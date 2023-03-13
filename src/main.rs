@@ -6,7 +6,7 @@ use std::path::PathBuf;
 fn main() -> Result<(), Box<dyn Error>> {
     let cli = Cli::parse();
     println!("Input: {cli:?}");
-    if let Some(p) = cli.script_path.as_ref() {
+    if let Some(p) = cli.script_path {
         let md = File::open(p)?.metadata()?;
         println!("File data is {md:?}");
     }
