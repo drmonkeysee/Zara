@@ -9,8 +9,7 @@ fn main() -> Result<()> {
 fn repl() -> Result<()> {
     let mut ed = DefaultEditor::new()?;
     for readline in ed.iter("λ:> ") {
-        let line = readline?;
-        let result = zara::eval(line.as_str());
+        let result = zara::eval(readline?.as_str());
         println!("{result}");
     }
     eprintln!("Saw EOF");
