@@ -16,6 +16,10 @@ Rust's toolchain is so intuitive this section is probably redundant, but here go
 1. Install [Rust](https://www.rust-lang.org/tools/install)
 2. `cargo run`
 
+## Dependencies
+
+- [RustyLine](https://crates.io/crates/rustyline)
+
 ## Resources
 
 - [R7RS Working Group](https://small.r7rs.org)
