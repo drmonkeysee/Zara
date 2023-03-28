@@ -2,7 +2,7 @@ use rustyline::{DefaultEditor, Result};
 
 fn main() -> Result<()> {
     println!("Starting zara cli...");
-    zara::lib_hello();
+    zara::hello();
     repl()
 }
 

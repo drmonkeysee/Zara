@@ -1,4 +1,4 @@
-pub fn lib_hello() {
+pub fn hello() {
     println!("Hello from Zara!");
 }
 
