@@ -61,3 +61,61 @@ fn app_title() -> String {
     }
     title
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn empty_args() {
+        let args: [String; 0] = [];
+
+        let result = parse(args.into_iter());
+
+        assert!(matches!(result, Parsed::Options(Opts {})))
+    }
+
+    #[test]
+    fn short_help() {
+        let program = "foo/me";
+        let args = [program, "-h"].map(|s| s.to_string());
+
+        let result = parse(args.into_iter());
+
+        assert!(matches!(
+            result,
+            Parsed::Command(Action::Help(me)) if me == program
+        ));
+    }
+
+    #[test]
+    fn long_help() {
+        let program = "foo/me";
+        let args = [program, "--help"].map(|s| s.to_string());
+
+        let result = parse(args.into_iter());
+
+        assert!(matches!(
+            result,
+            Parsed::Command(Action::Help(me)) if me == program
+        ));
+    }
+
+    #[test]
+    fn short_version() {
+        let args = ["foo/me", "-V"].map(|s| s.to_string());
+
+        let result = parse(args.into_iter());
+
+        assert!(matches!(result, Parsed::Command(Action::Version)));
+    }
+
+    #[test]
+    fn long_version() {
+        let args = ["foo/me", "--version"].map(|s| s.to_string());
+
+        let result = parse(args.into_iter());
+
+        assert!(matches!(result, Parsed::Command(Action::Version)));
+    }
+}
