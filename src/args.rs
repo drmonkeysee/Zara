@@ -43,7 +43,8 @@ pub(crate) struct Opts {}
 
 fn usage(me: &str) {
     println!("---=== {} Usage ===---", app_title());
-    println!("{me} [options...] [command]\n");
+    println!("{me} [options...] [command]");
+    println!();
     println!("commands");
     println!("  -h, --help\t: print usage");
     println!("  -V, --version\t: print version");
