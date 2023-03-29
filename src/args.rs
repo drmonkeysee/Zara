@@ -72,7 +72,7 @@ mod tests {
 
         let result = parse(args.into_iter());
 
-        assert!(matches!(result, Parsed::Options(Opts {})))
+        assert!(matches!(result, Parsed::Options(Opts {})));
     }
 
     #[test]
@@ -125,6 +125,6 @@ mod tests {
 
         let result = parse(args.into_iter());
 
-        assert!(matches!(result, Parsed::Options(Opts {})))
+        assert!(matches!(result, Parsed::Options(Opts {})));
     }
 }
