@@ -1,12 +1,19 @@
+mod args;
+
+use crate::args::Opts;
 use rustyline::{DefaultEditor, Result};
+use std::env;
 
 fn main() -> Result<()> {
-    println!("Starting zara cli...");
-    zara::hello();
-    repl()
+    if let Some(opts) = args::parse(env::args()) {
+        repl(opts)
+    } else {
+        Ok(())
+    }
 }
 
-fn repl() -> Result<()> {
+fn repl(options: Opts) -> Result<()> {
+    println!("{:?}", options);
     let mut ed = DefaultEditor::new()?;
     for readline in ed.iter("λ:> ") {
         let result = zara::eval(readline?.as_str());
