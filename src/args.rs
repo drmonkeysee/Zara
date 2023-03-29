@@ -11,29 +11,29 @@ pub(crate) fn parse(mut args: impl Iterator<Item = String>) -> Parsed {
     }
     // NOTE: enforce command precedence here
     if help {
-        Parsed::Command(Action::Help(me))
+        Parsed::Command(Cmd::Help(me))
     } else if ver {
-        Parsed::Command(Action::Version)
+        Parsed::Command(Cmd::Version)
     } else {
         Parsed::Options(Opts {})
     }
 }
 
 pub(crate) enum Parsed {
-    Command(Action),
+    Command(Cmd),
     Options(Opts),
 }
 
-pub(crate) enum Action {
+pub(crate) enum Cmd {
     Help(String),
     Version,
 }
 
-impl Action {
-    pub(crate) fn run(&self) {
+impl Cmd {
+    pub(crate) fn execute(&self) {
         match self {
-            Action::Help(me) => usage(me),
-            Action::Version => version(),
+            Cmd::Help(me) => usage(me),
+            Cmd::Version => version(),
         }
     }
 }
@@ -84,7 +84,7 @@ mod tests {
 
         assert!(matches!(
             result,
-            Parsed::Command(Action::Help(me)) if me == program
+            Parsed::Command(Cmd::Help(me)) if me == program
         ));
     }
 
@@ -97,7 +97,7 @@ mod tests {
 
         assert!(matches!(
             result,
-            Parsed::Command(Action::Help(me)) if me == program
+            Parsed::Command(Cmd::Help(me)) if me == program
         ));
     }
 
@@ -107,7 +107,7 @@ mod tests {
 
         let result = parse(args.into_iter());
 
-        assert!(matches!(result, Parsed::Command(Action::Version)));
+        assert!(matches!(result, Parsed::Command(Cmd::Version)));
     }
 
     #[test]
@@ -116,6 +116,6 @@ mod tests {
 
         let result = parse(args.into_iter());
 
-        assert!(matches!(result, Parsed::Command(Action::Version)));
+        assert!(matches!(result, Parsed::Command(Cmd::Version)));
     }
 }

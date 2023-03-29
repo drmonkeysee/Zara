@@ -6,7 +6,7 @@ use std::env;
 
 fn main() -> Result<()> {
     match args::parse(env::args()) {
-        Parsed::Command(action) => Ok(action.run()),
+        Parsed::Command(cmd) => Ok(cmd.execute()),
         Parsed::Options(opts) => repl(&opts),
     }
 }
