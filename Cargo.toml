@@ -9,5 +9,10 @@ repository = "https://github.com/drmonkeysee/Zara"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[profile.release]
+lto = true
+panic = "abort"
+strip = true
+
 [dependencies]
 rustyline = "11.0.0"
