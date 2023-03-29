@@ -118,4 +118,13 @@ mod tests {
 
         assert!(matches!(result, Parsed::Command(Cmd::Version)));
     }
+
+    #[test]
+    fn no_matched_args() {
+        let args = ["foo/me", "--not-an-option"].map(|s| s.to_string());
+
+        let result = parse(args.into_iter());
+
+        assert!(matches!(result, Parsed::Options(Opts {})))
+    }
 }
