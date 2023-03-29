@@ -1,5 +1,5 @@
-pub(crate) fn parse(mut args: impl Iterator<Item = String>) -> Option<Opts> {
-    let me = args.next();
+pub(crate) fn parse(mut args: impl Iterator<Item = String>) -> Parsed {
+    let me = args.next().unwrap_or(env!("CARGO_PKG_NAME").to_string());
     let mut help = false;
     let mut ver = false;
     for arg in args {
@@ -9,29 +9,42 @@ pub(crate) fn parse(mut args: impl Iterator<Item = String>) -> Option<Opts> {
             _ => (),
         }
     }
-    // NOTE: order of application matters here to ensure
-    // "-h -V" and "-V -h" behave consistently.
+    // NOTE: enforce command precedence here
     if help {
-        usage(me);
-        None
+        Parsed::Command(Action::Help(me))
     } else if ver {
-        version();
-        None
+        Parsed::Command(Action::Version)
     } else {
-        Some(Opts {})
+        Parsed::Options(Opts {})
+    }
+}
+
+pub(crate) enum Parsed {
+    Command(Action),
+    Options(Opts),
+}
+
+pub(crate) enum Action {
+    Help(String),
+    Version,
+}
+
+impl Action {
+    pub(crate) fn run(&self) {
+        match self {
+            Action::Help(me) => usage(me),
+            Action::Version => version(),
+        }
     }
 }
 
 #[derive(Debug)]
 pub(crate) struct Opts {}
 
-fn usage(me: Option<String>) {
+fn usage(me: &str) {
     println!("---=== {} Usage ===---", app_title());
-    println!(
-        "{} [options...]\n",
-        me.unwrap_or(env!("CARGO_PKG_NAME").to_string())
-    );
-    println!("options");
+    println!("{me} [options...] [command]\n");
+    println!("commands");
     println!("  -h, --help\t: print usage");
     println!("  -V, --version\t: print version");
 }

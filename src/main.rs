@@ -1,14 +1,13 @@
 mod args;
 
-use crate::args::Opts;
+use crate::args::{Opts, Parsed};
 use rustyline::{DefaultEditor, Result};
 use std::env;
 
 fn main() -> Result<()> {
-    if let Some(opts) = args::parse(env::args()) {
-        repl(opts)
-    } else {
-        Ok(())
+    match args::parse(env::args()) {
+        Parsed::Command(action) => Ok(action.run()),
+        Parsed::Options(opts) => repl(opts),
     }
 }
 
