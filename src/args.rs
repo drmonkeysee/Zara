@@ -1,5 +1,5 @@
 pub(crate) fn parse(mut args: impl Iterator<Item = String>) -> Parsed {
-    let me = args.next().unwrap_or(env!("CARGO_PKG_NAME").to_string());
+    let me = args.next().unwrap_or(String::from(env!("CARGO_PKG_NAME")));
     let mut help = false;
     let mut ver = false;
     for arg in args {
@@ -55,7 +55,7 @@ fn version() {
 }
 
 fn app_title() -> String {
-    let mut title = env!("CARGO_PKG_NAME").to_string();
+    let mut title = String::from(env!("CARGO_PKG_NAME"));
     if let Some(t) = title.get_mut(0..1) {
         t.make_ascii_uppercase()
     }
@@ -78,9 +78,9 @@ mod tests {
     #[test]
     fn short_help() {
         let program = "foo/me";
-        let args = [program, "-h"].map(|s| s.to_string());
+        let args = [program, "-h"];
 
-        let result = parse(args.into_iter());
+        let result = parse(args.into_iter().map(String::from));
 
         assert!(matches!(
             result,
@@ -91,9 +91,9 @@ mod tests {
     #[test]
     fn long_help() {
         let program = "foo/me";
-        let args = [program, "--help"].map(|s| s.to_string());
+        let args = [program, "--help"];
 
-        let result = parse(args.into_iter());
+        let result = parse(args.into_iter().map(String::from));
 
         assert!(matches!(
             result,
@@ -103,27 +103,27 @@ mod tests {
 
     #[test]
     fn short_version() {
-        let args = ["foo/me", "-V"].map(|s| s.to_string());
+        let args = ["foo/me", "-V"];
 
-        let result = parse(args.into_iter());
+        let result = parse(args.into_iter().map(String::from));
 
         assert!(matches!(result, Parsed::Command(Cmd::Version)));
     }
 
     #[test]
     fn long_version() {
-        let args = ["foo/me", "--version"].map(|s| s.to_string());
+        let args = ["foo/me", "--version"];
 
-        let result = parse(args.into_iter());
+        let result = parse(args.into_iter().map(String::from));
 
         assert!(matches!(result, Parsed::Command(Cmd::Version)));
     }
 
     #[test]
     fn no_matched_args() {
-        let args = ["foo/me", "--not-an-option"].map(|s| s.to_string());
+        let args = ["foo/me", "--not-an-option"];
 
-        let result = parse(args.into_iter());
+        let result = parse(args.into_iter().map(String::from));
 
         assert!(matches!(result, Parsed::Options(Opts {})));
     }
