@@ -1,5 +1,7 @@
-pub fn eval(text: &str) -> String {
-    let mut s = String::from("Evaluated text: ");
-    s.push_str(text);
-    s
+mod lex;
+
+use crate::lex::TokenStream;
+
+pub fn eval(text: String) -> TokenStream {
+    lex::tokenize(text)
 }
