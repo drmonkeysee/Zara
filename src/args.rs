@@ -1,11 +1,16 @@
+const HELP_SHORT: &str = "-h";
+const HELP_LONG: &str = "--help";
+const VERSION_SHORT: &str = "-V";
+const VERSION_LONG: &str = "--version";
+
 pub(crate) fn parse(mut args: impl Iterator<Item = String>) -> Parsed {
     let me = args.next().unwrap_or(String::from(env!("CARGO_PKG_NAME")));
     let mut help = false;
     let mut ver = false;
     for arg in args {
         match arg.as_str() {
-            "-h" | "--help" => help = true,
-            "-V" | "--version" => ver = true,
+            HELP_SHORT | HELP_LONG => help = true,
+            VERSION_SHORT | VERSION_LONG => ver = true,
             _ => (),
         }
     }
@@ -46,8 +51,8 @@ fn usage(me: &str) {
     println!("{me} [options...] [command]");
     println!();
     println!("commands");
-    println!("  -h, --help\t: print usage");
-    println!("  -V, --version\t: print version");
+    println!("  {HELP_SHORT}, {HELP_LONG}\t: print usage");
+    println!("  {VERSION_SHORT}, {VERSION_LONG}\t: print version");
 }
 
 fn version() {
