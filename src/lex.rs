@@ -10,18 +10,18 @@ pub fn tokenize(text: String) -> TokenStream {
 #[derive(Debug)]
 pub struct TokenStream {
     text: String,
-    tokens: Vec<Lexeme>,
+    tokens: Vec<Token>,
 }
 
 #[derive(Debug)]
-struct Lexeme {
-    token: Token,
-    word: Range<usize>,
+struct Token {
+    kind: TokenKind,
+    lexeme: Range<usize>,
 }
 
 // TODO: include label? #{n}={datum}, #{n}#
 #[derive(Debug)]
-enum Token {
+enum TokenKind {
     Boolean,        // #t|#f
     Character,      // \#{character}
     Identifier,     // {name}
