@@ -15,8 +15,7 @@ fn repl(options: &Opts) -> Result<()> {
     println!("{:?}", options);
     let mut ed = DefaultEditor::new()?;
     for readline in ed.iter("λ:> ") {
-        let result = zara::eval(readline?);
-        println!("{:?}", result);
+        println!("{:?}", zara::eval(readline?));
     }
     eprintln!("Saw EOF");
     Ok(())
