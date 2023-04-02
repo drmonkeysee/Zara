@@ -3,26 +3,18 @@ use std::{iter::Peekable, ops::Range, str::CharIndices};
 pub fn tokenize(text: &str) -> Vec<Token> {
     let mut tokens: Vec<Token> = Vec::new();
     let mut stream = CharStream::on(text);
-    while let Some(&(idx, ch)) = stream.peek() {
+    while let Some((idx, ch)) = stream.eat() {
         if ch.is_ascii_whitespace() {
-            stream.eat();
-        } else {
-            tokens.push(match ch {
-                '#' => tokenize_hash(&mut stream),
-                '(' => {
-                    stream.eat();
-                    Token::char(idx, TokenKind::ParenLeft)
-                }
-                ')' => {
-                    stream.eat();
-                    Token::char(idx, TokenKind::ParenRight)
-                }
-                _ => {
-                    stream.eat();
-                    Token::char(idx, TokenKind::Unimplemented(ch))
-                }
-            });
+            continue;
         }
+        let mut tokenizer = Tokenizer::start(idx);
+        match ch {
+            '#' => tokenizer.for_hash(&mut stream),
+            '(' => tokenizer.kind(TokenKind::ParenLeft),
+            ')' => tokenizer.kind(TokenKind::ParenRight),
+            _ => tokenizer.kind(TokenKind::Unimplemented(ch)),
+        };
+        tokens.push(tokenizer.extract());
     }
     tokens
 }
@@ -50,20 +42,26 @@ impl<'a> CharStream<'a> {
         self.iterator.next()
     }
 
-    fn eat_word(&mut self, first: usize) -> (usize, &str) {
-        let mut last = first;
-        self.eat();
-        while let Some(&(idx, ch)) = self.peek() {
-            match ch {
-                '"' | '(' | ')' | ';' | '|' => break,
-                _ if ch.is_ascii_whitespace() => break,
-                _ => {
-                    last = idx;
-                    self.eat();
-                }
-            }
+    fn pos(&mut self) -> usize {
+        if let Some(&(idx, _)) = self.peek() {
+            idx
+        } else {
+            self.text.len()
         }
-        (last, &self.text[first..=last])
+    }
+
+    fn scan_to_delimiter(&mut self) -> usize {
+        while let Some(&(idx, ch)) = self.peek() {
+            if is_delimiter(ch) {
+                return idx;
+            }
+            self.eat();
+        }
+        self.text.len()
+    }
+
+    fn lexeme(&self, range: Range<usize>) -> &str {
+        self.text.get(range).unwrap_or_default()
     }
 }
 
@@ -73,28 +71,17 @@ pub struct Token {
     lexeme: Range<usize>,
 }
 
-impl Token {
-    fn char(pos: usize, kind: TokenKind) -> Self {
-        Token::text(pos, pos, kind)
-    }
-
-    fn text(first: usize, last: usize, kind: TokenKind) -> Self {
-        Token {
-            kind: kind,
-            lexeme: (first..last + 1),
-        }
-    }
-}
-
 #[derive(Debug)]
 enum TokenKind {
-    ExpectedBoolean,
+    ExpectedBoolean(bool),
     HashInvalid,
     HashUnterminated,
     Literal(LiteralKind),
     ParenLeft,
     ParenRight,
+    Undefined,
     Unimplemented(char),
+    VectorOpen,
 }
 
 #[derive(Debug)]
@@ -102,29 +89,74 @@ enum LiteralKind {
     Boolean(bool),
 }
 
-fn tokenize_hash(stream: &mut CharStream) -> Token {
-    let (first, _) = stream.eat().unwrap();
-    if let Some(&(idx, ch)) = stream.peek() {
-        match ch {
-            't' | 'f' => {
-                let (last, word) = stream.eat_word(idx);
-                match word {
-                    "t" | "true" => {
-                        Token::text(first, last, TokenKind::Literal(LiteralKind::Boolean(true)))
-                    }
-                    "f" | "false" => {
-                        Token::text(first, last, TokenKind::Literal(LiteralKind::Boolean(false)))
-                    }
-                    _ => Token::text(first, last, TokenKind::ExpectedBoolean),
-                }
-            }
-            _ => {
-                let (last, _) = stream.eat_word(idx);
-                Token::text(first, last, TokenKind::HashInvalid)
-            }
+#[derive(Default)]
+struct Tokenizer {
+    start: usize,
+    end: Option<usize>,
+    kind: Option<TokenKind>,
+}
+
+impl Tokenizer {
+    fn start(start: usize) -> Self {
+        Tokenizer {
+            start: start,
+            ..Default::default()
         }
-    } else {
-        stream.eat();
-        Token::char(first, TokenKind::HashUnterminated)
+    }
+
+    fn end(&mut self, end: usize) -> &mut Self {
+        self.end = Some(end);
+        self
+    }
+
+    fn kind(&mut self, kind: TokenKind) -> &mut Self {
+        self.kind = Some(kind);
+        self
+    }
+
+    fn for_hash(&mut self, stream: &mut CharStream) -> &mut Self {
+        if let Some((idx, ch)) = stream.eat() {
+            match ch {
+                'f' => self.for_bool("alse", false, stream),
+                't' => self.for_bool("rue", true, stream),
+                '\\' => {
+                    // TODO: handle character literal
+                    todo!()
+                }
+                '(' => self.end(idx + 1).kind(TokenKind::VectorOpen),
+                _ => self
+                    .end(stream.scan_to_delimiter())
+                    .kind(TokenKind::HashInvalid),
+            }
+        } else {
+            self.kind(TokenKind::HashUnterminated)
+        }
+    }
+
+    fn for_bool(&mut self, pattern: &str, val: bool, stream: &mut CharStream) -> &mut Self {
+        let start = stream.pos();
+        let end = stream.scan_to_delimiter();
+        let lexeme = stream.lexeme(start..end);
+        self.end(end)
+            .kind(if lexeme.is_empty() || lexeme == pattern {
+                TokenKind::Literal(LiteralKind::Boolean(val))
+            } else {
+                TokenKind::ExpectedBoolean(val)
+            })
+    }
+
+    fn extract(self) -> Token {
+        Token {
+            kind: self.kind.unwrap_or(TokenKind::Undefined),
+            lexeme: self.start..self.end.unwrap_or(self.start + 1),
+        }
+    }
+}
+
+fn is_delimiter(ch: char) -> bool {
+    match ch {
+        '"' | '(' | ')' | ';' | '|' => true,
+        _ if ch.is_ascii_whitespace() => true,
+        _ => false,
     }
 }
