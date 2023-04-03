@@ -3,16 +3,16 @@ mod literal;
 
 use crate::lex::LexerResult;
 
-pub fn eval(text: String) -> Evaluation {
-    let result = lex::tokenize(&text);
+pub fn eval(textline: String) -> Evaluation {
+    let result = lex::tokenize(&textline);
     Evaluation {
-        text: text,
+        textline,
         lex_output: result,
     }
 }
 
 #[derive(Debug)]
 pub struct Evaluation {
-    text: String,
+    textline: String,
     lex_output: LexerResult,
 }

@@ -14,7 +14,7 @@ pub struct Tokenizer {
 impl Tokenizer {
     pub fn start(start: ScanIndex) -> Self {
         Tokenizer {
-            start: start,
+            start,
             ..Default::default()
         }
     }
@@ -32,14 +32,8 @@ impl Tokenizer {
     pub fn extract(self) -> Result<Token, TokenError> {
         let span = self.start.0..self.end.unwrap_or(self.start.0 + 1);
         match self.kind.unwrap_or(Err(TokenErrorKind::Undefined)) {
-            Ok(token) => Ok(Token {
-                kind: token,
-                span: span,
-            }),
-            Err(err) => Err(TokenError {
-                kind: err,
-                span: span,
-            }),
+            Ok(token) => Ok(Token { kind: token, span }),
+            Err(err) => Err(TokenError { kind: err, span }),
         }
     }
 

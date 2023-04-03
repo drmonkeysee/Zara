@@ -6,10 +6,10 @@ use self::{
     token::{Token, TokenError, Tokenizer},
 };
 
-pub fn tokenize(line: &str) -> LexerResult {
+pub fn tokenize(textline: &str) -> LexerResult {
     let mut tokens: Vec<Token> = Vec::new();
     let mut errors: Vec<TokenError> = Vec::new();
-    let mut scanner = Scanner::new(line);
+    let mut scanner = Scanner::new(textline);
     while let Some(start) = scanner.eat() {
         if start.1.is_ascii_whitespace() {
             continue;
