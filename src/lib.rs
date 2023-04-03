@@ -1,17 +1,18 @@
 mod lex;
+mod literal;
 
-use crate::lex::Token;
+use crate::lex::LexerResult;
 
 pub fn eval(text: String) -> Evaluation {
-    let tokens = lex::tokenize(&text);
+    let result = lex::tokenize(&text);
     Evaluation {
         text: text,
-        tokens: tokens,
+        lex_output: result,
     }
 }
 
 #[derive(Debug)]
 pub struct Evaluation {
     text: String,
-    tokens: Vec<Token>,
+    lex_output: LexerResult,
 }
