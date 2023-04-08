@@ -1,6 +1,7 @@
 use std::{iter::Peekable, ops::Range, str::CharIndices};
 
-pub type ScanIndex = (usize, char);
+pub type ScanItem<'a> = <CharIter<'a> as Iterator>::Item;
+type CharIter<'a> = Peekable<CharIndices<'a>>;
 
 pub struct Scanner<'a> {
     textline: &'a str,
@@ -15,8 +16,18 @@ impl<'a> Scanner<'a> {
         }
     }
 
-    pub fn eat(&mut self) -> Option<ScanIndex> {
-        self.chars.next()
+    pub fn next_char(&mut self) -> Option<ScanItem> {
+        loop {
+            let item = self.chars.next();
+            match item {
+                Some((_, ch)) => {
+                    if !ch.is_ascii_whitespace() {
+                        return item;
+                    }
+                }
+                None => return item,
+            }
+        }
     }
 
     pub fn pos(&mut self) -> usize {
@@ -27,12 +38,12 @@ impl<'a> Scanner<'a> {
         }
     }
 
-    pub fn scan_to_delimiter(&mut self) -> usize {
+    pub fn until_delimiter(&mut self) -> usize {
         while let Some(&(idx, ch)) = self.peek() {
             if is_delimiter(ch) {
                 return idx;
             }
-            self.eat();
+            self.next();
         }
         self.textline.len()
     }
@@ -46,7 +57,13 @@ impl<'a> Scanner<'a> {
     }
 }
 
-type CharIter<'a> = Peekable<CharIndices<'a>>;
+impl<'a> Iterator for Scanner<'a> {
+    type Item = ScanItem<'a>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.chars.next()
+    }
+}
 
 fn is_delimiter(ch: char) -> bool {
     match ch {

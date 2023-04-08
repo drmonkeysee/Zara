@@ -10,10 +10,7 @@ pub fn tokenize(textline: &str) -> LexerResult {
     let mut tokens: Vec<Token> = Vec::new();
     let mut errors: Vec<TokenError> = Vec::new();
     let mut scanner = Scanner::new(textline);
-    while let Some(start) = scanner.eat() {
-        if start.1.is_ascii_whitespace() {
-            continue;
-        }
+    while let Some(start) = scanner.next_char() {
         let mut tokenizer = Tokenizer::start(start);
         tokenizer.scan(&mut scanner);
         let result = tokenizer.extract();

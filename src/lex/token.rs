@@ -1,18 +1,18 @@
 use crate::{
-    lex::scan::{ScanIndex, Scanner},
+    lex::scan::{ScanItem, Scanner},
     literal::Literal,
 };
 use std::ops::Range;
 
 #[derive(Default)]
-pub struct Tokenizer {
-    start: ScanIndex,
+pub struct Tokenizer<'a> {
+    start: ScanItem<'a>,
     end: Option<usize>,
     kind: Option<TokenKindResult>,
 }
 
-impl Tokenizer {
-    pub fn start(start: ScanIndex) -> Self {
+impl<'a> Tokenizer<'a> {
+    pub fn start(start: ScanItem) -> Self {
         Tokenizer {
             start,
             ..Default::default()
@@ -56,7 +56,7 @@ impl Tokenizer {
     }
 
     fn for_hash(&mut self, scanner: &mut Scanner) -> &mut Self {
-        if let Some((idx, ch)) = scanner.eat() {
+        if let Some((idx, ch)) = scanner.next() {
             match ch {
                 'f' => self.for_bool("alse", false, scanner),
                 't' => self.for_bool("rue", true, scanner),
@@ -66,7 +66,7 @@ impl Tokenizer {
                 }
                 '(' => self.end(idx + 1).token(TokenKind::VectorOpen),
                 _ => self
-                    .end(scanner.scan_to_delimiter())
+                    .end(scanner.until_delimiter())
                     .error(TokenErrorKind::HashInvalid),
             }
         } else {
@@ -76,7 +76,7 @@ impl Tokenizer {
 
     fn for_bool(&mut self, pattern: &str, val: bool, scanner: &mut Scanner) -> &mut Self {
         let start = scanner.pos();
-        let end = scanner.scan_to_delimiter();
+        let end = scanner.until_delimiter();
         let lexeme = scanner.lexeme(start..end);
         self.end(end)
             .kind(if lexeme.is_empty() || lexeme == pattern {
