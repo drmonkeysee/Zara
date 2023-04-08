@@ -1,6 +1,6 @@
 use std::{iter::Peekable, ops::Range, str::CharIndices};
 
-pub type ScanItem<'a> = <CharIter<'a> as Iterator>::Item;
+pub type ScanItem = (usize, char);
 type CharIter<'a> = Peekable<CharIndices<'a>>;
 
 pub struct Scanner<'a> {
@@ -58,7 +58,7 @@ impl<'a> Scanner<'a> {
 }
 
 impl<'a> Iterator for Scanner<'a> {
-    type Item = ScanItem<'a>;
+    type Item = ScanItem;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.chars.next()

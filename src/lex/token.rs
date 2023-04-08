@@ -5,13 +5,13 @@ use crate::{
 use std::ops::Range;
 
 #[derive(Default)]
-pub struct Tokenizer<'a> {
-    start: ScanItem<'a>,
+pub struct Tokenizer {
+    start: ScanItem,
     end: Option<usize>,
     kind: Option<TokenKindResult>,
 }
 
-impl<'a> Tokenizer<'a> {
+impl Tokenizer {
     pub fn start(start: ScanItem) -> Self {
         Tokenizer {
             start,
