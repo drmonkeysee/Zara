@@ -56,10 +56,10 @@ impl Tokenizer {
     }
 
     fn for_hash(&mut self, scanner: &mut Scanner) -> &mut Self {
-        if let Some((idx, ch)) = scanner.next() {
+        if let Some((idx, ch)) = scanner.eat() {
             match ch {
-                'f' => self.for_bool("alse", false, scanner),
-                't' => self.for_bool("rue", true, scanner),
+                'f' => self.for_bool(false, idx, scanner),
+                't' => self.for_bool(true, idx, scanner),
                 '\\' => {
                     // TODO: handle character literal
                     todo!()
@@ -74,16 +74,17 @@ impl Tokenizer {
         }
     }
 
-    fn for_bool(&mut self, pattern: &str, val: bool, scanner: &mut Scanner) -> &mut Self {
-        let start = scanner.pos();
+    fn for_bool(&mut self, val: bool, at: usize, scanner: &mut Scanner) -> &mut Self {
         let end = scanner.until_delimiter();
-        let lexeme = scanner.lexeme(start..end);
-        self.end(end)
-            .kind(if lexeme.is_empty() || lexeme == pattern {
+        // TODO: support getting lexeme from current position to end
+        let remaining = scanner.lexeme(at + 1..end);
+        self.end(end).kind(
+            if remaining.is_empty() || remaining == if val { "rue" } else { "alse" } {
                 Ok(TokenKind::Literal(Literal::Boolean(val)))
             } else {
                 Err(TokenErrorKind::ExpectedBoolean(val))
-            })
+            },
+        )
     }
 }
 

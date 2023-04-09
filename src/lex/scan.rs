@@ -1,67 +1,106 @@
 use std::{iter::Peekable, ops::Range, str::CharIndices};
 
 pub type ScanItem = (usize, char);
-type CharIter<'a> = Peekable<CharIndices<'a>>;
 
 pub struct Scanner<'a> {
     textline: &'a str,
-    chars: CharIter<'a>,
+    chars: Peekable<CharIndices<'a>>,
+}
+
+struct PeekWhile<'a, P> {
+    inner: &'a mut Peekable<CharIndices<'a>>,
+    predicate: P,
+}
+
+impl<'a, P: Fn(&ScanItem) -> bool> PeekWhile<'a, P> {
+    fn peek(self) -> Option<&'a ScanItem> {
+        /*loop {
+            let item = self.inner.peek();
+            let p = &self.predicate;
+            if p(item?) {
+                self.inner.next();
+            } else {
+                break;
+            }
+        }
+        self.inner.peek()*/
+
+        while let Some(item) = self.inner.peek() {
+            if (self.predicate)(item) {
+                self.inner.next();
+            } else {
+                break;
+            }
+        }
+        self.inner.peek()
+    }
+}
+
+trait PeekableSkip<'a, P> {
+    fn peek_while(&'a mut self, predicate: P) -> PeekWhile<'a, P>;
+}
+
+impl<'a, P: Fn(&ScanItem) -> bool> PeekableSkip<'a, P> for Peekable<CharIndices<'a>> {
+    fn peek_while(&'a mut self, predicate: P) -> PeekWhile<'a, P> {
+        PeekWhile {
+            inner: self,
+            predicate,
+        }
+    }
 }
 
 impl<'a> Scanner<'a> {
     pub fn new(textline: &'a str) -> Self {
-        Scanner {
+        Self {
             textline,
             chars: textline.char_indices().peekable(),
         }
     }
 
-    pub fn next_char(&mut self) -> Option<ScanItem> {
-        loop {
-            let item = self.chars.next();
-            match item {
-                Some((_, ch)) => {
-                    if !ch.is_ascii_whitespace() {
-                        return item;
-                    }
-                }
-                None => return item,
-            }
-        }
+    pub fn eat(&mut self) -> Option<ScanItem> {
+        self.chars.next()
     }
 
-    pub fn pos(&mut self) -> usize {
-        if let Some(&(idx, _)) = self.peek() {
-            idx
-        } else {
-            self.textline.len()
-        }
+    pub fn next_char(&mut self) -> Option<ScanItem> {
+        self.chars
+            .by_ref()
+            .skip_while(|&(_, ch)| ch.is_ascii_whitespace())
+            .next()
     }
 
     pub fn until_delimiter(&mut self) -> usize {
-        while let Some(&(idx, ch)) = self.peek() {
+        /*let end = self.end();
+        self.chars
+            .peek_while(|&(_, ch)| !is_delimiter(ch))
+            .peek()
+            .map_or(end, |&(idx, _)| idx)*/
+        while let Some(&(idx, ch)) = self.chars.peek() {
             if is_delimiter(ch) {
                 return idx;
             }
-            self.next();
+            self.eat();
         }
-        self.textline.len()
+        self.end()
+        /*let end = self.end();
+        // TODO: can i create peek_while e.g. (#t) will skip right paren right
+        // because peekable() on skip_while consumes next() on chars while throwing away local peekable
+        // so next call to peek on chars advances again.
+        let mut binding = self
+            .chars
+            .by_ref()
+            .peek_while(|&(_, ch)| !is_delimiter(ch))
+            .peek();
+        let blah = binding.peek();
+        println!("delimiter peek {:?}", blah);
+        blah.map_or(end, |&(idx, _)| idx)*/
     }
 
     pub fn lexeme(&self, range: Range<usize>) -> &str {
         self.textline.get(range).unwrap_or_default()
     }
 
-    fn peek(&mut self) -> Option<&(usize, char)> {
-        self.chars.peek()
-    }
-}
-
-impl<'a> Iterator for Scanner<'a> {
-    type Item = ScanItem;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.chars.next()
+    fn end(&self) -> usize {
+        self.textline.len()
     }
 }
 
