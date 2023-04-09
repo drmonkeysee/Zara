@@ -43,6 +43,10 @@ impl<'a> Scanner<'a> {
     }
 }
 
+//
+// Private Section
+//
+
 type ScanChars<'a> = Peekable<CharIndices<'a>>;
 
 struct PeekWhile<'it, 'ch, P> {
@@ -50,7 +54,6 @@ struct PeekWhile<'it, 'ch, P> {
     predicate: P,
 }
 
-// TODO: Fn vs FnMut?
 impl<'it, 'ch, P: Fn(&ScanItem) -> bool> PeekWhile<'it, 'ch, P> {
     fn peek(self) -> Option<&'it ScanItem> {
         while let Some(item) = self.inner.peek() {
@@ -64,12 +67,12 @@ impl<'it, 'ch, P: Fn(&ScanItem) -> bool> PeekWhile<'it, 'ch, P> {
     }
 }
 
-trait PeekableSkip<'ch, P> {
-    fn peek_while(&mut self, predicate: P) -> PeekWhile<'_, 'ch, P>;
+trait PeekableSkip<'a, P> {
+    fn peek_while(&mut self, predicate: P) -> PeekWhile<'_, 'a, P>;
 }
 
-impl<'ch, P: Fn(&ScanItem) -> bool> PeekableSkip<'ch, P> for ScanChars<'ch> {
-    fn peek_while(&mut self, predicate: P) -> PeekWhile<'_, 'ch, P> {
+impl<'a, P: Fn(&ScanItem) -> bool> PeekableSkip<'a, P> for ScanChars<'a> {
+    fn peek_while(&mut self, predicate: P) -> PeekWhile<'_, 'a, P> {
         PeekWhile {
             inner: self,
             predicate,
