@@ -1,7 +1,7 @@
 mod lex;
 mod literal;
 
-use crate::lex::LexerResult;
+use self::lex::LexerResult;
 
 pub fn eval(textline: String) -> Evaluation {
     let result = lex::tokenize(&textline);

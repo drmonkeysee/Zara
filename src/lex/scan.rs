@@ -1,32 +1,32 @@
 use std::{iter::Peekable, ops::Range, str::CharIndices};
 
-pub type ScanItem = (usize, char);
+pub(crate) type ScanItem = (usize, char);
 
-pub struct Scanner<'a> {
+pub(crate) struct Scanner<'a> {
     textline: &'a str,
     chars: ScanChars<'a>,
 }
 
 impl<'a> Scanner<'a> {
-    pub fn new(textline: &'a str) -> Self {
+    pub(crate) fn new(textline: &'a str) -> Self {
         Self {
             textline,
             chars: textline.char_indices().peekable(),
         }
     }
 
-    pub fn eat(&mut self) -> Option<ScanItem> {
+    pub(crate) fn eat(&mut self) -> Option<ScanItem> {
         self.chars.next()
     }
 
-    pub fn next_char(&mut self) -> Option<ScanItem> {
+    pub(crate) fn next_char(&mut self) -> Option<ScanItem> {
         self.chars
             .by_ref()
             .skip_while(|&(_, ch)| ch.is_ascii_whitespace())
             .next()
     }
 
-    pub fn until_delimiter(&mut self) -> usize {
+    pub(crate) fn until_delimiter(&mut self) -> usize {
         let end = self.end();
         self.chars
             .peek_while(|&(_, ch)| !is_delimiter(ch))
@@ -34,7 +34,7 @@ impl<'a> Scanner<'a> {
             .map_or(end, |&(idx, _)| idx)
     }
 
-    pub fn lexeme(&self, range: Range<usize>) -> &str {
+    pub(crate) fn lexeme(&self, range: Range<usize>) -> &str {
         self.textline.get(range).unwrap_or_default()
     }
 
@@ -42,10 +42,6 @@ impl<'a> Scanner<'a> {
         self.textline.len()
     }
 }
-
-//
-// Private Section
-//
 
 type ScanChars<'a> = Peekable<CharIndices<'a>>;
 

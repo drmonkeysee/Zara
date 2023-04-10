@@ -4,22 +4,34 @@ use crate::{
 };
 use std::ops::Range;
 
+#[derive(Debug)]
+pub struct Token {
+    kind: TokenKind,
+    span: Range<usize>,
+}
+
+#[derive(Debug)]
+pub(super) struct TokenError {
+    kind: TokenErrorKind,
+    span: Range<usize>,
+}
+
 #[derive(Default)]
-pub struct Tokenizer {
+pub(super) struct Tokenizer {
     start: ScanItem,
     end: Option<usize>,
     kind: Option<TokenKindResult>,
 }
 
 impl Tokenizer {
-    pub fn start(start: ScanItem) -> Self {
+    pub(super) fn start(start: ScanItem) -> Self {
         Tokenizer {
             start,
             ..Default::default()
         }
     }
 
-    pub fn scan(&mut self, scanner: &mut Scanner) {
+    pub(super) fn scan(&mut self, scanner: &mut Scanner) {
         let ch = self.start.1;
         match ch {
             '#' => self.for_hash(scanner),
@@ -29,7 +41,7 @@ impl Tokenizer {
         };
     }
 
-    pub fn extract(self) -> Result<Token, TokenError> {
+    pub(super) fn extract(self) -> Result<Token, TokenError> {
         let span = self.start.0..self.end.unwrap_or(self.start.0 + 1);
         match self.kind.unwrap_or(Err(TokenErrorKind::Undefined)) {
             Ok(token) => Ok(Token { kind: token, span }),
@@ -86,18 +98,6 @@ impl Tokenizer {
             },
         )
     }
-}
-
-#[derive(Debug)]
-pub struct Token {
-    kind: TokenKind,
-    span: Range<usize>,
-}
-
-#[derive(Debug)]
-pub struct TokenError {
-    kind: TokenErrorKind,
-    span: Range<usize>,
 }
 
 type TokenKindResult = Result<TokenKind, TokenErrorKind>;

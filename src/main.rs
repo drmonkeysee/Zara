@@ -1,6 +1,6 @@
 mod args;
 
-use crate::args::{Opts, Parsed};
+use self::args::{Opts, Parsed};
 use rustyline::{DefaultEditor, Result};
 use std::env;
 
