@@ -5,16 +5,30 @@ use crate::{
 use std::ops::Range;
 
 #[derive(Debug)]
-pub struct Token {
-    kind: TokenKind,
-    span: Range<usize>,
+pub enum TokenKind {
+    Literal(Literal),
+    ParenLeft,
+    ParenRight,
+    VectorOpen,
 }
 
 #[derive(Debug)]
-pub(super) struct TokenError {
-    kind: TokenErrorKind,
+pub enum TokenErrorKind {
+    ExpectedBoolean(bool),
+    HashInvalid,
+    HashUnterminated,
+    Undefined,
+    Unimplemented(String),
+}
+
+#[derive(Debug)]
+pub struct TokenType<T> {
+    kind: T,
     span: Range<usize>,
 }
+
+pub type Token = TokenType<TokenKind>;
+pub type TokenError = TokenType<TokenErrorKind>;
 
 #[derive(Default)]
 struct TokenBuilder {
@@ -152,20 +166,3 @@ impl Tokenizer<'_> {
 }
 
 type TokenKindResult = Result<TokenKind, TokenErrorKind>;
-
-#[derive(Debug)]
-enum TokenKind {
-    Literal(Literal),
-    ParenLeft,
-    ParenRight,
-    VectorOpen,
-}
-
-#[derive(Debug)]
-enum TokenErrorKind {
-    ExpectedBoolean(bool),
-    HashInvalid,
-    HashUnterminated,
-    Undefined,
-    Unimplemented(String),
-}
