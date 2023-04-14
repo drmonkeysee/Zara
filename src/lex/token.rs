@@ -37,7 +37,7 @@ impl Tokenizer<'_> {
             '#' => self.for_hash(scanner),
             '(' => self.token(TokenKind::ParenLeft),
             ')' => self.token(TokenKind::ParenRight),
-            _ => self.error(TokenErrorKind::Unimplemented(ch)),
+            _ => self.for_unimplemented(scanner),
         };
     }
 
@@ -98,6 +98,15 @@ impl Tokenizer<'_> {
             },
         )
     }
+
+    fn for_unimplemented(&mut self, scanner: &mut Scanner) -> &mut Self {
+        let start = self.start.0;
+        let end = scanner.until_delimiter();
+        self.end(end)
+            .error(TokenErrorKind::Unimplemented(String::from(
+                scanner.lexeme(start..end),
+            )))
+    }
 }
 
 type TokenKindResult = Result<TokenKind, TokenErrorKind>;
@@ -116,5 +125,5 @@ enum TokenErrorKind {
     HashInvalid,
     HashUnterminated,
     Undefined,
-    Unimplemented(char),
+    Unimplemented(String),
 }
