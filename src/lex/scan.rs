@@ -1,6 +1,6 @@
 use std::{iter::Peekable, ops::Range, str::CharIndices};
 
-pub(crate) type ScanItem = (usize, char);
+pub(crate) type ScanItem<'a> = <CharIndices<'a> as Iterator>::Item;
 
 pub(crate) struct Scanner<'a> {
     textline: &'a str,
@@ -51,7 +51,7 @@ struct PeekWhile<'it, 'ch, P> {
 }
 
 impl<'it, 'ch, P: Fn(&ScanItem) -> bool> PeekWhile<'it, 'ch, P> {
-    fn peek(self) -> Option<&'it ScanItem> {
+    fn peek(self) -> Option<&'it ScanItem<'ch>> {
         while let Some(item) = self.inner.peek() {
             if (self.predicate)(item) {
                 self.inner.next();

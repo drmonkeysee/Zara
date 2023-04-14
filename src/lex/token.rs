@@ -17,13 +17,13 @@ pub(super) struct TokenError {
 }
 
 #[derive(Default)]
-pub(super) struct Tokenizer {
-    start: ScanItem,
+pub(super) struct Tokenizer<'a> {
+    start: ScanItem<'a>,
     end: Option<usize>,
     kind: Option<TokenKindResult>,
 }
 
-impl Tokenizer {
+impl Tokenizer<'_> {
     pub(super) fn start(start: ScanItem) -> Self {
         Tokenizer {
             start,
