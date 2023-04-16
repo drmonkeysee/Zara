@@ -1,8 +1,12 @@
+mod builder;
 mod scan;
 
-use self::scan::{ScanItem, Scanner};
+use self::{
+    builder::TokenBuilder,
+    scan::{ScanItem, Scanner},
+};
 use crate::{
-    lex::tokens::{Token, TokenError, TokenErrorKind, TokenKind, TokenResult},
+    lex::tokens::{TokenErrorKind, TokenKind, TokenResult},
     literal::Literal,
 };
 
@@ -111,47 +115,3 @@ impl<'t, 's> Tokenizer<'t, 's> {
             )));
     }
 }
-
-#[derive(Default)]
-struct TokenBuilder {
-    start: usize,
-    end: Option<usize>,
-    kind: Option<TokenKindResult>,
-}
-
-impl TokenBuilder {
-    fn start(start: usize) -> Self {
-        Self {
-            start,
-            ..Default::default()
-        }
-    }
-
-    fn end(&mut self, end: usize) -> &mut Self {
-        self.end = Some(end);
-        self
-    }
-
-    fn token(&mut self, token: TokenKind) -> &mut Self {
-        self.kind(Ok(token))
-    }
-
-    fn error(&mut self, err: TokenErrorKind) -> &mut Self {
-        self.kind(Err(err))
-    }
-
-    fn kind(&mut self, result: TokenKindResult) -> &mut Self {
-        self.kind = Some(result);
-        self
-    }
-
-    fn build(self) -> TokenResult {
-        let span = self.start..self.end.unwrap_or(self.start + 1);
-        match self.kind.unwrap_or(Err(TokenErrorKind::Undefined)) {
-            Ok(token) => Ok(Token { kind: token, span }),
-            Err(err) => Err(TokenError { kind: err, span }),
-        }
-    }
-}
-
-type TokenKindResult = Result<TokenKind, TokenErrorKind>;
