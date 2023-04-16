@@ -11,10 +11,9 @@ pub fn tokenize(textline: &str) -> LexerResult {
     let mut errors: Vec<TokenError> = Vec::new();
     let mut scanner = Scanner::new(textline);
     while let Some(start) = scanner.next_char() {
-        let mut tokenizer = Tokenizer::start(start);
-        tokenizer.scan(&mut scanner);
-        let result = tokenizer.extract();
-        match result {
+        let mut tokenizer = Tokenizer::start(start, &mut scanner);
+        tokenizer.scan();
+        match tokenizer.extract() {
             Ok(token) => tokens.push(token),
             Err(err) => errors.push(err),
         }

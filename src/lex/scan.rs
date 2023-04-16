@@ -15,7 +15,7 @@ impl<'a> Scanner<'a> {
         }
     }
 
-    pub(crate) fn eat(&mut self) -> Option<ScanItem> {
+    pub(crate) fn advance(&mut self) -> Option<ScanItem> {
         self.chars.next()
     }
 
