@@ -6,7 +6,7 @@ use self::{
     tokens::{Token, TokenError},
 };
 
-pub fn tokenize(textline: &str) -> LexerResult {
+pub(super) fn tokenize(textline: &str) -> LexerResult {
     let mut tokens: Vec<Token> = Vec::new();
     let mut errors: Vec<TokenError> = Vec::new();
     for result in TokenStream::on(textline) {
@@ -22,7 +22,7 @@ pub fn tokenize(textline: &str) -> LexerResult {
     }
 }
 
-pub type LexerResult = Result<Vec<Token>, LexerFailure>;
-
 #[derive(Debug)]
-pub struct LexerFailure(Vec<TokenError>, Vec<Token>);
+pub(super) struct LexerFailure(Vec<TokenError>, Vec<Token>);
+
+pub(super) type LexerResult = Result<Vec<Token>, LexerFailure>;

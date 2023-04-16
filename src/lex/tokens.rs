@@ -2,7 +2,7 @@ use crate::literal::Literal;
 use std::ops::Range;
 
 #[derive(Debug)]
-pub enum TokenKind {
+pub(crate) enum TokenKind {
     Literal(Literal),
     ParenLeft,
     ParenRight,
@@ -10,7 +10,7 @@ pub enum TokenKind {
 }
 
 #[derive(Debug)]
-pub enum TokenErrorKind {
+pub(crate) enum TokenErrorKind {
     ExpectedBoolean(bool),
     HashInvalid,
     HashUnterminated,
@@ -19,11 +19,11 @@ pub enum TokenErrorKind {
 }
 
 #[derive(Debug)]
-pub struct TokenType<T> {
+pub(crate) struct TokenType<T> {
     pub(crate) kind: T,
     pub(crate) span: Range<usize>,
 }
 
-pub type Token = TokenType<TokenKind>;
-pub type TokenError = TokenType<TokenErrorKind>;
-pub type TokenResult = Result<Token, TokenError>;
+pub(crate) type Token = TokenType<TokenKind>;
+pub(crate) type TokenError = TokenType<TokenErrorKind>;
+pub(crate) type TokenResult = Result<Token, TokenError>;
