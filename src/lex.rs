@@ -1,9 +1,11 @@
 mod scan;
 mod token;
+mod tokens;
 
 use self::{
     scan::Scanner,
-    token::{Token, TokenError, Tokenizer},
+    token::Tokenizer,
+    tokens::{Token, TokenError},
 };
 
 pub fn tokenize(textline: &str) -> LexerResult {
