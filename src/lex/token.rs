@@ -50,6 +50,7 @@ impl<'t, 's> Tokenizer<'t, 's> {
                 '(' => {
                     self.builder.end(idx + 1).token(TokenKind::VectorOpen);
                 }
+                // TODO: this will skip if ch is a delimiter
                 _ => {
                     self.builder
                         .end(self.scan.until_delimiter())
