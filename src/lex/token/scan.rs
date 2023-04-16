@@ -1,32 +1,32 @@
 use std::{iter::Peekable, ops::Range, str::CharIndices};
 
-pub(crate) type ScanItem<'a> = <CharIndices<'a> as Iterator>::Item;
+pub(super) type ScanItem<'a> = <CharIndices<'a> as Iterator>::Item;
 
-pub(crate) struct Scanner<'a> {
+pub(super) struct Scanner<'a> {
     textline: &'a str,
     chars: ScanChars<'a>,
 }
 
 impl<'a> Scanner<'a> {
-    pub(crate) fn new(textline: &'a str) -> Self {
+    pub(super) fn new(textline: &'a str) -> Self {
         Self {
             textline,
             chars: textline.char_indices().peekable(),
         }
     }
 
-    pub(crate) fn advance(&mut self) -> Option<ScanItem> {
+    pub(super) fn advance(&mut self) -> Option<ScanItem> {
         self.chars.next()
     }
 
-    pub(crate) fn next_char(&mut self) -> Option<ScanItem> {
+    pub(super) fn next_char(&mut self) -> Option<ScanItem> {
         self.chars
             .by_ref()
             .skip_while(|&(_, ch)| ch.is_ascii_whitespace())
             .next()
     }
 
-    pub(crate) fn until_delimiter(&mut self) -> usize {
+    pub(super) fn until_delimiter(&mut self) -> usize {
         let end = self.end();
         self.chars
             .peek_while(|&(_, ch)| !is_delimiter(ch))
@@ -34,7 +34,7 @@ impl<'a> Scanner<'a> {
             .map_or(end, |&(idx, _)| idx)
     }
 
-    pub(crate) fn lexeme(&self, range: Range<usize>) -> &str {
+    pub(super) fn lexeme(&self, range: Range<usize>) -> &str {
         self.textline.get(range).unwrap_or_default()
     }
 

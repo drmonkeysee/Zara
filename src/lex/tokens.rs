@@ -26,3 +26,4 @@ pub struct TokenType<T> {
 
 pub type Token = TokenType<TokenKind>;
 pub type TokenError = TokenType<TokenErrorKind>;
+pub type TokenResult = Result<Token, TokenError>;

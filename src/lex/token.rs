@@ -1,19 +1,45 @@
+mod scan;
+
+use self::scan::{ScanItem, Scanner};
 use crate::{
-    lex::{
-        scan::{ScanItem, Scanner},
-        tokens::{Token, TokenError, TokenErrorKind, TokenKind},
-    },
+    lex::tokens::{Token, TokenError, TokenErrorKind, TokenKind, TokenResult},
     literal::Literal,
 };
 
-pub(super) struct Tokenizer<'t, 's> {
+pub(super) struct TokenStream<'a> {
+    scan: Scanner<'a>,
+}
+
+impl<'a> TokenStream<'a> {
+    pub(super) fn on(textline: &'a str) -> Self {
+        Self {
+            scan: Scanner::new(textline),
+        }
+    }
+}
+
+impl<'a> Iterator for TokenStream<'a> {
+    type Item = TokenResult;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if let Some(item) = self.scan.next_char() {
+            let mut tokenizer = Tokenizer::start(item, &mut self.scan);
+            tokenizer.run();
+            Some(tokenizer.extract())
+        } else {
+            None
+        }
+    }
+}
+
+struct Tokenizer<'t, 's> {
     builder: TokenBuilder,
     scan: &'t mut Scanner<'s>,
     start: ScanItem<'s>,
 }
 
 impl<'t, 's> Tokenizer<'t, 's> {
-    pub(super) fn start(start: ScanItem, scan: &'t mut Scanner<'s>) -> Self {
+    fn start(start: ScanItem, scan: &'t mut Scanner<'s>) -> Self {
         Self {
             start,
             scan,
@@ -21,7 +47,7 @@ impl<'t, 's> Tokenizer<'t, 's> {
         }
     }
 
-    pub(super) fn scan(&mut self) {
+    fn run(&mut self) {
         match self.start.1 {
             '#' => self.hashcode(),
             '(' => {
@@ -34,7 +60,7 @@ impl<'t, 's> Tokenizer<'t, 's> {
         }
     }
 
-    pub(super) fn extract(self) -> Result<Token, TokenError> {
+    fn extract(self) -> TokenResult {
         self.builder.build()
     }
 
@@ -119,7 +145,7 @@ impl TokenBuilder {
         self
     }
 
-    fn build(self) -> Result<Token, TokenError> {
+    fn build(self) -> TokenResult {
         let span = self.start..self.end.unwrap_or(self.start + 1);
         match self.kind.unwrap_or(Err(TokenErrorKind::Undefined)) {
             Ok(token) => Ok(Token { kind: token, span }),
