@@ -53,7 +53,7 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
 
     fn run(&mut self) {
         match self.start.1 {
-            '#' => self.hashcode(),
+            '#' => self.hashtag(),
             '(' => {
                 self.builder.token(TokenKind::ParenLeft);
             }
@@ -68,7 +68,7 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
         self.builder.build()
     }
 
-    fn hashcode(&mut self) {
+    fn hashtag(&mut self) {
         if let Some((idx, ch)) = self.scan.advance() {
             match ch {
                 'f' => self.boolean(false, idx),
@@ -119,4 +119,90 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    mod tokenizer {
+        use super::*;
+        use crate::lex::tokens::{Token, TokenError};
+        use std::ops::Range;
+
+        #[test]
+        fn empty_string() {
+            let mut s = Scanner::new("");
+            let mut t = Tokenizer::start((0, 'a'), &mut s);
+
+            t.run();
+
+            assert!(matches!(
+                t.extract(),
+                Err(TokenError {
+                    kind: TokenErrorKind::Unimplemented(txt),
+                    span: Range { start: 0, end: 0 }
+                }) if txt == ""
+            ))
+        }
+
+        #[test]
+        fn token_not_implemented() {
+            let mut s = Scanner::new("abc");
+            let mut t = Tokenizer::start(s.advance().unwrap(), &mut s);
+
+            t.run();
+
+            assert!(matches!(
+                t.extract(),
+                Err(TokenError {
+                    kind: TokenErrorKind::Unimplemented(txt),
+                    span: Range { start: 0, end: 3 }
+                }) if txt == "abc"
+            ))
+        }
+
+        #[test]
+        fn token_not_implemented_stops_at_delimiter() {
+            let mut s = Scanner::new("abc;");
+            let mut t = Tokenizer::start(s.advance().unwrap(), &mut s);
+
+            t.run();
+
+            assert!(matches!(
+                t.extract(),
+                Err(TokenError {
+                    kind: TokenErrorKind::Unimplemented(txt),
+                    span: Range { start: 0, end: 3 }
+                }) if txt == "abc"
+            ))
+        }
+
+        #[test]
+        fn left_paren() {
+            let mut s = Scanner::new("(");
+            let mut t = Tokenizer::start(s.advance().unwrap(), &mut s);
+
+            t.run();
+
+            assert!(matches!(
+                t.extract(),
+                Ok(Token {
+                    kind: TokenKind::ParenLeft,
+                    span: Range { start: 0, end: 1 }
+                })
+            ))
+        }
+
+        #[test]
+        fn right_paren() {
+            let mut s = Scanner::new(")");
+            let mut t = Tokenizer::start(s.advance().unwrap(), &mut s);
+
+            t.run();
+
+            assert!(matches!(
+                t.extract(),
+                Ok(Token {
+                    kind: TokenKind::ParenRight,
+                    span: Range { start: 0, end: 1 }
+                })
+            ))
+        }
+    }
 }

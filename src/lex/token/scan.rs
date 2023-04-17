@@ -88,6 +88,37 @@ fn is_delimiter(ch: char) -> bool {
 mod tests {
     use super::*;
 
+    #[test]
+    fn delimiter_chars() {
+        let chars: Vec<char> = vec!['"', '(', ')', ';', '|'];
+
+        for ch in chars {
+            assert!(is_delimiter(ch), "Expected {ch} to be a delimiter");
+        }
+    }
+
+    #[test]
+    fn delimiter_whitespace() {
+        let chars: Vec<char> = vec![' ', '\t', '\r', '\n'];
+
+        for ch in chars {
+            assert!(
+                is_delimiter(ch),
+                "Expected {} to be a delimiter",
+                ch.escape_default()
+            );
+        }
+    }
+
+    #[test]
+    fn non_delimiter_chars() {
+        let chars: Vec<char> = vec!['\'', '#', '.', ',', ':', 'a', '@', '+', '-', '\\', '/', '1'];
+
+        for ch in chars {
+            assert!(!is_delimiter(ch), "Expected {ch} to not be a delimiter");
+        }
+    }
+
     mod advance {
         use super::*;
 
