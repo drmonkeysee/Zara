@@ -309,4 +309,72 @@ mod tests {
             assert_eq!(s.lexeme(5..2), "");
         }
     }
+
+    mod peek_while {
+        use super::*;
+
+        #[test]
+        fn empty_string() {
+            let mut it = "".char_indices().peekable();
+
+            assert!(it.peek_while(|_| false).peek().is_none());
+        }
+
+        #[test]
+        fn while_false() {
+            let mut it = "abc".char_indices().peekable();
+
+            let r = it.peek_while(|_| false).peek();
+
+            assert!(r.is_some());
+            assert_eq!(*r.unwrap(), (0, 'a'));
+        }
+
+        #[test]
+        fn while_true() {
+            let mut it = "abc".char_indices().peekable();
+
+            assert!(it.peek_while(|_| true).peek().is_none());
+        }
+
+        #[test]
+        fn false_predicate() {
+            let mut it = "123abc456".char_indices().peekable();
+
+            let r = it.peek_while(|&(_, ch)| ch.is_whitespace()).peek();
+
+            assert!(r.is_some());
+            assert_eq!(*r.unwrap(), (0, '1'));
+        }
+
+        #[test]
+        fn true_predicate() {
+            let mut it = "123abc456".char_indices().peekable();
+
+            assert!(it
+                .peek_while(|&(_, ch)| ch.is_alphanumeric())
+                .peek()
+                .is_none());
+        }
+
+        #[test]
+        fn ch_predicate() {
+            let mut it = "123abc456".char_indices().peekable();
+
+            let r = it.peek_while(|&(_, ch)| ch.is_ascii_digit()).peek();
+
+            assert!(r.is_some());
+            assert_eq!(*r.unwrap(), (3, 'a'));
+        }
+
+        #[test]
+        fn index_predicate() {
+            let mut it = "123abc456".char_indices().peekable();
+
+            let r = it.peek_while(|&(idx, _)| idx < 4).peek();
+
+            assert!(r.is_some());
+            assert_eq!(*r.unwrap(), (4, 'b'));
+        }
+    }
 }
