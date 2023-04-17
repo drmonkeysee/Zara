@@ -45,13 +45,13 @@ impl<'a> Scanner<'a> {
 
 type ScanChars<'a> = Peekable<CharIndices<'a>>;
 
-struct PeekWhile<'it, 'ch, P> {
-    inner: &'it mut ScanChars<'ch>,
+struct PeekWhile<'me, 'str, P> {
+    inner: &'me mut ScanChars<'str>,
     predicate: P,
 }
 
-impl<'it, 'ch, P: Fn(&ScanItem) -> bool> PeekWhile<'it, 'ch, P> {
-    fn peek(self) -> Option<&'it ScanItem<'ch>> {
+impl<'me, 'str, P: Fn(&ScanItem) -> bool> PeekWhile<'me, 'str, P> {
+    fn peek(self) -> Option<&'me ScanItem<'str>> {
         while let Some(item) = self.inner.peek() {
             if (self.predicate)(item) {
                 self.inner.next();

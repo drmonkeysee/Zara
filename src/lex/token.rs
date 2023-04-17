@@ -36,14 +36,14 @@ impl<'a> Iterator for TokenStream<'a> {
     }
 }
 
-struct Tokenizer<'t, 's> {
+struct Tokenizer<'me, 'str> {
     builder: TokenBuilder,
-    scan: &'t mut Scanner<'s>,
-    start: ScanItem<'s>,
+    scan: &'me mut Scanner<'str>,
+    start: ScanItem<'str>,
 }
 
-impl<'t, 's> Tokenizer<'t, 's> {
-    fn start(start: ScanItem, scan: &'t mut Scanner<'s>) -> Self {
+impl<'me, 'str> Tokenizer<'me, 'str> {
+    fn start(start: ScanItem, scan: &'me mut Scanner<'str>) -> Self {
         Self {
             start,
             scan,
@@ -114,4 +114,9 @@ impl<'t, 's> Tokenizer<'t, 's> {
                 self.scan.lexeme(start..end),
             )));
     }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
 }
