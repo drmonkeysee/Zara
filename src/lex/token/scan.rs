@@ -83,3 +83,244 @@ fn is_delimiter(ch: char) -> bool {
         _ => false,
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    mod advance {
+        use super::*;
+
+        #[test]
+        fn empty_string() {
+            let mut s = Scanner::new("");
+
+            let r = s.advance();
+
+            assert!(r.is_none());
+        }
+
+        #[test]
+        fn gets_first_char() {
+            let mut s = Scanner::new("abc");
+
+            let r = s.advance();
+
+            assert!(r.is_some());
+            assert_eq!(r.unwrap(), (0, 'a'));
+        }
+
+        #[test]
+        fn gets_first_whitespace() {
+            let mut s = Scanner::new(" abc");
+
+            let r = s.advance();
+
+            assert!(r.is_some());
+            assert_eq!(r.unwrap(), (0, ' '));
+        }
+
+        #[test]
+        fn gets_first_utf8_char() {
+            let mut s = Scanner::new("🦀bc");
+
+            let r = s.advance();
+
+            assert!(r.is_some());
+            assert_eq!(r.unwrap(), (0, '🦀'));
+        }
+    }
+
+    mod next_char {
+        use super::*;
+
+        #[test]
+        fn empty_string() {
+            let mut s = Scanner::new("");
+
+            let r = s.next_char();
+
+            assert!(r.is_none());
+        }
+
+        #[test]
+        fn gets_first_char() {
+            let mut s = Scanner::new("xyz");
+
+            let r = s.next_char();
+
+            assert!(r.is_some());
+            assert_eq!(r.unwrap(), (0, 'x'));
+        }
+
+        #[test]
+        fn skips_whitespace() {
+            let mut s = Scanner::new("   \t  \r\n  xyz");
+
+            let r = s.next_char();
+
+            assert!(r.is_some());
+            assert_eq!(r.unwrap(), (10, 'x'));
+        }
+
+        #[test]
+        fn advances_properly_after_finding_first_char() {
+            let mut s = Scanner::new("   \t  \r\n  xyz");
+
+            let mut r = s.next_char();
+
+            assert!(r.is_some());
+            assert_eq!(r.unwrap(), (10, 'x'));
+
+            r = s.advance();
+
+            assert!(r.is_some());
+            assert_eq!(r.unwrap(), (11, 'y'));
+        }
+
+        #[test]
+        fn all_whitespace() {
+            let mut s = Scanner::new("   \t  \r\n");
+
+            let r = s.next_char();
+
+            assert!(r.is_none());
+        }
+    }
+
+    mod until_delimiter {
+        use super::*;
+
+        #[test]
+        fn empty_string() {
+            let mut s = Scanner::new("");
+
+            let r = s.until_delimiter();
+
+            assert_eq!(r, 0);
+        }
+
+        #[test]
+        fn no_delimiter() {
+            let mut s = Scanner::new("abc");
+
+            let r = s.until_delimiter();
+
+            assert_eq!(r, 3);
+        }
+
+        #[test]
+        fn stops_at_delimiter() {
+            let mut s = Scanner::new("abcd)xyz");
+
+            let r = s.until_delimiter();
+
+            assert_eq!(r, 4);
+        }
+
+        #[test]
+        fn next_advance_is_delimiter() {
+            let mut s = Scanner::new("abcd)xyz");
+
+            let r = s.until_delimiter();
+
+            assert_eq!(r, 4);
+
+            let r = s.advance();
+
+            assert!(r.is_some());
+            assert_eq!(r.unwrap(), (4, ')'));
+        }
+
+        #[test]
+        fn stops_at_delimiter_until_advance() {
+            let mut s = Scanner::new("abcd)xyz");
+
+            assert_eq!(s.until_delimiter(), 4);
+            assert_eq!(s.until_delimiter(), 4);
+            assert_eq!(s.until_delimiter(), 4);
+
+            s.advance();
+
+            assert_eq!(s.until_delimiter(), 8);
+        }
+
+        #[test]
+        fn stops_at_immediately_following_delimiter() {
+            let mut s = Scanner::new("abcd);xyz");
+
+            assert_eq!(s.until_delimiter(), 4);
+
+            s.advance();
+
+            assert_eq!(s.until_delimiter(), 5);
+        }
+    }
+
+    mod lexeme {
+        use super::*;
+
+        #[test]
+        fn empty_string() {
+            let s = Scanner::new("");
+
+            assert_eq!(s.lexeme(0..1), "");
+        }
+
+        #[test]
+        fn empty_lexeme() {
+            let s = Scanner::new("abcdxyz");
+
+            assert_eq!(s.lexeme(0..0), "");
+        }
+
+        #[test]
+        fn one_char() {
+            let s = Scanner::new("abcdxyz");
+
+            assert_eq!(s.lexeme(0..1), "a");
+        }
+
+        #[test]
+        fn multi_char() {
+            let s = Scanner::new("abcdxyz");
+
+            assert_eq!(s.lexeme(0..5), "abcdx");
+        }
+
+        #[test]
+        fn substr() {
+            let s = Scanner::new("abcdxyz");
+
+            assert_eq!(s.lexeme(2..6), "cdxy");
+        }
+
+        #[test]
+        fn at_end() {
+            let s = Scanner::new("abcdxyz");
+
+            assert_eq!(s.lexeme(3..7), "dxyz");
+        }
+
+        #[test]
+        fn whole_str() {
+            let s = Scanner::new("abcdxyz");
+
+            assert_eq!(s.lexeme(0..7), "abcdxyz");
+        }
+
+        #[test]
+        fn past_end() {
+            let s = Scanner::new("abcdxyz");
+
+            assert_eq!(s.lexeme(3..10), "");
+        }
+
+        #[test]
+        fn backwards_range() {
+            let s = Scanner::new("abcdxyz");
+
+            assert_eq!(s.lexeme(5..2), "");
+        }
+    }
+}
