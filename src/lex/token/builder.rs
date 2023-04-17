@@ -53,10 +53,8 @@ mod tests {
     fn default() {
         let b = TokenBuilder::default();
 
-        let r = b.build();
-
         assert!(matches!(
-            r,
+            b.build(),
             Err(TokenError {
                 kind: TokenErrorKind::Undefined,
                 span: Range { start: 0, end: 1 },
@@ -68,10 +66,8 @@ mod tests {
     fn default_with_init() {
         let b = TokenBuilder::start(5);
 
-        let r = b.build();
-
         assert!(matches!(
-            r,
+            b.build(),
             Err(TokenError {
                 kind: TokenErrorKind::Undefined,
                 span: Range { start: 5, end: 6 }
@@ -85,10 +81,8 @@ mod tests {
 
         b.end(10);
 
-        let r = b.build();
-
         assert!(matches!(
-            r,
+            b.build(),
             Err(TokenError {
                 kind: TokenErrorKind::Undefined,
                 span: Range { start: 5, end: 10 }
@@ -102,10 +96,8 @@ mod tests {
 
         b.end(3);
 
-        let r = b.build();
-
         assert!(matches!(
-            r,
+            b.build(),
             Err(TokenError {
                 kind: TokenErrorKind::Undefined,
                 span: Range { start: 5, end: 3 }
@@ -119,10 +111,8 @@ mod tests {
 
         b.token(TokenKind::ParenLeft);
 
-        let r = b.build();
-
         assert!(matches!(
-            r,
+            b.build(),
             Ok(Token {
                 kind: TokenKind::ParenLeft,
                 span: Range { start: 5, end: 6 }
@@ -136,10 +126,8 @@ mod tests {
 
         b.token(TokenKind::ParenLeft).end(10);
 
-        let r = b.build();
-
         assert!(matches!(
-            r,
+            b.build(),
             Ok(Token {
                 kind: TokenKind::ParenLeft,
                 span: Range { start: 5, end: 10 }
@@ -153,10 +141,8 @@ mod tests {
 
         b.error(TokenErrorKind::HashInvalid);
 
-        let r = b.build();
-
         assert!(matches!(
-            r,
+            b.build(),
             Err(TokenError {
                 kind: TokenErrorKind::HashInvalid,
                 span: Range { start: 5, end: 6 }
@@ -170,10 +156,8 @@ mod tests {
 
         b.error(TokenErrorKind::HashInvalid).end(10);
 
-        let r = b.build();
-
         assert!(matches!(
-            r,
+            b.build(),
             Err(TokenError {
                 kind: TokenErrorKind::HashInvalid,
                 span: Range { start: 5, end: 10 }
@@ -187,10 +171,8 @@ mod tests {
 
         b.kind(Ok(TokenKind::ParenLeft));
 
-        let r = b.build();
-
         assert!(matches!(
-            r,
+            b.build(),
             Ok(Token {
                 kind: TokenKind::ParenLeft,
                 span: Range { start: 5, end: 6 }
@@ -204,10 +186,8 @@ mod tests {
 
         b.kind(Err(TokenErrorKind::HashInvalid));
 
-        let r = b.build();
-
         assert!(matches!(
-            r,
+            b.build(),
             Err(TokenError {
                 kind: TokenErrorKind::HashInvalid,
                 span: Range { start: 5, end: 6 }

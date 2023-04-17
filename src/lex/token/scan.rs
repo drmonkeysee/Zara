@@ -95,9 +95,7 @@ mod tests {
         fn empty_string() {
             let mut s = Scanner::new("");
 
-            let r = s.advance();
-
-            assert!(r.is_none());
+            assert!(s.advance().is_none());
         }
 
         #[test]
@@ -138,9 +136,7 @@ mod tests {
         fn empty_string() {
             let mut s = Scanner::new("");
 
-            let r = s.next_char();
-
-            assert!(r.is_none());
+            assert!(s.next_char().is_none());
         }
 
         #[test]
@@ -167,12 +163,12 @@ mod tests {
         fn advances_properly_after_finding_first_char() {
             let mut s = Scanner::new("   \t  \r\n  xyz");
 
-            let mut r = s.next_char();
+            let r = s.next_char();
 
             assert!(r.is_some());
             assert_eq!(r.unwrap(), (10, 'x'));
 
-            r = s.advance();
+            let r = s.advance();
 
             assert!(r.is_some());
             assert_eq!(r.unwrap(), (11, 'y'));
@@ -182,9 +178,7 @@ mod tests {
         fn all_whitespace() {
             let mut s = Scanner::new("   \t  \r\n");
 
-            let r = s.next_char();
-
-            assert!(r.is_none());
+            assert!(s.next_char().is_none());
         }
     }
 
@@ -195,36 +189,28 @@ mod tests {
         fn empty_string() {
             let mut s = Scanner::new("");
 
-            let r = s.until_delimiter();
-
-            assert_eq!(r, 0);
+            assert_eq!(s.until_delimiter(), 0);
         }
 
         #[test]
         fn no_delimiter() {
             let mut s = Scanner::new("abc");
 
-            let r = s.until_delimiter();
-
-            assert_eq!(r, 3);
+            assert_eq!(s.until_delimiter(), 3);
         }
 
         #[test]
         fn stops_at_delimiter() {
             let mut s = Scanner::new("abcd)xyz");
 
-            let r = s.until_delimiter();
-
-            assert_eq!(r, 4);
+            assert_eq!(s.until_delimiter(), 4);
         }
 
         #[test]
         fn next_advance_is_delimiter() {
             let mut s = Scanner::new("abcd)xyz");
 
-            let r = s.until_delimiter();
-
-            assert_eq!(r, 4);
+            assert_eq!(s.until_delimiter(), 4);
 
             let r = s.advance();
 
