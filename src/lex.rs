@@ -7,14 +7,10 @@ use self::{
 };
 
 pub(super) fn tokenize(textline: &str) -> LexerResult {
-    let mut tokens: Vec<Token> = Vec::new();
     let mut errors: Vec<TokenError> = Vec::new();
-    for result in TokenStream::on(textline) {
-        match result {
-            Ok(token) => tokens.push(token),
-            Err(err) => errors.push(err),
-        }
-    }
+    let tokens = TokenStream::on(textline)
+        .filter_map(|tr| tr.map_err(|e| errors.push(e)).ok())
+        .collect();
     if errors.is_empty() {
         Ok(tokens)
     } else {
