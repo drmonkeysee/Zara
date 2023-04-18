@@ -20,7 +20,7 @@ pub(super) fn parse(mut args: impl Iterator<Item = String>) -> Parsed {
     } else if ver {
         Parsed::Command(Cmd::Version)
     } else {
-        Parsed::Options(Opts {})
+        Parsed::Options(Opts)
     }
 }
 
@@ -44,7 +44,7 @@ impl Cmd {
 }
 
 #[derive(Debug)]
-pub(super) struct Opts {}
+pub(super) struct Opts;
 
 fn usage(me: &str) {
     println!("---=== {} Usage ===---", app_title());
@@ -77,7 +77,7 @@ mod tests {
 
         let result = parse(args.into_iter());
 
-        assert!(matches!(result, Parsed::Options(Opts {})));
+        assert!(matches!(result, Parsed::Options(Opts)));
     }
 
     #[test]
@@ -130,6 +130,6 @@ mod tests {
 
         let result = parse(args.into_iter().map(String::from));
 
-        assert!(matches!(result, Parsed::Options(Opts {})));
+        assert!(matches!(result, Parsed::Options(Opts)));
     }
 }
