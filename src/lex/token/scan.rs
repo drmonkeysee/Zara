@@ -119,18 +119,18 @@ mod tests {
         }
     }
 
-    mod advance {
+    mod scanner {
         use super::*;
 
         #[test]
-        fn empty_string() {
+        fn advance_empty_string() {
             let mut s = Scanner::new("");
 
             assert!(s.advance().is_none());
         }
 
         #[test]
-        fn gets_first_char() {
+        fn advance_first_char() {
             let mut s = Scanner::new("abc");
 
             let r = s.advance();
@@ -140,7 +140,7 @@ mod tests {
         }
 
         #[test]
-        fn gets_first_whitespace() {
+        fn advance_first_whitespace() {
             let mut s = Scanner::new(" abc");
 
             let r = s.advance();
@@ -150,7 +150,7 @@ mod tests {
         }
 
         #[test]
-        fn gets_first_utf8_char() {
+        fn advance_first_utf8_char() {
             let mut s = Scanner::new("🦀bc");
 
             let r = s.advance();
@@ -158,20 +158,16 @@ mod tests {
             assert!(r.is_some());
             assert_eq!(r.unwrap(), (0, '🦀'));
         }
-    }
-
-    mod next_char {
-        use super::*;
 
         #[test]
-        fn empty_string() {
+        fn next_char_empty_string() {
             let mut s = Scanner::new("");
 
             assert!(s.next_char().is_none());
         }
 
         #[test]
-        fn gets_first_char() {
+        fn next_char_first_char() {
             let mut s = Scanner::new("xyz");
 
             let r = s.next_char();
@@ -181,7 +177,7 @@ mod tests {
         }
 
         #[test]
-        fn skips_whitespace() {
+        fn next_char_skips_whitespace() {
             let mut s = Scanner::new("   \t  \r\n  xyz");
 
             let r = s.next_char();
@@ -191,7 +187,7 @@ mod tests {
         }
 
         #[test]
-        fn advances_properly_after_finding_first_char() {
+        fn advances_properly_after_next_char_finds_first_char() {
             let mut s = Scanner::new("   \t  \r\n  xyz");
 
             let r = s.next_char();
@@ -206,18 +202,14 @@ mod tests {
         }
 
         #[test]
-        fn all_whitespace() {
+        fn next_char_all_whitespace() {
             let mut s = Scanner::new("   \t  \r\n");
 
             assert!(s.next_char().is_none());
         }
-    }
-
-    mod until_delimiter {
-        use super::*;
 
         #[test]
-        fn empty_string() {
+        fn delimiter_empty_string() {
             let mut s = Scanner::new("");
 
             assert_eq!(s.until_delimiter(), 0);
@@ -272,69 +264,65 @@ mod tests {
 
             assert_eq!(s.until_delimiter(), 5);
         }
-    }
-
-    mod lexeme {
-        use super::*;
 
         #[test]
-        fn empty_string() {
+        fn lexeme_empty_string() {
             let s = Scanner::new("");
 
             assert_eq!(s.lexeme(0..1), "");
         }
 
         #[test]
-        fn empty_lexeme() {
+        fn lexeme_empty_range() {
             let s = Scanner::new("abcdxyz");
 
             assert_eq!(s.lexeme(0..0), "");
         }
 
         #[test]
-        fn one_char() {
+        fn one_char_lexeme() {
             let s = Scanner::new("abcdxyz");
 
             assert_eq!(s.lexeme(0..1), "a");
         }
 
         #[test]
-        fn multi_char() {
+        fn multi_char_lexeme() {
             let s = Scanner::new("abcdxyz");
 
             assert_eq!(s.lexeme(0..5), "abcdx");
         }
 
         #[test]
-        fn substr() {
+        fn substr_lexeme() {
             let s = Scanner::new("abcdxyz");
 
             assert_eq!(s.lexeme(2..6), "cdxy");
         }
 
         #[test]
-        fn at_end() {
+        fn lexeme_at_end() {
             let s = Scanner::new("abcdxyz");
 
             assert_eq!(s.lexeme(3..7), "dxyz");
         }
 
         #[test]
-        fn whole_str() {
+        fn lexeme_whole_str() {
             let s = Scanner::new("abcdxyz");
 
             assert_eq!(s.lexeme(0..7), "abcdxyz");
         }
 
         #[test]
-        fn past_end() {
+        fn lexeme_past_end() {
             let s = Scanner::new("abcdxyz");
 
             assert_eq!(s.lexeme(3..10), "");
         }
 
         #[test]
-        fn backwards_range() {
+        fn lexeme_backwards_range() {
             let s = Scanner::new("abcdxyz");
 
             assert_eq!(s.lexeme(5..2), "");
