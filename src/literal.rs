@@ -1,4 +1,4 @@
 #[derive(Debug)]
-pub enum Literal {
+pub(crate) enum Literal {
     Boolean(bool),
 }
