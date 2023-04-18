@@ -90,7 +90,7 @@ mod tests {
 
     #[test]
     fn delimiter_chars() {
-        let chars: Vec<char> = vec!['"', '(', ')', ';', '|'];
+        let chars = ['"', '(', ')', ';', '|'];
 
         for ch in chars {
             assert!(is_delimiter(ch), "Expected {ch} to be a delimiter");
@@ -99,7 +99,7 @@ mod tests {
 
     #[test]
     fn delimiter_whitespace() {
-        let chars: Vec<char> = vec![' ', '\t', '\r', '\n'];
+        let chars = [' ', '\t', '\r', '\n'];
 
         for ch in chars {
             assert!(
@@ -112,7 +112,7 @@ mod tests {
 
     #[test]
     fn non_delimiter_chars() {
-        let chars: Vec<char> = vec!['\'', '#', '.', ',', ':', 'a', '@', '+', '-', '\\', '/', '1'];
+        let chars = ['\'', '#', '.', ',', ':', 'a', '@', '+', '-', '\\', '/', '1'];
 
         for ch in chars {
             assert!(!is_delimiter(ch), "Expected {ch} to not be a delimiter");
