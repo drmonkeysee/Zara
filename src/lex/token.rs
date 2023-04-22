@@ -131,9 +131,10 @@ mod tests {
             let mut t = Tokenizer::start((0, 'a'), &mut s);
 
             t.run();
+            let r = t.extract();
 
             assert!(matches!(
-                t.extract(),
+                r,
                 Err(TokenError {
                     kind: TokenErrorKind::Unimplemented(txt),
                     span: Range { start: 0, end: 0 }
@@ -147,9 +148,10 @@ mod tests {
             let mut t = Tokenizer::start(s.advance().unwrap(), &mut s);
 
             t.run();
+            let r = t.extract();
 
             assert!(matches!(
-                t.extract(),
+                r,
                 Err(TokenError {
                     kind: TokenErrorKind::Unimplemented(txt),
                     span: Range { start: 0, end: 3 }
@@ -163,9 +165,10 @@ mod tests {
             let mut t = Tokenizer::start(s.advance().unwrap(), &mut s);
 
             t.run();
+            let r = t.extract();
 
             assert!(matches!(
-                t.extract(),
+                r,
                 Err(TokenError {
                     kind: TokenErrorKind::Unimplemented(txt),
                     span: Range { start: 0, end: 3 }
@@ -179,9 +182,10 @@ mod tests {
             let mut t = Tokenizer::start(s.advance().unwrap(), &mut s);
 
             t.run();
+            let r = t.extract();
 
             assert!(matches!(
-                t.extract(),
+                r,
                 Ok(Token {
                     kind: TokenKind::ParenLeft,
                     span: Range { start: 0, end: 1 }
@@ -195,9 +199,10 @@ mod tests {
             let mut t = Tokenizer::start(s.advance().unwrap(), &mut s);
 
             t.run();
+            let r = t.extract();
 
             assert!(matches!(
-                t.extract(),
+                r,
                 Ok(Token {
                     kind: TokenKind::ParenRight,
                     span: Range { start: 0, end: 1 }
@@ -211,9 +216,10 @@ mod tests {
             let mut t = Tokenizer::start(s.advance().unwrap(), &mut s);
 
             t.run();
+            let r = t.extract();
 
             assert!(matches!(
-                t.extract(),
+                r,
                 Ok(Token {
                     kind: TokenKind::ParenLeft,
                     span: Range { start: 0, end: 1 }
@@ -227,9 +233,10 @@ mod tests {
             let mut t = Tokenizer::start(s.advance().unwrap(), &mut s);
 
             t.run();
+            let r = t.extract();
 
             assert!(matches!(
-                t.extract(),
+                r,
                 Ok(Token {
                     kind: TokenKind::ParenLeft,
                     span: Range { start: 0, end: 1 }
@@ -246,9 +253,10 @@ mod tests {
                 let mut t = Tokenizer::start(s.advance().unwrap(), &mut s);
 
                 t.run();
+                let r = t.extract();
 
                 assert!(matches!(
-                    t.extract(),
+                    r,
                     Err(TokenError {
                         kind: TokenErrorKind::HashUnterminated,
                         span: Range { start: 0, end: 1 }
@@ -262,9 +270,10 @@ mod tests {
                 let mut t = Tokenizer::start(s.advance().unwrap(), &mut s);
 
                 t.run();
+                let r = t.extract();
 
                 assert!(matches!(
-                    t.extract(),
+                    r,
                     Err(TokenError {
                         kind: TokenErrorKind::HashUnterminated,
                         span: Range { start: 0, end: 1 }
@@ -278,9 +287,10 @@ mod tests {
                 let mut t = Tokenizer::start(s.advance().unwrap(), &mut s);
 
                 t.run();
+                let r = t.extract();
 
                 assert!(matches!(
-                    t.extract(),
+                    r,
                     Err(TokenError {
                         kind: TokenErrorKind::HashUnterminated,
                         span: Range { start: 0, end: 1 }
@@ -294,9 +304,10 @@ mod tests {
                 let mut t = Tokenizer::start(s.advance().unwrap(), &mut s);
 
                 t.run();
+                let r = t.extract();
 
                 assert!(matches!(
-                    t.extract(),
+                    r,
                     Ok(Token {
                         kind: TokenKind::VectorOpen,
                         span: Range { start: 0, end: 2 }
@@ -310,9 +321,10 @@ mod tests {
                 let mut t = Tokenizer::start(s.advance().unwrap(), &mut s);
 
                 t.run();
+                let r = t.extract();
 
                 assert!(matches!(
-                    t.extract(),
+                    r,
                     Ok(Token {
                         kind: TokenKind::Literal(Literal::Boolean(true)),
                         span: Range { start: 0, end: 2 }
@@ -326,9 +338,10 @@ mod tests {
                 let mut t = Tokenizer::start(s.advance().unwrap(), &mut s);
 
                 t.run();
+                let r = t.extract();
 
                 assert!(matches!(
-                    t.extract(),
+                    r,
                     Ok(Token {
                         kind: TokenKind::Literal(Literal::Boolean(true)),
                         span: Range { start: 0, end: 5 }
@@ -342,9 +355,10 @@ mod tests {
                 let mut t = Tokenizer::start(s.advance().unwrap(), &mut s);
 
                 t.run();
+                let r = t.extract();
 
                 assert!(matches!(
-                    t.extract(),
+                    r,
                     Err(TokenError {
                         kind: TokenErrorKind::ExpectedBoolean(true),
                         span: Range { start: 0, end: 8 }
@@ -358,9 +372,10 @@ mod tests {
                 let mut t = Tokenizer::start(s.advance().unwrap(), &mut s);
 
                 t.run();
+                let r = t.extract();
 
                 assert!(matches!(
-                    t.extract(),
+                    r,
                     Ok(Token {
                         kind: TokenKind::Literal(Literal::Boolean(false)),
                         span: Range { start: 0, end: 2 }
@@ -374,9 +389,10 @@ mod tests {
                 let mut t = Tokenizer::start(s.advance().unwrap(), &mut s);
 
                 t.run();
+                let r = t.extract();
 
                 assert!(matches!(
-                    t.extract(),
+                    r,
                     Ok(Token {
                         kind: TokenKind::Literal(Literal::Boolean(false)),
                         span: Range { start: 0, end: 6 }
@@ -390,9 +406,10 @@ mod tests {
                 let mut t = Tokenizer::start(s.advance().unwrap(), &mut s);
 
                 t.run();
+                let r = t.extract();
 
                 assert!(matches!(
-                    t.extract(),
+                    r,
                     Err(TokenError {
                         kind: TokenErrorKind::ExpectedBoolean(false),
                         span: Range { start: 0, end: 5 }

@@ -126,7 +126,9 @@ mod tests {
         fn advance_empty_string() {
             let mut s = Scanner::new("");
 
-            assert!(s.advance().is_none());
+            let r = s.advance();
+
+            assert!(r.is_none());
         }
 
         #[test]
@@ -163,7 +165,9 @@ mod tests {
         fn next_char_empty_string() {
             let mut s = Scanner::new("");
 
-            assert!(s.next_char().is_none());
+            let r = s.next_char();
+
+            assert!(r.is_none());
         }
 
         #[test]
@@ -205,28 +209,36 @@ mod tests {
         fn next_char_all_whitespace() {
             let mut s = Scanner::new("   \t  \r\n");
 
-            assert!(s.next_char().is_none());
+            let r = s.next_char();
+
+            assert!(r.is_none());
         }
 
         #[test]
         fn delimiter_empty_string() {
             let mut s = Scanner::new("");
 
-            assert_eq!(s.until_delimiter(), 0);
+            let r = s.until_delimiter();
+
+            assert_eq!(r, 0);
         }
 
         #[test]
         fn no_delimiter() {
             let mut s = Scanner::new("abc");
 
-            assert_eq!(s.until_delimiter(), 3);
+            let r = s.until_delimiter();
+
+            assert_eq!(r, 3);
         }
 
         #[test]
         fn stops_at_delimiter() {
             let mut s = Scanner::new("abcd)xyz");
 
-            assert_eq!(s.until_delimiter(), 4);
+            let r = s.until_delimiter();
+
+            assert_eq!(r, 4);
         }
 
         #[test]
@@ -269,63 +281,81 @@ mod tests {
         fn lexeme_empty_string() {
             let s = Scanner::new("");
 
-            assert_eq!(s.lexeme(0..1), "");
+            let r = s.lexeme(0..1);
+
+            assert_eq!(r, "");
         }
 
         #[test]
         fn lexeme_empty_range() {
             let s = Scanner::new("abcdxyz");
 
-            assert_eq!(s.lexeme(0..0), "");
+            let r = s.lexeme(0..0);
+
+            assert_eq!(r, "");
         }
 
         #[test]
         fn one_char_lexeme() {
             let s = Scanner::new("abcdxyz");
 
-            assert_eq!(s.lexeme(0..1), "a");
+            let r = s.lexeme(0..1);
+
+            assert_eq!(r, "a");
         }
 
         #[test]
         fn multi_char_lexeme() {
             let s = Scanner::new("abcdxyz");
 
-            assert_eq!(s.lexeme(0..5), "abcdx");
+            let r = s.lexeme(0..5);
+
+            assert_eq!(r, "abcdx");
         }
 
         #[test]
         fn substr_lexeme() {
             let s = Scanner::new("abcdxyz");
 
-            assert_eq!(s.lexeme(2..6), "cdxy");
+            let r = s.lexeme(2..6);
+
+            assert_eq!(r, "cdxy");
         }
 
         #[test]
         fn lexeme_at_end() {
             let s = Scanner::new("abcdxyz");
 
-            assert_eq!(s.lexeme(3..7), "dxyz");
+            let r = s.lexeme(3..7);
+
+            assert_eq!(r, "dxyz");
         }
 
         #[test]
         fn lexeme_whole_str() {
             let s = Scanner::new("abcdxyz");
 
-            assert_eq!(s.lexeme(0..7), "abcdxyz");
+            let r = s.lexeme(0..7);
+
+            assert_eq!(r, "abcdxyz");
         }
 
         #[test]
         fn lexeme_past_end() {
             let s = Scanner::new("abcdxyz");
 
-            assert_eq!(s.lexeme(3..10), "");
+            let r = s.lexeme(3..10);
+
+            assert_eq!(r, "");
         }
 
         #[test]
         fn lexeme_backwards_range() {
             let s = Scanner::new("abcdxyz");
 
-            assert_eq!(s.lexeme(5..2), "");
+            let r = s.lexeme(5..2);
+
+            assert_eq!(r, "");
         }
     }
 
@@ -336,7 +366,9 @@ mod tests {
         fn empty_string() {
             let mut it = "".char_indices().peekable();
 
-            assert!(it.peek_while(|_| false).peek().is_none());
+            let r = it.peek_while(|_| false).peek();
+
+            assert!(r.is_none());
         }
 
         #[test]
@@ -353,7 +385,9 @@ mod tests {
         fn while_true() {
             let mut it = "abc".char_indices().peekable();
 
-            assert!(it.peek_while(|_| true).peek().is_none());
+            let r = it.peek_while(|_| true).peek();
+
+            assert!(r.is_none());
         }
 
         #[test]
@@ -370,10 +404,9 @@ mod tests {
         fn true_predicate() {
             let mut it = "123abc456".char_indices().peekable();
 
-            assert!(it
-                .peek_while(|&(_, ch)| ch.is_alphanumeric())
-                .peek()
-                .is_none());
+            let r = it.peek_while(|&(_, ch)| ch.is_alphanumeric()).peek();
+
+            assert!(r.is_none());
         }
 
         #[test]
