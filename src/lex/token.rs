@@ -119,11 +119,185 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::lex::tokens::{Token, TokenError};
+    use std::ops::Range;
+
+    mod tokenstream {
+        use super::*;
+
+        #[test]
+        fn empty_string() {
+            let s = TokenStream::on("");
+
+            let r: Vec<TokenResult> = s.collect();
+
+            assert!(r.is_empty());
+        }
+
+        #[test]
+        fn whitespace() {
+            let s = TokenStream::on("   \t  \r  \n  ");
+
+            let r: Vec<TokenResult> = s.collect();
+
+            assert!(r.is_empty());
+        }
+
+        #[test]
+        fn single_token() {
+            let s = TokenStream::on("(");
+
+            let r: Vec<TokenResult> = s.collect();
+
+            assert_eq!(r.len(), 1);
+            assert!(matches!(
+                r[0],
+                Ok(Token {
+                    kind: TokenKind::ParenLeft,
+                    span: Range { start: 0, end: 1 }
+                })
+            ));
+        }
+
+        #[test]
+        fn single_token_with_whitespace() {
+            let s = TokenStream::on("  (   ");
+
+            let r: Vec<TokenResult> = s.collect();
+
+            assert_eq!(r.len(), 1);
+            assert!(matches!(
+                r[0],
+                Ok(Token {
+                    kind: TokenKind::ParenLeft,
+                    span: Range { start: 2, end: 3 }
+                })
+            ));
+        }
+
+        #[test]
+        fn multiple_tokens() {
+            let s = TokenStream::on("(#t)");
+
+            let r: Vec<TokenResult> = s.collect();
+
+            assert_eq!(r.len(), 3);
+            assert!(matches!(
+                r[0],
+                Ok(Token {
+                    kind: TokenKind::ParenLeft,
+                    span: Range { start: 0, end: 1 }
+                })
+            ));
+            assert!(matches!(
+                r[1],
+                Ok(Token {
+                    kind: TokenKind::Literal(Literal::Boolean(true)),
+                    span: Range { start: 1, end: 3 }
+                })
+            ));
+            assert!(matches!(
+                r[2],
+                Ok(Token {
+                    kind: TokenKind::ParenRight,
+                    span: Range { start: 3, end: 4 }
+                })
+            ));
+        }
+
+        #[test]
+        fn multiple_tokens_with_whitespace() {
+            let s = TokenStream::on("   (   #t    )   ");
+
+            let r: Vec<TokenResult> = s.collect();
+
+            assert_eq!(r.len(), 3);
+            assert!(matches!(
+                r[0],
+                Ok(Token {
+                    kind: TokenKind::ParenLeft,
+                    span: Range { start: 3, end: 4 }
+                })
+            ));
+            assert!(matches!(
+                r[1],
+                Ok(Token {
+                    kind: TokenKind::Literal(Literal::Boolean(true)),
+                    span: Range { start: 7, end: 9 }
+                })
+            ));
+            assert!(matches!(
+                r[2],
+                Ok(Token {
+                    kind: TokenKind::ParenRight,
+                    span: Range { start: 13, end: 14 }
+                })
+            ));
+        }
+
+        #[test]
+        fn tokens_with_malformed_error() {
+            let s = TokenStream::on("(#tdf)");
+
+            let r: Vec<TokenResult> = s.collect();
+
+            assert_eq!(r.len(), 3);
+            assert!(matches!(
+                r[0],
+                Ok(Token {
+                    kind: TokenKind::ParenLeft,
+                    span: Range { start: 0, end: 1 }
+                })
+            ));
+            assert!(matches!(
+                r[1],
+                Err(TokenError {
+                    kind: TokenErrorKind::ExpectedBoolean(true),
+                    span: Range { start: 1, end: 5 }
+                })
+            ));
+            assert!(matches!(
+                r[2],
+                Ok(Token {
+                    kind: TokenKind::ParenRight,
+                    span: Range { start: 5, end: 6 }
+                })
+            ));
+        }
+
+        #[test]
+        fn tokens_with_unterminated_error() {
+            let s = TokenStream::on("(#)");
+
+            let r: Vec<TokenResult> = s.collect();
+
+            assert_eq!(r.len(), 3);
+            assert!(matches!(
+                r[0],
+                Ok(Token {
+                    kind: TokenKind::ParenLeft,
+                    span: Range { start: 0, end: 1 }
+                })
+            ));
+            assert!(matches!(
+                r[1],
+                Err(TokenError {
+                    kind: TokenErrorKind::HashUnterminated,
+                    span: Range { start: 1, end: 2 }
+                })
+            ));
+            assert!(matches!(
+                r[2],
+                Ok(Token {
+                    kind: TokenKind::ParenRight,
+                    span: Range { start: 2, end: 3 }
+                })
+            ));
+        }
+    }
 
     mod tokenizer {
         use super::*;
-        use crate::lex::tokens::{Token, TokenError};
-        use std::ops::Range;
 
         #[test]
         fn empty_string() {
@@ -139,7 +313,7 @@ mod tests {
                     kind: TokenErrorKind::Unimplemented(txt),
                     span: Range { start: 0, end: 0 }
                 }) if txt == ""
-            ))
+            ));
         }
 
         #[test]
@@ -156,7 +330,7 @@ mod tests {
                     kind: TokenErrorKind::Unimplemented(txt),
                     span: Range { start: 0, end: 3 }
                 }) if txt == "abc"
-            ))
+            ));
         }
 
         #[test]
@@ -173,7 +347,7 @@ mod tests {
                     kind: TokenErrorKind::Unimplemented(txt),
                     span: Range { start: 0, end: 3 }
                 }) if txt == "abc"
-            ))
+            ));
         }
 
         #[test]
@@ -190,7 +364,7 @@ mod tests {
                     kind: TokenKind::ParenLeft,
                     span: Range { start: 0, end: 1 }
                 })
-            ))
+            ));
         }
 
         #[test]
@@ -207,7 +381,7 @@ mod tests {
                     kind: TokenKind::ParenRight,
                     span: Range { start: 0, end: 1 }
                 })
-            ))
+            ));
         }
 
         #[test]
@@ -224,7 +398,7 @@ mod tests {
                     kind: TokenKind::ParenLeft,
                     span: Range { start: 0, end: 1 }
                 })
-            ))
+            ));
         }
 
         #[test]
@@ -241,7 +415,7 @@ mod tests {
                     kind: TokenKind::ParenLeft,
                     span: Range { start: 0, end: 1 }
                 })
-            ))
+            ));
         }
 
         mod hashtag {
@@ -261,7 +435,7 @@ mod tests {
                         kind: TokenErrorKind::HashUnterminated,
                         span: Range { start: 0, end: 1 }
                     })
-                ))
+                ));
             }
 
             #[test]
@@ -278,7 +452,7 @@ mod tests {
                         kind: TokenErrorKind::HashUnterminated,
                         span: Range { start: 0, end: 1 }
                     })
-                ))
+                ));
             }
 
             #[test]
@@ -295,7 +469,7 @@ mod tests {
                         kind: TokenErrorKind::HashUnterminated,
                         span: Range { start: 0, end: 1 }
                     })
-                ))
+                ));
             }
 
             #[test]
@@ -312,7 +486,7 @@ mod tests {
                         kind: TokenErrorKind::HashInvalid,
                         span: Range { start: 0, end: 2 }
                     })
-                ))
+                ));
             }
 
             #[test]
@@ -329,7 +503,7 @@ mod tests {
                         kind: TokenErrorKind::HashInvalid,
                         span: Range { start: 0, end: 20 }
                     })
-                ))
+                ));
             }
 
             #[test]
@@ -346,7 +520,7 @@ mod tests {
                         kind: TokenKind::VectorOpen,
                         span: Range { start: 0, end: 2 }
                     })
-                ))
+                ));
             }
 
             #[test]
@@ -363,7 +537,7 @@ mod tests {
                         kind: TokenKind::Literal(Literal::Boolean(true)),
                         span: Range { start: 0, end: 2 }
                     })
-                ))
+                ));
             }
 
             #[test]
@@ -380,7 +554,7 @@ mod tests {
                         kind: TokenKind::Literal(Literal::Boolean(true)),
                         span: Range { start: 0, end: 5 }
                     })
-                ))
+                ));
             }
 
             #[test]
@@ -397,7 +571,7 @@ mod tests {
                         kind: TokenErrorKind::ExpectedBoolean(true),
                         span: Range { start: 0, end: 8 }
                     })
-                ))
+                ));
             }
 
             #[test]
@@ -414,7 +588,7 @@ mod tests {
                         kind: TokenKind::Literal(Literal::Boolean(false)),
                         span: Range { start: 0, end: 2 }
                     })
-                ))
+                ));
             }
 
             #[test]
@@ -431,7 +605,7 @@ mod tests {
                         kind: TokenKind::Literal(Literal::Boolean(false)),
                         span: Range { start: 0, end: 6 }
                     })
-                ))
+                ));
             }
 
             #[test]
@@ -448,7 +622,7 @@ mod tests {
                         kind: TokenErrorKind::ExpectedBoolean(false),
                         span: Range { start: 0, end: 5 }
                     })
-                ))
+                ));
             }
         }
     }
