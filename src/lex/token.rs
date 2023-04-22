@@ -69,6 +69,7 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
     }
 
     fn hashtag(&mut self) {
+        // TODO: this will consume and discard a character on invalid/unterminated
         if let Some((idx, ch)) = self.scan.advance() {
             match ch {
                 'f' => self.boolean(false, idx),
@@ -80,7 +81,6 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
                 '(' => {
                     self.builder.end(idx + 1).token(TokenKind::VectorOpen);
                 }
-                // TODO: this will consume and discard a character
                 _ => {
                     self.builder
                         .end(self.scan.until_delimiter())
@@ -294,6 +294,40 @@ mod tests {
                     Err(TokenError {
                         kind: TokenErrorKind::HashUnterminated,
                         span: Range { start: 0, end: 1 }
+                    })
+                ))
+            }
+
+            #[test]
+            fn invalid() {
+                let mut s = Scanner::new("#g");
+                let mut t = Tokenizer::start(s.advance().unwrap(), &mut s);
+
+                t.run();
+                let r = t.extract();
+
+                assert!(matches!(
+                    r,
+                    Err(TokenError {
+                        kind: TokenErrorKind::HashInvalid,
+                        span: Range { start: 0, end: 2 }
+                    })
+                ))
+            }
+
+            #[test]
+            fn invalid_long() {
+                let mut s = Scanner::new("#not_a_valid_hashtag");
+                let mut t = Tokenizer::start(s.advance().unwrap(), &mut s);
+
+                t.run();
+                let r = t.extract();
+
+                assert!(matches!(
+                    r,
+                    Err(TokenError {
+                        kind: TokenErrorKind::HashInvalid,
+                        span: Range { start: 0, end: 20 }
                     })
                 ))
             }
