@@ -80,7 +80,7 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
                 '(' => {
                     self.builder.end(idx + 1).token(TokenKind::VectorOpen);
                 }
-                // TODO: this will skip if ch is a delimiter
+                // TODO: this will consume and discard a character
                 _ => {
                     self.builder
                         .end(self.scan.until_delimiter())
@@ -203,6 +203,202 @@ mod tests {
                     span: Range { start: 0, end: 1 }
                 })
             ))
+        }
+
+        #[test]
+        fn token_ends_at_whitespace() {
+            let mut s = Scanner::new("(  ");
+            let mut t = Tokenizer::start(s.advance().unwrap(), &mut s);
+
+            t.run();
+
+            assert!(matches!(
+                t.extract(),
+                Ok(Token {
+                    kind: TokenKind::ParenLeft,
+                    span: Range { start: 0, end: 1 }
+                })
+            ))
+        }
+
+        #[test]
+        fn token_ends_at_delimiter() {
+            let mut s = Scanner::new("()");
+            let mut t = Tokenizer::start(s.advance().unwrap(), &mut s);
+
+            t.run();
+
+            assert!(matches!(
+                t.extract(),
+                Ok(Token {
+                    kind: TokenKind::ParenLeft,
+                    span: Range { start: 0, end: 1 }
+                })
+            ))
+        }
+
+        mod hashtag {
+            use super::*;
+
+            #[test]
+            fn unterminated() {
+                let mut s = Scanner::new("#");
+                let mut t = Tokenizer::start(s.advance().unwrap(), &mut s);
+
+                t.run();
+
+                assert!(matches!(
+                    t.extract(),
+                    Err(TokenError {
+                        kind: TokenErrorKind::HashUnterminated,
+                        span: Range { start: 0, end: 1 }
+                    })
+                ))
+            }
+
+            #[test]
+            fn unterminated_with_whitespace() {
+                let mut s = Scanner::new("#  ");
+                let mut t = Tokenizer::start(s.advance().unwrap(), &mut s);
+
+                t.run();
+
+                assert!(matches!(
+                    t.extract(),
+                    Err(TokenError {
+                        kind: TokenErrorKind::HashUnterminated,
+                        span: Range { start: 0, end: 1 }
+                    })
+                ))
+            }
+
+            #[test]
+            fn unterminated_with_delimiter() {
+                let mut s = Scanner::new("#)");
+                let mut t = Tokenizer::start(s.advance().unwrap(), &mut s);
+
+                t.run();
+
+                assert!(matches!(
+                    t.extract(),
+                    Err(TokenError {
+                        kind: TokenErrorKind::HashUnterminated,
+                        span: Range { start: 0, end: 1 }
+                    })
+                ))
+            }
+
+            #[test]
+            fn vector_open() {
+                let mut s = Scanner::new("#(");
+                let mut t = Tokenizer::start(s.advance().unwrap(), &mut s);
+
+                t.run();
+
+                assert!(matches!(
+                    t.extract(),
+                    Ok(Token {
+                        kind: TokenKind::VectorOpen,
+                        span: Range { start: 0, end: 2 }
+                    })
+                ))
+            }
+
+            #[test]
+            fn true_short() {
+                let mut s = Scanner::new("#t");
+                let mut t = Tokenizer::start(s.advance().unwrap(), &mut s);
+
+                t.run();
+
+                assert!(matches!(
+                    t.extract(),
+                    Ok(Token {
+                        kind: TokenKind::Literal(Literal::Boolean(true)),
+                        span: Range { start: 0, end: 2 }
+                    })
+                ))
+            }
+
+            #[test]
+            fn true_long() {
+                let mut s = Scanner::new("#true");
+                let mut t = Tokenizer::start(s.advance().unwrap(), &mut s);
+
+                t.run();
+
+                assert!(matches!(
+                    t.extract(),
+                    Ok(Token {
+                        kind: TokenKind::Literal(Literal::Boolean(true)),
+                        span: Range { start: 0, end: 5 }
+                    })
+                ))
+            }
+
+            #[test]
+            fn true_malformed() {
+                let mut s = Scanner::new("#trueasd");
+                let mut t = Tokenizer::start(s.advance().unwrap(), &mut s);
+
+                t.run();
+
+                assert!(matches!(
+                    t.extract(),
+                    Err(TokenError {
+                        kind: TokenErrorKind::ExpectedBoolean(true),
+                        span: Range { start: 0, end: 8 }
+                    })
+                ))
+            }
+
+            #[test]
+            fn false_short() {
+                let mut s = Scanner::new("#f");
+                let mut t = Tokenizer::start(s.advance().unwrap(), &mut s);
+
+                t.run();
+
+                assert!(matches!(
+                    t.extract(),
+                    Ok(Token {
+                        kind: TokenKind::Literal(Literal::Boolean(false)),
+                        span: Range { start: 0, end: 2 }
+                    })
+                ))
+            }
+
+            #[test]
+            fn false_long() {
+                let mut s = Scanner::new("#false");
+                let mut t = Tokenizer::start(s.advance().unwrap(), &mut s);
+
+                t.run();
+
+                assert!(matches!(
+                    t.extract(),
+                    Ok(Token {
+                        kind: TokenKind::Literal(Literal::Boolean(false)),
+                        span: Range { start: 0, end: 6 }
+                    })
+                ))
+            }
+
+            #[test]
+            fn false_malformed() {
+                let mut s = Scanner::new("#fals");
+                let mut t = Tokenizer::start(s.advance().unwrap(), &mut s);
+
+                t.run();
+
+                assert!(matches!(
+                    t.extract(),
+                    Err(TokenError {
+                        kind: TokenErrorKind::ExpectedBoolean(false),
+                        span: Range { start: 0, end: 5 }
+                    })
+                ))
+            }
         }
     }
 }
