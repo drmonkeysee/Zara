@@ -236,7 +236,7 @@ mod tests {
         }
 
         #[test]
-        fn tokens_with_malformed_error() {
+        fn tokens_with_hash_malformed() {
             let s = TokenStream::on("(#tdf)");
 
             let r: Vec<TokenResult> = s.collect();
@@ -266,7 +266,7 @@ mod tests {
         }
 
         #[test]
-        fn tokens_with_unterminated_error() {
+        fn tokens_with_unterminated_hash_to_delimiter() {
             let s = TokenStream::on("(#)");
 
             let r: Vec<TokenResult> = s.collect();
@@ -291,6 +291,29 @@ mod tests {
                 Ok(Token {
                     kind: TokenKind::ParenRight,
                     span: Range { start: 2, end: 3 }
+                })
+            ));
+        }
+
+        #[test]
+        fn tokens_with_unterminated_hash_to_whitespace() {
+            let s = TokenStream::on("# #f");
+
+            let r: Vec<TokenResult> = s.collect();
+
+            assert_eq!(r.len(), 2);
+            assert!(matches!(
+                r[0],
+                Err(TokenError {
+                    kind: TokenErrorKind::HashUnterminated,
+                    span: Range { start: 0, end: 1 }
+                })
+            ));
+            assert!(matches!(
+                r[1],
+                Ok(Token {
+                    kind: TokenKind::Literal(Literal::Boolean(false)),
+                    span: Range { start: 2, end: 4 }
                 })
             ));
         }
