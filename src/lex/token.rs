@@ -3,7 +3,7 @@ mod scan;
 
 use self::{
     builder::TokenBuilder,
-    scan::{ScanItem, ScanPolicy, Scanner},
+    scan::{ScanItem, Scan, Scanner},
 };
 use crate::{
     lex::tokens::{TokenErrorKind, TokenKind, TokenResult},
@@ -26,7 +26,7 @@ impl<'a> Iterator for TokenStream<'a> {
     type Item = TokenResult;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if let Some(item) = self.scan.next(ScanPolicy::SkipWhitespace) {
+        if let Some(item) = self.scan.next(Scan::SkipWhitespace) {
             let mut tokenizer = Tokenizer::start(item, &mut self.scan);
             tokenizer.run();
             Some(tokenizer.extract())
@@ -69,7 +69,7 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
     }
 
     fn hashtag(&mut self) {
-        if let Some((idx, ch)) = self.scan.next(ScanPolicy::Hashcode) {
+        if let Some((idx, ch)) = self.scan.next(Scan::Hashcode) {
             match ch {
                 'f' => self.boolean(false, idx),
                 't' => self.boolean(true, idx),
@@ -341,7 +341,7 @@ mod tests {
         #[test]
         fn token_not_implemented() {
             let mut s = Scanner::new("abc");
-            let mut t = Tokenizer::start(s.next(ScanPolicy::Any).unwrap(), &mut s);
+            let mut t = Tokenizer::start(s.next(Scan::Any).unwrap(), &mut s);
 
             t.run();
             let r = t.extract();
@@ -358,7 +358,7 @@ mod tests {
         #[test]
         fn token_not_implemented_stops_at_delimiter() {
             let mut s = Scanner::new("abc;");
-            let mut t = Tokenizer::start(s.next(ScanPolicy::Any).unwrap(), &mut s);
+            let mut t = Tokenizer::start(s.next(Scan::Any).unwrap(), &mut s);
 
             t.run();
             let r = t.extract();
@@ -375,7 +375,7 @@ mod tests {
         #[test]
         fn left_paren() {
             let mut s = Scanner::new("(");
-            let mut t = Tokenizer::start(s.next(ScanPolicy::Any).unwrap(), &mut s);
+            let mut t = Tokenizer::start(s.next(Scan::Any).unwrap(), &mut s);
 
             t.run();
             let r = t.extract();
@@ -392,7 +392,7 @@ mod tests {
         #[test]
         fn right_paren() {
             let mut s = Scanner::new(")");
-            let mut t = Tokenizer::start(s.next(ScanPolicy::Any).unwrap(), &mut s);
+            let mut t = Tokenizer::start(s.next(Scan::Any).unwrap(), &mut s);
 
             t.run();
             let r = t.extract();
@@ -409,7 +409,7 @@ mod tests {
         #[test]
         fn token_ends_at_whitespace() {
             let mut s = Scanner::new("(  ");
-            let mut t = Tokenizer::start(s.next(ScanPolicy::Any).unwrap(), &mut s);
+            let mut t = Tokenizer::start(s.next(Scan::Any).unwrap(), &mut s);
 
             t.run();
             let r = t.extract();
@@ -426,7 +426,7 @@ mod tests {
         #[test]
         fn token_ends_at_delimiter() {
             let mut s = Scanner::new("()");
-            let mut t = Tokenizer::start(s.next(ScanPolicy::Any).unwrap(), &mut s);
+            let mut t = Tokenizer::start(s.next(Scan::Any).unwrap(), &mut s);
 
             t.run();
             let r = t.extract();
@@ -446,7 +446,7 @@ mod tests {
             #[test]
             fn unterminated() {
                 let mut s = Scanner::new("#");
-                let mut t = Tokenizer::start(s.next(ScanPolicy::Any).unwrap(), &mut s);
+                let mut t = Tokenizer::start(s.next(Scan::Any).unwrap(), &mut s);
 
                 t.run();
                 let r = t.extract();
@@ -463,7 +463,7 @@ mod tests {
             #[test]
             fn unterminated_with_whitespace() {
                 let mut s = Scanner::new("#  ");
-                let mut t = Tokenizer::start(s.next(ScanPolicy::Any).unwrap(), &mut s);
+                let mut t = Tokenizer::start(s.next(Scan::Any).unwrap(), &mut s);
 
                 t.run();
                 let r = t.extract();
@@ -480,7 +480,7 @@ mod tests {
             #[test]
             fn unterminated_with_delimiter() {
                 let mut s = Scanner::new("#)");
-                let mut t = Tokenizer::start(s.next(ScanPolicy::Any).unwrap(), &mut s);
+                let mut t = Tokenizer::start(s.next(Scan::Any).unwrap(), &mut s);
 
                 t.run();
                 let r = t.extract();
@@ -497,7 +497,7 @@ mod tests {
             #[test]
             fn invalid() {
                 let mut s = Scanner::new("#g");
-                let mut t = Tokenizer::start(s.next(ScanPolicy::Any).unwrap(), &mut s);
+                let mut t = Tokenizer::start(s.next(Scan::Any).unwrap(), &mut s);
 
                 t.run();
                 let r = t.extract();
@@ -514,7 +514,7 @@ mod tests {
             #[test]
             fn invalid_long() {
                 let mut s = Scanner::new("#not_a_valid_hashtag");
-                let mut t = Tokenizer::start(s.next(ScanPolicy::Any).unwrap(), &mut s);
+                let mut t = Tokenizer::start(s.next(Scan::Any).unwrap(), &mut s);
 
                 t.run();
                 let r = t.extract();
@@ -531,7 +531,7 @@ mod tests {
             #[test]
             fn vector_open() {
                 let mut s = Scanner::new("#(");
-                let mut t = Tokenizer::start(s.next(ScanPolicy::Any).unwrap(), &mut s);
+                let mut t = Tokenizer::start(s.next(Scan::Any).unwrap(), &mut s);
 
                 t.run();
                 let r = t.extract();
@@ -548,7 +548,7 @@ mod tests {
             #[test]
             fn true_short() {
                 let mut s = Scanner::new("#t");
-                let mut t = Tokenizer::start(s.next(ScanPolicy::Any).unwrap(), &mut s);
+                let mut t = Tokenizer::start(s.next(Scan::Any).unwrap(), &mut s);
 
                 t.run();
                 let r = t.extract();
@@ -565,7 +565,7 @@ mod tests {
             #[test]
             fn true_long() {
                 let mut s = Scanner::new("#true");
-                let mut t = Tokenizer::start(s.next(ScanPolicy::Any).unwrap(), &mut s);
+                let mut t = Tokenizer::start(s.next(Scan::Any).unwrap(), &mut s);
 
                 t.run();
                 let r = t.extract();
@@ -582,7 +582,7 @@ mod tests {
             #[test]
             fn true_malformed() {
                 let mut s = Scanner::new("#trueasd");
-                let mut t = Tokenizer::start(s.next(ScanPolicy::Any).unwrap(), &mut s);
+                let mut t = Tokenizer::start(s.next(Scan::Any).unwrap(), &mut s);
 
                 t.run();
                 let r = t.extract();
@@ -599,7 +599,7 @@ mod tests {
             #[test]
             fn false_short() {
                 let mut s = Scanner::new("#f");
-                let mut t = Tokenizer::start(s.next(ScanPolicy::Any).unwrap(), &mut s);
+                let mut t = Tokenizer::start(s.next(Scan::Any).unwrap(), &mut s);
 
                 t.run();
                 let r = t.extract();
@@ -616,7 +616,7 @@ mod tests {
             #[test]
             fn false_long() {
                 let mut s = Scanner::new("#false");
-                let mut t = Tokenizer::start(s.next(ScanPolicy::Any).unwrap(), &mut s);
+                let mut t = Tokenizer::start(s.next(Scan::Any).unwrap(), &mut s);
 
                 t.run();
                 let r = t.extract();
@@ -633,7 +633,7 @@ mod tests {
             #[test]
             fn false_malformed() {
                 let mut s = Scanner::new("#fals");
-                let mut t = Tokenizer::start(s.next(ScanPolicy::Any).unwrap(), &mut s);
+                let mut t = Tokenizer::start(s.next(Scan::Any).unwrap(), &mut s);
 
                 t.run();
                 let r = t.extract();
