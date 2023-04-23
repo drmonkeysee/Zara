@@ -2,6 +2,12 @@ use std::{iter::Peekable, ops::Range, str::CharIndices};
 
 pub(super) type ScanItem<'a> = <CharIndices<'a> as Iterator>::Item;
 
+pub(super) enum ScanPolicy {
+    Any,
+    NonDelimiter,
+    SkipWhitespace,
+}
+
 pub(super) struct Scanner<'a> {
     textline: &'a str,
     chars: ScanChars<'a>,
@@ -15,18 +21,19 @@ impl<'a> Scanner<'a> {
         }
     }
 
-    pub(super) fn advance(&mut self) -> Option<ScanItem> {
-        self.chars.next()
+    pub(super) fn next(&mut self, policy: ScanPolicy) -> Option<ScanItem> {
+        match policy {
+            ScanPolicy::Any => self.chars.next(),
+            ScanPolicy::NonDelimiter => self.chars.next_if(|&(_, ch)| !is_delimiter(ch)),
+            ScanPolicy::SkipWhitespace => self
+                .chars
+                .by_ref()
+                .skip_while(|&(_, ch)| ch.is_ascii_whitespace())
+                .next(),
+        }
     }
 
-    pub(super) fn next_char(&mut self) -> Option<ScanItem> {
-        self.chars
-            .by_ref()
-            .skip_while(|&(_, ch)| ch.is_ascii_whitespace())
-            .next()
-    }
-
-    pub(super) fn until_delimiter(&mut self) -> usize {
+    pub(super) fn end_of_token(&mut self) -> usize {
         let end = self.end();
         self.chars
             .peek_while(|&(_, ch)| !is_delimiter(ch))
@@ -117,131 +124,183 @@ mod tests {
         use super::*;
 
         #[test]
-        fn advance_empty_string() {
+        fn next_empty_string() {
             let mut s = Scanner::new("");
 
-            let r = s.advance();
+            let r = s.next(ScanPolicy::Any);
 
             assert!(r.is_none());
         }
 
         #[test]
-        fn advance_first_char() {
+        fn next_first_char() {
             let mut s = Scanner::new("abc");
 
-            let r = s.advance();
+            let r = s.next(ScanPolicy::Any);
 
             assert!(r.is_some());
             assert_eq!(r.unwrap(), (0, 'a'));
         }
 
         #[test]
-        fn advance_first_whitespace() {
+        fn next_first_whitespace() {
             let mut s = Scanner::new(" abc");
 
-            let r = s.advance();
+            let r = s.next(ScanPolicy::Any);
 
             assert!(r.is_some());
             assert_eq!(r.unwrap(), (0, ' '));
         }
 
         #[test]
-        fn advance_first_utf8_char() {
+        fn next_first_utf8_char() {
             let mut s = Scanner::new("🦀bc");
 
-            let r = s.advance();
+            let r = s.next(ScanPolicy::Any);
 
             assert!(r.is_some());
             assert_eq!(r.unwrap(), (0, '🦀'));
         }
 
         #[test]
-        fn next_char_empty_string() {
+        fn skip_whitespace_empty_string() {
             let mut s = Scanner::new("");
 
-            let r = s.next_char();
+            let r = s.next(ScanPolicy::SkipWhitespace);
 
             assert!(r.is_none());
         }
 
         #[test]
-        fn next_char_first_char() {
+        fn skip_whitespace_first_char() {
             let mut s = Scanner::new("xyz");
 
-            let r = s.next_char();
+            let r = s.next(ScanPolicy::SkipWhitespace);
 
             assert!(r.is_some());
             assert_eq!(r.unwrap(), (0, 'x'));
         }
 
         #[test]
-        fn next_char_skips_whitespace() {
+        fn skip_whitespace_skips_whitespace() {
             let mut s = Scanner::new("   \t  \r\n  xyz");
 
-            let r = s.next_char();
+            let r = s.next(ScanPolicy::SkipWhitespace);
 
             assert!(r.is_some());
             assert_eq!(r.unwrap(), (10, 'x'));
         }
 
         #[test]
-        fn advances_properly_after_next_char_finds_first_char() {
+        fn advances_properly_after_skip_whitespace_finds_first_char() {
             let mut s = Scanner::new("   \t  \r\n  xyz");
 
-            let r = s.next_char();
+            let r = s.next(ScanPolicy::SkipWhitespace);
 
             assert!(r.is_some());
             assert_eq!(r.unwrap(), (10, 'x'));
 
-            let r = s.advance();
+            let r = s.next(ScanPolicy::Any);
 
             assert!(r.is_some());
             assert_eq!(r.unwrap(), (11, 'y'));
         }
 
         #[test]
-        fn next_char_all_whitespace() {
+        fn skip_whitespace_all_whitespace() {
             let mut s = Scanner::new("   \t  \r\n");
 
-            let r = s.next_char();
+            let r = s.next(ScanPolicy::SkipWhitespace);
 
             assert!(r.is_none());
         }
 
         #[test]
-        fn delimiter_empty_string() {
+        fn non_delimiter_empty_string() {
             let mut s = Scanner::new("");
 
-            let r = s.until_delimiter();
+            let r = s.next(ScanPolicy::NonDelimiter);
+
+            assert!(r.is_none());
+        }
+
+        #[test]
+        fn non_delimiter_if_delimiter_at_start() {
+            let mut s = Scanner::new("(abc");
+
+            let r = s.next(ScanPolicy::NonDelimiter);
+
+            assert!(r.is_none());
+        }
+
+        #[test]
+        fn non_delimiter_at_start() {
+            let mut s = Scanner::new("abc)");
+
+            let r = s.next(ScanPolicy::NonDelimiter);
+
+            assert!(r.is_some());
+            assert_eq!(r.unwrap(), (0, 'a'));
+        }
+
+        #[test]
+        fn non_delimiter_advances_properly_after_delimiter() {
+            let mut s = Scanner::new("ab)c");
+
+            let r = s.next(ScanPolicy::NonDelimiter);
+            assert!(r.is_some());
+            assert_eq!(r.unwrap(), (0, 'a'));
+
+            let r = s.next(ScanPolicy::NonDelimiter);
+            assert!(r.is_some());
+            assert_eq!(r.unwrap(), (1, 'b'));
+
+            let r = s.next(ScanPolicy::NonDelimiter);
+            assert!(r.is_none());
+            let r = s.next(ScanPolicy::NonDelimiter);
+            assert!(r.is_none());
+            let r = s.next(ScanPolicy::NonDelimiter);
+            assert!(r.is_none());
+
+            let r = s.next(ScanPolicy::Any);
+            assert!(r.is_some());
+            assert_eq!(r.unwrap(), (2, ')'));
+        }
+
+        #[test]
+        fn empty_string_ends_token() {
+            let mut s = Scanner::new("");
+
+            let r = s.end_of_token();
 
             assert_eq!(r, 0);
         }
 
         #[test]
-        fn no_delimiter() {
+        fn string_termination_ends_token() {
             let mut s = Scanner::new("abc");
 
-            let r = s.until_delimiter();
+            let r = s.end_of_token();
 
             assert_eq!(r, 3);
         }
 
         #[test]
-        fn stops_at_delimiter() {
+        fn delimiter_ends_token() {
             let mut s = Scanner::new("abcd)xyz");
 
-            let r = s.until_delimiter();
+            let r = s.end_of_token();
 
             assert_eq!(r, 4);
         }
 
         #[test]
-        fn next_advance_is_delimiter() {
+        fn next_item_is_delimiter() {
             let mut s = Scanner::new("abcd)xyz");
 
-            assert_eq!(s.until_delimiter(), 4);
+            assert_eq!(s.end_of_token(), 4);
 
-            let r = s.advance();
+            let r = s.next(ScanPolicy::Any);
 
             assert!(r.is_some());
             assert_eq!(r.unwrap(), (4, ')'));
@@ -251,24 +310,24 @@ mod tests {
         fn stops_at_delimiter_until_advance() {
             let mut s = Scanner::new("abcd)xyz");
 
-            assert_eq!(s.until_delimiter(), 4);
-            assert_eq!(s.until_delimiter(), 4);
-            assert_eq!(s.until_delimiter(), 4);
+            assert_eq!(s.end_of_token(), 4);
+            assert_eq!(s.end_of_token(), 4);
+            assert_eq!(s.end_of_token(), 4);
 
-            s.advance();
+            s.next(ScanPolicy::Any);
 
-            assert_eq!(s.until_delimiter(), 8);
+            assert_eq!(s.end_of_token(), 8);
         }
 
         #[test]
         fn stops_at_immediately_following_delimiter() {
             let mut s = Scanner::new("abcd);xyz");
 
-            assert_eq!(s.until_delimiter(), 4);
+            assert_eq!(s.end_of_token(), 4);
 
-            s.advance();
+            s.next(ScanPolicy::Any);
 
-            assert_eq!(s.until_delimiter(), 5);
+            assert_eq!(s.end_of_token(), 5);
         }
 
         #[test]
