@@ -4,6 +4,7 @@ pub(super) type ScanItem<'a> = <CharIndices<'a> as Iterator>::Item;
 
 pub(super) enum ScanPolicy {
     Any,
+    Hashcode,
     NonDelimiter,
     SkipWhitespace,
 }
@@ -22,21 +23,20 @@ impl<'a> Scanner<'a> {
     }
 
     pub(super) fn next(&mut self, policy: ScanPolicy) -> Option<ScanItem> {
+        use ScanPolicy::*;
+
         match policy {
-            ScanPolicy::Any => self.chars.next(),
-            ScanPolicy::NonDelimiter => self.chars.next_if(|&(_, ch)| !is_delimiter(ch)),
-            ScanPolicy::SkipWhitespace => self
-                .chars
-                .by_ref()
-                .skip_while(|&(_, ch)| ch.is_ascii_whitespace())
-                .next(),
+            Any => self.chars.next(),
+            Hashcode => self.chars.next_if(non_hashcode_delimiter),
+            NonDelimiter => self.chars.next_if(non_delimiter),
+            SkipWhitespace => self.chars.by_ref().skip_while(whitespace).next(),
         }
     }
 
     pub(super) fn end_of_token(&mut self) -> usize {
         let end = self.end();
         self.chars
-            .peek_while(|&(_, ch)| !is_delimiter(ch))
+            .peek_while(non_delimiter)
             .peek()
             .map_or(end, |&(idx, _)| idx)
     }
@@ -77,6 +77,18 @@ impl<'a, P: Fn(&ScanItem) -> bool> PeekableSkip<'a, P> for ScanChars<'a> {
     }
 }
 
+fn whitespace(item: &ScanItem) -> bool {
+    item.1.is_ascii_whitespace()
+}
+
+fn non_delimiter(item: &ScanItem) -> bool {
+    !is_delimiter(item.1)
+}
+
+fn non_hashcode_delimiter(item: &ScanItem) -> bool {
+    !is_hashcode_delimiter(item.1)
+}
+
 fn is_delimiter(ch: char) -> bool {
     match ch {
         '"' | '(' | ')' | ';' | '|' => true,
@@ -85,22 +97,17 @@ fn is_delimiter(ch: char) -> bool {
     }
 }
 
+fn is_hashcode_delimiter(ch: char) -> bool {
+    ch != '(' && is_delimiter(ch)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn delimiter_chars() {
-        let chars = ['"', '(', ')', ';', '|'];
-
-        for ch in chars {
-            assert!(is_delimiter(ch), "Expected {ch} to be a delimiter");
-        }
-    }
-
-    #[test]
-    fn delimiter_whitespace() {
-        let chars = [' ', '\t', '\r', '\n'];
+        let chars = ['"', '(', ')', ';', '|', ' ', '\t', '\r', '\n'];
 
         for ch in chars {
             assert!(
@@ -118,6 +125,24 @@ mod tests {
         for ch in chars {
             assert!(!is_delimiter(ch), "Expected {ch} to not be a delimiter");
         }
+    }
+
+    #[test]
+    fn hashcode_delimiter_chars() {
+        let chars = ['"', ')', ';', '|', ' ', '\t', '\r', '\n'];
+
+        for ch in chars {
+            assert!(
+                is_hashcode_delimiter(ch),
+                "Expected {} to be a hashcode delimiter",
+                ch.escape_default()
+            );
+        }
+    }
+
+    #[test]
+    fn is_hashcode_delimiter_does_not_include_lparen() {
+        assert!(!is_hashcode_delimiter('('));
     }
 
     mod scanner {

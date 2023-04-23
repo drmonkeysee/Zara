@@ -69,7 +69,7 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
     }
 
     fn hashtag(&mut self) {
-        if let Some((idx, ch)) = self.scan.next(ScanPolicy::NonDelimiter) {
+        if let Some((idx, ch)) = self.scan.next(ScanPolicy::Hashcode) {
             match ch {
                 'f' => self.boolean(false, idx),
                 't' => self.boolean(true, idx),
