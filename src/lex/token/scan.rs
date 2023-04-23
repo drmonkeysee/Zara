@@ -52,13 +52,7 @@ struct PeekWhile<'me, 'str, P> {
 
 impl<'me, 'str, P: Fn(&ScanItem) -> bool> PeekWhile<'me, 'str, P> {
     fn peek(self) -> Option<&'me ScanItem<'str>> {
-        while let Some(item) = self.inner.peek() {
-            if (self.predicate)(item) {
-                self.inner.next();
-            } else {
-                break;
-            }
-        }
+        while self.inner.next_if(&self.predicate).is_some() { /* consume iterator */ }
         self.inner.peek()
     }
 }
