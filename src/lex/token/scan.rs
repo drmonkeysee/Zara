@@ -20,7 +20,9 @@ impl<'a> Scanner<'a> {
     }
 
     pub(super) fn skip_whitespace(&mut self) -> Option<ScanItem> {
-        self.chars.by_ref().find(non_whitespace)
+        self.chars
+            .by_ref()
+            .find(|&(_, ch)| !ch.is_ascii_whitespace())
     }
 
     pub(super) fn non_delimiter(&mut self) -> Option<ScanItem> {
@@ -75,8 +77,12 @@ impl<'a, P: Fn(&ScanItem) -> bool> PeekableSkip<'a, P> for ScanChars<'a> {
     }
 }
 
-fn whitespace(item: &ScanItem) -> bool {
-    item.1.is_ascii_whitespace()
+fn non_delimiter(item: &ScanItem) -> bool {
+    !is_delimiter(item.1)
+}
+
+fn non_hashcode_delimiter(item: &ScanItem) -> bool {
+    !is_hashcode_delimiter(item.1)
 }
 
 fn is_delimiter(ch: char) -> bool {
@@ -89,18 +95,6 @@ fn is_delimiter(ch: char) -> bool {
 
 fn is_hashcode_delimiter(ch: char) -> bool {
     ch != '(' && is_delimiter(ch)
-}
-
-fn non_whitespace(item: &ScanItem) -> bool {
-    !whitespace(item)
-}
-
-fn non_delimiter(item: &ScanItem) -> bool {
-    !is_delimiter(item.1)
-}
-
-fn non_hashcode_delimiter(item: &ScanItem) -> bool {
-    !is_hashcode_delimiter(item.1)
 }
 
 #[cfg(test)]
