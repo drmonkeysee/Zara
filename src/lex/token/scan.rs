@@ -2,13 +2,6 @@ use std::{iter::Peekable, ops::Range, str::CharIndices};
 
 pub(super) type ScanItem<'a> = <CharIndices<'a> as Iterator>::Item;
 
-pub(super) enum Scan {
-    Any,
-    Hashcode,
-    NonDelimiter,
-    SkipWhitespace,
-}
-
 pub(super) struct Scanner<'a> {
     textline: &'a str,
     chars: ScanChars<'a>,
@@ -22,15 +15,20 @@ impl<'a> Scanner<'a> {
         }
     }
 
-    pub(super) fn next(&mut self, policy: Scan) -> Option<ScanItem> {
-        use Scan::*;
+    pub(super) fn char(&mut self) -> Option<ScanItem> {
+        self.chars.next()
+    }
 
-        match policy {
-            Any => self.chars.next(),
-            Hashcode => self.chars.next_if(non_hashcode_delimiter),
-            NonDelimiter => self.chars.next_if(non_delimiter),
-            SkipWhitespace => self.chars.by_ref().skip_while(whitespace).next(),
-        }
+    pub(super) fn skip_whitespace(&mut self) -> Option<ScanItem> {
+        self.chars.by_ref().skip_while(whitespace).next()
+    }
+
+    pub(super) fn non_delimiter(&mut self) -> Option<ScanItem> {
+        self.chars.next_if(non_delimiter)
+    }
+
+    pub(super) fn hashcode_non_delimiter(&mut self) -> Option<ScanItem> {
+        self.chars.next_if(non_hashcode_delimiter)
     }
 
     pub(super) fn end_of_token(&mut self) -> usize {
@@ -152,7 +150,7 @@ mod tests {
         fn next_empty_string() {
             let mut s = Scanner::new("");
 
-            let r = s.next(Scan::Any);
+            let r = s.char();
 
             assert!(r.is_none());
         }
@@ -161,7 +159,7 @@ mod tests {
         fn next_first_char() {
             let mut s = Scanner::new("abc");
 
-            let r = s.next(Scan::Any);
+            let r = s.char();
 
             assert!(r.is_some());
             assert_eq!(r.unwrap(), (0, 'a'));
@@ -171,7 +169,7 @@ mod tests {
         fn next_first_whitespace() {
             let mut s = Scanner::new(" abc");
 
-            let r = s.next(Scan::Any);
+            let r = s.char();
 
             assert!(r.is_some());
             assert_eq!(r.unwrap(), (0, ' '));
@@ -181,7 +179,7 @@ mod tests {
         fn next_first_utf8_char() {
             let mut s = Scanner::new("🦀bc");
 
-            let r = s.next(Scan::Any);
+            let r = s.char();
 
             assert!(r.is_some());
             assert_eq!(r.unwrap(), (0, '🦀'));
@@ -191,7 +189,7 @@ mod tests {
         fn skip_whitespace_empty_string() {
             let mut s = Scanner::new("");
 
-            let r = s.next(Scan::SkipWhitespace);
+            let r = s.skip_whitespace();
 
             assert!(r.is_none());
         }
@@ -200,7 +198,7 @@ mod tests {
         fn skip_whitespace_first_char() {
             let mut s = Scanner::new("xyz");
 
-            let r = s.next(Scan::SkipWhitespace);
+            let r = s.skip_whitespace();
 
             assert!(r.is_some());
             assert_eq!(r.unwrap(), (0, 'x'));
@@ -210,7 +208,7 @@ mod tests {
         fn skip_whitespace_skips_whitespace() {
             let mut s = Scanner::new("   \t  \r\n  xyz");
 
-            let r = s.next(Scan::SkipWhitespace);
+            let r = s.skip_whitespace();
 
             assert!(r.is_some());
             assert_eq!(r.unwrap(), (10, 'x'));
@@ -220,12 +218,12 @@ mod tests {
         fn advances_properly_after_skip_whitespace_finds_first_char() {
             let mut s = Scanner::new("   \t  \r\n  xyz");
 
-            let r = s.next(Scan::SkipWhitespace);
+            let r = s.skip_whitespace();
 
             assert!(r.is_some());
             assert_eq!(r.unwrap(), (10, 'x'));
 
-            let r = s.next(Scan::Any);
+            let r = s.char();
 
             assert!(r.is_some());
             assert_eq!(r.unwrap(), (11, 'y'));
@@ -235,7 +233,7 @@ mod tests {
         fn skip_whitespace_all_whitespace() {
             let mut s = Scanner::new("   \t  \r\n");
 
-            let r = s.next(Scan::SkipWhitespace);
+            let r = s.skip_whitespace();
 
             assert!(r.is_none());
         }
@@ -244,7 +242,7 @@ mod tests {
         fn non_delimiter_empty_string() {
             let mut s = Scanner::new("");
 
-            let r = s.next(Scan::NonDelimiter);
+            let r = s.non_delimiter();
 
             assert!(r.is_none());
         }
@@ -253,7 +251,7 @@ mod tests {
         fn non_delimiter_if_delimiter_at_start() {
             let mut s = Scanner::new("(abc");
 
-            let r = s.next(Scan::NonDelimiter);
+            let r = s.non_delimiter();
 
             assert!(r.is_none());
         }
@@ -262,7 +260,7 @@ mod tests {
         fn non_delimiter_at_start() {
             let mut s = Scanner::new("abc)");
 
-            let r = s.next(Scan::NonDelimiter);
+            let r = s.non_delimiter();
 
             assert!(r.is_some());
             assert_eq!(r.unwrap(), (0, 'a'));
@@ -272,24 +270,43 @@ mod tests {
         fn non_delimiter_advances_properly_after_delimiter() {
             let mut s = Scanner::new("ab)c");
 
-            let r = s.next(Scan::NonDelimiter);
+            let r = s.non_delimiter();
             assert!(r.is_some());
             assert_eq!(r.unwrap(), (0, 'a'));
 
-            let r = s.next(Scan::NonDelimiter);
+            let r = s.non_delimiter();
             assert!(r.is_some());
             assert_eq!(r.unwrap(), (1, 'b'));
 
-            let r = s.next(Scan::NonDelimiter);
+            let r = s.non_delimiter();
             assert!(r.is_none());
-            let r = s.next(Scan::NonDelimiter);
+            let r = s.non_delimiter();
             assert!(r.is_none());
-            let r = s.next(Scan::NonDelimiter);
+            let r = s.non_delimiter();
             assert!(r.is_none());
 
-            let r = s.next(Scan::Any);
+            let r = s.char();
             assert!(r.is_some());
             assert_eq!(r.unwrap(), (2, ')'));
+        }
+
+        #[test]
+        fn hashcode_non_delimiter_rparen() {
+            let mut s = Scanner::new(")abc");
+
+            let r = s.hashcode_non_delimiter();
+
+            assert!(r.is_none());
+        }
+
+        #[test]
+        fn hashcode_non_delimiter_lparen() {
+            let mut s = Scanner::new("(abc");
+
+            let r = s.hashcode_non_delimiter();
+
+            assert!(r.is_some());
+            assert_eq!(r.unwrap(), (0, '('));
         }
 
         #[test]
@@ -325,7 +342,7 @@ mod tests {
 
             assert_eq!(s.end_of_token(), 4);
 
-            let r = s.next(Scan::Any);
+            let r = s.char();
 
             assert!(r.is_some());
             assert_eq!(r.unwrap(), (4, ')'));
@@ -339,7 +356,7 @@ mod tests {
             assert_eq!(s.end_of_token(), 4);
             assert_eq!(s.end_of_token(), 4);
 
-            s.next(Scan::Any);
+            s.char();
 
             assert_eq!(s.end_of_token(), 8);
         }
@@ -350,7 +367,7 @@ mod tests {
 
             assert_eq!(s.end_of_token(), 4);
 
-            s.next(Scan::Any);
+            s.char();
 
             assert_eq!(s.end_of_token(), 5);
         }
