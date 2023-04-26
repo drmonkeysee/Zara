@@ -36,8 +36,7 @@ impl<'a> Scanner<'a> {
     pub(super) fn end_of_token(&mut self) -> usize {
         let end = self.end();
         self.chars
-            .peek_while(non_delimiter)
-            .peek()
+            .peek_find(non_delimiter)
             .map_or(end, |&(idx, _)| idx)
     }
 
@@ -52,28 +51,14 @@ impl<'a> Scanner<'a> {
 
 type ScanChars<'a> = Peekable<CharIndices<'a>>;
 
-struct PeekWhile<'me, 'str, P> {
-    inner: &'me mut ScanChars<'str>,
-    predicate: P,
+trait PeekableExt<P> {
+    fn peek_find(&mut self, predicate: P) -> Option<&ScanItem>;
 }
 
-impl<'me, 'str, P: Fn(&ScanItem) -> bool> PeekWhile<'me, 'str, P> {
-    fn peek(self) -> Option<&'me ScanItem<'str>> {
-        while self.inner.next_if(&self.predicate).is_some() { /* consume iterator */ }
-        self.inner.peek()
-    }
-}
-
-trait PeekableSkip<'a, P> {
-    fn peek_while(&mut self, predicate: P) -> PeekWhile<'_, 'a, P>;
-}
-
-impl<'a, P: Fn(&ScanItem) -> bool> PeekableSkip<'a, P> for ScanChars<'a> {
-    fn peek_while(&mut self, predicate: P) -> PeekWhile<'_, 'a, P> {
-        PeekWhile {
-            inner: self,
-            predicate,
-        }
+impl<P: Fn(&ScanItem) -> bool> PeekableExt<P> for ScanChars<'_> {
+    fn peek_find(&mut self, predicate: P) -> Option<&ScanItem> {
+        while self.next_if(&predicate).is_some() { /* consume iterator */ }
+        self.peek()
     }
 }
 
@@ -449,77 +434,6 @@ mod tests {
             let r = s.lexeme(5..2);
 
             assert_eq!(r, "");
-        }
-    }
-
-    mod peek_while {
-        use super::*;
-
-        #[test]
-        fn empty_string() {
-            let mut it = "".char_indices().peekable();
-
-            let r = it.peek_while(|_| false).peek();
-
-            assert!(r.is_none());
-        }
-
-        #[test]
-        fn while_false() {
-            let mut it = "abc".char_indices().peekable();
-
-            let r = it.peek_while(|_| false).peek();
-
-            assert!(r.is_some());
-            assert_eq!(*r.unwrap(), (0, 'a'));
-        }
-
-        #[test]
-        fn while_true() {
-            let mut it = "abc".char_indices().peekable();
-
-            let r = it.peek_while(|_| true).peek();
-
-            assert!(r.is_none());
-        }
-
-        #[test]
-        fn false_predicate() {
-            let mut it = "123abc456".char_indices().peekable();
-
-            let r = it.peek_while(|&(_, ch)| ch.is_whitespace()).peek();
-
-            assert!(r.is_some());
-            assert_eq!(*r.unwrap(), (0, '1'));
-        }
-
-        #[test]
-        fn true_predicate() {
-            let mut it = "123abc456".char_indices().peekable();
-
-            let r = it.peek_while(|&(_, ch)| ch.is_alphanumeric()).peek();
-
-            assert!(r.is_none());
-        }
-
-        #[test]
-        fn ch_predicate() {
-            let mut it = "123abc456".char_indices().peekable();
-
-            let r = it.peek_while(|&(_, ch)| ch.is_ascii_digit()).peek();
-
-            assert!(r.is_some());
-            assert_eq!(*r.unwrap(), (3, 'a'));
-        }
-
-        #[test]
-        fn index_predicate() {
-            let mut it = "123abc456".char_indices().peekable();
-
-            let r = it.peek_while(|&(idx, _)| idx < 4).peek();
-
-            assert!(r.is_some());
-            assert_eq!(*r.unwrap(), (4, 'b'));
         }
     }
 }
