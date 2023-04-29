@@ -26,13 +26,11 @@ impl<'a> Iterator for TokenStream<'a> {
     type Item = TokenResult;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if let Some(item) = self.scan.skip_whitespace() {
+        self.scan.skip_whitespace().map(|item| {
             let mut tokenizer = Tokenizer::start(item, &mut self.scan);
             tokenizer.run();
-            Some(tokenizer.extract())
-        } else {
-            None
-        }
+            tokenizer.extract()
+        })
     }
 }
 
