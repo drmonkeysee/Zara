@@ -44,6 +44,11 @@ impl<'a> Scanner<'a> {
         self.textline.get(range).unwrap_or_default()
     }
 
+    pub(super) fn pos(&mut self) -> usize {
+        let end = self.end();
+        self.chars.peek().map_or(end, |&(idx, _)| idx)
+    }
+
     fn end(&self) -> usize {
         self.textline.len()
     }
@@ -434,6 +439,46 @@ mod tests {
             let r = s.lexeme(5..2);
 
             assert_eq!(r, "");
+        }
+
+        #[test]
+        fn pos_at_begining() {
+            let mut s = Scanner::new("abcdxyz");
+
+            let r = s.pos();
+
+            assert_eq!(r, 0);
+        }
+
+        #[test]
+        fn pos_after_scanning() {
+            let mut s = Scanner::new("abcdxyz");
+
+            s.char();
+            s.char();
+            s.char();
+            let r = s.pos();
+
+            assert_eq!(r, 3);
+        }
+
+        #[test]
+        fn pos_at_end() {
+            let mut s = Scanner::new("abcdxyz");
+
+            s.end_of_token();
+            let r = s.pos();
+
+            assert_eq!(r, 7);
+        }
+
+        #[test]
+        fn pos_for_empty_string() {
+            let mut s = Scanner::new("");
+
+            let r = s.pos();
+
+            assert_eq!(r, 0);
         }
     }
 }

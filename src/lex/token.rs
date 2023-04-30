@@ -45,7 +45,7 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
         Self {
             start,
             scan,
-            builder: TokenBuilder::start(start),
+            builder: TokenBuilder::start(start.0),
         }
     }
 
@@ -53,10 +53,14 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
         match self.start.1 {
             '#' => self.hashtag(),
             '(' => {
-                self.builder.token(TokenKind::ParenLeft);
+                self.builder
+                    .end(self.scan.pos())
+                    .token(TokenKind::ParenLeft);
             }
             ')' => {
-                self.builder.token(TokenKind::ParenRight);
+                self.builder
+                    .end(self.scan.pos())
+                    .token(TokenKind::ParenRight);
             }
             _ => self.not_implemented(),
         }
@@ -67,16 +71,14 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
     }
 
     fn hashtag(&mut self) {
-        if let Some((idx, ch)) = self.scan.hashcode_non_delimiter() {
+        if let Some((_, ch)) = self.scan.hashcode_non_delimiter() {
             match ch {
-                'f' => self.boolean(false, idx + ch.len_utf8()),
-                't' => self.boolean(true, idx + ch.len_utf8()),
-                '\\' => {
-                    self.character(idx + ch.len_utf8());
-                }
+                'f' => self.boolean(false),
+                't' => self.boolean(true),
+                '\\' => self.character(),
                 '(' => {
                     self.builder
-                        .end(idx + ch.len_utf8())
+                        .end(self.scan.pos())
                         .token(TokenKind::VectorOpen);
                 }
                 _ => {
@@ -86,16 +88,18 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
                 }
             }
         } else {
-            self.builder.error(TokenErrorKind::HashUnterminated);
+            self.builder
+                .end(self.scan.pos())
+                .error(TokenErrorKind::HashUnterminated);
         }
     }
 
-    fn boolean(&mut self, val: bool, next: usize) {
+    fn boolean(&mut self, val: bool) {
+        let cur = self.scan.pos();
         let end = self.scan.end_of_token();
-        // TODO: support getting lexeme from current position to end
-        let remaining = self.scan.lexeme(next..end);
+        let rest = self.scan.lexeme(cur..end);
         self.builder.end(end).kind(
-            if remaining.is_empty() || remaining == if val { "rue" } else { "alse" } {
+            if rest.is_empty() || rest == if val { "rue" } else { "alse" } {
                 Ok(TokenKind::Literal(Literal::Boolean(val)))
             } else {
                 Err(TokenErrorKind::ExpectedBoolean(val))
@@ -103,24 +107,25 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
         );
     }
 
-    fn character(&mut self, next: usize) {
-        if let Some((idx, ch)) = self.scan.char() {
+    fn character(&mut self) {
+        if let Some((_, ch)) = self.scan.char() {
+            let cur = self.scan.pos();
             if ch.is_ascii_whitespace() {
                 self.builder
-                    .end(idx + ch.len_utf8())
+                    .end(cur)
                     .token(TokenKind::Literal(Literal::Character(ch)));
             } else {
                 let end = self.scan.end_of_token();
                 self.builder.end(end);
-                let remaining = self.scan.lexeme(idx + ch.len_utf8()..end);
+                let rest = self.scan.lexeme(cur..end);
                 match ch {
                     'x' => todo!(), //maybe_hex(),
-                    _ if remaining.is_empty() => {
+                    _ if rest.is_empty() => {
                         self.builder
                             .token(TokenKind::Literal(Literal::Character(ch)));
                     }
                     _ => {
-                        if let Some(literal) = match (ch, remaining) {
+                        if let Some(literal) = match (ch, rest) {
                             ('a', "larm") => Some('\u{7}'),
                             ('b', "ackspace") => Some('\u{8}'),
                             ('d', "elete") => Some('\u{7f}'),
@@ -142,7 +147,7 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
             }
         } else {
             self.builder
-                .end(next)
+                .end(self.scan.pos())
                 .token(TokenKind::Literal(Literal::Character('\n')));
         }
     }
