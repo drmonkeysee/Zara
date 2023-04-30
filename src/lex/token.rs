@@ -72,8 +72,7 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
                 'f' => self.boolean(false, idx),
                 't' => self.boolean(true, idx),
                 '\\' => {
-                    // TODO: handle character literal
-                    todo!()
+                    self.character(idx);
                 }
                 '(' => {
                     self.builder.end(idx + 1).token(TokenKind::VectorOpen);
@@ -100,6 +99,44 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
                 Err(TokenErrorKind::ExpectedBoolean(val))
             },
         );
+    }
+
+    fn character(&mut self, at: usize) {
+        if let Some((idx, ch)) = self.scan.char() {
+            let end = self.scan.end_of_token();
+            self.builder.end(end);
+            let remaining = self.scan.lexeme(idx + 1..end);
+            match ch {
+                'x' => todo!(), //maybe_hex(),
+                _ if remaining.is_empty() => {
+                    self.builder
+                        .token(TokenKind::Literal(Literal::Character(ch)));
+                }
+                _ => {
+                    if let Some(literal) = match (ch, remaining) {
+                        ('a', "larm") => Some('\u{7}'),
+                        ('b', "ackspace") => Some('\u{8}'),
+                        ('d', "elete") => Some('\u{7f}'),
+                        ('e', "scape") => Some('\u{1b}'),
+                        ('n', "ewline") => Some('\n'),
+                        ('n', "ull") => Some('\0'),
+                        ('r', "eturn") => Some('\r'),
+                        ('s', "pace") => Some(' '),
+                        ('t', "ab") => Some('\t'),
+                        _ => None,
+                    } {
+                        self.builder
+                            .token(TokenKind::Literal(Literal::Character(literal)));
+                    } else {
+                        self.builder.error(TokenErrorKind::ExpectedCharacter);
+                    }
+                }
+            }
+        } else {
+            self.builder
+                .end(at + 1)
+                .token(TokenKind::Literal(Literal::Character('\n')));
+        }
     }
 
     fn not_implemented(&mut self) {
@@ -643,6 +680,171 @@ mod tests {
                         span: Range { start: 0, end: 5 }
                     })
                 ));
+            }
+        }
+
+        mod character {
+            use super::*;
+
+            #[test]
+            fn ascii_literal() {
+                let mut s = Scanner::new("#\\a");
+                let mut t = Tokenizer::start(s.char().unwrap(), &mut s);
+
+                t.run();
+                let r = t.extract();
+
+                assert!(matches!(
+                    r,
+                    Ok(Token {
+                        kind: TokenKind::Literal(Literal::Character('a')),
+                        span: Range { start: 0, end: 3 }
+                    })
+                ));
+            }
+
+            #[test]
+            fn extended_literal() {
+                let mut s = Scanner::new("#\\λ");
+                let mut t = Tokenizer::start(s.char().unwrap(), &mut s);
+
+                t.run();
+                let r = t.extract();
+
+                assert!(matches!(
+                    r,
+                    Ok(Token {
+                        kind: TokenKind::Literal(Literal::Character('λ')),
+                        span: Range { start: 0, end: 4 }
+                    })
+                ));
+            }
+
+            #[test]
+            fn emoji_literal() {
+                let mut s = Scanner::new("#\\🦀");
+                let mut t = Tokenizer::start(s.char().unwrap(), &mut s);
+
+                t.run();
+                let r = t.extract();
+
+                assert!(matches!(
+                    r,
+                    Ok(Token {
+                        kind: TokenKind::Literal(Literal::Character('🦀')),
+                        span: Range { start: 0, end: 6 }
+                    })
+                ));
+            }
+
+            #[test]
+            fn string_escape_literals() {
+                check_character_list(&[("\"", '"'), ("'", '\''), ("\\", '\\'), ("", '\n')]);
+            }
+
+            #[test]
+            fn space_literal() {
+                let mut s = Scanner::new("#\\ ");
+                let mut t = Tokenizer::start(s.char().unwrap(), &mut s);
+
+                t.run();
+                let r = t.extract();
+
+                assert!(matches!(
+                    r,
+                    Ok(Token {
+                        kind: TokenKind::Literal(Literal::Character(' ')),
+                        span: Range { start: 0, end: 3 }
+                    })
+                ));
+            }
+
+            #[test]
+            fn space_followed_by_char() {
+                let mut s = Scanner::new("#\\ b");
+                let mut t = Tokenizer::start(s.char().unwrap(), &mut s);
+
+                t.run();
+                let r = t.extract();
+
+                assert!(matches!(
+                    r,
+                    Ok(Token {
+                        kind: TokenKind::Literal(Literal::Character(' ')),
+                        span: Range { start: 0, end: 3 }
+                    })
+                ));
+            }
+
+            #[test]
+            fn tab_literal() {
+                let mut s = Scanner::new("#\\\t");
+                let mut t = Tokenizer::start(s.char().unwrap(), &mut s);
+
+                t.run();
+                let r = t.extract();
+
+                assert!(matches!(
+                    r,
+                    Ok(Token {
+                        kind: TokenKind::Literal(Literal::Character('\t')),
+                        span: Range { start: 0, end: 3 }
+                    })
+                ));
+            }
+
+            #[test]
+            fn name() {
+                check_character_list(&[
+                    ("alarm", '\u{7}'),
+                    ("backspace", '\u{8}'),
+                    ("delete", '\u{7f}'),
+                    ("escape", '\u{1b}'),
+                    ("newline", '\n'),
+                    ("null", '\0'),
+                    ("return", '\r'),
+                    ("space", ' '),
+                    ("tab", '\t'),
+                ]);
+            }
+
+            #[test]
+            fn invalid_name() {
+                let mut s = Scanner::new("#\\ab");
+                let mut t = Tokenizer::start(s.char().unwrap(), &mut s);
+
+                t.run();
+                let r = t.extract();
+
+                assert!(matches!(
+                    r,
+                    Err(TokenError {
+                        kind: TokenErrorKind::ExpectedCharacter,
+                        span: Range { start: 0, end: 4 }
+                    })
+                ));
+            }
+
+            fn check_character_list(expected: &[(&str, char)]) {
+                for &(inp, ex) in expected {
+                    let input = format!("#\\{inp}");
+                    let mut s = Scanner::new(&input);
+                    let mut t = Tokenizer::start(s.char().unwrap(), &mut s);
+
+                    t.run();
+                    let r = t.extract();
+
+                    assert!(
+                        matches!(
+                            r,
+                            Ok(Token {
+                                kind: TokenKind::Literal(Literal::Character(ch)),
+                                span: Range { start: 0, end }
+                            }) if ch == ex && end == input.len()
+                        ),
+                        "Unexpected match for character input ({inp}, {ex})"
+                    );
+                }
             }
         }
     }
