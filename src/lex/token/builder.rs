@@ -1,22 +1,26 @@
-use crate::lex::tokens::{Token, TokenError, TokenErrorKind, TokenKind, TokenResult};
+use crate::lex::{
+    token::scan::ScanItem,
+    tokens::{Token, TokenError, TokenErrorKind, TokenKind, TokenResult},
+};
 
 #[derive(Default)]
 pub(super) struct TokenBuilder {
     start: usize,
-    end: Option<usize>,
+    end: usize,
     kind: Option<TokenKindResult>,
 }
 
 impl TokenBuilder {
-    pub(super) fn start(start: usize) -> Self {
+    pub(super) fn start(start: ScanItem) -> Self {
         Self {
-            start,
+            start: start.0,
+            end: start.0 + start.1.len_utf8(),
             ..Default::default()
         }
     }
 
     pub(super) fn end(&mut self, end: usize) -> &mut Self {
-        self.end = Some(end);
+        self.end = end;
         self
     }
 
@@ -34,7 +38,7 @@ impl TokenBuilder {
     }
 
     pub(super) fn build(self) -> TokenResult {
-        let span = self.start..self.end.unwrap_or(self.start + 1);
+        let span = self.start..self.end;
         match self.kind.unwrap_or(Err(TokenErrorKind::Undefined)) {
             Ok(token) => Ok(Token { kind: token, span }),
             Err(err) => Err(TokenError { kind: err, span }),
@@ -59,14 +63,14 @@ mod tests {
             r,
             Err(TokenError {
                 kind: TokenErrorKind::Undefined,
-                span: Range { start: 0, end: 1 },
+                span: Range { start: 0, end: 0 },
             })
         ));
     }
 
     #[test]
     fn default_with_init() {
-        let b = TokenBuilder::start(5);
+        let b = TokenBuilder::start((5, 'a'));
 
         let r = b.build();
 
@@ -80,8 +84,23 @@ mod tests {
     }
 
     #[test]
+    fn init_sets_length_correctly() {
+        let b = TokenBuilder::start((5, '🦀'));
+
+        let r = b.build();
+
+        assert!(matches!(
+            r,
+            Err(TokenError {
+                kind: TokenErrorKind::Undefined,
+                span: Range { start: 5, end: 9 }
+            })
+        ));
+    }
+
+    #[test]
     fn set_end() {
-        let mut b = TokenBuilder::start(5);
+        let mut b = TokenBuilder::start((5, 'a'));
 
         b.end(10);
         let r = b.build();
@@ -97,7 +116,7 @@ mod tests {
 
     #[test]
     fn set_backwards_end() {
-        let mut b = TokenBuilder::start(5);
+        let mut b = TokenBuilder::start((5, 'a'));
 
         b.end(3);
         let r = b.build();
@@ -113,7 +132,7 @@ mod tests {
 
     #[test]
     fn set_token() {
-        let mut b = TokenBuilder::start(5);
+        let mut b = TokenBuilder::start((5, 'a'));
 
         b.token(TokenKind::ParenLeft);
         let r = b.build();
@@ -129,7 +148,7 @@ mod tests {
 
     #[test]
     fn set_token_with_end() {
-        let mut b = TokenBuilder::start(5);
+        let mut b = TokenBuilder::start((5, 'a'));
 
         b.token(TokenKind::ParenLeft).end(10);
         let r = b.build();
@@ -145,7 +164,7 @@ mod tests {
 
     #[test]
     fn set_err() {
-        let mut b = TokenBuilder::start(5);
+        let mut b = TokenBuilder::start((5, 'a'));
 
         b.error(TokenErrorKind::HashInvalid);
         let r = b.build();
@@ -161,7 +180,7 @@ mod tests {
 
     #[test]
     fn set_err_with_end() {
-        let mut b = TokenBuilder::start(5);
+        let mut b = TokenBuilder::start((5, 'a'));
 
         b.error(TokenErrorKind::HashInvalid).end(10);
         let r = b.build();
@@ -177,7 +196,7 @@ mod tests {
 
     #[test]
     fn set_token_kind() {
-        let mut b = TokenBuilder::start(5);
+        let mut b = TokenBuilder::start((5, 'a'));
 
         b.kind(Ok(TokenKind::ParenLeft));
         let r = b.build();
@@ -193,7 +212,7 @@ mod tests {
 
     #[test]
     fn set_err_kind() {
-        let mut b = TokenBuilder::start(5);
+        let mut b = TokenBuilder::start((5, 'a'));
 
         b.kind(Err(TokenErrorKind::HashInvalid));
         let r = b.build();

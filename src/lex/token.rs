@@ -45,7 +45,7 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
         Self {
             start,
             scan,
-            builder: TokenBuilder::start(start.0),
+            builder: TokenBuilder::start(start),
         }
     }
 
@@ -69,13 +69,15 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
     fn hashtag(&mut self) {
         if let Some((idx, ch)) = self.scan.hashcode_non_delimiter() {
             match ch {
-                'f' => self.boolean(false, idx),
-                't' => self.boolean(true, idx),
+                'f' => self.boolean(false, idx + ch.len_utf8()),
+                't' => self.boolean(true, idx + ch.len_utf8()),
                 '\\' => {
-                    self.character(idx);
+                    self.character(idx + ch.len_utf8());
                 }
                 '(' => {
-                    self.builder.end(idx + 1).token(TokenKind::VectorOpen);
+                    self.builder
+                        .end(idx + ch.len_utf8())
+                        .token(TokenKind::VectorOpen);
                 }
                 _ => {
                     self.builder
@@ -88,10 +90,10 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
         }
     }
 
-    fn boolean(&mut self, val: bool, at: usize) {
+    fn boolean(&mut self, val: bool, next: usize) {
         let end = self.scan.end_of_token();
         // TODO: support getting lexeme from current position to end
-        let remaining = self.scan.lexeme(at + 1..end);
+        let remaining = self.scan.lexeme(next..end);
         self.builder.end(end).kind(
             if remaining.is_empty() || remaining == if val { "rue" } else { "alse" } {
                 Ok(TokenKind::Literal(Literal::Boolean(val)))
@@ -101,11 +103,11 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
         );
     }
 
-    fn character(&mut self, at: usize) {
+    fn character(&mut self, next: usize) {
         if let Some((idx, ch)) = self.scan.char() {
             if ch.is_ascii_whitespace() {
                 self.builder
-                    .end(idx + 1)
+                    .end(idx + ch.len_utf8())
                     .token(TokenKind::Literal(Literal::Character(ch)));
             } else {
                 let end = self.scan.end_of_token();
@@ -140,7 +142,7 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
             }
         } else {
             self.builder
-                .end(at + 1)
+                .end(next)
                 .token(TokenKind::Literal(Literal::Character('\n')));
         }
     }
