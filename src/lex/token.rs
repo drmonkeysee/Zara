@@ -64,8 +64,9 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
     }
 
     fn hashtag(&mut self) -> TokenExtractResult {
-        if let Some(ch) = self.scan.hashcode_non_delimiter() {
-            match ch {
+        self.scan
+            .hashcode_non_delimiter()
+            .map_or(Err(TokenErrorKind::HashUnterminated), |ch| match ch {
                 'f' => self.boolean(false),
                 't' => self.boolean(true),
                 '\\' => self.character(),
@@ -74,10 +75,7 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
                     self.scan.end_of_token();
                     Err(TokenErrorKind::HashInvalid)
                 }
-            }
-        } else {
-            Err(TokenErrorKind::HashUnterminated)
-        }
+            })
     }
 
     fn boolean(&mut self, val: bool) -> TokenExtractResult {
@@ -90,36 +88,26 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
     }
 
     fn character(&mut self) -> TokenExtractResult {
-        if let Some(ch) = self.scan.char() {
-            if ch.is_ascii_whitespace() {
-                Ok(TokenKind::Literal(Literal::Character(ch)))
-            } else {
-                let rest = self.scan.rest_of_token();
-                match ch {
-                    'x' => todo!(), //maybe_hex(),
-                    _ if rest.is_empty() => Ok(TokenKind::Literal(Literal::Character(ch))),
-                    _ => {
-                        if let Some(literal) = match (ch, rest) {
-                            ('a', "larm") => Some('\u{7}'),
-                            ('b', "ackspace") => Some('\u{8}'),
-                            ('d', "elete") => Some('\u{7f}'),
-                            ('e', "scape") => Some('\u{1b}'),
-                            ('n', "ewline") => Some('\n'),
-                            ('n', "ull") => Some('\0'),
-                            ('r', "eturn") => Some('\r'),
-                            ('s', "pace") => Some(' '),
-                            ('t', "ab") => Some('\t'),
-                            _ => None,
-                        } {
-                            Ok(TokenKind::Literal(Literal::Character(literal)))
-                        } else {
-                            Err(TokenErrorKind::ExpectedCharacter)
-                        }
-                    }
-                }
-            }
+        self.scan
+            .char()
+            .map_or(Ok(TokenKind::Literal(Literal::Character('\n'))), |ch| {
+                self.char_match(ch)
+            })
+    }
+
+    fn char_match(&mut self, ch: char) -> TokenExtractResult {
+        if ch.is_ascii_whitespace() {
+            Ok(TokenKind::Literal(Literal::Character(ch)))
         } else {
-            Ok(TokenKind::Literal(Literal::Character('\n')))
+            let rest = self.scan.rest_of_token();
+            match ch {
+                'x' => todo!(), //maybe_hex(),
+                _ if rest.is_empty() => Ok(TokenKind::Literal(Literal::Character(ch))),
+                _ => char_name(ch, rest)
+                    .map_or(Err(TokenErrorKind::ExpectedCharacter), |literal| {
+                        Ok(TokenKind::Literal(Literal::Character(literal)))
+                    }),
+            }
         }
     }
 
@@ -129,6 +117,21 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
         Err(TokenErrorKind::Unimplemented(String::from(
             self.scan.lexeme(start..end),
         )))
+    }
+}
+
+fn char_name(ch: char, rest: &str) -> Option<char> {
+    match (ch, rest) {
+        ('a', "larm") => Some('\u{7}'),
+        ('b', "ackspace") => Some('\u{8}'),
+        ('d', "elete") => Some('\u{7f}'),
+        ('e', "scape") => Some('\u{1b}'),
+        ('n', "ewline") => Some('\n'),
+        ('n', "ull") => Some('\0'),
+        ('r', "eturn") => Some('\r'),
+        ('s', "pace") => Some(' '),
+        ('t', "ab") => Some('\t'),
+        _ => None,
     }
 }
 
