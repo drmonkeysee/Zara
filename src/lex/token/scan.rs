@@ -21,23 +21,23 @@ impl<'a> Scanner<'a> {
             .find(|&(_, ch)| !ch.is_ascii_whitespace())
     }
 
-    pub(super) fn char(&mut self) -> Option<ScanItem> {
-        self.chars.next()
+    pub(super) fn char(&mut self) -> Option<char> {
+        self.chars.next().and_then(to_char_opt)
     }
 
-    pub(super) fn non_delimiter(&mut self) -> Option<ScanItem> {
-        self.chars.next_if(non_delimiter)
+    pub(super) fn non_delimiter(&mut self) -> Option<char> {
+        self.chars.next_if(non_delimiter).and_then(to_char_opt)
     }
 
-    pub(super) fn hashcode_non_delimiter(&mut self) -> Option<ScanItem> {
-        self.chars.next_if(non_hashcode_delimiter)
+    pub(super) fn hashcode_non_delimiter(&mut self) -> Option<char> {
+        self.chars
+            .next_if(non_hashcode_delimiter)
+            .and_then(to_char_opt)
     }
 
     pub(super) fn end_of_token(&mut self) -> usize {
         let end = self.end();
-        self.chars
-            .peek_find(non_delimiter)
-            .map_or(end, |&(idx, _)| idx)
+        self.chars.peek_find(non_delimiter).map_or(end, get_idx)
     }
 
     pub(super) fn rest_of_token(&mut self) -> &str {
@@ -52,7 +52,7 @@ impl<'a> Scanner<'a> {
 
     pub(super) fn pos(&mut self) -> usize {
         let end = self.end();
-        self.chars.peek().map_or(end, |&(idx, _)| idx)
+        self.chars.peek().map_or(end, get_idx)
     }
 
     fn end(&self) -> usize {
@@ -71,6 +71,14 @@ impl<P: Fn(&ScanItem) -> bool> PeekableExt<P> for ScanChars<'_> {
         while self.next_if(&predicate).is_some() { /* consume iterator */ }
         self.peek()
     }
+}
+
+fn get_idx(item: &ScanItem) -> usize {
+    item.0
+}
+
+fn to_char_opt(item: ScanItem) -> Option<char> {
+    Some(item.1)
 }
 
 fn non_delimiter(item: &ScanItem) -> bool {
@@ -156,7 +164,7 @@ mod tests {
             let r = s.char();
 
             assert!(r.is_some());
-            assert_eq!(r.unwrap(), (0, 'a'));
+            assert_eq!(r.unwrap(), 'a');
         }
 
         #[test]
@@ -166,7 +174,7 @@ mod tests {
             let r = s.char();
 
             assert!(r.is_some());
-            assert_eq!(r.unwrap(), (0, ' '));
+            assert_eq!(r.unwrap(), ' ');
         }
 
         #[test]
@@ -176,7 +184,7 @@ mod tests {
             let r = s.char();
 
             assert!(r.is_some());
-            assert_eq!(r.unwrap(), (0, '🦀'));
+            assert_eq!(r.unwrap(), '🦀');
         }
 
         #[test]
@@ -220,7 +228,7 @@ mod tests {
             let r = s.char();
 
             assert!(r.is_some());
-            assert_eq!(r.unwrap(), (11, 'y'));
+            assert_eq!(r.unwrap(), 'y');
         }
 
         #[test]
@@ -257,7 +265,7 @@ mod tests {
             let r = s.non_delimiter();
 
             assert!(r.is_some());
-            assert_eq!(r.unwrap(), (0, 'a'));
+            assert_eq!(r.unwrap(), 'a');
         }
 
         #[test]
@@ -266,11 +274,11 @@ mod tests {
 
             let r = s.non_delimiter();
             assert!(r.is_some());
-            assert_eq!(r.unwrap(), (0, 'a'));
+            assert_eq!(r.unwrap(), 'a');
 
             let r = s.non_delimiter();
             assert!(r.is_some());
-            assert_eq!(r.unwrap(), (1, 'b'));
+            assert_eq!(r.unwrap(), 'b');
 
             let r = s.non_delimiter();
             assert!(r.is_none());
@@ -281,7 +289,7 @@ mod tests {
 
             let r = s.char();
             assert!(r.is_some());
-            assert_eq!(r.unwrap(), (2, ')'));
+            assert_eq!(r.unwrap(), ')');
         }
 
         #[test]
@@ -300,7 +308,7 @@ mod tests {
             let r = s.hashcode_non_delimiter();
 
             assert!(r.is_some());
-            assert_eq!(r.unwrap(), (0, '('));
+            assert_eq!(r.unwrap(), '(');
         }
 
         #[test]
@@ -339,7 +347,7 @@ mod tests {
             let r = s.char();
 
             assert!(r.is_some());
-            assert_eq!(r.unwrap(), (4, ')'));
+            assert_eq!(r.unwrap(), ')');
         }
 
         #[test]
