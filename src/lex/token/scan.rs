@@ -22,17 +22,15 @@ impl<'a> Scanner<'a> {
     }
 
     pub(super) fn char(&mut self) -> Option<char> {
-        self.chars.next().and_then(to_char_opt)
+        self.chars.next().map(to_char)
     }
 
     pub(super) fn non_delimiter(&mut self) -> Option<char> {
-        self.chars.next_if(non_delimiter).and_then(to_char_opt)
+        self.chars.next_if(non_delimiter).map(to_char)
     }
 
     pub(super) fn hashcode_non_delimiter(&mut self) -> Option<char> {
-        self.chars
-            .next_if(non_hashcode_delimiter)
-            .and_then(to_char_opt)
+        self.chars.next_if(non_hashcode_delimiter).map(to_char)
     }
 
     pub(super) fn end_of_token(&mut self) -> usize {
@@ -77,8 +75,8 @@ fn get_idx(item: &ScanItem) -> usize {
     item.0
 }
 
-fn to_char_opt(item: ScanItem) -> Option<char> {
-    Some(item.1)
+fn to_char(item: ScanItem) -> char {
+    item.1
 }
 
 fn non_delimiter(item: &ScanItem) -> bool {
