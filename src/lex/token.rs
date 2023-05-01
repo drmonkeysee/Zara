@@ -52,13 +52,15 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
     }
 
     fn scan(&mut self) -> (TokenExtractResult, usize) {
-        let result = match self.start.1 {
-            '#' => self.hashtag(),
-            '(' => Ok(TokenKind::ParenLeft),
-            ')' => Ok(TokenKind::ParenRight),
-            _ => self.not_implemented(),
-        };
-        (result, self.scan.pos())
+        (
+            match self.start.1 {
+                '#' => self.hashtag(),
+                '(' => Ok(TokenKind::ParenLeft),
+                ')' => Ok(TokenKind::ParenRight),
+                _ => self.not_implemented(),
+            },
+            self.scan.pos(),
+        )
     }
 
     fn hashtag(&mut self) -> TokenExtractResult {
@@ -91,10 +93,10 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
 
     fn character(&mut self) -> TokenExtractResult {
         if let Some((_, ch)) = self.scan.char() {
-            let cur = self.scan.pos();
             if ch.is_ascii_whitespace() {
                 Ok(TokenKind::Literal(Literal::Character(ch)))
             } else {
+                let cur = self.scan.pos();
                 let end = self.scan.end_of_token();
                 let rest = self.scan.lexeme(cur..end);
                 match ch {

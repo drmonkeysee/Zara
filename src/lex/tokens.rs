@@ -15,7 +15,6 @@ pub(crate) enum TokenErrorKind {
     ExpectedCharacter,
     HashInvalid,
     HashUnterminated,
-    Undefined,
     Unimplemented(String),
 }
 
