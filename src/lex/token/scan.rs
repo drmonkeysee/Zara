@@ -40,6 +40,12 @@ impl<'a> Scanner<'a> {
             .map_or(end, |&(idx, _)| idx)
     }
 
+    pub(super) fn rest_of_token(&mut self) -> &str {
+        let cur = self.pos();
+        let end = self.end_of_token();
+        self.lexeme(cur..end)
+    }
+
     pub(super) fn lexeme(&self, range: Range<usize>) -> &str {
         self.textline.get(range).unwrap_or_default()
     }
@@ -358,6 +364,83 @@ mod tests {
             s.char();
 
             assert_eq!(s.end_of_token(), 5);
+        }
+
+        #[test]
+        fn rest_of_token_empty_string() {
+            let mut s = Scanner::new("");
+
+            let r = s.rest_of_token();
+
+            assert_eq!(r, "");
+        }
+
+        #[test]
+        fn rest_of_token_from_start() {
+            let mut s = Scanner::new("abc");
+
+            let r = s.rest_of_token();
+
+            assert_eq!(r, "abc");
+        }
+
+        #[test]
+        fn rest_of_token_to_whitespace() {
+            let mut s = Scanner::new("abc def");
+
+            let r = s.rest_of_token();
+
+            assert_eq!(r, "abc");
+        }
+
+        #[test]
+        fn rest_of_token_to_delimiter() {
+            let mut s = Scanner::new("abc(def)");
+
+            let r = s.rest_of_token();
+
+            assert_eq!(r, "abc");
+        }
+
+        #[test]
+        fn rest_of_token_from_current_position() {
+            let mut s = Scanner::new("abc(def)");
+
+            s.char();
+            let r = s.rest_of_token();
+
+            assert_eq!(r, "bc");
+        }
+
+        #[test]
+        fn rest_of_token_at_delimiter() {
+            let mut s = Scanner::new("abc(def)");
+
+            s.end_of_token();
+            let r = s.rest_of_token();
+
+            assert_eq!(r, "");
+        }
+
+        #[test]
+        fn rest_of_token_past_delimiter() {
+            let mut s = Scanner::new("abc(def)");
+
+            s.end_of_token();
+            s.char();
+            let r = s.rest_of_token();
+
+            assert_eq!(r, "def");
+        }
+
+        #[test]
+        fn rest_of_token_end_of_string() {
+            let mut s = Scanner::new("abc");
+
+            s.end_of_token();
+            let r = s.rest_of_token();
+
+            assert_eq!(r, "");
         }
 
         #[test]

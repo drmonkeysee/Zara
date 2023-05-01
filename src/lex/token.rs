@@ -81,9 +81,7 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
     }
 
     fn boolean(&mut self, val: bool) -> TokenExtractResult {
-        let cur = self.scan.pos();
-        let end = self.scan.end_of_token();
-        let rest = self.scan.lexeme(cur..end);
+        let rest = self.scan.rest_of_token();
         if rest.is_empty() || rest == if val { "rue" } else { "alse" } {
             Ok(TokenKind::Literal(Literal::Boolean(val)))
         } else {
@@ -96,9 +94,7 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
             if ch.is_ascii_whitespace() {
                 Ok(TokenKind::Literal(Literal::Character(ch)))
             } else {
-                let cur = self.scan.pos();
-                let end = self.scan.end_of_token();
-                let rest = self.scan.lexeme(cur..end);
+                let rest = self.scan.rest_of_token();
                 match ch {
                     'x' => todo!(), //maybe_hex(),
                     _ if rest.is_empty() => Ok(TokenKind::Literal(Literal::Character(ch))),
