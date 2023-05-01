@@ -1,8 +1,8 @@
-mod builder;
+mod extract;
 mod scan;
 
 use self::{
-    builder::{TokenExtract, TokenExtractResult},
+    extract::{TokenExtract, TokenExtractResult},
     scan::{ScanItem, Scanner},
 };
 use crate::{
