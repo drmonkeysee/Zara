@@ -15,14 +15,14 @@ impl<'a> Scanner<'a> {
         }
     }
 
-    pub(super) fn char(&mut self) -> Option<ScanItem> {
-        self.chars.next()
-    }
-
-    pub(super) fn skip_whitespace(&mut self) -> Option<ScanItem> {
+    pub(super) fn next_token(&mut self) -> Option<ScanItem> {
         self.chars
             .by_ref()
             .find(|&(_, ch)| !ch.is_ascii_whitespace())
+    }
+
+    pub(super) fn char(&mut self) -> Option<ScanItem> {
+        self.chars.next()
     }
 
     pub(super) fn non_delimiter(&mut self) -> Option<ScanItem> {
@@ -180,39 +180,39 @@ mod tests {
         }
 
         #[test]
-        fn skip_whitespace_empty_string() {
+        fn next_token_empty_string() {
             let mut s = Scanner::new("");
 
-            let r = s.skip_whitespace();
+            let r = s.next_token();
 
             assert!(r.is_none());
         }
 
         #[test]
-        fn skip_whitespace_first_char() {
+        fn next_token_first_char() {
             let mut s = Scanner::new("xyz");
 
-            let r = s.skip_whitespace();
+            let r = s.next_token();
 
             assert!(r.is_some());
             assert_eq!(r.unwrap(), (0, 'x'));
         }
 
         #[test]
-        fn skip_whitespace_skips_whitespace() {
+        fn next_token_skips_whitespace() {
             let mut s = Scanner::new("   \t  \r\n  xyz");
 
-            let r = s.skip_whitespace();
+            let r = s.next_token();
 
             assert!(r.is_some());
             assert_eq!(r.unwrap(), (10, 'x'));
         }
 
         #[test]
-        fn advances_properly_after_skip_whitespace_finds_first_char() {
+        fn advances_properly_after_next_token_finds_first_char() {
             let mut s = Scanner::new("   \t  \r\n  xyz");
 
-            let r = s.skip_whitespace();
+            let r = s.next_token();
 
             assert!(r.is_some());
             assert_eq!(r.unwrap(), (10, 'x'));
@@ -224,10 +224,10 @@ mod tests {
         }
 
         #[test]
-        fn skip_whitespace_all_whitespace() {
+        fn next_token_all_whitespace() {
             let mut s = Scanner::new("   \t  \r\n");
 
-            let r = s.skip_whitespace();
+            let r = s.next_token();
 
             assert!(r.is_none());
         }

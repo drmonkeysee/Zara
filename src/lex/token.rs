@@ -27,7 +27,7 @@ impl<'a> Iterator for TokenStream<'a> {
 
     fn next(&mut self) -> Option<Self::Item> {
         self.scan
-            .skip_whitespace()
+            .next_token()
             .map(|item| Tokenizer::start(item, &mut self.scan).extract().build())
     }
 }
