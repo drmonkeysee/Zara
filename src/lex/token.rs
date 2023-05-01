@@ -345,14 +345,15 @@ mod tests {
             let mut s = Scanner::new("");
             let t = Tokenizer::start((0, 'a'), &mut s);
 
-            let r = t.extract().build();
+            let r = t.extract();
 
             assert!(matches!(
                 r,
-                Err(TokenError {
-                    kind: TokenErrorKind::Unimplemented(txt),
-                    span: Range { start: 0, end: 0 }
-                }) if txt == ""
+                TokenExtract {
+                    start: 0,
+                    end: 0,
+                    result: Err(TokenErrorKind::Unimplemented(txt)),
+                } if txt == ""
             ));
         }
 
@@ -361,14 +362,15 @@ mod tests {
             let mut s = Scanner::new("abc");
             let t = Tokenizer::start(s.char().unwrap(), &mut s);
 
-            let r = t.extract().build();
+            let r = t.extract();
 
             assert!(matches!(
                 r,
-                Err(TokenError {
-                    kind: TokenErrorKind::Unimplemented(txt),
-                    span: Range { start: 0, end: 3 }
-                }) if txt == "abc"
+                TokenExtract {
+                    start: 0,
+                    end: 3,
+                    result: Err(TokenErrorKind::Unimplemented(txt)),
+                } if txt == "abc"
             ));
         }
 
@@ -377,14 +379,15 @@ mod tests {
             let mut s = Scanner::new("abc;");
             let t = Tokenizer::start(s.char().unwrap(), &mut s);
 
-            let r = t.extract().build();
+            let r = t.extract();
 
             assert!(matches!(
                 r,
-                Err(TokenError {
-                    kind: TokenErrorKind::Unimplemented(txt),
-                    span: Range { start: 0, end: 3 }
-                }) if txt == "abc"
+                TokenExtract {
+                    start: 0,
+                    end: 3,
+                    result: Err(TokenErrorKind::Unimplemented(txt)),
+                } if txt == "abc"
             ));
         }
 
@@ -393,14 +396,15 @@ mod tests {
             let mut s = Scanner::new("(");
             let t = Tokenizer::start(s.char().unwrap(), &mut s);
 
-            let r = t.extract().build();
+            let r = t.extract();
 
             assert!(matches!(
                 r,
-                Ok(Token {
-                    kind: TokenKind::ParenLeft,
-                    span: Range { start: 0, end: 1 }
-                })
+                TokenExtract {
+                    start: 0,
+                    end: 1,
+                    result: Ok(TokenKind::ParenLeft),
+                }
             ));
         }
 
@@ -409,14 +413,15 @@ mod tests {
             let mut s = Scanner::new(")");
             let t = Tokenizer::start(s.char().unwrap(), &mut s);
 
-            let r = t.extract().build();
+            let r = t.extract();
 
             assert!(matches!(
                 r,
-                Ok(Token {
-                    kind: TokenKind::ParenRight,
-                    span: Range { start: 0, end: 1 }
-                })
+                TokenExtract {
+                    start: 0,
+                    end: 1,
+                    result: Ok(TokenKind::ParenRight),
+                }
             ));
         }
 
@@ -425,14 +430,15 @@ mod tests {
             let mut s = Scanner::new("(  ");
             let t = Tokenizer::start(s.char().unwrap(), &mut s);
 
-            let r = t.extract().build();
+            let r = t.extract();
 
             assert!(matches!(
                 r,
-                Ok(Token {
-                    kind: TokenKind::ParenLeft,
-                    span: Range { start: 0, end: 1 }
-                })
+                TokenExtract {
+                    start: 0,
+                    end: 1,
+                    result: Ok(TokenKind::ParenLeft),
+                }
             ));
         }
 
@@ -441,14 +447,15 @@ mod tests {
             let mut s = Scanner::new("()");
             let t = Tokenizer::start(s.char().unwrap(), &mut s);
 
-            let r = t.extract().build();
+            let r = t.extract();
 
             assert!(matches!(
                 r,
-                Ok(Token {
-                    kind: TokenKind::ParenLeft,
-                    span: Range { start: 0, end: 1 }
-                })
+                TokenExtract {
+                    start: 0,
+                    end: 1,
+                    result: Ok(TokenKind::ParenLeft),
+                }
             ));
         }
 
@@ -460,14 +467,15 @@ mod tests {
                 let mut s = Scanner::new("#");
                 let t = Tokenizer::start(s.char().unwrap(), &mut s);
 
-                let r = t.extract().build();
+                let r = t.extract();
 
                 assert!(matches!(
                     r,
-                    Err(TokenError {
-                        kind: TokenErrorKind::HashUnterminated,
-                        span: Range { start: 0, end: 1 }
-                    })
+                    TokenExtract {
+                        start: 0,
+                        end: 1,
+                        result: Err(TokenErrorKind::HashUnterminated),
+                    }
                 ));
             }
 
@@ -476,14 +484,15 @@ mod tests {
                 let mut s = Scanner::new("#  ");
                 let t = Tokenizer::start(s.char().unwrap(), &mut s);
 
-                let r = t.extract().build();
+                let r = t.extract();
 
                 assert!(matches!(
                     r,
-                    Err(TokenError {
-                        kind: TokenErrorKind::HashUnterminated,
-                        span: Range { start: 0, end: 1 }
-                    })
+                    TokenExtract {
+                        start: 0,
+                        end: 1,
+                        result: Err(TokenErrorKind::HashUnterminated),
+                    }
                 ));
             }
 
@@ -492,14 +501,15 @@ mod tests {
                 let mut s = Scanner::new("#)");
                 let t = Tokenizer::start(s.char().unwrap(), &mut s);
 
-                let r = t.extract().build();
+                let r = t.extract();
 
                 assert!(matches!(
                     r,
-                    Err(TokenError {
-                        kind: TokenErrorKind::HashUnterminated,
-                        span: Range { start: 0, end: 1 }
-                    })
+                    TokenExtract {
+                        start: 0,
+                        end: 1,
+                        result: Err(TokenErrorKind::HashUnterminated),
+                    }
                 ));
             }
 
@@ -508,14 +518,15 @@ mod tests {
                 let mut s = Scanner::new("#g");
                 let t = Tokenizer::start(s.char().unwrap(), &mut s);
 
-                let r = t.extract().build();
+                let r = t.extract();
 
                 assert!(matches!(
                     r,
-                    Err(TokenError {
-                        kind: TokenErrorKind::HashInvalid,
-                        span: Range { start: 0, end: 2 }
-                    })
+                    TokenExtract {
+                        start: 0,
+                        end: 2,
+                        result: Err(TokenErrorKind::HashInvalid),
+                    }
                 ));
             }
 
@@ -524,15 +535,15 @@ mod tests {
                 let mut s = Scanner::new("#not_a_valid_hashtag");
                 let t = Tokenizer::start(s.char().unwrap(), &mut s);
 
-                let r = t.extract().build();
+                let r = t.extract();
 
-                dbg!(&r);
                 assert!(matches!(
                     r,
-                    Err(TokenError {
-                        kind: TokenErrorKind::HashInvalid,
-                        span: Range { start: 0, end: 20 }
-                    })
+                    TokenExtract {
+                        start: 0,
+                        end: 20,
+                        result: Err(TokenErrorKind::HashInvalid),
+                    }
                 ));
             }
 
@@ -541,14 +552,15 @@ mod tests {
                 let mut s = Scanner::new("#(");
                 let t = Tokenizer::start(s.char().unwrap(), &mut s);
 
-                let r = t.extract().build();
+                let r = t.extract();
 
                 assert!(matches!(
                     r,
-                    Ok(Token {
-                        kind: TokenKind::VectorOpen,
-                        span: Range { start: 0, end: 2 }
-                    })
+                    TokenExtract {
+                        start: 0,
+                        end: 2,
+                        result: Ok(TokenKind::VectorOpen),
+                    }
                 ));
             }
 
@@ -557,14 +569,15 @@ mod tests {
                 let mut s = Scanner::new("#t");
                 let t = Tokenizer::start(s.char().unwrap(), &mut s);
 
-                let r = t.extract().build();
+                let r = t.extract();
 
                 assert!(matches!(
                     r,
-                    Ok(Token {
-                        kind: TokenKind::Literal(Literal::Boolean(true)),
-                        span: Range { start: 0, end: 2 }
-                    })
+                    TokenExtract {
+                        start: 0,
+                        end: 2,
+                        result: Ok(TokenKind::Literal(Literal::Boolean(true))),
+                    }
                 ));
             }
 
@@ -573,14 +586,15 @@ mod tests {
                 let mut s = Scanner::new("#true");
                 let t = Tokenizer::start(s.char().unwrap(), &mut s);
 
-                let r = t.extract().build();
+                let r = t.extract();
 
                 assert!(matches!(
                     r,
-                    Ok(Token {
-                        kind: TokenKind::Literal(Literal::Boolean(true)),
-                        span: Range { start: 0, end: 5 }
-                    })
+                    TokenExtract {
+                        start: 0,
+                        end: 5,
+                        result: Ok(TokenKind::Literal(Literal::Boolean(true))),
+                    }
                 ));
             }
 
@@ -589,14 +603,15 @@ mod tests {
                 let mut s = Scanner::new("#trueasd");
                 let t = Tokenizer::start(s.char().unwrap(), &mut s);
 
-                let r = t.extract().build();
+                let r = t.extract();
 
                 assert!(matches!(
                     r,
-                    Err(TokenError {
-                        kind: TokenErrorKind::ExpectedBoolean(true),
-                        span: Range { start: 0, end: 8 }
-                    })
+                    TokenExtract {
+                        start: 0,
+                        end: 8,
+                        result: Err(TokenErrorKind::ExpectedBoolean(true)),
+                    }
                 ));
             }
 
@@ -605,14 +620,15 @@ mod tests {
                 let mut s = Scanner::new("#f");
                 let t = Tokenizer::start(s.char().unwrap(), &mut s);
 
-                let r = t.extract().build();
+                let r = t.extract();
 
                 assert!(matches!(
                     r,
-                    Ok(Token {
-                        kind: TokenKind::Literal(Literal::Boolean(false)),
-                        span: Range { start: 0, end: 2 }
-                    })
+                    TokenExtract {
+                        start: 0,
+                        end: 2,
+                        result: Ok(TokenKind::Literal(Literal::Boolean(false))),
+                    }
                 ));
             }
 
@@ -621,14 +637,15 @@ mod tests {
                 let mut s = Scanner::new("#false");
                 let t = Tokenizer::start(s.char().unwrap(), &mut s);
 
-                let r = t.extract().build();
+                let r = t.extract();
 
                 assert!(matches!(
                     r,
-                    Ok(Token {
-                        kind: TokenKind::Literal(Literal::Boolean(false)),
-                        span: Range { start: 0, end: 6 }
-                    })
+                    TokenExtract {
+                        start: 0,
+                        end: 6,
+                        result: Ok(TokenKind::Literal(Literal::Boolean(false))),
+                    }
                 ));
             }
 
@@ -637,14 +654,15 @@ mod tests {
                 let mut s = Scanner::new("#fals");
                 let t = Tokenizer::start(s.char().unwrap(), &mut s);
 
-                let r = t.extract().build();
+                let r = t.extract();
 
                 assert!(matches!(
                     r,
-                    Err(TokenError {
-                        kind: TokenErrorKind::ExpectedBoolean(false),
-                        span: Range { start: 0, end: 5 }
-                    })
+                    TokenExtract {
+                        start: 0,
+                        end: 5,
+                        result: Err(TokenErrorKind::ExpectedBoolean(false)),
+                    }
                 ));
             }
         }
@@ -657,14 +675,15 @@ mod tests {
                 let mut s = Scanner::new("#\\a");
                 let t = Tokenizer::start(s.char().unwrap(), &mut s);
 
-                let r = t.extract().build();
+                let r = t.extract();
 
                 assert!(matches!(
                     r,
-                    Ok(Token {
-                        kind: TokenKind::Literal(Literal::Character('a')),
-                        span: Range { start: 0, end: 3 }
-                    })
+                    TokenExtract {
+                        start: 0,
+                        end: 3,
+                        result: Ok(TokenKind::Literal(Literal::Character('a'))),
+                    }
                 ));
             }
 
@@ -673,14 +692,15 @@ mod tests {
                 let mut s = Scanner::new("#\\λ");
                 let t = Tokenizer::start(s.char().unwrap(), &mut s);
 
-                let r = t.extract().build();
+                let r = t.extract();
 
                 assert!(matches!(
                     r,
-                    Ok(Token {
-                        kind: TokenKind::Literal(Literal::Character('λ')),
-                        span: Range { start: 0, end: 4 }
-                    })
+                    TokenExtract {
+                        start: 0,
+                        end: 4,
+                        result: Ok(TokenKind::Literal(Literal::Character('λ'))),
+                    }
                 ));
             }
 
@@ -689,14 +709,15 @@ mod tests {
                 let mut s = Scanner::new("#\\🦀");
                 let t = Tokenizer::start(s.char().unwrap(), &mut s);
 
-                let r = t.extract().build();
+                let r = t.extract();
 
                 assert!(matches!(
                     r,
-                    Ok(Token {
-                        kind: TokenKind::Literal(Literal::Character('🦀')),
-                        span: Range { start: 0, end: 6 }
-                    })
+                    TokenExtract {
+                        start: 0,
+                        end: 6,
+                        result: Ok(TokenKind::Literal(Literal::Character('🦀'))),
+                    }
                 ));
             }
 
@@ -710,14 +731,15 @@ mod tests {
                 let mut s = Scanner::new("#\\ ");
                 let t = Tokenizer::start(s.char().unwrap(), &mut s);
 
-                let r = t.extract().build();
+                let r = t.extract();
 
                 assert!(matches!(
                     r,
-                    Ok(Token {
-                        kind: TokenKind::Literal(Literal::Character(' ')),
-                        span: Range { start: 0, end: 3 }
-                    })
+                    TokenExtract {
+                        start: 0,
+                        end: 3,
+                        result: Ok(TokenKind::Literal(Literal::Character(' '))),
+                    }
                 ));
             }
 
@@ -726,14 +748,15 @@ mod tests {
                 let mut s = Scanner::new("#\\\t");
                 let t = Tokenizer::start(s.char().unwrap(), &mut s);
 
-                let r = t.extract().build();
+                let r = t.extract();
 
                 assert!(matches!(
                     r,
-                    Ok(Token {
-                        kind: TokenKind::Literal(Literal::Character('\t')),
-                        span: Range { start: 0, end: 3 }
-                    })
+                    TokenExtract {
+                        start: 0,
+                        end: 3,
+                        result: Ok(TokenKind::Literal(Literal::Character('\t'))),
+                    }
                 ));
             }
 
@@ -757,14 +780,15 @@ mod tests {
                 let mut s = Scanner::new("#\\ b");
                 let t = Tokenizer::start(s.char().unwrap(), &mut s);
 
-                let r = t.extract().build();
+                let r = t.extract();
 
                 assert!(matches!(
                     r,
-                    Ok(Token {
-                        kind: TokenKind::Literal(Literal::Character(' ')),
-                        span: Range { start: 0, end: 3 }
-                    })
+                    TokenExtract {
+                        start: 0,
+                        end: 3,
+                        result: Ok(TokenKind::Literal(Literal::Character(' '))),
+                    }
                 ));
             }
 
@@ -773,14 +797,15 @@ mod tests {
                 let mut s = Scanner::new("#\\ab");
                 let t = Tokenizer::start(s.char().unwrap(), &mut s);
 
-                let r = t.extract().build();
+                let r = t.extract();
 
                 assert!(matches!(
                     r,
-                    Err(TokenError {
-                        kind: TokenErrorKind::ExpectedCharacter,
-                        span: Range { start: 0, end: 4 }
-                    })
+                    TokenExtract {
+                        start: 0,
+                        end: 4,
+                        result: Err(TokenErrorKind::ExpectedCharacter),
+                    }
                 ));
             }
 
@@ -789,14 +814,15 @@ mod tests {
                 let mut s = Scanner::new("#\\🦀b");
                 let t = Tokenizer::start(s.char().unwrap(), &mut s);
 
-                let r = t.extract().build();
+                let r = t.extract();
 
                 assert!(matches!(
                     r,
-                    Err(TokenError {
-                        kind: TokenErrorKind::ExpectedCharacter,
-                        span: Range { start: 0, end: 7 }
-                    })
+                    TokenExtract {
+                        start: 0,
+                        end: 7,
+                        result: Err(TokenErrorKind::ExpectedCharacter),
+                    }
                 ));
             }
 
@@ -805,14 +831,15 @@ mod tests {
                 let mut s = Scanner::new("#\\a(");
                 let t = Tokenizer::start(s.char().unwrap(), &mut s);
 
-                let r = t.extract().build();
+                let r = t.extract();
 
                 assert!(matches!(
                     r,
-                    Ok(Token {
-                        kind: TokenKind::Literal(Literal::Character('a')),
-                        span: Range { start: 0, end: 3 }
-                    })
+                    TokenExtract {
+                        start: 0,
+                        end: 3,
+                        result: Ok(TokenKind::Literal(Literal::Character('a'))),
+                    }
                 ));
             }
 
@@ -822,15 +849,16 @@ mod tests {
                     let mut s = Scanner::new(&input);
                     let t = Tokenizer::start(s.char().unwrap(), &mut s);
 
-                    let r = t.extract().build();
+                    let r = t.extract();
 
                     assert!(
                         matches!(
                             r,
-                            Ok(Token {
-                                kind: TokenKind::Literal(Literal::Character(ch)),
-                                span: Range { start: 0, end }
-                            }) if ch == ex && end == input.len()
+                            TokenExtract {
+                                start: 0,
+                                end,
+                                result: Ok(TokenKind::Literal(Literal::Character(ch))),
+                            } if ch == ex && end == input.len()
                         ),
                         "Unexpected match for character input ({inp}, {ex})"
                     );
