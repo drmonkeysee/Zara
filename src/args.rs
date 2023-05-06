@@ -62,7 +62,7 @@ fn version() {
 fn app_title() -> String {
     let mut title = String::from(env!("CARGO_PKG_NAME"));
     if let Some(t) = title.get_mut(0..1) {
-        t.make_ascii_uppercase()
+        t.make_ascii_uppercase();
     }
     title
 }
