@@ -83,7 +83,7 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
         if rest.is_empty() || rest == if val { "rue" } else { "alse" } {
             Ok(TokenKind::Literal(Literal::Boolean(val)))
         } else {
-            Err(TokenErrorKind::ExpectedBoolean(val))
+            Err(TokenErrorKind::BooleanExpected(val))
         }
     }
 
@@ -119,9 +119,9 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
 fn char_hex(rest: &str) -> TokenExtractResult {
     // NOTE: don't allow leading sign, which u32::from_str_radix accepts
     if rest.starts_with('+') {
-        Err(TokenErrorKind::ExpectedCharacterHex)
+        Err(TokenErrorKind::CharacterExpectedHex)
     } else {
-        u32::from_str_radix(rest, 16).map_or(Err(TokenErrorKind::ExpectedCharacterHex), |hex| {
+        u32::from_str_radix(rest, 16).map_or(Err(TokenErrorKind::CharacterExpectedHex), |hex| {
             char::from_u32(hex).map_or(Err(TokenErrorKind::CharacterInvalidHex), |ch| {
                 Ok(TokenKind::Literal(Literal::Character(ch)))
             })
@@ -142,7 +142,7 @@ fn char_name(ch: char, rest: &str) -> TokenExtractResult {
         ('t', "ab") => Some('\t'),
         _ => None,
     }
-    .map_or(Err(TokenErrorKind::ExpectedCharacter), |literal| {
+    .map_or(Err(TokenErrorKind::CharacterExpected), |literal| {
         Ok(TokenKind::Literal(Literal::Character(literal)))
     })
 }
@@ -283,7 +283,7 @@ mod tests {
             assert!(matches!(
                 r[1],
                 Err(TokenError {
-                    kind: TokenErrorKind::ExpectedBoolean(true),
+                    kind: TokenErrorKind::BooleanExpected(true),
                     span: Range { start: 1, end: 5 }
                 })
             ));
@@ -623,7 +623,7 @@ mod tests {
                     TokenExtract {
                         start: 0,
                         end: 8,
-                        result: Err(TokenErrorKind::ExpectedBoolean(true)),
+                        result: Err(TokenErrorKind::BooleanExpected(true)),
                     }
                 ));
             }
@@ -674,7 +674,7 @@ mod tests {
                     TokenExtract {
                         start: 0,
                         end: 5,
-                        result: Err(TokenErrorKind::ExpectedBoolean(false)),
+                        result: Err(TokenErrorKind::BooleanExpected(false)),
                     }
                 ));
             }
@@ -817,7 +817,7 @@ mod tests {
                     TokenExtract {
                         start: 0,
                         end: 4,
-                        result: Err(TokenErrorKind::ExpectedCharacter),
+                        result: Err(TokenErrorKind::CharacterExpected),
                     }
                 ));
             }
@@ -834,7 +834,7 @@ mod tests {
                     TokenExtract {
                         start: 0,
                         end: 7,
-                        result: Err(TokenErrorKind::ExpectedCharacter),
+                        result: Err(TokenErrorKind::CharacterExpected),
                     }
                 ));
             }
@@ -946,7 +946,7 @@ mod tests {
                     TokenExtract {
                         start: 0,
                         end: 5,
-                        result: Err(TokenErrorKind::ExpectedCharacterHex),
+                        result: Err(TokenErrorKind::CharacterExpectedHex),
                     }
                 ));
             }
@@ -980,7 +980,7 @@ mod tests {
                     TokenExtract {
                         start: 0,
                         end: 10,
-                        result: Err(TokenErrorKind::ExpectedCharacterHex),
+                        result: Err(TokenErrorKind::CharacterExpectedHex),
                     }
                 ));
             }

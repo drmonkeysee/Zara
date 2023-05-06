@@ -11,9 +11,9 @@ pub(crate) enum TokenKind {
 
 #[derive(Debug)]
 pub(crate) enum TokenErrorKind {
-    ExpectedBoolean(bool),
-    ExpectedCharacter,
-    ExpectedCharacterHex,
+    BooleanExpected(bool),
+    CharacterExpected,
+    CharacterExpectedHex,
     CharacterInvalidHex,
     HashInvalid,
     HashUnterminated,
