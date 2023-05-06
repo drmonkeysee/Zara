@@ -91,24 +91,20 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
         self.scan
             .char()
             .map_or(Ok(TokenKind::Literal(Literal::Character('\n'))), |ch| {
-                self.char_match(ch)
+                if ch.is_ascii_whitespace() {
+                    Ok(TokenKind::Literal(Literal::Character(ch)))
+                } else {
+                    let rest = self.scan.rest_of_token();
+                    if rest.is_empty() {
+                        Ok(TokenKind::Literal(Literal::Character(ch)))
+                    } else {
+                        match ch {
+                            'x' => char_hex(rest),
+                            _ => char_name(ch, rest),
+                        }
+                    }
+                }
             })
-    }
-
-    fn char_match(&mut self, ch: char) -> TokenExtractResult {
-        if ch.is_ascii_whitespace() {
-            Ok(TokenKind::Literal(Literal::Character(ch)))
-        } else {
-            let rest = self.scan.rest_of_token();
-            match ch {
-                'x' => todo!(), //maybe_hex(),
-                _ if rest.is_empty() => Ok(TokenKind::Literal(Literal::Character(ch))),
-                _ => char_name(ch, rest)
-                    .map_or(Err(TokenErrorKind::ExpectedCharacter), |literal| {
-                        Ok(TokenKind::Literal(Literal::Character(literal)))
-                    }),
-            }
-        }
     }
 
     fn not_implemented(&mut self) -> TokenExtractResult {
@@ -120,7 +116,20 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
     }
 }
 
-fn char_name(ch: char, rest: &str) -> Option<char> {
+fn char_hex(rest: &str) -> TokenExtractResult {
+    // NOTE: don't allow leading sign, which u32::from_str_radix accepts
+    if rest.starts_with('+') {
+        Err(TokenErrorKind::ExpectedCharacterHex)
+    } else {
+        u32::from_str_radix(rest, 16).map_or(Err(TokenErrorKind::ExpectedCharacterHex), |hex| {
+            char::from_u32(hex).map_or(Err(TokenErrorKind::CharacterInvalidHex), |ch| {
+                Ok(TokenKind::Literal(Literal::Character(ch)))
+            })
+        })
+    }
+}
+
+fn char_name(ch: char, rest: &str) -> TokenExtractResult {
     match (ch, rest) {
         ('a', "larm") => Some('\u{7}'),
         ('b', "ackspace") => Some('\u{8}'),
@@ -133,6 +142,9 @@ fn char_name(ch: char, rest: &str) -> Option<char> {
         ('t', "ab") => Some('\t'),
         _ => None,
     }
+    .map_or(Err(TokenErrorKind::ExpectedCharacter), |literal| {
+        Ok(TokenKind::Literal(Literal::Character(literal)))
+    })
 }
 
 #[cfg(test)]
@@ -840,6 +852,135 @@ mod tests {
                         start: 0,
                         end: 3,
                         result: Ok(TokenKind::Literal(Literal::Character('a'))),
+                    }
+                ));
+            }
+
+            #[test]
+            fn letter_x_is_not_hex() {
+                let mut s = Scanner::new("#\\x");
+                let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
+
+                let r = t.extract();
+
+                assert!(matches!(
+                    r,
+                    TokenExtract {
+                        start: 0,
+                        end: 3,
+                        result: Ok(TokenKind::Literal(Literal::Character('x'))),
+                    }
+                ));
+            }
+
+            #[test]
+            fn hex_zero() {
+                let mut s = Scanner::new("#\\x0");
+                let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
+
+                let r = t.extract();
+
+                assert!(matches!(
+                    r,
+                    TokenExtract {
+                        start: 0,
+                        end: 4,
+                        result: Ok(TokenKind::Literal(Literal::Character('\0'))),
+                    }
+                ));
+            }
+
+            #[test]
+            fn hex_lowercase() {
+                let mut s = Scanner::new("#\\xa");
+                let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
+
+                let r = t.extract();
+
+                assert!(matches!(
+                    r,
+                    TokenExtract {
+                        start: 0,
+                        end: 4,
+                        result: Ok(TokenKind::Literal(Literal::Character('\n'))),
+                    }
+                ));
+            }
+
+            #[test]
+            fn hex_uppercase() {
+                let mut s = Scanner::new("#\\xA");
+                let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
+
+                let r = t.extract();
+
+                assert!(matches!(
+                    r,
+                    TokenExtract {
+                        start: 0,
+                        end: 4,
+                        result: Ok(TokenKind::Literal(Literal::Character('\n'))),
+                    }
+                ));
+            }
+
+            #[test]
+            fn hex_multi_digits() {
+                check_character_list(&[
+                    ("x45", 'E'),
+                    ("x39b", 'Λ'),
+                    ("x16A1", 'ᚡ'),
+                    ("x1F64A", '🙊'),
+                ]);
+            }
+
+            #[test]
+            fn hex_sign_invalid() {
+                let mut s = Scanner::new("#\\x+A");
+                let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
+
+                let r = t.extract();
+
+                assert!(matches!(
+                    r,
+                    TokenExtract {
+                        start: 0,
+                        end: 5,
+                        result: Err(TokenErrorKind::ExpectedCharacterHex),
+                    }
+                ));
+            }
+
+            #[test]
+            fn hex_too_large() {
+                let mut s = Scanner::new("#\\xdeadbeef");
+                let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
+
+                let r = t.extract();
+
+                assert!(matches!(
+                    r,
+                    TokenExtract {
+                        start: 0,
+                        end: 11,
+                        result: Err(TokenErrorKind::CharacterInvalidHex),
+                    }
+                ));
+            }
+
+            #[test]
+            fn hex_malformed() {
+                let mut s = Scanner::new("#\\x124nope");
+                let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
+
+                let r = t.extract();
+
+                assert!(matches!(
+                    r,
+                    TokenExtract {
+                        start: 0,
+                        end: 10,
+                        result: Err(TokenErrorKind::ExpectedCharacterHex),
                     }
                 ));
             }
