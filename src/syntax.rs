@@ -1,3 +1,5 @@
+mod exprs;
+
 use crate::LexerResult;
 
 // TODO: can tokens be taken by value later
