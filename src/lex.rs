@@ -1,10 +1,8 @@
 mod token;
-mod tokens;
+pub(crate) mod tokens;
 
-use self::{
-    token::TokenStream,
-    tokens::{Token, TokenError},
-};
+pub(crate) use self::tokens::Token;
+use self::{token::TokenStream, tokens::TokenError};
 
 pub(super) fn tokenize(textline: &str) -> LexerResult {
     let mut errors: Vec<TokenError> = Vec::new();

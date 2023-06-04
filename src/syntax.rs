@@ -1,8 +1,13 @@
 mod exprs;
 
-use crate::LexerResult;
+use crate::lex::Token;
 
-// TODO: can tokens be taken by value later
-pub(super) fn parse(tokens: &LexerResult, textline: &str) {
-    todo!("parse token stream");
+pub(super) fn parse(tokens: impl Iterator<Item = Token>) -> ParserResult {
+    eprintln!("called parser");
+    Ok(())
 }
+
+#[derive(Debug)]
+pub(super) struct ParserFailure;
+
+pub(super) type ParserResult = Result<(), ParserFailure>;
