@@ -27,5 +27,5 @@ pub(crate) struct TokenType<T> {
 }
 
 pub(crate) type Token = TokenType<TokenKind>;
-pub(crate) type TokenError = TokenType<TokenErrorKind>;
-pub(crate) type TokenResult = Result<Token, TokenError>;
+pub(super) type TokenError = TokenType<TokenErrorKind>;
+pub(super) type TokenResult = Result<Token, TokenError>;

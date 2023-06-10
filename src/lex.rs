@@ -1,7 +1,7 @@
 mod token;
-pub(crate) mod tokens;
+pub(super) mod tokens;
 
-pub(crate) use self::tokens::Token;
+pub(super) use self::tokens::Token;
 use self::{token::TokenStream, tokens::TokenError};
 
 pub(super) fn tokenize(textline: &str) -> LexerResult {
