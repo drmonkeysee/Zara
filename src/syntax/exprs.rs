@@ -1,5 +1,6 @@
 use crate::literal::Literal;
 
-enum Expression {
+#[derive(Debug)]
+pub(crate) enum Expression {
     Literal(Literal),
 }
