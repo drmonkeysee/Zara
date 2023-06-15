@@ -2,17 +2,36 @@ mod lex;
 mod literal;
 mod syntax;
 
-use self::{lex::LexerResult, syntax::ParserResult};
+use self::{
+    lex::{LexerFailure, LexerResult},
+    syntax::{Expression, ParserFailure, ParserResult},
+};
 
-pub fn eval(textline: String) -> Evaluation {
-    let lex_result = lex::tokenize(&textline);
-    let output = if lex_result.is_err() {
-        OutputKind::Lexer(lex_result)
-    } else {
-        OutputKind::Parser(syntax::parse(lex_result.unwrap().into_iter()))
-    };
-    Evaluation { textline, output }
+pub fn eval(textline: String) -> EvalResult {
+    let token_stream = lex::tokenize(&textline);
+    let expressions = syntax::parse(token_stream?.into_iter());
+    Ok(expressions?.pop().unwrap())
 }
+
+#[derive(Debug)]
+pub enum EvalError {
+    Lexer(LexerFailure),
+    Parser(ParserFailure),
+}
+
+impl From<LexerFailure> for EvalError {
+    fn from(value: LexerFailure) -> Self {
+        Self::Lexer(value)
+    }
+}
+
+impl From<ParserFailure> for EvalError {
+    fn from(value: ParserFailure) -> Self {
+        Self::Parser(value)
+    }
+}
+
+type EvalResult = Result<Expression, EvalError>;
 
 #[derive(Debug)]
 pub struct Evaluation {

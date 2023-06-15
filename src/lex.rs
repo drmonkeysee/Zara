@@ -12,11 +12,11 @@ pub(super) fn tokenize(textline: &str) -> LexerResult {
     if errors.is_empty() {
         Ok(tokens)
     } else {
-        Err(LexerFailure(errors, tokens))
+        Err(LexerFailure(errors, String::from(textline)))
     }
 }
 
 #[derive(Debug)]
-pub(super) struct LexerFailure(Vec<TokenError>, Vec<Token>);
+pub struct LexerFailure(Vec<TokenError>, String);
 
 pub(super) type LexerResult = Result<Vec<Token>, LexerFailure>;

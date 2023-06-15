@@ -1,6 +1,6 @@
 mod exprs;
 
-use self::exprs::Expression;
+pub(super) use self::exprs::Expression;
 use crate::lex::Token;
 
 pub(super) fn parse(tokens: impl Iterator<Item = Token>) -> ParserResult {
@@ -8,6 +8,6 @@ pub(super) fn parse(tokens: impl Iterator<Item = Token>) -> ParserResult {
 }
 
 #[derive(Debug)]
-pub(super) struct ParserFailure;
+pub struct ParserFailure;
 
 pub(super) type ParserResult = Result<Vec<Expression>, ParserFailure>;

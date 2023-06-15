@@ -1,5 +1,5 @@
 #[derive(Debug)]
-pub(super) enum Literal {
+pub enum Literal {
     Boolean(bool),
     Character(char),
 }
