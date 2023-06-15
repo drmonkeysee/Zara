@@ -8,9 +8,9 @@ use self::{
 };
 
 pub fn eval(textline: String) -> EvalResult {
-    let token_stream = lex::tokenize(&textline);
-    let expressions = syntax::parse(token_stream?.into_iter());
-    Ok(expressions?.pop().unwrap())
+    Ok(syntax::parse(lex::tokenize(&textline)?.into_iter())?
+        .pop()
+        .unwrap())
 }
 
 #[derive(Debug)]
