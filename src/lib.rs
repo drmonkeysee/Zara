@@ -3,8 +3,8 @@ mod literal;
 mod syntax;
 
 use self::{
-    lex::{LexerFailure, LexerResult},
-    syntax::{Expression, ParserFailure, ParserResult},
+    lex::LexerFailure,
+    syntax::{Expression, ParserFailure},
 };
 
 pub fn eval(textline: String) -> EvalResult {
@@ -32,15 +32,3 @@ impl From<ParserFailure> for EvalError {
 }
 
 type EvalResult = Result<Expression, EvalError>;
-
-#[derive(Debug)]
-pub struct Evaluation {
-    textline: String,
-    output: OutputKind,
-}
-
-#[derive(Debug)]
-enum OutputKind {
-    Lexer(LexerResult),
-    Parser(ParserResult),
-}
