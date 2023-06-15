@@ -4,8 +4,7 @@ use self::exprs::Expression;
 use crate::lex::Token;
 
 pub(super) fn parse(tokens: impl Iterator<Item = Token>) -> ParserResult {
-    eprintln!("called parser");
-    Ok(Vec::new())
+    Ok(vec![Expression::TokenStream(tokens.collect())])
 }
 
 #[derive(Debug)]
