@@ -8,15 +8,19 @@ use self::{
 };
 
 pub fn eval(textline: String) -> EvalResult {
-    Ok(syntax::parse(lex::tokenize(&textline)?.into_iter())?
-        .pop()
-        .unwrap())
+    evaluate(syntax::parse(lex::tokenize(&textline)?.into_iter())?.into_iter())
 }
 
 #[derive(Debug)]
 pub enum EvalError {
     Lexer(LexerFailure),
     Parser(ParserFailure),
+}
+
+type EvalResult = Result<Expression, EvalError>;
+
+fn evaluate(expressions: impl Iterator<Item = Expression>) -> EvalResult {
+    Ok(expressions.last().unwrap())
 }
 
 impl From<LexerFailure> for EvalError {
@@ -30,5 +34,3 @@ impl From<ParserFailure> for EvalError {
         Self::Parser(value)
     }
 }
-
-type EvalResult = Result<Expression, EvalError>;
