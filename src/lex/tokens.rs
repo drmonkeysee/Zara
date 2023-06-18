@@ -1,6 +1,10 @@
 use crate::literal::Literal;
 use std::ops::Range;
 
+pub(crate) type Token = TokenType<TokenKind>;
+pub(super) type TokenError = TokenType<TokenErrorKind>;
+pub(super) type TokenResult = Result<Token, TokenError>;
+
 #[derive(Debug)]
 pub enum TokenKind {
     Literal(Literal),
@@ -25,7 +29,3 @@ pub struct TokenType<T> {
     pub(crate) kind: T,
     pub(crate) span: Range<usize>,
 }
-
-pub(crate) type Token = TokenType<TokenKind>;
-pub(super) type TokenError = TokenType<TokenErrorKind>;
-pub(super) type TokenResult = Result<Token, TokenError>;

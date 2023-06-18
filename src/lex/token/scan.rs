@@ -1,6 +1,7 @@
 use std::{iter::Peekable, ops::Range, str::CharIndices};
 
 pub(super) type ScanItem<'a> = <CharIndices<'a> as Iterator>::Item;
+type ScanChars<'a> = Peekable<CharIndices<'a>>;
 
 pub(super) struct Scanner<'a> {
     textline: &'a str,
@@ -57,8 +58,6 @@ impl<'a> Scanner<'a> {
         self.textline.len()
     }
 }
-
-type ScanChars<'a> = Peekable<CharIndices<'a>>;
 
 trait PeekableExt<P> {
     fn peek_find(&mut self, predicate: P) -> Option<&ScanItem>;

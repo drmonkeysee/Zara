@@ -9,6 +9,8 @@ use self::{
     syntax::{Expression, ParserError},
 };
 
+type InterpreterResult = Result<Expression, InterpreterError>;
+
 pub fn run_line(textline: String) -> InterpreterResult {
     Ok(eval::evaluate(
         syntax::parse(lex::tokenize(&textline)?.into_iter())?.into_iter(),
@@ -21,8 +23,6 @@ pub enum InterpreterError {
     Parser(ParserError),
     Eval(EvalError),
 }
-
-type InterpreterResult = Result<Expression, InterpreterError>;
 
 impl From<LexerError> for InterpreterError {
     fn from(value: LexerError) -> Self {
