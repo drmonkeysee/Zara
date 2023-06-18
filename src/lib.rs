@@ -27,13 +27,8 @@ pub struct EvalError;
 
 type EvalResult = Result<Expression, EvalError>;
 
-fn evaluate(expressions: impl Iterator<Item = Expression>) -> EvalResult {
-    // TODO: use reduce or try_for_each
-    let mut result = Err(EvalError);
-    for expr in expressions {
-        result = eval_expr(expr)
-    }
-    result
+fn evaluate(mut expressions: impl Iterator<Item = Expression>) -> EvalResult {
+    expressions.try_fold(Expression::Empty, |_, expr| eval_expr(expr))
 }
 
 fn eval_expr(expr: Expression) -> EvalResult {
