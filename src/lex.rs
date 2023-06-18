@@ -4,7 +4,7 @@ pub(super) mod tokens;
 pub(super) use self::tokens::Token;
 use self::{token::TokenStream, tokens::TokenError};
 
-type LexerResult = Result<Vec<Token>, LexerFailure>;
+type LexerResult = Result<Vec<Token>, LexerError>;
 
 pub(super) fn tokenize(textline: &str) -> LexerResult {
     let mut errors: Vec<TokenError> = Vec::new();
@@ -14,9 +14,9 @@ pub(super) fn tokenize(textline: &str) -> LexerResult {
     if errors.is_empty() {
         Ok(tokens)
     } else {
-        Err(LexerFailure(errors, String::from(textline)))
+        Err(LexerError(errors, String::from(textline)))
     }
 }
 
 #[derive(Debug)]
-pub struct LexerFailure(Vec<TokenError>, String);
+pub struct LexerError(Vec<TokenError>, String);

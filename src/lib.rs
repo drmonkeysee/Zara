@@ -5,8 +5,8 @@ mod syntax;
 
 use self::{
     eval::EvalError,
-    lex::LexerFailure,
-    syntax::{Expression, ParserFailure},
+    lex::LexerError,
+    syntax::{Expression, ParserError},
 };
 
 pub fn run_line(textline: String) -> InterpreterResult {
@@ -17,21 +17,21 @@ pub fn run_line(textline: String) -> InterpreterResult {
 
 #[derive(Debug)]
 pub enum InterpreterError {
-    Lexer(LexerFailure),
-    Parser(ParserFailure),
+    Lexer(LexerError),
+    Parser(ParserError),
     Eval(EvalError),
 }
 
 type InterpreterResult = Result<Expression, InterpreterError>;
 
-impl From<LexerFailure> for InterpreterError {
-    fn from(value: LexerFailure) -> Self {
+impl From<LexerError> for InterpreterError {
+    fn from(value: LexerError) -> Self {
         Self::Lexer(value)
     }
 }
 
-impl From<ParserFailure> for InterpreterError {
-    fn from(value: ParserFailure) -> Self {
+impl From<ParserError> for InterpreterError {
+    fn from(value: ParserError) -> Self {
         Self::Parser(value)
     }
 }
