@@ -7,8 +7,8 @@ use self::{
     syntax::{Expression, ParserFailure},
 };
 
-pub fn eval(textline: String) -> InterpreterResult {
-    Ok(evaluate(
+pub fn run_line(textline: String) -> InterpreterResult {
+    Ok(eval(
         syntax::parse(lex::tokenize(&textline)?.into_iter())?.into_iter(),
     )?)
 }
@@ -27,7 +27,7 @@ pub struct EvalError;
 
 type EvalResult = Result<Expression, EvalError>;
 
-fn evaluate(mut expressions: impl Iterator<Item = Expression>) -> EvalResult {
+fn eval(mut expressions: impl Iterator<Item = Expression>) -> EvalResult {
     expressions.try_fold(Expression::Empty, |_, expr| eval_expr(expr))
 }
 
