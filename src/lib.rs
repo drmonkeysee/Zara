@@ -1,14 +1,16 @@
+mod eval;
 mod lex;
 mod literal;
 mod syntax;
 
 use self::{
+    eval::EvalError,
     lex::LexerFailure,
     syntax::{Expression, ParserFailure},
 };
 
 pub fn run_line(textline: String) -> InterpreterResult {
-    Ok(eval(
+    Ok(eval::evaluate(
         syntax::parse(lex::tokenize(&textline)?.into_iter())?.into_iter(),
     )?)
 }
@@ -21,19 +23,6 @@ pub enum InterpreterError {
 }
 
 type InterpreterResult = Result<Expression, InterpreterError>;
-
-#[derive(Debug)]
-pub struct EvalError;
-
-type EvalResult = Result<Expression, EvalError>;
-
-fn eval(mut expressions: impl Iterator<Item = Expression>) -> EvalResult {
-    expressions.try_fold(Expression::Empty, |_, expr| eval_expr(expr))
-}
-
-fn eval_expr(expr: Expression) -> EvalResult {
-    Ok(expr)
-}
 
 impl From<LexerFailure> for InterpreterError {
     fn from(value: LexerFailure) -> Self {
