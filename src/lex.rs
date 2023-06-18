@@ -1,5 +1,5 @@
 mod token;
-pub(super) mod tokens;
+mod tokens;
 
 pub(super) use self::tokens::Token;
 use self::{token::TokenStream, tokens::TokenError};
