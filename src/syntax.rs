@@ -1,13 +1,53 @@
 mod exprs;
 
 pub(super) use self::exprs::Expression;
+use self::exprs::{ExpressionError, ExpressionResult};
 use crate::lex::Token;
+use std::iter::Peekable;
 
-type ParserResult = Result<Vec<Expression>, ParserError>;
+type ParserResult = Result<Expression, ParserError>;
 
 pub(super) fn parse(tokens: impl Iterator<Item = Token>) -> ParserResult {
-    Ok(vec![Expression::TokenStream(tokens.collect())])
+    // TODO: support CLI flag for outputing Token Stream expression
+    //Ok(vec![Expression::TokenStream(tokens.collect())])
+    let mut errors: Vec<ExpressionError> = Vec::new();
+    let ast = Parser::new(tokens)
+        .filter_map(|exr| exr.map_err(|e| errors.push(e)).ok())
+        .collect();
+    errors
+        .is_empty()
+        // NOTE: top-level AST is equivalent to (begin ...)
+        .then(|| Ok(Expression::Begin(ast)))
+        .unwrap_or_else(|| Err(ParserError(errors)))
 }
 
 #[derive(Debug)]
-pub struct ParserError;
+pub struct ParserError(Vec<ExpressionError>);
+
+struct Parser<I: Iterator> {
+    tokens: Peekable<I>,
+}
+
+impl<I: Iterator<Item = Token>> Parser<I> {
+    fn new(tokens: I) -> Self {
+        Self {
+            tokens: tokens.peekable(),
+        }
+    }
+
+    fn parse_expression(&mut self, token: Token) -> ExpressionResult {
+        match token.kind {
+            _ => Err(ExpressionError::Unimplemented(token)),
+        }
+    }
+}
+
+impl<I: Iterator<Item = Token>> Iterator for Parser<I> {
+    type Item = ExpressionResult;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.tokens
+            .next()
+            .and_then(|t| Some(self.parse_expression(t)))
+    }
+}
