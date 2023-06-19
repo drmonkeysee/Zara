@@ -1,7 +1,7 @@
 mod token;
 mod tokens;
 
-pub(super) use self::tokens::Token;
+pub(super) use self::tokens::{Token, TokenKind};
 use self::{token::TokenStream, tokens::TokenError};
 
 type LexerResult = Result<Vec<Token>, LexerError>;

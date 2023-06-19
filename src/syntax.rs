@@ -2,7 +2,7 @@ mod exprs;
 
 pub(super) use self::exprs::Expression;
 use self::exprs::{ExpressionError, ExpressionResult};
-use crate::lex::Token;
+use crate::lex::{Token, TokenKind};
 use std::iter::Peekable;
 
 type ParserResult = Result<Expression, ParserError>;
@@ -37,6 +37,7 @@ impl<I: Iterator<Item = Token>> Parser<I> {
 
     fn parse_expression(&mut self, token: Token) -> ExpressionResult {
         match token.kind {
+            TokenKind::Literal(val) => Ok(Expression::Literal(val)),
             _ => Err(ExpressionError::Unimplemented(token)),
         }
     }
