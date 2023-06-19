@@ -4,6 +4,7 @@ pub(super) type ExpressionResult = Result<Expression, ExpressionError>;
 
 #[derive(Debug)]
 pub enum Expression {
+    Ast(Box<Expression>),
     Begin(Vec<Expression>),
     Empty,
     Literal(Literal),

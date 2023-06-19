@@ -9,7 +9,7 @@ type ParserResult = Result<Expression, ParserError>;
 
 pub(super) fn parse(tokens: impl Iterator<Item = Token>) -> ParserResult {
     // TODO: support CLI flag for outputing Token Stream expression
-    //Ok(vec![Expression::TokenStream(tokens.collect())])
+    //return Ok(Expression::TokenStream(tokens.collect()));
     let mut errors: Vec<ExpressionError> = Vec::new();
     let ast = Parser::new(tokens)
         .filter_map(|exr| exr.map_err(|e| errors.push(e)).ok())
