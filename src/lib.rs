@@ -12,9 +12,9 @@ use self::{
 type InterpreterResult = Result<Expression, InterpreterError>;
 
 pub fn runline(textline: String) -> InterpreterResult {
-    Ok(eval::evaluate(syntax::parse(
-        lex::tokenize(&textline)?.into_iter(),
-    )?)?)
+    let tokens = lex::tokenize(&textline)?;
+    let ast = syntax::parse(tokens.into_iter())?;
+    Ok(eval::evaluate(ast)?)
 }
 
 #[derive(Debug)]
