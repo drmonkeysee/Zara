@@ -12,7 +12,7 @@ use self::{
 type InterpreterResult = Result<Expression, InterpreterError>;
 
 pub fn runline(textline: String) -> InterpreterResult {
-    let tokens = lex::tokenize(&textline)?;
+    let tokens = lex::tokenize(textline)?;
     let ast = syntax::parse(tokens.into_iter())?;
     Ok(eval::evaluate(ast)?)
 }
