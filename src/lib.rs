@@ -11,7 +11,7 @@ use self::{
 
 type InterpreterResult = Result<Expression, InterpreterError>;
 
-pub fn run_line(textline: String) -> InterpreterResult {
+pub fn runline(textline: String) -> InterpreterResult {
     Ok(eval::evaluate(syntax::parse(
         lex::tokenize(&textline)?.into_iter(),
     )?)?)
