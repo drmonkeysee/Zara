@@ -677,24 +677,32 @@ mod tokenizer {
         fn name() {
             check_character_list(&[
                 ("alarm", '\u{7}'),
-                ("ALARM", '\u{7}'),
                 ("backspace", '\u{8}'),
-                ("BACKSPACE", '\u{8}'),
                 ("delete", '\u{7f}'),
-                ("DELETE", '\u{7f}'),
                 ("escape", '\u{1b}'),
-                ("ESCAPE", '\u{1b}'),
                 ("newline", '\n'),
-                ("NEWLINE", '\n'),
                 ("null", '\0'),
-                ("NULL", '\0'),
                 ("return", '\r'),
-                ("RETURN", '\r'),
                 ("space", ' '),
-                ("SPACE", ' '),
                 ("tab", '\t'),
-                ("TAB", '\t'),
             ]);
+        }
+
+        #[test]
+        fn name_does_not_match_uppercase() {
+            let mut s = Scanner::new("#\\ALARM");
+            let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
+
+            let r = t.extract();
+
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 0,
+                    end: 7,
+                    result: Err(TokenErrorKind::CharacterExpected),
+                }
+            ));
         }
 
         #[test]
@@ -819,6 +827,23 @@ mod tokenizer {
         #[test]
         fn hex_uppercase() {
             let mut s = Scanner::new("#\\xA");
+            let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
+
+            let r = t.extract();
+
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 0,
+                    end: 4,
+                    result: Ok(TokenKind::Literal(Literal::Character('\n'))),
+                }
+            ));
+        }
+
+        #[test]
+        fn hex_uppercase_indicator() {
+            let mut s = Scanner::new("#\\Xa");
             let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
 
             let r = t.extract();
