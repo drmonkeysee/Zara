@@ -461,6 +461,23 @@ mod tokenizer {
         }
 
         #[test]
+        fn true_uppercase() {
+            let mut s = Scanner::new("#TRUE");
+            let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
+
+            let r = t.extract();
+
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 0,
+                    end: 5,
+                    result: Ok(TokenKind::Literal(Literal::Boolean(true))),
+                }
+            ));
+        }
+
+        #[test]
         fn true_malformed() {
             let mut s = Scanner::new("#trueasd");
             let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
@@ -512,6 +529,23 @@ mod tokenizer {
         }
 
         #[test]
+        fn false_uppercase() {
+            let mut s = Scanner::new("#FALSE");
+            let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
+
+            let r = t.extract();
+
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 0,
+                    end: 6,
+                    result: Ok(TokenKind::Literal(Literal::Boolean(false))),
+                }
+            ));
+        }
+
+        #[test]
         fn false_malformed() {
             let mut s = Scanner::new("#fals");
             let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
@@ -545,6 +579,23 @@ mod tokenizer {
                     start: 0,
                     end: 3,
                     result: Ok(TokenKind::Literal(Literal::Character('a'))),
+                }
+            ));
+        }
+
+        #[test]
+        fn ascii_uppercase_literal() {
+            let mut s = Scanner::new("#\\A");
+            let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
+
+            let r = t.extract();
+
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 0,
+                    end: 3,
+                    result: Ok(TokenKind::Literal(Literal::Character('A'))),
                 }
             ));
         }
@@ -626,14 +677,23 @@ mod tokenizer {
         fn name() {
             check_character_list(&[
                 ("alarm", '\u{7}'),
+                ("ALARM", '\u{7}'),
                 ("backspace", '\u{8}'),
+                ("BACKSPACE", '\u{8}'),
                 ("delete", '\u{7f}'),
+                ("DELETE", '\u{7f}'),
                 ("escape", '\u{1b}'),
+                ("ESCAPE", '\u{1b}'),
                 ("newline", '\n'),
+                ("NEWLINE", '\n'),
                 ("null", '\0'),
+                ("NULL", '\0'),
                 ("return", '\r'),
+                ("RETURN", '\r'),
                 ("space", ' '),
+                ("SPACE", ' '),
                 ("tab", '\t'),
+                ("TAB", '\t'),
             ]);
         }
 
