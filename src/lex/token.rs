@@ -69,8 +69,8 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
         self.scan
             .hashcode_non_delimiter()
             .map_or(Err(TokenErrorKind::HashUnterminated), |ch| match ch {
-                'f' => self.boolean(false),
-                't' => self.boolean(true),
+                'f' | 'F' => self.boolean(false),
+                't' | 'T' => self.boolean(true),
                 'u' => self.bytevector(),
                 '\\' => self.character(),
                 '(' => Ok(TokenKind::VectorOpen),
@@ -83,7 +83,7 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
 
     fn boolean(&mut self, val: bool) -> TokenExtractResult {
         let rest = self.scan.rest_of_token();
-        if rest.is_empty() || rest == if val { "rue" } else { "alse" } {
+        if rest.is_empty() || rest.eq_ignore_ascii_case(if val { "rue" } else { "alse" }) {
             Ok(TokenKind::Literal(Literal::Boolean(val)))
         } else {
             Err(TokenErrorKind::BooleanExpected(val))
@@ -106,7 +106,7 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
                         Ok(TokenKind::Literal(Literal::Character(ch)))
                     } else {
                         match ch {
-                            'x' => char_hex(rest),
+                            'x' | 'X' => char_hex(rest),
                             _ => char_name(ch, rest),
                         }
                     }
