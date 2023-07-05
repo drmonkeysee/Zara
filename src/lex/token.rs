@@ -138,10 +138,10 @@ fn char_hex(rest: &str) -> TokenExtractResult {
 
 fn char_name(ch: char, rest: &str) -> TokenExtractResult {
     match (ch, rest) {
-        ('a', "larm") => Some('\u{7}'),
-        ('b', "ackspace") => Some('\u{8}'),
-        ('d', "elete") => Some('\u{7f}'),
-        ('e', "scape") => Some('\u{1b}'),
+        ('a', "larm") => Some('\x07'),
+        ('b', "ackspace") => Some('\x08'),
+        ('d', "elete") => Some('\x7f'),
+        ('e', "scape") => Some('\x1b'),
         ('n', "ewline") => Some('\n'),
         ('n', "ull") => Some('\0'),
         ('r', "eturn") => Some('\r'),
