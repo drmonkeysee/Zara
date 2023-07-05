@@ -13,9 +13,29 @@ impl Display for Literal {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         match self {
             Self::Boolean(b) => write!(f, "#{}", if *b { 't' } else { 'f' }),
-            Self::Character(c) => write!(f, "#\\{c}"),
+            Self::Character(c) => display_char(*c, f),
         }
     }
+}
+
+fn display_char(ch: char, f: &mut Formatter<'_>) -> Result<(), Error> {
+    write!(
+        f,
+        "{}",
+        match ch {
+            '\x07' => Some("alarm"),
+            '\x08' => Some("backspace"),
+            '\x7f' => Some("delete"),
+            '\x1b' => Some("escape"),
+            '\n' => Some("newline"),
+            '\0' => Some("null"),
+            '\r' => Some("return"),
+            ' ' => Some("space"),
+            '\t' => Some("tab"),
+            _ => None,
+        }
+        .map_or_else(|| format!("#\\{ch}"), |n| format!("#\\{n}"))
+    )
 }
 
 #[cfg(test)]
@@ -116,7 +136,7 @@ mod tests {
 
         #[test]
         fn display_string_escape_characters() {
-            check_character_list(&[('"', "\""), ('\'', "'"), ('\\', "\\"), ('\n', "")]);
+            check_character_list(&[('"', "\""), ('\'', "'"), ('\\', "\\"), ('\n', "newline")]);
         }
 
         fn check_character_list(cases: &[(char, &str)]) {
