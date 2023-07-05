@@ -676,10 +676,10 @@ mod tokenizer {
         #[test]
         fn name() {
             check_character_list(&[
-                ("alarm", '\u{7}'),
-                ("backspace", '\u{8}'),
-                ("delete", '\u{7f}'),
-                ("escape", '\u{1b}'),
+                ("alarm", '\x07'),
+                ("backspace", '\x08'),
+                ("delete", '\x7f'),
+                ("escape", '\x1b'),
                 ("newline", '\n'),
                 ("null", '\0'),
                 ("return", '\r'),

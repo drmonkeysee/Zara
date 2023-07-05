@@ -65,12 +65,47 @@ mod tests {
         }
 
         #[test]
+        fn display_one_digit_hex() {
+            let c = Literal::Character('\x0c');
+
+            assert_eq!(c.to_string(), "#\\xc");
+        }
+
+        #[test]
+        fn display_two_digit_hex() {
+            let c = Literal::Character('\x1d');
+
+            assert_eq!(c.to_string(), "#\\x1d");
+        }
+
+        #[test]
+        fn display_four_digit_hex() {
+            let c = Literal::Character('\u{2401}');
+
+            assert_eq!(c.to_string(), "#\\x2401");
+        }
+
+        #[test]
+        fn display_special_purpose_plane() {
+            let c = Literal::Character('\u{e0001}');
+
+            assert_eq!(c.to_string(), "#\\xe0001");
+        }
+
+        #[test]
+        fn display_private_use_plane() {
+            let c = Literal::Character('\u{100001}');
+
+            assert_eq!(c.to_string(), "#\\x100001");
+        }
+
+        #[test]
         fn display_character_name() {
             check_character_list(&[
-                ('\u{7}', "alarm"),
-                ('\u{8}', "backspace"),
-                ('\u{7f}', "delete"),
-                ('\u{1b}', "escape"),
+                ('\x07', "alarm"),
+                ('\x08', "backspace"),
+                ('\x7f', "delete"),
+                ('\x1b', "escape"),
                 ('\n', "newline"),
                 ('\0', "null"),
                 ('\r', "return"),
