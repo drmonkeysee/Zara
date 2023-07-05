@@ -919,8 +919,8 @@ mod tokenizer {
             ));
         }
 
-        fn check_character_list(expected: &[(&str, char)]) {
-            for &(inp, ex) in expected {
+        fn check_character_list(cases: &[(&str, char)]) {
+            for &(inp, exp) in cases {
                 let input = format!("#\\{inp}");
                 let mut s = Scanner::new(&input);
                 let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
@@ -934,9 +934,9 @@ mod tokenizer {
                             start: 0,
                             end,
                             result: Ok(TokenKind::Literal(Literal::Character(ch))),
-                        } if ch == ex && end == input.len()
+                        } if ch == exp && end == input.len()
                     ),
-                    "Unexpected match for character input ({inp}, {ex})"
+                    "Unexpected match for character input ({inp}, {exp})"
                 );
             }
         }
