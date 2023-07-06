@@ -85,6 +85,20 @@ mod tests {
         }
 
         #[test]
+        fn display_control_picture() {
+            let c = Literal::Character('\u{2401}');
+
+            assert_eq!(c.to_string(), "#\\␁");
+        }
+
+        #[test]
+        fn display_replacement_char() {
+            let c = Literal::Character('\u{fffd}');
+
+            assert_eq!(c.to_string(), "#\\�");
+        }
+
+        #[test]
         fn display_one_digit_hex() {
             let c = Literal::Character('\x0c');
 
@@ -100,9 +114,9 @@ mod tests {
 
         #[test]
         fn display_four_digit_hex() {
-            let c = Literal::Character('\u{2401}');
+            let c = Literal::Character('\u{fff9}');
 
-            assert_eq!(c.to_string(), "#\\x2401");
+            assert_eq!(c.to_string(), "#\\xfff9");
         }
 
         #[test]
