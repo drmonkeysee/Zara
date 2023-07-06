@@ -1,6 +1,6 @@
 use std::{
+    cmp::Ordering,
     fmt::{Display, Error, Formatter},
-    write,
 };
 
 #[derive(Debug)]
@@ -13,29 +13,37 @@ impl Display for Literal {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         match self {
             Self::Boolean(b) => write!(f, "#{}", if *b { 't' } else { 'f' }),
-            Self::Character(c) => display_char(*c, f),
+            Self::Character(c) => write!(f, "#\\{}", format_char(*c)),
         }
     }
 }
 
-fn display_char(ch: char, f: &mut Formatter<'_>) -> Result<(), Error> {
-    write!(
-        f,
-        "{}",
-        match ch {
-            '\x07' => Some("alarm"),
-            '\x08' => Some("backspace"),
-            '\x7f' => Some("delete"),
-            '\x1b' => Some("escape"),
-            '\n' => Some("newline"),
-            '\0' => Some("null"),
-            '\r' => Some("return"),
-            ' ' => Some("space"),
-            '\t' => Some("tab"),
-            _ => None,
-        }
-        .map_or_else(|| format!("#\\{ch}"), |n| format!("#\\{n}"))
-    )
+fn format_char(ch: char) -> String {
+    match ch {
+        '\x07' => Some("alarm"),
+        '\x08' => Some("backspace"),
+        '\x7f' => Some("delete"),
+        '\x1b' => Some("escape"),
+        '\n' => Some("newline"),
+        '\0' => Some("null"),
+        '\r' => Some("return"),
+        ' ' => Some("space"),
+        '\t' => Some("tab"),
+        _ => None,
+    }
+    .map_or_else(|| format_unnamed_char(ch), String::from)
+}
+
+fn format_unnamed_char(ch: char) -> String {
+    // NOTE: this is a little weird but there's no Unicode classification
+    // exposed in Rust's stdlib to tell if a character has a dedicated glyph or
+    // not, so check indirectly by seeing if the debug output starts with `\u`.
+    if ch.escape_debug().take(2).cmp(['\\', 'u']) == Ordering::Equal {
+        let ord = u32::from(ch);
+        format!("x{ord:x}")
+    } else {
+        ch.to_string()
+    }
 }
 
 #[cfg(test)]
@@ -101,6 +109,13 @@ mod tests {
         #[test]
         fn display_one_digit_hex() {
             let c = Literal::Character('\x0c');
+
+            assert_eq!(c.to_string(), "#\\xc");
+        }
+
+        #[test]
+        fn display_hex_uses_lowercase() {
+            let c = Literal::Character('\x0C');
 
             assert_eq!(c.to_string(), "#\\xc");
         }
