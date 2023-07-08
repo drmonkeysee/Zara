@@ -1,4 +1,4 @@
-use crate::syntax::Expression;
+use crate::syn::Expression;
 
 type EvalResult = Result<Expression, EvalError>;
 

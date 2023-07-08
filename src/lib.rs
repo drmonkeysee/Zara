@@ -1,19 +1,19 @@
 mod eval;
 mod lex;
 mod literal;
-mod syntax;
+mod syn;
 
 use self::{
     eval::EvalError,
     lex::LexerError,
-    syntax::{Expression, ParserError},
+    syn::{Expression, ParserError},
 };
 
 type InterpreterResult = Result<Expression, InterpreterError>;
 
 pub fn runline(textline: String) -> InterpreterResult {
     let tokens = lex::tokenize(textline)?;
-    let ast = syntax::parse(tokens.into_iter())?;
+    let ast = syn::parse(tokens.into_iter())?;
     Ok(eval::evaluate(ast)?)
 }
 
