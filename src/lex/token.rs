@@ -138,18 +138,19 @@ fn char_hex(rest: &str) -> TokenExtractResult {
 
 fn char_name(ch: char, rest: &str) -> TokenExtractResult {
     match (ch, rest) {
-        ('a', "larm") => Some('\x07'),
-        ('b', "ackspace") => Some('\x08'),
-        ('d', "elete") => Some('\x7f'),
-        ('e', "scape") => Some('\x1b'),
-        ('n', "ewline") => Some('\n'),
-        ('n', "ull") => Some('\0'),
-        ('r', "eturn") => Some('\r'),
-        ('s', "pace") => Some(' '),
-        ('t', "ab") => Some('\t'),
-        _ => None,
+        ('a', "larm") => char_lit('\x07'),
+        ('b', "ackspace") => char_lit('\x08'),
+        ('d', "elete") => char_lit('\x7f'),
+        ('e', "scape") => char_lit('\x1b'),
+        ('n', "ewline") => char_lit('\n'),
+        ('n', "ull") => char_lit('\0'),
+        ('r', "eturn") => char_lit('\r'),
+        ('s', "pace") => char_lit(' '),
+        ('t', "ab") => char_lit('\t'),
+        _ => Err(TokenErrorKind::CharacterExpected),
     }
-    .map_or(Err(TokenErrorKind::CharacterExpected), |literal| {
-        Ok(TokenKind::Literal(Literal::Character(literal)))
-    })
+}
+
+fn char_lit(ch: char) -> TokenExtractResult {
+    Ok(TokenKind::Literal(Literal::Character(ch)))
 }

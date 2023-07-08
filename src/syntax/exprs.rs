@@ -23,7 +23,7 @@ pub(super) enum ExpressionError {
 impl Display for Expression {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         match self {
-            Self::Literal(lit) => write!(f, "{}", lit),
+            Self::Literal(lit) => f.write_str(&lit.to_string()),
             _ => write!(f, "#undef({:?})", self),
         }
     }

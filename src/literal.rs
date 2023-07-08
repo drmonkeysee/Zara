@@ -20,18 +20,17 @@ impl Display for Literal {
 
 fn format_char(ch: char) -> String {
     match ch {
-        '\x07' => Some("alarm"),
-        '\x08' => Some("backspace"),
-        '\x7f' => Some("delete"),
-        '\x1b' => Some("escape"),
-        '\n' => Some("newline"),
-        '\0' => Some("null"),
-        '\r' => Some("return"),
-        ' ' => Some("space"),
-        '\t' => Some("tab"),
-        _ => None,
+        '\x07' => String::from("alarm"),
+        '\x08' => String::from("backspace"),
+        '\x7f' => String::from("delete"),
+        '\x1b' => String::from("escape"),
+        '\n' => String::from("newline"),
+        '\0' => String::from("null"),
+        '\r' => String::from("return"),
+        ' ' => String::from("space"),
+        '\t' => String::from("tab"),
+        _ => format_unnamed_char(ch),
     }
-    .map_or_else(|| format_unnamed_char(ch), String::from)
 }
 
 fn format_unnamed_char(ch: char) -> String {
