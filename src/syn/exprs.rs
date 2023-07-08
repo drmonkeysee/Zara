@@ -33,6 +33,7 @@ impl Expression {
 impl Display for Expression {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         match self {
+            Self::Ast(expr) => write!(f, "{{{:?}}}", expr),
             Self::Empty => Ok(()),
             Self::Literal(lit) => f.write_str(&lit.to_string()),
             _ => write!(f, "#undef({:?})", self),
@@ -43,6 +44,27 @@ impl Display for Expression {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn display_ast() {
+        let expr = Expression::Ast(Box::new(Expression::Begin(vec![
+            Expression::Literal(Literal::Character('a')),
+            Expression::Literal(Literal::Character('b')),
+            Expression::Literal(Literal::Character('c')),
+        ])));
+
+        assert_eq!(
+            expr.to_string(),
+            format!(
+                "{{{:?}}}",
+                Expression::Begin(vec![
+                    Expression::Literal(Literal::Character('a')),
+                    Expression::Literal(Literal::Character('b')),
+                    Expression::Literal(Literal::Character('c')),
+                ])
+            )
+        );
+    }
 
     #[test]
     fn display_empty() {
