@@ -20,6 +20,15 @@ pub(super) enum ExpressionError {
     Unimplemented(Token),
 }
 
+impl Expression {
+    pub fn has_repr(&self) -> bool {
+        match self {
+            Self::Empty => false,
+            _ => true,
+        }
+    }
+}
+
 impl Display for Expression {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         match self {

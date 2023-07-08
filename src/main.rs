@@ -18,8 +18,14 @@ fn repl(options: Opts) -> Result<()> {
     println!("{:?}", options);
     let mut ed = DefaultEditor::new()?;
     for readline in ed.iter("λ:> ") {
-        zara::runline(readline?)
-            .map_or_else(|err| println!("{:?}", err), |expr| println!("{}", expr));
+        zara::runline(readline?).map_or_else(
+            |err| println!("{:?}", err),
+            |expr| {
+                if expr.has_repr() {
+                    println!("{}", expr)
+                }
+            },
+        );
     }
     eprintln!("Saw EOF");
     Ok(())
