@@ -105,9 +105,10 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
                     if rest.is_empty() {
                         Ok(TokenKind::Literal(Literal::Character(ch)))
                     } else {
-                        match ch {
-                            'x' | 'X' => char_hex(rest),
-                            _ => char_name(ch, rest),
+                        if let 'x' | 'X' = ch {
+                            char_hex(rest)
+                        } else {
+                            char_name(ch, rest)
                         }
                     }
                 }

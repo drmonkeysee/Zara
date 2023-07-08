@@ -22,9 +22,10 @@ pub(super) enum ExpressionError {
 
 impl Expression {
     pub fn has_repr(&self) -> bool {
-        match self {
-            Self::Empty => false,
-            _ => true,
+        if let Self::Empty = self {
+            false
+        } else {
+            true
         }
     }
 }
