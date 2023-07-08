@@ -37,8 +37,8 @@ pub(super) enum Cmd {
 impl Cmd {
     pub(super) fn execute(&self) {
         match self {
-            Cmd::Help(me) => usage(me),
-            Cmd::Version => version(),
+            Self::Help(me) => usage(me),
+            Self::Version => version(),
         }
     }
 }
