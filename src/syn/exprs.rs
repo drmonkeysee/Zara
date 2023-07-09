@@ -36,6 +36,7 @@ impl Display for Expression {
             Self::Ast(expr) => write!(f, "{{{:?}}}", expr),
             Self::Empty => Ok(()),
             Self::Literal(lit) => f.write_str(&lit.to_string()),
+            Self::TokenStream(tokens) => write!(f, "{:?}", tokens.as_slice()),
             _ => write!(f, "#undef({:?})", self),
         }
     }
@@ -44,6 +45,8 @@ impl Display for Expression {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::lex::TokenKind;
+    use std::ops::Range;
 
     #[test]
     fn display_ast() {
@@ -78,6 +81,38 @@ mod tests {
         let expr = Expression::Literal(Literal::Boolean(true));
 
         assert_eq!(expr.to_string(), "#t");
+    }
+
+    #[test]
+    fn display_token_stream() {
+        let expr = Expression::TokenStream(vec![
+            Token {
+                kind: TokenKind::ParenLeft,
+                span: Range { start: 0, end: 1 },
+            },
+            Token {
+                kind: TokenKind::ParenRight,
+                span: Range { start: 1, end: 2 },
+            },
+        ]);
+
+        // TODO: TokenStream probably needs to be more than a vec since
+        // it will need the src text as well; that will make this display
+        // easier to get right.
+        assert_eq!(
+            expr.to_string(),
+            format!(
+                "[{}, {}]",
+                Token {
+                    kind: TokenKind::ParenLeft,
+                    span: Range { start: 0, end: 1 },
+                },
+                Token {
+                    kind: TokenKind::ParenRight,
+                    span: Range { start: 1, end: 2 },
+                }
+            )
+        );
     }
 
     #[test]
