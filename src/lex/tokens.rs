@@ -35,7 +35,7 @@ pub struct TokenType<T> {
 
 impl Display for Token {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
-        write!(f, "{}[{}..{}]", self.kind, self.span.start, self.span.end)
+        write!(f, "{}[{:?}]", self.kind, self.span)
     }
 }
 
