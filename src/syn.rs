@@ -47,7 +47,6 @@ impl<I: Iterator<Item = Token>> Iterator for Parser<I> {
     type Item = ExpressionResult;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.tokens
-            .next().map(|t| self.parse_expression(t))
+        self.tokens.next().map(|t| self.parse_expression(t))
     }
 }
