@@ -14,11 +14,12 @@ pub(super) fn parse(tokens: impl Iterator<Item = Token>) -> ParserResult {
     let ast = Parser::new(tokens)
         .filter_map(|exr| exr.map_err(|e| errors.push(e)).ok())
         .collect();
-    errors
-        .is_empty()
+    if errors.is_empty() {
         // NOTE: top-level AST is equivalent to (begin ...)
-        .then(|| Ok(Expression::Begin(ast)))
-        .unwrap_or_else(|| Err(ParserError(errors)))
+        Ok(Expression::Begin(ast))
+    } else {
+        Err(ParserError(errors))
+    }
 }
 
 #[derive(Debug)]
