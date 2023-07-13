@@ -1,6 +1,6 @@
 use crate::{lex::Token, literal::Literal};
 use std::{
-    fmt::{Display, Error, Formatter},
+    fmt::{Display, Formatter},
     write,
 };
 
@@ -27,7 +27,7 @@ impl Expression {
 }
 
 impl Display for Expression {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Ast(expr) => write!(f, "{{{:?}}}", expr),
             Self::Empty => Ok(()),
