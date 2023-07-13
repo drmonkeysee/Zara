@@ -215,7 +215,7 @@ mod tokenizer {
                 start: 0,
                 end: 0,
                 result: Err(TokenErrorKind::Unimplemented(txt)),
-            } if txt == ""
+            } if txt.is_empty()
         ));
     }
 
