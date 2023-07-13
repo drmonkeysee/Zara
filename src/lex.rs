@@ -11,10 +11,11 @@ pub(super) fn tokenize(textline: String) -> LexerResult {
     let tokens = TokenStream::on(&textline)
         .filter_map(|tr| tr.map_err(|e| errors.push(e)).ok())
         .collect();
-    errors
-        .is_empty()
-        .then_some(Ok(tokens))
-        .unwrap_or(Err(LexerError(errors, textline)))
+    if errors.is_empty() {
+        Ok(tokens)
+    } else {
+        Err(LexerError(errors, textline))
+    }
 }
 
 #[derive(Debug)]
