@@ -87,8 +87,12 @@ mod tests {
                 span: Range { start: 0, end: 1 },
             },
             Token {
+                kind: TokenKind::Literal(Literal::Boolean(false)),
+                span: Range { start: 1, end: 3 },
+            },
+            Token {
                 kind: TokenKind::ParenRight,
-                span: Range { start: 1, end: 2 },
+                span: Range { start: 3, end: 4 },
             },
         ]);
 
@@ -97,17 +101,7 @@ mod tests {
         // easier to get right.
         assert_eq!(
             expr.to_string(),
-            format!(
-                "[{}, {}]",
-                Token {
-                    kind: TokenKind::ParenLeft,
-                    span: Range { start: 0, end: 1 },
-                },
-                Token {
-                    kind: TokenKind::ParenRight,
-                    span: Range { start: 1, end: 2 },
-                }
-            )
+            "[LPAREN[0..1](\"(\"), LITERAL{Literal::Boolean(false)}[1..3](\"#f\"), RPAREN[3..4](\")\")]"
         );
     }
 

@@ -42,7 +42,7 @@ impl Display for Token {
 impl Display for TokenKind {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         match self {
-            Self::Literal(lit) => write!(f, "LITERAL({:?})", lit),
+            Self::Literal(lit) => write!(f, "LITERAL{{{:?}}}", lit),
             Self::ParenLeft => f.write_str("LPAREN"),
             Self::ParenRight => f.write_str("RPAREN"),
             Self::VectorOpen => f.write_str("OPENVEC"),
@@ -63,7 +63,7 @@ mod tests {
 
         assert_eq!(
             token.to_string(),
-            format!("LITERAL({:?})[0..2]", Literal::Boolean(true))
+            format!("LITERAL{{{:?}}}[0..2]", Literal::Boolean(true))
         );
     }
 
