@@ -13,8 +13,8 @@ pub(super) fn tokenize(textline: String) -> LexerResult {
         .collect();
     errors
         .is_empty()
-        .then(|| Ok(tokens))
-        .unwrap_or_else(|| Err(LexerError(errors, textline)))
+        .then_some(Ok(tokens))
+        .unwrap_or(Err(LexerError(errors, textline)))
 }
 
 #[derive(Debug)]

@@ -104,12 +104,10 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
                     let rest = self.scan.rest_of_token();
                     if rest.is_empty() {
                         Ok(TokenKind::Literal(Literal::Character(ch)))
+                    } else if let 'x' | 'X' = ch {
+                        char_hex(rest)
                     } else {
-                        if let 'x' | 'X' = ch {
-                            char_hex(rest)
-                        } else {
-                            char_name(ch, rest)
-                        }
+                        char_name(ch, rest)
                     }
                 }
             })
