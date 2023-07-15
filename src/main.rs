@@ -2,7 +2,7 @@ mod args;
 
 use self::args::{Opts, Parsed};
 use rustyline::{DefaultEditor, Result};
-use std::{env, println};
+use std::env;
 use zara::{Expression, InterpreterError};
 
 fn main() -> Result<()> {
@@ -32,5 +32,12 @@ fn print_expr(expr: Expression) {
 }
 
 fn print_err(err: InterpreterError) {
-    println!("{:?}", err)
+    println!(
+        "{}:{} ({})",
+        "library", "line", "/full/path/to/lib/file.scm"
+    );
+    println!("\tthis is an invalid src line with multiple errors");
+    println!("\t           ^^^^^^^               ^^^^^^^^");
+    println!("{}:{:?}", "position1", err);
+    println!("{}:{:?}", "position2", err);
 }
