@@ -1,6 +1,6 @@
 mod exprs;
 
-pub(super) use self::exprs::Expression;
+pub use self::exprs::Expression;
 use self::exprs::{ExpressionError, ExpressionResult};
 use crate::lex::{Token, TokenKind};
 use std::iter::Peekable;

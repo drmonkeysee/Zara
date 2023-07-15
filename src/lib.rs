@@ -3,11 +3,8 @@ mod lex;
 mod literal;
 mod syn;
 
-use self::{
-    eval::EvalError,
-    lex::LexerError,
-    syn::{Expression, ParserError},
-};
+pub use self::syn::Expression;
+use self::{eval::EvalError, lex::LexerError, syn::ParserError};
 
 type InterpreterResult = Result<Expression, InterpreterError>;
 
