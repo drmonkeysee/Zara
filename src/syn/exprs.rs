@@ -54,14 +54,7 @@ mod tests {
 
         assert_eq!(
             expr.to_string(),
-            format!(
-                "{{{:?}}}",
-                Expression::Begin(vec![
-                    Expression::Literal(Literal::Character('a')),
-                    Expression::Literal(Literal::Character('b')),
-                    Expression::Literal(Literal::Character('c')),
-                ])
-            )
+            "{Begin([Literal(Character('a')), Literal(Character('b')), Literal(Character('c'))])}"
         );
     }
 
@@ -101,7 +94,7 @@ mod tests {
         // easier to get right.
         assert_eq!(
             expr.to_string(),
-            "[LPAREN[0..1](\"(\"), LITERAL{Literal::Boolean(false)}[1..3](\"#f\"), RPAREN[3..4](\")\")]"
+            "[LPAREN[0..1](\"(\"), LITERAL<Boolean(false)>[1..3](\"#f\"), RPAREN[3..4](\")\")]"
         );
     }
 

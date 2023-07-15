@@ -48,7 +48,7 @@ impl Display for TokenError {
 impl Display for TokenKind {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::Literal(lit) => write!(f, "LITERAL{{{:?}}}", lit),
+            Self::Literal(lit) => write!(f, "LITERAL<{:?}>", lit),
             Self::ParenLeft => f.write_str("LPAREN"),
             Self::ParenRight => f.write_str("RPAREN"),
             Self::VectorOpen => f.write_str("OPENVEC"),
@@ -61,10 +61,15 @@ impl Display for TokenErrorKind {
         match self {
             Self::BooleanExpected(b) => write!(f, "expected boolean literal: {}", b),
             Self::CharacterExpected => f.write_str("expected character literal"),
-            Self::CharacterExpectedHex => f.write_str("expected character hex escape"),
-            Self::CharacterInvalidHex => f.write_str("invalid character hex escape"),
-            Self::HashInvalid => f.write_str("invalid hash literal"),
-            Self::HashUnterminated => f.write_str("unterminated hash literal"),
+            Self::CharacterExpectedHex => f.write_str("expected character hex-sequence"),
+            Self::CharacterInvalidHex => write!(
+                f,
+                "character hex-sequence out of valid range: [{:#x}..{:#x}]",
+                0,
+                char::MAX as u32,
+            ),
+            Self::HashInvalid => f.write_str("unexpected #-literal"),
+            Self::HashUnterminated => f.write_str("unterminated #-literal"),
             Self::Unimplemented(s) => write!(f, "unimplemented tokenization: \"{}\"", s),
         }
     }
@@ -86,7 +91,7 @@ mod tests {
 
             assert_eq!(
                 token.to_string(),
-                format!("LITERAL{{{:?}}}[0..2]", Literal::Boolean(true))
+                format!("LITERAL<{:?}>[0..2]", Literal::Boolean(true))
             );
         }
 
@@ -151,7 +156,7 @@ mod tests {
                 span: Range { start: 0, end: 4 },
             };
 
-            assert_eq!(err.to_string(), "expected character hex escape");
+            assert_eq!(err.to_string(), "expected character hex-sequence");
         }
 
         #[test]
@@ -161,7 +166,10 @@ mod tests {
                 span: Range { start: 0, end: 4 },
             };
 
-            assert_eq!(err.to_string(), "invalid character hex escape");
+            assert_eq!(
+                err.to_string(),
+                "character hex-sequence out of valid range: [0x0..0x10ffff]"
+            );
         }
 
         #[test]
@@ -171,7 +179,7 @@ mod tests {
                 span: Range { start: 0, end: 4 },
             };
 
-            assert_eq!(err.to_string(), "invalid hash literal");
+            assert_eq!(err.to_string(), "unexpected #-literal");
         }
 
         #[test]
@@ -181,7 +189,7 @@ mod tests {
                 span: Range { start: 0, end: 4 },
             };
 
-            assert_eq!(err.to_string(), "unterminated hash literal");
+            assert_eq!(err.to_string(), "unterminated #-literal");
         }
 
         #[test]
