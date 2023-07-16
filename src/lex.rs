@@ -1,8 +1,8 @@
-mod token;
+mod tokenize;
 mod tokens;
 
 pub(super) use self::tokens::{Token, TokenKind};
-use self::{token::TokenStream, tokens::TokenError};
+use self::{tokenize::TokenStream, tokens::TokenError};
 
 type LexerResult = Result<Vec<Token>, LexerError>;
 
