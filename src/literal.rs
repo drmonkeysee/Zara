@@ -37,7 +37,7 @@ fn format_unnamed_char(ch: char) -> String {
     // NOTE: this is a little weird but there's no Unicode classification
     // exposed in Rust's stdlib to tell if a character has a dedicated glyph or
     // not, so check indirectly by seeing if the debug output starts with `\u`;
-    // if so we display the hex representation instead of the char literal.
+    // if so, we display the hex representation instead of the char literal.
     if ch.escape_debug().take(2).cmp(['\\', 'u']) == Ordering::Equal {
         let ord = u32::from(ch);
         format!("x{ord:x}")
