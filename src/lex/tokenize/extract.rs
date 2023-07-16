@@ -2,7 +2,6 @@ use crate::lex::tokens::{Token, TokenError, TokenErrorKind, TokenKind, TokenResu
 
 pub(super) type TokenExtractResult = Result<TokenKind, TokenErrorKind>;
 
-#[derive(Debug)]
 pub(super) struct TokenExtract {
     pub(super) start: usize,
     pub(super) end: usize,
