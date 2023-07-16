@@ -1,6 +1,12 @@
 use crate::syn::Expression;
 
-type EvalResult = Result<Expression, EvalError>;
+type EvalResult = Result<Evaluation, EvalError>;
+type ExprResult = Result<Expression, EvalError>;
+
+pub enum Evaluation {
+    Expression(Expression),
+    Continuation,
+}
 
 #[derive(Debug)]
 pub struct EvalError;
@@ -12,12 +18,13 @@ pub(super) fn evaluate(expression: Expression) -> EvalResult {
         Expression::Begin(exprs) => eval_begin(exprs.into_iter()),
         _ => Err(EvalError),
     }
+    .map(Evaluation::Expression)
 }
 
-fn eval_expr(expr: Expression) -> EvalResult {
+fn eval_expr(expr: Expression) -> ExprResult {
     Ok(expr)
 }
 
-fn eval_begin(mut exprs: impl Iterator<Item = Expression>) -> EvalResult {
+fn eval_begin(mut exprs: impl Iterator<Item = Expression>) -> ExprResult {
     exprs.try_fold(Expression::Empty, |_, expr| eval_expr(expr))
 }

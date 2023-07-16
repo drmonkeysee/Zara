@@ -3,15 +3,19 @@ mod lex;
 mod literal;
 mod syn;
 
-pub use self::syn::Expression;
 use self::{eval::EvalError, lex::LexerError, syn::ParserError};
+pub use self::{eval::Evaluation, syn::Expression};
 
-type InterpreterResult = Result<Expression, InterpreterError>;
+type InterpreterResult = Result<Evaluation, InterpreterError>;
 
 pub fn runline(textline: String) -> InterpreterResult {
-    let tokens = lex::tokenize(textline)?;
-    let ast = syn::parse(tokens.into_iter())?;
-    Ok(eval::evaluate(ast)?)
+    if !textline.ends_with(")") {
+        Ok(Evaluation::Continuation)
+    } else {
+        let tokens = lex::tokenize(textline)?;
+        let ast = syn::parse(tokens.into_iter())?;
+        Ok(eval::evaluate(ast)?)
+    }
 }
 
 #[derive(Debug)]

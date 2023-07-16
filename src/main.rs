@@ -3,7 +3,7 @@ mod args;
 use self::args::{Opts, Parsed};
 use rustyline::{DefaultEditor, Result};
 use std::env;
-use zara::{Expression, InterpreterError};
+use zara::{Evaluation, Expression, InterpreterError};
 
 fn main() -> Result<()> {
     match args::parse(env::args()) {
@@ -17,11 +17,29 @@ fn main() -> Result<()> {
 
 fn repl(options: Opts) -> Result<()> {
     println!("{:?}", options);
+    let mut cont = false;
     let mut ed = DefaultEditor::new()?;
-    for readline in ed.iter("λ:> ") {
-        zara::runline(readline?).map_or_else(print_err, print_expr);
+    loop {
+        let prompt = if cont {
+            cont = false;
+            "... "
+        } else {
+            "λ:> "
+        };
+        match ed.readline(prompt) {
+            Ok(line) => match zara::runline(line) {
+                Ok(eval) => match eval {
+                    Evaluation::Expression(expr) => print_expr(expr),
+                    Evaluation::Continuation => cont = true,
+                },
+                Err(err) => print_err(err),
+            },
+            Err(err) => {
+                eprintln!("{:?}", err);
+                break;
+            }
+        }
     }
-    eprintln!("Saw EOF");
     Ok(())
 }
 
