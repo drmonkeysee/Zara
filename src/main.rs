@@ -50,8 +50,8 @@ impl Repl {
     fn runline(&mut self, line: String) {
         match zara::runline(line) {
             Ok(eval) => match eval {
-                Evaluation::Expression(expr) => self.print_expr(expr),
                 Evaluation::Continuation => self.prompt = CONT,
+                Evaluation::Expression(expr) => self.print_expr(expr),
             },
             Err(err) => print_runerr(err),
         }
