@@ -64,7 +64,7 @@ impl Display for TokenErrorKind {
             Self::CharacterExpectedHex => f.write_str("expected character hex-sequence"),
             Self::CharacterInvalidHex => write!(
                 f,
-                "character hex-sequence out of valid range: [{:#x}..{:#x}]",
+                "character hex-sequence out of valid range: [{:#x}, {:#x}]",
                 0,
                 char::MAX as u32,
             ),
@@ -168,7 +168,7 @@ mod tests {
 
             assert_eq!(
                 err.to_string(),
-                "character hex-sequence out of valid range: [0x0..0x10ffff]"
+                "character hex-sequence out of valid range: [0x0, 0x10ffff]"
             );
         }
 
