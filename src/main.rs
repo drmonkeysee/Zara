@@ -1,7 +1,7 @@
 mod args;
 
 use self::args::{Opts, Parsed};
-use rustyline::{DefaultEditor, Result};
+use rustyline::{error::ReadlineError, DefaultEditor, Result};
 use std::env;
 use zara::{Evaluation, Expression, InterpreterError};
 
@@ -25,6 +25,7 @@ struct Repl {
     editor: DefaultEditor,
     options: Opts,
     prompt: &'static str,
+    running: bool,
 }
 
 impl Repl {
@@ -33,27 +34,34 @@ impl Repl {
             editor: DefaultEditor::new()?,
             options: opts,
             prompt: INPUT,
+            running: true,
         })
     }
 
     fn run(&mut self) -> Result<()> {
         println!("{:?}", self.options);
-        loop {
+        while self.running {
             match self.editor.readline(self.prompt) {
-                Ok(line) => match zara::runline(line) {
-                    Ok(eval) => match eval {
-                        Evaluation::Expression(expr) => self.print_expr(expr),
-                        Evaluation::Continuation => self.prompt = CONT,
-                    },
-                    Err(err) => print_err(err),
-                },
-                Err(err) => {
-                    eprintln!("{:?}", err);
-                    break;
-                }
+                Ok(line) => self.runline(line),
+                Err(err) => self.stop(err),
             }
         }
         Ok(())
+    }
+
+    fn runline(&mut self, line: String) {
+        match zara::runline(line) {
+            Ok(eval) => match eval {
+                Evaluation::Expression(expr) => self.print_expr(expr),
+                Evaluation::Continuation => self.prompt = CONT,
+            },
+            Err(err) => print_err(err),
+        }
+    }
+
+    fn stop(&mut self, err: ReadlineError) {
+        eprintln!("{:?}", err);
+        self.running = false;
     }
 
     fn print_expr(&mut self, expr: Expression) {
