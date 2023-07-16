@@ -9,13 +9,9 @@ pub use self::{eval::Evaluation, syn::Expression};
 pub type InterpreterResult = Result<Evaluation, InterpreterError>;
 
 pub fn runline(textline: String) -> InterpreterResult {
-    if !textline.ends_with(")") {
-        Ok(Evaluation::Continuation)
-    } else {
-        let tokens = lex::tokenize(textline)?;
-        let ast = syn::parse(tokens.into_iter())?;
-        Ok(eval::evaluate(ast)?)
-    }
+    let tokens = lex::tokenize(textline)?;
+    let ast = syn::parse(tokens.into_iter())?;
+    Ok(eval::evaluate(ast)?)
 }
 
 #[derive(Debug)]
