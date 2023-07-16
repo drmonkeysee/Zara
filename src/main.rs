@@ -5,47 +5,62 @@ use rustyline::{DefaultEditor, Result};
 use std::env;
 use zara::{Evaluation, Expression, InterpreterError};
 
+const INPUT: &str = "λ:> ";
+const CONT: &str = "... ";
+
 fn main() -> Result<()> {
     match args::parse(env::args()) {
         Parsed::Command(cmd) => {
             cmd.execute();
             Ok(())
         }
-        Parsed::Options(opts) => repl(opts),
-    }
-}
-
-fn repl(options: Opts) -> Result<()> {
-    println!("{:?}", options);
-    let mut cont = false;
-    let mut ed = DefaultEditor::new()?;
-    loop {
-        let prompt = if cont {
-            cont = false;
-            "... "
-        } else {
-            "λ:> "
-        };
-        match ed.readline(prompt) {
-            Ok(line) => match zara::runline(line) {
-                Ok(eval) => match eval {
-                    Evaluation::Expression(expr) => print_expr(expr),
-                    Evaluation::Continuation => cont = true,
-                },
-                Err(err) => print_err(err),
-            },
-            Err(err) => {
-                eprintln!("{:?}", err);
-                break;
-            }
+        Parsed::Options(opts) => {
+            let mut r = Repl::new(opts)?;
+            r.run()
         }
     }
-    Ok(())
 }
 
-fn print_expr(expr: Expression) {
-    if expr.has_repr() {
-        println!("==> {}", expr)
+struct Repl {
+    editor: DefaultEditor,
+    options: Opts,
+    prompt: &'static str,
+}
+
+impl Repl {
+    fn new(opts: Opts) -> Result<Self> {
+        Ok(Self {
+            editor: DefaultEditor::new()?,
+            options: opts,
+            prompt: INPUT,
+        })
+    }
+
+    fn run(&mut self) -> Result<()> {
+        println!("{:?}", self.options);
+        loop {
+            match self.editor.readline(self.prompt) {
+                Ok(line) => match zara::runline(line) {
+                    Ok(eval) => match eval {
+                        Evaluation::Expression(expr) => self.print_expr(expr),
+                        Evaluation::Continuation => self.prompt = CONT,
+                    },
+                    Err(err) => print_err(err),
+                },
+                Err(err) => {
+                    eprintln!("{:?}", err);
+                    break;
+                }
+            }
+        }
+        Ok(())
+    }
+
+    fn print_expr(&mut self, expr: Expression) {
+        if expr.has_repr() {
+            println!("==> {}", expr)
+        }
+        self.prompt = INPUT;
     }
 }
 
