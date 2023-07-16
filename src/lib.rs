@@ -6,7 +6,7 @@ mod syn;
 use self::{eval::EvalError, lex::LexerError, syn::ParserError};
 pub use self::{eval::Evaluation, syn::Expression};
 
-type InterpreterResult = Result<Evaluation, InterpreterError>;
+pub type InterpreterResult = Result<Evaluation, InterpreterError>;
 
 pub fn runline(textline: String) -> InterpreterResult {
     if !textline.ends_with(")") {
