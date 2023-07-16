@@ -12,7 +12,7 @@ pub(super) fn parse(tokens: impl Iterator<Item = Token>) -> ParserResult {
     //return Ok(Expression::TokenStream(tokens.collect()));
     let mut errors: Vec<ExpressionError> = Vec::new();
     let ast = Parser::new(tokens)
-        .filter_map(|exr| exr.map_err(|e| errors.push(e)).ok())
+        .filter_map(|expr| expr.map_err(|err| errors.push(err)).ok())
         .collect();
     if errors.is_empty() {
         // NOTE: top-level AST is equivalent to (begin ...)
