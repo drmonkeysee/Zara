@@ -1,7 +1,7 @@
 mod args;
 
 use self::args::{Opts, Parsed};
-use rustyline::{error::ReadlineError, DefaultEditor, Result};
+use rustyline::{DefaultEditor, Result};
 use std::env;
 use zara::{Evaluation, Expression, InterpreterError};
 
@@ -25,7 +25,7 @@ struct Repl {
     editor: DefaultEditor,
     options: Opts,
     prompt: &'static str,
-    running: bool,
+    running: bool, // TODO: will be needed for repl quit
 }
 
 impl Repl {
@@ -41,10 +41,8 @@ impl Repl {
     fn run(&mut self) -> Result<()> {
         println!("{:?}", self.options);
         while self.running {
-            match self.editor.readline(self.prompt) {
-                Ok(line) => self.runline(line),
-                Err(err) => self.stop(err),
-            }
+            let line = self.editor.readline(self.prompt)?;
+            self.runline(line);
         }
         Ok(())
     }
@@ -55,13 +53,8 @@ impl Repl {
                 Evaluation::Expression(expr) => self.print_expr(expr),
                 Evaluation::Continuation => self.prompt = CONT,
             },
-            Err(err) => print_err(err),
+            Err(err) => print_runerr(err),
         }
-    }
-
-    fn stop(&mut self, err: ReadlineError) {
-        eprintln!("{:?}", err);
-        self.running = false;
     }
 
     fn print_expr(&mut self, expr: Expression) {
@@ -72,7 +65,7 @@ impl Repl {
     }
 }
 
-fn print_err(err: InterpreterError) {
+fn print_runerr(err: InterpreterError) {
     println!(
         "{}:{} ({})",
         "library", "line", "/full/path/to/lib/file.scm"

@@ -26,6 +26,7 @@ impl<'a> Scanner<'a> {
         self.chars.next().map(to_char)
     }
 
+    // TODO: will be needed for non-hashcode stuff
     pub(super) fn non_delimiter(&mut self) -> Option<char> {
         self.chars.next_if(non_delimiter).map(to_char)
     }
