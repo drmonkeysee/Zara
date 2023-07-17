@@ -6,6 +6,7 @@ mod txt;
 
 use self::{eval::EvalError, lex::LexerError, syn::ParserError, txt::TextContext};
 pub use self::{eval::Evaluation, syn::Expression};
+use std::fmt::{Display, Formatter};
 
 pub type InterpreterResult = Result<Evaluation, InterpreterError>;
 
@@ -43,6 +44,12 @@ pub enum InterpreterError {
     Eval(EvalError),
 }
 
+impl InterpreterError {
+    pub fn verbose_display(&self) -> VerboseInterpreterError<'_> {
+        VerboseInterpreterError(self)
+    }
+}
+
 impl From<LexerError> for InterpreterError {
     fn from(value: LexerError) -> Self {
         Self::Lexer(value)
@@ -58,5 +65,27 @@ impl From<ParserError> for InterpreterError {
 impl From<EvalError> for InterpreterError {
     fn from(value: EvalError) -> Self {
         Self::Eval(value)
+    }
+}
+
+pub struct VerboseInterpreterError<'a>(&'a InterpreterError);
+
+impl Display for VerboseInterpreterError<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}:{} ({})\n\
+            \tthis is an invalid src line with multiple errors\n\
+            \t           ^^^^^^^               ^^^^^^^^\n\
+            {}:{:?}\n\
+            {}:{:?}",
+            "library",
+            "line",
+            "/full/path/to/lib/file.scm",
+            "position1",
+            self.0,
+            "position2",
+            self.0
+        )
     }
 }

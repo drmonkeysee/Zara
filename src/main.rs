@@ -55,7 +55,7 @@ impl Repl {
                 Evaluation::Continuation => self.prompt = CONT,
                 Evaluation::Expression(expr) => self.print_expr(expr),
             },
-            Err(err) => print_runerr(err),
+            Err(err) => eprintln!("{}", err.verbose_display()),
         }
     }
 
@@ -65,15 +65,4 @@ impl Repl {
         }
         self.prompt = INPUT;
     }
-}
-
-fn print_runerr(err: InterpreterError) {
-    println!(
-        "{}:{} ({})",
-        "library", "line", "/full/path/to/lib/file.scm"
-    );
-    println!("\tthis is an invalid src line with multiple errors");
-    println!("\t           ^^^^^^^               ^^^^^^^^");
-    println!("{}:{:?}", "position1", err);
-    println!("{}:{:?}", "position2", err);
 }
