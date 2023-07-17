@@ -7,7 +7,7 @@ use std::iter::Peekable;
 
 type ParserResult = Result<Expression, ParserError>;
 
-pub(super) fn parse(tokens: impl Iterator<Item = Token>) -> ParserResult {
+pub(crate) fn parse(tokens: impl Iterator<Item = Token>) -> ParserResult {
     // TODO: support CLI flag for outputing Token Stream expression
     //return Ok(Expression::TokenStream(tokens.collect()));
     let mut errors: Vec<ExpressionError> = Vec::new();

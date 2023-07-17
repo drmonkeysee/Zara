@@ -11,7 +11,7 @@ pub enum Evaluation {
 #[derive(Debug)]
 pub struct EvalError;
 
-pub(super) fn evaluate(expression: Expression) -> EvalResult {
+pub(crate) fn evaluate(expression: Expression) -> EvalResult {
     // TODO: support CLI flag for outputing Abstract Syntax Tree expression
     //return Ok(Expression::Ast(Box::new(expression)));
     match expression {

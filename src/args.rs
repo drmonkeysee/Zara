@@ -3,7 +3,7 @@ const HELP_LONG: &str = "--help";
 const VERSION_SHORT: &str = "-V";
 const VERSION_LONG: &str = "--version";
 
-pub(super) fn parse(mut args: impl Iterator<Item = String>) -> Parsed {
+pub(crate) fn parse(mut args: impl Iterator<Item = String>) -> Parsed {
     let me = args.next().unwrap_or(String::from(env!("CARGO_PKG_NAME")));
     let mut help = false;
     let mut ver = false;
@@ -24,18 +24,18 @@ pub(super) fn parse(mut args: impl Iterator<Item = String>) -> Parsed {
     }
 }
 
-pub(super) enum Parsed {
+pub(crate) enum Parsed {
     Command(Cmd),
     Options(Opts),
 }
 
-pub(super) enum Cmd {
+pub(crate) enum Cmd {
     Help(String),
     Version,
 }
 
 impl Cmd {
-    pub(super) fn execute(&self) {
+    pub(crate) fn execute(&self) {
         match self {
             Self::Help(me) => usage(me),
             Self::Version => version(),
@@ -44,7 +44,7 @@ impl Cmd {
 }
 
 #[derive(Debug)]
-pub(super) struct Opts;
+pub(crate) struct Opts;
 
 fn usage(me: &str) {
     println!("---=== {} Usage ===---", app_title());

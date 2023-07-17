@@ -3,7 +3,7 @@ mod args;
 use self::args::{Opts, Parsed};
 use rustyline::{DefaultEditor, Result};
 use std::env;
-use zara::{Evaluation, Expression, Interpreter, InterpreterError};
+use zara::{Evaluation, Expression, Interpreter};
 
 const INPUT: &str = "λ:> ";
 const CONT: &str = "... ";

@@ -1,14 +1,14 @@
 mod tokenize;
 mod tokens;
 
-pub(super) use self::tokens::{Token, TokenKind};
+pub(crate) use self::tokens::{Token, TokenKind};
 use self::{tokenize::TokenStream, tokens::TokenError};
 use crate::txt::TextContext;
 use std::fmt::{Display, Formatter};
 
 type LexerResult = Result<Vec<Token>, LexerError>;
 
-pub(super) fn tokenize(ctx: &TextContext) -> LexerResult {
+pub(crate) fn tokenize(ctx: &TextContext) -> LexerResult {
     let mut errors: Vec<TokenError> = Vec::new();
     let tokens = TokenStream::on(&ctx.line)
         .filter_map(|tr| tr.map_err(|err| errors.push(err)).ok())
