@@ -74,20 +74,8 @@ impl Display for VerboseInterpreterError<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let err = self.0;
         match err {
-            InterpreterError::Lexer(lex_err) => verbose_display_lexer_error(lex_err, f),
+            InterpreterError::Lexer(lex_err) => write!(f, "{}", lex_err.verbose_display()),
             _ => write!(f, "#intrerr_undef({:?})", err),
         }
     }
-}
-
-fn verbose_display_lexer_error(err: &LexerError, f: &mut Formatter<'_>) -> std::fmt::Result {
-    let LexerError(errs, ctx) = err;
-    write!(f, "{}:{}", ctx.library, ctx.lineno)?;
-    write!(f, "{}\n", ctx.filename.as_ref().map_or("", String::as_str))?;
-    write!(f, "\t{}\n", ctx.line)?;
-    write!(f, "\t{}\n", "           ^^^^^^^               ^^^^^^^^")?;
-    for err in errs {
-        write!(f, "{}:{:?}", err.span.start, err)?;
-    }
-    Ok(())
 }
