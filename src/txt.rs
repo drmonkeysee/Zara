@@ -1,10 +1,10 @@
 // TODO: can any of these be &str?
 #[derive(Clone, Debug)]
 pub(crate) struct TextContext {
+    pub(crate) filename: Option<String>,
+    pub(crate) library: String,
     pub(crate) line: String,
-    filename: Option<String>,
-    library: String,
-    lineno: u64,
+    pub(crate) lineno: u64,
 }
 
 impl TextContext {

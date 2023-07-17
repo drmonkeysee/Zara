@@ -21,4 +21,4 @@ pub(super) fn tokenize(ctx: &TextContext) -> LexerResult {
 }
 
 #[derive(Debug)]
-pub struct LexerError(Vec<TokenError>, TextContext);
+pub struct LexerError(pub(crate) Vec<TokenError>, pub(crate) TextContext);

@@ -33,7 +33,7 @@ impl Display for Expression {
             Self::Empty => Ok(()),
             Self::Literal(lit) => f.write_str(&lit.to_string()),
             Self::TokenStream(tokens) => write!(f, "{:?}", tokens.as_slice()),
-            _ => write!(f, "#undef({:?})", self),
+            _ => write!(f, "#expr_undef({:?})", self),
         }
     }
 }
