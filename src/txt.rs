@@ -19,10 +19,9 @@ impl TextContext {
 
     pub(crate) fn nextline(self, line: String) -> Self {
         Self {
-            filename: self.filename,
-            library: self.library,
             line,
             lineno: self.lineno + 1,
+            ..self
         }
     }
 }
