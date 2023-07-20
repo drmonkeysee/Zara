@@ -86,7 +86,7 @@ mod tests {
         fn display_literal() {
             let token = Token {
                 kind: TokenKind::Literal(Literal::Boolean(true)),
-                span: Range { start: 0, end: 2 },
+                span: 0..2,
             };
 
             assert_eq!(
@@ -99,7 +99,7 @@ mod tests {
         fn display_paren_left() {
             let token = Token {
                 kind: TokenKind::ParenLeft,
-                span: Range { start: 0, end: 1 },
+                span: 0..1,
             };
 
             assert_eq!(token.to_string(), "LPAREN[0..1]");
@@ -109,7 +109,7 @@ mod tests {
         fn display_paren_right() {
             let token = Token {
                 kind: TokenKind::ParenRight,
-                span: Range { start: 0, end: 1 },
+                span: 0..1,
             };
 
             assert_eq!(token.to_string(), "RPAREN[0..1]");
@@ -119,7 +119,7 @@ mod tests {
         fn display_vector_open() {
             let token = Token {
                 kind: TokenKind::VectorOpen,
-                span: Range { start: 0, end: 2 },
+                span: 0..2,
             };
 
             assert_eq!(token.to_string(), "OPENVEC[0..2]");
@@ -133,7 +133,7 @@ mod tests {
         fn display_expected_boolean() {
             let err = TokenError {
                 kind: TokenErrorKind::BooleanExpected(true),
-                span: Range { start: 0, end: 4 },
+                span: 0..4,
             };
 
             assert_eq!(err.to_string(), "expected boolean literal: true");
@@ -143,7 +143,7 @@ mod tests {
         fn display_expected_character() {
             let err = TokenError {
                 kind: TokenErrorKind::CharacterExpected,
-                span: Range { start: 0, end: 4 },
+                span: 0..4,
             };
 
             assert_eq!(err.to_string(), "expected character literal");
@@ -153,7 +153,7 @@ mod tests {
         fn display_expected_character_hex() {
             let err = TokenError {
                 kind: TokenErrorKind::CharacterExpectedHex,
-                span: Range { start: 0, end: 4 },
+                span: 0..4,
             };
 
             assert_eq!(err.to_string(), "expected character hex-sequence");
@@ -163,7 +163,7 @@ mod tests {
         fn display_invalid_character_hex() {
             let err = TokenError {
                 kind: TokenErrorKind::CharacterInvalidHex,
-                span: Range { start: 0, end: 4 },
+                span: 0..4,
             };
 
             assert_eq!(
@@ -176,7 +176,7 @@ mod tests {
         fn display_invalid_hash() {
             let err = TokenError {
                 kind: TokenErrorKind::HashInvalid,
-                span: Range { start: 0, end: 4 },
+                span: 0..4,
             };
 
             assert_eq!(err.to_string(), "unexpected #-literal");
@@ -186,7 +186,7 @@ mod tests {
         fn display_unterminated_hash() {
             let err = TokenError {
                 kind: TokenErrorKind::HashUnterminated,
-                span: Range { start: 0, end: 4 },
+                span: 0..4,
             };
 
             assert_eq!(err.to_string(), "unterminated #-literal");
@@ -196,7 +196,7 @@ mod tests {
         fn display_unimplemented() {
             let err = TokenError {
                 kind: TokenErrorKind::Unimplemented(String::from("foobar")),
-                span: Range { start: 0, end: 4 },
+                span: 0..4,
             };
 
             assert_eq!(err.to_string(), "unimplemented tokenization: \"foobar\"");

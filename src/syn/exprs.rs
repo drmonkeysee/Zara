@@ -42,7 +42,6 @@ impl Display for Expression {
 mod tests {
     use super::*;
     use crate::lex::TokenKind;
-    use std::ops::Range;
 
     #[test]
     fn display_ast() {
@@ -77,15 +76,15 @@ mod tests {
         let expr = Expression::TokenStream(vec![
             Token {
                 kind: TokenKind::ParenLeft,
-                span: Range { start: 0, end: 1 },
+                span: 0..1,
             },
             Token {
                 kind: TokenKind::Literal(Literal::Boolean(false)),
-                span: Range { start: 1, end: 3 },
+                span: 1..3,
             },
             Token {
                 kind: TokenKind::ParenRight,
-                span: Range { start: 3, end: 4 },
+                span: 3..4,
             },
         ]);
 
