@@ -39,7 +39,30 @@ impl Display for VerboseLexerError<'_> {
         write!(f, "{}:{}", ctx.library, ctx.lineno)?;
         write!(f, "{}\n", ctx.filename.as_ref().map_or("", String::as_str))?;
         write!(f, "\t{}\n", ctx.line)?;
+        write!(
+            f,
+            "\t{}\n",
+            "this is an invalid src line with multiple errors"
+        )?;
+        // 12:19, 35:43
         write!(f, "\t{}\n", "           ^^^^^^^               ^^^^^^^^")?;
+        let test_spans = [12..19, 35..43];
+        let mut cursor = 0;
+        if !test_spans.is_empty() {
+            f.write_str("\t")?;
+            for span in test_spans.into_iter().skip_while(std::ops::Range::is_empty) {
+                write!(
+                    f,
+                    "{0:>1$}{2:^<3$}",
+                    "^",
+                    span.start - cursor,
+                    "",
+                    (span.len() - 1)
+                )?;
+                cursor = span.end;
+            }
+            f.write_str("\n")?;
+        }
         for err in errs {
             write!(f, "{}:{:?}", err.span.start, err)?;
         }
