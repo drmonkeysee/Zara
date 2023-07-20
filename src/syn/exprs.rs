@@ -105,6 +105,6 @@ mod tests {
             Expression::Literal(Literal::Character('c')),
         ]);
 
-        assert_eq!(expr.to_string(), format!("#undef({:?})", expr));
+        assert_eq!(expr.to_string(), format!("#expr_undef({:?})", expr));
     }
 }
