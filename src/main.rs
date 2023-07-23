@@ -55,7 +55,7 @@ impl Repl {
                 Evaluation::Continuation => self.prompt = CONT,
                 Evaluation::Expression(expr) => self.print_expr(expr),
             },
-            Err(err) => eprintln!("{}", err.verbose_display()),
+            Err(err) => eprint!("{}", err.verbose_display()),
         }
     }
 
