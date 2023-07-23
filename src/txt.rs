@@ -28,8 +28,31 @@ impl TextContext {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+
     #[test]
-    fn todo() {
-        todo!();
+    fn create_for_repl() {
+        let tc = TextContext::for_repl(String::from("line of code"));
+
+        assert!(tc.filename.is_none());
+        assert_eq!(tc.library, "<repl>");
+        assert_eq!(tc.line, "line of code");
+        assert_eq!(tc.lineno, 1);
+    }
+
+    #[test]
+    fn nextline() {
+        let tc = TextContext {
+            filename: Some(String::from("lib/mylib")),
+            library: String::from("mylib"),
+            line: String::from("line of code"),
+            lineno: 1,
+        }
+        .nextline(String::from("next line of code"));
+
+        assert!(matches!(tc.filename, Some(name) if name == "lib/mylib"));
+        assert_eq!(tc.library, "mylib");
+        assert_eq!(tc.line, "next line of code");
+        assert_eq!(tc.lineno, 2);
     }
 }

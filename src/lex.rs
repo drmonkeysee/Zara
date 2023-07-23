@@ -196,4 +196,27 @@ mod tests {
             \n6: unimplemented tokenization: \"myerr\"\n"
         );
     }
+
+    #[test]
+    fn display_single_error_invalid_span() {
+        let err = LexerError(
+            vec![TokenError {
+                kind: TokenErrorKind::Unimplemented(String::from("myerr")),
+                span: 5..2,
+            }],
+            TextContext {
+                filename: Some(String::from("lib/mylib.scm")),
+                library: String::from("mylib"),
+                line: String::from("line of source code"),
+                lineno: 1,
+            },
+        );
+
+        assert_eq!(
+            format!("{}", err.verbose_display()),
+            "mylib:1 (lib/mylib.scm)\n\
+            \tline of source code\n\
+            \n6: unimplemented tokenization: \"myerr\"\n"
+        );
+    }
 }
