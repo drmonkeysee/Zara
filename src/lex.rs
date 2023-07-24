@@ -113,8 +113,8 @@ mod tests {
             format!("{}", err.verbose_display()),
             "mylib:1 (lib/mylib.scm)\n\
             \tline of source code\n\
-            \t     ^^\
-            \n6: unimplemented tokenization: \"myerr\"\n"
+            \t     ^^\n\
+            6: unimplemented tokenization: \"myerr\"\n"
         );
     }
 
@@ -137,8 +137,8 @@ mod tests {
             format!("{}", err.verbose_display()),
             "mylib:1 (lib/mylib.scm)\n\
             \tline of source code\n\
-            \t^^^^\
-            \n1: unimplemented tokenization: \"myerr\"\n"
+            \t^^^^\n\
+            1: unimplemented tokenization: \"myerr\"\n"
         );
     }
 
@@ -167,9 +167,9 @@ mod tests {
             format!("{}", err.verbose_display()),
             "mylib:1 (lib/mylib.scm)\n\
             \tline of source code\n\
-            \t     ^^        ^^^^\
-            \n6: unimplemented tokenization: \"myerr\"\
-            \n16: expected character literal\n"
+            \t     ^^        ^^^^\n\
+            6: unimplemented tokenization: \"myerr\"\n\
+            16: expected character literal\n"
         );
     }
 
@@ -192,8 +192,8 @@ mod tests {
             format!("{}", err.verbose_display()),
             "mylib:1\n\
             \tline of source code\n\
-            \t     ^^\
-            \n6: unimplemented tokenization: \"myerr\"\n"
+            \t     ^^\n\
+            6: unimplemented tokenization: \"myerr\"\n"
         );
     }
 
@@ -216,7 +216,8 @@ mod tests {
             format!("{}", err.verbose_display()),
             "mylib:1 (lib/mylib.scm)\n\
             \tline of source code\n\
-            \n6: unimplemented tokenization: \"myerr\"\n"
+            \t\n\
+            6: unimplemented tokenization: \"myerr\"\n"
         );
     }
 }
