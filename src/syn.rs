@@ -5,7 +5,7 @@ use self::exprs::{ExpressionError, ExpressionResult};
 use crate::lex::{Token, TokenKind};
 use std::iter::Peekable;
 
-type ParserResult = Result<Expression, ParserError>;
+pub(crate) type ParserResult = Result<Expression, ParserError>;
 
 pub(crate) fn parse(tokens: impl Iterator<Item = Token>) -> ParserResult {
     // TODO: support CLI flag for outputing Token Stream expression

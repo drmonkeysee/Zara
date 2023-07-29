@@ -6,7 +6,7 @@ use self::{tokenize::TokenStream, tokens::TokenError};
 use crate::txt::TextContext;
 use std::fmt::{Display, Formatter};
 
-type LexerResult = Result<Vec<Token>, LexerError>;
+pub(crate) type LexerResult = Result<Vec<Token>, LexerError>;
 
 pub(crate) fn tokenize(ctx: &TextContext) -> LexerResult {
     let mut errors: Vec<TokenError> = Vec::new();

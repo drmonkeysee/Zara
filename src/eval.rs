@@ -1,6 +1,6 @@
 use crate::syn::Expression;
 
-type EvalResult = Result<Evaluation, EvalError>;
+pub(crate) type EvalResult = Result<Evaluation, EvalError>;
 type ExprResult = Result<Expression, EvalError>;
 
 pub enum Evaluation {

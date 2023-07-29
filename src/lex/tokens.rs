@@ -4,7 +4,7 @@ use std::{
     ops::Range,
 };
 
-pub(crate) type Token = TokenType<TokenKind>;
+pub type Token = TokenType<TokenKind>;
 pub(super) type TokenError = TokenType<TokenErrorKind>;
 pub(super) type TokenResult = Result<Token, TokenError>;
 
