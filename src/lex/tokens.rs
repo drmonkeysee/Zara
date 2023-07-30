@@ -1,5 +1,6 @@
 use crate::literal::Literal;
 use std::{
+    fmt,
     fmt::{Display, Formatter},
     ops::Range,
 };
@@ -34,19 +35,19 @@ pub struct TokenType<T> {
 }
 
 impl Display for Token {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "{}[{:?}]", self.kind, self.span)
     }
 }
 
 impl Display for TokenError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         f.write_str(&self.kind.to_string())
     }
 }
 
 impl Display for TokenKind {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
             Self::Literal(lit) => write!(f, "LITERAL<{:?}>", lit),
             Self::ParenLeft => f.write_str("LPAREN"),
@@ -57,7 +58,7 @@ impl Display for TokenKind {
 }
 
 impl Display for TokenErrorKind {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
             Self::BooleanExpected(b) => write!(f, "expected boolean literal: {}", b),
             Self::CharacterExpected => f.write_str("expected character literal"),

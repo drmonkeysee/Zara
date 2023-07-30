@@ -6,9 +6,13 @@ mod txt;
 
 use self::{eval::EvalError, lex::LexerError, syn::ParserError, txt::TextContext};
 pub use self::{eval::Evaluation, syn::Expression};
-use std::fmt::{Display, Formatter};
+use std::{
+    fmt,
+    fmt::{Display, Formatter},
+    result,
+};
 
-pub type Result = std::result::Result<Evaluation, InterpreterError>;
+pub type Result = result::Result<Evaluation, InterpreterError>;
 
 pub struct Interpreter {
     ctx: Option<TextContext>,
@@ -71,7 +75,7 @@ impl From<EvalError> for InterpreterError {
 pub struct VerboseInterpreterError<'a>(&'a InterpreterError);
 
 impl Display for VerboseInterpreterError<'_> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let err = self.0;
         match err {
             InterpreterError::Lexer(lex_err) => write!(f, "{}", lex_err.verbose_display()),

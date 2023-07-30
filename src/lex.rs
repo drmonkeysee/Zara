@@ -4,7 +4,10 @@ mod tokens;
 pub(crate) use self::tokens::{Token, TokenKind};
 use self::{tokenize::TokenStream, tokens::TokenError};
 use crate::txt::TextContext;
-use std::fmt::{Display, Formatter};
+use std::{
+    fmt,
+    fmt::{Display, Formatter},
+};
 
 pub(crate) type LexerResult = Result<Vec<Token>, LexerError>;
 
@@ -33,7 +36,7 @@ impl LexerError {
 pub(crate) struct VerboseLexerError<'a>(&'a LexerError);
 
 impl Display for VerboseLexerError<'_> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         // TODO: lex/parse/eval err types will likely have to be unified into a (specific_err, span, ctx) pairing
         let LexerError(errs, ctx) = self.0;
         write!(f, "{}:{}", ctx.library, ctx.lineno)?;
