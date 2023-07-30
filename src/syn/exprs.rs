@@ -30,7 +30,7 @@ impl Display for Expression {
             Self::Empty => Ok(()),
             Self::Literal(lit) => f.write_str(&lit.to_string()),
             Self::TokenStream(tokens) => write!(f, "{:?}", tokens.as_slice()),
-            _ => write!(f, "#expr_undef({:?})", self),
+            _ => write!(f, "#<expr_undef({:?})>", self),
         }
     }
 }
@@ -102,6 +102,6 @@ mod tests {
             Expression::Literal(Literal::Character('c')),
         ]);
 
-        assert_eq!(expr.to_string(), format!("#expr_undef({:?})", expr));
+        assert_eq!(expr.to_string(), format!("#<expr_undef({:?})>", expr));
     }
 }

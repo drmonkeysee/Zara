@@ -75,7 +75,7 @@ impl Display for VerboseInterpreterError<'_> {
         let err = self.0;
         match err {
             InterpreterError::Lexer(lex_err) => write!(f, "{}", lex_err.verbose_display()),
-            _ => write!(f, "#intrerr_undef({:?})", err),
+            _ => write!(f, "#<intr_err_undef({:?})>", err),
         }
     }
 }
