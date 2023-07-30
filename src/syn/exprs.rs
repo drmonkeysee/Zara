@@ -1,8 +1,5 @@
 use crate::{lex::Token, literal::Literal};
-use std::{
-    fmt::{Display, Formatter},
-    write,
-};
+use std::fmt::{Display, Formatter};
 
 pub(super) type ExpressionResult = Result<Expression, ExpressionError>;
 
