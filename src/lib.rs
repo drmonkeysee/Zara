@@ -8,7 +8,7 @@ use self::{eval::EvalError, lex::LexerError, syn::ParserError, txt::TextContext}
 pub use self::{eval::Evaluation, syn::Expression};
 use std::fmt::{Display, Formatter};
 
-pub type InterpreterResult = Result<Evaluation, InterpreterError>;
+pub type Result = std::result::Result<Evaluation, InterpreterError>;
 
 pub struct Interpreter {
     ctx: Option<TextContext>,
@@ -19,7 +19,7 @@ impl Interpreter {
         Self { ctx: None }
     }
 
-    pub fn runline(&mut self, textline: String) -> InterpreterResult {
+    pub fn runline(&mut self, textline: String) -> Result {
         let ctx = match self.ctx.take() {
             Some(c) => c.nextline(textline),
             None => TextContext::for_repl(textline),
