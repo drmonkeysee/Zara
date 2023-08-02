@@ -12,7 +12,7 @@ use std::{
     result,
 };
 
-pub type Result = result::Result<Evaluation, InterpreterError>;
+pub type Result = result::Result<Evaluation, Error>;
 
 pub struct Interpreter {
     ctx: Option<TextContext>,
@@ -42,43 +42,43 @@ impl Interpreter {
 }
 
 #[derive(Debug)]
-pub enum InterpreterError {
-    Lexer(LexerError),
-    Parser(ParserError),
+pub enum Error {
+    Lex(LexerError),
+    Parse(ParserError),
     Eval(EvalError),
 }
 
-impl InterpreterError {
-    pub fn verbose_display(&self) -> VerboseInterpreterError<'_> {
-        VerboseInterpreterError(self)
+impl Error {
+    pub fn verbose_display(&self) -> VerboseError<'_> {
+        VerboseError(self)
     }
 }
 
-impl From<LexerError> for InterpreterError {
+impl From<LexerError> for Error {
     fn from(value: LexerError) -> Self {
-        Self::Lexer(value)
+        Self::Lex(value)
     }
 }
 
-impl From<ParserError> for InterpreterError {
+impl From<ParserError> for Error {
     fn from(value: ParserError) -> Self {
-        Self::Parser(value)
+        Self::Parse(value)
     }
 }
 
-impl From<EvalError> for InterpreterError {
+impl From<EvalError> for Error {
     fn from(value: EvalError) -> Self {
         Self::Eval(value)
     }
 }
 
-pub struct VerboseInterpreterError<'a>(&'a InterpreterError);
+pub struct VerboseError<'a>(&'a Error);
 
-impl Display for VerboseInterpreterError<'_> {
+impl Display for VerboseError<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let err = self.0;
         match err {
-            InterpreterError::Lexer(lex_err) => write!(f, "{}", lex_err.verbose_display()),
+            Error::Lex(lex_err) => write!(f, "{}", lex_err.verbose_display()),
             _ => write!(f, "#<intr_err_undef({:?})>", err),
         }
     }
