@@ -13,7 +13,9 @@ pub struct EvalError;
 
 pub(crate) fn evaluate(expression: Expression) -> EvalResult {
     // TODO: support CLI flag for outputing Abstract Syntax Tree expression
-    //return Ok(Expression::Ast(Box::new(expression)));
+    /*return Ok(Evaluation::Expression(Expression::Ast(Box::new(
+        expression,
+    ))));*/
     match expression {
         Expression::Begin(exprs) => eval_begin(exprs.into_iter()),
         _ => Err(EvalError),
