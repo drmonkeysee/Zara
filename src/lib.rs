@@ -2,9 +2,9 @@ mod eval;
 mod lex;
 mod literal;
 mod syn;
-mod txt;
+pub mod txt;
 
-use self::{eval::EvalError, lex::LexerError, syn::ParserError, txt::TextContext};
+use self::{eval::EvalError, lex::LexerError, syn::ParserError, txt::TextSource};
 pub use self::{eval::Evaluation, syn::Expression};
 use std::{
     fmt,
@@ -14,29 +14,17 @@ use std::{
 
 pub type Result = result::Result<Evaluation, Error>;
 
-pub struct Interpreter {
-    ctx: Option<TextContext>,
-}
+pub struct Interpreter;
 
 impl Interpreter {
     pub fn new() -> Self {
-        Self { ctx: None }
+        Self {}
     }
 
-    pub fn runline(&mut self, textline: String) -> Result {
-        let ctx = match self.ctx.take() {
-            Some(c) => c.nextline(textline),
-            None => TextContext::for_repl(textline),
-        };
-        let tokens = lex::tokenize(&ctx)?;
-        let ast = syn::parse(tokens.into_iter())?;
+    pub fn run(&mut self, src: &mut impl TextSource) -> Result {
+        let token_lines = lex::tokenize(src)?;
+        let ast = syn::parse(token_lines.into_iter())?;
         let evaluation = eval::evaluate(ast)?;
-        // NOTE: save text context for next line
-        self.ctx = if matches!(evaluation, Evaluation::Continuation) {
-            Some(ctx)
-        } else {
-            None
-        };
         Ok(evaluation)
     }
 }
@@ -79,7 +67,7 @@ impl Display for VerboseError<'_> {
         let err = self.0;
         match err {
             Error::Lex(lex_err) => write!(f, "{}", lex_err.verbose_display()),
-            _ => write!(f, "#<intr_err_undef({:?})>", err),
+            _ => write!(f, "#<intr_err_undef({:?})>\n", err),
         }
     }
 }

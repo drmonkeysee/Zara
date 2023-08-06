@@ -3,29 +3,45 @@ mod tokens;
 
 pub(crate) use self::tokens::{Token, TokenKind};
 use self::{tokenize::TokenStream, tokens::TokenError};
-use crate::txt::TextContext;
+use crate::txt::{TextLine, TextSource};
 use std::{
     fmt,
     fmt::{Display, Formatter},
 };
 
-pub(crate) type LexerResult = Result<Vec<Token>, LexerError>;
+pub(crate) type LexerResult = Result<Vec<LexLine>, LexerError>;
+type LexerLineResult = Result<LexLine, LexerError>;
 
-pub(crate) fn tokenize(ctx: &TextContext) -> LexerResult {
+pub(crate) fn tokenize(src: &mut impl TextSource) -> LexerResult {
+    src.map(tokenize_line).collect::<LexerResult>()
+}
+
+fn tokenize_line(text: TextLine) -> LexerLineResult {
     let mut errors: Vec<TokenError> = Vec::new();
-    let tokens = TokenStream::on(&ctx.line)
+    let tokens = TokenStream::on(&text.line)
         .filter_map(|tr| tr.map_err(|err| errors.push(err)).ok())
         .collect();
     if errors.is_empty() {
-        Ok(tokens)
+        Ok(LexLine(tokens, text))
     } else {
-        // TODO: can this clone be removed in favor of packaging errors at lib level
-        Err(LexerError(errors, ctx.clone()))
+        Err(LexerError(errors, text))
+    }
+}
+
+pub(crate) struct LexLine(Vec<Token>, TextLine);
+
+// NOTE: used by .flatten()
+impl IntoIterator for LexLine {
+    type Item = Token;
+    type IntoIter = <Vec<Token> as IntoIterator>::IntoIter;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.into_iter()
     }
 }
 
 #[derive(Debug)]
-pub struct LexerError(Vec<TokenError>, TextContext);
+pub struct LexerError(Vec<TokenError>, TextLine);
 
 impl LexerError {
     pub(crate) fn verbose_display(&self) -> VerboseLexerError<'_> {
@@ -38,12 +54,12 @@ pub(crate) struct VerboseLexerError<'a>(&'a LexerError);
 impl Display for VerboseLexerError<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         // TODO: lex/parse/eval err types will likely have to be unified into a (specific_err, span, ctx) pairing
-        let LexerError(errs, ctx) = self.0;
-        write!(f, "{}:{}", ctx.library, ctx.lineno)?;
-        if let Some(name) = &ctx.filename {
-            write!(f, " ({})", name)?;
+        let LexerError(errs, txtline) = self.0;
+        write!(f, "{}:{}", txtline.ctx.name, txtline.lineno)?;
+        if let Some(p) = &txtline.ctx.path {
+            write!(f, " ({})", p)?;
         }
-        write!(f, "\n\t{}\n", ctx.line)?;
+        write!(f, "\n\t{}\n", txtline.line)?;
 
         if errs.is_empty() {
             return Ok(());

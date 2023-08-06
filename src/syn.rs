@@ -2,12 +2,15 @@ mod exprs;
 
 pub use self::exprs::Expression;
 use self::exprs::{ExpressionError, ExpressionResult};
-use crate::lex::{Token, TokenKind};
+use crate::lex::{LexLine, Token, TokenKind};
 use std::iter::Peekable;
 
 pub(crate) type ParserResult = Result<Expression, ParserError>;
 
-pub(crate) fn parse(tokens: impl Iterator<Item = Token>) -> ParserResult {
+pub(crate) fn parse(token_lines: impl Iterator<Item = LexLine>) -> ParserResult {
+    // TODO: for now flatten all lexlines into one stream of tokens
+    // this'll need to handle individual lines later
+    let tokens = token_lines.flatten();
     // TODO: support CLI flag for outputing Token Stream expression
     //return Ok(Expression::TokenStream(tokens.collect()));
     let mut errors: Vec<ExpressionError> = Vec::new();
