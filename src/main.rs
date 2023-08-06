@@ -25,44 +25,37 @@ fn main() -> Result<()> {
 }
 
 struct Repl {
-    ctx: Rc<TextContext>,
     editor: DefaultEditor,
     interpreter: Interpreter,
-    lineno: LineNumber,
     options: Opts,
     prompt: &'static str,
     running: bool, // TODO: will be needed for repl quit
+    src: ReplSource,
 }
 
 impl Repl {
     fn new(options: Opts) -> Result<Self> {
         Ok(Self {
-            ctx: Rc::new(TextContext::named(String::from("<repl>"))),
             editor: DefaultEditor::new()?,
             interpreter: Interpreter::new(),
-            lineno: 1,
             options,
             prompt: INPUT,
             running: true,
+            src: ReplSource::new(),
         })
     }
 
     fn run(&mut self) -> Result<()> {
         println!("{:?}", self.options);
         while self.running {
-            let line = self.editor.readline(self.prompt)?;
-            self.runline(line);
+            self.src.set_line(self.editor.readline(self.prompt)?);
+            self.runline();
         }
         Ok(())
     }
 
-    fn runline(&mut self, line: String) {
-        let mut src = ReplSource {
-            ctx: self.ctx.clone(),
-            line: Some(line),
-            lineno: self.lineno,
-        };
-        match self.interpreter.run(&mut src) {
+    fn runline(&mut self) {
+        match self.interpreter.run(&mut self.src) {
             Ok(eval) => match eval {
                 Evaluation::Continuation => self.prep_continuation(),
                 Evaluation::Expression(expr) => self.print_expr(expr),
@@ -85,12 +78,12 @@ impl Repl {
 
     fn prep_continuation(&mut self) {
         self.prompt = CONT;
-        self.lineno += 1;
+        self.src.advance();
     }
 
     fn reset(&mut self) {
         self.prompt = INPUT;
-        self.lineno = 1;
+        self.src.reset();
     }
 }
 
@@ -98,6 +91,28 @@ struct ReplSource {
     ctx: Rc<TextContext>,
     line: Option<String>,
     lineno: LineNumber,
+}
+
+impl ReplSource {
+    fn new() -> Self {
+        Self {
+            ctx: Rc::new(TextContext::named(String::from("<repl>"))),
+            line: None,
+            lineno: 1,
+        }
+    }
+
+    fn set_line(&mut self, line: String) {
+        self.line = Some(line);
+    }
+
+    fn advance(&mut self) {
+        self.lineno += 1;
+    }
+
+    fn reset(&mut self) {
+        self.lineno = 1;
+    }
 }
 
 // TODO: can this be a macro
