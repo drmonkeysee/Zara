@@ -93,18 +93,12 @@ impl Display for VerboseLexerError<'_> {
 mod tests {
     use self::tokens::TokenErrorKind;
     use super::*;
+    use crate::txt::TextContext;
+    use std::rc::Rc;
 
     #[test]
     fn display_empty_errors() {
-        let err = LexerError(
-            Vec::new(),
-            TextContext {
-                filename: Some(String::from("lib/mylib.scm")),
-                library: String::from("mylib"),
-                line: String::from("line of source code"),
-                lineno: 1,
-            },
-        );
+        let err = LexerError(Vec::new(), make_textline());
 
         assert_eq!(
             format!("{}", err.verbose_display()),
@@ -120,12 +114,7 @@ mod tests {
                 kind: TokenErrorKind::Unimplemented(String::from("myerr")),
                 span: 5..7,
             }],
-            TextContext {
-                filename: Some(String::from("lib/mylib.scm")),
-                library: String::from("mylib"),
-                line: String::from("line of source code"),
-                lineno: 1,
-            },
+            make_textline(),
         );
 
         assert_eq!(
@@ -144,12 +133,7 @@ mod tests {
                 kind: TokenErrorKind::Unimplemented(String::from("myerr")),
                 span: 0..4,
             }],
-            TextContext {
-                filename: Some(String::from("lib/mylib.scm")),
-                library: String::from("mylib"),
-                line: String::from("line of source code"),
-                lineno: 1,
-            },
+            make_textline(),
         );
 
         assert_eq!(
@@ -174,12 +158,7 @@ mod tests {
                     span: 15..19,
                 },
             ],
-            TextContext {
-                filename: Some(String::from("lib/mylib.scm")),
-                library: String::from("mylib"),
-                line: String::from("line of source code"),
-                lineno: 1,
-            },
+            make_textline(),
         );
 
         assert_eq!(
@@ -199,9 +178,11 @@ mod tests {
                 kind: TokenErrorKind::Unimplemented(String::from("myerr")),
                 span: 5..7,
             }],
-            TextContext {
-                filename: None,
-                library: String::from("mylib"),
+            TextLine {
+                ctx: Rc::new(TextContext {
+                    name: String::from("mylib"),
+                    path: None,
+                }),
                 line: String::from("line of source code"),
                 lineno: 1,
             },
@@ -223,12 +204,7 @@ mod tests {
                 kind: TokenErrorKind::Unimplemented(String::from("myerr")),
                 span: 5..2,
             }],
-            TextContext {
-                filename: Some(String::from("lib/mylib.scm")),
-                library: String::from("mylib"),
-                line: String::from("line of source code"),
-                lineno: 1,
-            },
+            make_textline(),
         );
 
         assert_eq!(
@@ -238,5 +214,16 @@ mod tests {
             \t\n\
             6: unimplemented tokenization: \"myerr\"\n"
         );
+    }
+
+    fn make_textline() -> TextLine {
+        TextLine {
+            ctx: Rc::new(TextContext {
+                name: String::from("mylib"),
+                path: Some(String::from("lib/mylib.scm")),
+            }),
+            line: String::from("line of source code"),
+            lineno: 1,
+        }
     }
 }
