@@ -116,9 +116,9 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
     fn not_implemented(&mut self) -> TokenExtractResult {
         let start = self.start.0;
         let end = self.scan.end_of_token();
-        Err(TokenErrorKind::Unimplemented(String::from(
-            self.scan.lexeme(start..end),
-        )))
+        Err(TokenErrorKind::Unimplemented(
+            self.scan.lexeme(start..end).to_owned(),
+        ))
     }
 }
 

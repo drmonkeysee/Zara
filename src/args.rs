@@ -4,7 +4,7 @@ const VERSION_SHORT: &str = "-V";
 const VERSION_LONG: &str = "--version";
 
 pub(crate) fn parse(mut args: impl Iterator<Item = String>) -> Parsed {
-    let me = args.next().unwrap_or(String::from(env!("CARGO_PKG_NAME")));
+    let me = args.next().unwrap_or(env!("CARGO_PKG_NAME").to_owned());
     let mut help = false;
     let mut ver = false;
     for arg in args {
@@ -60,7 +60,7 @@ fn version() {
 }
 
 fn app_title() -> String {
-    let mut title = String::from(env!("CARGO_PKG_NAME"));
+    let mut title = env!("CARGO_PKG_NAME").to_owned();
     if let Some(t) = title.get_mut(0..1) {
         t.make_ascii_uppercase();
     }

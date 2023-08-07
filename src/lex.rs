@@ -111,7 +111,7 @@ mod tests {
     fn display_single_error() {
         let err = LexerError(
             vec![TokenError {
-                kind: TokenErrorKind::Unimplemented(String::from("myerr")),
+                kind: TokenErrorKind::Unimplemented("myerr".to_owned()),
                 span: 5..7,
             }],
             make_textline(),
@@ -130,7 +130,7 @@ mod tests {
     fn display_single_error_at_beginning_of_line() {
         let err = LexerError(
             vec![TokenError {
-                kind: TokenErrorKind::Unimplemented(String::from("myerr")),
+                kind: TokenErrorKind::Unimplemented("myerr".to_owned()),
                 span: 0..4,
             }],
             make_textline(),
@@ -150,7 +150,7 @@ mod tests {
         let err = LexerError(
             vec![
                 TokenError {
-                    kind: TokenErrorKind::Unimplemented(String::from("myerr")),
+                    kind: TokenErrorKind::Unimplemented("myerr".to_owned()),
                     span: 5..7,
                 },
                 TokenError {
@@ -175,15 +175,15 @@ mod tests {
     fn display_single_error_no_filename() {
         let err = LexerError(
             vec![TokenError {
-                kind: TokenErrorKind::Unimplemented(String::from("myerr")),
+                kind: TokenErrorKind::Unimplemented("myerr".to_owned()),
                 span: 5..7,
             }],
             TextLine {
                 ctx: Rc::new(TextContext {
-                    name: String::from("mylib"),
+                    name: "mylib".to_owned(),
                     path: None,
                 }),
-                line: String::from("line of source code"),
+                line: "line of source code".to_owned(),
                 lineno: 1,
             },
         );
@@ -201,7 +201,7 @@ mod tests {
     fn display_single_error_invalid_span() {
         let err = LexerError(
             vec![TokenError {
-                kind: TokenErrorKind::Unimplemented(String::from("myerr")),
+                kind: TokenErrorKind::Unimplemented("myerr".to_owned()),
                 span: 5..2,
             }],
             make_textline(),
@@ -219,10 +219,10 @@ mod tests {
     fn make_textline() -> TextLine {
         TextLine {
             ctx: Rc::new(TextContext {
-                name: String::from("mylib"),
-                path: Some(String::from("lib/mylib.scm")),
+                name: "mylib".to_owned(),
+                path: Some("lib/mylib.scm".to_owned()),
             }),
-            line: String::from("line of source code"),
+            line: "line of source code".to_owned(),
             lineno: 1,
         }
     }

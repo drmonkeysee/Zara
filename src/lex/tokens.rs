@@ -196,7 +196,7 @@ mod tests {
         #[test]
         fn display_unimplemented() {
             let err = TokenError {
-                kind: TokenErrorKind::Unimplemented(String::from("foobar")),
+                kind: TokenErrorKind::Unimplemented("foobar".to_owned()),
                 span: 0..4,
             };
 
