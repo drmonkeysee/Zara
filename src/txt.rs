@@ -13,8 +13,11 @@ pub struct TextContext {
 }
 
 impl TextContext {
-    pub fn named(name: String) -> Self {
-        Self { name, path: None }
+    pub fn named(name: impl Into<String>) -> Self {
+        Self {
+            name: name.into(),
+            path: None,
+        }
     }
 }
 
@@ -31,7 +34,7 @@ mod tests {
 
     #[test]
     fn context_with_name() {
-        let ctx = TextContext::named(String::from("foo"));
+        let ctx = TextContext::named("foo");
 
         assert!(matches!(
             ctx,

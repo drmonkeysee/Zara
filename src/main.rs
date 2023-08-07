@@ -96,7 +96,7 @@ struct ReplSource {
 impl ReplSource {
     fn new() -> Self {
         Self {
-            ctx: Rc::new(TextContext::named(String::from("<repl>"))),
+            ctx: Rc::new(TextContext::named("<repl>")),
             line: None,
             lineno: 1,
         }
