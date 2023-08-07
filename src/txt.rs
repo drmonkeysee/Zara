@@ -27,8 +27,18 @@ pub struct TextLine {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+
     #[test]
-    fn test() {
-        todo!();
+    fn context_with_name() {
+        let ctx = TextContext::named(String::from("foo"));
+
+        assert!(matches!(
+            ctx,
+            TextContext {
+                name,
+                path: None
+            } if name == "foo"
+        ));
     }
 }
