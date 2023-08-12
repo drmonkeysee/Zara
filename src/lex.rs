@@ -31,9 +31,24 @@ fn tokenize_line(text: TextLine) -> LexerLineResult {
 pub(crate) struct LexLine(Vec<Token>, TextLine);
 
 impl Display for LexLine {
-    fn fmt(&self, _: &mut Formatter<'_>) -> fmt::Result {
-        todo!()
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        let LexLine(tokens, txt) = self;
+        let token_txt: Vec<_> = tokens
+            .iter()
+            .map(|t| format_token_with_source(t, txt))
+            .collect();
+        write!(f, "{}:{}", txt.lineno, token_txt.join(", "))
     }
+}
+
+fn format_token_with_source(t: &Token, txt: &TextLine) -> String {
+    format!(
+        "{}(\"{}\")",
+        t,
+        txt.line
+            .get(t.span.start..t.span.end)
+            .unwrap_or("#<token-invalid-range>")
+    )
 }
 
 // NOTE: used by .flatten()
@@ -107,7 +122,7 @@ mod tests {
         fn display_empty_line() {
             let line = LexLine(Vec::new(), make_textline());
 
-            assert_eq!(line.to_string(), "1: ");
+            assert_eq!(line.to_string(), "1:");
         }
 
         #[test]
@@ -120,7 +135,7 @@ mod tests {
                 make_textline(),
             );
 
-            assert_eq!(line.to_string(), "1: LPAREN[8..14](\"source\")");
+            assert_eq!(line.to_string(), "1:LPAREN[8..14](\"source\")");
         }
 
         #[test]
@@ -133,7 +148,7 @@ mod tests {
                     },
                     Token {
                         kind: TokenKind::ParenRight,
-                        span: 5..2,
+                        span: 5..7,
                     },
                     Token {
                         kind: TokenKind::ParenLeft,
@@ -145,9 +160,41 @@ mod tests {
 
             assert_eq!(
                 line.to_string(),
-                "1: LPAREN[0..4](\"line\"), \
+                "1:LPAREN[0..4](\"line\"), \
                 RPAREN[5..7](\"of\"), \
                 LPAREN[8..14](\"source\")"
+            );
+        }
+
+        #[test]
+        fn display_invalid_span() {
+            let line = LexLine(
+                vec![Token {
+                    kind: TokenKind::ParenLeft,
+                    span: 8..4,
+                }],
+                make_textline(),
+            );
+
+            assert_eq!(
+                line.to_string(),
+                "1:LPAREN[8..4](\"#<token-invalid-range>\")"
+            );
+        }
+
+        #[test]
+        fn display_span_out_of_range() {
+            let line = LexLine(
+                vec![Token {
+                    kind: TokenKind::ParenLeft,
+                    span: 8..50,
+                }],
+                make_textline(),
+            );
+
+            assert_eq!(
+                line.to_string(),
+                "1:LPAREN[8..50](\"#<token-invalid-range>\")"
             );
         }
     }
