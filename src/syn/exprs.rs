@@ -1,4 +1,7 @@
-use crate::{lex::Token, literal::Literal};
+use crate::{
+    lex::{LexLine, Token},
+    literal::Literal,
+};
 use std::{
     fmt,
     fmt::{Display, Formatter},
@@ -12,7 +15,7 @@ pub enum Expression {
     Begin(Vec<Expression>),
     Empty,
     Literal(Literal),
-    TokenStream(Vec<Token>),
+    TokenStream(Vec<LexLine>),
 }
 
 #[derive(Debug)]
@@ -41,7 +44,10 @@ impl Display for Expression {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::lex::TokenKind;
+    use crate::{
+        lex::TokenKind,
+        txt::{TextContext, TextLine},
+    };
 
     #[test]
     fn display_ast() {
@@ -73,27 +79,35 @@ mod tests {
 
     #[test]
     fn display_token_stream() {
-        let expr = Expression::TokenStream(vec![
-            Token {
-                kind: TokenKind::ParenLeft,
-                span: 0..1,
+        let expr = Expression::TokenStream(vec![LexLine(
+            vec![
+                Token {
+                    kind: TokenKind::ParenLeft,
+                    span: 0..1,
+                },
+                Token {
+                    kind: TokenKind::Literal(Literal::Boolean(false)),
+                    span: 1..3,
+                },
+                Token {
+                    kind: TokenKind::ParenRight,
+                    span: 3..4,
+                },
+            ],
+            TextLine {
+                ctx: TextContext {
+                    name: "mylib".to_owned(),
+                    path: None,
+                }
+                .into(),
+                line: "(#f)".to_owned(),
+                lineno: 1,
             },
-            Token {
-                kind: TokenKind::Literal(Literal::Boolean(false)),
-                span: 1..3,
-            },
-            Token {
-                kind: TokenKind::ParenRight,
-                span: 3..4,
-            },
-        ]);
+        )]);
 
-        // TODO: TokenStream probably needs to be more than a vec since
-        // it will need the src text as well; that will make this display
-        // easier to get right.
         assert_eq!(
             expr.to_string(),
-            "[LPAREN[0..1](\"(\"), LITERAL<Boolean(false)>[1..3](\"#f\"), RPAREN[3..4](\")\")]"
+            "[1: LPAREN[0..1](\"(\"), LITERAL<Boolean(false)>[1..3](\"#f\"), RPAREN[3..4](\")\")]"
         );
     }
 

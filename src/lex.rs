@@ -28,7 +28,8 @@ fn tokenize_line(text: TextLine) -> LexerLineResult {
     }
 }
 
-pub(crate) struct LexLine(Vec<Token>, TextLine);
+#[derive(Debug)]
+pub struct LexLine(pub(crate) Vec<Token>, pub(crate) TextLine);
 
 impl Display for LexLine {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
