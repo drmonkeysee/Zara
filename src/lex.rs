@@ -94,7 +94,6 @@ mod tests {
     use self::tokens::TokenErrorKind;
     use super::*;
     use crate::txt::TextContext;
-    use std::rc::Rc;
 
     #[test]
     fn display_empty_errors() {
@@ -179,10 +178,11 @@ mod tests {
                 span: 5..7,
             }],
             TextLine {
-                ctx: Rc::new(TextContext {
+                ctx: TextContext {
                     name: "mylib".to_owned(),
                     path: None,
-                }),
+                }
+                .into(),
                 line: "line of source code".to_owned(),
                 lineno: 1,
             },
@@ -218,10 +218,11 @@ mod tests {
 
     fn make_textline() -> TextLine {
         TextLine {
-            ctx: Rc::new(TextContext {
+            ctx: TextContext {
                 name: "mylib".to_owned(),
                 path: Some("lib/mylib.scm".to_owned()),
-            }),
+            }
+            .into(),
             line: "line of source code".to_owned(),
             lineno: 1,
         }
