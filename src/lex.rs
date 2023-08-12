@@ -46,7 +46,7 @@ fn format_token_with_source(t: &Token, txt: &TextLine) -> String {
         "{}(\"{}\")",
         t,
         txt.line
-            .get(t.span.start..t.span.end)
+            .get(t.span.clone())
             .unwrap_or("#<token-invalid-range>")
     )
 }
