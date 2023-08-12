@@ -30,6 +30,12 @@ fn tokenize_line(text: TextLine) -> LexerLineResult {
 
 pub(crate) struct LexLine(Vec<Token>, TextLine);
 
+impl Display for LexLine {
+    fn fmt(&self, _: &mut Formatter<'_>) -> fmt::Result {
+        todo!()
+    }
+}
+
 // NOTE: used by .flatten()
 impl IntoIterator for LexLine {
     type Item = Token;
@@ -91,129 +97,204 @@ impl Display for VerboseLexerError<'_> {
 
 #[cfg(test)]
 mod tests {
-    use self::tokens::TokenErrorKind;
     use super::*;
     use crate::txt::TextContext;
 
-    #[test]
-    fn display_empty_errors() {
-        let err = LexerError(Vec::new(), make_textline());
+    mod result {
+        use super::*;
 
-        assert_eq!(
-            format!("{}", err.verbose_display()),
-            "mylib:1 (lib/mylib.scm)\n\
-            \tline of source code\n"
-        );
+        #[test]
+        fn display_empty_line() {
+            let line = LexLine(Vec::new(), make_textline());
+
+            assert_eq!(line.to_string(), "1: ");
+        }
+
+        #[test]
+        fn display_single_token() {
+            let line = LexLine(
+                vec![Token {
+                    kind: TokenKind::ParenLeft,
+                    span: 8..14,
+                }],
+                make_textline(),
+            );
+
+            assert_eq!(line.to_string(), "1: LPAREN[8..14](\"source\")");
+        }
+
+        #[test]
+        fn display_multiple_tokens() {
+            let line = LexLine(
+                vec![
+                    Token {
+                        kind: TokenKind::ParenLeft,
+                        span: 0..4,
+                    },
+                    Token {
+                        kind: TokenKind::ParenRight,
+                        span: 5..2,
+                    },
+                    Token {
+                        kind: TokenKind::ParenLeft,
+                        span: 8..14,
+                    },
+                ],
+                make_textline(),
+            );
+
+            assert_eq!(
+                line.to_string(),
+                "1: LPAREN[0..4](\"line\"), \
+                RPAREN[5..7](\"of\"), \
+                LPAREN[8..14](\"source\")"
+            );
+        }
     }
 
-    #[test]
-    fn display_single_error() {
-        let err = LexerError(
-            vec![TokenError {
-                kind: TokenErrorKind::Unimplemented("myerr".to_owned()),
-                span: 5..7,
-            }],
-            make_textline(),
-        );
+    mod error {
+        use self::tokens::TokenErrorKind;
+        use super::*;
 
-        assert_eq!(
-            format!("{}", err.verbose_display()),
-            "mylib:1 (lib/mylib.scm)\n\
-            \tline of source code\n\
-            \t     ^^\n\
-            6: unimplemented tokenization: \"myerr\"\n"
-        );
-    }
+        #[test]
+        fn display_empty_errors() {
+            let err = LexerError(Vec::new(), make_textline());
 
-    #[test]
-    fn display_single_error_at_beginning_of_line() {
-        let err = LexerError(
-            vec![TokenError {
-                kind: TokenErrorKind::Unimplemented("myerr".to_owned()),
-                span: 0..4,
-            }],
-            make_textline(),
-        );
+            assert_eq!(
+                err.verbose_display().to_string(),
+                "mylib:1 (lib/mylib.scm)\n\
+                \tline of source code\n"
+            );
+        }
 
-        assert_eq!(
-            format!("{}", err.verbose_display()),
-            "mylib:1 (lib/mylib.scm)\n\
-            \tline of source code\n\
-            \t^^^^\n\
-            1: unimplemented tokenization: \"myerr\"\n"
-        );
-    }
-
-    #[test]
-    fn display_multiple_errors() {
-        let err = LexerError(
-            vec![
-                TokenError {
+        #[test]
+        fn display_single_error() {
+            let err = LexerError(
+                vec![TokenError {
                     kind: TokenErrorKind::Unimplemented("myerr".to_owned()),
                     span: 5..7,
+                }],
+                make_textline(),
+            );
+
+            assert_eq!(
+                err.verbose_display().to_string(),
+                "mylib:1 (lib/mylib.scm)\n\
+                \tline of source code\n\
+                \t     ^^\n\
+                6: unimplemented tokenization: \"myerr\"\n"
+            );
+        }
+
+        #[test]
+        fn display_single_error_at_beginning_of_line() {
+            let err = LexerError(
+                vec![TokenError {
+                    kind: TokenErrorKind::Unimplemented("myerr".to_owned()),
+                    span: 0..4,
+                }],
+                make_textline(),
+            );
+
+            assert_eq!(
+                err.verbose_display().to_string(),
+                "mylib:1 (lib/mylib.scm)\n\
+                \tline of source code\n\
+                \t^^^^\n\
+                1: unimplemented tokenization: \"myerr\"\n"
+            );
+        }
+
+        #[test]
+        fn display_multiple_errors() {
+            let err = LexerError(
+                vec![
+                    TokenError {
+                        kind: TokenErrorKind::Unimplemented("myerr".to_owned()),
+                        span: 5..7,
+                    },
+                    TokenError {
+                        kind: TokenErrorKind::CharacterExpected,
+                        span: 15..19,
+                    },
+                ],
+                make_textline(),
+            );
+
+            assert_eq!(
+                err.verbose_display().to_string(),
+                "mylib:1 (lib/mylib.scm)\n\
+                \tline of source code\n\
+                \t     ^^        ^^^^\n\
+                6: unimplemented tokenization: \"myerr\"\n\
+                16: expected character literal\n"
+            );
+        }
+
+        #[test]
+        fn display_single_error_no_filename() {
+            let err = LexerError(
+                vec![TokenError {
+                    kind: TokenErrorKind::Unimplemented("myerr".to_owned()),
+                    span: 5..7,
+                }],
+                TextLine {
+                    ctx: TextContext {
+                        name: "mylib".to_owned(),
+                        path: None,
+                    }
+                    .into(),
+                    line: "line of source code".to_owned(),
+                    lineno: 1,
                 },
-                TokenError {
-                    kind: TokenErrorKind::CharacterExpected,
-                    span: 15..19,
-                },
-            ],
-            make_textline(),
-        );
+            );
 
-        assert_eq!(
-            format!("{}", err.verbose_display()),
-            "mylib:1 (lib/mylib.scm)\n\
-            \tline of source code\n\
-            \t     ^^        ^^^^\n\
-            6: unimplemented tokenization: \"myerr\"\n\
-            16: expected character literal\n"
-        );
-    }
+            assert_eq!(
+                err.verbose_display().to_string(),
+                "mylib:1\n\
+                \tline of source code\n\
+                \t     ^^\n\
+                6: unimplemented tokenization: \"myerr\"\n"
+            );
+        }
 
-    #[test]
-    fn display_single_error_no_filename() {
-        let err = LexerError(
-            vec![TokenError {
-                kind: TokenErrorKind::Unimplemented("myerr".to_owned()),
-                span: 5..7,
-            }],
-            TextLine {
-                ctx: TextContext {
-                    name: "mylib".to_owned(),
-                    path: None,
-                }
-                .into(),
-                line: "line of source code".to_owned(),
-                lineno: 1,
-            },
-        );
+        #[test]
+        fn display_single_error_invalid_span() {
+            let err = LexerError(
+                vec![TokenError {
+                    kind: TokenErrorKind::Unimplemented("myerr".to_owned()),
+                    span: 5..2,
+                }],
+                make_textline(),
+            );
 
-        assert_eq!(
-            format!("{}", err.verbose_display()),
-            "mylib:1\n\
-            \tline of source code\n\
-            \t     ^^\n\
-            6: unimplemented tokenization: \"myerr\"\n"
-        );
-    }
+            assert_eq!(
+                err.verbose_display().to_string(),
+                "mylib:1 (lib/mylib.scm)\n\
+                \tline of source code\n\
+                \t\n\
+                6: unimplemented tokenization: \"myerr\"\n"
+            );
+        }
 
-    #[test]
-    fn display_single_error_invalid_span() {
-        let err = LexerError(
-            vec![TokenError {
-                kind: TokenErrorKind::Unimplemented("myerr".to_owned()),
-                span: 5..2,
-            }],
-            make_textline(),
-        );
+        #[test]
+        fn display_single_error_span_out_of_range() {
+            let err = LexerError(
+                vec![TokenError {
+                    kind: TokenErrorKind::Unimplemented("myerr".to_owned()),
+                    span: 15..25,
+                }],
+                make_textline(),
+            );
 
-        assert_eq!(
-            format!("{}", err.verbose_display()),
-            "mylib:1 (lib/mylib.scm)\n\
-            \tline of source code\n\
-            \t\n\
-            6: unimplemented tokenization: \"myerr\"\n"
-        );
+            assert_eq!(
+                err.verbose_display().to_string(),
+                "mylib:1 (lib/mylib.scm)\n\
+                \tline of source code\n\
+                \t               ^^^^^^^^^^\n\
+                16: unimplemented tokenization: \"myerr\"\n"
+            );
+        }
     }
 
     fn make_textline() -> TextLine {
