@@ -18,6 +18,7 @@ pub(crate) fn evaluate(expression: Expression) -> EvalResult {
     ))));*/
     match expression {
         Expression::Begin(exprs) => eval_begin(exprs.into_iter()),
+        Expression::TokenStream(_) => Ok(expression),
         _ => Err(EvalError),
     }
     .map(Evaluation::Expression)

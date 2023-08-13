@@ -35,9 +35,34 @@ impl Display for Expression {
             Self::Ast(expr) => write!(f, "{{{:?}}}", expr),
             Self::Empty => Ok(()),
             Self::Literal(lit) => f.write_str(&lit.to_string()),
-            Self::TokenStream(tokens) => write!(f, "{:?}", tokens.as_slice()),
+            Self::TokenStream(lexlines) => {
+                write!(f, "{}", format_token_stream(lexlines.as_slice()))
+            }
             _ => write!(f, "#<expression-display-undefined({:?})>", self),
         }
+    }
+}
+
+fn format_token_stream(lexlines: &[LexLine]) -> String {
+    if lexlines.len() < 2 {
+        format!(
+            "[{}]",
+            lexlines
+                .into_iter()
+                .map(|line| line.to_string())
+                .collect::<String>()
+        )
+    } else {
+        format!(
+            "[\n{}]",
+            format!(
+                "{}",
+                lexlines
+                    .into_iter()
+                    .map(|line| format!("\t{},\n", line))
+                    .collect::<String>()
+            )
+        )
     }
 }
 
@@ -78,6 +103,13 @@ mod tests {
     }
 
     #[test]
+    fn display_empty_token_stream() {
+        let expr = Expression::TokenStream(Vec::new());
+
+        assert_eq!(expr.to_string(), "[]");
+    }
+
+    #[test]
     fn display_token_stream() {
         let expr = Expression::TokenStream(vec![LexLine(
             vec![
@@ -107,7 +139,97 @@ mod tests {
 
         assert_eq!(
             expr.to_string(),
-            "[1: LPAREN[0..1](\"(\"), LITERAL<Boolean(false)>[1..3](\"#f\"), RPAREN[3..4](\")\")]"
+            "[1:LPAREN[0..1](\"(\"), LITERAL<Boolean(false)>[1..3](\"#f\"), RPAREN[3..4](\")\")]"
+        );
+    }
+
+    #[test]
+    fn display_multiline_token_stream() {
+        let expr = Expression::TokenStream(vec![
+            LexLine(
+                vec![
+                    Token {
+                        kind: TokenKind::ParenLeft,
+                        span: 0..1,
+                    },
+                    Token {
+                        kind: TokenKind::Literal(Literal::Boolean(false)),
+                        span: 1..3,
+                    },
+                    Token {
+                        kind: TokenKind::ParenRight,
+                        span: 3..4,
+                    },
+                ],
+                TextLine {
+                    ctx: TextContext {
+                        name: "mylib".to_owned(),
+                        path: None,
+                    }
+                    .into(),
+                    line: "(#f)".to_owned(),
+                    lineno: 1,
+                },
+            ),
+            LexLine(
+                vec![
+                    Token {
+                        kind: TokenKind::ParenLeft,
+                        span: 0..1,
+                    },
+                    Token {
+                        kind: TokenKind::Literal(Literal::Boolean(true)),
+                        span: 2..4,
+                    },
+                    Token {
+                        kind: TokenKind::ParenRight,
+                        span: 5..6,
+                    },
+                ],
+                TextLine {
+                    ctx: TextContext {
+                        name: "mylib".to_owned(),
+                        path: None,
+                    }
+                    .into(),
+                    line: "( #t )".to_owned(),
+                    lineno: 2,
+                },
+            ),
+            LexLine(
+                vec![
+                    Token {
+                        kind: TokenKind::ParenLeft,
+                        span: 0..1,
+                    },
+                    Token {
+                        kind: TokenKind::Literal(Literal::Character('a')),
+                        span: 1..4,
+                    },
+                    Token {
+                        kind: TokenKind::ParenRight,
+                        span: 4..5,
+                    },
+                ],
+                TextLine {
+                    ctx: TextContext {
+                        name: "mylib".to_owned(),
+                        path: None,
+                    }
+                    .into(),
+                    line: "(#\\a)".to_owned(),
+                    lineno: 3,
+                },
+            ),
+        ]);
+
+        assert_eq!(
+            expr.to_string(),
+            "[\n\
+            \t1:LPAREN[0..1](\"(\"), LITERAL<Boolean(false)>[1..3](\"#f\"), RPAREN[3..4](\")\"),\n\
+            \t2:LPAREN[0..1](\"(\"), LITERAL<Boolean(true)>[2..4](\"#t\"), RPAREN[5..6](\")\"),\n\
+            \t3:LPAREN[0..1](\"(\"), LITERAL<Character('a')>[1..4](\"#\\a\"), RPAREN[4..5](\")\"),\n\
+            ]"
         );
     }
 
