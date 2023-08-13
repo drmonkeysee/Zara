@@ -36,7 +36,7 @@ impl Display for Expression {
             Self::Empty => Ok(()),
             Self::Literal(lit) => f.write_str(&lit.to_string()),
             Self::TokenStream(lexlines) => {
-                write!(f, "{}", format_token_stream(lexlines.as_slice()))
+                write!(f, "{}", format_token_stream(lexlines))
             }
             _ => write!(f, "#<expression-display-undefined({:?})>", self),
         }
