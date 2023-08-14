@@ -1,5 +1,9 @@
 const HELP_SHORT: &str = "-h";
 const HELP_LONG: &str = "--help";
+const LIB_SHORT: &str = "-l";
+const LIB_LONG: &str = "--lib";
+const TOKEN_SHORT: &str = "-T";
+const TOKEN_LONG: &str = "--token";
 const VERSION_SHORT: &str = "-V";
 const VERSION_LONG: &str = "--version";
 
@@ -48,11 +52,22 @@ pub(crate) struct Opts;
 
 fn usage(me: &str) {
     println!("---=== {} Usage ===---", app_title());
-    println!("{me} [options...] [command]");
+    println!("{me} [options...] [command | file | -] [args...]");
+    println!();
+    println!("options");
+    println!("  {TOKEN_SHORT}, {TOKEN_LONG}\t: tokenize output only");
     println!();
     println!("commands");
     println!("  {HELP_SHORT}, {HELP_LONG}\t: print usage");
     println!("  {VERSION_SHORT}, {VERSION_LONG}\t: print version");
+    println!(
+        "  {LIB_SHORT} [name],\n  {LIB_LONG} [name]\t: run program from named library (omit name for usage)"
+    );
+    println!("");
+    println!("file\t\t: run program from script file");
+    println!("-\t\t: run program from stdin");
+    println!("args\t\t: arguments passed to program");
+    println!("<no input>\t: launch REPL");
 }
 
 fn version() {
