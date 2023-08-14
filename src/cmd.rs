@@ -11,6 +11,8 @@ const TOKEN_LONG: &str = "--token";
 const VERSION_SHORT: &str = "-V";
 const VERSION_LONG: &str = "--version";
 
+pub(crate) type Result = result::Result<(), CmdError>;
+
 pub(crate) fn parse(mut args: impl Iterator<Item = String>) -> Cmd {
     let mut parsed: Parsed = Default::default();
     parsed.me = args.next().unwrap_or(env!("CARGO_PKG_NAME").to_owned());
@@ -32,8 +34,6 @@ pub(crate) fn parse(mut args: impl Iterator<Item = String>) -> Cmd {
         Cmd::Repl(Opts)
     }
 }
-
-pub(crate) type Result = result::Result<(), CmdError>;
 
 #[derive(Debug)]
 pub(crate) enum CmdError {
