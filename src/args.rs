@@ -1,3 +1,7 @@
+use crate::repl::Repl;
+use rustyline::error::ReadlineError;
+use std::result;
+
 const HELP_SHORT: &str = "-h";
 const HELP_LONG: &str = "--help";
 const LIB_SHORT: &str = "-l";
@@ -7,50 +11,69 @@ const TOKEN_LONG: &str = "--token";
 const VERSION_SHORT: &str = "-V";
 const VERSION_LONG: &str = "--version";
 
-pub(crate) fn parse(mut args: impl Iterator<Item = String>) -> Parsed {
-    let me = args.next().unwrap_or(env!("CARGO_PKG_NAME").to_owned());
-    let mut help = false;
-    let mut ver = false;
+pub(crate) fn parse(mut args: impl Iterator<Item = String>) -> Cmd {
+    let mut parsed: Parsed = Default::default();
+    parsed.me = args.next().unwrap_or(env!("CARGO_PKG_NAME").to_owned());
     for arg in args {
         match arg.as_str() {
-            HELP_SHORT | HELP_LONG => help = true,
-            VERSION_SHORT | VERSION_LONG => ver = true,
+            HELP_SHORT | HELP_LONG => parsed.help = true,
+            TOKEN_SHORT | TOKEN_LONG => parsed.tokenize = true,
+            VERSION_SHORT | VERSION_LONG => parsed.ver = true,
+            "-" => parsed.stdin = true,
             _ => (),
         }
     }
     // NOTE: enforce command precedence here
-    if help {
-        Parsed::Command(Cmd::Help(me))
-    } else if ver {
-        Parsed::Command(Cmd::Version)
+    if parsed.help {
+        Cmd::Help(parsed.me)
+    } else if parsed.ver {
+        Cmd::Version
     } else {
-        Parsed::Options(Opts)
+        Cmd::Repl(Opts)
     }
 }
 
-pub(crate) enum Parsed {
-    Command(Cmd),
-    Options(Opts),
+pub(crate) type Result = result::Result<(), CmdError>;
+
+#[derive(Debug)]
+pub(crate) enum CmdError {
+    Repl(ReadlineError),
+}
+
+impl From<ReadlineError> for CmdError {
+    fn from(value: ReadlineError) -> Self {
+        Self::Repl(value)
+    }
 }
 
 pub(crate) enum Cmd {
     Help(String),
+    Repl(Opts),
     Version,
 }
 
 impl Cmd {
-    pub(crate) fn execute(&self) {
+    pub(crate) fn execute(self) -> Result {
         match self {
             Self::Help(me) => usage(me),
+            Self::Repl(opts) => repl(opts),
             Self::Version => version(),
         }
     }
 }
 
-#[derive(Debug)]
 pub(crate) struct Opts;
 
-fn usage(me: &str) {
+#[derive(Default)]
+struct Parsed {
+    help: bool,
+    me: String,
+    stdin: bool,
+    tokenize: bool,
+    ver: bool,
+}
+
+fn usage(me: String) -> Result {
     println!("---=== {} Usage ===---", app_title());
     println!("{me} [options...] [command | file | -] [args...]");
     println!();
@@ -68,10 +91,18 @@ fn usage(me: &str) {
     println!("-\t\t: run program from stdin");
     println!("args\t\t: arguments passed to program");
     println!("<no input>\t: launch REPL");
+    Ok(())
 }
 
-fn version() {
+fn repl(opts: Opts) -> Result {
+    let mut r = Repl::new(opts)?;
+    r.run()?;
+    Ok(())
+}
+
+fn version() -> Result {
     println!("{} {}", app_title(), env!("CARGO_PKG_VERSION"));
+    Ok(())
 }
 
 fn app_title() -> String {

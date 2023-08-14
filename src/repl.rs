@@ -31,7 +31,6 @@ impl Repl {
     }
 
     pub(crate) fn run(&mut self) -> Result<()> {
-        println!("{:?}", self.options);
         while self.running {
             self.src.set_line(self.editor.readline(self.prompt)?);
             self.runline();
