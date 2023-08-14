@@ -123,7 +123,7 @@ mod tests {
 
         let result = parse(args.into_iter());
 
-        assert!(matches!(result, Parsed::Options(Opts)));
+        assert!(matches!(result, Cmd::Repl(Opts)));
     }
 
     #[test]
@@ -135,7 +135,7 @@ mod tests {
 
         assert!(matches!(
             result,
-            Parsed::Command(Cmd::Help(me)) if me == program
+            Cmd::Help(me) if me == program
         ));
     }
 
@@ -148,7 +148,7 @@ mod tests {
 
         assert!(matches!(
             result,
-            Parsed::Command(Cmd::Help(me)) if me == program
+            Cmd::Help(me) if me == program
         ));
     }
 
@@ -158,7 +158,7 @@ mod tests {
 
         let result = parse(args.into_iter().map(String::from));
 
-        assert!(matches!(result, Parsed::Command(Cmd::Version)));
+        assert!(matches!(result, Cmd::Version));
     }
 
     #[test]
@@ -167,7 +167,7 @@ mod tests {
 
         let result = parse(args.into_iter().map(String::from));
 
-        assert!(matches!(result, Parsed::Command(Cmd::Version)));
+        assert!(matches!(result, Cmd::Version));
     }
 
     #[test]
@@ -176,6 +176,6 @@ mod tests {
 
         let result = parse(args.into_iter().map(String::from));
 
-        assert!(matches!(result, Parsed::Options(Opts)));
+        assert!(matches!(result, Cmd::Repl(Opts)));
     }
 }
