@@ -7,7 +7,7 @@ const HELP_LONG: &str = "--help";
 const LIB_SHORT: &str = "-l";
 const LIB_LONG: &str = "--lib";
 const TOKEN_SHORT: &str = "-T";
-const TOKEN_LONG: &str = "--token";
+const TOKEN_LONG: &str = "--tokens";
 const VERSION_SHORT: &str = "-V";
 const VERSION_LONG: &str = "--version";
 
@@ -19,7 +19,7 @@ pub(crate) fn parse(mut args: impl Iterator<Item = String>) -> Cmd {
     for arg in args {
         match arg.as_str() {
             HELP_SHORT | HELP_LONG => parsed.help = true,
-            TOKEN_SHORT | TOKEN_LONG => parsed.tokenize = true,
+            TOKEN_SHORT | TOKEN_LONG => parsed.tokens = true,
             VERSION_SHORT | VERSION_LONG => parsed.ver = true,
             "-" => parsed.stdin = true,
             _ => (),
@@ -69,7 +69,7 @@ struct Parsed {
     help: bool,
     me: String,
     stdin: bool,
-    tokenize: bool,
+    tokens: bool,
     ver: bool,
 }
 
