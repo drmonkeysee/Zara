@@ -14,17 +14,32 @@ use std::{
 
 pub type Result = result::Result<Evaluation, Error>;
 
-pub struct Interpreter;
+#[derive(Default)]
+pub struct Interpreter {
+    ast_output: bool,
+    token_output: bool,
+}
 
 impl Interpreter {
     pub fn new() -> Self {
-        Self {}
+        Self {
+            ..Default::default()
+        }
     }
 
-    pub fn run(&mut self, src: &mut impl TextSource) -> Result {
+    pub fn run(&self, src: &mut impl TextSource) -> Result {
         let token_lines = lex::tokenize(src)?;
-        let ast = syn::parse(token_lines.into_iter())?;
-        let evaluation = eval::evaluate(ast)?;
+        // TODO: should these be templatized
+        let ast = if self.token_output {
+            syn::tokens(token_lines)
+        } else {
+            syn::parse(token_lines.into_iter())
+        }?;
+        let evaluation = if self.ast_output {
+            eval::ast(ast)
+        } else {
+            eval::evaluate(ast)
+        }?;
         Ok(evaluation)
     }
 }

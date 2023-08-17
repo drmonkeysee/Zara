@@ -12,16 +12,16 @@ pub enum Evaluation {
 pub struct EvalError;
 
 pub(crate) fn evaluate(expression: Expression) -> EvalResult {
-    // TODO: support CLI flag for outputing Abstract Syntax Tree expression
-    /*return Ok(Evaluation::Expression(Expression::Ast(Box::new(
-        expression,
-    ))));*/
     match expression {
         Expression::Begin(exprs) => eval_begin(exprs.into_iter()),
         Expression::TokenStream(_) => Ok(expression),
         _ => Err(EvalError),
     }
     .map(Evaluation::Expression)
+}
+
+pub(crate) fn ast(expression: Expression) -> EvalResult {
+    Ok(Evaluation::Expression(Expression::Ast(expression.into())))
 }
 
 fn eval_expr(expr: Expression) -> ExprResult {

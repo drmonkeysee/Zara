@@ -76,11 +76,14 @@ mod tests {
 
     #[test]
     fn display_ast() {
-        let expr = Expression::Ast(Box::new(Expression::Begin(vec![
-            Expression::Literal(Literal::Character('a')),
-            Expression::Literal(Literal::Character('b')),
-            Expression::Literal(Literal::Character('c')),
-        ])));
+        let expr = Expression::Ast(
+            Expression::Begin(vec![
+                Expression::Literal(Literal::Character('a')),
+                Expression::Literal(Literal::Character('b')),
+                Expression::Literal(Literal::Character('c')),
+            ])
+            .into(),
+        );
 
         assert_eq!(
             expr.to_string(),

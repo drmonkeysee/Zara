@@ -8,8 +8,6 @@ use std::iter::Peekable;
 pub(crate) type ParserResult = Result<Expression, ParserError>;
 
 pub(crate) fn parse(token_lines: impl Iterator<Item = LexLine>) -> ParserResult {
-    // TODO: support CLI flag for outputing Token Stream expression
-    //return Ok(Expression::TokenStream(token_lines.collect()));
     let mut errors: Vec<ExpressionError> = Vec::new();
     // TODO: for now flatten all lexlines into one stream of tokens
     // this'll need to handle individual lines later
@@ -22,6 +20,10 @@ pub(crate) fn parse(token_lines: impl Iterator<Item = LexLine>) -> ParserResult 
     } else {
         Err(ParserError(errors))
     }
+}
+
+pub(crate) fn tokens(token_lines: Vec<LexLine>) -> ParserResult {
+    Ok(Expression::TokenStream(token_lines))
 }
 
 #[derive(Debug)]
