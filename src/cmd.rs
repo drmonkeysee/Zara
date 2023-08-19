@@ -1,37 +1,35 @@
-use crate::repl::Repl;
+use crate::{args, args::Args, repl::Repl};
 use rustyline::error::ReadlineError;
 use std::result;
 
-const HELP_SHORT: &str = "-h";
-const HELP_LONG: &str = "--help";
-const LIB_SHORT: &str = "-l";
-const LIB_LONG: &str = "--lib";
-const TOKEN_SHORT: &str = "-T";
-const TOKEN_LONG: &str = "--tokens";
-const VERSION_SHORT: &str = "-V";
-const VERSION_LONG: &str = "--version";
-
 pub(crate) type Result = result::Result<(), CmdError>;
 
-pub(crate) fn parse(mut args: impl Iterator<Item = String>) -> Cmd {
-    let mut parsed: Parsed = Default::default();
-    parsed.me = args.next().unwrap_or(env!("CARGO_PKG_NAME").to_owned());
-    for arg in args {
-        match arg.as_str() {
-            HELP_SHORT | HELP_LONG => parsed.help = true,
-            TOKEN_SHORT | TOKEN_LONG => parsed.tokens = true,
-            VERSION_SHORT | VERSION_LONG => parsed.ver = true,
-            "-" => parsed.stdin = true,
-            _ => (),
+pub(crate) enum Cmd {
+    Help(String),
+    Repl(Args),
+    Version,
+}
+
+impl Cmd {
+    pub(crate) fn execute(self) -> Result {
+        match self {
+            Self::Help(me) => Ok(args::usage(me)),
+            Self::Repl(opts) => repl(opts),
+            Self::Version => Ok(args::version()),
         }
     }
-    // NOTE: enforce command precedence here
-    if parsed.help {
-        Cmd::Help(parsed.me)
-    } else if parsed.ver {
-        Cmd::Version
-    } else {
-        Cmd::Repl(Opts)
+}
+
+impl From<Args> for Cmd {
+    fn from(value: Args) -> Self {
+        // NOTE: enforce command precedence here
+        if value.help {
+            Self::Help(value.me)
+        } else if value.ver {
+            Self::Version
+        } else {
+            Self::Repl(value)
+        }
     }
 }
 
@@ -46,71 +44,10 @@ impl From<ReadlineError> for CmdError {
     }
 }
 
-pub(crate) enum Cmd {
-    Help(String),
-    Repl(Opts),
-    Version,
-}
-
-impl Cmd {
-    pub(crate) fn execute(self) -> Result {
-        match self {
-            Self::Help(me) => usage(me),
-            Self::Repl(opts) => repl(opts),
-            Self::Version => version(),
-        }
-    }
-}
-
-pub(crate) struct Opts;
-
-#[derive(Default)]
-struct Parsed {
-    help: bool,
-    me: String,
-    stdin: bool,
-    tokens: bool,
-    ver: bool,
-}
-
-fn usage(me: String) -> Result {
-    println!("---=== {} Usage ===---", app_title());
-    println!("{me} [options...] [command | file | -] [args...]");
-    println!();
-    println!("options");
-    println!("  {TOKEN_SHORT}, {TOKEN_LONG}\t: tokenize output only");
-    println!();
-    println!("commands");
-    println!("  {HELP_SHORT}, {HELP_LONG}\t: print usage");
-    println!("  {VERSION_SHORT}, {VERSION_LONG}\t: print version");
-    println!(
-        "  {LIB_SHORT} [name],\n  {LIB_LONG} [name]\t: run program from named library (omit name for usage)"
-    );
-    println!("");
-    println!("file\t\t: run program from script file");
-    println!("-\t\t: run program from stdin");
-    println!("args\t\t: arguments passed to program");
-    println!("<no input>\t: launch REPL");
-    Ok(())
-}
-
-fn repl(opts: Opts) -> Result {
-    let mut r = Repl::new(opts)?;
+fn repl(args: Args) -> Result {
+    let mut r = Repl::new(args)?;
     r.run()?;
     Ok(())
-}
-
-fn version() -> Result {
-    println!("{} {}", app_title(), env!("CARGO_PKG_VERSION"));
-    Ok(())
-}
-
-fn app_title() -> String {
-    let mut title = env!("CARGO_PKG_NAME").to_owned();
-    if let Some(t) = title.get_mut(0..1) {
-        t.make_ascii_uppercase();
-    }
-    title
 }
 
 #[cfg(test)]
@@ -118,20 +55,24 @@ mod tests {
     use super::*;
 
     #[test]
-    fn empty_args() {
-        let args: [String; 0] = [];
+    fn default_args() {
+        let args: Args = Default::default();
 
-        let result = parse(args.into_iter());
+        let result = args.into();
 
         assert!(matches!(result, Cmd::Repl(Opts)));
     }
 
     #[test]
-    fn short_help() {
+    fn help() {
         let program = "foo/me";
-        let args = [program, "-h"];
+        let args = Args {
+            help: true,
+            me: program.to_owned(),
+            ..Default::default()
+        };
 
-        let result = parse(args.into_iter().map(String::from));
+        let result = args.into();
 
         assert!(matches!(
             result,
@@ -140,42 +81,14 @@ mod tests {
     }
 
     #[test]
-    fn long_help() {
-        let program = "foo/me";
-        let args = [program, "--help"];
+    fn version() {
+        let args = Args {
+            ver: true,
+            ..Default::default()
+        };
 
-        let result = parse(args.into_iter().map(String::from));
-
-        assert!(matches!(
-            result,
-            Cmd::Help(me) if me == program
-        ));
-    }
-
-    #[test]
-    fn short_version() {
-        let args = ["foo/me", "-V"];
-
-        let result = parse(args.into_iter().map(String::from));
+        let result = args.into();
 
         assert!(matches!(result, Cmd::Version));
-    }
-
-    #[test]
-    fn long_version() {
-        let args = ["foo/me", "--version"];
-
-        let result = parse(args.into_iter().map(String::from));
-
-        assert!(matches!(result, Cmd::Version));
-    }
-
-    #[test]
-    fn no_matched_args() {
-        let args = ["foo/me", "--not-an-option"];
-
-        let result = parse(args.into_iter().map(String::from));
-
-        assert!(matches!(result, Cmd::Repl(Opts)));
     }
 }

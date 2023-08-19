@@ -1,4 +1,4 @@
-use crate::cmd::Opts;
+use crate::args::Args;
 use rustyline::{DefaultEditor, Result};
 use std::rc::Rc;
 use zara::{
@@ -12,14 +12,14 @@ const CONT: &str = "... ";
 pub(crate) struct Repl {
     editor: DefaultEditor,
     interpreter: Interpreter,
-    options: Opts,
+    options: Args,
     prompt: &'static str,
     running: bool, // TODO: will be needed for repl quit
     src: ReplSource,
 }
 
 impl Repl {
-    pub(crate) fn new(options: Opts) -> Result<Self> {
+    pub(crate) fn new(options: Args) -> Result<Self> {
         Ok(Self {
             editor: DefaultEditor::new()?,
             interpreter: Interpreter::new(),
