@@ -88,77 +88,76 @@ mod tests {
     }
 
     #[test]
-    fn short_help() {
+    fn help() {
         let program = "foo/me";
-        let args = [program, "-h"];
+        let cases = [[program, "-h"], [program, "--help"]];
 
-        let result = parse(args.into_iter().map(String::from));
+        for case in cases {
+            let result = parse(case.into_iter().map(String::from));
 
-        assert!(matches!(
-            result,
-            Args {
-                help: true,
-                me,
-                stdin: false,
-                tokens: false,
-                ver: false,
-            } if me == program
-        ));
+            assert!(
+                matches!(
+                    result,
+                    Args {
+                        help: true,
+                        me,
+                        stdin: false,
+                        tokens: false,
+                        ver: false,
+                    } if me == program
+                ),
+                "Unexpected match for argument {}",
+                case[1]
+            );
+        }
     }
 
     #[test]
-    fn long_help() {
-        let program = "foo/me";
-        let args = [program, "--help"];
+    fn tokens() {
+        let cases = [["foo/me", "-T"], ["foo/me", "--tokens"]];
 
-        let result = parse(args.into_iter().map(String::from));
+        for case in cases {
+            let result = parse(case.into_iter().map(String::from));
 
-        assert!(matches!(
-            result,
-            Args {
-                help: true,
-                me,
-                stdin: false,
-                tokens: false,
-                ver: false,
-            } if me == program
-        ));
+            assert!(
+                matches!(
+                    result,
+                    Args {
+                        help: false,
+                        me: _,
+                        stdin: false,
+                        tokens: true,
+                        ver: false,
+                    }
+                ),
+                "Unexpected match for argument {}",
+                case[1]
+            );
+        }
     }
 
     #[test]
-    fn short_version() {
-        let args = ["foo/me", "-V"];
+    fn version() {
+        let cases = [["foo/me", "-V"], ["foo/me", "--version"]];
 
-        let result = parse(args.into_iter().map(String::from));
+        for case in cases {
+            let result = parse(case.into_iter().map(String::from));
 
-        assert!(matches!(
-            result,
-            Args {
-                help: false,
-                me,
-                stdin: false,
-                tokens: false,
-                ver: true,
-            }
-        ));
-    }
-
-    #[test]
-    fn long_version() {
-        let args = ["foo/me", "--version"];
-
-        let result = parse(args.into_iter().map(String::from));
-
-        assert!(matches!(
-            result,
-            Args {
-                help: false,
-                me,
-                stdin: false,
-                tokens: false,
-                ver: true,
-            }
-        ));
+            assert!(
+                matches!(
+                    result,
+                    Args {
+                        help: false,
+                        me: _,
+                        stdin: false,
+                        tokens: false,
+                        ver: true,
+                    }
+                ),
+                "Unexpected match for argument {}",
+                case[1]
+            );
+        }
     }
 
     #[test]
@@ -171,7 +170,7 @@ mod tests {
             result,
             Args {
                 help: false,
-                me,
+                me: _,
                 stdin: false,
                 tokens: false,
                 ver: false,

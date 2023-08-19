@@ -66,7 +66,16 @@ mod tests {
 
         let result = args.into();
 
-        assert!(matches!(result, Cmd::Repl(Opts)));
+        assert!(matches!(
+            result,
+            Cmd::Repl(Args {
+                help: false,
+                me: _,
+                stdin: false,
+                tokens: false,
+                ver: false,
+            })
+        ));
     }
 
     #[test]
