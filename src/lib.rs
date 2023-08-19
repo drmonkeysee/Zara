@@ -82,7 +82,7 @@ impl Display for VerboseError<'_> {
         let err = self.0;
         match err {
             Error::Lex(lex_err) => write!(f, "{}", lex_err.verbose_display()),
-            _ => write!(f, "#<error-display-undefined({:?})>\n", err),
+            _ => writeln!(f, "#<error-display-undefined({:?})>", err),
         }
     }
 }

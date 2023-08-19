@@ -48,20 +48,17 @@ fn format_token_stream(lexlines: &[LexLine]) -> String {
         format!(
             "[{}]",
             lexlines
-                .into_iter()
+                .iter()
                 .map(|line| line.to_string())
                 .collect::<String>()
         )
     } else {
         format!(
             "[\n{}]",
-            format!(
-                "{}",
-                lexlines
-                    .into_iter()
-                    .map(|line| format!("\t{},\n", line))
-                    .collect::<String>()
-            )
+            lexlines
+                .iter()
+                .map(|line| format!("\t{},\n", line))
+                .collect::<String>()
         )
     }
 }

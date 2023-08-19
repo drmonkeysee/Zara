@@ -8,8 +8,10 @@ const VERSION_SHORT: &str = "-V";
 const VERSION_LONG: &str = "--version";
 
 pub(crate) fn parse(mut args: impl Iterator<Item = String>) -> Args {
-    let mut parsed: Args = Default::default();
-    parsed.me = args.next().unwrap_or(env!("CARGO_PKG_NAME").to_owned());
+    let mut parsed = Args {
+        me: args.next().unwrap_or(env!("CARGO_PKG_NAME").to_owned()),
+        ..Default::default()
+    };
     for arg in args {
         match arg.as_str() {
             HELP_SHORT | HELP_LONG => parsed.help = true,
@@ -44,7 +46,7 @@ pub(crate) fn usage(me: String) {
     println!(
         "  {LIB_SHORT} [name],\n  {LIB_LONG} [name]\t: run program from named library (omit name for usage)"
     );
-    println!("");
+    println!();
     println!("file\t\t: run program from script file");
     println!("-\t\t: run program from stdin");
     println!("args\t\t: arguments passed to program");

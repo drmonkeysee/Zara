@@ -13,9 +13,15 @@ pub(crate) enum Cmd {
 impl Cmd {
     pub(crate) fn execute(self) -> Result {
         match self {
-            Self::Help(me) => Ok(args::usage(me)),
+            Self::Help(me) => {
+                args::usage(me);
+                Ok(())
+            }
             Self::Repl(opts) => repl(opts),
-            Self::Version => Ok(args::version()),
+            Self::Version => {
+                args::version();
+                Ok(())
+            }
         }
     }
 }
