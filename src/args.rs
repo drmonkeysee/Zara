@@ -12,12 +12,17 @@ pub(crate) fn parse(mut args: impl Iterator<Item = String>) -> Args {
         me: args.next().unwrap_or(env!("CARGO_PKG_NAME").to_owned()),
         ..Default::default()
     };
+    let mut stdin = false;
     for arg in args {
+        if stdin {
+            parsed.stdin = Some(arg);
+            break;
+        }
         match arg.as_str() {
             HELP_SHORT | HELP_LONG => parsed.help = true,
             TOKEN_SHORT | TOKEN_LONG => parsed.tokens = true,
             VERSION_SHORT | VERSION_LONG => parsed.ver = true,
-            "-" => parsed.stdin = true,
+            "-" => stdin = true,
             _ => (),
         }
     }
@@ -28,7 +33,7 @@ pub(crate) fn parse(mut args: impl Iterator<Item = String>) -> Args {
 pub(crate) struct Args {
     pub(crate) help: bool,
     pub(crate) me: String,
-    pub(crate) stdin: bool,
+    pub(crate) stdin: Option<String>,
     pub(crate) tokens: bool,
     pub(crate) ver: bool,
 }
@@ -80,7 +85,7 @@ mod tests {
             Args {
                 help: false,
                 me,
-                stdin: false,
+                stdin: None,
                 tokens: false,
                 ver: false,
             } if me == "zara"
@@ -101,7 +106,7 @@ mod tests {
                     Args {
                         help: true,
                         me,
-                        stdin: false,
+                        stdin: None,
                         tokens: false,
                         ver: false,
                     } if me == program
@@ -110,6 +115,43 @@ mod tests {
                 case[1]
             );
         }
+    }
+
+    #[test]
+    fn stdin() {
+        let input = "stdin input";
+        let args = ["foo/me", "-", input];
+
+        let result = parse(args.into_iter().map(String::from));
+
+        assert!(matches!(
+            result,
+            Args {
+                help: false,
+                me: _,
+                stdin: Some(s),
+                tokens: false,
+                ver: false,
+            } if s == input,
+        ));
+    }
+
+    #[test]
+    fn stdin_noinput() {
+        let args = ["foo/me", "-"];
+
+        let result = parse(args.into_iter().map(String::from));
+
+        assert!(matches!(
+            result,
+            Args {
+                help: false,
+                me: _,
+                stdin: None,
+                tokens: false,
+                ver: false,
+            },
+        ));
     }
 
     #[test]
@@ -125,7 +167,7 @@ mod tests {
                     Args {
                         help: false,
                         me: _,
-                        stdin: false,
+                        stdin: None,
                         tokens: true,
                         ver: false,
                     }
@@ -149,7 +191,7 @@ mod tests {
                     Args {
                         help: false,
                         me: _,
-                        stdin: false,
+                        stdin: None,
                         tokens: false,
                         ver: true,
                     }
@@ -171,7 +213,7 @@ mod tests {
             Args {
                 help: false,
                 me: _,
-                stdin: false,
+                stdin: None,
                 tokens: false,
                 ver: false,
             }

@@ -7,6 +7,7 @@ pub(crate) type Result = result::Result<(), CmdError>;
 pub(crate) enum Cmd {
     Help(String),
     Repl(Args),
+    Stdin(String),
     Version,
 }
 
@@ -18,6 +19,7 @@ impl Cmd {
                 Ok(())
             }
             Self::Repl(opts) => repl(opts),
+            Self::Stdin(input) => run_stdin(input),
             Self::Version => {
                 args::version();
                 Ok(())
@@ -33,6 +35,8 @@ impl From<Args> for Cmd {
             Self::Help(value.me)
         } else if value.ver {
             Self::Version
+        } else if let Some(stdin) = value.stdin {
+            Self::Stdin(stdin)
         } else {
             Self::Repl(value)
         }
@@ -56,6 +60,10 @@ fn repl(args: Args) -> Result {
     Ok(())
 }
 
+fn run_stdin(input: String) -> Result {
+    todo!()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -71,7 +79,7 @@ mod tests {
             Cmd::Repl(Args {
                 help: false,
                 me: _,
-                stdin: false,
+                stdin: None,
                 tokens: false,
                 ver: false,
             })
@@ -92,6 +100,22 @@ mod tests {
         assert!(matches!(
             result,
             Cmd::Help(me) if me == program
+        ));
+    }
+
+    #[test]
+    fn stdin() {
+        let input = "stdin input";
+        let args = Args {
+            stdin: Some(input.to_owned()),
+            ..Default::default()
+        };
+
+        let result = args.into();
+
+        assert!(matches!(
+            result,
+            Cmd::Stdin(s) if s == input
         ));
     }
 
