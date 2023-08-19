@@ -59,7 +59,13 @@ pub(crate) fn usage(me: String) {
 }
 
 pub(crate) fn version() {
-    println!("{} {}", app_title(), env!("CARGO_PKG_VERSION"));
+    println!(
+        "{} {} ({}) ({})",
+        app_title(),
+        env!("CARGO_PKG_VERSION"),
+        env!("ZARA_GIT_HASH"),
+        env!("ZARA_COMPILER_VERSION")
+    );
 }
 
 fn app_title() -> String {
