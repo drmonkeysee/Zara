@@ -12,7 +12,6 @@ const CONT: &str = "... ";
 pub(crate) struct Repl {
     editor: DefaultEditor,
     interpreter: Interpreter,
-    options: Args,
     prompt: &'static str,
     running: bool, // TODO: will be needed for repl quit
     src: ReplSource,
@@ -22,8 +21,7 @@ impl Repl {
     pub(crate) fn new(options: Args) -> Result<Self> {
         Ok(Self {
             editor: DefaultEditor::new()?,
-            interpreter: Interpreter::new(),
-            options,
+            interpreter: Interpreter::new(options.tokens, false),
             prompt: INPUT,
             running: true,
             src: ReplSource::new(),

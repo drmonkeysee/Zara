@@ -21,15 +21,16 @@ pub struct Interpreter {
 }
 
 impl Interpreter {
-    pub fn new() -> Self {
+    // TODO: should these be type parameters
+    pub fn new(token_output: bool, ast_output: bool) -> Self {
         Self {
-            ..Default::default()
+            ast_output,
+            token_output,
         }
     }
 
     pub fn run(&self, src: &mut impl TextSource) -> Result {
         let token_lines = lex::tokenize(src)?;
-        // TODO: should these be templatized
         let ast = if self.token_output {
             syn::tokens(token_lines)
         } else {
