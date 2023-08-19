@@ -64,8 +64,12 @@ pub(crate) fn version() {
         app_title(),
         env!("CARGO_PKG_VERSION"),
         env!("ZARA_GIT_HASH"),
-        env!("ZARA_COMPILER_VERSION")
+        env!("ZARA_COMPILER_VERSION"),
     );
+    let deps = env!("ZARA_DEPENDENCIES");
+    if !deps.is_empty() {
+        print!("{}", deps.replace(",", "\n"));
+    }
 }
 
 fn app_title() -> String {
