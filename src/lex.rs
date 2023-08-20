@@ -79,7 +79,7 @@ impl Display for VerboseLexerError<'_> {
         let LexerError(errs, txtline) = self.0;
         write!(f, "{}:{}", txtline.ctx.name, txtline.lineno)?;
         if let Some(p) = &txtline.ctx.path {
-            write!(f, " ({})", p)?;
+            write!(f, " ({p})")?;
         }
         writeln!(f, "\n\t{}", txtline.line)?;
 
@@ -105,7 +105,7 @@ impl Display for VerboseLexerError<'_> {
         }
         f.write_str("\n")?;
         for err in errs {
-            writeln!(f, "{}: {}", err.span.start + 1, err)?;
+            writeln!(f, "{}: {err}", err.span.start + 1)?;
         }
         Ok(())
     }

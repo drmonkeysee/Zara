@@ -82,8 +82,8 @@ impl Display for VerboseError<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let err = self.0;
         match err {
-            Error::Lex(lex_err) => write!(f, "{}", lex_err.verbose_display()),
-            _ => writeln!(f, "#<error-display-undefined({:?})>", err),
+            Error::Lex(lex_err) => lex_err.verbose_display().fmt(f),
+            _ => writeln!(f, "#<error-display-undefined({err:?})>"),
         }
     }
 }

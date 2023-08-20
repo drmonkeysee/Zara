@@ -42,14 +42,14 @@ impl Display for Token {
 
 impl Display for TokenError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        f.write_str(&self.kind.to_string())
+        self.kind.fmt(f)
     }
 }
 
 impl Display for TokenKind {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Literal(lit) => write!(f, "LITERAL<{:?}>", lit),
+            Self::Literal(lit) => write!(f, "LITERAL<{lit:?}>"),
             Self::ParenLeft => f.write_str("LPAREN"),
             Self::ParenRight => f.write_str("RPAREN"),
             Self::VectorOpen => f.write_str("OPENVEC"),
@@ -60,7 +60,7 @@ impl Display for TokenKind {
 impl Display for TokenErrorKind {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            Self::BooleanExpected(b) => write!(f, "expected boolean literal: {}", b),
+            Self::BooleanExpected(b) => write!(f, "expected boolean literal: {b}"),
             Self::CharacterExpected => f.write_str("expected character literal"),
             Self::CharacterExpectedHex => f.write_str("expected character hex-sequence"),
             Self::CharacterInvalidHex => write!(
@@ -71,7 +71,7 @@ impl Display for TokenErrorKind {
             ),
             Self::HashInvalid => f.write_str("unexpected #-literal"),
             Self::HashUnterminated => f.write_str("unterminated #-literal"),
-            Self::Unimplemented(s) => write!(f, "unimplemented tokenization: \"{}\"", s),
+            Self::Unimplemented(s) => write!(f, "unimplemented tokenization: \"{s}\""),
         }
     }
 }

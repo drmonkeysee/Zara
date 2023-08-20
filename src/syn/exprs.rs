@@ -32,13 +32,11 @@ impl Expression {
 impl Display for Expression {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Ast(expr) => write!(f, "{{{:?}}}", expr),
+            Self::Ast(expr) => write!(f, "{{{expr:?}}}"),
             Self::Empty => Ok(()),
-            Self::Literal(lit) => f.write_str(&lit.to_string()),
-            Self::TokenStream(lexlines) => {
-                write!(f, "{}", format_token_stream(lexlines))
-            }
-            _ => write!(f, "#<expression-display-undefined({:?})>", self),
+            Self::Literal(lit) => lit.fmt(f),
+            Self::TokenStream(lexlines) => f.write_str(&format_token_stream(lexlines)),
+            _ => write!(f, "#<expression-display-undefined({self:?})>"),
         }
     }
 }
@@ -243,7 +241,7 @@ mod tests {
 
         assert_eq!(
             expr.to_string(),
-            format!("#<expression-display-undefined({:?})>", expr)
+            format!("#<expression-display-undefined({expr:?})>")
         );
     }
 }
