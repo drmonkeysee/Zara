@@ -1,6 +1,11 @@
 use crate::{args, args::Args, repl::Repl};
 use rustyline::error::ReadlineError;
-use std::result;
+use std::{
+    error::Error,
+    fmt,
+    fmt::{Display, Formatter},
+    result,
+};
 
 pub(crate) type Result = result::Result<(), CmdError>;
 
@@ -46,6 +51,22 @@ impl From<Args> for Cmd {
 #[derive(Debug)]
 pub(crate) enum CmdError {
     Repl(ReadlineError),
+}
+
+impl Display for CmdError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Repl(err) => err.fmt(f),
+        }
+    }
+}
+
+impl Error for CmdError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match self {
+            Self::Repl(err) => Some(err),
+        }
+    }
 }
 
 impl From<ReadlineError> for CmdError {
