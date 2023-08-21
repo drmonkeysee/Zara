@@ -59,12 +59,12 @@ pub(crate) fn usage(me: String) {
 }
 
 pub(crate) fn version() {
-    print!("{} {}", app_title(), env!("CARGO_PKG_VERSION"));
-    let commit = env!("ZARA_GIT_HASH");
-    if !commit.is_empty() {
-        print!(" ({commit})");
-    }
-    println!(" ({})", env!("ZARA_COMPILER_VERSION"));
+    println!(
+        "{} {} ({})",
+        app_title(),
+        env!("CARGO_PKG_VERSION"),
+        env!("ZARA_COMPILER_VERSION")
+    );
     let deps = env!("ZARA_DEPENDENCIES");
     if !deps.is_empty() {
         print!("{}", deps.replace(",", "\n"));
