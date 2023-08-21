@@ -1,4 +1,10 @@
-use crate::{args, args::Args, repl::Repl};
+use crate::{
+    args,
+    args::Args,
+    repl::Repl,
+    run,
+    run::{FileSource, Opts, StdinSource},
+};
 use rustyline::error::ReadlineError;
 use std::{
     error::Error,
@@ -6,25 +12,38 @@ use std::{
     fmt::{Display, Formatter},
     result,
 };
+use zara;
 
 pub(crate) type Result = result::Result<(), CmdError>;
 
 pub(crate) enum Cmd {
+    File(Opts, FileSource),
     Help(String),
-    Repl(Args),
-    Stdin(String),
+    Repl(Opts),
+    Stdin(Opts, StdinSource),
     Version,
 }
 
 impl Cmd {
     pub(crate) fn execute(self) -> Result {
         match self {
+            Self::File(opts, prg) => {
+                run::file(opts, prg)?;
+                Ok(())
+            }
             Self::Help(me) => {
                 args::usage(me);
                 Ok(())
             }
-            Self::Repl(opts) => repl(opts),
-            Self::Stdin(input) => run_stdin(input),
+            Self::Repl(opts) => {
+                let mut r = Repl::new(opts)?;
+                r.run()?;
+                Ok(())
+            }
+            Self::Stdin(opts, src) => {
+                run::stdin(opts, src)?;
+                Ok(())
+            }
             Self::Version => {
                 args::version();
                 Ok(())
@@ -40,10 +59,13 @@ impl From<Args> for Cmd {
             Self::Help(value.me)
         } else if value.ver {
             Self::Version
-        } else if let Some(stdin) = value.stdin {
-            Self::Stdin(stdin)
         } else {
-            Self::Repl(value)
+            let opts = Opts::with_args(&value);
+            if let Some(stdin) = value.stdin {
+                Self::Stdin(opts, StdinSource::new(stdin))
+            } else {
+                Self::Repl(opts)
+            }
         }
     }
 }
@@ -51,12 +73,14 @@ impl From<Args> for Cmd {
 #[derive(Debug)]
 pub(crate) enum CmdError {
     Repl(ReadlineError),
+    Run(zara::Error),
 }
 
 impl Display for CmdError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
             Self::Repl(err) => err.fmt(f),
+            Self::Run(err) => todo!(),
         }
     }
 }
@@ -65,6 +89,7 @@ impl Error for CmdError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
             Self::Repl(err) => Some(err),
+            Self::Run(err) => todo!(),
         }
     }
 }
@@ -75,14 +100,10 @@ impl From<ReadlineError> for CmdError {
     }
 }
 
-fn repl(args: Args) -> Result {
-    let mut r = Repl::new(args)?;
-    r.run()?;
-    Ok(())
-}
-
-fn run_stdin(input: String) -> Result {
-    todo!()
+impl From<zara::Error> for CmdError {
+    fn from(value: zara::Error) -> Self {
+        Self::Run(value)
+    }
 }
 
 #[cfg(test)]
@@ -97,12 +118,9 @@ mod tests {
 
         assert!(matches!(
             result,
-            Cmd::Repl(Args {
-                help: false,
-                me: _,
-                stdin: None,
-                tokens: false,
-                ver: false,
+            Cmd::Repl(Opts {
+                ast_output: false,
+                token_output: false,
             })
         ));
     }
@@ -136,7 +154,13 @@ mod tests {
 
         assert!(matches!(
             result,
-            Cmd::Stdin(s) if s == input
+            Cmd::Stdin(
+                Opts {
+                    ast_output: false,
+                    token_output: false,
+                },
+                src,
+            )
         ));
     }
 

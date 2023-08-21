@@ -1,6 +1,7 @@
 mod args;
 mod cmd;
 mod repl;
+mod run;
 
 use self::cmd::{Cmd, Result};
 use std::env;

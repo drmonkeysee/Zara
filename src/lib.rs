@@ -9,6 +9,8 @@ pub use self::{eval::Evaluation, syn::Expression};
 use std::{
     fmt,
     fmt::{Display, Formatter},
+    io,
+    path::PathBuf,
     result,
 };
 
@@ -86,4 +88,8 @@ impl Display for VerboseError<'_> {
             _ => writeln!(f, "#<error-display-undefined({err:?})>"),
         }
     }
+}
+
+pub fn resolve_library(name: &str) -> io::Result<PathBuf> {
+    todo!();
 }
