@@ -108,14 +108,10 @@ impl Iterator for ReplSource {
     type Item = TextLine;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if let Some(line) = self.line.take() {
-            Some(TextLine {
-                ctx: self.context(),
-                line,
-                lineno: self.lineno,
-            })
-        } else {
-            None
-        }
+        Some(TextLine {
+            ctx: self.context(),
+            line: self.line.take()?,
+            lineno: self.lineno,
+        })
     }
 }

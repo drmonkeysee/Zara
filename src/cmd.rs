@@ -12,7 +12,6 @@ use std::{
     fmt::{Display, Formatter},
     result,
 };
-use zara;
 
 pub(crate) type Result = result::Result<(), CmdError>;
 
