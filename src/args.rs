@@ -38,7 +38,7 @@ pub(crate) struct Args {
     pub(crate) ver: bool,
 }
 
-pub(crate) fn usage(me: String) {
+pub(crate) fn usage(me: &str) {
     println!("---=== {} Usage ===---", app_title());
     println!("{me} [options...] [command | file | -] [args...]");
     println!();

@@ -19,7 +19,7 @@ pub(crate) enum Cmd {
 }
 
 impl Cmd {
-    pub(crate) fn execute(self) -> Result {
+    pub(crate) fn execute(&self) -> Result {
         match self {
             Self::File(opts, prg) => {
                 run::file(opts, prg.as_path())?;
@@ -35,7 +35,7 @@ impl Cmd {
                 Ok(())
             }
             Self::Stdin(opts, src) => {
-                run::stdin(opts, &src)?;
+                run::stdin(opts, src)?;
                 Ok(())
             }
             Self::Version => {

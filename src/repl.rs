@@ -11,17 +11,17 @@ const CONT: &str = "... ";
 
 pub(crate) struct Repl {
     editor: DefaultEditor,
-    interpreter: Interpreter,
+    runtime: Interpreter,
     prompt: &'static str,
     running: bool, // TODO: will be needed for repl quit
     src: ReplSource,
 }
 
 impl Repl {
-    pub(crate) fn new(opts: Opts) -> Result<Self> {
+    pub(crate) fn new(opts: &Opts) -> Result<Self> {
         Ok(Self {
             editor: DefaultEditor::new()?,
-            interpreter: Interpreter::new(opts.token_output, false),
+            runtime: Interpreter::new(opts.token_output, opts.ast_output),
             prompt: INPUT,
             running: true,
             src: ReplSource::new(),
@@ -37,7 +37,7 @@ impl Repl {
     }
 
     fn runline(&mut self) {
-        match self.interpreter.run(&mut self.src) {
+        match self.runtime.run(&mut self.src) {
             Ok(eval) => match eval {
                 Evaluation::Continuation => self.prep_continuation(),
                 Evaluation::Expression(expr) => self.print_expr(expr),

@@ -19,11 +19,11 @@ impl Opts {
     }
 }
 
-pub(crate) fn file(opts: Opts, prg: &Path) -> Result {
+pub(crate) fn file(opts: &Opts, prg: &Path) -> Result {
     todo!();
 }
 
-pub(crate) fn stdin(opts: Opts, src: &str) -> Result {
+pub(crate) fn stdin(opts: &Opts, src: &str) -> Result {
     let mut src = StdinSource::new(src);
     let runtime = Interpreter::new(opts.token_output, opts.ast_output);
     runtime.run(&mut src)
