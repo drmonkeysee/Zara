@@ -115,3 +115,92 @@ impl Iterator for ReplSource {
         })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn source_create() {
+        let target = ReplSource::new();
+
+        assert!(matches!(
+            target.ctx.as_ref(),
+            TextContext {
+                name,
+                path: None
+            } if name == "<repl>"
+        ));
+        assert!(target.line.is_none());
+        assert_eq!(target.lineno, 1);
+    }
+
+    #[test]
+    fn source_set_line() {
+        let mut target = ReplSource::new();
+
+        target.set_line("foo".to_owned());
+
+        assert!(target.line.is_some());
+        assert_eq!(target.line.unwrap(), "foo");
+    }
+
+    #[test]
+    fn source_advance() {
+        let mut target = ReplSource::new();
+
+        target.advance();
+
+        assert_eq!(target.lineno, 2);
+    }
+
+    #[test]
+    fn source_reset() {
+        let mut target = ReplSource::new();
+
+        target.advance();
+        target.advance();
+
+        assert_eq!(target.lineno, 3);
+
+        target.reset();
+
+        assert_eq!(target.lineno, 1);
+    }
+
+    #[test]
+    fn source_context() {
+        let target = ReplSource::new();
+
+        let ctx = target.context();
+
+        assert!(Rc::ptr_eq(&ctx, &target.ctx));
+    }
+
+    #[test]
+    fn source_iterator() {
+        let mut target = ReplSource::new();
+
+        let item = target.next();
+
+        assert!(item.is_none());
+
+        target.set_line("foo".to_owned());
+
+        let item = target.next();
+
+        assert!(item.is_some());
+        assert!(matches!(
+            item.unwrap(),
+            TextLine {
+                ctx,
+                line,
+                lineno: 1,
+            } if Rc::ptr_eq(&ctx, &target.ctx) && line == "foo"
+        ));
+
+        let item = target.next();
+
+        assert!(item.is_none());
+    }
+}
