@@ -181,17 +181,17 @@ mod tests {
     fn source_iterator() {
         let mut target = ReplSource::new();
 
-        let item = target.next();
+        let line = target.next();
 
-        assert!(item.is_none());
+        assert!(line.is_none());
 
         target.set_line("foo".to_owned());
 
-        let item = target.next();
+        let line = target.next();
 
-        assert!(item.is_some());
+        assert!(line.is_some());
         assert!(matches!(
-            item.unwrap(),
+            line.unwrap(),
             TextLine {
                 ctx,
                 line,
@@ -199,8 +199,8 @@ mod tests {
             } if Rc::ptr_eq(&ctx, &target.ctx) && line == "foo"
         ));
 
-        let item = target.next();
+        let line = target.next();
 
-        assert!(item.is_none());
+        assert!(line.is_none());
     }
 }
