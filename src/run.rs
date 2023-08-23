@@ -1,5 +1,5 @@
 use crate::args::Args;
-use std::{path::Path, rc::Rc, str::Split};
+use std::{path::Path, rc::Rc};
 use zara::{
     txt::{LineNumber, TextContext, TextLine, TextSource},
     Interpreter, Result,
@@ -19,41 +19,46 @@ impl Opts {
     }
 }
 
-pub(crate) fn file(opts: &Opts, prg: &Path) -> Result {
+pub(crate) fn file(opts: Opts, prg: impl AsRef<Path>) -> Result {
     todo!();
 }
 
-pub(crate) fn stdin(opts: &Opts, src: &str) -> Result {
-    let mut src = StdinSource::new(src);
+pub(crate) fn stdin(opts: Opts, src: impl Into<String>) -> Result {
+    let mut src = StdinSource::new(src.into());
     let runtime = Interpreter::new(opts.token_output, opts.ast_output);
     runtime.run(&mut src)
 }
 
 struct FileSource;
 
-struct StdinSource<'a> {
+struct StdinSource {
     ctx: Rc<TextContext>,
-    lines: Split<'a, char>,
+    lines: <Vec<String> as IntoIterator>::IntoIter,
     lineno: LineNumber,
 }
 
-impl<'a> StdinSource<'a> {
-    pub(crate) fn new(src: &'a str) -> Self {
+impl StdinSource {
+    fn new(src: String) -> Self {
         Self {
             ctx: TextContext::named("<stdin>").into(),
-            lines: src.split('\n'),
+            lines: src
+                .split('\n')
+                .filter(|s| !s.trim().is_empty())
+                .map(String::from)
+                .collect::<Vec<_>>()
+                .into_iter(),
             lineno: 1,
         }
     }
 }
 
-impl TextSource for StdinSource<'_> {
+impl TextSource for StdinSource {
     fn context(&self) -> Rc<TextContext> {
         self.ctx.clone()
     }
 }
 
-impl Iterator for StdinSource<'_> {
+impl Iterator for StdinSource {
     type Item = TextLine;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -61,8 +66,7 @@ impl Iterator for StdinSource<'_> {
         self.lineno += 1;
         Some(TextLine {
             ctx: self.context(),
-            // TODO: interpreter does need to own its input
-            line: self.lines.next()?.to_owned(),
+            line: self.lines.next()?,
             lineno,
         })
     }
@@ -101,7 +105,7 @@ mod tests {
         fn create_from_str() {
             let src = "line of source code";
 
-            let target = StdinSource::new(src);
+            let target = StdinSource::new(src.to_owned());
 
             assert!(matches!(
                 target.ctx.as_ref(),
@@ -115,7 +119,7 @@ mod tests {
 
         #[test]
         fn context() {
-            let target = StdinSource::new("foo");
+            let target = StdinSource::new("foo".to_owned());
 
             let ctx = target.context();
 
@@ -125,7 +129,7 @@ mod tests {
         #[test]
         fn iterate_one_line() {
             let src = "line of source code";
-            let mut target = StdinSource::new(src);
+            let mut target = StdinSource::new(src.to_owned());
 
             let line = target.next();
 
@@ -147,7 +151,7 @@ mod tests {
         #[test]
         fn iterate_one_line_with_newline() {
             let src = "line of source code\n";
-            let mut target = StdinSource::new(src);
+            let mut target = StdinSource::new(src.to_owned());
 
             let line = target.next();
 
@@ -163,25 +167,13 @@ mod tests {
 
             let line = target.next();
 
-            assert!(line.is_some());
-            assert!(matches!(
-                line.unwrap(),
-                TextLine {
-                    ctx,
-                    line,
-                    lineno: 2,
-                } if Rc::ptr_eq(&ctx, &target.ctx) && line == ""
-            ));
-
-            let line = target.next();
-
             assert!(line.is_none());
         }
 
         #[test]
         fn iterate_multi_lines() {
             let src = "line1\nline2\nline3\n";
-            let mut target = StdinSource::new(src);
+            let mut target = StdinSource::new(src.to_owned());
 
             let line = target.next();
 
@@ -217,18 +209,6 @@ mod tests {
                     line,
                     lineno: 3,
                 } if Rc::ptr_eq(&ctx, &target.ctx) && line == "line3"
-            ));
-
-            let line = target.next();
-
-            assert!(line.is_some());
-            assert!(matches!(
-                line.unwrap(),
-                TextLine {
-                    ctx,
-                    line,
-                    lineno: 4,
-                } if Rc::ptr_eq(&ctx, &target.ctx) && line == ""
             ));
 
             let line = target.next();

@@ -18,7 +18,7 @@ pub(crate) struct Repl {
 }
 
 impl Repl {
-    pub(crate) fn new(opts: &Opts) -> Result<Self> {
+    pub(crate) fn new(opts: Opts) -> Result<Self> {
         Ok(Self {
             editor: DefaultEditor::new()?,
             runtime: Interpreter::new(opts.token_output, opts.ast_output),
