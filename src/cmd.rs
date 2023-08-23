@@ -1,25 +1,20 @@
-use crate::{
-    args,
-    args::Args,
-    repl::Repl,
-    run,
-    run::{FileSource, Opts, StdinSource},
-};
+use crate::{args, args::Args, repl::Repl, run, run::Opts};
 use rustyline::error::ReadlineError;
 use std::{
     error::Error,
     fmt,
     fmt::{Display, Formatter},
+    path::PathBuf,
     result,
 };
 
 pub(crate) type Result = result::Result<(), CmdError>;
 
 pub(crate) enum Cmd {
-    File(Opts, FileSource),
+    File(Opts, PathBuf),
     Help(String),
     Repl(Opts),
-    Stdin(Opts, StdinSource),
+    Stdin(Opts, String),
     Version,
 }
 
@@ -27,7 +22,7 @@ impl Cmd {
     pub(crate) fn execute(self) -> Result {
         match self {
             Self::File(opts, prg) => {
-                run::file(opts, prg)?;
+                run::file(opts, prg.as_path())?;
                 Ok(())
             }
             Self::Help(me) => {
@@ -40,7 +35,7 @@ impl Cmd {
                 Ok(())
             }
             Self::Stdin(opts, src) => {
-                run::stdin(opts, src)?;
+                run::stdin(opts, &src)?;
                 Ok(())
             }
             Self::Version => {
@@ -61,7 +56,7 @@ impl From<Args> for Cmd {
         } else {
             let opts = Opts::with_args(&value);
             if let Some(stdin) = value.stdin {
-                Self::Stdin(opts, StdinSource::new(stdin))
+                Self::Stdin(opts, stdin)
             } else {
                 Self::Repl(opts)
             }
