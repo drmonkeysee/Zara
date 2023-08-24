@@ -24,7 +24,7 @@ pub(crate) fn file(opts: Opts, prg: impl AsRef<Path>) -> Result {
 }
 
 pub(crate) fn stdin(opts: Opts, src: String) -> Result {
-    let mut src = StdinSource::new(src.into());
+    let mut src = StdinSource::new(src);
     let runtime = Interpreter::new(opts.token_output, opts.ast_output);
     runtime.run(&mut src)
 }
