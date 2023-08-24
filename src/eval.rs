@@ -3,6 +3,7 @@ use crate::syn::Expression;
 pub(crate) type EvalResult = Result<Evaluation, EvalError>;
 type ExprResult = Result<Expression, EvalError>;
 
+#[derive(Debug)]
 pub enum Evaluation {
     Expression(Expression),
     Continuation,
