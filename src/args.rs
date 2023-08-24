@@ -1,3 +1,5 @@
+const AST_SHORT: &str = "-S";
+const AST_LONG: &str = "--syntax";
 const HELP_SHORT: &str = "-h";
 const HELP_LONG: &str = "--help";
 const LIB_SHORT: &str = "-l";
@@ -19,6 +21,7 @@ pub(crate) fn parse(mut args: impl Iterator<Item = String>) -> Args {
             break;
         }
         match arg.as_str() {
+            AST_SHORT | AST_LONG => parsed.ast = true,
             HELP_SHORT | HELP_LONG => parsed.help = true,
             TOKEN_SHORT | TOKEN_LONG => parsed.tokens = true,
             VERSION_SHORT | VERSION_LONG => parsed.ver = true,
@@ -31,6 +34,7 @@ pub(crate) fn parse(mut args: impl Iterator<Item = String>) -> Args {
 
 #[derive(Debug, Default)]
 pub(crate) struct Args {
+    pub(crate) ast: bool,
     pub(crate) help: bool,
     pub(crate) me: String,
     pub(crate) stdin: Option<String>,
@@ -43,7 +47,8 @@ pub(crate) fn usage(me: &str) {
     println!("{me} [options...] [command | file | -] [args...]");
     println!();
     println!("options");
-    println!("  {TOKEN_SHORT}, {TOKEN_LONG}\t: tokenize output only");
+    println!("  {AST_SHORT}, {AST_LONG}\t: print abstract syntax tree");
+    println!("  {TOKEN_SHORT}, {TOKEN_LONG}\t: print tokenized input");
     println!();
     println!("commands");
     println!("  {HELP_SHORT}, {HELP_LONG}\t: print usage");
@@ -92,6 +97,7 @@ mod tests {
         assert!(matches!(
             result,
             Args {
+                ast: false,
                 help: false,
                 me,
                 stdin: None,
@@ -113,6 +119,7 @@ mod tests {
                 matches!(
                     result,
                     Args {
+                        ast: false,
                         help: true,
                         me,
                         stdin: None,
@@ -136,6 +143,7 @@ mod tests {
         assert!(matches!(
             result,
             Args {
+                ast: false,
                 help: false,
                 me: _,
                 stdin: Some(s),
@@ -154,6 +162,7 @@ mod tests {
         assert!(matches!(
             result,
             Args {
+                ast: false,
                 help: false,
                 me: _,
                 stdin: None,
@@ -161,6 +170,31 @@ mod tests {
                 ver: false,
             },
         ));
+    }
+
+    #[test]
+    fn syntax_tree() {
+        let cases = [["foo/me", "-S"], ["foo/me", "--syntax"]];
+
+        for case in cases {
+            let result = parse(case.into_iter().map(String::from));
+
+            assert!(
+                matches!(
+                    result,
+                    Args {
+                        ast: true,
+                        help: false,
+                        me: _,
+                        stdin: None,
+                        tokens: false,
+                        ver: false,
+                    }
+                ),
+                "Unexpected match for argument {}",
+                case[1]
+            );
+        }
     }
 
     #[test]
@@ -174,6 +208,7 @@ mod tests {
                 matches!(
                     result,
                     Args {
+                        ast: false,
                         help: false,
                         me: _,
                         stdin: None,
@@ -198,6 +233,7 @@ mod tests {
                 matches!(
                     result,
                     Args {
+                        ast: false,
                         help: false,
                         me: _,
                         stdin: None,
@@ -220,6 +256,7 @@ mod tests {
         assert!(matches!(
             result,
             Args {
+                ast: false,
                 help: false,
                 me: _,
                 stdin: None,

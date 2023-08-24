@@ -13,7 +13,7 @@ pub(crate) struct Opts {
 impl Opts {
     pub(crate) fn with_args(args: &Args) -> Self {
         Self {
-            ast_output: false,
+            ast_output: args.ast,
             token_output: args.tokens,
         }
     }
@@ -82,6 +82,7 @@ mod tests {
         #[test]
         fn create_from_args() {
             let args = Args {
+                ast: true,
                 tokens: true,
                 ..Default::default()
             };
@@ -91,7 +92,7 @@ mod tests {
             assert!(matches!(
                 target,
                 Opts {
-                    ast_output: false,
+                    ast_output: true,
                     token_output: true,
                 }
             ));
