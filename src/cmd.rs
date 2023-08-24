@@ -154,7 +154,7 @@ mod tests {
                     token_output: false,
                 },
                 src,
-            )
+            ) if src == input
         ));
     }
 
