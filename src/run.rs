@@ -5,6 +5,7 @@ use zara::{
     Interpreter, Result,
 };
 
+#[derive(Debug)]
 pub(crate) struct Opts {
     pub(crate) ast_output: bool,
     pub(crate) token_output: bool,
