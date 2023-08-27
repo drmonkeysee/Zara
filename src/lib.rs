@@ -7,7 +7,7 @@ pub mod txt;
 use self::{eval::EvalError, lex::LexerError, syn::ParserError, txt::TextSource};
 pub use self::{eval::Evaluation, syn::Expression};
 use std::{
-    fmt,
+    error, fmt,
     fmt::{Display, Formatter},
     io,
     path::PathBuf,
@@ -60,6 +60,26 @@ impl Error {
     }
 }
 
+impl Display for Error {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Lex(lx) => lx.fmt(f),
+            Self::Parse(ps) => ps.fmt(f),
+            Self::Eval(ev) => ev.fmt(f),
+        }
+    }
+}
+
+impl error::Error for Error {
+    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
+        Some(match self {
+            Self::Lex(lx) => lx,
+            Self::Parse(ps) => ps,
+            Self::Eval(ev) => ev,
+        })
+    }
+}
+
 impl From<LexerError> for Error {
     fn from(value: LexerError) -> Self {
         Self::Lex(value)
@@ -85,7 +105,7 @@ impl Display for ExtendedError<'_> {
         let err = self.0;
         match err {
             Error::Lex(lex_err) => lex_err.extended_display().fmt(f),
-            _ => writeln!(f, "#<error-display-undefined({err:?})>"),
+            _ => writeln!(f, "#<error-extended-display-undefined({err:?})>"),
         }
     }
 }

@@ -74,17 +74,17 @@ impl Display for CmdError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
             Self::Repl(err) => err.fmt(f),
-            Self::Run(err) => todo!(),
+            Self::Run(err) => err.fmt(f),
         }
     }
 }
 
 impl Error for CmdError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
-        match self {
-            Self::Repl(err) => Some(err),
-            Self::Run(err) => todo!(),
-        }
+        Some(match self {
+            Self::Repl(err) => err,
+            Self::Run(err) => err,
+        })
     }
 }
 

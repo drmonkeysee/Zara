@@ -28,7 +28,7 @@ impl Termination for Exit {
     fn report(self) -> ExitCode {
         self.0.map_or_else(
             |err| {
-                eprintln!("{}", err);
+                eprintln!("{err}");
                 ExitCode::FAILURE
             },
             |u| u.report(),

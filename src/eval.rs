@@ -1,5 +1,6 @@
 use crate::syn::Expression;
 use std::{
+    error::Error,
     fmt,
     fmt::{Display, Formatter},
 };
@@ -29,6 +30,14 @@ impl Display for ExtendedEvaluation<'_> {
 
 #[derive(Debug)]
 pub struct EvalError;
+
+impl Display for EvalError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        f.write_str("Fatal error: evaluation failure")
+    }
+}
+
+impl Error for EvalError {}
 
 pub(crate) fn evaluate(expression: Expression) -> EvalResult {
     match expression {

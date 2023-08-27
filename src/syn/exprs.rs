@@ -55,7 +55,7 @@ fn format_token_stream(lexlines: &[LexLine]) -> String {
             "[\n{}]",
             lexlines
                 .iter()
-                .map(|line| format!("\t{},\n", line))
+                .map(|line| format!("\t{line},\n"))
                 .collect::<String>()
         )
     }

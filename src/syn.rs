@@ -3,7 +3,12 @@ mod exprs;
 pub use self::exprs::Expression;
 use self::exprs::{ExpressionError, ExpressionResult};
 use crate::lex::{LexLine, Token, TokenKind};
-use std::iter::Peekable;
+use std::{
+    error::Error,
+    fmt,
+    fmt::{Display, Formatter},
+    iter::Peekable,
+};
 
 pub(crate) type ParserResult = Result<Expression, ParserError>;
 
@@ -28,6 +33,14 @@ pub(crate) fn tokens(token_lines: Vec<LexLine>) -> ParserResult {
 
 #[derive(Debug)]
 pub struct ParserError(Vec<ExpressionError>);
+
+impl Display for ParserError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        f.write_str("Fatal error: parsing failure")
+    }
+}
+
+impl Error for ParserError {}
 
 struct Parser<I: Iterator> {
     tokens: Peekable<I>,

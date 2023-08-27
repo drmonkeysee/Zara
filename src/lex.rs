@@ -5,6 +5,7 @@ pub(crate) use self::tokens::{Token, TokenKind};
 use self::{tokenize::TokenStream, tokens::TokenError};
 use crate::txt::{TextLine, TextSource};
 use std::{
+    error::Error,
     fmt,
     fmt::{Display, Formatter},
 };
@@ -70,6 +71,14 @@ impl LexerError {
         ExtendedLexerError(self)
     }
 }
+
+impl Display for LexerError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        f.write_str("Fatal error: tokenization failure")
+    }
+}
+
+impl Error for LexerError {}
 
 pub(crate) struct ExtendedLexerError<'a>(&'a LexerError);
 
