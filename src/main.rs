@@ -18,12 +18,6 @@ fn main() -> Exit {
 // annoying default behavior of Result printing the Debug representation.
 struct Exit(Result);
 
-impl From<Result> for Exit {
-    fn from(value: Result) -> Self {
-        Self(value)
-    }
-}
-
 impl Termination for Exit {
     fn report(self) -> ExitCode {
         self.0.map_or_else(
@@ -33,5 +27,11 @@ impl Termination for Exit {
             },
             |u| u.report(),
         )
+    }
+}
+
+impl From<Result> for Exit {
+    fn from(value: Result) -> Self {
+        Self(value)
     }
 }
