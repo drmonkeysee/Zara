@@ -22,7 +22,7 @@ fn set_env_dependencies() {
         Command::new("cargo")
             .args(["tree", "-e", "normal", "--depth", "1", "--prefix", "none"])
             .output(),
-        |val| val.split("\n").skip(1).collect::<Vec<_>>().join(","),
+        |val| val.split('\n').skip(1).collect::<Vec<_>>().join(","),
     );
 }
 

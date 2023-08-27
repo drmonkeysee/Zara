@@ -72,7 +72,7 @@ pub(crate) fn version() {
     );
     let deps = env!("ZARA_DEPENDENCIES");
     if !deps.is_empty() {
-        print!("{}", deps.replace(",", "\n"));
+        print!("{}", deps.replace(',', "\n"));
     }
 }
 
