@@ -105,7 +105,7 @@ impl Display for ExtendedError<'_> {
         let err = self.0;
         match err {
             Error::Lex(lex_err) => lex_err.extended_display().fmt(f),
-            _ => writeln!(f, "#<error-extended-display-undefined({err:?})>"),
+            _ => writeln!(f, "#<error-extdisplay-undef({err:?})>"),
         }
     }
 }

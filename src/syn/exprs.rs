@@ -32,7 +32,7 @@ impl Display for Expression {
             Self::Empty => Ok(()),
             Self::Literal(lit) => lit.fmt(f),
             Self::TokenStream(lexlines) => f.write_str(&format_token_stream(lexlines)),
-            _ => write!(f, "#<expression-display-undefined({self:?})>"),
+            _ => write!(f, "#<expr-display-undef({self:?})>"),
         }
     }
 }
@@ -44,7 +44,7 @@ pub(super) enum ExpressionError {
 
 impl Display for ExpressionError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "#<expression-error-display-undefined({self:?})>")
+        write!(f, "#<expr-error-display-undef({self:?})>")
     }
 }
 
@@ -248,9 +248,6 @@ mod tests {
             Expression::Literal(Literal::Character('c')),
         ]);
 
-        assert_eq!(
-            expr.to_string(),
-            format!("#<expression-display-undefined({expr:?})>")
-        );
+        assert_eq!(expr.to_string(), format!("#<expr-display-undef({expr:?})>"));
     }
 }

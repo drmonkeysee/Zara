@@ -21,7 +21,7 @@ pub struct ExtendedEvaluation<'a>(&'a Evaluation);
 
 impl Display for ExtendedEvaluation<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        writeln!(f, "#<eval-extended-display-undefined({:?})>", self.0)
+        writeln!(f, "#<eval-extdisplay-undef({:?})>", self.0)
     }
 }
 
