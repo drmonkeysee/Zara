@@ -10,6 +10,7 @@ use std::{
 
 pub(crate) type Result = result::Result<(), CmdError>;
 
+#[derive(Debug)]
 pub(crate) enum Cmd {
     File(Opts, PathBuf),
     Help(String),

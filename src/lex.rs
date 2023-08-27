@@ -10,25 +10,6 @@ use std::{
     fmt::{Display, Formatter},
 };
 
-pub(crate) type LexerResult = Result<Vec<LexLine>, LexerError>;
-type LexerLineResult = Result<LexLine, LexerError>;
-
-pub(crate) fn tokenize(src: &mut impl TextSource) -> LexerResult {
-    src.map(tokenize_line).collect::<LexerResult>()
-}
-
-fn tokenize_line(text: TextLine) -> LexerLineResult {
-    let mut errors: Vec<TokenError> = Vec::new();
-    let tokens = TokenStream::on(&text.line)
-        .filter_map(|tr| tr.map_err(|err| errors.push(err)).ok())
-        .collect();
-    if errors.is_empty() {
-        Ok(LexLine(tokens, text))
-    } else {
-        Err(LexerError(errors, text))
-    }
-}
-
 #[derive(Debug)]
 pub struct LexLine(pub(crate) Vec<Token>, pub(crate) TextLine);
 
@@ -41,16 +22,6 @@ impl Display for LexLine {
             .collect();
         write!(f, "{}:{}", txt.lineno, token_txt.join(", "))
     }
-}
-
-fn format_token_with_source(t: &Token, txt: &TextLine) -> String {
-    format!(
-        "{}(\"{}\")",
-        t,
-        txt.line
-            .get(t.span.clone())
-            .unwrap_or("#<token-invalid-range>")
-    )
 }
 
 // NOTE: used by .flatten()
@@ -79,6 +50,12 @@ impl Display for LexerError {
 }
 
 impl Error for LexerError {}
+
+pub(crate) type LexerResult = Result<Vec<LexLine>, LexerError>;
+
+pub(crate) fn tokenize(src: &mut impl TextSource) -> LexerResult {
+    src.map(tokenize_line).collect::<LexerResult>()
+}
 
 pub(crate) struct ExtendedLexerError<'a>(&'a LexerError);
 
@@ -118,6 +95,30 @@ impl Display for ExtendedLexerError<'_> {
         }
         Ok(())
     }
+}
+
+type LexerLineResult = Result<LexLine, LexerError>;
+
+fn tokenize_line(text: TextLine) -> LexerLineResult {
+    let mut errors: Vec<TokenError> = Vec::new();
+    let tokens = TokenStream::on(&text.line)
+        .filter_map(|tr| tr.map_err(|err| errors.push(err)).ok())
+        .collect();
+    if errors.is_empty() {
+        Ok(LexLine(tokens, text))
+    } else {
+        Err(LexerError(errors, text))
+    }
+}
+
+fn format_token_with_source(t: &Token, txt: &TextLine) -> String {
+    format!(
+        "{}(\"{}\")",
+        t,
+        txt.line
+            .get(t.span.clone())
+            .unwrap_or("#<token-invalid-range>")
+    )
 }
 
 #[cfg(test)]

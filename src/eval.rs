@@ -5,9 +5,6 @@ use std::{
     fmt::{Display, Formatter},
 };
 
-pub(crate) type EvalResult = Result<Evaluation, EvalError>;
-type ExprResult = Result<Expression, EvalError>;
-
 #[derive(Debug)]
 pub enum Evaluation {
     Expression(Expression),
@@ -39,6 +36,8 @@ impl Display for EvalError {
 
 impl Error for EvalError {}
 
+pub(crate) type EvalResult = Result<Evaluation, EvalError>;
+
 pub(crate) fn evaluate(expression: Expression) -> EvalResult {
     match expression {
         Expression::Begin(exprs) => eval_begin(exprs.into_iter()),
@@ -51,6 +50,8 @@ pub(crate) fn evaluate(expression: Expression) -> EvalResult {
 pub(crate) fn ast(expression: Expression) -> EvalResult {
     Ok(Evaluation::Expression(Expression::Ast(expression.into())))
 }
+
+type ExprResult = Result<Expression, EvalError>;
 
 fn eval_expr(expr: Expression) -> ExprResult {
     Ok(expr)

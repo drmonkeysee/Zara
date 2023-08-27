@@ -10,6 +10,17 @@ use std::{
     iter::Peekable,
 };
 
+#[derive(Debug)]
+pub struct ParserError(Vec<ExpressionError>);
+
+impl Display for ParserError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        f.write_str("Fatal error: parsing failure")
+    }
+}
+
+impl Error for ParserError {}
+
 pub(crate) type ParserResult = Result<Expression, ParserError>;
 
 pub(crate) fn parse(token_lines: impl Iterator<Item = LexLine>) -> ParserResult {
@@ -30,17 +41,6 @@ pub(crate) fn parse(token_lines: impl Iterator<Item = LexLine>) -> ParserResult 
 pub(crate) fn tokens(token_lines: Vec<LexLine>) -> ParserResult {
     Ok(Expression::TokenStream(token_lines))
 }
-
-#[derive(Debug)]
-pub struct ParserError(Vec<ExpressionError>);
-
-impl Display for ParserError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        f.write_str("Fatal error: parsing failure")
-    }
-}
-
-impl Error for ParserError {}
 
 struct Parser<I: Iterator> {
     tokens: Peekable<I>,

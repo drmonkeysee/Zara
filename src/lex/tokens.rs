@@ -7,8 +7,6 @@ use std::{
 };
 
 pub type Token = TokenType<TokenKind>;
-pub(super) type TokenError = TokenType<TokenErrorKind>;
-pub(super) type TokenResult = Result<Token, TokenError>;
 
 #[derive(Debug)]
 pub enum TokenKind {
@@ -28,6 +26,26 @@ impl Display for TokenKind {
         }
     }
 }
+
+#[derive(Debug)]
+pub struct TokenType<T> {
+    pub(crate) kind: T,
+    pub(crate) span: Range<usize>,
+}
+
+impl Display for Token {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{}[{:?}]", self.kind, self.span)
+    }
+}
+
+impl Display for TokenError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        self.kind.fmt(f)
+    }
+}
+
+impl Error for TokenError {}
 
 #[derive(Debug)]
 pub(crate) enum TokenErrorKind {
@@ -59,25 +77,8 @@ impl Display for TokenErrorKind {
     }
 }
 
-#[derive(Debug)]
-pub struct TokenType<T> {
-    pub(crate) kind: T,
-    pub(crate) span: Range<usize>,
-}
-
-impl Display for Token {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "{}[{:?}]", self.kind, self.span)
-    }
-}
-
-impl Display for TokenError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        self.kind.fmt(f)
-    }
-}
-
-impl Error for TokenError {}
+pub(super) type TokenError = TokenType<TokenErrorKind>;
+pub(super) type TokenResult = Result<Token, TokenError>;
 
 #[cfg(test)]
 mod tests {
