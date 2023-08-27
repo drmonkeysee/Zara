@@ -1,4 +1,8 @@
 use crate::syn::Expression;
+use std::{
+    fmt,
+    fmt::{Display, Formatter},
+};
 
 pub(crate) type EvalResult = Result<Evaluation, EvalError>;
 type ExprResult = Result<Expression, EvalError>;
@@ -7,6 +11,20 @@ type ExprResult = Result<Expression, EvalError>;
 pub enum Evaluation {
     Expression(Expression),
     Continuation,
+}
+
+impl Evaluation {
+    pub fn extended_display(&self) -> ExtendedEvaluation {
+        ExtendedEvaluation(self)
+    }
+}
+
+pub struct ExtendedEvaluation<'a>(&'a Evaluation);
+
+impl Display for ExtendedEvaluation<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        writeln!(f, "#<eval-display-undefined({:?})>", self.0)
+    }
 }
 
 #[derive(Debug)]

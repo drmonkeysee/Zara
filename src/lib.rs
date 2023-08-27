@@ -55,8 +55,8 @@ pub enum Error {
 }
 
 impl Error {
-    pub fn verbose_display(&self) -> VerboseError<'_> {
-        VerboseError(self)
+    pub fn extended_display(&self) -> ExtendedError<'_> {
+        ExtendedError(self)
     }
 }
 
@@ -78,13 +78,13 @@ impl From<EvalError> for Error {
     }
 }
 
-pub struct VerboseError<'a>(&'a Error);
+pub struct ExtendedError<'a>(&'a Error);
 
-impl Display for VerboseError<'_> {
+impl Display for ExtendedError<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let err = self.0;
         match err {
-            Error::Lex(lex_err) => lex_err.verbose_display().fmt(f),
+            Error::Lex(lex_err) => lex_err.extended_display().fmt(f),
             _ => writeln!(f, "#<error-display-undefined({err:?})>"),
         }
     }

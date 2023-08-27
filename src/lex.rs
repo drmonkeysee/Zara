@@ -66,14 +66,14 @@ impl IntoIterator for LexLine {
 pub struct LexerError(Vec<TokenError>, TextLine);
 
 impl LexerError {
-    pub(crate) fn verbose_display(&self) -> VerboseLexerError<'_> {
-        VerboseLexerError(self)
+    pub(crate) fn extended_display(&self) -> ExtendedLexerError<'_> {
+        ExtendedLexerError(self)
     }
 }
 
-pub(crate) struct VerboseLexerError<'a>(&'a LexerError);
+pub(crate) struct ExtendedLexerError<'a>(&'a LexerError);
 
-impl Display for VerboseLexerError<'_> {
+impl Display for ExtendedLexerError<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         // TODO: lex/parse/eval err types will likely have to be unified into a (specific_err, span, ctx) pairing
         let LexerError(errs, txtline) = self.0;
@@ -209,7 +209,7 @@ mod tests {
             let err = LexerError(Vec::new(), make_textline());
 
             assert_eq!(
-                err.verbose_display().to_string(),
+                err.extended_display().to_string(),
                 "mylib:1 (lib/mylib.scm)\n\
                 \tline of source code\n"
             );
@@ -226,7 +226,7 @@ mod tests {
             );
 
             assert_eq!(
-                err.verbose_display().to_string(),
+                err.extended_display().to_string(),
                 "mylib:1 (lib/mylib.scm)\n\
                 \tline of source code\n\
                 \t     ^^\n\
@@ -245,7 +245,7 @@ mod tests {
             );
 
             assert_eq!(
-                err.verbose_display().to_string(),
+                err.extended_display().to_string(),
                 "mylib:1 (lib/mylib.scm)\n\
                 \tline of source code\n\
                 \t^^^^\n\
@@ -270,7 +270,7 @@ mod tests {
             );
 
             assert_eq!(
-                err.verbose_display().to_string(),
+                err.extended_display().to_string(),
                 "mylib:1 (lib/mylib.scm)\n\
                 \tline of source code\n\
                 \t     ^^        ^^^^\n\
@@ -298,7 +298,7 @@ mod tests {
             );
 
             assert_eq!(
-                err.verbose_display().to_string(),
+                err.extended_display().to_string(),
                 "mylib:1\n\
                 \tline of source code\n\
                 \t     ^^\n\
@@ -317,7 +317,7 @@ mod tests {
             );
 
             assert_eq!(
-                err.verbose_display().to_string(),
+                err.extended_display().to_string(),
                 "mylib:1 (lib/mylib.scm)\n\
                 \tline of source code\n\
                 \t\n\
@@ -336,7 +336,7 @@ mod tests {
             );
 
             assert_eq!(
-                err.verbose_display().to_string(),
+                err.extended_display().to_string(),
                 "mylib:1 (lib/mylib.scm)\n\
                 \tline of source code\n\
                 \t               ^^^^^^^^^^\n\

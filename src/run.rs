@@ -27,7 +27,9 @@ pub(crate) fn file(opts: Opts, prg: impl AsRef<Path>) -> Result {
 pub(crate) fn stdin(opts: Opts, src: String) -> Result {
     let mut src = StdinSource::new(src);
     let runtime = Interpreter::new(opts.token_output, opts.ast_output);
-    runtime.run(&mut src)
+    let result = runtime.run(&mut src);
+    print_terminal_result(&result);
+    result
 }
 
 struct FileSource;
@@ -70,6 +72,13 @@ impl Iterator for StdinSource {
             line: self.lines.next()?,
             lineno,
         })
+    }
+}
+
+fn print_terminal_result(result: &Result) {
+    match result {
+        Ok(eval) => print!("{}", eval.extended_display()),
+        Err(err) => eprint!("{}", err.extended_display()),
     }
 }
 

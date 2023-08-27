@@ -54,7 +54,7 @@ impl Repl {
     }
 
     fn print_err(&mut self, err: Error) {
-        eprint!("{}", err.verbose_display());
+        eprint!("{}", err.extended_display());
         self.reset();
     }
 
