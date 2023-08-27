@@ -3,6 +3,7 @@ use crate::{
     literal::Literal,
 };
 use std::{
+    error::Error,
     fmt,
     fmt::{Display, Formatter},
 };
@@ -16,11 +17,6 @@ pub enum Expression {
     Empty,
     Literal(Literal),
     TokenStream(Vec<LexLine>),
-}
-
-#[derive(Debug)]
-pub(super) enum ExpressionError {
-    Unimplemented(Token),
 }
 
 impl Expression {
@@ -40,6 +36,19 @@ impl Display for Expression {
         }
     }
 }
+
+#[derive(Debug)]
+pub(super) enum ExpressionError {
+    Unimplemented(Token),
+}
+
+impl Display for ExpressionError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "#<expression-error-display-undefined({self:?})>")
+    }
+}
+
+impl Error for ExpressionError {}
 
 fn format_token_stream(lexlines: &[LexLine]) -> String {
     if lexlines.len() < 2 {

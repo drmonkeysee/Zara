@@ -1,5 +1,6 @@
 use crate::literal::Literal;
 use std::{
+    error::Error,
     fmt,
     fmt::{Display, Formatter},
     ops::Range,
@@ -17,35 +18,6 @@ pub enum TokenKind {
     VectorOpen,
 }
 
-#[derive(Debug)]
-pub(crate) enum TokenErrorKind {
-    BooleanExpected(bool),
-    CharacterExpected,
-    CharacterExpectedHex,
-    CharacterInvalidHex,
-    HashInvalid,
-    HashUnterminated,
-    Unimplemented(String),
-}
-
-#[derive(Debug)]
-pub struct TokenType<T> {
-    pub(crate) kind: T,
-    pub(crate) span: Range<usize>,
-}
-
-impl Display for Token {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "{}[{:?}]", self.kind, self.span)
-    }
-}
-
-impl Display for TokenError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        self.kind.fmt(f)
-    }
-}
-
 impl Display for TokenKind {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
@@ -55,6 +27,17 @@ impl Display for TokenKind {
             Self::VectorOpen => f.write_str("OPENVEC"),
         }
     }
+}
+
+#[derive(Debug)]
+pub(crate) enum TokenErrorKind {
+    BooleanExpected(bool),
+    CharacterExpected,
+    CharacterExpectedHex,
+    CharacterInvalidHex,
+    HashInvalid,
+    HashUnterminated,
+    Unimplemented(String),
 }
 
 impl Display for TokenErrorKind {
@@ -75,6 +58,26 @@ impl Display for TokenErrorKind {
         }
     }
 }
+
+#[derive(Debug)]
+pub struct TokenType<T> {
+    pub(crate) kind: T,
+    pub(crate) span: Range<usize>,
+}
+
+impl Display for Token {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{}[{:?}]", self.kind, self.span)
+    }
+}
+
+impl Display for TokenError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        self.kind.fmt(f)
+    }
+}
+
+impl Error for TokenError {}
 
 #[cfg(test)]
 mod tests {
