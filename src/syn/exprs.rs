@@ -1,4 +1,5 @@
 use crate::{
+    lex,
     lex::{LexLine, Token},
     literal::Literal,
 };
@@ -35,7 +36,7 @@ impl Display for Expression {
             Self::Ast(expr) => write!(f, "{{{expr:?}}}"),
             Self::Empty => Ok(()),
             Self::Literal(lit) => lit.fmt(f),
-            Self::TokenStream(lines) => f.write_str(&format_token_stream(lines)),
+            Self::TokenStream(lines) => lex::format_token_stream(lines, f),
             _ => write!(f, "#<expr-display-undef({self:?})>"),
         }
     }
@@ -47,7 +48,7 @@ impl Display for ExtendedExpression<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self.0 {
             Expression::Ast(expr) => writeln!(f, "{{{expr:#?}}}"),
-            Expression::TokenStream(lines) => f.write_str(&extended_format_token_stream(lines)),
+            Expression::TokenStream(lines) => lex::extended_format_token_stream(lines, f),
             _ => writeln!(f, "#<expr-extdisplay-undef({:?})>", self.0),
         }
     }
@@ -65,30 +66,6 @@ impl Display for ExpressionError {
 }
 
 impl Error for ExpressionError {}
-
-fn format_token_stream(lexlines: &[LexLine]) -> String {
-    if lexlines.len() < 2 {
-        format!(
-            "[{}]",
-            lexlines
-                .iter()
-                .map(|line| line.to_string())
-                .collect::<String>()
-        )
-    } else {
-        format!(
-            "[\n{}]",
-            lexlines
-                .iter()
-                .map(|line| format!("\t{line},\n"))
-                .collect::<String>()
-        )
-    }
-}
-
-fn extended_format_token_stream(lexlines: &[LexLine]) -> String {
-    format!("#<token-stream-extfmt-undef({lexlines:?})\n")
-}
 
 #[cfg(test)]
 mod tests {

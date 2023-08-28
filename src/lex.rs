@@ -53,10 +53,6 @@ impl Error for LexerError {}
 
 pub(crate) type LexerResult = Result<Vec<LexLine>, LexerError>;
 
-pub(crate) fn tokenize(src: &mut impl TextSource) -> LexerResult {
-    src.map(tokenize_line).collect::<LexerResult>()
-}
-
 pub(crate) struct ExtendedLexerError<'a>(&'a LexerError);
 
 impl Display for ExtendedLexerError<'_> {
@@ -95,6 +91,39 @@ impl Display for ExtendedLexerError<'_> {
         }
         Ok(())
     }
+}
+
+pub(crate) fn tokenize(src: &mut impl TextSource) -> LexerResult {
+    src.map(tokenize_line).collect::<LexerResult>()
+}
+
+pub(crate) fn format_token_stream(lines: &[LexLine], f: &mut Formatter<'_>) -> fmt::Result {
+    if lines.len() < 2 {
+        write!(
+            f,
+            "[{}]",
+            lines
+                .iter()
+                .map(|line| line.to_string())
+                .collect::<String>()
+        )
+    } else {
+        write!(
+            f,
+            "[\n{}]",
+            lines
+                .iter()
+                .map(|line| format!("\t{line},\n"))
+                .collect::<String>()
+        )
+    }
+}
+
+pub(crate) fn extended_format_token_stream(
+    lines: &[LexLine],
+    f: &mut Formatter<'_>,
+) -> fmt::Result {
+    writeln!(f, "#<token-stream-extfmt-undef({lines:?})")
 }
 
 type LexerLineResult = Result<LexLine, LexerError>;
