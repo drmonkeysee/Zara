@@ -23,6 +23,10 @@ impl Expression {
     pub fn has_repr(&self) -> bool {
         !matches!(self, Self::Empty)
     }
+
+    pub(crate) fn extended_display(&self) -> ExtendedExpression {
+        ExtendedExpression(self)
+    }
 }
 
 impl Display for Expression {
@@ -31,8 +35,20 @@ impl Display for Expression {
             Self::Ast(expr) => write!(f, "{{{expr:?}}}"),
             Self::Empty => Ok(()),
             Self::Literal(lit) => lit.fmt(f),
-            Self::TokenStream(lexlines) => f.write_str(&format_token_stream(lexlines)),
+            Self::TokenStream(lines) => f.write_str(&format_token_stream(lines)),
             _ => write!(f, "#<expr-display-undef({self:?})>"),
+        }
+    }
+}
+
+pub(crate) struct ExtendedExpression<'a>(&'a Expression);
+
+impl Display for ExtendedExpression<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self.0 {
+            Expression::Ast(expr) => writeln!(f, "{{{expr:#?}}}"),
+            Expression::TokenStream(lines) => f.write_str(&extended_format_token_stream(lines)),
+            _ => writeln!(f, "#<expr-extdisplay-undef({:?})>", self.0),
         }
     }
 }
@@ -68,6 +84,10 @@ fn format_token_stream(lexlines: &[LexLine]) -> String {
                 .collect::<String>()
         )
     }
+}
+
+fn extended_format_token_stream(lexlines: &[LexLine]) -> String {
+    format!("#<token-stream-extfmt-undef({lexlines:?})\n")
 }
 
 #[cfg(test)]
