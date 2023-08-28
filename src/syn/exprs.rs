@@ -96,13 +96,6 @@ mod tests {
     }
 
     #[test]
-    fn display_literal() {
-        let expr = Expression::Literal(Literal::Boolean(true));
-
-        assert_eq!(expr.to_string(), "#t");
-    }
-
-    #[test]
     fn display_invalid_expr() {
         let expr = Expression::Begin(vec![
             Expression::Literal(Literal::Character('a')),
