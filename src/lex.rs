@@ -97,7 +97,7 @@ pub(crate) fn tokenize(src: &mut impl TextSource) -> LexerResult {
     src.map(tokenize_line).collect::<LexerResult>()
 }
 
-pub(crate) fn format_token_stream(lines: &[LexLine], f: &mut Formatter<'_>) -> fmt::Result {
+pub(crate) fn display_token_stream(lines: &[LexLine], f: &mut Formatter<'_>) -> fmt::Result {
     if lines.len() < 2 {
         write!(
             f,
@@ -119,7 +119,7 @@ pub(crate) fn format_token_stream(lines: &[LexLine], f: &mut Formatter<'_>) -> f
     }
 }
 
-pub(crate) fn extended_format_token_stream(
+pub(crate) fn extended_display_token_stream(
     lines: &[LexLine],
     f: &mut Formatter<'_>,
 ) -> fmt::Result {
