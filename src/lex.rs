@@ -11,7 +11,7 @@ use std::{
 };
 
 #[derive(Debug)]
-pub struct LexLine(pub(crate) Vec<Token>, pub(crate) TextLine);
+pub struct LexLine(Vec<Token>, TextLine);
 
 impl Display for LexLine {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
@@ -393,6 +393,150 @@ mod tests {
             .into(),
             line: "line of source code".to_owned(),
             lineno: 1,
+        }
+    }
+
+    mod display {
+        use super::*;
+        use crate::literal::Literal;
+
+        struct MockDisplay(Vec<LexLine>);
+
+        impl Display for MockDisplay {
+            fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+                super::display_token_stream(&self.0, f)
+            }
+        }
+
+        #[test]
+        fn display_empty_token_stream() {
+            let target = MockDisplay(Vec::new());
+
+            assert_eq!(target.to_string(), "[]");
+        }
+
+        #[test]
+        fn display_token_stream() {
+            let target = MockDisplay(vec![LexLine(
+                vec![
+                    Token {
+                        kind: TokenKind::ParenLeft,
+                        span: 0..1,
+                    },
+                    Token {
+                        kind: TokenKind::Literal(Literal::Boolean(false)),
+                        span: 1..3,
+                    },
+                    Token {
+                        kind: TokenKind::ParenRight,
+                        span: 3..4,
+                    },
+                ],
+                TextLine {
+                    ctx: TextContext {
+                        name: "mylib".to_owned(),
+                        path: None,
+                    }
+                    .into(),
+                    line: "(#f)".to_owned(),
+                    lineno: 1,
+                },
+            )]);
+
+            assert_eq!(
+                target.to_string(),
+                "[1:LPAREN[0..1](\"(\"), LITERAL<Boolean(false)>[1..3](\"#f\"), RPAREN[3..4](\")\")]"
+            );
+        }
+
+        #[test]
+        fn display_multiline_token_stream() {
+            let target = MockDisplay(vec![
+                LexLine(
+                    vec![
+                        Token {
+                            kind: TokenKind::ParenLeft,
+                            span: 0..1,
+                        },
+                        Token {
+                            kind: TokenKind::Literal(Literal::Boolean(false)),
+                            span: 1..3,
+                        },
+                        Token {
+                            kind: TokenKind::ParenRight,
+                            span: 3..4,
+                        },
+                    ],
+                    TextLine {
+                        ctx: TextContext {
+                            name: "mylib".to_owned(),
+                            path: None,
+                        }
+                        .into(),
+                        line: "(#f)".to_owned(),
+                        lineno: 1,
+                    },
+                ),
+                LexLine(
+                    vec![
+                        Token {
+                            kind: TokenKind::ParenLeft,
+                            span: 0..1,
+                        },
+                        Token {
+                            kind: TokenKind::Literal(Literal::Boolean(true)),
+                            span: 2..4,
+                        },
+                        Token {
+                            kind: TokenKind::ParenRight,
+                            span: 5..6,
+                        },
+                    ],
+                    TextLine {
+                        ctx: TextContext {
+                            name: "mylib".to_owned(),
+                            path: None,
+                        }
+                        .into(),
+                        line: "( #t )".to_owned(),
+                        lineno: 2,
+                    },
+                ),
+                LexLine(
+                    vec![
+                        Token {
+                            kind: TokenKind::ParenLeft,
+                            span: 0..1,
+                        },
+                        Token {
+                            kind: TokenKind::Literal(Literal::Character('a')),
+                            span: 1..4,
+                        },
+                        Token {
+                            kind: TokenKind::ParenRight,
+                            span: 4..5,
+                        },
+                    ],
+                    TextLine {
+                        ctx: TextContext {
+                            name: "mylib".to_owned(),
+                            path: None,
+                        }
+                        .into(),
+                        line: "(#\\a)".to_owned(),
+                        lineno: 3,
+                    },
+                ),
+            ]);
+
+            assert_eq!(
+                target.to_string(),
+                "[\n\
+                \t1:LPAREN[0..1](\"(\"), LITERAL<Boolean(false)>[1..3](\"#f\"), RPAREN[3..4](\")\"),\n\
+                \t2:LPAREN[0..1](\"(\"), LITERAL<Boolean(true)>[2..4](\"#t\"), RPAREN[5..6](\")\"),\n\
+                \t3:LPAREN[0..1](\"(\"), LITERAL<Character('a')>[1..4](\"#\\a\"), RPAREN[4..5](\")\"),\n\
+                ]"
+            );
         }
     }
 }
