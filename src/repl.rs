@@ -97,13 +97,6 @@ impl ReplSource {
     }
 }
 
-// TODO: can this be a macro
-impl TextSource for ReplSource {
-    fn context(&self) -> Rc<TextContext> {
-        self.ctx.clone()
-    }
-}
-
 impl Iterator for ReplSource {
     type Item = TextLine;
 
@@ -113,6 +106,13 @@ impl Iterator for ReplSource {
             line: self.line.take()?,
             lineno: self.lineno,
         })
+    }
+}
+
+// TODO: can this be a macro
+impl TextSource for ReplSource {
+    fn context(&self) -> Rc<TextContext> {
+        self.ctx.clone()
     }
 }
 

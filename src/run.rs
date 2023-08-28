@@ -55,12 +55,6 @@ impl StdinSource {
     }
 }
 
-impl TextSource for StdinSource {
-    fn context(&self) -> Rc<TextContext> {
-        self.ctx.clone()
-    }
-}
-
 impl Iterator for StdinSource {
     type Item = TextLine;
 
@@ -72,6 +66,12 @@ impl Iterator for StdinSource {
             line: self.lines.next()?,
             lineno,
         })
+    }
+}
+
+impl TextSource for StdinSource {
+    fn context(&self) -> Rc<TextContext> {
+        self.ctx.clone()
     }
 }
 
