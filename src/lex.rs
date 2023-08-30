@@ -16,11 +16,12 @@ pub struct LexLine(Vec<Token>, TextLine);
 impl Display for LexLine {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let LexLine(tokens, txt) = self;
-        let token_txt: Vec<_> = tokens
+        let token_txt = tokens
             .iter()
             .map(|t| format_token_with_source(t, txt))
-            .collect();
-        write!(f, "{}:{}", txt.lineno, token_txt.join(", "))
+            .collect::<Vec<_>>()
+            .join(", ");
+        write!(f, "{}:{}", txt.lineno, token_txt)
     }
 }
 
@@ -109,14 +110,34 @@ pub(crate) fn display_token_stream(lines: &[LexLine], f: &mut Formatter<'_>) -> 
     }
 }
 
-pub(crate) fn extended_display_token_stream(
-    lines: &[LexLine],
+pub(crate) fn extended_display_token_stream<'a>(
+    lines: impl IntoIterator<Item = &'a LexLine>,
     f: &mut Formatter<'_>,
 ) -> fmt::Result {
-    writeln!(f, "#<token-stream-extfmt-undef({lines:?})>")
+    for line in lines {
+        ExtendedLexLine(line).fmt(f)?;
+    }
+    Ok(())
 }
 
 type LexerLineResult = Result<LexLine, LexerError>;
+
+struct ExtendedLexLine<'a>(&'a LexLine);
+
+impl Display for ExtendedLexLine<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        let LexLine(tokens, txt) = self.0;
+        for token in tokens {
+            writeln!(
+                f,
+                "{}:{}",
+                txt.lineno,
+                extended_format_token_with_source(token, txt)
+            )?
+        }
+        Ok(())
+    }
+}
 
 fn tokenize_line(text: TextLine) -> LexerLineResult {
     let mut errors: Vec<TokenError> = Vec::new();
@@ -137,6 +158,16 @@ fn format_token_with_source(t: &Token, txt: &TextLine) -> String {
         txt.line
             .get(t.span.clone())
             .unwrap_or("#<token-invalid-range>")
+    )
+}
+
+fn extended_format_token_with_source(t: &Token, txt: &TextLine) -> String {
+    format!(
+        "{}-{}\t\t{}\t\t\"{}\"",
+        t.span.start,
+        t.span.end,
+        t.kind,
+        txt.line.get(t.span.clone()).unwrap_or("INVALID RANGE")
     )
 }
 
