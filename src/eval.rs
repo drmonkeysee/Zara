@@ -43,7 +43,7 @@ pub(crate) type EvalResult = Result<Evaluation, EvalError>;
 
 pub(crate) fn evaluate(expression: Expression) -> EvalResult {
     match expression {
-        Expression::Begin(exprs) => eval_begin(exprs.into_iter()),
+        Expression::Begin(exprs) => eval_begin(exprs),
         Expression::TokenStream(_) => Ok(expression),
         _ => Err(EvalError),
     }
@@ -60,6 +60,8 @@ fn eval_expr(expr: Expression) -> ExprResult {
     Ok(expr)
 }
 
-fn eval_begin(mut exprs: impl Iterator<Item = Expression>) -> ExprResult {
-    exprs.try_fold(Expression::Empty, |_, expr| eval_expr(expr))
+fn eval_begin(exprs: impl IntoIterator<Item = Expression>) -> ExprResult {
+    exprs
+        .into_iter()
+        .try_fold(Expression::Empty, |_, expr| eval_expr(expr))
 }

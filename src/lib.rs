@@ -36,7 +36,7 @@ impl Interpreter {
         let ast = if self.token_output {
             syn::tokens(token_lines)
         } else {
-            syn::parse(token_lines.into_iter())
+            syn::parse(token_lines)
         }?;
         let evaluation = if self.ast_output {
             eval::ast(ast)

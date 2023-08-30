@@ -9,7 +9,8 @@ const TOKEN_LONG: &str = "--tokens";
 const VERSION_SHORT: &str = "-V";
 const VERSION_LONG: &str = "--version";
 
-pub(crate) fn parse(mut args: impl Iterator<Item = String>) -> Args {
+pub(crate) fn parse(args: impl IntoIterator<Item = String>) -> Args {
+    let mut args = args.into_iter();
     let mut parsed = Args {
         me: args.next().unwrap_or(env!("CARGO_PKG_NAME").to_owned()),
         ..Default::default()

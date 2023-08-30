@@ -23,11 +23,11 @@ impl Error for ParserError {}
 
 pub(crate) type ParserResult = Result<Expression, ParserError>;
 
-pub(crate) fn parse(token_lines: impl Iterator<Item = LexLine>) -> ParserResult {
+pub(crate) fn parse(token_lines: impl IntoIterator<Item = LexLine>) -> ParserResult {
     let mut errors: Vec<ExpressionError> = Vec::new();
     // TODO: for now flatten all lexlines into one stream of tokens
     // this'll need to handle individual lines later
-    let ast = Parser::new(token_lines.flatten())
+    let ast = Parser::new(token_lines.into_iter().flatten())
         .filter_map(|expr| expr.map_err(|err| errors.push(err)).ok())
         .collect();
     if errors.is_empty() {
