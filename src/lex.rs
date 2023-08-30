@@ -113,7 +113,7 @@ pub(crate) fn extended_display_token_stream(
     lines: &[LexLine],
     f: &mut Formatter<'_>,
 ) -> fmt::Result {
-    writeln!(f, "#<token-stream-extfmt-undef({lines:?})")
+    writeln!(f, "#<token-stream-extfmt-undef({lines:?})>")
 }
 
 type LexerLineResult = Result<LexLine, LexerError>;
