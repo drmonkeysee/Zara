@@ -99,22 +99,12 @@ pub(crate) fn tokenize(src: &mut impl TextSource) -> LexerResult {
 
 pub(crate) fn display_token_stream(lines: &[LexLine], f: &mut Formatter<'_>) -> fmt::Result {
     if lines.len() < 2 {
-        write!(
-            f,
-            "[{}]",
-            lines
-                .iter()
-                .map(|line| line.to_string())
-                .collect::<String>()
-        )
+        write!(f, "[{}]", lines_to_string(lines, |line| line.to_string()))
     } else {
         write!(
             f,
             "[\n{}]",
-            lines
-                .iter()
-                .map(|line| format!("\t{line},\n"))
-                .collect::<String>()
+            lines_to_string(lines, |line| format!("\t{line},\n"))
         )
     }
 }
@@ -148,6 +138,10 @@ fn format_token_with_source(t: &Token, txt: &TextLine) -> String {
             .get(t.span.clone())
             .unwrap_or("#<token-invalid-range>")
     )
+}
+
+fn lines_to_string(lines: &[LexLine], cvt: impl FnMut(&LexLine) -> String) -> String {
+    lines.iter().map(cvt).collect::<String>()
 }
 
 #[cfg(test)]
