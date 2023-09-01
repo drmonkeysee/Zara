@@ -5,18 +5,18 @@ use std::{
 };
 
 fn main() {
-    set_env_compiler_version();
-    set_env_dependencies();
+    set_compiler_version_env();
+    set_dependencies_env();
 }
 
-fn set_env_compiler_version() {
+fn set_compiler_version_env() {
     set_env_from_output(
         "ZARA_COMPILER_VERSION",
         Command::new("rustc").arg("-V").output(),
     );
 }
 
-fn set_env_dependencies() {
+fn set_dependencies_env() {
     set_env_from_converted_output(
         "ZARA_DEPENDENCIES",
         Command::new("cargo")
