@@ -18,7 +18,7 @@ impl Display for LexLine {
         let LexLine(tokens, txt) = self;
         let token_txt = tokens
             .iter()
-            .map(|t| format_token_with_source(t, txt))
+            .map(|t| TokenWithSource(t, txt).to_string())
             .collect::<Vec<_>>()
             .join(", ");
         write!(f, "{}:{}", txt.lineno, token_txt)
@@ -128,14 +128,40 @@ impl Display for ExtendedLexLine<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let LexLine(tokens, txt) = self.0;
         for token in tokens {
-            writeln!(
-                f,
-                "{}:{}",
-                txt.lineno,
-                extended_format_token_with_source(token, txt)
-            )?
+            writeln!(f, "{}:{}", txt.lineno, ExtendedTokenWithSource(token, txt))?
         }
         Ok(())
+    }
+}
+
+struct TokenWithSource<'a>(&'a Token, &'a TextLine);
+
+impl Display for TokenWithSource<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        let Self(t, txt) = *self;
+        write!(
+            f,
+            "{t}(\"{}\")",
+            txt.line
+                .get(t.span.clone())
+                .unwrap_or("#<token-invalid-range>")
+        )
+    }
+}
+
+struct ExtendedTokenWithSource<'a>(&'a Token, &'a TextLine);
+
+impl Display for ExtendedTokenWithSource<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        let Self(t, txt) = *self;
+        write!(
+            f,
+            "{}-{}\t\t{}\t\t\"{}\"",
+            t.span.start,
+            t.span.end,
+            t.kind,
+            txt.line.get(t.span.clone()).unwrap_or("INVALID RANGE")
+        )
     }
 }
 
@@ -149,26 +175,6 @@ fn tokenize_line(text: TextLine) -> LexerLineResult {
     } else {
         Err(LexerError(errors, text))
     }
-}
-
-fn format_token_with_source(t: &Token, txt: &TextLine) -> String {
-    format!(
-        "{}(\"{}\")",
-        t,
-        txt.line
-            .get(t.span.clone())
-            .unwrap_or("#<token-invalid-range>")
-    )
-}
-
-fn extended_format_token_with_source(t: &Token, txt: &TextLine) -> String {
-    format!(
-        "{}-{}\t\t{}\t\t\"{}\"",
-        t.span.start,
-        t.span.end,
-        t.kind,
-        txt.line.get(t.span.clone()).unwrap_or("INVALID RANGE")
-    )
 }
 
 fn lines_to_string(lines: &[LexLine], cvt: impl FnMut(&LexLine) -> String) -> String {
