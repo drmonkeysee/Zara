@@ -94,30 +94,41 @@ impl Display for ExtendedLexerError<'_> {
     }
 }
 
+pub(crate) struct DisplayLexLines<'a>(pub(crate) &'a [LexLine]);
+
+impl DisplayLexLines<'_> {
+    fn flatten_to_string(&self, cvt: impl FnMut(&LexLine) -> String) -> String {
+        self.0.iter().map(cvt).collect::<String>()
+    }
+}
+
+impl Display for DisplayLexLines<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        if self.0.len() < 2 {
+            write!(f, "[{}]", self.flatten_to_string(|ln| ln.to_string()))
+        } else {
+            write!(
+                f,
+                "[\n{}]",
+                self.flatten_to_string(|ln| format!("\t{ln},\n"))
+            )
+        }
+    }
+}
+
+pub(crate) struct ExtendedDisplayLexLines<'a>(pub(crate) &'a [LexLine]);
+
+impl Display for ExtendedDisplayLexLines<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        for line in self.0 {
+            ExtendedLexLine(line).fmt(f)?;
+        }
+        Ok(())
+    }
+}
+
 pub(crate) fn tokenize(src: &mut impl TextSource) -> LexerResult {
     src.map(tokenize_line).collect::<LexerResult>()
-}
-
-pub(crate) fn display_token_stream(lines: &[LexLine], f: &mut Formatter<'_>) -> fmt::Result {
-    if lines.len() < 2 {
-        write!(f, "[{}]", lines_to_string(lines, |line| line.to_string()))
-    } else {
-        write!(
-            f,
-            "[\n{}]",
-            lines_to_string(lines, |line| format!("\t{line},\n"))
-        )
-    }
-}
-
-pub(crate) fn extended_display_token_stream<'a>(
-    lines: impl IntoIterator<Item = &'a LexLine>,
-    f: &mut Formatter<'_>,
-) -> fmt::Result {
-    for line in lines {
-        ExtendedLexLine(line).fmt(f)?;
-    }
-    Ok(())
 }
 
 type LexerLineResult = Result<LexLine, LexerError>;
@@ -175,10 +186,6 @@ fn tokenize_line(text: TextLine) -> LexerLineResult {
     } else {
         Err(LexerError(errors, text))
     }
-}
-
-fn lines_to_string(lines: &[LexLine], cvt: impl FnMut(&LexLine) -> String) -> String {
-    lines.iter().map(cvt).collect::<String>()
 }
 
 #[cfg(test)]
@@ -431,24 +438,18 @@ mod tests {
         use super::*;
         use crate::literal::Literal;
 
-        struct MockDisplay(Vec<LexLine>);
-
-        impl Display for MockDisplay {
-            fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-                super::display_token_stream(&self.0, f)
-            }
-        }
-
         #[test]
         fn display_empty_token_stream() {
-            let target = MockDisplay(Vec::new());
+            let lines = Vec::new();
+
+            let target = DisplayLexLines(&lines);
 
             assert_eq!(target.to_string(), "[]");
         }
 
         #[test]
         fn display_token_stream() {
-            let target = MockDisplay(vec![LexLine(
+            let lines = vec![LexLine(
                 vec![
                     Token {
                         kind: TokenKind::ParenLeft,
@@ -472,7 +473,9 @@ mod tests {
                     line: "(#f)".to_owned(),
                     lineno: 1,
                 },
-            )]);
+            )];
+
+            let target = DisplayLexLines(&lines);
 
             assert_eq!(
                 target.to_string(),
@@ -482,7 +485,7 @@ mod tests {
 
         #[test]
         fn display_multiline_token_stream() {
-            let target = MockDisplay(vec![
+            let lines = vec![
                 LexLine(
                     vec![
                         Token {
@@ -558,7 +561,9 @@ mod tests {
                         lineno: 3,
                     },
                 ),
-            ]);
+            ];
+
+            let target = DisplayLexLines(&lines);
 
             assert_eq!(
                 target.to_string(),

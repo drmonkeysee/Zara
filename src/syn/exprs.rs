@@ -1,6 +1,5 @@
 use crate::{
-    lex,
-    lex::{LexLine, Token},
+    lex::{DisplayLexLines, ExtendedDisplayLexLines, LexLine, Token},
     literal::Literal,
 };
 use std::{
@@ -36,7 +35,7 @@ impl Display for Expression {
             Self::Ast(expr) => write!(f, "{{{expr:?}}}"),
             Self::Empty => Ok(()),
             Self::Literal(lit) => lit.fmt(f),
-            Self::TokenStream(lines) => lex::display_token_stream(lines, f),
+            Self::TokenStream(lines) => DisplayLexLines(lines).fmt(f),
             _ => write!(f, "#<expr-display-undef({self:?})>"),
         }
     }
@@ -48,7 +47,7 @@ impl Display for ExtendedExpression<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self.0 {
             Expression::Ast(expr) => writeln!(f, "{{{expr:#?}}}"),
-            Expression::TokenStream(lines) => lex::extended_display_token_stream(lines, f),
+            Expression::TokenStream(lines) => ExtendedDisplayLexLines(lines).fmt(f),
             _ => writeln!(f, "#<expr-extdisplay-undef({:?})>", self.0),
         }
     }
