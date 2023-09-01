@@ -139,7 +139,7 @@ impl Display for ExtendedLexLine<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let LexLine(tokens, txt) = self.0;
         for token in tokens {
-            writeln!(f, "{}:{}", txt.lineno, ExtendedTokenWithSource(token, txt))?
+            ExtendedTokenWithSource(token, txt).fmt(f)?
         }
         Ok(())
     }
@@ -165,12 +165,11 @@ struct ExtendedTokenWithSource<'a>(&'a Token, &'a TextLine);
 impl Display for ExtendedTokenWithSource<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let Self(t, txt) = *self;
-        write!(
+        writeln!(
             f,
-            "{}-{}\t\t{}\t\t\"{}\"",
-            t.span.start,
-            t.span.end,
-            t.kind,
+            "{:20}{:30}\"{}\"",
+            format!("{}:{:?}", txt.lineno, t.span),
+            format!("{}", t.kind),
             txt.line.get(t.span.clone()).unwrap_or("INVALID RANGE")
         )
     }
