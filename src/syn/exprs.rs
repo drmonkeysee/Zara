@@ -46,7 +46,7 @@ pub(crate) struct ExtendedExpression<'a>(&'a Expression);
 impl Display for ExtendedExpression<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self.0 {
-            Expression::Ast(expr) => writeln!(f, "{{{expr:#?}}}"),
+            Expression::Ast(expr) => writeln!(f, "{expr:#?}"),
             Expression::TokenStream(lines) => ExtendedDisplayLexLines(lines).fmt(f),
             _ => writeln!(f, "#<expr-extdisplay-undef({:?})>", self.0),
         }
