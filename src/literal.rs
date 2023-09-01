@@ -13,36 +13,51 @@ impl Display for Literal {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         match self {
             Self::Boolean(b) => write!(f, "#{}", if *b { 't' } else { 'f' }),
-            Self::Character(c) => write!(f, "#\\{}", format_char(*c)),
+            Self::Character(c) => write!(f, "#\\{}", FormattedChar::new(*c)),
         }
     }
 }
 
-fn format_char(ch: char) -> String {
-    match ch {
-        '\x07' => "alarm".to_owned(),
-        '\x08' => "backspace".to_owned(),
-        '\x7f' => "delete".to_owned(),
-        '\x1b' => "escape".to_owned(),
-        '\n' => "newline".to_owned(),
-        '\0' => "null".to_owned(),
-        '\r' => "return".to_owned(),
-        ' ' => "space".to_owned(),
-        '\t' => "tab".to_owned(),
-        _ => format_unnamed_char(ch),
+enum FormattedChar {
+    Named(&'static str),
+    Unnamed(char),
+}
+
+impl FormattedChar {
+    fn new(ch: char) -> Self {
+        match ch {
+            '\x07' => Self::Named("alarm"),
+            '\x08' => Self::Named("backspace"),
+            '\x7f' => Self::Named("delete"),
+            '\x1b' => Self::Named("escape"),
+            '\n' => Self::Named("newline"),
+            '\0' => Self::Named("null"),
+            '\r' => Self::Named("return"),
+            ' ' => Self::Named("space"),
+            '\t' => Self::Named("tab"),
+            ch => Self::Unnamed(ch),
+        }
     }
 }
 
-fn format_unnamed_char(ch: char) -> String {
+impl Display for FormattedChar {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        match self {
+            Self::Named(n) => f.write_str(n),
+            Self::Unnamed(ch) => display_unnamed_char(*ch, f),
+        }
+    }
+}
+
+fn display_unnamed_char(ch: char, f: &mut Formatter<'_>) -> Result {
     // NOTE: this is a little weird but there's no Unicode classification
     // exposed in Rust's stdlib to tell if a character has a dedicated glyph or
     // not, so check indirectly by seeing if the debug output starts with `\u`;
     // if so, we display the hex representation instead of the char literal.
     if ch.escape_debug().take(2).cmp(['\\', 'u']) == Ordering::Equal {
-        let ord = u32::from(ch);
-        format!("x{ord:x}")
+        write!(f, "x{:x}", u32::from(ch))
     } else {
-        ch.to_string()
+        write!(f, "{ch}")
     }
 }
 
