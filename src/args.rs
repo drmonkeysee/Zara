@@ -4,10 +4,14 @@ const HELP_SHORT: &str = "-h";
 const HELP_LONG: &str = "--help";
 const LIB_SHORT: &str = "-l";
 const LIB_LONG: &str = "--lib";
+const STDIN_SHORT: &str = "-";
 const TOKEN_SHORT: &str = "-T";
 const TOKEN_LONG: &str = "--tokens";
 const VERSION_SHORT: &str = "-V";
 const VERSION_LONG: &str = "--version";
+
+const ARG_WIDTH: usize = 16;
+const OPT_WIDTH: usize = 14;
 
 pub(crate) fn parse(args: impl IntoIterator<Item = String>) -> Args {
     let mut args = args.into_iter();
@@ -26,7 +30,7 @@ pub(crate) fn parse(args: impl IntoIterator<Item = String>) -> Args {
             HELP_SHORT | HELP_LONG => parsed.help = true,
             TOKEN_SHORT | TOKEN_LONG => parsed.tokens = true,
             VERSION_SHORT | VERSION_LONG => parsed.ver = true,
-            "-" => stdin = true,
+            STDIN_SHORT => stdin = true,
             _ => (),
         }
     }
@@ -48,20 +52,39 @@ pub(crate) fn usage(me: &str) {
     println!("{me} [options...] [command | file | -] [args...]");
     println!();
     println!("options");
-    println!("  {AST_SHORT}, {AST_LONG}\t: print abstract syntax tree");
-    println!("  {TOKEN_SHORT}, {TOKEN_LONG}\t: print tokenized input");
-    println!();
-    println!("commands");
-    println!("  {HELP_SHORT}, {HELP_LONG}\t: print usage");
-    println!("  {VERSION_SHORT}, {VERSION_LONG}\t: print version");
     println!(
-        "  {LIB_SHORT} [name],\n  {LIB_LONG} [name]\t: run program from named library (omit name for usage)"
+        "  {:1$}: print abstract syntax tree",
+        format!("{AST_SHORT}, {AST_LONG}"),
+        OPT_WIDTH
+    );
+    println!(
+        "  {:1$}: print tokenized input",
+        format!("{TOKEN_SHORT}, {TOKEN_LONG}"),
+        OPT_WIDTH
     );
     println!();
-    println!("file\t\t: run program from script file");
-    println!("-\t\t: run program from stdin");
-    println!("args\t\t: arguments passed to program");
-    println!("<no input>\t: launch REPL");
+    println!("commands");
+    println!(
+        "  {:1$}: print usage",
+        format!("{HELP_SHORT}, {HELP_LONG}"),
+        OPT_WIDTH
+    );
+    println!(
+        "  {:1$}: print version",
+        format!("{VERSION_SHORT}, {VERSION_LONG}"),
+        OPT_WIDTH
+    );
+    println!("  {LIB_SHORT} [name],");
+    println!(
+        "  {:1$}: run program from named library (omit name for usage)",
+        format!("{LIB_LONG} [name]"),
+        OPT_WIDTH
+    );
+    println!();
+    println!("{:1$}: run program from script file", "file", ARG_WIDTH);
+    println!("{:1$}: run program from stdin", STDIN_SHORT, ARG_WIDTH);
+    println!("{:1$}: arguments passed to program", "args", ARG_WIDTH);
+    println!("{:1$}: launch REPL", "<no input>", ARG_WIDTH);
 }
 
 pub(crate) fn version() {
