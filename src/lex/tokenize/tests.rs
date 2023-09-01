@@ -7,7 +7,7 @@ mod tokenstream {
 
     #[test]
     fn empty_string() {
-        let s = TokenStream::on("");
+        let s = TokenStream::new("");
 
         let r: Vec<TokenResult> = s.collect();
 
@@ -16,7 +16,7 @@ mod tokenstream {
 
     #[test]
     fn whitespace() {
-        let s = TokenStream::on("   \t  \r  \n  ");
+        let s = TokenStream::new("   \t  \r  \n  ");
 
         let r: Vec<TokenResult> = s.collect();
 
@@ -25,7 +25,7 @@ mod tokenstream {
 
     #[test]
     fn single_token() {
-        let s = TokenStream::on("(");
+        let s = TokenStream::new("(");
 
         let r: Vec<TokenResult> = s.collect();
 
@@ -41,7 +41,7 @@ mod tokenstream {
 
     #[test]
     fn single_token_with_whitespace() {
-        let s = TokenStream::on("  (   ");
+        let s = TokenStream::new("  (   ");
 
         let r: Vec<TokenResult> = s.collect();
 
@@ -57,7 +57,7 @@ mod tokenstream {
 
     #[test]
     fn multiple_tokens() {
-        let s = TokenStream::on("(#t)");
+        let s = TokenStream::new("(#t)");
 
         let r: Vec<TokenResult> = s.collect();
 
@@ -87,7 +87,7 @@ mod tokenstream {
 
     #[test]
     fn multiple_tokens_with_whitespace() {
-        let s = TokenStream::on("   (   #t    )   ");
+        let s = TokenStream::new("   (   #t    )   ");
 
         let r: Vec<TokenResult> = s.collect();
 
@@ -117,7 +117,7 @@ mod tokenstream {
 
     #[test]
     fn tokens_with_hash_malformed() {
-        let s = TokenStream::on("(#tdf)");
+        let s = TokenStream::new("(#tdf)");
 
         let r: Vec<TokenResult> = s.collect();
 
@@ -147,7 +147,7 @@ mod tokenstream {
 
     #[test]
     fn tokens_with_unterminated_hash_to_delimiter() {
-        let s = TokenStream::on("(#)");
+        let s = TokenStream::new("(#)");
 
         let r: Vec<TokenResult> = s.collect();
 
@@ -177,7 +177,7 @@ mod tokenstream {
 
     #[test]
     fn tokens_with_unterminated_hash_to_whitespace() {
-        let s = TokenStream::on("# #f");
+        let s = TokenStream::new("# #f");
 
         let r: Vec<TokenResult> = s.collect();
 

@@ -167,7 +167,7 @@ impl Display for ExtendedTokenWithSource<'_> {
 
 fn tokenize_line(text: TextLine) -> LexerLineResult {
     let mut errors: Vec<TokenError> = Vec::new();
-    let tokens = TokenStream::on(&text.line)
+    let tokens = TokenStream::new(&text.line)
         .filter_map(|tr| tr.map_err(|err| errors.push(err)).ok())
         .collect();
     if errors.is_empty() {

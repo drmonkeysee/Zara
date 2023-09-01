@@ -17,7 +17,7 @@ pub(super) struct TokenStream<'a> {
 }
 
 impl<'a> TokenStream<'a> {
-    pub(super) fn on(textline: &'a str) -> Self {
+    pub(super) fn new(textline: &'a str) -> Self {
         Self {
             scan: Scanner::new(textline),
         }
