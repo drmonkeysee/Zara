@@ -68,3 +68,11 @@ impl<I: Iterator<Item = Token>> Iterator for Parser<I> {
         self.tokens.next().map(|t| self.parse_expression(t))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn test() {
+        todo!();
+    }
+}

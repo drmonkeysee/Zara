@@ -113,3 +113,11 @@ impl Display for ExtendedError<'_> {
 pub fn resolve_library(name: &str) -> io::Result<PathBuf> {
     todo!();
 }
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn test() {
+        todo!();
+    }
+}
