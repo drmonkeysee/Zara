@@ -10,6 +10,7 @@ pub type Token = TokenType<TokenKind>;
 
 #[derive(Debug)]
 pub enum TokenKind {
+    ByteVectorOpen,
     Literal(Literal),
     ParenLeft,
     ParenRight,
@@ -19,6 +20,7 @@ pub enum TokenKind {
 impl Display for TokenKind {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
+            Self::ByteVectorOpen => f.write_str("OPENBYTEVEC"),
             Self::Literal(lit) => write!(f, "LITERAL<{lit:?}>"),
             Self::ParenLeft => f.write_str("LPAREN"),
             Self::ParenRight => f.write_str("RPAREN"),
@@ -50,6 +52,7 @@ impl Error for TokenError {}
 #[derive(Debug)]
 pub(crate) enum TokenErrorKind {
     BooleanExpected(bool),
+    ByteVectorExpected,
     CharacterExpected,
     CharacterExpectedHex,
     CharacterInvalidHex,
@@ -62,6 +65,7 @@ impl Display for TokenErrorKind {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
             Self::BooleanExpected(b) => write!(f, "expected boolean literal: {b}"),
+            Self::ByteVectorExpected => f.write_str("expected bytevector literal: #u8(…)"),
             Self::CharacterExpected => f.write_str("expected character literal"),
             Self::CharacterExpectedHex => f.write_str("expected character hex-sequence"),
             Self::CharacterInvalidHex => write!(
@@ -129,6 +133,16 @@ mod tests {
 
             assert_eq!(token.to_string(), "OPENVEC[0..2]");
         }
+
+        #[test]
+        fn display_bytevector_open() {
+            let token = Token {
+                kind: TokenKind::ByteVectorOpen,
+                span: 0..4,
+            };
+
+            assert_eq!(token.to_string(), "OPENBYTEVEC[0..4]");
+        }
     }
 
     mod tokenerror {
@@ -142,6 +156,16 @@ mod tests {
             };
 
             assert_eq!(err.to_string(), "expected boolean literal: true");
+        }
+
+        #[test]
+        fn display_expected_bytevector() {
+            let err = TokenError {
+                kind: TokenErrorKind::ByteVectorExpected,
+                span: 0..4,
+            };
+
+            assert_eq!(err.to_string(), "expected bytevector literal: #u8(…)");
         }
 
         #[test]

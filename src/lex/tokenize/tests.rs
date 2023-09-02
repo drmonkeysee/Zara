@@ -425,6 +425,108 @@ mod tokenizer {
                 }
             ));
         }
+
+        #[test]
+        fn bytevector_open() {
+            let mut s = Scanner::new("#u8(");
+            let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
+
+            let r = t.extract();
+
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 0,
+                    end: 4,
+                    result: Ok(TokenKind::ByteVectorOpen),
+                }
+            ));
+        }
+
+        #[test]
+        fn bytevector_open_uppercase() {
+            let mut s = Scanner::new("#U8(");
+            let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
+
+            let r = t.extract();
+
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 0,
+                    end: 4,
+                    result: Ok(TokenKind::ByteVectorOpen),
+                }
+            ));
+        }
+
+        #[test]
+        fn bytevector_open_ends_at_paren() {
+            let mut s = Scanner::new("#u8(sdf");
+            let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
+
+            let r = t.extract();
+
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 0,
+                    end: 4,
+                    result: Ok(TokenKind::ByteVectorOpen),
+                }
+            ));
+        }
+
+        #[test]
+        fn bytevector_open_unterminated() {
+            let mut s = Scanner::new("#u");
+            let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
+
+            let r = t.extract();
+
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 0,
+                    end: 2,
+                    result: Err(TokenErrorKind::ByteVectorExpected),
+                }
+            ));
+        }
+
+        #[test]
+        fn bytevector_open_wrong_number() {
+            let mut s = Scanner::new("#u9(");
+            let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
+
+            let r = t.extract();
+
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 0,
+                    end: 3,
+                    result: Err(TokenErrorKind::ByteVectorExpected),
+                }
+            ));
+        }
+
+        #[test]
+        fn bytevector_open_no_paren() {
+            let mut s = Scanner::new("#u8  ");
+            let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
+
+            let r = t.extract();
+
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 0,
+                    end: 3,
+                    result: Err(TokenErrorKind::ByteVectorExpected),
+                }
+            ));
+        }
     }
 
     mod boolean {
