@@ -116,7 +116,7 @@ mod tokenstream {
     }
 
     #[test]
-    fn tokens_with_hash_malformed() {
+    fn tokens_with_invalid_token() {
         let s = TokenStream::new("(#tdf)");
 
         let r: Vec<TokenResult> = s.collect();
@@ -146,7 +146,7 @@ mod tokenstream {
     }
 
     #[test]
-    fn tokens_with_unterminated_hash_to_delimiter() {
+    fn tokens_with_unterminated_token() {
         let s = TokenStream::new("(#)");
 
         let r: Vec<TokenResult> = s.collect();
@@ -176,7 +176,7 @@ mod tokenstream {
     }
 
     #[test]
-    fn tokens_with_unterminated_hash_to_whitespace() {
+    fn tokens_with_unterminated_token_to_whitespace() {
         let s = TokenStream::new("# #f");
 
         let r: Vec<TokenResult> = s.collect();
