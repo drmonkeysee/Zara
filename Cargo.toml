@@ -3,7 +3,7 @@ name = "zara"
 version = "0.1.0"
 edition = "2021"
 authors = ["Brandon Stansbury <brandonrstansbury@gmail.com"]
-description = "An R7RS Scheme Interpreter"
+description = "An R7RS-small Scheme Interpreter"
 license = "MIT"
 repository = "https://github.com/drmonkeysee/Zara"
 
