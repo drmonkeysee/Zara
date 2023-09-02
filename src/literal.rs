@@ -11,9 +11,9 @@ pub enum Literal {
 
 impl Display for Literal {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        match self {
-            Self::Boolean(b) => write!(f, "#{}", if *b { 't' } else { 'f' }),
-            Self::Character(c) => write!(f, "#\\{}", FormattedChar::new(*c)),
+        match *self {
+            Self::Boolean(b) => write!(f, "#{}", if b { 't' } else { 'f' }),
+            Self::Character(c) => write!(f, "#\\{}", FormattedChar::new(c)),
         }
     }
 }
