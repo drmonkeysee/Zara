@@ -169,7 +169,7 @@ impl Display for ExtendedTokenWithSource<'_> {
             f,
             "{:20}{:30}\"{}\"",
             format!("{}:{:?}", txt.lineno, t.span),
-            format!("{}", t.kind),
+            t.kind.to_string(),
             txt.line.get(t.span.clone()).unwrap_or("INVALID RANGE")
         )
     }

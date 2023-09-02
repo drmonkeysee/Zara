@@ -82,7 +82,7 @@ pub(crate) fn usage(me: &str) {
     );
     println!();
     println!("{:1$}: run program from script file", "file", ARG_WIDTH);
-    println!("{:1$}: run program from stdin", STDIN_SHORT, ARG_WIDTH);
+    println!("{STDIN_SHORT:0$}: run program from stdin", ARG_WIDTH);
     println!("{:1$}: arguments passed to program", "args", ARG_WIDTH);
     println!("{:1$}: launch REPL", "<no input>", ARG_WIDTH);
 }
