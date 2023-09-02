@@ -25,13 +25,13 @@ impl<'a> Scanner<'a> {
         self.chars.next().map(to_char)
     }
 
-    // TODO: will be needed for non-hashcode stuff
+    // TODO: will be needed for non-trailing stuff
     pub(super) fn non_delimiter(&mut self) -> Option<char> {
         self.chars.next_if(non_delimiter).map(to_char)
     }
 
-    pub(super) fn hashcode_non_delimiter(&mut self) -> Option<char> {
-        self.chars.next_if(non_hashcode_delimiter).map(to_char)
+    pub(super) fn trailing_non_delimiter(&mut self) -> Option<char> {
+        self.chars.next_if(non_trailing_delimiter).map(to_char)
     }
 
     pub(super) fn end_of_token(&mut self) -> usize {
@@ -84,20 +84,20 @@ fn non_delimiter(item: &ScanItem) -> bool {
     !is_delimiter(item.1)
 }
 
-fn non_hashcode_delimiter(item: &ScanItem) -> bool {
-    !is_hashcode_delimiter(item.1)
+fn non_trailing_delimiter(item: &ScanItem) -> bool {
+    !is_trailing_delimiter(item.1)
 }
 
 fn is_delimiter(ch: char) -> bool {
+    ch == '(' || is_trailing_delimiter(ch)
+}
+
+fn is_trailing_delimiter(ch: char) -> bool {
     match ch {
-        '"' | '(' | ')' | ';' | '|' => true,
+        '"' | ')' | ';' | '|' => true,
         _ if ch.is_ascii_whitespace() => true,
         _ => false,
     }
-}
-
-fn is_hashcode_delimiter(ch: char) -> bool {
-    ch != '(' && is_delimiter(ch)
 }
 
 #[cfg(test)]
@@ -127,21 +127,21 @@ mod tests {
     }
 
     #[test]
-    fn hashcode_delimiter_chars() {
+    fn trailing_delimiter_chars() {
         let chars = ['"', ')', ';', '|', ' ', '\t', '\r', '\n'];
 
         for ch in chars {
             assert!(
-                is_hashcode_delimiter(ch),
-                "Expected {} to be a hashcode delimiter",
+                is_trailing_delimiter(ch),
+                "Expected {} to be a trailing delimiter",
                 ch.escape_default()
             );
         }
     }
 
     #[test]
-    fn is_hashcode_delimiter_does_not_include_lparen() {
-        assert!(!is_hashcode_delimiter('('));
+    fn is_trailing_delimiter_does_not_include_lparen() {
+        assert!(!is_trailing_delimiter('('));
     }
 
     mod scanner {
@@ -292,19 +292,19 @@ mod tests {
         }
 
         #[test]
-        fn hashcode_non_delimiter_rparen() {
+        fn trailing_non_delimiter_rparen() {
             let mut s = Scanner::new(")abc");
 
-            let r = s.hashcode_non_delimiter();
+            let r = s.trailing_non_delimiter();
 
             assert!(r.is_none());
         }
 
         #[test]
-        fn hashcode_non_delimiter_lparen() {
+        fn trailing_non_delimiter_lparen() {
             let mut s = Scanner::new("(abc");
 
-            let r = s.hashcode_non_delimiter();
+            let r = s.trailing_non_delimiter();
 
             assert!(r.is_some());
             assert_eq!(r.unwrap(), '(');
