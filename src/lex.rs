@@ -98,7 +98,7 @@ pub(crate) struct DisplayLexLines<'a>(pub(crate) &'a [LexLine]);
 
 impl DisplayLexLines<'_> {
     fn flatten_to_string(&self, cvt: impl FnMut(&LexLine) -> String) -> String {
-        self.0.iter().map(cvt).collect::<String>()
+        self.0.iter().map(cvt).collect()
     }
 }
 
@@ -128,7 +128,7 @@ impl Display for ExtendedDisplayLexLines<'_> {
 }
 
 pub(crate) fn tokenize(src: &mut impl TextSource) -> LexerResult {
-    src.map(tokenize_line).collect::<LexerResult>()
+    src.map(tokenize_line).collect()
 }
 
 type LexerLineResult = Result<LexLine, LexerError>;
