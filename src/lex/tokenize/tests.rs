@@ -425,6 +425,10 @@ mod tokenizer {
                 }
             ));
         }
+    }
+
+    mod bytevector {
+        use super::*;
 
         #[test]
         fn bytevector_open() {
@@ -512,7 +516,41 @@ mod tokenizer {
         }
 
         #[test]
+        fn bytevector_open_extra_number() {
+            let mut s = Scanner::new("#u81(");
+            let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
+
+            let r = t.extract();
+
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 0,
+                    end: 4,
+                    result: Err(TokenErrorKind::ByteVectorExpected),
+                }
+            ));
+        }
+
+        #[test]
         fn bytevector_open_no_paren() {
+            let mut s = Scanner::new("#u8");
+            let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
+
+            let r = t.extract();
+
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 0,
+                    end: 3,
+                    result: Err(TokenErrorKind::ByteVectorExpected),
+                }
+            ));
+        }
+
+        #[test]
+        fn bytevector_open_no_paren_whitespace() {
             let mut s = Scanner::new("#u8  ");
             let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
 
