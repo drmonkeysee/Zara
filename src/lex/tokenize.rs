@@ -133,9 +133,9 @@ fn char_hex(rest: &str) -> TokenExtractResult {
         Err(TokenErrorKind::CharacterExpectedHex)
     } else {
         u32::from_str_radix(rest, 16).map_or(Err(TokenErrorKind::CharacterExpectedHex), |hex| {
-            char::from_u32(hex).map_or(Err(TokenErrorKind::CharacterInvalidHex), |ch| {
-                Ok(TokenKind::Literal(Literal::Character(ch)))
-            })
+            char::from_u32(hex)
+                .ok_or(TokenErrorKind::CharacterInvalidHex)
+                .map(|ch| TokenKind::Literal(Literal::Character(ch)))
         })
     }
 }
