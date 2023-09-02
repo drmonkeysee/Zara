@@ -425,6 +425,10 @@ mod tokenizer {
                 }
             ));
         }
+    }
+
+    mod boolean {
+        use super::*;
 
         #[test]
         fn true_short() {
