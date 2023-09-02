@@ -427,7 +427,7 @@ mod tokenizer {
         }
     }
 
-    mod bytevector {
+    mod bytevectoropen {
         use super::*;
 
         #[test]

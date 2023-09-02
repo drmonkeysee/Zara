@@ -71,7 +71,7 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
             .map_or(Err(TokenErrorKind::HashUnterminated), |ch| match ch {
                 'f' | 'F' => self.boolean(false),
                 't' | 'T' => self.boolean(true),
-                'u' | 'U' => self.bytevector(),
+                'u' | 'U' => self.bytevector_open(),
                 '\\' => self.character(),
                 '(' => Ok(TokenKind::VectorOpen),
                 _ => {
@@ -90,7 +90,7 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
         }
     }
 
-    fn bytevector(&mut self) -> TokenExtractResult {
+    fn bytevector_open(&mut self) -> TokenExtractResult {
         self.scan
             .trailing_non_delimiter()
             .filter(|&ch| ch == '8')
