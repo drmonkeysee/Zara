@@ -62,6 +62,7 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
                 '\'' => Ok(TokenKind::Quote),
                 '`' => Ok(TokenKind::Quasiquote),
                 ',' => self.unquote(),
+                '.' => self.period(),
                 _ => self.not_implemented(),
             },
             self.scan.pos(),
@@ -89,6 +90,16 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
             .scan
             .char_if_eq('@')
             .map_or(TokenKind::Unquote, |_| TokenKind::UnquoteSplice))
+    }
+
+    fn period(&mut self) -> TokenExtractResult {
+        let rest = self.scan.rest_of_token();
+        if rest.is_empty() {
+            Ok(TokenKind::PairJoiner)
+        } else {
+            // TODO: jump to number tokenization with period and next char?
+            self.not_implemented()
+        }
     }
 
     fn boolean(&mut self, val: bool) -> TokenExtractResult {

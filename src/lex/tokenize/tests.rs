@@ -314,8 +314,8 @@ mod tokenizer {
         assert!(matches!(
             r,
             TokenExtract {
-                start: 0,
-                end: 1,
+                start: 1,
+                end: 2,
                 result: Ok(TokenKind::PairJoiner),
             }
         ));
@@ -332,7 +332,7 @@ mod tokenizer {
             r,
             TokenExtract {
                 start: 0,
-                end: 1,
+                end: 2,
                 result: Err(TokenErrorKind::Unimplemented(txt)),
             } if txt == "a."
         ));
@@ -349,7 +349,7 @@ mod tokenizer {
             r,
             TokenExtract {
                 start: 0,
-                end: 1,
+                end: 2,
                 result: Err(TokenErrorKind::Unimplemented(txt)),
             } if txt == ".a"
         ));
