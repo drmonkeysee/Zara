@@ -288,6 +288,91 @@ mod tokenizer {
     }
 
     #[test]
+    fn pair_joiner() {
+        let mut s = Scanner::new(".");
+        let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
+
+        let r = t.extract();
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 1,
+                result: Ok(TokenKind::PairJoiner),
+            }
+        ));
+    }
+
+    #[test]
+    fn pair_joiner_with_whitespace() {
+        let mut s = Scanner::new(" . ");
+        let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
+
+        let r = t.extract();
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 1,
+                result: Ok(TokenKind::PairJoiner),
+            }
+        ));
+    }
+
+    #[test]
+    fn pair_joiner_prefixed_is_identifier() {
+        let mut s = Scanner::new("a.");
+        let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
+
+        let r = t.extract();
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 1,
+                result: Err(TokenErrorKind::Unimplemented(txt)),
+            } if txt == "a."
+        ));
+    }
+
+    #[test]
+    fn pair_joiner_postfixed_is_identifier() {
+        let mut s = Scanner::new(".a");
+        let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
+
+        let r = t.extract();
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 1,
+                result: Err(TokenErrorKind::Unimplemented(txt)),
+            } if txt == ".a"
+        ));
+    }
+
+    #[test]
+    fn pair_joiner_followed_by_delimiter() {
+        let mut s = Scanner::new(".)");
+        let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
+
+        let r = t.extract();
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 1,
+                result: Ok(TokenKind::PairJoiner),
+            }
+        ));
+    }
+
+    #[test]
     fn token_ends_at_whitespace() {
         let mut s = Scanner::new("(  ");
         let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
@@ -1083,6 +1168,95 @@ mod tokenizer {
                     "Unexpected match for character input ({inp}, {exp})"
                 );
             }
+        }
+    }
+
+    mod quoting {
+        use super::*;
+
+        #[test]
+        fn quote() {
+            let mut s = Scanner::new("'");
+            let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
+
+            let r = t.extract();
+
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 0,
+                    end: 1,
+                    result: Ok(TokenKind::Quote),
+                }
+            ));
+        }
+
+        #[test]
+        fn quasiquote() {
+            let mut s = Scanner::new("`");
+            let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
+
+            let r = t.extract();
+
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 0,
+                    end: 1,
+                    result: Ok(TokenKind::Quasiquote),
+                }
+            ));
+        }
+
+        #[test]
+        fn unquote() {
+            let mut s = Scanner::new(",");
+            let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
+
+            let r = t.extract();
+
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 0,
+                    end: 1,
+                    result: Ok(TokenKind::Unquote),
+                }
+            ));
+        }
+
+        #[test]
+        fn unquote_splicing() {
+            let mut s = Scanner::new("'@");
+            let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
+
+            let r = t.extract();
+
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 0,
+                    end: 2,
+                    result: Ok(TokenKind::UnquoteSplice),
+                }
+            ));
+        }
+
+        #[test]
+        fn unquote_whitespace_between_splice() {
+            let mut s = Scanner::new("' @");
+            let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
+
+            let r = t.extract();
+
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 0,
+                    end: 1,
+                    result: Ok(TokenKind::Unquote),
+                }
+            ));
         }
     }
 }

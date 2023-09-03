@@ -14,6 +14,11 @@ pub enum TokenKind {
     Literal(Literal),
     ParenLeft,
     ParenRight,
+    PairJoiner,
+    Quasiquote,
+    Quote,
+    Unquote,
+    UnquoteSplice,
     VectorOpen,
 }
 
@@ -24,6 +29,11 @@ impl Display for TokenKind {
             Self::Literal(lit) => write!(f, "LITERAL<{lit:?}>"),
             Self::ParenLeft => f.write_str("LPAREN"),
             Self::ParenRight => f.write_str("RPAREN"),
+            Self::PairJoiner => f.write_str("PAIR"),
+            Self::Quasiquote => f.write_str("QUASIQUOTE"),
+            Self::Quote => f.write_str("QUOTE"),
+            Self::Unquote => f.write_str("UNQUOTE"),
+            Self::UnquoteSplice => f.write_str("UNQUOTESPLICE"),
             Self::VectorOpen => f.write_str("OPENVEC"),
         }
     }
@@ -122,6 +132,56 @@ mod tests {
             };
 
             assert_eq!(token.to_string(), "RPAREN[0..1]");
+        }
+
+        #[test]
+        fn display_pair_joiner() {
+            let token = Token {
+                kind: TokenKind::PairJoiner,
+                span: 0..1,
+            };
+
+            assert_eq!(token.to_string(), "PAIR[0..1]");
+        }
+
+        #[test]
+        fn display_quasiquote() {
+            let token = Token {
+                kind: TokenKind::Quasiquote,
+                span: 0..1,
+            };
+
+            assert_eq!(token.to_string(), "QUASIQUOTE[0..1]");
+        }
+
+        #[test]
+        fn display_quote() {
+            let token = Token {
+                kind: TokenKind::Quote,
+                span: 0..1,
+            };
+
+            assert_eq!(token.to_string(), "QUOTE[0..1]");
+        }
+
+        #[test]
+        fn display_unquote() {
+            let token = Token {
+                kind: TokenKind::Unquote,
+                span: 0..1,
+            };
+
+            assert_eq!(token.to_string(), "UNQUOTE[0..1]");
+        }
+
+        #[test]
+        fn display_unquote_splice() {
+            let token = Token {
+                kind: TokenKind::UnquoteSplice,
+                span: 0..2,
+            };
+
+            assert_eq!(token.to_string(), "UNQUOTESPLICE[0..2]");
         }
 
         #[test]
