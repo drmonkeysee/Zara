@@ -25,6 +25,10 @@ impl<'a> Scanner<'a> {
         self.chars.next().map(to_char)
     }
 
+    pub(super) fn char_if_eq(&mut self, ch: char) -> Option<char> {
+        self.chars.next_if(|item| item.1 == ch).map(to_char)
+    }
+
     // TODO: will be needed for non-trailing stuff
     pub(super) fn non_delimiter(&mut self) -> Option<char> {
         self.chars.next_if(non_delimiter).map(to_char)
@@ -184,6 +188,35 @@ mod tests {
 
             assert!(r.is_some());
             assert_eq!(r.unwrap(), '🦀');
+        }
+
+        #[test]
+        fn next_char_eq() {
+            let mut s = Scanner::new("abc");
+
+            let r = s.char_if_eq('a');
+
+            assert!(r.is_some());
+            assert_eq!(r.unwrap(), 'a');
+
+            let r = s.char();
+
+            assert!(r.is_some());
+            assert_eq!(r.unwrap(), 'b');
+        }
+
+        #[test]
+        fn next_char_not_eq() {
+            let mut s = Scanner::new("abc");
+
+            let r = s.char_if_eq('b');
+
+            assert!(r.is_none());
+
+            let r = s.char();
+
+            assert!(r.is_some());
+            assert_eq!(r.unwrap(), 'a');
         }
 
         #[test]

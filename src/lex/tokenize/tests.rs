@@ -1226,8 +1226,25 @@ mod tokenizer {
         }
 
         #[test]
+        fn unquote_followed_by_non_splice() {
+            let mut s = Scanner::new(",a");
+            let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
+
+            let r = t.extract();
+
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 0,
+                    end: 1,
+                    result: Ok(TokenKind::Unquote),
+                }
+            ));
+        }
+
+        #[test]
         fn unquote_splicing() {
-            let mut s = Scanner::new("'@");
+            let mut s = Scanner::new(",@");
             let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
 
             let r = t.extract();
@@ -1244,7 +1261,7 @@ mod tokenizer {
 
         #[test]
         fn unquote_whitespace_between_splice() {
-            let mut s = Scanner::new("' @");
+            let mut s = Scanner::new(", @");
             let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
 
             let r = t.extract();

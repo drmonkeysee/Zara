@@ -59,6 +59,9 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
                 '#' => self.hashtag(),
                 '(' => Ok(TokenKind::ParenLeft),
                 ')' => Ok(TokenKind::ParenRight),
+                '\'' => Ok(TokenKind::Quote),
+                '`' => Ok(TokenKind::Quasiquote),
+                ',' => self.unquote(),
                 _ => self.not_implemented(),
             },
             self.scan.pos(),
@@ -79,6 +82,13 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
                     Err(TokenErrorKind::HashInvalid)
                 }
             })
+    }
+
+    fn unquote(&mut self) -> TokenExtractResult {
+        Ok(self
+            .scan
+            .char_if_eq('@')
+            .map_or(TokenKind::Unquote, |_| TokenKind::UnquoteSplice))
     }
 
     fn boolean(&mut self, val: bool) -> TokenExtractResult {
