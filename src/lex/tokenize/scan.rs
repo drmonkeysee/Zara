@@ -38,16 +38,6 @@ impl<'a> Scanner<'a> {
         self.chars.next_if(non_trailing_delimiter).map(to_char)
     }
 
-    pub(super) fn end_of_line(&mut self) -> usize {
-        let end = self.end();
-        self.chars.find(|item| item.1 == '\n').map_or(end, to_idx)
-    }
-
-    pub(super) fn end_of_token(&mut self) -> usize {
-        let end = self.end();
-        self.chars.peek_find(non_delimiter).map_or(end, get_idx)
-    }
-
     pub(super) fn rest_of_token(&mut self) -> &str {
         let cur = self.pos();
         let end = self.end_of_token();
@@ -56,6 +46,16 @@ impl<'a> Scanner<'a> {
 
     pub(super) fn lexeme(&self, range: Range<usize>) -> &str {
         self.textline.get(range).unwrap_or_default()
+    }
+
+    pub(super) fn end_of_token(&mut self) -> usize {
+        let end = self.end();
+        self.chars.next_until(delimiter).map_or(end, get_idx)
+    }
+
+    pub(super) fn end_of_line(&mut self) -> usize {
+        let end = self.end();
+        self.chars.next_until_eq('\n').map_or(end, get_idx)
     }
 
     pub(super) fn pos(&mut self) -> usize {
@@ -70,14 +70,24 @@ impl<'a> Scanner<'a> {
 
 type ScanChars<'a> = Peekable<CharIndices<'a>>;
 
-trait PeekableExt<P> {
-    fn peek_find(&mut self, predicate: P) -> Option<&ScanItem>;
+trait PeekablePred<P> {
+    fn next_until(&mut self, predicate: P) -> Option<&ScanItem>;
 }
 
-impl<P: Fn(&ScanItem) -> bool> PeekableExt<P> for ScanChars<'_> {
-    fn peek_find(&mut self, predicate: P) -> Option<&ScanItem> {
-        while self.next_if(&predicate).is_some() { /* consume iterator */ }
+impl<P: Fn(&ScanItem) -> bool> PeekablePred<P> for ScanChars<'_> {
+    fn next_until(&mut self, predicate: P) -> Option<&ScanItem> {
+        while self.next_if(|item| !predicate(item)).is_some() { /* consume iterator */ }
         self.peek()
+    }
+}
+
+trait PeekableExt {
+    fn next_until_eq(&mut self, ch: char) -> Option<&ScanItem>;
+}
+
+impl PeekableExt for ScanChars<'_> {
+    fn next_until_eq(&mut self, ch: char) -> Option<&ScanItem> {
+        self.next_until(|item| item.1 == ch)
     }
 }
 
@@ -85,16 +95,16 @@ fn get_idx(item: &ScanItem) -> usize {
     item.0
 }
 
-fn to_idx(item: ScanItem) -> usize {
-    item.0
-}
-
 fn to_char(item: ScanItem) -> char {
     item.1
 }
 
+fn delimiter(item: &ScanItem) -> bool {
+    is_delimiter(item.1)
+}
+
 fn non_delimiter(item: &ScanItem) -> bool {
-    !is_delimiter(item.1)
+    !delimiter(item)
 }
 
 fn non_trailing_delimiter(item: &ScanItem) -> bool {
@@ -378,10 +388,12 @@ mod tests {
 
             assert_eq!(r, 6);
 
+            s.char();
             let r = s.end_of_line();
 
             assert_eq!(r, 12);
 
+            s.char();
             let r = s.end_of_line();
 
             assert_eq!(r, 18);
@@ -395,10 +407,12 @@ mod tests {
 
             assert_eq!(r, 6);
 
+            s.char();
             let r = s.end_of_line();
 
             assert_eq!(r, 7);
 
+            s.char();
             let r = s.end_of_line();
 
             assert_eq!(r, 13);
