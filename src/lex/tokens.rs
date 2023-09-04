@@ -11,6 +11,7 @@ pub type Token = TokenType<TokenKind>;
 #[derive(Debug)]
 pub enum TokenKind {
     ByteVectorOpen,
+    Comment, // TODO: should comment include the text
     CommentDatum,
     Literal(Literal),
     ParenLeft,
@@ -27,6 +28,7 @@ impl Display for TokenKind {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
             Self::ByteVectorOpen => f.write_str("OPENBYTEVEC"),
+            Self::Comment => f.write_str("COMMENT"),
             Self::CommentDatum => f.write_str("DATUMCOMMENT"),
             Self::Literal(lit) => write!(f, "LITERAL<{lit:?}>"),
             Self::ParenLeft => f.write_str("LPAREN"),
@@ -111,6 +113,16 @@ mod tests {
             };
 
             assert_eq!(token.to_string(), "OPENBYTEVEC[0..4]");
+        }
+
+        #[test]
+        fn display_comment() {
+            let token = Token {
+                kind: TokenKind::Comment,
+                span: 0..5,
+            };
+
+            assert_eq!(token.to_string(), "COMMENT[0..5]");
         }
 
         #[test]

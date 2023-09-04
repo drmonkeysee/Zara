@@ -63,6 +63,7 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
                 '`' => Ok(TokenKind::Quasiquote),
                 ',' => self.unquote(),
                 '.' => self.period(),
+                ';' => self.comment(),
                 _ => self.not_implemented(),
             },
             self.scan.pos(),
@@ -91,6 +92,11 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
             // TODO: jump to number tokenization with period and next char?
             self.not_implemented()
         }
+    }
+
+    fn comment(&mut self) -> TokenExtractResult {
+        self.scan.end_of_line();
+        Ok(TokenKind::Comment)
     }
 
     fn hashliteral(&mut self, ch: char) -> TokenExtractResult {

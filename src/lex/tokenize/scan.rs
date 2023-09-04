@@ -38,6 +38,11 @@ impl<'a> Scanner<'a> {
         self.chars.next_if(non_trailing_delimiter).map(to_char)
     }
 
+    pub(super) fn end_of_line(&mut self) -> usize {
+        let end = self.end();
+        self.chars.find(|item| item.1 == '\n').map_or(end, to_idx)
+    }
+
     pub(super) fn end_of_token(&mut self) -> usize {
         let end = self.end();
         self.chars.peek_find(non_delimiter).map_or(end, get_idx)
@@ -77,6 +82,10 @@ impl<P: Fn(&ScanItem) -> bool> PeekableExt<P> for ScanChars<'_> {
 }
 
 fn get_idx(item: &ScanItem) -> usize {
+    item.0
+}
+
+fn to_idx(item: ScanItem) -> usize {
     item.0
 }
 
@@ -341,6 +350,58 @@ mod tests {
 
             assert!(r.is_some());
             assert_eq!(r.unwrap(), '(');
+        }
+
+        #[test]
+        fn empty_string_end_of_line() {
+            let mut s = Scanner::new("");
+
+            let r = s.end_of_line();
+
+            assert_eq!(r, 0);
+        }
+
+        #[test]
+        fn single_line_end_of_line() {
+            let mut s = Scanner::new("i am one line");
+
+            let r = s.end_of_line();
+
+            assert_eq!(r, 13);
+        }
+
+        #[test]
+        fn multiline_end_of_line() {
+            let mut s = Scanner::new("line 1\nline2\nline3");
+
+            let r = s.end_of_line();
+
+            assert_eq!(r, 6);
+
+            let r = s.end_of_line();
+
+            assert_eq!(r, 12);
+
+            let r = s.end_of_line();
+
+            assert_eq!(r, 18);
+        }
+
+        #[test]
+        fn multiline_end_of_line_includes_blank_lines() {
+            let mut s = Scanner::new("line 1\n\nline2");
+
+            let r = s.end_of_line();
+
+            assert_eq!(r, 6);
+
+            let r = s.end_of_line();
+
+            assert_eq!(r, 7);
+
+            let r = s.end_of_line();
+
+            assert_eq!(r, 13);
         }
 
         #[test]

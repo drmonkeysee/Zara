@@ -406,6 +406,57 @@ mod tokenizer {
         ));
     }
 
+    #[test]
+    fn comment() {
+        let mut s = Scanner::new(";");
+        let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
+
+        let r = t.extract();
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 1,
+                result: Ok(TokenKind::Comment),
+            }
+        ));
+    }
+
+    #[test]
+    fn comment_eof() {
+        let mut s = Scanner::new("; i am a comment");
+        let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
+
+        let r = t.extract();
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 16,
+                result: Ok(TokenKind::Comment),
+            }
+        ));
+    }
+
+    #[test]
+    fn comment_eol() {
+        let mut s = Scanner::new("; comment line\nnew line");
+        let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
+
+        let r = t.extract();
+        dbg!(&r);
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 14,
+                result: Ok(TokenKind::Comment),
+            }
+        ));
+    }
+
     mod hashtag {
         use super::*;
 
