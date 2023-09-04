@@ -105,7 +105,7 @@ impl DisplayLexLines<'_> {
 impl Display for DisplayLexLines<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         if self.0.len() < 2 {
-            write!(f, "[{}]", self.flatten_to_string(|ln| ln.to_string()))
+            write!(f, "[{}]", self.flatten_to_string(LexLine::to_string))
         } else {
             write!(
                 f,

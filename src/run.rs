@@ -46,8 +46,8 @@ impl StdinSource {
             ctx: TextContext::named("<stdin>").into(),
             lines: src
                 .split('\n')
-                .filter(|s| !s.trim().is_empty())
-                .map(String::from)
+                .map(str::trim)
+                .filter_map(|s| (!s.is_empty()).then(|| s.to_owned()))
                 .collect::<Vec<_>>()
                 .into_iter(),
             lineno: 1,
