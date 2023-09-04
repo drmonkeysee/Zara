@@ -190,7 +190,181 @@ fn tokenize_line(text: TextLine) -> LexerLineResult {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::txt::TextContext;
+    use crate::{literal::Literal, txt::TextContext};
+
+    mod lexer {
+        use super::*;
+        use crate::{lex::tokens::TokenType, txt::LineNumber};
+        use std::{ops::Range, rc::Rc, str::Lines};
+
+        struct MockTxtSource<'a> {
+            ctx: Rc<TextContext>,
+            lines: Lines<'a>,
+            lineno: LineNumber,
+        }
+
+        impl<'a> MockTxtSource<'a> {
+            fn new(src: &'a str) -> Self {
+                Self {
+                    ctx: TextContext::named("<mock>").into(),
+                    lines: src.lines(),
+                    lineno: 1,
+                }
+            }
+        }
+
+        impl Iterator for MockTxtSource<'_> {
+            type Item = TextLine;
+
+            fn next(&mut self) -> Option<Self::Item> {
+                let lineno = self.lineno;
+                self.lineno += 1;
+                Some(TextLine {
+                    ctx: self.context(),
+                    line: self.lines.next()?.to_owned(),
+                    lineno,
+                })
+            }
+        }
+
+        impl TextSource for MockTxtSource<'_> {
+            fn context(&self) -> Rc<TextContext> {
+                self.ctx.clone()
+            }
+        }
+
+        #[test]
+        fn empty_line() {
+            let mut src = MockTxtSource::new("");
+
+            let r = tokenize(&mut src);
+
+            assert!(r.is_ok());
+            assert!(r.unwrap().is_empty());
+        }
+
+        #[test]
+        fn single_token() {
+            let mut src = MockTxtSource::new("#t");
+
+            let r = tokenize(&mut src);
+
+            assert!(r.is_ok());
+            let lines = r.unwrap();
+            assert_eq!(lines.len(), 1);
+            let line = &lines[0];
+            assert_eq!(line.0.len(), 1);
+            assert!(matches!(
+                line.0[0],
+                TokenType {
+                    kind: TokenKind::Literal(Literal::Boolean(true)),
+                    span: Range { start: 0, end: 2 }
+                }
+            ));
+            assert!(matches!(
+                &line.1,
+                TextLine {
+                    ctx,
+                    line,
+                    lineno: 1,
+                } if Rc::ptr_eq(&ctx, &src.ctx) && line == "#t"
+            ));
+        }
+
+        #[test]
+        fn multi_tokens() {
+            let mut src = MockTxtSource::new("#t #f #\\a");
+
+            let r = tokenize(&mut src);
+
+            assert!(r.is_ok());
+            let lines = r.unwrap();
+            assert_eq!(lines.len(), 1);
+            let line = &lines[0];
+            assert_eq!(line.0.len(), 3);
+            assert!(matches!(
+                line.0[0],
+                TokenType {
+                    kind: TokenKind::Literal(Literal::Boolean(true)),
+                    span: Range { start: 0, end: 2 }
+                }
+            ));
+            assert!(matches!(
+                line.0[1],
+                TokenType {
+                    kind: TokenKind::Literal(Literal::Boolean(false)),
+                    span: Range { start: 3, end: 5 }
+                }
+            ));
+            assert!(matches!(
+                line.0[2],
+                TokenType {
+                    kind: TokenKind::Literal(Literal::Character('a')),
+                    span: Range { start: 6, end: 9 }
+                }
+            ));
+            assert!(matches!(
+                &line.1,
+                TextLine {
+                    ctx,
+                    line,
+                    lineno: 1,
+                } if Rc::ptr_eq(&ctx, &src.ctx) && line == "#t #f #\\a"
+            ));
+        }
+
+        #[test]
+        fn multi_lines() {
+            let mut src = MockTxtSource::new("#t\n  #f #\\a\n");
+
+            let r = tokenize(&mut src);
+
+            assert!(r.is_ok());
+            let lines = r.unwrap();
+            assert_eq!(lines.len(), 2);
+            let line = &lines[0];
+            assert_eq!(line.0.len(), 1);
+            assert!(matches!(
+                line.0[0],
+                TokenType {
+                    kind: TokenKind::Literal(Literal::Boolean(true)),
+                    span: Range { start: 0, end: 2 }
+                }
+            ));
+            assert!(matches!(
+                &line.1,
+                TextLine {
+                    ctx,
+                    line,
+                    lineno: 1,
+                } if Rc::ptr_eq(&ctx, &src.ctx) && line == "#t"
+            ));
+            let line = &lines[1];
+            assert_eq!(line.0.len(), 2);
+            assert!(matches!(
+                line.0[0],
+                TokenType {
+                    kind: TokenKind::Literal(Literal::Boolean(false)),
+                    span: Range { start: 2, end: 4 }
+                }
+            ));
+            assert!(matches!(
+                line.0[1],
+                TokenType {
+                    kind: TokenKind::Literal(Literal::Character('a')),
+                    span: Range { start: 5, end: 8 }
+                }
+            ));
+            assert!(matches!(
+                &line.1,
+                TextLine {
+                    ctx,
+                    line,
+                    lineno: 2,
+                } if Rc::ptr_eq(&ctx, &src.ctx) && line == "  #f #\\a"
+            ));
+        }
+    }
 
     mod result {
         use super::*;
@@ -435,7 +609,6 @@ mod tests {
 
     mod display {
         use super::*;
-        use crate::literal::Literal;
 
         #[test]
         fn display_empty_token_stream() {
