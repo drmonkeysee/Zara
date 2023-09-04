@@ -495,6 +495,57 @@ mod tokenizer {
         }
 
         #[test]
+        fn datum_comment() {
+            let mut s = Scanner::new("#;");
+            let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
+
+            let r = t.extract();
+
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 0,
+                    end: 2,
+                    result: Ok(TokenKind::CommentDatum),
+                }
+            ));
+        }
+
+        #[test]
+        fn datum_comment_followed_by_datum() {
+            let mut s = Scanner::new("#;#\\a");
+            let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
+
+            let r = t.extract();
+
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 0,
+                    end: 2,
+                    result: Ok(TokenKind::CommentDatum),
+                }
+            ));
+        }
+
+        #[test]
+        fn datum_comment_followed_by_whitespace() {
+            let mut s = Scanner::new("#; ");
+            let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
+
+            let r = t.extract();
+
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 0,
+                    end: 2,
+                    result: Ok(TokenKind::CommentDatum),
+                }
+            ));
+        }
+
+        #[test]
         fn vector_open() {
             let mut s = Scanner::new("#(");
             let t = Tokenizer::start(s.next_token().unwrap(), &mut s);

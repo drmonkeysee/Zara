@@ -11,6 +11,7 @@ pub type Token = TokenType<TokenKind>;
 #[derive(Debug)]
 pub enum TokenKind {
     ByteVectorOpen,
+    CommentDatum,
     Literal(Literal),
     ParenLeft,
     ParenRight,
@@ -26,6 +27,7 @@ impl Display for TokenKind {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
             Self::ByteVectorOpen => f.write_str("OPENBYTEVEC"),
+            Self::CommentDatum => f.write_str("DATUMCOMMENT"),
             Self::Literal(lit) => write!(f, "LITERAL<{lit:?}>"),
             Self::ParenLeft => f.write_str("LPAREN"),
             Self::ParenRight => f.write_str("RPAREN"),
@@ -100,6 +102,26 @@ mod tests {
 
     mod token {
         use super::*;
+
+        #[test]
+        fn display_bytevector_open() {
+            let token = Token {
+                kind: TokenKind::ByteVectorOpen,
+                span: 0..4,
+            };
+
+            assert_eq!(token.to_string(), "OPENBYTEVEC[0..4]");
+        }
+
+        #[test]
+        fn display_datum_comment() {
+            let token = Token {
+                kind: TokenKind::CommentDatum,
+                span: 0..2,
+            };
+
+            assert_eq!(token.to_string(), "DATUMCOMMENT[0..2]");
+        }
 
         #[test]
         fn display_literal() {
@@ -192,16 +214,6 @@ mod tests {
             };
 
             assert_eq!(token.to_string(), "OPENVEC[0..2]");
-        }
-
-        #[test]
-        fn display_bytevector_open() {
-            let token = Token {
-                kind: TokenKind::ByteVectorOpen,
-                span: 0..4,
-            };
-
-            assert_eq!(token.to_string(), "OPENBYTEVEC[0..4]");
         }
     }
 

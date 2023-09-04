@@ -70,19 +70,10 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
     }
 
     fn hashtag(&mut self) -> TokenExtractResult {
-        self.scan
-            .trailing_non_delimiter()
-            .map_or(Err(TokenErrorKind::HashUnterminated), |ch| match ch {
-                'f' | 'F' => self.boolean(false),
-                't' | 'T' => self.boolean(true),
-                'u' | 'U' => self.bytevector_open(),
-                '\\' => self.character(),
-                '(' => Ok(TokenKind::VectorOpen),
-                _ => {
-                    self.scan.end_of_token();
-                    Err(TokenErrorKind::HashInvalid)
-                }
-            })
+        match self.scan.trailing_non_delimiter() {
+            Some(ch) => self.hashliteral(ch),
+            None => self.hashcomment(),
+        }
     }
 
     fn unquote(&mut self) -> TokenExtractResult {
@@ -100,6 +91,27 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
             // TODO: jump to number tokenization with period and next char?
             self.not_implemented()
         }
+    }
+
+    fn hashliteral(&mut self, ch: char) -> TokenExtractResult {
+        match ch {
+            'f' | 'F' => self.boolean(false),
+            't' | 'T' => self.boolean(true),
+            'u' | 'U' => self.bytevector_open(),
+            '\\' => self.character(),
+            '(' => Ok(TokenKind::VectorOpen),
+            _ => {
+                self.scan.end_of_token();
+                Err(TokenErrorKind::HashInvalid)
+            }
+        }
+    }
+
+    fn hashcomment(&mut self) -> TokenExtractResult {
+        self.scan
+            .char_if_eq(';')
+            .ok_or(TokenErrorKind::HashUnterminated)
+            .map(|_| TokenKind::CommentDatum)
     }
 
     fn boolean(&mut self, val: bool) -> TokenExtractResult {
