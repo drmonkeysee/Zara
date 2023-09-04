@@ -16,9 +16,7 @@ impl<'a> Scanner<'a> {
     }
 
     pub(super) fn next_token(&mut self) -> Option<ScanItem> {
-        self.chars
-            .by_ref()
-            .find(|&(_, ch)| !ch.is_ascii_whitespace())
+        self.chars.find(|&(_, ch)| !ch.is_ascii_whitespace())
     }
 
     pub(super) fn char(&mut self) -> Option<char> {
@@ -54,8 +52,8 @@ impl<'a> Scanner<'a> {
     }
 
     pub(super) fn end_of_line(&mut self) -> usize {
-        let end = self.end();
-        self.chars.next_until_eq('\n').map_or(end, get_idx)
+        self.chars.by_ref().last();
+        self.end()
     }
 
     pub(super) fn pos(&mut self) -> usize {
@@ -70,28 +68,22 @@ impl<'a> Scanner<'a> {
 
 type ScanChars<'a> = Peekable<CharIndices<'a>>;
 
-trait PeekablePred<P> {
+trait PeekableExt<P> {
     fn next_until(&mut self, predicate: P) -> Option<&ScanItem>;
 }
 
-impl<P: Fn(&ScanItem) -> bool> PeekablePred<P> for ScanChars<'_> {
+impl<P: Fn(&ScanItem) -> bool> PeekableExt<P> for ScanChars<'_> {
     fn next_until(&mut self, predicate: P) -> Option<&ScanItem> {
         while self.next_if(|item| !predicate(item)).is_some() { /* consume iterator */ }
         self.peek()
     }
 }
 
-trait PeekableExt {
-    fn next_until_eq(&mut self, ch: char) -> Option<&ScanItem>;
-}
-
-impl PeekableExt for ScanChars<'_> {
-    fn next_until_eq(&mut self, ch: char) -> Option<&ScanItem> {
-        self.next_until(|item| item.1 == ch)
-    }
-}
-
 fn get_idx(item: &ScanItem) -> usize {
+    item.0
+}
+
+fn to_idx(item: ScanItem) -> usize {
     item.0
 }
 
@@ -372,50 +364,12 @@ mod tests {
         }
 
         #[test]
-        fn single_line_end_of_line() {
-            let mut s = Scanner::new("i am one line");
+        fn end_of_line() {
+            let mut s = Scanner::new("scanner input is always one line");
 
             let r = s.end_of_line();
 
-            assert_eq!(r, 13);
-        }
-
-        #[test]
-        fn multiline_end_of_line() {
-            let mut s = Scanner::new("line 1\nline2\nline3");
-
-            let r = s.end_of_line();
-
-            assert_eq!(r, 6);
-
-            s.char();
-            let r = s.end_of_line();
-
-            assert_eq!(r, 12);
-
-            s.char();
-            let r = s.end_of_line();
-
-            assert_eq!(r, 18);
-        }
-
-        #[test]
-        fn multiline_end_of_line_includes_blank_lines() {
-            let mut s = Scanner::new("line 1\n\nline2");
-
-            let r = s.end_of_line();
-
-            assert_eq!(r, 6);
-
-            s.char();
-            let r = s.end_of_line();
-
-            assert_eq!(r, 7);
-
-            s.char();
-            let r = s.end_of_line();
-
-            assert_eq!(r, 13);
+            assert_eq!(r, 32);
         }
 
         #[test]

@@ -424,8 +424,8 @@ mod tokenizer {
     }
 
     #[test]
-    fn comment_eof() {
-        let mut s = Scanner::new("; i am a comment");
+    fn comment_with_text() {
+        let mut s = Scanner::new("; scanner input is always one line");
         let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
 
         let r = t.extract();
@@ -434,24 +434,7 @@ mod tokenizer {
             r,
             TokenExtract {
                 start: 0,
-                end: 16,
-                result: Ok(TokenKind::Comment),
-            }
-        ));
-    }
-
-    #[test]
-    fn comment_eol() {
-        let mut s = Scanner::new("; comment line\nnew line");
-        let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
-
-        let r = t.extract();
-        dbg!(&r);
-        assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 14,
+                end: 34,
                 result: Ok(TokenKind::Comment),
             }
         ));
