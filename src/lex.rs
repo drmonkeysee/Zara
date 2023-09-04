@@ -386,7 +386,7 @@ mod tests {
                 make_textline(),
             );
 
-            assert_eq!(line.to_string(), "1:LPAREN[8..14](\"source\")");
+            assert_eq!(line.to_string(), "1:LEFTPAREN[8..14](\"source\")");
         }
 
         #[test]
@@ -411,9 +411,9 @@ mod tests {
 
             assert_eq!(
                 line.to_string(),
-                "1:LPAREN[0..4](\"line\"), \
-                RPAREN[5..7](\"of\"), \
-                LPAREN[8..14](\"source\")"
+                "1:LEFTPAREN[0..4](\"line\"), \
+                RIGHTPAREN[5..7](\"of\"), \
+                LEFTPAREN[8..14](\"source\")"
             );
         }
 
@@ -429,7 +429,7 @@ mod tests {
 
             assert_eq!(
                 line.to_string(),
-                "1:LPAREN[8..4](\"#<token-invalid-range>\")"
+                "1:LEFTPAREN[8..4](\"#<token-invalid-range>\")"
             );
         }
 
@@ -445,7 +445,7 @@ mod tests {
 
             assert_eq!(
                 line.to_string(),
-                "1:LPAREN[8..50](\"#<token-invalid-range>\")"
+                "1:LEFTPAREN[8..50](\"#<token-invalid-range>\")"
             );
         }
     }
@@ -651,7 +651,7 @@ mod tests {
 
             assert_eq!(
                 target.to_string(),
-                "[1:LPAREN[0..1](\"(\"), LITERAL<Boolean(false)>[1..3](\"#f\"), RPAREN[3..4](\")\")]"
+                "[1:LEFTPAREN[0..1](\"(\"), LITERAL<Boolean(false)>[1..3](\"#f\"), RIGHTPAREN[3..4](\")\")]"
             );
         }
 
@@ -740,9 +740,9 @@ mod tests {
             assert_eq!(
                 target.to_string(),
                 "[\n\
-                \t1:LPAREN[0..1](\"(\"), LITERAL<Boolean(false)>[1..3](\"#f\"), RPAREN[3..4](\")\"),\n\
-                \t2:LPAREN[0..1](\"(\"), LITERAL<Boolean(true)>[2..4](\"#t\"), RPAREN[5..6](\")\"),\n\
-                \t3:LPAREN[0..1](\"(\"), LITERAL<Character('a')>[1..4](\"#\\a\"), RPAREN[4..5](\")\"),\n\
+                \t1:LEFTPAREN[0..1](\"(\"), LITERAL<Boolean(false)>[1..3](\"#f\"), RIGHTPAREN[3..4](\")\"),\n\
+                \t2:LEFTPAREN[0..1](\"(\"), LITERAL<Boolean(true)>[2..4](\"#t\"), RIGHTPAREN[5..6](\")\"),\n\
+                \t3:LEFTPAREN[0..1](\"(\"), LITERAL<Character('a')>[1..4](\"#\\a\"), RIGHTPAREN[4..5](\")\"),\n\
                 ]"
             );
         }

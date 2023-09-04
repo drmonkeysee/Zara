@@ -31,8 +31,8 @@ impl Display for TokenKind {
             Self::Comment => f.write_str("COMMENT"),
             Self::CommentDatum => f.write_str("DATUMCOMMENT"),
             Self::Literal(lit) => write!(f, "LITERAL<{lit:?}>"),
-            Self::ParenLeft => f.write_str("LPAREN"),
-            Self::ParenRight => f.write_str("RPAREN"),
+            Self::ParenLeft => f.write_str("LEFTPAREN"),
+            Self::ParenRight => f.write_str("RIGHTPAREN"),
             Self::PairJoiner => f.write_str("PAIR"),
             Self::Quasiquote => f.write_str("QUASIQUOTE"),
             Self::Quote => f.write_str("QUOTE"),
@@ -155,7 +155,7 @@ mod tests {
                 span: 0..1,
             };
 
-            assert_eq!(token.to_string(), "LPAREN[0..1]");
+            assert_eq!(token.to_string(), "LEFTPAREN[0..1]");
         }
 
         #[test]
@@ -165,7 +165,7 @@ mod tests {
                 span: 0..1,
             };
 
-            assert_eq!(token.to_string(), "RPAREN[0..1]");
+            assert_eq!(token.to_string(), "RIGHTPAREN[0..1]");
         }
 
         #[test]
