@@ -584,7 +584,7 @@ mod tokenizer {
 
             #[test]
             fn block_comment_with_hash() {
-                let mut s = Scanner::new("#|hastag #comment|#");
+                let mut s = Scanner::new("#|hashtag #comment|#");
                 let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
 
                 let r = t.extract();
@@ -628,6 +628,23 @@ mod tokenizer {
                     TokenExtract {
                         start: 0,
                         end: 35,
+                        result: Ok(TokenKind::CommentBlock),
+                    }
+                ));
+            }
+
+            #[test]
+            fn block_comment_followed_by_other_text() {
+                let mut s = Scanner::new("#| comment |# other stuff");
+                let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
+
+                let r = t.extract();
+
+                assert!(matches!(
+                    r,
+                    TokenExtract {
+                        start: 0,
+                        end: 13,
                         result: Ok(TokenKind::CommentBlock),
                     }
                 ));
