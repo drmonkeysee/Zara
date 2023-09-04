@@ -580,7 +580,7 @@ mod tokenizer {
         }
 
         #[test]
-        fn vector_open() {
+        fn vector() {
             let mut s = Scanner::new("#(");
             let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
 
@@ -591,17 +591,17 @@ mod tokenizer {
                 TokenExtract {
                     start: 0,
                     end: 2,
-                    result: Ok(TokenKind::VectorOpen),
+                    result: Ok(TokenKind::Vector),
                 }
             ));
         }
     }
 
-    mod bytevectoropen {
+    mod bytevector {
         use super::*;
 
         #[test]
-        fn bytevector_open() {
+        fn bytevector() {
             let mut s = Scanner::new("#u8(");
             let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
 
@@ -612,13 +612,13 @@ mod tokenizer {
                 TokenExtract {
                     start: 0,
                     end: 4,
-                    result: Ok(TokenKind::ByteVectorOpen),
+                    result: Ok(TokenKind::ByteVector),
                 }
             ));
         }
 
         #[test]
-        fn bytevector_open_uppercase() {
+        fn bytevector_uppercase() {
             let mut s = Scanner::new("#U8(");
             let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
 
@@ -629,13 +629,13 @@ mod tokenizer {
                 TokenExtract {
                     start: 0,
                     end: 4,
-                    result: Ok(TokenKind::ByteVectorOpen),
+                    result: Ok(TokenKind::ByteVector),
                 }
             ));
         }
 
         #[test]
-        fn bytevector_open_ends_at_paren() {
+        fn bytevector_ends_at_paren() {
             let mut s = Scanner::new("#u8(sdf");
             let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
 
@@ -646,13 +646,13 @@ mod tokenizer {
                 TokenExtract {
                     start: 0,
                     end: 4,
-                    result: Ok(TokenKind::ByteVectorOpen),
+                    result: Ok(TokenKind::ByteVector),
                 }
             ));
         }
 
         #[test]
-        fn bytevector_open_unterminated() {
+        fn bytevector_unterminated() {
             let mut s = Scanner::new("#u");
             let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
 
@@ -669,7 +669,7 @@ mod tokenizer {
         }
 
         #[test]
-        fn bytevector_open_wrong_number() {
+        fn bytevector_wrong_number() {
             let mut s = Scanner::new("#u9(");
             let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
 
@@ -686,7 +686,7 @@ mod tokenizer {
         }
 
         #[test]
-        fn bytevector_open_extra_number() {
+        fn bytevector_extra_number() {
             let mut s = Scanner::new("#u81(");
             let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
 
@@ -703,7 +703,7 @@ mod tokenizer {
         }
 
         #[test]
-        fn bytevector_open_no_paren() {
+        fn bytevector_no_paren() {
             let mut s = Scanner::new("#u8");
             let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
 
@@ -720,7 +720,7 @@ mod tokenizer {
         }
 
         #[test]
-        fn bytevector_open_no_paren_whitespace() {
+        fn bytevector_no_paren_whitespace() {
             let mut s = Scanner::new("#u8  ");
             let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
 

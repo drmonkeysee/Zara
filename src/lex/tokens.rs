@@ -10,7 +10,7 @@ pub type Token = TokenType<TokenKind>;
 
 #[derive(Debug)]
 pub enum TokenKind {
-    ByteVectorOpen,
+    ByteVector,
     Comment, // TODO: should comment include the text
     CommentDatum,
     Literal(Literal),
@@ -21,13 +21,13 @@ pub enum TokenKind {
     Quote,
     Unquote,
     UnquoteSplice,
-    VectorOpen,
+    Vector,
 }
 
 impl Display for TokenKind {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            Self::ByteVectorOpen => f.write_str("OPENBYTEVEC"),
+            Self::ByteVector => f.write_str("BYTEVECTOR"),
             Self::Comment => f.write_str("COMMENT"),
             Self::CommentDatum => f.write_str("DATUMCOMMENT"),
             Self::Literal(lit) => write!(f, "LITERAL<{lit:?}>"),
@@ -38,7 +38,7 @@ impl Display for TokenKind {
             Self::Quote => f.write_str("QUOTE"),
             Self::Unquote => f.write_str("UNQUOTE"),
             Self::UnquoteSplice => f.write_str("UNQUOTESPLICE"),
-            Self::VectorOpen => f.write_str("OPENVEC"),
+            Self::Vector => f.write_str("VECTOR"),
         }
     }
 }
@@ -106,13 +106,13 @@ mod tests {
         use super::*;
 
         #[test]
-        fn display_bytevector_open() {
+        fn display_bytevector() {
             let token = Token {
-                kind: TokenKind::ByteVectorOpen,
+                kind: TokenKind::ByteVector,
                 span: 0..4,
             };
 
-            assert_eq!(token.to_string(), "OPENBYTEVEC[0..4]");
+            assert_eq!(token.to_string(), "BYTEVECTOR[0..4]");
         }
 
         #[test]
@@ -219,13 +219,13 @@ mod tests {
         }
 
         #[test]
-        fn display_vector_open() {
+        fn display_vector() {
             let token = Token {
-                kind: TokenKind::VectorOpen,
+                kind: TokenKind::Vector,
                 span: 0..2,
             };
 
-            assert_eq!(token.to_string(), "OPENVEC[0..2]");
+            assert_eq!(token.to_string(), "VECTOR[0..2]");
         }
     }
 

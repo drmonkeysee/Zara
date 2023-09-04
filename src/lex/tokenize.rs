@@ -103,9 +103,9 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
         match ch {
             'f' | 'F' => self.boolean(false),
             't' | 'T' => self.boolean(true),
-            'u' | 'U' => self.bytevector_open(),
+            'u' | 'U' => self.bytevector(),
             '\\' => self.character(),
-            '(' => Ok(TokenKind::VectorOpen),
+            '(' => Ok(TokenKind::Vector),
             _ => {
                 self.scan.end_of_token();
                 Err(TokenErrorKind::HashInvalid)
@@ -129,13 +129,13 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
         }
     }
 
-    fn bytevector_open(&mut self) -> TokenExtractResult {
+    fn bytevector(&mut self) -> TokenExtractResult {
         self.scan
             .trailing_non_delimiter()
             .filter(|&ch| ch == '8')
             .and_then(|_| self.scan.trailing_non_delimiter().filter(|&ch| ch == '('))
             .ok_or(TokenErrorKind::ByteVectorExpected)
-            .map(|_| TokenKind::ByteVectorOpen)
+            .map(|_| TokenKind::ByteVector)
     }
 
     fn character(&mut self) -> TokenExtractResult {
