@@ -529,57 +529,6 @@ mod tokenizer {
         }
 
         #[test]
-        fn datum_comment() {
-            let mut s = Scanner::new("#;");
-            let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
-
-            let r = t.extract();
-
-            assert!(matches!(
-                r,
-                TokenExtract {
-                    start: 0,
-                    end: 2,
-                    result: Ok(TokenKind::CommentDatum),
-                }
-            ));
-        }
-
-        #[test]
-        fn datum_comment_followed_by_datum() {
-            let mut s = Scanner::new("#;#\\a");
-            let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
-
-            let r = t.extract();
-
-            assert!(matches!(
-                r,
-                TokenExtract {
-                    start: 0,
-                    end: 2,
-                    result: Ok(TokenKind::CommentDatum),
-                }
-            ));
-        }
-
-        #[test]
-        fn datum_comment_followed_by_whitespace() {
-            let mut s = Scanner::new("#; ");
-            let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
-
-            let r = t.extract();
-
-            assert!(matches!(
-                r,
-                TokenExtract {
-                    start: 0,
-                    end: 2,
-                    result: Ok(TokenKind::CommentDatum),
-                }
-            ));
-        }
-
-        #[test]
         fn vector() {
             let mut s = Scanner::new("#(");
             let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
@@ -594,6 +543,146 @@ mod tokenizer {
                     result: Ok(TokenKind::Vector),
                 }
             ));
+        }
+
+        mod comments {
+            use super::*;
+
+            #[test]
+            fn block_comment_empty() {
+                let mut s = Scanner::new("#||#");
+                let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
+
+                let r = t.extract();
+
+                assert!(matches!(
+                    r,
+                    TokenExtract {
+                        start: 0,
+                        end: 4,
+                        result: Ok(TokenKind::CommentBlock),
+                    }
+                ));
+            }
+
+            #[test]
+            fn block_comment_with_text() {
+                let mut s = Scanner::new("#|i am a comment|#");
+                let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
+
+                let r = t.extract();
+
+                assert!(matches!(
+                    r,
+                    TokenExtract {
+                        start: 0,
+                        end: 18,
+                        result: Ok(TokenKind::CommentBlock),
+                    }
+                ));
+            }
+
+            #[test]
+            fn block_comment_with_hash() {
+                let mut s = Scanner::new("#|hastag #comment|#");
+                let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
+
+                let r = t.extract();
+
+                assert!(matches!(
+                    r,
+                    TokenExtract {
+                        start: 0,
+                        end: 19,
+                        result: Ok(TokenKind::CommentBlock),
+                    }
+                ));
+            }
+
+            #[test]
+            fn block_comment_with_pipe() {
+                let mut s = Scanner::new("#|pipe |comment|#");
+                let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
+
+                let r = t.extract();
+
+                assert!(matches!(
+                    r,
+                    TokenExtract {
+                        start: 0,
+                        end: 17,
+                        result: Ok(TokenKind::CommentBlock),
+                    }
+                ));
+            }
+
+            #[test]
+            fn block_comment_nested() {
+                let mut s = Scanner::new("#|outer #|inner comment|# comment|#");
+                let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
+
+                let r = t.extract();
+
+                assert!(matches!(
+                    r,
+                    TokenExtract {
+                        start: 0,
+                        end: 35,
+                        result: Ok(TokenKind::CommentBlock),
+                    }
+                ));
+            }
+
+            #[test]
+            fn datum_comment() {
+                let mut s = Scanner::new("#;");
+                let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
+
+                let r = t.extract();
+
+                assert!(matches!(
+                    r,
+                    TokenExtract {
+                        start: 0,
+                        end: 2,
+                        result: Ok(TokenKind::CommentDatum),
+                    }
+                ));
+            }
+
+            #[test]
+            fn datum_comment_followed_by_datum() {
+                let mut s = Scanner::new("#;#\\a");
+                let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
+
+                let r = t.extract();
+
+                assert!(matches!(
+                    r,
+                    TokenExtract {
+                        start: 0,
+                        end: 2,
+                        result: Ok(TokenKind::CommentDatum),
+                    }
+                ));
+            }
+
+            #[test]
+            fn datum_comment_followed_by_whitespace() {
+                let mut s = Scanner::new("#; ");
+                let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
+
+                let r = t.extract();
+
+                assert!(matches!(
+                    r,
+                    TokenExtract {
+                        start: 0,
+                        end: 2,
+                        result: Ok(TokenKind::CommentDatum),
+                    }
+                ));
+            }
         }
     }
 
