@@ -45,7 +45,7 @@ impl StdinSource {
         Self {
             ctx: TextContext::named("<stdin>").into(),
             lines: src
-                .split('\n')
+                .lines()
                 .map(str::trim)
                 .filter_map(|s| (!s.is_empty()).then(|| s.to_owned()))
                 .collect::<Vec<_>>()
@@ -184,6 +184,98 @@ mod tests {
         #[test]
         fn iterate_multi_lines() {
             let src = "line1\nline2\nline3\n";
+            let mut target = StdinSource::new(src.to_owned());
+
+            let line = target.next();
+
+            assert!(line.is_some());
+            assert!(matches!(
+                line.unwrap(),
+                TextLine {
+                    ctx,
+                    line,
+                    lineno: 1,
+                } if Rc::ptr_eq(&ctx, &target.ctx) && line == "line1"
+            ));
+
+            let line = target.next();
+
+            assert!(line.is_some());
+            assert!(matches!(
+                line.unwrap(),
+                TextLine {
+                    ctx,
+                    line,
+                    lineno: 2,
+                } if Rc::ptr_eq(&ctx, &target.ctx) && line == "line2"
+            ));
+
+            let line = target.next();
+
+            assert!(line.is_some());
+            assert!(matches!(
+                line.unwrap(),
+                TextLine {
+                    ctx,
+                    line,
+                    lineno: 3,
+                } if Rc::ptr_eq(&ctx, &target.ctx) && line == "line3"
+            ));
+
+            let line = target.next();
+
+            assert!(line.is_none());
+        }
+
+        #[test]
+        fn iterate_multi_lines_windows_style() {
+            let src = "line1\r\nline2\r\nline3\r\n";
+            let mut target = StdinSource::new(src.to_owned());
+
+            let line = target.next();
+
+            assert!(line.is_some());
+            assert!(matches!(
+                line.unwrap(),
+                TextLine {
+                    ctx,
+                    line,
+                    lineno: 1,
+                } if Rc::ptr_eq(&ctx, &target.ctx) && line == "line1"
+            ));
+
+            let line = target.next();
+
+            assert!(line.is_some());
+            assert!(matches!(
+                line.unwrap(),
+                TextLine {
+                    ctx,
+                    line,
+                    lineno: 2,
+                } if Rc::ptr_eq(&ctx, &target.ctx) && line == "line2"
+            ));
+
+            let line = target.next();
+
+            assert!(line.is_some());
+            assert!(matches!(
+                line.unwrap(),
+                TextLine {
+                    ctx,
+                    line,
+                    lineno: 3,
+                } if Rc::ptr_eq(&ctx, &target.ctx) && line == "line3"
+            ));
+
+            let line = target.next();
+
+            assert!(line.is_none());
+        }
+
+        #[test]
+        fn iterate_multi_lines_trims_whitespace() {
+            let src = "line1  \n  line2\t\n\tline3\n";
             let mut target = StdinSource::new(src.to_owned());
 
             let line = target.next();
