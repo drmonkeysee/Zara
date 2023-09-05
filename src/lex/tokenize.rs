@@ -184,17 +184,11 @@ impl BlockComment<'_, '_> {
     }
 
     fn found_comment_end(&mut self) -> bool {
-        while !self.0.consumed() {
-            if self
-                .0
-                .find_char('|')
-                .and_then(|_| self.0.char_if_eq('#'))
-                .is_some()
-            {
-                return true;
-            }
+        let mut end = None;
+        while end.is_none() && !self.0.consumed() {
+            end = self.0.find_char('|').and_then(|_| self.0.char_if_eq('#'));
         }
-        false
+        end.is_some()
     }
 }
 
