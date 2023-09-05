@@ -13,6 +13,7 @@ pub enum TokenKind {
     ByteVector,
     Comment,
     CommentBlock,
+    CommentBlockBegin(usize),
     CommentDatum,
     Literal(Literal),
     ParenLeft,
@@ -31,6 +32,7 @@ impl Display for TokenKind {
             Self::ByteVector => f.write_str("BYTEVECTOR"),
             Self::Comment => f.write_str("COMMENT"),
             Self::CommentBlock => f.write_str("BLOCKCOMMENT"),
+            Self::CommentBlockBegin(nesting) => write!(f, "BLOCKCOMMENTBEGIN<{nesting:?}>"),
             Self::CommentDatum => f.write_str("DATUMCOMMENT"),
             Self::Literal(lit) => write!(f, "LITERAL<{lit:?}>"),
             Self::ParenLeft => f.write_str("LEFTPAREN"),
@@ -135,6 +137,16 @@ mod tests {
             };
 
             assert_eq!(token.to_string(), "BLOCKCOMMENT[0..10]");
+        }
+
+        #[test]
+        fn display_comment_blockbegin() {
+            let token = Token {
+                kind: TokenKind::CommentBlockBegin(1),
+                span: 0..10,
+            };
+
+            assert_eq!(token.to_string(), "BLOCKCOMMENTBEGIN<1>[0..10]");
         }
 
         #[test]
