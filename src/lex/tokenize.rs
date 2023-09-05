@@ -116,8 +116,14 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
     fn hashcomment(&mut self) -> TokenExtractResult {
         self.scan
             .char_if_eq(';')
+            .map_or_else(|| self.blockcomment(), |_| Ok(TokenKind::CommentDatum))
+    }
+
+    fn blockcomment(&mut self) -> TokenExtractResult {
+        self.scan
+            .char_if_eq('|')
             .ok_or(TokenErrorKind::HashUnterminated)
-            .map(|_| TokenKind::CommentDatum)
+            .map(|_| BlockComment(self.scan).consume())
     }
 
     fn boolean(&mut self, val: bool) -> TokenExtractResult {
@@ -163,6 +169,32 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
         Err(TokenErrorKind::Unimplemented(
             self.scan.lexeme(start..end).to_owned(),
         ))
+    }
+}
+
+struct BlockComment<'me, 'str>(&'me mut Scanner<'str>);
+
+impl BlockComment<'_, '_> {
+    fn consume(&mut self) -> TokenKind {
+        if self.found_comment_end() {
+            TokenKind::CommentBlock
+        } else {
+            TokenKind::CommentBlockBegin(1)
+        }
+    }
+
+    fn found_comment_end(&mut self) -> bool {
+        while !self.0.consumed() {
+            if self
+                .0
+                .find_char('|')
+                .and_then(|_| self.0.char_if_eq('#'))
+                .is_some()
+            {
+                return true;
+            }
+        }
+        false
     }
 }
 

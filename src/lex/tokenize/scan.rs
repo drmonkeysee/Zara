@@ -16,7 +16,7 @@ impl<'a> Scanner<'a> {
     }
 
     pub(super) fn next_token(&mut self) -> Option<ScanItem> {
-        self.chars.find(|&(_, ch)| !ch.is_ascii_whitespace())
+        self.chars.find(|item| !item.1.is_ascii_whitespace())
     }
 
     pub(super) fn char(&mut self) -> Option<char> {
@@ -63,6 +63,10 @@ impl<'a> Scanner<'a> {
     pub(super) fn pos(&mut self) -> usize {
         let end = self.end();
         self.chars.peek().map_or(end, get_idx)
+    }
+
+    pub(super) fn consumed(&mut self) -> bool {
+        self.pos() == self.end()
     }
 
     fn end(&self) -> usize {
@@ -691,6 +695,38 @@ mod tests {
             let r = s.pos();
 
             assert_eq!(r, 0);
+        }
+
+        #[test]
+        fn consumed_empty_string() {
+            let mut s = Scanner::new("");
+
+            assert!(s.consumed());
+        }
+
+        #[test]
+        fn consumed_before_scan() {
+            let mut s = Scanner::new("abc");
+
+            assert!(!s.consumed());
+        }
+
+        #[test]
+        fn consumed_partial_scan() {
+            let mut s = Scanner::new("abc");
+
+            s.char();
+
+            assert!(!s.consumed());
+        }
+
+        #[test]
+        fn consumed_full_scan() {
+            let mut s = Scanner::new("abc");
+
+            s.end_of_line();
+
+            assert!(s.consumed());
         }
     }
 }

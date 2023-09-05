@@ -593,7 +593,7 @@ mod tokenizer {
                     r,
                     TokenExtract {
                         start: 0,
-                        end: 19,
+                        end: 20,
                         result: Ok(TokenKind::CommentBlock),
                     }
                 ));
