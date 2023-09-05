@@ -651,6 +651,91 @@ mod tokenizer {
             }
 
             #[test]
+            fn block_comment_begin() {
+                let mut s = Scanner::new("#| comment that continues...");
+                let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
+
+                let r = t.extract();
+
+                assert!(matches!(
+                    r,
+                    TokenExtract {
+                        start: 0,
+                        end: 28,
+                        result: Ok(TokenKind::CommentBlockBegin(1)),
+                    }
+                ));
+            }
+
+            #[test]
+            fn block_comment_begin_with_hash() {
+                let mut s = Scanner::new("#| comment with #hash...");
+                let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
+
+                let r = t.extract();
+
+                assert!(matches!(
+                    r,
+                    TokenExtract {
+                        start: 0,
+                        end: 24,
+                        result: Ok(TokenKind::CommentBlockBegin(1)),
+                    }
+                ));
+            }
+
+            #[test]
+            fn block_comment_begin_with_pipe() {
+                let mut s = Scanner::new("#| comment with |pipe...");
+                let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
+
+                let r = t.extract();
+
+                assert!(matches!(
+                    r,
+                    TokenExtract {
+                        start: 0,
+                        end: 24,
+                        result: Ok(TokenKind::CommentBlockBegin(1)),
+                    }
+                ));
+            }
+
+            #[test]
+            fn block_comment_begin_contained_nested_comment() {
+                let mut s = Scanner::new("#| begin #| nested |# continue...");
+                let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
+
+                let r = t.extract();
+
+                assert!(matches!(
+                    r,
+                    TokenExtract {
+                        start: 0,
+                        end: 33,
+                        result: Ok(TokenKind::CommentBlockBegin(1)),
+                    }
+                ));
+            }
+
+            #[test]
+            fn block_comment_begin_with_trailing_nested() {
+                let mut s = Scanner::new("#| begin #| nested...");
+                let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
+
+                let r = t.extract();
+
+                assert!(matches!(
+                    r,
+                    TokenExtract {
+                        start: 0,
+                        end: 21,
+                        result: Ok(TokenKind::CommentBlockBegin(2)),
+                    }
+                ));
+            }
+
+            #[test]
             fn datum_comment() {
                 let mut s = Scanner::new("#;");
                 let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
