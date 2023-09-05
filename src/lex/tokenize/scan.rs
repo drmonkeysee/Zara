@@ -24,7 +24,11 @@ impl<'a> Scanner<'a> {
     }
 
     pub(super) fn char_if_eq(&mut self, ch: char) -> Option<usize> {
-        self.chars.next_if(|item| item.1 == ch).map(to_idx)
+        self.chars.next_if(eq_char(ch)).map(to_idx)
+    }
+
+    pub(super) fn find_char(&mut self, ch: char) -> Option<usize> {
+        self.chars.find(eq_char(ch)).map(to_idx)
     }
 
     // TODO: will be needed for non-trailing stuff
@@ -89,6 +93,10 @@ fn to_idx(item: ScanItem) -> usize {
 
 fn to_char(item: ScanItem) -> char {
     item.1
+}
+
+fn eq_char(ch: char) -> impl FnMut(&ScanItem) -> bool {
+    move |item| item.1 == ch
 }
 
 fn delimiter(item: &ScanItem) -> bool {
@@ -228,6 +236,58 @@ mod tests {
 
             assert!(r.is_some());
             assert_eq!(r.unwrap(), 'a');
+        }
+
+        #[test]
+        fn find_char_empty_string() {
+            let mut s = Scanner::new("");
+
+            let r = s.find_char('a');
+
+            assert!(r.is_none());
+        }
+
+        #[test]
+        fn find_char_start_of_string() {
+            let mut s = Scanner::new("abc");
+
+            let r = s.find_char('a');
+
+            assert!(r.is_some());
+            assert_eq!(r.unwrap(), 0);
+
+            let r = s.char();
+
+            assert!(r.is_some());
+            assert_eq!(r.unwrap(), 'b');
+        }
+
+        #[test]
+        fn find_char_in_string() {
+            let mut s = Scanner::new("abc");
+
+            let r = s.find_char('b');
+
+            assert!(r.is_some());
+            assert_eq!(r.unwrap(), 1);
+
+            let r = s.char();
+
+            assert!(r.is_some());
+            assert_eq!(r.unwrap(), 'c');
+        }
+
+        #[test]
+        fn find_char_not_in_string() {
+            let mut s = Scanner::new("abc");
+
+            let r = s.find_char('d');
+
+            assert!(r.is_none());
+
+            let r = s.char();
+
+            assert!(r.is_none());
         }
 
         #[test]
