@@ -1,5 +1,10 @@
 use crate::args::Args;
-use std::{path::Path, rc::Rc};
+use std::{
+    io,
+    io::{IsTerminal, Stdin},
+    path::Path,
+    rc::Rc,
+};
 use zara::{
     txt::{LineNumber, TextContext, TextLine, TextSource},
     Interpreter, Result,
@@ -25,20 +30,11 @@ pub(crate) fn file(opts: Opts, prg: impl AsRef<Path>) -> Result {
 }
 
 pub(crate) fn prg(opts: Opts, prg: String) -> Result {
-    let mut src = PrgSource::new(prg);
-    let runtime = Interpreter::new(opts.token_output, opts.ast_output);
-    let result = runtime.run(&mut src);
-    print_terminal_result(&result);
-    result
+    run(opts, PrgSource::new(prg))
 }
 
 pub(crate) fn stdin(opts: Opts) -> Result {
-    todo!();
-    /*let mut src = StdinSource::new(src);
-    let runtime = Interpreter::new(opts.token_output, opts.ast_output);
-    let result = runtime.run(&mut src);
-    print_terminal_result(&result);
-    result*/
+    run(opts, StdinSource::new())
 }
 
 struct FileSource;
@@ -82,6 +78,62 @@ impl TextSource for PrgSource {
     fn context(&self) -> Rc<TextContext> {
         self.ctx.clone()
     }
+}
+
+struct StdinSource {
+    ctx: Rc<TextContext>,
+    stdin: Stdin,
+    lineno: LineNumber,
+}
+
+impl StdinSource {
+    fn new() -> Self {
+        Self {
+            ctx: TextContext::named("<stdin>").into(),
+            stdin: io::stdin(),
+            lineno: 1,
+        }
+    }
+}
+
+impl Iterator for StdinSource {
+    type Item = TextLine;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let lineno = self.lineno;
+        self.lineno += 1;
+        let mut buf = String::new();
+        self.stdin.read_line(&mut buf).map_or_else(
+            |err| {
+                eprintln!("Unexpected stdin read error: {err}");
+                None
+            },
+            |n| {
+                if n == 0 || (n == 1 && self.stdin.is_terminal()) {
+                    None
+                } else {
+                    Some(TextLine {
+                        ctx: self.context(),
+                        line: buf,
+                        lineno,
+                    })
+                }
+            },
+        )
+    }
+}
+
+impl TextSource for StdinSource {
+    fn context(&self) -> Rc<TextContext> {
+        self.ctx.clone()
+    }
+}
+
+fn run(opts: Opts, mut src: impl TextSource) -> Result {
+    let runtime = Interpreter::new(opts.token_output, opts.ast_output);
+    let result = runtime.run(&mut src);
+    print_terminal_result(&result);
+    result
 }
 
 fn print_terminal_result(result: &Result) {
@@ -326,6 +378,33 @@ mod tests {
             let line = target.next();
 
             assert!(line.is_none());
+        }
+    }
+
+    mod stdin {
+        use super::*;
+
+        #[test]
+        fn create() {
+            let target = StdinSource::new();
+
+            assert!(matches!(
+                target.ctx.as_ref(),
+                TextContext {
+                    name,
+                    path: None
+                } if name == "<stdin>"
+            ));
+            assert_eq!(target.lineno, 1);
+        }
+
+        #[test]
+        fn context() {
+            let target = StdinSource::new();
+
+            let ctx = target.context();
+
+            assert!(Rc::ptr_eq(&ctx, &target.ctx));
         }
     }
 }
