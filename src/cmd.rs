@@ -14,36 +14,35 @@ pub(crate) type Result = result::Result<(), CmdError>;
 pub(crate) enum Cmd {
     File(Opts, PathBuf),
     Help(String),
+    Prg(Opts, String),
     Repl(Opts),
-    Stdin(Opts, String),
+    Stdin(Opts),
     Version,
 }
 
 impl Cmd {
     pub(crate) fn execute(self) -> Result {
-        match self {
+        Ok(match self {
             Self::File(opts, prg) => {
                 run::file(opts, prg)?;
-                Ok(())
             }
             Self::Help(ref me) => {
                 args::usage(me);
-                Ok(())
+            }
+            Self::Prg(opts, prg) => {
+                run::prg(opts, prg)?;
             }
             Self::Repl(opts) => {
                 let mut r = Repl::new(opts)?;
                 r.run()?;
-                Ok(())
             }
-            Self::Stdin(opts, src) => {
-                run::stdin(opts, src)?;
-                Ok(())
+            Self::Stdin(opts) => {
+                run::stdin(opts)?;
             }
             Self::Version => {
                 args::version();
-                Ok(())
             }
-        }
+        })
     }
 }
 
@@ -56,8 +55,12 @@ impl From<Args> for Cmd {
             Self::Version
         } else {
             let opts = Opts::with_args(&value);
-            if let Some(stdin) = value.stdin {
-                Self::Stdin(opts, stdin)
+            if value.stdin {
+                if let Some(prg) = value.prg {
+                    Self::Prg(opts, prg)
+                } else {
+                    Self::Stdin(opts)
+                }
             } else {
                 Self::Repl(opts)
             }
@@ -138,10 +141,11 @@ mod tests {
     }
 
     #[test]
-    fn stdin() {
+    fn prg() {
         let input = "stdin input";
         let args = Args {
-            stdin: Some(input.to_owned()),
+            prg: Some(input.to_owned()),
+            stdin: true,
             ..Default::default()
         };
 
@@ -149,13 +153,31 @@ mod tests {
 
         assert!(matches!(
             result,
-            Cmd::Stdin(
+            Cmd::Prg(
                 Opts {
                     ast_output: false,
                     token_output: false,
                 },
-                src,
-            ) if src == input
+                prg,
+            ) if prg == input
+        ));
+    }
+
+    #[test]
+    fn stdin() {
+        let args = Args {
+            stdin: true,
+            ..Default::default()
+        };
+
+        let result = args.into();
+
+        assert!(matches!(
+            result,
+            Cmd::Stdin(Opts {
+                ast_output: false,
+                token_output: false,
+            })
         ));
     }
 

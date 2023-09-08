@@ -24,26 +24,35 @@ pub(crate) fn file(opts: Opts, prg: impl AsRef<Path>) -> Result {
     todo!();
 }
 
-pub(crate) fn stdin(opts: Opts, src: String) -> Result {
-    let mut src = StdinSource::new(src);
+pub(crate) fn prg(opts: Opts, prg: String) -> Result {
+    let mut src = PrgSource::new(prg);
     let runtime = Interpreter::new(opts.token_output, opts.ast_output);
     let result = runtime.run(&mut src);
     print_terminal_result(&result);
     result
 }
 
+pub(crate) fn stdin(opts: Opts) -> Result {
+    todo!();
+    /*let mut src = StdinSource::new(src);
+    let runtime = Interpreter::new(opts.token_output, opts.ast_output);
+    let result = runtime.run(&mut src);
+    print_terminal_result(&result);
+    result*/
+}
+
 struct FileSource;
 
-struct StdinSource {
+struct PrgSource {
     ctx: Rc<TextContext>,
     lines: <Vec<String> as IntoIterator>::IntoIter,
     lineno: LineNumber,
 }
 
-impl StdinSource {
+impl PrgSource {
     fn new(src: String) -> Self {
         Self {
-            ctx: TextContext::named("<stdin>").into(),
+            ctx: TextContext::named("<stdin prg>").into(),
             lines: src
                 .lines()
                 .map(str::trim)
@@ -55,7 +64,7 @@ impl StdinSource {
     }
 }
 
-impl Iterator for StdinSource {
+impl Iterator for PrgSource {
     type Item = TextLine;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -69,7 +78,7 @@ impl Iterator for StdinSource {
     }
 }
 
-impl TextSource for StdinSource {
+impl TextSource for PrgSource {
     fn context(&self) -> Rc<TextContext> {
         self.ctx.clone()
     }
@@ -109,28 +118,28 @@ mod tests {
         }
     }
 
-    mod stdin {
+    mod prg {
         use super::*;
 
         #[test]
         fn create_from_str() {
             let src = "line of source code";
 
-            let target = StdinSource::new(src.to_owned());
+            let target = PrgSource::new(src.to_owned());
 
             assert!(matches!(
                 target.ctx.as_ref(),
                 TextContext {
                     name,
                     path: None
-                } if name == "<stdin>"
+                } if name == "<stdin prg>"
             ));
             assert_eq!(target.lineno, 1);
         }
 
         #[test]
         fn context() {
-            let target = StdinSource::new("foo".to_owned());
+            let target = PrgSource::new("foo".to_owned());
 
             let ctx = target.context();
 
@@ -140,7 +149,7 @@ mod tests {
         #[test]
         fn iterate_one_line() {
             let src = "line of source code";
-            let mut target = StdinSource::new(src.to_owned());
+            let mut target = PrgSource::new(src.to_owned());
 
             let line = target.next();
 
@@ -162,7 +171,7 @@ mod tests {
         #[test]
         fn iterate_one_line_with_newline() {
             let src = "line of source code\n";
-            let mut target = StdinSource::new(src.to_owned());
+            let mut target = PrgSource::new(src.to_owned());
 
             let line = target.next();
 
@@ -184,7 +193,7 @@ mod tests {
         #[test]
         fn iterate_multi_lines() {
             let src = "line1\nline2\nline3\n";
-            let mut target = StdinSource::new(src.to_owned());
+            let mut target = PrgSource::new(src.to_owned());
 
             let line = target.next();
 
@@ -230,7 +239,7 @@ mod tests {
         #[test]
         fn iterate_multi_lines_windows_style() {
             let src = "line1\r\nline2\r\nline3\r\n";
-            let mut target = StdinSource::new(src.to_owned());
+            let mut target = PrgSource::new(src.to_owned());
 
             let line = target.next();
 
@@ -276,7 +285,7 @@ mod tests {
         #[test]
         fn iterate_multi_lines_trims_whitespace() {
             let src = "line1  \n  line2\t\n\tline3\n";
-            let mut target = StdinSource::new(src.to_owned());
+            let mut target = PrgSource::new(src.to_owned());
 
             let line = target.next();
 

@@ -19,10 +19,9 @@ pub(crate) fn parse(args: impl IntoIterator<Item = String>) -> Args {
         me: args.next().unwrap_or(env!("CARGO_PKG_NAME").to_owned()),
         ..Default::default()
     };
-    let mut stdin = false;
     for arg in args {
-        if stdin {
-            parsed.stdin = Some(arg);
+        if parsed.stdin {
+            parsed.prg = Some(arg);
             break;
         }
         match arg.as_str() {
@@ -30,7 +29,7 @@ pub(crate) fn parse(args: impl IntoIterator<Item = String>) -> Args {
             HELP_SHORT | HELP_LONG => parsed.help = true,
             TOKEN_SHORT | TOKEN_LONG => parsed.tokens = true,
             VERSION_SHORT | VERSION_LONG => parsed.ver = true,
-            STDIN_SHORT => stdin = true,
+            STDIN_SHORT => parsed.stdin = true,
             _ => (),
         }
     }
@@ -42,7 +41,8 @@ pub(crate) struct Args {
     pub(crate) ast: bool,
     pub(crate) help: bool,
     pub(crate) me: String,
-    pub(crate) stdin: Option<String>,
+    pub(crate) prg: Option<String>,
+    pub(crate) stdin: bool,
     pub(crate) tokens: bool,
     pub(crate) ver: bool,
 }
@@ -82,7 +82,11 @@ pub(crate) fn usage(me: &str) {
     );
     println!();
     println!("{:1$}: run program from script file", "file", ARG_WIDTH);
-    println!("{STDIN_SHORT:0$}: run program from stdin", ARG_WIDTH);
+    println!(
+        "{:1$}: run program string if provided, otherwise run program from stdin",
+        format!("{STDIN_SHORT} [prg]"),
+        ARG_WIDTH
+    );
     println!("{:1$}: arguments passed to program", "args", ARG_WIDTH);
     println!("{:1$}: launch REPL", "<no input>", ARG_WIDTH);
 }
@@ -124,7 +128,8 @@ mod tests {
                 ast: false,
                 help: false,
                 me,
-                stdin: None,
+                prg: None,
+                stdin: false,
                 tokens: false,
                 ver: false,
             } if me == "zara"
@@ -146,7 +151,8 @@ mod tests {
                         ast: false,
                         help: true,
                         me,
-                        stdin: None,
+                        prg: None,
+                        stdin: false,
                         tokens: false,
                         ver: false,
                     } if me == program
@@ -159,6 +165,26 @@ mod tests {
 
     #[test]
     fn stdin() {
+        let args = ["foo/me", "-"];
+
+        let result = parse(args.into_iter().map(String::from));
+
+        assert!(matches!(
+            result,
+            Args {
+                ast: false,
+                help: false,
+                me: _,
+                prg: None,
+                stdin: true,
+                tokens: false,
+                ver: false,
+            },
+        ));
+    }
+
+    #[test]
+    fn stdin_prg() {
         let input = "stdin input";
         let args = ["foo/me", "-", input];
 
@@ -170,7 +196,8 @@ mod tests {
                 ast: false,
                 help: false,
                 me: _,
-                stdin: Some(s),
+                prg: Some(s),
+                stdin: true,
                 tokens: false,
                 ver: false,
             } if s == input,
@@ -178,21 +205,24 @@ mod tests {
     }
 
     #[test]
-    fn stdin_noinput() {
-        let args = ["foo/me", "-"];
+    fn stdin_prg_args() {
+        let input = "stdin input arg1 arg2 --arg3=1";
+        let args = ["foo/me", "-", input];
 
         let result = parse(args.into_iter().map(String::from));
 
+        todo!();
         assert!(matches!(
             result,
             Args {
                 ast: false,
                 help: false,
                 me: _,
-                stdin: None,
+                prg: Some(s),
+                stdin: true,
                 tokens: false,
                 ver: false,
-            },
+            } if s == input,
         ));
     }
 
@@ -210,7 +240,8 @@ mod tests {
                         ast: true,
                         help: false,
                         me: _,
-                        stdin: None,
+                        prg: None,
+                        stdin: false,
                         tokens: false,
                         ver: false,
                     }
@@ -235,7 +266,8 @@ mod tests {
                         ast: false,
                         help: false,
                         me: _,
-                        stdin: None,
+                        prg: None,
+                        stdin: false,
                         tokens: true,
                         ver: false,
                     }
@@ -260,7 +292,8 @@ mod tests {
                         ast: false,
                         help: false,
                         me: _,
-                        stdin: None,
+                        prg: None,
+                        stdin: false,
                         tokens: false,
                         ver: true,
                     }
@@ -283,7 +316,8 @@ mod tests {
                 ast: false,
                 help: false,
                 me: _,
-                stdin: None,
+                prg: None,
+                stdin: false,
                 tokens: false,
                 ver: false,
             }
