@@ -22,5 +22,7 @@ Rust's toolchain is so intuitive this section is probably redundant, but here go
 
 ## Resources
 
+- [Scheme](https://www.scheme.org)
+	- [Standards](https://standards.scheme.org)
 - [R7RS Working Group](https://small.r7rs.org)
 - [The Scheme Programming Language (4th Edition)](https://scheme.com/tspl4/)
