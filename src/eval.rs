@@ -23,7 +23,7 @@ impl Display for ExtendedEvaluation<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self.0 {
             Evaluation::Expression(expr) => expr.extended_display().fmt(f),
-            Evaluation::Continuation => writeln!(f, "#<cont-extdisplay-undef({:?})>", self.0),
+            Evaluation::Continuation => writeln!(f, "#<cont-extended-undef({:?})>", self.0),
         }
     }
 }

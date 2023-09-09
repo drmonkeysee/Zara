@@ -9,21 +9,29 @@ pub enum Literal {
     Character(char),
 }
 
-impl Display for Literal {
+impl Literal {
+    pub(crate) fn as_datum(&self) -> Datum {
+        Datum(self)
+    }
+}
+
+pub(crate) struct Datum<'a>(&'a Literal);
+
+impl Display for Datum<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        match *self {
-            Self::Boolean(b) => write!(f, "#{}", if b { 't' } else { 'f' }),
-            Self::Character(c) => write!(f, "#\\{}", FormattedChar::new(c)),
+        match *self.0 {
+            Literal::Boolean(b) => write!(f, "#{}", if b { 't' } else { 'f' }),
+            Literal::Character(c) => write!(f, "#\\{}", CharDatum::new(c)),
         }
     }
 }
 
-enum FormattedChar {
+enum CharDatum {
     Named(&'static str),
     Unnamed(char),
 }
 
-impl FormattedChar {
+impl CharDatum {
     fn new(ch: char) -> Self {
         match ch {
             '\x07' => Self::Named("alarm"),
@@ -40,16 +48,16 @@ impl FormattedChar {
     }
 }
 
-impl Display for FormattedChar {
+impl Display for CharDatum {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         match *self {
             Self::Named(n) => f.write_str(n),
-            Self::Unnamed(ch) => display_unnamed_char(ch, f),
+            Self::Unnamed(ch) => unnamed_char_datum(ch, f),
         }
     }
 }
 
-fn display_unnamed_char(ch: char, f: &mut Formatter<'_>) -> Result {
+fn unnamed_char_datum(ch: char, f: &mut Formatter<'_>) -> Result {
     // NOTE: this is a little weird but there's no Unicode classification
     // exposed in Rust's stdlib to tell if a character has a dedicated glyph or
     // not, so check indirectly by seeing if the debug output starts with `\u`;
@@ -72,14 +80,14 @@ mod tests {
         fn display_true() {
             let b = Literal::Boolean(true);
 
-            assert_eq!(b.to_string(), "#t");
+            assert_eq!(b.as_datum().to_string(), "#t");
         }
 
         #[test]
         fn display_false() {
             let b = Literal::Boolean(false);
 
-            assert_eq!(b.to_string(), "#f");
+            assert_eq!(b.as_datum().to_string(), "#f");
         }
     }
 
@@ -90,77 +98,77 @@ mod tests {
         fn display_ascii() {
             let c = Literal::Character('a');
 
-            assert_eq!(c.to_string(), "#\\a");
+            assert_eq!(c.as_datum().to_string(), "#\\a");
         }
 
         #[test]
         fn display_extended_char() {
             let c = Literal::Character('λ');
 
-            assert_eq!(c.to_string(), "#\\λ");
+            assert_eq!(c.as_datum().to_string(), "#\\λ");
         }
 
         #[test]
         fn display_emoji() {
             let c = Literal::Character('🦀');
 
-            assert_eq!(c.to_string(), "#\\🦀");
+            assert_eq!(c.as_datum().to_string(), "#\\🦀");
         }
 
         #[test]
         fn display_control_picture() {
             let c = Literal::Character('\u{2401}');
 
-            assert_eq!(c.to_string(), "#\\␁");
+            assert_eq!(c.as_datum().to_string(), "#\\␁");
         }
 
         #[test]
         fn display_replacement_char() {
             let c = Literal::Character('\u{fffd}');
 
-            assert_eq!(c.to_string(), "#\\�");
+            assert_eq!(c.as_datum().to_string(), "#\\�");
         }
 
         #[test]
         fn display_one_digit_hex() {
             let c = Literal::Character('\x0c');
 
-            assert_eq!(c.to_string(), "#\\xc");
+            assert_eq!(c.as_datum().to_string(), "#\\xc");
         }
 
         #[test]
         fn display_hex_uses_lowercase() {
             let c = Literal::Character('\x0C');
 
-            assert_eq!(c.to_string(), "#\\xc");
+            assert_eq!(c.as_datum().to_string(), "#\\xc");
         }
 
         #[test]
         fn display_two_digit_hex() {
             let c = Literal::Character('\x1d');
 
-            assert_eq!(c.to_string(), "#\\x1d");
+            assert_eq!(c.as_datum().to_string(), "#\\x1d");
         }
 
         #[test]
         fn display_four_digit_hex() {
             let c = Literal::Character('\u{fff9}');
 
-            assert_eq!(c.to_string(), "#\\xfff9");
+            assert_eq!(c.as_datum().to_string(), "#\\xfff9");
         }
 
         #[test]
         fn display_special_purpose_plane() {
             let c = Literal::Character('\u{e0001}');
 
-            assert_eq!(c.to_string(), "#\\xe0001");
+            assert_eq!(c.as_datum().to_string(), "#\\xe0001");
         }
 
         #[test]
         fn display_private_use_plane() {
             let c = Literal::Character('\u{100001}');
 
-            assert_eq!(c.to_string(), "#\\x100001");
+            assert_eq!(c.as_datum().to_string(), "#\\x100001");
         }
 
         #[test]
@@ -187,7 +195,7 @@ mod tests {
             for &(inp, exp) in cases {
                 let c = Literal::Character(inp);
 
-                assert_eq!(c.to_string(), format!("#\\{exp}"));
+                assert_eq!(c.as_datum().to_string(), format!("#\\{exp}"));
             }
         }
     }

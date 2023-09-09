@@ -24,19 +24,25 @@ impl Expression {
         !matches!(self, Self::Empty)
     }
 
+    pub fn as_datum(&self) -> Datum {
+        Datum(self)
+    }
+
     pub(crate) fn extended_display(&self) -> ExtendedExpression {
         ExtendedExpression(self)
     }
 }
 
-impl Display for Expression {
+pub struct Datum<'a>(&'a Expression);
+
+impl Display for Datum<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Ast(expr) => write!(f, "{{{expr:?}}}"),
-            Self::Empty => Ok(()),
-            Self::Literal(lit) => lit.fmt(f),
-            Self::TokenStream(lines) => DisplayLexLines(lines).fmt(f),
-            _ => write!(f, "#<expr-display-undef({self:?})>"),
+        match self.0 {
+            Expression::Ast(expr) => write!(f, "{{{expr:?}}}"),
+            Expression::Empty => Ok(()),
+            Expression::Literal(lit) => lit.as_datum().fmt(f),
+            Expression::TokenStream(lines) => DisplayLexLines(lines).fmt(f),
+            _ => write!(f, "#<expr-datum-undef({:?})>", self.0),
         }
     }
 }
@@ -48,7 +54,7 @@ impl Display for ExtendedExpression<'_> {
         match self.0 {
             Expression::Ast(expr) => writeln!(f, "{expr:#?}"),
             Expression::TokenStream(lines) => ExtendedDisplayLexLines(lines).fmt(f),
-            _ => writeln!(f, "#<expr-extdisplay-undef({:?})>", self.0),
+            _ => writeln!(f, "#<expr-extended-undef({:?})>", self.0),
         }
     }
 }
@@ -82,7 +88,7 @@ mod tests {
         );
 
         assert_eq!(
-            expr.to_string(),
+            expr.as_datum().to_string(),
             "{Begin([Literal(Character('a')), Literal(Character('b')), Literal(Character('c'))])}"
         );
     }
@@ -91,7 +97,7 @@ mod tests {
     fn display_empty() {
         let expr = Expression::Empty;
 
-        assert_eq!(expr.to_string(), "");
+        assert_eq!(expr.as_datum().to_string(), "");
     }
 
     #[test]
@@ -102,6 +108,9 @@ mod tests {
             Expression::Literal(Literal::Character('c')),
         ]);
 
-        assert_eq!(expr.to_string(), format!("#<expr-display-undef({expr:?})>"));
+        assert_eq!(
+            expr.as_datum().to_string(),
+            format!("#<expr-datum-undef({expr:?})>")
+        );
     }
 }
