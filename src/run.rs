@@ -1,7 +1,7 @@
 use crate::args::Args;
 use std::{
     io,
-    io::{IsTerminal, Stdin},
+    io::{Error, IsTerminal, Stdin},
     path::Path,
     rc::Rc,
 };
@@ -103,23 +103,17 @@ impl Iterator for StdinSource {
         let lineno = self.lineno;
         self.lineno += 1;
         let mut buf = String::new();
-        self.stdin.read_line(&mut buf).map_or_else(
-            |err| {
-                eprintln!("Unexpected stdin read error: {err}");
+        self.stdin.read_line(&mut buf).map_or_else(fail_line, |n| {
+            if n == 0 || (n == 1 && self.stdin.is_terminal()) {
                 None
-            },
-            |n| {
-                if n == 0 || (n == 1 && self.stdin.is_terminal()) {
-                    None
-                } else {
-                    Some(TextLine {
-                        ctx: self.context(),
-                        line: buf,
-                        lineno,
-                    })
-                }
-            },
-        )
+            } else {
+                Some(TextLine {
+                    ctx: self.context(),
+                    line: buf,
+                    lineno,
+                })
+            }
+        })
     }
 }
 
@@ -141,6 +135,11 @@ fn print_terminal_result(result: &Result) {
         Ok(eval) => print!("{}", eval.extended_display()),
         Err(err) => eprint!("{}", err.extended_display()),
     }
+}
+
+fn fail_line(err: Error) -> Option<TextLine> {
+    eprintln!("Unexpected stdin read error: {err}");
+    None
 }
 
 #[cfg(test)]

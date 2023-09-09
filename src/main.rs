@@ -3,7 +3,7 @@ mod cmd;
 mod repl;
 mod run;
 
-use self::cmd::{Cmd, Result};
+use self::cmd::{Cmd, CmdError, Result};
 use std::{
     env,
     process::{ExitCode, Termination},
@@ -20,13 +20,7 @@ struct Exit(Result);
 
 impl Termination for Exit {
     fn report(self) -> ExitCode {
-        self.0.map_or_else(
-            |err| {
-                eprintln!("{err}");
-                ExitCode::FAILURE
-            },
-            |u| u.report(),
-        )
+        self.0.map_or_else(fail, |u| u.report())
     }
 }
 
@@ -34,4 +28,9 @@ impl From<Result> for Exit {
     fn from(value: Result) -> Self {
         Self(value)
     }
+}
+
+fn fail(err: CmdError) -> ExitCode {
+    eprintln!("{err}");
+    ExitCode::FAILURE
 }
