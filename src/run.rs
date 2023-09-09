@@ -103,17 +103,26 @@ impl Iterator for StdinSource {
         let lineno = self.lineno;
         self.lineno += 1;
         let mut buf = String::new();
-        self.stdin.read_line(&mut buf).map_or_else(fail_line, |n| {
-            if n == 0 || (n == 1 && self.stdin.is_terminal()) {
+        self.stdin.read_line(&mut buf).map_or_else(
+            |err| {
+                eprintln!(
+                    "{}:{lineno}\n\tunexpected stdin read error: {err}",
+                    self.ctx.name
+                );
                 None
-            } else {
-                Some(TextLine {
-                    ctx: self.context(),
-                    line: buf,
-                    lineno,
-                })
-            }
-        })
+            },
+            |n| {
+                if n == 0 || (n == 1 && self.stdin.is_terminal()) {
+                    None
+                } else {
+                    Some(TextLine {
+                        ctx: self.context(),
+                        line: buf,
+                        lineno,
+                    })
+                }
+            },
+        )
     }
 }
 
@@ -135,11 +144,6 @@ fn print_terminal_result(result: &Result) {
         Ok(eval) => print!("{}", eval.extended_display()),
         Err(err) => eprint!("{}", err.extended_display()),
     }
-}
-
-fn fail_line(err: Error) -> Option<TextLine> {
-    eprintln!("Unexpected stdin read error: {err}");
-    None
 }
 
 #[cfg(test)]
