@@ -114,6 +114,8 @@ impl Iterator for StdinSource {
                 if n == 0 || (n == 1 && self.stdin.is_terminal()) {
                     None
                 } else {
+                    // NOTE: read_line guarantees a trailing \n, safe to pop
+                    buf.pop();
                     Some(TextLine {
                         ctx: self.context(),
                         line: buf,
