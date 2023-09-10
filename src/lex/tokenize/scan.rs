@@ -40,8 +40,8 @@ impl<'a> Scanner<'a> {
         self.chars.find(eq_char(ch)).map(to_idx)
     }
 
-    pub(super) fn find(&mut self, predicate: impl FnMut(&ScanItem) -> bool) -> Option<ScanItem> {
-        self.chars.find(predicate)
+    pub(super) fn find_chars(&mut self, chars: &[char]) -> Option<ScanItem> {
+        self.chars.find(|item| chars.contains(&item.1))
     }
 
     pub(super) fn rest_of_token(&mut self) -> &str {
@@ -302,7 +302,7 @@ mod tests {
         fn find_in_string() {
             let mut s = Scanner::new("abc");
 
-            let r = s.find(|item| item.0 == 1);
+            let r = s.find_chars(&['z', 'b', 't']);
 
             assert!(r.is_some());
             assert_eq!(r.unwrap(), (1, 'b'));
@@ -317,7 +317,7 @@ mod tests {
         fn find_not_in_string() {
             let mut s = Scanner::new("abc");
 
-            let r = s.find(|item| item.1 == 'd');
+            let r = s.find_chars(&['z', 'd', 't']);
 
             assert!(r.is_none());
 

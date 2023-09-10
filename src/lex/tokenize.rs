@@ -184,7 +184,7 @@ impl<'me, 'str> BlockComment<'me, 'str> {
 
     fn consume(&mut self) -> TokenKind {
         while !self.scan.consumed() {
-            if let Some((_, ch)) = self.scan.find(block_comment_delimiters) {
+            if let Some((_, ch)) = self.scan.find_chars(&['|', '#']) {
                 if self.end_block(ch) {
                     if self.depth == 0 {
                         return TokenKind::CommentBlock;
@@ -200,12 +200,12 @@ impl<'me, 'str> BlockComment<'me, 'str> {
         TokenKind::CommentBlockBegin(self.depth)
     }
 
-    fn new_block(&mut self, ch: char) -> bool {
-        ch == '#' && self.scan.char_if_eq('|').is_some()
-    }
-
     fn end_block(&mut self, ch: char) -> bool {
         ch == '|' && self.scan.char_if_eq('#').is_some()
+    }
+
+    fn new_block(&mut self, ch: char) -> bool {
+        ch == '#' && self.scan.char_if_eq('|').is_some()
     }
 }
 
@@ -239,8 +239,4 @@ fn char_name(ch: char, rest: &str) -> TokenExtractResult {
 
 fn char_lit(ch: char) -> TokenExtractResult {
     Ok(TokenKind::Literal(Literal::Character(ch)))
-}
-
-fn block_comment_delimiters(item: &ScanItem) -> bool {
-    item.1 == '|' || item.1 == '#'
 }
