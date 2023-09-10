@@ -662,7 +662,7 @@ mod tokenizer {
                     TokenExtract {
                         start: 0,
                         end: 28,
-                        result: Ok(TokenKind::CommentBlockBegin(1)),
+                        result: Ok(TokenKind::CommentBlockBegin(0)),
                     }
                 ));
             }
@@ -679,7 +679,7 @@ mod tokenizer {
                     TokenExtract {
                         start: 0,
                         end: 24,
-                        result: Ok(TokenKind::CommentBlockBegin(1)),
+                        result: Ok(TokenKind::CommentBlockBegin(0)),
                     }
                 ));
             }
@@ -696,7 +696,7 @@ mod tokenizer {
                     TokenExtract {
                         start: 0,
                         end: 24,
-                        result: Ok(TokenKind::CommentBlockBegin(1)),
+                        result: Ok(TokenKind::CommentBlockBegin(0)),
                     }
                 ));
             }
@@ -713,7 +713,7 @@ mod tokenizer {
                     TokenExtract {
                         start: 0,
                         end: 33,
-                        result: Ok(TokenKind::CommentBlockBegin(1)),
+                        result: Ok(TokenKind::CommentBlockBegin(0)),
                     }
                 ));
             }
@@ -730,6 +730,23 @@ mod tokenizer {
                     TokenExtract {
                         start: 0,
                         end: 21,
+                        result: Ok(TokenKind::CommentBlockBegin(1)),
+                    }
+                ));
+            }
+
+            #[test]
+            fn block_comment_begin_with_multiple_trailing_nested() {
+                let mut s = Scanner::new("#| begin #| nested #| goofy...");
+                let t = Tokenizer::start(s.next_token().unwrap(), &mut s);
+
+                let r = t.extract();
+
+                assert!(matches!(
+                    r,
+                    TokenExtract {
+                        start: 0,
+                        end: 30,
                         result: Ok(TokenKind::CommentBlockBegin(2)),
                     }
                 ));

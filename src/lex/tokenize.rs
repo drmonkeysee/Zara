@@ -123,7 +123,7 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
         self.scan
             .char_if_eq('|')
             .ok_or(TokenErrorKind::HashUnterminated)
-            .map(|_| BlockComment(self.scan).consume())
+            .map(|_| BlockComment::new(self.scan).consume())
     }
 
     fn boolean(&mut self, val: bool) -> TokenExtractResult {
@@ -172,23 +172,40 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
     }
 }
 
-struct BlockComment<'me, 'str>(&'me mut Scanner<'str>);
+struct BlockComment<'me, 'str> {
+    depth: usize,
+    scan: &'me mut Scanner<'str>,
+}
 
-impl BlockComment<'_, '_> {
-    fn consume(&mut self) -> TokenKind {
-        if self.found_comment_end() {
-            TokenKind::CommentBlock
-        } else {
-            TokenKind::CommentBlockBegin(1)
-        }
+impl<'me, 'str> BlockComment<'me, 'str> {
+    fn new(scan: &'me mut Scanner<'str>) -> Self {
+        Self { depth: 0, scan }
     }
 
-    fn found_comment_end(&mut self) -> bool {
-        let mut end = None;
-        while end.is_none() && !self.0.consumed() {
-            end = self.0.find_char('|').and_then(|_| self.0.char_if_eq('#'));
+    fn consume(&mut self) -> TokenKind {
+        while !self.scan.consumed() {
+            if let Some((_, ch)) = self.scan.find(block_comment_delimiters) {
+                if self.end_block(ch) {
+                    if self.depth == 0 {
+                        return TokenKind::CommentBlock;
+                    } else {
+                        self.depth -= 1;
+                    }
+                } else if self.new_block(ch) {
+                    self.depth += 1;
+                    return self.consume();
+                }
+            }
         }
-        end.is_some()
+        TokenKind::CommentBlockBegin(self.depth)
+    }
+
+    fn new_block(&mut self, ch: char) -> bool {
+        ch == '#' && self.scan.char_if_eq('|').is_some()
+    }
+
+    fn end_block(&mut self, ch: char) -> bool {
+        ch == '|' && self.scan.char_if_eq('#').is_some()
     }
 }
 
@@ -222,4 +239,8 @@ fn char_name(ch: char, rest: &str) -> TokenExtractResult {
 
 fn char_lit(ch: char) -> TokenExtractResult {
     Ok(TokenKind::Literal(Literal::Character(ch)))
+}
+
+fn block_comment_delimiters(item: &ScanItem) -> bool {
+    item.1 == '|' || item.1 == '#'
 }
