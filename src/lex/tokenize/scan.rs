@@ -27,10 +27,6 @@ impl<'a> Scanner<'a> {
         self.chars.next_if(eq_char(ch)).map(to_idx)
     }
 
-    pub(super) fn find_char(&mut self, ch: char) -> Option<usize> {
-        self.chars.find(eq_char(ch)).map(to_idx)
-    }
-
     // TODO: will be needed for non-trailing stuff
     pub(super) fn non_delimiter(&mut self) -> Option<char> {
         self.chars.next_if(non_delimiter).map(to_char)
@@ -38,6 +34,14 @@ impl<'a> Scanner<'a> {
 
     pub(super) fn trailing_non_delimiter(&mut self) -> Option<char> {
         self.chars.next_if(non_trailing_delimiter).map(to_char)
+    }
+
+    pub(super) fn find_char(&mut self, ch: char) -> Option<usize> {
+        self.chars.find(eq_char(ch)).map(to_idx)
+    }
+
+    pub(super) fn find(&mut self, predicate: impl FnMut(&ScanItem) -> bool) -> Option<ScanItem> {
+        self.chars.find(predicate)
     }
 
     pub(super) fn rest_of_token(&mut self) -> &str {
@@ -286,6 +290,34 @@ mod tests {
             let mut s = Scanner::new("abc");
 
             let r = s.find_char('d');
+
+            assert!(r.is_none());
+
+            let r = s.char();
+
+            assert!(r.is_none());
+        }
+
+        #[test]
+        fn find_in_string() {
+            let mut s = Scanner::new("abc");
+
+            let r = s.find(|item| item.0 == 1);
+
+            assert!(r.is_some());
+            assert_eq!(r.unwrap(), (1, 'b'));
+
+            let r = s.char();
+
+            assert!(r.is_some());
+            assert_eq!(r.unwrap(), 'c');
+        }
+
+        #[test]
+        fn find_not_in_string() {
+            let mut s = Scanner::new("abc");
+
+            let r = s.find(|item| item.1 == 'd');
 
             assert!(r.is_none());
 
