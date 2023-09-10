@@ -51,8 +51,7 @@ impl PrgSource {
             ctx: TextContext::named("<stdin prg>").into(),
             lines: src
                 .lines()
-                .map(str::trim)
-                .filter_map(|s| (!s.is_empty()).then(|| s.to_owned()))
+                .filter_map(|s| (!s.trim().is_empty()).then(|| s.to_owned()))
                 .collect::<Vec<_>>()
                 .into_iter(),
             lineno: 1,
@@ -224,6 +223,28 @@ mod tests {
         }
 
         #[test]
+        fn iterate_one_line_with_whitespace() {
+            let src = "line of source code  \t  ";
+            let mut target = PrgSource::new(src.to_owned());
+
+            let line = target.next();
+
+            assert!(line.is_some());
+            assert!(matches!(
+                line.unwrap(),
+                TextLine {
+                    ctx,
+                    line,
+                    lineno: 1,
+                } if Rc::ptr_eq(&ctx, &target.ctx) && line == "line of source code  \t  "
+            ));
+
+            let line = target.next();
+
+            assert!(line.is_none());
+        }
+
+        #[test]
         fn iterate_one_line_with_newline() {
             let src = "line of source code\n";
             let mut target = PrgSource::new(src.to_owned());
@@ -338,7 +359,7 @@ mod tests {
         }
 
         #[test]
-        fn iterate_multi_lines_trims_whitespace() {
+        fn iterate_multi_lines_with_whitespace() {
             let src = "line1  \n  line2\t\n\tline3\n";
             let mut target = PrgSource::new(src.to_owned());
 
@@ -351,7 +372,7 @@ mod tests {
                     ctx,
                     line,
                     lineno: 1,
-                } if Rc::ptr_eq(&ctx, &target.ctx) && line == "line1"
+                } if Rc::ptr_eq(&ctx, &target.ctx) && line == "line1  "
             ));
 
             let line = target.next();
@@ -363,7 +384,7 @@ mod tests {
                     ctx,
                     line,
                     lineno: 2,
-                } if Rc::ptr_eq(&ctx, &target.ctx) && line == "line2"
+                } if Rc::ptr_eq(&ctx, &target.ctx) && line == "  line2\t"
             ));
 
             let line = target.next();
@@ -375,7 +396,7 @@ mod tests {
                     ctx,
                     line,
                     lineno: 3,
-                } if Rc::ptr_eq(&ctx, &target.ctx) && line == "line3"
+                } if Rc::ptr_eq(&ctx, &target.ctx) && line == "\tline3"
             ));
 
             let line = target.next();
