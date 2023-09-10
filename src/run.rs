@@ -51,7 +51,7 @@ impl PrgSource {
             ctx: TextContext::named("<stdin prg>").into(),
             lines: src
                 .lines()
-                .filter_map(|s| (!s.trim().is_empty()).then(|| s.to_owned()))
+                .map(String::from)
                 .collect::<Vec<_>>()
                 .into_iter(),
             lineno: 1,
@@ -399,6 +399,89 @@ mod tests {
                     line,
                     lineno: 3,
                 } if Rc::ptr_eq(&ctx, &target.ctx) && line == "\tline3"
+            ));
+
+            let line = target.next();
+
+            assert!(line.is_none());
+        }
+
+        // NOTE: preserve blank lines to keep lineno accurate
+        #[test]
+        fn iterate_includes_blank_lines() {
+            let src = "line1\n   \nline3\n\nline5\n\t\n";
+            let mut target = PrgSource::new(src.to_owned());
+
+            let line = target.next();
+
+            assert!(line.is_some());
+            assert!(matches!(
+                line.unwrap(),
+                TextLine {
+                    ctx,
+                    line,
+                    lineno: 1,
+                } if Rc::ptr_eq(&ctx, &target.ctx) && line == "line1"
+            ));
+
+            let line = target.next();
+
+            assert!(line.is_some());
+            assert!(matches!(
+                line.unwrap(),
+                TextLine {
+                    ctx,
+                    line,
+                    lineno: 2,
+                } if Rc::ptr_eq(&ctx, &target.ctx) && line == "   "
+            ));
+
+            let line = target.next();
+
+            assert!(line.is_some());
+            assert!(matches!(
+                line.unwrap(),
+                TextLine {
+                    ctx,
+                    line,
+                    lineno: 3,
+                } if Rc::ptr_eq(&ctx, &target.ctx) && line == "line3"
+            ));
+
+            let line = target.next();
+
+            assert!(line.is_some());
+            assert!(matches!(
+                line.unwrap(),
+                TextLine {
+                    ctx,
+                    line,
+                    lineno: 4,
+                } if Rc::ptr_eq(&ctx, &target.ctx) && line == ""
+            ));
+
+            let line = target.next();
+
+            assert!(line.is_some());
+            assert!(matches!(
+                line.unwrap(),
+                TextLine {
+                    ctx,
+                    line,
+                    lineno: 5,
+                } if Rc::ptr_eq(&ctx, &target.ctx) && line == "line5"
+            ));
+
+            let line = target.next();
+
+            assert!(line.is_some());
+            assert!(matches!(
+                line.unwrap(),
+                TextLine {
+                    ctx,
+                    line,
+                    lineno: 6,
+                } if Rc::ptr_eq(&ctx, &target.ctx) && line == "\t"
             ));
 
             let line = target.next();
