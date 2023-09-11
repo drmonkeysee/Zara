@@ -125,7 +125,7 @@ fn is_delimiter(ch: char) -> bool {
 
 fn is_trailing_delimiter(ch: char) -> bool {
     match ch {
-        '"' | ')' | ';' | '|' => true,
+        '"' | ')' | ';' | '|' | '\'' | '`' | ',' => true,
         _ if ch.is_ascii_whitespace() => true,
         _ => false,
     }
@@ -137,7 +137,9 @@ mod tests {
 
     #[test]
     fn delimiter_chars() {
-        let chars = ['"', '(', ')', ';', '|', ' ', '\t', '\r', '\n'];
+        let chars = [
+            '"', '(', ')', ';', '|', '\'', '`', ',', ' ', '\t', '\r', '\n',
+        ];
 
         for ch in chars {
             assert!(
@@ -150,7 +152,7 @@ mod tests {
 
     #[test]
     fn non_delimiter_chars() {
-        let chars = ['\'', '#', '.', ',', ':', 'a', '@', '+', '-', '\\', '/', '1'];
+        let chars = ['#', '.', ':', 'a', '@', '+', '-', '\\', '/', '1'];
 
         for ch in chars {
             assert!(!is_delimiter(ch), "Expected {ch} to not be a delimiter");

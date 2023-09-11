@@ -197,6 +197,128 @@ mod tokenstream {
             })
         ));
     }
+
+    #[test]
+    fn hash_is_not_a_delimiter() {
+        let s = TokenStream::new("#t#f");
+
+        let r: Vec<TokenResult> = s.collect();
+
+        assert_eq!(r.len(), 1);
+        assert!(matches!(
+            r[0],
+            Err(TokenError {
+                kind: TokenErrorKind::BooleanExpected(true),
+                span: Range { start: 0, end: 4 }
+            })
+        ));
+    }
+
+    #[test]
+    fn quote_is_a_delimiter() {
+        let s = TokenStream::new("#t'#f");
+
+        let r: Vec<TokenResult> = s.collect();
+
+        assert_eq!(r.len(), 3);
+        assert!(matches!(
+            r[0],
+            Ok(Token {
+                kind: TokenKind::Literal(Literal::Boolean(true)),
+                span: Range { start: 0, end: 2 }
+            })
+        ));
+        assert!(matches!(
+            r[1],
+            Ok(Token {
+                kind: TokenKind::Quote,
+                span: Range { start: 2, end: 3 }
+            })
+        ));
+        assert!(matches!(
+            r[2],
+            Ok(Token {
+                kind: TokenKind::Literal(Literal::Boolean(false)),
+                span: Range { start: 3, end: 5 }
+            })
+        ));
+    }
+
+    #[test]
+    fn quasiquote_is_a_delimiter() {
+        let s = TokenStream::new("#t`#f");
+
+        let r: Vec<TokenResult> = s.collect();
+
+        assert_eq!(r.len(), 3);
+        assert!(matches!(
+            r[0],
+            Ok(Token {
+                kind: TokenKind::Literal(Literal::Boolean(true)),
+                span: Range { start: 0, end: 2 }
+            })
+        ));
+        assert!(matches!(
+            r[1],
+            Ok(Token {
+                kind: TokenKind::Quasiquote,
+                span: Range { start: 2, end: 3 }
+            })
+        ));
+        assert!(matches!(
+            r[2],
+            Ok(Token {
+                kind: TokenKind::Literal(Literal::Boolean(false)),
+                span: Range { start: 3, end: 5 }
+            })
+        ));
+    }
+
+    #[test]
+    fn unquote_is_a_delimiter() {
+        let s = TokenStream::new("#t,#f");
+
+        let r: Vec<TokenResult> = s.collect();
+
+        assert_eq!(r.len(), 3);
+        assert!(matches!(
+            r[0],
+            Ok(Token {
+                kind: TokenKind::Literal(Literal::Boolean(true)),
+                span: Range { start: 0, end: 2 }
+            })
+        ));
+        assert!(matches!(
+            r[1],
+            Ok(Token {
+                kind: TokenKind::Unquote,
+                span: Range { start: 2, end: 3 }
+            })
+        ));
+        assert!(matches!(
+            r[2],
+            Ok(Token {
+                kind: TokenKind::Literal(Literal::Boolean(false)),
+                span: Range { start: 3, end: 5 }
+            })
+        ));
+    }
+
+    #[test]
+    fn pair_join_is_not_a_delimiter() {
+        let s = TokenStream::new("#t.#f");
+
+        let r: Vec<TokenResult> = s.collect();
+
+        assert_eq!(r.len(), 1);
+        assert!(matches!(
+            r[0],
+            Err(TokenError {
+                kind: TokenErrorKind::BooleanExpected(true),
+                span: Range { start: 0, end: 5 }
+            })
+        ));
+    }
 }
 
 mod tokenizer {
