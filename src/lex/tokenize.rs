@@ -137,9 +137,13 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
 
     fn bytevector(&mut self) -> TokenExtractResult {
         self.scan
-            .char_if_not_trailing_delimiter()
+            .char_if_not_delimiter()
             .filter(|&ch| ch == '8')
-            .and_then(|_| self.scan.char_if_not_trailing_delimiter().filter(|&ch| ch == '('))
+            .and_then(|_| {
+                self.scan
+                    .char_if_not_trailing_delimiter()
+                    .filter(|&ch| ch == '(')
+            })
             .ok_or(TokenErrorKind::ByteVectorExpected)
             .map(|_| TokenKind::ByteVector)
     }
