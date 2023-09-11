@@ -27,13 +27,12 @@ impl<'a> Scanner<'a> {
         self.chars.next_if(eq_char(ch)).map(to_idx)
     }
 
-    // TODO: will be needed for non-trailing stuff
-    pub(super) fn non_delimiter(&mut self) -> Option<char> {
-        self.chars.next_if(non_delimiter).map(to_char)
+    pub(super) fn char_if_not_delimiter(&mut self) -> Option<char> {
+        self.chars.next_if(not_delimiter).map(to_char)
     }
 
-    pub(super) fn trailing_non_delimiter(&mut self) -> Option<char> {
-        self.chars.next_if(non_trailing_delimiter).map(to_char)
+    pub(super) fn char_if_not_trailing_delimiter(&mut self) -> Option<char> {
+        self.chars.next_if(not_trailing_delimiter).map(to_char)
     }
 
     pub(super) fn find_char(&mut self, ch: char) -> Option<usize> {
@@ -111,11 +110,11 @@ fn delimiter(item: &ScanItem) -> bool {
     is_delimiter(item.1)
 }
 
-fn non_delimiter(item: &ScanItem) -> bool {
+fn not_delimiter(item: &ScanItem) -> bool {
     !delimiter(item)
 }
 
-fn non_trailing_delimiter(item: &ScanItem) -> bool {
+fn not_trailing_delimiter(item: &ScanItem) -> bool {
     !is_trailing_delimiter(item.1)
 }
 
@@ -382,50 +381,50 @@ mod tests {
         }
 
         #[test]
-        fn non_delimiter_empty_string() {
+        fn char_if_not_delimiter_empty_string() {
             let mut s = Scanner::new("");
 
-            let r = s.non_delimiter();
+            let r = s.char_if_not_delimiter();
 
             assert!(r.is_none());
         }
 
         #[test]
-        fn non_delimiter_if_delimiter_at_start() {
+        fn char_if_not_delimiter_if_delimiter_at_start() {
             let mut s = Scanner::new("(abc");
 
-            let r = s.non_delimiter();
+            let r = s.char_if_not_delimiter();
 
             assert!(r.is_none());
         }
 
         #[test]
-        fn non_delimiter_at_start() {
+        fn char_if_not_delimiter_at_start() {
             let mut s = Scanner::new("abc)");
 
-            let r = s.non_delimiter();
+            let r = s.char_if_not_delimiter();
 
             assert!(r.is_some());
             assert_eq!(r.unwrap(), 'a');
         }
 
         #[test]
-        fn non_delimiter_advances_properly_after_delimiter() {
+        fn char_if_not_delimiter_advances_properly_after_delimiter() {
             let mut s = Scanner::new("ab)c");
 
-            let r = s.non_delimiter();
+            let r = s.char_if_not_delimiter();
             assert!(r.is_some());
             assert_eq!(r.unwrap(), 'a');
 
-            let r = s.non_delimiter();
+            let r = s.char_if_not_delimiter();
             assert!(r.is_some());
             assert_eq!(r.unwrap(), 'b');
 
-            let r = s.non_delimiter();
+            let r = s.char_if_not_delimiter();
             assert!(r.is_none());
-            let r = s.non_delimiter();
+            let r = s.char_if_not_delimiter();
             assert!(r.is_none());
-            let r = s.non_delimiter();
+            let r = s.char_if_not_delimiter();
             assert!(r.is_none());
 
             let r = s.char();
@@ -434,19 +433,19 @@ mod tests {
         }
 
         #[test]
-        fn trailing_non_delimiter_rparen() {
+        fn char_if_not_trailing_delimiter_rparen() {
             let mut s = Scanner::new(")abc");
 
-            let r = s.trailing_non_delimiter();
+            let r = s.char_if_not_trailing_delimiter();
 
             assert!(r.is_none());
         }
 
         #[test]
-        fn trailing_non_delimiter_lparen() {
+        fn char_if_not_trailing_delimiter_lparen() {
             let mut s = Scanner::new("(abc");
 
-            let r = s.trailing_non_delimiter();
+            let r = s.char_if_not_trailing_delimiter();
 
             assert!(r.is_some());
             assert_eq!(r.unwrap(), '(');
