@@ -197,7 +197,6 @@ impl<'me, 'str> BlockComment<'me, 'str> {
                     }
                 } else if self.new_block(ch) {
                     self.depth += 1;
-                    return self.consume();
                 }
             }
         }
