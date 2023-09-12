@@ -71,7 +71,7 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
     }
 
     fn hashtag(&mut self) -> TokenExtractResult {
-        match self.scan.char_if_not_trailing_delimiter() {
+        match self.scan.char_if_not_token_boundary() {
             Some(ch) => self.hashliteral(ch),
             None => self.hashcomment(),
         }
@@ -141,7 +141,7 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
             .filter(|&ch| ch == '8')
             .and_then(|_| {
                 self.scan
-                    .char_if_not_trailing_delimiter()
+                    .char_if_not_token_boundary()
                     .filter(|&ch| ch == '(')
             })
             .ok_or(TokenErrorKind::ByteVectorExpected)
@@ -188,7 +188,7 @@ impl<'me, 'str> BlockComment<'me, 'str> {
 
     fn consume(&mut self) -> TokenKind {
         while !self.scan.consumed() {
-            if let Some((_, ch)) = self.scan.find_chars(&['|', '#']) {
+            if let Some((_, ch)) = self.scan.find_any_char(&['|', '#']) {
                 if self.end_block(ch) {
                     if self.depth == 0 {
                         return TokenKind::CommentBlock;

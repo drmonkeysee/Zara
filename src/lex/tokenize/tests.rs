@@ -199,23 +199,30 @@ mod tokenstream {
     }
 
     #[test]
-    fn hash_is_not_a_delimiter() {
+    fn hash_is_a_token_boundary() {
         let s = TokenStream::new("#t#f");
 
         let r: Vec<TokenResult> = s.collect();
 
-        assert_eq!(r.len(), 1);
+        assert_eq!(r.len(), 2);
         assert!(matches!(
             r[0],
-            Err(TokenError {
-                kind: TokenErrorKind::BooleanExpected(true),
-                span: Range { start: 0, end: 4 }
+            Ok(Token {
+                kind: TokenKind::Literal(Literal::Boolean(true)),
+                span: Range { start: 0, end: 2 }
+            })
+        ));
+        assert!(matches!(
+            r[1],
+            Ok(Token {
+                kind: TokenKind::Literal(Literal::Boolean(false)),
+                span: Range { start: 2, end: 4 }
             })
         ));
     }
 
     #[test]
-    fn quote_is_a_delimiter() {
+    fn quote_is_a_token_boundary() {
         let s = TokenStream::new("#t'#f");
 
         let r: Vec<TokenResult> = s.collect();
@@ -245,7 +252,7 @@ mod tokenstream {
     }
 
     #[test]
-    fn quasiquote_is_a_delimiter() {
+    fn quasiquote_is_a_token_boundary() {
         let s = TokenStream::new("#t`#f");
 
         let r: Vec<TokenResult> = s.collect();
@@ -275,7 +282,7 @@ mod tokenstream {
     }
 
     #[test]
-    fn unquote_is_a_delimiter() {
+    fn unquote_is_a_token_boundary() {
         let s = TokenStream::new("#t,#f");
 
         let r: Vec<TokenResult> = s.collect();
@@ -305,17 +312,24 @@ mod tokenstream {
     }
 
     #[test]
-    fn pair_join_is_not_a_delimiter() {
+    fn pair_join_is_not_a_token_boundary() {
         let s = TokenStream::new("#t.#f");
 
         let r: Vec<TokenResult> = s.collect();
 
-        assert_eq!(r.len(), 1);
+        assert_eq!(r.len(), 2);
         assert!(matches!(
             r[0],
             Err(TokenError {
                 kind: TokenErrorKind::BooleanExpected(true),
-                span: Range { start: 0, end: 5 }
+                span: Range { start: 0, end: 3 }
+            })
+        ));
+        assert!(matches!(
+            r[1],
+            Ok(Token {
+                kind: TokenKind::Literal(Literal::Boolean(false)),
+                span: Range { start: 3, end: 5 }
             })
         ));
     }

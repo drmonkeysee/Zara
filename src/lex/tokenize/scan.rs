@@ -31,15 +31,15 @@ impl<'a> Scanner<'a> {
         self.chars.next_if(not_delimiter).map(to_char)
     }
 
-    pub(super) fn char_if_not_trailing_delimiter(&mut self) -> Option<char> {
-        self.chars.next_if(not_trailing_delimiter).map(to_char)
+    pub(super) fn char_if_not_token_boundary(&mut self) -> Option<char> {
+        self.chars.next_if(not_token_boundary).map(to_char)
     }
 
     pub(super) fn find_char(&mut self, ch: char) -> Option<usize> {
         self.chars.find(eq_char(ch)).map(to_idx)
     }
 
-    pub(super) fn find_chars(&mut self, chars: &[char]) -> Option<ScanItem> {
+    pub(super) fn find_any_char(&mut self, chars: &[char]) -> Option<ScanItem> {
         self.chars.find(|item| chars.contains(&item.1))
     }
 
@@ -114,17 +114,17 @@ fn not_delimiter(item: &ScanItem) -> bool {
     !delimiter(item)
 }
 
-fn not_trailing_delimiter(item: &ScanItem) -> bool {
-    !is_trailing_delimiter(item.1)
+fn not_token_boundary(item: &ScanItem) -> bool {
+    !is_token_boundary(item.1)
 }
 
 fn is_delimiter(ch: char) -> bool {
-    ch == '(' || is_trailing_delimiter(ch)
+    ch == '(' || is_token_boundary(ch)
 }
 
-fn is_trailing_delimiter(ch: char) -> bool {
+fn is_token_boundary(ch: char) -> bool {
     match ch {
-        '"' | ')' | ';' | '|' | '\'' | '`' | ',' => true,
+        '"' | '#' | '\'' | ')' | ',' | ';' | '`' | '|' => true,
         _ if ch.is_ascii_whitespace() => true,
         _ => false,
     }
@@ -137,7 +137,7 @@ mod tests {
     #[test]
     fn delimiter_chars() {
         let chars = [
-            '"', '(', ')', ';', '|', '\'', '`', ',', ' ', '\t', '\r', '\n',
+            '"', '(', ')', ';', '|', '\'', '`', ',', '#', ' ', '\t', '\r', '\n',
         ];
 
         for ch in chars {
@@ -151,7 +151,7 @@ mod tests {
 
     #[test]
     fn non_delimiter_chars() {
-        let chars = ['#', '.', ':', 'a', '@', '+', '-', '\\', '/', '1'];
+        let chars = ['.', ':', 'a', '@', '+', '-', '\\', '/', '1'];
 
         for ch in chars {
             assert!(!is_delimiter(ch), "Expected {ch} to not be a delimiter");
@@ -159,21 +159,23 @@ mod tests {
     }
 
     #[test]
-    fn trailing_delimiter_chars() {
-        let chars = ['"', ')', ';', '|', ' ', '\t', '\r', '\n'];
+    fn token_boundary_chars() {
+        let chars = [
+            '"', ')', ';', '|', '\'', '`', ',', '#', ' ', '\t', '\r', '\n',
+        ];
 
         for ch in chars {
             assert!(
-                is_trailing_delimiter(ch),
-                "Expected {} to be a trailing delimiter",
+                is_token_boundary(ch),
+                "Expected {} to be a token boundary",
                 ch.escape_default()
             );
         }
     }
 
     #[test]
-    fn is_trailing_delimiter_does_not_include_lparen() {
-        assert!(!is_trailing_delimiter('('));
+    fn is_token_boundary_does_not_include_lparen() {
+        assert!(!is_token_boundary('('));
     }
 
     mod scanner {
@@ -303,7 +305,7 @@ mod tests {
         fn find_in_string() {
             let mut s = Scanner::new("abc");
 
-            let r = s.find_chars(&['z', 'b', 't']);
+            let r = s.find_any_char(&['z', 'b', 't']);
 
             assert!(r.is_some());
             assert_eq!(r.unwrap(), (1, 'b'));
@@ -318,7 +320,7 @@ mod tests {
         fn find_not_in_string() {
             let mut s = Scanner::new("abc");
 
-            let r = s.find_chars(&['z', 'd', 't']);
+            let r = s.find_any_char(&['z', 'd', 't']);
 
             assert!(r.is_none());
 
@@ -433,19 +435,19 @@ mod tests {
         }
 
         #[test]
-        fn char_if_not_trailing_delimiter_rparen() {
+        fn char_if_not_token_boundary_rparen() {
             let mut s = Scanner::new(")abc");
 
-            let r = s.char_if_not_trailing_delimiter();
+            let r = s.char_if_not_token_boundary();
 
             assert!(r.is_none());
         }
 
         #[test]
-        fn char_if_not_trailing_delimiter_lparen() {
+        fn char_if_not_token_boundary_lparen() {
             let mut s = Scanner::new("(abc");
 
-            let r = s.char_if_not_trailing_delimiter();
+            let r = s.char_if_not_token_boundary();
 
             assert!(r.is_some());
             assert_eq!(r.unwrap(), '(');
