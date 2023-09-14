@@ -4,7 +4,12 @@ mod literal;
 mod syn;
 pub mod txt;
 
-use self::{eval::EvalError, lex::LexerError, syn::ParserError, txt::TextSource};
+use self::{
+    eval::EvalError,
+    lex::{Lexer, LexerError},
+    syn::ParserError,
+    txt::TextSource,
+};
 pub use self::{eval::Evaluation, syn::Expression};
 use std::{
     error, fmt,
@@ -16,9 +21,9 @@ use std::{
 
 pub type Result = result::Result<Evaluation, Error>;
 
-#[derive(Default)]
 pub struct Interpreter {
     ast_output: bool,
+    lexer: Lexer,
     token_output: bool,
 }
 
@@ -27,12 +32,13 @@ impl Interpreter {
     pub fn new(token_output: bool, ast_output: bool) -> Self {
         Self {
             ast_output,
+            lexer: Lexer::new(),
             token_output,
         }
     }
 
-    pub fn run(&self, src: &mut impl TextSource) -> Result {
-        let token_lines = lex::tokenize(src)?;
+    pub fn run(&mut self, src: &mut impl TextSource) -> Result {
+        let token_lines = self.lexer.tokenize(src)?;
         let ast = if self.token_output {
             syn::tokens(token_lines)
         } else {

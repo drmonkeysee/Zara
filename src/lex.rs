@@ -54,6 +54,32 @@ impl Error for LexerError {}
 
 pub(crate) type LexerResult = Result<Vec<LexLine>, LexerError>;
 
+pub(crate) struct Lexer {
+    cont: Option<TokenKind>,
+}
+
+impl Lexer {
+    pub(crate) fn new() -> Self {
+        Self { cont: None }
+    }
+
+    pub(crate) fn tokenize(&mut self, src: &mut impl TextSource) -> LexerResult {
+        src.map(|tl| self.tokenize_line(tl)).collect()
+    }
+
+    fn tokenize_line(&mut self, text: TextLine) -> LexerLineResult {
+        let mut errors: Vec<TokenError> = Vec::new();
+        let tokens = TokenStream::new(&text.line)
+            .filter_map(|tr| tr.map_err(|err| errors.push(err)).ok())
+            .collect();
+        if errors.is_empty() {
+            Ok(LexLine(tokens, text))
+        } else {
+            Err(LexerError(errors, text))
+        }
+    }
+}
+
 pub(crate) struct ExtendedLexerError<'a>(&'a LexerError);
 
 impl Display for ExtendedLexerError<'_> {
@@ -127,10 +153,6 @@ impl Display for ExtendedDisplayLexLines<'_> {
     }
 }
 
-pub(crate) fn tokenize(src: &mut impl TextSource) -> LexerResult {
-    src.map(tokenize_line).collect()
-}
-
 type LexerLineResult = Result<LexLine, LexerError>;
 
 struct ExtendedLexLine<'a>(&'a LexLine);
@@ -172,18 +194,6 @@ impl Display for ExtendedTokenWithSource<'_> {
             t.kind.to_string(),
             txt.line.get(t.span.clone()).unwrap_or("INVALID RANGE")
         )
-    }
-}
-
-fn tokenize_line(text: TextLine) -> LexerLineResult {
-    let mut errors: Vec<TokenError> = Vec::new();
-    let tokens = TokenStream::new(&text.line)
-        .filter_map(|tr| tr.map_err(|err| errors.push(err)).ok())
-        .collect();
-    if errors.is_empty() {
-        Ok(LexLine(tokens, text))
-    } else {
-        Err(LexerError(errors, text))
     }
 }
 
@@ -236,8 +246,9 @@ mod tests {
         #[test]
         fn empty_line() {
             let mut src = MockTxtSource::new("");
+            let mut target = Lexer::new();
 
-            let r = tokenize(&mut src);
+            let r = target.tokenize(&mut src);
 
             assert!(r.is_ok());
             assert!(r.unwrap().is_empty());
@@ -246,8 +257,9 @@ mod tests {
         #[test]
         fn single_token() {
             let mut src = MockTxtSource::new("#t");
+            let mut target = Lexer::new();
 
-            let r = tokenize(&mut src);
+            let r = target.tokenize(&mut src);
 
             assert!(r.is_ok());
             let lines = r.unwrap();
@@ -274,8 +286,9 @@ mod tests {
         #[test]
         fn multi_tokens() {
             let mut src = MockTxtSource::new("#t #f #\\a");
+            let mut target = Lexer::new();
 
-            let r = tokenize(&mut src);
+            let r = target.tokenize(&mut src);
 
             assert!(r.is_ok());
             let lines = r.unwrap();
@@ -316,8 +329,9 @@ mod tests {
         #[test]
         fn multi_lines() {
             let mut src = MockTxtSource::new("#t\n  #f #\\a\n");
+            let mut target = Lexer::new();
 
-            let r = tokenize(&mut src);
+            let r = target.tokenize(&mut src);
 
             assert!(r.is_ok());
             let lines = r.unwrap();

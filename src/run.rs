@@ -1,7 +1,7 @@
 use crate::args::Args;
 use std::{
     io,
-    io::{Error, IsTerminal, Stdin},
+    io::{IsTerminal, Stdin},
     path::Path,
     rc::Rc,
 };
@@ -134,7 +134,7 @@ impl TextSource for StdinSource {
 }
 
 fn run(opts: Opts, mut src: impl TextSource) -> Result {
-    let runtime = Interpreter::new(opts.token_output, opts.ast_output);
+    let mut runtime = Interpreter::new(opts.token_output, opts.ast_output);
     let result = runtime.run(&mut src);
     print_terminal_result(&result);
     result
