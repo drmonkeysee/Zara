@@ -68,7 +68,7 @@ impl Display for TokenError {
 impl Error for TokenError {}
 
 #[derive(Debug)]
-pub(crate) enum TokenErrorKind {
+pub(super) enum TokenErrorKind {
     BooleanExpected(bool),
     ByteVectorExpected,
     CharacterExpected,
