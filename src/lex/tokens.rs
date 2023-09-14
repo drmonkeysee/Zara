@@ -26,6 +26,16 @@ pub enum TokenKind {
     Vector,
 }
 
+impl TokenKind {
+    pub(super) fn as_continuation(&self) -> Option<TokenContinuation> {
+        if let Self::CommentBlockBegin(nesting) = self {
+            Some(TokenContinuation::BlockComment(*nesting))
+        } else {
+            None
+        }
+    }
+}
+
 impl Display for TokenKind {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
@@ -100,6 +110,11 @@ impl Display for TokenErrorKind {
             Self::Unimplemented(s) => write!(f, "unimplemented tokenization: \"{s}\""),
         }
     }
+}
+
+#[derive(Debug)]
+pub(super) enum TokenContinuation {
+    BlockComment(usize),
 }
 
 #[cfg(test)]
@@ -250,6 +265,23 @@ mod tests {
             };
 
             assert_eq!(token.to_string(), "VECTOR[0..2]");
+        }
+
+        #[test]
+        fn no_token_continuation() {
+            let kind = TokenKind::Quote;
+
+            assert!(kind.as_continuation().is_none());
+        }
+
+        #[test]
+        fn block_comment_open_continuation() {
+            let kind = TokenKind::CommentBlockBegin(2);
+
+            assert!(matches!(
+                kind.as_continuation(),
+                Some(TokenContinuation::BlockComment(nesting)) if nesting == 2
+            ));
         }
     }
 

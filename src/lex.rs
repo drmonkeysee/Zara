@@ -2,7 +2,10 @@ mod tokenize;
 mod tokens;
 
 pub(crate) use self::tokens::{Token, TokenKind};
-use self::{tokenize::TokenStream, tokens::TokenError};
+use self::{
+    tokenize::TokenStream,
+    tokens::{TokenContinuation, TokenError},
+};
 use crate::txt::{TextLine, TextSource};
 use std::{
     error::Error,
@@ -54,13 +57,11 @@ impl Error for LexerError {}
 
 pub(crate) type LexerResult = Result<Vec<LexLine>, LexerError>;
 
-pub(crate) struct Lexer {
-    cont: Option<TokenKind>,
-}
+pub(crate) struct Lexer(Option<TokenContinuation>);
 
 impl Lexer {
     pub(crate) fn new() -> Self {
-        Self { cont: None }
+        Self(None)
     }
 
     pub(crate) fn tokenize(&mut self, src: &mut impl TextSource) -> LexerResult {
@@ -69,10 +70,11 @@ impl Lexer {
 
     fn tokenize_line(&mut self, text: TextLine) -> LexerLineResult {
         let mut errors: Vec<TokenError> = Vec::new();
-        let tokens = TokenStream::new(&text.line)
+        let tokens: Vec<_> = TokenStream::new(&text.line)
             .filter_map(|tr| tr.map_err(|err| errors.push(err)).ok())
             .collect();
         if errors.is_empty() {
+            self.0 = tokens.last().and_then(|t| t.kind.as_continuation());
             Ok(LexLine(tokens, text))
         } else {
             Err(LexerError(errors, text))
@@ -252,6 +254,7 @@ mod tests {
 
             assert!(r.is_ok());
             assert!(r.unwrap().is_empty());
+            assert!(target.0.is_none());
         }
 
         #[test]
@@ -281,6 +284,7 @@ mod tests {
                     lineno: 1,
                 } if Rc::ptr_eq(&ctx, &src.ctx) && line == "#t"
             ));
+            assert!(target.0.is_none());
         }
 
         #[test]
@@ -324,6 +328,7 @@ mod tests {
                     lineno: 1,
                 } if Rc::ptr_eq(&ctx, &src.ctx) && line == "#t #f #\\a"
             ));
+            assert!(target.0.is_none());
         }
 
         #[test]
@@ -376,6 +381,47 @@ mod tests {
                     line,
                     lineno: 2,
                 } if Rc::ptr_eq(&ctx, &src.ctx) && line == "  #f #\\a"
+            ));
+            assert!(target.0.is_none());
+        }
+
+        #[test]
+        fn continuation_token_persists_on_lexer() {
+            let mut src = MockTxtSource::new("#t #|trailing...");
+            let mut target = Lexer::new();
+
+            let r = target.tokenize(&mut src);
+
+            assert!(r.is_ok());
+            let lines = r.unwrap();
+            assert_eq!(lines.len(), 1);
+            let line = &lines[0];
+            assert_eq!(line.0.len(), 2);
+            assert!(matches!(
+                line.0[0],
+                TokenType {
+                    kind: TokenKind::Literal(Literal::Boolean(true)),
+                    span: Range { start: 0, end: 2 }
+                }
+            ));
+            assert!(matches!(
+                line.0[1],
+                TokenType {
+                    kind: TokenKind::CommentBlockBegin(0),
+                    span: Range { start: 3, end: 16 }
+                }
+            ));
+            assert!(matches!(
+                &line.1,
+                TextLine {
+                    ctx,
+                    line,
+                    lineno: 1,
+                } if Rc::ptr_eq(&ctx, &src.ctx) && line == "#t #|trailing..."
+            ));
+            assert!(matches!(
+                target.0,
+                Some(TokenContinuation::BlockComment(nesting)) if nesting == 0
             ));
         }
     }
