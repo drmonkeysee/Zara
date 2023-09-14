@@ -67,6 +67,9 @@ impl Display for TokenError {
 
 impl Error for TokenError {}
 
+pub(super) type TokenError = TokenType<TokenErrorKind>;
+pub(super) type TokenResult = Result<Token, TokenError>;
+
 #[derive(Debug)]
 pub(super) enum TokenErrorKind {
     BooleanExpected(bool),
@@ -98,9 +101,6 @@ impl Display for TokenErrorKind {
         }
     }
 }
-
-pub(super) type TokenError = TokenType<TokenErrorKind>;
-pub(super) type TokenResult = Result<Token, TokenError>;
 
 #[cfg(test)]
 mod tests {
