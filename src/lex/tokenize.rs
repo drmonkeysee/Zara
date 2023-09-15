@@ -24,17 +24,37 @@ impl<'a> TokenStream<'a> {
             scan: Scanner::new(textline),
         }
     }
+
+    fn token(&mut self) -> Option<IterItem<'a>> {
+        self.scan
+            .next_token()
+            .map(|item| Tokenizer::start(item, &mut self.scan).extract().build())
+    }
+
+    fn continuation(&mut self, cont: TokenContinuation) -> Option<IterItem<'a>> {
+        Some(
+            Continuation {
+                cont,
+                scan: &mut self.scan,
+            }
+            .extract()
+            .build(),
+        )
+    }
 }
 
 impl Iterator for TokenStream<'_> {
     type Item = TokenResult;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.scan
-            .next_token()
-            .map(|item| Tokenizer::start(item, &mut self.scan).extract().build())
+        match self.cont.take() {
+            Some(c) => self.continuation(c),
+            None => self.token(),
+        }
     }
 }
+
+type IterItem<'a> = <TokenStream<'a> as Iterator>::Item;
 
 struct Tokenizer<'me, 'str> {
     scan: &'me mut Scanner<'str>,
@@ -175,6 +195,26 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
         Err(TokenErrorKind::Unimplemented(
             self.scan.lexeme(start..end).to_owned(),
         ))
+    }
+}
+
+struct Continuation<'me, 'str> {
+    cont: TokenContinuation,
+    scan: &'me mut Scanner<'str>,
+}
+
+impl<'me, 'str> Continuation<'me, 'str> {
+    fn extract(self) -> TokenExtract {
+        let k = self.consume();
+        TokenExtract {
+            start: 0,
+            end: self.scan.pos(),
+            result: Ok(k),
+        }
+    }
+
+    fn consume(&self) -> TokenKind {
+        todo!();
     }
 }
 
