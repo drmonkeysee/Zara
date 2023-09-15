@@ -9,7 +9,7 @@ mod tokenstream {
     fn empty_string() {
         let s = TokenStream::new("");
 
-        let r: Vec<TokenResult> = s.collect();
+        let r: Vec<_> = s.collect();
 
         assert!(r.is_empty());
     }
@@ -18,7 +18,7 @@ mod tokenstream {
     fn whitespace() {
         let s = TokenStream::new("   \t  \r  \n  ");
 
-        let r: Vec<TokenResult> = s.collect();
+        let r: Vec<_> = s.collect();
 
         assert!(r.is_empty());
     }
@@ -27,7 +27,7 @@ mod tokenstream {
     fn single_token() {
         let s = TokenStream::new("(");
 
-        let r: Vec<TokenResult> = s.collect();
+        let r: Vec<_> = s.collect();
 
         assert_eq!(r.len(), 1);
         assert!(matches!(
@@ -43,7 +43,7 @@ mod tokenstream {
     fn single_token_with_whitespace() {
         let s = TokenStream::new("  (   ");
 
-        let r: Vec<TokenResult> = s.collect();
+        let r: Vec<_> = s.collect();
 
         assert_eq!(r.len(), 1);
         assert!(matches!(
@@ -59,7 +59,7 @@ mod tokenstream {
     fn multiple_tokens() {
         let s = TokenStream::new("(#t)");
 
-        let r: Vec<TokenResult> = s.collect();
+        let r: Vec<_> = s.collect();
 
         assert_eq!(r.len(), 3);
         assert!(matches!(
@@ -89,7 +89,7 @@ mod tokenstream {
     fn multiple_tokens_with_whitespace() {
         let s = TokenStream::new("   (   #t    )   ");
 
-        let r: Vec<TokenResult> = s.collect();
+        let r: Vec<_> = s.collect();
 
         assert_eq!(r.len(), 3);
         assert!(matches!(
@@ -119,7 +119,7 @@ mod tokenstream {
     fn tokens_with_invalid_token() {
         let s = TokenStream::new("(#tdf)");
 
-        let r: Vec<TokenResult> = s.collect();
+        let r: Vec<_> = s.collect();
 
         assert_eq!(r.len(), 3);
         assert!(matches!(
@@ -149,7 +149,7 @@ mod tokenstream {
     fn tokens_with_unterminated_token() {
         let s = TokenStream::new("(#)");
 
-        let r: Vec<TokenResult> = s.collect();
+        let r: Vec<_> = s.collect();
 
         assert_eq!(r.len(), 3);
         assert!(matches!(
@@ -179,7 +179,7 @@ mod tokenstream {
     fn tokens_with_unterminated_token_to_whitespace() {
         let s = TokenStream::new("# #f");
 
-        let r: Vec<TokenResult> = s.collect();
+        let r: Vec<_> = s.collect();
 
         assert_eq!(r.len(), 2);
         assert!(matches!(
@@ -202,7 +202,7 @@ mod tokenstream {
     fn hash_is_a_token_boundary() {
         let s = TokenStream::new("#t#f");
 
-        let r: Vec<TokenResult> = s.collect();
+        let r: Vec<_> = s.collect();
 
         assert_eq!(r.len(), 2);
         assert!(matches!(
@@ -225,7 +225,7 @@ mod tokenstream {
     fn quote_is_a_token_boundary() {
         let s = TokenStream::new("#t'#f");
 
-        let r: Vec<TokenResult> = s.collect();
+        let r: Vec<_> = s.collect();
 
         assert_eq!(r.len(), 3);
         assert!(matches!(
@@ -255,7 +255,7 @@ mod tokenstream {
     fn quasiquote_is_a_token_boundary() {
         let s = TokenStream::new("#t`#f");
 
-        let r: Vec<TokenResult> = s.collect();
+        let r: Vec<_> = s.collect();
 
         assert_eq!(r.len(), 3);
         assert!(matches!(
@@ -285,7 +285,7 @@ mod tokenstream {
     fn unquote_is_a_token_boundary() {
         let s = TokenStream::new("#t,#f");
 
-        let r: Vec<TokenResult> = s.collect();
+        let r: Vec<_> = s.collect();
 
         assert_eq!(r.len(), 3);
         assert!(matches!(
@@ -315,7 +315,7 @@ mod tokenstream {
     fn pair_join_is_not_a_token_boundary() {
         let s = TokenStream::new("#t.#f");
 
-        let r: Vec<TokenResult> = s.collect();
+        let r: Vec<_> = s.collect();
 
         assert_eq!(r.len(), 2);
         assert!(matches!(

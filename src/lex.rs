@@ -69,7 +69,7 @@ impl Lexer {
     }
 
     fn tokenize_line(&mut self, text: TextLine) -> LexerLineResult {
-        let mut errors: Vec<TokenError> = Vec::new();
+        let mut errors = Vec::new();
         let tokens: Vec<_> = TokenStream::new(&text.line)
             .filter_map(|tr| tr.map_err(|err| errors.push(err)).ok())
             .collect();
