@@ -7,7 +7,7 @@ mod tokenstream {
 
     #[test]
     fn empty_string() {
-        let s = TokenStream::new("");
+        let s = TokenStream::new("", None);
 
         let r: Vec<_> = s.collect();
 
@@ -16,7 +16,7 @@ mod tokenstream {
 
     #[test]
     fn whitespace() {
-        let s = TokenStream::new("   \t  \r  \n  ");
+        let s = TokenStream::new("   \t  \r  \n  ", None);
 
         let r: Vec<_> = s.collect();
 
@@ -25,7 +25,7 @@ mod tokenstream {
 
     #[test]
     fn single_token() {
-        let s = TokenStream::new("(");
+        let s = TokenStream::new("(", None);
 
         let r: Vec<_> = s.collect();
 
@@ -41,7 +41,7 @@ mod tokenstream {
 
     #[test]
     fn single_token_with_whitespace() {
-        let s = TokenStream::new("  (   ");
+        let s = TokenStream::new("  (   ", None);
 
         let r: Vec<_> = s.collect();
 
@@ -57,7 +57,7 @@ mod tokenstream {
 
     #[test]
     fn multiple_tokens() {
-        let s = TokenStream::new("(#t)");
+        let s = TokenStream::new("(#t)", None);
 
         let r: Vec<_> = s.collect();
 
@@ -87,7 +87,7 @@ mod tokenstream {
 
     #[test]
     fn multiple_tokens_with_whitespace() {
-        let s = TokenStream::new("   (   #t    )   ");
+        let s = TokenStream::new("   (   #t    )   ", None);
 
         let r: Vec<_> = s.collect();
 
@@ -117,7 +117,7 @@ mod tokenstream {
 
     #[test]
     fn tokens_with_invalid_token() {
-        let s = TokenStream::new("(#tdf)");
+        let s = TokenStream::new("(#tdf)", None);
 
         let r: Vec<_> = s.collect();
 
@@ -147,7 +147,7 @@ mod tokenstream {
 
     #[test]
     fn tokens_with_unterminated_token() {
-        let s = TokenStream::new("(#)");
+        let s = TokenStream::new("(#)", None);
 
         let r: Vec<_> = s.collect();
 
@@ -177,7 +177,7 @@ mod tokenstream {
 
     #[test]
     fn tokens_with_unterminated_token_to_whitespace() {
-        let s = TokenStream::new("# #f");
+        let s = TokenStream::new("# #f", None);
 
         let r: Vec<_> = s.collect();
 
@@ -200,7 +200,7 @@ mod tokenstream {
 
     #[test]
     fn hash_is_a_token_boundary() {
-        let s = TokenStream::new("#t#f");
+        let s = TokenStream::new("#t#f", None);
 
         let r: Vec<_> = s.collect();
 
@@ -223,7 +223,7 @@ mod tokenstream {
 
     #[test]
     fn quote_is_a_token_boundary() {
-        let s = TokenStream::new("#t'#f");
+        let s = TokenStream::new("#t'#f", None);
 
         let r: Vec<_> = s.collect();
 
@@ -253,7 +253,7 @@ mod tokenstream {
 
     #[test]
     fn quasiquote_is_a_token_boundary() {
-        let s = TokenStream::new("#t`#f");
+        let s = TokenStream::new("#t`#f", None);
 
         let r: Vec<_> = s.collect();
 
@@ -283,7 +283,7 @@ mod tokenstream {
 
     #[test]
     fn unquote_is_a_token_boundary() {
-        let s = TokenStream::new("#t,#f");
+        let s = TokenStream::new("#t,#f", None);
 
         let r: Vec<_> = s.collect();
 
@@ -313,7 +313,7 @@ mod tokenstream {
 
     #[test]
     fn pair_join_is_not_a_token_boundary() {
-        let s = TokenStream::new("#t.#f");
+        let s = TokenStream::new("#t.#f", None);
 
         let r: Vec<_> = s.collect();
 
@@ -330,6 +330,51 @@ mod tokenstream {
             Ok(Token {
                 kind: TokenKind::Literal(Literal::Boolean(false)),
                 span: Range { start: 3, end: 5 }
+            })
+        ));
+    }
+
+    #[test]
+    fn block_comment_fragment_uses_whole_line() {
+        let s = TokenStream::new(
+            "continued comment",
+            Some(TokenContinuation::BlockComment(2)),
+        );
+
+        let r: Vec<_> = s.collect();
+
+        assert_eq!(r.len(), 1);
+        assert!(matches!(
+            r[0],
+            Ok(Token {
+                kind: TokenKind::CommentBlockFragment(2),
+                span: Range { start: 0, end: 17 }
+            })
+        ));
+    }
+
+    #[test]
+    fn block_comment_end_continues_tokenizing() {
+        let s = TokenStream::new(
+            "end comment |# #f",
+            Some(TokenContinuation::BlockComment(0)),
+        );
+
+        let r: Vec<_> = s.collect();
+
+        assert_eq!(r.len(), 2);
+        assert!(matches!(
+            r[0],
+            Ok(Token {
+                kind: TokenKind::CommentBlockEnd,
+                span: Range { start: 0, end: 14 }
+            })
+        ));
+        assert!(matches!(
+            r[1],
+            Ok(Token {
+                kind: TokenKind::Literal(Literal::Boolean(false)),
+                span: Range { start: 15, end: 17 }
             })
         ));
     }
@@ -884,6 +929,26 @@ mod tokenizer {
                         start: 0,
                         end: 30,
                         result: Ok(TokenKind::CommentBlockBegin(2)),
+                    }
+                ));
+            }
+
+            #[test]
+            fn block_comment_fragment_top_nesting() {
+                let mut s = Scanner::new("continued comment");
+                let c = BlockComment {
+                    depth: 0,
+                    scan: &mut s,
+                };
+
+                let r = c.consume();
+
+                assert!(matches!(
+                    r,
+                    TokenExtract {
+                        start: 0,
+                        end: 17,
+                        result: Ok(TokenKind::CommentBlockFragment(0)),
                     }
                 ));
             }

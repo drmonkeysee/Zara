@@ -8,17 +8,19 @@ use self::{
     scan::{ScanItem, Scanner},
 };
 use crate::{
-    lex::tokens::{TokenErrorKind, TokenKind, TokenResult},
+    lex::tokens::{TokenContinuation, TokenErrorKind, TokenKind, TokenResult},
     literal::Literal,
 };
 
 pub(super) struct TokenStream<'a> {
+    cont: Option<TokenContinuation>,
     scan: Scanner<'a>,
 }
 
 impl<'a> TokenStream<'a> {
-    pub(super) fn new(textline: &'a str) -> Self {
+    pub(super) fn new(textline: &'a str, cont: Option<TokenContinuation>) -> Self {
         Self {
+            cont,
             scan: Scanner::new(textline),
         }
     }
