@@ -26,9 +26,14 @@ impl<'a> TokenStream<'a> {
     }
 
     fn token(&mut self) -> Option<IterItem<'a>> {
-        self.scan
-            .next_token()
-            .map(|item| Tokenizer::start(item, &mut self.scan).extract().build())
+        self.scan.next_token().map(|item| {
+            Tokenizer {
+                scan: &mut self.scan,
+                start: item,
+            }
+            .extract()
+            .build()
+        })
     }
 
     fn continuation(&mut self, cont: TokenContinuation) -> Option<IterItem<'a>> {
@@ -62,10 +67,6 @@ struct Tokenizer<'me, 'str> {
 }
 
 impl<'me, 'str> Tokenizer<'me, 'str> {
-    fn start(start: ScanItem, scan: &'me mut Scanner<'str>) -> Self {
-        Self { start, scan }
-    }
-
     fn extract(mut self) -> TokenExtract {
         let (result, end) = self.scan();
         TokenExtract {
