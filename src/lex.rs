@@ -421,7 +421,7 @@ mod tests {
             ));
             assert!(matches!(
                 target.0,
-                Some(TokenContinuation::BlockComment(nesting)) if nesting == 0
+                Some(TokenContinuation::BlockComment(depth)) if depth == 0
             ));
         }
     }

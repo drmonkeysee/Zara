@@ -14,6 +14,8 @@ pub enum TokenKind {
     Comment,
     CommentBlock,
     CommentBlockBegin(usize),
+    CommentBlockFragment(usize),
+    CommentBlockEnd,
     CommentDatum,
     Literal(Literal),
     ParenLeft,
@@ -28,8 +30,8 @@ pub enum TokenKind {
 
 impl TokenKind {
     pub(super) fn as_continuation(&self) -> Option<TokenContinuation> {
-        if let Self::CommentBlockBegin(nesting) = self {
-            Some(TokenContinuation::BlockComment(*nesting))
+        if let Self::CommentBlockBegin(depth) = self {
+            Some(TokenContinuation::BlockComment(*depth))
         } else {
             None
         }
@@ -42,7 +44,9 @@ impl Display for TokenKind {
             Self::ByteVector => f.write_str("BYTEVECTOR"),
             Self::Comment => f.write_str("COMMENT"),
             Self::CommentBlock => f.write_str("BLOCKCOMMENT"),
-            Self::CommentBlockBegin(nesting) => write!(f, "BLOCKCOMMENTBEGIN<{nesting:?}>"),
+            Self::CommentBlockBegin(depth) => write!(f, "BLOCKCOMMENTBEGIN<{depth:?}>"),
+            Self::CommentBlockFragment(depth) => write!(f, "BLOCKCOMMENTFRAG<{depth:?}>"),
+            Self::CommentBlockEnd => f.write_str("BLOCKCOMMENTEND"),
             Self::CommentDatum => f.write_str("DATUMCOMMENT"),
             Self::Literal(lit) => write!(f, "LITERAL<{lit:?}>"),
             Self::ParenLeft => f.write_str("LEFTPAREN"),
@@ -165,6 +169,26 @@ mod tests {
         }
 
         #[test]
+        fn display_comment_blockfragment() {
+            let token = Token {
+                kind: TokenKind::CommentBlockFragment(1),
+                span: 0..10,
+            };
+
+            assert_eq!(token.to_string(), "BLOCKCOMMENTFRAGMENT<1>[0..10]");
+        }
+
+        #[test]
+        fn display_comment_blockend() {
+            let token = Token {
+                kind: TokenKind::CommentBlockBegin(1),
+                span: 0..10,
+            };
+
+            assert_eq!(token.to_string(), "BLOCKCOMMENTEND[0..10]");
+        }
+
+        #[test]
         fn display_datum_comment() {
             let token = Token {
                 kind: TokenKind::CommentDatum,
@@ -280,7 +304,7 @@ mod tests {
 
             assert!(matches!(
                 kind.as_continuation(),
-                Some(TokenContinuation::BlockComment(nesting)) if nesting == 2
+                Some(TokenContinuation::BlockComment(depth)) if depth == 2
             ));
         }
     }
