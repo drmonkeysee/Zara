@@ -1081,6 +1081,187 @@ mod tokenizer {
             }
 
             #[test]
+            fn block_comment_fragment_includes_whitespace() {
+                let mut s = Scanner::new("  continued comment\t");
+                let c = Continuation {
+                    cont: TokenContinuation::BlockComment(0),
+                    scan: &mut s,
+                };
+
+                let r = c.extract();
+                dbg!(&r);
+
+                assert!(matches!(
+                    r,
+                    TokenExtract {
+                        start: 0,
+                        end: 20,
+                        result: Ok(TokenKind::CommentBlockFragment(0)),
+                    }
+                ));
+            }
+
+            #[test]
+            fn block_comment_fragment_contains_block_comment() {
+                let mut s = Scanner::new("continue #| whole comment |# more...");
+                let c = Continuation {
+                    cont: TokenContinuation::BlockComment(0),
+                    scan: &mut s,
+                };
+
+                let r = c.extract();
+
+                assert!(matches!(
+                    r,
+                    TokenExtract {
+                        start: 0,
+                        end: 36,
+                        result: Ok(TokenKind::CommentBlockFragment(0)),
+                    }
+                ));
+            }
+
+            #[test]
+            fn block_comment_fragment_with_nesting() {
+                let mut s = Scanner::new("continue #| partial comment...");
+                let c = Continuation {
+                    cont: TokenContinuation::BlockComment(0),
+                    scan: &mut s,
+                };
+
+                let r = c.extract();
+
+                assert!(matches!(
+                    r,
+                    TokenExtract {
+                        start: 0,
+                        end: 30,
+                        result: Ok(TokenKind::CommentBlockFragment(1)),
+                    }
+                ));
+            }
+
+            #[test]
+            fn block_comment_fragment_extends_nesting() {
+                let mut s = Scanner::new("continue #| partial comment...");
+                let c = Continuation {
+                    cont: TokenContinuation::BlockComment(2),
+                    scan: &mut s,
+                };
+
+                let r = c.extract();
+
+                assert!(matches!(
+                    r,
+                    TokenExtract {
+                        start: 0,
+                        end: 30,
+                        result: Ok(TokenKind::CommentBlockFragment(3)),
+                    }
+                ));
+            }
+
+            #[test]
+            fn block_comment_end() {
+                let mut s = Scanner::new("end comment |#");
+                let c = Continuation {
+                    cont: TokenContinuation::BlockComment(0),
+                    scan: &mut s,
+                };
+
+                let r = c.extract();
+
+                assert!(matches!(
+                    r,
+                    TokenExtract {
+                        start: 0,
+                        end: 14,
+                        result: Ok(TokenKind::CommentBlockEnd),
+                    }
+                ));
+            }
+
+            #[test]
+            fn block_comment_end_includes_leading_whitespace() {
+                let mut s = Scanner::new("  end comment |#  ");
+                let c = Continuation {
+                    cont: TokenContinuation::BlockComment(0),
+                    scan: &mut s,
+                };
+
+                let r = c.extract();
+
+                assert!(matches!(
+                    r,
+                    TokenExtract {
+                        start: 0,
+                        end: 16,
+                        result: Ok(TokenKind::CommentBlockEnd),
+                    }
+                ));
+            }
+
+            #[test]
+            fn block_comment_end_stops_at_next_token() {
+                let mut s = Scanner::new("end comment |##t");
+                let c = Continuation {
+                    cont: TokenContinuation::BlockComment(0),
+                    scan: &mut s,
+                };
+
+                let r = c.extract();
+
+                assert!(matches!(
+                    r,
+                    TokenExtract {
+                        start: 0,
+                        end: 14,
+                        result: Ok(TokenKind::CommentBlockEnd),
+                    }
+                ));
+            }
+
+            #[test]
+            fn block_comment_end_contains_whole_comment() {
+                let mut s = Scanner::new("end comment #| nested |# |#");
+                let c = Continuation {
+                    cont: TokenContinuation::BlockComment(0),
+                    scan: &mut s,
+                };
+
+                let r = c.extract();
+
+                assert!(matches!(
+                    r,
+                    TokenExtract {
+                        start: 0,
+                        end: 27,
+                        result: Ok(TokenKind::CommentBlockEnd),
+                    }
+                ));
+            }
+
+            #[test]
+            fn block_comment_ends_multiple_nesting() {
+                let mut s = Scanner::new("end inner |# end outer |#");
+                let c = Continuation {
+                    cont: TokenContinuation::BlockComment(1),
+                    scan: &mut s,
+                };
+
+                let r = c.extract();
+
+                assert!(matches!(
+                    r,
+                    TokenExtract {
+                        start: 0,
+                        end: 25,
+                        result: Ok(TokenKind::CommentBlockEnd),
+                    }
+                ));
+            }
+
+            #[test]
             fn datum_comment() {
                 let mut s = Scanner::new("#;");
                 let start = s.next_token().unwrap();

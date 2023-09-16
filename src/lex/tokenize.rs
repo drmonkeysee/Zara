@@ -205,28 +205,45 @@ struct Continuation<'me, 'str> {
 }
 
 impl<'me, 'str> Continuation<'me, 'str> {
-    fn extract(self) -> TokenExtract {
-        let k = self.consume();
+    fn extract(mut self) -> TokenExtract {
+        let result = Ok(self.consume());
         TokenExtract {
             start: 0,
             end: self.scan.pos(),
-            result: Ok(k),
+            result,
         }
     }
 
-    fn consume(&self) -> TokenKind {
-        todo!();
+    fn consume(&mut self) -> TokenKind {
+        match self.cont {
+            TokenContinuation::BlockComment(depth) => {
+                BlockComment::cont(depth, &mut self.scan).consume()
+            }
+        }
     }
 }
 
 struct BlockComment<'me, 'str> {
+    cont: bool,
     depth: usize,
     scan: &'me mut Scanner<'str>,
 }
 
 impl<'me, 'str> BlockComment<'me, 'str> {
     fn new(scan: &'me mut Scanner<'str>) -> Self {
-        Self { depth: 0, scan }
+        Self {
+            cont: false,
+            depth: 0,
+            scan,
+        }
+    }
+
+    fn cont(depth: usize, scan: &'me mut Scanner<'str>) -> Self {
+        Self {
+            cont: true,
+            depth,
+            scan,
+        }
     }
 
     fn consume(&mut self) -> TokenKind {
@@ -234,7 +251,7 @@ impl<'me, 'str> BlockComment<'me, 'str> {
             if let Some((_, ch)) = self.scan.find_any_char(&['|', '#']) {
                 if self.end_block(ch) {
                     if self.depth == 0 {
-                        return TokenKind::CommentBlock;
+                        return self.end_kind();
                     } else {
                         self.depth -= 1;
                     }
@@ -243,7 +260,7 @@ impl<'me, 'str> BlockComment<'me, 'str> {
                 }
             }
         }
-        TokenKind::CommentBlockBegin(self.depth)
+        self.continuation_kind()
     }
 
     fn end_block(&mut self, ch: char) -> bool {
@@ -252,6 +269,22 @@ impl<'me, 'str> BlockComment<'me, 'str> {
 
     fn new_block(&mut self, ch: char) -> bool {
         ch == '#' && self.scan.char_if_eq('|').is_some()
+    }
+
+    fn continuation_kind(&self) -> TokenKind {
+        if self.cont {
+            TokenKind::CommentBlockFragment(self.depth)
+        } else {
+            TokenKind::CommentBlockBegin(self.depth)
+        }
+    }
+
+    fn end_kind(&self) -> TokenKind {
+        if self.cont {
+            TokenKind::CommentBlockEnd
+        } else {
+            TokenKind::CommentBlock
+        }
     }
 }
 
