@@ -386,7 +386,10 @@ mod tokenizer {
     #[test]
     fn empty_string() {
         let mut s = Scanner::new("");
-        let t = Tokenizer::start((0, 'a'), &mut s);
+        let t = Tokenizer {
+            start: (0, 'a'),
+            scan: &mut s,
+        };
 
         let r = t.extract();
 
@@ -403,9 +406,10 @@ mod tokenizer {
     #[test]
     fn token_not_implemented() {
         let mut s = Scanner::new("abc");
+        let start = s.next_token().unwrap();
         let t = Tokenizer {
             scan: &mut s,
-            start: s.next_token().unwrap(),
+            start,
         };
 
         let r = t.extract();
@@ -423,9 +427,10 @@ mod tokenizer {
     #[test]
     fn token_not_implemented_stops_at_delimiter() {
         let mut s = Scanner::new("abc;");
+        let start = s.next_token().unwrap();
         let t = Tokenizer {
             scan: &mut s,
-            start: s.next_token().unwrap(),
+            start,
         };
 
         let r = t.extract();
@@ -443,9 +448,10 @@ mod tokenizer {
     #[test]
     fn left_paren() {
         let mut s = Scanner::new("(");
+        let start = s.next_token().unwrap();
         let t = Tokenizer {
             scan: &mut s,
-            start: s.next_token().unwrap(),
+            start,
         };
 
         let r = t.extract();
@@ -463,9 +469,10 @@ mod tokenizer {
     #[test]
     fn right_paren() {
         let mut s = Scanner::new(")");
+        let start = s.next_token().unwrap();
         let t = Tokenizer {
             scan: &mut s,
-            start: s.next_token().unwrap(),
+            start,
         };
 
         let r = t.extract();
@@ -483,9 +490,10 @@ mod tokenizer {
     #[test]
     fn pair_joiner() {
         let mut s = Scanner::new(".");
+        let start = s.next_token().unwrap();
         let t = Tokenizer {
             scan: &mut s,
-            start: s.next_token().unwrap(),
+            start,
         };
 
         let r = t.extract();
@@ -503,9 +511,10 @@ mod tokenizer {
     #[test]
     fn pair_joiner_with_whitespace() {
         let mut s = Scanner::new(" . ");
+        let start = s.next_token().unwrap();
         let t = Tokenizer {
             scan: &mut s,
-            start: s.next_token().unwrap(),
+            start,
         };
 
         let r = t.extract();
@@ -523,9 +532,10 @@ mod tokenizer {
     #[test]
     fn pair_joiner_prefixed_is_identifier() {
         let mut s = Scanner::new("a.");
+        let start = s.next_token().unwrap();
         let t = Tokenizer {
             scan: &mut s,
-            start: s.next_token().unwrap(),
+            start,
         };
 
         let r = t.extract();
@@ -543,9 +553,10 @@ mod tokenizer {
     #[test]
     fn pair_joiner_postfixed_is_identifier() {
         let mut s = Scanner::new(".a");
+        let start = s.next_token().unwrap();
         let t = Tokenizer {
             scan: &mut s,
-            start: s.next_token().unwrap(),
+            start,
         };
 
         let r = t.extract();
@@ -563,9 +574,10 @@ mod tokenizer {
     #[test]
     fn pair_joiner_followed_by_delimiter() {
         let mut s = Scanner::new(".)");
+        let start = s.next_token().unwrap();
         let t = Tokenizer {
             scan: &mut s,
-            start: s.next_token().unwrap(),
+            start,
         };
 
         let r = t.extract();
@@ -583,9 +595,10 @@ mod tokenizer {
     #[test]
     fn token_ends_at_whitespace() {
         let mut s = Scanner::new("(  ");
+        let start = s.next_token().unwrap();
         let t = Tokenizer {
             scan: &mut s,
-            start: s.next_token().unwrap(),
+            start,
         };
 
         let r = t.extract();
@@ -603,9 +616,10 @@ mod tokenizer {
     #[test]
     fn token_ends_at_delimiter() {
         let mut s = Scanner::new("()");
+        let start = s.next_token().unwrap();
         let t = Tokenizer {
             scan: &mut s,
-            start: s.next_token().unwrap(),
+            start,
         };
 
         let r = t.extract();
@@ -623,9 +637,10 @@ mod tokenizer {
     #[test]
     fn comment() {
         let mut s = Scanner::new(";");
+        let start = s.next_token().unwrap();
         let t = Tokenizer {
             scan: &mut s,
-            start: s.next_token().unwrap(),
+            start,
         };
 
         let r = t.extract();
@@ -643,9 +658,10 @@ mod tokenizer {
     #[test]
     fn comment_with_text() {
         let mut s = Scanner::new("; scanner input is always one line");
+        let start = s.next_token().unwrap();
         let t = Tokenizer {
             scan: &mut s,
-            start: s.next_token().unwrap(),
+            start,
         };
 
         let r = t.extract();
@@ -666,9 +682,10 @@ mod tokenizer {
         #[test]
         fn unterminated() {
             let mut s = Scanner::new("#");
+            let start = s.next_token().unwrap();
             let t = Tokenizer {
                 scan: &mut s,
-                start: s.next_token().unwrap(),
+                start,
             };
 
             let r = t.extract();
@@ -686,9 +703,10 @@ mod tokenizer {
         #[test]
         fn unterminated_with_whitespace() {
             let mut s = Scanner::new("#  ");
+            let start = s.next_token().unwrap();
             let t = Tokenizer {
                 scan: &mut s,
-                start: s.next_token().unwrap(),
+                start,
             };
 
             let r = t.extract();
@@ -706,9 +724,10 @@ mod tokenizer {
         #[test]
         fn unterminated_with_delimiter() {
             let mut s = Scanner::new("#)");
+            let start = s.next_token().unwrap();
             let t = Tokenizer {
                 scan: &mut s,
-                start: s.next_token().unwrap(),
+                start,
             };
 
             let r = t.extract();
@@ -726,9 +745,10 @@ mod tokenizer {
         #[test]
         fn invalid() {
             let mut s = Scanner::new("#g");
+            let start = s.next_token().unwrap();
             let t = Tokenizer {
                 scan: &mut s,
-                start: s.next_token().unwrap(),
+                start,
             };
 
             let r = t.extract();
@@ -746,9 +766,10 @@ mod tokenizer {
         #[test]
         fn invalid_long() {
             let mut s = Scanner::new("#not_a_valid_hashtag");
+            let start = s.next_token().unwrap();
             let t = Tokenizer {
                 scan: &mut s,
-                start: s.next_token().unwrap(),
+                start,
             };
 
             let r = t.extract();
@@ -766,9 +787,10 @@ mod tokenizer {
         #[test]
         fn vector() {
             let mut s = Scanner::new("#(");
+            let start = s.next_token().unwrap();
             let t = Tokenizer {
                 scan: &mut s,
-                start: s.next_token().unwrap(),
+                start,
             };
 
             let r = t.extract();
@@ -789,9 +811,10 @@ mod tokenizer {
             #[test]
             fn block_comment_empty() {
                 let mut s = Scanner::new("#||#");
+                let start = s.next_token().unwrap();
                 let t = Tokenizer {
                     scan: &mut s,
-                    start: s.next_token().unwrap(),
+                    start,
                 };
 
                 let r = t.extract();
@@ -809,9 +832,10 @@ mod tokenizer {
             #[test]
             fn block_comment_with_text() {
                 let mut s = Scanner::new("#|i am a comment|#");
+                let start = s.next_token().unwrap();
                 let t = Tokenizer {
                     scan: &mut s,
-                    start: s.next_token().unwrap(),
+                    start,
                 };
 
                 let r = t.extract();
@@ -829,9 +853,10 @@ mod tokenizer {
             #[test]
             fn block_comment_with_hash() {
                 let mut s = Scanner::new("#|hashtag #comment|#");
+                let start = s.next_token().unwrap();
                 let t = Tokenizer {
                     scan: &mut s,
-                    start: s.next_token().unwrap(),
+                    start,
                 };
 
                 let r = t.extract();
@@ -849,9 +874,10 @@ mod tokenizer {
             #[test]
             fn block_comment_with_pipe() {
                 let mut s = Scanner::new("#|pipe |comment|#");
+                let start = s.next_token().unwrap();
                 let t = Tokenizer {
                     scan: &mut s,
-                    start: s.next_token().unwrap(),
+                    start,
                 };
 
                 let r = t.extract();
@@ -869,9 +895,10 @@ mod tokenizer {
             #[test]
             fn block_comment_nested() {
                 let mut s = Scanner::new("#|outer #|inner comment|# comment|#");
+                let start = s.next_token().unwrap();
                 let t = Tokenizer {
                     scan: &mut s,
-                    start: s.next_token().unwrap(),
+                    start,
                 };
 
                 let r = t.extract();
@@ -889,9 +916,10 @@ mod tokenizer {
             #[test]
             fn block_comment_followed_by_other_text() {
                 let mut s = Scanner::new("#| comment |# other stuff");
+                let start = s.next_token().unwrap();
                 let t = Tokenizer {
                     scan: &mut s,
-                    start: s.next_token().unwrap(),
+                    start,
                 };
 
                 let r = t.extract();
@@ -909,9 +937,10 @@ mod tokenizer {
             #[test]
             fn block_comment_begin() {
                 let mut s = Scanner::new("#| comment that continues...");
+                let start = s.next_token().unwrap();
                 let t = Tokenizer {
                     scan: &mut s,
-                    start: s.next_token().unwrap(),
+                    start,
                 };
 
                 let r = t.extract();
@@ -929,9 +958,10 @@ mod tokenizer {
             #[test]
             fn block_comment_begin_with_hash() {
                 let mut s = Scanner::new("#| comment with #hash...");
+                let start = s.next_token().unwrap();
                 let t = Tokenizer {
                     scan: &mut s,
-                    start: s.next_token().unwrap(),
+                    start,
                 };
 
                 let r = t.extract();
@@ -949,9 +979,10 @@ mod tokenizer {
             #[test]
             fn block_comment_begin_with_pipe() {
                 let mut s = Scanner::new("#| comment with |pipe...");
+                let start = s.next_token().unwrap();
                 let t = Tokenizer {
                     scan: &mut s,
-                    start: s.next_token().unwrap(),
+                    start,
                 };
 
                 let r = t.extract();
@@ -969,9 +1000,10 @@ mod tokenizer {
             #[test]
             fn block_comment_begin_contained_nested_comment() {
                 let mut s = Scanner::new("#| begin #| nested |# continue...");
+                let start = s.next_token().unwrap();
                 let t = Tokenizer {
                     scan: &mut s,
-                    start: s.next_token().unwrap(),
+                    start,
                 };
 
                 let r = t.extract();
@@ -989,9 +1021,10 @@ mod tokenizer {
             #[test]
             fn block_comment_begin_with_trailing_nested() {
                 let mut s = Scanner::new("#| begin #| nested...");
+                let start = s.next_token().unwrap();
                 let t = Tokenizer {
                     scan: &mut s,
-                    start: s.next_token().unwrap(),
+                    start,
                 };
 
                 let r = t.extract();
@@ -1009,9 +1042,10 @@ mod tokenizer {
             #[test]
             fn block_comment_begin_with_multiple_trailing_nested() {
                 let mut s = Scanner::new("#| begin #| nested #| goofy...");
+                let start = s.next_token().unwrap();
                 let t = Tokenizer {
                     scan: &mut s,
-                    start: s.next_token().unwrap(),
+                    start,
                 };
 
                 let r = t.extract();
@@ -1029,12 +1063,12 @@ mod tokenizer {
             #[test]
             fn block_comment_fragment_top_nesting() {
                 let mut s = Scanner::new("continued comment");
-                let c = BlockComment {
-                    depth: 0,
+                let c = Continuation {
+                    cont: TokenContinuation::BlockComment(0),
                     scan: &mut s,
                 };
 
-                let r = c.consume();
+                let r = c.extract();
 
                 assert!(matches!(
                     r,
@@ -1049,9 +1083,10 @@ mod tokenizer {
             #[test]
             fn datum_comment() {
                 let mut s = Scanner::new("#;");
+                let start = s.next_token().unwrap();
                 let t = Tokenizer {
                     scan: &mut s,
-                    start: s.next_token().unwrap(),
+                    start,
                 };
 
                 let r = t.extract();
@@ -1069,9 +1104,10 @@ mod tokenizer {
             #[test]
             fn datum_comment_followed_by_datum() {
                 let mut s = Scanner::new("#;#\\a");
+                let start = s.next_token().unwrap();
                 let t = Tokenizer {
                     scan: &mut s,
-                    start: s.next_token().unwrap(),
+                    start,
                 };
 
                 let r = t.extract();
@@ -1089,9 +1125,10 @@ mod tokenizer {
             #[test]
             fn datum_comment_followed_by_whitespace() {
                 let mut s = Scanner::new("#; ");
+                let start = s.next_token().unwrap();
                 let t = Tokenizer {
                     scan: &mut s,
-                    start: s.next_token().unwrap(),
+                    start,
                 };
 
                 let r = t.extract();
@@ -1114,9 +1151,10 @@ mod tokenizer {
         #[test]
         fn bytevector() {
             let mut s = Scanner::new("#u8(");
+            let start = s.next_token().unwrap();
             let t = Tokenizer {
                 scan: &mut s,
-                start: s.next_token().unwrap(),
+                start,
             };
 
             let r = t.extract();
@@ -1134,9 +1172,10 @@ mod tokenizer {
         #[test]
         fn bytevector_uppercase() {
             let mut s = Scanner::new("#U8(");
+            let start = s.next_token().unwrap();
             let t = Tokenizer {
                 scan: &mut s,
-                start: s.next_token().unwrap(),
+                start,
             };
 
             let r = t.extract();
@@ -1154,9 +1193,10 @@ mod tokenizer {
         #[test]
         fn bytevector_ends_at_paren() {
             let mut s = Scanner::new("#u8(sdf");
+            let start = s.next_token().unwrap();
             let t = Tokenizer {
                 scan: &mut s,
-                start: s.next_token().unwrap(),
+                start,
             };
 
             let r = t.extract();
@@ -1174,9 +1214,10 @@ mod tokenizer {
         #[test]
         fn bytevector_unterminated() {
             let mut s = Scanner::new("#u");
+            let start = s.next_token().unwrap();
             let t = Tokenizer {
                 scan: &mut s,
-                start: s.next_token().unwrap(),
+                start,
             };
 
             let r = t.extract();
@@ -1194,9 +1235,10 @@ mod tokenizer {
         #[test]
         fn bytevector_wrong_number() {
             let mut s = Scanner::new("#u9(");
+            let start = s.next_token().unwrap();
             let t = Tokenizer {
                 scan: &mut s,
-                start: s.next_token().unwrap(),
+                start,
             };
 
             let r = t.extract();
@@ -1214,9 +1256,10 @@ mod tokenizer {
         #[test]
         fn bytevector_extra_number() {
             let mut s = Scanner::new("#u81(");
+            let start = s.next_token().unwrap();
             let t = Tokenizer {
                 scan: &mut s,
-                start: s.next_token().unwrap(),
+                start,
             };
 
             let r = t.extract();
@@ -1234,9 +1277,10 @@ mod tokenizer {
         #[test]
         fn bytevector_no_paren() {
             let mut s = Scanner::new("#u8");
+            let start = s.next_token().unwrap();
             let t = Tokenizer {
                 scan: &mut s,
-                start: s.next_token().unwrap(),
+                start,
             };
 
             let r = t.extract();
@@ -1254,9 +1298,10 @@ mod tokenizer {
         #[test]
         fn bytevector_no_paren_whitespace() {
             let mut s = Scanner::new("#u8  ");
+            let start = s.next_token().unwrap();
             let t = Tokenizer {
                 scan: &mut s,
-                start: s.next_token().unwrap(),
+                start,
             };
 
             let r = t.extract();
@@ -1278,9 +1323,10 @@ mod tokenizer {
         #[test]
         fn true_short() {
             let mut s = Scanner::new("#t");
+            let start = s.next_token().unwrap();
             let t = Tokenizer {
                 scan: &mut s,
-                start: s.next_token().unwrap(),
+                start,
             };
 
             let r = t.extract();
@@ -1298,9 +1344,10 @@ mod tokenizer {
         #[test]
         fn true_long() {
             let mut s = Scanner::new("#true");
+            let start = s.next_token().unwrap();
             let t = Tokenizer {
                 scan: &mut s,
-                start: s.next_token().unwrap(),
+                start,
             };
 
             let r = t.extract();
@@ -1318,9 +1365,10 @@ mod tokenizer {
         #[test]
         fn true_uppercase() {
             let mut s = Scanner::new("#TRUE");
+            let start = s.next_token().unwrap();
             let t = Tokenizer {
                 scan: &mut s,
-                start: s.next_token().unwrap(),
+                start,
             };
 
             let r = t.extract();
@@ -1338,9 +1386,10 @@ mod tokenizer {
         #[test]
         fn true_malformed() {
             let mut s = Scanner::new("#trueasd");
+            let start = s.next_token().unwrap();
             let t = Tokenizer {
                 scan: &mut s,
-                start: s.next_token().unwrap(),
+                start,
             };
 
             let r = t.extract();
@@ -1358,9 +1407,10 @@ mod tokenizer {
         #[test]
         fn false_short() {
             let mut s = Scanner::new("#f");
+            let start = s.next_token().unwrap();
             let t = Tokenizer {
                 scan: &mut s,
-                start: s.next_token().unwrap(),
+                start,
             };
 
             let r = t.extract();
@@ -1378,9 +1428,10 @@ mod tokenizer {
         #[test]
         fn false_long() {
             let mut s = Scanner::new("#false");
+            let start = s.next_token().unwrap();
             let t = Tokenizer {
                 scan: &mut s,
-                start: s.next_token().unwrap(),
+                start,
             };
 
             let r = t.extract();
@@ -1398,9 +1449,10 @@ mod tokenizer {
         #[test]
         fn false_uppercase() {
             let mut s = Scanner::new("#FALSE");
+            let start = s.next_token().unwrap();
             let t = Tokenizer {
                 scan: &mut s,
-                start: s.next_token().unwrap(),
+                start,
             };
 
             let r = t.extract();
@@ -1418,9 +1470,10 @@ mod tokenizer {
         #[test]
         fn false_malformed() {
             let mut s = Scanner::new("#fals");
+            let start = s.next_token().unwrap();
             let t = Tokenizer {
                 scan: &mut s,
-                start: s.next_token().unwrap(),
+                start,
             };
 
             let r = t.extract();
@@ -1442,9 +1495,10 @@ mod tokenizer {
         #[test]
         fn ascii_literal() {
             let mut s = Scanner::new("#\\a");
+            let start = s.next_token().unwrap();
             let t = Tokenizer {
                 scan: &mut s,
-                start: s.next_token().unwrap(),
+                start,
             };
 
             let r = t.extract();
@@ -1462,9 +1516,10 @@ mod tokenizer {
         #[test]
         fn ascii_uppercase_literal() {
             let mut s = Scanner::new("#\\A");
+            let start = s.next_token().unwrap();
             let t = Tokenizer {
                 scan: &mut s,
-                start: s.next_token().unwrap(),
+                start,
             };
 
             let r = t.extract();
@@ -1482,9 +1537,10 @@ mod tokenizer {
         #[test]
         fn extended_literal() {
             let mut s = Scanner::new("#\\λ");
+            let start = s.next_token().unwrap();
             let t = Tokenizer {
                 scan: &mut s,
-                start: s.next_token().unwrap(),
+                start,
             };
 
             let r = t.extract();
@@ -1502,9 +1558,10 @@ mod tokenizer {
         #[test]
         fn emoji_literal() {
             let mut s = Scanner::new("#\\🦀");
+            let start = s.next_token().unwrap();
             let t = Tokenizer {
                 scan: &mut s,
-                start: s.next_token().unwrap(),
+                start,
             };
 
             let r = t.extract();
@@ -1527,9 +1584,10 @@ mod tokenizer {
         #[test]
         fn space_literal() {
             let mut s = Scanner::new("#\\ ");
+            let start = s.next_token().unwrap();
             let t = Tokenizer {
                 scan: &mut s,
-                start: s.next_token().unwrap(),
+                start,
             };
 
             let r = t.extract();
@@ -1547,9 +1605,10 @@ mod tokenizer {
         #[test]
         fn tab_literal() {
             let mut s = Scanner::new("#\\\t");
+            let start = s.next_token().unwrap();
             let t = Tokenizer {
                 scan: &mut s,
-                start: s.next_token().unwrap(),
+                start,
             };
 
             let r = t.extract();
@@ -1582,9 +1641,10 @@ mod tokenizer {
         #[test]
         fn name_does_not_match_uppercase() {
             let mut s = Scanner::new("#\\ALARM");
+            let start = s.next_token().unwrap();
             let t = Tokenizer {
                 scan: &mut s,
-                start: s.next_token().unwrap(),
+                start,
             };
 
             let r = t.extract();
@@ -1602,9 +1662,10 @@ mod tokenizer {
         #[test]
         fn space_followed_by_alpha() {
             let mut s = Scanner::new("#\\ b");
+            let start = s.next_token().unwrap();
             let t = Tokenizer {
                 scan: &mut s,
-                start: s.next_token().unwrap(),
+                start,
             };
 
             let r = t.extract();
@@ -1622,9 +1683,10 @@ mod tokenizer {
         #[test]
         fn alpha_followed_by_alpha() {
             let mut s = Scanner::new("#\\ab");
+            let start = s.next_token().unwrap();
             let t = Tokenizer {
                 scan: &mut s,
-                start: s.next_token().unwrap(),
+                start,
             };
 
             let r = t.extract();
@@ -1642,9 +1704,10 @@ mod tokenizer {
         #[test]
         fn emoji_followed_by_alpha() {
             let mut s = Scanner::new("#\\🦀b");
+            let start = s.next_token().unwrap();
             let t = Tokenizer {
                 scan: &mut s,
-                start: s.next_token().unwrap(),
+                start,
             };
 
             let r = t.extract();
@@ -1662,9 +1725,10 @@ mod tokenizer {
         #[test]
         fn alpha_followed_by_delimiter() {
             let mut s = Scanner::new("#\\a(");
+            let start = s.next_token().unwrap();
             let t = Tokenizer {
                 scan: &mut s,
-                start: s.next_token().unwrap(),
+                start,
             };
 
             let r = t.extract();
@@ -1682,9 +1746,10 @@ mod tokenizer {
         #[test]
         fn letter_x_is_not_hex() {
             let mut s = Scanner::new("#\\x");
+            let start = s.next_token().unwrap();
             let t = Tokenizer {
                 scan: &mut s,
-                start: s.next_token().unwrap(),
+                start,
             };
 
             let r = t.extract();
@@ -1702,9 +1767,10 @@ mod tokenizer {
         #[test]
         fn hex_zero() {
             let mut s = Scanner::new("#\\x0");
+            let start = s.next_token().unwrap();
             let t = Tokenizer {
                 scan: &mut s,
-                start: s.next_token().unwrap(),
+                start,
             };
 
             let r = t.extract();
@@ -1722,9 +1788,10 @@ mod tokenizer {
         #[test]
         fn hex_lowercase() {
             let mut s = Scanner::new("#\\xa");
+            let start = s.next_token().unwrap();
             let t = Tokenizer {
                 scan: &mut s,
-                start: s.next_token().unwrap(),
+                start,
             };
 
             let r = t.extract();
@@ -1742,9 +1809,10 @@ mod tokenizer {
         #[test]
         fn hex_uppercase() {
             let mut s = Scanner::new("#\\xA");
+            let start = s.next_token().unwrap();
             let t = Tokenizer {
                 scan: &mut s,
-                start: s.next_token().unwrap(),
+                start,
             };
 
             let r = t.extract();
@@ -1762,9 +1830,10 @@ mod tokenizer {
         #[test]
         fn hex_uppercase_indicator() {
             let mut s = Scanner::new("#\\Xa");
+            let start = s.next_token().unwrap();
             let t = Tokenizer {
                 scan: &mut s,
-                start: s.next_token().unwrap(),
+                start,
             };
 
             let r = t.extract();
@@ -1792,9 +1861,10 @@ mod tokenizer {
         #[test]
         fn hex_sign_invalid() {
             let mut s = Scanner::new("#\\x+A");
+            let start = s.next_token().unwrap();
             let t = Tokenizer {
                 scan: &mut s,
-                start: s.next_token().unwrap(),
+                start,
             };
 
             let r = t.extract();
@@ -1812,9 +1882,10 @@ mod tokenizer {
         #[test]
         fn hex_too_large() {
             let mut s = Scanner::new("#\\xdeadbeef");
+            let start = s.next_token().unwrap();
             let t = Tokenizer {
                 scan: &mut s,
-                start: s.next_token().unwrap(),
+                start,
             };
 
             let r = t.extract();
@@ -1832,9 +1903,10 @@ mod tokenizer {
         #[test]
         fn hex_malformed() {
             let mut s = Scanner::new("#\\x124nope");
+            let start = s.next_token().unwrap();
             let t = Tokenizer {
                 scan: &mut s,
-                start: s.next_token().unwrap(),
+                start,
             };
 
             let r = t.extract();
@@ -1853,9 +1925,10 @@ mod tokenizer {
             for &(inp, exp) in cases {
                 let input = format!("#\\{inp}");
                 let mut s = Scanner::new(&input);
+                let start = s.next_token().unwrap();
                 let t = Tokenizer {
                     scan: &mut s,
-                    start: s.next_token().unwrap(),
+                    start,
                 };
 
                 let r = t.extract();
@@ -1881,9 +1954,10 @@ mod tokenizer {
         #[test]
         fn quote() {
             let mut s = Scanner::new("'");
+            let start = s.next_token().unwrap();
             let t = Tokenizer {
                 scan: &mut s,
-                start: s.next_token().unwrap(),
+                start,
             };
 
             let r = t.extract();
@@ -1901,9 +1975,10 @@ mod tokenizer {
         #[test]
         fn quasiquote() {
             let mut s = Scanner::new("`");
+            let start = s.next_token().unwrap();
             let t = Tokenizer {
                 scan: &mut s,
-                start: s.next_token().unwrap(),
+                start,
             };
 
             let r = t.extract();
@@ -1921,9 +1996,10 @@ mod tokenizer {
         #[test]
         fn unquote() {
             let mut s = Scanner::new(",");
+            let start = s.next_token().unwrap();
             let t = Tokenizer {
                 scan: &mut s,
-                start: s.next_token().unwrap(),
+                start,
             };
 
             let r = t.extract();
@@ -1941,9 +2017,10 @@ mod tokenizer {
         #[test]
         fn unquote_followed_by_non_splice() {
             let mut s = Scanner::new(",a");
+            let start = s.next_token().unwrap();
             let t = Tokenizer {
                 scan: &mut s,
-                start: s.next_token().unwrap(),
+                start,
             };
 
             let r = t.extract();
@@ -1961,9 +2038,10 @@ mod tokenizer {
         #[test]
         fn unquote_splicing() {
             let mut s = Scanner::new(",@");
+            let start = s.next_token().unwrap();
             let t = Tokenizer {
                 scan: &mut s,
-                start: s.next_token().unwrap(),
+                start,
             };
 
             let r = t.extract();
@@ -1981,9 +2059,10 @@ mod tokenizer {
         #[test]
         fn unquote_whitespace_between_splice() {
             let mut s = Scanner::new(", @");
+            let start = s.next_token().unwrap();
             let t = Tokenizer {
                 scan: &mut s,
-                start: s.next_token().unwrap(),
+                start,
             };
 
             let r = t.extract();
