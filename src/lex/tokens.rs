@@ -175,13 +175,13 @@ mod tests {
                 span: 0..10,
             };
 
-            assert_eq!(token.to_string(), "BLOCKCOMMENTFRAGMENT<1>[0..10]");
+            assert_eq!(token.to_string(), "BLOCKCOMMENTFRAG<1>[0..10]");
         }
 
         #[test]
         fn display_comment_blockend() {
             let token = Token {
-                kind: TokenKind::CommentBlockBegin(1),
+                kind: TokenKind::CommentBlockEnd,
                 span: 0..10,
             };
 
