@@ -30,10 +30,11 @@ pub enum TokenKind {
 
 impl TokenKind {
     pub(super) fn as_continuation(&self) -> Option<TokenContinuation> {
-        if let Self::CommentBlockBegin(depth) = self {
-            Some(TokenContinuation::BlockComment(*depth))
-        } else {
-            None
+        match self {
+            Self::CommentBlockBegin(depth) | Self::CommentBlockFragment(depth) => {
+                Some(TokenContinuation::BlockComment(*depth))
+            }
+            _ => None,
         }
     }
 }
@@ -301,6 +302,16 @@ mod tests {
         #[test]
         fn block_comment_open_continuation() {
             let kind = TokenKind::CommentBlockBegin(2);
+
+            assert!(matches!(
+                kind.as_continuation(),
+                Some(TokenContinuation::BlockComment(depth)) if depth == 2
+            ));
+        }
+
+        #[test]
+        fn block_comment_fragment_continuation() {
+            let kind = TokenKind::CommentBlockFragment(2);
 
             assert!(matches!(
                 kind.as_continuation(),
