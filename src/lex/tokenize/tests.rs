@@ -785,6 +785,111 @@ mod tokenizer {
         }
 
         #[test]
+        fn directive_fold_case() {
+            let mut s = Scanner::new("#!fold-case");
+            let start = s.next_token().unwrap();
+            let t = Tokenizer {
+                scan: &mut s,
+                start,
+            };
+
+            let r = t.extract();
+
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 0,
+                    end: 11,
+                    result: Ok(TokenKind::DirectiveCase(true)),
+                }
+            ));
+        }
+
+        #[test]
+        fn directive_no_fold_case() {
+            let mut s = Scanner::new("#!no-fold-case");
+            let start = s.next_token().unwrap();
+            let t = Tokenizer {
+                scan: &mut s,
+                start,
+            };
+
+            let r = t.extract();
+
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 0,
+                    end: 11,
+                    result: Ok(TokenKind::DirectiveCase(false)),
+                }
+            ));
+        }
+
+        #[test]
+        fn directive_case_insensitive() {
+            let mut s = Scanner::new("#!FOLD-CasE");
+            let start = s.next_token().unwrap();
+            let t = Tokenizer {
+                scan: &mut s,
+                start,
+            };
+
+            let r = t.extract();
+
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 0,
+                    end: 11,
+                    result: Ok(TokenKind::DirectiveCase(true)),
+                }
+            ));
+        }
+
+        #[test]
+        fn directive_expected() {
+            let mut s = Scanner::new("#!");
+            let start = s.next_token().unwrap();
+            let t = Tokenizer {
+                scan: &mut s,
+                start,
+            };
+
+            let r = t.extract();
+
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 0,
+                    end: 2,
+                    result: Err(TokenErrorKind::DirectiveExpected),
+                }
+            ));
+        }
+
+        #[test]
+        fn directive_invalid() {
+            let mut s = Scanner::new("#!foobar");
+            let start = s.next_token().unwrap();
+            let t = Tokenizer {
+                scan: &mut s,
+                start,
+            };
+
+            let r = t.extract();
+
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 0,
+                    end: 8,
+                    result: Err(TokenErrorKind::DirectiveInvalid),
+                }
+            ));
+        }
+
+        #[test]
         fn vector() {
             let mut s = Scanner::new("#(");
             let start = s.next_token().unwrap();
