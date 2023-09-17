@@ -1,11 +1,13 @@
 mod extract;
 mod scan;
+mod state;
 #[cfg(test)]
 mod tests;
 
 use self::{
     extract::{TokenExtract, TokenExtractResult},
     scan::{ScanItem, Scanner},
+    state::BlockComment,
 };
 use crate::{
     lex::tokens::{TokenContinuation, TokenErrorKind, TokenKind, TokenResult},
@@ -229,71 +231,6 @@ impl<'me, 'str> Continuation<'me, 'str> {
             TokenContinuation::BlockComment(depth) => {
                 BlockComment::cont(depth, &mut self.scan).consume()
             }
-        }
-    }
-}
-
-struct BlockComment<'me, 'str> {
-    cont: bool,
-    depth: usize,
-    scan: &'me mut Scanner<'str>,
-}
-
-impl<'me, 'str> BlockComment<'me, 'str> {
-    fn new(scan: &'me mut Scanner<'str>) -> Self {
-        Self {
-            cont: false,
-            depth: 0,
-            scan,
-        }
-    }
-
-    fn cont(depth: usize, scan: &'me mut Scanner<'str>) -> Self {
-        Self {
-            cont: true,
-            depth,
-            scan,
-        }
-    }
-
-    fn consume(&mut self) -> TokenKind {
-        while !self.scan.consumed() {
-            if let Some((_, ch)) = self.scan.find_any_char(&['|', '#']) {
-                if self.end_block(ch) {
-                    if self.depth == 0 {
-                        return self.end_kind();
-                    } else {
-                        self.depth -= 1;
-                    }
-                } else if self.new_block(ch) {
-                    self.depth += 1;
-                }
-            }
-        }
-        self.continuation_kind()
-    }
-
-    fn end_block(&mut self, ch: char) -> bool {
-        ch == '|' && self.scan.char_if_eq('#').is_some()
-    }
-
-    fn new_block(&mut self, ch: char) -> bool {
-        ch == '#' && self.scan.char_if_eq('|').is_some()
-    }
-
-    fn continuation_kind(&self) -> TokenKind {
-        if self.cont {
-            TokenKind::CommentBlockFragment(self.depth)
-        } else {
-            TokenKind::CommentBlockBegin(self.depth)
-        }
-    }
-
-    fn end_kind(&self) -> TokenKind {
-        if self.cont {
-            TokenKind::CommentBlockEnd
-        } else {
-            TokenKind::CommentBlock
         }
     }
 }
