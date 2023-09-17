@@ -17,6 +17,7 @@ pub enum TokenKind {
     CommentBlockFragment(usize),
     CommentBlockEnd,
     CommentDatum,
+    DirectiveCase(bool),
     Literal(Literal),
     ParenLeft,
     ParenRight,
@@ -49,6 +50,7 @@ impl Display for TokenKind {
             Self::CommentBlockFragment(depth) => write!(f, "BLOCKCOMMENTFRAG<{depth:?}>"),
             Self::CommentBlockEnd => f.write_str("BLOCKCOMMENTEND"),
             Self::CommentDatum => f.write_str("DATUMCOMMENT"),
+            Self::DirectiveCase(fold) => write!(f, "DIRFOLDCASE<{fold:?}>"),
             Self::Literal(lit) => write!(f, "LITERAL<{lit:?}>"),
             Self::ParenLeft => f.write_str("LEFTPAREN"),
             Self::ParenRight => f.write_str("RIGHTPAREN"),
@@ -92,6 +94,8 @@ pub(super) enum TokenErrorKind {
     CharacterExpected,
     CharacterExpectedHex,
     CharacterInvalidHex,
+    DirectiveExpected,
+    DirectiveInvalid,
     HashInvalid,
     HashUnterminated,
     Unimplemented(String),
@@ -110,6 +114,10 @@ impl Display for TokenErrorKind {
                 0,
                 char::MAX as u32,
             ),
+            Self::DirectiveExpected => f.write_str("expected directive: fold-case or no-fold-case"),
+            Self::DirectiveInvalid => {
+                f.write_str("unsupported directive: expected fold-case or no-fold-case")
+            }
             Self::HashInvalid => f.write_str("unexpected #-literal"),
             Self::HashUnterminated => f.write_str("unterminated #-literal"),
             Self::Unimplemented(s) => write!(f, "unimplemented tokenization: \"{s}\""),
@@ -197,6 +205,16 @@ mod tests {
             };
 
             assert_eq!(token.to_string(), "DATUMCOMMENT[0..2]");
+        }
+
+        #[test]
+        fn display_directive() {
+            let token = Token {
+                kind: TokenKind::DirectiveCase(false),
+                span: 0..10,
+            };
+
+            assert_eq!(token.to_string(), "DIRFOLDCASE<false>[0..10]");
         }
 
         #[test]
@@ -373,6 +391,32 @@ mod tests {
             assert_eq!(
                 err.to_string(),
                 "character hex-sequence out of valid range: [0x0, 0x10ffff]"
+            );
+        }
+
+        #[test]
+        fn display_expected_directive() {
+            let err = TokenError {
+                kind: TokenErrorKind::DirectiveExpected,
+                span: 0..2,
+            };
+
+            assert_eq!(
+                err.to_string(),
+                "expected directive: fold-case or no-fold-case"
+            );
+        }
+
+        #[test]
+        fn display_invalid_directive() {
+            let err = TokenError {
+                kind: TokenErrorKind::DirectiveInvalid,
+                span: 0..10,
+            };
+
+            assert_eq!(
+                err.to_string(),
+                "unsupported directive: expected fold-case or no-fold-case"
             );
         }
 
