@@ -7,6 +7,7 @@ use std::{
 pub enum Literal {
     Boolean(bool),
     Character(char),
+    String(String),
 }
 
 impl Literal {
@@ -19,9 +20,10 @@ pub(crate) struct Datum<'a>(&'a Literal);
 
 impl Display for Datum<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        match *self.0 {
-            Literal::Boolean(b) => write!(f, "#{}", if b { 't' } else { 'f' }),
-            Literal::Character(c) => write!(f, "#\\{}", CharDatum::new(c)),
+        match self.0 {
+            Literal::Boolean(b) => write!(f, "#{}", if *b { 't' } else { 'f' }),
+            Literal::Character(c) => write!(f, "#\\{}", CharDatum::new(*c)),
+            Literal::String(s) => write!(f, "\"{s}\""),
         }
     }
 }
@@ -197,6 +199,34 @@ mod tests {
 
                 assert_eq!(c.as_datum().to_string(), format!("#\\{exp}"));
             }
+        }
+    }
+
+    mod string {
+        use super::*;
+
+        #[test]
+        fn display_empty() {
+            let s = Literal::String("".to_owned());
+
+            assert_eq!(s.as_datum().to_string(), "\"\"");
+        }
+
+        #[test]
+        fn display_alphanumeric() {
+            let s = Literal::String("abc123!@#".to_owned());
+
+            assert_eq!(s.as_datum().to_string(), "\"abc123!@#\"");
+        }
+
+        #[test]
+        fn display_escape_sequences() {
+            let s = Literal::String("al: \\a, tab: \\t, nl: \\n, sl: \\\\, q: \\\"".to_owned());
+
+            assert_eq!(
+                s.as_datum().to_string(),
+                "\"al: \\a, tab: \\t, nl: \\n, sl: \\\\, q: \\\"\""
+            );
         }
     }
 }
