@@ -44,7 +44,7 @@ pub(crate) type EvalResult = Result<Evaluation, EvalError>;
 pub(crate) fn evaluate(expression: Expression) -> EvalResult {
     match expression {
         Expression::Begin(exprs) => eval_begin(exprs),
-        Expression::TokenStream(_) => Ok(expression),
+        Expression::TokenList(_) => Ok(expression),
         _ => Err(EvalError),
     }
     .map(Evaluation::Expression)

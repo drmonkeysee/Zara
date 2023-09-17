@@ -39,7 +39,7 @@ pub(crate) fn parse(token_lines: impl IntoIterator<Item = LexLine>) -> ParserRes
 }
 
 pub(crate) fn tokens(token_lines: Vec<LexLine>) -> ParserResult {
-    Ok(Expression::TokenStream(token_lines))
+    Ok(Expression::TokenList(token_lines))
 }
 
 struct ExpressionStream<I: Iterator> {

@@ -16,7 +16,7 @@ pub enum Expression {
     Begin(Vec<Expression>),
     Empty,
     Literal(Literal),
-    TokenStream(Vec<LexLine>),
+    TokenList(Vec<LexLine>),
 }
 
 impl Expression {
@@ -41,7 +41,7 @@ impl Display for Datum<'_> {
             Expression::Ast(expr) => write!(f, "{{{expr:?}}}"),
             Expression::Empty => Ok(()),
             Expression::Literal(lit) => lit.as_datum().fmt(f),
-            Expression::TokenStream(lines) => DisplayLexLines(lines).fmt(f),
+            Expression::TokenList(lines) => DisplayLexLines(lines).fmt(f),
             _ => write!(f, "#<expr-datum-undef({:?})>", self.0),
         }
     }
@@ -53,7 +53,7 @@ impl Display for ExtendedExpression<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self.0 {
             Expression::Ast(expr) => writeln!(f, "{expr:#?}"),
-            Expression::TokenStream(lines) => ExtendedDisplayLexLines(lines).fmt(f),
+            Expression::TokenList(lines) => ExtendedDisplayLexLines(lines).fmt(f),
             _ => writeln!(f, "#<expr-extended-undef({:?})>", self.0),
         }
     }
