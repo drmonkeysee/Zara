@@ -1,4 +1,95 @@
-use crate::lex::{tokenize::Scanner, tokens::TokenKind};
+use crate::{
+    lex::{
+        tokenize::{extract::TokenExtractResult, scan::Scanner},
+        tokens::{TokenErrorKind, TokenKind},
+    },
+    literal::Literal,
+};
+
+pub(super) struct Hashtag<'me, 'str>(pub(super) &'me mut Scanner<'str>);
+
+impl<'me, 'str> Hashtag<'me, 'str> {
+    pub(super) fn scan(&mut self) -> TokenExtractResult {
+        match self.0.char_if_not_token_boundary() {
+            Some(ch) => self.hashliteral(ch),
+            None => self.hashcomment(),
+        }
+    }
+
+    fn hashliteral(&mut self, ch: char) -> TokenExtractResult {
+        match ch {
+            '(' => Ok(TokenKind::Vector),
+            'f' | 'F' => self.boolean(false),
+            't' | 'T' => self.boolean(true),
+            'u' | 'U' => self.bytevector(),
+            '\\' => self.character(),
+            '!' => self.directive(),
+            _ => {
+                self.0.end_of_token();
+                Err(TokenErrorKind::HashInvalid)
+            }
+        }
+    }
+
+    fn hashcomment(&mut self) -> TokenExtractResult {
+        self.0
+            .char_if_eq(';')
+            .map_or_else(|| self.blockcomment(), |_| Ok(TokenKind::CommentDatum))
+    }
+
+    fn boolean(&mut self, val: bool) -> TokenExtractResult {
+        let rest = self.0.rest_of_token();
+        if rest.is_empty() || rest.eq_ignore_ascii_case(if val { "rue" } else { "alse" }) {
+            Ok(TokenKind::Literal(Literal::Boolean(val)))
+        } else {
+            Err(TokenErrorKind::BooleanExpected(val))
+        }
+    }
+
+    fn bytevector(&mut self) -> TokenExtractResult {
+        self.0
+            .char_if_not_delimiter()
+            .filter(|&ch| ch == '8')
+            .and_then(|_| self.0.char_if_not_token_boundary().filter(|&ch| ch == '('))
+            .ok_or(TokenErrorKind::ByteVectorExpected)
+            .map(|_| TokenKind::ByteVector)
+    }
+
+    fn character(&mut self) -> TokenExtractResult {
+        self.0
+            .char()
+            .map_or(Ok(TokenKind::Literal(Literal::Character('\n'))), |ch| {
+                if ch.is_ascii_whitespace() {
+                    Ok(TokenKind::Literal(Literal::Character(ch)))
+                } else {
+                    let rest = self.0.rest_of_token();
+                    if rest.is_empty() {
+                        Ok(TokenKind::Literal(Literal::Character(ch)))
+                    } else if let 'x' | 'X' = ch {
+                        char_hex(rest)
+                    } else {
+                        char_name(ch, rest)
+                    }
+                }
+            })
+    }
+
+    fn directive(&mut self) -> TokenExtractResult {
+        match self.0.rest_of_token().to_ascii_lowercase().as_str() {
+            "fold-case" => Ok(TokenKind::DirectiveCase(true)),
+            "no-fold-case" => Ok(TokenKind::DirectiveCase(false)),
+            "" => Err(TokenErrorKind::DirectiveExpected),
+            _ => Err(TokenErrorKind::DirectiveInvalid),
+        }
+    }
+
+    fn blockcomment(&mut self) -> TokenExtractResult {
+        self.0
+            .char_if_eq('|')
+            .ok_or(TokenErrorKind::HashUnterminated)
+            .map(|_| BlockComment::new(self.0).consume())
+    }
+}
 
 pub(super) struct BlockComment<'me, 'str> {
     cont: bool,
@@ -65,14 +156,46 @@ impl<'me, 'str> BlockComment<'me, 'str> {
     }
 }
 
-// NOTE: functionality is covered by Tokenizer and Continuation tests
+fn char_hex(rest: &str) -> TokenExtractResult {
+    // NOTE: don't allow leading sign, which u32::from_str_radix accepts
+    if rest.starts_with('+') {
+        Err(TokenErrorKind::CharacterExpectedHex)
+    } else {
+        u32::from_str_radix(rest, 16).map_or(Err(TokenErrorKind::CharacterExpectedHex), |hex| {
+            char::from_u32(hex)
+                .ok_or(TokenErrorKind::CharacterInvalidHex)
+                .map(|ch| TokenKind::Literal(Literal::Character(ch)))
+        })
+    }
+}
+
+fn char_name(ch: char, rest: &str) -> TokenExtractResult {
+    match (ch, rest) {
+        ('a', "larm") => char_lit('\x07'),
+        ('b', "ackspace") => char_lit('\x08'),
+        ('d', "elete") => char_lit('\x7f'),
+        ('e', "scape") => char_lit('\x1b'),
+        ('n', "ewline") => char_lit('\n'),
+        ('n', "ull") => char_lit('\0'),
+        ('r', "eturn") => char_lit('\r'),
+        ('s', "pace") => char_lit(' '),
+        ('t', "ab") => char_lit('\t'),
+        _ => Err(TokenErrorKind::CharacterExpected),
+    }
+}
+
+fn char_lit(ch: char) -> TokenExtractResult {
+    Ok(TokenKind::Literal(Literal::Character(ch)))
+}
+
+// NOTE: state functionality is covered by Tokenizer and Continuation tests
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn blockcomment_new() {
-        let mut s = Scanner::new("end comment #| nested |# |#");
+        let mut s = Scanner::new("");
 
         let target = BlockComment::new(&mut s);
 
@@ -82,7 +205,7 @@ mod tests {
 
     #[test]
     fn blockcomment_cont() {
-        let mut s = Scanner::new("end comment #| nested |# |#");
+        let mut s = Scanner::new("");
 
         let target = BlockComment::cont(3, &mut s);
 
