@@ -74,7 +74,7 @@ impl Lexer {
             .filter_map(|tr| tr.map_err(|err| errors.push(err)).ok())
             .collect();
         if errors.is_empty() {
-            self.0 = tokens.last().and_then(|t| t.kind.as_continuation());
+            self.0 = tokens.last().and_then(|t| t.kind.to_continuation());
             Ok(LexLine(tokens, text))
         } else {
             Err(LexerError(errors, text))
