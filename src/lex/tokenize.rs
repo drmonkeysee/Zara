@@ -79,14 +79,14 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
     fn scan(&mut self) -> (TokenExtractResult, usize) {
         (
             match self.start.1 {
-                '#' => self.hashtag(),
                 '(' => Ok(TokenKind::ParenLeft),
                 ')' => Ok(TokenKind::ParenRight),
                 '\'' => Ok(TokenKind::Quote),
                 '`' => Ok(TokenKind::Quasiquote),
-                ',' => self.unquote(),
-                '.' => self.period(),
                 ';' => self.comment(),
+                '#' => self.hashtag(),
+                '.' => self.period(),
+                ',' => self.unquote(),
                 _ => self.not_implemented(),
             },
             self.scan.pos(),
