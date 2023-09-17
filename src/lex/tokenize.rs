@@ -132,11 +132,12 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
 
     fn hashliteral(&mut self, ch: char) -> TokenExtractResult {
         match ch {
+            '(' => Ok(TokenKind::Vector),
             'f' | 'F' => self.boolean(false),
             't' | 'T' => self.boolean(true),
             'u' | 'U' => self.bytevector(),
             '\\' => self.character(),
-            '(' => Ok(TokenKind::Vector),
+            '!' => self.directive(),
             _ => {
                 self.scan.end_of_token();
                 Err(TokenErrorKind::HashInvalid)
@@ -148,13 +149,6 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
         self.scan
             .char_if_eq(';')
             .map_or_else(|| self.blockcomment(), |_| Ok(TokenKind::CommentDatum))
-    }
-
-    fn blockcomment(&mut self) -> TokenExtractResult {
-        self.scan
-            .char_if_eq('|')
-            .ok_or(TokenErrorKind::HashUnterminated)
-            .map(|_| BlockComment::new(self.scan).consume())
     }
 
     fn boolean(&mut self, val: bool) -> TokenExtractResult {
@@ -196,6 +190,22 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
                     }
                 }
             })
+    }
+
+    fn directive(&mut self) -> TokenExtractResult {
+        match self.scan.rest_of_token().to_ascii_lowercase().as_str() {
+            "fold-case" => Ok(TokenKind::DirectiveCase(true)),
+            "no-fold-case" => Ok(TokenKind::DirectiveCase(false)),
+            "" => Err(TokenErrorKind::DirectiveExpected),
+            _ => Err(TokenErrorKind::DirectiveInvalid),
+        }
+    }
+
+    fn blockcomment(&mut self) -> TokenExtractResult {
+        self.scan
+            .char_if_eq('|')
+            .ok_or(TokenErrorKind::HashUnterminated)
+            .map(|_| BlockComment::new(self.scan).consume())
     }
 }
 

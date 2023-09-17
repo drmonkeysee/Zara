@@ -820,7 +820,7 @@ mod tokenizer {
                 r,
                 TokenExtract {
                     start: 0,
-                    end: 11,
+                    end: 14,
                     result: Ok(TokenKind::DirectiveCase(false)),
                 }
             ));
@@ -829,6 +829,27 @@ mod tokenizer {
         #[test]
         fn directive_case_insensitive() {
             let mut s = Scanner::new("#!FOLD-CasE");
+            let start = s.next_token().unwrap();
+            let t = Tokenizer {
+                scan: &mut s,
+                start,
+            };
+
+            let r = t.extract();
+
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 0,
+                    end: 11,
+                    result: Ok(TokenKind::DirectiveCase(true)),
+                }
+            ));
+        }
+
+        #[test]
+        fn directive_fold_case_followed_by_token() {
+            let mut s = Scanner::new("#!fold-case#t");
             let start = s.next_token().unwrap();
             let t = Tokenizer {
                 scan: &mut s,
