@@ -1,10 +1,10 @@
+mod token;
 mod tokenize;
-mod tokens;
 
-pub(crate) use self::tokens::{Token, TokenKind};
+pub(crate) use self::token::{Token, TokenKind};
 use self::{
+    token::{TokenContinuation, TokenError},
     tokenize::TokenStream,
-    tokens::{TokenContinuation, TokenError},
 };
 use crate::txt::{TextLine, TextSource};
 use std::{
@@ -206,7 +206,7 @@ mod tests {
 
     mod lexer {
         use super::*;
-        use crate::{lex::tokens::TokenType, txt::LineNumber};
+        use crate::{lex::token::TokenType, txt::LineNumber};
         use std::{ops::Range, rc::Rc, str::Lines};
 
         struct MockTxtSource<'a> {
@@ -620,7 +620,7 @@ mod tests {
     }
 
     mod error {
-        use self::tokens::TokenErrorKind;
+        use self::token::TokenErrorKind;
         use super::*;
 
         #[test]

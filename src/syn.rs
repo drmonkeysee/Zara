@@ -1,7 +1,7 @@
-mod exprs;
+mod expr;
 
-pub use self::exprs::Expression;
-use self::exprs::{ExpressionError, ExpressionResult};
+pub use self::expr::Expression;
+use self::expr::{ExpressionError, ExpressionResult};
 use crate::lex::{LexLine, Token, TokenKind};
 use std::{
     error::Error,

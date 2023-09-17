@@ -1,5 +1,8 @@
 use super::*;
-use crate::lex::tokens::{Token, TokenError};
+use crate::{
+    lex::token::{Token, TokenError},
+    literal::Literal,
+};
 
 mod tokenstream {
     use super::*;

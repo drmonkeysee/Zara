@@ -1,7 +1,7 @@
 use crate::{
     lex::{
+        token::{TokenErrorKind, TokenKind},
         tokenize::{extract::TokenExtractResult, scan::Scanner},
-        tokens::{TokenErrorKind, TokenKind},
     },
     literal::Literal,
 };

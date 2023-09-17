@@ -1,4 +1,4 @@
-use crate::lex::tokens::{Token, TokenError, TokenErrorKind, TokenKind, TokenResult};
+use crate::lex::token::{Token, TokenError, TokenErrorKind, TokenKind, TokenResult};
 
 pub(super) type TokenExtractResult = Result<TokenKind, TokenErrorKind>;
 
