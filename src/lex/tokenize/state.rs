@@ -11,12 +11,12 @@ pub(super) struct Hashtag<'me, 'str>(pub(super) &'me mut Scanner<'str>);
 impl<'me, 'str> Hashtag<'me, 'str> {
     pub(super) fn scan(&mut self) -> TokenExtractResult {
         match self.0.char_if_not_token_boundary() {
-            Some(ch) => self.hashliteral(ch),
-            None => self.hashcomment(),
+            Some(ch) => self.literal(ch),
+            None => self.comment(),
         }
     }
 
-    fn hashliteral(&mut self, ch: char) -> TokenExtractResult {
+    fn literal(&mut self, ch: char) -> TokenExtractResult {
         match ch {
             '(' => Ok(TokenKind::Vector),
             'f' | 'F' => self.boolean(false),
@@ -31,7 +31,7 @@ impl<'me, 'str> Hashtag<'me, 'str> {
         }
     }
 
-    fn hashcomment(&mut self) -> TokenExtractResult {
+    fn comment(&mut self) -> TokenExtractResult {
         self.0
             .char_if_eq(';')
             .map_or_else(|| self.blockcomment(), |_| Ok(TokenKind::CommentDatum))
