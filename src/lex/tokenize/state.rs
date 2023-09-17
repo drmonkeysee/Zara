@@ -99,6 +99,8 @@ impl<'me, 'str> StringLit<'me, 'str> {
         while !self.0.consumed() {
             if self.0.char_if_eq('"').is_some() {
                 return Ok(TokenKind::Literal(Literal::String(buf)));
+            } else {
+                todo!();
             }
         }
         todo!();
