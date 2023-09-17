@@ -2387,4 +2387,29 @@ mod tokenizer {
             ));
         }
     }
+
+    mod string {
+        use super::*;
+
+        #[test]
+        fn empty() {
+            let mut s = Scanner::new("\"\"");
+            let start = s.next_token().unwrap();
+            let t = Tokenizer {
+                scan: &mut s,
+                start,
+            };
+
+            let r = t.extract();
+
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 0,
+                    end: 2,
+                    result: Ok(TokenKind::Literal(Literal::String(s))),
+                } if s == ""
+            ));
+        }
+    }
 }

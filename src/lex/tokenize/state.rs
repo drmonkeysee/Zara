@@ -91,6 +91,20 @@ impl<'me, 'str> Hashtag<'me, 'str> {
     }
 }
 
+pub(super) struct StringLit<'me, 'str>(pub(super) &'me mut Scanner<'str>);
+
+impl<'me, 'str> StringLit<'me, 'str> {
+    pub(super) fn scan(&mut self) -> TokenExtractResult {
+        let buf = String::new();
+        while !self.0.consumed() {
+            if self.0.char_if_eq('"').is_some() {
+                return Ok(TokenKind::Literal(Literal::String(buf)));
+            }
+        }
+        todo!();
+    }
+}
+
 pub(super) struct BlockComment<'me, 'str> {
     cont: bool,
     depth: usize,
