@@ -248,6 +248,13 @@ mod tests {
         }
 
         #[test]
+        fn display_null() {
+            let s = Literal::String("\0".to_owned());
+
+            assert_eq!(s.as_datum().to_string(), "\"\\x0;\"");
+        }
+
+        #[test]
         fn display_one_digit_hex() {
             let s = Literal::String("\x0c".to_owned());
 

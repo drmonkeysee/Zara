@@ -832,7 +832,6 @@ mod hashtag {
             };
 
             let r = c.extract();
-            dbg!(&r);
 
             assert!(matches!(
                 r,
@@ -2023,6 +2022,178 @@ mod string {
                 end: 2,
                 result: Ok(TokenKind::Literal(Literal::String(s))),
             } if s == ""
+        ));
+    }
+
+    #[test]
+    fn alphanumeric() {
+        let mut s = Scanner::new("\"abc123!@#\"");
+        let start = s.next_token().unwrap();
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 11,
+                result: Ok(TokenKind::Literal(Literal::String(s))),
+            } if s == "abc123!@#"
+        ));
+    }
+
+    #[test]
+    fn raw_extended_and_higher_char() {
+        let mut s = Scanner::new("\"λ 🦀 \u{2401} \u{fffd}\"");
+        let start = s.next_token().unwrap();
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 17,
+                result: Ok(TokenKind::Literal(Literal::String(s))),
+            } if s == "λ 🦀 ␁ �"
+        ));
+    }
+
+    #[test]
+    fn raw_escape_sequences() {
+        let mut s = Scanner::new(
+            "\"a:\x07, b:\x08, d:\x7f, e:\x1b, n:\n, 0:\0, r:\r, t:\t, q:\x22, s:\x5c, v: \x7c\"",
+        );
+        let start = s.next_token().unwrap();
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 40,
+                result: Ok(TokenKind::Literal(Literal::String(s))),
+            } if s == "a:\x07, b:\x08, d:\x7f, e:\x1b, n:\n, 0:\0, r:\r, t:\t, q:\", s:\\, v:|"
+        ));
+    }
+
+    #[test]
+    fn escape_sequences() {
+        let mut s = Scanner::new("\"a:\\a, b:\\b, n:\\n, r:\r, t:\t, q:\\\", s:\\\\, v: \\|\"");
+        let start = s.next_token().unwrap();
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 33,
+                result: Ok(TokenKind::Literal(Literal::String(s))),
+            } if s == "a:\x07, b:\x08, n:\n, r:\r, t:\t, q:\", s:\\, v:|"
+        ));
+    }
+
+    #[test]
+    fn hex_escape_sequences() {
+        let mut s = Scanner::new(
+            "\"a:\\x7;, b:\\x8;, d:\\x7f;, e:\\x1b;, n:\\xa;, 0:\\x0;, r:\\xd;, t:\\x9;, q:\\x22;, s:\\x5c;, v: \\x7c;\"",
+        );
+        let start = s.next_token().unwrap();
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 94,
+                result: Ok(TokenKind::Literal(Literal::String(s))),
+            } if s == "a:\x07, b:\x08, d:\x7f, e:\x1b, n:\n, 0:\0, r:\r, t:\t, q:\", s:\\, v:|"
+        ));
+    }
+
+    #[test]
+    fn hex_case_insensitive() {
+        let mut s = Scanner::new("\"\\x4a; \\X4A;\"");
+        let start = s.next_token().unwrap();
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 15,
+                result: Ok(TokenKind::Literal(Literal::String(s))),
+            } if s == "J J"
+        ));
+    }
+
+    #[test]
+    fn higher_plane_raw() {
+        let mut s = Scanner::new("\"\u{fff9} \u{e0001} \u{100001}\"");
+        let start = s.next_token().unwrap();
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 15,
+                result: Ok(TokenKind::Literal(Literal::String(s))),
+            } if s == "\u{fff9} \u{e0001} \u{100001}"
+        ));
+    }
+
+    #[test]
+    fn higher_plane_hex() {
+        let mut s = Scanner::new("\"\\xfff9; \\xe0001; \\x100001;\"");
+        let start = s.next_token().unwrap();
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 28,
+                result: Ok(TokenKind::Literal(Literal::String(s))),
+            } if s == "\u{fff9} \u{e0001} \u{100001}"
         ));
     }
 }

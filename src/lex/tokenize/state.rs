@@ -103,12 +103,12 @@ pub(super) struct StringLit<'me, 'str> {
 
 impl<'me, 'str> StringLit<'me, 'str> {
     pub(super) fn scan(&mut self) -> TokenExtractResult {
-        let buf = String::new();
-        while !self.scan.consumed() {
-            if self.scan.char_if_eq('"').is_some() {
+        let mut buf = String::new();
+        while let Some(ch) = self.scan.char() {
+            if ch == '"' {
                 return Ok(TokenKind::Literal(Literal::String(buf)));
             } else {
-                todo!();
+                buf.push(ch);
             }
         }
         todo!();
