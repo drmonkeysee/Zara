@@ -57,11 +57,13 @@ impl Error for LexerError {}
 
 pub(crate) type LexerResult = Result<Vec<LexLine>, LexerError>;
 
-pub(crate) struct Lexer(Option<TokenContinuation>);
+pub(crate) struct Lexer {
+    cont: Option<TokenContinuation>,
+}
 
 impl Lexer {
     pub(crate) fn new() -> Self {
-        Self(None)
+        Self { cont: None }
     }
 
     pub(crate) fn tokenize(&mut self, src: &mut impl TextSource) -> LexerResult {
@@ -70,11 +72,11 @@ impl Lexer {
 
     fn tokenize_line(&mut self, text: TextLine) -> LexerLineResult {
         let mut errors = Vec::new();
-        let tokens: Vec<_> = TokenStream::new(&text.line, self.0.take())
+        let tokens: Vec<_> = TokenStream::new(&text.line, self.cont.take())
             .filter_map(|tr| tr.map_err(|err| errors.push(err)).ok())
             .collect();
         if errors.is_empty() {
-            self.0 = tokens.last().and_then(|t| t.kind.to_continuation());
+            self.cont = tokens.last().and_then(|t| t.kind.to_continuation());
             Ok(LexLine(tokens, text))
         } else {
             Err(LexerError(errors, text))
@@ -254,7 +256,7 @@ mod tests {
 
             assert!(r.is_ok());
             assert!(r.unwrap().is_empty());
-            assert!(target.0.is_none());
+            assert!(target.cont.is_none());
         }
 
         #[test]
@@ -284,7 +286,7 @@ mod tests {
                     lineno: 1,
                 } if Rc::ptr_eq(&ctx, &src.ctx) && line == "#t"
             ));
-            assert!(target.0.is_none());
+            assert!(target.cont.is_none());
         }
 
         #[test]
@@ -328,7 +330,7 @@ mod tests {
                     lineno: 1,
                 } if Rc::ptr_eq(&ctx, &src.ctx) && line == "#t #f #\\a"
             ));
-            assert!(target.0.is_none());
+            assert!(target.cont.is_none());
         }
 
         #[test]
@@ -382,7 +384,7 @@ mod tests {
                     lineno: 2,
                 } if Rc::ptr_eq(&ctx, &src.ctx) && line == "  #f #\\a"
             ));
-            assert!(target.0.is_none());
+            assert!(target.cont.is_none());
         }
 
         #[test]
@@ -420,7 +422,7 @@ mod tests {
                 } if Rc::ptr_eq(&ctx, &src.ctx) && line == "#t #|trailing..."
             ));
             assert!(matches!(
-                target.0,
+                target.cont,
                 Some(TokenContinuation::BlockComment(depth)) if depth == 0
             ));
         }
@@ -468,7 +470,7 @@ mod tests {
                     lineno: 2,
                 } if Rc::ptr_eq(&ctx, &src.ctx) && line == "comment |#"
             ));
-            assert!(target.0.is_none());
+            assert!(target.cont.is_none());
         }
 
         #[test]
@@ -531,7 +533,7 @@ mod tests {
                     lineno: 3,
                 } if Rc::ptr_eq(&ctx, &src.ctx) && line == "comment |#"
             ));
-            assert!(target.0.is_none());
+            assert!(target.cont.is_none());
         }
     }
 

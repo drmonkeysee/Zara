@@ -6,11 +6,13 @@ use crate::{
     literal::Literal,
 };
 
-pub(super) struct Hashtag<'me, 'str>(pub(super) &'me mut Scanner<'str>);
+pub(super) struct Hashtag<'me, 'str> {
+    pub(super) scan: &'me mut Scanner<'str>,
+}
 
 impl<'me, 'str> Hashtag<'me, 'str> {
     pub(super) fn scan(&mut self) -> TokenExtractResult {
-        match self.0.char_if_not_token_boundary() {
+        match self.scan.char_if_not_token_boundary() {
             Some(ch) => self.literal(ch),
             None => self.comment(),
         }
@@ -25,20 +27,20 @@ impl<'me, 'str> Hashtag<'me, 'str> {
             '\\' => self.character(),
             '!' => self.directive(),
             _ => {
-                self.0.end_of_token();
+                self.scan.end_of_token();
                 Err(TokenErrorKind::HashInvalid)
             }
         }
     }
 
     fn comment(&mut self) -> TokenExtractResult {
-        self.0
+        self.scan
             .char_if_eq(';')
             .map_or_else(|| self.blockcomment(), |_| Ok(TokenKind::CommentDatum))
     }
 
     fn boolean(&mut self, val: bool) -> TokenExtractResult {
-        let rest = self.0.rest_of_token();
+        let rest = self.scan.rest_of_token();
         if rest.is_empty() || rest.eq_ignore_ascii_case(if val { "rue" } else { "alse" }) {
             Ok(TokenKind::Literal(Literal::Boolean(val)))
         } else {
@@ -47,22 +49,26 @@ impl<'me, 'str> Hashtag<'me, 'str> {
     }
 
     fn bytevector(&mut self) -> TokenExtractResult {
-        self.0
+        self.scan
             .char_if_not_delimiter()
             .filter(|&ch| ch == '8')
-            .and_then(|_| self.0.char_if_not_token_boundary().filter(|&ch| ch == '('))
+            .and_then(|_| {
+                self.scan
+                    .char_if_not_token_boundary()
+                    .filter(|&ch| ch == '(')
+            })
             .ok_or(TokenErrorKind::ByteVectorExpected)
             .map(|_| TokenKind::ByteVector)
     }
 
     fn character(&mut self) -> TokenExtractResult {
-        self.0
+        self.scan
             .char()
             .map_or(Ok(TokenKind::Literal(Literal::Character('\n'))), |ch| {
                 if ch.is_ascii_whitespace() {
                     Ok(TokenKind::Literal(Literal::Character(ch)))
                 } else {
-                    let rest = self.0.rest_of_token();
+                    let rest = self.scan.rest_of_token();
                     if rest.is_empty() {
                         Ok(TokenKind::Literal(Literal::Character(ch)))
                     } else if let 'x' | 'X' = ch {
@@ -75,7 +81,7 @@ impl<'me, 'str> Hashtag<'me, 'str> {
     }
 
     fn directive(&mut self) -> TokenExtractResult {
-        match self.0.rest_of_token().to_ascii_lowercase().as_str() {
+        match self.scan.rest_of_token().to_ascii_lowercase().as_str() {
             "fold-case" => Ok(TokenKind::DirectiveCase(true)),
             "no-fold-case" => Ok(TokenKind::DirectiveCase(false)),
             "" => Err(TokenErrorKind::DirectiveExpected),
@@ -84,20 +90,22 @@ impl<'me, 'str> Hashtag<'me, 'str> {
     }
 
     fn blockcomment(&mut self) -> TokenExtractResult {
-        self.0
+        self.scan
             .char_if_eq('|')
             .ok_or(TokenErrorKind::HashUnterminated)
-            .map(|_| BlockComment::new(self.0).consume())
+            .map(|_| BlockComment::new(self.scan).consume())
     }
 }
 
-pub(super) struct StringLit<'me, 'str>(pub(super) &'me mut Scanner<'str>);
+pub(super) struct StringLit<'me, 'str> {
+    pub(super) scan: &'me mut Scanner<'str>,
+}
 
 impl<'me, 'str> StringLit<'me, 'str> {
     pub(super) fn scan(&mut self) -> TokenExtractResult {
         let buf = String::new();
-        while !self.0.consumed() {
-            if self.0.char_if_eq('"').is_some() {
+        while !self.scan.consumed() {
+            if self.scan.char_if_eq('"').is_some() {
                 return Ok(TokenKind::Literal(Literal::String(buf)));
             } else {
                 todo!();
