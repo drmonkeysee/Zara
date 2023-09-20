@@ -2196,4 +2196,26 @@ mod string {
             } if s == "\u{fff9} \u{e0001} \u{100001}"
         ));
     }
+
+    #[test]
+    fn invalid_escape() {
+        let mut s = Scanner::new("\"\\B\"");
+        let start = s.next_token().unwrap();
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 4,
+                result: Err(TokenErrorKind::EscapeSequenceInvalid(ch)),
+            } if ch == 'B'
+        ));
+    }
 }

@@ -96,6 +96,7 @@ pub(super) enum TokenErrorKind {
     CharacterInvalidHex,
     DirectiveExpected,
     DirectiveInvalid,
+    EscapeSequenceInvalid(char),
     HashInvalid,
     HashUnterminated,
     Unimplemented(String),
@@ -118,6 +119,7 @@ impl Display for TokenErrorKind {
             Self::DirectiveInvalid => {
                 f.write_str("unsupported directive: expected fold-case or no-fold-case")
             }
+            Self::EscapeSequenceInvalid(ch) => write!(f, "invalid escape sequence: \\{ch}"),
             Self::HashInvalid => f.write_str("unexpected #-literal"),
             Self::HashUnterminated => f.write_str("unterminated #-literal"),
             Self::Unimplemented(s) => write!(f, "unimplemented tokenization: \"{s}\""),
@@ -418,6 +420,16 @@ mod tests {
                 err.to_string(),
                 "unsupported directive: expected fold-case or no-fold-case"
             );
+        }
+
+        #[test]
+        fn display_invalid_escape() {
+            let err = TokenError {
+                kind: TokenErrorKind::EscapeSequenceInvalid('B'),
+                span: 0..10,
+            };
+
+            assert_eq!(err.to_string(), "invalid escape sequence: \\B");
         }
 
         #[test]
