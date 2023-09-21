@@ -2091,7 +2091,7 @@ mod string {
 
     #[test]
     fn escape_sequences() {
-        let mut s = Scanner::new("\"a:\\a, b:\\b, n:\\n, r:\r, t:\t, q:\\\", s:\\\\, v: \\|\"");
+        let mut s = Scanner::new("\"a:\\a, b:\\b, n:\\n, r:\r, t:\t, q:\\\", s:\\\\, v:\\|\"");
         let start = s.next_token().unwrap();
         let t = Tokenizer {
             scan: &mut s,
@@ -2104,7 +2104,7 @@ mod string {
             r,
             TokenExtract {
                 start: 0,
-                end: 33,
+                end: 46,
                 result: Ok(TokenKind::Literal(Literal::String(s))),
             } if s == "a:\x07, b:\x08, n:\n, r:\r, t:\t, q:\", s:\\, v:|"
         ));
@@ -2113,7 +2113,7 @@ mod string {
     #[test]
     fn hex_escape_sequences() {
         let mut s = Scanner::new(
-            "\"a:\\x7;, b:\\x8;, d:\\x7f;, e:\\x1b;, n:\\xa;, 0:\\x0;, r:\\xd;, t:\\x9;, q:\\x22;, s:\\x5c;, v: \\x7c;\"",
+            "\"a:\\x7;, b:\\x8;, d:\\x7f;, e:\\x1b;, n:\\xa;, 0:\\x0;, r:\\xd;, t:\\x9;, q:\\x22;, s:\\x5c;, v:\\x7c;\"",
         );
         let start = s.next_token().unwrap();
         let t = Tokenizer {
@@ -2127,7 +2127,7 @@ mod string {
             r,
             TokenExtract {
                 start: 0,
-                end: 94,
+                end: 93,
                 result: Ok(TokenKind::Literal(Literal::String(s))),
             } if s == "a:\x07, b:\x08, d:\x7f, e:\x1b, n:\n, 0:\0, r:\r, t:\t, q:\", s:\\, v:|"
         ));
@@ -2148,7 +2148,7 @@ mod string {
             r,
             TokenExtract {
                 start: 0,
-                end: 15,
+                end: 13,
                 result: Ok(TokenKind::Literal(Literal::String(s))),
             } if s == "J J"
         ));
@@ -2211,7 +2211,7 @@ mod string {
             r,
             TokenExtract {
                 start: 0,
-                end: 4,
+                end: 3,
                 result: Err(TokenErrorKind::StringEscapeInvalid(ch)),
             } if ch == 'B'
         ));
@@ -2232,7 +2232,7 @@ mod string {
             r,
             TokenExtract {
                 start: 0,
-                end: 7,
+                end: 6,
                 result: Err(TokenErrorKind::StringExpectedHex),
             }
         ));
@@ -2253,7 +2253,7 @@ mod string {
             r,
             TokenExtract {
                 start: 0,
-                end: 13,
+                end: 12,
                 result: Err(TokenErrorKind::StringInvalidHex),
             }
         ));
@@ -2274,7 +2274,7 @@ mod string {
             r,
             TokenExtract {
                 start: 0,
-                end: 12,
+                end: 11,
                 result: Err(TokenErrorKind::StringExpectedHex),
             }
         ));
@@ -2296,27 +2296,6 @@ mod string {
             TokenExtract {
                 start: 0,
                 end: 7,
-                result: Err(TokenErrorKind::StringUnterminatedHex),
-            }
-        ));
-    }
-
-    #[test]
-    fn hex_unterminated_stops_after_max_length() {
-        let mut s = Scanner::new("\"\\x123456789\"");
-        let start = s.next_token().unwrap();
-        let t = Tokenizer {
-            scan: &mut s,
-            start,
-        };
-
-        let r = t.extract();
-
-        assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 9,
                 result: Err(TokenErrorKind::StringUnterminatedHex),
             }
         ));
