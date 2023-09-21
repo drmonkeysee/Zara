@@ -374,3 +374,56 @@ fn block_comment_end_continues_tokenizing() {
         })
     ));
 }
+
+#[test]
+fn finishes_parsing_string_if_error() {
+    let s = TokenStream::new("\"foo \\e bar\" #t", None);
+
+    let r: Vec<_> = s.collect();
+
+    assert_eq!(r.len(), 2);
+    assert!(matches!(
+        r[0],
+        Err(TokenError {
+            kind: TokenErrorKind::StringEscapeInvalid('e'),
+            span: Range { start: 0, end: 12 }
+        })
+    ));
+    assert!(matches!(
+        r[1],
+        Ok(Token {
+            kind: TokenKind::Literal(Literal::Boolean(true)),
+            span: Range { start: 13, end: 15 }
+        })
+    ));
+}
+
+#[test]
+fn multiple_string_errors() {
+    let s = TokenStream::new("\"foo \\xdeadbeef; bar \\e baz\" #t", None);
+
+    let r: Vec<_> = s.collect();
+
+    assert_eq!(r.len(), 3);
+    assert!(matches!(
+        r[0],
+        Err(TokenError {
+            kind: TokenErrorKind::StringInvalidHex,
+            span: Range { start: 0, end: 16 }
+        })
+    ));
+    assert!(matches!(
+        r[1],
+        Err(TokenError {
+            kind: TokenErrorKind::StringEscapeInvalid('e'),
+            span: Range { start: 16, end: 23 }
+        })
+    ));
+    assert!(matches!(
+        r[2],
+        Ok(Token {
+            kind: TokenKind::Literal(Literal::Boolean(true)),
+            span: Range { start: 29, end: 2 }
+        })
+    ));
+}
