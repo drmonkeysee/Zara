@@ -2207,15 +2207,119 @@ mod string {
         };
 
         let r = t.extract();
-        dbg!(&r);
 
         assert!(matches!(
             r,
             TokenExtract {
                 start: 0,
                 end: 4,
-                result: Err(TokenErrorKind::EscapeSequenceInvalid(ch)),
+                result: Err(TokenErrorKind::StringEscapeInvalid(ch)),
             } if ch == 'B'
+        ));
+    }
+
+    #[test]
+    fn hex_sign_invalid() {
+        let mut s = Scanner::new("\"\\x+A;\"");
+        let start = s.next_token().unwrap();
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 7,
+                result: Err(TokenErrorKind::StringExpectedHex),
+            }
+        ));
+    }
+
+    #[test]
+    fn hex_too_large() {
+        let mut s = Scanner::new("\"\\xdeadbeef;\"");
+        let start = s.next_token().unwrap();
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 13,
+                result: Err(TokenErrorKind::StringInvalidHex),
+            }
+        ));
+    }
+
+    #[test]
+    fn hex_malformed() {
+        let mut s = Scanner::new("\"\\x124nope;\"");
+        let start = s.next_token().unwrap();
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 12,
+                result: Err(TokenErrorKind::StringExpectedHex),
+            }
+        ));
+    }
+
+    #[test]
+    fn hex_unterminated() {
+        let mut s = Scanner::new("\"\\x123\"");
+        let start = s.next_token().unwrap();
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 7,
+                result: Err(TokenErrorKind::StringUnterminatedHex),
+            }
+        ));
+    }
+
+    #[test]
+    fn hex_unterminated_stops_after_max_length() {
+        let mut s = Scanner::new("\"\\x123456789\"");
+        let start = s.next_token().unwrap();
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 9,
+                result: Err(TokenErrorKind::StringUnterminatedHex),
+            }
         ));
     }
 }

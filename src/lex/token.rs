@@ -96,7 +96,10 @@ pub(super) enum TokenErrorKind {
     CharacterInvalidHex,
     DirectiveExpected,
     DirectiveInvalid,
-    EscapeSequenceInvalid(char),
+    StringEscapeInvalid(char),
+    StringExpectedHex,
+    StringInvalidHex,
+    StringUnterminatedHex,
     HashInvalid,
     HashUnterminated,
     Unimplemented(String),
@@ -109,17 +112,17 @@ impl Display for TokenErrorKind {
             Self::ByteVectorExpected => f.write_str("expected bytevector literal: #u8(…)"),
             Self::CharacterExpected => f.write_str("expected character literal"),
             Self::CharacterExpectedHex => f.write_str("expected character hex-sequence"),
-            Self::CharacterInvalidHex => write!(
-                f,
-                "character hex-sequence out of valid range: [{:#x}, {:#x}]",
-                0,
-                char::MAX as u32,
-            ),
+            Self::CharacterInvalidHex => {
+                format_char_range_error("character hex-sequence out of valid range", f)
+            }
             Self::DirectiveExpected => f.write_str("expected directive: fold-case or no-fold-case"),
             Self::DirectiveInvalid => {
                 f.write_str("unsupported directive: expected fold-case or no-fold-case")
             }
-            Self::EscapeSequenceInvalid(ch) => write!(f, "invalid escape sequence: \\{ch}"),
+            Self::StringEscapeInvalid(ch) => write!(f, "invalid escape sequence: \\{ch}"),
+            Self::StringExpectedHex => f.write_str("expected hex-escape"),
+            Self::StringInvalidHex => format_char_range_error("hex-escape out of valid range", f),
+            Self::StringUnterminatedHex => f.write_str("unterminated hex-escape"),
             Self::HashInvalid => f.write_str("unexpected #-literal"),
             Self::HashUnterminated => f.write_str("unterminated #-literal"),
             Self::Unimplemented(s) => write!(f, "unimplemented tokenization: \"{s}\""),
@@ -130,6 +133,10 @@ impl Display for TokenErrorKind {
 #[derive(Debug)]
 pub(super) enum TokenContinuation {
     BlockComment(usize),
+}
+
+fn format_char_range_error(msg: &str, f: &mut Formatter<'_>) -> fmt::Result {
+    write!(f, "{msg}: [{:#x}, {:#x}]", 0, char::MAX as u32)
 }
 
 #[cfg(test)]
@@ -425,11 +432,44 @@ mod tests {
         #[test]
         fn display_invalid_escape() {
             let err = TokenError {
-                kind: TokenErrorKind::EscapeSequenceInvalid('B'),
+                kind: TokenErrorKind::StringEscapeInvalid('B'),
                 span: 0..10,
             };
 
             assert_eq!(err.to_string(), "invalid escape sequence: \\B");
+        }
+
+        #[test]
+        fn display_expected_string_hex() {
+            let err = TokenError {
+                kind: TokenErrorKind::StringExpectedHex,
+                span: 0..10,
+            };
+
+            assert_eq!(err.to_string(), "expected hex-escape");
+        }
+
+        #[test]
+        fn display_invalid_string_hex() {
+            let err = TokenError {
+                kind: TokenErrorKind::StringInvalidHex,
+                span: 0..10,
+            };
+
+            assert_eq!(
+                err.to_string(),
+                "hex-escape out of valid range: [0x0, 0x10ffff]"
+            );
+        }
+
+        #[test]
+        fn display_unterminated_string_hex() {
+            let err = TokenError {
+                kind: TokenErrorKind::StringUnterminatedHex,
+                span: 0..10,
+            };
+
+            assert_eq!(err.to_string(), "unterminated hex-escape");
         }
 
         #[test]
