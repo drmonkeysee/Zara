@@ -221,7 +221,7 @@ enum HexParse {
 
 fn char_hex(rest: &str) -> TokenExtractResult {
     match parse_char_hex(rest) {
-        HexParse::Invalid => Err(TokenErrorKind::CharacterExpectedHex),
+        HexParse::Invalid => Err(TokenErrorKind::CharacterInvalidHex),
         HexParse::Unexpected => Err(TokenErrorKind::CharacterExpectedHex),
         HexParse::Valid(ch) => Ok(TokenKind::Literal(Literal::Character(ch))),
     }
