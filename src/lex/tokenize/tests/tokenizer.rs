@@ -2069,9 +2069,8 @@ mod string {
 
     #[test]
     fn raw_escape_sequences() {
-        let mut s = Scanner::new(
-            "\"a:\x07, b:\x08, d:\x7f, e:\x1b, n:\n, 0:\0, r:\r, t:\t, q:\x22, s:\x5c, v: \x7c\"",
-        );
+        let mut s =
+            Scanner::new("\"a:\x07, b:\x08, d:\x7f, e:\x1b, n:\n, 0:\0, r:\r, t:\t, v:\x7c\"");
         let start = s.next_token().unwrap();
         let t = Tokenizer {
             scan: &mut s,
@@ -2084,9 +2083,9 @@ mod string {
             r,
             TokenExtract {
                 start: 0,
-                end: 40,
+                end: 45,
                 result: Ok(TokenKind::Literal(Literal::String(s))),
-            } if s == "a:\x07, b:\x08, d:\x7f, e:\x1b, n:\n, 0:\0, r:\r, t:\t, q:\", s:\\, v:|"
+            } if s == "a:\x07, b:\x08, d:\x7f, e:\x1b, n:\n, 0:\0, r:\r, t:\t, v:|"
         ));
     }
 
