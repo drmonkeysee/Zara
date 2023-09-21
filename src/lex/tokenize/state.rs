@@ -105,13 +105,44 @@ impl<'me, 'str> StringLit<'me, 'str> {
     pub(super) fn scan(&mut self) -> TokenExtractResult {
         let mut buf = String::new();
         while let Some(ch) = self.scan.char() {
-            if ch == '"' {
-                return Ok(TokenKind::Literal(Literal::String(buf)));
-            } else {
-                buf.push(ch);
+            match ch {
+                '"' => return Ok(TokenKind::Literal(Literal::String(buf))),
+                '\\' => buf.push(self.escape()?),
+                _ => buf.push(ch),
             }
         }
         todo!();
+    }
+
+    fn escape(&mut self) -> StringLitResult {
+        if let Some(ch) = self.scan.char() {
+            match ch {
+                'a' => Ok('\x07'),
+                'b' => Ok('\x08'),
+                'n' => Ok('\n'),
+                'r' => Ok('\r'),
+                't' => Ok('\t'),
+                'x' | 'X' => self.hex(),
+                '"' | '\\' | '|' => Ok(ch),
+                _ => Err(TokenErrorKind::StringEscapeInvalid(ch)),
+            }
+        } else {
+            todo!();
+        }
+    }
+
+    fn hex(&mut self) -> StringLitResult {
+        let start = self.scan.pos();
+        if let Some(idx) = self.scan.find_char(';') {
+            let rest = self.scan.lexeme(start..idx);
+            match parse_char_hex(rest) {
+                HexParse::Invalid => Err(TokenErrorKind::StringInvalidHex),
+                HexParse::Unexpected => Err(TokenErrorKind::StringExpectedHex),
+                HexParse::Valid(ch) => Ok(ch),
+            }
+        } else {
+            Err(TokenErrorKind::StringUnterminatedHex)
+        }
     }
 }
 
@@ -180,16 +211,19 @@ impl<'me, 'str> BlockComment<'me, 'str> {
     }
 }
 
+type StringLitResult = Result<char, TokenErrorKind>;
+
+enum HexParse {
+    Invalid,
+    Unexpected,
+    Valid(char),
+}
+
 fn char_hex(rest: &str) -> TokenExtractResult {
-    // NOTE: don't allow leading sign, which u32::from_str_radix accepts
-    if rest.starts_with('+') {
-        Err(TokenErrorKind::CharacterExpectedHex)
-    } else {
-        u32::from_str_radix(rest, 16).map_or(Err(TokenErrorKind::CharacterExpectedHex), |hex| {
-            char::from_u32(hex)
-                .ok_or(TokenErrorKind::CharacterInvalidHex)
-                .map(|ch| TokenKind::Literal(Literal::Character(ch)))
-        })
+    match parse_char_hex(rest) {
+        HexParse::Invalid => Err(TokenErrorKind::CharacterExpectedHex),
+        HexParse::Unexpected => Err(TokenErrorKind::CharacterExpectedHex),
+        HexParse::Valid(ch) => Ok(TokenKind::Literal(Literal::Character(ch))),
     }
 }
 
@@ -210,6 +244,17 @@ fn char_name(ch: char, rest: &str) -> TokenExtractResult {
 
 fn char_lit(ch: char) -> TokenExtractResult {
     Ok(TokenKind::Literal(Literal::Character(ch)))
+}
+
+fn parse_char_hex(txt: &str) -> HexParse {
+    // NOTE: don't allow leading sign, which u32::from_str_radix accepts
+    if txt.starts_with('+') {
+        HexParse::Unexpected
+    } else {
+        u32::from_str_radix(txt, 16).map_or(HexParse::Unexpected, |hex| {
+            char::from_u32(hex).map_or(HexParse::Invalid, |ch| HexParse::Valid(ch))
+        })
+    }
 }
 
 // NOTE: state functionality is covered by Tokenizer and Continuation tests
