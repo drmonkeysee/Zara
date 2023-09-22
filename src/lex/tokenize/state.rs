@@ -97,11 +97,11 @@ impl<'me, 'str> Hashtag<'me, 'str> {
     }
 }
 
-pub(super) struct StringLit<'me, 'str> {
+pub(super) struct StringLiteral<'me, 'str> {
     pub(super) scan: &'me mut Scanner<'str>,
 }
 
-impl<'me, 'str> StringLit<'me, 'str> {
+impl<'me, 'str> StringLiteral<'me, 'str> {
     pub(super) fn scan(&mut self) -> TokenExtractResult {
         let mut buf = String::new();
         while let Some(ch) = self.scan.char() {

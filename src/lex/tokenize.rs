@@ -7,7 +7,7 @@ mod tests;
 use self::{
     extract::{TokenExtract, TokenExtractResult},
     scan::{ScanItem, Scanner},
-    state::{BlockComment, Hashtag, StringLit},
+    state::{BlockComment, Hashtag, StringLiteral},
 };
 use crate::lex::token::{TokenContinuation, TokenErrorKind, TokenKind, TokenResult};
 
@@ -83,7 +83,7 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
                 '\'' => Ok(TokenKind::Quote),
                 '`' => Ok(TokenKind::Quasiquote),
                 '#' => Hashtag { scan: self.scan }.scan(),
-                '"' => StringLit { scan: self.scan }.scan(),
+                '"' => StringLiteral { scan: self.scan }.scan(),
                 ';' => self.comment(),
                 '.' => self.period(),
                 ',' => self.unquote(),
