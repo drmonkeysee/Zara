@@ -208,7 +208,10 @@ mod tests {
 
     mod lexer {
         use super::*;
-        use crate::{lex::token::TokenType, txt::LineNumber};
+        use crate::{
+            lex::token::{TokenErrorKind, TokenType},
+            txt::LineNumber,
+        };
         use std::{ops::Range, rc::Rc, str::Lines};
 
         struct MockTxtSource<'a> {
@@ -335,14 +338,14 @@ mod tests {
 
         #[test]
         fn multi_lines() {
-            let mut src = MockTxtSource::new("#t\n  #f #\\a\n");
+            let mut src = MockTxtSource::new("#t\n  #f #\\a\n#f #f\n");
             let mut target = Lexer::new();
 
             let r = target.tokenize(&mut src);
 
             assert!(r.is_ok());
             let lines = r.unwrap();
-            assert_eq!(lines.len(), 2);
+            assert_eq!(lines.len(), 3);
             let line = &lines[0];
             assert_eq!(line.0.len(), 1);
             assert!(matches!(
@@ -383,6 +386,68 @@ mod tests {
                     line,
                     lineno: 2,
                 } if Rc::ptr_eq(&ctx, &src.ctx) && line == "  #f #\\a"
+            ));
+            assert!(target.cont.is_none());
+            let line = &lines[2];
+            assert_eq!(line.0.len(), 2);
+            assert!(matches!(
+                line.0[0],
+                TokenType {
+                    kind: TokenKind::Literal(Literal::Boolean(false)),
+                    span: Range { start: 0, end: 2 }
+                }
+            ));
+            assert!(matches!(
+                line.0[1],
+                TokenType {
+                    kind: TokenKind::Literal(Literal::Boolean(false)),
+                    span: Range { start: 3, end: 5 }
+                }
+            ));
+            assert!(matches!(
+                &line.1,
+                TextLine {
+                    ctx,
+                    line,
+                    lineno: 3,
+                } if Rc::ptr_eq(&ctx, &src.ctx) && line == "#f #f"
+            ));
+            assert!(target.cont.is_none());
+        }
+
+        #[test]
+        fn multi_lines_with_errors() {
+            let mut src = MockTxtSource::new("#t\n #z #f #z #\\a\n#f #z #f");
+            let mut target = Lexer::new();
+
+            let r = target.tokenize(&mut src);
+            dbg!(&r);
+
+            assert!(r.is_err());
+            let err = r.unwrap_err();
+            let errs = err.0;
+            assert_eq!(errs.len(), 2);
+            assert!(matches!(
+                errs[0],
+                TokenType {
+                    kind: TokenErrorKind::HashInvalid,
+                    span: Range { start: 1, end: 3 }
+                }
+            ));
+            assert!(matches!(
+                errs[1],
+                TokenType {
+                    kind: TokenErrorKind::HashInvalid,
+                    span: Range { start: 7, end: 9 }
+                }
+            ));
+            assert!(matches!(
+                &err.1,
+                TextLine {
+                    ctx,
+                    line,
+                    lineno: 2,
+                } if Rc::ptr_eq(&ctx, &src.ctx) && line == " #z #f #z #\\a"
             ));
             assert!(target.cont.is_none());
         }
