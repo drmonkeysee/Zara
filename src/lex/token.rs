@@ -52,7 +52,7 @@ impl Display for TokenKind {
             Self::CommentBlockEnd => f.write_str("BLOCKCOMMENTEND"),
             Self::CommentDatum => f.write_str("DATUMCOMMENT"),
             Self::DirectiveCase(fold) => write!(f, "DIRFOLDCASE<{fold:?}>"),
-            Self::Literal(lit) => write!(f, "LITERAL<{lit:?}>"),
+            Self::Literal(lit) => write!(f, "LITERAL<{}>", lit.as_token_descriptor()),
             Self::ParenLeft => f.write_str("LEFTPAREN"),
             Self::ParenRight => f.write_str("RIGHTPAREN"),
             Self::PairJoiner => f.write_str("PAIR"),
@@ -264,10 +264,7 @@ mod tests {
                 span: 0..2,
             };
 
-            assert_eq!(
-                token.to_string(),
-                format!("LITERAL<{:?}>[0..2]", Literal::Boolean(true))
-            );
+            assert_eq!(token.to_string(), "LITERAL<BOOL>[0..2]");
         }
 
         #[test]

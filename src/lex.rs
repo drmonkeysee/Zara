@@ -885,7 +885,7 @@ mod tests {
 
             assert_eq!(
                 target.to_string(),
-                "[1:LEFTPAREN[0..1](\"(\"), LITERAL<Boolean(false)>[1..3](\"#f\"), RIGHTPAREN[3..4](\")\")]"
+                "[1:LEFTPAREN[0..1](\"(\"), LITERAL<BOOL>[1..3](\"#f\"), RIGHTPAREN[3..4](\")\")]"
             );
         }
 
@@ -974,9 +974,9 @@ mod tests {
             assert_eq!(
                 target.to_string(),
                 "[\n\
-                \t1:LEFTPAREN[0..1](\"(\"), LITERAL<Boolean(false)>[1..3](\"#f\"), RIGHTPAREN[3..4](\")\"),\n\
-                \t2:LEFTPAREN[0..1](\"(\"), LITERAL<Boolean(true)>[2..4](\"#t\"), RIGHTPAREN[5..6](\")\"),\n\
-                \t3:LEFTPAREN[0..1](\"(\"), LITERAL<Character('a')>[1..4](\"#\\a\"), RIGHTPAREN[4..5](\")\"),\n\
+                \t1:LEFTPAREN[0..1](\"(\"), LITERAL<BOOL>[1..3](\"#f\"), RIGHTPAREN[3..4](\")\"),\n\
+                \t2:LEFTPAREN[0..1](\"(\"), LITERAL<BOOL>[2..4](\"#t\"), RIGHTPAREN[5..6](\")\"),\n\
+                \t3:LEFTPAREN[0..1](\"(\"), LITERAL<CHAR>[1..4](\"#\\a\"), RIGHTPAREN[4..5](\")\"),\n\
                 ]"
             );
         }

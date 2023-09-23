@@ -14,6 +14,10 @@ impl Literal {
     pub(crate) fn as_datum(&self) -> Datum {
         Datum(self)
     }
+
+    pub(crate) fn as_token_descriptor(&self) -> TokenDescriptor {
+        TokenDescriptor(self)
+    }
 }
 
 pub(crate) struct Datum<'a>(&'a Literal);
@@ -24,6 +28,18 @@ impl Display for Datum<'_> {
             Literal::Boolean(b) => write!(f, "#{}", if *b { 't' } else { 'f' }),
             Literal::Character(c) => write!(f, "#\\{}", CharDatum::new(*c)),
             Literal::String(s) => write!(f, "\"{s}\""),
+        }
+    }
+}
+
+pub(crate) struct TokenDescriptor<'a>(&'a Literal);
+
+impl Display for TokenDescriptor<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        match self.0 {
+            Literal::Boolean(_) => f.write_str("BOOL"),
+            Literal::Character(_) => f.write_str("CHAR"),
+            Literal::String(_) => f.write_str("STR"),
         }
     }
 }
@@ -79,6 +95,13 @@ mod tests {
         use super::*;
 
         #[test]
+        fn bool_token() {
+            let b = Literal::Boolean(false);
+
+            assert_eq!(b.as_token_descriptor().to_string(), "BOOL");
+        }
+
+        #[test]
         fn display_true() {
             let b = Literal::Boolean(true);
 
@@ -95,6 +118,13 @@ mod tests {
 
     mod character {
         use super::*;
+
+        #[test]
+        fn char_token() {
+            let b = Literal::Character('a');
+
+            assert_eq!(b.as_token_descriptor().to_string(), "CHAR");
+        }
 
         #[test]
         fn display_ascii() {
@@ -204,6 +234,13 @@ mod tests {
 
     mod string {
         use super::*;
+
+        #[test]
+        fn string_token() {
+            let b = Literal::String("foo".to_owned());
+
+            assert_eq!(b.as_token_descriptor().to_string(), "STR");
+        }
 
         #[test]
         fn display_empty() {
