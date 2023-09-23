@@ -421,7 +421,6 @@ mod tests {
             let mut target = Lexer::new();
 
             let r = target.tokenize(&mut src);
-            dbg!(&r);
 
             assert!(r.is_err());
             let err = r.unwrap_err();
