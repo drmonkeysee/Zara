@@ -390,17 +390,17 @@ fn finishes_parsing_string_if_error() {
         })
     ));
     assert!(matches!(
-        &r[1],
-        Ok(Token {
-            kind: TokenKind::Literal(Literal::String(s)),
-            span: Range { start: 0, end: 12 }
-        }) if s == "foo \\e bar"
+        r[1],
+        Err(TokenError {
+            kind: TokenErrorKind::StringDiscard(11),
+            span: Range { start: 11, end: 12 }
+        })
     ));
     assert!(matches!(
         r[2],
         Ok(Token {
             kind: TokenKind::Literal(Literal::Boolean(true)),
-            span: Range { start: 14, end: 16 }
+            span: Range { start: 13, end: 15 }
         })
     ));
 }
@@ -427,11 +427,11 @@ fn multiple_string_errors() {
         })
     ));
     assert!(matches!(
-        &r[2],
-        Ok(Token {
-            kind: TokenKind::Literal(Literal::String(s)),
-            span: Range { start: 0, end: 28 }
-        }) if s == "foo \\xdeadbeef; bar \\e baz"
+        r[2],
+        Err(TokenError {
+            kind: TokenErrorKind::StringDiscard(27),
+            span: Range { start: 27, end: 28 }
+        })
     ));
     assert!(matches!(
         r[3],

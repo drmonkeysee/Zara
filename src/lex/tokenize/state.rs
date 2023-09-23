@@ -98,13 +98,26 @@ impl<'me, 'str> Hashtag<'me, 'str> {
 }
 
 pub(super) struct StringLiteral<'me, 'str> {
-    pub(super) scan: &'me mut Scanner<'str>,
+    from_error: bool,
+    scan: &'me mut Scanner<'str>,
     start: usize,
 }
 
 impl<'me, 'str> StringLiteral<'me, 'str> {
     pub(super) fn new(scan: &'me mut Scanner<'str>) -> Self {
-        Self { scan, start: 0 }
+        Self {
+            from_error: false,
+            scan,
+            start: 0,
+        }
+    }
+
+    pub(super) fn cont(scan: &'me mut Scanner<'str>) -> Self {
+        Self {
+            from_error: true,
+            scan,
+            start: 0,
+        }
     }
 
     pub(super) fn scan(&mut self) -> TokenExtractResult {
@@ -112,7 +125,7 @@ impl<'me, 'str> StringLiteral<'me, 'str> {
         while let Some((idx, ch)) = self.scan.next() {
             self.start = idx;
             match ch {
-                '"' => return Ok(TokenKind::Literal(Literal::String(buf))),
+                '"' => return self.end_string(buf),
                 '\\' => buf.push(self.escape()?),
                 _ => buf.push(ch),
             }
@@ -148,6 +161,14 @@ impl<'me, 'str> StringLiteral<'me, 'str> {
             }
         } else {
             Err(TokenErrorKind::StringUnterminatedHex(self.start))
+        }
+    }
+
+    fn end_string(&self, buf: String) -> TokenExtractResult {
+        if self.from_error {
+            Err(TokenErrorKind::StringDiscard(self.start))
+        } else {
+            Ok(TokenKind::Literal(Literal::String(buf)))
         }
     }
 }
@@ -295,5 +316,16 @@ mod tests {
         let target = StringLiteral::new(&mut s);
 
         assert_eq!(target.start, 0);
+        assert_eq!(target.from_error, false);
+    }
+
+    #[test]
+    fn stringliteral_cont() {
+        let mut s = Scanner::new("");
+
+        let target = StringLiteral::cont(&mut s);
+
+        assert_eq!(target.start, 0);
+        assert_eq!(target.from_error, true);
     }
 }

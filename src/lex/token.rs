@@ -96,6 +96,7 @@ pub(super) enum TokenErrorKind {
     CharacterInvalidHex,
     DirectiveExpected,
     DirectiveInvalid,
+    StringDiscard(usize),
     StringEscapeInvalid(usize, char),
     StringExpectedHex(usize),
     StringInvalidHex(usize),
@@ -122,7 +123,8 @@ impl TokenErrorKind {
 
     pub(super) fn sub_idx(&self) -> Option<usize> {
         match self {
-            TokenErrorKind::StringEscapeInvalid(idx, _)
+            TokenErrorKind::StringDiscard(idx)
+            | TokenErrorKind::StringEscapeInvalid(idx, _)
             | TokenErrorKind::StringExpectedHex(idx)
             | TokenErrorKind::StringInvalidHex(idx)
             | TokenErrorKind::StringUnterminatedHex(idx) => Some(*idx),
@@ -145,6 +147,7 @@ impl Display for TokenErrorKind {
             Self::DirectiveInvalid => {
                 f.write_str("unsupported directive: expected fold-case or no-fold-case")
             }
+            Self::StringDiscard(_) => f.write_str("discarding invalid string literal"),
             Self::StringEscapeInvalid(_, ch) => write!(f, "invalid escape sequence: \\{ch}"),
             Self::StringExpectedHex(_) => f.write_str("expected hex-escape"),
             Self::StringInvalidHex(_) => {
@@ -383,7 +386,7 @@ mod tests {
         fn display_expected_boolean() {
             let err = TokenError {
                 kind: TokenErrorKind::BooleanExpected(true),
-                span: 0..4,
+                span: 0..1,
             };
 
             assert_eq!(err.to_string(), "expected boolean literal: true");
@@ -393,7 +396,7 @@ mod tests {
         fn display_expected_bytevector() {
             let err = TokenError {
                 kind: TokenErrorKind::ByteVectorExpected,
-                span: 0..4,
+                span: 0..1,
             };
 
             assert_eq!(err.to_string(), "expected bytevector literal: #u8(…)");
@@ -403,7 +406,7 @@ mod tests {
         fn display_expected_character() {
             let err = TokenError {
                 kind: TokenErrorKind::CharacterExpected,
-                span: 0..4,
+                span: 0..1,
             };
 
             assert_eq!(err.to_string(), "expected character literal");
@@ -413,7 +416,7 @@ mod tests {
         fn display_expected_character_hex() {
             let err = TokenError {
                 kind: TokenErrorKind::CharacterExpectedHex,
-                span: 0..4,
+                span: 0..1,
             };
 
             assert_eq!(err.to_string(), "expected character hex-sequence");
@@ -423,7 +426,7 @@ mod tests {
         fn display_invalid_character_hex() {
             let err = TokenError {
                 kind: TokenErrorKind::CharacterInvalidHex,
-                span: 0..4,
+                span: 0..1,
             };
 
             assert_eq!(
@@ -436,7 +439,7 @@ mod tests {
         fn display_expected_directive() {
             let err = TokenError {
                 kind: TokenErrorKind::DirectiveExpected,
-                span: 0..2,
+                span: 0..1,
             };
 
             assert_eq!(
@@ -449,7 +452,7 @@ mod tests {
         fn display_invalid_directive() {
             let err = TokenError {
                 kind: TokenErrorKind::DirectiveInvalid,
-                span: 0..10,
+                span: 0..1,
             };
 
             assert_eq!(
@@ -459,10 +462,20 @@ mod tests {
         }
 
         #[test]
+        fn display_string_discard() {
+            let err = TokenError {
+                kind: TokenErrorKind::StringDiscard(1),
+                span: 0..1,
+            };
+
+            assert_eq!(err.to_string(), "discarding invalid string literal");
+        }
+
+        #[test]
         fn display_invalid_escape() {
             let err = TokenError {
                 kind: TokenErrorKind::StringEscapeInvalid(1, 'B'),
-                span: 0..10,
+                span: 0..1,
             };
 
             assert_eq!(err.to_string(), "invalid escape sequence: \\B");
@@ -472,7 +485,7 @@ mod tests {
         fn display_expected_string_hex() {
             let err = TokenError {
                 kind: TokenErrorKind::StringExpectedHex(1),
-                span: 0..10,
+                span: 0..1,
             };
 
             assert_eq!(err.to_string(), "expected hex-escape");
@@ -482,7 +495,7 @@ mod tests {
         fn display_invalid_string_hex() {
             let err = TokenError {
                 kind: TokenErrorKind::StringInvalidHex(1),
-                span: 0..10,
+                span: 0..1,
             };
 
             assert_eq!(
@@ -495,7 +508,7 @@ mod tests {
         fn display_unterminated_string_hex() {
             let err = TokenError {
                 kind: TokenErrorKind::StringUnterminatedHex(1),
-                span: 0..10,
+                span: 0..1,
             };
 
             assert_eq!(err.to_string(), "unterminated hex-escape");
@@ -505,7 +518,7 @@ mod tests {
         fn display_invalid_hash() {
             let err = TokenError {
                 kind: TokenErrorKind::HashInvalid,
-                span: 0..4,
+                span: 0..1,
             };
 
             assert_eq!(err.to_string(), "unexpected #-literal");
@@ -515,7 +528,7 @@ mod tests {
         fn display_unterminated_hash() {
             let err = TokenError {
                 kind: TokenErrorKind::HashUnterminated,
-                span: 0..4,
+                span: 0..1,
             };
 
             assert_eq!(err.to_string(), "unterminated #-literal");
@@ -525,7 +538,7 @@ mod tests {
         fn display_unimplemented() {
             let err = TokenError {
                 kind: TokenErrorKind::Unimplemented("foobar".to_owned()),
-                span: 0..4,
+                span: 0..1,
             };
 
             assert_eq!(err.to_string(), "unimplemented tokenization: \"foobar\"");
@@ -559,6 +572,13 @@ mod tests {
         }
 
         #[test]
+        fn string_discard_no_continuation() {
+            let kind = TokenErrorKind::StringDiscard(3);
+
+            assert!(kind.to_continuation().is_none());
+        }
+
+        #[test]
         fn no_sub_index() {
             let kind = TokenErrorKind::CharacterExpected;
 
@@ -575,6 +595,13 @@ mod tests {
         #[test]
         fn string_hex_sub_index() {
             let kind = TokenErrorKind::StringExpectedHex(3);
+
+            assert!(matches!(kind.sub_idx(), Some(3)));
+        }
+
+        #[test]
+        fn string_discard_sub_index() {
+            let kind = TokenErrorKind::StringDiscard(3);
 
             assert!(matches!(kind.sub_idx(), Some(3)));
         }
