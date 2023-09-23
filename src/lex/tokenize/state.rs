@@ -114,7 +114,7 @@ impl<'me, 'str> StringLiteral<'me, 'str> {
         todo!();
     }
 
-    fn escape(&mut self) -> StringLitResult {
+    fn escape(&mut self) -> StringLiteralResult {
         if let Some(ch) = self.scan.char() {
             match ch {
                 'a' => Ok('\x07'),
@@ -131,7 +131,7 @@ impl<'me, 'str> StringLiteral<'me, 'str> {
         }
     }
 
-    fn hex(&mut self) -> StringLitResult {
+    fn hex(&mut self) -> StringLiteralResult {
         let start = self.scan.pos();
         if let Some(idx) = self.scan.find_char(';') {
             let rest = self.scan.lexeme(start..idx);
@@ -211,7 +211,7 @@ impl<'me, 'str> BlockComment<'me, 'str> {
     }
 }
 
-type StringLitResult = Result<char, TokenErrorKind>;
+type StringLiteralResult = Result<char, TokenErrorKind>;
 
 enum HexParse {
     Invalid,
