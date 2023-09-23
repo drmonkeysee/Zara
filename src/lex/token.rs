@@ -24,6 +24,7 @@ pub enum TokenKind {
     PairJoiner,
     Quasiquote,
     Quote,
+    StringDiscard,
     Unquote,
     UnquoteSplice,
     Vector,
@@ -57,6 +58,7 @@ impl Display for TokenKind {
             Self::PairJoiner => f.write_str("PAIR"),
             Self::Quasiquote => f.write_str("QUASIQUOTE"),
             Self::Quote => f.write_str("QUOTE"),
+            Self::StringDiscard => f.write_str("DISCARDSTR"),
             Self::Unquote => f.write_str("UNQUOTE"),
             Self::UnquoteSplice => f.write_str("UNQUOTESPLICE"),
             Self::Vector => f.write_str("VECTOR"),
@@ -96,7 +98,6 @@ pub(super) enum TokenErrorKind {
     CharacterInvalidHex,
     DirectiveExpected,
     DirectiveInvalid,
-    StringDiscard(usize),
     StringEscapeInvalid(usize, char),
     StringExpectedHex(usize),
     StringInvalidHex(usize),
@@ -123,8 +124,7 @@ impl TokenErrorKind {
 
     pub(super) fn sub_idx(&self) -> Option<usize> {
         match self {
-            TokenErrorKind::StringDiscard(idx)
-            | TokenErrorKind::StringEscapeInvalid(idx, _)
+            TokenErrorKind::StringEscapeInvalid(idx, _)
             | TokenErrorKind::StringExpectedHex(idx)
             | TokenErrorKind::StringInvalidHex(idx)
             | TokenErrorKind::StringUnterminatedHex(idx) => Some(*idx),
@@ -147,7 +147,6 @@ impl Display for TokenErrorKind {
             Self::DirectiveInvalid => {
                 f.write_str("unsupported directive: expected fold-case or no-fold-case")
             }
-            Self::StringDiscard(_) => f.write_str("discarding invalid string literal"),
             Self::StringEscapeInvalid(_, ch) => write!(f, "invalid escape sequence: \\{ch}"),
             Self::StringExpectedHex(_) => f.write_str("expected hex-escape"),
             Self::StringInvalidHex(_) => {
@@ -322,6 +321,16 @@ mod tests {
         }
 
         #[test]
+        fn display_string_discard() {
+            let token = Token {
+                kind: TokenKind::StringDiscard,
+                span: 0..1,
+            };
+
+            assert_eq!(token.to_string(), "DISCARDSTR[0..1]");
+        }
+
+        #[test]
         fn display_unquote() {
             let token = Token {
                 kind: TokenKind::Unquote,
@@ -462,16 +471,6 @@ mod tests {
         }
 
         #[test]
-        fn display_string_discard() {
-            let err = TokenError {
-                kind: TokenErrorKind::StringDiscard(1),
-                span: 0..1,
-            };
-
-            assert_eq!(err.to_string(), "discarding invalid string literal");
-        }
-
-        #[test]
         fn display_invalid_escape() {
             let err = TokenError {
                 kind: TokenErrorKind::StringEscapeInvalid(1, 'B'),
@@ -572,13 +571,6 @@ mod tests {
         }
 
         #[test]
-        fn string_discard_no_continuation() {
-            let kind = TokenErrorKind::StringDiscard(3);
-
-            assert!(kind.to_continuation().is_none());
-        }
-
-        #[test]
         fn no_sub_index() {
             let kind = TokenErrorKind::CharacterExpected;
 
@@ -595,13 +587,6 @@ mod tests {
         #[test]
         fn string_hex_sub_index() {
             let kind = TokenErrorKind::StringExpectedHex(3);
-
-            assert!(matches!(kind.sub_idx(), Some(3)));
-        }
-
-        #[test]
-        fn string_discard_sub_index() {
-            let kind = TokenErrorKind::StringDiscard(3);
 
             assert!(matches!(kind.sub_idx(), Some(3)));
         }

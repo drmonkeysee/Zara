@@ -391,9 +391,9 @@ fn finishes_parsing_string_if_error() {
     ));
     assert!(matches!(
         r[1],
-        Err(TokenError {
-            kind: TokenErrorKind::StringDiscard(11),
-            span: Range { start: 11, end: 12 }
+        Ok(Token {
+            kind: TokenKind::StringDiscard,
+            span: Range { start: 7, end: 12 }
         })
     ));
     assert!(matches!(
@@ -428,9 +428,9 @@ fn multiple_string_errors() {
     ));
     assert!(matches!(
         r[2],
-        Err(TokenError {
-            kind: TokenErrorKind::StringDiscard(27),
-            span: Range { start: 27, end: 28 }
+        Ok(Token {
+            kind: TokenKind::StringDiscard,
+            span: Range { start: 23, end: 28 }
         })
     ));
     assert!(matches!(

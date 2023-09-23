@@ -165,11 +165,11 @@ impl<'me, 'str> StringLiteral<'me, 'str> {
     }
 
     fn end_string(&self, buf: String) -> TokenExtractResult {
-        if self.from_error {
-            Err(TokenErrorKind::StringDiscard(self.start))
+        Ok(if self.from_error {
+            TokenKind::StringDiscard
         } else {
-            Ok(TokenKind::Literal(Literal::String(buf)))
-        }
+            TokenKind::Literal(Literal::String(buf))
+        })
     }
 }
 
