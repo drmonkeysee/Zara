@@ -105,6 +105,22 @@ pub(super) enum TokenErrorKind {
     Unimplemented(String),
 }
 
+impl TokenErrorKind {
+    pub(super) fn to_continuation(&self) -> Option<TokenContinuation> {
+        if matches!(
+            self,
+            TokenErrorKind::StringEscapeInvalid(..)
+                | TokenErrorKind::StringExpectedHex
+                | TokenErrorKind::StringInvalidHex
+                | TokenErrorKind::StringUnterminatedHex
+        ) {
+            Some(TokenContinuation::SubstringError)
+        } else {
+            None
+        }
+    }
+}
+
 impl Display for TokenErrorKind {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
@@ -133,6 +149,7 @@ impl Display for TokenErrorKind {
 #[derive(Debug)]
 pub(super) enum TokenContinuation {
     BlockComment(usize),
+    SubstringError,
 }
 
 fn format_char_range_error(msg: &str, f: &mut Formatter<'_>) -> fmt::Result {
@@ -500,6 +517,33 @@ mod tests {
             };
 
             assert_eq!(err.to_string(), "unimplemented tokenization: \"foobar\"");
+        }
+
+        #[test]
+        fn no_continuation() {
+            let kind = TokenErrorKind::CharacterExpected;
+
+            assert!(kind.to_continuation().is_none());
+        }
+
+        #[test]
+        fn string_invalid_sequence_continuation() {
+            let kind = TokenErrorKind::StringEscapeInvalid('c');
+
+            assert!(matches!(
+                kind.to_continuation(),
+                Some(TokenContinuation::SubstringError)
+            ));
+        }
+
+        #[test]
+        fn string_hex_continuation() {
+            let kind = TokenErrorKind::StringExpectedHex;
+
+            assert!(matches!(
+                kind.to_continuation(),
+                Some(TokenContinuation::SubstringError)
+            ));
         }
     }
 }

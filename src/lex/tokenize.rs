@@ -53,10 +53,14 @@ impl Iterator for TokenStream<'_> {
     type Item = TokenResult;
 
     fn next(&mut self) -> Option<Self::Item> {
-        match self.cont.take() {
+        let item = match self.cont.take() {
             Some(c) => self.continuation(c),
             None => self.token(),
-        }
+        };
+        self.cont = item
+            .as_ref()
+            .and_then(|te| te.as_ref().err().and_then(|err| err.kind.to_continuation()));
+        item
     }
 }
 
@@ -134,7 +138,7 @@ struct Continuation<'me, 'str> {
 
 impl<'me, 'str> Continuation<'me, 'str> {
     fn extract(mut self) -> TokenExtract {
-        let result = Ok(self.consume());
+        let result = self.scan();
         TokenExtract {
             start: self.start,
             end: self.scan.pos(),
@@ -142,11 +146,15 @@ impl<'me, 'str> Continuation<'me, 'str> {
         }
     }
 
-    fn consume(&mut self) -> TokenKind {
+    fn scan(&mut self) -> TokenExtractResult {
         match self.cont {
             TokenContinuation::BlockComment(depth) => {
-                BlockComment::cont(depth, &mut self.scan).consume()
+                Ok(BlockComment::cont(depth, &mut self.scan).consume())
             }
+            TokenContinuation::SubstringError => StringLiteral {
+                scan: &mut self.scan,
+            }
+            .scan(),
         }
     }
 }
