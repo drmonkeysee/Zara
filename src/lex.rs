@@ -488,7 +488,7 @@ mod tests {
             ));
             assert!(matches!(
                 target.cont,
-                Some(TokenContinuation::BlockComment(depth)) if depth == 0
+                Some(TokenContinuation::BlockComment(0))
             ));
         }
 

@@ -2222,8 +2222,8 @@ mod string {
             TokenExtract {
                 start: 0,
                 end: 3,
-                result: Err(TokenErrorKind::StringEscapeInvalid(ch)),
-            } if ch == 'B'
+                result: Err(TokenErrorKind::StringEscapeInvalid('B')),
+            }
         ));
     }
 

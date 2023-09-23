@@ -332,7 +332,7 @@ mod tests {
 
             assert!(matches!(
                 kind.to_continuation(),
-                Some(TokenContinuation::BlockComment(depth)) if depth == 2
+                Some(TokenContinuation::BlockComment(2))
             ));
         }
 
@@ -342,7 +342,7 @@ mod tests {
 
             assert!(matches!(
                 kind.to_continuation(),
-                Some(TokenContinuation::BlockComment(depth)) if depth == 2
+                Some(TokenContinuation::BlockComment(2))
             ));
         }
     }
