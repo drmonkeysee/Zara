@@ -809,6 +809,7 @@ mod hashtag {
             let c = Continuation {
                 cont: TokenContinuation::BlockComment(0),
                 scan: &mut s,
+                start: 0,
             };
 
             let r = c.extract();
@@ -829,6 +830,7 @@ mod hashtag {
             let c = Continuation {
                 cont: TokenContinuation::BlockComment(0),
                 scan: &mut s,
+                start: 0,
             };
 
             let r = c.extract();
@@ -849,6 +851,7 @@ mod hashtag {
             let c = Continuation {
                 cont: TokenContinuation::BlockComment(0),
                 scan: &mut s,
+                start: 0,
             };
 
             let r = c.extract();
@@ -869,6 +872,7 @@ mod hashtag {
             let c = Continuation {
                 cont: TokenContinuation::BlockComment(0),
                 scan: &mut s,
+                start: 0,
             };
 
             let r = c.extract();
@@ -889,6 +893,7 @@ mod hashtag {
             let c = Continuation {
                 cont: TokenContinuation::BlockComment(2),
                 scan: &mut s,
+                start: 0,
             };
 
             let r = c.extract();
@@ -909,6 +914,7 @@ mod hashtag {
             let c = Continuation {
                 cont: TokenContinuation::BlockComment(0),
                 scan: &mut s,
+                start: 0,
             };
 
             let r = c.extract();
@@ -929,6 +935,7 @@ mod hashtag {
             let c = Continuation {
                 cont: TokenContinuation::BlockComment(0),
                 scan: &mut s,
+                start: 0,
             };
 
             let r = c.extract();
@@ -949,6 +956,7 @@ mod hashtag {
             let c = Continuation {
                 cont: TokenContinuation::BlockComment(0),
                 scan: &mut s,
+                start: 0,
             };
 
             let r = c.extract();
@@ -969,6 +977,7 @@ mod hashtag {
             let c = Continuation {
                 cont: TokenContinuation::BlockComment(0),
                 scan: &mut s,
+                start: 0,
             };
 
             let r = c.extract();
@@ -989,6 +998,7 @@ mod hashtag {
             let c = Continuation {
                 cont: TokenContinuation::BlockComment(1),
                 scan: &mut s,
+                start: 0,
             };
 
             let r = c.extract();

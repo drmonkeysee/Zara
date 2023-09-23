@@ -36,10 +36,12 @@ impl<'a> TokenStream<'a> {
     }
 
     fn continuation(&mut self, cont: TokenContinuation) -> Option<IterItem<'a>> {
+        let start = self.scan.pos();
         Some(
             Continuation {
                 cont,
                 scan: &mut self.scan,
+                start: start,
             }
             .extract()
             .build(),
@@ -127,13 +129,14 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
 struct Continuation<'me, 'str> {
     cont: TokenContinuation,
     scan: &'me mut Scanner<'str>,
+    start: usize,
 }
 
 impl<'me, 'str> Continuation<'me, 'str> {
     fn extract(mut self) -> TokenExtract {
         let result = Ok(self.consume());
         TokenExtract {
-            start: 0,
+            start: self.start,
             end: self.scan.pos(),
             result,
         }
