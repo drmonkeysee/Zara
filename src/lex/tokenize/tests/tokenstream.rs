@@ -381,19 +381,26 @@ fn finishes_parsing_string_if_error() {
 
     let r: Vec<_> = s.collect();
 
-    assert_eq!(r.len(), 2);
+    assert_eq!(r.len(), 3);
     assert!(matches!(
         r[0],
         Err(TokenError {
-            kind: TokenErrorKind::StringEscapeInvalid('e'),
-            span: Range { start: 0, end: 12 }
+            kind: TokenErrorKind::StringEscapeInvalid(5, 'e'),
+            span: Range { start: 5, end: 7 }
         })
     ));
     assert!(matches!(
-        r[1],
+        &r[1],
+        Ok(Token {
+            kind: TokenKind::Literal(Literal::String(s)),
+            span: Range { start: 0, end: 12 }
+        }) if s == "foo \\e bar"
+    ));
+    assert!(matches!(
+        r[2],
         Ok(Token {
             kind: TokenKind::Literal(Literal::Boolean(true)),
-            span: Range { start: 13, end: 15 }
+            span: Range { start: 14, end: 16 }
         })
     ));
 }
@@ -404,26 +411,33 @@ fn multiple_string_errors() {
 
     let r: Vec<_> = s.collect();
 
-    assert_eq!(r.len(), 3);
+    assert_eq!(r.len(), 4);
     assert!(matches!(
         r[0],
         Err(TokenError {
-            kind: TokenErrorKind::StringInvalidHex,
-            span: Range { start: 0, end: 16 }
+            kind: TokenErrorKind::StringInvalidHex(5),
+            span: Range { start: 5, end: 16 }
         })
     ));
     assert!(matches!(
         r[1],
         Err(TokenError {
-            kind: TokenErrorKind::StringEscapeInvalid('e'),
-            span: Range { start: 16, end: 23 }
+            kind: TokenErrorKind::StringEscapeInvalid(21, 'e'),
+            span: Range { start: 21, end: 23 }
         })
     ));
     assert!(matches!(
-        r[2],
+        &r[2],
+        Ok(Token {
+            kind: TokenKind::Literal(Literal::String(s)),
+            span: Range { start: 0, end: 28 }
+        }) if s == "foo \\xdeadbeef; bar \\e baz"
+    ));
+    assert!(matches!(
+        r[3],
         Ok(Token {
             kind: TokenKind::Literal(Literal::Boolean(true)),
-            span: Range { start: 29, end: 2 }
+            span: Range { start: 29, end: 31 }
         })
     ));
 }

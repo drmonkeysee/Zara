@@ -99,12 +99,18 @@ impl<'me, 'str> Hashtag<'me, 'str> {
 
 pub(super) struct StringLiteral<'me, 'str> {
     pub(super) scan: &'me mut Scanner<'str>,
+    start: usize,
 }
 
 impl<'me, 'str> StringLiteral<'me, 'str> {
+    pub(super) fn new(scan: &'me mut Scanner<'str>) -> Self {
+        Self { scan, start: 0 }
+    }
+
     pub(super) fn scan(&mut self) -> TokenExtractResult {
         let mut buf = String::new();
-        while let Some(ch) = self.scan.char() {
+        while let Some((idx, ch)) = self.scan.next() {
+            self.start = idx;
             match ch {
                 '"' => return Ok(TokenKind::Literal(Literal::String(buf))),
                 '\\' => buf.push(self.escape()?),
@@ -124,7 +130,7 @@ impl<'me, 'str> StringLiteral<'me, 'str> {
                 't' => Ok('\t'),
                 'x' | 'X' => self.hex(),
                 '"' | '\\' | '|' => Ok(ch),
-                _ => Err(TokenErrorKind::StringEscapeInvalid(ch)),
+                _ => Err(TokenErrorKind::StringEscapeInvalid(self.start, ch)),
             }
         } else {
             todo!();
@@ -136,12 +142,12 @@ impl<'me, 'str> StringLiteral<'me, 'str> {
         if let Some(idx) = self.scan.find_char(';') {
             let rest = self.scan.lexeme(start..idx);
             match parse_char_hex(rest) {
-                HexParse::Invalid => Err(TokenErrorKind::StringInvalidHex),
-                HexParse::Unexpected => Err(TokenErrorKind::StringExpectedHex),
+                HexParse::Invalid => Err(TokenErrorKind::StringInvalidHex(self.start)),
+                HexParse::Unexpected => Err(TokenErrorKind::StringExpectedHex(self.start)),
                 HexParse::Valid(ch) => Ok(ch),
             }
         } else {
-            Err(TokenErrorKind::StringUnterminatedHex)
+            Err(TokenErrorKind::StringUnterminatedHex(self.start))
         }
     }
 }
@@ -280,5 +286,14 @@ mod tests {
 
         assert_eq!(target.cont, true);
         assert_eq!(target.depth, 3);
+    }
+
+    #[test]
+    fn stringliteral_new() {
+        let mut s = Scanner::new("");
+
+        let target = StringLiteral::new(&mut s);
+
+        assert_eq!(target.start, 0);
     }
 }

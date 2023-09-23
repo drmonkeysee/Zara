@@ -96,10 +96,10 @@ pub(super) enum TokenErrorKind {
     CharacterInvalidHex,
     DirectiveExpected,
     DirectiveInvalid,
-    StringEscapeInvalid(char),
-    StringExpectedHex,
-    StringInvalidHex,
-    StringUnterminatedHex,
+    StringEscapeInvalid(usize, char),
+    StringExpectedHex(usize),
+    StringInvalidHex(usize),
+    StringUnterminatedHex(usize),
     HashInvalid,
     HashUnterminated,
     Unimplemented(String),
@@ -110,13 +110,23 @@ impl TokenErrorKind {
         if matches!(
             self,
             TokenErrorKind::StringEscapeInvalid(..)
-                | TokenErrorKind::StringExpectedHex
-                | TokenErrorKind::StringInvalidHex
-                | TokenErrorKind::StringUnterminatedHex
+                | TokenErrorKind::StringExpectedHex(..)
+                | TokenErrorKind::StringInvalidHex(..)
+                | TokenErrorKind::StringUnterminatedHex(..)
         ) {
             Some(TokenContinuation::SubstringError)
         } else {
             None
+        }
+    }
+
+    pub(super) fn sub_idx(&self) -> Option<usize> {
+        match self {
+            TokenErrorKind::StringEscapeInvalid(idx, _)
+            | TokenErrorKind::StringExpectedHex(idx)
+            | TokenErrorKind::StringInvalidHex(idx)
+            | TokenErrorKind::StringUnterminatedHex(idx) => Some(*idx),
+            _ => None,
         }
     }
 }
@@ -135,10 +145,12 @@ impl Display for TokenErrorKind {
             Self::DirectiveInvalid => {
                 f.write_str("unsupported directive: expected fold-case or no-fold-case")
             }
-            Self::StringEscapeInvalid(ch) => write!(f, "invalid escape sequence: \\{ch}"),
-            Self::StringExpectedHex => f.write_str("expected hex-escape"),
-            Self::StringInvalidHex => format_char_range_error("hex-escape out of valid range", f),
-            Self::StringUnterminatedHex => f.write_str("unterminated hex-escape"),
+            Self::StringEscapeInvalid(_, ch) => write!(f, "invalid escape sequence: \\{ch}"),
+            Self::StringExpectedHex(_) => f.write_str("expected hex-escape"),
+            Self::StringInvalidHex(_) => {
+                format_char_range_error("hex-escape out of valid range", f)
+            }
+            Self::StringUnterminatedHex(_) => f.write_str("unterminated hex-escape"),
             Self::HashInvalid => f.write_str("unexpected #-literal"),
             Self::HashUnterminated => f.write_str("unterminated #-literal"),
             Self::Unimplemented(s) => write!(f, "unimplemented tokenization: \"{s}\""),
@@ -449,7 +461,7 @@ mod tests {
         #[test]
         fn display_invalid_escape() {
             let err = TokenError {
-                kind: TokenErrorKind::StringEscapeInvalid('B'),
+                kind: TokenErrorKind::StringEscapeInvalid(1, 'B'),
                 span: 0..10,
             };
 
@@ -459,7 +471,7 @@ mod tests {
         #[test]
         fn display_expected_string_hex() {
             let err = TokenError {
-                kind: TokenErrorKind::StringExpectedHex,
+                kind: TokenErrorKind::StringExpectedHex(1),
                 span: 0..10,
             };
 
@@ -469,7 +481,7 @@ mod tests {
         #[test]
         fn display_invalid_string_hex() {
             let err = TokenError {
-                kind: TokenErrorKind::StringInvalidHex,
+                kind: TokenErrorKind::StringInvalidHex(1),
                 span: 0..10,
             };
 
@@ -482,7 +494,7 @@ mod tests {
         #[test]
         fn display_unterminated_string_hex() {
             let err = TokenError {
-                kind: TokenErrorKind::StringUnterminatedHex,
+                kind: TokenErrorKind::StringUnterminatedHex(1),
                 span: 0..10,
             };
 
@@ -528,7 +540,7 @@ mod tests {
 
         #[test]
         fn string_invalid_sequence_continuation() {
-            let kind = TokenErrorKind::StringEscapeInvalid('c');
+            let kind = TokenErrorKind::StringEscapeInvalid(0, 'c');
 
             assert!(matches!(
                 kind.to_continuation(),
@@ -538,12 +550,33 @@ mod tests {
 
         #[test]
         fn string_hex_continuation() {
-            let kind = TokenErrorKind::StringExpectedHex;
+            let kind = TokenErrorKind::StringExpectedHex(1);
 
             assert!(matches!(
                 kind.to_continuation(),
                 Some(TokenContinuation::SubstringError)
             ));
+        }
+
+        #[test]
+        fn no_sub_index() {
+            let kind = TokenErrorKind::CharacterExpected;
+
+            assert!(kind.sub_idx().is_none());
+        }
+
+        #[test]
+        fn string_invalid_sequence_sub_index() {
+            let kind = TokenErrorKind::StringEscapeInvalid(3, 'c');
+
+            assert!(matches!(kind.sub_idx(), Some(3)));
+        }
+
+        #[test]
+        fn string_hex_sub_index() {
+            let kind = TokenErrorKind::StringExpectedHex(3);
+
+            assert!(matches!(kind.sub_idx(), Some(3)));
         }
     }
 }

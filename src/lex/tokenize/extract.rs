@@ -10,6 +10,14 @@ pub(super) struct TokenExtract {
 }
 
 impl TokenExtract {
+    pub(super) fn new(start: usize, end: usize, result: TokenExtractResult) -> Self {
+        Self {
+            start: sub_index_or(start, &result),
+            end,
+            result,
+        }
+    }
+
     pub(super) fn build(self) -> TokenResult {
         let span = self.start..self.end;
         match self.result {
@@ -17,6 +25,14 @@ impl TokenExtract {
             Err(err) => Err(TokenError { kind: err, span }),
         }
     }
+}
+
+fn sub_index_or(default: usize, result: &TokenExtractResult) -> usize {
+    result
+        .as_ref()
+        .err()
+        .and_then(|k| k.sub_idx())
+        .unwrap_or(default)
 }
 
 #[cfg(test)]

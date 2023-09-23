@@ -74,11 +74,7 @@ struct Tokenizer<'me, 'str> {
 impl<'me, 'str> Tokenizer<'me, 'str> {
     fn extract(mut self) -> TokenExtract {
         let (result, end) = self.scan();
-        TokenExtract {
-            start: self.start.0,
-            end,
-            result,
-        }
+        TokenExtract::new(self.start.0, end, result)
     }
 
     fn scan(&mut self) -> (TokenExtractResult, usize) {
@@ -89,7 +85,7 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
                 '\'' => Ok(TokenKind::Quote),
                 '`' => Ok(TokenKind::Quasiquote),
                 '#' => Hashtag { scan: self.scan }.scan(),
-                '"' => StringLiteral { scan: self.scan }.scan(),
+                '"' => StringLiteral::new(self.scan).scan(),
                 ';' => self.comment(),
                 '.' => self.period(),
                 ',' => self.unquote(),
@@ -139,22 +135,15 @@ struct Continuation<'me, 'str> {
 impl<'me, 'str> Continuation<'me, 'str> {
     fn extract(mut self) -> TokenExtract {
         let result = self.scan();
-        TokenExtract {
-            start: self.start,
-            end: self.scan.pos(),
-            result,
-        }
+        TokenExtract::new(self.start, self.scan.pos(), result)
     }
 
     fn scan(&mut self) -> TokenExtractResult {
         match self.cont {
             TokenContinuation::BlockComment(depth) => {
-                Ok(BlockComment::cont(depth, &mut self.scan).consume())
+                Ok(BlockComment::cont(depth, self.scan).consume())
             }
-            TokenContinuation::SubstringError => StringLiteral {
-                scan: &mut self.scan,
-            }
-            .scan(),
+            TokenContinuation::SubstringError => StringLiteral::new(self.scan).scan(),
         }
     }
 }

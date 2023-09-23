@@ -2220,9 +2220,9 @@ mod string {
         assert!(matches!(
             r,
             TokenExtract {
-                start: 0,
+                start: 1,
                 end: 3,
-                result: Err(TokenErrorKind::StringEscapeInvalid('B')),
+                result: Err(TokenErrorKind::StringEscapeInvalid(1, 'B')),
             }
         ));
     }
@@ -2241,9 +2241,9 @@ mod string {
         assert!(matches!(
             r,
             TokenExtract {
-                start: 0,
+                start: 1,
                 end: 6,
-                result: Err(TokenErrorKind::StringExpectedHex),
+                result: Err(TokenErrorKind::StringExpectedHex(1)),
             }
         ));
     }
@@ -2262,9 +2262,9 @@ mod string {
         assert!(matches!(
             r,
             TokenExtract {
-                start: 0,
+                start: 1,
                 end: 12,
-                result: Err(TokenErrorKind::StringInvalidHex),
+                result: Err(TokenErrorKind::StringInvalidHex(1)),
             }
         ));
     }
@@ -2283,9 +2283,9 @@ mod string {
         assert!(matches!(
             r,
             TokenExtract {
-                start: 0,
+                start: 1,
                 end: 11,
-                result: Err(TokenErrorKind::StringExpectedHex),
+                result: Err(TokenErrorKind::StringExpectedHex(1)),
             }
         ));
     }
@@ -2304,9 +2304,9 @@ mod string {
         assert!(matches!(
             r,
             TokenExtract {
-                start: 0,
+                start: 1,
                 end: 7,
-                result: Err(TokenErrorKind::StringUnterminatedHex),
+                result: Err(TokenErrorKind::StringUnterminatedHex(1)),
             }
         ));
     }

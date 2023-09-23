@@ -20,7 +20,7 @@ impl<'a> Scanner<'a> {
     }
 
     pub(super) fn char(&mut self) -> Option<char> {
-        self.chars.next().map(to_char)
+        self.next().map(to_char)
     }
 
     pub(super) fn char_if_eq(&mut self, ch: char) -> Option<usize> {
@@ -74,6 +74,14 @@ impl<'a> Scanner<'a> {
 
     fn end(&self) -> usize {
         self.textline.len()
+    }
+}
+
+impl<'a> Iterator for Scanner<'a> {
+    type Item = ScanItem<'a>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.chars.next()
     }
 }
 
