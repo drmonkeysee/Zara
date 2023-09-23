@@ -73,26 +73,23 @@ struct Tokenizer<'me, 'str> {
 
 impl<'me, 'str> Tokenizer<'me, 'str> {
     fn extract(mut self) -> TokenExtract {
-        let (result, end) = self.scan();
-        TokenExtract::new(self.start.0, end, result)
+        let result = self.scan();
+        TokenExtract::new(self.start.0, self.scan.pos(), result)
     }
 
-    fn scan(&mut self) -> (TokenExtractResult, usize) {
-        (
-            match self.start.1 {
-                '(' => Ok(TokenKind::ParenLeft),
-                ')' => Ok(TokenKind::ParenRight),
-                '\'' => Ok(TokenKind::Quote),
-                '`' => Ok(TokenKind::Quasiquote),
-                '#' => Hashtag { scan: self.scan }.scan(),
-                '"' => StringLiteral::new(self.scan).scan(),
-                ';' => self.comment(),
-                '.' => self.period(),
-                ',' => self.unquote(),
-                _ => self.not_implemented(),
-            },
-            self.scan.pos(),
-        )
+    fn scan(&mut self) -> TokenExtractResult {
+        match self.start.1 {
+            '(' => Ok(TokenKind::ParenLeft),
+            ')' => Ok(TokenKind::ParenRight),
+            '\'' => Ok(TokenKind::Quote),
+            '`' => Ok(TokenKind::Quasiquote),
+            '#' => Hashtag { scan: self.scan }.scan(),
+            '"' => StringLiteral::new(self.scan).scan(),
+            ';' => self.comment(),
+            '.' => self.period(),
+            ',' => self.unquote(),
+            _ => self.not_implemented(),
+        }
     }
 
     fn comment(&mut self) -> TokenExtractResult {
