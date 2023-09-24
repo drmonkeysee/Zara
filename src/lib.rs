@@ -12,8 +12,8 @@ use self::{
 };
 pub use self::{eval::Evaluation, syn::Expression};
 use std::{
-    error, fmt,
-    fmt::{Display, Formatter},
+    error,
+    fmt::{self, Display, Formatter},
     io,
     path::PathBuf,
     result,

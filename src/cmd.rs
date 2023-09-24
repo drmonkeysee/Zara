@@ -1,9 +1,12 @@
-use crate::{args, args::Args, repl::Repl, run, run::Opts};
+use crate::{
+    args::{self, Args},
+    repl::Repl,
+    run::{self, Opts},
+};
 use rustyline::error::ReadlineError;
 use std::{
     error::Error,
-    fmt,
-    fmt::{Display, Formatter},
+    fmt::{self, Display, Formatter},
     path::PathBuf,
     result,
 };

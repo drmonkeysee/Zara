@@ -1,8 +1,7 @@
 use crate::syn::Expression;
 use std::{
     error::Error,
-    fmt,
-    fmt::{Display, Formatter},
+    fmt::{self, Display, Formatter},
 };
 
 #[derive(Debug)]

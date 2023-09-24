@@ -1,7 +1,6 @@
 use crate::args::Args;
 use std::{
-    io,
-    io::{IsTerminal, Stdin},
+    io::{self, IsTerminal, Stdin},
     path::Path,
     rc::Rc,
 };

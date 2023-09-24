@@ -9,8 +9,7 @@ use self::{
 use crate::txt::{TextLine, TextSource};
 use std::{
     error::Error,
-    fmt,
-    fmt::{Display, Formatter},
+    fmt::{self, Display, Formatter, Write},
 };
 
 #[derive(Debug)]
@@ -101,7 +100,7 @@ impl Display for ExtendedLexerError<'_> {
         }
 
         let mut cursor = 0;
-        f.write_str("\t")?;
+        f.write_char('\t')?;
         for span in errs
             .iter()
             .filter_map(|err| (!err.span.is_empty()).then_some(&err.span))
@@ -116,7 +115,7 @@ impl Display for ExtendedLexerError<'_> {
             )?;
             cursor = span.end;
         }
-        f.write_str("\n")?;
+        f.write_char('\n')?;
         for err in errs {
             writeln!(f, "{}: {err}", err.span.start + 1)?;
         }

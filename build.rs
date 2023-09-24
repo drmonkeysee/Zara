@@ -1,6 +1,5 @@
 use std::{
-    io,
-    io::{Result, Write},
+    io::{self, Result, Write},
     process::{Command, Output},
 };
 

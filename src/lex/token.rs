@@ -1,8 +1,7 @@
 use crate::literal::Literal;
 use std::{
     error::Error,
-    fmt,
-    fmt::{Display, Formatter},
+    fmt::{self, Display, Formatter},
     ops::Range,
 };
 

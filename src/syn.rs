@@ -5,8 +5,7 @@ use self::expr::{ExpressionError, ExpressionResult};
 use crate::lex::{LexLine, Token, TokenKind};
 use std::{
     error::Error,
-    fmt,
-    fmt::{Display, Formatter},
+    fmt::{self, Display, Formatter},
     iter::Peekable,
 };
 
