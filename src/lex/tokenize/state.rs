@@ -98,56 +98,71 @@ impl<'me, 'str> Hashtag<'me, 'str> {
 }
 
 pub(super) struct StringLiteral<'me, 'str> {
-    from_error: bool,
+    buf: String,
+    cont: StringContinuation,
+    possible_line_cont_idx: Option<usize>,
     scan: &'me mut Scanner<'str>,
     start: usize,
 }
 
 impl<'me, 'str> StringLiteral<'me, 'str> {
     pub(super) fn new(scan: &'me mut Scanner<'str>) -> Self {
+        Self::init(scan, StringContinuation::New)
+    }
+
+    pub(super) fn cleanup(scan: &'me mut Scanner<'str>) -> Self {
+        Self::init(scan, StringContinuation::Error)
+    }
+
+    pub(super) fn cont(scan: &'me mut Scanner<'str>, line_cont: bool) -> Self {
+        Self::init(scan, StringContinuation::NextLine(line_cont))
+    }
+
+    fn init(scan: &'me mut Scanner<'str>, cont: StringContinuation) -> Self {
         Self {
-            from_error: false,
+            buf: String::new(),
+            cont,
+            possible_line_cont_idx: None,
             scan,
             start: 0,
         }
     }
 
-    pub(super) fn cont(scan: &'me mut Scanner<'str>) -> Self {
-        Self {
-            from_error: true,
-            scan,
-            start: 0,
-        }
-    }
-
-    pub(super) fn scan(&mut self) -> TokenExtractResult {
-        let mut buf = String::new();
+    pub(super) fn scan(mut self) -> TokenExtractResult {
         while let Some((idx, ch)) = self.scan.next() {
             self.start = idx;
             match ch {
-                '"' => return self.end_string(buf),
-                '\\' => buf.push(self.escape()?),
-                _ => buf.push(ch),
+                '"' => return self.end_string(),
+                '\\' => self.escape()?,
+                _ => self.buf.push(ch),
             }
         }
-        todo!();
+        self.unterminated()
     }
 
     fn escape(&mut self) -> StringLiteralResult {
         if let Some(ch) = self.scan.char() {
             match ch {
-                'a' => Ok('\x07'),
-                'b' => Ok('\x08'),
-                'n' => Ok('\n'),
-                'r' => Ok('\r'),
-                't' => Ok('\t'),
-                'x' | 'X' => self.hex(),
-                '"' | '\\' | '|' => Ok(ch),
-                _ => Err(TokenErrorKind::StringEscapeInvalid(self.start, ch)),
+                'a' => self.buf.push('\x07'),
+                'b' => self.buf.push('\x08'),
+                'n' => self.buf.push('\n'),
+                'r' => self.buf.push('\r'),
+                't' => self.buf.push('\t'),
+                'x' | 'X' => self.hex()?,
+                '"' | '\\' | '|' => self.buf.push(ch),
+                _ if ch.is_ascii_whitespace() => {
+                    // NOTE: \<whitespace> may be a line-continuation, but we
+                    // won't know until we're done lexing this string.
+                    self.possible_line_cont_idx = Some(self.buf.len());
+                    self.buf.push(ch);
+                }
+                _ => Err(TokenErrorKind::StringEscapeInvalid(self.start, ch))?,
             }
         } else {
-            todo!();
+            // NOTE: \EOL is a line continuation, mark end of buffer
+            self.possible_line_cont_idx = Some(self.buf.len());
         }
+        Ok(())
     }
 
     fn hex(&mut self) -> StringLiteralResult {
@@ -155,21 +170,36 @@ impl<'me, 'str> StringLiteral<'me, 'str> {
         if let Some(idx) = self.scan.find_char(';') {
             let rest = self.scan.lexeme(start..idx);
             match parse_char_hex(rest) {
-                HexParse::Invalid => Err(TokenErrorKind::StringInvalidHex(self.start)),
-                HexParse::Unexpected => Err(TokenErrorKind::StringExpectedHex(self.start)),
-                HexParse::Valid(ch) => Ok(ch),
+                HexParse::Invalid => Err(TokenErrorKind::StringInvalidHex(self.start))?,
+                HexParse::Unexpected => Err(TokenErrorKind::StringExpectedHex(self.start))?,
+                HexParse::Valid(ch) => self.buf.push(ch),
             }
         } else {
-            Err(TokenErrorKind::StringUnterminatedHex(self.start))
+            Err(TokenErrorKind::StringUnterminatedHex(self.start))?
         }
+        Ok(())
     }
 
-    fn end_string(&self, buf: String) -> TokenExtractResult {
-        Ok(if self.from_error {
+    fn end_string(self) -> TokenExtractResult {
+        Ok(if matches!(self.cont, StringContinuation::Error) {
             TokenKind::StringDiscard
         } else {
-            TokenKind::Literal(Literal::String(buf))
+            TokenKind::Literal(Literal::String(self.buf))
         })
+    }
+
+    fn unterminated(self) -> TokenExtractResult {
+        if matches!(self.cont, StringContinuation::Error) {
+            Ok(TokenKind::StringDiscard)
+        } else {
+            if let Some(idx) = self.possible_line_cont_idx {
+                let (lead, trail) = self.buf.split_at(idx);
+                if trail.trim().is_empty() {
+                    return Ok(TokenKind::StringBegin(lead.to_owned(), true));
+                }
+            }
+            Ok(TokenKind::StringBegin(self.buf, false))
+        }
     }
 }
 
@@ -238,7 +268,13 @@ impl<'me, 'str> BlockComment<'me, 'str> {
     }
 }
 
-type StringLiteralResult = Result<char, TokenErrorKind>;
+type StringLiteralResult = Result<(), TokenErrorKind>;
+
+enum StringContinuation {
+    Error,
+    New,
+    NextLine(bool),
+}
 
 enum HexParse {
     Invalid,
@@ -316,16 +352,36 @@ mod tests {
         let target = StringLiteral::new(&mut s);
 
         assert_eq!(target.start, 0);
-        assert_eq!(target.from_error, false);
+        assert!(matches!(target.cont, StringContinuation::New));
+    }
+
+    #[test]
+    fn stringliteral_cleanup() {
+        let mut s = Scanner::new("");
+
+        let target = StringLiteral::cleanup(&mut s);
+
+        assert_eq!(target.start, 0);
+        assert!(matches!(target.cont, StringContinuation::Error));
     }
 
     #[test]
     fn stringliteral_cont() {
         let mut s = Scanner::new("");
 
-        let target = StringLiteral::cont(&mut s);
+        let target = StringLiteral::cont(&mut s, false);
 
         assert_eq!(target.start, 0);
-        assert_eq!(target.from_error, true);
+        assert!(matches!(target.cont, StringContinuation::NextLine(false)));
+    }
+
+    #[test]
+    fn stringliteral_cont_with_line_continuation() {
+        let mut s = Scanner::new("");
+
+        let target = StringLiteral::cont(&mut s, true);
+
+        assert_eq!(target.start, 0);
+        assert!(matches!(target.cont, StringContinuation::NextLine(true)));
     }
 }

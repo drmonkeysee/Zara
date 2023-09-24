@@ -2121,6 +2121,27 @@ mod string {
     }
 
     #[test]
+    fn whitespace_escape() {
+        let mut s = Scanner::new("\"foo\\   bar\"");
+        let start = s.next_token().unwrap();
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 12,
+                result: Ok(TokenKind::Literal(Literal::String(s))),
+            } if s == "foo   bar"
+        ));
+    }
+
+    #[test]
     fn hex_escape_sequences() {
         let mut s = Scanner::new(
             "\"a:\\x7;, b:\\x8;, d:\\x7f;, e:\\x1b;, n:\\xa;, 0:\\x0;, r:\\xd;, t:\\x9;, q:\\x22;, s:\\x5c;, v:\\x7c;\"",
@@ -2328,6 +2349,70 @@ mod string {
                 start: 0,
                 end: 17,
                 result: Ok(TokenKind::StringBegin(s, false)),
+            } if s == "beginning string"
+        ));
+    }
+
+    #[test]
+    fn string_begin_with_line_continuation() {
+        let mut s = Scanner::new("\"beginning string\\");
+        let start = s.next_token().unwrap();
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 18,
+                result: Ok(TokenKind::StringBegin(s, true)),
+            } if s == "beginning string"
+        ));
+    }
+
+    #[test]
+    fn string_begin_with_line_continuation_includes_leading_whitespace() {
+        let mut s = Scanner::new("\"beginning string    \\");
+        let start = s.next_token().unwrap();
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 22,
+                result: Ok(TokenKind::StringBegin(s, true)),
+            } if s == "beginning string    "
+        ));
+    }
+
+    #[test]
+    fn string_begin_with_line_continuation_excludes_trailing_whitespace() {
+        let mut s = Scanner::new("\"beginning string\\    ");
+        let start = s.next_token().unwrap();
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 22,
+                result: Ok(TokenKind::StringBegin(s, true)),
             } if s == "beginning string"
         ));
     }
