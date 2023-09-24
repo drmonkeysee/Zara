@@ -1,6 +1,6 @@
 use std::{
     cmp::Ordering,
-    fmt::{Display, Formatter, Result},
+    fmt::{Display, Formatter, Result, Write},
 };
 
 #[derive(Debug)]
@@ -27,7 +27,7 @@ impl Display for Datum<'_> {
         match self.0 {
             Literal::Boolean(b) => write!(f, "#{}", if *b { 't' } else { 'f' }),
             Literal::Character(c) => write!(f, "#\\{}", CharDatum::new(*c)),
-            Literal::String(s) => write!(f, "\"{s}\""),
+            Literal::String(s) => StrDatum(s).fmt(f),
         }
     }
 }
@@ -70,20 +70,63 @@ impl Display for CharDatum {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         match *self {
             Self::Named(n) => f.write_str(n),
-            Self::Unnamed(ch) => unnamed_char_datum(ch, f),
+            Self::Unnamed(ch) => write_unnamed_char(ch, f),
         }
     }
 }
 
-fn unnamed_char_datum(ch: char, f: &mut Formatter<'_>) -> Result {
+struct StrDatum<'a>(&'a str);
+
+impl Display for StrDatum<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        f.write_char('"')?;
+        for ch in self.0.chars() {
+            match ch {
+                // NOTE: Rust displays NUL directly, fooling DisplayableChar,
+                // so handle as a special case here.
+                '\x00' => f.write_str("\\x0;")?,
+                '\x07' => f.write_str("\\a")?,
+                '\x08' => f.write_str("\\b")?,
+                '\n' => f.write_str("\\n")?,
+                '\r' => f.write_str("\\r")?,
+                '\t' => f.write_str("\\t")?,
+                '"' => f.write_str("\\\"")?,
+                '\\' => f.write_str("\\\\")?,
+                _ => write_str_chr(ch, f)?,
+            }
+        }
+        f.write_char('"')
+    }
+}
+
+fn write_str_chr(ch: char, f: &mut Formatter<'_>) -> Result {
+    match char_to_displayable(ch) {
+        DisplayableChar::Char(ch) => f.write_char(ch),
+        DisplayableChar::Hex(hex) => write!(f, "\\x{:x};", hex),
+    }
+}
+
+fn write_unnamed_char(ch: char, f: &mut Formatter<'_>) -> Result {
+    match char_to_displayable(ch) {
+        DisplayableChar::Char(ch) => f.write_char(ch),
+        DisplayableChar::Hex(hex) => write!(f, "x{:x}", hex),
+    }
+}
+
+enum DisplayableChar {
+    Char(char),
+    Hex(u32),
+}
+
+fn char_to_displayable(ch: char) -> DisplayableChar {
     // NOTE: this is a little weird but there's no Unicode classification
     // exposed in Rust's stdlib to tell if a character has a dedicated glyph or
     // not, so check indirectly by seeing if the debug output starts with `\u`;
     // if so, we display the hex representation instead of the char literal.
     if ch.escape_debug().take(2).cmp(['\\', 'u']) == Ordering::Equal {
-        write!(f, "x{:x}", u32::from(ch))
+        DisplayableChar::Hex(u32::from(ch))
     } else {
-        write!(f, "{ch}")
+        DisplayableChar::Char(ch)
     }
 }
 
@@ -292,6 +335,13 @@ mod tests {
         }
 
         #[test]
+        fn display_pipe() {
+            let s = Literal::String("|".to_owned());
+
+            assert_eq!(s.as_datum().to_string(), "\"|\"");
+        }
+
+        #[test]
         fn display_one_digit_hex() {
             let s = Literal::String("\x0c".to_owned());
 
@@ -354,7 +404,6 @@ bar"
                 ("\r", "\\r"),
                 ("\"", "\\\""),
                 ("\\", "\\\\"),
-                ("\\|", "\\|"),
             ]);
         }
 
