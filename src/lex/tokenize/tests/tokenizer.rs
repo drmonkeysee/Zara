@@ -2333,6 +2333,29 @@ mod string {
     }
 
     #[test]
+    fn string_discard() {
+        let mut s = Scanner::new("\\xbadstuff; discard this");
+        s.find_char(';');
+        let start = s.pos();
+        let t = Continuation {
+            cont: TokenContinuation::SubstringError,
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 11,
+                end: 24,
+                result: Ok(TokenKind::StringDiscard),
+            }
+        ));
+    }
+
+    #[test]
     fn string_begin() {
         let mut s = Scanner::new("\"beginning string");
         let start = s.next_token().unwrap();
