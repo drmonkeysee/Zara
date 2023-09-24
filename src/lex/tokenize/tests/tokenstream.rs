@@ -486,3 +486,26 @@ fn multiple_string_errors() {
         })
     ));
 }
+
+#[test]
+fn open_string_with_error() {
+    let s = TokenStream::new("\"foo \\e bar", None);
+
+    let r: Vec<_> = s.collect();
+
+    assert_eq!(r.len(), 2);
+    assert!(matches!(
+        r[0],
+        Err(TokenError {
+            kind: TokenErrorKind::StringEscapeInvalid(5, 'e'),
+            span: Range { start: 5, end: 7 }
+        })
+    ));
+    assert!(matches!(
+        r[1],
+        Ok(Token {
+            kind: TokenKind::StringDiscard,
+            span: Range { start: 7, end: 11 }
+        })
+    ));
+}

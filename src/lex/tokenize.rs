@@ -41,7 +41,7 @@ impl<'a> TokenStream<'a> {
             Continuation {
                 cont,
                 scan: &mut self.scan,
-                start: start,
+                start,
             }
             .extract()
             .build(),
@@ -140,8 +140,10 @@ impl<'me, 'str> Continuation<'me, 'str> {
             TokenContinuation::BlockComment(depth) => {
                 Ok(BlockComment::cont(depth, self.scan).consume())
             }
-            TokenContinuation::SubstringError => StringLiteral::cont(self.scan).scan(),
-            _ => todo!(),
+            TokenContinuation::StringLiteral(line_cont) => {
+                StringLiteral::cont(self.scan, line_cont).scan()
+            }
+            TokenContinuation::SubstringError => StringLiteral::cleanup(self.scan).scan(),
         }
     }
 }
