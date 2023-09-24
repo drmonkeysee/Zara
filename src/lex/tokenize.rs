@@ -141,6 +141,7 @@ impl<'me, 'str> Continuation<'me, 'str> {
                 Ok(BlockComment::cont(depth, self.scan).consume())
             }
             TokenContinuation::SubstringError => StringLiteral::cont(self.scan).scan(),
+            _ => todo!(),
         }
     }
 }

@@ -612,11 +612,11 @@ mod tests {
             let line = &lines[0];
             assert_eq!(line.0.len(), 1);
             assert!(matches!(
-                line.0[0],
+                &line.0[0],
                 TokenType {
-                    kind: TokenKind::StringBegin(false),
+                    kind: TokenKind::StringBegin(s, false),
                     span: Range { start: 0, end: 13 }
-                }
+                } if s == " double line"
             ));
             assert!(matches!(
                 &line.1,
@@ -628,11 +628,11 @@ mod tests {
             ));
             let line = &lines[1];
             assert!(matches!(
-                line.0[0],
+                &line.0[0],
                 TokenType {
-                    kind: TokenKind::StringEnd,
+                    kind: TokenKind::StringEnd(s),
                     span: Range { start: 0, end: 9 }
-                }
+                } if s == "string "
             ));
             assert!(matches!(
                 &line.1,
@@ -658,11 +658,11 @@ mod tests {
             let line = &lines[0];
             assert_eq!(line.0.len(), 1);
             assert!(matches!(
-                line.0[0],
+                &line.0[0],
                 TokenType {
-                    kind: TokenKind::StringBegin(false),
+                    kind: TokenKind::StringBegin(s, false),
                     span: Range { start: 0, end: 7 }
-                }
+                } if s == " multi"
             ));
             assert!(matches!(
                 &line.1,
@@ -674,11 +674,11 @@ mod tests {
             ));
             let line = &lines[1];
             assert!(matches!(
-                line.0[0],
+                &line.0[0],
                 TokenType {
-                    kind: TokenKind::StringFragment(false),
+                    kind: TokenKind::StringFragment(s, false),
                     span: Range { start: 0, end: 4 }
-                }
+                } if s == "line"
             ));
             assert!(matches!(
                 &line.1,
@@ -690,11 +690,11 @@ mod tests {
             ));
             let line = &lines[2];
             assert!(matches!(
-                line.0[0],
+                &line.0[0],
                 TokenType {
-                    kind: TokenKind::StringEnd,
+                    kind: TokenKind::StringEnd(s),
                     span: Range { start: 0, end: 8 }
-                }
+                } if s == "string "
             ));
             assert!(matches!(
                 &line.1,

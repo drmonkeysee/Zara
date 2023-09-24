@@ -2327,8 +2327,8 @@ mod string {
             TokenExtract {
                 start: 0,
                 end: 17,
-                result: Ok(TokenKind::StringBegin(false)),
-            }
+                result: Ok(TokenKind::StringBegin(s, false)),
+            } if s == "beginning string"
         ));
     }
 }

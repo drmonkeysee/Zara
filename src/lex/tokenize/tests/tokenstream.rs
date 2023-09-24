@@ -386,11 +386,11 @@ fn string_fragment_uses_whole_line() {
 
     assert_eq!(r.len(), 1);
     assert!(matches!(
-        r[0],
+        &r[0],
         Ok(Token {
-            kind: TokenKind::StringFragment(false),
+            kind: TokenKind::StringFragment(s, false),
             span: Range { start: 0, end: 16 }
-        })
+        }) if s == "continued string"
     ));
 }
 
@@ -405,11 +405,11 @@ fn string_end_continues_tokenizing() {
 
     assert_eq!(r.len(), 2);
     assert!(matches!(
-        r[0],
+        &r[0],
         Ok(Token {
-            kind: TokenKind::StringEnd,
+            kind: TokenKind::StringEnd(s),
             span: Range { start: 0, end: 12 }
-        })
+        }) if s == "end string "
     ));
     assert!(matches!(
         r[1],

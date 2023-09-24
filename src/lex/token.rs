@@ -14,8 +14,8 @@ pub enum TokenKind {
     Comment,
     CommentBlock,
     CommentBlockBegin(usize),
-    CommentBlockFragment(usize),
     CommentBlockEnd,
+    CommentBlockFragment(usize),
     CommentDatum,
     DirectiveCase(bool),
     Literal(Literal),
@@ -24,7 +24,10 @@ pub enum TokenKind {
     PairJoiner,
     Quasiquote,
     Quote,
+    StringBegin(String, bool),
     StringDiscard,
+    StringEnd(String),
+    StringFragment(String, bool),
     Unquote,
     UnquoteSplice,
     Vector,
@@ -35,6 +38,9 @@ impl TokenKind {
         match self {
             Self::CommentBlockBegin(depth) | Self::CommentBlockFragment(depth) => {
                 Some(TokenContinuation::BlockComment(*depth))
+            }
+            Self::StringBegin(_, line_cont) | Self::StringFragment(_, line_cont) => {
+                Some(TokenContinuation::StringLiteral(*line_cont))
             }
             _ => None,
         }
@@ -48,8 +54,8 @@ impl Display for TokenKind {
             Self::Comment => f.write_str("COMMENT"),
             Self::CommentBlock => f.write_str("BLOCKCOMMENT"),
             Self::CommentBlockBegin(depth) => write!(f, "BLOCKCOMMENTBEGIN<{depth:?}>"),
-            Self::CommentBlockFragment(depth) => write!(f, "BLOCKCOMMENTFRAG<{depth:?}>"),
             Self::CommentBlockEnd => f.write_str("BLOCKCOMMENTEND"),
+            Self::CommentBlockFragment(depth) => write!(f, "BLOCKCOMMENTFRAG<{depth:?}>"),
             Self::CommentDatum => f.write_str("DATUMCOMMENT"),
             Self::DirectiveCase(fold) => write!(f, "DIRFOLDCASE<{fold:?}>"),
             Self::Literal(lit) => write!(f, "LITERAL<{}>", lit.as_token_descriptor()),
@@ -58,7 +64,14 @@ impl Display for TokenKind {
             Self::PairJoiner => f.write_str("PAIR"),
             Self::Quasiquote => f.write_str("QUASIQUOTE"),
             Self::Quote => f.write_str("QUOTE"),
+            Self::StringBegin(_, line_cont) => {
+                write!(f, "BEGINSTR{}", line_cont_token(*line_cont))
+            }
             Self::StringDiscard => f.write_str("DISCARDSTR"),
+            Self::StringEnd(_) => f.write_str("ENDSTR"),
+            Self::StringFragment(_, line_cont) => {
+                write!(f, "STRFRAG{}", line_cont_token(*line_cont))
+            }
             Self::Unquote => f.write_str("UNQUOTE"),
             Self::UnquoteSplice => f.write_str("UNQUOTESPLICE"),
             Self::Vector => f.write_str("VECTOR"),
@@ -163,11 +176,20 @@ impl Display for TokenErrorKind {
 #[derive(Debug)]
 pub(super) enum TokenContinuation {
     BlockComment(usize),
+    StringLiteral(bool),
     SubstringError,
 }
 
 fn format_char_range_error(msg: &str, f: &mut Formatter<'_>) -> fmt::Result {
     write!(f, "{msg}: [{:#x}, {:#x}]", 0, char::MAX as u32)
+}
+
+fn line_cont_token(line_cont: bool) -> &'static str {
+    if line_cont {
+        "<\\>"
+    } else {
+        ""
+    }
 }
 
 #[cfg(test)]
@@ -318,6 +340,56 @@ mod tests {
         }
 
         #[test]
+        fn display_string_begin() {
+            let token = Token {
+                kind: TokenKind::StringBegin("foo".to_owned(), false),
+                span: 0..1,
+            };
+
+            assert_eq!(token.to_string(), "BEGINSTR[0..1]");
+        }
+
+        #[test]
+        fn display_string_begin_with_line_continuation() {
+            let token = Token {
+                kind: TokenKind::StringBegin("foo\\".to_owned(), true),
+                span: 0..1,
+            };
+
+            assert_eq!(token.to_string(), "BEGINSTR<\\>[0..1]");
+        }
+
+        #[test]
+        fn display_string_fragment() {
+            let token = Token {
+                kind: TokenKind::StringFragment("foo".to_owned(), false),
+                span: 0..1,
+            };
+
+            assert_eq!(token.to_string(), "STRFRAG[0..1]");
+        }
+
+        #[test]
+        fn display_string_fragment_with_line_continuation() {
+            let token = Token {
+                kind: TokenKind::StringFragment("foo \\".to_owned(), true),
+                span: 0..1,
+            };
+
+            assert_eq!(token.to_string(), "STRFRAG<\\>[0..1]");
+        }
+
+        #[test]
+        fn display_string_end() {
+            let token = Token {
+                kind: TokenKind::StringEnd("foo".to_owned()),
+                span: 0..1,
+            };
+
+            assert_eq!(token.to_string(), "ENDSTR[0..1]");
+        }
+
+        #[test]
         fn display_string_discard() {
             let token = Token {
                 kind: TokenKind::StringDiscard,
@@ -381,6 +453,26 @@ mod tests {
             assert!(matches!(
                 kind.to_continuation(),
                 Some(TokenContinuation::BlockComment(2))
+            ));
+        }
+
+        #[test]
+        fn string_open_continuation() {
+            let kind = TokenKind::StringBegin("".to_owned(), false);
+
+            assert!(matches!(
+                kind.to_continuation(),
+                Some(TokenContinuation::StringLiteral(false))
+            ));
+        }
+
+        #[test]
+        fn string_fragment_continuation() {
+            let kind = TokenKind::StringFragment("".to_owned(), true);
+
+            assert!(matches!(
+                kind.to_continuation(),
+                Some(TokenContinuation::StringLiteral(true))
             ));
         }
     }
