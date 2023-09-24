@@ -184,10 +184,10 @@ impl<'me, 'str> StringLiteral<'me, 'str> {
     }
 
     fn end_string(self) -> TokenExtractResult {
-        Ok(if matches!(self.cont, StringContinuation::Error) {
-            TokenKind::StringDiscard
-        } else {
-            TokenKind::Literal(Literal::String(self.buf))
+        Ok(match self.cont {
+            StringContinuation::Error => TokenKind::StringDiscard,
+            StringContinuation::New => TokenKind::Literal(Literal::String(self.buf)),
+            StringContinuation::NextLine(_) => TokenKind::StringEnd(self.buf),
         })
     }
 

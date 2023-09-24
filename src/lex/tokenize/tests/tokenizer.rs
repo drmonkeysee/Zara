@@ -2606,4 +2606,130 @@ mod string {
             } if s == "continued string    "
         ));
     }
+
+    #[test]
+    fn string_end() {
+        let mut s = Scanner::new("end string\"");
+        let c = Continuation {
+            cont: TokenContinuation::StringLiteral(false),
+            scan: &mut s,
+            start: 0,
+        };
+
+        let r = c.extract();
+        dbg!(&r);
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 11,
+                result: Ok(TokenKind::StringEnd(s)),
+            } if s == "end string"
+        ));
+    }
+
+    #[test]
+    fn string_end_includes_whitespace() {
+        let mut s = Scanner::new("   end string  \"");
+        let c = Continuation {
+            cont: TokenContinuation::StringLiteral(false),
+            scan: &mut s,
+            start: 0,
+        };
+
+        let r = c.extract();
+        dbg!(&r);
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 16,
+                result: Ok(TokenKind::StringEnd(s)),
+            } if s == "   end string  "
+        ));
+    }
+
+    #[test]
+    fn string_end_with_escaped_whitespace() {
+        let mut s = Scanner::new("end string  \\  \\  \"");
+        let c = Continuation {
+            cont: TokenContinuation::StringLiteral(false),
+            scan: &mut s,
+            start: 0,
+        };
+
+        let r = c.extract();
+        dbg!(&r);
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 19,
+                result: Ok(TokenKind::StringEnd(s)),
+            } if s == "end string      "
+        ));
+    }
+
+    #[test]
+    fn string_end_from_string_continuation() {
+        let mut s = Scanner::new("end string\"");
+        let c = Continuation {
+            cont: TokenContinuation::StringLiteral(true),
+            scan: &mut s,
+            start: 0,
+        };
+
+        let r = c.extract();
+        dbg!(&r);
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 11,
+                result: Ok(TokenKind::StringEnd(s)),
+            } if s == "end string"
+        ));
+    }
+
+    #[test]
+    fn string_end_from_string_continuation_ignores_leading_whitespace() {
+        let mut s = Scanner::new("   end string   \"");
+        let c = Continuation {
+            cont: TokenContinuation::StringLiteral(true),
+            scan: &mut s,
+            start: 0,
+        };
+
+        let r = c.extract();
+        dbg!(&r);
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 17,
+                result: Ok(TokenKind::StringEnd(s)),
+            } if s == "end string   "
+        ));
+    }
+
+    #[test]
+    fn string_end_from_string_continuation_all_whitespace() {
+        let mut s = Scanner::new("      \"");
+        let c = Continuation {
+            cont: TokenContinuation::StringLiteral(true),
+            scan: &mut s,
+            start: 0,
+        };
+
+        let r = c.extract();
+        dbg!(&r);
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 7,
+                result: Ok(TokenKind::StringEnd(s)),
+            } if s == ""
+        ));
+    }
 }
