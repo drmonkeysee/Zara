@@ -129,6 +129,9 @@ impl<'me, 'str> StringLiteral<'me, 'str> {
     }
 
     pub(super) fn scan(mut self) -> TokenExtractResult {
+        if matches!(self.cont, StringContinuation::NextLine(true)) {
+            self.scan.skip_whitespace();
+        }
         while let Some((idx, ch)) = self.scan.next() {
             self.start = idx;
             match ch {
@@ -192,13 +195,14 @@ impl<'me, 'str> StringLiteral<'me, 'str> {
         if matches!(self.cont, StringContinuation::Error) {
             Ok(TokenKind::StringDiscard)
         } else {
+            let next_line = matches!(self.cont, StringContinuation::NextLine(..));
             if let Some(idx) = self.possible_line_cont_idx {
                 let (lead, trail) = self.buf.split_at(idx);
                 if trail.trim().is_empty() {
-                    return Ok(TokenKind::StringBegin(lead.to_owned(), true));
+                    return Ok(unterminated_string(lead.to_owned(), next_line, true));
                 }
             }
-            Ok(TokenKind::StringBegin(self.buf, false))
+            Ok(unterminated_string(self.buf, next_line, false))
         }
     }
 }
@@ -317,6 +321,14 @@ fn parse_char_hex(txt: &str) -> HexParse {
         u32::from_str_radix(txt, 16).map_or(HexParse::Unexpected, |hex| {
             char::from_u32(hex).map_or(HexParse::Invalid, |ch| HexParse::Valid(ch))
         })
+    }
+}
+
+fn unterminated_string(buf: String, next_line: bool, line_cont: bool) -> TokenKind {
+    if next_line {
+        TokenKind::StringFragment(buf, line_cont)
+    } else {
+        TokenKind::StringBegin(buf, line_cont)
     }
 }
 

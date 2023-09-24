@@ -2407,7 +2407,6 @@ mod string {
         };
 
         let r = t.extract();
-        dbg!(&r);
 
         assert!(matches!(
             r,
@@ -2458,6 +2457,153 @@ mod string {
                 end: 26,
                 result: Ok(TokenKind::StringBegin(s, true)),
             } if s == "beginning string    "
+        ));
+    }
+
+    #[test]
+    fn string_fragment() {
+        let mut s = Scanner::new("continued string");
+        let c = Continuation {
+            cont: TokenContinuation::StringLiteral(false),
+            scan: &mut s,
+            start: 0,
+        };
+
+        let r = c.extract();
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 16,
+                result: Ok(TokenKind::StringFragment(s, false)),
+            } if s == "continued string"
+        ));
+    }
+
+    #[test]
+    fn string_fragment_includes_whitespace() {
+        let mut s = Scanner::new("   continued string");
+        let c = Continuation {
+            cont: TokenContinuation::StringLiteral(false),
+            scan: &mut s,
+            start: 0,
+        };
+
+        let r = c.extract();
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 19,
+                result: Ok(TokenKind::StringFragment(s, false)),
+            } if s == "   continued string"
+        ));
+    }
+
+    #[test]
+    fn string_fragment_with_line_continuation() {
+        let mut s = Scanner::new("continued string  \\  \\  ");
+        let c = Continuation {
+            cont: TokenContinuation::StringLiteral(false),
+            scan: &mut s,
+            start: 0,
+        };
+
+        let r = c.extract();
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 24,
+                result: Ok(TokenKind::StringFragment(s, true)),
+            } if s == "continued string    "
+        ));
+    }
+
+    #[test]
+    fn string_fragment_from_string_continuation() {
+        let mut s = Scanner::new("continued string");
+        let c = Continuation {
+            cont: TokenContinuation::StringLiteral(true),
+            scan: &mut s,
+            start: 0,
+        };
+
+        let r = c.extract();
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 16,
+                result: Ok(TokenKind::StringFragment(s, false)),
+            } if s == "continued string"
+        ));
+    }
+
+    #[test]
+    fn string_fragment_from_string_continuation_ignores_leading_whitespace() {
+        let mut s = Scanner::new("   continued string   ");
+        let c = Continuation {
+            cont: TokenContinuation::StringLiteral(true),
+            scan: &mut s,
+            start: 0,
+        };
+
+        let r = c.extract();
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 22,
+                result: Ok(TokenKind::StringFragment(s, false)),
+            } if s == "continued string   "
+        ));
+    }
+
+    #[test]
+    fn string_fragment_from_string_continuation_all_whitespace() {
+        let mut s = Scanner::new("      ");
+        let c = Continuation {
+            cont: TokenContinuation::StringLiteral(true),
+            scan: &mut s,
+            start: 0,
+        };
+
+        let r = c.extract();
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 6,
+                result: Ok(TokenKind::StringFragment(s, false)),
+            } if s == ""
+        ));
+    }
+
+    #[test]
+    fn string_fragment_from_string_continuation_to_string_continuation() {
+        let mut s = Scanner::new("   continued string  \\  \\  ");
+        let c = Continuation {
+            cont: TokenContinuation::StringLiteral(true),
+            scan: &mut s,
+            start: 0,
+        };
+
+        let r = c.extract();
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 27,
+                result: Ok(TokenKind::StringFragment(s, true)),
+            } if s == "continued string    "
         ));
     }
 }
