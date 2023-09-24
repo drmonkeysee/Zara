@@ -16,7 +16,7 @@ impl<'a> Scanner<'a> {
     }
 
     pub(super) fn next_token(&mut self) -> Option<ScanItem> {
-        self.chars.find(|item| !item.1.is_ascii_whitespace())
+        self.chars.find(not_whitespace)
     }
 
     pub(super) fn char(&mut self) -> Option<char> {
@@ -41,6 +41,11 @@ impl<'a> Scanner<'a> {
 
     pub(super) fn find_any_char(&mut self, chars: &[char]) -> Option<ScanItem> {
         self.chars.find(|item| chars.contains(&item.1))
+    }
+
+    pub(super) fn skip_whitespace(&mut self) -> usize {
+        let end = self.end();
+        self.chars.next_until(not_whitespace).map_or(end, get_idx)
     }
 
     pub(super) fn rest_of_token(&mut self) -> &str {
@@ -124,6 +129,10 @@ fn not_delimiter(item: &ScanItem) -> bool {
 
 fn not_token_boundary(item: &ScanItem) -> bool {
     !is_token_boundary(item.1)
+}
+
+fn not_whitespace(item: &ScanItem) -> bool {
+    !item.1.is_ascii_whitespace()
 }
 
 fn is_delimiter(ch: char) -> bool {
@@ -540,6 +549,41 @@ mod tests {
             s.char();
 
             assert_eq!(s.end_of_token(), 5);
+        }
+
+        #[test]
+        fn skip_whitespace() {
+            let mut s = Scanner::new("   abc");
+
+            assert_eq!(s.skip_whitespace(), 3);
+
+            let r = s.char();
+
+            assert!(r.is_some());
+            assert_eq!(r.unwrap(), 'a');
+        }
+
+        #[test]
+        fn skip_whitespace_no_whitespace() {
+            let mut s = Scanner::new("abc");
+
+            assert_eq!(s.skip_whitespace(), 0);
+
+            let r = s.char();
+
+            assert!(r.is_some());
+            assert_eq!(r.unwrap(), 'a');
+        }
+
+        #[test]
+        fn skip_whitespace_all_whitespace() {
+            let mut s = Scanner::new("      ");
+
+            assert_eq!(s.skip_whitespace(), 6);
+
+            let r = s.char();
+
+            assert!(r.is_none());
         }
 
         #[test]
