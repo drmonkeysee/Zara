@@ -2617,7 +2617,7 @@ mod string {
         };
 
         let r = c.extract();
-        dbg!(&r);
+
         assert!(matches!(
             r,
             TokenExtract {
@@ -2638,7 +2638,7 @@ mod string {
         };
 
         let r = c.extract();
-        dbg!(&r);
+
         assert!(matches!(
             r,
             TokenExtract {
@@ -2659,7 +2659,7 @@ mod string {
         };
 
         let r = c.extract();
-        dbg!(&r);
+
         assert!(matches!(
             r,
             TokenExtract {
@@ -2680,7 +2680,7 @@ mod string {
         };
 
         let r = c.extract();
-        dbg!(&r);
+
         assert!(matches!(
             r,
             TokenExtract {
@@ -2701,7 +2701,7 @@ mod string {
         };
 
         let r = c.extract();
-        dbg!(&r);
+
         assert!(matches!(
             r,
             TokenExtract {
@@ -2722,7 +2722,7 @@ mod string {
         };
 
         let r = c.extract();
-        dbg!(&r);
+
         assert!(matches!(
             r,
             TokenExtract {

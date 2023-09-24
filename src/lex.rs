@@ -631,7 +631,7 @@ mod tests {
                 &line.0[0],
                 TokenType {
                     kind: TokenKind::StringEnd(s),
-                    span: Range { start: 0, end: 9 }
+                    span: Range { start: 0, end: 8 }
                 } if s == "string "
             ));
             assert!(matches!(
