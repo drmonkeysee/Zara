@@ -25,7 +25,7 @@ pub(crate) enum Cmd {
 
 impl Cmd {
     pub(crate) fn execute(self) -> Result {
-        Ok(match self {
+        match self {
             Self::File(opts, prg) => {
                 run::file(opts, prg)?;
             }
@@ -45,7 +45,8 @@ impl Cmd {
             Self::Version => {
                 args::version();
             }
-        })
+        }
+        Ok(())
     }
 }
 

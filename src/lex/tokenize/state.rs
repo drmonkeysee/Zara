@@ -319,7 +319,7 @@ fn parse_char_hex(txt: &str) -> HexParse {
         HexParse::Unexpected
     } else {
         u32::from_str_radix(txt, 16).map_or(HexParse::Unexpected, |hex| {
-            char::from_u32(hex).map_or(HexParse::Invalid, |ch| HexParse::Valid(ch))
+            char::from_u32(hex).map_or(HexParse::Invalid, HexParse::Valid)
         })
     }
 }
