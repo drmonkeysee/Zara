@@ -2310,4 +2310,25 @@ mod string {
             }
         ));
     }
+
+    #[test]
+    fn string_begin() {
+        let mut s = Scanner::new("\"beginning string");
+        let start = s.next_token().unwrap();
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 17,
+                result: Ok(TokenKind::StringBegin(false)),
+            }
+        ));
+    }
 }

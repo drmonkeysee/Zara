@@ -492,7 +492,7 @@ mod tests {
         }
 
         #[test]
-        fn double_line_continuation() {
+        fn double_line_comment() {
             let mut src = MockTxtSource::new("#| double line\ncomment |#");
             let mut target = Lexer::new();
 
@@ -538,7 +538,7 @@ mod tests {
         }
 
         #[test]
-        fn multi_line_continuation() {
+        fn multi_line_comment() {
             let mut src = MockTxtSource::new("#| multi\nline\ncomment |#");
             let mut target = Lexer::new();
 
@@ -595,6 +595,114 @@ mod tests {
                     line,
                     lineno: 3,
                 } if Rc::ptr_eq(&ctx, &src.ctx) && line == "comment |#"
+            ));
+            assert!(target.cont.is_none());
+        }
+
+        #[test]
+        fn double_line_string() {
+            let mut src = MockTxtSource::new("\" double line\nstring \"");
+            let mut target = Lexer::new();
+
+            let r = target.tokenize(&mut src);
+
+            assert!(r.is_ok());
+            let lines = r.unwrap();
+            assert_eq!(lines.len(), 2);
+            let line = &lines[0];
+            assert_eq!(line.0.len(), 1);
+            assert!(matches!(
+                line.0[0],
+                TokenType {
+                    kind: TokenKind::StringBegin(false),
+                    span: Range { start: 0, end: 13 }
+                }
+            ));
+            assert!(matches!(
+                &line.1,
+                TextLine {
+                    ctx,
+                    line,
+                    lineno: 1,
+                } if Rc::ptr_eq(&ctx, &src.ctx) && line == "\" double line"
+            ));
+            let line = &lines[1];
+            assert!(matches!(
+                line.0[0],
+                TokenType {
+                    kind: TokenKind::StringEnd,
+                    span: Range { start: 0, end: 9 }
+                }
+            ));
+            assert!(matches!(
+                &line.1,
+                TextLine {
+                    ctx,
+                    line,
+                    lineno: 2,
+                } if Rc::ptr_eq(&ctx, &src.ctx) && line == "string \""
+            ));
+            assert!(target.cont.is_none());
+        }
+
+        #[test]
+        fn multi_line_string() {
+            let mut src = MockTxtSource::new("\" multi\nline\nstring \"");
+            let mut target = Lexer::new();
+
+            let r = target.tokenize(&mut src);
+
+            assert!(r.is_ok());
+            let lines = r.unwrap();
+            assert_eq!(lines.len(), 3);
+            let line = &lines[0];
+            assert_eq!(line.0.len(), 1);
+            assert!(matches!(
+                line.0[0],
+                TokenType {
+                    kind: TokenKind::StringBegin(false),
+                    span: Range { start: 0, end: 7 }
+                }
+            ));
+            assert!(matches!(
+                &line.1,
+                TextLine {
+                    ctx,
+                    line,
+                    lineno: 1,
+                } if Rc::ptr_eq(&ctx, &src.ctx) && line == "\" multi"
+            ));
+            let line = &lines[1];
+            assert!(matches!(
+                line.0[0],
+                TokenType {
+                    kind: TokenKind::StringFragment(false),
+                    span: Range { start: 0, end: 4 }
+                }
+            ));
+            assert!(matches!(
+                &line.1,
+                TextLine {
+                    ctx,
+                    line,
+                    lineno: 2,
+                } if Rc::ptr_eq(&ctx, &src.ctx) && line == "line"
+            ));
+            let line = &lines[2];
+            assert!(matches!(
+                line.0[0],
+                TokenType {
+                    kind: TokenKind::StringEnd,
+                    span: Range { start: 0, end: 8 }
+                }
+            ));
+            assert!(matches!(
+                &line.1,
+                TextLine {
+                    ctx,
+                    line,
+                    lineno: 3,
+                } if Rc::ptr_eq(&ctx, &src.ctx) && line == "string \""
             ));
             assert!(target.cont.is_none());
         }

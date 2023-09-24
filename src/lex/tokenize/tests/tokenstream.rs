@@ -376,6 +376,51 @@ fn block_comment_end_continues_tokenizing() {
 }
 
 #[test]
+fn string_fragment_uses_whole_line() {
+    let s = TokenStream::new(
+        "continued string",
+        Some(TokenContinuation::StringLiteral(false)),
+    );
+
+    let r: Vec<_> = s.collect();
+
+    assert_eq!(r.len(), 1);
+    assert!(matches!(
+        r[0],
+        Ok(Token {
+            kind: TokenKind::StringFragment(false),
+            span: Range { start: 0, end: 16 }
+        })
+    ));
+}
+
+#[test]
+fn string_end_continues_tokenizing() {
+    let s = TokenStream::new(
+        "end string \" #f",
+        Some(TokenContinuation::StringLiteral(false)),
+    );
+
+    let r: Vec<_> = s.collect();
+
+    assert_eq!(r.len(), 2);
+    assert!(matches!(
+        r[0],
+        Ok(Token {
+            kind: TokenKind::StringEnd,
+            span: Range { start: 0, end: 12 }
+        })
+    ));
+    assert!(matches!(
+        r[1],
+        Ok(Token {
+            kind: TokenKind::Literal(Literal::Boolean(false)),
+            span: Range { start: 13, end: 15 }
+        })
+    ));
+}
+
+#[test]
 fn finishes_parsing_string_if_error() {
     let s = TokenStream::new("\"foo \\e bar\" #t", None);
 
