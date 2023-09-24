@@ -2363,7 +2363,7 @@ mod string {
         };
 
         let r = t.extract();
-        dbg!(&r);
+
         assert!(matches!(
             r,
             TokenExtract {
@@ -2406,7 +2406,7 @@ mod string {
         };
 
         let r = t.extract();
-        dbg!(&r);
+
         assert!(matches!(
             r,
             TokenExtract {
@@ -2414,6 +2414,27 @@ mod string {
                 end: 22,
                 result: Ok(TokenKind::StringBegin(s, true)),
             } if s == "beginning string"
+        ));
+    }
+
+    #[test]
+    fn string_begin_only_counts_final_slash_as_line_continuation() {
+        let mut s = Scanner::new("\"beginning string\\  \\  \\  ");
+        let start = s.next_token().unwrap();
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 26,
+                result: Ok(TokenKind::StringBegin(s, true)),
+            } if s == "beginning string    "
         ));
     }
 }
