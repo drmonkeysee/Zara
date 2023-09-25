@@ -1,13 +1,19 @@
-use crate::args::Args;
+use crate::{args::Args, repl::Repl};
+use rustyline::error::ReadlineError;
 use std::{
+    error::Error,
+    fmt::{self, Display, Formatter},
     io::{self, IsTerminal, Stdin},
     path::Path,
     rc::Rc,
+    result,
 };
 use zara::{
-    txt::{LineNumber, TextContext, TextLine, TextSource},
-    Interpreter, Result,
+    txt::{FileSource, LineNumber, TextContext, TextLine, TextSource},
+    Interpreter,
 };
+
+pub(crate) type Result = result::Result<(), RunError>;
 
 #[derive(Debug)]
 pub(crate) struct Opts {
@@ -24,19 +30,67 @@ impl Opts {
     }
 }
 
+#[derive(Debug)]
+pub(crate) enum RunError {
+    Io(io::Error),
+    Repl(ReadlineError),
+    Run(zara::Error),
+}
+
+impl Display for RunError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Io(err) => err.fmt(f),
+            Self::Repl(err) => err.fmt(f),
+            Self::Run(err) => err.fmt(f),
+        }
+    }
+}
+
+impl Error for RunError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        Some(match self {
+            Self::Io(err) => err,
+            Self::Repl(err) => err,
+            Self::Run(err) => err,
+        })
+    }
+}
+
+impl From<io::Error> for RunError {
+    fn from(value: io::Error) -> Self {
+        Self::Io(value)
+    }
+}
+
+impl From<ReadlineError> for RunError {
+    fn from(value: ReadlineError) -> Self {
+        Self::Repl(value)
+    }
+}
+
+impl From<zara::Error> for RunError {
+    fn from(value: zara::Error) -> Self {
+        Self::Run(value)
+    }
+}
+
 pub(crate) fn file(opts: Opts, prg: impl AsRef<Path>) -> Result {
-    todo!();
+    run(opts, FileSource::file(prg)?)
 }
 
 pub(crate) fn prg(opts: Opts, prg: String) -> Result {
     run(opts, PrgSource::new(prg))
 }
 
+pub(crate) fn repl(opts: Opts) -> Result {
+    let mut r = Repl::new(opts)?;
+    Ok(r.run()?)
+}
+
 pub(crate) fn stdin(opts: Opts) -> Result {
     run(opts, StdinSource::new())
 }
-
-struct FileSource;
 
 struct PrgSource {
     ctx: Rc<TextContext>,
@@ -136,10 +190,11 @@ fn run(opts: Opts, mut src: impl TextSource) -> Result {
     let mut runtime = Interpreter::new(opts.token_output, opts.ast_output);
     let result = runtime.run(&mut src);
     print_terminal_result(&result);
-    result
+    result?;
+    Ok(())
 }
 
-fn print_terminal_result(result: &Result) {
+fn print_terminal_result(result: &zara::Result) {
     match result {
         Ok(eval) => print!("{}", eval.extended_display()),
         Err(err) => eprint!("{}", err.extended_display()),

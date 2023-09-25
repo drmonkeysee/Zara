@@ -14,8 +14,6 @@ pub use self::{eval::Evaluation, syn::Expression};
 use std::{
     error,
     fmt::{self, Display, Formatter},
-    io,
-    path::PathBuf,
     result,
 };
 
@@ -114,10 +112,6 @@ impl Display for ExtendedError<'_> {
             _ => writeln!(f, "#<error-extended-undef({err:?})>"),
         }
     }
-}
-
-pub fn resolve_library(name: &str) -> io::Result<PathBuf> {
-    todo!();
 }
 
 #[cfg(test)]

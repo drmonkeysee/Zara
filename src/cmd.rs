@@ -1,17 +1,9 @@
 use crate::{
     args::{self, Args},
-    repl::Repl,
-    run::{self, Opts},
-};
-use rustyline::error::ReadlineError;
-use std::{
-    error::Error,
-    fmt::{self, Display, Formatter},
-    path::PathBuf,
-    result,
+    run::{self, Opts, Result},
 };
 
-pub(crate) type Result = result::Result<(), CmdError>;
+use std::path::PathBuf;
 
 #[derive(Debug)]
 pub(crate) enum Cmd {
@@ -36,8 +28,7 @@ impl Cmd {
                 run::prg(opts, prg)?;
             }
             Self::Repl(opts) => {
-                let mut r = Repl::new(opts)?;
-                r.run()?;
+                run::repl(opts)?;
             }
             Self::Stdin(opts) => {
                 run::stdin(opts)?;
@@ -69,42 +60,6 @@ impl From<Args> for Cmd {
                 Self::Repl(opts)
             }
         }
-    }
-}
-
-#[derive(Debug)]
-pub(crate) enum CmdError {
-    Repl(ReadlineError),
-    Run(zara::Error),
-}
-
-impl Display for CmdError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Repl(err) => err.fmt(f),
-            Self::Run(err) => err.fmt(f),
-        }
-    }
-}
-
-impl Error for CmdError {
-    fn source(&self) -> Option<&(dyn Error + 'static)> {
-        Some(match self {
-            Self::Repl(err) => err,
-            Self::Run(err) => err,
-        })
-    }
-}
-
-impl From<ReadlineError> for CmdError {
-    fn from(value: ReadlineError) -> Self {
-        Self::Repl(value)
-    }
-}
-
-impl From<zara::Error> for CmdError {
-    fn from(value: zara::Error) -> Self {
-        Self::Run(value)
     }
 }
 

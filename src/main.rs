@@ -3,7 +3,10 @@ mod cmd;
 mod repl;
 mod run;
 
-use self::cmd::{Cmd, CmdError, Result};
+use self::{
+    cmd::Cmd,
+    run::{Result, RunError},
+};
 use std::{
     env,
     process::{ExitCode, Termination},
@@ -30,7 +33,7 @@ impl From<Result> for Exit {
     }
 }
 
-fn fail(err: CmdError) -> ExitCode {
+fn fail(err: RunError) -> ExitCode {
     eprintln!("{err}");
     ExitCode::FAILURE
 }
