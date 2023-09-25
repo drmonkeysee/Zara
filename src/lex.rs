@@ -69,7 +69,7 @@ impl Lexer {
         src.map(|tl| self.tokenize_line(tl)).collect()
     }
 
-    fn tokenize_line(&mut self, text: TextLine) -> LexerLineResult {
+    fn tokenize_line(&mut self, text: TextLine) -> Result<LexLine, LexerError> {
         let mut errors = Vec::new();
         let tokens: Vec<_> = TokenStream::new(&text.line, self.cont.take())
             .filter_map(|tr| tr.map_err(|err| errors.push(err)).ok())
@@ -155,8 +155,6 @@ impl Display for ExtendedDisplayLexLines<'_> {
         Ok(())
     }
 }
-
-type LexerLineResult = Result<LexLine, LexerError>;
 
 struct ExtendedLexLine<'a>(&'a LexLine);
 
