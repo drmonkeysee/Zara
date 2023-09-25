@@ -1,5 +1,6 @@
 const AST_SHORT: &str = "-S";
 const AST_LONG: &str = "--syntax";
+const AST_TOKEN_SHORT: &str = "-ST";
 const HELP_SHORT: &str = "-h";
 const HELP_LONG: &str = "--help";
 const LIB_SHORT: &str = "-l";
@@ -7,6 +8,7 @@ const LIB_LONG: &str = "--lib";
 const STDIN_SHORT: &str = "-";
 const TOKEN_SHORT: &str = "-T";
 const TOKEN_LONG: &str = "--tokens";
+const TOKEN_AST_SHORT: &str = "-TS";
 const VERSION_SHORT: &str = "-V";
 const VERSION_LONG: &str = "--version";
 
@@ -30,6 +32,10 @@ pub(crate) fn parse(args: impl IntoIterator<Item = String>) -> Args {
             TOKEN_SHORT | TOKEN_LONG => parsed.tokens = true,
             VERSION_SHORT | VERSION_LONG => parsed.ver = true,
             STDIN_SHORT => parsed.stdin = true,
+            AST_TOKEN_SHORT | TOKEN_AST_SHORT => {
+                parsed.ast = true;
+                parsed.tokens = true;
+            }
             _ => (),
         }
     }
@@ -264,6 +270,32 @@ mod tests {
                     result,
                     Args {
                         ast: false,
+                        help: false,
+                        me: _,
+                        prg: None,
+                        stdin: false,
+                        tokens: true,
+                        ver: false,
+                    }
+                ),
+                "Unexpected match for argument {}",
+                case[1]
+            );
+        }
+    }
+
+    #[test]
+    fn tokens_and_ast() {
+        let cases = [["foo/me", "-ST"], ["foo/me", "-TS"]];
+
+        for case in cases {
+            let result = parse(case.into_iter().map(String::from));
+
+            assert!(
+                matches!(
+                    result,
+                    Args {
+                        ast: true,
                         help: false,
                         me: _,
                         prg: None,
