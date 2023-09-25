@@ -189,12 +189,12 @@ impl TextSource for StdinSource {
 fn run(opts: Opts, mut src: impl TextSource) -> Result {
     let mut runtime = Interpreter::new(opts.token_output, opts.ast_output);
     let result = runtime.run(&mut src);
-    print_terminal_result(&result);
+    print_result(&result);
     result?;
     Ok(())
 }
 
-fn print_terminal_result(result: &zara::Result) {
+fn print_result(result: &zara::Result) {
     match result {
         Ok(eval) => print!("{}", eval.extended_display()),
         Err(err) => eprint!("{}", err.extended_display()),
