@@ -5,7 +5,7 @@ mod run;
 
 use self::{
     cmd::Cmd,
-    run::{Result, RunError},
+    run::{Result, Error},
 };
 use std::{
     env,
@@ -33,7 +33,7 @@ impl From<Result> for Exit {
     }
 }
 
-fn fail(err: RunError) -> ExitCode {
+fn fail(err: Error) -> ExitCode {
     eprintln!("{err}");
     ExitCode::FAILURE
 }

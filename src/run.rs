@@ -1,7 +1,7 @@
 use crate::{args::Args, repl::Repl};
 use rustyline::error::ReadlineError;
 use std::{
-    error::Error,
+    error,
     fmt::{self, Display, Formatter},
     io::{self, IsTerminal, Stdin},
     path::Path,
@@ -13,7 +13,7 @@ use zara::{
     Interpreter,
 };
 
-pub(crate) type Result = result::Result<(), RunError>;
+pub(crate) type Result = result::Result<(), Error>;
 
 #[derive(Debug)]
 pub(crate) struct Opts {
@@ -31,13 +31,13 @@ impl Opts {
 }
 
 #[derive(Debug)]
-pub(crate) enum RunError {
+pub(crate) enum Error {
     Io(io::Error),
     Repl(ReadlineError),
     Run(zara::Error),
 }
 
-impl Display for RunError {
+impl Display for Error {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
             Self::Io(err) => err.fmt(f),
@@ -47,8 +47,8 @@ impl Display for RunError {
     }
 }
 
-impl Error for RunError {
-    fn source(&self) -> Option<&(dyn Error + 'static)> {
+impl error::Error for Error {
+    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
         Some(match self {
             Self::Io(err) => err,
             Self::Repl(err) => err,
@@ -57,19 +57,19 @@ impl Error for RunError {
     }
 }
 
-impl From<io::Error> for RunError {
+impl From<io::Error> for Error {
     fn from(value: io::Error) -> Self {
         Self::Io(value)
     }
 }
 
-impl From<ReadlineError> for RunError {
+impl From<ReadlineError> for Error {
     fn from(value: ReadlineError) -> Self {
         Self::Repl(value)
     }
 }
 
-impl From<zara::Error> for RunError {
+impl From<zara::Error> for Error {
     fn from(value: zara::Error) -> Self {
         Self::Run(value)
     }
