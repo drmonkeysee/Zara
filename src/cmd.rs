@@ -57,6 +57,8 @@ impl From<Args> for Cmd {
                 } else {
                     Self::Stdin(opts)
                 }
+            } else if let Some(p) = value.filepath {
+                Self::File(opts, p)
             } else {
                 Self::Repl(opts)
             }
@@ -67,6 +69,7 @@ impl From<Args> for Cmd {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::path::Path;
 
     #[test]
     fn default_args() {
@@ -97,6 +100,28 @@ mod tests {
         assert!(matches!(
             result,
             Cmd::Help(me) if me == program
+        ));
+    }
+
+    #[test]
+    fn file() {
+        let input = "my/file.scm";
+        let args = Args {
+            filepath: Some(Path::new(input).to_path_buf()),
+            ..Default::default()
+        };
+
+        let result = args.into();
+
+        assert!(matches!(
+            result,
+            Cmd::File(
+                Opts {
+                    ast_output: false,
+                    token_output: false,
+                },
+                pth,
+            ) if pth.to_str().unwrap() == input
         ));
     }
 

@@ -1,3 +1,5 @@
+use std::path::{Path, PathBuf};
+
 const AST_SHORT: &str = "-S";
 const AST_LONG: &str = "--syntax";
 const AST_TOKEN_SHORT: &str = "-ST";
@@ -36,7 +38,10 @@ pub(crate) fn parse(args: impl IntoIterator<Item = String>) -> Args {
                 parsed.ast = true;
                 parsed.tokens = true;
             }
-            _ => (),
+            f @ _ if parsed.filepath.is_none() => {
+                parsed.filepath = Some(Path::new(f).to_path_buf())
+            }
+            _ => todo!(), // Script Arguments
         }
     }
     parsed
@@ -102,6 +107,7 @@ pub(crate) fn version() {
 #[derive(Debug, Default)]
 pub(crate) struct Args {
     pub(crate) ast: bool,
+    pub(crate) filepath: Option<PathBuf>,
     pub(crate) help: bool,
     pub(crate) me: String,
     pub(crate) prg: Option<String>,
@@ -132,6 +138,7 @@ mod tests {
             result,
             Args {
                 ast: false,
+                filepath: None,
                 help: false,
                 me,
                 prg: None,
@@ -139,6 +146,27 @@ mod tests {
                 tokens: false,
                 ver: false,
             } if me == "zara"
+        ));
+    }
+
+    #[test]
+    fn just_me() {
+        let args = ["foo/me"];
+
+        let result = parse(args.into_iter().map(String::from));
+
+        assert!(matches!(
+            result,
+            Args {
+                ast: false,
+                filepath: None,
+                help: false,
+                me: _,
+                prg: None,
+                stdin: false,
+                tokens: false,
+                ver: false,
+            }
         ));
     }
 
@@ -155,6 +183,7 @@ mod tests {
                     result,
                     Args {
                         ast: false,
+                        filepath: None,
                         help: true,
                         me,
                         prg: None,
@@ -179,6 +208,7 @@ mod tests {
             result,
             Args {
                 ast: false,
+                filepath: None,
                 help: false,
                 me: _,
                 prg: None,
@@ -200,6 +230,7 @@ mod tests {
             result,
             Args {
                 ast: false,
+                filepath: None,
                 help: false,
                 me: _,
                 prg: Some(s),
@@ -222,6 +253,7 @@ mod tests {
             result,
             Args {
                 ast: false,
+                filepath: None,
                 help: false,
                 me: _,
                 prg: Some(s),
@@ -244,6 +276,7 @@ mod tests {
                     result,
                     Args {
                         ast: true,
+                        filepath: None,
                         help: false,
                         me: _,
                         prg: None,
@@ -270,6 +303,7 @@ mod tests {
                     result,
                     Args {
                         ast: false,
+                        filepath: None,
                         help: false,
                         me: _,
                         prg: None,
@@ -296,6 +330,7 @@ mod tests {
                     result,
                     Args {
                         ast: true,
+                        filepath: None,
                         help: false,
                         me: _,
                         prg: None,
@@ -322,6 +357,7 @@ mod tests {
                     result,
                     Args {
                         ast: false,
+                        filepath: None,
                         help: false,
                         me: _,
                         prg: None,
@@ -337,8 +373,8 @@ mod tests {
     }
 
     #[test]
-    fn no_matched_args() {
-        let args = ["foo/me", "--not-an-option"];
+    fn file() {
+        let args = ["foo/me", "my/file"];
 
         let result = parse(args.into_iter().map(String::from));
 
@@ -346,13 +382,14 @@ mod tests {
             result,
             Args {
                 ast: false,
+                filepath: Some(p),
                 help: false,
                 me: _,
                 prg: None,
                 stdin: false,
                 tokens: false,
                 ver: false,
-            }
+            } if p.to_str().unwrap() == "my/file"
         ));
     }
 }
