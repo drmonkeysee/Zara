@@ -1,5 +1,6 @@
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
+const ARGS_PREFIX: &str = "--";
 const AST_SHORT: &str = "-S";
 const AST_LONG: &str = "--syntax";
 const AST_TOKEN_SHORT: &str = "-ST";
@@ -24,32 +25,14 @@ pub(crate) fn parse(args: impl IntoIterator<Item = String>) -> Args {
         ..Default::default()
     };
     for arg in args {
-        if parsed.stdin {
-            parsed.prg = Some(arg);
-            break;
-        }
-        match arg.as_str() {
-            AST_SHORT | AST_LONG => parsed.ast = true,
-            HELP_SHORT | HELP_LONG => parsed.help = true,
-            TOKEN_SHORT | TOKEN_LONG => parsed.tokens = true,
-            VERSION_SHORT | VERSION_LONG => parsed.ver = true,
-            STDIN_SHORT => parsed.stdin = true,
-            AST_TOKEN_SHORT | TOKEN_AST_SHORT => {
-                parsed.ast = true;
-                parsed.tokens = true;
-            }
-            f @ _ if parsed.filepath.is_none() => {
-                parsed.filepath = Some(Path::new(f).to_path_buf())
-            }
-            _ => todo!(), // Script Arguments
-        }
+        parsed.match_arg(arg);
     }
     parsed
 }
 
 pub(crate) fn usage(me: &str) {
     println!("---=== {} Usage ===---", app_title());
-    println!("{me} [options...] [command | file | -] [args...]");
+    println!("{me} [options...] [command | file | -] [--] [args...]");
     println!();
     println!("options");
     println!(
@@ -111,9 +94,54 @@ pub(crate) struct Args {
     pub(crate) help: bool,
     pub(crate) me: String,
     pub(crate) prg: Option<String>,
+    pub(crate) runargs: Vec<String>,
+    pub(crate) runargs_prefix: bool,
     pub(crate) stdin: bool,
     pub(crate) tokens: bool,
     pub(crate) ver: bool,
+}
+
+impl Args {
+    fn match_arg(&mut self, arg: String) {
+        if self.has_run_target() {
+            self.match_target_arg(arg);
+        } else {
+            self.match_command_arg(arg);
+        }
+    }
+
+    fn has_run_target(&self) -> bool {
+        self.stdin || self.runargs_prefix || self.filepath.is_some()
+    }
+
+    fn match_target_arg(&mut self, arg: String) {
+        match arg.as_str() {
+            ARGS_PREFIX => self.runargs_prefix = true,
+            _ if self.stdin && !self.runargs_prefix && self.prg.is_none() => self.prg = Some(arg),
+            _ => self.runargs.push(arg),
+        }
+    }
+
+    fn match_command_arg(&mut self, arg: String) {
+        match arg.as_str() {
+            ARGS_PREFIX => self.runargs_prefix = true,
+            AST_SHORT | AST_LONG => self.ast = true,
+            HELP_SHORT | HELP_LONG => self.help = true,
+            TOKEN_SHORT | TOKEN_LONG => self.tokens = true,
+            VERSION_SHORT | VERSION_LONG => self.ver = true,
+            STDIN_SHORT => self.stdin = true,
+            AST_TOKEN_SHORT | TOKEN_AST_SHORT => {
+                self.ast = true;
+                self.tokens = true;
+            }
+            _ if !self.stdin && !self.runargs_prefix && self.filepath.is_none() => {
+                let mut p = PathBuf::new();
+                p.push(arg);
+                self.filepath = Some(p);
+            }
+            _ => (),
+        }
+    }
 }
 
 fn app_title() -> String {
@@ -142,10 +170,12 @@ mod tests {
                 help: false,
                 me,
                 prg: None,
+                runargs,
                 stdin: false,
+                runargs_prefix: false,
                 tokens: false,
                 ver: false,
-            } if me == "zara"
+            } if me == "zara" && runargs.len() == 0
         ));
     }
 
@@ -161,13 +191,39 @@ mod tests {
                 ast: false,
                 filepath: None,
                 help: false,
-                me: _,
+                me,
                 prg: None,
+                runargs,
                 stdin: false,
+                runargs_prefix: false,
                 tokens: false,
                 ver: false,
-            }
+            } if me == "foo/me" && runargs.len() == 0
         ));
+    }
+
+    #[test]
+    fn just_me_with_args() {
+        let args = ["foo/me", "--", "arg1", "arg2", "--arg3=1"];
+
+        let result = parse(args.into_iter().map(String::from));
+
+        assert!(matches!(
+            result,
+            Args {
+                ast: false,
+                filepath: None,
+                help: false,
+                me,
+                prg: None,
+                runargs: _,
+                stdin: false,
+                runargs_prefix: true,
+                tokens: false,
+                ver: false,
+            } if me == "foo/me"
+        ));
+        assert_eq!(result.runargs, ["arg1", "arg2", "--arg3=1"]);
     }
 
     #[test]
@@ -187,7 +243,9 @@ mod tests {
                         help: true,
                         me,
                         prg: None,
+                        runargs: _,
                         stdin: false,
+                        runargs_prefix: false,
                         tokens: false,
                         ver: false,
                     } if me == program
@@ -212,7 +270,9 @@ mod tests {
                 help: false,
                 me: _,
                 prg: None,
+                runargs: _,
                 stdin: true,
+                runargs_prefix: false,
                 tokens: false,
                 ver: false,
             },
@@ -234,7 +294,9 @@ mod tests {
                 help: false,
                 me: _,
                 prg: Some(s),
+                runargs: _,
                 stdin: true,
+                runargs_prefix: false,
                 tokens: false,
                 ver: false,
             } if s == input,
@@ -242,13 +304,37 @@ mod tests {
     }
 
     #[test]
+    fn stdin_args() {
+        let args = ["foo/me", "-", "--", "arg1", "arg2", "--arg3=1"];
+
+        let result = parse(args.into_iter().map(String::from));
+        dbg!(&result);
+
+        assert!(matches!(
+            result,
+            Args {
+                ast: false,
+                filepath: None,
+                help: false,
+                me: _,
+                prg: None,
+                runargs: _,
+                stdin: true,
+                runargs_prefix: true,
+                tokens: false,
+                ver: false,
+            },
+        ));
+        assert_eq!(result.runargs, ["arg1", "arg2", "--arg3=1"]);
+    }
+
+    #[test]
     fn stdin_prg_args() {
-        let input = "stdin input arg1 arg2 --arg3=1";
-        let args = ["foo/me", "-", input];
+        let input = "stdin input";
+        let args = ["foo/me", "-", input, "arg1", "arg2", "--arg3=1"];
 
         let result = parse(args.into_iter().map(String::from));
 
-        todo!();
         assert!(matches!(
             result,
             Args {
@@ -257,11 +343,14 @@ mod tests {
                 help: false,
                 me: _,
                 prg: Some(s),
+                runargs: _,
                 stdin: true,
+                runargs_prefix: false,
                 tokens: false,
                 ver: false,
             } if s == input,
         ));
+        assert_eq!(result.runargs, ["arg1", "arg2", "--arg3=1"]);
     }
 
     #[test]
@@ -280,7 +369,9 @@ mod tests {
                         help: false,
                         me: _,
                         prg: None,
+                        runargs: _,
                         stdin: false,
+                        runargs_prefix: false,
                         tokens: false,
                         ver: false,
                     }
@@ -307,7 +398,9 @@ mod tests {
                         help: false,
                         me: _,
                         prg: None,
+                        runargs: _,
                         stdin: false,
+                        runargs_prefix: false,
                         tokens: true,
                         ver: false,
                     }
@@ -334,7 +427,9 @@ mod tests {
                         help: false,
                         me: _,
                         prg: None,
+                        runargs: _,
                         stdin: false,
+                        runargs_prefix: false,
                         tokens: true,
                         ver: false,
                     }
@@ -361,7 +456,9 @@ mod tests {
                         help: false,
                         me: _,
                         prg: None,
+                        runargs: _,
                         stdin: false,
+                        runargs_prefix: false,
                         tokens: false,
                         ver: true,
                     }
@@ -386,10 +483,84 @@ mod tests {
                 help: false,
                 me: _,
                 prg: None,
+                runargs: _,
                 stdin: false,
+                runargs_prefix: false,
                 tokens: false,
                 ver: false,
             } if p.to_str().unwrap() == "my/file"
         ));
+    }
+
+    #[test]
+    fn file_args() {
+        let args = ["foo/me", "my/file", "arg1", "arg2", "--arg3=1"];
+
+        let result = parse(args.into_iter().map(String::from));
+
+        assert!(matches!(
+            result,
+            Args {
+                ast: false,
+                filepath: Some(p),
+                help: false,
+                me: _,
+                prg: None,
+                runargs: _,
+                stdin: false,
+                runargs_prefix: false,
+                tokens: false,
+                ver: false,
+            } if p.to_str().unwrap() == "my/file"
+        ));
+        assert_eq!(result.runargs, ["arg1", "arg2", "--arg3=1"]);
+    }
+
+    #[test]
+    fn zara_options_ignored_after_run_target() {
+        let args = ["foo/me", "my/file", "--version", "-T", "-ST"];
+
+        let result = parse(args.into_iter().map(String::from));
+
+        assert!(matches!(
+            result,
+            Args {
+                ast: false,
+                filepath: Some(p),
+                help: false,
+                me,
+                prg: None,
+                runargs: _,
+                stdin: false,
+                runargs_prefix: false,
+                tokens: false,
+                ver: false,
+            } if me == "foo/me" && p.to_str().unwrap() == "my/file"
+        ));
+        assert_eq!(result.runargs, ["--version", "-T", "-ST"]);
+    }
+
+    #[test]
+    fn zara_options_ignored_after_runargs_prefix() {
+        let args = ["foo/me", "--", "--version", "-T", "-ST"];
+
+        let result = parse(args.into_iter().map(String::from));
+
+        assert!(matches!(
+            result,
+            Args {
+                ast: false,
+                filepath: None,
+                help: false,
+                me,
+                prg: None,
+                runargs: _,
+                stdin: false,
+                runargs_prefix: true,
+                tokens: false,
+                ver: false,
+            } if me == "foo/me"
+        ));
+        assert_eq!(result.runargs, ["--version", "-T", "-ST"]);
     }
 }

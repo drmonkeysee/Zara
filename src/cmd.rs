@@ -44,6 +44,7 @@ impl Cmd {
 
 impl From<Args> for Cmd {
     fn from(value: Args) -> Self {
+        eprintln!("Run Args: {:?}", value.runargs);
         // NOTE: enforce command precedence here
         if value.help {
             Self::Help(value.me)
