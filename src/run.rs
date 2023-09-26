@@ -5,7 +5,8 @@ use std::{
     rc::Rc,
 };
 use zara::{
-    txt::{FileSource, LineNumber, TextContext, TextLine, TextSource},
+    src::FileSource,
+    txt::{LineNumber, TextContext, TextLine, TextSource},
     Interpreter,
 };
 

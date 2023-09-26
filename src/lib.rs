@@ -1,6 +1,7 @@
 mod eval;
 mod lex;
 mod literal;
+pub mod src;
 mod syn;
 pub mod txt;
 
