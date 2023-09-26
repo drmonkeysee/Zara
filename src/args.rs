@@ -70,8 +70,16 @@ pub(crate) fn usage(me: &str) {
         format!("{STDIN_SHORT} [prg]"),
         ARG_WIDTH
     );
+    println!("{:1$}: launch REPL", "<no target>", ARG_WIDTH);
+    println!(
+        "{ARGS_PREFIX:0$}: disambiguate program args from other inputs,",
+        ARG_WIDTH
+    );
+    println!(
+        "{:ARG_WIDTH$}  such as when running from stdin or launching the REPL",
+        ""
+    );
     println!("{:1$}: arguments passed to program", "args", ARG_WIDTH);
-    println!("{:1$}: launch REPL", "<no input>", ARG_WIDTH);
 }
 
 pub(crate) fn version() {
