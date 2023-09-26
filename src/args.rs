@@ -42,17 +42,6 @@ pub(crate) fn parse(args: impl IntoIterator<Item = String>) -> Args {
     parsed
 }
 
-#[derive(Debug, Default)]
-pub(crate) struct Args {
-    pub(crate) ast: bool,
-    pub(crate) help: bool,
-    pub(crate) me: String,
-    pub(crate) prg: Option<String>,
-    pub(crate) stdin: bool,
-    pub(crate) tokens: bool,
-    pub(crate) ver: bool,
-}
-
 pub(crate) fn usage(me: &str) {
     println!("---=== {} Usage ===---", app_title());
     println!("{me} [options...] [command | file | -] [args...]");
@@ -108,6 +97,17 @@ pub(crate) fn version() {
     if !deps.is_empty() {
         println!("{}", deps.replace(',', "\n"));
     }
+}
+
+#[derive(Debug, Default)]
+pub(crate) struct Args {
+    pub(crate) ast: bool,
+    pub(crate) help: bool,
+    pub(crate) me: String,
+    pub(crate) prg: Option<String>,
+    pub(crate) stdin: bool,
+    pub(crate) tokens: bool,
+    pub(crate) ver: bool,
 }
 
 fn app_title() -> String {

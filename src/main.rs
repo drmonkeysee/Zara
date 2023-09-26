@@ -5,7 +5,7 @@ mod run;
 
 use self::{
     cmd::Cmd,
-    run::{Result, Error},
+    run::{Error, Result},
 };
 use std::{
     env,
@@ -15,6 +15,11 @@ use std::{
 fn main() -> Exit {
     let cmd: Cmd = args::parse(env::args()).into();
     cmd.execute().into()
+}
+
+fn fail(err: Error) -> ExitCode {
+    eprintln!("{err}");
+    ExitCode::FAILURE
 }
 
 // NOTE: newtype to have more control over exit output rather than the
@@ -31,9 +36,4 @@ impl From<Result> for Exit {
     fn from(value: Result) -> Self {
         Self(value)
     }
-}
-
-fn fail(err: Error) -> ExitCode {
-    eprintln!("{err}");
-    ExitCode::FAILURE
 }

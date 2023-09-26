@@ -274,18 +274,6 @@ impl<'me, 'str> BlockComment<'me, 'str> {
 
 type StringLiteralResult = Result<(), TokenErrorKind>;
 
-enum StringContinuation {
-    Error,
-    New,
-    NextLine(bool),
-}
-
-enum HexParse {
-    Invalid,
-    Unexpected,
-    Valid(char),
-}
-
 fn char_hex(rest: &str) -> TokenExtractResult {
     match parse_char_hex(rest) {
         HexParse::Invalid => Err(TokenErrorKind::CharacterInvalidHex),
@@ -330,6 +318,18 @@ fn unterminated_string(buf: String, next_line: bool, line_cont: bool) -> TokenKi
     } else {
         TokenKind::StringBegin(buf, line_cont)
     }
+}
+
+enum StringContinuation {
+    Error,
+    New,
+    NextLine(bool),
+}
+
+enum HexParse {
+    Invalid,
+    Unexpected,
+    Valid(char),
 }
 
 // NOTE: state functionality is covered by Tokenizer and Continuation tests

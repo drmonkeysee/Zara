@@ -44,6 +44,37 @@ impl Display for TokenDescriptor<'_> {
     }
 }
 
+fn write_str_chr(ch: char, f: &mut Formatter<'_>) -> Result {
+    match char_to_displayable(ch) {
+        DisplayableChar::Char(ch) => f.write_char(ch),
+        DisplayableChar::Hex(hex) => write!(f, "\\x{:x};", hex),
+    }
+}
+
+fn write_unnamed_char(ch: char, f: &mut Formatter<'_>) -> Result {
+    match char_to_displayable(ch) {
+        DisplayableChar::Char(ch) => f.write_char(ch),
+        DisplayableChar::Hex(hex) => write!(f, "x{:x}", hex),
+    }
+}
+
+fn char_to_displayable(ch: char) -> DisplayableChar {
+    // NOTE: this is a little weird but there's no Unicode classification
+    // exposed in Rust's stdlib to tell if a character has a dedicated glyph or
+    // not, so check indirectly by seeing if the debug output starts with `\u`;
+    // if so, we display the hex representation instead of the char literal.
+    if ch.escape_debug().take(2).cmp(['\\', 'u']) == Ordering::Equal {
+        DisplayableChar::Hex(u32::from(ch))
+    } else {
+        DisplayableChar::Char(ch)
+    }
+}
+
+enum DisplayableChar {
+    Char(char),
+    Hex(u32),
+}
+
 enum CharDatum {
     Named(&'static str),
     Unnamed(char),
@@ -96,37 +127,6 @@ impl Display for StrDatum<'_> {
             }
         }
         f.write_char('"')
-    }
-}
-
-fn write_str_chr(ch: char, f: &mut Formatter<'_>) -> Result {
-    match char_to_displayable(ch) {
-        DisplayableChar::Char(ch) => f.write_char(ch),
-        DisplayableChar::Hex(hex) => write!(f, "\\x{:x};", hex),
-    }
-}
-
-fn write_unnamed_char(ch: char, f: &mut Formatter<'_>) -> Result {
-    match char_to_displayable(ch) {
-        DisplayableChar::Char(ch) => f.write_char(ch),
-        DisplayableChar::Hex(hex) => write!(f, "x{:x}", hex),
-    }
-}
-
-enum DisplayableChar {
-    Char(char),
-    Hex(u32),
-}
-
-fn char_to_displayable(ch: char) -> DisplayableChar {
-    // NOTE: this is a little weird but there's no Unicode classification
-    // exposed in Rust's stdlib to tell if a character has a dedicated glyph or
-    // not, so check indirectly by seeing if the debug output starts with `\u`;
-    // if so, we display the hex representation instead of the char literal.
-    if ch.escape_debug().take(2).cmp(['\\', 'u']) == Ordering::Equal {
-        DisplayableChar::Hex(u32::from(ch))
-    } else {
-        DisplayableChar::Char(ch)
     }
 }
 

@@ -15,6 +15,23 @@ use zara::{
 
 pub(crate) type Result = result::Result<(), Error>;
 
+pub(crate) fn file(opts: Opts, prg: impl AsRef<Path>) -> Result {
+    run(opts, FileSource::file(prg)?)
+}
+
+pub(crate) fn prg(opts: Opts, prg: String) -> Result {
+    run(opts, PrgSource::new(prg))
+}
+
+pub(crate) fn repl(opts: Opts) -> Result {
+    let mut r = Repl::new(opts)?;
+    Ok(r.run()?)
+}
+
+pub(crate) fn stdin(opts: Opts) -> Result {
+    run(opts, StdinSource::new())
+}
+
 #[derive(Debug)]
 pub(crate) struct Opts {
     pub(crate) ast_output: bool,
@@ -75,21 +92,19 @@ impl From<zara::Error> for Error {
     }
 }
 
-pub(crate) fn file(opts: Opts, prg: impl AsRef<Path>) -> Result {
-    run(opts, FileSource::file(prg)?)
+fn run(opts: Opts, mut src: impl TextSource) -> Result {
+    let mut runtime = Interpreter::new(opts.token_output, opts.ast_output);
+    let result = runtime.run(&mut src);
+    print_result(&result);
+    result?;
+    Ok(())
 }
 
-pub(crate) fn prg(opts: Opts, prg: String) -> Result {
-    run(opts, PrgSource::new(prg))
-}
-
-pub(crate) fn repl(opts: Opts) -> Result {
-    let mut r = Repl::new(opts)?;
-    Ok(r.run()?)
-}
-
-pub(crate) fn stdin(opts: Opts) -> Result {
-    run(opts, StdinSource::new())
+fn print_result(result: &zara::Result) {
+    match result {
+        Ok(eval) => print!("{}", eval.extended_display()),
+        Err(err) => eprint!("{}", err.extended_display()),
+    }
 }
 
 struct PrgSource {
@@ -183,21 +198,6 @@ impl Iterator for StdinSource {
 impl TextSource for StdinSource {
     fn context(&self) -> Rc<TextContext> {
         self.ctx.clone()
-    }
-}
-
-fn run(opts: Opts, mut src: impl TextSource) -> Result {
-    let mut runtime = Interpreter::new(opts.token_output, opts.ast_output);
-    let result = runtime.run(&mut src);
-    print_result(&result);
-    result?;
-    Ok(())
-}
-
-fn print_result(result: &zara::Result) {
-    match result {
-        Ok(eval) => print!("{}", eval.extended_display()),
-        Err(err) => eprint!("{}", err.extended_display()),
     }
 }
 
