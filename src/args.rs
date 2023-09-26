@@ -114,10 +114,18 @@ impl Args {
         self.stdin || self.runargs_prefix || self.filepath.is_some()
     }
 
+    fn expecting_prg_text(&self) -> bool {
+        self.stdin && !self.runargs_prefix && self.prg.is_none()
+    }
+
+    fn expecting_file_path(&self) -> bool {
+        !self.stdin && !self.runargs_prefix && self.filepath.is_none()
+    }
+
     fn match_target_arg(&mut self, arg: String) {
         match arg.as_str() {
             ARGS_PREFIX => self.runargs_prefix = true,
-            _ if self.stdin && !self.runargs_prefix && self.prg.is_none() => self.prg = Some(arg),
+            _ if self.expecting_prg_text() => self.prg = Some(arg),
             _ => self.runargs.push(arg),
         }
     }
@@ -134,7 +142,7 @@ impl Args {
                 self.ast = true;
                 self.tokens = true;
             }
-            _ if !self.stdin && !self.runargs_prefix && self.filepath.is_none() => {
+            _ if self.expecting_file_path() => {
                 let mut p = PathBuf::new();
                 p.push(arg);
                 self.filepath = Some(p);
