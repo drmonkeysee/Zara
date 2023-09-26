@@ -1,11 +1,12 @@
 mod args;
+mod cli;
 mod cmd;
 mod repl;
 mod run;
 
 use self::{
+    cli::{Error, Result},
     cmd::Cmd,
-    run::{Error, Result},
 };
 use std::{
     env,

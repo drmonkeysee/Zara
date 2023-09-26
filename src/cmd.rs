@@ -1,6 +1,7 @@
 use crate::{
     args::{self, Args},
-    run::{self, Opts, Result},
+    cli::Result,
+    run::{self, Opts},
 };
 
 use std::path::PathBuf;
