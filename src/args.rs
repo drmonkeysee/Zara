@@ -36,50 +36,41 @@ pub(crate) fn usage(me: &str) {
     println!();
     println!("options");
     println!(
-        "  {:1$}: print abstract syntax tree",
-        format!("{AST_SHORT}, {AST_LONG}"),
-        OPT_WIDTH
+        "  {:OPT_WIDTH$}: print abstract syntax tree",
+        format!("{AST_SHORT}, {AST_LONG}")
     );
     println!(
-        "  {:1$}: print tokenized input",
-        format!("{TOKEN_SHORT}, {TOKEN_LONG}"),
-        OPT_WIDTH
+        "  {:OPT_WIDTH$}: print tokenized input",
+        format!("{TOKEN_SHORT}, {TOKEN_LONG}")
     );
     println!();
     println!("commands");
     println!(
-        "  {:1$}: print usage",
-        format!("{HELP_SHORT}, {HELP_LONG}"),
-        OPT_WIDTH
+        "  {:OPT_WIDTH$}: print usage",
+        format!("{HELP_SHORT}, {HELP_LONG}")
     );
     println!(
-        "  {:1$}: print version",
-        format!("{VERSION_SHORT}, {VERSION_LONG}"),
-        OPT_WIDTH
+        "  {:OPT_WIDTH$}: print version",
+        format!("{VERSION_SHORT}, {VERSION_LONG}")
     );
     println!("  {LIB_SHORT} [name],");
     println!(
-        "  {:1$}: run program from named library (omit name for usage)",
-        format!("{LIB_LONG} [name]"),
-        OPT_WIDTH
+        "  {:OPT_WIDTH$}: run program from named library (omit name for usage)",
+        format!("{LIB_LONG} [name]")
     );
     println!();
-    println!("{:1$}: run program from script file", "file", ARG_WIDTH);
+    println!("{:ARG_WIDTH$}: run program from script file", "file");
     println!(
-        "{:1$}: run program string if provided, otherwise run program from stdin",
-        format!("{STDIN_SHORT} [prg]"),
-        ARG_WIDTH
+        "{:ARG_WIDTH$}: run program string if provided, otherwise run program from stdin",
+        format!("{STDIN_SHORT} [prg]")
     );
-    println!("{:1$}: launch REPL", "<no target>", ARG_WIDTH);
-    println!(
-        "{ARGS_PREFIX:0$}: disambiguate program args from other inputs,",
-        ARG_WIDTH
-    );
+    println!("{:ARG_WIDTH$}: launch REPL", "<no target>");
+    println!("{ARGS_PREFIX:ARG_WIDTH$}: disambiguate program args from other inputs,");
     println!(
         "{:ARG_WIDTH$}  such as when running from stdin or launching the REPL",
         ""
     );
-    println!("{:1$}: arguments passed to program", "args", ARG_WIDTH);
+    println!("{:ARG_WIDTH$}: arguments passed to program", "args");
 }
 
 pub(crate) fn version() {
