@@ -20,11 +20,7 @@ impl FileSource {
     }
 
     fn init(f: File, n: String) -> Result<Self> {
-        Ok(Self {
-            adapter: FileLineAdapter(BufReader::new(f)),
-            ctx: TextContext::named(n).into(),
-            lineno: 1,
-        })
+        Ok(Self::new(FileLineAdapter(BufReader::new(f)), n))
     }
 }
 
@@ -93,6 +89,16 @@ pub struct LineInputSource<T> {
     lineno: LineNumber,
 }
 
+impl<T: LineInputAdapter> LineInputSource<T> {
+    pub fn new(adapter: T, name: impl Into<String>) -> Self {
+        Self {
+            adapter,
+            ctx: TextContext::named(name).into(),
+            lineno: 1,
+        }
+    }
+}
+
 impl<T: LineInputAdapter> Iterator for LineInputSource<T> {
     type Item = TextLine;
 
@@ -102,6 +108,8 @@ impl<T: LineInputAdapter> Iterator for LineInputSource<T> {
         let mut buf = String::new();
         self.adapter.read_line(&mut buf).map_or_else(
             |err| {
+                // TODO: should this yield an Option<Result<TextLine>> instead
+                // of printing to stderr?
                 eprintln!(
                     "{}:{lineno}\n\tunexpected line read error: {err}",
                     self.ctx.name
@@ -447,6 +455,135 @@ mod tests {
 
             let line = target.next();
 
+            assert!(line.is_none());
+        }
+    }
+
+    mod linesrc {
+        use super::*;
+
+        struct MockLineAdapter {
+            is_tty: bool,
+            lines: Vec<String>,
+        }
+
+        impl LineInputAdapter for MockLineAdapter {
+            fn is_tty(&self) -> bool {
+                self.is_tty
+            }
+
+            fn read_line(&mut self, buf: &mut String) -> Result<usize> {
+                self.lines.pop().map_or(Ok(0), |line| {
+                    buf.push_str(line.as_str());
+                    Ok(line.len())
+                })
+            }
+        }
+
+        #[test]
+        fn create() {
+            let target = LineInputSource::new(
+                MockLineAdapter {
+                    is_tty: false,
+                    lines: Vec::new(),
+                },
+                "test",
+            );
+
+            assert!(matches!(
+                target.ctx.as_ref(),
+                TextContext {
+                    name,
+                    path: None
+                } if name == "test"
+            ));
+            assert_eq!(target.lineno, 1);
+        }
+
+        #[test]
+        fn context() {
+            let target = LineInputSource::new(
+                MockLineAdapter {
+                    is_tty: false,
+                    lines: Vec::new(),
+                },
+                "test",
+            );
+
+            let ctx = target.context();
+
+            assert!(Rc::ptr_eq(&ctx, &target.ctx));
+        }
+
+        #[test]
+        fn lines_remove_newline() {
+            let mut target = LineInputSource::new(
+                MockLineAdapter {
+                    is_tty: false,
+                    lines: vec!["foo\n".to_owned(), "bar\n".to_owned()],
+                },
+                "test",
+            );
+
+            let line = target.next();
+            assert!(line.is_some());
+            let line = line.unwrap();
+            assert_eq!(line.line, "bar");
+            assert_eq!(line.lineno, 1);
+
+            let line = target.next();
+            assert!(line.is_some());
+            let line = line.unwrap();
+            assert_eq!(line.line, "foo");
+            assert_eq!(line.lineno, 2);
+
+            let line = target.next();
+            assert!(line.is_none());
+        }
+
+        #[test]
+        fn non_tty_returns_empty_line() {
+            let mut target = LineInputSource::new(
+                MockLineAdapter {
+                    is_tty: false,
+                    lines: vec!["\n".to_owned(), "bar\n".to_owned()],
+                },
+                "test",
+            );
+
+            let line = target.next();
+            assert!(line.is_some());
+            let line = line.unwrap();
+            assert_eq!(line.line, "bar");
+            assert_eq!(line.lineno, 1);
+
+            let line = target.next();
+            assert!(line.is_some());
+            let line = line.unwrap();
+            assert_eq!(line.line, "");
+            assert_eq!(line.lineno, 2);
+
+            let line = target.next();
+            assert!(line.is_none());
+        }
+
+        #[test]
+        fn tty_ends_on_empty_line() {
+            let mut target = LineInputSource::new(
+                MockLineAdapter {
+                    is_tty: true,
+                    lines: vec!["\n".to_owned(), "bar\n".to_owned()],
+                },
+                "test",
+            );
+
+            let line = target.next();
+            assert!(line.is_some());
+            let line = line.unwrap();
+            assert_eq!(line.line, "bar");
+            assert_eq!(line.lineno, 1);
+
+            let line = target.next();
             assert!(line.is_none());
         }
     }
