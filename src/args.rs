@@ -20,14 +20,14 @@ const OPT_WIDTH: usize = 14;
 
 pub(crate) fn parse(args: impl IntoIterator<Item = String>) -> Args {
     let mut args = args.into_iter();
-    let mut parsed = Args {
+    let mut arg_parse = Args {
         me: args.next().unwrap_or(env!("CARGO_PKG_NAME").to_owned()),
         ..Default::default()
     };
     for arg in args {
-        parsed.match_arg(arg);
+        arg_parse.match_arg(arg);
     }
-    parsed
+    arg_parse
 }
 
 pub(crate) fn usage(me: &str) {
