@@ -105,6 +105,8 @@ pub(super) struct StringLiteral<'me, 'str> {
     start: usize,
 }
 
+type StringLiteralResult = Result<(), TokenErrorKind>;
+
 impl<'me, 'str> StringLiteral<'me, 'str> {
     pub(super) fn new(scan: &'me mut Scanner<'str>) -> Self {
         Self::init(scan, StringContinuation::New)
@@ -271,8 +273,6 @@ impl<'me, 'str> BlockComment<'me, 'str> {
         }
     }
 }
-
-type StringLiteralResult = Result<(), TokenErrorKind>;
 
 fn char_hex(rest: &str) -> TokenExtractResult {
     match parse_char_hex(rest) {

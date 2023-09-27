@@ -6,24 +6,6 @@ use std::{
     rc::Rc,
 };
 
-pub type FileSource = LineInputSource<FileLineAdapter>;
-
-impl FileSource {
-    pub fn file(path: impl AsRef<Path>) -> Result<Self> {
-        let name = path
-            .as_ref()
-            .to_str()
-            .unwrap_or("#<invalid-file-path>")
-            .to_owned();
-        let f = File::open(path)?;
-        Self::init(f, name)
-    }
-
-    fn init(f: File, n: String) -> Result<Self> {
-        Ok(Self::new(FileLineAdapter(BufReader::new(f)), n))
-    }
-}
-
 pub struct StringSource {
     ctx: Rc<TextContext>,
     lines: <Vec<String> as IntoIterator>::IntoIter,
@@ -69,18 +51,6 @@ impl TextSource for StringSource {
 pub trait LineInputAdapter {
     fn is_tty(&self) -> bool;
     fn read_line(&mut self, buf: &mut String) -> Result<usize>;
-}
-
-pub struct FileLineAdapter(BufReader<File>);
-
-impl LineInputAdapter for FileLineAdapter {
-    fn is_tty(&self) -> bool {
-        self.0.get_ref().is_terminal()
-    }
-
-    fn read_line(&mut self, buf: &mut String) -> Result<usize> {
-        self.0.read_line(buf)
-    }
 }
 
 pub struct LineInputSource<T> {
@@ -136,6 +106,36 @@ impl<T: LineInputAdapter> Iterator for LineInputSource<T> {
 impl<T: LineInputAdapter> TextSource for LineInputSource<T> {
     fn context(&self) -> Rc<TextContext> {
         self.ctx.clone()
+    }
+}
+
+pub struct FileLineAdapter(BufReader<File>);
+
+impl LineInputAdapter for FileLineAdapter {
+    fn is_tty(&self) -> bool {
+        self.0.get_ref().is_terminal()
+    }
+
+    fn read_line(&mut self, buf: &mut String) -> Result<usize> {
+        self.0.read_line(buf)
+    }
+}
+
+pub type FileSource = LineInputSource<FileLineAdapter>;
+
+impl FileSource {
+    pub fn file(path: impl AsRef<Path>) -> Result<Self> {
+        let name = path
+            .as_ref()
+            .to_str()
+            .unwrap_or("#<invalid-file-path>")
+            .to_owned();
+        let f = File::open(path)?;
+        Self::init(f, name)
+    }
+
+    fn init(f: File, n: String) -> Result<Self> {
+        Ok(Self::new(FileLineAdapter(BufReader::new(f)), n))
     }
 }
 

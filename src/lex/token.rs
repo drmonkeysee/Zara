@@ -5,8 +5,6 @@ use std::{
     ops::Range,
 };
 
-pub type Token = TokenType<TokenKind>;
-
 #[derive(Debug)]
 pub enum TokenKind {
     ByteVector,
@@ -84,11 +82,15 @@ pub struct TokenType<T> {
     pub(crate) span: Range<usize>,
 }
 
+pub type Token = TokenType<TokenKind>;
+
 impl Display for Token {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "{}[{:?}]", self.kind, self.span)
     }
 }
+
+pub(super) type TokenError = TokenType<TokenErrorKind>;
 
 impl Display for TokenError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
@@ -98,7 +100,6 @@ impl Display for TokenError {
 
 impl Error for TokenError {}
 
-pub(super) type TokenError = TokenType<TokenErrorKind>;
 pub(super) type TokenResult = Result<Token, TokenError>;
 
 #[derive(Debug)]
