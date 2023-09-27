@@ -109,9 +109,9 @@ impl<T: LineInputAdapter> TextSource for LineInputSource<T> {
     }
 }
 
-pub struct FileLineAdapter(BufReader<File>);
+pub struct FileAdapter(BufReader<File>);
 
-impl LineInputAdapter for FileLineAdapter {
+impl LineInputAdapter for FileAdapter {
     fn is_tty(&self) -> bool {
         self.0.get_ref().is_terminal()
     }
@@ -121,7 +121,7 @@ impl LineInputAdapter for FileLineAdapter {
     }
 }
 
-pub type FileSource = LineInputSource<FileLineAdapter>;
+pub type FileSource = LineInputSource<FileAdapter>;
 
 impl FileSource {
     pub fn file(path: impl AsRef<Path>) -> Result<Self> {
@@ -135,7 +135,7 @@ impl FileSource {
     }
 
     fn init(f: File, n: String) -> Result<Self> {
-        Ok(Self::new(FileLineAdapter(BufReader::new(f)), n))
+        Ok(Self::new(FileAdapter(BufReader::new(f)), n))
     }
 }
 
@@ -464,7 +464,7 @@ mod tests {
 
         struct MockLineAdapter {
             is_tty: bool,
-            lines: Vec<String>,
+            lines: Vec<&'static str>,
         }
 
         impl LineInputAdapter for MockLineAdapter {
@@ -474,7 +474,7 @@ mod tests {
 
             fn read_line(&mut self, buf: &mut String) -> Result<usize> {
                 self.lines.pop().map_or(Ok(0), |line| {
-                    buf.push_str(line.as_str());
+                    buf.push_str(line);
                     Ok(line.len())
                 })
             }
@@ -520,7 +520,7 @@ mod tests {
             let mut target = LineInputSource::new(
                 MockLineAdapter {
                     is_tty: false,
-                    lines: vec!["foo\n".to_owned(), "bar\n".to_owned()],
+                    lines: vec!["foo\n", "bar\n"],
                 },
                 "test",
             );
@@ -546,7 +546,7 @@ mod tests {
             let mut target = LineInputSource::new(
                 MockLineAdapter {
                     is_tty: false,
-                    lines: vec!["\n".to_owned(), "bar\n".to_owned()],
+                    lines: vec!["\n", "bar\n"],
                 },
                 "test",
             );
@@ -572,7 +572,7 @@ mod tests {
             let mut target = LineInputSource::new(
                 MockLineAdapter {
                     is_tty: true,
-                    lines: vec!["\n".to_owned(), "bar\n".to_owned()],
+                    lines: vec!["\n", "bar\n"],
                 },
                 "test",
             );
