@@ -315,7 +315,6 @@ mod tests {
         let args = ["foo/me", "-", "--", "arg1", "arg2", "--arg3=1"];
 
         let result = parse(args.into_iter().map(String::from));
-        dbg!(&result);
 
         assert!(matches!(
             result,
