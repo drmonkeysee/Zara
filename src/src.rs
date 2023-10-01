@@ -13,10 +13,11 @@ pub struct StringSource {
 }
 
 impl StringSource {
-    pub fn new(src: String, name: impl Into<String>) -> Self {
+    pub fn new(src: impl Into<String>, name: impl Into<String>) -> Self {
         Self {
             ctx: TextContext::named(name).into(),
             lines: src
+                .into()
                 .lines()
                 .map(String::from)
                 .collect::<Vec<_>>()
@@ -151,7 +152,7 @@ mod tests {
         fn create_from_str() {
             let src = "line of source code";
 
-            let target = StringSource::new(src.to_owned(), "test");
+            let target = StringSource::new(src, "test");
 
             assert!(matches!(
                 target.ctx.as_ref(),
@@ -165,7 +166,7 @@ mod tests {
 
         #[test]
         fn context() {
-            let target = StringSource::new("foo".to_owned(), "test");
+            let target = StringSource::new("foo", "test");
 
             let ctx = target.context();
 
@@ -175,7 +176,7 @@ mod tests {
         #[test]
         fn iterate_one_line() {
             let src = "line of source code";
-            let mut target = StringSource::new(src.to_owned(), "test");
+            let mut target = StringSource::new(src, "test");
 
             let line = target.next();
 
@@ -197,7 +198,7 @@ mod tests {
         #[test]
         fn iterate_one_line_with_whitespace() {
             let src = "line of source code  \t  ";
-            let mut target = StringSource::new(src.to_owned(), "test");
+            let mut target = StringSource::new(src, "test");
 
             let line = target.next();
 
@@ -219,7 +220,7 @@ mod tests {
         #[test]
         fn iterate_one_line_with_newline() {
             let src = "line of source code\n";
-            let mut target = StringSource::new(src.to_owned(), "test");
+            let mut target = StringSource::new(src, "test");
 
             let line = target.next();
 
@@ -241,7 +242,7 @@ mod tests {
         #[test]
         fn iterate_multi_lines() {
             let src = "line1\nline2\nline3\n";
-            let mut target = StringSource::new(src.to_owned(), "test");
+            let mut target = StringSource::new(src, "test");
 
             let line = target.next();
 
@@ -287,7 +288,7 @@ mod tests {
         #[test]
         fn iterate_multi_lines_windows_style() {
             let src = "line1\r\nline2\r\nline3\r\n";
-            let mut target = StringSource::new(src.to_owned(), "test");
+            let mut target = StringSource::new(src, "test");
 
             let line = target.next();
 
@@ -333,7 +334,7 @@ mod tests {
         #[test]
         fn iterate_multi_lines_with_whitespace() {
             let src = "line1  \n  line2\t\n\tline3\n";
-            let mut target = StringSource::new(src.to_owned(), "test");
+            let mut target = StringSource::new(src, "test");
 
             let line = target.next();
 
@@ -380,7 +381,7 @@ mod tests {
         #[test]
         fn iterate_includes_blank_lines() {
             let src = "line1\n   \nline3\n\nline5\n\t\n";
-            let mut target = StringSource::new(src.to_owned(), "test");
+            let mut target = StringSource::new(src, "test");
 
             let line = target.next();
 
