@@ -114,11 +114,3 @@ impl Display for ExtendedError<'_> {
         }
     }
 }
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn test() {
-        todo!();
-    }
-}

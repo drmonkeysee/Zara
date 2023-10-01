@@ -67,11 +67,3 @@ impl<I: Iterator<Item = Token>> Iterator for ExpressionStream<I> {
         self.tokens.next().map(|t| self.parse_expression(t))
     }
 }
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn test() {
-        todo!();
-    }
-}

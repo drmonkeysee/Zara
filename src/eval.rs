@@ -64,11 +64,3 @@ fn eval_begin(exprs: impl IntoIterator<Item = Expression>) -> ExprResult {
         .into_iter()
         .try_fold(Expression::Empty, |_, expr| eval_expr(expr))
 }
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn test() {
-        todo!();
-    }
-}
