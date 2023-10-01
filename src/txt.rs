@@ -5,7 +5,6 @@ use std::{
 };
 
 pub type LineNumber = u64;
-
 pub type TextResult = Result<TextLine, TextError>;
 
 pub trait TextSource: Iterator<Item = TextResult> {
