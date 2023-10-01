@@ -21,7 +21,7 @@ impl StringSource {
                 .map(String::from)
                 .collect::<Vec<_>>()
                 .into_iter(),
-            lineno: 1,
+            lineno: 0,
         }
     }
 }
@@ -30,12 +30,11 @@ impl Iterator for StringSource {
     type Item = TextResult;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let lineno = self.lineno();
         self.lineno += 1;
         Some(Ok(TextLine {
             ctx: self.context(),
             line: self.lines.next()?,
-            lineno,
+            lineno: self.lineno(),
         }))
     }
 }
@@ -68,7 +67,7 @@ impl<T: LineInputAdapter> LineInputSource<T> {
         Self {
             adapter,
             ctx: TextContext::named(name).into(),
-            lineno: 1,
+            lineno: 0,
         }
     }
 }
@@ -77,11 +76,10 @@ impl<T: LineInputAdapter> Iterator for LineInputSource<T> {
     type Item = TextResult;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let lineno = self.lineno();
         self.lineno += 1;
         let mut buf = String::new();
         self.adapter.read_line(&mut buf).map_or_else(
-            |err| Some(Err(TextError::new(self.context(), lineno, err))),
+            |err| Some(Err(TextError::new(self.context(), self.lineno(), err))),
             |n| {
                 if n == 0 || (n == 1 && self.adapter.is_tty()) {
                     None
@@ -91,7 +89,7 @@ impl<T: LineInputAdapter> Iterator for LineInputSource<T> {
                     Some(Ok(TextLine {
                         ctx: self.context(),
                         line: buf,
-                        lineno,
+                        lineno: self.lineno(),
                     }))
                 }
             },
@@ -162,7 +160,7 @@ mod tests {
                     path: None
                 } if name == "test"
             ));
-            assert_eq!(target.lineno, 1);
+            assert_eq!(target.lineno(), 0);
         }
 
         #[test]
@@ -507,7 +505,7 @@ mod tests {
                     path: None
                 } if name == "test"
             ));
-            assert_eq!(target.lineno, 1);
+            assert_eq!(target.lineno(), 0);
         }
 
         #[test]

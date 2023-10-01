@@ -136,7 +136,7 @@ mod tests {
             } if name == "<repl>"
         ));
         assert!(target.line.is_none());
-        assert_eq!(target.lineno, 1);
+        assert_eq!(target.lineno(), 1);
     }
 
     #[test]
@@ -155,7 +155,7 @@ mod tests {
 
         target.advance();
 
-        assert_eq!(target.lineno, 2);
+        assert_eq!(target.lineno(), 2);
     }
 
     #[test]
@@ -165,11 +165,11 @@ mod tests {
         target.advance();
         target.advance();
 
-        assert_eq!(target.lineno, 3);
+        assert_eq!(target.lineno(), 3);
 
         target.reset();
 
-        assert_eq!(target.lineno, 1);
+        assert_eq!(target.lineno(), 1);
     }
 
     #[test]

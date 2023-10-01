@@ -223,7 +223,7 @@ mod tests {
                 Self {
                     ctx: TextContext::named("<mock>").into(),
                     lines: src.lines(),
-                    lineno: 1,
+                    lineno: 0,
                 }
             }
         }
@@ -232,12 +232,11 @@ mod tests {
             type Item = TextResult;
 
             fn next(&mut self) -> Option<Self::Item> {
-                let lineno = self.lineno();
                 self.lineno += 1;
                 Some(Ok(TextLine {
                     ctx: self.context(),
                     line: self.lines.next()?.to_owned(),
-                    lineno,
+                    lineno: self.lineno(),
                 }))
             }
         }
