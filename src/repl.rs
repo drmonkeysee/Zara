@@ -2,7 +2,7 @@ use crate::run::Opts;
 use rustyline::{DefaultEditor, Result};
 use std::rc::Rc;
 use zara::{
-    txt::{LineNumber, TextContext, TextLine, TextSource},
+    txt::{LineNumber, TextContext, TextLine, TextResult, TextSource},
     Error, Evaluation, Expression, Interpreter,
 };
 
@@ -98,14 +98,14 @@ impl ReplSource {
 }
 
 impl Iterator for ReplSource {
-    type Item = TextLine;
+    type Item = TextResult;
 
     fn next(&mut self) -> Option<Self::Item> {
-        Some(TextLine {
+        Some(Ok(TextLine {
             ctx: self.context(),
             line: self.line.take()?,
-            lineno: self.lineno,
-        })
+            lineno: self.lineno(),
+        }))
     }
 }
 
@@ -113,6 +113,10 @@ impl Iterator for ReplSource {
 impl TextSource for ReplSource {
     fn context(&self) -> Rc<TextContext> {
         self.ctx.clone()
+    }
+
+    fn lineno(&self) -> LineNumber {
+        self.lineno
     }
 }
 
@@ -192,11 +196,11 @@ mod tests {
         assert!(line.is_some());
         assert!(matches!(
             line.unwrap(),
-            TextLine {
+            Ok(TextLine {
                 ctx,
                 line,
                 lineno: 1,
-            } if Rc::ptr_eq(&ctx, &target.ctx) && line == "foo"
+            }) if Rc::ptr_eq(&ctx, &target.ctx) && line == "foo"
         ));
 
         let line = target.next();

@@ -66,7 +66,8 @@ impl Lexer {
     }
 
     pub(crate) fn tokenize(&mut self, src: &mut impl TextSource) -> LexerResult {
-        src.map(|tl| self.tokenize_line(tl)).collect()
+        src.map(|tl| self.tokenize_line(tl.expect("TODO: handle TextError")))
+            .collect()
     }
 
     fn tokenize_line(&mut self, text: TextLine) -> Result<LexLine, LexerError> {
@@ -207,7 +208,7 @@ mod tests {
         use super::*;
         use crate::{
             lex::token::{TokenErrorKind, TokenType},
-            txt::LineNumber,
+            txt::{LineNumber, TextResult},
         };
         use std::{ops::Range, rc::Rc, str::Lines};
 
@@ -228,22 +229,26 @@ mod tests {
         }
 
         impl Iterator for MockTxtSource<'_> {
-            type Item = TextLine;
+            type Item = TextResult;
 
             fn next(&mut self) -> Option<Self::Item> {
-                let lineno = self.lineno;
+                let lineno = self.lineno();
                 self.lineno += 1;
-                Some(TextLine {
+                Some(Ok(TextLine {
                     ctx: self.context(),
                     line: self.lines.next()?.to_owned(),
                     lineno,
-                })
+                }))
             }
         }
 
         impl TextSource for MockTxtSource<'_> {
             fn context(&self) -> Rc<TextContext> {
                 self.ctx.clone()
+            }
+
+            fn lineno(&self) -> LineNumber {
+                self.lineno
             }
         }
 

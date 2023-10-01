@@ -8,8 +8,9 @@ pub type LineNumber = u64;
 
 pub type TextResult = Result<TextLine, TextError>;
 
-pub trait TextSource: Iterator<Item = TextLine> {
+pub trait TextSource: Iterator<Item = TextResult> {
     fn context(&self) -> Rc<TextContext>;
+    fn lineno(&self) -> LineNumber;
 }
 
 #[derive(Debug)]
@@ -39,6 +40,20 @@ pub struct TextError {
     pub ctx: Rc<TextContext>,
     err: Box<dyn Error>,
     pub lineno: LineNumber,
+}
+
+impl TextError {
+    pub fn new(
+        ctx: impl Into<Rc<TextContext>>,
+        lineno: LineNumber,
+        err: impl Into<Box<dyn Error>>,
+    ) -> Self {
+        Self {
+            ctx: ctx.into(),
+            err: err.into(),
+            lineno,
+        }
+    }
 }
 
 impl Display for TextError {
@@ -87,11 +102,7 @@ mod tests {
     #[test]
     fn inner_error() {
         let inner = MockError(20);
-        let err = TextError {
-            ctx: TextContext::named("foo").into(),
-            err: inner.into(),
-            lineno: 1,
-        };
+        let err = TextError::new(TextContext::named("foo"), 1, inner);
 
         let src = err.source();
 
@@ -102,11 +113,8 @@ mod tests {
     #[test]
     fn error_display() {
         let inner = MockError(20);
-        let err = TextError {
-            ctx: TextContext::named("foo").into(),
-            err: inner.into(),
-            lineno: 1,
-        };
+
+        let err = TextError::new(TextContext::named("foo"), 1, inner);
 
         assert_eq!(
             err.to_string(),

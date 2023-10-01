@@ -1,4 +1,4 @@
-use crate::txt::{LineNumber, TextContext, TextLine, TextSource};
+use crate::txt::{LineNumber, TextContext, TextError, TextLine, TextResult, TextSource};
 use std::{
     fs::File,
     io::{BufRead, BufReader, IsTerminal, Result},
@@ -27,22 +27,26 @@ impl StringSource {
 }
 
 impl Iterator for StringSource {
-    type Item = TextLine;
+    type Item = TextResult;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let lineno = self.lineno;
+        let lineno = self.lineno();
         self.lineno += 1;
-        Some(TextLine {
+        Some(Ok(TextLine {
             ctx: self.context(),
             line: self.lines.next()?,
             lineno,
-        })
+        }))
     }
 }
 
 impl TextSource for StringSource {
     fn context(&self) -> Rc<TextContext> {
         self.ctx.clone()
+    }
+
+    fn lineno(&self) -> LineNumber {
+        self.lineno
     }
 }
 
@@ -70,33 +74,25 @@ impl<T: LineInputAdapter> LineInputSource<T> {
 }
 
 impl<T: LineInputAdapter> Iterator for LineInputSource<T> {
-    type Item = TextLine;
+    type Item = TextResult;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let lineno = self.lineno;
+        let lineno = self.lineno();
         self.lineno += 1;
         let mut buf = String::new();
         self.adapter.read_line(&mut buf).map_or_else(
-            |err| {
-                // TODO: should this yield an Option<Result<TextLine>> instead
-                // of printing to stderr?
-                eprintln!(
-                    "{}:{lineno}\n\tunexpected line read error: {err}",
-                    self.ctx.name
-                );
-                None
-            },
+            |err| Some(Err(TextError::new(self.context(), lineno, err))),
             |n| {
                 if n == 0 || (n == 1 && self.adapter.is_tty()) {
                     None
                 } else {
                     // NOTE: read_line guarantees a trailing \n, safe to pop
                     buf.pop();
-                    Some(TextLine {
+                    Some(Ok(TextLine {
                         ctx: self.context(),
                         line: buf,
                         lineno,
-                    })
+                    }))
                 }
             },
         )
@@ -106,6 +102,10 @@ impl<T: LineInputAdapter> Iterator for LineInputSource<T> {
 impl<T: LineInputAdapter> TextSource for LineInputSource<T> {
     fn context(&self) -> Rc<TextContext> {
         self.ctx.clone()
+    }
+
+    fn lineno(&self) -> LineNumber {
+        self.lineno
     }
 }
 
@@ -181,11 +181,11 @@ mod tests {
             assert!(line.is_some());
             assert!(matches!(
                 line.unwrap(),
-                TextLine {
+                Ok(TextLine {
                     ctx,
                     line,
                     lineno: 1,
-                } if Rc::ptr_eq(&ctx, &target.ctx) && line == "line of source code"
+                }) if Rc::ptr_eq(&ctx, &target.ctx) && line == "line of source code"
             ));
 
             let line = target.next();
@@ -203,11 +203,11 @@ mod tests {
             assert!(line.is_some());
             assert!(matches!(
                 line.unwrap(),
-                TextLine {
+                Ok(TextLine {
                     ctx,
                     line,
                     lineno: 1,
-                } if Rc::ptr_eq(&ctx, &target.ctx) && line == "line of source code  \t  "
+                }) if Rc::ptr_eq(&ctx, &target.ctx) && line == "line of source code  \t  "
             ));
 
             let line = target.next();
@@ -225,11 +225,11 @@ mod tests {
             assert!(line.is_some());
             assert!(matches!(
                 line.unwrap(),
-                TextLine {
+                Ok(TextLine {
                     ctx,
                     line,
                     lineno: 1,
-                } if Rc::ptr_eq(&ctx, &target.ctx) && line == "line of source code"
+                }) if Rc::ptr_eq(&ctx, &target.ctx) && line == "line of source code"
             ));
 
             let line = target.next();
@@ -247,11 +247,11 @@ mod tests {
             assert!(line.is_some());
             assert!(matches!(
                 line.unwrap(),
-                TextLine {
+                Ok(TextLine {
                     ctx,
                     line,
                     lineno: 1,
-                } if Rc::ptr_eq(&ctx, &target.ctx) && line == "line1"
+                }) if Rc::ptr_eq(&ctx, &target.ctx) && line == "line1"
             ));
 
             let line = target.next();
@@ -259,11 +259,11 @@ mod tests {
             assert!(line.is_some());
             assert!(matches!(
                 line.unwrap(),
-                TextLine {
+                Ok(TextLine {
                     ctx,
                     line,
                     lineno: 2,
-                } if Rc::ptr_eq(&ctx, &target.ctx) && line == "line2"
+                }) if Rc::ptr_eq(&ctx, &target.ctx) && line == "line2"
             ));
 
             let line = target.next();
@@ -271,11 +271,11 @@ mod tests {
             assert!(line.is_some());
             assert!(matches!(
                 line.unwrap(),
-                TextLine {
+                Ok(TextLine {
                     ctx,
                     line,
                     lineno: 3,
-                } if Rc::ptr_eq(&ctx, &target.ctx) && line == "line3"
+                }) if Rc::ptr_eq(&ctx, &target.ctx) && line == "line3"
             ));
 
             let line = target.next();
@@ -293,11 +293,11 @@ mod tests {
             assert!(line.is_some());
             assert!(matches!(
                 line.unwrap(),
-                TextLine {
+                Ok(TextLine {
                     ctx,
                     line,
                     lineno: 1,
-                } if Rc::ptr_eq(&ctx, &target.ctx) && line == "line1"
+                }) if Rc::ptr_eq(&ctx, &target.ctx) && line == "line1"
             ));
 
             let line = target.next();
@@ -305,11 +305,11 @@ mod tests {
             assert!(line.is_some());
             assert!(matches!(
                 line.unwrap(),
-                TextLine {
+                Ok(TextLine {
                     ctx,
                     line,
                     lineno: 2,
-                } if Rc::ptr_eq(&ctx, &target.ctx) && line == "line2"
+                }) if Rc::ptr_eq(&ctx, &target.ctx) && line == "line2"
             ));
 
             let line = target.next();
@@ -317,11 +317,11 @@ mod tests {
             assert!(line.is_some());
             assert!(matches!(
                 line.unwrap(),
-                TextLine {
+                Ok(TextLine {
                     ctx,
                     line,
                     lineno: 3,
-                } if Rc::ptr_eq(&ctx, &target.ctx) && line == "line3"
+                }) if Rc::ptr_eq(&ctx, &target.ctx) && line == "line3"
             ));
 
             let line = target.next();
@@ -339,11 +339,11 @@ mod tests {
             assert!(line.is_some());
             assert!(matches!(
                 line.unwrap(),
-                TextLine {
+                Ok(TextLine {
                     ctx,
                     line,
                     lineno: 1,
-                } if Rc::ptr_eq(&ctx, &target.ctx) && line == "line1  "
+                }) if Rc::ptr_eq(&ctx, &target.ctx) && line == "line1  "
             ));
 
             let line = target.next();
@@ -351,11 +351,11 @@ mod tests {
             assert!(line.is_some());
             assert!(matches!(
                 line.unwrap(),
-                TextLine {
+                Ok(TextLine {
                     ctx,
                     line,
                     lineno: 2,
-                } if Rc::ptr_eq(&ctx, &target.ctx) && line == "  line2\t"
+                }) if Rc::ptr_eq(&ctx, &target.ctx) && line == "  line2\t"
             ));
 
             let line = target.next();
@@ -363,11 +363,11 @@ mod tests {
             assert!(line.is_some());
             assert!(matches!(
                 line.unwrap(),
-                TextLine {
+                Ok(TextLine {
                     ctx,
                     line,
                     lineno: 3,
-                } if Rc::ptr_eq(&ctx, &target.ctx) && line == "\tline3"
+                }) if Rc::ptr_eq(&ctx, &target.ctx) && line == "\tline3"
             ));
 
             let line = target.next();
@@ -386,11 +386,11 @@ mod tests {
             assert!(line.is_some());
             assert!(matches!(
                 line.unwrap(),
-                TextLine {
+                Ok(TextLine {
                     ctx,
                     line,
                     lineno: 1,
-                } if Rc::ptr_eq(&ctx, &target.ctx) && line == "line1"
+                }) if Rc::ptr_eq(&ctx, &target.ctx) && line == "line1"
             ));
 
             let line = target.next();
@@ -398,11 +398,11 @@ mod tests {
             assert!(line.is_some());
             assert!(matches!(
                 line.unwrap(),
-                TextLine {
+                Ok(TextLine {
                     ctx,
                     line,
                     lineno: 2,
-                } if Rc::ptr_eq(&ctx, &target.ctx) && line == "   "
+                }) if Rc::ptr_eq(&ctx, &target.ctx) && line == "   "
             ));
 
             let line = target.next();
@@ -410,11 +410,11 @@ mod tests {
             assert!(line.is_some());
             assert!(matches!(
                 line.unwrap(),
-                TextLine {
+                Ok(TextLine {
                     ctx,
                     line,
                     lineno: 3,
-                } if Rc::ptr_eq(&ctx, &target.ctx) && line == "line3"
+                }) if Rc::ptr_eq(&ctx, &target.ctx) && line == "line3"
             ));
 
             let line = target.next();
@@ -422,11 +422,11 @@ mod tests {
             assert!(line.is_some());
             assert!(matches!(
                 line.unwrap(),
-                TextLine {
+                Ok(TextLine {
                     ctx,
                     line,
                     lineno: 4,
-                } if Rc::ptr_eq(&ctx, &target.ctx) && line == ""
+                }) if Rc::ptr_eq(&ctx, &target.ctx) && line == ""
             ));
 
             let line = target.next();
@@ -434,11 +434,11 @@ mod tests {
             assert!(line.is_some());
             assert!(matches!(
                 line.unwrap(),
-                TextLine {
+                Ok(TextLine {
                     ctx,
                     line,
                     lineno: 5,
-                } if Rc::ptr_eq(&ctx, &target.ctx) && line == "line5"
+                }) if Rc::ptr_eq(&ctx, &target.ctx) && line == "line5"
             ));
 
             let line = target.next();
@@ -446,11 +446,11 @@ mod tests {
             assert!(line.is_some());
             assert!(matches!(
                 line.unwrap(),
-                TextLine {
+                Ok(TextLine {
                     ctx,
                     line,
                     lineno: 6,
-                } if Rc::ptr_eq(&ctx, &target.ctx) && line == "\t"
+                }) if Rc::ptr_eq(&ctx, &target.ctx) && line == "\t"
             ));
 
             let line = target.next();
@@ -461,10 +461,12 @@ mod tests {
 
     mod linesrc {
         use super::*;
+        use std::{error::Error, io};
 
         struct MockLineAdapter {
             is_tty: bool,
             lines: Vec<&'static str>,
+            return_err: bool,
         }
 
         impl LineInputAdapter for MockLineAdapter {
@@ -473,10 +475,14 @@ mod tests {
             }
 
             fn read_line(&mut self, buf: &mut String) -> Result<usize> {
-                self.lines.pop().map_or(Ok(0), |line| {
-                    buf.push_str(line);
-                    Ok(line.len())
-                })
+                if self.return_err {
+                    Err(io::Error::new(io::ErrorKind::Other, "oh no!"))
+                } else {
+                    self.lines.pop().map_or(Ok(0), |line| {
+                        buf.push_str(line);
+                        Ok(line.len())
+                    })
+                }
             }
         }
 
@@ -486,6 +492,7 @@ mod tests {
                 MockLineAdapter {
                     is_tty: false,
                     lines: Vec::new(),
+                    return_err: false,
                 },
                 "test",
             );
@@ -506,6 +513,7 @@ mod tests {
                 MockLineAdapter {
                     is_tty: false,
                     lines: Vec::new(),
+                    return_err: false,
                 },
                 "test",
             );
@@ -521,6 +529,7 @@ mod tests {
                 MockLineAdapter {
                     is_tty: false,
                     lines: vec!["foo\n", "bar\n"],
+                    return_err: false,
                 },
                 "test",
             );
@@ -528,11 +537,15 @@ mod tests {
             let line = target.next();
             assert!(line.is_some());
             let line = line.unwrap();
+            assert!(line.is_ok());
+            let line = line.unwrap();
             assert_eq!(line.line, "bar");
             assert_eq!(line.lineno, 1);
 
             let line = target.next();
             assert!(line.is_some());
+            let line = line.unwrap();
+            assert!(line.is_ok());
             let line = line.unwrap();
             assert_eq!(line.line, "foo");
             assert_eq!(line.lineno, 2);
@@ -547,6 +560,7 @@ mod tests {
                 MockLineAdapter {
                     is_tty: false,
                     lines: vec!["\n", "bar\n"],
+                    return_err: false,
                 },
                 "test",
             );
@@ -554,11 +568,15 @@ mod tests {
             let line = target.next();
             assert!(line.is_some());
             let line = line.unwrap();
+            assert!(line.is_ok());
+            let line = line.unwrap();
             assert_eq!(line.line, "bar");
             assert_eq!(line.lineno, 1);
 
             let line = target.next();
             assert!(line.is_some());
+            let line = line.unwrap();
+            assert!(line.is_ok());
             let line = line.unwrap();
             assert_eq!(line.line, "");
             assert_eq!(line.lineno, 2);
@@ -573,6 +591,7 @@ mod tests {
                 MockLineAdapter {
                     is_tty: true,
                     lines: vec!["\n", "bar\n"],
+                    return_err: false,
                 },
                 "test",
             );
@@ -580,11 +599,33 @@ mod tests {
             let line = target.next();
             assert!(line.is_some());
             let line = line.unwrap();
+            assert!(line.is_ok());
+            let line = line.unwrap();
             assert_eq!(line.line, "bar");
             assert_eq!(line.lineno, 1);
 
             let line = target.next();
             assert!(line.is_none());
+        }
+
+        #[test]
+        fn failed_line() {
+            let mut target = LineInputSource::new(
+                MockLineAdapter {
+                    is_tty: false,
+                    lines: Vec::new(),
+                    return_err: true,
+                },
+                "test",
+            );
+
+            let line = target.next();
+            assert!(line.is_some());
+            let line = line.unwrap();
+            assert!(line.is_err());
+            let line = line.unwrap_err();
+            assert_eq!(line.source().unwrap().to_string(), "oh no!");
+            assert_eq!(line.lineno, 1);
         }
     }
 }
