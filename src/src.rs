@@ -1,7 +1,7 @@
 use crate::txt::{LineNumber, TextContext, TextError, TextLine, TextResult, TextSource};
 use std::{
     fs::File,
-    io::{BufRead, BufReader, IsTerminal, Result},
+    io::{BufRead, BufReader, Error, ErrorKind, IsTerminal, Result},
     path::Path,
     rc::Rc,
 };
@@ -128,7 +128,10 @@ impl FileSource {
         let name = path
             .as_ref()
             .to_str()
-            .unwrap_or("#<invalid-file-path>")
+            .ok_or(Error::new(
+                ErrorKind::InvalidInput,
+                "unable to convert file path to string",
+            ))?
             .to_owned();
         let f = File::open(path)?;
         Self::init(f, name)
