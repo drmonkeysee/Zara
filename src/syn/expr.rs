@@ -8,8 +8,6 @@ use std::{
     fmt::{Display, Formatter},
 };
 
-pub(super) type ExpressionResult = Result<Expression, ExpressionError>;
-
 #[derive(Debug)]
 pub enum Expression {
     Ast(Box<Expression>),
@@ -58,6 +56,8 @@ impl Display for ExtendedExpression<'_> {
         }
     }
 }
+
+pub(super) type ExpressionResult = Result<Expression, ExpressionError>;
 
 #[derive(Debug)]
 pub(super) enum ExpressionError {
