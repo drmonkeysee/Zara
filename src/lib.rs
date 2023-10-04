@@ -2,16 +2,16 @@ mod eval;
 mod lex;
 mod literal;
 pub mod src;
-mod syn;
+mod syntax;
 pub mod txt;
 
 use self::{
     eval::EvalError,
     lex::{Lexer, LexerError},
-    syn::ParserError,
+    syntax::ParserError,
     txt::TextSource,
 };
-pub use self::{eval::Evaluation, syn::Expression};
+pub use self::{eval::Evaluation, syntax::Expression};
 use std::{
     error,
     fmt::{self, Display, Formatter},
@@ -39,9 +39,9 @@ impl Interpreter {
     pub fn run(&mut self, src: &mut impl TextSource) -> Result {
         let token_lines = self.lexer.tokenize(src)?;
         let ast = if self.token_output {
-            syn::tokens(token_lines)
+            syntax::tokens(token_lines)
         } else {
-            syn::parse(token_lines)
+            syntax::parse(token_lines)
         }?;
         let evaluation = if self.ast_output {
             eval::ast(ast)
