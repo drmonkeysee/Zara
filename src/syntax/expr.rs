@@ -57,8 +57,6 @@ impl Display for ExtendedExpression<'_> {
     }
 }
 
-pub(super) type ExpressionResult = Result<Expression, ExpressionError>;
-
 #[derive(Debug)]
 pub(super) enum ExpressionError {
     Unimplemented(Token),

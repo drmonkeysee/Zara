@@ -1,7 +1,7 @@
 mod expr;
 
 pub use self::expr::Expression;
-use self::expr::{ExpressionError, ExpressionResult};
+use self::expr::ExpressionError;
 use crate::lex::{LexLine, Token, TokenKind};
 use std::{
     error::Error,
@@ -40,6 +40,8 @@ pub(crate) fn parse(token_lines: impl IntoIterator<Item = LexLine>) -> ParserRes
 pub(crate) fn tokens(token_lines: Vec<LexLine>) -> ParserResult {
     Ok(Expression::TokenList(token_lines))
 }
+
+type ExpressionResult = Result<Expression, ExpressionError>;
 
 struct ExpressionStream<I: Iterator> {
     tokens: Peekable<I>,
