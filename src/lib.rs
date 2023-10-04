@@ -1,8 +1,8 @@
-mod eval;
-mod lex;
-mod literal;
+pub mod eval;
+pub mod lex;
+pub mod literal;
 pub mod src;
-mod syntax;
+pub mod syntax;
 pub mod txt;
 
 use self::{

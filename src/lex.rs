@@ -27,7 +27,7 @@ impl Display for LexLine {
     }
 }
 
-// NOTE: used by .flatten()
+// TODO: used by .flatten() in syntax.rs, removal can de-publicize tokens
 impl IntoIterator for LexLine {
     type Item = Token;
     type IntoIter = <Vec<Token> as IntoIterator>::IntoIter;
