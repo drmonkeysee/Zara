@@ -1,4 +1,4 @@
-use crate::txt::{LineNumber, TextContext, TextError, TextLine, TextResult, TextSource};
+use super::txt::{LineNumber, TextContext, TextError, TextLine, TextResult, TextSource};
 use std::{
     fs::File,
     io::{BufRead, BufReader, Error, ErrorKind, IsTerminal, Result},

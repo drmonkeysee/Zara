@@ -6,7 +6,7 @@ use self::{
     token::{TokenContinuation, TokenError},
     tokenize::TokenStream,
 };
-use crate::txt::{TextLine, TextSource};
+use super::txt::{TextLine, TextSource};
 use std::{
     error::Error,
     fmt::{self, Display, Formatter, Write},
