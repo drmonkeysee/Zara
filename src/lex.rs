@@ -108,42 +108,8 @@ impl Display for ExtendedLexerError<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self.0 {
             LexerError::Read(err) => todo!(),
-            LexerError::Tokenize(err) => {
-                // TODO: lex/parse/eval err types will likely have to be unified into a (specific_err, span, ctx) pairing
-                let TokenizeError(errs, txtline) = err;
-                write!(f, "{}:{}", txtline.ctx.name, txtline.lineno)?;
-                if let Some(p) = &txtline.ctx.path {
-                    write!(f, " ({p})")?;
-                }
-                writeln!(f, "\n\t{}", txtline.line)?;
-
-                if errs.is_empty() {
-                    return Ok(());
-                }
-
-                let mut cursor = 0;
-                f.write_char('\t')?;
-                for span in errs
-                    .iter()
-                    .filter_map(|err| (!err.span.is_empty()).then_some(&err.span))
-                {
-                    write!(
-                        f,
-                        "{0:>1$}{2:^<3$}",
-                        "^",
-                        span.start + 1 - cursor,
-                        "",
-                        span.len() - 1
-                    )?;
-                    cursor = span.end;
-                }
-                f.write_char('\n')?;
-                for err in errs {
-                    writeln!(f, "{}: {err}", err.span.start + 1)?;
-                }
-            }
+            LexerError::Tokenize(err) => ExtendedTokenizeError(err).fmt(f),
         }
-        Ok(())
     }
 }
 
@@ -219,6 +185,45 @@ impl Display for ExtendedTokenWithSource<'_> {
             t.kind.to_string(),
             txt.line.get(t.span.clone()).unwrap_or("INVALID RANGE")
         )
+    }
+}
+
+struct ExtendedTokenizeError<'a>(&'a TokenizeError);
+
+impl Display for ExtendedTokenizeError<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        let TokenizeError(errs, txtline) = self.0;
+        write!(f, "{}:{}", txtline.ctx.name, txtline.lineno)?;
+        if let Some(p) = &txtline.ctx.path {
+            write!(f, " ({p})")?;
+        }
+        writeln!(f, "\n\t{}", txtline.line)?;
+
+        if errs.is_empty() {
+            return Ok(());
+        }
+
+        let mut cursor = 0;
+        f.write_char('\t')?;
+        for span in errs
+            .iter()
+            .filter_map(|err| (!err.span.is_empty()).then_some(&err.span))
+        {
+            write!(
+                f,
+                "{0:>1$}{2:^<3$}",
+                "^",
+                span.start + 1 - cursor,
+                "",
+                span.len() - 1
+            )?;
+            cursor = span.end;
+        }
+        f.write_char('\n')?;
+        for err in errs {
+            writeln!(f, "{}: {err}", err.span.start + 1)?;
+        }
+        Ok(())
     }
 }
 
