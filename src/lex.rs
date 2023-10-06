@@ -261,11 +261,20 @@ mod tests {
 
             fn next(&mut self) -> Option<Self::Item> {
                 self.lineno += 1;
-                Some(Ok(TextLine {
-                    ctx: self.context(),
-                    line: self.lines.next()?.to_owned(),
-                    lineno: self.lineno(),
-                }))
+                let line = self.lines.next()?;
+                if line == "BAD BYTES" {
+                    Some(Err(TextError::new(
+                        self.context(),
+                        self.lineno(),
+                        "BAD BYTES FOUND",
+                    )))
+                } else {
+                    Some(Ok(TextLine {
+                        ctx: self.context(),
+                        line: line.to_owned(),
+                        lineno: self.lineno(),
+                    }))
+                }
             }
         }
 
@@ -484,6 +493,28 @@ mod tests {
                     lineno: 2,
                 } if Rc::ptr_eq(&ctx, &src.ctx) && line == " #z #f #z #\\a"
             ));
+            assert!(target.cont.is_none());
+        }
+
+        #[test]
+        fn multi_lines_with_read_error() {
+            let mut src = MockTxtSource::new("#t\nBAD BYTES\n#f #f\n");
+            let mut target = Lexer::new();
+
+            let r = target.tokenize(&mut src);
+
+            assert!(r.is_err());
+            let err = r.unwrap_err();
+            assert!(matches!(err, LexerError::Read(_)));
+            let inner: TextError;
+            if let LexerError::Read(inn) = err {
+                inner = inn
+            } else {
+                unreachable!()
+            }
+            assert!(Rc::ptr_eq(&inner.ctx, &src.ctx));
+            assert_eq!(inner.lineno, 2);
+            assert!(inner.source().is_some());
             assert!(target.cont.is_none());
         }
 
@@ -831,6 +862,17 @@ mod tests {
     mod error {
         use self::token::TokenErrorKind;
         use super::*;
+
+        #[test]
+        fn display_read_error() {
+            let inner = TextError::new(TextContext::named("foo"), 3, "OH NO!");
+            let err = LexerError::Read(inner);
+
+            assert_eq!(
+                err.extended_display().to_string(),
+                "foo:3\n\tunable to read text line\n"
+            );
+        }
 
         #[test]
         fn display_empty_errors() {
