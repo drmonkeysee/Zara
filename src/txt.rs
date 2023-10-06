@@ -1,6 +1,7 @@
 use std::{
     error::Error,
     fmt::{self, Display, Formatter},
+    path::PathBuf,
     rc::Rc,
 };
 
@@ -15,7 +16,7 @@ pub trait TextSource: Iterator<Item = TextResult> {
 #[derive(Debug)]
 pub struct TextContext {
     pub name: String,
-    pub path: Option<String>,
+    pub path: Option<PathBuf>,
 }
 
 impl TextContext {

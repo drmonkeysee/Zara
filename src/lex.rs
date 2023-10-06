@@ -115,7 +115,7 @@ impl Display for ExtendedLexerError<'_> {
             LexerError::Read(err) => {
                 write!(f, "{}:{}", err.ctx.name, err.lineno)?;
                 if let Some(p) = &err.ctx.path {
-                    write!(f, " ({p})")?;
+                    write!(f, " ({})", p.display())?;
                 }
                 f.write_str("\n\tunable to read text line\n\n")
             }
@@ -206,7 +206,7 @@ impl Display for ExtendedTokenizeError<'_> {
         let TokenizeError(errs, txtline) = self.0;
         write!(f, "{}:{}", txtline.ctx.name, txtline.lineno)?;
         if let Some(p) = &txtline.ctx.path {
-            write!(f, " ({p})")?;
+            write!(f, " ({})", p.display())?;
         }
         writeln!(f, "\n\t{}", txtline.line)?;
 
@@ -242,6 +242,7 @@ impl Display for ExtendedTokenizeError<'_> {
 mod tests {
     use super::*;
     use crate::{literal::Literal, txt::TextContext};
+    use std::path::Path;
 
     mod lexer {
         use super::token::{TokenErrorKind, TokenType};
@@ -986,7 +987,7 @@ mod tests {
         TextLine {
             ctx: TextContext {
                 name: "mylib".to_owned(),
-                path: Some("lib/mylib.scm".to_owned()),
+                path: Some(Path::new("lib/mylib.scm").to_path_buf()),
             }
             .into(),
             line: "line of source code".to_owned(),

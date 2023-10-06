@@ -126,18 +126,25 @@ impl FileSource {
     pub fn file(path: impl AsRef<Path>) -> Result<Self> {
         let name = path
             .as_ref()
+            .file_stem()
+            .ok_or(Error::new(
+                ErrorKind::InvalidInput,
+                "unable to extract file name from path",
+            ))?
             .to_str()
             .ok_or(Error::new(
                 ErrorKind::InvalidInput,
-                "unable to convert file path to string",
+                "unable to convert file name to string",
             ))?
             .to_owned();
+        let p = Some(path.as_ref().to_path_buf());
         let f = File::open(path)?;
-        Self::init(f, name)
-    }
 
-    fn init(f: File, n: String) -> Result<Self> {
-        Ok(Self::new(FileAdapter(BufReader::new(f)), n))
+        Ok(Self {
+            adapter: FileAdapter(BufReader::new(f)),
+            ctx: TextContext { name, path: p }.into(),
+            lineno: 0,
+        })
     }
 }
 
