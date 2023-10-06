@@ -9,7 +9,7 @@ use self::{
     scan::{ScanItem, Scanner},
     state::{BlockComment, Hashtag, StringLiteral},
 };
-use crate::lex::token::{TokenContinuation, TokenErrorKind, TokenKind, TokenResult};
+use super::token::{TokenContinuation, TokenErrorKind, TokenKind, TokenResult};
 
 pub(super) struct TokenStream<'a> {
     cont: Option<TokenContinuation>,

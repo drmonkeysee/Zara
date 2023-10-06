@@ -205,11 +205,9 @@ mod tests {
     use crate::{literal::Literal, txt::TextContext};
 
     mod lexer {
+        use super::token::{TokenErrorKind, TokenType};
         use super::*;
-        use crate::{
-            lex::token::{TokenErrorKind, TokenType},
-            txt::{LineNumber, TextResult},
-        };
+        use crate::txt::{LineNumber, TextResult};
         use std::{ops::Range, rc::Rc, str::Lines};
 
         struct MockTxtSource<'a> {

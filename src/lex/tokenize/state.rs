@@ -1,8 +1,6 @@
+use super::{extract::TokenExtractResult, scan::Scanner};
 use crate::{
-    lex::{
-        token::{TokenErrorKind, TokenKind},
-        tokenize::{extract::TokenExtractResult, scan::Scanner},
-    },
+    lex::token::{TokenErrorKind, TokenKind},
     literal::Literal,
 };
 
