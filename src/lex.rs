@@ -6,7 +6,7 @@ use self::{
     token::{TokenContinuation, TokenError},
     tokenize::TokenStream,
 };
-use super::txt::{TextLine, TextSource};
+use super::txt::{TextError, TextLine, TextSource};
 use std::{
     error::Error,
     fmt::{self, Display, Formatter, Write},
@@ -38,7 +38,10 @@ impl IntoIterator for LexLine {
 }
 
 #[derive(Debug)]
-pub struct LexerError(Vec<TokenError>, TextLine);
+pub enum LexerError {
+    Read(TextError),
+    Tokenize(TokenizeError),
+}
 
 impl LexerError {
     pub(crate) fn extended_display(&self) -> ExtendedLexerError<'_> {
@@ -48,11 +51,26 @@ impl LexerError {
 
 impl Display for LexerError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        f.write_str("Fatal error: tokenization failure")
+        f.write_str("fatal error: ")?;
+        match self {
+            Self::Read(err) => err.fmt(f),
+            Self::Tokenize(err) => err.fmt(f),
+        }
     }
 }
 
 impl Error for LexerError {}
+
+#[derive(Debug)]
+pub struct TokenizeError(Vec<TokenError>, TextLine);
+
+impl Display for TokenizeError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        f.write_str("tokenization failure")
+    }
+}
+
+impl Error for TokenizeError {}
 
 pub(crate) type LexerResult = Result<Vec<LexLine>, LexerError>;
 
@@ -79,7 +97,7 @@ impl Lexer {
             self.cont = tokens.last().and_then(|t| t.kind.to_continuation());
             Ok(LexLine(tokens, text))
         } else {
-            Err(LexerError(errors, text))
+            Err(LexerError::Tokenize(TokenizeError(errors, text)))
         }
     }
 }
@@ -88,37 +106,42 @@ pub(crate) struct ExtendedLexerError<'a>(&'a LexerError);
 
 impl Display for ExtendedLexerError<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        // TODO: lex/parse/eval err types will likely have to be unified into a (specific_err, span, ctx) pairing
-        let LexerError(errs, txtline) = self.0;
-        write!(f, "{}:{}", txtline.ctx.name, txtline.lineno)?;
-        if let Some(p) = &txtline.ctx.path {
-            write!(f, " ({p})")?;
-        }
-        writeln!(f, "\n\t{}", txtline.line)?;
+        match self.0 {
+            LexerError::Read(err) => todo!(),
+            LexerError::Tokenize(err) => {
+                // TODO: lex/parse/eval err types will likely have to be unified into a (specific_err, span, ctx) pairing
+                let TokenizeError(errs, txtline) = err;
+                write!(f, "{}:{}", txtline.ctx.name, txtline.lineno)?;
+                if let Some(p) = &txtline.ctx.path {
+                    write!(f, " ({p})")?;
+                }
+                writeln!(f, "\n\t{}", txtline.line)?;
 
-        if errs.is_empty() {
-            return Ok(());
-        }
+                if errs.is_empty() {
+                    return Ok(());
+                }
 
-        let mut cursor = 0;
-        f.write_char('\t')?;
-        for span in errs
-            .iter()
-            .filter_map(|err| (!err.span.is_empty()).then_some(&err.span))
-        {
-            write!(
-                f,
-                "{0:>1$}{2:^<3$}",
-                "^",
-                span.start + 1 - cursor,
-                "",
-                span.len() - 1
-            )?;
-            cursor = span.end;
-        }
-        f.write_char('\n')?;
-        for err in errs {
-            writeln!(f, "{}: {err}", err.span.start + 1)?;
+                let mut cursor = 0;
+                f.write_char('\t')?;
+                for span in errs
+                    .iter()
+                    .filter_map(|err| (!err.span.is_empty()).then_some(&err.span))
+                {
+                    write!(
+                        f,
+                        "{0:>1$}{2:^<3$}",
+                        "^",
+                        span.start + 1 - cursor,
+                        "",
+                        span.len() - 1
+                    )?;
+                    cursor = span.end;
+                }
+                f.write_char('\n')?;
+                for err in errs {
+                    writeln!(f, "{}: {err}", err.span.start + 1)?;
+                }
+            }
         }
         Ok(())
     }
@@ -423,7 +446,14 @@ mod tests {
 
             assert!(r.is_err());
             let err = r.unwrap_err();
-            let errs = err.0;
+            assert!(matches!(err, LexerError::Tokenize(_)));
+            let errs: Vec<TokenError>;
+            let line: TextLine;
+            if let LexerError::Tokenize(TokenizeError(es, ln)) = err {
+                (errs, line) = (es, ln)
+            } else {
+                unreachable!()
+            }
             assert_eq!(errs.len(), 2);
             assert!(matches!(
                 errs[0],
@@ -440,7 +470,7 @@ mod tests {
                 }
             ));
             assert!(matches!(
-                &err.1,
+                line,
                 TextLine {
                     ctx,
                     line,
@@ -797,7 +827,7 @@ mod tests {
 
         #[test]
         fn display_empty_errors() {
-            let err = LexerError(Vec::new(), make_textline());
+            let err = LexerError::Tokenize(TokenizeError(Vec::new(), make_textline()));
 
             assert_eq!(
                 err.extended_display().to_string(),
@@ -808,13 +838,13 @@ mod tests {
 
         #[test]
         fn display_single_error() {
-            let err = LexerError(
+            let err = LexerError::Tokenize(TokenizeError(
                 vec![TokenError {
                     kind: TokenErrorKind::Unimplemented("myerr".to_owned()),
                     span: 5..7,
                 }],
                 make_textline(),
-            );
+            ));
 
             assert_eq!(
                 err.extended_display().to_string(),
@@ -827,13 +857,13 @@ mod tests {
 
         #[test]
         fn display_single_error_at_beginning_of_line() {
-            let err = LexerError(
+            let err = LexerError::Tokenize(TokenizeError(
                 vec![TokenError {
                     kind: TokenErrorKind::Unimplemented("myerr".to_owned()),
                     span: 0..4,
                 }],
                 make_textline(),
-            );
+            ));
 
             assert_eq!(
                 err.extended_display().to_string(),
@@ -846,7 +876,7 @@ mod tests {
 
         #[test]
         fn display_multiple_errors() {
-            let err = LexerError(
+            let err = LexerError::Tokenize(TokenizeError(
                 vec![
                     TokenError {
                         kind: TokenErrorKind::Unimplemented("myerr".to_owned()),
@@ -858,7 +888,7 @@ mod tests {
                     },
                 ],
                 make_textline(),
-            );
+            ));
 
             assert_eq!(
                 err.extended_display().to_string(),
@@ -872,7 +902,7 @@ mod tests {
 
         #[test]
         fn display_single_error_no_filename() {
-            let err = LexerError(
+            let err = LexerError::Tokenize(TokenizeError(
                 vec![TokenError {
                     kind: TokenErrorKind::Unimplemented("myerr".to_owned()),
                     span: 5..7,
@@ -886,7 +916,7 @@ mod tests {
                     line: "line of source code".to_owned(),
                     lineno: 1,
                 },
-            );
+            ));
 
             assert_eq!(
                 err.extended_display().to_string(),
@@ -899,13 +929,13 @@ mod tests {
 
         #[test]
         fn display_single_error_invalid_span() {
-            let err = LexerError(
+            let err = LexerError::Tokenize(TokenizeError(
                 vec![TokenError {
                     kind: TokenErrorKind::Unimplemented("myerr".to_owned()),
                     span: 5..2,
                 }],
                 make_textline(),
-            );
+            ));
 
             assert_eq!(
                 err.extended_display().to_string(),
@@ -918,13 +948,13 @@ mod tests {
 
         #[test]
         fn display_single_error_span_out_of_range() {
-            let err = LexerError(
+            let err = LexerError::Tokenize(TokenizeError(
                 vec![TokenError {
                     kind: TokenErrorKind::Unimplemented("myerr".to_owned()),
                     span: 15..25,
                 }],
                 make_textline(),
-            );
+            ));
 
             assert_eq!(
                 err.extended_display().to_string(),
