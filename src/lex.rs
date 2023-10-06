@@ -61,6 +61,12 @@ impl Display for LexerError {
 
 impl Error for LexerError {}
 
+impl From<TextError> for LexerError {
+    fn from(value: TextError) -> Self {
+        Self::Read(value)
+    }
+}
+
 #[derive(Debug)]
 pub struct TokenizeError(Vec<TokenError>, TextLine);
 
@@ -84,8 +90,7 @@ impl Lexer {
     }
 
     pub(crate) fn tokenize(&mut self, src: &mut impl TextSource) -> LexerResult {
-        src.map(|tl| self.tokenize_line(tl.expect("TODO: handle TextError")))
-            .collect()
+        src.map(|tr| self.tokenize_line(tr?)).collect()
     }
 
     fn tokenize_line(&mut self, text: TextLine) -> Result<LexLine, LexerError> {
@@ -107,7 +112,13 @@ pub(crate) struct ExtendedLexerError<'a>(&'a LexerError);
 impl Display for ExtendedLexerError<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self.0 {
-            LexerError::Read(err) => todo!(),
+            LexerError::Read(err) => {
+                write!(f, "{}:{}", err.ctx.name, err.lineno)?;
+                if let Some(p) = &err.ctx.path {
+                    write!(f, " ({p})")?;
+                }
+                f.write_str("\n\tunable to read text line\n\n")
+            }
             LexerError::Tokenize(err) => ExtendedTokenizeError(err).fmt(f),
         }
     }
