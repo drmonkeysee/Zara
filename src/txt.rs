@@ -35,6 +35,21 @@ pub struct TextLine {
     pub lineno: LineNumber,
 }
 
+impl TextLine {
+    pub fn display_header(&self) -> TextLineHeader {
+        TextLineHeader(self)
+    }
+}
+
+pub struct TextLineHeader<'a>(&'a TextLine);
+
+impl Display for TextLineHeader<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        format_header(&self.0.ctx, self.0.lineno, f)?;
+        writeln!(f, "\t{}", self.0.line)
+    }
+}
+
 #[derive(Debug)]
 pub struct TextError {
     pub ctx: Rc<TextContext>,
@@ -54,6 +69,10 @@ impl TextError {
             lineno,
         }
     }
+
+    pub fn display_header(&self) -> TextErrorHeader {
+        TextErrorHeader(self)
+    }
 }
 
 impl Display for TextError {
@@ -69,6 +88,23 @@ impl Error for TextError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         Some(self.err.as_ref())
     }
+}
+
+pub struct TextErrorHeader<'a>(&'a TextError);
+
+impl Display for TextErrorHeader<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        format_header(&self.0.ctx, self.0.lineno, f)?;
+        f.write_str("\tunable to read text line\n")
+    }
+}
+
+fn format_header(ctx: &TextContext, lineno: LineNumber, f: &mut Formatter<'_>) -> fmt::Result {
+    write!(f, "{}:{}", ctx.name, lineno)?;
+    if let Some(p) = &ctx.path {
+        write!(f, " ({})", p.display())?;
+    }
+    writeln!(f)
 }
 
 #[cfg(test)]

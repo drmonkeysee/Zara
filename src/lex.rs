@@ -112,13 +112,7 @@ pub(crate) struct ExtendedLexerError<'a>(&'a LexerError);
 impl Display for ExtendedLexerError<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self.0 {
-            LexerError::Read(err) => {
-                write!(f, "{}:{}", err.ctx.name, err.lineno)?;
-                if let Some(p) = &err.ctx.path {
-                    write!(f, " ({})", p.display())?;
-                }
-                f.write_str("\n\tunable to read text line\n\n")
-            }
+            LexerError::Read(err) => err.display_header().fmt(f),
             LexerError::Tokenize(err) => ExtendedTokenizeError(err).fmt(f),
         }
     }
@@ -204,11 +198,7 @@ struct ExtendedTokenizeError<'a>(&'a TokenizeError);
 impl Display for ExtendedTokenizeError<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let TokenizeError(errs, txtline) = self.0;
-        write!(f, "{}:{}", txtline.ctx.name, txtline.lineno)?;
-        if let Some(p) = &txtline.ctx.path {
-            write!(f, " ({})", p.display())?;
-        }
-        writeln!(f, "\n\t{}", txtline.line)?;
+        txtline.display_header().fmt(f)?;
 
         if errs.is_empty() {
             return Ok(());
