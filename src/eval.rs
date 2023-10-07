@@ -1,4 +1,4 @@
-use super::syntax::Expression;
+use crate::syntax::Expression;
 use std::{
     error::Error,
     fmt::{self, Display, Formatter},

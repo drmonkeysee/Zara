@@ -1,4 +1,4 @@
-use super::run::Opts;
+use crate::run::Opts;
 use rustyline::{DefaultEditor, Result};
 use std::rc::Rc;
 use zara::{

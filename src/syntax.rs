@@ -2,7 +2,7 @@ mod expr;
 
 use self::expr::ExpressionError;
 pub use self::expr::{Datum, Expression};
-use super::lex::{LexLine, Token, TokenKind};
+use crate::lex::{LexLine, Token, TokenKind};
 use std::{
     error::Error,
     fmt::{self, Display, Formatter},

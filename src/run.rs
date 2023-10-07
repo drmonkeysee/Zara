@@ -1,4 +1,4 @@
-use super::{args::Args, cli::Result, repl::Repl};
+use crate::{args::Args, cli::Result, repl::Repl};
 use std::{
     io::{self, IsTerminal, Stdin},
     path::Path,

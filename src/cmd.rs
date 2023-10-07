@@ -1,4 +1,4 @@
-use super::{
+use crate::{
     args::{self, Args},
     cli::Result,
     run::{self, Opts},

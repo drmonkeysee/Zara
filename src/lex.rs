@@ -6,7 +6,7 @@ use self::{
     token::{TokenContinuation, TokenError},
     tokenize::TokenStream,
 };
-use super::txt::{TextError, TextLine, TextSource};
+use crate::txt::{TextError, TextLine, TextSource};
 use std::{
     error::Error,
     fmt::{self, Display, Formatter, Write},
@@ -235,7 +235,7 @@ mod tests {
     use std::path::Path;
 
     mod lexer {
-        use super::token::{TokenErrorKind, TokenType};
+        use self::token::{TokenErrorKind, TokenType};
         use super::*;
         use crate::txt::{LineNumber, TextResult};
         use std::{ops::Range, rc::Rc, str::Lines};
