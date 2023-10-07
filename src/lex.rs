@@ -44,8 +44,8 @@ pub enum LexerError {
 }
 
 impl LexerError {
-    pub(crate) fn extended_display(&self) -> ExtendedLexerError<'_> {
-        ExtendedLexerError(self)
+    pub(crate) fn display_message(&self) -> LexerErrorMessage<'_> {
+        LexerErrorMessage(self)
     }
 }
 
@@ -107,13 +107,13 @@ impl Lexer {
     }
 }
 
-pub(crate) struct ExtendedLexerError<'a>(&'a LexerError);
+pub(crate) struct LexerErrorMessage<'a>(&'a LexerError);
 
-impl Display for ExtendedLexerError<'_> {
+impl Display for LexerErrorMessage<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self.0 {
             LexerError::Read(err) => err.display_header().fmt(f),
-            LexerError::Tokenize(err) => ExtendedTokenizeError(err).fmt(f),
+            LexerError::Tokenize(err) => TokenizeErrorMessage(err).fmt(f),
         }
     }
 }
@@ -140,24 +140,24 @@ impl Display for DisplayLexLines<'_> {
     }
 }
 
-pub(crate) struct ExtendedDisplayLexLines<'a>(pub(crate) &'a [LexLine]);
+pub(crate) struct LexLinesMessage<'a>(pub(crate) &'a [LexLine]);
 
-impl Display for ExtendedDisplayLexLines<'_> {
+impl Display for LexLinesMessage<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         for line in self.0 {
-            ExtendedLexLine(line).fmt(f)?;
+            LexLineMessage(line).fmt(f)?;
         }
         Ok(())
     }
 }
 
-struct ExtendedLexLine<'a>(&'a LexLine);
+struct LexLineMessage<'a>(&'a LexLine);
 
-impl Display for ExtendedLexLine<'_> {
+impl Display for LexLineMessage<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let LexLine(tokens, txt) = self.0;
         for token in tokens {
-            ExtendedTokenWithSource(token, txt).fmt(f)?
+            TokenWithSourceMessage(token, txt).fmt(f)?
         }
         Ok(())
     }
@@ -178,9 +178,9 @@ impl Display for TokenWithSource<'_> {
     }
 }
 
-struct ExtendedTokenWithSource<'a>(&'a Token, &'a TextLine);
+struct TokenWithSourceMessage<'a>(&'a Token, &'a TextLine);
 
-impl Display for ExtendedTokenWithSource<'_> {
+impl Display for TokenWithSourceMessage<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let Self(t, txt) = *self;
         writeln!(
@@ -193,9 +193,9 @@ impl Display for ExtendedTokenWithSource<'_> {
     }
 }
 
-struct ExtendedTokenizeError<'a>(&'a TokenizeError);
+struct TokenizeErrorMessage<'a>(&'a TokenizeError);
 
-impl Display for ExtendedTokenizeError<'_> {
+impl Display for TokenizeErrorMessage<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let TokenizeError(errs, txtline) = self.0;
         txtline.display_header().fmt(f)?;
@@ -869,7 +869,7 @@ mod tests {
             let err = LexerError::Read(inner);
 
             assert_eq!(
-                err.extended_display().to_string(),
+                err.display_message().to_string(),
                 "foo:3\n\tunable to read text line\n"
             );
         }
@@ -879,7 +879,7 @@ mod tests {
             let err = LexerError::Tokenize(TokenizeError(Vec::new(), make_textline()));
 
             assert_eq!(
-                err.extended_display().to_string(),
+                err.display_message().to_string(),
                 "mylib:1 (lib/mylib.scm)\n\
                 \tline of source code\n"
             );
@@ -896,7 +896,7 @@ mod tests {
             ));
 
             assert_eq!(
-                err.extended_display().to_string(),
+                err.display_message().to_string(),
                 "mylib:1 (lib/mylib.scm)\n\
                 \tline of source code\n\
                 \t     ^^\n\
@@ -915,7 +915,7 @@ mod tests {
             ));
 
             assert_eq!(
-                err.extended_display().to_string(),
+                err.display_message().to_string(),
                 "mylib:1 (lib/mylib.scm)\n\
                 \tline of source code\n\
                 \t^^^^\n\
@@ -940,7 +940,7 @@ mod tests {
             ));
 
             assert_eq!(
-                err.extended_display().to_string(),
+                err.display_message().to_string(),
                 "mylib:1 (lib/mylib.scm)\n\
                 \tline of source code\n\
                 \t     ^^        ^^^^\n\
@@ -968,7 +968,7 @@ mod tests {
             ));
 
             assert_eq!(
-                err.extended_display().to_string(),
+                err.display_message().to_string(),
                 "mylib:1\n\
                 \tline of source code\n\
                 \t     ^^\n\
@@ -987,7 +987,7 @@ mod tests {
             ));
 
             assert_eq!(
-                err.extended_display().to_string(),
+                err.display_message().to_string(),
                 "mylib:1 (lib/mylib.scm)\n\
                 \tline of source code\n\
                 \t\n\
@@ -1006,7 +1006,7 @@ mod tests {
             ));
 
             assert_eq!(
-                err.extended_display().to_string(),
+                err.display_message().to_string(),
                 "mylib:1 (lib/mylib.scm)\n\
                 \tline of source code\n\
                 \t               ^^^^^^^^^^\n\

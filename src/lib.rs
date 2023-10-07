@@ -60,8 +60,8 @@ pub enum Error {
 }
 
 impl Error {
-    pub fn extended_display(&self) -> ExtendedError<'_> {
-        ExtendedError(self)
+    pub fn display_message(&self) -> ErrorMessage<'_> {
+        ErrorMessage(self)
     }
 }
 
@@ -103,13 +103,13 @@ impl From<EvalError> for Error {
     }
 }
 
-pub struct ExtendedError<'a>(&'a Error);
+pub struct ErrorMessage<'a>(&'a Error);
 
-impl Display for ExtendedError<'_> {
+impl Display for ErrorMessage<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let err = self.0;
         match err {
-            Error::Lex(lex_err) => lex_err.extended_display().fmt(f),
+            Error::Lex(lex_err) => lex_err.display_message().fmt(f),
             _ => writeln!(f, "#<error-extended-undef({err:?})>"),
         }
     }

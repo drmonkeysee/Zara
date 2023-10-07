@@ -11,17 +11,17 @@ pub enum Evaluation {
 }
 
 impl Evaluation {
-    pub fn extended_display(&self) -> ExtendedEvaluation {
-        ExtendedEvaluation(self)
+    pub fn display_message(&self) -> EvaluationMessage {
+        EvaluationMessage(self)
     }
 }
 
-pub struct ExtendedEvaluation<'a>(&'a Evaluation);
+pub struct EvaluationMessage<'a>(&'a Evaluation);
 
-impl Display for ExtendedEvaluation<'_> {
+impl Display for EvaluationMessage<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self.0 {
-            Evaluation::Expression(expr) => expr.extended_display().fmt(f),
+            Evaluation::Expression(expr) => expr.display_message().fmt(f),
             Evaluation::Continuation => writeln!(f, "#<cont-extended-undef({:?})>", self.0),
         }
     }

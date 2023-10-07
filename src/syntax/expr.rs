@@ -1,5 +1,5 @@
 use crate::{
-    lex::{DisplayLexLines, ExtendedDisplayLexLines, LexLine, Token},
+    lex::{DisplayLexLines, LexLine, LexLinesMessage, Token},
     literal::Literal,
 };
 use std::{
@@ -26,8 +26,8 @@ impl Expression {
         Datum(self)
     }
 
-    pub(crate) fn extended_display(&self) -> ExtendedExpression {
-        ExtendedExpression(self)
+    pub(crate) fn display_message(&self) -> ExpressionMessage {
+        ExpressionMessage(self)
     }
 }
 
@@ -45,13 +45,13 @@ impl Display for Datum<'_> {
     }
 }
 
-pub(crate) struct ExtendedExpression<'a>(&'a Expression);
+pub(crate) struct ExpressionMessage<'a>(&'a Expression);
 
-impl Display for ExtendedExpression<'_> {
+impl Display for ExpressionMessage<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self.0 {
             Expression::Ast(expr) => writeln!(f, "{expr:#?}"),
-            Expression::TokenList(lines) => ExtendedDisplayLexLines(lines).fmt(f),
+            Expression::TokenList(lines) => LexLinesMessage(lines).fmt(f),
             _ => writeln!(f, "#<expr-extended-undef({:?})>", self.0),
         }
     }

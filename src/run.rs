@@ -51,8 +51,8 @@ fn run(opts: Opts, mut src: impl TextSource) -> Result {
 
 fn print_result(result: &zara::Result) {
     match result {
-        Ok(eval) => print!("{}", eval.extended_display()),
-        Err(err) => eprint!("{}", err.extended_display()),
+        Ok(eval) => print!("{}", eval.display_message()),
+        Err(err) => eprint!("{}", err.display_message()),
     }
 }
 
