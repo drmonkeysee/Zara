@@ -185,7 +185,7 @@ impl Display for TokenWithSourceMessage<'_> {
         let Self(t, txt) = *self;
         writeln!(
             f,
-            "{:20}{:30}\"{}\"",
+            "{:20}{:30}'{}'",
             format!("{}:{:?}", txt.lineno, t.span),
             t.kind.to_string(),
             txt.line.get(t.span.clone()).unwrap_or("INVALID RANGE")
