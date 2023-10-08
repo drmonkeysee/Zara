@@ -81,7 +81,7 @@ impl Error for TokenizeError {}
 pub(crate) type LexerResult = Result<Vec<LexLine>, LexerError>;
 
 pub(crate) struct Lexer {
-    cont: Option<TokenContinuation>,
+    cont: Option<(Vec<LexLine>, TokenContinuation)>,
 }
 
 impl Lexer {
@@ -90,19 +90,17 @@ impl Lexer {
     }
 
     pub(crate) fn tokenize(&mut self, src: &mut impl TextSource) -> LexerResult {
-        src.map(|tr| self.tokenize_line(tr?)).collect()
-    }
-
-    fn tokenize_line(&mut self, text: TextLine) -> Result<LexLine, LexerError> {
-        let mut errors = Vec::new();
-        let tokens: Vec<_> = TokenStream::new(&text.line, self.cont.take())
-            .filter_map(|tr| tr.map_err(|err| errors.push(err)).ok())
-            .collect();
-        if errors.is_empty() {
-            self.cont = tokens.last().and_then(|t| t.kind.to_continuation());
-            Ok(LexLine(tokens, text))
+        let mut d = if let Some((prev_lines, token_cont)) = self.cont.take() {
+            LexerDriver::cont(token_cont, prev_lines)
         } else {
-            Err(LexerError::Tokenize(TokenizeError(errors, text)))
+            LexerDriver::new()
+        };
+        let lines = d.tokenize(src)?;
+        if let Some(token_cont) = d.cont {
+            self.cont = Some((lines, token_cont));
+            todo!()
+        } else {
+            Ok(lines)
         }
     }
 }
@@ -148,6 +146,46 @@ impl Display for LexLinesMessage<'_> {
             LexLineMessage(line).fmt(f)?;
         }
         Ok(())
+    }
+}
+
+type LexerDriverResult = Result<Vec<LexLine>, LexerError>;
+
+struct LexerDriver {
+    cont: Option<TokenContinuation>,
+    prev_lines: Option<Vec<LexLine>>,
+}
+
+impl LexerDriver {
+    fn new() -> Self {
+        Self {
+            cont: None,
+            prev_lines: None,
+        }
+    }
+
+    fn cont(cont: TokenContinuation, prev_lines: Vec<LexLine>) -> Self {
+        Self {
+            cont: Some(cont),
+            prev_lines: Some(prev_lines),
+        }
+    }
+
+    fn tokenize(&mut self, src: &mut impl TextSource) -> LexerDriverResult {
+        src.map(|tr| self.tokenize_line(tr?)).collect()
+    }
+
+    fn tokenize_line(&mut self, text: TextLine) -> Result<LexLine, LexerError> {
+        let mut errors = Vec::new();
+        let tokens: Vec<_> = TokenStream::new(&text.line, self.cont.take())
+            .filter_map(|tr| tr.map_err(|err| errors.push(err)).ok())
+            .collect();
+        if errors.is_empty() {
+            self.cont = tokens.last().and_then(|t| t.kind.to_continuation());
+            Ok(LexLine(tokens, text))
+        } else {
+            Err(LexerError::Tokenize(TokenizeError(errors, text)))
+        }
     }
 }
 
