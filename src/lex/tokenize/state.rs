@@ -95,9 +95,37 @@ impl<'me, 'str> Hashtag<'me, 'str> {
     }
 }
 
-pub(super) struct StringLiteral<'me, 'str> {
+pub(super) struct StringLiteralFactory;
+
+impl StringLiteralFactory {
+    pub(super) fn new<'me, 'str>(
+        scan: &'me mut Scanner<'str>,
+    ) -> StringLiteral<'me, 'str, StartStringLiteral> {
+        StringLiteral::init(scan, StartStringLiteral)
+    }
+
+    pub(super) fn cleanup<'me, 'str>(
+        scan: &'me mut Scanner<'str>,
+    ) -> StringLiteral<'me, 'str, DiscardStringLiteral> {
+        StringLiteral::init(scan, DiscardStringLiteral)
+    }
+
+    pub(super) fn cont<'me, 'str>(
+        scan: &'me mut Scanner<'str>,
+    ) -> StringLiteral<'me, 'str, ContinueStringLiteral> {
+        StringLiteral::init(scan, ContinueStringLiteral)
+    }
+
+    pub(super) fn line_cont<'me, 'str>(
+        scan: &'me mut Scanner<'str>,
+    ) -> StringLiteral<'me, 'str, LineContinueStringLiteral> {
+        StringLiteral::init(scan, LineContinueStringLiteral)
+    }
+}
+
+pub(super) struct StringLiteral<'me, 'str, T> {
     buf: String,
-    cont: StringContinuation,
+    mode: T,
     possible_line_cont_idx: Option<usize>,
     scan: &'me mut Scanner<'str>,
     start: usize,
@@ -105,23 +133,11 @@ pub(super) struct StringLiteral<'me, 'str> {
 
 type StringLiteralResult = Result<(), TokenErrorKind>;
 
-impl<'me, 'str> StringLiteral<'me, 'str> {
-    pub(super) fn new(scan: &'me mut Scanner<'str>) -> Self {
-        Self::init(scan, StringContinuation::New)
-    }
-
-    pub(super) fn cleanup(scan: &'me mut Scanner<'str>) -> Self {
-        Self::init(scan, StringContinuation::Error)
-    }
-
-    pub(super) fn cont(scan: &'me mut Scanner<'str>, line_cont: bool) -> Self {
-        Self::init(scan, StringContinuation::NextLine(line_cont))
-    }
-
-    fn init(scan: &'me mut Scanner<'str>, cont: StringContinuation) -> Self {
+impl<'me, 'str, T: StringLiteralMode> StringLiteral<'me, 'str, T> {
+    fn init(scan: &'me mut Scanner<'str>, mode: T) -> Self {
         Self {
             buf: String::new(),
-            cont,
+            mode,
             possible_line_cont_idx: None,
             scan,
             start: 0,
@@ -129,9 +145,7 @@ impl<'me, 'str> StringLiteral<'me, 'str> {
     }
 
     pub(super) fn scan(mut self) -> TokenExtractResult {
-        if matches!(self.cont, StringContinuation::NextLine(true)) {
-            self.scan.skip_whitespace();
-        }
+        self.mode.prelude(self.scan);
         while let Some((idx, ch)) = self.scan.next() {
             self.start = idx;
             match ch {
@@ -184,26 +198,77 @@ impl<'me, 'str> StringLiteral<'me, 'str> {
     }
 
     fn end_string(self) -> TokenExtractResult {
-        Ok(match self.cont {
-            StringContinuation::Error => TokenKind::StringDiscard,
-            StringContinuation::New => TokenKind::Literal(Literal::String(self.buf)),
-            StringContinuation::NextLine(_) => TokenKind::StringEnd(self.buf),
-        })
+        Ok(self.mode.terminated(self.buf))
     }
 
     fn unterminated(self) -> TokenExtractResult {
-        if matches!(self.cont, StringContinuation::Error) {
-            Ok(TokenKind::StringDiscard)
-        } else {
-            let next_line = matches!(self.cont, StringContinuation::NextLine(..));
+        if self.mode.allows_line_continuation() {
             if let Some(idx) = self.possible_line_cont_idx {
                 let (lead, trail) = self.buf.split_at(idx);
                 if trail.trim().is_empty() {
-                    return Ok(unterminated_string(lead.to_owned(), next_line, true));
+                    return Ok(self.mode.unterminated(lead.to_owned(), true));
                 }
             }
-            Ok(unterminated_string(self.buf, next_line, false))
         }
+        Ok(self.mode.unterminated(self.buf, false))
+    }
+}
+
+pub(super) trait StringLiteralMode {
+    fn allows_line_continuation(&self) -> bool {
+        true
+    }
+
+    fn prelude<'me, 'str>(&self, _scan: &'me mut Scanner<'str>) {
+        // NOTE: do nothing by default
+    }
+
+    fn terminated(&self, buf: String) -> TokenKind {
+        TokenKind::StringEnd(buf)
+    }
+
+    fn unterminated(&self, buf: String, line_cont: bool) -> TokenKind {
+        TokenKind::StringFragment(buf, line_cont)
+    }
+}
+
+pub(super) struct StartStringLiteral;
+
+impl StringLiteralMode for StartStringLiteral {
+    fn terminated(&self, buf: String) -> TokenKind {
+        TokenKind::Literal(Literal::String(buf))
+    }
+
+    fn unterminated(&self, buf: String, line_cont: bool) -> TokenKind {
+        TokenKind::StringBegin(buf, line_cont)
+    }
+}
+
+pub(super) struct DiscardStringLiteral;
+
+impl StringLiteralMode for DiscardStringLiteral {
+    fn allows_line_continuation(&self) -> bool {
+        false
+    }
+
+    fn terminated(&self, _buf: String) -> TokenKind {
+        TokenKind::StringDiscard
+    }
+
+    fn unterminated(&self, buf: String, _line_cont: bool) -> TokenKind {
+        self.terminated(buf)
+    }
+}
+
+pub(super) struct ContinueStringLiteral;
+
+impl StringLiteralMode for ContinueStringLiteral {}
+
+pub(super) struct LineContinueStringLiteral;
+
+impl StringLiteralMode for LineContinueStringLiteral {
+    fn prelude<'me, 'str>(&self, scan: &'me mut Scanner<'str>) {
+        scan.skip_whitespace();
     }
 }
 
@@ -328,20 +393,6 @@ fn parse_char_hex(txt: &str) -> HexParse {
     }
 }
 
-fn unterminated_string(buf: String, next_line: bool, line_cont: bool) -> TokenKind {
-    if next_line {
-        TokenKind::StringFragment(buf, line_cont)
-    } else {
-        TokenKind::StringBegin(buf, line_cont)
-    }
-}
-
-enum StringContinuation {
-    Error,
-    New,
-    NextLine(bool),
-}
-
 enum HexParse {
     Invalid,
     Unexpected,
@@ -369,45 +420,5 @@ mod tests {
         let target = continue_block_comment(3, &mut s);
 
         assert_eq!(target.depth, 3);
-    }
-
-    #[test]
-    fn stringliteral_new() {
-        let mut s = Scanner::new("");
-
-        let target = StringLiteral::new(&mut s);
-
-        assert_eq!(target.start, 0);
-        assert!(matches!(target.cont, StringContinuation::New));
-    }
-
-    #[test]
-    fn stringliteral_cleanup() {
-        let mut s = Scanner::new("");
-
-        let target = StringLiteral::cleanup(&mut s);
-
-        assert_eq!(target.start, 0);
-        assert!(matches!(target.cont, StringContinuation::Error));
-    }
-
-    #[test]
-    fn stringliteral_cont() {
-        let mut s = Scanner::new("");
-
-        let target = StringLiteral::cont(&mut s, false);
-
-        assert_eq!(target.start, 0);
-        assert!(matches!(target.cont, StringContinuation::NextLine(false)));
-    }
-
-    #[test]
-    fn stringliteral_cont_with_line_continuation() {
-        let mut s = Scanner::new("");
-
-        let target = StringLiteral::cont(&mut s, true);
-
-        assert_eq!(target.start, 0);
-        assert!(matches!(target.cont, StringContinuation::NextLine(true)));
     }
 }
