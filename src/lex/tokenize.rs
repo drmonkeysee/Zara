@@ -7,7 +7,7 @@ mod tests;
 use self::{
     extract::{TokenExtract, TokenExtractResult},
     scan::{ScanItem, Scanner},
-    state::{BlockComment, Hashtag, StringLiteral},
+    state::{Hashtag, StringLiteral},
 };
 use super::token::{TokenContinuation, TokenErrorKind, TokenKind, TokenResult};
 
@@ -138,7 +138,7 @@ impl<'me, 'str> Continuation<'me, 'str> {
     fn scan(&mut self) -> TokenExtractResult {
         match self.cont {
             TokenContinuation::BlockComment(depth) => {
-                Ok(BlockComment::cont(depth, self.scan).consume())
+                Ok(state::continue_block_comment(depth, self.scan).consume())
             }
             TokenContinuation::StringLiteral(line_cont) => {
                 StringLiteral::cont(self.scan, line_cont).scan()

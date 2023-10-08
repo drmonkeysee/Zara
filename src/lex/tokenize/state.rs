@@ -91,7 +91,7 @@ impl<'me, 'str> Hashtag<'me, 'str> {
         self.scan
             .char_if_eq('|')
             .ok_or(TokenErrorKind::HashUnterminated)
-            .map(|_| BlockComment::new(self.scan).consume())
+            .map(|_| new_block_comment(self.scan).consume())
     }
 }
 
@@ -207,35 +207,40 @@ impl<'me, 'str> StringLiteral<'me, 'str> {
     }
 }
 
-pub(super) struct BlockComment<'me, 'str> {
-    cont: bool,
+pub(super) fn continue_block_comment<'me, 'str>(
     depth: usize,
+    scan: &'me mut Scanner<'str>,
+) -> BlockComment<'me, 'str, ContinueBlockComment> {
+    BlockComment {
+        depth,
+        mode: ContinueBlockComment,
+        scan,
+    }
+}
+
+fn new_block_comment<'me, 'str>(
+    scan: &'me mut Scanner<'str>,
+) -> BlockComment<'me, 'str, StartBlockComment> {
+    BlockComment {
+        depth: 0,
+        mode: StartBlockComment,
+        scan,
+    }
+}
+
+pub(super) struct BlockComment<'me, 'str, T> {
+    depth: usize,
+    mode: T,
     scan: &'me mut Scanner<'str>,
 }
 
-impl<'me, 'str> BlockComment<'me, 'str> {
-    pub(super) fn new(scan: &'me mut Scanner<'str>) -> Self {
-        Self {
-            cont: false,
-            depth: 0,
-            scan,
-        }
-    }
-
-    pub(super) fn cont(depth: usize, scan: &'me mut Scanner<'str>) -> Self {
-        Self {
-            cont: true,
-            depth,
-            scan,
-        }
-    }
-
+impl<'me, 'str, T: BlockCommentMode> BlockComment<'me, 'str, T> {
     pub(super) fn consume(&mut self) -> TokenKind {
         while !self.scan.consumed() {
             if let Some((_, ch)) = self.scan.find_any_char(&['|', '#']) {
                 if self.end_block(ch) {
                     if self.depth == 0 {
-                        return self.end_kind();
+                        return self.mode.terminated();
                     } else {
                         self.depth -= 1;
                     }
@@ -244,7 +249,7 @@ impl<'me, 'str> BlockComment<'me, 'str> {
                 }
             }
         }
-        self.continuation_kind()
+        self.mode.unterminated(self.depth)
     }
 
     fn end_block(&mut self, ch: char) -> bool {
@@ -254,21 +259,34 @@ impl<'me, 'str> BlockComment<'me, 'str> {
     fn new_block(&mut self, ch: char) -> bool {
         ch == '#' && self.scan.char_if_eq('|').is_some()
     }
+}
 
-    fn continuation_kind(&self) -> TokenKind {
-        if self.cont {
-            TokenKind::CommentBlockFragment(self.depth)
-        } else {
-            TokenKind::CommentBlockBegin(self.depth)
-        }
+pub(super) trait BlockCommentMode {
+    fn terminated(&self) -> TokenKind;
+    fn unterminated(&self, depth: usize) -> TokenKind;
+}
+
+pub(super) struct ContinueBlockComment;
+
+impl BlockCommentMode for ContinueBlockComment {
+    fn terminated(&self) -> TokenKind {
+        TokenKind::CommentBlockEnd
     }
 
-    fn end_kind(&self) -> TokenKind {
-        if self.cont {
-            TokenKind::CommentBlockEnd
-        } else {
-            TokenKind::CommentBlock
-        }
+    fn unterminated(&self, depth: usize) -> TokenKind {
+        TokenKind::CommentBlockFragment(depth)
+    }
+}
+
+struct StartBlockComment;
+
+impl BlockCommentMode for StartBlockComment {
+    fn terminated(&self) -> TokenKind {
+        TokenKind::CommentBlock
+    }
+
+    fn unterminated(&self, depth: usize) -> TokenKind {
+        TokenKind::CommentBlockBegin(depth)
     }
 }
 
@@ -339,9 +357,8 @@ mod tests {
     fn blockcomment_new() {
         let mut s = Scanner::new("");
 
-        let target = BlockComment::new(&mut s);
+        let target = new_block_comment(&mut s);
 
-        assert_eq!(target.cont, false);
         assert_eq!(target.depth, 0);
     }
 
@@ -349,9 +366,8 @@ mod tests {
     fn blockcomment_cont() {
         let mut s = Scanner::new("");
 
-        let target = BlockComment::cont(3, &mut s);
+        let target = continue_block_comment(3, &mut s);
 
-        assert_eq!(target.cont, true);
         assert_eq!(target.depth, 3);
     }
 
