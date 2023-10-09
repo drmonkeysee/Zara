@@ -168,7 +168,7 @@ impl Display for TokenErrorKind {
             Self::StringUnterminatedHex(_) => f.write_str("unterminated hex-escape"),
             Self::HashInvalid => f.write_str("unexpected #-literal"),
             Self::HashUnterminated => f.write_str("unterminated #-literal"),
-            Self::Unimplemented(s) => write!(f, "unimplemented tokenization: \"{s}\""),
+            Self::Unimplemented(s) => write!(f, "unimplemented tokenization: '{s}'"),
         }
     }
 }
@@ -629,7 +629,7 @@ mod tests {
                 span: 0..1,
             };
 
-            assert_eq!(err.to_string(), "unimplemented tokenization: \"foobar\"");
+            assert_eq!(err.to_string(), "unimplemented tokenization: 'foobar'");
         }
 
         #[test]

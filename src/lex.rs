@@ -208,7 +208,7 @@ impl Display for TokenWithSource<'_> {
         let Self(t, txt) = *self;
         write!(
             f,
-            "{t}(\"{}\")",
+            "{t}('{}')",
             txt.line
                 .get(t.span.clone())
                 .unwrap_or("#<token-invalid-range>")
@@ -833,7 +833,7 @@ mod tests {
                 make_textline(),
             );
 
-            assert_eq!(line.to_string(), "1:LEFTPAREN[8..14](\"source\")");
+            assert_eq!(line.to_string(), "1:LEFTPAREN[8..14]('source')");
         }
 
         #[test]
@@ -858,9 +858,9 @@ mod tests {
 
             assert_eq!(
                 line.to_string(),
-                "1:LEFTPAREN[0..4](\"line\"), \
-                RIGHTPAREN[5..7](\"of\"), \
-                LEFTPAREN[8..14](\"source\")"
+                "1:LEFTPAREN[0..4]('line'), \
+                RIGHTPAREN[5..7]('of'), \
+                LEFTPAREN[8..14]('source')"
             );
         }
 
@@ -876,7 +876,7 @@ mod tests {
 
             assert_eq!(
                 line.to_string(),
-                "1:LEFTPAREN[8..4](\"#<token-invalid-range>\")"
+                "1:LEFTPAREN[8..4]('#<token-invalid-range>')"
             );
         }
 
@@ -892,7 +892,7 @@ mod tests {
 
             assert_eq!(
                 line.to_string(),
-                "1:LEFTPAREN[8..50](\"#<token-invalid-range>\")"
+                "1:LEFTPAREN[8..50]('#<token-invalid-range>')"
             );
         }
     }
@@ -938,7 +938,7 @@ mod tests {
                 "mylib:1 (lib/mylib.scm)\n\
                 \tline of source code\n\
                 \t     ^^\n\
-                6: unimplemented tokenization: \"myerr\"\n"
+                6: unimplemented tokenization: 'myerr'\n"
             );
         }
 
@@ -957,7 +957,7 @@ mod tests {
                 "mylib:1 (lib/mylib.scm)\n\
                 \tline of source code\n\
                 \t^^^^\n\
-                1: unimplemented tokenization: \"myerr\"\n"
+                1: unimplemented tokenization: 'myerr'\n"
             );
         }
 
@@ -982,7 +982,7 @@ mod tests {
                 "mylib:1 (lib/mylib.scm)\n\
                 \tline of source code\n\
                 \t     ^^        ^^^^\n\
-                6: unimplemented tokenization: \"myerr\"\n\
+                6: unimplemented tokenization: 'myerr'\n\
                 16: expected character literal\n"
             );
         }
@@ -1010,7 +1010,7 @@ mod tests {
                 "mylib:1\n\
                 \tline of source code\n\
                 \t     ^^\n\
-                6: unimplemented tokenization: \"myerr\"\n"
+                6: unimplemented tokenization: 'myerr'\n"
             );
         }
 
@@ -1029,7 +1029,7 @@ mod tests {
                 "mylib:1 (lib/mylib.scm)\n\
                 \tline of source code\n\
                 \t\n\
-                6: unimplemented tokenization: \"myerr\"\n"
+                6: unimplemented tokenization: 'myerr'\n"
             );
         }
 
@@ -1048,7 +1048,7 @@ mod tests {
                 "mylib:1 (lib/mylib.scm)\n\
                 \tline of source code\n\
                 \t               ^^^^^^^^^^\n\
-                16: unimplemented tokenization: \"myerr\"\n"
+                16: unimplemented tokenization: 'myerr'\n"
             );
         }
     }
@@ -1109,7 +1109,7 @@ mod tests {
 
             assert_eq!(
                 target.to_string(),
-                "[1:LEFTPAREN[0..1](\"(\"), LITERAL<BOOL>[1..3](\"#f\"), RIGHTPAREN[3..4](\")\")]"
+                "[1:LEFTPAREN[0..1]('('), LITERAL<BOOL>[1..3]('#f'), RIGHTPAREN[3..4](')')]"
             );
         }
 
@@ -1198,9 +1198,9 @@ mod tests {
             assert_eq!(
                 target.to_string(),
                 "[\n\
-                \t1:LEFTPAREN[0..1](\"(\"), LITERAL<BOOL>[1..3](\"#f\"), RIGHTPAREN[3..4](\")\"),\n\
-                \t2:LEFTPAREN[0..1](\"(\"), LITERAL<BOOL>[2..4](\"#t\"), RIGHTPAREN[5..6](\")\"),\n\
-                \t3:LEFTPAREN[0..1](\"(\"), LITERAL<CHAR>[1..4](\"#\\a\"), RIGHTPAREN[4..5](\")\"),\n\
+                \t1:LEFTPAREN[0..1]('('), LITERAL<BOOL>[1..3]('#f'), RIGHTPAREN[3..4](')'),\n\
+                \t2:LEFTPAREN[0..1]('('), LITERAL<BOOL>[2..4]('#t'), RIGHTPAREN[5..6](')'),\n\
+                \t3:LEFTPAREN[0..1]('('), LITERAL<CHAR>[1..4]('#\\a'), RIGHTPAREN[4..5](')'),\n\
                 ]"
             );
         }
