@@ -7,7 +7,7 @@ pub mod txt;
 
 use self::{
     eval::EvalError,
-    lex::{Lexer, LexerError},
+    lex::{Lexer, LexerError, LexerOutput},
     syntax::ParserError,
     txt::TextSource,
 };
@@ -37,7 +37,11 @@ impl Interpreter {
     }
 
     pub fn run(&mut self, src: &mut impl TextSource) -> Result {
-        let token_lines = self.lexer.tokenize(src)?;
+        let lex_output = self.lexer.tokenize(src)?;
+        let token_lines = match lex_output {
+            LexerOutput::Complete(lines) => lines,
+            LexerOutput::Continuation => return Ok(Evaluation::Continuation),
+        };
         let ast = if self.token_output {
             syntax::tokens(token_lines)
         } else {

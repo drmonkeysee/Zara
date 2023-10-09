@@ -15,6 +15,12 @@ use std::{
 #[derive(Debug)]
 pub struct LexLine(Vec<Token>, TextLine);
 
+impl LexLine {
+    fn continuation(&self) -> Option<TokenContinuation> {
+        self.0.last().and_then(|t| t.kind.to_continuation())
+    }
+}
+
 impl Display for LexLine {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let LexLine(tokens, txt) = self;
@@ -78,7 +84,13 @@ impl Display for TokenizeError {
 
 impl Error for TokenizeError {}
 
-pub(crate) type LexerResult = Result<Vec<LexLine>, LexerError>;
+pub(crate) type LexerResult = Result<LexerOutput, LexerError>;
+
+#[derive(Debug)]
+pub(crate) enum LexerOutput {
+    Complete(Vec<LexLine>),
+    Continuation,
+}
 
 pub(crate) struct Lexer {
     cont: Option<(Vec<LexLine>, TokenContinuation)>,
@@ -90,18 +102,26 @@ impl Lexer {
     }
 
     pub(crate) fn tokenize(&mut self, src: &mut impl TextSource) -> LexerResult {
-        let mut d = if let Some((prev_lines, token_cont)) = self.cont.take() {
-            LexerDriver::cont(token_cont, prev_lines)
+        let (mut d, prev) = if let Some((prev_lines, token_cont)) = self.cont.take() {
+            (LexerDriver::cont(token_cont), Some(prev_lines))
         } else {
-            LexerDriver::new()
+            (LexerDriver::new(), None)
         };
-        let lines = d.tokenize(src)?;
-        if let Some(token_cont) = d.cont {
-            self.cont = Some((lines, token_cont));
-            todo!()
-        } else {
-            Ok(lines)
-        }
+        let mut new_lines = d.tokenize(src)?;
+        let lines = prev
+            .and_then(|mut p| {
+                p.append(&mut new_lines);
+                Some(p)
+            })
+            .unwrap_or(new_lines);
+        Ok(
+            if let Some(token_cont) = lines.last().and_then(LexLine::continuation) {
+                self.cont = Some((lines, token_cont));
+                LexerOutput::Continuation
+            } else {
+                LexerOutput::Complete(lines)
+            },
+        )
     }
 }
 
@@ -153,22 +173,15 @@ type LexerDriverResult = Result<Vec<LexLine>, LexerError>;
 
 struct LexerDriver {
     cont: Option<TokenContinuation>,
-    prev_lines: Option<Vec<LexLine>>,
 }
 
 impl LexerDriver {
     fn new() -> Self {
-        Self {
-            cont: None,
-            prev_lines: None,
-        }
+        Self { cont: None }
     }
 
-    fn cont(cont: TokenContinuation, prev_lines: Vec<LexLine>) -> Self {
-        Self {
-            cont: Some(cont),
-            prev_lines: Some(prev_lines),
-        }
+    fn cont(cont: TokenContinuation) -> Self {
+        Self { cont: Some(cont) }
     }
 
     fn tokenize(&mut self, src: &mut impl TextSource) -> LexerDriverResult {
@@ -181,8 +194,9 @@ impl LexerDriver {
             .filter_map(|tr| tr.map_err(|err| errors.push(err)).ok())
             .collect();
         if errors.is_empty() {
-            self.cont = tokens.last().and_then(|t| t.kind.to_continuation());
-            Ok(LexLine(tokens, text))
+            let lines = LexLine(tokens, text);
+            self.cont = lines.continuation();
+            Ok(lines)
         } else {
             Err(LexerError::Tokenize(TokenizeError(errors, text)))
         }
@@ -334,7 +348,14 @@ mod tests {
             let r = target.tokenize(&mut src);
 
             assert!(r.is_ok());
-            assert!(r.unwrap().is_empty());
+            let o = r.unwrap();
+            assert!(matches!(o, LexerOutput::Complete(_)));
+            let lines = if let LexerOutput::Complete(toks) = o {
+                toks
+            } else {
+                unreachable!();
+            };
+            assert!(lines.is_empty());
             assert!(target.cont.is_none());
         }
 
@@ -346,7 +367,13 @@ mod tests {
             let r = target.tokenize(&mut src);
 
             assert!(r.is_ok());
-            let lines = r.unwrap();
+            let o = r.unwrap();
+            assert!(matches!(o, LexerOutput::Complete(_)));
+            let lines = if let LexerOutput::Complete(toks) = o {
+                toks
+            } else {
+                unreachable!();
+            };
             assert_eq!(lines.len(), 1);
             let line = &lines[0];
             assert_eq!(line.0.len(), 1);
@@ -376,7 +403,13 @@ mod tests {
             let r = target.tokenize(&mut src);
 
             assert!(r.is_ok());
-            let lines = r.unwrap();
+            let o = r.unwrap();
+            assert!(matches!(o, LexerOutput::Complete(_)));
+            let lines = if let LexerOutput::Complete(toks) = o {
+                toks
+            } else {
+                unreachable!();
+            };
             assert_eq!(lines.len(), 1);
             let line = &lines[0];
             assert_eq!(line.0.len(), 3);
@@ -420,7 +453,13 @@ mod tests {
             let r = target.tokenize(&mut src);
 
             assert!(r.is_ok());
-            let lines = r.unwrap();
+            let o = r.unwrap();
+            assert!(matches!(o, LexerOutput::Complete(_)));
+            let lines = if let LexerOutput::Complete(toks) = o {
+                toks
+            } else {
+                unreachable!();
+            };
             assert_eq!(lines.len(), 3);
             let line = &lines[0];
             assert_eq!(line.0.len(), 1);
@@ -501,13 +540,11 @@ mod tests {
             assert!(r.is_err());
             let err = r.unwrap_err();
             assert!(matches!(err, LexerError::Tokenize(_)));
-            let errs: Vec<TokenError>;
-            let line: TextLine;
-            if let LexerError::Tokenize(TokenizeError(es, ln)) = err {
-                (errs, line) = (es, ln)
+            let (errs, line) = if let LexerError::Tokenize(TokenizeError(es, ln)) = err {
+                (es, ln)
             } else {
                 unreachable!()
-            }
+            };
             assert_eq!(errs.len(), 2);
             assert!(matches!(
                 errs[0],
@@ -544,12 +581,11 @@ mod tests {
             assert!(r.is_err());
             let err = r.unwrap_err();
             assert!(matches!(err, LexerError::Read(_)));
-            let inner: TextError;
-            if let LexerError::Read(inn) = err {
-                inner = inn
+            let inner = if let LexerError::Read(inn) = err {
+                inn
             } else {
                 unreachable!()
-            }
+            };
             assert!(Rc::ptr_eq(&inner.ctx, &src.ctx));
             assert_eq!(inner.lineno, 2);
             assert!(inner.source().is_some());
@@ -564,7 +600,14 @@ mod tests {
             let r = target.tokenize(&mut src);
 
             assert!(r.is_ok());
-            let lines = r.unwrap();
+            let o = r.unwrap();
+            assert!(matches!(o, LexerOutput::Continuation));
+            assert!(target.cont.is_some());
+            let (lines, cont) = if let Some((ln, c)) = target.cont {
+                (ln, c)
+            } else {
+                unreachable!();
+            };
             assert_eq!(lines.len(), 1);
             let line = &lines[0];
             assert_eq!(line.0.len(), 2);
@@ -590,10 +633,25 @@ mod tests {
                     lineno: 1,
                 } if Rc::ptr_eq(&ctx, &src.ctx) && line == "#t #|trailing..."
             ));
-            assert!(matches!(
-                target.cont,
-                Some(TokenContinuation::BlockComment(0))
-            ));
+            assert!(matches!(cont, TokenContinuation::BlockComment(0)));
+        }
+
+        #[test]
+        fn continuation_cleared_on_error() {
+            let mut src = MockTxtSource::new("#t #|trailing...");
+            let mut target = Lexer::new();
+
+            let r = target.tokenize(&mut src);
+
+            assert!(r.is_ok());
+            assert!(target.cont.is_some());
+
+            let mut src = MockTxtSource::new("...finish|# invalid_token");
+
+            let r = target.tokenize(&mut src);
+
+            assert!(r.is_err());
+            assert!(target.cont.is_none());
         }
 
         #[test]
@@ -604,7 +662,13 @@ mod tests {
             let r = target.tokenize(&mut src);
 
             assert!(r.is_ok());
-            let lines = r.unwrap();
+            let o = r.unwrap();
+            assert!(matches!(o, LexerOutput::Complete(_)));
+            let lines = if let LexerOutput::Complete(toks) = o {
+                toks
+            } else {
+                unreachable!();
+            };
             assert_eq!(lines.len(), 2);
             let line = &lines[0];
             assert_eq!(line.0.len(), 1);
@@ -650,7 +714,13 @@ mod tests {
             let r = target.tokenize(&mut src);
 
             assert!(r.is_ok());
-            let lines = r.unwrap();
+            let o = r.unwrap();
+            assert!(matches!(o, LexerOutput::Complete(_)));
+            let lines = if let LexerOutput::Complete(toks) = o {
+                toks
+            } else {
+                unreachable!();
+            };
             assert_eq!(lines.len(), 3);
             let line = &lines[0];
             assert_eq!(line.0.len(), 1);
@@ -712,7 +782,13 @@ mod tests {
             let r = target.tokenize(&mut src);
 
             assert!(r.is_ok());
-            let lines = r.unwrap();
+            let o = r.unwrap();
+            assert!(matches!(o, LexerOutput::Complete(_)));
+            let lines = if let LexerOutput::Complete(toks) = o {
+                toks
+            } else {
+                unreachable!();
+            };
             assert_eq!(lines.len(), 2);
             let line = &lines[0];
             assert_eq!(line.0.len(), 1);
@@ -758,7 +834,13 @@ mod tests {
             let r = target.tokenize(&mut src);
 
             assert!(r.is_ok());
-            let lines = r.unwrap();
+            let o = r.unwrap();
+            assert!(matches!(o, LexerOutput::Complete(_)));
+            let lines = if let LexerOutput::Complete(toks) = o {
+                toks
+            } else {
+                unreachable!();
+            };
             assert_eq!(lines.len(), 3);
             let line = &lines[0];
             assert_eq!(line.0.len(), 1);
