@@ -31,7 +31,7 @@ fn sub_index_or(default: usize, result: &TokenExtractResult) -> usize {
     result
         .as_ref()
         .err()
-        .and_then(|k| k.sub_idx())
+        .and_then(TokenErrorKind::sub_idx)
         .unwrap_or(default)
 }
 

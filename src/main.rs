@@ -29,7 +29,7 @@ struct Exit(Result);
 
 impl Termination for Exit {
     fn report(self) -> ExitCode {
-        self.0.map_or_else(fail, |u| u.report())
+        self.0.map_or_else(fail, Termination::report)
     }
 }
 
