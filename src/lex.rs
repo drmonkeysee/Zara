@@ -19,6 +19,12 @@ impl LexLine {
     fn continuation(&self) -> Option<TokenContinuation> {
         self.0.last().and_then(|t| t.kind.to_continuation())
     }
+
+    fn to_continuation_unsupported(mut self) -> LexerError {
+        self.0.pop().map_or(LexerError::InvalidOperation, |t| {
+            LexerError::Tokenize(TokenizeError(vec![t.to_continuation_unsupported()], self.1))
+        })
+    }
 }
 
 impl Display for LexLine {
@@ -45,6 +51,7 @@ impl IntoIterator for LexLine {
 
 #[derive(Debug)]
 pub enum LexerError {
+    InvalidOperation,
     Read(TextError),
     Tokenize(TokenizeError),
 }
@@ -59,6 +66,7 @@ impl Display for LexerError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         f.write_str("fatal error: ")?;
         match self {
+            Self::InvalidOperation => f.write_str("invalid lexer operation"),
             Self::Read(err) => err.fmt(f),
             Self::Tokenize(err) => err.fmt(f),
         }
@@ -114,14 +122,27 @@ impl Lexer {
                 Some(p)
             })
             .unwrap_or(new_lines);
-        Ok(
-            if let Some(token_cont) = lines.last().and_then(LexLine::continuation) {
-                self.cont = Some((lines, token_cont));
-                LexerOutput::Continuation
-            } else {
-                LexerOutput::Complete(lines)
-            },
-        )
+        if let Some(token_cont) = lines.last().and_then(LexLine::continuation) {
+            return self.continuation_result(token_cont, src.can_continue(), lines);
+        }
+        Ok(LexerOutput::Complete(lines))
+    }
+
+    fn continuation_result(
+        &mut self,
+        token_cont: TokenContinuation,
+        can_continue: bool,
+        mut lines: Vec<LexLine>,
+    ) -> LexerResult {
+        if can_continue {
+            self.cont = Some((lines, token_cont));
+            Ok(LexerOutput::Continuation)
+        } else {
+            Err(lines.pop().map_or(
+                LexerError::InvalidOperation,
+                LexLine::to_continuation_unsupported,
+            ))
+        }
     }
 }
 
@@ -130,6 +151,9 @@ pub(crate) struct LexerErrorMessage<'a>(&'a LexerError);
 impl Display for LexerErrorMessage<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self.0 {
+            LexerError::InvalidOperation => f.write_str(
+                "invalid operation attempted on lexer output; this is likely a library logic error!\n",
+            ),
             LexerError::Read(err) => err.display_header().fmt(f),
             LexerError::Tokenize(err) => TokenizeErrorMessage(err).fmt(f),
         }
@@ -293,14 +317,16 @@ mod tests {
         use std::{ops::Range, rc::Rc, str::Lines};
 
         struct MockTxtSource<'a> {
+            can_continue: bool,
             ctx: Rc<TextContext>,
             lines: Lines<'a>,
             lineno: LineNumber,
         }
 
         impl<'a> MockTxtSource<'a> {
-            fn new(src: &'a str) -> Self {
+            fn new(src: &'a str, can_continue: bool) -> Self {
                 Self {
+                    can_continue,
                     ctx: TextContext::named("<mock>").into(),
                     lines: src.lines(),
                     lineno: 0,
@@ -331,6 +357,10 @@ mod tests {
         }
 
         impl TextSource for MockTxtSource<'_> {
+            fn can_continue(&self) -> bool {
+                self.can_continue
+            }
+
             fn context(&self) -> Rc<TextContext> {
                 self.ctx.clone()
             }
@@ -342,7 +372,7 @@ mod tests {
 
         #[test]
         fn empty_line() {
-            let mut src = MockTxtSource::new("");
+            let mut src = MockTxtSource::new("", false);
             let mut target = Lexer::new();
 
             let r = target.tokenize(&mut src);
@@ -361,7 +391,7 @@ mod tests {
 
         #[test]
         fn single_token() {
-            let mut src = MockTxtSource::new("#t");
+            let mut src = MockTxtSource::new("#t", false);
             let mut target = Lexer::new();
 
             let r = target.tokenize(&mut src);
@@ -397,7 +427,7 @@ mod tests {
 
         #[test]
         fn multi_tokens() {
-            let mut src = MockTxtSource::new("#t #f #\\a");
+            let mut src = MockTxtSource::new("#t #f #\\a", false);
             let mut target = Lexer::new();
 
             let r = target.tokenize(&mut src);
@@ -447,7 +477,7 @@ mod tests {
 
         #[test]
         fn multi_lines() {
-            let mut src = MockTxtSource::new("#t\n  #f #\\a\n#f #f\n");
+            let mut src = MockTxtSource::new("#t\n  #f #\\a\n#f #f\n", false);
             let mut target = Lexer::new();
 
             let r = target.tokenize(&mut src);
@@ -532,7 +562,7 @@ mod tests {
 
         #[test]
         fn multi_lines_with_errors() {
-            let mut src = MockTxtSource::new("#t\n #z #f #z #\\a\n#f #z #f");
+            let mut src = MockTxtSource::new("#t\n #z #f #z #\\a\n#f #z #f", false);
             let mut target = Lexer::new();
 
             let r = target.tokenize(&mut src);
@@ -573,7 +603,7 @@ mod tests {
 
         #[test]
         fn multi_lines_with_read_error() {
-            let mut src = MockTxtSource::new("#t\nBAD BYTES\n#f #f\n");
+            let mut src = MockTxtSource::new("#t\nBAD BYTES\n#f #f\n", false);
             let mut target = Lexer::new();
 
             let r = target.tokenize(&mut src);
@@ -594,7 +624,7 @@ mod tests {
 
         #[test]
         fn continuation_token_persists_on_lexer() {
-            let mut src = MockTxtSource::new("#t #|trailing...");
+            let mut src = MockTxtSource::new("#t #|trailing...", true);
             let mut target = Lexer::new();
 
             let r = target.tokenize(&mut src);
@@ -637,8 +667,42 @@ mod tests {
         }
 
         #[test]
+        fn continuation_token_converted_to_error_if_src_does_not_support() {
+            let mut src = MockTxtSource::new("#t #|trailing...", false);
+            let mut target = Lexer::new();
+
+            let r = target.tokenize(&mut src);
+
+            assert!(r.is_err());
+            let err = r.unwrap_err();
+            assert!(matches!(err, LexerError::Tokenize(_)));
+            let (errs, line) = if let LexerError::Tokenize(TokenizeError(es, ln)) = err {
+                (es, ln)
+            } else {
+                unreachable!()
+            };
+            assert_eq!(errs.len(), 1);
+            assert!(matches!(
+                errs[0],
+                TokenType {
+                    kind: TokenErrorKind::BlockCommentUnterminated,
+                    span: Range { start: 3, end: 16 }
+                }
+            ));
+            assert!(matches!(
+                line,
+                TextLine {
+                    ctx,
+                    line,
+                    lineno: 1,
+                } if Rc::ptr_eq(&ctx, &src.ctx) && line == "#t #|trailing..."
+            ));
+            assert!(target.cont.is_none());
+        }
+
+        #[test]
         fn continuation_cleared_on_error() {
-            let mut src = MockTxtSource::new("#t #|trailing...");
+            let mut src = MockTxtSource::new("#t #|trailing...", true);
             let mut target = Lexer::new();
 
             let r = target.tokenize(&mut src);
@@ -646,7 +710,7 @@ mod tests {
             assert!(r.is_ok());
             assert!(target.cont.is_some());
 
-            let mut src = MockTxtSource::new("...finish|# invalid_token");
+            let mut src = MockTxtSource::new("...finish|# invalid_token", true);
 
             let r = target.tokenize(&mut src);
 
@@ -656,7 +720,7 @@ mod tests {
 
         #[test]
         fn double_line_comment() {
-            let mut src = MockTxtSource::new("#| double line\ncomment |#");
+            let mut src = MockTxtSource::new("#| double line\ncomment |#", false);
             let mut target = Lexer::new();
 
             let r = target.tokenize(&mut src);
@@ -708,7 +772,7 @@ mod tests {
 
         #[test]
         fn multi_line_comment() {
-            let mut src = MockTxtSource::new("#| multi\nline\ncomment |#");
+            let mut src = MockTxtSource::new("#| multi\nline\ncomment |#", false);
             let mut target = Lexer::new();
 
             let r = target.tokenize(&mut src);
@@ -776,7 +840,7 @@ mod tests {
 
         #[test]
         fn double_line_string() {
-            let mut src = MockTxtSource::new("\" double line\nstring \"");
+            let mut src = MockTxtSource::new("\" double line\nstring \"", false);
             let mut target = Lexer::new();
 
             let r = target.tokenize(&mut src);
@@ -828,7 +892,7 @@ mod tests {
 
         #[test]
         fn multi_line_string() {
-            let mut src = MockTxtSource::new("\" multi\nline\nstring \"");
+            let mut src = MockTxtSource::new("\" multi\nline\nstring \"", false);
             let mut target = Lexer::new();
 
             let r = target.tokenize(&mut src);
@@ -1132,6 +1196,25 @@ mod tests {
                 \t               ^^^^^^^^^^\n\
                 16: unimplemented tokenization: 'myerr'\n"
             );
+        }
+
+        #[test]
+        fn display_invalid_op() {
+            let err = LexerError::InvalidOperation;
+
+            assert_eq!(
+                err.display_message().to_string(),
+                "invalid operation attempted on lexer output; this is likely a library logic error!\n"
+            );
+        }
+
+        #[test]
+        fn convert_invalid_line_into_continuation_failure() {
+            let line = LexLine(Vec::new(), make_textline());
+
+            let err = line.to_continuation_unsupported();
+
+            assert!(matches!(err, LexerError::InvalidOperation));
         }
     }
 
