@@ -84,6 +84,18 @@ pub struct TokenType<T> {
 
 pub type Token = TokenType<TokenKind>;
 
+impl Token {
+    pub(super) fn to_continuation_unsupported(self) -> TokenError {
+        TokenError {
+            kind: self.kind.to_continuation().map_or(
+                TokenErrorKind::ContinuationInvalid,
+                TokenContinuation::to_unsupported,
+            ),
+            span: self.span,
+        }
+    }
+}
+
 impl Display for Token {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "{}[{:?}]", self.kind, self.span)
@@ -104,16 +116,19 @@ pub(super) type TokenResult = Result<Token, TokenError>;
 
 #[derive(Debug)]
 pub(super) enum TokenErrorKind {
+    BlockCommentUnterminated,
     BooleanExpected(bool),
     ByteVectorExpected,
     CharacterExpected,
     CharacterExpectedHex,
     CharacterInvalidHex,
+    ContinuationInvalid,
     DirectiveExpected,
     DirectiveInvalid,
     StringEscapeInvalid(usize, char),
     StringExpectedHex(usize),
     StringInvalidHex(usize),
+    StringUnterminated,
     StringUnterminatedHex(usize),
     HashInvalid,
     HashUnterminated,
@@ -149,6 +164,7 @@ impl TokenErrorKind {
 impl Display for TokenErrorKind {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
+            Self::BlockCommentUnterminated => f.write_str("unterminated block comment"),
             Self::BooleanExpected(b) => write!(f, "expected boolean literal: {b}"),
             Self::ByteVectorExpected => f.write_str("expected bytevector literal: #u8(…)"),
             Self::CharacterExpected => f.write_str("expected character literal"),
@@ -156,6 +172,7 @@ impl Display for TokenErrorKind {
             Self::CharacterInvalidHex => {
                 format_char_range_error("character hex-sequence out of valid range", f)
             }
+            Self::ContinuationInvalid => f.write_str("attempted continuation conversion on invalid token; this is likely a library logic error!"),
             Self::DirectiveExpected => f.write_str("expected directive: fold-case or no-fold-case"),
             Self::DirectiveInvalid => {
                 f.write_str("unsupported directive: expected fold-case or no-fold-case")
@@ -165,6 +182,7 @@ impl Display for TokenErrorKind {
             Self::StringInvalidHex(_) => {
                 format_char_range_error("hex-escape out of valid range", f)
             }
+            Self::StringUnterminated => f.write_str("unterminated string-literal"),
             Self::StringUnterminatedHex(_) => f.write_str("unterminated hex-escape"),
             Self::HashInvalid => f.write_str("unexpected #-literal"),
             Self::HashUnterminated => f.write_str("unterminated #-literal"),
@@ -178,6 +196,15 @@ pub(super) enum TokenContinuation {
     BlockComment(usize),
     StringLiteral(bool),
     SubstringError,
+}
+
+impl TokenContinuation {
+    fn to_unsupported(self) -> TokenErrorKind {
+        match self {
+            Self::BlockComment(_) => TokenErrorKind::BlockCommentUnterminated,
+            Self::StringLiteral(_) | Self::SubstringError => TokenErrorKind::StringUnterminated,
+        }
+    }
 }
 
 fn format_char_range_error(msg: &str, f: &mut Formatter<'_>) -> fmt::Result {
@@ -475,6 +502,42 @@ mod tests {
                 Some(TokenContinuation::StringLiteral(true))
             ));
         }
+
+        #[test]
+        fn to_valid_continuation_error() {
+            let token = Token {
+                kind: TokenKind::StringFragment("foo".to_owned(), false),
+                span: 1..3,
+            };
+
+            let result = token.to_continuation_unsupported();
+
+            assert!(matches!(
+                result,
+                TokenError {
+                    kind: TokenErrorKind::StringUnterminated,
+                    span: Range { start: 1, end: 3 },
+                }
+            ));
+        }
+
+        #[test]
+        fn to_invalid_continuation_error() {
+            let token = Token {
+                kind: TokenKind::ParenLeft,
+                span: 0..1,
+            };
+
+            let result = token.to_continuation_unsupported();
+
+            assert!(matches!(
+                result,
+                TokenError {
+                    kind: TokenErrorKind::ContinuationInvalid,
+                    span: Range { start: 0, end: 1 },
+                }
+            ));
+        }
     }
 
     mod tokenerror {
@@ -678,6 +741,70 @@ mod tests {
             let kind = TokenErrorKind::StringExpectedHex(3);
 
             assert!(matches!(kind.sub_idx(), Some(3)));
+        }
+
+        #[test]
+        fn display_block_comment_unterminated() {
+            let err = TokenError {
+                kind: TokenErrorKind::BlockCommentUnterminated,
+                span: 0..1,
+            };
+
+            assert_eq!(err.to_string(), "unterminated block comment");
+        }
+
+        #[test]
+        fn display_invalid_continuation() {
+            let err = TokenError {
+                kind: TokenErrorKind::ContinuationInvalid,
+                span: 0..1,
+            };
+
+            assert_eq!(err.to_string(), "attempted continuation conversion on invalid token; this is likely a library logic error!");
+        }
+
+        #[test]
+        fn display_string_unterminated() {
+            let err = TokenError {
+                kind: TokenErrorKind::StringUnterminated,
+                span: 0..1,
+            };
+
+            assert_eq!(err.to_string(), "unterminated string-literal");
+        }
+    }
+
+    mod tokencontinuation {
+        use super::*;
+
+        #[test]
+        fn block_comment() {
+            let cont = TokenContinuation::BlockComment(10);
+
+            assert!(matches!(
+                cont.to_unsupported(),
+                TokenErrorKind::BlockCommentUnterminated
+            ));
+        }
+
+        #[test]
+        fn string_fragment() {
+            let cont = TokenContinuation::StringLiteral(false);
+
+            assert!(matches!(
+                cont.to_unsupported(),
+                TokenErrorKind::StringUnterminated
+            ));
+        }
+
+        #[test]
+        fn string_error() {
+            let cont = TokenContinuation::SubstringError;
+
+            assert!(matches!(
+                cont.to_unsupported(),
+                TokenErrorKind::StringUnterminated
+            ));
         }
     }
 }
