@@ -20,9 +20,9 @@ impl LexLine {
         self.0.last().and_then(|t| t.kind.to_continuation())
     }
 
-    fn to_continuation_unsupported(mut self) -> LexerError {
+    fn into_continuation_unsupported(mut self) -> LexerError {
         self.0.pop().map_or(LexerError::InvalidOperation, |t| {
-            LexerError::Tokenize(TokenizeError(vec![t.to_continuation_unsupported()], self.1))
+            LexerError::Tokenize(TokenizeError(vec![t.into_continuation_unsupported()], self.1))
         })
     }
 }
@@ -140,7 +140,7 @@ impl Lexer {
         } else {
             Err(lines.pop().map_or(
                 LexerError::InvalidOperation,
-                LexLine::to_continuation_unsupported,
+                LexLine::into_continuation_unsupported,
             ))
         }
     }
@@ -1212,7 +1212,7 @@ mod tests {
         fn convert_invalid_line_into_continuation_failure() {
             let line = LexLine(Vec::new(), make_textline());
 
-            let err = line.to_continuation_unsupported();
+            let err = line.into_continuation_unsupported();
 
             assert!(matches!(err, LexerError::InvalidOperation));
         }

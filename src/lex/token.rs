@@ -85,12 +85,12 @@ pub struct TokenType<T> {
 pub type Token = TokenType<TokenKind>;
 
 impl Token {
-    pub(super) fn to_continuation_unsupported(self) -> TokenError {
+    pub(super) fn into_continuation_unsupported(self) -> TokenError {
         TokenError {
-            kind: self.kind.to_continuation().map_or(
-                TokenErrorKind::ContinuationInvalid,
-                TokenContinuation::to_unsupported,
-            ),
+            kind: self
+                .kind
+                .to_continuation()
+                .map_or(TokenErrorKind::ContinuationInvalid, TokenErrorKind::from),
             span: self.span,
         }
     }
@@ -191,20 +191,22 @@ impl Display for TokenErrorKind {
     }
 }
 
+impl From<TokenContinuation> for TokenErrorKind {
+    fn from(value: TokenContinuation) -> Self {
+        match value {
+            TokenContinuation::BlockComment(_) => Self::BlockCommentUnterminated,
+            TokenContinuation::StringLiteral(_) | TokenContinuation::SubstringError => {
+                Self::StringUnterminated
+            }
+        }
+    }
+}
+
 #[derive(Debug)]
 pub(super) enum TokenContinuation {
     BlockComment(usize),
     StringLiteral(bool),
     SubstringError,
-}
-
-impl TokenContinuation {
-    fn to_unsupported(self) -> TokenErrorKind {
-        match self {
-            Self::BlockComment(_) => TokenErrorKind::BlockCommentUnterminated,
-            Self::StringLiteral(_) | Self::SubstringError => TokenErrorKind::StringUnterminated,
-        }
-    }
 }
 
 fn format_char_range_error(msg: &str, f: &mut Formatter<'_>) -> fmt::Result {
@@ -510,7 +512,7 @@ mod tests {
                 span: 1..3,
             };
 
-            let result = token.to_continuation_unsupported();
+            let result = token.into_continuation_unsupported();
 
             assert!(matches!(
                 result,
@@ -528,7 +530,7 @@ mod tests {
                 span: 0..1,
             };
 
-            let result = token.to_continuation_unsupported();
+            let result = token.into_continuation_unsupported();
 
             assert!(matches!(
                 result,
@@ -782,7 +784,7 @@ mod tests {
             let cont = TokenContinuation::BlockComment(10);
 
             assert!(matches!(
-                cont.to_unsupported(),
+                cont.into(),
                 TokenErrorKind::BlockCommentUnterminated
             ));
         }
@@ -791,20 +793,14 @@ mod tests {
         fn string_fragment() {
             let cont = TokenContinuation::StringLiteral(false);
 
-            assert!(matches!(
-                cont.to_unsupported(),
-                TokenErrorKind::StringUnterminated
-            ));
+            assert!(matches!(cont.into(), TokenErrorKind::StringUnterminated));
         }
 
         #[test]
         fn string_error() {
             let cont = TokenContinuation::SubstringError;
 
-            assert!(matches!(
-                cont.to_unsupported(),
-                TokenErrorKind::StringUnterminated
-            ));
+            assert!(matches!(cont.into(), TokenErrorKind::StringUnterminated));
         }
     }
 }
