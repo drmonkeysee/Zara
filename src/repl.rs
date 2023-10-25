@@ -111,6 +111,10 @@ impl Iterator for ReplSource {
 
 // TODO: can this be a macro
 impl TextSource for ReplSource {
+    fn can_continue(&self) -> bool {
+        true
+    }
+
     fn context(&self) -> Rc<TextContext> {
         self.ctx.clone()
     }
