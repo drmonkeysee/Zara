@@ -141,6 +141,7 @@ mod tests {
         ));
         assert!(target.line.is_none());
         assert_eq!(target.lineno(), 1);
+        assert!(target.can_continue());
     }
 
     #[test]
