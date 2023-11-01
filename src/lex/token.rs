@@ -102,7 +102,7 @@ impl Display for Token {
     }
 }
 
-pub(super) type TokenError = TokenType<TokenErrorKind>;
+pub type TokenError = TokenType<TokenErrorKind>;
 
 impl Display for TokenError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
