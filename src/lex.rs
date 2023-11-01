@@ -22,10 +22,7 @@ impl LexLine {
 
     fn into_continuation_unsupported(mut self) -> LexerError {
         self.0.pop().map_or(LexerError::InvalidOperation, |t| {
-            LexerError::Tokenize(TokenizeError(
-                vec![t.into_continuation_unsupported()],
-                self.1,
-            ))
+            LexerError::Tokenize(TokenizeError(vec![t.into_continuation_unsupported()], self.1))
         })
     }
 }
@@ -57,13 +54,6 @@ pub enum LexerError {
     InvalidOperation,
     Read(TextError),
     Tokenize(TokenizeError),
-}
-
-#[derive(Debug)]
-pub enum LexerError2 {
-    InvalidOperation,
-    Read(TextError),
-    Tokenize(TokenError),
 }
 
 impl LexerError {
@@ -103,17 +93,10 @@ impl Display for TokenizeError {
 impl Error for TokenizeError {}
 
 pub(crate) type LexerResult = Result<LexerOutput, LexerError>;
-pub(crate) type LexerResult2 = Result<LexerOutput2, LexerError2>;
 
 #[derive(Debug)]
 pub(crate) enum LexerOutput {
     Complete(Vec<LexLine>),
-    Continuation,
-}
-
-#[derive(Debug)]
-pub(crate) enum LexerOutput2 {
-    Complete(Token), // TODO: better names for these
     Continuation,
 }
 
@@ -160,24 +143,6 @@ impl Lexer {
                 LexLine::into_continuation_unsupported,
             ))
         }
-    }
-}
-
-pub(crate) struct Lexer2<T> {
-    src: T,
-}
-
-impl<T: TextSource> Lexer2<T> {
-    pub(crate) fn new(src: T) -> Self {
-        Self { src }
-    }
-}
-
-impl<T> Iterator for Lexer2<T> {
-    type Item = LexerResult2;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        todo!()
     }
 }
 

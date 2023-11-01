@@ -2,7 +2,7 @@ mod expr;
 
 use self::expr::ExpressionError;
 pub use self::expr::{Datum, Expression};
-use crate::lex::{LexLine, LexerResult2, Token, TokenKind};
+use crate::lex::{LexLine, Token, TokenKind};
 use std::{
     error::Error,
     fmt::{self, Display, Formatter},
@@ -39,10 +39,6 @@ pub(crate) fn parse(token_lines: impl IntoIterator<Item = LexLine>) -> ParserRes
 
 pub(crate) fn tokens(token_lines: Vec<LexLine>) -> ParserResult {
     Ok(Expression::TokenList(token_lines))
-}
-
-pub(crate) fn tokens2(token_stream: impl IntoIterator<Item = LexerResult2>) -> ParserResult {
-    todo!();
 }
 
 type ExpressionResult = Result<Expression, ExpressionError>;
