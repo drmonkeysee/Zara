@@ -7,7 +7,7 @@ pub mod txt;
 
 use self::{
     eval::EvalError,
-    lex::{Lexer, LexerError, LexerOutput},
+    lex::{Lexer, Lexer2, LexerError, LexerOutput},
     syntax::ParserError,
     txt::TextSource,
 };
@@ -47,6 +47,16 @@ impl Interpreter {
         } else {
             syntax::parse(token_lines)
         }?;
+        let evaluation = if self.ast_output {
+            eval::ast(ast)
+        } else {
+            eval::evaluate(ast)
+        }?;
+        Ok(evaluation)
+    }
+
+    pub fn run2(self, src: impl TextSource) -> Result {
+        let ast = syntax::tokens2(Lexer2::new(src))?;
         let evaluation = if self.ast_output {
             eval::ast(ast)
         } else {

@@ -115,7 +115,7 @@ impl Error for TokenError {}
 pub(super) type TokenResult = Result<Token, TokenError>;
 
 #[derive(Debug)]
-pub(super) enum TokenErrorKind {
+pub enum TokenErrorKind {
     BlockCommentUnterminated,
     BooleanExpected(bool),
     ByteVectorExpected,
