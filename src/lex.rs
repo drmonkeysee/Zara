@@ -173,7 +173,7 @@ impl<T: TextSource> Lexer2<T> {
     }
 }
 
-impl<T: TextSource> Iterator for Lexer2<T> {
+impl<T> Iterator for Lexer2<T> {
     type Item = LexerResult2;
 
     fn next(&mut self) -> Option<Self::Item> {
