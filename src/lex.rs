@@ -22,7 +22,10 @@ impl LexLine {
 
     fn into_continuation_unsupported(mut self) -> LexerError {
         self.0.pop().map_or(LexerError::InvalidOperation, |t| {
-            LexerError::Tokenize(TokenizeError(vec![t.into_continuation_unsupported()], self.1))
+            LexerError::Tokenize(TokenizeError(
+                vec![t.into_continuation_unsupported()],
+                self.1,
+            ))
         })
     }
 }
