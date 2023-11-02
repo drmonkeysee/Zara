@@ -1,5 +1,5 @@
 use crate::{
-    lex::{DisplayLexLines, LexLine, LexLinesMessage, Token},
+    lex::{DisplayTokenLines, Token, TokenLine, TokenLinesMessage},
     literal::Literal,
 };
 use std::{
@@ -14,7 +14,7 @@ pub enum Expression {
     Begin(Vec<Expression>),
     Empty,
     Literal(Literal),
-    TokenList(Vec<LexLine>),
+    TokenList(Vec<TokenLine>),
 }
 
 impl Expression {
@@ -39,7 +39,7 @@ impl Display for Datum<'_> {
             Expression::Ast(expr) => write!(f, "{{{expr:?}}}"),
             Expression::Empty => Ok(()),
             Expression::Literal(lit) => lit.as_datum().fmt(f),
-            Expression::TokenList(lines) => DisplayLexLines(lines).fmt(f),
+            Expression::TokenList(lines) => DisplayTokenLines(lines).fmt(f),
             _ => write!(f, "#<expr-datum-undef({:?})>", self.0),
         }
     }
@@ -51,7 +51,7 @@ impl Display for ExpressionMessage<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self.0 {
             Expression::Ast(expr) => writeln!(f, "{expr:#?}"),
-            Expression::TokenList(lines) => LexLinesMessage(lines).fmt(f),
+            Expression::TokenList(lines) => TokenLinesMessage(lines).fmt(f),
             _ => writeln!(f, "#<expr-extended-undef({:?})>", self.0),
         }
     }

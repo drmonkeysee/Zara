@@ -13,16 +13,16 @@ use std::{
 };
 
 #[derive(Debug)]
-pub struct LexLine(Vec<Token>, TextLine);
+pub struct TokenLine(Vec<Token>, TextLine);
 
-impl LexLine {
+impl TokenLine {
     fn continuation(&self) -> Option<TokenContinuation> {
         self.0.last().and_then(|t| t.kind.to_continuation())
     }
 
     fn into_continuation_unsupported(mut self) -> LexerError {
         self.0.pop().map_or(LexerError::InvalidOperation, |t| {
-            LexerError::Tokenize(TokenizeError(
+            LexerError::Tokenize(TokenErrorLine(
                 vec![t.into_continuation_unsupported()],
                 self.1,
             ))
@@ -30,9 +30,9 @@ impl LexLine {
     }
 }
 
-impl Display for LexLine {
+impl Display for TokenLine {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        let LexLine(tokens, txt) = self;
+        let TokenLine(tokens, txt) = self;
         let token_txt = tokens
             .iter()
             .map(|t| TokenWithSource(t, txt).to_string())
@@ -43,7 +43,7 @@ impl Display for LexLine {
 }
 
 // TODO: used by .flatten() in syntax.rs, removal can de-publicize tokens
-impl IntoIterator for LexLine {
+impl IntoIterator for TokenLine {
     type Item = Token;
     type IntoIter = <Vec<Token> as IntoIterator>::IntoIter;
 
@@ -56,7 +56,7 @@ impl IntoIterator for LexLine {
 pub enum LexerError {
     InvalidOperation,
     Read(TextError),
-    Tokenize(TokenizeError),
+    Tokenize(TokenErrorLine),
 }
 
 impl LexerError {
@@ -85,26 +85,26 @@ impl From<TextError> for LexerError {
 }
 
 #[derive(Debug)]
-pub struct TokenizeError(Vec<TokenError>, TextLine);
+pub struct TokenErrorLine(Vec<TokenError>, TextLine);
 
-impl Display for TokenizeError {
+impl Display for TokenErrorLine {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         f.write_str("tokenization failure")
     }
 }
 
-impl Error for TokenizeError {}
+impl Error for TokenErrorLine {}
 
 pub(crate) type LexerResult = Result<LexerOutput, LexerError>;
 
 #[derive(Debug)]
 pub(crate) enum LexerOutput {
-    Complete(Vec<LexLine>),
+    Complete(Vec<TokenLine>),
     Continuation,
 }
 
 pub(crate) struct Lexer {
-    cont: Option<(Vec<LexLine>, TokenContinuation)>,
+    cont: Option<(Vec<TokenLine>, TokenContinuation)>,
 }
 
 impl Lexer {
@@ -125,7 +125,7 @@ impl Lexer {
                 Some(p)
             })
             .unwrap_or(new_lines);
-        if let Some(token_cont) = lines.last().and_then(LexLine::continuation) {
+        if let Some(token_cont) = lines.last().and_then(TokenLine::continuation) {
             return self.continuation_result(token_cont, src.can_continue(), lines);
         }
         Ok(LexerOutput::Complete(lines))
@@ -135,7 +135,7 @@ impl Lexer {
         &mut self,
         token_cont: TokenContinuation,
         can_continue: bool,
-        mut lines: Vec<LexLine>,
+        mut lines: Vec<TokenLine>,
     ) -> LexerResult {
         if can_continue {
             self.cont = Some((lines, token_cont));
@@ -143,7 +143,7 @@ impl Lexer {
         } else {
             Err(lines.pop().map_or(
                 LexerError::InvalidOperation,
-                LexLine::into_continuation_unsupported,
+                TokenLine::into_continuation_unsupported,
             ))
         }
     }
@@ -163,18 +163,18 @@ impl Display for LexerErrorMessage<'_> {
     }
 }
 
-pub(crate) struct DisplayLexLines<'a>(pub(crate) &'a [LexLine]);
+pub(crate) struct DisplayTokenLines<'a>(pub(crate) &'a [TokenLine]);
 
-impl DisplayLexLines<'_> {
-    fn flatten_to_string(&self, cvt: impl FnMut(&LexLine) -> String) -> String {
+impl DisplayTokenLines<'_> {
+    fn flatten_to_string(&self, cvt: impl FnMut(&TokenLine) -> String) -> String {
         self.0.iter().map(cvt).collect()
     }
 }
 
-impl Display for DisplayLexLines<'_> {
+impl Display for DisplayTokenLines<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         if self.0.len() < 2 {
-            write!(f, "[{}]", self.flatten_to_string(LexLine::to_string))
+            write!(f, "[{}]", self.flatten_to_string(TokenLine::to_string))
         } else {
             write!(
                 f,
@@ -185,18 +185,18 @@ impl Display for DisplayLexLines<'_> {
     }
 }
 
-pub(crate) struct LexLinesMessage<'a>(pub(crate) &'a [LexLine]);
+pub(crate) struct TokenLinesMessage<'a>(pub(crate) &'a [TokenLine]);
 
-impl Display for LexLinesMessage<'_> {
+impl Display for TokenLinesMessage<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         for line in self.0 {
-            LexLineMessage(line).fmt(f)?;
+            TokenLineMessage(line).fmt(f)?;
         }
         Ok(())
     }
 }
 
-type LexerDriverResult = Result<Vec<LexLine>, LexerError>;
+type LexerDriverResult = Result<Vec<TokenLine>, LexerError>;
 
 struct LexerDriver {
     cont: Option<TokenContinuation>,
@@ -215,26 +215,26 @@ impl LexerDriver {
         src.map(|tr| self.tokenize_line(tr?)).collect()
     }
 
-    fn tokenize_line(&mut self, text: TextLine) -> Result<LexLine, LexerError> {
+    fn tokenize_line(&mut self, text: TextLine) -> Result<TokenLine, LexerError> {
         let mut errors = Vec::new();
         let tokens: Vec<_> = TokenStream::new(&text.line, self.cont.take())
             .filter_map(|tr| tr.map_err(|err| errors.push(err)).ok())
             .collect();
         if errors.is_empty() {
-            let lines = LexLine(tokens, text);
+            let lines = TokenLine(tokens, text);
             self.cont = lines.continuation();
             Ok(lines)
         } else {
-            Err(LexerError::Tokenize(TokenizeError(errors, text)))
+            Err(LexerError::Tokenize(TokenErrorLine(errors, text)))
         }
     }
 }
 
-struct LexLineMessage<'a>(&'a LexLine);
+struct TokenLineMessage<'a>(&'a TokenLine);
 
-impl Display for LexLineMessage<'_> {
+impl Display for TokenLineMessage<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        let LexLine(tokens, txt) = self.0;
+        let TokenLine(tokens, txt) = self.0;
         for token in tokens {
             TokenWithSourceMessage(token, txt).fmt(f)?
         }
@@ -272,11 +272,11 @@ impl Display for TokenWithSourceMessage<'_> {
     }
 }
 
-struct TokenizeErrorMessage<'a>(&'a TokenizeError);
+struct TokenizeErrorMessage<'a>(&'a TokenErrorLine);
 
 impl Display for TokenizeErrorMessage<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        let TokenizeError(errs, txtline) = self.0;
+        let TokenErrorLine(errs, txtline) = self.0;
         txtline.display_header().fmt(f)?;
 
         if errs.is_empty() {
@@ -573,7 +573,7 @@ mod tests {
             assert!(r.is_err());
             let err = r.unwrap_err();
             assert!(matches!(err, LexerError::Tokenize(_)));
-            let (errs, line) = if let LexerError::Tokenize(TokenizeError(es, ln)) = err {
+            let (errs, line) = if let LexerError::Tokenize(TokenErrorLine(es, ln)) = err {
                 (es, ln)
             } else {
                 unreachable!()
@@ -679,7 +679,7 @@ mod tests {
             assert!(r.is_err());
             let err = r.unwrap_err();
             assert!(matches!(err, LexerError::Tokenize(_)));
-            let (errs, line) = if let LexerError::Tokenize(TokenizeError(es, ln)) = err {
+            let (errs, line) = if let LexerError::Tokenize(TokenErrorLine(es, ln)) = err {
                 (es, ln)
             } else {
                 unreachable!()
@@ -967,14 +967,14 @@ mod tests {
 
         #[test]
         fn display_empty_line() {
-            let line = LexLine(Vec::new(), make_textline());
+            let line = TokenLine(Vec::new(), make_textline());
 
             assert_eq!(line.to_string(), "1:");
         }
 
         #[test]
         fn display_single_token() {
-            let line = LexLine(
+            let line = TokenLine(
                 vec![Token {
                     kind: TokenKind::ParenLeft,
                     span: 8..14,
@@ -987,7 +987,7 @@ mod tests {
 
         #[test]
         fn display_multiple_tokens() {
-            let line = LexLine(
+            let line = TokenLine(
                 vec![
                     Token {
                         kind: TokenKind::ParenLeft,
@@ -1015,7 +1015,7 @@ mod tests {
 
         #[test]
         fn display_invalid_span() {
-            let line = LexLine(
+            let line = TokenLine(
                 vec![Token {
                     kind: TokenKind::ParenLeft,
                     span: 8..4,
@@ -1031,7 +1031,7 @@ mod tests {
 
         #[test]
         fn display_span_out_of_range() {
-            let line = LexLine(
+            let line = TokenLine(
                 vec![Token {
                     kind: TokenKind::ParenLeft,
                     span: 8..50,
@@ -1063,7 +1063,7 @@ mod tests {
 
         #[test]
         fn display_empty_errors() {
-            let err = LexerError::Tokenize(TokenizeError(Vec::new(), make_textline()));
+            let err = LexerError::Tokenize(TokenErrorLine(Vec::new(), make_textline()));
 
             assert_eq!(
                 err.display_message().to_string(),
@@ -1074,7 +1074,7 @@ mod tests {
 
         #[test]
         fn display_single_error() {
-            let err = LexerError::Tokenize(TokenizeError(
+            let err = LexerError::Tokenize(TokenErrorLine(
                 vec![TokenError {
                     kind: TokenErrorKind::Unimplemented("myerr".to_owned()),
                     span: 5..7,
@@ -1093,7 +1093,7 @@ mod tests {
 
         #[test]
         fn display_single_error_at_beginning_of_line() {
-            let err = LexerError::Tokenize(TokenizeError(
+            let err = LexerError::Tokenize(TokenErrorLine(
                 vec![TokenError {
                     kind: TokenErrorKind::Unimplemented("myerr".to_owned()),
                     span: 0..4,
@@ -1112,7 +1112,7 @@ mod tests {
 
         #[test]
         fn display_multiple_errors() {
-            let err = LexerError::Tokenize(TokenizeError(
+            let err = LexerError::Tokenize(TokenErrorLine(
                 vec![
                     TokenError {
                         kind: TokenErrorKind::Unimplemented("myerr".to_owned()),
@@ -1138,7 +1138,7 @@ mod tests {
 
         #[test]
         fn display_single_error_no_filename() {
-            let err = LexerError::Tokenize(TokenizeError(
+            let err = LexerError::Tokenize(TokenErrorLine(
                 vec![TokenError {
                     kind: TokenErrorKind::Unimplemented("myerr".to_owned()),
                     span: 5..7,
@@ -1165,7 +1165,7 @@ mod tests {
 
         #[test]
         fn display_single_error_invalid_span() {
-            let err = LexerError::Tokenize(TokenizeError(
+            let err = LexerError::Tokenize(TokenErrorLine(
                 vec![TokenError {
                     kind: TokenErrorKind::Unimplemented("myerr".to_owned()),
                     span: 5..2,
@@ -1184,7 +1184,7 @@ mod tests {
 
         #[test]
         fn display_single_error_span_out_of_range() {
-            let err = LexerError::Tokenize(TokenizeError(
+            let err = LexerError::Tokenize(TokenErrorLine(
                 vec![TokenError {
                     kind: TokenErrorKind::Unimplemented("myerr".to_owned()),
                     span: 15..25,
@@ -1213,7 +1213,7 @@ mod tests {
 
         #[test]
         fn convert_invalid_line_into_continuation_failure() {
-            let line = LexLine(Vec::new(), make_textline());
+            let line = TokenLine(Vec::new(), make_textline());
 
             let err = line.into_continuation_unsupported();
 
@@ -1240,14 +1240,14 @@ mod tests {
         fn display_empty_token_stream() {
             let lines = Vec::new();
 
-            let target = DisplayLexLines(&lines);
+            let target = DisplayTokenLines(&lines);
 
             assert_eq!(target.to_string(), "[]");
         }
 
         #[test]
         fn display_token_stream() {
-            let lines = vec![LexLine(
+            let lines = vec![TokenLine(
                 vec![
                     Token {
                         kind: TokenKind::ParenLeft,
@@ -1273,7 +1273,7 @@ mod tests {
                 },
             )];
 
-            let target = DisplayLexLines(&lines);
+            let target = DisplayTokenLines(&lines);
 
             assert_eq!(
                 target.to_string(),
@@ -1284,7 +1284,7 @@ mod tests {
         #[test]
         fn display_multiline_token_stream() {
             let lines = vec![
-                LexLine(
+                TokenLine(
                     vec![
                         Token {
                             kind: TokenKind::ParenLeft,
@@ -1309,7 +1309,7 @@ mod tests {
                         lineno: 1,
                     },
                 ),
-                LexLine(
+                TokenLine(
                     vec![
                         Token {
                             kind: TokenKind::ParenLeft,
@@ -1334,7 +1334,7 @@ mod tests {
                         lineno: 2,
                     },
                 ),
-                LexLine(
+                TokenLine(
                     vec![
                         Token {
                             kind: TokenKind::ParenLeft,
@@ -1361,7 +1361,7 @@ mod tests {
                 ),
             ];
 
-            let target = DisplayLexLines(&lines);
+            let target = DisplayTokenLines(&lines);
 
             assert_eq!(
                 target.to_string(),

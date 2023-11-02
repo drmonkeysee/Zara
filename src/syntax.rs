@@ -2,7 +2,7 @@ mod expr;
 
 use self::expr::ExpressionError;
 pub use self::expr::{Datum, Expression};
-use crate::lex::{LexLine, Token, TokenKind};
+use crate::lex::{Token, TokenKind, TokenLine};
 use std::{
     error::Error,
     fmt::{self, Display, Formatter},
@@ -22,7 +22,7 @@ impl Error for ParserError {}
 
 pub(crate) type ParserResult = Result<Expression, ParserError>;
 
-pub(crate) fn parse(token_lines: impl IntoIterator<Item = LexLine>) -> ParserResult {
+pub(crate) fn parse(token_lines: impl IntoIterator<Item = TokenLine>) -> ParserResult {
     let mut errors = Vec::new();
     // TODO: for now flatten all lexlines into one stream of tokens
     // this'll need to handle individual lines later
@@ -37,7 +37,7 @@ pub(crate) fn parse(token_lines: impl IntoIterator<Item = LexLine>) -> ParserRes
     }
 }
 
-pub(crate) fn tokens(token_lines: Vec<LexLine>) -> ParserResult {
+pub(crate) fn tokens(token_lines: Vec<TokenLine>) -> ParserResult {
     Ok(Expression::TokenList(token_lines))
 }
 
