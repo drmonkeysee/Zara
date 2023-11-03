@@ -651,14 +651,20 @@ mod tests {
 
             assert!(r.is_err());
             let err = r.unwrap_err();
-            assert!(matches!(err, LexerError::Tokenize(_)));
-            let err_lines = if let LexerError::Tokenize(errs) = err {
+            assert!(matches!(err, LexerError::Lines(_)));
+            let err_lines = if let LexerError::Lines(errs) = err {
                 errs
             } else {
                 unreachable!()
             };
             assert_eq!(err_lines.len(), 2);
-            let TokenErrorLine(errs, line) = &err_lines[0];
+            assert!(matches!(err_lines[0], LineFailure::Tokenize(_)));
+            let (errs, line) = if let LineFailure::Tokenize(TokenErrorLine(es, ln)) = &err_lines[0]
+            {
+                (es, ln)
+            } else {
+                unreachable!()
+            };
             assert_eq!(errs.len(), 2);
             assert!(matches!(
                 errs[0],
@@ -682,7 +688,13 @@ mod tests {
                     lineno: 2,
                 } if Rc::ptr_eq(&ctx, &src.ctx) && line == " #z #f #z #\\a"
             ));
-            let TokenErrorLine(errs, line) = &err_lines[1];
+            assert!(matches!(err_lines[1], LineFailure::Tokenize(_)));
+            let (errs, line) = if let LineFailure::Tokenize(TokenErrorLine(es, ln)) = &err_lines[1]
+            {
+                (es, ln)
+            } else {
+                unreachable!()
+            };
             assert_eq!(errs.len(), 1);
             assert!(matches!(
                 errs[0],
@@ -711,14 +723,79 @@ mod tests {
 
             assert!(r.is_err());
             let err = r.unwrap_err();
-            assert!(matches!(err, LexerError::Read(_)));
-            let inner = if let LexerError::Read(inn) = err {
+            assert!(matches!(err, LexerError::Lines(_)));
+            let err_lines = if let LexerError::Lines(lines) = err {
+                lines
+            } else {
+                unreachable!()
+            };
+            assert_eq!(err_lines.len(), 1);
+            assert!(matches!(err_lines[0], LineFailure::Read(_)));
+            let inner = if let LineFailure::Read(inn) = &err_lines[0] {
                 inn
             } else {
                 unreachable!()
             };
             assert!(Rc::ptr_eq(&inner.ctx, &src.ctx));
             assert_eq!(inner.lineno, 2);
+            assert!(inner.source().is_some());
+            assert!(target.cont.is_none());
+        }
+
+        #[test]
+        fn mixed_errors() {
+            let mut src = MockTxtSource::new("#t\n #z #f #z #\\a\nBAD BYTES", false);
+            let mut target = Lexer::new();
+
+            let r = target.tokenize(&mut src);
+
+            assert!(r.is_err());
+            let err = r.unwrap_err();
+            assert!(matches!(err, LexerError::Lines(_)));
+            let err_lines = if let LexerError::Lines(errs) = err {
+                errs
+            } else {
+                unreachable!()
+            };
+            assert_eq!(err_lines.len(), 2);
+            assert!(matches!(err_lines[0], LineFailure::Tokenize(_)));
+            let (errs, line) = if let LineFailure::Tokenize(TokenErrorLine(es, ln)) = &err_lines[0]
+            {
+                (es, ln)
+            } else {
+                unreachable!()
+            };
+            assert_eq!(errs.len(), 2);
+            assert!(matches!(
+                errs[0],
+                TokenType {
+                    kind: TokenErrorKind::HashInvalid,
+                    span: Range { start: 1, end: 3 }
+                }
+            ));
+            assert!(matches!(
+                errs[1],
+                TokenType {
+                    kind: TokenErrorKind::HashInvalid,
+                    span: Range { start: 7, end: 9 }
+                }
+            ));
+            assert!(matches!(
+                line,
+                TextLine {
+                    ctx,
+                    line,
+                    lineno: 2,
+                } if Rc::ptr_eq(&ctx, &src.ctx) && line == " #z #f #z #\\a"
+            ));
+            assert!(matches!(err_lines[1], LineFailure::Read(_)));
+            let inner = if let LineFailure::Read(inn) = &err_lines[1] {
+                inn
+            } else {
+                unreachable!()
+            };
+            assert!(Rc::ptr_eq(&inner.ctx, &src.ctx));
+            assert_eq!(inner.lineno, 3);
             assert!(inner.source().is_some());
             assert!(target.cont.is_none());
         }
@@ -776,14 +853,20 @@ mod tests {
 
             assert!(r.is_err());
             let err = r.unwrap_err();
-            assert!(matches!(err, LexerError::Tokenize(_)));
-            let err_lines = if let LexerError::Tokenize(errs) = err {
+            assert!(matches!(err, LexerError::Lines(_)));
+            let err_lines = if let LexerError::Lines(errs) = err {
                 errs
             } else {
                 unreachable!()
             };
             assert_eq!(err_lines.len(), 1);
-            let TokenErrorLine(errs, line) = &err_lines[0];
+            assert!(matches!(err_lines[0], LineFailure::Tokenize(_)));
+            let (errs, line) = if let LineFailure::Tokenize(TokenErrorLine(es, ln)) = &err_lines[0]
+            {
+                (es, ln)
+            } else {
+                unreachable!()
+            };
             assert_eq!(errs.len(), 1);
             assert!(matches!(
                 errs[0],
@@ -1151,19 +1234,29 @@ mod tests {
         use super::*;
 
         #[test]
+        fn display_empty_error() {
+            let err = LexerError::Lines(Vec::new());
+
+            assert_eq!(err.display_message().to_string(), "");
+        }
+
+        #[test]
         fn display_read_error() {
             let inner = TextError::new(TextContext::named("foo"), 3, "OH NO!");
-            let err = LexerError::Read(inner);
+            let err = LexerError::Lines(vec![LineFailure::Read(inner)]);
 
             assert_eq!(
                 err.display_message().to_string(),
-                "foo:3\n\tunable to read text line\n"
+                "foo:3\n\treadline failure: OH NO!\n"
             );
         }
 
         #[test]
-        fn display_empty_errors() {
-            let err = LexerError::Tokenize(vec![TokenErrorLine(Vec::new(), make_textline())]);
+        fn display_empty_tokenize_errors() {
+            let err = LexerError::Lines(vec![LineFailure::Tokenize(TokenErrorLine(
+                Vec::new(),
+                make_textline(),
+            ))]);
 
             assert_eq!(
                 err.display_message().to_string(),
@@ -1174,13 +1267,13 @@ mod tests {
 
         #[test]
         fn display_single_error() {
-            let err = LexerError::Tokenize(vec![TokenErrorLine(
+            let err = LexerError::Lines(vec![LineFailure::Tokenize(TokenErrorLine(
                 vec![TokenError {
                     kind: TokenErrorKind::Unimplemented("myerr".to_owned()),
                     span: 5..7,
                 }],
                 make_textline(),
-            )]);
+            ))]);
 
             assert_eq!(
                 err.display_message().to_string(),
@@ -1193,13 +1286,13 @@ mod tests {
 
         #[test]
         fn display_single_error_at_beginning_of_line() {
-            let err = LexerError::Tokenize(vec![TokenErrorLine(
+            let err = LexerError::Lines(vec![LineFailure::Tokenize(TokenErrorLine(
                 vec![TokenError {
                     kind: TokenErrorKind::Unimplemented("myerr".to_owned()),
                     span: 0..4,
                 }],
                 make_textline(),
-            )]);
+            ))]);
 
             assert_eq!(
                 err.display_message().to_string(),
@@ -1212,7 +1305,7 @@ mod tests {
 
         #[test]
         fn display_multiple_errors() {
-            let err = LexerError::Tokenize(vec![TokenErrorLine(
+            let err = LexerError::Lines(vec![LineFailure::Tokenize(TokenErrorLine(
                 vec![
                     TokenError {
                         kind: TokenErrorKind::Unimplemented("myerr".to_owned()),
@@ -1224,7 +1317,7 @@ mod tests {
                     },
                 ],
                 make_textline(),
-            )]);
+            ))]);
 
             assert_eq!(
                 err.display_message().to_string(),
@@ -1238,7 +1331,7 @@ mod tests {
 
         #[test]
         fn display_single_error_no_filename() {
-            let err = LexerError::Tokenize(vec![TokenErrorLine(
+            let err = LexerError::Lines(vec![LineFailure::Tokenize(TokenErrorLine(
                 vec![TokenError {
                     kind: TokenErrorKind::Unimplemented("myerr".to_owned()),
                     span: 5..7,
@@ -1252,7 +1345,7 @@ mod tests {
                     line: "line of source code".to_owned(),
                     lineno: 1,
                 },
-            )]);
+            ))]);
 
             assert_eq!(
                 err.display_message().to_string(),
@@ -1265,13 +1358,13 @@ mod tests {
 
         #[test]
         fn display_single_error_invalid_span() {
-            let err = LexerError::Tokenize(vec![TokenErrorLine(
+            let err = LexerError::Lines(vec![LineFailure::Tokenize(TokenErrorLine(
                 vec![TokenError {
                     kind: TokenErrorKind::Unimplemented("myerr".to_owned()),
                     span: 5..2,
                 }],
                 make_textline(),
-            )]);
+            ))]);
 
             assert_eq!(
                 err.display_message().to_string(),
@@ -1284,13 +1377,13 @@ mod tests {
 
         #[test]
         fn display_single_error_span_out_of_range() {
-            let err = LexerError::Tokenize(vec![TokenErrorLine(
+            let err = LexerError::Lines(vec![LineFailure::Tokenize(TokenErrorLine(
                 vec![TokenError {
                     kind: TokenErrorKind::Unimplemented("myerr".to_owned()),
                     span: 15..25,
                 }],
                 make_textline(),
-            )]);
+            ))]);
 
             assert_eq!(
                 err.display_message().to_string(),

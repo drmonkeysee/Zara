@@ -156,9 +156,6 @@ mod tests {
 
         let err = TextError::new(TextContext::named("foo"), 1, inner);
 
-        assert_eq!(
-            err.to_string(),
-            "text source readline failure: Mock error: 20"
-        );
+        assert_eq!(err.to_string(), "readline failure: Mock error: 20");
     }
 }
