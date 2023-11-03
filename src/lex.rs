@@ -10,6 +10,7 @@ use crate::txt::{TextError, TextLine, TextSource};
 use std::{
     error::Error,
     fmt::{self, Display, Formatter, Write},
+    ops::ControlFlow,
 };
 
 #[derive(Debug)]
@@ -22,10 +23,10 @@ impl TokenLine {
 
     fn into_continuation_unsupported(mut self) -> LexerError {
         self.0.pop().map_or(LexerError::InvalidOperation, |t| {
-            LexerError::Tokenize(vec![TokenErrorLine(
+            LexerError::Lines(vec![LineFailure::Tokenize(TokenErrorLine(
                 vec![t.into_continuation_unsupported()],
                 self.1,
-            )])
+            ))])
         })
     }
 }
@@ -54,10 +55,48 @@ impl IntoIterator for TokenLine {
 }
 
 #[derive(Debug)]
+pub enum LineFailure {
+    Read(TextError),
+    Tokenize(TokenErrorLine),
+}
+
+impl LineFailure {
+    fn accumulate(&self, acc: LineFailureAcc) -> ControlFlow<(), LineFailureAcc> {
+        match self {
+            Self::Read(_) => {
+                if matches!(acc, LineFailureAcc::Empty | LineFailureAcc::Read) {
+                    ControlFlow::Continue(LineFailureAcc::Read)
+                } else {
+                    ControlFlow::Break(())
+                }
+            }
+            Self::Tokenize(_) => {
+                if matches!(acc, LineFailureAcc::Empty | LineFailureAcc::Tokenize) {
+                    ControlFlow::Continue(LineFailureAcc::Tokenize)
+                } else {
+                    ControlFlow::Break(())
+                }
+            }
+        }
+    }
+}
+
+impl From<TextError> for LineFailure {
+    fn from(value: TextError) -> Self {
+        Self::Read(value)
+    }
+}
+
+impl From<TokenErrorLine> for LineFailure {
+    fn from(value: TokenErrorLine) -> Self {
+        Self::Tokenize(value)
+    }
+}
+
+#[derive(Debug)]
 pub enum LexerError {
     InvalidOperation,
-    Read(TextError),
-    Tokenize(Vec<TokenErrorLine>),
+    Lines(Vec<LineFailure>),
 }
 
 impl LexerError {
@@ -71,19 +110,12 @@ impl Display for LexerError {
         f.write_str("fatal error: ")?;
         match self {
             Self::InvalidOperation => f.write_str("invalid lexer operation"),
-            Self::Read(err) => err.fmt(f),
-            Self::Tokenize(_) => f.write_str("tokenization failure"),
+            LexerError::Lines(lines) => DisplayLineFailures(lines).fmt(f),
         }
     }
 }
 
 impl Error for LexerError {}
-
-impl From<TextError> for LexerError {
-    fn from(value: TextError) -> Self {
-        Self::Read(value)
-    }
-}
 
 #[derive(Debug)]
 pub struct TokenErrorLine(Vec<TokenError>, TextLine);
@@ -150,8 +182,7 @@ impl Display for LexerErrorMessage<'_> {
             LexerError::InvalidOperation => f.write_str(
                 "invalid operation attempted on lexer output; this is likely a library logic error!\n",
             ),
-            LexerError::Read(err) => err.display_header().fmt(f),
-            LexerError::Tokenize(err) => TokenErrorLinesMessage(err).fmt(f),
+            LexerError::Lines(lines) => LineFailuresMessage(lines).fmt(f),
         }
     }
 }
@@ -189,8 +220,6 @@ impl Display for TokenLinesMessage<'_> {
     }
 }
 
-type LexerDriverResult = Result<Vec<TokenLine>, LexerError>;
-
 struct LexerDriver {
     cont: Option<TokenContinuation>,
 }
@@ -204,21 +233,31 @@ impl LexerDriver {
         Self { cont: Some(cont) }
     }
 
-    fn tokenize(&mut self, src: &mut impl TextSource) -> LexerDriverResult {
-        src.map(|tr| self.tokenize_line(tr?)).collect()
+    fn tokenize(&mut self, src: &mut impl TextSource) -> Result<Vec<TokenLine>, LexerError> {
+        let (token_lines, err_lines): (Vec<_>, Vec<_>) = src
+            .map(|tr| self.tokenize_line(tr?))
+            .partition(|r| r.is_ok());
+        if err_lines.is_empty() {
+            Ok(token_lines.into_iter().flatten().collect())
+        } else {
+            Err(LexerError::Lines(
+                err_lines.into_iter().flat_map(|r| r.err()).collect(),
+            ))
+        }
     }
 
-    fn tokenize_line(&mut self, text: TextLine) -> Result<TokenLine, LexerError> {
-        let mut errors = Vec::new();
-        let tokens: Vec<_> = TokenStream::new(&text.line, self.cont.take())
-            .filter_map(|tr| tr.map_err(|err| errors.push(err)).ok())
-            .collect();
-        if errors.is_empty() {
-            let lines = TokenLine(tokens, text);
-            self.cont = lines.continuation();
-            Ok(lines)
+    fn tokenize_line(&mut self, text: TextLine) -> Result<TokenLine, LineFailure> {
+        let (tokens, errs): (Vec<_>, Vec<_>) =
+            TokenStream::new(&text.line, self.cont.take()).partition(|r| r.is_ok());
+        if errs.is_empty() {
+            let line = TokenLine(tokens.into_iter().flatten().collect(), text);
+            self.cont = line.continuation();
+            Ok(line)
         } else {
-            Err(LexerError::Tokenize(vec![TokenErrorLine(errors, text)]))
+            Err(TokenErrorLine(
+                errs.into_iter().flat_map(|r| r.err()).collect(),
+                text,
+            ))?
         }
     }
 }
@@ -265,14 +304,50 @@ impl Display for TokenWithSourceMessage<'_> {
     }
 }
 
-struct TokenErrorLinesMessage<'a>(&'a [TokenErrorLine]);
+enum LineFailureAcc {
+    Empty,
+    Read,
+    Tokenize,
+}
 
-impl Display for TokenErrorLinesMessage<'_> {
+struct DisplayLineFailures<'a>(&'a [LineFailure]);
+
+impl Display for DisplayLineFailures<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        let ctrl = self
+            .0
+            .into_iter()
+            .try_fold(LineFailureAcc::Empty, |acc, f| f.accumulate(acc));
+        match ctrl {
+            ControlFlow::Break(_) => f.write_str("multiple lexer failures"),
+            ControlFlow::Continue(acc) => match acc {
+                LineFailureAcc::Empty => Ok(()),
+                LineFailureAcc::Read => f.write_str("read failure"),
+                LineFailureAcc::Tokenize => f.write_str("tokenization failure"),
+            },
+        }
+    }
+}
+
+struct LineFailuresMessage<'a>(&'a [LineFailure]);
+
+impl Display for LineFailuresMessage<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         for line in self.0 {
-            TokenErrorLineMessage(line).fmt(f)?;
+            LineFailureMessage(line).fmt(f)?;
         }
         Ok(())
+    }
+}
+
+struct LineFailureMessage<'a>(&'a LineFailure);
+
+impl Display for LineFailureMessage<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self.0 {
+            LineFailure::Read(err) => err.display_header().fmt(f),
+            LineFailure::Tokenize(err) => TokenErrorLineMessage(err).fmt(f),
+        }
     }
 }
 

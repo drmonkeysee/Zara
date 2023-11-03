@@ -82,8 +82,8 @@ impl TextError {
 impl Display for TextError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self.source() {
-            Some(err) => write!(f, "text source readline failure: {err}"),
-            None => f.write_str("unknown text source readline error"),
+            Some(err) => write!(f, "readline failure: {err}"),
+            None => f.write_str("unknown readline error"),
         }
     }
 }
@@ -99,7 +99,7 @@ pub struct TextErrorHeader<'a>(&'a TextError);
 impl Display for TextErrorHeader<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         format_header(&self.0.ctx, self.0.lineno, f)?;
-        f.write_str("\tunable to read text line\n")
+        writeln!(f, "\t{}", self.0)
     }
 }
 
