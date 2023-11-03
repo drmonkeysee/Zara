@@ -1006,7 +1006,7 @@ mod error {
 
         assert_eq!(
             err.display_message().to_string(),
-            "invalid operation attempted on lexer output; this is likely a library logic error!\n"
+            "invalid operation attempted on lexer output; this is likely an interpreter bug!\n"
         );
     }
 

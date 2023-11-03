@@ -172,7 +172,7 @@ impl Display for TokenErrorKind {
             Self::CharacterInvalidHex => {
                 format_char_range_error("character hex-sequence out of valid range", f)
             }
-            Self::ContinuationInvalid => f.write_str("attempted continuation conversion on invalid token; this is likely a library logic error!"),
+            Self::ContinuationInvalid => f.write_str("attempted continuation conversion on invalid token; this is likely an interpreter bug!"),
             Self::DirectiveExpected => f.write_str("expected directive: fold-case or no-fold-case"),
             Self::DirectiveInvalid => {
                 f.write_str("unsupported directive: expected fold-case or no-fold-case")
@@ -762,7 +762,7 @@ mod tests {
                 span: 0..1,
             };
 
-            assert_eq!(err.to_string(), "attempted continuation conversion on invalid token; this is likely a library logic error!");
+            assert_eq!(err.to_string(), "attempted continuation conversion on invalid token; this is likely an interpreter bug!");
         }
 
         #[test]

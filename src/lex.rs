@@ -182,7 +182,7 @@ impl Display for LexerErrorMessage<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self.0 {
             LexerError::InvalidOperation => f.write_str(
-                "invalid operation attempted on lexer output; this is likely a library logic error!\n",
+                "invalid operation attempted on lexer output; this is likely an interpreter bug!\n",
             ),
             LexerError::Lines(lines) => LineFailuresMessage(lines).fmt(f),
         }
