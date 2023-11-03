@@ -11,9 +11,9 @@ const CONT: &str = "... ";
 
 pub(crate) struct Repl {
     editor: DefaultEditor,
-    runtime: Interpreter,
     prompt: &'static str,
     running: bool, // TODO: will be needed for repl quit
+    runtime: Interpreter,
     src: ReplSource,
 }
 
