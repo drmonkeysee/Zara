@@ -6,7 +6,6 @@ use crate::lex::{Token, TokenKind, TokenLine};
 use std::{
     error::Error,
     fmt::{self, Display, Formatter},
-    iter::Peekable,
 };
 
 #[derive(Debug)]
@@ -26,7 +25,10 @@ pub(crate) fn parse(token_lines: impl IntoIterator<Item = TokenLine>) -> ParserR
     let mut errors = Vec::new();
     // TODO: for now flatten all lexlines into one stream of tokens
     // this'll need to handle individual lines later
-    let ast = ExpressionStream::new(token_lines.into_iter().flatten())
+    let ast = token_lines
+        .into_iter()
+        .flatten()
+        .map(parse_expression)
         .filter_map(|expr| expr.map_err(|err| errors.push(err)).ok())
         .collect();
     if errors.is_empty() {
@@ -41,31 +43,9 @@ pub(crate) fn tokens(token_lines: Vec<TokenLine>) -> ParserResult {
     Ok(Expression::TokenList(token_lines))
 }
 
-type ExpressionResult = Result<Expression, ExpressionError>;
-
-struct ExpressionStream<I: Iterator> {
-    tokens: Peekable<I>,
-}
-
-impl<I: Iterator<Item = Token>> ExpressionStream<I> {
-    fn new(tokens: I) -> Self {
-        Self {
-            tokens: tokens.peekable(),
-        }
-    }
-
-    fn parse_expression(&mut self, token: Token) -> ExpressionResult {
-        match token.kind {
-            TokenKind::Literal(val) => Ok(Expression::Literal(val)),
-            _ => Err(ExpressionError::Unimplemented(token)),
-        }
-    }
-}
-
-impl<I: Iterator<Item = Token>> Iterator for ExpressionStream<I> {
-    type Item = ExpressionResult;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.tokens.next().map(|t| self.parse_expression(t))
+fn parse_expression(token: Token) -> Result<Expression, ExpressionError> {
+    match token.kind {
+        TokenKind::Literal(val) => Ok(Expression::Literal(val)),
+        _ => Err(ExpressionError::Unimplemented(token)),
     }
 }
