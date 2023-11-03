@@ -23,7 +23,7 @@ pub(crate) fn repl(opts: Opts) -> Result {
 }
 
 pub(crate) fn stdin(opts: Opts) -> Result {
-    run(opts, StdinSrcFactory::new().product)
+    run(opts, stdin_source())
 }
 
 #[derive(Debug)]
@@ -68,18 +68,8 @@ impl LineInputAdapter for StdinAdapter {
     }
 }
 
-type StdinSource = LineInputSource<StdinAdapter>;
-
-struct StdinSrcFactory {
-    product: StdinSource,
-}
-
-impl StdinSrcFactory {
-    fn new() -> Self {
-        Self {
-            product: StdinSource::new(StdinAdapter(io::stdin()), "<stdin>"),
-        }
-    }
+fn stdin_source() -> LineInputSource<StdinAdapter> {
+    LineInputSource::new(StdinAdapter(io::stdin()), "<stdin>")
 }
 
 #[cfg(test)]
