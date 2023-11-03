@@ -655,7 +655,7 @@ mod tests {
             let err_lines = if let LexerError::Lines(errs) = err {
                 errs
             } else {
-                unreachable!()
+                unreachable!();
             };
             assert_eq!(err_lines.len(), 2);
             assert!(matches!(err_lines[0], LineFailure::Tokenize(_)));
@@ -663,7 +663,7 @@ mod tests {
             {
                 (es, ln)
             } else {
-                unreachable!()
+                unreachable!();
             };
             assert_eq!(errs.len(), 2);
             assert!(matches!(
@@ -693,7 +693,7 @@ mod tests {
             {
                 (es, ln)
             } else {
-                unreachable!()
+                unreachable!();
             };
             assert_eq!(errs.len(), 1);
             assert!(matches!(
@@ -727,14 +727,14 @@ mod tests {
             let err_lines = if let LexerError::Lines(lines) = err {
                 lines
             } else {
-                unreachable!()
+                unreachable!();
             };
             assert_eq!(err_lines.len(), 1);
             assert!(matches!(err_lines[0], LineFailure::Read(_)));
             let inner = if let LineFailure::Read(inn) = &err_lines[0] {
                 inn
             } else {
-                unreachable!()
+                unreachable!();
             };
             assert!(Rc::ptr_eq(&inner.ctx, &src.ctx));
             assert_eq!(inner.lineno, 2);
@@ -755,7 +755,7 @@ mod tests {
             let err_lines = if let LexerError::Lines(errs) = err {
                 errs
             } else {
-                unreachable!()
+                unreachable!();
             };
             assert_eq!(err_lines.len(), 2);
             assert!(matches!(err_lines[0], LineFailure::Tokenize(_)));
@@ -763,7 +763,7 @@ mod tests {
             {
                 (es, ln)
             } else {
-                unreachable!()
+                unreachable!();
             };
             assert_eq!(errs.len(), 2);
             assert!(matches!(
@@ -792,7 +792,7 @@ mod tests {
             let inner = if let LineFailure::Read(inn) = &err_lines[1] {
                 inn
             } else {
-                unreachable!()
+                unreachable!();
             };
             assert!(Rc::ptr_eq(&inner.ctx, &src.ctx));
             assert_eq!(inner.lineno, 3);
@@ -857,7 +857,7 @@ mod tests {
             let err_lines = if let LexerError::Lines(errs) = err {
                 errs
             } else {
-                unreachable!()
+                unreachable!();
             };
             assert_eq!(err_lines.len(), 1);
             assert!(matches!(err_lines[0], LineFailure::Tokenize(_)));
@@ -865,7 +865,7 @@ mod tests {
             {
                 (es, ln)
             } else {
-                unreachable!()
+                unreachable!();
             };
             assert_eq!(errs.len(), 1);
             assert!(matches!(
