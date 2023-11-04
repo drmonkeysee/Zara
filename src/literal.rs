@@ -7,6 +7,7 @@ use std::{
 pub enum Literal {
     Boolean(bool),
     Character(char),
+    Identifier(String),
     String(String),
 }
 
@@ -27,6 +28,7 @@ impl Display for Datum<'_> {
         match self.0 {
             Literal::Boolean(b) => write!(f, "#{}", if *b { 't' } else { 'f' }),
             Literal::Character(c) => write!(f, "#\\{}", CharDatum::new(*c)),
+            Literal::Identifier(s) => f.write_str(s),
             Literal::String(s) => StrDatum(s).fmt(f),
         }
     }
@@ -39,6 +41,7 @@ impl Display for TokenDescriptor<'_> {
         match self.0 {
             Literal::Boolean(_) => f.write_str("BOOL"),
             Literal::Character(_) => f.write_str("CHAR"),
+            Literal::Identifier(_) => f.write_str("ID"),
             Literal::String(_) => f.write_str("STR"),
         }
     }
@@ -413,6 +416,31 @@ bar"
 
                 assert_eq!(s.as_datum().to_string(), format!("\"{exp}\""));
             }
+        }
+    }
+
+    mod identifier {
+        use super::*;
+
+        #[test]
+        fn identifier_token() {
+            let b = Literal::Identifier("foo".to_owned());
+
+            assert_eq!(b.as_token_descriptor().to_string(), "ID");
+        }
+
+        #[test]
+        fn display_empty() {
+            let s = Literal::Identifier("".to_owned());
+
+            assert_eq!(s.as_datum().to_string(), "");
+        }
+
+        #[test]
+        fn display_alphanumeric() {
+            let s = Literal::Identifier("abc123!@.".to_owned());
+
+            assert_eq!(s.as_datum().to_string(), "abc123!@.");
         }
     }
 }
