@@ -274,27 +274,45 @@ impl StringLiteralMode for LineContinueStringLiteral {
 
 pub(super) struct Identifier<'me, 'str> {
     buf: String,
-    first: char,
     scan: &'me mut Scanner<'str>,
 }
 
 impl<'me, 'str> Identifier<'me, 'str> {
-    pub(super) fn new(first: char, scan: &'me mut Scanner<'str>) -> Self {
+    // TODO: need a ctor that takes an initial buffer
+    // from processing peculiar starts redirected from numbers/pairs
+    pub(super) fn new(scan: &'me mut Scanner<'str>) -> Self {
         Self {
             buf: String::new(),
-            first,
             scan,
         }
     }
 
-    pub(super) fn scan(&mut self) -> TokenExtractResult {
-        // TODO: can first be passed as argument instead of state
-        match self.first {
-            '|' => todo!(),                            // TODO: literal identifier
-            '+' | '-' | '.' => todo!(),                // TODO: peculiar identifier
-            _ if is_id_initial(self.first) => todo!(), // TODO: identifier
-            _ => todo!(),                              // TODO: invalid identifier
+    pub(super) fn scan(mut self, first: char) -> TokenExtractResult {
+        match first {
+            '|' => todo!(),                                // TODO: verbatim identifier
+            _ if is_id_peculiar_initial(first) => todo!(), // TODO: peculiar identifier (maybe not hit, redirected from Number/Pair)
+            _ if is_id_initial(first) => {
+                self.buf.push(first);
+                self.standard()
+            }
+            _ => self.invalid(first),
         }
+    }
+
+    fn standard(mut self) -> TokenExtractResult {
+        while let Some(ch) = self.scan.char_if_not_delimiter() {
+            if is_id_standard(ch) {
+                self.buf.push(ch);
+            } else {
+                return self.invalid(ch);
+            }
+        }
+        Ok(TokenKind::Literal(Literal::Identifier(self.buf)))
+    }
+
+    fn invalid(&mut self, ch: char) -> TokenExtractResult {
+        self.scan.end_of_token();
+        Err(TokenErrorKind::IdentifierInvalid(ch))
     }
 }
 
@@ -423,8 +441,16 @@ fn is_id_initial(ch: char) -> bool {
     is_id_letter(ch) || is_id_special_initial(ch)
 }
 
+fn is_id_standard(ch: char) -> bool {
+    is_id_initial(ch) || is_id_digit(ch) || is_id_peculiar_initial(ch)
+}
+
 fn is_id_letter(ch: char) -> bool {
     ch.is_ascii_alphabetic()
+}
+
+fn is_id_digit(ch: char) -> bool {
+    ch.is_ascii_digit()
 }
 
 fn is_id_special_initial(ch: char) -> bool {
@@ -432,6 +458,10 @@ fn is_id_special_initial(ch: char) -> bool {
         ch,
         '!' | '$' | '%' | '&' | '*' | '/' | ':' | '<' | '=' | '>' | '?' | '@' | '^' | '_' | '~'
     )
+}
+
+fn is_id_peculiar_initial(ch: char) -> bool {
+    matches!(ch, '+' | '-' | '.')
 }
 
 enum HexParse {

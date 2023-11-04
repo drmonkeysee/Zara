@@ -88,7 +88,7 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
             ';' => self.comment(),
             '.' => self.period(),
             ',' => self.unquote(),
-            _ => Identifier::new(self.start.1, self.scan).scan(),
+            _ => Identifier::new(self.scan).scan(self.start.1),
         }
     }
 
