@@ -7,7 +7,7 @@ mod tests;
 use self::{
     extract::{TokenExtract, TokenExtractResult},
     scan::{ScanItem, Scanner},
-    state::{Hashtag, StringLiteralFactory},
+    state::{Hashtag, Identifier, StringLiteralFactory},
 };
 use super::token::{TokenContinuation, TokenErrorKind, TokenKind, TokenResult};
 
@@ -88,7 +88,7 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
             ';' => self.comment(),
             '.' => self.period(),
             ',' => self.unquote(),
-            _ => self.not_implemented(),
+            _ => Identifier::new(self.start.1, self.scan).scan(),
         }
     }
 

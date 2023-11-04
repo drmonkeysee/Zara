@@ -272,6 +272,32 @@ impl StringLiteralMode for LineContinueStringLiteral {
     }
 }
 
+pub(super) struct Identifier<'me, 'str> {
+    buf: String,
+    first: char,
+    scan: &'me mut Scanner<'str>,
+}
+
+impl<'me, 'str> Identifier<'me, 'str> {
+    pub(super) fn new(first: char, scan: &'me mut Scanner<'str>) -> Self {
+        Self {
+            buf: String::new(),
+            first,
+            scan,
+        }
+    }
+
+    pub(super) fn scan(&mut self) -> TokenExtractResult {
+        // TODO: can first be passed as argument instead of state
+        match self.first {
+            '|' => todo!(),                            // TODO: literal identifier
+            '+' | '-' | '.' => todo!(),                // TODO: peculiar identifier
+            _ if is_id_initial(self.first) => todo!(), // TODO: identifier
+            _ => todo!(),                              // TODO: invalid identifier
+        }
+    }
+}
+
 pub(super) fn continue_block_comment<'me, 'str>(
     depth: usize,
     scan: &'me mut Scanner<'str>,
@@ -391,6 +417,21 @@ fn parse_char_hex(txt: &str) -> HexParse {
             char::from_u32(hex).map_or(HexParse::Invalid, HexParse::Valid)
         })
     }
+}
+
+fn is_id_initial(ch: char) -> bool {
+    is_id_letter(ch) || is_id_special_initial(ch)
+}
+
+fn is_id_letter(ch: char) -> bool {
+    ch.is_ascii_alphabetic()
+}
+
+fn is_id_special_initial(ch: char) -> bool {
+    matches!(
+        ch,
+        '!' | '$' | '%' | '&' | '*' | '/' | ':' | '<' | '=' | '>' | '?' | '@' | '^' | '_' | '~'
+    )
 }
 
 enum HexParse {
