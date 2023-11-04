@@ -125,6 +125,7 @@ pub(super) enum TokenErrorKind {
     ContinuationInvalid,
     DirectiveExpected,
     DirectiveInvalid,
+    IdentifierInvalid(char),
     StringEscapeInvalid(usize, char),
     StringExpectedHex(usize),
     StringInvalidHex(usize),
@@ -177,6 +178,7 @@ impl Display for TokenErrorKind {
             Self::DirectiveInvalid => {
                 f.write_str("unsupported directive: expected fold-case or no-fold-case")
             }
+            Self::IdentifierInvalid(ch) => write!(f, "invalid identifier character: {ch}"),
             Self::StringEscapeInvalid(_, ch) => write!(f, "invalid escape sequence: \\{ch}"),
             Self::StringExpectedHex(_) => f.write_str("expected hex-escape"),
             Self::StringInvalidHex(_) => {
@@ -456,6 +458,16 @@ mod tests {
             };
 
             assert_eq!(token.to_string(), "VECTOR[0..2]");
+        }
+
+        #[test]
+        fn display_identifier() {
+            let token = Token {
+                kind: TokenKind::Literal(Literal::Identifier("foo".to_owned())),
+                span: 0..3,
+            };
+
+            assert_eq!(token.to_string(), "LITERAL<ID>[0..3]");
         }
 
         #[test]
@@ -773,6 +785,16 @@ mod tests {
             };
 
             assert_eq!(err.to_string(), "unterminated string-literal");
+        }
+
+        #[test]
+        fn display_invalid_identifier() {
+            let err = TokenError {
+                kind: TokenErrorKind::IdentifierInvalid('{'),
+                span: 0..1,
+            };
+
+            assert_eq!(err.to_string(), "invalid identifier character: {");
         }
     }
 
