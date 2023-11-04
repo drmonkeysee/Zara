@@ -15,6 +15,7 @@ pub enum TokenKind {
     CommentBlockFragment(usize),
     CommentDatum,
     DirectiveCase(bool),
+    Identifier(String),
     Literal(Literal),
     ParenLeft,
     ParenRight,
@@ -55,6 +56,7 @@ impl Display for TokenKind {
             Self::CommentBlockFragment(depth) => write!(f, "BLOCKCOMMENTFRAG<{depth:?}>"),
             Self::CommentDatum => f.write_str("DATUMCOMMENT"),
             Self::DirectiveCase(fold) => write!(f, "DIRFOLDCASE<{fold:?}>"),
+            Self::Identifier(_) => f.write_str("IDENTIFIER"),
             Self::Literal(lit) => write!(f, "LITERAL<{}>", lit.as_token_descriptor()),
             Self::ParenLeft => f.write_str("LEFTPAREN"),
             Self::ParenRight => f.write_str("RIGHTPAREN"),
@@ -463,11 +465,11 @@ mod tests {
         #[test]
         fn display_identifier() {
             let token = Token {
-                kind: TokenKind::Literal(Literal::Identifier("foo".to_owned())),
+                kind: TokenKind::Identifier("foo".to_owned()),
                 span: 0..3,
             };
 
-            assert_eq!(token.to_string(), "LITERAL<ID>[0..3]");
+            assert_eq!(token.to_string(), "IDENTIFIER[0..3]");
         }
 
         #[test]

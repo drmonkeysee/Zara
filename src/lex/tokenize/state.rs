@@ -307,7 +307,7 @@ impl<'me, 'str> Identifier<'me, 'str> {
                 return self.invalid(ch);
             }
         }
-        Ok(TokenKind::Literal(Literal::Identifier(self.buf)))
+        Ok(TokenKind::Identifier(self.buf))
     }
 
     fn invalid(&mut self, ch: char) -> TokenExtractResult {

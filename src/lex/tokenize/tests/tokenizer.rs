@@ -2753,7 +2753,7 @@ mod identifier {
             TokenExtract {
                 start: 0,
                 end: 3,
-                result: Ok(TokenKind::Literal(Literal::Identifier(s))),
+                result: Ok(TokenKind::Identifier(s)),
             } if s == "foo"
         ));
     }
