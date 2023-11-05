@@ -274,32 +274,33 @@ impl StringLiteralMode for LineContinueStringLiteral {
 
 pub(super) struct Identifier<'me, 'str> {
     buf: String,
+    peculiar_state: PeculiarState,
     scan: &'me mut Scanner<'str>,
 }
 
 impl<'me, 'str> Identifier<'me, 'str> {
-    // TODO: need a ctor that takes an initial buffer
-    // from processing peculiar starts redirected from numbers/pairs
     pub(super) fn new(scan: &'me mut Scanner<'str>) -> Self {
         Self {
             buf: String::new(),
+            peculiar_state: PeculiarState::Unspecified,
             scan,
         }
     }
 
     pub(super) fn scan(mut self, first: char) -> TokenExtractResult {
-        match first {
-            '|' => todo!(),                                // TODO: verbatim identifier
-            _ if is_id_peculiar_initial(first) => todo!(), // TODO: peculiar identifier (maybe not hit, redirected from Number/Pair)
-            _ if is_id_initial(first) => {
-                self.buf.push(first);
-                self.standard()
-            }
-            _ => self.invalid(first),
+        if first == '|' {
+            todo!(); // TODO: verbatim identifier
+        } else if is_id_peculiar_initial(first) {
+            self.peculiar(first)
+        } else if is_id_initial(first) {
+            self.standard(first)
+        } else {
+            self.invalid(first)
         }
     }
 
-    fn standard(mut self) -> TokenExtractResult {
+    fn standard(mut self, first: char) -> TokenExtractResult {
+        self.buf.push(first);
         while let Some(ch) = self.scan.char_if_not_delimiter() {
             if is_id_standard(ch) {
                 self.buf.push(ch);
@@ -310,9 +311,72 @@ impl<'me, 'str> Identifier<'me, 'str> {
         Ok(TokenKind::Identifier(self.buf))
     }
 
+    fn peculiar(mut self, ch: char) -> TokenExtractResult {
+        self.push_peculiar(ch);
+        let next_ch = self.scan.char_if_not_delimiter();
+        self.continue_peculiar(next_ch)
+    }
+
+    fn continue_peculiar(self, next_ch: Option<char>) -> TokenExtractResult {
+        match next_ch {
+            Some(ch) => {
+                // TODO: this should only be 0..9, change call if is_id_digit is expanded
+                if is_id_digit(ch) {
+                    if matches!(self.peculiar_state, PeculiarState::DefiniteIdentifier) {
+                        self.standard(ch)
+                    } else {
+                        // TODO: parse as number
+                        Err(TokenErrorKind::IdentifierInvalid(ch))
+                    }
+                } else if is_id_peculiar_initial(ch) {
+                    self.peculiar(ch)
+                } else if is_id_initial(ch) {
+                    self.standard(ch)
+                } else {
+                    Err(TokenErrorKind::IdentifierInvalid(ch))
+                }
+            }
+            None => {
+                // NOTE: a single '.' is invalid but Tokenizer handles '.'
+                // before attempting Identifier so this case never happens.
+                Ok(TokenKind::Identifier(self.buf))
+            }
+        }
+    }
+
     fn invalid(&mut self, ch: char) -> TokenExtractResult {
         self.scan.end_of_token();
         Err(TokenErrorKind::IdentifierInvalid(ch))
+    }
+
+    fn push_peculiar(&mut self, ch: char) {
+        self.buf.push(ch);
+        // NOTE: only 3 cases: + | - | .
+        self.peculiar_state = match ch {
+            '+' | '-' => match self.peculiar_state {
+                PeculiarState::Unspecified => PeculiarState::MaybeSignedNumber,
+                _ => PeculiarState::DefiniteIdentifier,
+            },
+            _ => match self.peculiar_state {
+                PeculiarState::Unspecified => PeculiarState::MaybeFloat,
+                PeculiarState::MaybeSignedNumber => PeculiarState::MaybeSignedFloat,
+                _ => PeculiarState::DefiniteIdentifier,
+            },
+        }
+    }
+}
+
+pub(super) struct PeriodIdentifier<'me, 'str>(Identifier<'me, 'str>);
+
+impl<'me, 'str> PeriodIdentifier<'me, 'str> {
+    pub(super) fn new(scan: &'me mut Scanner<'str>) -> Self {
+        let mut me = Self(Identifier::new(scan));
+        me.0.push_peculiar('.');
+        me
+    }
+
+    pub(super) fn scan(self, first: char) -> TokenExtractResult {
+        self.0.continue_peculiar(Some(first))
     }
 }
 
@@ -438,6 +502,7 @@ fn parse_char_hex(txt: &str) -> HexParse {
 }
 
 fn is_id_initial(ch: char) -> bool {
+    // TODO: disallow Mc, Me, Nd
     is_id_letter(ch) || is_id_special_initial(ch)
 }
 
@@ -446,6 +511,7 @@ fn is_id_standard(ch: char) -> bool {
 }
 
 fn is_id_letter(ch: char) -> bool {
+    // TODO: support Lu, Ll, Lt, Lm, Lo, Mn, Mc, Me, Nd, Nl, No, Pd, Pc, Po, Sc, Sm, Sk, So, Co, U+200C, U+200D
     ch.is_ascii_alphabetic()
 }
 
@@ -468,6 +534,14 @@ enum HexParse {
     Invalid,
     Unexpected,
     Valid(char),
+}
+
+enum PeculiarState {
+    DefiniteIdentifier,
+    MaybeFloat,
+    MaybeSignedFloat,
+    MaybeSignedNumber,
+    Unspecified,
 }
 
 // NOTE: state functionality is covered by Tokenizer and Continuation tests

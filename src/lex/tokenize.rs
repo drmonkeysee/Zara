@@ -7,7 +7,7 @@ mod tests;
 use self::{
     extract::{TokenExtract, TokenExtractResult},
     scan::{ScanItem, Scanner},
-    state::{Hashtag, Identifier, StringLiteralFactory},
+    state::{Hashtag, Identifier, PeriodIdentifier, StringLiteralFactory},
 };
 use super::token::{TokenContinuation, TokenErrorKind, TokenKind, TokenResult};
 
@@ -98,12 +98,10 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
     }
 
     fn period(&mut self) -> TokenExtractResult {
-        let rest = self.scan.rest_of_token();
-        if rest.is_empty() {
-            Ok(TokenKind::PairJoiner)
+        if let Some(ch) = self.scan.char_if_not_delimiter() {
+            PeriodIdentifier::new(self.scan).scan(ch)
         } else {
-            // TODO: jump to number tokenization with period and next char?
-            self.not_implemented()
+            Ok(TokenKind::PairJoiner)
         }
     }
 

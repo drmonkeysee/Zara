@@ -162,7 +162,7 @@ fn pair_joiner_prefixed_is_identifier() {
         TokenExtract {
             start: 0,
             end: 2,
-            result: Err(TokenErrorKind::Unimplemented(txt)),
+            result: Ok(TokenKind::Identifier(txt)),
         } if txt == "a."
     ));
 }
@@ -183,7 +183,7 @@ fn pair_joiner_postfixed_is_identifier() {
         TokenExtract {
             start: 0,
             end: 2,
-            result: Err(TokenErrorKind::Unimplemented(txt)),
+            result: Ok(TokenKind::Identifier(txt)),
         } if txt == ".a"
     ));
 }
@@ -2759,6 +2759,437 @@ mod identifier {
     }
 
     #[test]
+    fn identifier_with_digits() {
+        let mut s = Scanner::new("a24");
+        let start = s.next_token().unwrap();
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 3,
+                result: Ok(TokenKind::Identifier(s)),
+            } if s == "a24"
+        ));
+    }
+
+    #[test]
+    fn identifier_with_special_chars() {
+        let mut s = Scanner::new("foo?bar@baz.beef");
+        let start = s.next_token().unwrap();
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 16,
+                result: Ok(TokenKind::Identifier(s)),
+            } if s == "foo?bar@baz.beef"
+        ));
+    }
+
+    #[test]
+    fn identifier_starts_with_special_char() {
+        let mut s = Scanner::new("!foo");
+        let start = s.next_token().unwrap();
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 4,
+                result: Ok(TokenKind::Identifier(s)),
+            } if s == "!foo"
+        ));
+    }
+
+    #[test]
+    fn identifier_ends_with_peculiar_chars() {
+        let mut s = Scanner::new("c++");
+        let start = s.next_token().unwrap();
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 3,
+                result: Ok(TokenKind::Identifier(s)),
+            } if s == "c++"
+        ));
+    }
+
+    #[test]
+    fn identifier_is_only_special_char() {
+        let mut s = Scanner::new("!");
+        let start = s.next_token().unwrap();
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 1,
+                result: Ok(TokenKind::Identifier(s)),
+            } if s == "!"
+        ));
+    }
+
+    #[test]
+    fn identifier_with_extended_and_higher_chars() {
+        let mut s = Scanner::new("λ🦀\u{2401}\u{fffd}");
+        let start = s.next_token().unwrap();
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+
+        /*assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 16,
+                result: Ok(TokenKind::Identifier(s)),
+            } if s == "λ🦀\u{2401}\u{fffd}"
+        ));*/
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 12,
+                result: Err(TokenErrorKind::IdentifierInvalid('λ')),
+            }
+        ));
+    }
+
+    #[test]
+    fn peculiar_identifier() {
+        let mut s = Scanner::new("+foo");
+        let start = s.next_token().unwrap();
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 4,
+                result: Ok(TokenKind::Identifier(s)),
+            } if s == "+foo"
+        ));
+    }
+
+    #[test]
+    fn sign_identifier() {
+        let cases = ["+", "-"];
+        for case in cases {
+            let mut s = Scanner::new(case);
+            let start = s.next_token().unwrap();
+            let t = Tokenizer {
+                scan: &mut s,
+                start,
+            };
+
+            let r = t.extract();
+
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 0,
+                    end: 1,
+                    result: Ok(TokenKind::Identifier(s)),
+                } if s == case
+            ));
+        }
+    }
+
+    #[test]
+    fn double_sign_identifier() {
+        let mut s = Scanner::new("+-");
+        let start = s.next_token().unwrap();
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 2,
+                result: Ok(TokenKind::Identifier(s)),
+            } if s == "+-"
+        ));
+    }
+
+    #[test]
+    fn sign_dot_identifier() {
+        let mut s = Scanner::new("+.");
+        let start = s.next_token().unwrap();
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 2,
+                result: Ok(TokenKind::Identifier(s)),
+            } if s == "+."
+        ));
+    }
+
+    #[test]
+    fn double_period_identifier() {
+        let mut s = Scanner::new("..");
+        let start = s.next_token().unwrap();
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 2,
+                result: Ok(TokenKind::Identifier(s)),
+            } if s == ".."
+        ));
+    }
+
+    #[test]
+    fn double_period_word_identifier() {
+        let mut s = Scanner::new("..foo");
+        let start = s.next_token().unwrap();
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 5,
+                result: Ok(TokenKind::Identifier(s)),
+            } if s == "..foo"
+        ));
+    }
+
+    #[test]
+    fn period_identifier() {
+        let mut s = Scanner::new(".foo");
+        let start = s.next_token().unwrap();
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 4,
+                result: Ok(TokenKind::Identifier(s)),
+            } if s == ".foo"
+        ));
+    }
+
+    #[test]
+    fn double_sign_number_is_identifer() {
+        let mut s = Scanner::new("+-4");
+        let start = s.next_token().unwrap();
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 3,
+                result: Ok(TokenKind::Identifier(s)),
+            } if s == "+-4"
+        ));
+    }
+
+    #[test]
+    fn sign_at_number_is_identifer() {
+        let mut s = Scanner::new("+@4");
+        let start = s.next_token().unwrap();
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 3,
+                result: Ok(TokenKind::Identifier(s)),
+            } if s == "+@4"
+        ));
+    }
+
+    #[test]
+    fn sign_double_period_number_is_identifer() {
+        let mut s = Scanner::new("+..4");
+        let start = s.next_token().unwrap();
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 4,
+                result: Ok(TokenKind::Identifier(s)),
+            } if s == "+..4"
+        ));
+    }
+
+    #[test]
+    fn sign_period_sign_number_is_identifer() {
+        let mut s = Scanner::new("+.-4");
+        let start = s.next_token().unwrap();
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 4,
+                result: Ok(TokenKind::Identifier(s)),
+            } if s == "+.-4"
+        ));
+    }
+
+    #[test]
+    fn double_period_number_is_identifer() {
+        let mut s = Scanner::new("..4");
+        let start = s.next_token().unwrap();
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 3,
+                result: Ok(TokenKind::Identifier(s)),
+            } if s == "..4"
+        ));
+    }
+
+    #[test]
+    fn period_sign_is_identifier() {
+        let mut s = Scanner::new(".-4");
+        let start = s.next_token().unwrap();
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 3,
+                result: Ok(TokenKind::Identifier(s)),
+            } if s == ".-4"
+        ));
+    }
+
+    #[test]
+    fn period_at_number_is_identifer() {
+        let mut s = Scanner::new(".@4");
+        let start = s.next_token().unwrap();
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 3,
+                result: Ok(TokenKind::Identifier(s)),
+            } if s == ".@4"
+        ));
+    }
+
+    #[test]
     fn identifier_start_digit() {
         let mut s = Scanner::new("4foo");
         let start = s.next_token().unwrap();
@@ -2796,6 +3227,90 @@ mod identifier {
                 start: 0,
                 end: 4,
                 result: Err(TokenErrorKind::IdentifierInvalid('{')),
+            }
+        ));
+    }
+
+    #[test]
+    fn identifier_contains_reserved_char() {
+        let mut s = Scanner::new("foo{bar");
+        let start = s.next_token().unwrap();
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 7,
+                result: Err(TokenErrorKind::IdentifierInvalid('{')),
+            }
+        ));
+    }
+
+    #[test]
+    fn sign_start_with_digit_is_number() {
+        let mut s = Scanner::new("+4");
+        let start = s.next_token().unwrap();
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 2,
+                result: Err(TokenErrorKind::IdentifierInvalid('4')),
+            }
+        ));
+    }
+
+    #[test]
+    fn period_start_with_digit_is_number() {
+        let mut s = Scanner::new(".4");
+        let start = s.next_token().unwrap();
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 2,
+                result: Err(TokenErrorKind::IdentifierInvalid('4')),
+            }
+        ));
+    }
+
+    #[test]
+    fn sign_period_start_with_digit_is_number() {
+        let mut s = Scanner::new("-.4");
+        let start = s.next_token().unwrap();
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 3,
+                result: Err(TokenErrorKind::IdentifierInvalid('4')),
             }
         ));
     }
