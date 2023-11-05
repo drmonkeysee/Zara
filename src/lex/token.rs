@@ -140,16 +140,12 @@ pub(super) enum TokenErrorKind {
 
 impl TokenErrorKind {
     pub(super) fn to_continuation(&self) -> Option<TokenContinuation> {
-        if matches!(
-            self,
+        match self {
             TokenErrorKind::StringEscapeInvalid(..)
-                | TokenErrorKind::StringExpectedHex(..)
-                | TokenErrorKind::StringInvalidHex(..)
-                | TokenErrorKind::StringUnterminatedHex(..)
-        ) {
-            Some(TokenContinuation::SubstringError)
-        } else {
-            None
+            | TokenErrorKind::StringExpectedHex(..)
+            | TokenErrorKind::StringInvalidHex(..)
+            | TokenErrorKind::StringUnterminatedHex(..) => Some(TokenContinuation::SubstringError),
+            _ => None,
         }
     }
 

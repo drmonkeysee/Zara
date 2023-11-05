@@ -327,11 +327,9 @@ impl<'me, 'str> Identifier<'me, 'str> {
             Some(ch) => {
                 // TODO: this should only be 0..9, change call if is_id_digit is expanded
                 if is_id_digit(ch) {
-                    if matches!(self.peculiar_state, PeculiarState::DefiniteIdentifier) {
-                        self.standard(ch)
-                    } else {
-                        // TODO: parse as number
-                        self.not_implemented()
+                    match self.peculiar_state {
+                        PeculiarState::DefiniteIdentifier => self.standard(ch),
+                        _ => self.not_implemented(), // TODO: parse as number
                     }
                 } else if is_id_peculiar_initial(ch) {
                     self.peculiar(ch)
