@@ -9,7 +9,7 @@ use self::{
     scan::{ScanItem, Scanner},
     state::{Hashtag, Identifier, PeriodIdentifier, StringLiteralFactory},
 };
-use super::token::{TokenContinuation, TokenErrorKind, TokenKind, TokenResult};
+use super::token::{TokenContinuation, TokenKind, TokenResult};
 
 pub(super) struct TokenStream<'a> {
     cont: Option<TokenContinuation>,
@@ -88,7 +88,7 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
             ';' => self.comment(),
             '.' => self.period(),
             ',' => self.unquote(),
-            _ => Identifier::new(self.scan).scan(self.start.1),
+            _ => Identifier::new(self.scan, self.start).scan(self.start.1),
         }
     }
 
@@ -99,7 +99,7 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
 
     fn period(&mut self) -> TokenExtractResult {
         if let Some(ch) = self.scan.char_if_not_delimiter() {
-            PeriodIdentifier::new(self.scan).scan(ch)
+            PeriodIdentifier::new(self.scan, self.start).scan(ch)
         } else {
             Ok(TokenKind::PairJoiner)
         }
@@ -110,14 +110,6 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
             .scan
             .char_if_eq('@')
             .map_or(TokenKind::Unquote, |_| TokenKind::UnquoteSplice))
-    }
-
-    fn not_implemented(&mut self) -> TokenExtractResult {
-        let start = self.start.0;
-        let end = self.scan.end_of_token();
-        Err(TokenErrorKind::Unimplemented(
-            self.scan.lexeme(start..end).to_owned(),
-        ))
     }
 }
 

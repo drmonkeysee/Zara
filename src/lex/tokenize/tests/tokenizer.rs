@@ -1,4 +1,5 @@
 use super::*;
+use crate::lex::token::TokenErrorKind;
 
 #[test]
 fn empty_string() {
@@ -3268,8 +3269,8 @@ mod identifier {
             TokenExtract {
                 start: 0,
                 end: 2,
-                result: Err(TokenErrorKind::IdentifierInvalid('4')),
-            }
+                result: Err(TokenErrorKind::Unimplemented(s)),
+            } if s == "+4"
         ));
     }
 
@@ -3289,8 +3290,8 @@ mod identifier {
             TokenExtract {
                 start: 0,
                 end: 2,
-                result: Err(TokenErrorKind::IdentifierInvalid('4')),
-            }
+                result: Err(TokenErrorKind::Unimplemented(s)),
+            } if s == ".4"
         ));
     }
 
@@ -3310,8 +3311,8 @@ mod identifier {
             TokenExtract {
                 start: 0,
                 end: 3,
-                result: Err(TokenErrorKind::IdentifierInvalid('4')),
-            }
+                result: Err(TokenErrorKind::Unimplemented(s)),
+            } if s == "-.4"
         ));
     }
 }
