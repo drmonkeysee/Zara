@@ -1,7 +1,4 @@
-use super::{
-    extract::TokenExtractResult,
-    scan::{ScanItem, Scanner},
-};
+use super::{extract::TokenExtractResult, scan::Scanner};
 use crate::{
     lex::token::{TokenErrorKind, TokenKind},
     literal::Literal,
@@ -277,22 +274,20 @@ pub(super) struct Identifier<'me, 'str> {
     buf: String,
     peculiar_state: PeculiarState,
     scan: &'me mut Scanner<'str>,
-    start: ScanItem<'str>, // TODO: temporary for not_implemented()
 }
 
 impl<'me, 'str> Identifier<'me, 'str> {
-    pub(super) fn new(scan: &'me mut Scanner<'str>, start: ScanItem<'str>) -> Self {
+    pub(super) fn new(scan: &'me mut Scanner<'str>) -> Self {
         Self {
             buf: String::new(),
             peculiar_state: PeculiarState::Unspecified,
             scan,
-            start,
         }
     }
 
     pub(super) fn scan(mut self, first: char) -> TokenExtractResult {
         if first == '|' {
-            self.not_implemented() // TODO: verbatim identifier
+            self.not_implemented(first) // TODO: verbatim identifier
         } else if is_id_peculiar_initial(first) {
             self.peculiar(first)
         } else if is_id_initial(first) {
@@ -320,14 +315,14 @@ impl<'me, 'str> Identifier<'me, 'str> {
         self.continue_peculiar(next_ch)
     }
 
-    fn continue_peculiar(mut self, next_ch: Option<char>) -> TokenExtractResult {
+    fn continue_peculiar(self, next_ch: Option<char>) -> TokenExtractResult {
         match next_ch {
             Some(ch) => {
                 // TODO: this should only be 0..9, change call if is_id_digit is expanded
                 if is_id_digit(ch) {
                     match self.peculiar_state {
                         PeculiarState::DefiniteIdentifier => self.standard(ch),
-                        _ => self.not_implemented(), // TODO: parse as number
+                        _ => self.not_implemented(ch), // TODO: parse as number
                     }
                 } else if is_id_peculiar_initial(ch) {
                     self.peculiar(ch)
@@ -366,20 +361,18 @@ impl<'me, 'str> Identifier<'me, 'str> {
         }
     }
 
-    fn not_implemented(&mut self) -> TokenExtractResult {
-        let start = self.start.0;
-        let end = self.scan.end_of_token();
-        Err(TokenErrorKind::Unimplemented(
-            self.scan.lexeme(start..end).to_owned(),
-        ))
+    fn not_implemented(mut self, ch: char) -> TokenExtractResult {
+        self.buf.push(ch);
+        self.buf.push_str(self.scan.rest_of_token());
+        Err(TokenErrorKind::Unimplemented(self.buf))
     }
 }
 
 pub(super) struct PeriodIdentifier<'me, 'str>(Identifier<'me, 'str>);
 
 impl<'me, 'str> PeriodIdentifier<'me, 'str> {
-    pub(super) fn new(scan: &'me mut Scanner<'str>, start: ScanItem<'str>) -> Self {
-        let mut me = Self(Identifier::new(scan, start));
+    pub(super) fn new(scan: &'me mut Scanner<'str>) -> Self {
+        let mut me = Self(Identifier::new(scan));
         me.0.push_peculiar('.');
         me
     }

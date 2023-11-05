@@ -88,7 +88,7 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
             ';' => self.comment(),
             '.' => self.period(),
             ',' => self.unquote(),
-            _ => Identifier::new(self.scan, self.start).scan(self.start.1),
+            _ => Identifier::new(self.scan).scan(self.start.1),
         }
     }
 
@@ -99,7 +99,7 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
 
     fn period(&mut self) -> TokenExtractResult {
         if let Some(ch) = self.scan.char_if_not_delimiter() {
-            PeriodIdentifier::new(self.scan, self.start).scan(ch)
+            PeriodIdentifier::new(self.scan).scan(ch)
         } else {
             Ok(TokenKind::PairJoiner)
         }
