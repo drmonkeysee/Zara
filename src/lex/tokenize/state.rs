@@ -450,6 +450,32 @@ impl BlockCommentMode for ContinueBlockComment {
 
 type StringLiteralResult = Result<(), TokenErrorKind>;
 
+enum PeculiarState {
+    DefiniteIdentifier,
+    MaybeFloat,
+    MaybeSignedFloat,
+    MaybeSignedNumber,
+    Unspecified,
+}
+
+struct StartBlockComment;
+
+impl BlockCommentMode for StartBlockComment {
+    fn terminated(&self) -> TokenKind {
+        TokenKind::CommentBlock
+    }
+
+    fn unterminated(&self, depth: usize) -> TokenKind {
+        TokenKind::CommentBlockBegin(depth)
+    }
+}
+
+enum HexParse {
+    Invalid,
+    Unexpected,
+    Valid(char),
+}
+
 fn char_hex(rest: &str) -> TokenExtractResult {
     match parse_char_hex(rest) {
         HexParse::Invalid => Err(TokenErrorKind::CharacterInvalidHex),
@@ -515,32 +541,6 @@ fn is_id_special_initial(ch: char) -> bool {
 
 fn is_id_peculiar_initial(ch: char) -> bool {
     matches!(ch, '+' | '-' | '.')
-}
-
-enum HexParse {
-    Invalid,
-    Unexpected,
-    Valid(char),
-}
-
-enum PeculiarState {
-    DefiniteIdentifier,
-    MaybeFloat,
-    MaybeSignedFloat,
-    MaybeSignedNumber,
-    Unspecified,
-}
-
-struct StartBlockComment;
-
-impl BlockCommentMode for StartBlockComment {
-    fn terminated(&self) -> TokenKind {
-        TokenKind::CommentBlock
-    }
-
-    fn unterminated(&self, depth: usize) -> TokenKind {
-        TokenKind::CommentBlockBegin(depth)
-    }
 }
 
 // NOTE: state functionality is covered by Tokenizer and Continuation tests

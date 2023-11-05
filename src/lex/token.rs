@@ -6,6 +6,32 @@ use std::{
 };
 
 #[derive(Debug)]
+pub struct TokenType<T> {
+    pub(crate) kind: T,
+    pub(crate) span: Range<usize>,
+}
+
+pub type Token = TokenType<TokenKind>;
+
+impl Token {
+    pub(super) fn into_continuation_unsupported(self) -> TokenError {
+        TokenError {
+            kind: self
+                .kind
+                .to_continuation()
+                .map_or(TokenErrorKind::ContinuationInvalid, TokenErrorKind::from),
+            span: self.span,
+        }
+    }
+}
+
+impl Display for Token {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{}[{:?}]", self.kind, self.span)
+    }
+}
+
+#[derive(Debug)]
 pub enum TokenKind {
     ByteVector,
     Comment,
@@ -75,32 +101,6 @@ impl Display for TokenKind {
             Self::UnquoteSplice => f.write_str("UNQUOTESPLICE"),
             Self::Vector => f.write_str("VECTOR"),
         }
-    }
-}
-
-#[derive(Debug)]
-pub struct TokenType<T> {
-    pub(crate) kind: T,
-    pub(crate) span: Range<usize>,
-}
-
-pub type Token = TokenType<TokenKind>;
-
-impl Token {
-    pub(super) fn into_continuation_unsupported(self) -> TokenError {
-        TokenError {
-            kind: self
-                .kind
-                .to_continuation()
-                .map_or(TokenErrorKind::ContinuationInvalid, TokenErrorKind::from),
-            span: self.span,
-        }
-    }
-}
-
-impl Display for Token {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "{}[{:?}]", self.kind, self.span)
     }
 }
 

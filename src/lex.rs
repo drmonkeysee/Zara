@@ -220,48 +220,6 @@ impl Display for TokenLinesMessage<'_> {
     }
 }
 
-struct LexerDriver {
-    cont: Option<TokenContinuation>,
-}
-
-impl LexerDriver {
-    fn new() -> Self {
-        Self { cont: None }
-    }
-
-    fn cont(cont: TokenContinuation) -> Self {
-        Self { cont: Some(cont) }
-    }
-
-    fn tokenize(&mut self, src: &mut impl TextSource) -> Result<Vec<TokenLine>, LexerError> {
-        let (token_lines, err_lines): (Vec<_>, Vec<_>) = src
-            .map(|tr| self.tokenize_line(tr?))
-            .partition(|r| r.is_ok());
-        if err_lines.is_empty() {
-            Ok(token_lines.into_iter().flatten().collect())
-        } else {
-            Err(LexerError::Lines(
-                err_lines.into_iter().flat_map(|r| r.err()).collect(),
-            ))
-        }
-    }
-
-    fn tokenize_line(&mut self, text: TextLine) -> Result<TokenLine, LineFailure> {
-        let (tokens, errs): (Vec<_>, Vec<_>) =
-            TokenStream::new(&text.line, self.cont.take()).partition(|r| r.is_ok());
-        if errs.is_empty() {
-            let line = TokenLine(tokens.into_iter().flatten().collect(), text);
-            self.cont = line.continuation();
-            Ok(line)
-        } else {
-            Err(TokenErrorLine(
-                errs.into_iter().flat_map(|r| r.err()).collect(),
-                text,
-            ))?
-        }
-    }
-}
-
 struct TokenLineMessage<'a>(&'a TokenLine);
 
 impl Display for TokenLineMessage<'_> {
@@ -383,5 +341,47 @@ impl Display for TokenErrorLineMessage<'_> {
             writeln!(f, "{}: {err}", err.span.start + 1)?;
         }
         Ok(())
+    }
+}
+
+struct LexerDriver {
+    cont: Option<TokenContinuation>,
+}
+
+impl LexerDriver {
+    fn new() -> Self {
+        Self { cont: None }
+    }
+
+    fn cont(cont: TokenContinuation) -> Self {
+        Self { cont: Some(cont) }
+    }
+
+    fn tokenize(&mut self, src: &mut impl TextSource) -> Result<Vec<TokenLine>, LexerError> {
+        let (token_lines, err_lines): (Vec<_>, Vec<_>) = src
+            .map(|tr| self.tokenize_line(tr?))
+            .partition(|r| r.is_ok());
+        if err_lines.is_empty() {
+            Ok(token_lines.into_iter().flatten().collect())
+        } else {
+            Err(LexerError::Lines(
+                err_lines.into_iter().flat_map(|r| r.err()).collect(),
+            ))
+        }
+    }
+
+    fn tokenize_line(&mut self, text: TextLine) -> Result<TokenLine, LineFailure> {
+        let (tokens, errs): (Vec<_>, Vec<_>) =
+            TokenStream::new(&text.line, self.cont.take()).partition(|r| r.is_ok());
+        if errs.is_empty() {
+            let line = TokenLine(tokens.into_iter().flatten().collect(), text);
+            self.cont = line.continuation();
+            Ok(line)
+        } else {
+            Err(TokenErrorLine(
+                errs.into_iter().flat_map(|r| r.err()).collect(),
+                text,
+            ))?
+        }
     }
 }
