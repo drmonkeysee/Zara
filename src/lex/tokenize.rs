@@ -7,7 +7,7 @@ mod tests;
 use self::{
     extract::{TokenExtract, TokenExtractResult},
     scan::{ScanItem, Scanner},
-    state::{Hashtag, Identifier, PeriodIdentifier, StringLiteralFactory},
+    state::{BlockComment, Hashtag, Identifier, PeriodIdentifier, StringLiteral},
 };
 use super::token::{TokenContinuation, TokenKind, TokenResult};
 
@@ -84,7 +84,7 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
             '\'' => Ok(TokenKind::Quote),
             '`' => Ok(TokenKind::Quasiquote),
             '#' => Hashtag { scan: self.scan }.scan(),
-            '"' => StringLiteralFactory::new(self.scan).scan(),
+            '"' => StringLiteral::new(self.scan).scan(),
             ';' => self.comment(),
             '.' => self.period(),
             ',' => self.unquote(),
@@ -128,13 +128,11 @@ impl<'me, 'str> Continuation<'me, 'str> {
     fn scan(&mut self) -> TokenExtractResult {
         match self.cont {
             TokenContinuation::BlockComment(depth) => {
-                Ok(state::continue_block_comment(depth, self.scan).consume())
+                Ok(BlockComment::cont(depth, self.scan).consume())
             }
-            TokenContinuation::StringLiteral(false) => StringLiteralFactory::cont(self.scan).scan(),
-            TokenContinuation::StringLiteral(true) => {
-                StringLiteralFactory::line_cont(self.scan).scan()
-            }
-            TokenContinuation::SubstringError => StringLiteralFactory::cleanup(self.scan).scan(),
+            TokenContinuation::StringLiteral(false) => StringLiteral::cont(self.scan).scan(),
+            TokenContinuation::StringLiteral(true) => StringLiteral::line_cont(self.scan).scan(),
+            TokenContinuation::SubstringError => StringLiteral::cleanup(self.scan).scan(),
         }
     }
 }

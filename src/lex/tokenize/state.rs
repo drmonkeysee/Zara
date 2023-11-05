@@ -91,35 +91,7 @@ impl<'me, 'str> Hashtag<'me, 'str> {
         self.scan
             .char_if_eq('|')
             .ok_or(TokenErrorKind::HashUnterminated)
-            .map(|_| new_block_comment(self.scan).consume())
-    }
-}
-
-pub(super) struct StringLiteralFactory;
-
-impl StringLiteralFactory {
-    pub(super) fn new<'me, 'str>(
-        scan: &'me mut Scanner<'str>,
-    ) -> StringLiteral<'me, 'str, StartStringLiteral> {
-        StringLiteral::init(scan, StartStringLiteral)
-    }
-
-    pub(super) fn cleanup<'me, 'str>(
-        scan: &'me mut Scanner<'str>,
-    ) -> StringLiteral<'me, 'str, DiscardStringLiteral> {
-        StringLiteral::init(scan, DiscardStringLiteral)
-    }
-
-    pub(super) fn cont<'me, 'str>(
-        scan: &'me mut Scanner<'str>,
-    ) -> StringLiteral<'me, 'str, ContinueStringLiteral> {
-        StringLiteral::init(scan, ContinueStringLiteral)
-    }
-
-    pub(super) fn line_cont<'me, 'str>(
-        scan: &'me mut Scanner<'str>,
-    ) -> StringLiteral<'me, 'str, LineContinueStringLiteral> {
-        StringLiteral::init(scan, LineContinueStringLiteral)
+            .map(|_| BlockComment::new(self.scan).consume())
     }
 }
 
@@ -209,6 +181,30 @@ impl<'me, 'str, T: StringLiteralMode> StringLiteral<'me, 'str, T> {
             }
         }
         Ok(self.mode.unterminated(self.buf, false))
+    }
+}
+
+impl<'me, 'str> StringLiteral<'me, 'str, StartStringLiteral> {
+    pub(super) fn new(scan: &'me mut Scanner<'str>) -> Self {
+        Self::init(scan, StartStringLiteral)
+    }
+}
+
+impl<'me, 'str> StringLiteral<'me, 'str, DiscardStringLiteral> {
+    pub(super) fn cleanup(scan: &'me mut Scanner<'str>) -> Self {
+        Self::init(scan, DiscardStringLiteral)
+    }
+}
+
+impl<'me, 'str> StringLiteral<'me, 'str, ContinueStringLiteral> {
+    pub(super) fn cont(scan: &'me mut Scanner<'str>) -> Self {
+        Self::init(scan, ContinueStringLiteral)
+    }
+}
+
+impl<'me, 'str> StringLiteral<'me, 'str, LineContinueStringLiteral> {
+    pub(super) fn line_cont(scan: &'me mut Scanner<'str>) -> Self {
+        Self::init(scan, LineContinueStringLiteral)
     }
 }
 
@@ -382,17 +378,6 @@ impl<'me, 'str> PeriodIdentifier<'me, 'str> {
     }
 }
 
-pub(super) fn continue_block_comment<'me, 'str>(
-    depth: usize,
-    scan: &'me mut Scanner<'str>,
-) -> BlockComment<'me, 'str, ContinueBlockComment> {
-    BlockComment {
-        depth,
-        mode: ContinueBlockComment,
-        scan,
-    }
-}
-
 pub(super) struct BlockComment<'me, 'str, T> {
     depth: usize,
     mode: T,
@@ -423,6 +408,26 @@ impl<'me, 'str, T: BlockCommentMode> BlockComment<'me, 'str, T> {
 
     fn new_block(&mut self, ch: char) -> bool {
         ch == '#' && self.scan.char_if_eq('|').is_some()
+    }
+}
+
+impl<'me, 'str> BlockComment<'me, 'str, ContinueBlockComment> {
+    pub(super) fn cont(depth: usize, scan: &'me mut Scanner<'str>) -> Self {
+        Self {
+            depth,
+            mode: ContinueBlockComment,
+            scan,
+        }
+    }
+}
+
+impl<'me, 'str> BlockComment<'me, 'str, StartBlockComment> {
+    fn new(scan: &'me mut Scanner<'str>) -> Self {
+        Self {
+            depth: 0,
+            mode: StartBlockComment,
+            scan,
+        }
     }
 }
 
@@ -512,16 +517,6 @@ fn is_id_peculiar_initial(ch: char) -> bool {
     matches!(ch, '+' | '-' | '.')
 }
 
-fn new_block_comment<'me, 'str>(
-    scan: &'me mut Scanner<'str>,
-) -> BlockComment<'me, 'str, StartBlockComment> {
-    BlockComment {
-        depth: 0,
-        mode: StartBlockComment,
-        scan,
-    }
-}
-
 enum HexParse {
     Invalid,
     Unexpected,
@@ -557,7 +552,7 @@ mod tests {
     fn blockcomment_new() {
         let mut s = Scanner::new("");
 
-        let target = new_block_comment(&mut s);
+        let target = BlockComment::new(&mut s);
 
         assert_eq!(target.depth, 0);
     }
@@ -566,7 +561,7 @@ mod tests {
     fn blockcomment_cont() {
         let mut s = Scanner::new("");
 
-        let target = continue_block_comment(3, &mut s);
+        let target = BlockComment::cont(3, &mut s);
 
         assert_eq!(target.depth, 3);
     }
