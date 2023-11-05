@@ -134,8 +134,6 @@ pub(super) struct StringLiteral<'me, 'str, T> {
     start: usize,
 }
 
-type StringLiteralResult = Result<(), TokenErrorKind>;
-
 impl<'me, 'str, T: StringLiteralMode> StringLiteral<'me, 'str, T> {
     fn init(scan: &'me mut Scanner<'str>, mode: T) -> Self {
         Self {
@@ -402,16 +400,6 @@ pub(super) fn continue_block_comment<'me, 'str>(
     }
 }
 
-fn new_block_comment<'me, 'str>(
-    scan: &'me mut Scanner<'str>,
-) -> BlockComment<'me, 'str, StartBlockComment> {
-    BlockComment {
-        depth: 0,
-        mode: StartBlockComment,
-        scan,
-    }
-}
-
 pub(super) struct BlockComment<'me, 'str, T> {
     depth: usize,
     mode: T,
@@ -462,17 +450,7 @@ impl BlockCommentMode for ContinueBlockComment {
     }
 }
 
-struct StartBlockComment;
-
-impl BlockCommentMode for StartBlockComment {
-    fn terminated(&self) -> TokenKind {
-        TokenKind::CommentBlock
-    }
-
-    fn unterminated(&self, depth: usize) -> TokenKind {
-        TokenKind::CommentBlockBegin(depth)
-    }
-}
+type StringLiteralResult = Result<(), TokenErrorKind>;
 
 fn char_hex(rest: &str) -> TokenExtractResult {
     match parse_char_hex(rest) {
@@ -541,6 +519,16 @@ fn is_id_peculiar_initial(ch: char) -> bool {
     matches!(ch, '+' | '-' | '.')
 }
 
+fn new_block_comment<'me, 'str>(
+    scan: &'me mut Scanner<'str>,
+) -> BlockComment<'me, 'str, StartBlockComment> {
+    BlockComment {
+        depth: 0,
+        mode: StartBlockComment,
+        scan,
+    }
+}
+
 enum HexParse {
     Invalid,
     Unexpected,
@@ -553,6 +541,18 @@ enum PeculiarState {
     MaybeSignedFloat,
     MaybeSignedNumber,
     Unspecified,
+}
+
+struct StartBlockComment;
+
+impl BlockCommentMode for StartBlockComment {
+    fn terminated(&self) -> TokenKind {
+        TokenKind::CommentBlock
+    }
+
+    fn unterminated(&self, depth: usize) -> TokenKind {
+        TokenKind::CommentBlockBegin(depth)
+    }
 }
 
 // NOTE: state functionality is covered by Tokenizer and Continuation tests
