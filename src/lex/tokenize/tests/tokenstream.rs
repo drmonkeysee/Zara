@@ -510,3 +510,19 @@ fn open_string_with_error() {
         })
     ));
 }
+
+#[test]
+fn invalid_identifer_consumes_token() {
+    let s = TokenStream::new(".]bar", None);
+
+    let r: Vec<_> = s.collect();
+
+    assert_eq!(r.len(), 1);
+    assert!(matches!(
+        r[0],
+        Err(TokenError {
+            kind: TokenErrorKind::IdentifierInvalid(']'),
+            span: Range { start: 0, end: 5 }
+        })
+    ));
+}

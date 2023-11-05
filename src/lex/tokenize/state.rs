@@ -315,7 +315,7 @@ impl<'me, 'str> Identifier<'me, 'str> {
         self.continue_peculiar(next_ch)
     }
 
-    fn continue_peculiar(self, next_ch: Option<char>) -> TokenExtractResult {
+    fn continue_peculiar(mut self, next_ch: Option<char>) -> TokenExtractResult {
         match next_ch {
             Some(ch) => {
                 // TODO: this should only be 0..9, change call if is_id_digit is expanded
@@ -329,7 +329,7 @@ impl<'me, 'str> Identifier<'me, 'str> {
                 } else if is_id_initial(ch) {
                     self.standard(ch)
                 } else {
-                    Err(TokenErrorKind::IdentifierInvalid(ch))
+                    self.invalid(ch)
                 }
             }
             None => {
