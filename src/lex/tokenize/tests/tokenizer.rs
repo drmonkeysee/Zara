@@ -2,68 +2,6 @@ use super::*;
 use crate::lex::token::TokenErrorKind;
 
 #[test]
-fn empty_string() {
-    let mut s = Scanner::new("");
-    let t = Tokenizer {
-        start: (0, 'a'),
-        scan: &mut s,
-    };
-
-    let r = t.extract();
-
-    assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 0,
-            result: Err(TokenErrorKind::Unimplemented(txt)),
-        } if txt.is_empty()
-    ));
-}
-
-#[test]
-fn token_not_implemented() {
-    let mut s = Scanner::new("abc");
-    let start = s.next_token().unwrap();
-    let t = Tokenizer {
-        scan: &mut s,
-        start,
-    };
-
-    let r = t.extract();
-
-    assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 3,
-            result: Err(TokenErrorKind::Unimplemented(txt)),
-        } if txt == "abc"
-    ));
-}
-
-#[test]
-fn token_not_implemented_stops_at_delimiter() {
-    let mut s = Scanner::new("abc;");
-    let start = s.next_token().unwrap();
-    let t = Tokenizer {
-        scan: &mut s,
-        start,
-    };
-
-    let r = t.extract();
-
-    assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 3,
-            result: Err(TokenErrorKind::Unimplemented(txt)),
-        } if txt == "abc"
-    ));
-}
-
-#[test]
 fn left_paren() {
     let mut s = Scanner::new("(");
     let start = s.next_token().unwrap();
@@ -2802,6 +2740,27 @@ mod identifier {
     }
 
     #[test]
+    fn identifier_stops_at_delimiter() {
+        let mut s = Scanner::new("abc;");
+        let start = s.next_token().unwrap();
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 3,
+                result: Ok(TokenKind::Identifier(txt)),
+            } if txt == "abc"
+        ));
+    }
+
+    #[test]
     fn identifier_starts_with_special_char() {
         let mut s = Scanner::new("!foo");
         let start = s.next_token().unwrap();
@@ -3187,6 +3146,27 @@ mod identifier {
                 end: 3,
                 result: Ok(TokenKind::Identifier(s)),
             } if s == ".@4"
+        ));
+    }
+
+    #[test]
+    fn verbatim_identifier() {
+        let mut s = Scanner::new("| foo |");
+        let start = s.next_token().unwrap();
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 1,
+                result: Err(TokenErrorKind::Unimplemented(s)),
+            } if s == "|"
         ));
     }
 

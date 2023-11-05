@@ -502,7 +502,7 @@ mod lexer {
         assert!(r.is_ok());
         assert!(target.cont.is_some());
 
-        let mut src = MockTxtSource::new("...finish|# invalid_token", true);
+        let mut src = MockTxtSource::new("...finish|# [invalid_token]", true);
 
         let r = target.tokenize(&mut src);
 
