@@ -1,5 +1,4 @@
 use super::*;
-use crate::lex::token::TokenErrorKind;
 
 #[test]
 fn left_paren() {

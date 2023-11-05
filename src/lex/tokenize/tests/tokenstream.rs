@@ -1,5 +1,4 @@
 use super::*;
-use crate::lex::token::TokenErrorKind;
 use std::ops::Range;
 
 #[test]

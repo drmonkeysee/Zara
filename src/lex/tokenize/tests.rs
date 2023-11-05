@@ -3,6 +3,6 @@ mod tokenstream;
 
 use super::*;
 use crate::{
-    lex::token::{Token, TokenError},
+    lex::token::{Token, TokenError, TokenErrorKind},
     literal::Literal,
 };
