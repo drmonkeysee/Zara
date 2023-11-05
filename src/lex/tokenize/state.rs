@@ -176,7 +176,7 @@ impl<'me, 'str, T: StringLiteralMode> StringLiteral<'me, 'str, T> {
                     self.possible_line_cont_idx = Some(self.buf.len());
                     self.buf.push(ch);
                 }
-                _ => Err(TokenErrorKind::StringEscapeInvalid(self.start, ch))?,
+                _ => return Err(TokenErrorKind::StringEscapeInvalid(self.start, ch)),
             }
         } else {
             // NOTE: \EOL is a line continuation, mark end of buffer
@@ -190,12 +190,12 @@ impl<'me, 'str, T: StringLiteralMode> StringLiteral<'me, 'str, T> {
         if let Some(idx) = self.scan.find_char(';') {
             let rest = self.scan.lexeme(start..idx);
             match parse_char_hex(rest) {
-                HexParse::Invalid => Err(TokenErrorKind::StringInvalidHex(self.start))?,
-                HexParse::Unexpected => Err(TokenErrorKind::StringExpectedHex(self.start))?,
+                HexParse::Invalid => return Err(TokenErrorKind::StringInvalidHex(self.start)),
+                HexParse::Unexpected => return Err(TokenErrorKind::StringExpectedHex(self.start)),
                 HexParse::Valid(ch) => self.buf.push(ch),
             }
         } else {
-            Err(TokenErrorKind::StringUnterminatedHex(self.start))?
+            return Err(TokenErrorKind::StringUnterminatedHex(self.start));
         }
         Ok(())
     }
