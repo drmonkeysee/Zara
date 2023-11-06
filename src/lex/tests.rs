@@ -493,7 +493,7 @@ mod lexer {
     }
 
     #[test]
-    fn continuation_cleared_on_error() {
+    fn continuation_cleared_on_completion_followed_by_error() {
         let mut src = MockTxtSource::new("#t #|trailing...", true);
         let mut target = Lexer::new();
 
