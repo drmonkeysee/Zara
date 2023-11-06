@@ -150,7 +150,7 @@ impl Lexer {
                 Some(p)
             })
             .unwrap_or(new_lines);
-        if let Some(token_cont) = lines.last().and_then(TokenLine::continuation) {
+        if let Some(token_cont) = d.cont.take() {
             return self.continuation_result(token_cont, src.can_continue(), lines);
         }
         Ok(LexerOutput::Complete(lines))
