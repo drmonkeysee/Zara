@@ -92,6 +92,17 @@ impl<'a> Iterator for Scanner<'a> {
 
 type ScanChars<'a> = Peekable<CharIndices<'a>>;
 
+trait PeekableExt<P> {
+    fn next_until(&mut self, predicate: P) -> Option<&ScanItem>;
+}
+
+impl<P: Fn(&ScanItem) -> bool> PeekableExt<P> for ScanChars<'_> {
+    fn next_until(&mut self, predicate: P) -> Option<&ScanItem> {
+        while self.next_if(|item| !predicate(item)).is_some() { /* consume iterator */ }
+        self.peek()
+    }
+}
+
 fn get_idx(item: &ScanItem) -> usize {
     item.0
 }
@@ -133,17 +144,6 @@ fn is_token_boundary(ch: char) -> bool {
         '"' | '#' | '\'' | ')' | ',' | ';' | '`' | '|' => true,
         _ if ch.is_ascii_whitespace() => true,
         _ => false,
-    }
-}
-
-trait PeekableExt<P> {
-    fn next_until(&mut self, predicate: P) -> Option<&ScanItem>;
-}
-
-impl<P: Fn(&ScanItem) -> bool> PeekableExt<P> for ScanChars<'_> {
-    fn next_until(&mut self, predicate: P) -> Option<&ScanItem> {
-        while self.next_if(|item| !predicate(item)).is_some() { /* consume iterator */ }
-        self.peek()
     }
 }
 
