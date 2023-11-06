@@ -511,6 +511,17 @@ mod lexer {
     }
 
     #[test]
+    fn continuation_cleared_on_error_and_exhausted_source() {
+        let mut src = MockTxtSource::new("#t #z #|trailing...", true);
+        let mut target = Lexer::new();
+
+        let r = target.tokenize(&mut src);
+
+        assert!(r.is_err());
+        assert!(target.cont.is_none());
+    }
+
+    #[test]
     fn double_line_comment() {
         let mut src = MockTxtSource::new("#| double line\ncomment |#", false);
         let mut target = Lexer::new();
