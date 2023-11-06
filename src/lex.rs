@@ -360,26 +360,26 @@ impl LexerDriver {
     fn tokenize(&mut self, src: &mut impl TextSource) -> Result<Vec<TokenLine>, LexerError> {
         let (token_lines, err_lines): (Vec<_>, Vec<_>) = src
             .map(|tr| self.tokenize_line(tr?))
-            .partition(|r| r.is_ok());
+            .partition(Result::is_ok);
         if err_lines.is_empty() {
             Ok(token_lines.into_iter().flatten().collect())
         } else {
             Err(LexerError::Lines(
-                err_lines.into_iter().flat_map(|r| r.err()).collect(),
+                err_lines.into_iter().flat_map(Result::err).collect(),
             ))
         }
     }
 
     fn tokenize_line(&mut self, text: TextLine) -> Result<TokenLine, LineFailure> {
         let (tokens, errs): (Vec<_>, Vec<_>) =
-            TokenStream::new(&text.line, self.cont.take()).partition(|r| r.is_ok());
+            TokenStream::new(&text.line, self.cont.take()).partition(Result::is_ok);
         if errs.is_empty() {
             let line = TokenLine(tokens.into_iter().flatten().collect(), text);
             self.cont = line.continuation();
             Ok(line)
         } else {
             Err(TokenErrorLine(
-                errs.into_iter().flat_map(|r| r.err()).collect(),
+                errs.into_iter().flat_map(Result::err).collect(),
                 text,
             ))?
         }
