@@ -749,6 +749,97 @@ mod lexer {
         ));
         assert!(target.cont.is_none());
     }
+
+    #[test]
+    fn double_line_string_with_errors() {
+        let mut src = MockTxtSource::new("\" double \\xZZ; line\n\\x42; string\"", false);
+        let mut target = Lexer::new();
+
+        let r = target.tokenize(&mut src);
+        dbg!(&r);
+
+        assert!(r.is_err());
+        let err = r.unwrap_err();
+        assert!(matches!(err, LexerError::Lines(_)));
+        let err_lines = if let LexerError::Lines(errs) = err {
+            errs
+        } else {
+            unreachable!();
+        };
+        // TODO: right now this has two error lines with IdentifierInvalid('\\')
+        // because lexer loses string continuation context
+        assert_eq!(err_lines.len(), 1);
+        assert!(matches!(err_lines[0], LineFailure::Tokenize(_)));
+        let (errs, line) = if let LineFailure::Tokenize(TokenErrorLine(es, ln)) = &err_lines[0] {
+            (es, ln)
+        } else {
+            unreachable!();
+        };
+        assert_eq!(errs.len(), 1);
+        assert!(matches!(
+            errs[0],
+            TokenType {
+                kind: TokenErrorKind::StringExpectedHex(9),
+                span: Range { start: 9, end: 14 }
+            }
+        ));
+        assert!(matches!(
+            line,
+            TextLine {
+                ctx,
+                line,
+                lineno: 1,
+            } if Rc::ptr_eq(&ctx, &src.ctx) && line == "\" double \\xZZ; line"
+        ));
+        assert!(target.cont.is_none());
+    }
+
+    #[test]
+    fn double_line_input_with_unterminated_hex_string_error() {
+        let mut src = MockTxtSource::new(
+            "\"single \\x42 line string\" #t \"double\n\\x42; line string\"",
+            false,
+        );
+        let mut target = Lexer::new();
+
+        let r = target.tokenize(&mut src);
+        dbg!(&r);
+
+        assert!(r.is_err());
+        let err = r.unwrap_err();
+        assert!(matches!(err, LexerError::Lines(_)));
+        let err_lines = if let LexerError::Lines(errs) = err {
+            errs
+        } else {
+            unreachable!();
+        };
+        // TODO: right now this has two error lines with IdentifierInvalid('\\')
+        // because lexer discards rest-of-line, losing end of first string and beginning of next string
+        assert_eq!(err_lines.len(), 1);
+        assert!(matches!(err_lines[0], LineFailure::Tokenize(_)));
+        let (errs, line) = if let LineFailure::Tokenize(TokenErrorLine(es, ln)) = &err_lines[0] {
+            (es, ln)
+        } else {
+            unreachable!();
+        };
+        assert_eq!(errs.len(), 1);
+        assert!(matches!(
+            errs[0],
+            TokenType {
+                kind: TokenErrorKind::StringUnterminatedHex(8),
+                span: Range { start: 8, end: 36 }
+            }
+        ));
+        assert!(matches!(
+            line,
+            TextLine {
+                ctx,
+                line,
+                lineno: 1,
+            } if Rc::ptr_eq(&ctx, &src.ctx) && line == "\"single \\x42 line string\" #t \"double"
+        ));
+        assert!(target.cont.is_none());
+    }
 }
 
 mod result {
