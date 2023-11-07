@@ -643,10 +643,7 @@ mod lexer {
 
     #[test]
     fn double_line_comment_when_prefixed_by_error_and_followed_by_error() {
-        let mut src = MockTxtSource::new(
-            "#t #z #| double line\n[fake_bad_ident] comment |# [bad_ident]",
-            false,
-        );
+        let mut src = MockTxtSource::new("#t #z #| double line\n#z comment |# #z", false);
         let mut target = Lexer::new();
 
         let r = target.tokenize(&mut src);
@@ -692,8 +689,8 @@ mod lexer {
         assert!(matches!(
             errs[0],
             TokenType {
-                kind: TokenErrorKind::IdentifierInvalid('['),
-                span: Range { start: 28, end: 39 }
+                kind: TokenErrorKind::HashInvalid,
+                span: Range { start: 14, end: 16 }
             }
         ));
         assert!(matches!(
@@ -702,15 +699,14 @@ mod lexer {
                 ctx,
                 line,
                 lineno: 2,
-            } if Rc::ptr_eq(&ctx, &src.ctx) && line == "[fake_bad_ident] comment |# [bad_ident]"
+            } if Rc::ptr_eq(&ctx, &src.ctx) && line == "#z comment |# #z"
         ));
         assert!(target.cont.is_none());
     }
 
     #[test]
     fn double_line_comment_when_prefixed_by_error() {
-        let mut src =
-            MockTxtSource::new("#t #z #| double line\n[fake_bad_ident] comment |#", false);
+        let mut src = MockTxtSource::new("#t #z #| double line\n#z comment |#", false);
         let mut target = Lexer::new();
 
         let r = target.tokenize(&mut src);
@@ -871,7 +867,7 @@ mod lexer {
 
     #[test]
     fn double_line_string_with_errors() {
-        let mut src = MockTxtSource::new("\" double \\xZZ; line\n[fake_bad_ident] string\"", false);
+        let mut src = MockTxtSource::new("\" double \\xZZ; line\n#z string\"", false);
         let mut target = Lexer::new();
 
         let r = target.tokenize(&mut src);
@@ -912,10 +908,7 @@ mod lexer {
 
     #[test]
     fn double_line_string_with_errors_followed_by_other_error() {
-        let mut src = MockTxtSource::new(
-            "\" double \\xZZ; line\n[fake_bad_ident] string\" [real_bad_ident]",
-            false,
-        );
+        let mut src = MockTxtSource::new("\" double \\xZZ; line\n#z string\" #z", false);
         let mut target = Lexer::new();
 
         let r = target.tokenize(&mut src);
@@ -961,8 +954,8 @@ mod lexer {
         assert!(matches!(
             errs[0],
             TokenType {
-                kind: TokenErrorKind::IdentifierInvalid('['),
-                span: Range { start: 25, end: 41 }
+                kind: TokenErrorKind::HashInvalid,
+                span: Range { start: 11, end: 13 }
             }
         ));
         assert!(matches!(
@@ -971,17 +964,14 @@ mod lexer {
                 ctx,
                 line,
                 lineno: 2,
-            } if Rc::ptr_eq(&ctx, &src.ctx) && line == "[fake_bad_ident] string\" [real_bad_ident]"
+            } if Rc::ptr_eq(&ctx, &src.ctx) && line == "#z string\" #z"
         ));
         assert!(target.cont.is_none());
     }
 
     #[test]
     fn double_line_string_with_errors_and_line_continuation() {
-        let mut src = MockTxtSource::new(
-            "\" double \\xZZ; line \\\n   [fake_bad_ident] string\"",
-            false,
-        );
+        let mut src = MockTxtSource::new("\" double \\xZZ; line \\\n   #z string\"", false);
         let mut target = Lexer::new();
 
         let r = target.tokenize(&mut src);
@@ -1023,7 +1013,7 @@ mod lexer {
     #[test]
     fn double_line_input_with_unterminated_hex_string_error_on_one_line() {
         let mut src = MockTxtSource::new(
-            "\"single \\x42 line string\" #t [bad_ident]\"double\n[fake_bad_ident] line string\"",
+            "\"single \\x42 line string\" #t #z\"double\n#z line string\"",
             false,
         );
         let mut target = Lexer::new();
@@ -1040,7 +1030,7 @@ mod lexer {
             unreachable!();
         };
         // TODO: right now this has two error lines with IdentifierInvalid('\\')
-        // because lexer discards rest-of-line, losing end of first string and beginning of next string
+        // because lexer discards rest-of-line, losing end-of-string and everything else
         assert_eq!(err_lines.len(), 1);
         assert!(matches!(err_lines[0], LineFailure::Tokenize(_)));
         let (errs, line) = if let LineFailure::Tokenize(TokenErrorLine(es, ln)) = &err_lines[0] {
@@ -1048,12 +1038,19 @@ mod lexer {
         } else {
             unreachable!();
         };
-        assert_eq!(errs.len(), 1);
+        assert_eq!(errs.len(), 2);
         assert!(matches!(
             errs[0],
             TokenType {
                 kind: TokenErrorKind::StringUnterminatedHex(8),
-                span: Range { start: 8, end: 36 }
+                span: Range { start: 8, end: 12 }
+            }
+        ));
+        assert!(matches!(
+            errs[1],
+            TokenType {
+                kind: TokenErrorKind::HashInvalid,
+                span: Range { start: 30, end: 32 }
             }
         ));
         assert!(matches!(
@@ -1069,7 +1066,7 @@ mod lexer {
 
     #[test]
     fn double_line_string_prefixed_with_error() {
-        let mut src = MockTxtSource::new("#t #z \" double line\n[fake_bad_ident] string\"", false);
+        let mut src = MockTxtSource::new("#t #z \" double line\n#z string\"", false);
         let mut target = Lexer::new();
 
         let r = target.tokenize(&mut src);
