@@ -643,7 +643,7 @@ mod lexer {
 
     #[test]
     fn double_line_comment_when_prefixed_by_error() {
-        let mut src = MockTxtSource::new("#t #z #| double line\n\\bad_ident comment |#", false);
+        let mut src = MockTxtSource::new("#t #z #| double line\n[bad_ident] comment |#", false);
         let mut target = Lexer::new();
 
         let r = target.tokenize(&mut src);
@@ -807,7 +807,7 @@ mod lexer {
 
     #[test]
     fn double_line_string_with_errors() {
-        let mut src = MockTxtSource::new("\" double \\xZZ; line\n\\bad_ident string\"", false);
+        let mut src = MockTxtSource::new("\" double \\xZZ; line\n[bad_ident] string\"", false);
         let mut target = Lexer::new();
 
         let r = target.tokenize(&mut src);
@@ -852,7 +852,7 @@ mod lexer {
     #[test]
     fn double_line_input_with_unterminated_hex_string_error() {
         let mut src = MockTxtSource::new(
-            "\"single \\x42 line string\" #t \"double\n\\bad_ident line string\"",
+            "\"single \\x42 line string\" #t \"double\n[bad_ident] line string\"",
             false,
         );
         let mut target = Lexer::new();
@@ -898,7 +898,7 @@ mod lexer {
 
     #[test]
     fn double_line_string_prefixed_with_error() {
-        let mut src = MockTxtSource::new("#t #z \" double line\n\\bad_ident string\"", false);
+        let mut src = MockTxtSource::new("#t #z \" double line\n[bad_ident] string\"", false);
         let mut target = Lexer::new();
 
         let r = target.tokenize(&mut src);
