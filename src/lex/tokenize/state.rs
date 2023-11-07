@@ -172,12 +172,10 @@ impl<'me, 'str, T: StringLiteralMode> StringLiteral<'me, 'str, T> {
     }
 
     fn unterminated(self) -> TokenExtractResult {
-        if self.mode.allows_line_continuation() {
-            if let Some(idx) = self.possible_line_cont_idx {
-                let (lead, trail) = self.buf.split_at(idx);
-                if trail.trim().is_empty() {
-                    return Ok(self.mode.unterminated(lead.to_owned(), true));
-                }
+        if let Some(idx) = self.possible_line_cont_idx {
+            let (lead, trail) = self.buf.split_at(idx);
+            if trail.trim().is_empty() {
+                return Ok(self.mode.unterminated(lead.to_owned(), true));
             }
         }
         Ok(self.mode.unterminated(self.buf, false))
@@ -209,10 +207,6 @@ impl<'me, 'str> StringLiteral<'me, 'str, LineContinueStringLiteral> {
 }
 
 pub(super) trait StringLiteralMode {
-    fn allows_line_continuation(&self) -> bool {
-        true
-    }
-
     fn prelude<'me, 'str>(&self, _scan: &'me mut Scanner<'str>) {
         // NOTE: do nothing by default
     }
@@ -241,10 +235,6 @@ impl StringLiteralMode for StartStringLiteral {
 pub(super) struct DiscardStringLiteral;
 
 impl StringLiteralMode for DiscardStringLiteral {
-    fn allows_line_continuation(&self) -> bool {
-        false
-    }
-
     fn terminated(&self, _buf: String) -> TokenKind {
         TokenKind::StringDiscard
     }

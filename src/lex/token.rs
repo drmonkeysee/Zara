@@ -66,6 +66,7 @@ impl TokenKind {
             Self::StringBegin(_, line_cont) | Self::StringFragment(_, line_cont) => {
                 Some(TokenContinuation::StringLiteral(*line_cont))
             }
+            Self::StringDiscard => Some(TokenContinuation::SubstringError),
             _ => None,
         }
     }
