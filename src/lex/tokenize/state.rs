@@ -128,8 +128,8 @@ impl<'me, 'str, T: StringLiteralMode> StringLiteral<'me, 'str, T> {
     }
 
     fn escape(&mut self) -> StringLiteralResult {
-        if let Some(ch) = self.scan.char() {
-            match ch {
+        match self.scan.char() {
+            Some(ch) => match ch {
                 'a' => self.buf.push('\x07'),
                 'b' => self.buf.push('\x08'),
                 'n' => self.buf.push('\n'),
@@ -144,26 +144,30 @@ impl<'me, 'str, T: StringLiteralMode> StringLiteral<'me, 'str, T> {
                     self.buf.push(ch);
                 }
                 _ => return Err(TokenErrorKind::StringEscapeInvalid(self.start, ch)),
+            },
+            None => {
+                // NOTE: \EOL is a line continuation, mark end of buffer
+                self.possible_line_cont_idx = Some(self.buf.len())
             }
-        } else {
-            // NOTE: \EOL is a line continuation, mark end of buffer
-            self.possible_line_cont_idx = Some(self.buf.len());
-        }
+        };
         Ok(())
     }
 
     fn hex(&mut self) -> StringLiteralResult {
         let start = self.scan.pos();
-        if let Some(idx) = self.scan.find_char(';') {
-            let rest = self.scan.lexeme(start..idx);
-            match parse_char_hex(rest) {
-                HexParse::Invalid => return Err(TokenErrorKind::StringInvalidHex(self.start)),
-                HexParse::Unexpected => return Err(TokenErrorKind::StringExpectedHex(self.start)),
-                HexParse::Valid(ch) => self.buf.push(ch),
+        match self.scan.find_char(';') {
+            Some(idx) => {
+                let rest = self.scan.lexeme(start..idx);
+                match parse_char_hex(rest) {
+                    HexParse::Invalid => return Err(TokenErrorKind::StringInvalidHex(self.start)),
+                    HexParse::Unexpected => {
+                        return Err(TokenErrorKind::StringExpectedHex(self.start))
+                    }
+                    HexParse::Valid(ch) => self.buf.push(ch),
+                }
             }
-        } else {
-            return Err(TokenErrorKind::StringUnterminatedHex(self.start));
-        }
+            None => return Err(TokenErrorKind::StringUnterminatedHex(self.start)),
+        };
         Ok(())
     }
 

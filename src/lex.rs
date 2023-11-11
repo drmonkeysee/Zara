@@ -139,11 +139,10 @@ impl Lexer {
     }
 
     pub(crate) fn tokenize(&mut self, src: &mut impl TextSource) -> LexerResult {
-        let (mut d, prev) = if let Some((prev_lines, token_cont)) = self.cont.take() {
-            (LexerDriver::cont(token_cont), Some(prev_lines))
-        } else {
-            (LexerDriver::new(), None)
-        };
+        let (mut d, prev) = self.cont.take().map_or_else(
+            || (LexerDriver::new(), None),
+            |(prev_lines, token_cont)| (LexerDriver::cont(token_cont), Some(prev_lines)),
+        );
         let mut new_lines = d.tokenize(src)?;
         let lines = prev
             .and_then(|mut p| {

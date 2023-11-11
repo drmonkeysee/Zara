@@ -98,11 +98,11 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
     }
 
     fn period(&mut self) -> TokenExtractResult {
-        if let Some(ch) = self.scan.char_if_not_delimiter() {
-            PeriodIdentifier::new(self.scan).scan(ch)
-        } else {
-            Ok(TokenKind::PairJoiner)
-        }
+        self.scan
+            .char_if_not_delimiter()
+            .map_or(Ok(TokenKind::PairJoiner), |ch| {
+                PeriodIdentifier::new(self.scan).scan(ch)
+            })
     }
 
     fn unquote(&mut self) -> TokenExtractResult {

@@ -53,10 +53,9 @@ impl From<Args> for Cmd {
         } else {
             let opts = Opts::with_args(&value);
             if value.stdin {
-                if let Some(prg) = value.prg {
-                    Self::Prg(opts, prg)
-                } else {
-                    Self::Stdin(opts)
+                match value.prg {
+                    Some(prg) => Self::Prg(opts, prg),
+                    None => Self::Stdin(opts),
                 }
             } else if let Some(p) = value.filepath {
                 Self::File(opts, p)
