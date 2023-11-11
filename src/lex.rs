@@ -21,10 +21,9 @@ pub struct TokenLine(Vec<Token>, TextLine);
 impl TokenLine {
     fn into_continuation_unsupported(mut self) -> LexerError {
         self.0.pop().map_or(LexerError::InvalidOperation, |t| {
-            LexerError::Lines(vec![LineFailure::Tokenize(TokenErrorLine(
-                vec![t.into_continuation_unsupported()],
-                self.1,
-            ))])
+            let err: LineFailure =
+                TokenErrorLine(vec![t.into_continuation_unsupported()], self.1).into();
+            err.into()
         })
     }
 }
@@ -112,6 +111,12 @@ impl Display for LexerError {
 }
 
 impl Error for LexerError {}
+
+impl From<LineFailure> for LexerError {
+    fn from(value: LineFailure) -> Self {
+        Self::Lines(vec![value])
+    }
+}
 
 #[derive(Debug)]
 pub struct TokenErrorLine(Vec<TokenError>, TextLine);
