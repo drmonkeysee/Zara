@@ -1373,6 +1373,28 @@ mod error {
 
         assert!(matches!(err, LexerError::InvalidOperation));
     }
+
+    #[test]
+    fn token_failure_to_lexer_error() {
+        let target = TokenErrorLine(
+            vec![TokenError {
+                kind: TokenErrorKind::HashInvalid,
+                span: 0..1,
+            }],
+            make_textline(),
+        );
+
+        let line_err: LineFailure = target.into();
+        let err: LexerError = line_err.into();
+
+        assert!(matches!(err, LexerError::Lines(_)));
+        let lines = if let LexerError::Lines(lns) = err {
+            lns
+        } else {
+            unreachable!();
+        };
+        assert_eq!(lines.len(), 1);
+    }
 }
 
 fn make_textline() -> TextLine {
