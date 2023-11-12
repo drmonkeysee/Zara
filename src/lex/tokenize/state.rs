@@ -524,6 +524,7 @@ fn is_id_letter(ch: char) -> bool {
 }
 
 fn is_id_digit(ch: char) -> bool {
+    // TODO: support Nd, Nl, No
     ch.is_ascii_digit()
 }
 
