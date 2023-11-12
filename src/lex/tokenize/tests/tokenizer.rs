@@ -3294,4 +3294,88 @@ mod identifier {
             } if s == "-.4"
         ));
     }
+
+    #[test]
+    fn verbatim_identifier_empty() {
+        let mut s = Scanner::new("||");
+        let start = s.next_token().unwrap();
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 1,
+                end: 1,
+                result: Ok(TokenKind::Identifier(s)),
+            } if s == ""
+        ));
+    }
+
+    #[test]
+    fn verbatim_identifier_basic() {
+        let mut s = Scanner::new("|foo|");
+        let start = s.next_token().unwrap();
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 1,
+                end: 4,
+                result: Ok(TokenKind::Identifier(s)),
+            } if s == "foo"
+        ));
+    }
+
+    #[test]
+    fn verbatim_identifier_includes_whitespace() {
+        let mut s = Scanner::new("| foo bar |");
+        let start = s.next_token().unwrap();
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 1,
+                end: 10,
+                result: Ok(TokenKind::Identifier(s)),
+            } if s == " foo bar "
+        ));
+    }
+
+    #[test]
+    fn verbatim_identifier_escape_pipe() {
+        let mut s = Scanner::new("| foo\\|bar |");
+        let start = s.next_token().unwrap();
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 1,
+                end: 11,
+                result: Ok(TokenKind::Identifier(s)),
+            } if s == " foo|bar "
+        ));
+    }
 }
