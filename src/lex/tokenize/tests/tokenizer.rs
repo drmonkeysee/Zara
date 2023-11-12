@@ -2016,6 +2016,27 @@ mod string {
     }
 
     #[test]
+    fn contains_verbatim_identifier() {
+        let mut s = Scanner::new("\"foo |verbatim| bar\"");
+        let start = s.next_token().unwrap();
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 20,
+                result: Ok(TokenKind::Literal(Literal::String(s))),
+            } if s == "foo |verbatim| bar"
+        ));
+    }
+
+    #[test]
     fn raw_escape_sequences() {
         let mut s =
             Scanner::new("\"a:\x07, b:\x08, d:\x7f, e:\x1b, n:\n, 0:\0, r:\r, t:\t, v:\x7c\"");
@@ -3149,27 +3170,6 @@ mod identifier {
     }
 
     #[test]
-    fn verbatim_identifier() {
-        let mut s = Scanner::new("| foo |");
-        let start = s.next_token().unwrap();
-        let t = Tokenizer {
-            scan: &mut s,
-            start,
-        };
-
-        let r = t.extract();
-
-        assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 1,
-                result: Err(TokenErrorKind::Unimplemented(s)),
-            } if s == "|"
-        ));
-    }
-
-    #[test]
     fn identifier_start_digit() {
         let mut s = Scanner::new("4foo");
         let start = s.next_token().unwrap();
@@ -3295,87 +3295,117 @@ mod identifier {
         ));
     }
 
-    #[test]
-    fn verbatim_identifier_empty() {
-        let mut s = Scanner::new("||");
-        let start = s.next_token().unwrap();
-        let t = Tokenizer {
-            scan: &mut s,
-            start,
-        };
+    mod verbatim {
+        use super::*;
 
-        let r = t.extract();
+        #[test]
+        fn empty() {
+            let mut s = Scanner::new("||");
+            let start = s.next_token().unwrap();
+            let t = Tokenizer {
+                scan: &mut s,
+                start,
+            };
 
-        assert!(matches!(
-            r,
-            TokenExtract {
-                start: 1,
-                end: 1,
-                result: Ok(TokenKind::Identifier(s)),
-            } if s == ""
-        ));
-    }
+            let r = t.extract();
+            dbg!(&r);
 
-    #[test]
-    fn verbatim_identifier_basic() {
-        let mut s = Scanner::new("|foo|");
-        let start = s.next_token().unwrap();
-        let t = Tokenizer {
-            scan: &mut s,
-            start,
-        };
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 1,
+                    end: 1,
+                    result: Ok(TokenKind::Identifier(s)),
+                } if s == ""
+            ));
+        }
 
-        let r = t.extract();
+        #[test]
+        fn basic() {
+            let mut s = Scanner::new("|foo|");
+            let start = s.next_token().unwrap();
+            let t = Tokenizer {
+                scan: &mut s,
+                start,
+            };
 
-        assert!(matches!(
-            r,
-            TokenExtract {
-                start: 1,
-                end: 4,
-                result: Ok(TokenKind::Identifier(s)),
-            } if s == "foo"
-        ));
-    }
+            let r = t.extract();
+            dbg!(&r);
 
-    #[test]
-    fn verbatim_identifier_includes_whitespace() {
-        let mut s = Scanner::new("| foo bar |");
-        let start = s.next_token().unwrap();
-        let t = Tokenizer {
-            scan: &mut s,
-            start,
-        };
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 1,
+                    end: 4,
+                    result: Ok(TokenKind::Identifier(s)),
+                } if s == "foo"
+            ));
+        }
 
-        let r = t.extract();
+        #[test]
+        fn includes_whitespace() {
+            let mut s = Scanner::new("| foo bar |");
+            let start = s.next_token().unwrap();
+            let t = Tokenizer {
+                scan: &mut s,
+                start,
+            };
 
-        assert!(matches!(
-            r,
-            TokenExtract {
-                start: 1,
-                end: 10,
-                result: Ok(TokenKind::Identifier(s)),
-            } if s == " foo bar "
-        ));
-    }
+            let r = t.extract();
+            dbg!(&r);
 
-    #[test]
-    fn verbatim_identifier_escape_pipe() {
-        let mut s = Scanner::new("| foo\\|bar |");
-        let start = s.next_token().unwrap();
-        let t = Tokenizer {
-            scan: &mut s,
-            start,
-        };
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 1,
+                    end: 10,
+                    result: Ok(TokenKind::Identifier(s)),
+                } if s == " foo bar "
+            ));
+        }
 
-        let r = t.extract();
+        #[test]
+        fn escape_pipe() {
+            let mut s = Scanner::new("| foo\\|bar |");
+            let start = s.next_token().unwrap();
+            let t = Tokenizer {
+                scan: &mut s,
+                start,
+            };
 
-        assert!(matches!(
-            r,
-            TokenExtract {
-                start: 1,
-                end: 11,
-                result: Ok(TokenKind::Identifier(s)),
-            } if s == " foo|bar "
-        ));
+            let r = t.extract();
+            dbg!(&r);
+
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 1,
+                    end: 11,
+                    result: Ok(TokenKind::Identifier(s)),
+                } if s == " foo|bar "
+            ));
+        }
+
+        #[test]
+        fn contains_string() {
+            let mut s = Scanner::new("|foo \"string\" bar|");
+            let start = s.next_token().unwrap();
+            let t = Tokenizer {
+                scan: &mut s,
+                start,
+            };
+
+            let r = t.extract();
+            dbg!(&r);
+
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 1,
+                    end: 11,
+                    result: Ok(TokenKind::Identifier(s)),
+                } if s == "foo \"string\" bar"
+            ));
+        }
     }
 }
