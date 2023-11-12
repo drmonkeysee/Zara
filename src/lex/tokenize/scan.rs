@@ -35,10 +35,6 @@ impl<'a> Scanner<'a> {
         self.chars.next_if(not_token_boundary).map(to_char)
     }
 
-    pub(super) fn find_char(&mut self, ch: char) -> Option<usize> {
-        self.chars.find(eq_char(ch)).map(to_idx)
-    }
-
     pub(super) fn find_any_char(&mut self, chars: &[char]) -> Option<ScanItem> {
         self.chars.find(|item| chars.contains(&item.1))
     }
@@ -61,6 +57,11 @@ impl<'a> Scanner<'a> {
     pub(super) fn end_of_token(&mut self) -> usize {
         let end = self.end();
         self.chars.next_until(delimiter).map_or(end, get_idx)
+    }
+
+    pub(super) fn end_of_word(&mut self) -> usize {
+        let end = self.end();
+        self.chars.next_until(word_boundary).map_or(end, get_idx)
     }
 
     pub(super) fn end_of_line(&mut self) -> usize {
@@ -121,6 +122,10 @@ fn eq_char(ch: char) -> impl FnMut(&ScanItem) -> bool {
 
 fn delimiter(item: &ScanItem) -> bool {
     is_delimiter(item.1)
+}
+
+fn word_boundary(item: &ScanItem) -> bool {
+    item.1 == '\\' || is_delimiter(item.1)
 }
 
 fn not_delimiter(item: &ScanItem) -> bool {
@@ -264,58 +269,6 @@ mod tests {
 
             assert!(r.is_some());
             assert_eq!(r.unwrap(), 'a');
-        }
-
-        #[test]
-        fn find_char_empty_string() {
-            let mut s = Scanner::new("");
-
-            let r = s.find_char('a');
-
-            assert!(r.is_none());
-        }
-
-        #[test]
-        fn find_char_start_of_string() {
-            let mut s = Scanner::new("abc");
-
-            let r = s.find_char('a');
-
-            assert!(r.is_some());
-            assert_eq!(r.unwrap(), 0);
-
-            let r = s.char();
-
-            assert!(r.is_some());
-            assert_eq!(r.unwrap(), 'b');
-        }
-
-        #[test]
-        fn find_char_in_string() {
-            let mut s = Scanner::new("abc");
-
-            let r = s.find_char('b');
-
-            assert!(r.is_some());
-            assert_eq!(r.unwrap(), 1);
-
-            let r = s.char();
-
-            assert!(r.is_some());
-            assert_eq!(r.unwrap(), 'c');
-        }
-
-        #[test]
-        fn find_char_not_in_string() {
-            let mut s = Scanner::new("abc");
-
-            let r = s.find_char('d');
-
-            assert!(r.is_none());
-
-            let r = s.char();
-
-            assert!(r.is_none());
         }
 
         #[test]
@@ -549,6 +502,33 @@ mod tests {
             s.char();
 
             assert_eq!(s.end_of_token(), 5);
+        }
+
+        #[test]
+        fn end_of_word_empty_string() {
+            let mut s = Scanner::new("");
+
+            let r = s.end_of_word();
+
+            assert_eq!(r, 0);
+        }
+
+        #[test]
+        fn end_of_word_uses_delimiter() {
+            let mut s = Scanner::new("abcd)xyz");
+
+            let r = s.end_of_word();
+
+            assert_eq!(r, 4);
+        }
+
+        #[test]
+        fn end_of_word_includes_backslash() {
+            let mut s = Scanner::new("abcd\\xyz");
+
+            let r = s.end_of_word();
+
+            assert_eq!(r, 4);
         }
 
         #[test]

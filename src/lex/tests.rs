@@ -875,13 +875,10 @@ mod lexer {
         let mut target = Lexer::new();
 
         let r = target.tokenize(&mut src);
-        dbg!(&r);
 
         assert!(r.is_err());
         let err = r.unwrap_err();
         let err_lines = lextest_extract!(err, LexerError::Lines);
-        // TODO: right now this has two error lines with IdentifierInvalid('\\')
-        // because lexer discards rest-of-line, losing end-of-string and everything else
         assert_eq!(err_lines.len(), 1);
         let TokenErrorLine(errs, line) = lextest_extract!(&err_lines[0], LineFailure::Tokenize);
         assert_eq!(errs.len(), 2);
@@ -896,7 +893,7 @@ mod lexer {
             errs[1],
             TokenType {
                 kind: TokenErrorKind::HashInvalid,
-                span: Range { start: 30, end: 32 }
+                span: Range { start: 29, end: 31 }
             }
         ));
         assert!(matches!(
@@ -905,7 +902,7 @@ mod lexer {
                 ctx,
                 line,
                 lineno: 1,
-            } if Rc::ptr_eq(&ctx, &src.ctx) && line == "\"single \\x42 line string\" #t \"double"
+            } if Rc::ptr_eq(&ctx, &src.ctx) && line == "\"single \\x42 line string\" #t #z\"double"
         ));
         assert!(target.cont.is_none());
     }

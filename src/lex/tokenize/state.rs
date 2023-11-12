@@ -155,7 +155,8 @@ impl<'me, 'str, T: StringLiteralMode> StringLiteral<'me, 'str, T> {
 
     fn hex(&mut self) -> StringLiteralResult {
         let start = self.scan.pos();
-        match self.scan.find_char(';') {
+        self.scan.end_of_word();
+        match self.scan.char_if_eq(';') {
             Some(idx) => {
                 let rest = self.scan.lexeme(start..idx);
                 match parse_char_hex(rest) {

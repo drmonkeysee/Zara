@@ -2264,7 +2264,7 @@ mod string {
             r,
             TokenExtract {
                 start: 1,
-                end: 7,
+                end: 6,
                 result: Err(TokenErrorKind::StringUnterminatedHex(1)),
             }
         ));
@@ -2273,7 +2273,7 @@ mod string {
     #[test]
     fn string_discard() {
         let mut s = Scanner::new("\\xbadstuff; discard this");
-        s.find_char(';');
+        s.find_any_char(&[';']);
         let start = s.pos();
         let t = Continuation {
             cont: TokenContinuation::SubstringError,

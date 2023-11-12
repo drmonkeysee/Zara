@@ -451,6 +451,66 @@ fn finishes_parsing_string_if_error() {
 }
 
 #[test]
+fn unterminated_hex_does_not_consume_end_of_string() {
+    let s = TokenStream::new("\"\\x42\" #t", None);
+
+    let r: Vec<_> = s.collect();
+
+    assert_eq!(r.len(), 3);
+    assert!(matches!(
+        r[0],
+        Err(TokenError {
+            kind: TokenErrorKind::StringUnterminatedHex(1),
+            span: Range { start: 1, end: 5 }
+        })
+    ));
+    assert!(matches!(
+        r[1],
+        Ok(Token {
+            kind: TokenKind::StringDiscard,
+            span: Range { start: 5, end: 6 }
+        })
+    ));
+    assert!(matches!(
+        r[2],
+        Ok(Token {
+            kind: TokenKind::Literal(Literal::Boolean(true)),
+            span: Range { start: 7, end: 9 }
+        })
+    ));
+}
+
+#[test]
+fn unterminated_hex_does_not_consume_escape_sequence() {
+    let s = TokenStream::new("\"\\x42\\\"\" #t", None);
+
+    let r: Vec<_> = s.collect();
+
+    assert_eq!(r.len(), 3);
+    assert!(matches!(
+        r[0],
+        Err(TokenError {
+            kind: TokenErrorKind::StringUnterminatedHex(1),
+            span: Range { start: 1, end: 5 }
+        })
+    ));
+    assert!(matches!(
+        r[1],
+        Ok(Token {
+            kind: TokenKind::StringDiscard,
+            span: Range { start: 5, end: 8 }
+        })
+    ));
+    assert!(matches!(
+        r[2],
+        Ok(Token {
+            kind: TokenKind::Literal(Literal::Boolean(true)),
+            span: Range { start: 9, end: 11 }
+        })
+    ));
+}
+
+#[test]
 fn multiple_string_errors() {
     let s = TokenStream::new("\"foo \\xdeadbeef; bar \\e baz\" #t", None);
 
