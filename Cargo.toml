@@ -7,8 +7,6 @@ description = "An R7RS-small Scheme Interpreter"
 license = "MIT"
 repository = "https://github.com/drmonkeysee/Zara"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [profile.release]
 lto = true
 panic = "abort"
