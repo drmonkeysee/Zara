@@ -3431,6 +3431,28 @@ mod identifier {
         }
 
         #[test]
+        fn all_numbers() {
+            let mut s = Scanner::new("|1234|");
+            let start = s.next_token().unwrap();
+            let t = Tokenizer {
+                scan: &mut s,
+                start,
+            };
+
+            let r = t.extract();
+            dbg!(&r);
+
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 0,
+                    end: 6,
+                    result: Ok(TokenKind::Identifier(s)),
+                } if s == "1234"
+            ));
+        }
+
+        #[test]
         fn raw_extended_and_higher_char() {
             let mut s = Scanner::new("|λ 🦀 \u{2401} \u{fffd}|");
             let start = s.next_token().unwrap();
