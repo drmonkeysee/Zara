@@ -481,7 +481,7 @@ fn unterminated_hex_does_not_consume_end_of_string() {
 }
 
 #[test]
-fn unterminated_hex_does_not_consume_escape_sequence() {
+fn unterminated_hex_does_not_consume_string_escape_sequence() {
     let s = TokenStream::new("\"\\x42\\\"\" #t", None);
 
     let r: Vec<_> = s.collect();
@@ -582,6 +582,208 @@ fn invalid_identifer_consumes_token() {
         Err(TokenError {
             kind: TokenErrorKind::IdentifierInvalid(']'),
             span: Range { start: 0, end: 5 }
+        })
+    ));
+}
+
+#[test]
+fn identifier_fragment_uses_whole_line() {
+    let s = TokenStream::new(
+        "continued verbatim",
+        Some(TokenContinuation::StringLiteral(false)),
+    );
+
+    let r: Vec<_> = s.collect();
+    dbg!(&r);
+
+    assert_eq!(r.len(), 1);
+    assert!(matches!(
+        &r[0],
+        Ok(Token {
+            kind: TokenKind::StringFragment(s, false),
+            span: Range { start: 0, end: 16 }
+        }) if s == "continued verbatim"
+    ));
+}
+
+#[test]
+fn identifier_end_continues_tokenizing() {
+    let s = TokenStream::new(
+        "end verbatim | #f",
+        Some(TokenContinuation::StringLiteral(false)),
+    );
+
+    let r: Vec<_> = s.collect();
+    dbg!(&r);
+
+    assert_eq!(r.len(), 2);
+    assert!(matches!(
+        &r[0],
+        Ok(Token {
+            kind: TokenKind::StringEnd(s),
+            span: Range { start: 0, end: 12 }
+        }) if s == "end verbatim "
+    ));
+    assert!(matches!(
+        r[1],
+        Ok(Token {
+            kind: TokenKind::Literal(Literal::Boolean(false)),
+            span: Range { start: 13, end: 15 }
+        })
+    ));
+}
+
+#[test]
+fn finishes_parsing_identifier_if_error() {
+    let s = TokenStream::new("|foo \\e bar| #t", None);
+
+    let r: Vec<_> = s.collect();
+    dbg!(&r);
+
+    assert_eq!(r.len(), 3);
+    assert!(matches!(
+        r[0],
+        Err(TokenError {
+            kind: TokenErrorKind::StringEscapeInvalid(5, 'e'),
+            span: Range { start: 5, end: 7 }
+        })
+    ));
+    assert!(matches!(
+        r[1],
+        Ok(Token {
+            kind: TokenKind::StringDiscard,
+            span: Range { start: 7, end: 12 }
+        })
+    ));
+    assert!(matches!(
+        r[2],
+        Ok(Token {
+            kind: TokenKind::Literal(Literal::Boolean(true)),
+            span: Range { start: 13, end: 15 }
+        })
+    ));
+}
+
+#[test]
+fn unterminated_hex_does_not_consume_end_of_identifier() {
+    let s = TokenStream::new("|\\x42| #t", None);
+
+    let r: Vec<_> = s.collect();
+    dbg!(&r);
+
+    assert_eq!(r.len(), 3);
+    assert!(matches!(
+        r[0],
+        Err(TokenError {
+            kind: TokenErrorKind::StringUnterminatedHex(1),
+            span: Range { start: 1, end: 5 }
+        })
+    ));
+    assert!(matches!(
+        r[1],
+        Ok(Token {
+            kind: TokenKind::StringDiscard,
+            span: Range { start: 5, end: 6 }
+        })
+    ));
+    assert!(matches!(
+        r[2],
+        Ok(Token {
+            kind: TokenKind::Literal(Literal::Boolean(true)),
+            span: Range { start: 7, end: 9 }
+        })
+    ));
+}
+
+#[test]
+fn unterminated_hex_does_not_consume_identifier_escape_sequence() {
+    let s = TokenStream::new("|\\x42\\|| #t", None);
+
+    let r: Vec<_> = s.collect();
+    dbg!(&r);
+
+    assert_eq!(r.len(), 3);
+    assert!(matches!(
+        r[0],
+        Err(TokenError {
+            kind: TokenErrorKind::StringUnterminatedHex(1),
+            span: Range { start: 1, end: 5 }
+        })
+    ));
+    assert!(matches!(
+        r[1],
+        Ok(Token {
+            kind: TokenKind::StringDiscard,
+            span: Range { start: 5, end: 8 }
+        })
+    ));
+    assert!(matches!(
+        r[2],
+        Ok(Token {
+            kind: TokenKind::Literal(Literal::Boolean(true)),
+            span: Range { start: 9, end: 11 }
+        })
+    ));
+}
+
+#[test]
+fn multiple_identifier_errors() {
+    let s = TokenStream::new("|foo \\xdeadbeef; bar \\e baz| #t", None);
+
+    let r: Vec<_> = s.collect();
+    dbg!(&r);
+
+    assert_eq!(r.len(), 4);
+    assert!(matches!(
+        r[0],
+        Err(TokenError {
+            kind: TokenErrorKind::StringInvalidHex(5),
+            span: Range { start: 5, end: 16 }
+        })
+    ));
+    assert!(matches!(
+        r[1],
+        Err(TokenError {
+            kind: TokenErrorKind::StringEscapeInvalid(21, 'e'),
+            span: Range { start: 21, end: 23 }
+        })
+    ));
+    assert!(matches!(
+        r[2],
+        Ok(Token {
+            kind: TokenKind::StringDiscard,
+            span: Range { start: 23, end: 28 }
+        })
+    ));
+    assert!(matches!(
+        r[3],
+        Ok(Token {
+            kind: TokenKind::Literal(Literal::Boolean(true)),
+            span: Range { start: 29, end: 31 }
+        })
+    ));
+}
+
+#[test]
+fn open_identifier_with_error() {
+    let s = TokenStream::new("|foo \\e bar", None);
+
+    let r: Vec<_> = s.collect();
+    dbg!(&r);
+
+    assert_eq!(r.len(), 2);
+    assert!(matches!(
+        r[0],
+        Err(TokenError {
+            kind: TokenErrorKind::StringEscapeInvalid(5, 'e'),
+            span: Range { start: 5, end: 7 }
+        })
+    ));
+    assert!(matches!(
+        r[1],
+        Ok(Token {
+            kind: TokenKind::StringDiscard,
+            span: Range { start: 7, end: 11 }
         })
     ));
 }
