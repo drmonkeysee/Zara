@@ -99,30 +99,30 @@ impl<'me, 'str> Hashtag<'me, 'str> {
 pub(super) struct StringLiteral<'me, 'str, T, E> {
     buf: String,
     error_policy: PhantomData<E>,
-    mode: T,
     possible_line_cont_idx: Option<usize>,
     scan: &'me mut Scanner<'str>,
     start: usize,
+    token_policy: PhantomData<T>,
 }
 
-impl<'me, 'str, T: StringLiteralMode, E: FreeTextErrorPolicy> StringLiteral<'me, 'str, T, E> {
-    fn init(scan: &'me mut Scanner<'str>, mode: T) -> Self {
+impl<'me, 'str, T: FreeTextPolicy, E: FreeTextErrorPolicy> StringLiteral<'me, 'str, T, E> {
+    fn init(scan: &'me mut Scanner<'str>) -> Self {
         Self {
             buf: String::new(),
             error_policy: PhantomData,
-            mode,
             possible_line_cont_idx: None,
             scan,
             start: 0,
+            token_policy: PhantomData,
         }
     }
 
     pub(super) fn scan(mut self) -> TokenExtractResult {
-        self.mode.prelude(self.scan);
+        T::prelude(self.scan);
         while let Some((idx, ch)) = self.scan.next() {
             self.start = idx;
             match ch {
-                '"' => return self.end_string(),
+                '"' => return self.terminated(),
                 '\\' => self.escape()?,
                 _ => self.buf.push(ch),
             }
@@ -173,91 +173,91 @@ impl<'me, 'str, T: StringLiteralMode, E: FreeTextErrorPolicy> StringLiteral<'me,
         Ok(())
     }
 
-    fn end_string(self) -> TokenExtractResult {
-        Ok(self.mode.terminated(self.buf))
+    fn terminated(self) -> TokenExtractResult {
+        Ok(T::terminated(self.buf))
     }
 
     fn unterminated(self) -> TokenExtractResult {
         if let Some(idx) = self.possible_line_cont_idx {
             let (lead, trail) = self.buf.split_at(idx);
             if trail.trim().is_empty() {
-                return Ok(self.mode.unterminated(lead.to_owned(), true));
+                return Ok(T::unterminated(lead.to_owned(), true));
             }
         }
-        Ok(self.mode.unterminated(self.buf, false))
+        Ok(T::unterminated(self.buf, false))
     }
 }
 
-impl<'me, 'str> StringLiteral<'me, 'str, StartStringLiteral, StringErrorPolicy> {
+impl<'me, 'str> StringLiteral<'me, 'str, StartStringPolicy, StringErrorPolicy> {
     pub(super) fn new(scan: &'me mut Scanner<'str>) -> Self {
-        Self::init(scan, StartStringLiteral)
+        Self::init(scan)
     }
 }
 
-impl<'me, 'str> StringLiteral<'me, 'str, DiscardStringLiteral, StringErrorPolicy> {
+impl<'me, 'str> StringLiteral<'me, 'str, DiscardStringPolicy, StringErrorPolicy> {
     pub(super) fn cleanup(scan: &'me mut Scanner<'str>) -> Self {
-        Self::init(scan, DiscardStringLiteral)
+        Self::init(scan)
     }
 }
 
-impl<'me, 'str> StringLiteral<'me, 'str, ContinueStringLiteral, StringErrorPolicy> {
+impl<'me, 'str> StringLiteral<'me, 'str, ContinueStringPolicy, StringErrorPolicy> {
     pub(super) fn cont(scan: &'me mut Scanner<'str>) -> Self {
-        Self::init(scan, ContinueStringLiteral)
+        Self::init(scan)
     }
 }
 
-impl<'me, 'str> StringLiteral<'me, 'str, LineContinueStringLiteral, StringErrorPolicy> {
+impl<'me, 'str> StringLiteral<'me, 'str, LineContinueStringPolicy, StringErrorPolicy> {
     pub(super) fn line_cont(scan: &'me mut Scanner<'str>) -> Self {
-        Self::init(scan, LineContinueStringLiteral)
+        Self::init(scan)
     }
 }
 
-pub(super) trait StringLiteralMode {
-    fn prelude<'me, 'str>(&self, _scan: &'me mut Scanner<'str>) {
+pub(super) trait FreeTextPolicy {
+    fn prelude<'me, 'str>(_scan: &'me mut Scanner<'str>) {
         // NOTE: do nothing by default
     }
 
-    fn terminated(&self, buf: String) -> TokenKind {
+    fn terminated(buf: String) -> TokenKind {
         TokenKind::StringEnd(buf)
     }
 
-    fn unterminated(&self, buf: String, line_cont: bool) -> TokenKind {
+    fn unterminated(buf: String, line_cont: bool) -> TokenKind {
         TokenKind::StringFragment(buf, line_cont)
     }
 }
 
-pub(super) struct StartStringLiteral;
+pub(super) struct StartStringPolicy;
 
-impl StringLiteralMode for StartStringLiteral {
-    fn terminated(&self, buf: String) -> TokenKind {
+impl FreeTextPolicy for StartStringPolicy {
+    fn terminated(buf: String) -> TokenKind {
         TokenKind::Literal(Literal::String(buf))
     }
 
-    fn unterminated(&self, buf: String, line_cont: bool) -> TokenKind {
+    fn unterminated(buf: String, line_cont: bool) -> TokenKind {
         TokenKind::StringBegin(buf, line_cont)
     }
 }
 
-pub(super) struct DiscardStringLiteral;
+pub(super) struct DiscardStringPolicy;
 
-impl StringLiteralMode for DiscardStringLiteral {
-    fn terminated(&self, _buf: String) -> TokenKind {
+impl FreeTextPolicy for DiscardStringPolicy {
+    fn terminated(_buf: String) -> TokenKind {
         TokenKind::StringDiscard
     }
 
-    fn unterminated(&self, buf: String, _line_cont: bool) -> TokenKind {
-        self.terminated(buf)
+    fn unterminated(buf: String, _line_cont: bool) -> TokenKind {
+        Self::terminated(buf)
     }
 }
 
-pub(super) struct ContinueStringLiteral;
+pub(super) struct ContinueStringPolicy;
 
-impl StringLiteralMode for ContinueStringLiteral {}
+impl FreeTextPolicy for ContinueStringPolicy {}
 
-pub(super) struct LineContinueStringLiteral;
+pub(super) struct LineContinueStringPolicy;
 
-impl StringLiteralMode for LineContinueStringLiteral {
-    fn prelude<'me, 'str>(&self, scan: &'me mut Scanner<'str>) {
+impl FreeTextPolicy for LineContinueStringPolicy {
+    fn prelude<'me, 'str>(scan: &'me mut Scanner<'str>) {
         scan.skip_whitespace();
     }
 }
