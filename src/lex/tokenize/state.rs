@@ -3,6 +3,7 @@ use crate::{
     lex::token::{TokenErrorKind, TokenKind},
     literal::Literal,
 };
+use std::marker::PhantomData;
 
 pub(super) struct Hashtag<'me, 'str> {
     pub(super) scan: &'me mut Scanner<'str>,
@@ -95,18 +96,20 @@ impl<'me, 'str> Hashtag<'me, 'str> {
     }
 }
 
-pub(super) struct StringLiteral<'me, 'str, T> {
+pub(super) struct StringLiteral<'me, 'str, T, E> {
     buf: String,
+    error_policy: PhantomData<E>,
     mode: T,
     possible_line_cont_idx: Option<usize>,
     scan: &'me mut Scanner<'str>,
     start: usize,
 }
 
-impl<'me, 'str, T: StringLiteralMode> StringLiteral<'me, 'str, T> {
+impl<'me, 'str, T: StringLiteralMode, E: FreeTextErrorPolicy> StringLiteral<'me, 'str, T, E> {
     fn init(scan: &'me mut Scanner<'str>, mode: T) -> Self {
         Self {
             buf: String::new(),
+            error_policy: PhantomData,
             mode,
             possible_line_cont_idx: None,
             scan,
@@ -143,7 +146,7 @@ impl<'me, 'str, T: StringLiteralMode> StringLiteral<'me, 'str, T> {
                     self.possible_line_cont_idx = Some(self.buf.len());
                     self.buf.push(ch);
                 }
-                _ => return Err(TokenErrorKind::StringEscapeInvalid(self.start, ch)),
+                _ => return Err(E::escape_invalid(self.start, ch)),
             },
             None => {
                 // NOTE: \EOL is a line continuation, mark end of buffer
@@ -160,14 +163,12 @@ impl<'me, 'str, T: StringLiteralMode> StringLiteral<'me, 'str, T> {
             Some(idx) => {
                 let rest = self.scan.lexeme(start..idx);
                 match parse_char_hex(rest) {
-                    HexParse::Invalid => return Err(TokenErrorKind::StringInvalidHex(self.start)),
-                    HexParse::Unexpected => {
-                        return Err(TokenErrorKind::StringExpectedHex(self.start))
-                    }
+                    HexParse::Invalid => return Err(E::hex_invalid(self.start)),
+                    HexParse::Unexpected => return Err(E::hex_expected(self.start)),
                     HexParse::Valid(ch) => self.buf.push(ch),
                 }
             }
-            None => return Err(TokenErrorKind::StringUnterminatedHex(self.start)),
+            None => return Err(E::hex_unterminated(self.start)),
         };
         Ok(())
     }
@@ -187,25 +188,25 @@ impl<'me, 'str, T: StringLiteralMode> StringLiteral<'me, 'str, T> {
     }
 }
 
-impl<'me, 'str> StringLiteral<'me, 'str, StartStringLiteral> {
+impl<'me, 'str> StringLiteral<'me, 'str, StartStringLiteral, StringErrorPolicy> {
     pub(super) fn new(scan: &'me mut Scanner<'str>) -> Self {
         Self::init(scan, StartStringLiteral)
     }
 }
 
-impl<'me, 'str> StringLiteral<'me, 'str, DiscardStringLiteral> {
+impl<'me, 'str> StringLiteral<'me, 'str, DiscardStringLiteral, StringErrorPolicy> {
     pub(super) fn cleanup(scan: &'me mut Scanner<'str>) -> Self {
         Self::init(scan, DiscardStringLiteral)
     }
 }
 
-impl<'me, 'str> StringLiteral<'me, 'str, ContinueStringLiteral> {
+impl<'me, 'str> StringLiteral<'me, 'str, ContinueStringLiteral, StringErrorPolicy> {
     pub(super) fn cont(scan: &'me mut Scanner<'str>) -> Self {
         Self::init(scan, ContinueStringLiteral)
     }
 }
 
-impl<'me, 'str> StringLiteral<'me, 'str, LineContinueStringLiteral> {
+impl<'me, 'str> StringLiteral<'me, 'str, LineContinueStringLiteral, StringErrorPolicy> {
     pub(super) fn line_cont(scan: &'me mut Scanner<'str>) -> Self {
         Self::init(scan, LineContinueStringLiteral)
     }
@@ -258,6 +259,33 @@ pub(super) struct LineContinueStringLiteral;
 impl StringLiteralMode for LineContinueStringLiteral {
     fn prelude<'me, 'str>(&self, scan: &'me mut Scanner<'str>) {
         scan.skip_whitespace();
+    }
+}
+
+pub(super) trait FreeTextErrorPolicy {
+    fn escape_invalid(start: usize, ch: char) -> TokenErrorKind;
+    fn hex_expected(start: usize) -> TokenErrorKind;
+    fn hex_invalid(start: usize) -> TokenErrorKind;
+    fn hex_unterminated(start: usize) -> TokenErrorKind;
+}
+
+pub(super) struct StringErrorPolicy;
+
+impl FreeTextErrorPolicy for StringErrorPolicy {
+    fn escape_invalid(start: usize, ch: char) -> TokenErrorKind {
+        TokenErrorKind::StringEscapeInvalid(start, ch)
+    }
+
+    fn hex_expected(start: usize) -> TokenErrorKind {
+        TokenErrorKind::StringExpectedHex(start)
+    }
+
+    fn hex_invalid(start: usize) -> TokenErrorKind {
+        TokenErrorKind::StringInvalidHex(start)
+    }
+
+    fn hex_unterminated(start: usize) -> TokenErrorKind {
+        TokenErrorKind::StringUnterminatedHex(start)
     }
 }
 
