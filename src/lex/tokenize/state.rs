@@ -96,16 +96,15 @@ impl<'me, 'str> Hashtag<'me, 'str> {
     }
 }
 
-pub(super) struct StringLiteral<'me, 'str, P, T> {
+pub(super) struct StringLiteral<'me, 'str, P> {
     buf: String,
     policy: PhantomData<P>,
     possible_line_cont_idx: Option<usize>,
     scan: &'me mut Scanner<'str>,
     start: usize,
-    token_policy: PhantomData<T>,
 }
 
-impl<'me, 'str, P: FreeTextPolicy, T: FreeTextTokenPolicy> StringLiteral<'me, 'str, P, T> {
+impl<'me, 'str, P: FreeTextPolicy> StringLiteral<'me, 'str, P> {
     fn init(scan: &'me mut Scanner<'str>) -> Self {
         Self {
             buf: String::new(),
@@ -113,12 +112,11 @@ impl<'me, 'str, P: FreeTextPolicy, T: FreeTextTokenPolicy> StringLiteral<'me, 's
             possible_line_cont_idx: None,
             scan,
             start: 0,
-            token_policy: PhantomData,
         }
     }
 
     pub(super) fn scan(mut self) -> TokenExtractResult {
-        T::prelude(self.scan);
+        P::prelude(self.scan);
         while let Some((idx, ch)) = self.scan.next() {
             self.start = idx;
             match ch {
@@ -174,106 +172,59 @@ impl<'me, 'str, P: FreeTextPolicy, T: FreeTextTokenPolicy> StringLiteral<'me, 's
     }
 
     fn terminated(self) -> TokenExtractResult {
-        Ok(T::terminated(self.buf))
+        Ok(P::terminated(self.buf))
     }
 
     fn unterminated(self) -> TokenExtractResult {
-        if let Some(idx) = self.possible_line_cont_idx {
-            let (lead, trail) = self.buf.split_at(idx);
-            if trail.trim().is_empty() {
-                return Ok(T::unterminated(lead.to_owned(), true));
-            }
-        }
-        Ok(T::unterminated(self.buf, false))
+        Ok(P::unterminated(self.buf, self.possible_line_cont_idx))
     }
 }
 
-impl<'me, 'str> StringLiteral<'me, 'str, StringPolicy, StartStringPolicy> {
+impl<'me, 'str> StringLiteral<'me, 'str, StringPolicy<StartString>> {
     pub(super) fn new(scan: &'me mut Scanner<'str>) -> Self {
         Self::init(scan)
     }
 }
 
-impl<'me, 'str> StringLiteral<'me, 'str, StringPolicy, DiscardStringPolicy> {
+impl<'me, 'str> StringLiteral<'me, 'str, StringPolicy<DiscardString>> {
     pub(super) fn cleanup(scan: &'me mut Scanner<'str>) -> Self {
         Self::init(scan)
     }
 }
 
-impl<'me, 'str> StringLiteral<'me, 'str, StringPolicy, ContinueStringPolicy> {
+impl<'me, 'str> StringLiteral<'me, 'str, StringPolicy<ContinueString>> {
     pub(super) fn cont(scan: &'me mut Scanner<'str>) -> Self {
         Self::init(scan)
     }
 }
 
-impl<'me, 'str> StringLiteral<'me, 'str, StringPolicy, LineContinueStringPolicy> {
+impl<'me, 'str> StringLiteral<'me, 'str, StringPolicy<LineContinueString>> {
     pub(super) fn line_cont(scan: &'me mut Scanner<'str>) -> Self {
         Self::init(scan)
     }
 }
 
-pub(super) trait FreeTextTokenPolicy {
-    fn prelude<'me, 'str>(_scan: &'me mut Scanner<'str>) {
-        // NOTE: do nothing by default
-    }
-
-    fn terminated(buf: String) -> TokenKind {
-        TokenKind::StringEnd(buf)
-    }
-
-    fn unterminated(buf: String, line_cont: bool) -> TokenKind {
-        TokenKind::StringFragment(buf, line_cont)
-    }
-}
-
-pub(super) struct StartStringPolicy;
-
-impl FreeTextTokenPolicy for StartStringPolicy {
-    fn terminated(buf: String) -> TokenKind {
-        TokenKind::Literal(Literal::String(buf))
-    }
-
-    fn unterminated(buf: String, line_cont: bool) -> TokenKind {
-        TokenKind::StringBegin(buf, line_cont)
-    }
-}
-
-pub(super) struct DiscardStringPolicy;
-
-impl FreeTextTokenPolicy for DiscardStringPolicy {
-    fn terminated(_buf: String) -> TokenKind {
-        TokenKind::StringDiscard
-    }
-
-    fn unterminated(buf: String, _line_cont: bool) -> TokenKind {
-        Self::terminated(buf)
-    }
-}
-
-pub(super) struct ContinueStringPolicy;
-
-impl FreeTextTokenPolicy for ContinueStringPolicy {}
-
-pub(super) struct LineContinueStringPolicy;
-
-impl FreeTextTokenPolicy for LineContinueStringPolicy {
-    fn prelude<'me, 'str>(scan: &'me mut Scanner<'str>) {
-        scan.skip_whitespace();
-    }
-}
-
 pub(super) trait FreeTextPolicy {
     const TERMINATOR: char;
+    fn prelude<'me, 'str>(_scan: &'me mut Scanner<'str>);
     fn escape_invalid(start: usize, ch: char) -> TokenErrorKind;
     fn hex_expected(start: usize) -> TokenErrorKind;
     fn hex_invalid(start: usize) -> TokenErrorKind;
     fn hex_unterminated(start: usize) -> TokenErrorKind;
+    fn terminated(buf: String) -> TokenKind;
+    fn unterminated(buf: String, line_cont_idx: Option<usize>) -> TokenKind;
 }
 
-pub(super) struct StringPolicy;
+pub(super) struct StringPolicy<T> {
+    mode: PhantomData<T>,
+}
 
-impl FreeTextPolicy for StringPolicy {
+impl<T: StringPolicyMode> FreeTextPolicy for StringPolicy<T> {
     const TERMINATOR: char = '"';
+
+    fn prelude<'me, 'str>(scan: &'me mut Scanner<'str>) {
+        T::prelude(scan)
+    }
 
     fn escape_invalid(start: usize, ch: char) -> TokenErrorKind {
         TokenErrorKind::StringEscapeInvalid(start, ch)
@@ -289,6 +240,70 @@ impl FreeTextPolicy for StringPolicy {
 
     fn hex_unterminated(start: usize) -> TokenErrorKind {
         TokenErrorKind::StringUnterminatedHex(start)
+    }
+
+    fn terminated(buf: String) -> TokenKind {
+        T::terminated(buf)
+    }
+
+    fn unterminated(buf: String, line_cont_idx: Option<usize>) -> TokenKind {
+        if let Some(idx) = line_cont_idx {
+            let (lead, trail) = buf.split_at(idx);
+            if trail.trim().is_empty() {
+                return T::unterminated(lead.to_owned(), true);
+            }
+        }
+        T::unterminated(buf, false)
+    }
+}
+
+pub(super) trait StringPolicyMode {
+    fn prelude<'me, 'str>(_scan: &'me mut Scanner<'str>) {
+        // NOTE: do nothing by default
+    }
+
+    fn terminated(buf: String) -> TokenKind {
+        TokenKind::StringEnd(buf)
+    }
+
+    fn unterminated(buf: String, line_cont: bool) -> TokenKind {
+        TokenKind::StringFragment(buf, line_cont)
+    }
+}
+
+pub(super) struct StartString;
+
+impl StringPolicyMode for StartString {
+    fn terminated(buf: String) -> TokenKind {
+        TokenKind::Literal(Literal::String(buf))
+    }
+
+    fn unterminated(buf: String, line_cont: bool) -> TokenKind {
+        TokenKind::StringBegin(buf, line_cont)
+    }
+}
+
+pub(super) struct DiscardString;
+
+impl StringPolicyMode for DiscardString {
+    fn terminated(_buf: String) -> TokenKind {
+        TokenKind::StringDiscard
+    }
+
+    fn unterminated(buf: String, _line_cont: bool) -> TokenKind {
+        Self::terminated(buf)
+    }
+}
+
+pub(super) struct ContinueString;
+
+impl StringPolicyMode for ContinueString {}
+
+pub(super) struct LineContinueString;
+
+impl StringPolicyMode for LineContinueString {
+    fn prelude<'me, 'str>(scan: &'me mut Scanner<'str>) {
+        scan.skip_whitespace();
     }
 }
 
