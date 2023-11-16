@@ -96,7 +96,7 @@ impl<'me, 'str> Hashtag<'me, 'str> {
     }
 }
 
-pub(super) struct StringLiteral<'me, 'str, P> {
+pub(super) struct FreeText<'me, 'str, P> {
     buf: String,
     policy: PhantomData<P>,
     possible_line_cont_idx: Option<usize>,
@@ -104,7 +104,7 @@ pub(super) struct StringLiteral<'me, 'str, P> {
     start: usize,
 }
 
-impl<'me, 'str, P: FreeTextPolicy> StringLiteral<'me, 'str, P> {
+impl<'me, 'str, P: FreeTextPolicy> FreeText<'me, 'str, P> {
     fn init(scan: &'me mut Scanner<'str>) -> Self {
         Self {
             buf: String::new(),
@@ -180,26 +180,26 @@ impl<'me, 'str, P: FreeTextPolicy> StringLiteral<'me, 'str, P> {
     }
 }
 
-impl<'me, 'str> StringLiteral<'me, 'str, StringPolicy<StartString>> {
-    pub(super) fn new(scan: &'me mut Scanner<'str>) -> Self {
+impl<'me, 'str> FreeText<'me, 'str, StringPolicy<StartString>> {
+    pub(super) fn string(scan: &'me mut Scanner<'str>) -> Self {
         Self::init(scan)
     }
 }
 
-impl<'me, 'str> StringLiteral<'me, 'str, StringPolicy<DiscardString>> {
-    pub(super) fn cleanup(scan: &'me mut Scanner<'str>) -> Self {
+impl<'me, 'str> FreeText<'me, 'str, StringPolicy<DiscardString>> {
+    pub(super) fn string_cleanup(scan: &'me mut Scanner<'str>) -> Self {
         Self::init(scan)
     }
 }
 
-impl<'me, 'str> StringLiteral<'me, 'str, StringPolicy<ContinueString>> {
-    pub(super) fn cont(scan: &'me mut Scanner<'str>) -> Self {
+impl<'me, 'str> FreeText<'me, 'str, StringPolicy<ContinueString>> {
+    pub(super) fn string_cont(scan: &'me mut Scanner<'str>) -> Self {
         Self::init(scan)
     }
 }
 
-impl<'me, 'str> StringLiteral<'me, 'str, StringPolicy<LineContinueString>> {
-    pub(super) fn line_cont(scan: &'me mut Scanner<'str>) -> Self {
+impl<'me, 'str> FreeText<'me, 'str, StringPolicy<LineContinueString>> {
+    pub(super) fn string_line_cont(scan: &'me mut Scanner<'str>) -> Self {
         Self::init(scan)
     }
 }
