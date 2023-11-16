@@ -122,8 +122,8 @@ impl<'me, 'str, T: FreeTextPolicy, E: FreeTextErrorPolicy> StringLiteral<'me, 's
         while let Some((idx, ch)) = self.scan.next() {
             self.start = idx;
             match ch {
-                '"' => return self.terminated(),
                 '\\' => self.escape()?,
+                _ if ch == E::R => return self.terminated(),
                 _ => self.buf.push(ch),
             }
         }
@@ -263,6 +263,7 @@ impl FreeTextPolicy for LineContinueStringPolicy {
 }
 
 pub(super) trait FreeTextErrorPolicy {
+    const R: char;
     fn escape_invalid(start: usize, ch: char) -> TokenErrorKind;
     fn hex_expected(start: usize) -> TokenErrorKind;
     fn hex_invalid(start: usize) -> TokenErrorKind;
@@ -272,6 +273,8 @@ pub(super) trait FreeTextErrorPolicy {
 pub(super) struct StringErrorPolicy;
 
 impl FreeTextErrorPolicy for StringErrorPolicy {
+    const R: char = '"';
+
     fn escape_invalid(start: usize, ch: char) -> TokenErrorKind {
         TokenErrorKind::StringEscapeInvalid(start, ch)
     }
