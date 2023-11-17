@@ -3,7 +3,6 @@ use crate::{
     lex::token::{TokenErrorKind, TokenKind},
     literal::Literal,
 };
-use std::marker::PhantomData;
 
 pub(super) struct Hashtag<'me, 'str> {
     pub(super) scan: &'me mut Scanner<'str>,
@@ -98,17 +97,17 @@ impl<'me, 'str> Hashtag<'me, 'str> {
 
 pub(super) struct FreeText<'me, 'str, P> {
     buf: String,
-    policy: PhantomData<P>,
+    policy: P,
     possible_line_cont_idx: Option<usize>,
     scan: &'me mut Scanner<'str>,
     start: usize,
 }
 
 impl<'me, 'str, P: FreeTextPolicy> FreeText<'me, 'str, P> {
-    fn init(scan: &'me mut Scanner<'str>) -> Self {
+    fn init(scan: &'me mut Scanner<'str>, policy: P) -> Self {
         Self {
             buf: String::new(),
-            policy: PhantomData,
+            policy,
             possible_line_cont_idx: None,
             scan,
             start: 0,
@@ -116,7 +115,7 @@ impl<'me, 'str, P: FreeTextPolicy> FreeText<'me, 'str, P> {
     }
 
     pub(super) fn scan(mut self) -> TokenExtractResult {
-        P::prelude(self.scan);
+        self.policy.prelude(self.scan);
         while let Some((idx, ch)) = self.scan.next() {
             self.start = idx;
             match ch {
@@ -144,7 +143,7 @@ impl<'me, 'str, P: FreeTextPolicy> FreeText<'me, 'str, P> {
                     self.possible_line_cont_idx = Some(self.buf.len());
                     self.buf.push(ch);
                 }
-                _ => return Err(P::escape_invalid(self.start, ch)),
+                _ => return Err(self.policy.escape_invalid(self.start, ch)),
             },
             None => {
                 // NOTE: \EOL is a line continuation, mark end of buffer
@@ -161,112 +160,112 @@ impl<'me, 'str, P: FreeTextPolicy> FreeText<'me, 'str, P> {
             Some(idx) => {
                 let rest = self.scan.lexeme(start..idx);
                 match parse_char_hex(rest) {
-                    HexParse::Invalid => return Err(P::hex_invalid(self.start)),
-                    HexParse::Unexpected => return Err(P::hex_expected(self.start)),
+                    HexParse::Invalid => return Err(self.policy.hex_invalid(self.start)),
+                    HexParse::Unexpected => return Err(self.policy.hex_expected(self.start)),
                     HexParse::Valid(ch) => self.buf.push(ch),
                 }
             }
-            None => return Err(P::hex_unterminated(self.start)),
+            None => return Err(self.policy.hex_unterminated(self.start)),
         };
         Ok(())
     }
 
     fn terminated(self) -> TokenExtractResult {
-        Ok(P::terminated(self.buf))
+        Ok(self.policy.terminated(self.buf))
     }
 
     fn unterminated(self) -> TokenExtractResult {
-        Ok(P::unterminated(self.buf, self.possible_line_cont_idx))
+        Ok(self
+            .policy
+            .unterminated(self.buf, self.possible_line_cont_idx))
     }
 }
 
 impl<'me, 'str> FreeText<'me, 'str, StringPolicy<StartString>> {
     pub(super) fn string(scan: &'me mut Scanner<'str>) -> Self {
-        Self::init(scan)
+        Self::init(scan, StringPolicy(StartString))
     }
 }
 
 impl<'me, 'str> FreeText<'me, 'str, StringPolicy<DiscardString>> {
     pub(super) fn string_cleanup(scan: &'me mut Scanner<'str>) -> Self {
-        Self::init(scan)
+        Self::init(scan, StringPolicy(DiscardString))
     }
 }
 
 impl<'me, 'str> FreeText<'me, 'str, StringPolicy<ContinueString>> {
     pub(super) fn string_cont(scan: &'me mut Scanner<'str>) -> Self {
-        Self::init(scan)
+        Self::init(scan, StringPolicy(ContinueString))
     }
 }
 
 impl<'me, 'str> FreeText<'me, 'str, StringPolicy<LineContinueString>> {
     pub(super) fn string_line_cont(scan: &'me mut Scanner<'str>) -> Self {
-        Self::init(scan)
+        Self::init(scan, StringPolicy(LineContinueString))
     }
 }
 
 pub(super) trait FreeTextPolicy {
     const TERMINATOR: char;
-    fn prelude<'me, 'str>(_scan: &'me mut Scanner<'str>);
-    fn escape_invalid(start: usize, ch: char) -> TokenErrorKind;
-    fn hex_expected(start: usize) -> TokenErrorKind;
-    fn hex_invalid(start: usize) -> TokenErrorKind;
-    fn hex_unterminated(start: usize) -> TokenErrorKind;
-    fn terminated(buf: String) -> TokenKind;
-    fn unterminated(buf: String, line_cont_idx: Option<usize>) -> TokenKind;
+    fn prelude<'me, 'str>(&self, _scan: &'me mut Scanner<'str>);
+    fn escape_invalid(&self, start: usize, ch: char) -> TokenErrorKind;
+    fn hex_expected(&self, start: usize) -> TokenErrorKind;
+    fn hex_invalid(&self, start: usize) -> TokenErrorKind;
+    fn hex_unterminated(&self, start: usize) -> TokenErrorKind;
+    fn terminated(&self, buf: String) -> TokenKind;
+    fn unterminated(&self, buf: String, line_cont_idx: Option<usize>) -> TokenKind;
 }
 
-pub(super) struct StringPolicy<T> {
-    mode: PhantomData<T>,
-}
+pub(super) struct StringPolicy<T>(T);
 
 impl<T: StringPolicyMode> FreeTextPolicy for StringPolicy<T> {
     const TERMINATOR: char = '"';
 
-    fn prelude<'me, 'str>(scan: &'me mut Scanner<'str>) {
-        T::prelude(scan)
+    fn prelude<'me, 'str>(&self, scan: &'me mut Scanner<'str>) {
+        self.0.prelude(scan)
     }
 
-    fn escape_invalid(start: usize, ch: char) -> TokenErrorKind {
+    fn escape_invalid(&self, start: usize, ch: char) -> TokenErrorKind {
         TokenErrorKind::StringEscapeInvalid(start, ch)
     }
 
-    fn hex_expected(start: usize) -> TokenErrorKind {
+    fn hex_expected(&self, start: usize) -> TokenErrorKind {
         TokenErrorKind::StringExpectedHex(start)
     }
 
-    fn hex_invalid(start: usize) -> TokenErrorKind {
+    fn hex_invalid(&self, start: usize) -> TokenErrorKind {
         TokenErrorKind::StringInvalidHex(start)
     }
 
-    fn hex_unterminated(start: usize) -> TokenErrorKind {
+    fn hex_unterminated(&self, start: usize) -> TokenErrorKind {
         TokenErrorKind::StringUnterminatedHex(start)
     }
 
-    fn terminated(buf: String) -> TokenKind {
-        T::terminated(buf)
+    fn terminated(&self, buf: String) -> TokenKind {
+        self.0.terminated(buf)
     }
 
-    fn unterminated(buf: String, line_cont_idx: Option<usize>) -> TokenKind {
+    fn unterminated(&self, buf: String, line_cont_idx: Option<usize>) -> TokenKind {
         if let Some(idx) = line_cont_idx {
             let (lead, trail) = buf.split_at(idx);
             if trail.trim().is_empty() {
-                return T::unterminated(lead.to_owned(), true);
+                return self.0.unterminated(lead.to_owned(), true);
             }
         }
-        T::unterminated(buf, false)
+        self.0.unterminated(buf, false)
     }
 }
 
 pub(super) trait StringPolicyMode {
-    fn prelude<'me, 'str>(_scan: &'me mut Scanner<'str>) {
+    fn prelude<'me, 'str>(&self, _scan: &'me mut Scanner<'str>) {
         // NOTE: do nothing by default
     }
 
-    fn terminated(buf: String) -> TokenKind {
+    fn terminated(&self, buf: String) -> TokenKind {
         TokenKind::StringEnd(buf)
     }
 
-    fn unterminated(buf: String, line_cont: bool) -> TokenKind {
+    fn unterminated(&self, buf: String, line_cont: bool) -> TokenKind {
         TokenKind::StringFragment(buf, line_cont)
     }
 }
@@ -274,11 +273,11 @@ pub(super) trait StringPolicyMode {
 pub(super) struct StartString;
 
 impl StringPolicyMode for StartString {
-    fn terminated(buf: String) -> TokenKind {
+    fn terminated(&self, buf: String) -> TokenKind {
         TokenKind::Literal(Literal::String(buf))
     }
 
-    fn unterminated(buf: String, line_cont: bool) -> TokenKind {
+    fn unterminated(&self, buf: String, line_cont: bool) -> TokenKind {
         TokenKind::StringBegin(buf, line_cont)
     }
 }
@@ -286,12 +285,12 @@ impl StringPolicyMode for StartString {
 pub(super) struct DiscardString;
 
 impl StringPolicyMode for DiscardString {
-    fn terminated(_buf: String) -> TokenKind {
+    fn terminated(&self, _buf: String) -> TokenKind {
         TokenKind::StringDiscard
     }
 
-    fn unterminated(buf: String, _line_cont: bool) -> TokenKind {
-        Self::terminated(buf)
+    fn unterminated(&self, buf: String, _line_cont: bool) -> TokenKind {
+        self.terminated(buf)
     }
 }
 
@@ -302,7 +301,7 @@ impl StringPolicyMode for ContinueString {}
 pub(super) struct LineContinueString;
 
 impl StringPolicyMode for LineContinueString {
-    fn prelude<'me, 'str>(scan: &'me mut Scanner<'str>) {
+    fn prelude<'me, 'str>(&self, scan: &'me mut Scanner<'str>) {
         scan.skip_whitespace();
     }
 }
