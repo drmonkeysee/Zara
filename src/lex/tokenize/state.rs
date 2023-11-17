@@ -181,30 +181,6 @@ impl<'me, 'str, P: FreeTextPolicy> FreeText<'me, 'str, P> {
     }
 }
 
-impl<'me, 'str> FreeText<'me, 'str, StringPolicy<StartString>> {
-    pub(super) fn string(scan: &'me mut Scanner<'str>) -> Self {
-        Self::init(scan, StringPolicy(StartString))
-    }
-}
-
-impl<'me, 'str> FreeText<'me, 'str, StringPolicy<DiscardString>> {
-    pub(super) fn string_cleanup(scan: &'me mut Scanner<'str>) -> Self {
-        Self::init(scan, StringPolicy(DiscardString))
-    }
-}
-
-impl<'me, 'str> FreeText<'me, 'str, StringPolicy<ContinueString>> {
-    pub(super) fn string_cont(scan: &'me mut Scanner<'str>) -> Self {
-        Self::init(scan, StringPolicy(ContinueString))
-    }
-}
-
-impl<'me, 'str> FreeText<'me, 'str, StringPolicy<LineContinueString>> {
-    pub(super) fn string_line_cont(scan: &'me mut Scanner<'str>) -> Self {
-        Self::init(scan, StringPolicy(LineContinueString))
-    }
-}
-
 pub(super) trait FreeTextPolicy {
     const TERMINATOR: char;
     fn prelude<'me, 'str>(&self, _scan: &'me mut Scanner<'str>);
@@ -214,6 +190,32 @@ pub(super) trait FreeTextPolicy {
     fn hex_unterminated(&self, start: usize) -> TokenErrorKind;
     fn terminated(&self, buf: String) -> TokenKind;
     fn unterminated(&self, buf: String, line_cont_idx: Option<usize>) -> TokenKind;
+}
+
+pub(super) type StringLiteral<'me, 'str, M> = FreeText<'me, 'str, StringPolicy<M>>;
+
+impl<'me, 'str> StringLiteral<'me, 'str, StartString> {
+    pub(super) fn new(scan: &'me mut Scanner<'str>) -> Self {
+        Self::init(scan, StringPolicy(StartString))
+    }
+}
+
+impl<'me, 'str> StringLiteral<'me, 'str, DiscardString> {
+    pub(super) fn cleanup(scan: &'me mut Scanner<'str>) -> Self {
+        Self::init(scan, StringPolicy(DiscardString))
+    }
+}
+
+impl<'me, 'str> StringLiteral<'me, 'str, ContinueString> {
+    pub(super) fn cont(scan: &'me mut Scanner<'str>) -> Self {
+        Self::init(scan, StringPolicy(ContinueString))
+    }
+}
+
+impl<'me, 'str> StringLiteral<'me, 'str, LineContinueString> {
+    pub(super) fn line_cont(scan: &'me mut Scanner<'str>) -> Self {
+        Self::init(scan, StringPolicy(LineContinueString))
+    }
 }
 
 pub(super) struct StringPolicy<T>(T);
