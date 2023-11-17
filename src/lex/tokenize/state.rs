@@ -95,6 +95,188 @@ impl<'me, 'str> Hashtag<'me, 'str> {
     }
 }
 
+pub(super) struct Identifier<'me, 'str> {
+    buf: String,
+    peculiar_state: PeculiarState,
+    scan: &'me mut Scanner<'str>,
+}
+
+impl<'me, 'str> Identifier<'me, 'str> {
+    pub(super) fn new(scan: &'me mut Scanner<'str>) -> Self {
+        Self {
+            buf: String::new(),
+            peculiar_state: PeculiarState::Unspecified,
+            scan,
+        }
+    }
+
+    pub(super) fn scan(mut self, first: char) -> TokenExtractResult {
+        if first == '|' {
+            self.not_implemented(first) // TODO: verbatim identifier
+        } else if is_id_peculiar_initial(first) {
+            self.peculiar(first)
+        } else if is_id_initial(first) {
+            self.standard(first)
+        } else {
+            self.invalid(first)
+        }
+    }
+
+    fn standard(mut self, first: char) -> TokenExtractResult {
+        self.buf.push(first);
+        while let Some(ch) = self.scan.char_if_not_delimiter() {
+            if is_id_standard(ch) {
+                self.buf.push(ch);
+            } else {
+                return self.invalid(ch);
+            }
+        }
+        Ok(TokenKind::Identifier(self.buf))
+    }
+
+    fn peculiar(mut self, ch: char) -> TokenExtractResult {
+        self.push_peculiar(ch);
+        let next_ch = self.scan.char_if_not_delimiter();
+        self.continue_peculiar(next_ch)
+    }
+
+    fn continue_peculiar(mut self, next_ch: Option<char>) -> TokenExtractResult {
+        match next_ch {
+            Some(ch) => {
+                // TODO: this should only be 0..9, change call if is_id_digit is expanded
+                if is_id_digit(ch) {
+                    match self.peculiar_state {
+                        PeculiarState::DefiniteIdentifier => self.standard(ch),
+                        _ => self.not_implemented(ch), // TODO: parse as number
+                    }
+                } else if is_id_peculiar_initial(ch) {
+                    self.peculiar(ch)
+                } else if is_id_initial(ch) {
+                    self.standard(ch)
+                } else {
+                    self.invalid(ch)
+                }
+            }
+            None => {
+                // NOTE: a single '.' is invalid but Tokenizer handles '.'
+                // before attempting Identifier so this case never happens.
+                Ok(TokenKind::Identifier(self.buf))
+            }
+        }
+    }
+
+    fn invalid(&mut self, ch: char) -> TokenExtractResult {
+        self.scan.end_of_token();
+        Err(TokenErrorKind::IdentifierInvalid(ch))
+    }
+
+    fn push_peculiar(&mut self, ch: char) {
+        self.buf.push(ch);
+        // NOTE: only 3 cases: + | - | .
+        self.peculiar_state = match ch {
+            '+' | '-' => match self.peculiar_state {
+                PeculiarState::Unspecified => PeculiarState::MaybeSignedNumber,
+                _ => PeculiarState::DefiniteIdentifier,
+            },
+            _ => match self.peculiar_state {
+                PeculiarState::Unspecified => PeculiarState::MaybeFloat,
+                PeculiarState::MaybeSignedNumber => PeculiarState::MaybeSignedFloat,
+                _ => PeculiarState::DefiniteIdentifier,
+            },
+        }
+    }
+
+    fn not_implemented(mut self, ch: char) -> TokenExtractResult {
+        self.buf.push(ch);
+        self.buf.push_str(self.scan.rest_of_token());
+        Err(TokenErrorKind::Unimplemented(self.buf))
+    }
+}
+
+pub(super) struct PeriodIdentifier<'me, 'str>(Identifier<'me, 'str>);
+
+impl<'me, 'str> PeriodIdentifier<'me, 'str> {
+    pub(super) fn new(scan: &'me mut Scanner<'str>) -> Self {
+        let mut me = Self(Identifier::new(scan));
+        me.0.push_peculiar('.');
+        me
+    }
+
+    pub(super) fn scan(self, first: char) -> TokenExtractResult {
+        self.0.continue_peculiar(Some(first))
+    }
+}
+
+pub(super) struct BlockComment<'me, 'str, P> {
+    depth: usize,
+    policy: P,
+    scan: &'me mut Scanner<'str>,
+}
+
+impl<'me, 'str, P: BlockCommentPolicy> BlockComment<'me, 'str, P> {
+    pub(super) fn consume(&mut self) -> TokenKind {
+        while !self.scan.consumed() {
+            if let Some((_, ch)) = self.scan.find_any_char(&['|', '#']) {
+                if self.end_block(ch) {
+                    if self.depth == 0 {
+                        return self.policy.terminated();
+                    } else {
+                        self.depth -= 1;
+                    }
+                } else if self.new_block(ch) {
+                    self.depth += 1;
+                }
+            }
+        }
+        self.policy.unterminated(self.depth)
+    }
+
+    fn end_block(&mut self, ch: char) -> bool {
+        ch == '|' && self.scan.char_if_eq('#').is_some()
+    }
+
+    fn new_block(&mut self, ch: char) -> bool {
+        ch == '#' && self.scan.char_if_eq('|').is_some()
+    }
+}
+
+impl<'me, 'str> BlockComment<'me, 'str, ContinueComment> {
+    pub(super) fn cont(depth: usize, scan: &'me mut Scanner<'str>) -> Self {
+        Self {
+            depth,
+            policy: ContinueComment,
+            scan,
+        }
+    }
+}
+
+impl<'me, 'str> BlockComment<'me, 'str, StartComment> {
+    fn new(scan: &'me mut Scanner<'str>) -> Self {
+        Self {
+            depth: 0,
+            policy: StartComment,
+            scan,
+        }
+    }
+}
+
+pub(super) trait BlockCommentPolicy {
+    fn terminated(&self) -> TokenKind;
+    fn unterminated(&self, depth: usize) -> TokenKind;
+}
+
+pub(super) struct ContinueComment;
+
+impl BlockCommentPolicy for ContinueComment {
+    fn terminated(&self) -> TokenKind {
+        TokenKind::CommentBlockEnd
+    }
+
+    fn unterminated(&self, depth: usize) -> TokenKind {
+        TokenKind::CommentBlockFragment(depth)
+    }
+}
+
 pub(super) struct FreeText<'me, 'str, P> {
     buf: String,
     policy: P,
@@ -308,190 +490,6 @@ impl StringPolicyMode for LineContinueString {
     }
 }
 
-pub(super) struct Identifier<'me, 'str> {
-    buf: String,
-    peculiar_state: PeculiarState,
-    scan: &'me mut Scanner<'str>,
-}
-
-impl<'me, 'str> Identifier<'me, 'str> {
-    pub(super) fn new(scan: &'me mut Scanner<'str>) -> Self {
-        Self {
-            buf: String::new(),
-            peculiar_state: PeculiarState::Unspecified,
-            scan,
-        }
-    }
-
-    pub(super) fn scan(mut self, first: char) -> TokenExtractResult {
-        if first == '|' {
-            self.not_implemented(first) // TODO: verbatim identifier
-        } else if is_id_peculiar_initial(first) {
-            self.peculiar(first)
-        } else if is_id_initial(first) {
-            self.standard(first)
-        } else {
-            self.invalid(first)
-        }
-    }
-
-    fn standard(mut self, first: char) -> TokenExtractResult {
-        self.buf.push(first);
-        while let Some(ch) = self.scan.char_if_not_delimiter() {
-            if is_id_standard(ch) {
-                self.buf.push(ch);
-            } else {
-                return self.invalid(ch);
-            }
-        }
-        Ok(TokenKind::Identifier(self.buf))
-    }
-
-    fn peculiar(mut self, ch: char) -> TokenExtractResult {
-        self.push_peculiar(ch);
-        let next_ch = self.scan.char_if_not_delimiter();
-        self.continue_peculiar(next_ch)
-    }
-
-    fn continue_peculiar(mut self, next_ch: Option<char>) -> TokenExtractResult {
-        match next_ch {
-            Some(ch) => {
-                // TODO: this should only be 0..9, change call if is_id_digit is expanded
-                if is_id_digit(ch) {
-                    match self.peculiar_state {
-                        PeculiarState::DefiniteIdentifier => self.standard(ch),
-                        _ => self.not_implemented(ch), // TODO: parse as number
-                    }
-                } else if is_id_peculiar_initial(ch) {
-                    self.peculiar(ch)
-                } else if is_id_initial(ch) {
-                    self.standard(ch)
-                } else {
-                    self.invalid(ch)
-                }
-            }
-            None => {
-                // NOTE: a single '.' is invalid but Tokenizer handles '.'
-                // before attempting Identifier so this case never happens.
-                Ok(TokenKind::Identifier(self.buf))
-            }
-        }
-    }
-
-    fn invalid(&mut self, ch: char) -> TokenExtractResult {
-        self.scan.end_of_token();
-        Err(TokenErrorKind::IdentifierInvalid(ch))
-    }
-
-    fn push_peculiar(&mut self, ch: char) {
-        self.buf.push(ch);
-        // NOTE: only 3 cases: + | - | .
-        self.peculiar_state = match ch {
-            '+' | '-' => match self.peculiar_state {
-                PeculiarState::Unspecified => PeculiarState::MaybeSignedNumber,
-                _ => PeculiarState::DefiniteIdentifier,
-            },
-            _ => match self.peculiar_state {
-                PeculiarState::Unspecified => PeculiarState::MaybeFloat,
-                PeculiarState::MaybeSignedNumber => PeculiarState::MaybeSignedFloat,
-                _ => PeculiarState::DefiniteIdentifier,
-            },
-        }
-    }
-
-    fn not_implemented(mut self, ch: char) -> TokenExtractResult {
-        self.buf.push(ch);
-        self.buf.push_str(self.scan.rest_of_token());
-        Err(TokenErrorKind::Unimplemented(self.buf))
-    }
-}
-
-pub(super) struct PeriodIdentifier<'me, 'str>(Identifier<'me, 'str>);
-
-impl<'me, 'str> PeriodIdentifier<'me, 'str> {
-    pub(super) fn new(scan: &'me mut Scanner<'str>) -> Self {
-        let mut me = Self(Identifier::new(scan));
-        me.0.push_peculiar('.');
-        me
-    }
-
-    pub(super) fn scan(self, first: char) -> TokenExtractResult {
-        self.0.continue_peculiar(Some(first))
-    }
-}
-
-pub(super) struct BlockComment<'me, 'str, P> {
-    depth: usize,
-    policy: P,
-    scan: &'me mut Scanner<'str>,
-}
-
-impl<'me, 'str, P: BlockCommentPolicy> BlockComment<'me, 'str, P> {
-    pub(super) fn consume(&mut self) -> TokenKind {
-        while !self.scan.consumed() {
-            if let Some((_, ch)) = self.scan.find_any_char(&['|', '#']) {
-                if self.end_block(ch) {
-                    if self.depth == 0 {
-                        return self.policy.terminated();
-                    } else {
-                        self.depth -= 1;
-                    }
-                } else if self.new_block(ch) {
-                    self.depth += 1;
-                }
-            }
-        }
-        self.policy.unterminated(self.depth)
-    }
-
-    fn end_block(&mut self, ch: char) -> bool {
-        ch == '|' && self.scan.char_if_eq('#').is_some()
-    }
-
-    fn new_block(&mut self, ch: char) -> bool {
-        ch == '#' && self.scan.char_if_eq('|').is_some()
-    }
-}
-
-impl<'me, 'str> BlockComment<'me, 'str, ContinueComment> {
-    pub(super) fn cont(depth: usize, scan: &'me mut Scanner<'str>) -> Self {
-        Self {
-            depth,
-            policy: ContinueComment,
-            scan,
-        }
-    }
-}
-
-impl<'me, 'str> BlockComment<'me, 'str, StartComment> {
-    fn new(scan: &'me mut Scanner<'str>) -> Self {
-        Self {
-            depth: 0,
-            policy: StartComment,
-            scan,
-        }
-    }
-}
-
-pub(super) trait BlockCommentPolicy {
-    fn terminated(&self) -> TokenKind;
-    fn unterminated(&self, depth: usize) -> TokenKind;
-}
-
-pub(super) struct ContinueComment;
-
-impl BlockCommentPolicy for ContinueComment {
-    fn terminated(&self) -> TokenKind {
-        TokenKind::CommentBlockEnd
-    }
-
-    fn unterminated(&self, depth: usize) -> TokenKind {
-        TokenKind::CommentBlockFragment(depth)
-    }
-}
-
-type StringLiteralResult = Result<(), TokenErrorKind>;
-
 enum PeculiarState {
     DefiniteIdentifier,
     MaybeFloat,
@@ -511,6 +509,8 @@ impl BlockCommentPolicy for StartComment {
         TokenKind::CommentBlockBegin(depth)
     }
 }
+
+type StringLiteralResult = Result<(), TokenErrorKind>;
 
 enum HexParse {
     Invalid,
