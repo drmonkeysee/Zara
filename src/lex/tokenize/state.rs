@@ -453,21 +453,21 @@ impl<'me, 'str, P: BlockCommentPolicy> BlockComment<'me, 'str, P> {
     }
 }
 
-impl<'me, 'str> BlockComment<'me, 'str, ContinueBlockComment> {
+impl<'me, 'str> BlockComment<'me, 'str, ContinueComment> {
     pub(super) fn cont(depth: usize, scan: &'me mut Scanner<'str>) -> Self {
         Self {
             depth,
-            policy: ContinueBlockComment,
+            policy: ContinueComment,
             scan,
         }
     }
 }
 
-impl<'me, 'str> BlockComment<'me, 'str, StartBlockComment> {
+impl<'me, 'str> BlockComment<'me, 'str, StartComment> {
     fn new(scan: &'me mut Scanner<'str>) -> Self {
         Self {
             depth: 0,
-            policy: StartBlockComment,
+            policy: StartComment,
             scan,
         }
     }
@@ -478,9 +478,9 @@ pub(super) trait BlockCommentPolicy {
     fn unterminated(&self, depth: usize) -> TokenKind;
 }
 
-pub(super) struct ContinueBlockComment;
+pub(super) struct ContinueComment;
 
-impl BlockCommentPolicy for ContinueBlockComment {
+impl BlockCommentPolicy for ContinueComment {
     fn terminated(&self) -> TokenKind {
         TokenKind::CommentBlockEnd
     }
@@ -500,9 +500,9 @@ enum PeculiarState {
     Unspecified,
 }
 
-struct StartBlockComment;
+struct StartComment;
 
-impl BlockCommentPolicy for StartBlockComment {
+impl BlockCommentPolicy for StartComment {
     fn terminated(&self) -> TokenKind {
         TokenKind::CommentBlock
     }
