@@ -132,7 +132,9 @@ impl<'me, 'str> Continuation<'me, 'str> {
             }
             TokenContinuation::StringLiteral(false) => StringLiteral::cont(self.scan).scan(),
             TokenContinuation::StringLiteral(true) => StringLiteral::line_cont(self.scan).scan(),
+            TokenContinuation::SubidentifierError => todo!(),
             TokenContinuation::SubstringError => StringLiteral::cleanup(self.scan).scan(),
+            TokenContinuation::VerbatimIdentifier => todo!(),
         }
     }
 }

@@ -42,6 +42,10 @@ pub enum TokenKind {
     CommentDatum,
     DirectiveCase(bool),
     Identifier(String),
+    IdentifierBegin(String),
+    IdentifierDiscard,
+    IdentifierEnd(String),
+    IdentifierFragment(String),
     Literal(Literal),
     ParenLeft,
     ParenRight,
@@ -63,6 +67,10 @@ impl TokenKind {
             Self::CommentBlockBegin(depth) | Self::CommentBlockFragment(depth) => {
                 Some(TokenContinuation::BlockComment(*depth))
             }
+            Self::IdentifierBegin(_) | Self::IdentifierFragment(_) => {
+                Some(TokenContinuation::VerbatimIdentifier)
+            }
+            Self::IdentifierDiscard => Some(TokenContinuation::SubidentifierError),
             Self::StringBegin(_, line_cont) | Self::StringFragment(_, line_cont) => {
                 Some(TokenContinuation::StringLiteral(*line_cont))
             }
@@ -84,6 +92,10 @@ impl Display for TokenKind {
             Self::CommentDatum => f.write_str("DATUMCOMMENT"),
             Self::DirectiveCase(fold) => write!(f, "DIRFOLDCASE<{fold:?}>"),
             Self::Identifier(_) => f.write_str("IDENTIFIER"),
+            Self::IdentifierBegin(_) => f.write_str("BEGINVID"),
+            Self::IdentifierDiscard => f.write_str("DISCARDVID"),
+            Self::IdentifierEnd(_) => f.write_str("ENDVID"),
+            Self::IdentifierFragment(_) => f.write_str("VIDFRAG"),
             Self::Literal(lit) => write!(f, "LITERAL<{}>", lit.as_token_descriptor()),
             Self::ParenLeft => f.write_str("LEFTPAREN"),
             Self::ParenRight => f.write_str("RIGHTPAREN"),
@@ -128,7 +140,12 @@ pub(super) enum TokenErrorKind {
     ContinuationInvalid,
     DirectiveExpected,
     DirectiveInvalid,
+    IdentifierEscapeInvalid(usize, char),
+    IdentifierExpectedHex(usize),
     IdentifierInvalid(char),
+    IdentifierInvalidHex(usize),
+    IdentifierUnterminated,
+    IdentifierUnterminatedHex(usize),
     StringEscapeInvalid(usize, char),
     StringExpectedHex(usize),
     StringInvalidHex(usize),
@@ -142,6 +159,12 @@ pub(super) enum TokenErrorKind {
 impl TokenErrorKind {
     pub(super) fn to_continuation(&self) -> Option<TokenContinuation> {
         match self {
+            TokenErrorKind::IdentifierEscapeInvalid(..)
+            | TokenErrorKind::IdentifierExpectedHex(..)
+            | TokenErrorKind::IdentifierInvalidHex(..)
+            | TokenErrorKind::IdentifierUnterminatedHex(..) => {
+                Some(TokenContinuation::SubidentifierError)
+            }
             TokenErrorKind::StringEscapeInvalid(..)
             | TokenErrorKind::StringExpectedHex(..)
             | TokenErrorKind::StringInvalidHex(..)
@@ -152,7 +175,11 @@ impl TokenErrorKind {
 
     pub(super) fn sub_idx(&self) -> Option<usize> {
         match self {
-            TokenErrorKind::StringEscapeInvalid(idx, _)
+            TokenErrorKind::IdentifierEscapeInvalid(idx, _)
+            | TokenErrorKind::IdentifierExpectedHex(idx)
+            | TokenErrorKind::IdentifierInvalidHex(idx)
+            | TokenErrorKind::IdentifierUnterminatedHex(idx)
+            | TokenErrorKind::StringEscapeInvalid(idx, _)
             | TokenErrorKind::StringExpectedHex(idx)
             | TokenErrorKind::StringInvalidHex(idx)
             | TokenErrorKind::StringUnterminatedHex(idx) => Some(*idx),
@@ -177,16 +204,17 @@ impl Display for TokenErrorKind {
             Self::DirectiveInvalid => {
                 f.write_str("unsupported directive: expected fold-case or no-fold-case")
             }
-            Self::IdentifierInvalid(ch) => write!(f, "invalid identifier character: {ch}"),
-            Self::StringEscapeInvalid(_, ch) => write!(f, "invalid escape sequence: \\{ch}"),
-            Self::StringExpectedHex(_) => f.write_str("expected hex-escape"),
-            Self::StringInvalidHex(_) => {
-                format_char_range_error("hex-escape out of valid range", f)
-            }
-            Self::StringUnterminated => f.write_str("unterminated string-literal"),
-            Self::StringUnterminatedHex(_) => f.write_str("unterminated hex-escape"),
             Self::HashInvalid => f.write_str("unexpected #-literal"),
             Self::HashUnterminated => f.write_str("unterminated #-literal"),
+            Self::IdentifierInvalid(ch) => write!(f, "invalid identifier character: {ch}"),
+            Self::IdentifierEscapeInvalid(_, ch) | Self::StringEscapeInvalid(_, ch) => write!(f, "invalid escape sequence: \\{ch}"),
+            Self::IdentifierExpectedHex(_) | Self::StringExpectedHex(_) => f.write_str("expected hex-escape"),
+            Self::IdentifierInvalidHex(_) | Self::StringInvalidHex(_) => {
+                format_char_range_error("hex-escape out of valid range", f)
+            }
+            Self::IdentifierUnterminatedHex(_) | Self::StringUnterminatedHex(_) => f.write_str("unterminated hex-escape"),
+            Self::IdentifierUnterminated => f.write_str("unterminated verbatim identifier"),
+            Self::StringUnterminated => f.write_str("unterminated string-literal"),
             Self::Unimplemented(s) => write!(f, "unimplemented tokenization: '{s}'"),
         }
     }
@@ -196,6 +224,9 @@ impl From<TokenContinuation> for TokenErrorKind {
     fn from(value: TokenContinuation) -> Self {
         match value {
             TokenContinuation::BlockComment(_) => Self::BlockCommentUnterminated,
+            TokenContinuation::SubidentifierError | TokenContinuation::VerbatimIdentifier => {
+                Self::IdentifierUnterminated
+            }
             TokenContinuation::StringLiteral(_) | TokenContinuation::SubstringError => {
                 Self::StringUnterminated
             }
@@ -207,7 +238,9 @@ impl From<TokenContinuation> for TokenErrorKind {
 pub(super) enum TokenContinuation {
     BlockComment(usize),
     StringLiteral(bool),
+    SubidentifierError,
     SubstringError,
+    VerbatimIdentifier,
 }
 
 fn format_char_range_error(msg: &str, f: &mut Formatter<'_>) -> fmt::Result {
@@ -470,6 +503,46 @@ mod tests {
         }
 
         #[test]
+        fn display_identifier_start() {
+            let token = Token {
+                kind: TokenKind::IdentifierBegin("foo".to_owned()),
+                span: 0..3,
+            };
+
+            assert_eq!(token.to_string(), "BEGINVID[0..3]");
+        }
+
+        #[test]
+        fn display_identifier_fragment() {
+            let token = Token {
+                kind: TokenKind::IdentifierFragment("foo".to_owned()),
+                span: 0..3,
+            };
+
+            assert_eq!(token.to_string(), "VIDFRAG[0..3]");
+        }
+
+        #[test]
+        fn display_identifier_end() {
+            let token = Token {
+                kind: TokenKind::IdentifierEnd("foo".to_owned()),
+                span: 0..3,
+            };
+
+            assert_eq!(token.to_string(), "ENDVID[0..3]");
+        }
+
+        #[test]
+        fn display_identifier_discard() {
+            let token = Token {
+                kind: TokenKind::IdentifierDiscard,
+                span: 0..3,
+            };
+
+            assert_eq!(token.to_string(), "DISCARDVID[0..3]");
+        }
+
+        #[test]
         fn no_token_continuation() {
             let kind = TokenKind::Quote;
 
@@ -517,7 +590,27 @@ mod tests {
         }
 
         #[test]
-        fn to_valid_continuation_error() {
+        fn identifier_open_continuation() {
+            let kind = TokenKind::IdentifierBegin("".to_owned());
+
+            assert!(matches!(
+                kind.to_continuation(),
+                Some(TokenContinuation::VerbatimIdentifier)
+            ));
+        }
+
+        #[test]
+        fn identifier_fragment_continuation() {
+            let kind = TokenKind::IdentifierFragment("".to_owned());
+
+            assert!(matches!(
+                kind.to_continuation(),
+                Some(TokenContinuation::VerbatimIdentifier)
+            ));
+        }
+
+        #[test]
+        fn to_string_continuation_error() {
             let token = Token {
                 kind: TokenKind::StringFragment("foo".to_owned(), false),
                 span: 1..3,
@@ -529,6 +622,24 @@ mod tests {
                 result,
                 TokenError {
                     kind: TokenErrorKind::StringUnterminated,
+                    span: Range { start: 1, end: 3 },
+                }
+            ));
+        }
+
+        #[test]
+        fn to_identifier_continuation_error() {
+            let token = Token {
+                kind: TokenKind::IdentifierFragment("foo".to_owned()),
+                span: 1..3,
+            };
+
+            let result = token.into_continuation_unsupported();
+
+            assert!(matches!(
+                result,
+                TokenError {
+                    kind: TokenErrorKind::IdentifierUnterminated,
                     span: Range { start: 1, end: 3 },
                 }
             ));
@@ -637,45 +748,69 @@ mod tests {
 
         #[test]
         fn display_invalid_escape() {
-            let err = TokenError {
-                kind: TokenErrorKind::StringEscapeInvalid(1, 'B'),
-                span: 0..1,
-            };
+            let cases = [
+                TokenErrorKind::IdentifierEscapeInvalid(1, 'B'),
+                TokenErrorKind::StringEscapeInvalid(1, 'B'),
+            ];
+            for case in cases {
+                let err = TokenError {
+                    kind: case,
+                    span: 0..1,
+                };
 
-            assert_eq!(err.to_string(), "invalid escape sequence: \\B");
+                assert_eq!(err.to_string(), "invalid escape sequence: \\B");
+            }
         }
 
         #[test]
         fn display_expected_string_hex() {
-            let err = TokenError {
-                kind: TokenErrorKind::StringExpectedHex(1),
-                span: 0..1,
-            };
+            let cases = [
+                TokenErrorKind::IdentifierExpectedHex(1),
+                TokenErrorKind::StringExpectedHex(1),
+            ];
+            for case in cases {
+                let err = TokenError {
+                    kind: case,
+                    span: 0..1,
+                };
 
-            assert_eq!(err.to_string(), "expected hex-escape");
+                assert_eq!(err.to_string(), "expected hex-escape");
+            }
         }
 
         #[test]
         fn display_invalid_string_hex() {
-            let err = TokenError {
-                kind: TokenErrorKind::StringInvalidHex(1),
-                span: 0..1,
-            };
+            let cases = [
+                TokenErrorKind::IdentifierInvalidHex(1),
+                TokenErrorKind::StringInvalidHex(1),
+            ];
+            for case in cases {
+                let err = TokenError {
+                    kind: case,
+                    span: 0..1,
+                };
 
-            assert_eq!(
-                err.to_string(),
-                "hex-escape out of valid range: [0x0, 0x10ffff]"
-            );
+                assert_eq!(
+                    err.to_string(),
+                    "hex-escape out of valid range: [0x0, 0x10ffff]"
+                );
+            }
         }
 
         #[test]
         fn display_unterminated_string_hex() {
-            let err = TokenError {
-                kind: TokenErrorKind::StringUnterminatedHex(1),
-                span: 0..1,
-            };
+            let cases = [
+                TokenErrorKind::IdentifierUnterminatedHex(1),
+                TokenErrorKind::StringUnterminatedHex(1),
+            ];
+            for case in cases {
+                let err = TokenError {
+                    kind: case,
+                    span: 0..1,
+                };
 
-            assert_eq!(err.to_string(), "unterminated hex-escape");
+                assert_eq!(err.to_string(), "unterminated hex-escape");
+            }
         }
 
         #[test]
@@ -736,6 +871,26 @@ mod tests {
         }
 
         #[test]
+        fn identifier_invalid_sequence_continuation() {
+            let kind = TokenErrorKind::IdentifierEscapeInvalid(0, 'c');
+
+            assert!(matches!(
+                kind.to_continuation(),
+                Some(TokenContinuation::SubidentifierError)
+            ));
+        }
+
+        #[test]
+        fn identifier_hex_continuation() {
+            let kind = TokenErrorKind::IdentifierExpectedHex(1);
+
+            assert!(matches!(
+                kind.to_continuation(),
+                Some(TokenContinuation::SubidentifierError)
+            ));
+        }
+
+        #[test]
         fn no_sub_index() {
             let kind = TokenErrorKind::CharacterExpected;
 
@@ -743,17 +898,25 @@ mod tests {
         }
 
         #[test]
-        fn string_invalid_sequence_sub_index() {
-            let kind = TokenErrorKind::StringEscapeInvalid(3, 'c');
-
-            assert!(matches!(kind.sub_idx(), Some(3)));
+        fn invalid_sequence_sub_index() {
+            let cases = [
+                TokenErrorKind::IdentifierEscapeInvalid(3, 'c'),
+                TokenErrorKind::StringEscapeInvalid(3, 'c'),
+            ];
+            for case in cases {
+                assert!(matches!(case.sub_idx(), Some(3)));
+            }
         }
 
         #[test]
-        fn string_hex_sub_index() {
-            let kind = TokenErrorKind::StringExpectedHex(3);
-
-            assert!(matches!(kind.sub_idx(), Some(3)));
+        fn hex_sub_index() {
+            let cases = [
+                TokenErrorKind::IdentifierExpectedHex(3),
+                TokenErrorKind::StringExpectedHex(3),
+            ];
+            for case in cases {
+                assert!(matches!(case.sub_idx(), Some(3)));
+            }
         }
 
         #[test]
@@ -795,6 +958,16 @@ mod tests {
 
             assert_eq!(err.to_string(), "invalid identifier character: {");
         }
+
+        #[test]
+        fn display_identifier_unterminated() {
+            let err = TokenError {
+                kind: TokenErrorKind::IdentifierUnterminated,
+                span: 0..1,
+            };
+
+            assert_eq!(err.to_string(), "unterminated verbatim identifier");
+        }
     }
 
     mod tokencontinuation {
@@ -822,6 +995,26 @@ mod tests {
             let cont = TokenContinuation::SubstringError;
 
             assert!(matches!(cont.into(), TokenErrorKind::StringUnterminated));
+        }
+
+        #[test]
+        fn identifier_fragment() {
+            let cont = TokenContinuation::VerbatimIdentifier;
+
+            assert!(matches!(
+                cont.into(),
+                TokenErrorKind::IdentifierUnterminated
+            ));
+        }
+
+        #[test]
+        fn identifier_error() {
+            let cont = TokenContinuation::SubidentifierError;
+
+            assert!(matches!(
+                cont.into(),
+                TokenErrorKind::IdentifierUnterminated
+            ));
         }
     }
 }
