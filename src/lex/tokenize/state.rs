@@ -419,19 +419,19 @@ impl<'me, 'str> PeriodIdentifier<'me, 'str> {
     }
 }
 
-pub(super) struct BlockComment<'me, 'str, T> {
+pub(super) struct BlockComment<'me, 'str, P> {
     depth: usize,
-    mode: T,
+    policy: P,
     scan: &'me mut Scanner<'str>,
 }
 
-impl<'me, 'str, T: BlockCommentMode> BlockComment<'me, 'str, T> {
+impl<'me, 'str, P: BlockCommentPolicy> BlockComment<'me, 'str, P> {
     pub(super) fn consume(&mut self) -> TokenKind {
         while !self.scan.consumed() {
             if let Some((_, ch)) = self.scan.find_any_char(&['|', '#']) {
                 if self.end_block(ch) {
                     if self.depth == 0 {
-                        return self.mode.terminated();
+                        return self.policy.terminated();
                     } else {
                         self.depth -= 1;
                     }
@@ -440,7 +440,7 @@ impl<'me, 'str, T: BlockCommentMode> BlockComment<'me, 'str, T> {
                 }
             }
         }
-        self.mode.unterminated(self.depth)
+        self.policy.unterminated(self.depth)
     }
 
     fn end_block(&mut self, ch: char) -> bool {
@@ -456,7 +456,7 @@ impl<'me, 'str> BlockComment<'me, 'str, ContinueBlockComment> {
     pub(super) fn cont(depth: usize, scan: &'me mut Scanner<'str>) -> Self {
         Self {
             depth,
-            mode: ContinueBlockComment,
+            policy: ContinueBlockComment,
             scan,
         }
     }
@@ -466,20 +466,20 @@ impl<'me, 'str> BlockComment<'me, 'str, StartBlockComment> {
     fn new(scan: &'me mut Scanner<'str>) -> Self {
         Self {
             depth: 0,
-            mode: StartBlockComment,
+            policy: StartBlockComment,
             scan,
         }
     }
 }
 
-pub(super) trait BlockCommentMode {
+pub(super) trait BlockCommentPolicy {
     fn terminated(&self) -> TokenKind;
     fn unterminated(&self, depth: usize) -> TokenKind;
 }
 
 pub(super) struct ContinueBlockComment;
 
-impl BlockCommentMode for ContinueBlockComment {
+impl BlockCommentPolicy for ContinueBlockComment {
     fn terminated(&self) -> TokenKind {
         TokenKind::CommentBlockEnd
     }
@@ -501,7 +501,7 @@ enum PeculiarState {
 
 struct StartBlockComment;
 
-impl BlockCommentMode for StartBlockComment {
+impl BlockCommentPolicy for StartBlockComment {
     fn terminated(&self) -> TokenKind {
         TokenKind::CommentBlock
     }
