@@ -3313,8 +3313,8 @@ mod identifier {
             assert!(matches!(
                 r,
                 TokenExtract {
-                    start: 1,
-                    end: 1,
+                    start: 0,
+                    end: 2,
                     result: Ok(TokenKind::Identifier(s)),
                 } if s == ""
             ));
@@ -3335,8 +3335,8 @@ mod identifier {
             assert!(matches!(
                 r,
                 TokenExtract {
-                    start: 1,
-                    end: 4,
+                    start: 0,
+                    end: 5,
                     result: Ok(TokenKind::Identifier(s)),
                 } if s == "foo"
             ));
@@ -3357,8 +3357,8 @@ mod identifier {
             assert!(matches!(
                 r,
                 TokenExtract {
-                    start: 1,
-                    end: 10,
+                    start: 0,
+                    end: 11,
                     result: Ok(TokenKind::Identifier(s)),
                 } if s == " foo bar "
             ));
@@ -3379,8 +3379,8 @@ mod identifier {
             assert!(matches!(
                 r,
                 TokenExtract {
-                    start: 1,
-                    end: 11,
+                    start: 0,
+                    end: 12,
                     result: Ok(TokenKind::Identifier(s)),
                 } if s == " foo|bar "
             ));
@@ -3401,8 +3401,8 @@ mod identifier {
             assert!(matches!(
                 r,
                 TokenExtract {
-                    start: 1,
-                    end: 11,
+                    start: 0,
+                    end: 18,
                     result: Ok(TokenKind::Identifier(s)),
                 } if s == "foo \"string\" bar"
             ));
@@ -3477,7 +3477,7 @@ mod identifier {
         #[test]
         fn raw_escape_sequences() {
             let mut s =
-                Scanner::new("|a:\x07, b:\x08, d:\x7f, e:\x1b, n:\n, 0:\0, r:\r, t:\t, v:\x7c|");
+                Scanner::new("|a:\x07, b:\x08, d:\x7f, e:\x1b, n:\n, 0:\0, r:\r, t:\t, q:\"|");
             let start = s.next_token().unwrap();
             let t = Tokenizer {
                 scan: &mut s,
@@ -3493,7 +3493,7 @@ mod identifier {
                     start: 0,
                     end: 45,
                     result: Ok(TokenKind::Identifier(s)),
-                } if s == "a:\x07, b:\x08, d:\x7f, e:\x1b, n:\n, 0:\0, r:\r, t:\t, v:|"
+                } if s == "a:\x07, b:\x08, d:\x7f, e:\x1b, n:\n, 0:\0, r:\r, t:\t, q:\""
             ));
         }
 
@@ -3648,7 +3648,7 @@ mod identifier {
                 TokenExtract {
                     start: 1,
                     end: 3,
-                    result: Err(TokenErrorKind::StringEscapeInvalid(1, 'B')),
+                    result: Err(TokenErrorKind::IdentifierEscapeInvalid(1, 'B')),
                 }
             ));
         }
@@ -3670,7 +3670,7 @@ mod identifier {
                 TokenExtract {
                     start: 1,
                     end: 6,
-                    result: Err(TokenErrorKind::StringExpectedHex(1)),
+                    result: Err(TokenErrorKind::IdentifierExpectedHex(1)),
                 }
             ));
         }
@@ -3692,7 +3692,7 @@ mod identifier {
                 TokenExtract {
                     start: 1,
                     end: 12,
-                    result: Err(TokenErrorKind::StringInvalidHex(1)),
+                    result: Err(TokenErrorKind::IdentifierInvalidHex(1)),
                 }
             ));
         }
@@ -3714,7 +3714,7 @@ mod identifier {
                 TokenExtract {
                     start: 1,
                     end: 11,
-                    result: Err(TokenErrorKind::StringExpectedHex(1)),
+                    result: Err(TokenErrorKind::IdentifierExpectedHex(1)),
                 }
             ));
         }
@@ -3736,7 +3736,7 @@ mod identifier {
                 TokenExtract {
                     start: 1,
                     end: 6,
-                    result: Err(TokenErrorKind::StringUnterminatedHex(1)),
+                    result: Err(TokenErrorKind::IdentifierUnterminatedHex(1)),
                 }
             ));
         }
@@ -3781,14 +3781,14 @@ mod identifier {
                 r,
                 TokenExtract {
                     start: 0,
-                    end: 17,
-                    result: Ok(TokenKind::StringBegin(s, false)),
+                    end: 19,
+                    result: Ok(TokenKind::IdentifierBegin(s)),
                 } if s == "beginning verbatim"
             ));
         }
 
         #[test]
-        fn identifier_begin_with_line_continuation() {
+        fn identifier_begin_ignores_line_continuation() {
             let mut s = Scanner::new("|beginning verbatim\\");
             let start = s.next_token().unwrap();
             let t = Tokenizer {
@@ -3803,14 +3803,14 @@ mod identifier {
                 r,
                 TokenExtract {
                     start: 0,
-                    end: 18,
-                    result: Ok(TokenKind::StringBegin(s, true)),
+                    end: 20,
+                    result: Ok(TokenKind::IdentifierBegin(s)),
                 } if s == "beginning verbatim"
             ));
         }
 
         #[test]
-        fn identifier_begin_with_line_continuation_includes_leading_whitespace() {
+        fn identifier_begin_ignores_line_continuation_with_leading_whitespace() {
             let mut s = Scanner::new("|beginning verbatim    \\");
             let start = s.next_token().unwrap();
             let t = Tokenizer {
@@ -3825,14 +3825,14 @@ mod identifier {
                 r,
                 TokenExtract {
                     start: 0,
-                    end: 22,
-                    result: Ok(TokenKind::StringBegin(s, true)),
+                    end: 24,
+                    result: Ok(TokenKind::IdentifierBegin(s)),
                 } if s == "beginning verbatim    "
             ));
         }
 
         #[test]
-        fn identifier_begin_with_line_continuation_excludes_trailing_whitespace() {
+        fn identifier_begin_ignores_line_continuation_with_trailing_whitespace() {
             let mut s = Scanner::new("|beginning verbatim\\    ");
             let start = s.next_token().unwrap();
             let t = Tokenizer {
@@ -3847,30 +3847,8 @@ mod identifier {
                 r,
                 TokenExtract {
                     start: 0,
-                    end: 22,
-                    result: Ok(TokenKind::StringBegin(s, true)),
-                } if s == "beginning verbatim"
-            ));
-        }
-
-        #[test]
-        fn identifier_begin_only_counts_final_slash_as_line_continuation() {
-            let mut s = Scanner::new("|beginning verbatim\\  \\  \\  ");
-            let start = s.next_token().unwrap();
-            let t = Tokenizer {
-                scan: &mut s,
-                start,
-            };
-
-            let r = t.extract();
-            dbg!(&r);
-
-            assert!(matches!(
-                r,
-                TokenExtract {
-                    start: 0,
-                    end: 26,
-                    result: Ok(TokenKind::StringBegin(s, true)),
+                    end: 24,
+                    result: Ok(TokenKind::IdentifierBegin(s)),
                 } if s == "beginning verbatim    "
             ));
         }

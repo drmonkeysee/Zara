@@ -112,7 +112,7 @@ impl<'me, 'str> Identifier<'me, 'str> {
 
     pub(super) fn scan(mut self, first: char) -> TokenExtractResult {
         if first == '|' {
-            self.not_implemented(first) // TODO: verbatim identifier
+            VerbatimIdentifer::new(self.scan).scan()
         } else if is_id_peculiar_initial(first) {
             self.peculiar(first)
         } else if is_id_initial(first) {
@@ -487,6 +487,48 @@ pub(super) struct LineContinueString;
 impl StringPolicyMode for LineContinueString {
     fn prelude(&self, scan: &mut Scanner<'_>) {
         scan.skip_whitespace();
+    }
+}
+
+type VerbatimIdentifer<'me, 'str> = FreeText<'me, 'str, IdentifierPolicy>;
+
+impl<'me, 'str> VerbatimIdentifer<'me, 'str> {
+    fn new(scan: &'me mut Scanner<'str>) -> Self {
+        Self::init(scan, IdentifierPolicy)
+    }
+}
+
+struct IdentifierPolicy;
+
+impl FreeTextPolicy for IdentifierPolicy {
+    const TERMINATOR: char = '|';
+
+    fn prelude(&self, _scan: &mut Scanner<'_>) {
+        // NOTE: do nothing for verbatim identifiers
+    }
+
+    fn escape_invalid(&self, start: usize, ch: char) -> TokenErrorKind {
+        TokenErrorKind::IdentifierEscapeInvalid(start, ch)
+    }
+
+    fn hex_expected(&self, start: usize) -> TokenErrorKind {
+        TokenErrorKind::IdentifierExpectedHex(start)
+    }
+
+    fn hex_invalid(&self, start: usize) -> TokenErrorKind {
+        TokenErrorKind::IdentifierInvalidHex(start)
+    }
+
+    fn hex_unterminated(&self, start: usize) -> TokenErrorKind {
+        TokenErrorKind::IdentifierUnterminatedHex(start)
+    }
+
+    fn terminated(&self, buf: String) -> TokenKind {
+        TokenKind::Identifier(buf)
+    }
+
+    fn unterminated(&self, buf: String, _line_cont_idx: Option<usize>) -> TokenKind {
+        TokenKind::IdentifierBegin(buf)
     }
 }
 
