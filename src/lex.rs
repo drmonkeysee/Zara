@@ -145,9 +145,9 @@ impl Lexer {
         );
         let mut new_lines = d.tokenize(src)?;
         let lines = prev
-            .and_then(|mut p| {
+            .map(|mut p| {
                 p.append(&mut new_lines);
-                Some(p)
+                p
             })
             .unwrap_or(new_lines);
         if let Some(token_cont) = d.cont.take() {
@@ -274,7 +274,7 @@ impl Display for DisplayLineFailures<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let ctrl = self
             .0
-            .into_iter()
+            .iter()
             .try_fold(LineFailureAcc::Empty, |acc, f| f.accumulate(acc));
         match ctrl {
             ControlFlow::Break(_) => f.write_str("multiple lexer failures"),

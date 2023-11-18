@@ -365,7 +365,7 @@ impl<'me, 'str, P: FreeTextPolicy> FreeText<'me, 'str, P> {
 
 pub(super) trait FreeTextPolicy {
     const TERMINATOR: char;
-    fn prelude<'me, 'str>(&self, _scan: &'me mut Scanner<'str>);
+    fn prelude(&self, scan: &mut Scanner<'_>);
     fn escape_invalid(&self, start: usize, ch: char) -> TokenErrorKind;
     fn hex_expected(&self, start: usize) -> TokenErrorKind;
     fn hex_invalid(&self, start: usize) -> TokenErrorKind;
@@ -405,7 +405,7 @@ pub(super) struct StringPolicy<T>(T);
 impl<T: StringPolicyMode> FreeTextPolicy for StringPolicy<T> {
     const TERMINATOR: char = '"';
 
-    fn prelude<'me, 'str>(&self, scan: &'me mut Scanner<'str>) {
+    fn prelude(&self, scan: &mut Scanner<'_>) {
         self.0.prelude(scan)
     }
 
@@ -441,7 +441,7 @@ impl<T: StringPolicyMode> FreeTextPolicy for StringPolicy<T> {
 }
 
 pub(super) trait StringPolicyMode {
-    fn prelude<'me, 'str>(&self, _scan: &'me mut Scanner<'str>) {
+    fn prelude(&self, _scan: &mut Scanner<'_>) {
         // NOTE: do nothing by default
     }
 
@@ -485,7 +485,7 @@ impl StringPolicyMode for ContinueString {}
 pub(super) struct LineContinueString;
 
 impl StringPolicyMode for LineContinueString {
-    fn prelude<'me, 'str>(&self, scan: &'me mut Scanner<'str>) {
+    fn prelude(&self, scan: &mut Scanner<'_>) {
         scan.skip_whitespace();
     }
 }
