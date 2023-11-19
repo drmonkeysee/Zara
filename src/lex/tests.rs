@@ -955,7 +955,7 @@ mod lexer {
         assert!(matches!(
             &line.0[0],
             TokenType {
-                kind: TokenKind::StringBegin(s, false),
+                kind: TokenKind::IdentifierBegin(s),
                 span: Range { start: 0, end: 13 }
             } if s == " double line"
         ));
@@ -971,7 +971,7 @@ mod lexer {
         assert!(matches!(
             &line.0[0],
             TokenType {
-                kind: TokenKind::StringEnd(s),
+                kind: TokenKind::IdentifierEnd(s),
                 span: Range { start: 0, end: 8 }
             } if s == "verbatim "
         ));
@@ -1003,7 +1003,7 @@ mod lexer {
         assert!(matches!(
             &line.0[0],
             TokenType {
-                kind: TokenKind::StringBegin(s, false),
+                kind: TokenKind::IdentifierBegin(s),
                 span: Range { start: 0, end: 7 }
             } if s == " multi"
         ));
@@ -1019,7 +1019,7 @@ mod lexer {
         assert!(matches!(
             &line.0[0],
             TokenType {
-                kind: TokenKind::StringFragment(s, false),
+                kind: TokenKind::IdentifierFragment(s),
                 span: Range { start: 0, end: 4 }
             } if s == "line"
         ));
@@ -1035,7 +1035,7 @@ mod lexer {
         assert!(matches!(
             &line.0[0],
             TokenType {
-                kind: TokenKind::StringEnd(s),
+                kind: TokenKind::IdentifierEnd(s),
                 span: Range { start: 0, end: 8 }
             } if s == "verbatim "
         ));
@@ -1067,7 +1067,7 @@ mod lexer {
         assert!(matches!(
             errs[0],
             TokenType {
-                kind: TokenErrorKind::StringExpectedHex(9),
+                kind: TokenErrorKind::IdentifierExpectedHex(9),
                 span: Range { start: 9, end: 14 }
             }
         ));
@@ -1099,7 +1099,7 @@ mod lexer {
         assert!(matches!(
             errs[0],
             TokenType {
-                kind: TokenErrorKind::StringExpectedHex(9),
+                kind: TokenErrorKind::IdentifierExpectedHex(9),
                 span: Range { start: 9, end: 14 }
             }
         ));
@@ -1148,7 +1148,7 @@ mod lexer {
         assert!(matches!(
             errs[0],
             TokenType {
-                kind: TokenErrorKind::StringExpectedHex(9),
+                kind: TokenErrorKind::IdentifierExpectedHex(9),
                 span: Range { start: 9, end: 14 }
             }
         ));
@@ -1183,7 +1183,7 @@ mod lexer {
         assert!(matches!(
             errs[0],
             TokenType {
-                kind: TokenErrorKind::StringUnterminatedHex(8),
+                kind: TokenErrorKind::IdentifierUnterminatedHex(8),
                 span: Range { start: 8, end: 12 }
             }
         ));

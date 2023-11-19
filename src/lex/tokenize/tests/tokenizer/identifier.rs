@@ -1050,7 +1050,7 @@ mod verbatim {
         s.find_any_char(&[';']);
         let start = s.pos();
         let t = Continuation {
-            cont: TokenContinuation::SubstringError,
+            cont: TokenContinuation::SubidentifierError,
             scan: &mut s,
             start,
         };
@@ -1063,7 +1063,7 @@ mod verbatim {
             TokenExtract {
                 start: 11,
                 end: 24,
-                result: Ok(TokenKind::StringDiscard),
+                result: Ok(TokenKind::IdentifierDiscard),
             }
         ));
     }
@@ -1160,7 +1160,7 @@ mod verbatim {
     fn identifier_fragment() {
         let mut s = Scanner::new("continued verbatim");
         let c = Continuation {
-            cont: TokenContinuation::StringLiteral(false),
+            cont: TokenContinuation::VerbatimIdentifier,
             scan: &mut s,
             start: 0,
         };
@@ -1172,8 +1172,8 @@ mod verbatim {
             r,
             TokenExtract {
                 start: 0,
-                end: 16,
-                result: Ok(TokenKind::StringFragment(s, false)),
+                end: 18,
+                result: Ok(TokenKind::IdentifierFragment(s)),
             } if s == "continued verbatim"
         ));
     }
@@ -1182,7 +1182,7 @@ mod verbatim {
     fn identifier_fragment_includes_whitespace() {
         let mut s = Scanner::new("   continued verbatim");
         let c = Continuation {
-            cont: TokenContinuation::StringLiteral(false),
+            cont: TokenContinuation::VerbatimIdentifier,
             scan: &mut s,
             start: 0,
         };
@@ -1194,17 +1194,17 @@ mod verbatim {
             r,
             TokenExtract {
                 start: 0,
-                end: 19,
-                result: Ok(TokenKind::StringFragment(s, false)),
+                end: 21,
+                result: Ok(TokenKind::IdentifierFragment(s)),
             } if s == "   continued verbatim"
         ));
     }
 
     #[test]
-    fn identifier_fragment_with_line_continuation() {
+    fn identifier_fragment_ignores_line_continuation() {
         let mut s = Scanner::new("continued verbatim  \\  \\  ");
         let c = Continuation {
-            cont: TokenContinuation::StringLiteral(false),
+            cont: TokenContinuation::VerbatimIdentifier,
             scan: &mut s,
             start: 0,
         };
@@ -1216,97 +1216,9 @@ mod verbatim {
             r,
             TokenExtract {
                 start: 0,
-                end: 24,
-                result: Ok(TokenKind::StringFragment(s, true)),
-            } if s == "continued verbatim    "
-        ));
-    }
-
-    #[test]
-    fn identifier_fragment_from_identifier_continuation() {
-        let mut s = Scanner::new("continued verbatim");
-        let c = Continuation {
-            cont: TokenContinuation::StringLiteral(true),
-            scan: &mut s,
-            start: 0,
-        };
-
-        let r = c.extract();
-        dbg!(&r);
-
-        assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 16,
-                result: Ok(TokenKind::StringFragment(s, false)),
-            } if s == "continued verbatim"
-        ));
-    }
-
-    #[test]
-    fn identifier_fragment_from_identifier_continuation_ignores_leading_whitespace() {
-        let mut s = Scanner::new("   continued verbatim   ");
-        let c = Continuation {
-            cont: TokenContinuation::StringLiteral(true),
-            scan: &mut s,
-            start: 0,
-        };
-
-        let r = c.extract();
-        dbg!(&r);
-
-        assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 22,
-                result: Ok(TokenKind::StringFragment(s, false)),
-            } if s == "continued verbatim   "
-        ));
-    }
-
-    #[test]
-    fn identifier_fragment_from_identifier_continuation_all_whitespace() {
-        let mut s = Scanner::new("      ");
-        let c = Continuation {
-            cont: TokenContinuation::StringLiteral(true),
-            scan: &mut s,
-            start: 0,
-        };
-
-        let r = c.extract();
-        dbg!(&r);
-
-        assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 6,
-                result: Ok(TokenKind::StringFragment(s, false)),
-            } if s == ""
-        ));
-    }
-
-    #[test]
-    fn identifier_fragment_from_identifier_continuation_to_identifier_continuation() {
-        let mut s = Scanner::new("   continued verbatim  \\  \\  ");
-        let c = Continuation {
-            cont: TokenContinuation::StringLiteral(true),
-            scan: &mut s,
-            start: 0,
-        };
-
-        let r = c.extract();
-        dbg!(&r);
-
-        assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 27,
-                result: Ok(TokenKind::StringFragment(s, true)),
-            } if s == "continued verbatim    "
+                end: 26,
+                result: Ok(TokenKind::IdentifierFragment(s)),
+            } if s == "continued verbatim      "
         ));
     }
 
@@ -1314,7 +1226,7 @@ mod verbatim {
     fn identifier_end() {
         let mut s = Scanner::new("end verbatim|");
         let c = Continuation {
-            cont: TokenContinuation::StringLiteral(false),
+            cont: TokenContinuation::VerbatimIdentifier,
             scan: &mut s,
             start: 0,
         };
@@ -1326,8 +1238,8 @@ mod verbatim {
             r,
             TokenExtract {
                 start: 0,
-                end: 11,
-                result: Ok(TokenKind::StringEnd(s)),
+                end: 13,
+                result: Ok(TokenKind::IdentifierEnd(s)),
             } if s == "end verbatim"
         ));
     }
@@ -1336,7 +1248,7 @@ mod verbatim {
     fn identifier_end_includes_whitespace() {
         let mut s = Scanner::new("   end verbatim  |");
         let c = Continuation {
-            cont: TokenContinuation::StringLiteral(false),
+            cont: TokenContinuation::VerbatimIdentifier,
             scan: &mut s,
             start: 0,
         };
@@ -1348,8 +1260,8 @@ mod verbatim {
             r,
             TokenExtract {
                 start: 0,
-                end: 16,
-                result: Ok(TokenKind::StringEnd(s)),
+                end: 18,
+                result: Ok(TokenKind::IdentifierEnd(s)),
             } if s == "   end verbatim  "
         ));
     }
@@ -1358,7 +1270,7 @@ mod verbatim {
     fn identifier_end_with_escaped_whitespace() {
         let mut s = Scanner::new("end verbatim  \\  \\  |");
         let c = Continuation {
-            cont: TokenContinuation::StringLiteral(false),
+            cont: TokenContinuation::VerbatimIdentifier,
             scan: &mut s,
             start: 0,
         };
@@ -1370,75 +1282,9 @@ mod verbatim {
             r,
             TokenExtract {
                 start: 0,
-                end: 19,
-                result: Ok(TokenKind::StringEnd(s)),
+                end: 21,
+                result: Ok(TokenKind::IdentifierEnd(s)),
             } if s == "end verbatim      "
-        ));
-    }
-
-    #[test]
-    fn identifier_end_from_identifier_continuation() {
-        let mut s = Scanner::new("end verbatim|");
-        let c = Continuation {
-            cont: TokenContinuation::StringLiteral(true),
-            scan: &mut s,
-            start: 0,
-        };
-
-        let r = c.extract();
-        dbg!(&r);
-
-        assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 11,
-                result: Ok(TokenKind::StringEnd(s)),
-            } if s == "end verbatim"
-        ));
-    }
-
-    #[test]
-    fn identifier_end_from_identifier_continuation_ignores_leading_whitespace() {
-        let mut s = Scanner::new("   end verbatim   |");
-        let c = Continuation {
-            cont: TokenContinuation::StringLiteral(true),
-            scan: &mut s,
-            start: 0,
-        };
-
-        let r = c.extract();
-        dbg!(&r);
-
-        assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 17,
-                result: Ok(TokenKind::StringEnd(s)),
-            } if s == "end verbatim   "
-        ));
-    }
-
-    #[test]
-    fn identifier_end_from_identifier_continuation_all_whitespace() {
-        let mut s = Scanner::new("      |");
-        let c = Continuation {
-            cont: TokenContinuation::StringLiteral(true),
-            scan: &mut s,
-            start: 0,
-        };
-
-        let r = c.extract();
-        dbg!(&r);
-
-        assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 7,
-                result: Ok(TokenKind::StringEnd(s)),
-            } if s == ""
         ));
     }
 }

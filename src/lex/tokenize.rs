@@ -7,7 +7,9 @@ mod tests;
 use self::{
     extract::{TokenExtract, TokenExtractResult},
     scan::{ScanItem, Scanner},
-    state::{BlockComment, Hashtag, Identifier, PeriodIdentifier, StringLiteral},
+    state::{
+        BlockComment, Hashtag, Identifier, PeriodIdentifier, StringLiteral, VerbatimIdentifer,
+    },
 };
 use super::token::{TokenContinuation, TokenKind, TokenResult};
 
@@ -134,7 +136,7 @@ impl<'me, 'str> Continuation<'me, 'str> {
             TokenContinuation::StringLiteral(true) => StringLiteral::line_cont(self.scan).scan(),
             TokenContinuation::SubidentifierError => todo!(),
             TokenContinuation::SubstringError => StringLiteral::cleanup(self.scan).scan(),
-            TokenContinuation::VerbatimIdentifier => todo!(),
+            TokenContinuation::VerbatimIdentifier => VerbatimIdentifer::cont(self.scan).scan(),
         }
     }
 }

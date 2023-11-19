@@ -590,7 +590,7 @@ fn invalid_identifer_consumes_token() {
 fn identifier_fragment_uses_whole_line() {
     let s = TokenStream::new(
         "continued verbatim",
-        Some(TokenContinuation::StringLiteral(false)),
+        Some(TokenContinuation::VerbatimIdentifier),
     );
 
     let r: Vec<_> = s.collect();
@@ -600,7 +600,7 @@ fn identifier_fragment_uses_whole_line() {
     assert!(matches!(
         &r[0],
         Ok(Token {
-            kind: TokenKind::StringFragment(s, false),
+            kind: TokenKind::IdentifierFragment(s),
             span: Range { start: 0, end: 16 }
         }) if s == "continued verbatim"
     ));
@@ -610,7 +610,7 @@ fn identifier_fragment_uses_whole_line() {
 fn identifier_end_continues_tokenizing() {
     let s = TokenStream::new(
         "end verbatim | #f",
-        Some(TokenContinuation::StringLiteral(false)),
+        Some(TokenContinuation::VerbatimIdentifier),
     );
 
     let r: Vec<_> = s.collect();
@@ -620,7 +620,7 @@ fn identifier_end_continues_tokenizing() {
     assert!(matches!(
         &r[0],
         Ok(Token {
-            kind: TokenKind::StringEnd(s),
+            kind: TokenKind::IdentifierEnd(s),
             span: Range { start: 0, end: 12 }
         }) if s == "end verbatim "
     ));
@@ -644,14 +644,14 @@ fn finishes_parsing_identifier_if_error() {
     assert!(matches!(
         r[0],
         Err(TokenError {
-            kind: TokenErrorKind::StringEscapeInvalid(5, 'e'),
+            kind: TokenErrorKind::IdentifierEscapeInvalid(5, 'e'),
             span: Range { start: 5, end: 7 }
         })
     ));
     assert!(matches!(
         r[1],
         Ok(Token {
-            kind: TokenKind::StringDiscard,
+            kind: TokenKind::IdentifierDiscard,
             span: Range { start: 7, end: 12 }
         })
     ));
@@ -675,14 +675,14 @@ fn unterminated_hex_does_not_consume_end_of_identifier() {
     assert!(matches!(
         r[0],
         Err(TokenError {
-            kind: TokenErrorKind::StringUnterminatedHex(1),
+            kind: TokenErrorKind::IdentifierUnterminatedHex(1),
             span: Range { start: 1, end: 5 }
         })
     ));
     assert!(matches!(
         r[1],
         Ok(Token {
-            kind: TokenKind::StringDiscard,
+            kind: TokenKind::IdentifierDiscard,
             span: Range { start: 5, end: 6 }
         })
     ));
@@ -706,14 +706,14 @@ fn unterminated_hex_does_not_consume_identifier_escape_sequence() {
     assert!(matches!(
         r[0],
         Err(TokenError {
-            kind: TokenErrorKind::StringUnterminatedHex(1),
+            kind: TokenErrorKind::IdentifierUnterminatedHex(1),
             span: Range { start: 1, end: 5 }
         })
     ));
     assert!(matches!(
         r[1],
         Ok(Token {
-            kind: TokenKind::StringDiscard,
+            kind: TokenKind::IdentifierDiscard,
             span: Range { start: 5, end: 8 }
         })
     ));
@@ -737,21 +737,21 @@ fn multiple_identifier_errors() {
     assert!(matches!(
         r[0],
         Err(TokenError {
-            kind: TokenErrorKind::StringInvalidHex(5),
+            kind: TokenErrorKind::IdentifierInvalidHex(5),
             span: Range { start: 5, end: 16 }
         })
     ));
     assert!(matches!(
         r[1],
         Err(TokenError {
-            kind: TokenErrorKind::StringEscapeInvalid(21, 'e'),
+            kind: TokenErrorKind::IdentifierEscapeInvalid(21, 'e'),
             span: Range { start: 21, end: 23 }
         })
     ));
     assert!(matches!(
         r[2],
         Ok(Token {
-            kind: TokenKind::StringDiscard,
+            kind: TokenKind::IdentifierDiscard,
             span: Range { start: 23, end: 28 }
         })
     ));
@@ -775,14 +775,14 @@ fn open_identifier_with_error() {
     assert!(matches!(
         r[0],
         Err(TokenError {
-            kind: TokenErrorKind::StringEscapeInvalid(5, 'e'),
+            kind: TokenErrorKind::IdentifierEscapeInvalid(5, 'e'),
             span: Range { start: 5, end: 7 }
         })
     ));
     assert!(matches!(
         r[1],
         Ok(Token {
-            kind: TokenKind::StringDiscard,
+            kind: TokenKind::IdentifierDiscard,
             span: Range { start: 7, end: 11 }
         })
     ));

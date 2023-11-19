@@ -440,20 +440,6 @@ impl<M: StringPolicyMode> FreeTextPolicy for StringPolicy<M> {
     }
 }
 
-pub(super) trait StringPolicyMode {
-    fn prelude(&self, _scan: &mut Scanner<'_>) {
-        // NOTE: do nothing by default
-    }
-
-    fn terminated(&self, buf: String) -> TokenKind {
-        TokenKind::StringEnd(buf)
-    }
-
-    fn unterminated(&self, buf: String, line_cont: bool) -> TokenKind {
-        TokenKind::StringFragment(buf, line_cont)
-    }
-}
-
 pub(super) struct StartString;
 
 impl StringPolicyMode for StartString {
@@ -490,7 +476,13 @@ impl StringPolicyMode for DiscardString {
     }
 }
 
-type VerbatimIdentifer<'me, 'str, M> = FreeText<'me, 'str, IdentifierPolicy<M>>;
+pub(super) type VerbatimIdentifer<'me, 'str, M> = FreeText<'me, 'str, IdentifierPolicy<M>>;
+
+impl<'me, 'str> VerbatimIdentifer<'me, 'str, ContinueIdentifier> {
+    pub(super) fn cont(scan: &'me mut Scanner<'str>) -> Self {
+        Self::init(scan, IdentifierPolicy(ContinueIdentifier))
+    }
+}
 
 impl<'me, 'str> VerbatimIdentifer<'me, 'str, StartIdentifier> {
     fn new(scan: &'me mut Scanner<'str>) -> Self {
@@ -498,7 +490,7 @@ impl<'me, 'str> VerbatimIdentifer<'me, 'str, StartIdentifier> {
     }
 }
 
-struct IdentifierPolicy<M>(M);
+pub(super) struct IdentifierPolicy<M>(M);
 
 impl<M: IdentifierPolicyMode> FreeTextPolicy for IdentifierPolicy<M> {
     const TERMINATOR: char = '|';
@@ -532,24 +524,7 @@ impl<M: IdentifierPolicyMode> FreeTextPolicy for IdentifierPolicy<M> {
     }
 }
 
-trait IdentifierPolicyMode {
-    fn terminated(&self, buf: String) -> TokenKind;
-    fn unterminated(&self, buf: String) -> TokenKind;
-}
-
-struct StartIdentifier;
-
-impl IdentifierPolicyMode for StartIdentifier {
-    fn terminated(&self, buf: String) -> TokenKind {
-        TokenKind::Identifier(buf)
-    }
-
-    fn unterminated(&self, buf: String) -> TokenKind {
-        TokenKind::IdentifierBegin(buf)
-    }
-}
-
-struct ContinueIdentifier;
+pub(super) struct ContinueIdentifier;
 
 impl IdentifierPolicyMode for ContinueIdentifier {
     fn terminated(&self, buf: String) -> TokenKind {
@@ -570,6 +545,37 @@ impl IdentifierPolicyMode for DiscardIdentifier {
 
     fn unterminated(&self, buf: String) -> TokenKind {
         self.terminated(buf)
+    }
+}
+
+trait StringPolicyMode {
+    fn prelude(&self, _scan: &mut Scanner<'_>) {
+        // NOTE: do nothing by default
+    }
+
+    fn terminated(&self, buf: String) -> TokenKind {
+        TokenKind::StringEnd(buf)
+    }
+
+    fn unterminated(&self, buf: String, line_cont: bool) -> TokenKind {
+        TokenKind::StringFragment(buf, line_cont)
+    }
+}
+
+trait IdentifierPolicyMode {
+    fn terminated(&self, buf: String) -> TokenKind;
+    fn unterminated(&self, buf: String) -> TokenKind;
+}
+
+struct StartIdentifier;
+
+impl IdentifierPolicyMode for StartIdentifier {
+    fn terminated(&self, buf: String) -> TokenKind {
+        TokenKind::Identifier(buf)
+    }
+
+    fn unterminated(&self, buf: String) -> TokenKind {
+        TokenKind::IdentifierBegin(buf)
     }
 }
 
