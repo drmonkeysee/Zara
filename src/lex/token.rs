@@ -88,7 +88,7 @@ impl Display for TokenKind {
             Self::CommentBlockEnd => f.write_str("COMMENTEND"),
             Self::CommentBlockFragment(depth) => write!(f, "COMMENTFRAGMENT<{depth:?}>"),
             Self::CommentDatum => f.write_str("DATUMCOMMENT"),
-            Self::DirectiveCase(fold) => write!(f, "DIRFOLDCASE<{fold:?}>"),
+            Self::DirectiveCase(fold) => write!(f, "FOLDCASE<{fold:?}>"),
             Self::Identifier(_) => f.write_str("IDENTIFIER"),
             Self::IdentifierBegin(_) => f.write_str("IDENTBEGIN"),
             Self::IdentifierDiscard => f.write_str("IDENTDISCARD"),
@@ -327,7 +327,7 @@ mod tests {
                 span: 0..10,
             };
 
-            assert_eq!(token.to_string(), "DIRFOLDCASE<false>[0..10]");
+            assert_eq!(token.to_string(), "FOLDCASE<false>[0..10]");
         }
 
         #[test]
