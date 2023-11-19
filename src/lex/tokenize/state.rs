@@ -597,7 +597,7 @@ struct StartComment;
 
 impl BlockCommentPolicy for StartComment {
     fn terminated(&self) -> TokenKind {
-        TokenKind::CommentBlock
+        TokenKind::Comment
     }
 
     fn unterminated(&self, depth: usize) -> TokenKind {

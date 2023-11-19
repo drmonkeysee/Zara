@@ -271,7 +271,7 @@ mod comments {
             TokenExtract {
                 start: 0,
                 end: 4,
-                result: Ok(TokenKind::CommentBlock),
+                result: Ok(TokenKind::Comment),
             }
         ));
     }
@@ -292,7 +292,7 @@ mod comments {
             TokenExtract {
                 start: 0,
                 end: 18,
-                result: Ok(TokenKind::CommentBlock),
+                result: Ok(TokenKind::Comment),
             }
         ));
     }
@@ -313,7 +313,7 @@ mod comments {
             TokenExtract {
                 start: 0,
                 end: 20,
-                result: Ok(TokenKind::CommentBlock),
+                result: Ok(TokenKind::Comment),
             }
         ));
     }
@@ -334,7 +334,7 @@ mod comments {
             TokenExtract {
                 start: 0,
                 end: 17,
-                result: Ok(TokenKind::CommentBlock),
+                result: Ok(TokenKind::Comment),
             }
         ));
     }
@@ -355,7 +355,7 @@ mod comments {
             TokenExtract {
                 start: 0,
                 end: 35,
-                result: Ok(TokenKind::CommentBlock),
+                result: Ok(TokenKind::Comment),
             }
         ));
     }
@@ -376,7 +376,7 @@ mod comments {
             TokenExtract {
                 start: 0,
                 end: 13,
-                result: Ok(TokenKind::CommentBlock),
+                result: Ok(TokenKind::Comment),
             }
         ));
     }

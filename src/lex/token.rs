@@ -35,7 +35,6 @@ impl Display for Token {
 pub enum TokenKind {
     ByteVector,
     Comment,
-    CommentBlock,
     CommentBlockBegin(usize),
     CommentBlockEnd,
     CommentBlockFragment(usize),
@@ -85,10 +84,9 @@ impl Display for TokenKind {
         match self {
             Self::ByteVector => f.write_str("BYTEVECTOR"),
             Self::Comment => f.write_str("COMMENT"),
-            Self::CommentBlock => f.write_str("BLOCKCOMMENT"),
-            Self::CommentBlockBegin(depth) => write!(f, "BLKCMTBEGIN<{depth:?}>"),
-            Self::CommentBlockEnd => f.write_str("BLKCMTEND"),
-            Self::CommentBlockFragment(depth) => write!(f, "BLKCMTFRAGMENT<{depth:?}>"),
+            Self::CommentBlockBegin(depth) => write!(f, "COMMENTBEGIN<{depth:?}>"),
+            Self::CommentBlockEnd => f.write_str("COMMENTEND"),
+            Self::CommentBlockFragment(depth) => write!(f, "COMMENTFRAGMENT<{depth:?}>"),
             Self::CommentDatum => f.write_str("DATUMCOMMENT"),
             Self::DirectiveCase(fold) => write!(f, "DIRFOLDCASE<{fold:?}>"),
             Self::Identifier(_) => f.write_str("IDENTIFIER"),
@@ -283,23 +281,13 @@ mod tests {
         }
 
         #[test]
-        fn display_comment_block() {
-            let token = Token {
-                kind: TokenKind::CommentBlock,
-                span: 0..10,
-            };
-
-            assert_eq!(token.to_string(), "BLOCKCOMMENT[0..10]");
-        }
-
-        #[test]
         fn display_comment_blockbegin() {
             let token = Token {
                 kind: TokenKind::CommentBlockBegin(1),
                 span: 0..10,
             };
 
-            assert_eq!(token.to_string(), "BLKCMTBEGIN<1>[0..10]");
+            assert_eq!(token.to_string(), "COMMENTBEGIN<1>[0..10]");
         }
 
         #[test]
@@ -309,7 +297,7 @@ mod tests {
                 span: 0..10,
             };
 
-            assert_eq!(token.to_string(), "BLKCMTFRAGMENT<1>[0..10]");
+            assert_eq!(token.to_string(), "COMMENTFRAGMENT<1>[0..10]");
         }
 
         #[test]
@@ -319,7 +307,7 @@ mod tests {
                 span: 0..10,
             };
 
-            assert_eq!(token.to_string(), "BLKCMTEND[0..10]");
+            assert_eq!(token.to_string(), "COMMENTEND[0..10]");
         }
 
         #[test]
