@@ -134,7 +134,7 @@ impl<'me, 'str> Continuation<'me, 'str> {
             }
             TokenContinuation::StringLiteral(false) => StringLiteral::cont(self.scan).scan(),
             TokenContinuation::StringLiteral(true) => StringLiteral::line_cont(self.scan).scan(),
-            TokenContinuation::SubidentifierError => todo!(),
+            TokenContinuation::SubidentifierError => VerbatimIdentifer::cleanup(self.scan).scan(),
             TokenContinuation::SubstringError => StringLiteral::cleanup(self.scan).scan(),
             TokenContinuation::VerbatimIdentifier => VerbatimIdentifer::cont(self.scan).scan(),
         }

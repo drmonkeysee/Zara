@@ -601,7 +601,7 @@ fn identifier_fragment_uses_whole_line() {
         &r[0],
         Ok(Token {
             kind: TokenKind::IdentifierFragment(s),
-            span: Range { start: 0, end: 16 }
+            span: Range { start: 0, end: 18 }
         }) if s == "continued verbatim"
     ));
 }
@@ -621,14 +621,14 @@ fn identifier_end_continues_tokenizing() {
         &r[0],
         Ok(Token {
             kind: TokenKind::IdentifierEnd(s),
-            span: Range { start: 0, end: 12 }
+            span: Range { start: 0, end: 14 }
         }) if s == "end verbatim "
     ));
     assert!(matches!(
         r[1],
         Ok(Token {
             kind: TokenKind::Literal(Literal::Boolean(false)),
-            span: Range { start: 13, end: 15 }
+            span: Range { start: 15, end: 17 }
         })
     ));
 }

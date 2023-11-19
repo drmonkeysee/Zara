@@ -484,6 +484,12 @@ impl<'me, 'str> VerbatimIdentifer<'me, 'str, ContinueIdentifier> {
     }
 }
 
+impl<'me, 'str> VerbatimIdentifer<'me, 'str, DiscardIdentifier> {
+    pub(super) fn cleanup(scan: &'me mut Scanner<'str>) -> Self {
+        Self::init(scan, IdentifierPolicy(DiscardIdentifier))
+    }
+}
+
 impl<'me, 'str> VerbatimIdentifer<'me, 'str, StartIdentifier> {
     fn new(scan: &'me mut Scanner<'str>) -> Self {
         Self::init(scan, IdentifierPolicy(StartIdentifier))
@@ -536,7 +542,7 @@ impl IdentifierPolicyMode for ContinueIdentifier {
     }
 }
 
-struct DiscardIdentifier;
+pub(super) struct DiscardIdentifier;
 
 impl IdentifierPolicyMode for DiscardIdentifier {
     fn terminated(&self, _buf: String) -> TokenKind {

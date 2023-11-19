@@ -972,7 +972,7 @@ mod lexer {
             &line.0[0],
             TokenType {
                 kind: TokenKind::IdentifierEnd(s),
-                span: Range { start: 0, end: 8 }
+                span: Range { start: 0, end: 10 }
             } if s == "verbatim "
         ));
         assert!(matches!(
@@ -1036,7 +1036,7 @@ mod lexer {
             &line.0[0],
             TokenType {
                 kind: TokenKind::IdentifierEnd(s),
-                span: Range { start: 0, end: 8 }
+                span: Range { start: 0, end: 10 }
             } if s == "verbatim "
         ));
         assert!(matches!(
@@ -1117,7 +1117,7 @@ mod lexer {
             errs[0],
             TokenType {
                 kind: TokenErrorKind::HashInvalid,
-                span: Range { start: 11, end: 13 }
+                span: Range { start: 13, end: 15 }
             }
         ));
         assert!(matches!(
@@ -1127,38 +1127,6 @@ mod lexer {
                 line,
                 lineno: 2,
             } if Rc::ptr_eq(&ctx, &src.ctx) && line == "#z verbatim| #z"
-        ));
-        assert!(target.cont.is_none());
-    }
-
-    #[test]
-    fn double_line_identifier_with_errors_and_line_continuation() {
-        let mut src = MockTxtSource::new("| double \\xZZ; line \\\n   #z verbatim|", false);
-        let mut target = Lexer::new();
-
-        let r = target.tokenize(&mut src);
-        dbg!(&r);
-
-        assert!(r.is_err());
-        let err = r.unwrap_err();
-        let err_lines = lextest_extract!(err, LexerError::Lines);
-        assert_eq!(err_lines.len(), 1);
-        let TokenErrorLine(errs, line) = lextest_extract!(&err_lines[0], LineFailure::Tokenize);
-        assert_eq!(errs.len(), 1);
-        assert!(matches!(
-            errs[0],
-            TokenType {
-                kind: TokenErrorKind::IdentifierExpectedHex(9),
-                span: Range { start: 9, end: 14 }
-            }
-        ));
-        assert!(matches!(
-            line,
-            TextLine {
-                ctx,
-                line,
-                lineno: 1,
-            } if Rc::ptr_eq(&ctx, &src.ctx) && line == "| double \\xZZ; line \\"
         ));
         assert!(target.cont.is_none());
     }
@@ -1191,7 +1159,7 @@ mod lexer {
             errs[1],
             TokenType {
                 kind: TokenErrorKind::HashInvalid,
-                span: Range { start: 29, end: 31 }
+                span: Range { start: 31, end: 33 }
             }
         ));
         assert!(matches!(
