@@ -594,7 +594,6 @@ fn identifier_fragment_uses_whole_line() {
     );
 
     let r: Vec<_> = s.collect();
-    dbg!(&r);
 
     assert_eq!(r.len(), 1);
     assert!(matches!(
@@ -614,7 +613,6 @@ fn identifier_end_continues_tokenizing() {
     );
 
     let r: Vec<_> = s.collect();
-    dbg!(&r);
 
     assert_eq!(r.len(), 2);
     assert!(matches!(
@@ -638,7 +636,6 @@ fn finishes_parsing_identifier_if_error() {
     let s = TokenStream::new("|foo \\e bar| #t", None);
 
     let r: Vec<_> = s.collect();
-    dbg!(&r);
 
     assert_eq!(r.len(), 3);
     assert!(matches!(
@@ -669,7 +666,6 @@ fn unterminated_hex_does_not_consume_end_of_identifier() {
     let s = TokenStream::new("|\\x42| #t", None);
 
     let r: Vec<_> = s.collect();
-    dbg!(&r);
 
     assert_eq!(r.len(), 3);
     assert!(matches!(
@@ -700,7 +696,6 @@ fn unterminated_hex_does_not_consume_identifier_escape_sequence() {
     let s = TokenStream::new("|\\x42\\|| #t", None);
 
     let r: Vec<_> = s.collect();
-    dbg!(&r);
 
     assert_eq!(r.len(), 3);
     assert!(matches!(
@@ -731,7 +726,6 @@ fn multiple_identifier_errors() {
     let s = TokenStream::new("|foo \\xdeadbeef; bar \\e baz| #t", None);
 
     let r: Vec<_> = s.collect();
-    dbg!(&r);
 
     assert_eq!(r.len(), 4);
     assert!(matches!(
@@ -769,7 +763,6 @@ fn open_identifier_with_error() {
     let s = TokenStream::new("|foo \\e bar", None);
 
     let r: Vec<_> = s.collect();
-    dbg!(&r);
 
     assert_eq!(r.len(), 2);
     assert!(matches!(

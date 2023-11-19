@@ -612,7 +612,6 @@ mod verbatim {
         };
 
         let r = t.extract();
-        dbg!(&r);
 
         assert!(matches!(
             r,
@@ -634,7 +633,6 @@ mod verbatim {
         };
 
         let r = t.extract();
-        dbg!(&r);
 
         assert!(matches!(
             r,
@@ -656,7 +654,6 @@ mod verbatim {
         };
 
         let r = t.extract();
-        dbg!(&r);
 
         assert!(matches!(
             r,
@@ -678,7 +675,6 @@ mod verbatim {
         };
 
         let r = t.extract();
-        dbg!(&r);
 
         assert!(matches!(
             r,
@@ -700,7 +696,6 @@ mod verbatim {
         };
 
         let r = t.extract();
-        dbg!(&r);
 
         assert!(matches!(
             r,
@@ -722,7 +717,6 @@ mod verbatim {
         };
 
         let r = t.extract();
-        dbg!(&r);
 
         assert!(matches!(
             r,
@@ -744,7 +738,6 @@ mod verbatim {
         };
 
         let r = t.extract();
-        dbg!(&r);
 
         assert!(matches!(
             r,
@@ -766,7 +759,6 @@ mod verbatim {
         };
 
         let r = t.extract();
-        dbg!(&r);
 
         assert!(matches!(
             r,
@@ -788,7 +780,6 @@ mod verbatim {
         };
 
         let r = t.extract();
-        dbg!(&r);
 
         assert!(matches!(
             r,
@@ -810,7 +801,6 @@ mod verbatim {
         };
 
         let r = t.extract();
-        dbg!(&r);
 
         assert!(matches!(
             r,
@@ -832,7 +822,6 @@ mod verbatim {
         };
 
         let r = t.extract();
-        dbg!(&r);
 
         assert!(matches!(
             r,
@@ -856,7 +845,6 @@ mod verbatim {
         };
 
         let r = t.extract();
-        dbg!(&r);
 
         assert!(matches!(
             r,
@@ -878,7 +866,6 @@ mod verbatim {
         };
 
         let r = t.extract();
-        dbg!(&r);
 
         assert!(matches!(
             r,
@@ -900,7 +887,6 @@ mod verbatim {
         };
 
         let r = t.extract();
-        dbg!(&r);
 
         assert!(matches!(
             r,
@@ -922,7 +908,6 @@ mod verbatim {
         };
 
         let r = t.extract();
-        dbg!(&r);
 
         assert!(matches!(
             r,
@@ -944,7 +929,6 @@ mod verbatim {
         };
 
         let r = t.extract();
-        dbg!(&r);
 
         assert!(matches!(
             r,
@@ -966,7 +950,6 @@ mod verbatim {
         };
 
         let r = t.extract();
-        dbg!(&r);
 
         assert!(matches!(
             r,
@@ -988,7 +971,6 @@ mod verbatim {
         };
 
         let r = t.extract();
-        dbg!(&r);
 
         assert!(matches!(
             r,
@@ -1010,7 +992,6 @@ mod verbatim {
         };
 
         let r = t.extract();
-        dbg!(&r);
 
         assert!(matches!(
             r,
@@ -1032,7 +1013,6 @@ mod verbatim {
         };
 
         let r = t.extract();
-        dbg!(&r);
 
         assert!(matches!(
             r,
@@ -1056,7 +1036,6 @@ mod verbatim {
         };
 
         let r = t.extract();
-        dbg!(&r);
 
         assert!(matches!(
             r,
@@ -1078,7 +1057,6 @@ mod verbatim {
         };
 
         let r = t.extract();
-        dbg!(&r);
 
         assert!(matches!(
             r,
@@ -1100,7 +1078,6 @@ mod verbatim {
         };
 
         let r = t.extract();
-        dbg!(&r);
 
         assert!(matches!(
             r,
@@ -1122,7 +1099,6 @@ mod verbatim {
         };
 
         let r = t.extract();
-        dbg!(&r);
 
         assert!(matches!(
             r,
@@ -1144,7 +1120,6 @@ mod verbatim {
         };
 
         let r = t.extract();
-        dbg!(&r);
 
         assert!(matches!(
             r,
@@ -1166,7 +1141,6 @@ mod verbatim {
         };
 
         let r = c.extract();
-        dbg!(&r);
 
         assert!(matches!(
             r,
@@ -1188,7 +1162,6 @@ mod verbatim {
         };
 
         let r = c.extract();
-        dbg!(&r);
 
         assert!(matches!(
             r,
@@ -1210,7 +1183,6 @@ mod verbatim {
         };
 
         let r = c.extract();
-        dbg!(&r);
 
         assert!(matches!(
             r,
@@ -1232,7 +1204,6 @@ mod verbatim {
         };
 
         let r = c.extract();
-        dbg!(&r);
 
         assert!(matches!(
             r,
@@ -1254,7 +1225,6 @@ mod verbatim {
         };
 
         let r = c.extract();
-        dbg!(&r);
 
         assert!(matches!(
             r,
@@ -1276,7 +1246,6 @@ mod verbatim {
         };
 
         let r = c.extract();
-        dbg!(&r);
 
         assert!(matches!(
             r,
