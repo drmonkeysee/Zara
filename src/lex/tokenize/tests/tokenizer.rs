@@ -2,7 +2,7 @@ mod boolean;
 mod bytevector;
 mod character;
 mod hashtag;
-mod identifer;
+mod identifier;
 mod quoting;
 mod string;
 
