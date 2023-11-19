@@ -86,16 +86,16 @@ impl Display for TokenKind {
             Self::ByteVector => f.write_str("BYTEVECTOR"),
             Self::Comment => f.write_str("COMMENT"),
             Self::CommentBlock => f.write_str("BLOCKCOMMENT"),
-            Self::CommentBlockBegin(depth) => write!(f, "BLOCKCOMMENTBEGIN<{depth:?}>"),
-            Self::CommentBlockEnd => f.write_str("BLOCKCOMMENTEND"),
-            Self::CommentBlockFragment(depth) => write!(f, "BLOCKCOMMENTFRAG<{depth:?}>"),
+            Self::CommentBlockBegin(depth) => write!(f, "BLKCMTBEGIN<{depth:?}>"),
+            Self::CommentBlockEnd => f.write_str("BLKCMTEND"),
+            Self::CommentBlockFragment(depth) => write!(f, "BLKCMTFRAGMENT<{depth:?}>"),
             Self::CommentDatum => f.write_str("DATUMCOMMENT"),
             Self::DirectiveCase(fold) => write!(f, "DIRFOLDCASE<{fold:?}>"),
             Self::Identifier(_) => f.write_str("IDENTIFIER"),
-            Self::IdentifierBegin(_) => f.write_str("BEGINVID"),
-            Self::IdentifierDiscard => f.write_str("DISCARDVID"),
-            Self::IdentifierEnd(_) => f.write_str("ENDVID"),
-            Self::IdentifierFragment(_) => f.write_str("VIDFRAG"),
+            Self::IdentifierBegin(_) => f.write_str("IDENTBEGIN"),
+            Self::IdentifierDiscard => f.write_str("IDENTDISCARD"),
+            Self::IdentifierEnd(_) => f.write_str("IDENTEND"),
+            Self::IdentifierFragment(_) => f.write_str("IDENTFRAGMENT"),
             Self::Literal(lit) => write!(f, "LITERAL<{}>", lit.as_token_descriptor()),
             Self::ParenLeft => f.write_str("LEFTPAREN"),
             Self::ParenRight => f.write_str("RIGHTPAREN"),
@@ -103,12 +103,12 @@ impl Display for TokenKind {
             Self::Quasiquote => f.write_str("QUASIQUOTE"),
             Self::Quote => f.write_str("QUOTE"),
             Self::StringBegin(_, line_cont) => {
-                write!(f, "BEGINSTR{}", line_cont_token(*line_cont))
+                write!(f, "STRBEGIN{}", line_cont_token(*line_cont))
             }
-            Self::StringDiscard => f.write_str("DISCARDSTR"),
-            Self::StringEnd(_) => f.write_str("ENDSTR"),
+            Self::StringDiscard => f.write_str("STRDISCARD"),
+            Self::StringEnd(_) => f.write_str("STREND"),
             Self::StringFragment(_, line_cont) => {
-                write!(f, "STRFRAG{}", line_cont_token(*line_cont))
+                write!(f, "STRFRAGMENT{}", line_cont_token(*line_cont))
             }
             Self::Unquote => f.write_str("UNQUOTE"),
             Self::UnquoteSplice => f.write_str("UNQUOTESPLICE"),
@@ -299,7 +299,7 @@ mod tests {
                 span: 0..10,
             };
 
-            assert_eq!(token.to_string(), "BLOCKCOMMENTBEGIN<1>[0..10]");
+            assert_eq!(token.to_string(), "BLKCMTBEGIN<1>[0..10]");
         }
 
         #[test]
@@ -309,7 +309,7 @@ mod tests {
                 span: 0..10,
             };
 
-            assert_eq!(token.to_string(), "BLOCKCOMMENTFRAG<1>[0..10]");
+            assert_eq!(token.to_string(), "BLKCMTFRAGMENT<1>[0..10]");
         }
 
         #[test]
@@ -319,7 +319,7 @@ mod tests {
                 span: 0..10,
             };
 
-            assert_eq!(token.to_string(), "BLOCKCOMMENTEND[0..10]");
+            assert_eq!(token.to_string(), "BLKCMTEND[0..10]");
         }
 
         #[test]
@@ -409,7 +409,7 @@ mod tests {
                 span: 0..1,
             };
 
-            assert_eq!(token.to_string(), "BEGINSTR[0..1]");
+            assert_eq!(token.to_string(), "STRBEGIN[0..1]");
         }
 
         #[test]
@@ -419,7 +419,7 @@ mod tests {
                 span: 0..1,
             };
 
-            assert_eq!(token.to_string(), "BEGINSTR<\\>[0..1]");
+            assert_eq!(token.to_string(), "STRBEGIN<\\>[0..1]");
         }
 
         #[test]
@@ -429,7 +429,7 @@ mod tests {
                 span: 0..1,
             };
 
-            assert_eq!(token.to_string(), "STRFRAG[0..1]");
+            assert_eq!(token.to_string(), "STRFRAGMENT[0..1]");
         }
 
         #[test]
@@ -439,7 +439,7 @@ mod tests {
                 span: 0..1,
             };
 
-            assert_eq!(token.to_string(), "STRFRAG<\\>[0..1]");
+            assert_eq!(token.to_string(), "STRFRAGMENT<\\>[0..1]");
         }
 
         #[test]
@@ -449,7 +449,7 @@ mod tests {
                 span: 0..1,
             };
 
-            assert_eq!(token.to_string(), "ENDSTR[0..1]");
+            assert_eq!(token.to_string(), "STREND[0..1]");
         }
 
         #[test]
@@ -459,7 +459,7 @@ mod tests {
                 span: 0..1,
             };
 
-            assert_eq!(token.to_string(), "DISCARDSTR[0..1]");
+            assert_eq!(token.to_string(), "STRDISCARD[0..1]");
         }
 
         #[test]
@@ -509,7 +509,7 @@ mod tests {
                 span: 0..3,
             };
 
-            assert_eq!(token.to_string(), "BEGINVID[0..3]");
+            assert_eq!(token.to_string(), "IDENTBEGIN[0..3]");
         }
 
         #[test]
@@ -519,7 +519,7 @@ mod tests {
                 span: 0..3,
             };
 
-            assert_eq!(token.to_string(), "VIDFRAG[0..3]");
+            assert_eq!(token.to_string(), "IDENTFRAGMENT[0..3]");
         }
 
         #[test]
@@ -529,7 +529,7 @@ mod tests {
                 span: 0..3,
             };
 
-            assert_eq!(token.to_string(), "ENDVID[0..3]");
+            assert_eq!(token.to_string(), "IDENTEND[0..3]");
         }
 
         #[test]
@@ -539,7 +539,7 @@ mod tests {
                 span: 0..3,
             };
 
-            assert_eq!(token.to_string(), "DISCARDVID[0..3]");
+            assert_eq!(token.to_string(), "IDENTDISCARD[0..3]");
         }
 
         #[test]
