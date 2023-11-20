@@ -5,12 +5,12 @@ use crate::lex::{
 };
 use crate::literal::Literal;
 
-pub(crate) struct Hashtag<'me, 'str> {
-    pub(crate) scan: &'me mut Scanner<'str>,
+pub(in crate::lex::tokenize) struct Hashtag<'me, 'str> {
+    pub(in crate::lex::tokenize) scan: &'me mut Scanner<'str>,
 }
 
 impl<'me, 'str> Hashtag<'me, 'str> {
-    pub(crate) fn scan(&mut self) -> TokenExtractResult {
+    pub(in crate::lex::tokenize) fn scan(&mut self) -> TokenExtractResult {
         match self.scan.char_if_not_token_boundary() {
             Some(ch) => self.literal(ch),
             None => self.comment(),
@@ -96,14 +96,14 @@ impl<'me, 'str> Hashtag<'me, 'str> {
     }
 }
 
-pub(crate) struct BlockComment<'me, 'str, P> {
+pub(in crate::lex::tokenize) struct BlockComment<'me, 'str, P> {
     depth: usize,
     policy: P,
     scan: &'me mut Scanner<'str>,
 }
 
 impl<'me, 'str, P: BlockCommentPolicy> BlockComment<'me, 'str, P> {
-    pub(crate) fn consume(&mut self) -> TokenKind {
+    pub(in crate::lex::tokenize) fn consume(&mut self) -> TokenKind {
         while !self.scan.consumed() {
             if let Some((_, ch)) = self.scan.find_any_char(&['|', '#']) {
                 if self.end_block(ch) {
@@ -130,7 +130,7 @@ impl<'me, 'str, P: BlockCommentPolicy> BlockComment<'me, 'str, P> {
 }
 
 impl<'me, 'str> BlockComment<'me, 'str, ContinueComment> {
-    pub(crate) fn cont(depth: usize, scan: &'me mut Scanner<'str>) -> Self {
+    pub(in crate::lex::tokenize) fn cont(depth: usize, scan: &'me mut Scanner<'str>) -> Self {
         Self {
             depth,
             policy: ContinueComment,
@@ -149,12 +149,12 @@ impl<'me, 'str> BlockComment<'me, 'str, StartComment> {
     }
 }
 
-pub(crate) trait BlockCommentPolicy {
+pub(in crate::lex::tokenize) trait BlockCommentPolicy {
     fn terminated(&self) -> TokenKind;
     fn unterminated(&self, depth: usize) -> TokenKind;
 }
 
-pub(crate) struct ContinueComment;
+pub(in crate::lex::tokenize) struct ContinueComment;
 
 impl BlockCommentPolicy for ContinueComment {
     fn terminated(&self) -> TokenKind {

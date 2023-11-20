@@ -7,33 +7,34 @@ use crate::{
     literal::Literal,
 };
 
-pub(crate) type StringLiteral<'me, 'str, M> = FreeText<'me, 'str, StringPolicy<M>>;
+pub(in crate::lex::tokenize) type StringLiteral<'me, 'str, M> =
+    FreeText<'me, 'str, StringPolicy<M>>;
 
 impl<'me, 'str> StringLiteral<'me, 'str, StartString> {
-    pub(crate) fn new(scan: &'me mut Scanner<'str>) -> Self {
+    pub(in crate::lex::tokenize) fn new(scan: &'me mut Scanner<'str>) -> Self {
         Self::init(scan, StringPolicy(StartString))
     }
 }
 
 impl<'me, 'str> StringLiteral<'me, 'str, ContinueString> {
-    pub(crate) fn cont(scan: &'me mut Scanner<'str>) -> Self {
+    pub(in crate::lex::tokenize) fn cont(scan: &'me mut Scanner<'str>) -> Self {
         Self::init(scan, StringPolicy(ContinueString))
     }
 }
 
 impl<'me, 'str> StringLiteral<'me, 'str, LineContinueString> {
-    pub(crate) fn line_cont(scan: &'me mut Scanner<'str>) -> Self {
+    pub(in crate::lex::tokenize) fn line_cont(scan: &'me mut Scanner<'str>) -> Self {
         Self::init(scan, StringPolicy(LineContinueString))
     }
 }
 
 impl<'me, 'str> StringLiteral<'me, 'str, DiscardString> {
-    pub(crate) fn cleanup(scan: &'me mut Scanner<'str>) -> Self {
+    pub(in crate::lex::tokenize) fn cleanup(scan: &'me mut Scanner<'str>) -> Self {
         Self::init(scan, StringPolicy(DiscardString))
     }
 }
 
-pub(crate) struct StringPolicy<M>(M);
+pub(in crate::lex::tokenize) struct StringPolicy<M>(M);
 
 impl<M: StringPolicyMode> FreeTextPolicy for StringPolicy<M> {
     const TERMINATOR: char = '"';
@@ -73,7 +74,7 @@ impl<M: StringPolicyMode> FreeTextPolicy for StringPolicy<M> {
     }
 }
 
-pub(crate) struct StartString;
+pub(in crate::lex::tokenize) struct StartString;
 
 impl StringPolicyMode for StartString {
     fn terminated(&self, buf: String) -> TokenKind {
@@ -85,11 +86,11 @@ impl StringPolicyMode for StartString {
     }
 }
 
-pub(crate) struct ContinueString;
+pub(in crate::lex::tokenize) struct ContinueString;
 
 impl StringPolicyMode for ContinueString {}
 
-pub(crate) struct LineContinueString;
+pub(in crate::lex::tokenize) struct LineContinueString;
 
 impl StringPolicyMode for LineContinueString {
     fn prelude(&self, scan: &mut Scanner<'_>) {
@@ -97,7 +98,7 @@ impl StringPolicyMode for LineContinueString {
     }
 }
 
-pub(crate) struct DiscardString;
+pub(in crate::lex::tokenize) struct DiscardString;
 
 impl StringPolicyMode for DiscardString {
     fn terminated(&self, _buf: String) -> TokenKind {
