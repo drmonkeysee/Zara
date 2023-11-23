@@ -249,9 +249,9 @@ mod tests {
 
         #[test]
         fn char_token() {
-            let b = Literal::Character('a');
+            let c = Literal::Character('a');
 
-            assert_eq!(b.as_token_descriptor().to_string(), "CHAR");
+            assert_eq!(c.as_token_descriptor().to_string(), "CHAR");
         }
 
         #[test]
@@ -365,9 +365,9 @@ mod tests {
 
         #[test]
         fn string_token() {
-            let b = Literal::String("foo".to_owned());
+            let s = Literal::String("foo".to_owned());
 
-            assert_eq!(b.as_token_descriptor().to_string(), "STR");
+            assert_eq!(s.as_token_descriptor().to_string(), "STR");
         }
 
         #[test]
@@ -506,40 +506,40 @@ bar"
 
         #[test]
         fn integer_token() {
-            let b = Literal::Number(Number::real(42));
+            let n = Literal::Number(Number::real(42));
 
-            assert_eq!(b.as_token_descriptor().to_string(), "NUM<INT>");
+            assert_eq!(n.as_token_descriptor().to_string(), "NUM<INT>");
         }
 
         #[test]
         fn float_token() {
-            let b = Literal::Number(Number::real(4.2));
+            let n = Literal::Number(Number::real(4.2));
 
-            assert_eq!(b.as_token_descriptor().to_string(), "NUM<FLT>");
+            assert_eq!(n.as_token_descriptor().to_string(), "NUM<FLT>");
         }
 
         #[test]
         fn rational_token() {
-            let b = Literal::Number(Number::real((4, 5)));
+            let n = Literal::Number(Number::real((4, 5)));
 
-            assert_eq!(b.as_token_descriptor().to_string(), "NUM<RAT>");
+            assert_eq!(n.as_token_descriptor().to_string(), "NUM<RAT>");
         }
 
         #[test]
         fn complex_token() {
-            let b = Literal::Number(Number::complex(3, 5));
+            let n = Literal::Number(Number::complex(3, 5));
 
-            assert_eq!(b.as_token_descriptor().to_string(), "NUM<CPX>");
+            assert_eq!(n.as_token_descriptor().to_string(), "NUM<CPX>");
         }
 
         #[test]
         fn bigint_token() {
-            let b = Literal::Number(Number::real(BigInt {
+            let n = Literal::Number(Number::real(BigInt {
                 digits: vec![30],
                 sign: Sign::Positive,
             }));
 
-            assert_eq!(b.as_token_descriptor().to_string(), "NUM<INT>");
+            assert_eq!(n.as_token_descriptor().to_string(), "NUM<INT>");
         }
     }
 }
