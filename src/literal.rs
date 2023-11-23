@@ -102,8 +102,23 @@ impl Display for TokenDescriptor<'_> {
         match self.0 {
             Literal::Boolean(_) => f.write_str("BOOL"),
             Literal::Character(_) => f.write_str("CHAR"),
-            Literal::Number(_) => todo!(),
+            Literal::Number(n) => write!(f, "NUM<{}>", NumTokenDescriptor(n)),
             Literal::String(_) => f.write_str("STR"),
+        }
+    }
+}
+
+struct NumTokenDescriptor<'a>(&'a Number);
+
+impl Display for NumTokenDescriptor<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        match self.0 {
+            Number::Complex(_) => f.write_str("CPX"),
+            Number::Real(r) => match r {
+                Real::Inexact(_) => f.write_str("FLT"),
+                Real::Integer(_) => f.write_str("INT"),
+                Real::Rational(_) => f.write_str("RAT"),
+            },
         }
     }
 }
@@ -507,7 +522,7 @@ bar"
         fn rational_token() {
             let b = Literal::Number(Number::real((4, 5)));
 
-            assert_eq!(b.as_token_descriptor().to_string(), "NUM<RTL>");
+            assert_eq!(b.as_token_descriptor().to_string(), "NUM<RAT>");
         }
 
         #[test]
