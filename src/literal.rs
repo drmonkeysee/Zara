@@ -11,10 +11,30 @@ pub enum Literal {
     String(String),
 }
 
+impl Literal {
+    pub(crate) fn as_datum(&self) -> Datum {
+        Datum(self)
+    }
+
+    pub(crate) fn as_token_descriptor(&self) -> TokenDescriptor {
+        TokenDescriptor(self)
+    }
+}
+
 #[derive(Debug)]
 pub enum Number {
     Complex(Box<(Real, Real)>),
     Real(Real),
+}
+
+impl Number {
+    pub(crate) fn complex(real: impl Into<Real>, imag: impl Into<Real>) -> Self {
+        Self::Complex((real.into(), imag.into()).into())
+    }
+
+    pub(crate) fn real(value: impl Into<Real>) -> Self {
+        Self::Real(value.into())
+    }
 }
 
 #[derive(Debug)]
@@ -30,20 +50,29 @@ pub enum Exact {
     Big(BigNum),
 }
 
+impl From<f64> for Real {
+    fn from(value: f64) -> Self {
+        Self::Inexact(value)
+    }
+}
+
+impl From<i64> for Real {
+    fn from(value: i64) -> Self {
+        Self::Integer(Exact::Native(value))
+    }
+}
+
+impl From<(i64, i64)> for Real {
+    fn from(value: (i64, i64)) -> Self {
+        let (n, d) = value;
+        Self::Rational((Exact::Native(n), Exact::Native(d)).into())
+    }
+}
+
 #[derive(Debug)]
 pub struct BigNum {
     digits: Vec<u64>,
     sign: Sign,
-}
-
-impl Literal {
-    pub(crate) fn as_datum(&self) -> Datum {
-        Datum(self)
-    }
-
-    pub(crate) fn as_token_descriptor(&self) -> TokenDescriptor {
-        TokenDescriptor(self)
-    }
 }
 
 pub(crate) struct Datum<'a>(&'a Literal);
@@ -447,6 +476,48 @@ bar"
 
                 assert_eq!(s.as_datum().to_string(), format!("\"{exp}\""));
             }
+        }
+    }
+
+    mod number {
+        use super::*;
+
+        #[test]
+        fn integer_token() {
+            let b = Literal::Number(Number::real(42));
+
+            assert_eq!(b.as_token_descriptor().to_string(), "NUM<INT>");
+        }
+
+        #[test]
+        fn float_token() {
+            let b = Literal::Number(Number::real(4.2));
+
+            assert_eq!(b.as_token_descriptor().to_string(), "NUM<FLT>");
+        }
+
+        #[test]
+        fn rational_token() {
+            let b = Literal::Number(Number::real((4, 5)));
+
+            assert_eq!(b.as_token_descriptor().to_string(), "NUM<RTL>");
+        }
+
+        #[test]
+        fn complex_token() {
+            let b = Literal::Number(Number::complex(3, 5));
+
+            assert_eq!(b.as_token_descriptor().to_string(), "NUM<CPX>");
+        }
+
+        #[test]
+        fn bigint_token() {
+            let b = Literal::Number(Number::Real(Real::Integer(Exact::Big(BigNum {
+                digits: vec![30],
+                sign: Sign::Positive,
+            }))));
+
+            assert_eq!(b.as_token_descriptor().to_string(), "NUM<INT>");
         }
     }
 }
