@@ -47,7 +47,7 @@ pub enum Real {
 #[derive(Debug)]
 pub enum Exact {
     Native(i64),
-    Big(BigNum),
+    Big(BigInt),
 }
 
 impl From<f64> for Real {
@@ -69,8 +69,15 @@ impl From<(i64, i64)> for Real {
     }
 }
 
+// TODO: need full combo of converters for Rational
+impl From<BigInt> for Real {
+    fn from(value: BigInt) -> Self {
+        Self::Integer(Exact::Big(value))
+    }
+}
+
 #[derive(Debug)]
-pub struct BigNum {
+pub struct BigInt {
     digits: Vec<u64>,
     sign: Sign,
 }
@@ -512,10 +519,10 @@ bar"
 
         #[test]
         fn bigint_token() {
-            let b = Literal::Number(Number::Real(Real::Integer(Exact::Big(BigNum {
+            let b = Literal::Number(Number::real(BigInt {
                 digits: vec![30],
                 sign: Sign::Positive,
-            }))));
+            }));
 
             assert_eq!(b.as_token_descriptor().to_string(), "NUM<INT>");
         }
