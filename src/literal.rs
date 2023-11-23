@@ -7,7 +7,33 @@ use std::{
 pub enum Literal {
     Boolean(bool),
     Character(char),
+    Number(Number),
     String(String),
+}
+
+#[derive(Debug)]
+pub enum Number {
+    Complex(Box<(Real, Real)>),
+    Real(Real),
+}
+
+#[derive(Debug)]
+pub enum Real {
+    Inexact(f64),
+    Integer(Exact),
+    Rational(Box<(Exact, Exact)>),
+}
+
+#[derive(Debug)]
+pub enum Exact {
+    Native(i64),
+    Big(BigNum),
+}
+
+#[derive(Debug)]
+pub struct BigNum {
+    digits: Vec<u64>,
+    sign: Sign,
 }
 
 impl Literal {
@@ -27,6 +53,7 @@ impl Display for Datum<'_> {
         match self.0 {
             Literal::Boolean(b) => write!(f, "#{}", if *b { 't' } else { 'f' }),
             Literal::Character(c) => write!(f, "#\\{}", CharDatum::new(*c)),
+            Literal::Number(_) => todo!(),
             Literal::String(s) => StrDatum(s).fmt(f),
         }
     }
@@ -39,9 +66,16 @@ impl Display for TokenDescriptor<'_> {
         match self.0 {
             Literal::Boolean(_) => f.write_str("BOOL"),
             Literal::Character(_) => f.write_str("CHAR"),
+            Literal::Number(_) => todo!(),
             Literal::String(_) => f.write_str("STR"),
         }
     }
+}
+
+#[derive(Debug)]
+enum Sign {
+    Negative,
+    Positive,
 }
 
 enum CharDatum {
