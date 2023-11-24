@@ -1,6 +1,7 @@
 pub mod eval;
 pub mod lex;
 pub mod literal;
+pub mod number;
 pub mod src;
 pub mod syntax;
 pub mod txt;

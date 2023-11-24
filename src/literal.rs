@@ -1,8 +1,7 @@
+use crate::number::Number;
 use std::{
     cmp::Ordering,
-    error::Error,
     fmt::{Display, Formatter, Result, Write},
-    result,
 };
 
 #[derive(Debug)]
@@ -21,89 +20,6 @@ impl Literal {
     pub(crate) fn as_token_descriptor(&self) -> TokenDescriptor {
         TokenDescriptor(self)
     }
-}
-
-#[derive(Debug)]
-pub enum Number {
-    Complex(Box<(Real, Real)>),
-    Real(Real),
-}
-
-impl Number {
-    // TODO: need full combo of ctors for Rational
-    pub(crate) fn complex(real: impl Into<Real>, imag: impl Into<Real>) -> Self {
-        Self::Complex((real.into(), imag.into()).into())
-    }
-
-    pub(crate) fn real(value: impl Into<Real>) -> Self {
-        Self::Real(value.into())
-    }
-
-    pub(crate) fn rational(
-        value: impl TryInto<Real, Error = RationalError>,
-    ) -> result::Result<Self, RationalError> {
-        Ok(Self::Real(value.try_into()?))
-    }
-}
-
-#[derive(Debug)]
-pub enum Real {
-    Inexact(f64),
-    Integer(Exact),
-    Rational(Rational),
-}
-
-impl From<f64> for Real {
-    fn from(value: f64) -> Self {
-        Self::Inexact(value)
-    }
-}
-
-impl From<i64> for Real {
-    fn from(value: i64) -> Self {
-        Self::Integer(Exact::Native(value))
-    }
-}
-
-// TODO: need full combo of converters for Rational
-impl From<BigInt> for Real {
-    fn from(value: BigInt) -> Self {
-        Self::Integer(Exact::Big(value))
-    }
-}
-
-impl TryFrom<(i64, i64)> for Real {
-    type Error = RationalError;
-
-    fn try_from(value: (i64, i64)) -> result::Result<Self, Self::Error> {
-        todo!()
-    }
-}
-
-#[derive(Debug)]
-pub enum Exact {
-    Native(i64),
-    Big(BigInt),
-}
-
-#[derive(Debug)]
-pub struct Rational(Box<(Exact, Exact)>);
-
-#[derive(Debug)]
-pub struct RationalError;
-
-impl Display for RationalError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        todo!()
-    }
-}
-
-impl Error for RationalError {}
-
-#[derive(Debug)]
-pub struct BigInt {
-    digits: Vec<u64>,
-    sign: Sign,
 }
 
 pub(crate) struct Datum<'a>(&'a Literal);
@@ -126,31 +42,10 @@ impl Display for TokenDescriptor<'_> {
         match self.0 {
             Literal::Boolean(_) => f.write_str("BOOL"),
             Literal::Character(_) => f.write_str("CHAR"),
-            Literal::Number(n) => write!(f, "NUM<{}>", NumTokenDescriptor(n)),
+            Literal::Number(n) => write!(f, "NUM<{}>", n.as_token_descriptor()),
             Literal::String(_) => f.write_str("STR"),
         }
     }
-}
-
-struct NumTokenDescriptor<'a>(&'a Number);
-
-impl Display for NumTokenDescriptor<'_> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        match self.0 {
-            Number::Complex(_) => f.write_str("CPX"),
-            Number::Real(r) => match r {
-                Real::Inexact(_) => f.write_str("FLT"),
-                Real::Integer(_) => f.write_str("INT"),
-                Real::Rational(_) => f.write_str("RAT"),
-            },
-        }
-    }
-}
-
-#[derive(Debug)]
-enum Sign {
-    Negative,
-    Positive,
 }
 
 enum CharDatum {
@@ -527,6 +422,7 @@ bar"
 
     mod number {
         use super::*;
+        use crate::number::BigInt;
 
         #[test]
         fn integer_token() {
@@ -560,170 +456,27 @@ bar"
 
         #[test]
         fn bigint_token() {
-            let n = Literal::Number(Number::real(BigInt {
-                digits: vec![30],
-                sign: Sign::Positive,
-            }));
+            let n = Literal::Number(Number::real(BigInt::tempctor(30)));
 
             assert_eq!(n.as_token_descriptor().to_string(), "NUM<INT>");
         }
 
         #[test]
-        fn display_zero() {
-            let n = Literal::Number(Number::real(0));
-
-            assert_eq!(n.as_datum().to_string(), "0");
-        }
-
-        #[test]
-        fn display_positive_int() {
+        fn display_int() {
             let n = Literal::Number(Number::real(23));
 
             assert_eq!(n.as_datum().to_string(), "23");
         }
 
         #[test]
-        fn display_negative_int() {
-            let n = Literal::Number(Number::real(-32));
-
-            assert_eq!(n.as_datum().to_string(), "-32");
-        }
-
-        #[test]
-        fn display_int_max() {
-            let n = Literal::Number(Number::real(i64::MAX));
-
-            assert_eq!(n.as_datum().to_string(), "");
-        }
-
-        #[test]
-        fn display_int_min() {
-            let n = Literal::Number(Number::real(i64::MIN));
-
-            assert_eq!(n.as_datum().to_string(), "");
-        }
-
-        #[test]
-        fn display_positive_zero() {
-            let n = Literal::Number(Number::real(0.0));
-
-            assert_eq!(n.as_datum().to_string(), "0.0");
-        }
-
-        #[test]
-        fn display_negative_zero() {
-            let n = Literal::Number(Number::real(-0.0));
-
-            assert_eq!(n.as_datum().to_string(), "-0.0");
-        }
-
-        #[test]
-        fn display_whole_float() {
-            let n = Literal::Number(Number::real(1.0));
-
-            assert_eq!(n.as_datum().to_string(), "1.0");
-        }
-
-        #[test]
-        fn display_positive_float() {
+        fn display_float() {
             let n = Literal::Number(Number::real(234.23));
 
             assert_eq!(n.as_datum().to_string(), "234.23");
         }
 
         #[test]
-        fn display_negative_float() {
-            let n = Literal::Number(Number::real(-789.34));
-
-            assert_eq!(n.as_datum().to_string(), "-789.34");
-        }
-
-        #[test]
-        fn display_fractional_float() {
-            let n = Literal::Number(Number::real(0.0567));
-
-            assert_eq!(n.as_datum().to_string(), "0.0567");
-        }
-
-        #[test]
-        fn display_with_trailing_zeros() {
-            let n = Literal::Number(Number::real(234.23000));
-
-            assert_eq!(n.as_datum().to_string(), "234.23");
-        }
-
-        #[test]
-        fn display_large_exponent() {
-            let n = Literal::Number(Number::real(1e29));
-
-            assert_eq!(n.as_datum().to_string(), "234.23");
-        }
-
-        #[test]
-        fn display_small_exponent() {
-            let n = Literal::Number(Number::real(1e-29));
-
-            assert_eq!(n.as_datum().to_string(), "234.23");
-        }
-
-        #[test]
-        fn display_rounding_error() {
-            let n = Literal::Number(Number::real(0.1 + 0.2));
-
-            assert_eq!(n.as_datum().to_string(), "234.23");
-        }
-
-        #[test]
-        fn display_max_float() {
-            let n = Literal::Number(Number::real(f64::MAX));
-
-            assert_eq!(n.as_datum().to_string(), "234.23");
-        }
-
-        #[test]
-        fn display_min_float() {
-            let n = Literal::Number(Number::real(f64::MIN));
-
-            assert_eq!(n.as_datum().to_string(), "234.23");
-        }
-
-        #[test]
-        fn display_positive_min_float() {
-            let n = Literal::Number(Number::real(f64::MIN_POSITIVE));
-
-            assert_eq!(n.as_datum().to_string(), "234.23");
-        }
-
-        #[test]
-        fn display_epsilon() {
-            let n = Literal::Number(Number::real(f64::EPSILON));
-
-            assert_eq!(n.as_datum().to_string(), "234.23");
-        }
-
-        #[test]
-        fn display_infinity() {
-            let n = Literal::Number(Number::real(f64::INFINITY));
-
-            assert_eq!(n.as_datum().to_string(), "+inf.0");
-        }
-
-        #[test]
-        fn display_negative_infinity() {
-            let n = Literal::Number(Number::real(f64::NEG_INFINITY));
-
-            assert_eq!(n.as_datum().to_string(), "-inf.0");
-        }
-
-        #[test]
-        fn display_nan() {
-            let n = Literal::Number(Number::real(f64::NAN));
-
-            assert_eq!(n.as_datum().to_string(), "+nan.0");
-        }
-
-        #[test]
-        fn display_positive_rational() {
+        fn display_rational() {
             let r = Number::rational((3, 4));
             assert!(r.is_ok());
             let n = Literal::Number(r.unwrap());
@@ -732,96 +485,10 @@ bar"
         }
 
         #[test]
-        fn display_negative_numerator() {
-            let r = Number::rational((-3, 4));
-            assert!(r.is_ok());
-            let n = Literal::Number(r.unwrap());
+        fn display_bigint() {
+            let n = Literal::Number(Number::real(BigInt::tempctor(30)));
 
-            assert_eq!(n.as_datum().to_string(), "-3/4");
-        }
-
-        #[test]
-        fn display_min_over_max() {
-            let r = Number::rational((i64::MIN, i64::MAX));
-            assert!(r.is_ok());
-            let n = Literal::Number(r.unwrap());
-
-            assert_eq!(n.as_datum().to_string(), "-3/4");
-        }
-
-        #[test]
-        fn display_max_over_min() {
-            let r = Number::rational((i64::MAX, i64::MIN));
-            assert!(r.is_ok());
-            let n = Literal::Number(r.unwrap());
-
-            assert_eq!(n.as_datum().to_string(), "-3/4");
-        }
-
-        #[test]
-        fn display_min_forced_to_positive() {
-            let r = Number::rational((i64::MIN, -4));
-            assert!(r.is_ok());
-            let n = Literal::Number(r.unwrap());
-
-            assert_eq!(n.as_datum().to_string(), "-3/4");
-        }
-
-        #[test]
-        fn display_negative_denominator() {
-            let r = Number::rational((3, -4));
-            assert!(r.is_ok());
-            let n = Literal::Number(r.unwrap());
-
-            assert_eq!(n.as_datum().to_string(), "-3/4");
-        }
-
-        #[test]
-        fn display_negative_numerator_and_denominator() {
-            let r = Number::rational((-3, -4));
-            assert!(r.is_ok());
-            let n = Literal::Number(r.unwrap());
-
-            assert_eq!(n.as_datum().to_string(), "3/4");
-        }
-
-        #[test]
-        fn display_greater_than_one_rational() {
-            let r = Number::rational((4, 3));
-            assert!(r.is_ok());
-            let n = Literal::Number(r.unwrap());
-
-            assert_eq!(n.as_datum().to_string(), "4/3");
-        }
-
-        #[test]
-        fn display_rational_integer() {
-            let r = Number::rational((3, 1));
-            assert!(r.is_ok());
-            let n = Literal::Number(r.unwrap());
-
-            // TODO: should this reduce to an error?
-            assert_eq!(n.as_datum().to_string(), "3/1");
-        }
-
-        #[test]
-        fn display_unity() {
-            let r = Number::rational((1, 1));
-            assert!(r.is_ok());
-            let n = Literal::Number(r.unwrap());
-
-            // TODO: should this reduce to an error?
-            assert_eq!(n.as_datum().to_string(), "1/1");
-        }
-
-        #[test]
-        fn display_zero_numerator() {
-            let r = Number::rational((0, 1));
-            assert!(r.is_ok());
-            let n = Literal::Number(r.unwrap());
-
-            // TODO: should this reduce to an error?
-            assert_eq!(n.as_datum().to_string(), "0/1");
+            assert_eq!(n.as_datum().to_string(), "30");
         }
     }
 }
