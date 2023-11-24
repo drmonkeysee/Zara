@@ -485,6 +485,13 @@ bar"
         }
 
         #[test]
+        fn display_complex() {
+            let n = Literal::Number(Number::complex(4, 5));
+
+            assert_eq!(n.as_datum().to_string(), "4+5i");
+        }
+
+        #[test]
         fn display_bigint() {
             let n = Literal::Number(Number::real(BigInt::tempctor(30)));
 
