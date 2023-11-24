@@ -721,5 +721,107 @@ bar"
 
             assert_eq!(n.as_datum().to_string(), "+nan.0");
         }
+
+        #[test]
+        fn display_positive_rational() {
+            let r = Number::rational((3, 4));
+            assert!(r.is_ok());
+            let n = Literal::Number(r.unwrap());
+
+            assert_eq!(n.as_datum().to_string(), "3/4");
+        }
+
+        #[test]
+        fn display_negative_numerator() {
+            let r = Number::rational((-3, 4));
+            assert!(r.is_ok());
+            let n = Literal::Number(r.unwrap());
+
+            assert_eq!(n.as_datum().to_string(), "-3/4");
+        }
+
+        #[test]
+        fn display_min_over_max() {
+            let r = Number::rational((i64::MIN, i64::MAX));
+            assert!(r.is_ok());
+            let n = Literal::Number(r.unwrap());
+
+            assert_eq!(n.as_datum().to_string(), "-3/4");
+        }
+
+        #[test]
+        fn display_max_over_min() {
+            let r = Number::rational((i64::MAX, i64::MIN));
+            assert!(r.is_ok());
+            let n = Literal::Number(r.unwrap());
+
+            assert_eq!(n.as_datum().to_string(), "-3/4");
+        }
+
+        #[test]
+        fn display_min_forced_to_positive() {
+            let r = Number::rational((i64::MIN, -4));
+            assert!(r.is_ok());
+            let n = Literal::Number(r.unwrap());
+
+            assert_eq!(n.as_datum().to_string(), "-3/4");
+        }
+
+        #[test]
+        fn display_negative_denominator() {
+            let r = Number::rational((3, -4));
+            assert!(r.is_ok());
+            let n = Literal::Number(r.unwrap());
+
+            assert_eq!(n.as_datum().to_string(), "-3/4");
+        }
+
+        #[test]
+        fn display_negative_numerator_and_denominator() {
+            let r = Number::rational((-3, -4));
+            assert!(r.is_ok());
+            let n = Literal::Number(r.unwrap());
+
+            assert_eq!(n.as_datum().to_string(), "3/4");
+        }
+
+        #[test]
+        fn display_greater_than_one_rational() {
+            let r = Number::rational((4, 3));
+            assert!(r.is_ok());
+            let n = Literal::Number(r.unwrap());
+
+            assert_eq!(n.as_datum().to_string(), "4/3");
+        }
+
+        #[test]
+        fn display_rational_integer() {
+            let r = Number::rational((3, 1));
+            assert!(r.is_ok());
+            let n = Literal::Number(r.unwrap());
+
+            // TODO: should this reduce to an error?
+            assert_eq!(n.as_datum().to_string(), "3/1");
+        }
+
+        #[test]
+        fn display_unity() {
+            let r = Number::rational((1, 1));
+            assert!(r.is_ok());
+            let n = Literal::Number(r.unwrap());
+
+            // TODO: should this reduce to an error?
+            assert_eq!(n.as_datum().to_string(), "1/1");
+        }
+
+        #[test]
+        fn display_zero_numerator() {
+            let r = Number::rational((0, 1));
+            assert!(r.is_ok());
+            let n = Literal::Number(r.unwrap());
+
+            // TODO: should this reduce to an error?
+            assert_eq!(n.as_datum().to_string(), "0/1");
+        }
     }
 }
