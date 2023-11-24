@@ -29,7 +29,7 @@ impl Display for Datum<'_> {
         match self.0 {
             Literal::Boolean(b) => write!(f, "#{}", if *b { 't' } else { 'f' }),
             Literal::Character(c) => write!(f, "#\\{}", CharDatum::new(*c)),
-            Literal::Number(_) => todo!(),
+            Literal::Number(n) => n.as_datum().fmt(f),
             Literal::String(s) => StrDatum(s).fmt(f),
         }
     }
