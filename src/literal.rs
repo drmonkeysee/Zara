@@ -618,6 +618,13 @@ bar"
         }
 
         #[test]
+        fn display_whole_float() {
+            let n = Literal::Number(Number::real(1.0));
+
+            assert_eq!(n.as_datum().to_string(), "1.0");
+        }
+
+        #[test]
         fn display_positive_float() {
             let n = Literal::Number(Number::real(234.23));
 
@@ -632,7 +639,14 @@ bar"
         }
 
         #[test]
-        fn display_trailing_zeros() {
+        fn display_fractional_float() {
+            let n = Literal::Number(Number::real(0.0567));
+
+            assert_eq!(n.as_datum().to_string(), "0.0567");
+        }
+
+        #[test]
+        fn display_with_trailing_zeros() {
             let n = Literal::Number(Number::real(234.23000));
 
             assert_eq!(n.as_datum().to_string(), "234.23");
