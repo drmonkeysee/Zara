@@ -541,5 +541,145 @@ bar"
 
             assert_eq!(n.as_token_descriptor().to_string(), "NUM<INT>");
         }
+
+        #[test]
+        fn display_zero() {
+            let n = Literal::Number(Number::real(0));
+
+            assert_eq!(n.as_datum().to_string(), "0");
+        }
+
+        #[test]
+        fn display_positive_int() {
+            let n = Literal::Number(Number::real(23));
+
+            assert_eq!(n.as_datum().to_string(), "23");
+        }
+
+        #[test]
+        fn display_negative_int() {
+            let n = Literal::Number(Number::real(-32));
+
+            assert_eq!(n.as_datum().to_string(), "-32");
+        }
+
+        #[test]
+        fn display_int_max() {
+            let n = Literal::Number(Number::real(i64::MAX));
+
+            assert_eq!(n.as_datum().to_string(), "");
+        }
+
+        #[test]
+        fn display_int_min() {
+            let n = Literal::Number(Number::real(i64::MIN));
+
+            assert_eq!(n.as_datum().to_string(), "");
+        }
+
+        #[test]
+        fn display_positive_zero() {
+            let n = Literal::Number(Number::real(0.0));
+
+            assert_eq!(n.as_datum().to_string(), "0.0");
+        }
+
+        #[test]
+        fn display_negative_zero() {
+            let n = Literal::Number(Number::real(-0.0));
+
+            assert_eq!(n.as_datum().to_string(), "-0.0");
+        }
+
+        #[test]
+        fn display_positive_float() {
+            let n = Literal::Number(Number::real(234.23));
+
+            assert_eq!(n.as_datum().to_string(), "234.23");
+        }
+
+        #[test]
+        fn display_negative_float() {
+            let n = Literal::Number(Number::real(-789.34));
+
+            assert_eq!(n.as_datum().to_string(), "-789.34");
+        }
+
+        #[test]
+        fn display_trailing_zeros() {
+            let n = Literal::Number(Number::real(234.23000));
+
+            assert_eq!(n.as_datum().to_string(), "234.23");
+        }
+
+        #[test]
+        fn display_large_exponent() {
+            let n = Literal::Number(Number::real(1e29));
+
+            assert_eq!(n.as_datum().to_string(), "234.23");
+        }
+
+        #[test]
+        fn display_small_exponent() {
+            let n = Literal::Number(Number::real(1e-29));
+
+            assert_eq!(n.as_datum().to_string(), "234.23");
+        }
+
+        #[test]
+        fn display_rounding_error() {
+            let n = Literal::Number(Number::real(0.1 + 0.2));
+
+            assert_eq!(n.as_datum().to_string(), "234.23");
+        }
+
+        #[test]
+        fn display_max_float() {
+            let n = Literal::Number(Number::real(f64::MAX));
+
+            assert_eq!(n.as_datum().to_string(), "234.23");
+        }
+
+        #[test]
+        fn display_min_float() {
+            let n = Literal::Number(Number::real(f64::MIN));
+
+            assert_eq!(n.as_datum().to_string(), "234.23");
+        }
+
+        #[test]
+        fn display_positive_min_float() {
+            let n = Literal::Number(Number::real(f64::MIN_POSITIVE));
+
+            assert_eq!(n.as_datum().to_string(), "234.23");
+        }
+
+        #[test]
+        fn display_epsilon() {
+            let n = Literal::Number(Number::real(f64::EPSILON));
+
+            assert_eq!(n.as_datum().to_string(), "234.23");
+        }
+
+        #[test]
+        fn display_infinity() {
+            let n = Literal::Number(Number::real(f64::INFINITY));
+
+            assert_eq!(n.as_datum().to_string(), "+inf.0");
+        }
+
+        #[test]
+        fn display_negative_infinity() {
+            let n = Literal::Number(Number::real(f64::NEG_INFINITY));
+
+            assert_eq!(n.as_datum().to_string(), "-inf.0");
+        }
+
+        #[test]
+        fn display_nan() {
+            let n = Literal::Number(Number::real(f64::NAN));
+
+            assert_eq!(n.as_datum().to_string(), "+nan.0");
+        }
     }
 }
