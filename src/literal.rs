@@ -1,6 +1,8 @@
 use std::{
     cmp::Ordering,
+    error::Error,
     fmt::{Display, Formatter, Result, Write},
+    result,
 };
 
 #[derive(Debug)]
@@ -28,6 +30,7 @@ pub enum Number {
 }
 
 impl Number {
+    // TODO: need full combo of ctors for Rational
     pub(crate) fn complex(real: impl Into<Real>, imag: impl Into<Real>) -> Self {
         Self::Complex((real.into(), imag.into()).into())
     }
@@ -35,19 +38,19 @@ impl Number {
     pub(crate) fn real(value: impl Into<Real>) -> Self {
         Self::Real(value.into())
     }
+
+    pub(crate) fn rational(
+        value: impl TryInto<Real, Error = RationalError>,
+    ) -> result::Result<Self, RationalError> {
+        Ok(Self::Real(value.try_into()?))
+    }
 }
 
 #[derive(Debug)]
 pub enum Real {
     Inexact(f64),
     Integer(Exact),
-    Rational(Box<(Exact, Exact)>),
-}
-
-#[derive(Debug)]
-pub enum Exact {
-    Native(i64),
-    Big(BigInt),
+    Rational(Rational),
 }
 
 impl From<f64> for Real {
@@ -62,19 +65,40 @@ impl From<i64> for Real {
     }
 }
 
-impl From<(i64, i64)> for Real {
-    fn from(value: (i64, i64)) -> Self {
-        let (n, d) = value;
-        Self::Rational((Exact::Native(n), Exact::Native(d)).into())
-    }
-}
-
 // TODO: need full combo of converters for Rational
 impl From<BigInt> for Real {
     fn from(value: BigInt) -> Self {
         Self::Integer(Exact::Big(value))
     }
 }
+
+impl TryFrom<(i64, i64)> for Real {
+    type Error = RationalError;
+
+    fn try_from(value: (i64, i64)) -> result::Result<Self, Self::Error> {
+        todo!()
+    }
+}
+
+#[derive(Debug)]
+pub enum Exact {
+    Native(i64),
+    Big(BigInt),
+}
+
+#[derive(Debug)]
+pub struct Rational(Box<(Exact, Exact)>);
+
+#[derive(Debug)]
+pub struct RationalError;
+
+impl Display for RationalError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        todo!()
+    }
+}
+
+impl Error for RationalError {}
 
 #[derive(Debug)]
 pub struct BigInt {
@@ -520,7 +544,9 @@ bar"
 
         #[test]
         fn rational_token() {
-            let n = Literal::Number(Number::real((4, 5)));
+            let r = Number::rational((4, 5));
+            assert!(r.is_ok());
+            let n = Literal::Number(r.unwrap());
 
             assert_eq!(n.as_token_descriptor().to_string(), "NUM<RAT>");
         }
