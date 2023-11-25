@@ -9,7 +9,7 @@ pub enum Literal {
     Boolean(bool),
     Character(char),
     Number(Number),
-    String(String),
+    String(String), // TODO: can this be Box<str>
 }
 
 impl Literal {
