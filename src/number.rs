@@ -48,8 +48,8 @@ impl From<f64> for Real {
     }
 }
 
-impl From<i64> for Real {
-    fn from(value: i64) -> Self {
+impl<T: Into<Integer>> From<T> for Real {
+    fn from(value: T) -> Self {
         Self::Integer(value.into())
     }
 }
