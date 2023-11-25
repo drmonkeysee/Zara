@@ -1,7 +1,7 @@
 use super::*;
 
 #[test]
-fn bytevector() {
+fn basic_token() {
     let mut s = Scanner::new("#u8(");
     let start = s.next_token().unwrap();
     let t = Tokenizer {
@@ -22,7 +22,7 @@ fn bytevector() {
 }
 
 #[test]
-fn bytevector_uppercase() {
+fn uppercase() {
     let mut s = Scanner::new("#U8(");
     let start = s.next_token().unwrap();
     let t = Tokenizer {
@@ -43,7 +43,7 @@ fn bytevector_uppercase() {
 }
 
 #[test]
-fn bytevector_ends_at_paren() {
+fn ends_at_paren() {
     let mut s = Scanner::new("#u8(sdf");
     let start = s.next_token().unwrap();
     let t = Tokenizer {
@@ -64,7 +64,7 @@ fn bytevector_ends_at_paren() {
 }
 
 #[test]
-fn bytevector_unterminated() {
+fn unterminated() {
     let mut s = Scanner::new("#u");
     let start = s.next_token().unwrap();
     let t = Tokenizer {
@@ -85,7 +85,7 @@ fn bytevector_unterminated() {
 }
 
 #[test]
-fn bytevector_wrong_number() {
+fn wrong_number() {
     let mut s = Scanner::new("#u9(");
     let start = s.next_token().unwrap();
     let t = Tokenizer {
@@ -106,7 +106,7 @@ fn bytevector_wrong_number() {
 }
 
 #[test]
-fn bytevector_extra_number() {
+fn extra_number() {
     let mut s = Scanner::new("#u81(");
     let start = s.next_token().unwrap();
     let t = Tokenizer {
@@ -127,7 +127,7 @@ fn bytevector_extra_number() {
 }
 
 #[test]
-fn bytevector_no_paren() {
+fn no_paren() {
     let mut s = Scanner::new("#u8");
     let start = s.next_token().unwrap();
     let t = Tokenizer {
@@ -148,7 +148,7 @@ fn bytevector_no_paren() {
 }
 
 #[test]
-fn bytevector_no_paren_whitespace() {
+fn no_paren_whitespace() {
     let mut s = Scanner::new("#u8  ");
     let start = s.next_token().unwrap();
     let t = Tokenizer {

@@ -339,7 +339,7 @@ fn hex_unterminated() {
 }
 
 #[test]
-fn string_discard() {
+fn discard() {
     let mut s = Scanner::new("\\xbadstuff; discard this");
     s.find_any_char(&[';']);
     let start = s.pos();
@@ -362,7 +362,7 @@ fn string_discard() {
 }
 
 #[test]
-fn string_begin() {
+fn begin() {
     let mut s = Scanner::new("\"beginning string");
     let start = s.next_token().unwrap();
     let t = Tokenizer {
@@ -383,7 +383,7 @@ fn string_begin() {
 }
 
 #[test]
-fn string_begin_with_line_continuation() {
+fn begin_with_line_continuation() {
     let mut s = Scanner::new("\"beginning string\\");
     let start = s.next_token().unwrap();
     let t = Tokenizer {
@@ -404,7 +404,7 @@ fn string_begin_with_line_continuation() {
 }
 
 #[test]
-fn string_begin_with_line_continuation_includes_leading_whitespace() {
+fn begin_with_line_continuation_includes_leading_whitespace() {
     let mut s = Scanner::new("\"beginning string    \\");
     let start = s.next_token().unwrap();
     let t = Tokenizer {
@@ -425,7 +425,7 @@ fn string_begin_with_line_continuation_includes_leading_whitespace() {
 }
 
 #[test]
-fn string_begin_with_line_continuation_excludes_trailing_whitespace() {
+fn begin_with_line_continuation_excludes_trailing_whitespace() {
     let mut s = Scanner::new("\"beginning string\\    ");
     let start = s.next_token().unwrap();
     let t = Tokenizer {
@@ -446,7 +446,7 @@ fn string_begin_with_line_continuation_excludes_trailing_whitespace() {
 }
 
 #[test]
-fn string_begin_only_counts_final_slash_as_line_continuation() {
+fn begin_only_counts_final_slash_as_line_continuation() {
     let mut s = Scanner::new("\"beginning string\\  \\  \\  ");
     let start = s.next_token().unwrap();
     let t = Tokenizer {
@@ -467,7 +467,7 @@ fn string_begin_only_counts_final_slash_as_line_continuation() {
 }
 
 #[test]
-fn string_fragment() {
+fn fragment() {
     let mut s = Scanner::new("continued string");
     let c = Continuation {
         cont: TokenContinuation::StringLiteral(false),
@@ -488,7 +488,7 @@ fn string_fragment() {
 }
 
 #[test]
-fn string_fragment_includes_whitespace() {
+fn fragment_includes_whitespace() {
     let mut s = Scanner::new("   continued string");
     let c = Continuation {
         cont: TokenContinuation::StringLiteral(false),
@@ -509,7 +509,7 @@ fn string_fragment_includes_whitespace() {
 }
 
 #[test]
-fn string_fragment_with_line_continuation() {
+fn fragment_with_line_continuation() {
     let mut s = Scanner::new("continued string  \\  \\  ");
     let c = Continuation {
         cont: TokenContinuation::StringLiteral(false),
@@ -530,7 +530,7 @@ fn string_fragment_with_line_continuation() {
 }
 
 #[test]
-fn string_fragment_from_string_continuation() {
+fn fragment_from_string_continuation() {
     let mut s = Scanner::new("continued string");
     let c = Continuation {
         cont: TokenContinuation::StringLiteral(true),
@@ -551,7 +551,7 @@ fn string_fragment_from_string_continuation() {
 }
 
 #[test]
-fn string_fragment_from_string_continuation_ignores_leading_whitespace() {
+fn fragment_from_string_continuation_ignores_leading_whitespace() {
     let mut s = Scanner::new("   continued string   ");
     let c = Continuation {
         cont: TokenContinuation::StringLiteral(true),
@@ -572,7 +572,7 @@ fn string_fragment_from_string_continuation_ignores_leading_whitespace() {
 }
 
 #[test]
-fn string_fragment_from_string_continuation_all_whitespace() {
+fn fragment_from_string_continuation_all_whitespace() {
     let mut s = Scanner::new("      ");
     let c = Continuation {
         cont: TokenContinuation::StringLiteral(true),
@@ -593,7 +593,7 @@ fn string_fragment_from_string_continuation_all_whitespace() {
 }
 
 #[test]
-fn string_fragment_from_string_continuation_to_string_continuation() {
+fn fragment_from_string_continuation_to_string_continuation() {
     let mut s = Scanner::new("   continued string  \\  \\  ");
     let c = Continuation {
         cont: TokenContinuation::StringLiteral(true),
@@ -614,7 +614,7 @@ fn string_fragment_from_string_continuation_to_string_continuation() {
 }
 
 #[test]
-fn string_end() {
+fn end() {
     let mut s = Scanner::new("end string\"");
     let c = Continuation {
         cont: TokenContinuation::StringLiteral(false),
@@ -635,7 +635,7 @@ fn string_end() {
 }
 
 #[test]
-fn string_end_includes_whitespace() {
+fn end_includes_whitespace() {
     let mut s = Scanner::new("   end string  \"");
     let c = Continuation {
         cont: TokenContinuation::StringLiteral(false),
@@ -656,7 +656,7 @@ fn string_end_includes_whitespace() {
 }
 
 #[test]
-fn string_end_with_escaped_whitespace() {
+fn end_with_escaped_whitespace() {
     let mut s = Scanner::new("end string  \\  \\  \"");
     let c = Continuation {
         cont: TokenContinuation::StringLiteral(false),
@@ -677,7 +677,7 @@ fn string_end_with_escaped_whitespace() {
 }
 
 #[test]
-fn string_end_from_string_continuation() {
+fn end_from_string_continuation() {
     let mut s = Scanner::new("end string\"");
     let c = Continuation {
         cont: TokenContinuation::StringLiteral(true),
@@ -698,7 +698,7 @@ fn string_end_from_string_continuation() {
 }
 
 #[test]
-fn string_end_from_string_continuation_ignores_leading_whitespace() {
+fn end_from_string_continuation_ignores_leading_whitespace() {
     let mut s = Scanner::new("   end string   \"");
     let c = Continuation {
         cont: TokenContinuation::StringLiteral(true),
@@ -719,7 +719,7 @@ fn string_end_from_string_continuation_ignores_leading_whitespace() {
 }
 
 #[test]
-fn string_end_from_string_continuation_all_whitespace() {
+fn end_from_string_continuation_all_whitespace() {
     let mut s = Scanner::new("      \"");
     let c = Continuation {
         cont: TokenContinuation::StringLiteral(true),

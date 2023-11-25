@@ -1502,7 +1502,7 @@ mod display {
     use super::*;
 
     #[test]
-    fn display_empty_token_stream() {
+    fn empty_token_stream() {
         let lines = Vec::new();
 
         let target = DisplayTokenLines(&lines);
@@ -1511,7 +1511,7 @@ mod display {
     }
 
     #[test]
-    fn display_token_stream() {
+    fn token_stream() {
         let lines = vec![TokenLine(
             vec![
                 Token {
@@ -1547,7 +1547,7 @@ mod display {
     }
 
     #[test]
-    fn display_multiline_token_stream() {
+    fn multiline_token_stream() {
         let lines = vec![
             TokenLine(
                 vec![

@@ -22,7 +22,7 @@ fn standard_identifier() {
 }
 
 #[test]
-fn identifier_with_digits() {
+fn with_digits() {
     let mut s = Scanner::new("a24");
     let start = s.next_token().unwrap();
     let t = Tokenizer {
@@ -43,7 +43,7 @@ fn identifier_with_digits() {
 }
 
 #[test]
-fn identifier_with_special_chars() {
+fn with_special_chars() {
     let mut s = Scanner::new("foo?bar@baz.beef");
     let start = s.next_token().unwrap();
     let t = Tokenizer {
@@ -64,7 +64,7 @@ fn identifier_with_special_chars() {
 }
 
 #[test]
-fn identifier_stops_at_delimiter() {
+fn stops_at_delimiter() {
     let mut s = Scanner::new("abc;");
     let start = s.next_token().unwrap();
     let t = Tokenizer {
@@ -85,7 +85,7 @@ fn identifier_stops_at_delimiter() {
 }
 
 #[test]
-fn identifier_starts_with_special_char() {
+fn starts_with_special_char() {
     let mut s = Scanner::new("!foo");
     let start = s.next_token().unwrap();
     let t = Tokenizer {
@@ -106,7 +106,7 @@ fn identifier_starts_with_special_char() {
 }
 
 #[test]
-fn identifier_ends_with_peculiar_chars() {
+fn ends_with_peculiar_chars() {
     let mut s = Scanner::new("c++");
     let start = s.next_token().unwrap();
     let t = Tokenizer {
@@ -127,7 +127,7 @@ fn identifier_ends_with_peculiar_chars() {
 }
 
 #[test]
-fn identifier_is_only_special_char() {
+fn is_only_special_char() {
     let mut s = Scanner::new("!");
     let start = s.next_token().unwrap();
     let t = Tokenizer {
@@ -148,7 +148,7 @@ fn identifier_is_only_special_char() {
 }
 
 #[test]
-fn identifier_with_extended_and_higher_chars() {
+fn with_extended_and_higher_chars() {
     let mut s = Scanner::new("λ🦀\u{2401}\u{fffd}");
     let start = s.next_token().unwrap();
     let t = Tokenizer {
@@ -474,7 +474,7 @@ fn period_at_number_is_identifer() {
 }
 
 #[test]
-fn identifier_start_digit() {
+fn start_digit() {
     let mut s = Scanner::new("4foo");
     let start = s.next_token().unwrap();
     let t = Tokenizer {
@@ -495,7 +495,7 @@ fn identifier_start_digit() {
 }
 
 #[test]
-fn identifier_start_reserved_char() {
+fn start_reserved_char() {
     let mut s = Scanner::new("{foo");
     let start = s.next_token().unwrap();
     let t = Tokenizer {
@@ -516,7 +516,7 @@ fn identifier_start_reserved_char() {
 }
 
 #[test]
-fn identifier_contains_reserved_char() {
+fn contains_reserved_char() {
     let mut s = Scanner::new("foo{bar");
     let start = s.next_token().unwrap();
     let t = Tokenizer {
@@ -1025,7 +1025,7 @@ mod verbatim {
     }
 
     #[test]
-    fn identifier_discard() {
+    fn discard() {
         let mut s = Scanner::new("\\xbadstuff; discard this");
         s.find_any_char(&[';']);
         let start = s.pos();
@@ -1048,7 +1048,7 @@ mod verbatim {
     }
 
     #[test]
-    fn identifier_begin() {
+    fn begin() {
         let mut s = Scanner::new("|beginning verbatim");
         let start = s.next_token().unwrap();
         let t = Tokenizer {
@@ -1069,7 +1069,7 @@ mod verbatim {
     }
 
     #[test]
-    fn identifier_begin_ignores_line_continuation() {
+    fn begin_ignores_line_continuation() {
         let mut s = Scanner::new("|beginning verbatim\\");
         let start = s.next_token().unwrap();
         let t = Tokenizer {
@@ -1090,7 +1090,7 @@ mod verbatim {
     }
 
     #[test]
-    fn identifier_begin_ignores_line_continuation_with_leading_whitespace() {
+    fn begin_ignores_line_continuation_with_leading_whitespace() {
         let mut s = Scanner::new("|beginning verbatim    \\");
         let start = s.next_token().unwrap();
         let t = Tokenizer {
@@ -1111,7 +1111,7 @@ mod verbatim {
     }
 
     #[test]
-    fn identifier_begin_ignores_line_continuation_with_trailing_whitespace() {
+    fn begin_ignores_line_continuation_with_trailing_whitespace() {
         let mut s = Scanner::new("|beginning verbatim\\    ");
         let start = s.next_token().unwrap();
         let t = Tokenizer {
@@ -1132,7 +1132,7 @@ mod verbatim {
     }
 
     #[test]
-    fn identifier_fragment() {
+    fn fragment() {
         let mut s = Scanner::new("continued verbatim");
         let c = Continuation {
             cont: TokenContinuation::VerbatimIdentifier,
@@ -1153,7 +1153,7 @@ mod verbatim {
     }
 
     #[test]
-    fn identifier_fragment_includes_whitespace() {
+    fn fragment_includes_whitespace() {
         let mut s = Scanner::new("   continued verbatim");
         let c = Continuation {
             cont: TokenContinuation::VerbatimIdentifier,
@@ -1174,7 +1174,7 @@ mod verbatim {
     }
 
     #[test]
-    fn identifier_fragment_ignores_line_continuation() {
+    fn fragment_ignores_line_continuation() {
         let mut s = Scanner::new("continued verbatim  \\  \\  ");
         let c = Continuation {
             cont: TokenContinuation::VerbatimIdentifier,
@@ -1195,7 +1195,7 @@ mod verbatim {
     }
 
     #[test]
-    fn identifier_end() {
+    fn end() {
         let mut s = Scanner::new("end verbatim|");
         let c = Continuation {
             cont: TokenContinuation::VerbatimIdentifier,
@@ -1216,7 +1216,7 @@ mod verbatim {
     }
 
     #[test]
-    fn identifier_end_includes_whitespace() {
+    fn end_includes_whitespace() {
         let mut s = Scanner::new("   end verbatim  |");
         let c = Continuation {
             cont: TokenContinuation::VerbatimIdentifier,
@@ -1237,7 +1237,7 @@ mod verbatim {
     }
 
     #[test]
-    fn identifier_end_with_escaped_whitespace() {
+    fn end_with_escaped_whitespace() {
         let mut s = Scanner::new("end verbatim  \\  \\  |");
         let c = Continuation {
             cont: TokenContinuation::VerbatimIdentifier,

@@ -418,7 +418,7 @@ mod tests {
         }
 
         #[test]
-        fn rational_integer() {
+        fn integer() {
             let n = Number::rational((3, 1));
             assert!(n.is_ok());
             let n = n.unwrap();
