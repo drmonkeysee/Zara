@@ -133,15 +133,114 @@ impl Display for TokenDescriptor<'_> {
     }
 }
 
-#[derive(Debug)]
+// NOTE: enum expression of the signum function
+#[derive(Debug, Eq, Ord, PartialEq, PartialOrd)]
 enum Sign {
-    Negative,
+    Negative = -1,
+    Zero,
     Positive,
+}
+
+macro_rules! match_sign {
+    ($int:expr) => {
+        match $int.signum() {
+            -1 => Some(Self::Negative),
+            0 => Some(Self::Zero),
+            1 => Some(Self::Positive),
+            _ => None,
+        }
+    };
+}
+
+impl Sign {
+    fn from_i8(n: i8) -> Option<Self> {
+        match_sign!(n)
+    }
+
+    fn from_i16(n: i16) -> Option<Self> {
+        match_sign!(n)
+    }
+
+    fn from_i32(n: i32) -> Option<Self> {
+        match_sign!(n)
+    }
+
+    fn from_i64(n: i64) -> Option<Self> {
+        match_sign!(n)
+    }
+
+    fn from_i128(n: i128) -> Option<Self> {
+        match_sign!(n)
+    }
+
+    fn from_isize(n: isize) -> Option<Self> {
+        match_sign!(n)
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    mod sign {
+        use super::*;
+
+        #[test]
+        fn values() {
+            assert_eq!(Sign::Negative as i32, -1);
+            assert_eq!(Sign::Zero as i32, 0);
+            assert_eq!(Sign::Positive as i32, 1);
+        }
+
+        #[test]
+        fn comparisons() {
+            assert!(Sign::Negative == Sign::Negative);
+            assert!(Sign::Negative != Sign::Zero);
+            assert!(Sign::Negative != Sign::Positive);
+
+            assert!(Sign::Zero == Sign::Zero);
+            assert!(Sign::Zero != Sign::Positive);
+
+            assert!(Sign::Positive == Sign::Positive);
+
+            assert!(Sign::Negative < Sign::Zero);
+            assert!(Sign::Negative <= Sign::Zero);
+            assert!(Sign::Negative < Sign::Positive);
+            assert!(Sign::Negative <= Sign::Positive);
+
+            assert!(Sign::Zero < Sign::Positive);
+            assert!(Sign::Zero <= Sign::Positive);
+            assert!(Sign::Zero > Sign::Negative);
+            assert!(Sign::Zero >= Sign::Negative);
+
+            assert!(Sign::Positive > Sign::Negative);
+            assert!(Sign::Positive >= Sign::Negative);
+            assert!(Sign::Positive > Sign::Zero);
+            assert!(Sign::Positive >= Sign::Zero);
+        }
+
+        #[test]
+        fn from() {
+            macro_rules! assert_from {
+                ($int:ty, $method:ident) => {{
+                    let cases = [(-1, Sign::Negative), (0, Sign::Zero), (1, Sign::Positive)];
+                    for (case, exp) in cases {
+                        let n: $int = case;
+                        let s = Sign::$method(n);
+                        assert!(s.is_some());
+                        assert_eq!(s.unwrap(), exp);
+                    }
+                }};
+            }
+
+            assert_from!(i8, from_i8);
+            assert_from!(i16, from_i16);
+            assert_from!(i32, from_i32);
+            assert_from!(i64, from_i64);
+            assert_from!(i128, from_i128);
+            assert_from!(isize, from_isize);
+        }
+    }
 
     mod token {
         use super::*;
