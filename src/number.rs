@@ -37,14 +37,14 @@ impl Number {
 
 #[derive(Debug)]
 pub enum Real {
-    Inexact(f64),
+    Float(f64),
     Integer(Integer),
     Rational(Rational),
 }
 
 impl From<f64> for Real {
     fn from(value: f64) -> Self {
-        Self::Inexact(value)
+        Self::Float(value)
     }
 }
 
@@ -107,7 +107,7 @@ impl Display for TokenDescriptor<'_> {
         match self.0 {
             Number::Complex(_) => f.write_str("CPX"),
             Number::Real(r) => match r {
-                Real::Inexact(_) => f.write_str("FLT"),
+                Real::Float(_) => f.write_str("FLT"),
                 Real::Integer(_) => f.write_str("INT"),
                 Real::Rational(_) => f.write_str("RAT"),
             },
