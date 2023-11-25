@@ -38,7 +38,7 @@ impl Number {
 #[derive(Debug)]
 pub enum Real {
     Inexact(f64),
-    Integer(Exact),
+    Integer(Integer),
     Rational(Rational),
 }
 
@@ -50,14 +50,7 @@ impl From<f64> for Real {
 
 impl From<i64> for Real {
     fn from(value: i64) -> Self {
-        Self::Integer(Exact::Native(value))
-    }
-}
-
-// TODO: need full combo of converters for Rational
-impl From<BigInt> for Real {
-    fn from(value: BigInt) -> Self {
-        Self::Integer(Exact::Big(value))
+        Self::Integer(value.into())
     }
 }
 
@@ -70,13 +63,23 @@ impl TryFrom<(i64, i64)> for Real {
 }
 
 #[derive(Debug)]
-pub enum Exact {
-    Native(i64),
-    Big(BigInt),
+pub struct Integer {
+    precision: Precision,
+    sign: Sign,
 }
 
+impl From<i64> for Integer {
+    fn from(value: i64) -> Self {
+        Self {
+            precision: Precision::Single(value as u64),
+            sign: Sign::from_signed(value),
+        }
+    }
+}
+
+// NOTE: Boxed to keep struct size down
 #[derive(Debug)]
-pub struct Rational(Box<(Exact, Exact)>); // NOTE: Boxed to keep struct size down
+pub struct Rational(Box<(Integer, Integer)>);
 
 #[derive(Debug)]
 pub struct RationalError;
@@ -88,27 +91,6 @@ impl Display for RationalError {
 }
 
 impl Error for RationalError {}
-
-#[derive(Debug)]
-pub struct BigInt {
-    digits: Vec<u64>,
-    sign: Sign,
-}
-
-impl BigInt {
-    pub(crate) fn tempctor(v: i64) -> Self {
-        // TODO: should this use signum instead?
-        let sign = if v < 0 {
-            Sign::Negative
-        } else {
-            Sign::Positive
-        };
-        Self {
-            digits: vec![v.try_into().unwrap()],
-            sign,
-        }
-    }
-}
 
 pub(crate) struct Datum<'a>(&'a Number);
 
@@ -133,7 +115,14 @@ impl Display for TokenDescriptor<'_> {
     }
 }
 
+#[derive(Debug)]
+enum Precision {
+    Single(u64),
+    Multiple(Vec<u64>), // TODO: can this be Box<[u64]
+}
+
 // NOTE: enum expression of the signum function
+// TODO: do i need all these derives?
 #[derive(Debug, Eq, Ord, PartialEq, PartialOrd)]
 enum Sign {
     Negative = -1,
@@ -141,40 +130,15 @@ enum Sign {
     Positive,
 }
 
-macro_rules! match_sign {
-    ($int:expr) => {
-        match $int.signum() {
-            -1 => Some(Self::Negative),
-            0 => Some(Self::Zero),
-            1 => Some(Self::Positive),
-            _ => None,
-        }
-    };
-}
-
 impl Sign {
-    fn from_i8(n: i8) -> Option<Self> {
-        match_sign!(n)
-    }
-
-    fn from_i16(n: i16) -> Option<Self> {
-        match_sign!(n)
-    }
-
-    fn from_i32(n: i32) -> Option<Self> {
-        match_sign!(n)
-    }
-
-    fn from_i64(n: i64) -> Option<Self> {
-        match_sign!(n)
-    }
-
-    fn from_i128(n: i128) -> Option<Self> {
-        match_sign!(n)
-    }
-
-    fn from_isize(n: isize) -> Option<Self> {
-        match_sign!(n)
+    fn from_signed(n: i64) -> Self {
+        match n.signum() {
+            -1 => Self::Negative,
+            0 => Self::Zero,
+            // NOTE: *technically* this could be fallible but signum is
+            // guaranteed to only return (-1, 0, 1) so this won't actually fail.
+            _ => Self::Positive,
+        }
     }
 }
 
@@ -221,24 +185,11 @@ mod tests {
 
         #[test]
         fn from() {
-            macro_rules! assert_from {
-                ($int:ty, $method:ident) => {{
-                    let cases = [(-1, Sign::Negative), (0, Sign::Zero), (1, Sign::Positive)];
-                    for (case, exp) in cases {
-                        let n: $int = case;
-                        let s = Sign::$method(n);
-                        assert!(s.is_some());
-                        assert_eq!(s.unwrap(), exp);
-                    }
-                }};
+            let cases = [(-10, Sign::Negative), (0, Sign::Zero), (10, Sign::Positive)];
+            for (case, exp) in cases {
+                let s = Sign::from_signed(case);
+                assert_eq!(s, exp);
             }
-
-            assert_from!(i8, from_i8);
-            assert_from!(i16, from_i16);
-            assert_from!(i32, from_i32);
-            assert_from!(i64, from_i64);
-            assert_from!(i128, from_i128);
-            assert_from!(isize, from_isize);
         }
     }
 
@@ -273,13 +224,6 @@ mod tests {
             let n = Number::complex(3, 5);
 
             assert_eq!(n.as_token_descriptor().to_string(), "CPX");
-        }
-
-        #[test]
-        fn bigint() {
-            let n = Number::real(BigInt::tempctor(30));
-
-            assert_eq!(n.as_token_descriptor().to_string(), "INT");
         }
     }
 

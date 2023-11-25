@@ -422,7 +422,6 @@ bar"
 
     mod number {
         use super::*;
-        use crate::number::BigInt;
 
         #[test]
         fn integer_token() {
@@ -455,13 +454,6 @@ bar"
         }
 
         #[test]
-        fn bigint_token() {
-            let n = Literal::Number(Number::real(BigInt::tempctor(30)));
-
-            assert_eq!(n.as_token_descriptor().to_string(), "NUM<INT>");
-        }
-
-        #[test]
         fn display_int() {
             let n = Literal::Number(Number::real(23));
 
@@ -489,13 +481,6 @@ bar"
             let n = Literal::Number(Number::complex(4, 5));
 
             assert_eq!(n.as_datum().to_string(), "4+5i");
-        }
-
-        #[test]
-        fn display_bigint() {
-            let n = Literal::Number(Number::real(BigInt::tempctor(30)));
-
-            assert_eq!(n.as_datum().to_string(), "30");
         }
     }
 }
