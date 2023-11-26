@@ -5,7 +5,10 @@ use std::path::Path;
 mod lexer {
     use self::token::{TokenErrorKind, TokenType};
     use super::*;
-    use crate::txt::{LineNumber, TextResult};
+    use crate::{
+        testutil::ok_or_fail,
+        txt::{LineNumber, TextResult},
+    };
     use std::{ops::Range, rc::Rc, str::Lines};
 
     struct MockTxtSource<'a> {
@@ -69,8 +72,7 @@ mod lexer {
 
         let r = target.tokenize(&mut src);
 
-        assert!(r.is_ok());
-        let o = r.unwrap();
+        let o = ok_or_fail!(r);
         let lines = extract_or_fail!(o, LexerOutput::Complete);
         assert!(lines.is_empty());
         assert!(target.cont.is_none());
@@ -83,8 +85,7 @@ mod lexer {
 
         let r = target.tokenize(&mut src);
 
-        assert!(r.is_ok());
-        let o = r.unwrap();
+        let o = ok_or_fail!(r);
         let lines = extract_or_fail!(o, LexerOutput::Complete);
         assert_eq!(lines.len(), 1);
         let line = &lines[0];
@@ -114,8 +115,7 @@ mod lexer {
 
         let r = target.tokenize(&mut src);
 
-        assert!(r.is_ok());
-        let o = r.unwrap();
+        let o = ok_or_fail!(r);
         let lines = extract_or_fail!(o, LexerOutput::Complete);
         assert_eq!(lines.len(), 1);
         let line = &lines[0];
@@ -159,8 +159,7 @@ mod lexer {
 
         let r = target.tokenize(&mut src);
 
-        assert!(r.is_ok());
-        let o = r.unwrap();
+        let o = ok_or_fail!(r);
         let lines = extract_or_fail!(o, LexerOutput::Complete);
         assert_eq!(lines.len(), 3);
         let line = &lines[0];
@@ -354,8 +353,7 @@ mod lexer {
 
         let r = target.tokenize(&mut src);
 
-        assert!(r.is_ok());
-        let o = r.unwrap();
+        let o = ok_or_fail!(r);
         assert!(matches!(o, LexerOutput::Continuation));
         let (lines, cont) = extract_or_fail!(target.cont, Some);
         assert_eq!(lines.len(), 1);
@@ -453,8 +451,7 @@ mod lexer {
 
         let r = target.tokenize(&mut src);
 
-        assert!(r.is_ok());
-        let o = r.unwrap();
+        let o = ok_or_fail!(r);
         let lines = extract_or_fail!(o, LexerOutput::Complete);
         assert_eq!(lines.len(), 2);
         let line = &lines[0];
@@ -500,8 +497,7 @@ mod lexer {
 
         let r = target.tokenize(&mut src);
 
-        assert!(r.is_ok());
-        let o = r.unwrap();
+        let o = ok_or_fail!(r);
         let lines = extract_or_fail!(o, LexerOutput::Complete);
         assert_eq!(lines.len(), 3);
         let line = &lines[0];
@@ -642,8 +638,7 @@ mod lexer {
 
         let r = target.tokenize(&mut src);
 
-        assert!(r.is_ok());
-        let o = r.unwrap();
+        let o = ok_or_fail!(r);
         let lines = extract_or_fail!(o, LexerOutput::Complete);
         assert_eq!(lines.len(), 2);
         let line = &lines[0];
@@ -689,8 +684,7 @@ mod lexer {
 
         let r = target.tokenize(&mut src);
 
-        assert!(r.is_ok());
-        let o = r.unwrap();
+        let o = ok_or_fail!(r);
         let lines = extract_or_fail!(o, LexerOutput::Complete);
         assert_eq!(lines.len(), 3);
         let line = &lines[0];
@@ -934,8 +928,7 @@ mod lexer {
 
         let r = target.tokenize(&mut src);
 
-        assert!(r.is_ok());
-        let o = r.unwrap();
+        let o = ok_or_fail!(r);
         let lines = extract_or_fail!(o, LexerOutput::Complete);
         assert_eq!(lines.len(), 2);
         let line = &lines[0];
@@ -981,8 +974,7 @@ mod lexer {
 
         let r = target.tokenize(&mut src);
 
-        assert!(r.is_ok());
-        let o = r.unwrap();
+        let o = ok_or_fail!(r);
         let lines = extract_or_fail!(o, LexerOutput::Complete);
         assert_eq!(lines.len(), 3);
         let line = &lines[0];

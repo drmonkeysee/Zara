@@ -218,9 +218,7 @@ mod tests {
 
         #[test]
         fn rational() {
-            let n = Number::rational(4, 5);
-            assert!(n.is_ok());
-            let n = n.unwrap();
+            let n = ok_or_fail!(Number::rational(4, 5));
 
             assert_eq!(n.as_token_descriptor().to_string(), "RAT");
         }
@@ -392,45 +390,35 @@ mod tests {
 
         #[test]
         fn positive_rational() {
-            let n = Number::rational(3, 4);
-            assert!(n.is_ok());
-            let n = n.unwrap();
+            let n = ok_or_fail!(Number::rational(3, 4));
 
             assert_eq!(n.as_datum().to_string(), "3/4");
         }
 
         #[test]
         fn negative_numerator() {
-            let n = Number::rational(-3, 4);
-            assert!(n.is_ok());
-            let n = n.unwrap();
+            let n = ok_or_fail!(Number::rational(-3, 4));
 
             assert_eq!(n.as_datum().to_string(), "-3/4");
         }
 
         #[test]
         fn negative_denominator() {
-            let n = Number::rational(3, -4);
-            assert!(n.is_ok());
-            let n = n.unwrap();
+            let n = ok_or_fail!(Number::rational(3, -4));
 
             assert_eq!(n.as_datum().to_string(), "-3/4");
         }
 
         #[test]
         fn negative_numerator_and_denominator() {
-            let n = Number::rational(-3, -4);
-            assert!(n.is_ok());
-            let n = n.unwrap();
+            let n = ok_or_fail!(Number::rational(-3, -4));
 
             assert_eq!(n.as_datum().to_string(), "3/4");
         }
 
         #[test]
         fn greater_than_one_rational() {
-            let n = Number::rational(4, 3);
-            assert!(n.is_ok());
-            let n = n.unwrap();
+            let n = ok_or_fail!(Number::rational(4, 3));
 
             assert_eq!(n.as_datum().to_string(), "4/3");
         }

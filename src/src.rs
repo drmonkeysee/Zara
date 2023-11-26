@@ -470,6 +470,7 @@ mod tests {
 
     mod linesrc {
         use super::*;
+        use crate::testutil::ok_or_fail;
         use std::{error::Error, io};
 
         struct MockLineAdapter {
@@ -546,16 +547,14 @@ mod tests {
             let line = target.next();
             assert!(line.is_some());
             let line = line.unwrap();
-            assert!(line.is_ok());
-            let line = line.unwrap();
+            let line = ok_or_fail!(line);
             assert_eq!(line.line, "bar");
             assert_eq!(line.lineno, 1);
 
             let line = target.next();
             assert!(line.is_some());
             let line = line.unwrap();
-            assert!(line.is_ok());
-            let line = line.unwrap();
+            let line = ok_or_fail!(line);
             assert_eq!(line.line, "foo");
             assert_eq!(line.lineno, 2);
 
@@ -577,16 +576,14 @@ mod tests {
             let line = target.next();
             assert!(line.is_some());
             let line = line.unwrap();
-            assert!(line.is_ok());
-            let line = line.unwrap();
+            let line = ok_or_fail!(line);
             assert_eq!(line.line, "bar");
             assert_eq!(line.lineno, 1);
 
             let line = target.next();
             assert!(line.is_some());
             let line = line.unwrap();
-            assert!(line.is_ok());
-            let line = line.unwrap();
+            let line = ok_or_fail!(line);
             assert_eq!(line.line, "");
             assert_eq!(line.lineno, 2);
 
@@ -608,8 +605,7 @@ mod tests {
             let line = target.next();
             assert!(line.is_some());
             let line = line.unwrap();
-            assert!(line.is_ok());
-            let line = line.unwrap();
+            let line = ok_or_fail!(line);
             assert_eq!(line.line, "bar");
             assert_eq!(line.lineno, 1);
 
