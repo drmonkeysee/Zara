@@ -11,7 +11,6 @@ pub enum Number {
 }
 
 impl Number {
-    // TODO: need full combo of ctors for Rational
     pub(crate) fn complex(real: impl Into<Real>, imag: impl Into<Real>) -> Self {
         Self::Complex((real.into(), imag.into()).into())
     }
@@ -21,9 +20,12 @@ impl Number {
     }
 
     pub(crate) fn rational(
-        value: impl TryInto<Real, Error = RationalError>,
+        numerator: impl Into<Integer>,
+        denominator: impl Into<Integer>,
     ) -> Result<Self, RationalError> {
-        Ok(Self::Real(value.try_into()?))
+        Ok(Self::Real(
+            (numerator.into(), denominator.into()).try_into()?,
+        ))
     }
 
     pub(crate) fn as_datum(&self) -> Datum {
@@ -54,10 +56,10 @@ impl<T: Into<Integer>> From<T> for Real {
     }
 }
 
-impl TryFrom<(i64, i64)> for Real {
+impl<T: Into<Integer>> TryFrom<(T, T)> for Real {
     type Error = RationalError;
 
-    fn try_from(value: (i64, i64)) -> Result<Self, Self::Error> {
+    fn try_from(value: (T, T)) -> Result<Self, Self::Error> {
         todo!()
     }
 }
@@ -212,7 +214,7 @@ mod tests {
 
         #[test]
         fn rational() {
-            let n = Number::rational((4, 5));
+            let n = Number::rational(4, 5);
             assert!(n.is_ok());
             let n = n.unwrap();
 
@@ -386,7 +388,7 @@ mod tests {
 
         #[test]
         fn positive_rational() {
-            let n = Number::rational((3, 4));
+            let n = Number::rational(3, 4);
             assert!(n.is_ok());
             let n = n.unwrap();
 
@@ -395,7 +397,7 @@ mod tests {
 
         #[test]
         fn negative_numerator() {
-            let n = Number::rational((-3, 4));
+            let n = Number::rational(-3, 4);
             assert!(n.is_ok());
             let n = n.unwrap();
 
@@ -404,7 +406,7 @@ mod tests {
 
         #[test]
         fn negative_denominator() {
-            let n = Number::rational((3, -4));
+            let n = Number::rational(3, -4);
             assert!(n.is_ok());
             let n = n.unwrap();
 
@@ -413,7 +415,7 @@ mod tests {
 
         #[test]
         fn negative_numerator_and_denominator() {
-            let n = Number::rational((-3, -4));
+            let n = Number::rational(-3, -4);
             assert!(n.is_ok());
             let n = n.unwrap();
 
@@ -422,7 +424,7 @@ mod tests {
 
         #[test]
         fn greater_than_one_rational() {
-            let n = Number::rational((4, 3));
+            let n = Number::rational(4, 3);
             assert!(n.is_ok());
             let n = n.unwrap();
 
@@ -435,7 +437,7 @@ mod tests {
 
         #[test]
         fn min_over_max() {
-            let n = Number::rational((i64::MIN, i64::MAX));
+            let n = Number::rational(i64::MIN, i64::MAX);
             assert!(n.is_ok());
             let n = n.unwrap();
 
@@ -444,7 +446,7 @@ mod tests {
 
         #[test]
         fn max_over_min() {
-            let n = Number::rational((i64::MAX, i64::MIN));
+            let n = Number::rational(i64::MAX, i64::MIN);
             assert!(n.is_ok());
             let n = n.unwrap();
 
@@ -453,7 +455,7 @@ mod tests {
 
         #[test]
         fn min_forced_to_positive() {
-            let n = Number::rational((i64::MIN, -4));
+            let n = Number::rational(i64::MIN, -4);
             assert!(n.is_ok());
             let n = n.unwrap();
 
@@ -462,7 +464,7 @@ mod tests {
 
         #[test]
         fn integer() {
-            let n = Number::rational((3, 1));
+            let n = Number::rational(3, 1);
             assert!(n.is_ok());
             let n = n.unwrap();
 
@@ -472,7 +474,7 @@ mod tests {
 
         #[test]
         fn unity() {
-            let n = Number::rational((1, 1));
+            let n = Number::rational(1, 1);
             assert!(n.is_ok());
             let n = n.unwrap();
 
@@ -482,7 +484,7 @@ mod tests {
 
         #[test]
         fn zero_numerator() {
-            let n = Number::rational((0, 1));
+            let n = Number::rational(0, 1);
             assert!(n.is_ok());
             let n = n.unwrap();
 

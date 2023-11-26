@@ -439,7 +439,7 @@ bar"
 
         #[test]
         fn rational_token() {
-            let r = Number::rational((4, 5));
+            let r = Number::rational(4, 5);
             assert!(r.is_ok());
             let n = Literal::Number(r.unwrap());
 
@@ -469,7 +469,7 @@ bar"
 
         #[test]
         fn display_rational() {
-            let r = Number::rational((3, 4));
+            let r = Number::rational(3, 4);
             assert!(r.is_ok());
             let n = Literal::Number(r.unwrap());
 
