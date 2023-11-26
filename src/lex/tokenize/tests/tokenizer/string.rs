@@ -3,7 +3,7 @@ use super::*;
 #[test]
 fn empty() {
     let mut s = Scanner::new("\"\"");
-    let start = s.next_token().unwrap();
+    let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
         scan: &mut s,
         start,
@@ -24,7 +24,7 @@ fn empty() {
 #[test]
 fn alphanumeric() {
     let mut s = Scanner::new("\"abc123!@#\"");
-    let start = s.next_token().unwrap();
+    let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
         scan: &mut s,
         start,
@@ -45,7 +45,7 @@ fn alphanumeric() {
 #[test]
 fn raw_extended_and_higher_char() {
     let mut s = Scanner::new("\"λ 🦀 \u{2401} \u{fffd}\"");
-    let start = s.next_token().unwrap();
+    let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
         scan: &mut s,
         start,
@@ -66,7 +66,7 @@ fn raw_extended_and_higher_char() {
 #[test]
 fn contains_verbatim_identifier() {
     let mut s = Scanner::new("\"foo |verbatim| bar\"");
-    let start = s.next_token().unwrap();
+    let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
         scan: &mut s,
         start,
@@ -87,7 +87,7 @@ fn contains_verbatim_identifier() {
 #[test]
 fn raw_escape_sequences() {
     let mut s = Scanner::new("\"a:\x07, b:\x08, d:\x7f, e:\x1b, n:\n, 0:\0, r:\r, t:\t, v:\x7c\"");
-    let start = s.next_token().unwrap();
+    let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
         scan: &mut s,
         start,
@@ -108,7 +108,7 @@ fn raw_escape_sequences() {
 #[test]
 fn escape_sequences() {
     let mut s = Scanner::new("\"a:\\a, b:\\b, n:\\n, r:\r, t:\t, q:\\\", s:\\\\, v:\\|\"");
-    let start = s.next_token().unwrap();
+    let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
         scan: &mut s,
         start,
@@ -129,7 +129,7 @@ fn escape_sequences() {
 #[test]
 fn whitespace_escape() {
     let mut s = Scanner::new("\"foo\\   bar\"");
-    let start = s.next_token().unwrap();
+    let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
         scan: &mut s,
         start,
@@ -152,7 +152,7 @@ fn hex_escape_sequences() {
     let mut s = Scanner::new(
             "\"a:\\x7;, b:\\x8;, d:\\x7f;, e:\\x1b;, n:\\xa;, 0:\\x0;, r:\\xd;, t:\\x9;, q:\\x22;, s:\\x5c;, v:\\x7c;\"",
         );
-    let start = s.next_token().unwrap();
+    let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
         scan: &mut s,
         start,
@@ -173,7 +173,7 @@ fn hex_escape_sequences() {
 #[test]
 fn hex_case_insensitive() {
     let mut s = Scanner::new("\"\\x4a; \\X4A;\"");
-    let start = s.next_token().unwrap();
+    let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
         scan: &mut s,
         start,
@@ -194,7 +194,7 @@ fn hex_case_insensitive() {
 #[test]
 fn higher_plane_raw() {
     let mut s = Scanner::new("\"\u{fff9} \u{e0001} \u{100001}\"");
-    let start = s.next_token().unwrap();
+    let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
         scan: &mut s,
         start,
@@ -215,7 +215,7 @@ fn higher_plane_raw() {
 #[test]
 fn higher_plane_hex() {
     let mut s = Scanner::new("\"\\xfff9; \\xe0001; \\x100001;\"");
-    let start = s.next_token().unwrap();
+    let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
         scan: &mut s,
         start,
@@ -236,7 +236,7 @@ fn higher_plane_hex() {
 #[test]
 fn invalid_escape() {
     let mut s = Scanner::new("\"\\B\"");
-    let start = s.next_token().unwrap();
+    let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
         scan: &mut s,
         start,
@@ -257,7 +257,7 @@ fn invalid_escape() {
 #[test]
 fn hex_sign_invalid() {
     let mut s = Scanner::new("\"\\x+A;\"");
-    let start = s.next_token().unwrap();
+    let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
         scan: &mut s,
         start,
@@ -278,7 +278,7 @@ fn hex_sign_invalid() {
 #[test]
 fn hex_too_large() {
     let mut s = Scanner::new("\"\\xdeadbeef;\"");
-    let start = s.next_token().unwrap();
+    let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
         scan: &mut s,
         start,
@@ -299,7 +299,7 @@ fn hex_too_large() {
 #[test]
 fn hex_malformed() {
     let mut s = Scanner::new("\"\\x124nope;\"");
-    let start = s.next_token().unwrap();
+    let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
         scan: &mut s,
         start,
@@ -320,7 +320,7 @@ fn hex_malformed() {
 #[test]
 fn hex_unterminated() {
     let mut s = Scanner::new("\"\\x123\"");
-    let start = s.next_token().unwrap();
+    let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
         scan: &mut s,
         start,
@@ -364,7 +364,7 @@ fn discard() {
 #[test]
 fn begin() {
     let mut s = Scanner::new("\"beginning string");
-    let start = s.next_token().unwrap();
+    let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
         scan: &mut s,
         start,
@@ -385,7 +385,7 @@ fn begin() {
 #[test]
 fn begin_with_line_continuation() {
     let mut s = Scanner::new("\"beginning string\\");
-    let start = s.next_token().unwrap();
+    let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
         scan: &mut s,
         start,
@@ -406,7 +406,7 @@ fn begin_with_line_continuation() {
 #[test]
 fn begin_with_line_continuation_includes_leading_whitespace() {
     let mut s = Scanner::new("\"beginning string    \\");
-    let start = s.next_token().unwrap();
+    let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
         scan: &mut s,
         start,
@@ -427,7 +427,7 @@ fn begin_with_line_continuation_includes_leading_whitespace() {
 #[test]
 fn begin_with_line_continuation_excludes_trailing_whitespace() {
     let mut s = Scanner::new("\"beginning string\\    ");
-    let start = s.next_token().unwrap();
+    let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
         scan: &mut s,
         start,
@@ -448,7 +448,7 @@ fn begin_with_line_continuation_excludes_trailing_whitespace() {
 #[test]
 fn begin_only_counts_final_slash_as_line_continuation() {
     let mut s = Scanner::new("\"beginning string\\  \\  \\  ");
-    let start = s.next_token().unwrap();
+    let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
         scan: &mut s,
         start,

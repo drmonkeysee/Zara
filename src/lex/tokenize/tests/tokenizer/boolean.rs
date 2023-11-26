@@ -3,7 +3,7 @@ use super::*;
 #[test]
 fn true_short() {
     let mut s = Scanner::new("#t");
-    let start = s.next_token().unwrap();
+    let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
         scan: &mut s,
         start,
@@ -24,7 +24,7 @@ fn true_short() {
 #[test]
 fn true_long() {
     let mut s = Scanner::new("#true");
-    let start = s.next_token().unwrap();
+    let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
         scan: &mut s,
         start,
@@ -45,7 +45,7 @@ fn true_long() {
 #[test]
 fn true_uppercase() {
     let mut s = Scanner::new("#TRUE");
-    let start = s.next_token().unwrap();
+    let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
         scan: &mut s,
         start,
@@ -66,7 +66,7 @@ fn true_uppercase() {
 #[test]
 fn true_malformed() {
     let mut s = Scanner::new("#trueasd");
-    let start = s.next_token().unwrap();
+    let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
         scan: &mut s,
         start,
@@ -87,7 +87,7 @@ fn true_malformed() {
 #[test]
 fn false_short() {
     let mut s = Scanner::new("#f");
-    let start = s.next_token().unwrap();
+    let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
         scan: &mut s,
         start,
@@ -108,7 +108,7 @@ fn false_short() {
 #[test]
 fn false_long() {
     let mut s = Scanner::new("#false");
-    let start = s.next_token().unwrap();
+    let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
         scan: &mut s,
         start,
@@ -129,7 +129,7 @@ fn false_long() {
 #[test]
 fn false_uppercase() {
     let mut s = Scanner::new("#FALSE");
-    let start = s.next_token().unwrap();
+    let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
         scan: &mut s,
         start,
@@ -150,7 +150,7 @@ fn false_uppercase() {
 #[test]
 fn false_malformed() {
     let mut s = Scanner::new("#fals");
-    let start = s.next_token().unwrap();
+    let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
         scan: &mut s,
         start,

@@ -3,7 +3,7 @@ use super::*;
 #[test]
 fn unterminated() {
     let mut s = Scanner::new("#");
-    let start = s.next_token().unwrap();
+    let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
         scan: &mut s,
         start,
@@ -24,7 +24,7 @@ fn unterminated() {
 #[test]
 fn unterminated_with_whitespace() {
     let mut s = Scanner::new("#  ");
-    let start = s.next_token().unwrap();
+    let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
         scan: &mut s,
         start,
@@ -45,7 +45,7 @@ fn unterminated_with_whitespace() {
 #[test]
 fn unterminated_with_delimiter() {
     let mut s = Scanner::new("#)");
-    let start = s.next_token().unwrap();
+    let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
         scan: &mut s,
         start,
@@ -66,7 +66,7 @@ fn unterminated_with_delimiter() {
 #[test]
 fn invalid() {
     let mut s = Scanner::new("#g");
-    let start = s.next_token().unwrap();
+    let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
         scan: &mut s,
         start,
@@ -87,7 +87,7 @@ fn invalid() {
 #[test]
 fn invalid_long() {
     let mut s = Scanner::new("#not_a_valid_hashtag");
-    let start = s.next_token().unwrap();
+    let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
         scan: &mut s,
         start,
@@ -108,7 +108,7 @@ fn invalid_long() {
 #[test]
 fn directive_fold_case() {
     let mut s = Scanner::new("#!fold-case");
-    let start = s.next_token().unwrap();
+    let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
         scan: &mut s,
         start,
@@ -129,7 +129,7 @@ fn directive_fold_case() {
 #[test]
 fn directive_no_fold_case() {
     let mut s = Scanner::new("#!no-fold-case");
-    let start = s.next_token().unwrap();
+    let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
         scan: &mut s,
         start,
@@ -150,7 +150,7 @@ fn directive_no_fold_case() {
 #[test]
 fn directive_case_insensitive() {
     let mut s = Scanner::new("#!FOLD-CasE");
-    let start = s.next_token().unwrap();
+    let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
         scan: &mut s,
         start,
@@ -171,7 +171,7 @@ fn directive_case_insensitive() {
 #[test]
 fn directive_fold_case_followed_by_token() {
     let mut s = Scanner::new("#!fold-case#t");
-    let start = s.next_token().unwrap();
+    let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
         scan: &mut s,
         start,
@@ -192,7 +192,7 @@ fn directive_fold_case_followed_by_token() {
 #[test]
 fn directive_expected() {
     let mut s = Scanner::new("#!");
-    let start = s.next_token().unwrap();
+    let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
         scan: &mut s,
         start,
@@ -213,7 +213,7 @@ fn directive_expected() {
 #[test]
 fn directive_invalid() {
     let mut s = Scanner::new("#!foobar");
-    let start = s.next_token().unwrap();
+    let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
         scan: &mut s,
         start,
@@ -234,7 +234,7 @@ fn directive_invalid() {
 #[test]
 fn vector() {
     let mut s = Scanner::new("#(");
-    let start = s.next_token().unwrap();
+    let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
         scan: &mut s,
         start,
@@ -258,7 +258,7 @@ mod comments {
     #[test]
     fn block_comment_empty() {
         let mut s = Scanner::new("#||#");
-        let start = s.next_token().unwrap();
+        let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
             scan: &mut s,
             start,
@@ -279,7 +279,7 @@ mod comments {
     #[test]
     fn block_comment_with_text() {
         let mut s = Scanner::new("#|i am a comment|#");
-        let start = s.next_token().unwrap();
+        let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
             scan: &mut s,
             start,
@@ -300,7 +300,7 @@ mod comments {
     #[test]
     fn block_comment_with_hash() {
         let mut s = Scanner::new("#|hashtag #comment|#");
-        let start = s.next_token().unwrap();
+        let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
             scan: &mut s,
             start,
@@ -321,7 +321,7 @@ mod comments {
     #[test]
     fn block_comment_with_pipe() {
         let mut s = Scanner::new("#|pipe |comment|#");
-        let start = s.next_token().unwrap();
+        let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
             scan: &mut s,
             start,
@@ -342,7 +342,7 @@ mod comments {
     #[test]
     fn block_comment_nested() {
         let mut s = Scanner::new("#|outer #|inner comment|# comment|#");
-        let start = s.next_token().unwrap();
+        let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
             scan: &mut s,
             start,
@@ -363,7 +363,7 @@ mod comments {
     #[test]
     fn block_comment_followed_by_other_text() {
         let mut s = Scanner::new("#| comment |# other stuff");
-        let start = s.next_token().unwrap();
+        let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
             scan: &mut s,
             start,
@@ -384,7 +384,7 @@ mod comments {
     #[test]
     fn block_comment_begin() {
         let mut s = Scanner::new("#| comment that continues...");
-        let start = s.next_token().unwrap();
+        let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
             scan: &mut s,
             start,
@@ -405,7 +405,7 @@ mod comments {
     #[test]
     fn block_comment_begin_with_hash() {
         let mut s = Scanner::new("#| comment with #hash...");
-        let start = s.next_token().unwrap();
+        let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
             scan: &mut s,
             start,
@@ -426,7 +426,7 @@ mod comments {
     #[test]
     fn block_comment_begin_with_pipe() {
         let mut s = Scanner::new("#| comment with |pipe...");
-        let start = s.next_token().unwrap();
+        let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
             scan: &mut s,
             start,
@@ -447,7 +447,7 @@ mod comments {
     #[test]
     fn block_comment_begin_contained_nested_comment() {
         let mut s = Scanner::new("#| begin #| nested |# continue...");
-        let start = s.next_token().unwrap();
+        let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
             scan: &mut s,
             start,
@@ -468,7 +468,7 @@ mod comments {
     #[test]
     fn block_comment_begin_with_trailing_nested() {
         let mut s = Scanner::new("#| begin #| nested...");
-        let start = s.next_token().unwrap();
+        let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
             scan: &mut s,
             start,
@@ -489,7 +489,7 @@ mod comments {
     #[test]
     fn block_comment_begin_with_multiple_trailing_nested() {
         let mut s = Scanner::new("#| begin #| nested #| goofy...");
-        let start = s.next_token().unwrap();
+        let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
             scan: &mut s,
             start,
@@ -720,7 +720,7 @@ mod comments {
     #[test]
     fn datum_comment() {
         let mut s = Scanner::new("#;");
-        let start = s.next_token().unwrap();
+        let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
             scan: &mut s,
             start,
@@ -741,7 +741,7 @@ mod comments {
     #[test]
     fn datum_comment_followed_by_datum() {
         let mut s = Scanner::new("#;#\\a");
-        let start = s.next_token().unwrap();
+        let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
             scan: &mut s,
             start,
@@ -762,7 +762,7 @@ mod comments {
     #[test]
     fn datum_comment_followed_by_whitespace() {
         let mut s = Scanner::new("#; ");
-        let start = s.next_token().unwrap();
+        let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
             scan: &mut s,
             start,

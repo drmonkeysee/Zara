@@ -7,11 +7,12 @@ mod quoting;
 mod string;
 
 use super::*;
+use crate::testutil::some_or_fail;
 
 #[test]
 fn left_paren() {
     let mut s = Scanner::new("(");
-    let start = s.next_token().unwrap();
+    let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
         scan: &mut s,
         start,
@@ -32,7 +33,7 @@ fn left_paren() {
 #[test]
 fn right_paren() {
     let mut s = Scanner::new(")");
-    let start = s.next_token().unwrap();
+    let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
         scan: &mut s,
         start,
@@ -53,7 +54,7 @@ fn right_paren() {
 #[test]
 fn pair_joiner() {
     let mut s = Scanner::new(".");
-    let start = s.next_token().unwrap();
+    let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
         scan: &mut s,
         start,
@@ -74,7 +75,7 @@ fn pair_joiner() {
 #[test]
 fn pair_joiner_with_whitespace() {
     let mut s = Scanner::new(" . ");
-    let start = s.next_token().unwrap();
+    let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
         scan: &mut s,
         start,
@@ -95,7 +96,7 @@ fn pair_joiner_with_whitespace() {
 #[test]
 fn pair_joiner_prefixed_is_identifier() {
     let mut s = Scanner::new("a.");
-    let start = s.next_token().unwrap();
+    let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
         scan: &mut s,
         start,
@@ -116,7 +117,7 @@ fn pair_joiner_prefixed_is_identifier() {
 #[test]
 fn pair_joiner_postfixed_is_identifier() {
     let mut s = Scanner::new(".a");
-    let start = s.next_token().unwrap();
+    let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
         scan: &mut s,
         start,
@@ -137,7 +138,7 @@ fn pair_joiner_postfixed_is_identifier() {
 #[test]
 fn pair_joiner_followed_by_delimiter() {
     let mut s = Scanner::new(".)");
-    let start = s.next_token().unwrap();
+    let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
         scan: &mut s,
         start,
@@ -158,7 +159,7 @@ fn pair_joiner_followed_by_delimiter() {
 #[test]
 fn token_ends_at_whitespace() {
     let mut s = Scanner::new("(  ");
-    let start = s.next_token().unwrap();
+    let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
         scan: &mut s,
         start,
@@ -179,7 +180,7 @@ fn token_ends_at_whitespace() {
 #[test]
 fn token_ends_at_delimiter() {
     let mut s = Scanner::new("()");
-    let start = s.next_token().unwrap();
+    let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
         scan: &mut s,
         start,
@@ -200,7 +201,7 @@ fn token_ends_at_delimiter() {
 #[test]
 fn comment() {
     let mut s = Scanner::new(";");
-    let start = s.next_token().unwrap();
+    let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
         scan: &mut s,
         start,
@@ -221,7 +222,7 @@ fn comment() {
 #[test]
 fn comment_with_text() {
     let mut s = Scanner::new("; scanner input is always one line");
-    let start = s.next_token().unwrap();
+    let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
         scan: &mut s,
         start,

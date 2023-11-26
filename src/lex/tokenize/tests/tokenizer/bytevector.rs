@@ -3,7 +3,7 @@ use super::*;
 #[test]
 fn basic_token() {
     let mut s = Scanner::new("#u8(");
-    let start = s.next_token().unwrap();
+    let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
         scan: &mut s,
         start,
@@ -24,7 +24,7 @@ fn basic_token() {
 #[test]
 fn uppercase() {
     let mut s = Scanner::new("#U8(");
-    let start = s.next_token().unwrap();
+    let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
         scan: &mut s,
         start,
@@ -45,7 +45,7 @@ fn uppercase() {
 #[test]
 fn ends_at_paren() {
     let mut s = Scanner::new("#u8(sdf");
-    let start = s.next_token().unwrap();
+    let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
         scan: &mut s,
         start,
@@ -66,7 +66,7 @@ fn ends_at_paren() {
 #[test]
 fn unterminated() {
     let mut s = Scanner::new("#u");
-    let start = s.next_token().unwrap();
+    let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
         scan: &mut s,
         start,
@@ -87,7 +87,7 @@ fn unterminated() {
 #[test]
 fn wrong_number() {
     let mut s = Scanner::new("#u9(");
-    let start = s.next_token().unwrap();
+    let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
         scan: &mut s,
         start,
@@ -108,7 +108,7 @@ fn wrong_number() {
 #[test]
 fn extra_number() {
     let mut s = Scanner::new("#u81(");
-    let start = s.next_token().unwrap();
+    let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
         scan: &mut s,
         start,
@@ -129,7 +129,7 @@ fn extra_number() {
 #[test]
 fn no_paren() {
     let mut s = Scanner::new("#u8");
-    let start = s.next_token().unwrap();
+    let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
         scan: &mut s,
         start,
@@ -150,7 +150,7 @@ fn no_paren() {
 #[test]
 fn no_paren_whitespace() {
     let mut s = Scanner::new("#u8  ");
-    let start = s.next_token().unwrap();
+    let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
         scan: &mut s,
         start,
