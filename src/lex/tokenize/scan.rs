@@ -202,6 +202,7 @@ mod tests {
 
     mod scanner {
         use super::*;
+        use crate::testutil::some_or_fail;
 
         #[test]
         fn next_empty_string() {
@@ -216,45 +217,40 @@ mod tests {
         fn next_first_char() {
             let mut s = Scanner::new("abc");
 
-            let r = s.char();
+            let r = some_or_fail!(s.char());
 
-            assert!(r.is_some());
-            assert_eq!(r.unwrap(), 'a');
+            assert_eq!(r, 'a');
         }
 
         #[test]
         fn next_first_whitespace() {
             let mut s = Scanner::new(" abc");
 
-            let r = s.char();
+            let r = some_or_fail!(s.char());
 
-            assert!(r.is_some());
-            assert_eq!(r.unwrap(), ' ');
+            assert_eq!(r, ' ');
         }
 
         #[test]
         fn next_first_utf8_char() {
             let mut s = Scanner::new("🦀bc");
 
-            let r = s.char();
+            let r = some_or_fail!(s.char());
 
-            assert!(r.is_some());
-            assert_eq!(r.unwrap(), '🦀');
+            assert_eq!(r, '🦀');
         }
 
         #[test]
         fn next_char_eq() {
             let mut s = Scanner::new("abc");
 
-            let r = s.char_if_eq('a');
+            let r = some_or_fail!(s.char_if_eq('a'));
 
-            assert!(r.is_some());
-            assert_eq!(r.unwrap(), 0);
+            assert_eq!(r, 0);
 
-            let r = s.char();
+            let r = some_or_fail!(s.char());
 
-            assert!(r.is_some());
-            assert_eq!(r.unwrap(), 'b');
+            assert_eq!(r, 'b');
         }
 
         #[test]
@@ -265,25 +261,22 @@ mod tests {
 
             assert!(r.is_none());
 
-            let r = s.char();
+            let r = some_or_fail!(s.char());
 
-            assert!(r.is_some());
-            assert_eq!(r.unwrap(), 'a');
+            assert_eq!(r, 'a');
         }
 
         #[test]
         fn find_in_string() {
             let mut s = Scanner::new("abc");
 
-            let r = s.find_any_char(&['z', 'b', 't']);
+            let r = some_or_fail!(s.find_any_char(&['z', 'b', 't']));
 
-            assert!(r.is_some());
-            assert_eq!(r.unwrap(), (1, 'b'));
+            assert_eq!(r, (1, 'b'));
 
-            let r = s.char();
+            let r = some_or_fail!(s.char());
 
-            assert!(r.is_some());
-            assert_eq!(r.unwrap(), 'c');
+            assert_eq!(r, 'c');
         }
 
         #[test]
@@ -312,35 +305,31 @@ mod tests {
         fn next_token_first_char() {
             let mut s = Scanner::new("xyz");
 
-            let r = s.next_token();
+            let r = some_or_fail!(s.next_token());
 
-            assert!(r.is_some());
-            assert_eq!(r.unwrap(), (0, 'x'));
+            assert_eq!(r, (0, 'x'));
         }
 
         #[test]
         fn next_token_skips_whitespace() {
             let mut s = Scanner::new("   \t  \r\n  xyz");
 
-            let r = s.next_token();
+            let r = some_or_fail!(s.next_token());
 
-            assert!(r.is_some());
-            assert_eq!(r.unwrap(), (10, 'x'));
+            assert_eq!(r, (10, 'x'));
         }
 
         #[test]
         fn advances_properly_after_next_token_finds_first_char() {
             let mut s = Scanner::new("   \t  \r\n  xyz");
 
-            let r = s.next_token();
+            let r = some_or_fail!(s.next_token());
 
-            assert!(r.is_some());
-            assert_eq!(r.unwrap(), (10, 'x'));
+            assert_eq!(r, (10, 'x'));
 
-            let r = s.char();
+            let r = some_or_fail!(s.char());
 
-            assert!(r.is_some());
-            assert_eq!(r.unwrap(), 'y');
+            assert_eq!(r, 'y');
         }
 
         #[test]
@@ -374,23 +363,20 @@ mod tests {
         fn char_if_not_delimiter_at_start() {
             let mut s = Scanner::new("abc)");
 
-            let r = s.char_if_not_delimiter();
+            let r = some_or_fail!(s.char_if_not_delimiter());
 
-            assert!(r.is_some());
-            assert_eq!(r.unwrap(), 'a');
+            assert_eq!(r, 'a');
         }
 
         #[test]
         fn char_if_not_delimiter_advances_properly_after_delimiter() {
             let mut s = Scanner::new("ab)c");
 
-            let r = s.char_if_not_delimiter();
-            assert!(r.is_some());
-            assert_eq!(r.unwrap(), 'a');
+            let r = some_or_fail!(s.char_if_not_delimiter());
+            assert_eq!(r, 'a');
 
-            let r = s.char_if_not_delimiter();
-            assert!(r.is_some());
-            assert_eq!(r.unwrap(), 'b');
+            let r = some_or_fail!(s.char_if_not_delimiter());
+            assert_eq!(r, 'b');
 
             let r = s.char_if_not_delimiter();
             assert!(r.is_none());
@@ -399,9 +385,8 @@ mod tests {
             let r = s.char_if_not_delimiter();
             assert!(r.is_none());
 
-            let r = s.char();
-            assert!(r.is_some());
-            assert_eq!(r.unwrap(), ')');
+            let r = some_or_fail!(s.char());
+            assert_eq!(r, ')');
         }
 
         #[test]
@@ -417,10 +402,9 @@ mod tests {
         fn char_if_not_token_boundary_lparen() {
             let mut s = Scanner::new("(abc");
 
-            let r = s.char_if_not_token_boundary();
+            let r = some_or_fail!(s.char_if_not_token_boundary());
 
-            assert!(r.is_some());
-            assert_eq!(r.unwrap(), '(');
+            assert_eq!(r, '(');
         }
 
         #[test]
@@ -474,10 +458,9 @@ mod tests {
 
             assert_eq!(s.end_of_token(), 4);
 
-            let r = s.char();
+            let r = some_or_fail!(s.char());
 
-            assert!(r.is_some());
-            assert_eq!(r.unwrap(), ')');
+            assert_eq!(r, ')');
         }
 
         #[test]
@@ -537,10 +520,9 @@ mod tests {
 
             assert_eq!(s.skip_whitespace(), 3);
 
-            let r = s.char();
+            let r = some_or_fail!(s.char());
 
-            assert!(r.is_some());
-            assert_eq!(r.unwrap(), 'a');
+            assert_eq!(r, 'a');
         }
 
         #[test]
@@ -549,10 +531,9 @@ mod tests {
 
             assert_eq!(s.skip_whitespace(), 0);
 
-            let r = s.char();
+            let r = some_or_fail!(s.char());
 
-            assert!(r.is_some());
-            assert_eq!(r.unwrap(), 'a');
+            assert_eq!(r, 'a');
         }
 
         #[test]

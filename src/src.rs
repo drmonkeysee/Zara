@@ -151,6 +151,7 @@ impl FileSource {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::testutil::some_or_fail;
 
     mod stringsrc {
         use super::*;
@@ -185,11 +186,10 @@ mod tests {
             let src = "line of source code";
             let mut target = StringSource::new(src, "test");
 
-            let line = target.next();
+            let line = some_or_fail!(target.next());
 
-            assert!(line.is_some());
             assert!(matches!(
-                line.unwrap(),
+                line,
                 Ok(TextLine {
                     ctx,
                     line,
@@ -207,11 +207,10 @@ mod tests {
             let src = "line of source code  \t  ";
             let mut target = StringSource::new(src, "test");
 
-            let line = target.next();
+            let line = some_or_fail!(target.next());
 
-            assert!(line.is_some());
             assert!(matches!(
-                line.unwrap(),
+                line,
                 Ok(TextLine {
                     ctx,
                     line,
@@ -229,11 +228,10 @@ mod tests {
             let src = "line of source code\n";
             let mut target = StringSource::new(src, "test");
 
-            let line = target.next();
+            let line = some_or_fail!(target.next());
 
-            assert!(line.is_some());
             assert!(matches!(
-                line.unwrap(),
+                line,
                 Ok(TextLine {
                     ctx,
                     line,
@@ -251,11 +249,10 @@ mod tests {
             let src = "line1\nline2\nline3\n";
             let mut target = StringSource::new(src, "test");
 
-            let line = target.next();
+            let line = some_or_fail!(target.next());
 
-            assert!(line.is_some());
             assert!(matches!(
-                line.unwrap(),
+                line,
                 Ok(TextLine {
                     ctx,
                     line,
@@ -263,11 +260,10 @@ mod tests {
                 }) if Rc::ptr_eq(&ctx, &target.ctx) && line == "line1"
             ));
 
-            let line = target.next();
+            let line = some_or_fail!(target.next());
 
-            assert!(line.is_some());
             assert!(matches!(
-                line.unwrap(),
+                line,
                 Ok(TextLine {
                     ctx,
                     line,
@@ -275,11 +271,10 @@ mod tests {
                 }) if Rc::ptr_eq(&ctx, &target.ctx) && line == "line2"
             ));
 
-            let line = target.next();
+            let line = some_or_fail!(target.next());
 
-            assert!(line.is_some());
             assert!(matches!(
-                line.unwrap(),
+                line,
                 Ok(TextLine {
                     ctx,
                     line,
@@ -297,11 +292,10 @@ mod tests {
             let src = "line1\r\nline2\r\nline3\r\n";
             let mut target = StringSource::new(src, "test");
 
-            let line = target.next();
+            let line = some_or_fail!(target.next());
 
-            assert!(line.is_some());
             assert!(matches!(
-                line.unwrap(),
+                line,
                 Ok(TextLine {
                     ctx,
                     line,
@@ -309,11 +303,10 @@ mod tests {
                 }) if Rc::ptr_eq(&ctx, &target.ctx) && line == "line1"
             ));
 
-            let line = target.next();
+            let line = some_or_fail!(target.next());
 
-            assert!(line.is_some());
             assert!(matches!(
-                line.unwrap(),
+                line,
                 Ok(TextLine {
                     ctx,
                     line,
@@ -321,11 +314,10 @@ mod tests {
                 }) if Rc::ptr_eq(&ctx, &target.ctx) && line == "line2"
             ));
 
-            let line = target.next();
+            let line = some_or_fail!(target.next());
 
-            assert!(line.is_some());
             assert!(matches!(
-                line.unwrap(),
+                line,
                 Ok(TextLine {
                     ctx,
                     line,
@@ -343,11 +335,10 @@ mod tests {
             let src = "line1  \n  line2\t\n\tline3\n";
             let mut target = StringSource::new(src, "test");
 
-            let line = target.next();
+            let line = some_or_fail!(target.next());
 
-            assert!(line.is_some());
             assert!(matches!(
-                line.unwrap(),
+                line,
                 Ok(TextLine {
                     ctx,
                     line,
@@ -355,11 +346,10 @@ mod tests {
                 }) if Rc::ptr_eq(&ctx, &target.ctx) && line == "line1  "
             ));
 
-            let line = target.next();
+            let line = some_or_fail!(target.next());
 
-            assert!(line.is_some());
             assert!(matches!(
-                line.unwrap(),
+                line,
                 Ok(TextLine {
                     ctx,
                     line,
@@ -367,11 +357,10 @@ mod tests {
                 }) if Rc::ptr_eq(&ctx, &target.ctx) && line == "  line2\t"
             ));
 
-            let line = target.next();
+            let line = some_or_fail!(target.next());
 
-            assert!(line.is_some());
             assert!(matches!(
-                line.unwrap(),
+                line,
                 Ok(TextLine {
                     ctx,
                     line,
@@ -390,11 +379,10 @@ mod tests {
             let src = "line1\n   \nline3\n\nline5\n\t\n";
             let mut target = StringSource::new(src, "test");
 
-            let line = target.next();
+            let line = some_or_fail!(target.next());
 
-            assert!(line.is_some());
             assert!(matches!(
-                line.unwrap(),
+                line,
                 Ok(TextLine {
                     ctx,
                     line,
@@ -402,11 +390,10 @@ mod tests {
                 }) if Rc::ptr_eq(&ctx, &target.ctx) && line == "line1"
             ));
 
-            let line = target.next();
+            let line = some_or_fail!(target.next());
 
-            assert!(line.is_some());
             assert!(matches!(
-                line.unwrap(),
+                line,
                 Ok(TextLine {
                     ctx,
                     line,
@@ -414,11 +401,10 @@ mod tests {
                 }) if Rc::ptr_eq(&ctx, &target.ctx) && line == "   "
             ));
 
-            let line = target.next();
+            let line = some_or_fail!(target.next());
 
-            assert!(line.is_some());
             assert!(matches!(
-                line.unwrap(),
+                line,
                 Ok(TextLine {
                     ctx,
                     line,
@@ -426,11 +412,10 @@ mod tests {
                 }) if Rc::ptr_eq(&ctx, &target.ctx) && line == "line3"
             ));
 
-            let line = target.next();
+            let line = some_or_fail!(target.next());
 
-            assert!(line.is_some());
             assert!(matches!(
-                line.unwrap(),
+                line,
                 Ok(TextLine {
                     ctx,
                     line,
@@ -438,11 +423,10 @@ mod tests {
                 }) if Rc::ptr_eq(&ctx, &target.ctx) && line == ""
             ));
 
-            let line = target.next();
+            let line = some_or_fail!(target.next());
 
-            assert!(line.is_some());
             assert!(matches!(
-                line.unwrap(),
+                line,
                 Ok(TextLine {
                     ctx,
                     line,
@@ -450,11 +434,10 @@ mod tests {
                 }) if Rc::ptr_eq(&ctx, &target.ctx) && line == "line5"
             ));
 
-            let line = target.next();
+            let line = some_or_fail!(target.next());
 
-            assert!(line.is_some());
             assert!(matches!(
-                line.unwrap(),
+                line,
                 Ok(TextLine {
                     ctx,
                     line,
@@ -544,17 +527,13 @@ mod tests {
                 "test",
             );
 
-            let line = target.next();
-            assert!(line.is_some());
-            let line = line.unwrap();
-            let line = ok_or_fail!(line);
+            let r = some_or_fail!(target.next());
+            let line = ok_or_fail!(r);
             assert_eq!(line.line, "bar");
             assert_eq!(line.lineno, 1);
 
-            let line = target.next();
-            assert!(line.is_some());
-            let line = line.unwrap();
-            let line = ok_or_fail!(line);
+            let r = some_or_fail!(target.next());
+            let line = ok_or_fail!(r);
             assert_eq!(line.line, "foo");
             assert_eq!(line.lineno, 2);
 
@@ -573,17 +552,13 @@ mod tests {
                 "test",
             );
 
-            let line = target.next();
-            assert!(line.is_some());
-            let line = line.unwrap();
-            let line = ok_or_fail!(line);
+            let r = some_or_fail!(target.next());
+            let line = ok_or_fail!(r);
             assert_eq!(line.line, "bar");
             assert_eq!(line.lineno, 1);
 
-            let line = target.next();
-            assert!(line.is_some());
-            let line = line.unwrap();
-            let line = ok_or_fail!(line);
+            let r = some_or_fail!(target.next());
+            let line = ok_or_fail!(r);
             assert_eq!(line.line, "");
             assert_eq!(line.lineno, 2);
 
@@ -602,10 +577,8 @@ mod tests {
                 "test",
             );
 
-            let line = target.next();
-            assert!(line.is_some());
-            let line = line.unwrap();
-            let line = ok_or_fail!(line);
+            let r = some_or_fail!(target.next());
+            let line = ok_or_fail!(r);
             assert_eq!(line.line, "bar");
             assert_eq!(line.lineno, 1);
 
@@ -624,10 +597,8 @@ mod tests {
                 "test",
             );
 
-            let line = target.next();
-            assert!(line.is_some());
-            let line = line.unwrap();
-            let line = err_or_fail!(line);
+            let r = some_or_fail!(target.next());
+            let line = err_or_fail!(r);
             assert_eq!(line.source().unwrap().to_string(), "oh no!");
             assert_eq!(line.lineno, 1);
         }

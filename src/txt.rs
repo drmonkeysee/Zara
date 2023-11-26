@@ -114,6 +114,7 @@ fn format_header(ctx: &TextContext, lineno: LineNumber, f: &mut Formatter<'_>) -
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::testutil::some_or_fail;
 
     #[derive(Clone, Copy, Debug)]
     struct MockError(i32);
@@ -144,10 +145,9 @@ mod tests {
         let inner = MockError(20);
         let err = TextError::new(TextContext::named("foo"), 1, inner);
 
-        let src = err.source();
+        let src = some_or_fail!(err.source());
 
-        assert!(src.is_some());
-        assert_eq!(src.unwrap().downcast_ref::<MockError>().unwrap().0, inner.0);
+        assert_eq!(src.downcast_ref::<MockError>().unwrap().0, inner.0);
     }
 
     #[test]
