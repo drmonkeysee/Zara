@@ -2,6 +2,18 @@ use super::*;
 use crate::{literal::Literal, testutil::extract_or_fail, txt::TextContext};
 use std::path::Path;
 
+fn make_textline() -> TextLine {
+    TextLine {
+        ctx: TextContext {
+            name: "mylib".to_owned(),
+            path: Some(Path::new("lib/mylib.scm").to_path_buf()),
+        }
+        .into(),
+        line: "line of source code".to_owned(),
+        lineno: 1,
+    }
+}
+
 mod lexer {
     use self::token::{TokenErrorKind, TokenType};
     use super::*;
@@ -1449,18 +1461,6 @@ mod error {
 
         let err_lines = extract_or_fail!(err, LexerError::Lines);
         assert_eq!(err_lines.len(), 1);
-    }
-}
-
-fn make_textline() -> TextLine {
-    TextLine {
-        ctx: TextContext {
-            name: "mylib".to_owned(),
-            path: Some(Path::new("lib/mylib.scm").to_path_buf()),
-        }
-        .into(),
-        line: "line of source code".to_owned(),
-        lineno: 1,
     }
 }
 
