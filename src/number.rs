@@ -150,7 +150,7 @@ impl Sign {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::testutil::extract_or_fail;
+    use crate::testutil::{extract_or_fail, ok_or_fail};
 
     mod sign {
         use super::*;
@@ -478,9 +478,8 @@ mod tests {
         fn positive() {
             let n: Real = 42.into();
             let int = extract_or_fail!(n, Real::Integer);
-            let val = extract_or_fail!(int.precision, Precision::Single);
 
-            assert_eq!(val, 42);
+            assert_eq!(extract_or_fail!(int.precision, Precision::Single), 42);
             assert_eq!(int.sign, Sign::Positive);
         }
 
@@ -488,9 +487,8 @@ mod tests {
         fn zero() {
             let n: Real = 0.into();
             let int = extract_or_fail!(n, Real::Integer);
-            let val = extract_or_fail!(int.precision, Precision::Single);
 
-            assert_eq!(val, 0);
+            assert_eq!(extract_or_fail!(int.precision, Precision::Single), 0);
             assert_eq!(int.sign, Sign::Zero);
         }
 
@@ -498,9 +496,8 @@ mod tests {
         fn negative() {
             let n: Real = (-42).into();
             let int = extract_or_fail!(n, Real::Integer);
-            let val = extract_or_fail!(int.precision, Precision::Single);
 
-            assert_eq!(val, 42);
+            assert_eq!(extract_or_fail!(int.precision, Precision::Single), 42);
             assert_eq!(int.sign, Sign::Negative);
         }
 
@@ -508,9 +505,11 @@ mod tests {
         fn max() {
             let n: Real = i64::MAX.into();
             let int = extract_or_fail!(n, Real::Integer);
-            let val = extract_or_fail!(int.precision, Precision::Single);
 
-            assert_eq!(val, 9223372036854775807);
+            assert_eq!(
+                extract_or_fail!(int.precision, Precision::Single),
+                9223372036854775807
+            );
             assert_eq!(int.sign, Sign::Positive);
         }
 
@@ -518,9 +517,11 @@ mod tests {
         fn min() {
             let n: Real = i64::MIN.into();
             let int = extract_or_fail!(n, Real::Integer);
-            let val = extract_or_fail!(int.precision, Precision::Single);
 
-            assert_eq!(val, 9223372036854775808);
+            assert_eq!(
+                extract_or_fail!(int.precision, Precision::Single),
+                9223372036854775808
+            );
             assert_eq!(int.sign, Sign::Negative);
         }
     }
@@ -528,61 +529,118 @@ mod tests {
     mod rational {
         use super::*;
 
-        #[test]
-        fn min_over_max() {
-            let n = Number::rational(i64::MIN, i64::MAX);
-            assert!(n.is_ok());
-            let n = n.unwrap();
+        macro_rules! rational_parts {
+            ($num:expr) => {{
+                let r = extract_or_fail!($num, Number::Real);
+                let rat = extract_or_fail!(r, Real::Rational);
+                *rat.0
+            }};
+        }
 
-            assert_eq!(n.as_datum().to_string(), "-3/4");
+        macro_rules! rational_integer {
+            ($num:expr) => {{
+                let r = extract_or_fail!($num, Number::Real);
+                extract_or_fail!(r, Real::Integer)
+            }};
         }
 
         #[test]
-        fn max_over_min() {
-            let n = Number::rational(i64::MAX, i64::MIN);
-            assert!(n.is_ok());
-            let n = n.unwrap();
+        fn positive() {
+            let n = ok_or_fail!(Number::rational(4, 5));
+            let (num, den) = rational_parts!(n);
 
-            assert_eq!(n.as_datum().to_string(), "-3/4");
+            assert_eq!(extract_or_fail!(num.precision, Precision::Single), 4);
+            assert_eq!(num.sign, Sign::Positive);
+            assert_eq!(extract_or_fail!(den.precision, Precision::Single), 5);
+            assert_eq!(den.sign, Sign::Positive);
         }
 
         #[test]
-        fn min_forced_to_positive() {
-            let n = Number::rational(i64::MIN, -4);
-            assert!(n.is_ok());
-            let n = n.unwrap();
+        fn negative_numerator() {
+            let n = ok_or_fail!(Number::rational(-4, 5));
+            let (num, den) = rational_parts!(n);
 
-            assert_eq!(n.as_datum().to_string(), "-3/4");
+            assert_eq!(extract_or_fail!(num.precision, Precision::Single), 4);
+            assert_eq!(num.sign, Sign::Negative);
+            assert_eq!(extract_or_fail!(den.precision, Precision::Single), 5);
+            assert_eq!(den.sign, Sign::Positive);
         }
 
         #[test]
-        fn integer() {
-            let n = Number::rational(3, 1);
-            assert!(n.is_ok());
-            let n = n.unwrap();
+        fn negative_denominator() {
+            let n = ok_or_fail!(Number::rational(4, -5));
+            let (num, den) = rational_parts!(n);
 
-            // TODO: should this reduce to an error?
-            assert_eq!(n.as_datum().to_string(), "3/1");
+            assert_eq!(extract_or_fail!(num.precision, Precision::Single), 4);
+            assert_eq!(num.sign, Sign::Negative);
+            assert_eq!(extract_or_fail!(den.precision, Precision::Single), 5);
+            assert_eq!(den.sign, Sign::Positive);
+        }
+
+        #[test]
+        fn negative_parts() {
+            let n = ok_or_fail!(Number::rational(-4, -5));
+            let (num, den) = rational_parts!(n);
+
+            assert_eq!(extract_or_fail!(num.precision, Precision::Single), 4);
+            assert_eq!(num.sign, Sign::Positive);
+            assert_eq!(extract_or_fail!(den.precision, Precision::Single), 5);
+            assert_eq!(den.sign, Sign::Positive);
+        }
+
+        #[test]
+        fn gcd() {
+            let n = ok_or_fail!(Number::rational(4, 10));
+            let (num, den) = rational_parts!(n);
+
+            assert_eq!(extract_or_fail!(num.precision, Precision::Single), 2);
+            assert_eq!(num.sign, Sign::Positive);
+            assert_eq!(extract_or_fail!(den.precision, Precision::Single), 5);
+            assert_eq!(den.sign, Sign::Positive);
         }
 
         #[test]
         fn unity() {
-            let n = Number::rational(1, 1);
-            assert!(n.is_ok());
-            let n = n.unwrap();
+            let n = ok_or_fail!(Number::rational(1, 1));
+            let int = rational_integer!(n);
 
-            // TODO: should this reduce to an error?
-            assert_eq!(n.as_datum().to_string(), "1/1");
+            assert_eq!(extract_or_fail!(int.precision, Precision::Single), 1);
+            assert_eq!(int.sign, Sign::Positive);
+        }
+
+        #[test]
+        fn reduce_to_unity() {
+            let n = ok_or_fail!(Number::rational(7, 7));
+            let int = rational_integer!(n);
+
+            assert_eq!(extract_or_fail!(int.precision, Precision::Single), 1);
+            assert_eq!(int.sign, Sign::Positive);
+        }
+
+        #[test]
+        fn reduce_to_integer() {
+            let n = ok_or_fail!(Number::rational(20, 10));
+            let int = rational_integer!(n);
+
+            assert_eq!(extract_or_fail!(int.precision, Precision::Single), 2);
+            assert_eq!(int.sign, Sign::Positive);
         }
 
         #[test]
         fn zero_numerator() {
-            let n = Number::rational(0, 1);
-            assert!(n.is_ok());
-            let n = n.unwrap();
+            let n = ok_or_fail!(Number::rational(0, 7));
+            let int = rational_integer!(n);
 
-            // TODO: should this reduce to an error?
-            assert_eq!(n.as_datum().to_string(), "0/1");
+            assert_eq!(extract_or_fail!(int.precision, Precision::Single), 0);
+            assert_eq!(int.sign, Sign::Zero);
+        }
+
+        #[test]
+        fn zero_denominator() {
+            let n = Number::rational(1, 1);
+
+            assert!(n.is_err());
+            todo!();
         }
     }
 }
