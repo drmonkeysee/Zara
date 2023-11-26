@@ -12,6 +12,7 @@ pub enum Number {
 
 impl Number {
     // TODO: need full combo of ctors for Rational
+    // TODO: polar-coordinates complex
     pub(crate) fn complex(real: impl Into<Real>, imag: impl Into<Real>) -> Self {
         Self::Complex((real.into(), imag.into()).into())
     }
@@ -75,7 +76,7 @@ pub struct Integer {
 impl From<i64> for Integer {
     fn from(value: i64) -> Self {
         Self {
-            precision: Precision::Single(value as u64),
+            precision: Precision::Single(value.unsigned_abs()),
             sign: Sign::from_signed(value),
         }
     }
@@ -149,6 +150,17 @@ impl Sign {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    macro_rules! lextest_extract {
+        ($val:expr, $variant:path) => {{
+            assert!(matches!($val, $variant(..)));
+            if let $variant(inner) = $val {
+                inner
+            } else {
+                unreachable!();
+            }
+        }};
+    }
 
     mod sign {
         use super::*;
@@ -431,6 +443,95 @@ mod tests {
             let n = n.unwrap();
 
             assert_eq!(n.as_datum().to_string(), "4/3");
+        }
+
+        #[test]
+        fn basic_complex() {
+            let n = Number::complex(4, 5);
+
+            assert_eq!(n.as_datum().to_string(), "4+5i");
+        }
+
+        #[test]
+        fn complex_negative_real() {
+            let n = Number::complex(-4, 5);
+
+            assert_eq!(n.as_datum().to_string(), "-4+5i");
+        }
+
+        #[test]
+        fn complex_negative_imag() {
+            let n = Number::complex(4, -5);
+
+            assert_eq!(n.as_datum().to_string(), "4-5i");
+        }
+
+        #[test]
+        fn complex_negative() {
+            let n = Number::complex(-4, -5);
+
+            assert_eq!(n.as_datum().to_string(), "-4-5i");
+        }
+
+        #[test]
+        fn complex_float() {
+            let n = Number::complex(4.2, 5.3);
+
+            assert_eq!(n.as_datum().to_string(), "4.2+5.3i");
+        }
+    }
+
+    mod integer {
+        use super::*;
+
+        #[test]
+        fn positive() {
+            let n: Real = 42.into();
+            let int = lextest_extract!(n, Real::Integer);
+            let val = lextest_extract!(int.precision, Precision::Single);
+
+            assert_eq!(val, 42);
+            assert_eq!(int.sign, Sign::Positive);
+        }
+
+        #[test]
+        fn zero() {
+            let n: Real = 0.into();
+            let int = lextest_extract!(n, Real::Integer);
+            let val = lextest_extract!(int.precision, Precision::Single);
+
+            assert_eq!(val, 0);
+            assert_eq!(int.sign, Sign::Zero);
+        }
+
+        #[test]
+        fn negative() {
+            let n: Real = (-42).into();
+            let int = lextest_extract!(n, Real::Integer);
+            let val = lextest_extract!(int.precision, Precision::Single);
+
+            assert_eq!(val, 42);
+            assert_eq!(int.sign, Sign::Negative);
+        }
+
+        #[test]
+        fn max() {
+            let n: Real = i64::MAX.into();
+            let int = lextest_extract!(n, Real::Integer);
+            let val = lextest_extract!(int.precision, Precision::Single);
+
+            assert_eq!(val, 9223372036854775807);
+            assert_eq!(int.sign, Sign::Positive);
+        }
+
+        #[test]
+        fn min() {
+            let n: Real = i64::MIN.into();
+            let int = lextest_extract!(n, Real::Integer);
+            let val = lextest_extract!(int.precision, Precision::Single);
+
+            assert_eq!(val, 9223372036854775808);
+            assert_eq!(int.sign, Sign::Negative);
         }
     }
 
