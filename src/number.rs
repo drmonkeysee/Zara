@@ -11,6 +11,7 @@ pub enum Number {
 }
 
 impl Number {
+    // TODO: need full combo of ctors for Rational
     pub(crate) fn complex(real: impl Into<Real>, imag: impl Into<Real>) -> Self {
         Self::Complex((real.into(), imag.into()).into())
     }
@@ -70,6 +71,7 @@ pub struct Integer {
     sign: Sign,
 }
 
+// TODO: handle multi-precision later
 impl From<i64> for Integer {
     fn from(value: i64) -> Self {
         Self {
