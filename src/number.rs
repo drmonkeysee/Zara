@@ -577,6 +577,17 @@ mod tests {
         }
 
         #[test]
+        fn greater_than_one() {
+            let n = ok_or_fail!(Number::rational(5, 4));
+            let (num, den) = rational_parts!(n);
+
+            assert_eq!(extract_or_fail!(num.precision, Precision::Single), 5);
+            assert_eq!(num.sign, Sign::Positive);
+            assert_eq!(extract_or_fail!(den.precision, Precision::Single), 4);
+            assert_eq!(den.sign, Sign::Positive);
+        }
+
+        #[test]
         fn gcd() {
             let n = ok_or_fail!(Number::rational(4, 10));
             let (num, den) = rational_parts!(n);
