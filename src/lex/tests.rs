@@ -1,17 +1,6 @@
 use super::*;
-use crate::{literal::Literal, txt::TextContext};
+use crate::{literal::Literal, testutil::extract_or_fail, txt::TextContext};
 use std::path::Path;
-
-macro_rules! lextest_extract {
-    ($val:expr, $variant:path) => {{
-        assert!(matches!($val, $variant(..)));
-        if let $variant(inner) = $val {
-            inner
-        } else {
-            unreachable!();
-        }
-    }};
-}
 
 mod lexer {
     use self::token::{TokenErrorKind, TokenType};
@@ -82,7 +71,7 @@ mod lexer {
 
         assert!(r.is_ok());
         let o = r.unwrap();
-        let lines = lextest_extract!(o, LexerOutput::Complete);
+        let lines = extract_or_fail!(o, LexerOutput::Complete);
         assert!(lines.is_empty());
         assert!(target.cont.is_none());
     }
@@ -96,7 +85,7 @@ mod lexer {
 
         assert!(r.is_ok());
         let o = r.unwrap();
-        let lines = lextest_extract!(o, LexerOutput::Complete);
+        let lines = extract_or_fail!(o, LexerOutput::Complete);
         assert_eq!(lines.len(), 1);
         let line = &lines[0];
         assert_eq!(line.0.len(), 1);
@@ -127,7 +116,7 @@ mod lexer {
 
         assert!(r.is_ok());
         let o = r.unwrap();
-        let lines = lextest_extract!(o, LexerOutput::Complete);
+        let lines = extract_or_fail!(o, LexerOutput::Complete);
         assert_eq!(lines.len(), 1);
         let line = &lines[0];
         assert_eq!(line.0.len(), 3);
@@ -172,7 +161,7 @@ mod lexer {
 
         assert!(r.is_ok());
         let o = r.unwrap();
-        let lines = lextest_extract!(o, LexerOutput::Complete);
+        let lines = extract_or_fail!(o, LexerOutput::Complete);
         assert_eq!(lines.len(), 3);
         let line = &lines[0];
         assert_eq!(line.0.len(), 1);
@@ -252,9 +241,9 @@ mod lexer {
 
         assert!(r.is_err());
         let err = r.unwrap_err();
-        let err_lines = lextest_extract!(err, LexerError::Lines);
+        let err_lines = extract_or_fail!(err, LexerError::Lines);
         assert_eq!(err_lines.len(), 2);
-        let TokenErrorLine(errs, line) = lextest_extract!(&err_lines[0], LineFailure::Tokenize);
+        let TokenErrorLine(errs, line) = extract_or_fail!(&err_lines[0], LineFailure::Tokenize);
         assert_eq!(errs.len(), 2);
         assert!(matches!(
             errs[0],
@@ -278,7 +267,7 @@ mod lexer {
                 lineno: 2,
             } if Rc::ptr_eq(&ctx, &src.ctx) && line == " #z #f #z #\\a"
         ));
-        let TokenErrorLine(errs, line) = lextest_extract!(&err_lines[1], LineFailure::Tokenize);
+        let TokenErrorLine(errs, line) = extract_or_fail!(&err_lines[1], LineFailure::Tokenize);
         assert_eq!(errs.len(), 1);
         assert!(matches!(
             errs[0],
@@ -307,9 +296,9 @@ mod lexer {
 
         assert!(r.is_err());
         let err = r.unwrap_err();
-        let err_lines = lextest_extract!(err, LexerError::Lines);
+        let err_lines = extract_or_fail!(err, LexerError::Lines);
         assert_eq!(err_lines.len(), 1);
-        let inner = lextest_extract!(&err_lines[0], LineFailure::Read);
+        let inner = extract_or_fail!(&err_lines[0], LineFailure::Read);
         assert!(Rc::ptr_eq(&inner.ctx, &src.ctx));
         assert_eq!(inner.lineno, 2);
         assert!(inner.source().is_some());
@@ -325,9 +314,9 @@ mod lexer {
 
         assert!(r.is_err());
         let err = r.unwrap_err();
-        let err_lines = lextest_extract!(err, LexerError::Lines);
+        let err_lines = extract_or_fail!(err, LexerError::Lines);
         assert_eq!(err_lines.len(), 2);
-        let TokenErrorLine(errs, line) = lextest_extract!(&err_lines[0], LineFailure::Tokenize);
+        let TokenErrorLine(errs, line) = extract_or_fail!(&err_lines[0], LineFailure::Tokenize);
         assert_eq!(errs.len(), 2);
         assert!(matches!(
             errs[0],
@@ -351,7 +340,7 @@ mod lexer {
                 lineno: 2,
             } if Rc::ptr_eq(&ctx, &src.ctx) && line == " #z #f #z #\\a"
         ));
-        let inner = lextest_extract!(&err_lines[1], LineFailure::Read);
+        let inner = extract_or_fail!(&err_lines[1], LineFailure::Read);
         assert!(Rc::ptr_eq(&inner.ctx, &src.ctx));
         assert_eq!(inner.lineno, 3);
         assert!(inner.source().is_some());
@@ -368,7 +357,7 @@ mod lexer {
         assert!(r.is_ok());
         let o = r.unwrap();
         assert!(matches!(o, LexerOutput::Continuation));
-        let (lines, cont) = lextest_extract!(target.cont, Some);
+        let (lines, cont) = extract_or_fail!(target.cont, Some);
         assert_eq!(lines.len(), 1);
         let line = &lines[0];
         assert_eq!(line.0.len(), 2);
@@ -406,9 +395,9 @@ mod lexer {
 
         assert!(r.is_err());
         let err = r.unwrap_err();
-        let err_lines = lextest_extract!(err, LexerError::Lines);
+        let err_lines = extract_or_fail!(err, LexerError::Lines);
         assert_eq!(err_lines.len(), 1);
-        let TokenErrorLine(errs, line) = lextest_extract!(&err_lines[0], LineFailure::Tokenize);
+        let TokenErrorLine(errs, line) = extract_or_fail!(&err_lines[0], LineFailure::Tokenize);
         assert_eq!(errs.len(), 1);
         assert!(matches!(
             errs[0],
@@ -466,7 +455,7 @@ mod lexer {
 
         assert!(r.is_ok());
         let o = r.unwrap();
-        let lines = lextest_extract!(o, LexerOutput::Complete);
+        let lines = extract_or_fail!(o, LexerOutput::Complete);
         assert_eq!(lines.len(), 2);
         let line = &lines[0];
         assert_eq!(line.0.len(), 1);
@@ -513,7 +502,7 @@ mod lexer {
 
         assert!(r.is_ok());
         let o = r.unwrap();
-        let lines = lextest_extract!(o, LexerOutput::Complete);
+        let lines = extract_or_fail!(o, LexerOutput::Complete);
         assert_eq!(lines.len(), 3);
         let line = &lines[0];
         assert_eq!(line.0.len(), 1);
@@ -576,9 +565,9 @@ mod lexer {
 
         assert!(r.is_err());
         let err = r.unwrap_err();
-        let err_lines = lextest_extract!(err, LexerError::Lines);
+        let err_lines = extract_or_fail!(err, LexerError::Lines);
         assert_eq!(err_lines.len(), 2);
-        let TokenErrorLine(errs, line) = lextest_extract!(&err_lines[0], LineFailure::Tokenize);
+        let TokenErrorLine(errs, line) = extract_or_fail!(&err_lines[0], LineFailure::Tokenize);
         assert_eq!(errs.len(), 1);
         assert!(matches!(
             errs[0],
@@ -595,7 +584,7 @@ mod lexer {
                 lineno: 1,
             } if Rc::ptr_eq(&ctx, &src.ctx) && line == "#t #z #| double line"
         ));
-        let TokenErrorLine(errs, line) = lextest_extract!(&err_lines[1], LineFailure::Tokenize);
+        let TokenErrorLine(errs, line) = extract_or_fail!(&err_lines[1], LineFailure::Tokenize);
         assert_eq!(errs.len(), 1);
         assert!(matches!(
             errs[0],
@@ -624,9 +613,9 @@ mod lexer {
 
         assert!(r.is_err());
         let err = r.unwrap_err();
-        let err_lines = lextest_extract!(err, LexerError::Lines);
+        let err_lines = extract_or_fail!(err, LexerError::Lines);
         assert_eq!(err_lines.len(), 1);
-        let TokenErrorLine(errs, line) = lextest_extract!(&err_lines[0], LineFailure::Tokenize);
+        let TokenErrorLine(errs, line) = extract_or_fail!(&err_lines[0], LineFailure::Tokenize);
         assert_eq!(errs.len(), 1);
         assert!(matches!(
             errs[0],
@@ -655,7 +644,7 @@ mod lexer {
 
         assert!(r.is_ok());
         let o = r.unwrap();
-        let lines = lextest_extract!(o, LexerOutput::Complete);
+        let lines = extract_or_fail!(o, LexerOutput::Complete);
         assert_eq!(lines.len(), 2);
         let line = &lines[0];
         assert_eq!(line.0.len(), 1);
@@ -702,7 +691,7 @@ mod lexer {
 
         assert!(r.is_ok());
         let o = r.unwrap();
-        let lines = lextest_extract!(o, LexerOutput::Complete);
+        let lines = extract_or_fail!(o, LexerOutput::Complete);
         assert_eq!(lines.len(), 3);
         let line = &lines[0];
         assert_eq!(line.0.len(), 1);
@@ -765,9 +754,9 @@ mod lexer {
 
         assert!(r.is_err());
         let err = r.unwrap_err();
-        let err_lines = lextest_extract!(err, LexerError::Lines);
+        let err_lines = extract_or_fail!(err, LexerError::Lines);
         assert_eq!(err_lines.len(), 1);
-        let TokenErrorLine(errs, line) = lextest_extract!(&err_lines[0], LineFailure::Tokenize);
+        let TokenErrorLine(errs, line) = extract_or_fail!(&err_lines[0], LineFailure::Tokenize);
         assert_eq!(errs.len(), 1);
         assert!(matches!(
             errs[0],
@@ -796,9 +785,9 @@ mod lexer {
 
         assert!(r.is_err());
         let err = r.unwrap_err();
-        let err_lines = lextest_extract!(err, LexerError::Lines);
+        let err_lines = extract_or_fail!(err, LexerError::Lines);
         assert_eq!(err_lines.len(), 2);
-        let TokenErrorLine(errs, line) = lextest_extract!(&err_lines[0], LineFailure::Tokenize);
+        let TokenErrorLine(errs, line) = extract_or_fail!(&err_lines[0], LineFailure::Tokenize);
         assert_eq!(errs.len(), 1);
         assert!(matches!(
             errs[0],
@@ -815,7 +804,7 @@ mod lexer {
                 lineno: 1,
             } if Rc::ptr_eq(&ctx, &src.ctx) && line == "\" double \\xZZ; line"
         ));
-        let TokenErrorLine(errs, line) = lextest_extract!(&err_lines[1], LineFailure::Tokenize);
+        let TokenErrorLine(errs, line) = extract_or_fail!(&err_lines[1], LineFailure::Tokenize);
         assert_eq!(errs.len(), 1);
         assert!(matches!(
             errs[0],
@@ -844,9 +833,9 @@ mod lexer {
 
         assert!(r.is_err());
         let err = r.unwrap_err();
-        let err_lines = lextest_extract!(err, LexerError::Lines);
+        let err_lines = extract_or_fail!(err, LexerError::Lines);
         assert_eq!(err_lines.len(), 1);
-        let TokenErrorLine(errs, line) = lextest_extract!(&err_lines[0], LineFailure::Tokenize);
+        let TokenErrorLine(errs, line) = extract_or_fail!(&err_lines[0], LineFailure::Tokenize);
         assert_eq!(errs.len(), 1);
         assert!(matches!(
             errs[0],
@@ -878,9 +867,9 @@ mod lexer {
 
         assert!(r.is_err());
         let err = r.unwrap_err();
-        let err_lines = lextest_extract!(err, LexerError::Lines);
+        let err_lines = extract_or_fail!(err, LexerError::Lines);
         assert_eq!(err_lines.len(), 1);
-        let TokenErrorLine(errs, line) = lextest_extract!(&err_lines[0], LineFailure::Tokenize);
+        let TokenErrorLine(errs, line) = extract_or_fail!(&err_lines[0], LineFailure::Tokenize);
         assert_eq!(errs.len(), 2);
         assert!(matches!(
             errs[0],
@@ -916,9 +905,9 @@ mod lexer {
 
         assert!(r.is_err());
         let err = r.unwrap_err();
-        let err_lines = lextest_extract!(err, LexerError::Lines);
+        let err_lines = extract_or_fail!(err, LexerError::Lines);
         assert_eq!(err_lines.len(), 1);
-        let TokenErrorLine(errs, line) = lextest_extract!(&err_lines[0], LineFailure::Tokenize);
+        let TokenErrorLine(errs, line) = extract_or_fail!(&err_lines[0], LineFailure::Tokenize);
         assert_eq!(errs.len(), 1);
         assert!(matches!(
             errs[0],
@@ -947,7 +936,7 @@ mod lexer {
 
         assert!(r.is_ok());
         let o = r.unwrap();
-        let lines = lextest_extract!(o, LexerOutput::Complete);
+        let lines = extract_or_fail!(o, LexerOutput::Complete);
         assert_eq!(lines.len(), 2);
         let line = &lines[0];
         assert_eq!(line.0.len(), 1);
@@ -994,7 +983,7 @@ mod lexer {
 
         assert!(r.is_ok());
         let o = r.unwrap();
-        let lines = lextest_extract!(o, LexerOutput::Complete);
+        let lines = extract_or_fail!(o, LexerOutput::Complete);
         assert_eq!(lines.len(), 3);
         let line = &lines[0];
         assert_eq!(line.0.len(), 1);
@@ -1057,9 +1046,9 @@ mod lexer {
 
         assert!(r.is_err());
         let err = r.unwrap_err();
-        let err_lines = lextest_extract!(err, LexerError::Lines);
+        let err_lines = extract_or_fail!(err, LexerError::Lines);
         assert_eq!(err_lines.len(), 1);
-        let TokenErrorLine(errs, line) = lextest_extract!(&err_lines[0], LineFailure::Tokenize);
+        let TokenErrorLine(errs, line) = extract_or_fail!(&err_lines[0], LineFailure::Tokenize);
         assert_eq!(errs.len(), 1);
         assert!(matches!(
             errs[0],
@@ -1088,9 +1077,9 @@ mod lexer {
 
         assert!(r.is_err());
         let err = r.unwrap_err();
-        let err_lines = lextest_extract!(err, LexerError::Lines);
+        let err_lines = extract_or_fail!(err, LexerError::Lines);
         assert_eq!(err_lines.len(), 2);
-        let TokenErrorLine(errs, line) = lextest_extract!(&err_lines[0], LineFailure::Tokenize);
+        let TokenErrorLine(errs, line) = extract_or_fail!(&err_lines[0], LineFailure::Tokenize);
         assert_eq!(errs.len(), 1);
         assert!(matches!(
             errs[0],
@@ -1107,7 +1096,7 @@ mod lexer {
                 lineno: 1,
             } if Rc::ptr_eq(&ctx, &src.ctx) && line == "| double \\xZZ; line"
         ));
-        let TokenErrorLine(errs, line) = lextest_extract!(&err_lines[1], LineFailure::Tokenize);
+        let TokenErrorLine(errs, line) = extract_or_fail!(&err_lines[1], LineFailure::Tokenize);
         assert_eq!(errs.len(), 1);
         assert!(matches!(
             errs[0],
@@ -1139,9 +1128,9 @@ mod lexer {
 
         assert!(r.is_err());
         let err = r.unwrap_err();
-        let err_lines = lextest_extract!(err, LexerError::Lines);
+        let err_lines = extract_or_fail!(err, LexerError::Lines);
         assert_eq!(err_lines.len(), 1);
-        let TokenErrorLine(errs, line) = lextest_extract!(&err_lines[0], LineFailure::Tokenize);
+        let TokenErrorLine(errs, line) = extract_or_fail!(&err_lines[0], LineFailure::Tokenize);
         assert_eq!(errs.len(), 2);
         assert!(matches!(
             errs[0],
@@ -1177,9 +1166,9 @@ mod lexer {
 
         assert!(r.is_err());
         let err = r.unwrap_err();
-        let err_lines = lextest_extract!(err, LexerError::Lines);
+        let err_lines = extract_or_fail!(err, LexerError::Lines);
         assert_eq!(err_lines.len(), 1);
-        let TokenErrorLine(errs, line) = lextest_extract!(&err_lines[0], LineFailure::Tokenize);
+        let TokenErrorLine(errs, line) = extract_or_fail!(&err_lines[0], LineFailure::Tokenize);
         assert_eq!(errs.len(), 1);
         assert!(matches!(
             errs[0],
@@ -1481,7 +1470,7 @@ mod error {
         let line_err: LineFailure = target.into();
         let err: LexerError = line_err.into();
 
-        let err_lines = lextest_extract!(err, LexerError::Lines);
+        let err_lines = extract_or_fail!(err, LexerError::Lines);
         assert_eq!(err_lines.len(), 1);
     }
 }

@@ -4,6 +4,8 @@ pub mod literal;
 pub mod number;
 pub mod src;
 pub mod syntax;
+#[cfg(test)]
+mod testutil;
 pub mod txt;
 
 use self::{

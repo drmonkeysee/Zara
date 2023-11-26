@@ -150,17 +150,7 @@ impl Sign {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    macro_rules! lextest_extract {
-        ($val:expr, $variant:path) => {{
-            assert!(matches!($val, $variant(..)));
-            if let $variant(inner) = $val {
-                inner
-            } else {
-                unreachable!();
-            }
-        }};
-    }
+    use crate::testutil::extract_or_fail;
 
     mod sign {
         use super::*;
@@ -487,8 +477,8 @@ mod tests {
         #[test]
         fn positive() {
             let n: Real = 42.into();
-            let int = lextest_extract!(n, Real::Integer);
-            let val = lextest_extract!(int.precision, Precision::Single);
+            let int = extract_or_fail!(n, Real::Integer);
+            let val = extract_or_fail!(int.precision, Precision::Single);
 
             assert_eq!(val, 42);
             assert_eq!(int.sign, Sign::Positive);
@@ -497,8 +487,8 @@ mod tests {
         #[test]
         fn zero() {
             let n: Real = 0.into();
-            let int = lextest_extract!(n, Real::Integer);
-            let val = lextest_extract!(int.precision, Precision::Single);
+            let int = extract_or_fail!(n, Real::Integer);
+            let val = extract_or_fail!(int.precision, Precision::Single);
 
             assert_eq!(val, 0);
             assert_eq!(int.sign, Sign::Zero);
@@ -507,8 +497,8 @@ mod tests {
         #[test]
         fn negative() {
             let n: Real = (-42).into();
-            let int = lextest_extract!(n, Real::Integer);
-            let val = lextest_extract!(int.precision, Precision::Single);
+            let int = extract_or_fail!(n, Real::Integer);
+            let val = extract_or_fail!(int.precision, Precision::Single);
 
             assert_eq!(val, 42);
             assert_eq!(int.sign, Sign::Negative);
@@ -517,8 +507,8 @@ mod tests {
         #[test]
         fn max() {
             let n: Real = i64::MAX.into();
-            let int = lextest_extract!(n, Real::Integer);
-            let val = lextest_extract!(int.precision, Precision::Single);
+            let int = extract_or_fail!(n, Real::Integer);
+            let val = extract_or_fail!(int.precision, Precision::Single);
 
             assert_eq!(val, 9223372036854775807);
             assert_eq!(int.sign, Sign::Positive);
@@ -527,8 +517,8 @@ mod tests {
         #[test]
         fn min() {
             let n: Real = i64::MIN.into();
-            let int = lextest_extract!(n, Real::Integer);
-            let val = lextest_extract!(int.precision, Precision::Single);
+            let int = extract_or_fail!(n, Real::Integer);
+            let val = extract_or_fail!(int.precision, Precision::Single);
 
             assert_eq!(val, 9223372036854775808);
             assert_eq!(int.sign, Sign::Negative);
