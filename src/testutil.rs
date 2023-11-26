@@ -16,4 +16,11 @@ macro_rules! ok_or_fail {
     }};
 }
 
-pub(crate) use {extract_or_fail, ok_or_fail};
+macro_rules! err_or_fail {
+    ($val:expr) => {{
+        assert!($val.is_err());
+        $val.unwrap_err()
+    }};
+}
+
+pub(crate) use {err_or_fail, extract_or_fail, ok_or_fail};

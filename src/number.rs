@@ -516,6 +516,7 @@ mod tests {
 
     mod rational {
         use super::*;
+        use crate::testutil::err_or_fail;
 
         macro_rules! rational_parts {
             ($num:expr) => {{
@@ -637,8 +638,8 @@ mod tests {
         #[test]
         fn zero_denominator() {
             let n = Number::rational(1, 1);
+            let err = err_or_fail!(n);
 
-            assert!(n.is_err());
             todo!();
         }
     }

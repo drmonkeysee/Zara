@@ -470,7 +470,7 @@ mod tests {
 
     mod linesrc {
         use super::*;
-        use crate::testutil::ok_or_fail;
+        use crate::testutil::{err_or_fail, ok_or_fail};
         use std::{error::Error, io};
 
         struct MockLineAdapter {
@@ -627,8 +627,7 @@ mod tests {
             let line = target.next();
             assert!(line.is_some());
             let line = line.unwrap();
-            assert!(line.is_err());
-            let line = line.unwrap_err();
+            let line = err_or_fail!(line);
             assert_eq!(line.source().unwrap().to_string(), "oh no!");
             assert_eq!(line.lineno, 1);
         }
