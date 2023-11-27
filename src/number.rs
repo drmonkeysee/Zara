@@ -12,7 +12,7 @@ pub enum Number {
 
 impl Number {
     // TODO: need full combo of ctors for Rational
-    // TODO: polar-coordinates complex
+    // TODO: polar-coordinates
     pub(crate) fn complex(real: impl Into<Real>, imag: impl Into<Real>) -> Self {
         Self::Complex((real.into(), imag.into()).into())
     }
@@ -24,7 +24,7 @@ impl Number {
     pub(crate) fn rational(
         numerator: impl Into<Integer>,
         denominator: impl Into<Integer>,
-    ) -> Result<Self, RationalError> {
+    ) -> Result<Self, NumericError> {
         Ok(Self::Real(
             (numerator.into(), denominator.into()).try_into()?,
         ))
@@ -59,7 +59,7 @@ impl<T: Into<Integer>> From<T> for Real {
 }
 
 impl<T: Into<Integer>> TryFrom<(T, T)> for Real {
-    type Error = RationalError;
+    type Error = NumericError;
 
     fn try_from(value: (T, T)) -> Result<Self, Self::Error> {
         todo!()
@@ -87,15 +87,23 @@ impl From<i64> for Integer {
 pub struct Rational(Box<(Integer, Integer)>);
 
 #[derive(Debug)]
-pub struct RationalError;
+pub enum NumericError {
+    DivideByZero,
+}
 
-impl Display for RationalError {
+impl Display for NumericError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        todo!()
+        write!(
+            f,
+            "<#{}>",
+            match self {
+                Self::DivideByZero => "divide-by-zero",
+            }
+        )
     }
 }
 
-impl Error for RationalError {}
+impl Error for NumericError {}
 
 pub(crate) struct Datum<'a>(&'a Number);
 
@@ -459,6 +467,17 @@ mod tests {
         }
     }
 
+    mod error {
+        use super::*;
+
+        #[test]
+        fn display_div_by_zero() {
+            let err = NumericError::DivideByZero;
+
+            assert_eq!(err.to_string(), "<#divide-by-zero>");
+        }
+    }
+
     mod integer {
         use super::*;
 
@@ -637,10 +656,10 @@ mod tests {
 
         #[test]
         fn zero_denominator() {
-            let n = Number::rational(1, 1);
+            let n = Number::rational(1, 0);
             let err = err_or_fail!(n);
 
-            todo!();
+            assert!(matches!(err, NumericError::DivideByZero));
         }
     }
 }
