@@ -249,7 +249,7 @@ fn invalid_escape() {
         TokenExtract {
             start: 1,
             end: 3,
-            result: Err(TokenErrorKind::StringEscapeInvalid { idx: 1, ch: 'B' }),
+            result: Err(TokenErrorKind::StringEscapeInvalid { at: 1, ch: 'B' }),
         }
     ));
 }
@@ -270,7 +270,7 @@ fn hex_sign_invalid() {
         TokenExtract {
             start: 1,
             end: 6,
-            result: Err(TokenErrorKind::StringExpectedHex(1)),
+            result: Err(TokenErrorKind::StringExpectedHex { at: 1 }),
         }
     ));
 }
@@ -291,7 +291,7 @@ fn hex_too_large() {
         TokenExtract {
             start: 1,
             end: 12,
-            result: Err(TokenErrorKind::StringInvalidHex(1)),
+            result: Err(TokenErrorKind::StringInvalidHex { at: 1 }),
         }
     ));
 }
@@ -312,7 +312,7 @@ fn hex_malformed() {
         TokenExtract {
             start: 1,
             end: 11,
-            result: Err(TokenErrorKind::StringExpectedHex(1)),
+            result: Err(TokenErrorKind::StringExpectedHex { at: 1 }),
         }
     ));
 }
@@ -333,7 +333,7 @@ fn hex_unterminated() {
         TokenExtract {
             start: 1,
             end: 6,
-            result: Err(TokenErrorKind::StringUnterminatedHex(1)),
+            result: Err(TokenErrorKind::StringUnterminatedHex { at: 1 }),
         }
     ));
 }

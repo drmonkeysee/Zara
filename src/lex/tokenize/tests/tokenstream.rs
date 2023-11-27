@@ -430,7 +430,7 @@ fn finishes_parsing_string_if_error() {
     assert!(matches!(
         r[0],
         Err(TokenError {
-            kind: TokenErrorKind::StringEscapeInvalid { idx: 5, ch: 'e' },
+            kind: TokenErrorKind::StringEscapeInvalid { at: 5, ch: 'e' },
             span: Range { start: 5, end: 7 }
         })
     ));
@@ -460,7 +460,7 @@ fn unterminated_hex_does_not_consume_end_of_string() {
     assert!(matches!(
         r[0],
         Err(TokenError {
-            kind: TokenErrorKind::StringUnterminatedHex(1),
+            kind: TokenErrorKind::StringUnterminatedHex { at: 1 },
             span: Range { start: 1, end: 5 }
         })
     ));
@@ -490,7 +490,7 @@ fn unterminated_hex_does_not_consume_string_escape_sequence() {
     assert!(matches!(
         r[0],
         Err(TokenError {
-            kind: TokenErrorKind::StringUnterminatedHex(1),
+            kind: TokenErrorKind::StringUnterminatedHex { at: 1 },
             span: Range { start: 1, end: 5 }
         })
     ));
@@ -520,14 +520,14 @@ fn multiple_string_errors() {
     assert!(matches!(
         r[0],
         Err(TokenError {
-            kind: TokenErrorKind::StringInvalidHex(5),
+            kind: TokenErrorKind::StringInvalidHex { at: 5 },
             span: Range { start: 5, end: 16 }
         })
     ));
     assert!(matches!(
         r[1],
         Err(TokenError {
-            kind: TokenErrorKind::StringEscapeInvalid { idx: 21, ch: 'e' },
+            kind: TokenErrorKind::StringEscapeInvalid { at: 21, ch: 'e' },
             span: Range { start: 21, end: 23 }
         })
     ));
@@ -557,7 +557,7 @@ fn open_string_with_error() {
     assert!(matches!(
         r[0],
         Err(TokenError {
-            kind: TokenErrorKind::StringEscapeInvalid { idx: 5, ch: 'e' },
+            kind: TokenErrorKind::StringEscapeInvalid { at: 5, ch: 'e' },
             span: Range { start: 5, end: 7 }
         })
     ));
@@ -641,7 +641,7 @@ fn finishes_parsing_identifier_if_error() {
     assert!(matches!(
         r[0],
         Err(TokenError {
-            kind: TokenErrorKind::IdentifierEscapeInvalid { idx: 5, ch: 'e' },
+            kind: TokenErrorKind::IdentifierEscapeInvalid { at: 5, ch: 'e' },
             span: Range { start: 5, end: 7 }
         })
     ));
@@ -671,7 +671,7 @@ fn unterminated_hex_does_not_consume_end_of_identifier() {
     assert!(matches!(
         r[0],
         Err(TokenError {
-            kind: TokenErrorKind::IdentifierUnterminatedHex(1),
+            kind: TokenErrorKind::IdentifierUnterminatedHex { at: 1 },
             span: Range { start: 1, end: 5 }
         })
     ));
@@ -701,7 +701,7 @@ fn unterminated_hex_does_not_consume_identifier_escape_sequence() {
     assert!(matches!(
         r[0],
         Err(TokenError {
-            kind: TokenErrorKind::IdentifierUnterminatedHex(1),
+            kind: TokenErrorKind::IdentifierUnterminatedHex { at: 1 },
             span: Range { start: 1, end: 5 }
         })
     ));
@@ -731,14 +731,14 @@ fn multiple_identifier_errors() {
     assert!(matches!(
         r[0],
         Err(TokenError {
-            kind: TokenErrorKind::IdentifierInvalidHex(5),
+            kind: TokenErrorKind::IdentifierInvalidHex { at: 5 },
             span: Range { start: 5, end: 16 }
         })
     ));
     assert!(matches!(
         r[1],
         Err(TokenError {
-            kind: TokenErrorKind::IdentifierEscapeInvalid { idx: 21, ch: 'e' },
+            kind: TokenErrorKind::IdentifierEscapeInvalid { at: 21, ch: 'e' },
             span: Range { start: 21, end: 23 }
         })
     ));
@@ -768,7 +768,7 @@ fn open_identifier_with_error() {
     assert!(matches!(
         r[0],
         Err(TokenError {
-            kind: TokenErrorKind::IdentifierEscapeInvalid { idx: 5, ch: 'e' },
+            kind: TokenErrorKind::IdentifierEscapeInvalid { at: 5, ch: 'e' },
             span: Range { start: 5, end: 7 }
         })
     ));

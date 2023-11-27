@@ -44,19 +44,19 @@ impl<M: StringPolicyMode> FreeTextPolicy for StringPolicy<M> {
     }
 
     fn escape_invalid(&self, start: usize, ch: char) -> TokenErrorKind {
-        TokenErrorKind::StringEscapeInvalid { idx: start, ch }
+        TokenErrorKind::StringEscapeInvalid { at: start, ch }
     }
 
     fn hex_expected(&self, start: usize) -> TokenErrorKind {
-        TokenErrorKind::StringExpectedHex(start)
+        TokenErrorKind::StringExpectedHex { at: start }
     }
 
     fn hex_invalid(&self, start: usize) -> TokenErrorKind {
-        TokenErrorKind::StringInvalidHex(start)
+        TokenErrorKind::StringInvalidHex { at: start }
     }
 
     fn hex_unterminated(&self, start: usize) -> TokenErrorKind {
-        TokenErrorKind::StringUnterminatedHex(start)
+        TokenErrorKind::StringUnterminatedHex { at: start }
     }
 
     fn terminated(&self, buf: String) -> TokenKind {

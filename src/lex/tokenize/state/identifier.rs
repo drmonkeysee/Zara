@@ -147,19 +147,19 @@ impl<M: IdentifierPolicyMode> FreeTextPolicy for IdentifierPolicy<M> {
     }
 
     fn escape_invalid(&self, start: usize, ch: char) -> TokenErrorKind {
-        TokenErrorKind::IdentifierEscapeInvalid { idx: start, ch }
+        TokenErrorKind::IdentifierEscapeInvalid { at: start, ch }
     }
 
     fn hex_expected(&self, start: usize) -> TokenErrorKind {
-        TokenErrorKind::IdentifierExpectedHex(start)
+        TokenErrorKind::IdentifierExpectedHex { at: start }
     }
 
     fn hex_invalid(&self, start: usize) -> TokenErrorKind {
-        TokenErrorKind::IdentifierInvalidHex(start)
+        TokenErrorKind::IdentifierInvalidHex { at: start }
     }
 
     fn hex_unterminated(&self, start: usize) -> TokenErrorKind {
-        TokenErrorKind::IdentifierUnterminatedHex(start)
+        TokenErrorKind::IdentifierUnterminatedHex { at: start }
     }
 
     fn terminated(&self, buf: String) -> TokenKind {

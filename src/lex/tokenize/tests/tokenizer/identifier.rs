@@ -935,7 +935,7 @@ mod verbatim {
             TokenExtract {
                 start: 1,
                 end: 3,
-                result: Err(TokenErrorKind::IdentifierEscapeInvalid { idx: 1, ch: 'B' }),
+                result: Err(TokenErrorKind::IdentifierEscapeInvalid { at: 1, ch: 'B' }),
             }
         ));
     }
@@ -956,7 +956,7 @@ mod verbatim {
             TokenExtract {
                 start: 1,
                 end: 6,
-                result: Err(TokenErrorKind::IdentifierExpectedHex(1)),
+                result: Err(TokenErrorKind::IdentifierExpectedHex { at: 1 }),
             }
         ));
     }
@@ -977,7 +977,7 @@ mod verbatim {
             TokenExtract {
                 start: 1,
                 end: 12,
-                result: Err(TokenErrorKind::IdentifierInvalidHex(1)),
+                result: Err(TokenErrorKind::IdentifierInvalidHex { at: 1 }),
             }
         ));
     }
@@ -998,7 +998,7 @@ mod verbatim {
             TokenExtract {
                 start: 1,
                 end: 11,
-                result: Err(TokenErrorKind::IdentifierExpectedHex(1)),
+                result: Err(TokenErrorKind::IdentifierExpectedHex { at: 1 }),
             }
         ));
     }
@@ -1019,7 +1019,7 @@ mod verbatim {
             TokenExtract {
                 start: 1,
                 end: 6,
-                result: Err(TokenErrorKind::IdentifierUnterminatedHex(1)),
+                result: Err(TokenErrorKind::IdentifierUnterminatedHex { at: 1 }),
             }
         ));
     }

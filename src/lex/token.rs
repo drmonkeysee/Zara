@@ -140,17 +140,17 @@ pub(super) enum TokenErrorKind {
     ContinuationInvalid,
     DirectiveExpected,
     DirectiveInvalid,
-    IdentifierEscapeInvalid { idx: usize, ch: char },
-    IdentifierExpectedHex(usize),
+    IdentifierEscapeInvalid { at: usize, ch: char },
+    IdentifierExpectedHex { at: usize },
     IdentifierInvalid(char),
-    IdentifierInvalidHex(usize),
+    IdentifierInvalidHex { at: usize },
     IdentifierUnterminated,
-    IdentifierUnterminatedHex(usize),
-    StringEscapeInvalid { idx: usize, ch: char },
-    StringExpectedHex(usize),
-    StringInvalidHex(usize),
+    IdentifierUnterminatedHex { at: usize },
+    StringEscapeInvalid { at: usize, ch: char },
+    StringExpectedHex { at: usize },
+    StringInvalidHex { at: usize },
     StringUnterminated,
-    StringUnterminatedHex(usize),
+    StringUnterminatedHex { at: usize },
     HashInvalid,
     HashUnterminated,
     Unimplemented(String),
@@ -160,29 +160,31 @@ impl TokenErrorKind {
     pub(super) fn to_continuation(&self) -> Option<TokenContinuation> {
         match self {
             TokenErrorKind::IdentifierEscapeInvalid { .. }
-            | TokenErrorKind::IdentifierExpectedHex(..)
-            | TokenErrorKind::IdentifierInvalidHex(..)
-            | TokenErrorKind::IdentifierUnterminatedHex(..) => {
+            | TokenErrorKind::IdentifierExpectedHex { .. }
+            | TokenErrorKind::IdentifierInvalidHex { .. }
+            | TokenErrorKind::IdentifierUnterminatedHex { .. } => {
                 Some(TokenContinuation::SubidentifierError)
             }
             TokenErrorKind::StringEscapeInvalid { .. }
-            | TokenErrorKind::StringExpectedHex(..)
-            | TokenErrorKind::StringInvalidHex(..)
-            | TokenErrorKind::StringUnterminatedHex(..) => Some(TokenContinuation::SubstringError),
+            | TokenErrorKind::StringExpectedHex { .. }
+            | TokenErrorKind::StringInvalidHex { .. }
+            | TokenErrorKind::StringUnterminatedHex { .. } => {
+                Some(TokenContinuation::SubstringError)
+            }
             _ => None,
         }
     }
 
     pub(super) fn sub_idx(&self) -> Option<usize> {
         match self {
-            TokenErrorKind::IdentifierEscapeInvalid { idx, .. }
-            | TokenErrorKind::IdentifierExpectedHex(idx)
-            | TokenErrorKind::IdentifierInvalidHex(idx)
-            | TokenErrorKind::IdentifierUnterminatedHex(idx)
-            | TokenErrorKind::StringEscapeInvalid { idx, .. }
-            | TokenErrorKind::StringExpectedHex(idx)
-            | TokenErrorKind::StringInvalidHex(idx)
-            | TokenErrorKind::StringUnterminatedHex(idx) => Some(*idx),
+            TokenErrorKind::IdentifierEscapeInvalid { at, .. }
+            | TokenErrorKind::IdentifierExpectedHex { at }
+            | TokenErrorKind::IdentifierInvalidHex { at }
+            | TokenErrorKind::IdentifierUnterminatedHex { at }
+            | TokenErrorKind::StringEscapeInvalid { at, .. }
+            | TokenErrorKind::StringExpectedHex { at }
+            | TokenErrorKind::StringInvalidHex { at }
+            | TokenErrorKind::StringUnterminatedHex { at } => Some(*at),
             _ => None,
         }
     }
@@ -212,11 +214,11 @@ impl Display for TokenErrorKind {
             Self::IdentifierEscapeInvalid { ch, .. } | Self::StringEscapeInvalid { ch, .. } => {
                 write!(f, "invalid escape sequence: \\{ch}")
             }
-            Self::IdentifierExpectedHex(_) | Self::StringExpectedHex(_) => f.write_str("expected hex-escape"),
-            Self::IdentifierInvalidHex(_) | Self::StringInvalidHex(_) => {
+            Self::IdentifierExpectedHex{ .. } | Self::StringExpectedHex{ .. } => f.write_str("expected hex-escape"),
+            Self::IdentifierInvalidHex{ .. } | Self::StringInvalidHex{ .. } => {
                 format_char_range_error("hex-escape out of valid range", f)
             }
-            Self::IdentifierUnterminatedHex(_) | Self::StringUnterminatedHex(_) => f.write_str("unterminated hex-escape"),
+            Self::IdentifierUnterminatedHex{ .. } | Self::StringUnterminatedHex{ .. } => f.write_str("unterminated hex-escape"),
             Self::IdentifierUnterminated => f.write_str("unterminated verbatim identifier"),
             Self::StringUnterminated => f.write_str("unterminated string-literal"),
             Self::Unimplemented(s) => write!(f, "unimplemented tokenization: '{s}'"),
@@ -764,8 +766,8 @@ mod tests {
         #[test]
         fn display_invalid_escape() {
             let cases = [
-                TokenErrorKind::IdentifierEscapeInvalid { idx: 1, ch: 'B' },
-                TokenErrorKind::StringEscapeInvalid { idx: 1, ch: 'B' },
+                TokenErrorKind::IdentifierEscapeInvalid { at: 1, ch: 'B' },
+                TokenErrorKind::StringEscapeInvalid { at: 1, ch: 'B' },
             ];
             for case in cases {
                 let err = TokenError {
@@ -780,8 +782,8 @@ mod tests {
         #[test]
         fn display_expected_string_hex() {
             let cases = [
-                TokenErrorKind::IdentifierExpectedHex(1),
-                TokenErrorKind::StringExpectedHex(1),
+                TokenErrorKind::IdentifierExpectedHex { at: 1 },
+                TokenErrorKind::StringExpectedHex { at: 1 },
             ];
             for case in cases {
                 let err = TokenError {
@@ -796,8 +798,8 @@ mod tests {
         #[test]
         fn display_invalid_string_hex() {
             let cases = [
-                TokenErrorKind::IdentifierInvalidHex(1),
-                TokenErrorKind::StringInvalidHex(1),
+                TokenErrorKind::IdentifierInvalidHex { at: 1 },
+                TokenErrorKind::StringInvalidHex { at: 1 },
             ];
             for case in cases {
                 let err = TokenError {
@@ -815,8 +817,8 @@ mod tests {
         #[test]
         fn display_unterminated_string_hex() {
             let cases = [
-                TokenErrorKind::IdentifierUnterminatedHex(1),
-                TokenErrorKind::StringUnterminatedHex(1),
+                TokenErrorKind::IdentifierUnterminatedHex { at: 1 },
+                TokenErrorKind::StringUnterminatedHex { at: 1 },
             ];
             for case in cases {
                 let err = TokenError {
@@ -867,7 +869,7 @@ mod tests {
 
         #[test]
         fn string_invalid_sequence_continuation() {
-            let kind = TokenErrorKind::StringEscapeInvalid { idx: 0, ch: 'c' };
+            let kind = TokenErrorKind::StringEscapeInvalid { at: 0, ch: 'c' };
 
             assert!(matches!(
                 kind.to_continuation(),
@@ -877,7 +879,7 @@ mod tests {
 
         #[test]
         fn string_hex_continuation() {
-            let kind = TokenErrorKind::StringExpectedHex(1);
+            let kind = TokenErrorKind::StringExpectedHex { at: 1 };
 
             assert!(matches!(
                 kind.to_continuation(),
@@ -887,7 +889,7 @@ mod tests {
 
         #[test]
         fn identifier_invalid_sequence_continuation() {
-            let kind = TokenErrorKind::IdentifierEscapeInvalid { idx: 0, ch: 'c' };
+            let kind = TokenErrorKind::IdentifierEscapeInvalid { at: 0, ch: 'c' };
 
             assert!(matches!(
                 kind.to_continuation(),
@@ -897,7 +899,7 @@ mod tests {
 
         #[test]
         fn identifier_hex_continuation() {
-            let kind = TokenErrorKind::IdentifierExpectedHex(1);
+            let kind = TokenErrorKind::IdentifierExpectedHex { at: 1 };
 
             assert!(matches!(
                 kind.to_continuation(),
@@ -915,8 +917,8 @@ mod tests {
         #[test]
         fn invalid_sequence_sub_index() {
             let cases = [
-                TokenErrorKind::IdentifierEscapeInvalid { idx: 3, ch: 'c' },
-                TokenErrorKind::StringEscapeInvalid { idx: 3, ch: 'c' },
+                TokenErrorKind::IdentifierEscapeInvalid { at: 3, ch: 'c' },
+                TokenErrorKind::StringEscapeInvalid { at: 3, ch: 'c' },
             ];
             for case in cases {
                 assert!(matches!(case.sub_idx(), Some(3)));
@@ -926,8 +928,8 @@ mod tests {
         #[test]
         fn hex_sub_index() {
             let cases = [
-                TokenErrorKind::IdentifierExpectedHex(3),
-                TokenErrorKind::StringExpectedHex(3),
+                TokenErrorKind::IdentifierExpectedHex { at: 3 },
+                TokenErrorKind::StringExpectedHex { at: 3 },
             ];
             for case in cases {
                 assert!(matches!(case.sub_idx(), Some(3)));

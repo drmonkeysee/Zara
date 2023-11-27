@@ -760,7 +760,7 @@ mod lexer {
         assert!(matches!(
             errs[0],
             TokenType {
-                kind: TokenErrorKind::StringExpectedHex(9),
+                kind: TokenErrorKind::StringExpectedHex { at: 9 },
                 span: Range { start: 9, end: 14 }
             }
         ));
@@ -790,7 +790,7 @@ mod lexer {
         assert!(matches!(
             errs[0],
             TokenType {
-                kind: TokenErrorKind::StringExpectedHex(9),
+                kind: TokenErrorKind::StringExpectedHex { at: 9 },
                 span: Range { start: 9, end: 14 }
             }
         ));
@@ -837,7 +837,7 @@ mod lexer {
         assert!(matches!(
             errs[0],
             TokenType {
-                kind: TokenErrorKind::StringExpectedHex(9),
+                kind: TokenErrorKind::StringExpectedHex { at: 9 },
                 span: Range { start: 9, end: 14 }
             }
         ));
@@ -870,7 +870,7 @@ mod lexer {
         assert!(matches!(
             errs[0],
             TokenType {
-                kind: TokenErrorKind::StringUnterminatedHex(8),
+                kind: TokenErrorKind::StringUnterminatedHex { at: 8 },
                 span: Range { start: 8, end: 12 }
             }
         ));
@@ -1045,7 +1045,7 @@ mod lexer {
         assert!(matches!(
             errs[0],
             TokenType {
-                kind: TokenErrorKind::IdentifierExpectedHex(9),
+                kind: TokenErrorKind::IdentifierExpectedHex { at: 9 },
                 span: Range { start: 9, end: 14 }
             }
         ));
@@ -1075,7 +1075,7 @@ mod lexer {
         assert!(matches!(
             errs[0],
             TokenType {
-                kind: TokenErrorKind::IdentifierExpectedHex(9),
+                kind: TokenErrorKind::IdentifierExpectedHex { at: 9 },
                 span: Range { start: 9, end: 14 }
             }
         ));
@@ -1125,7 +1125,7 @@ mod lexer {
         assert!(matches!(
             errs[0],
             TokenType {
-                kind: TokenErrorKind::IdentifierUnterminatedHex(8),
+                kind: TokenErrorKind::IdentifierUnterminatedHex { at: 8 },
                 span: Range { start: 8, end: 12 }
             }
         ));
