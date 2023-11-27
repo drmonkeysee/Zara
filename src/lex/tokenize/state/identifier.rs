@@ -147,7 +147,7 @@ impl<M: IdentifierPolicyMode> FreeTextPolicy for IdentifierPolicy<M> {
     }
 
     fn escape_invalid(&self, start: usize, ch: char) -> TokenErrorKind {
-        TokenErrorKind::IdentifierEscapeInvalid(start, ch)
+        TokenErrorKind::IdentifierEscapeInvalid { idx: start, ch }
     }
 
     fn hex_expected(&self, start: usize) -> TokenErrorKind {

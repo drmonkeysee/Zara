@@ -249,7 +249,7 @@ fn invalid_escape() {
         TokenExtract {
             start: 1,
             end: 3,
-            result: Err(TokenErrorKind::StringEscapeInvalid(1, 'B')),
+            result: Err(TokenErrorKind::StringEscapeInvalid { idx: 1, ch: 'B' }),
         }
     ));
 }
@@ -377,7 +377,7 @@ fn begin() {
         TokenExtract {
             start: 0,
             end: 17,
-            result: Ok(TokenKind::StringBegin(s, false)),
+            result: Ok(TokenKind::StringBegin { s, line_cont: false }),
         } if s == "beginning string"
     ));
 }
@@ -398,7 +398,7 @@ fn begin_with_line_continuation() {
         TokenExtract {
             start: 0,
             end: 18,
-            result: Ok(TokenKind::StringBegin(s, true)),
+            result: Ok(TokenKind::StringBegin { s, line_cont: true }),
         } if s == "beginning string"
     ));
 }
@@ -419,7 +419,7 @@ fn begin_with_line_continuation_includes_leading_whitespace() {
         TokenExtract {
             start: 0,
             end: 22,
-            result: Ok(TokenKind::StringBegin(s, true)),
+            result: Ok(TokenKind::StringBegin { s, line_cont: true }),
         } if s == "beginning string    "
     ));
 }
@@ -440,7 +440,7 @@ fn begin_with_line_continuation_excludes_trailing_whitespace() {
         TokenExtract {
             start: 0,
             end: 22,
-            result: Ok(TokenKind::StringBegin(s, true)),
+            result: Ok(TokenKind::StringBegin { s, line_cont: true }),
         } if s == "beginning string"
     ));
 }
@@ -461,7 +461,7 @@ fn begin_only_counts_final_slash_as_line_continuation() {
         TokenExtract {
             start: 0,
             end: 26,
-            result: Ok(TokenKind::StringBegin(s, true)),
+            result: Ok(TokenKind::StringBegin { s, line_cont: true }),
         } if s == "beginning string    "
     ));
 }
@@ -482,7 +482,7 @@ fn fragment() {
         TokenExtract {
             start: 0,
             end: 16,
-            result: Ok(TokenKind::StringFragment(s, false)),
+            result: Ok(TokenKind::StringFragment { s, line_cont: false }),
         } if s == "continued string"
     ));
 }
@@ -503,7 +503,7 @@ fn fragment_includes_whitespace() {
         TokenExtract {
             start: 0,
             end: 19,
-            result: Ok(TokenKind::StringFragment(s, false)),
+            result: Ok(TokenKind::StringFragment { s, line_cont: false }),
         } if s == "   continued string"
     ));
 }
@@ -524,7 +524,7 @@ fn fragment_with_line_continuation() {
         TokenExtract {
             start: 0,
             end: 24,
-            result: Ok(TokenKind::StringFragment(s, true)),
+            result: Ok(TokenKind::StringFragment { s, line_cont: true }),
         } if s == "continued string    "
     ));
 }
@@ -545,7 +545,7 @@ fn fragment_from_string_continuation() {
         TokenExtract {
             start: 0,
             end: 16,
-            result: Ok(TokenKind::StringFragment(s, false)),
+            result: Ok(TokenKind::StringFragment { s, line_cont: false }),
         } if s == "continued string"
     ));
 }
@@ -566,7 +566,7 @@ fn fragment_from_string_continuation_ignores_leading_whitespace() {
         TokenExtract {
             start: 0,
             end: 22,
-            result: Ok(TokenKind::StringFragment(s, false)),
+            result: Ok(TokenKind::StringFragment { s, line_cont: false }),
         } if s == "continued string   "
     ));
 }
@@ -587,7 +587,7 @@ fn fragment_from_string_continuation_all_whitespace() {
         TokenExtract {
             start: 0,
             end: 6,
-            result: Ok(TokenKind::StringFragment(s, false)),
+            result: Ok(TokenKind::StringFragment { s, line_cont: false }),
         } if s == ""
     ));
 }
@@ -608,7 +608,7 @@ fn fragment_from_string_continuation_to_string_continuation() {
         TokenExtract {
             start: 0,
             end: 27,
-            result: Ok(TokenKind::StringFragment(s, true)),
+            result: Ok(TokenKind::StringFragment { s, line_cont: true }),
         } if s == "continued string    "
     ));
 }

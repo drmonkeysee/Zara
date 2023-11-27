@@ -652,7 +652,7 @@ mod lexer {
         assert!(matches!(
             &line.0[0],
             TokenType {
-                kind: TokenKind::StringBegin(s, false),
+                kind: TokenKind::StringBegin { s, line_cont: false },
                 span: Range { start: 0, end: 13 }
             } if s == " double line"
         ));
@@ -698,7 +698,7 @@ mod lexer {
         assert!(matches!(
             &line.0[0],
             TokenType {
-                kind: TokenKind::StringBegin(s, false),
+                kind: TokenKind::StringBegin { s, line_cont: false },
                 span: Range { start: 0, end: 7 }
             } if s == " multi"
         ));
@@ -714,7 +714,7 @@ mod lexer {
         assert!(matches!(
             &line.0[0],
             TokenType {
-                kind: TokenKind::StringFragment(s, false),
+                kind: TokenKind::StringFragment { s, line_cont: false },
                 span: Range { start: 0, end: 4 }
             } if s == "line"
         ));

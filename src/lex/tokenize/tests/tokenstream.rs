@@ -388,7 +388,7 @@ fn string_fragment_uses_whole_line() {
     assert!(matches!(
         &r[0],
         Ok(Token {
-            kind: TokenKind::StringFragment(s, false),
+            kind: TokenKind::StringFragment { s, line_cont: false },
             span: Range { start: 0, end: 16 }
         }) if s == "continued string"
     ));
@@ -430,7 +430,7 @@ fn finishes_parsing_string_if_error() {
     assert!(matches!(
         r[0],
         Err(TokenError {
-            kind: TokenErrorKind::StringEscapeInvalid(5, 'e'),
+            kind: TokenErrorKind::StringEscapeInvalid { idx: 5, ch: 'e' },
             span: Range { start: 5, end: 7 }
         })
     ));
@@ -527,7 +527,7 @@ fn multiple_string_errors() {
     assert!(matches!(
         r[1],
         Err(TokenError {
-            kind: TokenErrorKind::StringEscapeInvalid(21, 'e'),
+            kind: TokenErrorKind::StringEscapeInvalid { idx: 21, ch: 'e' },
             span: Range { start: 21, end: 23 }
         })
     ));
@@ -557,7 +557,7 @@ fn open_string_with_error() {
     assert!(matches!(
         r[0],
         Err(TokenError {
-            kind: TokenErrorKind::StringEscapeInvalid(5, 'e'),
+            kind: TokenErrorKind::StringEscapeInvalid { idx: 5, ch: 'e' },
             span: Range { start: 5, end: 7 }
         })
     ));
@@ -641,7 +641,7 @@ fn finishes_parsing_identifier_if_error() {
     assert!(matches!(
         r[0],
         Err(TokenError {
-            kind: TokenErrorKind::IdentifierEscapeInvalid(5, 'e'),
+            kind: TokenErrorKind::IdentifierEscapeInvalid { idx: 5, ch: 'e' },
             span: Range { start: 5, end: 7 }
         })
     ));
@@ -738,7 +738,7 @@ fn multiple_identifier_errors() {
     assert!(matches!(
         r[1],
         Err(TokenError {
-            kind: TokenErrorKind::IdentifierEscapeInvalid(21, 'e'),
+            kind: TokenErrorKind::IdentifierEscapeInvalid { idx: 21, ch: 'e' },
             span: Range { start: 21, end: 23 }
         })
     ));
@@ -768,7 +768,7 @@ fn open_identifier_with_error() {
     assert!(matches!(
         r[0],
         Err(TokenError {
-            kind: TokenErrorKind::IdentifierEscapeInvalid(5, 'e'),
+            kind: TokenErrorKind::IdentifierEscapeInvalid { idx: 5, ch: 'e' },
             span: Range { start: 5, end: 7 }
         })
     ));

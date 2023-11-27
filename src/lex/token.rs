@@ -51,10 +51,10 @@ pub enum TokenKind {
     PairJoiner,
     Quasiquote,
     Quote,
-    StringBegin(String, bool),
+    StringBegin { s: String, line_cont: bool },
     StringDiscard,
     StringEnd(String),
-    StringFragment(String, bool),
+    StringFragment { s: String, line_cont: bool },
     Unquote,
     UnquoteSplice,
     Vector,
@@ -70,7 +70,7 @@ impl TokenKind {
                 Some(TokenContinuation::VerbatimIdentifier)
             }
             Self::IdentifierDiscard => Some(TokenContinuation::SubidentifierError),
-            Self::StringBegin(_, line_cont) | Self::StringFragment(_, line_cont) => {
+            Self::StringBegin { line_cont, .. } | Self::StringFragment { line_cont, .. } => {
                 Some(TokenContinuation::StringLiteral(*line_cont))
             }
             Self::StringDiscard => Some(TokenContinuation::SubstringError),
@@ -100,12 +100,12 @@ impl Display for TokenKind {
             Self::PairJoiner => f.write_str("PAIR"),
             Self::Quasiquote => f.write_str("QUASIQUOTE"),
             Self::Quote => f.write_str("QUOTE"),
-            Self::StringBegin(_, line_cont) => {
+            Self::StringBegin { line_cont, .. } => {
                 write!(f, "STRBEGIN{}", line_cont_token(*line_cont))
             }
             Self::StringDiscard => f.write_str("STRDISCARD"),
             Self::StringEnd(_) => f.write_str("STREND"),
-            Self::StringFragment(_, line_cont) => {
+            Self::StringFragment { line_cont, .. } => {
                 write!(f, "STRFRAGMENT{}", line_cont_token(*line_cont))
             }
             Self::Unquote => f.write_str("UNQUOTE"),
@@ -138,13 +138,13 @@ pub(super) enum TokenErrorKind {
     ContinuationInvalid,
     DirectiveExpected,
     DirectiveInvalid,
-    IdentifierEscapeInvalid(usize, char),
+    IdentifierEscapeInvalid { idx: usize, ch: char },
     IdentifierExpectedHex(usize),
     IdentifierInvalid(char),
     IdentifierInvalidHex(usize),
     IdentifierUnterminated,
     IdentifierUnterminatedHex(usize),
-    StringEscapeInvalid(usize, char),
+    StringEscapeInvalid { idx: usize, ch: char },
     StringExpectedHex(usize),
     StringInvalidHex(usize),
     StringUnterminated,
@@ -157,13 +157,13 @@ pub(super) enum TokenErrorKind {
 impl TokenErrorKind {
     pub(super) fn to_continuation(&self) -> Option<TokenContinuation> {
         match self {
-            TokenErrorKind::IdentifierEscapeInvalid(..)
+            TokenErrorKind::IdentifierEscapeInvalid { .. }
             | TokenErrorKind::IdentifierExpectedHex(..)
             | TokenErrorKind::IdentifierInvalidHex(..)
             | TokenErrorKind::IdentifierUnterminatedHex(..) => {
                 Some(TokenContinuation::SubidentifierError)
             }
-            TokenErrorKind::StringEscapeInvalid(..)
+            TokenErrorKind::StringEscapeInvalid { .. }
             | TokenErrorKind::StringExpectedHex(..)
             | TokenErrorKind::StringInvalidHex(..)
             | TokenErrorKind::StringUnterminatedHex(..) => Some(TokenContinuation::SubstringError),
@@ -173,11 +173,11 @@ impl TokenErrorKind {
 
     pub(super) fn sub_idx(&self) -> Option<usize> {
         match self {
-            TokenErrorKind::IdentifierEscapeInvalid(idx, _)
+            TokenErrorKind::IdentifierEscapeInvalid { idx, .. }
             | TokenErrorKind::IdentifierExpectedHex(idx)
             | TokenErrorKind::IdentifierInvalidHex(idx)
             | TokenErrorKind::IdentifierUnterminatedHex(idx)
-            | TokenErrorKind::StringEscapeInvalid(idx, _)
+            | TokenErrorKind::StringEscapeInvalid { idx, .. }
             | TokenErrorKind::StringExpectedHex(idx)
             | TokenErrorKind::StringInvalidHex(idx)
             | TokenErrorKind::StringUnterminatedHex(idx) => Some(*idx),
@@ -197,7 +197,9 @@ impl Display for TokenErrorKind {
             Self::CharacterInvalidHex => {
                 format_char_range_error("character hex-sequence out of valid range", f)
             }
-            Self::ContinuationInvalid => f.write_str("attempted continuation conversion on invalid token; this is likely an interpreter bug!"),
+            Self::ContinuationInvalid => {
+                f.write_str("attempted continuation conversion on invalid token; this is likely an interpreter bug!")
+            }
             Self::DirectiveExpected => f.write_str("expected directive: fold-case or no-fold-case"),
             Self::DirectiveInvalid => {
                 f.write_str("unsupported directive: expected fold-case or no-fold-case")
@@ -205,7 +207,9 @@ impl Display for TokenErrorKind {
             Self::HashInvalid => f.write_str("unexpected #-literal"),
             Self::HashUnterminated => f.write_str("unterminated #-literal"),
             Self::IdentifierInvalid(ch) => write!(f, "invalid identifier character: {ch}"),
-            Self::IdentifierEscapeInvalid(_, ch) | Self::StringEscapeInvalid(_, ch) => write!(f, "invalid escape sequence: \\{ch}"),
+            Self::IdentifierEscapeInvalid { ch, .. } | Self::StringEscapeInvalid { ch, .. } => {
+                write!(f, "invalid escape sequence: \\{ch}")
+            }
             Self::IdentifierExpectedHex(_) | Self::StringExpectedHex(_) => f.write_str("expected hex-escape"),
             Self::IdentifierInvalidHex(_) | Self::StringInvalidHex(_) => {
                 format_char_range_error("hex-escape out of valid range", f)
@@ -393,7 +397,10 @@ mod tests {
         #[test]
         fn display_string_begin() {
             let token = Token {
-                kind: TokenKind::StringBegin("foo".to_owned(), false),
+                kind: TokenKind::StringBegin {
+                    s: "foo".to_owned(),
+                    line_cont: false,
+                },
                 span: 0..1,
             };
 
@@ -403,7 +410,10 @@ mod tests {
         #[test]
         fn display_string_begin_with_line_continuation() {
             let token = Token {
-                kind: TokenKind::StringBegin("foo\\".to_owned(), true),
+                kind: TokenKind::StringBegin {
+                    s: "foo\\".to_owned(),
+                    line_cont: true,
+                },
                 span: 0..1,
             };
 
@@ -413,7 +423,10 @@ mod tests {
         #[test]
         fn display_string_fragment() {
             let token = Token {
-                kind: TokenKind::StringFragment("foo".to_owned(), false),
+                kind: TokenKind::StringFragment {
+                    s: "foo".to_owned(),
+                    line_cont: false,
+                },
                 span: 0..1,
             };
 
@@ -423,7 +436,10 @@ mod tests {
         #[test]
         fn display_string_fragment_with_line_continuation() {
             let token = Token {
-                kind: TokenKind::StringFragment("foo \\".to_owned(), true),
+                kind: TokenKind::StringFragment {
+                    s: "foo \\".to_owned(),
+                    line_cont: true,
+                },
                 span: 0..1,
             };
 
@@ -559,7 +575,10 @@ mod tests {
 
         #[test]
         fn string_open_continuation() {
-            let kind = TokenKind::StringBegin("".to_owned(), false);
+            let kind = TokenKind::StringBegin {
+                s: "".to_owned(),
+                line_cont: false,
+            };
 
             assert!(matches!(
                 kind.to_continuation(),
@@ -569,7 +588,10 @@ mod tests {
 
         #[test]
         fn string_fragment_continuation() {
-            let kind = TokenKind::StringFragment("".to_owned(), true);
+            let kind = TokenKind::StringFragment {
+                s: "".to_owned(),
+                line_cont: true,
+            };
 
             assert!(matches!(
                 kind.to_continuation(),
@@ -600,7 +622,10 @@ mod tests {
         #[test]
         fn to_string_continuation_error() {
             let token = Token {
-                kind: TokenKind::StringFragment("foo".to_owned(), false),
+                kind: TokenKind::StringFragment {
+                    s: "foo".to_owned(),
+                    line_cont: false,
+                },
                 span: 1..3,
             };
 
@@ -737,8 +762,8 @@ mod tests {
         #[test]
         fn display_invalid_escape() {
             let cases = [
-                TokenErrorKind::IdentifierEscapeInvalid(1, 'B'),
-                TokenErrorKind::StringEscapeInvalid(1, 'B'),
+                TokenErrorKind::IdentifierEscapeInvalid { idx: 1, ch: 'B' },
+                TokenErrorKind::StringEscapeInvalid { idx: 1, ch: 'B' },
             ];
             for case in cases {
                 let err = TokenError {
@@ -840,7 +865,7 @@ mod tests {
 
         #[test]
         fn string_invalid_sequence_continuation() {
-            let kind = TokenErrorKind::StringEscapeInvalid(0, 'c');
+            let kind = TokenErrorKind::StringEscapeInvalid { idx: 0, ch: 'c' };
 
             assert!(matches!(
                 kind.to_continuation(),
@@ -860,7 +885,7 @@ mod tests {
 
         #[test]
         fn identifier_invalid_sequence_continuation() {
-            let kind = TokenErrorKind::IdentifierEscapeInvalid(0, 'c');
+            let kind = TokenErrorKind::IdentifierEscapeInvalid { idx: 0, ch: 'c' };
 
             assert!(matches!(
                 kind.to_continuation(),
@@ -888,8 +913,8 @@ mod tests {
         #[test]
         fn invalid_sequence_sub_index() {
             let cases = [
-                TokenErrorKind::IdentifierEscapeInvalid(3, 'c'),
-                TokenErrorKind::StringEscapeInvalid(3, 'c'),
+                TokenErrorKind::IdentifierEscapeInvalid { idx: 3, ch: 'c' },
+                TokenErrorKind::StringEscapeInvalid { idx: 3, ch: 'c' },
             ];
             for case in cases {
                 assert!(matches!(case.sub_idx(), Some(3)));
@@ -924,7 +949,10 @@ mod tests {
                 span: 0..1,
             };
 
-            assert_eq!(err.to_string(), "attempted continuation conversion on invalid token; this is likely an interpreter bug!");
+            assert_eq!(
+                err.to_string(),
+                "attempted continuation conversion on invalid token; this is likely an interpreter bug!"
+            );
         }
 
         #[test]

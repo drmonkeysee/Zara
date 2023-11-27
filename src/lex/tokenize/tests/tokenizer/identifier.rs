@@ -935,7 +935,7 @@ mod verbatim {
             TokenExtract {
                 start: 1,
                 end: 3,
-                result: Err(TokenErrorKind::IdentifierEscapeInvalid(1, 'B')),
+                result: Err(TokenErrorKind::IdentifierEscapeInvalid { idx: 1, ch: 'B' }),
             }
         ));
     }

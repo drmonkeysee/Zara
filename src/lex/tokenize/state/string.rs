@@ -44,7 +44,7 @@ impl<M: StringPolicyMode> FreeTextPolicy for StringPolicy<M> {
     }
 
     fn escape_invalid(&self, start: usize, ch: char) -> TokenErrorKind {
-        TokenErrorKind::StringEscapeInvalid(start, ch)
+        TokenErrorKind::StringEscapeInvalid { idx: start, ch }
     }
 
     fn hex_expected(&self, start: usize) -> TokenErrorKind {
@@ -82,7 +82,7 @@ impl StringPolicyMode for StartString {
     }
 
     fn unterminated(&self, buf: String, line_cont: bool) -> TokenKind {
-        TokenKind::StringBegin(buf, line_cont)
+        TokenKind::StringBegin { s: buf, line_cont }
     }
 }
 
@@ -120,6 +120,6 @@ trait StringPolicyMode {
     }
 
     fn unterminated(&self, buf: String, line_cont: bool) -> TokenKind {
-        TokenKind::StringFragment(buf, line_cont)
+        TokenKind::StringFragment { s: buf, line_cont }
     }
 }
