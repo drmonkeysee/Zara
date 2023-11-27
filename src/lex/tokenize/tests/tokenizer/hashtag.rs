@@ -397,7 +397,7 @@ mod comments {
             TokenExtract {
                 start: 0,
                 end: 28,
-                result: Ok(TokenKind::CommentBlockBegin(0)),
+                result: Ok(TokenKind::CommentBlockBegin { depth: 0 }),
             }
         ));
     }
@@ -418,7 +418,7 @@ mod comments {
             TokenExtract {
                 start: 0,
                 end: 24,
-                result: Ok(TokenKind::CommentBlockBegin(0)),
+                result: Ok(TokenKind::CommentBlockBegin { depth: 0 }),
             }
         ));
     }
@@ -439,7 +439,7 @@ mod comments {
             TokenExtract {
                 start: 0,
                 end: 24,
-                result: Ok(TokenKind::CommentBlockBegin(0)),
+                result: Ok(TokenKind::CommentBlockBegin { depth: 0 }),
             }
         ));
     }
@@ -460,7 +460,7 @@ mod comments {
             TokenExtract {
                 start: 0,
                 end: 33,
-                result: Ok(TokenKind::CommentBlockBegin(0)),
+                result: Ok(TokenKind::CommentBlockBegin { depth: 0 }),
             }
         ));
     }
@@ -481,7 +481,7 @@ mod comments {
             TokenExtract {
                 start: 0,
                 end: 21,
-                result: Ok(TokenKind::CommentBlockBegin(1)),
+                result: Ok(TokenKind::CommentBlockBegin { depth: 1 }),
             }
         ));
     }
@@ -502,7 +502,7 @@ mod comments {
             TokenExtract {
                 start: 0,
                 end: 30,
-                result: Ok(TokenKind::CommentBlockBegin(2)),
+                result: Ok(TokenKind::CommentBlockBegin { depth: 2 }),
             }
         ));
     }
@@ -511,7 +511,7 @@ mod comments {
     fn block_comment_fragment_top_nesting() {
         let mut s = Scanner::new("continued comment");
         let c = Continuation {
-            cont: TokenContinuation::BlockComment(0),
+            cont: TokenContinuation::BlockComment { depth: 0 },
             scan: &mut s,
             start: 0,
         };
@@ -523,7 +523,7 @@ mod comments {
             TokenExtract {
                 start: 0,
                 end: 17,
-                result: Ok(TokenKind::CommentBlockFragment(0)),
+                result: Ok(TokenKind::CommentBlockFragment { depth: 0 }),
             }
         ));
     }
@@ -532,7 +532,7 @@ mod comments {
     fn block_comment_fragment_includes_whitespace() {
         let mut s = Scanner::new("  continued comment\t");
         let c = Continuation {
-            cont: TokenContinuation::BlockComment(0),
+            cont: TokenContinuation::BlockComment { depth: 0 },
             scan: &mut s,
             start: 0,
         };
@@ -544,7 +544,7 @@ mod comments {
             TokenExtract {
                 start: 0,
                 end: 20,
-                result: Ok(TokenKind::CommentBlockFragment(0)),
+                result: Ok(TokenKind::CommentBlockFragment { depth: 0 }),
             }
         ));
     }
@@ -553,7 +553,7 @@ mod comments {
     fn block_comment_fragment_contains_block_comment() {
         let mut s = Scanner::new("continue #| whole comment |# more...");
         let c = Continuation {
-            cont: TokenContinuation::BlockComment(0),
+            cont: TokenContinuation::BlockComment { depth: 0 },
             scan: &mut s,
             start: 0,
         };
@@ -565,7 +565,7 @@ mod comments {
             TokenExtract {
                 start: 0,
                 end: 36,
-                result: Ok(TokenKind::CommentBlockFragment(0)),
+                result: Ok(TokenKind::CommentBlockFragment { depth: 0 }),
             }
         ));
     }
@@ -574,7 +574,7 @@ mod comments {
     fn block_comment_fragment_with_nesting() {
         let mut s = Scanner::new("continue #| partial comment...");
         let c = Continuation {
-            cont: TokenContinuation::BlockComment(0),
+            cont: TokenContinuation::BlockComment { depth: 0 },
             scan: &mut s,
             start: 0,
         };
@@ -586,7 +586,7 @@ mod comments {
             TokenExtract {
                 start: 0,
                 end: 30,
-                result: Ok(TokenKind::CommentBlockFragment(1)),
+                result: Ok(TokenKind::CommentBlockFragment { depth: 1 }),
             }
         ));
     }
@@ -595,7 +595,7 @@ mod comments {
     fn block_comment_fragment_extends_nesting() {
         let mut s = Scanner::new("continue #| partial comment...");
         let c = Continuation {
-            cont: TokenContinuation::BlockComment(2),
+            cont: TokenContinuation::BlockComment { depth: 2 },
             scan: &mut s,
             start: 0,
         };
@@ -607,7 +607,7 @@ mod comments {
             TokenExtract {
                 start: 0,
                 end: 30,
-                result: Ok(TokenKind::CommentBlockFragment(3)),
+                result: Ok(TokenKind::CommentBlockFragment { depth: 3 }),
             }
         ));
     }
@@ -616,7 +616,7 @@ mod comments {
     fn block_comment_end() {
         let mut s = Scanner::new("end comment |#");
         let c = Continuation {
-            cont: TokenContinuation::BlockComment(0),
+            cont: TokenContinuation::BlockComment { depth: 0 },
             scan: &mut s,
             start: 0,
         };
@@ -637,7 +637,7 @@ mod comments {
     fn block_comment_end_includes_leading_whitespace() {
         let mut s = Scanner::new("  end comment |#  ");
         let c = Continuation {
-            cont: TokenContinuation::BlockComment(0),
+            cont: TokenContinuation::BlockComment { depth: 0 },
             scan: &mut s,
             start: 0,
         };
@@ -658,7 +658,7 @@ mod comments {
     fn block_comment_end_stops_at_next_token() {
         let mut s = Scanner::new("end comment |##t");
         let c = Continuation {
-            cont: TokenContinuation::BlockComment(0),
+            cont: TokenContinuation::BlockComment { depth: 0 },
             scan: &mut s,
             start: 0,
         };
@@ -679,7 +679,7 @@ mod comments {
     fn block_comment_end_contains_whole_comment() {
         let mut s = Scanner::new("end comment #| nested |# |#");
         let c = Continuation {
-            cont: TokenContinuation::BlockComment(0),
+            cont: TokenContinuation::BlockComment { depth: 0 },
             scan: &mut s,
             start: 0,
         };
@@ -700,7 +700,7 @@ mod comments {
     fn block_comment_ends_multiple_nesting() {
         let mut s = Scanner::new("end inner |# end outer |#");
         let c = Continuation {
-            cont: TokenContinuation::BlockComment(1),
+            cont: TokenContinuation::BlockComment { depth: 1 },
             scan: &mut s,
             start: 0,
         };

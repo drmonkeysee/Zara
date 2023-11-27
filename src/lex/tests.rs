@@ -378,7 +378,7 @@ mod lexer {
         assert!(matches!(
             line.0[1],
             TokenType {
-                kind: TokenKind::CommentBlockBegin(0),
+                kind: TokenKind::CommentBlockBegin { depth: 0 },
                 span: Range { start: 3, end: 16 }
             }
         ));
@@ -390,7 +390,7 @@ mod lexer {
                 lineno: 1,
             } if Rc::ptr_eq(&ctx, &src.ctx) && line == "#t #|trailing..."
         ));
-        assert!(matches!(cont, TokenContinuation::BlockComment(0)));
+        assert!(matches!(cont, TokenContinuation::BlockComment { depth: 0 }));
     }
 
     #[test]
@@ -467,7 +467,7 @@ mod lexer {
         assert!(matches!(
             line.0[0],
             TokenType {
-                kind: TokenKind::CommentBlockBegin(0),
+                kind: TokenKind::CommentBlockBegin { depth: 0 },
                 span: Range { start: 0, end: 14 }
             }
         ));
@@ -513,7 +513,7 @@ mod lexer {
         assert!(matches!(
             line.0[0],
             TokenType {
-                kind: TokenKind::CommentBlockBegin(0),
+                kind: TokenKind::CommentBlockBegin { depth: 0 },
                 span: Range { start: 0, end: 8 }
             }
         ));
@@ -529,7 +529,7 @@ mod lexer {
         assert!(matches!(
             line.0[0],
             TokenType {
-                kind: TokenKind::CommentBlockFragment(0),
+                kind: TokenKind::CommentBlockFragment { depth: 0 },
                 span: Range { start: 0, end: 4 }
             }
         ));

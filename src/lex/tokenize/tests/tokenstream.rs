@@ -334,7 +334,7 @@ fn pair_join_is_not_a_token_boundary() {
 fn block_comment_fragment_uses_whole_line() {
     let s = TokenStream::new(
         "continued comment",
-        Some(TokenContinuation::BlockComment(2)),
+        Some(TokenContinuation::BlockComment { depth: 2 }),
     );
 
     let r: Vec<_> = s.collect();
@@ -343,7 +343,7 @@ fn block_comment_fragment_uses_whole_line() {
     assert!(matches!(
         r[0],
         Ok(Token {
-            kind: TokenKind::CommentBlockFragment(2),
+            kind: TokenKind::CommentBlockFragment { depth: 2 },
             span: Range { start: 0, end: 17 }
         })
     ));
@@ -353,7 +353,7 @@ fn block_comment_fragment_uses_whole_line() {
 fn block_comment_end_continues_tokenizing() {
     let s = TokenStream::new(
         "end comment |# #f",
-        Some(TokenContinuation::BlockComment(0)),
+        Some(TokenContinuation::BlockComment { depth: 0 }),
     );
 
     let r: Vec<_> = s.collect();
@@ -379,7 +379,7 @@ fn block_comment_end_continues_tokenizing() {
 fn string_fragment_uses_whole_line() {
     let s = TokenStream::new(
         "continued string",
-        Some(TokenContinuation::StringLiteral(false)),
+        Some(TokenContinuation::StringLiteral { line_cont: false }),
     );
 
     let r: Vec<_> = s.collect();
@@ -398,7 +398,7 @@ fn string_fragment_uses_whole_line() {
 fn string_end_continues_tokenizing() {
     let s = TokenStream::new(
         "end string \" #f",
-        Some(TokenContinuation::StringLiteral(false)),
+        Some(TokenContinuation::StringLiteral { line_cont: false }),
     );
 
     let r: Vec<_> = s.collect();

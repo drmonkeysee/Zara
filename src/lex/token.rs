@@ -35,9 +35,9 @@ impl Display for Token {
 pub enum TokenKind {
     ByteVector,
     Comment,
-    CommentBlockBegin(usize),
+    CommentBlockBegin { depth: usize },
     CommentBlockEnd,
-    CommentBlockFragment(usize),
+    CommentBlockFragment { depth: usize },
     CommentDatum,
     DirectiveCase(bool),
     Identifier(String),
@@ -63,15 +63,17 @@ pub enum TokenKind {
 impl TokenKind {
     pub(super) fn to_continuation(&self) -> Option<TokenContinuation> {
         match self {
-            Self::CommentBlockBegin(depth) | Self::CommentBlockFragment(depth) => {
-                Some(TokenContinuation::BlockComment(*depth))
+            Self::CommentBlockBegin { depth } | Self::CommentBlockFragment { depth } => {
+                Some(TokenContinuation::BlockComment { depth: *depth })
             }
             Self::IdentifierBegin(_) | Self::IdentifierFragment(_) => {
                 Some(TokenContinuation::VerbatimIdentifier)
             }
             Self::IdentifierDiscard => Some(TokenContinuation::SubidentifierError),
             Self::StringBegin { line_cont, .. } | Self::StringFragment { line_cont, .. } => {
-                Some(TokenContinuation::StringLiteral(*line_cont))
+                Some(TokenContinuation::StringLiteral {
+                    line_cont: *line_cont,
+                })
             }
             Self::StringDiscard => Some(TokenContinuation::SubstringError),
             _ => None,
@@ -84,9 +86,9 @@ impl Display for TokenKind {
         match self {
             Self::ByteVector => f.write_str("BYTEVECTOR"),
             Self::Comment => f.write_str("COMMENT"),
-            Self::CommentBlockBegin(depth) => write!(f, "COMMENTBEGIN<{depth:?}>"),
+            Self::CommentBlockBegin { depth } => write!(f, "COMMENTBEGIN<{depth:?}>"),
             Self::CommentBlockEnd => f.write_str("COMMENTEND"),
-            Self::CommentBlockFragment(depth) => write!(f, "COMMENTFRAGMENT<{depth:?}>"),
+            Self::CommentBlockFragment { depth } => write!(f, "COMMENTFRAGMENT<{depth:?}>"),
             Self::CommentDatum => f.write_str("DATUMCOMMENT"),
             Self::DirectiveCase(fold) => write!(f, "FOLDCASE<{fold:?}>"),
             Self::Identifier(_) => f.write_str("IDENTIFIER"),
@@ -225,11 +227,11 @@ impl Display for TokenErrorKind {
 impl From<TokenContinuation> for TokenErrorKind {
     fn from(value: TokenContinuation) -> Self {
         match value {
-            TokenContinuation::BlockComment(_) => Self::BlockCommentUnterminated,
+            TokenContinuation::BlockComment { .. } => Self::BlockCommentUnterminated,
             TokenContinuation::SubidentifierError | TokenContinuation::VerbatimIdentifier => {
                 Self::IdentifierUnterminated
             }
-            TokenContinuation::StringLiteral(_) | TokenContinuation::SubstringError => {
+            TokenContinuation::StringLiteral { .. } | TokenContinuation::SubstringError => {
                 Self::StringUnterminated
             }
         }
@@ -238,8 +240,8 @@ impl From<TokenContinuation> for TokenErrorKind {
 
 #[derive(Debug)]
 pub(super) enum TokenContinuation {
-    BlockComment(usize),
-    StringLiteral(bool),
+    BlockComment { depth: usize },
+    StringLiteral { line_cont: bool },
     SubidentifierError,
     SubstringError,
     VerbatimIdentifier,
@@ -287,7 +289,7 @@ mod tests {
         #[test]
         fn display_comment_blockbegin() {
             let token = Token {
-                kind: TokenKind::CommentBlockBegin(1),
+                kind: TokenKind::CommentBlockBegin { depth: 1 },
                 span: 0..10,
             };
 
@@ -297,7 +299,7 @@ mod tests {
         #[test]
         fn display_comment_blockfragment() {
             let token = Token {
-                kind: TokenKind::CommentBlockFragment(1),
+                kind: TokenKind::CommentBlockFragment { depth: 1 },
                 span: 0..10,
             };
 
@@ -555,21 +557,21 @@ mod tests {
 
         #[test]
         fn block_comment_open_continuation() {
-            let kind = TokenKind::CommentBlockBegin(2);
+            let kind = TokenKind::CommentBlockBegin { depth: 2 };
 
             assert!(matches!(
                 kind.to_continuation(),
-                Some(TokenContinuation::BlockComment(2))
+                Some(TokenContinuation::BlockComment { depth: 2 })
             ));
         }
 
         #[test]
         fn block_comment_fragment_continuation() {
-            let kind = TokenKind::CommentBlockFragment(2);
+            let kind = TokenKind::CommentBlockFragment { depth: 2 };
 
             assert!(matches!(
                 kind.to_continuation(),
-                Some(TokenContinuation::BlockComment(2))
+                Some(TokenContinuation::BlockComment { depth: 2 })
             ));
         }
 
@@ -582,7 +584,7 @@ mod tests {
 
             assert!(matches!(
                 kind.to_continuation(),
-                Some(TokenContinuation::StringLiteral(false))
+                Some(TokenContinuation::StringLiteral { line_cont: false })
             ));
         }
 
@@ -595,7 +597,7 @@ mod tests {
 
             assert!(matches!(
                 kind.to_continuation(),
-                Some(TokenContinuation::StringLiteral(true))
+                Some(TokenContinuation::StringLiteral { line_cont: true })
             ));
         }
 
@@ -991,7 +993,7 @@ mod tests {
 
         #[test]
         fn block_comment() {
-            let cont = TokenContinuation::BlockComment(10);
+            let cont = TokenContinuation::BlockComment { depth: 10 };
 
             assert!(matches!(
                 cont.into(),
@@ -1001,7 +1003,7 @@ mod tests {
 
         #[test]
         fn string_fragment() {
-            let cont = TokenContinuation::StringLiteral(false);
+            let cont = TokenContinuation::StringLiteral { line_cont: false };
 
             assert!(matches!(cont.into(), TokenErrorKind::StringUnterminated));
         }

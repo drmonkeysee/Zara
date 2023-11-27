@@ -129,11 +129,15 @@ impl<'me, 'str> Continuation<'me, 'str> {
 
     fn scan(&mut self) -> TokenExtractResult {
         match self.cont {
-            TokenContinuation::BlockComment(depth) => {
+            TokenContinuation::BlockComment { depth } => {
                 Ok(BlockComment::cont(depth, self.scan).consume())
             }
-            TokenContinuation::StringLiteral(false) => StringLiteral::cont(self.scan).scan(),
-            TokenContinuation::StringLiteral(true) => StringLiteral::line_cont(self.scan).scan(),
+            TokenContinuation::StringLiteral { line_cont: false } => {
+                StringLiteral::cont(self.scan).scan()
+            }
+            TokenContinuation::StringLiteral { line_cont: true } => {
+                StringLiteral::line_cont(self.scan).scan()
+            }
             TokenContinuation::SubidentifierError => VerbatimIdentifer::cleanup(self.scan).scan(),
             TokenContinuation::SubstringError => StringLiteral::cleanup(self.scan).scan(),
             TokenContinuation::VerbatimIdentifier => VerbatimIdentifer::cont(self.scan).scan(),

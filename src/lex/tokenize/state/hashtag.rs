@@ -162,7 +162,7 @@ impl BlockCommentPolicy for ContinueComment {
     }
 
     fn unterminated(&self, depth: usize) -> TokenKind {
-        TokenKind::CommentBlockFragment(depth)
+        TokenKind::CommentBlockFragment { depth }
     }
 }
 
@@ -174,7 +174,7 @@ impl BlockCommentPolicy for StartComment {
     }
 
     fn unterminated(&self, depth: usize) -> TokenKind {
-        TokenKind::CommentBlockBegin(depth)
+        TokenKind::CommentBlockBegin { depth }
     }
 }
 
