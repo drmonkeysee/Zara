@@ -19,28 +19,40 @@ impl Display for ParserError {
 
 impl Error for ParserError {}
 
+pub(crate) trait Parser {
+    fn parse(&self, token_lines: Vec<TokenLine>) -> ParserResult;
+}
+
 pub(crate) type ParserResult = Result<Expression, ParserError>;
 
-pub(crate) fn parse(token_lines: impl IntoIterator<Item = TokenLine>) -> ParserResult {
-    let mut errors = Vec::new();
-    // TODO: for now flatten all lexlines into one stream of tokens
-    // this'll need to handle individual lines later
-    let ast = token_lines
-        .into_iter()
-        .flatten()
-        .map(parse_expression)
-        .filter_map(|expr| expr.map_err(|err| errors.push(err)).ok())
-        .collect();
-    if errors.is_empty() {
-        // NOTE: top-level AST is equivalent to (begin ...)
-        Ok(Expression::Begin(ast))
-    } else {
-        Err(ParserError(errors))
+pub(crate) struct TokenList;
+
+impl Parser for TokenList {
+    fn parse(&self, token_lines: Vec<TokenLine>) -> ParserResult {
+        Ok(Expression::TokenList(token_lines))
     }
 }
 
-pub(crate) fn tokens(token_lines: Vec<TokenLine>) -> ParserResult {
-    Ok(Expression::TokenList(token_lines))
+pub(crate) struct ExpressionTree;
+
+impl Parser for ExpressionTree {
+    fn parse(&self, token_lines: Vec<TokenLine>) -> ParserResult {
+        let mut errors = Vec::new();
+        // TODO: for now flatten all lexlines into one stream of tokens
+        // this'll need to handle individual lines later
+        let ast = token_lines
+            .into_iter()
+            .flatten()
+            .map(parse_expression)
+            .filter_map(|expr| expr.map_err(|err| errors.push(err)).ok())
+            .collect();
+        if errors.is_empty() {
+            // NOTE: top-level AST is equivalent to (begin ...)
+            Ok(Expression::Begin(ast))
+        } else {
+            Err(ParserError(errors))
+        }
+    }
 }
 
 fn parse_expression(token: Token) -> Result<Expression, ExpressionError> {

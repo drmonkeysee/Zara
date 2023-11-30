@@ -8,13 +8,13 @@ pub mod syntax;
 mod testutil;
 pub mod txt;
 
+pub use self::{eval::Evaluation, syntax::Expression};
 use self::{
-    eval::EvalError,
-    lex::{Lexer, LexerError, LexerOutput},
-    syntax::ParserError,
+    eval::{Ast, Environment, EvalError, Evaluator},
+    lex::{Lexer, LexerError, LexerOutput, TokenLine},
+    syntax::{ExpressionTree, Parser, ParserError, TokenList},
     txt::TextSource,
 };
-pub use self::{eval::Evaluation, syntax::Expression};
 use std::{
     error,
     fmt::{self, Display, Formatter},
@@ -24,55 +24,83 @@ use std::{
 pub type Result = result::Result<Evaluation, Error>;
 
 pub struct Interpreter {
-    ast_output: bool,
     lexer: Lexer,
-    token_output: bool,
+    runner: Box<dyn Executor>,
 }
 
 impl Interpreter {
-    // TODO: should these be type parameters
     pub fn new(token_output: bool, ast_output: bool) -> Self {
         Self {
-            ast_output,
             lexer: Lexer::new(),
-            token_output,
+            runner: resolve_executor(token_output, ast_output),
         }
     }
 
     pub fn run(&mut self, src: &mut impl TextSource) -> Result {
-        let lex_output = self.lexer.tokenize(src)?;
+        let lex_output = self.lex(src)?;
         let token_lines = match lex_output {
             LexerOutput::Complete(lines) => lines,
             LexerOutput::Continuation => return Ok(Evaluation::Continuation),
         };
-        let ast = if self.token_output {
-            syntax::tokens(token_lines)
-        } else {
-            syntax::parse(token_lines)
-        }?;
-        let evaluation = if self.ast_output {
-            eval::ast(ast)
-        } else {
-            eval::evaluate(ast)
-        }?;
-        Ok(evaluation)
+        Ok(self.runner.exec(token_lines)?)
+    }
+
+    fn lex(&mut self, src: &mut impl TextSource) -> result::Result<LexerOutput, ExecError> {
+        Ok(self.lexer.tokenize(src)?)
     }
 }
 
 #[derive(Debug)]
-pub enum Error {
+pub struct Error(ExecError);
+
+impl Error {
+    pub fn display_message(&self) -> ErrorMessage<'_> {
+        ErrorMessage(&self.0)
+    }
+}
+
+impl Display for Error {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
+impl error::Error for Error {
+    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
+        self.0.source()
+    }
+}
+
+impl From<ExecError> for Error {
+    fn from(value: ExecError) -> Self {
+        Self(value)
+    }
+}
+
+pub struct ErrorMessage<'a>(&'a ExecError);
+
+impl Display for ErrorMessage<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        let err = self.0;
+        match err {
+            ExecError::Lex(lex_err) => lex_err.display_message().fmt(f),
+            _ => writeln!(f, "#<error-extended-undef({err:?})>"),
+        }
+    }
+}
+
+trait Executor {
+    fn exec(&self, token_lines: Vec<TokenLine>) -> result::Result<Evaluation, ExecError>;
+}
+
+#[derive(Debug)]
+enum ExecError {
     Lex(LexerError),
     Parse(ParserError),
     Eval(EvalError),
 }
 
-impl Error {
-    pub fn display_message(&self) -> ErrorMessage<'_> {
-        ErrorMessage(self)
-    }
-}
-
-impl Display for Error {
+impl Display for ExecError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
             Self::Lex(lx) => lx.fmt(f),
@@ -82,7 +110,7 @@ impl Display for Error {
     }
 }
 
-impl error::Error for Error {
+impl error::Error for ExecError {
     fn source(&self) -> Option<&(dyn error::Error + 'static)> {
         Some(match self {
             Self::Lex(lx) => lx,
@@ -92,32 +120,58 @@ impl error::Error for Error {
     }
 }
 
-impl From<LexerError> for Error {
+impl From<LexerError> for ExecError {
     fn from(value: LexerError) -> Self {
         Self::Lex(value)
     }
 }
 
-impl From<ParserError> for Error {
+impl From<ParserError> for ExecError {
     fn from(value: ParserError) -> Self {
         Self::Parse(value)
     }
 }
 
-impl From<EvalError> for Error {
+impl From<EvalError> for ExecError {
     fn from(value: EvalError) -> Self {
         Self::Eval(value)
     }
 }
 
-pub struct ErrorMessage<'a>(&'a Error);
+struct Engine<P, E> {
+    evaluator: E,
+    parser: P,
+}
 
-impl Display for ErrorMessage<'_> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        let err = self.0;
-        match err {
-            Error::Lex(lex_err) => lex_err.display_message().fmt(f),
-            _ => writeln!(f, "#<error-extended-undef({err:?})>"),
+impl<P: Parser, E: Evaluator> Executor for Engine<P, E> {
+    fn exec(&self, token_lines: Vec<TokenLine>) -> result::Result<Evaluation, ExecError> {
+        Ok(self.evaluator.evaluate(self.parser.parse(token_lines)?)?)
+    }
+}
+
+fn resolve_executor(token_output: bool, ast_output: bool) -> Box<dyn Executor> {
+    if token_output {
+        let parser = TokenList;
+        if ast_output {
+            Box::new(Engine {
+                evaluator: Ast,
+                parser,
+            })
+        } else {
+            Box::new(Engine {
+                evaluator: Environment,
+                parser,
+            })
         }
+    } else if ast_output {
+        Box::new(Engine {
+            evaluator: Ast,
+            parser: ExpressionTree,
+        })
+    } else {
+        Box::new(Engine {
+            evaluator: Environment,
+            parser: ExpressionTree,
+        })
     }
 }

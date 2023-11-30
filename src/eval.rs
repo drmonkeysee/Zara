@@ -40,17 +40,29 @@ impl Error for EvalError {}
 
 pub(crate) type EvalResult = Result<Evaluation, EvalError>;
 
-pub(crate) fn evaluate(expression: Expression) -> EvalResult {
-    match expression {
-        Expression::Begin(exprs) => eval_begin(exprs),
-        Expression::TokenList(_) => Ok(expression),
-        _ => Err(EvalError),
-    }
-    .map(Evaluation::Expression)
+pub(crate) trait Evaluator {
+    fn evaluate(&self, expression: Expression) -> EvalResult;
 }
 
-pub(crate) fn ast(expression: Expression) -> EvalResult {
-    Ok(Evaluation::Expression(Expression::Ast(expression.into())))
+pub(crate) struct Ast;
+
+impl Evaluator for Ast {
+    fn evaluate(&self, expression: Expression) -> EvalResult {
+        Ok(Evaluation::Expression(Expression::Ast(expression.into())))
+    }
+}
+
+pub(crate) struct Environment;
+
+impl Evaluator for Environment {
+    fn evaluate(&self, expression: Expression) -> EvalResult {
+        match expression {
+            Expression::Begin(exprs) => eval_begin(exprs),
+            Expression::TokenList(_) => Ok(expression),
+            _ => Err(EvalError),
+        }
+        .map(Evaluation::Expression)
+    }
 }
 
 type ExprResult = Result<Expression, EvalError>;
