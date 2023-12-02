@@ -1,5 +1,5 @@
 use crate::{
-    args::{self, Args},
+    args::{self, Args, Input},
     cli::Result,
     run::{self, Opts},
 };
@@ -51,15 +51,11 @@ impl From<Args> for Cmd {
             Self::Version
         } else {
             let opts = Opts::with_args(&value);
-            if value.stdin {
-                match value.prg {
-                    Some(prg) => Self::Prg(opts, prg),
-                    None => Self::Stdin(opts),
-                }
-            } else if let Some(p) = value.filepath {
-                Self::File(opts, p)
-            } else {
-                Self::Repl(opts)
+            match value.input {
+                Input::File(p) => Self::File(opts, p),
+                Input::Prg(p) => Self::Prg(opts, p),
+                Input::Repl => Self::Repl(opts),
+                Input::Stdin => Self::Stdin(opts),
             }
         }
     }
@@ -106,7 +102,7 @@ mod tests {
     fn file() {
         let input = "my/file.scm";
         let args = Args {
-            filepath: Some(Path::new(input).to_path_buf()),
+            input: Input::File(Path::new(input).to_path_buf()),
             ..Default::default()
         };
 
@@ -128,8 +124,7 @@ mod tests {
     fn prg() {
         let input = "stdin input";
         let args = Args {
-            prg: Some(input.to_owned()),
-            stdin: true,
+            input: Input::Prg(input.to_owned()),
             ..Default::default()
         };
 
@@ -150,7 +145,7 @@ mod tests {
     #[test]
     fn stdin() {
         let args = Args {
-            stdin: true,
+            input: Input::Stdin,
             ..Default::default()
         };
 

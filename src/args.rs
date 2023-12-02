@@ -87,15 +87,22 @@ pub(crate) fn version() {
 }
 
 #[derive(Debug, Default)]
+pub(crate) enum Input {
+    File(PathBuf),
+    Prg(String),
+    #[default]
+    Repl,
+    Stdin,
+}
+
+#[derive(Debug, Default)]
 pub(crate) struct Args {
     pub(crate) ast: bool,
-    pub(crate) filepath: Option<PathBuf>,
+    pub(crate) input: Input,
     pub(crate) help: bool,
     pub(crate) me: String,
-    pub(crate) prg: Option<String>,
     pub(crate) runargs: Vec<String>,
     pub(crate) runargs_prefix: bool,
-    pub(crate) stdin: bool,
     pub(crate) tokens: bool,
     pub(crate) ver: bool,
 }
@@ -110,21 +117,21 @@ impl Args {
     }
 
     fn has_run_target(&self) -> bool {
-        self.stdin || self.runargs_prefix || self.filepath.is_some()
+        !matches!(self.input, Input::Repl) || self.runargs_prefix
     }
 
     fn expecting_prg_text(&self) -> bool {
-        self.stdin && !self.runargs_prefix && self.prg.is_none()
+        matches!(self.input, Input::Stdin) && !self.runargs_prefix
     }
 
     fn expecting_file_path(&self) -> bool {
-        !self.stdin && !self.runargs_prefix && self.filepath.is_none()
+        matches!(self.input, Input::Repl) && !self.runargs_prefix
     }
 
     fn match_target_arg(&mut self, arg: String) {
         match arg.as_str() {
             ARGS_PREFIX => self.runargs_prefix = true,
-            _ if self.expecting_prg_text() => self.prg = Some(arg),
+            _ if self.expecting_prg_text() => self.input = Input::Prg(arg),
             _ => self.runargs.push(arg),
         }
     }
@@ -136,7 +143,7 @@ impl Args {
             HELP_SHORT | HELP_LONG => self.help = true,
             TOKEN_SHORT | TOKEN_LONG => self.tokens = true,
             VERSION_SHORT | VERSION_LONG => self.ver = true,
-            STDIN_SHORT => self.stdin = true,
+            STDIN_SHORT => self.input = Input::Stdin,
             AST_TOKEN_SHORT | TOKEN_AST_SHORT => {
                 self.ast = true;
                 self.tokens = true;
@@ -144,7 +151,7 @@ impl Args {
             _ if self.expecting_file_path() => {
                 let mut p = PathBuf::new();
                 p.push(arg);
-                self.filepath = Some(p);
+                self.input = Input::File(p);
             }
             _ => (),
         }
@@ -173,12 +180,10 @@ mod tests {
             result,
             Args {
                 ast: false,
-                filepath: None,
+                input: Input::Repl,
                 help: false,
                 me,
-                prg: None,
                 runargs,
-                stdin: false,
                 runargs_prefix: false,
                 tokens: false,
                 ver: false,
@@ -196,12 +201,10 @@ mod tests {
             result,
             Args {
                 ast: false,
-                filepath: None,
+                input: Input::Repl,
                 help: false,
                 me,
-                prg: None,
                 runargs,
-                stdin: false,
                 runargs_prefix: false,
                 tokens: false,
                 ver: false,
@@ -219,12 +222,10 @@ mod tests {
             result,
             Args {
                 ast: false,
-                filepath: None,
+                input: Input::Repl,
                 help: false,
                 me,
-                prg: None,
                 runargs: _,
-                stdin: false,
                 runargs_prefix: true,
                 tokens: false,
                 ver: false,
@@ -246,12 +247,10 @@ mod tests {
                     result,
                     Args {
                         ast: false,
-                        filepath: None,
+                        input: Input::Repl,
                         help: true,
                         me,
-                        prg: None,
                         runargs: _,
-                        stdin: false,
                         runargs_prefix: false,
                         tokens: false,
                         ver: false,
@@ -273,12 +272,10 @@ mod tests {
             result,
             Args {
                 ast: false,
-                filepath: None,
+                input: Input::Stdin,
                 help: false,
                 me: _,
-                prg: None,
                 runargs: _,
-                stdin: true,
                 runargs_prefix: false,
                 tokens: false,
                 ver: false,
@@ -297,12 +294,10 @@ mod tests {
             result,
             Args {
                 ast: false,
-                filepath: None,
+                input: Input::Prg(s),
                 help: false,
                 me: _,
-                prg: Some(s),
                 runargs: _,
-                stdin: true,
                 runargs_prefix: false,
                 tokens: false,
                 ver: false,
@@ -320,12 +315,10 @@ mod tests {
             result,
             Args {
                 ast: false,
-                filepath: None,
+                input: Input::Stdin,
                 help: false,
                 me: _,
-                prg: None,
                 runargs: _,
-                stdin: true,
                 runargs_prefix: true,
                 tokens: false,
                 ver: false,
@@ -345,12 +338,10 @@ mod tests {
             result,
             Args {
                 ast: false,
-                filepath: None,
+                input: Input::Prg(s),
                 help: false,
                 me: _,
-                prg: Some(s),
                 runargs: _,
-                stdin: true,
                 runargs_prefix: false,
                 tokens: false,
                 ver: false,
@@ -371,12 +362,10 @@ mod tests {
                     result,
                     Args {
                         ast: true,
-                        filepath: None,
+                        input: Input::Repl,
                         help: false,
                         me: _,
-                        prg: None,
                         runargs: _,
-                        stdin: false,
                         runargs_prefix: false,
                         tokens: false,
                         ver: false,
@@ -400,12 +389,10 @@ mod tests {
                     result,
                     Args {
                         ast: false,
-                        filepath: None,
+                        input: Input::Repl,
                         help: false,
                         me: _,
-                        prg: None,
                         runargs: _,
-                        stdin: false,
                         runargs_prefix: false,
                         tokens: true,
                         ver: false,
@@ -429,12 +416,10 @@ mod tests {
                     result,
                     Args {
                         ast: true,
-                        filepath: None,
+                        input: Input::Repl,
                         help: false,
                         me: _,
-                        prg: None,
                         runargs: _,
-                        stdin: false,
                         runargs_prefix: false,
                         tokens: true,
                         ver: false,
@@ -458,12 +443,10 @@ mod tests {
                     result,
                     Args {
                         ast: false,
-                        filepath: None,
+                        input: Input::Repl,
                         help: false,
                         me: _,
-                        prg: None,
                         runargs: _,
-                        stdin: false,
                         runargs_prefix: false,
                         tokens: false,
                         ver: true,
@@ -485,12 +468,10 @@ mod tests {
             result,
             Args {
                 ast: false,
-                filepath: Some(p),
+                input: Input::File(p),
                 help: false,
                 me: _,
-                prg: None,
                 runargs: _,
-                stdin: false,
                 runargs_prefix: false,
                 tokens: false,
                 ver: false,
@@ -508,12 +489,10 @@ mod tests {
             result,
             Args {
                 ast: false,
-                filepath: Some(p),
+                input: Input::File(p),
                 help: false,
                 me: _,
-                prg: None,
                 runargs: _,
-                stdin: false,
                 runargs_prefix: false,
                 tokens: false,
                 ver: false,
@@ -532,12 +511,10 @@ mod tests {
             result,
             Args {
                 ast: false,
-                filepath: Some(p),
+                input: Input::File(p),
                 help: false,
                 me,
-                prg: None,
                 runargs: _,
-                stdin: false,
                 runargs_prefix: false,
                 tokens: false,
                 ver: false,
@@ -556,12 +533,10 @@ mod tests {
             result,
             Args {
                 ast: false,
-                filepath: None,
+                input: Input::Repl,
                 help: false,
                 me,
-                prg: None,
                 runargs: _,
-                stdin: false,
                 runargs_prefix: true,
                 tokens: false,
                 ver: false,
