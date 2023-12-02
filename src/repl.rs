@@ -3,7 +3,7 @@ use rustyline::{DefaultEditor, Result};
 use std::rc::Rc;
 use zara::{
     txt::{LineNumber, TextContext, TextLine, TextResult, TextSource},
-    Error, Evaluation, Expression, Interpreter,
+    Error, Evaluation, Expr, Interpreter,
 };
 
 const INPUT: &str = "λ:> ";
@@ -46,7 +46,7 @@ impl Repl {
         }
     }
 
-    fn print_expr(&mut self, expr: &Expression) {
+    fn print_expr(&mut self, expr: &Expr) {
         if expr.has_value() {
             println!("==> {}", expr.as_datum());
         }

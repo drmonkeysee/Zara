@@ -1,4 +1,4 @@
-use crate::syntax::Expression;
+use crate::syntax::{Datum as DatumValue, Expression};
 use std::{
     error::Error,
     fmt::{self, Display, Formatter},
@@ -6,7 +6,7 @@ use std::{
 
 #[derive(Debug)]
 pub enum Evaluation {
-    Expression(Expression),
+    Expression(Expr),
     Continuation,
 }
 
@@ -15,6 +15,33 @@ impl Evaluation {
     pub fn display_message(&self) -> EvaluationMessage {
         EvaluationMessage(self)
     }
+
+    fn expr(expr: Expression) -> Self {
+        Self::Expression(Expr(expr))
+    }
+}
+
+#[derive(Debug)]
+pub struct Expr(Expression);
+
+impl Expr {
+    #[must_use]
+    pub fn has_value(&self) -> bool {
+        self.0.has_value()
+    }
+
+    #[must_use]
+    pub fn as_datum(&self) -> Datum {
+        Datum(self.0.as_datum())
+    }
+}
+
+pub struct Datum<'a>(DatumValue<'a>);
+
+impl Display for Datum<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
+    }
 }
 
 pub struct EvaluationMessage<'a>(&'a Evaluation);
@@ -22,7 +49,7 @@ pub struct EvaluationMessage<'a>(&'a Evaluation);
 impl Display for EvaluationMessage<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self.0 {
-            Evaluation::Expression(expr) => expr.display_message().fmt(f),
+            Evaluation::Expression(expr) => expr.0.display_message().fmt(f),
             Evaluation::Continuation => writeln!(f, "#<cont-extended-undef({:?})>", self.0),
         }
     }
@@ -49,7 +76,7 @@ pub(crate) struct Ast;
 
 impl Evaluator for Ast {
     fn evaluate(&self, expression: Expression) -> EvalResult {
-        Ok(Evaluation::Expression(Expression::Ast(expression.into())))
+        Ok(Evaluation::expr(Expression::Ast(expression.into())))
     }
 }
 
@@ -62,7 +89,7 @@ impl Evaluator for Environment {
             Expression::TokenList(_) => Ok(expression),
             _ => Err(EvalError),
         }
-        .map(Evaluation::Expression)
+        .map(Evaluation::expr)
     }
 }
 

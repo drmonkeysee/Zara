@@ -8,7 +8,7 @@ pub mod syntax;
 mod testutil;
 pub mod txt;
 
-pub use self::{eval::Evaluation, syntax::Expression};
+pub use self::eval::{Evaluation, Expr};
 use self::{
     eval::{Ast, Environment, EvalError, Evaluator},
     lex::{Lexer, LexerError, LexerOutput, TokenLine},
