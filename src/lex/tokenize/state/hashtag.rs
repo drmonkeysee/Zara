@@ -109,9 +109,8 @@ impl<'me, 'str, P: BlockCommentPolicy> BlockComment<'me, 'str, P> {
                 if self.end_block(ch) {
                     if self.depth == 0 {
                         return self.policy.terminated();
-                    } else {
-                        self.depth -= 1;
                     }
+                    self.depth -= 1;
                 } else if self.new_block(ch) {
                     self.depth += 1;
                 }

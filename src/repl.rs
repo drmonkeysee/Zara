@@ -48,7 +48,7 @@ impl Repl {
 
     fn print_expr(&mut self, expr: Expression) {
         if expr.has_value() {
-            println!("==> {}", expr.as_datum())
+            println!("==> {}", expr.as_datum());
         }
         self.reset();
     }

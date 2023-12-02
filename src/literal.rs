@@ -111,14 +111,14 @@ enum DisplayableChar {
 fn write_str_chr(ch: char, f: &mut Formatter<'_>) -> Result {
     match char_to_displayable(ch) {
         DisplayableChar::Char(ch) => f.write_char(ch),
-        DisplayableChar::Hex(hex) => write!(f, "\\x{:x};", hex),
+        DisplayableChar::Hex(hex) => write!(f, "\\x{hex:x};"),
     }
 }
 
 fn write_unnamed_char(ch: char, f: &mut Formatter<'_>) -> Result {
     match char_to_displayable(ch) {
         DisplayableChar::Char(ch) => f.write_char(ch),
-        DisplayableChar::Hex(hex) => write!(f, "x{:x}", hex),
+        DisplayableChar::Hex(hex) => write!(f, "x{hex:x}"),
     }
 }
 

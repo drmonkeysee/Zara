@@ -226,7 +226,7 @@ impl Display for TokenLineMessage<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let TokenLine(tokens, txt) = self.0;
         for token in tokens {
-            TokenWithSourceMessage(token, txt).fmt(f)?
+            TokenWithSourceMessage(token, txt).fmt(f)?;
         }
         Ok(())
     }

@@ -40,7 +40,7 @@ impl<M: StringPolicyMode> FreeTextPolicy for StringPolicy<M> {
     const TERMINATOR: char = '"';
 
     fn prelude(&self, scan: &mut Scanner<'_>) {
-        self.0.prelude(scan)
+        self.0.prelude(scan);
     }
 
     fn escape_invalid(&self, start: usize, ch: char) -> TokenErrorKind {
