@@ -1,7 +1,7 @@
 pub mod eval;
-pub mod lex;
-pub mod literal;
-pub mod number;
+mod lex;
+mod literal;
+mod number;
 pub mod src;
 mod syntax;
 #[cfg(test)]

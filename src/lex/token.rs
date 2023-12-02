@@ -6,12 +6,12 @@ use std::{
 };
 
 #[derive(Debug)]
-pub struct TokenType<T> {
+pub(crate) struct TokenType<T> {
     pub(crate) kind: T,
     pub(crate) span: Range<usize>,
 }
 
-pub type Token = TokenType<TokenKind>;
+pub(crate) type Token = TokenType<TokenKind>;
 
 impl Token {
     pub(super) fn into_continuation_unsupported(self) -> TokenError {
@@ -32,7 +32,7 @@ impl Display for Token {
 }
 
 #[derive(Debug)]
-pub enum TokenKind {
+pub(crate) enum TokenKind {
     ByteVector,
     Comment,
     CommentBlockBegin { depth: usize },

@@ -5,7 +5,7 @@ use std::{
 };
 
 #[derive(Debug)]
-pub enum Number {
+pub(crate) enum Number {
     Complex(Box<(Real, Real)>), // NOTE: Boxed to keep enum size down
     Real(Real),
 }
@@ -40,7 +40,7 @@ impl Number {
 }
 
 #[derive(Debug)]
-pub enum Real {
+pub(crate) enum Real {
     Float(f64),
     Integer(Integer),
     Rational(Rational),
@@ -67,7 +67,7 @@ impl<T: Into<Integer>> TryFrom<(T, T)> for Real {
 }
 
 #[derive(Debug)]
-pub struct Integer {
+pub(crate) struct Integer {
     precision: Precision,
     sign: Sign,
 }
@@ -84,10 +84,10 @@ impl From<i64> for Integer {
 
 // NOTE: Boxed to keep struct size down
 #[derive(Debug)]
-pub struct Rational(Box<(Integer, Integer)>);
+pub(crate) struct Rational(Box<(Integer, Integer)>);
 
 #[derive(Debug)]
-pub enum NumericError {
+pub(crate) enum NumericError {
     DivideByZero,
 }
 

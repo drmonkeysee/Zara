@@ -16,7 +16,7 @@ use std::{
 };
 
 #[derive(Debug)]
-pub struct TokenLine(Vec<Token>, TextLine);
+pub(crate) struct TokenLine(Vec<Token>, TextLine);
 
 impl TokenLine {
     fn into_continuation_unsupported(mut self) -> LexerError {
@@ -52,7 +52,7 @@ impl IntoIterator for TokenLine {
 }
 
 #[derive(Debug)]
-pub enum LineFailure {
+pub(crate) enum LineFailure {
     Read(TextError),
     Tokenize(TokenErrorLine),
 }
@@ -89,7 +89,7 @@ impl From<TokenErrorLine> for LineFailure {
 }
 
 #[derive(Debug)]
-pub enum LexerError {
+pub(crate) enum LexerError {
     InvalidOperation,
     Lines(Vec<LineFailure>),
 }
@@ -119,7 +119,7 @@ impl From<LineFailure> for LexerError {
 }
 
 #[derive(Debug)]
-pub struct TokenErrorLine(Vec<TokenError>, TextLine);
+pub(crate) struct TokenErrorLine(Vec<TokenError>, TextLine);
 
 pub(crate) type LexerResult = Result<LexerOutput, LexerError>;
 

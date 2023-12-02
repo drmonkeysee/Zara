@@ -5,7 +5,7 @@ use std::{
 };
 
 #[derive(Debug)]
-pub enum Literal {
+pub(crate) enum Literal {
     Boolean(bool),
     Character(char),
     Number(Number),
