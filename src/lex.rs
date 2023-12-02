@@ -64,13 +64,13 @@ impl LineFailure {
                 LineFailureAcc::Empty | LineFailureAcc::Read => {
                     ControlFlow::Continue(LineFailureAcc::Read)
                 }
-                _ => ControlFlow::Break(()),
+                LineFailureAcc::Tokenize => ControlFlow::Break(()),
             },
             Self::Tokenize(_) => match acc {
                 LineFailureAcc::Empty | LineFailureAcc::Tokenize => {
                     ControlFlow::Continue(LineFailureAcc::Tokenize)
                 }
-                _ => ControlFlow::Break(()),
+                LineFailureAcc::Read => ControlFlow::Break(()),
             },
         }
     }
@@ -262,6 +262,7 @@ impl Display for TokenWithSourceMessage<'_> {
     }
 }
 
+#[derive(Clone, Copy)]
 enum LineFailureAcc {
     Empty,
     Read,
@@ -277,7 +278,7 @@ impl Display for DisplayLineFailures<'_> {
             .iter()
             .try_fold(LineFailureAcc::Empty, |acc, f| f.accumulate(acc));
         match ctrl {
-            ControlFlow::Break(_) => f.write_str("multiple lexer failures"),
+            ControlFlow::Break(()) => f.write_str("multiple lexer failures"),
             ControlFlow::Continue(acc) => match acc {
                 LineFailureAcc::Empty => Ok(()),
                 LineFailureAcc::Read => f.write_str("read failure"),
@@ -365,7 +366,7 @@ impl LexerDriver {
             Ok(token_lines.into_iter().flatten().collect())
         } else {
             Err(LexerError::Lines(
-                err_lines.into_iter().flat_map(Result::err).collect(),
+                err_lines.into_iter().filter_map(Result::err).collect(),
             ))
         }
     }
@@ -381,7 +382,7 @@ impl LexerDriver {
             Ok(TokenLine(tokens.into_iter().flatten().collect(), text))
         } else {
             Err(TokenErrorLine(
-                errs.into_iter().flat_map(Result::err).collect(),
+                errs.into_iter().filter_map(Result::err).collect(),
                 text,
             ))?
         }

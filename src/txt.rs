@@ -40,6 +40,7 @@ pub struct TextLine {
 }
 
 impl TextLine {
+    #[must_use]
     pub fn display_header(&self) -> TextLineHeader {
         TextLineHeader(self)
     }
@@ -74,6 +75,7 @@ impl TextError {
         }
     }
 
+    #[must_use]
     pub fn display_header(&self) -> TextErrorHeader {
         TextErrorHeader(self)
     }

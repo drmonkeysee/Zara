@@ -29,6 +29,7 @@ pub struct Interpreter {
 }
 
 impl Interpreter {
+    #[must_use]
     pub fn new(token_output: bool, ast_output: bool) -> Self {
         Self {
             lexer: Lexer::new(),
@@ -54,6 +55,7 @@ impl Interpreter {
 pub struct Error(ExecError);
 
 impl Error {
+    #[must_use]
     pub fn display_message(&self) -> ErrorMessage<'_> {
         ErrorMessage(&self.0)
     }

@@ -18,10 +18,12 @@ pub enum Expression {
 }
 
 impl Expression {
+    #[must_use]
     pub fn has_value(&self) -> bool {
         !matches!(self, Self::Empty)
     }
 
+    #[must_use]
     pub fn as_datum(&self) -> Datum {
         Datum(self)
     }

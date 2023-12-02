@@ -26,7 +26,7 @@ pub(crate) fn stdin(opts: Opts) -> Result {
     run(opts, stdin_source())
 }
 
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug)]
 pub(crate) struct Opts {
     pub(crate) ast_output: bool,
     pub(crate) token_output: bool,

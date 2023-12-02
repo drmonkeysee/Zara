@@ -40,20 +40,20 @@ impl Repl {
         match self.runtime.run(&mut self.src) {
             Ok(eval) => match eval {
                 Evaluation::Continuation => self.prep_continuation(),
-                Evaluation::Expression(expr) => self.print_expr(expr),
+                Evaluation::Expression(expr) => self.print_expr(&expr),
             },
-            Err(err) => self.print_err(err),
+            Err(err) => self.print_err(&err),
         }
     }
 
-    fn print_expr(&mut self, expr: Expression) {
+    fn print_expr(&mut self, expr: &Expression) {
         if expr.has_value() {
             println!("==> {}", expr.as_datum());
         }
         self.reset();
     }
 
-    fn print_err(&mut self, err: Error) {
+    fn print_err(&mut self, err: &Error) {
         eprint!("{}", err.display_message());
         self.reset();
     }

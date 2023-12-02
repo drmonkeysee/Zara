@@ -11,6 +11,7 @@ pub enum Evaluation {
 }
 
 impl Evaluation {
+    #[must_use]
     pub fn display_message(&self) -> EvaluationMessage {
         EvaluationMessage(self)
     }
