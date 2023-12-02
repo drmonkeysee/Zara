@@ -15,77 +15,12 @@ use std::{
     ops::ControlFlow,
 };
 
-#[derive(Debug)]
-pub(crate) struct TokenLine(Vec<Token>, TextLine);
-
-impl TokenLine {
-    fn into_continuation_unsupported(mut self) -> LexerError {
-        self.0.pop().map_or(LexerError::InvalidOperation, |t| {
-            let err: LineFailure =
-                TokenErrorLine(vec![t.into_continuation_unsupported()], self.1).into();
-            err.into()
-        })
-    }
-}
-
-// TODO: this should probably be a datum new-type representation
-impl Display for TokenLine {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        let TokenLine(tokens, txt) = self;
-        let token_txt = tokens
-            .iter()
-            .map(|t| TokenWithSource(t, txt).to_string())
-            .collect::<Vec<_>>()
-            .join(", ");
-        write!(f, "{}:{}", txt.lineno, token_txt)
-    }
-}
-
-// TODO: used by .flatten() in syntax.rs, removal can de-publicize tokens
-impl IntoIterator for TokenLine {
-    type Item = Token;
-    type IntoIter = <Vec<Token> as IntoIterator>::IntoIter;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.0.into_iter()
-    }
-}
+pub(crate) type LexerResult = Result<LexerOutput, LexerError>;
 
 #[derive(Debug)]
-pub(crate) enum LineFailure {
-    Read(TextError),
-    Tokenize(TokenErrorLine),
-}
-
-impl LineFailure {
-    fn accumulate(&self, acc: LineFailureAcc) -> ControlFlow<(), LineFailureAcc> {
-        match self {
-            Self::Read(_) => match acc {
-                LineFailureAcc::Empty | LineFailureAcc::Read => {
-                    ControlFlow::Continue(LineFailureAcc::Read)
-                }
-                LineFailureAcc::Tokenize => ControlFlow::Break(()),
-            },
-            Self::Tokenize(_) => match acc {
-                LineFailureAcc::Empty | LineFailureAcc::Tokenize => {
-                    ControlFlow::Continue(LineFailureAcc::Tokenize)
-                }
-                LineFailureAcc::Read => ControlFlow::Break(()),
-            },
-        }
-    }
-}
-
-impl From<TextError> for LineFailure {
-    fn from(value: TextError) -> Self {
-        Self::Read(value)
-    }
-}
-
-impl From<TokenErrorLine> for LineFailure {
-    fn from(value: TokenErrorLine) -> Self {
-        Self::Tokenize(value)
-    }
+pub(crate) enum LexerOutput {
+    Complete(Vec<TokenLine>),
+    Continuation,
 }
 
 #[derive(Debug)]
@@ -116,17 +51,6 @@ impl From<LineFailure> for LexerError {
     fn from(value: LineFailure) -> Self {
         Self::Lines(vec![value])
     }
-}
-
-#[derive(Debug)]
-pub(crate) struct TokenErrorLine(Vec<TokenError>, TextLine);
-
-pub(crate) type LexerResult = Result<LexerOutput, LexerError>;
-
-#[derive(Debug)]
-pub(crate) enum LexerOutput {
-    Complete(Vec<TokenLine>),
-    Continuation,
 }
 
 pub(crate) struct Lexer {
@@ -173,6 +97,82 @@ impl Lexer {
         }
     }
 }
+
+#[derive(Debug)]
+pub(crate) enum LineFailure {
+    Read(TextError),
+    Tokenize(TokenErrorLine),
+}
+
+impl LineFailure {
+    fn accumulate(&self, acc: LineFailureAcc) -> ControlFlow<(), LineFailureAcc> {
+        match self {
+            Self::Read(_) => match acc {
+                LineFailureAcc::Empty | LineFailureAcc::Read => {
+                    ControlFlow::Continue(LineFailureAcc::Read)
+                }
+                LineFailureAcc::Tokenize => ControlFlow::Break(()),
+            },
+            Self::Tokenize(_) => match acc {
+                LineFailureAcc::Empty | LineFailureAcc::Tokenize => {
+                    ControlFlow::Continue(LineFailureAcc::Tokenize)
+                }
+                LineFailureAcc::Read => ControlFlow::Break(()),
+            },
+        }
+    }
+}
+
+impl From<TextError> for LineFailure {
+    fn from(value: TextError) -> Self {
+        Self::Read(value)
+    }
+}
+
+impl From<TokenErrorLine> for LineFailure {
+    fn from(value: TokenErrorLine) -> Self {
+        Self::Tokenize(value)
+    }
+}
+
+#[derive(Debug)]
+pub(crate) struct TokenLine(Vec<Token>, TextLine);
+
+impl TokenLine {
+    fn into_continuation_unsupported(mut self) -> LexerError {
+        self.0.pop().map_or(LexerError::InvalidOperation, |t| {
+            let err: LineFailure =
+                TokenErrorLine(vec![t.into_continuation_unsupported()], self.1).into();
+            err.into()
+        })
+    }
+}
+
+// TODO: this should probably be a datum new-type representation
+impl Display for TokenLine {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        let TokenLine(tokens, txt) = self;
+        let token_txt = tokens
+            .iter()
+            .map(|t| TokenWithSource(t, txt).to_string())
+            .collect::<Vec<_>>()
+            .join(", ");
+        write!(f, "{}:{}", txt.lineno, token_txt)
+    }
+}
+
+// NOTE: used by .flatten() in syntax.rs
+impl IntoIterator for TokenLine {
+    type Item = Token;
+    type IntoIter = <Vec<Token> as IntoIterator>::IntoIter;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.into_iter()
+    }
+}
+
+#[derive(Debug)]
+pub(crate) struct TokenErrorLine(Vec<TokenError>, TextLine);
 
 pub(crate) struct LexerErrorMessage<'a>(&'a LexerError);
 

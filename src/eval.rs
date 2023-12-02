@@ -55,6 +55,8 @@ impl Display for EvaluationMessage<'_> {
     }
 }
 
+pub(crate) type EvalResult = Result<Evaluation, EvalError>;
+
 #[derive(Debug)]
 pub(crate) struct EvalError;
 
@@ -65,8 +67,6 @@ impl Display for EvalError {
 }
 
 impl Error for EvalError {}
-
-pub(crate) type EvalResult = Result<Evaluation, EvalError>;
 
 pub(crate) trait Evaluator {
     fn evaluate(&self, expression: Expression) -> EvalResult;

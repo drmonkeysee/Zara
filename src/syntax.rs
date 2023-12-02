@@ -8,6 +8,8 @@ use std::{
     fmt::{self, Display, Formatter},
 };
 
+pub(crate) type ParserResult = Result<Expression, ParserError>;
+
 #[derive(Debug)]
 pub(crate) struct ParserError(Vec<ExpressionError>);
 
@@ -22,8 +24,6 @@ impl Error for ParserError {}
 pub(crate) trait Parser {
     fn parse(&self, token_lines: Vec<TokenLine>) -> ParserResult;
 }
-
-pub(crate) type ParserResult = Result<Expression, ParserError>;
 
 pub(crate) struct TokenList;
 
