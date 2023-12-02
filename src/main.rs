@@ -18,11 +18,6 @@ fn main() -> Exit {
     cmd.execute().into()
 }
 
-fn fail(err: Error) -> ExitCode {
-    eprintln!("{err}");
-    ExitCode::FAILURE
-}
-
 // NOTE: newtype to have more control over exit output rather than the
 // annoying default behavior of Result printing the Debug representation.
 struct Exit(Result);
@@ -37,4 +32,9 @@ impl From<Result> for Exit {
     fn from(value: Result) -> Self {
         Self(value)
     }
+}
+
+fn fail(err: Error) -> ExitCode {
+    eprintln!("{err}");
+    ExitCode::FAILURE
 }

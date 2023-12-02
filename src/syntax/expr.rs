@@ -18,7 +18,7 @@ pub enum Expression {
 }
 
 impl Expression {
-    pub fn has_repr(&self) -> bool {
+    pub fn has_value(&self) -> bool {
         !matches!(self, Self::Empty)
     }
 
