@@ -23,6 +23,13 @@ use std::{
 
 pub type Result = result::Result<Evaluation, Error>;
 
+pub enum RunMode {
+    Evaluate,
+    SyntaxTree,
+    Tokenize,
+    TokenTree,
+}
+
 pub struct Interpreter {
     lexer: Lexer,
     runner: Box<dyn Executor>,
@@ -30,10 +37,10 @@ pub struct Interpreter {
 
 impl Interpreter {
     #[must_use]
-    pub fn new(token_output: bool, ast_output: bool) -> Self {
+    pub fn new(mode: RunMode) -> Self {
         Self {
             lexer: Lexer::new(),
-            runner: resolve_executor(token_output, ast_output),
+            runner: resolve_executor(mode),
         }
     }
 
@@ -151,29 +158,29 @@ impl<P: Parser, E: Evaluator> Executor for Engine<P, E> {
     }
 }
 
-fn resolve_executor(token_output: bool, ast_output: bool) -> Box<dyn Executor> {
-    if token_output {
-        let parser = TokenList;
-        if ast_output {
-            Box::new(Engine {
-                evaluator: Ast,
-                parser,
-            })
-        } else {
-            Box::new(Engine {
-                evaluator: Environment,
-                parser,
-            })
-        }
-    } else if ast_output {
-        Box::new(Engine {
-            evaluator: Ast,
-            parser: ExpressionTree,
-        })
-    } else {
-        Box::new(Engine {
+fn resolve_executor(mode: RunMode) -> Box<dyn Executor> {
+    match mode {
+        RunMode::Evaluate => Box::new(Engine {
             evaluator: Environment,
             parser: ExpressionTree,
-        })
+        }),
+        RunMode::SyntaxTree => Box::new(Engine {
+            evaluator: Ast,
+            parser: ExpressionTree,
+        }),
+        RunMode::Tokenize | RunMode::TokenTree => {
+            let parser = TokenList;
+            if matches!(mode, RunMode::TokenTree) {
+                Box::new(Engine {
+                    evaluator: Ast,
+                    parser,
+                })
+            } else {
+                Box::new(Engine {
+                    evaluator: Environment,
+                    parser,
+                })
+            }
+        }
     }
 }

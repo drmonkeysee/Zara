@@ -21,7 +21,7 @@ impl Repl {
     pub(crate) fn new(opts: Opts) -> Result<Self> {
         Ok(Self {
             editor: DefaultEditor::new()?,
-            runtime: Interpreter::new(opts.token_output, opts.ast_output),
+            runtime: Interpreter::new(opts.mode()),
             prompt: INPUT,
             running: true,
             src: ReplSource::new(),

@@ -6,7 +6,7 @@ use std::{
 use zara::{
     src::{FileSource, LineInputAdapter, LineInputSource, StringSource},
     txt::TextSource,
-    Interpreter,
+    Interpreter, RunMode,
 };
 
 pub(crate) fn file(opts: Opts, prg: impl AsRef<Path>) -> Result {
@@ -26,7 +26,7 @@ pub(crate) fn stdin(opts: Opts) -> Result {
     run(opts, stdin_source())
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Default)]
 pub(crate) struct Opts {
     pub(crate) ast_output: bool,
     pub(crate) token_output: bool,
@@ -39,10 +39,24 @@ impl Opts {
             token_output: args.tokens,
         }
     }
+
+    pub(crate) fn mode(&self) -> RunMode {
+        if self.token_output {
+            if self.ast_output {
+                RunMode::TokenTree
+            } else {
+                RunMode::Tokenize
+            }
+        } else if self.ast_output {
+            RunMode::SyntaxTree
+        } else {
+            RunMode::Evaluate
+        }
+    }
 }
 
 fn run(opts: Opts, mut src: impl TextSource) -> Result {
-    let mut runtime = Interpreter::new(opts.token_output, opts.ast_output);
+    let mut runtime = Interpreter::new(opts.mode());
     let result = runtime.run(&mut src);
     print_result(&result);
     result?;
