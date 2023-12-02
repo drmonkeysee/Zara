@@ -1,7 +1,7 @@
 mod expr;
 
 use self::expr::ExpressionError;
-pub use self::expr::{Datum, Expression};
+pub(crate) use self::expr::{Datum, Expression};
 use crate::lex::{Token, TokenKind, TokenLine};
 use std::{
     error::Error,
@@ -9,7 +9,7 @@ use std::{
 };
 
 #[derive(Debug)]
-pub struct ParserError(Vec<ExpressionError>);
+pub(crate) struct ParserError(Vec<ExpressionError>);
 
 impl Display for ParserError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {

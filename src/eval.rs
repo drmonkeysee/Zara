@@ -56,7 +56,7 @@ impl Display for EvaluationMessage<'_> {
 }
 
 #[derive(Debug)]
-pub struct EvalError;
+pub(crate) struct EvalError;
 
 impl Display for EvalError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {

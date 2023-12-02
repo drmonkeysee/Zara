@@ -9,7 +9,7 @@ use std::{
 };
 
 #[derive(Debug)]
-pub enum Expression {
+pub(crate) enum Expression {
     Ast(Box<Expression>),
     Begin(Vec<Expression>),
     Empty,
@@ -18,13 +18,11 @@ pub enum Expression {
 }
 
 impl Expression {
-    #[must_use]
-    pub fn has_value(&self) -> bool {
+    pub(crate) fn has_value(&self) -> bool {
         !matches!(self, Self::Empty)
     }
 
-    #[must_use]
-    pub fn as_datum(&self) -> Datum {
+    pub(crate) fn as_datum(&self) -> Datum {
         Datum(self)
     }
 
@@ -33,7 +31,7 @@ impl Expression {
     }
 }
 
-pub struct Datum<'a>(&'a Expression);
+pub(crate) struct Datum<'a>(&'a Expression);
 
 impl Display for Datum<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
