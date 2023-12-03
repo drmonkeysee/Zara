@@ -20,9 +20,9 @@ impl Repl {
     pub(crate) fn new(mode: RunMode) -> Result<Self> {
         Ok(Self {
             editor: DefaultEditor::new()?,
-            runtime: Interpreter::new(mode),
             prompt: INPUT,
             running: true,
+            runtime: Interpreter::new(mode),
             src: ReplSource::new(),
         })
     }
