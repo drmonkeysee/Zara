@@ -145,7 +145,7 @@ impl Args {
             VERSION_SHORT | VERSION_LONG => self.ver = true,
             STDIN_SHORT => self.input = Input::Stdin,
             AST_TOKEN_SHORT | TOKEN_AST_SHORT => {
-                self.mode += RunMode::SyntaxTree + RunMode::Tokenize
+                self.mode += RunMode::SyntaxTree + RunMode::Tokenize;
             }
             _ if self.expecting_file_path() => {
                 let mut p = PathBuf::new();

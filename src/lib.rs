@@ -43,7 +43,7 @@ impl Add for RunMode {
 
 impl AddAssign for RunMode {
     fn add_assign(&mut self, rhs: Self) {
-        *self = *self + rhs
+        *self = *self + rhs;
     }
 }
 
