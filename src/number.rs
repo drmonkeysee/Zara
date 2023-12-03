@@ -87,9 +87,9 @@ impl Display for Integer {
         write!(
             f,
             "{}{}",
-            self.sign.to_string(),
+            self.sign,
             match self.precision {
-                Precision::Single(u) => u.to_string(),
+                Precision::Single(u) => u,
                 Precision::Multiple(_) => todo!(),
             }
         )
