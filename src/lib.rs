@@ -24,7 +24,7 @@ use std::{
 
 pub type Result = result::Result<Evaluation, Error>;
 
-#[derive(Clone, Copy, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub enum RunMode {
     #[default]
     Evaluate,

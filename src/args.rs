@@ -87,7 +87,7 @@ pub(crate) fn version() {
     }
 }
 
-#[derive(Clone, Copy, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub(crate) enum Cmd {
     Help,
     #[default]
