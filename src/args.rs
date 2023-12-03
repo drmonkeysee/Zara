@@ -1,4 +1,5 @@
 use std::path::PathBuf;
+use zara::RunMode;
 
 const ARGS_PREFIX: &str = "--";
 const AST_SHORT: &str = "-S";
@@ -97,13 +98,12 @@ pub(crate) enum Input {
 
 #[derive(Debug, Default)]
 pub(crate) struct Args {
-    pub(crate) ast: bool,
     pub(crate) input: Input,
     pub(crate) help: bool,
     pub(crate) me: String,
+    pub(crate) mode: RunMode,
     pub(crate) runargs: Vec<String>,
     pub(crate) runargs_prefix: bool,
-    pub(crate) tokens: bool,
     pub(crate) ver: bool,
 }
 
@@ -139,14 +139,13 @@ impl Args {
     fn match_command_arg(&mut self, arg: String) {
         match arg.as_str() {
             ARGS_PREFIX => self.runargs_prefix = true,
-            AST_SHORT | AST_LONG => self.ast = true,
+            AST_SHORT | AST_LONG => self.mode += RunMode::SyntaxTree,
             HELP_SHORT | HELP_LONG => self.help = true,
-            TOKEN_SHORT | TOKEN_LONG => self.tokens = true,
+            TOKEN_SHORT | TOKEN_LONG => self.mode += RunMode::Tokenize,
             VERSION_SHORT | VERSION_LONG => self.ver = true,
             STDIN_SHORT => self.input = Input::Stdin,
             AST_TOKEN_SHORT | TOKEN_AST_SHORT => {
-                self.ast = true;
-                self.tokens = true;
+                self.mode += RunMode::SyntaxTree + RunMode::Tokenize
             }
             _ if self.expecting_file_path() => {
                 let mut p = PathBuf::new();
@@ -179,13 +178,12 @@ mod tests {
         assert!(matches!(
             result,
             Args {
-                ast: false,
                 input: Input::Repl,
                 help: false,
                 me,
+                mode: RunMode::Evaluate,
                 runargs,
                 runargs_prefix: false,
-                tokens: false,
                 ver: false,
             } if me == "zara" && runargs.len() == 0
         ));
@@ -200,13 +198,12 @@ mod tests {
         assert!(matches!(
             result,
             Args {
-                ast: false,
                 input: Input::Repl,
                 help: false,
                 me,
+                mode: RunMode::Evaluate,
                 runargs,
                 runargs_prefix: false,
-                tokens: false,
                 ver: false,
             } if me == "foo/me" && runargs.len() == 0
         ));
@@ -221,13 +218,12 @@ mod tests {
         assert!(matches!(
             result,
             Args {
-                ast: false,
                 input: Input::Repl,
                 help: false,
                 me,
+                mode: RunMode::Evaluate,
                 runargs: _,
                 runargs_prefix: true,
-                tokens: false,
                 ver: false,
             } if me == "foo/me"
         ));
@@ -246,13 +242,12 @@ mod tests {
                 matches!(
                     result,
                     Args {
-                        ast: false,
                         input: Input::Repl,
                         help: true,
                         me,
+                        mode: RunMode::Evaluate,
                         runargs: _,
                         runargs_prefix: false,
-                        tokens: false,
                         ver: false,
                     } if me == program
                 ),
@@ -271,13 +266,12 @@ mod tests {
         assert!(matches!(
             result,
             Args {
-                ast: false,
                 input: Input::Stdin,
                 help: false,
                 me: _,
+                mode: RunMode::Evaluate,
                 runargs: _,
                 runargs_prefix: false,
-                tokens: false,
                 ver: false,
             },
         ));
@@ -293,13 +287,12 @@ mod tests {
         assert!(matches!(
             result,
             Args {
-                ast: false,
                 input: Input::Prg(s),
                 help: false,
                 me: _,
+                mode: RunMode::Evaluate,
                 runargs: _,
                 runargs_prefix: false,
-                tokens: false,
                 ver: false,
             } if s == input,
         ));
@@ -314,13 +307,12 @@ mod tests {
         assert!(matches!(
             result,
             Args {
-                ast: false,
                 input: Input::Stdin,
                 help: false,
                 me: _,
+                mode: RunMode::Evaluate,
                 runargs: _,
                 runargs_prefix: true,
-                tokens: false,
                 ver: false,
             },
         ));
@@ -337,13 +329,12 @@ mod tests {
         assert!(matches!(
             result,
             Args {
-                ast: false,
                 input: Input::Prg(s),
                 help: false,
                 me: _,
+                mode: RunMode::Evaluate,
                 runargs: _,
                 runargs_prefix: false,
-                tokens: false,
                 ver: false,
             } if s == input,
         ));
@@ -361,13 +352,12 @@ mod tests {
                 matches!(
                     result,
                     Args {
-                        ast: true,
                         input: Input::Repl,
                         help: false,
                         me: _,
+                        mode: RunMode::SyntaxTree,
                         runargs: _,
                         runargs_prefix: false,
-                        tokens: false,
                         ver: false,
                     }
                 ),
@@ -388,13 +378,12 @@ mod tests {
                 matches!(
                     result,
                     Args {
-                        ast: false,
                         input: Input::Repl,
                         help: false,
                         me: _,
+                        mode: RunMode::Tokenize,
                         runargs: _,
                         runargs_prefix: false,
-                        tokens: true,
                         ver: false,
                     }
                 ),
@@ -415,13 +404,12 @@ mod tests {
                 matches!(
                     result,
                     Args {
-                        ast: true,
                         input: Input::Repl,
                         help: false,
                         me: _,
+                        mode: RunMode::TokenTree,
                         runargs: _,
                         runargs_prefix: false,
-                        tokens: true,
                         ver: false,
                     }
                 ),
@@ -442,13 +430,12 @@ mod tests {
                 matches!(
                     result,
                     Args {
-                        ast: false,
                         input: Input::Repl,
                         help: false,
                         me: _,
+                        mode: RunMode::Evaluate,
                         runargs: _,
                         runargs_prefix: false,
-                        tokens: false,
                         ver: true,
                     }
                 ),
@@ -467,13 +454,12 @@ mod tests {
         assert!(matches!(
             result,
             Args {
-                ast: false,
                 input: Input::File(p),
                 help: false,
                 me: _,
+                mode: RunMode::Evaluate,
                 runargs: _,
                 runargs_prefix: false,
-                tokens: false,
                 ver: false,
             } if p.to_str().unwrap() == "my/file"
         ));
@@ -488,13 +474,12 @@ mod tests {
         assert!(matches!(
             result,
             Args {
-                ast: false,
                 input: Input::File(p),
                 help: false,
                 me: _,
+                mode: RunMode::Evaluate,
                 runargs: _,
                 runargs_prefix: false,
-                tokens: false,
                 ver: false,
             } if p.to_str().unwrap() == "my/file"
         ));
@@ -510,13 +495,12 @@ mod tests {
         assert!(matches!(
             result,
             Args {
-                ast: false,
                 input: Input::File(p),
                 help: false,
                 me,
+                mode: RunMode::Evaluate,
                 runargs: _,
                 runargs_prefix: false,
-                tokens: false,
                 ver: false,
             } if me == "foo/me" && p.to_str().unwrap() == "my/file"
         ));
@@ -532,13 +516,12 @@ mod tests {
         assert!(matches!(
             result,
             Args {
-                ast: false,
                 input: Input::Repl,
                 help: false,
                 me,
+                mode: RunMode::Evaluate,
                 runargs: _,
                 runargs_prefix: true,
-                tokens: false,
                 ver: false,
             } if me == "foo/me"
         ));

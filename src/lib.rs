@@ -18,16 +18,44 @@ use self::{
 use std::{
     error,
     fmt::{self, Display, Formatter},
+    ops::{Add, AddAssign},
     result,
 };
 
 pub type Result = result::Result<Evaluation, Error>;
 
+#[derive(Clone, Copy, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
 pub enum RunMode {
+    #[default]
     Evaluate,
     SyntaxTree,
     Tokenize,
     TokenTree,
+}
+
+impl Add for RunMode {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        (self as isize + rhs as isize).into()
+    }
+}
+
+impl AddAssign for RunMode {
+    fn add_assign(&mut self, rhs: Self) {
+        *self = *self + rhs
+    }
+}
+
+impl From<isize> for RunMode {
+    fn from(value: isize) -> Self {
+        match value {
+            0 => Self::Evaluate,
+            1 => Self::SyntaxTree,
+            2 => Self::Tokenize,
+            _ => Self::TokenTree,
+        }
+    }
 }
 
 pub struct Interpreter {
@@ -181,6 +209,55 @@ fn resolve_executor(mode: RunMode) -> Box<dyn Executor> {
                     parser,
                 })
             }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    mod runmode {
+        use super::*;
+
+        #[test]
+        fn default() {
+            let m: RunMode = Default::default();
+
+            assert_eq!(m, RunMode::Evaluate);
+        }
+
+        #[test]
+        fn addition() {
+            let m = RunMode::Evaluate + RunMode::Tokenize;
+
+            assert_eq!(m, RunMode::Tokenize);
+        }
+
+        #[test]
+        fn addassign() {
+            let mut m: RunMode = Default::default();
+
+            m += RunMode::SyntaxTree;
+
+            assert_eq!(m, RunMode::SyntaxTree);
+        }
+
+        #[test]
+        fn combine_modes() {
+            let mut m: RunMode = Default::default();
+
+            m += RunMode::SyntaxTree + RunMode::Tokenize;
+
+            assert_eq!(m, RunMode::TokenTree);
+        }
+
+        #[test]
+        fn max_out() {
+            let m =
+                RunMode::Evaluate + RunMode::SyntaxTree + RunMode::Tokenize + RunMode::TokenTree;
+
+            assert_eq!(m, RunMode::TokenTree);
         }
     }
 }

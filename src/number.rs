@@ -136,7 +136,7 @@ enum Precision {
 
 // NOTE: enum expression of the signum function
 // TODO: do i need all these derives?
-#[derive(Debug, Eq, Ord, PartialEq, PartialOrd)]
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
 enum Sign {
     Negative = -1,
     Zero,

@@ -1,4 +1,4 @@
-use crate::{args::Args, cli::Result, repl::Repl};
+use crate::{cli::Result, repl::Repl};
 use std::{
     io::{self, IsTerminal, Stdin},
     path::Path,
@@ -9,54 +9,25 @@ use zara::{
     Interpreter, RunMode,
 };
 
-pub(crate) fn file(opts: Opts, prg: impl AsRef<Path>) -> Result {
-    run(opts, FileSource::file(prg)?)
+pub(crate) fn file(mode: RunMode, prg: impl AsRef<Path>) -> Result {
+    run(mode, FileSource::file(prg)?)
 }
 
-pub(crate) fn prg(opts: Opts, prg: String) -> Result {
-    run(opts, StringSource::new(prg, "<stdin prg>"))
+pub(crate) fn prg(mode: RunMode, prg: String) -> Result {
+    run(mode, StringSource::new(prg, "<stdin prg>"))
 }
 
-pub(crate) fn repl(opts: Opts) -> Result {
-    let mut r = Repl::new(opts)?;
+pub(crate) fn repl(mode: RunMode) -> Result {
+    let mut r = Repl::new(mode)?;
     Ok(r.run()?)
 }
 
-pub(crate) fn stdin(opts: Opts) -> Result {
-    run(opts, stdin_source())
+pub(crate) fn stdin(mode: RunMode) -> Result {
+    run(mode, stdin_source())
 }
 
-#[derive(Clone, Copy, Debug, Default)]
-pub(crate) struct Opts {
-    pub(crate) ast_output: bool,
-    pub(crate) token_output: bool,
-}
-
-impl Opts {
-    pub(crate) fn with_args(args: &Args) -> Self {
-        Self {
-            ast_output: args.ast,
-            token_output: args.tokens,
-        }
-    }
-
-    pub(crate) fn mode(&self) -> RunMode {
-        if self.token_output {
-            if self.ast_output {
-                RunMode::TokenTree
-            } else {
-                RunMode::Tokenize
-            }
-        } else if self.ast_output {
-            RunMode::SyntaxTree
-        } else {
-            RunMode::Evaluate
-        }
-    }
-}
-
-fn run(opts: Opts, mut src: impl TextSource) -> Result {
-    let mut runtime = Interpreter::new(opts.mode());
+fn run(mode: RunMode, mut src: impl TextSource) -> Result {
+    let mut runtime = Interpreter::new(mode);
     let result = runtime.run(&mut src);
     print_result(&result);
     result?;
@@ -89,25 +60,6 @@ fn stdin_source() -> LineInputSource<StdinAdapter> {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn create_opts_from_args() {
-        let args = Args {
-            ast: true,
-            tokens: true,
-            ..Default::default()
-        };
-
-        let target = Opts::with_args(&args);
-
-        assert!(matches!(
-            target,
-            Opts {
-                ast_output: true,
-                token_output: true,
-            }
-        ));
-    }
 
     #[test]
     fn is_stdin_tty() {

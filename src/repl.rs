@@ -1,9 +1,8 @@
-use crate::run::Opts;
 use rustyline::{DefaultEditor, Result};
 use std::rc::Rc;
 use zara::{
     txt::{LineNumber, TextContext, TextLine, TextResult, TextSource},
-    Error, Evaluation, Expr, Interpreter,
+    Error, Evaluation, Expr, Interpreter, RunMode,
 };
 
 const INPUT: &str = "λ:> ";
@@ -18,10 +17,10 @@ pub(crate) struct Repl {
 }
 
 impl Repl {
-    pub(crate) fn new(opts: Opts) -> Result<Self> {
+    pub(crate) fn new(mode: RunMode) -> Result<Self> {
         Ok(Self {
             editor: DefaultEditor::new()?,
-            runtime: Interpreter::new(opts.mode()),
+            runtime: Interpreter::new(mode),
             prompt: INPUT,
             running: true,
             src: ReplSource::new(),

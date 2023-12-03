@@ -1,12 +1,11 @@
 mod args;
 mod cli;
-mod cmd;
 mod repl;
 mod run;
 
 use self::{
+    args::{Args, Input},
     cli::{Error, Result},
-    cmd::Cmd,
 };
 use std::{
     env,
@@ -14,8 +13,8 @@ use std::{
 };
 
 fn main() -> Exit {
-    let cmd: Cmd = args::parse(env::args()).into();
-    cmd.execute().into()
+    let args = args::parse(env::args());
+    execute(args).into()
 }
 
 // NOTE: newtype to have more control over exit output rather than the
@@ -32,6 +31,23 @@ impl From<Result> for Exit {
     fn from(value: Result) -> Self {
         Self(value)
     }
+}
+
+fn execute(args: Args) -> Result {
+    eprintln!("Run Args: {:?}", args.runargs);
+    if args.help {
+        args::usage(&args.me);
+    } else if args.ver {
+        args::version();
+    } else {
+        match args.input {
+            Input::File(p) => run::file(args.mode, p)?,
+            Input::Prg(p) => run::prg(args.mode, p)?,
+            Input::Repl => run::repl(args.mode)?,
+            Input::Stdin => run::stdin(args.mode)?,
+        }
+    }
+    Ok(())
 }
 
 fn fail(err: Error) -> ExitCode {
