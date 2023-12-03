@@ -13,7 +13,7 @@ pub(crate) fn file(mode: RunMode, prg: impl AsRef<Path>) -> Result {
     run(mode, FileSource::file(prg)?)
 }
 
-pub(crate) fn prg(mode: RunMode, prg: String) -> Result {
+pub(crate) fn prg(mode: RunMode, prg: impl Into<String>) -> Result {
     run(mode, StringSource::new(prg, "<stdin prg>"))
 }
 

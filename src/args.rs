@@ -24,14 +24,11 @@ const OPT_WIDTH: usize = 14;
 
 pub(crate) fn parse(args: impl IntoIterator<Item = String>) -> Args {
     let mut args = args.into_iter();
-    let mut arg_parse = Args {
+    let parsed = Args {
         me: args.next().unwrap_or(env!("CARGO_PKG_NAME").to_owned()),
         ..Default::default()
     };
-    for arg in args {
-        arg_parse.match_arg(arg);
-    }
-    arg_parse
+    args.fold(parsed, Args::match_arg)
 }
 
 pub(crate) fn usage(me: &str) {
@@ -141,11 +138,11 @@ pub(crate) struct Args {
 }
 
 impl Args {
-    fn match_arg(&mut self, arg: String) {
+    fn match_arg(self, arg: String) -> Self {
         if self.has_run_target() {
-            self.match_target_arg(arg);
+            self.match_target_arg(arg)
         } else {
-            self.match_command_arg(arg);
+            self.match_command_arg(arg)
         }
     }
 
@@ -161,7 +158,7 @@ impl Args {
         matches!(self.input, Input::Repl) && self.runargs.is_none()
     }
 
-    fn match_target_arg(&mut self, arg: String) {
+    fn match_target_arg(mut self, arg: String) -> Self {
         if arg == ARGS_PREFIX {
             self.init_runargs();
         } else if self.expecting_prg_text() {
@@ -169,9 +166,10 @@ impl Args {
         } else {
             self.push_runarg(arg);
         }
+        self
     }
 
-    fn match_command_arg(&mut self, arg: String) {
+    fn match_command_arg(mut self, arg: String) -> Self {
         match arg.as_str() {
             ARGS_PREFIX => self.init_runargs(),
             AST_SHORT | AST_LONG => self.mode += RunMode::SyntaxTree,
@@ -189,6 +187,7 @@ impl Args {
             }
             _ => (),
         }
+        self
     }
 
     fn push_runarg(&mut self, arg: String) {
@@ -231,7 +230,7 @@ mod tests {
     fn empty_args() {
         let args: [String; 0] = [];
 
-        let result = parse(args.into_iter());
+        let result = parse(args);
 
         assert!(matches!(
             result,
