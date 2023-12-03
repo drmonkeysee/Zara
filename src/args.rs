@@ -22,112 +22,6 @@ const VERSION_LONG: &str = "--version";
 const ARG_WIDTH: usize = 16;
 const OPT_WIDTH: usize = 14;
 
-pub(crate) fn parse(args: impl IntoIterator<Item = String>) -> Args {
-    let mut args = args.into_iter();
-    let parsed = Args {
-        me: args.next().unwrap_or(env!("CARGO_PKG_NAME").to_owned()),
-        ..Default::default()
-    };
-    args.fold(parsed, Args::match_arg)
-}
-
-pub(crate) fn usage(me: &str) {
-    println!("---=== {} Usage ===---", app_title());
-    println!("{me} [options...] [command | file | -] [--] [args...]");
-    println!();
-    println!("options");
-    println!(
-        "  {:OPT_WIDTH$}: print abstract syntax tree",
-        format!("{AST_SHORT}, {AST_LONG}")
-    );
-    println!(
-        "  {:OPT_WIDTH$}: print tokenized input",
-        format!("{TOKEN_SHORT}, {TOKEN_LONG}")
-    );
-    println!();
-    println!("commands");
-    println!(
-        "  {:OPT_WIDTH$}: print usage",
-        format!("{HELP_SHORT}, {HELP_LONG}")
-    );
-    println!(
-        "  {:OPT_WIDTH$}: print version",
-        format!("{VERSION_SHORT}, {VERSION_LONG}")
-    );
-    println!("  {LIB_SHORT} [name],");
-    println!(
-        "  {:OPT_WIDTH$}: run program from named library (omit name for usage)",
-        format!("{LIB_LONG} [name]")
-    );
-    println!();
-    println!("{:ARG_WIDTH$}: run program from script file", "file");
-    println!(
-        "{:ARG_WIDTH$}: run program string if provided, otherwise run program from stdin",
-        format!("{STDIN_SHORT} [prg]")
-    );
-    println!("{:ARG_WIDTH$}: launch REPL", "<no target>");
-    println!("{ARGS_PREFIX:ARG_WIDTH$}: disambiguate program args from other inputs,");
-    println!(
-        "{:ARG_WIDTH$}  such as when running from stdin or launching the REPL",
-        ""
-    );
-    println!("{:ARG_WIDTH$}: arguments passed to program", "args");
-}
-
-pub(crate) fn version() {
-    println!(
-        "{} {} ({})",
-        app_title(),
-        env!("CARGO_PKG_VERSION"),
-        env!("ZARA_COMPILER_VERSION")
-    );
-    let deps = env!("ZARA_DEPENDENCIES");
-    if !deps.is_empty() {
-        println!("{}", deps.replace(',', "\n"));
-    }
-}
-
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
-pub(crate) enum Cmd {
-    Help,
-    #[default]
-    Run,
-    Version,
-}
-
-impl Add for Cmd {
-    type Output = Self;
-
-    fn add(self, rhs: Self) -> Self::Output {
-        match self {
-            Self::Help => self,
-            Self::Run => rhs,
-            Self::Version => {
-                if matches!(rhs, Self::Help) {
-                    rhs
-                } else {
-                    self
-                }
-            }
-        }
-    }
-}
-
-impl AddAssign for Cmd {
-    fn add_assign(&mut self, rhs: Self) {
-        *self = *self + rhs;
-    }
-}
-
-#[derive(Debug, Default)]
-pub(crate) enum Input {
-    File(PathBuf),
-    Prg(String),
-    #[default]
-    Repl,
-    Stdin,
-}
-
 #[derive(Debug, Default)]
 pub(crate) struct Args {
     pub(crate) cmd: Cmd,
@@ -138,6 +32,15 @@ pub(crate) struct Args {
 }
 
 impl Args {
+    pub(crate) fn parse(args: impl IntoIterator<Item = String>) -> Self {
+        let mut args = args.into_iter();
+        let this = Self {
+            me: args.next().unwrap_or(env!("CARGO_PKG_NAME").to_owned()),
+            ..Default::default()
+        };
+        args.fold(this, Self::match_arg)
+    }
+
     fn match_arg(self, arg: String) -> Self {
         if self.has_run_target() {
             self.match_target_arg(arg)
@@ -204,6 +107,103 @@ impl Args {
     }
 }
 
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub(crate) enum Cmd {
+    Help,
+    #[default]
+    Run,
+    Version,
+}
+
+impl Add for Cmd {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        match self {
+            Self::Help => self,
+            Self::Run => rhs,
+            Self::Version => {
+                if matches!(rhs, Self::Help) {
+                    rhs
+                } else {
+                    self
+                }
+            }
+        }
+    }
+}
+
+impl AddAssign for Cmd {
+    fn add_assign(&mut self, rhs: Self) {
+        *self = *self + rhs;
+    }
+}
+
+#[derive(Debug, Default)]
+pub(crate) enum Input {
+    File(PathBuf),
+    Prg(String),
+    #[default]
+    Repl,
+    Stdin,
+}
+
+pub(crate) fn usage(me: &str) {
+    println!("---=== {} Usage ===---", app_title());
+    println!("{me} [options...] [command | file | -] [--] [args...]");
+    println!();
+    println!("options");
+    println!(
+        "  {:OPT_WIDTH$}: print abstract syntax tree",
+        format!("{AST_SHORT}, {AST_LONG}")
+    );
+    println!(
+        "  {:OPT_WIDTH$}: print tokenized input",
+        format!("{TOKEN_SHORT}, {TOKEN_LONG}")
+    );
+    println!();
+    println!("commands");
+    println!(
+        "  {:OPT_WIDTH$}: print usage",
+        format!("{HELP_SHORT}, {HELP_LONG}")
+    );
+    println!(
+        "  {:OPT_WIDTH$}: print version",
+        format!("{VERSION_SHORT}, {VERSION_LONG}")
+    );
+    println!("  {LIB_SHORT} [name],");
+    println!(
+        "  {:OPT_WIDTH$}: run program from named library (omit name for usage)",
+        format!("{LIB_LONG} [name]")
+    );
+    println!();
+    println!("{:ARG_WIDTH$}: run program from script file", "file");
+    println!(
+        "{:ARG_WIDTH$}: run program string if provided, otherwise run program from stdin",
+        format!("{STDIN_SHORT} [prg]")
+    );
+    println!("{:ARG_WIDTH$}: launch REPL", "<no target>");
+    println!("{ARGS_PREFIX:ARG_WIDTH$}: disambiguate program args from other inputs,");
+    println!(
+        "{:ARG_WIDTH$}  such as when running from stdin or launching the REPL",
+        ""
+    );
+    println!("{:ARG_WIDTH$}: arguments passed to program", "args");
+}
+
+pub(crate) fn version() {
+    println!(
+        "{} {} ({})",
+        app_title(),
+        env!("CARGO_PKG_VERSION"),
+        env!("ZARA_COMPILER_VERSION")
+    );
+    let deps = env!("ZARA_DEPENDENCIES");
+    if !deps.is_empty() {
+        println!("{}", deps.replace(',', "\n"));
+    }
+}
+
 fn app_title() -> String {
     let mut title = env!("CARGO_PKG_NAME").to_owned();
     if let Some(t) = title.get_mut(0..1) {
@@ -230,7 +230,7 @@ mod tests {
     fn empty_args() {
         let args: [String; 0] = [];
 
-        let result = parse(args);
+        let result = Args::parse(args);
 
         assert!(matches!(
             result,
@@ -248,7 +248,7 @@ mod tests {
     fn just_me() {
         let args = ["foo/me"];
 
-        let result = parse(args.into_iter().map(String::from));
+        let result = Args::parse(args.into_iter().map(String::from));
 
         assert!(matches!(
             result,
@@ -266,7 +266,7 @@ mod tests {
     fn just_me_with_args() {
         let args = ["foo/me", "--", "arg1", "arg2", "--arg3=1"];
 
-        let result = parse(args.into_iter().map(String::from));
+        let result = Args::parse(args.into_iter().map(String::from));
 
         assert!(matches!(
             result,
@@ -287,7 +287,7 @@ mod tests {
         let cases = [[program, "-h"], [program, "--help"]];
 
         for case in cases {
-            let result = parse(case.into_iter().map(String::from));
+            let result = Args::parse(case.into_iter().map(String::from));
 
             assert!(
                 matches!(
@@ -310,7 +310,7 @@ mod tests {
     fn stdin() {
         let args = ["foo/me", "-"];
 
-        let result = parse(args.into_iter().map(String::from));
+        let result = Args::parse(args.into_iter().map(String::from));
 
         assert!(matches!(
             result,
@@ -329,7 +329,7 @@ mod tests {
         let input = "stdin input";
         let args = ["foo/me", "-", input];
 
-        let result = parse(args.into_iter().map(String::from));
+        let result = Args::parse(args.into_iter().map(String::from));
 
         assert!(matches!(
             result,
@@ -347,7 +347,7 @@ mod tests {
     fn stdin_args() {
         let args = ["foo/me", "-", "--", "arg1", "arg2", "--arg3=1"];
 
-        let result = parse(args.into_iter().map(String::from));
+        let result = Args::parse(args.into_iter().map(String::from));
 
         assert!(matches!(
             result,
@@ -367,7 +367,7 @@ mod tests {
         let input = "stdin input";
         let args = ["foo/me", "-", input, "arg1", "arg2", "--arg3=1"];
 
-        let result = parse(args.into_iter().map(String::from));
+        let result = Args::parse(args.into_iter().map(String::from));
 
         assert!(matches!(
             result,
@@ -387,7 +387,7 @@ mod tests {
         let cases = [["foo/me", "-S"], ["foo/me", "--syntax"]];
 
         for case in cases {
-            let result = parse(case.into_iter().map(String::from));
+            let result = Args::parse(case.into_iter().map(String::from));
 
             assert!(
                 matches!(
@@ -411,7 +411,7 @@ mod tests {
         let cases = [["foo/me", "-T"], ["foo/me", "--tokens"]];
 
         for case in cases {
-            let result = parse(case.into_iter().map(String::from));
+            let result = Args::parse(case.into_iter().map(String::from));
 
             assert!(
                 matches!(
@@ -435,7 +435,7 @@ mod tests {
         let cases = [["foo/me", "-ST"], ["foo/me", "-TS"]];
 
         for case in cases {
-            let result = parse(case.into_iter().map(String::from));
+            let result = Args::parse(case.into_iter().map(String::from));
 
             assert!(
                 matches!(
@@ -459,7 +459,7 @@ mod tests {
         let cases = [["foo/me", "-V"], ["foo/me", "--version"]];
 
         for case in cases {
-            let result = parse(case.into_iter().map(String::from));
+            let result = Args::parse(case.into_iter().map(String::from));
 
             assert!(
                 matches!(
@@ -482,7 +482,7 @@ mod tests {
     fn file() {
         let args = ["foo/me", "my/file"];
 
-        let result = parse(args.into_iter().map(String::from));
+        let result = Args::parse(args.into_iter().map(String::from));
 
         assert!(matches!(
             result,
@@ -500,7 +500,7 @@ mod tests {
     fn file_args() {
         let args = ["foo/me", "my/file", "arg1", "arg2", "--arg3=1"];
 
-        let result = parse(args.into_iter().map(String::from));
+        let result = Args::parse(args.into_iter().map(String::from));
 
         assert!(matches!(
             result,
@@ -519,7 +519,7 @@ mod tests {
     fn zara_options_ignored_after_run_target() {
         let args = ["foo/me", "my/file", "--version", "-T", "-ST"];
 
-        let result = parse(args.into_iter().map(String::from));
+        let result = Args::parse(args.into_iter().map(String::from));
 
         assert!(matches!(
             result,
@@ -538,7 +538,7 @@ mod tests {
     fn zara_options_ignored_after_runargs_prefix() {
         let args = ["foo/me", "--", "--version", "-T", "-ST"];
 
-        let result = parse(args.into_iter().map(String::from));
+        let result = Args::parse(args.into_iter().map(String::from));
 
         assert!(matches!(
             result,

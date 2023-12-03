@@ -13,7 +13,7 @@ use std::{
 };
 
 fn main() -> Exit {
-    let args = args::parse(env::args());
+    let args = Args::parse(env::args());
     execute(args).into()
 }
 
