@@ -93,13 +93,9 @@ pub(crate) enum NumericError {
 
 impl Display for NumericError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "<#{}>",
-            match self {
-                Self::DivideByZero => "divide-by-zero",
-            }
-        )
+        match self {
+            Self::DivideByZero => f.write_str("divide by zero"),
+        }
     }
 }
 
@@ -473,7 +469,7 @@ mod tests {
         fn display_div_by_zero() {
             let err = NumericError::DivideByZero;
 
-            assert_eq!(err.to_string(), "<#divide-by-zero>");
+            assert_eq!(err.to_string(), "divide by zero");
         }
     }
 
