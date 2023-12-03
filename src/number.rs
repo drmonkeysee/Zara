@@ -1,6 +1,6 @@
 use std::{
     error::Error,
-    fmt::{self, Display, Formatter},
+    fmt::{self, Display, Formatter, Write},
     result::Result,
 };
 
@@ -46,6 +46,16 @@ pub(crate) enum Real {
     Rational(Rational),
 }
 
+impl Display for Real {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Real::Float(_) => todo!(),
+            Real::Integer(n) => write!(f, "{n}"),
+            Real::Rational(_) => todo!(),
+        }
+    }
+}
+
 impl From<f64> for Real {
     fn from(value: f64) -> Self {
         Self::Float(value)
@@ -70,6 +80,20 @@ impl<T: Into<Integer>> TryFrom<(T, T)> for Real {
 pub(crate) struct Integer {
     precision: Precision,
     sign: Sign,
+}
+
+impl Display for Integer {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}{}",
+            self.sign.to_string(),
+            match self.precision {
+                Precision::Single(u) => u.to_string(),
+                Precision::Multiple(_) => todo!(),
+            }
+        )
+    }
 }
 
 // TODO: handle multi-precision later
@@ -105,7 +129,10 @@ pub(crate) struct Datum<'a>(&'a Number);
 
 impl Display for Datum<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        todo!()
+        match self.0 {
+            Number::Complex(_) => todo!(),
+            Number::Real(r) => write!(f, "{r}"),
+        }
     }
 }
 
@@ -146,6 +173,16 @@ impl Sign {
             // NOTE: *technically* this could be fallible but signum is
             // guaranteed to only return (-1, 0, 1) so this won't actually fail.
             _ => Self::Positive,
+        }
+    }
+}
+
+impl Display for Sign {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        if matches!(self, Sign::Negative) {
+            f.write_char('-')
+        } else {
+            f.write_str("")
         }
     }
 }
@@ -262,14 +299,14 @@ mod tests {
         fn int_max() {
             let n = Number::real(i64::MAX);
 
-            assert_eq!(n.as_datum().to_string(), "");
+            assert_eq!(n.as_datum().to_string(), "9223372036854775807");
         }
 
         #[test]
         fn int_min() {
             let n = Number::real(i64::MIN);
 
-            assert_eq!(n.as_datum().to_string(), "");
+            assert_eq!(n.as_datum().to_string(), "-9223372036854775808");
         }
 
         #[test]
