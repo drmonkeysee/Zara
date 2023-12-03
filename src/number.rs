@@ -181,6 +181,8 @@ impl Display for Sign {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         if matches!(self, Sign::Negative) {
             f.write_char('-')
+        } else if f.sign_plus() {
+            f.write_char('+')
         } else {
             f.write_str("")
         }
