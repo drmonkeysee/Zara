@@ -37,17 +37,15 @@ impl<'a> TokenStream<'a> {
         })
     }
 
-    fn continuation(&mut self, cont: TokenContinuation) -> Option<IterItem<'a>> {
+    fn continuation(&mut self, cont: TokenContinuation) -> IterItem<'a> {
         let start = self.scan.pos();
-        Some(
-            Continuation {
-                cont,
-                scan: &mut self.scan,
-                start,
-            }
-            .extract()
-            .build(),
-        )
+        Continuation {
+            cont,
+            scan: &mut self.scan,
+            start,
+        }
+        .extract()
+        .build()
     }
 }
 
@@ -56,7 +54,7 @@ impl Iterator for TokenStream<'_> {
 
     fn next(&mut self) -> Option<Self::Item> {
         let item = match self.cont.take() {
-            Some(c) => self.continuation(c),
+            Some(c) => Some(self.continuation(c)),
             None => self.token(),
         };
         self.cont = item
@@ -87,16 +85,16 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
             '`' => Ok(TokenKind::Quasiquote),
             '#' => Hashtag { scan: self.scan }.scan(),
             '"' => StringLiteral::new(self.scan).scan(),
-            ';' => self.comment(),
+            ';' => Ok(self.comment()),
             '.' => self.period(),
-            ',' => self.unquote(),
+            ',' => Ok(self.unquote()),
             _ => Identifier::new(self.scan).scan(self.start.1),
         }
     }
 
-    fn comment(&mut self) -> TokenExtractResult {
+    fn comment(&mut self) -> TokenKind {
         self.scan.end_of_line();
-        Ok(TokenKind::Comment)
+        TokenKind::Comment
     }
 
     fn period(&mut self) -> TokenExtractResult {
@@ -107,11 +105,10 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
             })
     }
 
-    fn unquote(&mut self) -> TokenExtractResult {
-        Ok(self
-            .scan
+    fn unquote(&mut self) -> TokenKind {
+        self.scan
             .char_if_eq('@')
-            .map_or(TokenKind::Unquote, |_| TokenKind::UnquoteSplice))
+            .map_or(TokenKind::Unquote, |_| TokenKind::UnquoteSplice)
     }
 }
 

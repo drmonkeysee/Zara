@@ -36,11 +36,11 @@ impl<'me, 'str, P: FreeTextPolicy> FreeText<'me, 'str, P> {
             self.start = idx;
             match ch {
                 '\\' => self.escape()?,
-                _ if ch == P::TERMINATOR => return self.terminated(),
+                _ if ch == P::TERMINATOR => return Ok(self.terminated()),
                 _ => self.buf.push(ch),
             }
         }
-        self.unterminated()
+        Ok(self.unterminated())
     }
 
     fn escape(&mut self) -> FreeTextResult {
@@ -86,14 +86,13 @@ impl<'me, 'str, P: FreeTextPolicy> FreeText<'me, 'str, P> {
         Ok(())
     }
 
-    fn terminated(self) -> TokenExtractResult {
-        Ok(self.policy.terminated(self.buf))
+    fn terminated(self) -> TokenKind {
+        self.policy.terminated(self.buf)
     }
 
-    fn unterminated(self) -> TokenExtractResult {
-        Ok(self
-            .policy
-            .unterminated(self.buf, self.possible_line_cont_idx))
+    fn unterminated(self) -> TokenKind {
+        self.policy
+            .unterminated(self.buf, self.possible_line_cont_idx)
     }
 }
 
