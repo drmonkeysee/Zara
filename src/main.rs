@@ -4,7 +4,7 @@ mod repl;
 mod run;
 
 use self::{
-    args::{Args, Input},
+    args::{Args, Cmd, Input},
     cli::{Error, Result},
 };
 use std::{
@@ -35,17 +35,15 @@ impl From<Result> for Exit {
 
 fn execute(args: Args) -> Result {
     eprintln!("Run Args: {:?}", args.runargs);
-    if args.help {
-        args::usage(&args.me);
-    } else if args.ver {
-        args::version();
-    } else {
-        match args.input {
+    match args.cmd {
+        Cmd::Help => args::usage(&args.me),
+        Cmd::Run => match args.input {
             Input::File(p) => run::file(args.mode, p)?,
             Input::Prg(p) => run::prg(args.mode, p)?,
             Input::Repl => run::repl(args.mode)?,
             Input::Stdin => run::stdin(args.mode)?,
-        }
+        },
+        Cmd::Version => args::version(),
     }
     Ok(())
 }

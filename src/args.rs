@@ -1,4 +1,7 @@
-use std::path::PathBuf;
+use std::{
+    ops::{Add, AddAssign},
+    path::PathBuf,
+};
 use zara::RunMode;
 
 const ARGS_PREFIX: &str = "--";
@@ -87,6 +90,38 @@ pub(crate) fn version() {
     }
 }
 
+#[derive(Clone, Copy, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
+pub(crate) enum Cmd {
+    Help,
+    #[default]
+    Run,
+    Version,
+}
+
+impl Add for Cmd {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        match self {
+            Self::Help => self,
+            Self::Run => rhs,
+            Self::Version => {
+                if matches!(rhs, Self::Help) {
+                    rhs
+                } else {
+                    self
+                }
+            }
+        }
+    }
+}
+
+impl AddAssign for Cmd {
+    fn add_assign(&mut self, rhs: Self) {
+        *self = *self + rhs;
+    }
+}
+
 #[derive(Debug, Default)]
 pub(crate) enum Input {
     File(PathBuf),
@@ -98,13 +133,11 @@ pub(crate) enum Input {
 
 #[derive(Debug, Default)]
 pub(crate) struct Args {
+    pub(crate) cmd: Cmd,
     pub(crate) input: Input,
-    pub(crate) help: bool,
     pub(crate) me: String,
     pub(crate) mode: RunMode,
-    pub(crate) runargs: Vec<String>,
-    pub(crate) runargs_prefix: bool,
-    pub(crate) ver: bool,
+    pub(crate) runargs: Option<Vec<String>>,
 }
 
 impl Args {
@@ -117,32 +150,34 @@ impl Args {
     }
 
     fn has_run_target(&self) -> bool {
-        !matches!(self.input, Input::Repl) || self.runargs_prefix
+        !matches!(self.input, Input::Repl) || self.runargs.is_some()
     }
 
     fn expecting_prg_text(&self) -> bool {
-        matches!(self.input, Input::Stdin) && !self.runargs_prefix
+        matches!(self.input, Input::Stdin) && self.runargs.is_none()
     }
 
     fn expecting_file_path(&self) -> bool {
-        matches!(self.input, Input::Repl) && !self.runargs_prefix
+        matches!(self.input, Input::Repl) && self.runargs.is_none()
     }
 
     fn match_target_arg(&mut self, arg: String) {
-        match arg.as_str() {
-            ARGS_PREFIX => self.runargs_prefix = true,
-            _ if self.expecting_prg_text() => self.input = Input::Prg(arg),
-            _ => self.runargs.push(arg),
+        if arg == ARGS_PREFIX {
+            self.init_runargs();
+        } else if self.expecting_prg_text() {
+            self.input = Input::Prg(arg);
+        } else {
+            self.push_runarg(arg);
         }
     }
 
     fn match_command_arg(&mut self, arg: String) {
         match arg.as_str() {
-            ARGS_PREFIX => self.runargs_prefix = true,
+            ARGS_PREFIX => self.init_runargs(),
             AST_SHORT | AST_LONG => self.mode += RunMode::SyntaxTree,
-            HELP_SHORT | HELP_LONG => self.help = true,
+            HELP_SHORT | HELP_LONG => self.cmd += Cmd::Help,
             TOKEN_SHORT | TOKEN_LONG => self.mode += RunMode::Tokenize,
-            VERSION_SHORT | VERSION_LONG => self.ver = true,
+            VERSION_SHORT | VERSION_LONG => self.cmd += Cmd::Version,
             STDIN_SHORT => self.input = Input::Stdin,
             AST_TOKEN_SHORT | TOKEN_AST_SHORT => {
                 self.mode += RunMode::SyntaxTree + RunMode::Tokenize;
@@ -154,6 +189,19 @@ impl Args {
             }
             _ => (),
         }
+    }
+
+    fn push_runarg(&mut self, arg: String) {
+        if let Some(ra) = self.runargs.as_mut() {
+            ra.push(arg);
+        } else {
+            self.init_runargs();
+            self.push_runarg(arg);
+        }
+    }
+
+    fn init_runargs(&mut self) {
+        self.runargs = Some(Vec::new());
     }
 }
 
@@ -170,6 +218,16 @@ mod tests {
     use super::*;
 
     #[test]
+    fn cmd_ordering() {
+        let c: Cmd = Default::default();
+
+        assert_eq!(c, Cmd::Run);
+        assert_eq!(c + Cmd::Version, Cmd::Version);
+        assert_eq!(c + Cmd::Help, Cmd::Help);
+        assert_eq!(c + Cmd::Help + Cmd::Version, Cmd::Help);
+    }
+
+    #[test]
     fn empty_args() {
         let args: [String; 0] = [];
 
@@ -178,14 +236,12 @@ mod tests {
         assert!(matches!(
             result,
             Args {
+                cmd: Cmd::Run,
                 input: Input::Repl,
-                help: false,
                 me,
                 mode: RunMode::Evaluate,
-                runargs,
-                runargs_prefix: false,
-                ver: false,
-            } if me == "zara" && runargs.len() == 0
+                runargs: None,
+            } if me == "zara"
         ));
     }
 
@@ -198,14 +254,12 @@ mod tests {
         assert!(matches!(
             result,
             Args {
+                cmd: Cmd::Run,
                 input: Input::Repl,
-                help: false,
                 me,
                 mode: RunMode::Evaluate,
-                runargs,
-                runargs_prefix: false,
-                ver: false,
-            } if me == "foo/me" && runargs.len() == 0
+                runargs: None,
+            } if me == "foo/me"
         ));
     }
 
@@ -218,16 +272,14 @@ mod tests {
         assert!(matches!(
             result,
             Args {
+                cmd: Cmd::Run,
                 input: Input::Repl,
-                help: false,
                 me,
                 mode: RunMode::Evaluate,
-                runargs: _,
-                runargs_prefix: true,
-                ver: false,
+                runargs: Some(_),
             } if me == "foo/me"
         ));
-        assert_eq!(result.runargs, ["arg1", "arg2", "--arg3=1"]);
+        assert_eq!(result.runargs.unwrap(), ["arg1", "arg2", "--arg3=1"]);
     }
 
     #[test]
@@ -242,13 +294,11 @@ mod tests {
                 matches!(
                     result,
                     Args {
+                        cmd: Cmd::Help,
                         input: Input::Repl,
-                        help: true,
                         me,
                         mode: RunMode::Evaluate,
-                        runargs: _,
-                        runargs_prefix: false,
-                        ver: false,
+                        runargs: None,
                     } if me == program
                 ),
                 "Unexpected match for argument {}",
@@ -266,13 +316,11 @@ mod tests {
         assert!(matches!(
             result,
             Args {
+                cmd: Cmd::Run,
                 input: Input::Stdin,
-                help: false,
                 me: _,
                 mode: RunMode::Evaluate,
-                runargs: _,
-                runargs_prefix: false,
-                ver: false,
+                runargs: None,
             },
         ));
     }
@@ -287,13 +335,11 @@ mod tests {
         assert!(matches!(
             result,
             Args {
+                cmd: Cmd::Run,
                 input: Input::Prg(s),
-                help: false,
                 me: _,
                 mode: RunMode::Evaluate,
-                runargs: _,
-                runargs_prefix: false,
-                ver: false,
+                runargs: None,
             } if s == input,
         ));
     }
@@ -307,16 +353,14 @@ mod tests {
         assert!(matches!(
             result,
             Args {
+                cmd: Cmd::Run,
                 input: Input::Stdin,
-                help: false,
                 me: _,
                 mode: RunMode::Evaluate,
-                runargs: _,
-                runargs_prefix: true,
-                ver: false,
+                runargs: Some(_),
             },
         ));
-        assert_eq!(result.runargs, ["arg1", "arg2", "--arg3=1"]);
+        assert_eq!(result.runargs.unwrap(), ["arg1", "arg2", "--arg3=1"]);
     }
 
     #[test]
@@ -329,16 +373,14 @@ mod tests {
         assert!(matches!(
             result,
             Args {
+                cmd: Cmd::Run,
                 input: Input::Prg(s),
-                help: false,
                 me: _,
                 mode: RunMode::Evaluate,
-                runargs: _,
-                runargs_prefix: false,
-                ver: false,
+                runargs: Some(_),
             } if s == input,
         ));
-        assert_eq!(result.runargs, ["arg1", "arg2", "--arg3=1"]);
+        assert_eq!(result.runargs.unwrap(), ["arg1", "arg2", "--arg3=1"]);
     }
 
     #[test]
@@ -352,13 +394,11 @@ mod tests {
                 matches!(
                     result,
                     Args {
+                        cmd: Cmd::Run,
                         input: Input::Repl,
-                        help: false,
                         me: _,
                         mode: RunMode::SyntaxTree,
-                        runargs: _,
-                        runargs_prefix: false,
-                        ver: false,
+                        runargs: None,
                     }
                 ),
                 "Unexpected match for argument {}",
@@ -378,13 +418,11 @@ mod tests {
                 matches!(
                     result,
                     Args {
+                        cmd: Cmd::Run,
                         input: Input::Repl,
-                        help: false,
                         me: _,
                         mode: RunMode::Tokenize,
-                        runargs: _,
-                        runargs_prefix: false,
-                        ver: false,
+                        runargs: None,
                     }
                 ),
                 "Unexpected match for argument {}",
@@ -404,13 +442,11 @@ mod tests {
                 matches!(
                     result,
                     Args {
+                        cmd: Cmd::Run,
                         input: Input::Repl,
-                        help: false,
                         me: _,
                         mode: RunMode::TokenTree,
-                        runargs: _,
-                        runargs_prefix: false,
-                        ver: false,
+                        runargs: None,
                     }
                 ),
                 "Unexpected match for argument {}",
@@ -430,13 +466,11 @@ mod tests {
                 matches!(
                     result,
                     Args {
+                        cmd: Cmd::Version,
                         input: Input::Repl,
-                        help: false,
                         me: _,
                         mode: RunMode::Evaluate,
-                        runargs: _,
-                        runargs_prefix: false,
-                        ver: true,
+                        runargs: None,
                     }
                 ),
                 "Unexpected match for argument {}",
@@ -454,13 +488,11 @@ mod tests {
         assert!(matches!(
             result,
             Args {
+                cmd: Cmd::Run,
                 input: Input::File(p),
-                help: false,
                 me: _,
                 mode: RunMode::Evaluate,
-                runargs: _,
-                runargs_prefix: false,
-                ver: false,
+                runargs: None,
             } if p.to_str().unwrap() == "my/file"
         ));
     }
@@ -474,16 +506,14 @@ mod tests {
         assert!(matches!(
             result,
             Args {
+                cmd: Cmd::Run,
                 input: Input::File(p),
-                help: false,
                 me: _,
                 mode: RunMode::Evaluate,
-                runargs: _,
-                runargs_prefix: false,
-                ver: false,
+                runargs: Some(_),
             } if p.to_str().unwrap() == "my/file"
         ));
-        assert_eq!(result.runargs, ["arg1", "arg2", "--arg3=1"]);
+        assert_eq!(result.runargs.unwrap(), ["arg1", "arg2", "--arg3=1"]);
     }
 
     #[test]
@@ -495,16 +525,14 @@ mod tests {
         assert!(matches!(
             result,
             Args {
+                cmd: Cmd::Run,
                 input: Input::File(p),
-                help: false,
                 me,
                 mode: RunMode::Evaluate,
-                runargs: _,
-                runargs_prefix: false,
-                ver: false,
+                runargs: Some(_),
             } if me == "foo/me" && p.to_str().unwrap() == "my/file"
         ));
-        assert_eq!(result.runargs, ["--version", "-T", "-ST"]);
+        assert_eq!(result.runargs.unwrap(), ["--version", "-T", "-ST"]);
     }
 
     #[test]
@@ -516,15 +544,13 @@ mod tests {
         assert!(matches!(
             result,
             Args {
+                cmd: Cmd::Run,
                 input: Input::Repl,
-                help: false,
                 me,
                 mode: RunMode::Evaluate,
-                runargs: _,
-                runargs_prefix: true,
-                ver: false,
+                runargs: Some(_),
             } if me == "foo/me"
         ));
-        assert_eq!(result.runargs, ["--version", "-T", "-ST"]);
+        assert_eq!(result.runargs.unwrap(), ["--version", "-T", "-ST"]);
     }
 }
