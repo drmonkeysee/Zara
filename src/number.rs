@@ -44,6 +44,30 @@ pub(crate) enum Real {
     Rational(Rational),
 }
 
+impl Real {
+    fn reduce(
+        numerator: impl Into<Integer>,
+        denominator: impl Into<Integer>,
+    ) -> Result<Self, NumericError> {
+        let mut d: Integer = denominator.into();
+        if d.is_zero() {
+            return Err(NumericError::DivideByZero);
+        }
+        let mut n: Integer = numerator.into();
+        if n.is_zero() {
+            return Ok(Self::Integer(n));
+        }
+        if n.sign == d.sign {
+            n.make_positive();
+            d.make_positive();
+        } else {
+            n.make_negative();
+            d.make_positive();
+        }
+        Ok(Self::Rational(Rational((n, d).into())))
+    }
+}
+
 impl Display for Real {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
@@ -71,7 +95,7 @@ impl<N: Into<Integer>, D: Into<Integer>> TryFrom<(N, D)> for Real {
 
     fn try_from(value: (N, D)) -> Result<Self, Self::Error> {
         let (numerator, denominator) = value;
-        Ok(Self::Rational(Rational::new(numerator, denominator)?))
+        Ok(Self::reduce(numerator, denominator)?)
     }
 }
 
@@ -126,27 +150,6 @@ impl From<i64> for Integer {
 // NOTE: Boxed to keep struct size down
 #[derive(Debug)]
 pub(crate) struct Rational(Box<(Integer, Integer)>);
-
-impl Rational {
-    fn new(
-        numerator: impl Into<Integer>,
-        denominator: impl Into<Integer>,
-    ) -> Result<Self, NumericError> {
-        let mut d: Integer = denominator.into();
-        if d.is_zero() {
-            return Err(NumericError::DivideByZero);
-        }
-        let mut n: Integer = numerator.into();
-        if n.sign == d.sign {
-            n.make_positive();
-            d.make_positive();
-        } else {
-            n.make_negative();
-            d.make_positive();
-        }
-        Ok(Self((n, d).into()))
-    }
-}
 
 #[derive(Debug)]
 pub(crate) enum NumericError {
