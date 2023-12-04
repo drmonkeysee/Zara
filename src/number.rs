@@ -81,6 +81,24 @@ pub(crate) struct Integer {
     sign: Sign,
 }
 
+impl Integer {
+    fn is_zero(&self) -> bool {
+        self.sign == Sign::Zero
+    }
+
+    fn make_positive(&mut self) {
+        if self.sign == Sign::Negative {
+            self.sign = Sign::Positive;
+        }
+    }
+
+    fn make_negative(&mut self) {
+        if self.sign == Sign::Positive {
+            self.sign = Sign::Negative;
+        }
+    }
+}
+
 impl Display for Integer {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(
@@ -114,7 +132,19 @@ impl Rational {
         numerator: impl Into<Integer>,
         denominator: impl Into<Integer>,
     ) -> Result<Self, NumericError> {
-        todo!();
+        let mut d: Integer = denominator.into();
+        if d.is_zero() {
+            return Err(NumericError::DivideByZero);
+        }
+        let mut n: Integer = numerator.into();
+        if n.sign == d.sign {
+            n.make_positive();
+            d.make_positive();
+        } else {
+            n.make_negative();
+            d.make_positive();
+        }
+        Ok(Self((n, d).into()))
     }
 }
 
@@ -162,7 +192,7 @@ impl Display for TokenDescriptor<'_> {
 #[derive(Debug)]
 enum Precision {
     Single(u64),
-    Multiple(Vec<u64>), // TODO: can this be Box<[u64]
+    Multiple(Vec<u64>), // TODO: can this be Box<[u64]>
 }
 
 // NOTE: enum expression of the signum function
@@ -187,7 +217,7 @@ impl Sign {
 
 impl Display for Sign {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        if matches!(self, Sign::Negative) {
+        if *self == Sign::Negative {
             f.write_char('-')
         } else if f.sign_plus() {
             f.write_char('+')
