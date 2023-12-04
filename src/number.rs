@@ -25,9 +25,7 @@ impl Number {
         numerator: impl Into<Integer>,
         denominator: impl Into<Integer>,
     ) -> Result<Self, NumericError> {
-        Ok(Self::Real(
-            (numerator.into(), denominator.into()).try_into()?,
-        ))
+        Ok(Self::Real((numerator, denominator).try_into()?))
     }
 
     pub(crate) fn as_datum(&self) -> Datum {
@@ -68,11 +66,12 @@ impl<T: Into<Integer>> From<T> for Real {
     }
 }
 
-impl<T: Into<Integer>> TryFrom<(T, T)> for Real {
+impl<N: Into<Integer>, D: Into<Integer>> TryFrom<(N, D)> for Real {
     type Error = NumericError;
 
-    fn try_from(value: (T, T)) -> Result<Self, Self::Error> {
-        todo!()
+    fn try_from(value: (N, D)) -> Result<Self, Self::Error> {
+        let (numerator, denominator) = value;
+        Ok(Self::Rational(Rational::new(numerator, denominator)?))
     }
 }
 
@@ -109,6 +108,15 @@ impl From<i64> for Integer {
 // NOTE: Boxed to keep struct size down
 #[derive(Debug)]
 pub(crate) struct Rational(Box<(Integer, Integer)>);
+
+impl Rational {
+    fn new(
+        numerator: impl Into<Integer>,
+        denominator: impl Into<Integer>,
+    ) -> Result<Self, NumericError> {
+        todo!();
+    }
+}
 
 #[derive(Debug)]
 pub(crate) enum NumericError {
