@@ -54,15 +54,15 @@ impl Real {
             return Err(NumericError::DivideByZero);
         }
         let mut n: Integer = numerator.into();
-        if n.is_zero() {
-            return Ok(Self::Integer(n));
-        }
         if n.sign == d.sign {
             n.make_positive();
             d.make_positive();
         } else {
             n.make_negative();
             d.make_positive();
+        }
+        if n.is_zero() || d.is_one() {
+            return Ok(Self::Integer(n));
         }
         Ok(Self::Rational(Rational((n, d).into())))
     }
@@ -108,6 +108,14 @@ pub(crate) struct Integer {
 impl Integer {
     fn is_zero(&self) -> bool {
         self.sign == Sign::Zero
+    }
+
+    fn is_one(&self) -> bool {
+        self.sign == Sign::Positive
+            && match &self.precision {
+                Precision::Single(u) => *u == 1,
+                Precision::Multiple(_) => todo!(),
+            }
     }
 
     fn make_positive(&mut self) {
@@ -608,6 +616,17 @@ mod tests {
                 9223372036854775808
             );
             assert_eq!(int.sign, Sign::Negative);
+        }
+
+        #[test]
+        fn is_one() {
+            let cases = [(-4, false), (-1, false), (0, false), (1, true), (4, false)];
+            for (case, expected) in cases {
+                let n: Real = case.into();
+                let int = extract_or_fail!(n, Real::Integer);
+
+                assert_eq!(int.is_one(), expected);
+            }
         }
 
         #[test]
