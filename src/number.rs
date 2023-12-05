@@ -142,7 +142,7 @@ impl From<i64> for Integer {
     fn from(value: i64) -> Self {
         Self {
             precision: Precision::Single(value.unsigned_abs()),
-            sign: Sign::from_signed(value),
+            sign: value.into(),
         }
     }
 }
@@ -206,18 +206,6 @@ enum Sign {
     Positive,
 }
 
-impl Sign {
-    fn from_signed(n: i64) -> Self {
-        match n.signum() {
-            -1 => Self::Negative,
-            0 => Self::Zero,
-            // NOTE: *technically* this could be fallible but signum is
-            // guaranteed to only return (-1, 0, 1) so this won't actually fail.
-            _ => Self::Positive,
-        }
-    }
-}
-
 impl Display for Sign {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         if *self == Sign::Negative {
@@ -226,6 +214,18 @@ impl Display for Sign {
             f.write_char('+')
         } else {
             f.write_str("")
+        }
+    }
+}
+
+impl From<i64> for Sign {
+    fn from(value: i64) -> Self {
+        match value.signum() {
+            -1 => Self::Negative,
+            0 => Self::Zero,
+            // NOTE: *technically* this could be fallible but signum is
+            // guaranteed to only return (-1, 0, 1) so this won't actually fail.
+            _ => Self::Positive,
         }
     }
 }
@@ -276,7 +276,7 @@ mod tests {
         fn from() {
             let cases = [(-10, Sign::Negative), (0, Sign::Zero), (10, Sign::Positive)];
             for (case, exp) in cases {
-                let s = Sign::from_signed(case);
+                let s: Sign = case.into();
                 assert_eq!(s, exp);
             }
         }
