@@ -561,6 +561,7 @@ mod tests {
             let n: Real = 42.into();
             let int = extract_or_fail!(n, Real::Integer);
 
+            assert!(!int.is_zero());
             assert_eq!(extract_or_fail!(int.precision, Precision::Single), 42);
             assert_eq!(int.sign, Sign::Positive);
         }
@@ -570,6 +571,7 @@ mod tests {
             let n: Real = 0.into();
             let int = extract_or_fail!(n, Real::Integer);
 
+            assert!(int.is_zero());
             assert_eq!(extract_or_fail!(int.precision, Precision::Single), 0);
             assert_eq!(int.sign, Sign::Zero);
         }
@@ -579,6 +581,7 @@ mod tests {
             let n: Real = (-42).into();
             let int = extract_or_fail!(n, Real::Integer);
 
+            assert!(!int.is_zero());
             assert_eq!(extract_or_fail!(int.precision, Precision::Single), 42);
             assert_eq!(int.sign, Sign::Negative);
         }
@@ -605,6 +608,32 @@ mod tests {
                 9223372036854775808
             );
             assert_eq!(int.sign, Sign::Negative);
+        }
+
+        #[test]
+        fn make_positive() {
+            let cases = [(-4, Sign::Positive), (0, Sign::Zero), (4, Sign::Positive)];
+            for (case, expected) in cases {
+                let n: Real = case.into();
+                let mut int = extract_or_fail!(n, Real::Integer);
+
+                int.make_positive();
+
+                assert_eq!(int.sign, expected);
+            }
+        }
+
+        #[test]
+        fn make_negative() {
+            let cases = [(-4, Sign::Negative), (0, Sign::Zero), (4, Sign::Negative)];
+            for (case, expected) in cases {
+                let n: Real = case.into();
+                let mut int = extract_or_fail!(n, Real::Integer);
+
+                int.make_negative();
+
+                assert_eq!(int.sign, expected);
+            }
         }
     }
 
