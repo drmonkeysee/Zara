@@ -1,4 +1,5 @@
 use std::{
+    cmp::Ordering,
     error::Error,
     fmt::{self, Display, Formatter, Write},
     result::Result,
@@ -64,6 +65,13 @@ impl Real {
         if n.is_zero() || d.is_one() {
             return Ok(Self::Integer(n));
         }
+        if n.cmp_magnitude(&d) == Ordering::Equal {
+            return Ok(Self::Integer(Integer::single(1, n.sign)));
+        }
+        n.reduce(&mut d);
+        if d.is_one() {
+            return Ok(Self::Integer(n));
+        }
         Ok(Self::Rational(Rational((n, d).into())))
     }
 }
@@ -106,6 +114,16 @@ pub(crate) struct Integer {
 }
 
 impl Integer {
+    fn single(magnitude: u64, mut sign: Sign) -> Self {
+        if magnitude == 0 {
+            sign = Sign::Zero
+        }
+        Self {
+            precision: Precision::Single(magnitude),
+            sign,
+        }
+    }
+
     fn is_zero(&self) -> bool {
         self.sign == Sign::Zero
     }
@@ -118,6 +136,16 @@ impl Integer {
             }
     }
 
+    fn cmp_magnitude(&self, other: &Integer) -> Ordering {
+        match &self.precision {
+            Precision::Single(a) => match &other.precision {
+                Precision::Single(b) => a.cmp(b),
+                Precision::Multiple(_) => todo!(),
+            },
+            Precision::Multiple(_) => todo!(),
+        }
+    }
+
     fn make_positive(&mut self) {
         if self.sign == Sign::Negative {
             self.sign = Sign::Positive;
@@ -127,6 +155,20 @@ impl Integer {
     fn make_negative(&mut self) {
         if self.sign == Sign::Positive {
             self.sign = Sign::Negative;
+        }
+    }
+
+    fn reduce(&mut self, other: &mut Integer) {
+        match &self.precision {
+            Precision::Single(a) => match &other.precision {
+                Precision::Single(b) => {
+                    let gcd = gcd_euclidean(*a, *b);
+                    self.precision = Precision::Single(a / gcd);
+                    other.precision = Precision::Single(b / gcd);
+                }
+                Precision::Multiple(_) => todo!(),
+            },
+            Precision::Multiple(_) => todo!(),
         }
     }
 }
@@ -236,6 +278,16 @@ impl From<i64> for Sign {
             _ => Self::Positive,
         }
     }
+}
+
+// NOTE: https://en.wikipedia.org/wiki/Euclidean_algorithm
+fn gcd_euclidean(mut a: u64, mut b: u64) -> u64 {
+    while b > 0 {
+        let t = b;
+        b = a % b;
+        a = t;
+    }
+    return a;
 }
 
 #[cfg(test)]
@@ -565,6 +617,13 @@ mod tests {
         use super::*;
 
         #[test]
+        fn single_ctor_ignores_sign_for_zero() {
+            let n = Integer::single(0, Sign::Positive);
+
+            assert_eq!(n.sign, Sign::Zero);
+        }
+
+        #[test]
         fn positive() {
             let n: Real = 42.into();
             let int = extract_or_fail!(n, Real::Integer);
@@ -675,6 +734,40 @@ mod tests {
             }};
         }
 
+        mod euclid {
+            use super::*;
+
+            #[test]
+            fn zeros() {
+                assert_eq!(gcd_euclidean(0, 0), 0);
+            }
+
+            #[test]
+            fn numerator_zero() {
+                assert_eq!(gcd_euclidean(0, 5), 5);
+            }
+
+            #[test]
+            fn denominator_zero() {
+                assert_eq!(gcd_euclidean(5, 0), 5);
+            }
+
+            #[test]
+            fn reduce_below_zero() {
+                assert_eq!(gcd_euclidean(6, 10), 2);
+            }
+
+            #[test]
+            fn reduce_above_zero() {
+                assert_eq!(gcd_euclidean(15, 10), 5);
+            }
+
+            #[test]
+            fn reduce_equal() {
+                assert_eq!(gcd_euclidean(7, 7), 7);
+            }
+        }
+
         #[test]
         fn positive() {
             let n = ok_or_fail!(Number::rational(4, 5));
@@ -720,7 +813,7 @@ mod tests {
         }
 
         #[test]
-        fn greater_than_one() {
+        fn improper() {
             let n = ok_or_fail!(Number::rational(5, 4));
             let (num, den) = rational_parts!(n);
 
@@ -737,6 +830,17 @@ mod tests {
 
             assert_eq!(extract_or_fail!(num.precision, Precision::Single), 2);
             assert_eq!(num.sign, Sign::Positive);
+            assert_eq!(extract_or_fail!(den.precision, Precision::Single), 5);
+            assert_eq!(den.sign, Sign::Positive);
+        }
+
+        #[test]
+        fn gcd_negative() {
+            let n = ok_or_fail!(Number::rational(-4, 10));
+            let (num, den) = rational_parts!(n);
+
+            assert_eq!(extract_or_fail!(num.precision, Precision::Single), 2);
+            assert_eq!(num.sign, Sign::Negative);
             assert_eq!(extract_or_fail!(den.precision, Precision::Single), 5);
             assert_eq!(den.sign, Sign::Positive);
         }
@@ -760,12 +864,30 @@ mod tests {
         }
 
         #[test]
+        fn reduce_to_negative_unity() {
+            let n = ok_or_fail!(Number::rational(-7, 7));
+            let int = rational_integer!(n);
+
+            assert_eq!(extract_or_fail!(int.precision, Precision::Single), 1);
+            assert_eq!(int.sign, Sign::Negative);
+        }
+
+        #[test]
         fn reduce_to_integer() {
             let n = ok_or_fail!(Number::rational(20, 10));
             let int = rational_integer!(n);
 
             assert_eq!(extract_or_fail!(int.precision, Precision::Single), 2);
             assert_eq!(int.sign, Sign::Positive);
+        }
+
+        #[test]
+        fn reduce_to_negative_integer() {
+            let n = ok_or_fail!(Number::rational(-20, 10));
+            let int = rational_integer!(n);
+
+            assert_eq!(extract_or_fail!(int.precision, Precision::Single), 2);
+            assert_eq!(int.sign, Sign::Negative);
         }
 
         #[test]
