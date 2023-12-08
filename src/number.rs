@@ -114,8 +114,7 @@ pub(crate) struct Rational(Box<(Integer, Integer)>);
 impl Display for Rational {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         self.0 .0.fmt(f)?;
-        f.write_char('/')?;
-        self.0 .1.fmt(f)
+        write!(f, "/{}", self.0 .1)
     }
 }
 
@@ -637,7 +636,38 @@ mod tests {
 
         #[test]
         fn complex_rationals() {
-            todo!();
+            let r: Real = ok_or_fail!((3, 5).try_into());
+            let i: Real = ok_or_fail!((5, 2).try_into());
+            let n = Number::complex(r, i);
+
+            assert_eq!(n.as_datum().to_string(), "3/5+5/2i");
+        }
+
+        #[test]
+        fn complex_negative_rat_real() {
+            let r: Real = ok_or_fail!((-3, 5).try_into());
+            let i: Real = ok_or_fail!((5, 2).try_into());
+            let n = Number::complex(r, i);
+
+            assert_eq!(n.as_datum().to_string(), "-3/5+5/2i");
+        }
+
+        #[test]
+        fn complex_negative_rat_imag() {
+            let r: Real = ok_or_fail!((3, 5).try_into());
+            let i: Real = ok_or_fail!((-5, 2).try_into());
+            let n = Number::complex(r, i);
+
+            assert_eq!(n.as_datum().to_string(), "3/5-5/2i");
+        }
+
+        #[test]
+        fn complex_negative_rat() {
+            let r: Real = ok_or_fail!((-3, 5).try_into());
+            let i: Real = ok_or_fail!((-5, 2).try_into());
+            let n = Number::complex(r, i);
+
+            assert_eq!(n.as_datum().to_string(), "-3/5-5/2i");
         }
     }
 
