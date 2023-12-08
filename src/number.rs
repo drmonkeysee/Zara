@@ -80,8 +80,8 @@ impl Display for Real {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
             Real::Float(_) => todo!(),
-            Real::Integer(n) => write!(f, "{n}"),
-            Real::Rational(r) => write!(f, "{r}"),
+            Real::Integer(n) => n.fmt(f),
+            Real::Rational(r) => r.fmt(f),
         }
     }
 }
@@ -113,7 +113,9 @@ pub(crate) struct Rational(Box<(Integer, Integer)>);
 
 impl Display for Rational {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "{}/{}", self.0 .0, self.0 .1)
+        self.0 .0.fmt(f)?;
+        f.write_char('/')?;
+        self.0 .1.fmt(f)
     }
 }
 
@@ -169,15 +171,11 @@ impl Integer {
 
 impl Display for Integer {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "{}{}",
-            self.sign,
-            match self.precision {
-                Precision::Single(u) => u,
-                Precision::Multiple(_) => todo!(),
-            }
-        )
+        self.sign.fmt(f)?;
+        match self.precision {
+            Precision::Single(u) => write!(f, "{u}"),
+            Precision::Multiple(_) => todo!(),
+        }
     }
 }
 
@@ -211,7 +209,7 @@ pub(crate) struct Datum<'a>(&'a Number);
 impl Display for Datum<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self.0 {
-            Number::Complex(_) => todo!(),
+            Number::Complex(c) => write!(f, "{}{:+}i", c.0, c.1),
             Number::Real(r) => write!(f, "{r}"),
         }
     }
@@ -635,6 +633,11 @@ mod tests {
             let n = Number::complex(4.2, 5.3);
 
             assert_eq!(n.as_datum().to_string(), "4.2+5.3i");
+        }
+
+        #[test]
+        fn complex_rationals() {
+            todo!();
         }
     }
 
