@@ -140,14 +140,8 @@ impl Integer {
             }
     }
 
-    fn cmp_magnitude(&self, other: &Integer) -> Ordering {
-        match &self.precision {
-            Precision::Single(a) => match &other.precision {
-                Precision::Single(b) => a.cmp(b),
-                Precision::Multiple(_) => todo!(),
-            },
-            Precision::Multiple(_) => todo!(),
-        }
+    fn cmp_magnitude(&self, other: &Self) -> Ordering {
+        self.precision.cmp(&other.precision)
     }
 
     fn make_positive(&mut self) {
@@ -162,18 +156,8 @@ impl Integer {
         }
     }
 
-    fn reduce(&mut self, other: &mut Integer) {
-        match &self.precision {
-            Precision::Single(a) => match &other.precision {
-                Precision::Single(b) => {
-                    let gcd = gcd_euclidean(*a, *b);
-                    self.precision = Precision::Single(a / gcd);
-                    other.precision = Precision::Single(b / gcd);
-                }
-                Precision::Multiple(_) => todo!(),
-            },
-            Precision::Multiple(_) => todo!(),
-        }
+    fn reduce(&mut self, other: &mut Self) {
+        self.precision.reduce(&mut other.precision);
     }
 }
 
@@ -242,10 +226,56 @@ impl Display for TokenDescriptor<'_> {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Eq)]
 enum Precision {
     Single(u64),
     Multiple(Vec<u64>), // TODO: can this be Box<[u64]>
+}
+
+impl Precision {
+    fn reduce(&mut self, other: &mut Self) {
+        match self {
+            Self::Single(a) => match other {
+                Self::Single(b) => {
+                    let gcd = gcd_euclidean(*a, *b);
+                    *self = Self::Single(*a / gcd);
+                    *other = Self::Single(*b / gcd);
+                }
+                Self::Multiple(_) => todo!(),
+            },
+            Self::Multiple(_) => todo!(),
+        }
+    }
+}
+
+impl PartialEq for Precision {
+    fn eq(&self, other: &Self) -> bool {
+        match self {
+            Precision::Single(a) => match other {
+                Precision::Single(b) => a.eq(b),
+                Precision::Multiple(_) => todo!(),
+            },
+            Precision::Multiple(_) => todo!(),
+        }
+    }
+}
+
+impl PartialOrd for Precision {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for Precision {
+    fn cmp(&self, other: &Self) -> Ordering {
+        match self {
+            Precision::Single(a) => match other {
+                Precision::Single(b) => a.cmp(b),
+                Precision::Multiple(_) => todo!(),
+            },
+            Precision::Multiple(_) => todo!(),
+        }
+    }
 }
 
 // NOTE: enum expression of the signum function
