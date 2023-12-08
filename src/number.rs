@@ -81,7 +81,7 @@ impl Display for Real {
         match self {
             Real::Float(_) => todo!(),
             Real::Integer(n) => write!(f, "{n}"),
-            Real::Rational(_) => todo!(),
+            Real::Rational(r) => write!(f, "{r}"),
         }
     }
 }
@@ -110,6 +110,12 @@ impl<N: Into<Integer>, D: Into<Integer>> TryFrom<(N, D)> for Real {
 // NOTE: Boxed to keep struct size down
 #[derive(Debug)]
 pub(crate) struct Rational(Box<(Integer, Integer)>);
+
+impl Display for Rational {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{}/{}", self.0 .0, self.0 .1)
+    }
+}
 
 #[derive(Debug)]
 pub(crate) struct Integer {
