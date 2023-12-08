@@ -107,6 +107,10 @@ impl<N: Into<Integer>, D: Into<Integer>> TryFrom<(N, D)> for Real {
     }
 }
 
+// NOTE: Boxed to keep struct size down
+#[derive(Debug)]
+pub(crate) struct Rational(Box<(Integer, Integer)>);
+
 #[derive(Debug)]
 pub(crate) struct Integer {
     precision: Precision,
@@ -197,10 +201,6 @@ impl From<i64> for Integer {
     }
 }
 
-// NOTE: Boxed to keep struct size down
-#[derive(Debug)]
-pub(crate) struct Rational(Box<(Integer, Integer)>);
-
 #[derive(Debug)]
 pub(crate) enum NumericError {
     DivideByZero,
@@ -287,7 +287,7 @@ fn gcd_euclidean(mut a: u64, mut b: u64) -> u64 {
         b = a % b;
         a = t;
     }
-    return a;
+    a
 }
 
 #[cfg(test)]
