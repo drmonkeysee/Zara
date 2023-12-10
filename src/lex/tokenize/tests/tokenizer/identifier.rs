@@ -158,6 +158,7 @@ fn with_extended_and_higher_chars() {
 
     let r = t.extract();
 
+    // TODO: support unicode
     /*assert!(matches!(
         r,
         TokenExtract {

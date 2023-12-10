@@ -72,9 +72,9 @@ impl CharDatum {
 
 impl Display for CharDatum {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        match *self {
+        match self {
             Self::Named(n) => f.write_str(n),
-            Self::Unnamed(ch) => write_unnamed_char(ch, f),
+            Self::Unnamed(ch) => write_unnamed_char(*ch, f),
         }
     }
 }
