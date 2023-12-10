@@ -12,7 +12,6 @@ pub(crate) enum Number {
 }
 
 impl Number {
-    // TODO: need full combo of ctors for Rational
     // TODO: polar-coordinates
     pub(crate) fn complex(real: impl Into<Real>, imag: impl Into<Real>) -> Self {
         Self::Complex((real.into(), imag.into()).into())

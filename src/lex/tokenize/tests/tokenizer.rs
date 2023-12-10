@@ -3,6 +3,7 @@ mod bytevector;
 mod character;
 mod hashtag;
 mod identifier;
+mod numeric;
 mod quoting;
 mod string;
 
