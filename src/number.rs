@@ -438,6 +438,13 @@ mod tests {
         }
 
         #[test]
+        fn negative_int_zero() {
+            let n = Number::real(-0);
+
+            assert_eq!(n.as_datum().to_string(), "0");
+        }
+
+        #[test]
         fn positive_int() {
             let n = Number::real(23);
 
