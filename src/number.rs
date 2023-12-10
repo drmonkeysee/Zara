@@ -103,7 +103,7 @@ impl<N: Into<Integer>, D: Into<Integer>> TryFrom<(N, D)> for Real {
 
     fn try_from(value: (N, D)) -> Result<Self, Self::Error> {
         let (numerator, denominator) = value;
-        Ok(Self::reduce(numerator, denominator)?)
+        Self::reduce(numerator, denominator)
     }
 }
 
@@ -127,7 +127,7 @@ pub(crate) struct Integer {
 impl Integer {
     fn single(magnitude: u64, mut sign: Sign) -> Self {
         if magnitude == 0 {
-            sign = Sign::Zero
+            sign = Sign::Zero;
         }
         Self {
             precision: Precision::Single(magnitude),
