@@ -50,6 +50,30 @@ mod integer {
     }
 
     #[test]
+    fn explicit_positive() {
+        let mut s = Scanner::new("+4");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 1,
+                result: Ok(TokenKind::Literal(Literal::Number(_))),
+            }
+        ));
+        let int = extract_number!(r.result, Number::Real, Real::Integer);
+        assert_eq!(int.to_string(), "4");
+    }
+
+    #[test]
     fn negative() {
         let mut s = Scanner::new("-5");
         let start = some_or_fail!(s.next_token());
@@ -76,6 +100,30 @@ mod integer {
     #[test]
     fn zero() {
         let mut s = Scanner::new("0");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 1,
+                result: Ok(TokenKind::Literal(Literal::Number(_))),
+            }
+        ));
+        let int = extract_number!(r.result, Number::Real, Real::Integer);
+        assert_eq!(int.to_string(), "0");
+    }
+
+    #[test]
+    fn explicit_zero() {
+        let mut s = Scanner::new("+0");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
             scan: &mut s,
@@ -173,8 +221,33 @@ mod integer {
     }
 
     #[test]
-    fn unsigned_min() {
-        let input = format!("-{}", u64::MIN);
+    fn explicit_unsigned_max() {
+        let input = format!("+{}", u64::MAX);
+        let mut s = Scanner::new(&input);
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 1,
+                result: Ok(TokenKind::Literal(Literal::Number(_))),
+            }
+        ));
+        let int = extract_number!(r.result, Number::Real, Real::Integer);
+        assert_eq!(int.to_string(), "18446744073709551615");
+    }
+
+    #[test]
+    fn unsigned_negative_max() {
+        let input = format!("-{}", u64::MAX);
         let mut s = Scanner::new(&input);
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
