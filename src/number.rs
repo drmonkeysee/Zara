@@ -79,7 +79,7 @@ impl Real {
 impl Display for Real {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            Real::Float(_) => todo!(),
+            Real::Float(d) => FloatDatum(d).fmt(f),
             Real::Integer(n) => n.fmt(f),
             Real::Rational(r) => r.fmt(f),
         }
@@ -301,14 +301,35 @@ impl Display for Sign {
     }
 }
 
-impl From<i64> for Sign {
-    fn from(value: i64) -> Self {
-        match value.signum() {
-            -1 => Self::Negative,
-            0 => Self::Zero,
-            // NOTE: *technically* this could be fallible but signum is
-            // guaranteed to only return (-1, 0, 1) so this won't actually fail.
-            _ => Self::Positive,
+macro_rules! sign_from {
+    ($type:ty) => {
+        impl From<$type> for Sign {
+            fn from(value: $type) -> Self {
+                match value.signum() as i32 {
+                    -1 => Self::Negative,
+                    0 => Self::Zero,
+                    _ => Self::Positive,
+                }
+            }
+        }
+    };
+}
+
+sign_from!(i64);
+sign_from!(f64);
+
+struct FloatDatum<'a>(&'a f64);
+
+impl Display for FloatDatum<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        let d = *self.0;
+        if d.is_infinite() {
+            let s: Sign = d.into();
+            write!(f, "{s:+}inf.0")
+        } else if d.is_nan() {
+            f.write_str("+nan.0")
+        } else {
+            todo!();
         }
     }
 }
@@ -561,6 +582,14 @@ mod tests {
         fn nan() {
             let n = Number::real(f64::NAN);
 
+            assert_eq!(n.as_datum().to_string(), "+nan.0");
+        }
+
+        #[test]
+        fn negative_nan() {
+            let n = Number::real(-f64::NAN);
+
+            // NOTE: sign is ignored for NAN
             assert_eq!(n.as_datum().to_string(), "+nan.0");
         }
 
