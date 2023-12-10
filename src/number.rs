@@ -736,6 +736,56 @@ mod tests {
 
             assert_eq!(n.as_datum().to_string(), "3/5-6.34i");
         }
+
+        #[test]
+        fn complex_zero_real() {
+            let n = Number::complex(0, 5);
+
+            assert_eq!(n.as_datum().to_string(), "+5i");
+        }
+
+        #[test]
+        fn complex_negative_zero_real() {
+            let n = Number::complex(0, -5);
+
+            assert_eq!(n.as_datum().to_string(), "-5i");
+        }
+
+        #[test]
+        fn complex_zero_imag() {
+            let n = Number::complex(4, 0);
+
+            assert_eq!(n.as_datum().to_string(), "4");
+        }
+
+        #[test]
+        fn complex_unity_imag() {
+            let n = Number::complex(4, 1);
+
+            assert_eq!(n.as_datum().to_string(), "4+i");
+        }
+
+        #[test]
+        fn complex_zero_real_unity_imag() {
+            let n = Number::complex(0, 1);
+
+            assert_eq!(n.as_datum().to_string(), "+i");
+        }
+
+        #[test]
+        fn complex_zero_real_negative_unity_imag() {
+            let n = Number::complex(0, -1);
+
+            assert_eq!(n.as_datum().to_string(), "-i");
+        }
+
+        #[test]
+        fn complex_zero_real_rat_unity_imag() {
+            let i = ok_or_fail!(Real::try_from((5, 5)));
+            let n = Number::complex(0, i);
+
+            assert_eq!(n.as_datum().to_string(), "+i");
+        }
     }
 
     mod error {
