@@ -786,6 +786,13 @@ mod tests {
 
             assert_eq!(n.as_datum().to_string(), "+i");
         }
+
+        #[test]
+        fn complex_inexact_unity_imag() {
+            let n = Number::complex(4, 1.0);
+
+            assert_eq!(n.as_datum().to_string(), "4+1.0i");
+        }
     }
 
     mod error {
