@@ -1456,8 +1456,8 @@ mod error {
             make_textline(),
         );
 
-        let line_err: LineFailure = target.into();
-        let err: LexerError = line_err.into();
+        let line_err = LineFailure::from(target);
+        let err = line_err.into();
 
         let err_lines = extract_or_fail!(err, LexerError::Lines);
         assert_eq!(err_lines.len(), 1);

@@ -50,11 +50,11 @@ impl Real {
         numerator: impl Into<Integer>,
         denominator: impl Into<Integer>,
     ) -> Result<Self, NumericError> {
-        let mut d: Integer = denominator.into();
+        let mut d = denominator.into();
         if d.is_zero() {
             return Err(NumericError::DivideByZero);
         }
-        let mut n: Integer = numerator.into();
+        let mut n = numerator.into();
         if n.sign == d.sign {
             n.make_positive();
             d.make_positive();
@@ -390,7 +390,7 @@ mod tests {
         fn from() {
             let cases = [(-10, Sign::Negative), (0, Sign::Zero), (10, Sign::Positive)];
             for (case, exp) in cases {
-                let s: Sign = case.into();
+                let s = Sign::from(case);
                 assert_eq!(s, exp);
             }
         }
@@ -665,8 +665,8 @@ mod tests {
 
         #[test]
         fn complex_rationals() {
-            let r: Real = ok_or_fail!((3, 5).try_into());
-            let i: Real = ok_or_fail!((5, 2).try_into());
+            let r = ok_or_fail!(Real::try_from((3, 5)));
+            let i = ok_or_fail!(Real::try_from((5, 2)));
             let n = Number::complex(r, i);
 
             assert_eq!(n.as_datum().to_string(), "3/5+5/2i");
@@ -674,8 +674,8 @@ mod tests {
 
         #[test]
         fn complex_negative_rat_real() {
-            let r: Real = ok_or_fail!((-3, 5).try_into());
-            let i: Real = ok_or_fail!((5, 2).try_into());
+            let r = ok_or_fail!(Real::try_from((-3, 5)));
+            let i = ok_or_fail!(Real::try_from((5, 2)));
             let n = Number::complex(r, i);
 
             assert_eq!(n.as_datum().to_string(), "-3/5+5/2i");
@@ -683,8 +683,8 @@ mod tests {
 
         #[test]
         fn complex_negative_rat_imag() {
-            let r: Real = ok_or_fail!((3, 5).try_into());
-            let i: Real = ok_or_fail!((-5, 2).try_into());
+            let r = ok_or_fail!(Real::try_from((3, 5)));
+            let i = ok_or_fail!(Real::try_from((-5, 2)));
             let n = Number::complex(r, i);
 
             assert_eq!(n.as_datum().to_string(), "3/5-5/2i");
@@ -692,8 +692,8 @@ mod tests {
 
         #[test]
         fn complex_negative_rat() {
-            let r: Real = ok_or_fail!((-3, 5).try_into());
-            let i: Real = ok_or_fail!((-5, 2).try_into());
+            let r = ok_or_fail!(Real::try_from((-3, 5)));
+            let i = ok_or_fail!(Real::try_from((-5, 2)));
             let n = Number::complex(r, i);
 
             assert_eq!(n.as_datum().to_string(), "-3/5-5/2i");
@@ -701,7 +701,7 @@ mod tests {
 
         #[test]
         fn complex_real_rat() {
-            let r: Real = ok_or_fail!((3, 5).try_into());
+            let r = ok_or_fail!(Real::try_from((3, 5)));
             let n = Number::complex(r, 5);
 
             assert_eq!(n.as_datum().to_string(), "3/5+5i");
@@ -709,7 +709,7 @@ mod tests {
 
         #[test]
         fn complex_imag_rat() {
-            let i: Real = ok_or_fail!((5, 2).try_into());
+            let i = ok_or_fail!(Real::try_from((5, 2)));
             let n = Number::complex(3, i);
 
             assert_eq!(n.as_datum().to_string(), "3+5/2i");
@@ -717,7 +717,7 @@ mod tests {
 
         #[test]
         fn complex_real_float_imag_rat() {
-            let i: Real = ok_or_fail!((5, 2).try_into());
+            let i = ok_or_fail!(Real::try_from((5, 2)));
             let n = Number::complex(3.032, i);
 
             assert_eq!(n.as_datum().to_string(), "3.032+5/2i");
@@ -725,7 +725,7 @@ mod tests {
 
         #[test]
         fn complex_real_rat_imag_float() {
-            let r: Real = ok_or_fail!((3, 5).try_into());
+            let r = ok_or_fail!(Real::try_from((3, 5)));
             let n = Number::complex(r, -6.34);
 
             assert_eq!(n.as_datum().to_string(), "3/5-6.34i");
@@ -755,7 +755,7 @@ mod tests {
 
         #[test]
         fn positive() {
-            let n: Real = 42.into();
+            let n = 42.into();
             let int = extract_or_fail!(n, Real::Integer);
 
             assert!(!int.is_zero());
@@ -765,7 +765,7 @@ mod tests {
 
         #[test]
         fn zero() {
-            let n: Real = 0.into();
+            let n = 0.into();
             let int = extract_or_fail!(n, Real::Integer);
 
             assert!(int.is_zero());
@@ -775,7 +775,7 @@ mod tests {
 
         #[test]
         fn negative() {
-            let n: Real = (-42).into();
+            let n = (-42).into();
             let int = extract_or_fail!(n, Real::Integer);
 
             assert!(!int.is_zero());
@@ -785,7 +785,7 @@ mod tests {
 
         #[test]
         fn max() {
-            let n: Real = i64::MAX.into();
+            let n = i64::MAX.into();
             let int = extract_or_fail!(n, Real::Integer);
 
             assert_eq!(
@@ -797,7 +797,7 @@ mod tests {
 
         #[test]
         fn min() {
-            let n: Real = i64::MIN.into();
+            let n = i64::MIN.into();
             let int = extract_or_fail!(n, Real::Integer);
 
             assert_eq!(
@@ -811,7 +811,7 @@ mod tests {
         fn is_one() {
             let cases = [(-4, false), (-1, false), (0, false), (1, true), (4, false)];
             for (case, expected) in cases {
-                let n: Real = case.into();
+                let n = case.into();
                 let int = extract_or_fail!(n, Real::Integer);
 
                 assert_eq!(int.is_one(), expected);
@@ -822,7 +822,7 @@ mod tests {
         fn make_positive() {
             let cases = [(-4, Sign::Positive), (0, Sign::Zero), (4, Sign::Positive)];
             for (case, expected) in cases {
-                let n: Real = case.into();
+                let n = case.into();
                 let mut int = extract_or_fail!(n, Real::Integer);
 
                 int.make_positive();
@@ -835,7 +835,7 @@ mod tests {
         fn make_negative() {
             let cases = [(-4, Sign::Negative), (0, Sign::Zero), (4, Sign::Negative)];
             for (case, expected) in cases {
-                let n: Real = case.into();
+                let n = case.into();
                 let mut int = extract_or_fail!(n, Real::Integer);
 
                 int.make_negative();
