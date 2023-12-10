@@ -128,7 +128,7 @@ fn char_to_displayable(ch: char) -> DisplayableChar {
     // not, so check indirectly by seeing if the debug output starts with `\u`;
     // if so, we display the hex representation instead of the char literal.
     if ch.escape_debug().take(2).cmp(['\\', 'u']) == Ordering::Equal {
-        DisplayableChar::Hex(u32::from(ch))
+        DisplayableChar::Hex(ch as u32)
     } else {
         DisplayableChar::Char(ch)
     }

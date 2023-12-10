@@ -322,14 +322,14 @@ struct FloatDatum<'a>(&'a f64);
 
 impl Display for FloatDatum<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        let d = *self.0;
+        let d = self.0;
         if d.is_infinite() {
-            let s: Sign = d.into();
+            let s = Sign::from(*d);
             write!(f, "{s:+}inf.0")
         } else if d.is_nan() {
             f.write_str("+nan.0")
         } else {
-            write!(f, "{d:?}")
+            fmt::Debug::fmt(d, f)
         }
     }
 }
