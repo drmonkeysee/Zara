@@ -8,7 +8,8 @@ use self::{
     extract::{TokenExtract, TokenExtractResult},
     scan::{ScanItem, Scanner},
     state::{
-        BlockComment, Hashtag, Identifier, PeriodIdentifier, StringLiteral, VerbatimIdentifer,
+        BlockComment, Hashtag, Identifier, Numeric, PeriodIdentifier, StringLiteral,
+        VerbatimIdentifer,
     },
 };
 use super::token::{TokenContinuation, TokenKind, TokenResult};
@@ -78,7 +79,8 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
     }
 
     fn scan(&mut self) -> TokenExtractResult {
-        match self.start.1 {
+        let ch = self.start.1;
+        match ch {
             '(' => Ok(TokenKind::ParenLeft),
             ')' => Ok(TokenKind::ParenRight),
             '\'' => Ok(TokenKind::Quote),
@@ -88,7 +90,8 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
             ';' => Ok(self.comment()),
             '.' => self.period(),
             ',' => Ok(self.unquote()),
-            _ => Identifier::new(self.scan).scan(self.start.1),
+            _ if ch.is_ascii_digit() => Numeric { scan: self.scan }.scan(ch),
+            _ => Identifier::new(self.scan).scan(ch),
         }
     }
 

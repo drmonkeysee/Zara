@@ -1,11 +1,13 @@
 mod hashtag;
 mod identifier;
+mod numeric;
 mod string;
 
 // NOTE: re-export for parent module
 pub(super) use self::{
     hashtag::{BlockComment, Hashtag},
     identifier::{Identifier, PeriodIdentifier, VerbatimIdentifer},
+    numeric::Numeric,
     string::StringLiteral,
 };
 use super::{extract::TokenExtractResult, scan::Scanner};
