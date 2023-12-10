@@ -61,14 +61,14 @@ impl Real {
             n.make_negative();
             d.make_positive();
         }
-        if n.is_zero() || d.is_one() {
+        if n.is_zero() || d.is_magnitude_one() {
             return Ok(Self::Integer(n));
         }
         if n.cmp_magnitude(&d) == Ordering::Equal {
             return Ok(Self::Integer(Integer::single(1, n.sign)));
         }
         n.reduce(&mut d);
-        if d.is_one() {
+        if d.is_magnitude_one() {
             return Ok(Self::Integer(n));
         }
         Ok(Self::Rational(Rational((n, d).into())))
@@ -138,12 +138,11 @@ impl Integer {
         self.sign == Sign::Zero
     }
 
-    fn is_one(&self) -> bool {
-        self.sign == Sign::Positive
-            && match &self.precision {
-                Precision::Single(u) => *u == 1,
-                Precision::Multiple(_) => todo!(),
-            }
+    fn is_magnitude_one(&self) -> bool {
+        match &self.precision {
+            Precision::Single(u) => *u == 1,
+            Precision::Multiple(_) => todo!(),
+        }
     }
 
     fn cmp_magnitude(&self, other: &Self) -> Ordering {
@@ -207,7 +206,10 @@ pub(crate) struct Datum<'a>(&'a Number);
 impl Display for Datum<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self.0 {
-            Number::Complex(c) => write!(f, "{}{:+}i", c.0, c.1),
+            Number::Complex(c) => {
+                ComplexRealDatum(&c.0).fmt(f)?;
+                ComplexImagDatum(&c.1).fmt(f)
+            }
             Number::Real(r) => write!(f, "{r}"),
         }
     }
@@ -330,6 +332,37 @@ impl Display for FloatDatum<'_> {
         } else {
             fmt::Debug::fmt(d, f)
         }
+    }
+}
+
+struct ComplexRealDatum<'a>(&'a Real);
+
+impl Display for ComplexRealDatum<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        let r = self.0;
+        if let Real::Integer(n) = r {
+            if n.is_zero() {
+                return Ok(());
+            }
+        }
+        r.fmt(f)
+    }
+}
+
+struct ComplexImagDatum<'a>(&'a Real);
+
+impl Display for ComplexImagDatum<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        let r = self.0;
+        if let Real::Integer(n) = r {
+            if n.is_zero() {
+                return Ok(());
+            }
+            if n.is_magnitude_one() {
+                return write!(f, "{:+}i", n.sign);
+            }
+        }
+        write!(f, "{r:+}i")
     }
 }
 
@@ -897,13 +930,13 @@ mod tests {
         }
 
         #[test]
-        fn is_one() {
-            let cases = [(-4, false), (-1, false), (0, false), (1, true), (4, false)];
+        fn is_mag_one() {
+            let cases = [(-4, false), (-1, true), (0, false), (1, true), (4, false)];
             for (case, expected) in cases {
                 let n = case.into();
                 let int = extract_or_fail!(n, Real::Integer);
 
-                assert_eq!(int.is_one(), expected);
+                assert_eq!(int.is_magnitude_one(), expected);
             }
         }
 
