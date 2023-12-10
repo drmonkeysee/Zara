@@ -669,6 +669,38 @@ mod tests {
 
             assert_eq!(n.as_datum().to_string(), "-3/5-5/2i");
         }
+
+        #[test]
+        fn complex_real_rat() {
+            let r: Real = ok_or_fail!((3, 5).try_into());
+            let n = Number::complex(r, 5);
+
+            assert_eq!(n.as_datum().to_string(), "3/5+5i");
+        }
+
+        #[test]
+        fn complex_imag_rat() {
+            let i: Real = ok_or_fail!((5, 2).try_into());
+            let n = Number::complex(3, i);
+
+            assert_eq!(n.as_datum().to_string(), "3+5/2i");
+        }
+
+        #[test]
+        fn complex_real_float_imag_rat() {
+            let i: Real = ok_or_fail!((5, 2).try_into());
+            let n = Number::complex(3.032, i);
+
+            assert_eq!(n.as_datum().to_string(), "3.032+5/2i");
+        }
+
+        #[test]
+        fn complex_real_rat_imag_float() {
+            let r: Real = ok_or_fail!((3, 5).try_into());
+            let n = Number::complex(r, -6.34);
+
+            assert_eq!(n.as_datum().to_string(), "3/5-6.34i");
+        }
     }
 
     mod error {
