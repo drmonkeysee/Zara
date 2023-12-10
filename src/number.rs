@@ -329,7 +329,7 @@ impl Display for FloatDatum<'_> {
         } else if d.is_nan() {
             f.write_str("+nan.0")
         } else {
-            todo!();
+            write!(f, "{d:?}")
         }
     }
 }
@@ -519,49 +519,49 @@ mod tests {
         fn large_exponent() {
             let n = Number::real(1e29);
 
-            assert_eq!(n.as_datum().to_string(), "234.23");
+            assert_eq!(n.as_datum().to_string(), "1e29");
         }
 
         #[test]
         fn small_exponent() {
             let n = Number::real(1e-29);
 
-            assert_eq!(n.as_datum().to_string(), "234.23");
+            assert_eq!(n.as_datum().to_string(), "1e-29");
         }
 
         #[test]
         fn rounding_error() {
             let n = Number::real(0.1 + 0.2);
 
-            assert_eq!(n.as_datum().to_string(), "234.23");
+            assert_eq!(n.as_datum().to_string(), "0.30000000000000004");
         }
 
         #[test]
         fn max_float() {
             let n = Number::real(f64::MAX);
 
-            assert_eq!(n.as_datum().to_string(), "234.23");
+            assert_eq!(n.as_datum().to_string(), "1.7976931348623157e308");
         }
 
         #[test]
         fn min_float() {
             let n = Number::real(f64::MIN);
 
-            assert_eq!(n.as_datum().to_string(), "234.23");
+            assert_eq!(n.as_datum().to_string(), "-1.7976931348623157e308");
         }
 
         #[test]
         fn positive_min_float() {
             let n = Number::real(f64::MIN_POSITIVE);
 
-            assert_eq!(n.as_datum().to_string(), "234.23");
+            assert_eq!(n.as_datum().to_string(), "2.2250738585072014e-308");
         }
 
         #[test]
         fn epsilon() {
             let n = Number::real(f64::EPSILON);
 
-            assert_eq!(n.as_datum().to_string(), "234.23");
+            assert_eq!(n.as_datum().to_string(), "2.220446049250313e-16");
         }
 
         #[test]
