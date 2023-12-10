@@ -5,7 +5,7 @@ pub(in crate::lex::tokenize) struct Numeric<'me, 'str> {
 }
 
 impl<'me, 'str> Numeric<'me, 'str> {
-    pub(in crate::lex::tokenize) fn scan(&mut self, first: char) -> TokenExtractResult {
+    pub(in crate::lex::tokenize) fn scan(&mut self) -> TokenExtractResult {
         todo!();
     }
 }

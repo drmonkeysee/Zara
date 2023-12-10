@@ -90,7 +90,7 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
             ';' => Ok(self.comment()),
             '.' => self.period(),
             ',' => Ok(self.unquote()),
-            _ if ch.is_ascii_digit() => Numeric { scan: self.scan }.scan(ch),
+            _ if ch.is_ascii_digit() => Numeric { scan: self.scan }.scan(),
             _ => Identifier::new(self.scan).scan(ch),
         }
     }
