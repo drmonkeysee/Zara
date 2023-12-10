@@ -807,6 +807,32 @@ mod tests {
         }
 
         #[test]
+        fn umax() {
+            let u = Integer::single(u64::MAX, Sign::Positive);
+            let n = u.into();
+            let int = extract_or_fail!(n, Real::Integer);
+
+            assert_eq!(
+                extract_or_fail!(int.precision, Precision::Single),
+                18446744073709551615
+            );
+            assert_eq!(int.sign, Sign::Positive);
+        }
+
+        #[test]
+        fn umin() {
+            let u = Integer::single(u64::MAX, Sign::Negative);
+            let n = u.into();
+            let int = extract_or_fail!(n, Real::Integer);
+
+            assert_eq!(
+                extract_or_fail!(int.precision, Precision::Single),
+                18446744073709551615
+            );
+            assert_eq!(int.sign, Sign::Negative);
+        }
+
+        #[test]
         fn is_one() {
             let cases = [(-4, false), (-1, false), (0, false), (1, true), (4, false)];
             for (case, expected) in cases {
