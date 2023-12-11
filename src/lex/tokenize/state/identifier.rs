@@ -121,8 +121,8 @@ impl<'me, 'str> PeriodIdentifier<'me, 'str> {
         me
     }
 
-    pub(in crate::lex::tokenize) fn scan(&mut self, first: char) -> TokenExtractResult {
-        self.0.continue_peculiar(Some(first))
+    pub(in crate::lex::tokenize) fn scan(&mut self, next: char) -> TokenExtractResult {
+        self.0.continue_peculiar(Some(next))
     }
 }
 
