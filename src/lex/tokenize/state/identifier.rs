@@ -48,7 +48,7 @@ impl<'me, 'str> Identifier<'me, 'str> {
     }
 
     fn peculiar(&mut self, ch: char) -> TokenExtractResult {
-        self.push_peculiar(ch);
+        self.classify_peculiar(ch);
         let next_ch = self.scan.char_if_not_delimiter();
         self.continue_peculiar(next_ch)
     }
@@ -83,7 +83,7 @@ impl<'me, 'str> Identifier<'me, 'str> {
         Err(TokenErrorKind::IdentifierInvalid(ch))
     }
 
-    fn push_peculiar(&mut self, ch: char) {
+    fn classify_peculiar(&mut self, ch: char) {
         // NOTE: only 3 cases: + | - | .
         self.peculiar_state = match ch {
             '+' | '-' => match self.peculiar_state {
@@ -117,7 +117,7 @@ impl<'me, 'str> PeriodIdentifier<'me, 'str> {
         start: &'me ScanItem<'str>,
     ) -> Self {
         let mut me = Self(Identifier::new(scan, start));
-        me.0.push_peculiar('.');
+        me.0.classify_peculiar(start.1);
         me
     }
 
