@@ -1,67 +1,71 @@
 use super::{FreeText, FreeTextPolicy};
 use crate::lex::{
     token::{TokenErrorKind, TokenKind},
-    tokenize::{extract::TokenExtractResult, scan::Scanner},
+    tokenize::{
+        extract::TokenExtractResult,
+        scan::{ScanItem, Scanner},
+    },
 };
 
 pub(in crate::lex::tokenize) struct Identifier<'me, 'str> {
-    buf: String,
     peculiar_state: PeculiarState,
     scan: &'me mut Scanner<'str>,
+    start: &'me ScanItem<'str>,
 }
 
 impl<'me, 'str> Identifier<'me, 'str> {
-    pub(in crate::lex::tokenize) fn new(scan: &'me mut Scanner<'str>) -> Self {
+    pub(in crate::lex::tokenize) fn new(
+        scan: &'me mut Scanner<'str>,
+        start: &'me ScanItem<'str>,
+    ) -> Self {
         Self {
-            buf: String::new(),
             peculiar_state: PeculiarState::Unspecified,
             scan,
+            start,
         }
     }
 
-    pub(in crate::lex::tokenize) fn scan(mut self, first: char) -> TokenExtractResult {
+    pub(in crate::lex::tokenize) fn scan(&mut self) -> TokenExtractResult {
+        let first = self.start.1;
         if first == '|' {
             VerbatimIdentifer::new(self.scan).scan()
         } else if is_id_peculiar_initial(first) {
             self.peculiar(first)
         } else if is_id_initial(first) {
-            self.standard(first)
+            self.standard()
         } else {
             self.invalid(first)
         }
     }
 
-    fn standard(mut self, first: char) -> TokenExtractResult {
-        self.buf.push(first);
+    fn standard(&mut self) -> TokenExtractResult {
         while let Some(ch) = self.scan.char_if_not_delimiter() {
-            if is_id_standard(ch) {
-                self.buf.push(ch);
-            } else {
+            if !is_id_standard(ch) {
                 return self.invalid(ch);
             }
         }
-        Ok(TokenKind::Identifier(self.buf))
+        Ok(TokenKind::Identifier(self.extract_text()))
     }
 
-    fn peculiar(mut self, ch: char) -> TokenExtractResult {
+    fn peculiar(&mut self, ch: char) -> TokenExtractResult {
         self.push_peculiar(ch);
         let next_ch = self.scan.char_if_not_delimiter();
         self.continue_peculiar(next_ch)
     }
 
-    fn continue_peculiar(mut self, next_ch: Option<char>) -> TokenExtractResult {
+    fn continue_peculiar(&mut self, next_ch: Option<char>) -> TokenExtractResult {
         match next_ch {
             Some(ch) => {
                 // TODO: this should only be 0..9, change call if is_id_digit is expanded
                 if is_id_digit(ch) {
                     match self.peculiar_state {
-                        PeculiarState::DefiniteIdentifier => self.standard(ch),
-                        _ => self.not_implemented(ch), // TODO: parse as number
+                        PeculiarState::DefiniteIdentifier => self.standard(),
+                        _ => self.not_implemented(), // TODO: parse as number
                     }
                 } else if is_id_peculiar_initial(ch) {
                     self.peculiar(ch)
                 } else if is_id_initial(ch) {
-                    self.standard(ch)
+                    self.standard()
                 } else {
                     self.invalid(ch)
                 }
@@ -69,7 +73,7 @@ impl<'me, 'str> Identifier<'me, 'str> {
             None => {
                 // NOTE: a single '.' is invalid but Tokenizer handles '.'
                 // before attempting Identifier so this case never happens.
-                Ok(TokenKind::Identifier(self.buf))
+                Ok(TokenKind::Identifier(self.extract_text()))
             }
         }
     }
@@ -80,7 +84,6 @@ impl<'me, 'str> Identifier<'me, 'str> {
     }
 
     fn push_peculiar(&mut self, ch: char) {
-        self.buf.push(ch);
         // NOTE: only 3 cases: + | - | .
         self.peculiar_state = match ch {
             '+' | '-' => match self.peculiar_state {
@@ -95,23 +98,30 @@ impl<'me, 'str> Identifier<'me, 'str> {
         }
     }
 
-    fn not_implemented(mut self, ch: char) -> TokenExtractResult {
-        self.buf.push(ch);
-        self.buf.push_str(self.scan.rest_of_token());
-        Err(TokenErrorKind::Unimplemented(self.buf))
+    fn not_implemented(&mut self) -> TokenExtractResult {
+        self.scan.rest_of_token();
+        Err(TokenErrorKind::Unimplemented(self.extract_text()))
+    }
+
+    fn extract_text(&mut self) -> String {
+        let end = self.scan.pos();
+        self.scan.lexeme(self.start.0..end).to_owned()
     }
 }
 
 pub(in crate::lex::tokenize) struct PeriodIdentifier<'me, 'str>(Identifier<'me, 'str>);
 
 impl<'me, 'str> PeriodIdentifier<'me, 'str> {
-    pub(in crate::lex::tokenize) fn new(scan: &'me mut Scanner<'str>) -> Self {
-        let mut me = Self(Identifier::new(scan));
+    pub(in crate::lex::tokenize) fn new(
+        scan: &'me mut Scanner<'str>,
+        start: &'me ScanItem<'str>,
+    ) -> Self {
+        let mut me = Self(Identifier::new(scan, start));
         me.0.push_peculiar('.');
         me
     }
 
-    pub(in crate::lex::tokenize) fn scan(self, first: char) -> TokenExtractResult {
+    pub(in crate::lex::tokenize) fn scan(&mut self, first: char) -> TokenExtractResult {
         self.0.continue_peculiar(Some(first))
     }
 }

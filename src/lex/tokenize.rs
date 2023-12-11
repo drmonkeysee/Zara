@@ -91,7 +91,7 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
             '.' => self.period(),
             ',' => Ok(self.unquote()),
             _ if ch.is_ascii_digit() => Numeric { scan: self.scan }.scan(),
-            _ => Identifier::new(self.scan).scan(ch),
+            _ => Identifier::new(self.scan, &self.start).scan(),
         }
     }
 
@@ -104,7 +104,7 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
         self.scan
             .char_if_not_delimiter()
             .map_or(Ok(TokenKind::PairJoiner), |ch| {
-                PeriodIdentifier::new(self.scan).scan(ch)
+                PeriodIdentifier::new(self.scan, &self.start).scan(ch)
             })
     }
 
