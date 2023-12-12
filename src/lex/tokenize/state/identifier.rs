@@ -90,11 +90,15 @@ impl<'me, 'str> Identifier<'me, 'str> {
                 PeculiarState::Unspecified => PeculiarState::MaybeSignedNumber,
                 _ => PeculiarState::DefiniteIdentifier,
             },
-            _ => match self.peculiar_state {
+            '.' => match self.peculiar_state {
                 PeculiarState::MaybeSignedNumber => PeculiarState::MaybeSignedFloat,
                 PeculiarState::Unspecified => PeculiarState::MaybeFloat,
                 _ => PeculiarState::DefiniteIdentifier,
             },
+            // TODO: handle this as Result at some point
+            _ => panic!(
+                "developer error! passed unpeculiar initial state to PeculiarIdentifier {ch}"
+            ),
         }
     }
 
@@ -109,9 +113,9 @@ impl<'me, 'str> Identifier<'me, 'str> {
     }
 }
 
-pub(in crate::lex::tokenize) struct PeriodIdentifier<'me, 'str>(Identifier<'me, 'str>);
+pub(in crate::lex::tokenize) struct PeculiarIdentifier<'me, 'str>(Identifier<'me, 'str>);
 
-impl<'me, 'str> PeriodIdentifier<'me, 'str> {
+impl<'me, 'str> PeculiarIdentifier<'me, 'str> {
     pub(in crate::lex::tokenize) fn new(
         scan: &'me mut Scanner<'str>,
         start: &'me ScanItem<'str>,

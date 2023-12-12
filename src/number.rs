@@ -210,7 +210,7 @@ impl Display for Datum<'_> {
                 ComplexRealDatum(&c.0).fmt(f)?;
                 ComplexImagDatum(&c.1).fmt(f)
             }
-            Number::Real(r) => write!(f, "{r}"),
+            Number::Real(r) => r.fmt(f),
         }
     }
 }
