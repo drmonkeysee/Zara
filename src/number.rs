@@ -309,7 +309,8 @@ macro_rules! sign_from {
                 match value.signum() as i32 {
                     -1 => Self::Negative,
                     0 => Self::Zero,
-                    _ => Self::Positive,
+                    1 => Self::Positive,
+                    _ => unreachable!(),
                 }
             }
         }

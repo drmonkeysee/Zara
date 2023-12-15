@@ -103,8 +103,8 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
     fn period(&mut self) -> TokenExtractResult {
         self.scan
             .char_if_not_delimiter()
-            .map_or(Ok(TokenKind::PairJoiner), |ch| {
-                PeculiarIdentifier::new(self.scan, &self.start).scan(ch)
+            .map_or(Ok(TokenKind::PairJoiner), |next_ch| {
+                PeculiarIdentifier::new(self.scan, &self.start).scan(next_ch)
             })
     }
 

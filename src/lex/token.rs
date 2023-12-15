@@ -144,6 +144,7 @@ pub(super) enum TokenErrorKind {
     IdentifierExpectedHex { at: usize },
     IdentifierInvalid(char),
     IdentifierInvalidHex { at: usize },
+    IdentifierPeculiarInvalid(char),
     IdentifierUnterminated,
     IdentifierUnterminatedHex { at: usize },
     StringEscapeInvalid { at: usize, ch: char },
@@ -218,6 +219,7 @@ impl Display for TokenErrorKind {
             Self::IdentifierInvalidHex{ .. } | Self::StringInvalidHex{ .. } => {
                 format_char_range_error("hex-escape out of valid range", f)
             }
+            Self::IdentifierPeculiarInvalid(ch) => write!(f, "unexpected start for peculiar identifier: {ch}"),
             Self::IdentifierUnterminatedHex{ .. } | Self::StringUnterminatedHex{ .. } => f.write_str("unterminated hex-escape"),
             Self::IdentifierUnterminated => f.write_str("unterminated verbatim identifier"),
             Self::StringUnterminated => f.write_str("unterminated string-literal"),
@@ -977,6 +979,19 @@ mod tests {
             };
 
             assert_eq!(err.to_string(), "invalid identifier character: {");
+        }
+
+        #[test]
+        fn display_invalid_peculiar_identifier() {
+            let err = TokenError {
+                kind: TokenErrorKind::IdentifierPeculiarInvalid('{'),
+                span: 0..1,
+            };
+
+            assert_eq!(
+                err.to_string(),
+                "unexpected start for peculiar identifier: {"
+            );
         }
 
         #[test]

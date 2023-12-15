@@ -95,10 +95,7 @@ impl<'me, 'str> Identifier<'me, 'str> {
                 PeculiarState::Unspecified => PeculiarState::MaybeFloat,
                 _ => PeculiarState::DefiniteIdentifier,
             },
-            // TODO: handle this as Result at some point
-            _ => panic!(
-                "developer error! passed unpeculiar initial state to PeculiarIdentifier {ch}"
-            ),
+            _ => unreachable!(),
         }
     }
 
@@ -126,7 +123,12 @@ impl<'me, 'str> PeculiarIdentifier<'me, 'str> {
     }
 
     pub(in crate::lex::tokenize) fn scan(&mut self, next: char) -> TokenExtractResult {
-        self.0.continue_peculiar(Some(next))
+        let first = self.0.start.1;
+        if is_id_peculiar_initial(first) {
+            self.0.continue_peculiar(Some(next))
+        } else {
+            Err(TokenErrorKind::IdentifierPeculiarInvalid(first))
+        }
     }
 }
 
