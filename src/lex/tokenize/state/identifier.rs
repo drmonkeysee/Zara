@@ -29,9 +29,9 @@ impl<'me, 'str> Identifier<'me, 'str> {
         let first = self.start.1;
         if first == '|' {
             VerbatimIdentifer::new(self.scan).scan()
-        } else if is_id_peculiar_initial(first) {
+        } else if is_peculiar_initial(first) {
             self.peculiar(first)
-        } else if is_id_initial(first) {
+        } else if is_initial(first) {
             self.standard()
         } else {
             self.invalid(first)
@@ -40,7 +40,7 @@ impl<'me, 'str> Identifier<'me, 'str> {
 
     fn standard(&mut self) -> TokenExtractResult {
         while let Some(ch) = self.scan.char_if_not_delimiter() {
-            if !is_id_standard(ch) {
+            if !is_standard(ch) {
                 return self.invalid(ch);
             }
         }
@@ -57,14 +57,14 @@ impl<'me, 'str> Identifier<'me, 'str> {
         match next_ch {
             Some(ch) => {
                 // TODO: this should only be 0..9, change call if is_id_digit is expanded
-                if is_id_digit(ch) {
+                if is_digit(ch) {
                     match self.peculiar_state {
                         PeculiarState::DefiniteIdentifier => self.standard(),
                         _ => self.not_implemented(), // TODO: parse as number
                     }
-                } else if is_id_peculiar_initial(ch) {
+                } else if is_peculiar_initial(ch) {
                     self.peculiar(ch)
-                } else if is_id_initial(ch) {
+                } else if is_initial(ch) {
                     self.standard()
                 } else {
                     self.invalid(ch)
@@ -124,7 +124,7 @@ impl<'me, 'str> PeculiarIdentifier<'me, 'str> {
 
     pub(in crate::lex::tokenize) fn scan(&mut self, next: char) -> TokenExtractResult {
         let first = self.0.start.1;
-        if is_id_peculiar_initial(first) {
+        if is_peculiar_initial(first) {
             self.0.continue_peculiar(Some(next))
         } else {
             Err(TokenErrorKind::IdentifierPeculiarInvalid(first))
@@ -236,32 +236,32 @@ enum PeculiarState {
     Unspecified,
 }
 
-fn is_id_initial(ch: char) -> bool {
+fn is_initial(ch: char) -> bool {
     // TODO: disallow Mc, Me, Nd
-    is_id_letter(ch) || is_id_special_initial(ch)
+    is_letter(ch) || is_special_initial(ch)
 }
 
-fn is_id_standard(ch: char) -> bool {
-    is_id_initial(ch) || is_id_digit(ch) || is_id_peculiar_initial(ch)
+fn is_standard(ch: char) -> bool {
+    is_initial(ch) || is_digit(ch) || is_peculiar_initial(ch)
 }
 
-fn is_id_letter(ch: char) -> bool {
+fn is_letter(ch: char) -> bool {
     // TODO: support Lu, Ll, Lt, Lm, Lo, Mn, Mc, Me, Nd, Nl, No, Pd, Pc, Po, Sc, Sm, Sk, So, Co, U+200C, U+200D
     ch.is_ascii_alphabetic()
 }
 
-fn is_id_digit(ch: char) -> bool {
+fn is_digit(ch: char) -> bool {
     // TODO: support Nd, Nl, No
     ch.is_ascii_digit()
 }
 
-fn is_id_special_initial(ch: char) -> bool {
+fn is_special_initial(ch: char) -> bool {
     matches!(
         ch,
         '!' | '$' | '%' | '&' | '*' | '/' | ':' | '<' | '=' | '>' | '?' | '@' | '^' | '_' | '~'
     )
 }
 
-fn is_id_peculiar_initial(ch: char) -> bool {
+fn is_peculiar_initial(ch: char) -> bool {
     matches!(ch, '+' | '-' | '.')
 }
