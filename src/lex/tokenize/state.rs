@@ -6,7 +6,7 @@ mod string;
 // NOTE: re-export for parent module
 pub(super) use self::{
     hashtag::{BlockComment, Hashtag},
-    identifier::{Identifier, PeculiarIdentifier, VerbatimIdentifer},
+    identifier::{Identifier, PeriodIdentifier, VerbatimIdentifer},
     numeric::Numeric,
     string::StringLiteral,
 };

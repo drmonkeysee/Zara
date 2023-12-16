@@ -8,7 +8,7 @@ use self::{
     extract::{TokenExtract, TokenExtractResult},
     scan::{ScanItem, Scanner},
     state::{
-        BlockComment, Hashtag, Identifier, Numeric, PeculiarIdentifier, StringLiteral,
+        BlockComment, Hashtag, Identifier, Numeric, PeriodIdentifier, StringLiteral,
         VerbatimIdentifer,
     },
 };
@@ -104,7 +104,7 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
         self.scan
             .char_if_not_delimiter()
             .map_or(Ok(TokenKind::PairJoiner), |next_ch| {
-                PeculiarIdentifier::new(self.scan, &self.start).scan(next_ch)
+                PeriodIdentifier::new(self.scan, &self.start).scan(next_ch)
             })
     }
 
