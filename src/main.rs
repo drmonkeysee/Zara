@@ -5,7 +5,7 @@ mod run;
 
 use self::{
     args::{Args, Cmd, Input},
-    cli::{Error, Result},
+    cli::Result,
 };
 use std::{
     env,
@@ -23,7 +23,7 @@ struct Exit(Result);
 
 impl Termination for Exit {
     fn report(self) -> ExitCode {
-        self.0.map_or_else(fail, Termination::report)
+        self.0.map_or_else(Termination::report, Termination::report)
     }
 }
 
@@ -46,9 +46,4 @@ fn execute(args: Args) -> Result {
         Cmd::Version => args::version(),
     }
     Ok(())
-}
-
-fn fail(err: Error) -> ExitCode {
-    eprintln!("{err}");
-    ExitCode::FAILURE
 }

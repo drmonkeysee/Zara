@@ -2,7 +2,9 @@ use rustyline::error::ReadlineError;
 use std::{
     error,
     fmt::{self, Display, Formatter},
-    io, result,
+    io,
+    process::{ExitCode, Termination},
+    result,
 };
 
 pub(crate) type Result = result::Result<(), Error>;
@@ -31,6 +33,13 @@ impl error::Error for Error {
             Self::Repl(err) => err,
             Self::Run(err) => err,
         })
+    }
+}
+
+impl Termination for Error {
+    fn report(self) -> ExitCode {
+        eprintln!("{self}");
+        ExitCode::FAILURE
     }
 }
 
