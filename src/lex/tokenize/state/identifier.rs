@@ -117,14 +117,13 @@ impl<'me, 'str> PeculiarIdentifier<'me, 'str> {
         scan: &'me mut Scanner<'str>,
         start: &'me ScanItem<'str>,
     ) -> Self {
-        let mut me = Self(Identifier::new(scan, start));
-        me.0.classify_peculiar(start.1);
-        me
+        Self(Identifier::new(scan, start))
     }
 
     pub(in crate::lex::tokenize) fn scan(&mut self, next: char) -> TokenExtractResult {
         let first = self.0.start.1;
         if is_peculiar_initial(first) {
+            self.0.classify_peculiar(first);
             self.0.continue_peculiar(Some(next))
         } else {
             Err(TokenErrorKind::IdentifierPeculiarInvalid(first))
