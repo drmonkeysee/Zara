@@ -264,3 +264,22 @@ fn is_special_initial(ch: char) -> bool {
 fn is_peculiar_initial(ch: char) -> bool {
     matches!(ch, '+' | '-' | '.')
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn init_peculiar_with_invalid_char() {
+        let mut s = Scanner::new("*");
+        let start = s.next().unwrap();
+        let mut p = PeculiarIdentifier::new(&mut s, &start);
+
+        let r = p.scan('f');
+
+        assert!(matches!(
+            r,
+            Err(TokenErrorKind::IdentifierPeculiarInvalid('*')),
+        ));
+    }
+}
