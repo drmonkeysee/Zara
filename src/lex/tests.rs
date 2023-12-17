@@ -251,7 +251,7 @@ mod lexer {
         let r = target.tokenize(&mut src);
 
         let err = err_or_fail!(r);
-        let err_lines = extract_or_fail!(err, LexerError::Lines);
+        let err_lines = err.0;
         assert_eq!(err_lines.len(), 2);
         let TokenErrorLine(errs, line) = extract_or_fail!(&err_lines[0], LineFailure::Tokenize);
         assert_eq!(errs.len(), 2);
@@ -305,7 +305,7 @@ mod lexer {
         let r = target.tokenize(&mut src);
 
         let err = err_or_fail!(r);
-        let err_lines = extract_or_fail!(err, LexerError::Lines);
+        let err_lines = err.0;
         assert_eq!(err_lines.len(), 1);
         let inner = extract_or_fail!(&err_lines[0], LineFailure::Read);
         assert!(Rc::ptr_eq(&inner.ctx, &src.ctx));
@@ -322,7 +322,7 @@ mod lexer {
         let r = target.tokenize(&mut src);
 
         let err = err_or_fail!(r);
-        let err_lines = extract_or_fail!(err, LexerError::Lines);
+        let err_lines = err.0;
         assert_eq!(err_lines.len(), 2);
         let TokenErrorLine(errs, line) = extract_or_fail!(&err_lines[0], LineFailure::Tokenize);
         assert_eq!(errs.len(), 2);
@@ -401,7 +401,7 @@ mod lexer {
         let r = target.tokenize(&mut src);
 
         let err = err_or_fail!(r);
-        let err_lines = extract_or_fail!(err, LexerError::Lines);
+        let err_lines = err.0;
         assert_eq!(err_lines.len(), 1);
         let TokenErrorLine(errs, line) = extract_or_fail!(&err_lines[0], LineFailure::Tokenize);
         assert_eq!(errs.len(), 1);
@@ -568,7 +568,7 @@ mod lexer {
         let r = target.tokenize(&mut src);
 
         let err = err_or_fail!(r);
-        let err_lines = extract_or_fail!(err, LexerError::Lines);
+        let err_lines = err.0;
         assert_eq!(err_lines.len(), 2);
         let TokenErrorLine(errs, line) = extract_or_fail!(&err_lines[0], LineFailure::Tokenize);
         assert_eq!(errs.len(), 1);
@@ -615,7 +615,7 @@ mod lexer {
         let r = target.tokenize(&mut src);
 
         let err = err_or_fail!(r);
-        let err_lines = extract_or_fail!(err, LexerError::Lines);
+        let err_lines = err.0;
         assert_eq!(err_lines.len(), 1);
         let TokenErrorLine(errs, line) = extract_or_fail!(&err_lines[0], LineFailure::Tokenize);
         assert_eq!(errs.len(), 1);
@@ -753,7 +753,7 @@ mod lexer {
         let r = target.tokenize(&mut src);
 
         let err = err_or_fail!(r);
-        let err_lines = extract_or_fail!(err, LexerError::Lines);
+        let err_lines = err.0;
         assert_eq!(err_lines.len(), 1);
         let TokenErrorLine(errs, line) = extract_or_fail!(&err_lines[0], LineFailure::Tokenize);
         assert_eq!(errs.len(), 1);
@@ -783,7 +783,7 @@ mod lexer {
         let r = target.tokenize(&mut src);
 
         let err = err_or_fail!(r);
-        let err_lines = extract_or_fail!(err, LexerError::Lines);
+        let err_lines = err.0;
         assert_eq!(err_lines.len(), 2);
         let TokenErrorLine(errs, line) = extract_or_fail!(&err_lines[0], LineFailure::Tokenize);
         assert_eq!(errs.len(), 1);
@@ -830,7 +830,7 @@ mod lexer {
         let r = target.tokenize(&mut src);
 
         let err = err_or_fail!(r);
-        let err_lines = extract_or_fail!(err, LexerError::Lines);
+        let err_lines = err.0;
         assert_eq!(err_lines.len(), 1);
         let TokenErrorLine(errs, line) = extract_or_fail!(&err_lines[0], LineFailure::Tokenize);
         assert_eq!(errs.len(), 1);
@@ -863,7 +863,7 @@ mod lexer {
         let r = target.tokenize(&mut src);
 
         let err = err_or_fail!(r);
-        let err_lines = extract_or_fail!(err, LexerError::Lines);
+        let err_lines = err.0;
         assert_eq!(err_lines.len(), 1);
         let TokenErrorLine(errs, line) = extract_or_fail!(&err_lines[0], LineFailure::Tokenize);
         assert_eq!(errs.len(), 2);
@@ -900,7 +900,7 @@ mod lexer {
         let r = target.tokenize(&mut src);
 
         let err = err_or_fail!(r);
-        let err_lines = extract_or_fail!(err, LexerError::Lines);
+        let err_lines = err.0;
         assert_eq!(err_lines.len(), 1);
         let TokenErrorLine(errs, line) = extract_or_fail!(&err_lines[0], LineFailure::Tokenize);
         assert_eq!(errs.len(), 1);
@@ -1038,7 +1038,7 @@ mod lexer {
         let r = target.tokenize(&mut src);
 
         let err = err_or_fail!(r);
-        let err_lines = extract_or_fail!(err, LexerError::Lines);
+        let err_lines = err.0;
         assert_eq!(err_lines.len(), 1);
         let TokenErrorLine(errs, line) = extract_or_fail!(&err_lines[0], LineFailure::Tokenize);
         assert_eq!(errs.len(), 1);
@@ -1068,7 +1068,7 @@ mod lexer {
         let r = target.tokenize(&mut src);
 
         let err = err_or_fail!(r);
-        let err_lines = extract_or_fail!(err, LexerError::Lines);
+        let err_lines = err.0;
         assert_eq!(err_lines.len(), 2);
         let TokenErrorLine(errs, line) = extract_or_fail!(&err_lines[0], LineFailure::Tokenize);
         assert_eq!(errs.len(), 1);
@@ -1118,7 +1118,7 @@ mod lexer {
         let r = target.tokenize(&mut src);
 
         let err = err_or_fail!(r);
-        let err_lines = extract_or_fail!(err, LexerError::Lines);
+        let err_lines = err.0;
         assert_eq!(err_lines.len(), 1);
         let TokenErrorLine(errs, line) = extract_or_fail!(&err_lines[0], LineFailure::Tokenize);
         assert_eq!(errs.len(), 2);
@@ -1155,7 +1155,7 @@ mod lexer {
         let r = target.tokenize(&mut src);
 
         let err = err_or_fail!(r);
-        let err_lines = extract_or_fail!(err, LexerError::Lines);
+        let err_lines = err.0;
         assert_eq!(err_lines.len(), 1);
         let TokenErrorLine(errs, line) = extract_or_fail!(&err_lines[0], LineFailure::Tokenize);
         assert_eq!(errs.len(), 1);
@@ -1268,7 +1268,7 @@ mod error {
 
     #[test]
     fn display_empty_error() {
-        let err = LexerError::Lines(Vec::new());
+        let err = LexerError(Vec::new());
 
         assert_eq!(err.display_message().to_string(), "");
     }
@@ -1276,7 +1276,7 @@ mod error {
     #[test]
     fn display_read_error() {
         let inner = TextError::new(TextContext::named("foo"), 3, "OH NO!");
-        let err = LexerError::Lines(vec![LineFailure::Read(inner)]);
+        let err = LexerError(vec![LineFailure::Read(inner)]);
 
         assert_eq!(
             err.display_message().to_string(),
@@ -1286,7 +1286,7 @@ mod error {
 
     #[test]
     fn display_empty_tokenize_errors() {
-        let err = LexerError::Lines(vec![LineFailure::Tokenize(TokenErrorLine(
+        let err = LexerError(vec![LineFailure::Tokenize(TokenErrorLine(
             Vec::new(),
             make_textline(),
         ))]);
@@ -1300,7 +1300,7 @@ mod error {
 
     #[test]
     fn display_single_error() {
-        let err = LexerError::Lines(vec![LineFailure::Tokenize(TokenErrorLine(
+        let err = LexerError(vec![LineFailure::Tokenize(TokenErrorLine(
             vec![TokenError {
                 kind: TokenErrorKind::Unimplemented("myerr".to_owned()),
                 span: 5..7,
@@ -1319,7 +1319,7 @@ mod error {
 
     #[test]
     fn display_single_error_at_beginning_of_line() {
-        let err = LexerError::Lines(vec![LineFailure::Tokenize(TokenErrorLine(
+        let err = LexerError(vec![LineFailure::Tokenize(TokenErrorLine(
             vec![TokenError {
                 kind: TokenErrorKind::Unimplemented("myerr".to_owned()),
                 span: 0..4,
@@ -1338,7 +1338,7 @@ mod error {
 
     #[test]
     fn display_multiple_errors() {
-        let err = LexerError::Lines(vec![LineFailure::Tokenize(TokenErrorLine(
+        let err = LexerError(vec![LineFailure::Tokenize(TokenErrorLine(
             vec![
                 TokenError {
                     kind: TokenErrorKind::Unimplemented("myerr".to_owned()),
@@ -1364,7 +1364,7 @@ mod error {
 
     #[test]
     fn display_single_error_no_filename() {
-        let err = LexerError::Lines(vec![LineFailure::Tokenize(TokenErrorLine(
+        let err = LexerError(vec![LineFailure::Tokenize(TokenErrorLine(
             vec![TokenError {
                 kind: TokenErrorKind::Unimplemented("myerr".to_owned()),
                 span: 5..7,
@@ -1391,7 +1391,7 @@ mod error {
 
     #[test]
     fn display_single_error_invalid_span() {
-        let err = LexerError::Lines(vec![LineFailure::Tokenize(TokenErrorLine(
+        let err = LexerError(vec![LineFailure::Tokenize(TokenErrorLine(
             vec![TokenError {
                 kind: TokenErrorKind::Unimplemented("myerr".to_owned()),
                 span: 5..2,
@@ -1410,7 +1410,7 @@ mod error {
 
     #[test]
     fn display_single_error_span_out_of_range() {
-        let err = LexerError::Lines(vec![LineFailure::Tokenize(TokenErrorLine(
+        let err = LexerError(vec![LineFailure::Tokenize(TokenErrorLine(
             vec![TokenError {
                 kind: TokenErrorKind::Unimplemented("myerr".to_owned()),
                 span: 15..25,
@@ -1428,22 +1428,11 @@ mod error {
     }
 
     #[test]
-    fn display_invalid_op() {
-        let err = LexerError::InvalidOperation;
-
-        assert_eq!(
-            err.display_message().to_string(),
-            "invalid operation attempted on lexer output; this is likely an interpreter bug!\n"
-        );
-    }
-
-    #[test]
+    #[should_panic(expected = "assertion failed: self.0.len() > 0")]
     fn convert_invalid_line_into_continuation_failure() {
         let line = TokenLine(Vec::new(), make_textline());
 
-        let err = line.into_continuation_unsupported();
-
-        assert!(matches!(err, LexerError::InvalidOperation));
+        line.into_continuation_unsupported();
     }
 
     #[test]
@@ -1457,9 +1446,9 @@ mod error {
         );
 
         let line_err = LineFailure::from(target);
-        let err = line_err.into();
+        let err: LexerError = line_err.into();
 
-        let err_lines = extract_or_fail!(err, LexerError::Lines);
+        let err_lines = err.0;
         assert_eq!(err_lines.len(), 1);
     }
 }
