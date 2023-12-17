@@ -15,11 +15,10 @@ pub(crate) type Token = TokenType<TokenKind>;
 
 impl Token {
     pub(super) fn into_continuation_unsupported(self) -> TokenError {
+        let cont = self.kind.to_continuation();
+        debug_assert!(cont.is_some());
         TokenError {
-            kind: self
-                .kind
-                .to_continuation()
-                .map_or(TokenErrorKind::ContinuationInvalid, TokenErrorKind::from),
+            kind: cont.unwrap().into(),
             span: self.span,
         }
     }
@@ -137,7 +136,6 @@ pub(super) enum TokenErrorKind {
     CharacterExpected,
     CharacterExpectedHex,
     CharacterInvalidHex,
-    ContinuationInvalid,
     DirectiveExpected,
     DirectiveInvalid,
     IdentifierEscapeInvalid { at: usize, ch: char },
@@ -201,9 +199,6 @@ impl Display for TokenErrorKind {
             Self::CharacterInvalidHex => {
                 format_char_range_error("character hex-sequence out of valid range", f)
             }
-            Self::ContinuationInvalid => {
-                f.write_str("attempted continuation conversion on invalid token; this is likely an interpreter bug!")
-            }
             Self::DirectiveExpected => f.write_str("expected directive: fold-case or no-fold-case"),
             Self::DirectiveInvalid => {
                 f.write_str("unsupported directive: expected fold-case or no-fold-case")
@@ -214,11 +209,15 @@ impl Display for TokenErrorKind {
             Self::IdentifierEscapeInvalid { ch, .. } | Self::StringEscapeInvalid { ch, .. } => {
                 write!(f, "invalid escape sequence: \\{ch}")
             }
-            Self::IdentifierExpectedHex{ .. } | Self::StringExpectedHex{ .. } => f.write_str("expected hex-escape"),
-            Self::IdentifierInvalidHex{ .. } | Self::StringInvalidHex{ .. } => {
+            Self::IdentifierExpectedHex { .. } | Self::StringExpectedHex { .. } => {
+                f.write_str("expected hex-escape")
+            }
+            Self::IdentifierInvalidHex { .. } | Self::StringInvalidHex { .. } => {
                 format_char_range_error("hex-escape out of valid range", f)
             }
-            Self::IdentifierUnterminatedHex{ .. } | Self::StringUnterminatedHex{ .. } => f.write_str("unterminated hex-escape"),
+            Self::IdentifierUnterminatedHex { .. } | Self::StringUnterminatedHex { .. } => {
+                f.write_str("unterminated hex-escape")
+            }
             Self::IdentifierUnterminated => f.write_str("unterminated verbatim identifier"),
             Self::StringUnterminated => f.write_str("unterminated string-literal"),
             Self::Unimplemented(s) => write!(f, "unimplemented tokenization: '{s}'"),
@@ -663,21 +662,14 @@ mod tests {
         }
 
         #[test]
+        #[should_panic(expected = "assertion failed: cont.is_some()")]
         fn to_invalid_continuation_error() {
             let token = Token {
                 kind: TokenKind::ParenLeft,
                 span: 0..1,
             };
 
-            let result = token.into_continuation_unsupported();
-
-            assert!(matches!(
-                result,
-                TokenError {
-                    kind: TokenErrorKind::ContinuationInvalid,
-                    span: Range { start: 0, end: 1 },
-                }
-            ));
+            token.into_continuation_unsupported();
         }
     }
 
@@ -944,19 +936,6 @@ mod tests {
             };
 
             assert_eq!(err.to_string(), "unterminated block comment");
-        }
-
-        #[test]
-        fn display_invalid_continuation() {
-            let err = TokenError {
-                kind: TokenErrorKind::ContinuationInvalid,
-                span: 0..1,
-            };
-
-            assert_eq!(
-                err.to_string(),
-                "attempted continuation conversion on invalid token; this is likely an interpreter bug!"
-            );
         }
 
         #[test]
