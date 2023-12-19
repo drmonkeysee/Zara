@@ -79,8 +79,8 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
     }
 
     fn scan(&mut self) -> TokenExtractResult {
-        let ch = self.start.1;
-        match ch {
+        let first = self.start.1;
+        match first {
             '(' => Ok(TokenKind::ParenLeft),
             ')' => Ok(TokenKind::ParenRight),
             '\'' => Ok(TokenKind::Quote),
@@ -90,7 +90,7 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
             ';' => Ok(self.comment()),
             '.' => self.period(),
             ',' => Ok(self.unquote()),
-            _ if ch.is_ascii_digit() => Numeric { scan: self.scan }.scan(),
+            _ if first.is_ascii_digit() => Numeric::decimal(self.scan).scan(first),
             _ => Identifier::new(self.scan, &self.start).scan(),
         }
     }

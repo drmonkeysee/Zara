@@ -18,7 +18,6 @@ pub(super) struct FreeText<'me, 'str, P> {
     policy: P,
     possible_line_cont_idx: Option<usize>,
     scan: &'me mut Scanner<'str>,
-    start: usize,
 }
 
 impl<'me, 'str, P: FreeTextPolicy> FreeText<'me, 'str, P> {
@@ -28,16 +27,14 @@ impl<'me, 'str, P: FreeTextPolicy> FreeText<'me, 'str, P> {
             policy,
             possible_line_cont_idx: None,
             scan,
-            start: 0,
         }
     }
 
     pub(super) fn scan(mut self) -> TokenExtractResult {
         self.policy.prelude(self.scan);
         while let Some((idx, ch)) = self.scan.next() {
-            self.start = idx;
             match ch {
-                '\\' => self.escape()?,
+                '\\' => self.escape(idx)?,
                 _ if ch == P::TERMINATOR => return Ok(self.terminated()),
                 _ => self.buf.push(ch),
             }
@@ -45,7 +42,7 @@ impl<'me, 'str, P: FreeTextPolicy> FreeText<'me, 'str, P> {
         Ok(self.unterminated())
     }
 
-    fn escape(&mut self) -> FreeTextResult {
+    fn escape(&mut self, start: usize) -> FreeTextResult {
         match self.scan.char() {
             Some(ch) => match ch {
                 'a' => self.buf.push('\x07'),
@@ -53,7 +50,7 @@ impl<'me, 'str, P: FreeTextPolicy> FreeText<'me, 'str, P> {
                 'n' => self.buf.push('\n'),
                 'r' => self.buf.push('\r'),
                 't' => self.buf.push('\t'),
-                'x' | 'X' => self.hex()?,
+                'x' | 'X' => self.hex(start)?,
                 '"' | '\\' | '|' => self.buf.push(ch),
                 _ if ch.is_ascii_whitespace() => {
                     // NOTE: \<whitespace> may be a line-continuation, but we
@@ -61,7 +58,7 @@ impl<'me, 'str, P: FreeTextPolicy> FreeText<'me, 'str, P> {
                     self.possible_line_cont_idx = Some(self.buf.len());
                     self.buf.push(ch);
                 }
-                _ => return Err(self.policy.escape_invalid(self.start, ch)),
+                _ => return Err(self.policy.escape_invalid(start, ch)),
             },
             None => {
                 // NOTE: \EOL is a line continuation, mark end of buffer
@@ -71,19 +68,19 @@ impl<'me, 'str, P: FreeTextPolicy> FreeText<'me, 'str, P> {
         Ok(())
     }
 
-    fn hex(&mut self) -> FreeTextResult {
-        let start = self.scan.pos();
+    fn hex(&mut self, start: usize) -> FreeTextResult {
+        let pos = self.scan.pos();
         self.scan.end_of_word();
         match self.scan.char_if_eq(';') {
             Some(idx) => {
-                let rest = self.scan.lexeme(start..idx);
+                let rest = self.scan.lexeme(pos..idx);
                 match parse_char_hex(rest) {
-                    HexParse::Invalid => return Err(self.policy.hex_invalid(self.start)),
-                    HexParse::Unexpected => return Err(self.policy.hex_expected(self.start)),
+                    HexParse::Invalid => return Err(self.policy.hex_invalid(start)),
+                    HexParse::Unexpected => return Err(self.policy.hex_expected(start)),
                     HexParse::Valid(ch) => self.buf.push(ch),
                 }
             }
-            None => return Err(self.policy.hex_unterminated(self.start)),
+            None => return Err(self.policy.hex_unterminated(start)),
         };
         Ok(())
     }
