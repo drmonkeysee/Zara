@@ -299,6 +299,30 @@ mod float {
     }
 
     #[test]
+    fn infinity_upper() {
+        let mut s = Scanner::new("+INF.0");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 6,
+                result: Ok(TokenKind::Literal(Literal::Number(_))),
+            }
+        ));
+        let flt = extract_number!(r.result, Number::Real);
+        assert_eq!(flt.to_string(), "+inf.0");
+    }
+
+    #[test]
     fn negative_infinity() {
         let mut s = Scanner::new("-inf.0");
         let start = some_or_fail!(s.next_token());
@@ -347,6 +371,30 @@ mod float {
     #[test]
     fn positive_nan() {
         let mut s = Scanner::new("+nan.0");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 6,
+                result: Ok(TokenKind::Literal(Literal::Number(_))),
+            }
+        ));
+        let flt = extract_number!(r.result, Number::Real);
+        assert_eq!(flt.to_string(), "+nan.0");
+    }
+
+    #[test]
+    fn nan_upper() {
+        let mut s = Scanner::new("+NAN.0");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
             scan: &mut s,
@@ -465,6 +513,32 @@ mod complex {
     #[test]
     fn positive_imaginary() {
         let mut s = Scanner::new("+i");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 2,
+                result: Ok(TokenKind::Literal(Literal::Number(_))),
+            }
+        ));
+        let tok = ok_or_fail!(r.result);
+        let lit = extract_or_fail!(tok, TokenKind::Literal);
+        let cpx = extract_or_fail!(lit, Literal::Number);
+        assert_eq!(cpx.as_datum().to_string(), "+i");
+    }
+
+    #[test]
+    fn imaginary_upper() {
+        let mut s = Scanner::new("+I");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
             scan: &mut s,
