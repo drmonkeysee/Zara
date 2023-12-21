@@ -9,72 +9,33 @@ use crate::{
     literal::Literal,
     number::Number,
 };
+use std::ops::Range;
 
 pub(in crate::lex::tokenize) struct Numeric<'me, 'str, R> {
-    decimal_point: bool,
-    radix: R,
+    classifier: Classifier<R>,
     scan: &'me mut Scanner<'str>,
-    sign: Option<Sign>,
     start: &'me ScanItem<'str>,
 }
 
-impl<'me, 'str, R: Radix> Numeric<'me, 'str, R> {
+impl<'me, 'str, R: Radix + Default> Numeric<'me, 'str, R> {
     fn new(scan: &'me mut Scanner<'str>, start: &'me ScanItem<'str>, radix: R) -> Self {
         Self {
-            decimal_point: false,
+            classifier: Classifier::new(radix),
             scan,
-            radix,
-            sign: None,
             start,
         }
     }
 
     pub(in crate::lex::tokenize) fn scan(&mut self) -> TokenExtractResult {
-        if let Some(err) = self.classify(*self.start) {
+        if let Some(err) = self.classifier.classify(*self.start) {
             return self.fail(err);
         }
         while let Some(item) = self.scan.next_if_not_delimiter() {
-            if let Some(err) = self.classify(item) {
+            if let Some(err) = self.classifier.classify(item) {
                 return self.fail(err);
             }
         }
         self.parse()
-    }
-
-    fn classify(&mut self, item: ScanItem) -> Option<TokenErrorKind> {
-        let (idx, ch) = item;
-        match ch {
-            '+' | '-' => {
-                if self.sign.is_some() {
-                    todo!();
-                }
-                self.sign = Some(if ch == '+' {
-                    Sign::Positive
-                } else {
-                    Sign::Negative
-                });
-            }
-            '.' => {
-                if !self.radix.allow_decimal_point() {
-                    return Some(TokenErrorKind::NumberInvalidDecimalPoint {
-                        at: idx,
-                        radix: self.radix.name(),
-                    });
-                }
-                if self.decimal_point {
-                    return Some(TokenErrorKind::NumberUnexpectedDecimalPoint { at: idx });
-                }
-                self.decimal_point = true;
-            }
-            '/' => todo!(),
-            '@' => todo!(),
-            'e' | 'E' => todo!(),
-            'i' | 'I' => todo!(),
-            'n' | 'N' => todo!(),
-            _ if self.radix.is_digit(ch) => (),
-            _ => todo!(),
-        }
-        None
     }
 
     fn fail(&mut self, kind: TokenErrorKind) -> TokenExtractResult {
@@ -83,7 +44,7 @@ impl<'me, 'str, R: Radix> Numeric<'me, 'str, R> {
     }
 
     fn parse(&mut self) -> TokenExtractResult {
-        if self.decimal_point {
+        if self.classifier.decimal_point {
             let flt: f64 = self.extract_str(self.start.0).parse()?;
             return Ok(TokenKind::Literal(Literal::Number(Number::real(flt))));
         }
@@ -114,6 +75,7 @@ pub(in crate::lex::tokenize) trait Radix {
     }
 }
 
+#[derive(Default)]
 pub(in crate::lex::tokenize) struct Decimal;
 
 impl Radix for Decimal {
@@ -154,4 +116,66 @@ pub(super) fn infinity(sign: Sign) -> TokenKind {
 
 pub(super) fn nan() -> TokenKind {
     TokenKind::Literal(Literal::Number(Number::real(f64::NAN)))
+}
+
+#[derive(Default)]
+enum Classification {
+    Exponent,
+    Number,
+    #[default]
+    Start,
+}
+
+#[derive(Default)]
+struct Classifier<R> {
+    decimal_point: bool,
+    digits: Range<usize>,
+    radix: R,
+    sign: Option<Sign>,
+    state: Classification,
+}
+
+impl<R: Radix + Default> Classifier<R> {
+    fn new(radix: R) -> Self {
+        Self {
+            radix,
+            ..Default::default()
+        }
+    }
+
+    fn classify(&mut self, item: ScanItem) -> Option<TokenErrorKind> {
+        let (idx, ch) = item;
+        match ch {
+            '+' | '-' => {
+                if self.sign.is_some() {
+                    todo!();
+                }
+                self.sign = Some(if ch == '+' {
+                    Sign::Positive
+                } else {
+                    Sign::Negative
+                });
+            }
+            '.' => {
+                if !self.radix.allow_decimal_point() {
+                    return Some(TokenErrorKind::NumberInvalidDecimalPoint {
+                        at: idx,
+                        radix: self.radix.name(),
+                    });
+                }
+                if self.decimal_point {
+                    return Some(TokenErrorKind::NumberUnexpectedDecimalPoint { at: idx });
+                }
+                self.decimal_point = true;
+            }
+            '/' => todo!(),
+            '@' => todo!(),
+            'e' | 'E' => todo!(),
+            'i' | 'I' => todo!(),
+            'n' | 'N' => todo!(),
+            _ if self.radix.is_digit(ch) => (),
+            _ => todo!(),
+        }
+        None
+    }
 }
