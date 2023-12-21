@@ -27,9 +27,6 @@ impl<'me, 'str, R: Radix + Default> Numeric<'me, 'str, R> {
     }
 
     pub(in crate::lex::tokenize) fn scan(&mut self) -> TokenExtractResult {
-        if let Some(err) = self.classifier.classify(*self.start) {
-            return self.fail(err);
-        }
         while let Some(item) = self.scan.next_if_not_delimiter() {
             if let Some(err) = self.classifier.classify(item) {
                 return self.fail(err);
