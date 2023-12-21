@@ -145,6 +145,7 @@ pub(super) enum TokenErrorKind {
     IdentifierInvalidHex { at: usize },
     IdentifierUnterminated,
     IdentifierUnterminatedHex { at: usize },
+    NumberInvalid,
     NumberInvalidDecimalPoint { at: usize, radix: &'static str },
     NumberUnexpectedDecimalPoint { at: usize },
     StringEscapeInvalid { at: usize, ch: char },
@@ -224,6 +225,7 @@ impl Display for TokenErrorKind {
                 f.write_str("unterminated hex-escape")
             }
             Self::IdentifierUnterminated => f.write_str("unterminated verbatim identifier"),
+            Self::NumberInvalid => f.write_str("expected numeric literal"),
             Self::NumberInvalidDecimalPoint { radix, .. } => {
                 write!(f, "{radix} radix does not support decimal notation")
             }
@@ -995,6 +997,16 @@ mod tests {
             };
 
             assert_eq!(err.to_string(), "unterminated verbatim identifier");
+        }
+
+        #[test]
+        fn display_number_invalid() {
+            let err = TokenError {
+                kind: TokenErrorKind::NumberInvalid,
+                span: 0..1,
+            };
+
+            assert_eq!(err.to_string(), "expected numeric literal");
         }
 
         #[test]

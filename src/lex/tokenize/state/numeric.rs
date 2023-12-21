@@ -144,38 +144,47 @@ impl<R: Radix + Default> Classifier<R> {
     }
 
     fn classify(&mut self, item: ScanItem) -> Option<TokenErrorKind> {
+        match self.state {
+            Classification::Exponent => todo!(),
+            Classification::Number => todo!(),
+            Classification::Start => self.start(item),
+        }
+    }
+
+    fn start(&mut self, item: ScanItem) -> Option<TokenErrorKind> {
         let (idx, ch) = item;
+        self.state = Classification::Number;
+        // TODO: is sign ever part of numeric tokenizer or does identifier always handle it?
         match ch {
             '+' | '-' => {
-                if self.sign.is_some() {
-                    todo!();
-                }
-                self.sign = Some(if ch == '+' {
-                    Sign::Positive
-                } else {
-                    Sign::Negative
-                });
+                self.set_sign(ch);
+                None
             }
-            '.' => {
-                if !self.radix.allow_decimal_point() {
-                    return Some(TokenErrorKind::NumberInvalidDecimalPoint {
-                        at: idx,
-                        radix: self.radix.name(),
-                    });
-                }
-                if self.decimal_point {
-                    return Some(TokenErrorKind::NumberUnexpectedDecimalPoint { at: idx });
-                }
-                self.decimal_point = true;
-            }
-            '/' => todo!(),
-            '@' => todo!(),
-            'e' | 'E' => todo!(),
-            'i' | 'I' => todo!(),
-            'n' | 'N' => todo!(),
-            _ if self.radix.is_digit(ch) => (),
-            _ => todo!(),
+            '.' => self.handle_decimal_point(idx),
+            _ if self.radix.is_digit(ch) => None,
+            _ => Some(TokenErrorKind::NumberInvalid),
         }
-        None
+    }
+
+    fn set_sign(&mut self, ch: char) {
+        self.sign = Some(if ch == '+' {
+            Sign::Positive
+        } else {
+            Sign::Negative
+        });
+    }
+
+    fn handle_decimal_point(&mut self, idx: usize) -> Option<TokenErrorKind> {
+        if !self.radix.allow_decimal_point() {
+            Some(TokenErrorKind::NumberInvalidDecimalPoint {
+                at: idx,
+                radix: self.radix.name(),
+            })
+        } else if self.decimal_point {
+            Some(TokenErrorKind::NumberUnexpectedDecimalPoint { at: idx })
+        } else {
+            self.decimal_point = true;
+            None
+        }
     }
 }

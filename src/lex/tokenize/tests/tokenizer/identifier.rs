@@ -265,6 +265,27 @@ fn sign_dot_identifier() {
 }
 
 #[test]
+fn dot_sign_identifier() {
+    let mut s = Scanner::new(".+");
+    let start = some_or_fail!(s.next_token());
+    let t = Tokenizer {
+        scan: &mut s,
+        start,
+    };
+
+    let r = t.extract();
+
+    assert!(matches!(
+        r,
+        TokenExtract {
+            start: 0,
+            end: 2,
+            result: Ok(TokenKind::Identifier(s)),
+        } if s == ".+"
+    ));
+}
+
+#[test]
 fn double_period_identifier() {
     let mut s = Scanner::new("..");
     let start = some_or_fail!(s.next_token());
