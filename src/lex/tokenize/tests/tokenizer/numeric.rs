@@ -499,7 +499,7 @@ mod float {
         assert!(matches!(
             r,
             TokenExtract {
-                start: 0,
+                start: 5,
                 end: 8,
                 result: Err(TokenErrorKind::NumberUnexpectedDecimalPoint { at: 5 }),
             }

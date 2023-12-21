@@ -30,18 +30,19 @@ impl<'me, 'str, R: Radix> Numeric<'me, 'str, R> {
     }
 
     pub(in crate::lex::tokenize) fn scan(&mut self) -> TokenExtractResult {
-        if let Some(err) = self.classify_char(self.start.1) {
+        if let Some(err) = self.classify(*self.start) {
             return self.fail(err);
         }
-        while let Some(ch) = self.scan.char_if_not_delimiter() {
-            if let Some(err) = self.classify_char(ch) {
+        while let Some(item) = self.scan.next_if_not_delimiter() {
+            if let Some(err) = self.classify(item) {
                 return self.fail(err);
             }
         }
         self.parse()
     }
 
-    fn classify_char(&mut self, ch: char) -> Option<TokenErrorKind> {
+    fn classify(&mut self, item: ScanItem) -> Option<TokenErrorKind> {
+        let (idx, ch) = item;
         match ch {
             '+' | '-' => {
                 if self.sign.is_some() {
@@ -56,12 +57,12 @@ impl<'me, 'str, R: Radix> Numeric<'me, 'str, R> {
             '.' => {
                 if !self.radix.allow_decimal_point() {
                     return Some(TokenErrorKind::NumberInvalidDecimalPoint {
-                        at: 0,
+                        at: idx,
                         radix: self.radix.name(),
                     });
                 }
                 if self.decimal_point {
-                    return Some(TokenErrorKind::NumberUnexpectedDecimalPoint { at: 0 });
+                    return Some(TokenErrorKind::NumberUnexpectedDecimalPoint { at: idx });
                 }
                 self.decimal_point = true;
             }

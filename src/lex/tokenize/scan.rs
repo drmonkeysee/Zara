@@ -19,6 +19,10 @@ impl<'a> Scanner<'a> {
         self.chars.find(not_whitespace)
     }
 
+    pub(super) fn next_if_not_delimiter(&mut self) -> Option<ScanItem> {
+        self.chars.next_if(not_delimiter)
+    }
+
     pub(super) fn char(&mut self) -> Option<char> {
         self.next().map(to_char)
     }
@@ -28,7 +32,7 @@ impl<'a> Scanner<'a> {
     }
 
     pub(super) fn char_if_not_delimiter(&mut self) -> Option<char> {
-        self.chars.next_if(not_delimiter).map(to_char)
+        self.next_if_not_delimiter().map(to_char)
     }
 
     pub(super) fn char_if_not_token_boundary(&mut self) -> Option<char> {
@@ -264,6 +268,33 @@ mod tests {
             let r = some_or_fail!(s.char());
 
             assert_eq!(r, 'a');
+        }
+
+        #[test]
+        fn next_if_not_delimiter_empty_string() {
+            let mut s = Scanner::new("");
+
+            let r = s.next_if_not_delimiter();
+
+            assert!(r.is_none());
+        }
+
+        #[test]
+        fn next_if_not_delimiter_if_delimiter_at_start() {
+            let mut s = Scanner::new("(abc");
+
+            let r = s.next_if_not_delimiter();
+
+            assert!(r.is_none());
+        }
+
+        #[test]
+        fn next_if_not_delimiter_at_start() {
+            let mut s = Scanner::new("abc)");
+
+            let r = some_or_fail!(s.next_if_not_delimiter());
+
+            assert_eq!(r, (0, 'a'));
         }
 
         #[test]
