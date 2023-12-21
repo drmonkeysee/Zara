@@ -90,7 +90,7 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
             ';' => Ok(self.comment()),
             '.' => self.period(),
             ',' => Ok(self.unquote()),
-            _ if Decimal.is_digit(first) => Numeric::decimal(self.scan).scan(first),
+            _ if Decimal.is_digit(first) => Numeric::decimal(self.scan, &self.start).scan(),
             _ => Identifier::new(self.scan, &self.start).scan(),
         }
     }

@@ -2,6 +2,7 @@ use crate::literal::Literal;
 use std::{
     error::Error,
     fmt::{self, Display, Formatter},
+    num::ParseFloatError,
     ops::Range,
 };
 
@@ -244,6 +245,12 @@ impl From<TokenContinuation> for TokenErrorKind {
                 Self::StringUnterminated
             }
         }
+    }
+}
+
+impl From<ParseFloatError> for TokenErrorKind {
+    fn from(value: ParseFloatError) -> Self {
+        todo!()
     }
 }
 

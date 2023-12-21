@@ -1,7 +1,10 @@
 use crate::{
     lex::{
         token::{TokenErrorKind, TokenKind},
-        tokenize::{extract::TokenExtractResult, scan::Scanner},
+        tokenize::{
+            extract::TokenExtractResult,
+            scan::{ScanItem, Scanner},
+        },
     },
     literal::Literal,
     number::Number,
@@ -12,20 +15,22 @@ pub(in crate::lex::tokenize) struct Numeric<'me, 'str, R> {
     radix: R,
     scan: &'me mut Scanner<'str>,
     sign: Option<Sign>,
+    start: &'me ScanItem<'str>,
 }
 
 impl<'me, 'str, R: Radix> Numeric<'me, 'str, R> {
-    fn new(scan: &'me mut Scanner<'str>, radix: R) -> Self {
+    fn new(scan: &'me mut Scanner<'str>, start: &'me ScanItem<'str>, radix: R) -> Self {
         Self {
             decimal_point: false,
             scan,
             radix,
             sign: None,
+            start,
         }
     }
 
-    pub(in crate::lex::tokenize) fn scan(&mut self, first: char) -> TokenExtractResult {
-        if let Some(err) = self.classify_char(first) {
+    pub(in crate::lex::tokenize) fn scan(&mut self) -> TokenExtractResult {
+        if let Some(err) = self.classify_char(self.start.1) {
             return self.fail(err);
         }
         while let Some(ch) = self.scan.char_if_not_delimiter() {
@@ -59,14 +64,13 @@ impl<'me, 'str, R: Radix> Numeric<'me, 'str, R> {
                     return Some(TokenErrorKind::NumberUnexpectedDecimalPoint { at: 0 });
                 }
                 self.decimal_point = true;
-                todo!();
             }
             '/' => todo!(),
             '@' => todo!(),
             'e' | 'E' => todo!(),
             'i' | 'I' => todo!(),
             'n' | 'N' => todo!(),
-            _ if self.radix.is_digit(ch) => todo!(),
+            _ if self.radix.is_digit(ch) => (),
             _ => todo!(),
         }
         None
@@ -77,14 +81,26 @@ impl<'me, 'str, R: Radix> Numeric<'me, 'str, R> {
         Err(kind)
     }
 
-    fn parse(&self) -> TokenExtractResult {
+    fn parse(&mut self) -> TokenExtractResult {
+        if self.decimal_point {
+            let flt: f64 = self.extract_str(self.start.0).parse()?;
+            return Ok(TokenKind::Literal(Literal::Number(Number::real(flt))));
+        }
         todo!();
+    }
+
+    fn extract_str(&mut self, start: usize) -> &str {
+        let end = self.scan.pos();
+        self.scan.lexeme(start..end)
     }
 }
 
 impl<'me, 'str> Numeric<'me, 'str, Decimal> {
-    pub(in crate::lex::tokenize) fn decimal(scan: &'me mut Scanner<'str>) -> Self {
-        Self::new(scan, Decimal)
+    pub(in crate::lex::tokenize) fn decimal(
+        scan: &'me mut Scanner<'str>,
+        start: &'me ScanItem<'str>,
+    ) -> Self {
+        Self::new(scan, start, Decimal)
     }
 }
 
