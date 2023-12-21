@@ -67,7 +67,7 @@ pub(in crate::lex::tokenize) trait Radix {
     fn is_digit(&self, ch: char) -> bool;
     fn name(&self) -> &'static str;
 
-    fn allow_decimal_point(&self) -> bool {
+    fn allow_floating_point(&self) -> bool {
         false
     }
 }
@@ -84,7 +84,7 @@ impl Radix for Decimal {
         "decimal"
     }
 
-    fn allow_decimal_point(&self) -> bool {
+    fn allow_floating_point(&self) -> bool {
         true
     }
 }
@@ -118,7 +118,8 @@ pub(super) fn nan() -> TokenKind {
 #[derive(Default)]
 enum Classification {
     Exponent,
-    Number,
+    Float,
+    Integer,
     #[default]
     Start,
 }
@@ -126,7 +127,7 @@ enum Classification {
 #[derive(Default)]
 struct Classifier<R> {
     decimal_point: bool,
-    digits: Range<usize>,
+    magnitude: Range<usize>,
     radix: R,
     sign: Option<Sign>,
     state: Classification,
@@ -140,48 +141,103 @@ impl<R: Radix + Default> Classifier<R> {
         }
     }
 
+    fn signed(sign: Sign, radix: R) -> Self {
+        Self {
+            radix,
+            sign: Some(sign),
+            ..Default::default()
+        }
+    }
+
+    fn floating(sign: Option<Sign>, radix: R) -> Self {
+        Self {
+            decimal_point: true,
+            radix,
+            sign,
+            ..Default::default()
+        }
+    }
+
     fn classify(&mut self, item: ScanItem) -> Option<TokenErrorKind> {
         match self.state {
-            Classification::Exponent => todo!(),
-            Classification::Number => todo!(),
+            Classification::Exponent => self.exponent(item),
+            Classification::Float => self.float(item),
+            Classification::Integer => self.integer(item),
             Classification::Start => self.start(item),
         }
     }
 
     fn start(&mut self, item: ScanItem) -> Option<TokenErrorKind> {
         let (idx, ch) = item;
-        self.state = Classification::Number;
-        // TODO: is sign ever part of numeric tokenizer or does identifier always handle it?
         match ch {
-            '+' | '-' => {
-                self.set_sign(ch);
+            _ if self.radix.is_digit(ch) => {
+                self.state = Classification::Integer;
+                self.magnitude.start = idx;
                 None
             }
-            '.' => self.handle_decimal_point(idx),
-            _ if self.radix.is_digit(ch) => None,
-            _ => Some(TokenErrorKind::NumberInvalid),
+            _ => self.invalid(),
         }
     }
 
-    fn set_sign(&mut self, ch: char) {
-        self.sign = Some(if ch == '+' {
-            Sign::Positive
-        } else {
-            Sign::Negative
-        });
+    fn integer(&mut self, item: ScanItem) -> Option<TokenErrorKind> {
+        let (idx, ch) = item;
+        match ch {
+            '.' => {
+                if self.radix.allow_floating_point() {
+                    self.state = Classification::Float;
+                    None
+                } else {
+                    Some(TokenErrorKind::NumberInvalidDecimalPoint {
+                        at: idx,
+                        radix: self.radix.name(),
+                    })
+                }
+            }
+            'e' | 'E' => {
+                if self.radix.allow_floating_point() {
+                    self.state = Classification::Exponent;
+                    None
+                } else {
+                    Some(TokenErrorKind::NumberInvalidExponent {
+                        at: idx,
+                        radix: self.radix.name(),
+                    })
+                }
+            }
+            _ if self.radix.is_digit(ch) => {
+                self.magnitude.end = idx;
+                None
+            }
+            _ => self.invalid(),
+        }
     }
 
-    fn handle_decimal_point(&mut self, idx: usize) -> Option<TokenErrorKind> {
-        if !self.radix.allow_decimal_point() {
-            Some(TokenErrorKind::NumberInvalidDecimalPoint {
-                at: idx,
-                radix: self.radix.name(),
-            })
-        } else if self.decimal_point {
-            Some(TokenErrorKind::NumberUnexpectedDecimalPoint { at: idx })
-        } else {
-            self.decimal_point = true;
-            None
+    fn float(&mut self, item: ScanItem) -> Option<TokenErrorKind> {
+        let (idx, ch) = item;
+        match ch {
+            '.' => Some(TokenErrorKind::NumberUnexpectedDecimalPoint { at: idx }),
+            'e' | 'E' => {
+                self.state = Classification::Exponent;
+                None
+            }
+            _ if self.radix.is_digit(ch) => {
+                self.magnitude.end = idx;
+                None
+            }
+            _ => self.invalid(),
         }
+    }
+
+    fn exponent(&mut self, item: ScanItem) -> Option<TokenErrorKind> {
+        let (idx, ch) = item;
+        match ch {
+            '+' | '-' => todo!(),
+            _ if self.radix.is_digit(ch) => todo!(),
+            _ => todo!(),
+        }
+    }
+
+    fn invalid(&self) -> Option<TokenErrorKind> {
+        Some(TokenErrorKind::NumberInvalid)
     }
 }

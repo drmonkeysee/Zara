@@ -147,6 +147,7 @@ pub(super) enum TokenErrorKind {
     IdentifierUnterminatedHex { at: usize },
     NumberInvalid,
     NumberInvalidDecimalPoint { at: usize, radix: &'static str },
+    NumberInvalidExponent { at: usize, radix: &'static str },
     NumberUnexpectedDecimalPoint { at: usize },
     StringEscapeInvalid { at: usize, ch: char },
     StringExpectedHex { at: usize },
@@ -184,6 +185,7 @@ impl TokenErrorKind {
             | TokenErrorKind::IdentifierInvalidHex { at }
             | TokenErrorKind::IdentifierUnterminatedHex { at }
             | TokenErrorKind::NumberInvalidDecimalPoint { at, .. }
+            | TokenErrorKind::NumberInvalidExponent { at, .. }
             | TokenErrorKind::NumberUnexpectedDecimalPoint { at }
             | TokenErrorKind::StringEscapeInvalid { at, .. }
             | TokenErrorKind::StringExpectedHex { at }
@@ -228,6 +230,9 @@ impl Display for TokenErrorKind {
             Self::NumberInvalid => f.write_str("expected numeric literal"),
             Self::NumberInvalidDecimalPoint { radix, .. } => {
                 write!(f, "{radix} radix does not support decimal notation")
+            }
+            Self::NumberInvalidExponent { radix, .. } => {
+                write!(f, "{radix} radix does not support exponential notation")
             }
             Self::NumberUnexpectedDecimalPoint { .. } => f.write_str("unexpected decimal point"),
             Self::StringUnterminated => f.write_str("unterminated string-literal"),
@@ -952,6 +957,10 @@ mod tests {
                     at: 3,
                     radix: "foo",
                 },
+                TokenErrorKind::NumberInvalidExponent {
+                    at: 3,
+                    radix: "foo",
+                },
                 TokenErrorKind::NumberUnexpectedDecimalPoint { at: 3 },
             ];
             for case in cases {
@@ -1022,6 +1031,22 @@ mod tests {
             assert_eq!(
                 err.to_string(),
                 "foo radix does not support decimal notation"
+            );
+        }
+
+        #[test]
+        fn display_number_invalid_exponent() {
+            let err = TokenError {
+                kind: TokenErrorKind::NumberInvalidExponent {
+                    at: 1,
+                    radix: "foo",
+                },
+                span: 0..1,
+            };
+
+            assert_eq!(
+                err.to_string(),
+                "foo radix does not support exponential notation"
             );
         }
 
