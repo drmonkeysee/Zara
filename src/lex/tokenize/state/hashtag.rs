@@ -70,7 +70,7 @@ impl<'me, 'str> Hashtag<'me, 'str> {
                     let rest = self.scan.rest_of_token();
                     if rest.is_empty() {
                         Ok(TokenKind::Literal(Literal::Character(ch)))
-                    } else if let 'x' | 'X' = ch {
+                    } else if matches!(ch, 'x' | 'X') {
                         char_hex(rest)
                     } else {
                         char_name(ch, rest)

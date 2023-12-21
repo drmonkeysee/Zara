@@ -44,8 +44,11 @@ impl<'me, 'str> Identifier<'me, 'str> {
                 return self.invalid(ch);
             }
         }
-        let txt = self.extract_txt();
-        Ok(super::numeric_identifier(&txt).unwrap_or_else(|| TokenKind::Identifier(txt)))
+        let txt = self.extract_str();
+        Ok(
+            super::numeric_identifier(&txt)
+                .unwrap_or_else(|| TokenKind::Identifier(txt.to_owned())),
+        )
     }
 
     fn peculiar(&mut self, ch: char) -> TokenExtractResult {
@@ -108,8 +111,12 @@ impl<'me, 'str> Identifier<'me, 'str> {
     }
 
     fn extract_txt(&mut self) -> String {
+        self.extract_str().to_owned()
+    }
+
+    fn extract_str(&mut self) -> &str {
         let end = self.scan.pos();
-        self.scan.lexeme(self.start.0..end).to_owned()
+        self.scan.lexeme(self.start.0..end)
     }
 }
 

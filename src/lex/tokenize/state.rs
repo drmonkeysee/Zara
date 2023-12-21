@@ -44,14 +44,14 @@ impl<'me, 'str, P: FreeTextPolicy> FreeText<'me, 'str, P> {
     }
 
     fn escape(&mut self, start: usize) -> FreeTextResult {
-        match self.scan.char() {
-            Some(ch) => match ch {
+        match self.scan.next() {
+            Some((idx, ch)) => match ch {
                 'a' => self.buf.push('\x07'),
                 'b' => self.buf.push('\x08'),
                 'n' => self.buf.push('\n'),
                 'r' => self.buf.push('\r'),
                 't' => self.buf.push('\t'),
-                'x' | 'X' => self.hex(start)?,
+                'x' | 'X' => self.hex(start, idx)?,
                 '"' | '\\' | '|' => self.buf.push(ch),
                 _ if ch.is_ascii_whitespace() => {
                     // NOTE: \<whitespace> may be a line-continuation, but we
@@ -69,8 +69,7 @@ impl<'me, 'str, P: FreeTextPolicy> FreeText<'me, 'str, P> {
         Ok(())
     }
 
-    fn hex(&mut self, start: usize) -> FreeTextResult {
-        let pos = self.scan.pos();
+    fn hex(&mut self, start: usize, pos: usize) -> FreeTextResult {
         self.scan.end_of_word();
         match self.scan.char_if_eq(';') {
             Some(idx) => {
