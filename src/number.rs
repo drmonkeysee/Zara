@@ -7,7 +7,7 @@ use std::{
 
 #[derive(Debug)]
 pub(crate) enum Number {
-    Complex(Box<(Real, Real)>), // NOTE: Boxed to keep enum size down
+    Complex(Box<(Real, Real)>),
     Real(Real),
 }
 

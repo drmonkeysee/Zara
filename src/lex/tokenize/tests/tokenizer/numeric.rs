@@ -270,3 +270,269 @@ mod integer {
         assert_eq!(int.to_string(), "-18446744073709551615");
     }
 }
+
+mod float {
+    use super::*;
+
+    #[test]
+    fn positive_infinity() {
+        let mut s = Scanner::new("+inf.0");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 6,
+                result: Ok(TokenKind::Literal(Literal::Number(_))),
+            }
+        ));
+        let flt = extract_number!(r.result, Number::Real);
+        assert_eq!(flt.to_string(), "+inf.0");
+    }
+
+    #[test]
+    fn negative_infinity() {
+        let mut s = Scanner::new("-inf.0");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 6,
+                result: Ok(TokenKind::Literal(Literal::Number(_))),
+            }
+        ));
+        let flt = extract_number!(r.result, Number::Real);
+        assert_eq!(flt.to_string(), "-inf.0");
+    }
+
+    #[test]
+    fn nosign_infinity() {
+        let mut s = Scanner::new("inf.0");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 5,
+                result: Ok(TokenKind::Identifier(s)),
+            } if s == "inf.0"
+        ));
+    }
+
+    #[test]
+    fn positive_nan() {
+        let mut s = Scanner::new("+nan.0");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 6,
+                result: Ok(TokenKind::Literal(Literal::Number(_))),
+            }
+        ));
+        let flt = extract_number!(r.result, Number::Real);
+        assert_eq!(flt.to_string(), "+nan.0");
+    }
+
+    #[test]
+    fn negative_nan() {
+        let mut s = Scanner::new("-nan.0");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 6,
+                result: Ok(TokenKind::Literal(Literal::Number(_))),
+            }
+        ));
+        let flt = extract_number!(r.result, Number::Real);
+        assert_eq!(flt.to_string(), "+nan.0");
+    }
+
+    #[test]
+    fn nosign_nan() {
+        let mut s = Scanner::new("nan.0");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 5,
+                result: Ok(TokenKind::Identifier(s)),
+            } if s == "nan.0"
+        ));
+    }
+
+    #[test]
+    fn invalid_decimal_radix() {
+        let mut s = Scanner::new("#b1.01");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 6,
+                result: Err(TokenErrorKind::NumberInvalidDecimalPoint { at: 3, radix }),
+            } if radix == "binary"
+        ));
+    }
+
+    #[test]
+    fn unexpected_decimal_point() {
+        let mut s = Scanner::new("3.456.23");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 8,
+                result: Err(TokenErrorKind::NumberUnexpectedDecimalPoint { at: 5 }),
+            }
+        ));
+    }
+}
+
+mod complex {
+    use super::*;
+
+    #[test]
+    fn positive_imaginary() {
+        let mut s = Scanner::new("+i");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 2,
+                result: Ok(TokenKind::Literal(Literal::Number(_))),
+            }
+        ));
+        let tok = ok_or_fail!(r.result);
+        let lit = extract_or_fail!(tok, TokenKind::Literal);
+        let cpx = extract_or_fail!(lit, Literal::Number);
+        assert_eq!(cpx.as_datum().to_string(), "+i");
+    }
+
+    #[test]
+    fn negative_imaginary() {
+        let mut s = Scanner::new("-i");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 2,
+                result: Ok(TokenKind::Literal(Literal::Number(_))),
+            }
+        ));
+        let tok = ok_or_fail!(r.result);
+        let lit = extract_or_fail!(tok, TokenKind::Literal);
+        let cpx = extract_or_fail!(lit, Literal::Number);
+        assert_eq!(cpx.as_datum().to_string(), "-i");
+    }
+
+    #[test]
+    fn nosign_imaginary() {
+        let mut s = Scanner::new("i");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 1,
+                result: Ok(TokenKind::Identifier(s)),
+            } if s == "i"
+        ));
+    }
+}

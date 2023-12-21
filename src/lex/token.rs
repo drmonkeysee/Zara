@@ -144,6 +144,8 @@ pub(super) enum TokenErrorKind {
     IdentifierInvalidHex { at: usize },
     IdentifierUnterminated,
     IdentifierUnterminatedHex { at: usize },
+    NumberInvalidDecimalPoint { at: usize, radix: &'static str },
+    NumberUnexpectedDecimalPoint { at: usize },
     StringEscapeInvalid { at: usize, ch: char },
     StringExpectedHex { at: usize },
     StringInvalidHex { at: usize },
@@ -179,6 +181,8 @@ impl TokenErrorKind {
             | TokenErrorKind::IdentifierExpectedHex { at }
             | TokenErrorKind::IdentifierInvalidHex { at }
             | TokenErrorKind::IdentifierUnterminatedHex { at }
+            | TokenErrorKind::NumberInvalidDecimalPoint { at, .. }
+            | TokenErrorKind::NumberUnexpectedDecimalPoint { at }
             | TokenErrorKind::StringEscapeInvalid { at, .. }
             | TokenErrorKind::StringExpectedHex { at }
             | TokenErrorKind::StringInvalidHex { at }
@@ -219,6 +223,10 @@ impl Display for TokenErrorKind {
                 f.write_str("unterminated hex-escape")
             }
             Self::IdentifierUnterminated => f.write_str("unterminated verbatim identifier"),
+            Self::NumberInvalidDecimalPoint { radix, .. } => {
+                write!(f, "{radix} radix does not support decimal notation")
+            }
+            Self::NumberUnexpectedDecimalPoint { .. } => f.write_str("unexpected decimal point"),
             Self::StringUnterminated => f.write_str("unterminated string-literal"),
             Self::Unimplemented(s) => write!(f, "unimplemented tokenization: '{s}'"),
         }
@@ -929,6 +937,20 @@ mod tests {
         }
 
         #[test]
+        fn number_sub_index() {
+            let cases = [
+                TokenErrorKind::NumberInvalidDecimalPoint {
+                    at: 3,
+                    radix: "foo",
+                },
+                TokenErrorKind::NumberUnexpectedDecimalPoint { at: 3 },
+            ];
+            for case in cases {
+                assert!(matches!(case.sub_idx(), Some(3)));
+            }
+        }
+
+        #[test]
         fn display_block_comment_unterminated() {
             let err = TokenError {
                 kind: TokenErrorKind::BlockCommentUnterminated,
@@ -966,6 +988,32 @@ mod tests {
             };
 
             assert_eq!(err.to_string(), "unterminated verbatim identifier");
+        }
+
+        #[test]
+        fn display_number_invalid_decimal() {
+            let err = TokenError {
+                kind: TokenErrorKind::NumberInvalidDecimalPoint {
+                    at: 1,
+                    radix: "foo",
+                },
+                span: 0..1,
+            };
+
+            assert_eq!(
+                err.to_string(),
+                "foo radix does not support decimal notation"
+            );
+        }
+
+        #[test]
+        fn display_number_unexpected_decimal() {
+            let err = TokenError {
+                kind: TokenErrorKind::NumberUnexpectedDecimalPoint { at: 1 },
+                span: 0..1,
+            };
+
+            assert_eq!(err.to_string(), "unexpected decimal point");
         }
     }
 

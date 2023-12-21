@@ -3,6 +3,7 @@ mod identifier;
 mod numeric;
 mod string;
 
+use self::numeric::Sign;
 // NOTE: re-export for parent module
 pub(super) use self::{
     hashtag::{BlockComment, Hashtag},
@@ -123,4 +124,25 @@ fn parse_char_hex(txt: &str) -> HexParse {
             char::from_u32(hex).map_or(HexParse::Invalid, HexParse::Valid)
         })
     }
+}
+
+fn numeric_identifier(txt: &str) -> Option<TokenKind> {
+    let sign = if txt.starts_with('+') {
+        Some(Sign::Positive)
+    } else if txt.starts_with('-') {
+        Some(Sign::Negative)
+    } else {
+        None
+    };
+    if let Some(sign) = sign {
+        if let Some(label) = txt.get(1..) {
+            return match label.to_ascii_lowercase().as_str() {
+                "i" => Some(numeric::imaginary(sign)),
+                "inf.0" => Some(numeric::infinity(sign)),
+                "nan.0" => Some(numeric::nan()),
+                _ => None,
+            };
+        }
+    };
+    None
 }

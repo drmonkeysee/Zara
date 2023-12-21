@@ -44,7 +44,8 @@ impl<'me, 'str> Identifier<'me, 'str> {
                 return self.invalid(ch);
             }
         }
-        Ok(TokenKind::Identifier(self.extract_text()))
+        let txt = self.extract_txt();
+        Ok(super::numeric_identifier(&txt).unwrap_or_else(|| TokenKind::Identifier(txt)))
     }
 
     fn peculiar(&mut self, ch: char) -> TokenExtractResult {
@@ -73,7 +74,9 @@ impl<'me, 'str> Identifier<'me, 'str> {
             None => {
                 // NOTE: a single '.' is invalid but Tokenizer handles '.'
                 // before attempting Identifier so this case never happens.
-                Ok(TokenKind::Identifier(self.extract_text()))
+                let txt = self.extract_txt();
+                debug_assert!(txt != ".");
+                Ok(TokenKind::Identifier(txt))
             }
         }
     }
@@ -101,10 +104,10 @@ impl<'me, 'str> Identifier<'me, 'str> {
 
     fn not_implemented(&mut self) -> TokenExtractResult {
         self.scan.rest_of_token();
-        Err(TokenErrorKind::Unimplemented(self.extract_text()))
+        Err(TokenErrorKind::Unimplemented(self.extract_txt()))
     }
 
-    fn extract_text(&mut self) -> String {
+    fn extract_txt(&mut self) -> String {
         let end = self.scan.pos();
         self.scan.lexeme(self.start.0..end).to_owned()
     }
