@@ -258,9 +258,6 @@ impl<R: Radix + Default + Debug> Classifier<R> {
             _ if self.radix.is_digit(ch) => {
                 debug_assert!(self.exponent.is_some());
                 self.exponent.as_mut().unwrap().end += 1;
-                if self.exponent_sign.is_none() {
-                    self.exponent_sign = Some(Sign::Positive);
-                }
                 None
             }
             _ => Some(TokenErrorKind::NumberMalformedExponent { at: idx }),
@@ -277,7 +274,7 @@ impl<R: Radix + Default + Debug> Classifier<R> {
                 debug_assert!(self.exponent.is_some());
                 let exp = self.exponent.as_ref().unwrap();
                 debug_assert!(!exp.is_empty());
-                if exp.len() == 1 {
+                if exp.len() == 1 || (exp.len() == 2 && self.exponent_sign.is_some()) {
                     return Some(TokenErrorKind::NumberMalformedExponent { at: exp.start });
                 }
             }
