@@ -159,16 +159,8 @@ impl<R: Radix + Default + Debug> Classifier<R> {
     }
 
     fn parse(&self, input: &str) -> TokenExtractResult {
-        debug_assert!(!self.magnitude.is_empty());
-        match self.state {
-            Classification::Exponent => {
-                debug_assert!(self.exponent.is_some());
-                let exp = self.exponent.as_ref().unwrap();
-                if exp.len() == 1 {
-                    return Err(TokenErrorKind::NumberMalformedExponent { at: exp.start });
-                }
-            }
-            _ => todo!(),
+        if let Some(err) = self.validate() {
+            return Err(err);
         }
         match self.exactness {
             Some(Exactness::Inexact) => {
@@ -275,5 +267,21 @@ impl<R: Radix + Default + Debug> Classifier<R> {
 
     fn invalid(&self) -> Option<TokenErrorKind> {
         Some(TokenErrorKind::NumberInvalid)
+    }
+
+    fn validate(&self) -> Option<TokenErrorKind> {
+        debug_assert!(!self.magnitude.is_empty());
+        match self.state {
+            Classification::Exponent => {
+                debug_assert!(self.exponent.is_some());
+                let exp = self.exponent.as_ref().unwrap();
+                debug_assert!(!exp.is_empty());
+                if exp.len() == 1 {
+                    return Some(TokenErrorKind::NumberMalformedExponent { at: exp.start });
+                }
+            }
+            _ => todo!(),
+        }
+        None
     }
 }
