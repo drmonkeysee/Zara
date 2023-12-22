@@ -9,7 +9,7 @@ use crate::{
     literal::Literal,
     number::Number,
 };
-use std::ops::Range;
+use std::{fmt::Debug, ops::Range};
 
 pub(in crate::lex::tokenize) struct Numeric<'me, 'str, R> {
     classifier: Classifier<R>,
@@ -17,10 +17,14 @@ pub(in crate::lex::tokenize) struct Numeric<'me, 'str, R> {
     start: &'me ScanItem<'str>,
 }
 
-impl<'me, 'str, R: Radix + Default> Numeric<'me, 'str, R> {
-    fn new(scan: &'me mut Scanner<'str>, start: &'me ScanItem<'str>, radix: R) -> Self {
+impl<'me, 'str, R: Radix + Default + Debug> Numeric<'me, 'str, R> {
+    fn new(
+        scan: &'me mut Scanner<'str>,
+        start: &'me ScanItem<'str>,
+        classifier: Classifier<R>,
+    ) -> Self {
         Self {
-            classifier: Classifier::new(radix),
+            classifier,
             scan,
             start,
         }
@@ -41,16 +45,8 @@ impl<'me, 'str, R: Radix + Default> Numeric<'me, 'str, R> {
     }
 
     fn parse(&mut self) -> TokenExtractResult {
-        if self.classifier.decimal_point {
-            let flt: f64 = self.extract_str(self.start.0).parse()?;
-            return Ok(TokenKind::Literal(Literal::Number(Number::real(flt))));
-        }
-        todo!();
-    }
-
-    fn extract_str(&mut self, start: usize) -> &str {
         let end = self.scan.pos();
-        self.scan.lexeme(start..end)
+        self.classifier.parse(self.scan.lexeme(self.start.0..end))
     }
 }
 
@@ -59,7 +55,17 @@ impl<'me, 'str> Numeric<'me, 'str, Decimal> {
         scan: &'me mut Scanner<'str>,
         start: &'me ScanItem<'str>,
     ) -> Self {
-        Self::new(scan, start, Decimal)
+        let idx = start.0;
+        Self::new(
+            scan,
+            start,
+            Classifier {
+                magnitude: idx..idx + 1,
+                radix: Decimal,
+                sign: Some(Sign::Positive),
+                ..Default::default()
+            },
+        )
     }
 }
 
@@ -72,7 +78,7 @@ pub(in crate::lex::tokenize) trait Radix {
     }
 }
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub(in crate::lex::tokenize) struct Decimal;
 
 impl Radix for Decimal {
@@ -89,6 +95,7 @@ impl Radix for Decimal {
     }
 }
 
+#[derive(Debug)]
 pub(super) enum Sign {
     Negative,
     Positive,
@@ -115,67 +122,54 @@ pub(super) fn nan() -> TokenKind {
     TokenKind::Literal(Literal::Number(Number::real(f64::NAN)))
 }
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 enum Classification {
     Exponent,
     Float,
-    Integer,
     #[default]
-    Start,
+    Integer,
 }
 
-#[derive(Default)]
+#[derive(Debug)]
+enum Exactness {
+    Exact,
+    Inexact,
+}
+
+#[derive(Debug, Default)]
 struct Classifier<R> {
-    decimal_point: bool,
+    decimal_point: Option<usize>,
+    exactness: Option<Exactness>,
+    exponent: Option<Range<usize>>,
+    exponent_sign: Option<Sign>,
     magnitude: Range<usize>,
     radix: R,
     sign: Option<Sign>,
     state: Classification,
 }
 
-impl<R: Radix + Default> Classifier<R> {
-    fn new(radix: R) -> Self {
-        Self {
-            radix,
-            ..Default::default()
-        }
-    }
-
-    fn signed(sign: Sign, radix: R) -> Self {
-        Self {
-            radix,
-            sign: Some(sign),
-            ..Default::default()
-        }
-    }
-
-    fn floating(sign: Option<Sign>, radix: R) -> Self {
-        Self {
-            decimal_point: true,
-            radix,
-            sign,
-            ..Default::default()
-        }
-    }
-
+// TODO: imaginary numbers
+impl<R: Radix + Default + Debug> Classifier<R> {
     fn classify(&mut self, item: ScanItem) -> Option<TokenErrorKind> {
         match self.state {
             Classification::Exponent => self.exponent(item),
             Classification::Float => self.float(item),
             Classification::Integer => self.integer(item),
-            Classification::Start => self.start(item),
         }
     }
 
-    fn start(&mut self, item: ScanItem) -> Option<TokenErrorKind> {
-        let (idx, ch) = item;
-        match ch {
-            _ if self.radix.is_digit(ch) => {
-                self.state = Classification::Integer;
-                self.magnitude.start = idx;
-                None
+    fn parse(&self, input: &str) -> TokenExtractResult {
+        debug_assert!(!self.magnitude.is_empty());
+        match self.exactness {
+            Some(Exactness::Inexact) => {
+                let flt: f64 = input.parse()?;
+                Ok(TokenKind::Literal(Literal::Number(Number::real(flt))))
             }
-            _ => self.invalid(),
+            // TODO: handle u64+sign, exact vs non-specified
+            _ => {
+                let int: i64 = input.parse()?;
+                Ok(TokenKind::Literal(Literal::Number(Number::real(int))))
+            }
         }
     }
 
@@ -185,6 +179,10 @@ impl<R: Radix + Default> Classifier<R> {
             '.' => {
                 if self.radix.allow_floating_point() {
                     self.state = Classification::Float;
+                    self.decimal_point = Some(idx);
+                    if self.exactness.is_none() {
+                        self.exactness = Some(Exactness::Inexact);
+                    }
                     None
                 } else {
                     Some(TokenErrorKind::NumberInvalidDecimalPoint {
@@ -196,6 +194,9 @@ impl<R: Radix + Default> Classifier<R> {
             'e' | 'E' => {
                 if self.radix.allow_floating_point() {
                     self.state = Classification::Exponent;
+                    if self.exactness.is_none() {
+                        self.exactness = Some(Exactness::Inexact);
+                    }
                     None
                 } else {
                     Some(TokenErrorKind::NumberInvalidExponent {
@@ -205,7 +206,7 @@ impl<R: Radix + Default> Classifier<R> {
                 }
             }
             _ if self.radix.is_digit(ch) => {
-                self.magnitude.end = idx;
+                self.magnitude.end += 1;
                 None
             }
             _ => self.invalid(),
@@ -218,10 +219,13 @@ impl<R: Radix + Default> Classifier<R> {
             '.' => Some(TokenErrorKind::NumberUnexpectedDecimalPoint { at: idx }),
             'e' | 'E' => {
                 self.state = Classification::Exponent;
+                if self.exactness.is_none() {
+                    self.exactness = Some(Exactness::Inexact);
+                }
                 None
             }
             _ if self.radix.is_digit(ch) => {
-                self.magnitude.end = idx;
+                // TODO: start counting fractional part?
                 None
             }
             _ => self.invalid(),
@@ -231,9 +235,30 @@ impl<R: Radix + Default> Classifier<R> {
     fn exponent(&mut self, item: ScanItem) -> Option<TokenErrorKind> {
         let (idx, ch) = item;
         match ch {
-            '+' | '-' => todo!(),
-            _ if self.radix.is_digit(ch) => todo!(),
-            _ => todo!(),
+            '+' | '-' => {
+                if self.exponent_sign.is_some() {
+                    Some(TokenErrorKind::NumberMalformedExponent { at: idx })
+                } else {
+                    self.exponent_sign = Some(if ch == '+' {
+                        Sign::Positive
+                    } else {
+                        Sign::Negative
+                    });
+                    None
+                }
+            }
+            _ if self.radix.is_digit(ch) => {
+                if let Some(exp) = &mut self.exponent {
+                    exp.end += 1;
+                } else {
+                    self.exponent = Some(idx..idx + 1);
+                }
+                if self.exponent_sign.is_none() {
+                    self.exponent_sign = Some(Sign::Positive);
+                }
+                None
+            }
+            _ => Some(TokenErrorKind::NumberMalformedExponent { at: idx }),
         }
     }
 

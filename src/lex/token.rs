@@ -2,7 +2,7 @@ use crate::literal::Literal;
 use std::{
     error::Error,
     fmt::{self, Display, Formatter},
-    num::ParseFloatError,
+    num::{ParseFloatError, ParseIntError},
     ops::Range,
 };
 
@@ -148,6 +148,7 @@ pub(super) enum TokenErrorKind {
     NumberInvalid,
     NumberInvalidDecimalPoint { at: usize, radix: &'static str },
     NumberInvalidExponent { at: usize, radix: &'static str },
+    NumberMalformedExponent { at: usize },
     NumberUnexpectedDecimalPoint { at: usize },
     StringEscapeInvalid { at: usize, ch: char },
     StringExpectedHex { at: usize },
@@ -186,6 +187,7 @@ impl TokenErrorKind {
             | TokenErrorKind::IdentifierUnterminatedHex { at }
             | TokenErrorKind::NumberInvalidDecimalPoint { at, .. }
             | TokenErrorKind::NumberInvalidExponent { at, .. }
+            | TokenErrorKind::NumberMalformedExponent { at, .. }
             | TokenErrorKind::NumberUnexpectedDecimalPoint { at }
             | TokenErrorKind::StringEscapeInvalid { at, .. }
             | TokenErrorKind::StringExpectedHex { at }
@@ -232,7 +234,13 @@ impl Display for TokenErrorKind {
                 write!(f, "{radix} radix does not support decimal notation")
             }
             Self::NumberInvalidExponent { radix, .. } => {
-                write!(f, "{radix} radix does not support exponential notation")
+                write!(f, "{radix} radix does not support scientific notation")
+            }
+            Self::NumberMalformedExponent { .. } => {
+                write!(
+                    f,
+                    "malformed exponent: expected decimal integer with optional sign"
+                )
             }
             Self::NumberUnexpectedDecimalPoint { .. } => f.write_str("unexpected decimal point"),
             Self::StringUnterminated => f.write_str("unterminated string-literal"),
@@ -255,8 +263,15 @@ impl From<TokenContinuation> for TokenErrorKind {
     }
 }
 
+// TODO: do i need these?
 impl From<ParseFloatError> for TokenErrorKind {
     fn from(value: ParseFloatError) -> Self {
+        todo!()
+    }
+}
+
+impl From<ParseIntError> for TokenErrorKind {
+    fn from(value: ParseIntError) -> Self {
         todo!()
     }
 }
@@ -961,6 +976,7 @@ mod tests {
                     at: 3,
                     radix: "foo",
                 },
+                TokenErrorKind::NumberMalformedExponent { at: 3 },
                 TokenErrorKind::NumberUnexpectedDecimalPoint { at: 3 },
             ];
             for case in cases {
@@ -1046,7 +1062,20 @@ mod tests {
 
             assert_eq!(
                 err.to_string(),
-                "foo radix does not support exponential notation"
+                "foo radix does not support scientific notation"
+            );
+        }
+
+        #[test]
+        fn display_number_malformed_exponent() {
+            let err = TokenError {
+                kind: TokenErrorKind::NumberMalformedExponent { at: 1 },
+                span: 0..1,
+            };
+
+            assert_eq!(
+                err.to_string(),
+                "malformed exponent: expected decimal integer with optional sign"
             );
         }
 
