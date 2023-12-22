@@ -60,7 +60,7 @@ impl<'me, 'str> Numeric<'me, 'str, Decimal> {
             scan,
             start,
             Classifier {
-                magnitude: idx..idx + 1,
+                integer: Some(idx..idx + 1),
                 radix: Decimal,
                 sign: Some(Sign::Positive),
                 ..Default::default()
@@ -138,11 +138,11 @@ enum Exactness {
 
 #[derive(Debug, Default)]
 struct Classifier<R> {
-    decimal_point: Option<usize>,
     exactness: Option<Exactness>,
     exponent: Option<Range<usize>>,
     exponent_sign: Option<Sign>,
-    magnitude: Range<usize>,
+    fraction: Option<Range<usize>>,
+    integer: Option<Range<usize>>,
     radix: R,
     sign: Option<Sign>,
     state: Classification,
@@ -152,9 +152,9 @@ struct Classifier<R> {
 impl<R: Radix + Default + Debug> Classifier<R> {
     fn classify(&mut self, item: ScanItem) -> Option<TokenErrorKind> {
         match self.state {
-            Classification::Exponent => self.exponent(item),
-            Classification::Float => self.float(item),
-            Classification::Integer => self.integer(item),
+            Classification::Exponent => self.scientific(item),
+            Classification::Float => self.floating_point(item),
+            Classification::Integer => self.integral(item),
         }
     }
 
@@ -175,13 +175,13 @@ impl<R: Radix + Default + Debug> Classifier<R> {
         }
     }
 
-    fn integer(&mut self, item: ScanItem) -> Option<TokenErrorKind> {
+    fn integral(&mut self, item: ScanItem) -> Option<TokenErrorKind> {
         let (idx, ch) = item;
         match ch {
             '.' => {
                 if self.radix.allow_floating_point() {
                     self.state = Classification::Float;
-                    self.decimal_point = Some(idx);
+                    self.fraction = Some(idx..idx + 1);
                     if self.exactness.is_none() {
                         self.exactness = Some(Exactness::Inexact);
                     }
@@ -209,14 +209,15 @@ impl<R: Radix + Default + Debug> Classifier<R> {
                 }
             }
             _ if self.radix.is_digit(ch) => {
-                self.magnitude.end += 1;
+                debug_assert!(self.integer.is_some());
+                self.integer.as_mut().unwrap().end += 1;
                 None
             }
             _ => self.invalid(),
         }
     }
 
-    fn float(&mut self, item: ScanItem) -> Option<TokenErrorKind> {
+    fn floating_point(&mut self, item: ScanItem) -> Option<TokenErrorKind> {
         let (idx, ch) = item;
         match ch {
             '.' => Some(TokenErrorKind::NumberUnexpectedDecimalPoint { at: idx }),
@@ -229,14 +230,15 @@ impl<R: Radix + Default + Debug> Classifier<R> {
                 None
             }
             _ if self.radix.is_digit(ch) => {
-                // TODO: start counting fractional part?
+                debug_assert!(self.fraction.is_some());
+                self.fraction.as_mut().unwrap().end += 1;
                 None
             }
             _ => self.invalid(),
         }
     }
 
-    fn exponent(&mut self, item: ScanItem) -> Option<TokenErrorKind> {
+    fn scientific(&mut self, item: ScanItem) -> Option<TokenErrorKind> {
         let (idx, ch) = item;
         match ch {
             '+' | '-' => {
@@ -270,7 +272,6 @@ impl<R: Radix + Default + Debug> Classifier<R> {
     }
 
     fn validate(&self) -> Option<TokenErrorKind> {
-        debug_assert!(!self.magnitude.is_empty());
         match self.state {
             Classification::Exponent => {
                 debug_assert!(self.exponent.is_some());
@@ -280,7 +281,15 @@ impl<R: Radix + Default + Debug> Classifier<R> {
                     return Some(TokenErrorKind::NumberMalformedExponent { at: exp.start });
                 }
             }
-            _ => todo!(),
+            Classification::Float => {
+                debug_assert!(
+                    self.integer.as_ref().is_some_and(|r| !r.is_empty())
+                        || self.fraction.as_ref().is_some_and(|r| !r.is_empty())
+                );
+            }
+            Classification::Integer => {
+                debug_assert!(self.integer.as_ref().is_some_and(|r| !r.is_empty()));
+            }
         }
         None
     }
