@@ -8,7 +8,7 @@ use crate::lex::{
 };
 
 pub(in crate::lex::tokenize) struct Identifier<'me, 'str> {
-    peculiar_state: PeculiarState,
+    peculiar_state: Option<PeculiarState>,
     scan: &'me mut Scanner<'str>,
     start: &'me ScanItem<'str>,
 }
@@ -19,7 +19,7 @@ impl<'me, 'str> Identifier<'me, 'str> {
         start: &'me ScanItem<'str>,
     ) -> Self {
         Self {
-            peculiar_state: PeculiarState::Unspecified,
+            peculiar_state: None,
             scan,
             start,
         }
@@ -63,7 +63,7 @@ impl<'me, 'str> Identifier<'me, 'str> {
                 // TODO: this should only be 0..9, change call if is_id_digit is expanded
                 if is_digit(ch) {
                     match self.peculiar_state {
-                        PeculiarState::DefiniteIdentifier => self.standard(),
+                        Some(PeculiarState::DefiniteIdentifier) => self.standard(),
                         _ => self.not_implemented(), // TODO: parse as number
                     }
                 } else if is_peculiar_initial(ch) {
@@ -91,18 +91,18 @@ impl<'me, 'str> Identifier<'me, 'str> {
 
     fn classify_peculiar(&mut self, ch: char) {
         // NOTE: only 3 cases: + | - | .
-        self.peculiar_state = match ch {
+        self.peculiar_state = Some(match ch {
             '+' | '-' => match self.peculiar_state {
-                PeculiarState::Unspecified => PeculiarState::MaybeSignedNumber,
+                None => PeculiarState::MaybeSignedNumber,
                 _ => PeculiarState::DefiniteIdentifier,
             },
             '.' => match self.peculiar_state {
-                PeculiarState::MaybeSignedNumber => PeculiarState::MaybeSignedFloat,
-                PeculiarState::Unspecified => PeculiarState::MaybeFloat,
+                Some(PeculiarState::MaybeSignedNumber) => PeculiarState::MaybeSignedFloat,
+                None => PeculiarState::MaybeFloat,
                 _ => PeculiarState::DefiniteIdentifier,
             },
             _ => unreachable!(),
-        }
+        })
     }
 
     fn not_implemented(&mut self) -> TokenExtractResult {
@@ -239,7 +239,6 @@ enum PeculiarState {
     MaybeFloat,
     MaybeSignedFloat,
     MaybeSignedNumber,
-    Unspecified,
 }
 
 fn is_initial(ch: char) -> bool {
