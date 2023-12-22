@@ -160,6 +160,16 @@ impl<R: Radix + Default + Debug> Classifier<R> {
 
     fn parse(&self, input: &str) -> TokenExtractResult {
         debug_assert!(!self.magnitude.is_empty());
+        match self.state {
+            Classification::Exponent => {
+                debug_assert!(self.exponent.is_some());
+                let exp = self.exponent.as_ref().unwrap();
+                if exp.len() == 1 {
+                    return Err(TokenErrorKind::NumberMalformedExponent { at: exp.start });
+                }
+            }
+            _ => todo!(),
+        }
         match self.exactness {
             Some(Exactness::Inexact) => {
                 let flt: f64 = input.parse()?;
@@ -194,6 +204,7 @@ impl<R: Radix + Default + Debug> Classifier<R> {
             'e' | 'E' => {
                 if self.radix.allow_floating_point() {
                     self.state = Classification::Exponent;
+                    self.exponent = Some(idx..idx + 1);
                     if self.exactness.is_none() {
                         self.exactness = Some(Exactness::Inexact);
                     }
@@ -219,6 +230,7 @@ impl<R: Radix + Default + Debug> Classifier<R> {
             '.' => Some(TokenErrorKind::NumberUnexpectedDecimalPoint { at: idx }),
             'e' | 'E' => {
                 self.state = Classification::Exponent;
+                self.exponent = Some(idx..idx + 1);
                 if self.exactness.is_none() {
                     self.exactness = Some(Exactness::Inexact);
                 }
@@ -236,6 +248,8 @@ impl<R: Radix + Default + Debug> Classifier<R> {
         let (idx, ch) = item;
         match ch {
             '+' | '-' => {
+                debug_assert!(self.exponent.is_some());
+                self.exponent.as_mut().unwrap().end += 1;
                 if self.exponent_sign.is_some() {
                     Some(TokenErrorKind::NumberMalformedExponent { at: idx })
                 } else {
@@ -248,11 +262,8 @@ impl<R: Radix + Default + Debug> Classifier<R> {
                 }
             }
             _ if self.radix.is_digit(ch) => {
-                if let Some(exp) = &mut self.exponent {
-                    exp.end += 1;
-                } else {
-                    self.exponent = Some(idx..idx + 1);
-                }
+                debug_assert!(self.exponent.is_some());
+                self.exponent.as_mut().unwrap().end += 1;
                 if self.exponent_sign.is_none() {
                     self.exponent_sign = Some(Sign::Positive);
                 }
