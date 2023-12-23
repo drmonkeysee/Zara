@@ -167,15 +167,8 @@ impl<R: Radix + Default + Debug> Classifier<R> {
             return Err(err);
         }
         match self.exactness {
-            Some(Exactness::Inexact) => {
-                let flt: f64 = input.parse()?;
-                Ok(TokenKind::Literal(Literal::Number(Number::real(flt))))
-            }
-            // TODO: handle u64+sign, exact vs non-specified
-            _ => {
-                let int: i64 = input.parse()?;
-                Ok(TokenKind::Literal(Literal::Number(Number::real(int))))
-            }
+            Some(Exactness::Inexact) => self.parse_inexact(input),
+            _ => self.parse_exact(input),
         }
     }
 
@@ -293,6 +286,17 @@ impl<R: Radix + Default + Debug> Classifier<R> {
             }
         }
         None
+    }
+
+    fn parse_exact(&self, input: &str) -> TokenExtractResult {
+        // TODO: handle u64+sign, exact vs non-specified
+        let int: i64 = input.parse()?;
+        Ok(TokenKind::Literal(Literal::Number(Number::real(int))))
+    }
+
+    fn parse_inexact(&self, input: &str) -> TokenExtractResult {
+        let flt: f64 = input.parse()?;
+        Ok(TokenKind::Literal(Literal::Number(Number::real(flt))))
     }
 }
 
