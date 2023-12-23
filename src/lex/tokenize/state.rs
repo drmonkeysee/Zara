@@ -126,7 +126,6 @@ fn parse_char_hex(txt: &str) -> HexParse {
     }
 }
 
-// TODO: handle imaginary inf/nan and inexact
 fn numeric_identifier(txt: &str) -> Option<TokenKind> {
     let sign = if txt.starts_with('+') {
         Some(Sign::Positive)
