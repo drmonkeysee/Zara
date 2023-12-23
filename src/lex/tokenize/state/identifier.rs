@@ -46,7 +46,7 @@ impl<'me, 'str> Identifier<'me, 'str> {
         }
         let txt = self.extract_str();
         Ok(
-            super::numeric_identifier(&txt)
+            super::numeric_text(&txt)
                 .unwrap_or_else(|| TokenKind::Identifier(txt.to_owned())),
         )
     }
