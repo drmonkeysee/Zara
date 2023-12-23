@@ -126,8 +126,8 @@ fn parse_char_hex(txt: &str) -> HexParse {
     }
 }
 
-fn numeric_text(txt: &str) -> Option<TokenKind> {
-    if let Some(sign) = num_txt_sign(txt) {
+fn numeric_label(txt: &str) -> Option<TokenKind> {
+    if let Some(sign) = num_lbl_sign(txt) {
         if let Some(txt) = txt.get(1..) {
             let label = txt.to_ascii_lowercase();
             let imaginary = label.ends_with('i');
@@ -149,7 +149,7 @@ fn numeric_text(txt: &str) -> Option<TokenKind> {
     None
 }
 
-fn num_txt_sign(txt: &str) -> Option<Sign> {
+fn num_lbl_sign(txt: &str) -> Option<Sign> {
     if txt.starts_with('+') {
         Some(Sign::Positive)
     } else if txt.starts_with('-') {
