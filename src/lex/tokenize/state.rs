@@ -136,13 +136,22 @@ fn numeric_identifier(txt: &str) -> Option<TokenKind> {
         None
     };
     if let Some(sign) = sign {
-        if let Some(label) = txt.get(1..) {
-            return match label.to_ascii_lowercase().as_str() {
-                "i" => Some(numeric::imaginary(sign)),
-                "inf.0" => Some(numeric::infinity(sign)),
-                "nan.0" => Some(numeric::nan()),
-                _ => None,
+        if let Some(txt) = txt.get(1..) {
+            let label = txt.to_ascii_lowercase();
+            let imaginary = label.ends_with('i');
+            let end = if imaginary {
+                label.len() - 1
+            } else {
+                label.len()
             };
+            if let Some(label) = label.get(..end) {
+                return match label {
+                    "" => Some(numeric::imaginary(sign)),
+                    "inf.0" => Some(numeric::infinity(sign, imaginary)),
+                    "nan.0" => Some(numeric::nan(imaginary)),
+                    _ => None,
+                };
+            }
         }
     };
     None

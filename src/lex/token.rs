@@ -1,4 +1,7 @@
-use crate::literal::Literal;
+use crate::{
+    literal::Literal,
+    number::{Number, Real},
+};
 use std::{
     error::Error,
     fmt::{self, Display, Formatter},
@@ -45,6 +48,7 @@ pub(crate) enum TokenKind {
     IdentifierDiscard,
     IdentifierEnd(String),
     IdentifierFragment(String),
+    Imaginary(Real),
     Literal(Literal),
     ParenLeft,
     ParenRight,
@@ -96,6 +100,7 @@ impl Display for TokenKind {
             Self::IdentifierDiscard => f.write_str("IDENTDISCARD"),
             Self::IdentifierEnd(_) => f.write_str("IDENTEND"),
             Self::IdentifierFragment(_) => f.write_str("IDENTFRAGMENT"),
+            Self::Imaginary(r) => write!(f, "IMAGINARY<{}>", r.as_token_descriptor()),
             Self::Literal(lit) => write!(f, "LITERAL<{}>", lit.as_token_descriptor()),
             Self::ParenLeft => f.write_str("LEFTPAREN"),
             Self::ParenRight => f.write_str("RIGHTPAREN"),
@@ -584,6 +589,16 @@ mod tests {
             };
 
             assert_eq!(token.to_string(), "IDENTDISCARD[0..3]");
+        }
+
+        #[test]
+        fn display_imaginary() {
+            let token = Token {
+                kind: TokenKind::Imaginary(4.into()),
+                span: 0..3,
+            };
+
+            assert_eq!(token.to_string(), "IMAGINARY<INT>[0..3]");
         }
 
         #[test]

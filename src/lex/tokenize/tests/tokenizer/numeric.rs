@@ -1069,13 +1069,12 @@ mod complex {
             TokenExtract {
                 start: 0,
                 end: 2,
-                result: Ok(TokenKind::Literal(Literal::Number(_))),
+                result: Ok(TokenKind::Imaginary(_)),
             }
         ));
         let tok = ok_or_fail!(r.result);
-        let lit = extract_or_fail!(tok, TokenKind::Literal);
-        let cpx = extract_or_fail!(lit, Literal::Number);
-        assert_eq!(cpx.as_datum().to_string(), "+i");
+        let r = extract_or_fail!(tok, TokenKind::Imaginary);
+        assert_eq!(r.to_string(), "1");
     }
 
     #[test]
@@ -1095,13 +1094,12 @@ mod complex {
             TokenExtract {
                 start: 0,
                 end: 2,
-                result: Ok(TokenKind::Literal(Literal::Number(_))),
+                result: Ok(TokenKind::Imaginary(_)),
             }
         ));
         let tok = ok_or_fail!(r.result);
-        let lit = extract_or_fail!(tok, TokenKind::Literal);
-        let cpx = extract_or_fail!(lit, Literal::Number);
-        assert_eq!(cpx.as_datum().to_string(), "+i");
+        let r = extract_or_fail!(tok, TokenKind::Imaginary);
+        assert_eq!(r.to_string(), "1");
     }
 
     #[test]
@@ -1121,13 +1119,162 @@ mod complex {
             TokenExtract {
                 start: 0,
                 end: 2,
-                result: Ok(TokenKind::Literal(Literal::Number(_))),
+                result: Ok(TokenKind::Imaginary(_)),
             }
         ));
         let tok = ok_or_fail!(r.result);
-        let lit = extract_or_fail!(tok, TokenKind::Literal);
-        let cpx = extract_or_fail!(lit, Literal::Number);
-        assert_eq!(cpx.as_datum().to_string(), "-i");
+        let r = extract_or_fail!(tok, TokenKind::Imaginary);
+        assert_eq!(r.to_string(), "-1");
+    }
+
+    #[test]
+    fn positive_infinite_imaginary() {
+        let mut s = Scanner::new("+inf.0i");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 7,
+                result: Ok(TokenKind::Imaginary(_)),
+            }
+        ));
+        let tok = ok_or_fail!(r.result);
+        let r = extract_or_fail!(tok, TokenKind::Imaginary);
+        assert_eq!(r.to_string(), "+inf.0");
+    }
+
+    #[test]
+    fn upper_positive_infinite_imaginary() {
+        let mut s = Scanner::new("+INF.0I");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 7,
+                result: Ok(TokenKind::Imaginary(_)),
+            }
+        ));
+        let tok = ok_or_fail!(r.result);
+        let r = extract_or_fail!(tok, TokenKind::Imaginary);
+        assert_eq!(r.to_string(), "+inf.0");
+    }
+
+    #[test]
+    fn negative_infinite_imaginary() {
+        let mut s = Scanner::new("-inf.0i");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 7,
+                result: Ok(TokenKind::Imaginary(_)),
+            }
+        ));
+        let tok = ok_or_fail!(r.result);
+        let r = extract_or_fail!(tok, TokenKind::Imaginary);
+        assert_eq!(r.to_string(), "-inf.0");
+    }
+
+    #[test]
+    fn positive_nan_imaginary() {
+        let mut s = Scanner::new("+nan.0i");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 7,
+                result: Ok(TokenKind::Imaginary(_)),
+            }
+        ));
+        let tok = ok_or_fail!(r.result);
+        let r = extract_or_fail!(tok, TokenKind::Imaginary);
+        assert_eq!(r.to_string(), "+nan.0");
+    }
+
+    #[test]
+    fn upper_positive_nan_imaginary() {
+        let mut s = Scanner::new("+NAN.0I");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 7,
+                result: Ok(TokenKind::Imaginary(_)),
+            }
+        ));
+        let tok = ok_or_fail!(r.result);
+        let r = extract_or_fail!(tok, TokenKind::Imaginary);
+        assert_eq!(r.to_string(), "+nan.0");
+    }
+
+    #[test]
+    fn negative_nan_imaginary() {
+        let mut s = Scanner::new("-nan.0i");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 7,
+                result: Ok(TokenKind::Imaginary(_)),
+            }
+        ));
+        let tok = ok_or_fail!(r.result);
+        let r = extract_or_fail!(tok, TokenKind::Imaginary);
+        assert_eq!(r.to_string(), "+nan.0");
     }
 
     #[test]
@@ -1149,6 +1296,50 @@ mod complex {
                 end: 1,
                 result: Ok(TokenKind::Identifier(s)),
             } if s == "i"
+        ));
+    }
+
+    #[test]
+    fn infinite_imaginary_extra_letters() {
+        let mut s = Scanner::new("+inf.0ifni");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 10,
+                result: Ok(TokenKind::Identifier(s)),
+            } if s == "+inf.0ifni"
+        ));
+    }
+
+    #[test]
+    fn nan_imaginary_extra_letters() {
+        let mut s = Scanner::new("+nan.0inon");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 10,
+                result: Ok(TokenKind::Identifier(s)),
+            } if s == "+nan.0inon"
         ));
     }
 }

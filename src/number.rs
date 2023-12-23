@@ -45,6 +45,10 @@ pub(crate) enum Real {
 }
 
 impl Real {
+    pub(crate) fn as_token_descriptor(&self) -> RealTokenDescriptor {
+        RealTokenDescriptor(self)
+    }
+
     fn reduce(
         numerator: impl Into<Integer>,
         denominator: impl Into<Integer>,
@@ -221,11 +225,19 @@ impl Display for TokenDescriptor<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self.0 {
             Number::Complex(_) => f.write_str("CPX"),
-            Number::Real(r) => match r {
-                Real::Float(_) => f.write_str("FLT"),
-                Real::Integer(_) => f.write_str("INT"),
-                Real::Rational(_) => f.write_str("RAT"),
-            },
+            Number::Real(r) => r.as_token_descriptor().fmt(f),
+        }
+    }
+}
+
+pub(crate) struct RealTokenDescriptor<'a>(&'a Real);
+
+impl Display for RealTokenDescriptor<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self.0 {
+            Real::Float(_) => f.write_str("FLT"),
+            Real::Integer(_) => f.write_str("INT"),
+            Real::Rational(_) => f.write_str("RAT"),
         }
     }
 }

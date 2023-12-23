@@ -7,7 +7,7 @@ use crate::{
         },
     },
     literal::Literal,
-    number::Number,
+    number::{Number, Real},
 };
 use std::{fmt::Debug, ops::Range};
 
@@ -101,25 +101,29 @@ pub(super) enum Sign {
     Positive,
 }
 
+// TODO: handle inexact
 pub(super) fn imaginary(sign: Sign) -> TokenKind {
-    TokenKind::Literal(Literal::Number(Number::complex(
-        0,
+    real_to_token(
         match sign {
             Sign::Negative => -1,
             Sign::Positive => 1,
         },
-    )))
+        true,
+    )
 }
 
-pub(super) fn infinity(sign: Sign) -> TokenKind {
-    TokenKind::Literal(Literal::Number(Number::real(match sign {
-        Sign::Negative => f64::NEG_INFINITY,
-        Sign::Positive => f64::INFINITY,
-    })))
+pub(super) fn infinity(sign: Sign, imaginary: bool) -> TokenKind {
+    real_to_token(
+        match sign {
+            Sign::Negative => f64::NEG_INFINITY,
+            Sign::Positive => f64::INFINITY,
+        },
+        imaginary,
+    )
 }
 
-pub(super) fn nan() -> TokenKind {
-    TokenKind::Literal(Literal::Number(Number::real(f64::NAN)))
+pub(super) fn nan(imaginary: bool) -> TokenKind {
+    real_to_token(f64::NAN, imaginary)
 }
 
 #[derive(Debug, Default)]
@@ -289,5 +293,13 @@ impl<R: Radix + Default + Debug> Classifier<R> {
             }
         }
         None
+    }
+}
+
+fn real_to_token(r: impl Into<Real>, imaginary: bool) -> TokenKind {
+    if imaginary {
+        TokenKind::Imaginary(r.into())
+    } else {
+        TokenKind::Literal(Literal::Number(Number::real(r)))
     }
 }
