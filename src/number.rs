@@ -25,7 +25,7 @@ impl Number {
         numerator: impl Into<Integer>,
         denominator: impl Into<Integer>,
     ) -> Result<Self, NumericError> {
-        Ok(Self::Real((numerator, denominator).try_into()?))
+        Ok(Self::Real(Real::reduce(numerator, denominator)?))
     }
 
     pub(crate) fn as_datum(&self) -> Datum {
@@ -98,15 +98,6 @@ impl From<f64> for Real {
 impl<T: Into<Integer>> From<T> for Real {
     fn from(value: T) -> Self {
         Self::Integer(value.into())
-    }
-}
-
-impl<N: Into<Integer>, D: Into<Integer>> TryFrom<(N, D)> for Real {
-    type Error = NumericError;
-
-    fn try_from(value: (N, D)) -> Result<Self, Self::Error> {
-        let (numerator, denominator) = value;
-        Self::reduce(numerator, denominator)
     }
 }
 
@@ -187,6 +178,12 @@ impl From<i64> for Integer {
             precision: Precision::Single(value.unsigned_abs()),
             sign: value.into(),
         }
+    }
+}
+
+impl From<(Sign, u64)> for Integer {
+    fn from(value: (Sign, u64)) -> Self {
+        Self::single(value.1, value.0)
     }
 }
 
@@ -717,8 +714,8 @@ mod tests {
 
         #[test]
         fn complex_rationals() {
-            let r = ok_or_fail!(Real::try_from((3, 5)));
-            let i = ok_or_fail!(Real::try_from((5, 2)));
+            let r = ok_or_fail!(Real::reduce(3, 5));
+            let i = ok_or_fail!(Real::reduce(5, 2));
             let n = Number::complex(r, i);
 
             assert_eq!(n.as_datum().to_string(), "3/5+5/2i");
@@ -726,8 +723,8 @@ mod tests {
 
         #[test]
         fn complex_negative_rat_real() {
-            let r = ok_or_fail!(Real::try_from((-3, 5)));
-            let i = ok_or_fail!(Real::try_from((5, 2)));
+            let r = ok_or_fail!(Real::reduce(-3, 5));
+            let i = ok_or_fail!(Real::reduce(5, 2));
             let n = Number::complex(r, i);
 
             assert_eq!(n.as_datum().to_string(), "-3/5+5/2i");
@@ -735,8 +732,8 @@ mod tests {
 
         #[test]
         fn complex_negative_rat_imag() {
-            let r = ok_or_fail!(Real::try_from((3, 5)));
-            let i = ok_or_fail!(Real::try_from((-5, 2)));
+            let r = ok_or_fail!(Real::reduce(3, 5));
+            let i = ok_or_fail!(Real::reduce(-5, 2));
             let n = Number::complex(r, i);
 
             assert_eq!(n.as_datum().to_string(), "3/5-5/2i");
@@ -744,8 +741,8 @@ mod tests {
 
         #[test]
         fn complex_negative_rat() {
-            let r = ok_or_fail!(Real::try_from((-3, 5)));
-            let i = ok_or_fail!(Real::try_from((-5, 2)));
+            let r = ok_or_fail!(Real::reduce(-3, 5));
+            let i = ok_or_fail!(Real::reduce(-5, 2));
             let n = Number::complex(r, i);
 
             assert_eq!(n.as_datum().to_string(), "-3/5-5/2i");
@@ -753,7 +750,7 @@ mod tests {
 
         #[test]
         fn complex_real_rat() {
-            let r = ok_or_fail!(Real::try_from((3, 5)));
+            let r = ok_or_fail!(Real::reduce(3, 5));
             let n = Number::complex(r, 5);
 
             assert_eq!(n.as_datum().to_string(), "3/5+5i");
@@ -761,7 +758,7 @@ mod tests {
 
         #[test]
         fn complex_imag_rat() {
-            let i = ok_or_fail!(Real::try_from((5, 2)));
+            let i = ok_or_fail!(Real::reduce(5, 2));
             let n = Number::complex(3, i);
 
             assert_eq!(n.as_datum().to_string(), "3+5/2i");
@@ -769,7 +766,7 @@ mod tests {
 
         #[test]
         fn complex_real_float_imag_rat() {
-            let i = ok_or_fail!(Real::try_from((5, 2)));
+            let i = ok_or_fail!(Real::reduce(5, 2));
             let n = Number::complex(3.032, i);
 
             assert_eq!(n.as_datum().to_string(), "3.032+5/2i");
@@ -777,7 +774,7 @@ mod tests {
 
         #[test]
         fn complex_real_rat_imag_float() {
-            let r = ok_or_fail!(Real::try_from((3, 5)));
+            let r = ok_or_fail!(Real::reduce(3, 5));
             let n = Number::complex(r, -6.34);
 
             assert_eq!(n.as_datum().to_string(), "3/5-6.34i");
@@ -827,7 +824,7 @@ mod tests {
 
         #[test]
         fn complex_zero_real_rat_unity_imag() {
-            let i = ok_or_fail!(Real::try_from((5, 5)));
+            let i = ok_or_fail!(Real::reduce(5, 5));
             let n = Number::complex(0, i);
 
             assert_eq!(n.as_datum().to_string(), "+i");

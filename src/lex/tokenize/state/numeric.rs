@@ -297,7 +297,15 @@ impl<R: Radix + Default + Debug> Classifier<R> {
     }
 
     fn parse_sign_magnitude(&self, input: &str) -> TokenExtractResult {
-        todo!();
+        if let Some(mag) = self.magnitude.as_ref() {
+            if let Some(mag_str) = input.get(mag.start..mag.end) {
+                return u64::from_str_radix(mag_str, R::BASE).map_or_else(
+                    |_| self.parse_multi_precision(input),
+                    |val| uint_to_num(self.sign.unwrap_or(Sign::Positive), val),
+                );
+            }
+        }
+        Err(TokenErrorKind::NumberInvalid)
     }
 
     fn parse_multi_precision(&self, input: &str) -> TokenExtractResult {
@@ -315,4 +323,9 @@ fn real_to_token(r: impl Into<Real>, imaginary: bool) -> TokenKind {
 
 fn int_to_num(val: i64) -> TokenExtractResult {
     Ok(TokenKind::Literal(Literal::Number(Number::real(val))))
+}
+
+fn uint_to_num(sign: Sign, val: u64) -> TokenExtractResult {
+    let sign_mag = (sign, val);
+    Ok(TokenKind::Literal(Literal::Number(Number::real(sign_mag))))
 }
