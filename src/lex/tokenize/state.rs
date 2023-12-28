@@ -3,7 +3,6 @@ mod identifier;
 mod numeric;
 mod string;
 
-use self::numeric::Sign;
 // NOTE: re-export for parent module
 pub(super) use self::{
     hashtag::{BlockComment, Hashtag},
@@ -12,7 +11,10 @@ pub(super) use self::{
     string::StringLiteral,
 };
 use super::{extract::TokenExtractResult, scan::Scanner};
-use crate::lex::token::{TokenErrorKind, TokenKind};
+use crate::{
+    lex::token::{TokenErrorKind, TokenKind},
+    number::Sign,
+};
 
 pub(super) struct FreeText<'me, 'str, P> {
     buf: String,

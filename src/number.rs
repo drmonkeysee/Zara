@@ -190,6 +190,44 @@ impl From<i64> for Integer {
     }
 }
 
+// NOTE: enum expression of the signum function
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
+pub(crate) enum Sign {
+    Negative = -1,
+    Zero,
+    Positive,
+}
+
+impl Display for Sign {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        if *self == Sign::Negative {
+            f.write_char('-')
+        } else if f.sign_plus() {
+            f.write_char('+')
+        } else {
+            Ok(())
+        }
+    }
+}
+
+macro_rules! sign_from {
+    ($type:ty) => {
+        impl From<$type> for Sign {
+            fn from(value: $type) -> Self {
+                match value.signum() as i32 {
+                    -1 => Self::Negative,
+                    0 => Self::Zero,
+                    1 => Self::Positive,
+                    _ => unreachable!(),
+                }
+            }
+        }
+    };
+}
+
+sign_from!(i64);
+sign_from!(f64);
+
 #[derive(Debug)]
 pub(crate) enum NumericError {
     DivideByZero,
@@ -293,44 +331,6 @@ impl Ord for Precision {
         }
     }
 }
-
-// NOTE: enum expression of the signum function
-#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
-enum Sign {
-    Negative = -1,
-    Zero,
-    Positive,
-}
-
-impl Display for Sign {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        if *self == Sign::Negative {
-            f.write_char('-')
-        } else if f.sign_plus() {
-            f.write_char('+')
-        } else {
-            Ok(())
-        }
-    }
-}
-
-macro_rules! sign_from {
-    ($type:ty) => {
-        impl From<$type> for Sign {
-            fn from(value: $type) -> Self {
-                match value.signum() as i32 {
-                    -1 => Self::Negative,
-                    0 => Self::Zero,
-                    1 => Self::Positive,
-                    _ => unreachable!(),
-                }
-            }
-        }
-    };
-}
-
-sign_from!(i64);
-sign_from!(f64);
 
 struct FloatDatum<'a>(&'a f64);
 

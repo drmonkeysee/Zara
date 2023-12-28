@@ -7,7 +7,7 @@ use crate::{
         },
     },
     literal::Literal,
-    number::{Number, Real},
+    number::{Number, Real, Sign},
 };
 use std::{fmt::Debug, ops::Range};
 
@@ -96,18 +96,13 @@ impl Radix for Decimal {
     }
 }
 
-#[derive(Debug)]
-pub(super) enum Sign {
-    Negative,
-    Positive,
-}
-
 // TODO: handle inexact
 pub(super) fn imaginary(sign: Sign) -> TokenKind {
     real_to_token(
         match sign {
             Sign::Negative => -1,
             Sign::Positive => 1,
+            Sign::Zero => 0,
         },
         true,
     )
@@ -118,6 +113,7 @@ pub(super) fn infinity(sign: Sign, imaginary: bool) -> TokenKind {
         match sign {
             Sign::Negative => f64::NEG_INFINITY,
             Sign::Positive => f64::INFINITY,
+            Sign::Zero => 0.0,
         },
         imaginary,
     )
@@ -291,13 +287,21 @@ impl<R: Radix + Default + Debug> Classifier<R> {
 
     fn parse_exact(&self, input: &str) -> TokenExtractResult {
         // TODO: handle u64+sign, exact vs non-specified
-        let int = i64::from_str_radix(input, R::BASE)?;
-        Ok(TokenKind::Literal(Literal::Number(Number::real(int))))
+        i64::from_str_radix(input, R::BASE)
+            .map_or_else(|_| self.parse_sign_magnitude(input), int_to_num)
     }
 
     fn parse_inexact(&self, input: &str) -> TokenExtractResult {
         let flt: f64 = input.parse()?;
         Ok(TokenKind::Literal(Literal::Number(Number::real(flt))))
+    }
+
+    fn parse_sign_magnitude(&self, input: &str) -> TokenExtractResult {
+        todo!();
+    }
+
+    fn parse_multi_precision(&self, input: &str) -> TokenExtractResult {
+        todo!();
     }
 }
 
@@ -307,4 +311,8 @@ fn real_to_token(r: impl Into<Real>, imaginary: bool) -> TokenKind {
     } else {
         TokenKind::Literal(Literal::Number(Number::real(r)))
     }
+}
+
+fn int_to_num(val: i64) -> TokenExtractResult {
+    Ok(TokenKind::Literal(Literal::Number(Number::real(val))))
 }

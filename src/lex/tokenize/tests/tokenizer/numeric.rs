@@ -779,6 +779,30 @@ mod float {
     }
 
     #[test]
+    fn invalid_leading_digits_infinity() {
+        let mut s = Scanner::new("+0inf.0");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 6,
+                result: Ok(TokenKind::Literal(Literal::Number(_))),
+            }
+        ));
+        let flt = extract_number!(r.result, Number::Real);
+        assert_eq!(flt.to_string(), "+inf.0");
+    }
+
+    #[test]
     fn nosign_infinity() {
         let mut s = Scanner::new("inf.0");
         let start = some_or_fail!(s.next_token());
@@ -827,6 +851,30 @@ mod float {
     #[test]
     fn nan_upper() {
         let mut s = Scanner::new("+NAN.0");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 6,
+                result: Ok(TokenKind::Literal(Literal::Number(_))),
+            }
+        ));
+        let flt = extract_number!(r.result, Number::Real);
+        assert_eq!(flt.to_string(), "+nan.0");
+    }
+
+    #[test]
+    fn invalid_leading_digits_nan() {
+        let mut s = Scanner::new("+0nan.0");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
             scan: &mut s,
@@ -1080,6 +1128,53 @@ mod complex {
     #[test]
     fn imaginary_upper() {
         let mut s = Scanner::new("+I");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 2,
+                result: Ok(TokenKind::Imaginary(_)),
+            }
+        ));
+        let tok = ok_or_fail!(r.result);
+        let r = extract_or_fail!(tok, TokenKind::Imaginary);
+        assert_eq!(r.to_string(), "1");
+    }
+
+    #[test]
+    fn zero_imaginary() {
+        let mut s = Scanner::new("0i");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 2,
+                result: Err(TokenErrorKind::NumberInvalid),
+            }
+        ));
+    }
+
+    #[test]
+    fn explicit_zero_imaginary() {
+        let mut s = Scanner::new("+0i");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
             scan: &mut s,
