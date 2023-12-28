@@ -162,7 +162,7 @@ mod integer {
             r,
             TokenExtract {
                 start: 0,
-                end: 1,
+                end: 19,
                 result: Ok(TokenKind::Literal(Literal::Number(_))),
             }
         ));
