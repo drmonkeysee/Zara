@@ -94,7 +94,7 @@ impl<'me, 'str> Numeric<'me, 'str, Decimal> {
             Classifier {
                 fraction: Some(idx..idx + 1),
                 radix: Decimal,
-                sign,
+                sign: Some(sign),
                 state: Classification::Float,
                 ..Default::default()
             },
@@ -113,7 +113,7 @@ impl<'me, 'str> Numeric<'me, 'str, Decimal> {
             Classifier {
                 magnitude: Some(idx..idx + 1),
                 radix: Decimal,
-                sign,
+                sign: Some(sign),
                 ..Default::default()
             },
         )
@@ -174,6 +174,8 @@ pub(super) fn nan(imaginary: bool) -> TokenKind {
     real_to_token(f64::NAN, imaginary)
 }
 
+type ClassifierParseResult = Result<Real, TokenErrorKind>;
+
 #[derive(Debug, Default)]
 enum Classification {
     Exponent,
@@ -194,19 +196,24 @@ struct Classifier<R> {
     exponent: Option<Range<usize>>,
     exponent_sign: Option<Sign>,
     fraction: Option<Range<usize>>,
+    imaginary: bool,
     magnitude: Option<Range<usize>>,
     radix: R,
-    sign: Sign,
+    sign: Option<Sign>,
     state: Classification,
 }
 
 // TODO: imaginary numbers
 impl<R: Radix + Default + Debug> Classifier<R> {
     fn classify(&mut self, item: ScanItem) -> Option<TokenErrorKind> {
-        match self.state {
-            Classification::Exponent => self.scientific(item),
-            Classification::Float => self.floating_point(item),
-            Classification::Integer => self.integral(item),
+        if self.imaginary {
+            Some(TokenErrorKind::NumberInvalid)
+        } else {
+            match self.state {
+                Classification::Exponent => self.scientific(item),
+                Classification::Float => self.floating_point(item),
+                Classification::Integer => self.integral(item),
+            }
         }
     }
 
@@ -214,14 +221,15 @@ impl<R: Radix + Default + Debug> Classifier<R> {
         if let Some(err) = self.validate() {
             return Err(err);
         }
-        match self.exactness {
+        let r = match self.exactness {
             Some(Exactness::Exact) => self.parse_exact(input),
-            Some(Exactness::Inexact) => parse_inexact(input),
+            Some(Exactness::Inexact) => self.parse_inexact(input),
             None => match self.state {
-                Classification::Exponent | Classification::Float => parse_inexact(input),
+                Classification::Exponent | Classification::Float => self.parse_inexact(input),
                 Classification::Integer => self.parse_int(input),
             },
-        }
+        }?;
+        Ok(real_to_token(r, self.imaginary))
     }
 
     fn integral(&mut self, item: ScanItem) -> Option<TokenErrorKind> {
@@ -251,6 +259,10 @@ impl<R: Radix + Default + Debug> Classifier<R> {
                     })
                 }
             }
+            'i' | 'I' => {
+                self.imaginary = true;
+                None
+            }
             _ if self.radix.is_digit(ch) => {
                 debug_assert!(self.magnitude.is_some());
                 self.magnitude.as_mut().unwrap().end += 1;
@@ -267,6 +279,10 @@ impl<R: Radix + Default + Debug> Classifier<R> {
             'e' | 'E' => {
                 self.state = Classification::Exponent;
                 self.exponent = Some(idx..idx + 1);
+                None
+            }
+            'i' | 'I' => {
+                self.imaginary = true;
                 None
             }
             _ if self.radix.is_digit(ch) => {
@@ -291,6 +307,14 @@ impl<R: Radix + Default + Debug> Classifier<R> {
                     None
                 }
             }
+            'i' | 'I' => {
+                if self.exponent.is_some() {
+                    self.imaginary = true;
+                    None
+                } else {
+                    Some(TokenErrorKind::NumberMalformedExponent { at: idx })
+                }
+            }
             _ if self.radix.is_digit(ch) => {
                 debug_assert!(self.exponent.is_some());
                 self.exponent.as_mut().unwrap().end += 1;
@@ -301,6 +325,9 @@ impl<R: Radix + Default + Debug> Classifier<R> {
     }
 
     fn validate(&self) -> Option<TokenErrorKind> {
+        if self.imaginary && self.sign.is_none() {
+            return Some(TokenErrorKind::ImaginaryMissingSign);
+        }
         match self.state {
             Classification::Exponent => {
                 debug_assert!(self.exponent.is_some());
@@ -323,27 +350,36 @@ impl<R: Radix + Default + Debug> Classifier<R> {
         None
     }
 
-    fn parse_exact(&self, input: &str) -> TokenExtractResult {
+    fn parse_inexact(&self, mut input: &str) -> ClassifierParseResult {
+        if self.imaginary {
+            if let Some(inp) = input.get(..input.len() - 1) {
+                input = inp
+            } else {
+                return Err(TokenErrorKind::NumberInvalid);
+            }
+        }
+        let flt: f64 = input.parse()?;
+        Ok(flt.into())
+    }
+
+    fn parse_exact(&self, input: &str) -> ClassifierParseResult {
         // TODO: int vs float
         self.parse_int(input)
     }
 
-    fn parse_int(&self, input: &str) -> TokenExtractResult {
-        i64::from_str_radix(input, R::BASE).map_or_else(
-            |_| self.parse_sign_magnitude(input),
-            |val| Ok(TokenKind::Literal(Literal::Number(Number::real(val)))),
-        )
+    fn parse_int(&self, input: &str) -> ClassifierParseResult {
+        i64::from_str_radix(input, R::BASE)
+            .map_or_else(|_| self.parse_sign_magnitude(input), |val| Ok(val.into()))
     }
 
-    fn parse_sign_magnitude(&self, input: &str) -> TokenExtractResult {
+    fn parse_sign_magnitude(&self, input: &str) -> ClassifierParseResult {
         if let Some(mag) = &self.magnitude {
             if let Some(mag_slice) = input.get(mag.start..mag.end) {
                 return u64::from_str_radix(mag_slice, R::BASE).map_or_else(
                     |_| self.parse_multi_precision(input),
                     |val| {
-                        Ok(TokenKind::Literal(Literal::Number(Number::real((
-                            self.sign, val,
-                        )))))
+                        let sign_mag = (self.sign.unwrap_or(Sign::Positive), val);
+                        Ok(sign_mag.into())
                     },
                 );
             }
@@ -351,14 +387,9 @@ impl<R: Radix + Default + Debug> Classifier<R> {
         Err(TokenErrorKind::NumberInvalid)
     }
 
-    fn parse_multi_precision(&self, input: &str) -> TokenExtractResult {
+    fn parse_multi_precision(&self, input: &str) -> ClassifierParseResult {
         todo!();
     }
-}
-
-fn parse_inexact(input: &str) -> TokenExtractResult {
-    let flt: f64 = input.parse()?;
-    Ok(TokenKind::Literal(Literal::Number(Number::real(flt))))
 }
 
 fn real_to_token(r: impl Into<Real>, imaginary: bool) -> TokenKind {

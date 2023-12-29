@@ -1540,8 +1540,52 @@ mod complex {
             TokenExtract {
                 start: 0,
                 end: 2,
+                result: Err(TokenErrorKind::ImaginaryMissingSign),
+            }
+        ));
+    }
+
+    #[test]
+    fn anything_after_i() {
+        let mut s = Scanner::new("+4i5");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 4,
                 result: Err(TokenErrorKind::NumberInvalid),
             }
+        ));
+    }
+
+    #[test]
+    fn just_i() {
+        let mut s = Scanner::new("i");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 1,
+                result: Ok(TokenKind::Identifier(s)),
+            } if s == "i"
         ));
     }
 
@@ -1567,7 +1611,7 @@ mod complex {
         ));
         let tok = ok_or_fail!(r.result);
         let r = extract_or_fail!(tok, TokenKind::Imaginary);
-        assert_eq!(r.to_string(), "1");
+        assert_eq!(r.to_string(), "0");
     }
 
     #[test]
@@ -1643,6 +1687,103 @@ mod complex {
         let tok = ok_or_fail!(r.result);
         let r = extract_or_fail!(tok, TokenKind::Imaginary);
         assert_eq!(r.to_string(), "4.5");
+    }
+
+    #[test]
+    fn exponent_imaginary() {
+        let mut s = Scanner::new("+4.5e4i");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 7,
+                result: Ok(TokenKind::Imaginary(_)),
+            }
+        ));
+        let tok = ok_or_fail!(r.result);
+        let r = extract_or_fail!(tok, TokenKind::Imaginary);
+        assert_eq!(r.to_string(), "45000.0");
+    }
+
+    #[test]
+    fn positive_exponent_imaginary() {
+        let mut s = Scanner::new("+4.5e+4i");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 8,
+                result: Ok(TokenKind::Imaginary(_)),
+            }
+        ));
+        let tok = ok_or_fail!(r.result);
+        let r = extract_or_fail!(tok, TokenKind::Imaginary);
+        assert_eq!(r.to_string(), "45000.0");
+    }
+
+    #[test]
+    fn negative_exponent_imaginary() {
+        let mut s = Scanner::new("+4.5e-4i");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 8,
+                result: Ok(TokenKind::Imaginary(_)),
+            }
+        ));
+        let tok = ok_or_fail!(r.result);
+        let r = extract_or_fail!(tok, TokenKind::Imaginary);
+        assert_eq!(r.to_string(), "0.00045");
+    }
+
+    #[test]
+    fn invalid_exponent_imaginary() {
+        let mut s = Scanner::new("+4.5ei");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 4,
+                end: 6,
+                result: Err(TokenErrorKind::NumberMalformedExponent { at: 4 }),
+            }
+        ));
     }
 
     #[test]
