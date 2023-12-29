@@ -62,7 +62,6 @@ impl<'me, 'str> Numeric<'me, 'str, Decimal> {
             Classifier {
                 magnitude: Some(idx..idx + 1),
                 radix: Decimal,
-                sign: Some(Sign::Positive),
                 ..Default::default()
             },
         )
@@ -81,7 +80,6 @@ impl<'me, 'str> Numeric<'me, 'str, Decimal> {
             Classifier {
                 fraction: Some(idx..idx + 2),
                 radix: Decimal,
-                sign: Some(Sign::Positive),
                 state: Classification::Float,
                 ..Default::default()
             },
@@ -100,7 +98,7 @@ impl<'me, 'str> Numeric<'me, 'str, Decimal> {
             Classifier {
                 fraction: Some(idx..idx + 1),
                 radix: Decimal,
-                sign: Some(sign),
+                sign,
                 state: Classification::Float,
                 ..Default::default()
             },
@@ -119,7 +117,7 @@ impl<'me, 'str> Numeric<'me, 'str, Decimal> {
             Classifier {
                 magnitude: Some(idx..idx + 1),
                 radix: Decimal,
-                sign: Some(sign),
+                sign,
                 ..Default::default()
             },
         )
@@ -202,7 +200,7 @@ struct Classifier<R> {
     fraction: Option<Range<usize>>,
     magnitude: Option<Range<usize>>,
     radix: R,
-    sign: Option<Sign>,
+    sign: Sign,
     state: Classification,
 }
 
@@ -347,8 +345,9 @@ impl<R: Radix + Default + Debug> Classifier<R> {
                 return u64::from_str_radix(mag_slice, R::BASE).map_or_else(
                     |_| self.parse_multi_precision(input),
                     |val| {
-                        let sign_mag = (self.sign.unwrap_or(Sign::Positive), val);
-                        Ok(TokenKind::Literal(Literal::Number(Number::real(sign_mag))))
+                        Ok(TokenKind::Literal(Literal::Number(Number::real((
+                            self.sign, val,
+                        )))))
                     },
                 );
             }

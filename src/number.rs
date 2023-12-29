@@ -188,10 +188,11 @@ impl From<(Sign, u64)> for Integer {
 }
 
 // NOTE: enum expression of the signum function
-#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
+#[derive(Clone, Copy, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
 pub(crate) enum Sign {
     Negative = -1,
     Zero,
+    #[default]
     Positive,
 }
 
