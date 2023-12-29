@@ -1568,6 +1568,28 @@ mod complex {
     }
 
     #[test]
+    fn sign_after_i() {
+        let mut s = Scanner::new("+4i+");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 4,
+                result: Err(TokenErrorKind::NumberInvalid),
+            }
+        ));
+    }
+
+    #[test]
     fn just_i() {
         let mut s = Scanner::new("i");
         let start = some_or_fail!(s.next_token());
