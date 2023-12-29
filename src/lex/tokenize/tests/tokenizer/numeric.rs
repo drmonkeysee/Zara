@@ -1590,6 +1590,28 @@ mod complex {
     }
 
     #[test]
+    fn sign_period_i() {
+        let mut s = Scanner::new("+.i");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 3,
+                result: Ok(TokenKind::Identifier(s)),
+            } if s == "+.i"
+        ));
+    }
+
+    #[test]
     fn explicit_zero_imaginary() {
         let mut s = Scanner::new("+0i");
         let start = some_or_fail!(s.next_token());

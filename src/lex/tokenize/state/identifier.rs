@@ -57,31 +57,21 @@ impl<'me, 'str> Identifier<'me, 'str> {
     fn continue_peculiar(&mut self, next_ch: Option<char>) -> TokenExtractResult {
         if let Some(ch) = next_ch {
             if Decimal.is_digit(ch) {
-                if let Some(ps) = &self.peculiar_state {
-                    match ps {
-                        PeculiarState::DefiniteIdentifier => self.standard(),
-                        // CASE: .<digit>
-                        PeculiarState::MaybeFloat => {
-                            Numeric::try_float(self.scan, self.start).scan()
-                        }
-                        // CASE: +/-.<digit>
-                        PeculiarState::MaybeSignedFloat(ch) => Numeric::try_signed_float(
-                            super::char_to_sign(*ch),
-                            self.scan,
-                            self.start,
-                        )
-                        .scan(),
-                        // CASE: +/-<digit>
-                        PeculiarState::MaybeSignedNumber(ch) => Numeric::try_signed_number(
-                            super::char_to_sign(*ch),
-                            self.scan,
-                            self.start,
-                        )
-                        .scan(),
+                debug_assert!(self.peculiar_state.is_some());
+                match self.peculiar_state.as_ref().unwrap() {
+                    PeculiarState::DefiniteIdentifier => self.standard(),
+                    // CASE: .<digit>
+                    PeculiarState::MaybeFloat => Numeric::try_float(self.scan, self.start).scan(),
+                    // CASE: +/-.<digit>
+                    PeculiarState::MaybeSignedFloat(sn) => {
+                        Numeric::try_signed_float(super::char_to_sign(*sn), self.scan, self.start)
+                            .scan()
                     }
-                } else {
-                    // NOTE: this method is only reachable from a peculiar state
-                    unreachable!();
+                    // CASE: +/-<digit>
+                    PeculiarState::MaybeSignedNumber(sn) => {
+                        Numeric::try_signed_number(super::char_to_sign(*sn), self.scan, self.start)
+                            .scan()
+                    }
                 }
             } else if is_peculiar_initial(ch) {
                 self.peculiar(ch)

@@ -352,11 +352,9 @@ impl<R: Radix + Default + Debug> Classifier<R> {
 
     fn parse_inexact(&self, mut input: &str) -> ClassifierParseResult {
         if self.imaginary {
-            if let Some(inp) = input.get(..input.len() - 1) {
-                input = inp
-            } else {
-                return Err(TokenErrorKind::NumberInvalid);
-            }
+            let slc = input.get(..input.len() - 1);
+            debug_assert!(slc.is_some_and(|sc| !sc.is_empty()));
+            input = slc.unwrap();
         }
         let flt: f64 = input.parse()?;
         Ok(flt.into())
