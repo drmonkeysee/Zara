@@ -55,29 +55,26 @@ impl<'me, 'str> Identifier<'me, 'str> {
     }
 
     fn continue_peculiar(&mut self, next_ch: Option<char>) -> TokenExtractResult {
-        match next_ch {
-            Some(ch) => {
-                // TODO: this should only be 0..9, change call if is_id_digit is expanded
-                if is_digit(ch) {
-                    match self.peculiar_state {
-                        Some(PeculiarState::DefiniteIdentifier) => self.standard(),
-                        _ => self.not_implemented(), // TODO: parse as number
-                    }
-                } else if is_peculiar_initial(ch) {
-                    self.peculiar(ch)
-                } else if is_initial(ch) {
-                    self.standard()
-                } else {
-                    self.invalid(ch)
+        if let Some(ch) = next_ch {
+            // TODO: this should only be 0..9, change call if is_id_digit is expanded
+            if is_digit(ch) {
+                match self.peculiar_state {
+                    Some(PeculiarState::DefiniteIdentifier) => self.standard(),
+                    _ => self.not_implemented(), // TODO: parse as number
                 }
+            } else if is_peculiar_initial(ch) {
+                self.peculiar(ch)
+            } else if is_initial(ch) {
+                self.standard()
+            } else {
+                self.invalid(ch)
             }
-            None => {
-                // NOTE: a single '.' is invalid but Tokenizer handles '.'
-                // before attempting Identifier so this case never happens.
-                let txt = self.extract_txt();
-                debug_assert!(txt != ".");
-                Ok(TokenKind::Identifier(txt))
-            }
+        } else {
+            // NOTE: a single '.' is invalid but Tokenizer handles '.'
+            // before attempting Identifier so this case never happens.
+            let txt = self.extract_txt();
+            debug_assert!(txt != ".");
+            Ok(TokenKind::Identifier(txt))
         }
     }
 
@@ -99,7 +96,7 @@ impl<'me, 'str> Identifier<'me, 'str> {
                 _ => PeculiarState::DefiniteIdentifier,
             },
             _ => unreachable!(),
-        })
+        });
     }
 
     fn not_implemented(&mut self) -> TokenExtractResult {

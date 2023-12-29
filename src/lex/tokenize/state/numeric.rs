@@ -164,7 +164,7 @@ impl<R: Radix + Default + Debug> Classifier<R> {
             return Err(err);
         }
         match self.exactness {
-            Some(Exactness::Inexact) => self.parse_inexact(input),
+            Some(Exactness::Inexact) => parse_inexact(input),
             _ => self.parse_exact(input),
         }
     }
@@ -207,7 +207,7 @@ impl<R: Radix + Default + Debug> Classifier<R> {
                 self.magnitude.as_mut().unwrap().end += 1;
                 None
             }
-            _ => self.invalid(),
+            _ => Some(TokenErrorKind::NumberInvalid),
         }
     }
 
@@ -228,7 +228,7 @@ impl<R: Radix + Default + Debug> Classifier<R> {
                 self.fraction.as_mut().unwrap().end += 1;
                 None
             }
-            _ => self.invalid(),
+            _ => Some(TokenErrorKind::NumberInvalid),
         }
     }
 
@@ -258,10 +258,6 @@ impl<R: Radix + Default + Debug> Classifier<R> {
         }
     }
 
-    fn invalid(&self) -> Option<TokenErrorKind> {
-        Some(TokenErrorKind::NumberInvalid)
-    }
-
     fn validate(&self) -> Option<TokenErrorKind> {
         match self.state {
             Classification::Exponent => {
@@ -287,13 +283,10 @@ impl<R: Radix + Default + Debug> Classifier<R> {
 
     fn parse_exact(&self, input: &str) -> TokenExtractResult {
         // TODO: handle u64+sign, exact vs non-specified
-        i64::from_str_radix(input, R::BASE)
-            .map_or_else(|_| self.parse_sign_magnitude(input), int_to_num)
-    }
-
-    fn parse_inexact(&self, input: &str) -> TokenExtractResult {
-        let flt: f64 = input.parse()?;
-        Ok(TokenKind::Literal(Literal::Number(Number::real(flt))))
+        i64::from_str_radix(input, R::BASE).map_or_else(
+            |_| self.parse_sign_magnitude(input),
+            |val| Ok(TokenKind::Literal(Literal::Number(Number::real(val)))),
+        )
     }
 
     fn parse_sign_magnitude(&self, input: &str) -> TokenExtractResult {
@@ -301,7 +294,10 @@ impl<R: Radix + Default + Debug> Classifier<R> {
             if let Some(mag_slice) = input.get(mag.start..mag.end) {
                 return u64::from_str_radix(mag_slice, R::BASE).map_or_else(
                     |_| self.parse_multi_precision(input),
-                    |val| uint_to_num(self.sign.unwrap_or(Sign::Positive), val),
+                    |val| {
+                        let sign_mag = (self.sign.unwrap_or(Sign::Positive), val);
+                        Ok(TokenKind::Literal(Literal::Number(Number::real(sign_mag))))
+                    },
                 );
             }
         }
@@ -313,19 +309,15 @@ impl<R: Radix + Default + Debug> Classifier<R> {
     }
 }
 
+fn parse_inexact(input: &str) -> TokenExtractResult {
+    let flt: f64 = input.parse()?;
+    Ok(TokenKind::Literal(Literal::Number(Number::real(flt))))
+}
+
 fn real_to_token(r: impl Into<Real>, imaginary: bool) -> TokenKind {
     if imaginary {
         TokenKind::Imaginary(r.into())
     } else {
         TokenKind::Literal(Literal::Number(Number::real(r)))
     }
-}
-
-fn int_to_num(val: i64) -> TokenExtractResult {
-    Ok(TokenKind::Literal(Literal::Number(Number::real(val))))
-}
-
-fn uint_to_num(sign: Sign, val: u64) -> TokenExtractResult {
-    let sign_mag = (sign, val);
-    Ok(TokenKind::Literal(Literal::Number(Number::real(sign_mag))))
 }
