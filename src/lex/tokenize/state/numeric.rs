@@ -298,8 +298,8 @@ impl<R: Radix + Default + Debug> Classifier<R> {
 
     fn parse_sign_magnitude(&self, input: &str) -> TokenExtractResult {
         if let Some(mag) = self.magnitude.as_ref() {
-            if let Some(mag_str) = input.get(mag.start..mag.end) {
-                return u64::from_str_radix(mag_str, R::BASE).map_or_else(
+            if let Some(mag_slice) = input.get(mag.start..mag.end) {
+                return u64::from_str_radix(mag_slice, R::BASE).map_or_else(
                     |_| self.parse_multi_precision(input),
                     |val| uint_to_num(self.sign.unwrap_or(Sign::Positive), val),
                 );

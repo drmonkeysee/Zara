@@ -1,7 +1,4 @@
-use crate::{
-    literal::Literal,
-    number::{Number, Real},
-};
+use crate::{literal::Literal, number::Real};
 use std::{
     error::Error,
     fmt::{self, Display, Formatter},

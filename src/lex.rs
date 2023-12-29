@@ -95,7 +95,7 @@ impl Lexer {
             self.cont = Some((lines, token_cont));
             Ok(LexerOutput::Continuation)
         } else {
-            debug_assert!(lines.len() > 0);
+            debug_assert!(!lines.is_empty());
             Err(lines.pop().unwrap().into_continuation_unsupported())
         }
     }
@@ -143,7 +143,7 @@ pub(crate) struct TokenLine(Vec<Token>, TextLine);
 
 impl TokenLine {
     fn into_continuation_unsupported(mut self) -> LexerError {
-        debug_assert!(self.0.len() > 0);
+        debug_assert!(!self.0.is_empty());
         let token_err = self.0.pop().unwrap().into_continuation_unsupported();
         let err: LineFailure = TokenErrorLine(vec![token_err], self.1).into();
         err.into()

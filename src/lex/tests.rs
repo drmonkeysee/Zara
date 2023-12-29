@@ -1428,7 +1428,7 @@ mod error {
     }
 
     #[test]
-    #[should_panic(expected = "assertion failed: self.0.len() > 0")]
+    #[should_panic(expected = "assertion failed: !self.0.is_empty()")]
     fn convert_invalid_line_into_continuation_failure() {
         let line = TokenLine(Vec::new(), make_textline());
 
