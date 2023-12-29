@@ -511,7 +511,7 @@ fn start_digit() {
         TokenExtract {
             start: 0,
             end: 4,
-            result: Err(TokenErrorKind::IdentifierInvalid('4')),
+            result: Err(TokenErrorKind::NumberInvalid),
         }
     ));
 }
@@ -555,69 +555,6 @@ fn contains_reserved_char() {
             end: 7,
             result: Err(TokenErrorKind::IdentifierInvalid('{')),
         }
-    ));
-}
-
-#[test]
-fn sign_start_with_digit_is_number() {
-    let mut s = Scanner::new("+4");
-    let start = some_or_fail!(s.next_token());
-    let t = Tokenizer {
-        scan: &mut s,
-        start,
-    };
-
-    let r = t.extract();
-
-    assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 2,
-            result: Err(TokenErrorKind::Unimplemented(s)),
-        } if s == "+4"
-    ));
-}
-
-#[test]
-fn period_start_with_digit_is_number() {
-    let mut s = Scanner::new(".4");
-    let start = some_or_fail!(s.next_token());
-    let t = Tokenizer {
-        scan: &mut s,
-        start,
-    };
-
-    let r = t.extract();
-
-    assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 2,
-            result: Err(TokenErrorKind::Unimplemented(s)),
-        } if s == ".4"
-    ));
-}
-
-#[test]
-fn sign_period_start_with_digit_is_number() {
-    let mut s = Scanner::new("-.4");
-    let start = some_or_fail!(s.next_token());
-    let t = Tokenizer {
-        scan: &mut s,
-        start,
-    };
-
-    let r = t.extract();
-
-    assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 3,
-            result: Err(TokenErrorKind::Unimplemented(s)),
-        } if s == "-.4"
     ));
 }
 

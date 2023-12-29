@@ -128,6 +128,14 @@ fn parse_char_hex(txt: &str) -> HexParse {
     }
 }
 
+fn char_to_sign(ch: char) -> Sign {
+    if ch == '-' {
+        Sign::Negative
+    } else {
+        Sign::Positive
+    }
+}
+
 fn numeric_label(txt: &str) -> Option<TokenKind> {
     if let Some(sign) = num_lbl_sign(txt) {
         if let Some(txt) = txt.get(1..) {

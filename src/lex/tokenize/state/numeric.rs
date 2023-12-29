@@ -67,6 +67,63 @@ impl<'me, 'str> Numeric<'me, 'str, Decimal> {
             },
         )
     }
+
+    // NOTE: these ctors are always called after one confirmed
+    // decimal digit has been scanned.
+    pub(in crate::lex::tokenize) fn try_float(
+        scan: &'me mut Scanner<'str>,
+        start: &'me ScanItem<'str>,
+    ) -> Self {
+        let idx = start.0;
+        Self::new(
+            scan,
+            start,
+            Classifier {
+                fraction: Some(idx..idx + 2),
+                radix: Decimal,
+                sign: Some(Sign::Positive),
+                state: Classification::Float,
+                ..Default::default()
+            },
+        )
+    }
+
+    pub(in crate::lex::tokenize) fn try_signed_float(
+        sign: Sign,
+        scan: &'me mut Scanner<'str>,
+        start: &'me ScanItem<'str>,
+    ) -> Self {
+        let idx = start.0 + 1;
+        Self::new(
+            scan,
+            start,
+            Classifier {
+                fraction: Some(idx..idx + 1),
+                radix: Decimal,
+                sign: Some(sign),
+                state: Classification::Float,
+                ..Default::default()
+            },
+        )
+    }
+
+    pub(in crate::lex::tokenize) fn try_signed_number(
+        sign: Sign,
+        scan: &'me mut Scanner<'str>,
+        start: &'me ScanItem<'str>,
+    ) -> Self {
+        let idx = start.0 + 1;
+        Self::new(
+            scan,
+            start,
+            Classifier {
+                magnitude: Some(idx..idx + 1),
+                radix: Decimal,
+                sign: Some(sign),
+                ..Default::default()
+            },
+        )
+    }
 }
 
 pub(in crate::lex::tokenize) trait Radix {
@@ -164,8 +221,12 @@ impl<R: Radix + Default + Debug> Classifier<R> {
             return Err(err);
         }
         match self.exactness {
+            Some(Exactness::Exact) => self.parse_exact(input),
             Some(Exactness::Inexact) => parse_inexact(input),
-            _ => self.parse_exact(input),
+            None => match self.state {
+                Classification::Exponent | Classification::Float => parse_inexact(input),
+                Classification::Integer => self.parse_int(input),
+            },
         }
     }
 
@@ -176,9 +237,6 @@ impl<R: Radix + Default + Debug> Classifier<R> {
                 if self.radix.allow_floating_point() {
                     self.state = Classification::Float;
                     self.fraction = Some(idx..idx + 1);
-                    if self.exactness.is_none() {
-                        self.exactness = Some(Exactness::Inexact);
-                    }
                     None
                 } else {
                     Some(TokenErrorKind::NumberInvalidDecimalPoint {
@@ -191,9 +249,6 @@ impl<R: Radix + Default + Debug> Classifier<R> {
                 if self.radix.allow_floating_point() {
                     self.state = Classification::Exponent;
                     self.exponent = Some(idx..idx + 1);
-                    if self.exactness.is_none() {
-                        self.exactness = Some(Exactness::Inexact);
-                    }
                     None
                 } else {
                     Some(TokenErrorKind::NumberInvalidExponent {
@@ -218,9 +273,6 @@ impl<R: Radix + Default + Debug> Classifier<R> {
             'e' | 'E' => {
                 self.state = Classification::Exponent;
                 self.exponent = Some(idx..idx + 1);
-                if self.exactness.is_none() {
-                    self.exactness = Some(Exactness::Inexact);
-                }
                 None
             }
             _ if self.radix.is_digit(ch) => {
@@ -241,11 +293,7 @@ impl<R: Radix + Default + Debug> Classifier<R> {
                 if self.exponent_sign.is_some() {
                     Some(TokenErrorKind::NumberMalformedExponent { at: idx })
                 } else {
-                    self.exponent_sign = Some(if ch == '+' {
-                        Sign::Positive
-                    } else {
-                        Sign::Negative
-                    });
+                    self.exponent_sign = Some(super::char_to_sign(ch));
                     None
                 }
             }
@@ -282,7 +330,11 @@ impl<R: Radix + Default + Debug> Classifier<R> {
     }
 
     fn parse_exact(&self, input: &str) -> TokenExtractResult {
-        // TODO: handle u64+sign, exact vs non-specified
+        // TODO: int vs float
+        self.parse_int(input)
+    }
+
+    fn parse_int(&self, input: &str) -> TokenExtractResult {
         i64::from_str_radix(input, R::BASE).map_or_else(
             |_| self.parse_sign_magnitude(input),
             |val| Ok(TokenKind::Literal(Literal::Number(Number::real(val)))),
@@ -290,7 +342,7 @@ impl<R: Radix + Default + Debug> Classifier<R> {
     }
 
     fn parse_sign_magnitude(&self, input: &str) -> TokenExtractResult {
-        if let Some(mag) = self.magnitude.as_ref() {
+        if let Some(mag) = &self.magnitude {
             if let Some(mag_slice) = input.get(mag.start..mag.end) {
                 return u64::from_str_radix(mag_slice, R::BASE).map_or_else(
                     |_| self.parse_multi_precision(input),

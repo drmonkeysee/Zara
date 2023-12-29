@@ -65,7 +65,7 @@ mod integer {
             r,
             TokenExtract {
                 start: 0,
-                end: 1,
+                end: 2,
                 result: Ok(TokenKind::Literal(Literal::Number(_))),
             }
         ));
@@ -137,7 +137,7 @@ mod integer {
             r,
             TokenExtract {
                 start: 0,
-                end: 1,
+                end: 2,
                 result: Ok(TokenKind::Literal(Literal::Number(_))),
             }
         ));
@@ -187,7 +187,7 @@ mod integer {
             r,
             TokenExtract {
                 start: 0,
-                end: 1,
+                end: 20,
                 result: Ok(TokenKind::Literal(Literal::Number(_))),
             }
         ));
@@ -237,7 +237,7 @@ mod integer {
             r,
             TokenExtract {
                 start: 0,
-                end: 1,
+                end: 21,
                 result: Ok(TokenKind::Literal(Literal::Number(_))),
             }
         ));
@@ -262,7 +262,7 @@ mod integer {
             r,
             TokenExtract {
                 start: 0,
-                end: 1,
+                end: 21,
                 result: Ok(TokenKind::Literal(Literal::Number(_))),
             }
         ));
@@ -314,7 +314,7 @@ mod float {
             r,
             TokenExtract {
                 start: 0,
-                end: 5,
+                end: 6,
                 result: Ok(TokenKind::Literal(Literal::Number(_))),
             }
         ));
@@ -338,7 +338,7 @@ mod float {
             r,
             TokenExtract {
                 start: 0,
-                end: 5,
+                end: 6,
                 result: Ok(TokenKind::Literal(Literal::Number(_))),
             }
         ));
@@ -386,7 +386,7 @@ mod float {
             r,
             TokenExtract {
                 start: 0,
-                end: 2,
+                end: 3,
                 result: Ok(TokenKind::Literal(Literal::Number(_))),
             }
         ));
@@ -410,7 +410,7 @@ mod float {
             r,
             TokenExtract {
                 start: 0,
-                end: 2,
+                end: 3,
                 result: Ok(TokenKind::Literal(Literal::Number(_))),
             }
         ));
@@ -794,12 +794,10 @@ mod float {
             r,
             TokenExtract {
                 start: 0,
-                end: 6,
-                result: Ok(TokenKind::Literal(Literal::Number(_))),
+                end: 7,
+                result: Err(TokenErrorKind::NumberInvalid),
             }
         ));
-        let flt = extract_number!(r.result, Number::Real);
-        assert_eq!(flt.to_string(), "+inf.0");
     }
 
     #[test]
@@ -888,12 +886,10 @@ mod float {
             r,
             TokenExtract {
                 start: 0,
-                end: 6,
-                result: Ok(TokenKind::Literal(Literal::Number(_))),
+                end: 7,
+                result: Err(TokenErrorKind::NumberInvalid),
             }
         ));
-        let flt = extract_number!(r.result, Number::Real);
-        assert_eq!(flt.to_string(), "+nan.0");
     }
 
     #[test]
