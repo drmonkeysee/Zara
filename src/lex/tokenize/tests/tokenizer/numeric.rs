@@ -271,11 +271,364 @@ mod integer {
     }
 }
 
+mod rational {
+    use super::*;
+
+    #[test]
+    fn simple() {
+        let mut s = Scanner::new("4/5");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 3,
+                result: Ok(TokenKind::Literal(Literal::Number(_))),
+            }
+        ));
+        let rat = extract_number!(r.result, Number::Real, Real::Rational);
+        assert_eq!(rat.to_string(), "4/5");
+    }
+
+    #[test]
+    fn explicit_positive() {
+        let mut s = Scanner::new("+4/5");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 4,
+                result: Ok(TokenKind::Literal(Literal::Number(_))),
+            }
+        ));
+        let rat = extract_number!(r.result, Number::Real, Real::Rational);
+        assert_eq!(rat.to_string(), "4/5");
+    }
+
+    #[test]
+    fn zero_numerator() {
+        let mut s = Scanner::new("0/5");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 3,
+                result: Ok(TokenKind::Literal(Literal::Number(_))),
+            }
+        ));
+        let rat = extract_number!(r.result, Number::Real, Real::Integer);
+        assert_eq!(rat.to_string(), "0");
+    }
+
+    #[test]
+    fn zero_denominator() {
+        let mut s = Scanner::new("4/0");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 3,
+                result: Err(TokenErrorKind::Unimplemented(_)),
+            }
+        ));
+    }
+
+    #[test]
+    fn reduce() {
+        let mut s = Scanner::new("4/10");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 4,
+                result: Ok(TokenKind::Literal(Literal::Number(_))),
+            }
+        ));
+        let rat = extract_number!(r.result, Number::Real, Real::Rational);
+        assert_eq!(rat.to_string(), "2/5");
+    }
+
+    #[test]
+    fn reduce_to_int() {
+        let mut s = Scanner::new("10/5");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 4,
+                result: Ok(TokenKind::Literal(Literal::Number(_))),
+            }
+        ));
+        let rat = extract_number!(r.result, Number::Real, Real::Integer);
+        assert_eq!(rat.to_string(), "2");
+    }
+
+    #[test]
+    fn reduce_to_unity() {
+        let mut s = Scanner::new("10/10");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 5,
+                result: Ok(TokenKind::Literal(Literal::Number(_))),
+            }
+        ));
+        let rat = extract_number!(r.result, Number::Real, Real::Integer);
+        assert_eq!(rat.to_string(), "1");
+    }
+
+    #[test]
+    fn unity_denominator() {
+        let mut s = Scanner::new("10/1");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 4,
+                result: Ok(TokenKind::Literal(Literal::Number(_))),
+            }
+        ));
+        let rat = extract_number!(r.result, Number::Real, Real::Integer);
+        assert_eq!(rat.to_string(), "10");
+    }
+
+    #[test]
+    fn max_uint() {
+        let input = format!("+1/{}", u64::MAX);
+        let mut s = Scanner::new(&input);
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 22,
+                result: Ok(TokenKind::Literal(Literal::Number(_))),
+            }
+        ));
+        let rat = extract_number!(r.result, Number::Real, Real::Rational);
+        assert_eq!(rat.to_string(), "1/18446744073709551615");
+    }
+
+    #[test]
+    fn negative_numerator() {
+        let mut s = Scanner::new("-4/5");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 4,
+                result: Ok(TokenKind::Literal(Literal::Number(_))),
+            }
+        ));
+        let rat = extract_number!(r.result, Number::Real, Real::Rational);
+        assert_eq!(rat.to_string(), "-4/5");
+    }
+
+    #[test]
+    fn negative_denominator() {
+        let mut s = Scanner::new("4/-5");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 4,
+                result: Err(TokenErrorKind::Unimplemented(_)),
+            }
+        ));
+    }
+
+    #[test]
+    fn explicit_positive_denominator() {
+        let mut s = Scanner::new("4/+5");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 4,
+                result: Err(TokenErrorKind::Unimplemented(_)),
+            }
+        ));
+    }
+
+    #[test]
+    fn negative_both() {
+        let mut s = Scanner::new("-4/-5");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 5,
+                result: Err(TokenErrorKind::Unimplemented(_)),
+            }
+        ));
+    }
+
+    #[test]
+    fn float_numerator() {
+        let mut s = Scanner::new("4.2/5");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 5,
+                result: Err(TokenErrorKind::Unimplemented(_)),
+            }
+        ));
+    }
+
+    #[test]
+    fn float_denominator() {
+        let mut s = Scanner::new("4/5.3");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 5,
+                result: Err(TokenErrorKind::Unimplemented(_)),
+            }
+        ));
+    }
+}
+
 mod float {
     use super::*;
 
     #[test]
-    fn simple_float() {
+    fn simple() {
         let mut s = Scanner::new("42.34");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
@@ -704,6 +1057,30 @@ mod float {
         ));
         let flt = extract_number!(r.result, Number::Real);
         assert_eq!(flt.to_string(), "-5.0");
+    }
+
+    #[test]
+    fn inexact_rational() {
+        let mut s = Scanner::new("#i4/5");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 5,
+                result: Ok(TokenKind::Literal(Literal::Number(_))),
+            }
+        ));
+        let flt = extract_number!(r.result, Number::Real);
+        assert_eq!(flt.to_string(), "0.8");
     }
 
     #[test]
@@ -1184,13 +1561,88 @@ mod complex {
             r,
             TokenExtract {
                 start: 0,
-                end: 2,
+                end: 3,
                 result: Ok(TokenKind::Imaginary(_)),
             }
         ));
         let tok = ok_or_fail!(r.result);
         let r = extract_or_fail!(tok, TokenKind::Imaginary);
         assert_eq!(r.to_string(), "1");
+    }
+
+    #[test]
+    fn integer_imaginary() {
+        let mut s = Scanner::new("+5i");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 3,
+                result: Ok(TokenKind::Imaginary(_)),
+            }
+        ));
+        let tok = ok_or_fail!(r.result);
+        let r = extract_or_fail!(tok, TokenKind::Imaginary);
+        assert_eq!(r.to_string(), "5");
+    }
+
+    #[test]
+    fn rational_imaginary() {
+        let mut s = Scanner::new("+4/5i");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 5,
+                result: Ok(TokenKind::Imaginary(_)),
+            }
+        ));
+        let tok = ok_or_fail!(r.result);
+        let r = extract_or_fail!(tok, TokenKind::Imaginary);
+        assert_eq!(r.to_string(), "4/5");
+    }
+
+    #[test]
+    fn float_imaginary() {
+        let mut s = Scanner::new("+4.5i");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 5,
+                result: Ok(TokenKind::Imaginary(_)),
+            }
+        ));
+        let tok = ok_or_fail!(r.result);
+        let r = extract_or_fail!(tok, TokenKind::Imaginary);
+        assert_eq!(r.to_string(), "4.5");
     }
 
     #[test]
@@ -1216,6 +1668,31 @@ mod complex {
         let tok = ok_or_fail!(r.result);
         let r = extract_or_fail!(tok, TokenKind::Imaginary);
         assert_eq!(r.to_string(), "-1");
+    }
+
+    #[test]
+    fn negative_integer_imaginary() {
+        let mut s = Scanner::new("-5i");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 3,
+                result: Ok(TokenKind::Imaginary(_)),
+            }
+        ));
+        let tok = ok_or_fail!(r.result);
+        let r = extract_or_fail!(tok, TokenKind::Imaginary);
+        assert_eq!(r.to_string(), "-5");
     }
 
     #[test]
