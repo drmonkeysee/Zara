@@ -350,13 +350,10 @@ impl<R: Radix + Default + Debug> Classifier<R> {
         None
     }
 
-    fn parse_inexact(&self, mut input: &str) -> ClassifierParseResult {
-        if self.imaginary {
-            let slc = input.get(..input.len() - 1);
-            debug_assert!(slc.is_some_and(|sc| !sc.is_empty()));
-            input = slc.unwrap();
-        }
-        let flt: f64 = input.parse()?;
+    fn parse_inexact(&self, input: &str) -> ClassifierParseResult {
+        let num = input.get(..input.len() - usize::from(self.imaginary));
+        debug_assert!(num.is_some_and(|sc| !sc.is_empty()));
+        let flt: f64 = num.unwrap().parse()?;
         Ok(flt.into())
     }
 

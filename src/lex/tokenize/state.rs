@@ -141,11 +141,7 @@ fn numeric_label(txt: &str) -> Option<TokenKind> {
         if let Some(txt) = txt.get(1..) {
             let label = txt.to_ascii_lowercase();
             let imaginary = label.ends_with('i');
-            let end = if imaginary {
-                label.len() - 1
-            } else {
-                label.len()
-            };
+            let end = label.len() - usize::from(imaginary);
             if let Some(label) = label.get(..end) {
                 return match label {
                     "" => Some(numeric::imaginary(sign)),
