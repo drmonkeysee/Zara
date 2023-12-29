@@ -14,15 +14,11 @@ use std::{fmt::Debug, ops::Range};
 pub(in crate::lex::tokenize) struct Numeric<'me, 'str, R> {
     classifier: Classifier<R>,
     scan: &'me mut Scanner<'str>,
-    start: &'me ScanItem<'str>,
+    start: ScanItem<'str>,
 }
 
 impl<'me, 'str, R: Radix + Default + Debug> Numeric<'me, 'str, R> {
-    fn new(
-        scan: &'me mut Scanner<'str>,
-        start: &'me ScanItem<'str>,
-        classifier: Classifier<R>,
-    ) -> Self {
+    fn new(scan: &'me mut Scanner<'str>, start: ScanItem<'str>, classifier: Classifier<R>) -> Self {
         Self {
             classifier,
             scan,
@@ -53,7 +49,7 @@ impl<'me, 'str, R: Radix + Default + Debug> Numeric<'me, 'str, R> {
 impl<'me, 'str> Numeric<'me, 'str, Decimal> {
     pub(in crate::lex::tokenize) fn decimal(
         scan: &'me mut Scanner<'str>,
-        start: &'me ScanItem<'str>,
+        start: ScanItem<'str>,
     ) -> Self {
         let idx = start.0;
         Self::new(
@@ -71,7 +67,7 @@ impl<'me, 'str> Numeric<'me, 'str, Decimal> {
     // decimal digit has been scanned.
     pub(in crate::lex::tokenize) fn try_float(
         scan: &'me mut Scanner<'str>,
-        start: &'me ScanItem<'str>,
+        start: ScanItem<'str>,
     ) -> Self {
         let idx = start.0;
         Self::new(
@@ -89,7 +85,7 @@ impl<'me, 'str> Numeric<'me, 'str, Decimal> {
     pub(in crate::lex::tokenize) fn try_signed_float(
         sign: Sign,
         scan: &'me mut Scanner<'str>,
-        start: &'me ScanItem<'str>,
+        start: ScanItem<'str>,
     ) -> Self {
         let idx = start.0 + 1;
         Self::new(
@@ -108,7 +104,7 @@ impl<'me, 'str> Numeric<'me, 'str, Decimal> {
     pub(in crate::lex::tokenize) fn try_signed_number(
         sign: Sign,
         scan: &'me mut Scanner<'str>,
-        start: &'me ScanItem<'str>,
+        start: ScanItem<'str>,
     ) -> Self {
         let idx = start.0 + 1;
         Self::new(

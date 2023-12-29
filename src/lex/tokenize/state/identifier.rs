@@ -10,13 +10,13 @@ use crate::lex::{
 pub(in crate::lex::tokenize) struct Identifier<'me, 'str> {
     peculiar_state: Option<PeculiarState>,
     scan: &'me mut Scanner<'str>,
-    start: &'me ScanItem<'str>,
+    start: ScanItem<'str>,
 }
 
 impl<'me, 'str> Identifier<'me, 'str> {
     pub(in crate::lex::tokenize) fn new(
         scan: &'me mut Scanner<'str>,
-        start: &'me ScanItem<'str>,
+        start: ScanItem<'str>,
     ) -> Self {
         Self {
             peculiar_state: None,
@@ -140,7 +140,7 @@ pub(in crate::lex::tokenize) struct PeriodIdentifier<'me, 'str>(Identifier<'me, 
 impl<'me, 'str> PeriodIdentifier<'me, 'str> {
     pub(in crate::lex::tokenize) fn new(
         scan: &'me mut Scanner<'str>,
-        start: &'me ScanItem<'str>,
+        start: ScanItem<'str>,
     ) -> Self {
         debug_assert_eq!(start.1, '.');
         let mut me = Self(Identifier::new(scan, start));

@@ -90,8 +90,8 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
             ';' => Ok(self.comment()),
             '.' => self.period(),
             ',' => Ok(self.unquote()),
-            _ if Decimal.is_digit(first) => Numeric::decimal(self.scan, &self.start).scan(),
-            _ => Identifier::new(self.scan, &self.start).scan(),
+            _ if Decimal.is_digit(first) => Numeric::decimal(self.scan, self.start).scan(),
+            _ => Identifier::new(self.scan, self.start).scan(),
         }
     }
 
@@ -104,7 +104,7 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
         self.scan
             .char_if_not_delimiter()
             .map_or(Ok(TokenKind::PairJoiner), |next_ch| {
-                PeriodIdentifier::new(self.scan, &self.start).scan(next_ch)
+                PeriodIdentifier::new(self.scan, self.start).scan(next_ch)
             })
     }
 
