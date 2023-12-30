@@ -622,6 +622,28 @@ mod rational {
             }
         ));
     }
+
+    #[test]
+    fn too_many_slashes() {
+        let mut s = Scanner::new("4/5/6");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 5,
+                result: Err(TokenErrorKind::Unimplemented(_)),
+            }
+        ));
+    }
 }
 
 mod float {
@@ -1706,6 +1728,28 @@ mod complex {
         let tok = ok_or_fail!(r.result);
         let r = extract_or_fail!(tok, TokenKind::Imaginary);
         assert_eq!(r.to_string(), "4/5");
+    }
+
+    #[test]
+    fn imaginary_numerator() {
+        let mut s = Scanner::new("+4i/5");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 5,
+                result: Err(TokenErrorKind::Unimplemented(_)),
+            }
+        ));
     }
 
     #[test]

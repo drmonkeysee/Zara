@@ -7,7 +7,7 @@ use crate::{
         },
     },
     literal::Literal,
-    number::{Number, Real, Sign},
+    number::{Integer, Number, Real, Sign},
 };
 use std::{fmt::Debug, ops::Range};
 
@@ -17,7 +17,7 @@ pub(in crate::lex::tokenize) struct Numeric<'me, 'str, R> {
     start: ScanItem<'str>,
 }
 
-impl<'me, 'str, R: Radix + Default + Debug> Numeric<'me, 'str, R> {
+impl<'me, 'str, R: Radix + Copy + Debug + Default> Numeric<'me, 'str, R> {
     fn new(scan: &'me mut Scanner<'str>, start: ScanItem<'str>, classifier: Classifier<R>) -> Self {
         Self {
             classifier,
@@ -27,12 +27,57 @@ impl<'me, 'str, R: Radix + Default + Debug> Numeric<'me, 'str, R> {
     }
 
     pub(in crate::lex::tokenize) fn scan(&mut self) -> TokenExtractResult {
-        while let Some(item) = self.scan.next_if_not_delimiter() {
-            if let Some(err) = self.classifier.classify(item) {
-                return self.fail(err);
+        if let Some(err) = self.classify() {
+            self.fail(err)
+        } else {
+            match self.parse()? {
+                Continuation::Complete(r) => Ok(real_to_token(r, self.classifier.imaginary)),
+                Continuation::Denominator(numerator) => self.scan_denominator(numerator),
+                Continuation::Imaginary(r, s) => self.scan_imaginary(r, s),
             }
         }
-        self.parse()
+    }
+
+    fn classify(&mut self) -> Option<TokenErrorKind> {
+        while let Some(item) = self.scan.next_if_not_delimiter() {
+            if let Some(err) = self.classifier.classify(item) {
+                return Some(err);
+            }
+            if self.classifier.done {
+                break;
+            }
+        }
+        None
+    }
+
+    fn scan_denominator(&mut self, numerator: Integer) -> TokenExtractResult {
+        self.classifier.reset_as_denominator();
+        if let Some(err) = self.classify() {
+            self.fail(err)
+        } else if let Continuation::Complete(Real::Integer(denominator)) = self.parse()? {
+            Ok(real_to_token(
+                Real::reduce(numerator, denominator)?,
+                self.classifier.imaginary,
+            ))
+        } else {
+            // TODO: must be an integer
+            todo!();
+        }
+    }
+
+    fn scan_imaginary(&mut self, real: Real, sign: Sign) -> TokenExtractResult {
+        self.classifier.reset_as_imaginary(sign);
+        if let Some(err) = self.classify() {
+            return self.fail(err);
+        }
+        if self.classifier.imaginary {
+            if let Continuation::Complete(imag) = self.parse()? {
+                return Ok(TokenKind::Literal(Literal::Number(Number::complex(
+                    real, imag,
+                ))));
+            }
+        }
+        todo!();
     }
 
     fn fail(&mut self, kind: TokenErrorKind) -> TokenExtractResult {
@@ -40,7 +85,7 @@ impl<'me, 'str, R: Radix + Default + Debug> Numeric<'me, 'str, R> {
         Err(kind)
     }
 
-    fn parse(&mut self) -> TokenExtractResult {
+    fn parse(&mut self) -> ClassifierResult {
         let end = self.scan.pos();
         self.classifier.parse(self.scan.lexeme(self.start.0..end))
     }
@@ -131,7 +176,7 @@ pub(in crate::lex::tokenize) trait Radix {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Clone, Copy, Debug, Default)]
 pub(in crate::lex::tokenize) struct Decimal;
 
 impl Radix for Decimal {
@@ -174,7 +219,7 @@ pub(super) fn nan(imaginary: bool) -> TokenKind {
     real_to_token(f64::NAN, imaginary)
 }
 
-type ClassifierParseResult = Result<Real, TokenErrorKind>;
+type ClassifierResult = Result<Continuation, TokenErrorKind>;
 
 #[derive(Debug, Default)]
 enum Classification {
@@ -184,7 +229,13 @@ enum Classification {
     Integer,
 }
 
-#[derive(Debug)]
+enum Continuation {
+    Complete(Real),
+    Denominator(Integer),
+    Imaginary(Real, Sign),
+}
+
+#[derive(Clone, Copy, Debug)]
 enum Exactness {
     Exact,
     Inexact,
@@ -192,6 +243,7 @@ enum Exactness {
 
 #[derive(Debug, Default)]
 struct Classifier<R> {
+    done: bool,
     exactness: Option<Exactness>,
     exponent: Option<Range<usize>>,
     exponent_sign: Option<Sign>,
@@ -204,7 +256,25 @@ struct Classifier<R> {
 }
 
 // TODO: imaginary numbers
-impl<R: Radix + Default + Debug> Classifier<R> {
+impl<R: Radix + Copy + Debug + Default> Classifier<R> {
+    fn reset_as_denominator(&mut self) {
+        *self = Self {
+            exactness: self.exactness,
+            radix: self.radix,
+            sign: Some(Sign::Positive),
+            ..Default::default()
+        }
+    }
+
+    fn reset_as_imaginary(&mut self, sign: Sign) {
+        *self = Self {
+            exactness: self.exactness,
+            radix: self.radix,
+            sign: Some(sign),
+            ..Default::default()
+        }
+    }
+
     fn classify(&mut self, item: ScanItem) -> Option<TokenErrorKind> {
         if self.imaginary {
             Some(TokenErrorKind::NumberInvalid)
@@ -217,19 +287,18 @@ impl<R: Radix + Default + Debug> Classifier<R> {
         }
     }
 
-    fn parse(&self, input: &str) -> TokenExtractResult {
+    fn parse(&self, input: &str) -> ClassifierResult {
         if let Some(err) = self.validate() {
             return Err(err);
         }
-        let r = match self.exactness {
+        match self.exactness {
             Some(Exactness::Exact) => self.parse_exact(input),
             Some(Exactness::Inexact) => self.parse_inexact(input),
             None => match self.state {
                 Classification::Exponent | Classification::Float => self.parse_inexact(input),
                 Classification::Integer => self.parse_int(input),
             },
-        }?;
-        Ok(real_to_token(r, self.imaginary))
+        }
     }
 
     fn integral(&mut self, item: ScanItem) -> Option<TokenErrorKind> {
@@ -350,31 +419,33 @@ impl<R: Radix + Default + Debug> Classifier<R> {
         None
     }
 
-    fn parse_inexact(&self, input: &str) -> ClassifierParseResult {
+    fn parse_inexact(&self, input: &str) -> ClassifierResult {
         let num = input.get(..input.len() - usize::from(self.imaginary));
         debug_assert!(num.is_some_and(|sc| !sc.is_empty()));
         let flt: f64 = num.unwrap().parse()?;
-        Ok(flt.into())
+        Ok(Continuation::Complete(flt.into()))
     }
 
-    fn parse_exact(&self, input: &str) -> ClassifierParseResult {
+    fn parse_exact(&self, input: &str) -> ClassifierResult {
         // TODO: int vs float
         self.parse_int(input)
     }
 
-    fn parse_int(&self, input: &str) -> ClassifierParseResult {
-        i64::from_str_radix(input, R::BASE)
-            .map_or_else(|_| self.parse_sign_magnitude(input), |val| Ok(val.into()))
+    fn parse_int(&self, input: &str) -> ClassifierResult {
+        i64::from_str_radix(input, R::BASE).map_or_else(
+            |_| self.parse_sign_magnitude(input),
+            |val| Ok(Continuation::Complete(val.into())),
+        )
     }
 
-    fn parse_sign_magnitude(&self, input: &str) -> ClassifierParseResult {
+    fn parse_sign_magnitude(&self, input: &str) -> ClassifierResult {
         if let Some(mag) = &self.magnitude {
             if let Some(mag_slice) = input.get(mag.start..mag.end) {
                 return u64::from_str_radix(mag_slice, R::BASE).map_or_else(
                     |_| self.parse_multi_precision(input),
                     |val| {
                         let sign_mag = (self.sign.unwrap_or(Sign::Positive), val);
-                        Ok(sign_mag.into())
+                        Ok(Continuation::Complete(sign_mag.into()))
                     },
                 );
             }
@@ -382,7 +453,7 @@ impl<R: Radix + Default + Debug> Classifier<R> {
         Err(TokenErrorKind::NumberInvalid)
     }
 
-    fn parse_multi_precision(&self, input: &str) -> ClassifierParseResult {
+    fn parse_multi_precision(&self, input: &str) -> ClassifierResult {
         todo!();
     }
 }

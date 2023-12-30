@@ -49,7 +49,7 @@ impl Real {
         RealTokenDescriptor(self)
     }
 
-    fn reduce(
+    pub(crate) fn reduce(
         numerator: impl Into<Integer>,
         denominator: impl Into<Integer>,
     ) -> Result<Self, NumericError> {

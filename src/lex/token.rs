@@ -1,4 +1,7 @@
-use crate::{literal::Literal, number::Real};
+use crate::{
+    literal::Literal,
+    number::{NumericError, Real},
+};
 use std::{
     error::Error,
     fmt::{self, Display, Formatter},
@@ -276,6 +279,12 @@ impl From<ParseFloatError> for TokenErrorKind {
 
 impl From<ParseIntError> for TokenErrorKind {
     fn from(value: ParseIntError) -> Self {
+        todo!()
+    }
+}
+
+impl From<NumericError> for TokenErrorKind {
+    fn from(value: NumericError) -> Self {
         todo!()
     }
 }
