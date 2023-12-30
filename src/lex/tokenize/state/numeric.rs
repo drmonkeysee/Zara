@@ -66,17 +66,16 @@ impl<'me, 'str, R: Radix + Copy + Debug + Default> Numeric<'me, 'str, R> {
     }
 
     fn scan_imaginary(&mut self, real: Real, sign: Sign) -> TokenExtractResult {
-        self.classifier.reset_as_imaginary(sign);
-        if let Some(err) = self.classify() {
-            return self.fail(err);
+        /*
+        let tok = SignIdentifier::new(self.scan, sign_item).scan()?
+        if let TokenKind::Imaginary(imag) = tok {
+            return Ok(TokenKind::Literal(Literal::Number(Number::complex(
+                real, imag,
+            ))));
         }
-        if self.classifier.imaginary {
-            if let Continuation::Complete(imag) = self.parse()? {
-                return Ok(TokenKind::Literal(Literal::Number(Number::complex(
-                    real, imag,
-                ))));
-            }
-        }
+        else
+            Invalid Imaginary Part
+        */
         todo!();
     }
 
@@ -262,15 +261,6 @@ impl<R: Radix + Copy + Debug + Default> Classifier<R> {
             exactness: self.exactness,
             radix: self.radix,
             sign: Some(Sign::Positive),
-            ..Default::default()
-        }
-    }
-
-    fn reset_as_imaginary(&mut self, sign: Sign) {
-        *self = Self {
-            exactness: self.exactness,
-            radix: self.radix,
-            sign: Some(sign),
             ..Default::default()
         }
     }
