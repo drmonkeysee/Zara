@@ -91,6 +91,8 @@ impl<'me, 'str, R: Radix + Copy + Debug + Default> Numeric<'me, 'str, R> {
     }
 }
 
+// NOTE: these ctors are always called after one confirmed
+// decimal digit has been scanned.
 impl<'me, 'str> Numeric<'me, 'str, Decimal> {
     pub(in crate::lex::tokenize) fn decimal(
         scan: &'me mut Scanner<'str>,
@@ -108,8 +110,6 @@ impl<'me, 'str> Numeric<'me, 'str, Decimal> {
         )
     }
 
-    // NOTE: these ctors are always called after one confirmed
-    // decimal digit has been scanned.
     pub(in crate::lex::tokenize) fn try_float(
         scan: &'me mut Scanner<'str>,
         start: ScanItem<'str>,
