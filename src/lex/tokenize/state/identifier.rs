@@ -1,4 +1,4 @@
-use super::{Decimal, FreeText, FreeTextPolicy, Numeric, Radix};
+use super::{FreeText, FreeTextPolicy, Decimal};
 use crate::lex::{
     token::{TokenErrorKind, TokenKind},
     tokenize::{
@@ -56,20 +56,20 @@ impl<'me, 'str> Identifier<'me, 'str> {
 
     fn continue_peculiar(&mut self, next_ch: Option<char>) -> TokenExtractResult {
         if let Some(ch) = next_ch {
-            if Decimal.is_digit(ch) {
+            if ch.is_ascii_digit() {
                 debug_assert!(self.peculiar_state.is_some());
                 match self.peculiar_state.as_ref().unwrap() {
                     PeculiarState::DefiniteIdentifier => self.standard(),
                     // CASE: .<digit>
-                    PeculiarState::MaybeFloat => Numeric::try_float(self.scan, self.start).scan(),
+                    PeculiarState::MaybeFloat => Decimal::try_float(self.scan, self.start).scan(),
                     // CASE: +/-.<digit>
                     PeculiarState::MaybeSignedFloat(sn) => {
-                        Numeric::try_signed_float(super::char_to_sign(*sn), self.scan, self.start)
+                        Decimal::try_signed_float(super::char_to_sign(*sn), self.scan, self.start)
                             .scan()
                     }
                     // CASE: +/-<digit>
                     PeculiarState::MaybeSignedNumber(sn) => {
-                        Numeric::try_signed_number(super::char_to_sign(*sn), self.scan, self.start)
+                        Decimal::try_signed_number(super::char_to_sign(*sn), self.scan, self.start)
                             .scan()
                     }
                 }

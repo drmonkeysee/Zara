@@ -9,24 +9,134 @@ use crate::{
     literal::Literal,
     number::{Integer, Number, Real, Sign},
 };
-use std::{fmt::Debug, ops::Range};
+use std::{
+    fmt::Debug,
+    ops::{ControlFlow, Range},
+};
 
-pub(in crate::lex::tokenize) struct Numeric<'me, 'str, R> {
-    classifier: Classifier<R>,
+pub(in crate::lex::tokenize) struct Decimal<'me, 'str> {
+    classifier: Classifier,
     scan: &'me mut Scanner<'str>,
     start: ScanItem<'str>,
 }
 
-impl<'me, 'str, R: Radix + Copy + Debug + Default> Numeric<'me, 'str, R> {
-    fn new(scan: &'me mut Scanner<'str>, start: ScanItem<'str>, classifier: Classifier<R>) -> Self {
+// NOTE: these ctors are always called after one confirmed decimal digit has been scanned
+impl<'me, 'str> Decimal<'me, 'str> {
+    pub(in crate::lex::tokenize) fn new(
+        scan: &'me mut Scanner<'str>,
+        start: ScanItem<'str>,
+    ) -> Self {
+        let idx = start.0;
         Self {
-            classifier,
+            classifier: Classifier::Int(Magnitude {
+                digits: idx..idx + 1,
+                ..Default::default()
+            }),
+            scan,
+            start,
+        }
+    }
+
+    pub(in crate::lex::tokenize) fn try_float(
+        scan: &'me mut Scanner<'str>,
+        start: ScanItem<'str>,
+    ) -> Self {
+        let idx = start.0;
+        Self {
+            classifier: Classifier::Flt(Float {
+                fraction: idx..idx + 2,
+                ..Default::default()
+            }),
+            scan,
+            start,
+        }
+    }
+
+    pub(in crate::lex::tokenize) fn try_signed_float(
+        sign: Sign,
+        scan: &'me mut Scanner<'str>,
+        start: ScanItem<'str>,
+    ) -> Self {
+        let idx = start.0 + 1;
+        Self {
+            classifier: Classifier::Flt(Float {
+                fraction: idx..idx + 1,
+                integral: Magnitude {
+                    sign: Some(sign),
+                    ..Default::default()
+                },
+                ..Default::default()
+            }),
+            scan,
+            start,
+        }
+    }
+
+    pub(in crate::lex::tokenize) fn try_signed_number(
+        sign: Sign,
+        scan: &'me mut Scanner<'str>,
+        start: ScanItem<'str>,
+    ) -> Self {
+        let idx = start.0 + 1;
+        Self {
+            classifier: Classifier::Int(Magnitude {
+                digits: idx..idx + 1,
+                sign: Some(sign),
+                ..Default::default()
+            }),
             scan,
             start,
         }
     }
 
     pub(in crate::lex::tokenize) fn scan(&mut self) -> TokenExtractResult {
+        let mut brk = Ok(BreakCondition::Complete);
+        while let Some(item) = self.scan.next_if_not_delimiter() {
+            match self.classifier.classify(item) {
+                ControlFlow::Continue(None) => (),
+                ControlFlow::Continue(Some(c)) => {
+                    self.classifier = c;
+                }
+                ControlFlow::Break(b) => {
+                    brk = b;
+                    break;
+                }
+            }
+        }
+        match brk {
+            Ok(cond) => {
+                let end = self.scan.pos();
+                match self
+                    .classifier
+                    .parse(cond, self.scan.lexeme(self.start.0..end))?
+                {
+                    Continuation::Complete(r) => todo!(),
+                    Continuation::Denominator(n) => todo!(),
+                    Continuation::Imaginary { kind, real, sign } => todo!(),
+                }
+            }
+            Err(err) => {
+                self.scan.end_of_token();
+                Err(err)
+            }
+        }
+        /*
+        let mut condition = BreakCondition::Complete;
+        while let Some(item) = self.scan.next_if_not_delimiter() {
+            match self.classifier.classify(item) {
+                ControlFlow::Continue(None) => (),
+                ControlFlow::Continue(Some(c)) => {
+                    self.classifier = c;
+                }
+                ControlFlow::Break(b) => {
+                    condition = b;
+                    break;
+                }
+            }
+        }
+        self.complete(condition)
+        */
+        /*
         if let Some(err) = self.classify() {
             self.fail(err)
         } else {
@@ -36,21 +146,11 @@ impl<'me, 'str, R: Radix + Copy + Debug + Default> Numeric<'me, 'str, R> {
                 Continuation::Imaginary(r, s) => self.scan_imaginary(r, s),
             }
         }
-    }
-
-    fn classify(&mut self) -> Option<TokenErrorKind> {
-        while let Some(item) = self.scan.next_if_not_delimiter() {
-            if let Some(err) = self.classifier.classify(item) {
-                return Some(err);
-            }
-            if self.classifier.done {
-                break;
-            }
-        }
-        None
+        */
     }
 
     fn scan_denominator(&mut self, numerator: Integer) -> TokenExtractResult {
+        /*
         self.classifier.reset_as_denominator();
         if let Some(err) = self.classify() {
             self.fail(err)
@@ -63,6 +163,8 @@ impl<'me, 'str, R: Radix + Copy + Debug + Default> Numeric<'me, 'str, R> {
             // TODO: must be an integer
             todo!();
         }
+        */
+        todo!();
     }
 
     fn scan_imaginary(&mut self, real: Real, sign: Sign) -> TokenExtractResult {
@@ -78,117 +180,25 @@ impl<'me, 'str, R: Radix + Copy + Debug + Default> Numeric<'me, 'str, R> {
         */
         todo!();
     }
-
-    fn fail(&mut self, kind: TokenErrorKind) -> TokenExtractResult {
-        self.scan.rest_of_token();
-        Err(kind)
-    }
-
-    fn parse(&mut self) -> ClassifierResult {
-        let end = self.scan.pos();
-        self.classifier.parse(self.scan.lexeme(self.start.0..end))
-    }
 }
 
-// NOTE: these ctors are always called after one confirmed
-// decimal digit has been scanned.
-impl<'me, 'str> Numeric<'me, 'str, Decimal> {
-    pub(in crate::lex::tokenize) fn decimal(
-        scan: &'me mut Scanner<'str>,
-        start: ScanItem<'str>,
-    ) -> Self {
-        let idx = start.0;
-        Self::new(
-            scan,
-            start,
-            Classifier {
-                magnitude: Some(idx..idx + 1),
-                radix: Decimal,
-                ..Default::default()
-            },
-        )
-    }
+struct RadixNumeric<'me, 'str, R> {
+    classifier: Integral<R>,
+    scan: &'me mut Scanner<'str>,
+    start: ScanItem<'str>,
+}
 
-    pub(in crate::lex::tokenize) fn try_float(
-        scan: &'me mut Scanner<'str>,
-        start: ScanItem<'str>,
-    ) -> Self {
-        let idx = start.0;
-        Self::new(
-            scan,
-            start,
-            Classifier {
-                fraction: Some(idx..idx + 2),
-                radix: Decimal,
-                state: Classification::Float,
-                ..Default::default()
-            },
-        )
-    }
-
-    pub(in crate::lex::tokenize) fn try_signed_float(
-        sign: Sign,
-        scan: &'me mut Scanner<'str>,
-        start: ScanItem<'str>,
-    ) -> Self {
-        let idx = start.0 + 1;
-        Self::new(
-            scan,
-            start,
-            Classifier {
-                fraction: Some(idx..idx + 1),
-                radix: Decimal,
-                sign: Some(sign),
-                state: Classification::Float,
-                ..Default::default()
-            },
-        )
-    }
-
-    pub(in crate::lex::tokenize) fn try_signed_number(
-        sign: Sign,
-        scan: &'me mut Scanner<'str>,
-        start: ScanItem<'str>,
-    ) -> Self {
-        let idx = start.0 + 1;
-        Self::new(
-            scan,
-            start,
-            Classifier {
-                magnitude: Some(idx..idx + 1),
-                radix: Decimal,
-                sign: Some(sign),
-                ..Default::default()
-            },
-        )
-    }
+enum RadixDigit {
+    Digit,
+    InvalidDigit,
+    NonDigit,
 }
 
 pub(in crate::lex::tokenize) trait Radix {
     const BASE: u32;
     const NAME: &'static str;
 
-    fn is_digit(&self, ch: char) -> bool;
-
-    fn allow_floating_point(&self) -> bool {
-        false
-    }
-}
-
-#[derive(Clone, Copy, Debug, Default)]
-pub(in crate::lex::tokenize) struct Decimal;
-
-impl Radix for Decimal {
-    const BASE: u32 = 10;
-    const NAME: &'static str = "decimal";
-
-    fn is_digit(&self, ch: char) -> bool {
-        ch.is_ascii_digit()
-    }
-
-    fn allow_floating_point(&self) -> bool {
-        true
-    }
+    fn is_digit(&self, ch: char) -> RadixDigit;
 }
 
 // TODO: handle inexact
@@ -218,20 +228,21 @@ pub(super) fn nan(imaginary: bool) -> TokenKind {
     real_to_token(f64::NAN, imaginary)
 }
 
-type ClassifierResult = Result<Continuation, TokenErrorKind>;
+type ClassifierResult<'str> = Result<Continuation<'str>, TokenErrorKind>;
 
-#[derive(Debug, Default)]
-enum Classification {
-    Exponent,
-    Float,
-    #[default]
-    Integer,
+enum ComplexKind {
+    Cartesian,
+    Polar,
 }
 
-enum Continuation {
+enum Continuation<'str> {
     Complete(Real),
     Denominator(Integer),
-    Imaginary(Real, Sign),
+    Imaginary {
+        kind: ComplexKind,
+        real: Real,
+        sign: ScanItem<'str>,
+    },
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -240,21 +251,188 @@ enum Exactness {
     Inexact,
 }
 
-#[derive(Debug, Default)]
-struct Classifier<R> {
-    done: bool,
-    exactness: Option<Exactness>,
-    exponent: Option<Range<usize>>,
-    exponent_sign: Option<Sign>,
-    fraction: Option<Range<usize>>,
-    imaginary: bool,
-    magnitude: Option<Range<usize>>,
-    radix: R,
-    sign: Option<Sign>,
-    state: Classification,
+type DecimalControl = ControlFlow<Result<BreakCondition, TokenErrorKind>, Option<Classifier>>;
+type RadixControl = ControlFlow<Result<BreakCondition, TokenErrorKind>>;
+
+enum BreakCondition {
+    Complete,
+    Fraction,
+    Imaginary(ComplexKind),
 }
 
-// TODO: imaginary numbers
+enum Classifier {
+    Flt(Float),
+    Int(Magnitude),
+    Sci(Scientific),
+}
+
+impl Classifier {
+    fn classify(&mut self, item: ScanItem) -> DecimalControl {
+        match self {
+            Self::Flt(f) => f.classify(item),
+            Self::Int(i) => i.classify(item),
+            Self::Sci(s) => s.classify(item),
+        }
+    }
+
+    fn parse(&self, condition: BreakCondition, input: &str) -> ClassifierResult {
+        match condition {
+            BreakCondition::Complete => todo!(),
+            BreakCondition::Fraction => todo!(),
+            BreakCondition::Imaginary(k) => todo!(),
+        }
+    }
+}
+
+struct Integral<R> {
+    mag: Magnitude,
+    radix: R,
+}
+
+impl<R: Radix> Integral<R> {
+    fn classify(&mut self, item: ScanItem) -> RadixControl {
+        let (idx, ch) = item;
+        match ch {
+            '+' | '-' => {
+                if self.mag.digits.is_empty() {
+                    if self.mag.sign.is_none() {
+                        self.mag.sign = Some(super::char_to_sign(ch));
+                        ControlFlow::Continue(())
+                    } else {
+                        ControlFlow::Break(Err(TokenErrorKind::NumberInvalid))
+                    }
+                } else {
+                    todo!(); // begin imaginary part
+                }
+            }
+            '.' => ControlFlow::Break(Err(TokenErrorKind::NumberInvalidDecimalPoint {
+                at: idx,
+                radix: R::NAME,
+            })),
+            'e' | 'E' => ControlFlow::Break(Err(TokenErrorKind::NumberInvalidExponent {
+                at: idx,
+                radix: R::NAME,
+            })),
+            'i' | 'I' => todo!(),
+            _ => match self.radix.is_digit(ch) {
+                RadixDigit::Digit => {
+                    self.mag.digits.end += 1;
+                    ControlFlow::Continue(())
+                }
+                RadixDigit::InvalidDigit => todo!(),
+                RadixDigit::NonDigit => ControlFlow::Break(Err(TokenErrorKind::NumberInvalid)),
+            },
+            // TODO: /, @
+        }
+    }
+}
+
+#[derive(Clone, Default)]
+struct Magnitude {
+    exactness: Option<Exactness>,
+    digits: Range<usize>,
+    sign: Option<Sign>,
+}
+
+impl Magnitude {
+    fn classify(&mut self, item: ScanItem) -> DecimalControl {
+        let (idx, ch) = item;
+        match ch {
+            '.' => ControlFlow::Continue(Some(Classifier::Flt(Float {
+                fraction: idx..idx + 1,
+                integral: self.clone(),
+            }))),
+            'e' | 'E' => ControlFlow::Continue(Some(Classifier::Sci(Scientific {
+                exponent: idx..idx + 1,
+                float: Float {
+                    fraction: idx..idx + 1,
+                    integral: self.clone(),
+                },
+                ..Default::default()
+            }))),
+            'i' | 'I' => todo!(),
+            _ if ch.is_ascii_digit() => {
+                self.digits.end += 1;
+                ControlFlow::Continue(None)
+            }
+            _ => ControlFlow::Break(Err(TokenErrorKind::NumberInvalid)),
+        }
+        // TODO: /, +-, @
+    }
+}
+
+#[derive(Clone, Default)]
+struct Float {
+    fraction: Range<usize>,
+    integral: Magnitude,
+}
+
+impl Float {
+    fn classify(&mut self, item: ScanItem) -> DecimalControl {
+        let (idx, ch) = item;
+        match ch {
+            '.' => ControlFlow::Break(Err(TokenErrorKind::NumberUnexpectedDecimalPoint {
+                at: idx,
+            })),
+            'e' | 'E' => ControlFlow::Continue(Some(Classifier::Sci(Scientific {
+                exponent: idx..idx + 1,
+                float: self.clone(),
+                ..Default::default()
+            }))),
+            'i' | 'I' => todo!(),
+            _ if ch.is_ascii_digit() => {
+                self.fraction.end += 1;
+                ControlFlow::Continue(None)
+            }
+            _ => ControlFlow::Break(Err(TokenErrorKind::NumberInvalid)),
+        }
+        // TODO: +-, @
+    }
+}
+
+#[derive(Default)]
+struct Scientific {
+    exponent: Range<usize>,
+    exponent_sign: Option<Sign>,
+    float: Float,
+}
+
+impl Scientific {
+    fn classify(&mut self, item: ScanItem) -> DecimalControl {
+        let (idx, ch) = item;
+        match ch {
+            '+' | '-' => {
+                self.exponent.end += 1;
+                if self.exponent_sign.is_some() {
+                    if self.exponent.is_empty() {
+                        ControlFlow::Break(Err(TokenErrorKind::NumberMalformedExponent { at: idx }))
+                    } else {
+                        // TODO: begin imaginary part
+                        todo!();
+                    }
+                } else {
+                    self.exponent_sign = Some(super::char_to_sign(ch));
+                    ControlFlow::Continue(None)
+                }
+            }
+            'i' | 'I' => {
+                if self.exponent.is_empty() {
+                    ControlFlow::Break(Err(TokenErrorKind::NumberMalformedExponent { at: idx }))
+                } else {
+                    todo!();
+                }
+            }
+            _ if ch.is_ascii_digit() => {
+                self.exponent.end += 1;
+                ControlFlow::Continue(None)
+            }
+            _ => ControlFlow::Break(Err(TokenErrorKind::NumberMalformedExponent { at: idx })),
+        }
+        // TODO: +-, @
+    }
+}
+
+/*
 impl<R: Radix + Copy + Debug + Default> Classifier<R> {
     fn reset_as_denominator(&mut self) {
         *self = Self {
@@ -447,6 +625,7 @@ impl<R: Radix + Copy + Debug + Default> Classifier<R> {
         todo!();
     }
 }
+*/
 
 fn real_to_token(r: impl Into<Real>, imaginary: bool) -> TokenKind {
     if imaginary {
