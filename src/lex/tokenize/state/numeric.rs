@@ -110,9 +110,14 @@ impl<'me, 'str> Decimal<'me, 'str> {
                     .classifier
                     .parse(cond, self.scan.lexeme(self.start.0..end))?
                 {
-                    Continuation::Complete(r) => todo!(),
+                    Continuation::Complete(r) => Ok(real_to_token(r, false)),
                     Continuation::Denominator(n) => todo!(),
-                    Continuation::Imaginary { kind, real, sign } => todo!(),
+                    Continuation::Imaginary {
+                        kind,
+                        real,
+                        sign,
+                        start,
+                    } => todo!(),
                 }
             }
             Err(err) => {
@@ -241,7 +246,8 @@ enum Continuation<'str> {
     Imaginary {
         kind: ComplexKind,
         real: Real,
-        sign: ScanItem<'str>,
+        sign: Sign,
+        start: ScanItem<'str>,
     },
 }
 
@@ -251,13 +257,19 @@ enum Exactness {
     Inexact,
 }
 
-type DecimalControl = ControlFlow<Result<BreakCondition, TokenErrorKind>, Option<Classifier>>;
-type RadixControl = ControlFlow<Result<BreakCondition, TokenErrorKind>>;
+type DecimalControl<'str> =
+    ControlFlow<Result<BreakCondition<'str>, TokenErrorKind>, Option<Classifier>>;
+type RadixControl<'str> = ControlFlow<Result<BreakCondition<'str>, TokenErrorKind>>;
+type ParseResult = Result<Real, TokenErrorKind>;
 
-enum BreakCondition {
+enum BreakCondition<'str> {
     Complete,
     Fraction,
-    Imaginary(ComplexKind),
+    Complex {
+        kind: ComplexKind,
+        sign: Sign,
+        start: ScanItem<'str>,
+    },
 }
 
 enum Classifier {
@@ -267,7 +279,7 @@ enum Classifier {
 }
 
 impl Classifier {
-    fn classify(&mut self, item: ScanItem) -> DecimalControl {
+    fn classify<'str>(&mut self, item: ScanItem<'str>) -> DecimalControl<'str> {
         match self {
             Self::Flt(f) => f.classify(item),
             Self::Int(i) => i.classify(item),
@@ -276,10 +288,26 @@ impl Classifier {
     }
 
     fn parse(&self, condition: BreakCondition, input: &str) -> ClassifierResult {
+        let real = match self {
+            Self::Flt(f) => f.parse(input),
+            Self::Int(i) => i.parse(input),
+            Self::Sci(s) => s.parse(input),
+        }?;
         match condition {
-            BreakCondition::Complete => todo!(),
-            BreakCondition::Fraction => todo!(),
-            BreakCondition::Imaginary(k) => todo!(),
+            BreakCondition::Complete => Ok(Continuation::Complete(real)),
+            BreakCondition::Fraction => {
+                if let Real::Integer(int) = real {
+                    Ok(Continuation::Denominator(int))
+                } else {
+                    todo!()
+                }
+            }
+            BreakCondition::Complex { kind, sign, start } => Ok(Continuation::Imaginary {
+                kind,
+                real,
+                sign,
+                start,
+            }),
         }
     }
 }
@@ -290,7 +318,7 @@ struct Integral<R> {
 }
 
 impl<R: Radix> Integral<R> {
-    fn classify(&mut self, item: ScanItem) -> RadixControl {
+    fn classify<'str>(&mut self, item: ScanItem<'str>) -> RadixControl<'str> {
         let (idx, ch) = item;
         match ch {
             '+' | '-' => {
@@ -329,13 +357,13 @@ impl<R: Radix> Integral<R> {
 
 #[derive(Clone, Default)]
 struct Magnitude {
-    exactness: Option<Exactness>,
     digits: Range<usize>,
+    exactness: Option<Exactness>,
     sign: Option<Sign>,
 }
 
 impl Magnitude {
-    fn classify(&mut self, item: ScanItem) -> DecimalControl {
+    fn classify<'str>(&mut self, item: ScanItem<'str>) -> DecimalControl<'str> {
         let (idx, ch) = item;
         match ch {
             '.' => ControlFlow::Continue(Some(Classifier::Flt(Float {
@@ -345,8 +373,8 @@ impl Magnitude {
             'e' | 'E' => ControlFlow::Continue(Some(Classifier::Sci(Scientific {
                 exponent: idx..idx + 1,
                 float: Float {
-                    fraction: idx..idx + 1,
                     integral: self.clone(),
+                    ..Default::default()
                 },
                 ..Default::default()
             }))),
@@ -359,6 +387,31 @@ impl Magnitude {
         }
         // TODO: /, +-, @
     }
+
+    fn parse(&self, input: &str) -> ParseResult {
+        match self.exactness {
+            None | Some(Exactness::Exact) => i64::from_str_radix(input, 10)
+                .map_or_else(|_| self.parse_sign_magnitude(input), |val| Ok(val.into())),
+            Some(Exactness::Inexact) => todo!(),
+        }
+    }
+
+    fn parse_sign_magnitude(&self, input: &str) -> ParseResult {
+        if let Some(mag) = input.get(self.digits.start..) {
+            return u64::from_str_radix(mag, 10).map_or_else(
+                |_| self.parse_multi_precision(input),
+                |val| {
+                    let sign_mag = (self.sign.unwrap_or(Sign::Positive), val);
+                    Ok(sign_mag.into())
+                },
+            );
+        }
+        Err(TokenErrorKind::NumberInvalid)
+    }
+
+    fn parse_multi_precision(&self, input: &str) -> ParseResult {
+        todo!();
+    }
 }
 
 #[derive(Clone, Default)]
@@ -368,7 +421,7 @@ struct Float {
 }
 
 impl Float {
-    fn classify(&mut self, item: ScanItem) -> DecimalControl {
+    fn classify<'str>(&mut self, item: ScanItem<'str>) -> DecimalControl<'str> {
         let (idx, ch) = item;
         match ch {
             '.' => ControlFlow::Break(Err(TokenErrorKind::NumberUnexpectedDecimalPoint {
@@ -388,6 +441,16 @@ impl Float {
         }
         // TODO: +-, @
     }
+
+    fn parse(&self, input: &str) -> ParseResult {
+        match self.integral.exactness {
+            None | Some(Exactness::Inexact) => {
+                let flt: f64 = input.parse()?;
+                Ok(flt.into())
+            }
+            Some(Exactness::Exact) => todo!(),
+        }
+    }
 }
 
 #[derive(Default)]
@@ -398,7 +461,7 @@ struct Scientific {
 }
 
 impl Scientific {
-    fn classify(&mut self, item: ScanItem) -> DecimalControl {
+    fn classify<'str>(&mut self, item: ScanItem<'str>) -> DecimalControl<'str> {
         let (idx, ch) = item;
         match ch {
             '+' | '-' => {
@@ -429,6 +492,10 @@ impl Scientific {
             _ => ControlFlow::Break(Err(TokenErrorKind::NumberMalformedExponent { at: idx })),
         }
         // TODO: +-, @
+    }
+
+    fn parse(&self, input: &str) -> ParseResult {
+        self.float.parse(input)
     }
 }
 
