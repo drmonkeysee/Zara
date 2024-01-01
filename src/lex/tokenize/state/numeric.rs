@@ -210,19 +210,19 @@ impl<'me, 'str> Decimal<'me, 'str> {
     }
 }
 
-struct RadixNumeric<'me, 'str, R> {
+struct Radix<'me, 'str, R> {
     classifier: Integral<R>,
     scan: &'me mut Scanner<'str>,
     start: ScanItem<'str>,
 }
 
-enum RadixDigit {
+pub(in crate::lex::tokenize) enum RadixDigit {
     Digit,
     InvalidDigit,
     NonDigit,
 }
 
-pub(in crate::lex::tokenize) trait Radix {
+pub(in crate::lex::tokenize) trait RadixPolicy {
     const BASE: u32;
     const NAME: &'static str;
 
@@ -322,7 +322,7 @@ struct Integral<R> {
     radix: R,
 }
 
-impl<R: Radix> Integral<R> {
+impl<R: RadixPolicy> Integral<R> {
     fn classify<'str>(&mut self, item: ScanItem<'str>) -> RadixControl<'str> {
         let (idx, ch) = item;
         match ch {
