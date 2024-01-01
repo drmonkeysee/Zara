@@ -1426,6 +1426,28 @@ mod float {
     }
 
     #[test]
+    fn empty_exponent_no_fraction() {
+        let mut s = Scanner::new("3e");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 1,
+                end: 2,
+                result: Err(TokenErrorKind::NumberMalformedExponent { at: 1 }),
+            }
+        ));
+    }
+
+    #[test]
     fn sign_only_exponent() {
         let mut s = Scanner::new("3.456e-");
         let start = some_or_fail!(s.next_token());
@@ -1440,9 +1462,31 @@ mod float {
         assert!(matches!(
             r,
             TokenExtract {
-                start: 6,
+                start: 5,
                 end: 7,
-                result: Err(TokenErrorKind::NumberMalformedExponent { at: 6 }),
+                result: Err(TokenErrorKind::NumberMalformedExponent { at: 5 }),
+            }
+        ));
+    }
+
+    #[test]
+    fn sign_only_exponent_no_fraction() {
+        let mut s = Scanner::new("3e-");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 1,
+                end: 3,
+                result: Err(TokenErrorKind::NumberMalformedExponent { at: 1 }),
             }
         ));
     }

@@ -375,6 +375,7 @@ impl Magnitude {
                 exponent: idx..idx + 1,
                 float: Float {
                     integral: self.clone(),
+                    fraction: idx..idx,
                     ..Default::default()
                 },
                 ..Default::default()
@@ -428,14 +429,11 @@ impl Float {
             '.' => ControlFlow::Break(Err(TokenErrorKind::NumberUnexpectedDecimalPoint {
                 at: idx,
             })),
-            'e' | 'E' => {
-                let exp_start = idx + 1;
-                ControlFlow::Continue(Some(Classifier::Sci(Scientific {
-                    exponent: exp_start..exp_start,
-                    float: self.clone(),
-                    ..Default::default()
-                })))
-            }
+            'e' | 'E' => ControlFlow::Continue(Some(Classifier::Sci(Scientific {
+                exponent: idx..idx + 1,
+                float: self.clone(),
+                ..Default::default()
+            }))),
             'i' | 'I' => todo!(),
             _ if ch.is_ascii_digit() => {
                 self.fraction.end += 1;
@@ -499,7 +497,7 @@ impl Scientific {
     }
 
     fn parse(&self, input: &str) -> ParseResult {
-        if self.exponent.len() <= 1 && self.exponent_sign.is_some() {
+        if self.exponent.len() <= 1 || (self.exponent.len() == 2 && self.exponent_sign.is_some()) {
             return Err(TokenErrorKind::NumberMalformedExponent {
                 at: self.exponent.start,
             });
