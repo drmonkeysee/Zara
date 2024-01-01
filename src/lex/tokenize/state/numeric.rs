@@ -91,7 +91,11 @@ impl<'me, 'str> Decimal<'me, 'str> {
 
     pub(in crate::lex::tokenize) fn scan(&mut self) -> TokenExtractResult {
         let mut brk = Ok(BreakCondition::Complete);
+        let mut imaginary = false;
         while let Some(item) = self.scan.next_if_not_delimiter() {
+            if imaginary {
+                return self.fail(TokenErrorKind::NumberInvalid);
+            }
             match self.classifier.classify(item) {
                 ControlFlow::Continue(None) => (),
                 ControlFlow::Continue(Some(c)) => {
@@ -99,31 +103,39 @@ impl<'me, 'str> Decimal<'me, 'str> {
                 }
                 ControlFlow::Break(b) => {
                     brk = b;
-                    break;
+                    if matches!(brk, Ok(BreakCondition::Imaginary)) {
+                        imaginary = true;
+                    } else {
+                        break;
+                    }
                 }
             }
         }
         match brk {
             Ok(cond) => {
-                let end = self.scan.pos();
-                match self
-                    .classifier
-                    .parse(cond, self.scan.lexeme(self.start.0..end))?
-                {
-                    Continuation::Complete(r) => Ok(real_to_token(r, false)),
-                    Continuation::Denominator(n) => todo!(),
-                    Continuation::Imaginary {
-                        kind,
-                        real,
-                        sign,
-                        start,
-                    } => todo!(),
+                if imaginary && !self.classifier.has_sign() {
+                    Err(TokenErrorKind::ImaginaryMissingSign)
+                } else {
+                    let end = self.scan.pos() - usize::from(imaginary);
+                    let real = self.classifier.parse(self.scan.lexeme(self.start.0..end))?;
+                    match cond {
+                        BreakCondition::Complete | BreakCondition::Imaginary => {
+                            Ok(real_to_token(real, imaginary))
+                        }
+                        BreakCondition::Fraction => {
+                            if let Real::Integer(numerator) = real {
+                                self.scan_denominator(numerator)
+                            } else {
+                                todo!()
+                            }
+                        }
+                        BreakCondition::Complex { kind, sign, start } => {
+                            self.scan_imaginary(real, sign, kind, start)
+                        }
+                    }
                 }
             }
-            Err(err) => {
-                self.scan.end_of_token();
-                Err(err)
-            }
+            Err(err) => self.fail(err),
         }
         /*
         let mut condition = BreakCondition::Complete;
@@ -172,7 +184,13 @@ impl<'me, 'str> Decimal<'me, 'str> {
         todo!();
     }
 
-    fn scan_imaginary(&mut self, real: Real, sign: Sign) -> TokenExtractResult {
+    fn scan_imaginary(
+        &mut self,
+        real: Real,
+        sign: Sign,
+        kind: ComplexKind,
+        start: ScanItem,
+    ) -> TokenExtractResult {
         /*
         let tok = SignIdentifier::new(self.scan, sign_item).scan()?
         if let TokenKind::Imaginary(imag) = tok {
@@ -184,6 +202,11 @@ impl<'me, 'str> Decimal<'me, 'str> {
             Invalid Imaginary Part
         */
         todo!();
+    }
+
+    fn fail(&mut self, err: TokenErrorKind) -> TokenExtractResult {
+        self.scan.end_of_token();
+        Err(err)
     }
 }
 
@@ -233,22 +256,9 @@ pub(super) fn nan(imaginary: bool) -> TokenKind {
     real_to_token(f64::NAN, imaginary)
 }
 
-type ClassifierResult<'str> = Result<Continuation<'str>, TokenErrorKind>;
-
 enum ComplexKind {
     Cartesian,
     Polar,
-}
-
-enum Continuation<'str> {
-    Complete(Real),
-    Denominator(Integer),
-    Imaginary {
-        kind: ComplexKind,
-        real: Real,
-        sign: Sign,
-        start: ScanItem<'str>,
-    },
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -264,12 +274,13 @@ type ParseResult = Result<Real, TokenErrorKind>;
 
 enum BreakCondition<'str> {
     Complete,
-    Fraction,
     Complex {
         kind: ComplexKind,
         sign: Sign,
         start: ScanItem<'str>,
     },
+    Fraction,
+    Imaginary,
 }
 
 enum Classifier {
@@ -279,6 +290,15 @@ enum Classifier {
 }
 
 impl Classifier {
+    fn has_sign(&self) -> bool {
+        match self {
+            Self::Flt(f) => f.integral.sign,
+            Self::Int(i) => i.sign,
+            Self::Sci(s) => s.significand.integral.sign,
+        }
+        .is_some()
+    }
+
     fn classify<'str>(&mut self, item: ScanItem<'str>) -> DecimalControl<'str> {
         match self {
             Self::Flt(f) => f.classify(item),
@@ -287,27 +307,11 @@ impl Classifier {
         }
     }
 
-    fn parse(&self, condition: BreakCondition, input: &str) -> ClassifierResult {
-        let real = match self {
+    fn parse(&self, input: &str) -> ParseResult {
+        match self {
             Self::Flt(f) => f.parse(input),
             Self::Int(i) => i.parse(input),
             Self::Sci(s) => s.parse(input),
-        }?;
-        match condition {
-            BreakCondition::Complete => Ok(Continuation::Complete(real)),
-            BreakCondition::Fraction => {
-                if let Real::Integer(int) = real {
-                    Ok(Continuation::Denominator(int))
-                } else {
-                    todo!()
-                }
-            }
-            BreakCondition::Complex { kind, sign, start } => Ok(Continuation::Imaginary {
-                kind,
-                real,
-                sign,
-                start,
-            }),
         }
     }
 }
@@ -342,7 +346,7 @@ impl<R: Radix> Integral<R> {
                 at: idx,
                 radix: R::NAME,
             })),
-            'i' | 'I' => todo!(),
+            'i' | 'I' => ControlFlow::Break(Ok(BreakCondition::Imaginary)),
             _ => match self.radix.is_digit(ch) {
                 RadixDigit::Digit => {
                     self.mag.digits.end += 1;
@@ -373,14 +377,14 @@ impl Magnitude {
             }))),
             'e' | 'E' => ControlFlow::Continue(Some(Classifier::Sci(Scientific {
                 exponent: idx..idx + 1,
-                float: Float {
+                significand: Float {
                     integral: self.clone(),
                     fraction: idx..idx,
                     ..Default::default()
                 },
                 ..Default::default()
             }))),
-            'i' | 'I' => todo!(),
+            'i' | 'I' => ControlFlow::Break(Ok(BreakCondition::Imaginary)),
             _ if ch.is_ascii_digit() => {
                 self.digits.end += 1;
                 ControlFlow::Continue(None)
@@ -431,10 +435,10 @@ impl Float {
             })),
             'e' | 'E' => ControlFlow::Continue(Some(Classifier::Sci(Scientific {
                 exponent: idx..idx + 1,
-                float: self.clone(),
+                significand: self.clone(),
                 ..Default::default()
             }))),
-            'i' | 'I' => todo!(),
+            'i' | 'I' => ControlFlow::Break(Ok(BreakCondition::Imaginary)),
             _ if ch.is_ascii_digit() => {
                 self.fraction.end += 1;
                 ControlFlow::Continue(None)
@@ -459,7 +463,7 @@ impl Float {
 struct Scientific {
     exponent: Range<usize>,
     exponent_sign: Option<Sign>,
-    float: Float,
+    significand: Float,
 }
 
 impl Scientific {
@@ -480,13 +484,11 @@ impl Scientific {
                     ControlFlow::Continue(None)
                 }
             }
-            'i' | 'I' => {
-                if self.no_e_value() {
-                    ControlFlow::Break(Err(self.malformed_exponent()))
-                } else {
-                    todo!();
-                }
-            }
+            'i' | 'I' => ControlFlow::Break(if self.no_e_value() {
+                Err(self.malformed_exponent())
+            } else {
+                Ok(BreakCondition::Imaginary)
+            }),
             _ if ch.is_ascii_digit() => {
                 self.exponent.end += 1;
                 ControlFlow::Continue(None)
@@ -500,7 +502,7 @@ impl Scientific {
         if self.no_e_value() {
             return Err(self.malformed_exponent());
         }
-        self.float.parse(input)
+        self.significand.parse(input)
     }
 
     fn no_e_value(&self) -> bool {
