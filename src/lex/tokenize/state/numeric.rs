@@ -464,12 +464,12 @@ struct Scientific {
 
 impl Scientific {
     fn classify<'str>(&mut self, item: ScanItem<'str>) -> DecimalControl<'str> {
-        let (idx, ch) = item;
+        let ch = item.1;
         match ch {
             '+' | '-' => {
                 if self.exponent_sign.is_some() {
-                    if self.exponent.is_empty() {
-                        ControlFlow::Break(Err(TokenErrorKind::NumberMalformedExponent { at: idx }))
+                    if self.exponent.len() == 2 {
+                        ControlFlow::Break(Err(self.malformed_exponent()))
                     } else {
                         // TODO: begin imaginary part
                         todo!();
@@ -481,8 +481,8 @@ impl Scientific {
                 }
             }
             'i' | 'I' => {
-                if self.exponent.is_empty() {
-                    ControlFlow::Break(Err(TokenErrorKind::NumberMalformedExponent { at: idx }))
+                if self.no_e_value() {
+                    ControlFlow::Break(Err(self.malformed_exponent()))
                 } else {
                     todo!();
                 }
@@ -491,18 +491,27 @@ impl Scientific {
                 self.exponent.end += 1;
                 ControlFlow::Continue(None)
             }
-            _ => ControlFlow::Break(Err(TokenErrorKind::NumberMalformedExponent { at: idx })),
+            _ => ControlFlow::Break(Err(self.malformed_exponent())),
         }
         // TODO: +-, @
     }
 
     fn parse(&self, input: &str) -> ParseResult {
-        if self.exponent.len() <= 1 || (self.exponent.len() == 2 && self.exponent_sign.is_some()) {
-            return Err(TokenErrorKind::NumberMalformedExponent {
-                at: self.exponent.start,
-            });
+        if self.no_e_value() {
+            return Err(self.malformed_exponent());
         }
         self.float.parse(input)
+    }
+
+    fn no_e_value(&self) -> bool {
+        // NOTE: exponent range contains no digits but may include 'e' and sign
+        self.exponent.len() <= 1 || (self.exponent.len() == 2 && self.exponent_sign.is_some())
+    }
+
+    fn malformed_exponent(&self) -> TokenErrorKind {
+        TokenErrorKind::NumberMalformedExponent {
+            at: self.exponent.start,
+        }
     }
 }
 

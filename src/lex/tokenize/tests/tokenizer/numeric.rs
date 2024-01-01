@@ -1506,16 +1506,16 @@ mod float {
         assert!(matches!(
             r,
             TokenExtract {
-                start: 7,
+                start: 5,
                 end: 9,
-                result: Err(TokenErrorKind::NumberMalformedExponent { at: 7 }),
+                result: Err(TokenErrorKind::NumberMalformedExponent { at: 5 }),
             }
         ));
     }
 
     #[test]
     fn exponent_too_many_signs() {
-        let mut s = Scanner::new("3.456e+4-5");
+        let mut s = Scanner::new("3.456e+-");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
             scan: &mut s,
@@ -1528,9 +1528,9 @@ mod float {
         assert!(matches!(
             r,
             TokenExtract {
-                start: 8,
-                end: 10,
-                result: Err(TokenErrorKind::NumberMalformedExponent { at: 8 }),
+                start: 5,
+                end: 8,
+                result: Err(TokenErrorKind::NumberMalformedExponent { at: 5 }),
             }
         ));
     }
@@ -2181,6 +2181,28 @@ mod complex {
                 end: 10,
                 result: Ok(TokenKind::Identifier(s)),
             } if s == "+nan.0inon"
+        ));
+    }
+
+    #[test]
+    fn exponent_real_invalid_imaginary() {
+        let mut s = Scanner::new("3.456e+4-5");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 8,
+                end: 10,
+                result: Err(TokenErrorKind::Unimplemented(_)),
+            }
         ));
     }
 }
