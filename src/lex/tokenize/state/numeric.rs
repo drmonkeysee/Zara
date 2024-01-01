@@ -312,6 +312,7 @@ impl Classifier {
     }
 }
 
+#[derive(Debug)]
 struct Integral<R> {
     mag: Magnitude,
     radix: R,
@@ -355,7 +356,7 @@ impl<R: Radix> Integral<R> {
     }
 }
 
-#[derive(Clone, Default)]
+#[derive(Clone, Debug, Default)]
 struct Magnitude {
     digits: Range<usize>,
     exactness: Option<Exactness>,
@@ -414,7 +415,7 @@ impl Magnitude {
     }
 }
 
-#[derive(Clone, Default)]
+#[derive(Clone, Debug, Default)]
 struct Float {
     fraction: Range<usize>,
     integral: Magnitude,
@@ -427,11 +428,14 @@ impl Float {
             '.' => ControlFlow::Break(Err(TokenErrorKind::NumberUnexpectedDecimalPoint {
                 at: idx,
             })),
-            'e' | 'E' => ControlFlow::Continue(Some(Classifier::Sci(Scientific {
-                exponent: idx..idx + 1,
-                float: self.clone(),
-                ..Default::default()
-            }))),
+            'e' | 'E' => {
+                let exp_start = idx + 1;
+                ControlFlow::Continue(Some(Classifier::Sci(Scientific {
+                    exponent: exp_start..exp_start,
+                    float: self.clone(),
+                    ..Default::default()
+                })))
+            }
             'i' | 'I' => todo!(),
             _ if ch.is_ascii_digit() => {
                 self.fraction.end += 1;
@@ -453,7 +457,7 @@ impl Float {
     }
 }
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 struct Scientific {
     exponent: Range<usize>,
     exponent_sign: Option<Sign>,
@@ -465,7 +469,6 @@ impl Scientific {
         let (idx, ch) = item;
         match ch {
             '+' | '-' => {
-                self.exponent.end += 1;
                 if self.exponent_sign.is_some() {
                     if self.exponent.is_empty() {
                         ControlFlow::Break(Err(TokenErrorKind::NumberMalformedExponent { at: idx }))
@@ -475,6 +478,7 @@ impl Scientific {
                     }
                 } else {
                     self.exponent_sign = Some(super::char_to_sign(ch));
+                    self.exponent.end += 1;
                     ControlFlow::Continue(None)
                 }
             }
@@ -495,6 +499,11 @@ impl Scientific {
     }
 
     fn parse(&self, input: &str) -> ParseResult {
+        if self.exponent.len() <= 1 && self.exponent_sign.is_some() {
+            return Err(TokenErrorKind::NumberMalformedExponent {
+                at: self.exponent.start,
+            });
+        }
         self.float.parse(input)
     }
 }

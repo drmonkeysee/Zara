@@ -1440,9 +1440,9 @@ mod float {
         assert!(matches!(
             r,
             TokenExtract {
-                start: 5,
+                start: 6,
                 end: 7,
-                result: Err(TokenErrorKind::NumberMalformedExponent { at: 5 }),
+                result: Err(TokenErrorKind::NumberMalformedExponent { at: 6 }),
             }
         ));
     }
