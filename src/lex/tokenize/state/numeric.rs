@@ -37,6 +37,23 @@ impl<'me, 'str> Decimal<'me, 'str> {
         }
     }
 
+    pub(in crate::lex::tokenize) fn try_signed_number(
+        sign: Sign,
+        scan: &'me mut Scanner<'str>,
+        start: ScanItem<'str>,
+    ) -> Self {
+        let idx = start.0 + 1;
+        Self {
+            classifier: Classifier::Int(Magnitude {
+                digits: idx..idx + 1,
+                sign: Some(sign),
+                ..Default::default()
+            }),
+            scan,
+            start,
+        }
+    }
+
     pub(in crate::lex::tokenize) fn try_float(
         scan: &'me mut Scanner<'str>,
         start: ScanItem<'str>,
@@ -60,28 +77,11 @@ impl<'me, 'str> Decimal<'me, 'str> {
         let idx = start.0 + 1;
         Self {
             classifier: Classifier::Flt(Float {
-                fraction: idx..idx + 1,
+                fraction: idx..idx + 2,
                 integral: Magnitude {
                     sign: Some(sign),
                     ..Default::default()
                 },
-                ..Default::default()
-            }),
-            scan,
-            start,
-        }
-    }
-
-    pub(in crate::lex::tokenize) fn try_signed_number(
-        sign: Sign,
-        scan: &'me mut Scanner<'str>,
-        start: ScanItem<'str>,
-    ) -> Self {
-        let idx = start.0 + 1;
-        Self {
-            classifier: Classifier::Int(Magnitude {
-                digits: idx..idx + 1,
-                sign: Some(sign),
                 ..Default::default()
             }),
             scan,
@@ -106,17 +106,17 @@ impl<'me, 'str> Decimal<'me, 'str> {
         match brk {
             Ok(cond) => {
                 match cond {
-                    BreakCondition::Complete => Ok(real_to_token(self.parse(false)?, false)),
+                    BreakCondition::Complete => Ok(real_to_token(self.parse()?, false)),
                     BreakCondition::Complex { kind, sign, start } => {
-                        let real = self.parse(false)?;
+                        let real = self.parse()?;
                         self.scan_imaginary(real, sign, kind, start)
                     }
                     BreakCondition::Fraction => {
                         // TODO: handle inexact e.g #i4/3 => 1.3333...
                         // this means numerator's parse should not apply inexact modifier too early
-                        let real = self.parse(false)?;
+                        let real = self.parse()?;
                         debug_assert!(matches!(real, Real::Integer(_)));
-                        if let Real::Integer(numerator) = self.parse(false)? {
+                        if let Real::Integer(numerator) = self.parse()? {
                             self.scan_denominator(numerator)
                         } else {
                             unreachable!();
@@ -133,7 +133,7 @@ impl<'me, 'str> Decimal<'me, 'str> {
                         } else if !self.classifier.has_sign() {
                             self.fail(TokenErrorKind::ImaginaryMissingSign)
                         } else {
-                            Ok(real_to_token(self.parse(true)?, true))
+                            Ok(real_to_token(self.parse()?, true))
                         }
                     }
                 }
@@ -142,12 +142,13 @@ impl<'me, 'str> Decimal<'me, 'str> {
         }
     }
 
-    fn parse(&mut self, imaginary: bool) -> ParseResult {
-        let end = self.scan.pos() - usize::from(imaginary);
+    fn parse(&mut self) -> ParseResult {
+        let end = self.scan.pos();
         self.classifier.parse(self.scan.lexeme(self.start.0..end))
     }
 
     fn scan_denominator(&mut self, numerator: Integer) -> TokenExtractResult {
+        todo!();
         /*
         self.classifier.reset_as_denominator();
         if let Some(err) = self.classify() {
@@ -162,7 +163,6 @@ impl<'me, 'str> Decimal<'me, 'str> {
             todo!();
         }
         */
-        todo!();
     }
 
     fn scan_imaginary(
@@ -333,6 +333,9 @@ impl<R: RadixPolicy> Integral<R> {
             'i' | 'I' => ControlFlow::Break(Ok(BreakCondition::Imaginary)),
             _ => match self.radix.is_digit(ch) {
                 RadixDigit::Digit => {
+                    if self.mag.digits.is_empty() {
+                        self.mag.digits = idx..idx;
+                    }
                     self.mag.digits.end += 1;
                     ControlFlow::Continue(())
                 }
@@ -380,10 +383,16 @@ impl Magnitude {
     }
 
     fn parse(&self, input: &str) -> ParseResult {
-        match self.exactness {
-            None | Some(Exactness::Exact) => i64::from_str_radix(input, 10)
-                .map_or_else(|_| self.parse_sign_magnitude(input), |val| Ok(val.into())),
-            Some(Exactness::Inexact) => todo!(),
+        if let Some(sign_mag) = input.get(..self.digits.end) {
+            match self.exactness {
+                None | Some(Exactness::Exact) => i64::from_str_radix(sign_mag, 10).map_or_else(
+                    |_| self.parse_sign_magnitude(sign_mag),
+                    |val| Ok(val.into()),
+                ),
+                Some(Exactness::Inexact) => todo!(),
+            }
+        } else {
+            Err(TokenErrorKind::NumberInvalid)
         }
     }
 
@@ -435,12 +444,20 @@ impl Float {
     }
 
     fn parse(&self, input: &str) -> ParseResult {
-        match self.integral.exactness {
-            None | Some(Exactness::Inexact) => {
-                let flt: f64 = input.parse()?;
-                Ok(flt.into())
+        self.parse_to(input, self.fraction.end)
+    }
+
+    fn parse_to(&self, input: &str, end: usize) -> ParseResult {
+        if let Some(numstr) = input.get(..end) {
+            match self.integral.exactness {
+                None | Some(Exactness::Inexact) => {
+                    let flt: f64 = numstr.parse()?;
+                    Ok(flt.into())
+                }
+                Some(Exactness::Exact) => todo!(),
             }
-            Some(Exactness::Exact) => todo!(),
+        } else {
+            Err(TokenErrorKind::NumberInvalid)
         }
     }
 }
@@ -489,7 +506,7 @@ impl Scientific {
         if self.no_e_value() {
             return Err(self.malformed_exponent());
         }
-        self.significand.parse(input)
+        self.significand.parse_to(input, self.exponent.end)
     }
 
     fn no_e_value(&self) -> bool {
