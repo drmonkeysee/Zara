@@ -596,7 +596,7 @@ mod rational {
             TokenExtract {
                 start: 0,
                 end: 5,
-                result: Err(TokenErrorKind::Unimplemented(_)),
+                result: Err(TokenErrorKind::RationalInvalid),
             }
         ));
     }
@@ -1628,7 +1628,7 @@ mod complex {
             TokenExtract {
                 start: 0,
                 end: 4,
-                result: Err(TokenErrorKind::NumberInvalid),
+                result: Err(TokenErrorKind::ImaginaryMalformed),
             }
         ));
     }
@@ -1650,7 +1650,7 @@ mod complex {
             TokenExtract {
                 start: 0,
                 end: 4,
-                result: Err(TokenErrorKind::NumberInvalid),
+                result: Err(TokenErrorKind::ImaginaryMalformed),
             }
         ));
     }

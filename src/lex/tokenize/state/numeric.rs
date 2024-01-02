@@ -91,11 +91,7 @@ impl<'me, 'str> Decimal<'me, 'str> {
 
     pub(in crate::lex::tokenize) fn scan(&mut self) -> TokenExtractResult {
         let mut brk = Ok(BreakCondition::Complete);
-        let mut imaginary = false;
         while let Some(item) = self.scan.next_if_not_delimiter() {
-            if imaginary {
-                return self.fail(TokenErrorKind::NumberInvalid);
-            }
             match self.classifier.classify(item) {
                 ControlFlow::Continue(None) => (),
                 ControlFlow::Continue(Some(c)) => {
@@ -103,67 +99,52 @@ impl<'me, 'str> Decimal<'me, 'str> {
                 }
                 ControlFlow::Break(b) => {
                     brk = b;
-                    if matches!(brk, Ok(BreakCondition::Imaginary)) {
-                        imaginary = true;
-                    } else {
-                        break;
-                    }
+                    break;
                 }
             }
         }
         match brk {
             Ok(cond) => {
-                if imaginary && !self.classifier.has_sign() {
-                    Err(TokenErrorKind::ImaginaryMissingSign)
-                } else {
-                    let end = self.scan.pos() - usize::from(imaginary);
-                    let real = self.classifier.parse(self.scan.lexeme(self.start.0..end))?;
-                    match cond {
-                        BreakCondition::Complete | BreakCondition::Imaginary => {
-                            Ok(real_to_token(real, imaginary))
+                match cond {
+                    BreakCondition::Complete => Ok(real_to_token(self.parse(false)?, false)),
+                    BreakCondition::Complex { kind, sign, start } => {
+                        let real = self.parse(false)?;
+                        self.scan_imaginary(real, sign, kind, start)
+                    }
+                    BreakCondition::Fraction => {
+                        // TODO: handle inexact e.g #i4/3 => 1.3333...
+                        // this means numerator's parse should not apply inexact modifier too early
+                        let real = self.parse(false)?;
+                        debug_assert!(matches!(real, Real::Integer(_)));
+                        if let Real::Integer(numerator) = self.parse(false)? {
+                            self.scan_denominator(numerator)
+                        } else {
+                            unreachable!();
                         }
-                        BreakCondition::Fraction => {
-                            if let Real::Integer(numerator) = real {
-                                self.scan_denominator(numerator)
+                    }
+                    BreakCondition::Imaginary => {
+                        if let Some(item) = self.scan.next_if_not_delimiter() {
+                            // NOTE: maybe malformed "in"finity? otherwise assume malformed imaginary
+                            self.fail(if matches!(item.1, 'n' | 'N') {
+                                TokenErrorKind::NumberInvalid
                             } else {
-                                todo!()
-                            }
-                        }
-                        BreakCondition::Complex { kind, sign, start } => {
-                            self.scan_imaginary(real, sign, kind, start)
+                                TokenErrorKind::ImaginaryMalformed
+                            })
+                        } else if !self.classifier.has_sign() {
+                            self.fail(TokenErrorKind::ImaginaryMissingSign)
+                        } else {
+                            Ok(real_to_token(self.parse(true)?, true))
                         }
                     }
                 }
             }
             Err(err) => self.fail(err),
         }
-        /*
-        let mut condition = BreakCondition::Complete;
-        while let Some(item) = self.scan.next_if_not_delimiter() {
-            match self.classifier.classify(item) {
-                ControlFlow::Continue(None) => (),
-                ControlFlow::Continue(Some(c)) => {
-                    self.classifier = c;
-                }
-                ControlFlow::Break(b) => {
-                    condition = b;
-                    break;
-                }
-            }
-        }
-        self.complete(condition)
-        */
-        /*
-        if let Some(err) = self.classify() {
-            self.fail(err)
-        } else {
-            match self.parse()? {
-                Continuation::Complete(r) => Ok(real_to_token(r, self.classifier.imaginary)),
-                Continuation::Denominator(numerator) => self.scan_denominator(numerator),
-                Continuation::Imaginary(r, s) => self.scan_imaginary(r, s),
-            }
-        }
-        */
+    }
+
+    fn parse(&mut self, imaginary: bool) -> ParseResult {
+        let end = self.scan.pos() - usize::from(imaginary);
+        self.classifier.parse(self.scan.lexeme(self.start.0..end))
     }
 
     fn scan_denominator(&mut self, numerator: Integer) -> TokenExtractResult {
@@ -256,6 +237,7 @@ pub(super) fn nan(imaginary: bool) -> TokenKind {
     real_to_token(f64::NAN, imaginary)
 }
 
+#[derive(Debug)]
 enum ComplexKind {
     Cartesian,
     Polar,
@@ -272,6 +254,7 @@ type DecimalControl<'str> =
 type RadixControl<'str> = ControlFlow<Result<BreakCondition<'str>, TokenErrorKind>>;
 type ParseResult = Result<Real, TokenErrorKind>;
 
+#[derive(Debug)]
 enum BreakCondition<'str> {
     Complete,
     Complex {
@@ -283,6 +266,7 @@ enum BreakCondition<'str> {
     Imaginary,
 }
 
+#[derive(Debug)]
 enum Classifier {
     Flt(Float),
     Int(Magnitude),
@@ -375,6 +359,7 @@ impl Magnitude {
                 fraction: idx..idx + 1,
                 integral: self.clone(),
             }))),
+            '/' => ControlFlow::Break(Ok(BreakCondition::Fraction)),
             'e' | 'E' => ControlFlow::Continue(Some(Classifier::Sci(Scientific {
                 exponent: idx..idx + 1,
                 significand: Float {
@@ -391,7 +376,7 @@ impl Magnitude {
             }
             _ => ControlFlow::Break(Err(TokenErrorKind::NumberInvalid)),
         }
-        // TODO: /, +-, @
+        // TODO: +-, @
     }
 
     fn parse(&self, input: &str) -> ParseResult {
@@ -433,6 +418,7 @@ impl Float {
             '.' => ControlFlow::Break(Err(TokenErrorKind::NumberUnexpectedDecimalPoint {
                 at: idx,
             })),
+            '/' => ControlFlow::Break(Err(TokenErrorKind::RationalInvalid)),
             'e' | 'E' => ControlFlow::Continue(Some(Classifier::Sci(Scientific {
                 exponent: idx..idx + 1,
                 significand: self.clone(),
@@ -484,6 +470,7 @@ impl Scientific {
                     ControlFlow::Continue(None)
                 }
             }
+            '/' => ControlFlow::Break(Err(TokenErrorKind::RationalInvalid)),
             'i' | 'I' => ControlFlow::Break(if self.no_e_value() {
                 Err(self.malformed_exponent())
             } else {
