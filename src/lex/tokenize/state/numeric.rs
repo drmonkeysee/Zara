@@ -125,7 +125,7 @@ impl<'me, 'str> Decimal<'me, 'str> {
                     BreakCondition::Imaginary => {
                         if let Some(item) = self.scan.next_if_not_delimiter() {
                             // NOTE: maybe malformed "in"finity? otherwise assume malformed imaginary
-                            self.fail(if matches!(item.1, 'n' | 'N') {
+                            self.fail(if item.1.is_ascii_alphabetic() {
                                 TokenErrorKind::NumberInvalid
                             } else {
                                 TokenErrorKind::ImaginaryMalformed
