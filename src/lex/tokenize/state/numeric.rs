@@ -14,14 +14,14 @@ use std::{
     ops::{ControlFlow, Range},
 };
 
-pub(in crate::lex::tokenize) struct Decimal<'me, 'str> {
+pub(in crate::lex::tokenize) struct DecimalNumber<'me, 'str> {
     classifier: Classifier,
     scan: &'me mut Scanner<'str>,
     start: ScanItem<'str>,
 }
 
 // NOTE: these ctors are always called after one confirmed decimal digit has been scanned
-impl<'me, 'str> Decimal<'me, 'str> {
+impl<'me, 'str> DecimalNumber<'me, 'str> {
     pub(in crate::lex::tokenize) fn new(
         scan: &'me mut Scanner<'str>,
         start: ScanItem<'str>,
@@ -191,7 +191,7 @@ impl<'me, 'str> Decimal<'me, 'str> {
     }
 }
 
-struct Radix<'me, 'str, R> {
+struct RadixNumber<'me, 'str, R> {
     classifier: Integral<R>,
     scan: &'me mut Scanner<'str>,
     start: ScanItem<'str>,

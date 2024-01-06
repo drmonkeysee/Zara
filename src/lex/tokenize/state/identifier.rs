@@ -1,4 +1,4 @@
-use super::{FreeText, FreeTextPolicy, Decimal};
+use super::{DecimalNumber, FreeText, FreeTextPolicy};
 use crate::lex::{
     token::{TokenErrorKind, TokenKind},
     tokenize::{
@@ -61,17 +61,23 @@ impl<'me, 'str> Identifier<'me, 'str> {
                 match self.peculiar_state.as_ref().unwrap() {
                     PeculiarState::DefiniteIdentifier => self.standard(),
                     // CASE: .<digit>
-                    PeculiarState::MaybeFloat => Decimal::try_float(self.scan, self.start).scan(),
+                    PeculiarState::MaybeFloat => {
+                        DecimalNumber::try_float(self.scan, self.start).scan()
+                    }
                     // CASE: +/-.<digit>
-                    PeculiarState::MaybeSignedFloat(sn) => {
-                        Decimal::try_signed_float(super::char_to_sign(*sn), self.scan, self.start)
-                            .scan()
-                    }
+                    PeculiarState::MaybeSignedFloat(sn) => DecimalNumber::try_signed_float(
+                        super::char_to_sign(*sn),
+                        self.scan,
+                        self.start,
+                    )
+                    .scan(),
                     // CASE: +/-<digit>
-                    PeculiarState::MaybeSignedNumber(sn) => {
-                        Decimal::try_signed_number(super::char_to_sign(*sn), self.scan, self.start)
-                            .scan()
-                    }
+                    PeculiarState::MaybeSignedNumber(sn) => DecimalNumber::try_signed_number(
+                        super::char_to_sign(*sn),
+                        self.scan,
+                        self.start,
+                    )
+                    .scan(),
                 }
             } else if is_peculiar_initial(ch) {
                 self.peculiar(ch)
