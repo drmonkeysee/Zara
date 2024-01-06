@@ -28,10 +28,10 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
     ) -> Self {
         let idx = start.0;
         Self {
-            classifier: Classifier::Int(Magnitude {
+            classifier: Classifier::Int(DecimalInt(Magnitude {
                 digits: idx..idx + 1,
                 ..Default::default()
-            }),
+            })),
             scan,
             start,
         }
@@ -44,11 +44,11 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
     ) -> Self {
         let idx = start.0 + 1;
         Self {
-            classifier: Classifier::Int(Magnitude {
+            classifier: Classifier::Int(DecimalInt(Magnitude {
                 digits: idx..idx + 1,
                 sign: Some(sign),
                 ..Default::default()
-            }),
+            })),
             scan,
             start,
         }
@@ -269,7 +269,7 @@ enum BreakCondition<'str> {
 #[derive(Debug)]
 enum Classifier {
     Flt(Float),
-    Int(Magnitude),
+    Int(DecimalInt),
     Sci(Scientific),
 }
 
@@ -277,7 +277,7 @@ impl Classifier {
     fn has_sign(&self) -> bool {
         match self {
             Self::Flt(f) => f.integral.sign,
-            Self::Int(i) => i.sign,
+            Self::Int(i) => i.0.sign,
             Self::Sci(s) => s.significand.integral.sign,
         }
         .is_some()
@@ -347,26 +347,22 @@ impl<R: RadixPolicy> Integral<R> {
     }
 }
 
-#[derive(Clone, Debug, Default)]
-struct Magnitude {
-    digits: Range<usize>,
-    exactness: Option<Exactness>,
-    sign: Option<Sign>,
-}
+#[derive(Debug)]
+struct DecimalInt(Magnitude);
 
-impl Magnitude {
+impl DecimalInt {
     fn classify<'str>(&mut self, item: ScanItem<'str>) -> DecimalControl<'str> {
         let (idx, ch) = item;
         match ch {
             '.' => ControlFlow::Continue(Some(Classifier::Flt(Float {
                 fraction: idx..idx + 1,
-                integral: self.clone(),
+                integral: self.0.clone(),
             }))),
             '/' => ControlFlow::Break(Ok(BreakCondition::Fraction)),
             'e' | 'E' => ControlFlow::Continue(Some(Classifier::Sci(Scientific {
                 exponent: idx..idx + 1,
                 significand: Float {
-                    integral: self.clone(),
+                    integral: self.0.clone(),
                     fraction: idx..idx,
                     ..Default::default()
                 },
@@ -374,7 +370,7 @@ impl Magnitude {
             }))),
             'i' | 'I' => ControlFlow::Break(Ok(BreakCondition::Imaginary)),
             _ if ch.is_ascii_digit() => {
-                self.digits.end += 1;
+                self.0.digits.end += 1;
                 ControlFlow::Continue(None)
             }
             _ => ControlFlow::Break(Err(TokenErrorKind::NumberInvalid)),
@@ -383,8 +379,8 @@ impl Magnitude {
     }
 
     fn parse(&self, input: &str) -> ParseResult {
-        if let Some(sign_mag) = input.get(..self.digits.end) {
-            match self.exactness {
+        if let Some(sign_mag) = input.get(..self.0.digits.end) {
+            match self.0.exactness {
                 None | Some(Exactness::Exact) => i64::from_str_radix(sign_mag, 10).map_or_else(
                     |_| self.parse_sign_magnitude(sign_mag),
                     |val| Ok(val.into()),
@@ -397,11 +393,11 @@ impl Magnitude {
     }
 
     fn parse_sign_magnitude(&self, input: &str) -> ParseResult {
-        if let Some(mag) = input.get(self.digits.start..) {
+        if let Some(mag) = input.get(self.0.digits.start..) {
             return u64::from_str_radix(mag, 10).map_or_else(
                 |_| self.parse_multi_precision(input),
                 |val| {
-                    let sign_mag = (self.sign.unwrap_or(Sign::Positive), val);
+                    let sign_mag = (self.0.sign.unwrap_or(Sign::Positive), val);
                     Ok(sign_mag.into())
                 },
             );
@@ -519,6 +515,13 @@ impl Scientific {
             at: self.exponent.start,
         }
     }
+}
+
+#[derive(Clone, Debug, Default)]
+struct Magnitude {
+    digits: Range<usize>,
+    exactness: Option<Exactness>,
+    sign: Option<Sign>,
 }
 
 /*
