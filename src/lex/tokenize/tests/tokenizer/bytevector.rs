@@ -167,3 +167,24 @@ fn no_paren_whitespace() {
         }
     ));
 }
+
+#[test]
+fn no_paren_extra_chars() {
+    let mut s = Scanner::new("#u8abc");
+    let start = some_or_fail!(s.next_token());
+    let t = Tokenizer {
+        scan: &mut s,
+        start,
+    };
+
+    let r = t.extract();
+
+    assert!(matches!(
+        r,
+        TokenExtract {
+            start: 0,
+            end: 6,
+            result: Err(TokenErrorKind::ByteVectorExpected),
+        }
+    ));
+}

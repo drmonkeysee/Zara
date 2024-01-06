@@ -56,7 +56,10 @@ impl<'me, 'str> Hashtag<'me, 'str> {
                     .char_if_not_token_boundary()
                     .filter(|&ch| ch == '(')
             })
-            .ok_or(TokenErrorKind::ByteVectorExpected)
+            .ok_or_else(|| {
+                self.scan.end_of_token();
+                TokenErrorKind::ByteVectorExpected
+            })
             .map(|_| TokenKind::ByteVector)
     }
 

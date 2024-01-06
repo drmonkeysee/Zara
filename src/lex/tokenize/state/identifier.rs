@@ -117,7 +117,7 @@ impl<'me, 'str> Identifier<'me, 'str> {
     }
 
     fn not_implemented(&mut self) -> TokenExtractResult {
-        self.scan.rest_of_token();
+        self.scan.end_of_token();
         Err(TokenErrorKind::Unimplemented(self.extract_txt()))
     }
 
