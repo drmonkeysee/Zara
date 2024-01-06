@@ -111,7 +111,7 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
                         let real = self.parse()?;
                         self.scan_imaginary(real, sign, kind, start)
                     }
-                    BreakCondition::Fraction => {
+                    BreakCondition::Fraction(m) => {
                         // TODO: handle inexact e.g #i4/3 => 1.3333...
                         // this means numerator's parse should not apply inexact modifier too early
                         let real = self.parse()?;
@@ -197,17 +197,23 @@ struct RadixNumber<'me, 'str, R> {
     start: ScanItem<'str>,
 }
 
-pub(in crate::lex::tokenize) enum RadixDigit {
-    Digit,
-    InvalidDigit,
-    NonDigit,
-}
-
-pub(in crate::lex::tokenize) trait RadixPolicy {
+pub(in crate::lex::tokenize) trait Radix {
     const BASE: u32;
     const NAME: &'static str;
 
-    fn is_digit(&self, ch: char) -> RadixDigit;
+    fn is_digit(&self, ch: char) -> bool;
+}
+
+#[derive(Clone, Copy, Debug, Default)]
+struct Decimal;
+
+impl Radix for Decimal {
+    const BASE: u32 = 10;
+    const NAME: &'static str = "decimal";
+
+    fn is_digit(&self, ch: char) -> bool {
+        ch.is_ascii_digit()
+    }
 }
 
 // TODO: handle inexact
@@ -250,19 +256,19 @@ enum Exactness {
 }
 
 type DecimalControl<'str> =
-    ControlFlow<Result<BreakCondition<'str>, TokenErrorKind>, Option<Classifier>>;
-type RadixControl<'str> = ControlFlow<Result<BreakCondition<'str>, TokenErrorKind>>;
+    ControlFlow<Result<BreakCondition<'str, Decimal>, TokenErrorKind>, Option<Classifier>>;
+type RadixControl<'str, R> = ControlFlow<Result<BreakCondition<'str, R>, TokenErrorKind>>;
 type ParseResult = Result<Real, TokenErrorKind>;
 
 #[derive(Debug)]
-enum BreakCondition<'str> {
+enum BreakCondition<'str, R> {
     Complete,
     Complex {
         kind: ComplexKind,
         sign: Sign,
         start: ScanItem<'str>,
     },
-    Fraction,
+    Fraction(Magnitude<R>),
     Imaginary,
 }
 
@@ -301,19 +307,16 @@ impl Classifier {
 }
 
 #[derive(Debug)]
-struct Integral<R> {
-    mag: Magnitude,
-    radix: R,
-}
+struct Integral<R>(Magnitude<R>);
 
-impl<R: RadixPolicy> Integral<R> {
-    fn classify<'str>(&mut self, item: ScanItem<'str>) -> RadixControl<'str> {
+impl<R: Radix> Integral<R> {
+    fn classify<'str>(&mut self, item: ScanItem<'str>) -> RadixControl<'str, R> {
         let (idx, ch) = item;
         match ch {
             '+' | '-' => {
-                if self.mag.digits.is_empty() {
-                    if self.mag.sign.is_none() {
-                        self.mag.sign = Some(super::char_to_sign(ch));
+                if self.0.digits.is_empty() {
+                    if self.0.sign.is_none() {
+                        self.0.sign = Some(super::char_to_sign(ch));
                         ControlFlow::Continue(())
                     } else {
                         ControlFlow::Break(Err(TokenErrorKind::NumberInvalid))
@@ -331,24 +334,21 @@ impl<R: RadixPolicy> Integral<R> {
                 radix: R::NAME,
             })),
             'i' | 'I' => ControlFlow::Break(Ok(BreakCondition::Imaginary)),
-            _ => match self.radix.is_digit(ch) {
-                RadixDigit::Digit => {
-                    if self.mag.digits.is_empty() {
-                        self.mag.digits = idx..idx;
-                    }
-                    self.mag.digits.end += 1;
-                    ControlFlow::Continue(())
+            _ if ch.is_ascii_digit() => {
+                if self.0.digits.is_empty() {
+                    self.0.digits = idx..idx;
                 }
-                RadixDigit::InvalidDigit => todo!(),
-                RadixDigit::NonDigit => ControlFlow::Break(Err(TokenErrorKind::NumberInvalid)),
-            },
+                self.0.digits.end += 1;
+                ControlFlow::Continue(())
+            }
+            _ => ControlFlow::Break(Err(TokenErrorKind::NumberInvalid)),
             // TODO: /, @
         }
     }
 }
 
 #[derive(Debug)]
-struct DecimalInt(Magnitude);
+struct DecimalInt(Magnitude<Decimal>);
 
 impl DecimalInt {
     fn classify<'str>(&mut self, item: ScanItem<'str>) -> DecimalControl<'str> {
@@ -358,7 +358,7 @@ impl DecimalInt {
                 fraction: idx..idx + 1,
                 integral: self.0.clone(),
             }))),
-            '/' => ControlFlow::Break(Ok(BreakCondition::Fraction)),
+            '/' => ControlFlow::Break(Ok(BreakCondition::Fraction(self.0.clone()))),
             'e' | 'E' => ControlFlow::Continue(Some(Classifier::Sci(Scientific {
                 exponent: idx..idx + 1,
                 significand: Float {
@@ -413,7 +413,7 @@ impl DecimalInt {
 #[derive(Clone, Debug, Default)]
 struct Float {
     fraction: Range<usize>,
-    integral: Magnitude,
+    integral: Magnitude<Decimal>,
 }
 
 impl Float {
@@ -518,10 +518,17 @@ impl Scientific {
 }
 
 #[derive(Clone, Debug, Default)]
-struct Magnitude {
+struct Magnitude<R> {
     digits: Range<usize>,
     exactness: Option<Exactness>,
+    radix: R,
     sign: Option<Sign>,
+}
+
+impl<R: Radix> Magnitude<R> {
+    fn exact_parse(&self) -> Result<Integer, TokenErrorKind> {
+        todo!();
+    }
 }
 
 /*
