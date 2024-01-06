@@ -171,15 +171,15 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
         }
     }
 
+    fn fail(&mut self, err: TokenErrorKind) -> TokenExtractResult {
+        self.scan.end_of_token();
+        Err(err)
+    }
+
     fn parse(&mut self, classifier: &Classifier) -> ParseResult {
         let exactness = self.exactness;
         let input = self.extract_str();
         classifier.parse(input, exactness)
-    }
-
-    fn fail(&mut self, err: TokenErrorKind) -> TokenExtractResult {
-        self.scan.end_of_token();
-        Err(err)
     }
 
     fn extract_str(&mut self) -> &str {
