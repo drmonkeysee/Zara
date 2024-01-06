@@ -15,7 +15,8 @@ use std::{
 };
 
 pub(in crate::lex::tokenize) struct DecimalNumber<'me, 'str> {
-    classifier: Classifier,
+    init: ClassifierInit,
+    exactness: Option<Exactness>,
     scan: &'me mut Scanner<'str>,
     start: ScanItem<'str>,
 }
@@ -26,12 +27,9 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
         scan: &'me mut Scanner<'str>,
         start: ScanItem<'str>,
     ) -> Self {
-        let idx = start.0;
         Self {
-            classifier: Classifier::Int(DecimalInt(Magnitude {
-                digits: idx..idx + 1,
-                ..Default::default()
-            })),
+            init: ClassifierInit::New,
+            exactness: None,
             scan,
             start,
         }
@@ -42,13 +40,9 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
         scan: &'me mut Scanner<'str>,
         start: ScanItem<'str>,
     ) -> Self {
-        let idx = start.0 + 1;
         Self {
-            classifier: Classifier::Int(DecimalInt(Magnitude {
-                digits: idx..idx + 1,
-                sign: Some(sign),
-                ..Default::default()
-            })),
+            init: ClassifierInit::SignedNumber(sign),
+            exactness: None,
             scan,
             start,
         }
@@ -58,12 +52,9 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
         scan: &'me mut Scanner<'str>,
         start: ScanItem<'str>,
     ) -> Self {
-        let idx = start.0;
         Self {
-            classifier: Classifier::Flt(Float {
-                fraction: idx..idx + 2,
-                ..Default::default()
-            }),
+            init: ClassifierInit::Float,
+            exactness: None,
             scan,
             start,
         }
@@ -74,16 +65,9 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
         scan: &'me mut Scanner<'str>,
         start: ScanItem<'str>,
     ) -> Self {
-        let idx = start.0 + 1;
         Self {
-            classifier: Classifier::Flt(Float {
-                fraction: idx..idx + 2,
-                integral: Magnitude {
-                    sign: Some(sign),
-                    ..Default::default()
-                },
-                ..Default::default()
-            }),
+            init: ClassifierInit::SignedFloat(sign),
+            exactness: None,
             scan,
             start,
         }
@@ -91,11 +75,12 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
 
     pub(in crate::lex::tokenize) fn scan(&mut self) -> TokenExtractResult {
         let mut brk = Ok(BreakCondition::Complete);
+        let mut classifier = self.init.new_classifier(self.start.0);
         while let Some(item) = self.scan.next_if_not_delimiter() {
-            match self.classifier.classify(item) {
+            match classifier.classify(item) {
                 ControlFlow::Continue(None) => (),
                 ControlFlow::Continue(Some(c)) => {
-                    self.classifier = c;
+                    classifier = c;
                 }
                 ControlFlow::Break(b) => {
                     brk = b;
@@ -106,20 +91,19 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
         match brk {
             Ok(cond) => {
                 match cond {
-                    BreakCondition::Complete => Ok(real_to_token(self.parse()?, false)),
+                    BreakCondition::Complete => self.complete(&classifier, false),
                     BreakCondition::Complex { kind, sign, start } => {
-                        let real = self.parse()?;
-                        self.scan_imaginary(real, sign, kind, start)
+                        match self.parse(&classifier) {
+                            Ok(real) => self.scan_imaginary(real, sign, kind, start),
+                            Err(err) => self.fail(err),
+                        }
                     }
                     BreakCondition::Fraction(m) => {
                         // TODO: handle inexact e.g #i4/3 => 1.3333...
                         // this means numerator's parse should not apply inexact modifier too early
-                        let real = self.parse()?;
-                        debug_assert!(matches!(real, Real::Integer(_)));
-                        if let Real::Integer(numerator) = self.parse()? {
-                            self.scan_denominator(numerator)
-                        } else {
-                            unreachable!();
+                        match m.exact_parse(self.extract_str()) {
+                            Ok(numerator) => self.scan_denominator(numerator),
+                            Err(err) => self.fail(err),
                         }
                     }
                     BreakCondition::Imaginary => {
@@ -130,21 +114,16 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
                             } else {
                                 TokenErrorKind::ImaginaryMalformed
                             })
-                        } else if !self.classifier.has_sign() {
+                        } else if !classifier.has_sign() {
                             self.fail(TokenErrorKind::ImaginaryMissingSign)
                         } else {
-                            Ok(real_to_token(self.parse()?, true))
+                            self.complete(&classifier, true)
                         }
                     }
                 }
             }
             Err(err) => self.fail(err),
         }
-    }
-
-    fn parse(&mut self) -> ParseResult {
-        let end = self.scan.pos();
-        self.classifier.parse(self.scan.lexeme(self.start.0..end))
     }
 
     fn scan_denominator(&mut self, numerator: Integer) -> TokenExtractResult {
@@ -185,9 +164,68 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
         todo!();
     }
 
+    fn complete(&mut self, classifier: &Classifier, imaginary: bool) -> TokenExtractResult {
+        match self.parse(&classifier) {
+            Ok(r) => Ok(real_to_token(r, imaginary)),
+            Err(err) => self.fail(err),
+        }
+    }
+
+    fn parse(&mut self, classifier: &Classifier) -> ParseResult {
+        let exactness = self.exactness;
+        let input = self.extract_str();
+        classifier.parse(input, exactness)
+    }
+
     fn fail(&mut self, err: TokenErrorKind) -> TokenExtractResult {
         self.scan.end_of_token();
         Err(err)
+    }
+
+    fn extract_str(&mut self) -> &str {
+        let end = self.scan.pos();
+        self.scan.lexeme(self.start.0..end)
+    }
+}
+
+enum ClassifierInit {
+    Float,
+    New,
+    SignedFloat(Sign),
+    SignedNumber(Sign),
+}
+
+impl ClassifierInit {
+    fn new_classifier(&self, start: usize) -> Classifier {
+        match self {
+            Self::Float => Classifier::Flt(Float {
+                fraction: start..start + 2,
+                ..Default::default()
+            }),
+            Self::New => Classifier::Int(DecimalInt(Magnitude {
+                digits: start..start + 1,
+                ..Default::default()
+            })),
+            Self::SignedFloat(s) => {
+                let idx = start + 1;
+                Classifier::Flt(Float {
+                    fraction: idx..idx + 2,
+                    integral: Magnitude {
+                        sign: Some(*s),
+                        ..Default::default()
+                    },
+                    ..Default::default()
+                })
+            }
+            Self::SignedNumber(s) => {
+                let idx = start + 1;
+                Classifier::Int(DecimalInt(Magnitude {
+                    digits: idx..idx + 1,
+                    sign: Some(*s),
+                    ..Default::default()
+                }))
+            }
+        }
     }
 }
 
@@ -297,11 +335,11 @@ impl Classifier {
         }
     }
 
-    fn parse(&self, input: &str) -> ParseResult {
+    fn parse(&self, input: &str, exactness: Option<Exactness>) -> ParseResult {
         match self {
-            Self::Flt(f) => f.parse(input),
-            Self::Int(i) => i.parse(input),
-            Self::Sci(s) => s.parse(input),
+            Self::Flt(f) => f.parse(input, exactness),
+            Self::Int(i) => i.parse(input, exactness),
+            Self::Sci(s) => s.parse(input, exactness),
         }
     }
 }
@@ -378,35 +416,11 @@ impl DecimalInt {
         // TODO: +-, @
     }
 
-    fn parse(&self, input: &str) -> ParseResult {
-        if let Some(sign_mag) = input.get(..self.0.digits.end) {
-            match self.0.exactness {
-                None | Some(Exactness::Exact) => i64::from_str_radix(sign_mag, 10).map_or_else(
-                    |_| self.parse_sign_magnitude(sign_mag),
-                    |val| Ok(val.into()),
-                ),
-                Some(Exactness::Inexact) => todo!(),
-            }
-        } else {
-            Err(TokenErrorKind::NumberInvalid)
+    fn parse(&self, input: &str, exactness: Option<Exactness>) -> ParseResult {
+        match exactness {
+            None | Some(Exactness::Exact) => Ok(self.0.exact_parse(input)?.into()),
+            Some(Exactness::Inexact) => todo!(),
         }
-    }
-
-    fn parse_sign_magnitude(&self, input: &str) -> ParseResult {
-        if let Some(mag) = input.get(self.0.digits.start..) {
-            return u64::from_str_radix(mag, 10).map_or_else(
-                |_| self.parse_multi_precision(input),
-                |val| {
-                    let sign_mag = (self.0.sign.unwrap_or(Sign::Positive), val);
-                    Ok(sign_mag.into())
-                },
-            );
-        }
-        Err(TokenErrorKind::NumberInvalid)
-    }
-
-    fn parse_multi_precision(&self, input: &str) -> ParseResult {
-        todo!();
     }
 }
 
@@ -439,13 +453,13 @@ impl Float {
         // TODO: +-, @
     }
 
-    fn parse(&self, input: &str) -> ParseResult {
-        self.parse_to(input, self.fraction.end)
+    fn parse(&self, input: &str, exactness: Option<Exactness>) -> ParseResult {
+        self.parse_to(input, self.fraction.end, exactness)
     }
 
-    fn parse_to(&self, input: &str, end: usize) -> ParseResult {
+    fn parse_to(&self, input: &str, end: usize, exactness: Option<Exactness>) -> ParseResult {
         if let Some(numstr) = input.get(..end) {
-            match self.integral.exactness {
+            match exactness {
                 None | Some(Exactness::Inexact) => {
                     let flt: f64 = numstr.parse()?;
                     Ok(flt.into())
@@ -498,11 +512,12 @@ impl Scientific {
         // TODO: +-, @
     }
 
-    fn parse(&self, input: &str) -> ParseResult {
+    fn parse(&self, input: &str, exactness: Option<Exactness>) -> ParseResult {
         if self.no_e_value() {
             return Err(self.malformed_exponent());
         }
-        self.significand.parse_to(input, self.exponent.end)
+        self.significand
+            .parse_to(input, self.exponent.end, exactness)
     }
 
     fn no_e_value(&self) -> bool {
@@ -517,16 +532,42 @@ impl Scientific {
     }
 }
 
+type ExactParseResult = Result<Integer, TokenErrorKind>;
+
 #[derive(Clone, Debug, Default)]
 struct Magnitude<R> {
     digits: Range<usize>,
-    exactness: Option<Exactness>,
     radix: R,
     sign: Option<Sign>,
 }
 
 impl<R: Radix> Magnitude<R> {
-    fn exact_parse(&self) -> Result<Integer, TokenErrorKind> {
+    fn exact_parse(&self, input: &str) -> ExactParseResult {
+        // TODO: use magnitude start instead of assuming input starts at sign
+        if let Some(sign_mag) = input.get(..self.digits.end) {
+            i64::from_str_radix(sign_mag, R::BASE).map_or_else(
+                |_| self.parse_sign_magnitude(sign_mag),
+                |val| Ok(val.into()),
+            )
+        } else {
+            Err(TokenErrorKind::NumberInvalid)
+        }
+    }
+
+    fn parse_sign_magnitude(&self, input: &str) -> ExactParseResult {
+        if let Some(mag) = input.get(self.digits.start..) {
+            return u64::from_str_radix(mag, R::BASE).map_or_else(
+                |_| self.parse_multi_precision(input),
+                |val| {
+                    let sign_mag = (self.sign.unwrap_or(Sign::Positive), val);
+                    Ok(sign_mag.into())
+                },
+            );
+        }
+        Err(TokenErrorKind::NumberInvalid)
+    }
+
+    fn parse_multi_precision(&self, input: &str) -> ExactParseResult {
         todo!();
     }
 }
