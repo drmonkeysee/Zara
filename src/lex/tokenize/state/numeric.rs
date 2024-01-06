@@ -541,7 +541,7 @@ struct Magnitude<R> {
     sign: Option<Sign>,
 }
 
-impl<R: Radix> Magnitude<R> {
+impl<R: Radix + Debug> Magnitude<R> {
     fn exact_parse(&self, input: &str) -> ExactParseResult {
         // TODO: use magnitude start instead of assuming input starts at sign
         if let Some(sign_mag) = input.get(..self.digits.end) {

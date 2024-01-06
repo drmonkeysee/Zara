@@ -112,6 +112,51 @@ fn multiple_tokens_with_whitespace() {
 }
 
 #[test]
+fn multiple_numbers() {
+    let s = TokenStream::new("10 -22 13.45 4/5 5+3i", None);
+
+    let r: Vec<_> = s.collect();
+    dbg!(&r);
+
+    assert_eq!(r.len(), 5);
+    assert!(matches!(
+        r[0],
+        Ok(Token {
+            kind: TokenKind::Literal(Literal::Number(_)),
+            span: Range { start: 0, end: 2 }
+        })
+    ));
+    assert!(matches!(
+        r[1],
+        Ok(Token {
+            kind: TokenKind::Literal(Literal::Number(_)),
+            span: Range { start: 3, end: 6 }
+        })
+    ));
+    assert!(matches!(
+        r[2],
+        Ok(Token {
+            kind: TokenKind::Literal(Literal::Number(_)),
+            span: Range { start: 7, end: 12 }
+        })
+    ));
+    assert!(matches!(
+        r[3],
+        Ok(Token {
+            kind: TokenKind::Literal(Literal::Number(_)),
+            span: Range { start: 13, end: 16 }
+        })
+    ));
+    assert!(matches!(
+        r[4],
+        Ok(Token {
+            kind: TokenKind::Literal(Literal::Number(_)),
+            span: Range { start: 17, end: 21 }
+        })
+    ));
+}
+
+#[test]
 fn tokens_with_invalid_token() {
     let s = TokenStream::new("(#tdf)", None);
 
