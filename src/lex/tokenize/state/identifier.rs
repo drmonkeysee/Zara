@@ -44,7 +44,7 @@ impl<'me, 'str> Identifier<'me, 'str> {
                 return self.invalid(ch);
             }
         }
-        let txt = self.extract_str();
+        let txt = self.get_lexeme();
         Ok(super::numeric_label(txt).unwrap_or_else(|| TokenKind::Identifier(txt.to_owned())))
     }
 
@@ -89,9 +89,9 @@ impl<'me, 'str> Identifier<'me, 'str> {
         } else {
             // NOTE: a single '.' is invalid but Tokenizer handles '.'
             // before attempting Identifier so this case never happens.
-            let txt = self.extract_txt();
+            let txt = self.get_lexeme();
             debug_assert!(txt != ".");
-            Ok(TokenKind::Identifier(txt))
+            Ok(TokenKind::Identifier(txt.to_owned()))
         }
     }
 
@@ -116,18 +116,8 @@ impl<'me, 'str> Identifier<'me, 'str> {
         });
     }
 
-    fn not_implemented(&mut self) -> TokenExtractResult {
-        self.scan.end_of_token();
-        Err(TokenErrorKind::Unimplemented(self.extract_txt()))
-    }
-
-    fn extract_txt(&mut self) -> String {
-        self.extract_str().to_owned()
-    }
-
-    fn extract_str(&mut self) -> &str {
-        let end = self.scan.pos();
-        self.scan.lexeme(self.start.0..end)
+    fn get_lexeme(&mut self) -> &str {
+        self.scan.current_lexeme_at(self.start.0)
     }
 }
 

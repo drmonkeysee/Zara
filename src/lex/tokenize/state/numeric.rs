@@ -102,7 +102,7 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
                     BreakCondition::Fraction(m) => {
                         // TODO: handle inexact e.g #i4/3 => 1.3333...
                         // this means numerator's parse should not apply inexact modifier too early
-                        match m.exact_parse(self.extract_str()) {
+                        match m.exact_parse(self.get_lexeme()) {
                             Ok(numerator) => {
                                 self.scan_denominator(numerator, classifier.has_sign())
                             }
@@ -173,12 +173,11 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
 
     fn parse(&mut self, classifier: &Classifier) -> ParseResult {
         let exactness = self.exactness;
-        classifier.parse(self.extract_str(), exactness)
+        classifier.parse(self.get_lexeme(), exactness)
     }
 
-    fn extract_str(&mut self) -> &str {
-        let end = self.scan.pos();
-        self.scan.lexeme(self.start.0..end)
+    fn get_lexeme(&mut self) -> &str {
+        self.scan.current_lexeme_at(self.start.0)
     }
 }
 
@@ -245,13 +244,13 @@ impl<'me, 'str> DenominatorNumber<'me, 'str> {
         }
         match brk {
             Ok(BreakCondition::Complete) => {
-                Ok((classifier.0.exact_parse(self.extract_str())?, false))
+                Ok((classifier.0.exact_parse(self.get_lexeme())?, false))
             }
             Ok(BreakCondition::Imaginary) => {
                 if classifier.is_empty() || self.scan.next_if_not_delimiter().is_some() {
                     Err(self.fail())
                 } else {
-                    Ok((classifier.0.exact_parse(self.extract_str())?, true))
+                    Ok((classifier.0.exact_parse(self.get_lexeme())?, true))
                 }
             }
             _ => Err(self.fail()),
@@ -263,9 +262,8 @@ impl<'me, 'str> DenominatorNumber<'me, 'str> {
         TokenErrorKind::RationalInvalid
     }
 
-    fn extract_str(&mut self) -> &str {
-        let end = self.scan.pos();
-        self.scan.lexeme(self.start..end)
+    fn get_lexeme(&mut self) -> &str {
+        self.scan.current_lexeme_at(self.start)
     }
 }
 

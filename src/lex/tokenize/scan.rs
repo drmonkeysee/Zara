@@ -58,6 +58,11 @@ impl<'a> Scanner<'a> {
         self.textline.get(range).unwrap_or_default()
     }
 
+    pub(super) fn current_lexeme_at(&mut self, start: usize) -> &str {
+        let curr = self.pos();
+        self.lexeme(start..curr)
+    }
+
     pub(super) fn end_of_token(&mut self) -> usize {
         let end = self.end();
         self.chars.next_until(delimiter).map_or(end, get_idx)
@@ -732,6 +737,70 @@ mod tests {
             let s = Scanner::new("abcdxyz");
 
             let r = s.lexeme(5..2);
+
+            assert_eq!(r, "");
+        }
+
+        #[test]
+        fn current_lexeme_at_empty_string() {
+            let mut s = Scanner::new("");
+
+            let r = s.current_lexeme_at(0);
+
+            assert_eq!(r, "");
+        }
+
+        #[test]
+        fn current_lexeme_at_start() {
+            let mut s = Scanner::new("abcdxyz");
+
+            let r = s.current_lexeme_at(0);
+
+            assert_eq!(r, "");
+        }
+
+        #[test]
+        fn current_lexeme_at_current_pos() {
+            let mut s = Scanner::new("abcdxyz");
+            s.next();
+            s.next();
+            s.next();
+
+            let r = s.current_lexeme_at(0);
+
+            assert_eq!(r, "abc");
+        }
+
+        #[test]
+        fn current_lexeme_at_past_pos() {
+            let mut s = Scanner::new("abcdxyz");
+            s.next();
+            s.next();
+            s.next();
+
+            let r = s.current_lexeme_at(4);
+
+            assert_eq!(r, "");
+        }
+
+        #[test]
+        fn current_lexeme_at_end() {
+            let mut s = Scanner::new("abcdxyz");
+            s.end_of_line();
+
+            let r = s.current_lexeme_at(3);
+
+            assert_eq!(r, "dxyz");
+        }
+
+        #[test]
+        fn current_lexeme_at_past_end() {
+            let mut s = Scanner::new("abcdxyz");
+            s.next();
+            s.next();
+            s.next();
+
+            let r = s.current_lexeme_at(40);
 
             assert_eq!(r, "");
         }
