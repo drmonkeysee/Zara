@@ -1776,6 +1776,31 @@ mod complex {
     }
 
     #[test]
+    fn rational_imaginary_unity_denominator() {
+        let mut s = Scanner::new("+4/1i");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 5,
+                result: Ok(TokenKind::Imaginary(_)),
+            }
+        ));
+        let tok = ok_or_fail!(r.result);
+        let r = extract_or_fail!(tok, TokenKind::Imaginary);
+        assert_eq!(r.to_string(), "4");
+    }
+
+    #[test]
     fn rational_imaginary_missing_sign() {
         let mut s = Scanner::new("4/5i");
         let start = some_or_fail!(s.next_token());
@@ -1815,6 +1840,28 @@ mod complex {
                 start: 0,
                 end: 5,
                 result: Err(TokenErrorKind::Unimplemented(_)),
+            }
+        ));
+    }
+
+    #[test]
+    fn rational_imaginary_missing_denominator_digit() {
+        let mut s = Scanner::new("+4/i");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 4,
+                result: Err(TokenErrorKind::RationalInvalid),
             }
         ));
     }

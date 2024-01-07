@@ -248,7 +248,7 @@ impl<'me, 'str> DenominatorNumber<'me, 'str> {
                 Ok((classifier.0.exact_parse(self.extract_str())?, false))
             }
             Ok(BreakCondition::Imaginary) => {
-                if self.scan.next_if_not_delimiter().is_some() {
+                if classifier.is_empty() || self.scan.next_if_not_delimiter().is_some() {
                     Err(self.fail())
                 } else {
                     Ok((classifier.0.exact_parse(self.extract_str())?, true))
@@ -392,11 +392,15 @@ impl<R: Radix> Integral<R> {
         self.0.sign.is_some()
     }
 
+    fn is_empty(&self) -> bool {
+        self.0.digits.is_empty()
+    }
+
     fn classify<'str>(&mut self, item: ScanItem<'str>) -> RadixControl<'str, R> {
         let (idx, ch) = item;
         match ch {
             '+' | '-' => {
-                if self.0.digits.is_empty() {
+                if self.is_empty() {
                     if self.0.sign.is_none() {
                         self.0.sign = Some(super::char_to_sign(ch));
                         self.0.digits = 1..1;
