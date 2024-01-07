@@ -65,15 +65,15 @@ impl<'me, 'str> Identifier<'me, 'str> {
                         DecimalNumber::try_float(self.scan, self.start).scan()
                     }
                     // CASE: +/-.<digit>
-                    PeculiarState::MaybeSignedFloat(sn) => DecimalNumber::try_signed_float(
-                        super::char_to_sign(*sn),
+                    PeculiarState::MaybeSignedFloat => DecimalNumber::try_signed_float(
+                        super::char_to_sign(self.start.1),
                         self.scan,
                         self.start,
                     )
                     .scan(),
                     // CASE: +/-<digit>
-                    PeculiarState::MaybeSignedNumber(sn) => DecimalNumber::try_signed_number(
-                        super::char_to_sign(*sn),
+                    PeculiarState::MaybeSignedNumber => DecimalNumber::try_signed_number(
+                        super::char_to_sign(self.start.1),
                         self.scan,
                         self.start,
                     )
@@ -104,11 +104,11 @@ impl<'me, 'str> Identifier<'me, 'str> {
         // NOTE: only 3 cases: + | - | .
         self.peculiar_state = Some(match ch {
             '+' | '-' => match self.peculiar_state {
-                None => PeculiarState::MaybeSignedNumber(ch),
+                None => PeculiarState::MaybeSignedNumber,
                 _ => PeculiarState::DefiniteIdentifier,
             },
             '.' => match self.peculiar_state {
-                Some(PeculiarState::MaybeSignedNumber(sn)) => PeculiarState::MaybeSignedFloat(sn),
+                Some(PeculiarState::MaybeSignedNumber) => PeculiarState::MaybeSignedFloat,
                 None => PeculiarState::MaybeFloat,
                 _ => PeculiarState::DefiniteIdentifier,
             },
@@ -238,8 +238,8 @@ impl IdentifierPolicyMode for StartIdentifier {
 enum PeculiarState {
     DefiniteIdentifier,
     MaybeFloat,
-    MaybeSignedFloat(char),
-    MaybeSignedNumber(char),
+    MaybeSignedFloat,
+    MaybeSignedNumber,
 }
 
 fn is_initial(ch: char) -> bool {
