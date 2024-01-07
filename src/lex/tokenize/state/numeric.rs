@@ -115,7 +115,7 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
                             self.fail(if item.1.is_ascii_alphabetic() {
                                 TokenErrorKind::NumberInvalid
                             } else {
-                                TokenErrorKind::ImaginaryMalformed
+                                TokenErrorKind::ImaginaryInvalid
                             })
                         } else if !classifier.has_sign() {
                             self.fail(TokenErrorKind::ImaginaryMissingSign)

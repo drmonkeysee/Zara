@@ -150,7 +150,7 @@ pub(super) enum TokenErrorKind {
     IdentifierInvalidHex { at: usize },
     IdentifierUnterminated,
     IdentifierUnterminatedHex { at: usize },
-    ImaginaryMalformed,
+    ImaginaryInvalid,
     ImaginaryMissingSign,
     NumberInvalid,
     NumberInvalidDecimalPoint { at: usize, radix: &'static str },
@@ -238,9 +238,7 @@ impl Display for TokenErrorKind {
                 f.write_str("unterminated hex-escape")
             }
             Self::IdentifierUnterminated => f.write_str("unterminated verbatim identifier"),
-            Self::ImaginaryMalformed => {
-                f.write_str("imaginary indicator must come at the end of a number literal")
-            }
+            Self::ImaginaryInvalid => f.write_str("invalid imaginary literal"),
             Self::ImaginaryMissingSign => f.write_str("missing explicit sign on imaginary number"),
             Self::NumberInvalid => f.write_str("expected numeric literal"),
             Self::NumberInvalidDecimalPoint { radix, .. } => {
@@ -257,9 +255,7 @@ impl Display for TokenErrorKind {
             }
             Self::NumberUnexpectedDecimalPoint { .. } => f.write_str("unexpected decimal point"),
             Self::NumericError(err) => write!(f, "numeric error: {err}"),
-            Self::RationalInvalid => {
-                f.write_str("rational literals must be composed of integer components")
-            }
+            Self::RationalInvalid => f.write_str("invalid rational literal"),
             Self::StringUnterminated => f.write_str("unterminated string-literal"),
             Self::Unimplemented(s) => write!(f, "unimplemented tokenization: '{s}'"),
         }
@@ -1135,14 +1131,11 @@ mod tests {
         #[test]
         fn display_imaginary_malformed() {
             let err = TokenError {
-                kind: TokenErrorKind::ImaginaryMalformed,
+                kind: TokenErrorKind::ImaginaryInvalid,
                 span: 0..1,
             };
 
-            assert_eq!(
-                err.to_string(),
-                "imaginary indicator must come at the end of a number literal"
-            );
+            assert_eq!(err.to_string(), "invalid imaginary literal");
         }
 
         #[test]
@@ -1152,10 +1145,7 @@ mod tests {
                 span: 0..1,
             };
 
-            assert_eq!(
-                err.to_string(),
-                "rational literals must be composed of integer components"
-            );
+            assert_eq!(err.to_string(), "invalid rational literal");
         }
 
         #[test]

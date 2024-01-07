@@ -1629,7 +1629,7 @@ mod complex {
             TokenExtract {
                 start: 0,
                 end: 4,
-                result: Err(TokenErrorKind::ImaginaryMalformed),
+                result: Err(TokenErrorKind::ImaginaryInvalid),
             }
         ));
     }
@@ -1651,7 +1651,7 @@ mod complex {
             TokenExtract {
                 start: 0,
                 end: 4,
-                result: Err(TokenErrorKind::ImaginaryMalformed),
+                result: Err(TokenErrorKind::ImaginaryInvalid),
             }
         ));
     }
