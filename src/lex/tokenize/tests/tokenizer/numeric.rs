@@ -5,12 +5,18 @@ use crate::{
 };
 
 macro_rules! extract_number {
-    ($exp:expr, $complex:path) => {{
+    ($exp:expr) => {{
+        let result = $exp;
+        let tok = ok_or_fail!(result);
+        let lit = extract_or_fail!(tok, TokenKind::Literal);
+        extract_or_fail!(lit, Literal::Number)
+    }};
+    ($exp:expr, $real:path) => {{
         let result = $exp;
         let tok = ok_or_fail!(result);
         let lit = extract_or_fail!(tok, TokenKind::Literal);
         let num = extract_or_fail!(lit, Literal::Number);
-        extract_or_fail!(num, $complex)
+        extract_or_fail!(num, $real)
     }};
     ($exp:expr, $real:path, $kind:path) => {{
         let result = $exp;
@@ -1537,7 +1543,7 @@ mod float {
     }
 }
 
-mod complex {
+mod imaginary {
     use super::*;
 
     #[test]
@@ -2274,5 +2280,177 @@ mod complex {
                 result: Err(TokenErrorKind::Unimplemented(_)),
             }
         ));
+    }
+}
+
+mod complex {
+    use super::*;
+
+    #[test]
+    fn simple() {
+        let mut s = Scanner::new("4+3i");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 4,
+                result: Ok(TokenKind::Literal(_)),
+            }
+        ));
+        let num = extract_number!(r.result);
+        assert_eq!(num.as_datum().to_string(), "4+3i");
+    }
+
+    #[test]
+    fn unity_imaginary_part() {
+        let mut s = Scanner::new("4+i");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 3,
+                result: Ok(TokenKind::Literal(_)),
+            }
+        ));
+        let num = extract_number!(r.result);
+        assert_eq!(num.as_datum().to_string(), "4+i");
+    }
+
+    #[test]
+    fn explicit_unity_imaginary_part() {
+        let mut s = Scanner::new("4+1i");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 4,
+                result: Ok(TokenKind::Literal(_)),
+            }
+        ));
+        let num = extract_number!(r.result);
+        assert_eq!(num.as_datum().to_string(), "4+i");
+    }
+
+    #[test]
+    fn explicit_positive() {
+        let mut s = Scanner::new("+4+3i");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 5,
+                result: Ok(TokenKind::Literal(_)),
+            }
+        ));
+        let num = extract_number!(r.result);
+        assert_eq!(num.as_datum().to_string(), "4+3i");
+    }
+
+    #[test]
+    fn negative_real() {
+        let mut s = Scanner::new("-4+3i");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 5,
+                result: Ok(TokenKind::Literal(_)),
+            }
+        ));
+        let num = extract_number!(r.result);
+        assert_eq!(num.as_datum().to_string(), "-4+3i");
+    }
+
+    #[test]
+    fn negative_imaginary() {
+        let mut s = Scanner::new("4-3i");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 4,
+                result: Ok(TokenKind::Literal(_)),
+            }
+        ));
+        let num = extract_number!(r.result);
+        assert_eq!(num.as_datum().to_string(), "4-3i");
+    }
+
+    #[test]
+    fn negative_complex() {
+        let mut s = Scanner::new("-4-3i");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 5,
+                result: Ok(TokenKind::Literal(_)),
+            }
+        ));
+        let num = extract_number!(r.result);
+        assert_eq!(num.as_datum().to_string(), "-4-3i");
     }
 }

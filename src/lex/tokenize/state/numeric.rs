@@ -1,3 +1,4 @@
+use super::Identifier;
 use crate::{
     lex::{
         token::{TokenErrorKind, TokenKind},
@@ -92,10 +93,10 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
             Ok(cond) => {
                 match cond {
                     BreakCondition::Complete => self.complete(&classifier, false),
-                    BreakCondition::Complex { kind, sign, start } => {
+                    BreakCondition::Complex { kind, start } => {
                         // TODO: can scan imaginary be a new object so i can chain map_or_else
                         match self.parse(&classifier) {
-                            Ok(real) => self.scan_imaginary(real, sign, kind, start),
+                            Ok(real) => self.scan_imaginary(real, kind, start),
                             Err(err) => self.fail(err),
                         }
                     }
@@ -144,21 +145,16 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
     fn scan_imaginary(
         &mut self,
         real: Real,
-        sign: Sign,
         kind: ComplexKind,
         start: ScanItem,
     ) -> TokenExtractResult {
-        /*
-        let tok = SignIdentifier::new(self.scan, sign_item).scan()?
-        if let TokenKind::Imaginary(imag) = tok {
-            return Ok(TokenKind::Literal(Literal::Number(Number::complex(
-                real, imag,
-            ))));
+        debug_assert!(matches!(start.1, '+' | '-'));
+        match Identifier::new(self.scan, start).scan() {
+            Ok(TokenKind::Imaginary(imag)) => Ok(TokenKind::Literal(Literal::Number(
+                Number::complex(real, imag),
+            ))),
+            _ => self.fail(TokenErrorKind::ComplexInvalid),
         }
-        else
-            Invalid Imaginary Part
-        */
-        todo!();
     }
 
     fn complete(&mut self, classifier: &Classifier, imaginary: bool) -> TokenExtractResult {
@@ -341,7 +337,6 @@ enum BreakCondition<'str, R> {
     Complete,
     Complex {
         kind: ComplexKind,
-        sign: Sign,
         start: ScanItem<'str>,
     },
     Fraction(Magnitude<R>),
@@ -386,10 +381,6 @@ impl Classifier {
 struct Integral<R>(Magnitude<R>);
 
 impl<R: Radix> Integral<R> {
-    fn has_sign(&self) -> bool {
-        self.0.sign.is_some()
-    }
-
     fn is_empty(&self) -> bool {
         self.0.digits.is_empty()
     }
@@ -437,6 +428,10 @@ impl DecimalInt {
         let ch = item.1;
         let offset = self.0.digits.end;
         match ch {
+            '+' | '-' => ControlFlow::Break(Ok(BreakCondition::Complex {
+                kind: ComplexKind::Cartesian,
+                start: item,
+            })),
             '.' => ControlFlow::Continue(Some(Classifier::Flt(Float {
                 fraction: offset..offset + 1,
                 integral: self.0.clone(),
@@ -458,7 +453,7 @@ impl DecimalInt {
             }
             _ => ControlFlow::Break(Err(TokenErrorKind::NumberInvalid)),
         }
-        // TODO: +-, @
+        // TODO: @
     }
 
     fn parse(&self, input: &str, exactness: Option<Exactness>) -> ParseResult {

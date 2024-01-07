@@ -142,6 +142,7 @@ pub(super) enum TokenErrorKind {
     CharacterExpected,
     CharacterExpectedHex,
     CharacterInvalidHex,
+    ComplexInvalid,
     DirectiveExpected,
     DirectiveInvalid,
     IdentifierEscapeInvalid { at: usize, ch: char },
@@ -218,6 +219,7 @@ impl Display for TokenErrorKind {
             Self::CharacterInvalidHex => {
                 format_char_range_error("character hex-sequence out of valid range", f)
             }
+            Self::ComplexInvalid => f.write_str("invalid complex literal"),
             Self::DirectiveExpected => f.write_str("expected directive: fold-case or no-fold-case"),
             Self::DirectiveInvalid => {
                 f.write_str("unsupported directive: expected fold-case or no-fold-case")
