@@ -157,6 +157,7 @@ pub(super) enum TokenErrorKind {
     NumberInvalidExponent { at: usize, radix: &'static str },
     NumberMalformedExponent { at: usize },
     NumberUnexpectedDecimalPoint { at: usize },
+    NumericError(NumericError),
     RationalInvalid,
     StringEscapeInvalid { at: usize, ch: char },
     StringExpectedHex { at: usize },
@@ -255,6 +256,7 @@ impl Display for TokenErrorKind {
                 )
             }
             Self::NumberUnexpectedDecimalPoint { .. } => f.write_str("unexpected decimal point"),
+            Self::NumericError(err) => write!(f, "numeric error: {err}"),
             Self::RationalInvalid => {
                 f.write_str("rational literals must be composed of integer components")
             }
@@ -293,7 +295,7 @@ impl From<ParseIntError> for TokenErrorKind {
 
 impl From<NumericError> for TokenErrorKind {
     fn from(value: NumericError) -> Self {
-        todo!()
+        Self::NumericError(value)
     }
 }
 
@@ -1154,6 +1156,16 @@ mod tests {
                 err.to_string(),
                 "rational literals must be composed of integer components"
             );
+        }
+
+        #[test]
+        fn display_numeric_error() {
+            let err = TokenError {
+                kind: NumericError::DivideByZero.into(),
+                span: 0..1,
+            };
+
+            assert_eq!(err.to_string(), "numeric error: divide by zero");
         }
     }
 

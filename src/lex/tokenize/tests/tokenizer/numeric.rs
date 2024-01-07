@@ -273,6 +273,7 @@ mod integer {
 
 mod rational {
     use super::*;
+    use crate::number::NumericError;
 
     #[test]
     fn simple() {
@@ -363,7 +364,7 @@ mod rational {
             TokenExtract {
                 start: 0,
                 end: 3,
-                result: Err(TokenErrorKind::Unimplemented(_)),
+                result: Err(TokenErrorKind::NumericError(NumericError::DivideByZero)),
             }
         ));
     }
@@ -481,7 +482,7 @@ mod rational {
             r,
             TokenExtract {
                 start: 0,
-                end: 22,
+                end: 23,
                 result: Ok(TokenKind::Literal(Literal::Number(_))),
             }
         ));
@@ -530,7 +531,7 @@ mod rational {
             TokenExtract {
                 start: 0,
                 end: 4,
-                result: Err(TokenErrorKind::Unimplemented(_)),
+                result: Err(TokenErrorKind::RationalInvalid),
             }
         ));
     }
@@ -552,7 +553,7 @@ mod rational {
             TokenExtract {
                 start: 0,
                 end: 4,
-                result: Err(TokenErrorKind::Unimplemented(_)),
+                result: Err(TokenErrorKind::RationalInvalid),
             }
         ));
     }
@@ -574,7 +575,7 @@ mod rational {
             TokenExtract {
                 start: 0,
                 end: 5,
-                result: Err(TokenErrorKind::Unimplemented(_)),
+                result: Err(TokenErrorKind::RationalInvalid),
             }
         ));
     }
@@ -618,7 +619,7 @@ mod rational {
             TokenExtract {
                 start: 0,
                 end: 5,
-                result: Err(TokenErrorKind::Unimplemented(_)),
+                result: Err(TokenErrorKind::RationalInvalid),
             }
         ));
     }
@@ -640,7 +641,7 @@ mod rational {
             TokenExtract {
                 start: 0,
                 end: 5,
-                result: Err(TokenErrorKind::Unimplemented(_)),
+                result: Err(TokenErrorKind::RationalInvalid),
             }
         ));
     }
@@ -1772,6 +1773,28 @@ mod complex {
         let tok = ok_or_fail!(r.result);
         let r = extract_or_fail!(tok, TokenKind::Imaginary);
         assert_eq!(r.to_string(), "4/5");
+    }
+
+    #[test]
+    fn rational_imaginary_missing_sign() {
+        let mut s = Scanner::new("4/5i");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 4,
+                result: Err(TokenErrorKind::ImaginaryMissingSign),
+            }
+        ));
     }
 
     #[test]

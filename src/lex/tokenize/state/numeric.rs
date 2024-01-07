@@ -102,9 +102,10 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
                     BreakCondition::Fraction(m) => {
                         // TODO: handle inexact e.g #i4/3 => 1.3333...
                         // this means numerator's parse should not apply inexact modifier too early
-                        // TODO: can scan denominator be a new object so i can chain map_or_else
                         match m.exact_parse(self.extract_str()) {
-                            Ok(numerator) => self.scan_denominator(numerator),
+                            Ok(numerator) => {
+                                self.scan_denominator(numerator, classifier.has_sign())
+                            }
                             Err(err) => self.fail(err),
                         }
                     }
@@ -128,22 +129,16 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
         }
     }
 
-    fn scan_denominator(&mut self, numerator: Integer) -> TokenExtractResult {
-        todo!();
-        /*
-        self.classifier.reset_as_denominator();
-        if let Some(err) = self.classify() {
-            self.fail(err)
-        } else if let Continuation::Complete(Real::Integer(denominator)) = self.parse()? {
+    fn scan_denominator(&mut self, numerator: Integer, explicit_sign: bool) -> TokenExtractResult {
+        let (denominator, imaginary) = DenominatorNumber::new(self.scan).scan::<Decimal>()?;
+        if imaginary && !explicit_sign {
+            Err(TokenErrorKind::ImaginaryMissingSign)
+        } else {
             Ok(real_to_token(
                 Real::reduce(numerator, denominator)?,
-                self.classifier.imaginary,
+                imaginary,
             ))
-        } else {
-            // TODO: must be an integer
-            todo!();
         }
-        */
     }
 
     fn scan_imaginary(
@@ -219,6 +214,58 @@ impl ClassifierInit {
                 ..Default::default()
             })),
         }
+    }
+}
+
+struct DenominatorNumber<'me, 'str> {
+    scan: &'me mut Scanner<'str>,
+    start: usize,
+}
+
+impl<'me, 'str> DenominatorNumber<'me, 'str> {
+    fn new(scan: &'me mut Scanner<'str>) -> Self {
+        let start = scan.pos();
+        Self { scan, start }
+    }
+
+    fn scan<R: Radix + Debug + Default>(&mut self) -> Result<(Integer, bool), TokenErrorKind> {
+        let mut brk = Ok(BreakCondition::<R>::Complete);
+        let mut classifier = Integral(Magnitude {
+            sign: Some(Sign::Positive),
+            ..Default::default()
+        });
+        while let Some(item) = self.scan.next_if_not_delimiter() {
+            match classifier.classify(item) {
+                ControlFlow::Continue(()) => (),
+                ControlFlow::Break(b) => {
+                    brk = b;
+                    break;
+                }
+            }
+        }
+        match brk {
+            Ok(BreakCondition::Complete) => {
+                Ok((classifier.0.exact_parse(self.extract_str())?, false))
+            }
+            Ok(BreakCondition::Imaginary) => {
+                if self.scan.next_if_not_delimiter().is_some() {
+                    Err(self.fail())
+                } else {
+                    Ok((classifier.0.exact_parse(self.extract_str())?, true))
+                }
+            }
+            _ => Err(self.fail()),
+        }
+    }
+
+    fn fail(&mut self) -> TokenErrorKind {
+        self.scan.end_of_token();
+        TokenErrorKind::RationalInvalid
+    }
+
+    fn extract_str(&mut self) -> &str {
+        let end = self.scan.pos();
+        self.scan.lexeme(self.start..end)
     }
 }
 
@@ -341,6 +388,10 @@ impl Classifier {
 struct Integral<R>(Magnitude<R>);
 
 impl<R: Radix> Integral<R> {
+    fn has_sign(&self) -> bool {
+        self.0.sign.is_some()
+    }
+
     fn classify<'str>(&mut self, item: ScanItem<'str>) -> RadixControl<'str, R> {
         let (idx, ch) = item;
         match ch {
@@ -348,6 +399,7 @@ impl<R: Radix> Integral<R> {
                 if self.0.digits.is_empty() {
                     if self.0.sign.is_none() {
                         self.0.sign = Some(super::char_to_sign(ch));
+                        self.0.digits = 1..1;
                         ControlFlow::Continue(())
                     } else {
                         ControlFlow::Break(Err(TokenErrorKind::NumberInvalid))
@@ -366,9 +418,6 @@ impl<R: Radix> Integral<R> {
             })),
             'i' | 'I' => ControlFlow::Break(Ok(BreakCondition::Imaginary)),
             _ if self.0.radix.is_digit(ch) => {
-                if self.0.digits.is_empty() {
-                    self.0.digits = idx..idx;
-                }
                 self.0.digits.end += 1;
                 ControlFlow::Continue(())
             }
