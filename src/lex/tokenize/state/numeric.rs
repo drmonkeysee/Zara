@@ -93,6 +93,7 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
                 match cond {
                     BreakCondition::Complete => self.complete(&classifier, false),
                     BreakCondition::Complex { kind, sign, start } => {
+                        // TODO: can scan imaginary be a new object so i can chain map_or_else
                         match self.parse(&classifier) {
                             Ok(real) => self.scan_imaginary(real, sign, kind, start),
                             Err(err) => self.fail(err),
@@ -101,6 +102,7 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
                     BreakCondition::Fraction(m) => {
                         // TODO: handle inexact e.g #i4/3 => 1.3333...
                         // this means numerator's parse should not apply inexact modifier too early
+                        // TODO: can scan denominator be a new object so i can chain map_or_else
                         match m.exact_parse(self.extract_str()) {
                             Ok(numerator) => self.scan_denominator(numerator),
                             Err(err) => self.fail(err),
@@ -165,10 +167,8 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
     }
 
     fn complete(&mut self, classifier: &Classifier, imaginary: bool) -> TokenExtractResult {
-        match self.parse(&classifier) {
-            Ok(r) => Ok(real_to_token(r, imaginary)),
-            Err(err) => self.fail(err),
-        }
+        self.parse(&classifier)
+            .map_or_else(|err| self.fail(err), |r| Ok(real_to_token(r, imaginary)))
     }
 
     fn fail(&mut self, err: TokenErrorKind) -> TokenExtractResult {
@@ -178,8 +178,7 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
 
     fn parse(&mut self, classifier: &Classifier) -> ParseResult {
         let exactness = self.exactness;
-        let input = self.extract_str();
-        classifier.parse(input, exactness)
+        classifier.parse(self.extract_str(), exactness)
     }
 
     fn extract_str(&mut self) -> &str {
