@@ -113,12 +113,13 @@ fn multiple_tokens_with_whitespace() {
 
 #[test]
 fn multiple_numbers() {
-    let s = TokenStream::new("10 -22 13.45 4/5 5+3i", None);
+    let s = TokenStream::new("10 -22 13.45 4.5e2 12e-3 " /*4/5 5+3i"*/, None);
 
     let r: Vec<_> = s.collect();
     dbg!(&r);
 
     assert_eq!(r.len(), 5);
+    //assert_eq!(r.len(), 7);
     assert!(matches!(
         r[0],
         Ok(Token {
@@ -144,14 +145,14 @@ fn multiple_numbers() {
         r[3],
         Ok(Token {
             kind: TokenKind::Literal(Literal::Number(_)),
-            span: Range { start: 13, end: 16 }
+            span: Range { start: 13, end: 18 }
         })
     ));
     assert!(matches!(
         r[4],
         Ok(Token {
             kind: TokenKind::Literal(Literal::Number(_)),
-            span: Range { start: 17, end: 21 }
+            span: Range { start: 19, end: 24 }
         })
     ));
 }

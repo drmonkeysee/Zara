@@ -75,7 +75,7 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
 
     pub(in crate::lex::tokenize) fn scan(&mut self) -> TokenExtractResult {
         let mut brk = Ok(BreakCondition::Complete);
-        let mut classifier = self.init.new_classifier(self.start.0);
+        let mut classifier = self.init.new_classifier();
         while let Some(item) = self.scan.next_if_not_delimiter() {
             match classifier.classify(item) {
                 ControlFlow::Continue(None) => (),
@@ -195,35 +195,29 @@ enum ClassifierInit {
 }
 
 impl ClassifierInit {
-    fn new_classifier(&self, start: usize) -> Classifier {
+    fn new_classifier(&self) -> Classifier {
         match self {
             Self::Float => Classifier::Flt(Float {
-                fraction: start..start + 2,
+                fraction: 0..2,
                 ..Default::default()
             }),
             Self::New => Classifier::Int(DecimalInt(Magnitude {
-                digits: start..start + 1,
+                digits: 0..1,
                 ..Default::default()
             })),
-            Self::SignedFloat(s) => {
-                let idx = start + 1;
-                Classifier::Flt(Float {
-                    fraction: idx..idx + 2,
-                    integral: Magnitude {
-                        sign: Some(*s),
-                        ..Default::default()
-                    },
-                    ..Default::default()
-                })
-            }
-            Self::SignedNumber(s) => {
-                let idx = start + 1;
-                Classifier::Int(DecimalInt(Magnitude {
-                    digits: idx..idx + 1,
+            Self::SignedFloat(s) => Classifier::Flt(Float {
+                fraction: 1..3,
+                integral: Magnitude {
                     sign: Some(*s),
                     ..Default::default()
-                }))
-            }
+                },
+                ..Default::default()
+            }),
+            Self::SignedNumber(s) => Classifier::Int(DecimalInt(Magnitude {
+                digits: 1..2,
+                sign: Some(*s),
+                ..Default::default()
+            })),
         }
     }
 }
@@ -371,7 +365,7 @@ impl<R: Radix> Integral<R> {
                 radix: R::NAME,
             })),
             'i' | 'I' => ControlFlow::Break(Ok(BreakCondition::Imaginary)),
-            _ if ch.is_ascii_digit() => {
+            _ if self.0.radix.is_digit(ch) => {
                 if self.0.digits.is_empty() {
                     self.0.digits = idx..idx;
                 }
@@ -389,24 +383,25 @@ struct DecimalInt(Magnitude<Decimal>);
 
 impl DecimalInt {
     fn classify<'str>(&mut self, item: ScanItem<'str>) -> DecimalControl<'str> {
-        let (idx, ch) = item;
+        let ch = item.1;
+        let offset = self.0.digits.end;
         match ch {
             '.' => ControlFlow::Continue(Some(Classifier::Flt(Float {
-                fraction: idx..idx + 1,
+                fraction: offset..offset + 1,
                 integral: self.0.clone(),
             }))),
             '/' => ControlFlow::Break(Ok(BreakCondition::Fraction(self.0.clone()))),
             'e' | 'E' => ControlFlow::Continue(Some(Classifier::Sci(Scientific {
-                exponent: idx..idx + 1,
+                exponent: offset..offset + 1,
                 significand: Float {
                     integral: self.0.clone(),
-                    fraction: idx..idx,
+                    fraction: offset..offset,
                     ..Default::default()
                 },
                 ..Default::default()
             }))),
             'i' | 'I' => ControlFlow::Break(Ok(BreakCondition::Imaginary)),
-            _ if ch.is_ascii_digit() => {
+            _ if self.0.radix.is_digit(ch) => {
                 self.0.digits.end += 1;
                 ControlFlow::Continue(None)
             }
@@ -423,6 +418,49 @@ impl DecimalInt {
     }
 }
 
+type ExactParseResult = Result<Integer, TokenErrorKind>;
+
+// NOTE: all ranges are relative to parse string, not the token scanner;
+// e.g. all magnitude digits start at 0 or 1 (if sign is explicit).
+#[derive(Clone, Debug, Default)]
+struct Magnitude<R> {
+    digits: Range<usize>,
+    radix: R,
+    sign: Option<Sign>,
+}
+
+impl<R: Radix + Debug> Magnitude<R> {
+    fn exact_parse(&self, input: &str) -> ExactParseResult {
+        // TODO: use magnitude start instead of assuming input starts at sign
+        if let Some(sign_mag) = input.get(..self.digits.end) {
+            i64::from_str_radix(sign_mag, R::BASE).map_or_else(
+                |_| self.parse_sign_magnitude(sign_mag),
+                |val| Ok(val.into()),
+            )
+        } else {
+            Err(TokenErrorKind::NumberInvalid)
+        }
+    }
+
+    fn parse_sign_magnitude(&self, input: &str) -> ExactParseResult {
+        if let Some(mag) = input.get(self.digits.start..) {
+            u64::from_str_radix(mag, R::BASE).map_or_else(
+                |_| self.parse_multi_precision(input),
+                |val| {
+                    let sign_mag = (self.sign.unwrap_or(Sign::Positive), val);
+                    Ok(sign_mag.into())
+                },
+            )
+        } else {
+            Err(TokenErrorKind::NumberInvalid)
+        }
+    }
+
+    fn parse_multi_precision(&self, input: &str) -> ExactParseResult {
+        todo!();
+    }
+}
+
 #[derive(Clone, Debug, Default)]
 struct Float {
     fraction: Range<usize>,
@@ -432,18 +470,19 @@ struct Float {
 impl Float {
     fn classify<'str>(&mut self, item: ScanItem<'str>) -> DecimalControl<'str> {
         let (idx, ch) = item;
+        let offset = self.fraction.end;
         match ch {
             '.' => ControlFlow::Break(Err(TokenErrorKind::NumberUnexpectedDecimalPoint {
                 at: idx,
             })),
             '/' => ControlFlow::Break(Err(TokenErrorKind::RationalInvalid)),
             'e' | 'E' => ControlFlow::Continue(Some(Classifier::Sci(Scientific {
-                exponent: idx..idx + 1,
+                exponent: offset..offset + 1,
                 significand: self.clone(),
                 ..Default::default()
             }))),
             'i' | 'I' => ControlFlow::Break(Ok(BreakCondition::Imaginary)),
-            _ if ch.is_ascii_digit() => {
+            _ if self.integral.radix.is_digit(ch) => {
                 self.fraction.end += 1;
                 ControlFlow::Continue(None)
             }
@@ -502,7 +541,7 @@ impl Scientific {
             } else {
                 Ok(BreakCondition::Imaginary)
             }),
-            _ if ch.is_ascii_digit() => {
+            _ if self.significand.integral.radix.is_digit(ch) => {
                 self.exponent.end += 1;
                 ControlFlow::Continue(None)
             }
@@ -528,46 +567,6 @@ impl Scientific {
         TokenErrorKind::NumberMalformedExponent {
             at: self.exponent.start,
         }
-    }
-}
-
-type ExactParseResult = Result<Integer, TokenErrorKind>;
-
-#[derive(Clone, Debug, Default)]
-struct Magnitude<R> {
-    digits: Range<usize>,
-    radix: R,
-    sign: Option<Sign>,
-}
-
-impl<R: Radix + Debug> Magnitude<R> {
-    fn exact_parse(&self, input: &str) -> ExactParseResult {
-        // TODO: use magnitude start instead of assuming input starts at sign
-        if let Some(sign_mag) = input.get(..self.digits.end) {
-            i64::from_str_radix(sign_mag, R::BASE).map_or_else(
-                |_| self.parse_sign_magnitude(sign_mag),
-                |val| Ok(val.into()),
-            )
-        } else {
-            Err(TokenErrorKind::NumberInvalid)
-        }
-    }
-
-    fn parse_sign_magnitude(&self, input: &str) -> ExactParseResult {
-        if let Some(mag) = input.get(self.digits.start..) {
-            return u64::from_str_radix(mag, R::BASE).map_or_else(
-                |_| self.parse_multi_precision(input),
-                |val| {
-                    let sign_mag = (self.sign.unwrap_or(Sign::Positive), val);
-                    Ok(sign_mag.into())
-                },
-            );
-        }
-        Err(TokenErrorKind::NumberInvalid)
-    }
-
-    fn parse_multi_precision(&self, input: &str) -> ExactParseResult {
-        todo!();
     }
 }
 
