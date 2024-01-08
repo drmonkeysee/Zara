@@ -127,14 +127,20 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
     }
 
     fn scan_denominator(&mut self, numerator: Integer, explicit_sign: bool) -> TokenExtractResult {
-        let (denominator, imaginary) = DenominatorNumber::new(self.scan).scan::<Decimal>()?;
-        if imaginary && !explicit_sign {
-            Err(TokenErrorKind::ImaginaryMissingSign)
-        } else {
-            Ok(real_to_token(
-                Real::reduce(numerator, denominator)?,
-                imaginary,
-            ))
+        let mut d = DenominatorNumber::new(self.scan);
+        let (denominator, cond) = d.scan::<Decimal>()?;
+        let real = Real::reduce(numerator, denominator)?;
+        match cond {
+            BreakCondition::Complete => Ok(real_to_token(real, false)),
+            BreakCondition::Complex { kind, start } => todo!(),
+            BreakCondition::Imaginary => {
+                if explicit_sign {
+                    Ok(real_to_token(real, true))
+                } else {
+                    Err(TokenErrorKind::ImaginaryMissingSign)
+                }
+            }
+            BreakCondition::Fraction(_) => unreachable!(),
         }
     }
 
@@ -155,7 +161,7 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
     }
 
     fn complete(&mut self, classifier: &Classifier, imaginary: bool) -> TokenExtractResult {
-        self.parse(&classifier)
+        self.parse(classifier)
             .map_or_else(|err| self.fail(err), |r| Ok(real_to_token(r, imaginary)))
     }
 
@@ -198,7 +204,6 @@ impl ClassifierSpec {
                     sign: Some(*s),
                     ..Default::default()
                 },
-                ..Default::default()
             }),
             Self::SignedNumber(s) => Classifier::Int(DecimalInt(Magnitude {
                 digits: 1..2,
@@ -220,7 +225,9 @@ impl<'me, 'str> DenominatorNumber<'me, 'str> {
         Self { scan, start }
     }
 
-    fn scan<R: Radix + Debug + Default>(&mut self) -> Result<(Integer, bool), TokenErrorKind> {
+    fn scan<R: Radix + Debug + Default>(
+        &mut self,
+    ) -> Result<(Integer, BreakCondition<R>), TokenErrorKind> {
         let mut brk = Ok(BreakCondition::<R>::Complete);
         let mut classifier = Integral(Magnitude {
             sign: Some(Sign::Positive),
@@ -236,23 +243,27 @@ impl<'me, 'str> DenominatorNumber<'me, 'str> {
             }
         }
         match brk {
-            Ok(BreakCondition::Complete) => classifier
-                .0
-                .exact_parse(self.get_lexeme())
-                .map_err(|_| self.fail())
-                .map(|int| (int, false)),
-            Ok(BreakCondition::Complex { kind, start }) => todo!(),
-            Ok(BreakCondition::Imaginary) => {
-                if self.scan.next_if_not_delimiter().is_some() {
-                    Err(self.fail())
-                } else {
-                    classifier
+            Ok(cond) => Ok((
+                match cond {
+                    BreakCondition::Complete => classifier
                         .0
                         .exact_parse(self.get_lexeme())
-                        .map_err(|_| self.fail())
-                        .map(|int| (int, true))
-                }
-            }
+                        .map_err(|_| self.fail()),
+                    BreakCondition::Complex { kind, start } => todo!(),
+                    BreakCondition::Fraction(_) => Err(self.fail()),
+                    BreakCondition::Imaginary => {
+                        if self.scan.next_if_not_delimiter().is_some() {
+                            Err(self.fail())
+                        } else {
+                            classifier
+                                .0
+                                .exact_parse(self.get_lexeme())
+                                .map_err(|_| self.fail())
+                        }
+                    }
+                }?,
+                cond,
+            )),
             _ => Err(self.fail()),
         }
     }
@@ -319,7 +330,7 @@ pub(super) fn nan(imaginary: bool) -> TokenKind {
     real_to_token(f64::NAN, imaginary)
 }
 
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug)]
 enum ComplexKind {
     Cartesian,
     Polar,
@@ -445,7 +456,6 @@ impl DecimalInt {
                 significand: Float {
                     integral: self.0.clone(),
                     fraction: offset..offset,
-                    ..Default::default()
                 },
                 ..Default::default()
             }))),
