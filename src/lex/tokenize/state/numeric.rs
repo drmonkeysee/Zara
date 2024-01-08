@@ -132,7 +132,7 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
         let real = Real::reduce(numerator, denominator)?;
         match cond {
             BreakCondition::Complete => Ok(real_to_token(real, false)),
-            BreakCondition::Complex { kind, start } => todo!(),
+            BreakCondition::Complex { kind, start } => self.scan_imaginary(real, kind, start),
             BreakCondition::Imaginary => {
                 if explicit_sign {
                     Ok(real_to_token(real, true))
@@ -245,11 +245,10 @@ impl<'me, 'str> DenominatorNumber<'me, 'str> {
         match brk {
             Ok(cond) => Ok((
                 match cond {
-                    BreakCondition::Complete => classifier
+                    BreakCondition::Complete | BreakCondition::Complex { .. } => classifier
                         .0
                         .exact_parse(self.get_lexeme())
                         .map_err(|_| self.fail()),
-                    BreakCondition::Complex { kind, start } => todo!(),
                     BreakCondition::Fraction(_) => Err(self.fail()),
                     BreakCondition::Imaginary => {
                         if self.scan.next_if_not_delimiter().is_some() {
