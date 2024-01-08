@@ -587,6 +587,28 @@ mod rational {
     }
 
     #[test]
+    fn missing_denominator() {
+        let mut s = Scanner::new("4/");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 2,
+                result: Err(TokenErrorKind::RationalInvalid),
+            }
+        ));
+    }
+
+    #[test]
     fn float_numerator() {
         let mut s = Scanner::new("4.2/5");
         let start = some_or_fail!(s.next_token());
@@ -1845,7 +1867,7 @@ mod imaginary {
             TokenExtract {
                 start: 0,
                 end: 5,
-                result: Err(TokenErrorKind::Unimplemented(_)),
+                result: Err(TokenErrorKind::ImaginaryInvalid),
             }
         ));
     }
@@ -2452,5 +2474,27 @@ mod complex {
         ));
         let num = extract_number!(r.result);
         assert_eq!(num.as_datum().to_string(), "-4-3i");
+    }
+
+    #[test]
+    fn missing_imaginary() {
+        let mut s = Scanner::new("4+");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 2,
+                result: Err(TokenErrorKind::ComplexInvalid),
+            }
+        ));
     }
 }

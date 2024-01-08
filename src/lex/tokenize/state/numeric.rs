@@ -16,9 +16,9 @@ use std::{
 };
 
 pub(in crate::lex::tokenize) struct DecimalNumber<'me, 'str> {
-    init: ClassifierInit,
     exactness: Option<Exactness>,
     scan: &'me mut Scanner<'str>,
+    spec: ClassifierSpec,
     start: ScanItem<'str>,
 }
 
@@ -29,9 +29,9 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
         start: ScanItem<'str>,
     ) -> Self {
         Self {
-            init: ClassifierInit::New,
             exactness: None,
             scan,
+            spec: ClassifierSpec::New,
             start,
         }
     }
@@ -42,9 +42,9 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
         start: ScanItem<'str>,
     ) -> Self {
         Self {
-            init: ClassifierInit::SignedNumber(sign),
             exactness: None,
             scan,
+            spec: ClassifierSpec::SignedNumber(sign),
             start,
         }
     }
@@ -54,9 +54,9 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
         start: ScanItem<'str>,
     ) -> Self {
         Self {
-            init: ClassifierInit::Float,
             exactness: None,
             scan,
+            spec: ClassifierSpec::Float,
             start,
         }
     }
@@ -67,16 +67,16 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
         start: ScanItem<'str>,
     ) -> Self {
         Self {
-            init: ClassifierInit::SignedFloat(sign),
             exactness: None,
             scan,
+            spec: ClassifierSpec::SignedFloat(sign),
             start,
         }
     }
 
     pub(in crate::lex::tokenize) fn scan(&mut self) -> TokenExtractResult {
         let mut brk = Ok(BreakCondition::Complete);
-        let mut classifier = self.init.new_classifier();
+        let mut classifier = self.spec.new_classifier();
         while let Some(item) = self.scan.next_if_not_delimiter() {
             match classifier.classify(item) {
                 ControlFlow::Continue(None) => (),
@@ -93,16 +93,12 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
             Ok(cond) => {
                 match cond {
                     BreakCondition::Complete => self.complete(&classifier, false),
-                    BreakCondition::Complex { kind, start } => {
-                        // TODO: can scan imaginary be a new object so i can chain map_or_else
-                        match self.parse(&classifier) {
-                            Ok(real) => self.scan_imaginary(real, kind, start),
-                            Err(err) => self.fail(err),
-                        }
-                    }
+                    BreakCondition::Complex { kind, start } => match self.parse(&classifier) {
+                        Ok(real) => self.scan_imaginary(real, kind, start),
+                        Err(err) => self.fail(err),
+                    },
                     BreakCondition::Fraction(m) => {
                         // TODO: handle inexact e.g #i4/3 => 1.3333...
-                        // this means numerator's parse should not apply inexact modifier too early
                         match m.exact_parse(self.get_lexeme()) {
                             Ok(numerator) => {
                                 self.scan_denominator(numerator, classifier.has_sign())
@@ -150,9 +146,10 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
     ) -> TokenExtractResult {
         debug_assert!(matches!(start.1, '+' | '-'));
         match Identifier::new(self.scan, start).scan() {
-            Ok(TokenKind::Imaginary(imag)) => Ok(TokenKind::Literal(Literal::Number(
-                Number::complex(real, imag),
-            ))),
+            Ok(TokenKind::Imaginary(imag)) => Ok(TokenKind::Literal(Literal::Number(match kind {
+                ComplexKind::Cartesian => Number::complex(real, imag),
+                ComplexKind::Polar => todo!(),
+            }))),
             _ => self.fail(TokenErrorKind::ComplexInvalid),
         }
     }
@@ -177,14 +174,14 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
     }
 }
 
-enum ClassifierInit {
+enum ClassifierSpec {
     Float,
     New,
     SignedFloat(Sign),
     SignedNumber(Sign),
 }
 
-impl ClassifierInit {
+impl ClassifierSpec {
     fn new_classifier(&self) -> Classifier {
         match self {
             Self::Float => Classifier::Flt(Float {
@@ -239,14 +236,20 @@ impl<'me, 'str> DenominatorNumber<'me, 'str> {
             }
         }
         match brk {
-            Ok(BreakCondition::Complete) => {
-                Ok((classifier.0.exact_parse(self.get_lexeme())?, false))
-            }
+            Ok(BreakCondition::Complete) => classifier
+                .0
+                .exact_parse(self.get_lexeme())
+                .map_err(|_| self.fail())
+                .map(|int| (int, false)),
             Ok(BreakCondition::Imaginary) => {
-                if classifier.is_empty() || self.scan.next_if_not_delimiter().is_some() {
+                if self.scan.next_if_not_delimiter().is_some() {
                     Err(self.fail())
                 } else {
-                    Ok((classifier.0.exact_parse(self.get_lexeme())?, true))
+                    classifier
+                        .0
+                        .exact_parse(self.get_lexeme())
+                        .map_err(|_| self.fail())
+                        .map(|int| (int, true))
                 }
             }
             _ => Err(self.fail()),
@@ -381,15 +384,11 @@ impl Classifier {
 struct Integral<R>(Magnitude<R>);
 
 impl<R: Radix> Integral<R> {
-    fn is_empty(&self) -> bool {
-        self.0.digits.is_empty()
-    }
-
     fn classify<'str>(&mut self, item: ScanItem<'str>) -> RadixControl<'str, R> {
         let (idx, ch) = item;
         match ch {
             '+' | '-' => {
-                if self.is_empty() {
+                if self.0.digits.is_empty() {
                     if self.0.sign.is_none() {
                         self.0.sign = Some(super::char_to_sign(ch));
                         self.0.digits = 1..1;
@@ -477,15 +476,16 @@ struct Magnitude<R> {
 
 impl<R: Radix + Debug> Magnitude<R> {
     fn exact_parse(&self, input: &str) -> ExactParseResult {
-        // TODO: use magnitude start instead of assuming input starts at sign
-        if let Some(sign_mag) = input.get(..self.digits.end) {
-            i64::from_str_radix(sign_mag, R::BASE).map_or_else(
-                |_| self.parse_sign_magnitude(sign_mag),
-                |val| Ok(val.into()),
-            )
-        } else {
-            Err(TokenErrorKind::NumberInvalid)
+        if !self.digits.is_empty() {
+            // TODO: use magnitude start instead of assuming input starts at sign
+            if let Some(sign_mag) = input.get(..self.digits.end) {
+                return i64::from_str_radix(sign_mag, R::BASE).map_or_else(
+                    |_| self.parse_sign_magnitude(sign_mag),
+                    |val| Ok(val.into()),
+                );
+            }
         }
+        Err(TokenErrorKind::NumberInvalid)
     }
 
     fn parse_sign_magnitude(&self, input: &str) -> ExactParseResult {
@@ -503,7 +503,7 @@ impl<R: Radix + Debug> Magnitude<R> {
     }
 
     fn parse_multi_precision(&self, input: &str) -> ExactParseResult {
-        todo!();
+        Err(TokenErrorKind::Unimplemented(input.to_owned()))
     }
 }
 
