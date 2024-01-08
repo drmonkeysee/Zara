@@ -2297,9 +2297,9 @@ mod imaginary {
         assert!(matches!(
             r,
             TokenExtract {
-                start: 8,
+                start: 0,
                 end: 10,
-                result: Err(TokenErrorKind::Unimplemented(_)),
+                result: Err(TokenErrorKind::ComplexInvalid),
             }
         ));
     }

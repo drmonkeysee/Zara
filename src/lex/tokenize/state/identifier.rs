@@ -1,4 +1,4 @@
-use super::{DecimalNumber, FreeText, FreeTextPolicy};
+use super::{Decimal, DecimalNumber, FreeText, FreeTextPolicy, Radix};
 use crate::lex::{
     token::{TokenErrorKind, TokenKind},
     tokenize::{
@@ -56,7 +56,7 @@ impl<'me, 'str> Identifier<'me, 'str> {
 
     fn continue_peculiar(&mut self, next_ch: Option<char>) -> TokenExtractResult {
         if let Some(ch) = next_ch {
-            if ch.is_ascii_digit() {
+            if Decimal.is_digit(ch) {
                 debug_assert!(self.peculiar_state.is_some());
                 match self.peculiar_state.as_ref().unwrap() {
                     PeculiarState::DefiniteIdentifier => self.standard(),

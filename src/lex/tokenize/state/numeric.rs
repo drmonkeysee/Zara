@@ -180,6 +180,58 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
     }
 }
 
+struct RadixNumber<'me, 'str, R> {
+    classifier: Integral<R>,
+    scan: &'me mut Scanner<'str>,
+    start: ScanItem<'str>,
+}
+
+pub(in crate::lex::tokenize) trait Radix {
+    const BASE: u32;
+    const NAME: &'static str;
+
+    fn is_digit(&self, ch: char) -> bool;
+}
+
+#[derive(Clone, Copy, Debug, Default)]
+pub(in crate::lex::tokenize) struct Decimal;
+
+impl Radix for Decimal {
+    const BASE: u32 = 10;
+    const NAME: &'static str = "decimal";
+
+    fn is_digit(&self, ch: char) -> bool {
+        ch.is_ascii_digit()
+    }
+}
+
+// TODO: handle inexact
+pub(super) fn imaginary(sign: Sign) -> TokenKind {
+    real_to_token(
+        match sign {
+            Sign::Negative => -1,
+            Sign::Positive => 1,
+            Sign::Zero => 0,
+        },
+        true,
+    )
+}
+
+pub(super) fn infinity(sign: Sign, imaginary: bool) -> TokenKind {
+    real_to_token(
+        match sign {
+            Sign::Negative => f64::NEG_INFINITY,
+            Sign::Positive => f64::INFINITY,
+            Sign::Zero => 0.0,
+        },
+        imaginary,
+    )
+}
+
+pub(super) fn nan(imaginary: bool) -> TokenKind {
+    real_to_token(f64::NAN, imaginary)
+}
+
 enum ClassifierSpec {
     Float,
     New,
@@ -225,7 +277,7 @@ impl<'me, 'str> DenominatorNumber<'me, 'str> {
         Self { scan, start }
     }
 
-    fn scan<R: Radix + Debug + Default>(
+    fn scan<R: Radix + Clone + Debug + Default>(
         &mut self,
     ) -> Result<(Integer, BreakCondition<R>), TokenErrorKind> {
         let mut brk = Ok(BreakCondition::<R>::Complete);
@@ -275,58 +327,6 @@ impl<'me, 'str> DenominatorNumber<'me, 'str> {
     fn get_lexeme(&mut self) -> &str {
         self.scan.current_lexeme_at(self.start)
     }
-}
-
-struct RadixNumber<'me, 'str, R> {
-    classifier: Integral<R>,
-    scan: &'me mut Scanner<'str>,
-    start: ScanItem<'str>,
-}
-
-pub(in crate::lex::tokenize) trait Radix {
-    const BASE: u32;
-    const NAME: &'static str;
-
-    fn is_digit(&self, ch: char) -> bool;
-}
-
-#[derive(Clone, Copy, Debug, Default)]
-struct Decimal;
-
-impl Radix for Decimal {
-    const BASE: u32 = 10;
-    const NAME: &'static str = "decimal";
-
-    fn is_digit(&self, ch: char) -> bool {
-        ch.is_ascii_digit()
-    }
-}
-
-// TODO: handle inexact
-pub(super) fn imaginary(sign: Sign) -> TokenKind {
-    real_to_token(
-        match sign {
-            Sign::Negative => -1,
-            Sign::Positive => 1,
-            Sign::Zero => 0,
-        },
-        true,
-    )
-}
-
-pub(super) fn infinity(sign: Sign, imaginary: bool) -> TokenKind {
-    real_to_token(
-        match sign {
-            Sign::Negative => f64::NEG_INFINITY,
-            Sign::Positive => f64::INFINITY,
-            Sign::Zero => 0.0,
-        },
-        imaginary,
-    )
-}
-
-pub(super) fn nan(imaginary: bool) -> TokenKind {
-    real_to_token(f64::NAN, imaginary)
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -391,91 +391,6 @@ impl Classifier {
     }
 }
 
-#[derive(Debug)]
-struct Integral<R>(Magnitude<R>);
-
-impl<R: Radix + Debug> Integral<R> {
-    fn classify<'str>(&mut self, item: ScanItem<'str>) -> RadixControl<'str, R> {
-        let (idx, ch) = item;
-        match ch {
-            '+' | '-' => {
-                if self.0.digits.is_empty() {
-                    if self.0.sign.is_none() {
-                        self.0.sign = Some(super::char_to_sign(ch));
-                        self.0.digits = 1..1;
-                        ControlFlow::Continue(())
-                    } else {
-                        ControlFlow::Break(Err(TokenErrorKind::NumberInvalid))
-                    }
-                } else {
-                    ControlFlow::Break(Ok(BreakCondition::Complex {
-                        kind: ComplexKind::Cartesian,
-                        start: item,
-                    }))
-                }
-            }
-            '.' => ControlFlow::Break(Err(TokenErrorKind::NumberInvalidDecimalPoint {
-                at: idx,
-                radix: R::NAME,
-            })),
-            'e' | 'E' => ControlFlow::Break(Err(TokenErrorKind::NumberInvalidExponent {
-                at: idx,
-                radix: R::NAME,
-            })),
-            'i' | 'I' => ControlFlow::Break(Ok(BreakCondition::Imaginary)),
-            _ if self.0.radix.is_digit(ch) => {
-                self.0.digits.end += 1;
-                ControlFlow::Continue(())
-            }
-            _ => ControlFlow::Break(Err(TokenErrorKind::NumberInvalid)),
-            // TODO: /, @
-        }
-    }
-}
-
-#[derive(Debug)]
-struct DecimalInt(Magnitude<Decimal>);
-
-impl DecimalInt {
-    fn classify<'str>(&mut self, item: ScanItem<'str>) -> DecimalControl<'str> {
-        let ch = item.1;
-        let offset = self.0.digits.end;
-        match ch {
-            '+' | '-' => ControlFlow::Break(Ok(BreakCondition::Complex {
-                kind: ComplexKind::Cartesian,
-                start: item,
-            })),
-            '.' => ControlFlow::Continue(Some(Classifier::Flt(Float {
-                fraction: offset..offset + 1,
-                integral: self.0.clone(),
-            }))),
-            '/' => ControlFlow::Break(Ok(BreakCondition::Fraction(self.0.clone()))),
-            'e' | 'E' => ControlFlow::Continue(Some(Classifier::Sci(Scientific {
-                exponent: offset..offset + 1,
-                significand: Float {
-                    integral: self.0.clone(),
-                    fraction: offset..offset,
-                },
-                ..Default::default()
-            }))),
-            'i' | 'I' => ControlFlow::Break(Ok(BreakCondition::Imaginary)),
-            _ if self.0.radix.is_digit(ch) => {
-                self.0.digits.end += 1;
-                ControlFlow::Continue(None)
-            }
-            _ => ControlFlow::Break(Err(TokenErrorKind::NumberInvalid)),
-        }
-        // TODO: @
-    }
-
-    fn parse(&self, input: &str, exactness: Option<Exactness>) -> ParseResult {
-        match exactness {
-            None | Some(Exactness::Exact) => Ok(self.0.exact_parse(input)?.into()),
-            Some(Exactness::Inexact) => todo!(),
-        }
-    }
-}
-
 type ExactParseResult = Result<Integer, TokenErrorKind>;
 
 // NOTE: all ranges are relative to parse string, not the token scanner;
@@ -490,7 +405,6 @@ struct Magnitude<R> {
 impl<R: Radix + Debug> Magnitude<R> {
     fn exact_parse(&self, input: &str) -> ExactParseResult {
         if !self.digits.is_empty() {
-            // TODO: use magnitude start instead of assuming input starts at sign
             if let Some(sign_mag) = input.get(..self.digits.end) {
                 return i64::from_str_radix(sign_mag, R::BASE).map_or_else(
                     |_| self.parse_sign_magnitude(sign_mag),
@@ -520,6 +434,92 @@ impl<R: Radix + Debug> Magnitude<R> {
     }
 }
 
+#[derive(Debug)]
+struct Integral<R>(Magnitude<R>);
+
+impl<R: Radix + Clone + Debug> Integral<R> {
+    fn classify<'str>(&mut self, item: ScanItem<'str>) -> RadixControl<'str, R> {
+        let (idx, ch) = item;
+        match ch {
+            '+' | '-' => {
+                if self.0.digits.is_empty() {
+                    if self.0.sign.is_none() {
+                        self.0.sign = Some(super::char_to_sign(ch));
+                        self.0.digits = 1..1;
+                        ControlFlow::Continue(())
+                    } else {
+                        ControlFlow::Break(Err(TokenErrorKind::NumberInvalid))
+                    }
+                } else {
+                    ControlFlow::Break(Ok(BreakCondition::Complex {
+                        kind: ComplexKind::Cartesian,
+                        start: item,
+                    }))
+                }
+            }
+            '.' => ControlFlow::Break(Err(TokenErrorKind::NumberInvalidDecimalPoint {
+                at: idx,
+                radix: R::NAME,
+            })),
+            '/' => ControlFlow::Break(Ok(BreakCondition::Fraction(self.0.clone()))),
+            '@' => todo!(),
+            'e' | 'E' => ControlFlow::Break(Err(TokenErrorKind::NumberInvalidExponent {
+                at: idx,
+                radix: R::NAME,
+            })),
+            'i' | 'I' => ControlFlow::Break(Ok(BreakCondition::Imaginary)),
+            _ if self.0.radix.is_digit(ch) => {
+                self.0.digits.end += 1;
+                ControlFlow::Continue(())
+            }
+            _ => ControlFlow::Break(Err(TokenErrorKind::NumberInvalid)),
+        }
+    }
+}
+
+#[derive(Debug)]
+struct DecimalInt(Magnitude<Decimal>);
+
+impl DecimalInt {
+    fn classify<'str>(&mut self, item: ScanItem<'str>) -> DecimalControl<'str> {
+        let ch = item.1;
+        let offset = self.0.digits.end;
+        match ch {
+            '+' | '-' => ControlFlow::Break(Ok(BreakCondition::Complex {
+                kind: ComplexKind::Cartesian,
+                start: item,
+            })),
+            '.' => ControlFlow::Continue(Some(Classifier::Flt(Float {
+                fraction: offset..offset + 1,
+                integral: self.0.clone(),
+            }))),
+            '/' => ControlFlow::Break(Ok(BreakCondition::Fraction(self.0.clone()))),
+            '@' => todo!(),
+            'e' | 'E' => ControlFlow::Continue(Some(Classifier::Sci(Scientific {
+                exponent: offset..offset + 1,
+                significand: Float {
+                    integral: self.0.clone(),
+                    fraction: offset..offset,
+                },
+                ..Default::default()
+            }))),
+            'i' | 'I' => ControlFlow::Break(Ok(BreakCondition::Imaginary)),
+            _ if self.0.radix.is_digit(ch) => {
+                self.0.digits.end += 1;
+                ControlFlow::Continue(None)
+            }
+            _ => ControlFlow::Break(Err(TokenErrorKind::NumberInvalid)),
+        }
+    }
+
+    fn parse(&self, input: &str, exactness: Option<Exactness>) -> ParseResult {
+        match exactness {
+            None | Some(Exactness::Exact) => Ok(self.0.exact_parse(input)?.into()),
+            Some(Exactness::Inexact) => todo!(),
+        }
+    }
+}
+
 #[derive(Clone, Debug, Default)]
 struct Float {
     fraction: Range<usize>,
@@ -539,6 +539,7 @@ impl Float {
                 at: idx,
             })),
             '/' => ControlFlow::Break(Err(TokenErrorKind::RationalInvalid)),
+            '@' => todo!(),
             'e' | 'E' => ControlFlow::Continue(Some(Classifier::Sci(Scientific {
                 exponent: offset..offset + 1,
                 significand: self.clone(),
@@ -551,7 +552,6 @@ impl Float {
             }
             _ => ControlFlow::Break(Err(TokenErrorKind::NumberInvalid)),
         }
-        // TODO: @
     }
 
     fn parse(&self, input: &str, exactness: Option<Exactness>) -> ParseResult {
@@ -599,6 +599,7 @@ impl Scientific {
                 }
             }
             '/' => ControlFlow::Break(Err(TokenErrorKind::RationalInvalid)),
+            '@' => todo!(),
             'i' | 'I' => ControlFlow::Break(if self.no_e_value() {
                 Err(self.malformed_exponent())
             } else {
@@ -610,7 +611,6 @@ impl Scientific {
             }
             _ => ControlFlow::Break(Err(self.malformed_exponent())),
         }
-        // TODO: @
     }
 
     fn parse(&self, input: &str, exactness: Option<Exactness>) -> ParseResult {

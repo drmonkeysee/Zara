@@ -8,8 +8,8 @@ use self::{
     extract::{TokenExtract, TokenExtractResult},
     scan::{ScanItem, Scanner},
     state::{
-        BlockComment, DecimalNumber, Hashtag, Identifier, PeriodIdentifier, StringLiteral,
-        VerbatimIdentifer,
+        BlockComment, Decimal, DecimalNumber, Hashtag, Identifier, PeriodIdentifier, Radix,
+        StringLiteral, VerbatimIdentifer,
     },
 };
 use super::token::{TokenContinuation, TokenKind, TokenResult};
@@ -90,7 +90,7 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
             ';' => Ok(self.comment()),
             '.' => self.period(),
             ',' => Ok(self.unquote()),
-            _ if first.is_ascii_digit() => DecimalNumber::new(self.scan, self.start).scan(),
+            _ if Decimal.is_digit(first) => DecimalNumber::new(self.scan, self.start).scan(),
             _ => Identifier::new(self.scan, self.start).scan(),
         }
     }
