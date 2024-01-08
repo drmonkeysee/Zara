@@ -518,6 +518,10 @@ impl Float {
         let (idx, ch) = item;
         let offset = self.fraction.end;
         match ch {
+            '+' | '-' => ControlFlow::Break(Ok(BreakCondition::Complex {
+                kind: ComplexKind::Cartesian,
+                start: item,
+            })),
             '.' => ControlFlow::Break(Err(TokenErrorKind::NumberUnexpectedDecimalPoint {
                 at: idx,
             })),
@@ -534,7 +538,7 @@ impl Float {
             }
             _ => ControlFlow::Break(Err(TokenErrorKind::NumberInvalid)),
         }
-        // TODO: +-, @
+        // TODO: @
     }
 
     fn parse(&self, input: &str, exactness: Option<Exactness>) -> ParseResult {
@@ -568,17 +572,17 @@ impl Scientific {
         let ch = item.1;
         match ch {
             '+' | '-' => {
-                if self.exponent_sign.is_some() {
-                    if self.exponent.len() == 2 {
-                        ControlFlow::Break(Err(self.malformed_exponent()))
-                    } else {
-                        // TODO: begin imaginary part
-                        todo!();
-                    }
-                } else {
+                if self.exponent_sign.is_some() && self.exponent.len() == 2 {
+                    ControlFlow::Break(Err(self.malformed_exponent()))
+                } else if self.exponent.len() == 1 {
                     self.exponent_sign = Some(super::char_to_sign(ch));
                     self.exponent.end += 1;
                     ControlFlow::Continue(None)
+                } else {
+                    ControlFlow::Break(Ok(BreakCondition::Complex {
+                        kind: ComplexKind::Cartesian,
+                        start: item,
+                    }))
                 }
             }
             '/' => ControlFlow::Break(Err(TokenErrorKind::RationalInvalid)),
@@ -593,7 +597,7 @@ impl Scientific {
             }
             _ => ControlFlow::Break(Err(self.malformed_exponent())),
         }
-        // TODO: +-, @
+        // TODO: @
     }
 
     fn parse(&self, input: &str, exactness: Option<Exactness>) -> ParseResult {

@@ -2477,6 +2477,37 @@ mod complex {
     }
 
     #[test]
+    fn combos() {
+        let reals = ["4", "3.5", "4.2e40", "1/6"];
+        let imags = ["5", "12.2", "5.6e-20", "7/3"];
+        let combos = reals
+            .into_iter()
+            .flat_map(|r| imags.into_iter().map(move |i| format!("{r}+{i}i")));
+        for cpx in combos {
+            let mut s = Scanner::new(cpx.as_str());
+            let start = some_or_fail!(s.next_token());
+            let t = Tokenizer {
+                scan: &mut s,
+                start,
+            };
+
+            let r = t.extract();
+            dbg!(&r);
+
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 0,
+                    end,
+                    result: Ok(TokenKind::Literal(_)),
+                } if end == cpx.len()
+            ));
+            let num = extract_number!(r.result);
+            assert_eq!(num.as_datum().to_string(), cpx);
+        }
+    }
+
+    #[test]
     fn missing_imaginary() {
         let mut s = Scanner::new("4+");
         let start = some_or_fail!(s.next_token());
@@ -2493,6 +2524,28 @@ mod complex {
             TokenExtract {
                 start: 0,
                 end: 2,
+                result: Err(TokenErrorKind::ComplexInvalid),
+            }
+        ));
+    }
+
+    #[test]
+    fn missing_imaginary_with_exponent() {
+        let mut s = Scanner::new("4e2+");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 4,
                 result: Err(TokenErrorKind::ComplexInvalid),
             }
         ));
