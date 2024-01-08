@@ -2508,6 +2508,34 @@ mod complex {
     }
 
     #[test]
+    fn unity_inf_nan_combos() {
+        let combos = ["4+i", "4-i", "4+inf.0i", "4-inf.0i", "4+nan.0i", "4-nan.0i"];
+        for cpx in combos {
+            let mut s = Scanner::new(cpx);
+            let start = some_or_fail!(s.next_token());
+            let t = Tokenizer {
+                scan: &mut s,
+                start,
+            };
+
+            let r = t.extract();
+            dbg!(&r);
+
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 0,
+                    end,
+                    result: Ok(TokenKind::Literal(_)),
+                } if end == cpx.len()
+            ));
+            let num = extract_number!(r.result);
+            let expected = if cpx == "4-nan.0i" { "4+nan.0i" } else { cpx };
+            assert_eq!(num.as_datum().to_string(), expected);
+        }
+    }
+
+    #[test]
     fn missing_imaginary() {
         let mut s = Scanner::new("4+");
         let start = some_or_fail!(s.next_token());
