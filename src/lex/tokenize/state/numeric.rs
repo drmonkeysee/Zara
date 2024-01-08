@@ -241,6 +241,7 @@ impl<'me, 'str> DenominatorNumber<'me, 'str> {
                 .exact_parse(self.get_lexeme())
                 .map_err(|_| self.fail())
                 .map(|int| (int, false)),
+            Ok(BreakCondition::Complex { kind, start }) => todo!(),
             Ok(BreakCondition::Imaginary) => {
                 if self.scan.next_if_not_delimiter().is_some() {
                     Err(self.fail())
@@ -383,7 +384,7 @@ impl Classifier {
 #[derive(Debug)]
 struct Integral<R>(Magnitude<R>);
 
-impl<R: Radix> Integral<R> {
+impl<R: Radix + Debug> Integral<R> {
     fn classify<'str>(&mut self, item: ScanItem<'str>) -> RadixControl<'str, R> {
         let (idx, ch) = item;
         match ch {
@@ -397,7 +398,10 @@ impl<R: Radix> Integral<R> {
                         ControlFlow::Break(Err(TokenErrorKind::NumberInvalid))
                     }
                 } else {
-                    todo!(); // begin imaginary part
+                    ControlFlow::Break(Ok(BreakCondition::Complex {
+                        kind: ComplexKind::Cartesian,
+                        start: item,
+                    }))
                 }
             }
             '.' => ControlFlow::Break(Err(TokenErrorKind::NumberInvalidDecimalPoint {
