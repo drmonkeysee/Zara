@@ -405,9 +405,9 @@ struct Magnitude<R> {
 impl<R: Radix + Debug> Magnitude<R> {
     fn exact_parse(&self, input: &str) -> ExactParseResult {
         if !self.digits.is_empty() {
-            if let Some(sign_mag) = input.get(..self.digits.end) {
-                return i64::from_str_radix(sign_mag, R::BASE).map_or_else(
-                    |_| self.parse_sign_magnitude(sign_mag),
+            if let Some(signed_num) = input.get(..self.digits.end) {
+                return i64::from_str_radix(signed_num, R::BASE).map_or_else(
+                    |_| self.parse_sign_magnitude(signed_num),
                     |val| Ok(val.into()),
                 );
             }
@@ -615,10 +615,11 @@ impl Scientific {
 
     fn parse(&self, input: &str, exactness: Option<Exactness>) -> ParseResult {
         if self.no_e_value() {
-            return Err(self.malformed_exponent());
+            Err(self.malformed_exponent())
+        } else {
+            self.significand
+                .parse_to(input, self.exponent.end, exactness)
         }
-        self.significand
-            .parse_to(input, self.exponent.end, exactness)
     }
 
     fn no_e_value(&self) -> bool {
