@@ -7,7 +7,7 @@ use std::{
 
 #[derive(Debug)]
 pub(crate) enum Number {
-    Complex(Box<(Real, Real)>),
+    Complex(Complex),
     Real(Real),
 }
 
@@ -18,7 +18,7 @@ impl Number {
         if imag.is_zero() {
             Self::Real(real)
         } else {
-            Self::Complex((real, imag).into())
+            Self::Complex(Complex((real, imag).into()))
         }
     }
 
@@ -41,6 +41,9 @@ impl Number {
         TokenDescriptor(self)
     }
 }
+
+#[derive(Debug)]
+pub(crate) struct Complex(Box<(Real, Real)>);
 
 #[derive(Debug)]
 pub(crate) enum Real {
@@ -264,7 +267,7 @@ pub(crate) struct Datum<'a>(&'a Number);
 impl Display for Datum<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self.0 {
-            Number::Complex(c) => {
+            Number::Complex(Complex(c)) => {
                 ComplexRealDatum(&c.0).fmt(f)?;
                 ComplexImagDatum(&c.1).fmt(f)
             }
@@ -1222,10 +1225,10 @@ mod tests {
             let c = Number::complex(4, 3);
 
             let ri = extract_or_fail!(c, Number::Complex);
-            let r = extract_or_fail!(ri.0, Real::Integer);
+            let r = extract_or_fail!(ri.0 .0, Real::Integer);
             assert!(!r.is_zero());
             assert_eq!(extract_or_fail!(r.precision, Precision::Single), 4);
-            let i = extract_or_fail!(ri.1, Real::Integer);
+            let i = extract_or_fail!(ri.0 .1, Real::Integer);
             assert!(!i.is_zero());
             assert_eq!(extract_or_fail!(i.precision, Precision::Single), 3);
         }
@@ -1245,10 +1248,10 @@ mod tests {
             let c = Number::complex(0, 3);
 
             let ri = extract_or_fail!(c, Number::Complex);
-            let r = extract_or_fail!(ri.0, Real::Integer);
+            let r = extract_or_fail!(ri.0 .0, Real::Integer);
             assert!(r.is_zero());
             assert_eq!(extract_or_fail!(r.precision, Precision::Single), 0);
-            let i = extract_or_fail!(ri.1, Real::Integer);
+            let i = extract_or_fail!(ri.0 .1, Real::Integer);
             assert!(!i.is_zero());
             assert_eq!(extract_or_fail!(i.precision, Precision::Single), 3);
         }
