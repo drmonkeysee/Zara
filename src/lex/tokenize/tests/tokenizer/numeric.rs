@@ -1251,6 +1251,50 @@ mod float {
     }
 
     #[test]
+    fn inf_followed_by_signed_identifier() {
+        let mut s = Scanner::new("+inf.0+foo");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 10,
+                result: Ok(TokenKind::Identifier(s)),
+            } if s == "+inf.0+foo"
+        ));
+    }
+
+    #[test]
+    fn inf_followed_by_polar_identifier() {
+        let mut s = Scanner::new("+inf.0@foo");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 10,
+                result: Ok(TokenKind::Identifier(s)),
+            } if s == "+inf.0@foo"
+        ));
+    }
+
+    #[test]
     fn positive_nan() {
         let mut s = Scanner::new("+nan.0");
         let start = some_or_fail!(s.next_token());
@@ -1363,6 +1407,50 @@ mod float {
                 end: 5,
                 result: Ok(TokenKind::Identifier(s)),
             } if s == "nan.0"
+        ));
+    }
+
+    #[test]
+    fn nan_followed_by_signed_identifier() {
+        let mut s = Scanner::new("+nan.0-bar");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 10,
+                result: Ok(TokenKind::Identifier(s)),
+            } if s == "+nan.0-bar"
+        ));
+    }
+
+    #[test]
+    fn nan_followed_by_polar_identifier() {
+        let mut s = Scanner::new("+nan.0@bar");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 10,
+                result: Ok(TokenKind::Identifier(s)),
+            } if s == "+nan.0@bar"
         ));
     }
 
@@ -2283,8 +2371,8 @@ mod imaginary {
     }
 
     #[test]
-    fn exponent_real_invalid_imaginary() {
-        let mut s = Scanner::new("3.456e+4-5");
+    fn imaginary_in_real_position() {
+        let mut s = Scanner::new("4i+3");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
             scan: &mut s,
@@ -2298,8 +2386,8 @@ mod imaginary {
             r,
             TokenExtract {
                 start: 0,
-                end: 10,
-                result: Err(TokenErrorKind::ComplexInvalid),
+                end: 4,
+                result: Err(TokenErrorKind::ImaginaryInvalid),
             }
         ));
     }
@@ -2557,7 +2645,30 @@ mod cartesian {
 
     #[test]
     fn unity_inf_nan_combos() {
-        let combos = ["4+i", "4-i", "4+inf.0i", "4-inf.0i", "4+nan.0i", "4-nan.0i"];
+        let combos = [
+            "4+i",
+            "4-i",
+            "4+inf.0i",
+            "4-inf.0i",
+            "4+nan.0i",
+            "4-nan.0i",
+            "+inf.0+4i",
+            "-inf.0+4i",
+            "+nan.0+4i",
+            "-nan.0+4i",
+            "+inf.0+inf.0i",
+            "-inf.0-inf.0i",
+            "+nan.0+nan.0i",
+            "-nan.0-nan.0i",
+            "+inf.0+nan.0i",
+            "+nan.0+inf.0i",
+            "-inf.0-nan.0i",
+            "-nan.0-inf.0i",
+            "+inf.0+i",
+            "-inf.0-i",
+            "+nan.0+i",
+            "-nan.0-i",
+        ];
         for cpx in combos {
             let mut s = Scanner::new(cpx);
             let start = some_or_fail!(s.next_token());
@@ -2622,6 +2733,28 @@ mod cartesian {
             TokenExtract {
                 start: 0,
                 end: 4,
+                result: Err(TokenErrorKind::ComplexInvalid),
+            }
+        ));
+    }
+
+    #[test]
+    fn exponent_real_invalid_imaginary() {
+        let mut s = Scanner::new("3.456e+4-5");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 10,
                 result: Err(TokenErrorKind::ComplexInvalid),
             }
         ));
@@ -2782,6 +2915,51 @@ mod polar {
             ));
             let num = extract_number!(r.result);
             assert_eq!(num.as_datum().to_string(), expected[idx]);
+        }
+    }
+
+    #[test]
+    fn inf_nan_combos() {
+        let combos = [
+            "4@+inf.0",
+            "4@-inf.0",
+            "4@+nan.0",
+            "4@-nan.0",
+            "+inf.0@4",
+            "-inf.0@4",
+            "+nan.0@4",
+            "-nan.0@4",
+            "+inf.0@+inf.0",
+            "-inf.0@-inf.0",
+            "+nan.0@+nan.0",
+            "-nan.0@-nan.0",
+            "+inf.0@+nan.0",
+            "+nan.0@+inf.0",
+            "-inf.0@-nan.0",
+            "-nan.0@-inf.0",
+        ];
+        for cpx in combos {
+            let mut s = Scanner::new(cpx);
+            let start = some_or_fail!(s.next_token());
+            let t = Tokenizer {
+                scan: &mut s,
+                start,
+            };
+
+            let r = t.extract();
+            dbg!(&r);
+
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 0,
+                    end,
+                    result: Ok(TokenKind::Literal(_)),
+                } if end == cpx.len()
+            ));
+            let num = extract_number!(r.result);
+            let expected = if cpx == "4-nan.0i" { "4+nan.0i" } else { cpx };
+            assert_eq!(num.as_datum().to_string(), expected);
         }
     }
 
