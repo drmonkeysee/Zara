@@ -2305,7 +2305,7 @@ mod imaginary {
     }
 }
 
-mod complex {
+mod cartesian {
     use super::*;
 
     #[test]
@@ -2378,6 +2378,54 @@ mod complex {
         ));
         let num = extract_number!(r.result);
         assert_eq!(num.as_datum().to_string(), "4+i");
+    }
+
+    #[test]
+    fn zero_imaginary_part() {
+        let mut s = Scanner::new("4+0i");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 4,
+                result: Ok(TokenKind::Literal(_)),
+            }
+        ));
+        let num = extract_number!(r.result);
+        assert_eq!(num.as_datum().to_string(), "4");
+    }
+
+    #[test]
+    fn zero_real_part() {
+        let mut s = Scanner::new("0+3i");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 4,
+                result: Ok(TokenKind::Literal(_)),
+            }
+        ));
+        let num = extract_number!(r.result);
+        assert_eq!(num.as_datum().to_string(), "+3i");
     }
 
     #[test]
@@ -2484,7 +2532,7 @@ mod complex {
             .into_iter()
             .flat_map(|r| imags.into_iter().map(move |i| format!("{r}+{i}i")));
         for cpx in combos {
-            let mut s = Scanner::new(cpx.as_str());
+            let mut s = Scanner::new(&cpx);
             let start = some_or_fail!(s.next_token());
             let t = Tokenizer {
                 scan: &mut s,
@@ -2576,6 +2624,230 @@ mod complex {
                 end: 4,
                 result: Err(TokenErrorKind::ComplexInvalid),
             }
+        ));
+    }
+}
+
+mod polar {
+    use super::*;
+
+    #[test]
+    fn simple() {
+        let mut s = Scanner::new("4@3");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 3,
+                result: Ok(TokenKind::Literal(_)),
+            }
+        ));
+        let num = extract_number!(r.result);
+        assert_eq!(num.as_datum().to_string(), "???");
+    }
+
+    #[test]
+    fn zero_magnitude() {
+        let mut s = Scanner::new("0@3");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 3,
+                result: Ok(TokenKind::Literal(_)),
+            }
+        ));
+        let num = extract_number!(r.result);
+        assert_eq!(num.as_datum().to_string(), "???");
+    }
+
+    #[test]
+    fn zero_angle() {
+        let mut s = Scanner::new("4@0");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 3,
+                result: Ok(TokenKind::Literal(_)),
+            }
+        ));
+        let num = extract_number!(r.result);
+        assert_eq!(num.as_datum().to_string(), "???");
+    }
+
+    #[test]
+    fn all_zeros() {
+        let mut s = Scanner::new("0@0");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 3,
+                result: Ok(TokenKind::Literal(_)),
+            }
+        ));
+        let num = extract_number!(r.result);
+        assert_eq!(num.as_datum().to_string(), "???");
+    }
+
+    #[test]
+    fn unit_45degrees() {
+        let input = format!("0@{}", std::f64::consts::FRAC_PI_4);
+        let mut s = Scanner::new(&input);
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 3,
+                result: Ok(TokenKind::Literal(_)),
+            }
+        ));
+        let num = extract_number!(r.result);
+        assert_eq!(num.as_datum().to_string(), "???");
+    }
+
+    #[test]
+    fn combos() {
+        let reals = ["4", "3.5", "4.2e4", "1/6"];
+        let imags = ["5", "12.2", "5.6e-2", "7/3"];
+        let expected = ["???"];
+        let combos = reals
+            .into_iter()
+            .flat_map(|r| imags.into_iter().map(move |i| format!("{r}@{i}")));
+        assert_eq!(expected.len(), reals.len() * imags.len());
+        for (idx, cpx) in combos.enumerate() {
+            let mut s = Scanner::new(&cpx);
+            let start = some_or_fail!(s.next_token());
+            let t = Tokenizer {
+                scan: &mut s,
+                start,
+            };
+
+            let r = t.extract();
+            dbg!(&r);
+
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 0,
+                    end,
+                    result: Ok(TokenKind::Literal(_)),
+                } if end == cpx.len()
+            ));
+            let num = extract_number!(r.result);
+            assert_eq!(num.as_datum().to_string(), expected[idx]);
+        }
+    }
+
+    #[test]
+    fn do_not_allow_i() {
+        let mut s = Scanner::new("4@3i");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 3,
+                result: Err(TokenErrorKind::Unimplemented(_)),
+            }
+        ));
+    }
+
+    #[test]
+    fn missing_angle() {
+        let mut s = Scanner::new("4@");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 3,
+                result: Err(TokenErrorKind::Unimplemented(_)),
+            }
+        ));
+    }
+
+    #[test]
+    fn no_magnitude() {
+        let mut s = Scanner::new("@3");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 2,
+                result: Ok(TokenKind::Identifier(s)),
+            } if s == "@3"
         ));
     }
 }
