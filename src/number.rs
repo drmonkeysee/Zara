@@ -14,7 +14,12 @@ pub(crate) enum Number {
 impl Number {
     // TODO: polar-coordinates
     pub(crate) fn complex(real: impl Into<Real>, imag: impl Into<Real>) -> Self {
-        Self::Complex((real.into(), imag.into()).into())
+        let (real, imag): (Real, Real) = (real.into(), imag.into());
+        if imag.is_zero() {
+            Self::Real(real)
+        } else {
+            Self::Complex((real, imag).into())
+        }
     }
 
     pub(crate) fn real(value: impl Into<Real>) -> Self {
@@ -77,6 +82,14 @@ impl Real {
         }
         Ok(Self::Rational(Rational((n, d).into())))
     }
+
+    fn is_zero(&self) -> bool {
+        match self {
+            Real::Float(f) => *f == 0.0,
+            Real::Integer(n) => n.is_zero(),
+            Real::Rational(r) => r.is_zero(),
+        }
+    }
 }
 
 impl Display for Real {
@@ -101,9 +114,14 @@ impl<T: Into<Integer>> From<T> for Real {
     }
 }
 
-// NOTE: Boxed to keep struct size down
 #[derive(Debug)]
 pub(crate) struct Rational(Box<(Integer, Integer)>);
+
+impl Rational {
+    fn is_zero(&self) -> bool {
+        self.0 .0.is_zero()
+    }
+}
 
 impl Display for Rational {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
@@ -978,6 +996,24 @@ mod tests {
         }
     }
 
+    mod float {
+        use super::*;
+
+        #[test]
+        fn is_zero() {
+            let f = Real::Float(0.0);
+
+            assert!(f.is_zero());
+        }
+
+        #[test]
+        fn epsilon_is_not_zero() {
+            let f = Real::Float(f64::EPSILON);
+
+            assert!(!f.is_zero());
+        }
+    }
+
     mod rational {
         use super::*;
         use crate::testutil::err_or_fail;
@@ -1163,11 +1199,58 @@ mod tests {
         }
 
         #[test]
+        fn unreduced_zero_numerator_is_zero() {
+            let r = Rational((0.into(), 7.into()).into());
+
+            assert!(r.is_zero());
+        }
+
+        #[test]
         fn zero_denominator() {
             let n = Number::rational(1, 0);
             let err = err_or_fail!(n);
 
             assert!(matches!(err, NumericError::DivideByZero));
+        }
+    }
+
+    mod complex {
+        use super::*;
+
+        #[test]
+        fn basic() {
+            let c = Number::complex(4, 3);
+
+            let ri = extract_or_fail!(c, Number::Complex);
+            let r = extract_or_fail!(ri.0, Real::Integer);
+            assert!(!r.is_zero());
+            assert_eq!(extract_or_fail!(r.precision, Precision::Single), 4);
+            let i = extract_or_fail!(ri.1, Real::Integer);
+            assert!(!i.is_zero());
+            assert_eq!(extract_or_fail!(i.precision, Precision::Single), 3);
+        }
+
+        #[test]
+        fn zero_imaginary_reduces_to_int() {
+            let c = Number::complex(4, 0);
+
+            let r = extract_or_fail!(c, Number::Real);
+            let int = extract_or_fail!(r, Real::Integer);
+            assert!(!int.is_zero());
+            assert_eq!(extract_or_fail!(int.precision, Precision::Single), 4);
+        }
+
+        #[test]
+        fn zero_real() {
+            let c = Number::complex(0, 3);
+
+            let ri = extract_or_fail!(c, Number::Complex);
+            let r = extract_or_fail!(ri.0, Real::Integer);
+            assert!(r.is_zero());
+            assert_eq!(extract_or_fail!(r.precision, Precision::Single), 0);
+            let i = extract_or_fail!(ri.1, Real::Integer);
+            assert!(!i.is_zero());
+            assert_eq!(extract_or_fail!(i.precision, Precision::Single), 3);
         }
     }
 }
