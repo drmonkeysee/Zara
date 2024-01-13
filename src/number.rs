@@ -12,7 +12,6 @@ pub(crate) enum Number {
 }
 
 impl Number {
-    // TODO: polar-coordinates
     pub(crate) fn complex(real: impl Into<Real>, imag: impl Into<Real>) -> Self {
         let (real, imag): (Real, Real) = (real.into(), imag.into());
         if imag.is_zero() {
@@ -20,6 +19,12 @@ impl Number {
         } else {
             Self::Complex(Complex((real, imag).into()))
         }
+    }
+
+    pub(crate) fn polar(magnitude: impl Into<Real>, radians: impl Into<Real>) -> Self {
+        let (mag, rad) = (magnitude.into().into_float(), radians.into().into_float());
+        let (rsin, rcos) = rad.sin_cos();
+        Number::complex(mag * rcos, mag * rsin)
     }
 
     pub(crate) fn real(value: impl Into<Real>) -> Self {
@@ -93,6 +98,14 @@ impl Real {
             Real::Rational(r) => r.is_zero(),
         }
     }
+
+    fn into_float(self) -> f64 {
+        match self {
+            Self::Float(f) => f,
+            Self::Integer(n) => n.into_float(),
+            Self::Rational(r) => r.into_float(),
+        }
+    }
 }
 
 impl Display for Real {
@@ -123,6 +136,11 @@ pub(crate) struct Rational(Box<(Integer, Integer)>);
 impl Rational {
     fn is_zero(&self) -> bool {
         self.0 .0.is_zero()
+    }
+
+    fn into_float(self) -> f64 {
+        let (num, denom) = (self.0 .0.into_float(), self.0 .1.into_float());
+        num / denom
     }
 }
 
@@ -179,6 +197,20 @@ impl Integer {
 
     fn reduce(&mut self, other: &mut Self) {
         self.precision.reduce(&mut other.precision);
+    }
+
+    fn into_float(self) -> f64 {
+        match self.precision {
+            Precision::Single(u) => {
+                let f = u as f64;
+                if self.sign == Sign::Negative {
+                    0.0 - f
+                } else {
+                    f
+                }
+            }
+            Precision::Multiple(_) => todo!(),
+        }
     }
 }
 
@@ -997,6 +1029,57 @@ mod tests {
                 assert_eq!(int.sign, expected);
             }
         }
+
+        #[test]
+        fn single_into_float() {
+            let n: Real = 42.into();
+
+            assert_eq!(n.into_float(), 42.0);
+        }
+
+        #[test]
+        fn zero_into_float() {
+            let n: Real = 0.into();
+
+            assert_eq!(n.into_float(), 0.0);
+        }
+
+        #[test]
+        fn negative_into_float() {
+            let n: Real = (-42).into();
+
+            assert_eq!(n.into_float(), -42.0);
+        }
+
+        #[test]
+        fn imax_into_float() {
+            let n: Real = i64::MAX.into();
+
+            assert_eq!(n.into_float(), 9.223372036854776e18);
+        }
+
+        #[test]
+        fn imin_into_float() {
+            let n: Real = i64::MIN.into();
+
+            assert_eq!(n.into_float(), -9.223372036854776e18);
+        }
+
+        #[test]
+        fn umax_into_float() {
+            let u = Integer::single(u64::MAX, Sign::Positive);
+            let n: Real = u.into();
+
+            assert_eq!(n.into_float(), 1.8446744073709552e19);
+        }
+
+        #[test]
+        fn umin_into_float() {
+            let u = Integer::single(u64::MAX, Sign::Negative);
+            let n: Real = u.into();
+
+            assert_eq!(n.into_float(), -1.8446744073709552e19);
+        }
     }
 
     mod float {
@@ -1014,6 +1097,13 @@ mod tests {
             let f = Real::Float(f64::EPSILON);
 
             assert!(!f.is_zero());
+        }
+
+        #[test]
+        fn into_float() {
+            let n: Real = Real::Float(1.5);
+
+            assert_eq!(n.into_float(), 1.5);
         }
     }
 
@@ -1214,6 +1304,59 @@ mod tests {
             let err = err_or_fail!(n);
 
             assert!(matches!(err, NumericError::DivideByZero));
+        }
+
+        #[test]
+        fn positive_into_float() {
+            let n = ok_or_fail!(Number::rational(4, 5));
+            let r = extract_or_fail!(n, Number::Real);
+
+            assert_eq!(r.into_float(), 0.8);
+        }
+
+        #[test]
+        fn negative_numerator_into_float() {
+            let n = ok_or_fail!(Number::rational(-4, 5));
+            let r = extract_or_fail!(n, Number::Real);
+
+            assert_eq!(r.into_float(), -0.8);
+        }
+
+        #[test]
+        fn negative_denominator_into_float() {
+            let n = ok_or_fail!(Number::rational(4, -5));
+            let r = extract_or_fail!(n, Number::Real);
+
+            assert_eq!(r.into_float(), -0.8);
+        }
+
+        #[test]
+        fn negative_parts_into_float() {
+            let n = ok_or_fail!(Number::rational(-4, -5));
+            let r = extract_or_fail!(n, Number::Real);
+
+            assert_eq!(r.into_float(), 0.8);
+        }
+
+        #[test]
+        fn unreduced_zero_into_float() {
+            let r = Rational((0.into(), 7.into()).into());
+
+            assert_eq!(r.into_float(), 0.0);
+        }
+
+        #[test]
+        fn unreduced_div_by_zero_into_float() {
+            let r = Rational((7.into(), 0.into()).into());
+
+            assert_eq!(r.into_float(), f64::INFINITY);
+        }
+
+        #[test]
+        fn unreduced_negative_div_by_zero_into_float() {
+            let r = Rational(((-7).into(), 0.into()).into());
+
+            assert_eq!(r.into_float(), f64::NEG_INFINITY);
         }
     }
 
