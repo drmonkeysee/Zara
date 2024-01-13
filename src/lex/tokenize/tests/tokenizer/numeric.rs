@@ -1229,72 +1229,6 @@ mod float {
     }
 
     #[test]
-    fn nosign_infinity() {
-        let mut s = Scanner::new("inf.0");
-        let start = some_or_fail!(s.next_token());
-        let t = Tokenizer {
-            scan: &mut s,
-            start,
-        };
-
-        let r = t.extract();
-        dbg!(&r);
-
-        assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 5,
-                result: Ok(TokenKind::Identifier(s)),
-            } if s == "inf.0"
-        ));
-    }
-
-    #[test]
-    fn inf_followed_by_signed_identifier() {
-        let mut s = Scanner::new("+inf.0+foo");
-        let start = some_or_fail!(s.next_token());
-        let t = Tokenizer {
-            scan: &mut s,
-            start,
-        };
-
-        let r = t.extract();
-        dbg!(&r);
-
-        assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 10,
-                result: Ok(TokenKind::Identifier(s)),
-            } if s == "+inf.0+foo"
-        ));
-    }
-
-    #[test]
-    fn inf_followed_by_polar_identifier() {
-        let mut s = Scanner::new("+inf.0@foo");
-        let start = some_or_fail!(s.next_token());
-        let t = Tokenizer {
-            scan: &mut s,
-            start,
-        };
-
-        let r = t.extract();
-        dbg!(&r);
-
-        assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 10,
-                result: Ok(TokenKind::Identifier(s)),
-            } if s == "+inf.0@foo"
-        ));
-    }
-
-    #[test]
     fn positive_nan() {
         let mut s = Scanner::new("+nan.0");
         let start = some_or_fail!(s.next_token());
@@ -1386,72 +1320,6 @@ mod float {
         ));
         let flt = extract_number!(r.result, Number::Real);
         assert_eq!(flt.to_string(), "+nan.0");
-    }
-
-    #[test]
-    fn nosign_nan() {
-        let mut s = Scanner::new("nan.0");
-        let start = some_or_fail!(s.next_token());
-        let t = Tokenizer {
-            scan: &mut s,
-            start,
-        };
-
-        let r = t.extract();
-        dbg!(&r);
-
-        assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 5,
-                result: Ok(TokenKind::Identifier(s)),
-            } if s == "nan.0"
-        ));
-    }
-
-    #[test]
-    fn nan_followed_by_signed_identifier() {
-        let mut s = Scanner::new("+nan.0-bar");
-        let start = some_or_fail!(s.next_token());
-        let t = Tokenizer {
-            scan: &mut s,
-            start,
-        };
-
-        let r = t.extract();
-        dbg!(&r);
-
-        assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 10,
-                result: Ok(TokenKind::Identifier(s)),
-            } if s == "+nan.0-bar"
-        ));
-    }
-
-    #[test]
-    fn nan_followed_by_polar_identifier() {
-        let mut s = Scanner::new("+nan.0@bar");
-        let start = some_or_fail!(s.next_token());
-        let t = Tokenizer {
-            scan: &mut s,
-            start,
-        };
-
-        let r = t.extract();
-        dbg!(&r);
-
-        assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 10,
-                result: Ok(TokenKind::Identifier(s)),
-            } if s == "+nan.0@bar"
-        ));
     }
 
     #[test]
@@ -1769,50 +1637,6 @@ mod imaginary {
                 end: 4,
                 result: Err(TokenErrorKind::ImaginaryInvalid),
             }
-        ));
-    }
-
-    #[test]
-    fn just_i() {
-        let mut s = Scanner::new("i");
-        let start = some_or_fail!(s.next_token());
-        let t = Tokenizer {
-            scan: &mut s,
-            start,
-        };
-
-        let r = t.extract();
-        dbg!(&r);
-
-        assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 1,
-                result: Ok(TokenKind::Identifier(s)),
-            } if s == "i"
-        ));
-    }
-
-    #[test]
-    fn sign_period_i() {
-        let mut s = Scanner::new("+.i");
-        let start = some_or_fail!(s.next_token());
-        let t = Tokenizer {
-            scan: &mut s,
-            start,
-        };
-
-        let r = t.extract();
-        dbg!(&r);
-
-        assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 3,
-                result: Ok(TokenKind::Identifier(s)),
-            } if s == "+.i"
         ));
     }
 
@@ -2305,72 +2129,6 @@ mod imaginary {
     }
 
     #[test]
-    fn nosign_imaginary() {
-        let mut s = Scanner::new("i");
-        let start = some_or_fail!(s.next_token());
-        let t = Tokenizer {
-            scan: &mut s,
-            start,
-        };
-
-        let r = t.extract();
-        dbg!(&r);
-
-        assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 1,
-                result: Ok(TokenKind::Identifier(s)),
-            } if s == "i"
-        ));
-    }
-
-    #[test]
-    fn infinite_imaginary_extra_letters() {
-        let mut s = Scanner::new("+inf.0ifni");
-        let start = some_or_fail!(s.next_token());
-        let t = Tokenizer {
-            scan: &mut s,
-            start,
-        };
-
-        let r = t.extract();
-        dbg!(&r);
-
-        assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 10,
-                result: Ok(TokenKind::Identifier(s)),
-            } if s == "+inf.0ifni"
-        ));
-    }
-
-    #[test]
-    fn nan_imaginary_extra_letters() {
-        let mut s = Scanner::new("+nan.0inon");
-        let start = some_or_fail!(s.next_token());
-        let t = Tokenizer {
-            scan: &mut s,
-            start,
-        };
-
-        let r = t.extract();
-        dbg!(&r);
-
-        assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 10,
-                result: Ok(TokenKind::Identifier(s)),
-            } if s == "+nan.0inon"
-        ));
-    }
-
-    #[test]
     fn imaginary_in_real_position() {
         let mut s = Scanner::new("4i+3");
         let start = some_or_fail!(s.next_token());
@@ -2785,31 +2543,6 @@ mod cartesian {
             }
         ));
     }
-
-    #[test]
-    fn inf_nan_invalid_identifier() {
-        let cases = ["+inf.0+foo{bar", "+nan.0-bar{foo"];
-        for case in cases {
-            let mut s = Scanner::new(case);
-            let start = some_or_fail!(s.next_token());
-            let t = Tokenizer {
-                scan: &mut s,
-                start,
-            };
-
-            let r = t.extract();
-            dbg!(&r);
-
-            assert!(matches!(
-                r,
-                TokenExtract {
-                    start: 0,
-                    end,
-                    result: Err(TokenErrorKind::IdentifierInvalid('{')),
-                } if end == case.len()
-            ));
-        }
-    }
 }
 
 mod polar {
@@ -3059,28 +2792,6 @@ mod polar {
     }
 
     #[test]
-    fn no_magnitude() {
-        let mut s = Scanner::new("@3");
-        let start = some_or_fail!(s.next_token());
-        let t = Tokenizer {
-            scan: &mut s,
-            start,
-        };
-
-        let r = t.extract();
-        dbg!(&r);
-
-        assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 2,
-                result: Ok(TokenKind::Identifier(s)),
-            } if s == "@3"
-        ));
-    }
-
-    #[test]
     fn recursive_polar() {
         let mut s = Scanner::new("4@3@2");
         let start = some_or_fail!(s.next_token());
@@ -3100,5 +2811,486 @@ mod polar {
                 result: Err(TokenErrorKind::Unimplemented(_)),
             }
         ));
+    }
+}
+
+mod identifiers {
+    use super::*;
+
+    #[test]
+    fn double_sign_number() {
+        let mut s = Scanner::new("+-4");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 3,
+                result: Ok(TokenKind::Identifier(s)),
+            } if s == "+-4"
+        ));
+    }
+
+    #[test]
+    fn sign_at_number() {
+        let mut s = Scanner::new("+@4");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 3,
+                result: Ok(TokenKind::Identifier(s)),
+            } if s == "+@4"
+        ));
+    }
+
+    #[test]
+    fn sign_double_period_number() {
+        let mut s = Scanner::new("+..4");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 4,
+                result: Ok(TokenKind::Identifier(s)),
+            } if s == "+..4"
+        ));
+    }
+
+    #[test]
+    fn sign_period_sign_number() {
+        let mut s = Scanner::new("+.-4");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 4,
+                result: Ok(TokenKind::Identifier(s)),
+            } if s == "+.-4"
+        ));
+    }
+
+    #[test]
+    fn double_period_number() {
+        let mut s = Scanner::new("..4");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 3,
+                result: Ok(TokenKind::Identifier(s)),
+            } if s == "..4"
+        ));
+    }
+
+    #[test]
+    fn period_sign_is_identifier() {
+        let mut s = Scanner::new(".-4");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 3,
+                result: Ok(TokenKind::Identifier(s)),
+            } if s == ".-4"
+        ));
+    }
+
+    #[test]
+    fn period_at_number() {
+        let mut s = Scanner::new(".@4");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 3,
+                result: Ok(TokenKind::Identifier(s)),
+            } if s == ".@4"
+        ));
+    }
+
+    #[test]
+    fn at_number() {
+        let mut s = Scanner::new("@4");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 2,
+                result: Ok(TokenKind::Identifier(s)),
+            } if s == "@4"
+        ));
+    }
+
+    #[test]
+    fn nosign_infinity() {
+        let mut s = Scanner::new("inf.0");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 5,
+                result: Ok(TokenKind::Identifier(s)),
+            } if s == "inf.0"
+        ));
+    }
+
+    #[test]
+    fn inf_followed_by_signed_identifier() {
+        let mut s = Scanner::new("+inf.0+foo");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 10,
+                result: Ok(TokenKind::Identifier(s)),
+            } if s == "+inf.0+foo"
+        ));
+    }
+
+    #[test]
+    fn inf_followed_by_polar_identifier() {
+        let mut s = Scanner::new("+inf.0@foo");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 10,
+                result: Ok(TokenKind::Identifier(s)),
+            } if s == "+inf.0@foo"
+        ));
+    }
+
+    #[test]
+    fn nosign_nan() {
+        let mut s = Scanner::new("nan.0");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 5,
+                result: Ok(TokenKind::Identifier(s)),
+            } if s == "nan.0"
+        ));
+    }
+
+    #[test]
+    fn nan_followed_by_signed_identifier() {
+        let mut s = Scanner::new("+nan.0-bar");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 10,
+                result: Ok(TokenKind::Identifier(s)),
+            } if s == "+nan.0-bar"
+        ));
+    }
+
+    #[test]
+    fn nan_followed_by_polar_identifier() {
+        let mut s = Scanner::new("+nan.0@bar");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 10,
+                result: Ok(TokenKind::Identifier(s)),
+            } if s == "+nan.0@bar"
+        ));
+    }
+
+    #[test]
+    fn imag_sign_number() {
+        let mut s = Scanner::new("+i+4");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 4,
+                result: Ok(TokenKind::Identifier(s)),
+            } if s == "+i+4"
+        ));
+    }
+
+    #[test]
+    fn imag_at_number() {
+        let mut s = Scanner::new("+i@4");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 4,
+                result: Ok(TokenKind::Identifier(s)),
+            } if s == "+i@4"
+        ));
+    }
+
+    #[test]
+    fn just_i() {
+        let mut s = Scanner::new("i");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 1,
+                result: Ok(TokenKind::Identifier(s)),
+            } if s == "i"
+        ));
+    }
+
+    #[test]
+    fn sign_period_i() {
+        let mut s = Scanner::new("+.i");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 3,
+                result: Ok(TokenKind::Identifier(s)),
+            } if s == "+.i"
+        ));
+    }
+
+    #[test]
+    fn nosign_imaginary() {
+        let mut s = Scanner::new("i");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 1,
+                result: Ok(TokenKind::Identifier(s)),
+            } if s == "i"
+        ));
+    }
+
+    #[test]
+    fn infinite_imaginary_extra_letters() {
+        let mut s = Scanner::new("+inf.0ifni");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 10,
+                result: Ok(TokenKind::Identifier(s)),
+            } if s == "+inf.0ifni"
+        ));
+    }
+
+    #[test]
+    fn nan_imaginary_extra_letters() {
+        let mut s = Scanner::new("+nan.0inon");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 10,
+                result: Ok(TokenKind::Identifier(s)),
+            } if s == "+nan.0inon"
+        ));
+    }
+
+    #[test]
+    fn inf_nan_invalid_identifier() {
+        let cases = ["+inf.0+foo{bar", "+nan.0-bar{foo"];
+        for case in cases {
+            let mut s = Scanner::new(case);
+            let start = some_or_fail!(s.next_token());
+            let t = Tokenizer {
+                scan: &mut s,
+                start,
+            };
+
+            let r = t.extract();
+            dbg!(&r);
+
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 0,
+                    end,
+                    result: Err(TokenErrorKind::IdentifierInvalid('{')),
+                } if end == case.len()
+            ));
+        }
     }
 }
