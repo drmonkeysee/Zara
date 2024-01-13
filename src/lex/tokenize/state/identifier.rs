@@ -29,6 +29,8 @@ impl<'me, 'str> Identifier<'me, 'str> {
         let first = self.start.1;
         if first == '|' {
             VerbatimIdentifer::new(self.scan).scan()
+        } else if Decimal.is_digit(first) {
+            DecimalNumber::new(self.scan, self.start).scan()
         } else if is_peculiar_initial(first) {
             self.peculiar(first)
         } else if is_initial(first) {
