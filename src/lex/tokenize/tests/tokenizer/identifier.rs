@@ -496,6 +496,69 @@ fn period_at_number_is_identifer() {
 }
 
 #[test]
+fn at_number_is_identifer() {
+    let mut s = Scanner::new("@4");
+    let start = some_or_fail!(s.next_token());
+    let t = Tokenizer {
+        scan: &mut s,
+        start,
+    };
+
+    let r = t.extract();
+
+    assert!(matches!(
+        r,
+        TokenExtract {
+            start: 0,
+            end: 2,
+            result: Ok(TokenKind::Identifier(s)),
+        } if s == "@4"
+    ));
+}
+
+#[test]
+fn imag_sign_number_is_identifer() {
+    let mut s = Scanner::new("+i+4");
+    let start = some_or_fail!(s.next_token());
+    let t = Tokenizer {
+        scan: &mut s,
+        start,
+    };
+
+    let r = t.extract();
+
+    assert!(matches!(
+        r,
+        TokenExtract {
+            start: 0,
+            end: 4,
+            result: Ok(TokenKind::Identifier(s)),
+        } if s == "+i+4"
+    ));
+}
+
+#[test]
+fn imag_at_number_is_identifer() {
+    let mut s = Scanner::new("+i@4");
+    let start = some_or_fail!(s.next_token());
+    let t = Tokenizer {
+        scan: &mut s,
+        start,
+    };
+
+    let r = t.extract();
+
+    assert!(matches!(
+        r,
+        TokenExtract {
+            start: 0,
+            end: 4,
+            result: Ok(TokenKind::Identifier(s)),
+        } if s == "+i@4"
+    ));
+}
+
+#[test]
 fn start_digit() {
     let mut s = Scanner::new("4foo");
     let start = some_or_fail!(s.next_token());

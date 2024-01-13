@@ -1,4 +1,4 @@
-use super::Identifier;
+use super::{ComplexKind, Identifier};
 use crate::{
     lex::{
         token::{TokenErrorKind, TokenKind},
@@ -327,12 +327,6 @@ impl<'me, 'str> DenominatorNumber<'me, 'str> {
     fn get_lexeme(&mut self) -> &str {
         self.scan.current_lexeme_at(self.start)
     }
-}
-
-#[derive(Clone, Copy, Debug)]
-enum ComplexKind {
-    Cartesian,
-    Polar,
 }
 
 #[derive(Clone, Copy, Debug)]

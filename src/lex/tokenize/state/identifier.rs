@@ -1,10 +1,14 @@
-use super::{Decimal, DecimalNumber, FreeText, FreeTextPolicy, Radix};
-use crate::lex::{
-    token::{TokenErrorKind, TokenKind},
-    tokenize::{
-        extract::TokenExtractResult,
-        scan::{ScanItem, Scanner},
+use super::{ComplexKind, Decimal, DecimalNumber, FreeText, FreeTextPolicy, Radix};
+use crate::{
+    lex::{
+        token::{TokenErrorKind, TokenKind},
+        tokenize::{
+            extract::TokenExtractResult,
+            scan::{ScanItem, Scanner},
+        },
     },
+    literal::Literal,
+    number::Number,
 };
 
 pub(in crate::lex::tokenize) struct Identifier<'me, 'str> {
@@ -41,9 +45,13 @@ impl<'me, 'str> Identifier<'me, 'str> {
     }
 
     fn standard(&mut self) -> TokenExtractResult {
-        while let Some(ch) = self.scan.char_if_not_delimiter() {
-            if !is_standard(ch) {
-                return self.invalid(ch);
+        while let Some(item) = self.scan.next_if_not_delimiter() {
+            let ch = item.1;
+            match ch {
+                '+' | '-' => return self.maybe_infnan_complex(item, ComplexKind::Cartesian),
+                '@' => return self.maybe_infnan_complex(item, ComplexKind::Polar),
+                _ if is_standard(ch) => (),
+                _ => return self.invalid(ch),
             }
         }
         let txt = self.get_lexeme();
@@ -95,6 +103,33 @@ impl<'me, 'str> Identifier<'me, 'str> {
             debug_assert!(txt != ".");
             Ok(TokenKind::Identifier(txt.to_owned()))
         }
+    }
+
+    fn maybe_infnan_complex(&mut self, item: ScanItem, kind: ComplexKind) -> TokenExtractResult {
+        if let Some(TokenKind::Literal(Literal::Number(Number::Real(real)))) =
+            super::numeric_label(self.scan.lexeme(self.start.0..item.0))
+        {
+            match kind {
+                ComplexKind::Cartesian => {
+                    if let TokenKind::Imaginary(imag) = Identifier::new(self.scan, item).scan()? {
+                        return Ok(TokenKind::Literal(Literal::Number(Number::complex(
+                            real, imag,
+                        ))));
+                    }
+                }
+                ComplexKind::Polar => todo!(),
+            }
+        }
+        self.rest_of_standard()
+    }
+
+    fn rest_of_standard(&mut self) -> TokenExtractResult {
+        while let Some(ch) = self.scan.char_if_not_delimiter() {
+            if !is_standard(ch) {
+                return self.invalid(ch);
+            }
+        }
+        Ok(TokenKind::Identifier(self.get_lexeme().to_owned()))
     }
 
     fn invalid(&mut self, ch: char) -> TokenExtractResult {

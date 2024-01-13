@@ -111,6 +111,12 @@ pub(super) trait FreeTextPolicy {
 
 type FreeTextResult = Result<(), TokenErrorKind>;
 
+#[derive(Clone, Copy, Debug)]
+enum ComplexKind {
+    Cartesian,
+    Polar,
+}
+
 enum HexParse {
     Invalid,
     Unexpected,
