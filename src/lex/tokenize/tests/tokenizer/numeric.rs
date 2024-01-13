@@ -2759,6 +2759,28 @@ mod cartesian {
             }
         ));
     }
+
+    #[test]
+    fn recursive_complex() {
+        let mut s = Scanner::new("4+3+2i");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 6,
+                result: Err(TokenErrorKind::ComplexInvalid),
+            }
+        ));
+    }
 }
 
 mod polar {
@@ -3026,6 +3048,28 @@ mod polar {
                 end: 2,
                 result: Ok(TokenKind::Identifier(s)),
             } if s == "@3"
+        ));
+    }
+
+    #[test]
+    fn recursive_polar() {
+        let mut s = Scanner::new("4@3@2");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 5,
+                result: Err(TokenErrorKind::Unimplemented(_)),
+            }
         ));
     }
 }
