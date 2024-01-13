@@ -2251,6 +2251,30 @@ mod cartesian {
     }
 
     #[test]
+    fn negative_zero_imaginary_part() {
+        let mut s = Scanner::new("4-0i");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 4,
+                result: Ok(TokenKind::Literal(_)),
+            }
+        ));
+        let num = extract_number!(r.result);
+        assert_eq!(num.as_datum().to_string(), "4");
+    }
+
+    #[test]
     fn zero_real_part() {
         let mut s = Scanner::new("0+3i");
         let start = some_or_fail!(s.next_token());
@@ -2267,6 +2291,30 @@ mod cartesian {
             TokenExtract {
                 start: 0,
                 end: 4,
+                result: Ok(TokenKind::Literal(_)),
+            }
+        ));
+        let num = extract_number!(r.result);
+        assert_eq!(num.as_datum().to_string(), "+3i");
+    }
+
+    #[test]
+    fn negative_zero_real_part() {
+        let mut s = Scanner::new("-0+3i");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 5,
                 result: Ok(TokenKind::Literal(_)),
             }
         ));
@@ -2573,6 +2621,78 @@ mod polar {
     }
 
     #[test]
+    fn negative_mag() {
+        let mut s = Scanner::new("-4@3");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 4,
+                result: Ok(TokenKind::Literal(_)),
+            }
+        ));
+        let num = extract_number!(r.result);
+        assert_eq!(num.as_datum().to_string(), "???");
+    }
+
+    #[test]
+    fn negative_rads() {
+        let mut s = Scanner::new("4@-3");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 4,
+                result: Ok(TokenKind::Literal(_)),
+            }
+        ));
+        let num = extract_number!(r.result);
+        assert_eq!(num.as_datum().to_string(), "???");
+    }
+
+    #[test]
+    fn negative() {
+        let mut s = Scanner::new("-4@-3");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 5,
+                result: Ok(TokenKind::Literal(_)),
+            }
+        ));
+        let num = extract_number!(r.result);
+        assert_eq!(num.as_datum().to_string(), "???");
+    }
+
+    #[test]
     fn zero_magnitude() {
         let mut s = Scanner::new("0@3");
         let start = some_or_fail!(s.next_token());
@@ -2597,6 +2717,30 @@ mod polar {
     }
 
     #[test]
+    fn negative_zero_magnitude() {
+        let mut s = Scanner::new("-0@3");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 4,
+                result: Ok(TokenKind::Literal(_)),
+            }
+        ));
+        let num = extract_number!(r.result);
+        assert_eq!(num.as_datum().to_string(), "???");
+    }
+
+    #[test]
     fn zero_angle() {
         let mut s = Scanner::new("4@0");
         let start = some_or_fail!(s.next_token());
@@ -2613,6 +2757,30 @@ mod polar {
             TokenExtract {
                 start: 0,
                 end: 3,
+                result: Ok(TokenKind::Literal(_)),
+            }
+        ));
+        let num = extract_number!(r.result);
+        assert_eq!(num.as_datum().to_string(), "???");
+    }
+
+    #[test]
+    fn negative_zero_angle() {
+        let mut s = Scanner::new("4@-0");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 4,
                 result: Ok(TokenKind::Literal(_)),
             }
         ));
