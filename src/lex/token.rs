@@ -159,6 +159,7 @@ pub(super) enum TokenErrorKind {
     NumberMalformedExponent { at: usize },
     NumberUnexpectedDecimalPoint { at: usize },
     NumericError(NumericError),
+    PolarInvalid,
     RationalInvalid,
     StringEscapeInvalid { at: usize, ch: char },
     StringExpectedHex { at: usize },
@@ -257,6 +258,7 @@ impl Display for TokenErrorKind {
             }
             Self::NumberUnexpectedDecimalPoint { .. } => f.write_str("unexpected decimal point"),
             Self::NumericError(err) => write!(f, "numeric error: {err}"),
+            Self::PolarInvalid => f.write_str("invalid polar literal"),
             Self::RationalInvalid => f.write_str("invalid rational literal"),
             Self::StringUnterminated => f.write_str("unterminated string-literal"),
             Self::Unimplemented(s) => write!(f, "unimplemented tokenization: '{s}'"),
@@ -1148,6 +1150,26 @@ mod tests {
             };
 
             assert_eq!(err.to_string(), "invalid rational literal");
+        }
+
+        #[test]
+        fn display_complex_invalid() {
+            let err = TokenError {
+                kind: TokenErrorKind::ComplexInvalid,
+                span: 0..1,
+            };
+
+            assert_eq!(err.to_string(), "invalid complex literal");
+        }
+
+        #[test]
+        fn display_polar_invalid() {
+            let err = TokenError {
+                kind: TokenErrorKind::PolarInvalid,
+                span: 0..1,
+            };
+
+            assert_eq!(err.to_string(), "invalid polar literal");
         }
 
         #[test]

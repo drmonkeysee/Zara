@@ -150,13 +150,30 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
         kind: ComplexKind,
         start: ScanItem,
     ) -> TokenExtractResult {
-        debug_assert!(matches!(start.1, '+' | '-'));
-        match Identifier::new(self.scan, start).scan() {
-            Ok(TokenKind::Imaginary(imag)) => Ok(TokenKind::Literal(Literal::Number(match kind {
-                ComplexKind::Cartesian => Number::complex(real, imag),
-                ComplexKind::Polar => todo!(),
-            }))),
-            _ => self.fail(TokenErrorKind::ComplexInvalid),
+        match kind {
+            ComplexKind::Cartesian => {
+                debug_assert!(matches!(start.1, '+' | '-'));
+                if let Ok(TokenKind::Imaginary(imag)) = Identifier::new(self.scan, start).scan() {
+                    Ok(TokenKind::Literal(Literal::Number(Number::complex(
+                        real, imag,
+                    ))))
+                } else {
+                    self.fail(TokenErrorKind::ComplexInvalid)
+                }
+            }
+            ComplexKind::Polar => {
+                debug_assert_eq!(start.1, '@');
+                if let Some(first) = self.scan.next_if_not_delimiter() {
+                    if let Ok(TokenKind::Literal(Literal::Number(Number::Real(rads)))) =
+                        Identifier::new(self.scan, first).scan()
+                    {
+                        return Ok(TokenKind::Literal(Literal::Number(Number::polar(
+                            real, rads,
+                        ))));
+                    }
+                }
+                self.fail(TokenErrorKind::PolarInvalid)
+            }
         }
     }
 
@@ -456,7 +473,10 @@ impl<R: Radix + Clone + Debug> Integral<R> {
                 radix: R::NAME,
             })),
             '/' => ControlFlow::Break(Ok(BreakCondition::Fraction(self.0.clone()))),
-            '@' => todo!(),
+            '@' => ControlFlow::Break(Ok(BreakCondition::Complex {
+                kind: ComplexKind::Polar,
+                start: item,
+            })),
             'e' | 'E' => ControlFlow::Break(Err(TokenErrorKind::NumberInvalidExponent {
                 at: idx,
                 radix: R::NAME,
@@ -488,7 +508,10 @@ impl DecimalInt {
                 integral: self.0.clone(),
             }))),
             '/' => ControlFlow::Break(Ok(BreakCondition::Fraction(self.0.clone()))),
-            '@' => todo!(),
+            '@' => ControlFlow::Break(Ok(BreakCondition::Complex {
+                kind: ComplexKind::Polar,
+                start: item,
+            })),
             'e' | 'E' => ControlFlow::Continue(Some(Classifier::Sci(Scientific {
                 exponent: offset..offset + 1,
                 significand: Float {
@@ -533,7 +556,10 @@ impl Float {
                 at: idx,
             })),
             '/' => ControlFlow::Break(Err(TokenErrorKind::RationalInvalid)),
-            '@' => todo!(),
+            '@' => ControlFlow::Break(Ok(BreakCondition::Complex {
+                kind: ComplexKind::Polar,
+                start: item,
+            })),
             'e' | 'E' => ControlFlow::Continue(Some(Classifier::Sci(Scientific {
                 exponent: offset..offset + 1,
                 significand: self.clone(),
@@ -593,7 +619,10 @@ impl Scientific {
                 }
             }
             '/' => ControlFlow::Break(Err(TokenErrorKind::RationalInvalid)),
-            '@' => todo!(),
+            '@' => ControlFlow::Break(Ok(BreakCondition::Complex {
+                kind: ComplexKind::Polar,
+                start: item,
+            })),
             'i' | 'I' => ControlFlow::Break(if self.no_e_value() {
                 Err(self.malformed_exponent())
             } else {

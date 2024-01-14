@@ -111,24 +111,25 @@ impl<'me, 'str> Identifier<'me, 'str> {
         {
             let invalid_tok = match kind {
                 ComplexKind::Cartesian => {
-                    let tokr = Identifier::new(self.scan, item).scan();
-                    if let Ok(TokenKind::Imaginary(imag)) = tokr {
+                    let result = Identifier::new(self.scan, item).scan();
+                    if let Ok(TokenKind::Imaginary(imag)) = result {
                         return Ok(TokenKind::Literal(Literal::Number(Number::complex(
                             real, imag,
                         ))));
                     } else {
-                        Some(tokr)
+                        Some(result)
                     }
                 }
                 ComplexKind::Polar => {
                     if let Some(first) = self.scan.next_if_not_delimiter() {
-                        let tokr = Identifier::new(self.scan, first).scan();
-                        if let Ok(TokenKind::Literal(Literal::Number(Number::Real(rads)))) = tokr {
+                        let result = Identifier::new(self.scan, first).scan();
+                        if let Ok(TokenKind::Literal(Literal::Number(Number::Real(rads)))) = result
+                        {
                             return Ok(TokenKind::Literal(Literal::Number(Number::polar(
                                 real, rads,
                             ))));
                         } else {
-                            Some(tokr)
+                            Some(result)
                         }
                     } else {
                         None

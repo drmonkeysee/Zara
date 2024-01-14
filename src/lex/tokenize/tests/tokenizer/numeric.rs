@@ -2617,7 +2617,10 @@ mod polar {
             }
         ));
         let num = extract_number!(r.result);
-        assert_eq!(num.as_datum().to_string(), "???");
+        assert_eq!(
+            num.as_datum().to_string(),
+            "-3.9599699864017817+0.5644800322394689i"
+        );
     }
 
     #[test]
@@ -2641,7 +2644,10 @@ mod polar {
             }
         ));
         let num = extract_number!(r.result);
-        assert_eq!(num.as_datum().to_string(), "???");
+        assert_eq!(
+            num.as_datum().to_string(),
+            "3.9599699864017817-0.5644800322394689i"
+        );
     }
 
     #[test]
@@ -2665,7 +2671,10 @@ mod polar {
             }
         ));
         let num = extract_number!(r.result);
-        assert_eq!(num.as_datum().to_string(), "???");
+        assert_eq!(
+            num.as_datum().to_string(),
+            "-3.9599699864017817-0.5644800322394689i"
+        );
     }
 
     #[test]
@@ -2689,7 +2698,10 @@ mod polar {
             }
         ));
         let num = extract_number!(r.result);
-        assert_eq!(num.as_datum().to_string(), "???");
+        assert_eq!(
+            num.as_datum().to_string(),
+            "3.9599699864017817+0.5644800322394689i"
+        );
     }
 
     #[test]
@@ -2713,7 +2725,7 @@ mod polar {
             }
         ));
         let num = extract_number!(r.result);
-        assert_eq!(num.as_datum().to_string(), "???");
+        assert_eq!(num.as_datum().to_string(), "0");
     }
 
     #[test]
@@ -2737,7 +2749,7 @@ mod polar {
             }
         ));
         let num = extract_number!(r.result);
-        assert_eq!(num.as_datum().to_string(), "???");
+        assert_eq!(num.as_datum().to_string(), "0");
     }
 
     #[test]
@@ -2761,7 +2773,7 @@ mod polar {
             }
         ));
         let num = extract_number!(r.result);
-        assert_eq!(num.as_datum().to_string(), "???");
+        assert_eq!(num.as_datum().to_string(), "4");
     }
 
     #[test]
@@ -2785,7 +2797,7 @@ mod polar {
             }
         ));
         let num = extract_number!(r.result);
-        assert_eq!(num.as_datum().to_string(), "???");
+        assert_eq!(num.as_datum().to_string(), "4");
     }
 
     #[test]
@@ -2809,12 +2821,12 @@ mod polar {
             }
         ));
         let num = extract_number!(r.result);
-        assert_eq!(num.as_datum().to_string(), "???");
+        assert_eq!(num.as_datum().to_string(), "0");
     }
 
     #[test]
     fn unit_45degrees() {
-        let input = format!("0@{}", std::f64::consts::FRAC_PI_4);
+        let input = format!("1@{}", std::f64::consts::FRAC_PI_4);
         let mut s = Scanner::new(&input);
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
@@ -2829,19 +2841,39 @@ mod polar {
             r,
             TokenExtract {
                 start: 0,
-                end: 3,
+                end: 20,
                 result: Ok(TokenKind::Literal(_)),
             }
         ));
         let num = extract_number!(r.result);
-        assert_eq!(num.as_datum().to_string(), "???");
+        assert_eq!(
+            num.as_datum().to_string(),
+            "0.7071067811865476+0.7071067811865475i"
+        );
     }
 
     #[test]
     fn combos() {
         let reals = ["4", "3.5", "4.2e4", "1/6"];
         let imags = ["5", "12.2", "5.6e-2", "7/3"];
-        let expected = ["???"];
+        let expected = [
+            "1.134648741852905-3.835697098652554i",
+            "3.7345345762985493-1.4329171289473148i",
+            "3.9937296389113377+0.2238829410230219i",
+            "-2.7630325589995057+2.892343526953298i",
+            "0.9928176491212919-3.3562349613209848i",
+            "3.2677177542612306-1.2538024878289005i",
+            "3.4945134340474207+0.19589757339514416i",
+            "-2.4176534891245676+2.530800586084136i",
+            "11913.811789455502-40274.81953585181i",
+            "39212.613051134766-15045.629853946806i",
+            "41934.16120856904+2350.77088074173i",
+            "-29011.84186949481+30369.60703300963i",
+            "0.047277030910537705-0.1598207124438564i",
+            "0.1556056073457729-0.05970488037280478i",
+            "0.16640540162130574+0.009328455875959245i",
+            "-0.1151263566249794+0.12051431362305409i",
+        ];
         let combos = reals
             .into_iter()
             .flat_map(|r| imags.into_iter().map(move |i| format!("{r}@{i}")));
@@ -2930,8 +2962,8 @@ mod polar {
             r,
             TokenExtract {
                 start: 0,
-                end: 3,
-                result: Err(TokenErrorKind::Unimplemented(_)),
+                end: 4,
+                result: Err(TokenErrorKind::PolarInvalid),
             }
         ));
     }
@@ -2952,8 +2984,8 @@ mod polar {
             r,
             TokenExtract {
                 start: 0,
-                end: 3,
-                result: Err(TokenErrorKind::Unimplemented(_)),
+                end: 2,
+                result: Err(TokenErrorKind::PolarInvalid),
             }
         ));
     }
@@ -2975,7 +3007,7 @@ mod polar {
             TokenExtract {
                 start: 0,
                 end: 5,
-                result: Err(TokenErrorKind::Unimplemented(_)),
+                result: Err(TokenErrorKind::PolarInvalid),
             }
         ));
     }
