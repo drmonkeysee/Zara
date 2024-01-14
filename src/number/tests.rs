@@ -1,6 +1,14 @@
 use super::*;
 use crate::testutil::{extract_or_fail, ok_or_fail};
 
+macro_rules! rational_parts {
+    ($num:expr) => {{
+        let r = extract_or_fail!($num, Number::Real);
+        let rat = extract_or_fail!(r, Real::Rational);
+        *rat.0
+    }};
+}
+
 mod sign {
     use super::*;
 
@@ -667,14 +675,6 @@ mod rational {
     use super::*;
     use crate::testutil::err_or_fail;
 
-    macro_rules! rational_parts {
-        ($num:expr) => {{
-            let r = extract_or_fail!($num, Number::Real);
-            let rat = extract_or_fail!(r, Real::Rational);
-            *rat.0
-        }};
-    }
-
     macro_rules! rational_integer {
         ($num:expr) => {{
             let r = extract_or_fail!($num, Number::Real);
@@ -953,5 +953,92 @@ mod complex {
         let i = extract_or_fail!(ri.0 .1, Real::Integer);
         assert!(!i.is_zero());
         assert_eq!(extract_or_fail!(i.precision, Precision::Single), 3);
+    }
+
+    #[test]
+    fn polar() {
+        let c = Number::polar(4, 3);
+
+        let ri = extract_or_fail!(c, Number::Complex);
+        let r = extract_or_fail!(ri.0 .0, Real::Float);
+        assert_eq!(r, -3.9599699864017817);
+        let i = extract_or_fail!(ri.0 .1, Real::Float);
+        assert_eq!(i, 0.5644800322394689);
+    }
+
+    #[test]
+    fn negative_mag() {
+        let c = Number::polar(-4, 3);
+
+        let ri = extract_or_fail!(c, Number::Complex);
+        let r = extract_or_fail!(ri.0 .0, Real::Float);
+        assert_eq!(r, 3.9599699864017817);
+        let i = extract_or_fail!(ri.0 .1, Real::Float);
+        assert_eq!(i, -0.5644800322394689);
+    }
+
+    #[test]
+    fn negative_angle() {
+        let c = Number::polar(4, -3);
+
+        let ri = extract_or_fail!(c, Number::Complex);
+        let r = extract_or_fail!(ri.0 .0, Real::Float);
+        assert_eq!(r, -3.9599699864017817);
+        let i = extract_or_fail!(ri.0 .1, Real::Float);
+        assert_eq!(i, -0.5644800322394689);
+    }
+
+    #[test]
+    fn negatives() {
+        let c = Number::polar(-4, -3);
+
+        let ri = extract_or_fail!(c, Number::Complex);
+        let r = extract_or_fail!(ri.0 .0, Real::Float);
+        assert_eq!(r, 3.9599699864017817);
+        let i = extract_or_fail!(ri.0 .1, Real::Float);
+        assert_eq!(i, 0.5644800322394689);
+    }
+
+    #[test]
+    fn zero_mag() {
+        let c = Number::polar(0, 3);
+
+        let r = extract_or_fail!(c, Number::Real);
+        let int = extract_or_fail!(r, Real::Integer);
+        assert!(int.is_zero());
+        assert_eq!(extract_or_fail!(int.precision, Precision::Single), 0);
+    }
+
+    #[test]
+    fn zero_angle() {
+        let c = Number::polar(4, 0);
+
+        let r = extract_or_fail!(c, Number::Real);
+        let int = extract_or_fail!(r, Real::Integer);
+        assert!(!int.is_zero());
+        assert_eq!(extract_or_fail!(int.precision, Precision::Single), 4);
+    }
+
+    #[test]
+    fn zero_angle_float() {
+        let c = Number::polar(4.0, 0.0);
+
+        let r = extract_or_fail!(c, Number::Real);
+        let f = extract_or_fail!(r, Real::Float);
+        assert_eq!(f, 4.0);
+    }
+
+    #[test]
+    fn zero_angle_rational() {
+        let m = ok_or_fail!(Real::reduce(4, 5));
+        let rad = ok_or_fail!(Real::reduce(0, 2));
+        let c = Number::polar(m, rad);
+
+        let (num, den) = rational_parts!(c);
+
+        assert_eq!(extract_or_fail!(num.precision, Precision::Single), 4);
+        assert_eq!(num.sign, Sign::Positive);
+        assert_eq!(extract_or_fail!(den.precision, Precision::Single), 5);
+        assert_eq!(den.sign, Sign::Positive);
     }
 }

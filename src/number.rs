@@ -18,16 +18,23 @@ impl Number {
     pub(crate) fn complex(real: impl Into<Real>, imag: impl Into<Real>) -> Self {
         let (real, imag): (Real, Real) = (real.into(), imag.into());
         if imag.is_zero() {
-            Self::Real(real)
+            Self::real(real)
         } else {
             Self::Complex(Complex((real, imag).into()))
         }
     }
 
     pub(crate) fn polar(magnitude: impl Into<Real>, radians: impl Into<Real>) -> Self {
-        let (mag, rad) = (magnitude.into().into_float(), radians.into().into_float());
-        let (rsin, rcos) = rad.sin_cos();
-        Number::complex(mag * rcos, mag * rsin)
+        let (mag, rad) = (magnitude.into(), radians.into());
+        if mag.is_zero() {
+            Self::real(0)
+        } else if rad.is_zero() {
+            Self::real(mag)
+        } else {
+            let (fmag, frad) = (mag.into_float(), rad.into_float());
+            let (rsin, rcos) = frad.sin_cos();
+            Self::complex(fmag * rcos, fmag * rsin)
+        }
     }
 
     pub(crate) fn real(value: impl Into<Real>) -> Self {
@@ -38,7 +45,7 @@ impl Number {
         numerator: impl Into<Integer>,
         denominator: impl Into<Integer>,
     ) -> Result<Self, NumericError> {
-        Ok(Self::Real(Real::reduce(numerator, denominator)?))
+        Ok(Self::real(Real::reduce(numerator, denominator)?))
     }
 
     pub(crate) fn as_datum(&self) -> Datum {
