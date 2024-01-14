@@ -275,6 +275,90 @@ mod integer {
         let int = extract_number!(r.result, Number::Real, Real::Integer);
         assert_eq!(int.to_string(), "-18446744073709551615");
     }
+
+    #[test]
+    fn radix_and_sign() {
+        let radix = [("#b", "101010"), ("#o", "52"), ("#d", "42"), ("#x", "2a")];
+        let prefix = ["", "+", "-", "0", "+0", "-0"];
+        let combos = prefix
+            .into_iter()
+            .flat_map(|p| radix.map(|r| format!("{}{p}{}", r.0, r.1)));
+        for case in combos {
+            let mut s = Scanner::new(&case);
+            let start = some_or_fail!(s.next_token());
+            let t = Tokenizer {
+                scan: &mut s,
+                start,
+            };
+
+            let r = t.extract();
+            dbg!(&r);
+
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 0,
+                    end,
+                    result: Ok(TokenKind::Literal(Literal::Number(_))),
+                } if end == case.len()
+            ));
+            let int = extract_number!(r.result, Number::Real, Real::Integer);
+            let expected = if case.contains('-') { "-42" } else { "42" };
+            assert_eq!(int.to_string(), expected);
+        }
+    }
+
+    #[test]
+    fn radix_uppercase() {
+        let cases = ["#B101010", "#O52", "#D42", "#X2a"];
+        for case in cases {
+            let mut s = Scanner::new(&case);
+            let start = some_or_fail!(s.next_token());
+            let t = Tokenizer {
+                scan: &mut s,
+                start,
+            };
+
+            let r = t.extract();
+            dbg!(&r);
+
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 0,
+                    end,
+                    result: Ok(TokenKind::Literal(Literal::Number(_))),
+                } if end == case.len()
+            ));
+            let int = extract_number!(r.result, Number::Real, Real::Integer);
+            assert_eq!(int.to_string(), "42");
+        }
+    }
+
+    #[test]
+    fn invalid_radix_digits() {
+        let cases = ["#b102010", "#o82", "#d42af", "#x2ag"];
+        for case in cases {
+            let mut s = Scanner::new(case);
+            let start = some_or_fail!(s.next_token());
+            let t = Tokenizer {
+                scan: &mut s,
+                start,
+            };
+
+            let r = t.extract();
+            dbg!(&r);
+
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 0,
+                    end,
+                    result: Err(TokenErrorKind::NumberInvalid),
+                } if end == case.len()
+            ));
+        }
+    }
 }
 
 mod rational {
@@ -521,6 +605,47 @@ mod rational {
     }
 
     #[test]
+    fn radix_and_sign() {
+        let radix = [
+            ("#b", "101010/101011"),
+            ("#o", "52/53"),
+            ("#d", "42/43"),
+            ("#x", "2a/2b"),
+        ];
+        let sign = ["", "+", "-"];
+        let combos = sign
+            .into_iter()
+            .flat_map(|s| radix.map(|r| format!("{}{s}{}", r.0, r.1)));
+        for case in combos {
+            let mut s = Scanner::new(&case);
+            let start = some_or_fail!(s.next_token());
+            let t = Tokenizer {
+                scan: &mut s,
+                start,
+            };
+
+            let r = t.extract();
+            dbg!(&r);
+
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 0,
+                    end,
+                    result: Ok(TokenKind::Literal(Literal::Number(_))),
+                } if end == case.len()
+            ));
+            let rat = extract_number!(r.result, Number::Real, Real::Rational);
+            let expected = if case.contains('-') {
+                "-42/43"
+            } else {
+                "42/43"
+            };
+            assert_eq!(rat.to_string(), expected);
+        }
+    }
+
+    #[test]
     fn negative_denominator() {
         let mut s = Scanner::new("4/-5");
         let start = some_or_fail!(s.next_token());
@@ -669,6 +794,50 @@ mod rational {
             TokenExtract {
                 start: 0,
                 end: 5,
+                result: Err(TokenErrorKind::RationalInvalid),
+            }
+        ));
+    }
+
+    #[test]
+    fn invalid_radix_placement() {
+        let mut s = Scanner::new("4/#b101");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 7,
+                result: Err(TokenErrorKind::RationalInvalid),
+            }
+        ));
+    }
+
+    #[test]
+    fn invalid_radix_denom() {
+        let mut s = Scanner::new("#b100/5");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 7,
                 result: Err(TokenErrorKind::RationalInvalid),
             }
         ));
@@ -1323,8 +1492,8 @@ mod float {
     }
 
     #[test]
-    fn invalid_decimal_radix() {
-        let mut s = Scanner::new("#b1.01");
+    fn valid_decimal_radix() {
+        let mut s = Scanner::new("#d42.34");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
             scan: &mut s,
@@ -1338,32 +1507,94 @@ mod float {
             r,
             TokenExtract {
                 start: 0,
-                end: 6,
-                result: Err(TokenErrorKind::NumberInvalidDecimalPoint { at: 3, radix }),
-            } if radix == "binary"
+                end: 7,
+                result: Ok(TokenKind::Literal(Literal::Number(_))),
+            }
         ));
+        let flt = extract_number!(r.result, Number::Real);
+        assert_eq!(flt.to_string(), "42.34");
+    }
+
+    #[test]
+    fn invalid_decimal_radix() {
+        let cases = [
+            ("#b1.01", "binary"),
+            ("#o3.73", "octal"),
+            ("#x4f.a2", "hexadecimal"),
+        ];
+        for (case, label) in cases {
+            let mut s = Scanner::new(case);
+            let start = some_or_fail!(s.next_token());
+            let t = Tokenizer {
+                scan: &mut s,
+                start,
+            };
+
+            let r = t.extract();
+            dbg!(&r);
+
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 0,
+                    end,
+                    result: Err(TokenErrorKind::NumberInvalidDecimalPoint { at: 3, radix }),
+                } if radix == label && end == case.len()
+            ));
+        }
+    }
+
+    #[test]
+    fn valid_exponent_radix() {
+        let mut s = Scanner::new("#d34e4");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 4,
+                result: Ok(TokenKind::Literal(Literal::Number(_))),
+            }
+        ));
+        let flt = extract_number!(r.result, Number::Real);
+        assert_eq!(flt.to_string(), "340000.0");
     }
 
     #[test]
     fn invalid_exponent_radix() {
-        let mut s = Scanner::new("#x101e11");
-        let start = some_or_fail!(s.next_token());
-        let t = Tokenizer {
-            scan: &mut s,
-            start,
-        };
+        let cases = [
+            ("#b101e11", "binary"),
+            ("#o34e72", "octal"),
+            ("#x4fea2", "hexadecimal"),
+        ];
+        for (case, label) in cases {
+            let mut s = Scanner::new(case);
+            let start = some_or_fail!(s.next_token());
+            let t = Tokenizer {
+                scan: &mut s,
+                start,
+            };
 
-        let r = t.extract();
-        dbg!(&r);
+            let r = t.extract();
+            dbg!(&r);
 
-        assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 6,
-                result: Err(TokenErrorKind::NumberInvalidExponent { at: 3, radix }),
-            } if radix == "binary"
-        ));
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 0,
+                    end,
+                    result: Err(TokenErrorKind::NumberInvalidExponent { at: 3, radix }),
+                } if radix == label && end == case.len()
+            ));
+        }
     }
 
     #[test]
@@ -1738,6 +1969,72 @@ mod imaginary {
         let tok = ok_or_fail!(r.result);
         let r = extract_or_fail!(tok, TokenKind::Imaginary);
         assert_eq!(r.to_string(), "4");
+    }
+
+    #[test]
+    fn radix_and_sign() {
+        let radix = [("#b", "101010"), ("#o", "52"), ("#d", "42"), ("#x", "2a")];
+        let prefix = ["+", "-", "+0", "-0"];
+        let combos = prefix
+            .into_iter()
+            .flat_map(|p| radix.map(|r| format!("{}{p}{}i", r.0, r.1)));
+        for case in combos {
+            let mut s = Scanner::new(&case);
+            let start = some_or_fail!(s.next_token());
+            let t = Tokenizer {
+                scan: &mut s,
+                start,
+            };
+
+            let r = t.extract();
+            dbg!(&r);
+
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 0,
+                    end,
+                    result: Ok(TokenKind::Imaginary(_)),
+                } if end == case.len()
+            ));
+            let tok = ok_or_fail!(r.result);
+            let r = extract_or_fail!(tok, TokenKind::Imaginary);
+            let expected = if case.contains('-') { "-42" } else { "42" };
+            assert_eq!(r.to_string(), expected);
+        }
+    }
+
+    #[test]
+    fn unity_radix() {
+        let radix = ["#b", "#o", "#d", "#x"];
+        let sign = ["+", "-"];
+        let combos = sign
+            .into_iter()
+            .flat_map(|s| radix.map(|r| format!("{r}{s}i")));
+        for case in combos {
+            let mut s = Scanner::new(&case);
+            let start = some_or_fail!(s.next_token());
+            let t = Tokenizer {
+                scan: &mut s,
+                start,
+            };
+
+            let r = t.extract();
+            dbg!(&r);
+
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 0,
+                    end,
+                    result: Ok(TokenKind::Imaginary(_)),
+                } if end == case.len()
+            ));
+            let tok = ok_or_fail!(r.result);
+            let r = extract_or_fail!(tok, TokenKind::Imaginary);
+            let expected = if case.contains('-') { "-42" } else { "42" };
+            assert_eq!(r.to_string(), expected);
+        }
     }
 
     #[test]
@@ -2505,6 +2802,79 @@ mod cartesian {
     }
 
     #[test]
+    fn radix_and_sign() {
+        let radix = [
+            ("#b", "101010", "101011"),
+            ("#o", "52", "53"),
+            ("#d", "42", "43"),
+            ("#x", "2a", "2b"),
+        ];
+        let sign = ["", "+", "-"];
+        let combos = sign.into_iter().flat_map(|s| {
+            radix.map(|r| {
+                format!(
+                    "{}{s}{}{}{}",
+                    r.0,
+                    r.1,
+                    if s.is_empty() { "+" } else { "-" },
+                    r.2
+                )
+            })
+        });
+        for case in combos {
+            let mut s = Scanner::new(&case);
+            let start = some_or_fail!(s.next_token());
+            let t = Tokenizer {
+                scan: &mut s,
+                start,
+            };
+
+            let r = t.extract();
+            dbg!(&r);
+
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 0,
+                    end,
+                    result: Ok(TokenKind::Literal(Literal::Number(_))),
+                } if end == case.len()
+            ));
+            let rat = extract_number!(r.result, Number::Real, Real::Rational);
+            let expected = if case.contains('-') {
+                "-42-43i"
+            } else {
+                "42+43i"
+            };
+            assert_eq!(rat.to_string(), expected);
+        }
+    }
+
+    #[test]
+    fn rational_radix() {
+        let mut s = Scanner::new("#b100/101+10/11i");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 16,
+                result: Ok(TokenKind::Literal(_)),
+            }
+        ));
+        let num = extract_number!(r.result);
+        assert_eq!(num.as_datum().to_string(), "4/5+2/3i");
+    }
+
+    #[test]
     fn missing_imaginary() {
         let mut s = Scanner::new("4+");
         let start = some_or_fail!(s.next_token());
@@ -2587,6 +2957,50 @@ mod cartesian {
             TokenExtract {
                 start: 0,
                 end: 6,
+                result: Err(TokenErrorKind::ComplexInvalid),
+            }
+        ));
+    }
+
+    #[test]
+    fn invalid_radix_placement() {
+        let mut s = Scanner::new("4+#b101i");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 8,
+                result: Err(TokenErrorKind::ComplexInvalid),
+            }
+        ));
+    }
+
+    #[test]
+    fn invalid_radix_imaginary() {
+        let mut s = Scanner::new("#b100+5i");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 8,
                 result: Err(TokenErrorKind::ComplexInvalid),
             }
         ));
@@ -2947,6 +3361,74 @@ mod polar {
     }
 
     #[test]
+    fn radix_and_sign() {
+        let radix = [
+            ("#b", "101010", "101011"),
+            ("#o", "52", "53"),
+            ("#d", "42", "43"),
+            ("#x", "2a", "2b"),
+        ];
+        let sign = ["", "+", "-"];
+        let combos = sign
+            .into_iter()
+            .flat_map(|s| radix.map(|r| format!("{}{s}{}@{s}{}", r.0, r.1, r.2)));
+        for case in combos {
+            let mut s = Scanner::new(&case);
+            let start = some_or_fail!(s.next_token());
+            let t = Tokenizer {
+                scan: &mut s,
+                start,
+            };
+
+            let r = t.extract();
+            dbg!(&r);
+
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 0,
+                    end,
+                    result: Ok(TokenKind::Literal(Literal::Number(_))),
+                } if end == case.len()
+            ));
+            let rat = extract_number!(r.result, Number::Real, Real::Rational);
+            let expected = if case.contains('-') {
+                "-23.31475866386628-34.934539190401125i"
+            } else {
+                "23.31475866386628-34.934539190401125i"
+            };
+            assert_eq!(rat.to_string(), expected);
+        }
+    }
+
+    #[test]
+    fn rational_radix() {
+        let mut s = Scanner::new("#b100/101@10/11");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 15,
+                result: Ok(TokenKind::Literal(_)),
+            }
+        ));
+        let num = extract_number!(r.result);
+        assert_eq!(
+            num.as_datum().to_string(),
+            "0.6287098086215585+0.4946958424557896i"
+        );
+    }
+
+    #[test]
     fn do_not_allow_i() {
         let mut s = Scanner::new("4@3i");
         let start = some_or_fail!(s.next_token());
@@ -3008,6 +3490,50 @@ mod polar {
                 start: 0,
                 end: 5,
                 result: Err(TokenErrorKind::PolarInvalid),
+            }
+        ));
+    }
+
+    #[test]
+    fn invalid_radix_placement() {
+        let mut s = Scanner::new("4@#b101");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 7,
+                result: Err(TokenErrorKind::PolarInvalid),
+            }
+        ));
+    }
+
+    #[test]
+    fn invalid_radix_rads() {
+        let mut s = Scanner::new("#b100@5");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 7,
+                result: Err(TokenErrorKind::ComplexInvalid),
             }
         ));
     }
