@@ -2873,24 +2873,24 @@ mod polar {
     #[test]
     fn inf_nan_combos() {
         let combos = [
-            "4@+inf.0",
-            "4@-inf.0",
-            "4@+nan.0",
-            "4@-nan.0",
-            "+inf.0@4",
-            "-inf.0@4",
-            "+nan.0@4",
-            "-nan.0@4",
-            "+inf.0@+inf.0",
-            "-inf.0@-inf.0",
-            "+nan.0@+nan.0",
-            "-nan.0@-nan.0",
-            "+inf.0@+nan.0",
-            "+nan.0@+inf.0",
-            "-inf.0@-nan.0",
-            "-nan.0@-inf.0",
+            ("4@+inf.0", "+nan.0+nan.0i"),
+            ("4@-inf.0", "+nan.0+nan.0i"),
+            ("4@+nan.0", "+nan.0+nan.0i"),
+            ("4@-nan.0", "+nan.0+nan.0i"),
+            ("+inf.0@4", "-inf.0-inf.0i"),
+            ("-inf.0@4", "+inf.0+inf.0i"),
+            ("+nan.0@4", "+nan.0+nan.0i"),
+            ("-nan.0@4", "+nan.0+nan.0i"),
+            ("+inf.0@+inf.0", "+nan.0+nan.0i"),
+            ("-inf.0@-inf.0", "+nan.0+nan.0i"),
+            ("+nan.0@+nan.0", "+nan.0+nan.0i"),
+            ("-nan.0@-nan.0", "+nan.0+nan.0i"),
+            ("+inf.0@+nan.0", "+nan.0+nan.0i"),
+            ("+nan.0@+inf.0", "+nan.0+nan.0i"),
+            ("-inf.0@-nan.0", "+nan.0+nan.0i"),
+            ("-nan.0@-inf.0", "+nan.0+nan.0i"),
         ];
-        for cpx in combos {
+        for (cpx, exp) in combos {
             let mut s = Scanner::new(cpx);
             let start = some_or_fail!(s.next_token());
             let t = Tokenizer {
@@ -2910,8 +2910,7 @@ mod polar {
                 } if end == cpx.len()
             ));
             let num = extract_number!(r.result);
-            let expected = if cpx == "4-nan.0i" { "4+nan.0i" } else { cpx };
-            assert_eq!(num.as_datum().to_string(), expected);
+            assert_eq!(num.as_datum().to_string(), exp);
         }
     }
 
@@ -3198,6 +3197,50 @@ mod identifiers {
     }
 
     #[test]
+    fn inf_followed_by_signed_invalid_number() {
+        let mut s = Scanner::new("+inf.0+4.2.2i");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 13,
+                result: Ok(TokenKind::Identifier(s)),
+            } if s == "+inf.0+4.2.2i"
+        ));
+    }
+
+    #[test]
+    fn inf_followed_by_sign() {
+        let mut s = Scanner::new("+inf.0+");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 7,
+                result: Ok(TokenKind::Identifier(s)),
+            } if s == "+inf.0+"
+        ));
+    }
+
+    #[test]
     fn inf_followed_by_polar_identifier() {
         let mut s = Scanner::new("+inf.0@foo");
         let start = some_or_fail!(s.next_token());
@@ -3216,6 +3259,72 @@ mod identifiers {
                 end: 10,
                 result: Ok(TokenKind::Identifier(s)),
             } if s == "+inf.0@foo"
+        ));
+    }
+
+    #[test]
+    fn inf_end_in_polar_symbol() {
+        let mut s = Scanner::new("+inf.0@");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 7,
+                result: Ok(TokenKind::Identifier(s)),
+            } if s == "+inf.0@"
+        ));
+    }
+
+    #[test]
+    fn inf_followed_by_polar_imaginary() {
+        let mut s = Scanner::new("+inf.0@4i");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 9,
+                result: Ok(TokenKind::Identifier(s)),
+            } if s == "+inf.0@4i"
+        ));
+    }
+
+    #[test]
+    fn inf_followed_by_polar_invalid_number() {
+        let mut s = Scanner::new("+inf.0@4.2.2");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 12,
+                result: Ok(TokenKind::Identifier(s)),
+            } if s == "+inf.0@4.2.2"
         ));
     }
 
@@ -3282,6 +3391,28 @@ mod identifiers {
                 end: 10,
                 result: Ok(TokenKind::Identifier(s)),
             } if s == "+nan.0@bar"
+        ));
+    }
+
+    #[test]
+    fn nan_followed_by_polar_imaginary() {
+        let mut s = Scanner::new("+nan.0@4i");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 9,
+                result: Ok(TokenKind::Identifier(s)),
+            } if s == "+nan.0@4i"
         ));
     }
 
@@ -3439,7 +3570,12 @@ mod identifiers {
 
     #[test]
     fn inf_nan_invalid_identifier() {
-        let cases = ["+inf.0+foo{bar", "+nan.0-bar{foo"];
+        let cases = [
+            "+inf.0+foo{bar",
+            "+nan.0-bar{foo",
+            "+inf.0@foo{bar",
+            "+nan.0@bar{foo",
+        ];
         for case in cases {
             let mut s = Scanner::new(case);
             let start = some_or_fail!(s.next_token());

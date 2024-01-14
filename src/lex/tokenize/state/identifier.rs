@@ -109,15 +109,34 @@ impl<'me, 'str> Identifier<'me, 'str> {
         if let Some(TokenKind::Literal(Literal::Number(Number::Real(real)))) =
             super::numeric_label(self.scan.lexeme(self.start.0..item.0))
         {
-            match kind {
+            let invalid_tok = match kind {
                 ComplexKind::Cartesian => {
-                    if let TokenKind::Imaginary(imag) = Identifier::new(self.scan, item).scan()? {
+                    let tokr = Identifier::new(self.scan, item).scan();
+                    if let Ok(TokenKind::Imaginary(imag)) = tokr {
                         return Ok(TokenKind::Literal(Literal::Number(Number::complex(
                             real, imag,
                         ))));
+                    } else {
+                        Some(tokr)
                     }
                 }
-                ComplexKind::Polar => todo!(),
+                ComplexKind::Polar => {
+                    if let Some(first) = self.scan.next_if_not_delimiter() {
+                        let tokr = Identifier::new(self.scan, first).scan();
+                        if let Ok(TokenKind::Literal(Literal::Number(Number::Real(rads)))) = tokr {
+                            return Ok(TokenKind::Literal(Literal::Number(Number::polar(
+                                real, rads,
+                            ))));
+                        } else {
+                            Some(tokr)
+                        }
+                    } else {
+                        None
+                    }
+                }
+            };
+            if let Some(err @ Err(TokenErrorKind::IdentifierInvalid(_))) = invalid_tok {
+                return err;
             }
         }
         self.rest_of_standard()
