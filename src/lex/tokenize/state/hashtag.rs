@@ -22,13 +22,13 @@ impl<'me, 'str> Hashtag<'me, 'str> {
     fn literal(&mut self, ch: char) -> TokenExtractResult {
         match ch {
             '(' => Ok(TokenKind::Vector),
-            'b' | 'B' => RadixNumber::new(self.scan).scan::<Binary>(),
+            'b' | 'B' => RadixNumber::<Binary>::new(self.scan).scan(),
             'd' | 'D' => self.decimal(),
             'f' | 'F' => self.boolean(false),
-            'o' | 'O' => RadixNumber::new(self.scan).scan::<Octal>(),
+            'o' | 'O' => RadixNumber::<Octal>::new(self.scan).scan(),
             't' | 'T' => self.boolean(true),
             'u' | 'U' => self.bytevector(),
-            'x' | 'X' => RadixNumber::new(self.scan).scan::<Hexadecimal>(),
+            'x' | 'X' => RadixNumber::<Hexadecimal>::new(self.scan).scan(),
             '\\' => self.character(),
             '!' => self.directive(),
             _ => {
@@ -109,7 +109,9 @@ impl<'me, 'str> Hashtag<'me, 'str> {
             let result = Identifier::new(self.scan, item).scan();
             match result {
                 Err(TokenErrorKind::IdentifierInvalid(_)) => (),
-                Ok(TokenKind::Literal(Literal::Number(_))) | Err(_) => return result,
+                Ok(TokenKind::Literal(Literal::Number(_)))
+                | Ok(TokenKind::Imaginary(_))
+                | Err(_) => return result,
                 _ => (),
             }
         }

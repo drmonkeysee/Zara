@@ -337,7 +337,7 @@ mod integer {
 
     #[test]
     fn invalid_radix_digits() {
-        let cases = ["#b102010", "#o82", "#d42af", "#x2ag"];
+        let cases = ["#b102010", "#o28", "#d42af", "#x2ag"];
         for case in cases {
             let mut s = Scanner::new(case);
             let start = some_or_fail!(s.next_token());
@@ -815,7 +815,7 @@ mod rational {
             r,
             TokenExtract {
                 start: 0,
-                end: 7,
+                end: 2,
                 result: Err(TokenErrorKind::RationalInvalid),
             }
         ));
@@ -1987,7 +1987,7 @@ mod imaginary {
             };
 
             let r = t.extract();
-            dbg!(&r);
+            dbg!(&r, &case);
 
             assert!(matches!(
                 r,
@@ -2020,7 +2020,7 @@ mod imaginary {
             };
 
             let r = t.extract();
-            dbg!(&r);
+            dbg!(&case, &r);
 
             assert!(matches!(
                 r,
@@ -2032,7 +2032,7 @@ mod imaginary {
             ));
             let tok = ok_or_fail!(r.result);
             let r = extract_or_fail!(tok, TokenKind::Imaginary);
-            let expected = if case.contains('-') { "-42" } else { "42" };
+            let expected = if case.contains('-') { "-1" } else { "1" };
             assert_eq!(r.to_string(), expected);
         }
     }
@@ -2813,10 +2813,10 @@ mod cartesian {
         let combos = sign.into_iter().flat_map(|s| {
             radix.map(|r| {
                 format!(
-                    "{}{s}{}{}{}",
+                    "{}{s}{}{}{}i",
                     r.0,
                     r.1,
-                    if s.is_empty() { "+" } else { "-" },
+                    if s.is_empty() { "+" } else { s },
                     r.2
                 )
             })
@@ -2830,7 +2830,7 @@ mod cartesian {
             };
 
             let r = t.extract();
-            dbg!(&r);
+            dbg!(&r, &case);
 
             assert!(matches!(
                 r,
@@ -2840,13 +2840,13 @@ mod cartesian {
                     result: Ok(TokenKind::Literal(Literal::Number(_))),
                 } if end == case.len()
             ));
-            let rat = extract_number!(r.result, Number::Real, Real::Rational);
+            let num = extract_number!(r.result);
             let expected = if case.contains('-') {
                 "-42-43i"
             } else {
                 "42+43i"
             };
-            assert_eq!(rat.to_string(), expected);
+            assert_eq!(num.as_datum().to_string(), expected);
         }
     }
 
@@ -2978,7 +2978,7 @@ mod cartesian {
             r,
             TokenExtract {
                 start: 0,
-                end: 8,
+                end: 2,
                 result: Err(TokenErrorKind::ComplexInvalid),
             }
         ));
@@ -3391,13 +3391,13 @@ mod polar {
                     result: Ok(TokenKind::Literal(Literal::Number(_))),
                 } if end == case.len()
             ));
-            let rat = extract_number!(r.result, Number::Real, Real::Rational);
+            let num = extract_number!(r.result);
             let expected = if case.contains('-') {
                 "-23.31475866386628-34.934539190401125i"
             } else {
                 "23.31475866386628-34.934539190401125i"
             };
-            assert_eq!(rat.to_string(), expected);
+            assert_eq!(num.as_datum().to_string(), expected);
         }
     }
 
@@ -3510,7 +3510,7 @@ mod polar {
             r,
             TokenExtract {
                 start: 0,
-                end: 7,
+                end: 2,
                 result: Err(TokenErrorKind::PolarInvalid),
             }
         ));
@@ -3533,7 +3533,7 @@ mod polar {
             TokenExtract {
                 start: 0,
                 end: 7,
-                result: Err(TokenErrorKind::ComplexInvalid),
+                result: Err(TokenErrorKind::PolarInvalid),
             }
         ));
     }

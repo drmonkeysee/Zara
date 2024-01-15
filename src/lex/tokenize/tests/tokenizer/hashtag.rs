@@ -278,7 +278,7 @@ fn radix_with_no_number() {
 
 #[test]
 fn radix_with_invalid_number() {
-    let cases = ["#dfoo", "#xfoo"];
+    let cases = ["#dfoo", "#ofoo"];
     for case in cases {
         let mut s = Scanner::new(case);
         let start = some_or_fail!(s.next_token());

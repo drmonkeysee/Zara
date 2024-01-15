@@ -197,26 +197,154 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
     }
 }
 
-pub(in crate::lex::tokenize) struct RadixNumber<'me, 'str> {
-    //classifier: Integral<R>,
+pub(in crate::lex::tokenize) struct RadixNumber<'me, 'str, R> {
+    classifier: Integral<R>,
     exactness: Option<Exactness>,
     scan: &'me mut Scanner<'str>,
     start: usize,
 }
 
-impl<'me, 'str> RadixNumber<'me, 'str> {
+impl<'me, 'str, R: Radix + Clone + Debug + Default> RadixNumber<'me, 'str, R> {
     pub(in crate::lex::tokenize) fn new(scan: &'me mut Scanner<'str>) -> Self {
         let start = scan.pos();
         Self {
+            classifier: Integral(Default::default()),
             exactness: None,
             scan,
             start,
         }
     }
 
-    pub(in crate::lex::tokenize) fn scan<R: Radix + Default>(&mut self) -> TokenExtractResult {
-        let classifier: Integral<R> = Default::default();
-        todo!();
+    fn with_sign(scan: &'me mut Scanner<'str>, start: ScanItem) -> Self {
+        let (start, sign) = start;
+        Self {
+            classifier: Integral(Magnitude {
+                digits: 1..1,
+                sign: Some(super::char_to_sign(sign)),
+                ..Default::default()
+            }),
+            exactness: None,
+            scan,
+            start,
+        }
+    }
+
+    pub(in crate::lex::tokenize) fn scan(&mut self) -> TokenExtractResult {
+        let mut brk = Ok(BreakCondition::<R>::Complete);
+        while let Some(item) = self.scan.next_if_not_delimiter() {
+            match self.classifier.classify(item) {
+                ControlFlow::Continue(()) => (),
+                ControlFlow::Break(b) => {
+                    brk = b;
+                    break;
+                }
+            }
+        }
+        match brk {
+            Ok(cond) => {
+                match cond {
+                    BreakCondition::Complete => self.complete(false),
+                    BreakCondition::Complex { kind, start } => match self.parse() {
+                        Ok(real) => self.scan_imaginary(real, kind, start),
+                        Err(err) => self.fail(err),
+                    },
+                    BreakCondition::Fraction(m) => {
+                        // TODO: handle inexact e.g #i4/3 => 1.3333...
+                        match m.exact_parse(self.scan.current_lexeme_at(self.start)) {
+                            Ok(numerator) => self.scan_denominator(numerator),
+                            Err(err) => self.fail(err),
+                        }
+                    }
+                    BreakCondition::Imaginary => {
+                        if let Some(item) = self.scan.next_if_not_delimiter() {
+                            // NOTE: maybe malformed "in"finity? otherwise assume malformed imaginary
+                            self.fail(if item.1.is_ascii_alphabetic() {
+                                TokenErrorKind::NumberInvalid
+                            } else {
+                                TokenErrorKind::ImaginaryInvalid
+                            })
+                        } else if !self.classifier.has_sign() {
+                            self.fail(TokenErrorKind::ImaginaryMissingSign)
+                        } else {
+                            self.complete(true)
+                        }
+                    }
+                }
+            }
+            Err(err) => self.fail(err),
+        }
+    }
+
+    fn scan_denominator(&mut self, numerator: Integer) -> TokenExtractResult {
+        let mut d = DenominatorNumber::new(self.scan);
+        let (denominator, cond) = d.scan::<R>()?;
+        let real = Real::reduce(numerator, denominator)?;
+        match cond {
+            BreakCondition::Complete => Ok(real_to_token(real, false)),
+            BreakCondition::Complex { kind, start } => self.scan_imaginary(real, kind, start),
+            BreakCondition::Imaginary => {
+                if self.classifier.has_sign() {
+                    Ok(real_to_token(real, true))
+                } else {
+                    Err(TokenErrorKind::ImaginaryMissingSign)
+                }
+            }
+            BreakCondition::Fraction(_) => unreachable!(),
+        }
+    }
+
+    fn scan_imaginary(
+        &mut self,
+        real: Real,
+        kind: ComplexKind,
+        start: ScanItem,
+    ) -> TokenExtractResult {
+        match kind {
+            ComplexKind::Cartesian => {
+                debug_assert!(matches!(start.1, '+' | '-'));
+                if let Ok(TokenKind::Imaginary(imag)) =
+                    RadixNumber::<R>::with_sign(self.scan, start).scan()
+                {
+                    Ok(TokenKind::Literal(Literal::Number(Number::complex(
+                        real, imag,
+                    ))))
+                } else {
+                    self.fail(TokenErrorKind::ComplexInvalid)
+                }
+            }
+            ComplexKind::Polar => {
+                debug_assert_eq!(start.1, '@');
+                if let Ok(TokenKind::Literal(Literal::Number(Number::Real(rads)))) =
+                    RadixNumber::<R>::new(self.scan).scan()
+                {
+                    return Ok(TokenKind::Literal(Literal::Number(Number::polar(
+                        real, rads,
+                    ))));
+                }
+                self.fail(TokenErrorKind::PolarInvalid)
+            }
+        }
+    }
+
+    fn complete(&mut self, is_imaginary: bool) -> TokenExtractResult {
+        if is_imaginary && self.classifier.is_empty() {
+            if let Some(sign) = self.classifier.get_sign() {
+                return Ok(imaginary(sign));
+            }
+        }
+        self.parse()
+            .map_or_else(|err| self.fail(err), |r| Ok(real_to_token(r, is_imaginary)))
+    }
+
+    fn fail(&mut self, err: TokenErrorKind) -> TokenExtractResult {
+        self.scan.end_of_token();
+        Err(err)
+    }
+
+    fn parse(&mut self) -> ParseResult {
+        let exactness = self.exactness;
+        self.classifier
+            .parse(self.scan.current_lexeme_at(self.start), exactness)
     }
 }
 
@@ -503,10 +631,22 @@ impl<R: Radix + Debug> Magnitude<R> {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 struct Integral<R>(Magnitude<R>);
 
 impl<R: Radix + Clone + Debug> Integral<R> {
+    fn has_sign(&self) -> bool {
+        self.0.sign.is_some()
+    }
+
+    fn get_sign(&self) -> Option<Sign> {
+        self.0.sign
+    }
+
+    fn is_empty(&self) -> bool {
+        self.0.digits.is_empty()
+    }
+
     fn classify<'str>(&mut self, item: ScanItem<'str>) -> RadixControl<'str, R> {
         let (idx, ch) = item;
         match ch {
@@ -544,7 +684,18 @@ impl<R: Radix + Clone + Debug> Integral<R> {
                 self.0.digits.end += 1;
                 ControlFlow::Continue(())
             }
-            _ => ControlFlow::Break(Err(TokenErrorKind::NumberInvalid)),
+            _ => ControlFlow::Break(Err(if !self.has_sign() && self.is_empty() {
+                TokenErrorKind::NumberExpected
+            } else {
+                TokenErrorKind::NumberInvalid
+            })),
+        }
+    }
+
+    fn parse(&self, input: &str, exactness: Option<Exactness>) -> ParseResult {
+        match exactness {
+            None | Some(Exactness::Exact) => Ok(self.0.exact_parse(input)?.into()),
+            Some(Exactness::Inexact) => todo!(),
         }
     }
 }
