@@ -127,8 +127,8 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
     }
 
     fn scan_denominator(&mut self, numerator: Integer, explicit_sign: bool) -> TokenExtractResult {
-        let mut d = DenominatorNumber::new(self.scan);
-        let (denominator, cond) = d.scan::<Decimal>()?;
+        let mut d = DenominatorNumber::<Decimal>::new(self.scan);
+        let (denominator, cond) = d.scan()?;
         let real = Real::reduce(numerator, denominator)?;
         match cond {
             BreakCondition::Complete => Ok(real_to_token(real, false)),
@@ -276,8 +276,8 @@ impl<'me, 'str, R: Radix + Clone + Debug + Default> RadixNumber<'me, 'str, R> {
     }
 
     fn scan_denominator(&mut self, numerator: Integer) -> TokenExtractResult {
-        let mut d = DenominatorNumber::new(self.scan);
-        let (denominator, cond) = d.scan::<R>()?;
+        let mut d = DenominatorNumber::<R>::new(self.scan);
+        let (denominator, cond) = d.scan()?;
         let real = Real::reduce(numerator, denominator)?;
         match cond {
             BreakCondition::Complete => Ok(real_to_token(real, false)),
@@ -466,27 +466,29 @@ impl ClassifierSpec {
     }
 }
 
-struct DenominatorNumber<'me, 'str> {
+struct DenominatorNumber<'me, 'str, R> {
+    classifier: Integral<R>,
     scan: &'me mut Scanner<'str>,
     start: usize,
 }
 
-impl<'me, 'str> DenominatorNumber<'me, 'str> {
+impl<'me, 'str, R: Radix + Clone + Debug + Default> DenominatorNumber<'me, 'str, R> {
     fn new(scan: &'me mut Scanner<'str>) -> Self {
         let start = scan.pos();
-        Self { scan, start }
+        Self {
+            classifier: Integral(Magnitude {
+                sign: Some(Sign::Positive),
+                ..Default::default()
+            }),
+            scan,
+            start,
+        }
     }
 
-    fn scan<R: Radix + Clone + Debug + Default>(
-        &mut self,
-    ) -> Result<(Integer, BreakCondition<R>), TokenErrorKind> {
+    fn scan(&mut self) -> Result<(Integer, BreakCondition<R>), TokenErrorKind> {
         let mut brk = Ok(BreakCondition::<R>::Complete);
-        let mut classifier = Integral(Magnitude {
-            sign: Some(Sign::Positive),
-            ..Default::default()
-        });
         while let Some(item) = self.scan.next_if_not_delimiter() {
-            match classifier.classify(item) {
+            match self.classifier.classify(item) {
                 ControlFlow::Continue(()) => (),
                 ControlFlow::Break(b) => {
                     brk = b;
@@ -497,18 +499,19 @@ impl<'me, 'str> DenominatorNumber<'me, 'str> {
         match brk {
             Ok(cond) => Ok((
                 match cond {
-                    BreakCondition::Complete | BreakCondition::Complex { .. } => classifier
+                    BreakCondition::Complete | BreakCondition::Complex { .. } => self
+                        .classifier
                         .0
-                        .exact_parse(self.get_lexeme())
+                        .exact_parse(self.scan.current_lexeme_at(self.start))
                         .map_err(|_| self.fail()),
                     BreakCondition::Fraction(_) => Err(self.fail()),
                     BreakCondition::Imaginary => {
                         if self.scan.next_if_not_delimiter().is_some() {
                             Err(self.fail())
                         } else {
-                            classifier
+                            self.classifier
                                 .0
-                                .exact_parse(self.get_lexeme())
+                                .exact_parse(self.scan.current_lexeme_at(self.start))
                                 .map_err(|_| self.fail())
                         }
                     }
@@ -522,10 +525,6 @@ impl<'me, 'str> DenominatorNumber<'me, 'str> {
     fn fail(&mut self) -> TokenErrorKind {
         self.scan.end_of_token();
         TokenErrorKind::RationalInvalid
-    }
-
-    fn get_lexeme(&mut self) -> &str {
-        self.scan.current_lexeme_at(self.start)
     }
 }
 
