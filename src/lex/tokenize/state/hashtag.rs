@@ -1,9 +1,11 @@
-use super::HexParse;
-use crate::lex::{
-    token::{TokenErrorKind, TokenKind},
-    tokenize::{extract::TokenExtractResult, scan::Scanner},
+use super::{HexParse, Identifier};
+use crate::{
+    lex::{
+        token::{TokenErrorKind, TokenKind},
+        tokenize::{extract::TokenExtractResult, scan::Scanner},
+    },
+    literal::Literal,
 };
-use crate::literal::Literal;
 
 pub(in crate::lex::tokenize) struct Hashtag<'me, 'str> {
     pub(in crate::lex::tokenize) scan: &'me mut Scanner<'str>,
@@ -20,6 +22,7 @@ impl<'me, 'str> Hashtag<'me, 'str> {
     fn literal(&mut self, ch: char) -> TokenExtractResult {
         match ch {
             '(' => Ok(TokenKind::Vector),
+            'd' | 'D' => self.decimal(),
             'f' | 'F' => self.boolean(false),
             't' | 'T' => self.boolean(true),
             'u' | 'U' => self.bytevector(),
@@ -96,6 +99,16 @@ impl<'me, 'str> Hashtag<'me, 'str> {
             .char_if_eq('|')
             .ok_or(TokenErrorKind::HashUnterminated)
             .map(|_| BlockComment::new(self.scan).consume())
+    }
+
+    fn decimal(&mut self) -> TokenExtractResult {
+        if let Some(item) = self.scan.next_if_not_delimiter() {
+            let result = Identifier::new(self.scan, item).scan();
+            if let Ok(TokenKind::Literal(Literal::Number(_))) = result {
+                return result;
+            }
+        }
+        Err(TokenErrorKind::NumberExpected)
     }
 }
 

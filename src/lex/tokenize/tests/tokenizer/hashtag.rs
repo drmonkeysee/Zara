@@ -252,6 +252,48 @@ fn vector() {
     ));
 }
 
+#[test]
+fn radix_with_no_number() {
+    let mut s = Scanner::new("#d");
+    let start = some_or_fail!(s.next_token());
+    let t = Tokenizer {
+        scan: &mut s,
+        start,
+    };
+
+    let r = t.extract();
+
+    assert!(matches!(
+        r,
+        TokenExtract {
+            start: 0,
+            end: 2,
+            result: Err(TokenErrorKind::NumberExpected),
+        }
+    ));
+}
+
+#[test]
+fn radix_with_invalid_number() {
+    let mut s = Scanner::new("#dfoo");
+    let start = some_or_fail!(s.next_token());
+    let t = Tokenizer {
+        scan: &mut s,
+        start,
+    };
+
+    let r = t.extract();
+
+    assert!(matches!(
+        r,
+        TokenExtract {
+            start: 0,
+            end: 5,
+            result: Err(TokenErrorKind::NumberExpected),
+        }
+    ));
+}
+
 mod comments {
     use super::*;
 

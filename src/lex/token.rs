@@ -153,6 +153,7 @@ pub(super) enum TokenErrorKind {
     IdentifierUnterminatedHex { at: usize },
     ImaginaryInvalid,
     ImaginaryMissingSign,
+    NumberExpected,
     NumberInvalid,
     NumberInvalidDecimalPoint { at: usize, radix: &'static str },
     NumberInvalidExponent { at: usize, radix: &'static str },
@@ -243,7 +244,8 @@ impl Display for TokenErrorKind {
             Self::IdentifierUnterminated => f.write_str("unterminated verbatim identifier"),
             Self::ImaginaryInvalid => f.write_str("invalid imaginary literal"),
             Self::ImaginaryMissingSign => f.write_str("missing explicit sign on imaginary number"),
-            Self::NumberInvalid => f.write_str("expected numeric literal"),
+            Self::NumberExpected => f.write_str("expected numeric literal"),
+            Self::NumberInvalid => f.write_str("invalid numeric literal"),
             Self::NumberInvalidDecimalPoint { radix, .. } => {
                 write!(f, "{radix} radix does not support decimal notation")
             }
@@ -1058,13 +1060,23 @@ mod tests {
         }
 
         #[test]
+        fn display_number_expected() {
+            let err = TokenError {
+                kind: TokenErrorKind::NumberExpected,
+                span: 0..1,
+            };
+
+            assert_eq!(err.to_string(), "expected numeric literal");
+        }
+
+        #[test]
         fn display_number_invalid() {
             let err = TokenError {
                 kind: TokenErrorKind::NumberInvalid,
                 span: 0..1,
             };
 
-            assert_eq!(err.to_string(), "expected numeric literal");
+            assert_eq!(err.to_string(), "invalid numeric literal");
         }
 
         #[test]

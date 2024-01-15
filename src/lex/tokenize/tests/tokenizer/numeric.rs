@@ -1560,7 +1560,7 @@ mod float {
             r,
             TokenExtract {
                 start: 0,
-                end: 4,
+                end: 6,
                 result: Ok(TokenKind::Literal(Literal::Number(_))),
             }
         ));
