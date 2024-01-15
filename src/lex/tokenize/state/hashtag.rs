@@ -1,4 +1,4 @@
-use super::{HexParse, Identifier};
+use super::{Binary, HexParse, Hexadecimal, Identifier, Octal, RadixNumber};
 use crate::{
     lex::{
         token::{TokenErrorKind, TokenKind},
@@ -22,10 +22,13 @@ impl<'me, 'str> Hashtag<'me, 'str> {
     fn literal(&mut self, ch: char) -> TokenExtractResult {
         match ch {
             '(' => Ok(TokenKind::Vector),
+            'b' | 'B' => RadixNumber::new(self.scan).scan::<Binary>(),
             'd' | 'D' => self.decimal(),
             'f' | 'F' => self.boolean(false),
+            'o' | 'O' => RadixNumber::new(self.scan).scan::<Octal>(),
             't' | 'T' => self.boolean(true),
             'u' | 'U' => self.bytevector(),
+            'x' | 'X' => RadixNumber::new(self.scan).scan::<Hexadecimal>(),
             '\\' => self.character(),
             '!' => self.directive(),
             _ => {
@@ -104,8 +107,10 @@ impl<'me, 'str> Hashtag<'me, 'str> {
     fn decimal(&mut self) -> TokenExtractResult {
         if let Some(item) = self.scan.next_if_not_delimiter() {
             let result = Identifier::new(self.scan, item).scan();
-            if let Ok(TokenKind::Literal(Literal::Number(_))) = result {
-                return result;
+            match result {
+                Err(TokenErrorKind::IdentifierInvalid(_)) => (),
+                Ok(TokenKind::Literal(Literal::Number(_))) | Err(_) => return result,
+                _ => (),
             }
         }
         Err(TokenErrorKind::NumberExpected)

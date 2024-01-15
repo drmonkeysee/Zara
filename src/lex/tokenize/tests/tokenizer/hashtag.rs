@@ -254,7 +254,55 @@ fn vector() {
 
 #[test]
 fn radix_with_no_number() {
-    let mut s = Scanner::new("#d");
+    let cases = ["#d", "#x"];
+    for case in cases {
+        let mut s = Scanner::new(case);
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 2,
+                result: Err(TokenErrorKind::NumberExpected),
+            }
+        ));
+    }
+}
+
+#[test]
+fn radix_with_invalid_number() {
+    let cases = ["#dfoo", "#xfoo"];
+    for case in cases {
+        let mut s = Scanner::new(case);
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 5,
+                result: Err(TokenErrorKind::NumberExpected),
+            }
+        ));
+    }
+}
+
+#[test]
+fn decimal_radix_with_malformed_number() {
+    let mut s = Scanner::new("#d4.2.2");
     let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
         scan: &mut s,
@@ -266,16 +314,16 @@ fn radix_with_no_number() {
     assert!(matches!(
         r,
         TokenExtract {
-            start: 0,
-            end: 2,
-            result: Err(TokenErrorKind::NumberExpected),
+            start: 5,
+            end: 7,
+            result: Err(TokenErrorKind::NumberUnexpectedDecimalPoint { at: 5 }),
         }
     ));
 }
 
 #[test]
-fn radix_with_invalid_number() {
-    let mut s = Scanner::new("#dfoo");
+fn radix_with_malformed_number() {
+    let mut s = Scanner::new("#x456xyz");
     let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
         scan: &mut s,
@@ -288,8 +336,8 @@ fn radix_with_invalid_number() {
         r,
         TokenExtract {
             start: 0,
-            end: 5,
-            result: Err(TokenErrorKind::NumberExpected),
+            end: 8,
+            result: Err(TokenErrorKind::NumberInvalid),
         }
     ));
 }

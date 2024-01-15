@@ -7,7 +7,7 @@ mod string;
 pub(super) use self::{
     hashtag::{BlockComment, Hashtag},
     identifier::{Identifier, PeriodIdentifier, VerbatimIdentifer},
-    numeric::{Decimal, DecimalNumber, Radix},
+    numeric::{Binary, Decimal, DecimalNumber, Hexadecimal, Octal, Radix, RadixNumber},
     string::StringLiteral,
 };
 use super::{extract::TokenExtractResult, scan::Scanner};

@@ -197,10 +197,27 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
     }
 }
 
-struct RadixNumber<'me, 'str, R> {
-    classifier: Integral<R>,
+pub(in crate::lex::tokenize) struct RadixNumber<'me, 'str> {
+    //classifier: Integral<R>,
+    exactness: Option<Exactness>,
     scan: &'me mut Scanner<'str>,
-    start: ScanItem<'str>,
+    start: usize,
+}
+
+impl<'me, 'str> RadixNumber<'me, 'str> {
+    pub(in crate::lex::tokenize) fn new(scan: &'me mut Scanner<'str>) -> Self {
+        let start = scan.pos();
+        Self {
+            exactness: None,
+            scan,
+            start,
+        }
+    }
+
+    pub(in crate::lex::tokenize) fn scan<R: Radix + Default>(&mut self) -> TokenExtractResult {
+        let classifier: Integral<R> = Default::default();
+        todo!();
+    }
 }
 
 pub(in crate::lex::tokenize) trait Radix {
@@ -208,6 +225,32 @@ pub(in crate::lex::tokenize) trait Radix {
     const NAME: &'static str;
 
     fn is_digit(&self, ch: char) -> bool;
+}
+
+#[derive(Clone, Copy, Debug, Default)]
+pub(in crate::lex::tokenize) struct Binary;
+
+impl Radix for Binary {
+    const BASE: u32 = 2;
+    const NAME: &'static str = "binary";
+
+    fn is_digit(&self, ch: char) -> bool {
+        matches!(ch, '0'..='1')
+    }
+}
+
+#[derive(Clone, Copy, Debug, Default)]
+pub(in crate::lex::tokenize) struct Octal;
+
+impl Radix for Octal {
+    const BASE: u32 = 8;
+    const NAME: &'static str = "octal";
+
+    fn is_digit(&self, ch: char) -> bool {
+        // TODO: nightly-only experimental API.
+        // (is_ascii_octdigit https://github.com/rust-lang/rust/issues/101288)
+        matches!(ch, '0'..='7')
+    }
 }
 
 #[derive(Clone, Copy, Debug, Default)]
@@ -219,6 +262,18 @@ impl Radix for Decimal {
 
     fn is_digit(&self, ch: char) -> bool {
         ch.is_ascii_digit()
+    }
+}
+
+#[derive(Clone, Copy, Debug, Default)]
+pub(in crate::lex::tokenize) struct Hexadecimal;
+
+impl Radix for Hexadecimal {
+    const BASE: u32 = 16;
+    const NAME: &'static str = "hexadecimal";
+
+    fn is_digit(&self, ch: char) -> bool {
+        ch.is_ascii_hexdigit()
     }
 }
 
@@ -415,15 +470,18 @@ struct Magnitude<R> {
 
 impl<R: Radix + Debug> Magnitude<R> {
     fn exact_parse(&self, input: &str) -> ExactParseResult {
-        if !self.digits.is_empty() {
-            if let Some(signed_num) = input.get(..self.digits.end) {
-                return i64::from_str_radix(signed_num, R::BASE).map_or_else(
-                    |_| self.parse_sign_magnitude(signed_num),
-                    |val| Ok(val.into()),
-                );
-            }
+        if self.digits.is_empty() {
+            Err(TokenErrorKind::NumberExpected)
+        } else {
+            input
+                .get(..self.digits.end)
+                .map_or(Err(TokenErrorKind::NumberInvalid), |signed_num| {
+                    return i64::from_str_radix(signed_num, R::BASE).map_or_else(
+                        |_| self.parse_sign_magnitude(signed_num),
+                        |val| Ok(val.into()),
+                    );
+                })
         }
-        Err(TokenErrorKind::NumberInvalid)
     }
 
     fn parse_sign_magnitude(&self, input: &str) -> ExactParseResult {
@@ -445,7 +503,7 @@ impl<R: Radix + Debug> Magnitude<R> {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 struct Integral<R>(Magnitude<R>);
 
 impl<R: Radix + Clone + Debug> Integral<R> {
