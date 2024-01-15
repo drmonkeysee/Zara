@@ -1,4 +1,4 @@
-use super::{ComplexKind, Identifier};
+use super::{ComplexKind, Exactness, Identifier};
 use crate::{
     lex::{
         token::{TokenErrorKind, TokenKind},
@@ -15,7 +15,7 @@ use std::{
     ops::{ControlFlow, Range},
 };
 
-pub(in crate::lex::tokenize) struct DecimalNumber<'me, 'str> {
+pub(super) struct DecimalNumber<'me, 'str> {
     classifier: Classifier,
     exactness: Option<Exactness>,
     scan: &'me mut Scanner<'str>,
@@ -24,10 +24,7 @@ pub(in crate::lex::tokenize) struct DecimalNumber<'me, 'str> {
 
 // NOTE: these ctors are always called after one confirmed decimal digit has been scanned
 impl<'me, 'str> DecimalNumber<'me, 'str> {
-    pub(in crate::lex::tokenize) fn new(
-        scan: &'me mut Scanner<'str>,
-        start: ScanItem<'str>,
-    ) -> Self {
+    pub(super) fn new(scan: &'me mut Scanner<'str>, start: ScanItem<'str>) -> Self {
         Self {
             classifier: Classifier::Int(DecimalInt(Magnitude {
                 digits: 0..1,
@@ -39,7 +36,7 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
         }
     }
 
-    pub(in crate::lex::tokenize) fn try_signed_number(
+    pub(super) fn try_signed_number(
         sign: Sign,
         scan: &'me mut Scanner<'str>,
         start: ScanItem<'str>,
@@ -56,10 +53,7 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
         }
     }
 
-    pub(in crate::lex::tokenize) fn try_float(
-        scan: &'me mut Scanner<'str>,
-        start: ScanItem<'str>,
-    ) -> Self {
+    pub(super) fn try_float(scan: &'me mut Scanner<'str>, start: ScanItem<'str>) -> Self {
         Self {
             classifier: Classifier::Flt(Float {
                 fraction: 0..2,
@@ -71,7 +65,7 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
         }
     }
 
-    pub(in crate::lex::tokenize) fn try_signed_float(
+    pub(super) fn try_signed_float(
         sign: Sign,
         scan: &'me mut Scanner<'str>,
         start: ScanItem<'str>,
@@ -90,7 +84,7 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
         }
     }
 
-    pub(in crate::lex::tokenize) fn scan(&mut self) -> TokenExtractResult {
+    pub(super) fn scan(&mut self) -> TokenExtractResult {
         let mut brk = Ok(BreakCondition::Complete);
         while let Some(item) = self.scan.next_if_not_delimiter() {
             match self.classifier.classify(item) {
@@ -211,25 +205,25 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
     }
 }
 
-pub(in crate::lex::tokenize) struct RadixNumber<'me, 'str, R> {
+pub(super) struct RadixNumber<'me, 'str, R> {
     classifier: Integral<R>,
-    exactness: Option<Exactness>,
+    exactness: Exactness,
     scan: &'me mut Scanner<'str>,
     start: usize,
 }
 
 impl<'me, 'str, R: Radix + Clone + Debug + Default> RadixNumber<'me, 'str, R> {
-    pub(in crate::lex::tokenize) fn new(scan: &'me mut Scanner<'str>) -> Self {
+    pub(super) fn new(scan: &'me mut Scanner<'str>, exactness: Exactness) -> Self {
         let start = scan.pos();
         Self {
             classifier: Integral(Default::default()),
-            exactness: None,
+            exactness,
             scan,
             start,
         }
     }
 
-    fn with_sign(scan: &'me mut Scanner<'str>, start: ScanItem) -> Self {
+    fn with_sign(scan: &'me mut Scanner<'str>, start: ScanItem, exactness: Exactness) -> Self {
         let (start, sign) = start;
         Self {
             classifier: Integral(Magnitude {
@@ -237,13 +231,13 @@ impl<'me, 'str, R: Radix + Clone + Debug + Default> RadixNumber<'me, 'str, R> {
                 sign: Some(super::char_to_sign(sign)),
                 ..Default::default()
             }),
-            exactness: None,
+            exactness,
             scan,
             start,
         }
     }
 
-    pub(in crate::lex::tokenize) fn scan(&mut self) -> TokenExtractResult {
+    pub(super) fn scan(&mut self) -> TokenExtractResult {
         let mut brk = Ok(BreakCondition::<R>::Complete);
         while let Some(item) = self.scan.next_if_not_delimiter() {
             match self.classifier.classify(item) {
@@ -317,7 +311,7 @@ impl<'me, 'str, R: Radix + Clone + Debug + Default> RadixNumber<'me, 'str, R> {
             ComplexKind::Cartesian => {
                 debug_assert!(matches!(start.1, '+' | '-'));
                 if let Ok(TokenKind::Imaginary(imag)) =
-                    RadixNumber::<R>::with_sign(self.scan, start).scan()
+                    RadixNumber::<R>::with_sign(self.scan, start, self.exactness).scan()
                 {
                     Ok(TokenKind::Literal(Literal::Number(Number::complex(
                         real, imag,
@@ -329,7 +323,7 @@ impl<'me, 'str, R: Radix + Clone + Debug + Default> RadixNumber<'me, 'str, R> {
             ComplexKind::Polar => {
                 debug_assert_eq!(start.1, '@');
                 if let Ok(TokenKind::Literal(Literal::Number(Number::Real(rads)))) =
-                    RadixNumber::<R>::new(self.scan).scan()
+                    RadixNumber::<R>::new(self.scan, self.exactness).scan()
                 {
                     return Ok(TokenKind::Literal(Literal::Number(Number::polar(
                         real, rads,
@@ -366,7 +360,7 @@ impl<'me, 'str, R: Radix + Clone + Debug + Default> RadixNumber<'me, 'str, R> {
     }
 }
 
-pub(in crate::lex::tokenize) trait Radix {
+pub(super) trait Radix {
     const BASE: u32;
     const NAME: &'static str;
 
@@ -374,7 +368,7 @@ pub(in crate::lex::tokenize) trait Radix {
 }
 
 #[derive(Clone, Copy, Debug, Default)]
-pub(in crate::lex::tokenize) struct Binary;
+pub(super) struct Binary;
 
 impl Radix for Binary {
     const BASE: u32 = 2;
@@ -386,7 +380,7 @@ impl Radix for Binary {
 }
 
 #[derive(Clone, Copy, Debug, Default)]
-pub(in crate::lex::tokenize) struct Octal;
+pub(super) struct Octal;
 
 impl Radix for Octal {
     const BASE: u32 = 8;
@@ -400,7 +394,7 @@ impl Radix for Octal {
 }
 
 #[derive(Clone, Copy, Debug, Default)]
-pub(in crate::lex::tokenize) struct Decimal;
+pub(super) struct Decimal;
 
 impl Radix for Decimal {
     const BASE: u32 = 10;
@@ -412,7 +406,7 @@ impl Radix for Decimal {
 }
 
 #[derive(Clone, Copy, Debug, Default)]
-pub(in crate::lex::tokenize) struct Hexadecimal;
+pub(super) struct Hexadecimal;
 
 impl Radix for Hexadecimal {
     const BASE: u32 = 16;
@@ -517,12 +511,6 @@ impl<'me, 'str, R: Radix + Clone + Debug + Default> DenominatorNumber<'me, 'str,
     fn get_lexeme(&mut self) -> &'str str {
         self.scan.current_lexeme_at(self.start)
     }
-}
-
-#[derive(Clone, Copy, Debug)]
-enum Exactness {
-    Exact,
-    Inexact,
 }
 
 type DecimalControl<'str> =
@@ -683,10 +671,11 @@ impl<R: Radix + Clone + Debug> Integral<R> {
         }
     }
 
-    fn parse(&self, input: &str, exactness: Option<Exactness>) -> ParseResult {
+    // TODO: unify this with DecimalInt
+    fn parse(&self, input: &str, exactness: Exactness) -> ParseResult {
         match exactness {
-            None | Some(Exactness::Exact) => Ok(self.0.exact_parse(input)?.into()),
-            Some(Exactness::Inexact) => todo!(),
+            Exactness::Exact => Ok(self.0.exact_parse(input)?.into()),
+            Exactness::Inexact => todo!(),
         }
     }
 }
@@ -729,6 +718,7 @@ impl DecimalInt {
         }
     }
 
+    // TODO: unify this with Integral<T>
     fn parse(&self, input: &str, exactness: Option<Exactness>) -> ParseResult {
         match exactness {
             None | Some(Exactness::Exact) => Ok(self.0.exact_parse(input)?.into()),
@@ -775,17 +765,21 @@ impl Float {
     }
 
     fn parse(&self, input: &str, exactness: Option<Exactness>) -> ParseResult {
-        self.parse_to(input, self.fraction.end, exactness)
+        self.parse_to(
+            input,
+            self.fraction.end,
+            exactness.unwrap_or(Exactness::Inexact),
+        )
     }
 
-    fn parse_to(&self, input: &str, end: usize, exactness: Option<Exactness>) -> ParseResult {
+    fn parse_to(&self, input: &str, end: usize, exactness: Exactness) -> ParseResult {
         if let Some(numstr) = input.get(..end) {
             match exactness {
-                None | Some(Exactness::Inexact) => {
+                Exactness::Inexact => {
                     let flt: f64 = numstr.parse()?;
                     Ok(flt.into())
                 }
-                Some(Exactness::Exact) => todo!(),
+                Exactness::Exact => todo!(),
             }
         } else {
             Err(TokenErrorKind::NumberInvalid)
@@ -840,8 +834,11 @@ impl Scientific {
         if self.no_e_value() {
             Err(self.malformed_exponent())
         } else {
-            self.significand
-                .parse_to(input, self.exponent.end, exactness)
+            self.significand.parse_to(
+                input,
+                self.exponent.end,
+                exactness.unwrap_or(Exactness::Inexact),
+            )
         }
     }
 

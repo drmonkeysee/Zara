@@ -1,4 +1,4 @@
-use super::{Binary, HexParse, Hexadecimal, Identifier, Octal, RadixNumber};
+use super::{Binary, Exactness, HexParse, Hexadecimal, Identifier, Octal, Radix, RadixNumber};
 use crate::{
     lex::{
         token::{TokenErrorKind, TokenKind},
@@ -6,6 +6,7 @@ use crate::{
     },
     literal::Literal,
 };
+use std::fmt::Debug;
 
 pub(in crate::lex::tokenize) struct Hashtag<'me, 'str> {
     pub(in crate::lex::tokenize) scan: &'me mut Scanner<'str>,
@@ -22,13 +23,13 @@ impl<'me, 'str> Hashtag<'me, 'str> {
     fn literal(&mut self, ch: char) -> TokenExtractResult {
         match ch {
             '(' => Ok(TokenKind::Vector),
-            'b' | 'B' => RadixNumber::<Binary>::new(self.scan).scan(),
+            'b' | 'B' => self.radix::<Binary>(),
             'd' | 'D' => self.decimal(),
             'f' | 'F' => self.boolean(false),
-            'o' | 'O' => RadixNumber::<Octal>::new(self.scan).scan(),
+            'o' | 'O' => self.radix::<Octal>(),
             't' | 'T' => self.boolean(true),
             'u' | 'U' => self.bytevector(),
-            'x' | 'X' => RadixNumber::<Hexadecimal>::new(self.scan).scan(),
+            'x' | 'X' => self.radix::<Hexadecimal>(),
             '\\' => self.character(),
             '!' => self.directive(),
             _ => {
@@ -116,6 +117,11 @@ impl<'me, 'str> Hashtag<'me, 'str> {
             }
         }
         Err(TokenErrorKind::NumberExpected)
+    }
+
+    fn radix<R: Radix + Clone + Debug + Default>(&mut self) -> TokenExtractResult {
+        // TODO: check for exactness prefix
+        RadixNumber::<R>::new(self.scan, Exactness::Exact).scan()
     }
 }
 

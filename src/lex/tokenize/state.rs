@@ -3,11 +3,11 @@ mod identifier;
 mod numeric;
 mod string;
 
+use self::numeric::{Binary, Decimal, DecimalNumber, Hexadecimal, Octal, Radix, RadixNumber};
 // NOTE: re-export for parent module
 pub(super) use self::{
     hashtag::{BlockComment, Hashtag},
     identifier::{Identifier, PeriodIdentifier, VerbatimIdentifer},
-    numeric::{Binary, Decimal, DecimalNumber, Hexadecimal, Octal, Radix, RadixNumber},
     string::StringLiteral,
 };
 use super::{extract::TokenExtractResult, scan::Scanner};
@@ -110,6 +110,12 @@ pub(super) trait FreeTextPolicy {
 }
 
 type FreeTextResult = Result<(), TokenErrorKind>;
+
+#[derive(Clone, Copy, Debug)]
+enum Exactness {
+    Exact,
+    Inexact,
+}
 
 #[derive(Clone, Copy, Debug)]
 enum ComplexKind {
