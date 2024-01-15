@@ -214,7 +214,7 @@ impl Integer {
             Precision::Single(u) => {
                 let f = u as f64;
                 if self.sign == Sign::Negative {
-                    0.0 - f
+                    -f
                 } else {
                     f
                 }
