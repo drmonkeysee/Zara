@@ -800,6 +800,28 @@ mod rational {
     }
 
     #[test]
+    fn radix_double_sign() {
+        let mut s = Scanner::new("#x++");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 4,
+                result: Err(TokenErrorKind::NumberInvalid),
+            }
+        ));
+    }
+
+    #[test]
     fn invalid_radix_placement() {
         let mut s = Scanner::new("4/#b101");
         let start = some_or_fail!(s.next_token());

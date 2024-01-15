@@ -680,7 +680,7 @@ impl<R: Radix + Clone + Debug> Integral<R> {
                 self.0.digits.end += 1;
                 ControlFlow::Continue(())
             }
-            // NOTE: is_digit is true for e|E hexadecimal so check exponent after digit
+            // NOTE: e|E hexadecimal is_digit is true, so check exponent after digit
             'e' | 'E' => ControlFlow::Break(Err(TokenErrorKind::NumberInvalidExponent {
                 at: idx,
                 radix: R::NAME,
