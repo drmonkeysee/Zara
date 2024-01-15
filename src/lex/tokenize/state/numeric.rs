@@ -16,9 +16,9 @@ use std::{
 };
 
 pub(in crate::lex::tokenize) struct DecimalNumber<'me, 'str> {
+    classifier: Classifier,
     exactness: Option<Exactness>,
     scan: &'me mut Scanner<'str>,
-    spec: ClassifierSpec,
     start: ScanItem<'str>,
 }
 
@@ -29,9 +29,12 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
         start: ScanItem<'str>,
     ) -> Self {
         Self {
+            classifier: Classifier::Int(DecimalInt(Magnitude {
+                digits: 0..1,
+                ..Default::default()
+            })),
             exactness: None,
             scan,
-            spec: ClassifierSpec::New,
             start,
         }
     }
@@ -42,9 +45,13 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
         start: ScanItem<'str>,
     ) -> Self {
         Self {
+            classifier: Classifier::Int(DecimalInt(Magnitude {
+                digits: 1..2,
+                sign: Some(sign),
+                ..Default::default()
+            })),
             exactness: None,
             scan,
-            spec: ClassifierSpec::SignedNumber(sign),
             start,
         }
     }
@@ -54,9 +61,12 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
         start: ScanItem<'str>,
     ) -> Self {
         Self {
+            classifier: Classifier::Flt(Float {
+                fraction: 0..2,
+                ..Default::default()
+            }),
             exactness: None,
             scan,
-            spec: ClassifierSpec::Float,
             start,
         }
     }
@@ -67,21 +77,26 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
         start: ScanItem<'str>,
     ) -> Self {
         Self {
+            classifier: Classifier::Flt(Float {
+                fraction: 1..3,
+                integral: Magnitude {
+                    sign: Some(sign),
+                    ..Default::default()
+                },
+            }),
             exactness: None,
             scan,
-            spec: ClassifierSpec::SignedFloat(sign),
             start,
         }
     }
 
     pub(in crate::lex::tokenize) fn scan(&mut self) -> TokenExtractResult {
         let mut brk = Ok(BreakCondition::Complete);
-        let mut classifier = self.spec.new_classifier();
         while let Some(item) = self.scan.next_if_not_delimiter() {
-            match classifier.classify(item) {
+            match self.classifier.classify(item) {
                 ControlFlow::Continue(None) => (),
                 ControlFlow::Continue(Some(c)) => {
-                    classifier = c;
+                    self.classifier = c;
                 }
                 ControlFlow::Break(b) => {
                     brk = b;
@@ -92,17 +107,15 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
         match brk {
             Ok(cond) => {
                 match cond {
-                    BreakCondition::Complete => self.complete(&classifier, false),
-                    BreakCondition::Complex { kind, start } => match self.parse(&classifier) {
+                    BreakCondition::Complete => self.complete(false),
+                    BreakCondition::Complex { kind, start } => match self.parse() {
                         Ok(real) => self.scan_imaginary(real, kind, start),
                         Err(err) => self.fail(err),
                     },
                     BreakCondition::Fraction(m) => {
                         // TODO: handle inexact e.g #i4/3 => 1.3333...
-                        match m.exact_parse(self.get_lexeme()) {
-                            Ok(numerator) => {
-                                self.scan_denominator(numerator, classifier.has_sign())
-                            }
+                        match m.exact_parse(self.scan.current_lexeme_at(self.start.0)) {
+                            Ok(numerator) => self.scan_denominator(numerator),
                             Err(err) => self.fail(err),
                         }
                     }
@@ -114,10 +127,10 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
                             } else {
                                 TokenErrorKind::ImaginaryInvalid
                             })
-                        } else if !classifier.has_sign() {
+                        } else if !self.classifier.has_sign() {
                             self.fail(TokenErrorKind::ImaginaryMissingSign)
                         } else {
-                            self.complete(&classifier, true)
+                            self.complete(true)
                         }
                     }
                 }
@@ -126,7 +139,7 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
         }
     }
 
-    fn scan_denominator(&mut self, numerator: Integer, explicit_sign: bool) -> TokenExtractResult {
+    fn scan_denominator(&mut self, numerator: Integer) -> TokenExtractResult {
         let mut d = DenominatorNumber::<Decimal>::new(self.scan);
         let (denominator, cond) = d.scan()?;
         let real = Real::reduce(numerator, denominator)?;
@@ -134,7 +147,7 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
             BreakCondition::Complete => Ok(real_to_token(real, false)),
             BreakCondition::Complex { kind, start } => self.scan_imaginary(real, kind, start),
             BreakCondition::Imaginary => {
-                if explicit_sign {
+                if self.classifier.has_sign() {
                     Ok(real_to_token(real, true))
                 } else {
                     Err(TokenErrorKind::ImaginaryMissingSign)
@@ -177,8 +190,8 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
         }
     }
 
-    fn complete(&mut self, classifier: &Classifier, imaginary: bool) -> TokenExtractResult {
-        self.parse(classifier)
+    fn complete(&mut self, imaginary: bool) -> TokenExtractResult {
+        self.parse()
             .map_or_else(|err| self.fail(err), |r| Ok(real_to_token(r, imaginary)))
     }
 
@@ -187,13 +200,10 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
         Err(err)
     }
 
-    fn parse(&mut self, classifier: &Classifier) -> ParseResult {
+    fn parse(&mut self) -> ParseResult {
         let exactness = self.exactness;
-        classifier.parse(self.get_lexeme(), exactness)
-    }
-
-    fn get_lexeme(&mut self) -> &str {
-        self.scan.current_lexeme_at(self.start.0)
+        self.classifier
+            .parse(self.scan.current_lexeme_at(self.start.0), exactness)
     }
 }
 
@@ -430,40 +440,6 @@ pub(super) fn infinity(sign: Sign, imaginary: bool) -> TokenKind {
 
 pub(super) fn nan(imaginary: bool) -> TokenKind {
     real_to_token(f64::NAN, imaginary)
-}
-
-enum ClassifierSpec {
-    Float,
-    New,
-    SignedFloat(Sign),
-    SignedNumber(Sign),
-}
-
-impl ClassifierSpec {
-    fn new_classifier(&self) -> Classifier {
-        match self {
-            Self::Float => Classifier::Flt(Float {
-                fraction: 0..2,
-                ..Default::default()
-            }),
-            Self::New => Classifier::Int(DecimalInt(Magnitude {
-                digits: 0..1,
-                ..Default::default()
-            })),
-            Self::SignedFloat(s) => Classifier::Flt(Float {
-                fraction: 1..3,
-                integral: Magnitude {
-                    sign: Some(*s),
-                    ..Default::default()
-                },
-            }),
-            Self::SignedNumber(s) => Classifier::Int(DecimalInt(Magnitude {
-                digits: 1..2,
-                sign: Some(*s),
-                ..Default::default()
-            })),
-        }
-    }
 }
 
 struct DenominatorNumber<'me, 'str, R> {
