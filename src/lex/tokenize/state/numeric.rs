@@ -675,15 +675,16 @@ impl<R: Radix + Clone + Debug> Integral<R> {
                 kind: ComplexKind::Polar,
                 start: item,
             })),
-            'e' | 'E' => ControlFlow::Break(Err(TokenErrorKind::NumberInvalidExponent {
-                at: idx,
-                radix: R::NAME,
-            })),
             'i' | 'I' => ControlFlow::Break(Ok(BreakCondition::Imaginary)),
             _ if self.0.radix.is_digit(ch) => {
                 self.0.digits.end += 1;
                 ControlFlow::Continue(())
             }
+            // NOTE: is_digit is true for e|E hexadecimal so check exponent after digit
+            'e' | 'E' => ControlFlow::Break(Err(TokenErrorKind::NumberInvalidExponent {
+                at: idx,
+                radix: R::NAME,
+            })),
             _ => ControlFlow::Break(Err(if !self.has_sign() && self.is_empty() {
                 TokenErrorKind::NumberExpected
             } else {

@@ -1598,6 +1598,30 @@ mod float {
     }
 
     #[test]
+    fn hex_digit_is_not_exponent() {
+        let mut s = Scanner::new("#x4fea2");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 7,
+                result: Ok(TokenKind::Literal(Literal::Number(_))),
+            }
+        ));
+        let num = extract_number!(r.result, Number::Real);
+        assert_eq!(num.to_string(), "327330");
+    }
+
+    #[test]
     fn unexpected_decimal_point() {
         let mut s = Scanner::new("3.456.23");
         let start = some_or_fail!(s.next_token());
