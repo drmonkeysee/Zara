@@ -48,17 +48,17 @@ impl<'a> Scanner<'a> {
         self.chars.next_until(not_whitespace).map_or(end, get_idx)
     }
 
-    pub(super) fn rest_of_token(&mut self) -> &str {
+    pub(super) fn rest_of_token(&mut self) -> &'a str {
         let cur = self.pos();
         let end = self.end_of_token();
         self.lexeme(cur..end)
     }
 
-    pub(super) fn lexeme(&self, range: Range<usize>) -> &str {
+    pub(super) fn lexeme(&self, range: Range<usize>) -> &'a str {
         self.textline.get(range).unwrap_or_default()
     }
 
-    pub(super) fn current_lexeme_at(&mut self, start: usize) -> &str {
+    pub(super) fn current_lexeme_at(&mut self, start: usize) -> &'a str {
         let curr = self.pos();
         self.lexeme(start..curr)
     }

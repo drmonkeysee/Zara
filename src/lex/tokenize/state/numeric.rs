@@ -114,7 +114,7 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
                     },
                     BreakCondition::Fraction(m) => {
                         // TODO: handle inexact e.g #i4/3 => 1.3333...
-                        match m.exact_parse(self.scan.current_lexeme_at(self.start.0)) {
+                        match m.exact_parse(self.get_lexeme()) {
                             Ok(numerator) => self.scan_denominator(numerator),
                             Err(err) => self.fail(err),
                         }
@@ -202,8 +202,12 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
 
     fn parse(&mut self) -> ParseResult {
         let exactness = self.exactness;
-        self.classifier
-            .parse(self.scan.current_lexeme_at(self.start.0), exactness)
+        let input = self.get_lexeme();
+        self.classifier.parse(input, exactness)
+    }
+
+    fn get_lexeme(&mut self) -> &'str str {
+        self.scan.current_lexeme_at(self.start.0)
     }
 }
 
@@ -260,7 +264,7 @@ impl<'me, 'str, R: Radix + Clone + Debug + Default> RadixNumber<'me, 'str, R> {
                     },
                     BreakCondition::Fraction(m) => {
                         // TODO: handle inexact e.g #i4/3 => 1.3333...
-                        match m.exact_parse(self.scan.current_lexeme_at(self.start)) {
+                        match m.exact_parse(self.get_lexeme()) {
                             Ok(numerator) => self.scan_denominator(numerator),
                             Err(err) => self.fail(err),
                         }
@@ -353,8 +357,12 @@ impl<'me, 'str, R: Radix + Clone + Debug + Default> RadixNumber<'me, 'str, R> {
 
     fn parse(&mut self) -> ParseResult {
         let exactness = self.exactness;
-        self.classifier
-            .parse(self.scan.current_lexeme_at(self.start), exactness)
+        let input = self.get_lexeme();
+        self.classifier.parse(input, exactness)
+    }
+
+    fn get_lexeme(&mut self) -> &'str str {
+        self.scan.current_lexeme_at(self.start)
     }
 }
 
@@ -475,19 +483,22 @@ impl<'me, 'str, R: Radix + Clone + Debug + Default> DenominatorNumber<'me, 'str,
         match brk {
             Ok(cond) => Ok((
                 match cond {
-                    BreakCondition::Complete | BreakCondition::Complex { .. } => self
-                        .classifier
-                        .0
-                        .exact_parse(self.scan.current_lexeme_at(self.start))
-                        .map_err(|_| self.fail()),
+                    BreakCondition::Complete | BreakCondition::Complex { .. } => {
+                        let input = self.get_lexeme();
+                        self.classifier
+                            .0
+                            .exact_parse(input)
+                            .map_err(|_| self.fail())
+                    }
                     BreakCondition::Fraction(_) => Err(self.fail()),
                     BreakCondition::Imaginary => {
                         if self.scan.next_if_not_delimiter().is_some() {
                             Err(self.fail())
                         } else {
+                            let input = self.get_lexeme();
                             self.classifier
                                 .0
-                                .exact_parse(self.scan.current_lexeme_at(self.start))
+                                .exact_parse(input)
                                 .map_err(|_| self.fail())
                         }
                     }
@@ -501,6 +512,10 @@ impl<'me, 'str, R: Radix + Clone + Debug + Default> DenominatorNumber<'me, 'str,
     fn fail(&mut self) -> TokenErrorKind {
         self.scan.end_of_token();
         TokenErrorKind::RationalInvalid
+    }
+
+    fn get_lexeme(&mut self) -> &'str str {
+        self.scan.current_lexeme_at(self.start)
     }
 }
 
