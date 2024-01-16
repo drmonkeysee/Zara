@@ -24,13 +24,17 @@ pub(super) struct DecimalNumber<'me, 'str> {
 
 // NOTE: these ctors are always called after one confirmed decimal digit has been scanned
 impl<'me, 'str> DecimalNumber<'me, 'str> {
-    pub(super) fn new(scan: &'me mut Scanner<'str>, start: ScanItem<'str>) -> Self {
+    pub(super) fn new(
+        scan: &'me mut Scanner<'str>,
+        start: ScanItem<'str>,
+        exactness: Option<Exactness>,
+    ) -> Self {
         Self {
             classifier: Classifier::Int(DecimalInt(Magnitude {
                 digits: 0..1,
                 ..Default::default()
             })),
-            exactness: None,
+            exactness,
             scan,
             start,
         }
@@ -40,6 +44,7 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
         sign: Sign,
         scan: &'me mut Scanner<'str>,
         start: ScanItem<'str>,
+        exactness: Option<Exactness>,
     ) -> Self {
         Self {
             classifier: Classifier::Int(DecimalInt(Magnitude {
@@ -47,19 +52,23 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
                 sign: Some(sign),
                 ..Default::default()
             })),
-            exactness: None,
+            exactness,
             scan,
             start,
         }
     }
 
-    pub(super) fn try_float(scan: &'me mut Scanner<'str>, start: ScanItem<'str>) -> Self {
+    pub(super) fn try_float(
+        scan: &'me mut Scanner<'str>,
+        start: ScanItem<'str>,
+        exactness: Option<Exactness>,
+    ) -> Self {
         Self {
             classifier: Classifier::Flt(Float {
                 fraction: 0..2,
                 ..Default::default()
             }),
-            exactness: None,
+            exactness,
             scan,
             start,
         }
@@ -69,6 +78,7 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
         sign: Sign,
         scan: &'me mut Scanner<'str>,
         start: ScanItem<'str>,
+        exactness: Option<Exactness>,
     ) -> Self {
         Self {
             classifier: Classifier::Flt(Float {
@@ -78,7 +88,7 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
                     ..Default::default()
                 },
             }),
-            exactness: None,
+            exactness,
             scan,
             start,
         }

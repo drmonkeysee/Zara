@@ -1,4 +1,4 @@
-use super::{ComplexKind, Decimal, DecimalNumber, FreeText, FreeTextPolicy, Radix};
+use super::{ComplexKind, Decimal, DecimalNumber, Exactness, FreeText, FreeTextPolicy, Radix};
 use crate::{
     lex::{
         token::{TokenErrorKind, TokenKind},
@@ -12,6 +12,7 @@ use crate::{
 };
 
 pub(in crate::lex::tokenize) struct Identifier<'me, 'str> {
+    exactness: Option<Exactness>,
     peculiar_state: Option<PeculiarState>,
     scan: &'me mut Scanner<'str>,
     start: ScanItem<'str>,
@@ -22,11 +23,7 @@ impl<'me, 'str> Identifier<'me, 'str> {
         scan: &'me mut Scanner<'str>,
         start: ScanItem<'str>,
     ) -> Self {
-        Self {
-            peculiar_state: None,
-            scan,
-            start,
-        }
+        Self::with_exactness(scan, start, None)
     }
 
     pub(in crate::lex::tokenize) fn scan(&mut self) -> TokenExtractResult {
@@ -34,13 +31,26 @@ impl<'me, 'str> Identifier<'me, 'str> {
         if first == '|' {
             VerbatimIdentifer::new(self.scan).scan()
         } else if Decimal.is_digit(first) {
-            DecimalNumber::new(self.scan, self.start).scan()
+            DecimalNumber::new(self.scan, self.start, self.exactness).scan()
         } else if is_peculiar_initial(first) {
             self.peculiar(first)
         } else if is_initial(first) {
             self.standard()
         } else {
             self.invalid(first)
+        }
+    }
+
+    pub(super) fn with_exactness(
+        scan: &'me mut Scanner<'str>,
+        start: ScanItem<'str>,
+        exactness: Option<Exactness>,
+    ) -> Self {
+        Self {
+            exactness,
+            peculiar_state: None,
+            scan,
+            start,
         }
     }
 
@@ -72,13 +82,14 @@ impl<'me, 'str> Identifier<'me, 'str> {
                     PeculiarState::DefiniteIdentifier => self.standard(),
                     // CASE: .<digit>
                     PeculiarState::MaybeFloat => {
-                        DecimalNumber::try_float(self.scan, self.start).scan()
+                        DecimalNumber::try_float(self.scan, self.start, self.exactness).scan()
                     }
                     // CASE: +/-.<digit>
                     PeculiarState::MaybeSignedFloat => DecimalNumber::try_signed_float(
                         super::char_to_sign(self.start.1),
                         self.scan,
                         self.start,
+                        self.exactness,
                     )
                     .scan(),
                     // CASE: +/-<digit>
@@ -86,6 +97,7 @@ impl<'me, 'str> Identifier<'me, 'str> {
                         super::char_to_sign(self.start.1),
                         self.scan,
                         self.start,
+                        self.exactness,
                     )
                     .scan(),
                 }

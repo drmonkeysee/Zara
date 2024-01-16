@@ -23,19 +23,14 @@ impl<'me, 'str> Hashtag<'me, 'str> {
     fn literal(&mut self, ch: char) -> TokenExtractResult {
         match ch {
             '(' => Ok(TokenKind::Vector),
-            'b' | 'B' => self.radix::<Binary>(),
-            'd' | 'D' => self.decimal(),
+            'e' | 'E' => self.exactness(Exactness::Exact),
             'f' | 'F' => self.boolean(false),
-            'o' | 'O' => self.radix::<Octal>(),
+            'i' | 'I' => self.exactness(Exactness::Inexact),
             't' | 'T' => self.boolean(true),
             'u' | 'U' => self.bytevector(),
-            'x' | 'X' => self.radix::<Hexadecimal>(),
             '\\' => self.character(),
             '!' => self.directive(),
-            _ => {
-                self.scan.end_of_token();
-                Err(TokenErrorKind::HashInvalid)
-            }
+            _ => self.number(ch, None, TokenErrorKind::HashInvalid),
         }
     }
 
@@ -105,9 +100,41 @@ impl<'me, 'str> Hashtag<'me, 'str> {
             .map(|_| BlockComment::new(self.scan).consume())
     }
 
-    fn decimal(&mut self) -> TokenExtractResult {
+    fn exactness(&mut self, exactness: Exactness) -> TokenExtractResult {
+        if self.scan.char_if_eq('#').is_some() {
+            if let Some(ch) = self.scan.char_if_not_delimiter() {
+                self.number(ch, Some(exactness), TokenErrorKind::RadixExpected)
+            } else {
+                self.scan.end_of_token();
+                Err(TokenErrorKind::RadixExpected)
+            }
+        } else {
+            self.decimal(Some(exactness))
+        }
+    }
+
+    fn number(
+        &mut self,
+        ch: char,
+        exactness: Option<Exactness>,
+        failure: TokenErrorKind,
+    ) -> TokenExtractResult {
+        match ch {
+            'b' | 'B' => self.radix::<Binary>(exactness),
+            'd' | 'D' => self.decimal(exactness),
+            'o' | 'O' => self.radix::<Octal>(exactness),
+            'x' | 'X' => self.radix::<Hexadecimal>(exactness),
+            _ => {
+                self.scan.end_of_token();
+                Err(failure)
+            }
+        }
+    }
+
+    fn decimal(&mut self, exactness: Option<Exactness>) -> TokenExtractResult {
+        let ext = exactness.map_or_else(|| self.post_radix_exactness(), |ex| Ok(Some(ex)))?;
         if let Some(item) = self.scan.next_if_not_delimiter() {
-            let result = Identifier::new(self.scan, item).scan();
+            let result = Identifier::with_exactness(self.scan, item, ext).scan();
             match result {
                 Err(TokenErrorKind::IdentifierInvalid(_)) => (),
                 Ok(TokenKind::Literal(Literal::Number(_)))
@@ -119,9 +146,27 @@ impl<'me, 'str> Hashtag<'me, 'str> {
         Err(TokenErrorKind::NumberExpected)
     }
 
-    fn radix<R: Radix + Clone + Debug + Default>(&mut self) -> TokenExtractResult {
-        // TODO: check for exactness prefix
-        RadixNumber::<R>::new(self.scan, Exactness::Exact).scan()
+    fn radix<R: Radix + Clone + Debug + Default>(
+        &mut self,
+        exactness: Option<Exactness>,
+    ) -> TokenExtractResult {
+        let ext = exactness
+            .map_or_else(|| self.post_radix_exactness(), |ex| Ok(Some(ex)))?
+            .unwrap_or(Exactness::Exact);
+        RadixNumber::<R>::new(self.scan, ext).scan()
+    }
+
+    fn post_radix_exactness(&mut self) -> Result<Option<Exactness>, TokenErrorKind> {
+        self.scan
+            .char_if_eq('#')
+            .map_or(Ok(None), |_| match self.scan.char_if_not_delimiter() {
+                Some('e' | 'E') => Ok(Some(Exactness::Exact)),
+                Some('i' | 'I') => Ok(Some(Exactness::Inexact)),
+                _ => {
+                    self.scan.end_of_token();
+                    Err(TokenErrorKind::ExactnessExpected)
+                }
+            })
     }
 }
 

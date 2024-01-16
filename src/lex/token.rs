@@ -145,6 +145,7 @@ pub(super) enum TokenErrorKind {
     ComplexInvalid,
     DirectiveExpected,
     DirectiveInvalid,
+    ExactnessExpected,
     IdentifierEscapeInvalid { at: usize, ch: char },
     IdentifierExpectedHex { at: usize },
     IdentifierInvalid(char),
@@ -161,6 +162,7 @@ pub(super) enum TokenErrorKind {
     NumberUnexpectedDecimalPoint { at: usize },
     NumericError(NumericError),
     PolarInvalid,
+    RadixExpected,
     RationalInvalid,
     StringEscapeInvalid { at: usize, ch: char },
     StringExpectedHex { at: usize },
@@ -226,6 +228,7 @@ impl Display for TokenErrorKind {
             Self::DirectiveInvalid => {
                 f.write_str("unsupported directive: expected fold-case or no-fold-case")
             }
+            Self::ExactnessExpected => f.write_str("expected exactness prefix, one of: #e #i"),
             Self::HashInvalid => f.write_str("unexpected #-literal"),
             Self::HashUnterminated => f.write_str("unterminated #-literal"),
             Self::IdentifierInvalid(ch) => write!(f, "invalid identifier character: {ch}"),
@@ -261,6 +264,7 @@ impl Display for TokenErrorKind {
             Self::NumberUnexpectedDecimalPoint { .. } => f.write_str("unexpected decimal point"),
             Self::NumericError(err) => write!(f, "numeric error: {err}"),
             Self::PolarInvalid => f.write_str("invalid polar literal"),
+            Self::RadixExpected => f.write_str("expected radix prefix, one of: #b #o #d #x"),
             Self::RationalInvalid => f.write_str("invalid rational literal"),
             Self::StringUnterminated => f.write_str("unterminated string-literal"),
             Self::Unimplemented(s) => write!(f, "unimplemented tokenization: '{s}'"),
@@ -1192,6 +1196,29 @@ mod tests {
             };
 
             assert_eq!(err.to_string(), "numeric error: divide by zero");
+        }
+
+        #[test]
+        fn display_expected_exactness() {
+            let err = TokenError {
+                kind: TokenErrorKind::ExactnessExpected,
+                span: 0..1,
+            };
+
+            assert_eq!(err.to_string(), "expected exactness prefix, one of: #e #i");
+        }
+
+        #[test]
+        fn display_expected_radix() {
+            let err = TokenError {
+                kind: TokenErrorKind::RadixExpected,
+                span: 0..1,
+            };
+
+            assert_eq!(
+                err.to_string(),
+                "expected radix prefix, one of: #b #o #d #x"
+            );
         }
     }
 
