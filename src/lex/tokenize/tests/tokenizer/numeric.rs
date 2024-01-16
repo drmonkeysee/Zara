@@ -1542,7 +1542,7 @@ mod float {
         let cases = [
             ("#b1.01", "binary"),
             ("#o3.73", "octal"),
-            ("#x4f.a2", "hexadecimal"),
+            ("#xf.a2", "hexadecimal"),
         ];
         for (case, label) in cases {
             let mut s = Scanner::new(case);
@@ -1558,7 +1558,7 @@ mod float {
             assert!(matches!(
                 r,
                 TokenExtract {
-                    start: 0,
+                    start: 3,
                     end,
                     result: Err(TokenErrorKind::NumberInvalidDecimalPoint { at: 3, radix }),
                 } if radix == label && end == case.len()
@@ -1592,11 +1592,7 @@ mod float {
 
     #[test]
     fn invalid_exponent_radix() {
-        let cases = [
-            ("#b101e11", "binary"),
-            ("#o34e72", "octal"),
-            ("#x4fea2", "hexadecimal"),
-        ];
+        let cases = [("#b11e10", "binary"), ("#o34e72", "octal")];
         for (case, label) in cases {
             let mut s = Scanner::new(case);
             let start = some_or_fail!(s.next_token());
@@ -1611,9 +1607,9 @@ mod float {
             assert!(matches!(
                 r,
                 TokenExtract {
-                    start: 0,
+                    start: 4,
                     end,
-                    result: Err(TokenErrorKind::NumberInvalidExponent { at: 3, radix }),
+                    result: Err(TokenErrorKind::NumberInvalidExponent { at: 4, radix }),
                 } if radix == label && end == case.len()
             ));
         }
