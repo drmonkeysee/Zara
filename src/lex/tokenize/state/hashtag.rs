@@ -132,9 +132,9 @@ impl<'me, 'str> Hashtag<'me, 'str> {
     }
 
     fn decimal(&mut self, exactness: Option<Exactness>) -> TokenExtractResult {
-        let ext = exactness.map_or_else(|| self.post_radix_exactness(), |ex| Ok(Some(ex)))?;
+        let exactness = exactness.map_or_else(|| self.post_radix_exactness(), |ex| Ok(Some(ex)))?;
         if let Some(item) = self.scan.next_if_not_delimiter() {
-            let result = Identifier::with_exactness(self.scan, item, ext).scan();
+            let result = Identifier::with_exactness(self.scan, item, exactness).scan();
             match result {
                 Err(TokenErrorKind::IdentifierInvalid(_)) => (),
                 Ok(TokenKind::Literal(Literal::Number(_)))
@@ -150,10 +150,10 @@ impl<'me, 'str> Hashtag<'me, 'str> {
         &mut self,
         exactness: Option<Exactness>,
     ) -> TokenExtractResult {
-        let ext = exactness
+        let exactness = exactness
             .map_or_else(|| self.post_radix_exactness(), |ex| Ok(Some(ex)))?
             .unwrap_or(Exactness::Exact);
-        RadixNumber::<R>::new(self.scan, ext).scan()
+        RadixNumber::<R>::new(self.scan, exactness).scan()
     }
 
     fn post_radix_exactness(&mut self) -> Result<Option<Exactness>, TokenErrorKind> {

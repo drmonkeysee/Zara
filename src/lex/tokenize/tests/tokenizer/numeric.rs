@@ -336,6 +336,84 @@ mod integer {
     }
 
     #[test]
+    fn exact_has_no_effect() {
+        let mut s = Scanner::new("#e4");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 3,
+                result: Ok(TokenKind::Literal(Literal::Number(_))),
+            }
+        ));
+        let int = extract_number!(r.result, Number::Real, Real::Integer);
+        assert_eq!(int.to_string(), "4");
+    }
+
+    #[test]
+    fn exact_and_radix() {
+        let cases = ["#e#xa", "#E#XA"];
+        for case in cases {
+            let mut s = Scanner::new(case);
+            let start = some_or_fail!(s.next_token());
+            let t = Tokenizer {
+                scan: &mut s,
+                start,
+            };
+
+            let r = t.extract();
+            dbg!(&r);
+
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 0,
+                    end: 5,
+                    result: Ok(TokenKind::Literal(Literal::Number(_))),
+                }
+            ));
+            let int = extract_number!(r.result, Number::Real, Real::Integer);
+            assert_eq!(int.to_string(), "10");
+        }
+    }
+
+    #[test]
+    fn radix_and_exact() {
+        let cases = ["#x#ea", "#X#EA"];
+        for case in cases {
+            let mut s = Scanner::new(case);
+            let start = some_or_fail!(s.next_token());
+            let t = Tokenizer {
+                scan: &mut s,
+                start,
+            };
+
+            let r = t.extract();
+            dbg!(&r);
+
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 0,
+                    end: 5,
+                    result: Ok(TokenKind::Literal(Literal::Number(_))),
+                }
+            ));
+            let int = extract_number!(r.result, Number::Real, Real::Integer);
+            assert_eq!(int.to_string(), "10");
+        }
+    }
+
+    #[test]
     fn invalid_radix_digits() {
         let cases = ["#b102010", "#o28", "#d42af", "#x2ag"];
         for case in cases {
@@ -642,6 +720,84 @@ mod rational {
                 "42/43"
             };
             assert_eq!(rat.to_string(), expected);
+        }
+    }
+
+    #[test]
+    fn exact_has_no_effect() {
+        let mut s = Scanner::new("#e4/5");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 5,
+                result: Ok(TokenKind::Literal(Literal::Number(_))),
+            }
+        ));
+        let rat = extract_number!(r.result, Number::Real, Real::Rational);
+        assert_eq!(rat.to_string(), "4/5");
+    }
+
+    #[test]
+    fn exact_and_radix() {
+        let cases = ["#e#xa/b", "#E#XA/B"];
+        for case in cases {
+            let mut s = Scanner::new(case);
+            let start = some_or_fail!(s.next_token());
+            let t = Tokenizer {
+                scan: &mut s,
+                start,
+            };
+
+            let r = t.extract();
+            dbg!(&r);
+
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 0,
+                    end: 7,
+                    result: Ok(TokenKind::Literal(Literal::Number(_))),
+                }
+            ));
+            let rat = extract_number!(r.result, Number::Real, Real::Rational);
+            assert_eq!(rat.to_string(), "10/11");
+        }
+    }
+
+    #[test]
+    fn radix_and_exact() {
+        let cases = ["#x#ea/b", "#X#EA/B"];
+        for case in cases {
+            let mut s = Scanner::new(case);
+            let start = some_or_fail!(s.next_token());
+            let t = Tokenizer {
+                scan: &mut s,
+                start,
+            };
+
+            let r = t.extract();
+            dbg!(&r);
+
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 0,
+                    end: 7,
+                    result: Ok(TokenKind::Literal(Literal::Number(_))),
+                }
+            ));
+            let rat = extract_number!(r.result, Number::Real, Real::Rational);
+            assert_eq!(rat.to_string(), "10/11");
         }
     }
 
@@ -1398,6 +1554,84 @@ mod float {
     }
 
     #[test]
+    fn inexact_has_no_effect() {
+        let mut s = Scanner::new("#i42.34");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 7,
+                result: Ok(TokenKind::Literal(Literal::Number(_))),
+            }
+        ));
+        let flt = extract_number!(r.result, Number::Real);
+        assert_eq!(flt.to_string(), "42.34");
+    }
+
+    #[test]
+    fn inexact_and_radix() {
+        let cases = ["#i#d42.34", "#I#D42.34"];
+        for case in cases {
+            let mut s = Scanner::new(case);
+            let start = some_or_fail!(s.next_token());
+            let t = Tokenizer {
+                scan: &mut s,
+                start,
+            };
+
+            let r = t.extract();
+            dbg!(&r);
+
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 0,
+                    end: 9,
+                    result: Ok(TokenKind::Literal(Literal::Number(_))),
+                }
+            ));
+            let flt = extract_number!(r.result, Number::Real);
+            assert_eq!(flt.to_string(), "42.34");
+        }
+    }
+
+    #[test]
+    fn radix_and_inexact() {
+        let cases = ["#d#i42.34", "#D#I42.34"];
+        for case in cases {
+            let mut s = Scanner::new(case);
+            let start = some_or_fail!(s.next_token());
+            let t = Tokenizer {
+                scan: &mut s,
+                start,
+            };
+
+            let r = t.extract();
+            dbg!(&r);
+
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 0,
+                    end: 9,
+                    result: Ok(TokenKind::Literal(Literal::Number(_))),
+                }
+            ));
+            let flt = extract_number!(r.result, Number::Real);
+            assert_eq!(flt.to_string(), "42.34");
+        }
+    }
+
+    #[test]
     fn invalid_leading_digits_infinity() {
         let mut s = Scanner::new("+0inf.0");
         let start = some_or_fail!(s.next_token());
@@ -2076,6 +2310,118 @@ mod imaginary {
             let r = extract_or_fail!(tok, TokenKind::Imaginary);
             let expected = if case.contains('-') { "-1" } else { "1" };
             assert_eq!(r.to_string(), expected);
+        }
+    }
+
+    #[test]
+    fn exact_and_radix() {
+        let cases = ["#e#x+ai", "#E#X+Ai"];
+        for case in cases {
+            let mut s = Scanner::new(case);
+            let start = some_or_fail!(s.next_token());
+            let t = Tokenizer {
+                scan: &mut s,
+                start,
+            };
+
+            let r = t.extract();
+            dbg!(&r);
+
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 0,
+                    end: 7,
+                    result: Ok(TokenKind::Imaginary(_)),
+                }
+            ));
+            let tok = ok_or_fail!(r.result);
+            let r = extract_or_fail!(tok, TokenKind::Imaginary);
+            assert_eq!(r.to_string(), "10");
+        }
+    }
+
+    #[test]
+    fn radix_and_exact() {
+        let cases = ["#x#e+ai", "#X#E+Ai"];
+        for case in cases {
+            let mut s = Scanner::new(case);
+            let start = some_or_fail!(s.next_token());
+            let t = Tokenizer {
+                scan: &mut s,
+                start,
+            };
+
+            let r = t.extract();
+            dbg!(&r);
+
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 0,
+                    end: 7,
+                    result: Ok(TokenKind::Imaginary(_)),
+                }
+            ));
+            let tok = ok_or_fail!(r.result);
+            let r = extract_or_fail!(tok, TokenKind::Imaginary);
+            assert_eq!(r.to_string(), "10");
+        }
+    }
+
+    #[test]
+    fn inexact_and_radix() {
+        let cases = ["#i#d+42.34i", "#I#D+42.34i"];
+        for case in cases {
+            let mut s = Scanner::new(case);
+            let start = some_or_fail!(s.next_token());
+            let t = Tokenizer {
+                scan: &mut s,
+                start,
+            };
+
+            let r = t.extract();
+            dbg!(&r);
+
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 0,
+                    end: 11,
+                    result: Ok(TokenKind::Imaginary(_)),
+                }
+            ));
+            let tok = ok_or_fail!(r.result);
+            let r = extract_or_fail!(tok, TokenKind::Imaginary);
+            assert_eq!(r.to_string(), "42.34");
+        }
+    }
+
+    #[test]
+    fn radix_and_inexact() {
+        let cases = ["#d#i+42.34i", "#D#I+42.34i"];
+        for case in cases {
+            let mut s = Scanner::new(case);
+            let start = some_or_fail!(s.next_token());
+            let t = Tokenizer {
+                scan: &mut s,
+                start,
+            };
+
+            let r = t.extract();
+            dbg!(&r);
+
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 0,
+                    end: 11,
+                    result: Ok(TokenKind::Imaginary(_)),
+                }
+            ));
+            let tok = ok_or_fail!(r.result);
+            let r = extract_or_fail!(tok, TokenKind::Imaginary);
+            assert_eq!(r.to_string(), "42.34");
         }
     }
 
@@ -2917,6 +3263,114 @@ mod cartesian {
     }
 
     #[test]
+    fn exact_and_radix() {
+        let cases = ["#e#xb+ai", "#E#XB+Ai"];
+        for case in cases {
+            let mut s = Scanner::new(case);
+            let start = some_or_fail!(s.next_token());
+            let t = Tokenizer {
+                scan: &mut s,
+                start,
+            };
+
+            let r = t.extract();
+            dbg!(&r);
+
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 0,
+                    end: 8,
+                    result: Ok(TokenKind::Literal(_)),
+                }
+            ));
+            let num = extract_number!(r.result);
+            assert_eq!(num.as_datum().to_string(), "11+10i");
+        }
+    }
+
+    #[test]
+    fn radix_and_exact() {
+        let cases = ["#x#eb+ai", "#X#EB+Ai"];
+        for case in cases {
+            let mut s = Scanner::new(case);
+            let start = some_or_fail!(s.next_token());
+            let t = Tokenizer {
+                scan: &mut s,
+                start,
+            };
+
+            let r = t.extract();
+            dbg!(&r);
+
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 0,
+                    end: 8,
+                    result: Ok(TokenKind::Literal(_)),
+                }
+            ));
+            let num = extract_number!(r.result);
+            assert_eq!(num.as_datum().to_string(), "11+10i");
+        }
+    }
+
+    #[test]
+    fn inexact_and_radix() {
+        let cases = ["#i#d3.5+12.2i", "#I#D3.5+12.2i"];
+        for case in cases {
+            let mut s = Scanner::new(case);
+            let start = some_or_fail!(s.next_token());
+            let t = Tokenizer {
+                scan: &mut s,
+                start,
+            };
+
+            let r = t.extract();
+            dbg!(&r);
+
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 0,
+                    end: 13,
+                    result: Ok(TokenKind::Literal(_)),
+                }
+            ));
+            let num = extract_number!(r.result);
+            assert_eq!(num.as_datum().to_string(), "3.5+12.2i");
+        }
+    }
+
+    #[test]
+    fn radix_and_inexact() {
+        let cases = ["#d#i3.5+12.2i", "#D#I3.5+12.2i"];
+        for case in cases {
+            let mut s = Scanner::new(case);
+            let start = some_or_fail!(s.next_token());
+            let t = Tokenizer {
+                scan: &mut s,
+                start,
+            };
+
+            let r = t.extract();
+            dbg!(&r);
+
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 0,
+                    end: 13,
+                    result: Ok(TokenKind::Literal(_)),
+                }
+            ));
+            let num = extract_number!(r.result);
+            assert_eq!(num.as_datum().to_string(), "3.5+12.2i");
+        }
+    }
+
+    #[test]
     fn missing_imaginary() {
         let mut s = Scanner::new("4+");
         let start = some_or_fail!(s.next_token());
@@ -3468,6 +3922,66 @@ mod polar {
             num.as_datum().to_string(),
             "0.6287098086215585+0.4946958424557896i"
         );
+    }
+
+    #[test]
+    fn inexact_and_radix() {
+        let cases = ["#i#d3.5@12.2", "#I#D3.5@12.2"];
+        for case in cases {
+            let mut s = Scanner::new(case);
+            let start = some_or_fail!(s.next_token());
+            let t = Tokenizer {
+                scan: &mut s,
+                start,
+            };
+
+            let r = t.extract();
+            dbg!(&r);
+
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 0,
+                    end: 12,
+                    result: Ok(TokenKind::Literal(_)),
+                }
+            ));
+            let num = extract_number!(r.result);
+            assert_eq!(
+                num.as_datum().to_string(),
+                "3.2677177542612306-1.2538024878289005i"
+            );
+        }
+    }
+
+    #[test]
+    fn radix_and_inexact() {
+        let cases = ["#d#i3.5@12.2", "#D#I3.5@12.2"];
+        for case in cases {
+            let mut s = Scanner::new(case);
+            let start = some_or_fail!(s.next_token());
+            let t = Tokenizer {
+                scan: &mut s,
+                start,
+            };
+
+            let r = t.extract();
+            dbg!(&r);
+
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 0,
+                    end: 12,
+                    result: Ok(TokenKind::Literal(_)),
+                }
+            ));
+            let num = extract_number!(r.result);
+            assert_eq!(
+                num.as_datum().to_string(),
+                "3.2677177542612306-1.2538024878289005i",
+            );
+        }
     }
 
     #[test]
