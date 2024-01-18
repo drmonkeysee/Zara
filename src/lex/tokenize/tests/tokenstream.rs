@@ -838,3 +838,49 @@ fn open_identifier_with_error() {
         })
     ));
 }
+
+#[test]
+fn exactness_following_invalid_hash() {
+    let s = TokenStream::new("#c#e", None);
+
+    let r: Vec<_> = s.collect();
+
+    assert_eq!(r.len(), 2);
+    assert!(matches!(
+        r[0],
+        Err(TokenError {
+            kind: TokenErrorKind::HashInvalid,
+            span: Range { start: 0, end: 2 }
+        })
+    ));
+    assert!(matches!(
+        r[1],
+        Err(TokenError {
+            kind: TokenErrorKind::NumberExpected,
+            span: Range { start: 2, end: 4 }
+        })
+    ));
+}
+
+#[test]
+fn radix_following_invalid_hash() {
+    let s = TokenStream::new("#c#x", None);
+
+    let r: Vec<_> = s.collect();
+
+    assert_eq!(r.len(), 2);
+    assert!(matches!(
+        r[0],
+        Err(TokenError {
+            kind: TokenErrorKind::HashInvalid,
+            span: Range { start: 0, end: 2 }
+        })
+    ));
+    assert!(matches!(
+        r[1],
+        Err(TokenError {
+            kind: TokenErrorKind::NumberExpected,
+            span: Range { start: 2, end: 4 }
+        })
+    ));
+}

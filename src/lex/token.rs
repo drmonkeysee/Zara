@@ -229,7 +229,7 @@ impl Display for TokenErrorKind {
                 f.write_str("unsupported directive: expected fold-case or no-fold-case")
             }
             Self::ExactnessExpected => f.write_str("expected exactness prefix, one of: #e #i"),
-            Self::HashInvalid => f.write_str("unexpected #-literal"),
+            Self::HashInvalid => f.write_str("invalid #-literal"),
             Self::HashUnterminated => f.write_str("unterminated #-literal"),
             Self::IdentifierInvalid(ch) => write!(f, "invalid identifier character: {ch}"),
             Self::IdentifierEscapeInvalid { ch, .. } | Self::StringEscapeInvalid { ch, .. } => {
@@ -905,7 +905,7 @@ mod tests {
                 span: 0..1,
             };
 
-            assert_eq!(err.to_string(), "unexpected #-literal");
+            assert_eq!(err.to_string(), "invalid #-literal");
         }
 
         #[test]
