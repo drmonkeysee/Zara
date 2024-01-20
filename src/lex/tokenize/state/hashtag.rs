@@ -8,6 +8,11 @@ use crate::{
 };
 use std::fmt::Debug;
 
+const EXACT_U: char = 'E';
+const EXACT_L: char = 'e';
+const INEXACT_U: char = 'I';
+const INEXACT_L: char = 'i';
+
 pub(in crate::lex::tokenize) struct Hashtag<'me, 'str> {
     pub(in crate::lex::tokenize) scan: &'me mut Scanner<'str>,
 }
@@ -23,14 +28,14 @@ impl<'me, 'str> Hashtag<'me, 'str> {
     fn literal(&mut self, ch: char) -> TokenExtractResult {
         match ch {
             '(' => Ok(TokenKind::Vector),
-            'e' | 'E' => self.exactness(Exactness::Exact),
+            EXACT_L | EXACT_U => self.exactness(Exactness::Exact),
             'f' | 'F' => self.boolean(false),
-            'i' | 'I' => self.exactness(Exactness::Inexact),
+            INEXACT_L | INEXACT_U => self.exactness(Exactness::Inexact),
             't' | 'T' => self.boolean(true),
             'u' | 'U' => self.bytevector(),
             '\\' => self.character(),
             '!' => self.directive(),
-            _ => self.number(ch, None, TokenErrorKind::HashInvalid),
+            _ => self.number(ch),
         }
     }
 
@@ -102,66 +107,25 @@ impl<'me, 'str> Hashtag<'me, 'str> {
 
     fn exactness(&mut self, exactness: Exactness) -> TokenExtractResult {
         if self.scan.char_if_eq('#').is_some() {
-            if let Some(ch) = self.scan.char_if_not_delimiter() {
-                self.number(ch, Some(exactness), TokenErrorKind::RadixExpected)
-            } else {
-                self.scan.end_of_token();
-                Err(TokenErrorKind::RadixExpected)
-            }
+            let num = NumberKind::select_or(TokenErrorKind::RadixExpected, self.scan, None)?;
+            num.scan(self.scan, Some(exactness))
         } else {
-            self.decimal(Some(exactness))
+            NumberKind::Decimal.scan(self.scan, Some(exactness))
         }
     }
 
-    fn number(
-        &mut self,
-        ch: char,
-        exactness: Option<Exactness>,
-        failure: TokenErrorKind,
-    ) -> TokenExtractResult {
-        match ch {
-            'b' | 'B' => self.radix::<Binary>(exactness),
-            'd' | 'D' => self.decimal(exactness),
-            'o' | 'O' => self.radix::<Octal>(exactness),
-            'x' | 'X' => self.radix::<Hexadecimal>(exactness),
-            _ => {
-                self.scan.end_of_token();
-                Err(failure)
-            }
-        }
+    fn number(&mut self, ch: char) -> TokenExtractResult {
+        let num = NumberKind::select_or(TokenErrorKind::HashInvalid, self.scan, Some(ch))?;
+        let exactness = self.check_exactness()?;
+        num.scan(self.scan, exactness)
     }
 
-    fn decimal(&mut self, exactness: Option<Exactness>) -> TokenExtractResult {
-        let exactness = exactness.map_or_else(|| self.post_radix_exactness(), |ex| Ok(Some(ex)))?;
-        if let Some(item) = self.scan.next_if_not_delimiter() {
-            let result = Identifier::with_exactness(self.scan, item, exactness).scan();
-            match result {
-                Err(TokenErrorKind::IdentifierInvalid(_)) => (),
-                Ok(TokenKind::Literal(Literal::Number(_)))
-                | Ok(TokenKind::Imaginary(_))
-                | Err(_) => return result,
-                _ => (),
-            }
-        }
-        Err(TokenErrorKind::NumberExpected)
-    }
-
-    fn radix<R: Radix + Clone + Debug + Default>(
-        &mut self,
-        exactness: Option<Exactness>,
-    ) -> TokenExtractResult {
-        let exactness = exactness
-            .map_or_else(|| self.post_radix_exactness(), |ex| Ok(Some(ex)))?
-            .unwrap_or(Exactness::Exact);
-        RadixNumber::<R>::new(self.scan, exactness).scan()
-    }
-
-    fn post_radix_exactness(&mut self) -> Result<Option<Exactness>, TokenErrorKind> {
+    fn check_exactness(&mut self) -> Result<Option<Exactness>, TokenErrorKind> {
         self.scan
             .char_if_eq('#')
             .map_or(Ok(None), |_| match self.scan.char_if_not_delimiter() {
-                Some('e' | 'E') => Ok(Some(Exactness::Exact)),
-                Some('i' | 'I') => Ok(Some(Exactness::Inexact)),
+                Some(EXACT_L | EXACT_U) => Ok(Some(Exactness::Exact)),
+                Some(INEXACT_L | INEXACT_U) => Ok(Some(Exactness::Inexact)),
                 _ => {
                     self.scan.end_of_token();
                     Err(TokenErrorKind::ExactnessExpected)
@@ -248,6 +212,60 @@ impl BlockCommentPolicy for StartComment {
 
     fn unterminated(&self, depth: usize) -> TokenKind {
         TokenKind::CommentBlockBegin { depth }
+    }
+}
+
+enum NumberKind {
+    Binary,
+    Decimal,
+    Hexadecimal,
+    Octal,
+}
+
+impl NumberKind {
+    fn select_or(
+        failure: TokenErrorKind,
+        scan: &mut Scanner,
+        ch: Option<char>,
+    ) -> Result<NumberKind, TokenErrorKind> {
+        match ch.or_else(|| scan.char_if_not_delimiter()) {
+            Some('b' | 'B') => Ok(Self::Binary),
+            Some('d' | 'D') => Ok(Self::Decimal),
+            Some('o' | 'O') => Ok(Self::Octal),
+            Some('x' | 'X') => Ok(Self::Hexadecimal),
+            _ => {
+                scan.end_of_token();
+                Err(failure)
+            }
+        }
+    }
+
+    fn scan(&self, scan: &mut Scanner, exactness: Option<Exactness>) -> TokenExtractResult {
+        match self {
+            Self::Binary => self.radix::<Binary>(scan, exactness),
+            Self::Decimal => {
+                if let Some(item) = scan.next_if_not_delimiter() {
+                    let result = Identifier::with_exactness(scan, item, exactness).scan();
+                    match result {
+                        Err(TokenErrorKind::IdentifierInvalid(_)) => (),
+                        Ok(TokenKind::Literal(Literal::Number(_)) | TokenKind::Imaginary(_))
+                        | Err(_) => return result,
+                        _ => (),
+                    }
+                }
+                Err(TokenErrorKind::NumberExpected)
+            }
+            Self::Hexadecimal => self.radix::<Hexadecimal>(scan, exactness),
+            Self::Octal => self.radix::<Octal>(scan, exactness),
+        }
+    }
+
+    fn radix<R: Radix + Clone + Debug + Default>(
+        &self,
+        scan: &mut Scanner,
+        exactness: Option<Exactness>,
+    ) -> TokenExtractResult {
+        RadixNumber::<R>::new(scan, exactness.unwrap_or(Exactness::Exact)).scan()
     }
 }
 
