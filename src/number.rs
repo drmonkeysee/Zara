@@ -31,9 +31,9 @@ impl Number {
         } else if rad.is_zero() {
             Self::real(mag)
         } else {
-            let (fmag, frad) = (mag.into_float(), rad.into_float());
-            let (rsin, rcos) = frad.sin_cos();
-            Self::complex(fmag * rcos, fmag * rsin)
+            let (mag, rad) = (mag.into_float(), rad.into_float());
+            let (rsin, rcos) = rad.sin_cos();
+            Self::complex(mag * rcos, mag * rsin)
         }
     }
 

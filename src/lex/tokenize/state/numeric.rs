@@ -226,7 +226,7 @@ impl<'me, 'str, R: Radix + Clone + Debug + Default> RadixNumber<'me, 'str, R> {
     pub(super) fn new(scan: &'me mut Scanner<'str>, exactness: Exactness) -> Self {
         let start = scan.pos();
         Self {
-            classifier: Integral(Default::default()),
+            classifier: Integral(Magnitude::default()),
             exactness,
             scan,
             start,
@@ -592,10 +592,10 @@ impl<R: Radix + Debug> Magnitude<R> {
             input
                 .get(..self.digits.end)
                 .map_or(Err(TokenErrorKind::NumberInvalid), |signed_num| {
-                    return i64::from_str_radix(signed_num, R::BASE).map_or_else(
+                    i64::from_str_radix(signed_num, R::BASE).map_or_else(
                         |_| self.parse_sign_magnitude(signed_num),
                         |val| Ok(val.into()),
-                    );
+                    )
                 })
         }
     }

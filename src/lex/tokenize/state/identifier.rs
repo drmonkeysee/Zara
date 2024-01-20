@@ -128,9 +128,8 @@ impl<'me, 'str> Identifier<'me, 'str> {
                         return Ok(TokenKind::Literal(Literal::Number(Number::complex(
                             real, imag,
                         ))));
-                    } else {
-                        Some(result)
                     }
+                    Some(result)
                 }
                 ComplexKind::Polar => {
                     if let Some(first) = self.scan.next_if_not_delimiter() {
@@ -140,9 +139,8 @@ impl<'me, 'str> Identifier<'me, 'str> {
                             return Ok(TokenKind::Literal(Literal::Number(Number::polar(
                                 real, rads,
                             ))));
-                        } else {
-                            Some(result)
                         }
+                        Some(result)
                     } else {
                         None
                     }

@@ -242,7 +242,7 @@ impl NumberKind {
 
     fn scan(&self, scan: &mut Scanner, exactness: Option<Exactness>) -> TokenExtractResult {
         match self {
-            Self::Binary => self.radix::<Binary>(scan, exactness),
+            Self::Binary => radix::<Binary>(scan, exactness),
             Self::Decimal => {
                 if let Some(item) = scan.next_if_not_delimiter() {
                     let result = Identifier::with_exactness(scan, item, exactness).scan();
@@ -255,18 +255,17 @@ impl NumberKind {
                 }
                 Err(TokenErrorKind::NumberExpected)
             }
-            Self::Hexadecimal => self.radix::<Hexadecimal>(scan, exactness),
-            Self::Octal => self.radix::<Octal>(scan, exactness),
+            Self::Hexadecimal => radix::<Hexadecimal>(scan, exactness),
+            Self::Octal => radix::<Octal>(scan, exactness),
         }
     }
+}
 
-    fn radix<R: Radix + Clone + Debug + Default>(
-        &self,
-        scan: &mut Scanner,
-        exactness: Option<Exactness>,
-    ) -> TokenExtractResult {
-        RadixNumber::<R>::new(scan, exactness.unwrap_or(Exactness::Exact)).scan()
-    }
+fn radix<R: Radix + Clone + Debug + Default>(
+    scan: &mut Scanner,
+    exactness: Option<Exactness>,
+) -> TokenExtractResult {
+    RadixNumber::<R>::new(scan, exactness.unwrap_or(Exactness::Exact)).scan()
 }
 
 fn char_hex(rest: &str) -> TokenExtractResult {
@@ -279,21 +278,21 @@ fn char_hex(rest: &str) -> TokenExtractResult {
 
 fn char_name(ch: char, rest: &str) -> TokenExtractResult {
     match (ch, rest) {
-        ('a', "larm") => char_lit('\x07'),
-        ('b', "ackspace") => char_lit('\x08'),
-        ('d', "elete") => char_lit('\x7f'),
-        ('e', "scape") => char_lit('\x1b'),
-        ('n', "ewline") => char_lit('\n'),
-        ('n', "ull") => char_lit('\0'),
-        ('r', "eturn") => char_lit('\r'),
-        ('s', "pace") => char_lit(' '),
-        ('t', "ab") => char_lit('\t'),
+        ('a', "larm") => Ok(char_lit('\x07')),
+        ('b', "ackspace") => Ok(char_lit('\x08')),
+        ('d', "elete") => Ok(char_lit('\x7f')),
+        ('e', "scape") => Ok(char_lit('\x1b')),
+        ('n', "ewline") => Ok(char_lit('\n')),
+        ('n', "ull") => Ok(char_lit('\0')),
+        ('r', "eturn") => Ok(char_lit('\r')),
+        ('s', "pace") => Ok(char_lit(' ')),
+        ('t', "ab") => Ok(char_lit('\t')),
         _ => Err(TokenErrorKind::CharacterExpected),
     }
 }
 
-fn char_lit(ch: char) -> TokenExtractResult {
-    Ok(TokenKind::Literal(Literal::Character(ch)))
+fn char_lit(ch: char) -> TokenKind {
+    TokenKind::Literal(Literal::Character(ch))
 }
 
 // NOTE: state functionality is covered by Tokenizer and Continuation tests
