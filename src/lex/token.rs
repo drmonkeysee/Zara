@@ -145,7 +145,7 @@ pub(super) enum TokenErrorKind {
     ComplexInvalid,
     DirectiveExpected,
     DirectiveInvalid,
-    ExactnessExpected,
+    ExactnessExpected { at: usize },
     IdentifierEscapeInvalid { at: usize, ch: char },
     IdentifierExpectedHex { at: usize },
     IdentifierInvalid(char),
@@ -162,7 +162,7 @@ pub(super) enum TokenErrorKind {
     NumberUnexpectedDecimalPoint { at: usize },
     NumericError(NumericError),
     PolarInvalid,
-    RadixExpected,
+    RadixExpected { at: usize },
     RationalInvalid,
     StringEscapeInvalid { at: usize, ch: char },
     StringExpectedHex { at: usize },
@@ -195,7 +195,8 @@ impl TokenErrorKind {
 
     pub(super) fn sub_idx(&self) -> Option<usize> {
         match self {
-            TokenErrorKind::IdentifierEscapeInvalid { at, .. }
+            TokenErrorKind::ExactnessExpected { at }
+            | TokenErrorKind::IdentifierEscapeInvalid { at, .. }
             | TokenErrorKind::IdentifierExpectedHex { at }
             | TokenErrorKind::IdentifierInvalidHex { at }
             | TokenErrorKind::IdentifierUnterminatedHex { at }
@@ -203,6 +204,7 @@ impl TokenErrorKind {
             | TokenErrorKind::NumberInvalidExponent { at, .. }
             | TokenErrorKind::NumberMalformedExponent { at, .. }
             | TokenErrorKind::NumberUnexpectedDecimalPoint { at }
+            | TokenErrorKind::RadixExpected { at }
             | TokenErrorKind::StringEscapeInvalid { at, .. }
             | TokenErrorKind::StringExpectedHex { at }
             | TokenErrorKind::StringInvalidHex { at }
@@ -228,7 +230,9 @@ impl Display for TokenErrorKind {
             Self::DirectiveInvalid => {
                 f.write_str("unsupported directive: expected fold-case or no-fold-case")
             }
-            Self::ExactnessExpected => f.write_str("expected exactness prefix, one of: #e #i"),
+            Self::ExactnessExpected { .. } => {
+                f.write_str("expected exactness prefix, one of: #e #i")
+            }
             Self::HashInvalid => f.write_str("invalid #-literal"),
             Self::HashUnterminated => f.write_str("unterminated #-literal"),
             Self::IdentifierInvalid(ch) => write!(f, "invalid identifier character: {ch}"),
@@ -264,7 +268,7 @@ impl Display for TokenErrorKind {
             Self::NumberUnexpectedDecimalPoint { .. } => f.write_str("unexpected decimal point"),
             Self::NumericError(err) => write!(f, "numeric error: {err}"),
             Self::PolarInvalid => f.write_str("invalid polar literal"),
-            Self::RadixExpected => f.write_str("expected radix prefix, one of: #b #o #d #x"),
+            Self::RadixExpected { .. } => f.write_str("expected radix prefix, one of: #b #o #d #x"),
             Self::RationalInvalid => f.write_str("invalid rational literal"),
             Self::StringUnterminated => f.write_str("unterminated string-literal"),
             Self::Unimplemented(s) => write!(f, "unimplemented tokenization: '{s}'"),
@@ -1201,7 +1205,7 @@ mod tests {
         #[test]
         fn display_expected_exactness() {
             let err = TokenError {
-                kind: TokenErrorKind::ExactnessExpected,
+                kind: TokenErrorKind::ExactnessExpected { at: 0 },
                 span: 0..1,
             };
 
@@ -1211,7 +1215,7 @@ mod tests {
         #[test]
         fn display_expected_radix() {
             let err = TokenError {
-                kind: TokenErrorKind::RadixExpected,
+                kind: TokenErrorKind::RadixExpected { at: 0 },
                 span: 0..1,
             };
 

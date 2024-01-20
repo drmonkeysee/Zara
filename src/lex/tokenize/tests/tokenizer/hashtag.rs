@@ -428,9 +428,9 @@ fn exactness_missing_radix() {
     assert!(matches!(
         r,
         TokenExtract {
-            start: 0,
+            start: 2,
             end: 3,
-            result: Err(TokenErrorKind::RadixExpected),
+            result: Err(TokenErrorKind::RadixExpected { at: 2 }),
         }
     ));
 }
@@ -449,9 +449,9 @@ fn exactness_malformed_radix() {
     assert!(matches!(
         r,
         TokenExtract {
-            start: 0,
+            start: 2,
             end: 7,
-            result: Err(TokenErrorKind::RadixExpected),
+            result: Err(TokenErrorKind::RadixExpected { at: 2 }),
         }
     ));
 }
@@ -470,9 +470,9 @@ fn radix_missing_exactness() {
     assert!(matches!(
         r,
         TokenExtract {
-            start: 0,
+            start: 2,
             end: 3,
-            result: Err(TokenErrorKind::ExactnessExpected),
+            result: Err(TokenErrorKind::ExactnessExpected { at: 2 }),
         }
     ));
 }
@@ -491,9 +491,9 @@ fn radix_malformed_exactness() {
     assert!(matches!(
         r,
         TokenExtract {
-            start: 0,
+            start: 2,
             end: 9,
-            result: Err(TokenErrorKind::ExactnessExpected),
+            result: Err(TokenErrorKind::ExactnessExpected { at: 2 }),
         }
     ));
 }

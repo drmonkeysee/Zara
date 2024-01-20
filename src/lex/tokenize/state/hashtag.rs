@@ -106,8 +106,10 @@ impl<'me, 'str> Hashtag<'me, 'str> {
     }
 
     fn exactness(&mut self, exactness: Exactness) -> TokenExtractResult {
+        let curr = self.scan.pos();
         if self.scan.char_if_eq('#').is_some() {
-            let num = NumberKind::select_or(TokenErrorKind::RadixExpected, self.scan, None)?;
+            let num =
+                NumberKind::select_or(TokenErrorKind::RadixExpected { at: curr }, self.scan, None)?;
             num.scan(self.scan, Some(exactness))
         } else {
             NumberKind::Decimal.scan(self.scan, Some(exactness))
@@ -121,6 +123,7 @@ impl<'me, 'str> Hashtag<'me, 'str> {
     }
 
     fn check_exactness(&mut self) -> Result<Option<Exactness>, TokenErrorKind> {
+        let curr = self.scan.pos();
         self.scan
             .char_if_eq('#')
             .map_or(Ok(None), |_| match self.scan.char_if_not_delimiter() {
@@ -128,7 +131,7 @@ impl<'me, 'str> Hashtag<'me, 'str> {
                 Some(INEXACTL | INEXACTU) => Ok(Some(Exactness::Inexact)),
                 _ => {
                     self.scan.end_of_token();
-                    Err(TokenErrorKind::ExactnessExpected)
+                    Err(TokenErrorKind::ExactnessExpected { at: curr })
                 }
             })
     }
