@@ -416,98 +416,86 @@ fn exactness_with_malformed_number() {
 
 #[test]
 fn exactness_missing_radix() {
-    let cases = ["#e#"];
-    for case in cases {
-        let mut s = Scanner::new(case);
-        let start = some_or_fail!(s.next_token());
-        let t = Tokenizer {
-            scan: &mut s,
-            start,
-        };
+    let mut s = Scanner::new("#e#");
+    let start = some_or_fail!(s.next_token());
+    let t = Tokenizer {
+        scan: &mut s,
+        start,
+    };
 
-        let r = t.extract();
+    let r = t.extract();
 
-        assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 3,
-                result: Err(TokenErrorKind::RadixExpected),
-            }
-        ));
-    }
+    assert!(matches!(
+        r,
+        TokenExtract {
+            start: 0,
+            end: 3,
+            result: Err(TokenErrorKind::RadixExpected),
+        }
+    ));
 }
 
 #[test]
 fn exactness_malformed_radix() {
-    let cases = ["#e#h2af"];
-    for case in cases {
-        let mut s = Scanner::new(case);
-        let start = some_or_fail!(s.next_token());
-        let t = Tokenizer {
-            scan: &mut s,
-            start,
-        };
+    let mut s = Scanner::new("#e#h2af");
+    let start = some_or_fail!(s.next_token());
+    let t = Tokenizer {
+        scan: &mut s,
+        start,
+    };
 
-        let r = t.extract();
+    let r = t.extract();
 
-        assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 7,
-                result: Err(TokenErrorKind::RadixExpected),
-            }
-        ));
-    }
+    assert!(matches!(
+        r,
+        TokenExtract {
+            start: 0,
+            end: 7,
+            result: Err(TokenErrorKind::RadixExpected),
+        }
+    ));
 }
 
 #[test]
 fn radix_missing_exactness() {
-    let cases = ["#x#"];
-    for case in cases {
-        let mut s = Scanner::new(case);
-        let start = some_or_fail!(s.next_token());
-        let t = Tokenizer {
-            scan: &mut s,
-            start,
-        };
+    let mut s = Scanner::new("#x#");
+    let start = some_or_fail!(s.next_token());
+    let t = Tokenizer {
+        scan: &mut s,
+        start,
+    };
 
-        let r = t.extract();
+    let r = t.extract();
 
-        assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 3,
-                result: Err(TokenErrorKind::ExactnessExpected),
-            }
-        ));
-    }
+    assert!(matches!(
+        r,
+        TokenExtract {
+            start: 0,
+            end: 3,
+            result: Err(TokenErrorKind::ExactnessExpected),
+        }
+    ));
 }
 
 #[test]
 fn radix_malformed_exactness() {
-    let cases = ["#x#g34234"];
-    for case in cases {
-        let mut s = Scanner::new(case);
-        let start = some_or_fail!(s.next_token());
-        let t = Tokenizer {
-            scan: &mut s,
-            start,
-        };
+    let mut s = Scanner::new("#x#g34234");
+    let start = some_or_fail!(s.next_token());
+    let t = Tokenizer {
+        scan: &mut s,
+        start,
+    };
 
-        let r = t.extract();
+    let r = t.extract();
 
-        assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 9,
-                result: Err(TokenErrorKind::ExactnessExpected),
-            }
-        ));
-    }
+    assert!(matches!(
+        r,
+        TokenExtract {
+            start: 0,
+            end: 9,
+            result: Err(TokenErrorKind::ExactnessExpected),
+        }
+    ));
 }
 
 mod comments {

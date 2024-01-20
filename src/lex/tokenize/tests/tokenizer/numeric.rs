@@ -1482,6 +1482,38 @@ mod float {
     }
 
     #[test]
+    fn inexact_inf_nan() {
+        let cases = ["#i+inf.0", "#i-inf.0", "#i+nan.0", "#i-nan.0"];
+        for case in cases {
+            let mut s = Scanner::new(case);
+            let start = some_or_fail!(s.next_token());
+            let t = Tokenizer {
+                scan: &mut s,
+                start,
+            };
+
+            let r = t.extract();
+            dbg!(&r);
+
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 0,
+                    end,
+                    result: Ok(TokenKind::Literal(Literal::Number(_))),
+                } if end == case.len()
+            ));
+            let flt = extract_number!(r.result, Number::Real);
+            let expected = if case.contains("-nan") {
+                case[2..].replace("-nan", "+nan")
+            } else {
+                case[2..].to_owned()
+            };
+            assert_eq!(flt.to_string(), expected);
+        }
+    }
+
+    #[test]
     fn inexact_and_radix() {
         let cases = ["#i#d42.34", "#I#D42.34"];
         for case in cases {
