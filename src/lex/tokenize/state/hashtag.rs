@@ -8,10 +8,10 @@ use crate::{
 };
 use std::fmt::Debug;
 
-const EXACT_U: char = 'E';
-const EXACT_L: char = 'e';
-const INEXACT_U: char = 'I';
-const INEXACT_L: char = 'i';
+const EXACTL: char = 'e';
+const EXACTU: char = EXACTL.to_ascii_uppercase();
+const INEXACTL: char = 'i';
+const INEXACTU: char = INEXACTL.to_ascii_uppercase();
 
 pub(in crate::lex::tokenize) struct Hashtag<'me, 'str> {
     pub(in crate::lex::tokenize) scan: &'me mut Scanner<'str>,
@@ -28,9 +28,9 @@ impl<'me, 'str> Hashtag<'me, 'str> {
     fn literal(&mut self, ch: char) -> TokenExtractResult {
         match ch {
             '(' => Ok(TokenKind::Vector),
-            EXACT_L | EXACT_U => self.exactness(Exactness::Exact),
+            EXACTL | EXACTU => self.exactness(Exactness::Exact),
             'f' | 'F' => self.boolean(false),
-            INEXACT_L | INEXACT_U => self.exactness(Exactness::Inexact),
+            INEXACTL | INEXACTU => self.exactness(Exactness::Inexact),
             't' | 'T' => self.boolean(true),
             'u' | 'U' => self.bytevector(),
             '\\' => self.character(),
@@ -124,8 +124,8 @@ impl<'me, 'str> Hashtag<'me, 'str> {
         self.scan
             .char_if_eq('#')
             .map_or(Ok(None), |_| match self.scan.char_if_not_delimiter() {
-                Some(EXACT_L | EXACT_U) => Ok(Some(Exactness::Exact)),
-                Some(INEXACT_L | INEXACT_U) => Ok(Some(Exactness::Inexact)),
+                Some(EXACTL | EXACTU) => Ok(Some(Exactness::Exact)),
+                Some(INEXACTL | INEXACTU) => Ok(Some(Exactness::Inexact)),
                 _ => {
                     self.scan.end_of_token();
                     Err(TokenErrorKind::ExactnessExpected)
@@ -243,18 +243,7 @@ impl NumberKind {
     fn scan(&self, scan: &mut Scanner, exactness: Option<Exactness>) -> TokenExtractResult {
         match self {
             Self::Binary => radix::<Binary>(scan, exactness),
-            Self::Decimal => {
-                if let Some(item) = scan.next_if_not_delimiter() {
-                    let result = Identifier::with_exactness(scan, item, exactness).scan();
-                    match result {
-                        Err(TokenErrorKind::IdentifierInvalid(_)) => (),
-                        Ok(TokenKind::Literal(Literal::Number(_)) | TokenKind::Imaginary(_))
-                        | Err(_) => return result,
-                        _ => (),
-                    }
-                }
-                Err(TokenErrorKind::NumberExpected)
-            }
+            Self::Decimal => decimal(scan, exactness),
             Self::Hexadecimal => radix::<Hexadecimal>(scan, exactness),
             Self::Octal => radix::<Octal>(scan, exactness),
         }
@@ -266,6 +255,20 @@ fn radix<R: Radix + Clone + Debug + Default>(
     exactness: Option<Exactness>,
 ) -> TokenExtractResult {
     RadixNumber::<R>::new(scan, exactness.unwrap_or(Exactness::Exact)).scan()
+}
+
+fn decimal(scan: &mut Scanner, exactness: Option<Exactness>) -> TokenExtractResult {
+    if let Some(item) = scan.next_if_not_delimiter() {
+        let result = Identifier::with_exactness(scan, item, exactness).scan();
+        match result {
+            Err(TokenErrorKind::IdentifierInvalid(_)) => (),
+            Ok(TokenKind::Literal(Literal::Number(_)) | TokenKind::Imaginary(_)) | Err(_) => {
+                return result
+            }
+            _ => (),
+        }
+    }
+    Err(TokenErrorKind::NumberExpected)
 }
 
 fn char_hex(rest: &str) -> TokenExtractResult {
