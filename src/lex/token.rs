@@ -290,16 +290,15 @@ impl From<TokenContinuation> for TokenErrorKind {
     }
 }
 
-// TODO: do i need these?
 impl From<ParseFloatError> for TokenErrorKind {
-    fn from(value: ParseFloatError) -> Self {
-        todo!()
+    fn from(_value: ParseFloatError) -> Self {
+        Self::NumberInvalid
     }
 }
 
 impl From<ParseIntError> for TokenErrorKind {
-    fn from(value: ParseIntError) -> Self {
-        todo!()
+    fn from(_value: ParseIntError) -> Self {
+        Self::NumberInvalid
     }
 }
 
