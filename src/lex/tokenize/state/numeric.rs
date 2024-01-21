@@ -182,6 +182,9 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
             ComplexKind::Polar => {
                 debug_assert_eq!(start.1, '@');
                 if let Some(first) = self.scan.next_if_not_delimiter() {
+                    // NOTE: polar literals must roundtrip through float representation
+                    // by definition so exactness does not apply during parsing.
+                    // TODO: handle exact final representation
                     if let Ok(TokenKind::Literal(Literal::Number(Number::Real(rads)))) =
                         Identifier::new(self.scan, first).scan()
                     {
