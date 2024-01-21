@@ -148,7 +148,7 @@ fn char_to_sign(ch: char) -> Sign {
     }
 }
 
-fn numeric_label(txt: &str) -> Option<TokenKind> {
+fn numeric_label(txt: &str, exactness: Option<Exactness>) -> Option<TokenKind> {
     if let Some(sign) = num_lbl_sign(txt) {
         if let Some(txt) = txt.get(1..) {
             let label = txt.to_ascii_lowercase();
@@ -156,7 +156,7 @@ fn numeric_label(txt: &str) -> Option<TokenKind> {
             let end = label.len() - usize::from(imaginary);
             if let Some(label) = label.get(..end) {
                 return match label {
-                    "" => Some(numeric::imaginary(sign)),
+                    "" => Some(numeric::imaginary(sign, exactness)),
                     "inf.0" => Some(numeric::infinity(sign, imaginary)),
                     "nan.0" => Some(numeric::nan(imaginary)),
                     _ => None,

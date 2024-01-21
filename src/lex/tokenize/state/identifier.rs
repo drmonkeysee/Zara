@@ -26,6 +26,19 @@ impl<'me, 'str> Identifier<'me, 'str> {
         Self::with_exactness(scan, start, None)
     }
 
+    pub(super) fn with_exactness(
+        scan: &'me mut Scanner<'str>,
+        start: ScanItem<'str>,
+        exactness: Option<Exactness>,
+    ) -> Self {
+        Self {
+            exactness,
+            peculiar_state: None,
+            scan,
+            start,
+        }
+    }
+
     pub(in crate::lex::tokenize) fn scan(&mut self) -> TokenExtractResult {
         let first = self.start.1;
         if first == '|' {
@@ -41,19 +54,6 @@ impl<'me, 'str> Identifier<'me, 'str> {
         }
     }
 
-    pub(super) fn with_exactness(
-        scan: &'me mut Scanner<'str>,
-        start: ScanItem<'str>,
-        exactness: Option<Exactness>,
-    ) -> Self {
-        Self {
-            exactness,
-            peculiar_state: None,
-            scan,
-            start,
-        }
-    }
-
     fn standard(&mut self) -> TokenExtractResult {
         while let Some(item) = self.scan.next_if_not_delimiter() {
             let ch = item.1;
@@ -64,8 +64,10 @@ impl<'me, 'str> Identifier<'me, 'str> {
                 _ => return self.invalid(ch),
             }
         }
+        let exactness = self.exactness;
         let txt = self.get_lexeme();
-        Ok(super::numeric_label(txt).unwrap_or_else(|| TokenKind::Identifier(txt.to_owned())))
+        Ok(super::numeric_label(txt, exactness)
+            .unwrap_or_else(|| TokenKind::Identifier(txt.to_owned())))
     }
 
     fn peculiar(&mut self, ch: char) -> TokenExtractResult {
@@ -119,7 +121,7 @@ impl<'me, 'str> Identifier<'me, 'str> {
 
     fn maybe_infnan_complex(&mut self, item: ScanItem, kind: ComplexKind) -> TokenExtractResult {
         if let Some(TokenKind::Literal(Literal::Number(Number::Real(real)))) =
-            super::numeric_label(self.scan.lexeme(self.start.0..item.0))
+            super::numeric_label(self.scan.lexeme(self.start.0..item.0), self.exactness)
         {
             let invalid_tok = match kind {
                 ComplexKind::Cartesian => {

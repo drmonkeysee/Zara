@@ -345,7 +345,7 @@ impl<'me, 'str, R: Radix + Clone + Debug + Default> RadixNumber<'me, 'str, R> {
     fn complete(&mut self, is_imaginary: bool) -> TokenExtractResult {
         if is_imaginary && self.classifier.is_empty() {
             if let Some(sign) = self.classifier.get_sign() {
-                return Ok(imaginary(sign));
+                return Ok(imaginary(sign, Some(self.exactness)));
             }
         }
         self.parse()
@@ -426,15 +426,13 @@ impl Radix for Hexadecimal {
 }
 
 // TODO: handle inexact
-pub(super) fn imaginary(sign: Sign) -> TokenKind {
-    real_to_token(
-        match sign {
-            Sign::Negative => -1,
-            Sign::Positive => 1,
-            Sign::Zero => 0,
-        },
-        true,
-    )
+pub(super) fn imaginary(sign: Sign, exactness: Option<Exactness>) -> TokenKind {
+    let sign_val = sign as i64;
+    let r: Real = match exactness {
+        None | Some(Exactness::Exact) => sign_val.into(),
+        Some(Exactness::Inexact) => (sign_val as f64).into(),
+    };
+    real_to_token(r, true)
 }
 
 pub(super) fn infinity(sign: Sign, imaginary: bool) -> TokenKind {
@@ -703,9 +701,10 @@ impl<R: Radix + Clone + Debug> Integral<R> {
 
     // TODO: unify this with DecimalInt
     fn parse(&self, input: &str, exactness: Exactness) -> ParseResult {
+        let n = self.0.exact_parse(input)?;
         match exactness {
-            Exactness::Exact => Ok(self.0.exact_parse(input)?.into()),
-            Exactness::Inexact => todo!(),
+            Exactness::Exact => Ok(n.into()),
+            Exactness::Inexact => Ok(n.into_inexact()),
         }
     }
 }
@@ -750,9 +749,10 @@ impl DecimalInt {
 
     // TODO: unify this with Integral<T>
     fn parse(&self, input: &str, exactness: Option<Exactness>) -> ParseResult {
+        let n = self.0.exact_parse(input)?;
         match exactness {
-            None | Some(Exactness::Exact) => Ok(self.0.exact_parse(input)?.into()),
-            Some(Exactness::Inexact) => todo!(),
+            None | Some(Exactness::Exact) => Ok(n.into()),
+            Some(Exactness::Inexact) => Ok(n.into_inexact()),
         }
     }
 }
