@@ -3596,12 +3596,36 @@ mod cartesian {
             r,
             TokenExtract {
                 start: 0,
-                end: 7,
+                end: 8,
                 result: Ok(TokenKind::Literal(_)),
             }
         ));
         let num = extract_number!(r.result);
         assert_eq!(num.as_datum().to_string(), "4.0+1.5i");
+    }
+
+    #[test]
+    fn applied_inexact_radix() {
+        let mut s = Scanner::new("#i#xc+a/bi");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 10,
+                result: Ok(TokenKind::Literal(_)),
+            }
+        ));
+        let num = extract_number!(r.result);
+        assert_eq!(num.as_datum().to_string(), "12.0+0.9090909090909091i");
     }
 
     #[test]
@@ -4256,14 +4280,41 @@ mod polar {
             r,
             TokenExtract {
                 start: 0,
-                end: 3,
+                end: 7,
                 result: Ok(TokenKind::Literal(_)),
             }
         ));
         let num = extract_number!(r.result);
         assert_eq!(
             num.as_datum().to_string(),
-            "-3.9599699864017817+2.892343526953298i"
+            "-2.7630325589995057+2.892343526953298i"
+        );
+    }
+
+    #[test]
+    fn applied_inexact_radix() {
+        let mut s = Scanner::new("#i#xc@a/b");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 9,
+                result: Ok(TokenKind::Literal(_)),
+            }
+        ));
+        let num = extract_number!(r.result);
+        assert_eq!(
+            num.as_datum().to_string(),
+            "7.373558717381609+9.46734555413109i"
         );
     }
 

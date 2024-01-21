@@ -169,7 +169,9 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
         match kind {
             ComplexKind::Cartesian => {
                 debug_assert!(matches!(start.1, '+' | '-'));
-                if let Ok(TokenKind::Imaginary(imag)) = Identifier::new(self.scan, start).scan() {
+                if let Ok(TokenKind::Imaginary(imag)) =
+                    Identifier::with_exactness(self.scan, start, self.exactness).scan()
+                {
                     Ok(TokenKind::Literal(Literal::Number(Number::complex(
                         real, imag,
                     ))))
