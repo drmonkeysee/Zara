@@ -923,8 +923,8 @@ mod rational {
                     result: Ok(TokenKind::Literal(Literal::Number(_))),
                 } if end == case.len()
             ));
-            let rat = extract_number!(r.result, Number::Real, Real::Rational);
-            assert_eq!(rat.to_string(), "0.8");
+            let flt = extract_number!(r.result, Number::Real);
+            assert_eq!(flt.to_string(), "0.8");
         }
     }
 
@@ -948,8 +948,8 @@ mod rational {
                 result: Ok(TokenKind::Literal(Literal::Number(_))),
             }
         ));
-        let rat = extract_number!(r.result, Number::Real, Real::Rational);
-        assert_eq!(rat.to_string(), "-0.8");
+        let flt = extract_number!(r.result, Number::Real);
+        assert_eq!(flt.to_string(), "-0.8");
     }
 
     #[test]
@@ -972,8 +972,8 @@ mod rational {
                 result: Ok(TokenKind::Literal(Literal::Number(_))),
             }
         ));
-        let rat = extract_number!(r.result, Number::Real, Real::Rational);
-        assert_eq!(rat.to_string(), "foo");
+        let flt = extract_number!(r.result, Number::Real);
+        assert_eq!(flt.to_string(), "0.9090909090909091");
     }
 
     #[test]
@@ -996,8 +996,8 @@ mod rational {
                 result: Ok(TokenKind::Literal(Literal::Number(_))),
             }
         ));
-        let rat = extract_number!(r.result, Number::Real, Real::Rational);
-        assert_eq!(rat.to_string(), "5.0");
+        let flt = extract_number!(r.result, Number::Real);
+        assert_eq!(flt.to_string(), "5.0");
     }
 
     #[test]
@@ -1021,8 +1021,8 @@ mod rational {
                 result: Ok(TokenKind::Literal(Literal::Number(_))),
             } if end == input.len()
         ));
-        let rat = extract_number!(r.result, Number::Real, Real::Rational);
-        assert_eq!(rat.to_string(), "foo");
+        let flt = extract_number!(r.result, Number::Real);
+        assert_eq!(flt.to_string(), "5.421010862427522e-20");
     }
 
     #[test]

@@ -101,6 +101,14 @@ impl Real {
         Ok(Self::Rational(Rational((n, d).into())))
     }
 
+    pub(crate) fn into_inexact(self) -> Self {
+        match self {
+            Self::Float(_) => self,
+            Self::Integer(n) => n.into_inexact(),
+            Self::Rational(r) => r.into_inexact(),
+        }
+    }
+
     fn is_zero(&self) -> bool {
         match self {
             Real::Float(f) => *f == 0.0,
@@ -146,6 +154,10 @@ pub(crate) struct Rational(Box<(Integer, Integer)>);
 impl Rational {
     fn is_zero(&self) -> bool {
         self.0 .0.is_zero()
+    }
+
+    fn into_inexact(self) -> Real {
+        Real::Float(self.into_float())
     }
 
     fn into_float(self) -> f64 {

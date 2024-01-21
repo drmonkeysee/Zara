@@ -116,13 +116,10 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
                         Ok(real) => self.scan_imaginary(real, kind, start),
                         Err(err) => self.fail(err),
                     },
-                    BreakCondition::Fraction(m) => {
-                        // TODO: handle inexact e.g #i4/3 => 1.3333...
-                        match m.parse(self.get_lexeme()) {
-                            Ok(numerator) => self.scan_denominator(numerator),
-                            Err(err) => self.fail(err),
-                        }
-                    }
+                    BreakCondition::Fraction(m) => match m.parse(self.get_lexeme()) {
+                        Ok(numerator) => self.scan_denominator(numerator),
+                        Err(err) => self.fail(err),
+                    },
                     BreakCondition::Imaginary => {
                         if let Some(item) = self.scan.next_if_not_delimiter() {
                             // NOTE: maybe malformed "in"finity? otherwise assume malformed imaginary
@@ -146,7 +143,10 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
     fn scan_denominator(&mut self, numerator: Integer) -> TokenExtractResult {
         let mut d = Denominator::<Decimal>::new(self.scan);
         let (denominator, cond) = d.scan()?;
-        let real = Real::reduce(numerator, denominator)?;
+        let mut real = Real::reduce(numerator, denominator)?;
+        if let Some(Exactness::Inexact) = self.exactness {
+            real = real.into_inexact();
+        }
         match cond {
             FractionBreak::Complete => Ok(real_to_token(real, false)),
             FractionBreak::Complex { kind, start } => self.scan_imaginary(real, kind, start),
@@ -295,7 +295,10 @@ impl<'me, 'str, R: Radix + Clone + Debug + Default> RadixNumber<'me, 'str, R> {
     fn scan_denominator(&mut self, numerator: Integer) -> TokenExtractResult {
         let mut d = Denominator::<R>::new(self.scan);
         let (denominator, cond) = d.scan()?;
-        let real = Real::reduce(numerator, denominator)?;
+        let mut real = Real::reduce(numerator, denominator)?;
+        if self.exactness == Exactness::Inexact {
+            real = real.into_inexact();
+        }
         match cond {
             FractionBreak::Complete => Ok(real_to_token(real, false)),
             FractionBreak::Complex { kind, start } => self.scan_imaginary(real, kind, start),
