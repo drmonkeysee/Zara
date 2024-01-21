@@ -118,7 +118,7 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
                     },
                     BreakCondition::Fraction(m) => {
                         // TODO: handle inexact e.g #i4/3 => 1.3333...
-                        match m.exact_parse(self.get_lexeme()) {
+                        match m.parse(self.get_lexeme()) {
                             Ok(numerator) => self.scan_denominator(numerator),
                             Err(err) => self.fail(err),
                         }
@@ -267,7 +267,7 @@ impl<'me, 'str, R: Radix + Clone + Debug + Default> RadixNumber<'me, 'str, R> {
                     },
                     BreakCondition::Fraction(m) => {
                         // TODO: handle inexact e.g #i4/3 => 1.3333...
-                        match m.exact_parse(self.get_lexeme()) {
+                        match m.parse(self.get_lexeme()) {
                             Ok(numerator) => self.scan_denominator(numerator),
                             Err(err) => self.fail(err),
                         }
@@ -485,10 +485,7 @@ impl<'me, 'str, R: Radix + Clone + Debug + Default> Denominator<'me, 'str, R> {
                 match cond {
                     BreakCondition::Complete | BreakCondition::Complex { .. } => {
                         let input = self.get_lexeme();
-                        self.classifier
-                            .0
-                            .exact_parse(input)
-                            .map_err(|_| self.fail())
+                        self.classifier.0.parse(input).map_err(|_| self.fail())
                     }
                     BreakCondition::Fraction(_) => Err(self.fail()),
                     BreakCondition::Imaginary => {
@@ -496,10 +493,7 @@ impl<'me, 'str, R: Radix + Clone + Debug + Default> Denominator<'me, 'str, R> {
                             Err(self.fail())
                         } else {
                             let input = self.get_lexeme();
-                            self.classifier
-                                .0
-                                .exact_parse(input)
-                                .map_err(|_| self.fail())
+                            self.classifier.0.parse(input).map_err(|_| self.fail())
                         }
                     }
                 }?,
@@ -603,7 +597,7 @@ struct Magnitude<R> {
 }
 
 impl<R: Radix + Debug> Magnitude<R> {
-    fn exact_parse(&self, input: &str) -> ExactParseResult {
+    fn parse(&self, input: &str) -> ExactParseResult {
         if self.digits.is_empty() {
             Err(TokenErrorKind::NumberExpected)
         } else {
@@ -699,9 +693,9 @@ impl<R: Radix + Clone + Debug> Integral<R> {
         }
     }
 
-    // TODO: unify this with DecimalInt
     fn parse(&self, input: &str, exactness: Exactness) -> ParseResult {
-        let n = self.0.exact_parse(input)?;
+        // NOTE: always parse exact magnitude first to account for radix
+        let n = self.0.parse(input)?;
         match exactness {
             Exactness::Exact => Ok(n.into()),
             Exactness::Inexact => Ok(n.into_inexact()),
@@ -747,12 +741,10 @@ impl DecimalInt {
         }
     }
 
-    // TODO: unify this with Integral<T>
     fn parse(&self, input: &str, exactness: Option<Exactness>) -> ParseResult {
-        let n = self.0.exact_parse(input)?;
         match exactness {
-            None | Some(Exactness::Exact) => Ok(n.into()),
-            Some(Exactness::Inexact) => Ok(n.into_inexact()),
+            None | Some(Exactness::Exact) => Ok(self.0.parse(input)?.into()),
+            Some(Exactness::Inexact) => parse_inexact_to(self.0.digits.end, input),
         }
     }
 }
@@ -795,24 +787,9 @@ impl Float {
     }
 
     fn parse(&self, input: &str, exactness: Option<Exactness>) -> ParseResult {
-        self.parse_to(
-            input,
-            self.fraction.end,
-            exactness.unwrap_or(Exactness::Inexact),
-        )
-    }
-
-    fn parse_to(&self, input: &str, end: usize, exactness: Exactness) -> ParseResult {
-        if let Some(numstr) = input.get(..end) {
-            match exactness {
-                Exactness::Inexact => {
-                    let flt: f64 = numstr.parse()?;
-                    Ok(flt.into())
-                }
-                Exactness::Exact => todo!(),
-            }
-        } else {
-            Err(TokenErrorKind::NumberInvalid)
+        match exactness {
+            None | Some(Exactness::Inexact) => parse_inexact_to(self.fraction.end, input),
+            Some(Exactness::Exact) => Err(TokenErrorKind::Unimplemented(input.to_owned())),
         }
     }
 }
@@ -864,11 +841,10 @@ impl Scientific {
         if self.no_e_value() {
             Err(self.malformed_exponent())
         } else {
-            self.significand.parse_to(
-                input,
-                self.exponent.end,
-                exactness.unwrap_or(Exactness::Inexact),
-            )
+            match exactness {
+                None | Some(Exactness::Inexact) => parse_inexact_to(self.exponent.end, input),
+                Some(Exactness::Exact) => Err(TokenErrorKind::Unimplemented(input.to_owned())),
+            }
         }
     }
 
@@ -882,6 +858,14 @@ impl Scientific {
             at: self.exponent.start,
         }
     }
+}
+
+fn parse_inexact_to(end: usize, input: &str) -> ParseResult {
+    input
+        .get(..end)
+        .map_or(Err(TokenErrorKind::NumberInvalid), |fstr| {
+            Ok(fstr.parse::<f64>()?.into())
+        })
 }
 
 fn real_to_token(r: impl Into<Real>, imaginary: bool) -> TokenKind {

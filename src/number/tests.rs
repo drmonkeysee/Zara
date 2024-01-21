@@ -924,16 +924,6 @@ mod rational {
 
         assert_eq!(r.into_float(), f64::NEG_INFINITY);
     }
-
-    #[test]
-    fn positive_into_inexact() {
-        let r = Rational((4.into(), 5.into()).into());
-
-        let r = r.into_inexact();
-
-        let f = extract_or_fail!(r, Real::Float);
-        assert_eq!(f, 0.8);
-    }
 }
 
 mod complex {

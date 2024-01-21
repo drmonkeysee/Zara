@@ -144,10 +144,6 @@ impl<T: Into<Integer>> From<T> for Real {
 pub(crate) struct Rational(Box<(Integer, Integer)>);
 
 impl Rational {
-    pub(crate) fn into_inexact(self) -> Real {
-        Real::Float(self.into_float())
-    }
-
     fn is_zero(&self) -> bool {
         self.0 .0.is_zero()
     }
