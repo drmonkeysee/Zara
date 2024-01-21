@@ -144,20 +144,19 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
     }
 
     fn scan_denominator(&mut self, numerator: Integer) -> TokenExtractResult {
-        let mut d = DenominatorNumber::<Decimal>::new(self.scan);
+        let mut d = Denominator::<Decimal>::new(self.scan);
         let (denominator, cond) = d.scan()?;
         let real = Real::reduce(numerator, denominator)?;
         match cond {
-            BreakCondition::Complete => Ok(real_to_token(real, false)),
-            BreakCondition::Complex { kind, start } => self.scan_imaginary(real, kind, start),
-            BreakCondition::Imaginary => {
+            FractionBreak::Complete => Ok(real_to_token(real, false)),
+            FractionBreak::Complex { kind, start } => self.scan_imaginary(real, kind, start),
+            FractionBreak::Imaginary => {
                 if self.classifier.has_sign() {
                     Ok(real_to_token(real, true))
                 } else {
                     Err(TokenErrorKind::ImaginaryMissingSign)
                 }
             }
-            BreakCondition::Fraction(_) => unreachable!(),
         }
     }
 
@@ -294,20 +293,19 @@ impl<'me, 'str, R: Radix + Clone + Debug + Default> RadixNumber<'me, 'str, R> {
     }
 
     fn scan_denominator(&mut self, numerator: Integer) -> TokenExtractResult {
-        let mut d = DenominatorNumber::<R>::new(self.scan);
+        let mut d = Denominator::<R>::new(self.scan);
         let (denominator, cond) = d.scan()?;
         let real = Real::reduce(numerator, denominator)?;
         match cond {
-            BreakCondition::Complete => Ok(real_to_token(real, false)),
-            BreakCondition::Complex { kind, start } => self.scan_imaginary(real, kind, start),
-            BreakCondition::Imaginary => {
+            FractionBreak::Complete => Ok(real_to_token(real, false)),
+            FractionBreak::Complex { kind, start } => self.scan_imaginary(real, kind, start),
+            FractionBreak::Imaginary => {
                 if self.classifier.has_sign() {
                     Ok(real_to_token(real, true))
                 } else {
                     Err(TokenErrorKind::ImaginaryMissingSign)
                 }
             }
-            BreakCondition::Fraction(_) => unreachable!(),
         }
     }
 
@@ -454,13 +452,13 @@ pub(super) fn nan(imaginary: bool) -> TokenKind {
     real_to_token(f64::NAN, imaginary)
 }
 
-struct DenominatorNumber<'me, 'str, R> {
+struct Denominator<'me, 'str, R> {
     classifier: Integral<R>,
     scan: &'me mut Scanner<'str>,
     start: usize,
 }
 
-impl<'me, 'str, R: Radix + Clone + Debug + Default> DenominatorNumber<'me, 'str, R> {
+impl<'me, 'str, R: Radix + Clone + Debug + Default> Denominator<'me, 'str, R> {
     fn new(scan: &'me mut Scanner<'str>) -> Self {
         let start = scan.pos();
         Self {
@@ -473,7 +471,7 @@ impl<'me, 'str, R: Radix + Clone + Debug + Default> DenominatorNumber<'me, 'str,
         }
     }
 
-    fn scan(&mut self) -> Result<(Integer, BreakCondition<R>), TokenErrorKind> {
+    fn scan(&mut self) -> Result<(Integer, FractionBreak), TokenErrorKind> {
         let mut brk = Ok(BreakCondition::<R>::Complete);
         while let Some(item) = self.scan.next_if_not_delimiter() {
             match self.classifier.classify(item) {
@@ -507,7 +505,7 @@ impl<'me, 'str, R: Radix + Clone + Debug + Default> DenominatorNumber<'me, 'str,
                         }
                     }
                 }?,
-                cond,
+                cond.into(),
             )),
             _ => Err(self.fail()),
         }
@@ -537,6 +535,28 @@ enum BreakCondition<'str, R> {
     },
     Fraction(Magnitude<R>),
     Imaginary,
+}
+
+#[derive(Debug)]
+enum FractionBreak<'str> {
+    Complete,
+    Complex {
+        kind: ComplexKind,
+        start: ScanItem<'str>,
+    },
+    Imaginary,
+}
+
+impl<'str, R> From<BreakCondition<'str, R>> for FractionBreak<'str> {
+    fn from(value: BreakCondition<'str, R>) -> Self {
+        match value {
+            BreakCondition::Complete => Self::Complete,
+            BreakCondition::Complex { kind, start } => Self::Complex { kind, start },
+            BreakCondition::Imaginary => Self::Imaginary,
+            // NOTE: Denominator ensures this case never happens
+            BreakCondition::Fraction(_) => unreachable!(),
+        }
+    }
 }
 
 #[derive(Debug)]
