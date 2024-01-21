@@ -644,6 +644,16 @@ mod integer {
 
         assert_eq!(n.into_float(), -1.8446744073709552e19);
     }
+
+    #[test]
+    fn single_into_inexact() {
+        let n = Integer::single(42, Sign::Positive);
+
+        let r = n.into_inexact();
+
+        let f = extract_or_fail!(r, Real::Float);
+        assert_eq!(f, 42.0);
+    }
 }
 
 mod float {
@@ -913,6 +923,16 @@ mod rational {
         let r = Rational(((-7).into(), 0.into()).into());
 
         assert_eq!(r.into_float(), f64::NEG_INFINITY);
+    }
+
+    #[test]
+    fn positive_into_inexact() {
+        let r = Rational((4.into(), 5.into()).into());
+
+        let r = r.into_inexact();
+
+        let f = extract_or_fail!(r, Real::Float);
+        assert_eq!(f, 0.8);
     }
 }
 
