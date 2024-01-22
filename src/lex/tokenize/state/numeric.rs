@@ -341,6 +341,7 @@ impl<'me, 'str, C: Classifier> ConditionHandler<'me, 'str, C> {
                 // NOTE: polar literals must roundtrip through float representation
                 // by definition so exactness does not apply during parsing.
                 // TODO: handle exact final representation
+                // TODO: what's implication of applying exactness on mag+rad before polar ctor?
                 if let Ok(TokenKind::Literal(Literal::Number(Number::Real(rads)))) =
                     self.classifier.polar_scan(self.scan)
                 {
