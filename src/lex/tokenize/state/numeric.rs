@@ -297,7 +297,7 @@ impl<'me, 'str, C: Classifier> ConditionHandler<'me, 'str, C> {
     }
 
     fn scan_denominator(&mut self, numerator: Integer) -> TokenExtractResult {
-        let mut d = self.classifier.make_denominator(self.scan);
+        let mut d = self.classifier.denominator_scanner(self.scan);
         let (denominator, cond) = d.scan()?;
         let mut real = Real::reduce(numerator, denominator)?;
         if let Some(Exactness::Inexact) = self.exactness {
@@ -487,10 +487,6 @@ trait Classifier {
     fn parse(&self, input: &str, exactness: Option<Exactness>) -> ParseResult;
     fn get_sign(&self) -> Option<Sign>;
     fn is_empty(&self) -> bool;
-    fn make_denominator<'me, 'str>(
-        &self,
-        scan: &'me mut Scanner<'str>,
-    ) -> Denominator<'me, 'str, Self::Radix>;
     fn cartesian_scan(
         &self,
         scan: &mut Scanner,
@@ -501,6 +497,13 @@ trait Classifier {
 
     fn has_sign(&self) -> bool {
         self.get_sign().is_some()
+    }
+
+    fn denominator_scanner<'me, 'str>(
+        &self,
+        scan: &'me mut Scanner<'str>,
+    ) -> Denominator<'me, 'str, Self::Radix> {
+        Denominator::<Self::Radix>::new(scan)
     }
 }
 
@@ -543,13 +546,6 @@ impl Classifier for DecimalClassifier {
     // NOTE: decimal classifier always classifies at least one digit
     fn is_empty(&self) -> bool {
         false
-    }
-
-    fn make_denominator<'me, 'str>(
-        &self,
-        scan: &'me mut Scanner<'str>,
-    ) -> Denominator<'me, 'str, Self::Radix> {
-        Denominator::<Self::Radix>::new(scan)
     }
 
     fn cartesian_scan(
@@ -672,9 +668,9 @@ impl<R: Radix + Clone + Debug + Default> Classifier for Integral<R> {
     fn parse(&self, input: &str, exactness: Option<Exactness>) -> ParseResult {
         // NOTE: always parse exact magnitude first to account for radix
         let n = self.0.parse(input)?;
-        match exactness.unwrap_or(Exactness::Exact) {
-            Exactness::Exact => Ok(n.into()),
-            Exactness::Inexact => Ok(n.into_inexact()),
+        match exactness {
+            None | Some(Exactness::Exact) => Ok(n.into()),
+            Some(Exactness::Inexact) => Ok(n.into_inexact()),
         }
     }
 
@@ -697,13 +693,6 @@ impl<R: Radix + Clone + Debug + Default> Classifier for Integral<R> {
 
     fn polar_scan(&self, scan: &mut Scanner) -> TokenExtractResult {
         RadixNumber::<R>::new(scan, Exactness::Exact).scan()
-    }
-
-    fn make_denominator<'me, 'str>(
-        &self,
-        scan: &'me mut Scanner<'str>,
-    ) -> Denominator<'me, 'str, Self::Radix> {
-        Denominator::<Self::Radix>::new(scan)
     }
 }
 
