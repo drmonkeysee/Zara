@@ -114,7 +114,7 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
             scan: self.scan,
             start: self.start,
         }
-        .handle(brk)
+        .resolve(brk)
     }
 }
 
@@ -167,7 +167,7 @@ impl<'me, 'str, R: Radix + Clone + Debug + Default> RadixNumber<'me, 'str, R> {
             scan: self.scan,
             start: self.start,
         }
-        .handle(brk)
+        .resolve(brk)
     }
 }
 
@@ -260,8 +260,8 @@ struct ConditionHandler<'me, 'str, C> {
 }
 
 impl<'me, 'str, C: Classifier> ConditionHandler<'me, 'str, C> {
-    fn handle<R: Radix + Debug>(
-        &mut self,
+    fn resolve<R: Radix + Debug>(
+        mut self,
         result: Result<BreakCondition<'str, R>, TokenErrorKind>,
     ) -> TokenExtractResult {
         match result {
