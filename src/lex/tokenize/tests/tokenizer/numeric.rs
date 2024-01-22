@@ -4593,7 +4593,7 @@ mod polar {
 
     #[test]
     fn applied_inexact() {
-        let cases = ["#i3@4/5", "#i3.0@0.8"];
+        let cases = ["#i3@4/5", "#i3.0@0.8", "3.0@0.8"];
         for case in cases {
             let mut s = Scanner::new(case);
             let start = some_or_fail!(s.next_token());
@@ -4623,7 +4623,7 @@ mod polar {
 
     #[test]
     fn applied_inexact_negative_output() {
-        let cases = ["#i-3@4/5", "#i-3.0@0.8"];
+        let cases = ["#i-3@4/5", "#i-3.0@0.8", "-3.0@0.8"];
         for case in cases {
             let mut s = Scanner::new(case);
             let start = some_or_fail!(s.next_token());
@@ -4653,7 +4653,7 @@ mod polar {
 
     #[test]
     fn applied_exact() {
-        let cases = ["#e3@4/5", "#e3.0@0.8"];
+        let cases = ["3@4/5", "#e3@4/5", "#e3.0@0.8"];
         for case in cases {
             let mut s = Scanner::new(case);
             let start = some_or_fail!(s.next_token());
@@ -4683,7 +4683,7 @@ mod polar {
 
     #[test]
     fn applied_exact_negative_output() {
-        let cases = ["#e-3@4/5", "#e-3.0@0.8"];
+        let cases = ["-3@4/5", "#e-3@4/5", "#e-3.0@0.8"];
         for case in cases {
             let mut s = Scanner::new(case);
             let start = some_or_fail!(s.next_token());
