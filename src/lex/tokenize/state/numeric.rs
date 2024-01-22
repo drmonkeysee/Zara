@@ -16,21 +16,21 @@ use std::{
 };
 
 pub(super) struct DecimalNumber<'me, 'str> {
-    classifier: Classifier,
+    classifier: DecimalClassifier,
     exactness: Option<Exactness>,
     scan: &'me mut Scanner<'str>,
-    start: ScanItem<'str>,
+    start: usize,
 }
 
 // NOTE: these ctors are always called after one confirmed decimal digit has been scanned
 impl<'me, 'str> DecimalNumber<'me, 'str> {
     pub(super) fn new(
         scan: &'me mut Scanner<'str>,
-        start: ScanItem<'str>,
+        start: usize,
         exactness: Option<Exactness>,
     ) -> Self {
         Self {
-            classifier: Classifier::Int(DecimalInt(Magnitude {
+            classifier: DecimalClassifier::Int(DecimalInt(Magnitude {
                 digits: 0..1,
                 ..Default::default()
             })),
@@ -43,11 +43,11 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
     pub(super) fn try_signed_number(
         sign: Sign,
         scan: &'me mut Scanner<'str>,
-        start: ScanItem<'str>,
+        start: usize,
         exactness: Option<Exactness>,
     ) -> Self {
         Self {
-            classifier: Classifier::Int(DecimalInt(Magnitude {
+            classifier: DecimalClassifier::Int(DecimalInt(Magnitude {
                 digits: 1..2,
                 sign: Some(sign),
                 ..Default::default()
@@ -60,11 +60,11 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
 
     pub(super) fn try_float(
         scan: &'me mut Scanner<'str>,
-        start: ScanItem<'str>,
+        start: usize,
         exactness: Option<Exactness>,
     ) -> Self {
         Self {
-            classifier: Classifier::Flt(Float {
+            classifier: DecimalClassifier::Flt(Float {
                 fraction: 0..2,
                 ..Default::default()
             }),
@@ -77,11 +77,11 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
     pub(super) fn try_signed_float(
         sign: Sign,
         scan: &'me mut Scanner<'str>,
-        start: ScanItem<'str>,
+        start: usize,
         exactness: Option<Exactness>,
     ) -> Self {
         Self {
-            classifier: Classifier::Flt(Float {
+            classifier: DecimalClassifier::Flt(Float {
                 fraction: 1..3,
                 integral: Magnitude {
                     sign: Some(sign),
@@ -108,114 +108,13 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
                 }
             }
         }
-        match brk {
-            Ok(cond) => {
-                match cond {
-                    BreakCondition::Complete => self.complete(false),
-                    BreakCondition::Complex { kind, start } => match self.parse() {
-                        Ok(real) => self.scan_imaginary(real, kind, start),
-                        Err(err) => self.fail(err),
-                    },
-                    BreakCondition::Fraction(m) => match m.parse(self.get_lexeme()) {
-                        Ok(numerator) => self.scan_denominator(numerator),
-                        Err(err) => self.fail(err),
-                    },
-                    BreakCondition::Imaginary => {
-                        if let Some(item) = self.scan.next_if_not_delimiter() {
-                            // NOTE: maybe malformed "in"finity? otherwise assume malformed imaginary
-                            self.fail(if item.1.is_ascii_alphabetic() {
-                                TokenErrorKind::NumberInvalid
-                            } else {
-                                TokenErrorKind::ImaginaryInvalid
-                            })
-                        } else if !self.classifier.has_sign() {
-                            self.fail(TokenErrorKind::ImaginaryMissingSign)
-                        } else {
-                            self.complete(true)
-                        }
-                    }
-                }
-            }
-            Err(err) => self.fail(err),
+        ConditionHandler {
+            classifier: &self.classifier,
+            exactness: self.exactness,
+            scan: self.scan,
+            start: self.start,
         }
-    }
-
-    fn scan_denominator(&mut self, numerator: Integer) -> TokenExtractResult {
-        let mut d = Denominator::<Decimal>::new(self.scan);
-        let (denominator, cond) = d.scan()?;
-        let mut real = Real::reduce(numerator, denominator)?;
-        if let Some(Exactness::Inexact) = self.exactness {
-            real = real.into_inexact();
-        }
-        match cond {
-            FractionBreak::Complete => Ok(real_to_token(real, false)),
-            FractionBreak::Complex { kind, start } => self.scan_imaginary(real, kind, start),
-            FractionBreak::Imaginary => {
-                if self.classifier.has_sign() {
-                    Ok(real_to_token(real, true))
-                } else {
-                    Err(TokenErrorKind::ImaginaryMissingSign)
-                }
-            }
-        }
-    }
-
-    fn scan_imaginary(
-        &mut self,
-        real: Real,
-        kind: ComplexKind,
-        start: ScanItem,
-    ) -> TokenExtractResult {
-        match kind {
-            ComplexKind::Cartesian => {
-                debug_assert!(matches!(start.1, '+' | '-'));
-                if let Ok(TokenKind::Imaginary(imag)) =
-                    Identifier::with_exactness(self.scan, start, self.exactness).scan()
-                {
-                    Ok(TokenKind::Literal(Literal::Number(Number::complex(
-                        real, imag,
-                    ))))
-                } else {
-                    self.fail(TokenErrorKind::ComplexInvalid)
-                }
-            }
-            ComplexKind::Polar => {
-                debug_assert_eq!(start.1, '@');
-                if let Some(first) = self.scan.next_if_not_delimiter() {
-                    // NOTE: polar literals must roundtrip through float representation
-                    // by definition so exactness does not apply during parsing.
-                    // TODO: handle exact final representation
-                    if let Ok(TokenKind::Literal(Literal::Number(Number::Real(rads)))) =
-                        Identifier::new(self.scan, first).scan()
-                    {
-                        return Ok(TokenKind::Literal(Literal::Number(Number::polar(
-                            real, rads,
-                        ))));
-                    }
-                }
-                self.fail(TokenErrorKind::PolarInvalid)
-            }
-        }
-    }
-
-    fn complete(&mut self, imaginary: bool) -> TokenExtractResult {
-        self.parse()
-            .map_or_else(|err| self.fail(err), |r| Ok(real_to_token(r, imaginary)))
-    }
-
-    fn fail(&mut self, err: TokenErrorKind) -> TokenExtractResult {
-        self.scan.end_of_token();
-        Err(err)
-    }
-
-    fn parse(&mut self) -> ParseResult {
-        let exactness = self.exactness;
-        let input = self.get_lexeme();
-        self.classifier.parse(input, exactness)
-    }
-
-    fn get_lexeme(&mut self) -> &'str str {
-        self.scan.current_lexeme_at(self.start.0)
+        .handle(brk)
     }
 }
 
@@ -262,117 +161,13 @@ impl<'me, 'str, R: Radix + Clone + Debug + Default> RadixNumber<'me, 'str, R> {
                 }
             }
         }
-        match brk {
-            Ok(cond) => {
-                match cond {
-                    BreakCondition::Complete => self.complete(false),
-                    BreakCondition::Complex { kind, start } => match self.parse() {
-                        Ok(real) => self.scan_imaginary(real, kind, start),
-                        Err(err) => self.fail(err),
-                    },
-                    BreakCondition::Fraction(m) => {
-                        // TODO: handle inexact e.g #i4/3 => 1.3333...
-                        match m.parse(self.get_lexeme()) {
-                            Ok(numerator) => self.scan_denominator(numerator),
-                            Err(err) => self.fail(err),
-                        }
-                    }
-                    BreakCondition::Imaginary => {
-                        if let Some(item) = self.scan.next_if_not_delimiter() {
-                            // NOTE: maybe malformed "in"finity? otherwise assume malformed imaginary
-                            self.fail(if item.1.is_ascii_alphabetic() {
-                                TokenErrorKind::NumberInvalid
-                            } else {
-                                TokenErrorKind::ImaginaryInvalid
-                            })
-                        } else if !self.classifier.has_sign() {
-                            self.fail(TokenErrorKind::ImaginaryMissingSign)
-                        } else {
-                            self.complete(true)
-                        }
-                    }
-                }
-            }
-            Err(err) => self.fail(err),
+        ConditionHandler {
+            classifier: &self.classifier,
+            exactness: Some(self.exactness),
+            scan: self.scan,
+            start: self.start,
         }
-    }
-
-    fn scan_denominator(&mut self, numerator: Integer) -> TokenExtractResult {
-        let mut d = Denominator::<R>::new(self.scan);
-        let (denominator, cond) = d.scan()?;
-        let mut real = Real::reduce(numerator, denominator)?;
-        if self.exactness == Exactness::Inexact {
-            real = real.into_inexact();
-        }
-        match cond {
-            FractionBreak::Complete => Ok(real_to_token(real, false)),
-            FractionBreak::Complex { kind, start } => self.scan_imaginary(real, kind, start),
-            FractionBreak::Imaginary => {
-                if self.classifier.has_sign() {
-                    Ok(real_to_token(real, true))
-                } else {
-                    Err(TokenErrorKind::ImaginaryMissingSign)
-                }
-            }
-        }
-    }
-
-    fn scan_imaginary(
-        &mut self,
-        real: Real,
-        kind: ComplexKind,
-        start: ScanItem,
-    ) -> TokenExtractResult {
-        match kind {
-            ComplexKind::Cartesian => {
-                debug_assert!(matches!(start.1, '+' | '-'));
-                if let Ok(TokenKind::Imaginary(imag)) =
-                    RadixNumber::<R>::with_sign(self.scan, start, self.exactness).scan()
-                {
-                    Ok(TokenKind::Literal(Literal::Number(Number::complex(
-                        real, imag,
-                    ))))
-                } else {
-                    self.fail(TokenErrorKind::ComplexInvalid)
-                }
-            }
-            ComplexKind::Polar => {
-                debug_assert_eq!(start.1, '@');
-                if let Ok(TokenKind::Literal(Literal::Number(Number::Real(rads)))) =
-                    RadixNumber::<R>::new(self.scan, self.exactness).scan()
-                {
-                    return Ok(TokenKind::Literal(Literal::Number(Number::polar(
-                        real, rads,
-                    ))));
-                }
-                self.fail(TokenErrorKind::PolarInvalid)
-            }
-        }
-    }
-
-    fn complete(&mut self, is_imaginary: bool) -> TokenExtractResult {
-        if is_imaginary && self.classifier.is_empty() {
-            if let Some(sign) = self.classifier.get_sign() {
-                return Ok(imaginary(sign, Some(self.exactness)));
-            }
-        }
-        self.parse()
-            .map_or_else(|err| self.fail(err), |r| Ok(real_to_token(r, is_imaginary)))
-    }
-
-    fn fail(&mut self, err: TokenErrorKind) -> TokenExtractResult {
-        self.scan.end_of_token();
-        Err(err)
-    }
-
-    fn parse(&mut self) -> ParseResult {
-        let exactness = self.exactness;
-        let input = self.get_lexeme();
-        self.classifier.parse(input, exactness)
-    }
-
-    fn get_lexeme(&mut self) -> &'str str {
-        self.scan.current_lexeme_at(self.start)
+        .handle(brk)
     }
 }
 
@@ -433,7 +228,6 @@ impl Radix for Hexadecimal {
     }
 }
 
-// TODO: handle inexact
 pub(super) fn imaginary(sign: Sign, exactness: Option<Exactness>) -> TokenKind {
     let sign_val = sign as i64;
     let r: Real = match exactness {
@@ -456,6 +250,134 @@ pub(super) fn infinity(sign: Sign, imaginary: bool) -> TokenKind {
 
 pub(super) fn nan(imaginary: bool) -> TokenKind {
     real_to_token(f64::NAN, imaginary)
+}
+
+struct ConditionHandler<'me, 'str, C> {
+    classifier: &'me C,
+    exactness: Option<Exactness>,
+    scan: &'me mut Scanner<'str>,
+    start: usize,
+}
+
+impl<'me, 'str, C: Classifier> ConditionHandler<'me, 'str, C> {
+    fn handle<R: Radix + Debug>(
+        &mut self,
+        result: Result<BreakCondition<'str, R>, TokenErrorKind>,
+    ) -> TokenExtractResult {
+        match result {
+            Ok(cond) => {
+                match cond {
+                    BreakCondition::Complete => self.complete(false),
+                    BreakCondition::Complex { kind, start } => match self.parse() {
+                        Ok(real) => self.scan_imaginary(real, kind, start),
+                        Err(err) => self.fail(err),
+                    },
+                    BreakCondition::Fraction(m) => match m.parse(self.get_lexeme()) {
+                        Ok(numerator) => self.scan_denominator(numerator),
+                        Err(err) => self.fail(err),
+                    },
+                    BreakCondition::Imaginary => {
+                        if let Some(item) = self.scan.next_if_not_delimiter() {
+                            // NOTE: maybe malformed "in"finity? otherwise assume malformed imaginary
+                            self.fail(if item.1.is_ascii_alphabetic() {
+                                TokenErrorKind::NumberInvalid
+                            } else {
+                                TokenErrorKind::ImaginaryInvalid
+                            })
+                        } else if !self.classifier.has_sign() {
+                            self.fail(TokenErrorKind::ImaginaryMissingSign)
+                        } else {
+                            self.complete(true)
+                        }
+                    }
+                }
+            }
+            Err(err) => self.fail(err),
+        }
+    }
+
+    fn scan_denominator(&mut self, numerator: Integer) -> TokenExtractResult {
+        let mut d = self.classifier.make_denominator(self.scan);
+        let (denominator, cond) = d.scan()?;
+        let mut real = Real::reduce(numerator, denominator)?;
+        if let Some(Exactness::Inexact) = self.exactness {
+            real = real.into_inexact();
+        }
+        match cond {
+            FractionBreak::Complete => Ok(real_to_token(real, false)),
+            FractionBreak::Complex { kind, start } => self.scan_imaginary(real, kind, start),
+            FractionBreak::Imaginary => {
+                if self.classifier.has_sign() {
+                    Ok(real_to_token(real, true))
+                } else {
+                    Err(TokenErrorKind::ImaginaryMissingSign)
+                }
+            }
+        }
+    }
+
+    fn scan_imaginary(
+        &mut self,
+        real: Real,
+        kind: ComplexKind,
+        start: ScanItem,
+    ) -> TokenExtractResult {
+        match kind {
+            ComplexKind::Cartesian => {
+                debug_assert!(matches!(start.1, '+' | '-'));
+                if let Ok(TokenKind::Imaginary(imag)) =
+                    self.classifier
+                        .cartesian_scan(self.scan, start, self.exactness)
+                {
+                    Ok(TokenKind::Literal(Literal::Number(Number::complex(
+                        real, imag,
+                    ))))
+                } else {
+                    self.fail(TokenErrorKind::ComplexInvalid)
+                }
+            }
+            ComplexKind::Polar => {
+                debug_assert_eq!(start.1, '@');
+                // NOTE: polar literals must roundtrip through float representation
+                // by definition so exactness does not apply during parsing.
+                // TODO: handle exact final representation
+                if let Ok(TokenKind::Literal(Literal::Number(Number::Real(rads)))) =
+                    self.classifier.polar_scan(self.scan)
+                {
+                    Ok(TokenKind::Literal(Literal::Number(Number::polar(
+                        real, rads,
+                    ))))
+                } else {
+                    self.fail(TokenErrorKind::PolarInvalid)
+                }
+            }
+        }
+    }
+
+    fn complete(&mut self, is_imaginary: bool) -> TokenExtractResult {
+        if is_imaginary && self.classifier.is_empty() {
+            if let Some(sign) = self.classifier.get_sign() {
+                return Ok(imaginary(sign, self.exactness));
+            }
+        }
+        self.parse()
+            .map_or_else(|err| self.fail(err), |r| Ok(real_to_token(r, is_imaginary)))
+    }
+
+    fn fail(&mut self, err: TokenErrorKind) -> TokenExtractResult {
+        self.scan.end_of_token();
+        Err(err)
+    }
+
+    fn parse(&mut self) -> ParseResult {
+        let exactness = self.exactness;
+        let input = self.get_lexeme();
+        self.classifier.parse(input, exactness)
+    }
+
+    fn get_lexeme(&mut self) -> &'str str {
+        self.scan.current_lexeme_at(self.start)
+    }
 }
 
 struct Denominator<'me, 'str, R> {
@@ -522,7 +444,7 @@ impl<'me, 'str, R: Radix + Clone + Debug + Default> Denominator<'me, 'str, R> {
 }
 
 type DecimalControl<'str> =
-    ControlFlow<Result<BreakCondition<'str, Decimal>, TokenErrorKind>, Option<Classifier>>;
+    ControlFlow<Result<BreakCondition<'str, Decimal>, TokenErrorKind>, Option<DecimalClassifier>>;
 type RadixControl<'str, R> = ControlFlow<Result<BreakCondition<'str, R>, TokenErrorKind>>;
 type ParseResult = Result<Real, TokenErrorKind>;
 
@@ -559,23 +481,37 @@ impl<'str, R> From<BreakCondition<'str, R>> for FractionBreak<'str> {
     }
 }
 
+trait Classifier {
+    type Radix: Radix + Clone + Debug + Default;
+
+    fn parse(&self, input: &str, exactness: Option<Exactness>) -> ParseResult;
+    fn get_sign(&self) -> Option<Sign>;
+    fn is_empty(&self) -> bool;
+    fn make_denominator<'me, 'str>(
+        &self,
+        scan: &'me mut Scanner<'str>,
+    ) -> Denominator<'me, 'str, Self::Radix>;
+    fn cartesian_scan(
+        &self,
+        scan: &mut Scanner,
+        start: ScanItem,
+        exactness: Option<Exactness>,
+    ) -> TokenExtractResult;
+    fn polar_scan(&self, scan: &mut Scanner) -> TokenExtractResult;
+
+    fn has_sign(&self) -> bool {
+        self.get_sign().is_some()
+    }
+}
+
 #[derive(Debug)]
-enum Classifier {
+enum DecimalClassifier {
     Flt(Float),
     Int(DecimalInt),
     Sci(Scientific),
 }
 
-impl Classifier {
-    fn has_sign(&self) -> bool {
-        match self {
-            Self::Flt(f) => f.integral.sign,
-            Self::Int(i) => i.0.sign,
-            Self::Sci(s) => s.significand.integral.sign,
-        }
-        .is_some()
-    }
-
+impl DecimalClassifier {
     fn classify<'str>(&mut self, item: ScanItem<'str>) -> DecimalControl<'str> {
         match self {
             Self::Flt(f) => f.classify(item),
@@ -583,6 +519,10 @@ impl Classifier {
             Self::Sci(s) => s.classify(item),
         }
     }
+}
+
+impl Classifier for DecimalClassifier {
+    type Radix = Decimal;
 
     fn parse(&self, input: &str, exactness: Option<Exactness>) -> ParseResult {
         match self {
@@ -590,6 +530,42 @@ impl Classifier {
             Self::Int(i) => i.parse(input, exactness),
             Self::Sci(s) => s.parse(input, exactness),
         }
+    }
+
+    fn get_sign(&self) -> Option<Sign> {
+        match self {
+            Self::Flt(f) => f.integral.sign,
+            Self::Int(i) => i.0.sign,
+            Self::Sci(s) => s.significand.integral.sign,
+        }
+    }
+
+    // NOTE: decimal classifier always classifies at least one digit
+    fn is_empty(&self) -> bool {
+        false
+    }
+
+    fn make_denominator<'me, 'str>(
+        &self,
+        scan: &'me mut Scanner<'str>,
+    ) -> Denominator<'me, 'str, Self::Radix> {
+        Denominator::<Self::Radix>::new(scan)
+    }
+
+    fn cartesian_scan(
+        &self,
+        scan: &mut Scanner,
+        start: ScanItem,
+        exactness: Option<Exactness>,
+    ) -> TokenExtractResult {
+        Identifier::with_exactness(scan, start, exactness).scan()
+    }
+
+    fn polar_scan(&self, scan: &mut Scanner) -> TokenExtractResult {
+        scan.next_if_not_delimiter()
+            .map_or(Err(TokenErrorKind::PolarInvalid), |start| {
+                Identifier::new(scan, start).scan()
+            })
     }
 }
 
@@ -642,19 +618,7 @@ impl<R: Radix + Debug> Magnitude<R> {
 #[derive(Debug)]
 struct Integral<R>(Magnitude<R>);
 
-impl<R: Radix + Clone + Debug> Integral<R> {
-    fn has_sign(&self) -> bool {
-        self.0.sign.is_some()
-    }
-
-    fn get_sign(&self) -> Option<Sign> {
-        self.0.sign
-    }
-
-    fn is_empty(&self) -> bool {
-        self.0.digits.is_empty()
-    }
-
+impl<R: Radix + Clone + Debug + Default> Integral<R> {
     fn classify<'str>(&mut self, item: ScanItem<'str>) -> RadixControl<'str, R> {
         let (idx, ch) = item;
         match ch {
@@ -700,14 +664,46 @@ impl<R: Radix + Clone + Debug> Integral<R> {
             })),
         }
     }
+}
 
-    fn parse(&self, input: &str, exactness: Exactness) -> ParseResult {
+impl<R: Radix + Clone + Debug + Default> Classifier for Integral<R> {
+    type Radix = R;
+
+    fn parse(&self, input: &str, exactness: Option<Exactness>) -> ParseResult {
         // NOTE: always parse exact magnitude first to account for radix
         let n = self.0.parse(input)?;
-        match exactness {
+        match exactness.unwrap_or(Exactness::Exact) {
             Exactness::Exact => Ok(n.into()),
             Exactness::Inexact => Ok(n.into_inexact()),
         }
+    }
+
+    fn get_sign(&self) -> Option<Sign> {
+        self.0.sign
+    }
+
+    fn is_empty(&self) -> bool {
+        self.0.digits.is_empty()
+    }
+
+    fn cartesian_scan(
+        &self,
+        scan: &mut Scanner,
+        start: ScanItem,
+        exactness: Option<Exactness>,
+    ) -> TokenExtractResult {
+        RadixNumber::<R>::with_sign(scan, start, exactness.unwrap_or(Exactness::Exact)).scan()
+    }
+
+    fn polar_scan(&self, scan: &mut Scanner) -> TokenExtractResult {
+        RadixNumber::<R>::new(scan, Exactness::Exact).scan()
+    }
+
+    fn make_denominator<'me, 'str>(
+        &self,
+        scan: &'me mut Scanner<'str>,
+    ) -> Denominator<'me, 'str, Self::Radix> {
+        Denominator::<Self::Radix>::new(scan)
     }
 }
 
@@ -723,7 +719,7 @@ impl DecimalInt {
                 kind: ComplexKind::Cartesian,
                 start: item,
             })),
-            '.' => ControlFlow::Continue(Some(Classifier::Flt(Float {
+            '.' => ControlFlow::Continue(Some(DecimalClassifier::Flt(Float {
                 fraction: offset..offset + 1,
                 integral: self.0.clone(),
             }))),
@@ -732,7 +728,7 @@ impl DecimalInt {
                 kind: ComplexKind::Polar,
                 start: item,
             })),
-            'e' | 'E' => ControlFlow::Continue(Some(Classifier::Sci(Scientific {
+            'e' | 'E' => ControlFlow::Continue(Some(DecimalClassifier::Sci(Scientific {
                 exponent: offset..offset + 1,
                 significand: Float {
                     integral: self.0.clone(),
@@ -780,7 +776,7 @@ impl Float {
                 kind: ComplexKind::Polar,
                 start: item,
             })),
-            'e' | 'E' => ControlFlow::Continue(Some(Classifier::Sci(Scientific {
+            'e' | 'E' => ControlFlow::Continue(Some(DecimalClassifier::Sci(Scientific {
                 exponent: offset..offset + 1,
                 significand: self.clone(),
                 ..Default::default()

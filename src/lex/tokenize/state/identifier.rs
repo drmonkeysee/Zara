@@ -44,7 +44,7 @@ impl<'me, 'str> Identifier<'me, 'str> {
         if first == '|' {
             VerbatimIdentifer::new(self.scan).scan()
         } else if Decimal.is_digit(first) {
-            DecimalNumber::new(self.scan, self.start, self.exactness).scan()
+            DecimalNumber::new(self.scan, self.start.0, self.exactness).scan()
         } else if is_peculiar_initial(first) {
             self.peculiar(first)
         } else if is_initial(first) {
@@ -84,13 +84,13 @@ impl<'me, 'str> Identifier<'me, 'str> {
                     PeculiarState::DefiniteIdentifier => self.standard(),
                     // CASE: .<digit>
                     PeculiarState::MaybeFloat => {
-                        DecimalNumber::try_float(self.scan, self.start, self.exactness).scan()
+                        DecimalNumber::try_float(self.scan, self.start.0, self.exactness).scan()
                     }
                     // CASE: +/-.<digit>
                     PeculiarState::MaybeSignedFloat => DecimalNumber::try_signed_float(
                         super::char_to_sign(self.start.1),
                         self.scan,
-                        self.start,
+                        self.start.0,
                         self.exactness,
                     )
                     .scan(),
@@ -98,7 +98,7 @@ impl<'me, 'str> Identifier<'me, 'str> {
                     PeculiarState::MaybeSignedNumber => DecimalNumber::try_signed_number(
                         super::char_to_sign(self.start.1),
                         self.scan,
-                        self.start,
+                        self.start.0,
                         self.exactness,
                     )
                     .scan(),
