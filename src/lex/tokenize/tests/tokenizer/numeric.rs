@@ -2038,6 +2038,38 @@ mod float {
     }
 
     #[test]
+    fn exact_inf_nan() {
+        let cases = ["#e+inf.0", "#e-inf.0", "#e+nan.0", "#e-nan.0"];
+        for case in cases {
+            let mut s = Scanner::new(case);
+            let start = some_or_fail!(s.next_token());
+            let t = Tokenizer {
+                scan: &mut s,
+                start,
+            };
+
+            let r = t.extract();
+            dbg!(&r);
+
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 0,
+                    end,
+                    result: Ok(TokenKind::Literal(Literal::Number(_))),
+                } if end == case.len()
+            ));
+            let flt = extract_number!(r.result, Number::Real);
+            let expected = if case.contains("-nan") {
+                case[2..].replace("-nan", "+nan")
+            } else {
+                case[2..].to_owned()
+            };
+            assert_eq!(flt.to_string(), "UNKNOWN");
+        }
+    }
+
+    #[test]
     fn invalid_leading_digits_infinity() {
         let mut s = Scanner::new("+0inf.0");
         let start = some_or_fail!(s.next_token());
