@@ -1817,7 +1817,7 @@ mod float {
 
     #[test]
     fn exact_integer() {
-        let cases = ["#e4.0", "#e+4.0"];
+        let cases = ["#e4.", "#e4.0", "#e+4.0"];
         for case in cases {
             let mut s = Scanner::new(case);
             let start = some_or_fail!(s.next_token());
@@ -1916,26 +1916,56 @@ mod float {
 
     #[test]
     fn exact_smaller_than_unity() {
-        let mut s = Scanner::new("#e.45");
-        let start = some_or_fail!(s.next_token());
-        let t = Tokenizer {
-            scan: &mut s,
-            start,
-        };
+        let cases = ["#e.45", "#e0.45", "#e+.45", "#e+0.45"];
+        for case in cases {
+            let mut s = Scanner::new(case);
+            let start = some_or_fail!(s.next_token());
+            let t = Tokenizer {
+                scan: &mut s,
+                start,
+            };
 
-        let r = t.extract();
-        dbg!(&r);
+            let r = t.extract();
+            dbg!(&r);
 
-        assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 6,
-                result: Ok(TokenKind::Literal(Literal::Number(_))),
-            }
-        ));
-        let rat = extract_number!(r.result, Number::Real, Real::Rational);
-        assert_eq!(rat.to_string(), "9/20");
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 0,
+                    end,
+                    result: Ok(TokenKind::Literal(Literal::Number(_))),
+                } if end == case.len()
+            ));
+            let rat = extract_number!(r.result, Number::Real, Real::Rational);
+            assert_eq!(rat.to_string(), "9/20");
+        }
+    }
+
+    #[test]
+    fn exact_negative_smaller_than_unity() {
+        let cases = ["#-e.45", "#e-0.45"];
+        for case in cases {
+            let mut s = Scanner::new(case);
+            let start = some_or_fail!(s.next_token());
+            let t = Tokenizer {
+                scan: &mut s,
+                start,
+            };
+
+            let r = t.extract();
+            dbg!(&r);
+
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 0,
+                    end,
+                    result: Ok(TokenKind::Literal(Literal::Number(_))),
+                } if end == case.len()
+            ));
+            let rat = extract_number!(r.result, Number::Real, Real::Rational);
+            assert_eq!(rat.to_string(), "-9/20");
+        }
     }
 
     #[test]
@@ -2011,6 +2041,30 @@ mod float {
         ));
         let int = extract_number!(r.result, Number::Real, Real::Integer);
         assert_eq!(int.to_string(), "45200");
+    }
+
+    #[test]
+    fn exact_decimal_no_fraction_and_exponent_integer() {
+        let mut s = Scanner::new("#e4.e4");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 6,
+                result: Ok(TokenKind::Literal(Literal::Number(_))),
+            }
+        ));
+        let int = extract_number!(r.result, Number::Real, Real::Integer);
+        assert_eq!(int.to_string(), "40000");
     }
 
     #[test]
