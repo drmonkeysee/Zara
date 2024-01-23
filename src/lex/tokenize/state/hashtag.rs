@@ -257,7 +257,7 @@ fn radix<R: Radix + Clone + Debug + Default>(
     scan: &mut Scanner,
     exactness: Option<Exactness>,
 ) -> TokenExtractResult {
-    RadixNumber::<R>::new(scan, exactness.unwrap_or(Exactness::Exact)).scan()
+    RadixNumber::<R>::new(scan, exactness).scan()
 }
 
 fn decimal(scan: &mut Scanner, exactness: Option<Exactness>) -> TokenExtractResult {

@@ -111,7 +111,7 @@ pub(super) trait FreeTextPolicy {
 
 type FreeTextResult = Result<(), TokenErrorKind>;
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug)]
 enum Exactness {
     Exact,
     Inexact,
@@ -152,13 +152,13 @@ fn numeric_label(txt: &str, exactness: Option<Exactness>) -> Option<TokenKind> {
     if let Some(sign) = num_lbl_sign(txt) {
         if let Some(txt) = txt.get(1..) {
             let label = txt.to_ascii_lowercase();
-            let imaginary = label.ends_with('i');
-            let end = label.len() - usize::from(imaginary);
+            let is_imaginary = label.ends_with('i');
+            let end = label.len() - usize::from(is_imaginary);
             if let Some(label) = label.get(..end) {
                 return match label {
                     "" => Some(numeric::imaginary(sign, exactness)),
-                    "inf.0" => Some(numeric::infinity(sign, imaginary)),
-                    "nan.0" => Some(numeric::nan(imaginary)),
+                    "inf.0" => Some(numeric::infinity(sign, is_imaginary)),
+                    "nan.0" => Some(numeric::nan(is_imaginary)),
                     _ => None,
                 };
             }

@@ -120,13 +120,13 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
 
 pub(super) struct RadixNumber<'me, 'str, R> {
     classifier: Integral<R>,
-    exactness: Exactness,
+    exactness: Option<Exactness>,
     scan: &'me mut Scanner<'str>,
     start: usize,
 }
 
 impl<'me, 'str, R: Radix + Clone + Debug + Default> RadixNumber<'me, 'str, R> {
-    pub(super) fn new(scan: &'me mut Scanner<'str>, exactness: Exactness) -> Self {
+    pub(super) fn new(scan: &'me mut Scanner<'str>, exactness: Option<Exactness>) -> Self {
         let start = scan.pos();
         Self {
             classifier: Integral(Magnitude::default()),
@@ -136,7 +136,11 @@ impl<'me, 'str, R: Radix + Clone + Debug + Default> RadixNumber<'me, 'str, R> {
         }
     }
 
-    fn with_sign(scan: &'me mut Scanner<'str>, start: ScanItem, exactness: Exactness) -> Self {
+    fn with_sign(
+        scan: &'me mut Scanner<'str>,
+        start: ScanItem,
+        exactness: Option<Exactness>,
+    ) -> Self {
         let (start, sign) = start;
         Self {
             classifier: Integral(Magnitude {
@@ -163,7 +167,7 @@ impl<'me, 'str, R: Radix + Clone + Debug + Default> RadixNumber<'me, 'str, R> {
         }
         ConditionHandler {
             classifier: &self.classifier,
-            exactness: Some(self.exactness),
+            exactness: self.exactness,
             scan: self.scan,
             start: self.start,
         }
@@ -237,19 +241,19 @@ pub(super) fn imaginary(sign: Sign, exactness: Option<Exactness>) -> TokenKind {
     real_to_token(r, true)
 }
 
-pub(super) fn infinity(sign: Sign, imaginary: bool) -> TokenKind {
+pub(super) fn infinity(sign: Sign, is_imaginary: bool) -> TokenKind {
     real_to_token(
         match sign {
             Sign::Negative => f64::NEG_INFINITY,
             Sign::Positive => f64::INFINITY,
             Sign::Zero => 0.0,
         },
-        imaginary,
+        is_imaginary,
     )
 }
 
-pub(super) fn nan(imaginary: bool) -> TokenKind {
-    real_to_token(f64::NAN, imaginary)
+pub(super) fn nan(is_imaginary: bool) -> TokenKind {
+    real_to_token(f64::NAN, is_imaginary)
 }
 
 struct ConditionHandler<'me, 'str, C> {
@@ -566,52 +570,6 @@ impl Classifier for DecimalClassifier {
     }
 }
 
-type ExactParseResult = Result<Integer, TokenErrorKind>;
-
-// NOTE: all ranges are relative to parse string, not the token scanner;
-// e.g. all magnitude digits start at 0 or 1 (if sign is explicit).
-#[derive(Clone, Debug, Default)]
-struct Magnitude<R> {
-    digits: Range<usize>,
-    radix: R,
-    sign: Option<Sign>,
-}
-
-impl<R: Radix + Debug> Magnitude<R> {
-    fn parse(&self, input: &str) -> ExactParseResult {
-        if self.digits.is_empty() {
-            Err(TokenErrorKind::NumberExpected)
-        } else {
-            input
-                .get(..self.digits.end)
-                .map_or(Err(TokenErrorKind::NumberInvalid), |signed_num| {
-                    i64::from_str_radix(signed_num, R::BASE).map_or_else(
-                        |_| self.parse_sign_magnitude(signed_num),
-                        |val| Ok(val.into()),
-                    )
-                })
-        }
-    }
-
-    fn parse_sign_magnitude(&self, input: &str) -> ExactParseResult {
-        if let Some(mag) = input.get(self.digits.start..) {
-            u64::from_str_radix(mag, R::BASE).map_or_else(
-                |_| self.parse_multi_precision(input),
-                |val| {
-                    let sign_mag = (self.sign.unwrap_or(Sign::Positive), val);
-                    Ok(sign_mag.into())
-                },
-            )
-        } else {
-            Err(TokenErrorKind::NumberInvalid)
-        }
-    }
-
-    fn parse_multi_precision(&self, input: &str) -> ExactParseResult {
-        Err(TokenErrorKind::Unimplemented(input.to_owned()))
-    }
-}
-
 #[derive(Debug)]
 struct Integral<R>(Magnitude<R>);
 
@@ -689,11 +647,57 @@ impl<R: Radix + Clone + Debug + Default> Classifier for Integral<R> {
         start: ScanItem,
         exactness: Option<Exactness>,
     ) -> TokenExtractResult {
-        RadixNumber::<R>::with_sign(scan, start, exactness.unwrap_or(Exactness::Exact)).scan()
+        RadixNumber::<R>::with_sign(scan, start, exactness).scan()
     }
 
     fn polar_scan(&self, scan: &mut Scanner) -> TokenExtractResult {
-        RadixNumber::<R>::new(scan, Exactness::Exact).scan()
+        RadixNumber::<R>::new(scan, Some(Exactness::Exact)).scan()
+    }
+}
+
+type ExactParseResult = Result<Integer, TokenErrorKind>;
+
+// NOTE: all ranges are relative to parse string, not the token scanner;
+// e.g. all magnitude digits start at 0 or 1 (if sign is explicit).
+#[derive(Clone, Debug, Default)]
+struct Magnitude<R> {
+    digits: Range<usize>,
+    radix: R,
+    sign: Option<Sign>,
+}
+
+impl<R: Radix + Debug> Magnitude<R> {
+    fn parse(&self, input: &str) -> ExactParseResult {
+        if self.digits.is_empty() {
+            Err(TokenErrorKind::NumberExpected)
+        } else {
+            input
+                .get(..self.digits.end)
+                .map_or(Err(TokenErrorKind::NumberInvalid), |signed_num| {
+                    i64::from_str_radix(signed_num, R::BASE).map_or_else(
+                        |_| self.parse_sign_magnitude(signed_num),
+                        |val| Ok(val.into()),
+                    )
+                })
+        }
+    }
+
+    fn parse_sign_magnitude(&self, input: &str) -> ExactParseResult {
+        if let Some(mag) = input.get(self.digits.start..) {
+            u64::from_str_radix(mag, R::BASE).map_or_else(
+                |_| self.parse_multi_precision(input),
+                |val| {
+                    let sign_mag = (self.sign.unwrap_or(Sign::Positive), val);
+                    Ok(sign_mag.into())
+                },
+            )
+        } else {
+            Err(TokenErrorKind::NumberInvalid)
+        }
+    }
+
+    fn parse_multi_precision(&self, input: &str) -> ExactParseResult {
+        Err(TokenErrorKind::Unimplemented(input.to_owned()))
     }
 }
 
@@ -862,8 +866,8 @@ fn parse_inexact_to(end: usize, input: &str) -> ParseResult {
         })
 }
 
-fn real_to_token(r: impl Into<Real>, imaginary: bool) -> TokenKind {
-    if imaginary {
+fn real_to_token(r: impl Into<Real>, is_imaginary: bool) -> TokenKind {
+    if is_imaginary {
         TokenKind::Imaginary(r.into())
     } else {
         TokenKind::Literal(Literal::Number(Number::real(r)))
