@@ -65,7 +65,7 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
     ) -> Self {
         Self {
             classifier: DecimalClassifier::Flt(Float {
-                fraction: 0..2,
+                fraction: 1..2,
                 ..Default::default()
             }),
             exactness,
@@ -82,7 +82,7 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
     ) -> Self {
         Self {
             classifier: DecimalClassifier::Flt(Float {
-                fraction: 1..3,
+                fraction: 2..3,
                 integral: Magnitude {
                     sign: Some(sign),
                     ..Default::default()
@@ -714,7 +714,7 @@ impl DecimalInt {
                 start: item,
             })),
             '.' => ControlFlow::Continue(Some(DecimalClassifier::Flt(Float {
-                fraction: offset..offset + 1,
+                fraction: offset + 1..offset + 1,
                 integral: self.0.clone(),
             }))),
             '/' => ControlFlow::Break(Ok(BreakCondition::Fraction(self.0.clone()))),
@@ -787,7 +787,40 @@ impl Float {
     fn parse(&self, input: &str, exactness: Option<Exactness>) -> ParseResult {
         match exactness {
             None | Some(Exactness::Inexact) => parse_inexact_to(self.fraction.end, input),
-            Some(Exactness::Exact) => Err(TokenErrorKind::Unimplemented(input.to_owned())),
+            Some(Exactness::Exact) => {
+                dbg!(self, input);
+                let mut buf = String::new();
+                let mut num = Magnitude::<Decimal>::default();
+                if self.integral.sign.is_some() {
+                    buf.push_str(&input[0..1]);
+                    num.sign = self.integral.sign;
+                    num.digits = 1..1;
+                    dbg!(&buf);
+                }
+                let integral = &input[self.integral.digits.clone()];
+                dbg!(integral);
+                buf.push_str(integral);
+                dbg!(&buf);
+                let frac = &input[self.fraction.clone()];
+                dbg!(frac);
+                buf.push_str(frac);
+                dbg!(&buf);
+                num.digits.end = buf.len();
+                let multipler = format!(
+                    "1{}",
+                    std::iter::repeat('0').take(frac.len()).collect::<String>()
+                );
+                dbg!(&multipler);
+                let denom = Magnitude::<Decimal> {
+                    digits: 0..multipler.len(),
+                    ..Default::default()
+                };
+                dbg!(format!("FINAL: {buf}/{multipler}"));
+                dbg!(&num, &denom);
+                let e = Real::reduce(num.parse(&buf)?, denom.parse(&multipler)?);
+                dbg!(&e);
+                Err(TokenErrorKind::Unimplemented(input.to_owned()))
+            }
         }
     }
 }
