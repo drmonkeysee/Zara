@@ -732,7 +732,7 @@ impl DecimalInt {
                 start: item,
             })),
             'e' | 'E' => ControlFlow::Continue(Some(DecimalClassifier::Sci(Scientific {
-                exponent: offset..offset + 1,
+                exponent: offset + 1..offset + 1,
                 significand: Float {
                     integral: self.0.clone(),
                     fraction: offset..offset,
@@ -780,7 +780,7 @@ impl Float {
                 start: item,
             })),
             'e' | 'E' => ControlFlow::Continue(Some(DecimalClassifier::Sci(Scientific {
-                exponent: offset..offset + 1,
+                exponent: offset + 1..offset + 1,
                 significand: self.clone(),
                 ..Default::default()
             }))),
@@ -796,41 +796,62 @@ impl Float {
     fn parse(&self, input: &str, exactness: Option<Exactness>) -> ParseResult {
         match exactness {
             None | Some(Exactness::Inexact) => parse_inexact_to(self.fraction.end, input),
-            Some(Exactness::Exact) => {
-                dbg!(self, input);
-                let mut buf = String::new();
-                let mut num = Magnitude::<Decimal>::default();
-                if self.integral.sign.is_some() {
-                    buf.push_str(&input[0..1]);
-                    num.sign = self.integral.sign;
-                    num.digits = 1..1;
-                    dbg!(&buf);
-                }
-                let integral = &input[self.integral.digits.clone()];
-                dbg!(integral);
-                buf.push_str(integral);
-                dbg!(&buf);
-                let frac = &input[self.fraction.clone()];
-                dbg!(frac);
-                buf.push_str(frac);
-                dbg!(&buf);
-                num.digits.end = buf.len();
-                let multipler = format!(
-                    "1{}",
-                    std::iter::repeat('0').take(frac.len()).collect::<String>()
-                );
-                dbg!(&multipler);
-                let denom = Magnitude::<Decimal> {
-                    digits: 0..multipler.len(),
-                    ..Default::default()
-                };
-                dbg!(format!("FINAL: {buf}/{multipler}"));
-                dbg!(&num, &denom);
-                let e = Real::reduce(num.parse(&buf)?, denom.parse(&multipler)?);
-                dbg!(&e);
-                Err(TokenErrorKind::Unimplemented(input.to_owned()))
-            }
+            Some(Exactness::Exact) => self.parse_exact(input, 0),
         }
+    }
+
+    fn parse_exact(&self, input: &str, exponent: i32) -> ParseResult {
+        dbg!(self, input);
+        let mut buf = String::new();
+        let mut num = Magnitude::<Decimal>::default();
+        if self.integral.sign.is_some() {
+            buf.push_str(&input[0..1]);
+            num.sign = self.integral.sign;
+            num.digits = 1..1;
+            dbg!(&buf);
+        }
+        let integral = &input[self.integral.digits.clone()];
+        dbg!(integral);
+        buf.push_str(integral);
+        dbg!(&buf);
+        let frac = &input[self.fraction.clone()];
+        dbg!(frac);
+        buf.push_str(frac);
+        dbg!(&buf);
+        let scale_factor = exponent - i32::try_from(frac.len()).unwrap();
+        dbg!(scale_factor);
+        if scale_factor < 0 {
+            let scale_factor = usize::try_from(scale_factor.abs()).unwrap();
+            let multipler = format!(
+                "1{}",
+                std::iter::repeat('0')
+                    .take(scale_factor)
+                    .collect::<String>()
+            );
+            dbg!(&multipler);
+            num.digits.end = buf.len();
+            let denom = Magnitude::<Decimal> {
+                digits: 0..multipler.len(),
+                ..Default::default()
+            };
+            dbg!(format!("FINAL: {buf}/{multipler}"));
+            dbg!(&num, &denom);
+            let e = Real::reduce(num.parse(&buf)?, denom.parse(&multipler)?);
+            dbg!(&e);
+        } else {
+            let scale_factor = usize::try_from(scale_factor.abs()).unwrap();
+            let multipler = std::iter::repeat('0')
+                .take(scale_factor)
+                .collect::<String>();
+            buf.push_str(&multipler);
+            dbg!(format!("FINAL: {buf}"));
+            num.digits.end = buf.len();
+            dbg!(&num);
+            let e = num.parse(&buf)?;
+            dbg!(&e);
+        }
+
+        Err(TokenErrorKind::Unimplemented(input.to_owned()))
     }
 }
 
@@ -846,9 +867,9 @@ impl Scientific {
         let ch = item.1;
         match ch {
             '+' | '-' => {
-                if self.exponent_sign.is_some() && self.exponent.len() == 2 {
+                if self.exponent_sign.is_some() && self.exponent.len() == 1 {
                     ControlFlow::Break(Err(self.malformed_exponent()))
-                } else if self.exponent.len() == 1 {
+                } else if self.exponent.is_empty() {
                     self.exponent_sign = Some(super::char_to_sign(ch));
                     self.exponent.end += 1;
                     ControlFlow::Continue(None)
@@ -883,19 +904,30 @@ impl Scientific {
         } else {
             match exactness {
                 None | Some(Exactness::Inexact) => parse_inexact_to(self.exponent.end, input),
-                Some(Exactness::Exact) => Err(TokenErrorKind::Unimplemented(input.to_owned())),
+                Some(Exactness::Exact) => self.parse_exact(input),
             }
         }
     }
 
+    fn parse_exact(&self, input: &str) -> ParseResult {
+        dbg!(self, input);
+        let exponent = &input[self.exponent.clone()];
+        dbg!(exponent);
+        let exponent: i32 = exponent.parse()?;
+        dbg!(exponent);
+        self.significand.parse_exact(input, exponent)
+    }
+
     fn no_e_value(&self) -> bool {
-        // NOTE: exponent range contains no digits but may include 'e' and sign
-        self.exponent.len() <= 1 || (self.exponent.len() == 2 && self.exponent_sign.is_some())
+        // NOTE: if true, exponent is either empty or only contains sign
+        self.exponent.is_empty() || (self.exponent.len() == 1 && self.exponent_sign.is_some())
     }
 
     fn malformed_exponent(&self) -> TokenErrorKind {
+        // NOTE: safe to point one char behind exponent range
+        // as there must have been an e|E to get this far.
         TokenErrorKind::NumberMalformedExponent {
-            at: self.exponent.start,
+            at: self.exponent.start - 1,
         }
     }
 }
