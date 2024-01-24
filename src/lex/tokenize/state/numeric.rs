@@ -550,6 +550,15 @@ impl Classifier for DecimalClassifier {
 
     // NOTE: decimal classifier always classifies at least one digit
     fn is_empty(&self) -> bool {
+        // NOTE: this should never happen due to the above invariant
+        debug_assert!(match self {
+            Self::Flt(f) => !(f.integral.digits.is_empty() && f.fraction.is_empty()),
+            Self::Int(i) => !i.0.digits.is_empty(),
+            Self::Sci(s) =>
+                !(s.significand.integral.digits.is_empty()
+                    && s.significand.fraction.is_empty()
+                    && s.exponent.is_empty()),
+        });
         false
     }
 

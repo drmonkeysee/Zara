@@ -1490,6 +1490,30 @@ mod float {
     }
 
     #[test]
+    fn zero_exponent() {
+        let mut s = Scanner::new("34e0");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 4,
+                result: Ok(TokenKind::Literal(Literal::Number(_))),
+            }
+        ));
+        let flt = extract_number!(r.result, Number::Real);
+        assert_eq!(flt.to_string(), "34.0");
+    }
+
+    #[test]
     fn upper_exponent() {
         let mut s = Scanner::new("34E4");
         let start = some_or_fail!(s.next_token());
