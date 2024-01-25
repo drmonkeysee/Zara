@@ -2614,9 +2614,9 @@ mod float {
             assert!(matches!(
                 r,
                 TokenExtract {
-                    start: 3,
+                    start: 5,
                     end,
-                    result: Err(TokenErrorKind::ExponentOutOfRange{ at: 3 }),
+                    result: Err(TokenErrorKind::ExponentOutOfRange{ at: 5 }),
                 } if end == input.len()
             ));
         }

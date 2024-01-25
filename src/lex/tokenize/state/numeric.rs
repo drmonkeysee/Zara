@@ -716,7 +716,7 @@ struct DecimalInt(Magnitude<Decimal>);
 
 impl DecimalInt {
     fn classify<'str>(&mut self, item: ScanItem<'str>) -> DecimalControl<'str> {
-        let ch = item.1;
+        let (idx, ch) = item;
         let offset = self.0.digits.end;
         match ch {
             '+' | '-' => ControlFlow::Break(Ok(BreakCondition::Complex {
@@ -733,6 +733,7 @@ impl DecimalInt {
                 start: item,
             })),
             'e' | 'E' => ControlFlow::Continue(Some(DecimalClassifier::Sci(Scientific {
+                e_at: idx,
                 exponent: offset + 1..offset + 1,
                 significand: Float {
                     integral: self.0.clone(),
@@ -781,6 +782,7 @@ impl Float {
                 start: item,
             })),
             'e' | 'E' => ControlFlow::Continue(Some(DecimalClassifier::Sci(Scientific {
+                e_at: idx,
                 exponent: offset + 1..offset + 1,
                 significand: self.clone(),
                 ..Default::default()
@@ -858,6 +860,7 @@ impl Float {
 
 #[derive(Debug, Default)]
 struct Scientific {
+    e_at: usize,
     exponent: Range<usize>,
     exponent_sign: Option<Sign>,
     significand: Float,
@@ -920,7 +923,7 @@ impl Scientific {
                     err.kind(),
                     IntErrorKind::PosOverflow | IntErrorKind::NegOverflow
                 ) {
-                    self.exponent_out_of_range()
+                    TokenErrorKind::ExponentOutOfRange { at: self.e_at }
                 } else {
                     self.malformed_exponent()
                 }
@@ -933,18 +936,8 @@ impl Scientific {
         self.exponent.is_empty() || (self.exponent.len() == 1 && self.exponent_sign.is_some())
     }
 
-    // NOTE: safe to point one char behind exponent range for these errors,
-    // as there must have been an e|E to get this far.
     fn malformed_exponent(&self) -> TokenErrorKind {
-        TokenErrorKind::NumberMalformedExponent {
-            at: self.exponent.start - 1,
-        }
-    }
-
-    fn exponent_out_of_range(&self) -> TokenErrorKind {
-        TokenErrorKind::ExponentOutOfRange {
-            at: self.exponent.start - 1,
-        }
+        TokenErrorKind::NumberMalformedExponent { at: self.e_at }
     }
 }
 
