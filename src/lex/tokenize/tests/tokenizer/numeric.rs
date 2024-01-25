@@ -2599,7 +2599,8 @@ mod float {
     fn exact_exponent_overflow() {
         let cases = [(i32::MAX as i64) + 1, (i32::MIN as i64) - 1];
         for case in cases {
-            let input = format!("4.0e{case}");
+            let input = format!("#e4.0e{case}");
+            dbg!(&input);
             let mut s = Scanner::new(&input);
             let start = some_or_fail!(s.next_token());
             let t = Tokenizer {
@@ -2615,7 +2616,7 @@ mod float {
                 TokenExtract {
                     start: 3,
                     end,
-                    result: Err(TokenErrorKind::Unimplemented(_)),
+                    result: Err(TokenErrorKind::ExponentOutOfRange{ at: 3 }),
                 } if end == input.len()
             ));
         }

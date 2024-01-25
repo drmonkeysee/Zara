@@ -12,6 +12,7 @@ use crate::{
 };
 use std::{
     fmt::Debug,
+    num::{IntErrorKind, ParseIntError},
     ops::{ControlFlow, Range},
 };
 
@@ -801,7 +802,7 @@ impl Float {
     }
 
     fn parse_exact(&self, input: &str, exponent: i32) -> ParseResult {
-        dbg!(self, input);
+        dbg!(self, input, exponent);
         let mut buf = String::new();
         let mut num = Magnitude::<Decimal>::default();
         if self.integral.sign.is_some() {
@@ -910,11 +911,20 @@ impl Scientific {
     }
 
     fn parse_exact(&self, input: &str) -> ParseResult {
-        dbg!(self, input);
-        let exponent = &input[self.exponent.clone()];
-        dbg!(exponent);
-        let exponent: i32 = dbg!(exponent.parse())?;
-        dbg!(exponent);
+        let exponent: i32 = input
+            .get(self.exponent.clone())
+            .unwrap_or_default()
+            .parse()
+            .map_err(|err: ParseIntError| {
+                if matches!(
+                    err.kind(),
+                    IntErrorKind::PosOverflow | IntErrorKind::NegOverflow
+                ) {
+                    self.exponent_out_of_range()
+                } else {
+                    self.malformed_exponent()
+                }
+            })?;
         self.significand.parse_exact(input, exponent)
     }
 
@@ -923,10 +933,16 @@ impl Scientific {
         self.exponent.is_empty() || (self.exponent.len() == 1 && self.exponent_sign.is_some())
     }
 
+    // NOTE: safe to point one char behind exponent range for these errors,
+    // as there must have been an e|E to get this far.
     fn malformed_exponent(&self) -> TokenErrorKind {
-        // NOTE: safe to point one char behind exponent range
-        // as there must have been an e|E to get this far.
         TokenErrorKind::NumberMalformedExponent {
+            at: self.exponent.start - 1,
+        }
+    }
+
+    fn exponent_out_of_range(&self) -> TokenErrorKind {
+        TokenErrorKind::ExponentOutOfRange {
             at: self.exponent.start - 1,
         }
     }
