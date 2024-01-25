@@ -2116,6 +2116,33 @@ mod float {
     }
 
     #[test]
+    fn exact_decimal_and_exponent_cancel_out() {
+        let cases = ["42", "#e4.2e1"];
+        for case in cases {
+            let mut s = Scanner::new(case);
+            let start = some_or_fail!(s.next_token());
+            let t = Tokenizer {
+                scan: &mut s,
+                start,
+            };
+
+            let r = t.extract();
+            dbg!(&r);
+
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 0,
+                    end,
+                    result: Ok(TokenKind::Literal(Literal::Number(_))),
+                } if end == case.len()
+            ));
+            let int = extract_number!(r.result, Number::Real, Real::Integer);
+            assert_eq!(int.to_string(), "42");
+        }
+    }
+
+    #[test]
     fn exact_inf_nan() {
         let cases = ["#e+inf.0", "#e-inf.0", "#e+nan.0", "#e-nan.0"];
         for case in cases {
@@ -2541,6 +2568,57 @@ mod float {
                 result: Err(TokenErrorKind::NumberMalformedExponent { at: 5 }),
             }
         ));
+    }
+
+    #[test]
+    fn exact_exponent_empty_and_only_sign() {
+        let cases = ["3.456e", "3.456e-"];
+        for case in cases {
+            let mut s = Scanner::new(case);
+            let start = some_or_fail!(s.next_token());
+            let t = Tokenizer {
+                scan: &mut s,
+                start,
+            };
+
+            let r = t.extract();
+            dbg!(&r);
+
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 5,
+                    end,
+                    result: Err(TokenErrorKind::NumberMalformedExponent { at: 5 }),
+                } if end == case.len()
+            ));
+        }
+    }
+
+    #[test]
+    fn exact_exponent_overflow() {
+        let cases = [(i32::MAX as i64) + 1, (i32::MIN as i64) - 1];
+        for case in cases {
+            let input = format!("4.0e{case}");
+            let mut s = Scanner::new(&input);
+            let start = some_or_fail!(s.next_token());
+            let t = Tokenizer {
+                scan: &mut s,
+                start,
+            };
+
+            let r = t.extract();
+            dbg!(&r);
+
+            assert!(matches!(
+                r,
+                TokenExtract {
+                    start: 3,
+                    end,
+                    result: Err(TokenErrorKind::Unimplemented(_)),
+                } if end == input.len()
+            ));
+        }
     }
 }
 

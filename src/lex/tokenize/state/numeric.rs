@@ -913,7 +913,7 @@ impl Scientific {
         dbg!(self, input);
         let exponent = &input[self.exponent.clone()];
         dbg!(exponent);
-        let exponent: i32 = exponent.parse()?;
+        let exponent: i32 = dbg!(exponent.parse())?;
         dbg!(exponent);
         self.significand.parse_exact(input, exponent)
     }
