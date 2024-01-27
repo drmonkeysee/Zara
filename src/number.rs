@@ -55,6 +55,14 @@ impl Number {
     pub(crate) fn as_token_descriptor(&self) -> TokenDescriptor {
         TokenDescriptor(self)
     }
+
+    pub(crate) fn into_exact(self) -> Self {
+        todo!();
+    }
+
+    pub(crate) fn into_inexact(self) -> Self {
+        todo!();
+    }
 }
 
 #[derive(Debug)]
@@ -99,6 +107,10 @@ impl Real {
             return Ok(Self::Integer(n));
         }
         Ok(Self::Rational(Rational((n, d).into())))
+    }
+
+    pub(crate) fn into_exact(self) -> Self {
+        todo!();
     }
 
     pub(crate) fn into_inexact(self) -> Self {

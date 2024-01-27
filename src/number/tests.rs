@@ -654,6 +654,18 @@ mod integer {
         let f = extract_or_fail!(r, Real::Float);
         assert_eq!(f, 42.0);
     }
+
+    #[test]
+    fn single_into_exact() {
+        let n = Integer::single(42, Sign::Positive);
+
+        let r = n.into_exact();
+
+        let int = extract_or_fail!(r, Real::Integer);
+
+        assert_eq!(extract_or_fail!(int.precision, Precision::Single), 42);
+        assert_eq!(int.sign, Sign::Positive);
+    }
 }
 
 mod float {
@@ -688,6 +700,30 @@ mod float {
 
         let f = extract_or_fail!(r, Real::Float);
         assert_eq!(f, 1.5);
+    }
+
+    #[test]
+    fn into_exact() {
+        let n: Real = Real::Float(4.0);
+
+        let n = n.into_exact();
+
+        let int = extract_or_fail!(n, Real::Integer);
+        assert_eq!(extract_or_fail!(int.precision, Precision::Single), 4);
+        assert_eq!(int.sign, Sign::Positive);
+    }
+
+    #[test]
+    fn into_exact_rational() {
+        let n: Real = Real::Float(1.5);
+
+        let n = n.into_exact();
+
+        let (num, den) = rational_parts!(n);
+        assert_eq!(extract_or_fail!(num.precision, Precision::Single), 3);
+        assert_eq!(num.sign, Sign::Negative);
+        assert_eq!(extract_or_fail!(den.precision, Precision::Single), 2);
+        assert_eq!(den.sign, Sign::Positive);
     }
 }
 
@@ -944,6 +980,18 @@ mod rational {
 
         let f = extract_or_fail!(r, Real::Float);
         assert_eq!(f, 0.8);
+    }
+
+    #[test]
+    fn positive_into_exact() {
+        let n = ok_or_fail!(Number::rational(4, 5));
+
+        let (num, den) = rational_parts!(n.into_exact());
+
+        assert_eq!(extract_or_fail!(num.precision, Precision::Single), 4);
+        assert_eq!(num.sign, Sign::Negative);
+        assert_eq!(extract_or_fail!(den.precision, Precision::Single), 5);
+        assert_eq!(den.sign, Sign::Positive);
     }
 }
 

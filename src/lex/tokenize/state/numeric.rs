@@ -273,10 +273,16 @@ impl<'me, 'str, C: Classifier> ConditionHandler<'me, 'str, C> {
             Ok(cond) => {
                 match cond {
                     BreakCondition::Complete => self.complete(false),
-                    BreakCondition::Complex { kind, start } => match self.parse() {
-                        Ok(real) => self.scan_imaginary(real, kind, start),
-                        Err(err) => self.fail(err),
-                    },
+                    BreakCondition::Complex { kind, start } => {
+                        // NOTE: delay application of exactness until final
+                        // composition of complex number; specifically Polar
+                        // will round-trip inputs through float representation,
+                        // undoing any exactness applied to real part.
+                        match self.classifier.parse(self.get_lexeme(), None) {
+                            Ok(real) => self.scan_imaginary(real, kind, start),
+                            Err(err) => self.fail(err),
+                        }
+                    }
                     BreakCondition::Fraction(m) => match m.parse(self.get_lexeme()) {
                         Ok(numerator) => self.scan_denominator(numerator),
                         Err(err) => self.fail(err),
@@ -334,6 +340,11 @@ impl<'me, 'str, C: Classifier> ConditionHandler<'me, 'str, C> {
                     self.classifier
                         .cartesian_scan(self.scan, start, self.exactness)
                 {
+                    let real = match self.exactness {
+                        Some(Exactness::Exact) => real.into_exact(),
+                        Some(Exactness::Inexact) => real.into_inexact(),
+                        None => real,
+                    };
                     Ok(TokenKind::Literal(Literal::Number(Number::complex(
                         real, imag,
                     ))))
@@ -343,16 +354,15 @@ impl<'me, 'str, C: Classifier> ConditionHandler<'me, 'str, C> {
             }
             ComplexKind::Polar => {
                 debug_assert_eq!(start.1, '@');
-                // NOTE: polar literals must roundtrip through float representation
-                // by definition so exactness does not apply during parsing.
-                // TODO: handle exact final representation
-                // TODO: what's implication of applying exactness on mag+rad before polar ctor?
                 if let Ok(TokenKind::Literal(Literal::Number(Number::Real(rads)))) =
                     self.classifier.polar_scan(self.scan)
                 {
-                    Ok(TokenKind::Literal(Literal::Number(Number::polar(
-                        real, rads,
-                    ))))
+                    let pol = Number::polar(real, rads);
+                    Ok(TokenKind::Literal(Literal::Number(match self.exactness {
+                        Some(Exactness::Exact) => pol.into_exact(),
+                        Some(Exactness::Inexact) => pol.into_inexact(),
+                        None => pol,
+                    })))
                 } else {
                     self.fail(TokenErrorKind::PolarInvalid)
                 }
