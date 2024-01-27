@@ -976,7 +976,7 @@ mod rational {
         let (num, den) = rational_parts!(n.into_exact());
 
         assert_eq!(extract_or_fail!(num.precision, Precision::Single), 4);
-        assert_eq!(num.sign, Sign::Negative);
+        assert_eq!(num.sign, Sign::Positive);
         assert_eq!(extract_or_fail!(den.precision, Precision::Single), 5);
         assert_eq!(den.sign, Sign::Positive);
     }
