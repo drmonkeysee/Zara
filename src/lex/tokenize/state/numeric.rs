@@ -311,14 +311,19 @@ impl<'me, 'str, C: Classifier> ConditionHandler<'me, 'str, C> {
         let mut d = self.classifier.denominator_scanner(self.scan);
         let (denominator, cond) = d.scan()?;
         let mut real = Real::reduce(numerator, denominator)?;
-        if let Some(Exactness::Inexact) = self.exactness {
-            real = real.into_inexact();
-        }
         match cond {
-            FractionBreak::Complete => Ok(real_to_token(real, false)),
+            FractionBreak::Complete => {
+                if matches!(self.exactness, Some(Exactness::Inexact)) {
+                    real = real.into_inexact();
+                }
+                Ok(real_to_token(real, false))
+            }
             FractionBreak::Complex { kind, start } => self.scan_imaginary(real, kind, start),
             FractionBreak::Imaginary => {
                 if self.classifier.has_sign() {
+                    if matches!(self.exactness, Some(Exactness::Inexact)) {
+                        real = real.into_inexact();
+                    }
                     Ok(real_to_token(real, true))
                 } else {
                     Err(TokenErrorKind::ImaginaryMissingSign)

@@ -656,7 +656,7 @@ mod integer {
 
     #[test]
     fn single_into_exact() {
-        let n = Integer::single(42, Sign::Positive);
+        let n = Real::Integer(Integer::single(42, Sign::Positive));
 
         let r = n.into_exact();
 

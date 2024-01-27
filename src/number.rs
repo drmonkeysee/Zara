@@ -103,7 +103,10 @@ impl Real {
     }
 
     pub(crate) fn into_exact(self) -> Self {
-        todo!();
+        match self {
+            Self::Float(_) => todo!(),
+            _ => self,
+        }
     }
 
     pub(crate) fn into_inexact(self) -> Self {
@@ -228,10 +231,6 @@ impl Integer {
 
     fn reduce(&mut self, other: &mut Self) {
         self.precision.reduce(&mut other.precision);
-    }
-
-    fn into_exact(self) -> Real {
-        todo!();
     }
 
     fn into_float(self) -> f64 {
