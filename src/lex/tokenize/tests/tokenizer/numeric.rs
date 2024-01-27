@@ -4403,6 +4403,30 @@ mod polar {
     }
 
     #[test]
+    fn decimal_zero_magnitude() {
+        let mut s = Scanner::new("0.0@3.0");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 5,
+                result: Ok(TokenKind::Literal(_)),
+            }
+        ));
+        let num = extract_number!(r.result);
+        assert_eq!(num.as_datum().to_string(), "0.0");
+    }
+
+    #[test]
     fn negative_zero_magnitude() {
         let mut s = Scanner::new("-0@3");
         let start = some_or_fail!(s.next_token());
@@ -4448,6 +4472,30 @@ mod polar {
         ));
         let num = extract_number!(r.result);
         assert_eq!(num.as_datum().to_string(), "4");
+    }
+
+    #[test]
+    fn decimal_zero_angle() {
+        let mut s = Scanner::new("4.0@0.0");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 7,
+                result: Ok(TokenKind::Literal(_)),
+            }
+        ));
+        let num = extract_number!(r.result);
+        assert_eq!(num.as_datum().to_string(), "4.0");
     }
 
     #[test]
@@ -4866,6 +4914,102 @@ mod polar {
                 "-1176633028725907/562949953421312-2423013467750285/1125899906842624i"
             );
         }
+    }
+
+    #[test]
+    fn applied_exact_decimal_zero_magnitude() {
+        let mut s = Scanner::new("#e0.0@3.0");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 9,
+                result: Ok(TokenKind::Literal(_)),
+            }
+        ));
+        let num = extract_number!(r.result);
+        assert_eq!(num.as_datum().to_string(), "0");
+    }
+
+    #[test]
+    fn applied_exact_decimal_zero_angle() {
+        let mut s = Scanner::new("#e4.0@0.0");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 9,
+                result: Ok(TokenKind::Literal(_)),
+            }
+        ));
+        let num = extract_number!(r.result);
+        assert_eq!(num.as_datum().to_string(), "4");
+    }
+
+    #[test]
+    fn applied_inexact_decimal_zero_magnitude() {
+        let mut s = Scanner::new("#i0@3");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 5,
+                result: Ok(TokenKind::Literal(_)),
+            }
+        ));
+        let num = extract_number!(r.result);
+        assert_eq!(num.as_datum().to_string(), "0.0");
+    }
+
+    #[test]
+    fn applied_inexact_decimal_zero_angle() {
+        let mut s = Scanner::new("#i4@0");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scan: &mut s,
+            start,
+        };
+
+        let r = t.extract();
+        dbg!(&r);
+
+        assert!(matches!(
+            r,
+            TokenExtract {
+                start: 0,
+                end: 5,
+                result: Ok(TokenKind::Literal(_)),
+            }
+        ));
+        let num = extract_number!(r.result);
+        assert_eq!(num.as_datum().to_string(), "4.0");
     }
 
     #[test]
