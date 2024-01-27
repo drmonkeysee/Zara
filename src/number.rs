@@ -41,13 +41,6 @@ impl Number {
         Self::Real(value.into())
     }
 
-    pub(crate) fn rational(
-        numerator: impl Into<Integer>,
-        denominator: impl Into<Integer>,
-    ) -> Result<Self, NumericError> {
-        Ok(Self::real(Real::reduce(numerator, denominator)?))
-    }
-
     pub(crate) fn as_datum(&self) -> Datum {
         Datum(self)
     }
@@ -235,6 +228,10 @@ impl Integer {
 
     fn reduce(&mut self, other: &mut Self) {
         self.precision.reduce(&mut other.precision);
+    }
+
+    fn into_exact(self) -> Real {
+        todo!();
     }
 
     fn into_float(self) -> f64 {

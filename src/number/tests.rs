@@ -2,9 +2,8 @@ use super::*;
 use crate::testutil::{extract_or_fail, ok_or_fail};
 
 macro_rules! rational_parts {
-    ($num:expr) => {{
-        let r = extract_or_fail!($num, Number::Real);
-        let rat = extract_or_fail!(r, Real::Rational);
+    ($real:expr) => {{
+        let rat = extract_or_fail!($real, Real::Rational);
         *rat.0
     }};
 }
@@ -75,7 +74,7 @@ mod token {
 
     #[test]
     fn rational() {
-        let n = ok_or_fail!(Number::rational(4, 5));
+        let n = Number::Real(ok_or_fail!(Real::reduce(4, 5)));
 
         assert_eq!(n.as_token_descriptor().to_string(), "RAT");
     }
@@ -262,35 +261,35 @@ mod display {
 
     #[test]
     fn positive_rational() {
-        let n = ok_or_fail!(Number::rational(3, 4));
+        let n = Number::Real(ok_or_fail!(Real::reduce(3, 4)));
 
         assert_eq!(n.as_datum().to_string(), "3/4");
     }
 
     #[test]
     fn negative_numerator() {
-        let n = ok_or_fail!(Number::rational(-3, 4));
+        let n = Number::Real(ok_or_fail!(Real::reduce(-3, 4)));
 
         assert_eq!(n.as_datum().to_string(), "-3/4");
     }
 
     #[test]
     fn negative_denominator() {
-        let n = ok_or_fail!(Number::rational(3, -4));
+        let n = Number::Real(ok_or_fail!(Real::reduce(3, -4)));
 
         assert_eq!(n.as_datum().to_string(), "-3/4");
     }
 
     #[test]
     fn negative_numerator_and_denominator() {
-        let n = ok_or_fail!(Number::rational(-3, -4));
+        let n = Number::Real(ok_or_fail!(Real::reduce(-3, -4)));
 
         assert_eq!(n.as_datum().to_string(), "3/4");
     }
 
     #[test]
     fn greater_than_one_rational() {
-        let n = ok_or_fail!(Number::rational(4, 3));
+        let n = Number::Real(ok_or_fail!(Real::reduce(4, 3)));
 
         assert_eq!(n.as_datum().to_string(), "4/3");
     }
@@ -731,13 +730,6 @@ mod rational {
     use super::*;
     use crate::testutil::err_or_fail;
 
-    macro_rules! rational_integer {
-        ($num:expr) => {{
-            let r = extract_or_fail!($num, Number::Real);
-            extract_or_fail!(r, Real::Integer)
-        }};
-    }
-
     mod euclid {
         use super::*;
 
@@ -774,7 +766,7 @@ mod rational {
 
     #[test]
     fn positive() {
-        let n = ok_or_fail!(Number::rational(4, 5));
+        let n = ok_or_fail!(Real::reduce(4, 5));
         let (num, den) = rational_parts!(n);
 
         assert_eq!(extract_or_fail!(num.precision, Precision::Single), 4);
@@ -785,7 +777,7 @@ mod rational {
 
     #[test]
     fn negative_numerator() {
-        let n = ok_or_fail!(Number::rational(-4, 5));
+        let n = ok_or_fail!(Real::reduce(-4, 5));
         let (num, den) = rational_parts!(n);
 
         assert_eq!(extract_or_fail!(num.precision, Precision::Single), 4);
@@ -796,7 +788,7 @@ mod rational {
 
     #[test]
     fn negative_denominator() {
-        let n = ok_or_fail!(Number::rational(4, -5));
+        let n = ok_or_fail!(Real::reduce(4, -5));
         let (num, den) = rational_parts!(n);
 
         assert_eq!(extract_or_fail!(num.precision, Precision::Single), 4);
@@ -807,7 +799,7 @@ mod rational {
 
     #[test]
     fn negative_parts() {
-        let n = ok_or_fail!(Number::rational(-4, -5));
+        let n = ok_or_fail!(Real::reduce(-4, -5));
         let (num, den) = rational_parts!(n);
 
         assert_eq!(extract_or_fail!(num.precision, Precision::Single), 4);
@@ -818,7 +810,7 @@ mod rational {
 
     #[test]
     fn improper() {
-        let n = ok_or_fail!(Number::rational(5, 4));
+        let n = ok_or_fail!(Real::reduce(5, 4));
         let (num, den) = rational_parts!(n);
 
         assert_eq!(extract_or_fail!(num.precision, Precision::Single), 5);
@@ -829,7 +821,7 @@ mod rational {
 
     #[test]
     fn gcd() {
-        let n = ok_or_fail!(Number::rational(4, 10));
+        let n = ok_or_fail!(Real::reduce(4, 10));
         let (num, den) = rational_parts!(n);
 
         assert_eq!(extract_or_fail!(num.precision, Precision::Single), 2);
@@ -840,7 +832,7 @@ mod rational {
 
     #[test]
     fn gcd_negative() {
-        let n = ok_or_fail!(Number::rational(-4, 10));
+        let n = ok_or_fail!(Real::reduce(-4, 10));
         let (num, den) = rational_parts!(n);
 
         assert_eq!(extract_or_fail!(num.precision, Precision::Single), 2);
@@ -851,8 +843,8 @@ mod rational {
 
     #[test]
     fn unity() {
-        let n = ok_or_fail!(Number::rational(1, 1));
-        let int = rational_integer!(n);
+        let n = ok_or_fail!(Real::reduce(1, 1));
+        let int = extract_or_fail!(n, Real::Integer);
 
         assert_eq!(extract_or_fail!(int.precision, Precision::Single), 1);
         assert_eq!(int.sign, Sign::Positive);
@@ -860,8 +852,8 @@ mod rational {
 
     #[test]
     fn reduce_to_unity() {
-        let n = ok_or_fail!(Number::rational(7, 7));
-        let int = rational_integer!(n);
+        let n = ok_or_fail!(Real::reduce(7, 7));
+        let int = extract_or_fail!(n, Real::Integer);
 
         assert_eq!(extract_or_fail!(int.precision, Precision::Single), 1);
         assert_eq!(int.sign, Sign::Positive);
@@ -869,8 +861,8 @@ mod rational {
 
     #[test]
     fn reduce_to_negative_unity() {
-        let n = ok_or_fail!(Number::rational(-7, 7));
-        let int = rational_integer!(n);
+        let n = ok_or_fail!(Real::reduce(-7, 7));
+        let int = extract_or_fail!(n, Real::Integer);
 
         assert_eq!(extract_or_fail!(int.precision, Precision::Single), 1);
         assert_eq!(int.sign, Sign::Negative);
@@ -878,8 +870,8 @@ mod rational {
 
     #[test]
     fn reduce_to_integer() {
-        let n = ok_or_fail!(Number::rational(20, 10));
-        let int = rational_integer!(n);
+        let n = ok_or_fail!(Real::reduce(20, 10));
+        let int = extract_or_fail!(n, Real::Integer);
 
         assert_eq!(extract_or_fail!(int.precision, Precision::Single), 2);
         assert_eq!(int.sign, Sign::Positive);
@@ -887,8 +879,8 @@ mod rational {
 
     #[test]
     fn reduce_to_negative_integer() {
-        let n = ok_or_fail!(Number::rational(-20, 10));
-        let int = rational_integer!(n);
+        let n = ok_or_fail!(Real::reduce(-20, 10));
+        let int = extract_or_fail!(n, Real::Integer);
 
         assert_eq!(extract_or_fail!(int.precision, Precision::Single), 2);
         assert_eq!(int.sign, Sign::Negative);
@@ -896,8 +888,8 @@ mod rational {
 
     #[test]
     fn zero_numerator() {
-        let n = ok_or_fail!(Number::rational(0, 7));
-        let int = rational_integer!(n);
+        let n = ok_or_fail!(Real::reduce(0, 7));
+        let int = extract_or_fail!(n, Real::Integer);
 
         assert_eq!(extract_or_fail!(int.precision, Precision::Single), 0);
         assert_eq!(int.sign, Sign::Zero);
@@ -912,7 +904,7 @@ mod rational {
 
     #[test]
     fn zero_denominator() {
-        let n = Number::rational(1, 0);
+        let n = Real::reduce(1, 0);
         let err = err_or_fail!(n);
 
         assert!(matches!(err, NumericError::DivideByZero));
@@ -920,32 +912,28 @@ mod rational {
 
     #[test]
     fn positive_into_float() {
-        let n = ok_or_fail!(Number::rational(4, 5));
-        let r = extract_or_fail!(n, Number::Real);
+        let r = ok_or_fail!(Real::reduce(4, 5));
 
         assert_eq!(r.into_float(), 0.8);
     }
 
     #[test]
     fn negative_numerator_into_float() {
-        let n = ok_or_fail!(Number::rational(-4, 5));
-        let r = extract_or_fail!(n, Number::Real);
+        let r = ok_or_fail!(Real::reduce(-4, 5));
 
         assert_eq!(r.into_float(), -0.8);
     }
 
     #[test]
     fn negative_denominator_into_float() {
-        let n = ok_or_fail!(Number::rational(4, -5));
-        let r = extract_or_fail!(n, Number::Real);
+        let r = ok_or_fail!(Real::reduce(4, -5));
 
         assert_eq!(r.into_float(), -0.8);
     }
 
     #[test]
     fn negative_parts_into_float() {
-        let n = ok_or_fail!(Number::rational(-4, -5));
-        let r = extract_or_fail!(n, Number::Real);
+        let r = ok_or_fail!(Real::reduce(-4, -5));
 
         assert_eq!(r.into_float(), 0.8);
     }
@@ -973,10 +961,9 @@ mod rational {
 
     #[test]
     fn positive_into_inexact() {
-        let n = ok_or_fail!(Number::rational(4, 5));
-        let r = extract_or_fail!(n, Number::Real);
+        let n = ok_or_fail!(Real::reduce(4, 5));
 
-        let r = r.into_inexact();
+        let r = n.into_inexact();
 
         let f = extract_or_fail!(r, Real::Float);
         assert_eq!(f, 0.8);
@@ -984,7 +971,7 @@ mod rational {
 
     #[test]
     fn positive_into_exact() {
-        let n = ok_or_fail!(Number::rational(4, 5));
+        let n = ok_or_fail!(Real::reduce(4, 5));
 
         let (num, den) = rational_parts!(n.into_exact());
 
@@ -1113,7 +1100,7 @@ mod complex {
         let rad = ok_or_fail!(Real::reduce(0, 2));
         let c = Number::polar(m, rad);
 
-        let (num, den) = rational_parts!(c);
+        let (num, den) = rational_parts!(extract_or_fail!(c, Number::Real));
 
         assert_eq!(extract_or_fail!(num.precision, Precision::Single), 4);
         assert_eq!(num.sign, Sign::Positive);

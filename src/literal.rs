@@ -422,7 +422,7 @@ bar"
 
     mod number {
         use super::*;
-        use crate::testutil::ok_or_fail;
+        use crate::{number::Real, testutil::ok_or_fail};
 
         #[test]
         fn integer_token() {
@@ -440,8 +440,8 @@ bar"
 
         #[test]
         fn rational_token() {
-            let r = ok_or_fail!(Number::rational(4, 5));
-            let n = Literal::Number(r);
+            let r = ok_or_fail!(Real::reduce(4, 5));
+            let n = Literal::Number(Number::Real(r));
 
             assert_eq!(n.as_token_descriptor().to_string(), "NUM<RAT>");
         }
@@ -469,8 +469,8 @@ bar"
 
         #[test]
         fn display_rational() {
-            let r = ok_or_fail!(Number::rational(3, 4));
-            let n = Literal::Number(r);
+            let r = ok_or_fail!(Real::reduce(3, 4));
+            let n = Literal::Number(Number::Real(r));
 
             assert_eq!(n.as_datum().to_string(), "3/4");
         }
