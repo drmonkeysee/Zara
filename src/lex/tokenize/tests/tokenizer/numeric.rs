@@ -1906,7 +1906,7 @@ mod float {
             r,
             TokenExtract {
                 start: 0,
-                end: 5,
+                end: 6,
                 result: Ok(TokenKind::Literal(Literal::Number(_))),
             }
         ));
@@ -1967,7 +1967,7 @@ mod float {
 
     #[test]
     fn exact_negative_smaller_than_unity() {
-        let cases = ["#-e.45", "#e-0.45"];
+        let cases = ["#e-.45", "#e-0.45"];
         for case in cases {
             let mut s = Scanner::new(case);
             let start = some_or_fail!(s.next_token());
@@ -2107,7 +2107,7 @@ mod float {
             r,
             TokenExtract {
                 start: 0,
-                end: 8,
+                end: 12,
                 result: Ok(TokenKind::Literal(Literal::Number(_))),
             }
         ));
@@ -2170,7 +2170,7 @@ mod float {
             } else {
                 case[2..].to_owned()
             };
-            assert_eq!(flt.to_string(), "UNKNOWN");
+            assert_eq!(flt.to_string(), expected);
         }
     }
 
@@ -4080,7 +4080,7 @@ mod cartesian {
             r,
             TokenExtract {
                 start: 0,
-                end: 8,
+                end: 12,
                 result: Ok(TokenKind::Literal(_)),
             }
         ));

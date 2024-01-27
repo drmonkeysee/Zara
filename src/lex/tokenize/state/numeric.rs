@@ -804,57 +804,33 @@ impl Float {
     }
 
     fn parse_exact(&self, input: &str, exponent: i32) -> ParseResult {
-        dbg!(self, input, exponent);
         let mut buf = String::new();
         let mut num = Magnitude::<Decimal>::default();
         if self.integral.sign.is_some() {
-            buf.push_str(&input[0..1]);
+            buf += input.get(0..1).unwrap_or_default();
             num.sign = self.integral.sign;
             num.digits = 1..1;
-            dbg!(&buf);
         }
-        let integral = &input[self.integral.digits.clone()];
-        dbg!(integral);
-        buf.push_str(integral);
-        dbg!(&buf);
-        let frac = &input[self.fraction.clone()];
-        dbg!(frac);
-        buf.push_str(frac);
-        dbg!(&buf);
-        let scale_factor = exponent - i32::try_from(frac.len()).unwrap();
-        dbg!(scale_factor);
-        if scale_factor < 0 {
-            let scale_factor = usize::try_from(scale_factor.abs()).unwrap();
-            let multipler = format!(
-                "1{}",
-                std::iter::repeat('0')
-                    .take(scale_factor)
-                    .collect::<String>()
-            );
-            dbg!(&multipler);
+        buf += input.get(self.integral.digits.clone()).unwrap_or_default();
+        let frac = input.get(self.fraction.clone()).unwrap_or_default();
+        buf += frac;
+        let scale = exponent - i32::try_from(frac.len()).unwrap_or_default();
+        let adjustment = std::iter::repeat('0')
+            .take(scale.abs().try_into().unwrap_or_default())
+            .collect::<String>();
+        Ok(if scale < 0 {
             num.digits.end = buf.len();
+            let adjustment = format!("1{adjustment}",);
             let denom = Magnitude::<Decimal> {
-                digits: 0..multipler.len(),
+                digits: 0..adjustment.len(),
                 ..Default::default()
             };
-            dbg!(format!("FINAL: {buf}/{multipler}"));
-            dbg!(&num, &denom);
-            let e = Real::reduce(num.parse(&buf)?, denom.parse(&multipler)?);
-            dbg!(&e);
+            Real::reduce(num.parse(&buf)?, denom.parse(&adjustment)?)?
         } else {
-            let scale_factor = usize::try_from(scale_factor.abs()).unwrap();
-            let multipler = std::iter::repeat('0')
-                .take(scale_factor)
-                .collect::<String>();
-            buf.push_str(&multipler);
-            dbg!(format!("FINAL: {buf}"));
+            buf += &adjustment;
             num.digits.end = buf.len();
-            dbg!(&num);
-            let e = num.parse(&buf)?;
-            dbg!(&e);
-        }
-
-        Err(TokenErrorKind::Unimplemented(input.to_owned()))
+            num.parse(&buf)?.into()
+        })
     }
 }
 
@@ -918,21 +894,16 @@ impl Scientific {
             .get(self.exponent.clone())
             .unwrap_or_default()
             .parse()
-            .map_err(|err: ParseIntError| {
-                if matches!(
-                    err.kind(),
-                    IntErrorKind::PosOverflow | IntErrorKind::NegOverflow
-                ) {
+            .map_err(|err: ParseIntError| match err.kind() {
+                IntErrorKind::PosOverflow | IntErrorKind::NegOverflow => {
                     TokenErrorKind::ExponentOutOfRange { at: self.e_at }
-                } else {
-                    self.malformed_exponent()
                 }
+                _ => self.malformed_exponent(),
             })?;
         self.significand.parse_exact(input, exponent)
     }
 
     fn no_e_value(&self) -> bool {
-        // NOTE: if true, exponent is either empty or only contains sign
         self.exponent.is_empty() || (self.exponent.len() == 1 && self.exponent_sign.is_some())
     }
 
