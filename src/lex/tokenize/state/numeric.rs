@@ -381,19 +381,14 @@ impl<'me, 'str, C: Classifier> ConditionHandler<'me, 'str, C> {
                 return Ok(imaginary(sign, self.exactness));
             }
         }
-        self.parse()
+        self.classifier
+            .parse(self.get_lexeme(), self.exactness)
             .map_or_else(|err| self.fail(err), |r| Ok(real_to_token(r, is_imaginary)))
     }
 
     fn fail(&mut self, err: TokenErrorKind) -> TokenExtractResult {
         self.scan.end_of_token();
         Err(err)
-    }
-
-    fn parse(&mut self) -> ParseResult {
-        let exactness = self.exactness;
-        let input = self.get_lexeme();
-        self.classifier.parse(input, exactness)
     }
 
     fn get_lexeme(&mut self) -> &'str str {
