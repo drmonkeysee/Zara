@@ -16,7 +16,7 @@ pub(crate) enum Number {
 
 impl Number {
     pub(crate) fn complex(real: impl Into<Real>, imag: impl Into<Real>) -> Self {
-        let (real, imag): (Real, Real) = (real.into(), imag.into());
+        let (real, imag) = (real.into(), imag.into());
         if imag.is_zero() {
             Self::real(real)
         } else {
@@ -26,9 +26,7 @@ impl Number {
 
     pub(crate) fn polar(magnitude: impl Into<Real>, radians: impl Into<Real>) -> Self {
         let (mag, rad) = (magnitude.into(), radians.into());
-        if mag.is_zero() {
-            Self::real(0)
-        } else if rad.is_zero() {
+        if mag.is_zero() || rad.is_zero() {
             Self::real(mag)
         } else {
             let (mag, rad) = (mag.into_float(), rad.into_float());
@@ -50,11 +48,17 @@ impl Number {
     }
 
     pub(crate) fn into_exact(self) -> Self {
-        todo!();
+        match self {
+            Self::Complex(c) => Self::complex(c.0 .0.into_exact(), c.0 .1.into_exact()),
+            Self::Real(r) => Self::Real(r.into_exact()),
+        }
     }
 
     pub(crate) fn into_inexact(self) -> Self {
-        todo!();
+        match self {
+            Self::Complex(c) => Self::complex(c.0 .0.into_inexact(), c.0 .1.into_inexact()),
+            Self::Real(r) => Self::Real(r.into_inexact()),
+        }
     }
 }
 

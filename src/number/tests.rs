@@ -1107,4 +1107,51 @@ mod complex {
         assert_eq!(extract_or_fail!(den.precision, Precision::Single), 5);
         assert_eq!(den.sign, Sign::Positive);
     }
+
+    #[test]
+    fn into_exact() {
+        let c = Number::complex(4.0, 3.0);
+
+        let c = c.into_exact();
+
+        let ri = extract_or_fail!(c, Number::Complex);
+        let r = extract_or_fail!(ri.0 .0, Real::Integer);
+        assert!(!r.is_zero());
+        assert_eq!(extract_or_fail!(r.precision, Precision::Single), 4);
+        let i = extract_or_fail!(ri.0 .1, Real::Integer);
+        assert!(!i.is_zero());
+        assert_eq!(extract_or_fail!(i.precision, Precision::Single), 3);
+    }
+
+    #[test]
+    fn into_exact_rational() {
+        let c = Number::complex(1.5, 0.8);
+
+        let c = c.into_exact();
+
+        let ri = extract_or_fail!(c, Number::Complex);
+        let (num, den) = rational_parts!(ri.0 .0);
+        assert_eq!(extract_or_fail!(num.precision, Precision::Single), 3);
+        assert_eq!(num.sign, Sign::Negative);
+        assert_eq!(extract_or_fail!(den.precision, Precision::Single), 2);
+        assert_eq!(den.sign, Sign::Positive);
+        let (num, den) = rational_parts!(ri.0 .1);
+        assert_eq!(extract_or_fail!(num.precision, Precision::Single), 4);
+        assert_eq!(num.sign, Sign::Negative);
+        assert_eq!(extract_or_fail!(den.precision, Precision::Single), 5);
+        assert_eq!(den.sign, Sign::Positive);
+    }
+
+    #[test]
+    fn into_inexact() {
+        let c = Number::complex(4, 3);
+
+        let c = c.into_inexact();
+
+        let ri = extract_or_fail!(c, Number::Complex);
+        let r = extract_or_fail!(ri.0 .0, Real::Float);
+        assert_eq!(r, 4.0);
+        let i = extract_or_fail!(ri.0 .1, Real::Float);
+        assert_eq!(i, 3.0);
+    }
 }
