@@ -10,6 +10,9 @@ use std::{
     result::Result,
 };
 
+pub(crate) type RealResult = Result<Real, NumericError>;
+pub(crate) type IntResult = Result<Integer, NumericError>;
+
 #[derive(Debug)]
 pub(crate) enum Number {
     Complex(Complex),
@@ -82,7 +85,7 @@ impl Real {
     pub(crate) fn reduce(
         numerator: impl Into<Integer>,
         denominator: impl Into<Integer>,
-    ) -> Result<Self, NumericError> {
+    ) -> RealResult {
         let mut d = denominator.into();
         if d.is_zero() {
             return Err(NumericError::DivideByZero);
@@ -325,7 +328,7 @@ pub(crate) trait Radix {
 
     fn is_digit(&self, ch: char) -> bool;
 
-    fn into_inexact<R: Radix>(&self, spec: &IntSpec<R>, input: &str) -> Result<Real, NumericError> {
+    fn into_inexact<R: Radix>(&self, spec: &IntSpec<R>, input: &str) -> RealResult {
         // NOTE: always parse exact magnitude first to account for radix
         Ok(parse_signed(spec, input)?.into_inexact())
     }
@@ -368,7 +371,7 @@ impl Radix for Decimal {
         ch.is_ascii_digit()
     }
 
-    fn into_inexact<R>(&self, spec: &IntSpec<R>, input: &str) -> Result<Real, NumericError> {
+    fn into_inexact<R>(&self, spec: &IntSpec<R>, input: &str) -> RealResult {
         input
             .get(..spec.magnitude.end)
             .map_or(Err(NumericError::ParseFailure), |fstr| {
@@ -397,11 +400,11 @@ pub(crate) struct IntSpec<R> {
 }
 
 impl<R: Radix> IntSpec<R> {
-    pub(crate) fn into_exact(&self, input: &str) -> Result<Integer, NumericError> {
+    pub(crate) fn into_exact(&self, input: &str) -> IntResult {
         parse_signed(self, input)
     }
 
-    pub(crate) fn into_inexact(&self, input: &str) -> Result<Real, NumericError> {
+    pub(crate) fn into_inexact(&self, input: &str) -> RealResult {
         self.radix.into_inexact(self, input)
     }
 }
@@ -413,11 +416,11 @@ pub(crate) struct FloatSpec {
 }
 
 impl FloatSpec {
-    pub(crate) fn into_exact(&self, input: &str) -> Result<Real, NumericError> {
+    pub(crate) fn into_exact(&self, input: &str) -> RealResult {
         self.into_exact_with_exponent(input, 0)
     }
 
-    pub(crate) fn into_inexact(&self, input: &str) -> Result<Real, NumericError> {
+    pub(crate) fn into_inexact(&self, input: &str) -> RealResult {
         let end = if !self.fraction.is_empty() {
             self.fraction.end
         } else {
@@ -426,7 +429,7 @@ impl FloatSpec {
         parse_float_to(end, input)
     }
 
-    fn into_exact_with_exponent(&self, input: &str, exponent: i32) -> Result<Real, NumericError> {
+    fn into_exact_with_exponent(&self, input: &str, exponent: i32) -> RealResult {
         let mut buf = String::new();
         let mut num = IntSpec::<Decimal>::default();
         if self.integral.sign.is_some() {
@@ -466,7 +469,7 @@ pub(crate) struct ExponentSpec {
 }
 
 impl ExponentSpec {
-    pub(crate) fn into_exact(&self, input: &str) -> Result<Real, NumericError> {
+    pub(crate) fn into_exact(&self, input: &str) -> RealResult {
         let exponent: i32 = input
             .get(self.exponent.clone())
             .unwrap_or_default()
@@ -480,7 +483,7 @@ impl ExponentSpec {
         self.significand.into_exact_with_exponent(input, exponent)
     }
 
-    pub(crate) fn into_inexact(&self, input: &str) -> Result<Real, NumericError> {
+    pub(crate) fn into_inexact(&self, input: &str) -> RealResult {
         parse_float_to(self.exponent.end, input)
     }
 }
@@ -662,7 +665,7 @@ fn gcd_euclidean(mut a: u64, mut b: u64) -> u64 {
     a
 }
 
-fn parse_signed<R: Radix>(spec: &IntSpec<R>, input: &str) -> Result<Integer, NumericError> {
+fn parse_signed<R: Radix>(spec: &IntSpec<R>, input: &str) -> IntResult {
     input
         .get(..spec.magnitude.end)
         .map_or(Err(NumericError::ParseFailure), |signed_num| {
@@ -673,7 +676,7 @@ fn parse_signed<R: Radix>(spec: &IntSpec<R>, input: &str) -> Result<Integer, Num
         })
 }
 
-fn parse_sign_magnitude<R: Radix>(spec: &IntSpec<R>, input: &str) -> Result<Integer, NumericError> {
+fn parse_sign_magnitude<R: Radix>(spec: &IntSpec<R>, input: &str) -> IntResult {
     if let Some(mag) = input.get(spec.magnitude.start..) {
         u64::from_str_radix(mag, R::BASE).map_or_else(
             |_| parse_multi_precision(spec, input),
@@ -687,14 +690,11 @@ fn parse_sign_magnitude<R: Radix>(spec: &IntSpec<R>, input: &str) -> Result<Inte
     }
 }
 
-fn parse_multi_precision<R: Radix>(
-    spec: &IntSpec<R>,
-    input: &str,
-) -> Result<Integer, NumericError> {
+fn parse_multi_precision<R: Radix>(spec: &IntSpec<R>, input: &str) -> IntResult {
     Err(NumericError::Unimplemented(input.to_owned()))
 }
 
-fn parse_float_to(end: usize, input: &str) -> Result<Real, NumericError> {
+fn parse_float_to(end: usize, input: &str) -> RealResult {
     input
         .get(..end)
         .map_or(Err(NumericError::ParseFailure), |fstr| {
