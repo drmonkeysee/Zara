@@ -8,7 +8,7 @@ use crate::{
         },
     },
     literal::Literal,
-    number::{Integer, Number, Real, Sign},
+    number::{Decimal, Integer, Number, Radix, Real, Sign},
 };
 use std::{
     fmt::Debug,
@@ -173,63 +173,6 @@ impl<'me, 'str, R: Radix + Clone + Debug + Default> RadixNumber<'me, 'str, R> {
             start: self.start,
         }
         .resolve(brk)
-    }
-}
-
-pub(super) trait Radix {
-    const BASE: u32;
-    const NAME: &'static str;
-
-    fn is_digit(&self, ch: char) -> bool;
-}
-
-#[derive(Clone, Copy, Debug, Default)]
-pub(super) struct Binary;
-
-impl Radix for Binary {
-    const BASE: u32 = 2;
-    const NAME: &'static str = "binary";
-
-    fn is_digit(&self, ch: char) -> bool {
-        matches!(ch, '0'..='1')
-    }
-}
-
-#[derive(Clone, Copy, Debug, Default)]
-pub(super) struct Octal;
-
-impl Radix for Octal {
-    const BASE: u32 = 8;
-    const NAME: &'static str = "octal";
-
-    fn is_digit(&self, ch: char) -> bool {
-        // TODO: nightly-only experimental API.
-        // (is_ascii_octdigit https://github.com/rust-lang/rust/issues/101288)
-        matches!(ch, '0'..='7')
-    }
-}
-
-#[derive(Clone, Copy, Debug, Default)]
-pub(super) struct Decimal;
-
-impl Radix for Decimal {
-    const BASE: u32 = 10;
-    const NAME: &'static str = "decimal";
-
-    fn is_digit(&self, ch: char) -> bool {
-        ch.is_ascii_digit()
-    }
-}
-
-#[derive(Clone, Copy, Debug, Default)]
-pub(super) struct Hexadecimal;
-
-impl Radix for Hexadecimal {
-    const BASE: u32 = 16;
-    const NAME: &'static str = "hexadecimal";
-
-    fn is_digit(&self, ch: char) -> bool {
-        ch.is_ascii_hexdigit()
     }
 }
 

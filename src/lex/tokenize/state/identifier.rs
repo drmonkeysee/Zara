@@ -1,4 +1,4 @@
-use super::{ComplexKind, Decimal, DecimalNumber, Exactness, FreeText, FreeTextPolicy, Radix};
+use super::{ComplexKind, DecimalNumber, Exactness, FreeText, FreeTextPolicy};
 use crate::{
     lex::{
         token::{TokenErrorKind, TokenKind},
@@ -8,7 +8,7 @@ use crate::{
         },
     },
     literal::Literal,
-    number::Number,
+    number::{Decimal, Number, Radix},
 };
 
 pub(in crate::lex::tokenize) struct Identifier<'me, 'str> {

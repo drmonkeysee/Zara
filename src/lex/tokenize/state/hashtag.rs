@@ -1,10 +1,11 @@
-use super::{Binary, Exactness, HexParse, Hexadecimal, Identifier, Octal, Radix, RadixNumber};
+use super::{Exactness, HexParse, Identifier, RadixNumber};
 use crate::{
     lex::{
         token::{TokenErrorKind, TokenKind},
         tokenize::{extract::TokenExtractResult, scan::Scanner},
     },
     literal::Literal,
+    number::{Binary, Hexadecimal, Octal, Radix},
 };
 use std::fmt::Debug;
 
