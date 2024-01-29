@@ -500,7 +500,7 @@ impl Classifier for DecimalClassifier {
 
     // NOTE: decimal classifier always classifies at least one digit
     fn is_empty(&self) -> bool {
-        // NOTE: this should never happen due to the above invariant
+        // NOTE: this assert should never fail due to the above invariant
         debug_assert!(match self {
             Self::Flt(f) => !(f.0.integral.magnitude.is_empty() && f.0.fraction.is_empty()),
             Self::Int(i) => !i.0.magnitude.is_empty(),
