@@ -5,6 +5,8 @@ use std::{
     cmp::Ordering,
     error::Error,
     fmt::{self, Display, Formatter, Write},
+    num::{IntErrorKind, ParseFloatError, ParseIntError},
+    ops::Range,
     result::Result,
 };
 
@@ -322,6 +324,11 @@ pub(crate) trait Radix {
     const NAME: &'static str;
 
     fn is_digit(&self, ch: char) -> bool;
+
+    fn into_inexact<R: Radix>(&self, spec: &IntSpec<R>, input: &str) -> Result<Real, NumericError> {
+        // NOTE: always parse exact magnitude first to account for radix
+        Ok(parse_signed(spec, input)?.into_inexact())
+    }
 }
 
 #[derive(Clone, Copy, Debug, Default)]
@@ -360,6 +367,14 @@ impl Radix for Decimal {
     fn is_digit(&self, ch: char) -> bool {
         ch.is_ascii_digit()
     }
+
+    fn into_inexact<R>(&self, spec: &IntSpec<R>, input: &str) -> Result<Real, NumericError> {
+        input
+            .get(..spec.magnitude.end)
+            .map_or(Err(NumericError::ParseFailure), |fstr| {
+                Ok(fstr.parse::<f64>()?.into())
+            })
+    }
 }
 
 #[derive(Clone, Copy, Debug, Default)]
@@ -374,20 +389,132 @@ impl Radix for Hexadecimal {
     }
 }
 
+#[derive(Clone, Debug, Default)]
+pub(crate) struct IntSpec<R> {
+    pub(crate) magnitude: Range<usize>,
+    pub(crate) radix: R,
+    pub(crate) sign: Option<Sign>,
+}
+
+impl<R: Radix> IntSpec<R> {
+    pub(crate) fn into_exact(&self, input: &str) -> Result<Integer, NumericError> {
+        parse_signed(self, input)
+    }
+
+    pub(crate) fn into_inexact(&self, input: &str) -> Result<Real, NumericError> {
+        self.radix.into_inexact(self, input)
+    }
+}
+
+#[derive(Clone, Debug, Default)]
+pub(crate) struct FloatSpec {
+    pub(crate) fraction: Range<usize>,
+    pub(crate) integral: IntSpec<Decimal>,
+}
+
+impl FloatSpec {
+    pub(crate) fn into_exact(&self, input: &str) -> Result<Real, NumericError> {
+        self.into_exact_with_exponent(input, 0)
+    }
+
+    pub(crate) fn into_inexact(&self, input: &str) -> Result<Real, NumericError> {
+        let end = if !self.fraction.is_empty() {
+            self.fraction.end
+        } else {
+            self.integral.magnitude.end
+        };
+        parse_float_to(end, input)
+    }
+
+    fn into_exact_with_exponent(&self, input: &str, exponent: i32) -> Result<Real, NumericError> {
+        let mut buf = String::new();
+        let mut num = IntSpec::<Decimal>::default();
+        if self.integral.sign.is_some() {
+            buf += input.get(0..1).unwrap_or_default();
+            num.sign = self.integral.sign;
+            num.magnitude = 1..1;
+        }
+        buf += input
+            .get(self.integral.magnitude.clone())
+            .unwrap_or_default();
+        let frac = input.get(self.fraction.clone()).unwrap_or_default();
+        buf += frac;
+        let scale = exponent - i32::try_from(frac.len()).unwrap_or_default();
+        let adjustment = std::iter::repeat('0')
+            .take(scale.abs().try_into().unwrap_or_default())
+            .collect::<String>();
+        if scale < 0 {
+            num.magnitude.end = buf.len();
+            let adjustment = format!("1{adjustment}",);
+            let denom = IntSpec::<Decimal> {
+                magnitude: 0..adjustment.len(),
+                ..Default::default()
+            };
+            Real::reduce(num.into_exact(&buf)?, denom.into_exact(&adjustment)?)
+        } else {
+            buf += &adjustment;
+            num.magnitude.end = buf.len();
+            Ok(num.into_exact(&buf)?.into())
+        }
+    }
+}
+
+#[derive(Clone, Debug, Default)]
+pub(crate) struct ExponentSpec {
+    pub(crate) exponent: Range<usize>,
+    pub(crate) significand: FloatSpec,
+}
+
+impl ExponentSpec {
+    pub(crate) fn into_exact(&self, input: &str) -> Result<Real, NumericError> {
+        let exponent: i32 = input
+            .get(self.exponent.clone())
+            .unwrap_or_default()
+            .parse()
+            .map_err(|err: ParseIntError| match err.kind() {
+                IntErrorKind::PosOverflow | IntErrorKind::NegOverflow => {
+                    NumericError::ParseExponentOutOfRange
+                }
+                _ => NumericError::ParseExponentMalformed,
+            })?;
+        self.significand.into_exact_with_exponent(input, exponent)
+    }
+
+    pub(crate) fn into_inexact(&self, input: &str) -> Result<Real, NumericError> {
+        parse_float_to(self.exponent.end, input)
+    }
+}
+
 #[derive(Debug)]
 pub(crate) enum NumericError {
     DivideByZero,
+    ParseExponentOutOfRange,
+    ParseExponentMalformed,
+    ParseFailure,
+    Unimplemented(String),
 }
 
 impl Display for NumericError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
             Self::DivideByZero => f.write_str("divide by zero"),
+            Self::ParseExponentOutOfRange => {
+                write!(f, "exponent out of range: [{}, {}]", i32::MIN, i32::MAX)
+            }
+            Self::ParseExponentMalformed => f.write_str("exponent parse failure"),
+            Self::ParseFailure => f.write_str("number parse failure"),
+            Self::Unimplemented(s) => write!(f, "unimplemented number parse: '{s}'"),
         }
     }
 }
 
 impl Error for NumericError {}
+
+impl From<ParseFloatError> for NumericError {
+    fn from(_value: ParseFloatError) -> Self {
+        Self::ParseFailure
+    }
+}
 
 pub(crate) struct Datum<'a>(&'a Number);
 
@@ -533,4 +660,44 @@ fn gcd_euclidean(mut a: u64, mut b: u64) -> u64 {
         a = t;
     }
     a
+}
+
+fn parse_signed<R: Radix>(spec: &IntSpec<R>, input: &str) -> Result<Integer, NumericError> {
+    input
+        .get(..spec.magnitude.end)
+        .map_or(Err(NumericError::ParseFailure), |signed_num| {
+            i64::from_str_radix(signed_num, R::BASE).map_or_else(
+                |_| parse_sign_magnitude(spec, signed_num),
+                |val| Ok(val.into()),
+            )
+        })
+}
+
+fn parse_sign_magnitude<R: Radix>(spec: &IntSpec<R>, input: &str) -> Result<Integer, NumericError> {
+    if let Some(mag) = input.get(spec.magnitude.start..) {
+        u64::from_str_radix(mag, R::BASE).map_or_else(
+            |_| parse_multi_precision(spec, input),
+            |val| {
+                let sign_mag = (spec.sign.unwrap_or(Sign::Positive), val);
+                Ok(sign_mag.into())
+            },
+        )
+    } else {
+        Err(NumericError::ParseFailure)
+    }
+}
+
+fn parse_multi_precision<R: Radix>(
+    spec: &IntSpec<R>,
+    input: &str,
+) -> Result<Integer, NumericError> {
+    Err(NumericError::Unimplemented(input.to_owned()))
+}
+
+fn parse_float_to(end: usize, input: &str) -> Result<Real, NumericError> {
+    input
+        .get(..end)
+        .map_or(Err(NumericError::ParseFailure), |fstr| {
+            Ok(fstr.parse::<f64>()?.into())
+        })
 }

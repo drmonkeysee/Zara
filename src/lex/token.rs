@@ -5,7 +5,6 @@ use crate::{
 use std::{
     error::Error,
     fmt::{self, Display, Formatter},
-    num::{ParseFloatError, ParseIntError},
     ops::Range,
 };
 
@@ -172,7 +171,6 @@ pub(super) enum TokenErrorKind {
     StringUnterminatedHex { at: usize },
     HashInvalid,
     HashUnterminated,
-    Unimplemented(String),
 }
 
 impl TokenErrorKind {
@@ -279,7 +277,6 @@ impl Display for TokenErrorKind {
             Self::RadixExpected { .. } => f.write_str("expected radix prefix, one of: #b #o #d #x"),
             Self::RationalInvalid => f.write_str("invalid rational literal"),
             Self::StringUnterminated => f.write_str("unterminated string-literal"),
-            Self::Unimplemented(s) => write!(f, "unimplemented tokenization: '{s}'"),
         }
     }
 }
@@ -295,18 +292,6 @@ impl From<TokenContinuation> for TokenErrorKind {
                 Self::StringUnterminated
             }
         }
-    }
-}
-
-impl From<ParseFloatError> for TokenErrorKind {
-    fn from(_value: ParseFloatError) -> Self {
-        Self::NumberInvalid
-    }
-}
-
-impl From<ParseIntError> for TokenErrorKind {
-    fn from(_value: ParseIntError) -> Self {
-        Self::NumberInvalid
     }
 }
 
@@ -927,16 +912,6 @@ mod tests {
             };
 
             assert_eq!(err.to_string(), "unterminated #-literal");
-        }
-
-        #[test]
-        fn display_unimplemented() {
-            let err = TokenError {
-                kind: TokenErrorKind::Unimplemented("foobar".to_owned()),
-                span: 0..1,
-            };
-
-            assert_eq!(err.to_string(), "unimplemented tokenization: 'foobar'");
         }
 
         #[test]

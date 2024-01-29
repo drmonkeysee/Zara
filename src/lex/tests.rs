@@ -1265,6 +1265,7 @@ mod result {
 mod error {
     use self::token::TokenErrorKind;
     use super::*;
+    use crate::number::NumericError;
 
     #[test]
     fn display_empty_error() {
@@ -1302,7 +1303,7 @@ mod error {
     fn display_single_error() {
         let err = LexerError(vec![LineFailure::Tokenize(TokenErrorLine(
             vec![TokenError {
-                kind: TokenErrorKind::Unimplemented("myerr".to_owned()),
+                kind: TokenErrorKind::NumericError(NumericError::Unimplemented("myerr".to_owned())),
                 span: 5..7,
             }],
             make_textline(),
@@ -1313,7 +1314,7 @@ mod error {
             "mylib:1 (lib/mylib.scm)\n\
                 \tline of source code\n\
                 \t     ^^\n\
-                6: unimplemented tokenization: 'myerr'\n"
+                6: numeric error: unimplemented number parse: 'myerr'\n"
         );
     }
 
@@ -1321,7 +1322,7 @@ mod error {
     fn display_single_error_at_beginning_of_line() {
         let err = LexerError(vec![LineFailure::Tokenize(TokenErrorLine(
             vec![TokenError {
-                kind: TokenErrorKind::Unimplemented("myerr".to_owned()),
+                kind: TokenErrorKind::NumericError(NumericError::Unimplemented("myerr".to_owned())),
                 span: 0..4,
             }],
             make_textline(),
@@ -1332,7 +1333,7 @@ mod error {
             "mylib:1 (lib/mylib.scm)\n\
                 \tline of source code\n\
                 \t^^^^\n\
-                1: unimplemented tokenization: 'myerr'\n"
+                1: numeric error: unimplemented number parse: 'myerr'\n"
         );
     }
 
@@ -1341,7 +1342,9 @@ mod error {
         let err = LexerError(vec![LineFailure::Tokenize(TokenErrorLine(
             vec![
                 TokenError {
-                    kind: TokenErrorKind::Unimplemented("myerr".to_owned()),
+                    kind: TokenErrorKind::NumericError(NumericError::Unimplemented(
+                        "myerr".to_owned(),
+                    )),
                     span: 5..7,
                 },
                 TokenError {
@@ -1357,7 +1360,7 @@ mod error {
             "mylib:1 (lib/mylib.scm)\n\
                 \tline of source code\n\
                 \t     ^^        ^^^^\n\
-                6: unimplemented tokenization: 'myerr'\n\
+                6: numeric error: unimplemented number parse: 'myerr'\n\
                 16: expected character literal\n"
         );
     }
@@ -1366,7 +1369,7 @@ mod error {
     fn display_single_error_no_filename() {
         let err = LexerError(vec![LineFailure::Tokenize(TokenErrorLine(
             vec![TokenError {
-                kind: TokenErrorKind::Unimplemented("myerr".to_owned()),
+                kind: TokenErrorKind::NumericError(NumericError::Unimplemented("myerr".to_owned())),
                 span: 5..7,
             }],
             TextLine {
@@ -1385,7 +1388,7 @@ mod error {
             "mylib:1\n\
                 \tline of source code\n\
                 \t     ^^\n\
-                6: unimplemented tokenization: 'myerr'\n"
+                6: numeric error: unimplemented number parse: 'myerr'\n"
         );
     }
 
@@ -1393,7 +1396,7 @@ mod error {
     fn display_single_error_invalid_span() {
         let err = LexerError(vec![LineFailure::Tokenize(TokenErrorLine(
             vec![TokenError {
-                kind: TokenErrorKind::Unimplemented("myerr".to_owned()),
+                kind: TokenErrorKind::NumericError(NumericError::Unimplemented("myerr".to_owned())),
                 span: 5..2,
             }],
             make_textline(),
@@ -1404,7 +1407,7 @@ mod error {
             "mylib:1 (lib/mylib.scm)\n\
                 \tline of source code\n\
                 \t\n\
-                6: unimplemented tokenization: 'myerr'\n"
+                6: numeric error: unimplemented number parse: 'myerr'\n"
         );
     }
 
@@ -1412,7 +1415,7 @@ mod error {
     fn display_single_error_span_out_of_range() {
         let err = LexerError(vec![LineFailure::Tokenize(TokenErrorLine(
             vec![TokenError {
-                kind: TokenErrorKind::Unimplemented("myerr".to_owned()),
+                kind: TokenErrorKind::NumericError(NumericError::Unimplemented("myerr".to_owned())),
                 span: 15..25,
             }],
             make_textline(),
@@ -1423,7 +1426,7 @@ mod error {
             "mylib:1 (lib/mylib.scm)\n\
                 \tline of source code\n\
                 \t               ^^^^^^^^^^\n\
-                16: unimplemented tokenization: 'myerr'\n"
+                16: numeric error: unimplemented number parse: 'myerr'\n"
         );
     }
 
