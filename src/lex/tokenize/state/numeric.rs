@@ -206,10 +206,7 @@ struct ConditionHandler<'me, 'str, C> {
 }
 
 impl<'me, 'str, C: Classifier> ConditionHandler<'me, 'str, C> {
-    fn resolve<R: Radix + Debug>(
-        mut self,
-        result: Result<BreakCondition<'str, R>, TokenErrorKind>,
-    ) -> TokenExtractResult {
+    fn resolve<R: Radix + Debug>(mut self, result: RadixBreak<'str, R>) -> TokenExtractResult {
         match result {
             Ok(cond) => {
                 match cond {
@@ -402,7 +399,8 @@ impl<'me, 'str, R: Radix + Clone + Debug + Default> Denominator<'me, 'str, R> {
 
 type DecimalControl<'str> =
     ControlFlow<Result<BreakCondition<'str, Decimal>, TokenErrorKind>, Option<DecimalClassifier>>;
-type RadixControl<'str, R> = ControlFlow<Result<BreakCondition<'str, R>, TokenErrorKind>>;
+type RadixBreak<'str, R> = Result<BreakCondition<'str, R>, TokenErrorKind>;
+type RadixControl<'str, R> = ControlFlow<RadixBreak<'str, R>>;
 type ParseResult = Result<Real, TokenErrorKind>;
 
 #[derive(Debug)]
