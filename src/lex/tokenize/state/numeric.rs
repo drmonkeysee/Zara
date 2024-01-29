@@ -766,10 +766,10 @@ impl Scientific {
             match exactness {
                 None | Some(Exactness::Inexact) => Ok(self.spec.into_inexact(input)?),
                 Some(Exactness::Exact) => match self.spec.into_exact(input) {
-                    Err(NumericError::ParseExponentOutOfRange) => {
-                        Err(TokenErrorKind::ExponentOutOfRange { at: self.e_at })
-                    }
-                    Err(NumericError::ParseExponentMalformed) => Err(self.malformed_exponent()),
+                    Err(
+                        err @ (NumericError::ParseExponentOutOfRange
+                        | NumericError::ParseExponentFailure),
+                    ) => Err(TokenErrorKind::NumericErrorAt { at: self.e_at, err }),
                     r @ _ => Ok(r?),
                 },
             }
@@ -782,7 +782,10 @@ impl Scientific {
     }
 
     fn malformed_exponent(&self) -> TokenErrorKind {
-        TokenErrorKind::NumberMalformedExponent { at: self.e_at }
+        TokenErrorKind::NumericErrorAt {
+            at: self.e_at,
+            err: NumericError::ParseExponentFailure,
+        }
     }
 }
 

@@ -145,7 +145,6 @@ pub(super) enum TokenErrorKind {
     DirectiveExpected,
     DirectiveInvalid,
     ExactnessExpected { at: usize },
-    ExponentOutOfRange { at: usize },
     IdentifierEscapeInvalid { at: usize, ch: char },
     IdentifierExpectedHex { at: usize },
     IdentifierInvalid(char),
@@ -158,9 +157,9 @@ pub(super) enum TokenErrorKind {
     NumberInvalid,
     NumberInvalidDecimalPoint { at: usize, radix: &'static str },
     NumberInvalidExponent { at: usize, radix: &'static str },
-    NumberMalformedExponent { at: usize },
     NumberUnexpectedDecimalPoint { at: usize },
     NumericError(NumericError),
+    NumericErrorAt { at: usize, err: NumericError },
     PolarInvalid,
     RadixExpected { at: usize },
     RationalInvalid,
@@ -195,15 +194,14 @@ impl TokenErrorKind {
     pub(super) fn sub_idx(&self) -> Option<usize> {
         match self {
             TokenErrorKind::ExactnessExpected { at }
-            | TokenErrorKind::ExponentOutOfRange { at }
             | TokenErrorKind::IdentifierEscapeInvalid { at, .. }
             | TokenErrorKind::IdentifierExpectedHex { at }
             | TokenErrorKind::IdentifierInvalidHex { at }
             | TokenErrorKind::IdentifierUnterminatedHex { at }
             | TokenErrorKind::NumberInvalidDecimalPoint { at, .. }
             | TokenErrorKind::NumberInvalidExponent { at, .. }
-            | TokenErrorKind::NumberMalformedExponent { at, .. }
             | TokenErrorKind::NumberUnexpectedDecimalPoint { at }
+            | TokenErrorKind::NumericErrorAt { at, .. }
             | TokenErrorKind::RadixExpected { at }
             | TokenErrorKind::StringEscapeInvalid { at, .. }
             | TokenErrorKind::StringExpectedHex { at }
@@ -233,12 +231,6 @@ impl Display for TokenErrorKind {
             Self::ExactnessExpected { .. } => {
                 f.write_str("expected exactness prefix, one of: #e #i")
             }
-            Self::ExponentOutOfRange { .. } => write!(
-                f,
-                "exact exponent out of supported range: [{}, {}]",
-                i32::MIN,
-                i32::MAX
-            ),
             Self::HashInvalid => f.write_str("invalid #-literal"),
             Self::HashUnterminated => f.write_str("unterminated #-literal"),
             Self::IdentifierInvalid(ch) => write!(f, "invalid identifier character: {ch}"),
@@ -265,14 +257,10 @@ impl Display for TokenErrorKind {
             Self::NumberInvalidExponent { radix, .. } => {
                 write!(f, "{radix} radix does not support scientific notation")
             }
-            Self::NumberMalformedExponent { .. } => {
-                write!(
-                    f,
-                    "malformed exponent: expected decimal integer with optional sign"
-                )
-            }
             Self::NumberUnexpectedDecimalPoint { .. } => f.write_str("unexpected decimal point"),
-            Self::NumericError(err) => write!(f, "numeric error: {err}"),
+            Self::NumericError(err) | Self::NumericErrorAt { err, .. } => {
+                write!(f, "numeric error - {err}")
+            }
             Self::PolarInvalid => f.write_str("invalid polar literal"),
             Self::RadixExpected { .. } => f.write_str("expected radix prefix, one of: #b #o #d #x"),
             Self::RationalInvalid => f.write_str("invalid rational literal"),
@@ -1001,7 +989,6 @@ mod tests {
                     at: 3,
                     radix: "foo",
                 },
-                TokenErrorKind::NumberMalformedExponent { at: 3 },
                 TokenErrorKind::NumberUnexpectedDecimalPoint { at: 3 },
             ];
             for case in cases {
@@ -1102,19 +1089,6 @@ mod tests {
         }
 
         #[test]
-        fn display_number_malformed_exponent() {
-            let err = TokenError {
-                kind: TokenErrorKind::NumberMalformedExponent { at: 1 },
-                span: 0..1,
-            };
-
-            assert_eq!(
-                err.to_string(),
-                "malformed exponent: expected decimal integer with optional sign"
-            );
-        }
-
-        #[test]
         fn display_number_unexpected_decimal() {
             let err = TokenError {
                 kind: TokenErrorKind::NumberUnexpectedDecimalPoint { at: 1 },
@@ -1181,7 +1155,7 @@ mod tests {
                 span: 0..1,
             };
 
-            assert_eq!(err.to_string(), "numeric error: divide by zero");
+            assert_eq!(err.to_string(), "numeric error - divide by zero");
         }
 
         #[test]
@@ -1204,19 +1178,6 @@ mod tests {
             assert_eq!(
                 err.to_string(),
                 "expected radix prefix, one of: #b #o #d #x"
-            );
-        }
-
-        #[test]
-        fn display_exponent_out_of_range() {
-            let err = TokenError {
-                kind: TokenErrorKind::ExponentOutOfRange { at: 0 },
-                span: 0..1,
-            };
-
-            assert_eq!(
-                err.to_string(),
-                "exact exponent out of supported range: [-2147483648, 2147483647]"
             );
         }
     }

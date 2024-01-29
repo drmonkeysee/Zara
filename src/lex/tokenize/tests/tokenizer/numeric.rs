@@ -1,6 +1,6 @@
 use super::*;
 use crate::{
-    number::{Number, Real},
+    number::{Number, NumericError, Real},
     testutil::{extract_or_fail, ok_or_fail},
 };
 
@@ -565,7 +565,6 @@ mod integer {
 
 mod rational {
     use super::*;
-    use crate::number::NumericError;
 
     #[test]
     fn simple() {
@@ -2455,7 +2454,10 @@ mod float {
             TokenExtract {
                 start: 5,
                 end: 6,
-                result: Err(TokenErrorKind::NumberMalformedExponent { at: 5 }),
+                result: Err(TokenErrorKind::NumericErrorAt {
+                    at: 5,
+                    err: NumericError::ParseExponentFailure
+                }),
             }
         ));
     }
@@ -2477,7 +2479,10 @@ mod float {
             TokenExtract {
                 start: 1,
                 end: 2,
-                result: Err(TokenErrorKind::NumberMalformedExponent { at: 1 }),
+                result: Err(TokenErrorKind::NumericErrorAt {
+                    at: 1,
+                    err: NumericError::ParseExponentFailure
+                }),
             }
         ));
     }
@@ -2499,7 +2504,10 @@ mod float {
             TokenExtract {
                 start: 5,
                 end: 7,
-                result: Err(TokenErrorKind::NumberMalformedExponent { at: 5 }),
+                result: Err(TokenErrorKind::NumericErrorAt {
+                    at: 5,
+                    err: NumericError::ParseExponentFailure
+                }),
             }
         ));
     }
@@ -2521,7 +2529,10 @@ mod float {
             TokenExtract {
                 start: 1,
                 end: 3,
-                result: Err(TokenErrorKind::NumberMalformedExponent { at: 1 }),
+                result: Err(TokenErrorKind::NumericErrorAt {
+                    at: 1,
+                    err: NumericError::ParseExponentFailure
+                }),
             }
         ));
     }
@@ -2543,7 +2554,10 @@ mod float {
             TokenExtract {
                 start: 5,
                 end: 9,
-                result: Err(TokenErrorKind::NumberMalformedExponent { at: 5 }),
+                result: Err(TokenErrorKind::NumericErrorAt {
+                    at: 5,
+                    err: NumericError::ParseExponentFailure
+                }),
             }
         ));
     }
@@ -2565,7 +2579,10 @@ mod float {
             TokenExtract {
                 start: 5,
                 end: 8,
-                result: Err(TokenErrorKind::NumberMalformedExponent { at: 5 }),
+                result: Err(TokenErrorKind::NumericErrorAt {
+                    at: 5,
+                    err: NumericError::ParseExponentFailure
+                }),
             }
         ));
     }
@@ -2589,7 +2606,10 @@ mod float {
                 TokenExtract {
                     start: 5,
                     end,
-                    result: Err(TokenErrorKind::NumberMalformedExponent { at: 5 }),
+                    result: Err(TokenErrorKind::NumericErrorAt {
+                        at: 5,
+                        err: NumericError::ParseExponentFailure
+                    }),
                 } if end == case.len()
             ));
         }
@@ -2616,7 +2636,10 @@ mod float {
                 TokenExtract {
                     start: 5,
                     end,
-                    result: Err(TokenErrorKind::ExponentOutOfRange{ at: 5 }),
+                    result: Err(TokenErrorKind::NumericErrorAt {
+                        at: 5,
+                        err: NumericError::ParseExponentOutOfRange
+                    }),
                 } if end == input.len()
             ));
         }
@@ -3278,7 +3301,10 @@ mod imaginary {
             TokenExtract {
                 start: 4,
                 end: 6,
-                result: Err(TokenErrorKind::NumberMalformedExponent { at: 4 }),
+                result: Err(TokenErrorKind::NumericErrorAt {
+                    at: 4,
+                    err: NumericError::ParseExponentFailure
+                }),
             }
         ));
     }

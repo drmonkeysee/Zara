@@ -1281,7 +1281,7 @@ mod error {
 
         assert_eq!(
             err.display_message().to_string(),
-            "foo:3\n\treadline failure: OH NO!\n"
+            "foo:3\n\treadline failure - OH NO!\n"
         );
     }
 
@@ -1314,7 +1314,7 @@ mod error {
             "mylib:1 (lib/mylib.scm)\n\
                 \tline of source code\n\
                 \t     ^^\n\
-                6: numeric error: unimplemented number parse: 'myerr'\n"
+                6: numeric error - unimplemented number parse: 'myerr'\n"
         );
     }
 
@@ -1333,7 +1333,7 @@ mod error {
             "mylib:1 (lib/mylib.scm)\n\
                 \tline of source code\n\
                 \t^^^^\n\
-                1: numeric error: unimplemented number parse: 'myerr'\n"
+                1: numeric error - unimplemented number parse: 'myerr'\n"
         );
     }
 
@@ -1360,7 +1360,7 @@ mod error {
             "mylib:1 (lib/mylib.scm)\n\
                 \tline of source code\n\
                 \t     ^^        ^^^^\n\
-                6: numeric error: unimplemented number parse: 'myerr'\n\
+                6: numeric error - unimplemented number parse: 'myerr'\n\
                 16: expected character literal\n"
         );
     }
@@ -1388,7 +1388,7 @@ mod error {
             "mylib:1\n\
                 \tline of source code\n\
                 \t     ^^\n\
-                6: numeric error: unimplemented number parse: 'myerr'\n"
+                6: numeric error - unimplemented number parse: 'myerr'\n"
         );
     }
 
@@ -1407,7 +1407,7 @@ mod error {
             "mylib:1 (lib/mylib.scm)\n\
                 \tline of source code\n\
                 \t\n\
-                6: numeric error: unimplemented number parse: 'myerr'\n"
+                6: numeric error - unimplemented number parse: 'myerr'\n"
         );
     }
 
@@ -1426,7 +1426,7 @@ mod error {
             "mylib:1 (lib/mylib.scm)\n\
                 \tline of source code\n\
                 \t               ^^^^^^^^^^\n\
-                16: numeric error: unimplemented number parse: 'myerr'\n"
+                16: numeric error - unimplemented number parse: 'myerr'\n"
         );
     }
 

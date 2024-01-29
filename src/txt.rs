@@ -84,7 +84,7 @@ impl TextError {
 impl Display for TextError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self.source() {
-            Some(err) => write!(f, "readline failure: {err}"),
+            Some(err) => write!(f, "readline failure - {err}"),
             None => f.write_str("unknown readline error"),
         }
     }
@@ -158,6 +158,6 @@ mod tests {
 
         let err = TextError::new(TextContext::named("foo"), 1, inner);
 
-        assert_eq!(err.to_string(), "readline failure: Mock error: 20");
+        assert_eq!(err.to_string(), "readline failure - Mock error: 20");
     }
 }

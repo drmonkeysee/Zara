@@ -464,6 +464,37 @@ mod error {
 
         assert_eq!(err.to_string(), "divide by zero");
     }
+
+    #[test]
+    fn display_exp_out_of_range() {
+        let err = NumericError::ParseExponentOutOfRange;
+
+        assert_eq!(
+            err.to_string(),
+            "exponent out of range: [-2147483648, 2147483647]"
+        );
+    }
+
+    #[test]
+    fn display_exp_failure() {
+        let err = NumericError::ParseExponentFailure;
+
+        assert_eq!(err.to_string(), "exponent parse failure");
+    }
+
+    #[test]
+    fn display_parse_failure() {
+        let err = NumericError::ParseFailure;
+
+        assert_eq!(err.to_string(), "number parse failure");
+    }
+
+    #[test]
+    fn display_unimplemented() {
+        let err = NumericError::Unimplemented("foo".to_owned());
+
+        assert_eq!(err.to_string(), "unimplemented number parse: 'foo'");
+    }
 }
 
 mod integer {

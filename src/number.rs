@@ -475,7 +475,7 @@ impl ExponentSpec {
                 IntErrorKind::PosOverflow | IntErrorKind::NegOverflow => {
                     NumericError::ParseExponentOutOfRange
                 }
-                _ => NumericError::ParseExponentMalformed,
+                _ => NumericError::ParseExponentFailure,
             })?;
         self.significand.into_exact_with_exponent(input, exponent)
     }
@@ -488,8 +488,8 @@ impl ExponentSpec {
 #[derive(Debug)]
 pub(crate) enum NumericError {
     DivideByZero,
+    ParseExponentFailure,
     ParseExponentOutOfRange,
-    ParseExponentMalformed,
     ParseFailure,
     Unimplemented(String),
 }
@@ -501,7 +501,7 @@ impl Display for NumericError {
             Self::ParseExponentOutOfRange => {
                 write!(f, "exponent out of range: [{}, {}]", i32::MIN, i32::MAX)
             }
-            Self::ParseExponentMalformed => f.write_str("exponent parse failure"),
+            Self::ParseExponentFailure => f.write_str("exponent parse failure"),
             Self::ParseFailure => f.write_str("number parse failure"),
             Self::Unimplemented(s) => write!(f, "unimplemented number parse: '{s}'"),
         }
