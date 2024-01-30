@@ -1,15 +1,15 @@
 mod extract;
+mod lexers;
 mod scan;
-mod state;
 #[cfg(test)]
 mod tests;
 
 use self::{
     extract::{TokenExtract, TokenExtractResult},
-    scan::{ScanItem, Scanner},
-    state::{
+    lexers::{
         BlockComment, Hashtag, Identifier, PeriodIdentifier, StringLiteral, VerbatimIdentifer,
     },
+    scan::{ScanItem, Scanner},
 };
 use super::token::{TokenContinuation, TokenKind, TokenResult};
 
