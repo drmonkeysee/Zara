@@ -9,12 +9,12 @@ pub type LineNumber = u64;
 pub type TextResult = Result<TextLine, TextError>;
 
 pub trait TextSource: Iterator<Item = TextResult> {
+    fn context(&self) -> Rc<TextContext>;
+    fn lineno(&self) -> LineNumber;
+
     fn can_continue(&self) -> bool {
         false
     }
-
-    fn context(&self) -> Rc<TextContext>;
-    fn lineno(&self) -> LineNumber;
 }
 
 #[derive(Debug)]
