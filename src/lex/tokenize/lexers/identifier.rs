@@ -39,7 +39,7 @@ impl<'me, 'str> Identifier<'me, 'str> {
         }
     }
 
-    pub(in crate::lex::tokenize) fn scan(&mut self) -> TokenExtractResult {
+    pub(in crate::lex::tokenize) fn scan(mut self) -> TokenExtractResult {
         let first = self.start.1;
         if first == '|' {
             VerbatimIdentifer::new(self.scan).scan()
@@ -203,7 +203,7 @@ impl<'me, 'str> PeriodIdentifier<'me, 'str> {
         me
     }
 
-    pub(in crate::lex::tokenize) fn scan(&mut self, next: char) -> TokenExtractResult {
+    pub(in crate::lex::tokenize) fn scan(mut self, next: char) -> TokenExtractResult {
         self.0.continue_peculiar(Some(next))
     }
 }
