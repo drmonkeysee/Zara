@@ -400,6 +400,10 @@ pub(crate) struct IntSpec<R> {
 }
 
 impl<R: Radix> IntSpec<R> {
+    pub(crate) fn is_empty(&self) -> bool {
+        self.magnitude.is_empty()
+    }
+
     pub(crate) fn into_exact(&self, input: &str) -> IntResult {
         parse_signed(self, input)
     }
@@ -411,25 +415,17 @@ impl<R: Radix> IntSpec<R> {
 
 #[derive(Clone, Debug, Default)]
 pub(crate) struct FloatSpec {
+    pub(crate) exponent: Range<usize>,
     pub(crate) fraction: Range<usize>,
     pub(crate) integral: IntSpec<Decimal>,
 }
 
 impl FloatSpec {
+    pub(crate) fn is_empty(&self) -> bool {
+        self.exponent.is_empty() && self.fraction.is_empty() && self.integral.is_empty()
+    }
+
     pub(crate) fn into_exact(&self, input: &str) -> RealResult {
-        self.into_exact_with_exponent(input, 0)
-    }
-
-    pub(crate) fn into_inexact(&self, input: &str) -> RealResult {
-        let end = if !self.fraction.is_empty() {
-            self.fraction.end
-        } else {
-            self.integral.magnitude.end
-        };
-        parse_float_to(end, input)
-    }
-
-    fn into_exact_with_exponent(&self, input: &str, exponent: i32) -> RealResult {
         let mut buf = String::new();
         let mut num = IntSpec::<Decimal>::default();
         if self.integral.sign.is_some() {
@@ -442,6 +438,7 @@ impl FloatSpec {
             .unwrap_or_default();
         let frac = input.get(self.fraction.clone()).unwrap_or_default();
         buf += frac;
+        let exponent = parse_exponent(input, self.exponent.clone())?;
         let scale = exponent - i32::try_from(frac.len()).unwrap_or_default();
         let adjustment = std::iter::repeat('0')
             .take(scale.abs().try_into().unwrap_or_default())
@@ -460,31 +457,20 @@ impl FloatSpec {
             Ok(num.into_exact(&buf)?.into())
         }
     }
-}
-
-#[derive(Clone, Debug, Default)]
-pub(crate) struct ExponentSpec {
-    pub(crate) exponent: Range<usize>,
-    pub(crate) significand: FloatSpec,
-}
-
-impl ExponentSpec {
-    pub(crate) fn into_exact(&self, input: &str) -> RealResult {
-        let exponent: i32 = input
-            .get(self.exponent.clone())
-            .unwrap_or_default()
-            .parse()
-            .map_err(|err: ParseIntError| match err.kind() {
-                IntErrorKind::PosOverflow | IntErrorKind::NegOverflow => {
-                    NumericError::ParseExponentOutOfRange
-                }
-                _ => NumericError::ParseExponentFailure,
-            })?;
-        self.significand.into_exact_with_exponent(input, exponent)
-    }
 
     pub(crate) fn into_inexact(&self, input: &str) -> RealResult {
-        parse_float_to(self.exponent.end, input)
+        let end = if !self.exponent.is_empty() {
+            self.exponent.end
+        } else if !self.fraction.is_empty() {
+            self.fraction.end
+        } else {
+            self.integral.magnitude.end
+        };
+        input
+            .get(..end)
+            .map_or(Err(NumericError::ParseFailure), |fstr| {
+                Ok(fstr.parse::<f64>()?.into())
+            })
     }
 }
 
@@ -694,10 +680,19 @@ fn parse_multi_precision<R: Radix>(spec: &IntSpec<R>, input: &str) -> IntResult 
     Err(NumericError::Unimplemented(input.to_owned()))
 }
 
-fn parse_float_to(end: usize, input: &str) -> RealResult {
-    input
-        .get(..end)
-        .map_or(Err(NumericError::ParseFailure), |fstr| {
-            Ok(fstr.parse::<f64>()?.into())
-        })
+fn parse_exponent(input: &str, range: Range<usize>) -> Result<i32, NumericError> {
+    if range.is_empty() {
+        Ok(0)
+    } else {
+        input
+            .get(range)
+            .unwrap_or_default()
+            .parse()
+            .map_err(|err: ParseIntError| match err.kind() {
+                IntErrorKind::PosOverflow | IntErrorKind::NegOverflow => {
+                    NumericError::ParseExponentOutOfRange
+                }
+                _ => NumericError::ParseExponentFailure,
+            })
+    }
 }

@@ -8,9 +8,7 @@ use crate::{
         },
     },
     literal::Literal,
-    number::{
-        Decimal, ExponentSpec, FloatSpec, IntSpec, Integer, Number, NumericError, Radix, Real, Sign,
-    },
+    number::{Decimal, FloatSpec, IntSpec, Integer, Number, NumericError, Radix, Real, Sign},
 };
 use std::{fmt::Debug, ops::ControlFlow};
 
@@ -86,6 +84,7 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
                     sign: Some(sign),
                     ..Default::default()
                 },
+                ..Default::default()
             })),
             exactness,
             scan,
@@ -492,22 +491,18 @@ impl Classifier for DecimalClassifier {
 
     fn get_sign(&self) -> Option<Sign> {
         match self {
-            Self::Flt(f) => f.0.integral.sign,
-            Self::Int(i) => i.0.sign,
-            Self::Sci(s) => s.spec.significand.integral.sign,
+            Self::Flt(Float(f)) => f.integral.sign,
+            Self::Int(DecimalInt(i)) => i.sign,
+            Self::Sci(Scientific { spec, .. }) => spec.integral.sign,
         }
     }
 
     // NOTE: decimal classifier always classifies at least one digit
     fn is_empty(&self) -> bool {
-        // NOTE: this assert should never fail due to the above invariant
         debug_assert!(match self {
-            Self::Flt(f) => !(f.0.integral.magnitude.is_empty() && f.0.fraction.is_empty()),
-            Self::Int(i) => !i.0.magnitude.is_empty(),
-            Self::Sci(s) =>
-                !(s.spec.significand.integral.magnitude.is_empty()
-                    && s.spec.significand.fraction.is_empty()
-                    && s.spec.exponent.is_empty()),
+            Self::Flt(Float(f)) => !f.is_empty(),
+            Self::Int(DecimalInt(i)) => !i.is_empty(),
+            Self::Sci(Scientific { spec, .. }) => !spec.is_empty(),
         });
         false
     }
@@ -537,7 +532,7 @@ impl<R: Radix + Clone + Debug + Default> Integral<R> {
         let (idx, ch) = item;
         match ch {
             '+' | '-' => {
-                if self.0.magnitude.is_empty() {
+                if self.0.is_empty() {
                     if self.0.sign.is_none() {
                         self.0.sign = Some(super::char_to_sign(ch));
                         self.0.magnitude = 1..1;
@@ -584,7 +579,7 @@ impl<R: Radix + Clone + Debug + Default> Classifier for Integral<R> {
     type Radix = R;
 
     fn parse(&self, input: &str, exactness: Option<Exactness>) -> ParseResult {
-        if self.0.magnitude.is_empty() {
+        if self.0.is_empty() {
             Err(TokenErrorKind::NumberExpected)
         } else {
             Ok(match exactness {
@@ -599,7 +594,7 @@ impl<R: Radix + Clone + Debug + Default> Classifier for Integral<R> {
     }
 
     fn is_empty(&self) -> bool {
-        self.0.magnitude.is_empty()
+        self.0.is_empty()
     }
 
     fn cartesian_scan(
@@ -631,6 +626,7 @@ impl DecimalInt {
             '.' => ControlFlow::Continue(Some(DecimalClassifier::Flt(Float(FloatSpec {
                 fraction: offset + 1..offset + 1,
                 integral: self.0.clone(),
+                ..Default::default()
             })))),
             '/' => ControlFlow::Break(Ok(BreakCondition::Fraction(self.0.clone()))),
             '@' => ControlFlow::Break(Ok(BreakCondition::Complex {
@@ -639,12 +635,10 @@ impl DecimalInt {
             })),
             'e' | 'E' => ControlFlow::Continue(Some(DecimalClassifier::Sci(Scientific {
                 e_at: idx,
-                spec: ExponentSpec {
+                spec: FloatSpec {
                     exponent: offset + 1..offset + 1,
-                    significand: FloatSpec {
-                        fraction: offset..offset,
-                        integral: self.0.clone(),
-                    },
+                    fraction: offset..offset,
+                    integral: self.0.clone(),
                 },
                 ..Default::default()
             }))),
@@ -658,7 +652,7 @@ impl DecimalInt {
     }
 
     fn parse(&self, input: &str, exactness: Option<Exactness>) -> ParseResult {
-        if self.0.magnitude.is_empty() {
+        if self.0.is_empty() {
             Err(TokenErrorKind::NumberExpected)
         } else {
             Ok(match exactness {
@@ -689,14 +683,15 @@ impl Float {
                 kind: ComplexKind::Polar,
                 start: item,
             })),
-            'e' | 'E' => ControlFlow::Continue(Some(DecimalClassifier::Sci(Scientific {
-                e_at: idx,
-                spec: ExponentSpec {
-                    exponent: offset + 1..offset + 1,
-                    significand: self.0.clone(),
-                },
-                ..Default::default()
-            }))),
+            'e' | 'E' => {
+                let mut spec = self.0.clone();
+                spec.exponent = offset + 1..offset + 1;
+                ControlFlow::Continue(Some(DecimalClassifier::Sci(Scientific {
+                    e_at: idx,
+                    spec,
+                    ..Default::default()
+                })))
+            }
             'i' | 'I' => ControlFlow::Break(Ok(BreakCondition::Imaginary)),
             _ if self.0.integral.radix.is_digit(ch) => {
                 self.0.fraction.end += 1;
@@ -718,7 +713,7 @@ impl Float {
 struct Scientific {
     e_at: usize,
     exponent_sign: Option<Sign>,
-    spec: ExponentSpec,
+    spec: FloatSpec,
 }
 
 impl Scientific {
@@ -749,7 +744,7 @@ impl Scientific {
             } else {
                 Ok(BreakCondition::Imaginary)
             }),
-            _ if self.spec.significand.integral.radix.is_digit(ch) => {
+            _ if self.spec.integral.radix.is_digit(ch) => {
                 self.spec.exponent.end += 1;
                 ControlFlow::Continue(None)
             }
