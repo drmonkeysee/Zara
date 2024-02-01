@@ -438,7 +438,7 @@ impl FloatSpec {
             .unwrap_or_default();
         let frac = input.get(self.fraction.clone()).unwrap_or_default();
         buf += frac;
-        let exponent = parse_exponent(input, self.exponent.clone())?;
+        let exponent = self.parse_exponent(input)?;
         let scale = exponent - i32::try_from(frac.len()).unwrap_or_default();
         let adjustment = std::iter::repeat('0')
             .take(scale.abs().try_into().unwrap_or_default())
@@ -471,6 +471,23 @@ impl FloatSpec {
             .map_or(Err(NumericError::ParseFailure), |fstr| {
                 Ok(fstr.parse::<f64>()?.into())
             })
+    }
+
+    fn parse_exponent(&self, input: &str) -> Result<i32, NumericError> {
+        if self.exponent.is_empty() {
+            Ok(0)
+        } else {
+            input
+                .get(self.exponent.clone())
+                .unwrap_or_default()
+                .parse()
+                .map_err(|err: ParseIntError| match err.kind() {
+                    IntErrorKind::PosOverflow | IntErrorKind::NegOverflow => {
+                        NumericError::ParseExponentOutOfRange
+                    }
+                    _ => NumericError::ParseExponentFailure,
+                })
+        }
     }
 }
 
@@ -678,21 +695,4 @@ fn parse_sign_magnitude<R: Radix>(spec: &IntSpec<R>, input: &str) -> IntResult {
 
 fn parse_multi_precision<R: Radix>(spec: &IntSpec<R>, input: &str) -> IntResult {
     Err(NumericError::Unimplemented(input.to_owned()))
-}
-
-fn parse_exponent(input: &str, range: Range<usize>) -> Result<i32, NumericError> {
-    if range.is_empty() {
-        Ok(0)
-    } else {
-        input
-            .get(range)
-            .unwrap_or_default()
-            .parse()
-            .map_err(|err: ParseIntError| match err.kind() {
-                IntErrorKind::PosOverflow | IntErrorKind::NegOverflow => {
-                    NumericError::ParseExponentOutOfRange
-                }
-                _ => NumericError::ParseExponentFailure,
-            })
-    }
 }
