@@ -106,6 +106,16 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
                 }
             }
         }
+        /*
+        let (props, parser) = self.classifier.commit(self.exactness, self.scan.lexeme())
+        ConditionHandler {
+            props,
+            parser,
+            scan: self.scan,
+            start: self.start,
+        }
+        .resolve(brk)
+        */
         ConditionHandler {
             classifier: &self.classifier,
             exactness: self.exactness,
@@ -448,6 +458,8 @@ trait Classifier {
         exactness: Option<Exactness>,
     ) -> TokenExtractResult;
     fn polar_scan(&self, scan: &mut Scanner) -> TokenExtractResult;
+    fn commit(self, input: &str, exactness: Option<Exactness>)
+    /*-> (impl ClassifierProps, impl NumericParser)*/;
 
     fn has_sign(&self) -> bool {
         self.get_sign().is_some()
@@ -459,6 +471,38 @@ trait Classifier {
     ) -> Denominator<'me, 'str, Self::Radix> {
         Denominator::<Self::Radix>::new(scan)
     }
+}
+
+trait ClassifierProps {
+    type Radix: Radix + Clone + Debug + Default;
+
+    fn get_sign(&self) -> Option<Sign>;
+    fn is_empty(&self) -> bool;
+    fn cartesian_scan(
+        &self,
+        scan: &mut Scanner,
+        start: ScanItem,
+        exactness: Option<Exactness>,
+    ) -> TokenExtractResult;
+    fn polar_scan(&self, scan: &mut Scanner) -> TokenExtractResult;
+
+    fn has_sign(&self) -> bool {
+        self.get_sign().is_some()
+    }
+
+    fn denominator_scanner<'me, 'str>(
+        &self,
+        scan: &'me mut Scanner<'str>,
+    ) -> Denominator<'me, 'str, Self::Radix> {
+        Denominator::<Self::Radix>::new(scan)
+    }
+}
+
+trait NumericParser {
+    type ExactResult;
+
+    fn parse(self) -> ParseResult;
+    fn exact_parse(self) -> Self::ExactResult;
 }
 
 #[derive(Debug)]
@@ -521,6 +565,12 @@ impl Classifier for DecimalClassifier {
             .map_or(Err(TokenErrorKind::PolarInvalid), |start| {
                 Identifier::new(scan, start).scan()
             })
+    }
+
+    fn commit(self, input: &str, exactness: Option<Exactness>)
+    /*-> (impl ClassifierProps, impl NumericParser)*/
+    {
+        todo!()
     }
 }
 
@@ -608,6 +658,12 @@ impl<R: Radix + Clone + Debug + Default> Classifier for Integral<R> {
 
     fn polar_scan(&self, scan: &mut Scanner) -> TokenExtractResult {
         RadixNumber::<R>::new(scan, Some(Exactness::Exact)).scan()
+    }
+
+    fn commit(self, input: &str, exactness: Option<Exactness>)
+    /*-> (impl ClassifierProps, impl NumericParser)*/
+    {
+        todo!()
     }
 }
 
