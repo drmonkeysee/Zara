@@ -679,7 +679,7 @@ impl<'str, R: Radix> ClassifierParser for RadixParser<'str, R> {
     }
 
     fn parse_int(self) -> IntParseResult {
-        exact_parse_intspec(self.spec, self.input)
+        Ok(self.spec.into_exact(self.input)?)
     }
 }
 
@@ -863,12 +863,8 @@ fn parse_intspec<R: Radix>(
         Err(TokenErrorKind::NumberExpected)
     } else {
         Ok(match exactness {
-            None | Some(Exactness::Exact) => exact_parse_intspec(spec, input)?.into(),
+            None | Some(Exactness::Exact) => spec.into_exact(input)?.into(),
             Some(Exactness::Inexact) => spec.into_inexact(input)?,
         })
     }
-}
-
-fn exact_parse_intspec<R: Radix>(spec: IntSpec<R>, input: &str) -> IntParseResult {
-    Ok(spec.into_exact(input)?)
 }
