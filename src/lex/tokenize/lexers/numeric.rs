@@ -226,7 +226,7 @@ impl<'me, 'str, P: ClassifierProps> ConditionProcessor<'me, 'str, P> {
                     }
                     BreakCondition::Fraction => match parser.parse_int() {
                         Ok(numerator) => self.scan_denominator(numerator),
-                        Err(err) => self.fail(err.into()),
+                        Err(err) => self.fail(err),
                     },
                     BreakCondition::Sub(SubCondition::Imaginary) => {
                         if let Some(item) = self.scan.next_if_not_delimiter() {
@@ -800,7 +800,7 @@ impl Scientific {
                         err @ (NumericError::ParseExponentOutOfRange
                         | NumericError::ParseExponentFailure),
                     ) => Err(TokenErrorKind::NumericErrorAt { at: self.e_at, err }),
-                    r @ _ => Ok(r?),
+                    r => Ok(r?),
                 },
             }
         }

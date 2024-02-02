@@ -328,7 +328,7 @@ pub(crate) trait Radix {
 
     fn is_digit(&self, ch: char) -> bool;
 
-    fn into_inexact<R: Radix>(&self, spec: &IntSpec<R>, input: &str) -> RealResult {
+    fn parse_inexact<R: Radix>(&self, spec: &IntSpec<R>, input: &str) -> RealResult {
         // NOTE: always parse exact magnitude first to account for radix
         Ok(parse_signed(spec, input)?.into_inexact())
     }
@@ -371,7 +371,7 @@ impl Radix for Decimal {
         ch.is_ascii_digit()
     }
 
-    fn into_inexact<R>(&self, spec: &IntSpec<R>, input: &str) -> RealResult {
+    fn parse_inexact<R>(&self, spec: &IntSpec<R>, input: &str) -> RealResult {
         input
             .get(..spec.magnitude.end)
             .map_or(Err(NumericError::ParseFailure), |fstr| {
@@ -404,12 +404,12 @@ impl<R: Radix> IntSpec<R> {
         self.magnitude.is_empty()
     }
 
-    pub(crate) fn into_exact(&self, input: &str) -> IntResult {
-        parse_signed(self, input)
+    pub(crate) fn into_exact(self, input: &str) -> IntResult {
+        parse_signed(&self, input)
     }
 
-    pub(crate) fn into_inexact(&self, input: &str) -> RealResult {
-        self.radix.into_inexact(self, input)
+    pub(crate) fn into_inexact(self, input: &str) -> RealResult {
+        self.radix.parse_inexact(&self, input)
     }
 }
 
@@ -425,7 +425,7 @@ impl FloatSpec {
         self.exponent.is_empty() && self.fraction.is_empty() && self.integral.is_empty()
     }
 
-    pub(crate) fn into_exact(&self, input: &str) -> RealResult {
+    pub(crate) fn into_exact(self, input: &str) -> RealResult {
         let mut buf = String::new();
         let mut num = IntSpec::<Decimal>::default();
         if self.integral.sign.is_some() {
@@ -440,9 +440,7 @@ impl FloatSpec {
         buf += frac;
         let exponent = self.parse_exponent(input)?;
         let scale = exponent - i32::try_from(frac.len()).unwrap_or_default();
-        let adjustment = std::iter::repeat('0')
-            .take(scale.abs().try_into().unwrap_or_default())
-            .collect::<String>();
+        let adjustment = "0".repeat(scale.abs().try_into().unwrap_or_default());
         if scale < 0 {
             num.magnitude.end = buf.len();
             let adjustment = format!("1{adjustment}",);
@@ -458,7 +456,7 @@ impl FloatSpec {
         }
     }
 
-    pub(crate) fn into_inexact(&self, input: &str) -> RealResult {
+    pub(crate) fn into_inexact(self, input: &str) -> RealResult {
         let end = if !self.exponent.is_empty() {
             self.exponent.end
         } else if !self.fraction.is_empty() {
