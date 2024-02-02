@@ -108,7 +108,7 @@ impl<'me, 'str> RealNumber<'me, 'str> {
         }
         let (props, parser) = self
             .classifier
-            .commit(self.exactness, self.scan.current_lexeme_at(self.start));
+            .commit(self.scan.current_lexeme_at(self.start), self.exactness);
         ConditionProcessor {
             props,
             scan: self.scan,
@@ -166,7 +166,7 @@ impl<'me, 'str, R: Radix + Default> RadixNumber<'me, 'str, R> {
         }
         let (props, parser) = self
             .classifier
-            .commit(self.exactness, self.scan.current_lexeme_at(self.start));
+            .commit(self.scan.current_lexeme_at(self.start), self.exactness);
         ConditionProcessor {
             props,
             scan: self.scan,
@@ -364,7 +364,7 @@ impl<'me, 'str> Denominator<'me, 'str> {
                 }
             }
         }
-        let (_, parser) = classifier.commit(None, self.get_lexeme());
+        let (_, parser) = classifier.commit(self.get_lexeme(), None);
         match brk {
             Ok(cond) => Ok((
                 match cond {
@@ -467,7 +467,7 @@ impl RealClassifier {
         }
     }
 
-    fn commit(self, exactness: Option<Exactness>, input: &str) -> (RealProps, RealParser) {
+    fn commit(self, input: &str, exactness: Option<Exactness>) -> (RealProps, RealParser) {
         (
             RealProps {
                 empty: self.is_empty(),
@@ -610,7 +610,7 @@ impl<R: Radix> Integral<R> {
         }
     }
 
-    fn commit(self, exactness: Option<Exactness>, input: &str) -> (RadixProps<R>, RadixParser<R>) {
+    fn commit(self, input: &str, exactness: Option<Exactness>) -> (RadixProps<R>, RadixParser<R>) {
         (
             RadixProps {
                 empty: self.0.is_empty(),
