@@ -474,7 +474,10 @@ impl RealClassifier {
                 exactness,
                 sign: self.get_sign(),
             },
-            RealParser { input, spec: self },
+            RealParser {
+                input,
+                classifier: self,
+            },
         )
     }
 
@@ -504,7 +507,7 @@ impl RealClassifier {
         false
     }
 
-    fn parse(&self, input: &str, exactness: Option<Exactness>) -> ParseResult {
+    fn parse(self, input: &str, exactness: Option<Exactness>) -> ParseResult {
         match self {
             Self::Flt(f) => f.parse(input, exactness),
             Self::Int(i) => i.parse(input, exactness),
@@ -548,16 +551,16 @@ impl ClassifierProps for RealProps {
 
 struct RealParser<'str> {
     input: &'str str,
-    spec: RealClassifier,
+    classifier: RealClassifier,
 }
 
 impl<'str> ClassifierParser for RealParser<'str> {
     fn parse(self, exactness: Option<Exactness>) -> ParseResult {
-        self.spec.parse(self.input, exactness)
+        self.classifier.parse(self.input, exactness)
     }
 
     fn parse_int(self) -> IntParseResult {
-        Ok(self.spec.into_int_spec().into_exact(self.input)?)
+        Ok(self.classifier.into_int_spec().into_exact(self.input)?)
     }
 }
 
@@ -613,12 +616,14 @@ impl<R: Radix> Integral<R> {
     fn commit(self, input: &str, exactness: Option<Exactness>) -> (RadixProps<R>, RadixParser<R>) {
         (
             RadixProps {
-                empty: self.0.is_empty(),
-                exactness,
-                sign: self.0.sign,
-                radix: PhantomData::<R>,
+                props: RealProps {
+                    empty: self.0.is_empty(),
+                    exactness,
+                    sign: self.0.sign,
+                },
+                radix: PhantomData,
             },
-            RadixParser::<R> {
+            RadixParser {
                 input,
                 spec: self.0,
             },
@@ -635,9 +640,7 @@ impl<R: Radix> Integral<R> {
 }
 
 struct RadixProps<R> {
-    empty: bool,
-    exactness: Option<Exactness>,
-    sign: Option<Sign>,
+    props: RealProps,
     radix: PhantomData<R>,
 }
 
@@ -645,15 +648,15 @@ impl<R: Radix + Default> ClassifierProps for RadixProps<R> {
     type Radix = R;
 
     fn get_sign(&self) -> Option<Sign> {
-        self.sign
+        self.props.sign
     }
 
     fn get_exactness(&self) -> Option<Exactness> {
-        self.exactness
+        self.props.exactness
     }
 
     fn is_empty(&self) -> bool {
-        self.empty
+        self.props.empty
     }
 
     fn cartesian_scan(&self, scan: &mut Scanner, start: ScanItem) -> TokenExtractResult {
@@ -672,18 +675,11 @@ struct RadixParser<'str, R> {
 
 impl<'str, R: Radix> ClassifierParser for RadixParser<'str, R> {
     fn parse(self, exactness: Option<Exactness>) -> ParseResult {
-        if self.spec.is_empty() {
-            Err(TokenErrorKind::NumberExpected)
-        } else {
-            Ok(match exactness {
-                None | Some(Exactness::Exact) => self.parse_int()?.into(),
-                Some(Exactness::Inexact) => self.spec.into_inexact(self.input)?,
-            })
-        }
+        parse_intspec(self.spec, self.input, exactness)
     }
 
     fn parse_int(self) -> IntParseResult {
-        Ok(self.spec.into_exact(self.input)?)
+        exact_parse_intspec(self.spec, self.input)
     }
 }
 
@@ -726,15 +722,8 @@ impl DecimalInt {
         }
     }
 
-    fn parse(&self, input: &str, exactness: Option<Exactness>) -> ParseResult {
-        if self.0.is_empty() {
-            Err(TokenErrorKind::NumberExpected)
-        } else {
-            Ok(match exactness {
-                None | Some(Exactness::Exact) => self.0.into_exact(input)?.into(),
-                Some(Exactness::Inexact) => self.0.into_inexact(input)?,
-            })
-        }
+    fn parse(self, input: &str, exactness: Option<Exactness>) -> ParseResult {
+        parse_intspec(self.0, input, exactness)
     }
 }
 
@@ -776,7 +765,7 @@ impl Float {
         }
     }
 
-    fn parse(&self, input: &str, exactness: Option<Exactness>) -> ParseResult {
+    fn parse(self, input: &str, exactness: Option<Exactness>) -> ParseResult {
         Ok(match exactness {
             None | Some(Exactness::Inexact) => self.0.into_inexact(input),
             Some(Exactness::Exact) => self.0.into_exact(input),
@@ -827,7 +816,7 @@ impl Scientific {
         }
     }
 
-    fn parse(&self, input: &str, exactness: Option<Exactness>) -> ParseResult {
+    fn parse(self, input: &str, exactness: Option<Exactness>) -> ParseResult {
         if self.no_e_value() {
             Err(self.malformed_exponent())
         } else {
@@ -863,4 +852,23 @@ fn real_to_token(r: impl Into<Real>, is_imaginary: bool) -> TokenKind {
     } else {
         TokenKind::Literal(Literal::Number(Number::real(r)))
     }
+}
+
+fn parse_intspec<R: Radix>(
+    spec: IntSpec<R>,
+    input: &str,
+    exactness: Option<Exactness>,
+) -> ParseResult {
+    if spec.is_empty() {
+        Err(TokenErrorKind::NumberExpected)
+    } else {
+        Ok(match exactness {
+            None | Some(Exactness::Exact) => exact_parse_intspec(spec, input)?.into(),
+            Some(Exactness::Inexact) => spec.into_inexact(input)?,
+        })
+    }
+}
+
+fn exact_parse_intspec<R: Radix>(spec: IntSpec<R>, input: &str) -> IntParseResult {
+    Ok(spec.into_exact(input)?)
 }
