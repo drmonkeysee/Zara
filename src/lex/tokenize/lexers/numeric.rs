@@ -577,10 +577,7 @@ impl<R: Radix> Integral<R> {
                         ControlFlow::Break(Err(TokenErrorKind::NumberInvalid))
                     }
                 } else {
-                    ControlFlow::Break(Ok(BreakCondition::Sub(SubCondition::Complex {
-                        kind: ComplexKind::Cartesian,
-                        start: item,
-                    })))
+                    ControlFlow::Break(Ok(break_complex(ComplexKind::Cartesian, item)))
                 }
             }
             '.' => ControlFlow::Break(Err(TokenErrorKind::NumberInvalidDecimalPoint {
@@ -588,11 +585,8 @@ impl<R: Radix> Integral<R> {
                 radix: R::NAME,
             })),
             '/' => ControlFlow::Break(Ok(BreakCondition::Fraction)),
-            '@' => ControlFlow::Break(Ok(BreakCondition::Sub(SubCondition::Complex {
-                kind: ComplexKind::Polar,
-                start: item,
-            }))),
-            'i' | 'I' => ControlFlow::Break(Ok(BreakCondition::Sub(SubCondition::Imaginary))),
+            '@' => ControlFlow::Break(Ok(break_complex(ComplexKind::Polar, item))),
+            'i' | 'I' => ControlFlow::Break(Ok(break_imaginary())),
             _ if self.0.radix.is_digit(ch) => {
                 self.0.magnitude.end += 1;
                 ControlFlow::Continue(())
@@ -687,20 +681,14 @@ impl DecimalInt {
         let (idx, ch) = item;
         let offset = self.0.magnitude.end;
         match ch {
-            '+' | '-' => ControlFlow::Break(Ok(BreakCondition::Sub(SubCondition::Complex {
-                kind: ComplexKind::Cartesian,
-                start: item,
-            }))),
+            '+' | '-' => ControlFlow::Break(Ok(break_complex(ComplexKind::Cartesian, item))),
             '.' => ControlFlow::Continue(Some(RealClassifier::Flt(Float(FloatSpec {
                 fraction: offset + 1..offset + 1,
                 integral: self.0.clone(),
                 ..Default::default()
             })))),
             '/' => ControlFlow::Break(Ok(BreakCondition::Fraction)),
-            '@' => ControlFlow::Break(Ok(BreakCondition::Sub(SubCondition::Complex {
-                kind: ComplexKind::Polar,
-                start: item,
-            }))),
+            '@' => ControlFlow::Break(Ok(break_complex(ComplexKind::Polar, item))),
             'e' | 'E' => ControlFlow::Continue(Some(RealClassifier::Sci(Scientific {
                 e_at: idx,
                 spec: FloatSpec {
@@ -710,7 +698,7 @@ impl DecimalInt {
                 },
                 ..Default::default()
             }))),
-            'i' | 'I' => ControlFlow::Break(Ok(BreakCondition::Sub(SubCondition::Imaginary))),
+            'i' | 'I' => ControlFlow::Break(Ok(break_imaginary())),
             _ if self.0.radix.is_digit(ch) => {
                 self.0.magnitude.end += 1;
                 ControlFlow::Continue(None)
@@ -732,18 +720,12 @@ impl Float {
         let (idx, ch) = item;
         let offset = self.0.fraction.end;
         match ch {
-            '+' | '-' => ControlFlow::Break(Ok(BreakCondition::Sub(SubCondition::Complex {
-                kind: ComplexKind::Cartesian,
-                start: item,
-            }))),
+            '+' | '-' => ControlFlow::Break(Ok(break_complex(ComplexKind::Cartesian, item))),
             '.' => ControlFlow::Break(Err(TokenErrorKind::NumberUnexpectedDecimalPoint {
                 at: idx,
             })),
             '/' => ControlFlow::Break(Err(TokenErrorKind::RationalInvalid)),
-            '@' => ControlFlow::Break(Ok(BreakCondition::Sub(SubCondition::Complex {
-                kind: ComplexKind::Polar,
-                start: item,
-            }))),
+            '@' => ControlFlow::Break(Ok(break_complex(ComplexKind::Polar, item))),
             'e' | 'E' => {
                 let mut spec = self.0.clone();
                 spec.exponent = offset + 1..offset + 1;
@@ -753,7 +735,7 @@ impl Float {
                     ..Default::default()
                 })))
             }
-            'i' | 'I' => ControlFlow::Break(Ok(BreakCondition::Sub(SubCondition::Imaginary))),
+            'i' | 'I' => ControlFlow::Break(Ok(break_imaginary())),
             _ if self.0.integral.radix.is_digit(ch) => {
                 self.0.fraction.end += 1;
                 ControlFlow::Continue(None)
@@ -789,21 +771,15 @@ impl Scientific {
                     self.spec.exponent.end += 1;
                     ControlFlow::Continue(None)
                 } else {
-                    ControlFlow::Break(Ok(BreakCondition::Sub(SubCondition::Complex {
-                        kind: ComplexKind::Cartesian,
-                        start: item,
-                    })))
+                    ControlFlow::Break(Ok(break_complex(ComplexKind::Cartesian, item)))
                 }
             }
             '/' => ControlFlow::Break(Err(TokenErrorKind::RationalInvalid)),
-            '@' => ControlFlow::Break(Ok(BreakCondition::Sub(SubCondition::Complex {
-                kind: ComplexKind::Polar,
-                start: item,
-            }))),
+            '@' => ControlFlow::Break(Ok(break_complex(ComplexKind::Polar, item))),
             'i' | 'I' => ControlFlow::Break(if self.no_e_value() {
                 Err(self.malformed_exponent())
             } else {
-                Ok(BreakCondition::Sub(SubCondition::Imaginary))
+                Ok(break_imaginary())
             }),
             _ if self.spec.integral.radix.is_digit(ch) => {
                 self.spec.exponent.end += 1;
@@ -864,4 +840,12 @@ fn parse_intspec<R: Radix>(
             Some(Exactness::Inexact) => spec.into_inexact(input)?,
         })
     }
+}
+
+fn break_imaginary<'str>() -> BreakCondition<'str> {
+    BreakCondition::Sub(SubCondition::Imaginary)
+}
+
+fn break_complex(kind: ComplexKind, start: ScanItem) -> BreakCondition<'_> {
+    BreakCondition::Sub(SubCondition::Complex { kind, start })
 }
