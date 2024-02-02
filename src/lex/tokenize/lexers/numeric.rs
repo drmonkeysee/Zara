@@ -12,22 +12,22 @@ use crate::{
 };
 use std::{fmt::Debug, ops::ControlFlow};
 
-pub(super) struct DecimalNumber<'me, 'str> {
-    classifier: DecimalClassifier,
+pub(super) struct RealNumber<'me, 'str> {
+    classifier: RealClassifier,
     exactness: Option<Exactness>,
     scan: &'me mut Scanner<'str>,
     start: usize,
 }
 
-// NOTE: these ctors are always called after one confirmed decimal digit has been scanned
-impl<'me, 'str> DecimalNumber<'me, 'str> {
+// NOTE: this lexer is only invoked after one confirmed digit has been scanned
+impl<'me, 'str> RealNumber<'me, 'str> {
     pub(super) fn new(
         scan: &'me mut Scanner<'str>,
         start: usize,
         exactness: Option<Exactness>,
     ) -> Self {
         Self {
-            classifier: DecimalClassifier::Int(DecimalInt(IntSpec {
+            classifier: RealClassifier::Int(DecimalInt(IntSpec {
                 magnitude: 0..1,
                 ..Default::default()
             })),
@@ -44,7 +44,7 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
         exactness: Option<Exactness>,
     ) -> Self {
         Self {
-            classifier: DecimalClassifier::Int(DecimalInt(IntSpec {
+            classifier: RealClassifier::Int(DecimalInt(IntSpec {
                 magnitude: 1..2,
                 sign: Some(sign),
                 ..Default::default()
@@ -61,7 +61,7 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
         exactness: Option<Exactness>,
     ) -> Self {
         Self {
-            classifier: DecimalClassifier::Flt(Float(FloatSpec {
+            classifier: RealClassifier::Flt(Float(FloatSpec {
                 fraction: 1..2,
                 ..Default::default()
             })),
@@ -78,7 +78,7 @@ impl<'me, 'str> DecimalNumber<'me, 'str> {
         exactness: Option<Exactness>,
     ) -> Self {
         Self {
-            classifier: DecimalClassifier::Flt(Float(FloatSpec {
+            classifier: RealClassifier::Flt(Float(FloatSpec {
                 fraction: 2..3,
                 integral: IntSpec {
                     sign: Some(sign),
@@ -406,8 +406,8 @@ impl<'me, 'str, R: Radix + Clone + Debug + Default> Denominator<'me, 'str, R> {
     }
 }
 
-type DecimalControl<'str> =
-    ControlFlow<Result<BreakCondition<'str, Decimal>, TokenErrorKind>, Option<DecimalClassifier>>;
+type RealControl<'str> =
+    ControlFlow<Result<BreakCondition<'str, Decimal>, TokenErrorKind>, Option<RealClassifier>>;
 type RadixBreak<'str, R> = Result<BreakCondition<'str, R>, TokenErrorKind>;
 type RadixControl<'str, R> = ControlFlow<RadixBreak<'str, R>>;
 type ParseResult = Result<Real, TokenErrorKind>;
@@ -506,14 +506,14 @@ trait NumericParser {
 }
 
 #[derive(Debug)]
-enum DecimalClassifier {
+enum RealClassifier {
     Flt(Float),
     Int(DecimalInt),
     Sci(Scientific),
 }
 
-impl DecimalClassifier {
-    fn classify<'str>(&mut self, item: ScanItem<'str>) -> DecimalControl<'str> {
+impl RealClassifier {
+    fn classify<'str>(&mut self, item: ScanItem<'str>) -> RealControl<'str> {
         match self {
             Self::Flt(f) => f.classify(item),
             Self::Int(i) => i.classify(item),
@@ -522,7 +522,7 @@ impl DecimalClassifier {
     }
 }
 
-impl Classifier for DecimalClassifier {
+impl Classifier for RealClassifier {
     type Radix = Decimal;
 
     fn parse(&self, input: &str, exactness: Option<Exactness>) -> ParseResult {
@@ -671,7 +671,7 @@ impl<R: Radix + Clone + Debug + Default> Classifier for Integral<R> {
 struct DecimalInt(IntSpec<Decimal>);
 
 impl DecimalInt {
-    fn classify<'str>(&mut self, item: ScanItem<'str>) -> DecimalControl<'str> {
+    fn classify<'str>(&mut self, item: ScanItem<'str>) -> RealControl<'str> {
         let (idx, ch) = item;
         let offset = self.0.magnitude.end;
         match ch {
@@ -679,7 +679,7 @@ impl DecimalInt {
                 kind: ComplexKind::Cartesian,
                 start: item,
             })),
-            '.' => ControlFlow::Continue(Some(DecimalClassifier::Flt(Float(FloatSpec {
+            '.' => ControlFlow::Continue(Some(RealClassifier::Flt(Float(FloatSpec {
                 fraction: offset + 1..offset + 1,
                 integral: self.0.clone(),
                 ..Default::default()
@@ -689,7 +689,7 @@ impl DecimalInt {
                 kind: ComplexKind::Polar,
                 start: item,
             })),
-            'e' | 'E' => ControlFlow::Continue(Some(DecimalClassifier::Sci(Scientific {
+            'e' | 'E' => ControlFlow::Continue(Some(RealClassifier::Sci(Scientific {
                 e_at: idx,
                 spec: FloatSpec {
                     exponent: offset + 1..offset + 1,
@@ -723,7 +723,7 @@ impl DecimalInt {
 struct Float(FloatSpec);
 
 impl Float {
-    fn classify<'str>(&mut self, item: ScanItem<'str>) -> DecimalControl<'str> {
+    fn classify<'str>(&mut self, item: ScanItem<'str>) -> RealControl<'str> {
         let (idx, ch) = item;
         let offset = self.0.fraction.end;
         match ch {
@@ -742,7 +742,7 @@ impl Float {
             'e' | 'E' => {
                 let mut spec = self.0.clone();
                 spec.exponent = offset + 1..offset + 1;
-                ControlFlow::Continue(Some(DecimalClassifier::Sci(Scientific {
+                ControlFlow::Continue(Some(RealClassifier::Sci(Scientific {
                     e_at: idx,
                     spec,
                     ..Default::default()
@@ -773,7 +773,7 @@ struct Scientific {
 }
 
 impl Scientific {
-    fn classify<'str>(&mut self, item: ScanItem<'str>) -> DecimalControl<'str> {
+    fn classify<'str>(&mut self, item: ScanItem<'str>) -> RealControl<'str> {
         let ch = item.1;
         match ch {
             '+' | '-' => {

@@ -3,7 +3,7 @@ mod identifier;
 mod numeric;
 mod string;
 
-use self::numeric::{DecimalNumber, RadixNumber};
+use self::numeric::{RadixNumber, RealNumber};
 // NOTE: re-export for parent module
 pub(super) use self::{
     hashtag::{BlockComment, Hashtag},

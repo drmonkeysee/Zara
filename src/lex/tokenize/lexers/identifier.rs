@@ -1,4 +1,4 @@
-use super::{ComplexKind, DecimalNumber, Exactness, FreeText, FreeTextPolicy};
+use super::{ComplexKind, Exactness, FreeText, FreeTextPolicy, RealNumber};
 use crate::{
     lex::{
         token::{TokenErrorKind, TokenKind},
@@ -44,7 +44,7 @@ impl<'me, 'str> Identifier<'me, 'str> {
         if first == '|' {
             VerbatimIdentifer::new(self.scan).scan()
         } else if Decimal.is_digit(first) {
-            DecimalNumber::new(self.scan, self.start.0, self.exactness).scan()
+            RealNumber::new(self.scan, self.start.0, self.exactness).scan()
         } else if is_peculiar_initial(first) {
             self.peculiar(first)
         } else if is_initial(first) {
@@ -84,10 +84,10 @@ impl<'me, 'str> Identifier<'me, 'str> {
                     PeculiarState::DefiniteIdentifier => self.standard(),
                     // CASE: .<digit>
                     PeculiarState::MaybeFloat => {
-                        DecimalNumber::try_float(self.scan, self.start.0, self.exactness).scan()
+                        RealNumber::try_float(self.scan, self.start.0, self.exactness).scan()
                     }
                     // CASE: +/-.<digit>
-                    PeculiarState::MaybeSignedFloat => DecimalNumber::try_signed_float(
+                    PeculiarState::MaybeSignedFloat => RealNumber::try_signed_float(
                         super::char_to_sign(self.start.1),
                         self.scan,
                         self.start.0,
@@ -95,7 +95,7 @@ impl<'me, 'str> Identifier<'me, 'str> {
                     )
                     .scan(),
                     // CASE: +/-<digit>
-                    PeculiarState::MaybeSignedNumber => DecimalNumber::try_signed_number(
+                    PeculiarState::MaybeSignedNumber => RealNumber::try_signed_number(
                         super::char_to_sign(self.start.1),
                         self.scan,
                         self.start.0,
