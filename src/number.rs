@@ -645,23 +645,15 @@ impl Display for ComplexImagDatum<'_> {
 }
 
 trait RadixPrivate {
-    fn parse_inexact<R: Radix>(spec: IntSpec<R>, input: &str) -> RealResult;
+    fn parse_inexact<R: Radix>(spec: IntSpec<R>, input: &str) -> RealResult {
+        // NOTE: always parse exact magnitude first to account for radix
+        Ok(parse_signed(&spec, input)?.into_inexact())
+    }
 }
 
-macro_rules! private_radix {
-    ($type:ty) => {
-        impl RadixPrivate for $type {
-            fn parse_inexact<R: Radix>(spec: IntSpec<R>, input: &str) -> RealResult {
-                // NOTE: always parse exact magnitude first to account for radix
-                Ok(parse_signed(&spec, input)?.into_inexact())
-            }
-        }
-    };
-}
-
-private_radix!(Binary);
-private_radix!(Octal);
-private_radix!(Hexadecimal);
+impl RadixPrivate for Binary {}
+impl RadixPrivate for Octal {}
+impl RadixPrivate for Hexadecimal {}
 
 impl RadixPrivate for Decimal {
     fn parse_inexact<R>(spec: IntSpec<R>, input: &str) -> RealResult {
