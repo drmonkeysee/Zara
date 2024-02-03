@@ -687,17 +687,17 @@ fn parse_signed<R: Radix>(spec: &IntSpec<R>, input: &str) -> IntResult {
 }
 
 fn parse_sign_magnitude<R: Radix>(spec: &IntSpec<R>, input: &str) -> IntResult {
-    if let Some(mag) = input.get(spec.magnitude.start..) {
-        u64::from_str_radix(mag, R::BASE).map_or_else(
-            |_| parse_multi_precision(spec, input),
-            |val| {
-                let sign_mag = (spec.sign.unwrap_or(Sign::Positive), val);
-                Ok(sign_mag.into())
-            },
-        )
-    } else {
-        Err(NumericError::ParseFailure)
-    }
+    input
+        .get(spec.magnitude.start..)
+        .map_or(Err(NumericError::ParseFailure), |mag| {
+            u64::from_str_radix(mag, R::BASE).map_or_else(
+                |_| parse_multi_precision(spec, input),
+                |val| {
+                    let sign_mag = (spec.sign.unwrap_or(Sign::Positive), val);
+                    Ok(sign_mag.into())
+                },
+            )
+        })
 }
 
 fn parse_multi_precision<R: Radix>(spec: &IntSpec<R>, input: &str) -> IntResult {
