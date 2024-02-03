@@ -328,9 +328,9 @@ pub(crate) trait Radix {
 
     fn is_digit(&self, ch: char) -> bool;
 
-    fn parse_inexact<R: Radix>(&self, spec: &IntSpec<R>, input: &str) -> RealResult {
+    fn parse_inexact<R: Radix>(spec: IntSpec<R>, input: &str) -> RealResult {
         // NOTE: always parse exact magnitude first to account for radix
-        Ok(parse_signed(spec, input)?.into_inexact())
+        Ok(parse_signed(&spec, input)?.into_inexact())
     }
 }
 
@@ -371,7 +371,7 @@ impl Radix for Decimal {
         ch.is_ascii_digit()
     }
 
-    fn parse_inexact<R>(&self, spec: &IntSpec<R>, input: &str) -> RealResult {
+    fn parse_inexact<R>(spec: IntSpec<R>, input: &str) -> RealResult {
         input
             .get(..spec.magnitude.end)
             .map_or(Err(NumericError::ParseFailure), |fstr| {
@@ -409,7 +409,7 @@ impl<R: Radix> IntSpec<R> {
     }
 
     pub(crate) fn into_inexact(self, input: &str) -> RealResult {
-        self.radix.parse_inexact(&self, input)
+        R::parse_inexact(self, input)
     }
 }
 
