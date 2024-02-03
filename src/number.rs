@@ -322,16 +322,12 @@ macro_rules! sign_from {
 sign_from!(i64);
 sign_from!(f64);
 
-pub(crate) trait Radix {
+#[allow(private_bounds)]
+pub(crate) trait Radix: RadixPrivate {
     const BASE: u32;
     const NAME: &'static str;
 
     fn is_digit(&self, ch: char) -> bool;
-
-    fn parse_inexact<R: Radix>(spec: IntSpec<R>, input: &str) -> RealResult {
-        // NOTE: always parse exact magnitude first to account for radix
-        Ok(parse_signed(&spec, input)?.into_inexact())
-    }
 }
 
 #[derive(Clone, Copy, Debug, Default)]
@@ -369,14 +365,6 @@ impl Radix for Decimal {
 
     fn is_digit(&self, ch: char) -> bool {
         ch.is_ascii_digit()
-    }
-
-    fn parse_inexact<R>(spec: IntSpec<R>, input: &str) -> RealResult {
-        input
-            .get(..spec.magnitude.end)
-            .map_or(Err(NumericError::ParseFailure), |fstr| {
-                Ok(fstr.parse::<f64>()?.into())
-            })
     }
 }
 
@@ -653,6 +641,35 @@ impl Display for ComplexImagDatum<'_> {
             }
         }
         write!(f, "{r:+}i")
+    }
+}
+
+trait RadixPrivate {
+    fn parse_inexact<R: Radix>(spec: IntSpec<R>, input: &str) -> RealResult;
+}
+
+macro_rules! private_radix {
+    ($type:ty) => {
+        impl RadixPrivate for $type {
+            fn parse_inexact<R: Radix>(spec: IntSpec<R>, input: &str) -> RealResult {
+                // NOTE: always parse exact magnitude first to account for radix
+                Ok(parse_signed(&spec, input)?.into_inexact())
+            }
+        }
+    };
+}
+
+private_radix!(Binary);
+private_radix!(Octal);
+private_radix!(Hexadecimal);
+
+impl RadixPrivate for Decimal {
+    fn parse_inexact<R>(spec: IntSpec<R>, input: &str) -> RealResult {
+        input
+            .get(..spec.magnitude.end)
+            .map_or(Err(NumericError::ParseFailure), |fstr| {
+                Ok(fstr.parse::<f64>()?.into())
+            })
     }
 }
 
