@@ -177,9 +177,9 @@ impl<'me, 'str, R: Radix + Default> RadixNumber<'me, 'str, R> {
 
 pub(super) fn imaginary(sign: Sign, exactness: Option<Exactness>) -> TokenKind {
     let sign_val = sign as i64;
-    let r: Real = match exactness {
-        None | Some(Exactness::Exact) => sign_val.into(),
-        Some(Exactness::Inexact) => (sign_val as f64).into(),
+    let r = match exactness {
+        None | Some(Exactness::Exact) => Real::from(sign_val),
+        Some(Exactness::Inexact) => Real::from(sign_val as f64),
     };
     real_to_token(r, true)
 }
@@ -211,39 +211,35 @@ impl<'me, 'str, P: ClassifierProps> ConditionProcessor<'me, 'str, P> {
         result: BreakResult<'str>,
     ) -> TokenExtractResult {
         match result {
-            Ok(cond) => {
-                match cond {
-                    BreakCondition::Sub(SubCondition::Complete) => self.complete(parser, false),
-                    BreakCondition::Sub(SubCondition::Complex { kind, start }) => {
-                        // NOTE: delay application of exactness until final
-                        // composition of complex number; specifically Polar
-                        // will round-trip inputs through float representation,
-                        // undoing any exactness applied to real part.
-                        match parser.parse(None) {
-                            Ok(real) => self.scan_imaginary(real, kind, start),
-                            Err(err) => self.fail(err),
-                        }
-                    }
-                    BreakCondition::Sub(SubCondition::Imaginary) => {
-                        if let Some(item) = self.scan.next_if_not_delimiter() {
-                            // NOTE: maybe malformed "in"finity? otherwise assume malformed imaginary
-                            self.fail(if item.1.is_ascii_alphabetic() {
-                                TokenErrorKind::NumberInvalid
-                            } else {
-                                TokenErrorKind::ImaginaryInvalid
-                            })
-                        } else if !self.props.has_sign() {
-                            self.fail(TokenErrorKind::ImaginaryMissingSign)
-                        } else {
-                            self.complete(parser, true)
-                        }
-                    }
-                    BreakCondition::Fraction => match parser.parse_int() {
-                        Ok(numerator) => self.scan_denominator(numerator),
-                        Err(err) => self.fail(err),
-                    },
+            Ok(BreakCondition::Sub(SubCondition::Complete)) => self.complete(parser, false),
+            Ok(BreakCondition::Sub(SubCondition::Complex { kind, start })) => {
+                // NOTE: delay application of exactness until final
+                // composition of complex number; specifically Polar
+                // will round-trip inputs through float representation,
+                // undoing any exactness applied to real part.
+                match parser.parse(None) {
+                    Ok(real) => self.scan_imaginary(real, kind, start),
+                    Err(err) => self.fail(err),
                 }
             }
+            Ok(BreakCondition::Sub(SubCondition::Imaginary)) => {
+                if let Some(item) = self.scan.next_if_not_delimiter() {
+                    // NOTE: maybe malformed "in"finity? otherwise assume malformed imaginary
+                    self.fail(if item.1.is_ascii_alphabetic() {
+                        TokenErrorKind::NumberInvalid
+                    } else {
+                        TokenErrorKind::ImaginaryInvalid
+                    })
+                } else if !self.props.has_sign() {
+                    self.fail(TokenErrorKind::ImaginaryMissingSign)
+                } else {
+                    self.complete(parser, true)
+                }
+            }
+            Ok(BreakCondition::Fraction) => match parser.parse_int() {
+                Ok(numerator) => self.scan_denominator(numerator),
+                Err(err) => self.fail(err),
+            },
             Err(err) => self.fail(err),
         }
     }
@@ -281,35 +277,34 @@ impl<'me, 'str, P: ClassifierProps> ConditionProcessor<'me, 'str, P> {
         match kind {
             ComplexKind::Cartesian => {
                 debug_assert!(matches!(start.1, '+' | '-'));
-                if let Ok(TokenKind::Imaginary(imag)) = self.props.cartesian_scan(self.scan, start)
-                {
-                    let real = match self.props.get_exactness() {
-                        Some(Exactness::Exact) => real.into_exact(),
-                        Some(Exactness::Inexact) => real.into_inexact(),
-                        None => real,
-                    };
-                    Ok(TokenKind::Literal(Literal::Number(Number::complex(
-                        real, imag,
-                    ))))
-                } else {
-                    self.fail(TokenErrorKind::ComplexInvalid)
+                match self.props.cartesian_scan(self.scan, start) {
+                    Ok(TokenKind::Imaginary(imag)) => {
+                        let real = match self.props.get_exactness() {
+                            Some(Exactness::Exact) => real.into_exact(),
+                            Some(Exactness::Inexact) => real.into_inexact(),
+                            None => real,
+                        };
+                        Ok(TokenKind::Literal(Literal::Number(Number::complex(
+                            real, imag,
+                        ))))
+                    }
+                    _ => self.fail(TokenErrorKind::ComplexInvalid),
                 }
             }
             ComplexKind::Polar => {
                 debug_assert_eq!(start.1, '@');
-                if let Ok(TokenKind::Literal(Literal::Number(Number::Real(rads)))) =
-                    self.props.polar_scan(self.scan)
-                {
-                    let pol = Number::polar(real, rads);
-                    Ok(TokenKind::Literal(Literal::Number(
-                        match self.props.get_exactness() {
-                            Some(Exactness::Exact) => pol.into_exact(),
-                            Some(Exactness::Inexact) => pol.into_inexact(),
-                            None => pol,
-                        },
-                    )))
-                } else {
-                    self.fail(TokenErrorKind::PolarInvalid)
+                match self.props.polar_scan(self.scan) {
+                    Ok(TokenKind::Literal(Literal::Number(Number::Real(rads)))) => {
+                        let pol = Number::polar(real, rads);
+                        Ok(TokenKind::Literal(Literal::Number(
+                            match self.props.get_exactness() {
+                                Some(Exactness::Exact) => pol.into_exact(),
+                                Some(Exactness::Inexact) => pol.into_inexact(),
+                                None => pol,
+                            },
+                        )))
+                    }
+                    _ => self.fail(TokenErrorKind::PolarInvalid),
                 }
             }
         }
