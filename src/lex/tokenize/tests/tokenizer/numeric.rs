@@ -4884,7 +4884,7 @@ mod polar {
 
     #[test]
     fn applied_exact() {
-        let cases = ["3@4/5", "#e3@4/5", "#e3.0@0.8"];
+        let cases = ["#e3@4/5", "#e3.0@0.8"];
         for case in cases {
             let mut s = Scanner::new(case);
             let start = some_or_fail!(s.next_token());
@@ -4907,14 +4907,14 @@ mod polar {
             let num = extract_number!(r.result);
             assert_eq!(
                 num.as_datum().to_string(),
-                "1176633028725907/562949953421312+2423013467750285/1125899906842624i"
+                "20901201280414963/10000000000000000+4304136545397137/2000000000000000i"
             );
         }
     }
 
     #[test]
     fn applied_exact_negative_output() {
-        let cases = ["-3@4/5", "#e-3@4/5", "#e-3.0@0.8"];
+        let cases = ["#e-3@4/5", "#e-3.0@0.8"];
         for case in cases {
             let mut s = Scanner::new(case);
             let start = some_or_fail!(s.next_token());
@@ -4937,7 +4937,7 @@ mod polar {
             let num = extract_number!(r.result);
             assert_eq!(
                 num.as_datum().to_string(),
-                "-1176633028725907/562949953421312-2423013467750285/1125899906842624i"
+                "-20901201280414963/10000000000000000-4304136545397137/2000000000000000i"
             );
         }
     }

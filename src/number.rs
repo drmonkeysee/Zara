@@ -113,7 +113,7 @@ impl Real {
 
     pub(crate) fn into_exact(self) -> Self {
         match self {
-            Self::Float(_) => todo!(),
+            Self::Float(f) => FloatSpec::float_to_exact(f),
             _ => self,
         }
     }
@@ -409,6 +409,49 @@ pub(crate) struct FloatSpec {
 }
 
 impl FloatSpec {
+    fn float_to_exact(flt: f64) -> Real {
+        if flt.is_infinite() || flt.is_nan() {
+            Real::Float(flt)
+        } else {
+            let flt_str = FloatDatum(&flt).to_string();
+            let spec = Self::for_fltstr(&flt_str, flt.is_sign_negative());
+            spec.into_exact(&flt_str).unwrap_or(Real::Float(f64::NAN))
+        }
+    }
+
+    fn for_fltstr(flt_str: &str, is_negative: bool) -> Self {
+        let mut spec = Self {
+            integral: IntSpec {
+                magnitude: 0..flt_str.len(),
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+        if is_negative {
+            spec.integral.sign = Some(Sign::Negative);
+            spec.integral.magnitude.start = 1;
+        }
+        if let Some(idx) = flt_str.find('.') {
+            spec.integral.magnitude.end = idx;
+            let next = idx + 1;
+            if next < flt_str.len() {
+                spec.fraction = next..flt_str.len();
+            }
+        }
+        if let Some(idx) = flt_str.find('e') {
+            if spec.fraction.is_empty() {
+                spec.integral.magnitude.end = idx
+            } else {
+                spec.fraction.end = idx
+            };
+            let next = idx + 1;
+            if next < flt_str.len() {
+                spec.exponent = next..flt_str.len();
+            }
+        }
+        spec
+    }
+
     pub(crate) fn is_empty(&self) -> bool {
         self.exponent.is_empty() && self.fraction.is_empty() && self.integral.is_empty()
     }

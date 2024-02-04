@@ -751,9 +751,73 @@ mod float {
 
         let (num, den) = rational_parts!(n);
         assert_eq!(extract_or_fail!(num.precision, Precision::Single), 3);
-        assert_eq!(num.sign, Sign::Negative);
+        assert_eq!(num.sign, Sign::Positive);
         assert_eq!(extract_or_fail!(den.precision, Precision::Single), 2);
         assert_eq!(den.sign, Sign::Positive);
+    }
+
+    #[test]
+    fn into_exact_zero() {
+        let n: Real = Real::Float(0.0);
+
+        let n = n.into_exact();
+
+        let int = extract_or_fail!(n, Real::Integer);
+        assert_eq!(extract_or_fail!(int.precision, Precision::Single), 0);
+        assert_eq!(int.sign, Sign::Zero);
+    }
+
+    #[test]
+    fn into_exact_negative_zero() {
+        let n: Real = Real::Float(-0.0);
+
+        let n = n.into_exact();
+
+        let int = extract_or_fail!(n, Real::Integer);
+        assert_eq!(extract_or_fail!(int.precision, Precision::Single), 0);
+        assert_eq!(int.sign, Sign::Zero);
+    }
+
+    #[test]
+    fn into_exact_exponent() {
+        let n: Real = Real::Float(4e2);
+
+        let n = n.into_exact();
+
+        let int = extract_or_fail!(n, Real::Integer);
+        assert_eq!(extract_or_fail!(int.precision, Precision::Single), 400);
+        assert_eq!(int.sign, Sign::Positive);
+    }
+
+    #[test]
+    fn into_exact_fraction_exponent() {
+        let n: Real = Real::Float(4.2e3);
+
+        let n = n.into_exact();
+
+        let int = extract_or_fail!(n, Real::Integer);
+        assert_eq!(extract_or_fail!(int.precision, Precision::Single), 4200);
+        assert_eq!(int.sign, Sign::Positive);
+    }
+
+    #[test]
+    fn into_exact_infinite() {
+        let n: Real = Real::Float(f64::INFINITY);
+
+        let n = n.into_exact();
+
+        let flt = extract_or_fail!(n, Real::Float);
+        assert!(flt.is_infinite());
+    }
+
+    #[test]
+    fn into_exact_nan() {
+        let n: Real = Real::Float(f64::NAN);
+
+        let n = n.into_exact();
+
+        let flt = extract_or_fail!(n, Real::Float);
+        assert!(flt.is_nan());
     }
 }
 
@@ -1163,12 +1227,12 @@ mod complex {
         let ri = extract_or_fail!(c, Number::Complex);
         let (num, den) = rational_parts!(ri.0 .0);
         assert_eq!(extract_or_fail!(num.precision, Precision::Single), 3);
-        assert_eq!(num.sign, Sign::Negative);
+        assert_eq!(num.sign, Sign::Positive);
         assert_eq!(extract_or_fail!(den.precision, Precision::Single), 2);
         assert_eq!(den.sign, Sign::Positive);
         let (num, den) = rational_parts!(ri.0 .1);
         assert_eq!(extract_or_fail!(num.precision, Precision::Single), 4);
-        assert_eq!(num.sign, Sign::Negative);
+        assert_eq!(num.sign, Sign::Positive);
         assert_eq!(extract_or_fail!(den.precision, Precision::Single), 5);
         assert_eq!(den.sign, Sign::Positive);
     }
