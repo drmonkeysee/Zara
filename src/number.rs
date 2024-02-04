@@ -415,6 +415,8 @@ impl FloatSpec {
         } else {
             let flt_str = FloatDatum(&flt).to_string();
             let spec = Self::for_fltstr(&flt_str, flt.is_sign_negative());
+            // NOTE: this should never fail since the string input comes from
+            // an f64 but if something real weird happens treat it as NaN.
             spec.into_exact(&flt_str).unwrap_or(Real::Float(f64::NAN))
         }
     }
