@@ -721,14 +721,18 @@ fn gcd_euclidean(mut a: u64, mut b: u64) -> u64 {
 }
 
 fn parse_signed<R: Radix>(spec: &IntSpec<R>, input: &str) -> IntResult {
-    input
-        .get(..spec.magnitude.end)
-        .map_or(Err(NumericError::ParseFailure), |signed_num| {
-            i64::from_str_radix(signed_num, R::BASE).map_or_else(
-                |_| parse_sign_magnitude(spec, signed_num),
-                |val| Ok(val.into()),
-            )
-        })
+    if spec.is_empty() {
+        Err(NumericError::ParseFailure)
+    } else {
+        input
+            .get(..spec.magnitude.end)
+            .map_or(Err(NumericError::ParseFailure), |signed_num| {
+                i64::from_str_radix(signed_num, R::BASE).map_or_else(
+                    |_| parse_sign_magnitude(spec, signed_num),
+                    |val| Ok(val.into()),
+                )
+            })
+    }
 }
 
 fn parse_sign_magnitude<R: Radix>(spec: &IntSpec<R>, input: &str) -> IntResult {

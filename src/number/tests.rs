@@ -1,5 +1,5 @@
 use super::*;
-use crate::testutil::{extract_or_fail, ok_or_fail};
+use crate::testutil::{err_or_fail, extract_or_fail, ok_or_fail};
 
 macro_rules! rational_parts {
     ($real:expr) => {{
@@ -823,7 +823,6 @@ mod float {
 
 mod rational {
     use super::*;
-    use crate::testutil::err_or_fail;
 
     mod euclid {
         use super::*;
@@ -1248,5 +1247,83 @@ mod complex {
         assert_eq!(r, 4.0);
         let i = extract_or_fail!(ri.0 .1, Real::Float);
         assert_eq!(i, 3.0);
+    }
+}
+
+mod specs {
+    use super::*;
+
+    #[test]
+    fn int_empty() {
+        let espec = IntSpec::<Decimal>::default();
+        let ispec = espec.clone();
+
+        assert!(espec.is_empty());
+
+        let err = err_or_fail!(espec.into_exact("1234"));
+
+        assert!(matches!(err, NumericError::ParseFailure));
+
+        let err = err_or_fail!(ispec.into_inexact("1234"));
+
+        assert!(matches!(err, NumericError::ParseFailure));
+    }
+
+    #[test]
+    fn int_blank_string() {
+        let espec = IntSpec::<Decimal> {
+            magnitude: 1..3,
+            ..Default::default()
+        };
+        let ispec = espec.clone();
+
+        assert!(!espec.is_empty());
+
+        let err = err_or_fail!(espec.into_exact(""));
+
+        assert!(matches!(err, NumericError::ParseFailure));
+
+        let err = err_or_fail!(ispec.into_inexact(""));
+
+        assert!(matches!(err, NumericError::ParseFailure));
+    }
+
+    #[test]
+    fn float_empty() {
+        let espec = FloatSpec::default();
+        let ispec = espec.clone();
+
+        assert!(espec.is_empty());
+
+        let err = err_or_fail!(espec.into_exact("1234.456e3"));
+
+        assert!(matches!(err, NumericError::ParseFailure));
+
+        let err = err_or_fail!(ispec.into_inexact("1234.456e3"));
+
+        assert!(matches!(err, NumericError::ParseFailure));
+    }
+
+    #[test]
+    fn float_blank_string() {
+        let espec = FloatSpec {
+            exponent: 4..5,
+            fraction: 2..3,
+            integral: IntSpec {
+                magnitude: 0..1,
+                ..Default::default()
+            },
+        };
+        let ispec = espec.clone();
+
+        assert!(!espec.is_empty());
+
+        let err = err_or_fail!(espec.into_exact(""));
+
+        assert!(matches!(err, NumericError::ParseExponentFailure));
+
+        let err = err_or_fail!(ispec.into_inexact(""));
+
+        assert!(matches!(err, NumericError::ParseFailure));
     }
 }
