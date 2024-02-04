@@ -442,10 +442,10 @@ impl FloatSpec {
         }
         if let Some(idx) = flt_str.find('e') {
             if spec.fraction.is_empty() {
-                spec.integral.magnitude.end = idx
+                spec.integral.magnitude.end = idx;
             } else {
-                spec.fraction.end = idx
-            };
+                spec.fraction.end = idx;
+            }
             let next = idx + 1;
             if next < flt_str.len() {
                 spec.exponent = next..flt_str.len();
@@ -476,7 +476,7 @@ impl FloatSpec {
         let adjustment = "0".repeat(scale.abs().try_into().unwrap_or_default());
         if scale < 0 {
             num.magnitude.end = buf.len();
-            let adjustment = format!("1{adjustment}",);
+            let adjustment = format!("1{adjustment}");
             let denom = IntSpec::<Decimal> {
                 magnitude: 0..adjustment.len(),
                 ..Default::default()
