@@ -413,15 +413,15 @@ impl FloatSpec {
         if flt.is_infinite() || flt.is_nan() {
             Real::Float(flt)
         } else {
-            let flt_str = FloatDatum(&flt).to_string();
-            let spec = Self::for_fltstr(&flt_str, flt.is_sign_negative());
+            let (spec, flt_str) = Self::prep_parse(flt);
             // NOTE: this should never fail since the string input comes from
             // an f64 but if something real weird happens treat it as NaN.
             spec.into_exact(&flt_str).unwrap_or(Real::Float(f64::NAN))
         }
     }
 
-    fn for_fltstr(flt_str: &str, is_negative: bool) -> Self {
+    fn prep_parse(flt: f64) -> (Self, String) {
+        let flt_str = FloatDatum(&flt).to_string();
         let mut spec = Self {
             integral: IntSpec {
                 magnitude: 0..flt_str.len(),
@@ -429,7 +429,7 @@ impl FloatSpec {
             },
             ..Default::default()
         };
-        if is_negative {
+        if flt.is_sign_negative() {
             spec.integral.sign = Some(Sign::Negative);
             spec.integral.magnitude.start = 1;
         }
@@ -451,7 +451,7 @@ impl FloatSpec {
                 spec.exponent = next..flt_str.len();
             }
         }
-        spec
+        (spec, flt_str)
     }
 
     pub(crate) fn is_empty(&self) -> bool {
