@@ -87,16 +87,16 @@ impl Lexer {
 
     fn continuation_result(
         &mut self,
-        token_cont: TokenContinuation,
+        cont: TokenContinuation,
         can_continue: bool,
         mut lines: Vec<TokenLine>,
     ) -> LexerResult {
         if can_continue {
-            self.cont = Some((lines, token_cont));
+            self.cont = Some((lines, cont));
             Ok(LexerOutput::Continuation)
         } else {
             debug_assert!(!lines.is_empty());
-            Err(lines.pop().unwrap().into_continuation_unsupported())
+            Err(lines.pop().unwrap().into_continuation_unsupported(cont))
         }
     }
 }
@@ -142,11 +142,16 @@ impl From<TokenErrorLine> for LineFailure {
 pub(crate) struct TokenLine(Vec<Token>, TextLine);
 
 impl TokenLine {
-    fn into_continuation_unsupported(mut self) -> LexerError {
+    fn into_continuation_unsupported(mut self, cont: TokenContinuation) -> LexerError {
         debug_assert!(!self.0.is_empty());
-        let token_err = self.0.pop().unwrap().into_continuation_unsupported();
-        let err: LineFailure = TokenErrorLine(vec![token_err], self.1).into();
-        err.into()
+        LineFailure::from(TokenErrorLine(
+            vec![TokenError {
+                kind: cont.into(),
+                span: self.0.pop().unwrap().span,
+            }],
+            self.1,
+        ))
+        .into()
     }
 }
 

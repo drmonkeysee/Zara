@@ -1435,7 +1435,7 @@ mod error {
     fn convert_invalid_line_into_continuation_failure() {
         let line = TokenLine(Vec::new(), make_textline());
 
-        line.into_continuation_unsupported();
+        line.into_continuation_unsupported(TokenContinuation::SubstringError);
     }
 
     #[test]

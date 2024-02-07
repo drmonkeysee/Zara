@@ -16,17 +16,6 @@ pub(crate) struct TokenType<T> {
 
 pub(crate) type Token = TokenType<TokenKind>;
 
-impl Token {
-    pub(super) fn into_continuation_unsupported(self) -> TokenError {
-        let cont = self.kind.to_continuation();
-        debug_assert!(cont.is_some());
-        TokenError {
-            kind: cont.unwrap().into(),
-            span: self.span,
-        }
-    }
-}
-
 impl Display for Token {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "{}[{:?}]", self.kind, self.span)
@@ -680,56 +669,6 @@ mod tests {
                 kind.to_continuation(),
                 Some(TokenContinuation::VerbatimIdentifier)
             ));
-        }
-
-        #[test]
-        fn to_string_continuation_error() {
-            let token = Token {
-                kind: TokenKind::StringFragment {
-                    s: "foo".to_owned(),
-                    line_cont: false,
-                },
-                span: 1..3,
-            };
-
-            let result = token.into_continuation_unsupported();
-
-            assert!(matches!(
-                result,
-                TokenError {
-                    kind: TokenErrorKind::StringUnterminated,
-                    span: Range { start: 1, end: 3 },
-                }
-            ));
-        }
-
-        #[test]
-        fn to_identifier_continuation_error() {
-            let token = Token {
-                kind: TokenKind::IdentifierFragment("foo".to_owned()),
-                span: 1..3,
-            };
-
-            let result = token.into_continuation_unsupported();
-
-            assert!(matches!(
-                result,
-                TokenError {
-                    kind: TokenErrorKind::IdentifierUnterminated,
-                    span: Range { start: 1, end: 3 },
-                }
-            ));
-        }
-
-        #[test]
-        #[should_panic(expected = "assertion failed: cont.is_some()")]
-        fn to_invalid_continuation_error() {
-            let token = Token {
-                kind: TokenKind::ParenLeft,
-                span: 0..1,
-            };
-
-            token.into_continuation_unsupported();
         }
     }
 
