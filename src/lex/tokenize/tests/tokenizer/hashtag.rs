@@ -9,8 +9,9 @@ fn unterminated() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -30,8 +31,9 @@ fn unterminated_with_whitespace() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -51,8 +53,9 @@ fn unterminated_with_delimiter() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -72,8 +75,9 @@ fn invalid() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -93,8 +97,9 @@ fn invalid_long() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -114,8 +119,9 @@ fn directive_fold_case() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -135,8 +141,9 @@ fn directive_no_fold_case() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -156,8 +163,9 @@ fn directive_case_insensitive() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -177,8 +185,9 @@ fn directive_fold_case_followed_by_token() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -198,8 +207,9 @@ fn directive_expected() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -219,8 +229,9 @@ fn directive_invalid() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -240,8 +251,9 @@ fn vector() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -263,8 +275,9 @@ fn radix_with_no_number() {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
 
+        assert!(c.is_none());
         assert!(matches!(
             r,
             TokenExtract {
@@ -287,8 +300,9 @@ fn radix_with_invalid_number() {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
 
+        assert!(c.is_none());
         assert!(matches!(
             r,
             TokenExtract {
@@ -309,8 +323,9 @@ fn decimal_radix_with_malformed_number() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -330,8 +345,9 @@ fn radix_with_malformed_number() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -353,8 +369,9 @@ fn exactness_with_no_number() {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
 
+        assert!(c.is_none());
         assert!(matches!(
             r,
             TokenExtract {
@@ -377,8 +394,9 @@ fn exactness_with_invalid_number() {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
 
+        assert!(c.is_none());
         assert!(matches!(
             r,
             TokenExtract {
@@ -401,8 +419,9 @@ fn exactness_with_malformed_number() {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
 
+        assert!(c.is_none());
         assert!(matches!(
             r,
             TokenExtract {
@@ -423,8 +442,9 @@ fn exactness_missing_radix() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -444,8 +464,9 @@ fn exactness_malformed_radix() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -465,8 +486,9 @@ fn radix_missing_exactness() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -486,8 +508,9 @@ fn radix_malformed_exactness() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -510,8 +533,9 @@ mod comments {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
 
+        assert!(c.is_none());
         assert!(matches!(
             r,
             TokenExtract {
@@ -531,8 +555,9 @@ mod comments {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
 
+        assert!(c.is_none());
         assert!(matches!(
             r,
             TokenExtract {
@@ -552,8 +577,9 @@ mod comments {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
 
+        assert!(c.is_none());
         assert!(matches!(
             r,
             TokenExtract {
@@ -573,8 +599,9 @@ mod comments {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
 
+        assert!(c.is_none());
         assert!(matches!(
             r,
             TokenExtract {
@@ -594,8 +621,9 @@ mod comments {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
 
+        assert!(c.is_none());
         assert!(matches!(
             r,
             TokenExtract {
@@ -615,8 +643,9 @@ mod comments {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
 
+        assert!(c.is_none());
         assert!(matches!(
             r,
             TokenExtract {
@@ -636,8 +665,9 @@ mod comments {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
 
+        assert!(c.is_none());
         assert!(matches!(
             r,
             TokenExtract {
@@ -657,8 +687,9 @@ mod comments {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
 
+        assert!(c.is_none());
         assert!(matches!(
             r,
             TokenExtract {
@@ -678,8 +709,9 @@ mod comments {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
 
+        assert!(c.is_none());
         assert!(matches!(
             r,
             TokenExtract {
@@ -699,8 +731,9 @@ mod comments {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
 
+        assert!(c.is_none());
         assert!(matches!(
             r,
             TokenExtract {
@@ -720,8 +753,9 @@ mod comments {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
 
+        assert!(c.is_none());
         assert!(matches!(
             r,
             TokenExtract {
@@ -741,8 +775,9 @@ mod comments {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
 
+        assert!(c.is_none());
         assert!(matches!(
             r,
             TokenExtract {
@@ -762,8 +797,9 @@ mod comments {
             start: 0,
         };
 
-        let r = c.extract();
+        let (r, c) = c.extract();
 
+        assert!(c.is_none());
         assert!(matches!(
             r,
             TokenExtract {
@@ -783,8 +819,9 @@ mod comments {
             start: 0,
         };
 
-        let r = c.extract();
+        let (r, c) = c.extract();
 
+        assert!(c.is_none());
         assert!(matches!(
             r,
             TokenExtract {
@@ -804,8 +841,9 @@ mod comments {
             start: 0,
         };
 
-        let r = c.extract();
+        let (r, c) = c.extract();
 
+        assert!(c.is_none());
         assert!(matches!(
             r,
             TokenExtract {
@@ -825,8 +863,9 @@ mod comments {
             start: 0,
         };
 
-        let r = c.extract();
+        let (r, c) = c.extract();
 
+        assert!(c.is_none());
         assert!(matches!(
             r,
             TokenExtract {
@@ -846,8 +885,9 @@ mod comments {
             start: 0,
         };
 
-        let r = c.extract();
+        let (r, c) = c.extract();
 
+        assert!(c.is_none());
         assert!(matches!(
             r,
             TokenExtract {
@@ -867,8 +907,9 @@ mod comments {
             start: 0,
         };
 
-        let r = c.extract();
+        let (r, c) = c.extract();
 
+        assert!(c.is_none());
         assert!(matches!(
             r,
             TokenExtract {
@@ -888,8 +929,9 @@ mod comments {
             start: 0,
         };
 
-        let r = c.extract();
+        let (r, c) = c.extract();
 
+        assert!(c.is_none());
         assert!(matches!(
             r,
             TokenExtract {
@@ -909,8 +951,9 @@ mod comments {
             start: 0,
         };
 
-        let r = c.extract();
+        let (r, c) = c.extract();
 
+        assert!(c.is_none());
         assert!(matches!(
             r,
             TokenExtract {
@@ -930,8 +973,9 @@ mod comments {
             start: 0,
         };
 
-        let r = c.extract();
+        let (r, c) = c.extract();
 
+        assert!(c.is_none());
         assert!(matches!(
             r,
             TokenExtract {
@@ -951,8 +995,9 @@ mod comments {
             start: 0,
         };
 
-        let r = c.extract();
+        let (r, c) = c.extract();
 
+        assert!(c.is_none());
         assert!(matches!(
             r,
             TokenExtract {
@@ -972,8 +1017,9 @@ mod comments {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
 
+        assert!(c.is_none());
         assert!(matches!(
             r,
             TokenExtract {
@@ -993,8 +1039,9 @@ mod comments {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
 
+        assert!(c.is_none());
         assert!(matches!(
             r,
             TokenExtract {
@@ -1014,8 +1061,9 @@ mod comments {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
 
+        assert!(c.is_none());
         assert!(matches!(
             r,
             TokenExtract {

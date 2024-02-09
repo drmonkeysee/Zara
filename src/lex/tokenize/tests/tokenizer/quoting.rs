@@ -9,8 +9,9 @@ fn quote() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -30,8 +31,9 @@ fn quasiquote() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -51,8 +53,9 @@ fn unquote() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -72,8 +75,9 @@ fn unquote_followed_by_non_splice() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -93,8 +97,9 @@ fn unquote_splicing() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -114,8 +119,9 @@ fn unquote_whitespace_between_splice() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {

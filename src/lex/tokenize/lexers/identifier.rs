@@ -165,7 +165,7 @@ impl<'me, 'str> Identifier<'me, 'str> {
     }
 
     fn invalid(&mut self, ch: char) -> TokenExtractResult {
-        self.scan.end_of_token();
+        //self.scan.end_of_token();
         Err(TokenErrorKind::IdentifierInvalid(ch))
     }
 

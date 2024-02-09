@@ -9,8 +9,9 @@ fn ascii_literal() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -30,8 +31,9 @@ fn ascii_uppercase_literal() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -51,8 +53,9 @@ fn extended_literal() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -72,8 +75,9 @@ fn emoji_literal() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -98,8 +102,9 @@ fn space_literal() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -119,8 +124,9 @@ fn tab_literal() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -155,8 +161,9 @@ fn name_does_not_match_uppercase() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -176,8 +183,9 @@ fn space_followed_by_alpha() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -197,8 +205,9 @@ fn alpha_followed_by_alpha() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -218,8 +227,9 @@ fn emoji_followed_by_alpha() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -239,8 +249,9 @@ fn alpha_followed_by_delimiter() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -260,8 +271,9 @@ fn letter_x_is_not_hex() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -281,8 +293,9 @@ fn hex_zero() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -302,8 +315,9 @@ fn hex_lowercase() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -323,8 +337,9 @@ fn hex_uppercase() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -344,8 +359,9 @@ fn hex_uppercase_indicator() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -375,8 +391,9 @@ fn hex_sign_invalid() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -396,8 +413,9 @@ fn hex_too_large() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -417,8 +435,9 @@ fn hex_malformed() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -439,7 +458,9 @@ fn check_character_list(cases: &[(&str, char)]) {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
 
         assert!(
             matches!(

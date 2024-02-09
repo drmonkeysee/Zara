@@ -9,8 +9,9 @@ fn true_short() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -30,8 +31,9 @@ fn true_long() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -51,8 +53,9 @@ fn true_uppercase() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -72,8 +75,9 @@ fn true_malformed() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -93,8 +97,9 @@ fn false_short() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -114,8 +119,9 @@ fn false_long() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -135,8 +141,9 @@ fn false_uppercase() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -156,8 +163,9 @@ fn false_malformed() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {

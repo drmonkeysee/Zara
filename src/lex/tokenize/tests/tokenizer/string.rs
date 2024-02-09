@@ -9,8 +9,9 @@ fn empty() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -30,8 +31,9 @@ fn alphanumeric() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -51,8 +53,9 @@ fn raw_extended_and_higher_char() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -72,8 +75,9 @@ fn contains_verbatim_identifier() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -93,8 +97,9 @@ fn raw_escape_sequences() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -114,8 +119,9 @@ fn escape_sequences() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -135,8 +141,9 @@ fn whitespace_escape() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -158,8 +165,9 @@ fn hex_escape_sequences() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -179,8 +187,9 @@ fn hex_case_insensitive() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -200,8 +209,9 @@ fn higher_plane_raw() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -221,8 +231,9 @@ fn higher_plane_hex() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -242,8 +253,9 @@ fn invalid_escape() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(matches!(c, Some(TokenContinuation::SubstringError)));
     assert!(matches!(
         r,
         TokenExtract {
@@ -263,8 +275,9 @@ fn hex_sign_invalid() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(matches!(c, Some(TokenContinuation::SubstringError)));
     assert!(matches!(
         r,
         TokenExtract {
@@ -284,8 +297,9 @@ fn hex_too_large() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(matches!(c, Some(TokenContinuation::SubstringError)));
     assert!(matches!(
         r,
         TokenExtract {
@@ -305,8 +319,9 @@ fn hex_malformed() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(matches!(c, Some(TokenContinuation::SubstringError)));
     assert!(matches!(
         r,
         TokenExtract {
@@ -326,8 +341,9 @@ fn hex_unterminated() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(matches!(c, Some(TokenContinuation::SubstringError)));
     assert!(matches!(
         r,
         TokenExtract {
@@ -349,8 +365,9 @@ fn discard() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -370,8 +387,9 @@ fn begin() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -391,8 +409,9 @@ fn begin_with_line_continuation() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -412,8 +431,9 @@ fn begin_with_line_continuation_includes_leading_whitespace() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -433,8 +453,9 @@ fn begin_with_line_continuation_excludes_trailing_whitespace() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -454,8 +475,9 @@ fn begin_only_counts_final_slash_as_line_continuation() {
         start,
     };
 
-    let r = t.extract();
+    let (r, c) = t.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -475,8 +497,9 @@ fn fragment() {
         start: 0,
     };
 
-    let r = c.extract();
+    let (r, c) = c.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -496,8 +519,9 @@ fn fragment_includes_whitespace() {
         start: 0,
     };
 
-    let r = c.extract();
+    let (r, c) = c.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -517,8 +541,9 @@ fn fragment_with_line_continuation() {
         start: 0,
     };
 
-    let r = c.extract();
+    let (r, c) = c.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -538,8 +563,9 @@ fn fragment_from_string_continuation() {
         start: 0,
     };
 
-    let r = c.extract();
+    let (r, c) = c.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -559,8 +585,9 @@ fn fragment_from_string_continuation_ignores_leading_whitespace() {
         start: 0,
     };
 
-    let r = c.extract();
+    let (r, c) = c.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -580,8 +607,9 @@ fn fragment_from_string_continuation_all_whitespace() {
         start: 0,
     };
 
-    let r = c.extract();
+    let (r, c) = c.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -601,8 +629,9 @@ fn fragment_from_string_continuation_to_string_continuation() {
         start: 0,
     };
 
-    let r = c.extract();
+    let (r, c) = c.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -622,8 +651,9 @@ fn end() {
         start: 0,
     };
 
-    let r = c.extract();
+    let (r, c) = c.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -643,8 +673,9 @@ fn end_includes_whitespace() {
         start: 0,
     };
 
-    let r = c.extract();
+    let (r, c) = c.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -664,8 +695,9 @@ fn end_with_escaped_whitespace() {
         start: 0,
     };
 
-    let r = c.extract();
+    let (r, c) = c.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -685,8 +717,9 @@ fn end_from_string_continuation() {
         start: 0,
     };
 
-    let r = c.extract();
+    let (r, c) = c.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -706,8 +739,9 @@ fn end_from_string_continuation_ignores_leading_whitespace() {
         start: 0,
     };
 
-    let r = c.extract();
+    let (r, c) = c.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {
@@ -727,8 +761,9 @@ fn end_from_string_continuation_all_whitespace() {
         start: 0,
     };
 
-    let r = c.extract();
+    let (r, c) = c.extract();
 
+    assert!(c.is_none());
     assert!(matches!(
         r,
         TokenExtract {

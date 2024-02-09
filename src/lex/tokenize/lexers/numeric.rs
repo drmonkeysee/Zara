@@ -326,7 +326,7 @@ impl<'me, 'str, P: ClassifierProps> ConditionProcessor<'me, 'str, P> {
     }
 
     fn fail(&mut self, err: TokenErrorKind) -> TokenExtractResult {
-        self.scan.end_of_token();
+        //self.scan.end_of_token();
         Err(err)
     }
 }
@@ -380,7 +380,7 @@ impl<'me, 'str> Denominator<'me, 'str> {
     }
 
     fn fail(&mut self) -> TokenErrorKind {
-        self.scan.end_of_token();
+        //self.scan.end_of_token();
         TokenErrorKind::RationalInvalid
     }
 

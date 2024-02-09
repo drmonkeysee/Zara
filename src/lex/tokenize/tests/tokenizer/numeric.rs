@@ -40,7 +40,9 @@ mod integer {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -64,7 +66,9 @@ mod integer {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -88,7 +92,9 @@ mod integer {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -112,7 +118,9 @@ mod integer {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -136,7 +144,9 @@ mod integer {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -161,7 +171,9 @@ mod integer {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -186,7 +198,9 @@ mod integer {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -211,7 +225,9 @@ mod integer {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -236,7 +252,9 @@ mod integer {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -261,7 +279,9 @@ mod integer {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -291,7 +311,9 @@ mod integer {
                 start,
             };
 
-            let r = t.extract();
+            let (r, c) = t.extract();
+
+            assert!(c.is_none());
             dbg!(&r);
 
             assert!(matches!(
@@ -319,7 +341,9 @@ mod integer {
                 start,
             };
 
-            let r = t.extract();
+            let (r, c) = t.extract();
+
+            assert!(c.is_none());
             dbg!(&r);
 
             assert!(matches!(
@@ -344,7 +368,9 @@ mod integer {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -370,7 +396,9 @@ mod integer {
                 start,
             };
 
-            let r = t.extract();
+            let (r, c) = t.extract();
+
+            assert!(c.is_none());
             dbg!(&r);
 
             assert!(matches!(
@@ -397,7 +425,9 @@ mod integer {
                 start,
             };
 
-            let r = t.extract();
+            let (r, c) = t.extract();
+
+            assert!(c.is_none());
             dbg!(&r);
 
             assert!(matches!(
@@ -424,7 +454,9 @@ mod integer {
                 start,
             };
 
-            let r = t.extract();
+            let (r, c) = t.extract();
+
+            assert!(c.is_none());
             dbg!(&r);
 
             assert!(matches!(
@@ -449,7 +481,9 @@ mod integer {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -473,7 +507,9 @@ mod integer {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -497,7 +533,9 @@ mod integer {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -522,7 +560,9 @@ mod integer {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -548,7 +588,9 @@ mod integer {
                 start,
             };
 
-            let r = t.extract();
+            let (r, c) = t.extract();
+
+            assert!(c.is_none());
             dbg!(&r);
 
             assert!(matches!(
@@ -575,7 +617,9 @@ mod rational {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -599,7 +643,9 @@ mod rational {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -623,7 +669,9 @@ mod rational {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -647,7 +695,9 @@ mod rational {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -669,7 +719,9 @@ mod rational {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -693,7 +745,9 @@ mod rational {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -717,7 +771,9 @@ mod rational {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -741,7 +797,9 @@ mod rational {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -766,7 +824,9 @@ mod rational {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -790,7 +850,9 @@ mod rational {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -825,7 +887,9 @@ mod rational {
                 start,
             };
 
-            let r = t.extract();
+            let (r, c) = t.extract();
+
+            assert!(c.is_none());
             dbg!(&r);
 
             assert!(matches!(
@@ -855,7 +919,9 @@ mod rational {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -881,7 +947,9 @@ mod rational {
                 start,
             };
 
-            let r = t.extract();
+            let (r, c) = t.extract();
+
+            assert!(c.is_none());
             dbg!(&r);
 
             assert!(matches!(
@@ -908,7 +976,9 @@ mod rational {
                 start,
             };
 
-            let r = t.extract();
+            let (r, c) = t.extract();
+
+            assert!(c.is_none());
             dbg!(&r);
 
             assert!(matches!(
@@ -935,7 +1005,9 @@ mod rational {
                 start,
             };
 
-            let r = t.extract();
+            let (r, c) = t.extract();
+
+            assert!(c.is_none());
             dbg!(&r);
 
             assert!(matches!(
@@ -960,7 +1032,9 @@ mod rational {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -984,7 +1058,9 @@ mod rational {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -1008,7 +1084,9 @@ mod rational {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -1033,7 +1111,9 @@ mod rational {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -1057,7 +1137,9 @@ mod rational {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -1079,7 +1161,9 @@ mod rational {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -1101,7 +1185,9 @@ mod rational {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -1123,7 +1209,9 @@ mod rational {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -1145,7 +1233,9 @@ mod rational {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -1167,7 +1257,9 @@ mod rational {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -1189,7 +1281,9 @@ mod rational {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -1211,7 +1305,9 @@ mod rational {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -1233,7 +1329,9 @@ mod rational {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -1255,7 +1353,9 @@ mod rational {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -1281,7 +1381,9 @@ mod float {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -1305,7 +1407,9 @@ mod float {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -1329,7 +1433,9 @@ mod float {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -1353,7 +1459,9 @@ mod float {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -1377,7 +1485,9 @@ mod float {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -1401,7 +1511,9 @@ mod float {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -1425,7 +1537,9 @@ mod float {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -1449,7 +1563,9 @@ mod float {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -1473,7 +1589,9 @@ mod float {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -1497,7 +1615,9 @@ mod float {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -1521,7 +1641,9 @@ mod float {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -1545,7 +1667,9 @@ mod float {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -1569,7 +1693,9 @@ mod float {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -1593,7 +1719,9 @@ mod float {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -1617,7 +1745,9 @@ mod float {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -1641,7 +1771,9 @@ mod float {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -1665,7 +1797,9 @@ mod float {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -1689,7 +1823,9 @@ mod float {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -1713,7 +1849,9 @@ mod float {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -1737,7 +1875,9 @@ mod float {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -1763,7 +1903,9 @@ mod float {
                 start,
             };
 
-            let r = t.extract();
+            let (r, c) = t.extract();
+
+            assert!(c.is_none());
             dbg!(&r);
 
             assert!(matches!(
@@ -1795,7 +1937,9 @@ mod float {
                 start,
             };
 
-            let r = t.extract();
+            let (r, c) = t.extract();
+
+            assert!(c.is_none());
             dbg!(&r);
 
             assert!(matches!(
@@ -1822,7 +1966,9 @@ mod float {
                 start,
             };
 
-            let r = t.extract();
+            let (r, c) = t.extract();
+
+            assert!(c.is_none());
             dbg!(&r);
 
             assert!(matches!(
@@ -1849,7 +1995,9 @@ mod float {
                 start,
             };
 
-            let r = t.extract();
+            let (r, c) = t.extract();
+
+            assert!(c.is_none());
             dbg!(&r);
 
             assert!(matches!(
@@ -1874,7 +2022,9 @@ mod float {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -1898,7 +2048,9 @@ mod float {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -1922,7 +2074,9 @@ mod float {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -1948,7 +2102,9 @@ mod float {
                 start,
             };
 
-            let r = t.extract();
+            let (r, c) = t.extract();
+
+            assert!(c.is_none());
             dbg!(&r);
 
             assert!(matches!(
@@ -1975,7 +2131,9 @@ mod float {
                 start,
             };
 
-            let r = t.extract();
+            let (r, c) = t.extract();
+
+            assert!(c.is_none());
             dbg!(&r);
 
             assert!(matches!(
@@ -2002,7 +2160,9 @@ mod float {
                 start,
             };
 
-            let r = t.extract();
+            let (r, c) = t.extract();
+
+            assert!(c.is_none());
             dbg!(&r);
 
             assert!(matches!(
@@ -2027,7 +2187,9 @@ mod float {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -2051,7 +2213,9 @@ mod float {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -2075,7 +2239,9 @@ mod float {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -2099,7 +2265,9 @@ mod float {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -2125,7 +2293,9 @@ mod float {
                 start,
             };
 
-            let r = t.extract();
+            let (r, c) = t.extract();
+
+            assert!(c.is_none());
             dbg!(&r);
 
             assert!(matches!(
@@ -2152,7 +2322,9 @@ mod float {
                 start,
             };
 
-            let r = t.extract();
+            let (r, c) = t.extract();
+
+            assert!(c.is_none());
             dbg!(&r);
 
             assert!(matches!(
@@ -2182,7 +2354,9 @@ mod float {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -2204,7 +2378,9 @@ mod float {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -2228,7 +2404,9 @@ mod float {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -2252,7 +2430,9 @@ mod float {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -2274,7 +2454,9 @@ mod float {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -2298,7 +2480,9 @@ mod float {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -2328,7 +2512,9 @@ mod float {
                 start,
             };
 
-            let r = t.extract();
+            let (r, c) = t.extract();
+
+            assert!(c.is_none());
             dbg!(&r);
 
             assert!(matches!(
@@ -2351,7 +2537,9 @@ mod float {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -2377,7 +2565,9 @@ mod float {
                 start,
             };
 
-            let r = t.extract();
+            let (r, c) = t.extract();
+
+            assert!(c.is_none());
             dbg!(&r);
 
             assert!(matches!(
@@ -2400,7 +2590,9 @@ mod float {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -2424,7 +2616,9 @@ mod float {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -2446,7 +2640,9 @@ mod float {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -2471,7 +2667,9 @@ mod float {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -2496,7 +2694,9 @@ mod float {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -2521,7 +2721,9 @@ mod float {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -2546,7 +2748,9 @@ mod float {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -2571,7 +2775,9 @@ mod float {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -2598,7 +2804,9 @@ mod float {
                 start,
             };
 
-            let r = t.extract();
+            let (r, c) = t.extract();
+
+            assert!(c.is_none());
             dbg!(&r);
 
             assert!(matches!(
@@ -2628,7 +2836,9 @@ mod float {
                 start,
             };
 
-            let r = t.extract();
+            let (r, c) = t.extract();
+
+            assert!(c.is_none());
             dbg!(&r);
 
             assert!(matches!(
@@ -2658,7 +2868,9 @@ mod imaginary {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -2683,7 +2895,9 @@ mod imaginary {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -2708,7 +2922,9 @@ mod imaginary {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -2730,7 +2946,9 @@ mod imaginary {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -2752,7 +2970,9 @@ mod imaginary {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -2774,7 +2994,9 @@ mod imaginary {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -2799,7 +3021,9 @@ mod imaginary {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -2824,7 +3048,9 @@ mod imaginary {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -2849,7 +3075,9 @@ mod imaginary {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -2880,7 +3108,9 @@ mod imaginary {
                 start,
             };
 
-            let r = t.extract();
+            let (r, c) = t.extract();
+
+            assert!(c.is_none());
             dbg!(&r, &case);
 
             assert!(matches!(
@@ -2913,7 +3143,9 @@ mod imaginary {
                 start,
             };
 
-            let r = t.extract();
+            let (r, c) = t.extract();
+
+            assert!(c.is_none());
             dbg!(&case, &r);
 
             assert!(matches!(
@@ -2942,7 +3174,9 @@ mod imaginary {
                 start,
             };
 
-            let r = t.extract();
+            let (r, c) = t.extract();
+
+            assert!(c.is_none());
             dbg!(&r);
 
             assert!(matches!(
@@ -2970,7 +3204,9 @@ mod imaginary {
                 start,
             };
 
-            let r = t.extract();
+            let (r, c) = t.extract();
+
+            assert!(c.is_none());
             dbg!(&r);
 
             assert!(matches!(
@@ -2998,7 +3234,9 @@ mod imaginary {
                 start,
             };
 
-            let r = t.extract();
+            let (r, c) = t.extract();
+
+            assert!(c.is_none());
             dbg!(&r);
 
             assert!(matches!(
@@ -3026,7 +3264,9 @@ mod imaginary {
                 start,
             };
 
-            let r = t.extract();
+            let (r, c) = t.extract();
+
+            assert!(c.is_none());
             dbg!(&r);
 
             assert!(matches!(
@@ -3052,7 +3292,9 @@ mod imaginary {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -3077,7 +3319,9 @@ mod imaginary {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -3102,7 +3346,9 @@ mod imaginary {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -3127,7 +3373,9 @@ mod imaginary {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -3149,7 +3397,9 @@ mod imaginary {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -3171,7 +3421,9 @@ mod imaginary {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -3193,7 +3445,9 @@ mod imaginary {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -3218,7 +3472,9 @@ mod imaginary {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -3243,7 +3499,9 @@ mod imaginary {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -3268,7 +3526,9 @@ mod imaginary {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -3293,7 +3553,9 @@ mod imaginary {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -3318,7 +3580,9 @@ mod imaginary {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -3343,7 +3607,9 @@ mod imaginary {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -3368,7 +3634,9 @@ mod imaginary {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -3393,7 +3661,9 @@ mod imaginary {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -3418,7 +3688,9 @@ mod imaginary {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -3443,7 +3715,9 @@ mod imaginary {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -3468,7 +3742,9 @@ mod imaginary {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -3493,7 +3769,9 @@ mod imaginary {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -3518,7 +3796,9 @@ mod imaginary {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -3544,7 +3824,9 @@ mod cartesian {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -3568,7 +3850,9 @@ mod cartesian {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -3592,7 +3876,9 @@ mod cartesian {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -3616,7 +3902,9 @@ mod cartesian {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -3640,7 +3928,9 @@ mod cartesian {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -3664,7 +3954,9 @@ mod cartesian {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -3688,7 +3980,9 @@ mod cartesian {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -3712,7 +4006,9 @@ mod cartesian {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -3736,7 +4032,9 @@ mod cartesian {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -3760,7 +4058,9 @@ mod cartesian {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -3784,7 +4084,9 @@ mod cartesian {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -3814,7 +4116,9 @@ mod cartesian {
                 start,
             };
 
-            let r = t.extract();
+            let (r, c) = t.extract();
+
+            assert!(c.is_none());
             dbg!(&r);
 
             assert!(matches!(
@@ -3864,7 +4168,9 @@ mod cartesian {
                 start,
             };
 
-            let r = t.extract();
+            let (r, c) = t.extract();
+
+            assert!(c.is_none());
             dbg!(&r);
 
             assert!(matches!(
@@ -3913,7 +4219,9 @@ mod cartesian {
                 start,
             };
 
-            let r = t.extract();
+            let (r, c) = t.extract();
+
+            assert!(c.is_none());
             dbg!(&r, &case);
 
             assert!(matches!(
@@ -3943,7 +4251,9 @@ mod cartesian {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -3969,7 +4279,9 @@ mod cartesian {
                 start,
             };
 
-            let r = t.extract();
+            let (r, c) = t.extract();
+
+            assert!(c.is_none());
             dbg!(&r);
 
             assert!(matches!(
@@ -3996,7 +4308,9 @@ mod cartesian {
                 start,
             };
 
-            let r = t.extract();
+            let (r, c) = t.extract();
+
+            assert!(c.is_none());
             dbg!(&r);
 
             assert!(matches!(
@@ -4023,7 +4337,9 @@ mod cartesian {
                 start,
             };
 
-            let r = t.extract();
+            let (r, c) = t.extract();
+
+            assert!(c.is_none());
             dbg!(&r);
 
             assert!(matches!(
@@ -4050,7 +4366,9 @@ mod cartesian {
                 start,
             };
 
-            let r = t.extract();
+            let (r, c) = t.extract();
+
+            assert!(c.is_none());
             dbg!(&r);
 
             assert!(matches!(
@@ -4075,7 +4393,9 @@ mod cartesian {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -4099,7 +4419,9 @@ mod cartesian {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -4123,7 +4445,9 @@ mod cartesian {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -4147,7 +4471,9 @@ mod cartesian {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -4169,7 +4495,9 @@ mod cartesian {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -4191,7 +4519,9 @@ mod cartesian {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -4213,7 +4543,9 @@ mod cartesian {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -4235,7 +4567,9 @@ mod cartesian {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -4257,7 +4591,9 @@ mod cartesian {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -4279,7 +4615,9 @@ mod cartesian {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -4305,7 +4643,9 @@ mod polar {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -4332,7 +4672,9 @@ mod polar {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -4359,7 +4701,9 @@ mod polar {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -4386,7 +4730,9 @@ mod polar {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -4413,7 +4759,9 @@ mod polar {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -4437,7 +4785,9 @@ mod polar {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -4461,7 +4811,9 @@ mod polar {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -4485,7 +4837,9 @@ mod polar {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -4509,7 +4863,9 @@ mod polar {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -4533,7 +4889,9 @@ mod polar {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -4557,7 +4915,9 @@ mod polar {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -4582,7 +4942,9 @@ mod polar {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -4634,7 +4996,9 @@ mod polar {
                 start,
             };
 
-            let r = t.extract();
+            let (r, c) = t.extract();
+
+            assert!(c.is_none());
             dbg!(&r);
 
             assert!(matches!(
@@ -4678,7 +5042,9 @@ mod polar {
                 start,
             };
 
-            let r = t.extract();
+            let (r, c) = t.extract();
+
+            assert!(c.is_none());
             dbg!(&r);
 
             assert!(matches!(
@@ -4714,7 +5080,9 @@ mod polar {
                 start,
             };
 
-            let r = t.extract();
+            let (r, c) = t.extract();
+
+            assert!(c.is_none());
             dbg!(&r);
 
             assert!(matches!(
@@ -4744,7 +5112,9 @@ mod polar {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -4773,7 +5143,9 @@ mod polar {
                 start,
             };
 
-            let r = t.extract();
+            let (r, c) = t.extract();
+
+            assert!(c.is_none());
             dbg!(&r);
 
             assert!(matches!(
@@ -4803,7 +5175,9 @@ mod polar {
                 start,
             };
 
-            let r = t.extract();
+            let (r, c) = t.extract();
+
+            assert!(c.is_none());
             dbg!(&r);
 
             assert!(matches!(
@@ -4833,7 +5207,9 @@ mod polar {
                 start,
             };
 
-            let r = t.extract();
+            let (r, c) = t.extract();
+
+            assert!(c.is_none());
             dbg!(&r);
 
             assert!(matches!(
@@ -4863,7 +5239,9 @@ mod polar {
                 start,
             };
 
-            let r = t.extract();
+            let (r, c) = t.extract();
+
+            assert!(c.is_none());
             dbg!(&r);
 
             assert!(matches!(
@@ -4893,7 +5271,9 @@ mod polar {
                 start,
             };
 
-            let r = t.extract();
+            let (r, c) = t.extract();
+
+            assert!(c.is_none());
             dbg!(&r);
 
             assert!(matches!(
@@ -4923,7 +5303,9 @@ mod polar {
                 start,
             };
 
-            let r = t.extract();
+            let (r, c) = t.extract();
+
+            assert!(c.is_none());
             dbg!(&r);
 
             assert!(matches!(
@@ -4951,7 +5333,9 @@ mod polar {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -4975,7 +5359,9 @@ mod polar {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -4999,7 +5385,9 @@ mod polar {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -5023,7 +5411,9 @@ mod polar {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -5047,7 +5437,9 @@ mod polar {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -5074,7 +5466,9 @@ mod polar {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -5096,7 +5490,9 @@ mod polar {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -5118,7 +5514,9 @@ mod polar {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -5140,7 +5538,9 @@ mod polar {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -5162,7 +5562,9 @@ mod polar {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -5184,7 +5586,9 @@ mod polar {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -5210,7 +5614,9 @@ mod identifiers {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
 
         assert!(matches!(
             r,
@@ -5231,7 +5637,9 @@ mod identifiers {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
 
         assert!(matches!(
             r,
@@ -5252,7 +5660,9 @@ mod identifiers {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
 
         assert!(matches!(
             r,
@@ -5273,7 +5683,9 @@ mod identifiers {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
 
         assert!(matches!(
             r,
@@ -5294,7 +5706,9 @@ mod identifiers {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
 
         assert!(matches!(
             r,
@@ -5315,7 +5729,9 @@ mod identifiers {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
 
         assert!(matches!(
             r,
@@ -5336,7 +5752,9 @@ mod identifiers {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
 
         assert!(matches!(
             r,
@@ -5357,7 +5775,9 @@ mod identifiers {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
 
         assert!(matches!(
             r,
@@ -5378,7 +5798,9 @@ mod identifiers {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -5400,7 +5822,9 @@ mod identifiers {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -5422,7 +5846,9 @@ mod identifiers {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -5444,7 +5870,9 @@ mod identifiers {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -5466,7 +5894,9 @@ mod identifiers {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -5488,7 +5918,9 @@ mod identifiers {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -5510,7 +5942,9 @@ mod identifiers {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -5532,7 +5966,9 @@ mod identifiers {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -5554,7 +5990,9 @@ mod identifiers {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -5576,7 +6014,9 @@ mod identifiers {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -5598,7 +6038,9 @@ mod identifiers {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -5620,7 +6062,9 @@ mod identifiers {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -5642,7 +6086,9 @@ mod identifiers {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
 
         assert!(matches!(
             r,
@@ -5663,7 +6109,9 @@ mod identifiers {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
 
         assert!(matches!(
             r,
@@ -5684,7 +6132,9 @@ mod identifiers {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -5706,7 +6156,9 @@ mod identifiers {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -5728,7 +6180,9 @@ mod identifiers {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -5750,7 +6204,9 @@ mod identifiers {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -5772,7 +6228,9 @@ mod identifiers {
             start,
         };
 
-        let r = t.extract();
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
         dbg!(&r);
 
         assert!(matches!(
@@ -5801,7 +6259,9 @@ mod identifiers {
                 start,
             };
 
-            let r = t.extract();
+            let (r, c) = t.extract();
+
+            assert!(c.is_none());
             dbg!(&r);
 
             assert!(matches!(
