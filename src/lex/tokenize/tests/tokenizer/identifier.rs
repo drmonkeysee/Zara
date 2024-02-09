@@ -166,7 +166,6 @@ fn with_extended_and_higher_chars() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
-
     // TODO: support unicode
     /*assert!(matches!(
         r,

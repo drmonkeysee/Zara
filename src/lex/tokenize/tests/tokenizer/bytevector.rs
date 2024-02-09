@@ -54,7 +54,6 @@ fn ends_at_paren() {
     };
 
     let (r, c) = t.extract();
-    dbg!(&r);
 
     assert!(c.is_none());
     assert!(matches!(

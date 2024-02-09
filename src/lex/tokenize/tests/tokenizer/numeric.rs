@@ -43,8 +43,6 @@ mod integer {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -69,8 +67,6 @@ mod integer {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -95,8 +91,6 @@ mod integer {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -121,8 +115,6 @@ mod integer {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -147,8 +139,6 @@ mod integer {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -174,8 +164,6 @@ mod integer {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -201,8 +189,6 @@ mod integer {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -228,8 +214,6 @@ mod integer {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -255,8 +239,6 @@ mod integer {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -282,8 +264,6 @@ mod integer {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -314,8 +294,6 @@ mod integer {
             let (r, c) = t.extract();
 
             assert!(c.is_none());
-            dbg!(&r);
-
             assert!(matches!(
                 r,
                 TokenExtract {
@@ -344,8 +322,6 @@ mod integer {
             let (r, c) = t.extract();
 
             assert!(c.is_none());
-            dbg!(&r);
-
             assert!(matches!(
                 r,
                 TokenExtract {
@@ -371,8 +347,6 @@ mod integer {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -399,8 +373,6 @@ mod integer {
             let (r, c) = t.extract();
 
             assert!(c.is_none());
-            dbg!(&r);
-
             assert!(matches!(
                 r,
                 TokenExtract {
@@ -428,8 +400,6 @@ mod integer {
             let (r, c) = t.extract();
 
             assert!(c.is_none());
-            dbg!(&r);
-
             assert!(matches!(
                 r,
                 TokenExtract {
@@ -457,8 +427,6 @@ mod integer {
             let (r, c) = t.extract();
 
             assert!(c.is_none());
-            dbg!(&r);
-
             assert!(matches!(
                 r,
                 TokenExtract {
@@ -484,8 +452,6 @@ mod integer {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -510,8 +476,6 @@ mod integer {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -536,8 +500,6 @@ mod integer {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -563,8 +525,6 @@ mod integer {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -591,8 +551,6 @@ mod integer {
             let (r, c) = t.extract();
 
             assert!(c.is_none());
-            dbg!(&r);
-
             assert!(matches!(
                 r,
                 TokenExtract {
@@ -620,8 +578,6 @@ mod rational {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -646,8 +602,6 @@ mod rational {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -672,8 +626,6 @@ mod rational {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -698,8 +650,6 @@ mod rational {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -722,8 +672,6 @@ mod rational {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -748,8 +696,6 @@ mod rational {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -774,8 +720,6 @@ mod rational {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -800,8 +744,6 @@ mod rational {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -827,8 +769,6 @@ mod rational {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -853,8 +793,6 @@ mod rational {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -890,8 +828,6 @@ mod rational {
             let (r, c) = t.extract();
 
             assert!(c.is_none());
-            dbg!(&r);
-
             assert!(matches!(
                 r,
                 TokenExtract {
@@ -922,8 +858,6 @@ mod rational {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -950,8 +884,6 @@ mod rational {
             let (r, c) = t.extract();
 
             assert!(c.is_none());
-            dbg!(&r);
-
             assert!(matches!(
                 r,
                 TokenExtract {
@@ -979,8 +911,6 @@ mod rational {
             let (r, c) = t.extract();
 
             assert!(c.is_none());
-            dbg!(&r);
-
             assert!(matches!(
                 r,
                 TokenExtract {
@@ -1008,8 +938,6 @@ mod rational {
             let (r, c) = t.extract();
 
             assert!(c.is_none());
-            dbg!(&r);
-
             assert!(matches!(
                 r,
                 TokenExtract {
@@ -1035,8 +963,6 @@ mod rational {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -1061,8 +987,6 @@ mod rational {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -1087,8 +1011,6 @@ mod rational {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -1114,8 +1036,6 @@ mod rational {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -1140,8 +1060,6 @@ mod rational {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -1164,8 +1082,6 @@ mod rational {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -1188,8 +1104,6 @@ mod rational {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -1212,8 +1126,6 @@ mod rational {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -1236,8 +1148,6 @@ mod rational {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -1260,8 +1170,6 @@ mod rational {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -1284,8 +1192,6 @@ mod rational {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -1308,8 +1214,6 @@ mod rational {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -1332,8 +1236,6 @@ mod rational {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -1356,8 +1258,6 @@ mod rational {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -1384,8 +1284,6 @@ mod float {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -1410,8 +1308,6 @@ mod float {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -1436,8 +1332,6 @@ mod float {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -1462,8 +1356,6 @@ mod float {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -1488,8 +1380,6 @@ mod float {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -1514,8 +1404,6 @@ mod float {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -1540,8 +1428,6 @@ mod float {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -1566,8 +1452,6 @@ mod float {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -1592,8 +1476,6 @@ mod float {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -1618,8 +1500,6 @@ mod float {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -1644,8 +1524,6 @@ mod float {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -1670,8 +1548,6 @@ mod float {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -1696,8 +1572,6 @@ mod float {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -1722,8 +1596,6 @@ mod float {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -1748,8 +1620,6 @@ mod float {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -1774,8 +1644,6 @@ mod float {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -1800,8 +1668,6 @@ mod float {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -1826,8 +1692,6 @@ mod float {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -1852,8 +1716,6 @@ mod float {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -1878,8 +1740,6 @@ mod float {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -1906,8 +1766,6 @@ mod float {
             let (r, c) = t.extract();
 
             assert!(c.is_none());
-            dbg!(&r);
-
             assert!(matches!(
                 r,
                 TokenExtract {
@@ -1940,8 +1798,6 @@ mod float {
             let (r, c) = t.extract();
 
             assert!(c.is_none());
-            dbg!(&r);
-
             assert!(matches!(
                 r,
                 TokenExtract {
@@ -1969,8 +1825,6 @@ mod float {
             let (r, c) = t.extract();
 
             assert!(c.is_none());
-            dbg!(&r);
-
             assert!(matches!(
                 r,
                 TokenExtract {
@@ -1998,8 +1852,6 @@ mod float {
             let (r, c) = t.extract();
 
             assert!(c.is_none());
-            dbg!(&r);
-
             assert!(matches!(
                 r,
                 TokenExtract {
@@ -2025,8 +1877,6 @@ mod float {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -2051,8 +1901,6 @@ mod float {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -2077,8 +1925,6 @@ mod float {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -2105,8 +1951,6 @@ mod float {
             let (r, c) = t.extract();
 
             assert!(c.is_none());
-            dbg!(&r);
-
             assert!(matches!(
                 r,
                 TokenExtract {
@@ -2134,8 +1978,6 @@ mod float {
             let (r, c) = t.extract();
 
             assert!(c.is_none());
-            dbg!(&r);
-
             assert!(matches!(
                 r,
                 TokenExtract {
@@ -2163,8 +2005,6 @@ mod float {
             let (r, c) = t.extract();
 
             assert!(c.is_none());
-            dbg!(&r);
-
             assert!(matches!(
                 r,
                 TokenExtract {
@@ -2190,8 +2030,6 @@ mod float {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -2216,8 +2054,6 @@ mod float {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -2242,8 +2078,6 @@ mod float {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -2268,8 +2102,6 @@ mod float {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -2296,8 +2128,6 @@ mod float {
             let (r, c) = t.extract();
 
             assert!(c.is_none());
-            dbg!(&r);
-
             assert!(matches!(
                 r,
                 TokenExtract {
@@ -2325,8 +2155,6 @@ mod float {
             let (r, c) = t.extract();
 
             assert!(c.is_none());
-            dbg!(&r);
-
             assert!(matches!(
                 r,
                 TokenExtract {
@@ -2357,8 +2185,6 @@ mod float {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -2381,8 +2207,6 @@ mod float {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -2407,8 +2231,6 @@ mod float {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -2433,8 +2255,6 @@ mod float {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -2457,8 +2277,6 @@ mod float {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -2483,8 +2301,6 @@ mod float {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -2515,8 +2331,6 @@ mod float {
             let (r, c) = t.extract();
 
             assert!(c.is_none());
-            dbg!(&r);
-
             assert!(matches!(
                 r,
                 TokenExtract {
@@ -2540,8 +2354,6 @@ mod float {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -2568,8 +2380,6 @@ mod float {
             let (r, c) = t.extract();
 
             assert!(c.is_none());
-            dbg!(&r);
-
             assert!(matches!(
                 r,
                 TokenExtract {
@@ -2593,8 +2403,6 @@ mod float {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -2619,8 +2427,6 @@ mod float {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -2643,8 +2449,6 @@ mod float {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -2670,8 +2474,6 @@ mod float {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -2697,8 +2499,6 @@ mod float {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -2724,8 +2524,6 @@ mod float {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -2751,8 +2549,6 @@ mod float {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -2778,8 +2574,6 @@ mod float {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -2807,8 +2601,6 @@ mod float {
             let (r, c) = t.extract();
 
             assert!(c.is_none());
-            dbg!(&r);
-
             assert!(matches!(
                 r,
                 TokenExtract {
@@ -2828,7 +2620,6 @@ mod float {
         let cases = [(i32::MAX as i64) + 1, (i32::MIN as i64) - 1];
         for case in cases {
             let input = format!("#e4.0e{case}");
-            dbg!(&input);
             let mut s = Scanner::new(&input);
             let start = some_or_fail!(s.next_token());
             let t = Tokenizer {
@@ -2839,8 +2630,6 @@ mod float {
             let (r, c) = t.extract();
 
             assert!(c.is_none());
-            dbg!(&r);
-
             assert!(matches!(
                 r,
                 TokenExtract {
@@ -2871,8 +2660,6 @@ mod imaginary {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -2898,8 +2685,6 @@ mod imaginary {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -2925,8 +2710,6 @@ mod imaginary {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -2949,8 +2732,6 @@ mod imaginary {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -2973,8 +2754,6 @@ mod imaginary {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -2997,8 +2776,6 @@ mod imaginary {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -3024,8 +2801,6 @@ mod imaginary {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -3051,8 +2826,6 @@ mod imaginary {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -3078,8 +2851,6 @@ mod imaginary {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -3111,8 +2882,6 @@ mod imaginary {
             let (r, c) = t.extract();
 
             assert!(c.is_none());
-            dbg!(&r, &case);
-
             assert!(matches!(
                 r,
                 TokenExtract {
@@ -3146,8 +2915,6 @@ mod imaginary {
             let (r, c) = t.extract();
 
             assert!(c.is_none());
-            dbg!(&case, &r);
-
             assert!(matches!(
                 r,
                 TokenExtract {
@@ -3177,8 +2944,6 @@ mod imaginary {
             let (r, c) = t.extract();
 
             assert!(c.is_none());
-            dbg!(&r);
-
             assert!(matches!(
                 r,
                 TokenExtract {
@@ -3207,8 +2972,6 @@ mod imaginary {
             let (r, c) = t.extract();
 
             assert!(c.is_none());
-            dbg!(&r);
-
             assert!(matches!(
                 r,
                 TokenExtract {
@@ -3237,8 +3000,6 @@ mod imaginary {
             let (r, c) = t.extract();
 
             assert!(c.is_none());
-            dbg!(&r);
-
             assert!(matches!(
                 r,
                 TokenExtract {
@@ -3267,8 +3028,6 @@ mod imaginary {
             let (r, c) = t.extract();
 
             assert!(c.is_none());
-            dbg!(&r);
-
             assert!(matches!(
                 r,
                 TokenExtract {
@@ -3295,8 +3054,6 @@ mod imaginary {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -3322,8 +3079,6 @@ mod imaginary {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -3349,8 +3104,6 @@ mod imaginary {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -3376,8 +3129,6 @@ mod imaginary {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -3400,8 +3151,6 @@ mod imaginary {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -3424,8 +3173,6 @@ mod imaginary {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -3448,8 +3195,6 @@ mod imaginary {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -3475,8 +3220,6 @@ mod imaginary {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -3502,8 +3245,6 @@ mod imaginary {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -3529,8 +3270,6 @@ mod imaginary {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -3556,8 +3295,6 @@ mod imaginary {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -3583,8 +3320,6 @@ mod imaginary {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -3610,8 +3345,6 @@ mod imaginary {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -3637,8 +3370,6 @@ mod imaginary {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -3664,8 +3395,6 @@ mod imaginary {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -3691,8 +3420,6 @@ mod imaginary {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -3718,8 +3445,6 @@ mod imaginary {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -3745,8 +3470,6 @@ mod imaginary {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -3772,8 +3495,6 @@ mod imaginary {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -3799,8 +3520,6 @@ mod imaginary {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -3827,8 +3546,6 @@ mod cartesian {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -3853,8 +3570,6 @@ mod cartesian {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -3879,8 +3594,6 @@ mod cartesian {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -3905,8 +3618,6 @@ mod cartesian {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -3931,8 +3642,6 @@ mod cartesian {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -3957,8 +3666,6 @@ mod cartesian {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -3983,8 +3690,6 @@ mod cartesian {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -4009,8 +3714,6 @@ mod cartesian {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -4035,8 +3738,6 @@ mod cartesian {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -4061,8 +3762,6 @@ mod cartesian {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -4087,8 +3786,6 @@ mod cartesian {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -4119,8 +3816,6 @@ mod cartesian {
             let (r, c) = t.extract();
 
             assert!(c.is_none());
-            dbg!(&r);
-
             assert!(matches!(
                 r,
                 TokenExtract {
@@ -4171,8 +3866,6 @@ mod cartesian {
             let (r, c) = t.extract();
 
             assert!(c.is_none());
-            dbg!(&r);
-
             assert!(matches!(
                 r,
                 TokenExtract {
@@ -4222,8 +3915,6 @@ mod cartesian {
             let (r, c) = t.extract();
 
             assert!(c.is_none());
-            dbg!(&r, &case);
-
             assert!(matches!(
                 r,
                 TokenExtract {
@@ -4254,8 +3945,6 @@ mod cartesian {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -4282,8 +3971,6 @@ mod cartesian {
             let (r, c) = t.extract();
 
             assert!(c.is_none());
-            dbg!(&r);
-
             assert!(matches!(
                 r,
                 TokenExtract {
@@ -4311,8 +3998,6 @@ mod cartesian {
             let (r, c) = t.extract();
 
             assert!(c.is_none());
-            dbg!(&r);
-
             assert!(matches!(
                 r,
                 TokenExtract {
@@ -4340,8 +4025,6 @@ mod cartesian {
             let (r, c) = t.extract();
 
             assert!(c.is_none());
-            dbg!(&r);
-
             assert!(matches!(
                 r,
                 TokenExtract {
@@ -4369,8 +4052,6 @@ mod cartesian {
             let (r, c) = t.extract();
 
             assert!(c.is_none());
-            dbg!(&r);
-
             assert!(matches!(
                 r,
                 TokenExtract {
@@ -4396,8 +4077,6 @@ mod cartesian {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -4422,8 +4101,6 @@ mod cartesian {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -4448,8 +4125,6 @@ mod cartesian {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -4474,8 +4149,6 @@ mod cartesian {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -4498,8 +4171,6 @@ mod cartesian {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -4522,8 +4193,6 @@ mod cartesian {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -4546,8 +4215,6 @@ mod cartesian {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -4570,8 +4237,6 @@ mod cartesian {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -4594,8 +4259,6 @@ mod cartesian {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -4618,8 +4281,6 @@ mod cartesian {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -4646,8 +4307,6 @@ mod polar {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -4675,8 +4334,6 @@ mod polar {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -4704,8 +4361,6 @@ mod polar {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -4733,8 +4388,6 @@ mod polar {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -4762,8 +4415,6 @@ mod polar {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -4788,8 +4439,6 @@ mod polar {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -4814,8 +4463,6 @@ mod polar {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -4840,8 +4487,6 @@ mod polar {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -4866,8 +4511,6 @@ mod polar {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -4892,8 +4535,6 @@ mod polar {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -4918,8 +4559,6 @@ mod polar {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -4945,8 +4584,6 @@ mod polar {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -4999,8 +4636,6 @@ mod polar {
             let (r, c) = t.extract();
 
             assert!(c.is_none());
-            dbg!(&r);
-
             assert!(matches!(
                 r,
                 TokenExtract {
@@ -5045,8 +4680,6 @@ mod polar {
             let (r, c) = t.extract();
 
             assert!(c.is_none());
-            dbg!(&r);
-
             assert!(matches!(
                 r,
                 TokenExtract {
@@ -5083,8 +4716,6 @@ mod polar {
             let (r, c) = t.extract();
 
             assert!(c.is_none());
-            dbg!(&r);
-
             assert!(matches!(
                 r,
                 TokenExtract {
@@ -5115,8 +4746,6 @@ mod polar {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -5146,8 +4775,6 @@ mod polar {
             let (r, c) = t.extract();
 
             assert!(c.is_none());
-            dbg!(&r);
-
             assert!(matches!(
                 r,
                 TokenExtract {
@@ -5178,8 +4805,6 @@ mod polar {
             let (r, c) = t.extract();
 
             assert!(c.is_none());
-            dbg!(&r);
-
             assert!(matches!(
                 r,
                 TokenExtract {
@@ -5210,8 +4835,6 @@ mod polar {
             let (r, c) = t.extract();
 
             assert!(c.is_none());
-            dbg!(&r);
-
             assert!(matches!(
                 r,
                 TokenExtract {
@@ -5242,8 +4865,6 @@ mod polar {
             let (r, c) = t.extract();
 
             assert!(c.is_none());
-            dbg!(&r);
-
             assert!(matches!(
                 r,
                 TokenExtract {
@@ -5274,8 +4895,6 @@ mod polar {
             let (r, c) = t.extract();
 
             assert!(c.is_none());
-            dbg!(&r);
-
             assert!(matches!(
                 r,
                 TokenExtract {
@@ -5306,8 +4925,6 @@ mod polar {
             let (r, c) = t.extract();
 
             assert!(c.is_none());
-            dbg!(&r);
-
             assert!(matches!(
                 r,
                 TokenExtract {
@@ -5336,8 +4953,6 @@ mod polar {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -5362,8 +4977,6 @@ mod polar {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -5388,8 +5001,6 @@ mod polar {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -5414,8 +5025,6 @@ mod polar {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -5440,8 +5049,6 @@ mod polar {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -5469,8 +5076,6 @@ mod polar {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -5493,8 +5098,6 @@ mod polar {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -5517,8 +5120,6 @@ mod polar {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -5541,8 +5142,6 @@ mod polar {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -5565,8 +5164,6 @@ mod polar {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -5589,8 +5186,6 @@ mod polar {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -5617,7 +5212,6 @@ mod identifiers {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -5640,7 +5234,6 @@ mod identifiers {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -5663,7 +5256,6 @@ mod identifiers {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -5686,7 +5278,6 @@ mod identifiers {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -5709,7 +5300,6 @@ mod identifiers {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -5732,7 +5322,6 @@ mod identifiers {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -5755,7 +5344,6 @@ mod identifiers {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -5778,7 +5366,6 @@ mod identifiers {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -5801,8 +5388,6 @@ mod identifiers {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -5825,8 +5410,6 @@ mod identifiers {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -5849,8 +5432,6 @@ mod identifiers {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -5873,8 +5454,6 @@ mod identifiers {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -5897,8 +5476,6 @@ mod identifiers {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -5921,8 +5498,6 @@ mod identifiers {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -5945,8 +5520,6 @@ mod identifiers {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -5969,8 +5542,6 @@ mod identifiers {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -5993,8 +5564,6 @@ mod identifiers {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -6017,8 +5586,6 @@ mod identifiers {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -6041,8 +5608,6 @@ mod identifiers {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -6065,8 +5630,6 @@ mod identifiers {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -6089,7 +5652,6 @@ mod identifiers {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -6112,7 +5674,6 @@ mod identifiers {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -6135,8 +5696,6 @@ mod identifiers {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -6159,8 +5718,6 @@ mod identifiers {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -6183,8 +5740,6 @@ mod identifiers {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -6207,8 +5762,6 @@ mod identifiers {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -6231,8 +5784,6 @@ mod identifiers {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-        dbg!(&r);
-
         assert!(matches!(
             r,
             TokenExtract {
@@ -6262,8 +5813,6 @@ mod identifiers {
             let (r, c) = t.extract();
 
             assert!(c.is_none());
-            dbg!(&r);
-
             assert!(matches!(
                 r,
                 TokenExtract {

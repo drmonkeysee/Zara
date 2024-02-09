@@ -461,7 +461,6 @@ fn check_character_list(cases: &[(&str, char)]) {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
-
         assert!(
             matches!(
                 r,
