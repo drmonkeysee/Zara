@@ -12,12 +12,12 @@ fn true_short() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let tok = ok_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 2,
-            result: Ok(TokenKind::Literal(Literal::Boolean(true))),
+        tok,
+        Token {
+            kind: TokenKind::Literal(Literal::Boolean(true)),
+            span: Range { start: 0, end: 2 },
         }
     ));
 }
@@ -34,12 +34,12 @@ fn true_long() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let tok = ok_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 5,
-            result: Ok(TokenKind::Literal(Literal::Boolean(true))),
+        tok,
+        Token {
+            kind: TokenKind::Literal(Literal::Boolean(true)),
+            span: Range { start: 0, end: 5 },
         }
     ));
 }
@@ -56,12 +56,12 @@ fn true_uppercase() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let tok = ok_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 5,
-            result: Ok(TokenKind::Literal(Literal::Boolean(true))),
+        tok,
+        Token {
+            kind: TokenKind::Literal(Literal::Boolean(true)),
+            span: Range { start: 0, end: 5 },
         }
     ));
 }
@@ -78,12 +78,12 @@ fn true_malformed() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let err = err_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 8,
-            result: Err(TokenErrorKind::BooleanExpected(true)),
+        err,
+        TokenError {
+            kind: TokenErrorKind::BooleanExpected(true),
+            span: Range { start: 0, end: 8 },
         }
     ));
 }
@@ -100,12 +100,12 @@ fn false_short() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let tok = ok_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 2,
-            result: Ok(TokenKind::Literal(Literal::Boolean(false))),
+        tok,
+        Token {
+            kind: TokenKind::Literal(Literal::Boolean(false)),
+            span: Range { start: 0, end: 2 },
         }
     ));
 }
@@ -122,12 +122,12 @@ fn false_long() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let tok = ok_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 6,
-            result: Ok(TokenKind::Literal(Literal::Boolean(false))),
+        tok,
+        Token {
+            kind: TokenKind::Literal(Literal::Boolean(false)),
+            span: Range { start: 0, end: 6 },
         }
     ));
 }
@@ -144,12 +144,12 @@ fn false_uppercase() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let tok = ok_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 6,
-            result: Ok(TokenKind::Literal(Literal::Boolean(false))),
+        tok,
+        Token {
+            kind: TokenKind::Literal(Literal::Boolean(false)),
+            span: Range { start: 0, end: 6 },
         }
     ));
 }
@@ -166,12 +166,12 @@ fn false_malformed() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let err = err_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 5,
-            result: Err(TokenErrorKind::BooleanExpected(false)),
+        err,
+        TokenError {
+            kind: TokenErrorKind::BooleanExpected(false),
+            span: Range { start: 0, end: 5 },
         }
     ));
 }

@@ -12,12 +12,12 @@ fn basic_token() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let tok = ok_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 4,
-            result: Ok(TokenKind::ByteVector),
+        tok,
+        Token {
+            kind: TokenKind::ByteVector,
+            span: Range { start: 0, end: 4 },
         }
     ));
 }
@@ -34,12 +34,12 @@ fn uppercase() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let tok = ok_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 4,
-            result: Ok(TokenKind::ByteVector),
+        tok,
+        Token {
+            kind: TokenKind::ByteVector,
+            span: Range { start: 0, end: 4 },
         }
     ));
 }
@@ -56,12 +56,12 @@ fn ends_at_paren() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let tok = ok_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 4,
-            result: Ok(TokenKind::ByteVector),
+        tok,
+        Token {
+            kind: TokenKind::ByteVector,
+            span: Range { start: 0, end: 4 },
         }
     ));
 }
@@ -78,12 +78,12 @@ fn unterminated() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let err = err_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 2,
-            result: Err(TokenErrorKind::ByteVectorExpected),
+        err,
+        TokenError {
+            kind: TokenErrorKind::ByteVectorExpected,
+            span: Range { start: 0, end: 2 },
         }
     ));
 }
@@ -100,12 +100,12 @@ fn wrong_number() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let err = err_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 3,
-            result: Err(TokenErrorKind::ByteVectorExpected),
+        err,
+        TokenError {
+            kind: TokenErrorKind::ByteVectorExpected,
+            span: Range { start: 0, end: 3 },
         }
     ));
 }
@@ -122,12 +122,12 @@ fn extra_number() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let err = err_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 4,
-            result: Err(TokenErrorKind::ByteVectorExpected),
+        err,
+        TokenError {
+            kind: TokenErrorKind::ByteVectorExpected,
+            span: Range { start: 0, end: 4 },
         }
     ));
 }
@@ -144,12 +144,12 @@ fn no_paren() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let err = err_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 3,
-            result: Err(TokenErrorKind::ByteVectorExpected),
+        err,
+        TokenError {
+            kind: TokenErrorKind::ByteVectorExpected,
+            span: Range { start: 0, end: 3 },
         }
     ));
 }
@@ -166,12 +166,12 @@ fn no_paren_whitespace() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let err = err_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 3,
-            result: Err(TokenErrorKind::ByteVectorExpected),
+        err,
+        TokenError {
+            kind: TokenErrorKind::ByteVectorExpected,
+            span: Range { start: 0, end: 3 },
         }
     ));
 }
@@ -188,12 +188,13 @@ fn no_paren_extra_chars() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let err = err_or_fail!(r);
+    dbg!(&err);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 6,
-            result: Err(TokenErrorKind::ByteVectorExpected),
+        err,
+        TokenError {
+            kind: TokenErrorKind::ByteVectorExpected,
+            span: Range { start: 0, end: 6 },
         }
     ));
 }

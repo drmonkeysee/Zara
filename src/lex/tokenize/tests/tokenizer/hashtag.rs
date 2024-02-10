@@ -12,12 +12,12 @@ fn unterminated() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let err = err_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 1,
-            result: Err(TokenErrorKind::HashUnterminated),
+        err,
+        TokenError {
+            kind: TokenErrorKind::HashUnterminated,
+            span: Range { start: 0, end: 1 },
         }
     ));
 }
@@ -34,12 +34,12 @@ fn unterminated_with_whitespace() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let err = err_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 1,
-            result: Err(TokenErrorKind::HashUnterminated),
+        err,
+        TokenError {
+            kind: TokenErrorKind::HashUnterminated,
+            span: Range { start: 0, end: 1 },
         }
     ));
 }
@@ -56,12 +56,12 @@ fn unterminated_with_delimiter() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let err = err_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 1,
-            result: Err(TokenErrorKind::HashUnterminated),
+        err,
+        TokenError {
+            kind: TokenErrorKind::HashUnterminated,
+            span: Range { start: 0, end: 1 },
         }
     ));
 }
@@ -78,12 +78,12 @@ fn invalid() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let err = err_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 2,
-            result: Err(TokenErrorKind::HashInvalid),
+        err,
+        TokenError {
+            kind: TokenErrorKind::HashInvalid,
+            span: Range { start: 0, end: 2 },
         }
     ));
 }
@@ -100,12 +100,12 @@ fn invalid_long() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let err = err_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 20,
-            result: Err(TokenErrorKind::HashInvalid),
+        err,
+        TokenError {
+            kind: TokenErrorKind::HashInvalid,
+            span: Range { start: 0, end: 20 },
         }
     ));
 }
@@ -122,12 +122,12 @@ fn directive_fold_case() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let tok = ok_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 11,
-            result: Ok(TokenKind::DirectiveCase(true)),
+        tok,
+        Token {
+            kind: TokenKind::DirectiveCase(true),
+            span: Range { start: 0, end: 11 },
         }
     ));
 }
@@ -144,12 +144,12 @@ fn directive_no_fold_case() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let tok = ok_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 14,
-            result: Ok(TokenKind::DirectiveCase(false)),
+        tok,
+        Token {
+            kind: TokenKind::DirectiveCase(false),
+            span: Range { start: 0, end: 14 },
         }
     ));
 }
@@ -166,12 +166,12 @@ fn directive_case_insensitive() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let tok = ok_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 11,
-            result: Ok(TokenKind::DirectiveCase(true)),
+        tok,
+        Token {
+            kind: TokenKind::DirectiveCase(true),
+            span: Range { start: 0, end: 11 },
         }
     ));
 }
@@ -188,12 +188,12 @@ fn directive_fold_case_followed_by_token() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let tok = ok_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 11,
-            result: Ok(TokenKind::DirectiveCase(true)),
+        tok,
+        Token {
+            kind: TokenKind::DirectiveCase(true),
+            span: Range { start: 0, end: 11 },
         }
     ));
 }
@@ -210,12 +210,12 @@ fn directive_expected() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let err = err_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 2,
-            result: Err(TokenErrorKind::DirectiveExpected),
+        err,
+        TokenError {
+            kind: TokenErrorKind::DirectiveExpected,
+            span: Range { start: 0, end: 2 },
         }
     ));
 }
@@ -232,12 +232,12 @@ fn directive_invalid() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let err = err_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 8,
-            result: Err(TokenErrorKind::DirectiveInvalid),
+        err,
+        TokenError {
+            kind: TokenErrorKind::DirectiveInvalid,
+            span: Range { start: 0, end: 8 },
         }
     ));
 }
@@ -254,12 +254,12 @@ fn vector() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let tok = ok_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 2,
-            result: Ok(TokenKind::Vector),
+        tok,
+        Token {
+            kind: TokenKind::Vector,
+            span: Range { start: 0, end: 2 },
         }
     ));
 }
@@ -278,12 +278,12 @@ fn radix_with_no_number() {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
+        let err = err_or_fail!(r);
         assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 2,
-                result: Err(TokenErrorKind::NumberExpected),
+            err,
+            TokenError {
+                kind: TokenErrorKind::NumberExpected,
+                span: Range { start: 0, end: 2 },
             }
         ));
     }
@@ -303,12 +303,12 @@ fn radix_with_invalid_number() {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
+        let err = err_or_fail!(r);
         assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 5,
-                result: Err(TokenErrorKind::NumberExpected),
+            err,
+            TokenError {
+                kind: TokenErrorKind::NumberExpected,
+                span: Range { start: 0, end: 5 },
             }
         ));
     }
@@ -326,12 +326,12 @@ fn decimal_radix_with_malformed_number() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let err = err_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 5,
-            end: 7,
-            result: Err(TokenErrorKind::NumberUnexpectedDecimalPoint { at: 5 }),
+        err,
+        TokenError {
+            kind: TokenErrorKind::NumberUnexpectedDecimalPoint { at: 5 },
+            span: Range { start: 5, end: 7 },
         }
     ));
 }
@@ -348,12 +348,12 @@ fn radix_with_malformed_number() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let err = err_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 8,
-            result: Err(TokenErrorKind::NumberInvalid),
+        err,
+        TokenError {
+            kind: TokenErrorKind::NumberInvalid,
+            span: Range { start: 0, end: 8 },
         }
     ));
 }
@@ -372,12 +372,12 @@ fn exactness_with_no_number() {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
+        let err = err_or_fail!(r);
         assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 2,
-                result: Err(TokenErrorKind::NumberExpected),
+            err,
+            TokenError {
+                kind: TokenErrorKind::NumberExpected,
+                span: Range { start: 0, end: 2 },
             }
         ));
     }
@@ -397,12 +397,12 @@ fn exactness_with_invalid_number() {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
+        let err = err_or_fail!(r);
         assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 5,
-                result: Err(TokenErrorKind::NumberExpected),
+            err,
+            TokenError {
+                kind: TokenErrorKind::NumberExpected,
+                span: Range { start: 0, end: 5 },
             }
         ));
     }
@@ -422,12 +422,12 @@ fn exactness_with_malformed_number() {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
+        let err = err_or_fail!(r);
         assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 6,
-                result: Err(TokenErrorKind::NumberInvalid),
+            err,
+            TokenError {
+                kind: TokenErrorKind::NumberInvalid,
+                span: Range { start: 0, end: 6 },
             }
         ));
     }
@@ -445,12 +445,12 @@ fn exactness_missing_radix() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let err = err_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 2,
-            end: 3,
-            result: Err(TokenErrorKind::RadixExpected { at: 2 }),
+        err,
+        TokenError {
+            kind: TokenErrorKind::RadixExpected { at: 2 },
+            span: Range { start: 2, end: 3 },
         }
     ));
 }
@@ -467,12 +467,12 @@ fn exactness_malformed_radix() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let err = err_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 2,
-            end: 7,
-            result: Err(TokenErrorKind::RadixExpected { at: 2 }),
+        err,
+        TokenError {
+            kind: TokenErrorKind::RadixExpected { at: 2 },
+            span: Range { start: 2, end: 7 },
         }
     ));
 }
@@ -489,12 +489,12 @@ fn radix_missing_exactness() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let err = err_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 2,
-            end: 3,
-            result: Err(TokenErrorKind::ExactnessExpected { at: 2 }),
+        err,
+        TokenError {
+            kind: TokenErrorKind::ExactnessExpected { at: 2 },
+            span: Range { start: 2, end: 3 },
         }
     ));
 }
@@ -511,12 +511,12 @@ fn radix_malformed_exactness() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let err = err_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 2,
-            end: 9,
-            result: Err(TokenErrorKind::ExactnessExpected { at: 2 }),
+        err,
+        TokenError {
+            kind: TokenErrorKind::ExactnessExpected { at: 2 },
+            span: Range { start: 2, end: 9 },
         }
     ));
 }
@@ -536,12 +536,12 @@ mod comments {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
+        let tok = ok_or_fail!(r);
         assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 4,
-                result: Ok(TokenKind::Comment),
+            tok,
+            Token {
+                kind: TokenKind::Comment,
+                span: Range { start: 0, end: 4 },
             }
         ));
     }
@@ -558,12 +558,12 @@ mod comments {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
+        let tok = ok_or_fail!(r);
         assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 18,
-                result: Ok(TokenKind::Comment),
+            tok,
+            Token {
+                kind: TokenKind::Comment,
+                span: Range { start: 0, end: 18 },
             }
         ));
     }
@@ -580,12 +580,12 @@ mod comments {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
+        let tok = ok_or_fail!(r);
         assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 20,
-                result: Ok(TokenKind::Comment),
+            tok,
+            Token {
+                kind: TokenKind::Comment,
+                span: Range { start: 0, end: 20 },
             }
         ));
     }
@@ -602,12 +602,12 @@ mod comments {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
+        let tok = ok_or_fail!(r);
         assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 17,
-                result: Ok(TokenKind::Comment),
+            tok,
+            Token {
+                kind: TokenKind::Comment,
+                span: Range { start: 0, end: 17 },
             }
         ));
     }
@@ -624,12 +624,12 @@ mod comments {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
+        let tok = ok_or_fail!(r);
         assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 35,
-                result: Ok(TokenKind::Comment),
+            tok,
+            Token {
+                kind: TokenKind::Comment,
+                span: Range { start: 0, end: 35 },
             }
         ));
     }
@@ -646,12 +646,12 @@ mod comments {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
+        let tok = ok_or_fail!(r);
         assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 13,
-                result: Ok(TokenKind::Comment),
+            tok,
+            Token {
+                kind: TokenKind::Comment,
+                span: Range { start: 0, end: 13 },
             }
         ));
     }
@@ -668,12 +668,12 @@ mod comments {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
+        let tok = ok_or_fail!(r);
         assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 28,
-                result: Ok(TokenKind::CommentBlockBegin { depth: 0 }),
+            tok,
+            Token {
+                kind: TokenKind::CommentBlockBegin { depth: 0 },
+                span: Range { start: 0, end: 28 },
             }
         ));
     }
@@ -690,12 +690,12 @@ mod comments {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
+        let tok = ok_or_fail!(r);
         assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 24,
-                result: Ok(TokenKind::CommentBlockBegin { depth: 0 }),
+            tok,
+            Token {
+                kind: TokenKind::CommentBlockBegin { depth: 0 },
+                span: Range { start: 0, end: 24 },
             }
         ));
     }
@@ -712,12 +712,12 @@ mod comments {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
+        let tok = ok_or_fail!(r);
         assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 24,
-                result: Ok(TokenKind::CommentBlockBegin { depth: 0 }),
+            tok,
+            Token {
+                kind: TokenKind::CommentBlockBegin { depth: 0 },
+                span: Range { start: 0, end: 24 },
             }
         ));
     }
@@ -734,12 +734,12 @@ mod comments {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
+        let tok = ok_or_fail!(r);
         assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 33,
-                result: Ok(TokenKind::CommentBlockBegin { depth: 0 }),
+            tok,
+            Token {
+                kind: TokenKind::CommentBlockBegin { depth: 0 },
+                span: Range { start: 0, end: 33 },
             }
         ));
     }
@@ -756,12 +756,12 @@ mod comments {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
+        let tok = ok_or_fail!(r);
         assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 21,
-                result: Ok(TokenKind::CommentBlockBegin { depth: 1 }),
+            tok,
+            Token {
+                kind: TokenKind::CommentBlockBegin { depth: 1 },
+                span: Range { start: 0, end: 21 },
             }
         ));
     }
@@ -778,12 +778,12 @@ mod comments {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
+        let tok = ok_or_fail!(r);
         assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 30,
-                result: Ok(TokenKind::CommentBlockBegin { depth: 2 }),
+            tok,
+            Token {
+                kind: TokenKind::CommentBlockBegin { depth: 2 },
+                span: Range { start: 0, end: 30 },
             }
         ));
     }
@@ -800,12 +800,12 @@ mod comments {
         let (r, c) = c.extract();
 
         assert!(c.is_none());
+        let tok = ok_or_fail!(r);
         assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 17,
-                result: Ok(TokenKind::CommentBlockFragment { depth: 0 }),
+            tok,
+            Token {
+                kind: TokenKind::CommentBlockFragment { depth: 0 },
+                span: Range { start: 0, end: 17 },
             }
         ));
     }
@@ -822,12 +822,12 @@ mod comments {
         let (r, c) = c.extract();
 
         assert!(c.is_none());
+        let tok = ok_or_fail!(r);
         assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 20,
-                result: Ok(TokenKind::CommentBlockFragment { depth: 0 }),
+            tok,
+            Token {
+                kind: TokenKind::CommentBlockFragment { depth: 0 },
+                span: Range { start: 0, end: 20 },
             }
         ));
     }
@@ -844,12 +844,12 @@ mod comments {
         let (r, c) = c.extract();
 
         assert!(c.is_none());
+        let tok = ok_or_fail!(r);
         assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 36,
-                result: Ok(TokenKind::CommentBlockFragment { depth: 0 }),
+            tok,
+            Token {
+                kind: TokenKind::CommentBlockFragment { depth: 0 },
+                span: Range { start: 0, end: 36 },
             }
         ));
     }
@@ -866,12 +866,12 @@ mod comments {
         let (r, c) = c.extract();
 
         assert!(c.is_none());
+        let tok = ok_or_fail!(r);
         assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 30,
-                result: Ok(TokenKind::CommentBlockFragment { depth: 1 }),
+            tok,
+            Token {
+                kind: TokenKind::CommentBlockFragment { depth: 1 },
+                span: Range { start: 0, end: 30 },
             }
         ));
     }
@@ -888,12 +888,12 @@ mod comments {
         let (r, c) = c.extract();
 
         assert!(c.is_none());
+        let tok = ok_or_fail!(r);
         assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 30,
-                result: Ok(TokenKind::CommentBlockFragment { depth: 3 }),
+            tok,
+            Token {
+                kind: TokenKind::CommentBlockFragment { depth: 3 },
+                span: Range { start: 0, end: 30 },
             }
         ));
     }
@@ -910,12 +910,12 @@ mod comments {
         let (r, c) = c.extract();
 
         assert!(c.is_none());
+        let tok = ok_or_fail!(r);
         assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 14,
-                result: Ok(TokenKind::CommentBlockEnd),
+            tok,
+            Token {
+                kind: TokenKind::CommentBlockEnd,
+                span: Range { start: 0, end: 14 },
             }
         ));
     }
@@ -932,12 +932,12 @@ mod comments {
         let (r, c) = c.extract();
 
         assert!(c.is_none());
+        let tok = ok_or_fail!(r);
         assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 16,
-                result: Ok(TokenKind::CommentBlockEnd),
+            tok,
+            Token {
+                kind: TokenKind::CommentBlockEnd,
+                span: Range { start: 0, end: 16 },
             }
         ));
     }
@@ -954,12 +954,12 @@ mod comments {
         let (r, c) = c.extract();
 
         assert!(c.is_none());
+        let tok = ok_or_fail!(r);
         assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 14,
-                result: Ok(TokenKind::CommentBlockEnd),
+            tok,
+            Token {
+                kind: TokenKind::CommentBlockEnd,
+                span: Range { start: 0, end: 14 },
             }
         ));
     }
@@ -976,12 +976,12 @@ mod comments {
         let (r, c) = c.extract();
 
         assert!(c.is_none());
+        let tok = ok_or_fail!(r);
         assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 27,
-                result: Ok(TokenKind::CommentBlockEnd),
+            tok,
+            Token {
+                kind: TokenKind::CommentBlockEnd,
+                span: Range { start: 0, end: 27 },
             }
         ));
     }
@@ -998,12 +998,12 @@ mod comments {
         let (r, c) = c.extract();
 
         assert!(c.is_none());
+        let tok = ok_or_fail!(r);
         assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 25,
-                result: Ok(TokenKind::CommentBlockEnd),
+            tok,
+            Token {
+                kind: TokenKind::CommentBlockEnd,
+                span: Range { start: 0, end: 25 },
             }
         ));
     }
@@ -1020,12 +1020,12 @@ mod comments {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
+        let tok = ok_or_fail!(r);
         assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 2,
-                result: Ok(TokenKind::CommentDatum),
+            tok,
+            Token {
+                kind: TokenKind::CommentDatum,
+                span: Range { start: 0, end: 2 },
             }
         ));
     }
@@ -1042,12 +1042,12 @@ mod comments {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
+        let tok = ok_or_fail!(r);
         assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 2,
-                result: Ok(TokenKind::CommentDatum),
+            tok,
+            Token {
+                kind: TokenKind::CommentDatum,
+                span: Range { start: 0, end: 2 },
             }
         ));
     }
@@ -1064,12 +1064,12 @@ mod comments {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
+        let tok = ok_or_fail!(r);
         assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 2,
-                result: Ok(TokenKind::CommentDatum),
+            tok,
+            Token {
+                kind: TokenKind::CommentDatum,
+                span: Range { start: 0, end: 2 },
             }
         ));
     }

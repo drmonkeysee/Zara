@@ -1,17 +1,15 @@
-mod extract;
 mod lexers;
 mod scan;
 #[cfg(test)]
 mod tests;
 
 use self::{
-    extract::{TokenExtract, TokenExtractResult},
     lexers::{
         BlockComment, Hashtag, Identifier, PeriodIdentifier, StringLiteral, VerbatimIdentifer,
     },
     scan::{ScanItem, Scanner},
 };
-use super::token::{TokenContinuation, TokenKind, TokenResult};
+use super::token::{Token, TokenContinuation, TokenError, TokenErrorKind, TokenKind, TokenResult};
 
 pub(super) struct TokenStream<'a> {
     cont: Option<TokenContinuation>,
@@ -28,26 +26,26 @@ impl<'a> TokenStream<'a> {
 
     fn token(&mut self) -> Option<IterItem<'a>> {
         self.scan.next_token().map(|item| {
-            let (ext, cont) = Tokenizer {
+            let (tok, cont) = Tokenizer {
                 scan: &mut self.scan,
                 start: item,
             }
             .extract();
             self.cont = cont;
-            ext.build()
+            tok
         })
     }
 
     fn continuation(&mut self, cont: TokenContinuation) -> IterItem<'a> {
         let start = self.scan.pos();
-        let (ext, cont) = Continuation {
+        let (tok, cont) = Continuation {
             cont,
             scan: &mut self.scan,
             start,
         }
         .extract();
         self.cont = cont;
-        ext.build()
+        tok
     }
 }
 
@@ -63,6 +61,7 @@ impl Iterator for TokenStream<'_> {
 }
 
 type IterItem<'a> = <TokenStream<'a> as Iterator>::Item;
+type TokenExtractResult = Result<TokenKind, TokenErrorKind>;
 
 struct Tokenizer<'me, 'str> {
     scan: &'me mut Scanner<'str>,
@@ -70,9 +69,8 @@ struct Tokenizer<'me, 'str> {
 }
 
 impl<'me, 'str> Tokenizer<'me, 'str> {
-    fn extract(mut self) -> (TokenExtract, Option<TokenContinuation>) {
-        let result = self.scan();
-        flush(result, self.scan, self.start.0)
+    fn extract(mut self) -> (TokenResult, Option<TokenContinuation>) {
+        extract(self.scan(), self.scan, self.start.0)
     }
 
     fn scan(&mut self) -> TokenExtractResult {
@@ -118,9 +116,8 @@ struct Continuation<'me, 'str> {
 }
 
 impl<'me, 'str> Continuation<'me, 'str> {
-    fn extract(mut self) -> (TokenExtract, Option<TokenContinuation>) {
-        let result = self.scan();
-        flush(result, self.scan, self.start)
+    fn extract(mut self) -> (TokenResult, Option<TokenContinuation>) {
+        extract(self.scan(), self.scan, self.start)
     }
 
     fn scan(&mut self) -> TokenExtractResult {
@@ -141,17 +138,27 @@ impl<'me, 'str> Continuation<'me, 'str> {
     }
 }
 
-fn flush(
+fn extract(
     result: TokenExtractResult,
     scan: &mut Scanner,
-    start: usize,
-) -> (TokenExtract, Option<TokenContinuation>) {
+    mut start: usize,
+) -> (TokenResult, Option<TokenContinuation>) {
     let cont = result.as_ref().err().and_then(|err| {
+        if let Some(idx) = err.sub_idx() {
+            start = idx;
+        }
         let cont = err.to_continuation();
         if cont.is_none() {
             scan.end_of_token();
         }
         cont
     });
-    (TokenExtract::new(start, scan.pos(), result), cont)
+    let span = start..scan.pos();
+    (
+        match result {
+            Ok(token) => Ok(Token { kind: token, span }),
+            Err(err) => Err(TokenError { kind: err, span }),
+        },
+        cont,
+    )
 }

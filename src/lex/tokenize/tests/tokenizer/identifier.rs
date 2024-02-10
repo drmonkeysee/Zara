@@ -12,13 +12,13 @@ fn standard_identifier() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let tok = ok_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 3,
-            result: Ok(TokenKind::Identifier(s)),
-        } if s == "foo"
+        tok,
+        Token {
+            kind: TokenKind::Identifier(txt),
+            span: Range { start: 0, end: 3 },
+        } if txt == "foo"
     ));
 }
 
@@ -34,13 +34,13 @@ fn with_digits() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let tok = ok_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 3,
-            result: Ok(TokenKind::Identifier(s)),
-        } if s == "a24"
+        tok,
+        Token {
+            kind: TokenKind::Identifier(txt),
+            span: Range { start: 0, end: 3 },
+        } if txt == "a24"
     ));
 }
 
@@ -56,13 +56,13 @@ fn with_special_chars() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let tok = ok_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 16,
-            result: Ok(TokenKind::Identifier(s)),
-        } if s == "foo?bar@baz.beef"
+        tok,
+        Token {
+            kind: TokenKind::Identifier(txt),
+            span: Range { start: 0, end: 16 },
+        } if txt == "foo?bar@baz.beef"
     ));
 }
 
@@ -78,12 +78,12 @@ fn stops_at_delimiter() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let tok = ok_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 3,
-            result: Ok(TokenKind::Identifier(txt)),
+        tok,
+        Token {
+            kind: TokenKind::Identifier(txt),
+            span: Range { start: 0, end: 3 },
         } if txt == "abc"
     ));
 }
@@ -100,13 +100,13 @@ fn starts_with_special_char() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let tok = ok_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 4,
-            result: Ok(TokenKind::Identifier(s)),
-        } if s == "!foo"
+        tok,
+        Token {
+            kind: TokenKind::Identifier(txt),
+            span: Range { start: 0, end: 4 },
+        } if txt == "!foo"
     ));
 }
 
@@ -122,13 +122,13 @@ fn ends_with_peculiar_chars() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let tok = ok_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 3,
-            result: Ok(TokenKind::Identifier(s)),
-        } if s == "c++"
+        tok,
+        Token {
+            kind: TokenKind::Identifier(txt),
+            span: Range { start: 0, end: 3 },
+        } if txt == "c++"
     ));
 }
 
@@ -144,13 +144,13 @@ fn is_only_special_char() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let tok = ok_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 1,
-            result: Ok(TokenKind::Identifier(s)),
-        } if s == "!"
+        tok,
+        Token {
+            kind: TokenKind::Identifier(txt),
+            span: Range { start: 0, end: 1 },
+        } if txt == "!"
     ));
 }
 
@@ -166,6 +166,7 @@ fn with_extended_and_higher_chars() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let err = err_or_fail!(r);
     // TODO: support unicode
     /*assert!(matches!(
         r,
@@ -176,11 +177,10 @@ fn with_extended_and_higher_chars() {
         } if s == "λ🦀\u{2401}\u{fffd}"
     ));*/
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 12,
-            result: Err(TokenErrorKind::IdentifierInvalid('λ')),
+        err,
+        TokenError {
+            kind: TokenErrorKind::IdentifierInvalid('λ'),
+            span: Range { start: 0, end: 12 },
         }
     ));
 }
@@ -197,13 +197,13 @@ fn peculiar_identifier() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let tok = ok_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 4,
-            result: Ok(TokenKind::Identifier(s)),
-        } if s == "+foo"
+        tok,
+        Token {
+            kind: TokenKind::Identifier(txt),
+            span: Range { start: 0, end: 4 },
+        } if txt == "+foo"
     ));
 }
 
@@ -221,13 +221,13 @@ fn sign_identifier() {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
+        let tok = ok_or_fail!(r);
         assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 1,
-                result: Ok(TokenKind::Identifier(s)),
-            } if s == case
+            tok,
+            Token {
+                kind: TokenKind::Identifier(txt),
+                span: Range { start: 0, end: 1},
+            } if txt == case
         ));
     }
 }
@@ -244,13 +244,13 @@ fn double_sign_identifier() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let tok = ok_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 2,
-            result: Ok(TokenKind::Identifier(s)),
-        } if s == "+-"
+        tok,
+        Token {
+            kind: TokenKind::Identifier(txt),
+            span: Range { start: 0, end: 2 },
+        } if txt == "+-"
     ));
 }
 
@@ -266,13 +266,13 @@ fn sign_dot_identifier() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let tok = ok_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 2,
-            result: Ok(TokenKind::Identifier(s)),
-        } if s == "+."
+        tok,
+        Token {
+            kind: TokenKind::Identifier(txt),
+            span: Range { start: 0, end: 2 },
+        } if txt == "+."
     ));
 }
 
@@ -288,13 +288,13 @@ fn dot_sign_identifier() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let tok = ok_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 2,
-            result: Ok(TokenKind::Identifier(s)),
-        } if s == ".+"
+        tok,
+        Token {
+            kind: TokenKind::Identifier(txt),
+            span: Range { start: 0, end: 2 },
+        } if txt == ".+"
     ));
 }
 
@@ -310,13 +310,13 @@ fn double_period_identifier() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let tok = ok_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 2,
-            result: Ok(TokenKind::Identifier(s)),
-        } if s == ".."
+        tok,
+        Token {
+            kind: TokenKind::Identifier(txt),
+            span: Range { start: 0, end: 2 },
+        } if txt == ".."
     ));
 }
 
@@ -332,13 +332,13 @@ fn double_period_word_identifier() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let tok = ok_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 5,
-            result: Ok(TokenKind::Identifier(s)),
-        } if s == "..foo"
+        tok,
+        Token {
+            kind: TokenKind::Identifier(txt),
+            span: Range { start: 0, end: 5 },
+        } if txt == "..foo"
     ));
 }
 
@@ -354,13 +354,13 @@ fn period_identifier() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let tok = ok_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 4,
-            result: Ok(TokenKind::Identifier(s)),
-        } if s == ".foo"
+        tok,
+        Token {
+            kind: TokenKind::Identifier(txt),
+            span: Range { start: 0, end: 4 },
+        } if txt == ".foo"
     ));
 }
 
@@ -376,12 +376,12 @@ fn start_digit() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let err = err_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 4,
-            result: Err(TokenErrorKind::NumberInvalid),
+        err,
+        TokenError {
+            kind: TokenErrorKind::NumberInvalid,
+            span: Range { start: 0, end: 4 },
         }
     ));
 }
@@ -398,12 +398,12 @@ fn start_reserved_char() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let err = err_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 4,
-            result: Err(TokenErrorKind::IdentifierInvalid('{')),
+        err,
+        TokenError {
+            kind: TokenErrorKind::IdentifierInvalid('{'),
+            span: Range { start: 0, end: 4 },
         }
     ));
 }
@@ -420,12 +420,12 @@ fn contains_reserved_char() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let err = err_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 7,
-            result: Err(TokenErrorKind::IdentifierInvalid('{')),
+        err,
+        TokenError {
+            kind: TokenErrorKind::IdentifierInvalid('{'),
+            span: Range { start: 0, end: 7 },
         }
     ));
 }
@@ -445,13 +445,13 @@ mod verbatim {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
+        let tok = ok_or_fail!(r);
         assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 2,
-                result: Ok(TokenKind::Identifier(s)),
-            } if s == ""
+            tok,
+            Token {
+                kind: TokenKind::Identifier(txt),
+                span: Range { start: 0, end: 2 },
+            } if txt == ""
         ));
     }
 
@@ -467,13 +467,13 @@ mod verbatim {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
+        let tok = ok_or_fail!(r);
         assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 5,
-                result: Ok(TokenKind::Identifier(s)),
-            } if s == "foo"
+            tok,
+            Token {
+                kind: TokenKind::Identifier(txt),
+                span: Range { start: 0, end: 5 },
+            } if txt == "foo"
         ));
     }
 
@@ -489,13 +489,13 @@ mod verbatim {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
+        let tok = ok_or_fail!(r);
         assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 11,
-                result: Ok(TokenKind::Identifier(s)),
-            } if s == " foo bar "
+            tok,
+            Token {
+                kind: TokenKind::Identifier(txt),
+                span: Range { start: 0, end: 11 },
+            } if txt == " foo bar "
         ));
     }
 
@@ -511,13 +511,13 @@ mod verbatim {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
+        let tok = ok_or_fail!(r);
         assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 12,
-                result: Ok(TokenKind::Identifier(s)),
-            } if s == " foo|bar "
+            tok,
+            Token {
+                kind: TokenKind::Identifier(txt),
+                span: Range { start: 0, end: 12 },
+            } if txt == " foo|bar "
         ));
     }
 
@@ -533,13 +533,13 @@ mod verbatim {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
+        let tok = ok_or_fail!(r);
         assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 18,
-                result: Ok(TokenKind::Identifier(s)),
-            } if s == "foo \"string\" bar"
+            tok,
+            Token {
+                kind: TokenKind::Identifier(txt),
+                span: Range { start: 0, end: 18 },
+            } if txt == "foo \"string\" bar"
         ));
     }
 
@@ -555,13 +555,13 @@ mod verbatim {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
+        let tok = ok_or_fail!(r);
         assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 11,
-                result: Ok(TokenKind::Identifier(s)),
-            } if s == "abc123!@#"
+            tok,
+            Token {
+                kind: TokenKind::Identifier(txt),
+                span: Range { start: 0, end: 11 },
+            } if txt == "abc123!@#"
         ));
     }
 
@@ -577,13 +577,13 @@ mod verbatim {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
+        let tok = ok_or_fail!(r);
         assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 6,
-                result: Ok(TokenKind::Identifier(s)),
-            } if s == "1234"
+            tok,
+            Token {
+                kind: TokenKind::Identifier(txt),
+                span: Range { start: 0, end: 6 },
+            } if txt == "1234"
         ));
     }
 
@@ -599,13 +599,13 @@ mod verbatim {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
+        let tok = ok_or_fail!(r);
         assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 17,
-                result: Ok(TokenKind::Identifier(s)),
-            } if s == "λ 🦀 ␁ �"
+            tok,
+            Token {
+                kind: TokenKind::Identifier(txt),
+                span: Range { start: 0, end: 17 },
+            } if txt == "λ 🦀 ␁ �"
         ));
     }
 
@@ -621,13 +621,13 @@ mod verbatim {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
+        let tok = ok_or_fail!(r);
         assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 45,
-                result: Ok(TokenKind::Identifier(s)),
-            } if s == "a:\x07, b:\x08, d:\x7f, e:\x1b, n:\n, 0:\0, r:\r, t:\t, q:\""
+            tok,
+            Token {
+                kind: TokenKind::Identifier(txt),
+                span: Range { start: 0, end: 45 },
+            } if txt == "a:\x07, b:\x08, d:\x7f, e:\x1b, n:\n, 0:\0, r:\r, t:\t, q:\""
         ));
     }
 
@@ -643,13 +643,13 @@ mod verbatim {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
+        let tok = ok_or_fail!(r);
         assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 46,
-                result: Ok(TokenKind::Identifier(s)),
-            } if s == "a:\x07, b:\x08, n:\n, r:\r, t:\t, q:\", s:\\, v:|"
+            tok,
+            Token {
+                kind: TokenKind::Identifier(txt),
+                span: Range { start: 0, end: 46 },
+            } if txt == "a:\x07, b:\x08, n:\n, r:\r, t:\t, q:\", s:\\, v:|"
         ));
     }
 
@@ -665,13 +665,13 @@ mod verbatim {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
+        let tok = ok_or_fail!(r);
         assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 12,
-                result: Ok(TokenKind::Identifier(s)),
-            } if s == "foo   bar"
+            tok,
+            Token {
+                kind: TokenKind::Identifier(txt),
+                span: Range { start: 0, end: 12 },
+            } if txt == "foo   bar"
         ));
     }
 
@@ -689,13 +689,13 @@ mod verbatim {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
+        let tok = ok_or_fail!(r);
         assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 93,
-                result: Ok(TokenKind::Identifier(s)),
-            } if s == "a:\x07, b:\x08, d:\x7f, e:\x1b, n:\n, 0:\0, r:\r, t:\t, q:\", s:\\, v:|"
+            tok,
+            Token {
+                kind: TokenKind::Identifier(txt),
+                span: Range { start: 0, end: 93 },
+            } if txt == "a:\x07, b:\x08, d:\x7f, e:\x1b, n:\n, 0:\0, r:\r, t:\t, q:\", s:\\, v:|"
         ));
     }
 
@@ -711,13 +711,13 @@ mod verbatim {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
+        let tok = ok_or_fail!(r);
         assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 13,
-                result: Ok(TokenKind::Identifier(s)),
-            } if s == "J J"
+            tok,
+            Token {
+                kind: TokenKind::Identifier(txt),
+                span: Range { start: 0, end: 13 },
+            } if txt == "J J"
         ));
     }
 
@@ -733,13 +733,13 @@ mod verbatim {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
+        let tok = ok_or_fail!(r);
         assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 15,
-                result: Ok(TokenKind::Identifier(s)),
-            } if s == "\u{fff9} \u{e0001} \u{100001}"
+            tok,
+            Token {
+                kind: TokenKind::Identifier(txt),
+                span: Range { start: 0, end: 15 },
+            } if txt == "\u{fff9} \u{e0001} \u{100001}"
         ));
     }
 
@@ -755,13 +755,13 @@ mod verbatim {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
+        let tok = ok_or_fail!(r);
         assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 28,
-                result: Ok(TokenKind::Identifier(s)),
-            } if s == "\u{fff9} \u{e0001} \u{100001}"
+            tok,
+            Token {
+                kind: TokenKind::Identifier(txt),
+                span: Range { start: 0, end: 28 },
+            } if txt == "\u{fff9} \u{e0001} \u{100001}"
         ));
     }
 
@@ -777,12 +777,12 @@ mod verbatim {
         let (r, c) = t.extract();
 
         assert!(matches!(c, Some(TokenContinuation::SubidentifierError)));
+        let err = err_or_fail!(r);
         assert!(matches!(
-            r,
-            TokenExtract {
-                start: 1,
-                end: 3,
-                result: Err(TokenErrorKind::IdentifierEscapeInvalid { at: 1, ch: 'B' }),
+            err,
+            TokenError {
+                kind: TokenErrorKind::IdentifierEscapeInvalid { at: 1, ch: 'B' },
+                span: Range { start: 1, end: 3 },
             }
         ));
     }
@@ -799,12 +799,12 @@ mod verbatim {
         let (r, c) = t.extract();
 
         assert!(matches!(c, Some(TokenContinuation::SubidentifierError)));
+        let err = err_or_fail!(r);
         assert!(matches!(
-            r,
-            TokenExtract {
-                start: 1,
-                end: 6,
-                result: Err(TokenErrorKind::IdentifierExpectedHex { at: 1 }),
+            err,
+            TokenError {
+                kind: TokenErrorKind::IdentifierExpectedHex { at: 1 },
+                span: Range { start: 1, end: 6 },
             }
         ));
     }
@@ -821,12 +821,12 @@ mod verbatim {
         let (r, c) = t.extract();
 
         assert!(matches!(c, Some(TokenContinuation::SubidentifierError)));
+        let err = err_or_fail!(r);
         assert!(matches!(
-            r,
-            TokenExtract {
-                start: 1,
-                end: 12,
-                result: Err(TokenErrorKind::IdentifierInvalidHex { at: 1 }),
+            err,
+            TokenError {
+                kind: TokenErrorKind::IdentifierInvalidHex { at: 1 },
+                span: Range { start: 1, end: 12 },
             }
         ));
     }
@@ -843,12 +843,12 @@ mod verbatim {
         let (r, c) = t.extract();
 
         assert!(matches!(c, Some(TokenContinuation::SubidentifierError)));
+        let err = err_or_fail!(r);
         assert!(matches!(
-            r,
-            TokenExtract {
-                start: 1,
-                end: 11,
-                result: Err(TokenErrorKind::IdentifierExpectedHex { at: 1 }),
+            err,
+            TokenError {
+                kind: TokenErrorKind::IdentifierExpectedHex { at: 1 },
+                span: Range { start: 1, end: 11 },
             }
         ));
     }
@@ -865,12 +865,12 @@ mod verbatim {
         let (r, c) = t.extract();
 
         assert!(matches!(c, Some(TokenContinuation::SubidentifierError)));
+        let err = err_or_fail!(r);
         assert!(matches!(
-            r,
-            TokenExtract {
-                start: 1,
-                end: 6,
-                result: Err(TokenErrorKind::IdentifierUnterminatedHex { at: 1 }),
+            err,
+            TokenError {
+                kind: TokenErrorKind::IdentifierUnterminatedHex { at: 1 },
+                span: Range { start: 1, end: 6 },
             }
         ));
     }
@@ -889,12 +889,12 @@ mod verbatim {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
+        let tok = ok_or_fail!(r);
         assert!(matches!(
-            r,
-            TokenExtract {
-                start: 11,
-                end: 24,
-                result: Ok(TokenKind::IdentifierDiscard),
+            tok,
+            Token {
+                kind: TokenKind::IdentifierDiscard,
+                span: Range { start: 11, end: 24 },
             }
         ));
     }
@@ -911,13 +911,13 @@ mod verbatim {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
+        let tok = ok_or_fail!(r);
         assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 19,
-                result: Ok(TokenKind::IdentifierBegin(s)),
-            } if s == "beginning verbatim"
+            tok,
+            Token {
+                kind: TokenKind::IdentifierBegin(txt),
+                span: Range { start: 0, end: 19 },
+            } if txt == "beginning verbatim"
         ));
     }
 
@@ -933,13 +933,13 @@ mod verbatim {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
+        let tok = ok_or_fail!(r);
         assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 20,
-                result: Ok(TokenKind::IdentifierBegin(s)),
-            } if s == "beginning verbatim"
+            tok,
+            Token {
+                kind: TokenKind::IdentifierBegin(txt),
+                span: Range { start: 0, end: 20 },
+            } if txt == "beginning verbatim"
         ));
     }
 
@@ -955,13 +955,13 @@ mod verbatim {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
+        let tok = ok_or_fail!(r);
         assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 24,
-                result: Ok(TokenKind::IdentifierBegin(s)),
-            } if s == "beginning verbatim    "
+            tok,
+            Token {
+                kind: TokenKind::IdentifierBegin(txt),
+                span: Range { start: 0, end: 24 },
+            } if txt == "beginning verbatim    "
         ));
     }
 
@@ -977,13 +977,13 @@ mod verbatim {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
+        let tok = ok_or_fail!(r);
         assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 24,
-                result: Ok(TokenKind::IdentifierBegin(s)),
-            } if s == "beginning verbatim    "
+            tok,
+            Token {
+                kind: TokenKind::IdentifierBegin(txt),
+                span: Range { start: 0, end: 24 },
+            } if txt == "beginning verbatim    "
         ));
     }
 
@@ -999,13 +999,13 @@ mod verbatim {
         let (r, c) = c.extract();
 
         assert!(c.is_none());
+        let tok = ok_or_fail!(r);
         assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 18,
-                result: Ok(TokenKind::IdentifierFragment(s)),
-            } if s == "continued verbatim"
+            tok,
+            Token {
+                kind: TokenKind::IdentifierFragment(txt),
+                span: Range { start: 0, end: 18 },
+            } if txt == "continued verbatim"
         ));
     }
 
@@ -1021,13 +1021,13 @@ mod verbatim {
         let (r, c) = c.extract();
 
         assert!(c.is_none());
+        let tok = ok_or_fail!(r);
         assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 21,
-                result: Ok(TokenKind::IdentifierFragment(s)),
-            } if s == "   continued verbatim"
+            tok,
+            Token {
+                kind: TokenKind::IdentifierFragment(txt),
+                span: Range { start: 0, end: 21 },
+            } if txt == "   continued verbatim"
         ));
     }
 
@@ -1043,13 +1043,13 @@ mod verbatim {
         let (r, c) = c.extract();
 
         assert!(c.is_none());
+        let tok = ok_or_fail!(r);
         assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 26,
-                result: Ok(TokenKind::IdentifierFragment(s)),
-            } if s == "continued verbatim      "
+            tok,
+            Token {
+                kind: TokenKind::IdentifierFragment(txt),
+                span: Range { start: 0, end: 26 },
+            } if txt == "continued verbatim      "
         ));
     }
 
@@ -1065,13 +1065,13 @@ mod verbatim {
         let (r, c) = c.extract();
 
         assert!(c.is_none());
+        let tok = ok_or_fail!(r);
         assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 13,
-                result: Ok(TokenKind::IdentifierEnd(s)),
-            } if s == "end verbatim"
+            tok,
+            Token {
+                kind: TokenKind::IdentifierEnd(txt),
+                span: Range { start: 0, end: 13 },
+            } if txt == "end verbatim"
         ));
     }
 
@@ -1087,13 +1087,13 @@ mod verbatim {
         let (r, c) = c.extract();
 
         assert!(c.is_none());
+        let tok = ok_or_fail!(r);
         assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 18,
-                result: Ok(TokenKind::IdentifierEnd(s)),
-            } if s == "   end verbatim  "
+            tok,
+            Token {
+                kind: TokenKind::IdentifierEnd(txt),
+                span: Range { start: 0, end: 18 },
+            } if txt == "   end verbatim  "
         ));
     }
 
@@ -1109,13 +1109,13 @@ mod verbatim {
         let (r, c) = c.extract();
 
         assert!(c.is_none());
+        let tok = ok_or_fail!(r);
         assert!(matches!(
-            r,
-            TokenExtract {
-                start: 0,
-                end: 21,
-                result: Ok(TokenKind::IdentifierEnd(s)),
-            } if s == "end verbatim      "
+            tok,
+            Token {
+                kind: TokenKind::IdentifierEnd(txt),
+                span: Range { start: 0, end: 21 },
+            } if txt == "end verbatim      "
         ));
     }
 }

@@ -12,12 +12,12 @@ fn quote() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let tok = ok_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 1,
-            result: Ok(TokenKind::Quote),
+        tok,
+        Token {
+            kind: TokenKind::Quote,
+            span: Range { start: 0, end: 1 },
         }
     ));
 }
@@ -34,12 +34,12 @@ fn quasiquote() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let tok = ok_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 1,
-            result: Ok(TokenKind::Quasiquote),
+        tok,
+        Token {
+            kind: TokenKind::Quasiquote,
+            span: Range { start: 0, end: 1 },
         }
     ));
 }
@@ -56,12 +56,12 @@ fn unquote() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let tok = ok_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 1,
-            result: Ok(TokenKind::Unquote),
+        tok,
+        Token {
+            kind: TokenKind::Unquote,
+            span: Range { start: 0, end: 1 },
         }
     ));
 }
@@ -78,12 +78,12 @@ fn unquote_followed_by_non_splice() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let tok = ok_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 1,
-            result: Ok(TokenKind::Unquote),
+        tok,
+        Token {
+            kind: TokenKind::Unquote,
+            span: Range { start: 0, end: 1 },
         }
     ));
 }
@@ -100,12 +100,12 @@ fn unquote_splicing() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let tok = ok_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 2,
-            result: Ok(TokenKind::UnquoteSplice),
+        tok,
+        Token {
+            kind: TokenKind::UnquoteSplice,
+            span: Range { start: 0, end: 2 },
         }
     ));
 }
@@ -122,12 +122,12 @@ fn unquote_whitespace_between_splice() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let tok = ok_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 1,
-            result: Ok(TokenKind::Unquote),
+        tok,
+        Token {
+            kind: TokenKind::Unquote,
+            span: Range { start: 0, end: 1 },
         }
     ));
 }

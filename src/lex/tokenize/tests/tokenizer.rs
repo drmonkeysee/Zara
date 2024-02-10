@@ -22,12 +22,12 @@ fn left_paren() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let tok = ok_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 1,
-            result: Ok(TokenKind::ParenLeft),
+        tok,
+        Token {
+            kind: TokenKind::ParenLeft,
+            span: Range { start: 0, end: 1 },
         }
     ));
 }
@@ -44,12 +44,12 @@ fn right_paren() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let tok = ok_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 1,
-            result: Ok(TokenKind::ParenRight),
+        tok,
+        Token {
+            kind: TokenKind::ParenRight,
+            span: Range { start: 0, end: 1 },
         }
     ));
 }
@@ -66,12 +66,12 @@ fn pair_joiner() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let tok = ok_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 1,
-            result: Ok(TokenKind::PairJoiner),
+        tok,
+        Token {
+            kind: TokenKind::PairJoiner,
+            span: Range { start: 0, end: 1 },
         }
     ));
 }
@@ -88,12 +88,12 @@ fn pair_joiner_with_whitespace() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let tok = ok_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 1,
-            end: 2,
-            result: Ok(TokenKind::PairJoiner),
+        tok,
+        Token {
+            kind: TokenKind::PairJoiner,
+            span: Range { start: 1, end: 2 },
         }
     ));
 }
@@ -110,12 +110,12 @@ fn pair_joiner_prefixed_is_identifier() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let tok = ok_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 2,
-            result: Ok(TokenKind::Identifier(txt)),
+        tok,
+        Token {
+            kind: TokenKind::Identifier(txt),
+            span: Range { start: 0, end: 2 },
         } if txt == "a."
     ));
 }
@@ -132,12 +132,12 @@ fn pair_joiner_postfixed_is_identifier() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let tok = ok_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 2,
-            result: Ok(TokenKind::Identifier(txt)),
+        tok,
+        Token {
+            kind: TokenKind::Identifier(txt),
+            span: Range { start: 0, end: 2 },
         } if txt == ".a"
     ));
 }
@@ -154,12 +154,12 @@ fn pair_joiner_followed_by_delimiter() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let tok = ok_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 1,
-            result: Ok(TokenKind::PairJoiner),
+        tok,
+        Token {
+            kind: TokenKind::PairJoiner,
+            span: Range { start: 0, end: 1 },
         }
     ));
 }
@@ -176,12 +176,12 @@ fn token_ends_at_whitespace() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let tok = ok_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 1,
-            result: Ok(TokenKind::ParenLeft),
+        tok,
+        Token {
+            kind: TokenKind::ParenLeft,
+            span: Range { start: 0, end: 1 },
         }
     ));
 }
@@ -198,12 +198,12 @@ fn token_ends_at_delimiter() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let tok = ok_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 1,
-            result: Ok(TokenKind::ParenLeft),
+        tok,
+        Token {
+            kind: TokenKind::ParenLeft,
+            span: Range { start: 0, end: 1 },
         }
     ));
 }
@@ -220,12 +220,12 @@ fn comment() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let tok = ok_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 1,
-            result: Ok(TokenKind::Comment),
+        tok,
+        Token {
+            kind: TokenKind::Comment,
+            span: Range { start: 0, end: 1 },
         }
     ));
 }
@@ -242,12 +242,12 @@ fn comment_with_text() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let tok = ok_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 34,
-            result: Ok(TokenKind::Comment),
+        tok,
+        Token {
+            kind: TokenKind::Comment,
+            span: Range { start: 0, end: 34 },
         }
     ));
 }

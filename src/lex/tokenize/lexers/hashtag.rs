@@ -2,7 +2,7 @@ use super::{Exactness, HexParse, Identifier, RadixNumber};
 use crate::{
     lex::{
         token::{TokenErrorKind, TokenKind},
-        tokenize::{extract::TokenExtractResult, scan::Scanner},
+        tokenize::{scan::Scanner, TokenExtractResult},
     },
     literal::Literal,
     number::{Binary, Hexadecimal, Octal, Radix},

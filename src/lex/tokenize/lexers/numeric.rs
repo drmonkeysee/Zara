@@ -3,8 +3,8 @@ use crate::{
     lex::{
         token::{TokenErrorKind, TokenKind},
         tokenize::{
-            extract::TokenExtractResult,
             scan::{ScanItem, Scanner},
+            TokenExtractResult,
         },
     },
     literal::Literal,

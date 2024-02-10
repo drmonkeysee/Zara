@@ -1,5 +1,4 @@
 use super::*;
-use std::ops::Range;
 
 #[test]
 fn empty_string() {

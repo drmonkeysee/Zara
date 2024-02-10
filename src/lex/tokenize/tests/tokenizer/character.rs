@@ -12,12 +12,12 @@ fn ascii_literal() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let tok = ok_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 3,
-            result: Ok(TokenKind::Literal(Literal::Character('a'))),
+        tok,
+        Token {
+            kind: TokenKind::Literal(Literal::Character('a')),
+            span: Range { start: 0, end: 3 },
         }
     ));
 }
@@ -34,12 +34,12 @@ fn ascii_uppercase_literal() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let tok = ok_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 3,
-            result: Ok(TokenKind::Literal(Literal::Character('A'))),
+        tok,
+        Token {
+            kind: TokenKind::Literal(Literal::Character('A')),
+            span: Range { start: 0, end: 3 },
         }
     ));
 }
@@ -56,12 +56,12 @@ fn extended_literal() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let tok = ok_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 4,
-            result: Ok(TokenKind::Literal(Literal::Character('λ'))),
+        tok,
+        Token {
+            kind: TokenKind::Literal(Literal::Character('λ')),
+            span: Range { start: 0, end: 4 },
         }
     ));
 }
@@ -78,12 +78,12 @@ fn emoji_literal() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let tok = ok_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 6,
-            result: Ok(TokenKind::Literal(Literal::Character('🦀'))),
+        tok,
+        Token {
+            kind: TokenKind::Literal(Literal::Character('🦀')),
+            span: Range { start: 0, end: 6 },
         }
     ));
 }
@@ -105,12 +105,12 @@ fn space_literal() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let tok = ok_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 3,
-            result: Ok(TokenKind::Literal(Literal::Character(' '))),
+        tok,
+        Token {
+            kind: TokenKind::Literal(Literal::Character(' ')),
+            span: Range { start: 0, end: 3 },
         }
     ));
 }
@@ -127,12 +127,12 @@ fn tab_literal() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let tok = ok_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 3,
-            result: Ok(TokenKind::Literal(Literal::Character('\t'))),
+        tok,
+        Token {
+            kind: TokenKind::Literal(Literal::Character('\t')),
+            span: Range { start: 0, end: 3 },
         }
     ));
 }
@@ -164,12 +164,12 @@ fn name_does_not_match_uppercase() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let err = err_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 7,
-            result: Err(TokenErrorKind::CharacterExpected),
+        err,
+        TokenError {
+            kind: TokenErrorKind::CharacterExpected,
+            span: Range { start: 0, end: 7 },
         }
     ));
 }
@@ -186,12 +186,12 @@ fn space_followed_by_alpha() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let tok = ok_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 3,
-            result: Ok(TokenKind::Literal(Literal::Character(' '))),
+        tok,
+        Token {
+            kind: TokenKind::Literal(Literal::Character(' ')),
+            span: Range { start: 0, end: 3 },
         }
     ));
 }
@@ -208,12 +208,12 @@ fn alpha_followed_by_alpha() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let err = err_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 4,
-            result: Err(TokenErrorKind::CharacterExpected),
+        err,
+        TokenError {
+            kind: TokenErrorKind::CharacterExpected,
+            span: Range { start: 0, end: 4 },
         }
     ));
 }
@@ -230,12 +230,12 @@ fn emoji_followed_by_alpha() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let err = err_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 7,
-            result: Err(TokenErrorKind::CharacterExpected),
+        err,
+        TokenError {
+            kind: TokenErrorKind::CharacterExpected,
+            span: Range { start: 0, end: 7 },
         }
     ));
 }
@@ -252,12 +252,12 @@ fn alpha_followed_by_delimiter() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let tok = ok_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 3,
-            result: Ok(TokenKind::Literal(Literal::Character('a'))),
+        tok,
+        Token {
+            kind: TokenKind::Literal(Literal::Character('a')),
+            span: Range { start: 0, end: 3 },
         }
     ));
 }
@@ -274,12 +274,12 @@ fn letter_x_is_not_hex() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let tok = ok_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 3,
-            result: Ok(TokenKind::Literal(Literal::Character('x'))),
+        tok,
+        Token {
+            kind: TokenKind::Literal(Literal::Character('x')),
+            span: Range { start: 0, end: 3 },
         }
     ));
 }
@@ -296,12 +296,12 @@ fn hex_zero() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let tok = ok_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 4,
-            result: Ok(TokenKind::Literal(Literal::Character('\0'))),
+        tok,
+        Token {
+            kind: TokenKind::Literal(Literal::Character('\0')),
+            span: Range { start: 0, end: 4 },
         }
     ));
 }
@@ -318,12 +318,12 @@ fn hex_lowercase() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let tok = ok_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 4,
-            result: Ok(TokenKind::Literal(Literal::Character('\n'))),
+        tok,
+        Token {
+            kind: TokenKind::Literal(Literal::Character('\n')),
+            span: Range { start: 0, end: 4 },
         }
     ));
 }
@@ -340,12 +340,12 @@ fn hex_uppercase() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let tok = ok_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 4,
-            result: Ok(TokenKind::Literal(Literal::Character('\n'))),
+        tok,
+        Token {
+            kind: TokenKind::Literal(Literal::Character('\n')),
+            span: Range { start: 0, end: 4 },
         }
     ));
 }
@@ -362,12 +362,12 @@ fn hex_uppercase_indicator() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let tok = ok_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 4,
-            result: Ok(TokenKind::Literal(Literal::Character('\n'))),
+        tok,
+        Token {
+            kind: TokenKind::Literal(Literal::Character('\n')),
+            span: Range { start: 0, end: 4 },
         }
     ));
 }
@@ -394,12 +394,12 @@ fn hex_sign_invalid() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let err = err_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 5,
-            result: Err(TokenErrorKind::CharacterExpectedHex),
+        err,
+        TokenError {
+            kind: TokenErrorKind::CharacterExpectedHex,
+            span: Range { start: 0, end: 5 },
         }
     ));
 }
@@ -416,12 +416,12 @@ fn hex_too_large() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let err = err_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 11,
-            result: Err(TokenErrorKind::CharacterInvalidHex),
+        err,
+        TokenError {
+            kind: TokenErrorKind::CharacterInvalidHex,
+            span: Range { start: 0, end: 11 },
         }
     ));
 }
@@ -438,12 +438,12 @@ fn hex_malformed() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
+    let err = err_or_fail!(r);
     assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 10,
-            result: Err(TokenErrorKind::CharacterExpectedHex),
+        err,
+        TokenError {
+            kind: TokenErrorKind::CharacterExpectedHex,
+            span: Range { start: 0, end: 10 },
         }
     ));
 }
@@ -461,13 +461,13 @@ fn check_character_list(cases: &[(&str, char)]) {
         let (r, c) = t.extract();
 
         assert!(c.is_none());
+        let tok = ok_or_fail!(r);
         assert!(
             matches!(
-                r,
-                TokenExtract {
-                    start: 0,
-                    end,
-                    result: Ok(TokenKind::Literal(Literal::Character(ch))),
+                tok,
+                Token {
+                    kind: TokenKind::Literal(Literal::Character(ch)),
+                    span: Range { start: 0, end },
                 } if ch == exp && end == input.len()
             ),
             "Unexpected match for character input ({inp}, {exp})"
