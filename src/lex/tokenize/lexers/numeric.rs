@@ -106,6 +106,7 @@ impl<'me, 'str> RealNumber<'me, 'str> {
                 }
             }
         }
+        let cond = brk?;
         let (props, parser) = self
             .classifier
             .commit(self.scan.current_lexeme_at(self.start), self.exactness);
@@ -113,7 +114,7 @@ impl<'me, 'str> RealNumber<'me, 'str> {
             props,
             scan: self.scan,
         }
-        .resolve(parser, brk)
+        .resolve(parser, cond)
     }
 }
 
@@ -164,6 +165,7 @@ impl<'me, 'str, R: Radix + Default> RadixNumber<'me, 'str, R> {
                 }
             }
         }
+        let cond = brk?;
         let (props, parser) = self
             .classifier
             .commit(self.scan.current_lexeme_at(self.start), self.exactness);
@@ -171,7 +173,7 @@ impl<'me, 'str, R: Radix + Default> RadixNumber<'me, 'str, R> {
             props,
             scan: self.scan,
         }
-        .resolve(parser, brk)
+        .resolve(parser, cond)
     }
 }
 
@@ -208,39 +210,36 @@ impl<'me, 'str, P: ClassifierProps> ConditionProcessor<'me, 'str, P> {
     fn resolve<N: ClassifierParser>(
         mut self,
         parser: N,
-        result: BreakResult<'str>,
+        cond: BreakCondition<'str>,
     ) -> TokenExtractResult {
-        match result {
-            Ok(BreakCondition::Sub(SubCondition::Complete)) => self.complete(parser, false),
-            Ok(BreakCondition::Sub(SubCondition::Complex { kind, start })) => {
+        match cond {
+            BreakCondition::Sub(SubCondition::Complete) => self.complete(parser, false),
+            BreakCondition::Sub(SubCondition::Complex { kind, start }) => {
                 // NOTE: delay application of exactness until final
                 // composition of complex number; specifically Polar
                 // will round-trip inputs through float representation,
                 // undoing any exactness applied to real part.
-                match parser.parse(None) {
-                    Ok(real) => self.scan_imaginary(real, kind, start),
-                    Err(err) => self.fail(err),
-                }
+                parser
+                    .parse(None)
+                    .and_then(|real| self.scan_imaginary(real, kind, start))
             }
-            Ok(BreakCondition::Sub(SubCondition::Imaginary)) => {
+            BreakCondition::Sub(SubCondition::Imaginary) => {
                 if let Some(item) = self.scan.next_if_not_delimiter() {
                     // NOTE: maybe malformed "in"finity? otherwise assume malformed imaginary
-                    self.fail(if item.1.is_ascii_alphabetic() {
+                    Err(if item.1.is_ascii_alphabetic() {
                         TokenErrorKind::NumberInvalid
                     } else {
                         TokenErrorKind::ImaginaryInvalid
                     })
                 } else if !self.props.has_sign() {
-                    self.fail(TokenErrorKind::ImaginaryMissingSign)
+                    Err(TokenErrorKind::ImaginaryMissingSign)
                 } else {
                     self.complete(parser, true)
                 }
             }
-            Ok(BreakCondition::Fraction) => match parser.parse_int() {
-                Ok(numerator) => self.scan_denominator(numerator),
-                Err(err) => self.fail(err),
-            },
-            Err(err) => self.fail(err),
+            BreakCondition::Fraction => parser
+                .parse_int()
+                .and_then(|numerator| self.scan_denominator(numerator)),
         }
     }
 
@@ -288,7 +287,7 @@ impl<'me, 'str, P: ClassifierProps> ConditionProcessor<'me, 'str, P> {
                             real, imag,
                         ))))
                     }
-                    _ => self.fail(TokenErrorKind::ComplexInvalid),
+                    _ => Err(TokenErrorKind::ComplexInvalid),
                 }
             }
             ComplexKind::Polar => {
@@ -304,7 +303,7 @@ impl<'me, 'str, P: ClassifierProps> ConditionProcessor<'me, 'str, P> {
                             },
                         )))
                     }
-                    _ => self.fail(TokenErrorKind::PolarInvalid),
+                    _ => Err(TokenErrorKind::PolarInvalid),
                 }
             }
         }
@@ -322,12 +321,7 @@ impl<'me, 'str, P: ClassifierProps> ConditionProcessor<'me, 'str, P> {
         }
         parser
             .parse(self.props.get_exactness())
-            .map_or_else(|err| self.fail(err), |r| Ok(real_to_token(r, is_imaginary)))
-    }
-
-    fn fail(&mut self, err: TokenErrorKind) -> TokenExtractResult {
-        //self.scan.end_of_token();
-        Err(err)
+            .map(|r| real_to_token(r, is_imaginary))
     }
 }
 
@@ -357,35 +351,30 @@ impl<'me, 'str> Denominator<'me, 'str> {
                 }
             }
         }
+        let cond = brk.map_err(|_| TokenErrorKind::RationalInvalid)?;
         let (_, parser) = classifier.commit(self.get_lexeme(), None);
-        match brk {
-            Ok(cond) => Ok((
-                match cond {
-                    BreakCondition::Sub(SubCondition::Complete | SubCondition::Complex { .. }) => {
-                        parser.parse_int().map_err(|_| self.fail())
-                    }
-                    BreakCondition::Sub(SubCondition::Imaginary) => {
-                        if self.scan.next_if_not_delimiter().is_some() {
-                            Err(self.fail())
-                        } else {
-                            parser.parse_int().map_err(|_| self.fail())
-                        }
-                    }
-                    BreakCondition::Fraction => Err(self.fail()),
-                }?,
-                cond.into(),
-            )),
-            _ => Err(self.fail()),
-        }
-    }
-
-    fn fail(&mut self) -> TokenErrorKind {
-        //self.scan.end_of_token();
-        TokenErrorKind::RationalInvalid
+        Ok((
+            if self.should_parse(&cond) {
+                parser
+                    .parse_int()
+                    .map_err(|_| TokenErrorKind::RationalInvalid)
+            } else {
+                Err(TokenErrorKind::RationalInvalid)
+            }?,
+            cond.into(),
+        ))
     }
 
     fn get_lexeme(&mut self) -> &'str str {
         self.scan.current_lexeme_at(self.start)
+    }
+
+    fn should_parse(&mut self, cond: &BreakCondition<'_>) -> bool {
+        matches!(
+            cond,
+            BreakCondition::Sub(SubCondition::Complete | SubCondition::Complex { .. })
+        ) || (matches!(cond, BreakCondition::Sub(SubCondition::Imaginary))
+            && self.scan.next_if_not_delimiter().is_none())
     }
 }
 
@@ -584,12 +573,13 @@ impl<R: Radix> Integral<R> {
         match ch {
             '+' | '-' => {
                 if self.0.is_empty() {
-                    if self.0.sign.is_none() {
-                        self.0.sign = Some(super::char_to_sign(ch));
-                        self.0.magnitude = 1..1;
-                        ControlFlow::Continue(())
-                    } else {
-                        ControlFlow::Break(Err(TokenErrorKind::NumberInvalid))
+                    match self.0.sign {
+                        None => {
+                            self.0.sign = Some(super::char_to_sign(ch));
+                            self.0.magnitude = 1..1;
+                            ControlFlow::Continue(())
+                        }
+                        Some(_) => ControlFlow::Break(Err(TokenErrorKind::NumberInvalid)),
                     }
                 } else {
                     ControlFlow::Break(Ok(BreakCondition::cartesian(item)))

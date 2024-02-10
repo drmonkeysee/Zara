@@ -64,10 +64,7 @@ impl<'me, 'str> Hashtag<'me, 'str> {
                     .char_if_not_token_boundary()
                     .filter(|&ch| ch == '(')
             })
-            .ok_or_else(|| {
-                //self.scan.end_of_token();
-                TokenErrorKind::ByteVectorExpected
-            })
+            .ok_or(TokenErrorKind::ByteVectorExpected)
             .map(|_| TokenKind::ByteVector)
     }
 
@@ -130,10 +127,7 @@ impl<'me, 'str> Hashtag<'me, 'str> {
             .map_or(Ok(None), |_| match self.scan.char_if_not_delimiter() {
                 Some(EXACTL | EXACTU) => Ok(Some(Exactness::Exact)),
                 Some(INEXACTL | INEXACTU) => Ok(Some(Exactness::Inexact)),
-                _ => {
-                    //self.scan.end_of_token();
-                    Err(TokenErrorKind::ExactnessExpected { at: curr })
-                }
+                _ => Err(TokenErrorKind::ExactnessExpected { at: curr }),
             })
     }
 }
@@ -237,10 +231,7 @@ impl NumberKind {
             Some('d' | 'D') => Ok(Self::Decimal),
             Some('o' | 'O') => Ok(Self::Octal),
             Some('x' | 'X') => Ok(Self::Hexadecimal),
-            _ => {
-                //scan.end_of_token();
-                Err(failure)
-            }
+            _ => Err(failure),
         }
     }
 
