@@ -8,7 +8,6 @@ mod quoting;
 mod string;
 
 use super::*;
-use crate::testutil::some_or_fail;
 
 #[test]
 fn left_paren() {
