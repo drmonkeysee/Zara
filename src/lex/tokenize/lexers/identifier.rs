@@ -184,7 +184,7 @@ impl<'me, 'txt> Identifier<'me, 'txt> {
         });
     }
 
-    fn get_lexeme(&mut self) -> &str {
+    fn get_lexeme(&mut self) -> &'txt str {
         self.scan.current_lexeme_at(self.start.0)
     }
 }

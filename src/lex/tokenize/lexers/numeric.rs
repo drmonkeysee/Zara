@@ -352,7 +352,7 @@ impl<'me, 'txt> Denominator<'me, 'txt> {
             }
         }
         let cond = brk.map_err(|_| TokenErrorKind::RationalInvalid)?;
-        let (_, parser) = classifier.commit(self.get_lexeme(), None);
+        let (_, parser) = classifier.commit(self.scan.current_lexeme_at(self.start), None);
         Ok((
             if self.should_parse(&cond) {
                 parser
@@ -363,10 +363,6 @@ impl<'me, 'txt> Denominator<'me, 'txt> {
             }?,
             cond.into(),
         ))
-    }
-
-    fn get_lexeme(&mut self) -> &'txt str {
-        self.scan.current_lexeme_at(self.start)
     }
 
     fn should_parse(&mut self, cond: &BreakCondition<'_>) -> bool {
