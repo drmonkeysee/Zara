@@ -123,13 +123,10 @@ impl Add for Cmd {
         match self {
             Self::Help => self,
             Self::Run => rhs,
-            Self::Version => {
-                if matches!(rhs, Self::Help) {
-                    rhs
-                } else {
-                    self
-                }
-            }
+            Self::Version => match rhs {
+                Self::Help => rhs,
+                _ => self,
+            },
         }
     }
 }

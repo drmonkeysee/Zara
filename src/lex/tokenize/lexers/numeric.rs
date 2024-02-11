@@ -366,11 +366,13 @@ impl<'me, 'txt> Denominator<'me, 'txt> {
     }
 
     fn should_parse(&mut self, cond: &BreakCondition<'_>) -> bool {
-        matches!(
-            cond,
-            BreakCondition::Sub(SubCondition::Complete | SubCondition::Complex { .. })
-        ) || (matches!(cond, BreakCondition::Sub(SubCondition::Imaginary))
-            && self.scan.next_if_not_delimiter().is_none())
+        match cond {
+            BreakCondition::Sub(SubCondition::Complete | SubCondition::Complex { .. }) => true,
+            BreakCondition::Sub(SubCondition::Imaginary) => {
+                self.scan.next_if_not_delimiter().is_none()
+            }
+            _ => false,
+        }
     }
 }
 
