@@ -105,16 +105,12 @@ impl<'me, 'txt> Hashtag<'me, 'txt> {
 
     fn exactness(&mut self, exactness: Exactness) -> TokenExtractResult {
         let curr = self.scan.pos();
-        match self.scan.char_if_eq('#') {
-            Some(_) => {
-                let num = NumberKind::select_or(
-                    TokenErrorKind::RadixExpected { at: curr },
-                    self.scan,
-                    None,
-                )?;
-                num.scan(self.scan, Some(exactness))
-            }
-            None => NumberKind::Decimal.scan(self.scan, Some(exactness)),
+        if self.scan.char_if_eq('#').is_some() {
+            let num =
+                NumberKind::select_or(TokenErrorKind::RadixExpected { at: curr }, self.scan, None)?;
+            num.scan(self.scan, Some(exactness))
+        } else {
+            NumberKind::Decimal.scan(self.scan, Some(exactness))
         }
     }
 

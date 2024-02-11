@@ -37,10 +37,8 @@ impl Repl {
 
     fn runline(&mut self) {
         match self.runtime.run(&mut self.src) {
-            Ok(eval) => match eval {
-                Evaluation::Continuation => self.prep_continuation(),
-                Evaluation::Expression(expr) => self.print_expr(&expr),
-            },
+            Ok(Evaluation::Continuation) => self.prep_continuation(),
+            Ok(Evaluation::Expression(expr)) => self.print_expr(&expr),
             Err(err) => self.print_err(&err),
         }
     }

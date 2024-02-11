@@ -96,10 +96,10 @@ impl<'me, 'txt> RealNumber<'me, 'txt> {
         let mut brk = Ok(BreakCondition::default());
         while let Some(item) = self.scan.next_if_not_delimiter() {
             match self.classifier.classify(item) {
-                ControlFlow::Continue(None) => (),
                 ControlFlow::Continue(Some(c)) => {
                     self.classifier = c;
                 }
+                ControlFlow::Continue(None) => (),
                 ControlFlow::Break(b) => {
                     brk = b;
                     break;
@@ -571,13 +571,12 @@ impl<R: Radix> Integral<R> {
         match ch {
             '+' | '-' => {
                 if self.0.is_empty() {
-                    match self.0.sign {
-                        None => {
-                            self.0.sign = Some(super::char_to_sign(ch));
-                            self.0.magnitude = 1..1;
-                            ControlFlow::Continue(())
-                        }
-                        Some(_) => ControlFlow::Break(Err(TokenErrorKind::NumberInvalid)),
+                    if self.0.sign.is_none() {
+                        self.0.sign = Some(super::char_to_sign(ch));
+                        self.0.magnitude = 1..1;
+                        ControlFlow::Continue(())
+                    } else {
+                        ControlFlow::Break(Err(TokenErrorKind::NumberInvalid))
                     }
                 } else {
                     ControlFlow::Break(Ok(BreakCondition::cartesian(item)))

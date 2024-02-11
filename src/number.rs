@@ -128,9 +128,9 @@ impl Real {
 
     fn is_zero(&self) -> bool {
         match self {
-            Real::Float(f) => *f == 0.0,
-            Real::Integer(n) => n.is_zero(),
-            Real::Rational(r) => r.is_zero(),
+            Self::Float(f) => *f == 0.0,
+            Self::Integer(n) => n.is_zero(),
+            Self::Rational(r) => r.is_zero(),
         }
     }
 
@@ -146,9 +146,9 @@ impl Real {
 impl Display for Real {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            Real::Float(d) => FloatDatum(d).fmt(f),
-            Real::Integer(n) => n.fmt(f),
-            Real::Rational(r) => r.fmt(f),
+            Self::Float(d) => FloatDatum(d).fmt(f),
+            Self::Integer(n) => n.fmt(f),
+            Self::Rational(r) => r.fmt(f),
         }
     }
 }
@@ -615,11 +615,11 @@ impl Precision {
 impl PartialEq for Precision {
     fn eq(&self, other: &Self) -> bool {
         match self {
-            Precision::Single(a) => match other {
-                Precision::Single(b) => a.eq(b),
-                Precision::Multiple(_) => todo!(),
+            Self::Single(a) => match other {
+                Self::Single(b) => a.eq(b),
+                Self::Multiple(_) => todo!(),
             },
-            Precision::Multiple(_) => todo!(),
+            Self::Multiple(_) => todo!(),
         }
     }
 }
@@ -633,11 +633,11 @@ impl PartialOrd for Precision {
 impl Ord for Precision {
     fn cmp(&self, other: &Self) -> Ordering {
         match self {
-            Precision::Single(a) => match other {
-                Precision::Single(b) => a.cmp(b),
-                Precision::Multiple(_) => todo!(),
+            Self::Single(a) => match other {
+                Self::Single(b) => a.cmp(b),
+                Self::Multiple(_) => todo!(),
             },
-            Precision::Multiple(_) => todo!(),
+            Self::Multiple(_) => todo!(),
         }
     }
 }

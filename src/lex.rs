@@ -41,11 +41,9 @@ impl Display for LexerError {
             .try_fold(LineFailureAcc::Empty, |acc, ln| ln.accumulate(acc));
         match ctrl {
             ControlFlow::Break(()) => f.write_str("multiple lexer failures"),
-            ControlFlow::Continue(acc) => match acc {
-                LineFailureAcc::Empty => Ok(()),
-                LineFailureAcc::Read => f.write_str("read failure"),
-                LineFailureAcc::Tokenize => f.write_str("tokenization failure"),
-            },
+            ControlFlow::Continue(LineFailureAcc::Empty) => Ok(()),
+            ControlFlow::Continue(LineFailureAcc::Read) => f.write_str("read failure"),
+            ControlFlow::Continue(LineFailureAcc::Tokenize) => f.write_str("tokenization failure"),
         }
     }
 }

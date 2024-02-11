@@ -164,38 +164,34 @@ pub(super) enum TokenErrorKind {
 impl TokenErrorKind {
     pub(super) fn to_continuation(&self) -> Option<TokenContinuation> {
         match self {
-            TokenErrorKind::IdentifierEscapeInvalid { .. }
-            | TokenErrorKind::IdentifierExpectedHex { .. }
-            | TokenErrorKind::IdentifierInvalidHex { .. }
-            | TokenErrorKind::IdentifierUnterminatedHex { .. } => {
-                Some(TokenContinuation::SubidentifierError)
-            }
-            TokenErrorKind::StringEscapeInvalid { .. }
-            | TokenErrorKind::StringExpectedHex { .. }
-            | TokenErrorKind::StringInvalidHex { .. }
-            | TokenErrorKind::StringUnterminatedHex { .. } => {
-                Some(TokenContinuation::SubstringError)
-            }
+            Self::IdentifierEscapeInvalid { .. }
+            | Self::IdentifierExpectedHex { .. }
+            | Self::IdentifierInvalidHex { .. }
+            | Self::IdentifierUnterminatedHex { .. } => Some(TokenContinuation::SubidentifierError),
+            Self::StringEscapeInvalid { .. }
+            | Self::StringExpectedHex { .. }
+            | Self::StringInvalidHex { .. }
+            | Self::StringUnterminatedHex { .. } => Some(TokenContinuation::SubstringError),
             _ => None,
         }
     }
 
     pub(super) fn sub_idx(&self) -> Option<usize> {
         match self {
-            TokenErrorKind::ExactnessExpected { at }
-            | TokenErrorKind::IdentifierEscapeInvalid { at, .. }
-            | TokenErrorKind::IdentifierExpectedHex { at }
-            | TokenErrorKind::IdentifierInvalidHex { at }
-            | TokenErrorKind::IdentifierUnterminatedHex { at }
-            | TokenErrorKind::NumberInvalidDecimalPoint { at, .. }
-            | TokenErrorKind::NumberInvalidExponent { at, .. }
-            | TokenErrorKind::NumberUnexpectedDecimalPoint { at }
-            | TokenErrorKind::NumericErrorAt { at, .. }
-            | TokenErrorKind::RadixExpected { at }
-            | TokenErrorKind::StringEscapeInvalid { at, .. }
-            | TokenErrorKind::StringExpectedHex { at }
-            | TokenErrorKind::StringInvalidHex { at }
-            | TokenErrorKind::StringUnterminatedHex { at } => Some(*at),
+            Self::ExactnessExpected { at }
+            | Self::IdentifierEscapeInvalid { at, .. }
+            | Self::IdentifierExpectedHex { at }
+            | Self::IdentifierInvalidHex { at }
+            | Self::IdentifierUnterminatedHex { at }
+            | Self::NumberInvalidDecimalPoint { at, .. }
+            | Self::NumberInvalidExponent { at, .. }
+            | Self::NumberUnexpectedDecimalPoint { at }
+            | Self::NumericErrorAt { at, .. }
+            | Self::RadixExpected { at }
+            | Self::StringEscapeInvalid { at, .. }
+            | Self::StringExpectedHex { at }
+            | Self::StringInvalidHex { at }
+            | Self::StringUnterminatedHex { at } => Some(*at),
             _ => None,
         }
     }

@@ -47,22 +47,20 @@ impl<'me, 'txt, P: FreeTextPolicy> FreeText<'me, 'txt, P> {
 
     fn escape(&mut self, start: usize) -> FreeTextResult {
         match self.scan.char() {
-            Some(ch) => match ch {
-                'a' => self.buf.push('\x07'),
-                'b' => self.buf.push('\x08'),
-                'n' => self.buf.push('\n'),
-                'r' => self.buf.push('\r'),
-                't' => self.buf.push('\t'),
-                'x' | 'X' => self.hex(start)?,
-                '"' | '\\' | '|' => self.buf.push(ch),
-                _ if ch.is_ascii_whitespace() => {
-                    // NOTE: \<whitespace> may be a line-continuation, but we
-                    // won't know until we're done lexing this string.
-                    self.possible_line_cont_idx = Some(self.buf.len());
-                    self.buf.push(ch);
-                }
-                _ => return Err(self.policy.escape_invalid(start, ch)),
-            },
+            Some('a') => self.buf.push('\x07'),
+            Some('b') => self.buf.push('\x08'),
+            Some('n') => self.buf.push('\n'),
+            Some('r') => self.buf.push('\r'),
+            Some('t') => self.buf.push('\t'),
+            Some('x' | 'X') => self.hex(start)?,
+            Some(ch @ ('"' | '\\' | '|')) => self.buf.push(ch),
+            Some(ch) if ch.is_ascii_whitespace() => {
+                // NOTE: \<whitespace> may be a line-continuation, but we
+                // won't know until we're done lexing this string.
+                self.possible_line_cont_idx = Some(self.buf.len());
+                self.buf.push(ch);
+            }
+            Some(ch) => return Err(self.policy.escape_invalid(start, ch)),
             None => {
                 // NOTE: \EOL is a line continuation, mark end of buffer
                 self.possible_line_cont_idx = Some(self.buf.len());
