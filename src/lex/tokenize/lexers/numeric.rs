@@ -206,11 +206,11 @@ struct ConditionProcessor<'me, 'txt, P> {
     scan: &'me mut Scanner<'txt>,
 }
 
-impl<'me, 'txt, P: ClassifierProps> ConditionProcessor<'me, 'txt, P> {
+impl<P: ClassifierProps> ConditionProcessor<'_, '_, P> {
     fn resolve<N: ClassifierParser>(
         mut self,
         parser: N,
-        cond: BreakCondition<'txt>,
+        cond: BreakCondition<'_>,
     ) -> TokenExtractResult {
         match cond {
             BreakCondition::Sub(SubCondition::Complete) => self.complete(parser, false),

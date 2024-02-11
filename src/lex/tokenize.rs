@@ -11,20 +11,20 @@ use self::{
 };
 use super::token::{Token, TokenContinuation, TokenError, TokenErrorKind, TokenKind, TokenResult};
 
-pub(super) struct TokenStream<'a> {
+pub(super) struct TokenStream<'txt> {
     cont: Option<TokenContinuation>,
-    scan: Scanner<'a>,
+    scan: Scanner<'txt>,
 }
 
-impl<'a> TokenStream<'a> {
-    pub(super) fn new(textline: &'a str, cont: Option<TokenContinuation>) -> Self {
+impl<'txt> TokenStream<'txt> {
+    pub(super) fn new(textline: &'txt str, cont: Option<TokenContinuation>) -> Self {
         Self {
             cont,
             scan: Scanner::new(textline),
         }
     }
 
-    fn token(&mut self) -> Option<IterItem<'a>> {
+    fn token(&mut self) -> Option<IterItem<'txt>> {
         self.scan.next_token().map(|item| {
             let (tok, cont) = Tokenizer {
                 scan: &mut self.scan,
@@ -36,7 +36,7 @@ impl<'a> TokenStream<'a> {
         })
     }
 
-    fn continuation(&mut self, cont: TokenContinuation) -> IterItem<'a> {
+    fn continuation(&mut self, cont: TokenContinuation) -> IterItem<'txt> {
         let start = self.scan.pos();
         let (tok, cont) = Continuation {
             cont,
@@ -60,7 +60,7 @@ impl Iterator for TokenStream<'_> {
     }
 }
 
-type IterItem<'a> = <TokenStream<'a> as Iterator>::Item;
+type IterItem<'txt> = <TokenStream<'txt> as Iterator>::Item;
 type TokenExtractResult = Result<TokenKind, TokenErrorKind>;
 
 struct Tokenizer<'me, 'txt> {
@@ -68,7 +68,7 @@ struct Tokenizer<'me, 'txt> {
     start: ScanItem<'txt>,
 }
 
-impl<'me, 'txt> Tokenizer<'me, 'txt> {
+impl Tokenizer<'_, '_> {
     fn extract(mut self) -> (TokenResult, Option<TokenContinuation>) {
         extract(self.scan(), self.scan, self.start.0)
     }
@@ -115,7 +115,7 @@ struct Continuation<'me, 'txt> {
     start: usize,
 }
 
-impl<'me, 'txt> Continuation<'me, 'txt> {
+impl Continuation<'_, '_> {
     fn extract(mut self) -> (TokenResult, Option<TokenContinuation>) {
         extract(self.scan(), self.scan, self.start)
     }

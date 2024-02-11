@@ -18,7 +18,7 @@ pub(in crate::lex::tokenize) struct Hashtag<'me, 'txt> {
     pub(in crate::lex::tokenize) scan: &'me mut Scanner<'txt>,
 }
 
-impl<'me, 'txt> Hashtag<'me, 'txt> {
+impl Hashtag<'_, '_> {
     pub(in crate::lex::tokenize) fn scan(&mut self) -> TokenExtractResult {
         match self.scan.char_if_not_token_boundary() {
             Some(ch) => self.literal(ch),
@@ -138,7 +138,7 @@ pub(in crate::lex::tokenize) struct BlockComment<'me, 'txt, P> {
     scan: &'me mut Scanner<'txt>,
 }
 
-impl<'me, 'txt, P: BlockCommentPolicy> BlockComment<'me, 'txt, P> {
+impl<P: BlockCommentPolicy> BlockComment<'_, '_, P> {
     pub(in crate::lex::tokenize) fn consume(&mut self) -> TokenKind {
         while !self.scan.consumed() {
             if let Some((_, ch)) = self.scan.find_any_char(&['|', '#']) {
