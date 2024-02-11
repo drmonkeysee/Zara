@@ -12,17 +12,17 @@ use crate::{
 };
 use std::{fmt::Debug, marker::PhantomData, ops::ControlFlow};
 
-pub(super) struct RealNumber<'me, 'str> {
+pub(super) struct RealNumber<'me, 'txt> {
     classifier: RealClassifier,
     exactness: Option<Exactness>,
-    scan: &'me mut Scanner<'str>,
+    scan: &'me mut Scanner<'txt>,
     start: usize,
 }
 
 // NOTE: this lexer is only invoked after one confirmed digit has been scanned
-impl<'me, 'str> RealNumber<'me, 'str> {
+impl<'me, 'txt> RealNumber<'me, 'txt> {
     pub(super) fn new(
-        scan: &'me mut Scanner<'str>,
+        scan: &'me mut Scanner<'txt>,
         start: usize,
         exactness: Option<Exactness>,
     ) -> Self {
@@ -39,7 +39,7 @@ impl<'me, 'str> RealNumber<'me, 'str> {
 
     pub(super) fn try_signed_number(
         sign: Sign,
-        scan: &'me mut Scanner<'str>,
+        scan: &'me mut Scanner<'txt>,
         start: usize,
         exactness: Option<Exactness>,
     ) -> Self {
@@ -56,7 +56,7 @@ impl<'me, 'str> RealNumber<'me, 'str> {
     }
 
     pub(super) fn try_float(
-        scan: &'me mut Scanner<'str>,
+        scan: &'me mut Scanner<'txt>,
         start: usize,
         exactness: Option<Exactness>,
     ) -> Self {
@@ -73,7 +73,7 @@ impl<'me, 'str> RealNumber<'me, 'str> {
 
     pub(super) fn try_signed_float(
         sign: Sign,
-        scan: &'me mut Scanner<'str>,
+        scan: &'me mut Scanner<'txt>,
         start: usize,
         exactness: Option<Exactness>,
     ) -> Self {
@@ -118,15 +118,15 @@ impl<'me, 'str> RealNumber<'me, 'str> {
     }
 }
 
-pub(super) struct RadixNumber<'me, 'str, R> {
+pub(super) struct RadixNumber<'me, 'txt, R> {
     classifier: Integral<R>,
     exactness: Option<Exactness>,
-    scan: &'me mut Scanner<'str>,
+    scan: &'me mut Scanner<'txt>,
     start: usize,
 }
 
-impl<'me, 'str, R: Radix + Default> RadixNumber<'me, 'str, R> {
-    pub(super) fn new(scan: &'me mut Scanner<'str>, exactness: Option<Exactness>) -> Self {
+impl<'me, 'txt, R: Radix + Default> RadixNumber<'me, 'txt, R> {
+    pub(super) fn new(scan: &'me mut Scanner<'txt>, exactness: Option<Exactness>) -> Self {
         let start = scan.pos();
         Self {
             classifier: Integral(IntSpec::default()),
@@ -137,7 +137,7 @@ impl<'me, 'str, R: Radix + Default> RadixNumber<'me, 'str, R> {
     }
 
     fn with_sign(
-        scan: &'me mut Scanner<'str>,
+        scan: &'me mut Scanner<'txt>,
         start: ScanItem,
         exactness: Option<Exactness>,
     ) -> Self {
@@ -201,16 +201,16 @@ pub(super) fn nan(is_imaginary: bool) -> TokenKind {
     real_to_token(f64::NAN, is_imaginary)
 }
 
-struct ConditionProcessor<'me, 'str, P> {
+struct ConditionProcessor<'me, 'txt, P> {
     props: P,
-    scan: &'me mut Scanner<'str>,
+    scan: &'me mut Scanner<'txt>,
 }
 
-impl<'me, 'str, P: ClassifierProps> ConditionProcessor<'me, 'str, P> {
+impl<'me, 'txt, P: ClassifierProps> ConditionProcessor<'me, 'txt, P> {
     fn resolve<N: ClassifierParser>(
         mut self,
         parser: N,
-        cond: BreakCondition<'str>,
+        cond: BreakCondition<'txt>,
     ) -> TokenExtractResult {
         match cond {
             BreakCondition::Sub(SubCondition::Complete) => self.complete(parser, false),
@@ -325,18 +325,18 @@ impl<'me, 'str, P: ClassifierProps> ConditionProcessor<'me, 'str, P> {
     }
 }
 
-struct Denominator<'me, 'str> {
-    scan: &'me mut Scanner<'str>,
+struct Denominator<'me, 'txt> {
+    scan: &'me mut Scanner<'txt>,
     start: usize,
 }
 
-impl<'me, 'str> Denominator<'me, 'str> {
-    fn new(scan: &'me mut Scanner<'str>) -> Self {
+impl<'me, 'txt> Denominator<'me, 'txt> {
+    fn new(scan: &'me mut Scanner<'txt>) -> Self {
         let start = scan.pos();
         Self { scan, start }
     }
 
-    fn scan<R: Radix + Default>(mut self) -> Result<(Integer, SubCondition<'str>), TokenErrorKind> {
+    fn scan<R: Radix + Default>(mut self) -> Result<(Integer, SubCondition<'txt>), TokenErrorKind> {
         let mut brk = Ok(BreakCondition::default());
         let mut classifier = Integral::<R>(IntSpec {
             sign: Some(Sign::Positive),
@@ -365,7 +365,7 @@ impl<'me, 'str> Denominator<'me, 'str> {
         ))
     }
 
-    fn get_lexeme(&mut self) -> &'str str {
+    fn get_lexeme(&mut self) -> &'txt str {
         self.scan.current_lexeme_at(self.start)
     }
 
@@ -378,15 +378,15 @@ impl<'me, 'str> Denominator<'me, 'str> {
     }
 }
 
-type BreakResult<'str> = Result<BreakCondition<'str>, TokenErrorKind>;
-type RealControl<'str> = ControlFlow<BreakResult<'str>, Option<RealClassifier>>;
-type RadixControl<'str> = ControlFlow<BreakResult<'str>>;
+type BreakResult<'txt> = Result<BreakCondition<'txt>, TokenErrorKind>;
+type RealControl<'txt> = ControlFlow<BreakResult<'txt>, Option<RealClassifier>>;
+type RadixControl<'txt> = ControlFlow<BreakResult<'txt>>;
 type ParseResult = Result<Real, TokenErrorKind>;
 type IntParseResult = Result<Integer, TokenErrorKind>;
 
-enum BreakCondition<'str> {
+enum BreakCondition<'txt> {
     Fraction,
-    Sub(SubCondition<'str>),
+    Sub(SubCondition<'txt>),
 }
 
 impl BreakCondition<'_> {
@@ -415,17 +415,17 @@ impl Default for BreakCondition<'_> {
     }
 }
 
-enum SubCondition<'str> {
+enum SubCondition<'txt> {
     Complete,
     Complex {
         kind: ComplexKind,
-        start: ScanItem<'str>,
+        start: ScanItem<'txt>,
     },
     Imaginary,
 }
 
-impl<'str> From<BreakCondition<'str>> for SubCondition<'str> {
-    fn from(value: BreakCondition<'str>) -> Self {
+impl<'txt> From<BreakCondition<'txt>> for SubCondition<'txt> {
+    fn from(value: BreakCondition<'txt>) -> Self {
         match value {
             BreakCondition::Sub(s) => s,
             // NOTE: Denominator ensures this case never happens
@@ -460,7 +460,7 @@ enum RealClassifier {
 }
 
 impl RealClassifier {
-    fn classify<'str>(&mut self, item: ScanItem<'str>) -> RealControl<'str> {
+    fn classify<'txt>(&mut self, item: ScanItem<'txt>) -> RealControl<'txt> {
         match self {
             Self::Flt(f) => f.classify(item),
             Self::Int(i) => i.classify(item),
@@ -550,9 +550,9 @@ impl ClassifierProps for RealProps {
     }
 }
 
-struct RealParser<'str> {
+struct RealParser<'txt> {
     classifier: RealClassifier,
-    input: &'str str,
+    input: &'txt str,
 }
 
 impl ClassifierParser for RealParser<'_> {
@@ -568,7 +568,7 @@ impl ClassifierParser for RealParser<'_> {
 struct Integral<R>(IntSpec<R>);
 
 impl<R: Radix> Integral<R> {
-    fn classify<'str>(&mut self, item: ScanItem<'str>) -> RadixControl<'str> {
+    fn classify<'txt>(&mut self, item: ScanItem<'txt>) -> RadixControl<'txt> {
         let (idx, ch) = item;
         match ch {
             '+' | '-' => {
@@ -664,8 +664,8 @@ impl<R: Radix + Default> ClassifierProps for RadixProps<R> {
     }
 }
 
-struct RadixParser<'str, R> {
-    input: &'str str,
+struct RadixParser<'txt, R> {
+    input: &'txt str,
     spec: IntSpec<R>,
 }
 
@@ -682,7 +682,7 @@ impl<R: Radix> ClassifierParser for RadixParser<'_, R> {
 struct RealInt(IntSpec<Decimal>);
 
 impl RealInt {
-    fn classify<'str>(&mut self, item: ScanItem<'str>) -> RealControl<'str> {
+    fn classify<'txt>(&mut self, item: ScanItem<'txt>) -> RealControl<'txt> {
         let (idx, ch) = item;
         let offset = self.0.magnitude.end;
         match ch {
@@ -721,7 +721,7 @@ impl RealInt {
 struct Float(FloatSpec);
 
 impl Float {
-    fn classify<'str>(&mut self, item: ScanItem<'str>) -> RealControl<'str> {
+    fn classify<'txt>(&mut self, item: ScanItem<'txt>) -> RealControl<'txt> {
         let (idx, ch) = item;
         let offset = self.0.fraction.end;
         match ch {
@@ -765,7 +765,7 @@ struct Scientific {
 }
 
 impl Scientific {
-    fn classify<'str>(&mut self, item: ScanItem<'str>) -> RealControl<'str> {
+    fn classify<'txt>(&mut self, item: ScanItem<'txt>) -> RealControl<'txt> {
         let ch = item.1;
         match ch {
             '+' | '-' => {

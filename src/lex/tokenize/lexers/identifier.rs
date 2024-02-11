@@ -11,24 +11,24 @@ use crate::{
     number::{Decimal, Number, Radix},
 };
 
-pub(in crate::lex::tokenize) struct Identifier<'me, 'str> {
+pub(in crate::lex::tokenize) struct Identifier<'me, 'txt> {
     exactness: Option<Exactness>,
     peculiar_state: Option<PeculiarState>,
-    scan: &'me mut Scanner<'str>,
-    start: ScanItem<'str>,
+    scan: &'me mut Scanner<'txt>,
+    start: ScanItem<'txt>,
 }
 
-impl<'me, 'str> Identifier<'me, 'str> {
+impl<'me, 'txt> Identifier<'me, 'txt> {
     pub(in crate::lex::tokenize) fn new(
-        scan: &'me mut Scanner<'str>,
-        start: ScanItem<'str>,
+        scan: &'me mut Scanner<'txt>,
+        start: ScanItem<'txt>,
     ) -> Self {
         Self::with_exactness(scan, start, None)
     }
 
     pub(super) fn with_exactness(
-        scan: &'me mut Scanner<'str>,
-        start: ScanItem<'str>,
+        scan: &'me mut Scanner<'txt>,
+        start: ScanItem<'txt>,
         exactness: Option<Exactness>,
     ) -> Self {
         Self {
@@ -189,12 +189,12 @@ impl<'me, 'str> Identifier<'me, 'str> {
     }
 }
 
-pub(in crate::lex::tokenize) struct PeriodIdentifier<'me, 'str>(Identifier<'me, 'str>);
+pub(in crate::lex::tokenize) struct PeriodIdentifier<'me, 'txt>(Identifier<'me, 'txt>);
 
-impl<'me, 'str> PeriodIdentifier<'me, 'str> {
+impl<'me, 'txt> PeriodIdentifier<'me, 'txt> {
     pub(in crate::lex::tokenize) fn new(
-        scan: &'me mut Scanner<'str>,
-        start: ScanItem<'str>,
+        scan: &'me mut Scanner<'txt>,
+        start: ScanItem<'txt>,
     ) -> Self {
         debug_assert_eq!(start.1, '.');
         let mut me = Self(Identifier::new(scan, start));
@@ -207,23 +207,23 @@ impl<'me, 'str> PeriodIdentifier<'me, 'str> {
     }
 }
 
-pub(in crate::lex::tokenize) type VerbatimIdentifer<'me, 'str, M> =
-    FreeText<'me, 'str, IdentifierPolicy<M>>;
+pub(in crate::lex::tokenize) type VerbatimIdentifer<'me, 'txt, M> =
+    FreeText<'me, 'txt, IdentifierPolicy<M>>;
 
-impl<'me, 'str> VerbatimIdentifer<'me, 'str, ContinueIdentifier> {
-    pub(in crate::lex::tokenize) fn cont(scan: &'me mut Scanner<'str>) -> Self {
+impl<'me, 'txt> VerbatimIdentifer<'me, 'txt, ContinueIdentifier> {
+    pub(in crate::lex::tokenize) fn cont(scan: &'me mut Scanner<'txt>) -> Self {
         Self::init(scan, IdentifierPolicy(ContinueIdentifier))
     }
 }
 
-impl<'me, 'str> VerbatimIdentifer<'me, 'str, DiscardIdentifier> {
-    pub(in crate::lex::tokenize) fn cleanup(scan: &'me mut Scanner<'str>) -> Self {
+impl<'me, 'txt> VerbatimIdentifer<'me, 'txt, DiscardIdentifier> {
+    pub(in crate::lex::tokenize) fn cleanup(scan: &'me mut Scanner<'txt>) -> Self {
         Self::init(scan, IdentifierPolicy(DiscardIdentifier))
     }
 }
 
-impl<'me, 'str> VerbatimIdentifer<'me, 'str, StartIdentifier> {
-    fn new(scan: &'me mut Scanner<'str>) -> Self {
+impl<'me, 'txt> VerbatimIdentifer<'me, 'txt, StartIdentifier> {
+    fn new(scan: &'me mut Scanner<'txt>) -> Self {
         Self::init(scan, IdentifierPolicy(StartIdentifier))
     }
 }

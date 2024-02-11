@@ -16,15 +16,15 @@ use crate::{
     number::Sign,
 };
 
-pub(super) struct FreeText<'me, 'str, P> {
+pub(super) struct FreeText<'me, 'txt, P> {
     buf: String,
     policy: P,
     possible_line_cont_idx: Option<usize>,
-    scan: &'me mut Scanner<'str>,
+    scan: &'me mut Scanner<'txt>,
 }
 
-impl<'me, 'str, P: FreeTextPolicy> FreeText<'me, 'str, P> {
-    fn init(scan: &'me mut Scanner<'str>, policy: P) -> Self {
+impl<'me, 'txt, P: FreeTextPolicy> FreeText<'me, 'txt, P> {
+    fn init(scan: &'me mut Scanner<'txt>, policy: P) -> Self {
         Self {
             buf: String::new(),
             policy,

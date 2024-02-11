@@ -63,12 +63,12 @@ impl Iterator for TokenStream<'_> {
 type IterItem<'a> = <TokenStream<'a> as Iterator>::Item;
 type TokenExtractResult = Result<TokenKind, TokenErrorKind>;
 
-struct Tokenizer<'me, 'str> {
-    scan: &'me mut Scanner<'str>,
-    start: ScanItem<'str>,
+struct Tokenizer<'me, 'txt> {
+    scan: &'me mut Scanner<'txt>,
+    start: ScanItem<'txt>,
 }
 
-impl<'me, 'str> Tokenizer<'me, 'str> {
+impl<'me, 'txt> Tokenizer<'me, 'txt> {
     fn extract(mut self) -> (TokenResult, Option<TokenContinuation>) {
         extract(self.scan(), self.scan, self.start.0)
     }
@@ -109,13 +109,13 @@ impl<'me, 'str> Tokenizer<'me, 'str> {
     }
 }
 
-struct Continuation<'me, 'str> {
+struct Continuation<'me, 'txt> {
     cont: TokenContinuation,
-    scan: &'me mut Scanner<'str>,
+    scan: &'me mut Scanner<'txt>,
     start: usize,
 }
 
-impl<'me, 'str> Continuation<'me, 'str> {
+impl<'me, 'txt> Continuation<'me, 'txt> {
     fn extract(mut self) -> (TokenResult, Option<TokenContinuation>) {
         extract(self.scan(), self.scan, self.start)
     }

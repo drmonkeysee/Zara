@@ -14,11 +14,11 @@ const EXACTU: char = EXACTL.to_ascii_uppercase();
 const INEXACTL: char = 'i';
 const INEXACTU: char = INEXACTL.to_ascii_uppercase();
 
-pub(in crate::lex::tokenize) struct Hashtag<'me, 'str> {
-    pub(in crate::lex::tokenize) scan: &'me mut Scanner<'str>,
+pub(in crate::lex::tokenize) struct Hashtag<'me, 'txt> {
+    pub(in crate::lex::tokenize) scan: &'me mut Scanner<'txt>,
 }
 
-impl<'me, 'str> Hashtag<'me, 'str> {
+impl<'me, 'txt> Hashtag<'me, 'txt> {
     pub(in crate::lex::tokenize) fn scan(&mut self) -> TokenExtractResult {
         match self.scan.char_if_not_token_boundary() {
             Some(ch) => self.literal(ch),
@@ -132,13 +132,13 @@ impl<'me, 'str> Hashtag<'me, 'str> {
     }
 }
 
-pub(in crate::lex::tokenize) struct BlockComment<'me, 'str, P> {
+pub(in crate::lex::tokenize) struct BlockComment<'me, 'txt, P> {
     depth: usize,
     policy: P,
-    scan: &'me mut Scanner<'str>,
+    scan: &'me mut Scanner<'txt>,
 }
 
-impl<'me, 'str, P: BlockCommentPolicy> BlockComment<'me, 'str, P> {
+impl<'me, 'txt, P: BlockCommentPolicy> BlockComment<'me, 'txt, P> {
     pub(in crate::lex::tokenize) fn consume(&mut self) -> TokenKind {
         while !self.scan.consumed() {
             if let Some((_, ch)) = self.scan.find_any_char(&['|', '#']) {
@@ -164,8 +164,8 @@ impl<'me, 'str, P: BlockCommentPolicy> BlockComment<'me, 'str, P> {
     }
 }
 
-impl<'me, 'str> BlockComment<'me, 'str, ContinueComment> {
-    pub(in crate::lex::tokenize) fn cont(depth: usize, scan: &'me mut Scanner<'str>) -> Self {
+impl<'me, 'txt> BlockComment<'me, 'txt, ContinueComment> {
+    pub(in crate::lex::tokenize) fn cont(depth: usize, scan: &'me mut Scanner<'txt>) -> Self {
         Self {
             depth,
             policy: ContinueComment,
@@ -174,8 +174,8 @@ impl<'me, 'str> BlockComment<'me, 'str, ContinueComment> {
     }
 }
 
-impl<'me, 'str> BlockComment<'me, 'str, StartComment> {
-    fn new(scan: &'me mut Scanner<'str>) -> Self {
+impl<'me, 'txt> BlockComment<'me, 'txt, StartComment> {
+    fn new(scan: &'me mut Scanner<'txt>) -> Self {
         Self {
             depth: 0,
             policy: StartComment,
