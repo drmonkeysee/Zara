@@ -1,14 +1,14 @@
 use std::{iter::Peekable, ops::Range, str::CharIndices};
 
-pub(super) type ScanItem<'a> = <CharIndices<'a> as Iterator>::Item;
+pub(super) type ScanItem<'txt> = <CharIndices<'txt> as Iterator>::Item;
 
-pub(super) struct Scanner<'a> {
-    textline: &'a str,
-    chars: ScanChars<'a>,
+pub(super) struct Scanner<'txt> {
+    textline: &'txt str,
+    chars: ScanChars<'txt>,
 }
 
-impl<'a> Scanner<'a> {
-    pub(super) fn new(textline: &'a str) -> Self {
+impl<'txt> Scanner<'txt> {
+    pub(super) fn new(textline: &'txt str) -> Self {
         Self {
             textline,
             chars: textline.char_indices().peekable(),
@@ -48,17 +48,17 @@ impl<'a> Scanner<'a> {
         self.chars.next_until(not_whitespace).map_or(end, get_idx)
     }
 
-    pub(super) fn rest_of_token(&mut self) -> &'a str {
+    pub(super) fn rest_of_token(&mut self) -> &'txt str {
         let cur = self.pos();
         let end = self.end_of_token();
         self.lexeme(cur..end)
     }
 
-    pub(super) fn lexeme(&self, range: Range<usize>) -> &'a str {
+    pub(super) fn lexeme(&self, range: Range<usize>) -> &'txt str {
         self.textline.get(range).unwrap_or_default()
     }
 
-    pub(super) fn current_lexeme_at(&mut self, start: usize) -> &'a str {
+    pub(super) fn current_lexeme_at(&mut self, start: usize) -> &'txt str {
         let curr = self.pos();
         self.lexeme(start..curr)
     }
@@ -92,15 +92,15 @@ impl<'a> Scanner<'a> {
     }
 }
 
-impl<'a> Iterator for Scanner<'a> {
-    type Item = ScanItem<'a>;
+impl<'txt> Iterator for Scanner<'txt> {
+    type Item = ScanItem<'txt>;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.chars.next()
     }
 }
 
-type ScanChars<'a> = Peekable<CharIndices<'a>>;
+type ScanChars<'txt> = Peekable<CharIndices<'txt>>;
 
 trait PeekableExt<P> {
     fn next_until(&mut self, predicate: P) -> Option<&ScanItem>;
