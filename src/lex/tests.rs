@@ -1449,7 +1449,7 @@ mod error {
         );
 
         let line_err = LineFailure::from(target);
-        let err: LexerError = line_err.into();
+        let err = LexerError::from(line_err);
 
         let err_lines = err.0;
         assert_eq!(err_lines.len(), 1);

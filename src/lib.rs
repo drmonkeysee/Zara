@@ -222,7 +222,7 @@ mod tests {
 
         #[test]
         fn default() {
-            let m: RunMode = Default::default();
+            let m = RunMode::default();
 
             assert_eq!(m, RunMode::Evaluate);
         }
@@ -236,7 +236,7 @@ mod tests {
 
         #[test]
         fn addassign() {
-            let mut m: RunMode = Default::default();
+            let mut m = RunMode::default();
 
             m += RunMode::SyntaxTree;
 
@@ -245,7 +245,7 @@ mod tests {
 
         #[test]
         fn combine_modes() {
-            let mut m: RunMode = Default::default();
+            let mut m = RunMode::default();
 
             m += RunMode::SyntaxTree + RunMode::Tokenize;
 

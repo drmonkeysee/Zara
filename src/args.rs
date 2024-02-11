@@ -218,7 +218,7 @@ mod tests {
 
     #[test]
     fn cmd_ordering() {
-        let c: Cmd = Default::default();
+        let c = Cmd::default();
 
         assert_eq!(c, Cmd::Run);
         assert_eq!(c + Cmd::Version, Cmd::Version);
