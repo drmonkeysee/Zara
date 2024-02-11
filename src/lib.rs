@@ -196,20 +196,14 @@ fn resolve_executor(mode: RunMode) -> Box<dyn Executor> {
             evaluator: Ast,
             parser: ExpressionTree,
         }),
-        RunMode::Tokenize | RunMode::TokenTree => {
-            let parser = TokenList;
-            if matches!(mode, RunMode::TokenTree) {
-                Box::new(Engine {
-                    evaluator: Ast,
-                    parser,
-                })
-            } else {
-                Box::new(Engine {
-                    evaluator: Environment,
-                    parser,
-                })
-            }
-        }
+        RunMode::Tokenize => Box::new(Engine {
+            evaluator: Environment,
+            parser: TokenList,
+        }),
+        RunMode::TokenTree => Box::new(Engine {
+            evaluator: Ast,
+            parser: TokenList,
+        }),
     }
 }
 

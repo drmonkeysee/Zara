@@ -77,45 +77,48 @@ impl<'me, 'txt> Identifier<'me, 'txt> {
     }
 
     fn continue_peculiar(&mut self, next_ch: Option<char>) -> TokenExtractResult {
-        if let Some(ch) = next_ch {
-            if Decimal.is_digit(ch) {
-                debug_assert!(self.peculiar_state.is_some());
-                match self.peculiar_state.as_ref().unwrap() {
-                    PeculiarState::DefiniteIdentifier => self.standard(),
-                    // CASE: .<digit>
-                    PeculiarState::MaybeFloat => {
-                        RealNumber::try_float(self.scan, self.start.0, self.exactness).scan()
+        match next_ch {
+            Some(ch) => {
+                if Decimal.is_digit(ch) {
+                    debug_assert!(self.peculiar_state.is_some());
+                    match self.peculiar_state.as_ref().unwrap() {
+                        PeculiarState::DefiniteIdentifier => self.standard(),
+                        // CASE: .<digit>
+                        PeculiarState::MaybeFloat => {
+                            RealNumber::try_float(self.scan, self.start.0, self.exactness).scan()
+                        }
+                        // CASE: +/-.<digit>
+                        PeculiarState::MaybeSignedFloat => RealNumber::try_signed_float(
+                            super::char_to_sign(self.start.1),
+                            self.scan,
+                            self.start.0,
+                            self.exactness,
+                        )
+                        .scan(),
+                        // CASE: +/-<digit>
+                        PeculiarState::MaybeSignedNumber => RealNumber::try_signed_number(
+                            super::char_to_sign(self.start.1),
+                            self.scan,
+                            self.start.0,
+                            self.exactness,
+                        )
+                        .scan(),
                     }
-                    // CASE: +/-.<digit>
-                    PeculiarState::MaybeSignedFloat => RealNumber::try_signed_float(
-                        super::char_to_sign(self.start.1),
-                        self.scan,
-                        self.start.0,
-                        self.exactness,
-                    )
-                    .scan(),
-                    // CASE: +/-<digit>
-                    PeculiarState::MaybeSignedNumber => RealNumber::try_signed_number(
-                        super::char_to_sign(self.start.1),
-                        self.scan,
-                        self.start.0,
-                        self.exactness,
-                    )
-                    .scan(),
+                } else if is_peculiar_initial(ch) {
+                    self.peculiar(ch)
+                } else if is_initial(ch) {
+                    self.standard()
+                } else {
+                    self.invalid(ch)
                 }
-            } else if is_peculiar_initial(ch) {
-                self.peculiar(ch)
-            } else if is_initial(ch) {
-                self.standard()
-            } else {
-                self.invalid(ch)
             }
-        } else {
-            // NOTE: a single '.' is invalid but Tokenizer handles '.'
-            // before attempting Identifier so this case never happens.
-            let txt = self.get_lexeme();
-            debug_assert!(txt != ".");
-            Ok(TokenKind::Identifier(txt.to_owned()))
+            None => {
+                // NOTE: a single '.' is invalid but Tokenizer handles '.'
+                // before attempting Identifier so this case never happens.
+                let txt = self.get_lexeme();
+                debug_assert!(txt != ".");
+                Ok(TokenKind::Identifier(txt.to_owned()))
+            }
         }
     }
 
@@ -133,8 +136,8 @@ impl<'me, 'txt> Identifier<'me, 'txt> {
                     }
                     Some(result)
                 }
-                ComplexKind::Polar => {
-                    if let Some(first) = self.scan.next_if_not_delimiter() {
+                ComplexKind::Polar => match self.scan.next_if_not_delimiter() {
+                    Some(first) => {
                         let result = Identifier::new(self.scan, first).scan();
                         if let Ok(TokenKind::Literal(Literal::Number(Number::Real(rads)))) = result
                         {
@@ -143,10 +146,9 @@ impl<'me, 'txt> Identifier<'me, 'txt> {
                             ))));
                         }
                         Some(result)
-                    } else {
-                        None
                     }
-                }
+                    None => None,
+                },
             };
             if let Some(err @ Err(TokenErrorKind::IdentifierInvalid(_))) = invalid_tok {
                 return err;

@@ -94,11 +94,12 @@ impl Args {
     }
 
     fn push_runarg(&mut self, arg: String) {
-        if let Some(ra) = self.runargs.as_mut() {
-            ra.push(arg);
-        } else {
-            self.init_runargs();
-            self.push_runarg(arg);
+        match self.runargs.as_mut() {
+            Some(ra) => ra.push(arg),
+            None => {
+                self.init_runargs();
+                self.push_runarg(arg);
+            }
         }
     }
 
