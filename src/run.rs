@@ -10,11 +10,11 @@ use zara::{
 };
 
 pub(crate) fn file(mode: RunMode, prg: impl AsRef<Path>) -> Result {
-    run(mode, FileSource::file(prg)?)
+    run(mode, &mut FileSource::file(prg)?)
 }
 
 pub(crate) fn prg(mode: RunMode, prg: impl Into<String>) -> Result {
-    run(mode, StringSource::new(prg, "<stdin prg>"))
+    run(mode, &mut StringSource::new(prg, "<stdin prg>"))
 }
 
 pub(crate) fn repl(mode: RunMode) -> Result {
@@ -23,12 +23,12 @@ pub(crate) fn repl(mode: RunMode) -> Result {
 }
 
 pub(crate) fn stdin(mode: RunMode) -> Result {
-    run(mode, stdin_source())
+    run(mode, &mut stdin_source())
 }
 
-fn run(mode: RunMode, mut src: impl TextSource) -> Result {
+fn run(mode: RunMode, src: &mut impl TextSource) -> Result {
     let mut runtime = Interpreter::new(mode);
-    let result = runtime.run(&mut src);
+    let result = runtime.run(src);
     print_result(&result);
     result?;
     Ok(())
