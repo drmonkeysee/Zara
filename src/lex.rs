@@ -79,10 +79,10 @@ impl Lexer {
                 p
             })
             .unwrap_or(new_lines);
-        if let Some(token_cont) = d.cont.take() {
-            return self.continuation_result(token_cont, src.can_continue(), lines);
+        match d.cont.take() {
+            Some(token_cont) => self.continuation_result(token_cont, src.can_continue(), lines),
+            None => Ok(LexerOutput::Complete(lines)),
         }
-        Ok(LexerOutput::Complete(lines))
     }
 
     fn continuation_result(

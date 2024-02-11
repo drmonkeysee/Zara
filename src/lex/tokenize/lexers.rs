@@ -150,22 +150,17 @@ fn char_to_sign(ch: char) -> Sign {
 }
 
 fn numeric_label(txt: &str, exactness: Option<Exactness>) -> Option<TokenKind> {
-    if let Some(sign) = num_lbl_sign(txt) {
-        if let Some(txt) = txt.get(1..) {
-            let label = txt.to_ascii_lowercase();
-            let is_imaginary = label.ends_with('i');
-            let end = label.len() - usize::from(is_imaginary);
-            if let Some(label) = label.get(..end) {
-                return match label {
-                    "" => Some(numeric::imaginary(sign, exactness)),
-                    "inf.0" => Some(numeric::infinity(sign, is_imaginary)),
-                    "nan.0" => Some(numeric::nan(is_imaginary)),
-                    _ => None,
-                };
-            }
-        }
-    };
-    None
+    let sign = num_lbl_sign(txt)?;
+    let txt = txt.get(1..)?;
+    let label = txt.to_ascii_lowercase();
+    let is_imaginary = label.ends_with('i');
+    let end = label.len() - usize::from(is_imaginary);
+    match label.get(..end)? {
+        "" => Some(numeric::imaginary(sign, exactness)),
+        "inf.0" => Some(numeric::infinity(sign, is_imaginary)),
+        "nan.0" => Some(numeric::nan(is_imaginary)),
+        _ => None,
+    }
 }
 
 fn num_lbl_sign(txt: &str) -> Option<Sign> {
