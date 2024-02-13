@@ -17,7 +17,7 @@ pub(crate) struct TokenType<T> {
 pub(crate) type Token = TokenType<TokenKind>;
 
 impl Display for Token {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(f, "{}[{:?}]", self.kind, self.span)
     }
 }
@@ -74,7 +74,7 @@ impl TokenKind {
 }
 
 impl Display for TokenKind {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
             Self::ByteVector => f.write_str("BYTEVECTOR"),
             Self::Comment => f.write_str("COMMENT"),
@@ -113,7 +113,7 @@ impl Display for TokenKind {
 pub(super) type TokenError = TokenType<TokenErrorKind>;
 
 impl Display for TokenError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         self.kind.fmt(f)
     }
 }
@@ -198,7 +198,7 @@ impl TokenErrorKind {
 }
 
 impl Display for TokenErrorKind {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
             Self::BlockCommentUnterminated => f.write_str("unterminated block comment"),
             Self::BooleanExpected(b) => write!(f, "expected boolean literal: {b}"),
@@ -283,7 +283,7 @@ pub(super) enum TokenContinuation {
     VerbatimIdentifier,
 }
 
-fn format_char_range_error(msg: &str, f: &mut Formatter<'_>) -> fmt::Result {
+fn format_char_range_error(msg: &str, f: &mut Formatter) -> fmt::Result {
     write!(f, "{msg}: [{:#x}, {:#x}]", 0, char::MAX as u32)
 }
 

@@ -25,7 +25,7 @@ impl Literal {
 pub(crate) struct Datum<'a>(&'a Literal);
 
 impl Display for Datum<'_> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+    fn fmt(&self, f: &mut Formatter) -> Result {
         match self.0 {
             Literal::Boolean(b) => write!(f, "#{}", if *b { 't' } else { 'f' }),
             Literal::Character(c) => write!(f, "#\\{}", CharDatum::new(*c)),
@@ -38,7 +38,7 @@ impl Display for Datum<'_> {
 pub(crate) struct TokenDescriptor<'a>(&'a Literal);
 
 impl Display for TokenDescriptor<'_> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+    fn fmt(&self, f: &mut Formatter) -> Result {
         match self.0 {
             Literal::Boolean(_) => f.write_str("BOOL"),
             Literal::Character(_) => f.write_str("CHAR"),
@@ -71,7 +71,7 @@ impl CharDatum {
 }
 
 impl Display for CharDatum {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+    fn fmt(&self, f: &mut Formatter) -> Result {
         match self {
             Self::Named(n) => f.write_str(n),
             Self::Unnamed(ch) => write_unnamed_char(*ch, f),
@@ -82,7 +82,7 @@ impl Display for CharDatum {
 struct StrDatum<'a>(&'a str);
 
 impl Display for StrDatum<'_> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+    fn fmt(&self, f: &mut Formatter) -> Result {
         f.write_char('"')?;
         for ch in self.0.chars() {
             match ch {
@@ -108,14 +108,14 @@ enum DisplayableChar {
     Hex(u32),
 }
 
-fn write_str_chr(ch: char, f: &mut Formatter<'_>) -> Result {
+fn write_str_chr(ch: char, f: &mut Formatter) -> Result {
     match char_to_displayable(ch) {
         DisplayableChar::Char(ch) => f.write_char(ch),
         DisplayableChar::Hex(hex) => write!(f, "\\x{hex:x};"),
     }
 }
 
-fn write_unnamed_char(ch: char, f: &mut Formatter<'_>) -> Result {
+fn write_unnamed_char(ch: char, f: &mut Formatter) -> Result {
     match char_to_displayable(ch) {
         DisplayableChar::Char(ch) => f.write_char(ch),
         DisplayableChar::Hex(hex) => write!(f, "x{hex:x}"),

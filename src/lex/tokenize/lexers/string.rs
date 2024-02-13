@@ -39,7 +39,7 @@ pub(in crate::lex::tokenize) struct StringPolicy<M>(M);
 impl<M: StringPolicyMode> FreeTextPolicy for StringPolicy<M> {
     const TERMINATOR: char = '"';
 
-    fn prelude(&self, scan: &mut Scanner<'_>) {
+    fn prelude(&self, scan: &mut Scanner) {
         self.0.prelude(scan);
     }
 
@@ -93,7 +93,7 @@ impl StringPolicyMode for ContinueString {}
 pub(in crate::lex::tokenize) struct LineContinueString;
 
 impl StringPolicyMode for LineContinueString {
-    fn prelude(&self, scan: &mut Scanner<'_>) {
+    fn prelude(&self, scan: &mut Scanner) {
         scan.skip_whitespace();
     }
 }
@@ -111,7 +111,7 @@ impl StringPolicyMode for DiscardString {
 }
 
 trait StringPolicyMode {
-    fn prelude(&self, _scan: &mut Scanner<'_>) {
+    fn prelude(&self, _scan: &mut Scanner) {
         // NOTE: do nothing by default
     }
 

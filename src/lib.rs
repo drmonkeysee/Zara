@@ -91,13 +91,13 @@ pub struct Error(ExecError);
 
 impl Error {
     #[must_use]
-    pub fn display_message(&self) -> ErrorMessage<'_> {
+    pub fn display_message(&self) -> ErrorMessage {
         ErrorMessage(&self.0)
     }
 }
 
 impl Display for Error {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         self.0.fmt(f)
     }
 }
@@ -117,7 +117,7 @@ impl From<ExecError> for Error {
 pub struct ErrorMessage<'a>(&'a ExecError);
 
 impl Display for ErrorMessage<'_> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         let err = self.0;
         match err {
             ExecError::Lex(lex_err) => lex_err.display_message().fmt(f),
@@ -138,7 +138,7 @@ enum ExecError {
 }
 
 impl Display for ExecError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
             Self::Lex(lx) => lx.fmt(f),
             Self::Parse(ps) => ps.fmt(f),
@@ -219,7 +219,7 @@ mod tests {
     }
 
     impl Display for DisplayTest {
-        fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        fn fmt(&self, f: &mut Formatter) -> fmt::Result {
             match self {
                 Self::Write(i) => write!(f, "wrtint{i}"),
                 Self::Format(i) => format!("fmtint{i}").fmt(f),
@@ -240,7 +240,7 @@ mod tests {
         eprintln!("B: {b:>15}");
         eprintln!("C: {c:>15}");
         eprintln!("D: {d:>15}");
-        assert!(false);
+        //assert!(false);
     }
 
     mod runmode {

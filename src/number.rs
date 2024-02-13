@@ -144,7 +144,7 @@ impl Real {
 }
 
 impl Display for Real {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
             Self::Float(d) => FloatDatum(d).fmt(f),
             Self::Integer(n) => n.fmt(f),
@@ -184,7 +184,7 @@ impl Rational {
 }
 
 impl Display for Rational {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         self.0 .0.fmt(f)?;
         write!(f, "/{}", self.0 .1)
     }
@@ -258,7 +258,7 @@ impl Integer {
 }
 
 impl Display for Integer {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         self.sign.fmt(f)?;
         match self.precision {
             Precision::Single(u) => write!(f, "{u}"),
@@ -293,7 +293,7 @@ pub(crate) enum Sign {
 }
 
 impl Display for Sign {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         if *self == Sign::Negative {
             f.write_char('-')
         } else if f.sign_plus() {
@@ -532,7 +532,7 @@ pub(crate) enum NumericError {
 }
 
 impl Display for NumericError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
             Self::DivideByZero => f.write_str("divide by zero"),
             Self::ParseExponentOutOfRange => {
@@ -556,7 +556,7 @@ impl From<ParseFloatError> for NumericError {
 pub(crate) struct Datum<'a>(&'a Number);
 
 impl Display for Datum<'_> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self.0 {
             Number::Complex(Complex(c)) => {
                 ComplexRealDatum(&c.0).fmt(f)?;
@@ -570,7 +570,7 @@ impl Display for Datum<'_> {
 pub(crate) struct TokenDescriptor<'a>(&'a Number);
 
 impl Display for TokenDescriptor<'_> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self.0 {
             Number::Complex(_) => f.write_str("CPX"),
             Number::Real(r) => r.as_token_descriptor().fmt(f),
@@ -581,7 +581,7 @@ impl Display for TokenDescriptor<'_> {
 pub(crate) struct RealTokenDescriptor<'a>(&'a Real);
 
 impl Display for RealTokenDescriptor<'_> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self.0 {
             Real::Float(_) => f.write_str("FLT"),
             Real::Integer(_) => f.write_str("INT"),
@@ -645,7 +645,7 @@ impl Ord for Precision {
 struct FloatDatum<'a>(&'a f64);
 
 impl Display for FloatDatum<'_> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         let d = self.0;
         if d.is_infinite() {
             let s = Sign::from(*d);
@@ -661,7 +661,7 @@ impl Display for FloatDatum<'_> {
 struct ComplexRealDatum<'a>(&'a Real);
 
 impl Display for ComplexRealDatum<'_> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         let r = self.0;
         if let Real::Integer(n) = r {
             if n.is_zero() {
@@ -675,7 +675,7 @@ impl Display for ComplexRealDatum<'_> {
 struct ComplexImagDatum<'a>(&'a Real);
 
 impl Display for ComplexImagDatum<'_> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         let r = self.0;
         if let Real::Integer(n) = r {
             if n.is_zero() {

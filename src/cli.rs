@@ -17,7 +17,7 @@ pub(crate) enum Error {
 }
 
 impl Display for Error {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
             Self::Io(err) => err.fmt(f),
             Self::Repl(err) => err.fmt(f),

@@ -49,7 +49,7 @@ impl TextLine {
 pub struct TextLineHeader<'a>(&'a TextLine);
 
 impl Display for TextLineHeader<'_> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         format_header(&self.0.ctx, self.0.lineno, f)?;
         writeln!(f, "\t{}", self.0.line)
     }
@@ -82,7 +82,7 @@ impl TextError {
 }
 
 impl Display for TextError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self.source() {
             Some(err) => write!(f, "readline failure - {err}"),
             None => f.write_str("unknown readline error"),
@@ -99,13 +99,13 @@ impl Error for TextError {
 pub struct TextErrorHeader<'a>(&'a TextError);
 
 impl Display for TextErrorHeader<'_> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         format_header(&self.0.ctx, self.0.lineno, f)?;
         writeln!(f, "\t{}", self.0)
     }
 }
 
-fn format_header(ctx: &TextContext, lineno: LineNumber, f: &mut Formatter<'_>) -> fmt::Result {
+fn format_header(ctx: &TextContext, lineno: LineNumber, f: &mut Formatter) -> fmt::Result {
     write!(f, "{}:{}", ctx.name, lineno)?;
     if let Some(p) = &ctx.path {
         write!(f, " ({})", p.display())?;
@@ -122,7 +122,7 @@ mod tests {
     struct MockError(i32);
 
     impl Display for MockError {
-        fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        fn fmt(&self, f: &mut Formatter) -> fmt::Result {
             write!(f, "Mock error: {}", self.0)
         }
     }

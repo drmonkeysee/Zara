@@ -39,7 +39,7 @@ impl Expr {
 pub struct Datum<'a>(DatumValue<'a>);
 
 impl Display for Datum<'_> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         self.0.fmt(f)
     }
 }
@@ -47,7 +47,7 @@ impl Display for Datum<'_> {
 pub struct EvaluationMessage<'a>(&'a Evaluation);
 
 impl Display for EvaluationMessage<'_> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self.0 {
             Evaluation::Expression(expr) => expr.0.display_message().fmt(f),
             Evaluation::Continuation => writeln!(f, "#<cont-extended-undef({:?})>", self.0),
@@ -61,7 +61,7 @@ pub(crate) type EvalResult = Result<Evaluation, EvalError>;
 pub(crate) struct EvalError;
 
 impl Display for EvalError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         f.write_str("fatal error: evaluation failure")
     }
 }

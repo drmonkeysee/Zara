@@ -33,7 +33,7 @@ impl LexerError {
 }
 
 impl Display for LexerError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         f.write_str("fatal error: ")?;
         let ctrl = self
             .0
@@ -155,7 +155,7 @@ impl TokenLine {
 
 // TODO: this should probably be a datum new-type representation
 impl Display for TokenLine {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         let TokenLine(tokens, txt) = self;
         let token_txt = tokens
             .iter()
@@ -182,7 +182,7 @@ pub(crate) struct TokenErrorLine(Vec<TokenError>, TextLine);
 pub(crate) struct LexerErrorMessage<'a>(&'a [LineFailure]);
 
 impl Display for LexerErrorMessage<'_> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         for line in self.0 {
             LineFailureMessage(line).fmt(f)?;
         }
@@ -199,7 +199,7 @@ impl DisplayTokenLines<'_> {
 }
 
 impl Display for DisplayTokenLines<'_> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         if self.0.len() < 2 {
             write!(f, "[{}]", self.flatten_to_string(TokenLine::to_string))
         } else {
@@ -215,7 +215,7 @@ impl Display for DisplayTokenLines<'_> {
 pub(crate) struct TokenLinesMessage<'a>(pub(crate) &'a [TokenLine]);
 
 impl Display for TokenLinesMessage<'_> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         for line in self.0 {
             TokenLineMessage(line).fmt(f)?;
         }
@@ -226,7 +226,7 @@ impl Display for TokenLinesMessage<'_> {
 struct TokenLineMessage<'a>(&'a TokenLine);
 
 impl Display for TokenLineMessage<'_> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         let TokenLine(tokens, txt) = self.0;
         for token in tokens {
             TokenWithSourceMessage(token, txt).fmt(f)?;
@@ -238,7 +238,7 @@ impl Display for TokenLineMessage<'_> {
 struct TokenWithSource<'a>(&'a Token, &'a TextLine);
 
 impl Display for TokenWithSource<'_> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         let Self(t, txt) = *self;
         write!(
             f,
@@ -253,7 +253,7 @@ impl Display for TokenWithSource<'_> {
 struct TokenWithSourceMessage<'a>(&'a Token, &'a TextLine);
 
 impl Display for TokenWithSourceMessage<'_> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         let Self(t, txt) = *self;
         writeln!(
             f,
@@ -275,7 +275,7 @@ enum LineFailureAcc {
 struct LineFailureMessage<'a>(&'a LineFailure);
 
 impl Display for LineFailureMessage<'_> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self.0 {
             LineFailure::Read(err) => err.display_header().fmt(f),
             LineFailure::Tokenize(err) => TokenErrorLineMessage(err).fmt(f),
@@ -286,7 +286,7 @@ impl Display for LineFailureMessage<'_> {
 struct TokenErrorLineMessage<'a>(&'a TokenErrorLine);
 
 impl Display for TokenErrorLineMessage<'_> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         let TokenErrorLine(errs, txtline) = self.0;
         txtline.display_header().fmt(f)?;
 

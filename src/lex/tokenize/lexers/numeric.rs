@@ -210,7 +210,7 @@ impl<P: ClassifierProps> ConditionProcessor<'_, '_, P> {
     fn resolve<N: ClassifierParser>(
         mut self,
         parser: N,
-        cond: BreakCondition<'_>,
+        cond: BreakCondition,
     ) -> TokenExtractResult {
         match cond {
             BreakCondition::Sub(SubCondition::Complete) => self.complete(parser, false),
@@ -365,7 +365,7 @@ impl<'me, 'txt> Denominator<'me, 'txt> {
         ))
     }
 
-    fn should_parse(&mut self, cond: &BreakCondition<'_>) -> bool {
+    fn should_parse(&mut self, cond: &BreakCondition) -> bool {
         match cond {
             BreakCondition::Sub(SubCondition::Complete | SubCondition::Complex { .. }) => true,
             BreakCondition::Sub(SubCondition::Imaginary) => {

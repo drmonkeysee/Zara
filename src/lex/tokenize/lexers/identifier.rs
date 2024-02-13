@@ -235,7 +235,7 @@ pub(in crate::lex::tokenize) struct IdentifierPolicy<M>(M);
 impl<M: IdentifierPolicyMode> FreeTextPolicy for IdentifierPolicy<M> {
     const TERMINATOR: char = '|';
 
-    fn prelude(&self, _scan: &mut Scanner<'_>) {
+    fn prelude(&self, _scan: &mut Scanner) {
         // NOTE: do nothing for verbatim identifiers
     }
 

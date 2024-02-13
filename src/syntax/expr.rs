@@ -34,7 +34,7 @@ impl Expression {
 pub(crate) struct Datum<'a>(&'a Expression);
 
 impl Display for Datum<'_> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self.0 {
             Expression::Ast(expr) => write!(f, "{{{expr:?}}}"),
             Expression::Empty => Ok(()),
@@ -48,7 +48,7 @@ impl Display for Datum<'_> {
 pub(crate) struct ExpressionMessage<'a>(&'a Expression);
 
 impl Display for ExpressionMessage<'_> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self.0 {
             Expression::Ast(expr) => writeln!(f, "{expr:#?}"),
             Expression::TokenList(lines) => TokenLinesMessage(lines).fmt(f),
@@ -63,7 +63,7 @@ pub(super) enum ExpressionError {
 }
 
 impl Display for ExpressionError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(f, "#<expr-error-display-undef({self:?})>")
     }
 }
