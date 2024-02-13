@@ -211,6 +211,38 @@ fn resolve_executor(mode: RunMode) -> Box<dyn Executor> {
 mod tests {
     use super::*;
 
+    enum DisplayTest {
+        Write(i32),
+        Format(i32),
+        WStr,
+        StrFmt,
+    }
+
+    impl Display for DisplayTest {
+        fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+            match self {
+                Self::Write(i) => write!(f, "wrtint{i}"),
+                Self::Format(i) => format!("fmtint{i}").fmt(f),
+                Self::WStr => f.write_str("wrtestr"),
+                Self::StrFmt => "frmtstr".fmt(f),
+            }
+        }
+    }
+
+    #[test]
+    fn disptest() {
+        let a = DisplayTest::Write(5);
+        let b = DisplayTest::Format(3);
+        let c = DisplayTest::WStr;
+        let d = DisplayTest::StrFmt;
+
+        eprintln!("A: {a:>15}");
+        eprintln!("B: {b:>15}");
+        eprintln!("C: {c:>15}");
+        eprintln!("D: {d:>15}");
+        assert!(false);
+    }
+
     mod runmode {
         use super::*;
 
