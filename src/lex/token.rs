@@ -18,7 +18,7 @@ pub(crate) type Token = TokenType<TokenKind>;
 
 impl Display for Token {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        write!(f, "{}[{:?}]", self.kind, self.span)
+        format!("{}[{:?}]", self.kind, self.span).fmt(f)
     }
 }
 
@@ -76,36 +76,36 @@ impl TokenKind {
 impl Display for TokenKind {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
-            Self::ByteVector => f.write_str("BYTEVECTOR"),
-            Self::Comment => f.write_str("COMMENT"),
-            Self::CommentBlockBegin { depth } => write!(f, "COMMENTBEGIN<{depth:?}>"),
-            Self::CommentBlockEnd => f.write_str("COMMENTEND"),
-            Self::CommentBlockFragment { depth } => write!(f, "COMMENTFRAGMENT<{depth:?}>"),
-            Self::CommentDatum => f.write_str("DATUMCOMMENT"),
-            Self::DirectiveCase(fold) => write!(f, "FOLDCASE<{fold:?}>"),
-            Self::Identifier(_) => f.write_str("IDENTIFIER"),
-            Self::IdentifierBegin(_) => f.write_str("IDENTBEGIN"),
-            Self::IdentifierDiscard => f.write_str("IDENTDISCARD"),
-            Self::IdentifierEnd(_) => f.write_str("IDENTEND"),
-            Self::IdentifierFragment(_) => f.write_str("IDENTFRAGMENT"),
-            Self::Imaginary(r) => write!(f, "IMAGINARY<{}>", r.as_token_descriptor()),
-            Self::Literal(lit) => write!(f, "LITERAL<{}>", lit.as_token_descriptor()),
-            Self::ParenLeft => f.write_str("LEFTPAREN"),
-            Self::ParenRight => f.write_str("RIGHTPAREN"),
-            Self::PairJoiner => f.write_str("PAIR"),
-            Self::Quasiquote => f.write_str("QUASIQUOTE"),
-            Self::Quote => f.write_str("QUOTE"),
+            Self::ByteVector => "BYTEVECTOR".fmt(f),
+            Self::Comment => "COMMENT".fmt(f),
+            Self::CommentBlockBegin { depth } => format!("COMMENTBEGIN<{depth:?}>").fmt(f),
+            Self::CommentBlockEnd => "COMMENTEND".fmt(f),
+            Self::CommentBlockFragment { depth } => format!("COMMENTFRAGMENT<{depth:?}>").fmt(f),
+            Self::CommentDatum => "DATUMCOMMENT".fmt(f),
+            Self::DirectiveCase(fold) => format!("FOLDCASE<{fold:?}>").fmt(f),
+            Self::Identifier(_) => "IDENTIFIER".fmt(f),
+            Self::IdentifierBegin(_) => "IDENTBEGIN".fmt(f),
+            Self::IdentifierDiscard => "IDENTDISCARD".fmt(f),
+            Self::IdentifierEnd(_) => "IDENTEND".fmt(f),
+            Self::IdentifierFragment(_) => "IDENTFRAGMENT".fmt(f),
+            Self::Imaginary(r) => format!("IMAGINARY<{}>", r.as_token_descriptor()).fmt(f),
+            Self::Literal(lit) => format!("LITERAL<{}>", lit.as_token_descriptor()).fmt(f),
+            Self::ParenLeft => "LEFTPAREN".fmt(f),
+            Self::ParenRight => "RIGHTPAREN".fmt(f),
+            Self::PairJoiner => "PAIR".fmt(f),
+            Self::Quasiquote => "QUASIQUOTE".fmt(f),
+            Self::Quote => "QUOTE".fmt(f),
             Self::StringBegin { line_cont, .. } => {
-                write!(f, "STRBEGIN{}", line_cont_token(*line_cont))
+                format!("STRBEGIN{}", line_cont_token(*line_cont)).fmt(f)
             }
-            Self::StringDiscard => f.write_str("STRDISCARD"),
-            Self::StringEnd(_) => f.write_str("STREND"),
+            Self::StringDiscard => "STRDISCARD".fmt(f),
+            Self::StringEnd(_) => "STREND".fmt(f),
             Self::StringFragment { line_cont, .. } => {
-                write!(f, "STRFRAGMENT{}", line_cont_token(*line_cont))
+                format!("STRFRAGMENT{}", line_cont_token(*line_cont)).fmt(f)
             }
-            Self::Unquote => f.write_str("UNQUOTE"),
-            Self::UnquoteSplice => f.write_str("UNQUOTESPLICE"),
-            Self::Vector => f.write_str("VECTOR"),
+            Self::Unquote => "UNQUOTE".fmt(f),
+            Self::UnquoteSplice => "UNQUOTESPLICE".fmt(f),
+            Self::Vector => "VECTOR".fmt(f),
         }
     }
 }
@@ -200,56 +200,54 @@ impl TokenErrorKind {
 impl Display for TokenErrorKind {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
-            Self::BlockCommentUnterminated => f.write_str("unterminated block comment"),
-            Self::BooleanExpected(b) => write!(f, "expected boolean literal: {b}"),
-            Self::ByteVectorExpected => f.write_str("expected bytevector literal: #u8(…)"),
-            Self::CharacterExpected => f.write_str("expected character literal"),
-            Self::CharacterExpectedHex => f.write_str("expected character hex-sequence"),
+            Self::BlockCommentUnterminated => "unterminated block comment".fmt(f),
+            Self::BooleanExpected(b) => format!("expected boolean literal: {b}").fmt(f),
+            Self::ByteVectorExpected => "expected bytevector literal: #u8(…)".fmt(f),
+            Self::CharacterExpected => "expected character literal".fmt(f),
+            Self::CharacterExpectedHex => "expected character hex-sequence".fmt(f),
             Self::CharacterInvalidHex => {
                 format_char_range_error("character hex-sequence out of valid range", f)
             }
-            Self::ComplexInvalid => f.write_str("invalid complex literal"),
-            Self::DirectiveExpected => f.write_str("expected directive: fold-case or no-fold-case"),
+            Self::ComplexInvalid => "invalid complex literal".fmt(f),
+            Self::DirectiveExpected => "expected directive: fold-case or no-fold-case".fmt(f),
             Self::DirectiveInvalid => {
-                f.write_str("unsupported directive: expected fold-case or no-fold-case")
+                "unsupported directive: expected fold-case or no-fold-case".fmt(f)
             }
-            Self::ExactnessExpected { .. } => {
-                f.write_str("expected exactness prefix, one of: #e #i")
-            }
-            Self::HashInvalid => f.write_str("invalid #-literal"),
-            Self::HashUnterminated => f.write_str("unterminated #-literal"),
-            Self::IdentifierInvalid(ch) => write!(f, "invalid identifier character: {ch}"),
+            Self::ExactnessExpected { .. } => "expected exactness prefix, one of: #e #i".fmt(f),
+            Self::HashInvalid => "invalid #-literal".fmt(f),
+            Self::HashUnterminated => "unterminated #-literal".fmt(f),
+            Self::IdentifierInvalid(ch) => format!("invalid identifier character: {ch}").fmt(f),
             Self::IdentifierEscapeInvalid { ch, .. } | Self::StringEscapeInvalid { ch, .. } => {
-                write!(f, "invalid escape sequence: \\{ch}")
+                format!("invalid escape sequence: \\{ch}").fmt(f)
             }
             Self::IdentifierExpectedHex { .. } | Self::StringExpectedHex { .. } => {
-                f.write_str("expected hex-escape")
+                "expected hex-escape".fmt(f)
             }
             Self::IdentifierInvalidHex { .. } | Self::StringInvalidHex { .. } => {
                 format_char_range_error("hex-escape out of valid range", f)
             }
             Self::IdentifierUnterminatedHex { .. } | Self::StringUnterminatedHex { .. } => {
-                f.write_str("unterminated hex-escape")
+                "unterminated hex-escape".fmt(f)
             }
-            Self::IdentifierUnterminated => f.write_str("unterminated verbatim identifier"),
-            Self::ImaginaryInvalid => f.write_str("invalid imaginary literal"),
-            Self::ImaginaryMissingSign => f.write_str("missing explicit sign on imaginary number"),
-            Self::NumberExpected => f.write_str("expected numeric literal"),
-            Self::NumberInvalid => f.write_str("invalid numeric literal"),
+            Self::IdentifierUnterminated => "unterminated verbatim identifier".fmt(f),
+            Self::ImaginaryInvalid => "invalid imaginary literal".fmt(f),
+            Self::ImaginaryMissingSign => "missing explicit sign on imaginary number".fmt(f),
+            Self::NumberExpected => "expected numeric literal".fmt(f),
+            Self::NumberInvalid => "invalid numeric literal".fmt(f),
             Self::NumberInvalidDecimalPoint { radix, .. } => {
-                write!(f, "{radix} radix does not support decimal notation")
+                format!("{radix} radix does not support decimal notation").fmt(f)
             }
             Self::NumberInvalidExponent { radix, .. } => {
-                write!(f, "{radix} radix does not support scientific notation")
+                format!("{radix} radix does not support scientific notation").fmt(f)
             }
-            Self::NumberUnexpectedDecimalPoint { .. } => f.write_str("unexpected decimal point"),
+            Self::NumberUnexpectedDecimalPoint { .. } => "unexpected decimal point".fmt(f),
             Self::NumericError(err) | Self::NumericErrorAt { err, .. } => {
-                write!(f, "numeric error - {err}")
+                format!("numeric error - {err}").fmt(f)
             }
-            Self::PolarInvalid => f.write_str("invalid polar literal"),
-            Self::RadixExpected { .. } => f.write_str("expected radix prefix, one of: #b #o #d #x"),
-            Self::RationalInvalid => f.write_str("invalid rational literal"),
-            Self::StringUnterminated => f.write_str("unterminated string-literal"),
+            Self::PolarInvalid => "invalid polar literal".fmt(f),
+            Self::RadixExpected { .. } => "expected radix prefix, one of: #b #o #d #x".fmt(f),
+            Self::RationalInvalid => "invalid rational literal".fmt(f),
+            Self::StringUnterminated => "unterminated string-literal".fmt(f),
         }
     }
 }
@@ -284,7 +282,7 @@ pub(super) enum TokenContinuation {
 }
 
 fn format_char_range_error(msg: &str, f: &mut Formatter) -> fmt::Result {
-    write!(f, "{msg}: [{:#x}, {:#x}]", 0, char::MAX as u32)
+    format!("{msg}: [{:#x}, {:#x}]", 0, char::MAX as u32).fmt(f)
 }
 
 fn line_cont_token(line_cont: bool) -> &'static str {
