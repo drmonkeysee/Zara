@@ -27,7 +27,7 @@ pub(crate) enum LexerOutput {
 pub(crate) struct LexerError(Vec<LineFailure>);
 
 impl LexerError {
-    pub(crate) fn display_message(&self) -> LexerErrorMessage<'_> {
+    pub(crate) fn display_message(&self) -> LexerErrorMessage {
         LexerErrorMessage(&self.0)
     }
 }
