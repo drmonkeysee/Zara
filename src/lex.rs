@@ -34,17 +34,20 @@ impl LexerError {
 
 impl Display for LexerError {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        f.write_str("fatal error: ")?;
         let ctrl = self
             .0
             .iter()
             .try_fold(LineFailureAcc::Empty, |acc, ln| ln.accumulate(acc));
-        match ctrl {
-            ControlFlow::Break(()) => f.write_str("multiple lexer failures"),
-            ControlFlow::Continue(LineFailureAcc::Empty) => Ok(()),
-            ControlFlow::Continue(LineFailureAcc::Read) => f.write_str("read failure"),
-            ControlFlow::Continue(LineFailureAcc::Tokenize) => f.write_str("tokenization failure"),
-        }
+        format!(
+            "fatal error: {}",
+            match ctrl {
+                ControlFlow::Break(()) => "multiple lexer failures",
+                ControlFlow::Continue(LineFailureAcc::Empty) => "unknown failure",
+                ControlFlow::Continue(LineFailureAcc::Read) => "read failure",
+                ControlFlow::Continue(LineFailureAcc::Tokenize) => "tokenization failure",
+            }
+        )
+        .fmt(f)
     }
 }
 
@@ -153,7 +156,6 @@ impl TokenLine {
     }
 }
 
-// TODO: this should probably be a datum new-type representation
 impl Display for TokenLine {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         let TokenLine(tokens, txt) = self;
@@ -162,7 +164,7 @@ impl Display for TokenLine {
             .map(|t| TokenWithSource(t, txt).to_string())
             .collect::<Vec<_>>()
             .join(", ");
-        write!(f, "{}:{}", txt.lineno, token_txt)
+        format!("{}:{}", txt.lineno, token_txt).fmt(f)
     }
 }
 
@@ -240,13 +242,13 @@ struct TokenWithSource<'a>(&'a Token, &'a TextLine);
 impl Display for TokenWithSource<'_> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         let Self(t, txt) = *self;
-        write!(
-            f,
+        format!(
             "{t}('{}')",
             txt.line
                 .get(t.span.clone())
                 .unwrap_or("#<token-invalid-range>")
         )
+        .fmt(f)
     }
 }
 

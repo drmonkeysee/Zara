@@ -27,8 +27,8 @@ pub(crate) struct Datum<'a>(&'a Literal);
 impl Display for Datum<'_> {
     fn fmt(&self, f: &mut Formatter) -> Result {
         match self.0 {
-            Literal::Boolean(b) => write!(f, "#{}", if *b { 't' } else { 'f' }),
-            Literal::Character(c) => write!(f, "#\\{}", CharDatum::new(*c)),
+            Literal::Boolean(b) => format!("#{}", if *b { 't' } else { 'f' }).fmt(f),
+            Literal::Character(c) => format!("#\\{}", CharDatum::new(*c)).fmt(f),
             Literal::Number(n) => n.as_datum().fmt(f),
             Literal::String(s) => StrDatum(s).fmt(f),
         }
@@ -40,10 +40,10 @@ pub(crate) struct TokenDescriptor<'a>(&'a Literal);
 impl Display for TokenDescriptor<'_> {
     fn fmt(&self, f: &mut Formatter) -> Result {
         match self.0 {
-            Literal::Boolean(_) => f.write_str("BOOL"),
-            Literal::Character(_) => f.write_str("CHAR"),
-            Literal::Number(n) => write!(f, "NUM<{}>", n.as_token_descriptor()),
-            Literal::String(_) => f.write_str("STR"),
+            Literal::Boolean(_) => "BOOL".fmt(f),
+            Literal::Character(_) => "CHAR".fmt(f),
+            Literal::Number(n) => format!("NUM<{}>", n.as_token_descriptor()).fmt(f),
+            Literal::String(_) => "STR".fmt(f),
         }
     }
 }

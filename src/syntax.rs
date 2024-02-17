@@ -15,7 +15,7 @@ pub(crate) struct ParserError(Vec<ExpressionError>);
 
 impl Display for ParserError {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        f.write_str("fatal error: parsing failure")
+        "fatal error: parsing failure".fmt(f)
     }
 }
 

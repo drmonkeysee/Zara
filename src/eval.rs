@@ -62,7 +62,7 @@ pub(crate) struct EvalError;
 
 impl Display for EvalError {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        f.write_str("fatal error: evaluation failure")
+        "fatal error: evaluation failure".fmt(f)
     }
 }
 

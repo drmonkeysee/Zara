@@ -534,13 +534,13 @@ pub(crate) enum NumericError {
 impl Display for NumericError {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
-            Self::DivideByZero => f.write_str("divide by zero"),
+            Self::DivideByZero => "divide by zero".fmt(f),
             Self::ParseExponentOutOfRange => {
-                write!(f, "exponent out of range: [{}, {}]", i32::MIN, i32::MAX)
+                format!("exponent out of range: [{}, {}]", i32::MIN, i32::MAX).fmt(f)
             }
-            Self::ParseExponentFailure => f.write_str("exponent parse failure"),
-            Self::ParseFailure => f.write_str("number parse failure"),
-            Self::Unimplemented(s) => write!(f, "unimplemented number parse: '{s}'"),
+            Self::ParseExponentFailure => "exponent parse failure".fmt(f),
+            Self::ParseFailure => "number parse failure".fmt(f),
+            Self::Unimplemented(s) => format!("unimplemented number parse: '{s}'").fmt(f),
         }
     }
 }
@@ -572,7 +572,7 @@ pub(crate) struct TokenDescriptor<'a>(&'a Number);
 impl Display for TokenDescriptor<'_> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self.0 {
-            Number::Complex(_) => f.write_str("CPX"),
+            Number::Complex(_) => "CPX".fmt(f),
             Number::Real(r) => r.as_token_descriptor().fmt(f),
         }
     }
@@ -583,9 +583,9 @@ pub(crate) struct RealTokenDescriptor<'a>(&'a Real);
 impl Display for RealTokenDescriptor<'_> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self.0 {
-            Real::Float(_) => f.write_str("FLT"),
-            Real::Integer(_) => f.write_str("INT"),
-            Real::Rational(_) => f.write_str("RAT"),
+            Real::Float(_) => "FLT".fmt(f),
+            Real::Integer(_) => "INT".fmt(f),
+            Real::Rational(_) => "RAT".fmt(f),
         }
     }
 }

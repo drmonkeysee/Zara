@@ -229,20 +229,6 @@ mod tests {
         }
     }
 
-    #[test]
-    fn disptest() {
-        let a = DisplayTest::Write(5);
-        let b = DisplayTest::Format(3);
-        let c = DisplayTest::WStr;
-        let d = DisplayTest::StrFmt;
-
-        eprintln!("A: {a:>15}");
-        eprintln!("B: {b:>15}");
-        eprintln!("C: {c:>15}");
-        eprintln!("D: {d:>15}");
-        //assert!(false);
-    }
-
     mod runmode {
         use super::*;
 
