@@ -50,7 +50,7 @@ impl<'me, 'txt> Identifier<'me, 'txt> {
         } else if is_initial(first) {
             self.standard()
         } else {
-            self.invalid(first)
+            invalid(first)
         }
     }
 
@@ -61,7 +61,7 @@ impl<'me, 'txt> Identifier<'me, 'txt> {
                 '+' | '-' => return self.maybe_infnan_complex(item, ComplexKind::Cartesian),
                 '@' => return self.maybe_infnan_complex(item, ComplexKind::Polar),
                 _ if is_standard(ch) => (),
-                _ => return self.invalid(ch),
+                _ => return invalid(ch),
             }
         }
         let exactness = self.exactness;
@@ -77,48 +77,45 @@ impl<'me, 'txt> Identifier<'me, 'txt> {
     }
 
     fn continue_peculiar(&mut self, next_ch: Option<char>) -> TokenExtractResult {
-        match next_ch {
-            Some(ch) => {
-                if Decimal.is_digit(ch) {
-                    debug_assert!(self.peculiar_state.is_some());
-                    match self.peculiar_state.as_ref().unwrap() {
-                        PeculiarState::DefiniteIdentifier => self.standard(),
-                        // CASE: .<digit>
-                        PeculiarState::MaybeFloat => {
-                            RealNumber::try_float(self.scan, self.start.0, self.exactness).scan()
-                        }
-                        // CASE: +/-.<digit>
-                        PeculiarState::MaybeSignedFloat => RealNumber::try_signed_float(
-                            super::char_to_sign(self.start.1),
-                            self.scan,
-                            self.start.0,
-                            self.exactness,
-                        )
-                        .scan(),
-                        // CASE: +/-<digit>
-                        PeculiarState::MaybeSignedNumber => RealNumber::try_signed_number(
-                            super::char_to_sign(self.start.1),
-                            self.scan,
-                            self.start.0,
-                            self.exactness,
-                        )
-                        .scan(),
-                    }
-                } else if is_peculiar_initial(ch) {
-                    self.peculiar(ch)
-                } else if is_initial(ch) {
-                    self.standard()
-                } else {
-                    self.invalid(ch)
+        let Some(ch) = next_ch else {
+            // NOTE: a single '.' is invalid but Tokenizer handles '.'
+            // before attempting Identifier so this case never happens.
+            let txt = self.get_lexeme();
+            debug_assert!(txt != ".");
+            return Ok(TokenKind::Identifier(txt.to_owned()));
+        };
+
+        if Decimal.is_digit(ch) {
+            debug_assert!(self.peculiar_state.is_some());
+            match self.peculiar_state.as_ref().unwrap() {
+                PeculiarState::DefiniteIdentifier => self.standard(),
+                // CASE: .<digit>
+                PeculiarState::MaybeFloat => {
+                    RealNumber::try_float(self.scan, self.start.0, self.exactness).scan()
                 }
+                // CASE: +/-.<digit>
+                PeculiarState::MaybeSignedFloat => RealNumber::try_signed_float(
+                    super::char_to_sign(self.start.1),
+                    self.scan,
+                    self.start.0,
+                    self.exactness,
+                )
+                .scan(),
+                // CASE: +/-<digit>
+                PeculiarState::MaybeSignedNumber => RealNumber::try_signed_number(
+                    super::char_to_sign(self.start.1),
+                    self.scan,
+                    self.start.0,
+                    self.exactness,
+                )
+                .scan(),
             }
-            None => {
-                // NOTE: a single '.' is invalid but Tokenizer handles '.'
-                // before attempting Identifier so this case never happens.
-                let txt = self.get_lexeme();
-                debug_assert!(txt != ".");
-                Ok(TokenKind::Identifier(txt.to_owned()))
-            }
+        } else if is_peculiar_initial(ch) {
+            self.peculiar(ch)
+        } else if is_initial(ch) {
+            self.standard()
+        } else {
+            invalid(ch)
         }
     }
 
@@ -160,14 +157,10 @@ impl<'me, 'txt> Identifier<'me, 'txt> {
     fn rest_of_standard(&mut self) -> TokenExtractResult {
         while let Some(ch) = self.scan.char_if_not_delimiter() {
             if !is_standard(ch) {
-                return self.invalid(ch);
+                return invalid(ch);
             }
         }
         Ok(TokenKind::Identifier(self.get_lexeme().to_owned()))
-    }
-
-    fn invalid(&mut self, ch: char) -> TokenExtractResult {
-        Err(TokenErrorKind::IdentifierInvalid(ch))
     }
 
     fn classify_peculiar(&mut self, ch: char) {
@@ -340,4 +333,8 @@ fn is_special_initial(ch: char) -> bool {
 
 fn is_peculiar_initial(ch: char) -> bool {
     matches!(ch, '+' | '-' | '.')
+}
+
+fn invalid(ch: char) -> TokenExtractResult {
+    Err(TokenErrorKind::IdentifierInvalid(ch))
 }

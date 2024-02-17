@@ -114,7 +114,7 @@ impl<'me, 'txt> RealNumber<'me, 'txt> {
             props,
             scan: self.scan,
         }
-        .resolve(parser, cond)
+        .resolve(parser, &cond)
     }
 }
 
@@ -173,7 +173,7 @@ impl<'me, 'txt, R: Radix + Default> RadixNumber<'me, 'txt, R> {
             props,
             scan: self.scan,
         }
-        .resolve(parser, cond)
+        .resolve(parser, &cond)
     }
 }
 
@@ -210,7 +210,7 @@ impl<P: ClassifierProps> ConditionProcessor<'_, '_, P> {
     fn resolve<N: ClassifierParser>(
         mut self,
         parser: N,
-        cond: BreakCondition,
+        cond: &BreakCondition,
     ) -> TokenExtractResult {
         match cond {
             BreakCondition::Sub(SubCondition::Complete) => self.complete(parser, false),
@@ -221,7 +221,7 @@ impl<P: ClassifierProps> ConditionProcessor<'_, '_, P> {
                 // undoing any exactness applied to real part.
                 parser
                     .parse(None)
-                    .and_then(|real| self.scan_imaginary(real, kind, start))
+                    .and_then(|real| self.scan_imaginary(real, *kind, *start))
             }
             BreakCondition::Sub(SubCondition::Imaginary) => {
                 if let Some(item) = self.scan.next_if_not_delimiter() {
