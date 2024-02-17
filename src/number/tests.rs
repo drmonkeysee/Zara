@@ -819,6 +819,18 @@ mod float {
         let flt = extract_or_fail!(n, Real::Float);
         assert!(flt.is_nan());
     }
+
+    #[test]
+    fn round_trip() {
+        let expected = 4.23452e-2;
+        let n: Real = Real::Float(expected);
+
+        let r = n.into_exact();
+        assert!(matches!(r, Real::Rational(_)));
+
+        let f = r.into_inexact();
+        assert_eq!(f.into_float(), expected);
+    }
 }
 
 mod rational {
