@@ -139,7 +139,7 @@ pub(in crate::lex::tokenize) struct BlockComment<'me, 'txt, P> {
 }
 
 impl<P: BlockCommentPolicy> BlockComment<'_, '_, P> {
-    pub(in crate::lex::tokenize) fn consume(&mut self) -> TokenKind {
+    pub(in crate::lex::tokenize) fn consume(mut self) -> TokenKind {
         while !self.scan.consumed() {
             if let Some((_, ch)) = self.scan.find_any_char(&['|', '#']) {
                 if self.end_block(ch) {
