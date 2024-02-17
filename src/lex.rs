@@ -158,7 +158,7 @@ impl TokenLine {
 
 impl Display for TokenLine {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        let TokenLine(tokens, txt) = self;
+        let Self(tokens, txt) = self;
         let token_txt = tokens
             .iter()
             .map(|t| TokenWithSource(t, txt).to_string())
