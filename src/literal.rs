@@ -9,7 +9,7 @@ pub(crate) enum Literal {
     Boolean(bool),
     Character(char),
     Number(Number),
-    String(String), // TODO: can this be Box<str>
+    String(Box<str>),
 }
 
 impl Literal {
@@ -284,105 +284,105 @@ mod tests {
 
         #[test]
         fn string_token() {
-            let s = Literal::String("foo".to_owned());
+            let s = Literal::String("foo".into());
 
             assert_eq!(s.as_token_descriptor().to_string(), "STR");
         }
 
         #[test]
         fn display_empty() {
-            let s = Literal::String("".to_owned());
+            let s = Literal::String("".into());
 
             assert_eq!(s.as_datum().to_string(), "\"\"");
         }
 
         #[test]
         fn display_alphanumeric() {
-            let s = Literal::String("abc123!@#".to_owned());
+            let s = Literal::String("abc123!@#".into());
 
             assert_eq!(s.as_datum().to_string(), "\"abc123!@#\"");
         }
 
         #[test]
         fn display_extended() {
-            let s = Literal::String("λ".to_owned());
+            let s = Literal::String("λ".into());
 
             assert_eq!(s.as_datum().to_string(), "\"λ\"");
         }
 
         #[test]
         fn display_emoji() {
-            let s = Literal::String("🦀".to_owned());
+            let s = Literal::String("🦀".into());
 
             assert_eq!(s.as_datum().to_string(), "\"🦀\"");
         }
 
         #[test]
         fn display_control_picture() {
-            let s = Literal::String("\u{2401}".to_owned());
+            let s = Literal::String("\u{2401}".into());
 
             assert_eq!(s.as_datum().to_string(), "\"␁\"");
         }
 
         #[test]
         fn display_replacement() {
-            let s = Literal::String("\u{fffd}".to_owned());
+            let s = Literal::String("\u{fffd}".into());
 
             assert_eq!(s.as_datum().to_string(), "\"�\"");
         }
 
         #[test]
         fn display_null() {
-            let s = Literal::String("\0".to_owned());
+            let s = Literal::String("\0".into());
 
             assert_eq!(s.as_datum().to_string(), "\"\\x0;\"");
         }
 
         #[test]
         fn display_pipe() {
-            let s = Literal::String("|".to_owned());
+            let s = Literal::String("|".into());
 
             assert_eq!(s.as_datum().to_string(), "\"|\"");
         }
 
         #[test]
         fn display_one_digit_hex() {
-            let s = Literal::String("\x0c".to_owned());
+            let s = Literal::String("\x0c".into());
 
             assert_eq!(s.as_datum().to_string(), "\"\\xc;\"");
         }
 
         #[test]
         fn display_hex_uses_lowercase() {
-            let s = Literal::String("\x0C".to_owned());
+            let s = Literal::String("\x0C".into());
 
             assert_eq!(s.as_datum().to_string(), "\"\\xc;\"");
         }
 
         #[test]
         fn display_two_digit_hex() {
-            let s = Literal::String("\x1d".to_owned());
+            let s = Literal::String("\x1d".into());
 
             assert_eq!(s.as_datum().to_string(), "\"\\x1d;\"");
         }
 
         #[test]
         fn display_four_digit_hex() {
-            let s = Literal::String("\u{fff9}".to_owned());
+            let s = Literal::String("\u{fff9}".into());
 
             assert_eq!(s.as_datum().to_string(), "\"\\xfff9;\"");
         }
 
         #[test]
         fn display_special_purpose_plane() {
-            let s = Literal::String("\u{e0001}".to_owned());
+            let s = Literal::String("\u{e0001}".into());
 
             assert_eq!(s.as_datum().to_string(), "\"\\xe0001;\"");
         }
 
         #[test]
         fn display_private_use_plane() {
-            let s = Literal::String("\u{100001}".to_owned());
+            let s = Literal::String("\u{100001}".into());
 
             assert_eq!(s.as_datum().to_string(), "\"\\x100001;\"");
         }
@@ -392,7 +392,7 @@ mod tests {
             let s = Literal::String(
                 "foo
 bar"
-                .to_owned(),
+                .into(),
             );
 
             assert_eq!(s.as_datum().to_string(), "\"foo\\nbar\"");
@@ -413,7 +413,7 @@ bar"
 
         fn check_escape_sequence(cases: &[(&str, &str)]) {
             for &(inp, exp) in cases {
-                let s = Literal::String(inp.to_owned());
+                let s = Literal::String(inp.into());
 
                 assert_eq!(s.as_datum().to_string(), format!("\"{exp}\""));
             }

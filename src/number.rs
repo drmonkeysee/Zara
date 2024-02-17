@@ -593,7 +593,7 @@ impl Display for RealTokenDescriptor<'_> {
 #[derive(Debug, Eq)]
 enum Precision {
     Single(u64),
-    Multiple(Vec<u64>), // TODO: can this be Box<[u64]>
+    Multiple(Box<[u64]>),
 }
 
 impl Precision {

@@ -18,7 +18,7 @@ fn empty() {
         Token {
             kind: TokenKind::Literal(Literal::String(txt)),
             span: Range { start: 0, end: 2 },
-        } if txt == ""
+        } if txt.as_ref() == ""
     ));
 }
 
@@ -40,7 +40,7 @@ fn alphanumeric() {
         Token {
             kind: TokenKind::Literal(Literal::String(txt)),
             span: Range { start: 0, end: 11 },
-        } if txt == "abc123!@#"
+        } if txt.as_ref() == "abc123!@#"
     ));
 }
 
@@ -62,7 +62,7 @@ fn raw_extended_and_higher_char() {
         Token {
             kind: TokenKind::Literal(Literal::String(txt)),
             span: Range { start: 0, end: 17 },
-        } if txt == "λ 🦀 ␁ �"
+        } if txt.as_ref() == "λ 🦀 ␁ �"
     ));
 }
 
@@ -84,7 +84,7 @@ fn contains_verbatim_identifier() {
         Token {
             kind: TokenKind::Literal(Literal::String(txt)),
             span: Range { start: 0, end: 20 },
-        } if txt == "foo |verbatim| bar"
+        } if txt.as_ref() == "foo |verbatim| bar"
     ));
 }
 
@@ -106,7 +106,7 @@ fn raw_escape_sequences() {
         Token {
             kind: TokenKind::Literal(Literal::String(txt)),
             span: Range { start: 0, end: 45 },
-        } if txt == "a:\x07, b:\x08, d:\x7f, e:\x1b, n:\n, 0:\0, r:\r, t:\t, v:|"
+        } if txt.as_ref() == "a:\x07, b:\x08, d:\x7f, e:\x1b, n:\n, 0:\0, r:\r, t:\t, v:|"
     ));
 }
 
@@ -128,7 +128,7 @@ fn escape_sequences() {
         Token {
             kind: TokenKind::Literal(Literal::String(txt)),
             span: Range { start: 0, end: 46 },
-        } if txt == "a:\x07, b:\x08, n:\n, r:\r, t:\t, q:\", s:\\, v:|"
+        } if txt.as_ref() == "a:\x07, b:\x08, n:\n, r:\r, t:\t, q:\", s:\\, v:|"
     ));
 }
 
@@ -150,7 +150,7 @@ fn whitespace_escape() {
         Token {
             kind: TokenKind::Literal(Literal::String(txt)),
             span: Range { start: 0, end: 12 },
-        } if txt == "foo   bar"
+        } if txt.as_ref() == "foo   bar"
     ));
 }
 
@@ -174,7 +174,7 @@ fn hex_escape_sequences() {
         Token {
             kind: TokenKind::Literal(Literal::String(txt)),
             span: Range { start: 0, end: 93 },
-        } if txt == "a:\x07, b:\x08, d:\x7f, e:\x1b, n:\n, 0:\0, r:\r, t:\t, q:\", s:\\, v:|"
+        } if txt.as_ref() == "a:\x07, b:\x08, d:\x7f, e:\x1b, n:\n, 0:\0, r:\r, t:\t, q:\", s:\\, v:|"
     ));
 }
 
@@ -196,7 +196,7 @@ fn hex_case_insensitive() {
         Token {
             kind: TokenKind::Literal(Literal::String(txt)),
             span: Range { start: 0, end: 13 },
-        } if txt == "J J"
+        } if txt.as_ref() == "J J"
     ));
 }
 
@@ -218,7 +218,7 @@ fn higher_plane_raw() {
         Token {
             kind: TokenKind::Literal(Literal::String(txt)),
             span: Range { start: 0, end: 15 },
-        } if txt == "\u{fff9} \u{e0001} \u{100001}"
+        } if txt.as_ref() == "\u{fff9} \u{e0001} \u{100001}"
     ));
 }
 
@@ -240,7 +240,7 @@ fn higher_plane_hex() {
         Token {
             kind: TokenKind::Literal(Literal::String(txt)),
             span: Range { start: 0, end: 28 },
-        } if txt == "\u{fff9} \u{e0001} \u{100001}"
+        } if txt.as_ref() == "\u{fff9} \u{e0001} \u{100001}"
     ));
 }
 

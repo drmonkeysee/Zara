@@ -75,7 +75,7 @@ pub(in crate::lex::tokenize) struct StartString;
 
 impl StringPolicyMode for StartString {
     fn terminated(&self, buf: String) -> TokenKind {
-        TokenKind::Literal(Literal::String(buf))
+        TokenKind::Literal(Literal::String(buf.into()))
     }
 
     fn unterminated(&self, buf: String, line_cont: bool) -> TokenKind {
