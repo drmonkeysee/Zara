@@ -1,9 +1,6 @@
 use super::{FreeText, FreeTextPolicy};
 use crate::{
-    lex::{
-        token::{TokenErrorKind, TokenKind},
-        tokenize::scan::Scanner,
-    },
+    lex::{token::TokenErrorKind, tokenize::scan::Scanner, TokenKind},
     literal::Literal,
 };
 

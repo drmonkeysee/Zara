@@ -1,13 +1,13 @@
 use super::{Exactness, HexParse, Identifier, RadixNumber};
 use crate::{
     lex::{
-        token::{TokenErrorKind, TokenKind},
+        token::TokenErrorKind,
         tokenize::{scan::Scanner, TokenExtractResult},
+        TokenKind,
     },
     literal::Literal,
     number::{Binary, Hexadecimal, Octal, Radix},
 };
-use std::fmt::Debug;
 
 const EXACTL: char = 'e';
 const EXACTU: char = EXACTL.to_ascii_uppercase();

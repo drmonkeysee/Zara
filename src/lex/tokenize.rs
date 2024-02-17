@@ -9,7 +9,10 @@ use self::{
     },
     scan::{ScanItem, Scanner},
 };
-use super::token::{Token, TokenContinuation, TokenError, TokenErrorKind, TokenKind, TokenResult};
+use super::{
+    token::{TokenContinuation, TokenError, TokenErrorKind, TokenResult},
+    Token, TokenKind,
+};
 
 pub(super) struct TokenStream<'txt> {
     cont: Option<TokenContinuation>,

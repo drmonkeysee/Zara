@@ -12,7 +12,7 @@ pub(super) use self::{
 };
 use super::{scan::Scanner, TokenExtractResult};
 use crate::{
-    lex::token::{TokenErrorKind, TokenKind},
+    lex::{token::TokenErrorKind, TokenKind},
     number::Sign,
 };
 
