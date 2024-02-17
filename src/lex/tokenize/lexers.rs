@@ -72,18 +72,18 @@ impl<'me, 'txt, P: FreeTextPolicy> FreeText<'me, 'txt, P> {
     fn hex(&mut self, start: usize) -> FreeTextResult {
         let pos = self.scan.pos();
         self.scan.end_of_word();
-        match self.scan.char_if_eq(';') {
-            Some(idx) => {
-                let rest = self.scan.lexeme(pos..idx);
-                match parse_char_hex(rest) {
-                    HexParse::Invalid => return Err(self.policy.hex_invalid(start)),
-                    HexParse::Unexpected => return Err(self.policy.hex_expected(start)),
-                    HexParse::Valid(ch) => self.buf.push(ch),
-                }
-            }
-            None => return Err(self.policy.hex_unterminated(start)),
+        let Some(idx) = self.scan.char_if_eq(';') else {
+            return Err(self.policy.hex_unterminated(start));
         };
-        Ok(())
+        let rest = self.scan.lexeme(pos..idx);
+        match parse_char_hex(rest) {
+            HexParse::Invalid => Err(self.policy.hex_invalid(start)),
+            HexParse::Unexpected => Err(self.policy.hex_expected(start)),
+            HexParse::Valid(ch) => {
+                self.buf.push(ch);
+                Ok(())
+            }
+        }
     }
 
     fn terminated(self) -> TokenKind {
