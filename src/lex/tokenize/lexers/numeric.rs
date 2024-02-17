@@ -10,7 +10,7 @@ use crate::{
     literal::Literal,
     number::{Decimal, FloatSpec, IntSpec, Integer, Number, NumericError, Radix, Real, Sign},
 };
-use std::{fmt::Debug, marker::PhantomData, ops::ControlFlow};
+use std::{marker::PhantomData, ops::ControlFlow};
 
 pub(super) struct RealNumber<'me, 'txt> {
     classifier: RealClassifier,
