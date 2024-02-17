@@ -110,13 +110,13 @@ pub(super) trait FreeTextPolicy {
 
 type FreeTextResult = Result<(), TokenErrorKind>;
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy)]
 enum Exactness {
     Exact,
     Inexact,
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy)]
 enum ComplexKind {
     Cartesian,
     Polar,

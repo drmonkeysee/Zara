@@ -245,7 +245,7 @@ impl NumberKind {
     }
 }
 
-fn radix<R: Radix + Clone + Debug + Default>(
+fn radix<R: Radix + Clone + Default>(
     scan: &mut Scanner,
     exactness: Option<Exactness>,
 ) -> TokenExtractResult {

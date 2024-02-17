@@ -330,7 +330,7 @@ pub(crate) trait Radix: RadixPrivate {
     fn is_digit(&self, ch: char) -> bool;
 }
 
-#[derive(Clone, Copy, Debug, Default)]
+#[derive(Clone, Copy, Default)]
 pub(crate) struct Binary;
 
 impl Radix for Binary {
@@ -342,7 +342,7 @@ impl Radix for Binary {
     }
 }
 
-#[derive(Clone, Copy, Debug, Default)]
+#[derive(Clone, Copy, Default)]
 pub(crate) struct Octal;
 
 impl Radix for Octal {
@@ -356,7 +356,7 @@ impl Radix for Octal {
     }
 }
 
-#[derive(Clone, Copy, Debug, Default)]
+#[derive(Clone, Copy, Default)]
 pub(crate) struct Decimal;
 
 impl Radix for Decimal {
@@ -368,7 +368,7 @@ impl Radix for Decimal {
     }
 }
 
-#[derive(Clone, Copy, Debug, Default)]
+#[derive(Clone, Copy, Default)]
 pub(crate) struct Hexadecimal;
 
 impl Radix for Hexadecimal {
@@ -380,7 +380,7 @@ impl Radix for Hexadecimal {
     }
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Default)]
 pub(crate) struct IntSpec<R> {
     pub(crate) magnitude: Range<usize>,
     pub(crate) radix: R,
@@ -401,7 +401,7 @@ impl<R: Radix> IntSpec<R> {
     }
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Default)]
 pub(crate) struct FloatSpec {
     pub(crate) exponent: Range<usize>,
     pub(crate) fraction: Range<usize>,

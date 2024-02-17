@@ -714,7 +714,7 @@ impl RealInt {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Default)]
 struct Float(FloatSpec);
 
 impl Float {
@@ -754,7 +754,7 @@ impl Float {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Default)]
 struct Scientific {
     e_at: usize,
     exponent_sign: Option<Sign>,
