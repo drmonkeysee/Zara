@@ -182,6 +182,7 @@ pub(super) fn imaginary(sign: Sign, exactness: Option<Exactness>) -> TokenKind {
     let sign_val = sign as i64;
     let r = match exactness {
         None | Some(Exactness::Exact) => Real::from(sign_val),
+        #[allow(clippy::cast_precision_loss)]
         Some(Exactness::Inexact) => Real::from(sign_val as f64),
     };
     real_to_token(r, true)

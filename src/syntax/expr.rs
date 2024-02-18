@@ -37,10 +37,10 @@ impl Display for Datum<'_> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self.0 {
             Expression::Ast(expr) => format!("{{{expr:?}}}").fmt(f),
+            Expression::Begin(_) => format!("#<expr-datum-undef({:?})>", self.0).fmt(f),
             Expression::Empty => Ok(()),
             Expression::Literal(lit) => lit.as_datum().fmt(f),
             Expression::TokenList(lines) => DisplayTokenLines(lines).fmt(f),
-            _ => format!("#<expr-datum-undef({:?})>", self.0).fmt(f),
         }
     }
 }

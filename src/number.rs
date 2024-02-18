@@ -245,6 +245,7 @@ impl Integer {
     fn into_float(self) -> f64 {
         match self.precision {
             Precision::Single(u) => {
+                #[allow(clippy::cast_precision_loss)]
                 let f = u as f64;
                 if self.sign == Sign::Negative {
                     -f
