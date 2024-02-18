@@ -30,7 +30,7 @@ fn set_env_from_output(var: &str, result: Result<Output>) {
 }
 
 fn set_env_from_converted_output(
-    var: &str,
+    name: &str,
     result: Result<Output>,
     convert: impl FnOnce(String) -> String,
 ) {
@@ -38,7 +38,7 @@ fn set_env_from_converted_output(
     if output.status.success() {
         let val = String::from_utf8(output.stdout).expect("command output conversion failure");
         let val = convert(val);
-        println!("cargo:rustc-env={var}={val}");
+        println!("cargo:rustc-env={name}={val}");
     } else {
         io::stderr()
             .write_all(&output.stderr)

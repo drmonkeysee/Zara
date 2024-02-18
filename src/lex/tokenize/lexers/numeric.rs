@@ -440,8 +440,8 @@ trait ClassifierProps {
     fn get_sign(&self) -> Option<Sign>;
     fn get_exactness(&self) -> Option<Exactness>;
     fn is_empty(&self) -> bool;
-    fn cartesian_scan(&self, scan: &mut Scanner, start: ScanItem) -> TokenExtractResult;
-    fn polar_scan(&self, scan: &mut Scanner) -> TokenExtractResult;
+    fn cartesian_scan(&self, scanner: &mut Scanner, start: ScanItem) -> TokenExtractResult;
+    fn polar_scan(&self, scanner: &mut Scanner) -> TokenExtractResult;
 
     fn has_sign(&self) -> bool {
         self.get_sign().is_some()
@@ -538,14 +538,15 @@ impl ClassifierProps for RealProps {
         self.empty
     }
 
-    fn cartesian_scan(&self, scan: &mut Scanner, start: ScanItem) -> TokenExtractResult {
-        Identifier::with_exactness(scan, start, self.get_exactness()).scan()
+    fn cartesian_scan(&self, scanner: &mut Scanner, start: ScanItem) -> TokenExtractResult {
+        Identifier::with_exactness(scanner, start, self.get_exactness()).scan()
     }
 
-    fn polar_scan(&self, scan: &mut Scanner) -> TokenExtractResult {
-        scan.next_if_not_delimiter()
+    fn polar_scan(&self, scanner: &mut Scanner) -> TokenExtractResult {
+        scanner
+            .next_if_not_delimiter()
             .map_or(Err(TokenErrorKind::PolarInvalid), |start| {
-                Identifier::new(scan, start).scan()
+                Identifier::new(scanner, start).scan()
             })
     }
 }
@@ -654,12 +655,12 @@ impl<R: Radix + Default> ClassifierProps for RadixProps<R> {
         self.props.empty
     }
 
-    fn cartesian_scan(&self, scan: &mut Scanner, start: ScanItem) -> TokenExtractResult {
-        RadixNumber::<R>::with_sign(scan, start, self.get_exactness()).scan()
+    fn cartesian_scan(&self, scanner: &mut Scanner, start: ScanItem) -> TokenExtractResult {
+        RadixNumber::<R>::with_sign(scanner, start, self.get_exactness()).scan()
     }
 
-    fn polar_scan(&self, scan: &mut Scanner) -> TokenExtractResult {
-        RadixNumber::<R>::new(scan, Some(Exactness::Exact)).scan()
+    fn polar_scan(&self, scanner: &mut Scanner) -> TokenExtractResult {
+        RadixNumber::<R>::new(scanner, Some(Exactness::Exact)).scan()
     }
 }
 
@@ -687,6 +688,7 @@ impl RealInt {
         match ch {
             '+' | '-' => ControlFlow::Break(Ok(BreakCondition::cartesian(item))),
             '.' => ControlFlow::Continue(Some(RealClassifier::Flt(Float(FloatSpec {
+                #[allow(clippy::range_plus_one)]
                 fraction: offset + 1..offset + 1,
                 integral: self.0.clone(),
                 ..Default::default()
@@ -696,6 +698,7 @@ impl RealInt {
             'e' | 'E' => ControlFlow::Continue(Some(RealClassifier::Sci(Scientific {
                 e_at: idx,
                 spec: FloatSpec {
+                    #[allow(clippy::range_plus_one)]
                     exponent: offset + 1..offset + 1,
                     fraction: offset..offset,
                     integral: self.0.clone(),
@@ -730,6 +733,8 @@ impl Float {
             })),
             '/' => ControlFlow::Break(Err(TokenErrorKind::RationalInvalid)),
             '@' => ControlFlow::Break(Ok(BreakCondition::polar(item))),
+            // TODO: https://github.com/rust-lang/rust/issues/15701
+            #[allow(clippy::range_plus_one)]
             'e' | 'E' => {
                 let mut spec = self.0.clone();
                 spec.exponent = offset + 1..offset + 1;

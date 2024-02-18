@@ -99,7 +99,7 @@ impl<'me, 'txt, P: FreeTextPolicy> FreeText<'me, 'txt, P> {
 pub(super) trait FreeTextPolicy {
     const TERMINATOR: char;
 
-    fn prelude(&self, scan: &mut Scanner);
+    fn prelude(&self, scanner: &mut Scanner);
     fn escape_invalid(&self, start: usize, ch: char) -> TokenErrorKind;
     fn hex_expected(&self, start: usize) -> TokenErrorKind;
     fn hex_invalid(&self, start: usize) -> TokenErrorKind;

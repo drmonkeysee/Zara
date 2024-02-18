@@ -143,7 +143,7 @@ impl Continuation<'_, '_> {
 
 fn extract(
     result: TokenExtractResult,
-    scan: &mut Scanner,
+    scanner: &mut Scanner,
     mut start: usize,
 ) -> (TokenResult, Option<TokenContinuation>) {
     let cont = result.as_ref().err().and_then(|err| {
@@ -152,11 +152,11 @@ fn extract(
         }
         let cont = err.to_continuation();
         if cont.is_none() {
-            scan.end_of_token();
+            scanner.end_of_token();
         }
         cont
     });
-    let span = start..scan.pos();
+    let span = start..scanner.pos();
     (
         match result {
             Ok(token) => Ok(Token { kind: token, span }),

@@ -223,10 +223,10 @@ enum NumberKind {
 impl NumberKind {
     fn select_or(
         failure: TokenErrorKind,
-        scan: &mut Scanner,
+        scanner: &mut Scanner,
         ch: Option<char>,
     ) -> Result<NumberKind, TokenErrorKind> {
-        match ch.or_else(|| scan.char_if_not_delimiter()) {
+        match ch.or_else(|| scanner.char_if_not_delimiter()) {
             Some('b' | 'B') => Ok(Self::Binary),
             Some('d' | 'D') => Ok(Self::Decimal),
             Some('o' | 'O') => Ok(Self::Octal),
@@ -235,26 +235,26 @@ impl NumberKind {
         }
     }
 
-    fn scan(&self, scan: &mut Scanner, exactness: Option<Exactness>) -> TokenExtractResult {
+    fn scan(&self, scanner: &mut Scanner, exactness: Option<Exactness>) -> TokenExtractResult {
         match self {
-            Self::Binary => radix::<Binary>(scan, exactness),
-            Self::Decimal => decimal(scan, exactness),
-            Self::Hexadecimal => radix::<Hexadecimal>(scan, exactness),
-            Self::Octal => radix::<Octal>(scan, exactness),
+            Self::Binary => radix::<Binary>(scanner, exactness),
+            Self::Decimal => decimal(scanner, exactness),
+            Self::Hexadecimal => radix::<Hexadecimal>(scanner, exactness),
+            Self::Octal => radix::<Octal>(scanner, exactness),
         }
     }
 }
 
 fn radix<R: Radix + Clone + Default>(
-    scan: &mut Scanner,
+    scanner: &mut Scanner,
     exactness: Option<Exactness>,
 ) -> TokenExtractResult {
-    RadixNumber::<R>::new(scan, exactness).scan()
+    RadixNumber::<R>::new(scanner, exactness).scan()
 }
 
-fn decimal(scan: &mut Scanner, exactness: Option<Exactness>) -> TokenExtractResult {
-    if let Some(item) = scan.next_if_not_delimiter() {
-        let result = Identifier::with_exactness(scan, item, exactness).scan();
+fn decimal(scanner: &mut Scanner, exactness: Option<Exactness>) -> TokenExtractResult {
+    if let Some(item) = scanner.next_if_not_delimiter() {
+        let result = Identifier::with_exactness(scanner, item, exactness).scan();
         match result {
             Err(TokenErrorKind::IdentifierInvalid(_)) => (),
             Ok(TokenKind::Literal(Literal::Number(_)) | TokenKind::Imaginary(_)) | Err(_) => {
