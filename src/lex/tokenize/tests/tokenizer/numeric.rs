@@ -33,7 +33,7 @@ mod integer {
         let mut s = Scanner::new("4");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -57,7 +57,7 @@ mod integer {
         let mut s = Scanner::new("+4");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -81,7 +81,7 @@ mod integer {
         let mut s = Scanner::new("-5");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -105,7 +105,7 @@ mod integer {
         let mut s = Scanner::new("0");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -129,7 +129,7 @@ mod integer {
         let mut s = Scanner::new("+0");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -154,7 +154,7 @@ mod integer {
         let mut s = Scanner::new(&input);
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -179,7 +179,7 @@ mod integer {
         let mut s = Scanner::new(&input);
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -204,7 +204,7 @@ mod integer {
         let mut s = Scanner::new(&input);
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -229,7 +229,7 @@ mod integer {
         let mut s = Scanner::new(&input);
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -254,7 +254,7 @@ mod integer {
         let mut s = Scanner::new(&input);
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -284,7 +284,7 @@ mod integer {
             let mut s = Scanner::new(&case);
             let start = some_or_fail!(s.next_token());
             let t = Tokenizer {
-                scan: &mut s,
+                scanner: &mut s,
                 start,
             };
 
@@ -312,7 +312,7 @@ mod integer {
             let mut s = Scanner::new(&case);
             let start = some_or_fail!(s.next_token());
             let t = Tokenizer {
-                scan: &mut s,
+                scanner: &mut s,
                 start,
             };
 
@@ -337,7 +337,7 @@ mod integer {
         let mut s = Scanner::new("#e4");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -363,7 +363,7 @@ mod integer {
             let mut s = Scanner::new(case);
             let start = some_or_fail!(s.next_token());
             let t = Tokenizer {
-                scan: &mut s,
+                scanner: &mut s,
                 start,
             };
 
@@ -390,7 +390,7 @@ mod integer {
             let mut s = Scanner::new(case);
             let start = some_or_fail!(s.next_token());
             let t = Tokenizer {
-                scan: &mut s,
+                scanner: &mut s,
                 start,
             };
 
@@ -417,7 +417,7 @@ mod integer {
             let mut s = Scanner::new(case);
             let start = some_or_fail!(s.next_token());
             let t = Tokenizer {
-                scan: &mut s,
+                scanner: &mut s,
                 start,
             };
 
@@ -442,7 +442,7 @@ mod integer {
         let mut s = Scanner::new("#i0");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -466,7 +466,7 @@ mod integer {
         let mut s = Scanner::new("#i-4");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -490,7 +490,7 @@ mod integer {
         let mut s = Scanner::new("#i#b100");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -515,7 +515,7 @@ mod integer {
         let mut s = Scanner::new(&input);
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -541,7 +541,7 @@ mod integer {
             let mut s = Scanner::new(case);
             let start = some_or_fail!(s.next_token());
             let t = Tokenizer {
-                scan: &mut s,
+                scanner: &mut s,
                 start,
             };
 
@@ -568,7 +568,7 @@ mod rational {
         let mut s = Scanner::new("4/5");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -592,7 +592,7 @@ mod rational {
         let mut s = Scanner::new("+4/5");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -616,7 +616,7 @@ mod rational {
         let mut s = Scanner::new("0/5");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -640,7 +640,7 @@ mod rational {
         let mut s = Scanner::new("4/0");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -662,7 +662,7 @@ mod rational {
         let mut s = Scanner::new("4/10");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -686,7 +686,7 @@ mod rational {
         let mut s = Scanner::new("10/5");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -710,7 +710,7 @@ mod rational {
         let mut s = Scanner::new("10/10");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -734,7 +734,7 @@ mod rational {
         let mut s = Scanner::new("10/1");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -759,7 +759,7 @@ mod rational {
         let mut s = Scanner::new(&input);
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -783,7 +783,7 @@ mod rational {
         let mut s = Scanner::new("-4/5");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -818,7 +818,7 @@ mod rational {
             let mut s = Scanner::new(&case);
             let start = some_or_fail!(s.next_token());
             let t = Tokenizer {
-                scan: &mut s,
+                scanner: &mut s,
                 start,
             };
 
@@ -848,7 +848,7 @@ mod rational {
         let mut s = Scanner::new("#e4/5");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -874,7 +874,7 @@ mod rational {
             let mut s = Scanner::new(case);
             let start = some_or_fail!(s.next_token());
             let t = Tokenizer {
-                scan: &mut s,
+                scanner: &mut s,
                 start,
             };
 
@@ -901,7 +901,7 @@ mod rational {
             let mut s = Scanner::new(case);
             let start = some_or_fail!(s.next_token());
             let t = Tokenizer {
-                scan: &mut s,
+                scanner: &mut s,
                 start,
             };
 
@@ -928,7 +928,7 @@ mod rational {
             let mut s = Scanner::new(case);
             let start = some_or_fail!(s.next_token());
             let t = Tokenizer {
-                scan: &mut s,
+                scanner: &mut s,
                 start,
             };
 
@@ -953,7 +953,7 @@ mod rational {
         let mut s = Scanner::new("#i-4/5");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -977,7 +977,7 @@ mod rational {
         let mut s = Scanner::new("#i#xa/b");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -1001,7 +1001,7 @@ mod rational {
         let mut s = Scanner::new("#i10/2");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -1026,7 +1026,7 @@ mod rational {
         let mut s = Scanner::new(&input);
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -1050,7 +1050,7 @@ mod rational {
         let mut s = Scanner::new("4/-5");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -1072,7 +1072,7 @@ mod rational {
         let mut s = Scanner::new("4/+5");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -1094,7 +1094,7 @@ mod rational {
         let mut s = Scanner::new("-4/-5");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -1116,7 +1116,7 @@ mod rational {
         let mut s = Scanner::new("4/");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -1138,7 +1138,7 @@ mod rational {
         let mut s = Scanner::new("4.2/5");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -1160,7 +1160,7 @@ mod rational {
         let mut s = Scanner::new("4/5.3");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -1182,7 +1182,7 @@ mod rational {
         let mut s = Scanner::new("4/5/6");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -1204,7 +1204,7 @@ mod rational {
         let mut s = Scanner::new("#x++");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -1226,7 +1226,7 @@ mod rational {
         let mut s = Scanner::new("4/#b101");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -1248,7 +1248,7 @@ mod rational {
         let mut s = Scanner::new("#b100/5");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -1274,7 +1274,7 @@ mod float {
         let mut s = Scanner::new("42.34");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -1298,7 +1298,7 @@ mod float {
         let mut s = Scanner::new("+42.34");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -1322,7 +1322,7 @@ mod float {
         let mut s = Scanner::new("-42.34");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -1346,7 +1346,7 @@ mod float {
         let mut s = Scanner::new(".5");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -1370,7 +1370,7 @@ mod float {
         let mut s = Scanner::new("+.5");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -1394,7 +1394,7 @@ mod float {
         let mut s = Scanner::new("-.5");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -1418,7 +1418,7 @@ mod float {
         let mut s = Scanner::new("5.");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -1442,7 +1442,7 @@ mod float {
         let mut s = Scanner::new("34e4");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -1466,7 +1466,7 @@ mod float {
         let mut s = Scanner::new("34e+4");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -1490,7 +1490,7 @@ mod float {
         let mut s = Scanner::new("34e0");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -1514,7 +1514,7 @@ mod float {
         let mut s = Scanner::new("34E4");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -1538,7 +1538,7 @@ mod float {
         let mut s = Scanner::new("34e-4");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -1562,7 +1562,7 @@ mod float {
         let mut s = Scanner::new("12.45e4");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -1586,7 +1586,7 @@ mod float {
         let mut s = Scanner::new("12.45e50");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -1610,7 +1610,7 @@ mod float {
         let mut s = Scanner::new("12.45e500");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -1634,7 +1634,7 @@ mod float {
         let mut s = Scanner::new("12.45e-500");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -1658,7 +1658,7 @@ mod float {
         let mut s = Scanner::new("+inf.0");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -1682,7 +1682,7 @@ mod float {
         let mut s = Scanner::new("+INF.0");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -1706,7 +1706,7 @@ mod float {
         let mut s = Scanner::new("-inf.0");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -1730,7 +1730,7 @@ mod float {
         let mut s = Scanner::new("#i42.34");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -1756,7 +1756,7 @@ mod float {
             let mut s = Scanner::new(case);
             let start = some_or_fail!(s.next_token());
             let t = Tokenizer {
-                scan: &mut s,
+                scanner: &mut s,
                 start,
             };
 
@@ -1788,7 +1788,7 @@ mod float {
             let mut s = Scanner::new(case);
             let start = some_or_fail!(s.next_token());
             let t = Tokenizer {
-                scan: &mut s,
+                scanner: &mut s,
                 start,
             };
 
@@ -1815,7 +1815,7 @@ mod float {
             let mut s = Scanner::new(case);
             let start = some_or_fail!(s.next_token());
             let t = Tokenizer {
-                scan: &mut s,
+                scanner: &mut s,
                 start,
             };
 
@@ -1842,7 +1842,7 @@ mod float {
             let mut s = Scanner::new(case);
             let start = some_or_fail!(s.next_token());
             let t = Tokenizer {
-                scan: &mut s,
+                scanner: &mut s,
                 start,
             };
 
@@ -1867,7 +1867,7 @@ mod float {
         let mut s = Scanner::new("#e0.0");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -1891,7 +1891,7 @@ mod float {
         let mut s = Scanner::new("#e-4.0");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -1915,7 +1915,7 @@ mod float {
         let mut s = Scanner::new("#e12.45");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -1941,7 +1941,7 @@ mod float {
             let mut s = Scanner::new(case);
             let start = some_or_fail!(s.next_token());
             let t = Tokenizer {
-                scan: &mut s,
+                scanner: &mut s,
                 start,
             };
 
@@ -1968,7 +1968,7 @@ mod float {
             let mut s = Scanner::new(case);
             let start = some_or_fail!(s.next_token());
             let t = Tokenizer {
-                scan: &mut s,
+                scanner: &mut s,
                 start,
             };
 
@@ -1995,7 +1995,7 @@ mod float {
             let mut s = Scanner::new(case);
             let start = some_or_fail!(s.next_token());
             let t = Tokenizer {
-                scan: &mut s,
+                scanner: &mut s,
                 start,
             };
 
@@ -2020,7 +2020,7 @@ mod float {
         let mut s = Scanner::new("#e4e-4");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -2044,7 +2044,7 @@ mod float {
         let mut s = Scanner::new("#e4.52e4");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -2068,7 +2068,7 @@ mod float {
         let mut s = Scanner::new("#e4.e4");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -2092,7 +2092,7 @@ mod float {
         let mut s = Scanner::new("#e4.524242e3");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -2118,7 +2118,7 @@ mod float {
             let mut s = Scanner::new(case);
             let start = some_or_fail!(s.next_token());
             let t = Tokenizer {
-                scan: &mut s,
+                scanner: &mut s,
                 start,
             };
 
@@ -2145,7 +2145,7 @@ mod float {
             let mut s = Scanner::new(case);
             let start = some_or_fail!(s.next_token());
             let t = Tokenizer {
-                scan: &mut s,
+                scanner: &mut s,
                 start,
             };
 
@@ -2175,7 +2175,7 @@ mod float {
         let mut s = Scanner::new("+0inf.0");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -2197,7 +2197,7 @@ mod float {
         let mut s = Scanner::new("+nan.0");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -2221,7 +2221,7 @@ mod float {
         let mut s = Scanner::new("+NAN.0");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -2245,7 +2245,7 @@ mod float {
         let mut s = Scanner::new("+0nan.0");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -2267,7 +2267,7 @@ mod float {
         let mut s = Scanner::new("-nan.0");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -2291,7 +2291,7 @@ mod float {
         let mut s = Scanner::new("#d42.34");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -2321,7 +2321,7 @@ mod float {
             let mut s = Scanner::new(case);
             let start = some_or_fail!(s.next_token());
             let t = Tokenizer {
-                scan: &mut s,
+                scanner: &mut s,
                 start,
             };
 
@@ -2344,7 +2344,7 @@ mod float {
         let mut s = Scanner::new("#d34e4");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -2370,7 +2370,7 @@ mod float {
             let mut s = Scanner::new(case);
             let start = some_or_fail!(s.next_token());
             let t = Tokenizer {
-                scan: &mut s,
+                scanner: &mut s,
                 start,
             };
 
@@ -2393,7 +2393,7 @@ mod float {
         let mut s = Scanner::new("#x4fea2");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -2417,7 +2417,7 @@ mod float {
         let mut s = Scanner::new("3.456.23");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -2439,7 +2439,7 @@ mod float {
         let mut s = Scanner::new("3.456e");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -2464,7 +2464,7 @@ mod float {
         let mut s = Scanner::new("3e");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -2489,7 +2489,7 @@ mod float {
         let mut s = Scanner::new("3.456e-");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -2514,7 +2514,7 @@ mod float {
         let mut s = Scanner::new("3e-");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -2539,7 +2539,7 @@ mod float {
         let mut s = Scanner::new("3.456e4.5");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -2564,7 +2564,7 @@ mod float {
         let mut s = Scanner::new("3.456e+-");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -2591,7 +2591,7 @@ mod float {
             let mut s = Scanner::new(case);
             let start = some_or_fail!(s.next_token());
             let t = Tokenizer {
-                scan: &mut s,
+                scanner: &mut s,
                 start,
             };
 
@@ -2620,7 +2620,7 @@ mod float {
             let mut s = Scanner::new(&input);
             let start = some_or_fail!(s.next_token());
             let t = Tokenizer {
-                scan: &mut s,
+                scanner: &mut s,
                 start,
             };
 
@@ -2650,7 +2650,7 @@ mod imaginary {
         let mut s = Scanner::new("+i");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -2674,7 +2674,7 @@ mod imaginary {
         let mut s = Scanner::new("+I");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -2698,7 +2698,7 @@ mod imaginary {
         let mut s = Scanner::new("0i");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -2720,7 +2720,7 @@ mod imaginary {
         let mut s = Scanner::new("+4i5");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -2742,7 +2742,7 @@ mod imaginary {
         let mut s = Scanner::new("+4i+");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -2764,7 +2764,7 @@ mod imaginary {
         let mut s = Scanner::new("+0i");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -2788,7 +2788,7 @@ mod imaginary {
         let mut s = Scanner::new("+5i");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -2812,7 +2812,7 @@ mod imaginary {
         let mut s = Scanner::new("+4/5i");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -2836,7 +2836,7 @@ mod imaginary {
         let mut s = Scanner::new("+4/1i");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -2866,7 +2866,7 @@ mod imaginary {
             let mut s = Scanner::new(&case);
             let start = some_or_fail!(s.next_token());
             let t = Tokenizer {
-                scan: &mut s,
+                scanner: &mut s,
                 start,
             };
 
@@ -2898,7 +2898,7 @@ mod imaginary {
             let mut s = Scanner::new(&case);
             let start = some_or_fail!(s.next_token());
             let t = Tokenizer {
-                scan: &mut s,
+                scanner: &mut s,
                 start,
             };
 
@@ -2926,7 +2926,7 @@ mod imaginary {
             let mut s = Scanner::new(case);
             let start = some_or_fail!(s.next_token());
             let t = Tokenizer {
-                scan: &mut s,
+                scanner: &mut s,
                 start,
             };
 
@@ -2953,7 +2953,7 @@ mod imaginary {
             let mut s = Scanner::new(case);
             let start = some_or_fail!(s.next_token());
             let t = Tokenizer {
-                scan: &mut s,
+                scanner: &mut s,
                 start,
             };
 
@@ -2980,7 +2980,7 @@ mod imaginary {
             let mut s = Scanner::new(case);
             let start = some_or_fail!(s.next_token());
             let t = Tokenizer {
-                scan: &mut s,
+                scanner: &mut s,
                 start,
             };
 
@@ -3007,7 +3007,7 @@ mod imaginary {
             let mut s = Scanner::new(case);
             let start = some_or_fail!(s.next_token());
             let t = Tokenizer {
-                scan: &mut s,
+                scanner: &mut s,
                 start,
             };
 
@@ -3032,7 +3032,7 @@ mod imaginary {
         let mut s = Scanner::new("#i+i");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -3056,7 +3056,7 @@ mod imaginary {
         let mut s = Scanner::new("#i+5i");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -3080,7 +3080,7 @@ mod imaginary {
         let mut s = Scanner::new("#e+5.2i");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -3104,7 +3104,7 @@ mod imaginary {
         let mut s = Scanner::new("4/5i");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -3126,7 +3126,7 @@ mod imaginary {
         let mut s = Scanner::new("+4i/5");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -3148,7 +3148,7 @@ mod imaginary {
         let mut s = Scanner::new("+4/i");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -3170,7 +3170,7 @@ mod imaginary {
         let mut s = Scanner::new("+4.5i");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -3194,7 +3194,7 @@ mod imaginary {
         let mut s = Scanner::new("+4.5e4i");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -3218,7 +3218,7 @@ mod imaginary {
         let mut s = Scanner::new("+4.5e+4i");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -3242,7 +3242,7 @@ mod imaginary {
         let mut s = Scanner::new("+4.5e-4i");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -3266,7 +3266,7 @@ mod imaginary {
         let mut s = Scanner::new("+4.5ei");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -3291,7 +3291,7 @@ mod imaginary {
         let mut s = Scanner::new("-i");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -3315,7 +3315,7 @@ mod imaginary {
         let mut s = Scanner::new("-5i");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -3339,7 +3339,7 @@ mod imaginary {
         let mut s = Scanner::new("+inf.0i");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -3363,7 +3363,7 @@ mod imaginary {
         let mut s = Scanner::new("+INF.0I");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -3387,7 +3387,7 @@ mod imaginary {
         let mut s = Scanner::new("-inf.0i");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -3411,7 +3411,7 @@ mod imaginary {
         let mut s = Scanner::new("+nan.0i");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -3435,7 +3435,7 @@ mod imaginary {
         let mut s = Scanner::new("+NAN.0I");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -3459,7 +3459,7 @@ mod imaginary {
         let mut s = Scanner::new("-nan.0i");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -3483,7 +3483,7 @@ mod imaginary {
         let mut s = Scanner::new("4i+3");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -3509,7 +3509,7 @@ mod cartesian {
         let mut s = Scanner::new("4+3i");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -3533,7 +3533,7 @@ mod cartesian {
         let mut s = Scanner::new("4+i");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -3557,7 +3557,7 @@ mod cartesian {
         let mut s = Scanner::new("4+1i");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -3581,7 +3581,7 @@ mod cartesian {
         let mut s = Scanner::new("4+0i");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -3605,7 +3605,7 @@ mod cartesian {
         let mut s = Scanner::new("4-0i");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -3629,7 +3629,7 @@ mod cartesian {
         let mut s = Scanner::new("0+3i");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -3653,7 +3653,7 @@ mod cartesian {
         let mut s = Scanner::new("-0+3i");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -3677,7 +3677,7 @@ mod cartesian {
         let mut s = Scanner::new("+4+3i");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -3701,7 +3701,7 @@ mod cartesian {
         let mut s = Scanner::new("-4+3i");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -3725,7 +3725,7 @@ mod cartesian {
         let mut s = Scanner::new("4-3i");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -3749,7 +3749,7 @@ mod cartesian {
         let mut s = Scanner::new("-4-3i");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -3779,7 +3779,7 @@ mod cartesian {
             let mut s = Scanner::new(&cpx);
             let start = some_or_fail!(s.next_token());
             let t = Tokenizer {
-                scan: &mut s,
+                scanner: &mut s,
                 start,
             };
 
@@ -3829,7 +3829,7 @@ mod cartesian {
             let mut s = Scanner::new(cpx);
             let start = some_or_fail!(s.next_token());
             let t = Tokenizer {
-                scan: &mut s,
+                scanner: &mut s,
                 start,
             };
 
@@ -3878,7 +3878,7 @@ mod cartesian {
             let mut s = Scanner::new(&case);
             let start = some_or_fail!(s.next_token());
             let t = Tokenizer {
-                scan: &mut s,
+                scanner: &mut s,
                 start,
             };
 
@@ -3908,7 +3908,7 @@ mod cartesian {
         let mut s = Scanner::new("#b100/101+10/11i");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -3934,7 +3934,7 @@ mod cartesian {
             let mut s = Scanner::new(case);
             let start = some_or_fail!(s.next_token());
             let t = Tokenizer {
-                scan: &mut s,
+                scanner: &mut s,
                 start,
             };
 
@@ -3961,7 +3961,7 @@ mod cartesian {
             let mut s = Scanner::new(case);
             let start = some_or_fail!(s.next_token());
             let t = Tokenizer {
-                scan: &mut s,
+                scanner: &mut s,
                 start,
             };
 
@@ -3988,7 +3988,7 @@ mod cartesian {
             let mut s = Scanner::new(case);
             let start = some_or_fail!(s.next_token());
             let t = Tokenizer {
-                scan: &mut s,
+                scanner: &mut s,
                 start,
             };
 
@@ -4015,7 +4015,7 @@ mod cartesian {
             let mut s = Scanner::new(case);
             let start = some_or_fail!(s.next_token());
             let t = Tokenizer {
-                scan: &mut s,
+                scanner: &mut s,
                 start,
             };
 
@@ -4040,7 +4040,7 @@ mod cartesian {
         let mut s = Scanner::new("#i4+3/2i");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -4064,7 +4064,7 @@ mod cartesian {
         let mut s = Scanner::new("#e4.2+3.2e3i");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -4088,7 +4088,7 @@ mod cartesian {
         let mut s = Scanner::new("#i#xc+a/bi");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -4112,7 +4112,7 @@ mod cartesian {
         let mut s = Scanner::new("4+");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -4134,7 +4134,7 @@ mod cartesian {
         let mut s = Scanner::new("4e2+");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -4156,7 +4156,7 @@ mod cartesian {
         let mut s = Scanner::new("3.456e+4-5");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -4178,7 +4178,7 @@ mod cartesian {
         let mut s = Scanner::new("4+3+2i");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -4200,7 +4200,7 @@ mod cartesian {
         let mut s = Scanner::new("4+#b101i");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -4222,7 +4222,7 @@ mod cartesian {
         let mut s = Scanner::new("#b100+5i");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -4244,7 +4244,7 @@ mod cartesian {
         let mut s = Scanner::new("4+#e3i");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -4270,7 +4270,7 @@ mod polar {
         let mut s = Scanner::new("4@3");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -4297,7 +4297,7 @@ mod polar {
         let mut s = Scanner::new("-4@3");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -4324,7 +4324,7 @@ mod polar {
         let mut s = Scanner::new("4@-3");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -4351,7 +4351,7 @@ mod polar {
         let mut s = Scanner::new("-4@-3");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -4378,7 +4378,7 @@ mod polar {
         let mut s = Scanner::new("0@3");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -4402,7 +4402,7 @@ mod polar {
         let mut s = Scanner::new("0.0@3.0");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -4426,7 +4426,7 @@ mod polar {
         let mut s = Scanner::new("-0@3");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -4450,7 +4450,7 @@ mod polar {
         let mut s = Scanner::new("4@0");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -4474,7 +4474,7 @@ mod polar {
         let mut s = Scanner::new("4.0@0.0");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -4498,7 +4498,7 @@ mod polar {
         let mut s = Scanner::new("4@-0");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -4522,7 +4522,7 @@ mod polar {
         let mut s = Scanner::new("0@0");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -4547,7 +4547,7 @@ mod polar {
         let mut s = Scanner::new(&input);
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -4599,7 +4599,7 @@ mod polar {
             let mut s = Scanner::new(&cpx);
             let start = some_or_fail!(s.next_token());
             let t = Tokenizer {
-                scan: &mut s,
+                scanner: &mut s,
                 start,
             };
 
@@ -4643,7 +4643,7 @@ mod polar {
             let mut s = Scanner::new(cpx);
             let start = some_or_fail!(s.next_token());
             let t = Tokenizer {
-                scan: &mut s,
+                scanner: &mut s,
                 start,
             };
 
@@ -4679,7 +4679,7 @@ mod polar {
             let mut s = Scanner::new(&case);
             let start = some_or_fail!(s.next_token());
             let t = Tokenizer {
-                scan: &mut s,
+                scanner: &mut s,
                 start,
             };
 
@@ -4709,7 +4709,7 @@ mod polar {
         let mut s = Scanner::new("#b100/101@10/11");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -4738,7 +4738,7 @@ mod polar {
             let mut s = Scanner::new(case);
             let start = some_or_fail!(s.next_token());
             let t = Tokenizer {
-                scan: &mut s,
+                scanner: &mut s,
                 start,
             };
 
@@ -4768,7 +4768,7 @@ mod polar {
             let mut s = Scanner::new(case);
             let start = some_or_fail!(s.next_token());
             let t = Tokenizer {
-                scan: &mut s,
+                scanner: &mut s,
                 start,
             };
 
@@ -4798,7 +4798,7 @@ mod polar {
             let mut s = Scanner::new(case);
             let start = some_or_fail!(s.next_token());
             let t = Tokenizer {
-                scan: &mut s,
+                scanner: &mut s,
                 start,
             };
 
@@ -4828,7 +4828,7 @@ mod polar {
             let mut s = Scanner::new(case);
             let start = some_or_fail!(s.next_token());
             let t = Tokenizer {
-                scan: &mut s,
+                scanner: &mut s,
                 start,
             };
 
@@ -4858,7 +4858,7 @@ mod polar {
             let mut s = Scanner::new(case);
             let start = some_or_fail!(s.next_token());
             let t = Tokenizer {
-                scan: &mut s,
+                scanner: &mut s,
                 start,
             };
 
@@ -4888,7 +4888,7 @@ mod polar {
             let mut s = Scanner::new(case);
             let start = some_or_fail!(s.next_token());
             let t = Tokenizer {
-                scan: &mut s,
+                scanner: &mut s,
                 start,
             };
 
@@ -4916,7 +4916,7 @@ mod polar {
         let mut s = Scanner::new("#e0.0@3.0");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -4940,7 +4940,7 @@ mod polar {
         let mut s = Scanner::new("#e4.0@0.0");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -4964,7 +4964,7 @@ mod polar {
         let mut s = Scanner::new("#i0@3");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -4988,7 +4988,7 @@ mod polar {
         let mut s = Scanner::new("#i4@0");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -5012,7 +5012,7 @@ mod polar {
         let mut s = Scanner::new("#i#xc@a/b");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -5039,7 +5039,7 @@ mod polar {
         let mut s = Scanner::new("4@3i");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -5061,7 +5061,7 @@ mod polar {
         let mut s = Scanner::new("4@");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -5083,7 +5083,7 @@ mod polar {
         let mut s = Scanner::new("4@3@2");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -5105,7 +5105,7 @@ mod polar {
         let mut s = Scanner::new("4@#b101");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -5127,7 +5127,7 @@ mod polar {
         let mut s = Scanner::new("#b100@5");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -5149,7 +5149,7 @@ mod polar {
         let mut s = Scanner::new("4@#e3");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -5175,7 +5175,7 @@ mod identifiers {
         let mut s = Scanner::new("+-4");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -5197,7 +5197,7 @@ mod identifiers {
         let mut s = Scanner::new("+@4");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -5219,7 +5219,7 @@ mod identifiers {
         let mut s = Scanner::new("+..4");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -5241,7 +5241,7 @@ mod identifiers {
         let mut s = Scanner::new("+.-4");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -5263,7 +5263,7 @@ mod identifiers {
         let mut s = Scanner::new("..4");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -5285,7 +5285,7 @@ mod identifiers {
         let mut s = Scanner::new(".-4");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -5307,7 +5307,7 @@ mod identifiers {
         let mut s = Scanner::new(".@4");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -5329,7 +5329,7 @@ mod identifiers {
         let mut s = Scanner::new("@4");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -5351,7 +5351,7 @@ mod identifiers {
         let mut s = Scanner::new("inf.0");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -5373,7 +5373,7 @@ mod identifiers {
         let mut s = Scanner::new("+inf.0+foo");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -5395,7 +5395,7 @@ mod identifiers {
         let mut s = Scanner::new("+inf.0+4.2.2i");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -5417,7 +5417,7 @@ mod identifiers {
         let mut s = Scanner::new("+inf.0+");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -5439,7 +5439,7 @@ mod identifiers {
         let mut s = Scanner::new("+inf.0@foo");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -5461,7 +5461,7 @@ mod identifiers {
         let mut s = Scanner::new("+inf.0@");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -5483,7 +5483,7 @@ mod identifiers {
         let mut s = Scanner::new("+inf.0@4i");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -5505,7 +5505,7 @@ mod identifiers {
         let mut s = Scanner::new("+inf.0@4.2.2");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -5527,7 +5527,7 @@ mod identifiers {
         let mut s = Scanner::new("nan.0");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -5549,7 +5549,7 @@ mod identifiers {
         let mut s = Scanner::new("+nan.0-bar");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -5571,7 +5571,7 @@ mod identifiers {
         let mut s = Scanner::new("+nan.0@bar");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -5593,7 +5593,7 @@ mod identifiers {
         let mut s = Scanner::new("+nan.0@4i");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -5615,7 +5615,7 @@ mod identifiers {
         let mut s = Scanner::new("+i+4");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -5637,7 +5637,7 @@ mod identifiers {
         let mut s = Scanner::new("+i@4");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -5659,7 +5659,7 @@ mod identifiers {
         let mut s = Scanner::new("i");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -5681,7 +5681,7 @@ mod identifiers {
         let mut s = Scanner::new("+.i");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -5703,7 +5703,7 @@ mod identifiers {
         let mut s = Scanner::new("i");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -5725,7 +5725,7 @@ mod identifiers {
         let mut s = Scanner::new("+inf.0ifni");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -5747,7 +5747,7 @@ mod identifiers {
         let mut s = Scanner::new("+nan.0inon");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -5776,7 +5776,7 @@ mod identifiers {
             let mut s = Scanner::new(case);
             let start = some_or_fail!(s.next_token());
             let t = Tokenizer {
-                scan: &mut s,
+                scanner: &mut s,
                 start,
             };
 

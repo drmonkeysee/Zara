@@ -14,7 +14,7 @@ fn left_paren() {
     let mut s = Scanner::new("(");
     let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
-        scan: &mut s,
+        scanner: &mut s,
         start,
     };
 
@@ -36,7 +36,7 @@ fn right_paren() {
     let mut s = Scanner::new(")");
     let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
-        scan: &mut s,
+        scanner: &mut s,
         start,
     };
 
@@ -58,7 +58,7 @@ fn pair_joiner() {
     let mut s = Scanner::new(".");
     let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
-        scan: &mut s,
+        scanner: &mut s,
         start,
     };
 
@@ -80,7 +80,7 @@ fn pair_joiner_with_whitespace() {
     let mut s = Scanner::new(" . ");
     let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
-        scan: &mut s,
+        scanner: &mut s,
         start,
     };
 
@@ -102,7 +102,7 @@ fn pair_joiner_prefixed_is_identifier() {
     let mut s = Scanner::new("a.");
     let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
-        scan: &mut s,
+        scanner: &mut s,
         start,
     };
 
@@ -124,7 +124,7 @@ fn pair_joiner_postfixed_is_identifier() {
     let mut s = Scanner::new(".a");
     let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
-        scan: &mut s,
+        scanner: &mut s,
         start,
     };
 
@@ -146,7 +146,7 @@ fn pair_joiner_followed_by_delimiter() {
     let mut s = Scanner::new(".)");
     let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
-        scan: &mut s,
+        scanner: &mut s,
         start,
     };
 
@@ -168,7 +168,7 @@ fn token_ends_at_whitespace() {
     let mut s = Scanner::new("(  ");
     let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
-        scan: &mut s,
+        scanner: &mut s,
         start,
     };
 
@@ -190,7 +190,7 @@ fn token_ends_at_delimiter() {
     let mut s = Scanner::new("()");
     let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
-        scan: &mut s,
+        scanner: &mut s,
         start,
     };
 
@@ -212,7 +212,7 @@ fn comment() {
     let mut s = Scanner::new(";");
     let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
-        scan: &mut s,
+        scanner: &mut s,
         start,
     };
 
@@ -234,7 +234,7 @@ fn comment_with_text() {
     let mut s = Scanner::new("; scanner input is always one line");
     let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
-        scan: &mut s,
+        scanner: &mut s,
         start,
     };
 

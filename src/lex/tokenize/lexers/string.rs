@@ -8,26 +8,26 @@ pub(in crate::lex::tokenize) type StringLiteral<'me, 'txt, M> =
     FreeText<'me, 'txt, StringPolicy<M>>;
 
 impl<'me, 'txt> StringLiteral<'me, 'txt, StartString> {
-    pub(in crate::lex::tokenize) fn new(scan: &'me mut Scanner<'txt>) -> Self {
-        Self::init(scan, StringPolicy(StartString))
+    pub(in crate::lex::tokenize) fn new(scanner: &'me mut Scanner<'txt>) -> Self {
+        Self::init(scanner, StringPolicy(StartString))
     }
 }
 
 impl<'me, 'txt> StringLiteral<'me, 'txt, ContinueString> {
-    pub(in crate::lex::tokenize) fn cont(scan: &'me mut Scanner<'txt>) -> Self {
-        Self::init(scan, StringPolicy(ContinueString))
+    pub(in crate::lex::tokenize) fn cont(scanner: &'me mut Scanner<'txt>) -> Self {
+        Self::init(scanner, StringPolicy(ContinueString))
     }
 }
 
 impl<'me, 'txt> StringLiteral<'me, 'txt, LineContinueString> {
-    pub(in crate::lex::tokenize) fn line_cont(scan: &'me mut Scanner<'txt>) -> Self {
-        Self::init(scan, StringPolicy(LineContinueString))
+    pub(in crate::lex::tokenize) fn line_cont(scanner: &'me mut Scanner<'txt>) -> Self {
+        Self::init(scanner, StringPolicy(LineContinueString))
     }
 }
 
 impl<'me, 'txt> StringLiteral<'me, 'txt, DiscardString> {
-    pub(in crate::lex::tokenize) fn cleanup(scan: &'me mut Scanner<'txt>) -> Self {
-        Self::init(scan, StringPolicy(DiscardString))
+    pub(in crate::lex::tokenize) fn cleanup(scanner: &'me mut Scanner<'txt>) -> Self {
+        Self::init(scanner, StringPolicy(DiscardString))
     }
 }
 

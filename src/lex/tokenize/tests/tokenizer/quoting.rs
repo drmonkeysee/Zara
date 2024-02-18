@@ -5,7 +5,7 @@ fn quote() {
     let mut s = Scanner::new("'");
     let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
-        scan: &mut s,
+        scanner: &mut s,
         start,
     };
 
@@ -27,7 +27,7 @@ fn quasiquote() {
     let mut s = Scanner::new("`");
     let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
-        scan: &mut s,
+        scanner: &mut s,
         start,
     };
 
@@ -49,7 +49,7 @@ fn unquote() {
     let mut s = Scanner::new(",");
     let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
-        scan: &mut s,
+        scanner: &mut s,
         start,
     };
 
@@ -71,7 +71,7 @@ fn unquote_followed_by_non_splice() {
     let mut s = Scanner::new(",a");
     let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
-        scan: &mut s,
+        scanner: &mut s,
         start,
     };
 
@@ -93,7 +93,7 @@ fn unquote_splicing() {
     let mut s = Scanner::new(",@");
     let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
-        scan: &mut s,
+        scanner: &mut s,
         start,
     };
 
@@ -115,7 +115,7 @@ fn unquote_whitespace_between_splice() {
     let mut s = Scanner::new(", @");
     let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
-        scan: &mut s,
+        scanner: &mut s,
         start,
     };
 

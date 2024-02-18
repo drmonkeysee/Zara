@@ -5,7 +5,7 @@ fn standard_identifier() {
     let mut s = Scanner::new("foo");
     let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
-        scan: &mut s,
+        scanner: &mut s,
         start,
     };
 
@@ -27,7 +27,7 @@ fn with_digits() {
     let mut s = Scanner::new("a24");
     let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
-        scan: &mut s,
+        scanner: &mut s,
         start,
     };
 
@@ -49,7 +49,7 @@ fn with_special_chars() {
     let mut s = Scanner::new("foo?bar@baz.beef");
     let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
-        scan: &mut s,
+        scanner: &mut s,
         start,
     };
 
@@ -71,7 +71,7 @@ fn stops_at_delimiter() {
     let mut s = Scanner::new("abc;");
     let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
-        scan: &mut s,
+        scanner: &mut s,
         start,
     };
 
@@ -93,7 +93,7 @@ fn starts_with_special_char() {
     let mut s = Scanner::new("!foo");
     let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
-        scan: &mut s,
+        scanner: &mut s,
         start,
     };
 
@@ -115,7 +115,7 @@ fn ends_with_peculiar_chars() {
     let mut s = Scanner::new("c++");
     let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
-        scan: &mut s,
+        scanner: &mut s,
         start,
     };
 
@@ -137,7 +137,7 @@ fn is_only_special_char() {
     let mut s = Scanner::new("!");
     let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
-        scan: &mut s,
+        scanner: &mut s,
         start,
     };
 
@@ -159,7 +159,7 @@ fn with_extended_and_higher_chars() {
     let mut s = Scanner::new("λ🦀\u{2401}\u{fffd}");
     let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
-        scan: &mut s,
+        scanner: &mut s,
         start,
     };
 
@@ -190,7 +190,7 @@ fn peculiar_identifier() {
     let mut s = Scanner::new("+foo");
     let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
-        scan: &mut s,
+        scanner: &mut s,
         start,
     };
 
@@ -214,7 +214,7 @@ fn sign_identifier() {
         let mut s = Scanner::new(case);
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -237,7 +237,7 @@ fn double_sign_identifier() {
     let mut s = Scanner::new("+-");
     let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
-        scan: &mut s,
+        scanner: &mut s,
         start,
     };
 
@@ -259,7 +259,7 @@ fn sign_dot_identifier() {
     let mut s = Scanner::new("+.");
     let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
-        scan: &mut s,
+        scanner: &mut s,
         start,
     };
 
@@ -281,7 +281,7 @@ fn dot_sign_identifier() {
     let mut s = Scanner::new(".+");
     let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
-        scan: &mut s,
+        scanner: &mut s,
         start,
     };
 
@@ -303,7 +303,7 @@ fn double_period_identifier() {
     let mut s = Scanner::new("..");
     let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
-        scan: &mut s,
+        scanner: &mut s,
         start,
     };
 
@@ -325,7 +325,7 @@ fn double_period_word_identifier() {
     let mut s = Scanner::new("..foo");
     let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
-        scan: &mut s,
+        scanner: &mut s,
         start,
     };
 
@@ -347,7 +347,7 @@ fn period_identifier() {
     let mut s = Scanner::new(".foo");
     let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
-        scan: &mut s,
+        scanner: &mut s,
         start,
     };
 
@@ -369,7 +369,7 @@ fn start_digit() {
     let mut s = Scanner::new("4foo");
     let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
-        scan: &mut s,
+        scanner: &mut s,
         start,
     };
 
@@ -391,7 +391,7 @@ fn start_reserved_char() {
     let mut s = Scanner::new("{foo");
     let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
-        scan: &mut s,
+        scanner: &mut s,
         start,
     };
 
@@ -413,7 +413,7 @@ fn contains_reserved_char() {
     let mut s = Scanner::new("foo{bar");
     let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
-        scan: &mut s,
+        scanner: &mut s,
         start,
     };
 
@@ -438,7 +438,7 @@ mod verbatim {
         let mut s = Scanner::new("||");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -460,7 +460,7 @@ mod verbatim {
         let mut s = Scanner::new("|foo|");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -482,7 +482,7 @@ mod verbatim {
         let mut s = Scanner::new("| foo bar |");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -504,7 +504,7 @@ mod verbatim {
         let mut s = Scanner::new("| foo\\|bar |");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -526,7 +526,7 @@ mod verbatim {
         let mut s = Scanner::new("|foo \"string\" bar|");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -548,7 +548,7 @@ mod verbatim {
         let mut s = Scanner::new("|abc123!@#|");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -570,7 +570,7 @@ mod verbatim {
         let mut s = Scanner::new("|1234|");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -592,7 +592,7 @@ mod verbatim {
         let mut s = Scanner::new("|λ 🦀 \u{2401} \u{fffd}|");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -614,7 +614,7 @@ mod verbatim {
         let mut s = Scanner::new("|a:\x07, b:\x08, d:\x7f, e:\x1b, n:\n, 0:\0, r:\r, t:\t, q:\"|");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -636,7 +636,7 @@ mod verbatim {
         let mut s = Scanner::new("|a:\\a, b:\\b, n:\\n, r:\r, t:\t, q:\\\", s:\\\\, v:\\||");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -658,7 +658,7 @@ mod verbatim {
         let mut s = Scanner::new("|foo\\   bar|");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -682,7 +682,7 @@ mod verbatim {
         );
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -704,7 +704,7 @@ mod verbatim {
         let mut s = Scanner::new("|\\x4a; \\X4A;|");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -726,7 +726,7 @@ mod verbatim {
         let mut s = Scanner::new("|\u{fff9} \u{e0001} \u{100001}|");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -748,7 +748,7 @@ mod verbatim {
         let mut s = Scanner::new("|\\xfff9; \\xe0001; \\x100001;|");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -770,7 +770,7 @@ mod verbatim {
         let mut s = Scanner::new("|\\B|");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -792,7 +792,7 @@ mod verbatim {
         let mut s = Scanner::new("|\\x+A;|");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -814,7 +814,7 @@ mod verbatim {
         let mut s = Scanner::new("|\\xdeadbeef;|");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -836,7 +836,7 @@ mod verbatim {
         let mut s = Scanner::new("|\\x124nope;|");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -858,7 +858,7 @@ mod verbatim {
         let mut s = Scanner::new("|\\x123|");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -882,7 +882,7 @@ mod verbatim {
         let start = s.pos();
         let t = Continuation {
             cont: TokenContinuation::SubidentifierError,
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -904,7 +904,7 @@ mod verbatim {
         let mut s = Scanner::new("|beginning verbatim");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -926,7 +926,7 @@ mod verbatim {
         let mut s = Scanner::new("|beginning verbatim\\");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -948,7 +948,7 @@ mod verbatim {
         let mut s = Scanner::new("|beginning verbatim    \\");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -970,7 +970,7 @@ mod verbatim {
         let mut s = Scanner::new("|beginning verbatim\\    ");
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 
@@ -992,7 +992,7 @@ mod verbatim {
         let mut s = Scanner::new("continued verbatim");
         let c = Continuation {
             cont: TokenContinuation::VerbatimIdentifier,
-            scan: &mut s,
+            scanner: &mut s,
             start: 0,
         };
 
@@ -1014,7 +1014,7 @@ mod verbatim {
         let mut s = Scanner::new("   continued verbatim");
         let c = Continuation {
             cont: TokenContinuation::VerbatimIdentifier,
-            scan: &mut s,
+            scanner: &mut s,
             start: 0,
         };
 
@@ -1036,7 +1036,7 @@ mod verbatim {
         let mut s = Scanner::new("continued verbatim  \\  \\  ");
         let c = Continuation {
             cont: TokenContinuation::VerbatimIdentifier,
-            scan: &mut s,
+            scanner: &mut s,
             start: 0,
         };
 
@@ -1058,7 +1058,7 @@ mod verbatim {
         let mut s = Scanner::new("end verbatim|");
         let c = Continuation {
             cont: TokenContinuation::VerbatimIdentifier,
-            scan: &mut s,
+            scanner: &mut s,
             start: 0,
         };
 
@@ -1080,7 +1080,7 @@ mod verbatim {
         let mut s = Scanner::new("   end verbatim  |");
         let c = Continuation {
             cont: TokenContinuation::VerbatimIdentifier,
-            scan: &mut s,
+            scanner: &mut s,
             start: 0,
         };
 
@@ -1102,7 +1102,7 @@ mod verbatim {
         let mut s = Scanner::new("end verbatim  \\  \\  |");
         let c = Continuation {
             cont: TokenContinuation::VerbatimIdentifier,
-            scan: &mut s,
+            scanner: &mut s,
             start: 0,
         };
 

@@ -16,14 +16,14 @@ use std::{marker::PhantomData, ops::ControlFlow};
 pub(super) struct RealNumber<'me, 'txt> {
     classifier: RealClassifier,
     exactness: Option<Exactness>,
-    scan: &'me mut Scanner<'txt>,
+    scanner: &'me mut Scanner<'txt>,
     start: usize,
 }
 
 // NOTE: this lexer is only invoked after one confirmed digit has been scanned
 impl<'me, 'txt> RealNumber<'me, 'txt> {
     pub(super) fn new(
-        scan: &'me mut Scanner<'txt>,
+        scanner: &'me mut Scanner<'txt>,
         start: usize,
         exactness: Option<Exactness>,
     ) -> Self {
@@ -33,14 +33,14 @@ impl<'me, 'txt> RealNumber<'me, 'txt> {
                 ..Default::default()
             })),
             exactness,
-            scan,
+            scanner,
             start,
         }
     }
 
     pub(super) fn try_signed_number(
         sign: Sign,
-        scan: &'me mut Scanner<'txt>,
+        scanner: &'me mut Scanner<'txt>,
         start: usize,
         exactness: Option<Exactness>,
     ) -> Self {
@@ -51,13 +51,13 @@ impl<'me, 'txt> RealNumber<'me, 'txt> {
                 ..Default::default()
             })),
             exactness,
-            scan,
+            scanner,
             start,
         }
     }
 
     pub(super) fn try_float(
-        scan: &'me mut Scanner<'txt>,
+        scanner: &'me mut Scanner<'txt>,
         start: usize,
         exactness: Option<Exactness>,
     ) -> Self {
@@ -67,14 +67,14 @@ impl<'me, 'txt> RealNumber<'me, 'txt> {
                 ..Default::default()
             })),
             exactness,
-            scan,
+            scanner,
             start,
         }
     }
 
     pub(super) fn try_signed_float(
         sign: Sign,
-        scan: &'me mut Scanner<'txt>,
+        scanner: &'me mut Scanner<'txt>,
         start: usize,
         exactness: Option<Exactness>,
     ) -> Self {
@@ -88,14 +88,14 @@ impl<'me, 'txt> RealNumber<'me, 'txt> {
                 ..Default::default()
             })),
             exactness,
-            scan,
+            scanner,
             start,
         }
     }
 
     pub(super) fn scan(mut self) -> TokenExtractResult {
         let mut brk = Ok(BreakCondition::default());
-        while let Some(item) = self.scan.next_if_not_delimiter() {
+        while let Some(item) = self.scanner.next_if_not_delimiter() {
             match self.classifier.classify(item) {
                 ControlFlow::Continue(Some(c)) => {
                     self.classifier = c;
@@ -110,10 +110,10 @@ impl<'me, 'txt> RealNumber<'me, 'txt> {
         let cond = brk?;
         let (props, parser) = self
             .classifier
-            .commit(self.scan.current_lexeme_at(self.start), self.exactness);
+            .commit(self.scanner.current_lexeme_at(self.start), self.exactness);
         ConditionProcessor {
             props,
-            scan: self.scan,
+            scanner: self.scanner,
         }
         .resolve(parser, &cond)
     }
@@ -122,23 +122,23 @@ impl<'me, 'txt> RealNumber<'me, 'txt> {
 pub(super) struct RadixNumber<'me, 'txt, R> {
     classifier: Integral<R>,
     exactness: Option<Exactness>,
-    scan: &'me mut Scanner<'txt>,
+    scanner: &'me mut Scanner<'txt>,
     start: usize,
 }
 
 impl<'me, 'txt, R: Radix + Default> RadixNumber<'me, 'txt, R> {
-    pub(super) fn new(scan: &'me mut Scanner<'txt>, exactness: Option<Exactness>) -> Self {
-        let start = scan.pos();
+    pub(super) fn new(scanner: &'me mut Scanner<'txt>, exactness: Option<Exactness>) -> Self {
+        let start = scanner.pos();
         Self {
             classifier: Integral(IntSpec::default()),
             exactness,
-            scan,
+            scanner,
             start,
         }
     }
 
     fn with_sign(
-        scan: &'me mut Scanner<'txt>,
+        scanner: &'me mut Scanner<'txt>,
         start: ScanItem,
         exactness: Option<Exactness>,
     ) -> Self {
@@ -150,14 +150,14 @@ impl<'me, 'txt, R: Radix + Default> RadixNumber<'me, 'txt, R> {
                 ..Default::default()
             }),
             exactness,
-            scan,
+            scanner,
             start,
         }
     }
 
     pub(super) fn scan(mut self) -> TokenExtractResult {
         let mut brk = Ok(BreakCondition::default());
-        while let Some(item) = self.scan.next_if_not_delimiter() {
+        while let Some(item) = self.scanner.next_if_not_delimiter() {
             match self.classifier.classify(item) {
                 ControlFlow::Continue(()) => (),
                 ControlFlow::Break(b) => {
@@ -169,10 +169,10 @@ impl<'me, 'txt, R: Radix + Default> RadixNumber<'me, 'txt, R> {
         let cond = brk?;
         let (props, parser) = self
             .classifier
-            .commit(self.scan.current_lexeme_at(self.start), self.exactness);
+            .commit(self.scanner.current_lexeme_at(self.start), self.exactness);
         ConditionProcessor {
             props,
-            scan: self.scan,
+            scanner: self.scanner,
         }
         .resolve(parser, &cond)
     }
@@ -205,7 +205,7 @@ pub(super) fn nan(is_imaginary: bool) -> TokenKind {
 
 struct ConditionProcessor<'me, 'txt, P> {
     props: P,
-    scan: &'me mut Scanner<'txt>,
+    scanner: &'me mut Scanner<'txt>,
 }
 
 impl<P: ClassifierProps> ConditionProcessor<'_, '_, P> {
@@ -226,7 +226,7 @@ impl<P: ClassifierProps> ConditionProcessor<'_, '_, P> {
                     .and_then(|real| self.scan_imaginary(real, *kind, *start))
             }
             BreakCondition::Sub(SubCondition::Imaginary) => {
-                if let Some(item) = self.scan.next_if_not_delimiter() {
+                if let Some(item) = self.scanner.next_if_not_delimiter() {
                     // NOTE: maybe malformed "in"finity? otherwise assume malformed imaginary
                     Err(if item.1.is_ascii_alphabetic() {
                         TokenErrorKind::NumberInvalid
@@ -246,7 +246,7 @@ impl<P: ClassifierProps> ConditionProcessor<'_, '_, P> {
     }
 
     fn scan_denominator(&mut self, numerator: Integer) -> TokenExtractResult {
-        let (denominator, cond) = Denominator::new(self.scan).scan::<P::Radix>()?;
+        let (denominator, cond) = Denominator::new(self.scanner).scan::<P::Radix>()?;
         let mut real = Real::reduce(numerator, denominator)?;
         match cond {
             SubCondition::Complete => {
@@ -278,7 +278,7 @@ impl<P: ClassifierProps> ConditionProcessor<'_, '_, P> {
         match kind {
             ComplexKind::Cartesian => {
                 debug_assert!(matches!(start.1, '+' | '-'));
-                match self.props.cartesian_scan(self.scan, start) {
+                match self.props.cartesian_scan(self.scanner, start) {
                     Ok(TokenKind::Imaginary(imag)) => {
                         let real = match self.props.get_exactness() {
                             Some(Exactness::Exact) => real.into_exact(),
@@ -294,7 +294,7 @@ impl<P: ClassifierProps> ConditionProcessor<'_, '_, P> {
             }
             ComplexKind::Polar => {
                 debug_assert_eq!(start.1, '@');
-                match self.props.polar_scan(self.scan) {
+                match self.props.polar_scan(self.scanner) {
                     Ok(TokenKind::Literal(Literal::Number(Number::Real(rads)))) => {
                         let pol = Number::polar(real, rads);
                         Ok(TokenKind::Literal(Literal::Number(
@@ -328,14 +328,14 @@ impl<P: ClassifierProps> ConditionProcessor<'_, '_, P> {
 }
 
 struct Denominator<'me, 'txt> {
-    scan: &'me mut Scanner<'txt>,
+    scanner: &'me mut Scanner<'txt>,
     start: usize,
 }
 
 impl<'me, 'txt> Denominator<'me, 'txt> {
-    fn new(scan: &'me mut Scanner<'txt>) -> Self {
-        let start = scan.pos();
-        Self { scan, start }
+    fn new(scanner: &'me mut Scanner<'txt>) -> Self {
+        let start = scanner.pos();
+        Self { scanner, start }
     }
 
     fn scan<R: Radix + Default>(mut self) -> Result<(Integer, SubCondition<'txt>), TokenErrorKind> {
@@ -344,7 +344,7 @@ impl<'me, 'txt> Denominator<'me, 'txt> {
             sign: Some(Sign::Positive),
             ..Default::default()
         });
-        while let Some(item) = self.scan.next_if_not_delimiter() {
+        while let Some(item) = self.scanner.next_if_not_delimiter() {
             match classifier.classify(item) {
                 ControlFlow::Continue(()) => (),
                 ControlFlow::Break(b) => {
@@ -354,7 +354,7 @@ impl<'me, 'txt> Denominator<'me, 'txt> {
             }
         }
         let cond = brk.map_err(|_| TokenErrorKind::RationalInvalid)?;
-        let (_, parser) = classifier.commit(self.scan.current_lexeme_at(self.start), None);
+        let (_, parser) = classifier.commit(self.scanner.current_lexeme_at(self.start), None);
         Ok((
             if self.should_parse(&cond) {
                 parser
@@ -371,7 +371,7 @@ impl<'me, 'txt> Denominator<'me, 'txt> {
         match cond {
             BreakCondition::Sub(SubCondition::Complete | SubCondition::Complex { .. }) => true,
             BreakCondition::Sub(SubCondition::Imaginary) => {
-                self.scan.next_if_not_delimiter().is_none()
+                self.scanner.next_if_not_delimiter().is_none()
             }
             _ => false,
         }

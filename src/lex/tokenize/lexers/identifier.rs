@@ -15,27 +15,27 @@ use crate::{
 pub(in crate::lex::tokenize) struct Identifier<'me, 'txt> {
     exactness: Option<Exactness>,
     peculiar_state: Option<PeculiarState>,
-    scan: &'me mut Scanner<'txt>,
+    scanner: &'me mut Scanner<'txt>,
     start: ScanItem<'txt>,
 }
 
 impl<'me, 'txt> Identifier<'me, 'txt> {
     pub(in crate::lex::tokenize) fn new(
-        scan: &'me mut Scanner<'txt>,
+        scanner: &'me mut Scanner<'txt>,
         start: ScanItem<'txt>,
     ) -> Self {
-        Self::with_exactness(scan, start, None)
+        Self::with_exactness(scanner, start, None)
     }
 
     pub(super) fn with_exactness(
-        scan: &'me mut Scanner<'txt>,
+        scanner: &'me mut Scanner<'txt>,
         start: ScanItem<'txt>,
         exactness: Option<Exactness>,
     ) -> Self {
         Self {
             exactness,
             peculiar_state: None,
-            scan,
+            scanner,
             start,
         }
     }
@@ -43,9 +43,9 @@ impl<'me, 'txt> Identifier<'me, 'txt> {
     pub(in crate::lex::tokenize) fn scan(mut self) -> TokenExtractResult {
         let first = self.start.1;
         if first == '|' {
-            VerbatimIdentifer::new(self.scan).scan()
+            VerbatimIdentifer::new(self.scanner).scan()
         } else if Decimal.is_digit(first) {
-            RealNumber::new(self.scan, self.start.0, self.exactness).scan()
+            RealNumber::new(self.scanner, self.start.0, self.exactness).scan()
         } else if is_peculiar_initial(first) {
             self.peculiar(first)
         } else if is_initial(first) {
@@ -56,7 +56,7 @@ impl<'me, 'txt> Identifier<'me, 'txt> {
     }
 
     fn standard(&mut self) -> TokenExtractResult {
-        while let Some(item) = self.scan.next_if_not_delimiter() {
+        while let Some(item) = self.scanner.next_if_not_delimiter() {
             let ch = item.1;
             match ch {
                 '+' | '-' => return self.maybe_infnan_complex(item, ComplexKind::Cartesian),
@@ -73,7 +73,7 @@ impl<'me, 'txt> Identifier<'me, 'txt> {
 
     fn peculiar(&mut self, ch: char) -> TokenExtractResult {
         self.classify_peculiar(ch);
-        let next_ch = self.scan.char_if_not_delimiter();
+        let next_ch = self.scanner.char_if_not_delimiter();
         self.continue_peculiar(next_ch)
     }
 
@@ -92,12 +92,12 @@ impl<'me, 'txt> Identifier<'me, 'txt> {
                 PeculiarState::DefiniteIdentifier => self.standard(),
                 // CASE: .<digit>
                 PeculiarState::MaybeFloat => {
-                    RealNumber::try_float(self.scan, self.start.0, self.exactness).scan()
+                    RealNumber::try_float(self.scanner, self.start.0, self.exactness).scan()
                 }
                 // CASE: +/-.<digit>
                 PeculiarState::MaybeSignedFloat => RealNumber::try_signed_float(
                     super::char_to_sign(self.start.1),
-                    self.scan,
+                    self.scanner,
                     self.start.0,
                     self.exactness,
                 )
@@ -105,7 +105,7 @@ impl<'me, 'txt> Identifier<'me, 'txt> {
                 // CASE: +/-<digit>
                 PeculiarState::MaybeSignedNumber => RealNumber::try_signed_number(
                     super::char_to_sign(self.start.1),
-                    self.scan,
+                    self.scanner,
                     self.start.0,
                     self.exactness,
                 )
@@ -122,11 +122,11 @@ impl<'me, 'txt> Identifier<'me, 'txt> {
 
     fn maybe_infnan_complex(&mut self, item: ScanItem, kind: ComplexKind) -> TokenExtractResult {
         if let Some(TokenKind::Literal(Literal::Number(Number::Real(real)))) =
-            super::numeric_label(self.scan.lexeme(self.start.0..item.0), self.exactness)
+            super::numeric_label(self.scanner.lexeme(self.start.0..item.0), self.exactness)
         {
             let invalid_tok = match kind {
                 ComplexKind::Cartesian => {
-                    let result = Identifier::new(self.scan, item).scan();
+                    let result = Identifier::new(self.scanner, item).scan();
                     if let Ok(TokenKind::Imaginary(imag)) = result {
                         return Ok(TokenKind::Literal(Literal::Number(Number::complex(
                             real, imag,
@@ -134,9 +134,9 @@ impl<'me, 'txt> Identifier<'me, 'txt> {
                     }
                     Some(result)
                 }
-                ComplexKind::Polar => match self.scan.next_if_not_delimiter() {
+                ComplexKind::Polar => match self.scanner.next_if_not_delimiter() {
                     Some(first) => {
-                        let result = Identifier::new(self.scan, first).scan();
+                        let result = Identifier::new(self.scanner, first).scan();
                         if let Ok(TokenKind::Literal(Literal::Number(Number::Real(rads)))) = result
                         {
                             return Ok(TokenKind::Literal(Literal::Number(Number::polar(
@@ -156,7 +156,7 @@ impl<'me, 'txt> Identifier<'me, 'txt> {
     }
 
     fn rest_of_standard(&mut self) -> TokenExtractResult {
-        while let Some(ch) = self.scan.char_if_not_delimiter() {
+        while let Some(ch) = self.scanner.char_if_not_delimiter() {
             if !is_standard(ch) {
                 return invalid(ch);
             }
@@ -181,7 +181,7 @@ impl<'me, 'txt> Identifier<'me, 'txt> {
     }
 
     fn get_lexeme(&mut self) -> &'txt str {
-        self.scan.current_lexeme_at(self.start.0)
+        self.scanner.current_lexeme_at(self.start.0)
     }
 }
 
@@ -189,11 +189,11 @@ pub(in crate::lex::tokenize) struct PeriodIdentifier<'me, 'txt>(Identifier<'me, 
 
 impl<'me, 'txt> PeriodIdentifier<'me, 'txt> {
     pub(in crate::lex::tokenize) fn new(
-        scan: &'me mut Scanner<'txt>,
+        scanner: &'me mut Scanner<'txt>,
         start: ScanItem<'txt>,
     ) -> Self {
         debug_assert_eq!(start.1, '.');
-        let mut me = Self(Identifier::new(scan, start));
+        let mut me = Self(Identifier::new(scanner, start));
         me.0.classify_peculiar(start.1);
         me
     }
@@ -207,20 +207,20 @@ pub(in crate::lex::tokenize) type VerbatimIdentifer<'me, 'txt, M> =
     FreeText<'me, 'txt, IdentifierPolicy<M>>;
 
 impl<'me, 'txt> VerbatimIdentifer<'me, 'txt, ContinueIdentifier> {
-    pub(in crate::lex::tokenize) fn cont(scan: &'me mut Scanner<'txt>) -> Self {
-        Self::init(scan, IdentifierPolicy(ContinueIdentifier))
+    pub(in crate::lex::tokenize) fn cont(scanner: &'me mut Scanner<'txt>) -> Self {
+        Self::init(scanner, IdentifierPolicy(ContinueIdentifier))
     }
 }
 
 impl<'me, 'txt> VerbatimIdentifer<'me, 'txt, DiscardIdentifier> {
-    pub(in crate::lex::tokenize) fn cleanup(scan: &'me mut Scanner<'txt>) -> Self {
-        Self::init(scan, IdentifierPolicy(DiscardIdentifier))
+    pub(in crate::lex::tokenize) fn cleanup(scanner: &'me mut Scanner<'txt>) -> Self {
+        Self::init(scanner, IdentifierPolicy(DiscardIdentifier))
     }
 }
 
 impl<'me, 'txt> VerbatimIdentifer<'me, 'txt, StartIdentifier> {
-    fn new(scan: &'me mut Scanner<'txt>) -> Self {
-        Self::init(scan, IdentifierPolicy(StartIdentifier))
+    fn new(scanner: &'me mut Scanner<'txt>) -> Self {
+        Self::init(scanner, IdentifierPolicy(StartIdentifier))
     }
 }
 

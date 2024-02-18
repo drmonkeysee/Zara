@@ -15,12 +15,12 @@ const INEXACTL: char = 'i';
 const INEXACTU: char = INEXACTL.to_ascii_uppercase();
 
 pub(in crate::lex::tokenize) struct Hashtag<'me, 'txt> {
-    pub(in crate::lex::tokenize) scan: &'me mut Scanner<'txt>,
+    pub(in crate::lex::tokenize) scanner: &'me mut Scanner<'txt>,
 }
 
 impl Hashtag<'_, '_> {
     pub(in crate::lex::tokenize) fn scan(&mut self) -> TokenExtractResult {
-        match self.scan.char_if_not_token_boundary() {
+        match self.scanner.char_if_not_token_boundary() {
             Some(ch) => self.literal(ch),
             None => self.comment(),
         }
@@ -41,13 +41,13 @@ impl Hashtag<'_, '_> {
     }
 
     fn comment(&mut self) -> TokenExtractResult {
-        self.scan
+        self.scanner
             .char_if_eq(';')
             .map_or_else(|| self.blockcomment(), |_| Ok(TokenKind::CommentDatum))
     }
 
     fn boolean(&mut self, val: bool) -> TokenExtractResult {
-        let rest = self.scan.rest_of_token();
+        let rest = self.scanner.rest_of_token();
         if rest.is_empty() || rest.eq_ignore_ascii_case(if val { "rue" } else { "alse" }) {
             Ok(TokenKind::Literal(Literal::Boolean(val)))
         } else {
@@ -56,11 +56,11 @@ impl Hashtag<'_, '_> {
     }
 
     fn bytevector(&mut self) -> TokenExtractResult {
-        self.scan
+        self.scanner
             .char_if_not_delimiter()
             .filter(|&ch| ch == '8')
             .and_then(|_| {
-                self.scan
+                self.scanner
                     .char_if_not_token_boundary()
                     .filter(|&ch| ch == '(')
             })
@@ -69,13 +69,13 @@ impl Hashtag<'_, '_> {
     }
 
     fn character(&mut self) -> TokenExtractResult {
-        self.scan
+        self.scanner
             .char()
             .map_or(Ok(TokenKind::Literal(Literal::Character('\n'))), |ch| {
                 if ch.is_ascii_whitespace() {
                     Ok(TokenKind::Literal(Literal::Character(ch)))
                 } else {
-                    let rest = self.scan.rest_of_token();
+                    let rest = self.scanner.rest_of_token();
                     if rest.is_empty() {
                         Ok(TokenKind::Literal(Literal::Character(ch)))
                     } else if matches!(ch, 'x' | 'X') {
@@ -88,7 +88,7 @@ impl Hashtag<'_, '_> {
     }
 
     fn directive(&mut self) -> TokenExtractResult {
-        match self.scan.rest_of_token().to_ascii_lowercase().as_str() {
+        match self.scanner.rest_of_token().to_ascii_lowercase().as_str() {
             "fold-case" => Ok(TokenKind::DirectiveCase(true)),
             "no-fold-case" => Ok(TokenKind::DirectiveCase(false)),
             "" => Err(TokenErrorKind::DirectiveExpected),
@@ -97,51 +97,54 @@ impl Hashtag<'_, '_> {
     }
 
     fn blockcomment(&mut self) -> TokenExtractResult {
-        self.scan
+        self.scanner
             .char_if_eq('|')
             .ok_or(TokenErrorKind::HashUnterminated)
-            .map(|_| BlockComment::new(self.scan).consume())
+            .map(|_| BlockComment::new(self.scanner).consume())
     }
 
     fn exactness(&mut self, exactness: Exactness) -> TokenExtractResult {
-        let curr = self.scan.pos();
-        if self.scan.char_if_eq('#').is_some() {
-            let num =
-                NumberKind::select_or(TokenErrorKind::RadixExpected { at: curr }, self.scan, None)?;
-            num.scan(self.scan, Some(exactness))
+        let curr = self.scanner.pos();
+        if self.scanner.char_if_eq('#').is_some() {
+            let num = NumberKind::select_or(
+                TokenErrorKind::RadixExpected { at: curr },
+                self.scanner,
+                None,
+            )?;
+            num.scan(self.scanner, Some(exactness))
         } else {
-            NumberKind::Decimal.scan(self.scan, Some(exactness))
+            NumberKind::Decimal.scan(self.scanner, Some(exactness))
         }
     }
 
     fn number(&mut self, ch: char) -> TokenExtractResult {
-        let num = NumberKind::select_or(TokenErrorKind::HashInvalid, self.scan, Some(ch))?;
+        let num = NumberKind::select_or(TokenErrorKind::HashInvalid, self.scanner, Some(ch))?;
         let exactness = self.check_exactness()?;
-        num.scan(self.scan, exactness)
+        num.scan(self.scanner, exactness)
     }
 
     fn check_exactness(&mut self) -> Result<Option<Exactness>, TokenErrorKind> {
-        let curr = self.scan.pos();
-        self.scan
-            .char_if_eq('#')
-            .map_or(Ok(None), |_| match self.scan.char_if_not_delimiter() {
+        let curr = self.scanner.pos();
+        self.scanner.char_if_eq('#').map_or(Ok(None), |_| {
+            match self.scanner.char_if_not_delimiter() {
                 Some(EXACTL | EXACTU) => Ok(Some(Exactness::Exact)),
                 Some(INEXACTL | INEXACTU) => Ok(Some(Exactness::Inexact)),
                 _ => Err(TokenErrorKind::ExactnessExpected { at: curr }),
-            })
+            }
+        })
     }
 }
 
 pub(in crate::lex::tokenize) struct BlockComment<'me, 'txt, P> {
     depth: usize,
     policy: P,
-    scan: &'me mut Scanner<'txt>,
+    scanner: &'me mut Scanner<'txt>,
 }
 
 impl<P: BlockCommentPolicy> BlockComment<'_, '_, P> {
     pub(in crate::lex::tokenize) fn consume(mut self) -> TokenKind {
-        while !self.scan.consumed() {
-            if let Some((_, ch)) = self.scan.find_any_char(&['|', '#']) {
+        while !self.scanner.consumed() {
+            if let Some((_, ch)) = self.scanner.find_any_char(&['|', '#']) {
                 if self.end_block(ch) {
                     if self.depth == 0 {
                         return self.policy.terminated();
@@ -156,30 +159,30 @@ impl<P: BlockCommentPolicy> BlockComment<'_, '_, P> {
     }
 
     fn end_block(&mut self, ch: char) -> bool {
-        ch == '|' && self.scan.char_if_eq('#').is_some()
+        ch == '|' && self.scanner.char_if_eq('#').is_some()
     }
 
     fn new_block(&mut self, ch: char) -> bool {
-        ch == '#' && self.scan.char_if_eq('|').is_some()
+        ch == '#' && self.scanner.char_if_eq('|').is_some()
     }
 }
 
 impl<'me, 'txt> BlockComment<'me, 'txt, ContinueComment> {
-    pub(in crate::lex::tokenize) fn cont(depth: usize, scan: &'me mut Scanner<'txt>) -> Self {
+    pub(in crate::lex::tokenize) fn cont(depth: usize, scanner: &'me mut Scanner<'txt>) -> Self {
         Self {
             depth,
             policy: ContinueComment,
-            scan,
+            scanner,
         }
     }
 }
 
 impl<'me, 'txt> BlockComment<'me, 'txt, StartComment> {
-    fn new(scan: &'me mut Scanner<'txt>) -> Self {
+    fn new(scanner: &'me mut Scanner<'txt>) -> Self {
         Self {
             depth: 0,
             policy: StartComment,
-            scan,
+            scanner,
         }
     }
 }

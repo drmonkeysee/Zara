@@ -16,21 +16,21 @@ use super::{
 
 pub(super) struct TokenStream<'txt> {
     cont: Option<TokenContinuation>,
-    scan: Scanner<'txt>,
+    scanner: Scanner<'txt>,
 }
 
 impl<'txt> TokenStream<'txt> {
     pub(super) fn new(textline: &'txt str, cont: Option<TokenContinuation>) -> Self {
         Self {
             cont,
-            scan: Scanner::new(textline),
+            scanner: Scanner::new(textline),
         }
     }
 
     fn token(&mut self) -> Option<IterItem<'txt>> {
-        self.scan.next_token().map(|item| {
+        self.scanner.next_token().map(|item| {
             let (tok, cont) = Tokenizer {
-                scan: &mut self.scan,
+                scanner: &mut self.scanner,
                 start: item,
             }
             .extract();
@@ -40,10 +40,10 @@ impl<'txt> TokenStream<'txt> {
     }
 
     fn continuation(&mut self, cont: TokenContinuation) -> IterItem<'txt> {
-        let start = self.scan.pos();
+        let start = self.scanner.pos();
         let (tok, cont) = Continuation {
             cont,
-            scan: &mut self.scan,
+            scanner: &mut self.scanner,
             start,
         }
         .extract();
@@ -67,13 +67,13 @@ type IterItem<'txt> = <TokenStream<'txt> as Iterator>::Item;
 type TokenExtractResult = Result<TokenKind, TokenErrorKind>;
 
 struct Tokenizer<'me, 'txt> {
-    scan: &'me mut Scanner<'txt>,
+    scanner: &'me mut Scanner<'txt>,
     start: ScanItem<'txt>,
 }
 
 impl Tokenizer<'_, '_> {
     fn extract(mut self) -> (TokenResult, Option<TokenContinuation>) {
-        extract(self.scan(), self.scan, self.start.0)
+        extract(self.scan(), self.scanner, self.start.0)
     }
 
     fn scan(&mut self) -> TokenExtractResult {
@@ -83,30 +83,33 @@ impl Tokenizer<'_, '_> {
             ')' => Ok(TokenKind::ParenRight),
             '\'' => Ok(TokenKind::Quote),
             '`' => Ok(TokenKind::Quasiquote),
-            '#' => Hashtag { scan: self.scan }.scan(),
-            '"' => StringLiteral::new(self.scan).scan(),
+            '#' => Hashtag {
+                scanner: self.scanner,
+            }
+            .scan(),
+            '"' => StringLiteral::new(self.scanner).scan(),
             ';' => Ok(self.comment()),
             '.' => self.period(),
             ',' => Ok(self.unquote()),
-            _ => Identifier::new(self.scan, self.start).scan(),
+            _ => Identifier::new(self.scanner, self.start).scan(),
         }
     }
 
     fn comment(&mut self) -> TokenKind {
-        self.scan.end_of_line();
+        self.scanner.end_of_line();
         TokenKind::Comment
     }
 
     fn period(&mut self) -> TokenExtractResult {
-        self.scan
+        self.scanner
             .char_if_not_delimiter()
             .map_or(Ok(TokenKind::PairJoiner), |next_ch| {
-                PeriodIdentifier::new(self.scan, self.start).scan(next_ch)
+                PeriodIdentifier::new(self.scanner, self.start).scan(next_ch)
             })
     }
 
     fn unquote(&mut self) -> TokenKind {
-        self.scan
+        self.scanner
             .char_if_eq('@')
             .map_or(TokenKind::Unquote, |_| TokenKind::UnquoteSplice)
     }
@@ -114,29 +117,31 @@ impl Tokenizer<'_, '_> {
 
 struct Continuation<'me, 'txt> {
     cont: TokenContinuation,
-    scan: &'me mut Scanner<'txt>,
+    scanner: &'me mut Scanner<'txt>,
     start: usize,
 }
 
 impl Continuation<'_, '_> {
     fn extract(mut self) -> (TokenResult, Option<TokenContinuation>) {
-        extract(self.scan(), self.scan, self.start)
+        extract(self.scan(), self.scanner, self.start)
     }
 
     fn scan(&mut self) -> TokenExtractResult {
         match self.cont {
             TokenContinuation::BlockComment { depth } => {
-                Ok(BlockComment::cont(depth, self.scan).consume())
+                Ok(BlockComment::cont(depth, self.scanner).consume())
             }
             TokenContinuation::StringLiteral { line_cont: false } => {
-                StringLiteral::cont(self.scan).scan()
+                StringLiteral::cont(self.scanner).scan()
             }
             TokenContinuation::StringLiteral { line_cont: true } => {
-                StringLiteral::line_cont(self.scan).scan()
+                StringLiteral::line_cont(self.scanner).scan()
             }
-            TokenContinuation::SubidentifierError => VerbatimIdentifer::cleanup(self.scan).scan(),
-            TokenContinuation::SubstringError => StringLiteral::cleanup(self.scan).scan(),
-            TokenContinuation::VerbatimIdentifier => VerbatimIdentifer::cont(self.scan).scan(),
+            TokenContinuation::SubidentifierError => {
+                VerbatimIdentifer::cleanup(self.scanner).scan()
+            }
+            TokenContinuation::SubstringError => StringLiteral::cleanup(self.scanner).scan(),
+            TokenContinuation::VerbatimIdentifier => VerbatimIdentifer::cont(self.scanner).scan(),
         }
     }
 }

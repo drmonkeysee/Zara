@@ -5,7 +5,7 @@ fn basic_token() {
     let mut s = Scanner::new("#u8(");
     let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
-        scan: &mut s,
+        scanner: &mut s,
         start,
     };
 
@@ -27,7 +27,7 @@ fn uppercase() {
     let mut s = Scanner::new("#U8(");
     let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
-        scan: &mut s,
+        scanner: &mut s,
         start,
     };
 
@@ -49,7 +49,7 @@ fn ends_at_paren() {
     let mut s = Scanner::new("#u8(sdf");
     let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
-        scan: &mut s,
+        scanner: &mut s,
         start,
     };
 
@@ -71,7 +71,7 @@ fn unterminated() {
     let mut s = Scanner::new("#u");
     let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
-        scan: &mut s,
+        scanner: &mut s,
         start,
     };
 
@@ -93,7 +93,7 @@ fn wrong_number() {
     let mut s = Scanner::new("#u9(");
     let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
-        scan: &mut s,
+        scanner: &mut s,
         start,
     };
 
@@ -115,7 +115,7 @@ fn extra_number() {
     let mut s = Scanner::new("#u81(");
     let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
-        scan: &mut s,
+        scanner: &mut s,
         start,
     };
 
@@ -137,7 +137,7 @@ fn no_paren() {
     let mut s = Scanner::new("#u8");
     let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
-        scan: &mut s,
+        scanner: &mut s,
         start,
     };
 
@@ -159,7 +159,7 @@ fn no_paren_whitespace() {
     let mut s = Scanner::new("#u8  ");
     let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
-        scan: &mut s,
+        scanner: &mut s,
         start,
     };
 
@@ -181,7 +181,7 @@ fn no_paren_extra_chars() {
     let mut s = Scanner::new("#u8abc");
     let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
-        scan: &mut s,
+        scanner: &mut s,
         start,
     };
 

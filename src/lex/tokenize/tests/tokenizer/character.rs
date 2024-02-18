@@ -5,7 +5,7 @@ fn ascii_literal() {
     let mut s = Scanner::new("#\\a");
     let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
-        scan: &mut s,
+        scanner: &mut s,
         start,
     };
 
@@ -27,7 +27,7 @@ fn ascii_uppercase_literal() {
     let mut s = Scanner::new("#\\A");
     let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
-        scan: &mut s,
+        scanner: &mut s,
         start,
     };
 
@@ -49,7 +49,7 @@ fn extended_literal() {
     let mut s = Scanner::new("#\\λ");
     let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
-        scan: &mut s,
+        scanner: &mut s,
         start,
     };
 
@@ -71,7 +71,7 @@ fn emoji_literal() {
     let mut s = Scanner::new("#\\🦀");
     let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
-        scan: &mut s,
+        scanner: &mut s,
         start,
     };
 
@@ -98,7 +98,7 @@ fn space_literal() {
     let mut s = Scanner::new("#\\ ");
     let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
-        scan: &mut s,
+        scanner: &mut s,
         start,
     };
 
@@ -120,7 +120,7 @@ fn tab_literal() {
     let mut s = Scanner::new("#\\\t");
     let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
-        scan: &mut s,
+        scanner: &mut s,
         start,
     };
 
@@ -157,7 +157,7 @@ fn name_does_not_match_uppercase() {
     let mut s = Scanner::new("#\\ALARM");
     let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
-        scan: &mut s,
+        scanner: &mut s,
         start,
     };
 
@@ -179,7 +179,7 @@ fn space_followed_by_alpha() {
     let mut s = Scanner::new("#\\ b");
     let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
-        scan: &mut s,
+        scanner: &mut s,
         start,
     };
 
@@ -201,7 +201,7 @@ fn alpha_followed_by_alpha() {
     let mut s = Scanner::new("#\\ab");
     let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
-        scan: &mut s,
+        scanner: &mut s,
         start,
     };
 
@@ -223,7 +223,7 @@ fn emoji_followed_by_alpha() {
     let mut s = Scanner::new("#\\🦀b");
     let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
-        scan: &mut s,
+        scanner: &mut s,
         start,
     };
 
@@ -245,7 +245,7 @@ fn alpha_followed_by_delimiter() {
     let mut s = Scanner::new("#\\a(");
     let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
-        scan: &mut s,
+        scanner: &mut s,
         start,
     };
 
@@ -267,7 +267,7 @@ fn letter_x_is_not_hex() {
     let mut s = Scanner::new("#\\x");
     let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
-        scan: &mut s,
+        scanner: &mut s,
         start,
     };
 
@@ -289,7 +289,7 @@ fn hex_zero() {
     let mut s = Scanner::new("#\\x0");
     let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
-        scan: &mut s,
+        scanner: &mut s,
         start,
     };
 
@@ -311,7 +311,7 @@ fn hex_lowercase() {
     let mut s = Scanner::new("#\\xa");
     let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
-        scan: &mut s,
+        scanner: &mut s,
         start,
     };
 
@@ -333,7 +333,7 @@ fn hex_uppercase() {
     let mut s = Scanner::new("#\\xA");
     let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
-        scan: &mut s,
+        scanner: &mut s,
         start,
     };
 
@@ -355,7 +355,7 @@ fn hex_uppercase_indicator() {
     let mut s = Scanner::new("#\\Xa");
     let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
-        scan: &mut s,
+        scanner: &mut s,
         start,
     };
 
@@ -387,7 +387,7 @@ fn hex_sign_invalid() {
     let mut s = Scanner::new("#\\x+A");
     let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
-        scan: &mut s,
+        scanner: &mut s,
         start,
     };
 
@@ -409,7 +409,7 @@ fn hex_too_large() {
     let mut s = Scanner::new("#\\xdeadbeef");
     let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
-        scan: &mut s,
+        scanner: &mut s,
         start,
     };
 
@@ -431,7 +431,7 @@ fn hex_malformed() {
     let mut s = Scanner::new("#\\x124nope");
     let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
-        scan: &mut s,
+        scanner: &mut s,
         start,
     };
 
@@ -454,7 +454,7 @@ fn check_character_list(cases: &[(&str, char)]) {
         let mut s = Scanner::new(&input);
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {
-            scan: &mut s,
+            scanner: &mut s,
             start,
         };
 

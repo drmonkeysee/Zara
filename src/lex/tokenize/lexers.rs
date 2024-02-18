@@ -20,22 +20,22 @@ pub(super) struct FreeText<'me, 'txt, P> {
     buf: String,
     policy: P,
     possible_line_cont_idx: Option<usize>,
-    scan: &'me mut Scanner<'txt>,
+    scanner: &'me mut Scanner<'txt>,
 }
 
 impl<'me, 'txt, P: FreeTextPolicy> FreeText<'me, 'txt, P> {
-    fn init(scan: &'me mut Scanner<'txt>, policy: P) -> Self {
+    fn init(scanner: &'me mut Scanner<'txt>, policy: P) -> Self {
         Self {
             buf: String::new(),
             policy,
             possible_line_cont_idx: None,
-            scan,
+            scanner,
         }
     }
 
     pub(super) fn scan(mut self) -> TokenExtractResult {
-        self.policy.prelude(self.scan);
-        while let Some((idx, ch)) = self.scan.next() {
+        self.policy.prelude(self.scanner);
+        while let Some((idx, ch)) = self.scanner.next() {
             match ch {
                 '\\' => self.escape(idx)?,
                 _ if ch == P::TERMINATOR => return Ok(self.terminated()),
@@ -46,7 +46,7 @@ impl<'me, 'txt, P: FreeTextPolicy> FreeText<'me, 'txt, P> {
     }
 
     fn escape(&mut self, start: usize) -> FreeTextResult {
-        match self.scan.char() {
+        match self.scanner.char() {
             Some('a') => self.buf.push('\x07'),
             Some('b') => self.buf.push('\x08'),
             Some('n') => self.buf.push('\n'),
@@ -70,12 +70,12 @@ impl<'me, 'txt, P: FreeTextPolicy> FreeText<'me, 'txt, P> {
     }
 
     fn hex(&mut self, start: usize) -> FreeTextResult {
-        let pos = self.scan.pos();
-        self.scan.end_of_word();
-        let Some(idx) = self.scan.char_if_eq(';') else {
+        let pos = self.scanner.pos();
+        self.scanner.end_of_word();
+        let Some(idx) = self.scanner.char_if_eq(';') else {
             return Err(self.policy.hex_unterminated(start));
         };
-        let rest = self.scan.lexeme(pos..idx);
+        let rest = self.scanner.lexeme(pos..idx);
         match parse_char_hex(rest) {
             HexParse::Invalid => Err(self.policy.hex_invalid(start)),
             HexParse::Unexpected => Err(self.policy.hex_expected(start)),
