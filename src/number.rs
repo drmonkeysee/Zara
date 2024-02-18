@@ -593,6 +593,7 @@ impl Display for RealTokenDescriptor<'_> {
 #[derive(Debug, Eq)]
 enum Precision {
     Single(u64),
+    #[allow(dead_code)]
     Multiple(Box<[u64]>),
 }
 
@@ -749,6 +750,6 @@ fn parse_sign_magnitude<R: Radix>(spec: &IntSpec<R>, input: &str) -> IntResult {
         })
 }
 
-fn parse_multi_precision<R: Radix>(spec: &IntSpec<R>, input: &str) -> IntResult {
+fn parse_multi_precision<R: Radix>(_spec: &IntSpec<R>, input: &str) -> IntResult {
     Err(NumericError::Unimplemented(input.to_owned()))
 }

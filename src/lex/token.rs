@@ -26,9 +26,13 @@ impl Display for Token {
 pub(crate) enum TokenKind {
     ByteVector,
     Comment,
-    CommentBlockBegin { depth: usize },
+    CommentBlockBegin {
+        depth: usize,
+    },
     CommentBlockEnd,
-    CommentBlockFragment { depth: usize },
+    CommentBlockFragment {
+        depth: usize,
+    },
     CommentDatum,
     DirectiveCase(bool),
     Identifier(String),
@@ -43,10 +47,18 @@ pub(crate) enum TokenKind {
     PairJoiner,
     Quasiquote,
     Quote,
-    StringBegin { s: String, line_cont: bool },
+    StringBegin {
+        #[allow(dead_code)]
+        s: String,
+        line_cont: bool,
+    },
     StringDiscard,
     StringEnd(String),
-    StringFragment { s: String, line_cont: bool },
+    StringFragment {
+        #[allow(dead_code)]
+        s: String,
+        line_cont: bool,
+    },
     Unquote,
     UnquoteSplice,
     Vector,
