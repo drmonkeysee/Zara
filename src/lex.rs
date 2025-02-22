@@ -143,14 +143,15 @@ impl From<TokenErrorLine> for LineFailure {
 pub(crate) struct TokenLine(Vec<Token>, TextLine);
 
 impl TokenLine {
-    fn into_continuation_unsupported(mut self, cont: TokenContinuation) -> LexerError {
-        debug_assert!(!self.0.is_empty());
+    fn into_continuation_unsupported(self, cont: TokenContinuation) -> LexerError {
+        let Self(mut tokens, txtline) = self;
+        debug_assert!(!tokens.is_empty());
         LineFailure::from(TokenErrorLine(
             vec![TokenError {
                 kind: cont.into(),
-                span: self.0.pop().unwrap().span,
+                span: tokens.pop().unwrap().span,
             }],
-            self.1,
+            txtline,
         ))
         .into()
     }

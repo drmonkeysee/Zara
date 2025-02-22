@@ -54,14 +54,14 @@ impl Number {
 
     pub(crate) fn into_exact(self) -> Self {
         match self {
-            Self::Complex(c) => Self::complex(c.0.0.into_exact(), c.0.1.into_exact()),
+            Self::Complex(Complex(c)) => Self::complex(c.0.into_exact(), c.1.into_exact()),
             Self::Real(r) => Self::Real(r.into_exact()),
         }
     }
 
     pub(crate) fn into_inexact(self) -> Self {
         match self {
-            Self::Complex(c) => Self::complex(c.0.0.into_inexact(), c.0.1.into_inexact()),
+            Self::Complex(Complex(c)) => Self::complex(c.0.into_inexact(), c.1.into_inexact()),
             Self::Real(r) => Self::Real(r.into_inexact()),
         }
     }
@@ -178,15 +178,17 @@ impl Rational {
     }
 
     fn into_float(self) -> f64 {
-        let (num, denom) = (self.0.0.into_float(), self.0.1.into_float());
+        let r = self.0;
+        let (num, denom) = (r.0.into_float(), r.1.into_float());
         num / denom
     }
 }
 
 impl Display for Rational {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        self.0.0.fmt(f)?;
-        write!(f, "/{}", self.0.1)
+        let r = &self.0;
+        r.0.fmt(f)?;
+        write!(f, "/{}", r.1)
     }
 }
 
@@ -275,8 +277,8 @@ impl From<i64> for Integer {
 }
 
 impl From<(Sign, u64)> for Integer {
-    fn from(value: (Sign, u64)) -> Self {
-        Self::single(value.1, value.0)
+    fn from((sign, val): (Sign, u64)) -> Self {
+        Self::single(val, sign)
     }
 }
 
