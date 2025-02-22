@@ -10,8 +10,8 @@ use self::{
     scan::{ScanItem, Scanner},
 };
 use super::{
-    token::{TokenContinuation, TokenError, TokenErrorKind, TokenResult},
     Token, TokenKind,
+    token::{TokenContinuation, TokenError, TokenErrorKind, TokenResult},
 };
 
 pub(super) struct TokenStream<'txt> {

@@ -1,9 +1,9 @@
 use super::{Exactness, HexParse, Identifier, RadixNumber};
 use crate::{
     lex::{
-        token::TokenErrorKind,
-        tokenize::{scan::Scanner, TokenExtractResult},
         TokenKind,
+        token::TokenErrorKind,
+        tokenize::{TokenExtractResult, scan::Scanner},
     },
     literal::Literal,
     number::{Binary, Hexadecimal, Octal, Radix},
@@ -261,7 +261,7 @@ fn decimal(scanner: &mut Scanner, exactness: Option<Exactness>) -> TokenExtractR
         match result {
             Err(TokenErrorKind::IdentifierInvalid(_)) => (),
             Ok(TokenKind::Literal(Literal::Number(_)) | TokenKind::Imaginary(_)) | Err(_) => {
-                return result
+                return result;
             }
             _ => (),
         }

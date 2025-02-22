@@ -157,8 +157,8 @@ fn whitespace_escape() {
 #[test]
 fn hex_escape_sequences() {
     let mut s = Scanner::new(
-            "\"a:\\x7;, b:\\x8;, d:\\x7f;, e:\\x1b;, n:\\xa;, 0:\\x0;, r:\\xd;, t:\\x9;, q:\\x22;, s:\\x5c;, v:\\x7c;\"",
-        );
+        "\"a:\\x7;, b:\\x8;, d:\\x7f;, e:\\x1b;, n:\\xa;, 0:\\x0;, r:\\xd;, t:\\x9;, q:\\x22;, s:\\x5c;, v:\\x7c;\"",
+    );
     let start = some_or_fail!(s.next_token());
     let t = Tokenizer {
         scanner: &mut s,

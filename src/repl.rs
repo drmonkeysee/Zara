@@ -1,8 +1,8 @@
 use rustyline::{DefaultEditor, Result};
 use std::rc::Rc;
 use zara::{
-    txt::{LineNumber, TextContext, TextLine, TextResult, TextSource},
     Error, Evaluation, Expr, Interpreter, RunMode,
+    txt::{LineNumber, TextContext, TextLine, TextResult, TextSource},
 };
 
 const INPUT: &str = "λ:> ";

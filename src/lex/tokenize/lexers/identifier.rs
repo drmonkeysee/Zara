@@ -1,12 +1,12 @@
 use super::{ComplexKind, Exactness, FreeText, FreeTextPolicy, RealNumber};
 use crate::{
     lex::{
+        TokenKind,
         token::TokenErrorKind,
         tokenize::{
-            scan::{ScanItem, Scanner},
             TokenExtractResult,
+            scan::{ScanItem, Scanner},
         },
-        TokenKind,
     },
     literal::Literal,
     number::{Decimal, Number, Radix},

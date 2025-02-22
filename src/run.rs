@@ -4,9 +4,9 @@ use std::{
     path::Path,
 };
 use zara::{
+    Interpreter, RunMode,
     src::{FileSource, LineInputAdapter, LineInputSource, StringSource},
     txt::TextSource,
-    Interpreter, RunMode,
 };
 
 pub(crate) fn file(mode: RunMode, prg: impl AsRef<Path>) -> Result {

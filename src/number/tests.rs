@@ -1096,10 +1096,10 @@ mod complex {
         let c = Number::complex(4, 3);
 
         let ri = extract_or_fail!(c, Number::Complex);
-        let r = extract_or_fail!(ri.0 .0, Real::Integer);
+        let r = extract_or_fail!(ri.0.0, Real::Integer);
         assert!(!r.is_zero());
         assert_eq!(extract_or_fail!(r.precision, Precision::Single), 4);
-        let i = extract_or_fail!(ri.0 .1, Real::Integer);
+        let i = extract_or_fail!(ri.0.1, Real::Integer);
         assert!(!i.is_zero());
         assert_eq!(extract_or_fail!(i.precision, Precision::Single), 3);
     }
@@ -1119,10 +1119,10 @@ mod complex {
         let c = Number::complex(0, 3);
 
         let ri = extract_or_fail!(c, Number::Complex);
-        let r = extract_or_fail!(ri.0 .0, Real::Integer);
+        let r = extract_or_fail!(ri.0.0, Real::Integer);
         assert!(r.is_zero());
         assert_eq!(extract_or_fail!(r.precision, Precision::Single), 0);
-        let i = extract_or_fail!(ri.0 .1, Real::Integer);
+        let i = extract_or_fail!(ri.0.1, Real::Integer);
         assert!(!i.is_zero());
         assert_eq!(extract_or_fail!(i.precision, Precision::Single), 3);
     }
@@ -1132,9 +1132,9 @@ mod complex {
         let c = Number::polar(4, 3);
 
         let ri = extract_or_fail!(c, Number::Complex);
-        let r = extract_or_fail!(ri.0 .0, Real::Float);
+        let r = extract_or_fail!(ri.0.0, Real::Float);
         assert_eq!(r, -3.9599699864017817);
-        let i = extract_or_fail!(ri.0 .1, Real::Float);
+        let i = extract_or_fail!(ri.0.1, Real::Float);
         assert_eq!(i, 0.5644800322394689);
     }
 
@@ -1143,9 +1143,9 @@ mod complex {
         let c = Number::polar(-4, 3);
 
         let ri = extract_or_fail!(c, Number::Complex);
-        let r = extract_or_fail!(ri.0 .0, Real::Float);
+        let r = extract_or_fail!(ri.0.0, Real::Float);
         assert_eq!(r, 3.9599699864017817);
-        let i = extract_or_fail!(ri.0 .1, Real::Float);
+        let i = extract_or_fail!(ri.0.1, Real::Float);
         assert_eq!(i, -0.5644800322394689);
     }
 
@@ -1154,9 +1154,9 @@ mod complex {
         let c = Number::polar(4, -3);
 
         let ri = extract_or_fail!(c, Number::Complex);
-        let r = extract_or_fail!(ri.0 .0, Real::Float);
+        let r = extract_or_fail!(ri.0.0, Real::Float);
         assert_eq!(r, -3.9599699864017817);
-        let i = extract_or_fail!(ri.0 .1, Real::Float);
+        let i = extract_or_fail!(ri.0.1, Real::Float);
         assert_eq!(i, -0.5644800322394689);
     }
 
@@ -1165,9 +1165,9 @@ mod complex {
         let c = Number::polar(-4, -3);
 
         let ri = extract_or_fail!(c, Number::Complex);
-        let r = extract_or_fail!(ri.0 .0, Real::Float);
+        let r = extract_or_fail!(ri.0.0, Real::Float);
         assert_eq!(r, 3.9599699864017817);
-        let i = extract_or_fail!(ri.0 .1, Real::Float);
+        let i = extract_or_fail!(ri.0.1, Real::Float);
         assert_eq!(i, 0.5644800322394689);
     }
 
@@ -1221,10 +1221,10 @@ mod complex {
         let c = c.into_exact();
 
         let ri = extract_or_fail!(c, Number::Complex);
-        let r = extract_or_fail!(ri.0 .0, Real::Integer);
+        let r = extract_or_fail!(ri.0.0, Real::Integer);
         assert!(!r.is_zero());
         assert_eq!(extract_or_fail!(r.precision, Precision::Single), 4);
-        let i = extract_or_fail!(ri.0 .1, Real::Integer);
+        let i = extract_or_fail!(ri.0.1, Real::Integer);
         assert!(!i.is_zero());
         assert_eq!(extract_or_fail!(i.precision, Precision::Single), 3);
     }
@@ -1236,12 +1236,12 @@ mod complex {
         let c = c.into_exact();
 
         let ri = extract_or_fail!(c, Number::Complex);
-        let (num, den) = rational_parts!(ri.0 .0);
+        let (num, den) = rational_parts!(ri.0.0);
         assert_eq!(extract_or_fail!(num.precision, Precision::Single), 3);
         assert_eq!(num.sign, Sign::Positive);
         assert_eq!(extract_or_fail!(den.precision, Precision::Single), 2);
         assert_eq!(den.sign, Sign::Positive);
-        let (num, den) = rational_parts!(ri.0 .1);
+        let (num, den) = rational_parts!(ri.0.1);
         assert_eq!(extract_or_fail!(num.precision, Precision::Single), 4);
         assert_eq!(num.sign, Sign::Positive);
         assert_eq!(extract_or_fail!(den.precision, Precision::Single), 5);
@@ -1255,9 +1255,9 @@ mod complex {
         let c = c.into_inexact();
 
         let ri = extract_or_fail!(c, Number::Complex);
-        let r = extract_or_fail!(ri.0 .0, Real::Float);
+        let r = extract_or_fail!(ri.0.0, Real::Float);
         assert_eq!(r, 4.0);
-        let i = extract_or_fail!(ri.0 .1, Real::Float);
+        let i = extract_or_fail!(ri.0.1, Real::Float);
         assert_eq!(i, 3.0);
     }
 }

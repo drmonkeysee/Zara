@@ -10,9 +10,9 @@ pub(super) use self::{
     identifier::{Identifier, PeriodIdentifier, VerbatimIdentifer},
     string::StringLiteral,
 };
-use super::{scan::Scanner, TokenExtractResult};
+use super::{TokenExtractResult, scan::Scanner};
 use crate::{
-    lex::{token::TokenErrorKind, TokenKind},
+    lex::{TokenKind, token::TokenErrorKind},
     number::Sign,
 };
 
