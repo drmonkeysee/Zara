@@ -26,13 +26,9 @@ impl Display for Token {
 pub(crate) enum TokenKind {
     ByteVector,
     Comment,
-    CommentBlockBegin {
-        depth: usize,
-    },
+    CommentBlockBegin { depth: usize },
     CommentBlockEnd,
-    CommentBlockFragment {
-        depth: usize,
-    },
+    CommentBlockFragment { depth: usize },
     CommentDatum,
     DirectiveCase(bool),
     Identifier(String),
@@ -47,18 +43,10 @@ pub(crate) enum TokenKind {
     PairJoiner,
     Quasiquote,
     Quote,
-    StringBegin {
-        #[allow(dead_code)]
-        s: String,
-        line_cont: bool,
-    },
+    StringBegin { s: String, line_cont: bool },
     StringDiscard,
     StringEnd(String),
-    StringFragment {
-        #[allow(dead_code)]
-        s: String,
-        line_cont: bool,
-    },
+    StringFragment { s: String, line_cont: bool },
     Unquote,
     UnquoteSplice,
     Vector,
@@ -298,11 +286,7 @@ fn format_char_range_error(msg: &str, f: &mut Formatter) -> fmt::Result {
 }
 
 fn line_cont_token(line_cont: bool) -> &'static str {
-    if line_cont {
-        "<\\>"
-    } else {
-        ""
-    }
+    if line_cont { "<\\>" } else { "" }
 }
 
 #[cfg(test)]

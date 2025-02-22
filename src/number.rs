@@ -54,14 +54,14 @@ impl Number {
 
     pub(crate) fn into_exact(self) -> Self {
         match self {
-            Self::Complex(c) => Self::complex(c.0 .0.into_exact(), c.0 .1.into_exact()),
+            Self::Complex(c) => Self::complex(c.0.0.into_exact(), c.0.1.into_exact()),
             Self::Real(r) => Self::Real(r.into_exact()),
         }
     }
 
     pub(crate) fn into_inexact(self) -> Self {
         match self {
-            Self::Complex(c) => Self::complex(c.0 .0.into_inexact(), c.0 .1.into_inexact()),
+            Self::Complex(c) => Self::complex(c.0.0.into_inexact(), c.0.1.into_inexact()),
             Self::Real(r) => Self::Real(r.into_inexact()),
         }
     }
@@ -170,7 +170,7 @@ pub(crate) struct Rational(Box<(Integer, Integer)>);
 
 impl Rational {
     fn is_zero(&self) -> bool {
-        self.0 .0.is_zero()
+        self.0.0.is_zero()
     }
 
     fn into_inexact(self) -> Real {
@@ -178,15 +178,15 @@ impl Rational {
     }
 
     fn into_float(self) -> f64 {
-        let (num, denom) = (self.0 .0.into_float(), self.0 .1.into_float());
+        let (num, denom) = (self.0.0.into_float(), self.0.1.into_float());
         num / denom
     }
 }
 
 impl Display for Rational {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        self.0 .0.fmt(f)?;
-        write!(f, "/{}", self.0 .1)
+        self.0.0.fmt(f)?;
+        write!(f, "/{}", self.0.1)
     }
 }
 
@@ -247,11 +247,7 @@ impl Integer {
             Precision::Single(u) => {
                 #[allow(clippy::cast_precision_loss)]
                 let f = u as f64;
-                if self.sign == Sign::Negative {
-                    -f
-                } else {
-                    f
-                }
+                if self.sign == Sign::Negative { -f } else { f }
             }
             Precision::Multiple(_) => todo!(),
         }
@@ -594,7 +590,6 @@ impl Display for RealTokenDescriptor<'_> {
 #[derive(Debug, Eq)]
 enum Precision {
     Single(u64),
-    #[allow(dead_code)]
     Multiple(Box<[u64]>),
 }
 
