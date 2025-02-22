@@ -726,10 +726,8 @@ fn parse_signed<R: Radix>(spec: &IntSpec<R>, input: &str) -> IntResult {
         input
             .get(..spec.magnitude.end)
             .map_or(Err(NumericError::ParseFailure), |signed_num| {
-                i64::from_str_radix(signed_num, R::BASE).map_or_else(
-                    |_| parse_sign_magnitude(spec, signed_num),
-                    |val| Ok(val.into()),
-                )
+                i64::from_str_radix(signed_num, R::BASE)
+                    .map_or_else(|_| parse_sign_magnitude(spec, signed_num), |n| Ok(n.into()))
             })
     }
 }
@@ -740,8 +738,8 @@ fn parse_sign_magnitude<R: Radix>(spec: &IntSpec<R>, input: &str) -> IntResult {
         .map_or(Err(NumericError::ParseFailure), |mag| {
             u64::from_str_radix(mag, R::BASE).map_or_else(
                 |_| parse_multi_precision(spec, input),
-                |val| {
-                    let sign_mag = (spec.sign.unwrap_or(Sign::Positive), val);
+                |n| {
+                    let sign_mag = (spec.sign.unwrap_or(Sign::Positive), n);
                     Ok(sign_mag.into())
                 },
             )

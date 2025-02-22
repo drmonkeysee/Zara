@@ -40,7 +40,7 @@ impl<'txt> Scanner<'txt> {
     }
 
     pub(super) fn find_any_char(&mut self, chars: &[char]) -> Option<ScanItem> {
-        self.chars.find(|item| chars.contains(&item.1))
+        self.chars.find(|(_, ch)| chars.contains(ch))
     }
 
     pub(super) fn skip_whitespace(&mut self) -> usize {
@@ -113,40 +113,40 @@ impl<P: Fn(&ScanItem) -> bool> PeekableExt<P> for ScanChars<'_> {
     }
 }
 
-fn get_idx(item: &ScanItem) -> usize {
-    item.0
+fn get_idx(&(idx, _): &ScanItem) -> usize {
+    idx
 }
 
-fn to_idx(item: ScanItem) -> usize {
-    item.0
+fn to_idx((idx, _): ScanItem) -> usize {
+    idx
 }
 
-fn to_char(item: ScanItem) -> char {
-    item.1
+fn to_char((_, ch): ScanItem) -> char {
+    ch
 }
 
 fn eq_char(ch: char) -> impl FnMut(&ScanItem) -> bool {
-    move |item| item.1 == ch
+    move |&(_, c)| c == ch
 }
 
-fn delimiter(item: &ScanItem) -> bool {
-    is_delimiter(item.1)
+fn delimiter(&(_, ch): &ScanItem) -> bool {
+    is_delimiter(ch)
 }
 
-fn word_boundary(item: &ScanItem) -> bool {
-    item.1 == '\\' || is_delimiter(item.1)
+fn word_boundary(&(_, ch): &ScanItem) -> bool {
+    ch == '\\' || is_delimiter(ch)
 }
 
 fn not_delimiter(item: &ScanItem) -> bool {
     !delimiter(item)
 }
 
-fn not_token_boundary(item: &ScanItem) -> bool {
-    !is_token_boundary(item.1)
+fn not_token_boundary(&(_, ch): &ScanItem) -> bool {
+    !is_token_boundary(ch)
 }
 
-fn not_whitespace(item: &ScanItem) -> bool {
-    !item.1.is_ascii_whitespace()
+fn not_whitespace(&(_, ch): &ScanItem) -> bool {
+    !ch.is_ascii_whitespace()
 }
 
 fn is_delimiter(ch: char) -> bool {
