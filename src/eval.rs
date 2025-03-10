@@ -6,8 +6,8 @@ use std::{
 
 #[derive(Debug)]
 pub enum Evaluation {
-    Expression(Expr),
     Continuation,
+    Expression(Expr),
 }
 
 impl Evaluation {
