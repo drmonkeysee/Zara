@@ -85,7 +85,7 @@ pub(crate) struct Environment;
 impl Evaluator for Environment {
     fn evaluate(&self, expression: Expression) -> EvalResult {
         match expression {
-            Expression::Begin(exprs) => Ok(eval_begin(exprs)),
+            Expression::Begin(seq) => Ok(eval_sequence(seq)),
             Expression::TokenList(_) => Ok(expression),
             _ => Err(EvalError),
         }
@@ -93,6 +93,6 @@ impl Evaluator for Environment {
     }
 }
 
-fn eval_begin(exprs: impl IntoIterator<Item = Expression>) -> Expression {
-    exprs.into_iter().last().unwrap_or(Expression::Empty)
+fn eval_sequence(seq: impl IntoIterator<Item = Expression>) -> Expression {
+    seq.into_iter().last().unwrap_or(Expression::Empty)
 }
