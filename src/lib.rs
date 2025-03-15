@@ -229,6 +229,11 @@ mod tests {
      * in Zara are recursively defined and need to maintain whatever high-level
      * formatting came from the original caller, or the output looks janky.
      *
+     * Update: looks like this behavior is sort of called out at:
+     * https://doc.rust-lang.org/std/fmt/index.html#formatting-traits
+     * It doesn't explicitly cover the alignment behavior below but it's the
+     * same principle.
+     *
      * TODO: generally this is relevant for "long-form" description and error
      * output so I can probably simplify this usage for stuff like Datums.
      */
