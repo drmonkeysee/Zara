@@ -220,8 +220,8 @@ mod tests {
      * will ignore the formatter state; I assume this has something to do with
      * many of the stdlib Display implementations, particularly for String.
      *
-     * e.g. f.write_str("blah") probably simply adds the string argument to
-     * f's buffer while "blah".fmt(f) delegates to String::fmt which likely
+     * e.g. `f.write_str("blah")` probably simply adds the string argument to
+     * f's buffer while `"blah".fmt(f)` delegates to String::fmt which likely
      * checks f's state and adjusts the write calls accordingly.
      *
      * Keep these tests here to remind myself why so many of the Display impls
@@ -259,7 +259,7 @@ mod tests {
         }
 
         #[test]
-        #[ignore = "uncomment and run cargo r -- dispcompare to see output"]
+        #[ignore = "run `cargo t -- --ignored` to see output"]
         fn dispcompare() {
             let a = DisplayTest::Write(5);
             let b = DisplayTest::Format(3);
