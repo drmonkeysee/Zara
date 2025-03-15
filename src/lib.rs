@@ -211,6 +211,66 @@ fn resolve_executor(mode: RunMode) -> Box<dyn Executor> {
 mod tests {
     use super::*;
 
+    /*
+     * How you use the formatter in Display trait determines whether your
+     * implementation inherits the state of the current formatter or not.
+     *
+     * In practice, delegating to .fmt() will get you the desired inheritance
+     * while using the formatter directly (via associated function or macro)
+     * will ignore the formatter state; I assume this has something to do with
+     * many of the stdlib Display implementations, particularly for String.
+     *
+     * e.g. f.write_str("blah") probably simply adds the string argument to
+     * f's buffer while "blah".fmt(f) delegates to String::fmt which likely
+     * checks f's state and adjusts the write calls accordingly.
+     *
+     * Keep these tests here to remind myself why so many of the Display impls
+     * use .fmt() instead of more direct mechanisms. Most of the Display impls
+     * in Zara are recursively defined and need to maintain whatever high-level
+     * formatting came from the original caller, or the output looks janky.
+     *
+     * TODO: generally this is relevant for "long-form" description and error
+     * output so I can probably simplify this usage for stuff like Datums.
+     */
+    mod dispcheck {
+        use super::*;
+
+        enum DisplayTest {
+            Write(i32),
+            Format(i32),
+            WStr,
+            StrFmt,
+        }
+
+        impl Display for DisplayTest {
+            fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+                match self {
+                    Self::Write(i) => write!(f, "wrtint{i}"),
+                    Self::Format(i) => format!("fmtint{i}").fmt(f),
+                    Self::WStr => f.write_str("wrtestr"),
+                    Self::StrFmt => "frmtstr".fmt(f),
+                }
+            }
+        }
+
+        #[test]
+        #[ignore = "uncomment and run cargo r -- dispcompare to see output"]
+        fn dispcompare() {
+            let a = DisplayTest::Write(5);
+            let b = DisplayTest::Format(3);
+            let c = DisplayTest::WStr;
+            let d = DisplayTest::StrFmt;
+
+            // NOTE: you would expect all of these to right-align to 15 chars
+            // but only two of them do.
+            eprintln!("A: {a:>15}");
+            eprintln!("B: {b:>15}");
+            eprintln!("C: {c:>15}");
+            eprintln!("D: {d:>15}");
+            assert!(false);
+        }
+    }
+
     mod runmode {
         use super::*;
 
