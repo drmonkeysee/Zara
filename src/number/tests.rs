@@ -453,6 +453,13 @@ mod display {
 
         assert_eq!(n.as_datum().to_string(), "4+1.0i");
     }
+
+    #[test]
+    fn complex_zero() {
+        let n = Number::complex(0, 0);
+
+        assert_eq!(n.as_datum().to_string(), "0");
+    }
 }
 
 mod error {
