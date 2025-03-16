@@ -127,7 +127,7 @@ impl Display for ErrorMessage<'_> {
 }
 
 trait Executor {
-    fn exec(&self, token_lines: Vec<TokenLine>) -> result::Result<Evaluation, ExecError>;
+    fn exec(&mut self, token_lines: Vec<TokenLine>) -> result::Result<Evaluation, ExecError>;
 }
 
 #[derive(Debug)]
@@ -181,7 +181,7 @@ struct Engine<P, E> {
 }
 
 impl<P: Parser, E: Evaluator> Executor for Engine<P, E> {
-    fn exec(&self, token_lines: Vec<TokenLine>) -> result::Result<Evaluation, ExecError> {
+    fn exec(&mut self, token_lines: Vec<TokenLine>) -> result::Result<Evaluation, ExecError> {
         Ok(self.evaluator.evaluate(self.parser.parse(token_lines)?)?)
     }
 }
@@ -190,11 +190,11 @@ fn resolve_executor(mode: RunMode) -> Box<dyn Executor> {
     match mode {
         RunMode::Evaluate => Box::new(Engine {
             evaluator: Environment,
-            parser: ExpressionTree,
+            parser: ExpressionTree::default(),
         }),
         RunMode::SyntaxTree => Box::new(Engine {
             evaluator: Ast,
-            parser: ExpressionTree,
+            parser: ExpressionTree::default(),
         }),
         RunMode::Tokenize => Box::new(Engine {
             evaluator: Environment,
