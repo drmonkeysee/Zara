@@ -1135,6 +1135,19 @@ mod complex {
     }
 
     #[test]
+    fn imaginary_only() {
+        let c = Number::imaginary(3);
+
+        let ri = extract_or_fail!(c, Number::Complex);
+        let r = extract_or_fail!(ri.0.0, Real::Integer);
+        assert!(r.is_zero());
+        assert_eq!(extract_or_fail!(r.precision, Precision::Single), 0);
+        let i = extract_or_fail!(ri.0.1, Real::Integer);
+        assert!(!i.is_zero());
+        assert_eq!(extract_or_fail!(i.precision, Precision::Single), 3);
+    }
+
+    #[test]
     fn polar() {
         let c = Number::polar(4, 3);
 

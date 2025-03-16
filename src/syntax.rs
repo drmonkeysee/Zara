@@ -2,7 +2,11 @@ mod expr;
 
 use self::expr::ExpressionError;
 pub(crate) use self::expr::{Datum, Expression};
-use crate::lex::{Token, TokenKind, TokenLine};
+use crate::{
+    lex::{Token, TokenKind, TokenLine},
+    literal::Literal,
+    number::Number,
+};
 use std::{
     error::Error,
     fmt::{self, Display, Formatter},
@@ -125,6 +129,9 @@ impl ExprTreeNode {
 
     fn parse(&mut self, token: Token) -> ControlFlow<ParseBreak> {
         match token.kind {
+            TokenKind::Imaginary(r) => self
+                .exprs
+                .push(Expression::Literal(Literal::Number(Number::imaginary(r)))),
             TokenKind::Literal(val) => self.exprs.push(Expression::Literal(val)),
             // TODO: add text line to errors
             _ => self.errs.push(ExpressionError::Unimplemented(token)),
