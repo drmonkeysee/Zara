@@ -121,6 +121,7 @@ impl Display for ErrorMessage<'_> {
         let err = self.0;
         match err {
             ExecError::Lex(lex_err) => lex_err.display_message().fmt(f),
+            ExecError::Parse(parse_err) => parse_err.display_message().fmt(f),
             _ => writeln!(f, "#<error-extended-undef({err:?})>"),
         }
     }

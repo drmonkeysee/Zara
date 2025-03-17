@@ -1,5 +1,5 @@
 use crate::{
-    lex::{DisplayTokenLines, TokenLine, TokenLinesMessage},
+    lex::{DisplayTokenLines, TokenKind, TokenLine, TokenLinesMessage},
     literal::Literal,
 };
 use std::{
@@ -65,7 +65,7 @@ pub(super) struct ExpressionError {
 
 impl Display for ExpressionError {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        format!("#<expr-error-display-undef({self:?})>").fmt(f)
+        self.kind.fmt(f)
     }
 }
 
@@ -73,7 +73,15 @@ impl Error for ExpressionError {}
 
 #[derive(Debug)]
 pub(super) enum ExpressionErrorKind {
-    Unimplemented,
+    Unimplemented(TokenKind),
+}
+
+impl Display for ExpressionErrorKind {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        match self {
+            Self::Unimplemented(t) => format!("{t} parsing not yet implemented").fmt(f),
+        }
+    }
 }
 
 #[cfg(test)]

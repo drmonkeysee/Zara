@@ -10,7 +10,7 @@ use crate::{
 };
 use std::{
     error::Error,
-    fmt::{self, Display, Formatter},
+    fmt::{self, Display, Formatter, Write},
     mem,
     ops::ControlFlow,
 };
@@ -19,6 +19,12 @@ pub(crate) type ParserResult = Result<Expression, ParserError>;
 
 #[derive(Debug)]
 pub(crate) struct ParserError(Vec<ParseErrorLine>);
+
+impl ParserError {
+    pub(crate) fn display_message(&self) -> ParserErrorMessage {
+        ParserErrorMessage(&self.0)
+    }
+}
 
 impl Display for ParserError {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
@@ -44,6 +50,17 @@ impl Parser for TokenList {
 pub(crate) struct ExpressionTree {
     errs: Vec<ParseErrorLine>,
     parsers: Vec<ExprTreeNode>,
+}
+
+pub(crate) struct ParserErrorMessage<'a>(&'a [ParseErrorLine]);
+
+impl Display for ParserErrorMessage<'_> {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        for line in self.0 {
+            ParseErrorLineMessage(line).fmt(f)?;
+        }
+        Ok(())
+    }
 }
 
 /*
@@ -141,7 +158,7 @@ impl ExprTreeNode {
             TokenKind::Literal(val) => self.exprs.push(Expression::Literal(val)),
             // TODO: add text line to errors
             _ => self.errs.push(ExpressionError {
-                kind: ExpressionErrorKind::Unimplemented,
+                kind: ExpressionErrorKind::Unimplemented(token.kind),
                 span: token.span,
             }),
         }
@@ -167,3 +184,39 @@ enum ParseBreak {
 
 #[derive(Debug)]
 struct ParseErrorLine(Vec<ExpressionError>, TextLine);
+
+struct ParseErrorLineMessage<'a>(&'a ParseErrorLine);
+
+// TODO: unify this with token error message
+impl Display for ParseErrorLineMessage<'_> {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        let ParseErrorLine(errs, txtline) = self.0;
+        txtline.display_header().fmt(f)?;
+
+        if errs.is_empty() {
+            return Ok(());
+        }
+
+        let mut cursor = 0;
+        f.write_char('\t')?;
+        for span in errs
+            .iter()
+            .filter_map(|err| (!err.span.is_empty()).then_some(&err.span))
+        {
+            write!(
+                f,
+                "{0:>1$}{2:^<3$}",
+                "^",
+                span.start + 1 - cursor,
+                "",
+                span.len() - 1
+            )?;
+            cursor = span.end;
+        }
+        f.write_char('\n')?;
+        for err in errs {
+            writeln!(f, "{}: {err}", err.span.start + 1)?;
+        }
+        Ok(())
+    }
+}
