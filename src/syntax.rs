@@ -1,22 +1,24 @@
 mod expr;
 
-use self::expr::ExpressionError;
 pub(crate) use self::expr::{Datum, Expression};
+use self::expr::{ExpressionError, ExpressionErrorKind};
 use crate::{
     lex::{Token, TokenKind, TokenLine},
     literal::Literal,
     number::Number,
+    txt::TextLine,
 };
 use std::{
     error::Error,
     fmt::{self, Display, Formatter},
+    mem,
     ops::ControlFlow,
 };
 
 pub(crate) type ParserResult = Result<Expression, ParserError>;
 
 #[derive(Debug)]
-pub(crate) struct ParserError(Vec<ExpressionError>);
+pub(crate) struct ParserError(Vec<ParseErrorLine>);
 
 impl Display for ParserError {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
@@ -40,6 +42,7 @@ impl Parser for TokenList {
 
 #[derive(Default)]
 pub(crate) struct ExpressionTree {
+    errs: Vec<ParseErrorLine>,
     parsers: Vec<ExprTreeNode>,
 }
 
@@ -71,7 +74,8 @@ else:
 */
 
 impl ExpressionTree {
-    fn parse_line(&mut self, mut parser: ExprTreeNode, tokens: TokenLine) -> ExprTreeNode {
+    fn parse_line(&mut self, mut parser: ExprTreeNode, line: TokenLine) -> ExprTreeNode {
+        let TokenLine(tokens, txt) = line;
         for token in tokens {
             match parser.parse(token) {
                 ControlFlow::Break(ParseBreak::Complete) => {
@@ -89,25 +93,27 @@ impl ExpressionTree {
                 ControlFlow::Continue(_) => (),
             }
         }
+        if !parser.errs.is_empty() {
+            self.errs
+                .push(ParseErrorLine(mem::take(&mut parser.errs), txt));
+        }
         parser
     }
 }
 
 impl Parser for ExpressionTree {
     fn parse(&mut self, token_lines: Vec<TokenLine>) -> ParserResult {
-        let mut parser = self
-            .parsers
-            .pop()
-            .unwrap_or(ExprTreeNode::new(NodeKind::Sequence));
+        let parser = token_lines.into_iter().fold(
+            self.parsers
+                .pop()
+                .unwrap_or(ExprTreeNode::new(NodeKind::Sequence)),
+            |p, ln| self.parse_line(p, ln),
+        );
 
-        parser = token_lines
-            .into_iter()
-            .fold(parser, |p, ln| self.parse_line(p, ln));
-
-        if parser.errs.is_empty() {
+        if self.errs.is_empty() {
             Ok(parser.to_expr())
         } else {
-            Err(ParserError(parser.errs))
+            Err(ParserError(mem::take(&mut self.errs)))
         }
     }
 }
@@ -134,7 +140,10 @@ impl ExprTreeNode {
                 .push(Expression::Literal(Literal::Number(Number::imaginary(r)))),
             TokenKind::Literal(val) => self.exprs.push(Expression::Literal(val)),
             // TODO: add text line to errors
-            _ => self.errs.push(ExpressionError::Unimplemented(token)),
+            _ => self.errs.push(ExpressionError {
+                kind: ExpressionErrorKind::Unimplemented,
+                span: token.span,
+            }),
         }
         ControlFlow::Continue(())
     }
@@ -155,3 +164,6 @@ enum ParseBreak {
     Continuation,
     New(ExprTreeNode),
 }
+
+#[derive(Debug)]
+struct ParseErrorLine(Vec<ExpressionError>, TextLine);

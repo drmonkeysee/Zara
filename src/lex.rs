@@ -140,7 +140,7 @@ impl From<TokenErrorLine> for LineFailure {
 }
 
 #[derive(Debug)]
-pub(crate) struct TokenLine(Vec<Token>, TextLine);
+pub(crate) struct TokenLine(pub(crate) Vec<Token>, pub(crate) TextLine);
 
 impl TokenLine {
     fn into_continuation_unsupported(self, cont: TokenContinuation) -> LexerError {
@@ -166,16 +166,6 @@ impl Display for TokenLine {
             .collect::<Vec<_>>()
             .join(", ");
         format!("{}:{}", txt.lineno, token_txt).fmt(f)
-    }
-}
-
-// NOTE: used by .flatten() in syntax.rs
-impl IntoIterator for TokenLine {
-    type Item = Token;
-    type IntoIter = <Vec<Token> as IntoIterator>::IntoIter;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.0.into_iter()
     }
 }
 

@@ -1,11 +1,11 @@
 use crate::{
-    lex::{DisplayTokenLines, Token, TokenLine, TokenLinesMessage},
+    lex::{DisplayTokenLines, TokenLine, TokenLinesMessage},
     literal::Literal,
 };
 use std::{
     error::Error,
-    fmt,
-    fmt::{Display, Formatter},
+    fmt::{self, Display, Formatter},
+    ops::Range,
 };
 
 #[derive(Debug)]
@@ -58,8 +58,9 @@ impl Display for ExpressionMessage<'_> {
 }
 
 #[derive(Debug)]
-pub(super) enum ExpressionError {
-    Unimplemented(Token),
+pub(super) struct ExpressionError {
+    pub(super) kind: ExpressionErrorKind,
+    pub(super) span: Range<usize>,
 }
 
 impl Display for ExpressionError {
@@ -69,6 +70,11 @@ impl Display for ExpressionError {
 }
 
 impl Error for ExpressionError {}
+
+#[derive(Debug)]
+pub(super) enum ExpressionErrorKind {
+    Unimplemented,
+}
 
 #[cfg(test)]
 mod tests {
