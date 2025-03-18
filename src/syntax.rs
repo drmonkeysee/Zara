@@ -156,7 +156,6 @@ impl ExprTreeNode {
                 .exprs
                 .push(Expression::Literal(Literal::Number(Number::imaginary(r)))),
             TokenKind::Literal(val) => self.exprs.push(Expression::Literal(val)),
-            // TODO: add text line to errors
             _ => self.errs.push(ExpressionError {
                 kind: ExpressionErrorKind::Unimplemented(token.kind),
                 span: token.span,
