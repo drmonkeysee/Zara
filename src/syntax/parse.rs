@@ -31,6 +31,15 @@ impl ParseNode {
                 .exprs
                 .push(Expression::Literal(Literal::Number(Number::imaginary(r)))),
             TokenKind::Literal(val) => self.exprs.push(Expression::Literal(val)),
+            TokenKind::IdentifierDiscard
+            | TokenKind::IdentifierEnd(_)
+            | TokenKind::IdentifierFragment(_)
+            | TokenKind::StringDiscard
+            | TokenKind::StringEnd(_)
+            | TokenKind::StringFragment { .. } => self.errs.push(ExpressionError {
+                kind: ExpressionErrorKind::InvalidLex(token.kind),
+                span: token.span,
+            }),
             _ => self.errs.push(ExpressionError {
                 kind: ExpressionErrorKind::Unimplemented(token.kind),
                 span: token.span,

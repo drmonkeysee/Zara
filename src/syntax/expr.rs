@@ -73,12 +73,14 @@ impl Error for ExpressionError {}
 
 #[derive(Debug)]
 pub(super) enum ExpressionErrorKind {
+    InvalidLex(TokenKind),
     Unimplemented(TokenKind),
 }
 
 impl Display for ExpressionErrorKind {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
+            Self::InvalidLex(t) => format!("unexpected token reached: {t}").fmt(f),
             Self::Unimplemented(t) => format!("{t} parsing not yet implemented").fmt(f),
         }
     }
