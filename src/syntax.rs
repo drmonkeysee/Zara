@@ -102,6 +102,7 @@ impl ExpressionTree {
                 ParseFlow::Break(ParseBreak::Complete) => {
                     let done = parser;
                     // TODO: fix this unwrap
+                    debug_assert!(!self.parsers.is_empty());
                     parser = self.parsers.pop().unwrap();
                     parser.merge(done);
                 }

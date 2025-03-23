@@ -152,7 +152,7 @@ impl StringContext {
             _ => ContextFlow::Break(Err(ExpressionError {
                 kind: ExpressionErrorKind::InvalidLex(token.kind),
                 span: token.span,
-            })), // TODO: InvalidLex, unterminated string is actually when we're out of tokens
+            })),
         }
     }
 }
