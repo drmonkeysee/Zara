@@ -97,11 +97,11 @@ impl<'me, 'txt> RealNumber<'me, 'txt> {
         let mut brk = Ok(BreakCondition::default());
         while let Some(item) = self.scanner.next_if_not_delimiter() {
             match self.classifier.classify(item) {
-                ControlFlow::Continue(Some(c)) => {
+                RealControl::Continue(Some(c)) => {
                     self.classifier = c;
                 }
-                ControlFlow::Continue(None) => (),
-                ControlFlow::Break(b) => {
+                RealControl::Continue(None) => (),
+                RealControl::Break(b) => {
                     brk = b;
                     break;
                 }
@@ -159,8 +159,8 @@ impl<'me, 'txt, R: Radix + Default> RadixNumber<'me, 'txt, R> {
         let mut brk = Ok(BreakCondition::default());
         while let Some(item) = self.scanner.next_if_not_delimiter() {
             match self.classifier.classify(item) {
-                ControlFlow::Continue(()) => (),
-                ControlFlow::Break(b) => {
+                RadixControl::Continue(()) => (),
+                RadixControl::Break(b) => {
                     brk = b;
                     break;
                 }
@@ -346,8 +346,8 @@ impl<'me, 'txt> Denominator<'me, 'txt> {
         });
         while let Some(item) = self.scanner.next_if_not_delimiter() {
             match classifier.classify(item) {
-                ControlFlow::Continue(()) => (),
-                ControlFlow::Break(b) => {
+                RadixControl::Continue(()) => (),
+                RadixControl::Break(b) => {
                     brk = b;
                     break;
                 }
@@ -577,31 +577,31 @@ impl<R: Radix> Integral<R> {
                     if self.0.sign.is_none() {
                         self.0.sign = Some(super::char_to_sign(ch));
                         self.0.magnitude = 1..1;
-                        ControlFlow::Continue(())
+                        RadixControl::Continue(())
                     } else {
-                        ControlFlow::Break(Err(TokenErrorKind::NumberInvalid))
+                        RadixControl::Break(Err(TokenErrorKind::NumberInvalid))
                     }
                 } else {
-                    ControlFlow::Break(Ok(BreakCondition::cartesian(item)))
+                    RadixControl::Break(Ok(BreakCondition::cartesian(item)))
                 }
             }
-            '.' => ControlFlow::Break(Err(TokenErrorKind::NumberInvalidDecimalPoint {
+            '.' => RadixControl::Break(Err(TokenErrorKind::NumberInvalidDecimalPoint {
                 at: idx,
                 radix: R::NAME,
             })),
-            '/' => ControlFlow::Break(Ok(BreakCondition::Fraction)),
-            '@' => ControlFlow::Break(Ok(BreakCondition::polar(item))),
-            'i' | 'I' => ControlFlow::Break(Ok(BreakCondition::imaginary())),
+            '/' => RadixControl::Break(Ok(BreakCondition::Fraction)),
+            '@' => RadixControl::Break(Ok(BreakCondition::polar(item))),
+            'i' | 'I' => RadixControl::Break(Ok(BreakCondition::imaginary())),
             _ if self.0.radix.is_digit(ch) => {
                 self.0.magnitude.end += 1;
-                ControlFlow::Continue(())
+                RadixControl::Continue(())
             }
             // NOTE: e|E hexadecimal is_digit is true, so check exponent after digit
-            'e' | 'E' => ControlFlow::Break(Err(TokenErrorKind::NumberInvalidExponent {
+            'e' | 'E' => RadixControl::Break(Err(TokenErrorKind::NumberInvalidExponent {
                 at: idx,
                 radix: R::NAME,
             })),
-            _ => ControlFlow::Break(Err(if !self.has_sign() && self.is_empty() {
+            _ => RadixControl::Break(Err(if !self.has_sign() && self.is_empty() {
                 TokenErrorKind::NumberExpected
             } else {
                 TokenErrorKind::NumberInvalid
@@ -686,16 +686,16 @@ impl RealInt {
         let (idx, ch) = item;
         let offset = self.0.magnitude.end;
         match ch {
-            '+' | '-' => ControlFlow::Break(Ok(BreakCondition::cartesian(item))),
-            '.' => ControlFlow::Continue(Some(RealClassifier::Flt(Float(FloatSpec {
+            '+' | '-' => RealControl::Break(Ok(BreakCondition::cartesian(item))),
+            '.' => RealControl::Continue(Some(RealClassifier::Flt(Float(FloatSpec {
                 #[allow(clippy::range_plus_one)]
                 fraction: offset + 1..offset + 1,
                 integral: self.0.clone(),
                 ..Default::default()
             })))),
-            '/' => ControlFlow::Break(Ok(BreakCondition::Fraction)),
-            '@' => ControlFlow::Break(Ok(BreakCondition::polar(item))),
-            'e' | 'E' => ControlFlow::Continue(Some(RealClassifier::Sci(Scientific {
+            '/' => RealControl::Break(Ok(BreakCondition::Fraction)),
+            '@' => RealControl::Break(Ok(BreakCondition::polar(item))),
+            'e' | 'E' => RealControl::Continue(Some(RealClassifier::Sci(Scientific {
                 e_at: idx,
                 spec: FloatSpec {
                     #[allow(clippy::range_plus_one)]
@@ -705,12 +705,12 @@ impl RealInt {
                 },
                 ..Default::default()
             }))),
-            'i' | 'I' => ControlFlow::Break(Ok(BreakCondition::imaginary())),
+            'i' | 'I' => RealControl::Break(Ok(BreakCondition::imaginary())),
             _ if self.0.radix.is_digit(ch) => {
                 self.0.magnitude.end += 1;
-                ControlFlow::Continue(None)
+                RealControl::Continue(None)
             }
-            _ => ControlFlow::Break(Err(TokenErrorKind::NumberInvalid)),
+            _ => RealControl::Break(Err(TokenErrorKind::NumberInvalid)),
         }
     }
 
@@ -727,29 +727,29 @@ impl Float {
         let (idx, ch) = item;
         let offset = self.0.fraction.end;
         match ch {
-            '+' | '-' => ControlFlow::Break(Ok(BreakCondition::cartesian(item))),
-            '.' => ControlFlow::Break(Err(TokenErrorKind::NumberUnexpectedDecimalPoint {
+            '+' | '-' => RealControl::Break(Ok(BreakCondition::cartesian(item))),
+            '.' => RealControl::Break(Err(TokenErrorKind::NumberUnexpectedDecimalPoint {
                 at: idx,
             })),
-            '/' => ControlFlow::Break(Err(TokenErrorKind::RationalInvalid)),
-            '@' => ControlFlow::Break(Ok(BreakCondition::polar(item))),
+            '/' => RealControl::Break(Err(TokenErrorKind::RationalInvalid)),
+            '@' => RealControl::Break(Ok(BreakCondition::polar(item))),
             // TODO: https://github.com/rust-lang/rust/issues/15701
             #[allow(clippy::range_plus_one)]
             'e' | 'E' => {
                 let mut spec = self.0.clone();
                 spec.exponent = offset + 1..offset + 1;
-                ControlFlow::Continue(Some(RealClassifier::Sci(Scientific {
+                RealControl::Continue(Some(RealClassifier::Sci(Scientific {
                     e_at: idx,
                     spec,
                     ..Default::default()
                 })))
             }
-            'i' | 'I' => ControlFlow::Break(Ok(BreakCondition::imaginary())),
+            'i' | 'I' => RealControl::Break(Ok(BreakCondition::imaginary())),
             _ if self.0.integral.radix.is_digit(ch) => {
                 self.0.fraction.end += 1;
-                ControlFlow::Continue(None)
+                RealControl::Continue(None)
             }
-            _ => ControlFlow::Break(Err(TokenErrorKind::NumberInvalid)),
+            _ => RealControl::Break(Err(TokenErrorKind::NumberInvalid)),
         }
     }
 
@@ -774,27 +774,27 @@ impl Scientific {
         match ch {
             '+' | '-' => {
                 if self.exponent_sign.is_some() && self.spec.exponent.len() == 1 {
-                    ControlFlow::Break(Err(self.malformed_exponent()))
+                    RealControl::Break(Err(self.malformed_exponent()))
                 } else if self.spec.exponent.is_empty() {
                     self.exponent_sign = Some(super::char_to_sign(ch));
                     self.spec.exponent.end += 1;
-                    ControlFlow::Continue(None)
+                    RealControl::Continue(None)
                 } else {
-                    ControlFlow::Break(Ok(BreakCondition::cartesian(item)))
+                    RealControl::Break(Ok(BreakCondition::cartesian(item)))
                 }
             }
-            '/' => ControlFlow::Break(Err(TokenErrorKind::RationalInvalid)),
-            '@' => ControlFlow::Break(Ok(BreakCondition::polar(item))),
-            'i' | 'I' => ControlFlow::Break(if self.no_e_value() {
+            '/' => RealControl::Break(Err(TokenErrorKind::RationalInvalid)),
+            '@' => RealControl::Break(Ok(BreakCondition::polar(item))),
+            'i' | 'I' => RealControl::Break(if self.no_e_value() {
                 Err(self.malformed_exponent())
             } else {
                 Ok(BreakCondition::imaginary())
             }),
             _ if self.spec.integral.radix.is_digit(ch) => {
                 self.spec.exponent.end += 1;
-                ControlFlow::Continue(None)
+                RealControl::Continue(None)
             }
-            _ => ControlFlow::Break(Err(self.malformed_exponent())),
+            _ => RealControl::Break(Err(self.malformed_exponent())),
         }
     }
 
