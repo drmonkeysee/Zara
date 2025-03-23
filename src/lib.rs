@@ -12,7 +12,7 @@ pub use self::eval::{Evaluation, Expr};
 use self::{
     eval::{Ast, Environment, EvalError, Evaluator},
     lex::{Lexer, LexerError, LexerOutput, TokenLine},
-    syntax::{ExpressionTree, Parser, ParserError, TokenList},
+    syntax::{ExpressionTree, Parser, ParserError, ParserOutput, TokenList},
     txt::TextSource,
 };
 use std::{
@@ -183,7 +183,10 @@ struct Engine<P, E> {
 
 impl<P: Parser, E: Evaluator> Executor for Engine<P, E> {
     fn exec(&mut self, token_lines: Vec<TokenLine>) -> result::Result<Evaluation, ExecError> {
-        Ok(self.evaluator.evaluate(self.parser.parse(token_lines)?)?)
+        Ok(match self.parser.parse(token_lines)? {
+            ParserOutput::Complete(expr) => self.evaluator.evaluate(expr)?,
+            ParserOutput::Continuation => Evaluation::Continuation,
+        })
     }
 }
 

@@ -13,7 +13,13 @@ use std::{
     mem,
 };
 
-pub(crate) type ParserResult = Result<Expression, ParserError>;
+pub(crate) type ParserResult = Result<ParserOutput, ParserError>;
+
+#[derive(Debug)]
+pub(crate) enum ParserOutput {
+    Complete(Expression),
+    Continuation,
+}
 
 #[derive(Debug)]
 pub(crate) struct ParserError(Vec<ParseErrorLine>);
@@ -40,7 +46,7 @@ pub(crate) struct TokenList;
 
 impl Parser for TokenList {
     fn parse(&mut self, token_lines: Vec<TokenLine>) -> ParserResult {
-        Ok(Expression::TokenList(token_lines))
+        Ok(ParserOutput::Complete(Expression::TokenList(token_lines)))
     }
 }
 
@@ -125,7 +131,7 @@ impl Parser for ExpressionTree {
         debug_assert!(self.parsers.is_empty());
         debug_assert!(parser.is_prg());
         if self.errs.is_empty() {
-            Ok(parser.to_expr())
+            Ok(ParserOutput::Complete(parser.to_expr()))
         } else {
             Err(ParserError(mem::take(&mut self.errs)))
         }
