@@ -128,11 +128,14 @@ impl Parser for ExpressionTree {
                 self.parse_line(p, ln)
             });
 
-        // TODO: this is the continuation condition
-        debug_assert!(self.parsers.is_empty());
-        debug_assert!(parser.is_prg());
         if self.errs.is_empty() {
-            Ok(ParserOutput::Complete(parser.to_expr()))
+            Ok(if self.parsers.is_empty() {
+                debug_assert!(parser.is_prg());
+                ParserOutput::Complete(parser.to_expr())
+            } else {
+                self.parsers.push(parser);
+                ParserOutput::Continuation
+            })
         } else {
             Err(ParserError(mem::take(&mut self.errs)))
         }
