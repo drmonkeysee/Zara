@@ -4,14 +4,13 @@ mod parse;
 pub(crate) use self::expr::{Datum, Expression};
 use self::{
     expr::ExpressionError,
-    parse::{ParseBreak, ParseNode},
+    parse::{ParseBreak, ParseFlow, ParseNode},
 };
 use crate::{lex::TokenLine, txt::TextLine};
 use std::{
     error::Error,
     fmt::{self, Display, Formatter, Write},
     mem,
-    ops::ControlFlow,
 };
 
 pub(crate) type ParserResult = Result<Expression, ParserError>;
@@ -94,18 +93,17 @@ impl ExpressionTree {
         let TokenLine(tokens, txt) = line;
         for token in tokens {
             match parser.parse(token) {
-                ControlFlow::Break(ParseBreak::Complete) => {
+                ParseFlow::Break(ParseBreak::Complete) => {
                     let done = parser;
                     // TODO: fix this unwrap
                     parser = self.parsers.pop().unwrap();
                     parser.merge(done);
                 }
-                ControlFlow::Break(ParseBreak::Continuation) => todo!(),
-                ControlFlow::Break(ParseBreak::New(n)) => {
+                ParseFlow::Break(ParseBreak::New(p)) => {
                     self.parsers.push(parser);
-                    parser = n;
+                    parser = p;
                 }
-                ControlFlow::Continue(_) => (),
+                ParseFlow::Continue(_) => (),
             }
         }
         if parser.has_errors() {
@@ -119,10 +117,13 @@ impl Parser for ExpressionTree {
     fn parse(&mut self, token_lines: Vec<TokenLine>) -> ParserResult {
         let parser = token_lines
             .into_iter()
-            .fold(self.parsers.pop().unwrap_or(ParseNode::seq()), |p, ln| {
+            .fold(self.parsers.pop().unwrap_or(ParseNode::prg()), |p, ln| {
                 self.parse_line(p, ln)
             });
 
+        // TODO: this is the continuation condition
+        debug_assert!(self.parsers.is_empty());
+        debug_assert!(parser.is_prg());
         if self.errs.is_empty() {
             Ok(parser.to_expr())
         } else {
