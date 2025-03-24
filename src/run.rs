@@ -4,7 +4,7 @@ use std::{
     path::Path,
 };
 use zara::{
-    Interpreter, RunMode,
+    Evaluation, Interpreter, RunMode,
     src::{FileSource, LineInputAdapter, LineInputSource, StringSource},
     txt::TextSource,
 };
@@ -28,7 +28,12 @@ pub(crate) fn stdin(mode: RunMode) -> Result {
 
 fn run(mode: RunMode, src: &mut impl TextSource) -> Result {
     let mut runtime = Interpreter::new(mode);
-    let result = runtime.run(src);
+    let mut result = runtime.run(src);
+    if matches!(result, Ok(Evaluation::Continuation)) {
+        result = runtime
+            .unsupported_continuation()
+            .map_or(result, |err| Err(err));
+    }
     print_result(&result);
     result?;
     Ok(())

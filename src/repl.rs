@@ -108,10 +108,6 @@ impl Iterator for ReplSource {
 
 // TODO: can this be a macro
 impl TextSource for ReplSource {
-    fn can_continue(&self) -> bool {
-        true
-    }
-
     fn context(&self) -> Rc<TextContext> {
         self.ctx.clone()
     }
@@ -138,7 +134,6 @@ mod tests {
         ));
         assert!(target.line.is_none());
         assert_eq!(target.lineno(), 1);
-        assert!(target.can_continue());
     }
 
     #[test]

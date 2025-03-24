@@ -50,7 +50,7 @@ impl Display for EvaluationMessage<'_> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self.0 {
             Evaluation::Expression(expr) => expr.0.display_message().fmt(f),
-            Evaluation::Continuation => writeln!(f, "#<cont-extended-undef({:?})>", self.0),
+            Evaluation::Continuation => "fatal error: unexpected continuation".fmt(f),
         }
     }
 }

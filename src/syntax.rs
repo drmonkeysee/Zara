@@ -40,6 +40,7 @@ impl Error for ParserError {}
 
 pub(crate) trait Parser {
     fn parse(&mut self, token_lines: Vec<TokenLine>) -> ParserResult;
+    fn unsupported_continuation(&mut self) -> Option<ParserError>;
 }
 
 pub(crate) struct TokenList;
@@ -47,6 +48,10 @@ pub(crate) struct TokenList;
 impl Parser for TokenList {
     fn parse(&mut self, token_lines: Vec<TokenLine>) -> ParserResult {
         Ok(ParserOutput::Complete(Expression::TokenList(token_lines)))
+    }
+
+    fn unsupported_continuation(&mut self) -> Option<ParserError> {
+        todo!();
     }
 }
 
@@ -139,6 +144,10 @@ impl Parser for ExpressionTree {
         } else {
             Err(ParserError(mem::take(&mut self.errs)))
         }
+    }
+
+    fn unsupported_continuation(&mut self) -> Option<ParserError> {
+        todo!();
     }
 }
 

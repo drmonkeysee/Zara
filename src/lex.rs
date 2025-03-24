@@ -80,25 +80,22 @@ impl Lexer {
                 p
             })
             .unwrap_or(new_lines);
-        match d.cont.take() {
-            Some(token_cont) => self.continuation_result(token_cont, src.can_continue(), lines),
-            None => Ok(LexerOutput::Complete(lines)),
-        }
+        Ok(match d.cont.take() {
+            Some(token_cont) => self.continuation(token_cont, lines),
+            None => LexerOutput::Complete(lines),
+        })
     }
 
-    fn continuation_result(
-        &mut self,
-        cont: TokenContinuation,
-        can_continue: bool,
-        mut lines: Vec<TokenLine>,
-    ) -> LexerResult {
-        if can_continue {
-            self.cont = Some((lines, cont));
-            Ok(LexerOutput::Continuation)
-        } else {
+    pub(crate) fn unsupported_continuation(&mut self) -> Option<LexerError> {
+        self.cont.take().map_or(None, |(mut lines, cont)| {
             debug_assert!(!lines.is_empty());
-            Err(lines.pop().unwrap().into_continuation_unsupported(cont))
-        }
+            Some(lines.pop().unwrap().into_continuation_unsupported(cont))
+        })
+    }
+
+    fn continuation(&mut self, cont: TokenContinuation, lines: Vec<TokenLine>) -> LexerOutput {
+        self.cont = Some((lines, cont));
+        LexerOutput::Continuation
     }
 }
 

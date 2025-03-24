@@ -81,8 +81,20 @@ impl Interpreter {
         Ok(self.runner.exec(token_lines)?)
     }
 
+    pub fn unsupported_continuation(&mut self) -> Option<Error> {
+        Some(
+            self.lex_unsupported()
+                .or_else(|| self.runner.unsupported_continuation())?
+                .into(),
+        )
+    }
+
     fn lex(&mut self, src: &mut impl TextSource) -> result::Result<LexerOutput, ExecError> {
         Ok(self.lexer.tokenize(src)?)
+    }
+
+    fn lex_unsupported(&mut self) -> Option<ExecError> {
+        Some(self.lexer.unsupported_continuation()?.into())
     }
 }
 
@@ -129,6 +141,7 @@ impl Display for ErrorMessage<'_> {
 
 trait Executor {
     fn exec(&mut self, token_lines: Vec<TokenLine>) -> result::Result<Evaluation, ExecError>;
+    fn unsupported_continuation(&mut self) -> Option<ExecError>;
 }
 
 #[derive(Debug)]
@@ -187,6 +200,10 @@ impl<P: Parser, E: Evaluator> Executor for Engine<P, E> {
             ParserOutput::Complete(expr) => self.evaluator.evaluate(expr)?,
             ParserOutput::Continuation => Evaluation::Continuation,
         })
+    }
+
+    fn unsupported_continuation(&mut self) -> Option<ExecError> {
+        Some(self.parser.unsupported_continuation()?.into())
     }
 }
 
