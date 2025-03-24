@@ -127,4 +127,34 @@ mod tests {
             format!("#<expr-datum-undef({expr:?})>")
         );
     }
+
+    mod error {
+        use super::*;
+
+        #[test]
+        fn display_invalid() {
+            let err = ExpressionError {
+                kind: ExpressionErrorKind::InvalidLex(TokenKind::Comment),
+                span: 0..5,
+            };
+
+            assert_eq!(
+                err.to_string(),
+                format!("unexpected token reached: {}", TokenKind::Comment)
+            );
+        }
+
+        #[test]
+        fn display_unimplemented() {
+            let err = ExpressionError {
+                kind: ExpressionErrorKind::Unimplemented(TokenKind::Comment),
+                span: 0..5,
+            };
+
+            assert_eq!(
+                err.to_string(),
+                format!("{} parsing not yet implemented", TokenKind::Comment)
+            );
+        }
+    }
 }

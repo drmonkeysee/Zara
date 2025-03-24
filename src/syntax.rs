@@ -51,7 +51,7 @@ impl Parser for TokenList {
     }
 
     fn unsupported_continuation(&mut self) -> Option<ParserError> {
-        todo!();
+        None
     }
 }
 
