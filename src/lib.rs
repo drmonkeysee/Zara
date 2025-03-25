@@ -73,8 +73,7 @@ impl Interpreter {
     }
 
     pub fn run(&mut self, src: &mut impl TextSource) -> Result {
-        let lex_output = self.lex(src)?;
-        let token_lines = match lex_output {
+        let token_lines = match self.lex(src)? {
             LexerOutput::Complete(lines) => lines,
             LexerOutput::Continuation => return Ok(Evaluation::Continuation),
         };
@@ -139,8 +138,10 @@ impl Display for ErrorMessage<'_> {
     }
 }
 
+type ExecResult = result::Result<Evaluation, ExecError>;
+
 trait Executor {
-    fn exec(&mut self, token_lines: Vec<TokenLine>) -> result::Result<Evaluation, ExecError>;
+    fn exec(&mut self, token_lines: Vec<TokenLine>) -> ExecResult;
     fn unsupported_continuation(&mut self) -> Option<ExecError>;
 }
 
@@ -195,7 +196,7 @@ struct Engine<P, E> {
 }
 
 impl<P: Parser, E: Evaluator> Executor for Engine<P, E> {
-    fn exec(&mut self, token_lines: Vec<TokenLine>) -> result::Result<Evaluation, ExecError> {
+    fn exec(&mut self, token_lines: Vec<TokenLine>) -> ExecResult {
         Ok(match self.parser.parse(token_lines)? {
             ParserOutput::Complete(expr) => self.evaluator.evaluate(expr)?,
             ParserOutput::Continuation => Evaluation::Continuation,
