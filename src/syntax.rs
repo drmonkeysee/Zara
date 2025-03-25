@@ -123,6 +123,12 @@ impl ExpressionTree {
         }
         parser
     }
+
+    fn clear(&mut self) {
+        // TODO: should i ever shrink the allocations?
+        self.parsers.clear();
+        self.errs.clear();
+    }
 }
 
 impl Parser for ExpressionTree {
@@ -136,17 +142,22 @@ impl Parser for ExpressionTree {
         if self.errs.is_empty() {
             Ok(if self.parsers.is_empty() {
                 debug_assert!(parser.is_prg());
-                ParserOutput::Complete(parser.to_expr())
+                ParserOutput::Complete(parser.into_expr())
             } else {
                 self.parsers.push(parser);
                 ParserOutput::Continuation
             })
         } else {
+            // TODO: do parsers need to be cleared here
             Err(ParserError(mem::take(&mut self.errs)))
         }
     }
 
     fn unsupported_continuation(&mut self) -> Option<ParserError> {
+        let parser = self.parsers.pop();
+        self.clear();
+        let err = parser?.into_continuation_unsupported()?;
+        // TODO: parsers need enough information to tie TextLine to ExpressionError
         todo!();
     }
 }

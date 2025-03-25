@@ -24,19 +24,19 @@ impl<'txt> Scanner<'txt> {
     }
 
     pub(super) fn char(&mut self) -> Option<char> {
-        self.next().map(to_char)
+        self.next().map(into_char)
     }
 
     pub(super) fn char_if_eq(&mut self, ch: char) -> Option<usize> {
-        self.chars.next_if(eq_char(ch)).map(to_idx)
+        self.chars.next_if(eq_char(ch)).map(into_idx)
     }
 
     pub(super) fn char_if_not_delimiter(&mut self) -> Option<char> {
-        self.next_if_not_delimiter().map(to_char)
+        self.next_if_not_delimiter().map(into_char)
     }
 
     pub(super) fn char_if_not_token_boundary(&mut self) -> Option<char> {
-        self.chars.next_if(not_token_boundary).map(to_char)
+        self.chars.next_if(not_token_boundary).map(into_char)
     }
 
     pub(super) fn find_any_char(&mut self, chars: &[char]) -> Option<ScanItem> {
@@ -117,11 +117,11 @@ fn get_idx(&(idx, _): &ScanItem) -> usize {
     idx
 }
 
-fn to_idx((idx, _): ScanItem) -> usize {
+fn into_idx((idx, _): ScanItem) -> usize {
     idx
 }
 
-fn to_char((_, ch): ScanItem) -> char {
+fn into_char((_, ch): ScanItem) -> char {
     ch
 }
 

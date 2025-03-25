@@ -51,17 +51,24 @@ impl ParseNode {
 
     pub(super) fn merge(&mut self, mut other: ParseNode) {
         self.errs.append(&mut other.errs);
-        self.exprs.push(other.to_expr());
+        self.exprs.push(other.into_expr());
     }
 
     pub(super) fn take_errors(&mut self) -> Vec<ExpressionError> {
         mem::take(&mut self.errs)
     }
 
-    pub(super) fn to_expr(mut self) -> Expression {
+    pub(super) fn into_expr(mut self) -> Expression {
         match self.kind {
             NodeKind::Program => Expression::Begin(self.exprs),
             NodeKind::StringLiteral(_) => self.exprs.pop().unwrap_or(Expression::Empty),
+        }
+    }
+
+    pub(super) fn into_continuation_unsupported(self) -> Option<ExpressionError> {
+        match self.kind {
+            NodeKind::Program => None,
+            NodeKind::StringLiteral(_) => todo!(),
         }
     }
 
