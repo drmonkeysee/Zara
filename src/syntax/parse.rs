@@ -12,7 +12,6 @@ use std::{
 pub(super) type ParseFlow = ControlFlow<ParseBreak>;
 
 pub(super) struct ParseNode {
-    errs: Vec<ExpressionError>,
     exprs: Vec<Expression>,
     kind: NodeKind,
 }
@@ -24,14 +23,9 @@ impl ParseNode {
 
     fn new(kind: NodeKind) -> Self {
         Self {
-            errs: Vec::new(),
             exprs: Vec::new(),
             kind,
         }
-    }
-
-    pub(super) fn has_errors(&self) -> bool {
-        !self.errs.is_empty()
     }
 
     // TODO: temporary for debug assert
@@ -49,13 +43,8 @@ impl ParseNode {
         }
     }
 
-    pub(super) fn merge(&mut self, mut other: ParseNode) {
-        self.errs.append(&mut other.errs);
+    pub(super) fn merge(&mut self, other: ParseNode) {
         self.exprs.push(other.into_expr());
-    }
-
-    pub(super) fn take_errors(&mut self) -> Vec<ExpressionError> {
-        mem::take(&mut self.errs)
     }
 
     pub(super) fn into_expr(mut self) -> Expression {
@@ -68,7 +57,7 @@ impl ParseNode {
     pub(super) fn into_continuation_unsupported(self) -> Option<ExpressionError> {
         match self.kind {
             NodeKind::Program => None,
-            NodeKind::StringLiteral(_) => todo!(),
+            NodeKind::StringLiteral(_) => todo!("need text line information"),
         }
     }
 
@@ -88,14 +77,18 @@ impl ParseNode {
             | TokenKind::IdentifierFragment(_)
             | TokenKind::StringDiscard
             | TokenKind::StringEnd(_)
-            | TokenKind::StringFragment { .. } => self.errs.push(ExpressionError {
-                kind: ExpressionErrorKind::InvalidLex(token.kind),
-                span: token.span,
-            }),
-            _ => self.errs.push(ExpressionError {
-                kind: ExpressionErrorKind::Unimplemented(token.kind),
-                span: token.span,
-            }),
+            | TokenKind::StringFragment { .. } => {
+                return ParseFlow::Break(ParseBreak::Err(ExpressionError {
+                    kind: ExpressionErrorKind::InvalidLex(token.kind),
+                    span: token.span,
+                }));
+            }
+            _ => {
+                return ParseFlow::Break(ParseBreak::Err(ExpressionError {
+                    kind: ExpressionErrorKind::Unimplemented(token.kind),
+                    span: token.span,
+                }));
+            }
         }
         ParseFlow::Continue(())
     }
@@ -106,10 +99,7 @@ impl ParseNode {
                 self.exprs.push(expr);
                 ParseFlow::Break(ParseBreak::Complete)
             }
-            ContextFlow::Break(Err(err)) => {
-                self.errs.push(err);
-                ParseFlow::Continue(())
-            }
+            ContextFlow::Break(Err(err)) => ParseFlow::Break(ParseBreak::Err(err)),
             ContextFlow::Continue(u) => ParseFlow::Continue(u),
         }
     }
@@ -117,6 +107,7 @@ impl ParseNode {
 
 pub(super) enum ParseBreak {
     Complete,
+    Err(ExpressionError),
     New(ParseNode),
 }
 

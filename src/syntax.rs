@@ -102,6 +102,7 @@ else:
 impl ExpressionTree {
     fn parse_line(&mut self, mut parser: ParseNode, line: TokenLine) -> ParseNode {
         let TokenLine(tokens, txt) = line;
+        let mut errs = Vec::new();
         for token in tokens {
             match parser.parse(token) {
                 ParseFlow::Break(ParseBreak::Complete) => {
@@ -111,6 +112,10 @@ impl ExpressionTree {
                     parser = self.parsers.pop().unwrap();
                     parser.merge(done);
                 }
+                ParseFlow::Break(ParseBreak::Err(err)) => {
+                    errs.push(err);
+                    todo!("swap existing parser with recovery node");
+                }
                 ParseFlow::Break(ParseBreak::New(p)) => {
                     self.parsers.push(parser);
                     parser = p;
@@ -118,8 +123,8 @@ impl ExpressionTree {
                 ParseFlow::Continue(_) => (),
             }
         }
-        if parser.has_errors() {
-            self.errs.push(ParseErrorLine(parser.take_errors(), txt));
+        if !errs.is_empty() {
+            self.errs.push(ParseErrorLine(errs, txt));
         }
         parser
     }
