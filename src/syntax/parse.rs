@@ -39,7 +39,7 @@ impl ParseNode {
                 let flow = ctx.parse(token);
                 self.handle_ctx(flow)
             }
-            _ => self.parse_general(token),
+            _ => self.parse_expr(token),
         }
     }
 
@@ -61,7 +61,7 @@ impl ParseNode {
         }
     }
 
-    fn parse_general(&mut self, token: Token) -> ParseFlow {
+    fn parse_expr(&mut self, token: Token) -> ParseFlow {
         match token.kind {
             TokenKind::Imaginary(r) => self
                 .exprs

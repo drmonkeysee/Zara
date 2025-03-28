@@ -162,8 +162,7 @@ impl Parser for ExpressionTree {
         let parser = self.parsers.pop();
         self.clear();
         let err = parser?.into_continuation_unsupported()?;
-        // TODO: parsers need enough information to tie TextLine to ExpressionError
-        todo!();
+        todo!("parsers need enough information to tie TextLine to ExpressionError");
     }
 }
 
