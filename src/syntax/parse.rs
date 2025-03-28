@@ -9,82 +9,48 @@ use std::ops::ControlFlow;
 pub(super) type ParseFlow = ControlFlow<ParseBreak>;
 
 pub(super) struct ParseNode {
-    exprs: Vec<Expression>,
     kind: NodeKind,
+    // TODO: need token range and text line
 }
 
 impl ParseNode {
     pub(super) fn prg() -> Self {
-        Self::new(NodeKind::Program)
-    }
-
-    fn new(kind: NodeKind) -> Self {
         Self {
-            exprs: Vec::new(),
-            kind,
+            kind: NodeKind::Program(Vec::new()),
         }
     }
 
     // TODO: temporary for debug assert
     pub(super) fn is_prg(&self) -> bool {
-        matches!(self.kind, NodeKind::Program)
+        matches!(self.kind, NodeKind::Program(_))
     }
 
     pub(super) fn parse(&mut self, token: Token) -> ParseFlow {
         match &mut self.kind {
+            NodeKind::Program(seq) => parse_sequence(seq, token),
             NodeKind::StringLiteral(buf) => parse_str(buf, token),
-            _ => self.parse_expr(token),
         }
     }
 
     pub(super) fn merge(&mut self, other: ParseNode) {
-        self.exprs.push(other.into_expr());
+        match &mut self.kind {
+            NodeKind::Program(exprs) => exprs.push(other.into_expr()),
+            _ => todo!("fail here somehow"),
+        }
     }
 
     pub(super) fn into_expr(self) -> Expression {
         match self.kind {
-            NodeKind::Program => Expression::Begin(self.exprs),
+            NodeKind::Program(exprs) => Expression::Begin(exprs),
             NodeKind::StringLiteral(s) => Expression::Literal(Literal::String(s.into())),
         }
     }
 
     pub(super) fn into_continuation_unsupported(self) -> Option<ExpressionError> {
         match self.kind {
-            NodeKind::Program => None,
+            NodeKind::Program(_) => None,
             NodeKind::StringLiteral(_) => todo!("need text line information"),
         }
-    }
-
-    fn parse_expr(&mut self, token: Token) -> ParseFlow {
-        match token.kind {
-            TokenKind::Imaginary(r) => self
-                .exprs
-                .push(Expression::Literal(Literal::Number(Number::imaginary(r)))),
-            TokenKind::Literal(val) => self.exprs.push(Expression::Literal(val)),
-            TokenKind::StringBegin { s, line_cont } => {
-                return ParseFlow::Break(ParseBreak::New(Self::new(NodeKind::string(
-                    s, !line_cont,
-                ))));
-            }
-            TokenKind::IdentifierDiscard
-            | TokenKind::IdentifierEnd(_)
-            | TokenKind::IdentifierFragment(_)
-            | TokenKind::StringDiscard
-            | TokenKind::StringEnd(_)
-            | TokenKind::StringFragment { .. } => {
-                return ParseFlow::Break(ParseBreak::Err(ExpressionError {
-                    kind: ExpressionErrorKind::InvalidLex(token.kind),
-                    span: token.span,
-                }));
-            }
-            _ => {
-                return ParseFlow::Break(ParseBreak::Err(ExpressionError {
-                    kind: ExpressionErrorKind::Unimplemented(token.kind),
-                    span: token.span,
-                }));
-            }
-        }
-        ParseFlow::Continue(())
     }
 }
 
@@ -94,8 +60,9 @@ pub(super) enum ParseBreak {
     New(ParseNode),
 }
 
+// TODO: better name, something like builder but not builder
 enum NodeKind {
-    Program,
+    Program(Vec<Expression>),
     StringLiteral(String),
 }
 
@@ -106,6 +73,38 @@ impl NodeKind {
         }
         Self::StringLiteral(s)
     }
+}
+
+fn parse_sequence(seq: &mut Vec<Expression>, token: Token) -> ParseFlow {
+    match token.kind {
+        TokenKind::Imaginary(r) => {
+            seq.push(Expression::Literal(Literal::Number(Number::imaginary(r))))
+        }
+        TokenKind::Literal(val) => seq.push(Expression::Literal(val)),
+        TokenKind::StringBegin { s, line_cont } => {
+            return ParseFlow::Break(ParseBreak::New(ParseNode {
+                kind: NodeKind::string(s, !line_cont),
+            }));
+        }
+        TokenKind::IdentifierDiscard
+        | TokenKind::IdentifierEnd(_)
+        | TokenKind::IdentifierFragment(_)
+        | TokenKind::StringDiscard
+        | TokenKind::StringEnd(_)
+        | TokenKind::StringFragment { .. } => {
+            return ParseFlow::Break(ParseBreak::Err(ExpressionError {
+                kind: ExpressionErrorKind::InvalidLex(token.kind),
+                span: token.span,
+            }));
+        }
+        _ => {
+            return ParseFlow::Break(ParseBreak::Err(ExpressionError {
+                kind: ExpressionErrorKind::Unimplemented(token.kind),
+                span: token.span,
+            }));
+        }
+    }
+    ParseFlow::Continue(())
 }
 
 fn parse_str(buf: &mut String, token: Token) -> ParseFlow {
