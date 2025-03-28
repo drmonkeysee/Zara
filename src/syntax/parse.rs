@@ -4,10 +4,7 @@ use crate::{
     literal::Literal,
     number::Number,
 };
-use std::{
-    mem,
-    ops::{ControlFlow, Range},
-};
+use std::ops::ControlFlow;
 
 pub(super) type ParseFlow = ControlFlow<ParseBreak>;
 
@@ -35,10 +32,7 @@ impl ParseNode {
 
     pub(super) fn parse(&mut self, token: Token) -> ParseFlow {
         match &mut self.kind {
-            NodeKind::StringLiteral(ctx) => {
-                let flow = ctx.parse(token);
-                self.handle_ctx(flow)
-            }
+            NodeKind::StringLiteral(buf) => parse_str(buf, token),
             _ => self.parse_expr(token),
         }
     }
@@ -47,10 +41,10 @@ impl ParseNode {
         self.exprs.push(other.into_expr());
     }
 
-    pub(super) fn into_expr(mut self) -> Expression {
+    pub(super) fn into_expr(self) -> Expression {
         match self.kind {
             NodeKind::Program => Expression::Begin(self.exprs),
-            NodeKind::StringLiteral(_) => self.exprs.pop().unwrap_or(Expression::Empty),
+            NodeKind::StringLiteral(s) => Expression::Literal(Literal::String(s.into())),
         }
     }
 
@@ -68,8 +62,8 @@ impl ParseNode {
                 .push(Expression::Literal(Literal::Number(Number::imaginary(r)))),
             TokenKind::Literal(val) => self.exprs.push(Expression::Literal(val)),
             TokenKind::StringBegin { s, line_cont } => {
-                return ParseFlow::Break(ParseBreak::New(Self::new(NodeKind::StringLiteral(
-                    StringContext::new(s, !line_cont, token.span),
+                return ParseFlow::Break(ParseBreak::New(Self::new(NodeKind::string(
+                    s, !line_cont,
                 ))));
             }
             TokenKind::IdentifierDiscard
@@ -92,17 +86,6 @@ impl ParseNode {
         }
         ParseFlow::Continue(())
     }
-
-    fn handle_ctx(&mut self, flow: ContextFlow) -> ParseFlow {
-        match flow {
-            ContextFlow::Break(Ok(expr)) => {
-                self.exprs.push(expr);
-                ParseFlow::Break(ParseBreak::Complete)
-            }
-            ContextFlow::Break(Err(err)) => ParseFlow::Break(ParseBreak::Err(err)),
-            ContextFlow::Continue(u) => ParseFlow::Continue(u),
-        }
-    }
 }
 
 pub(super) enum ParseBreak {
@@ -113,44 +96,34 @@ pub(super) enum ParseBreak {
 
 enum NodeKind {
     Program,
-    StringLiteral(StringContext),
+    StringLiteral(String),
 }
 
-type ContextResult = Result<Expression, ExpressionError>;
-type ContextFlow = ControlFlow<ContextResult>;
-
-struct StringContext {
-    s: String,
-    span: Range<usize>,
-}
-
-impl StringContext {
-    fn new(s: String, newline: bool, span: Range<usize>) -> Self {
-        let mut me = StringContext { s, span };
+impl NodeKind {
+    fn string(mut s: String, newline: bool) -> Self {
         if newline {
-            me.s.push('\n')
+            s.push('\n');
         }
-        me
+        Self::StringLiteral(s)
     }
+}
 
-    fn parse(&mut self, token: Token) -> ContextFlow {
-        match token.kind {
-            TokenKind::StringFragment { s, line_cont } => {
-                self.s.push_str(&s);
-                if !line_cont {
-                    self.s.push('\n');
-                }
-                ContextFlow::Continue(())
+fn parse_str(buf: &mut String, token: Token) -> ParseFlow {
+    match token.kind {
+        TokenKind::StringFragment { s, line_cont } => {
+            buf.push_str(&s);
+            if !line_cont {
+                buf.push('\n');
             }
-            TokenKind::StringEnd(s) => {
-                self.s.push_str(&s);
-                let s = mem::take(&mut self.s);
-                ContextFlow::Break(Ok(Expression::Literal(Literal::String(s.into()))))
-            }
-            _ => ContextFlow::Break(Err(ExpressionError {
-                kind: ExpressionErrorKind::InvalidLex(token.kind),
-                span: token.span,
-            })),
+            ParseFlow::Continue(())
         }
+        TokenKind::StringEnd(s) => {
+            buf.push_str(&s);
+            ParseFlow::Break(ParseBreak::Complete)
+        }
+        _ => ParseFlow::Break(ParseBreak::Err(ExpressionError {
+            kind: ExpressionErrorKind::InvalidLex(token.kind),
+            span: token.span,
+        })),
     }
 }
