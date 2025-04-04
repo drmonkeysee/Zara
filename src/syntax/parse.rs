@@ -61,8 +61,14 @@ impl ParseNode {
 
 pub(super) enum ParseBreak {
     Complete,
-    Err(ExpressionError),
+    Err(ExpressionError, Recovery),
     New(ParseNode),
+}
+
+pub(super) enum Recovery {
+    Continue,
+    DiscardTo(TokenKind),
+    Fail,
 }
 
 // TODO: better name, something like builder but not builder
@@ -99,16 +105,22 @@ fn parse_sequence(seq: &mut Vec<Expression>, token: Token) -> ParseFlow {
         | TokenKind::StringDiscard
         | TokenKind::StringEnd(_)
         | TokenKind::StringFragment { .. } => {
-            return ParseFlow::Break(ParseBreak::Err(ExpressionError {
-                kind: ExpressionErrorKind::InvalidLex(token.kind),
-                span: token.span,
-            }));
+            return ParseFlow::Break(ParseBreak::Err(
+                ExpressionError {
+                    kind: ExpressionErrorKind::InvalidLex(token.kind),
+                    span: token.span,
+                },
+                Recovery::Fail,
+            ));
         }
         _ => {
-            return ParseFlow::Break(ParseBreak::Err(ExpressionError {
-                kind: ExpressionErrorKind::Unimplemented(token.kind),
-                span: token.span,
-            }));
+            return ParseFlow::Break(ParseBreak::Err(
+                ExpressionError {
+                    kind: ExpressionErrorKind::Unimplemented(token.kind),
+                    span: token.span,
+                },
+                Recovery::Continue,
+            ));
         }
     }
     ParseFlow::Continue(())
@@ -127,9 +139,59 @@ fn parse_str(buf: &mut String, token: Token) -> ParseFlow {
             buf.push_str(&s);
             ParseFlow::Break(ParseBreak::Complete)
         }
-        _ => ParseFlow::Break(ParseBreak::Err(ExpressionError {
-            kind: ExpressionErrorKind::InvalidLex(token.kind),
-            span: token.span,
-        })),
+        _ => ParseFlow::Break(ParseBreak::Err(
+            ExpressionError {
+                kind: ExpressionErrorKind::InvalidLex(token.kind),
+                span: token.span,
+            },
+            Recovery::Fail,
+        )),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    mod sequence {
+        use super::*;
+        use crate::{number::Real, testutil::extract_or_fail};
+
+        #[test]
+        fn literal() {
+            let mut seq = Vec::new();
+            let token = Token {
+                kind: TokenKind::Literal(Literal::Boolean(true)),
+                span: 0..3,
+            };
+
+            let f = parse_sequence(&mut seq, token);
+
+            assert!(matches!(f, ParseFlow::Continue(())));
+            assert_eq!(seq.len(), 1);
+            assert!(matches!(
+                seq[0],
+                Expression::Literal(Literal::Boolean(true))
+            ));
+        }
+
+        #[test]
+        fn imaginary() {
+            let mut seq = Vec::new();
+            let token = Token {
+                kind: TokenKind::Imaginary(Real::Float(1.2)),
+                span: 0..3,
+            };
+
+            let f = parse_sequence(&mut seq, token);
+
+            assert!(matches!(f, ParseFlow::Continue(())));
+            assert_eq!(seq.len(), 1);
+            let n = extract_or_fail!(
+                extract_or_fail!(&seq[0], Expression::Literal),
+                Literal::Number
+            );
+            assert!(matches!(n, Number::Complex(_) if n.as_datum().to_string() == "+1.2i"));
+        }
     }
 }

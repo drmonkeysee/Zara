@@ -1,18 +1,9 @@
 use super::*;
-use crate::{literal::Literal, testutil::extract_or_fail, txt::TextContext};
-use std::path::Path;
-
-fn make_textline() -> TextLine {
-    TextLine {
-        ctx: TextContext {
-            name: "mylib".to_owned(),
-            path: Some(Path::new("lib/mylib.scm").to_path_buf()),
-        }
-        .into(),
-        line: "line of source code".to_owned(),
-        lineno: 1,
-    }
-}
+use crate::{
+    literal::Literal,
+    testutil::{extract_or_fail, make_textline},
+    txt::TextContext,
+};
 
 mod lexer {
     use self::token::{TokenErrorKind, TokenType};
