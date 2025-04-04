@@ -3,24 +3,25 @@ use crate::{
     lex::{Token, TokenKind},
     literal::Literal,
     number::Number,
-    txt::TextLine,
 };
-use std::ops::{ControlFlow, Range};
+use std::ops::ControlFlow;
 
 pub(super) type ParseFlow = ControlFlow<ParseBreak>;
 
 pub(super) struct ParseNode {
     kind: NodeKind,
-    span: Range<usize>,
-    txt: Option<TextLine>,
 }
 
 impl ParseNode {
     pub(super) fn prg() -> Self {
         Self {
             kind: NodeKind::Program(Vec::new()),
-            span: 0..0,
-            txt: None,
+        }
+    }
+
+    pub(super) fn fail() -> Self {
+        Self {
+            kind: NodeKind::Failed,
         }
     }
 
@@ -30,8 +31,8 @@ impl ParseNode {
     }
 
     pub(super) fn parse(&mut self, token: Token) -> ParseFlow {
-        self.span.end = token.span.end;
         match &mut self.kind {
+            NodeKind::Failed => ParseFlow::Continue(()),
             NodeKind::Program(seq) => parse_sequence(seq, token),
             NodeKind::StringLiteral(buf) => parse_str(buf, token),
         }
@@ -48,13 +49,14 @@ impl ParseNode {
         match self.kind {
             NodeKind::Program(exprs) => Expression::Begin(exprs),
             NodeKind::StringLiteral(s) => Expression::Literal(Literal::String(s.into())),
+            _ => Expression::Empty,
         }
     }
 
     pub(super) fn into_continuation_unsupported(self) -> Option<ExpressionError> {
         match self.kind {
-            NodeKind::Program(_) => None,
             NodeKind::StringLiteral(_) => todo!("need text line information"),
+            _ => None,
         }
     }
 }
@@ -73,6 +75,7 @@ pub(super) enum Recovery {
 
 // TODO: better name, something like builder but not builder
 enum NodeKind {
+    Failed,
     Program(Vec<Expression>),
     StringLiteral(String),
 }
@@ -95,8 +98,6 @@ fn parse_sequence(seq: &mut Vec<Expression>, token: Token) -> ParseFlow {
         TokenKind::StringBegin { s, line_cont } => {
             return ParseFlow::Break(ParseBreak::New(ParseNode {
                 kind: NodeKind::string(s, !line_cont),
-                span: token.span.clone(),
-                txt: None,
             }));
         }
         TokenKind::IdentifierDiscard

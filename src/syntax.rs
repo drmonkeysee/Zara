@@ -117,7 +117,11 @@ impl ExpressionTree {
                     match recovery {
                         Recovery::Continue => (),
                         Recovery::DiscardTo(_) => todo!("swap existing parser with recovery node"),
-                        Recovery::Fail => todo!("swap existing parser with recovery node"),
+                        Recovery::Fail => {
+                            // NOTE: discard rest of input
+                            parser = ParseNode::fail();
+                            self.parsers.clear();
+                        }
                     }
                 }
                 ParseFlow::Break(ParseBreak::New(p)) => {
@@ -449,6 +453,78 @@ mod tests {
                 kind: ExpressionErrorKind::Unimplemented(TokenKind::Identifier(s)),
                 span: Range { start: 0, end: 1 },
             } if s == "baz"
+        ));
+        assert!(et.parsers.is_empty());
+        assert!(et.errs.is_empty());
+    }
+
+    #[test]
+    fn parse_fail_skips_rest_of_tokens() {
+        let mut et: ExpressionTree = Default::default();
+        let tokens = vec![
+            make_tokenline_no(
+                vec![
+                    TokenKind::Literal(Literal::Boolean(true)),
+                    TokenKind::Identifier("foo".to_owned()),
+                    TokenKind::Literal(Literal::Character('a')),
+                    TokenKind::Identifier("bar".to_owned()),
+                    TokenKind::Literal(Literal::String("foo".into())),
+                ],
+                1,
+            ),
+            make_tokenline_no(
+                vec![
+                    TokenKind::Literal(Literal::Character('c')),
+                    TokenKind::IdentifierDiscard,
+                    TokenKind::Literal(Literal::Character('d')),
+                    TokenKind::Identifier("beef".to_owned()),
+                ],
+                2,
+            ),
+            make_tokenline_no(
+                vec![
+                    TokenKind::Identifier("baz".to_owned()),
+                    TokenKind::Literal(Literal::Boolean(false)),
+                    TokenKind::Literal(Literal::Character('b')),
+                ],
+                3,
+            ),
+        ];
+
+        let r = et.parse(tokens);
+
+        let err_lines = err_or_fail!(r).0;
+        assert_eq!(err_lines.len(), 2);
+
+        let err_line = &err_lines[0];
+        let ParseErrorLine(errs, line) = &err_line;
+        assert_eq!(line.lineno, 1);
+        assert_eq!(errs.len(), 2);
+        assert!(matches!(
+            &errs[0],
+            ExpressionError {
+                kind: ExpressionErrorKind::Unimplemented(TokenKind::Identifier(s)),
+                span: Range { start: 1, end: 2 },
+            } if s == "foo"
+        ));
+        assert!(matches!(
+            &errs[1],
+            ExpressionError {
+                kind: ExpressionErrorKind::Unimplemented(TokenKind::Identifier(s)),
+                span: Range { start: 3, end: 4 },
+            } if s == "bar"
+        ));
+
+        let err_line = &err_lines[1];
+        let ParseErrorLine(errs, line) = &err_line;
+        assert_eq!(line.lineno, 2);
+        assert_eq!(errs.len(), 1);
+        assert!(matches!(
+            &errs[0],
+            ExpressionError {
+                kind: ExpressionErrorKind::InvalidLex(TokenKind::IdentifierDiscard),
+                span: Range { start: 1, end: 2 },
+            }
         ));
         assert!(et.parsers.is_empty());
         assert!(et.errs.is_empty());
