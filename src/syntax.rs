@@ -4,7 +4,7 @@ mod parse;
 pub(crate) use self::expr::{Datum, Expression};
 use self::{
     expr::ExpressionError,
-    parse::{ParseBreak, ParseFlow, ParseNode, Recovery},
+    parse::{ErrFlow, ParseBreak, ParseFlow, ParseNode, Recovery},
 };
 use crate::{lex::TokenLine, txt::TextLine};
 use std::{
@@ -115,9 +115,11 @@ impl ExpressionTree {
                 ParseFlow::Break(ParseBreak::Err(err, recovery)) => {
                     errs.push(err);
                     match recovery {
-                        Recovery::Continue => (),
-                        Recovery::DiscardTo(_) => todo!("swap existing parser with recovery node"),
-                        Recovery::Fail => {
+                        ErrFlow::Continue(u) => u,
+                        ErrFlow::Break(Recovery::DiscardTo(_)) => {
+                            todo!("swap existing parser with recovery node")
+                        }
+                        ErrFlow::Break(Recovery::Fail) => {
                             // NOTE: discard rest of input
                             parser = ParseNode::fail();
                             self.parsers.clear();

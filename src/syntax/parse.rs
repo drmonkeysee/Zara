@@ -63,12 +63,13 @@ impl ParseNode {
 
 pub(super) enum ParseBreak {
     Complete,
-    Err(ExpressionError, Recovery),
+    Err(ExpressionError, ErrFlow),
     New(ParseNode),
 }
 
+pub(super) type ErrFlow = ControlFlow<Recovery>;
+
 pub(super) enum Recovery {
-    Continue,
     DiscardTo(TokenKind),
     Fail,
 }
@@ -111,7 +112,7 @@ fn parse_sequence(seq: &mut Vec<Expression>, token: Token) -> ParseFlow {
                     kind: ExpressionErrorKind::InvalidLex(token.kind),
                     span: token.span,
                 },
-                Recovery::Fail,
+                ErrFlow::Break(Recovery::Fail),
             ));
         }
         _ => {
@@ -120,7 +121,7 @@ fn parse_sequence(seq: &mut Vec<Expression>, token: Token) -> ParseFlow {
                     kind: ExpressionErrorKind::Unimplemented(token.kind),
                     span: token.span,
                 },
-                Recovery::Continue,
+                ErrFlow::Continue(()),
             ));
         }
     }
@@ -145,7 +146,7 @@ fn parse_str(buf: &mut String, token: Token) -> ParseFlow {
                 kind: ExpressionErrorKind::InvalidLex(token.kind),
                 span: token.span,
             },
-            Recovery::Fail,
+            ErrFlow::Break(Recovery::Fail),
         )),
     }
 }
