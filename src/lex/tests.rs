@@ -54,7 +54,7 @@ mod lexer {
 
     impl TextSource for MockTxtSource<'_> {
         fn context(&self) -> Rc<TextContext> {
-            self.ctx.clone()
+            Rc::clone(&self.ctx)
         }
 
         fn lineno(&self) -> LineNumber {

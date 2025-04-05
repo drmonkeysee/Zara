@@ -42,7 +42,7 @@ impl Iterator for StringSource {
 
 impl TextSource for StringSource {
     fn context(&self) -> Rc<TextContext> {
-        self.ctx.clone()
+        Rc::clone(&self.ctx)
     }
 
     fn lineno(&self) -> LineNumber {
@@ -100,7 +100,7 @@ impl<T: LineInputAdapter> Iterator for LineInputSource<T> {
 
 impl<T: LineInputAdapter> TextSource for LineInputSource<T> {
     fn context(&self) -> Rc<TextContext> {
-        self.ctx.clone()
+        Rc::clone(&self.ctx)
     }
 
     fn lineno(&self) -> LineNumber {

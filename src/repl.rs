@@ -109,7 +109,7 @@ impl Iterator for ReplSource {
 // TODO: can this be a macro
 impl TextSource for ReplSource {
     fn context(&self) -> Rc<TextContext> {
-        self.ctx.clone()
+        Rc::clone(&self.ctx)
     }
 
     fn lineno(&self) -> LineNumber {
