@@ -219,7 +219,7 @@ mod tests {
     use crate::{
         lex::{Token, TokenKind},
         literal::Literal,
-        testutil::{err_or_fail, extract_or_fail, make_textline_no, ok_or_fail},
+        testutil::{err_or_fail, extract_or_fail, make_textline_no, ok_or_fail, some_or_fail},
         txt::LineNumber,
     };
     use std::ops::Range;
@@ -528,5 +528,72 @@ mod tests {
         ));
         assert!(et.parsers.is_empty());
         assert!(et.errs.is_empty());
+    }
+
+    #[test]
+    fn no_continuation() {
+        let mut et: ExpressionTree = Default::default();
+
+        let o = et.unsupported_continuation();
+
+        assert!(o.is_none());
+    }
+
+    #[test]
+    fn continuation_to_error() {
+        let mut et: ExpressionTree = Default::default();
+        let tokens = vec![make_tokenline(vec![
+            TokenKind::Literal(Literal::Boolean(true)),
+            TokenKind::StringBegin {
+                s: "foo".to_owned(),
+                line_cont: false,
+            },
+        ])];
+
+        let r = et.parse(tokens);
+
+        assert!(matches!(r, Ok(ParserOutput::Continuation)));
+        assert_eq!(et.parsers.len(), 2);
+        assert!(et.errs.is_empty());
+
+        let o = et.unsupported_continuation();
+
+        let err = some_or_fail!(o);
+        todo!("what kind of error?");
+    }
+
+    #[test]
+    fn continuation_tied_to_expression_first_line() {
+        let mut et: ExpressionTree = Default::default();
+        let tokens = vec![
+            make_tokenline_no(
+                vec![TokenKind::StringBegin {
+                    s: "foo".to_owned(),
+                    line_cont: false,
+                }],
+                1,
+            ),
+            make_tokenline_no(
+                vec![TokenKind::StringFragment {
+                    s: "bar".to_owned(),
+                    line_cont: false,
+                }],
+                2,
+            ),
+        ];
+
+        let r = et.parse(tokens);
+
+        assert!(matches!(r, Ok(ParserOutput::Continuation)));
+        assert_eq!(et.parsers.len(), 2);
+        assert!(et.errs.is_empty());
+
+        let o = et.unsupported_continuation();
+
+        let lines = some_or_fail!(o).0;
+        assert_eq!(lines.len(), 1);
+        let ParseErrorLine(err, line) = &lines[0];
+
+        todo!("what kind of error?");
     }
 }
