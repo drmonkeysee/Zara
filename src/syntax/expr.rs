@@ -73,14 +73,14 @@ impl Error for ExpressionError {}
 
 #[derive(Debug)]
 pub(super) enum ExpressionErrorKind {
-    InvalidLex(TokenKind),
+    InvalidSeq(TokenKind),
     Unimplemented(TokenKind),
 }
 
 impl Display for ExpressionErrorKind {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
-            Self::InvalidLex(t) => format!("unexpected token reached: {t}").fmt(f),
+            Self::InvalidSeq(t) => format!("unexpected token in sequence: {t}").fmt(f),
             Self::Unimplemented(t) => format!("{t} parsing not yet implemented").fmt(f),
         }
     }
@@ -132,15 +132,15 @@ mod tests {
         use super::*;
 
         #[test]
-        fn display_invalid() {
+        fn display_invalid_seq() {
             let err = ExpressionError {
-                kind: ExpressionErrorKind::InvalidLex(TokenKind::Comment),
+                kind: ExpressionErrorKind::InvalidSeq(TokenKind::Comment),
                 span: 0..5,
             };
 
             assert_eq!(
                 err.to_string(),
-                format!("unexpected token reached: {}", TokenKind::Comment)
+                format!("unexpected token in sequence: {}", TokenKind::Comment)
             );
         }
 

@@ -526,7 +526,7 @@ mod tests {
         assert!(matches!(
             &errs[0],
             ExpressionError {
-                kind: ExpressionErrorKind::InvalidLex(TokenKind::IdentifierDiscard),
+                kind: ExpressionErrorKind::InvalidSeq(TokenKind::IdentifierDiscard),
                 span: Range { start: 1, end: 2 },
             }
         ));

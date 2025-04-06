@@ -140,7 +140,7 @@ fn parse_sequence(seq: &mut Vec<Expression>, token: Token) -> ParseFlow {
         | TokenKind::StringFragment { .. } => {
             return ParseFlow::Break(ParseBreak::Err(
                 ExpressionError {
-                    kind: ExpressionErrorKind::InvalidLex(token.kind),
+                    kind: ExpressionErrorKind::InvalidSeq(token.kind),
                     span: token.span,
                 },
                 ErrFlow::Break(Recovery::Fail),
@@ -174,7 +174,7 @@ fn parse_str(buf: &mut String, token: Token) -> ParseFlow {
         }
         _ => ParseFlow::Break(ParseBreak::Err(
             ExpressionError {
-                kind: ExpressionErrorKind::InvalidLex(token.kind),
+                kind: ExpressionErrorKind::InvalidSeq(token.kind),
                 span: token.span,
             },
             ErrFlow::Break(Recovery::Fail),
