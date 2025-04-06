@@ -7,6 +7,7 @@ use crate::{
     literal::Literal,
     number::Number,
     txt::TextLine,
+    value::Value,
 };
 use std::{ops::ControlFlow, rc::Rc};
 
@@ -65,8 +66,10 @@ impl ParseNode {
     pub(super) fn into_expr(self) -> Expression {
         match self.kind {
             NodeKind::Program(exprs) => Expression::Begin(exprs),
-            NodeKind::StringLiteral(s) => Expression::Literal(Literal::String(s.into())),
-            _ => Expression::Empty,
+            NodeKind::StringLiteral(s) => {
+                Expression::Constant(Value::Literal(Literal::String(s.into())))
+            }
+            _ => Expression::Constant(Value::Empty),
         }
     }
 
@@ -139,10 +142,10 @@ struct ParseCtx {
 
 fn parse_sequence(seq: &mut Vec<Expression>, token: Token) -> ParseFlow {
     match token.kind {
-        TokenKind::Imaginary(r) => {
-            seq.push(Expression::Literal(Literal::Number(Number::imaginary(r))))
-        }
-        TokenKind::Literal(val) => seq.push(Expression::Literal(val)),
+        TokenKind::Imaginary(r) => seq.push(Expression::Constant(Value::Literal(Literal::Number(
+            Number::imaginary(r),
+        )))),
+        TokenKind::Literal(val) => seq.push(Expression::Constant(Value::Literal(val))),
         TokenKind::StringBegin { s, line_cont } => {
             return ParseFlow::Break(ParseBreak::New(ParseNew {
                 kind: NodeKind::string(s, !line_cont),
@@ -222,7 +225,7 @@ mod tests {
             assert_eq!(seq.len(), 1);
             assert!(matches!(
                 seq[0],
-                Expression::Literal(Literal::Boolean(true))
+                Expression::Constant(Value::Literal(Literal::Boolean(true)))
             ));
         }
 
@@ -239,7 +242,10 @@ mod tests {
             assert!(matches!(f, ParseFlow::Continue(())));
             assert_eq!(seq.len(), 1);
             let n = extract_or_fail!(
-                extract_or_fail!(&seq[0], Expression::Literal),
+                extract_or_fail!(
+                    extract_or_fail!(&seq[0], Expression::Constant),
+                    Value::Literal
+                ),
                 Literal::Number
             );
             assert!(matches!(n, Number::Complex(_) if n.as_datum().to_string() == "+1.2i"));

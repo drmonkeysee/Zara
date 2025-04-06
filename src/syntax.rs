@@ -1,12 +1,12 @@
 mod expr;
 mod parse;
 
-pub(crate) use self::expr::{Datum, Expression};
+pub(crate) use self::expr::Expression;
 use self::{
     expr::ExpressionError,
     parse::{ErrFlow, ParseBreak, ParseFlow, ParseNode, Recovery},
 };
-use crate::{lex::TokenLine, txt::TextLine};
+use crate::{lex::TokenLine, txt::TextLine, value::Value};
 use std::{
     error::Error,
     fmt::{self, Display, Formatter, Write},
@@ -48,7 +48,9 @@ pub(crate) struct TokenList;
 
 impl Parser for TokenList {
     fn parse(&mut self, token_lines: Vec<TokenLine>) -> ParserResult {
-        Ok(ParserOutput::Complete(Expression::TokenList(token_lines)))
+        Ok(ParserOutput::Complete(Expression::Constant(
+            Value::TokenList(token_lines),
+        )))
     }
 
     fn unsupported_continuation(&mut self) -> Option<ParserError> {
@@ -273,7 +275,7 @@ mod tests {
         assert_eq!(seq.len(), 1);
         assert!(matches!(
             seq[0],
-            Expression::Literal(Literal::Boolean(true))
+            Expression::Constant(Value::Literal(Literal::Boolean(true)))
         ));
         assert!(et.parsers.is_empty());
     }
@@ -296,15 +298,15 @@ mod tests {
         assert_eq!(seq.len(), 3);
         assert!(matches!(
             seq[0],
-            Expression::Literal(Literal::Boolean(true))
+            Expression::Constant(Value::Literal(Literal::Boolean(true)))
         ));
         assert!(matches!(
             seq[1],
-            Expression::Literal(Literal::Character('a'))
+            Expression::Constant(Value::Literal(Literal::Character('a')))
         ));
         assert!(matches!(
             &seq[2],
-            Expression::Literal(Literal::String(s)) if &**s == "foo"
+            Expression::Constant(Value::Literal(Literal::String(s))) if &**s == "foo"
         ));
         assert!(et.parsers.is_empty());
     }
@@ -339,23 +341,23 @@ mod tests {
         assert_eq!(seq.len(), 5);
         assert!(matches!(
             seq[0],
-            Expression::Literal(Literal::Boolean(true))
+            Expression::Constant(Value::Literal(Literal::Boolean(true)))
         ));
         assert!(matches!(
             seq[1],
-            Expression::Literal(Literal::Character('a'))
+            Expression::Constant(Value::Literal(Literal::Character('a')))
         ));
         assert!(matches!(
             &seq[2],
-            Expression::Literal(Literal::String(s)) if &**s == "foo"
+            Expression::Constant(Value::Literal(Literal::String(s))) if &**s == "foo"
         ));
         assert!(matches!(
             seq[3],
-            Expression::Literal(Literal::Boolean(false))
+            Expression::Constant(Value::Literal(Literal::Boolean(false)))
         ));
         assert!(matches!(
             seq[4],
-            Expression::Literal(Literal::Character('b'))
+            Expression::Constant(Value::Literal(Literal::Character('b')))
         ));
 
         assert!(et.parsers.is_empty());

@@ -1,4 +1,7 @@
-use crate::syntax::{Datum as DatumValue, Expression};
+use crate::{
+    syntax::Expression,
+    value::{Datum as ValueDatum, Value},
+};
 use std::{
     error::Error,
     fmt::{self, Display, Formatter},
@@ -7,7 +10,7 @@ use std::{
 #[derive(Debug)]
 pub enum Evaluation {
     Continuation,
-    Expression(Expr),
+    Value(Val),
 }
 
 impl Evaluation {
@@ -16,15 +19,15 @@ impl Evaluation {
         EvaluationMessage(self)
     }
 
-    fn expr(expr: Expression) -> Self {
-        Self::Expression(Expr(expr))
+    fn val(v: Value) -> Self {
+        Self::Value(Val(v))
     }
 }
 
 #[derive(Debug)]
-pub struct Expr(Expression);
+pub struct Val(Value);
 
-impl Expr {
+impl Val {
     #[must_use]
     pub fn has_value(&self) -> bool {
         self.0.has_value()
@@ -36,7 +39,7 @@ impl Expr {
     }
 }
 
-pub struct Datum<'a>(DatumValue<'a>);
+pub struct Datum<'a>(ValueDatum<'a>);
 
 impl Display for Datum<'_> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
@@ -49,12 +52,13 @@ pub struct EvaluationMessage<'a>(&'a Evaluation);
 impl Display for EvaluationMessage<'_> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self.0 {
-            Evaluation::Expression(expr) => expr.0.display_message().fmt(f),
+            Evaluation::Value(val) => val.0.display_message().fmt(f),
             Evaluation::Continuation => "fatal error: unexpected continuation".fmt(f),
         }
     }
 }
 
+// TODO: will this ever be used?
 pub(crate) type EvalResult = Result<Evaluation, EvalError>;
 
 #[derive(Debug)]
@@ -76,7 +80,7 @@ pub(crate) struct Ast;
 
 impl Evaluator for Ast {
     fn evaluate(&self, expression: Expression) -> EvalResult {
-        Ok(Evaluation::expr(Expression::Ast(expression.into())))
+        Ok(Evaluation::val(Value::Ast(expression.into())))
     }
 }
 
@@ -84,15 +88,6 @@ pub(crate) struct Environment;
 
 impl Evaluator for Environment {
     fn evaluate(&self, expression: Expression) -> EvalResult {
-        match expression {
-            Expression::Begin(seq) => Ok(eval_sequence(seq)),
-            Expression::TokenList(_) => Ok(expression),
-            _ => Err(EvalError),
-        }
-        .map(Evaluation::expr)
+        Ok(Evaluation::val(expression.eval()))
     }
-}
-
-fn eval_sequence(seq: impl IntoIterator<Item = Expression>) -> Expression {
-    seq.into_iter().last().unwrap_or(Expression::Empty)
 }

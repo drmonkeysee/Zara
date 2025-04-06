@@ -7,8 +7,9 @@ mod syntax;
 #[cfg(test)]
 mod testutil;
 pub mod txt;
+mod value;
 
-pub use self::eval::{Evaluation, Expr};
+pub use self::eval::{Evaluation, Val};
 use self::{
     eval::{Ast, Environment, EvalError, Evaluator},
     lex::{Lexer, LexerError, LexerOutput, TokenLine},
