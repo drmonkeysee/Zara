@@ -1,4 +1,7 @@
-use super::expr::{Expression, ExpressionError, ExpressionErrorKind};
+use super::{
+    ParseErrorLine,
+    expr::{Expression, ExpressionError, ExpressionErrorKind},
+};
 use crate::{
     lex::{Token, TokenKind},
     literal::Literal,
@@ -67,9 +70,19 @@ impl ParseNode {
         }
     }
 
-    pub(super) fn into_continuation_unsupported(self) -> Option<ExpressionError> {
+    pub(super) fn into_continuation_unsupported(self) -> Option<ParseErrorLine> {
         match self.kind {
-            NodeKind::StringLiteral(_) => todo!("need text line information"),
+            NodeKind::StringLiteral(_) => {
+                debug_assert!(self.ctx.is_some());
+                let ctx = self.ctx.unwrap();
+                Some(ParseErrorLine(
+                    vec![ExpressionError {
+                        kind: ExpressionErrorKind::InvalidStr,
+                        span: ctx.start..ctx.txt.line.len(),
+                    }],
+                    ctx.txt,
+                ))
+            }
             _ => None,
         }
     }

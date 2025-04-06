@@ -74,6 +74,7 @@ impl Error for ExpressionError {}
 #[derive(Debug)]
 pub(super) enum ExpressionErrorKind {
     InvalidSeq(TokenKind),
+    InvalidStr,
     Unimplemented(TokenKind),
 }
 
@@ -81,6 +82,7 @@ impl Display for ExpressionErrorKind {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
             Self::InvalidSeq(t) => format!("unexpected token in sequence: {t}").fmt(f),
+            Self::InvalidStr => "unterminated string-literal".fmt(f),
             Self::Unimplemented(t) => format!("{t} parsing not yet implemented").fmt(f),
         }
     }
@@ -142,6 +144,16 @@ mod tests {
                 err.to_string(),
                 format!("unexpected token in sequence: {}", TokenKind::Comment)
             );
+        }
+
+        #[test]
+        fn display_invalid_str() {
+            let err = ExpressionError {
+                kind: ExpressionErrorKind::InvalidStr,
+                span: 0..5,
+            };
+
+            assert_eq!(err.to_string(), "unterminated string-literal");
         }
 
         #[test]

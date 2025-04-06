@@ -173,8 +173,7 @@ impl Parser for ExpressionTree {
     fn unsupported_continuation(&mut self) -> Option<ParserError> {
         let parser = self.parsers.pop();
         self.clear();
-        let err = parser?.into_continuation_unsupported()?;
-        todo!("parsers need enough information to tie TextLine to ExpressionError");
+        Some(ParserError(vec![parser?.into_continuation_unsupported()?]))
     }
 }
 
@@ -562,8 +561,23 @@ mod tests {
 
         let o = et.unsupported_continuation();
 
-        let err = some_or_fail!(o);
-        todo!("what kind of error?");
+        let err_lines = some_or_fail!(o).0;
+        assert_eq!(err_lines.len(), 1);
+
+        let err_line = &err_lines[0];
+        let ParseErrorLine(errs, line) = &err_line;
+        assert_eq!(line.lineno, 1);
+        assert_eq!(errs.len(), 1);
+        assert!(matches!(
+            &errs[0],
+            ExpressionError {
+                kind: ExpressionErrorKind::InvalidStr,
+                span: Range { start: 1, end: 19 },
+            }
+        ));
+
+        assert!(et.parsers.is_empty());
+        assert!(et.errs.is_empty());
     }
 
     #[test]
@@ -594,10 +608,23 @@ mod tests {
 
         let o = et.unsupported_continuation();
 
-        let lines = some_or_fail!(o).0;
-        assert_eq!(lines.len(), 1);
-        let ParseErrorLine(err, line) = &lines[0];
+        let err_lines = some_or_fail!(o).0;
+        assert_eq!(err_lines.len(), 1);
 
-        todo!("what kind of error?");
+        let err_line = &err_lines[0];
+        let ParseErrorLine(errs, line) = &err_line;
+        assert_eq!(line.lineno, 1);
+        assert_eq!(errs.len(), 1);
+        dbg!(&errs[0]);
+        assert!(matches!(
+            &errs[0],
+            ExpressionError {
+                kind: ExpressionErrorKind::InvalidStr,
+                span: Range { start: 0, end: 19 },
+            }
+        ));
+
+        assert!(et.parsers.is_empty());
+        assert!(et.errs.is_empty());
     }
 }
