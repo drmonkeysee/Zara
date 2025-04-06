@@ -6,8 +6,10 @@ use crate::{
 };
 
 mod lexer {
-    use self::token::{TokenErrorKind, TokenType};
-    use super::*;
+    use super::{
+        token::{TokenErrorKind, TokenType},
+        *,
+    };
     use crate::{
         testutil::{err_or_fail, ok_or_fail, some_or_fail},
         txt::{LineNumber, TextResult},
@@ -1263,8 +1265,7 @@ mod result {
 }
 
 mod error {
-    use self::token::TokenErrorKind;
-    use super::*;
+    use super::{token::TokenErrorKind, *};
     use crate::number::NumericError;
 
     #[test]
