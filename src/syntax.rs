@@ -11,6 +11,7 @@ use std::{
     error::Error,
     fmt::{self, Display, Formatter, Write},
     mem,
+    rc::Rc,
 };
 
 pub(crate) type ParserResult = Result<ParserOutput, ParserError>;
@@ -102,6 +103,7 @@ else:
 impl ExpressionTree {
     fn parse_line(&mut self, mut parser: ParseNode, line: TokenLine) -> ParseNode {
         let TokenLine(tokens, txt) = line;
+        let txt = Rc::new(txt);
         let mut errs = Vec::new();
         for token in tokens {
             match parser.parse(token) {
@@ -126,15 +128,15 @@ impl ExpressionTree {
                         }
                     }
                 }
-                ParseFlow::Break(ParseBreak::New(p)) => {
+                ParseFlow::Break(ParseBreak::New(new)) => {
                     self.parsers.push(parser);
-                    parser = p;
+                    parser = new.into_node(Rc::clone(&txt));
                 }
                 ParseFlow::Continue(_) => (),
             }
         }
         if !errs.is_empty() {
-            self.errs.push(ParseErrorLine(errs, txt));
+            self.errs.push(ParseErrorLine(errs, Rc::clone(&txt)));
         }
         parser
     }
@@ -177,7 +179,7 @@ impl Parser for ExpressionTree {
 }
 
 #[derive(Debug)]
-struct ParseErrorLine(Vec<ExpressionError>, TextLine);
+struct ParseErrorLine(Vec<ExpressionError>, Rc<TextLine>);
 
 struct ParseErrorLineMessage<'a>(&'a ParseErrorLine);
 

@@ -3,25 +3,39 @@ use crate::{
     lex::{Token, TokenKind},
     literal::Literal,
     number::Number,
+    txt::TextLine,
 };
-use std::ops::ControlFlow;
+use std::{ops::ControlFlow, rc::Rc};
 
 pub(super) type ParseFlow = ControlFlow<ParseBreak>;
 
 pub(super) struct ParseNode {
+    ctx: Option<ParseCtx>,
     kind: NodeKind,
 }
 
 impl ParseNode {
     pub(super) fn prg() -> Self {
         Self {
+            ctx: None,
             kind: NodeKind::Program(Vec::new()),
         }
     }
 
     pub(super) fn fail() -> Self {
         Self {
+            ctx: None,
             kind: NodeKind::Failed,
+        }
+    }
+
+    fn new(kind: NodeKind, start: usize, txt: impl Into<Rc<TextLine>>) -> Self {
+        Self {
+            kind,
+            ctx: Some(ParseCtx {
+                txt: txt.into(),
+                start,
+            }),
         }
     }
 
@@ -64,7 +78,18 @@ impl ParseNode {
 pub(super) enum ParseBreak {
     Complete,
     Err(ExpressionError, ErrFlow),
-    New(ParseNode),
+    New(ParseNew),
+}
+
+pub(super) struct ParseNew {
+    kind: NodeKind,
+    start: usize,
+}
+
+impl ParseNew {
+    pub(super) fn into_node(self, txt: impl Into<Rc<TextLine>>) -> ParseNode {
+        ParseNode::new(self.kind, self.start, txt)
+    }
 }
 
 pub(super) type ErrFlow = ControlFlow<Recovery>;
@@ -90,6 +115,11 @@ impl NodeKind {
     }
 }
 
+struct ParseCtx {
+    txt: Rc<TextLine>,
+    start: usize,
+}
+
 fn parse_sequence(seq: &mut Vec<Expression>, token: Token) -> ParseFlow {
     match token.kind {
         TokenKind::Imaginary(r) => {
@@ -97,8 +127,9 @@ fn parse_sequence(seq: &mut Vec<Expression>, token: Token) -> ParseFlow {
         }
         TokenKind::Literal(val) => seq.push(Expression::Literal(val)),
         TokenKind::StringBegin { s, line_cont } => {
-            return ParseFlow::Break(ParseBreak::New(ParseNode {
+            return ParseFlow::Break(ParseBreak::New(ParseNew {
                 kind: NodeKind::string(s, !line_cont),
+                start: token.span.start,
             }));
         }
         TokenKind::IdentifierDiscard
