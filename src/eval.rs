@@ -2,10 +2,7 @@ use crate::{
     syntax::Expression,
     value::{Datum as ValueDatum, Value},
 };
-use std::{
-    error::Error,
-    fmt::{self, Display, Formatter},
-};
+use std::fmt::{self, Display, Formatter};
 
 #[derive(Debug)]
 pub enum Evaluation {
@@ -58,36 +55,22 @@ impl Display for EvaluationMessage<'_> {
     }
 }
 
-// TODO: will this ever be used?
-pub(crate) type EvalResult = Result<Evaluation, EvalError>;
-
-#[derive(Debug)]
-pub(crate) struct EvalError;
-
-impl Display for EvalError {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        "fatal error: evaluation failure".fmt(f)
-    }
-}
-
-impl Error for EvalError {}
-
 pub(crate) trait Evaluator {
-    fn evaluate(&self, expression: Expression) -> EvalResult;
+    fn evaluate(&self, expression: Expression) -> Evaluation;
 }
 
 pub(crate) struct Ast;
 
 impl Evaluator for Ast {
-    fn evaluate(&self, expression: Expression) -> EvalResult {
-        Ok(Evaluation::val(Value::Ast(expression.into())))
+    fn evaluate(&self, expression: Expression) -> Evaluation {
+        Evaluation::val(Value::Ast(expression.into()))
     }
 }
 
 pub(crate) struct Environment;
 
 impl Evaluator for Environment {
-    fn evaluate(&self, expression: Expression) -> EvalResult {
-        Ok(Evaluation::val(expression.eval()))
+    fn evaluate(&self, expression: Expression) -> Evaluation {
+        Evaluation::val(expression.eval())
     }
 }

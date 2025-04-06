@@ -11,7 +11,7 @@ mod value;
 
 pub use self::eval::{Evaluation, Val};
 use self::{
-    eval::{Ast, Environment, EvalError, Evaluator},
+    eval::{Ast, Environment, Evaluator},
     lex::{Lexer, LexerError, LexerOutput, TokenLine},
     syntax::{ExpressionTree, Parser, ParserError, ParserOutput, TokenList},
     txt::TextSource,
@@ -134,7 +134,6 @@ impl Display for ErrorMessage<'_> {
         match err {
             ExecError::Lex(lex_err) => lex_err.display_message().fmt(f),
             ExecError::Parse(parse_err) => parse_err.display_message().fmt(f),
-            _ => writeln!(f, "#<error-extended-undef({err:?})>"),
         }
     }
 }
@@ -150,7 +149,6 @@ trait Executor {
 enum ExecError {
     Lex(LexerError),
     Parse(ParserError),
-    Eval(EvalError),
 }
 
 impl Display for ExecError {
@@ -158,7 +156,6 @@ impl Display for ExecError {
         match self {
             Self::Lex(lx) => lx.fmt(f),
             Self::Parse(ps) => ps.fmt(f),
-            Self::Eval(ev) => ev.fmt(f),
         }
     }
 }
@@ -168,7 +165,6 @@ impl error::Error for ExecError {
         Some(match self {
             Self::Lex(lx) => lx,
             Self::Parse(ps) => ps,
-            Self::Eval(ev) => ev,
         })
     }
 }
@@ -185,12 +181,6 @@ impl From<ParserError> for ExecError {
     }
 }
 
-impl From<EvalError> for ExecError {
-    fn from(value: EvalError) -> Self {
-        Self::Eval(value)
-    }
-}
-
 struct Engine<P, E> {
     evaluator: E,
     parser: P,
@@ -199,7 +189,7 @@ struct Engine<P, E> {
 impl<P: Parser, E: Evaluator> Executor for Engine<P, E> {
     fn exec(&mut self, token_lines: Vec<TokenLine>) -> ExecResult {
         Ok(match self.parser.parse(token_lines)? {
-            ParserOutput::Complete(expr) => self.evaluator.evaluate(expr)?,
+            ParserOutput::Complete(expr) => self.evaluator.evaluate(expr),
             ParserOutput::Continuation => Evaluation::Continuation,
         })
     }
