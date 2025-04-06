@@ -73,19 +73,25 @@ impl Error for ExpressionError {}
 
 #[derive(Debug)]
 pub(super) enum ExpressionErrorKind {
-    InvalidSeq(TokenKind),
-    InvalidStr,
+    SeqInvalid(TokenKind),
+    StrInvalid(TokenKind),
+    StrUnterminated,
     Unimplemented(TokenKind),
 }
 
 impl Display for ExpressionErrorKind {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
-            Self::InvalidSeq(t) => format!("unexpected token in sequence: {t}").fmt(f),
-            Self::InvalidStr => "unterminated string-literal".fmt(f),
+            Self::SeqInvalid(t) => format_unexpected_error("sequence", t, f),
+            Self::StrInvalid(t) => format_unexpected_error("string", t, f),
+            Self::StrUnterminated => "unterminated string-literal".fmt(f),
             Self::Unimplemented(t) => format!("{t} parsing not yet implemented").fmt(f),
         }
     }
+}
+
+fn format_unexpected_error(kind: &str, token: &TokenKind, f: &mut Formatter) -> fmt::Result {
+    format!("unexpected token in {kind}: {token}").fmt(f)
 }
 
 #[cfg(test)]
@@ -136,7 +142,7 @@ mod tests {
         #[test]
         fn display_invalid_seq() {
             let err = ExpressionError {
-                kind: ExpressionErrorKind::InvalidSeq(TokenKind::Comment),
+                kind: ExpressionErrorKind::SeqInvalid(TokenKind::Comment),
                 span: 0..5,
             };
 
@@ -149,7 +155,20 @@ mod tests {
         #[test]
         fn display_invalid_str() {
             let err = ExpressionError {
-                kind: ExpressionErrorKind::InvalidStr,
+                kind: ExpressionErrorKind::StrInvalid(TokenKind::Comment),
+                span: 0..5,
+            };
+
+            assert_eq!(
+                err.to_string(),
+                format!("unexpected token in string: {}", TokenKind::Comment)
+            );
+        }
+
+        #[test]
+        fn display_unterminated_str() {
+            let err = ExpressionError {
+                kind: ExpressionErrorKind::StrUnterminated,
                 span: 0..5,
             };
 

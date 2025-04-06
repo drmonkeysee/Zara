@@ -77,7 +77,7 @@ impl ParseNode {
                 let ctx = self.ctx.unwrap();
                 Some(ParseErrorLine(
                     vec![ExpressionError {
-                        kind: ExpressionErrorKind::InvalidStr,
+                        kind: ExpressionErrorKind::StrUnterminated,
                         span: ctx.start..ctx.txt.line.len(),
                     }],
                     ctx.txt,
@@ -88,12 +88,14 @@ impl ParseNode {
     }
 }
 
+#[derive(Debug)]
 pub(super) enum ParseBreak {
     Complete,
     Err(ExpressionError, ErrFlow),
     New(ParseNew),
 }
 
+#[derive(Debug)]
 pub(super) struct ParseNew {
     kind: NodeKind,
     start: usize,
@@ -107,12 +109,14 @@ impl ParseNew {
 
 pub(super) type ErrFlow = ControlFlow<Recovery>;
 
+#[derive(Debug)]
 pub(super) enum Recovery {
     DiscardTo(TokenKind),
     Fail,
 }
 
 // TODO: better name, something like builder but not builder
+#[derive(Debug)]
 enum NodeKind {
     Failed,
     Program(Vec<Expression>),
@@ -153,7 +157,7 @@ fn parse_sequence(seq: &mut Vec<Expression>, token: Token) -> ParseFlow {
         | TokenKind::StringFragment { .. } => {
             return ParseFlow::Break(ParseBreak::Err(
                 ExpressionError {
-                    kind: ExpressionErrorKind::InvalidSeq(token.kind),
+                    kind: ExpressionErrorKind::SeqInvalid(token.kind),
                     span: token.span,
                 },
                 ErrFlow::Break(Recovery::Fail),
@@ -187,7 +191,7 @@ fn parse_str(buf: &mut String, token: Token) -> ParseFlow {
         }
         _ => ParseFlow::Break(ParseBreak::Err(
             ExpressionError {
-                kind: ExpressionErrorKind::InvalidSeq(token.kind),
+                kind: ExpressionErrorKind::StrInvalid(token.kind),
                 span: token.span,
             },
             ErrFlow::Break(Recovery::Fail),
@@ -198,6 +202,7 @@ fn parse_str(buf: &mut String, token: Token) -> ParseFlow {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::ops::Range;
 
     mod sequence {
         use super::*;
@@ -238,6 +243,154 @@ mod tests {
                 Literal::Number
             );
             assert!(matches!(n, Number::Complex(_) if n.as_datum().to_string() == "+1.2i"));
+        }
+
+        #[test]
+        fn start_string() {
+            let mut seq = Vec::new();
+            let token = Token {
+                kind: TokenKind::StringBegin {
+                    s: "start".to_owned(),
+                    line_cont: false,
+                },
+                span: 3..8,
+            };
+
+            let f = parse_sequence(&mut seq, token);
+
+            assert!(matches!(
+                f,
+                ParseFlow::Break(ParseBreak::New(
+                    ParseNew {
+                        kind: NodeKind::StringLiteral(s),
+                        start: 3
+                    }
+                )) if s == "start\n"
+            ));
+            assert!(seq.is_empty());
+        }
+
+        #[test]
+        fn start_string_line_cont() {
+            let mut seq = Vec::new();
+            let token = Token {
+                kind: TokenKind::StringBegin {
+                    s: "start".to_owned(),
+                    line_cont: true,
+                },
+                span: 3..8,
+            };
+
+            let f = parse_sequence(&mut seq, token);
+
+            assert!(matches!(
+                f,
+                ParseFlow::Break(ParseBreak::New(
+                    ParseNew {
+                        kind: NodeKind::StringLiteral(s),
+                        start: 3
+                    }
+                )) if s == "start"
+            ));
+            assert!(seq.is_empty());
+        }
+
+        #[test]
+        fn invalid() {
+            let mut seq = Vec::new();
+            let token = Token {
+                kind: TokenKind::StringEnd("foo".to_owned()),
+                span: 0..3,
+            };
+
+            let f = parse_sequence(&mut seq, token);
+
+            assert!(matches!(
+                f,
+                ParseFlow::Break(ParseBreak::Err(
+                    ExpressionError {
+                        kind: ExpressionErrorKind::SeqInvalid(TokenKind::StringEnd(_)),
+                        span: Range { start: 0, end: 3 },
+                    },
+                    ErrFlow::Break(Recovery::Fail),
+                ))
+            ));
+            assert!(seq.is_empty());
+        }
+    }
+
+    mod string {
+        use super::*;
+
+        #[test]
+        fn end() {
+            let mut s = "start\n".to_owned();
+            let token = Token {
+                kind: TokenKind::StringEnd("end".to_owned()),
+                span: 0..4,
+            };
+
+            let f = parse_str(&mut s, token);
+
+            assert!(matches!(f, ParseFlow::Break(ParseBreak::Complete)));
+            assert_eq!(s, "start\nend");
+        }
+
+        #[test]
+        fn fragment() {
+            let mut s = "start\n".to_owned();
+            let token = Token {
+                kind: TokenKind::StringFragment {
+                    s: "middle".to_owned(),
+                    line_cont: false,
+                },
+                span: 0..6,
+            };
+
+            let f = parse_str(&mut s, token);
+
+            assert!(matches!(f, ParseFlow::Continue(())));
+            assert_eq!(s, "start\nmiddle\n");
+        }
+
+        #[test]
+        fn fragment_line_cont() {
+            let mut s = "start\n".to_owned();
+            let token = Token {
+                kind: TokenKind::StringFragment {
+                    s: "middle".to_owned(),
+                    line_cont: true,
+                },
+                span: 0..6,
+            };
+
+            let f = parse_str(&mut s, token);
+
+            assert!(matches!(f, ParseFlow::Continue(())));
+            assert_eq!(s, "start\nmiddle");
+        }
+
+        #[test]
+        fn invalid() {
+            let mut s = "start\n".to_owned();
+            let token = Token {
+                kind: TokenKind::ParenLeft,
+                span: 4..5,
+            };
+
+            let f = parse_str(&mut s, token);
+
+            assert!(matches!(
+                f,
+                ParseFlow::Break(ParseBreak::Err(
+                    ExpressionError {
+                        kind: ExpressionErrorKind::StrInvalid(TokenKind::ParenLeft),
+                        span: Range { start: 4, end: 5 },
+                    },
+                    ErrFlow::Break(Recovery::Fail),
+                ))
+            ));
+            assert_eq!(s, "start\n");
         }
     }
 }

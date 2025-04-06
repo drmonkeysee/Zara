@@ -189,7 +189,6 @@ fn no_paren_extra_chars() {
 
     assert!(c.is_none());
     let err = err_or_fail!(r);
-    dbg!(&err);
     assert!(matches!(
         err,
         TokenError {

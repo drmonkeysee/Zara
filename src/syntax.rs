@@ -525,7 +525,7 @@ mod tests {
         assert!(matches!(
             &errs[0],
             ExpressionError {
-                kind: ExpressionErrorKind::InvalidSeq(TokenKind::IdentifierDiscard),
+                kind: ExpressionErrorKind::SeqInvalid(TokenKind::IdentifierDiscard),
                 span: Range { start: 1, end: 2 },
             }
         ));
@@ -571,7 +571,7 @@ mod tests {
         assert!(matches!(
             &errs[0],
             ExpressionError {
-                kind: ExpressionErrorKind::InvalidStr,
+                kind: ExpressionErrorKind::StrUnterminated,
                 span: Range { start: 1, end: 19 },
             }
         ));
@@ -615,11 +615,10 @@ mod tests {
         let ParseErrorLine(errs, line) = &err_line;
         assert_eq!(line.lineno, 1);
         assert_eq!(errs.len(), 1);
-        dbg!(&errs[0]);
         assert!(matches!(
             &errs[0],
             ExpressionError {
-                kind: ExpressionErrorKind::InvalidStr,
+                kind: ExpressionErrorKind::StrUnterminated,
                 span: Range { start: 0, end: 19 },
             }
         ));
