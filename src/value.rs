@@ -60,9 +60,9 @@ mod tests {
     fn display_ast() {
         let val = Value::Ast(
             Expression::Begin(vec![
-                Expression::Constant(Value::Literal(Literal::Character('a'))),
-                Expression::Constant(Value::Literal(Literal::Character('b'))),
-                Expression::Constant(Value::Literal(Literal::Character('c'))),
+                Expression::literal(Literal::Character('a')),
+                Expression::literal(Literal::Character('b')),
+                Expression::literal(Literal::Character('c')),
             ])
             .into(),
         );

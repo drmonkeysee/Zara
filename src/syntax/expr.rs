@@ -1,4 +1,4 @@
-use crate::{lex::TokenKind, value::Value};
+use crate::{lex::TokenKind, literal::Literal, value::Value};
 use std::{
     error::Error,
     fmt::{self, Display, Formatter},
@@ -12,6 +12,14 @@ pub(crate) enum Expression {
 }
 
 impl Expression {
+    pub(crate) fn literal(lit: Literal) -> Self {
+        Self::Constant(Value::Literal(lit))
+    }
+
+    pub(super) fn empty() -> Self {
+        Self::Constant(Value::Empty)
+    }
+
     pub(crate) fn eval(self) -> Value {
         match self {
             Self::Begin(seq) => seq

@@ -7,7 +7,6 @@ use crate::{
     literal::Literal,
     number::Number,
     txt::TextLine,
-    value::Value,
 };
 use std::{ops::ControlFlow, rc::Rc};
 
@@ -66,10 +65,8 @@ impl ParseNode {
     pub(super) fn into_expr(self) -> Expression {
         match self.kind {
             NodeKind::Program(exprs) => Expression::Begin(exprs),
-            NodeKind::StringLiteral(s) => {
-                Expression::Constant(Value::Literal(Literal::String(s.into())))
-            }
-            _ => Expression::Constant(Value::Empty),
+            NodeKind::StringLiteral(s) => Expression::literal(Literal::String(s.into())),
+            _ => Expression::empty(),
         }
     }
 
@@ -142,10 +139,10 @@ struct ParseCtx {
 
 fn parse_sequence(seq: &mut Vec<Expression>, token: Token) -> ParseFlow {
     match token.kind {
-        TokenKind::Imaginary(r) => seq.push(Expression::Constant(Value::Literal(Literal::Number(
-            Number::imaginary(r),
-        )))),
-        TokenKind::Literal(val) => seq.push(Expression::Constant(Value::Literal(val))),
+        TokenKind::Imaginary(r) => {
+            seq.push(Expression::literal(Literal::Number(Number::imaginary(r))))
+        }
+        TokenKind::Literal(val) => seq.push(Expression::literal(val)),
         TokenKind::StringBegin { s, line_cont } => {
             return ParseFlow::Break(ParseBreak::New(ParseNew {
                 kind: NodeKind::string(s, !line_cont),
