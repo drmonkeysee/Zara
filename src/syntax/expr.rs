@@ -14,7 +14,11 @@ pub(crate) enum Expression {
 impl Expression {
     pub(crate) fn eval(self) -> Value {
         match self {
-            Self::Begin(seq) => seq.into_iter().last().map_or(Value::Empty, Self::eval),
+            Self::Begin(seq) => seq
+                .into_iter()
+                .map(Self::eval)
+                .last()
+                .unwrap_or(Value::Empty),
             Self::Constant(val) => val,
         }
     }
