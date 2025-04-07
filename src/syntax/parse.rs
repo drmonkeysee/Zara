@@ -49,6 +49,7 @@ impl ParseNode {
 
     pub(super) fn parse(&mut self, token: Token) -> ParseFlow {
         match &mut self.kind {
+            NodeKind::CommentBlock(d) => parse_comment_block(*d, token),
             NodeKind::Failed => ParseFlow::Continue(()),
             NodeKind::Program(seq) => parse_sequence(seq, token),
             NodeKind::StringLiteral(buf) => parse_str(buf, token),
@@ -71,20 +72,13 @@ impl ParseNode {
     }
 
     pub(super) fn into_continuation_unsupported(self) -> Option<ParseErrorLine> {
-        match self.kind {
-            NodeKind::StringLiteral(_) => {
-                debug_assert!(self.ctx.is_some());
-                let ctx = self.ctx.unwrap();
-                Some(ParseErrorLine(
-                    vec![ExpressionError {
-                        kind: ExpressionErrorKind::StrUnterminated,
-                        span: ctx.start..ctx.txt.line.len(),
-                    }],
-                    ctx.txt,
-                ))
-            }
+        let err_kind = match self.kind {
+            NodeKind::CommentBlock(_) => Some(ExpressionErrorKind::CommentBlockUnterminated),
+            NodeKind::StringLiteral(_) => Some(ExpressionErrorKind::StrUnterminated),
             _ => None,
-        }
+        }?;
+        debug_assert!(self.ctx.is_some());
+        Some(self.ctx.unwrap().into_errorline(err_kind))
     }
 }
 
@@ -118,6 +112,7 @@ pub(super) enum Recovery {
 // TODO: better name, something like builder but not builder
 #[derive(Debug)]
 enum NodeKind {
+    CommentBlock(usize),
     Failed,
     Program(Vec<Expression>),
     StringLiteral(String),
@@ -137,8 +132,47 @@ struct ParseCtx {
     start: usize,
 }
 
+impl ParseCtx {
+    fn into_errorline(self, kind: ExpressionErrorKind) -> ParseErrorLine {
+        ParseErrorLine(
+            vec![ExpressionError {
+                kind,
+                span: self.start..self.txt.line.len(),
+            }],
+            self.txt,
+        )
+    }
+}
+
+fn parse_comment_block(d: usize, token: Token) -> ParseFlow {
+    match token.kind {
+        TokenKind::CommentBlockBegin { depth } if depth == d + 1 => {
+            ParseFlow::Break(ParseBreak::New(ParseNew {
+                kind: NodeKind::CommentBlock(depth),
+                start: token.span.start,
+            }))
+        }
+        TokenKind::CommentBlockFragment { depth } if depth == d => ParseFlow::Continue(()),
+        TokenKind::CommentBlockEnd => ParseFlow::Break(ParseBreak::Complete),
+        _ => ParseFlow::Break(ParseBreak::Err(
+            ExpressionError {
+                kind: ExpressionErrorKind::CommentBlockInvalid(token.kind),
+                span: token.span,
+            },
+            ErrFlow::Break(Recovery::Fail),
+        )),
+    }
+}
+
 fn parse_sequence(seq: &mut Vec<Expression>, token: Token) -> ParseFlow {
     match token.kind {
+        TokenKind::Comment => (),
+        TokenKind::CommentBlockBegin { depth: d @ 0 } => {
+            return ParseFlow::Break(ParseBreak::New(ParseNew {
+                kind: NodeKind::CommentBlock(d),
+                start: token.span.start,
+            }));
+        }
         TokenKind::Imaginary(r) => {
             seq.push(Expression::literal(Literal::Number(Number::imaginary(r))))
         }
@@ -149,7 +183,10 @@ fn parse_sequence(seq: &mut Vec<Expression>, token: Token) -> ParseFlow {
                 start: token.span.start,
             }));
         }
-        TokenKind::IdentifierDiscard
+        TokenKind::CommentBlockBegin { .. }
+        | TokenKind::CommentBlockFragment { .. }
+        | TokenKind::CommentBlockEnd
+        | TokenKind::IdentifierDiscard
         | TokenKind::IdentifierEnd(_)
         | TokenKind::IdentifierFragment(_)
         | TokenKind::StringDiscard
@@ -203,6 +240,62 @@ fn parse_str(buf: &mut String, token: Token) -> ParseFlow {
 mod tests {
     use super::*;
     use std::ops::Range;
+
+    mod continuation {
+        use super::*;
+        use crate::testutil::{make_textline, some_or_fail};
+
+        #[test]
+        fn prg_no_continuation() {
+            let p = ParseNode::prg();
+
+            let o = p.into_continuation_unsupported();
+
+            assert!(o.is_none());
+        }
+
+        #[test]
+        fn str_continuation() {
+            let p = ParseNode::new(
+                NodeKind::StringLiteral("foo".to_owned()),
+                3,
+                make_textline(),
+            );
+
+            let o = p.into_continuation_unsupported();
+
+            let err_line = some_or_fail!(o);
+            let ParseErrorLine(errs, line) = &err_line;
+            assert_eq!(line.lineno, 1);
+            assert_eq!(errs.len(), 1);
+            assert!(matches!(
+                &errs[0],
+                ExpressionError {
+                    kind: ExpressionErrorKind::StrUnterminated,
+                    span: Range { start: 3, end: 19 },
+                }
+            ));
+        }
+
+        #[test]
+        fn comment_block_continuation() {
+            let p = ParseNode::new(NodeKind::CommentBlock(2), 3, make_textline());
+
+            let o = p.into_continuation_unsupported();
+
+            let err_line = some_or_fail!(o);
+            let ParseErrorLine(errs, line) = &err_line;
+            assert_eq!(line.lineno, 1);
+            assert_eq!(errs.len(), 1);
+            assert!(matches!(
+                &errs[0],
+                ExpressionError {
+                    kind: ExpressionErrorKind::CommentBlockUnterminated,
+                    span: Range { start: 3, end: 19 },
+                }
+            ));
+        }
+    }
 
     mod sequence {
         use super::*;
@@ -320,6 +413,64 @@ mod tests {
             ));
             assert!(seq.is_empty());
         }
+
+        #[test]
+        fn comment() {
+            let mut seq = Vec::new();
+            let token = Token {
+                kind: TokenKind::Comment,
+                span: 0..3,
+            };
+
+            let f = parse_sequence(&mut seq, token);
+
+            assert!(matches!(f, ParseFlow::Continue(())));
+            assert!(seq.is_empty());
+        }
+
+        #[test]
+        fn comment_begin() {
+            let mut seq = Vec::new();
+            let token = Token {
+                kind: TokenKind::CommentBlockBegin { depth: 0 },
+                span: 3..6,
+            };
+
+            let f = parse_sequence(&mut seq, token);
+
+            assert!(matches!(
+                f,
+                ParseFlow::Break(ParseBreak::New(ParseNew {
+                    kind: NodeKind::CommentBlock(0),
+                    start: 3
+                }))
+            ));
+            assert!(seq.is_empty());
+        }
+
+        #[test]
+        fn comment_begin_invalid_depth() {
+            let mut seq = Vec::new();
+            let token = Token {
+                kind: TokenKind::CommentBlockBegin { depth: 1 },
+                span: 3..6,
+            };
+
+            let f = parse_sequence(&mut seq, token);
+
+            dbg!(&f);
+            assert!(matches!(
+                f,
+                ParseFlow::Break(ParseBreak::Err(
+                    ExpressionError {
+                        kind: ExpressionErrorKind::SeqInvalid(TokenKind::CommentBlockBegin { .. }),
+                        span: Range { start: 3, end: 6 },
+                    },
+                    ErrFlow::Break(Recovery::Fail),
+                ))
+            ));
+            assert!(seq.is_empty());
+        }
     }
 
     mod string {
@@ -394,6 +545,121 @@ mod tests {
                 ))
             ));
             assert_eq!(s, "start\n");
+        }
+    }
+
+    mod comment {
+        use super::*;
+
+        #[test]
+        fn end() {
+            let token = Token {
+                kind: TokenKind::CommentBlockEnd,
+                span: 0..4,
+            };
+
+            let f = parse_comment_block(0, token);
+
+            assert!(matches!(f, ParseFlow::Break(ParseBreak::Complete)));
+        }
+
+        #[test]
+        fn fragment() {
+            let token = Token {
+                kind: TokenKind::CommentBlockFragment { depth: 0 },
+                span: 0..4,
+            };
+
+            let f = parse_comment_block(0, token);
+
+            assert!(matches!(f, ParseFlow::Continue(())));
+        }
+
+        #[test]
+        fn new_block() {
+            let token = Token {
+                kind: TokenKind::CommentBlockBegin { depth: 1 },
+                span: 0..4,
+            };
+
+            let f = parse_comment_block(0, token);
+
+            assert!(matches!(
+                f,
+                ParseFlow::Break(ParseBreak::New(ParseNew {
+                    kind: NodeKind::CommentBlock(1),
+                    start: 0
+                }))
+            ));
+        }
+
+        #[test]
+        fn fragment_invalid_depth() {
+            let token = Token {
+                kind: TokenKind::CommentBlockFragment { depth: 1 },
+                span: 0..4,
+            };
+
+            let f = parse_comment_block(0, token);
+
+            assert!(matches!(
+                f,
+                ParseFlow::Break(ParseBreak::Err(
+                    ExpressionError {
+                        kind: ExpressionErrorKind::CommentBlockInvalid(
+                            TokenKind::CommentBlockFragment { .. }
+                        ),
+                        span: Range { start: 0, end: 4 },
+                    },
+                    ErrFlow::Break(Recovery::Fail),
+                ))
+            ));
+        }
+
+        #[test]
+        fn new_block_too_deep() {
+            let token = Token {
+                kind: TokenKind::CommentBlockBegin { depth: 4 },
+                span: 0..4,
+            };
+
+            let f = parse_comment_block(2, token);
+
+            assert!(matches!(
+                f,
+                ParseFlow::Break(ParseBreak::Err(
+                    ExpressionError {
+                        kind: ExpressionErrorKind::CommentBlockInvalid(
+                            TokenKind::CommentBlockBegin { .. }
+                        ),
+                        span: Range { start: 0, end: 4 },
+                    },
+                    ErrFlow::Break(Recovery::Fail),
+                ))
+            ));
+        }
+
+        #[test]
+        fn new_block_backwards_depth() {
+            let token = Token {
+                kind: TokenKind::CommentBlockBegin { depth: 1 },
+                span: 0..4,
+            };
+
+            let f = parse_comment_block(2, token);
+
+            assert!(matches!(
+                f,
+                ParseFlow::Break(ParseBreak::Err(
+                    ExpressionError {
+                        kind: ExpressionErrorKind::CommentBlockInvalid(
+                            TokenKind::CommentBlockBegin { .. }
+                        ),
+                        span: Range { start: 0, end: 4 },
+                    },
+                    ErrFlow::Break(Recovery::Fail),
+                ))
+            ));
         }
     }
 }

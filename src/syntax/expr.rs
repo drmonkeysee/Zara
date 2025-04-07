@@ -48,6 +48,8 @@ impl Error for ExpressionError {}
 
 #[derive(Debug)]
 pub(super) enum ExpressionErrorKind {
+    CommentBlockInvalid(TokenKind),
+    CommentBlockUnterminated,
     SeqInvalid(TokenKind),
     StrInvalid(TokenKind),
     StrUnterminated,
@@ -57,6 +59,9 @@ pub(super) enum ExpressionErrorKind {
 impl Display for ExpressionErrorKind {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
+            Self::CommentBlockInvalid(t) => format_unexpected_error("comment block", t, f),
+            // TODO: can i share tokenerrorkind display here
+            Self::CommentBlockUnterminated => "unterminated block comment".fmt(f),
             Self::SeqInvalid(t) => format_unexpected_error("sequence", t, f),
             Self::StrInvalid(t) => format_unexpected_error("string", t, f),
             Self::StrUnterminated => "unterminated string-literal".fmt(f),
