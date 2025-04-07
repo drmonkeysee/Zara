@@ -206,7 +206,7 @@ mod tests {
 
     mod sequence {
         use super::*;
-        use crate::{number::Real, testutil::extract_or_fail};
+        use crate::{number::Real, testutil::extract_or_fail, value::Value};
 
         #[test]
         fn literal() {
