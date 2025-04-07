@@ -176,6 +176,7 @@ fn parse_sequence(seq: &mut Vec<Expression>, token: Token) -> ParseFlow {
                 start: token.span.start,
             }));
         }
+        // TODO: this should reduce to _ => once Unimplemented is removed
         TokenKind::CommentBlockFragment { .. }
         | TokenKind::CommentBlockEnd
         | TokenKind::IdentifierDiscard
