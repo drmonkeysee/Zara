@@ -11,13 +11,13 @@ pub enum Evaluation {
 }
 
 impl Evaluation {
+    fn val(v: Option<Value>) -> Self {
+        Self::Value(Val::wrap(v))
+    }
+
     #[must_use]
     pub fn display_message(&self) -> EvaluationMessage {
         EvaluationMessage(self)
-    }
-
-    fn val(v: Option<Value>) -> Self {
-        Self::Value(Val::wrap(v))
     }
 }
 
