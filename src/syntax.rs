@@ -167,7 +167,7 @@ impl Parser for ExpressionTree {
                 ParserOutput::Continuation
             })
         } else {
-            // TODO: do parsers need to be cleared here
+            self.parsers.clear();
             Err(ParserError(mem::take(&mut self.errs)))
         }
     }
@@ -625,6 +625,37 @@ mod tests {
             }
         ));
 
+        assert!(et.parsers.is_empty());
+        assert!(et.errs.is_empty());
+    }
+
+    #[test]
+    fn continuation_ignored_if_existing_errors() {
+        let mut et: ExpressionTree = Default::default();
+        let tokens = vec![make_tokenline(vec![
+            TokenKind::Literal(Literal::Boolean(true)),
+            TokenKind::Identifier("foo".to_owned()),
+            TokenKind::StringBegin {
+                s: "foo".to_owned(),
+                line_cont: false,
+            },
+        ])];
+
+        let r = et.parse(tokens);
+
+        let err_lines = err_or_fail!(r).0;
+        assert_eq!(err_lines.len(), 1);
+        let err_line = &err_lines[0];
+        let ParseErrorLine(errs, line) = &err_line;
+        assert_eq!(line.lineno, 1);
+        assert_eq!(errs.len(), 1);
+        assert!(matches!(
+            &errs[0],
+            ExpressionError {
+                kind: ExpressionErrorKind::Unimplemented(TokenKind::Identifier(s)),
+                span: Range { start: 1, end: 2 },
+            } if s == "foo"
+        ));
         assert!(et.parsers.is_empty());
         assert!(et.errs.is_empty());
     }
