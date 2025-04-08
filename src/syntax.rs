@@ -48,7 +48,7 @@ pub(crate) struct TokenList;
 
 impl Parser for TokenList {
     fn parse(&mut self, token_lines: Vec<TokenLine>) -> ParserResult {
-        Ok(ParserOutput::Complete(Expression::Constant(
+        Ok(ParserOutput::Complete(Expression::Literal(
             Value::TokenList(token_lines),
         )))
     }
@@ -222,8 +222,8 @@ impl Display for ParseErrorLineMessage<'_> {
 mod tests {
     use super::{expr::ExpressionErrorKind, *};
     use crate::{
+        constant::Constant,
         lex::{Token, TokenKind},
-        literal::Literal,
         testutil::{err_or_fail, extract_or_fail, make_textline_no, ok_or_fail, some_or_fail},
         txt::LineNumber,
     };
@@ -262,9 +262,9 @@ mod tests {
     #[test]
     fn single_literal_sequence() {
         let mut et: ExpressionTree = Default::default();
-        let tokens = vec![make_tokenline(vec![TokenKind::Literal(Literal::Boolean(
-            true,
-        ))])];
+        let tokens = vec![make_tokenline(vec![TokenKind::Constant(
+            Constant::Boolean(true),
+        )])];
 
         let r = et.parse(tokens);
 
@@ -275,7 +275,7 @@ mod tests {
         assert_eq!(seq.len(), 1);
         assert!(matches!(
             seq[0],
-            Expression::Constant(Value::Literal(Literal::Boolean(true)))
+            Expression::Literal(Value::Constant(Constant::Boolean(true)))
         ));
         assert!(et.parsers.is_empty());
     }
@@ -284,9 +284,9 @@ mod tests {
     fn multiple_literals_sequence() {
         let mut et: ExpressionTree = Default::default();
         let tokens = vec![make_tokenline(vec![
-            TokenKind::Literal(Literal::Boolean(true)),
-            TokenKind::Literal(Literal::Character('a')),
-            TokenKind::Literal(Literal::String("foo".into())),
+            TokenKind::Constant(Constant::Boolean(true)),
+            TokenKind::Constant(Constant::Character('a')),
+            TokenKind::Constant(Constant::String("foo".into())),
         ])];
 
         let r = et.parse(tokens);
@@ -298,15 +298,15 @@ mod tests {
         assert_eq!(seq.len(), 3);
         assert!(matches!(
             seq[0],
-            Expression::Constant(Value::Literal(Literal::Boolean(true)))
+            Expression::Literal(Value::Constant(Constant::Boolean(true)))
         ));
         assert!(matches!(
             seq[1],
-            Expression::Constant(Value::Literal(Literal::Character('a')))
+            Expression::Literal(Value::Constant(Constant::Character('a')))
         ));
         assert!(matches!(
             &seq[2],
-            Expression::Constant(Value::Literal(Literal::String(s))) if &**s == "foo"
+            Expression::Literal(Value::Constant(Constant::String(s))) if &**s == "foo"
         ));
         assert!(et.parsers.is_empty());
     }
@@ -317,16 +317,16 @@ mod tests {
         let tokens = vec![
             make_tokenline_no(
                 vec![
-                    TokenKind::Literal(Literal::Boolean(true)),
-                    TokenKind::Literal(Literal::Character('a')),
-                    TokenKind::Literal(Literal::String("foo".into())),
+                    TokenKind::Constant(Constant::Boolean(true)),
+                    TokenKind::Constant(Constant::Character('a')),
+                    TokenKind::Constant(Constant::String("foo".into())),
                 ],
                 1,
             ),
             make_tokenline_no(
                 vec![
-                    TokenKind::Literal(Literal::Boolean(false)),
-                    TokenKind::Literal(Literal::Character('b')),
+                    TokenKind::Constant(Constant::Boolean(false)),
+                    TokenKind::Constant(Constant::Character('b')),
                 ],
                 2,
             ),
@@ -341,23 +341,23 @@ mod tests {
         assert_eq!(seq.len(), 5);
         assert!(matches!(
             seq[0],
-            Expression::Constant(Value::Literal(Literal::Boolean(true)))
+            Expression::Literal(Value::Constant(Constant::Boolean(true)))
         ));
         assert!(matches!(
             seq[1],
-            Expression::Constant(Value::Literal(Literal::Character('a')))
+            Expression::Literal(Value::Constant(Constant::Character('a')))
         ));
         assert!(matches!(
             &seq[2],
-            Expression::Constant(Value::Literal(Literal::String(s))) if &**s == "foo"
+            Expression::Literal(Value::Constant(Constant::String(s))) if &**s == "foo"
         ));
         assert!(matches!(
             seq[3],
-            Expression::Constant(Value::Literal(Literal::Boolean(false)))
+            Expression::Literal(Value::Constant(Constant::Boolean(false)))
         ));
         assert!(matches!(
             seq[4],
-            Expression::Constant(Value::Literal(Literal::Character('b')))
+            Expression::Literal(Value::Constant(Constant::Character('b')))
         ));
 
         assert!(et.parsers.is_empty());
@@ -367,11 +367,11 @@ mod tests {
     fn sequence_line_with_errors() {
         let mut et: ExpressionTree = Default::default();
         let tokens = vec![make_tokenline(vec![
-            TokenKind::Literal(Literal::Boolean(true)),
+            TokenKind::Constant(Constant::Boolean(true)),
             TokenKind::Identifier("foo".to_owned()),
-            TokenKind::Literal(Literal::Character('a')),
+            TokenKind::Constant(Constant::Character('a')),
             TokenKind::Identifier("bar".to_owned()),
-            TokenKind::Literal(Literal::String("foo".into())),
+            TokenKind::Constant(Constant::String("foo".into())),
         ])];
 
         let r = et.parse(tokens);
@@ -406,19 +406,19 @@ mod tests {
         let tokens = vec![
             make_tokenline_no(
                 vec![
-                    TokenKind::Literal(Literal::Boolean(true)),
+                    TokenKind::Constant(Constant::Boolean(true)),
                     TokenKind::Identifier("foo".to_owned()),
-                    TokenKind::Literal(Literal::Character('a')),
+                    TokenKind::Constant(Constant::Character('a')),
                     TokenKind::Identifier("bar".to_owned()),
-                    TokenKind::Literal(Literal::String("foo".into())),
+                    TokenKind::Constant(Constant::String("foo".into())),
                 ],
                 1,
             ),
             make_tokenline_no(
                 vec![
                     TokenKind::Identifier("baz".to_owned()),
-                    TokenKind::Literal(Literal::Boolean(false)),
-                    TokenKind::Literal(Literal::Character('b')),
+                    TokenKind::Constant(Constant::Boolean(false)),
+                    TokenKind::Constant(Constant::Character('b')),
                 ],
                 2,
             ),
@@ -469,19 +469,19 @@ mod tests {
         let tokens = vec![
             make_tokenline_no(
                 vec![
-                    TokenKind::Literal(Literal::Boolean(true)),
+                    TokenKind::Constant(Constant::Boolean(true)),
                     TokenKind::Identifier("foo".to_owned()),
-                    TokenKind::Literal(Literal::Character('a')),
+                    TokenKind::Constant(Constant::Character('a')),
                     TokenKind::Identifier("bar".to_owned()),
-                    TokenKind::Literal(Literal::String("foo".into())),
+                    TokenKind::Constant(Constant::String("foo".into())),
                 ],
                 1,
             ),
             make_tokenline_no(
                 vec![
-                    TokenKind::Literal(Literal::Character('c')),
+                    TokenKind::Constant(Constant::Character('c')),
                     TokenKind::IdentifierDiscard,
-                    TokenKind::Literal(Literal::Character('d')),
+                    TokenKind::Constant(Constant::Character('d')),
                     TokenKind::Identifier("beef".to_owned()),
                 ],
                 2,
@@ -489,8 +489,8 @@ mod tests {
             make_tokenline_no(
                 vec![
                     TokenKind::Identifier("baz".to_owned()),
-                    TokenKind::Literal(Literal::Boolean(false)),
-                    TokenKind::Literal(Literal::Character('b')),
+                    TokenKind::Constant(Constant::Boolean(false)),
+                    TokenKind::Constant(Constant::Character('b')),
                 ],
                 3,
             ),
@@ -548,7 +548,7 @@ mod tests {
     fn continuation_to_error() {
         let mut et: ExpressionTree = Default::default();
         let tokens = vec![make_tokenline(vec![
-            TokenKind::Literal(Literal::Boolean(true)),
+            TokenKind::Constant(Constant::Boolean(true)),
             TokenKind::StringBegin {
                 s: "foo".to_owned(),
                 line_cont: false,
@@ -633,7 +633,7 @@ mod tests {
     fn continuation_ignored_if_existing_errors() {
         let mut et: ExpressionTree = Default::default();
         let tokens = vec![make_tokenline(vec![
-            TokenKind::Literal(Literal::Boolean(true)),
+            TokenKind::Constant(Constant::Boolean(true)),
             TokenKind::Identifier("foo".to_owned()),
             TokenKind::StringBegin {
                 s: "foo".to_owned(),

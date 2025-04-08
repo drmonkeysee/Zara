@@ -1,6 +1,6 @@
 use crate::{
+    constant::Constant,
     lex::{DisplayTokenLines, TokenLine, TokenLinesMessage},
-    literal::Literal,
     syntax::Expression,
 };
 use std::fmt::{self, Display, Formatter};
@@ -8,7 +8,7 @@ use std::fmt::{self, Display, Formatter};
 #[derive(Debug)]
 pub(crate) enum Value {
     Ast(Box<Expression>),
-    Literal(Literal),
+    Constant(Constant),
     TokenList(Vec<TokenLine>),
 }
 
@@ -28,7 +28,7 @@ impl Display for Datum<'_> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self.0 {
             Value::Ast(expr) => format!("{{{expr:?}}}").fmt(f),
-            Value::Literal(lit) => lit.as_datum().fmt(f),
+            Value::Constant(con) => con.as_datum().fmt(f),
             Value::TokenList(lines) => DisplayTokenLines(lines).fmt(f),
         }
     }
@@ -54,16 +54,16 @@ mod tests {
     fn display_ast() {
         let val = Value::Ast(
             Expression::Begin(vec![
-                Expression::literal(Literal::Character('a')),
-                Expression::literal(Literal::Character('b')),
-                Expression::literal(Literal::Character('c')),
+                Expression::constant(Constant::Character('a')),
+                Expression::constant(Constant::Character('b')),
+                Expression::constant(Constant::Character('c')),
             ])
             .into(),
         );
 
         assert_eq!(
             val.as_datum().to_string(),
-            "{Begin([Constant(Literal(Character('a'))), Constant(Literal(Character('b'))), Constant(Literal(Character('c')))])}"
+            "{Begin([Literal(Constant(Character('a'))), Literal(Constant(Character('b'))), Literal(Constant(Character('c')))])}"
         );
     }
 }

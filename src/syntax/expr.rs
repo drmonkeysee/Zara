@@ -1,4 +1,4 @@
-use crate::{lex::TokenKind, literal::Literal, value::Value};
+use crate::{constant::Constant, lex::TokenKind, value::Value};
 use std::{
     error::Error,
     fmt::{self, Display, Formatter},
@@ -8,20 +8,20 @@ use std::{
 #[derive(Debug)]
 pub(crate) enum Expression {
     Begin(Vec<Expression>),
-    Constant(Value),
     Empty,
+    Literal(Value),
 }
 
 impl Expression {
-    pub(crate) fn literal(lit: Literal) -> Self {
-        Self::Constant(Value::Literal(lit))
+    pub(crate) fn constant(con: Constant) -> Self {
+        Self::Literal(Value::Constant(con))
     }
 
     pub(crate) fn eval(self) -> Option<Value> {
         match self {
             Self::Begin(seq) => seq.into_iter().map(Self::eval).last()?,
-            Self::Constant(v) => Some(v),
             Self::Empty => None,
+            Self::Literal(v) => Some(v),
         }
     }
 }
@@ -63,7 +63,7 @@ impl Display for ExpressionErrorKind {
             Self::CommentBlockUnterminated => "unterminated block comment".fmt(f),
             Self::SeqInvalid(t) => format_unexpected_error("sequence", t, f),
             Self::StrInvalid(t) => format_unexpected_error("string", t, f),
-            Self::StrUnterminated => "unterminated string-literal".fmt(f),
+            Self::StrUnterminated => "unterminated string constant".fmt(f),
             Self::Unimplemented(t) => format!("{t} parsing not yet implemented").fmt(f),
         }
     }
@@ -92,12 +92,12 @@ mod tests {
 
         #[test]
         fn constant() {
-            let expr = Expression::Constant(Value::Literal(Literal::Boolean(true)));
+            let expr = Expression::Literal(Value::Constant(Constant::Boolean(true)));
 
             let o = expr.eval();
 
             let v = some_or_fail!(o);
-            assert!(matches!(v, Value::Literal(Literal::Boolean(true))));
+            assert!(matches!(v, Value::Constant(Constant::Boolean(true))));
         }
 
         #[test]
@@ -112,15 +112,15 @@ mod tests {
         #[test]
         fn sequence() {
             let expr = Expression::Begin(vec![
-                Expression::Constant(Value::Literal(Literal::Boolean(true))),
-                Expression::Constant(Value::Literal(Literal::Character('a'))),
-                Expression::Constant(Value::Literal(Literal::Character('b'))),
+                Expression::Literal(Value::Constant(Constant::Boolean(true))),
+                Expression::Literal(Value::Constant(Constant::Character('a'))),
+                Expression::Literal(Value::Constant(Constant::Character('b'))),
             ]);
 
             let o = expr.eval();
 
             let v = some_or_fail!(o);
-            assert!(matches!(v, Value::Literal(Literal::Character('b'))));
+            assert!(matches!(v, Value::Constant(Constant::Character('b'))));
         }
     }
 
@@ -160,7 +160,7 @@ mod tests {
                 span: 0..5,
             };
 
-            assert_eq!(err.to_string(), "unterminated string-literal");
+            assert_eq!(err.to_string(), "unterminated string constant");
         }
 
         #[test]

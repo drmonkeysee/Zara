@@ -1,5 +1,6 @@
 use super::{ComplexKind, Exactness, FreeText, FreeTextPolicy, RealNumber};
 use crate::{
+    constant::Constant,
     lex::{
         TokenKind,
         token::TokenErrorKind,
@@ -8,7 +9,6 @@ use crate::{
             scan::{ScanItem, Scanner},
         },
     },
-    literal::Literal,
     number::{Decimal, Number, Radix},
 };
 
@@ -121,14 +121,14 @@ impl<'me, 'txt> Identifier<'me, 'txt> {
     }
 
     fn maybe_infnan_complex(&mut self, item: ScanItem, kind: ComplexKind) -> TokenExtractResult {
-        if let Some(TokenKind::Literal(Literal::Number(Number::Real(real)))) =
+        if let Some(TokenKind::Constant(Constant::Number(Number::Real(real)))) =
             super::numeric_label(self.scanner.lexeme(self.start.0..item.0), self.exactness)
         {
             let invalid_tok = match kind {
                 ComplexKind::Cartesian => {
                     let result = Identifier::new(self.scanner, item).scan();
                     if let Ok(TokenKind::Imaginary(imag)) = result {
-                        return Ok(TokenKind::Literal(Literal::Number(Number::complex(
+                        return Ok(TokenKind::Constant(Constant::Number(Number::complex(
                             real, imag,
                         ))));
                     }
@@ -137,9 +137,10 @@ impl<'me, 'txt> Identifier<'me, 'txt> {
                 ComplexKind::Polar => match self.scanner.next_if_not_delimiter() {
                     Some(first) => {
                         let result = Identifier::new(self.scanner, first).scan();
-                        if let Ok(TokenKind::Literal(Literal::Number(Number::Real(rads)))) = result
+                        if let Ok(TokenKind::Constant(Constant::Number(Number::Real(rads)))) =
+                            result
                         {
-                            return Ok(TokenKind::Literal(Literal::Number(Number::polar(
+                            return Ok(TokenKind::Constant(Constant::Number(Number::polar(
                                 real, rads,
                             ))));
                         }

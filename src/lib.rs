@@ -1,6 +1,6 @@
+mod constant;
 pub mod eval;
 mod lex;
-mod literal;
 mod number;
 pub mod src;
 mod syntax;

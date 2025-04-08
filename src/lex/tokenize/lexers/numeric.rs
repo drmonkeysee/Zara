@@ -1,5 +1,6 @@
 use super::{ComplexKind, Exactness, Identifier};
 use crate::{
+    constant::Constant,
     lex::{
         TokenKind,
         token::TokenErrorKind,
@@ -8,7 +9,6 @@ use crate::{
             scan::{ScanItem, Scanner},
         },
     },
-    literal::Literal,
     number::{Decimal, FloatSpec, IntSpec, Integer, Number, NumericError, Radix, Real, Sign},
 };
 use std::{marker::PhantomData, ops::ControlFlow};
@@ -285,7 +285,7 @@ impl<P: ClassifierProps> ConditionProcessor<'_, '_, P> {
                             Some(Exactness::Inexact) => real.into_inexact(),
                             None => real,
                         };
-                        Ok(TokenKind::Literal(Literal::Number(Number::complex(
+                        Ok(TokenKind::Constant(Constant::Number(Number::complex(
                             real, imag,
                         ))))
                     }
@@ -295,9 +295,9 @@ impl<P: ClassifierProps> ConditionProcessor<'_, '_, P> {
             ComplexKind::Polar => {
                 debug_assert_eq!(start.1, '@');
                 match self.props.polar_scan(self.scanner) {
-                    Ok(TokenKind::Literal(Literal::Number(Number::Real(rads)))) => {
+                    Ok(TokenKind::Constant(Constant::Number(Number::Real(rads)))) => {
                         let pol = Number::polar(real, rads);
-                        Ok(TokenKind::Literal(Literal::Number(
+                        Ok(TokenKind::Constant(Constant::Number(
                             match self.props.get_exactness() {
                                 Some(Exactness::Exact) => pol.into_exact(),
                                 Some(Exactness::Inexact) => pol.into_inexact(),
@@ -832,7 +832,7 @@ fn real_to_token(r: impl Into<Real>, is_imaginary: bool) -> TokenKind {
     if is_imaginary {
         TokenKind::Imaginary(r.into())
     } else {
-        TokenKind::Literal(Literal::Number(Number::real(r)))
+        TokenKind::Constant(Constant::Number(Number::real(r)))
     }
 }
 

@@ -3,8 +3,8 @@ use super::{
     expr::{Expression, ExpressionError, ExpressionErrorKind},
 };
 use crate::{
+    constant::Constant,
     lex::{Token, TokenKind},
-    literal::Literal,
     number::Number,
     txt::TextLine,
 };
@@ -67,7 +67,7 @@ impl ParseNode {
     pub(super) fn into_expr(self) -> Expression {
         match self.kind {
             NodeKind::Program(exprs) => Expression::Begin(exprs),
-            NodeKind::StringLiteral(s) => Expression::literal(Literal::String(s.into())),
+            NodeKind::StringLiteral(s) => Expression::constant(Constant::String(s.into())),
             _ => Expression::Empty,
         }
     }
@@ -191,10 +191,10 @@ fn parse_sequence(seq: &mut Vec<Expression>, token: Token) -> ParseFlow {
                 start: token.span.start,
             }));
         }
+        TokenKind::Constant(con) => seq.push(Expression::constant(con)),
         TokenKind::Imaginary(r) => {
-            seq.push(Expression::literal(Literal::Number(Number::imaginary(r))))
+            seq.push(Expression::constant(Constant::Number(Number::imaginary(r))))
         }
-        TokenKind::Literal(lit) => seq.push(Expression::literal(lit)),
         TokenKind::StringBegin { s, line_cont } => {
             return ParseFlow::Break(ParseBreak::New(ParseNew {
                 kind: NodeKind::string(s, !line_cont),
@@ -267,7 +267,7 @@ mod tests {
         fn byte() {
             let mut seq = Vec::new();
             let token = Token {
-                kind: TokenKind::Literal(Literal::Number(Number::real(16))),
+                kind: TokenKind::Constant(Constant::Number(Number::real(16))),
                 span: 3..5,
             };
 
@@ -277,7 +277,7 @@ mod tests {
             assert_eq!(seq.len(), 1);
             assert!(matches!(
                 &seq[0],
-                Expression::Constant(Value::Literal(Literal::Number(n)))
+                Expression::Literal(Value::Constant(Constant::Number(n)))
                 if n.as_datum().to_string() == "16"
             ));
         }
@@ -286,7 +286,7 @@ mod tests {
         fn min_byte() {
             let mut seq = Vec::new();
             let token = Token {
-                kind: TokenKind::Literal(Literal::Number(Number::real(0))),
+                kind: TokenKind::Constant(Constant::Number(Number::real(0))),
                 span: 3..5,
             };
 
@@ -296,7 +296,7 @@ mod tests {
             assert_eq!(seq.len(), 1);
             assert!(matches!(
                 &seq[0],
-                Expression::Constant(Value::Literal(Literal::Number(n)))
+                Expression::Literal(Value::Constant(Constant::Number(n)))
                 if n.as_datum().to_string() == "0"
             ));
         }
@@ -305,7 +305,7 @@ mod tests {
         fn max_byte() {
             let mut seq = Vec::new();
             let token = Token {
-                kind: TokenKind::Literal(Literal::Number(Number::real(255))),
+                kind: TokenKind::Constant(Constant::Number(Number::real(255))),
                 span: 3..5,
             };
 
@@ -315,7 +315,7 @@ mod tests {
             assert_eq!(seq.len(), 1);
             assert!(matches!(
                 &seq[0],
-                Expression::Constant(Value::Literal(Literal::Number(n)))
+                Expression::Literal(Value::Constant(Constant::Number(n)))
                 if n.as_datum().to_string() == "255"
             ));
         }
@@ -323,9 +323,9 @@ mod tests {
         #[test]
         fn end() {
             let mut seq = vec![
-                Expression::literal(Literal::Number(Number::real(24))),
-                Expression::literal(Literal::Number(Number::real(25))),
-                Expression::literal(Literal::Number(Number::real(26))),
+                Expression::constant(Constant::Number(Number::real(24))),
+                Expression::constant(Constant::Number(Number::real(25))),
+                Expression::constant(Constant::Number(Number::real(26))),
             ];
             let token = Token {
                 kind: TokenKind::ParenRight,
@@ -414,10 +414,10 @@ mod tests {
         use crate::{number::Real, testutil::extract_or_fail};
 
         #[test]
-        fn literal() {
+        fn constant() {
             let mut seq = Vec::new();
             let token = Token {
-                kind: TokenKind::Literal(Literal::Boolean(true)),
+                kind: TokenKind::Constant(Constant::Boolean(true)),
                 span: 0..3,
             };
 
@@ -427,7 +427,7 @@ mod tests {
             assert_eq!(seq.len(), 1);
             assert!(matches!(
                 seq[0],
-                Expression::Constant(Value::Literal(Literal::Boolean(true)))
+                Expression::Literal(Value::Constant(Constant::Boolean(true)))
             ));
         }
 
@@ -445,10 +445,10 @@ mod tests {
             assert_eq!(seq.len(), 1);
             let n = extract_or_fail!(
                 extract_or_fail!(
-                    extract_or_fail!(&seq[0], Expression::Constant),
-                    Value::Literal
+                    extract_or_fail!(&seq[0], Expression::Literal),
+                    Value::Constant
                 ),
-                Literal::Number
+                Constant::Number
             );
             assert!(matches!(n, Number::Complex(_) if n.as_datum().to_string() == "+1.2i"));
         }

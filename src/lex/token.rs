@@ -1,5 +1,5 @@
 use crate::{
-    literal::Literal,
+    constant::Constant,
     number::{NumericError, Real},
 };
 use std::{
@@ -30,6 +30,7 @@ pub(crate) enum TokenKind {
     CommentBlockEnd,
     CommentBlockFragment { depth: usize },
     CommentDatum,
+    Constant(Constant),
     DirectiveCase(bool),
     Identifier(String),
     IdentifierBegin(String),
@@ -37,7 +38,6 @@ pub(crate) enum TokenKind {
     IdentifierEnd(String),
     IdentifierFragment(String),
     Imaginary(Real),
-    Literal(Literal),
     ParenLeft,
     ParenRight,
     PairJoiner,
@@ -82,6 +82,7 @@ impl Display for TokenKind {
             Self::CommentBlockEnd => "COMMENTEND".fmt(f),
             Self::CommentBlockFragment { depth } => format!("COMMENTFRAGMENT<{depth:?}>").fmt(f),
             Self::CommentDatum => "DATUMCOMMENT".fmt(f),
+            Self::Constant(con) => format!("CONSTANT<{}>", con.as_token_descriptor()).fmt(f),
             Self::DirectiveCase(fold) => format!("FOLDCASE<{fold:?}>").fmt(f),
             Self::Identifier(_) => "IDENTIFIER".fmt(f),
             Self::IdentifierBegin(_) => "IDENTBEGIN".fmt(f),
@@ -89,7 +90,6 @@ impl Display for TokenKind {
             Self::IdentifierEnd(_) => "IDENTEND".fmt(f),
             Self::IdentifierFragment(_) => "IDENTFRAGMENT".fmt(f),
             Self::Imaginary(r) => format!("IMAGINARY<{}>", r.as_token_descriptor()).fmt(f),
-            Self::Literal(lit) => format!("LITERAL<{}>", lit.as_token_descriptor()).fmt(f),
             Self::ParenLeft => "LEFTPAREN".fmt(f),
             Self::ParenRight => "RIGHTPAREN".fmt(f),
             Self::PairJoiner => "PAIR".fmt(f),
@@ -201,21 +201,21 @@ impl Display for TokenErrorKind {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
             Self::BlockCommentUnterminated => "unterminated block comment".fmt(f),
-            Self::BooleanExpected(b) => format!("expected boolean literal: {b}").fmt(f),
-            Self::ByteVectorExpected => "expected bytevector literal: #u8(…)".fmt(f),
-            Self::CharacterExpected => "expected character literal".fmt(f),
+            Self::BooleanExpected(b) => format!("expected boolean constant: {b}").fmt(f),
+            Self::ByteVectorExpected => "expected bytevector constant: #u8(…)".fmt(f),
+            Self::CharacterExpected => "expected character constant".fmt(f),
             Self::CharacterExpectedHex => "expected character hex-sequence".fmt(f),
             Self::CharacterInvalidHex => {
                 format_char_range_error("character hex-sequence out of valid range", f)
             }
-            Self::ComplexInvalid => "invalid complex literal".fmt(f),
+            Self::ComplexInvalid => "invalid complex constant".fmt(f),
             Self::DirectiveExpected => "expected directive: fold-case or no-fold-case".fmt(f),
             Self::DirectiveInvalid => {
                 "unsupported directive: expected fold-case or no-fold-case".fmt(f)
             }
             Self::ExactnessExpected { .. } => "expected exactness prefix, one of: #e #i".fmt(f),
-            Self::HashInvalid => "invalid #-literal".fmt(f),
-            Self::HashUnterminated => "unterminated #-literal".fmt(f),
+            Self::HashInvalid => "invalid #-constant".fmt(f),
+            Self::HashUnterminated => "unterminated #-constant".fmt(f),
             Self::IdentifierInvalid(ch) => format!("invalid identifier character: {ch}").fmt(f),
             Self::IdentifierEscapeInvalid { ch, .. } | Self::StringEscapeInvalid { ch, .. } => {
                 format!("invalid escape sequence: \\{ch}").fmt(f)
@@ -230,10 +230,10 @@ impl Display for TokenErrorKind {
                 "unterminated hex-escape".fmt(f)
             }
             Self::IdentifierUnterminated => "unterminated verbatim identifier".fmt(f),
-            Self::ImaginaryInvalid => "invalid imaginary literal".fmt(f),
+            Self::ImaginaryInvalid => "invalid imaginary constant".fmt(f),
             Self::ImaginaryMissingSign => "missing explicit sign on imaginary number".fmt(f),
-            Self::NumberExpected => "expected numeric literal".fmt(f),
-            Self::NumberInvalid => "invalid numeric literal".fmt(f),
+            Self::NumberExpected => "expected numeric constant".fmt(f),
+            Self::NumberInvalid => "invalid numeric constant".fmt(f),
             Self::NumberInvalidDecimalPoint { radix, .. } => {
                 format!("{radix} radix does not support decimal notation").fmt(f)
             }
@@ -244,10 +244,10 @@ impl Display for TokenErrorKind {
             Self::NumericError(err) | Self::NumericErrorAt { err, .. } => {
                 format!("numeric error - {err}").fmt(f)
             }
-            Self::PolarInvalid => "invalid polar literal".fmt(f),
+            Self::PolarInvalid => "invalid polar constant".fmt(f),
             Self::RadixExpected { .. } => "expected radix prefix, one of: #b #o #d #x".fmt(f),
-            Self::RationalInvalid => "invalid rational literal".fmt(f),
-            Self::StringUnterminated => "unterminated string-literal".fmt(f),
+            Self::RationalInvalid => "invalid rational constant".fmt(f),
+            Self::StringUnterminated => "unterminated string constant".fmt(f),
         }
     }
 }
@@ -367,13 +367,13 @@ mod tests {
         }
 
         #[test]
-        fn display_literal() {
+        fn display_constant() {
             let token = Token {
-                kind: TokenKind::Literal(Literal::Boolean(true)),
+                kind: TokenKind::Constant(Constant::Boolean(true)),
                 span: 0..2,
             };
 
-            assert_eq!(token.to_string(), "LITERAL<BOOL>[0..2]");
+            assert_eq!(token.to_string(), "CONSTANT<BOOL>[0..2]");
         }
 
         #[test]
@@ -672,7 +672,7 @@ mod tests {
                 span: 0..1,
             };
 
-            assert_eq!(err.to_string(), "expected boolean literal: true");
+            assert_eq!(err.to_string(), "expected boolean constant: true");
         }
 
         #[test]
@@ -682,7 +682,7 @@ mod tests {
                 span: 0..1,
             };
 
-            assert_eq!(err.to_string(), "expected bytevector literal: #u8(…)");
+            assert_eq!(err.to_string(), "expected bytevector constant: #u8(…)");
         }
 
         #[test]
@@ -692,7 +692,7 @@ mod tests {
                 span: 0..1,
             };
 
-            assert_eq!(err.to_string(), "expected character literal");
+            assert_eq!(err.to_string(), "expected character constant");
         }
 
         #[test]
@@ -818,7 +818,7 @@ mod tests {
                 span: 0..1,
             };
 
-            assert_eq!(err.to_string(), "invalid #-literal");
+            assert_eq!(err.to_string(), "invalid #-constant");
         }
 
         #[test]
@@ -828,7 +828,7 @@ mod tests {
                 span: 0..1,
             };
 
-            assert_eq!(err.to_string(), "unterminated #-literal");
+            assert_eq!(err.to_string(), "unterminated #-constant");
         }
 
         #[test]
@@ -942,7 +942,7 @@ mod tests {
                 span: 0..1,
             };
 
-            assert_eq!(err.to_string(), "unterminated string-literal");
+            assert_eq!(err.to_string(), "unterminated string constant");
         }
 
         #[test]
@@ -972,7 +972,7 @@ mod tests {
                 span: 0..1,
             };
 
-            assert_eq!(err.to_string(), "expected numeric literal");
+            assert_eq!(err.to_string(), "expected numeric constant");
         }
 
         #[test]
@@ -982,7 +982,7 @@ mod tests {
                 span: 0..1,
             };
 
-            assert_eq!(err.to_string(), "invalid numeric literal");
+            assert_eq!(err.to_string(), "invalid numeric constant");
         }
 
         #[test]
@@ -1044,7 +1044,7 @@ mod tests {
                 span: 0..1,
             };
 
-            assert_eq!(err.to_string(), "invalid imaginary literal");
+            assert_eq!(err.to_string(), "invalid imaginary constant");
         }
 
         #[test]
@@ -1054,7 +1054,7 @@ mod tests {
                 span: 0..1,
             };
 
-            assert_eq!(err.to_string(), "invalid rational literal");
+            assert_eq!(err.to_string(), "invalid rational constant");
         }
 
         #[test]
@@ -1064,7 +1064,7 @@ mod tests {
                 span: 0..1,
             };
 
-            assert_eq!(err.to_string(), "invalid complex literal");
+            assert_eq!(err.to_string(), "invalid complex constant");
         }
 
         #[test]
@@ -1074,7 +1074,7 @@ mod tests {
                 span: 0..1,
             };
 
-            assert_eq!(err.to_string(), "invalid polar literal");
+            assert_eq!(err.to_string(), "invalid polar constant");
         }
 
         #[test]

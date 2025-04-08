@@ -16,7 +16,7 @@ fn ascii_literal() {
     assert!(matches!(
         tok,
         Token {
-            kind: TokenKind::Literal(Literal::Character('a')),
+            kind: TokenKind::Constant(Constant::Character('a')),
             span: Range { start: 0, end: 3 },
         }
     ));
@@ -38,7 +38,7 @@ fn ascii_uppercase_literal() {
     assert!(matches!(
         tok,
         Token {
-            kind: TokenKind::Literal(Literal::Character('A')),
+            kind: TokenKind::Constant(Constant::Character('A')),
             span: Range { start: 0, end: 3 },
         }
     ));
@@ -60,7 +60,7 @@ fn extended_literal() {
     assert!(matches!(
         tok,
         Token {
-            kind: TokenKind::Literal(Literal::Character('λ')),
+            kind: TokenKind::Constant(Constant::Character('λ')),
             span: Range { start: 0, end: 4 },
         }
     ));
@@ -82,7 +82,7 @@ fn emoji_literal() {
     assert!(matches!(
         tok,
         Token {
-            kind: TokenKind::Literal(Literal::Character('🦀')),
+            kind: TokenKind::Constant(Constant::Character('🦀')),
             span: Range { start: 0, end: 6 },
         }
     ));
@@ -109,7 +109,7 @@ fn space_literal() {
     assert!(matches!(
         tok,
         Token {
-            kind: TokenKind::Literal(Literal::Character(' ')),
+            kind: TokenKind::Constant(Constant::Character(' ')),
             span: Range { start: 0, end: 3 },
         }
     ));
@@ -131,7 +131,7 @@ fn tab_literal() {
     assert!(matches!(
         tok,
         Token {
-            kind: TokenKind::Literal(Literal::Character('\t')),
+            kind: TokenKind::Constant(Constant::Character('\t')),
             span: Range { start: 0, end: 3 },
         }
     ));
@@ -190,7 +190,7 @@ fn space_followed_by_alpha() {
     assert!(matches!(
         tok,
         Token {
-            kind: TokenKind::Literal(Literal::Character(' ')),
+            kind: TokenKind::Constant(Constant::Character(' ')),
             span: Range { start: 0, end: 3 },
         }
     ));
@@ -256,7 +256,7 @@ fn alpha_followed_by_delimiter() {
     assert!(matches!(
         tok,
         Token {
-            kind: TokenKind::Literal(Literal::Character('a')),
+            kind: TokenKind::Constant(Constant::Character('a')),
             span: Range { start: 0, end: 3 },
         }
     ));
@@ -278,7 +278,7 @@ fn letter_x_is_not_hex() {
     assert!(matches!(
         tok,
         Token {
-            kind: TokenKind::Literal(Literal::Character('x')),
+            kind: TokenKind::Constant(Constant::Character('x')),
             span: Range { start: 0, end: 3 },
         }
     ));
@@ -300,7 +300,7 @@ fn hex_zero() {
     assert!(matches!(
         tok,
         Token {
-            kind: TokenKind::Literal(Literal::Character('\0')),
+            kind: TokenKind::Constant(Constant::Character('\0')),
             span: Range { start: 0, end: 4 },
         }
     ));
@@ -322,7 +322,7 @@ fn hex_lowercase() {
     assert!(matches!(
         tok,
         Token {
-            kind: TokenKind::Literal(Literal::Character('\n')),
+            kind: TokenKind::Constant(Constant::Character('\n')),
             span: Range { start: 0, end: 4 },
         }
     ));
@@ -344,7 +344,7 @@ fn hex_uppercase() {
     assert!(matches!(
         tok,
         Token {
-            kind: TokenKind::Literal(Literal::Character('\n')),
+            kind: TokenKind::Constant(Constant::Character('\n')),
             span: Range { start: 0, end: 4 },
         }
     ));
@@ -366,7 +366,7 @@ fn hex_uppercase_indicator() {
     assert!(matches!(
         tok,
         Token {
-            kind: TokenKind::Literal(Literal::Character('\n')),
+            kind: TokenKind::Constant(Constant::Character('\n')),
             span: Range { start: 0, end: 4 },
         }
     ));
@@ -466,7 +466,7 @@ fn check_character_list(cases: &[(&str, char)]) {
             matches!(
                 tok,
                 Token {
-                    kind: TokenKind::Literal(Literal::Character(ch)),
+                    kind: TokenKind::Constant(Constant::Character(ch)),
                     span: Range { start: 0, end },
                 } if ch == exp && end == input.len()
             ),

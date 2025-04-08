@@ -16,7 +16,7 @@ fn true_short() {
     assert!(matches!(
         tok,
         Token {
-            kind: TokenKind::Literal(Literal::Boolean(true)),
+            kind: TokenKind::Constant(Constant::Boolean(true)),
             span: Range { start: 0, end: 2 },
         }
     ));
@@ -38,7 +38,7 @@ fn true_long() {
     assert!(matches!(
         tok,
         Token {
-            kind: TokenKind::Literal(Literal::Boolean(true)),
+            kind: TokenKind::Constant(Constant::Boolean(true)),
             span: Range { start: 0, end: 5 },
         }
     ));
@@ -60,7 +60,7 @@ fn true_uppercase() {
     assert!(matches!(
         tok,
         Token {
-            kind: TokenKind::Literal(Literal::Boolean(true)),
+            kind: TokenKind::Constant(Constant::Boolean(true)),
             span: Range { start: 0, end: 5 },
         }
     ));
@@ -104,7 +104,7 @@ fn false_short() {
     assert!(matches!(
         tok,
         Token {
-            kind: TokenKind::Literal(Literal::Boolean(false)),
+            kind: TokenKind::Constant(Constant::Boolean(false)),
             span: Range { start: 0, end: 2 },
         }
     ));
@@ -126,7 +126,7 @@ fn false_long() {
     assert!(matches!(
         tok,
         Token {
-            kind: TokenKind::Literal(Literal::Boolean(false)),
+            kind: TokenKind::Constant(Constant::Boolean(false)),
             span: Range { start: 0, end: 6 },
         }
     ));
@@ -148,7 +148,7 @@ fn false_uppercase() {
     assert!(matches!(
         tok,
         Token {
-            kind: TokenKind::Literal(Literal::Boolean(false)),
+            kind: TokenKind::Constant(Constant::Boolean(false)),
             span: Range { start: 0, end: 6 },
         }
     ));

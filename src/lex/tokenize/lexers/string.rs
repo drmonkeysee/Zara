@@ -1,7 +1,7 @@
 use super::{FreeText, FreeTextPolicy};
 use crate::{
+    constant::Constant,
     lex::{TokenKind, token::TokenErrorKind, tokenize::scan::Scanner},
-    literal::Literal,
 };
 
 pub(in crate::lex::tokenize) type StringLiteral<'me, 'txt, M> =
@@ -75,7 +75,7 @@ pub(in crate::lex::tokenize) struct StartString;
 
 impl StringPolicyMode for StartString {
     fn terminated(&self, buf: String) -> TokenKind {
-        TokenKind::Literal(Literal::String(buf.into()))
+        TokenKind::Constant(Constant::String(buf.into()))
     }
 
     fn unterminated(&self, buf: String, line_cont: bool) -> TokenKind {

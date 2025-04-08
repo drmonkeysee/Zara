@@ -1,11 +1,11 @@
 use super::{Exactness, HexParse, Identifier, RadixNumber};
 use crate::{
+    constant::Constant,
     lex::{
         TokenKind,
         token::TokenErrorKind,
         tokenize::{TokenExtractResult, scan::Scanner},
     },
-    literal::Literal,
     number::{Binary, Hexadecimal, Octal, Radix},
 };
 
@@ -21,12 +21,12 @@ pub(in crate::lex::tokenize) struct Hashtag<'me, 'txt> {
 impl Hashtag<'_, '_> {
     pub(in crate::lex::tokenize) fn scan(&mut self) -> TokenExtractResult {
         match self.scanner.char_if_not_token_boundary() {
-            Some(ch) => self.literal(ch),
+            Some(ch) => self.constant(ch),
             None => self.comment(),
         }
     }
 
-    fn literal(&mut self, ch: char) -> TokenExtractResult {
+    fn constant(&mut self, ch: char) -> TokenExtractResult {
         match ch {
             '(' => Ok(TokenKind::Vector),
             EXACTL | EXACTU => self.exactness(Exactness::Exact),
@@ -49,7 +49,7 @@ impl Hashtag<'_, '_> {
     fn boolean(&mut self, val: bool) -> TokenExtractResult {
         let rest = self.scanner.rest_of_token();
         if rest.is_empty() || rest.eq_ignore_ascii_case(if val { "rue" } else { "alse" }) {
-            Ok(TokenKind::Literal(Literal::Boolean(val)))
+            Ok(TokenKind::Constant(Constant::Boolean(val)))
         } else {
             Err(TokenErrorKind::BooleanExpected(val))
         }
@@ -71,13 +71,13 @@ impl Hashtag<'_, '_> {
     fn character(&mut self) -> TokenExtractResult {
         self.scanner
             .char()
-            .map_or(Ok(TokenKind::Literal(Literal::Character('\n'))), |ch| {
+            .map_or(Ok(TokenKind::Constant(Constant::Character('\n'))), |ch| {
                 if ch.is_ascii_whitespace() {
-                    Ok(TokenKind::Literal(Literal::Character(ch)))
+                    Ok(TokenKind::Constant(Constant::Character(ch)))
                 } else {
                     let rest = self.scanner.rest_of_token();
                     if rest.is_empty() {
-                        Ok(TokenKind::Literal(Literal::Character(ch)))
+                        Ok(TokenKind::Constant(Constant::Character(ch)))
                     } else if matches!(ch, 'x' | 'X') {
                         char_hex(rest)
                     } else {
@@ -260,7 +260,7 @@ fn decimal(scanner: &mut Scanner, exactness: Option<Exactness>) -> TokenExtractR
         let result = Identifier::with_exactness(scanner, item, exactness).scan();
         match result {
             Err(TokenErrorKind::IdentifierInvalid(_)) => (),
-            Ok(TokenKind::Literal(Literal::Number(_)) | TokenKind::Imaginary(_)) | Err(_) => {
+            Ok(TokenKind::Constant(Constant::Number(_)) | TokenKind::Imaginary(_)) | Err(_) => {
                 return result;
             }
             _ => (),
@@ -273,7 +273,7 @@ fn char_hex(rest: &str) -> TokenExtractResult {
     match super::parse_char_hex(rest) {
         HexParse::Invalid => Err(TokenErrorKind::CharacterInvalidHex),
         HexParse::Unexpected => Err(TokenErrorKind::CharacterExpectedHex),
-        HexParse::Valid(ch) => Ok(TokenKind::Literal(Literal::Character(ch))),
+        HexParse::Valid(ch) => Ok(TokenKind::Constant(Constant::Character(ch))),
     }
 }
 
@@ -293,7 +293,7 @@ fn char_name(ch: char, rest: &str) -> TokenExtractResult {
 }
 
 fn char_lit(ch: char) -> TokenKind {
-    TokenKind::Literal(Literal::Character(ch))
+    TokenKind::Constant(Constant::Character(ch))
 }
 
 // NOTE: state functionality is covered by Tokenizer and Continuation tests
