@@ -53,7 +53,7 @@ mod tests {
     #[test]
     fn display_ast() {
         let val = Value::Ast(
-            Expression::Begin(vec![
+            Expression::Seq(vec![
                 Expression::constant(Constant::Character('a')),
                 Expression::constant(Constant::Character('b')),
                 Expression::constant(Constant::Character('c')),
@@ -63,7 +63,7 @@ mod tests {
 
         assert_eq!(
             val.as_datum().to_string(),
-            "{Begin([Literal(Constant(Character('a'))), Literal(Constant(Character('b'))), Literal(Constant(Character('c')))])}"
+            "{Seq([Literal(Constant(Character('a'))), Literal(Constant(Character('b'))), Literal(Constant(Character('c')))])}"
         );
     }
 }

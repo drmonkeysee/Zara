@@ -7,9 +7,9 @@ use std::{
 
 #[derive(Debug)]
 pub(crate) enum Expression {
-    Begin(Vec<Expression>),
     Empty,
     Literal(Value),
+    Seq(Vec<Expression>),
 }
 
 impl Expression {
@@ -19,9 +19,9 @@ impl Expression {
 
     pub(crate) fn eval(self) -> Option<Value> {
         match self {
-            Self::Begin(seq) => seq.into_iter().map(Self::eval).last()?,
             Self::Empty => None,
             Self::Literal(v) => Some(v),
+            Self::Seq(seq) => seq.into_iter().map(Self::eval).last()?,
         }
     }
 }
@@ -102,7 +102,7 @@ mod tests {
 
         #[test]
         fn empty_sequence() {
-            let expr = Expression::Begin(Vec::new());
+            let expr = Expression::Seq(Vec::new());
 
             let o = expr.eval();
 
@@ -111,7 +111,7 @@ mod tests {
 
         #[test]
         fn sequence() {
-            let expr = Expression::Begin(vec![
+            let expr = Expression::Seq(vec![
                 Expression::Literal(Value::Constant(Constant::Boolean(true))),
                 Expression::Literal(Value::Constant(Constant::Character('a'))),
                 Expression::Literal(Value::Constant(Constant::Character('b'))),

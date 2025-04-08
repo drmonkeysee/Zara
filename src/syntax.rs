@@ -253,7 +253,7 @@ mod tests {
 
         assert!(matches!(
             r,
-            Ok(ParserOutput::Complete(Expression::Begin(seq)))
+            Ok(ParserOutput::Complete(Expression::Seq(seq)))
             if seq.is_empty()
         ));
         assert!(et.parsers.is_empty());
@@ -270,7 +270,7 @@ mod tests {
 
         let seq = extract_or_fail!(
             extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete),
-            Expression::Begin
+            Expression::Seq
         );
         assert_eq!(seq.len(), 1);
         assert!(matches!(
@@ -293,7 +293,7 @@ mod tests {
 
         let seq = extract_or_fail!(
             extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete),
-            Expression::Begin
+            Expression::Seq
         );
         assert_eq!(seq.len(), 3);
         assert!(matches!(
@@ -336,7 +336,7 @@ mod tests {
 
         let seq = extract_or_fail!(
             extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete),
-            Expression::Begin
+            Expression::Seq
         );
         assert_eq!(seq.len(), 5);
         assert!(matches!(

@@ -66,7 +66,7 @@ impl ParseNode {
 
     pub(super) fn into_expr(self) -> Expression {
         match self.kind {
-            NodeKind::Program(exprs) => Expression::Begin(exprs),
+            NodeKind::Program(exprs) => Expression::Seq(exprs),
             NodeKind::StringLiteral(s) => Expression::constant(Constant::String(s.into())),
             _ => Expression::Empty,
         }
