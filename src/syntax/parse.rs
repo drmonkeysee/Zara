@@ -49,6 +49,7 @@ impl ParseNode {
 
     pub(super) fn parse(&mut self, token: Token) -> ParseFlow {
         match &mut self.kind {
+            NodeKind::ByteVector(seq) => parse_bytevector(seq, token),
             NodeKind::CommentBlock => parse_comment_block(token),
             NodeKind::Failed => ParseFlow::Continue(()),
             NodeKind::Program(seq) => parse_sequence(seq, token),
@@ -111,6 +112,7 @@ pub(super) enum Recovery {
 
 #[derive(Debug)]
 enum NodeKind {
+    ByteVector(Vec<Expression>),
     CommentBlock,
     Failed,
     Program(Vec<Expression>),
@@ -143,6 +145,23 @@ impl ParseCtx {
     }
 }
 
+fn parse_bytevector(seq: &mut Vec<Expression>, token: Token) -> ParseFlow {
+    todo!();
+    /*
+    let f := parse_sequence(vec)
+    if error, propogate flow
+    expr := vec.last()
+    if expr is u8:
+        keep in vec
+    else if expr is empty:
+        pop
+    else:
+        pop and raise error flow
+    continue until rparen or continuation
+    this is basically list parsing with some post-fix logic
+    */
+}
+
 fn parse_comment_block(token: Token) -> ParseFlow {
     match token.kind {
         TokenKind::CommentBlockFragment { .. } => ParseFlow::Continue(()),
@@ -159,6 +178,12 @@ fn parse_comment_block(token: Token) -> ParseFlow {
 
 fn parse_sequence(seq: &mut Vec<Expression>, token: Token) -> ParseFlow {
     match token.kind {
+        TokenKind::ByteVector => {
+            return ParseFlow::Break(ParseBreak::New(ParseNew {
+                kind: NodeKind::ByteVector(Vec::new()),
+                start: token.span.start,
+            }));
+        }
         TokenKind::Comment => (),
         TokenKind::CommentBlockBegin { .. } => {
             return ParseFlow::Break(ParseBreak::New(ParseNew {
@@ -232,7 +257,101 @@ fn parse_str(buf: &mut String, token: Token) -> ParseFlow {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::value::Value;
     use std::ops::Range;
+
+    mod bytevector {
+        use super::*;
+
+        #[test]
+        fn byte() {
+            let mut seq = Vec::new();
+            let token = Token {
+                kind: TokenKind::Literal(Literal::Number(Number::real(16))),
+                span: 3..5,
+            };
+
+            let f = parse_bytevector(&mut seq, token);
+
+            assert!(matches!(f, ParseFlow::Continue(())));
+            assert_eq!(seq.len(), 1);
+            assert!(matches!(
+                &seq[0],
+                Expression::Constant(Value::Literal(Literal::Number(n)))
+                if n.as_datum().to_string() == "16"
+            ));
+        }
+
+        #[test]
+        fn min_byte() {
+            let mut seq = Vec::new();
+            let token = Token {
+                kind: TokenKind::Literal(Literal::Number(Number::real(0))),
+                span: 3..5,
+            };
+
+            let f = parse_bytevector(&mut seq, token);
+
+            assert!(matches!(f, ParseFlow::Continue(())));
+            assert_eq!(seq.len(), 1);
+            assert!(matches!(
+                &seq[0],
+                Expression::Constant(Value::Literal(Literal::Number(n)))
+                if n.as_datum().to_string() == "0"
+            ));
+        }
+
+        #[test]
+        fn max_byte() {
+            let mut seq = Vec::new();
+            let token = Token {
+                kind: TokenKind::Literal(Literal::Number(Number::real(255))),
+                span: 3..5,
+            };
+
+            let f = parse_bytevector(&mut seq, token);
+
+            assert!(matches!(f, ParseFlow::Continue(())));
+            assert_eq!(seq.len(), 1);
+            assert!(matches!(
+                &seq[0],
+                Expression::Constant(Value::Literal(Literal::Number(n)))
+                if n.as_datum().to_string() == "255"
+            ));
+        }
+
+        #[test]
+        fn end() {
+            let mut seq = vec![
+                Expression::literal(Literal::Number(Number::real(24))),
+                Expression::literal(Literal::Number(Number::real(25))),
+                Expression::literal(Literal::Number(Number::real(26))),
+            ];
+            let token = Token {
+                kind: TokenKind::ParenRight,
+                span: 9..10,
+            };
+
+            let f = parse_bytevector(&mut seq, token);
+
+            assert!(matches!(f, ParseFlow::Break(ParseBreak::Complete)));
+            assert_eq!(seq.len(), 3);
+        }
+
+        #[test]
+        fn empty() {
+            let mut seq = Vec::new();
+            let token = Token {
+                kind: TokenKind::ParenRight,
+                span: 3..4,
+            };
+
+            let f = parse_bytevector(&mut seq, token);
+
+            assert!(matches!(f, ParseFlow::Break(ParseBreak::Complete)));
+            assert!(seq.is_empty());
+        }
+    }
 
     mod continuation {
         use super::*;
@@ -292,7 +411,7 @@ mod tests {
 
     mod sequence {
         use super::*;
-        use crate::{number::Real, testutil::extract_or_fail, value::Value};
+        use crate::{number::Real, testutil::extract_or_fail};
 
         #[test]
         fn literal() {
@@ -437,6 +556,26 @@ mod tests {
                     kind: NodeKind::CommentBlock,
                     start: 3
                 }))
+            ));
+            assert!(seq.is_empty());
+        }
+
+        #[test]
+        fn start_bytevector() {
+            let mut seq = Vec::new();
+            let token = Token {
+                kind: TokenKind::ByteVector,
+                span: 3..6,
+            };
+
+            let f = parse_sequence(&mut seq, token);
+
+            assert!(matches!(
+                f,
+                ParseFlow::Break(ParseBreak::New(ParseNew {
+                    kind: NodeKind::ByteVector(vec),
+                    start: 3
+                })) if vec.is_empty()
             ));
             assert!(seq.is_empty());
         }
