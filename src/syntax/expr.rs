@@ -9,6 +9,7 @@ use std::{
 pub(crate) enum Expression {
     Begin(Vec<Expression>),
     Constant(Value),
+    Empty,
 }
 
 impl Expression {
@@ -16,18 +17,11 @@ impl Expression {
         Self::Constant(Value::Literal(lit))
     }
 
-    pub(super) fn empty() -> Self {
-        Self::Constant(Value::Empty)
-    }
-
-    pub(crate) fn eval(self) -> Value {
+    pub(crate) fn eval(self) -> Option<Value> {
         match self {
-            Self::Begin(seq) => seq
-                .into_iter()
-                .map(Self::eval)
-                .last()
-                .unwrap_or(Value::Empty),
-            Self::Constant(val) => val,
+            Self::Begin(seq) => seq.into_iter().map(Self::eval).last()?,
+            Self::Constant(v) => Some(v),
+            Self::Empty => None,
         }
     }
 }
@@ -77,6 +71,53 @@ fn format_unexpected_error(kind: &str, token: &TokenKind, f: &mut Formatter) -> 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    mod eval {
+        use super::*;
+        use crate::testutil::some_or_fail;
+
+        #[test]
+        fn empty() {
+            let expr = Expression::Empty;
+
+            let o = expr.eval();
+
+            assert!(o.is_none());
+        }
+
+        #[test]
+        fn constant() {
+            let expr = Expression::Constant(Value::Literal(Literal::Boolean(true)));
+
+            let o = expr.eval();
+
+            let v = some_or_fail!(o);
+            assert!(matches!(v, Value::Literal(Literal::Boolean(true))));
+        }
+
+        #[test]
+        fn empty_sequence() {
+            let expr = Expression::Begin(Vec::new());
+
+            let o = expr.eval();
+
+            assert!(o.is_none());
+        }
+
+        #[test]
+        fn sequence() {
+            let expr = Expression::Begin(vec![
+                Expression::Constant(Value::Literal(Literal::Boolean(true))),
+                Expression::Constant(Value::Literal(Literal::Character('a'))),
+                Expression::Constant(Value::Literal(Literal::Character('b'))),
+            ]);
+
+            let o = expr.eval();
+
+            let v = some_or_fail!(o);
+            assert!(matches!(v, Value::Literal(Literal::Character('b'))));
+        }
+    }
 
     mod error {
         use super::*;

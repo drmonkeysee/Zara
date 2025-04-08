@@ -67,7 +67,7 @@ impl ParseNode {
         match self.kind {
             NodeKind::Program(exprs) => Expression::Begin(exprs),
             NodeKind::StringLiteral(s) => Expression::literal(Literal::String(s.into())),
-            _ => Expression::empty(),
+            _ => Expression::Empty,
         }
     }
 
@@ -169,7 +169,7 @@ fn parse_sequence(seq: &mut Vec<Expression>, token: Token) -> ParseFlow {
         TokenKind::Imaginary(r) => {
             seq.push(Expression::literal(Literal::Number(Number::imaginary(r))))
         }
-        TokenKind::Literal(val) => seq.push(Expression::literal(val)),
+        TokenKind::Literal(lit) => seq.push(Expression::literal(lit)),
         TokenKind::StringBegin { s, line_cont } => {
             return ParseFlow::Break(ParseBreak::New(ParseNew {
                 kind: NodeKind::string(s, !line_cont),

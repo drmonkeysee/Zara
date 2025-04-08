@@ -7,7 +7,7 @@ use std::fmt::{self, Display, Formatter};
 #[derive(Debug)]
 pub enum Evaluation {
     Continuation,
-    Value(Val),
+    Value(Option<Val>),
 }
 
 impl Evaluation {
@@ -16,8 +16,8 @@ impl Evaluation {
         EvaluationMessage(self)
     }
 
-    fn val(v: Value) -> Self {
-        Self::Value(Val(v))
+    fn val(v: Option<Value>) -> Self {
+        Self::Value(Val::wrap(v))
     }
 }
 
@@ -25,9 +25,8 @@ impl Evaluation {
 pub struct Val(Value);
 
 impl Val {
-    #[must_use]
-    pub fn has_value(&self) -> bool {
-        self.0.has_value()
+    fn wrap(v: Option<Value>) -> Option<Self> {
+        Some(Self(v?))
     }
 
     #[must_use]
@@ -49,8 +48,9 @@ pub struct EvaluationMessage<'a>(&'a Evaluation);
 impl Display for EvaluationMessage<'_> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self.0 {
-            Evaluation::Value(val) => val.0.display_message().fmt(f),
             Evaluation::Continuation => "fatal error: unexpected continuation".fmt(f),
+            Evaluation::Value(None) => Ok(()),
+            Evaluation::Value(Some(v)) => v.0.display_message().fmt(f),
         }
     }
 }
@@ -63,7 +63,7 @@ pub(crate) struct Ast;
 
 impl Evaluator for Ast {
     fn evaluate(&self, expression: Expression) -> Evaluation {
-        Evaluation::val(Value::Ast(expression.into()))
+        Evaluation::val(Some(Value::Ast(expression.into())))
     }
 }
 

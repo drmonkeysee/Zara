@@ -8,16 +8,11 @@ use std::fmt::{self, Display, Formatter};
 #[derive(Debug)]
 pub(crate) enum Value {
     Ast(Box<Expression>),
-    Empty,
     Literal(Literal),
     TokenList(Vec<TokenLine>),
 }
 
 impl Value {
-    pub(crate) fn has_value(&self) -> bool {
-        !matches!(self, Self::Empty)
-    }
-
     pub(crate) fn as_datum(&self) -> Datum {
         Datum(self)
     }
@@ -33,7 +28,6 @@ impl Display for Datum<'_> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self.0 {
             Value::Ast(expr) => format!("{{{expr:?}}}").fmt(f),
-            Value::Empty => Ok(()),
             Value::Literal(lit) => lit.as_datum().fmt(f),
             Value::TokenList(lines) => DisplayTokenLines(lines).fmt(f),
         }
@@ -71,12 +65,5 @@ mod tests {
             val.as_datum().to_string(),
             "{Begin([Constant(Literal(Character('a'))), Constant(Literal(Character('b'))), Constant(Literal(Character('c')))])}"
         );
-    }
-
-    #[test]
-    fn display_empty() {
-        let val = Value::Empty;
-
-        assert_eq!(val.as_datum().to_string(), "");
     }
 }
