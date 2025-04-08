@@ -52,6 +52,7 @@ impl ParseNode {
             NodeKind::ByteVector(seq) => parse_bytevector(seq, token),
             NodeKind::CommentBlock => parse_comment_block(token),
             NodeKind::Failed => ParseFlow::Continue(()),
+            NodeKind::Identifier(buf) => parse_verbatim_identifier(buf, token),
             NodeKind::Program(seq) => parse_sequence(seq, token),
             NodeKind::StringLiteral(buf) => parse_str(buf, token),
         }
@@ -67,6 +68,7 @@ impl ParseNode {
     pub(super) fn into_expr(self) -> Expression {
         match self.kind {
             NodeKind::Program(exprs) => Expression::Seq(exprs),
+            NodeKind::Identifier(s) => Expression::Identifier(s.into()),
             NodeKind::StringLiteral(s) => Expression::constant(Constant::String(s.into())),
             _ => Expression::Empty,
         }
@@ -75,6 +77,7 @@ impl ParseNode {
     pub(super) fn into_continuation_unsupported(self) -> Option<ParseErrorLine> {
         let err_kind = match self.kind {
             NodeKind::CommentBlock => Some(ExpressionErrorKind::CommentBlockUnterminated),
+            NodeKind::Identifier(_) => Some(ExpressionErrorKind::IdentifierUnterminated),
             NodeKind::StringLiteral(_) => Some(ExpressionErrorKind::StrUnterminated),
             _ => None,
         }?;
@@ -115,11 +118,17 @@ enum NodeKind {
     ByteVector(Vec<Expression>),
     CommentBlock,
     Failed,
+    Identifier(String),
     Program(Vec<Expression>),
     StringLiteral(String),
 }
 
 impl NodeKind {
+    fn identifier(mut s: String) -> Self {
+        s.push('\n');
+        Self::Identifier(s)
+    }
+
     fn string(mut s: String, newline: bool) -> Self {
         if newline {
             s.push('\n');
@@ -195,6 +204,15 @@ fn parse_sequence(seq: &mut Vec<Expression>, token: Token) -> ParseFlow {
         TokenKind::Imaginary(r) => {
             seq.push(Expression::constant(Constant::Number(Number::imaginary(r))))
         }
+        // TODO: check for keywords/special forms here?
+        // need to handle cases where e.g. "if" is shadowed by a user definition
+        TokenKind::Identifier(s) => seq.push(Expression::Identifier(s.into())),
+        TokenKind::IdentifierBegin(s) => {
+            return ParseFlow::Break(ParseBreak::New(ParseNew {
+                kind: NodeKind::identifier(s),
+                start: token.span.start,
+            }));
+        }
         TokenKind::StringBegin { s, line_cont } => {
             return ParseFlow::Break(ParseBreak::New(ParseNew {
                 kind: NodeKind::string(s, !line_cont),
@@ -247,6 +265,27 @@ fn parse_str(buf: &mut String, token: Token) -> ParseFlow {
         _ => ParseFlow::Break(ParseBreak::Err(
             ExpressionError {
                 kind: ExpressionErrorKind::StrInvalid(token.kind),
+                span: token.span,
+            },
+            ErrFlow::Break(Recovery::Fail),
+        )),
+    }
+}
+
+fn parse_verbatim_identifier(buf: &mut String, token: Token) -> ParseFlow {
+    match token.kind {
+        TokenKind::IdentifierFragment(s) => {
+            buf.push_str(&s);
+            buf.push('\n');
+            ParseFlow::Continue(())
+        }
+        TokenKind::IdentifierEnd(s) => {
+            buf.push_str(&s);
+            ParseFlow::Break(ParseBreak::Complete)
+        }
+        _ => ParseFlow::Break(ParseBreak::Err(
+            ExpressionError {
+                kind: ExpressionErrorKind::IdentifierInvalid(token.kind),
                 span: token.span,
             },
             ErrFlow::Break(Recovery::Fail),
@@ -406,6 +445,84 @@ mod tests {
                     span: Range { start: 3, end: 19 },
                 }
             ));
+        }
+
+        #[test]
+        fn identifier_continuation() {
+            let p = ParseNode::new(
+                NodeKind::Identifier("myproc".to_owned()),
+                3,
+                make_textline(),
+            );
+
+            let o = p.into_continuation_unsupported();
+
+            let err_line = some_or_fail!(o);
+            let ParseErrorLine(errs, line) = &err_line;
+            assert_eq!(line.lineno, 1);
+            assert_eq!(errs.len(), 1);
+            assert!(matches!(
+                &errs[0],
+                ExpressionError {
+                    kind: ExpressionErrorKind::IdentifierUnterminated,
+                    span: Range { start: 3, end: 19 },
+                }
+            ));
+        }
+    }
+
+    mod identifier {
+        use super::*;
+
+        #[test]
+        fn end() {
+            let mut s = "start\n".to_owned();
+            let token = Token {
+                kind: TokenKind::IdentifierEnd("end".to_owned()),
+                span: 0..4,
+            };
+
+            let f = parse_verbatim_identifier(&mut s, token);
+
+            assert!(matches!(f, ParseFlow::Break(ParseBreak::Complete)));
+            assert_eq!(s, "start\nend");
+        }
+
+        #[test]
+        fn fragment() {
+            let mut s = "start\n".to_owned();
+            let token = Token {
+                kind: TokenKind::IdentifierFragment("middle".to_owned()),
+                span: 0..6,
+            };
+
+            let f = parse_verbatim_identifier(&mut s, token);
+
+            assert!(matches!(f, ParseFlow::Continue(())));
+            assert_eq!(s, "start\nmiddle\n");
+        }
+
+        #[test]
+        fn invalid() {
+            let mut s = "start\n".to_owned();
+            let token = Token {
+                kind: TokenKind::ParenLeft,
+                span: 4..5,
+            };
+
+            let f = parse_verbatim_identifier(&mut s, token);
+
+            assert!(matches!(
+                f,
+                ParseFlow::Break(ParseBreak::Err(
+                    ExpressionError {
+                        kind: ExpressionErrorKind::IdentifierInvalid(TokenKind::ParenLeft),
+                        span: Range { start: 4, end: 5 },
+                    },
+                    ErrFlow::Break(Recovery::Fail),
+                ))
+            ));
+            assert_eq!(s, "start\n");
         }
     }
 
@@ -576,6 +693,64 @@ mod tests {
                     kind: NodeKind::ByteVector(vec),
                     start: 3
                 })) if vec.is_empty()
+            ));
+            assert!(seq.is_empty());
+        }
+
+        #[test]
+        fn identifier() {
+            let mut seq = Vec::new();
+            let token = Token {
+                kind: TokenKind::Identifier("myproc".to_owned()),
+                span: 0..6,
+            };
+
+            let f = parse_sequence(&mut seq, token);
+
+            assert!(matches!(f, ParseFlow::Continue(())));
+            assert_eq!(seq.len(), 1);
+            assert!(matches!(
+                &seq[0],
+                Expression::Identifier(s) if &**s == "myproc"
+            ));
+        }
+
+        #[test]
+        fn empty_identifier() {
+            let mut seq = Vec::new();
+            let token = Token {
+                kind: TokenKind::Identifier("".to_owned()),
+                span: 0..0,
+            };
+
+            let f = parse_sequence(&mut seq, token);
+
+            assert!(matches!(f, ParseFlow::Continue(())));
+            assert_eq!(seq.len(), 1);
+            assert!(matches!(
+                &seq[0],
+                Expression::Identifier(s) if &**s == ""
+            ));
+        }
+
+        #[test]
+        fn start_identifier() {
+            let mut seq = Vec::new();
+            let token = Token {
+                kind: TokenKind::IdentifierBegin("start".to_owned()),
+                span: 3..8,
+            };
+
+            let f = parse_sequence(&mut seq, token);
+
+            assert!(matches!(
+                f,
+                ParseFlow::Break(ParseBreak::New(
+                    ParseNew {
+                        kind: NodeKind::Identifier(s),
+                        start: 3
+                    }
+                )) if s == "start\n"
             ));
             assert!(seq.is_empty());
         }

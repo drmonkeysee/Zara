@@ -368,9 +368,9 @@ mod tests {
         let mut et: ExpressionTree = Default::default();
         let tokens = vec![make_tokenline(vec![
             TokenKind::Constant(Constant::Boolean(true)),
-            TokenKind::Identifier("foo".to_owned()),
+            TokenKind::DirectiveCase(true),
             TokenKind::Constant(Constant::Character('a')),
-            TokenKind::Identifier("bar".to_owned()),
+            TokenKind::DirectiveCase(false),
             TokenKind::Constant(Constant::String("foo".into())),
         ])];
 
@@ -385,16 +385,16 @@ mod tests {
         assert!(matches!(
             &errs[0],
             ExpressionError {
-                kind: ExpressionErrorKind::Unimplemented(TokenKind::Identifier(s)),
+                kind: ExpressionErrorKind::Unimplemented(TokenKind::DirectiveCase(true)),
                 span: Range { start: 1, end: 2 },
-            } if s == "foo"
+            }
         ));
         assert!(matches!(
             &errs[1],
             ExpressionError {
-                kind: ExpressionErrorKind::Unimplemented(TokenKind::Identifier(s)),
+                kind: ExpressionErrorKind::Unimplemented(TokenKind::DirectiveCase(false)),
                 span: Range { start: 3, end: 4 },
-            } if s == "bar"
+            }
         ));
         assert!(et.parsers.is_empty());
         assert!(et.errs.is_empty());
@@ -407,16 +407,16 @@ mod tests {
             make_tokenline_no(
                 vec![
                     TokenKind::Constant(Constant::Boolean(true)),
-                    TokenKind::Identifier("foo".to_owned()),
+                    TokenKind::DirectiveCase(true),
                     TokenKind::Constant(Constant::Character('a')),
-                    TokenKind::Identifier("bar".to_owned()),
+                    TokenKind::DirectiveCase(false),
                     TokenKind::Constant(Constant::String("foo".into())),
                 ],
                 1,
             ),
             make_tokenline_no(
                 vec![
-                    TokenKind::Identifier("baz".to_owned()),
+                    TokenKind::CommentDatum,
                     TokenKind::Constant(Constant::Boolean(false)),
                     TokenKind::Constant(Constant::Character('b')),
                 ],
@@ -436,16 +436,16 @@ mod tests {
         assert!(matches!(
             &errs[0],
             ExpressionError {
-                kind: ExpressionErrorKind::Unimplemented(TokenKind::Identifier(s)),
+                kind: ExpressionErrorKind::Unimplemented(TokenKind::DirectiveCase(true)),
                 span: Range { start: 1, end: 2 },
-            } if s == "foo"
+            }
         ));
         assert!(matches!(
             &errs[1],
             ExpressionError {
-                kind: ExpressionErrorKind::Unimplemented(TokenKind::Identifier(s)),
+                kind: ExpressionErrorKind::Unimplemented(TokenKind::DirectiveCase(false)),
                 span: Range { start: 3, end: 4 },
-            } if s == "bar"
+            }
         ));
 
         let err_line = &err_lines[1];
@@ -455,9 +455,9 @@ mod tests {
         assert!(matches!(
             &errs[0],
             ExpressionError {
-                kind: ExpressionErrorKind::Unimplemented(TokenKind::Identifier(s)),
+                kind: ExpressionErrorKind::Unimplemented(TokenKind::CommentDatum),
                 span: Range { start: 0, end: 1 },
-            } if s == "baz"
+            }
         ));
         assert!(et.parsers.is_empty());
         assert!(et.errs.is_empty());
@@ -470,9 +470,9 @@ mod tests {
             make_tokenline_no(
                 vec![
                     TokenKind::Constant(Constant::Boolean(true)),
-                    TokenKind::Identifier("foo".to_owned()),
+                    TokenKind::DirectiveCase(true),
                     TokenKind::Constant(Constant::Character('a')),
-                    TokenKind::Identifier("bar".to_owned()),
+                    TokenKind::DirectiveCase(false),
                     TokenKind::Constant(Constant::String("foo".into())),
                 ],
                 1,
@@ -482,13 +482,13 @@ mod tests {
                     TokenKind::Constant(Constant::Character('c')),
                     TokenKind::IdentifierDiscard,
                     TokenKind::Constant(Constant::Character('d')),
-                    TokenKind::Identifier("beef".to_owned()),
+                    TokenKind::CommentDatum,
                 ],
                 2,
             ),
             make_tokenline_no(
                 vec![
-                    TokenKind::Identifier("baz".to_owned()),
+                    TokenKind::CommentDatum,
                     TokenKind::Constant(Constant::Boolean(false)),
                     TokenKind::Constant(Constant::Character('b')),
                 ],
@@ -508,16 +508,16 @@ mod tests {
         assert!(matches!(
             &errs[0],
             ExpressionError {
-                kind: ExpressionErrorKind::Unimplemented(TokenKind::Identifier(s)),
+                kind: ExpressionErrorKind::Unimplemented(TokenKind::DirectiveCase(true)),
                 span: Range { start: 1, end: 2 },
-            } if s == "foo"
+            }
         ));
         assert!(matches!(
             &errs[1],
             ExpressionError {
-                kind: ExpressionErrorKind::Unimplemented(TokenKind::Identifier(s)),
+                kind: ExpressionErrorKind::Unimplemented(TokenKind::DirectiveCase(false)),
                 span: Range { start: 3, end: 4 },
-            } if s == "bar"
+            }
         ));
 
         let err_line = &err_lines[1];
@@ -634,7 +634,7 @@ mod tests {
         let mut et: ExpressionTree = Default::default();
         let tokens = vec![make_tokenline(vec![
             TokenKind::Constant(Constant::Boolean(true)),
-            TokenKind::Identifier("foo".to_owned()),
+            TokenKind::DirectiveCase(true),
             TokenKind::StringBegin {
                 s: "foo".to_owned(),
                 line_cont: false,
@@ -652,9 +652,9 @@ mod tests {
         assert!(matches!(
             &errs[0],
             ExpressionError {
-                kind: ExpressionErrorKind::Unimplemented(TokenKind::Identifier(s)),
+                kind: ExpressionErrorKind::Unimplemented(TokenKind::DirectiveCase(true)),
                 span: Range { start: 1, end: 2 },
-            } if s == "foo"
+            }
         ));
         assert!(et.parsers.is_empty());
         assert!(et.errs.is_empty());

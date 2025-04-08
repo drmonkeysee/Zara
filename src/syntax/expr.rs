@@ -8,6 +8,7 @@ use std::{
 #[derive(Debug)]
 pub(crate) enum Expression {
     Empty,
+    Identifier(Box<str>),
     Literal(Value),
     Seq(Vec<Expression>),
 }
@@ -20,6 +21,7 @@ impl Expression {
     pub(crate) fn eval(self) -> Option<Value> {
         match self {
             Self::Empty => None,
+            Self::Identifier(_) => todo!("this is dependent on current environment frame"),
             Self::Literal(v) => Some(v),
             Self::Seq(seq) => seq.into_iter().map(Self::eval).last()?,
         }
@@ -47,6 +49,8 @@ pub(super) enum ExpressionErrorKind {
     ByteVectorInvalidItem,
     CommentBlockInvalid(TokenKind),
     CommentBlockUnterminated,
+    IdentifierInvalid(TokenKind),
+    IdentifierUnterminated,
     SeqInvalid(TokenKind),
     StrInvalid(TokenKind),
     StrUnterminated,
@@ -61,6 +65,8 @@ impl Display for ExpressionErrorKind {
             Self::CommentBlockInvalid(t) => format_unexpected_error("comment block", t, f),
             // TODO: can i share tokenerrorkind display here
             Self::CommentBlockUnterminated => "unterminated block comment".fmt(f),
+            Self::IdentifierInvalid(t) => format_unexpected_error("verbatim identifier", t, f),
+            Self::IdentifierUnterminated => "unterminated verbatim identifier".fmt(f),
             Self::SeqInvalid(t) => format_unexpected_error("sequence", t, f),
             Self::StrInvalid(t) => format_unexpected_error("string", t, f),
             Self::StrUnterminated => "unterminated string constant".fmt(f),
@@ -138,6 +144,32 @@ mod tests {
                 err.to_string(),
                 format!("unexpected token in sequence: {}", TokenKind::Comment)
             );
+        }
+
+        #[test]
+        fn display_invalid_identifier() {
+            let err = ExpressionError {
+                kind: ExpressionErrorKind::IdentifierInvalid(TokenKind::Comment),
+                span: 0..5,
+            };
+
+            assert_eq!(
+                err.to_string(),
+                format!(
+                    "unexpected token in verbatim identifier: {}",
+                    TokenKind::Comment
+                )
+            );
+        }
+
+        #[test]
+        fn display_unterminated_identifier() {
+            let err = ExpressionError {
+                kind: ExpressionErrorKind::IdentifierUnterminated,
+                span: 0..5,
+            };
+
+            assert_eq!(err.to_string(), "unterminated verbatim identifier");
         }
 
         #[test]
