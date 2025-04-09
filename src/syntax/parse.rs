@@ -14,27 +14,27 @@ pub(super) type ParseFlow = ControlFlow<ParseBreak>;
 
 pub(super) struct ParseNode {
     ctx: Option<ParseCtx>,
-    kind: NodeKind,
+    mode: ParseMode,
 }
 
 impl ParseNode {
     pub(super) fn prg() -> Self {
         Self {
             ctx: None,
-            kind: NodeKind::Program(Vec::new()),
+            mode: ParseMode::Program(Vec::new()),
         }
     }
 
     pub(super) fn fail() -> Self {
         Self {
             ctx: None,
-            kind: NodeKind::Failed,
+            mode: ParseMode::Failed,
         }
     }
 
-    fn new(kind: NodeKind, start: usize, txt: impl Into<Rc<TextLine>>) -> Self {
+    fn new(mode: ParseMode, start: usize, txt: impl Into<Rc<TextLine>>) -> Self {
         Self {
-            kind,
+            mode,
             ctx: Some(ParseCtx {
                 txt: txt.into(),
                 start,
@@ -44,41 +44,41 @@ impl ParseNode {
 
     // TODO: temporary for debug assert
     pub(super) fn is_prg(&self) -> bool {
-        matches!(self.kind, NodeKind::Program(_))
+        matches!(self.mode, ParseMode::Program(_))
     }
 
     pub(super) fn parse(&mut self, token: Token) -> ParseFlow {
-        match &mut self.kind {
-            NodeKind::ByteVector(seq) => parse_bytevector(seq, token),
-            NodeKind::CommentBlock => parse_comment_block(token),
-            NodeKind::Failed => ParseFlow::Continue(()),
-            NodeKind::Identifier(buf) => parse_verbatim_identifier(buf, token),
-            NodeKind::Program(seq) => parse_sequence(seq, token),
-            NodeKind::StringLiteral(buf) => parse_str(buf, token),
+        match &mut self.mode {
+            ParseMode::ByteVector(seq) => parse_bytevector(seq, token),
+            ParseMode::CommentBlock => parse_comment_block(token),
+            ParseMode::Failed => ParseFlow::Continue(()),
+            ParseMode::Identifier(buf) => parse_verbatim_identifier(buf, token),
+            ParseMode::Program(seq) => parse_sequence(seq, token),
+            ParseMode::StringLiteral(buf) => parse_str(buf, token),
         }
     }
 
     pub(super) fn merge(&mut self, other: ParseNode) {
-        match &mut self.kind {
-            NodeKind::Program(exprs) => exprs.push(other.into_expr()),
+        match &mut self.mode {
+            ParseMode::Program(exprs) => exprs.push(other.into_expr()),
             _ => todo!("fail here somehow"),
         }
     }
 
     pub(super) fn into_expr(self) -> Expression {
-        match self.kind {
-            NodeKind::Program(exprs) => Expression::Seq(exprs),
-            NodeKind::Identifier(s) => Expression::Identifier(s.into()),
-            NodeKind::StringLiteral(s) => Expression::constant(Constant::String(s.into())),
+        match self.mode {
+            ParseMode::Program(exprs) => Expression::Seq(exprs),
+            ParseMode::Identifier(s) => Expression::Identifier(s.into()),
+            ParseMode::StringLiteral(s) => Expression::constant(Constant::String(s.into())),
             _ => Expression::Empty,
         }
     }
 
     pub(super) fn into_continuation_unsupported(self) -> Option<ParseErrorLine> {
-        let err_kind = match self.kind {
-            NodeKind::CommentBlock => Some(ExpressionErrorKind::CommentBlockUnterminated),
-            NodeKind::Identifier(_) => Some(ExpressionErrorKind::IdentifierUnterminated),
-            NodeKind::StringLiteral(_) => Some(ExpressionErrorKind::StrUnterminated),
+        let err_kind = match self.mode {
+            ParseMode::CommentBlock => Some(ExpressionErrorKind::CommentBlockUnterminated),
+            ParseMode::Identifier(_) => Some(ExpressionErrorKind::IdentifierUnterminated),
+            ParseMode::StringLiteral(_) => Some(ExpressionErrorKind::StrUnterminated),
             _ => None,
         }?;
         debug_assert!(self.ctx.is_some());
@@ -95,13 +95,13 @@ pub(super) enum ParseBreak {
 
 #[derive(Debug)]
 pub(super) struct ParseNew {
-    kind: NodeKind,
+    mode: ParseMode,
     start: usize,
 }
 
 impl ParseNew {
     pub(super) fn into_node(self, txt: impl Into<Rc<TextLine>>) -> ParseNode {
-        ParseNode::new(self.kind, self.start, txt)
+        ParseNode::new(self.mode, self.start, txt)
     }
 }
 
@@ -114,7 +114,7 @@ pub(super) enum Recovery {
 }
 
 #[derive(Debug)]
-enum NodeKind {
+enum ParseMode {
     ByteVector(Vec<Expression>),
     CommentBlock,
     Failed,
@@ -123,7 +123,7 @@ enum NodeKind {
     StringLiteral(String),
 }
 
-impl NodeKind {
+impl ParseMode {
     fn identifier(mut s: String) -> Self {
         s.push('\n');
         Self::Identifier(s)
@@ -189,14 +189,14 @@ fn parse_sequence(seq: &mut Vec<Expression>, token: Token) -> ParseFlow {
     match token.kind {
         TokenKind::ByteVector => {
             return ParseFlow::Break(ParseBreak::New(ParseNew {
-                kind: NodeKind::ByteVector(Vec::new()),
+                mode: ParseMode::ByteVector(Vec::new()),
                 start: token.span.start,
             }));
         }
         TokenKind::Comment => (),
         TokenKind::CommentBlockBegin { .. } => {
             return ParseFlow::Break(ParseBreak::New(ParseNew {
-                kind: NodeKind::CommentBlock,
+                mode: ParseMode::CommentBlock,
                 start: token.span.start,
             }));
         }
@@ -209,13 +209,13 @@ fn parse_sequence(seq: &mut Vec<Expression>, token: Token) -> ParseFlow {
         TokenKind::Identifier(s) => seq.push(Expression::Identifier(s.into())),
         TokenKind::IdentifierBegin(s) => {
             return ParseFlow::Break(ParseBreak::New(ParseNew {
-                kind: NodeKind::identifier(s),
+                mode: ParseMode::identifier(s),
                 start: token.span.start,
             }));
         }
         TokenKind::StringBegin { s, line_cont } => {
             return ParseFlow::Break(ParseBreak::New(ParseNew {
-                kind: NodeKind::string(s, !line_cont),
+                mode: ParseMode::string(s, !line_cont),
                 start: token.span.start,
             }));
         }
@@ -408,7 +408,7 @@ mod tests {
         #[test]
         fn str_continuation() {
             let p = ParseNode::new(
-                NodeKind::StringLiteral("foo".to_owned()),
+                ParseMode::StringLiteral("foo".to_owned()),
                 3,
                 make_textline(),
             );
@@ -430,7 +430,7 @@ mod tests {
 
         #[test]
         fn comment_block_continuation() {
-            let p = ParseNode::new(NodeKind::CommentBlock, 3, make_textline());
+            let p = ParseNode::new(ParseMode::CommentBlock, 3, make_textline());
 
             let o = p.into_continuation_unsupported();
 
@@ -450,7 +450,7 @@ mod tests {
         #[test]
         fn identifier_continuation() {
             let p = ParseNode::new(
-                NodeKind::Identifier("myproc".to_owned()),
+                ParseMode::Identifier("myproc".to_owned()),
                 3,
                 make_textline(),
             );
@@ -587,7 +587,7 @@ mod tests {
                 f,
                 ParseFlow::Break(ParseBreak::New(
                     ParseNew {
-                        kind: NodeKind::StringLiteral(s),
+                        mode: ParseMode::StringLiteral(s),
                         start: 3
                     }
                 )) if s == "start\n"
@@ -612,7 +612,7 @@ mod tests {
                 f,
                 ParseFlow::Break(ParseBreak::New(
                     ParseNew {
-                        kind: NodeKind::StringLiteral(s),
+                        mode: ParseMode::StringLiteral(s),
                         start: 3
                     }
                 )) if s == "start"
@@ -670,7 +670,7 @@ mod tests {
             assert!(matches!(
                 f,
                 ParseFlow::Break(ParseBreak::New(ParseNew {
-                    kind: NodeKind::CommentBlock,
+                    mode: ParseMode::CommentBlock,
                     start: 3
                 }))
             ));
@@ -690,7 +690,7 @@ mod tests {
             assert!(matches!(
                 f,
                 ParseFlow::Break(ParseBreak::New(ParseNew {
-                    kind: NodeKind::ByteVector(vec),
+                    mode: ParseMode::ByteVector(vec),
                     start: 3
                 })) if vec.is_empty()
             ));
@@ -747,7 +747,7 @@ mod tests {
                 f,
                 ParseFlow::Break(ParseBreak::New(
                     ParseNew {
-                        kind: NodeKind::Identifier(s),
+                        mode: ParseMode::Identifier(s),
                         start: 3
                     }
                 )) if s == "start\n"
