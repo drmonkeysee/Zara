@@ -69,6 +69,14 @@ impl Number {
             Self::Real(r) => Self::Real(r.into_inexact()),
         }
     }
+
+    // TODO: bv-temp
+    pub(crate) fn into_u8(self) -> u8 {
+        match self {
+            Self::Real(Real::Integer(n)) => n.into_u8(),
+            _ => 0,
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -256,6 +264,14 @@ impl Integer {
                 if self.sign == Sign::Negative { -f } else { f }
             }
             Precision::Multiple(_) => todo!(),
+        }
+    }
+
+    // TODO: bv-temp
+    fn into_u8(self) -> u8 {
+        match self.precision {
+            Precision::Single(u) => u as u8,
+            Precision::Multiple(_) => 255,
         }
     }
 }

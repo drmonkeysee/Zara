@@ -1,6 +1,9 @@
 #[cfg(test)]
 mod tests;
 
+// TODO: bv-temp
+use crate::value::Value;
+
 use super::{
     ParseErrorLine,
     expr::{Expression, ExpressionError, ExpressionErrorKind},
@@ -52,11 +55,10 @@ impl ParseNode {
 
     pub(super) fn parse(&mut self, token: Token) -> ParseFlow {
         match &mut self.mode {
-            ParseMode::ByteVector(seq) => parse_bytevector(seq, token),
+            ParseMode::ByteVector(seq) | ParseMode::List(seq) => parse_list(seq, token),
             ParseMode::CommentBlock => parse_comment_block(token),
             ParseMode::Failed => ParseFlow::Continue(()),
             ParseMode::Identifier(buf) => parse_verbatim_identifier(buf, token),
-            ParseMode::List(seq) => parse_list(seq, token),
             ParseMode::Program(seq) => parse_sequence(seq, token),
             ParseMode::StringLiteral(buf) => parse_str(buf, token),
         }
@@ -71,6 +73,14 @@ impl ParseNode {
 
     pub(super) fn into_expr(self) -> Expression {
         match self.mode {
+            ParseMode::ByteVector(seq) => {
+                // todo!("filter out everything except bytes")
+                let bytes = seq.into_iter().map(|expr| match expr {
+                    Expression::Literal(Value::Constant(Constant::Number(n))) => n.into_u8(),
+                    _ => 0,
+                });
+                Expression::Literal(Value::ByteVector(bytes.collect()))
+            }
             ParseMode::Identifier(s) => Expression::Identifier(s.into()),
             ParseMode::List(seq) => {
                 debug_assert!(

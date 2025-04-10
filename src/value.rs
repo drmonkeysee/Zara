@@ -8,6 +8,7 @@ use std::fmt::{self, Display, Formatter};
 #[derive(Debug)]
 pub(crate) enum Value {
     Ast(Box<Expression>),
+    ByteVector(Box<[u8]>),
     Constant(Constant),
     TokenList(Box<[TokenLine]>),
 }
@@ -28,6 +29,7 @@ impl Display for Datum<'_> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self.0 {
             Value::Ast(expr) => format!("{{{expr:?}}}").fmt(f),
+            Value::ByteVector(_) => todo!("print as #u8(...)"),
             Value::Constant(con) => con.as_datum().fmt(f),
             Value::TokenList(lines) => DisplayTokenLines(lines).fmt(f),
         }
