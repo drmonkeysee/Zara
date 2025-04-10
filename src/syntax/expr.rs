@@ -7,10 +7,15 @@ use std::{
 
 #[derive(Debug)]
 pub(crate) enum Expression {
+    Call {
+        args: Box<[Expression]>,
+        proc: Box<Expression>,
+    },
+    // TODO: dump Empty in favor of Option<..>?
     Empty,
     Identifier(Box<str>),
     Literal(Value),
-    Seq(Vec<Expression>),
+    Seq(Box<[Expression]>),
 }
 
 impl Expression {
@@ -20,6 +25,7 @@ impl Expression {
 
     pub(crate) fn eval(self) -> Option<Value> {
         match self {
+            Self::Call { .. } => todo!("no idea what to do here"),
             Self::Empty => None,
             Self::Identifier(_) => todo!("this is dependent on current environment frame"),
             Self::Literal(v) => Some(v),
@@ -51,6 +57,7 @@ pub(super) enum ExpressionErrorKind {
     CommentBlockUnterminated,
     IdentifierInvalid(TokenKind),
     IdentifierUnterminated,
+    ListUnterminated,
     SeqInvalid(TokenKind),
     StrInvalid(TokenKind),
     StrUnterminated,
@@ -67,6 +74,7 @@ impl Display for ExpressionErrorKind {
             Self::CommentBlockUnterminated => "unterminated block comment".fmt(f),
             Self::IdentifierInvalid(t) => format_unexpected_error("verbatim identifier", t, f),
             Self::IdentifierUnterminated => "unterminated verbatim identifier".fmt(f),
+            Self::ListUnterminated => "unterminated list expression".fmt(f),
             Self::SeqInvalid(t) => format_unexpected_error("sequence", t, f),
             Self::StrInvalid(t) => format_unexpected_error("string", t, f),
             Self::StrUnterminated => "unterminated string constant".fmt(f),
@@ -108,7 +116,7 @@ mod tests {
 
         #[test]
         fn empty_sequence() {
-            let expr = Expression::Seq(Vec::new());
+            let expr = Expression::Seq([].into());
 
             let o = expr.eval();
 
@@ -117,11 +125,14 @@ mod tests {
 
         #[test]
         fn sequence() {
-            let expr = Expression::Seq(vec![
-                Expression::Literal(Value::Constant(Constant::Boolean(true))),
-                Expression::Literal(Value::Constant(Constant::Character('a'))),
-                Expression::Literal(Value::Constant(Constant::Character('b'))),
-            ]);
+            let expr = Expression::Seq(
+                [
+                    Expression::Literal(Value::Constant(Constant::Boolean(true))),
+                    Expression::Literal(Value::Constant(Constant::Character('a'))),
+                    Expression::Literal(Value::Constant(Constant::Character('b'))),
+                ]
+                .into(),
+            );
 
             let o = expr.eval();
 
@@ -170,6 +181,16 @@ mod tests {
             };
 
             assert_eq!(err.to_string(), "unterminated verbatim identifier");
+        }
+
+        #[test]
+        fn display_unterminated_list() {
+            let err = ExpressionError {
+                kind: ExpressionErrorKind::ListUnterminated,
+                span: 0..5,
+            };
+
+            assert_eq!(err.to_string(), "unterminated list expression");
         }
 
         #[test]

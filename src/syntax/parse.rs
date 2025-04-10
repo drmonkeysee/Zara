@@ -53,6 +53,7 @@ impl ParseNode {
             ParseMode::CommentBlock => parse_comment_block(token),
             ParseMode::Failed => ParseFlow::Continue(()),
             ParseMode::Identifier(buf) => parse_verbatim_identifier(buf, token),
+            ParseMode::List(seq) => parse_list(seq, token),
             ParseMode::Program(seq) => parse_sequence(seq, token),
             ParseMode::StringLiteral(buf) => parse_str(buf, token),
         }
@@ -67,8 +68,20 @@ impl ParseNode {
 
     pub(super) fn into_expr(self) -> Expression {
         match self.mode {
-            ParseMode::Program(exprs) => Expression::Seq(exprs),
             ParseMode::Identifier(s) => Expression::Identifier(s.into()),
+            ParseMode::List(seq) => {
+                debug_assert!(
+                    !seq.is_empty(),
+                    "empty list is invalid syntax unless quoted"
+                );
+                let mut iter = seq.into_iter();
+                let proc = iter.next().unwrap();
+                Expression::Call {
+                    args: iter.collect(),
+                    proc: proc.into(),
+                }
+            }
+            ParseMode::Program(exprs) => Expression::Seq(exprs.into()),
             ParseMode::StringLiteral(s) => Expression::constant(Constant::String(s.into())),
             _ => Expression::Empty,
         }
@@ -78,6 +91,7 @@ impl ParseNode {
         let err_kind = match self.mode {
             ParseMode::CommentBlock => Some(ExpressionErrorKind::CommentBlockUnterminated),
             ParseMode::Identifier(_) => Some(ExpressionErrorKind::IdentifierUnterminated),
+            ParseMode::List(_) => Some(ExpressionErrorKind::ListUnterminated),
             ParseMode::StringLiteral(_) => Some(ExpressionErrorKind::StrUnterminated),
             _ => None,
         }?;
@@ -119,6 +133,7 @@ enum ParseMode {
     CommentBlock,
     Failed,
     Identifier(String),
+    List(Vec<Expression>),
     Program(Vec<Expression>),
     StringLiteral(String),
 }
@@ -185,6 +200,13 @@ fn parse_comment_block(token: Token) -> ParseFlow {
     }
 }
 
+fn parse_list(seq: &mut Vec<Expression>, token: Token) -> ParseFlow {
+    match token.kind {
+        TokenKind::ParenRight => ParseFlow::Break(ParseBreak::Complete),
+        _ => parse_sequence(seq, token),
+    }
+}
+
 fn parse_sequence(seq: &mut Vec<Expression>, token: Token) -> ParseFlow {
     match token.kind {
         TokenKind::ByteVector => {
@@ -210,6 +232,12 @@ fn parse_sequence(seq: &mut Vec<Expression>, token: Token) -> ParseFlow {
         TokenKind::IdentifierBegin(s) => {
             return ParseFlow::Break(ParseBreak::New(ParseNew {
                 mode: ParseMode::identifier(s),
+                start: token.span.start,
+            }));
+        }
+        TokenKind::ParenLeft => {
+            return ParseFlow::Break(ParseBreak::New(ParseNew {
+                mode: ParseMode::List(Vec::new()),
                 start: token.span.start,
             }));
         }
@@ -465,6 +493,33 @@ mod tests {
                 &errs[0],
                 ExpressionError {
                     kind: ExpressionErrorKind::IdentifierUnterminated,
+                    span: Range { start: 3, end: 19 },
+                }
+            ));
+        }
+
+        #[test]
+        fn list_continuation() {
+            let p = ParseNode::new(
+                ParseMode::List(vec![
+                    Expression::Identifier("+".into()),
+                    Expression::constant(Constant::Number(Number::real(4))),
+                    Expression::constant(Constant::Number(Number::real(5))),
+                ]),
+                3,
+                make_textline(),
+            );
+
+            let o = p.into_continuation_unsupported();
+
+            let err_line = some_or_fail!(o);
+            let ParseErrorLine(errs, line) = &err_line;
+            assert_eq!(line.lineno, 1);
+            assert_eq!(errs.len(), 1);
+            assert!(matches!(
+                &errs[0],
+                ExpressionError {
+                    kind: ExpressionErrorKind::ListUnterminated,
                     span: Range { start: 3, end: 19 },
                 }
             ));
@@ -753,6 +808,138 @@ mod tests {
                 )) if s == "start\n"
             ));
             assert!(seq.is_empty());
+        }
+
+        #[test]
+        fn start_list() {
+            let mut seq = Vec::new();
+            let token = Token {
+                kind: TokenKind::ParenLeft,
+                span: 1..2,
+            };
+
+            let f = parse_sequence(&mut seq, token);
+
+            assert!(matches!(
+                f,
+                ParseFlow::Break(ParseBreak::New(
+                    ParseNew {
+                        mode: ParseMode::List(vec),
+                        start: 1
+                    }
+                )) if vec.is_empty()
+            ));
+            assert!(seq.is_empty());
+        }
+    }
+
+    mod list {
+        use super::*;
+
+        #[test]
+        fn end() {
+            let mut seq = vec![
+                Expression::Identifier("+".into()),
+                Expression::constant(Constant::Number(Number::real(4))),
+                Expression::constant(Constant::Number(Number::real(5))),
+            ];
+            let token = Token {
+                kind: TokenKind::ParenRight,
+                span: 4..5,
+            };
+
+            let f = parse_list(&mut seq, token);
+
+            assert!(matches!(f, ParseFlow::Break(ParseBreak::Complete)));
+            assert_eq!(seq.len(), 3);
+        }
+
+        #[test]
+        fn nested_list() {
+            let mut seq = vec![
+                Expression::Identifier("+".into()),
+                Expression::constant(Constant::Number(Number::real(4))),
+                Expression::constant(Constant::Number(Number::real(5))),
+            ];
+            let token = Token {
+                kind: TokenKind::ParenLeft,
+                span: 4..5,
+            };
+
+            let f = parse_list(&mut seq, token);
+
+            assert!(matches!(
+                f,
+                ParseFlow::Break(ParseBreak::New(ParseNew {
+                    mode: ParseMode::List(vec),
+                    start: 4
+                })) if vec.is_empty()
+            ));
+            assert_eq!(seq.len(), 3);
+        }
+
+        #[test]
+        fn empty() {
+            let mut seq = Vec::new();
+            let token = Token {
+                kind: TokenKind::ParenRight,
+                span: 4..5,
+            };
+
+            let f = parse_list(&mut seq, token);
+
+            assert!(matches!(f, ParseFlow::Break(ParseBreak::Complete)));
+            assert!(seq.is_empty());
+        }
+
+        #[test]
+        fn non_list_expression() {
+            let mut seq = vec![
+                Expression::Identifier("+".into()),
+                Expression::constant(Constant::Number(Number::real(4))),
+                Expression::constant(Constant::Number(Number::real(5))),
+            ];
+            let token = Token {
+                kind: TokenKind::Constant(Constant::Number(Number::real(10))),
+                span: 4..6,
+            };
+
+            let f = parse_list(&mut seq, token);
+
+            assert!(matches!(f, ParseFlow::Continue(())));
+            assert_eq!(seq.len(), 4);
+            assert!(matches!(
+                &seq[3],
+                Expression::Literal(Value::Constant(Constant::Number(n)))
+                if n.as_datum().to_string() == "10"
+            ));
+        }
+
+        #[test]
+        fn invalid_token() {
+            let mut seq = vec![
+                Expression::Identifier("+".into()),
+                Expression::constant(Constant::Number(Number::real(4))),
+                Expression::constant(Constant::Number(Number::real(5))),
+            ];
+            let token = Token {
+                kind: TokenKind::StringDiscard,
+                span: 4..6,
+            };
+
+            let f = parse_list(&mut seq, token);
+
+            assert!(matches!(
+                f,
+                ParseFlow::Break(ParseBreak::Err(
+                    ExpressionError {
+                        kind: ExpressionErrorKind::SeqInvalid(TokenKind::StringDiscard),
+                        span: Range { start: 4, end: 6 },
+                    },
+                    ErrFlow::Break(Recovery::Fail),
+                ))
+            ));
+            assert_eq!(seq.len(), 3);
         }
     }
 

@@ -9,7 +9,7 @@ use std::fmt::{self, Display, Formatter};
 pub(crate) enum Value {
     Ast(Box<Expression>),
     Constant(Constant),
-    TokenList(Vec<TokenLine>),
+    TokenList(Box<[TokenLine]>),
 }
 
 impl Value {
@@ -53,11 +53,14 @@ mod tests {
     #[test]
     fn display_ast() {
         let val = Value::Ast(
-            Expression::Seq(vec![
-                Expression::constant(Constant::Character('a')),
-                Expression::constant(Constant::Character('b')),
-                Expression::constant(Constant::Character('c')),
-            ])
+            Expression::Seq(
+                [
+                    Expression::constant(Constant::Character('a')),
+                    Expression::constant(Constant::Character('b')),
+                    Expression::constant(Constant::Character('c')),
+                ]
+                .into(),
+            )
             .into(),
         );
 

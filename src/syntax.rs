@@ -49,7 +49,7 @@ pub(crate) struct TokenList;
 impl Parser for TokenList {
     fn parse(&mut self, token_lines: Vec<TokenLine>) -> ParserResult {
         Ok(ParserOutput::Complete(Expression::Literal(
-            Value::TokenList(token_lines),
+            Value::TokenList(token_lines.into()),
         )))
     }
 
