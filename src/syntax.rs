@@ -114,8 +114,8 @@ impl ExpressionTree {
                     // TODO: fix this unwrap
                     debug_assert!(!self.parsers.is_empty());
                     parser = self.parsers.pop().unwrap();
-                    if let Err(err) = parser.merge(done) {
-                        errs.push(err);
+                    if let Err(errv) = parser.merge(done) {
+                        errs.extend(errv);
                     }
                 }
                 ParseFlow::Break(ParseBreak::Err(err, recovery)) => {
@@ -163,7 +163,10 @@ impl Parser for ExpressionTree {
         if self.errs.is_empty() {
             Ok(if self.parsers.is_empty() {
                 debug_assert!(parser.is_prg());
-                ParserOutput::Complete(parser.into_expr())
+                match parser.try_into() {
+                    Ok(expr) => ParserOutput::Complete(expr),
+                    Err(_) => todo!("need to convert to parsererror"),
+                }
             } else {
                 self.parsers.push(parser);
                 ParserOutput::Continuation

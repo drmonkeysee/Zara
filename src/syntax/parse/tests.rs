@@ -13,7 +13,7 @@ mod bytevector {
             span: 3..5,
         };
 
-        let f = parse_bytevector(&mut seq, token);
+        let f = parse_list(&mut seq, token);
 
         assert!(matches!(f, ParseFlow::Continue(())));
         assert_eq!(seq.len(), 1);
@@ -32,7 +32,7 @@ mod bytevector {
             span: 3..5,
         };
 
-        let f = parse_bytevector(&mut seq, token);
+        let f = parse_list(&mut seq, token);
 
         assert!(matches!(f, ParseFlow::Continue(())));
         assert_eq!(seq.len(), 1);
@@ -51,7 +51,7 @@ mod bytevector {
             span: 3..5,
         };
 
-        let f = parse_bytevector(&mut seq, token);
+        let f = parse_list(&mut seq, token);
 
         assert!(matches!(f, ParseFlow::Continue(())));
         assert_eq!(seq.len(), 1);
@@ -74,7 +74,7 @@ mod bytevector {
             span: 9..10,
         };
 
-        let f = parse_bytevector(&mut seq, token);
+        let f = parse_list(&mut seq, token);
 
         assert!(matches!(f, ParseFlow::Break(ParseBreak::Complete)));
         assert_eq!(seq.len(), 3);
@@ -88,7 +88,7 @@ mod bytevector {
             span: 3..4,
         };
 
-        let f = parse_bytevector(&mut seq, token);
+        let f = parse_list(&mut seq, token);
 
         assert!(matches!(f, ParseFlow::Break(ParseBreak::Complete)));
         assert!(seq.is_empty());

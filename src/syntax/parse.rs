@@ -64,40 +64,11 @@ impl ParseNode {
         }
     }
 
-    pub(super) fn merge(&mut self, other: ParseNode) -> Result<(), ExpressionError> {
+    pub(super) fn merge(&mut self, other: ParseNode) -> Result<(), Vec<ExpressionError>> {
         match &mut self.mode {
-            ParseMode::Program(exprs) => Ok(exprs.push(other.into_expr()?)),
+            ParseMode::Program(exprs) => Ok(exprs.push(other.try_into()?)),
             _ => todo!("fail here somehow"),
         }
-    }
-
-    pub(super) fn into_expr(self) -> Result<Expression, ExpressionError> {
-        Ok(match self.mode {
-            ParseMode::ByteVector(seq) => {
-                // todo!("filter out everything except bytes")
-                let bytes = seq.into_iter().map(|expr| match expr {
-                    Expression::Literal(Value::Constant(Constant::Number(n))) => n.into_u8(),
-                    _ => 0,
-                });
-                Expression::Literal(Value::ByteVector(bytes.collect()))
-            }
-            ParseMode::Identifier(s) => Expression::Identifier(s.into()),
-            ParseMode::List(seq) => {
-                debug_assert!(
-                    !seq.is_empty(),
-                    "empty list is invalid syntax unless quoted"
-                );
-                let mut iter = seq.into_iter();
-                let proc = iter.next().unwrap();
-                Expression::Call {
-                    args: iter.collect(),
-                    proc: proc.into(),
-                }
-            }
-            ParseMode::Program(exprs) => Expression::Seq(exprs.into()),
-            ParseMode::StringLiteral(s) => Expression::constant(Constant::String(s.into())),
-            _ => Expression::Empty,
-        })
     }
 
     pub(super) fn into_continuation_unsupported(self) -> Option<ParseErrorLine> {
@@ -110,6 +81,21 @@ impl ParseNode {
         }?;
         debug_assert!(self.ctx.is_some());
         Some(self.ctx.unwrap().into_errorline(err_kind))
+    }
+}
+
+impl TryFrom<ParseNode> for Expression {
+    type Error = Vec<ExpressionError>;
+
+    fn try_from(node: ParseNode) -> Result<Self, <Self as TryFrom<ParseNode>>::Error> {
+        Ok(match node.mode {
+            ParseMode::ByteVector(seq) => into_bytevector(seq)?,
+            ParseMode::Identifier(s) => Expression::Identifier(s.into()),
+            ParseMode::List(seq) => convert_list(seq),
+            ParseMode::Program(exprs) => Expression::Seq(exprs.into()),
+            ParseMode::StringLiteral(s) => Expression::constant(Constant::String(s.into())),
+            _ => Expression::Empty,
+        })
     }
 }
 
@@ -180,23 +166,6 @@ impl ParseCtx {
             self.txt,
         )
     }
-}
-
-fn parse_bytevector(seq: &mut Vec<Expression>, token: Token) -> ParseFlow {
-    todo!();
-    /*
-    let f := parse_sequence(vec)
-    if error, propogate flow
-    expr := vec.last()
-    if expr is u8:
-        keep in vec
-    else if expr is empty:
-        pop
-    else:
-        pop and raise error flow
-    continue until rparen or continuation
-    this is basically list parsing with some post-fix logic
-    */
 }
 
 fn parse_comment_block(token: Token) -> ParseFlow {
@@ -331,5 +300,45 @@ fn parse_verbatim_identifier(buf: &mut String, token: Token) -> ParseFlow {
             },
             ErrFlow::Break(Recovery::Fail),
         )),
+    }
+}
+
+type NodeToExprResult = Result<Expression, <Expression as TryFrom<ParseNode>>::Error>;
+
+fn into_bytevector(seq: Vec<Expression>) -> NodeToExprResult {
+    // todo!("filter out everything except bytes")
+    /*
+    errors
+    - invalid type (anything that's not an Integer)
+    - out of range (< 0 or > 255)
+    */
+    let foo = seq.into_iter().map(|expr| match expr {
+        Expression::Literal(Value::Constant(Constant::Number(n))) => Ok(n.into_u8()),
+        _ => Err(ExpressionError {
+            kind: ExpressionErrorKind::ByteVectorInvalidItem,
+            span: 0..0,
+        }),
+    });
+    let (bytes, errs): (Vec<_>, Vec<_>) = foo.partition(Result::is_ok);
+    //todo!("do something with errors");
+    if errs.is_empty() {
+        Ok(Expression::Literal(Value::ByteVector(
+            bytes.into_iter().flatten().collect(),
+        )))
+    } else {
+        Err(errs.into_iter().filter_map(Result::err).collect::<Vec<_>>())?
+    }
+}
+
+fn convert_list(seq: Vec<Expression>) -> Expression {
+    debug_assert!(
+        !seq.is_empty(),
+        "empty list is invalid syntax unless quoted"
+    );
+    let mut iter = seq.into_iter();
+    let proc = iter.next().unwrap();
+    Expression::Call {
+        args: iter.collect(),
+        proc: proc.into(),
     }
 }
