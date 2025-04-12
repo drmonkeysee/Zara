@@ -40,16 +40,16 @@ impl Display for ParserError {
 impl Error for ParserError {}
 
 pub(crate) trait Parser {
-    fn parse(&mut self, token_lines: Vec<TokenLine>) -> ParserResult;
+    fn parse(&mut self, token_lines: impl IntoIterator<Item = TokenLine>) -> ParserResult;
     fn unsupported_continuation(&mut self) -> Option<ParserError>;
 }
 
 pub(crate) struct TokenList;
 
 impl Parser for TokenList {
-    fn parse(&mut self, token_lines: Vec<TokenLine>) -> ParserResult {
+    fn parse(&mut self, token_lines: impl IntoIterator<Item = TokenLine>) -> ParserResult {
         Ok(ParserOutput::Complete(Expression::Literal(
-            Value::TokenList(token_lines.into()),
+            Value::TokenList(token_lines.into_iter().collect()),
         )))
     }
 
@@ -153,7 +153,7 @@ impl ExpressionTree {
 }
 
 impl Parser for ExpressionTree {
-    fn parse(&mut self, token_lines: Vec<TokenLine>) -> ParserResult {
+    fn parse(&mut self, token_lines: impl IntoIterator<Item = TokenLine>) -> ParserResult {
         let parser = token_lines
             .into_iter()
             .fold(self.parsers.pop().unwrap_or(ParseNode::prg()), |p, ln| {
@@ -267,9 +267,9 @@ mod tests {
     #[test]
     fn single_literal_sequence() {
         let mut et: ExpressionTree = Default::default();
-        let tokens = vec![make_tokenline(vec![TokenKind::Constant(
-            Constant::Boolean(true),
-        )])];
+        let tokens = [make_tokenline([TokenKind::Constant(Constant::Boolean(
+            true,
+        ))])];
 
         let r = et.parse(tokens);
 
@@ -288,7 +288,7 @@ mod tests {
     #[test]
     fn multiple_literals_sequence() {
         let mut et: ExpressionTree = Default::default();
-        let tokens = vec![make_tokenline(vec![
+        let tokens = [make_tokenline([
             TokenKind::Constant(Constant::Boolean(true)),
             TokenKind::Constant(Constant::Character('a')),
             TokenKind::Constant(Constant::String("foo".into())),
@@ -319,9 +319,9 @@ mod tests {
     #[test]
     fn sequence_multiple_lines() {
         let mut et: ExpressionTree = Default::default();
-        let tokens = vec![
+        let tokens = [
             make_tokenline_no(
-                vec![
+                [
                     TokenKind::Constant(Constant::Boolean(true)),
                     TokenKind::Constant(Constant::Character('a')),
                     TokenKind::Constant(Constant::String("foo".into())),
@@ -329,7 +329,7 @@ mod tests {
                 1,
             ),
             make_tokenline_no(
-                vec![
+                [
                     TokenKind::Constant(Constant::Boolean(false)),
                     TokenKind::Constant(Constant::Character('b')),
                 ],
@@ -371,7 +371,7 @@ mod tests {
     #[test]
     fn sequence_line_with_errors() {
         let mut et: ExpressionTree = Default::default();
-        let tokens = vec![make_tokenline(vec![
+        let tokens = [make_tokenline([
             TokenKind::Constant(Constant::Boolean(true)),
             TokenKind::DirectiveCase(true),
             TokenKind::Constant(Constant::Character('a')),
@@ -408,9 +408,9 @@ mod tests {
     #[test]
     fn multiple_sequence_lines_with_errors() {
         let mut et: ExpressionTree = Default::default();
-        let tokens = vec![
+        let tokens = [
             make_tokenline_no(
-                vec![
+                [
                     TokenKind::Constant(Constant::Boolean(true)),
                     TokenKind::DirectiveCase(true),
                     TokenKind::Constant(Constant::Character('a')),
@@ -420,7 +420,7 @@ mod tests {
                 1,
             ),
             make_tokenline_no(
-                vec![
+                [
                     TokenKind::CommentDatum,
                     TokenKind::Constant(Constant::Boolean(false)),
                     TokenKind::Constant(Constant::Character('b')),
@@ -471,9 +471,9 @@ mod tests {
     #[test]
     fn parse_fail_skips_rest_of_tokens() {
         let mut et: ExpressionTree = Default::default();
-        let tokens = vec![
+        let tokens = [
             make_tokenline_no(
-                vec![
+                [
                     TokenKind::Constant(Constant::Boolean(true)),
                     TokenKind::DirectiveCase(true),
                     TokenKind::Constant(Constant::Character('a')),
@@ -483,7 +483,7 @@ mod tests {
                 1,
             ),
             make_tokenline_no(
-                vec![
+                [
                     TokenKind::Constant(Constant::Character('c')),
                     TokenKind::IdentifierDiscard,
                     TokenKind::Constant(Constant::Character('d')),
@@ -492,7 +492,7 @@ mod tests {
                 2,
             ),
             make_tokenline_no(
-                vec![
+                [
                     TokenKind::CommentDatum,
                     TokenKind::Constant(Constant::Boolean(false)),
                     TokenKind::Constant(Constant::Character('b')),
@@ -552,7 +552,7 @@ mod tests {
     #[test]
     fn continuation_to_error() {
         let mut et: ExpressionTree = Default::default();
-        let tokens = vec![make_tokenline(vec![
+        let tokens = [make_tokenline([
             TokenKind::Constant(Constant::Boolean(true)),
             TokenKind::StringBegin {
                 s: "foo".to_owned(),
@@ -590,16 +590,16 @@ mod tests {
     #[test]
     fn continuation_tied_to_expression_first_line() {
         let mut et: ExpressionTree = Default::default();
-        let tokens = vec![
+        let tokens = [
             make_tokenline_no(
-                vec![TokenKind::StringBegin {
+                [TokenKind::StringBegin {
                     s: "foo".to_owned(),
                     line_cont: false,
                 }],
                 1,
             ),
             make_tokenline_no(
-                vec![TokenKind::StringFragment {
+                [TokenKind::StringFragment {
                     s: "bar".to_owned(),
                     line_cont: false,
                 }],
@@ -637,7 +637,7 @@ mod tests {
     #[test]
     fn continuation_ignored_if_existing_errors() {
         let mut et: ExpressionTree = Default::default();
-        let tokens = vec![make_tokenline(vec![
+        let tokens = [make_tokenline([
             TokenKind::Constant(Constant::Boolean(true)),
             TokenKind::DirectiveCase(true),
             TokenKind::StringBegin {
