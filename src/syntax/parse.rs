@@ -64,15 +64,15 @@ impl ParseNode {
         }
     }
 
-    pub(super) fn merge(&mut self, other: ParseNode) {
+    pub(super) fn merge(&mut self, other: ParseNode) -> Result<(), ExpressionError> {
         match &mut self.mode {
-            ParseMode::Program(exprs) => exprs.push(other.into_expr()),
+            ParseMode::Program(exprs) => Ok(exprs.push(other.into_expr()?)),
             _ => todo!("fail here somehow"),
         }
     }
 
-    pub(super) fn into_expr(self) -> Expression {
-        match self.mode {
+    pub(super) fn into_expr(self) -> Result<Expression, ExpressionError> {
+        Ok(match self.mode {
             ParseMode::ByteVector(seq) => {
                 // todo!("filter out everything except bytes")
                 let bytes = seq.into_iter().map(|expr| match expr {
@@ -97,7 +97,7 @@ impl ParseNode {
             ParseMode::Program(exprs) => Expression::Seq(exprs.into()),
             ParseMode::StringLiteral(s) => Expression::constant(Constant::String(s.into())),
             _ => Expression::Empty,
-        }
+        })
     }
 
     pub(super) fn into_continuation_unsupported(self) -> Option<ParseErrorLine> {
