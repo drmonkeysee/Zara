@@ -59,8 +59,9 @@ impl Error for ExpressionError {}
 #[derive(Debug)]
 pub(super) enum ExpressionErrorKind {
     // TODO: what do these two need to store?
-    ByteVectorOutOfRange,
     ByteVectorInvalidItem,
+    ByteVectorOutOfRange,
+    ByteVectorUnterminated,
     CommentBlockInvalid(TokenKind),
     CommentBlockUnterminated,
     IdentifierInvalid(TokenKind),
@@ -75,8 +76,9 @@ pub(super) enum ExpressionErrorKind {
 impl Display for ExpressionErrorKind {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
-            Self::ByteVectorOutOfRange => todo!(),
             Self::ByteVectorInvalidItem => todo!(),
+            Self::ByteVectorOutOfRange => todo!(),
+            Self::ByteVectorUnterminated => "unterminated bytevector".fmt(f),
             Self::CommentBlockInvalid(t) => format_unexpected_error("comment block", t, f),
             // TODO: can i share tokenerrorkind display here
             Self::CommentBlockUnterminated => "unterminated block comment".fmt(f),
