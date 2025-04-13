@@ -69,6 +69,7 @@ impl ParseNode {
     }
 
     pub(super) fn into_continuation_unsupported(self) -> Option<ExpressionError> {
+        let ctx = self.ctx?;
         let err_kind = match self.mode {
             ParseMode::ByteVector(_) => Some(ExpressionErrorKind::ByteVectorUnterminated),
             ParseMode::CommentBlock => Some(ExpressionErrorKind::CommentBlockUnterminated),
@@ -77,8 +78,7 @@ impl ParseNode {
             ParseMode::StringLiteral(_) => Some(ExpressionErrorKind::StrUnterminated),
             _ => None,
         }?;
-        debug_assert!(self.ctx.is_some());
-        Some(self.ctx.unwrap().into_error(err_kind))
+        Some(ctx.into_error(err_kind))
     }
 }
 
