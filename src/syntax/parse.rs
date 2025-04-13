@@ -316,9 +316,9 @@ fn parse_verbatim_identifier(buf: &mut String, token: Token, txt: &Rc<TextLine>)
     }
 }
 
-type NodeToExprResult = Result<Expression, <Expression as TryFrom<ParseNode>>::Error>;
+type ConvertExprResult = Result<Expression, <Expression as TryFrom<ParseNode>>::Error>;
 
-fn into_bytevector(seq: Vec<Expression>) -> NodeToExprResult {
+fn into_bytevector(seq: Vec<Expression>) -> ConvertExprResult {
     // todo!("filter out everything except bytes")
     /*
     errors

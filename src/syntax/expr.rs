@@ -183,6 +183,19 @@ mod tests {
         use crate::testutil::make_textline;
 
         #[test]
+        fn display_unterminated_bytevector() {
+            let err = ExpressionError {
+                ctx: ExprCtx {
+                    txt: make_textline().into(),
+                    span: 0..5,
+                },
+                kind: ExpressionErrorKind::ByteVectorUnterminated,
+            };
+
+            assert_eq!(err.to_string(), "unterminated bytevector");
+        }
+
+        #[test]
         fn display_invalid_seq() {
             let err = ExpressionError {
                 ctx: ExprCtx {
