@@ -105,7 +105,9 @@ impl<'a, I: Iterator<Item = &'a ExpressionError>> Iterator for GroupBy<I> {
         let start = self.peek.next()?;
         let key = &start.ctx.txt;
         let mut group = vec![start];
-        group.extend(self.peek.next_if(|err| Rc::ptr_eq(key, &err.ctx.txt)));
+        while let Some(err) = self.peek.next_if(|err| Rc::ptr_eq(key, &err.ctx.txt)) {
+            group.push(err);
+        }
         Some((Rc::as_ref(key), group))
     }
 }
@@ -304,6 +306,8 @@ mod tests {
 
     mod groupby {
         use super::*;
+        use crate::testutil::{make_textline, make_textline_no};
+        use std::ptr;
 
         #[test]
         fn empty() {
@@ -312,6 +316,156 @@ mod tests {
             let groups: Vec<_> = errs.into_iter().peekable().groupby_txt().collect();
 
             assert!(groups.is_empty());
+        }
+
+        #[test]
+        fn single() {
+            let txt = Rc::new(make_textline());
+            let errs = [ExpressionError {
+                ctx: ExprCtx {
+                    span: 0..5,
+                    txt: Rc::clone(&txt),
+                },
+                kind: ExpressionErrorKind::StrUnterminated,
+            }];
+
+            let groups: Vec<_> = errs.iter().peekable().groupby_txt().collect();
+
+            assert_eq!(groups.len(), 1);
+            let (key, group) = &groups[0];
+            assert!(ptr::eq(*key, Rc::as_ptr(&txt)));
+            assert_eq!(group.len(), 1);
+            assert!(ptr::eq(group[0], &errs[0]));
+        }
+
+        #[test]
+        fn one_group() {
+            let txt = Rc::new(make_textline());
+            let errs = [
+                ExpressionError {
+                    ctx: ExprCtx {
+                        span: 0..5,
+                        txt: Rc::clone(&txt),
+                    },
+                    kind: ExpressionErrorKind::StrUnterminated,
+                },
+                ExpressionError {
+                    ctx: ExprCtx {
+                        span: 5..7,
+                        txt: Rc::clone(&txt),
+                    },
+                    kind: ExpressionErrorKind::ListUnterminated,
+                },
+                ExpressionError {
+                    ctx: ExprCtx {
+                        span: 7..10,
+                        txt: Rc::clone(&txt),
+                    },
+                    kind: ExpressionErrorKind::CommentBlockUnterminated,
+                },
+            ];
+
+            let groups: Vec<_> = errs.iter().peekable().groupby_txt().collect();
+
+            assert_eq!(groups.len(), 1);
+            let (key, group) = &groups[0];
+            assert!(ptr::eq(*key, Rc::as_ptr(&txt)));
+            assert_eq!(group.len(), 3);
+            assert!(ptr::eq(group[0], &errs[0]));
+            assert!(ptr::eq(group[1], &errs[1]));
+            assert!(ptr::eq(group[2], &errs[2]));
+        }
+
+        #[test]
+        fn two_groups() {
+            let txt1 = Rc::new(make_textline_no(1));
+            let txt2 = Rc::new(make_textline_no(2));
+            let errs = [
+                ExpressionError {
+                    ctx: ExprCtx {
+                        span: 0..5,
+                        txt: Rc::clone(&txt1),
+                    },
+                    kind: ExpressionErrorKind::StrUnterminated,
+                },
+                ExpressionError {
+                    ctx: ExprCtx {
+                        span: 5..7,
+                        txt: Rc::clone(&txt1),
+                    },
+                    kind: ExpressionErrorKind::ListUnterminated,
+                },
+                ExpressionError {
+                    ctx: ExprCtx {
+                        span: 0..3,
+                        txt: Rc::clone(&txt2),
+                    },
+                    kind: ExpressionErrorKind::CommentBlockUnterminated,
+                },
+            ];
+
+            let groups: Vec<_> = errs.iter().peekable().groupby_txt().collect();
+
+            assert_eq!(groups.len(), 2);
+
+            let (key, group) = &groups[0];
+            assert!(ptr::eq(*key, Rc::as_ptr(&txt1)));
+            assert_eq!(group.len(), 2);
+            assert!(ptr::eq(group[0], &errs[0]));
+            assert!(ptr::eq(group[1], &errs[1]));
+
+            let (key, group) = &groups[1];
+            assert!(ptr::eq(*key, Rc::as_ptr(&txt2)));
+            assert_eq!(group.len(), 1);
+            assert!(ptr::eq(group[0], &errs[2]));
+        }
+
+        #[test]
+        fn non_contiguous() {
+            let txt1 = Rc::new(make_textline_no(1));
+            let txt2 = Rc::new(make_textline_no(2));
+            let errs = [
+                ExpressionError {
+                    ctx: ExprCtx {
+                        span: 0..5,
+                        txt: Rc::clone(&txt1),
+                    },
+                    kind: ExpressionErrorKind::StrUnterminated,
+                },
+                ExpressionError {
+                    ctx: ExprCtx {
+                        span: 0..3,
+                        txt: Rc::clone(&txt2),
+                    },
+                    kind: ExpressionErrorKind::CommentBlockUnterminated,
+                },
+                ExpressionError {
+                    ctx: ExprCtx {
+                        span: 5..7,
+                        txt: Rc::clone(&txt1),
+                    },
+                    kind: ExpressionErrorKind::ListUnterminated,
+                },
+            ];
+
+            let groups: Vec<_> = errs.iter().peekable().groupby_txt().collect();
+
+            assert_eq!(groups.len(), 3);
+
+            let (key, group) = &groups[0];
+            assert!(ptr::eq(*key, Rc::as_ptr(&txt1)));
+            assert_eq!(group.len(), 1);
+            assert!(ptr::eq(group[0], &errs[0]));
+
+            let (key, group) = &groups[1];
+            assert!(ptr::eq(*key, Rc::as_ptr(&txt2)));
+            assert_eq!(group.len(), 1);
+            assert!(ptr::eq(group[0], &errs[1]));
+
+            let (key, group) = &groups[2];
+            assert!(ptr::eq(*key, Rc::as_ptr(&txt1)));
+            assert_eq!(group.len(), 1);
+            assert!(ptr::eq(group[0], &errs[2]));
         }
     }
 }
