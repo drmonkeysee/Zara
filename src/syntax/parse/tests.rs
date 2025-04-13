@@ -127,8 +127,9 @@ mod continuation {
         assert!(matches!(
             &err,
             ExpressionError {
-                ctx: ExprCtx { span: Range { start: 3, end: 19 } , txt },
                 kind: ExpressionErrorKind::StrUnterminated,
+                span: Range { start: 3, end: 19 },
+                txt,
             } if txt.lineno == 1
         ));
     }
@@ -143,8 +144,9 @@ mod continuation {
         assert!(matches!(
             &err,
             ExpressionError {
-                ctx: ExprCtx { span: Range { start: 3, end: 19 } , txt },
                 kind: ExpressionErrorKind::CommentBlockUnterminated,
+                span: Range { start: 3, end: 19 },
+                txt,
             } if txt.lineno == 1
         ));
     }
@@ -163,8 +165,9 @@ mod continuation {
         assert!(matches!(
             &err,
             ExpressionError {
-                ctx: ExprCtx { span: Range { start: 3, end: 19 } , txt },
                 kind: ExpressionErrorKind::IdentifierUnterminated,
+                span: Range { start: 3, end: 19 },
+                txt,
             } if txt.lineno == 1
         ));
     }
@@ -187,8 +190,9 @@ mod continuation {
         assert!(matches!(
             &err,
             ExpressionError {
-                ctx: ExprCtx { span: Range { start: 3, end: 19 } , txt },
                 kind: ExpressionErrorKind::ListUnterminated,
+                span: Range { start: 3, end: 19 },
+                txt,
             } if txt.lineno == 1
         ));
     }
@@ -242,8 +246,9 @@ mod identifier {
             f,
             ParseFlow::Break(ParseBreak::Err(
                 ExpressionError {
-                    ctx: ExprCtx { span: Range { start: 4, end: 5 } , txt: line },
                     kind: ExpressionErrorKind::IdentifierInvalid(TokenKind::ParenLeft),
+                    span: Range { start: 4, end: 5 },
+                    txt: line,
                 },
                 ErrFlow::Break(Recovery::Fail),
             )) if Rc::ptr_eq(&line, &txt)
@@ -365,8 +370,9 @@ mod sequence {
             f,
             ParseFlow::Break(ParseBreak::Err(
                 ExpressionError {
-                    ctx: ExprCtx { span: Range { start: 0, end: 3 } , txt: line },
                     kind: ExpressionErrorKind::SeqInvalid(TokenKind::StringEnd(_)),
+                    span: Range { start: 0, end: 3 },
+                    txt: line,
                 },
                 ErrFlow::Break(Recovery::Fail),
             )) if Rc::ptr_eq(&line, &txt)
@@ -621,8 +627,9 @@ mod list {
             f,
             ParseFlow::Break(ParseBreak::Err(
                 ExpressionError {
-                    ctx: ExprCtx { span: Range { start: 4, end: 6 } , txt: line },
                     kind: ExpressionErrorKind::SeqInvalid(TokenKind::StringDiscard),
+                    span: Range { start: 4, end: 6 },
+                    txt: line,
                 },
                 ErrFlow::Break(Recovery::Fail),
             )) if Rc::ptr_eq(&line, &txt)
@@ -700,8 +707,9 @@ mod string {
             f,
             ParseFlow::Break(ParseBreak::Err(
                 ExpressionError {
-                    ctx: ExprCtx { span: Range { start: 4, end: 5 } , txt: line },
                     kind: ExpressionErrorKind::StrInvalid(TokenKind::ParenLeft),
+                    span: Range { start: 4, end: 5 },
+                    txt: line,
                 },
                 ErrFlow::Break(Recovery::Fail),
             )) if Rc::ptr_eq(&line, &txt)
@@ -753,10 +761,11 @@ mod comment {
             f,
             ParseFlow::Break(ParseBreak::Err(
                 ExpressionError {
-                    ctx: ExprCtx { span: Range { start: 0, end: 4 } , txt: line },
                     kind: ExpressionErrorKind::CommentBlockInvalid(
                         TokenKind::CommentBlockBegin { .. }
-                    )
+                    ),
+                    span: Range { start: 0, end: 4 },
+                    txt: line,
                 },
                 ErrFlow::Break(Recovery::Fail),
             )) if Rc::ptr_eq(&line, &txt)
@@ -777,8 +786,9 @@ mod comment {
             f,
             ParseFlow::Break(ParseBreak::Err(
                 ExpressionError {
-                    ctx: ExprCtx { span: Range { start: 0, end: 1 } , txt: line },
                     kind: ExpressionErrorKind::CommentBlockInvalid(TokenKind::ParenLeft),
+                    span: Range { start: 0, end: 1 },
+                    txt: line,
                 },
                 ErrFlow::Break(Recovery::Fail),
             )) if Rc::ptr_eq(&line, &txt)

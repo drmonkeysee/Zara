@@ -200,7 +200,7 @@ impl Display for ParseErrorLineMessage<'_> {
         f.write_char('\t')?;
         for span in errs
             .iter()
-            .filter_map(|err| (!err.ctx.span.is_empty()).then_some(&err.ctx.span))
+            .filter_map(|err| (!err.span.is_empty()).then_some(&err.span))
         {
             write!(
                 f,
@@ -214,7 +214,7 @@ impl Display for ParseErrorLineMessage<'_> {
         }
         f.write_char('\n')?;
         for err in errs {
-            writeln!(f, "{}: {err}", err.ctx.span.start + 1)?;
+            writeln!(f, "{}: {err}", err.span.start + 1)?;
         }
         Ok(())
     }
@@ -222,10 +222,7 @@ impl Display for ParseErrorLineMessage<'_> {
 
 #[cfg(test)]
 mod tests {
-    use super::{
-        expr::{ExprCtx, ExpressionErrorKind},
-        *,
-    };
+    use super::{expr::ExpressionErrorKind, *};
     use crate::{
         constant::Constant,
         lex::{Token, TokenKind},
@@ -386,22 +383,17 @@ mod tests {
         assert!(matches!(
             &errs[0],
             ExpressionError {
-                ctx: ExprCtx {
-                    span: Range { start: 1, end: 2 },
-                    txt
-                },
                 kind: ExpressionErrorKind::Unimplemented(TokenKind::DirectiveCase(true)),
+                span: Range { start: 1, end: 2 },
+                txt,
             } if txt.lineno == 1
         ));
         assert!(matches!(
             &errs[1],
             ExpressionError {
-                ctx: ExprCtx {
-                    span: Range { start: 3, end: 4 },
-                    txt
-                },
                 kind: ExpressionErrorKind::Unimplemented(TokenKind::DirectiveCase(false)),
-
+                span: Range { start: 3, end: 4 },
+                txt,
             }  if txt.lineno == 1
         ));
         assert!(et.parsers.is_empty());
@@ -439,33 +431,25 @@ mod tests {
         assert!(matches!(
             &errs[0],
             ExpressionError {
-                ctx: ExprCtx {
-                    span: Range { start: 1, end: 2 },
-                    txt
-                },
                 kind: ExpressionErrorKind::Unimplemented(TokenKind::DirectiveCase(true)),
+                span: Range { start: 1, end: 2 },
+                txt,
             } if txt.lineno == 1
         ));
         assert!(matches!(
             &errs[1],
             ExpressionError {
-                ctx: ExprCtx {
-                    span: Range { start: 3, end: 4 },
-                    txt
-                },
                 kind: ExpressionErrorKind::Unimplemented(TokenKind::DirectiveCase(false)),
-
+                span: Range { start: 3, end: 4 },
+                txt,
             }  if txt.lineno == 1
         ));
         assert!(matches!(
             &errs[2],
             ExpressionError {
-                ctx: ExprCtx {
-                    span: Range { start: 0, end: 1 },
-                    txt
-                },
                 kind: ExpressionErrorKind::Unimplemented(TokenKind::CommentDatum),
-
+                span: Range { start: 0, end: 1 },
+                txt,
             }  if txt.lineno == 2
         ));
         assert!(et.parsers.is_empty());
@@ -512,33 +496,25 @@ mod tests {
         assert!(matches!(
             &errs[0],
             ExpressionError {
-                ctx: ExprCtx {
-                    span: Range { start: 1, end: 2 },
-                    txt
-                },
                 kind: ExpressionErrorKind::Unimplemented(TokenKind::DirectiveCase(true)),
+                span: Range { start: 1, end: 2 },
+                txt,
             } if txt.lineno == 1
         ));
         assert!(matches!(
             &errs[1],
             ExpressionError {
-                ctx: ExprCtx {
-                    span: Range { start: 3, end: 4 },
-                    txt
-                },
                 kind: ExpressionErrorKind::Unimplemented(TokenKind::DirectiveCase(false)),
-
+                span: Range { start: 3, end: 4 },
+                txt,
             }  if txt.lineno == 1
         ));
         assert!(matches!(
             &errs[2],
             ExpressionError {
-                ctx: ExprCtx {
-                    span: Range { start: 1, end: 2 },
-                    txt
-                },
                 kind: ExpressionErrorKind::SeqInvalid(TokenKind::IdentifierDiscard),
-
+                span: Range { start: 1, end: 2 },
+                txt,
             }  if txt.lineno == 2
         ));
         assert!(et.parsers.is_empty());
@@ -578,11 +554,9 @@ mod tests {
         assert!(matches!(
             &errs[0],
             ExpressionError {
-                ctx: ExprCtx {
-                    span: Range { start: 1, end: 19 },
-                    txt
-                },
                 kind: ExpressionErrorKind::StrUnterminated,
+                span: Range { start: 1, end: 19 },
+                txt,
             } if txt.lineno == 1
         ));
 
@@ -623,11 +597,9 @@ mod tests {
         assert!(matches!(
             &errs[0],
             ExpressionError {
-                ctx: ExprCtx {
-                    span: Range { start: 0, end: 19 },
-                    txt
-                },
                 kind: ExpressionErrorKind::StrUnterminated,
+                span: Range { start: 0, end: 19 },
+                txt,
             } if txt.lineno == 1
         ));
 
@@ -654,11 +626,9 @@ mod tests {
         assert!(matches!(
             &errs[0],
             ExpressionError {
-                ctx: ExprCtx {
-                    span: Range { start: 1, end: 2 },
-                    txt
-                },
                 kind: ExpressionErrorKind::Unimplemented(TokenKind::DirectiveCase(true)),
+                span: Range { start: 1, end: 2 },
+                txt,
             } if txt.lineno == 1
         ));
         assert!(et.parsers.is_empty());
