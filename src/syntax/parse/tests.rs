@@ -1,5 +1,5 @@
 use super::*;
-use crate::value::Value;
+use crate::{testutil::make_textline, value::Value};
 use std::ops::Range;
 
 mod bytevector {
@@ -12,8 +12,9 @@ mod bytevector {
             kind: TokenKind::Constant(Constant::Number(Number::real(16))),
             span: 3..5,
         };
+        let txt = Rc::new(make_textline());
 
-        let f = parse_list(&mut seq, token);
+        let f = parse_list(&mut seq, token, &txt);
 
         assert!(matches!(f, ParseFlow::Continue(())));
         assert_eq!(seq.len(), 1);
@@ -31,8 +32,9 @@ mod bytevector {
             kind: TokenKind::Constant(Constant::Number(Number::real(0))),
             span: 3..5,
         };
+        let txt = Rc::new(make_textline());
 
-        let f = parse_list(&mut seq, token);
+        let f = parse_list(&mut seq, token, &txt);
 
         assert!(matches!(f, ParseFlow::Continue(())));
         assert_eq!(seq.len(), 1);
@@ -50,8 +52,9 @@ mod bytevector {
             kind: TokenKind::Constant(Constant::Number(Number::real(255))),
             span: 3..5,
         };
+        let txt = Rc::new(make_textline());
 
-        let f = parse_list(&mut seq, token);
+        let f = parse_list(&mut seq, token, &txt);
 
         assert!(matches!(f, ParseFlow::Continue(())));
         assert_eq!(seq.len(), 1);
@@ -73,8 +76,9 @@ mod bytevector {
             kind: TokenKind::ParenRight,
             span: 9..10,
         };
+        let txt = Rc::new(make_textline());
 
-        let f = parse_list(&mut seq, token);
+        let f = parse_list(&mut seq, token, &txt);
 
         assert!(matches!(f, ParseFlow::Break(ParseBreak::Complete)));
         assert_eq!(seq.len(), 3);
@@ -87,8 +91,9 @@ mod bytevector {
             kind: TokenKind::ParenRight,
             span: 3..4,
         };
+        let txt = Rc::new(make_textline());
 
-        let f = parse_list(&mut seq, token);
+        let f = parse_list(&mut seq, token, &txt);
 
         assert!(matches!(f, ParseFlow::Break(ParseBreak::Complete)));
         assert!(seq.is_empty());
@@ -118,16 +123,13 @@ mod continuation {
 
         let o = p.into_continuation_unsupported();
 
-        let err_line = some_or_fail!(o);
-        let ParseErrorLine(errs, line) = &err_line;
-        assert_eq!(line.lineno, 1);
-        assert_eq!(errs.len(), 1);
+        let err = some_or_fail!(o);
         assert!(matches!(
-            &errs[0],
+            &err,
             ExpressionError {
+                ctx: ExprCtx { span: Range { start: 3, end: 19 } , txt },
                 kind: ExpressionErrorKind::StrUnterminated,
-                span: Range { start: 3, end: 19 },
-            }
+            } if txt.lineno == 1
         ));
     }
 
@@ -137,16 +139,13 @@ mod continuation {
 
         let o = p.into_continuation_unsupported();
 
-        let err_line = some_or_fail!(o);
-        let ParseErrorLine(errs, line) = &err_line;
-        assert_eq!(line.lineno, 1);
-        assert_eq!(errs.len(), 1);
+        let err = some_or_fail!(o);
         assert!(matches!(
-            &errs[0],
+            &err,
             ExpressionError {
+                ctx: ExprCtx { span: Range { start: 3, end: 19 } , txt },
                 kind: ExpressionErrorKind::CommentBlockUnterminated,
-                span: Range { start: 3, end: 19 },
-            }
+            } if txt.lineno == 1
         ));
     }
 
@@ -160,16 +159,13 @@ mod continuation {
 
         let o = p.into_continuation_unsupported();
 
-        let err_line = some_or_fail!(o);
-        let ParseErrorLine(errs, line) = &err_line;
-        assert_eq!(line.lineno, 1);
-        assert_eq!(errs.len(), 1);
+        let err = some_or_fail!(o);
         assert!(matches!(
-            &errs[0],
+            &err,
             ExpressionError {
+                ctx: ExprCtx { span: Range { start: 3, end: 19 } , txt },
                 kind: ExpressionErrorKind::IdentifierUnterminated,
-                span: Range { start: 3, end: 19 },
-            }
+            } if txt.lineno == 1
         ));
     }
 
@@ -187,16 +183,13 @@ mod continuation {
 
         let o = p.into_continuation_unsupported();
 
-        let err_line = some_or_fail!(o);
-        let ParseErrorLine(errs, line) = &err_line;
-        assert_eq!(line.lineno, 1);
-        assert_eq!(errs.len(), 1);
+        let err = some_or_fail!(o);
         assert!(matches!(
-            &errs[0],
+            &err,
             ExpressionError {
+                ctx: ExprCtx { span: Range { start: 3, end: 19 } , txt },
                 kind: ExpressionErrorKind::ListUnterminated,
-                span: Range { start: 3, end: 19 },
-            }
+            } if txt.lineno == 1
         ));
     }
 }
@@ -211,8 +204,9 @@ mod identifier {
             kind: TokenKind::IdentifierEnd("end".to_owned()),
             span: 0..4,
         };
+        let txt = Rc::new(make_textline());
 
-        let f = parse_verbatim_identifier(&mut s, token);
+        let f = parse_verbatim_identifier(&mut s, token, &txt);
 
         assert!(matches!(f, ParseFlow::Break(ParseBreak::Complete)));
         assert_eq!(s, "start\nend");
@@ -225,8 +219,9 @@ mod identifier {
             kind: TokenKind::IdentifierFragment("middle".to_owned()),
             span: 0..6,
         };
+        let txt = Rc::new(make_textline());
 
-        let f = parse_verbatim_identifier(&mut s, token);
+        let f = parse_verbatim_identifier(&mut s, token, &txt);
 
         assert!(matches!(f, ParseFlow::Continue(())));
         assert_eq!(s, "start\nmiddle\n");
@@ -239,18 +234,19 @@ mod identifier {
             kind: TokenKind::ParenLeft,
             span: 4..5,
         };
+        let txt = Rc::new(make_textline());
 
-        let f = parse_verbatim_identifier(&mut s, token);
+        let f = parse_verbatim_identifier(&mut s, token, &txt);
 
         assert!(matches!(
             f,
             ParseFlow::Break(ParseBreak::Err(
                 ExpressionError {
+                    ctx: ExprCtx { span: Range { start: 4, end: 5 } , txt: line },
                     kind: ExpressionErrorKind::IdentifierInvalid(TokenKind::ParenLeft),
-                    span: Range { start: 4, end: 5 },
                 },
                 ErrFlow::Break(Recovery::Fail),
-            ))
+            )) if Rc::ptr_eq(&line, &txt)
         ));
         assert_eq!(s, "start\n");
     }
@@ -267,8 +263,9 @@ mod sequence {
             kind: TokenKind::Constant(Constant::Boolean(true)),
             span: 0..3,
         };
+        let txt = Rc::new(make_textline());
 
-        let f = parse_sequence(&mut seq, token);
+        let f = parse_sequence(&mut seq, token, &txt);
 
         assert!(matches!(f, ParseFlow::Continue(())));
         assert_eq!(seq.len(), 1);
@@ -285,8 +282,9 @@ mod sequence {
             kind: TokenKind::Imaginary(Real::Float(1.2)),
             span: 0..3,
         };
+        let txt = Rc::new(make_textline());
 
-        let f = parse_sequence(&mut seq, token);
+        let f = parse_sequence(&mut seq, token, &txt);
 
         assert!(matches!(f, ParseFlow::Continue(())));
         assert_eq!(seq.len(), 1);
@@ -310,8 +308,9 @@ mod sequence {
             },
             span: 3..8,
         };
+        let txt = Rc::new(make_textline());
 
-        let f = parse_sequence(&mut seq, token);
+        let f = parse_sequence(&mut seq, token, &txt);
 
         assert!(matches!(
             f,
@@ -335,8 +334,9 @@ mod sequence {
             },
             span: 3..8,
         };
+        let txt = Rc::new(make_textline());
 
-        let f = parse_sequence(&mut seq, token);
+        let f = parse_sequence(&mut seq, token, &txt);
 
         assert!(matches!(
             f,
@@ -357,18 +357,19 @@ mod sequence {
             kind: TokenKind::StringEnd("foo".to_owned()),
             span: 0..3,
         };
+        let txt = Rc::new(make_textline());
 
-        let f = parse_sequence(&mut seq, token);
+        let f = parse_sequence(&mut seq, token, &txt);
 
         assert!(matches!(
             f,
             ParseFlow::Break(ParseBreak::Err(
                 ExpressionError {
+                    ctx: ExprCtx { span: Range { start: 0, end: 3 } , txt: line },
                     kind: ExpressionErrorKind::SeqInvalid(TokenKind::StringEnd(_)),
-                    span: Range { start: 0, end: 3 },
                 },
                 ErrFlow::Break(Recovery::Fail),
-            ))
+            )) if Rc::ptr_eq(&line, &txt)
         ));
         assert!(seq.is_empty());
     }
@@ -380,8 +381,9 @@ mod sequence {
             kind: TokenKind::Comment,
             span: 0..3,
         };
+        let txt = Rc::new(make_textline());
 
-        let f = parse_sequence(&mut seq, token);
+        let f = parse_sequence(&mut seq, token, &txt);
 
         assert!(matches!(f, ParseFlow::Continue(())));
         assert!(seq.is_empty());
@@ -394,8 +396,9 @@ mod sequence {
             kind: TokenKind::CommentBlockBegin { depth: 0 },
             span: 3..6,
         };
+        let txt = Rc::new(make_textline());
 
-        let f = parse_sequence(&mut seq, token);
+        let f = parse_sequence(&mut seq, token, &txt);
 
         assert!(matches!(
             f,
@@ -414,8 +417,9 @@ mod sequence {
             kind: TokenKind::ByteVector,
             span: 3..6,
         };
+        let txt = Rc::new(make_textline());
 
-        let f = parse_sequence(&mut seq, token);
+        let f = parse_sequence(&mut seq, token, &txt);
 
         assert!(matches!(
             f,
@@ -434,8 +438,9 @@ mod sequence {
             kind: TokenKind::Identifier("myproc".to_owned()),
             span: 0..6,
         };
+        let txt = Rc::new(make_textline());
 
-        let f = parse_sequence(&mut seq, token);
+        let f = parse_sequence(&mut seq, token, &txt);
 
         assert!(matches!(f, ParseFlow::Continue(())));
         assert_eq!(seq.len(), 1);
@@ -452,8 +457,9 @@ mod sequence {
             kind: TokenKind::Identifier("".to_owned()),
             span: 0..0,
         };
+        let txt = Rc::new(make_textline());
 
-        let f = parse_sequence(&mut seq, token);
+        let f = parse_sequence(&mut seq, token, &txt);
 
         assert!(matches!(f, ParseFlow::Continue(())));
         assert_eq!(seq.len(), 1);
@@ -470,8 +476,9 @@ mod sequence {
             kind: TokenKind::IdentifierBegin("start".to_owned()),
             span: 3..8,
         };
+        let txt = Rc::new(make_textline());
 
-        let f = parse_sequence(&mut seq, token);
+        let f = parse_sequence(&mut seq, token, &txt);
 
         assert!(matches!(
             f,
@@ -492,8 +499,9 @@ mod sequence {
             kind: TokenKind::ParenLeft,
             span: 1..2,
         };
+        let txt = Rc::new(make_textline());
 
-        let f = parse_sequence(&mut seq, token);
+        let f = parse_sequence(&mut seq, token, &txt);
 
         assert!(matches!(
             f,
@@ -522,8 +530,9 @@ mod list {
             kind: TokenKind::ParenRight,
             span: 4..5,
         };
+        let txt = Rc::new(make_textline());
 
-        let f = parse_list(&mut seq, token);
+        let f = parse_list(&mut seq, token, &txt);
 
         assert!(matches!(f, ParseFlow::Break(ParseBreak::Complete)));
         assert_eq!(seq.len(), 3);
@@ -540,8 +549,9 @@ mod list {
             kind: TokenKind::ParenLeft,
             span: 4..5,
         };
+        let txt = Rc::new(make_textline());
 
-        let f = parse_list(&mut seq, token);
+        let f = parse_list(&mut seq, token, &txt);
 
         assert!(matches!(
             f,
@@ -560,8 +570,9 @@ mod list {
             kind: TokenKind::ParenRight,
             span: 4..5,
         };
+        let txt = Rc::new(make_textline());
 
-        let f = parse_list(&mut seq, token);
+        let f = parse_list(&mut seq, token, &txt);
 
         assert!(matches!(f, ParseFlow::Break(ParseBreak::Complete)));
         assert!(seq.is_empty());
@@ -578,8 +589,9 @@ mod list {
             kind: TokenKind::Constant(Constant::Number(Number::real(10))),
             span: 4..6,
         };
+        let txt = Rc::new(make_textline());
 
-        let f = parse_list(&mut seq, token);
+        let f = parse_list(&mut seq, token, &txt);
 
         assert!(matches!(f, ParseFlow::Continue(())));
         assert_eq!(seq.len(), 4);
@@ -601,18 +613,19 @@ mod list {
             kind: TokenKind::StringDiscard,
             span: 4..6,
         };
+        let txt = Rc::new(make_textline());
 
-        let f = parse_list(&mut seq, token);
+        let f = parse_list(&mut seq, token, &txt);
 
         assert!(matches!(
             f,
             ParseFlow::Break(ParseBreak::Err(
                 ExpressionError {
+                    ctx: ExprCtx { span: Range { start: 4, end: 6 } , txt: line },
                     kind: ExpressionErrorKind::SeqInvalid(TokenKind::StringDiscard),
-                    span: Range { start: 4, end: 6 },
                 },
                 ErrFlow::Break(Recovery::Fail),
-            ))
+            )) if Rc::ptr_eq(&line, &txt)
         ));
         assert_eq!(seq.len(), 3);
     }
@@ -628,8 +641,9 @@ mod string {
             kind: TokenKind::StringEnd("end".to_owned()),
             span: 0..4,
         };
+        let txt = Rc::new(make_textline());
 
-        let f = parse_str(&mut s, token);
+        let f = parse_str(&mut s, token, &txt);
 
         assert!(matches!(f, ParseFlow::Break(ParseBreak::Complete)));
         assert_eq!(s, "start\nend");
@@ -645,8 +659,9 @@ mod string {
             },
             span: 0..6,
         };
+        let txt = Rc::new(make_textline());
 
-        let f = parse_str(&mut s, token);
+        let f = parse_str(&mut s, token, &txt);
 
         assert!(matches!(f, ParseFlow::Continue(())));
         assert_eq!(s, "start\nmiddle\n");
@@ -662,8 +677,9 @@ mod string {
             },
             span: 0..6,
         };
+        let txt = Rc::new(make_textline());
 
-        let f = parse_str(&mut s, token);
+        let f = parse_str(&mut s, token, &txt);
 
         assert!(matches!(f, ParseFlow::Continue(())));
         assert_eq!(s, "start\nmiddle");
@@ -676,18 +692,19 @@ mod string {
             kind: TokenKind::ParenLeft,
             span: 4..5,
         };
+        let txt = Rc::new(make_textline());
 
-        let f = parse_str(&mut s, token);
+        let f = parse_str(&mut s, token, &txt);
 
         assert!(matches!(
             f,
             ParseFlow::Break(ParseBreak::Err(
                 ExpressionError {
+                    ctx: ExprCtx { span: Range { start: 4, end: 5 } , txt: line },
                     kind: ExpressionErrorKind::StrInvalid(TokenKind::ParenLeft),
-                    span: Range { start: 4, end: 5 },
                 },
                 ErrFlow::Break(Recovery::Fail),
-            ))
+            )) if Rc::ptr_eq(&line, &txt)
         ));
         assert_eq!(s, "start\n");
     }
@@ -702,8 +719,9 @@ mod comment {
             kind: TokenKind::CommentBlockEnd,
             span: 0..4,
         };
+        let txt = Rc::new(make_textline());
 
-        let f = parse_comment_block(token);
+        let f = parse_comment_block(token, &txt);
 
         assert!(matches!(f, ParseFlow::Break(ParseBreak::Complete)));
     }
@@ -714,8 +732,9 @@ mod comment {
             kind: TokenKind::CommentBlockFragment { depth: 0 },
             span: 0..4,
         };
+        let txt = Rc::new(make_textline());
 
-        let f = parse_comment_block(token);
+        let f = parse_comment_block(token, &txt);
 
         assert!(matches!(f, ParseFlow::Continue(())));
     }
@@ -726,20 +745,21 @@ mod comment {
             kind: TokenKind::CommentBlockBegin { depth: 1 },
             span: 0..4,
         };
+        let txt = Rc::new(make_textline());
 
-        let f = parse_comment_block(token);
+        let f = parse_comment_block(token, &txt);
 
         assert!(matches!(
             f,
             ParseFlow::Break(ParseBreak::Err(
                 ExpressionError {
+                    ctx: ExprCtx { span: Range { start: 0, end: 4 } , txt: line },
                     kind: ExpressionErrorKind::CommentBlockInvalid(
                         TokenKind::CommentBlockBegin { .. }
-                    ),
-                    span: Range { start: 0, end: 4 },
+                    )
                 },
                 ErrFlow::Break(Recovery::Fail),
-            ))
+            )) if Rc::ptr_eq(&line, &txt)
         ));
     }
 
@@ -749,18 +769,19 @@ mod comment {
             kind: TokenKind::ParenLeft,
             span: 0..1,
         };
+        let txt = Rc::new(make_textline());
 
-        let f = parse_comment_block(token);
+        let f = parse_comment_block(token, &txt);
 
         assert!(matches!(
             f,
             ParseFlow::Break(ParseBreak::Err(
                 ExpressionError {
+                    ctx: ExprCtx { span: Range { start: 0, end: 1 } , txt: line },
                     kind: ExpressionErrorKind::CommentBlockInvalid(TokenKind::ParenLeft),
-                    span: Range { start: 0, end: 1 },
                 },
                 ErrFlow::Break(Recovery::Fail),
-            ))
+            )) if Rc::ptr_eq(&line, &txt)
         ));
     }
 }

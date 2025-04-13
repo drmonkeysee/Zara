@@ -60,7 +60,7 @@ impl Parser for TokenList {
 
 #[derive(Default)]
 pub(crate) struct ExpressionTree {
-    errs: Vec<ParseErrorLine>,
+    errs: Vec<ExpressionError>,
     parsers: Vec<ParseNode>,
 }
 
@@ -108,7 +108,7 @@ impl ExpressionTree {
         let txt = Rc::new(txt);
         let mut errs = Vec::new();
         for token in tokens {
-            match parser.parse(token) {
+            match parser.parse(token, &txt) {
                 ParseFlow::Break(ParseBreak::Complete) => {
                     let done = parser;
                     // TODO: fix this unwrap
@@ -140,7 +140,7 @@ impl ExpressionTree {
             }
         }
         if !errs.is_empty() {
-            self.errs.push(ParseErrorLine(errs, Rc::clone(&txt)));
+            self.errs.extend(errs);
         }
         parser
     }
@@ -184,9 +184,6 @@ impl Parser for ExpressionTree {
     }
 }
 
-#[derive(Debug)]
-struct ParseErrorLine(Vec<ExpressionError>, Rc<TextLine>);
-
 struct ParseErrorLineMessage<'a>((&'a TextLine, &'a [&'a ExpressionError]));
 
 // TODO: unify this with token error message
@@ -225,7 +222,10 @@ impl Display for ParseErrorLineMessage<'_> {
 
 #[cfg(test)]
 mod tests {
-    use super::{expr::ExpressionErrorKind, *};
+    use super::{
+        expr::{ExprCtx, ExpressionErrorKind},
+        *,
+    };
     use crate::{
         constant::Constant,
         lex::{Token, TokenKind},
@@ -381,25 +381,28 @@ mod tests {
 
         let r = et.parse(tokens);
 
-        let err_lines = err_or_fail!(r).0;
-        assert_eq!(err_lines.len(), 1);
-        let err_line = &err_lines[0];
-        let ParseErrorLine(errs, line) = &err_line;
-        assert_eq!(line.lineno, 1);
+        let errs = err_or_fail!(r).0;
         assert_eq!(errs.len(), 2);
         assert!(matches!(
             &errs[0],
             ExpressionError {
+                ctx: ExprCtx {
+                    span: Range { start: 1, end: 2 },
+                    txt
+                },
                 kind: ExpressionErrorKind::Unimplemented(TokenKind::DirectiveCase(true)),
-                span: Range { start: 1, end: 2 },
-            }
+            } if txt.lineno == 1
         ));
         assert!(matches!(
             &errs[1],
             ExpressionError {
+                ctx: ExprCtx {
+                    span: Range { start: 3, end: 4 },
+                    txt
+                },
                 kind: ExpressionErrorKind::Unimplemented(TokenKind::DirectiveCase(false)),
-                span: Range { start: 3, end: 4 },
-            }
+
+            }  if txt.lineno == 1
         ));
         assert!(et.parsers.is_empty());
         assert!(et.errs.is_empty());
@@ -431,38 +434,39 @@ mod tests {
 
         let r = et.parse(tokens);
 
-        let err_lines = err_or_fail!(r).0;
-        assert_eq!(err_lines.len(), 2);
-
-        let err_line = &err_lines[0];
-        let ParseErrorLine(errs, line) = &err_line;
-        assert_eq!(line.lineno, 1);
-        assert_eq!(errs.len(), 2);
+        let errs = err_or_fail!(r).0;
+        assert_eq!(errs.len(), 3);
         assert!(matches!(
             &errs[0],
             ExpressionError {
+                ctx: ExprCtx {
+                    span: Range { start: 1, end: 2 },
+                    txt
+                },
                 kind: ExpressionErrorKind::Unimplemented(TokenKind::DirectiveCase(true)),
-                span: Range { start: 1, end: 2 },
-            }
+            } if txt.lineno == 1
         ));
         assert!(matches!(
             &errs[1],
             ExpressionError {
+                ctx: ExprCtx {
+                    span: Range { start: 3, end: 4 },
+                    txt
+                },
                 kind: ExpressionErrorKind::Unimplemented(TokenKind::DirectiveCase(false)),
-                span: Range { start: 3, end: 4 },
-            }
-        ));
 
-        let err_line = &err_lines[1];
-        let ParseErrorLine(errs, line) = &err_line;
-        assert_eq!(line.lineno, 2);
-        assert_eq!(errs.len(), 1);
+            }  if txt.lineno == 1
+        ));
         assert!(matches!(
-            &errs[0],
+            &errs[2],
             ExpressionError {
+                ctx: ExprCtx {
+                    span: Range { start: 0, end: 1 },
+                    txt
+                },
                 kind: ExpressionErrorKind::Unimplemented(TokenKind::CommentDatum),
-                span: Range { start: 0, end: 1 },
-            }
+
+            }  if txt.lineno == 2
         ));
         assert!(et.parsers.is_empty());
         assert!(et.errs.is_empty());
@@ -503,38 +507,39 @@ mod tests {
 
         let r = et.parse(tokens);
 
-        let err_lines = err_or_fail!(r).0;
-        assert_eq!(err_lines.len(), 2);
-
-        let err_line = &err_lines[0];
-        let ParseErrorLine(errs, line) = &err_line;
-        assert_eq!(line.lineno, 1);
-        assert_eq!(errs.len(), 2);
+        let errs = err_or_fail!(r).0;
+        assert_eq!(errs.len(), 3);
         assert!(matches!(
             &errs[0],
             ExpressionError {
+                ctx: ExprCtx {
+                    span: Range { start: 1, end: 2 },
+                    txt
+                },
                 kind: ExpressionErrorKind::Unimplemented(TokenKind::DirectiveCase(true)),
-                span: Range { start: 1, end: 2 },
-            }
+            } if txt.lineno == 1
         ));
         assert!(matches!(
             &errs[1],
             ExpressionError {
+                ctx: ExprCtx {
+                    span: Range { start: 3, end: 4 },
+                    txt
+                },
                 kind: ExpressionErrorKind::Unimplemented(TokenKind::DirectiveCase(false)),
-                span: Range { start: 3, end: 4 },
-            }
-        ));
 
-        let err_line = &err_lines[1];
-        let ParseErrorLine(errs, line) = &err_line;
-        assert_eq!(line.lineno, 2);
-        assert_eq!(errs.len(), 1);
+            }  if txt.lineno == 1
+        ));
         assert!(matches!(
-            &errs[0],
+            &errs[2],
             ExpressionError {
+                ctx: ExprCtx {
+                    span: Range { start: 1, end: 2 },
+                    txt
+                },
                 kind: ExpressionErrorKind::SeqInvalid(TokenKind::IdentifierDiscard),
-                span: Range { start: 1, end: 2 },
-            }
+
+            }  if txt.lineno == 2
         ));
         assert!(et.parsers.is_empty());
         assert!(et.errs.is_empty());
@@ -568,19 +573,17 @@ mod tests {
 
         let o = et.unsupported_continuation();
 
-        let err_lines = some_or_fail!(o).0;
-        assert_eq!(err_lines.len(), 1);
-
-        let err_line = &err_lines[0];
-        let ParseErrorLine(errs, line) = &err_line;
-        assert_eq!(line.lineno, 1);
+        let errs = some_or_fail!(o).0;
         assert_eq!(errs.len(), 1);
         assert!(matches!(
             &errs[0],
             ExpressionError {
+                ctx: ExprCtx {
+                    span: Range { start: 1, end: 19 },
+                    txt
+                },
                 kind: ExpressionErrorKind::StrUnterminated,
-                span: Range { start: 1, end: 19 },
-            }
+            } if txt.lineno == 1
         ));
 
         assert!(et.parsers.is_empty());
@@ -615,19 +618,17 @@ mod tests {
 
         let o = et.unsupported_continuation();
 
-        let err_lines = some_or_fail!(o).0;
-        assert_eq!(err_lines.len(), 1);
-
-        let err_line = &err_lines[0];
-        let ParseErrorLine(errs, line) = &err_line;
-        assert_eq!(line.lineno, 1);
+        let errs = some_or_fail!(o).0;
         assert_eq!(errs.len(), 1);
         assert!(matches!(
             &errs[0],
             ExpressionError {
+                ctx: ExprCtx {
+                    span: Range { start: 0, end: 19 },
+                    txt
+                },
                 kind: ExpressionErrorKind::StrUnterminated,
-                span: Range { start: 0, end: 19 },
-            }
+            } if txt.lineno == 1
         ));
 
         assert!(et.parsers.is_empty());
@@ -648,18 +649,17 @@ mod tests {
 
         let r = et.parse(tokens);
 
-        let err_lines = err_or_fail!(r).0;
-        assert_eq!(err_lines.len(), 1);
-        let err_line = &err_lines[0];
-        let ParseErrorLine(errs, line) = &err_line;
-        assert_eq!(line.lineno, 1);
+        let errs = err_or_fail!(r).0;
         assert_eq!(errs.len(), 1);
         assert!(matches!(
             &errs[0],
             ExpressionError {
+                ctx: ExprCtx {
+                    span: Range { start: 1, end: 2 },
+                    txt
+                },
                 kind: ExpressionErrorKind::Unimplemented(TokenKind::DirectiveCase(true)),
-                span: Range { start: 1, end: 2 },
-            }
+            } if txt.lineno == 1
         ));
         assert!(et.parsers.is_empty());
         assert!(et.errs.is_empty());

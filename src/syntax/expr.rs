@@ -91,14 +91,8 @@ impl Display for ExpressionErrorKind {
     }
 }
 
-struct GroupBy<I: Iterator> {
+pub(super) struct GroupBy<I: Iterator> {
     peek: Peekable<I>,
-}
-
-impl<I: Iterator> GroupBy<I> {
-    fn new(peek: Peekable<I>) -> Self {
-        Self { peek }
-    }
 }
 
 impl<'a, I: Iterator<Item = &'a ExpressionError>> Iterator for GroupBy<I> {

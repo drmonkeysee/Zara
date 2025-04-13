@@ -4,10 +4,7 @@ mod tests;
 // TODO: bv-temp
 use crate::value::Value;
 
-use super::{
-    ParseErrorLine,
-    expr::{Expression, ExpressionError, ExpressionErrorKind},
-};
+use super::expr::{ExprCtx, Expression, ExpressionError, ExpressionErrorKind};
 use crate::{
     constant::Constant,
     lex::{Token, TokenKind},
@@ -53,14 +50,14 @@ impl ParseNode {
         matches!(self.mode, ParseMode::Program(_))
     }
 
-    pub(super) fn parse(&mut self, token: Token) -> ParseFlow {
+    pub(super) fn parse(&mut self, token: Token, txt: &Rc<TextLine>) -> ParseFlow {
         match &mut self.mode {
-            ParseMode::ByteVector(seq) | ParseMode::List(seq) => parse_list(seq, token),
-            ParseMode::CommentBlock => parse_comment_block(token),
+            ParseMode::ByteVector(seq) | ParseMode::List(seq) => parse_list(seq, token, txt),
+            ParseMode::CommentBlock => parse_comment_block(token, txt),
             ParseMode::Failed => ParseFlow::Continue(()),
-            ParseMode::Identifier(buf) => parse_verbatim_identifier(buf, token),
-            ParseMode::Program(seq) => parse_sequence(seq, token),
-            ParseMode::StringLiteral(buf) => parse_str(buf, token),
+            ParseMode::Identifier(buf) => parse_verbatim_identifier(buf, token, txt),
+            ParseMode::Program(seq) => parse_sequence(seq, token, txt),
+            ParseMode::StringLiteral(buf) => parse_str(buf, token, txt),
         }
     }
 
@@ -71,7 +68,7 @@ impl ParseNode {
         }
     }
 
-    pub(super) fn into_continuation_unsupported(self) -> Option<ParseErrorLine> {
+    pub(super) fn into_continuation_unsupported(self) -> Option<ExpressionError> {
         let err_kind = match self.mode {
             ParseMode::CommentBlock => Some(ExpressionErrorKind::CommentBlockUnterminated),
             ParseMode::Identifier(_) => Some(ExpressionErrorKind::IdentifierUnterminated),
@@ -80,7 +77,7 @@ impl ParseNode {
             _ => None,
         }?;
         debug_assert!(self.ctx.is_some());
-        Some(self.ctx.unwrap().into_errorline(err_kind))
+        Some(self.ctx.unwrap().into_error(err_kind))
     }
 }
 
@@ -157,39 +154,42 @@ struct ParseCtx {
 }
 
 impl ParseCtx {
-    fn into_errorline(self, kind: ExpressionErrorKind) -> ParseErrorLine {
-        ParseErrorLine(
-            vec![ExpressionError {
-                kind,
+    fn into_error(self, kind: ExpressionErrorKind) -> ExpressionError {
+        ExpressionError {
+            ctx: ExprCtx {
                 span: self.start..self.txt.line.len(),
-            }],
-            self.txt,
-        )
+                txt: self.txt,
+            },
+            kind,
+        }
     }
 }
 
-fn parse_comment_block(token: Token) -> ParseFlow {
+fn parse_comment_block(token: Token, txt: &Rc<TextLine>) -> ParseFlow {
     match token.kind {
         TokenKind::CommentBlockFragment { .. } => ParseFlow::Continue(()),
         TokenKind::CommentBlockEnd => ParseFlow::Break(ParseBreak::Complete),
         _ => ParseFlow::Break(ParseBreak::Err(
             ExpressionError {
+                ctx: ExprCtx {
+                    span: token.span,
+                    txt: Rc::clone(txt),
+                },
                 kind: ExpressionErrorKind::CommentBlockInvalid(token.kind),
-                span: token.span,
             },
             ErrFlow::Break(Recovery::Fail),
         )),
     }
 }
 
-fn parse_list(seq: &mut Vec<Expression>, token: Token) -> ParseFlow {
+fn parse_list(seq: &mut Vec<Expression>, token: Token, txt: &Rc<TextLine>) -> ParseFlow {
     match token.kind {
         TokenKind::ParenRight => ParseFlow::Break(ParseBreak::Complete),
-        _ => parse_sequence(seq, token),
+        _ => parse_sequence(seq, token, txt),
     }
 }
 
-fn parse_sequence(seq: &mut Vec<Expression>, token: Token) -> ParseFlow {
+fn parse_sequence(seq: &mut Vec<Expression>, token: Token, txt: &Rc<TextLine>) -> ParseFlow {
     match token.kind {
         TokenKind::ByteVector => {
             return ParseFlow::Break(ParseBreak::New(ParseNew {
@@ -240,8 +240,11 @@ fn parse_sequence(seq: &mut Vec<Expression>, token: Token) -> ParseFlow {
         | TokenKind::StringFragment { .. } => {
             return ParseFlow::Break(ParseBreak::Err(
                 ExpressionError {
+                    ctx: ExprCtx {
+                        span: token.span,
+                        txt: Rc::clone(txt),
+                    },
                     kind: ExpressionErrorKind::SeqInvalid(token.kind),
-                    span: token.span,
                 },
                 ErrFlow::Break(Recovery::Fail),
             ));
@@ -249,8 +252,11 @@ fn parse_sequence(seq: &mut Vec<Expression>, token: Token) -> ParseFlow {
         _ => {
             return ParseFlow::Break(ParseBreak::Err(
                 ExpressionError {
+                    ctx: ExprCtx {
+                        span: token.span,
+                        txt: Rc::clone(txt),
+                    },
                     kind: ExpressionErrorKind::Unimplemented(token.kind),
-                    span: token.span,
                 },
                 ErrFlow::Continue(()),
             ));
@@ -259,7 +265,7 @@ fn parse_sequence(seq: &mut Vec<Expression>, token: Token) -> ParseFlow {
     ParseFlow::Continue(())
 }
 
-fn parse_str(buf: &mut String, token: Token) -> ParseFlow {
+fn parse_str(buf: &mut String, token: Token, txt: &Rc<TextLine>) -> ParseFlow {
     match token.kind {
         TokenKind::StringFragment { s, line_cont } => {
             buf.push_str(&s);
@@ -274,15 +280,18 @@ fn parse_str(buf: &mut String, token: Token) -> ParseFlow {
         }
         _ => ParseFlow::Break(ParseBreak::Err(
             ExpressionError {
+                ctx: ExprCtx {
+                    span: token.span,
+                    txt: Rc::clone(txt),
+                },
                 kind: ExpressionErrorKind::StrInvalid(token.kind),
-                span: token.span,
             },
             ErrFlow::Break(Recovery::Fail),
         )),
     }
 }
 
-fn parse_verbatim_identifier(buf: &mut String, token: Token) -> ParseFlow {
+fn parse_verbatim_identifier(buf: &mut String, token: Token, txt: &Rc<TextLine>) -> ParseFlow {
     match token.kind {
         TokenKind::IdentifierFragment(s) => {
             buf.push_str(&s);
@@ -295,8 +304,11 @@ fn parse_verbatim_identifier(buf: &mut String, token: Token) -> ParseFlow {
         }
         _ => ParseFlow::Break(ParseBreak::Err(
             ExpressionError {
+                ctx: ExprCtx {
+                    span: token.span,
+                    txt: Rc::clone(txt),
+                },
                 kind: ExpressionErrorKind::IdentifierInvalid(token.kind),
-                span: token.span,
             },
             ErrFlow::Break(Recovery::Fail),
         )),
@@ -314,10 +326,10 @@ fn into_bytevector(seq: Vec<Expression>) -> NodeToExprResult {
     */
     let foo = seq.into_iter().map(|expr| match expr {
         Expression::Literal(Value::Constant(Constant::Number(n))) => Ok(n.into_u8()),
-        _ => Err(ExpressionError {
-            kind: ExpressionErrorKind::ByteVectorInvalidItem,
-            span: 0..0,
-        }),
+        _ => todo!("expressions need exprctx"), /*Err(ExpressionError {
+                                                    kind: ExpressionErrorKind::ByteVectorInvalidItem,
+                                                    span: 0..0,
+                                                }),*/
     });
     let (bytes, errs): (Vec<_>, Vec<_>) = foo.partition(Result::is_ok);
     //todo!("do something with errors");
