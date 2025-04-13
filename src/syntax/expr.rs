@@ -1,8 +1,10 @@
-use crate::{constant::Constant, lex::TokenKind, value::Value};
+use crate::{constant::Constant, lex::TokenKind, txt::TextLine, value::Value};
 use std::{
     error::Error,
     fmt::{self, Display, Formatter},
+    iter::Peekable,
     ops::Range,
+    rc::Rc,
 };
 
 #[derive(Debug)]
@@ -35,9 +37,15 @@ impl Expression {
 }
 
 #[derive(Debug)]
-pub(super) struct ExpressionError {
-    pub(super) kind: ExpressionErrorKind,
+pub(super) struct ExprCtx {
     pub(super) span: Range<usize>,
+    pub(super) txt: Rc<TextLine>,
+}
+
+#[derive(Debug)]
+pub(super) struct ExpressionError {
+    pub(super) ctx: ExprCtx,
+    pub(super) kind: ExpressionErrorKind,
 }
 
 impl Display for ExpressionError {
@@ -80,6 +88,39 @@ impl Display for ExpressionErrorKind {
             Self::StrUnterminated => "unterminated string constant".fmt(f),
             Self::Unimplemented(t) => format!("{t} parsing not yet implemented").fmt(f),
         }
+    }
+}
+
+struct GroupBy<I: Iterator> {
+    peek: Peekable<I>,
+}
+
+impl<I: Iterator> GroupBy<I> {
+    fn new(peek: Peekable<I>) -> Self {
+        Self { peek }
+    }
+}
+
+impl<'a, I: Iterator<Item = &'a ExpressionError>> Iterator for GroupBy<I> {
+    type Item = (&'a TextLine, Vec<&'a ExpressionError>);
+
+    // NOTE: this assumes grouped items are contiguous in the original sequence
+    fn next(&mut self) -> Option<Self::Item> {
+        let start = self.peek.next()?;
+        let key = &start.ctx.txt;
+        let mut group = vec![start];
+        group.extend(self.peek.next_if(|err| Rc::ptr_eq(key, &err.ctx.txt)));
+        Some((Rc::as_ref(key), group))
+    }
+}
+
+pub(super) trait PeekableExt<I: Iterator> {
+    fn groupby_txt(self) -> GroupBy<I>;
+}
+
+impl<'a, I: Iterator<Item = &'a ExpressionError>> PeekableExt<I> for Peekable<I> {
+    fn groupby_txt(self) -> GroupBy<I> {
+        GroupBy { peek: self }
     }
 }
 
@@ -143,12 +184,16 @@ mod tests {
 
     mod error {
         use super::*;
+        use crate::testutil::make_textline;
 
         #[test]
         fn display_invalid_seq() {
             let err = ExpressionError {
+                ctx: ExprCtx {
+                    txt: make_textline().into(),
+                    span: 0..5,
+                },
                 kind: ExpressionErrorKind::SeqInvalid(TokenKind::Comment),
-                span: 0..5,
             };
 
             assert_eq!(
@@ -160,8 +205,11 @@ mod tests {
         #[test]
         fn display_invalid_identifier() {
             let err = ExpressionError {
+                ctx: ExprCtx {
+                    txt: make_textline().into(),
+                    span: 0..5,
+                },
                 kind: ExpressionErrorKind::IdentifierInvalid(TokenKind::Comment),
-                span: 0..5,
             };
 
             assert_eq!(
@@ -176,8 +224,11 @@ mod tests {
         #[test]
         fn display_unterminated_identifier() {
             let err = ExpressionError {
+                ctx: ExprCtx {
+                    txt: make_textline().into(),
+                    span: 0..5,
+                },
                 kind: ExpressionErrorKind::IdentifierUnterminated,
-                span: 0..5,
             };
 
             assert_eq!(err.to_string(), "unterminated verbatim identifier");
@@ -186,8 +237,11 @@ mod tests {
         #[test]
         fn display_unterminated_list() {
             let err = ExpressionError {
+                ctx: ExprCtx {
+                    txt: make_textline().into(),
+                    span: 0..5,
+                },
                 kind: ExpressionErrorKind::ListUnterminated,
-                span: 0..5,
             };
 
             assert_eq!(err.to_string(), "unterminated list expression");
@@ -196,8 +250,11 @@ mod tests {
         #[test]
         fn display_invalid_str() {
             let err = ExpressionError {
+                ctx: ExprCtx {
+                    txt: make_textline().into(),
+                    span: 0..5,
+                },
                 kind: ExpressionErrorKind::StrInvalid(TokenKind::Comment),
-                span: 0..5,
             };
 
             assert_eq!(
@@ -209,8 +266,11 @@ mod tests {
         #[test]
         fn display_unterminated_str() {
             let err = ExpressionError {
+                ctx: ExprCtx {
+                    txt: make_textline().into(),
+                    span: 0..5,
+                },
                 kind: ExpressionErrorKind::StrUnterminated,
-                span: 0..5,
             };
 
             assert_eq!(err.to_string(), "unterminated string constant");
@@ -219,14 +279,30 @@ mod tests {
         #[test]
         fn display_unimplemented() {
             let err = ExpressionError {
+                ctx: ExprCtx {
+                    txt: make_textline().into(),
+                    span: 0..5,
+                },
                 kind: ExpressionErrorKind::Unimplemented(TokenKind::Comment),
-                span: 0..5,
             };
 
             assert_eq!(
                 err.to_string(),
                 format!("{} parsing not yet implemented", TokenKind::Comment)
             );
+        }
+    }
+
+    mod groupby {
+        use super::*;
+
+        #[test]
+        fn empty() {
+            let errs = Vec::new();
+
+            let groups: Vec<_> = errs.into_iter().peekable().groupby_txt().collect();
+
+            assert!(groups.is_empty());
         }
     }
 }

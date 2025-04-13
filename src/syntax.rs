@@ -3,7 +3,7 @@ mod parse;
 
 pub(crate) use self::expr::Expression;
 use self::{
-    expr::ExpressionError,
+    expr::{ExpressionError, PeekableExt},
     parse::{ErrFlow, ParseBreak, ParseFlow, ParseNode, Recovery},
 };
 use crate::{lex::TokenLine, txt::TextLine, value::Value};
@@ -23,7 +23,7 @@ pub(crate) enum ParserOutput {
 }
 
 #[derive(Debug)]
-pub(crate) struct ParserError(Vec<ParseErrorLine>);
+pub(crate) struct ParserError(Vec<ExpressionError>);
 
 impl ParserError {
     pub(crate) fn display_message(&self) -> ParserErrorMessage {
@@ -64,12 +64,12 @@ pub(crate) struct ExpressionTree {
     parsers: Vec<ParseNode>,
 }
 
-pub(crate) struct ParserErrorMessage<'a>(&'a [ParseErrorLine]);
+pub(crate) struct ParserErrorMessage<'a>(&'a [ExpressionError]);
 
 impl Display for ParserErrorMessage<'_> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        for line in self.0 {
-            ParseErrorLineMessage(line).fmt(f)?;
+        for (txt, errs) in self.0.into_iter().peekable().groupby_txt() {
+            ParseErrorLineMessage((txt, &errs)).fmt(f)?;
         }
         Ok(())
     }
@@ -187,12 +187,12 @@ impl Parser for ExpressionTree {
 #[derive(Debug)]
 struct ParseErrorLine(Vec<ExpressionError>, Rc<TextLine>);
 
-struct ParseErrorLineMessage<'a>(&'a ParseErrorLine);
+struct ParseErrorLineMessage<'a>((&'a TextLine, &'a [&'a ExpressionError]));
 
 // TODO: unify this with token error message
 impl Display for ParseErrorLineMessage<'_> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        let ParseErrorLine(errs, txtline) = self.0;
+        let (txtline, errs) = self.0;
         txtline.display_header().fmt(f)?;
 
         if errs.is_empty() {
@@ -203,7 +203,7 @@ impl Display for ParseErrorLineMessage<'_> {
         f.write_char('\t')?;
         for span in errs
             .iter()
-            .filter_map(|err| (!err.span.is_empty()).then_some(&err.span))
+            .filter_map(|err| (!err.ctx.span.is_empty()).then_some(&err.ctx.span))
         {
             write!(
                 f,
@@ -217,7 +217,7 @@ impl Display for ParseErrorLineMessage<'_> {
         }
         f.write_char('\n')?;
         for err in errs {
-            writeln!(f, "{}: {err}", err.span.start + 1)?;
+            writeln!(f, "{}: {err}", err.ctx.span.start + 1)?;
         }
         Ok(())
     }
