@@ -90,11 +90,11 @@ impl Display for ExpressionErrorKind {
     }
 }
 
-pub(super) struct GroupBy<I: Iterator> {
-    peek: Peekable<I>,
+pub(super) struct GroupBy<I> {
+    peek: I,
 }
 
-impl<'a, I: Iterator<Item = &'a ExpressionError>> Iterator for GroupBy<I> {
+impl<'a, I: Iterator<Item = &'a ExpressionError>> Iterator for GroupBy<Peekable<I>> {
     type Item = (&'a TextLine, Vec<&'a ExpressionError>);
 
     // NOTE: this assumes grouped items are contiguous in the original sequence
@@ -110,11 +110,13 @@ impl<'a, I: Iterator<Item = &'a ExpressionError>> Iterator for GroupBy<I> {
 }
 
 pub(super) trait PeekableExt<I: Iterator> {
-    fn groupby_txt(self) -> GroupBy<I>;
+    fn groupby_txt(self) -> GroupBy<Self>
+    where
+        Self: Sized;
 }
 
 impl<'a, I: Iterator<Item = &'a ExpressionError>> PeekableExt<I> for Peekable<I> {
-    fn groupby_txt(self) -> GroupBy<I> {
+    fn groupby_txt(self) -> GroupBy<Self> {
         GroupBy { peek: self }
     }
 }
