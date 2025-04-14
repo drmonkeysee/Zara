@@ -92,7 +92,7 @@ impl TryFrom<ParseNode> for Expression {
             ParseMode::List(seq) => convert_list(seq),
             ParseMode::Program(exprs) => Expression::Seq(exprs.into()),
             ParseMode::StringLiteral(s) => Expression::constant(Constant::String(s.into())),
-            _ => Expression::Empty,
+            _ => todo!("fill out rest of arms"),
         })
     }
 }
