@@ -8,10 +8,38 @@ use std::{
 };
 
 #[derive(Debug)]
+pub(crate) struct Program(pub(super) Box<[Expression]>);
+
+impl Program {
+    pub(crate) fn new(seq: impl Into<Box<[Expression]>>) -> Self {
+        Self(seq.into())
+    }
+
+    pub(crate) fn eval(self) -> Option<Value> {
+        self.0.into_iter().map(Expression::eval).last()?
+    }
+}
+
+#[derive(Debug)]
 pub(super) struct ExpressionType<T> {
     pub(super) kind: T,
     pub(super) span: Range<usize>,
     pub(super) txt: Rc<TextLine>,
+}
+
+pub(super) struct ExprCtx {
+    pub(super) span: Range<usize>,
+    pub(super) txt: Rc<TextLine>,
+}
+
+impl ExprCtx {
+    pub(super) fn into_error(self, kind: ExpressionErrorKind) -> ExpressionError {
+        ExpressionError {
+            kind,
+            span: self.span,
+            txt: self.txt,
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -24,7 +52,6 @@ pub(crate) enum Expression {
     Empty,
     Identifier(Box<str>),
     Literal(Value),
-    Seq(Box<[Expression]>),
 }
 
 impl Expression {
@@ -32,16 +59,17 @@ impl Expression {
         Self::Literal(Value::Constant(con))
     }
 
-    pub(crate) fn eval(self) -> Option<Value> {
+    fn eval(self) -> Option<Value> {
         match self {
             Self::Call { .. } => todo!("no idea what to do here"),
             Self::Empty => None,
             Self::Identifier(_) => todo!("this is dependent on current environment frame"),
             Self::Literal(v) => Some(v),
-            Self::Seq(seq) => seq.into_iter().map(Self::eval).last()?,
         }
     }
 }
+
+pub(super) struct ProgramError;
 
 pub(super) type ExpressionError = ExpressionType<ExpressionErrorKind>;
 
@@ -153,26 +181,23 @@ mod tests {
         }
 
         #[test]
-        fn empty_sequence() {
-            let expr = Expression::Seq([].into());
+        fn empty_program() {
+            let prg = Program::new([]);
 
-            let o = expr.eval();
+            let o = prg.eval();
 
             assert!(o.is_none());
         }
 
         #[test]
-        fn sequence() {
-            let expr = Expression::Seq(
-                [
-                    Expression::Literal(Value::Constant(Constant::Boolean(true))),
-                    Expression::Literal(Value::Constant(Constant::Character('a'))),
-                    Expression::Literal(Value::Constant(Constant::Character('b'))),
-                ]
-                .into(),
-            );
+        fn program() {
+            let prg = Program::new([
+                Expression::Literal(Value::Constant(Constant::Boolean(true))),
+                Expression::Literal(Value::Constant(Constant::Character('a'))),
+                Expression::Literal(Value::Constant(Constant::Character('b'))),
+            ]);
 
-            let o = expr.eval();
+            let o = prg.eval();
 
             let v = some_or_fail!(o);
             assert!(matches!(v, Value::Constant(Constant::Character('b'))));

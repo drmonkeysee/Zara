@@ -1,5 +1,5 @@
 use crate::{
-    syntax::Expression,
+    syntax::Program,
     value::{Datum as ValueDatum, Value},
 };
 use std::fmt::{self, Display, Formatter};
@@ -56,21 +56,21 @@ impl Display for EvaluationMessage<'_> {
 }
 
 pub(crate) trait Evaluator {
-    fn evaluate(&self, expression: Expression) -> Evaluation;
+    fn evaluate(&self, prg: Program) -> Evaluation;
 }
 
 pub(crate) struct Ast;
 
 impl Evaluator for Ast {
-    fn evaluate(&self, expression: Expression) -> Evaluation {
-        Evaluation::val(Some(Value::Ast(expression.into())))
+    fn evaluate(&self, prg: Program) -> Evaluation {
+        Evaluation::val(Some(Value::Ast(prg)))
     }
 }
 
 pub(crate) struct Environment;
 
 impl Evaluator for Environment {
-    fn evaluate(&self, expression: Expression) -> Evaluation {
-        Evaluation::val(expression.eval())
+    fn evaluate(&self, prg: Program) -> Evaluation {
+        Evaluation::val(prg.eval())
     }
 }

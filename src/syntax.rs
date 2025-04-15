@@ -1,7 +1,7 @@
 mod expr;
 mod parse;
 
-pub(crate) use self::expr::Expression;
+pub(crate) use self::expr::{Expression, Program};
 use self::{
     expr::{ExpressionError, PeekableExt},
     parse::{ErrFlow, ParseBreak, ParseFlow, ParseNode, Recovery},
@@ -18,7 +18,7 @@ pub(crate) type ParserResult = Result<ParserOutput, ParserError>;
 
 #[derive(Debug)]
 pub(crate) enum ParserOutput {
-    Complete(Expression),
+    Complete(Program),
     Continuation,
 }
 
@@ -48,9 +48,9 @@ pub(crate) struct TokenList;
 
 impl Parser for TokenList {
     fn parse(&mut self, token_lines: impl IntoIterator<Item = TokenLine>) -> ParserResult {
-        Ok(ParserOutput::Complete(Expression::Literal(
+        Ok(ParserOutput::Complete(Program::new([Expression::Literal(
             Value::TokenList(token_lines.into_iter().collect()),
-        )))
+        )])))
     }
 
     fn unsupported_continuation(&mut self) -> Option<ParserError> {
@@ -255,7 +255,7 @@ mod tests {
 
         assert!(matches!(
             r,
-            Ok(ParserOutput::Complete(Expression::Seq(seq)))
+            Ok(ParserOutput::Complete(Program(seq)))
             if seq.is_empty()
         ));
         assert!(et.parsers.is_empty());
@@ -270,10 +270,7 @@ mod tests {
 
         let r = et.parse(tokens);
 
-        let seq = extract_or_fail!(
-            extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete),
-            Expression::Seq
-        );
+        let Program(seq) = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
         assert_eq!(seq.len(), 1);
         assert!(matches!(
             seq[0],
@@ -293,10 +290,7 @@ mod tests {
 
         let r = et.parse(tokens);
 
-        let seq = extract_or_fail!(
-            extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete),
-            Expression::Seq
-        );
+        let Program(seq) = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
         assert_eq!(seq.len(), 3);
         assert!(matches!(
             seq[0],
@@ -336,10 +330,7 @@ mod tests {
 
         let r = et.parse(tokens);
 
-        let seq = extract_or_fail!(
-            extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete),
-            Expression::Seq
-        );
+        let Program(seq) = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
         assert_eq!(seq.len(), 5);
         assert!(matches!(
             seq[0],

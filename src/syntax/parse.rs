@@ -4,7 +4,9 @@ mod tests;
 // TODO: bv-temp
 use crate::value::Value;
 
-use super::expr::{Expression, ExpressionError, ExpressionErrorKind};
+use super::expr::{
+    ExprCtx, Expression, ExpressionError, ExpressionErrorKind, Program, ProgramError,
+};
 use crate::{
     constant::Constant,
     lex::{Token, TokenKind},
@@ -15,82 +17,113 @@ use std::{ops::ControlFlow, rc::Rc};
 
 pub(super) type ParseFlow = ControlFlow<ParseBreak>;
 
-pub(super) struct ParseNode {
-    ctx: Option<ParseCtx>,
-    mode: ParseMode,
+pub(super) enum ParseNode {
+    Expr(ExprNode),
+    Fail,
+    Prg(Vec<Expression>),
 }
 
 impl ParseNode {
     pub(super) fn prg() -> Self {
-        Self {
-            ctx: None,
-            mode: ParseMode::Program(Vec::new()),
-        }
+        Self::Prg(Vec::new())
     }
 
     pub(super) fn fail() -> Self {
-        Self {
-            ctx: None,
-            mode: ParseMode::Failed,
-        }
+        Self::Fail
     }
 
     fn new(mode: ParseMode, start: usize, txt: impl Into<Rc<TextLine>>) -> Self {
-        Self {
+        let txt = txt.into();
+        Self::Expr(ExprNode {
+            ctx: ExprCtx {
+                span: start..txt.line.len(),
+                txt,
+            },
             mode,
-            ctx: Some(ParseCtx {
-                txt: txt.into(),
-                start,
-            }),
-        }
+        })
     }
 
     // TODO: temporary for debug assert
     pub(super) fn is_prg(&self) -> bool {
-        matches!(self.mode, ParseMode::Program(_))
+        matches!(self, Self::Prg(_))
     }
 
     pub(super) fn parse(&mut self, token: Token, txt: &Rc<TextLine>) -> ParseFlow {
-        match &mut self.mode {
-            ParseMode::ByteVector(seq) | ParseMode::List(seq) => parse_list(seq, token, txt),
-            ParseMode::CommentBlock => parse_comment_block(token, txt),
-            ParseMode::Failed => ParseFlow::Continue(()),
-            ParseMode::Identifier(buf) => parse_verbatim_identifier(buf, token, txt),
-            ParseMode::Program(seq) => parse_sequence(seq, token, txt),
-            ParseMode::StringLiteral(buf) => parse_str(buf, token, txt),
+        match self {
+            Self::Expr(node) => node.parse(token, txt),
+            Self::Fail => ParseFlow::Continue(()),
+            Self::Prg(seq) => parse_sequence(seq, token, txt),
         }
     }
 
     pub(super) fn merge(&mut self, other: ParseNode) -> Result<(), Vec<ExpressionError>> {
-        match &mut self.mode {
-            ParseMode::Program(exprs) => Ok(exprs.push(other.try_into()?)),
-            _ => todo!("fail here somehow"),
+        let Self::Expr(other_expr) = other else {
+            todo!("other always needs to be an expr node");
+        };
+        match self {
+            Self::Prg(seq) => Ok(seq.push(other_expr.try_into()?)),
+            _ => todo!("what to do for rest of arms"),
         }
     }
 
     pub(super) fn into_continuation_unsupported(self) -> Option<ExpressionError> {
-        let ctx = self.ctx?;
-        let err_kind = match self.mode {
-            ParseMode::ByteVector(_) => Some(ExpressionErrorKind::ByteVectorUnterminated),
-            ParseMode::CommentBlock => Some(ExpressionErrorKind::CommentBlockUnterminated),
-            ParseMode::Identifier(_) => Some(ExpressionErrorKind::IdentifierUnterminated),
-            ParseMode::List(_) => Some(ExpressionErrorKind::ListUnterminated),
-            ParseMode::StringLiteral(_) => Some(ExpressionErrorKind::StrUnterminated),
-            _ => None,
-        }?;
-        Some(ctx.into_error(err_kind))
+        if let Self::Expr(node) = self {
+            node.into_continuation_unsupported()
+        } else {
+            None
+        }
     }
 }
 
-impl TryFrom<ParseNode> for Expression {
+impl TryFrom<ParseNode> for Program {
+    type Error = ProgramError;
+
+    fn try_from(value: ParseNode) -> Result<Self, <Self as TryFrom<ParseNode>>::Error> {
+        let ParseNode::Prg(seq) = value else {
+            todo!("only prg can convert properly");
+        };
+        Ok(Program::new(seq))
+    }
+}
+
+pub(super) struct ExprNode {
+    ctx: ExprCtx,
+    mode: ParseMode,
+}
+
+impl ExprNode {
+    fn parse(&mut self, token: Token, txt: &Rc<TextLine>) -> ParseFlow {
+        match &mut self.mode {
+            ParseMode::ByteVector(seq) | ParseMode::List(seq) => parse_list(seq, token, txt),
+            ParseMode::CommentBlock => parse_comment_block(token, txt),
+            ParseMode::Identifier(buf) => parse_verbatim_identifier(buf, token, txt),
+            ParseMode::StringLiteral(buf) => parse_str(buf, token, txt),
+        }
+    }
+
+    fn merge(&mut self, other: ExprNode) -> Result<(), Vec<ExpressionError>> {
+        todo!();
+    }
+
+    fn into_continuation_unsupported(self) -> Option<ExpressionError> {
+        Some(self.ctx.into_error(match self.mode {
+            ParseMode::ByteVector(_) => ExpressionErrorKind::ByteVectorUnterminated,
+            ParseMode::CommentBlock => ExpressionErrorKind::CommentBlockUnterminated,
+            ParseMode::Identifier(_) => ExpressionErrorKind::IdentifierUnterminated,
+            ParseMode::List(_) => ExpressionErrorKind::ListUnterminated,
+            ParseMode::StringLiteral(_) => ExpressionErrorKind::StrUnterminated,
+        }))
+    }
+}
+
+impl TryFrom<ExprNode> for Expression {
     type Error = Vec<ExpressionError>;
 
-    fn try_from(node: ParseNode) -> Result<Self, <Self as TryFrom<ParseNode>>::Error> {
+    fn try_from(node: ExprNode) -> Result<Self, <Self as TryFrom<ExprNode>>::Error> {
         Ok(match node.mode {
             ParseMode::ByteVector(seq) => into_bytevector(seq)?,
             ParseMode::Identifier(s) => Expression::Identifier(s.into()),
             ParseMode::List(seq) => convert_list(seq),
-            ParseMode::Program(exprs) => Expression::Seq(exprs.into()),
             ParseMode::StringLiteral(s) => Expression::constant(Constant::String(s.into())),
             _ => todo!("fill out rest of arms"),
         })
@@ -128,10 +161,8 @@ pub(super) enum Recovery {
 enum ParseMode {
     ByteVector(Vec<Expression>),
     CommentBlock,
-    Failed,
     Identifier(String),
     List(Vec<Expression>),
-    Program(Vec<Expression>),
     StringLiteral(String),
 }
 
@@ -146,21 +177,6 @@ impl ParseMode {
             s.push('\n');
         }
         Self::StringLiteral(s)
-    }
-}
-
-struct ParseCtx {
-    txt: Rc<TextLine>,
-    start: usize,
-}
-
-impl ParseCtx {
-    fn into_error(self, kind: ExpressionErrorKind) -> ExpressionError {
-        ExpressionError {
-            kind,
-            span: self.start..self.txt.line.len(),
-            txt: self.txt,
-        }
     }
 }
 
@@ -304,7 +320,7 @@ fn parse_verbatim_identifier(buf: &mut String, token: Token, txt: &Rc<TextLine>)
     }
 }
 
-type ConvertExprResult = Result<Expression, <Expression as TryFrom<ParseNode>>::Error>;
+type ConvertExprResult = Result<Expression, <Expression as TryFrom<ExprNode>>::Error>;
 
 fn into_bytevector(seq: Vec<Expression>) -> ConvertExprResult {
     // todo!("filter out everything except bytes")
