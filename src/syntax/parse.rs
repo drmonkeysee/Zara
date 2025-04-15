@@ -186,9 +186,11 @@ fn parse_comment_block(token: Token, txt: &Rc<TextLine>) -> ParseFlow {
         TokenKind::CommentBlockEnd => ParseFlow::Break(ParseBreak::Complete),
         _ => ParseFlow::Break(ParseBreak::Err(
             ExpressionError {
+                ctx: ExprCtx {
+                    span: token.span,
+                    txt: Rc::clone(txt),
+                },
                 kind: ExpressionErrorKind::CommentBlockInvalid(token.kind),
-                span: token.span,
-                txt: Rc::clone(txt),
             },
             ErrFlow::Break(Recovery::Fail),
         )),
@@ -253,9 +255,11 @@ fn parse_sequence(seq: &mut Vec<Expression>, token: Token, txt: &Rc<TextLine>) -
         | TokenKind::StringFragment { .. } => {
             return ParseFlow::Break(ParseBreak::Err(
                 ExpressionError {
+                    ctx: ExprCtx {
+                        span: token.span,
+                        txt: Rc::clone(txt),
+                    },
                     kind: ExpressionErrorKind::SeqInvalid(token.kind),
-                    span: token.span,
-                    txt: Rc::clone(txt),
                 },
                 ErrFlow::Break(Recovery::Fail),
             ));
@@ -263,9 +267,11 @@ fn parse_sequence(seq: &mut Vec<Expression>, token: Token, txt: &Rc<TextLine>) -
         _ => {
             return ParseFlow::Break(ParseBreak::Err(
                 ExpressionError {
+                    ctx: ExprCtx {
+                        span: token.span,
+                        txt: Rc::clone(txt),
+                    },
                     kind: ExpressionErrorKind::Unimplemented(token.kind),
-                    span: token.span,
-                    txt: Rc::clone(txt),
                 },
                 ErrFlow::Continue(()),
             ));
@@ -289,9 +295,11 @@ fn parse_str(buf: &mut String, token: Token, txt: &Rc<TextLine>) -> ParseFlow {
         }
         _ => ParseFlow::Break(ParseBreak::Err(
             ExpressionError {
+                ctx: ExprCtx {
+                    span: token.span,
+                    txt: Rc::clone(txt),
+                },
                 kind: ExpressionErrorKind::StrInvalid(token.kind),
-                span: token.span,
-                txt: Rc::clone(txt),
             },
             ErrFlow::Break(Recovery::Fail),
         )),
@@ -311,9 +319,11 @@ fn parse_verbatim_identifier(buf: &mut String, token: Token, txt: &Rc<TextLine>)
         }
         _ => ParseFlow::Break(ParseBreak::Err(
             ExpressionError {
+                ctx: ExprCtx {
+                    span: token.span,
+                    txt: Rc::clone(txt),
+                },
                 kind: ExpressionErrorKind::IdentifierInvalid(token.kind),
-                span: token.span,
-                txt: Rc::clone(txt),
             },
             ErrFlow::Break(Recovery::Fail),
         )),
