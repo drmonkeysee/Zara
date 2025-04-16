@@ -11,7 +11,7 @@ use std::{
 pub(crate) struct Program(pub(super) Box<[Expression]>);
 
 impl Program {
-    pub(crate) fn new(seq: impl Into<Box<[Expression]>>) -> Self {
+    pub(super) fn new(seq: impl Into<Box<[Expression]>>) -> Self {
         Self(seq.into())
     }
 
@@ -38,8 +38,30 @@ impl ExprCtx {
     }
 }
 
+pub(super) type Expression = ExpressionType<ExpressionKind>;
+
+impl Expression {
+    pub(super) fn constant(con: Constant, ctx: ExprCtx) -> Self {
+        Self {
+            ctx,
+            kind: ExpressionKind::Literal(Value::Constant(con)),
+        }
+    }
+
+    fn eval(self) -> Option<Value> {
+        match self.kind {
+            ExpressionKind::Call { .. } => todo!("no idea what to do here"),
+            ExpressionKind::Empty => None,
+            ExpressionKind::Identifier(_) => {
+                todo!("this is dependent on current environment frame")
+            }
+            ExpressionKind::Literal(v) => Some(v),
+        }
+    }
+}
+
 #[derive(Debug)]
-pub(crate) enum Expression {
+pub(super) enum ExpressionKind {
     Call {
         args: Box<[Expression]>,
         proc: Box<Expression>,
@@ -48,21 +70,6 @@ pub(crate) enum Expression {
     Empty,
     Identifier(Box<str>),
     Literal(Value),
-}
-
-impl Expression {
-    pub(crate) fn constant(con: Constant) -> Self {
-        Self::Literal(Value::Constant(con))
-    }
-
-    fn eval(self) -> Option<Value> {
-        match self {
-            Self::Call { .. } => todo!("no idea what to do here"),
-            Self::Empty => None,
-            Self::Identifier(_) => todo!("this is dependent on current environment frame"),
-            Self::Literal(v) => Some(v),
-        }
-    }
 }
 
 pub(super) struct ProgramError;
@@ -155,11 +162,17 @@ mod tests {
 
     mod eval {
         use super::*;
-        use crate::testutil::some_or_fail;
+        use crate::testutil::{make_textline, some_or_fail};
 
         #[test]
         fn empty() {
-            let expr = Expression::Empty;
+            let expr = Expression {
+                ctx: ExprCtx {
+                    span: 0..0,
+                    txt: make_textline().into(),
+                },
+                kind: ExpressionKind::Empty,
+            };
 
             let o = expr.eval();
 
@@ -168,7 +181,13 @@ mod tests {
 
         #[test]
         fn constant() {
-            let expr = Expression::Literal(Value::Constant(Constant::Boolean(true)));
+            let expr = Expression::constant(
+                Constant::Boolean(true),
+                ExprCtx {
+                    span: 0..6,
+                    txt: make_textline().into(),
+                },
+            );
 
             let o = expr.eval();
 
@@ -187,10 +206,29 @@ mod tests {
 
         #[test]
         fn program() {
+            let txt = make_textline().into();
             let prg = Program::new([
-                Expression::Literal(Value::Constant(Constant::Boolean(true))),
-                Expression::Literal(Value::Constant(Constant::Character('a'))),
-                Expression::Literal(Value::Constant(Constant::Character('b'))),
+                Expression::constant(
+                    Constant::Boolean(true),
+                    ExprCtx {
+                        span: 0..6,
+                        txt: Rc::clone(&txt),
+                    },
+                ),
+                Expression::constant(
+                    Constant::Character('a'),
+                    ExprCtx {
+                        span: 6..8,
+                        txt: Rc::clone(&txt),
+                    },
+                ),
+                Expression::constant(
+                    Constant::Character('b'),
+                    ExprCtx {
+                        span: 8..10,
+                        txt: Rc::clone(&txt),
+                    },
+                ),
             ]);
 
             let o = prg.eval();

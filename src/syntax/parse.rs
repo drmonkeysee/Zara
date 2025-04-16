@@ -5,7 +5,8 @@ mod tests;
 use crate::value::Value;
 
 use super::expr::{
-    ExprCtx, Expression, ExpressionError, ExpressionErrorKind, Program, ProgramError,
+    ExprCtx, Expression, ExpressionError, ExpressionErrorKind, ExpressionKind, Program,
+    ProgramError,
 };
 use crate::{
     constant::Constant,
@@ -121,10 +122,15 @@ impl TryFrom<ExprNode> for Expression {
 
     fn try_from(node: ExprNode) -> Result<Self, <Self as TryFrom<ExprNode>>::Error> {
         Ok(match node.mode {
-            ParseMode::ByteVector(seq) => into_bytevector(seq)?,
-            ParseMode::Identifier(s) => Expression::Identifier(s.into()),
-            ParseMode::List(seq) => convert_list(seq),
-            ParseMode::StringLiteral(s) => Expression::constant(Constant::String(s.into())),
+            ParseMode::ByteVector(seq) => into_bytevector(seq, node.ctx)?,
+            ParseMode::Identifier(s) => Expression {
+                ctx: node.ctx,
+                kind: ExpressionKind::Identifier(s.into()),
+            },
+            ParseMode::List(seq) => convert_list(seq, node.ctx),
+            ParseMode::StringLiteral(s) => {
+                Expression::constant(Constant::String(s.into()), node.ctx)
+            }
             _ => todo!("fill out rest of arms"),
         })
     }
@@ -219,13 +225,29 @@ fn parse_sequence(seq: &mut Vec<Expression>, token: Token, txt: &Rc<TextLine>) -
                 start: token.span.start,
             }));
         }
-        TokenKind::Constant(con) => seq.push(Expression::constant(con)),
-        TokenKind::Imaginary(r) => {
-            seq.push(Expression::constant(Constant::Number(Number::imaginary(r))))
-        }
+        TokenKind::Constant(con) => seq.push(Expression::constant(
+            con,
+            ExprCtx {
+                span: token.span,
+                txt: Rc::clone(txt),
+            },
+        )),
+        TokenKind::Imaginary(r) => seq.push(Expression::constant(
+            Constant::Number(Number::imaginary(r)),
+            ExprCtx {
+                span: token.span,
+                txt: Rc::clone(txt),
+            },
+        )),
         // TODO: check for keywords/special forms here?
         // need to handle cases where e.g. "if" is shadowed by a user definition
-        TokenKind::Identifier(s) => seq.push(Expression::Identifier(s.into())),
+        TokenKind::Identifier(s) => seq.push(Expression {
+            ctx: ExprCtx {
+                span: token.span,
+                txt: Rc::clone(txt),
+            },
+            kind: ExpressionKind::Identifier(s.into()),
+        }),
         TokenKind::IdentifierBegin(s) => {
             return ParseFlow::Break(ParseBreak::New(ParseNew {
                 mode: ParseMode::identifier(s),
@@ -332,15 +354,15 @@ fn parse_verbatim_identifier(buf: &mut String, token: Token, txt: &Rc<TextLine>)
 
 type ConvertExprResult = Result<Expression, <Expression as TryFrom<ExprNode>>::Error>;
 
-fn into_bytevector(seq: Vec<Expression>) -> ConvertExprResult {
+fn into_bytevector(seq: Vec<Expression>, ctx: ExprCtx) -> ConvertExprResult {
     // todo!("filter out everything except bytes")
     /*
     errors
     - invalid type (anything that's not an Integer)
     - out of range (< 0 or > 255)
     */
-    let foo = seq.into_iter().map(|expr| match expr {
-        Expression::Literal(Value::Constant(Constant::Number(n))) => Ok(n.into_u8()),
+    let foo = seq.into_iter().map(|expr| match expr.kind {
+        ExpressionKind::Literal(Value::Constant(Constant::Number(n))) => Ok(n.into_u8()),
         _ => todo!("expressions need exprctx"), /*Err(ExpressionError {
                                                     kind: ExpressionErrorKind::ByteVectorInvalidItem,
                                                     span: 0..0,
@@ -349,23 +371,27 @@ fn into_bytevector(seq: Vec<Expression>) -> ConvertExprResult {
     let (bytes, errs): (Vec<_>, Vec<_>) = foo.partition(Result::is_ok);
     //todo!("do something with errors");
     if errs.is_empty() {
-        Ok(Expression::Literal(Value::ByteVector(
-            bytes.into_iter().flatten().collect(),
-        )))
+        Ok(Expression {
+            ctx,
+            kind: ExpressionKind::Literal(Value::ByteVector(bytes.into_iter().flatten().collect())),
+        })
     } else {
         Err(errs.into_iter().filter_map(Result::err).collect::<Vec<_>>())?
     }
 }
 
-fn convert_list(seq: Vec<Expression>) -> Expression {
+fn convert_list(seq: Vec<Expression>, ctx: ExprCtx) -> Expression {
     debug_assert!(
         !seq.is_empty(),
         "empty list is invalid syntax unless quoted"
     );
     let mut iter = seq.into_iter();
     let proc = iter.next().unwrap();
-    Expression::Call {
-        args: iter.collect(),
-        proc: proc.into(),
+    Expression {
+        ctx,
+        kind: ExpressionKind::Call {
+            args: iter.collect(),
+            proc: proc.into(),
+        },
     }
 }

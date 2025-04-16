@@ -20,8 +20,11 @@ mod bytevector {
         assert_eq!(seq.len(), 1);
         assert!(matches!(
             &seq[0],
-            Expression::Literal(Value::Constant(Constant::Number(n)))
-            if n.as_datum().to_string() == "16"
+            Expression {
+                ctx: ExprCtx { span: Range { start: 3, end: 5 }, txt: line },
+                kind: ExpressionKind::Literal(Value::Constant(Constant::Number(n))),
+            }
+            if n.as_datum().to_string() == "16" && Rc::ptr_eq(&txt, &line)
         ));
     }
 
@@ -40,8 +43,11 @@ mod bytevector {
         assert_eq!(seq.len(), 1);
         assert!(matches!(
             &seq[0],
-            Expression::Literal(Value::Constant(Constant::Number(n)))
-            if n.as_datum().to_string() == "0"
+            Expression {
+                ctx: ExprCtx { span: Range { start: 3, end: 5 }, txt: line },
+                kind: ExpressionKind::Literal(Value::Constant(Constant::Number(n))),
+            }
+            if n.as_datum().to_string() == "0" && Rc::ptr_eq(&txt, &line)
         ));
     }
 
@@ -60,17 +66,39 @@ mod bytevector {
         assert_eq!(seq.len(), 1);
         assert!(matches!(
             &seq[0],
-            Expression::Literal(Value::Constant(Constant::Number(n)))
-            if n.as_datum().to_string() == "255"
+            Expression {
+                ctx: ExprCtx { span: Range { start: 3, end: 5 }, txt: line },
+                kind: ExpressionKind::Literal(Value::Constant(Constant::Number(n))),
+            }
+            if n.as_datum().to_string() == "255" && Rc::ptr_eq(&txt, &line)
         ));
     }
 
     #[test]
     fn end() {
+        let txt = make_textline().into();
         let mut seq = vec![
-            Expression::constant(Constant::Number(Number::real(24))),
-            Expression::constant(Constant::Number(Number::real(25))),
-            Expression::constant(Constant::Number(Number::real(26))),
+            Expression::constant(
+                Constant::Number(Number::real(24)),
+                ExprCtx {
+                    span: 0..3,
+                    txt: Rc::clone(&txt),
+                },
+            ),
+            Expression::constant(
+                Constant::Number(Number::real(25)),
+                ExprCtx {
+                    span: 3..6,
+                    txt: Rc::clone(&txt),
+                },
+            ),
+            Expression::constant(
+                Constant::Number(Number::real(26)),
+                ExprCtx {
+                    span: 6..9,
+                    txt: Rc::clone(&txt),
+                },
+            ),
         ];
         let token = Token {
             kind: TokenKind::ParenRight,
@@ -171,14 +199,33 @@ mod continuation {
 
     #[test]
     fn list_continuation() {
+        let txt = make_textline().into();
         let p = ParseNode::new(
             ParseMode::List(vec![
-                Expression::Identifier("+".into()),
-                Expression::constant(Constant::Number(Number::real(4))),
-                Expression::constant(Constant::Number(Number::real(5))),
+                Expression {
+                    ctx: ExprCtx {
+                        span: 0..1,
+                        txt: Rc::clone(&txt),
+                    },
+                    kind: ExpressionKind::Identifier("+".into()),
+                },
+                Expression::constant(
+                    Constant::Number(Number::real(4)),
+                    ExprCtx {
+                        span: 1..4,
+                        txt: Rc::clone(&txt),
+                    },
+                ),
+                Expression::constant(
+                    Constant::Number(Number::real(5)),
+                    ExprCtx {
+                        span: 4..6,
+                        txt: Rc::clone(&txt),
+                    },
+                ),
             ]),
             3,
-            make_textline(),
+            Rc::clone(&txt),
         );
 
         let o = p.into_continuation_unsupported();
@@ -254,7 +301,7 @@ mod identifier {
 
 mod sequence {
     use super::*;
-    use crate::{number::Real, testutil::extract_or_fail};
+    use crate::number::Real;
 
     #[test]
     fn constant() {
@@ -270,8 +317,11 @@ mod sequence {
         assert!(matches!(f, ParseFlow::Continue(())));
         assert_eq!(seq.len(), 1);
         assert!(matches!(
-            seq[0],
-            Expression::Literal(Value::Constant(Constant::Boolean(true)))
+            &seq[0],
+            Expression {
+                ctx: ExprCtx { span: Range { start: 0, end: 3 }, txt: line },
+                kind: ExpressionKind::Literal(Value::Constant(Constant::Boolean(true))),
+            } if Rc::ptr_eq(&txt, &line)
         ));
     }
 
@@ -288,14 +338,13 @@ mod sequence {
 
         assert!(matches!(f, ParseFlow::Continue(())));
         assert_eq!(seq.len(), 1);
-        let n = extract_or_fail!(
-            extract_or_fail!(
-                extract_or_fail!(&seq[0], Expression::Literal),
-                Value::Constant
-            ),
-            Constant::Number
-        );
-        assert!(matches!(n, Number::Complex(_) if n.as_datum().to_string() == "+1.2i"));
+        assert!(matches!(
+            &seq[0],
+            Expression {
+                ctx: ExprCtx { span: Range { start: 0, end: 3 }, txt: line },
+                kind: ExpressionKind::Literal(Value::Constant(Constant::Number(n))),
+            } if n.as_datum().to_string() == "+1.2i" && Rc::ptr_eq(&txt, &line)
+        ));
     }
 
     #[test]
@@ -446,7 +495,10 @@ mod sequence {
         assert_eq!(seq.len(), 1);
         assert!(matches!(
             &seq[0],
-            Expression::Identifier(s) if &**s == "myproc"
+            Expression {
+                ctx: ExprCtx { span: Range { start: 0, end: 6 }, txt: line },
+                kind: ExpressionKind::Identifier(s),
+            } if &**s == "myproc" && Rc::ptr_eq(&txt, &line)
         ));
     }
 
@@ -465,7 +517,10 @@ mod sequence {
         assert_eq!(seq.len(), 1);
         assert!(matches!(
             &seq[0],
-            Expression::Identifier(s) if &**s == ""
+            Expression {
+                ctx: ExprCtx { span: Range { start: 0, end: 0 }, txt: line },
+                kind: ExpressionKind::Identifier(s),
+            } if &**s == "" && Rc::ptr_eq(&txt, &line)
         ));
     }
 
@@ -521,16 +576,34 @@ mod list {
 
     #[test]
     fn end() {
+        let txt = make_textline().into();
         let mut seq = vec![
-            Expression::Identifier("+".into()),
-            Expression::constant(Constant::Number(Number::real(4))),
-            Expression::constant(Constant::Number(Number::real(5))),
+            Expression {
+                ctx: ExprCtx {
+                    span: 0..1,
+                    txt: Rc::clone(&txt),
+                },
+                kind: ExpressionKind::Identifier("+".into()),
+            },
+            Expression::constant(
+                Constant::Number(Number::real(4)),
+                ExprCtx {
+                    span: 1..4,
+                    txt: Rc::clone(&txt),
+                },
+            ),
+            Expression::constant(
+                Constant::Number(Number::real(5)),
+                ExprCtx {
+                    span: 4..6,
+                    txt: Rc::clone(&txt),
+                },
+            ),
         ];
         let token = Token {
             kind: TokenKind::ParenRight,
-            span: 4..5,
+            span: 6..7,
         };
-        let txt = Rc::new(make_textline());
 
         let f = parse_list(&mut seq, token, &txt);
 
@@ -540,16 +613,34 @@ mod list {
 
     #[test]
     fn nested_list() {
+        let txt = make_textline().into();
         let mut seq = vec![
-            Expression::Identifier("+".into()),
-            Expression::constant(Constant::Number(Number::real(4))),
-            Expression::constant(Constant::Number(Number::real(5))),
+            Expression {
+                ctx: ExprCtx {
+                    span: 0..1,
+                    txt: Rc::clone(&txt),
+                },
+                kind: ExpressionKind::Identifier("+".into()),
+            },
+            Expression::constant(
+                Constant::Number(Number::real(4)),
+                ExprCtx {
+                    span: 1..4,
+                    txt: Rc::clone(&txt),
+                },
+            ),
+            Expression::constant(
+                Constant::Number(Number::real(5)),
+                ExprCtx {
+                    span: 4..6,
+                    txt: Rc::clone(&txt),
+                },
+            ),
         ];
         let token = Token {
             kind: TokenKind::ParenLeft,
-            span: 4..5,
+            span: 6..7,
         };
-        let txt = Rc::new(make_textline());
 
         let f = parse_list(&mut seq, token, &txt);
 
@@ -557,7 +648,7 @@ mod list {
             f,
             ParseFlow::Break(ParseBreak::New(ParseNew {
                 mode: ParseMode::List(vec),
-                start: 4
+                start: 6
             })) if vec.is_empty()
         ));
         assert_eq!(seq.len(), 3);
@@ -580,16 +671,34 @@ mod list {
 
     #[test]
     fn non_list_expression() {
+        let txt = make_textline().into();
         let mut seq = vec![
-            Expression::Identifier("+".into()),
-            Expression::constant(Constant::Number(Number::real(4))),
-            Expression::constant(Constant::Number(Number::real(5))),
+            Expression {
+                ctx: ExprCtx {
+                    span: 0..1,
+                    txt: Rc::clone(&txt),
+                },
+                kind: ExpressionKind::Identifier("+".into()),
+            },
+            Expression::constant(
+                Constant::Number(Number::real(4)),
+                ExprCtx {
+                    span: 1..4,
+                    txt: Rc::clone(&txt),
+                },
+            ),
+            Expression::constant(
+                Constant::Number(Number::real(5)),
+                ExprCtx {
+                    span: 4..6,
+                    txt: Rc::clone(&txt),
+                },
+            ),
         ];
         let token = Token {
             kind: TokenKind::Constant(Constant::Number(Number::real(10))),
-            span: 4..6,
+            span: 6..7,
         };
-        let txt = Rc::new(make_textline());
 
         let f = parse_list(&mut seq, token, &txt);
 
@@ -597,23 +706,43 @@ mod list {
         assert_eq!(seq.len(), 4);
         assert!(matches!(
             &seq[3],
-            Expression::Literal(Value::Constant(Constant::Number(n)))
-            if n.as_datum().to_string() == "10"
+            Expression {
+                ctx: ExprCtx { span: Range { start: 6, end: 7 }, txt: line },
+                kind: ExpressionKind::Literal(Value::Constant(Constant::Number(n))),
+            } if n.as_datum().to_string() == "10" && Rc::ptr_eq(&txt, &line)
         ));
     }
 
     #[test]
     fn invalid_token() {
+        let txt = make_textline().into();
         let mut seq = vec![
-            Expression::Identifier("+".into()),
-            Expression::constant(Constant::Number(Number::real(4))),
-            Expression::constant(Constant::Number(Number::real(5))),
+            Expression {
+                ctx: ExprCtx {
+                    span: 0..1,
+                    txt: Rc::clone(&txt),
+                },
+                kind: ExpressionKind::Identifier("+".into()),
+            },
+            Expression::constant(
+                Constant::Number(Number::real(4)),
+                ExprCtx {
+                    span: 1..4,
+                    txt: Rc::clone(&txt),
+                },
+            ),
+            Expression::constant(
+                Constant::Number(Number::real(5)),
+                ExprCtx {
+                    span: 4..6,
+                    txt: Rc::clone(&txt),
+                },
+            ),
         ];
         let token = Token {
             kind: TokenKind::StringDiscard,
-            span: 4..6,
+            span: 6..7,
         };
-        let txt = Rc::new(make_textline());
 
         let f = parse_list(&mut seq, token, &txt);
 
@@ -621,7 +750,7 @@ mod list {
             f,
             ParseFlow::Break(ParseBreak::Err(
                 ExpressionError {
-                    ctx: ExprCtx { span: Range { start: 4, end: 6 }, txt: line },
+                    ctx: ExprCtx { span: Range { start: 6, end: 7 }, txt: line },
                     kind: ExpressionErrorKind::SeqInvalid(TokenKind::StringDiscard),
                 },
                 ErrFlow::Break(Recovery::Fail),

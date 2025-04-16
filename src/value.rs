@@ -51,15 +51,42 @@ impl Display for ValueMessage<'_> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::syntax::Expression;
+    /*
+    use crate::{
+        syntax::{ExprCtx, Expression},
+        testutil::make_textline,
+    };
+    use std::rc::Rc;
+    */
 
     #[test]
     fn display_ast() {
+        todo!("figure out access");
+        /*
+        let txt = make_textline().into();
         let val = Value::Ast(
             Program::new([
-                Expression::constant(Constant::Character('a')),
-                Expression::constant(Constant::Character('b')),
-                Expression::constant(Constant::Character('c')),
+                Expression::constant(
+                    Constant::Character('a'),
+                    ExprCtx {
+                        span: 0..2,
+                        txt: Rc::clone(&txt),
+                    },
+                ),
+                Expression::constant(
+                    Constant::Character('b'),
+                    ExprCtx {
+                        span: 2..4,
+                        txt: Rc::clone(&txt),
+                    },
+                ),
+                Expression::constant(
+                    Constant::Character('c'),
+                    ExprCtx {
+                        span: 4..6,
+                        txt: Rc::clone(&txt),
+                    },
+                ),
             ])
             .into(),
         );
@@ -68,5 +95,6 @@ mod tests {
             val.as_datum().to_string(),
             "{Program([Literal(Constant(Character('a'))), Literal(Constant(Character('b'))), Literal(Constant(Character('c')))])}"
         );
+        */
     }
 }

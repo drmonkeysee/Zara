@@ -1,12 +1,12 @@
 mod expr;
 mod parse;
 
-pub(crate) use self::expr::{Expression, Program};
+pub(crate) use self::expr::Program;
 use self::{
     expr::{ExpressionError, PeekableExt},
     parse::{ErrFlow, ParseBreak, ParseFlow, ParseNode, Recovery},
 };
-use crate::{lex::TokenLine, txt::TextLine, value::Value};
+use crate::{lex::TokenLine, txt::TextLine};
 use std::{
     error::Error,
     fmt::{self, Display, Formatter, Write},
@@ -48,9 +48,12 @@ pub(crate) struct TokenList;
 
 impl Parser for TokenList {
     fn parse(&mut self, token_lines: impl IntoIterator<Item = TokenLine>) -> ParserResult {
+        todo!("figure out what to do with token list ctx");
+        /*
         Ok(ParserOutput::Complete(Program::new([Expression::Literal(
             Value::TokenList(token_lines.into_iter().collect()),
         )])))
+        */
     }
 
     fn unsupported_continuation(&mut self) -> Option<ParserError> {
@@ -223,7 +226,7 @@ impl Display for ParseErrorLineMessage<'_> {
 #[cfg(test)]
 mod tests {
     use super::{
-        expr::{ExprCtx, ExpressionErrorKind},
+        expr::{ExprCtx, Expression, ExpressionErrorKind, ExpressionKind},
         *,
     };
     use crate::{
@@ -231,6 +234,7 @@ mod tests {
         lex::{Token, TokenKind},
         testutil::{err_or_fail, extract_or_fail, make_textline_no, ok_or_fail, some_or_fail},
         txt::LineNumber,
+        value::Value,
     };
     use std::ops::Range;
 
@@ -276,8 +280,11 @@ mod tests {
         let Program(seq) = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
         assert_eq!(seq.len(), 1);
         assert!(matches!(
-            seq[0],
-            Expression::Literal(Value::Constant(Constant::Boolean(true)))
+            &seq[0],
+            Expression {
+                ctx: ExprCtx { span: Range { start: 0, end: 1 }, txt },
+                kind: ExpressionKind::Literal(Value::Constant(Constant::Boolean(true))),
+            } if txt.lineno == 1
         ));
         assert!(et.parsers.is_empty());
     }
@@ -296,16 +303,25 @@ mod tests {
         let Program(seq) = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
         assert_eq!(seq.len(), 3);
         assert!(matches!(
-            seq[0],
-            Expression::Literal(Value::Constant(Constant::Boolean(true)))
+            &seq[0],
+            Expression {
+                ctx: ExprCtx { span: Range { start: 0, end: 1 }, txt },
+                kind: ExpressionKind::Literal(Value::Constant(Constant::Boolean(true))),
+            } if txt.lineno == 1
         ));
         assert!(matches!(
-            seq[1],
-            Expression::Literal(Value::Constant(Constant::Character('a')))
+            &seq[1],
+            Expression {
+                ctx: ExprCtx { span: Range { start: 1, end: 2 }, txt },
+                kind: ExpressionKind::Literal(Value::Constant(Constant::Character('a'))),
+            } if txt.lineno == 1
         ));
         assert!(matches!(
             &seq[2],
-            Expression::Literal(Value::Constant(Constant::String(s))) if &**s == "foo"
+            Expression {
+                ctx: ExprCtx { span: Range { start: 2, end: 3 }, txt },
+                kind: ExpressionKind::Literal(Value::Constant(Constant::String(s))),
+            } if txt.lineno == 1 && &**s == "foo"
         ));
         assert!(et.parsers.is_empty());
     }
@@ -336,24 +352,39 @@ mod tests {
         let Program(seq) = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
         assert_eq!(seq.len(), 5);
         assert!(matches!(
-            seq[0],
-            Expression::Literal(Value::Constant(Constant::Boolean(true)))
+            &seq[0],
+            Expression {
+                ctx: ExprCtx { span: Range { start: 0, end: 1 }, txt },
+                kind: ExpressionKind::Literal(Value::Constant(Constant::Boolean(true))),
+            } if txt.lineno == 1
         ));
         assert!(matches!(
-            seq[1],
-            Expression::Literal(Value::Constant(Constant::Character('a')))
+            &seq[1],
+            Expression {
+                ctx: ExprCtx { span: Range { start: 1, end: 2 }, txt },
+                kind: ExpressionKind::Literal(Value::Constant(Constant::Character('a'))),
+            } if txt.lineno == 1
         ));
         assert!(matches!(
             &seq[2],
-            Expression::Literal(Value::Constant(Constant::String(s))) if &**s == "foo"
+            Expression {
+                ctx: ExprCtx { span: Range { start: 2, end: 3 }, txt },
+                kind: ExpressionKind::Literal(Value::Constant(Constant::String(s))),
+            } if txt.lineno == 1 && &**s == "foo"
         ));
         assert!(matches!(
-            seq[3],
-            Expression::Literal(Value::Constant(Constant::Boolean(false)))
+            &seq[3],
+            Expression {
+                ctx: ExprCtx { span: Range { start: 0, end: 1 }, txt },
+                kind: ExpressionKind::Literal(Value::Constant(Constant::Boolean(false))),
+            } if txt.lineno == 2
         ));
         assert!(matches!(
-            seq[4],
-            Expression::Literal(Value::Constant(Constant::Character('b')))
+            &seq[4],
+            Expression {
+                ctx: ExprCtx { span: Range { start: 1, end: 2 }, txt },
+                kind: ExpressionKind::Literal(Value::Constant(Constant::Character('b'))),
+            } if txt.lineno == 2
         ));
 
         assert!(et.parsers.is_empty());
