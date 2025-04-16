@@ -189,7 +189,7 @@ struct Engine<P, E> {
 impl<P: Parser, E: Evaluator> Executor for Engine<P, E> {
     fn exec(&mut self, token_lines: Vec<TokenLine>) -> ExecResult {
         Ok(match self.parser.parse(token_lines)? {
-            ParserOutput::Complete(expr) => self.evaluator.evaluate(expr),
+            ParserOutput::Complete(prg) => self.evaluator.evaluate(prg),
             ParserOutput::Continuation => Evaluation::Continuation,
         })
     }

@@ -167,7 +167,7 @@ impl Parser for ExpressionTree {
             Ok(if self.parsers.is_empty() {
                 debug_assert!(parser.is_prg());
                 match parser.try_into() {
-                    Ok(expr) => ParserOutput::Complete(expr),
+                    Ok(prg) => ParserOutput::Complete(prg),
                     Err(_) => todo!("need to convert to parsererror"),
                 }
             } else {
