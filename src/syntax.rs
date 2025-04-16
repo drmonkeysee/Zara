@@ -20,6 +20,7 @@ pub(crate) type ParserResult = Result<ParserOutput, ParserError>;
 pub(crate) enum ParserOutput {
     Complete(Program),
     Continuation,
+    Tokens(Box<[TokenLine]>),
 }
 
 #[derive(Debug)]
@@ -48,12 +49,7 @@ pub(crate) struct TokenList;
 
 impl Parser for TokenList {
     fn parse(&mut self, token_lines: impl IntoIterator<Item = TokenLine>) -> ParserResult {
-        todo!("figure out what to do with token list ctx");
-        /*
-        Ok(ParserOutput::Complete(Program::new([Expression::Literal(
-            Value::TokenList(token_lines.into_iter().collect()),
-        )])))
-        */
+        Ok(ParserOutput::Tokens(token_lines.into_iter().collect()))
     }
 
     fn unsupported_continuation(&mut self) -> Option<ParserError> {
