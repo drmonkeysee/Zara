@@ -39,6 +39,12 @@ impl Display for ParserError {
 
 impl Error for ParserError {}
 
+impl From<ExpressionError> for ParserError {
+    fn from(value: ExpressionError) -> Self {
+        Self(vec![value])
+    }
+}
+
 pub(crate) trait Parser {
     fn parse(&mut self, token_lines: impl IntoIterator<Item = TokenLine>) -> ParserResult;
     fn unsupported_continuation(&mut self) -> Option<ParserError>;
@@ -172,7 +178,7 @@ impl Parser for ExpressionTree {
     fn unsupported_continuation(&mut self) -> Option<ParserError> {
         let parser = self.parsers.pop();
         self.clear();
-        Some(ParserError(vec![parser?.into_continuation_unsupported()?]))
+        Some(parser?.into_continuation_unsupported()?.into())
     }
 }
 
