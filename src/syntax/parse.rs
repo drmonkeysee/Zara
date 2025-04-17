@@ -4,9 +4,11 @@ mod tests;
 // TODO: bv-temp
 use crate::value::Value;
 
-use super::expr::{
-    ExprCtx, Expression, ExpressionError, ExpressionErrorKind, ExpressionKind, Program,
-    ProgramError,
+use super::{
+    Program,
+    expr::{
+        ExprCtx, Expression, ExpressionError, ExpressionErrorKind, ExpressionKind, ProgramError,
+    },
 };
 use crate::{
     constant::Constant,

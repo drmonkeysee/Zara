@@ -28,7 +28,7 @@ impl TextContext {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct TextLine {
     pub ctx: Rc<TextContext>,
     pub line: String,

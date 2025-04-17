@@ -3,10 +3,10 @@ mod parse;
 
 pub(crate) use self::expr::Program;
 use self::{
-    expr::{ExpressionError, PeekableExt},
+    expr::{ExprCtx, Expression, ExpressionError, ExpressionKind, PeekableExt},
     parse::{ErrFlow, ParseBreak, ParseFlow, ParseNode, Recovery},
 };
-use crate::{lex::TokenLine, txt::TextLine};
+use crate::{lex::TokenLine, txt::TextLine, value::Value};
 use std::{
     error::Error,
     fmt::{self, Display, Formatter, Write},
@@ -46,14 +46,30 @@ pub(crate) trait Parser {
 
 pub(crate) struct TokenList;
 
+impl TokenList {
+    fn make_expr(&self, token_lines: impl IntoIterator<Item = TokenLine>) -> Option<Expression> {
+        let list: Box<[TokenLine]> = token_lines.into_iter().collect();
+        if let Some(TokenLine(_, line)) = list.first() {
+            Some(Expression {
+                ctx: ExprCtx {
+                    span: 0..line.line.len(),
+                    txt: Rc::new(line.clone()),
+                },
+                kind: ExpressionKind::Literal(Value::TokenList(list)),
+            })
+        } else {
+            None
+        }
+    }
+}
+
 impl Parser for TokenList {
     fn parse(&mut self, token_lines: impl IntoIterator<Item = TokenLine>) -> ParserResult {
-        todo!("figure out what to do with token list ctx");
-        /*
-        Ok(ParserOutput::Complete(Program::new([Expression::Literal(
-            Value::TokenList(token_lines.into_iter().collect()),
-        )])))
-        */
+        Ok(ParserOutput::Complete(Program::new(
+            self.make_expr(token_lines)
+                .into_iter()
+                .collect::<Box<[_]>>(),
+        )))
     }
 
     fn unsupported_continuation(&mut self) -> Option<ParserError> {
