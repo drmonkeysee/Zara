@@ -94,33 +94,6 @@ impl Display for ParserErrorMessage<'_> {
     }
 }
 
-/*
-maintain stack of parsers and top-level Sequence in ExpressionTree
-parse:
-if stack empty:
-    push Sequence builder
-else:
-    pop builder off stack and start there
-for each TokenLine:
-    for each Token:
-        if expr complete:
-            return expr
-        create builder(token pos, txtline)
-        while builder.parse(token) until complete or out of tokens
-        if builder.complete:
-            return expr
-        else:
-            return builder
-    if expr:
-        add to builder on top of stack
-    if builder:
-        push builder on stack
-if stack empty:
-    return Expression::Begin(move and reset sequence with mem::take)
-else:
-    return continuation
-*/
-
 impl ExpressionTree {
     fn parse_line(&mut self, mut parser: ParseNode, line: TokenLine) -> ParseNode {
         let TokenLine(tokens, txt) = line;
