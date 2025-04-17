@@ -241,16 +241,12 @@ impl Display for ParseErrorLineMessage<'_> {
 
 #[cfg(test)]
 mod tests {
-    use super::{
-        expr::{ExprCtx, Expression, ExpressionErrorKind, ExpressionKind},
-        *,
-    };
+    use super::{expr::ExpressionErrorKind, *};
     use crate::{
         constant::Constant,
         lex::{Token, TokenKind},
         testutil::{err_or_fail, extract_or_fail, make_textline_no, ok_or_fail, some_or_fail},
         txt::LineNumber,
-        value::Value,
     };
     use std::ops::Range;
 
