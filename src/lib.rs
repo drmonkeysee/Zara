@@ -191,8 +191,6 @@ impl<P: Parser, E: Evaluator> Executor for Engine<P, E> {
         Ok(match self.parser.parse(token_lines)? {
             ParserOutput::Complete(prg) => self.evaluator.evaluate(prg),
             ParserOutput::Continuation => Evaluation::Continuation,
-            // TODO: should this be a value?
-            ParserOutput::Tokens(toks) => Evaluation::Value(Some(Val::tokens(toks))),
         })
     }
 

@@ -1,5 +1,4 @@
 use crate::{
-    lex::TokenLine,
     syntax::Program,
     value::{Datum as ValueDatum, Value},
 };
@@ -26,10 +25,6 @@ impl Evaluation {
 pub struct Val(Value);
 
 impl Val {
-    pub(crate) fn tokens(tokens: impl Into<Box<[TokenLine]>>) -> Self {
-        Self(Value::TokenList(tokens.into()))
-    }
-
     fn wrap(v: Option<Value>) -> Option<Self> {
         Some(Self(v?))
     }
