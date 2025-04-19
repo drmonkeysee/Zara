@@ -70,14 +70,47 @@ impl Number {
         }
     }
 
-    // TODO: bv-temp
-    pub(crate) fn into_u8(self) -> u8 {
-        match self {
-            Self::Real(Real::Integer(n)) => n.into_u8(),
-            _ => 0,
+    fn as_typename(&self) -> NumericTypeName {
+        NumericTypeName(self)
+    }
+}
+
+impl TryFrom<Number> for u8 {
+    type Error = ByteConversionError;
+
+    fn try_from(value: Number) -> Result<Self, Self::Error> {
+        match value {
+            Number::Real(Real::Integer(n)) => n.try_into_u8(),
+            _ => Err(ByteConversionError::InvalidType(
+                value.as_typename().to_string(),
+            )),
         }
     }
 }
+
+#[derive(Debug)]
+pub(crate) enum ByteConversionError {
+    InvalidRange,
+    InvalidType(String),
+}
+
+impl Display for ByteConversionError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::InvalidRange => format!(
+                "integer literal out of valid range: [{}, {}]",
+                u8::MIN,
+                u8::MAX
+            )
+            .fmt(f),
+            Self::InvalidType(name) => {
+                format!("expected integer literal but got numeric type: {name}").fmt(f)
+            }
+        }
+    }
+}
+
+impl Error for ByteConversionError {}
 
 #[derive(Debug)]
 pub(crate) struct Complex(Box<(Real, Real)>);
@@ -229,6 +262,10 @@ impl Integer {
         self.sign == Sign::Zero
     }
 
+    fn is_negative(&self) -> bool {
+        self.sign == Sign::Negative
+    }
+
     fn is_magnitude_one(&self) -> bool {
         match &self.precision {
             Precision::Single(u) => *u == 1,
@@ -267,12 +304,14 @@ impl Integer {
         }
     }
 
-    // TODO: bv-temp
-    fn into_u8(self) -> u8 {
-        match self.precision {
-            Precision::Single(u) => u as u8,
-            Precision::Multiple(_) => 255,
+    fn try_into_u8(self) -> Result<u8, ByteConversionError> {
+        if self.is_negative() {
+            return Err(ByteConversionError::InvalidRange);
         }
+        let Precision::Single(_u) = self.precision else {
+            return Err(ByteConversionError::InvalidRange);
+        };
+        todo!();
     }
 }
 
@@ -726,6 +765,19 @@ impl RadixPrivate for Decimal {
             .map_or(Err(NumericError::ParseFailure), |fstr| {
                 Ok(fstr.parse::<f64>()?.into())
             })
+    }
+}
+
+struct NumericTypeName<'a>(&'a Number);
+
+impl Display for NumericTypeName<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self.0 {
+            Number::Complex(_) => "complex".fmt(f),
+            Number::Real(Real::Float(_)) => "floating-point".fmt(f),
+            Number::Real(Real::Integer(_)) => "integer".fmt(f),
+            Number::Real(Real::Rational(_)) => "rational".fmt(f),
+        }
     }
 }
 

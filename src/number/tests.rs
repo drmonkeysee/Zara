@@ -460,6 +460,34 @@ mod display {
 
         assert_eq!(n.as_datum().to_string(), "0");
     }
+
+    #[test]
+    fn complex_type_name() {
+        let n = Number::complex(1, 2);
+
+        assert_eq!(n.as_typename().to_string(), "complex");
+    }
+
+    #[test]
+    fn rational_type_name() {
+        let n = Number::real(ok_or_fail!(Real::reduce(4, 5)));
+
+        assert_eq!(n.as_typename().to_string(), "rational");
+    }
+
+    #[test]
+    fn float_type_name() {
+        let n = Number::real(1.2);
+
+        assert_eq!(n.as_typename().to_string(), "floating-point");
+    }
+
+    #[test]
+    fn integer_type_name() {
+        let n = Number::real(5);
+
+        assert_eq!(n.as_typename().to_string(), "integer");
+    }
 }
 
 mod error {
@@ -502,6 +530,26 @@ mod error {
 
         assert_eq!(err.to_string(), "unimplemented number parse: 'foo'");
     }
+
+    #[test]
+    fn display_byte_invalid_type() {
+        let err = ByteConversionError::InvalidType("foobar".to_owned());
+
+        assert_eq!(
+            err.to_string(),
+            "expected integer literal but got numeric type: foobar"
+        );
+    }
+
+    #[test]
+    fn display_byte_out_of_range() {
+        let err = ByteConversionError::InvalidRange;
+
+        assert_eq!(
+            err.to_string(),
+            "integer literal out of valid range: [0, 255]"
+        );
+    }
 }
 
 mod integer {
@@ -520,6 +568,7 @@ mod integer {
         let int = extract_or_fail!(n, Real::Integer);
 
         assert!(!int.is_zero());
+        assert!(!int.is_negative());
         assert_eq!(extract_or_fail!(int.precision, Precision::Single), 42);
         assert_eq!(int.sign, Sign::Positive);
     }
@@ -530,6 +579,7 @@ mod integer {
         let int = extract_or_fail!(n, Real::Integer);
 
         assert!(int.is_zero());
+        assert!(!int.is_negative());
         assert_eq!(extract_or_fail!(int.precision, Precision::Single), 0);
         assert_eq!(int.sign, Sign::Zero);
     }
@@ -540,6 +590,7 @@ mod integer {
         let int = extract_or_fail!(n, Real::Integer);
 
         assert!(!int.is_zero());
+        assert!(int.is_negative());
         assert_eq!(extract_or_fail!(int.precision, Precision::Single), 42);
         assert_eq!(int.sign, Sign::Negative);
     }
@@ -703,6 +754,69 @@ mod integer {
         assert_eq!(extract_or_fail!(int.precision, Precision::Single), 42);
         assert_eq!(int.sign, Sign::Positive);
     }
+
+    #[test]
+    fn single_into_byte() {
+        let n = Number::real(12);
+
+        let r = n.try_into();
+
+        let b: u8 = ok_or_fail!(r);
+        assert_eq!(b, 12);
+    }
+
+    #[test]
+    fn zero_into_byte() {
+        let n = Number::real(0);
+
+        let r = n.try_into();
+
+        let b: u8 = ok_or_fail!(r);
+        assert_eq!(b, 0);
+    }
+
+    #[test]
+    fn max_into_byte() {
+        let n = Number::real(255);
+
+        let r = n.try_into();
+
+        let b: u8 = ok_or_fail!(r);
+        assert_eq!(b, 12);
+    }
+
+    #[test]
+    fn negative_into_byte() {
+        let n = Number::real(-12);
+
+        let r: Result<u8, _> = n.try_into();
+
+        let err = err_or_fail!(r);
+        assert!(matches!(err, ByteConversionError::InvalidRange));
+    }
+
+    #[test]
+    fn too_large_into_byte() {
+        let n = Number::real(256);
+
+        let r: Result<u8, _> = n.try_into();
+
+        let err = err_or_fail!(r);
+        assert!(matches!(err, ByteConversionError::InvalidRange));
+    }
+
+    #[test]
+    fn multiple_into_byte() {
+        let i = Integer {
+            precision: Precision::Multiple([24].into()),
+            sign: Sign::Positive,
+        };
+
+        let r = i.try_into_u8();
+
+        let err = err_or_fail!(r);
+        assert!(matches!(err, ByteConversionError::InvalidRange));
+    }
 }
 
 mod float {
@@ -837,6 +951,19 @@ mod float {
 
         let f = r.into_inexact();
         assert_eq!(f.into_float(), expected);
+    }
+
+    #[test]
+    fn float_into_type() {
+        let n = Number::real(1.2);
+
+        let r: Result<u8, _> = n.try_into();
+
+        let err = err_or_fail!(r);
+        assert!(matches!(
+            err,
+            ByteConversionError::InvalidType(s)
+            if s == "floating-point"));
     }
 }
 
@@ -1093,6 +1220,21 @@ mod rational {
         assert_eq!(extract_or_fail!(den.precision, Precision::Single), 5);
         assert_eq!(den.sign, Sign::Positive);
     }
+
+    #[test]
+    fn rational_into_byte() {
+        let rat = Real::reduce(4, 5);
+
+        let n = Number::real(ok_or_fail!(rat));
+
+        let r: Result<u8, _> = n.try_into();
+
+        let err = err_or_fail!(r);
+        assert!(matches!(
+            err,
+            ByteConversionError::InvalidType(s)
+            if s == "rational"));
+    }
 }
 
 mod complex {
@@ -1279,6 +1421,19 @@ mod complex {
         assert_eq!(r, 4.0);
         let i = extract_or_fail!(ri.0.1, Real::Float);
         assert_eq!(i, 3.0);
+    }
+
+    #[test]
+    fn complex_into_byte() {
+        let n = Number::complex(4, 5);
+
+        let r: Result<u8, _> = n.try_into();
+
+        let err = err_or_fail!(r);
+        assert!(matches!(
+            err,
+            ByteConversionError::InvalidType(s)
+            if s == "complex"));
     }
 }
 
