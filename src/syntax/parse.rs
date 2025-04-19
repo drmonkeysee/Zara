@@ -64,8 +64,9 @@ impl ParseNode {
             todo!("other always needs to be an expr node");
         };
         match self {
+            Self::Expr(expr) => expr.merge(other_expr),
+            Self::Fail => Ok(()),
             Self::Prg(seq) => Ok(seq.push(other_expr.try_into()?)),
-            _ => todo!("what to do for rest of arms"),
         }
     }
 
@@ -104,7 +105,7 @@ impl ExprNode {
         }
     }
 
-    fn merge(&mut self, other: ExprNode) -> Result<(), Vec<ExpressionError>> {
+    fn merge(&mut self, _other: ExprNode) -> Result<(), Vec<ExpressionError>> {
         todo!();
     }
 
@@ -365,13 +366,12 @@ fn into_bytevector(seq: Vec<Expression>, ctx: ExprCtx) -> ConvertExprResult {
     */
     let foo = seq.into_iter().map(|expr| match expr.kind {
         ExpressionKind::Literal(Value::Constant(Constant::Number(n))) => Ok(n.into_u8()),
-        _ => todo!("expressions need exprctx"), /*Err(ExpressionError {
-                                                    kind: ExpressionErrorKind::ByteVectorInvalidItem,
-                                                    span: 0..0,
-                                                }),*/
+        _ => Err(ExpressionError {
+            ctx: expr.ctx,
+            kind: ExpressionErrorKind::ByteVectorInvalidItem(expr.kind),
+        }),
     });
     let (bytes, errs): (Vec<_>, Vec<_>) = foo.partition(Result::is_ok);
-    //todo!("do something with errors");
     if errs.is_empty() {
         Ok(Expression {
             ctx,

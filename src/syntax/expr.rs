@@ -72,6 +72,12 @@ pub(super) enum ExpressionKind {
     Literal(Value),
 }
 
+impl Display for ExpressionKind {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        todo!("implement this for expression error display");
+    }
+}
+
 pub(super) struct ProgramError;
 
 pub(super) type ExpressionError = ExpressionType<ExpressionErrorKind>;
@@ -87,7 +93,7 @@ impl Error for ExpressionError {}
 #[derive(Debug)]
 pub(super) enum ExpressionErrorKind {
     // TODO: what do these two need to store?
-    ByteVectorInvalidItem,
+    ByteVectorInvalidItem(ExpressionKind),
     ByteVectorOutOfRange,
     ByteVectorUnterminated,
     CommentBlockInvalid(TokenKind),
@@ -104,7 +110,9 @@ pub(super) enum ExpressionErrorKind {
 impl Display for ExpressionErrorKind {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
-            Self::ByteVectorInvalidItem => todo!(),
+            Self::ByteVectorInvalidItem(expr) => {
+                format!("invalid bytevector element; expected byte literal, got: {expr:?}").fmt(f)
+            }
             Self::ByteVectorOutOfRange => todo!(),
             Self::ByteVectorUnterminated => "unterminated bytevector".fmt(f),
             Self::CommentBlockInvalid(t) => format_unexpected_error("comment block", t, f),

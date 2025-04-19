@@ -53,7 +53,7 @@ pub(crate) trait Parser {
 pub(crate) struct TokenList;
 
 impl TokenList {
-    fn make_expr(&self, token_lines: impl IntoIterator<Item = TokenLine>) -> Option<Expression> {
+    fn token_expr(&self, token_lines: impl IntoIterator<Item = TokenLine>) -> Option<Expression> {
         let list: Box<[TokenLine]> = token_lines.into_iter().collect();
         if let Some(TokenLine(_, line)) = list.first() {
             Some(Expression {
@@ -72,7 +72,7 @@ impl TokenList {
 impl Parser for TokenList {
     fn parse(&mut self, token_lines: impl IntoIterator<Item = TokenLine>) -> ParserResult {
         Ok(ParserOutput::Complete(Program::new(
-            self.make_expr(token_lines)
+            self.token_expr(token_lines)
                 .into_iter()
                 .collect::<Box<[_]>>(),
         )))
