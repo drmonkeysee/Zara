@@ -97,12 +97,9 @@ pub(crate) enum ByteConversionError {
 impl Display for ByteConversionError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            Self::InvalidRange => format!(
-                "integer literal out of valid range: [{}, {}]",
-                u8::MIN,
-                u8::MAX
-            )
-            .fmt(f),
+            Self::InvalidRange => {
+                format!("integer literal out of range: [{}, {}]", u8::MIN, u8::MAX).fmt(f)
+            }
             Self::InvalidType(name) => {
                 format!("expected integer literal but got numeric type: {name}").fmt(f)
             }
@@ -308,10 +305,10 @@ impl Integer {
         if self.is_negative() {
             return Err(ByteConversionError::InvalidRange);
         }
-        let Precision::Single(_u) = self.precision else {
+        let Precision::Single(u) = self.precision else {
             return Err(ByteConversionError::InvalidRange);
         };
-        todo!();
+        u.try_into().map_err(|_| ByteConversionError::InvalidRange)
     }
 }
 

@@ -545,10 +545,7 @@ mod error {
     fn display_byte_out_of_range() {
         let err = ByteConversionError::InvalidRange;
 
-        assert_eq!(
-            err.to_string(),
-            "integer literal out of valid range: [0, 255]"
-        );
+        assert_eq!(err.to_string(), "integer literal out of range: [0, 255]");
     }
 }
 
@@ -782,7 +779,7 @@ mod integer {
         let r = n.try_into();
 
         let b: u8 = ok_or_fail!(r);
-        assert_eq!(b, 12);
+        assert_eq!(b, 255);
     }
 
     #[test]
