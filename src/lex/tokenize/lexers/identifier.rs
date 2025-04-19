@@ -177,7 +177,7 @@ impl<'me, 'txt> Identifier<'me, 'txt> {
                 None => PeculiarState::MaybeFloat,
                 _ => PeculiarState::DefiniteIdentifier,
             },
-            _ => unreachable!(),
+            _ => unreachable!("unexpected peculiar case lexeme"),
         });
     }
 

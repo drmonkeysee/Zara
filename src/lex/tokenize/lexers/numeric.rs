@@ -429,7 +429,7 @@ impl<'txt> From<BreakCondition<'txt>> for SubCondition<'txt> {
         match value {
             BreakCondition::Sub(s) => s,
             // NOTE: Denominator ensures this case never happens
-            BreakCondition::Fraction => unreachable!(),
+            BreakCondition::Fraction => unreachable!("unexpected break-to-sub conversion case"),
         }
     }
 }

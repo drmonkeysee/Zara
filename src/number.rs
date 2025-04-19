@@ -221,7 +221,7 @@ impl Integer {
         }
     }
 
-    pub(crate) fn into_inexact(self) -> Real {
+    fn into_inexact(self) -> Real {
         Real::Float(self.into_float())
     }
 
@@ -331,7 +331,7 @@ macro_rules! sign_from {
                     -1 => Self::Negative,
                     0 => Self::Zero,
                     1 => Self::Positive,
-                    _ => unreachable!(),
+                    _ => unreachable!("unexpected value from signum()"),
                 }
             }
         }
