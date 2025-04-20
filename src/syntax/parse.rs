@@ -1,9 +1,6 @@
 #[cfg(test)]
 mod tests;
 
-// TODO: bv-temp
-use crate::value::Value;
-
 use super::{
     Program,
     expr::{
@@ -15,6 +12,7 @@ use crate::{
     lex::{Token, TokenKind},
     number::Number,
     txt::TextLine,
+    value::Value,
 };
 use std::{ops::ControlFlow, rc::Rc};
 
@@ -358,20 +356,21 @@ fn parse_verbatim_identifier(buf: &mut String, token: Token, txt: &Rc<TextLine>)
 type ConvertExprResult = Result<Expression, <Expression as TryFrom<ExprNode>>::Error>;
 
 fn into_bytevector(seq: Vec<Expression>, ctx: ExprCtx) -> ConvertExprResult {
-    // todo!("filter out everything except bytes")
-    /*
-    errors
-    - invalid type (anything that's not an Integer)
-    - out of range (< 0 or > 255)
-    */
-    let foo = seq.into_iter().map(|expr| match expr.kind {
-        ExpressionKind::Literal(Value::Constant(Constant::Number(n))) => Ok(n.into_u8()),
-        _ => Err(ExpressionError {
-            ctx: expr.ctx,
-            kind: ExpressionErrorKind::ByteVectorInvalidItem(expr.kind),
-        }),
-    });
-    let (bytes, errs): (Vec<_>, Vec<_>) = foo.partition(Result::is_ok);
+    let (bytes, errs): (Vec<_>, Vec<_>) = seq
+        .into_iter()
+        .map(|expr| match expr.kind {
+            ExpressionKind::Literal(Value::Constant(Constant::Number(n))) => {
+                n.try_into().map_err(|err| ExpressionError {
+                    ctx: expr.ctx,
+                    kind: ExpressionErrorKind::ByteVectorInvalidNumber(err),
+                })
+            }
+            _ => Err(ExpressionError {
+                ctx: expr.ctx,
+                kind: ExpressionErrorKind::ByteVectorInvalidItem(expr.kind),
+            }),
+        })
+        .partition(Result::is_ok);
     if errs.is_empty() {
         Ok(Expression {
             ctx,

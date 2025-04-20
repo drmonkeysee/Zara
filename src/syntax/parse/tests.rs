@@ -4,80 +4,52 @@ use std::ops::Range;
 
 mod bytevector {
     use super::*;
+    use crate::{
+        number::ByteConversionError,
+        testutil::{err_or_fail, extract_or_fail, ok_or_fail},
+    };
 
     #[test]
     fn byte() {
-        let mut seq = Vec::new();
-        let token = Token {
-            kind: TokenKind::Constant(Constant::Number(Number::real(16))),
-            span: 3..5,
-        };
-        let txt = Rc::new(make_textline());
-
-        let f = parse_list(&mut seq, token, &txt);
-
-        assert!(matches!(f, ParseFlow::Continue(())));
-        assert_eq!(seq.len(), 1);
-        assert!(matches!(
-            &seq[0],
-            Expression {
-                ctx: ExprCtx { span: Range { start: 3, end: 5 }, txt: line },
-                kind: ExpressionKind::Literal(Value::Constant(Constant::Number(n))),
-            }
-            if n.as_datum().to_string() == "16" && Rc::ptr_eq(&txt, &line)
-        ));
-    }
-
-    #[test]
-    fn min_byte() {
-        let mut seq = Vec::new();
-        let token = Token {
-            kind: TokenKind::Constant(Constant::Number(Number::real(0))),
-            span: 3..5,
-        };
-        let txt = Rc::new(make_textline());
-
-        let f = parse_list(&mut seq, token, &txt);
-
-        assert!(matches!(f, ParseFlow::Continue(())));
-        assert_eq!(seq.len(), 1);
-        assert!(matches!(
-            &seq[0],
-            Expression {
-                ctx: ExprCtx { span: Range { start: 3, end: 5 }, txt: line },
-                kind: ExpressionKind::Literal(Value::Constant(Constant::Number(n))),
-            }
-            if n.as_datum().to_string() == "0" && Rc::ptr_eq(&txt, &line)
-        ));
-    }
-
-    #[test]
-    fn max_byte() {
-        let mut seq = Vec::new();
-        let token = Token {
-            kind: TokenKind::Constant(Constant::Number(Number::real(255))),
-            span: 3..5,
-        };
-        let txt = Rc::new(make_textline());
-
-        let f = parse_list(&mut seq, token, &txt);
-
-        assert!(matches!(f, ParseFlow::Continue(())));
-        assert_eq!(seq.len(), 1);
-        assert!(matches!(
-            &seq[0],
-            Expression {
-                ctx: ExprCtx { span: Range { start: 3, end: 5 }, txt: line },
-                kind: ExpressionKind::Literal(Value::Constant(Constant::Number(n))),
-            }
-            if n.as_datum().to_string() == "255" && Rc::ptr_eq(&txt, &line)
-        ));
-    }
-
-    #[test]
-    fn end() {
         let txt = make_textline().into();
-        let mut seq = vec![
+        let seq = vec![Expression::constant(
+            Constant::Number(Number::real(24)),
+            ExprCtx {
+                span: 0..3,
+                txt: Rc::clone(&txt),
+            },
+        )];
+        let node = ExprNode {
+            ctx: ExprCtx {
+                span: 0..3,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::ByteVector(seq),
+        };
+
+        let r: Result<Expression, _> = node.try_into();
+
+        let expr = ok_or_fail!(r);
+
+        assert!(matches!(
+            expr,
+            Expression {
+                ctx: ExprCtx { span: Range { start: 0, end: 3 }, txt: line },
+                kind: ExpressionKind::Literal(Value::ByteVector(_)),
+            } if Rc::ptr_eq(&txt, &line)
+        ));
+        let bv = extract_or_fail!(
+            extract_or_fail!(expr.kind, ExpressionKind::Literal),
+            Value::ByteVector
+        );
+        assert_eq!(bv.len(), 1);
+        assert_eq!(bv[0], 24);
+    }
+
+    #[test]
+    fn multiple_bytes() {
+        let txt = make_textline().into();
+        let seq = vec![
             Expression::constant(
                 Constant::Number(Number::real(24)),
                 ExprCtx {
@@ -100,31 +72,172 @@ mod bytevector {
                 },
             ),
         ];
-        let token = Token {
-            kind: TokenKind::ParenRight,
-            span: 9..10,
+        let node = ExprNode {
+            ctx: ExprCtx {
+                span: 0..9,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::ByteVector(seq),
         };
-        let txt = Rc::new(make_textline());
 
-        let f = parse_list(&mut seq, token, &txt);
+        let r: Result<Expression, _> = node.try_into();
 
-        assert!(matches!(f, ParseFlow::Break(ParseBreak::Complete)));
-        assert_eq!(seq.len(), 3);
+        let expr = ok_or_fail!(r);
+
+        assert!(matches!(
+            expr,
+            Expression {
+                ctx: ExprCtx { span: Range { start: 0, end: 9 }, txt: line },
+                kind: ExpressionKind::Literal(Value::ByteVector(_)),
+            } if Rc::ptr_eq(&txt, &line)
+        ));
+        let bv = extract_or_fail!(
+            extract_or_fail!(expr.kind, ExpressionKind::Literal),
+            Value::ByteVector
+        );
+        assert_eq!(bv.len(), 3);
+        assert_eq!(bv[0], 24);
+        assert_eq!(bv[1], 25);
+        assert_eq!(bv[2], 26);
     }
 
     #[test]
     fn empty() {
-        let mut seq = Vec::new();
-        let token = Token {
-            kind: TokenKind::ParenRight,
-            span: 3..4,
+        let txt = make_textline().into();
+        let node = ExprNode {
+            ctx: ExprCtx {
+                span: 0..3,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::ByteVector(Vec::new()),
         };
-        let txt = Rc::new(make_textline());
 
-        let f = parse_list(&mut seq, token, &txt);
+        let r: Result<Expression, _> = node.try_into();
 
-        assert!(matches!(f, ParseFlow::Break(ParseBreak::Complete)));
-        assert!(seq.is_empty());
+        let expr = ok_or_fail!(r);
+
+        assert!(matches!(
+            expr,
+            Expression {
+                ctx: ExprCtx { span: Range { start: 0, end: 3 }, txt: line },
+                kind: ExpressionKind::Literal(Value::ByteVector(_)),
+            } if Rc::ptr_eq(&txt, &line)
+        ));
+        let bv = extract_or_fail!(
+            extract_or_fail!(expr.kind, ExpressionKind::Literal),
+            Value::ByteVector
+        );
+        assert_eq!(bv.len(), 0);
+    }
+
+    #[test]
+    fn invalid_item() {
+        let txt = make_textline().into();
+        let seq = vec![
+            Expression::constant(
+                Constant::Number(Number::real(24)),
+                ExprCtx {
+                    span: 0..3,
+                    txt: Rc::clone(&txt),
+                },
+            ),
+            Expression {
+                ctx: ExprCtx {
+                    span: 3..6,
+                    txt: Rc::clone(&txt),
+                },
+                kind: ExpressionKind::Identifier("foo".into()),
+            },
+            Expression::constant(
+                Constant::Number(Number::real(26)),
+                ExprCtx {
+                    span: 6..9,
+                    txt: Rc::clone(&txt),
+                },
+            ),
+        ];
+        let node = ExprNode {
+            ctx: ExprCtx {
+                span: 0..9,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::ByteVector(seq),
+        };
+
+        let r: Result<Expression, _> = node.try_into();
+
+        let errs = err_or_fail!(r);
+
+        assert_eq!(errs.len(), 1);
+        assert!(matches!(
+            &errs[0],
+            ExpressionError {
+                ctx: ExprCtx { span: Range { start: 3, end: 6 }, txt: line },
+                kind: ExpressionErrorKind::ByteVectorInvalidItem(ExpressionKind::Identifier(s)),
+            } if &**s == "foo" && Rc::ptr_eq(&txt, &line)
+        ));
+    }
+
+    #[test]
+    fn invalid_items() {
+        let txt = make_textline().into();
+        let seq = vec![
+            Expression::constant(
+                Constant::Number(Number::real(24)),
+                ExprCtx {
+                    span: 0..3,
+                    txt: Rc::clone(&txt),
+                },
+            ),
+            Expression {
+                ctx: ExprCtx {
+                    span: 3..6,
+                    txt: Rc::clone(&txt),
+                },
+                kind: ExpressionKind::Identifier("foo".into()),
+            },
+            Expression::constant(
+                Constant::Number(Number::real(26)),
+                ExprCtx {
+                    span: 6..9,
+                    txt: Rc::clone(&txt),
+                },
+            ),
+            Expression::constant(
+                Constant::Number(Number::real(1.2)),
+                ExprCtx {
+                    span: 9..12,
+                    txt: Rc::clone(&txt),
+                },
+            ),
+        ];
+        let node = ExprNode {
+            ctx: ExprCtx {
+                span: 0..12,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::ByteVector(seq),
+        };
+
+        let r: Result<Expression, _> = node.try_into();
+
+        let errs = err_or_fail!(r);
+
+        assert_eq!(errs.len(), 2);
+        assert!(matches!(
+            &errs[0],
+            ExpressionError {
+                ctx: ExprCtx { span: Range { start: 3, end: 6 }, txt: line },
+                kind: ExpressionErrorKind::ByteVectorInvalidItem(ExpressionKind::Identifier(s)),
+            } if &**s == "foo" && Rc::ptr_eq(&txt, &line)
+        ));
+        assert!(matches!(
+            &errs[1],
+            ExpressionError {
+                ctx: ExprCtx { span: Range { start: 9, end: 12 }, txt: line },
+                kind: ExpressionErrorKind::ByteVectorInvalidNumber(ByteConversionError::InvalidType(s)),
+            } if s == "floating-point" && Rc::ptr_eq(&txt, &line)
+        ));
     }
 }
 
@@ -670,7 +783,7 @@ mod list {
     }
 
     #[test]
-    fn non_list_expression() {
+    fn expression_item() {
         let txt = make_textline().into();
         let mut seq = vec![
             Expression {
