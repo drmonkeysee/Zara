@@ -1,13 +1,13 @@
 use super::*;
-use crate::{testutil::make_textline, value::Value};
+use crate::{
+    testutil::{err_or_fail, make_textline, ok_or_fail},
+    value::Value,
+};
 use std::ops::Range;
 
 mod bytevector {
     use super::*;
-    use crate::{
-        number::ByteConversionError,
-        testutil::{err_or_fail, extract_or_fail, ok_or_fail},
-    };
+    use crate::{number::ByteConversionError, testutil::extract_or_fail};
 
     #[test]
     fn byte() {
@@ -1025,5 +1025,49 @@ mod comment {
                 ErrFlow::Break(Recovery::Fail),
             )) if Rc::ptr_eq(&line, &txt)
         ));
+    }
+}
+
+mod program {
+    use super::*;
+
+    #[test]
+    fn node_to_program() {
+        let txt = make_textline().into();
+        let p = ParseNode::Prg(vec![Expression::constant(
+            Constant::Number(Number::real(24)),
+            ExprCtx {
+                span: 0..3,
+                txt: Rc::clone(&txt),
+            },
+        )]);
+
+        let r = p.try_into();
+
+        let prg: Program = ok_or_fail!(r);
+        assert_eq!(prg.0.len(), 1);
+        assert!(matches!(
+            &prg.0[0],
+            Expression {
+                ctx: ExprCtx { span: Range { start: 0, end: 3 }, txt: line },
+                kind: ExpressionKind::Literal(Value::Constant(Constant::Number(n))),
+            } if n.as_datum().to_string() == "24" && Rc::ptr_eq(&txt, &line)
+        ));
+    }
+
+    #[test]
+    fn node_to_program_error() {
+        let txt = make_textline().into();
+        let p = ParseNode::Expr(ExprNode {
+            ctx: ExprCtx {
+                span: 0..3,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::CommentBlock,
+        });
+
+        let r: Result<Program, ProgramError> = p.try_into();
+
+        assert!(r.is_err());
     }
 }

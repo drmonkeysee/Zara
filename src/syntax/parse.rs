@@ -44,11 +44,6 @@ impl ParseNode {
         })
     }
 
-    // TODO: temporary for debug assert
-    pub(super) fn is_prg(&self) -> bool {
-        matches!(self, Self::Prg(_))
-    }
-
     pub(super) fn parse(&mut self, token: Token, txt: &Rc<TextLine>) -> ParseFlow {
         match self {
             Self::Expr(node) => node.parse(token, txt),
@@ -81,10 +76,11 @@ impl TryFrom<ParseNode> for Program {
     type Error = ProgramError;
 
     fn try_from(value: ParseNode) -> Result<Self, <Self as TryFrom<ParseNode>>::Error> {
-        let ParseNode::Prg(seq) = value else {
-            todo!("only prg can convert properly");
-        };
-        Ok(Program::new(seq))
+        if let ParseNode::Prg(seq) = value {
+            Ok(Program::new(seq))
+        } else {
+            Err(ProgramError)
+        }
     }
 }
 
