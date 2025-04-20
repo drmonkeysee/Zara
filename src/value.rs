@@ -33,7 +33,14 @@ impl Display for Datum<'_> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self.0 {
             Value::Ast(prg) => format!("{{{prg:?}}}").fmt(f),
-            Value::ByteVector(_) => todo!("print as #u8(...)"),
+            Value::ByteVector(bv) => format!(
+                "#u8({})",
+                bv.into_iter()
+                    .map(|b| b.to_string())
+                    .collect::<Vec<_>>()
+                    .join(" ")
+            )
+            .fmt(f),
             Value::Constant(con) => con.as_datum().fmt(f),
             Value::TokenList(lines) => DisplayTokenLines(lines).fmt(f),
         }
@@ -73,10 +80,31 @@ mod tests {
         use super::*;
 
         #[test]
+        fn bytevector_datum() {
+            let v = Value::ByteVector([1, 2, 3].into());
+
+            assert_eq!(v.as_datum().to_string(), "#u8(1 2 3)");
+        }
+
+        #[test]
+        fn empty_bytevector_datum() {
+            let v = Value::ByteVector([].into());
+
+            assert_eq!(v.as_datum().to_string(), "#u8()");
+        }
+
+        #[test]
         fn bytevector_typename() {
             let v = Value::ByteVector([].into());
 
             assert_eq!(v.as_typename().to_string(), "bytevector");
+        }
+
+        #[test]
+        fn constant_datum() {
+            let v = Value::Constant(Constant::Boolean(true));
+
+            assert_eq!(v.as_datum().to_string(), "#t");
         }
 
         #[test]
