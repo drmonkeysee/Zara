@@ -72,8 +72,8 @@ pub(super) enum ExpressionKind {
 }
 
 impl ExpressionKind {
-    fn as_typename(&self) -> ExprTypeName {
-        ExprTypeName(self)
+    fn as_typename(&self) -> TypeName {
+        TypeName(self)
     }
 }
 
@@ -166,9 +166,9 @@ impl<'a, I: Iterator<Item = &'a ExpressionError>> PeekableExt<I> for Peekable<I>
     }
 }
 
-struct ExprTypeName<'a>(&'a ExpressionKind);
+struct TypeName<'a>(&'a ExpressionKind);
 
-impl Display for ExprTypeName<'_> {
+impl Display for TypeName<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self.0 {
             ExpressionKind::Call { .. } => "procedure call".fmt(f),

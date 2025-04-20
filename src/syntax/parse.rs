@@ -353,9 +353,9 @@ fn parse_verbatim_identifier(buf: &mut String, token: Token, txt: &Rc<TextLine>)
     }
 }
 
-type ConvertExprResult = Result<Expression, <Expression as TryFrom<ExprNode>>::Error>;
+type IntoExprResult = Result<Expression, <Expression as TryFrom<ExprNode>>::Error>;
 
-fn into_bytevector(seq: Vec<Expression>, ctx: ExprCtx) -> ConvertExprResult {
+fn into_bytevector(seq: Vec<Expression>, ctx: ExprCtx) -> IntoExprResult {
     let (bytes, errs): (Vec<_>, Vec<_>) = seq
         .into_iter()
         .map(|expr| match expr.kind {
