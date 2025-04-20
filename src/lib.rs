@@ -253,11 +253,20 @@ mod tests {
     mod dispcheck {
         use super::*;
 
+        struct Nested(i32);
+
+        impl Display for Nested {
+            fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+                write!(f, "ed {}", self.0)
+            }
+        }
+
         enum DisplayTest {
             Write(i32),
             Format(i32),
             WStr,
             StrFmt,
+            Nest(Nested),
         }
 
         impl Display for DisplayTest {
@@ -267,6 +276,7 @@ mod tests {
                     Self::Format(i) => format!("fmtint{i}").fmt(f),
                     Self::WStr => f.write_str("wrtestr"),
                     Self::StrFmt => "frmtstr".fmt(f),
+                    Self::Nest(n) => format!("nest{n}").fmt(f),
                 }
             }
         }
@@ -278,13 +288,15 @@ mod tests {
             let b = DisplayTest::Format(3);
             let c = DisplayTest::WStr;
             let d = DisplayTest::StrFmt;
+            let e = DisplayTest::Nest(Nested(8));
 
             // NOTE: you would expect all of these to right-align to 15 chars
             // but only two of them do.
-            eprintln!("A: {a:>15}");
-            eprintln!("B: {b:>15}");
-            eprintln!("C: {c:>15}");
-            eprintln!("D: {d:>15}");
+            eprintln!("A: {a:>15}"); // no-align
+            eprintln!("B: {b:>15}"); // align
+            eprintln!("C: {c:>15}"); // no-align
+            eprintln!("D: {d:>15}"); // align
+            eprintln!("E: {e:>15}"); // align
             assert!(false);
         }
     }
