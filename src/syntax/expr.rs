@@ -87,7 +87,15 @@ impl Display for ExpressionError {
     }
 }
 
-impl Error for ExpressionError {}
+impl Error for ExpressionError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        if let ExpressionErrorKind::ByteVectorInvalidNumber(inner) = &self.kind {
+            Some(inner)
+        } else {
+            None
+        }
+    }
+}
 
 #[derive(Debug)]
 pub(super) enum ExpressionErrorKind {
@@ -177,7 +185,7 @@ fn format_unexpected_error(kind: &str, token: &TokenKind, f: &mut Formatter) -> 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::testutil::make_textline;
+    use crate::testutil::{make_textline, some_or_fail};
 
     mod display {
         use super::*;
@@ -216,7 +224,6 @@ mod tests {
 
     mod eval {
         use super::*;
-        use crate::testutil::some_or_fail;
 
         #[test]
         fn constant() {
@@ -427,6 +434,41 @@ mod tests {
                 err.to_string(),
                 format!("{} parsing not yet implemented", TokenKind::Comment)
             );
+        }
+
+        #[test]
+        fn byte_invalid_source() {
+            let err = ExpressionError {
+                ctx: ExprCtx {
+                    span: 0..5,
+                    txt: make_textline().into(),
+                },
+                kind: ExpressionErrorKind::ByteVectorInvalidNumber(
+                    ByteConversionError::InvalidRange,
+                ),
+            };
+
+            let inner = some_or_fail!(err.source());
+
+            assert!(matches!(
+                inner.downcast_ref::<ByteConversionError>().unwrap(),
+                ByteConversionError::InvalidRange
+            ));
+        }
+
+        #[test]
+        fn other_source() {
+            let err = ExpressionError {
+                ctx: ExprCtx {
+                    span: 0..5,
+                    txt: make_textline().into(),
+                },
+                kind: ExpressionErrorKind::StrUnterminated,
+            };
+
+            let inner = err.source();
+
+            assert!(inner.is_none());
         }
     }
 

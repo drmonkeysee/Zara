@@ -118,7 +118,16 @@ impl Display for TokenError {
     }
 }
 
-impl Error for TokenError {}
+impl Error for TokenError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match &self.kind {
+            TokenErrorKind::NumericError(err) | TokenErrorKind::NumericErrorAt { err, .. } => {
+                Some(err)
+            }
+            _ => None,
+        }
+    }
+}
 
 pub(super) type TokenResult = Result<Token, TokenError>;
 
@@ -664,6 +673,7 @@ mod tests {
 
     mod tokenerror {
         use super::*;
+        use crate::testutil::some_or_fail;
 
         #[test]
         fn display_expected_boolean() {
@@ -1108,6 +1118,51 @@ mod tests {
                 err.to_string(),
                 "expected radix prefix, one of: #b #o #d #x"
             );
+        }
+
+        #[test]
+        fn numeric_error_source() {
+            let err = TokenError {
+                kind: TokenErrorKind::NumericError(NumericError::DivideByZero),
+                span: 0..1,
+            };
+
+            let inner = some_or_fail!(err.source());
+
+            assert!(matches!(
+                inner.downcast_ref::<NumericError>().unwrap(),
+                NumericError::DivideByZero
+            ));
+        }
+
+        #[test]
+        fn numeric_errorat_source() {
+            let err = TokenError {
+                kind: TokenErrorKind::NumericErrorAt {
+                    at: 1,
+                    err: NumericError::ParseExponentFailure,
+                },
+                span: 0..1,
+            };
+
+            let inner = some_or_fail!(err.source());
+
+            assert!(matches!(
+                inner.downcast_ref::<NumericError>().unwrap(),
+                NumericError::ParseExponentFailure
+            ));
+        }
+
+        #[test]
+        fn other_error_source() {
+            let err = TokenError {
+                kind: TokenErrorKind::NumberInvalid,
+                span: 0..1,
+            };
+
+            let inner = err.source();
+
+            assert!(inner.is_none());
         }
     }
 
