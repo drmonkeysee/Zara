@@ -38,7 +38,8 @@ impl Display for LexerError {
             .0
             .iter()
             .try_fold(LineFailureAcc::Empty, |acc, ln| ln.accumulate(acc));
-        format!(
+        write!(
+            f,
             "fatal error: {}",
             match ctrl {
                 ControlFlow::Break(()) => "multiple lexer failures",
@@ -47,7 +48,6 @@ impl Display for LexerError {
                 ControlFlow::Continue(LineFailureAcc::Tokenize) => "tokenization failure",
             }
         )
-        .fmt(f)
     }
 }
 
@@ -162,7 +162,7 @@ impl Display for TokenLine {
             .map(|t| TokenWithSource(t, txt).to_string())
             .collect::<Vec<_>>()
             .join(", ");
-        format!("{}:{}", txt.lineno, token_txt).fmt(f)
+        write!(f, "{}:{}", txt.lineno, token_txt)
     }
 }
 
@@ -230,13 +230,13 @@ struct TokenWithSource<'a>(&'a Token, &'a TextLine);
 impl Display for TokenWithSource<'_> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         let Self(t, txt) = *self;
-        format!(
+        write!(
+            f,
             "{t}('{}')",
             txt.line
                 .get(t.span.clone())
                 .unwrap_or("#<token-invalid-range>")
         )
-        .fmt(f)
     }
 }
 

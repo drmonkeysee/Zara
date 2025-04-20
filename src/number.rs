@@ -98,10 +98,15 @@ impl Display for ByteConversionError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
             Self::InvalidRange => {
-                format!("integer literal out of range: [{}, {}]", u8::MIN, u8::MAX).fmt(f)
+                write!(
+                    f,
+                    "integer literal out of range: [{}, {}]",
+                    u8::MIN,
+                    u8::MAX
+                )
             }
             Self::InvalidType(name) => {
-                format!("expected integer literal but got numeric type: {name}").fmt(f)
+                write!(f, "expected integer literal but got numeric type: {name}")
             }
         }
     }
@@ -589,13 +594,13 @@ pub(crate) enum NumericError {
 impl Display for NumericError {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
-            Self::DivideByZero => "divide by zero".fmt(f),
+            Self::DivideByZero => f.write_str("divide by zero"),
             Self::ParseExponentOutOfRange => {
-                format!("exponent out of range: [{}, {}]", i32::MIN, i32::MAX).fmt(f)
+                write!(f, "exponent out of range: [{}, {}]", i32::MIN, i32::MAX)
             }
-            Self::ParseExponentFailure => "exponent parse failure".fmt(f),
-            Self::ParseFailure => "number parse failure".fmt(f),
-            Self::Unimplemented(s) => format!("unimplemented number parse: '{s}'").fmt(f),
+            Self::ParseExponentFailure => f.write_str("exponent parse failure"),
+            Self::ParseFailure => f.write_str("number parse failure"),
+            Self::Unimplemented(s) => write!(f, "unimplemented number parse: '{s}'"),
         }
     }
 }

@@ -32,15 +32,15 @@ pub(crate) struct Datum<'a>(&'a Value);
 impl Display for Datum<'_> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self.0 {
-            Value::Ast(prg) => format!("{{{prg:?}}}").fmt(f),
-            Value::ByteVector(bv) => format!(
+            Value::Ast(prg) => write!(f, "{{{prg:?}}}"),
+            Value::ByteVector(bv) => write!(
+                f,
                 "#u8({})",
                 bv.into_iter()
                     .map(|b| b.to_string())
                     .collect::<Vec<_>>()
                     .join(" ")
-            )
-            .fmt(f),
+            ),
             Value::Constant(con) => con.as_datum().fmt(f),
             Value::TokenList(lines) => DisplayTokenLines(lines).fmt(f),
         }

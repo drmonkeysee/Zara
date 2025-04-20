@@ -31,8 +31,8 @@ pub(crate) struct Datum<'a>(&'a Constant);
 impl Display for Datum<'_> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self.0 {
-            Constant::Boolean(b) => format!("#{}", if *b { 't' } else { 'f' }).fmt(f),
-            Constant::Character(c) => format!("#\\{}", CharDatum::new(*c)).fmt(f),
+            Constant::Boolean(b) => write!(f, "#{}", if *b { 't' } else { 'f' }),
+            Constant::Character(c) => write!(f, "#\\{}", CharDatum::new(*c)),
             Constant::Number(n) => n.as_datum().fmt(f),
             Constant::String(s) => StrDatum(s).fmt(f),
         }

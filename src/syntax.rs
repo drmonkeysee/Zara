@@ -33,7 +33,7 @@ impl ParserError {
 
 impl Display for ParserError {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        "fatal error: parsing failure".fmt(f)
+        f.write_str("fatal error: parsing failure")
     }
 }
 

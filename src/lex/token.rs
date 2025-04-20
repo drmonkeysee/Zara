@@ -18,7 +18,7 @@ pub(crate) type Token = TokenType<TokenKind>;
 
 impl Display for Token {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        format!("{}[{:?}]", self.kind, self.span).fmt(f)
+        write!(f, "{}[{:?}]", self.kind, self.span)
     }
 }
 
@@ -209,54 +209,56 @@ impl TokenErrorKind {
 impl Display for TokenErrorKind {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
-            Self::BlockCommentUnterminated => "unterminated block comment".fmt(f),
-            Self::BooleanExpected(b) => format!("expected boolean constant: {b}").fmt(f),
-            Self::ByteVectorExpected => "expected bytevector constant: #u8(…)".fmt(f),
-            Self::CharacterExpected => "expected character constant".fmt(f),
-            Self::CharacterExpectedHex => "expected character hex-sequence".fmt(f),
+            Self::BlockCommentUnterminated => f.write_str("unterminated block comment"),
+            Self::BooleanExpected(b) => write!(f, "expected boolean constant: {b}"),
+            Self::ByteVectorExpected => f.write_str("expected bytevector constant: #u8(…)"),
+            Self::CharacterExpected => f.write_str("expected character constant"),
+            Self::CharacterExpectedHex => f.write_str("expected character hex-sequence"),
             Self::CharacterInvalidHex => {
                 format_char_range_error("character hex-sequence out of valid range", f)
             }
-            Self::ComplexInvalid => "invalid complex constant".fmt(f),
-            Self::DirectiveExpected => "expected directive: fold-case or no-fold-case".fmt(f),
+            Self::ComplexInvalid => f.write_str("invalid complex constant"),
+            Self::DirectiveExpected => f.write_str("expected directive: fold-case or no-fold-case"),
             Self::DirectiveInvalid => {
-                "unsupported directive: expected fold-case or no-fold-case".fmt(f)
+                f.write_str("unsupported directive: expected fold-case or no-fold-case")
             }
-            Self::ExactnessExpected { .. } => "expected exactness prefix, one of: #e #i".fmt(f),
-            Self::HashInvalid => "invalid #-constant".fmt(f),
-            Self::HashUnterminated => "unterminated #-constant".fmt(f),
-            Self::IdentifierInvalid(ch) => format!("invalid identifier character: {ch}").fmt(f),
+            Self::ExactnessExpected { .. } => {
+                f.write_str("expected exactness prefix, one of: #e #i")
+            }
+            Self::HashInvalid => f.write_str("invalid #-constant"),
+            Self::HashUnterminated => f.write_str("unterminated #-constant"),
+            Self::IdentifierInvalid(ch) => write!(f, "invalid identifier character: {ch}"),
             Self::IdentifierEscapeInvalid { ch, .. } | Self::StringEscapeInvalid { ch, .. } => {
-                format!("invalid escape sequence: \\{ch}").fmt(f)
+                write!(f, "invalid escape sequence: \\{ch}")
             }
             Self::IdentifierExpectedHex { .. } | Self::StringExpectedHex { .. } => {
-                "expected hex-escape".fmt(f)
+                f.write_str("expected hex-escape")
             }
             Self::IdentifierInvalidHex { .. } | Self::StringInvalidHex { .. } => {
                 format_char_range_error("hex-escape out of valid range", f)
             }
             Self::IdentifierUnterminatedHex { .. } | Self::StringUnterminatedHex { .. } => {
-                "unterminated hex-escape".fmt(f)
+                f.write_str("unterminated hex-escape")
             }
-            Self::IdentifierUnterminated => "unterminated verbatim identifier".fmt(f),
-            Self::ImaginaryInvalid => "invalid imaginary constant".fmt(f),
-            Self::ImaginaryMissingSign => "missing explicit sign on imaginary number".fmt(f),
-            Self::NumberExpected => "expected numeric constant".fmt(f),
-            Self::NumberInvalid => "invalid numeric constant".fmt(f),
+            Self::IdentifierUnterminated => f.write_str("unterminated verbatim identifier"),
+            Self::ImaginaryInvalid => f.write_str("invalid imaginary constant"),
+            Self::ImaginaryMissingSign => f.write_str("missing explicit sign on imaginary number"),
+            Self::NumberExpected => f.write_str("expected numeric constant"),
+            Self::NumberInvalid => f.write_str("invalid numeric constant"),
             Self::NumberInvalidDecimalPoint { radix, .. } => {
-                format!("{radix} radix does not support decimal notation").fmt(f)
+                write!(f, "{radix} radix does not support decimal notation")
             }
             Self::NumberInvalidExponent { radix, .. } => {
-                format!("{radix} radix does not support scientific notation").fmt(f)
+                write!(f, "{radix} radix does not support scientific notation")
             }
-            Self::NumberUnexpectedDecimalPoint { .. } => "unexpected decimal point".fmt(f),
+            Self::NumberUnexpectedDecimalPoint { .. } => f.write_str("unexpected decimal point"),
             Self::NumericError(err) | Self::NumericErrorAt { err, .. } => {
-                format!("numeric error - {err}").fmt(f)
+                write!(f, "numeric error - {err}")
             }
-            Self::PolarInvalid => "invalid polar constant".fmt(f),
-            Self::RadixExpected { .. } => "expected radix prefix, one of: #b #o #d #x".fmt(f),
-            Self::RationalInvalid => "invalid rational constant".fmt(f),
-            Self::StringUnterminated => "unterminated string constant".fmt(f),
+            Self::PolarInvalid => f.write_str("invalid polar constant"),
+            Self::RadixExpected { .. } => f.write_str("expected radix prefix, one of: #b #o #d #x"),
+            Self::RationalInvalid => f.write_str("invalid rational constant"),
+            Self::StringUnterminated => f.write_str("unterminated string constant"),
         }
     }
 }
@@ -291,7 +293,7 @@ pub(super) enum TokenContinuation {
 }
 
 fn format_char_range_error(msg: &str, f: &mut Formatter) -> fmt::Result {
-    format!("{msg}: [{:#x}, {:#x}]", 0, char::MAX as u32).fmt(f)
+    write!(f, "{msg}: [{:#x}, {:#x}]", 0, char::MAX as u32)
 }
 
 fn line_cont_token(line_cont: bool) -> &'static str {

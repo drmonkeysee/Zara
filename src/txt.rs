@@ -80,8 +80,8 @@ impl TextError {
 impl Display for TextError {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self.source() {
-            Some(err) => format!("readline failure - {err}").fmt(f),
-            None => "unknown readline error".fmt(f),
+            Some(err) => write!(f, "readline failure - {err}"),
+            None => f.write_str("unknown readline error"),
         }
     }
 }

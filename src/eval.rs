@@ -48,7 +48,7 @@ pub struct EvaluationMessage<'a>(&'a Evaluation);
 impl Display for EvaluationMessage<'_> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self.0 {
-            Evaluation::Continuation => "fatal error: unexpected continuation".fmt(f),
+            Evaluation::Continuation => f.write_str("fatal error: unexpected continuation"),
             Evaluation::Value(None) => Ok(()),
             Evaluation::Value(Some(v)) => v.0.display_message().fmt(f),
         }
