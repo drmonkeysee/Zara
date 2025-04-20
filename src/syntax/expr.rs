@@ -1,4 +1,6 @@
-use crate::{constant::Constant, lex::TokenKind, txt::TextLine, value::Value};
+use crate::{
+    constant::Constant, lex::TokenKind, number::ByteConversionError, txt::TextLine, value::Value,
+};
 use std::{
     error::Error,
     fmt::{self, Display, Formatter},
@@ -51,7 +53,6 @@ impl Expression {
     fn eval(self) -> Option<Value> {
         match self.kind {
             ExpressionKind::Call { .. } => todo!("no idea what to do here"),
-            ExpressionKind::Empty => None,
             ExpressionKind::Identifier(_) => {
                 todo!("this is dependent on current environment frame")
             }
@@ -66,15 +67,13 @@ pub(super) enum ExpressionKind {
         args: Box<[Expression]>,
         proc: Box<Expression>,
     },
-    // TODO: dump Empty in favor of Option<..>?
-    Empty,
     Identifier(Box<str>),
     Literal(Value),
 }
 
-impl Display for ExpressionKind {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        todo!("implement this for expression error display");
+impl ExpressionKind {
+    fn as_typename(&self) -> ExprTypeName {
+        ExprTypeName(self)
     }
 }
 
@@ -92,9 +91,8 @@ impl Error for ExpressionError {}
 
 #[derive(Debug)]
 pub(super) enum ExpressionErrorKind {
-    // TODO: what do these two need to store?
     ByteVectorInvalidItem(ExpressionKind),
-    ByteVectorOutOfRange,
+    ByteVectorInvalidNumber(ByteConversionError),
     ByteVectorUnterminated,
     CommentBlockInvalid(TokenKind),
     CommentBlockUnterminated,
@@ -111,9 +109,9 @@ impl Display for ExpressionErrorKind {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
             Self::ByteVectorInvalidItem(expr) => {
-                format!("invalid bytevector element; expected byte literal, got: {expr:?}").fmt(f)
+                format!("expected byte literal, got: {}", expr.as_typename()).fmt(f)
             }
-            Self::ByteVectorOutOfRange => todo!(),
+            Self::ByteVectorInvalidNumber(err) => err.fmt(f),
             Self::ByteVectorUnterminated => "unterminated bytevector".fmt(f),
             Self::CommentBlockInvalid(t) => format_unexpected_error("comment block", t, f),
             // TODO: can i share tokenerrorkind display here
@@ -160,6 +158,18 @@ impl<'a, I: Iterator<Item = &'a ExpressionError>> PeekableExt<I> for Peekable<I>
     }
 }
 
+struct ExprTypeName<'a>(&'a ExpressionKind);
+
+impl Display for ExprTypeName<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self.0 {
+            ExpressionKind::Call { .. } => "procedure call".fmt(f),
+            ExpressionKind::Identifier(_) => "identifier".fmt(f),
+            ExpressionKind::Literal(val) => val.as_typename().fmt(f),
+        }
+    }
+}
+
 fn format_unexpected_error(kind: &str, token: &TokenKind, f: &mut Formatter) -> fmt::Result {
     format!("unexpected token in {kind}: {token}").fmt(f)
 }
@@ -167,25 +177,46 @@ fn format_unexpected_error(kind: &str, token: &TokenKind, f: &mut Formatter) -> 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::testutil::make_textline;
+
+    mod display {
+        use super::*;
+
+        #[test]
+        fn call_typename() {
+            let proc = Expression {
+                ctx: ExprCtx {
+                    span: 0..5,
+                    txt: make_textline().into(),
+                },
+                kind: ExpressionKind::Identifier("foo".into()),
+            };
+            let expr = ExpressionKind::Call {
+                args: [].into(),
+                proc: proc.into(),
+            };
+
+            assert_eq!(expr.as_typename().to_string(), "procedure call");
+        }
+
+        #[test]
+        fn identifier_typename() {
+            let expr = ExpressionKind::Identifier("foo".into());
+
+            assert_eq!(expr.as_typename().to_string(), "identifier");
+        }
+
+        #[test]
+        fn literal_typename() {
+            let expr = ExpressionKind::Literal(Value::ByteVector([].into()));
+
+            assert_eq!(expr.as_typename().to_string(), "bytevector");
+        }
+    }
 
     mod eval {
         use super::*;
-        use crate::testutil::{make_textline, some_or_fail};
-
-        #[test]
-        fn empty() {
-            let expr = Expression {
-                ctx: ExprCtx {
-                    span: 0..0,
-                    txt: make_textline().into(),
-                },
-                kind: ExpressionKind::Empty,
-            };
-
-            let o = expr.eval();
-
-            assert!(o.is_none());
-        }
+        use crate::testutil::some_or_fail;
 
         #[test]
         fn constant() {
@@ -248,7 +279,36 @@ mod tests {
 
     mod error {
         use super::*;
-        use crate::testutil::make_textline;
+
+        #[test]
+        fn display_invalid_bytevector_item() {
+            let err = ExpressionError {
+                ctx: ExprCtx {
+                    span: 0..5,
+                    txt: make_textline().into(),
+                },
+                kind: ExpressionErrorKind::ByteVectorInvalidItem(ExpressionKind::Identifier(
+                    "foobar".into(),
+                )),
+            };
+
+            assert_eq!(err.to_string(), "expected byte literal, got: identifier");
+        }
+
+        #[test]
+        fn display_invalid_bytevector_number() {
+            let err = ExpressionError {
+                ctx: ExprCtx {
+                    span: 0..5,
+                    txt: make_textline().into(),
+                },
+                kind: ExpressionErrorKind::ByteVectorInvalidNumber(
+                    ByteConversionError::InvalidRange,
+                ),
+            };
+
+            assert_eq!(err.to_string(), "integer literal out of range: [0, 255]");
+        }
 
         #[test]
         fn display_unterminated_bytevector() {
@@ -372,7 +432,7 @@ mod tests {
 
     mod groupby {
         use super::*;
-        use crate::testutil::{make_textline, make_textline_no};
+        use crate::testutil::make_textline_no;
         use std::ptr;
 
         #[test]

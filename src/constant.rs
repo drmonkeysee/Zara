@@ -1,7 +1,7 @@
 use crate::number::Number;
 use std::{
     cmp::Ordering,
-    fmt::{Display, Formatter, Result, Write},
+    fmt::{self, Display, Formatter, Write},
 };
 
 #[derive(Debug)]
@@ -20,12 +20,16 @@ impl Constant {
     pub(crate) fn as_token_descriptor(&self) -> TokenDescriptor {
         TokenDescriptor(self)
     }
+
+    pub(crate) fn as_typename(&self) -> TypeName {
+        TypeName(self)
+    }
 }
 
 pub(crate) struct Datum<'a>(&'a Constant);
 
 impl Display for Datum<'_> {
-    fn fmt(&self, f: &mut Formatter) -> Result {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self.0 {
             Constant::Boolean(b) => format!("#{}", if *b { 't' } else { 'f' }).fmt(f),
             Constant::Character(c) => format!("#\\{}", CharDatum::new(*c)).fmt(f),
@@ -38,12 +42,25 @@ impl Display for Datum<'_> {
 pub(crate) struct TokenDescriptor<'a>(&'a Constant);
 
 impl Display for TokenDescriptor<'_> {
-    fn fmt(&self, f: &mut Formatter) -> Result {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self.0 {
             Constant::Boolean(_) => "BOOL".fmt(f),
             Constant::Character(_) => "CHAR".fmt(f),
             Constant::Number(n) => format!("NUM<{}>", n.as_token_descriptor()).fmt(f),
             Constant::String(_) => "STR".fmt(f),
+        }
+    }
+}
+
+pub(crate) struct TypeName<'a>(&'a Constant);
+
+impl Display for TypeName<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self.0 {
+            Constant::Boolean(_) => "boolean".fmt(f),
+            Constant::Character(_) => "character".fmt(f),
+            Constant::Number(_) => "number".fmt(f),
+            Constant::String(_) => "string".fmt(f),
         }
     }
 }
@@ -71,7 +88,7 @@ impl CharDatum {
 }
 
 impl Display for CharDatum {
-    fn fmt(&self, f: &mut Formatter) -> Result {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
             Self::Named(n) => f.write_str(n),
             Self::Unnamed(ch) => write_unnamed_char(*ch, f),
@@ -82,7 +99,7 @@ impl Display for CharDatum {
 struct StrDatum<'a>(&'a str);
 
 impl Display for StrDatum<'_> {
-    fn fmt(&self, f: &mut Formatter) -> Result {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         f.write_char('"')?;
         for ch in self.0.chars() {
             match ch {
@@ -108,14 +125,14 @@ enum DisplayableChar {
     Hex(u32),
 }
 
-fn write_str_chr(ch: char, f: &mut Formatter) -> Result {
+fn write_str_chr(ch: char, f: &mut Formatter) -> fmt::Result {
     match char_to_displayable(ch) {
         DisplayableChar::Char(ch) => f.write_char(ch),
         DisplayableChar::Hex(hex) => write!(f, "\\x{hex:x};"),
     }
 }
 
-fn write_unnamed_char(ch: char, f: &mut Formatter) -> Result {
+fn write_unnamed_char(ch: char, f: &mut Formatter) -> fmt::Result {
     match char_to_displayable(ch) {
         DisplayableChar::Char(ch) => f.write_char(ch),
         DisplayableChar::Hex(hex) => write!(f, "x{hex:x}"),
@@ -160,6 +177,13 @@ mod tests {
             let b = Constant::Boolean(false);
 
             assert_eq!(b.as_datum().to_string(), "#f");
+        }
+
+        #[test]
+        fn display_typename() {
+            let b = Constant::Boolean(false);
+
+            assert_eq!(b.as_typename().to_string(), "boolean");
         }
     }
 
@@ -276,6 +300,13 @@ mod tests {
 
                 assert_eq!(c.as_datum().to_string(), format!("#\\{exp}"));
             }
+        }
+
+        #[test]
+        fn display_typename() {
+            let c = Constant::Character('a');
+
+            assert_eq!(c.as_typename().to_string(), "character");
         }
     }
 
@@ -418,6 +449,13 @@ bar"
                 assert_eq!(s.as_datum().to_string(), format!("\"{exp}\""));
             }
         }
+
+        #[test]
+        fn display_typename() {
+            let s = Constant::String("foo".into());
+
+            assert_eq!(s.as_typename().to_string(), "string");
+        }
     }
 
     mod number {
@@ -480,6 +518,13 @@ bar"
             let n = Constant::Number(Number::complex(4, 5));
 
             assert_eq!(n.as_datum().to_string(), "4+5i");
+        }
+
+        #[test]
+        fn display_typename() {
+            let n = Constant::Number(Number::real(42));
+
+            assert_eq!(n.as_typename().to_string(), "number");
         }
     }
 }
