@@ -36,7 +36,7 @@ impl Display for Datum<'_> {
             Value::ByteVector(bv) => write!(
                 f,
                 "#u8({})",
-                bv.into_iter()
+                bv.iter()
                     .map(|b| b.to_string())
                     .collect::<Vec<_>>()
                     .join(" ")
