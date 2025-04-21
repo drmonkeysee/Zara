@@ -1,7 +1,7 @@
 mod expr;
 mod parse;
 
-pub(crate) use self::expr::Program;
+pub(crate) use self::expr::{Program, ProgramError};
 use self::{
     expr::{ExprCtx, Expression, ExpressionError, ExpressionKind, PeekableExt},
     parse::{ErrFlow, ParseBreak, ParseFlow, ParseNode, Recovery},
@@ -23,27 +23,61 @@ pub(crate) enum ParserOutput {
 }
 
 #[derive(Debug)]
-pub(crate) struct ParserError(Vec<ExpressionError>);
+pub(crate) enum ParserError {
+    Invalid(ProgramError),
+    Syntax(SyntaxError),
+}
 
 impl ParserError {
     pub(crate) fn display_message(&self) -> ParserErrorMessage {
-        ParserErrorMessage(&self.0)
+        ParserErrorMessage(&self)
     }
 }
 
 impl Display for ParserError {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        f.write_str("fatal error: parsing failure")
+        write!(
+            f,
+            "fatal error: {}",
+            match self {
+                Self::Invalid(pe) => pe.to_string(),
+                Self::Syntax(se) => se.to_string(),
+            }
+        )
     }
 }
 
-impl Error for ParserError {}
+impl Error for ParserError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        Some(match self {
+            Self::Invalid(err) => err,
+            Self::Syntax(err) => err,
+        })
+    }
+}
+
+impl From<ProgramError> for ParserError {
+    fn from(value: ProgramError) -> Self {
+        Self::Invalid(value)
+    }
+}
 
 impl From<ExpressionError> for ParserError {
     fn from(value: ExpressionError) -> Self {
-        Self(vec![value])
+        Self::Syntax(SyntaxError(vec![value]))
     }
 }
+
+#[derive(Debug)]
+pub(crate) struct SyntaxError(Vec<ExpressionError>);
+
+impl Display for SyntaxError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        f.write_str("invalid syntax")
+    }
+}
+
+impl Error for SyntaxError {}
 
 pub(crate) trait Parser {
     fn parse(&mut self, token_lines: impl IntoIterator<Item = TokenLine>) -> ParserResult;
@@ -89,14 +123,19 @@ pub(crate) struct ExpressionTree {
     parsers: Vec<ParseNode>,
 }
 
-pub(crate) struct ParserErrorMessage<'a>(&'a [ExpressionError]);
+pub(crate) struct ParserErrorMessage<'a>(&'a ParserError);
 
 impl Display for ParserErrorMessage<'_> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        for (txt, errs) in self.0.into_iter().peekable().groupby_txt() {
-            ParseErrorLineMessage((txt, &errs)).fmt(f)?;
+        match self.0 {
+            ParserError::Invalid(_) => f.write_str("unexpected end-of-parse\n"),
+            ParserError::Syntax(SyntaxError(errs)) => {
+                for (txt, errs) in errs.iter().peekable().groupby_txt() {
+                    ParseErrorLineMessage((txt, &errs)).fmt(f)?;
+                }
+                Ok(())
+            }
         }
-        Ok(())
     }
 }
 
@@ -160,17 +199,14 @@ impl Parser for ExpressionTree {
 
         if self.errs.is_empty() {
             Ok(if self.parsers.is_empty() {
-                match parser.try_into() {
-                    Ok(prg) => ParserOutput::Complete(prg),
-                    Err(_) => todo!("need to convert to parsererror"),
-                }
+                ParserOutput::Complete(parser.try_into()?)
             } else {
                 self.parsers.push(parser);
                 ParserOutput::Continuation
             })
         } else {
             self.parsers.clear();
-            Err(ParserError(mem::take(&mut self.errs)))
+            Err(ParserError::Syntax(SyntaxError(mem::take(&mut self.errs))))
         }
     }
 
@@ -223,7 +259,7 @@ mod tests {
     use crate::{
         constant::Constant,
         lex::{Token, TokenKind},
-        testutil::{err_or_fail, extract_or_fail, make_textline_no, ok_or_fail, some_or_fail},
+        testutil::{err_or_fail, extract_or_fail, make_textline_no, some_or_fail},
         txt::LineNumber,
     };
     use std::ops::Range;
@@ -243,399 +279,450 @@ mod tests {
         TokenLine(tokens.collect(), make_textline_no(lineno))
     }
 
-    #[test]
-    fn no_tokens() {
-        let mut et: ExpressionTree = Default::default();
-        let tokens = Vec::new();
+    mod parsing {
+        use super::*;
+        use crate::testutil::ok_or_fail;
 
-        let r = et.parse(tokens);
+        #[test]
+        fn no_tokens() {
+            let mut et: ExpressionTree = Default::default();
+            let tokens = Vec::new();
 
-        assert!(matches!(
-            r,
-            Ok(ParserOutput::Complete(Program(seq)))
-            if seq.is_empty()
-        ));
-        assert!(et.parsers.is_empty());
+            let r = et.parse(tokens);
+
+            assert!(matches!(
+                r,
+                Ok(ParserOutput::Complete(Program(seq)))
+                if seq.is_empty()
+            ));
+            assert!(et.parsers.is_empty());
+        }
+
+        #[test]
+        fn single_literal_sequence() {
+            let mut et: ExpressionTree = Default::default();
+            let tokens = [make_tokenline([TokenKind::Constant(Constant::Boolean(
+                true,
+            ))])];
+
+            let r = et.parse(tokens);
+
+            let Program(seq) = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
+            assert_eq!(seq.len(), 1);
+            assert!(matches!(
+                &seq[0],
+                Expression {
+                    ctx: ExprCtx { span: Range { start: 0, end: 1 }, txt },
+                    kind: ExpressionKind::Literal(Value::Constant(Constant::Boolean(true))),
+                } if txt.lineno == 1
+            ));
+            assert!(et.parsers.is_empty());
+        }
+
+        #[test]
+        fn multiple_literals_sequence() {
+            let mut et: ExpressionTree = Default::default();
+            let tokens = [make_tokenline([
+                TokenKind::Constant(Constant::Boolean(true)),
+                TokenKind::Constant(Constant::Character('a')),
+                TokenKind::Constant(Constant::String("foo".into())),
+            ])];
+
+            let r = et.parse(tokens);
+
+            let Program(seq) = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
+            assert_eq!(seq.len(), 3);
+            assert!(matches!(
+                &seq[0],
+                Expression {
+                    ctx: ExprCtx { span: Range { start: 0, end: 1 }, txt },
+                    kind: ExpressionKind::Literal(Value::Constant(Constant::Boolean(true))),
+                } if txt.lineno == 1
+            ));
+            assert!(matches!(
+                &seq[1],
+                Expression {
+                    ctx: ExprCtx { span: Range { start: 1, end: 2 }, txt },
+                    kind: ExpressionKind::Literal(Value::Constant(Constant::Character('a'))),
+                } if txt.lineno == 1
+            ));
+            assert!(matches!(
+                &seq[2],
+                Expression {
+                    ctx: ExprCtx { span: Range { start: 2, end: 3 }, txt },
+                    kind: ExpressionKind::Literal(Value::Constant(Constant::String(s))),
+                } if txt.lineno == 1 && &**s == "foo"
+            ));
+            assert!(et.parsers.is_empty());
+        }
+
+        #[test]
+        fn sequence_multiple_lines() {
+            let mut et: ExpressionTree = Default::default();
+            let tokens = [
+                make_tokenline_no(
+                    [
+                        TokenKind::Constant(Constant::Boolean(true)),
+                        TokenKind::Constant(Constant::Character('a')),
+                        TokenKind::Constant(Constant::String("foo".into())),
+                    ],
+                    1,
+                ),
+                make_tokenline_no(
+                    [
+                        TokenKind::Constant(Constant::Boolean(false)),
+                        TokenKind::Constant(Constant::Character('b')),
+                    ],
+                    2,
+                ),
+            ];
+
+            let r = et.parse(tokens);
+
+            let Program(seq) = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
+            assert_eq!(seq.len(), 5);
+            assert!(matches!(
+                &seq[0],
+                Expression {
+                    ctx: ExprCtx { span: Range { start: 0, end: 1 }, txt },
+                    kind: ExpressionKind::Literal(Value::Constant(Constant::Boolean(true))),
+                } if txt.lineno == 1
+            ));
+            assert!(matches!(
+                &seq[1],
+                Expression {
+                    ctx: ExprCtx { span: Range { start: 1, end: 2 }, txt },
+                    kind: ExpressionKind::Literal(Value::Constant(Constant::Character('a'))),
+                } if txt.lineno == 1
+            ));
+            assert!(matches!(
+                &seq[2],
+                Expression {
+                    ctx: ExprCtx { span: Range { start: 2, end: 3 }, txt },
+                    kind: ExpressionKind::Literal(Value::Constant(Constant::String(s))),
+                } if txt.lineno == 1 && &**s == "foo"
+            ));
+            assert!(matches!(
+                &seq[3],
+                Expression {
+                    ctx: ExprCtx { span: Range { start: 0, end: 1 }, txt },
+                    kind: ExpressionKind::Literal(Value::Constant(Constant::Boolean(false))),
+                } if txt.lineno == 2
+            ));
+            assert!(matches!(
+                &seq[4],
+                Expression {
+                    ctx: ExprCtx { span: Range { start: 1, end: 2 }, txt },
+                    kind: ExpressionKind::Literal(Value::Constant(Constant::Character('b'))),
+                } if txt.lineno == 2
+            ));
+
+            assert!(et.parsers.is_empty());
+        }
+
+        #[test]
+        fn sequence_line_with_errors() {
+            let mut et: ExpressionTree = Default::default();
+            let tokens = [make_tokenline([
+                TokenKind::Constant(Constant::Boolean(true)),
+                TokenKind::DirectiveCase(true),
+                TokenKind::Constant(Constant::Character('a')),
+                TokenKind::DirectiveCase(false),
+                TokenKind::Constant(Constant::String("foo".into())),
+            ])];
+
+            let r = et.parse(tokens);
+
+            let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
+            assert_eq!(errs.len(), 2);
+            assert!(matches!(
+                &errs[0],
+                ExpressionError {
+                    ctx: ExprCtx { span: Range { start: 1, end: 2 }, txt },
+                    kind: ExpressionErrorKind::Unimplemented(TokenKind::DirectiveCase(true)),
+                } if txt.lineno == 1
+            ));
+            assert!(matches!(
+                &errs[1],
+                ExpressionError {
+                    ctx: ExprCtx { span: Range { start: 3, end: 4 }, txt },
+                    kind: ExpressionErrorKind::Unimplemented(TokenKind::DirectiveCase(false)),
+                }  if txt.lineno == 1
+            ));
+            assert!(et.parsers.is_empty());
+            assert!(et.errs.is_empty());
+        }
+
+        #[test]
+        fn multiple_sequence_lines_with_errors() {
+            let mut et: ExpressionTree = Default::default();
+            let tokens = [
+                make_tokenline_no(
+                    [
+                        TokenKind::Constant(Constant::Boolean(true)),
+                        TokenKind::DirectiveCase(true),
+                        TokenKind::Constant(Constant::Character('a')),
+                        TokenKind::DirectiveCase(false),
+                        TokenKind::Constant(Constant::String("foo".into())),
+                    ],
+                    1,
+                ),
+                make_tokenline_no(
+                    [
+                        TokenKind::CommentDatum,
+                        TokenKind::Constant(Constant::Boolean(false)),
+                        TokenKind::Constant(Constant::Character('b')),
+                    ],
+                    2,
+                ),
+            ];
+
+            let r = et.parse(tokens);
+
+            let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
+            assert_eq!(errs.len(), 3);
+            assert!(matches!(
+                &errs[0],
+                ExpressionError {
+                    ctx: ExprCtx { span: Range { start: 1, end: 2 }, txt },
+                    kind: ExpressionErrorKind::Unimplemented(TokenKind::DirectiveCase(true)),
+                } if txt.lineno == 1
+            ));
+            assert!(matches!(
+                &errs[1],
+                ExpressionError {
+                    ctx: ExprCtx { span: Range { start: 3, end: 4 }, txt },
+                    kind: ExpressionErrorKind::Unimplemented(TokenKind::DirectiveCase(false)),
+                }  if txt.lineno == 1
+            ));
+            assert!(matches!(
+                &errs[2],
+                ExpressionError {
+                    ctx: ExprCtx { span: Range { start: 0, end: 1 }, txt },
+                    kind: ExpressionErrorKind::Unimplemented(TokenKind::CommentDatum),
+                }  if txt.lineno == 2
+            ));
+            assert!(et.parsers.is_empty());
+            assert!(et.errs.is_empty());
+        }
+
+        #[test]
+        fn parse_fail_skips_rest_of_tokens() {
+            let mut et: ExpressionTree = Default::default();
+            let tokens = [
+                make_tokenline_no(
+                    [
+                        TokenKind::Constant(Constant::Boolean(true)),
+                        TokenKind::DirectiveCase(true),
+                        TokenKind::Constant(Constant::Character('a')),
+                        TokenKind::DirectiveCase(false),
+                        TokenKind::Constant(Constant::String("foo".into())),
+                    ],
+                    1,
+                ),
+                make_tokenline_no(
+                    [
+                        TokenKind::Constant(Constant::Character('c')),
+                        TokenKind::IdentifierDiscard,
+                        TokenKind::Constant(Constant::Character('d')),
+                        TokenKind::CommentDatum,
+                    ],
+                    2,
+                ),
+                make_tokenline_no(
+                    [
+                        TokenKind::CommentDatum,
+                        TokenKind::Constant(Constant::Boolean(false)),
+                        TokenKind::Constant(Constant::Character('b')),
+                    ],
+                    3,
+                ),
+            ];
+
+            let r = et.parse(tokens);
+
+            let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
+            assert_eq!(errs.len(), 3);
+            assert!(matches!(
+                &errs[0],
+                ExpressionError {
+                    ctx: ExprCtx { span: Range { start: 1, end: 2 }, txt },
+                    kind: ExpressionErrorKind::Unimplemented(TokenKind::DirectiveCase(true)),
+                } if txt.lineno == 1
+            ));
+            assert!(matches!(
+                &errs[1],
+                ExpressionError {
+                    ctx: ExprCtx { span: Range { start: 3, end: 4 }, txt },
+                    kind: ExpressionErrorKind::Unimplemented(TokenKind::DirectiveCase(false)),
+                }  if txt.lineno == 1
+            ));
+            assert!(matches!(
+                &errs[2],
+                ExpressionError {
+                    ctx: ExprCtx { span: Range { start: 1, end: 2 }, txt },
+                    kind: ExpressionErrorKind::SeqInvalid(TokenKind::IdentifierDiscard),
+                }  if txt.lineno == 2
+            ));
+            assert!(et.parsers.is_empty());
+            assert!(et.errs.is_empty());
+        }
     }
 
-    #[test]
-    fn single_literal_sequence() {
-        let mut et: ExpressionTree = Default::default();
-        let tokens = [make_tokenline([TokenKind::Constant(Constant::Boolean(
-            true,
-        ))])];
+    mod continuation {
+        use super::*;
 
-        let r = et.parse(tokens);
+        #[test]
+        fn no_continuation() {
+            let mut et: ExpressionTree = Default::default();
 
-        let Program(seq) = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
-        assert_eq!(seq.len(), 1);
-        assert!(matches!(
-            &seq[0],
-            Expression {
-                ctx: ExprCtx { span: Range { start: 0, end: 1 }, txt },
-                kind: ExpressionKind::Literal(Value::Constant(Constant::Boolean(true))),
-            } if txt.lineno == 1
-        ));
-        assert!(et.parsers.is_empty());
-    }
+            let o = et.unsupported_continuation();
 
-    #[test]
-    fn multiple_literals_sequence() {
-        let mut et: ExpressionTree = Default::default();
-        let tokens = [make_tokenline([
-            TokenKind::Constant(Constant::Boolean(true)),
-            TokenKind::Constant(Constant::Character('a')),
-            TokenKind::Constant(Constant::String("foo".into())),
-        ])];
+            assert!(o.is_none());
+        }
 
-        let r = et.parse(tokens);
-
-        let Program(seq) = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
-        assert_eq!(seq.len(), 3);
-        assert!(matches!(
-            &seq[0],
-            Expression {
-                ctx: ExprCtx { span: Range { start: 0, end: 1 }, txt },
-                kind: ExpressionKind::Literal(Value::Constant(Constant::Boolean(true))),
-            } if txt.lineno == 1
-        ));
-        assert!(matches!(
-            &seq[1],
-            Expression {
-                ctx: ExprCtx { span: Range { start: 1, end: 2 }, txt },
-                kind: ExpressionKind::Literal(Value::Constant(Constant::Character('a'))),
-            } if txt.lineno == 1
-        ));
-        assert!(matches!(
-            &seq[2],
-            Expression {
-                ctx: ExprCtx { span: Range { start: 2, end: 3 }, txt },
-                kind: ExpressionKind::Literal(Value::Constant(Constant::String(s))),
-            } if txt.lineno == 1 && &**s == "foo"
-        ));
-        assert!(et.parsers.is_empty());
-    }
-
-    #[test]
-    fn sequence_multiple_lines() {
-        let mut et: ExpressionTree = Default::default();
-        let tokens = [
-            make_tokenline_no(
-                [
-                    TokenKind::Constant(Constant::Boolean(true)),
-                    TokenKind::Constant(Constant::Character('a')),
-                    TokenKind::Constant(Constant::String("foo".into())),
-                ],
-                1,
-            ),
-            make_tokenline_no(
-                [
-                    TokenKind::Constant(Constant::Boolean(false)),
-                    TokenKind::Constant(Constant::Character('b')),
-                ],
-                2,
-            ),
-        ];
-
-        let r = et.parse(tokens);
-
-        let Program(seq) = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
-        assert_eq!(seq.len(), 5);
-        assert!(matches!(
-            &seq[0],
-            Expression {
-                ctx: ExprCtx { span: Range { start: 0, end: 1 }, txt },
-                kind: ExpressionKind::Literal(Value::Constant(Constant::Boolean(true))),
-            } if txt.lineno == 1
-        ));
-        assert!(matches!(
-            &seq[1],
-            Expression {
-                ctx: ExprCtx { span: Range { start: 1, end: 2 }, txt },
-                kind: ExpressionKind::Literal(Value::Constant(Constant::Character('a'))),
-            } if txt.lineno == 1
-        ));
-        assert!(matches!(
-            &seq[2],
-            Expression {
-                ctx: ExprCtx { span: Range { start: 2, end: 3 }, txt },
-                kind: ExpressionKind::Literal(Value::Constant(Constant::String(s))),
-            } if txt.lineno == 1 && &**s == "foo"
-        ));
-        assert!(matches!(
-            &seq[3],
-            Expression {
-                ctx: ExprCtx { span: Range { start: 0, end: 1 }, txt },
-                kind: ExpressionKind::Literal(Value::Constant(Constant::Boolean(false))),
-            } if txt.lineno == 2
-        ));
-        assert!(matches!(
-            &seq[4],
-            Expression {
-                ctx: ExprCtx { span: Range { start: 1, end: 2 }, txt },
-                kind: ExpressionKind::Literal(Value::Constant(Constant::Character('b'))),
-            } if txt.lineno == 2
-        ));
-
-        assert!(et.parsers.is_empty());
-    }
-
-    #[test]
-    fn sequence_line_with_errors() {
-        let mut et: ExpressionTree = Default::default();
-        let tokens = [make_tokenline([
-            TokenKind::Constant(Constant::Boolean(true)),
-            TokenKind::DirectiveCase(true),
-            TokenKind::Constant(Constant::Character('a')),
-            TokenKind::DirectiveCase(false),
-            TokenKind::Constant(Constant::String("foo".into())),
-        ])];
-
-        let r = et.parse(tokens);
-
-        let errs = err_or_fail!(r).0;
-        assert_eq!(errs.len(), 2);
-        assert!(matches!(
-            &errs[0],
-            ExpressionError {
-                ctx: ExprCtx { span: Range { start: 1, end: 2 }, txt },
-                kind: ExpressionErrorKind::Unimplemented(TokenKind::DirectiveCase(true)),
-            } if txt.lineno == 1
-        ));
-        assert!(matches!(
-            &errs[1],
-            ExpressionError {
-                ctx: ExprCtx { span: Range { start: 3, end: 4 }, txt },
-                kind: ExpressionErrorKind::Unimplemented(TokenKind::DirectiveCase(false)),
-            }  if txt.lineno == 1
-        ));
-        assert!(et.parsers.is_empty());
-        assert!(et.errs.is_empty());
-    }
-
-    #[test]
-    fn multiple_sequence_lines_with_errors() {
-        let mut et: ExpressionTree = Default::default();
-        let tokens = [
-            make_tokenline_no(
-                [
-                    TokenKind::Constant(Constant::Boolean(true)),
-                    TokenKind::DirectiveCase(true),
-                    TokenKind::Constant(Constant::Character('a')),
-                    TokenKind::DirectiveCase(false),
-                    TokenKind::Constant(Constant::String("foo".into())),
-                ],
-                1,
-            ),
-            make_tokenline_no(
-                [
-                    TokenKind::CommentDatum,
-                    TokenKind::Constant(Constant::Boolean(false)),
-                    TokenKind::Constant(Constant::Character('b')),
-                ],
-                2,
-            ),
-        ];
-
-        let r = et.parse(tokens);
-
-        let errs = err_or_fail!(r).0;
-        assert_eq!(errs.len(), 3);
-        assert!(matches!(
-            &errs[0],
-            ExpressionError {
-                ctx: ExprCtx { span: Range { start: 1, end: 2 }, txt },
-                kind: ExpressionErrorKind::Unimplemented(TokenKind::DirectiveCase(true)),
-            } if txt.lineno == 1
-        ));
-        assert!(matches!(
-            &errs[1],
-            ExpressionError {
-                ctx: ExprCtx { span: Range { start: 3, end: 4 }, txt },
-                kind: ExpressionErrorKind::Unimplemented(TokenKind::DirectiveCase(false)),
-            }  if txt.lineno == 1
-        ));
-        assert!(matches!(
-            &errs[2],
-            ExpressionError {
-                ctx: ExprCtx { span: Range { start: 0, end: 1 }, txt },
-                kind: ExpressionErrorKind::Unimplemented(TokenKind::CommentDatum),
-            }  if txt.lineno == 2
-        ));
-        assert!(et.parsers.is_empty());
-        assert!(et.errs.is_empty());
-    }
-
-    #[test]
-    fn parse_fail_skips_rest_of_tokens() {
-        let mut et: ExpressionTree = Default::default();
-        let tokens = [
-            make_tokenline_no(
-                [
-                    TokenKind::Constant(Constant::Boolean(true)),
-                    TokenKind::DirectiveCase(true),
-                    TokenKind::Constant(Constant::Character('a')),
-                    TokenKind::DirectiveCase(false),
-                    TokenKind::Constant(Constant::String("foo".into())),
-                ],
-                1,
-            ),
-            make_tokenline_no(
-                [
-                    TokenKind::Constant(Constant::Character('c')),
-                    TokenKind::IdentifierDiscard,
-                    TokenKind::Constant(Constant::Character('d')),
-                    TokenKind::CommentDatum,
-                ],
-                2,
-            ),
-            make_tokenline_no(
-                [
-                    TokenKind::CommentDatum,
-                    TokenKind::Constant(Constant::Boolean(false)),
-                    TokenKind::Constant(Constant::Character('b')),
-                ],
-                3,
-            ),
-        ];
-
-        let r = et.parse(tokens);
-
-        let errs = err_or_fail!(r).0;
-        assert_eq!(errs.len(), 3);
-        assert!(matches!(
-            &errs[0],
-            ExpressionError {
-                ctx: ExprCtx { span: Range { start: 1, end: 2 }, txt },
-                kind: ExpressionErrorKind::Unimplemented(TokenKind::DirectiveCase(true)),
-            } if txt.lineno == 1
-        ));
-        assert!(matches!(
-            &errs[1],
-            ExpressionError {
-                ctx: ExprCtx { span: Range { start: 3, end: 4 }, txt },
-                kind: ExpressionErrorKind::Unimplemented(TokenKind::DirectiveCase(false)),
-            }  if txt.lineno == 1
-        ));
-        assert!(matches!(
-            &errs[2],
-            ExpressionError {
-                ctx: ExprCtx { span: Range { start: 1, end: 2 }, txt },
-                kind: ExpressionErrorKind::SeqInvalid(TokenKind::IdentifierDiscard),
-            }  if txt.lineno == 2
-        ));
-        assert!(et.parsers.is_empty());
-        assert!(et.errs.is_empty());
-    }
-
-    #[test]
-    fn no_continuation() {
-        let mut et: ExpressionTree = Default::default();
-
-        let o = et.unsupported_continuation();
-
-        assert!(o.is_none());
-    }
-
-    #[test]
-    fn continuation_to_error() {
-        let mut et: ExpressionTree = Default::default();
-        let tokens = [make_tokenline([
-            TokenKind::Constant(Constant::Boolean(true)),
-            TokenKind::StringBegin {
-                s: "foo".to_owned(),
-                line_cont: false,
-            },
-        ])];
-
-        let r = et.parse(tokens);
-
-        assert!(matches!(r, Ok(ParserOutput::Continuation)));
-        assert_eq!(et.parsers.len(), 2);
-        assert!(et.errs.is_empty());
-
-        let o = et.unsupported_continuation();
-
-        let errs = some_or_fail!(o).0;
-        assert_eq!(errs.len(), 1);
-        assert!(matches!(
-            &errs[0],
-            ExpressionError {
-                ctx: ExprCtx { span: Range { start: 1, end: 19 }, txt },
-                kind: ExpressionErrorKind::StrUnterminated,
-            } if txt.lineno == 1
-        ));
-
-        assert!(et.parsers.is_empty());
-        assert!(et.errs.is_empty());
-    }
-
-    #[test]
-    fn continuation_tied_to_expression_first_line() {
-        let mut et: ExpressionTree = Default::default();
-        let tokens = [
-            make_tokenline_no(
-                [TokenKind::StringBegin {
+        #[test]
+        fn continuation_to_error() {
+            let mut et: ExpressionTree = Default::default();
+            let tokens = [make_tokenline([
+                TokenKind::Constant(Constant::Boolean(true)),
+                TokenKind::StringBegin {
                     s: "foo".to_owned(),
                     line_cont: false,
-                }],
-                1,
-            ),
-            make_tokenline_no(
-                [TokenKind::StringFragment {
-                    s: "bar".to_owned(),
+                },
+            ])];
+
+            let r = et.parse(tokens);
+
+            assert!(matches!(r, Ok(ParserOutput::Continuation)));
+            assert_eq!(et.parsers.len(), 2);
+            assert!(et.errs.is_empty());
+
+            let o = et.unsupported_continuation();
+
+            let errs = extract_or_fail!(some_or_fail!(o), ParserError::Syntax).0;
+            assert_eq!(errs.len(), 1);
+            assert!(matches!(
+                &errs[0],
+                ExpressionError {
+                    ctx: ExprCtx { span: Range { start: 1, end: 19 }, txt },
+                    kind: ExpressionErrorKind::StrUnterminated,
+                } if txt.lineno == 1
+            ));
+
+            assert!(et.parsers.is_empty());
+            assert!(et.errs.is_empty());
+        }
+
+        #[test]
+        fn continuation_tied_to_expression_first_line() {
+            let mut et: ExpressionTree = Default::default();
+            let tokens = [
+                make_tokenline_no(
+                    [TokenKind::StringBegin {
+                        s: "foo".to_owned(),
+                        line_cont: false,
+                    }],
+                    1,
+                ),
+                make_tokenline_no(
+                    [TokenKind::StringFragment {
+                        s: "bar".to_owned(),
+                        line_cont: false,
+                    }],
+                    2,
+                ),
+            ];
+
+            let r = et.parse(tokens);
+
+            assert!(matches!(r, Ok(ParserOutput::Continuation)));
+            assert_eq!(et.parsers.len(), 2);
+            assert!(et.errs.is_empty());
+
+            let o = et.unsupported_continuation();
+
+            let errs = extract_or_fail!(some_or_fail!(o), ParserError::Syntax).0;
+            assert_eq!(errs.len(), 1);
+            assert!(matches!(
+                &errs[0],
+                ExpressionError {
+                    ctx: ExprCtx { span: Range { start: 0, end: 19 }, txt },
+                    kind: ExpressionErrorKind::StrUnterminated,
+                } if txt.lineno == 1
+            ));
+
+            assert!(et.parsers.is_empty());
+            assert!(et.errs.is_empty());
+        }
+
+        #[test]
+        fn continuation_ignored_if_existing_errors() {
+            let mut et: ExpressionTree = Default::default();
+            let tokens = [make_tokenline([
+                TokenKind::Constant(Constant::Boolean(true)),
+                TokenKind::DirectiveCase(true),
+                TokenKind::StringBegin {
+                    s: "foo".to_owned(),
                     line_cont: false,
-                }],
-                2,
-            ),
-        ];
+                },
+            ])];
 
-        let r = et.parse(tokens);
+            let r = et.parse(tokens);
 
-        assert!(matches!(r, Ok(ParserOutput::Continuation)));
-        assert_eq!(et.parsers.len(), 2);
-        assert!(et.errs.is_empty());
-
-        let o = et.unsupported_continuation();
-
-        let errs = some_or_fail!(o).0;
-        assert_eq!(errs.len(), 1);
-        assert!(matches!(
-            &errs[0],
-            ExpressionError {
-                ctx: ExprCtx { span: Range { start: 0, end: 19 }, txt },
-                kind: ExpressionErrorKind::StrUnterminated,
-            } if txt.lineno == 1
-        ));
-
-        assert!(et.parsers.is_empty());
-        assert!(et.errs.is_empty());
+            let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
+            assert_eq!(errs.len(), 1);
+            assert!(matches!(
+                &errs[0],
+                ExpressionError {
+                    ctx: ExprCtx { span: Range { start: 1, end: 2 }, txt },
+                    kind: ExpressionErrorKind::Unimplemented(TokenKind::DirectiveCase(true)),
+                } if txt.lineno == 1
+            ));
+            assert!(et.parsers.is_empty());
+            assert!(et.errs.is_empty());
+        }
     }
 
-    #[test]
-    fn continuation_ignored_if_existing_errors() {
-        let mut et: ExpressionTree = Default::default();
-        let tokens = [make_tokenline([
-            TokenKind::Constant(Constant::Boolean(true)),
-            TokenKind::DirectiveCase(true),
-            TokenKind::StringBegin {
-                s: "foo".to_owned(),
-                line_cont: false,
-            },
-        ])];
+    mod errors {
+        use super::*;
 
-        let r = et.parse(tokens);
+        #[test]
+        fn display_syntax_error() {
+            let err = ParserError::Syntax(SyntaxError(Vec::new()));
 
-        let errs = err_or_fail!(r).0;
-        assert_eq!(errs.len(), 1);
-        assert!(matches!(
-            &errs[0],
-            ExpressionError {
-                ctx: ExprCtx { span: Range { start: 1, end: 2 }, txt },
-                kind: ExpressionErrorKind::Unimplemented(TokenKind::DirectiveCase(true)),
-            } if txt.lineno == 1
-        ));
-        assert!(et.parsers.is_empty());
-        assert!(et.errs.is_empty());
+            assert_eq!(err.to_string(), "fatal error: invalid syntax");
+        }
+
+        #[test]
+        fn display_invalid_error() {
+            let err = ParserError::Invalid(ProgramError);
+
+            assert_eq!(err.to_string(), "fatal error: invalid parser state reached");
+        }
+
+        #[test]
+        fn syntax_source() {
+            let err = ParserError::Syntax(SyntaxError(Vec::new()));
+
+            let inner = some_or_fail!(err.source());
+
+            assert!(matches!(
+                inner.downcast_ref::<SyntaxError>().unwrap(),
+                SyntaxError(_)
+            ));
+        }
+
+        #[test]
+        fn invalid_source() {
+            let err = ParserError::Invalid(ProgramError);
+
+            let inner = some_or_fail!(err.source());
+
+            assert!(matches!(
+                inner.downcast_ref::<ProgramError>().unwrap(),
+                ProgramError
+            ));
+        }
     }
 }

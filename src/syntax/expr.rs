@@ -23,6 +23,17 @@ impl Program {
 }
 
 #[derive(Debug)]
+pub(crate) struct ProgramError;
+
+impl Display for ProgramError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        f.write_str("invalid parser state reached")
+    }
+}
+
+impl Error for ProgramError {}
+
+#[derive(Debug)]
 pub(super) struct ExpressionType<T> {
     pub(super) ctx: ExprCtx,
     pub(super) kind: T,
@@ -76,17 +87,6 @@ impl ExpressionKind {
         TypeName(self)
     }
 }
-
-#[derive(Debug)]
-pub(super) struct ProgramError;
-
-impl Display for ProgramError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        f.write_str("invalid parser state reached")
-    }
-}
-
-impl Error for ProgramError {}
 
 pub(super) type ExpressionError = ExpressionType<ExpressionErrorKind>;
 
