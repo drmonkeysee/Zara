@@ -3,9 +3,7 @@ mod tests;
 
 use super::{
     Program,
-    expr::{
-        ExprCtx, Expression, ExpressionError, ExpressionErrorKind, ExpressionKind, ProgramError,
-    },
+    expr::{ExprCtx, Expression, ExpressionError, ExpressionErrorKind, ExpressionKind},
 };
 use crate::{
     constant::Constant,
@@ -14,7 +12,23 @@ use crate::{
     txt::TextLine,
     value::Value,
 };
-use std::{ops::ControlFlow, rc::Rc};
+use std::{
+    error::Error,
+    fmt::{self, Display, Formatter},
+    ops::ControlFlow,
+    rc::Rc,
+};
+
+#[derive(Debug)]
+pub(crate) struct InvalidParseError;
+
+impl Display for InvalidParseError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        f.write_str("invalid parser state reached")
+    }
+}
+
+impl Error for InvalidParseError {}
 
 pub(super) type ParseFlow = ControlFlow<ParseBreak>;
 
@@ -73,13 +87,13 @@ impl ParseNode {
 }
 
 impl TryFrom<ParseNode> for Program {
-    type Error = ProgramError;
+    type Error = InvalidParseError;
 
     fn try_from(value: ParseNode) -> Result<Self, <Self as TryFrom<ParseNode>>::Error> {
         if let ParseNode::Prg(seq) = value {
             Ok(Program::new(seq))
         } else {
-            Err(ProgramError)
+            Err(InvalidParseError)
         }
     }
 }

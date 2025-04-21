@@ -1,7 +1,7 @@
 mod expr;
 mod parse;
 
-pub(crate) use self::expr::{Program, ProgramError};
+pub(crate) use self::{expr::Program, parse::InvalidParseError};
 use self::{
     expr::{ExprCtx, Expression, ExpressionError, ExpressionKind, PeekableExt},
     parse::{ParseBreak, ParseFlow, ParseNode},
@@ -24,7 +24,7 @@ pub(crate) enum ParserOutput {
 
 #[derive(Debug)]
 pub(crate) enum ParserError {
-    Invalid(ProgramError),
+    Invalid(InvalidParseError),
     Syntax(SyntaxError),
 }
 
@@ -56,8 +56,8 @@ impl Error for ParserError {
     }
 }
 
-impl From<ProgramError> for ParserError {
-    fn from(value: ProgramError) -> Self {
+impl From<InvalidParseError> for ParserError {
+    fn from(value: InvalidParseError) -> Self {
         Self::Invalid(value)
     }
 }
@@ -131,7 +131,7 @@ impl Display for ParserErrorMessage<'_> {
             ParserError::Invalid(_) => f.write_str("unexpected end-of-parse\n"),
             ParserError::Syntax(SyntaxError(errs)) => {
                 for (txt, errs) in errs.iter().peekable().groupby_txt() {
-                    ParseErrorLineMessage((txt, &errs)).fmt(f)?;
+                    SyntaxErrorLineMessage((txt, &errs)).fmt(f)?;
                 }
                 Ok(())
             }
@@ -211,10 +211,10 @@ impl Parser for ExpressionTree {
     }
 }
 
-struct ParseErrorLineMessage<'a>((&'a TextLine, &'a [&'a ExpressionError]));
+struct SyntaxErrorLineMessage<'a>((&'a TextLine, &'a [&'a ExpressionError]));
 
 // TODO: unify this with token error message
-impl Display for ParseErrorLineMessage<'_> {
+impl Display for SyntaxErrorLineMessage<'_> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         let (txtline, errs) = self.0;
         txtline.display_header().fmt(f)?;
@@ -690,7 +690,7 @@ mod tests {
 
         #[test]
         fn display_invalid_error() {
-            let err = ParserError::Invalid(ProgramError);
+            let err = ParserError::Invalid(InvalidParseError);
 
             assert_eq!(err.to_string(), "fatal error: invalid parser state reached");
         }
@@ -709,13 +709,13 @@ mod tests {
 
         #[test]
         fn invalid_source() {
-            let err = ParserError::Invalid(ProgramError);
+            let err = ParserError::Invalid(InvalidParseError);
 
             let inner = some_or_fail!(err.source());
 
             assert!(matches!(
-                inner.downcast_ref::<ProgramError>().unwrap(),
-                ProgramError
+                inner.downcast_ref::<InvalidParseError>().unwrap(),
+                InvalidParseError
             ));
         }
     }

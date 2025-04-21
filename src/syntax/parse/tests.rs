@@ -1066,7 +1066,7 @@ mod program {
             mode: ParseMode::CommentBlock,
         });
 
-        let r: Result<Program, ProgramError> = p.try_into();
+        let r: Result<Program, InvalidParseError> = p.try_into();
 
         assert!(r.is_err());
     }
