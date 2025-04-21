@@ -43,10 +43,6 @@ impl ParseNode {
         Self::Prg(Vec::new())
     }
 
-    pub(super) fn fail() -> Self {
-        Self::Fail
-    }
-
     fn new(mode: ParseMode, start: usize, txt: impl Into<Rc<TextLine>>) -> Self {
         let txt = txt.into();
         Self::Expr(ExprNode {

@@ -159,7 +159,7 @@ impl ExpressionTree {
                     errs.push(err);
                     if fail {
                         // NOTE: discard rest of input
-                        parser = ParseNode::fail();
+                        parser = ParseNode::Fail;
                         self.parsers.clear();
                     }
                 }
