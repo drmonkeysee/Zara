@@ -136,8 +136,18 @@ impl TryFrom<ExprNode> for Expression {
 #[derive(Debug)]
 pub(super) enum ParseBreak {
     Complete,
-    Err(ExpressionError, ErrFlow),
+    Err { err: ExpressionError, fail: bool },
     New(ParseNew),
+}
+
+impl ParseBreak {
+    fn fail(err: ExpressionError) -> Self {
+        Self::Err { err, fail: true }
+    }
+
+    fn recover(err: ExpressionError) -> Self {
+        Self::Err { err, fail: false }
+    }
 }
 
 #[derive(Debug)]
@@ -150,14 +160,6 @@ impl ParseNew {
     pub(super) fn into_node(self, txt: impl Into<Rc<TextLine>>) -> ParseNode {
         ParseNode::new(self.mode, self.start, txt)
     }
-}
-
-pub(super) type ErrFlow = ControlFlow<Recovery>;
-
-#[derive(Debug)]
-pub(super) enum Recovery {
-    DiscardTo(TokenKind),
-    Fail,
 }
 
 #[derive(Debug)]
@@ -187,16 +189,13 @@ fn parse_comment_block(token: Token, txt: &Rc<TextLine>) -> ParseFlow {
     match token.kind {
         TokenKind::CommentBlockFragment { .. } => ParseFlow::Continue(()),
         TokenKind::CommentBlockEnd => ParseFlow::Break(ParseBreak::Complete),
-        _ => ParseFlow::Break(ParseBreak::Err(
-            ExpressionError {
-                ctx: ExprCtx {
-                    span: token.span,
-                    txt: Rc::clone(txt),
-                },
-                kind: ExpressionErrorKind::CommentBlockInvalid(token.kind),
+        _ => ParseFlow::Break(ParseBreak::fail(ExpressionError {
+            ctx: ExprCtx {
+                span: token.span,
+                txt: Rc::clone(txt),
             },
-            ErrFlow::Break(Recovery::Fail),
-        )),
+            kind: ExpressionErrorKind::CommentBlockInvalid(token.kind),
+        })),
     }
 }
 
@@ -272,28 +271,22 @@ fn parse_sequence(seq: &mut Vec<Expression>, token: Token, txt: &Rc<TextLine>) -
         | TokenKind::StringDiscard
         | TokenKind::StringEnd(_)
         | TokenKind::StringFragment { .. } => {
-            return ParseFlow::Break(ParseBreak::Err(
-                ExpressionError {
-                    ctx: ExprCtx {
-                        span: token.span,
-                        txt: Rc::clone(txt),
-                    },
-                    kind: ExpressionErrorKind::SeqInvalid(token.kind),
+            return ParseFlow::Break(ParseBreak::fail(ExpressionError {
+                ctx: ExprCtx {
+                    span: token.span,
+                    txt: Rc::clone(txt),
                 },
-                ErrFlow::Break(Recovery::Fail),
-            ));
+                kind: ExpressionErrorKind::SeqInvalid(token.kind),
+            }));
         }
         _ => {
-            return ParseFlow::Break(ParseBreak::Err(
-                ExpressionError {
-                    ctx: ExprCtx {
-                        span: token.span,
-                        txt: Rc::clone(txt),
-                    },
-                    kind: ExpressionErrorKind::Unimplemented(token.kind),
+            return ParseFlow::Break(ParseBreak::recover(ExpressionError {
+                ctx: ExprCtx {
+                    span: token.span,
+                    txt: Rc::clone(txt),
                 },
-                ErrFlow::Continue(()),
-            ));
+                kind: ExpressionErrorKind::Unimplemented(token.kind),
+            }));
         }
     }
     ParseFlow::Continue(())
@@ -312,16 +305,13 @@ fn parse_str(buf: &mut String, token: Token, txt: &Rc<TextLine>) -> ParseFlow {
             buf.push_str(&s);
             ParseFlow::Break(ParseBreak::Complete)
         }
-        _ => ParseFlow::Break(ParseBreak::Err(
-            ExpressionError {
-                ctx: ExprCtx {
-                    span: token.span,
-                    txt: Rc::clone(txt),
-                },
-                kind: ExpressionErrorKind::StrInvalid(token.kind),
+        _ => ParseFlow::Break(ParseBreak::fail(ExpressionError {
+            ctx: ExprCtx {
+                span: token.span,
+                txt: Rc::clone(txt),
             },
-            ErrFlow::Break(Recovery::Fail),
-        )),
+            kind: ExpressionErrorKind::StrInvalid(token.kind),
+        })),
     }
 }
 
@@ -336,16 +326,13 @@ fn parse_verbatim_identifier(buf: &mut String, token: Token, txt: &Rc<TextLine>)
             buf.push_str(&s);
             ParseFlow::Break(ParseBreak::Complete)
         }
-        _ => ParseFlow::Break(ParseBreak::Err(
-            ExpressionError {
-                ctx: ExprCtx {
-                    span: token.span,
-                    txt: Rc::clone(txt),
-                },
-                kind: ExpressionErrorKind::IdentifierInvalid(token.kind),
+        _ => ParseFlow::Break(ParseBreak::fail(ExpressionError {
+            ctx: ExprCtx {
+                span: token.span,
+                txt: Rc::clone(txt),
             },
-            ErrFlow::Break(Recovery::Fail),
-        )),
+            kind: ExpressionErrorKind::IdentifierInvalid(token.kind),
+        })),
     }
 }
 

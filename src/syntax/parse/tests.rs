@@ -400,13 +400,13 @@ mod identifier {
 
         assert!(matches!(
             f,
-            ParseFlow::Break(ParseBreak::Err(
-                ExpressionError {
+            ParseFlow::Break(ParseBreak::Err {
+                err: ExpressionError {
                     ctx: ExprCtx { span: Range { start: 4, end: 5 }, txt: line },
                     kind: ExpressionErrorKind::IdentifierInvalid(TokenKind::ParenLeft),
                 },
-                ErrFlow::Break(Recovery::Fail),
-            )) if Rc::ptr_eq(&line, &txt)
+                fail: true,
+            }) if Rc::ptr_eq(&line, &txt)
         ));
         assert_eq!(s, "start\n");
     }
@@ -525,13 +525,13 @@ mod sequence {
 
         assert!(matches!(
             f,
-            ParseFlow::Break(ParseBreak::Err(
-                ExpressionError {
+            ParseFlow::Break(ParseBreak::Err {
+                err: ExpressionError {
                     ctx: ExprCtx { span: Range { start: 0, end: 3 }, txt: line },
                     kind: ExpressionErrorKind::SeqInvalid(TokenKind::StringEnd(_)),
                 },
-                ErrFlow::Break(Recovery::Fail),
-            )) if Rc::ptr_eq(&line, &txt)
+                fail: true,
+            }) if Rc::ptr_eq(&line, &txt)
         ));
         assert!(seq.is_empty());
     }
@@ -861,13 +861,13 @@ mod list {
 
         assert!(matches!(
             f,
-            ParseFlow::Break(ParseBreak::Err(
-                ExpressionError {
+            ParseFlow::Break(ParseBreak::Err {
+                err: ExpressionError {
                     ctx: ExprCtx { span: Range { start: 6, end: 7 }, txt: line },
                     kind: ExpressionErrorKind::SeqInvalid(TokenKind::StringDiscard),
                 },
-                ErrFlow::Break(Recovery::Fail),
-            )) if Rc::ptr_eq(&line, &txt)
+                fail: true,
+            }) if Rc::ptr_eq(&line, &txt)
         ));
         assert_eq!(seq.len(), 3);
     }
@@ -940,13 +940,13 @@ mod string {
 
         assert!(matches!(
             f,
-            ParseFlow::Break(ParseBreak::Err(
-                ExpressionError {
+            ParseFlow::Break(ParseBreak::Err {
+                err: ExpressionError {
                     ctx: ExprCtx { span: Range { start: 4, end: 5 }, txt: line },
                     kind: ExpressionErrorKind::StrInvalid(TokenKind::ParenLeft),
                 },
-                ErrFlow::Break(Recovery::Fail),
-            )) if Rc::ptr_eq(&line, &txt)
+                fail: true,
+            }) if Rc::ptr_eq(&line, &txt)
         ));
         assert_eq!(s, "start\n");
     }
@@ -993,15 +993,15 @@ mod comment {
 
         assert!(matches!(
             f,
-            ParseFlow::Break(ParseBreak::Err(
-                ExpressionError {
+            ParseFlow::Break(ParseBreak::Err {
+                err: ExpressionError {
                     ctx: ExprCtx { span: Range { start: 0, end: 4 }, txt: line },
                     kind: ExpressionErrorKind::CommentBlockInvalid(
                         TokenKind::CommentBlockBegin { .. }
                     ),
                 },
-                ErrFlow::Break(Recovery::Fail),
-            )) if Rc::ptr_eq(&line, &txt)
+                fail: true,
+            }) if Rc::ptr_eq(&line, &txt)
         ));
     }
 
@@ -1017,13 +1017,13 @@ mod comment {
 
         assert!(matches!(
             f,
-            ParseFlow::Break(ParseBreak::Err(
-                ExpressionError {
+            ParseFlow::Break(ParseBreak::Err {
+                err: ExpressionError {
                     ctx: ExprCtx { span: Range { start: 0, end: 1 }, txt: line },
                     kind: ExpressionErrorKind::CommentBlockInvalid(TokenKind::ParenLeft),
                 },
-                ErrFlow::Break(Recovery::Fail),
-            )) if Rc::ptr_eq(&line, &txt)
+                fail: true,
+            }) if Rc::ptr_eq(&line, &txt)
         ));
     }
 }
