@@ -44,10 +44,10 @@ pub(crate) struct TokenDescriptor<'a>(&'a Constant);
 impl Display for TokenDescriptor<'_> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self.0 {
-            Constant::Boolean(_) => "BOOL".fmt(f),
-            Constant::Character(_) => "CHAR".fmt(f),
-            Constant::Number(n) => format!("NUM<{}>", n.as_token_descriptor()).fmt(f),
-            Constant::String(_) => "STR".fmt(f),
+            Constant::Boolean(_) => f.write_str("BOOL"),
+            Constant::Character(_) => f.write_str("CHAR"),
+            Constant::Number(n) => write!(f, "NUM<{}>", n.as_token_descriptor()),
+            Constant::String(_) => f.write_str("STR"),
         }
     }
 }
@@ -57,10 +57,10 @@ pub(crate) struct TypeName<'a>(&'a Constant);
 impl Display for TypeName<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self.0 {
-            Constant::Boolean(_) => "boolean".fmt(f),
-            Constant::Character(_) => "character".fmt(f),
-            Constant::Number(_) => "number".fmt(f),
-            Constant::String(_) => "string".fmt(f),
+            Constant::Boolean(_) => f.write_str("boolean"),
+            Constant::Character(_) => f.write_str("character"),
+            Constant::Number(_) => f.write_str("number"),
+            Constant::String(_) => f.write_str("string"),
         }
     }
 }

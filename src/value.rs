@@ -64,10 +64,10 @@ pub(crate) struct TypeName<'a>(&'a Value);
 impl Display for TypeName<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self.0 {
-            Value::Ast(_) => "abstract syntax tree".fmt(f),
-            Value::ByteVector(_) => "bytevector".fmt(f),
+            Value::Ast(_) => f.write_str("abstract syntax tree"),
+            Value::ByteVector(_) => f.write_str("bytevector"),
             Value::Constant(c) => c.as_typename().fmt(f),
-            Value::TokenList(_) => "token list".fmt(f),
+            Value::TokenList(_) => f.write_str("token list"),
         }
     }
 }

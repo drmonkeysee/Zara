@@ -169,8 +169,8 @@ struct TypeName<'a>(&'a ExpressionKind);
 impl Display for TypeName<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self.0 {
-            ExpressionKind::Call { .. } => "procedure call".fmt(f),
-            ExpressionKind::Identifier(_) => "identifier".fmt(f),
+            ExpressionKind::Call { .. } => f.write_str("procedure call"),
+            ExpressionKind::Identifier(_) => f.write_str("identifier"),
             ExpressionKind::Literal(val) => val.as_typename().fmt(f),
         }
     }

@@ -127,19 +127,19 @@ impl ExprNode {
 impl TryFrom<ExprNode> for Expression {
     type Error = Vec<ExpressionError>;
 
-    fn try_from(node: ExprNode) -> Result<Self, <Self as TryFrom<ExprNode>>::Error> {
-        Ok(match node.mode {
-            ParseMode::ByteVector(seq) => into_bytevector(seq, node.ctx)?,
-            ParseMode::Identifier(s) => Expression {
-                ctx: node.ctx,
+    fn try_from(value: ExprNode) -> Result<Self, <Self as TryFrom<ExprNode>>::Error> {
+        match value.mode {
+            ParseMode::ByteVector(seq) => into_bytevector(seq, value.ctx),
+            ParseMode::Identifier(s) => Ok(Expression {
+                ctx: value.ctx,
                 kind: ExpressionKind::Identifier(s.into()),
-            },
-            ParseMode::List(seq) => convert_list(seq, node.ctx),
+            }),
+            ParseMode::List(seq) => Ok(convert_list(seq, value.ctx)),
             ParseMode::StringLiteral(s) => {
-                Expression::constant(Constant::String(s.into()), node.ctx)
+                Ok(Expression::constant(Constant::String(s.into()), value.ctx))
             }
             _ => todo!("fill out rest of arms"),
-        })
+        }
     }
 }
 

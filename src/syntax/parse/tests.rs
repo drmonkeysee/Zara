@@ -934,7 +934,7 @@ mod list {
             } if Rc::ptr_eq(&txt, &line)
         ));
         let ExpressionKind::Call { args, proc } = expr.kind else {
-            unreachable!("unexpected test assertion");
+            unreachable!();
         };
         assert!(matches!(
             &*proc,

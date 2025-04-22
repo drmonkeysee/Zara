@@ -249,7 +249,7 @@ impl Display for TokenWithSourceMessage<'_> {
             f,
             "{:20}{:30}'{}'",
             format!("{}:{:?}", txt.lineno, t.span),
-            t.kind,
+            t.kind.to_string(),
             txt.line.get(t.span.clone()).unwrap_or("INVALID RANGE")
         )
     }

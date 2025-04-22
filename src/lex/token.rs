@@ -76,36 +76,36 @@ impl TokenKind {
 impl Display for TokenKind {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
-            Self::ByteVector => "BYTEVECTOR".fmt(f),
-            Self::Comment => "COMMENT".fmt(f),
-            Self::CommentBlockBegin { depth } => format!("COMMENTBEGIN<{depth:?}>").fmt(f),
-            Self::CommentBlockEnd => "COMMENTEND".fmt(f),
-            Self::CommentBlockFragment { depth } => format!("COMMENTFRAGMENT<{depth:?}>").fmt(f),
-            Self::CommentDatum => "DATUMCOMMENT".fmt(f),
-            Self::Constant(con) => format!("CONSTANT<{}>", con.as_token_descriptor()).fmt(f),
-            Self::DirectiveCase(fold) => format!("FOLDCASE<{fold:?}>").fmt(f),
-            Self::Identifier(_) => "IDENTIFIER".fmt(f),
-            Self::IdentifierBegin(_) => "IDENTBEGIN".fmt(f),
-            Self::IdentifierDiscard => "IDENTDISCARD".fmt(f),
-            Self::IdentifierEnd(_) => "IDENTEND".fmt(f),
-            Self::IdentifierFragment(_) => "IDENTFRAGMENT".fmt(f),
-            Self::Imaginary(r) => format!("IMAGINARY<{}>", r.as_token_descriptor()).fmt(f),
-            Self::ParenLeft => "LEFTPAREN".fmt(f),
-            Self::ParenRight => "RIGHTPAREN".fmt(f),
-            Self::PairJoiner => "PAIR".fmt(f),
-            Self::Quasiquote => "QUASIQUOTE".fmt(f),
-            Self::Quote => "QUOTE".fmt(f),
+            Self::ByteVector => f.write_str("BYTEVECTOR"),
+            Self::Comment => f.write_str("COMMENT"),
+            Self::CommentBlockBegin { depth } => write!(f, "COMMENTBEGIN<{depth:?}>"),
+            Self::CommentBlockEnd => f.write_str("COMMENTEND"),
+            Self::CommentBlockFragment { depth } => write!(f, "COMMENTFRAGMENT<{depth:?}>"),
+            Self::CommentDatum => f.write_str("DATUMCOMMENT"),
+            Self::Constant(con) => write!(f, "CONSTANT<{}>", con.as_token_descriptor()),
+            Self::DirectiveCase(fold) => write!(f, "FOLDCASE<{fold:?}>"),
+            Self::Identifier(_) => f.write_str("IDENTIFIER"),
+            Self::IdentifierBegin(_) => f.write_str("IDENTBEGIN"),
+            Self::IdentifierDiscard => f.write_str("IDENTDISCARD"),
+            Self::IdentifierEnd(_) => f.write_str("IDENTEND"),
+            Self::IdentifierFragment(_) => f.write_str("IDENTFRAGMENT"),
+            Self::Imaginary(r) => write!(f, "IMAGINARY<{}>", r.as_token_descriptor()),
+            Self::ParenLeft => f.write_str("LEFTPAREN"),
+            Self::ParenRight => f.write_str("RIGHTPAREN"),
+            Self::PairJoiner => f.write_str("PAIR"),
+            Self::Quasiquote => f.write_str("QUASIQUOTE"),
+            Self::Quote => f.write_str("QUOTE"),
             Self::StringBegin { line_cont, .. } => {
-                format!("STRBEGIN{}", line_cont_token(*line_cont)).fmt(f)
+                write!(f, "STRBEGIN{}", line_cont_token(*line_cont))
             }
-            Self::StringDiscard => "STRDISCARD".fmt(f),
-            Self::StringEnd(_) => "STREND".fmt(f),
+            Self::StringDiscard => f.write_str("STRDISCARD"),
+            Self::StringEnd(_) => f.write_str("STREND"),
             Self::StringFragment { line_cont, .. } => {
-                format!("STRFRAGMENT{}", line_cont_token(*line_cont)).fmt(f)
+                write!(f, "STRFRAGMENT{}", line_cont_token(*line_cont))
             }
-            Self::Unquote => "UNQUOTE".fmt(f),
-            Self::UnquoteSplice => "UNQUOTESPLICE".fmt(f),
-            Self::Vector => "VECTOR".fmt(f),
+            Self::Unquote => f.write_str("UNQUOTE"),
+            Self::UnquoteSplice => f.write_str("UNQUOTESPLICE"),
+            Self::Vector => f.write_str("VECTOR"),
         }
     }
 }

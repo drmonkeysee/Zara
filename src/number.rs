@@ -632,7 +632,7 @@ pub(crate) struct TokenDescriptor<'a>(&'a Number);
 impl Display for TokenDescriptor<'_> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self.0 {
-            Number::Complex(_) => "CPX".fmt(f),
+            Number::Complex(_) => f.write_str("CPX"),
             Number::Real(r) => r.as_token_descriptor().fmt(f),
         }
     }
@@ -643,9 +643,9 @@ pub(crate) struct RealTokenDescriptor<'a>(&'a Real);
 impl Display for RealTokenDescriptor<'_> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self.0 {
-            Real::Float(_) => "FLT".fmt(f),
-            Real::Integer(_) => "INT".fmt(f),
-            Real::Rational(_) => "RAT".fmt(f),
+            Real::Float(_) => f.write_str("FLT"),
+            Real::Integer(_) => f.write_str("INT"),
+            Real::Rational(_) => f.write_str("RAT"),
         }
     }
 }
@@ -775,10 +775,10 @@ struct NumericTypeName<'a>(&'a Number);
 impl Display for NumericTypeName<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self.0 {
-            Number::Complex(_) => "complex".fmt(f),
-            Number::Real(Real::Float(_)) => "floating-point".fmt(f),
-            Number::Real(Real::Integer(_)) => "integer".fmt(f),
-            Number::Real(Real::Rational(_)) => "rational".fmt(f),
+            Number::Complex(_) => f.write_str("complex"),
+            Number::Real(Real::Float(_)) => f.write_str("floating-point"),
+            Number::Real(Real::Integer(_)) => f.write_str("integer"),
+            Number::Real(Real::Rational(_)) => f.write_str("rational"),
         }
     }
 }

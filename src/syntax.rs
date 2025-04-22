@@ -36,14 +36,11 @@ impl ParserError {
 
 impl Display for ParserError {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        write!(
-            f,
-            "fatal error: {}",
-            match self {
-                Self::Invalid(pe) => pe.to_string(),
-                Self::Syntax(se) => se.to_string(),
-            }
-        )
+        f.write_str("fatal error: ")?;
+        match self {
+            Self::Invalid(pe) => pe.fmt(f),
+            Self::Syntax(se) => se.fmt(f),
+        }
     }
 }
 
