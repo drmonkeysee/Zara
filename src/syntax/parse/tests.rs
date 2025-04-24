@@ -236,7 +236,7 @@ mod bytevector {
     }
 }
 
-mod continuation {
+mod nodeutil {
     use super::*;
     use crate::testutil::{make_textline, some_or_fail};
 
@@ -347,6 +347,67 @@ mod continuation {
             } if txt.lineno == 1
         ));
     }
+
+    #[test]
+    fn unwrap_expr_node() {
+        let txt = Rc::new(make_textline());
+        let p = ParseNode::new(
+            ParseMode::StringLiteral("foo".to_owned()),
+            3,
+            Rc::clone(&txt),
+        );
+
+        let o = p.into_expr_node();
+
+        let exp = some_or_fail!(o);
+        assert!(matches!(
+            exp,
+            ExprNode {
+                ctx: ExprCtx {
+                    span: Range { start: 3, end: 19 },
+                    txt: line
+                },
+                mode: ParseMode::StringLiteral(s)
+            } if s == "foo" && Rc::ptr_eq(&txt, &line)
+        ));
+    }
+
+    #[test]
+    fn unwrap_other_node() {
+        let p = ParseNode::prg();
+
+        let o = p.into_expr_node();
+
+        assert!(o.is_none());
+    }
+
+    #[test]
+    fn failed_parse() {
+        let p = ParseNode::InvalidTokenStream;
+
+        assert!(p.is_failed_parse());
+    }
+
+    #[test]
+    fn not_failed_parse() {
+        let p = ParseNode::prg();
+
+        assert!(!p.is_failed_parse());
+    }
+
+    #[test]
+    fn invalid_node_parse() {
+        let mut p = ParseNode::InvalidTokenStream;
+        let token = Token {
+            kind: TokenKind::ParenLeft,
+            span: 0..6,
+        };
+        let txt = Rc::new(make_textline());
+
+        let r = p.parse(token, &txt);
+
+        assert!(r.is_continue());
+    }
 }
 
 mod identifier {
@@ -396,11 +457,11 @@ mod identifier {
         assert!(matches!(
             f,
             ParseFlow::Break(ParseBreak::Err {
+                bad_tokens: true,
                 err: ExpressionError {
                     ctx: ExprCtx { span: Range { start: 4, end: 5 }, txt: line },
                     kind: ExpressionErrorKind::IdentifierInvalid(TokenKind::ParenLeft),
                 },
-                fail: true,
             }) if Rc::ptr_eq(&line, &txt)
         ));
         assert_eq!(s, "start\n");
@@ -544,11 +605,11 @@ mod sequence {
         assert!(matches!(
             f,
             ParseFlow::Break(ParseBreak::Err {
+                bad_tokens: true,
                 err: ExpressionError {
                     ctx: ExprCtx { span: Range { start: 0, end: 3 }, txt: line },
                     kind: ExpressionErrorKind::SeqInvalid(TokenKind::StringEnd(_)),
                 },
-                fail: true,
             }) if Rc::ptr_eq(&line, &txt)
         ));
         assert!(seq.is_empty());
@@ -880,11 +941,11 @@ mod list {
         assert!(matches!(
             f,
             ParseFlow::Break(ParseBreak::Err {
+                bad_tokens: true,
                 err: ExpressionError {
                     ctx: ExprCtx { span: Range { start: 6, end: 7 }, txt: line },
                     kind: ExpressionErrorKind::SeqInvalid(TokenKind::StringDiscard),
                 },
-                fail: true,
             }) if Rc::ptr_eq(&line, &txt)
         ));
         assert_eq!(seq.len(), 3);
@@ -1029,11 +1090,11 @@ mod string {
         assert!(matches!(
             f,
             ParseFlow::Break(ParseBreak::Err {
+                bad_tokens: true,
                 err: ExpressionError {
                     ctx: ExprCtx { span: Range { start: 4, end: 5 }, txt: line },
                     kind: ExpressionErrorKind::StrInvalid(TokenKind::ParenLeft),
                 },
-                fail: true,
             }) if Rc::ptr_eq(&line, &txt)
         ));
         assert_eq!(s, "start\n");
@@ -1105,13 +1166,13 @@ mod comment {
         assert!(matches!(
             f,
             ParseFlow::Break(ParseBreak::Err {
+                bad_tokens: true,
                 err: ExpressionError {
                     ctx: ExprCtx { span: Range { start: 0, end: 4 }, txt: line },
                     kind: ExpressionErrorKind::CommentBlockInvalid(
                         TokenKind::CommentBlockBegin { .. }
                     ),
                 },
-                fail: true,
             }) if Rc::ptr_eq(&line, &txt)
         ));
     }
@@ -1129,11 +1190,11 @@ mod comment {
         assert!(matches!(
             f,
             ParseFlow::Break(ParseBreak::Err {
+                bad_tokens: true,
                 err: ExpressionError {
                     ctx: ExprCtx { span: Range { start: 0, end: 1 }, txt: line },
                     kind: ExpressionErrorKind::CommentBlockInvalid(TokenKind::ParenLeft),
                 },
-                fail: true,
             }) if Rc::ptr_eq(&line, &txt)
         ));
     }
@@ -1167,19 +1228,23 @@ mod program {
     }
 
     #[test]
-    fn node_to_program_error() {
-        let txt = make_textline().into();
-        let p = ParseNode::Expr(ExprNode {
-            ctx: ExprCtx {
-                span: 0..3,
-                txt: Rc::clone(&txt),
-            },
-            mode: ParseMode::CommentBlock,
-        });
+    fn parse_failure_node_to_program_error() {
+        let p = ParseNode::InvalidParseTree(InvalidParseError::InvalidExprSource);
 
         let r: Result<Program, InvalidParseError> = p.try_into();
 
-        assert!(r.is_err());
+        let err = err_or_fail!(r);
+        assert!(matches!(err, InvalidParseError::InvalidExprSource));
+    }
+
+    #[test]
+    fn invalid_node_to_program_error() {
+        let p = ParseNode::new(ParseMode::CommentBlock, 0, make_textline());
+
+        let r: Result<Program, InvalidParseError> = p.try_into();
+
+        let err = err_or_fail!(r);
+        assert!(matches!(err, InvalidParseError::EndOfParse));
     }
 }
 
@@ -1196,13 +1261,13 @@ mod merge {
             },
             kind: ExpressionKind::Literal(Value::Constant(Constant::Boolean(true))),
         }]);
-        let other = ParseNode::Expr(ExprNode {
+        let other = ExprNode {
             ctx: ExprCtx {
                 span: 0..3,
                 txt: Rc::clone(&txt),
             },
             mode: ParseMode::Identifier("foo".to_owned()),
-        });
+        };
 
         let r = p.merge(other);
 
@@ -1222,7 +1287,7 @@ mod merge {
     fn prg_merge_fail() {
         let txt = make_textline().into();
         let mut p = ParseNode::prg();
-        let other = ParseNode::Expr(ExprNode {
+        let other = ExprNode {
             ctx: ExprCtx {
                 span: 0..3,
                 txt: Rc::clone(&txt),
@@ -1234,7 +1299,7 @@ mod merge {
                 },
                 kind: ExpressionKind::Identifier("foo".into()),
             }]),
-        });
+        };
 
         let r = p.merge(other);
 
@@ -1250,12 +1315,18 @@ mod merge {
     }
 
     #[test]
-    fn prg_merge_invalid() {
-        let mut p = ParseNode::prg();
-        let other = ParseNode::Fail;
+    fn invalid_node_merge() {
+        let mut p = ParseNode::InvalidTokenStream;
+        let other = ExprNode {
+            ctx: ExprCtx {
+                span: 0..3,
+                txt: make_textline().into(),
+            },
+            mode: ParseMode::Identifier("foo".to_owned()),
+        };
 
         let r = p.merge(other);
 
-        let _err = err_or_fail!(r);
+        assert!(r.is_ok());
     }
 }

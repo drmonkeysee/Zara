@@ -20,7 +20,17 @@ use std::{
 };
 
 #[derive(Debug)]
-pub(crate) struct InvalidParseError;
+pub(crate) enum InvalidParseError {
+    EndOfParse,
+    InvalidExprSource,
+    InvalidExprTarget,
+}
+
+impl InvalidParseError {
+    pub(super) fn display_message(&self) -> InvalidParseErrorMessage {
+        InvalidParseErrorMessage(self)
+    }
+}
 
 impl Display for InvalidParseError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
@@ -31,10 +41,28 @@ impl Display for InvalidParseError {
 impl Error for InvalidParseError {}
 
 pub(super) type ParseFlow = ControlFlow<ParseBreak>;
+pub(super) type MergeResult = Result<(), Vec<ExpressionError>>;
+
+pub(super) struct InvalidParseErrorMessage<'a>(&'a InvalidParseError);
+
+impl Display for InvalidParseErrorMessage<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self.0 {
+            InvalidParseError::EndOfParse => f.write_str("unexpected end-of-parse\n"),
+            InvalidParseError::InvalidExprSource => {
+                f.write_str("unexpected merge source not an expression\n")
+            }
+            InvalidParseError::InvalidExprTarget => {
+                f.write_str("unexpected end-of-parse for merge target\n")
+            }
+        }
+    }
+}
 
 pub(super) enum ParseNode {
     Expr(ExprNode),
-    Fail,
+    InvalidParseTree(InvalidParseError),
+    InvalidTokenStream,
     Prg(Vec<Expression>),
 }
 
@@ -54,22 +82,34 @@ impl ParseNode {
         })
     }
 
+    pub(super) fn is_failed_parse(&self) -> bool {
+        matches!(
+            self,
+            ParseNode::InvalidParseTree(_) | ParseNode::InvalidTokenStream
+        )
+    }
+
     pub(super) fn parse(&mut self, token: Token, txt: &Rc<TextLine>) -> ParseFlow {
         match self {
             Self::Expr(node) => node.parse(token, txt),
-            Self::Fail => ParseFlow::Continue(()),
+            Self::InvalidParseTree(_) | Self::InvalidTokenStream => ParseFlow::Continue(()),
             Self::Prg(seq) => parse_sequence(seq, token, txt),
         }
     }
 
-    pub(super) fn merge(&mut self, other: ParseNode) -> Result<(), Vec<ExpressionError>> {
-        let Self::Expr(other_expr) = other else {
-            todo!("other always needs to be an expr node");
-        };
+    pub(super) fn merge(&mut self, other: ExprNode) -> MergeResult {
         match self {
-            Self::Expr(expr) => expr.merge(other_expr),
-            Self::Fail => Ok(()),
-            Self::Prg(seq) => Ok(seq.push(other_expr.try_into()?)),
+            Self::Expr(expr) => expr.merge(other),
+            Self::InvalidParseTree(_) | Self::InvalidTokenStream => Ok(()),
+            Self::Prg(seq) => Ok(seq.push(other.try_into()?)),
+        }
+    }
+
+    pub(super) fn into_expr_node(self) -> Option<ExprNode> {
+        if let Self::Expr(expr) = self {
+            Some(expr)
+        } else {
+            None
         }
     }
 
@@ -86,10 +126,10 @@ impl TryFrom<ParseNode> for Program {
     type Error = InvalidParseError;
 
     fn try_from(value: ParseNode) -> Result<Self, <Self as TryFrom<ParseNode>>::Error> {
-        if let ParseNode::Prg(seq) = value {
-            Ok(Program::new(seq))
-        } else {
-            Err(InvalidParseError)
+        match value {
+            ParseNode::InvalidParseTree(err) => Err(err),
+            ParseNode::Prg(seq) => Ok(Program::new(seq)),
+            _ => Err(InvalidParseError::EndOfParse),
         }
     }
 }
@@ -109,7 +149,7 @@ impl ExprNode {
         }
     }
 
-    fn merge(&mut self, _other: ExprNode) -> Result<(), Vec<ExpressionError>> {
+    fn merge(&mut self, _other: ExprNode) -> MergeResult {
         todo!();
     }
 
@@ -146,17 +186,26 @@ impl TryFrom<ExprNode> for Expression {
 #[derive(Debug)]
 pub(super) enum ParseBreak {
     Complete,
-    Err { err: ExpressionError, fail: bool },
+    Err {
+        bad_tokens: bool,
+        err: ExpressionError,
+    },
     New(ParseNew),
 }
 
 impl ParseBreak {
-    fn fail(err: ExpressionError) -> Self {
-        Self::Err { err, fail: true }
+    fn recover(err: ExpressionError) -> Self {
+        Self::Err {
+            bad_tokens: false,
+            err,
+        }
     }
 
-    fn recover(err: ExpressionError) -> Self {
-        Self::Err { err, fail: false }
+    fn token_failure(err: ExpressionError) -> Self {
+        Self::Err {
+            bad_tokens: true,
+            err,
+        }
     }
 }
 
@@ -199,7 +248,7 @@ fn parse_comment_block(token: Token, txt: &Rc<TextLine>) -> ParseFlow {
     match token.kind {
         TokenKind::CommentBlockFragment { .. } => ParseFlow::Continue(()),
         TokenKind::CommentBlockEnd => ParseFlow::Break(ParseBreak::Complete),
-        _ => ParseFlow::Break(ParseBreak::fail(ExpressionError {
+        _ => ParseFlow::Break(ParseBreak::token_failure(ExpressionError {
             ctx: ExprCtx {
                 span: token.span,
                 txt: Rc::clone(txt),
@@ -281,7 +330,7 @@ fn parse_sequence(seq: &mut Vec<Expression>, token: Token, txt: &Rc<TextLine>) -
         | TokenKind::StringDiscard
         | TokenKind::StringEnd(_)
         | TokenKind::StringFragment { .. } => {
-            return ParseFlow::Break(ParseBreak::fail(ExpressionError {
+            return ParseFlow::Break(ParseBreak::token_failure(ExpressionError {
                 ctx: ExprCtx {
                     span: token.span,
                     txt: Rc::clone(txt),
@@ -315,7 +364,7 @@ fn parse_str(buf: &mut String, token: Token, txt: &Rc<TextLine>) -> ParseFlow {
             buf.push_str(&s);
             ParseFlow::Break(ParseBreak::Complete)
         }
-        _ => ParseFlow::Break(ParseBreak::fail(ExpressionError {
+        _ => ParseFlow::Break(ParseBreak::token_failure(ExpressionError {
             ctx: ExprCtx {
                 span: token.span,
                 txt: Rc::clone(txt),
@@ -336,7 +385,7 @@ fn parse_verbatim_identifier(buf: &mut String, token: Token, txt: &Rc<TextLine>)
             buf.push_str(&s);
             ParseFlow::Break(ParseBreak::Complete)
         }
-        _ => ParseFlow::Break(ParseBreak::fail(ExpressionError {
+        _ => ParseFlow::Break(ParseBreak::token_failure(ExpressionError {
             ctx: ExprCtx {
                 span: token.span,
                 txt: Rc::clone(txt),

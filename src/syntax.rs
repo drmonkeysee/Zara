@@ -125,7 +125,7 @@ pub(crate) struct ParserErrorMessage<'a>(&'a ParserError);
 impl Display for ParserErrorMessage<'_> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self.0 {
-            ParserError::Invalid(_) => f.write_str("unexpected end-of-parse\n"),
+            ParserError::Invalid(err) => err.display_message().fmt(f),
             ParserError::Syntax(SyntaxError(errs)) => {
                 for (txt, errs) in errs.iter().peekable().groupby_txt() {
                     SyntaxErrorLineMessage((txt, &errs)).fmt(f)?;
@@ -144,20 +144,12 @@ impl ExpressionTree {
         for token in tokens {
             match parser.parse(token, &txt) {
                 ParseFlow::Break(ParseBreak::Complete) => {
-                    let done = parser;
-                    // TODO: fix this unwrap
-                    debug_assert!(!self.parsers.is_empty());
-                    parser = self.parsers.pop().unwrap();
-                    if let Err(errv) = parser.merge(done) {
-                        errs.extend(errv);
-                    }
+                    parser = self.finalize_parser(parser, &mut errs);
                 }
-                ParseFlow::Break(ParseBreak::Err { err, fail }) => {
+                ParseFlow::Break(ParseBreak::Err { bad_tokens, err }) => {
                     errs.push(err);
-                    if fail {
-                        // NOTE: discard rest of input
-                        parser = ParseNode::Fail;
-                        self.parsers.clear();
+                    if bad_tokens {
+                        parser = ParseNode::InvalidTokenStream;
                     }
                 }
                 ParseFlow::Break(ParseBreak::New(new)) => {
@@ -170,7 +162,26 @@ impl ExpressionTree {
         if !errs.is_empty() {
             self.errs.extend(errs);
         }
+        if parser.is_failed_parse() {
+            self.parsers.clear();
+        }
         parser
+    }
+
+    fn finalize_parser(&mut self, parser: ParseNode, errs: &mut Vec<ExpressionError>) -> ParseNode {
+        let err = if let Some(mut p) = self.parsers.pop() {
+            if let Some(done) = parser.into_expr_node() {
+                if let Err(errv) = p.merge(done) {
+                    errs.extend(errv);
+                }
+                return p;
+            } else {
+                InvalidParseError::InvalidExprSource
+            }
+        } else {
+            InvalidParseError::InvalidExprTarget
+        };
+        ParseNode::InvalidParseTree(err)
     }
 
     fn clear(&mut self) {
@@ -558,6 +569,31 @@ mod tests {
             assert!(et.parsers.is_empty());
             assert!(et.errs.is_empty());
         }
+
+        #[test]
+        fn invalid_parse_skips_rest_of_tokens() {
+            let mut et: ExpressionTree = Default::default();
+            et.parsers.push(ParseNode::InvalidParseTree(
+                InvalidParseError::InvalidExprSource,
+            ));
+            let tokens = [make_tokenline_no(
+                [
+                    TokenKind::Constant(Constant::Boolean(true)),
+                    TokenKind::DirectiveCase(true),
+                    TokenKind::Constant(Constant::Character('a')),
+                    TokenKind::DirectiveCase(false),
+                    TokenKind::Constant(Constant::String("foo".into())),
+                ],
+                1,
+            )];
+
+            let r = et.parse(tokens);
+
+            let err = extract_or_fail!(err_or_fail!(r), ParserError::Invalid);
+            assert!(matches!(err, InvalidParseError::InvalidExprSource));
+            assert!(et.parsers.is_empty());
+            assert!(et.errs.is_empty());
+        }
     }
 
     mod continuation {
@@ -677,6 +713,7 @@ mod tests {
 
     mod errors {
         use super::*;
+        use crate::testutil::make_textline;
 
         #[test]
         fn display_syntax_error() {
@@ -687,9 +724,49 @@ mod tests {
 
         #[test]
         fn display_invalid_error() {
-            let err = ParserError::Invalid(InvalidParseError);
+            let err = ParserError::Invalid(InvalidParseError::EndOfParse);
 
             assert_eq!(err.to_string(), "fatal error: invalid parser state reached");
+        }
+
+        #[test]
+        fn display_syntax_message() {
+            let err = ParserError::Syntax(SyntaxError(vec![ExpressionError {
+                ctx: ExprCtx {
+                    span: 0..3,
+                    txt: make_textline().into(),
+                },
+                kind: ExpressionErrorKind::ListUnterminated,
+            }]));
+
+            assert_eq!(
+                err.display_message().to_string(),
+                "mylib:1 (lib/mylib.scm)\n\tline of source code\n\t^^^\n1: unterminated list expression\n"
+            );
+        }
+
+        #[test]
+        fn display_invalid_message() {
+            let err = ParserError::Invalid(InvalidParseError::EndOfParse);
+
+            assert_eq!(
+                err.display_message().to_string(),
+                "unexpected end-of-parse\n"
+            );
+
+            let err = ParserError::Invalid(InvalidParseError::InvalidExprSource);
+
+            assert_eq!(
+                err.display_message().to_string(),
+                "unexpected merge source not an expression\n"
+            );
+
+            let err = ParserError::Invalid(InvalidParseError::InvalidExprTarget);
+
+            assert_eq!(
+                err.display_message().to_string(),
+                "unexpected end-of-parse for merge target\n"
+            );
         }
 
         #[test]
@@ -706,13 +783,13 @@ mod tests {
 
         #[test]
         fn invalid_source() {
-            let err = ParserError::Invalid(InvalidParseError);
+            let err = ParserError::Invalid(InvalidParseError::EndOfParse);
 
             let inner = some_or_fail!(err.source());
 
             assert!(matches!(
                 inner.downcast_ref::<InvalidParseError>().unwrap(),
-                InvalidParseError
+                InvalidParseError::EndOfParse
             ));
         }
     }
