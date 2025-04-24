@@ -159,7 +159,7 @@ impl<'me, 'txt, R: Radix + Default> RadixNumber<'me, 'txt, R> {
         let mut brk = Ok(BreakCondition::default());
         while let Some(item) = self.scanner.next_if_not_delimiter() {
             match self.classifier.classify(item) {
-                RadixControl::Continue(()) => (),
+                RadixControl::Continue(u) => u,
                 RadixControl::Break(b) => {
                     brk = b;
                     break;
@@ -346,7 +346,7 @@ impl<'me, 'txt> Denominator<'me, 'txt> {
         });
         while let Some(item) = self.scanner.next_if_not_delimiter() {
             match classifier.classify(item) {
-                RadixControl::Continue(()) => (),
+                RadixControl::Continue(u) => u,
                 RadixControl::Break(b) => {
                     brk = b;
                     break;

@@ -164,7 +164,7 @@ impl ExpressionTree {
                     self.parsers.push(parser);
                     parser = new.into_node(Rc::clone(&txt));
                 }
-                ParseFlow::Continue(_) => (),
+                ParseFlow::Continue(u) => u,
             }
         }
         if !errs.is_empty() {
