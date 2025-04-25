@@ -99,15 +99,15 @@ impl ParseNode {
 
     pub(super) fn merge(&mut self, other: ExprNode) -> MergeResult {
         match self {
-            Self::Expr(expr) => expr.merge(other),
+            Self::Expr(node) => node.merge(other),
             Self::InvalidParseTree(_) | Self::InvalidTokenStream => Ok(()),
             Self::Prg(seq) => Ok(seq.push(other.try_into()?)),
         }
     }
 
     pub(super) fn into_expr_node(self) -> Option<ExprNode> {
-        if let Self::Expr(expr) = self {
-            Some(expr)
+        if let Self::Expr(node) = self {
+            Some(node)
         } else {
             None
         }
@@ -419,7 +419,7 @@ fn into_bytevector(seq: Vec<Expression>, ctx: ExprCtx) -> IntoExprResult {
             kind: ExpressionKind::Literal(Value::ByteVector(bytes.into_iter().flatten().collect())),
         })
     } else {
-        Err(errs.into_iter().filter_map(Result::err).collect::<Vec<_>>())?
+        Err(errs.into_iter().filter_map(Result::err).collect::<Vec<_>>())
     }
 }
 
