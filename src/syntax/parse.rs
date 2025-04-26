@@ -171,6 +171,7 @@ impl TryFrom<ExprNode> for Option<Expression> {
     fn try_from(value: ExprNode) -> Result<Self, <Self as TryFrom<ExprNode>>::Error> {
         match value.mode {
             ParseMode::ByteVector(seq) => into_bytevector(seq, value.ctx),
+            ParseMode::CommentBlock => Ok(None),
             ParseMode::Identifier(s) => Ok(Some(Expression {
                 ctx: value.ctx,
                 kind: ExpressionKind::Identifier(s.into()),
@@ -180,7 +181,6 @@ impl TryFrom<ExprNode> for Option<Expression> {
                 Constant::String(s.into()),
                 value.ctx,
             ))),
-            _ => todo!("fill out rest of arms"),
         }
     }
 }

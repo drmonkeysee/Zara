@@ -1198,6 +1198,22 @@ mod comment {
             }) if Rc::ptr_eq(&line, &txt)
         ));
     }
+
+    #[test]
+    fn node_into_expr() {
+        let p = ExprNode {
+            ctx: ExprCtx {
+                span: 0..3,
+                txt: make_textline().into(),
+            },
+            mode: ParseMode::CommentBlock,
+        };
+
+        let r: Result<Option<Expression>, _> = p.try_into();
+
+        let o = ok_or_fail!(r);
+        assert!(o.is_none());
+    }
 }
 
 mod program {
