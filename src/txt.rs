@@ -53,9 +53,9 @@ impl Display for TextLineHeader<'_> {
 
 #[derive(Debug)]
 pub struct TextError {
-    pub ctx: Rc<TextContext>,
-    pub lineno: LineNumber,
+    ctx: Rc<TextContext>,
     err: Box<dyn Error>,
+    lineno: LineNumber,
 }
 
 impl TextError {
@@ -69,6 +69,14 @@ impl TextError {
             err: err.into(),
             lineno,
         }
+    }
+
+    pub fn context(&self) -> &TextContext {
+        &self.ctx
+    }
+
+    pub fn line_number(&self) -> LineNumber {
+        self.lineno
     }
 
     #[must_use]

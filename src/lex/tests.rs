@@ -295,8 +295,8 @@ mod lexer {
         let err_lines = err.0;
         assert_eq!(err_lines.len(), 1);
         let inner = extract_or_fail!(&err_lines[0], LineFailure::Read);
-        assert!(Rc::ptr_eq(&inner.ctx, &src.ctx));
-        assert_eq!(inner.lineno, 2);
+        assert_eq!(inner.context() as *const _, Rc::as_ptr(&src.ctx));
+        assert_eq!(inner.line_number(), 2);
         assert!(inner.source().is_some());
         assert!(target.cont.is_none());
     }
@@ -336,8 +336,8 @@ mod lexer {
             } if Rc::ptr_eq(&ctx, &src.ctx) && line == " #z #f #z #\\a"
         ));
         let inner = extract_or_fail!(&err_lines[1], LineFailure::Read);
-        assert!(Rc::ptr_eq(&inner.ctx, &src.ctx));
-        assert_eq!(inner.lineno, 3);
+        assert_eq!(inner.context() as *const _, Rc::as_ptr(&src.ctx));
+        assert_eq!(inner.line_number(), 3);
         assert!(inner.source().is_some());
         assert!(target.cont.is_none());
     }

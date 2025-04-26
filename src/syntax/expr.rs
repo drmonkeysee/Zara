@@ -21,7 +21,6 @@ impl Program {
         self.0.into_iter().map(Expression::eval).last()?
     }
 
-    // NOTE: convenience accessor for parser tests
     #[cfg(test)]
     pub(super) fn unwrap(self) -> Box<[Expression]> {
         self.0

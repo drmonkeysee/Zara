@@ -600,7 +600,7 @@ mod tests {
             let r = some_or_fail!(target.next());
             let line = err_or_fail!(r);
             assert_eq!(line.source().unwrap().to_string(), "oh no!");
-            assert_eq!(line.lineno, 1);
+            assert_eq!(line.line_number(), 1);
         }
     }
 }
