@@ -1,6 +1,6 @@
 use super::*;
 use crate::{
-    testutil::{err_or_fail, extract_or_fail, make_textline, ok_or_fail},
+    testutil::{err_or_fail, extract_or_fail, make_textline, ok_or_fail, some_or_fail},
     value::Value,
 };
 use std::ops::Range;
@@ -27,9 +27,9 @@ mod bytevector {
             mode: ParseMode::ByteVector(seq),
         };
 
-        let r = node.try_into();
+        let r: Result<Option<Expression>, _> = node.try_into();
 
-        let expr: Expression = ok_or_fail!(r);
+        let expr = some_or_fail!(ok_or_fail!(r));
         assert!(matches!(
             expr,
             Expression {
@@ -79,9 +79,9 @@ mod bytevector {
             mode: ParseMode::ByteVector(seq),
         };
 
-        let r = node.try_into();
+        let r: Result<Option<Expression>, _> = node.try_into();
 
-        let expr: Expression = ok_or_fail!(r);
+        let expr = some_or_fail!(ok_or_fail!(r));
         assert!(matches!(
             expr,
             Expression {
@@ -110,9 +110,9 @@ mod bytevector {
             mode: ParseMode::ByteVector(Vec::new()),
         };
 
-        let r = node.try_into();
+        let r: Result<Option<Expression>, _> = node.try_into();
 
-        let expr: Expression = ok_or_fail!(r);
+        let expr = some_or_fail!(ok_or_fail!(r));
         assert!(matches!(
             expr,
             Expression {
@@ -161,7 +161,7 @@ mod bytevector {
             mode: ParseMode::ByteVector(seq),
         };
 
-        let r: Result<Expression, _> = node.try_into();
+        let r: Result<Option<Expression>, _> = node.try_into();
 
         let errs = err_or_fail!(r);
         assert_eq!(errs.len(), 1);
@@ -215,7 +215,7 @@ mod bytevector {
             mode: ParseMode::ByteVector(seq),
         };
 
-        let r: Result<Expression, _> = node.try_into();
+        let r: Result<Option<Expression>, _> = node.try_into();
 
         let errs = err_or_fail!(r);
         assert_eq!(errs.len(), 2);
@@ -238,7 +238,7 @@ mod bytevector {
 
 mod nodeutil {
     use super::*;
-    use crate::testutil::{make_textline, some_or_fail};
+    use crate::testutil::make_textline;
 
     #[test]
     fn prg_no_continuation() {
@@ -478,9 +478,9 @@ mod identifier {
             mode: ParseMode::Identifier("foo".to_owned()),
         };
 
-        let r = p.try_into();
+        let r: Result<Option<Expression>, _> = p.try_into();
 
-        let expr: Expression = ok_or_fail!(r);
+        let expr = some_or_fail!(ok_or_fail!(r));
         assert!(matches!(
             expr,
             Expression {
@@ -984,9 +984,9 @@ mod list {
             ]),
         };
 
-        let r = p.try_into();
+        let r: Result<Option<Expression>, _> = p.try_into();
 
-        let expr: Expression = ok_or_fail!(r);
+        let expr = some_or_fail!(ok_or_fail!(r));
         assert!(matches!(
             expr,
             Expression {
@@ -1111,9 +1111,9 @@ mod string {
             mode: ParseMode::StringLiteral("foo".to_owned()),
         };
 
-        let r = p.try_into();
+        let r: Result<Option<Expression>, _> = p.try_into();
 
-        let expr: Expression = ok_or_fail!(r);
+        let expr = some_or_fail!(ok_or_fail!(r));
         assert!(matches!(
             expr,
             Expression {

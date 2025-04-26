@@ -101,7 +101,8 @@ impl ParseNode {
         match self {
             Self::Expr(node) => node.merge(other),
             Self::InvalidParseTree(_) | Self::InvalidTokenStream => Ok(()),
-            Self::Prg(seq) => Ok(seq.push(other.try_into()?)),
+            Self::Prg(seq) => Ok(<ExprNode as TryInto<Option<Expression>>>::try_into(other)?
+                .map_or((), |expr| seq.push(expr))),
         }
     }
 
@@ -164,20 +165,21 @@ impl ExprNode {
     }
 }
 
-impl TryFrom<ExprNode> for Expression {
+impl TryFrom<ExprNode> for Option<Expression> {
     type Error = Vec<ExpressionError>;
 
     fn try_from(value: ExprNode) -> Result<Self, <Self as TryFrom<ExprNode>>::Error> {
         match value.mode {
             ParseMode::ByteVector(seq) => into_bytevector(seq, value.ctx),
-            ParseMode::Identifier(s) => Ok(Expression {
+            ParseMode::Identifier(s) => Ok(Some(Expression {
                 ctx: value.ctx,
                 kind: ExpressionKind::Identifier(s.into()),
-            }),
-            ParseMode::List(seq) => Ok(convert_list(seq, value.ctx)),
-            ParseMode::StringLiteral(s) => {
-                Ok(Expression::constant(Constant::String(s.into()), value.ctx))
-            }
+            })),
+            ParseMode::List(seq) => Ok(Some(convert_list(seq, value.ctx))),
+            ParseMode::StringLiteral(s) => Ok(Some(Expression::constant(
+                Constant::String(s.into()),
+                value.ctx,
+            ))),
             _ => todo!("fill out rest of arms"),
         }
     }
@@ -395,7 +397,7 @@ fn parse_verbatim_identifier(buf: &mut String, token: Token, txt: &Rc<TextLine>)
     }
 }
 
-type IntoExprResult = Result<Expression, <Expression as TryFrom<ExprNode>>::Error>;
+type IntoExprResult = Result<Option<Expression>, <Option<Expression> as TryFrom<ExprNode>>::Error>;
 
 fn into_bytevector(seq: Vec<Expression>, ctx: ExprCtx) -> IntoExprResult {
     let (bytes, errs): (Vec<_>, Vec<_>) = seq
@@ -414,10 +416,10 @@ fn into_bytevector(seq: Vec<Expression>, ctx: ExprCtx) -> IntoExprResult {
         })
         .partition(Result::is_ok);
     if errs.is_empty() {
-        Ok(Expression {
+        Ok(Some(Expression {
             ctx,
             kind: ExpressionKind::Literal(Value::ByteVector(bytes.into_iter().flatten().collect())),
-        })
+        }))
     } else {
         Err(errs.into_iter().filter_map(Result::err).collect::<Vec<_>>())
     }
