@@ -385,14 +385,14 @@ mod nodeutil {
     fn failed_parse() {
         let p = ParseNode::InvalidTokenStream;
 
-        assert!(p.is_failed_parse());
+        assert!(p.is_invalid_parse());
     }
 
     #[test]
     fn not_failed_parse() {
         let p = ParseNode::prg();
 
-        assert!(!p.is_failed_parse());
+        assert!(!p.is_invalid_parse());
     }
 
     #[test]

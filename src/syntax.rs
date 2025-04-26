@@ -161,7 +161,7 @@ impl ExpressionTree {
         if !errs.is_empty() {
             self.errs.extend(errs);
         }
-        if parser.is_failed_parse() {
+        if parser.is_invalid_parse() {
             self.parsers.clear();
         }
         parser

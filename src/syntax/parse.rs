@@ -83,7 +83,7 @@ impl ParseNode {
         })
     }
 
-    pub(super) fn is_failed_parse(&self) -> bool {
+    pub(super) fn is_invalid_parse(&self) -> bool {
         matches!(
             self,
             ParseNode::InvalidParseTree(_) | ParseNode::InvalidTokenStream
