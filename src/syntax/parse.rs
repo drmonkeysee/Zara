@@ -41,7 +41,8 @@ impl Display for InvalidParseError {
 impl Error for InvalidParseError {}
 
 pub(super) type ParseFlow = ControlFlow<ParseBreak>;
-pub(super) type MergeResult = Result<(), Vec<ExpressionError>>;
+pub(super) type ExprConversionError = <Option<Expression> as TryFrom<ExprNode>>::Error;
+pub(super) type MergeResult = Result<(), ExprConversionError>;
 
 pub(super) struct InvalidParseErrorMessage<'a>(&'a InvalidParseError);
 
@@ -168,20 +169,19 @@ impl ExprNode {
 impl TryFrom<ExprNode> for Option<Expression> {
     type Error = Vec<ExpressionError>;
 
-    fn try_from(value: ExprNode) -> Result<Self, <Self as TryFrom<ExprNode>>::Error> {
-        match value.mode {
-            ParseMode::ByteVector(seq) => into_bytevector(seq, value.ctx),
-            ParseMode::CommentBlock => Ok(None),
-            ParseMode::Identifier(s) => Ok(Some(Expression {
+    fn try_from(value: ExprNode) -> Result<Self, ExprConversionError> {
+        Ok(match value.mode {
+            ParseMode::ByteVector(seq) => Some(into_bytevector(seq, value.ctx)?),
+            ParseMode::CommentBlock => None,
+            ParseMode::Identifier(s) => Some(Expression {
                 ctx: value.ctx,
                 kind: ExpressionKind::Identifier(s.into()),
-            })),
-            ParseMode::List(seq) => Ok(Some(convert_list(seq, value.ctx))),
-            ParseMode::StringLiteral(s) => Ok(Some(Expression::constant(
-                Constant::String(s.into()),
-                value.ctx,
-            ))),
-        }
+            }),
+            ParseMode::List(seq) => Some(convert_list(seq, value.ctx)),
+            ParseMode::StringLiteral(s) => {
+                Some(Expression::constant(Constant::String(s.into()), value.ctx))
+            }
+        })
     }
 }
 
@@ -397,7 +397,7 @@ fn parse_verbatim_identifier(buf: &mut String, token: Token, txt: &Rc<TextLine>)
     }
 }
 
-type IntoExprResult = Result<Option<Expression>, <Option<Expression> as TryFrom<ExprNode>>::Error>;
+type IntoExprResult = Result<Expression, ExprConversionError>;
 
 fn into_bytevector(seq: Vec<Expression>, ctx: ExprCtx) -> IntoExprResult {
     let (bytes, errs): (Vec<_>, Vec<_>) = seq
@@ -416,10 +416,10 @@ fn into_bytevector(seq: Vec<Expression>, ctx: ExprCtx) -> IntoExprResult {
         })
         .partition(Result::is_ok);
     if errs.is_empty() {
-        Ok(Some(Expression {
+        Ok(Expression {
             ctx,
             kind: ExpressionKind::Literal(Value::ByteVector(bytes.into_iter().flatten().collect())),
-        }))
+        })
     } else {
         Err(errs.into_iter().filter_map(Result::err).collect::<Vec<_>>())
     }
