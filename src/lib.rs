@@ -141,7 +141,7 @@ impl Display for ErrorMessage<'_> {
 type ExecResult = result::Result<Evaluation, ExecError>;
 
 trait Executor {
-    fn exec(&mut self, token_lines: Vec<TokenLine>) -> ExecResult;
+    fn exec(&mut self, token_lines: Box<[TokenLine]>) -> ExecResult;
     fn unsupported_continuation(&mut self) -> Option<ExecError>;
 }
 
@@ -187,7 +187,7 @@ struct Engine<P, E> {
 }
 
 impl<P: Parser, E: Evaluator> Executor for Engine<P, E> {
-    fn exec(&mut self, token_lines: Vec<TokenLine>) -> ExecResult {
+    fn exec(&mut self, token_lines: Box<[TokenLine]>) -> ExecResult {
         Ok(match self.parser.parse(token_lines)? {
             ParserOutput::Complete(prg) => self.evaluator.evaluate(prg),
             ParserOutput::Continuation => Evaluation::Continuation,

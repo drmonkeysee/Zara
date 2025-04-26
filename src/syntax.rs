@@ -77,22 +77,21 @@ impl Display for SyntaxError {
 impl Error for SyntaxError {}
 
 pub(crate) trait Parser {
-    fn parse(&mut self, token_lines: impl IntoIterator<Item = TokenLine>) -> ParserResult;
+    fn parse(&mut self, token_lines: Box<[TokenLine]>) -> ParserResult;
     fn unsupported_continuation(&mut self) -> Option<ParserError>;
 }
 
 pub(crate) struct TokenList;
 
 impl TokenList {
-    fn token_expr(&self, token_lines: impl IntoIterator<Item = TokenLine>) -> Option<Expression> {
-        let list: Box<[TokenLine]> = token_lines.into_iter().collect();
-        if let Some(TokenLine(_, line)) = list.first() {
+    fn token_expr(&self, token_lines: Box<[TokenLine]>) -> Option<Expression> {
+        if let Some(TokenLine(_, line)) = token_lines.first() {
             Some(Expression {
                 ctx: ExprCtx {
                     span: 0..line.line.len(),
                     txt: Rc::new(line.clone()),
                 },
-                kind: ExpressionKind::Literal(Value::TokenList(list)),
+                kind: ExpressionKind::Literal(Value::TokenList(token_lines)),
             })
         } else {
             None
@@ -101,7 +100,7 @@ impl TokenList {
 }
 
 impl Parser for TokenList {
-    fn parse(&mut self, token_lines: impl IntoIterator<Item = TokenLine>) -> ParserResult {
+    fn parse(&mut self, token_lines: Box<[TokenLine]>) -> ParserResult {
         Ok(ParserOutput::Complete(Program::new(
             self.token_expr(token_lines)
                 .into_iter()
@@ -192,7 +191,7 @@ impl ExpressionTree {
 }
 
 impl Parser for ExpressionTree {
-    fn parse(&mut self, token_lines: impl IntoIterator<Item = TokenLine>) -> ParserResult {
+    fn parse(&mut self, token_lines: Box<[TokenLine]>) -> ParserResult {
         let parser = token_lines
             .into_iter()
             .fold(self.parsers.pop().unwrap_or(ParseNode::prg()), |p, ln| {
@@ -288,7 +287,7 @@ mod tests {
         #[test]
         fn no_tokens() {
             let mut et: ExpressionTree = Default::default();
-            let tokens = Vec::new();
+            let tokens = [].into();
 
             let r = et.parse(tokens);
 
@@ -305,7 +304,7 @@ mod tests {
                 true,
             ))])];
 
-            let r = et.parse(tokens);
+            let r = et.parse(tokens.into());
 
             let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
             let seq = prg.unwrap();
@@ -329,7 +328,7 @@ mod tests {
                 TokenKind::Constant(Constant::String("foo".into())),
             ])];
 
-            let r = et.parse(tokens);
+            let r = et.parse(tokens.into());
 
             let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
             let seq = prg.unwrap();
@@ -379,7 +378,7 @@ mod tests {
                 ),
             ];
 
-            let r = et.parse(tokens);
+            let r = et.parse(tokens.into());
 
             let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
             let seq = prg.unwrap();
@@ -434,7 +433,7 @@ mod tests {
                 TokenKind::Constant(Constant::String("foo".into())),
             ])];
 
-            let r = et.parse(tokens);
+            let r = et.parse(tokens.into());
 
             let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
             assert_eq!(errs.len(), 2);
@@ -480,7 +479,7 @@ mod tests {
                 ),
             ];
 
-            let r = et.parse(tokens);
+            let r = et.parse(tokens.into());
 
             let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
             assert_eq!(errs.len(), 3);
@@ -542,7 +541,7 @@ mod tests {
                 ),
             ];
 
-            let r = et.parse(tokens);
+            let r = et.parse(tokens.into());
 
             let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
             assert_eq!(errs.len(), 3);
@@ -588,7 +587,7 @@ mod tests {
                 1,
             )];
 
-            let r = et.parse(tokens);
+            let r = et.parse(tokens.into());
 
             let err = extract_or_fail!(err_or_fail!(r), ParserError::Invalid);
             assert!(matches!(err, InvalidParseError::InvalidExprSource));
@@ -620,7 +619,7 @@ mod tests {
                 },
             ])];
 
-            let r = et.parse(tokens);
+            let r = et.parse(tokens.into());
 
             assert!(matches!(r, Ok(ParserOutput::Continuation)));
             assert_eq!(et.parsers.len(), 2);
@@ -662,7 +661,7 @@ mod tests {
                 ),
             ];
 
-            let r = et.parse(tokens);
+            let r = et.parse(tokens.into());
 
             assert!(matches!(r, Ok(ParserOutput::Continuation)));
             assert_eq!(et.parsers.len(), 2);
@@ -696,7 +695,7 @@ mod tests {
                 },
             ])];
 
-            let r = et.parse(tokens);
+            let r = et.parse(tokens.into());
 
             let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
             assert_eq!(errs.len(), 1);

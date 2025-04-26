@@ -19,7 +19,7 @@ pub(crate) type LexerResult = Result<LexerOutput, LexerError>;
 
 #[derive(Debug)]
 pub(crate) enum LexerOutput {
-    Complete(Vec<TokenLine>),
+    Complete(Box<[TokenLine]>),
     Continuation,
 }
 
@@ -82,7 +82,7 @@ impl Lexer {
             .unwrap_or(new_lines);
         Ok(match d.cont.take() {
             Some(token_cont) => self.continuation(token_cont, lines),
-            None => LexerOutput::Complete(lines),
+            None => LexerOutput::Complete(lines.into()),
         })
     }
 
