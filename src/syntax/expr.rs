@@ -10,7 +10,7 @@ use std::{
 };
 
 #[derive(Debug)]
-pub(crate) struct Program(pub(super) Box<[Expression]>);
+pub(crate) struct Program(Box<[Expression]>);
 
 impl Program {
     pub(super) fn new(seq: impl Into<Box<[Expression]>>) -> Self {
@@ -19,6 +19,12 @@ impl Program {
 
     pub(crate) fn eval(self) -> Option<Value> {
         self.0.into_iter().map(Expression::eval).last()?
+    }
+
+    // NOTE: convenience accessor for parser tests
+    #[cfg(test)]
+    pub(super) fn unwrap(self) -> Box<[Expression]> {
+        self.0
     }
 }
 

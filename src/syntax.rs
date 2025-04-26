@@ -292,11 +292,9 @@ mod tests {
 
             let r = et.parse(tokens);
 
-            assert!(matches!(
-                r,
-                Ok(ParserOutput::Complete(Program(seq)))
-                if seq.is_empty()
-            ));
+            let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
+            let seq = prg.unwrap();
+            assert!(seq.is_empty());
             assert!(et.parsers.is_empty());
         }
 
@@ -309,7 +307,8 @@ mod tests {
 
             let r = et.parse(tokens);
 
-            let Program(seq) = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
+            let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
+            let seq = prg.unwrap();
             assert_eq!(seq.len(), 1);
             assert!(matches!(
                 &seq[0],
@@ -332,7 +331,8 @@ mod tests {
 
             let r = et.parse(tokens);
 
-            let Program(seq) = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
+            let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
+            let seq = prg.unwrap();
             assert_eq!(seq.len(), 3);
             assert!(matches!(
                 &seq[0],
@@ -381,7 +381,8 @@ mod tests {
 
             let r = et.parse(tokens);
 
-            let Program(seq) = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
+            let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
+            let seq = prg.unwrap();
             assert_eq!(seq.len(), 5);
             assert!(matches!(
                 &seq[0],

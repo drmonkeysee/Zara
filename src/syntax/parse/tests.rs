@@ -1217,9 +1217,10 @@ mod program {
         let r = p.try_into();
 
         let prg: Program = ok_or_fail!(r);
-        assert_eq!(prg.0.len(), 1);
+        let seq = prg.unwrap();
+        assert_eq!(seq.len(), 1);
         assert!(matches!(
-            &prg.0[0],
+            &seq[0],
             Expression {
                 ctx: ExprCtx { span: Range { start: 0, end: 3 }, txt: line },
                 kind: ExpressionKind::Literal(Value::Constant(Constant::Number(n))),
