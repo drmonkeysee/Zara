@@ -1,7 +1,7 @@
 use rustyline::{DefaultEditor, Result};
 use std::rc::Rc;
 use zara::{
-    Error, Evaluation, Interpreter, RunMode, Val,
+    Error, Evaluation, Interpreter, RunMode, Value,
     txt::{LineNumber, TextContext, TextLine, TextResult, TextSource},
 };
 
@@ -38,12 +38,12 @@ impl Repl {
     fn runline(&mut self) {
         match self.runtime.run(&mut self.src) {
             Ok(Evaluation::Continuation) => self.prep_continuation(),
-            Ok(Evaluation::Value(v)) => self.print_val(&v),
+            Ok(Evaluation::Val(v)) => self.print_value(&v),
             Err(err) => self.print_err(&err),
         }
     }
 
-    fn print_val(&mut self, v: &Option<Val>) {
+    fn print_value(&mut self, v: &Option<Value>) {
         if let Some(v) = v {
             println!("==> {}", v.as_datum());
         }

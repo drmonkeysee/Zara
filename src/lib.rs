@@ -9,7 +9,7 @@ mod testutil;
 pub mod txt;
 mod value;
 
-pub use self::eval::{Evaluation, Val};
+pub use self::eval::{Evaluation, Value};
 use self::{
     eval::{Ast, Environment, Evaluator},
     lex::{Lexer, LexerError, LexerOutput, TokenLine},

@@ -1,18 +1,15 @@
-use crate::{
-    syntax::Program,
-    value::{Datum as ValueDatum, Value},
-};
+use crate::{syntax::Program, value};
 use std::fmt::{self, Display, Formatter};
 
 #[derive(Debug)]
 pub enum Evaluation {
     Continuation,
-    Value(Option<Val>),
+    Val(Option<Value>),
 }
 
 impl Evaluation {
-    fn val(v: Option<Value>) -> Self {
-        Self::Value(Val::wrap(v))
+    fn val(v: Option<value::Value>) -> Self {
+        Self::Val(Value::wrap(v))
     }
 
     #[must_use]
@@ -22,10 +19,10 @@ impl Evaluation {
 }
 
 #[derive(Debug)]
-pub struct Val(Value);
+pub struct Value(value::Value);
 
-impl Val {
-    fn wrap(v: Option<Value>) -> Option<Self> {
+impl Value {
+    fn wrap(v: Option<value::Value>) -> Option<Self> {
         Some(Self(v?))
     }
 
@@ -35,7 +32,7 @@ impl Val {
     }
 }
 
-pub struct Datum<'a>(ValueDatum<'a>);
+pub struct Datum<'a>(value::Datum<'a>);
 
 impl Display for Datum<'_> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
@@ -49,8 +46,8 @@ impl Display for EvaluationMessage<'_> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self.0 {
             Evaluation::Continuation => f.write_str("fatal error: unexpected continuation"),
-            Evaluation::Value(None) => Ok(()),
-            Evaluation::Value(Some(v)) => v.0.display_message().fmt(f),
+            Evaluation::Val(None) => Ok(()),
+            Evaluation::Val(Some(v)) => v.0.display_message().fmt(f),
         }
     }
 }
@@ -63,7 +60,7 @@ pub(crate) struct Ast;
 
 impl Evaluator for Ast {
     fn evaluate(&self, prg: Program) -> Evaluation {
-        Evaluation::val(Some(Value::Ast(prg)))
+        Evaluation::val(Some(value::Value::Ast(prg)))
     }
 }
 
