@@ -60,8 +60,7 @@ impl ParseNode {
         match self {
             Self::Expr(node) => node.merge(other),
             Self::InvalidParseTree(_) | Self::InvalidTokenStream => Ok(()),
-            Self::Prg(seq) => Ok(<ExprNode as TryInto<Option<Expression>>>::try_into(other)?
-                .map_or((), |expr| seq.push(expr))),
+            Self::Prg(seq) => other.merge_into(seq),
         }
     }
 
@@ -114,10 +113,7 @@ impl ExprNode {
 
     fn merge(&mut self, other: ExprNode) -> MergeResult {
         match &mut self.mode {
-            ParseMode::ByteVector(seq) | ParseMode::List(seq) => {
-                Ok(<Self as TryInto<Option<Expression>>>::try_into(other)?
-                    .map_or((), |expr| seq.push(expr)))
-            }
+            ParseMode::ByteVector(seq) | ParseMode::List(seq) => other.merge_into(seq),
             _ => Err(ParserError::Invalid(InvalidParseError::InvalidExprTarget)),
         }
     }
@@ -130,6 +126,13 @@ impl ExprNode {
             ParseMode::List(_) => ExpressionErrorKind::ListUnterminated,
             ParseMode::StringLiteral(_) => ExpressionErrorKind::StrUnterminated,
         }))
+    }
+
+    fn merge_into(self, seq: &mut Vec<Expression>) -> MergeResult {
+        Ok(
+            <Self as TryInto<Option<Expression>>>::try_into(self)?
+                .map_or((), |expr| seq.push(expr)),
+        )
     }
 }
 
