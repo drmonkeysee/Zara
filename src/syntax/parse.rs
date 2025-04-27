@@ -200,6 +200,8 @@ impl ParseNew {
     }
 }
 
+type ExprFlow = ControlFlow<ParseBreak, Option<Expression>>;
+
 #[derive(Debug)]
 enum ParseMode {
     ByteVector(Vec<Expression>),
@@ -239,63 +241,50 @@ fn parse_comment_block(token: Token, txt: &Rc<TextLine>) -> ParseFlow {
     }
 }
 
-fn parse_list(seq: &mut Vec<Expression>, token: Token, txt: &Rc<TextLine>) -> ParseFlow {
+fn parse_expr(token: Token, txt: &Rc<TextLine>) -> ExprFlow {
     match token.kind {
-        TokenKind::ParenRight => ParseFlow::Break(ParseBreak::complete(txt.lineno, token.span.end)),
-        _ => parse_sequence(seq, token, txt),
-    }
-}
-
-fn parse_sequence(seq: &mut Vec<Expression>, token: Token, txt: &Rc<TextLine>) -> ParseFlow {
-    match token.kind {
-        TokenKind::ByteVector => {
-            return ParseFlow::Break(ParseBreak::new(
-                ParseMode::ByteVector(Vec::new()),
-                token.span.start,
-            ));
-        }
-        TokenKind::Comment => (),
+        TokenKind::ByteVector => ExprFlow::Break(ParseBreak::new(
+            ParseMode::ByteVector(Vec::new()),
+            token.span.start,
+        )),
+        TokenKind::Comment => ExprFlow::Continue(None),
         TokenKind::CommentBlockBegin { .. } => {
-            return ParseFlow::Break(ParseBreak::new(ParseMode::CommentBlock, token.span.start));
+            ExprFlow::Break(ParseBreak::new(ParseMode::CommentBlock, token.span.start))
         }
-        TokenKind::Constant(con) => seq.push(Expression::constant(
+        TokenKind::Constant(con) => ExprFlow::Continue(Some(Expression::constant(
             con,
             ExprCtx {
                 span: token.span,
                 txt: Rc::clone(txt),
             },
-        )),
-        TokenKind::Imaginary(r) => seq.push(Expression::constant(
+        ))),
+        TokenKind::Imaginary(r) => ExprFlow::Continue(Some(Expression::constant(
             Constant::Number(Number::imaginary(r)),
             ExprCtx {
                 span: token.span,
                 txt: Rc::clone(txt),
             },
-        )),
+        ))),
         // TODO: check for keywords/special forms here?
         // need to handle cases where e.g. "if" is shadowed by a user definition
-        TokenKind::Identifier(s) => seq.push(Expression {
+        TokenKind::Identifier(s) => ExprFlow::Continue(Some(Expression {
             ctx: ExprCtx {
                 span: token.span,
                 txt: Rc::clone(txt),
             },
             kind: ExpressionKind::Identifier(s.into()),
-        }),
+        })),
         TokenKind::IdentifierBegin(s) => {
-            return ParseFlow::Break(ParseBreak::new(ParseMode::identifier(s), token.span.start));
+            ExprFlow::Break(ParseBreak::new(ParseMode::identifier(s), token.span.start))
         }
-        TokenKind::ParenLeft => {
-            return ParseFlow::Break(ParseBreak::new(
-                ParseMode::List(Vec::new()),
-                token.span.start,
-            ));
-        }
-        TokenKind::StringBegin { s, line_cont } => {
-            return ParseFlow::Break(ParseBreak::new(
-                ParseMode::string(s, !line_cont),
-                token.span.start,
-            ));
-        }
+        TokenKind::ParenLeft => ExprFlow::Break(ParseBreak::new(
+            ParseMode::List(Vec::new()),
+            token.span.start,
+        )),
+        TokenKind::StringBegin { s, line_cont } => ExprFlow::Break(ParseBreak::new(
+            ParseMode::string(s, !line_cont),
+            token.span.start,
+        )),
         // TODO: this should reduce to _ => once Unimplemented is removed
         TokenKind::CommentBlockFragment { .. }
         | TokenKind::CommentBlockEnd
@@ -305,25 +294,41 @@ fn parse_sequence(seq: &mut Vec<Expression>, token: Token, txt: &Rc<TextLine>) -
         | TokenKind::StringDiscard
         | TokenKind::StringEnd(_)
         | TokenKind::StringFragment { .. } => {
-            return ParseFlow::Break(ParseBreak::token_failure(ExpressionError {
+            ExprFlow::Break(ParseBreak::token_failure(ExpressionError {
                 ctx: ExprCtx {
                     span: token.span,
                     txt: Rc::clone(txt),
                 },
                 kind: ExpressionErrorKind::SeqInvalid(token.kind),
-            }));
+            }))
         }
-        _ => {
-            return ParseFlow::Break(ParseBreak::recover(ExpressionError {
-                ctx: ExprCtx {
-                    span: token.span,
-                    txt: Rc::clone(txt),
-                },
-                kind: ExpressionErrorKind::Unimplemented(token.kind),
-            }));
+        _ => ExprFlow::Break(ParseBreak::recover(ExpressionError {
+            ctx: ExprCtx {
+                span: token.span,
+                txt: Rc::clone(txt),
+            },
+            kind: ExpressionErrorKind::Unimplemented(token.kind),
+        })),
+    }
+}
+
+fn parse_list(seq: &mut Vec<Expression>, token: Token, txt: &Rc<TextLine>) -> ParseFlow {
+    match token.kind {
+        TokenKind::ParenRight => ParseFlow::Break(ParseBreak::complete(txt.lineno, token.span.end)),
+        _ => parse_sequence(seq, token, txt),
+    }
+}
+
+fn parse_sequence(seq: &mut Vec<Expression>, token: Token, txt: &Rc<TextLine>) -> ParseFlow {
+    match parse_expr(token, txt) {
+        ExprFlow::Break(b) => ParseFlow::Break(b),
+        ExprFlow::Continue(expr) => {
+            if let Some(expr) = expr {
+                seq.push(expr);
+            }
+            ParseFlow::Continue(())
         }
     }
-    ParseFlow::Continue(())
 }
 
 fn parse_str(buf: &mut String, token: Token, txt: &Rc<TextLine>) -> ParseFlow {

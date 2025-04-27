@@ -503,7 +503,7 @@ mod tests {
 
         #[test]
         fn single() {
-            let txt = Rc::new(make_textline());
+            let txt = make_textline().into();
             let errs = [ExpressionError {
                 ctx: ExprCtx {
                     span: 0..5,
@@ -523,7 +523,7 @@ mod tests {
 
         #[test]
         fn one_group() {
-            let txt = Rc::new(make_textline());
+            let txt = make_textline().into();
             let errs = [
                 ExpressionError {
                     ctx: ExprCtx {
@@ -561,8 +561,8 @@ mod tests {
 
         #[test]
         fn two_groups() {
-            let txt1 = Rc::new(make_textline_no(1));
-            let txt2 = Rc::new(make_textline_no(2));
+            let txt1 = make_textline_no(1).into();
+            let txt2 = make_textline_no(2).into();
             let errs = [
                 ExpressionError {
                     ctx: ExprCtx {
@@ -605,8 +605,8 @@ mod tests {
 
         #[test]
         fn non_contiguous() {
-            let txt1 = Rc::new(make_textline_no(1));
-            let txt2 = Rc::new(make_textline_no(2));
+            let txt1 = make_textline_no(1).into();
+            let txt2 = make_textline_no(2).into();
             let errs = [
                 ExpressionError {
                     ctx: ExprCtx {

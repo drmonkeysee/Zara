@@ -142,7 +142,7 @@ impl Display for ParserErrorMessage<'_> {
 impl ExpressionTree {
     fn parse_line(&mut self, mut parser: ParseNode, line: TokenLine) -> ParseNode {
         let TokenLine(tokens, txt) = line;
-        let txt = Rc::new(txt);
+        let txt = txt.into();
         let mut errs = Vec::new();
         for token in tokens {
             match parser.parse(token, &txt) {
@@ -291,7 +291,7 @@ fn tokens_expr(token_lines: Box<[TokenLine]>) -> Option<Expression> {
         Some(Expression {
             ctx: ExprCtx {
                 span: 0..line.line.len(),
-                txt: Rc::new(line.clone()),
+                txt: line.clone().into(),
             },
             kind: ExpressionKind::Literal(Value::TokenList(token_lines)),
         })
