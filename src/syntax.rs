@@ -105,28 +105,10 @@ pub(crate) trait Parser {
 
 pub(crate) struct TokenList;
 
-impl TokenList {
-    fn token_expr(&self, token_lines: Box<[TokenLine]>) -> Option<Expression> {
-        if let Some(TokenLine(_, line)) = token_lines.first() {
-            Some(Expression {
-                ctx: ExprCtx {
-                    span: 0..line.line.len(),
-                    txt: Rc::new(line.clone()),
-                },
-                kind: ExpressionKind::Literal(Value::TokenList(token_lines)),
-            })
-        } else {
-            None
-        }
-    }
-}
-
 impl Parser for TokenList {
     fn parse(&mut self, token_lines: Box<[TokenLine]>) -> ParserResult {
         Ok(ParserOutput::Complete(Program::new(
-            self.token_expr(token_lines)
-                .into_iter()
-                .collect::<Box<[_]>>(),
+            tokens_expr(token_lines).into_iter().collect::<Box<[_]>>(),
         )))
     }
 
@@ -165,7 +147,7 @@ impl ExpressionTree {
         for token in tokens {
             match parser.parse(token, &txt) {
                 ParseFlow::Break(ParseBreak::Complete(end)) => {
-                    parser = self.finalize_parser(parser, end, &mut errs);
+                    parser = self.finalize_parser(parser, &end, &mut errs);
                 }
                 ParseFlow::Break(ParseBreak::Err { bad_tokens, err }) => {
                     errs.push(err);
@@ -192,16 +174,16 @@ impl ExpressionTree {
     fn finalize_parser(
         &mut self,
         parser: ParseNode,
-        end: ExprEnd,
+        end: &ExprEnd,
         errs: &mut Vec<ExpressionError>,
     ) -> ParseNode {
         let err = if let Some(mut p) = self.parsers.pop() {
             if let Some(done) = parser.into_expr_node(end) {
                 match p.merge(done) {
-                    Ok(_) => return p,
+                    Ok(()) => return p,
                     Err(ParserError::Invalid(err)) => err,
-                    Err(ParserError::Syntax(SyntaxError(errv))) => {
-                        errs.extend(errv);
+                    Err(ParserError::Syntax(SyntaxError(errvec))) => {
+                        errs.extend(errvec);
                         return p;
                     }
                 }
@@ -301,6 +283,20 @@ impl Display for SyntaxErrorLineMessage<'_> {
             writeln!(f, "{}: {err}", err.ctx.span.start + 1)?;
         }
         Ok(())
+    }
+}
+
+fn tokens_expr(token_lines: Box<[TokenLine]>) -> Option<Expression> {
+    if let Some(TokenLine(_, line)) = token_lines.first() {
+        Some(Expression {
+            ctx: ExprCtx {
+                span: 0..line.line.len(),
+                txt: Rc::new(line.clone()),
+            },
+            kind: ExpressionKind::Literal(Value::TokenList(token_lines)),
+        })
+    } else {
+        None
     }
 }
 

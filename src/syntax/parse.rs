@@ -64,7 +64,7 @@ impl ParseNode {
         }
     }
 
-    pub(super) fn into_expr_node(self, end: ExprEnd) -> Option<ExprNode> {
+    pub(super) fn into_expr_node(self, end: &ExprEnd) -> Option<ExprNode> {
         if let Self::Expr(mut node) = self {
             if end.lineno == node.ctx.txt.lineno {
                 node.ctx.span.end = end.pos;
@@ -77,7 +77,7 @@ impl ParseNode {
 
     pub(super) fn into_continuation_unsupported(self) -> Option<ExpressionError> {
         if let Self::Expr(node) = self {
-            node.into_continuation_unsupported()
+            Some(node.into_continuation_unsupported())
         } else {
             None
         }
@@ -118,14 +118,14 @@ impl ExprNode {
         }
     }
 
-    fn into_continuation_unsupported(self) -> Option<ExpressionError> {
-        Some(self.ctx.into_error(match self.mode {
+    fn into_continuation_unsupported(self) -> ExpressionError {
+        self.ctx.into_error(match self.mode {
             ParseMode::ByteVector(_) => ExpressionErrorKind::ByteVectorUnterminated,
             ParseMode::CommentBlock => ExpressionErrorKind::CommentBlockUnterminated,
             ParseMode::Identifier(_) => ExpressionErrorKind::IdentifierUnterminated,
             ParseMode::List(_) => ExpressionErrorKind::ListUnterminated,
             ParseMode::StringLiteral(_) => ExpressionErrorKind::StrUnterminated,
-        }))
+        })
     }
 
     fn merge_into(self, seq: &mut Vec<Expression>) -> MergeResult {

@@ -71,10 +71,12 @@ impl TextError {
         }
     }
 
+    #[must_use]
     pub fn context(&self) -> &TextContext {
         &self.ctx
     }
 
+    #[must_use]
     pub fn line_number(&self) -> LineNumber {
         self.lineno
     }

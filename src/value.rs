@@ -37,7 +37,7 @@ impl Display for Datum<'_> {
                 f,
                 "#u8({})",
                 bv.iter()
-                    .map(|b| b.to_string())
+                    .map(ToString::to_string)
                     .collect::<Vec<_>>()
                     .join(" ")
             ),
