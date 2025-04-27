@@ -357,7 +357,31 @@ mod nodeutil {
             Rc::clone(&txt),
         );
 
-        let o = p.into_expr_node();
+        let o = p.into_expr_node(ExprEnd { lineno: 1, pos: 8 });
+
+        let exp = some_or_fail!(o);
+        assert!(matches!(
+            exp,
+            ExprNode {
+                ctx: ExprCtx {
+                    span: Range { start: 3, end: 8 },
+                    txt: line
+                },
+                mode: ParseMode::StringLiteral(s)
+            } if s == "foo" && Rc::ptr_eq(&txt, &line)
+        ));
+    }
+
+    #[test]
+    fn unwrap_expr_node_ended_on_different_line() {
+        let txt = Rc::new(make_textline());
+        let p = ParseNode::new(
+            ParseMode::StringLiteral("foo".to_owned()),
+            3,
+            Rc::clone(&txt),
+        );
+
+        let o = p.into_expr_node(ExprEnd { lineno: 2, pos: 8 });
 
         let exp = some_or_fail!(o);
         assert!(matches!(
@@ -376,7 +400,7 @@ mod nodeutil {
     fn unwrap_other_node() {
         let p = ParseNode::prg();
 
-        let o = p.into_expr_node();
+        let o = p.into_expr_node(ExprEnd { lineno: 1, pos: 8 });
 
         assert!(o.is_none());
     }
@@ -424,7 +448,10 @@ mod identifier {
 
         let f = parse_verbatim_identifier(&mut s, token, &txt);
 
-        assert!(matches!(f, ParseFlow::Break(ParseBreak::Complete)));
+        assert!(matches!(
+            f,
+            ParseFlow::Break(ParseBreak::Complete(ExprEnd { lineno: 1, pos: 4 }))
+        ));
         assert_eq!(s, "start\nend");
     }
 
@@ -799,7 +826,10 @@ mod list {
 
         let f = parse_list(&mut seq, token, &txt);
 
-        assert!(matches!(f, ParseFlow::Break(ParseBreak::Complete)));
+        assert!(matches!(
+            f,
+            ParseFlow::Break(ParseBreak::Complete(ExprEnd { lineno: 1, pos: 7 }))
+        ));
         assert_eq!(seq.len(), 3);
     }
 
@@ -857,7 +887,10 @@ mod list {
 
         let f = parse_list(&mut seq, token, &txt);
 
-        assert!(matches!(f, ParseFlow::Break(ParseBreak::Complete)));
+        assert!(matches!(
+            f,
+            ParseFlow::Break(ParseBreak::Complete(ExprEnd { lineno: 1, pos: 5 }))
+        ));
         assert!(seq.is_empty());
     }
 
@@ -1036,7 +1069,10 @@ mod string {
 
         let f = parse_str(&mut s, token, &txt);
 
-        assert!(matches!(f, ParseFlow::Break(ParseBreak::Complete)));
+        assert!(matches!(
+            f,
+            ParseFlow::Break(ParseBreak::Complete(ExprEnd { lineno: 1, pos: 4 }))
+        ));
         assert_eq!(s, "start\nend");
     }
 
@@ -1137,7 +1173,10 @@ mod comment {
 
         let f = parse_comment_block(token, &txt);
 
-        assert!(matches!(f, ParseFlow::Break(ParseBreak::Complete)));
+        assert!(matches!(
+            f,
+            ParseFlow::Break(ParseBreak::Complete(ExprEnd { lineno: 1, pos: 4 }))
+        ));
     }
 
     #[test]

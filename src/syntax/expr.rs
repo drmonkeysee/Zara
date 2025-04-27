@@ -1,5 +1,9 @@
 use crate::{
-    constant::Constant, lex::TokenKind, number::ByteConversionError, txt::TextLine, value::Value,
+    constant::Constant,
+    lex::TokenKind,
+    number::ByteConversionError,
+    txt::{LineNumber, TextLine},
+    value::Value,
 };
 use std::{
     error::Error,
@@ -43,6 +47,12 @@ impl ExprCtx {
     pub(super) fn into_error(self, kind: ExpressionErrorKind) -> ExpressionError {
         ExpressionError { kind, ctx: self }
     }
+}
+
+#[derive(Debug)]
+pub(super) struct ExprEnd {
+    pub(super) lineno: LineNumber,
+    pub(super) pos: usize,
 }
 
 pub(super) type Expression = ExpressionType<ExpressionKind>;

@@ -3,7 +3,7 @@ mod parse;
 
 pub(crate) use self::expr::Program;
 use self::{
-    expr::{ExprCtx, Expression, ExpressionError, ExpressionKind, PeekableExt},
+    expr::{ExprCtx, ExprEnd, Expression, ExpressionError, ExpressionKind, PeekableExt},
     parse::{ParseBreak, ParseFlow, ParseNode},
 };
 use crate::{lex::TokenLine, txt::TextLine, value::Value};
@@ -164,8 +164,8 @@ impl ExpressionTree {
         let mut errs = Vec::new();
         for token in tokens {
             match parser.parse(token, &txt) {
-                ParseFlow::Break(ParseBreak::Complete) => {
-                    parser = self.finalize_parser(parser, &mut errs);
+                ParseFlow::Break(ParseBreak::Complete(end)) => {
+                    parser = self.finalize_parser(parser, end, &mut errs);
                 }
                 ParseFlow::Break(ParseBreak::Err { bad_tokens, err }) => {
                     errs.push(err);
@@ -189,9 +189,14 @@ impl ExpressionTree {
         parser
     }
 
-    fn finalize_parser(&mut self, parser: ParseNode, errs: &mut Vec<ExpressionError>) -> ParseNode {
+    fn finalize_parser(
+        &mut self,
+        parser: ParseNode,
+        end: ExprEnd,
+        errs: &mut Vec<ExpressionError>,
+    ) -> ParseNode {
         let err = if let Some(mut p) = self.parsers.pop() {
-            if let Some(done) = parser.into_expr_node() {
+            if let Some(done) = parser.into_expr_node(end) {
                 match p.merge(done) {
                     Ok(_) => return p,
                     Err(ParserError::Invalid(err)) => err,
