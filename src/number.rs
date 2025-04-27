@@ -653,6 +653,7 @@ impl Display for RealTokenDescriptor<'_> {
 #[derive(Debug, Eq)]
 enum Precision {
     Single(u64),
+    #[allow(dead_code, reason = "not yet implemented")]
     Multiple(Box<[u64]>),
 }
 

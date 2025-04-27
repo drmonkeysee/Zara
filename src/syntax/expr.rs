@@ -78,10 +78,12 @@ impl Expression {
 
 #[derive(Debug)]
 pub(super) enum ExpressionKind {
+    #[allow(dead_code, reason = "not yet implemented")]
     Call {
         args: Box<[Expression]>,
         proc: Box<Expression>,
     },
+    #[allow(dead_code, reason = "not yet implemented")]
     Identifier(Box<str>),
     Literal(Value),
 }
