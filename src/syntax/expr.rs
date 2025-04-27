@@ -49,7 +49,7 @@ impl ExprCtx {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug, Default)]
 pub(super) struct ExprEnd {
     pub(super) lineno: LineNumber,
     pub(super) pos: usize,

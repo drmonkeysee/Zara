@@ -357,7 +357,7 @@ mod nodeutil {
             Rc::clone(&txt),
         );
 
-        let o = p.into_expr_node(&ExprEnd { lineno: 1, pos: 8 });
+        let o = p.into_expr_node(ExprEnd { lineno: 1, pos: 8 });
 
         let exp = some_or_fail!(o);
         assert!(matches!(
@@ -381,7 +381,7 @@ mod nodeutil {
             Rc::clone(&txt),
         );
 
-        let o = p.into_expr_node(&ExprEnd { lineno: 2, pos: 8 });
+        let o = p.into_expr_node(ExprEnd { lineno: 2, pos: 8 });
 
         let exp = some_or_fail!(o);
         assert!(matches!(
@@ -400,7 +400,7 @@ mod nodeutil {
     fn unwrap_other_node() {
         let p = ParseNode::prg();
 
-        let o = p.into_expr_node(&ExprEnd { lineno: 1, pos: 8 });
+        let o = p.into_expr_node(ExprEnd { lineno: 1, pos: 8 });
 
         assert!(o.is_none());
     }

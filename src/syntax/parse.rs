@@ -64,7 +64,7 @@ impl ParseNode {
         }
     }
 
-    pub(super) fn into_expr_node(self, end: &ExprEnd) -> Option<ExprNode> {
+    pub(super) fn into_expr_node(self, end: ExprEnd) -> Option<ExprNode> {
         if let Self::Expr(mut node) = self {
             if end.lineno == node.ctx.txt.lineno {
                 node.ctx.span.end = end.pos;

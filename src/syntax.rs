@@ -147,7 +147,7 @@ impl ExpressionTree {
         for token in tokens {
             match parser.parse(token, &txt) {
                 ParseFlow::Break(ParseBreak::Complete(end)) => {
-                    parser = self.finalize_parser(parser, &end, &mut errs);
+                    parser = self.finalize_parser(parser, end, &mut errs);
                 }
                 ParseFlow::Break(ParseBreak::Err { bad_tokens, err }) => {
                     errs.push(err);
@@ -174,7 +174,7 @@ impl ExpressionTree {
     fn finalize_parser(
         &mut self,
         parser: ParseNode,
-        end: &ExprEnd,
+        end: ExprEnd,
         errs: &mut Vec<ExpressionError>,
     ) -> ParseNode {
         let err = if let Some(mut p) = self.parsers.pop() {
