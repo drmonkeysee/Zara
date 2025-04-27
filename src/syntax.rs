@@ -1,7 +1,7 @@
 mod expr;
 mod parse;
 
-pub(crate) use self::{expr::Program, parse::InvalidParseError};
+pub(crate) use self::expr::Program;
 use self::{
     expr::{ExprCtx, Expression, ExpressionError, ExpressionKind, PeekableExt},
     parse::{ParseBreak, ParseFlow, ParseNode},
@@ -65,6 +65,28 @@ impl From<ExpressionError> for ParserError {
     }
 }
 
+impl From<Vec<ExpressionError>> for ParserError {
+    fn from(value: Vec<ExpressionError>) -> Self {
+        Self::Syntax(SyntaxError(value))
+    }
+}
+
+#[derive(Debug)]
+pub(crate) enum InvalidParseError {
+    EndOfParse,
+    InvalidExprSource,
+    InvalidExprTarget,
+    MissingExprTarget,
+}
+
+impl Display for InvalidParseError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        f.write_str("invalid parser state reached")
+    }
+}
+
+impl Error for InvalidParseError {}
+
 #[derive(Debug)]
 pub(crate) struct SyntaxError(Vec<ExpressionError>);
 
@@ -124,7 +146,7 @@ pub(crate) struct ParserErrorMessage<'a>(&'a ParserError);
 impl Display for ParserErrorMessage<'_> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self.0 {
-            ParserError::Invalid(err) => err.display_message().fmt(f),
+            ParserError::Invalid(err) => InvalidParseErrorMessage(err).fmt(f),
             ParserError::Syntax(SyntaxError(errs)) => {
                 for (txt, errs) in errs.iter().peekable().groupby_txt() {
                     SyntaxErrorLineMessage((txt, &errs)).fmt(f)?;
@@ -170,15 +192,19 @@ impl ExpressionTree {
     fn finalize_parser(&mut self, parser: ParseNode, errs: &mut Vec<ExpressionError>) -> ParseNode {
         let err = if let Some(mut p) = self.parsers.pop() {
             if let Some(done) = parser.into_expr_node() {
-                if let Err(errv) = p.merge(done) {
-                    errs.extend(errv);
+                match p.merge(done) {
+                    Ok(_) => return p,
+                    Err(ParserError::Invalid(err)) => err,
+                    Err(ParserError::Syntax(SyntaxError(errv))) => {
+                        errs.extend(errv);
+                        return p;
+                    }
                 }
-                return p;
             } else {
                 InvalidParseError::InvalidExprSource
             }
         } else {
-            InvalidParseError::InvalidExprTarget
+            InvalidParseError::MissingExprTarget
         };
         ParseNode::InvalidParseTree(err)
     }
@@ -207,7 +233,7 @@ impl Parser for ExpressionTree {
             })
         } else {
             self.parsers.clear();
-            Err(ParserError::Syntax(SyntaxError(mem::take(&mut self.errs))))
+            Err(mem::take(&mut self.errs).into())
         }
     }
 
@@ -215,6 +241,25 @@ impl Parser for ExpressionTree {
         let parser = self.parsers.pop();
         self.clear();
         Some(parser?.into_continuation_unsupported()?.into())
+    }
+}
+
+struct InvalidParseErrorMessage<'a>(&'a InvalidParseError);
+
+impl Display for InvalidParseErrorMessage<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self.0 {
+            InvalidParseError::EndOfParse => f.write_str("unexpected end-of-parse\n"),
+            InvalidParseError::InvalidExprSource => {
+                f.write_str("unexpected merge source not an expression\n")
+            }
+            InvalidParseError::InvalidExprTarget => {
+                f.write_str("invalid merge target expression\n")
+            }
+            InvalidParseError::MissingExprTarget => {
+                f.write_str("unexpected end-of-parse for merge target\n")
+            }
+        }
     }
 }
 
@@ -762,6 +807,13 @@ mod tests {
             );
 
             let err = ParserError::Invalid(InvalidParseError::InvalidExprTarget);
+
+            assert_eq!(
+                err.display_message().to_string(),
+                "invalid merge target expression\n"
+            );
+
+            let err = ParserError::Invalid(InvalidParseError::MissingExprTarget);
 
             assert_eq!(
                 err.display_message().to_string(),

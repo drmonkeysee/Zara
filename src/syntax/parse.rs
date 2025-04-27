@@ -2,7 +2,7 @@
 mod tests;
 
 use super::{
-    Program,
+    InvalidParseError, ParserError, Program,
     expr::{ExprCtx, Expression, ExpressionError, ExpressionErrorKind, ExpressionKind},
 };
 use crate::{
@@ -12,53 +12,11 @@ use crate::{
     txt::TextLine,
     value::Value,
 };
-use std::{
-    error::Error,
-    fmt::{self, Display, Formatter},
-    ops::ControlFlow,
-    rc::Rc,
-};
-
-#[derive(Debug)]
-pub(crate) enum InvalidParseError {
-    EndOfParse,
-    InvalidExprSource,
-    InvalidExprTarget,
-}
-
-impl InvalidParseError {
-    pub(super) fn display_message(&self) -> InvalidParseErrorMessage {
-        InvalidParseErrorMessage(self)
-    }
-}
-
-impl Display for InvalidParseError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        f.write_str("invalid parser state reached")
-    }
-}
-
-impl Error for InvalidParseError {}
+use std::{ops::ControlFlow, rc::Rc};
 
 pub(super) type ParseFlow = ControlFlow<ParseBreak>;
-pub(super) type ExprConversionError = <Option<Expression> as TryFrom<ExprNode>>::Error;
-pub(super) type MergeResult = Result<(), ExprConversionError>;
-
-pub(super) struct InvalidParseErrorMessage<'a>(&'a InvalidParseError);
-
-impl Display for InvalidParseErrorMessage<'_> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        match self.0 {
-            InvalidParseError::EndOfParse => f.write_str("unexpected end-of-parse\n"),
-            InvalidParseError::InvalidExprSource => {
-                f.write_str("unexpected merge source not an expression\n")
-            }
-            InvalidParseError::InvalidExprTarget => {
-                f.write_str("unexpected end-of-parse for merge target\n")
-            }
-        }
-    }
-}
+pub(super) type ExprConvertFailures = <Option<Expression> as TryFrom<ExprNode>>::Error;
+pub(super) type MergeResult = Result<(), ParserError>;
 
 pub(super) enum ParseNode {
     Expr(ExprNode),
@@ -152,7 +110,7 @@ impl ExprNode {
     }
 
     fn merge(&mut self, _other: ExprNode) -> MergeResult {
-        todo!();
+        Err(ParserError::Invalid(InvalidParseError::InvalidExprTarget))
     }
 
     fn into_continuation_unsupported(self) -> Option<ExpressionError> {
@@ -169,7 +127,7 @@ impl ExprNode {
 impl TryFrom<ExprNode> for Option<Expression> {
     type Error = Vec<ExpressionError>;
 
-    fn try_from(value: ExprNode) -> Result<Self, ExprConversionError> {
+    fn try_from(value: ExprNode) -> Result<Self, ExprConvertFailures> {
         Ok(match value.mode {
             ParseMode::ByteVector(seq) => Some(into_bytevector(seq, value.ctx)?),
             ParseMode::CommentBlock => None,
@@ -397,7 +355,7 @@ fn parse_verbatim_identifier(buf: &mut String, token: Token, txt: &Rc<TextLine>)
     }
 }
 
-type IntoExprResult = Result<Expression, ExprConversionError>;
+type IntoExprResult = Result<Expression, ExprConvertFailures>;
 
 fn into_bytevector(seq: Vec<Expression>, ctx: ExprCtx) -> IntoExprResult {
     let (bytes, errs): (Vec<_>, Vec<_>) = seq

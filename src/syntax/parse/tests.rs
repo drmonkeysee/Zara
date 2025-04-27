@@ -1320,7 +1320,7 @@ mod merge {
 
         let r = p.merge(other);
 
-        let errs = err_or_fail!(r);
+        let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
         assert_eq!(errs.len(), 1);
         assert!(matches!(
             &errs[0],
