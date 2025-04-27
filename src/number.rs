@@ -368,6 +368,10 @@ macro_rules! sign_from {
     ($type:ty) => {
         impl From<$type> for Sign {
             fn from(value: $type) -> Self {
+                #[allow(
+                    clippy::cast_possible_truncation,
+                    reason = "conversion is never called for invalid value"
+                )]
                 match value.signum() as i32 {
                     -1 => Self::Negative,
                     0 => Self::Zero,
