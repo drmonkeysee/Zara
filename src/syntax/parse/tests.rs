@@ -251,6 +251,25 @@ mod expr {
             )) if vec.is_empty()
         ));
     }
+
+    #[test]
+    fn start_comment_datum() {
+        let token = Token {
+            kind: TokenKind::CommentDatum,
+            span: 1..2,
+        };
+        let txt = make_textline().into();
+
+        let f = parse_expr(token, &txt);
+
+        assert!(matches!(
+            f,
+            ExprFlow::Break(ParseBreak::New(ParseNew {
+                mode: ParseMode::CommentDatum(None),
+                start: 1
+            }))
+        ));
+    }
 }
 
 mod bytevector {
@@ -1053,7 +1072,7 @@ mod comment {
     use super::*;
 
     #[test]
-    fn end() {
+    fn block_end() {
         let token = Token {
             kind: TokenKind::CommentBlockEnd,
             span: 0..4,
@@ -1069,7 +1088,7 @@ mod comment {
     }
 
     #[test]
-    fn fragment() {
+    fn block_fragment() {
         let token = Token {
             kind: TokenKind::CommentBlockFragment { depth: 0 },
             span: 0..4,
@@ -1106,7 +1125,7 @@ mod comment {
     }
 
     #[test]
-    fn invalid() {
+    fn block_invalid() {
         let token = Token {
             kind: TokenKind::ParenLeft,
             span: 0..1,
@@ -1128,7 +1147,7 @@ mod comment {
     }
 
     #[test]
-    fn node_into_expr() {
+    fn block_into_expr() {
         let p = ExprNode {
             ctx: ExprCtx {
                 span: 0..3,
@@ -1141,6 +1160,136 @@ mod comment {
 
         let o = ok_or_fail!(r);
         assert!(o.is_none());
+    }
+
+    #[test]
+    fn datum_simple() {
+        let token = Token {
+            kind: TokenKind::Constant(Constant::Boolean(true)),
+            span: 1..3,
+        };
+        let txt = make_textline().into();
+        let mut inner = None;
+
+        let f = parse_comment_datum(&mut inner, token, &txt);
+
+        assert!(matches!(
+            f,
+            ParseFlow::Break(ParseBreak::Complete(ExprEnd { lineno: 1, pos: 3 })),
+        ));
+        let expr = some_or_fail!(inner);
+        assert!(matches!(expr, Expression {
+                ctx: ExprCtx { span: Range { start: 1, end: 3 }, txt: line },
+                kind: ExpressionKind::Literal(Value::Constant(Constant::Boolean(true)))
+            } if Rc::ptr_eq(&txt, &line)
+        ));
+    }
+
+    #[test]
+    fn datum_compound() {
+        let token = Token {
+            kind: TokenKind::ParenLeft,
+            span: 1..2,
+        };
+        let txt = make_textline().into();
+        let mut inner = None;
+
+        let f = parse_comment_datum(&mut inner, token, &txt);
+
+        assert!(matches!(
+            f,
+            ParseFlow::Break(ParseBreak::New(ParseNew {
+                mode: ParseMode::List(v),
+                start: 1
+            })) if v.is_empty(),
+        ));
+        assert!(inner.is_none());
+    }
+
+    #[test]
+    fn datum_no_expression() {
+        let token = Token {
+            kind: TokenKind::Comment,
+            span: 1..6,
+        };
+        let txt = make_textline().into();
+        let mut inner = None;
+
+        let f = parse_comment_datum(&mut inner, token, &txt);
+
+        assert!(matches!(f, ParseFlow::Continue(()),));
+        assert!(inner.is_none());
+    }
+
+    #[test]
+    fn datum_invalid() {
+        let token = Token {
+            kind: TokenKind::StringDiscard,
+            span: 1..2,
+        };
+        let txt = make_textline().into();
+        let mut inner = None;
+
+        let f = parse_comment_datum(&mut inner, token, &txt);
+
+        assert!(matches!(
+            f,
+            ParseFlow::Break(ParseBreak::Err{
+                bad_tokens: true,
+                err: ExpressionError {
+                    ctx: ExprCtx { span: Range { start: 1, end: 2 }, txt: line },
+                    kind: ExpressionErrorKind::SeqInvalid(TokenKind::StringDiscard),
+                },
+            }) if Rc::ptr_eq(&txt, &line),
+        ));
+        assert!(inner.is_none());
+    }
+
+    #[test]
+    fn datum_into_expr() {
+        let txt = make_textline().into();
+        let p = ExprNode {
+            ctx: ExprCtx {
+                span: 0..2,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::CommentDatum(Some(Expression {
+                ctx: ExprCtx {
+                    span: 3..5,
+                    txt: Rc::clone(&txt),
+                },
+                kind: ExpressionKind::Identifier("foo".into()),
+            })),
+        };
+
+        let r: Result<Option<Expression>, _> = p.try_into();
+
+        let o = ok_or_fail!(r);
+        assert!(o.is_none());
+    }
+
+    #[test]
+    fn datum_empty_into_expr() {
+        let txt = make_textline().into();
+        let p = ExprNode {
+            ctx: ExprCtx {
+                span: 0..2,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::CommentDatum(None),
+        };
+
+        let r: Result<Option<Expression>, _> = p.try_into();
+
+        let errs = err_or_fail!(r);
+        assert_eq!(errs.len(), 1);
+        assert!(matches!(
+            &errs[0],
+            ExpressionError {
+                ctx: ExprCtx { span: Range { start: 0, end: 2 }, txt },
+                kind: ExpressionErrorKind::CommentDatumUnterminated,
+            } if txt.lineno == 1
+        ));
     }
 }
 
@@ -1480,6 +1629,22 @@ mod nodeutil {
             ExpressionError {
                 ctx: ExprCtx { span: Range { start: 3, end: 19 }, txt },
                 kind: ExpressionErrorKind::CommentBlockUnterminated,
+            } if txt.lineno == 1
+        ));
+    }
+
+    #[test]
+    fn comment_datum_continuation() {
+        let p = ParseNode::new(ParseMode::CommentDatum(None), 3, make_textline());
+
+        let o = p.into_continuation_unsupported();
+
+        let err = some_or_fail!(o);
+        assert!(matches!(
+            &err,
+            ExpressionError {
+                ctx: ExprCtx { span: Range { start: 3, end: 19 }, txt },
+                kind: ExpressionErrorKind::CommentDatumUnterminated,
             } if txt.lineno == 1
         ));
     }

@@ -119,6 +119,7 @@ pub(super) enum ExpressionErrorKind {
     ByteVectorUnterminated,
     CommentBlockInvalid(TokenKind),
     CommentBlockUnterminated,
+    CommentDatumUnterminated,
     IdentifierInvalid(TokenKind),
     IdentifierUnterminated,
     ListUnterminated,
@@ -139,6 +140,7 @@ impl Display for ExpressionErrorKind {
             Self::CommentBlockInvalid(t) => format_unexpected_error("comment block", t, f),
             // TODO: can i share tokenerrorkind display here
             Self::CommentBlockUnterminated => f.write_str("unterminated block comment"),
+            Self::CommentDatumUnterminated => f.write_str("expected datum"),
             Self::IdentifierInvalid(t) => format_unexpected_error("verbatim identifier", t, f),
             Self::IdentifierUnterminated => f.write_str("unterminated verbatim identifier"),
             Self::ListUnterminated => f.write_str("unterminated list expression"),
@@ -346,19 +348,45 @@ mod tests {
         }
 
         #[test]
-        fn display_invalid_seq() {
+        fn display_invalid_block_comment() {
             let err = ExpressionError {
                 ctx: ExprCtx {
                     span: 0..5,
                     txt: make_textline().into(),
                 },
-                kind: ExpressionErrorKind::SeqInvalid(TokenKind::Comment),
+                kind: ExpressionErrorKind::CommentBlockInvalid(TokenKind::Comment),
             };
 
             assert_eq!(
                 err.to_string(),
-                format!("unexpected token in sequence: {}", TokenKind::Comment)
+                format!("unexpected token in comment block: {}", TokenKind::Comment)
             );
+        }
+
+        #[test]
+        fn display_unterminated_block_comment() {
+            let err = ExpressionError {
+                ctx: ExprCtx {
+                    span: 0..5,
+                    txt: make_textline().into(),
+                },
+                kind: ExpressionErrorKind::CommentBlockUnterminated,
+            };
+
+            assert_eq!(err.to_string(), "unterminated block comment");
+        }
+
+        #[test]
+        fn display_unterminated_block_datum() {
+            let err = ExpressionError {
+                ctx: ExprCtx {
+                    span: 0..5,
+                    txt: make_textline().into(),
+                },
+                kind: ExpressionErrorKind::CommentDatumUnterminated,
+            };
+
+            assert_eq!(err.to_string(), "expected datum");
         }
 
         #[test]
@@ -404,6 +432,22 @@ mod tests {
             };
 
             assert_eq!(err.to_string(), "unterminated list expression");
+        }
+
+        #[test]
+        fn display_invalid_seq() {
+            let err = ExpressionError {
+                ctx: ExprCtx {
+                    span: 0..5,
+                    txt: make_textline().into(),
+                },
+                kind: ExpressionErrorKind::SeqInvalid(TokenKind::Comment),
+            };
+
+            assert_eq!(
+                err.to_string(),
+                format!("unexpected token in sequence: {}", TokenKind::Comment)
+            );
         }
 
         #[test]

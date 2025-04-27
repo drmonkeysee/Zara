@@ -15,7 +15,8 @@ use crate::{
 use std::{ops::ControlFlow, rc::Rc};
 
 pub(super) type ParseFlow = ControlFlow<ParseBreak>;
-pub(super) type ExprConvertFailures = <Option<Expression> as TryFrom<ExprNode>>::Error;
+pub(super) type ExprConvertResult =
+    Result<Option<Expression>, <Option<Expression> as TryFrom<ExprNode>>::Error>;
 pub(super) type MergeResult = Result<(), ParserError>;
 
 pub(super) enum ParseNode {
@@ -106,6 +107,7 @@ impl ExprNode {
         match &mut self.mode {
             ParseMode::ByteVector(seq) | ParseMode::List(seq) => parse_list(seq, token, txt),
             ParseMode::CommentBlock => parse_comment_block(token, txt),
+            ParseMode::CommentDatum(inner) => parse_comment_datum(inner, token, txt),
             ParseMode::Identifier(buf) => parse_verbatim_identifier(buf, token, txt),
             ParseMode::StringLiteral(buf) => parse_str(buf, token, txt),
         }
@@ -114,6 +116,7 @@ impl ExprNode {
     fn merge(&mut self, other: ExprNode) -> MergeResult {
         match &mut self.mode {
             ParseMode::ByteVector(seq) | ParseMode::List(seq) => other.merge_into(seq),
+            ParseMode::CommentDatum(_inner) => todo!("merge and complete datum comment"),
             _ => Err(ParserError::Invalid(InvalidParseError::InvalidExprTarget)),
         }
     }
@@ -122,6 +125,7 @@ impl ExprNode {
         self.ctx.into_error(match self.mode {
             ParseMode::ByteVector(_) => ExpressionErrorKind::ByteVectorUnterminated,
             ParseMode::CommentBlock => ExpressionErrorKind::CommentBlockUnterminated,
+            ParseMode::CommentDatum(_) => ExpressionErrorKind::CommentDatumUnterminated,
             ParseMode::Identifier(_) => ExpressionErrorKind::IdentifierUnterminated,
             ParseMode::List(_) => ExpressionErrorKind::ListUnterminated,
             ParseMode::StringLiteral(_) => ExpressionErrorKind::StrUnterminated,
@@ -138,19 +142,21 @@ impl ExprNode {
 impl TryFrom<ExprNode> for Option<Expression> {
     type Error = Vec<ExpressionError>;
 
-    fn try_from(value: ExprNode) -> Result<Self, ExprConvertFailures> {
-        Ok(match value.mode {
-            ParseMode::ByteVector(seq) => Some(into_bytevector(seq, value.ctx)?),
-            ParseMode::CommentBlock => None,
-            ParseMode::Identifier(s) => Some(Expression {
+    fn try_from(value: ExprNode) -> ExprConvertResult {
+        match value.mode {
+            ParseMode::ByteVector(seq) => into_bytevector(seq, value.ctx),
+            ParseMode::CommentBlock => Ok(None),
+            ParseMode::CommentDatum(inner) => into_comment_datum(inner, value.ctx),
+            ParseMode::Identifier(s) => Ok(Some(Expression {
                 ctx: value.ctx,
                 kind: ExpressionKind::Identifier(s.into()),
-            }),
-            ParseMode::List(seq) => Some(convert_list(seq, value.ctx)),
-            ParseMode::StringLiteral(s) => {
-                Some(Expression::constant(Constant::String(s.into()), value.ctx))
-            }
-        })
+            })),
+            ParseMode::List(seq) => Ok(Some(convert_list(seq, value.ctx))),
+            ParseMode::StringLiteral(s) => Ok(Some(Expression::constant(
+                Constant::String(s.into()),
+                value.ctx,
+            ))),
+        }
     }
 }
 
@@ -206,6 +212,7 @@ type ExprFlow = ControlFlow<ParseBreak, Option<Expression>>;
 enum ParseMode {
     ByteVector(Vec<Expression>),
     CommentBlock,
+    CommentDatum(Option<Expression>),
     Identifier(String),
     List(Vec<Expression>),
     StringLiteral(String),
@@ -241,6 +248,25 @@ fn parse_comment_block(token: Token, txt: &Rc<TextLine>) -> ParseFlow {
     }
 }
 
+fn parse_comment_datum(
+    inner: &mut Option<Expression>,
+    token: Token,
+    txt: &Rc<TextLine>,
+) -> ParseFlow {
+    let pos = token.span.end;
+    match parse_expr(token, txt) {
+        ExprFlow::Break(brk) => ParseFlow::Break(brk),
+        ExprFlow::Continue(None) => ParseFlow::Continue(()),
+        ExprFlow::Continue(Some(expr)) => {
+            inner.replace(expr);
+            ParseFlow::Break(ParseBreak::Complete(ExprEnd {
+                lineno: txt.lineno,
+                pos,
+            }))
+        }
+    }
+}
+
 fn parse_expr(token: Token, txt: &Rc<TextLine>) -> ExprFlow {
     match token.kind {
         TokenKind::ByteVector => ExprFlow::Break(ParseBreak::new(
@@ -251,6 +277,10 @@ fn parse_expr(token: Token, txt: &Rc<TextLine>) -> ExprFlow {
         TokenKind::CommentBlockBegin { .. } => {
             ExprFlow::Break(ParseBreak::new(ParseMode::CommentBlock, token.span.start))
         }
+        TokenKind::CommentDatum => ExprFlow::Break(ParseBreak::new(
+            ParseMode::CommentDatum(None),
+            token.span.start,
+        )),
         TokenKind::Constant(con) => ExprFlow::Continue(Some(Expression::constant(
             con,
             ExprCtx {
@@ -321,7 +351,7 @@ fn parse_list(seq: &mut Vec<Expression>, token: Token, txt: &Rc<TextLine>) -> Pa
 
 fn parse_sequence(seq: &mut Vec<Expression>, token: Token, txt: &Rc<TextLine>) -> ParseFlow {
     match parse_expr(token, txt) {
-        ExprFlow::Break(b) => ParseFlow::Break(b),
+        ExprFlow::Break(brk) => ParseFlow::Break(brk),
         ExprFlow::Continue(expr) => {
             if let Some(expr) = expr {
                 seq.push(expr);
@@ -375,9 +405,7 @@ fn parse_verbatim_identifier(buf: &mut String, token: Token, txt: &Rc<TextLine>)
     }
 }
 
-type IntoExprResult = Result<Expression, ExprConvertFailures>;
-
-fn into_bytevector(seq: Vec<Expression>, ctx: ExprCtx) -> IntoExprResult {
+fn into_bytevector(seq: Vec<Expression>, ctx: ExprCtx) -> ExprConvertResult {
     let (bytes, errs): (Vec<_>, Vec<_>) = seq
         .into_iter()
         .map(|expr| match expr.kind {
@@ -394,12 +422,22 @@ fn into_bytevector(seq: Vec<Expression>, ctx: ExprCtx) -> IntoExprResult {
         })
         .partition(Result::is_ok);
     if errs.is_empty() {
-        Ok(Expression {
+        Ok(Some(Expression {
             ctx,
             kind: ExpressionKind::Literal(Value::ByteVector(bytes.into_iter().flatten().collect())),
-        })
+        }))
     } else {
         Err(errs.into_iter().filter_map(Result::err).collect::<Vec<_>>())
+    }
+}
+
+fn into_comment_datum(inner: Option<Expression>, ctx: ExprCtx) -> ExprConvertResult {
+    match inner {
+        None => Err(vec![ExpressionError {
+            ctx,
+            kind: ExpressionErrorKind::CommentDatumUnterminated,
+        }]),
+        Some(_) => Ok(None),
     }
 }
 

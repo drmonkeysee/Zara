@@ -517,7 +517,7 @@ mod tests {
                 ),
                 make_tokenline_no(
                     [
-                        TokenKind::CommentDatum,
+                        TokenKind::StringDiscard,
                         TokenKind::Constant(Constant::Boolean(false)),
                         TokenKind::Constant(Constant::Character('b')),
                     ],
@@ -547,7 +547,7 @@ mod tests {
                 &errs[2],
                 ExpressionError {
                     ctx: ExprCtx { span: Range { start: 0, end: 1 }, txt },
-                    kind: ExpressionErrorKind::Unimplemented(TokenKind::CommentDatum),
+                    kind: ExpressionErrorKind::SeqInvalid(TokenKind::StringDiscard),
                 }  if txt.lineno == 2
             ));
             assert!(et.parsers.is_empty());
