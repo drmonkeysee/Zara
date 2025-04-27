@@ -1346,4 +1346,82 @@ mod merge {
 
         assert!(r.is_ok());
     }
+
+    #[test]
+    fn commentblock_node_merge() {
+        let txt = make_textline().into();
+        let mut p = ExprNode {
+            ctx: ExprCtx {
+                span: 0..3,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::CommentBlock,
+        };
+        let other = ExprNode {
+            ctx: ExprCtx {
+                span: 0..3,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::Identifier("foo".to_owned()),
+        };
+
+        let r = p.merge(other);
+
+        assert!(matches!(
+            r,
+            Err(ParserError::Invalid(InvalidParseError::InvalidExprTarget))
+        ));
+    }
+
+    #[test]
+    fn identifier_node_merge() {
+        let txt = make_textline().into();
+        let mut p = ExprNode {
+            ctx: ExprCtx {
+                span: 0..3,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::Identifier("bar".to_owned()),
+        };
+        let other = ExprNode {
+            ctx: ExprCtx {
+                span: 0..3,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::Identifier("foo".to_owned()),
+        };
+
+        let r = p.merge(other);
+
+        assert!(matches!(
+            r,
+            Err(ParserError::Invalid(InvalidParseError::InvalidExprTarget))
+        ));
+    }
+
+    #[test]
+    fn string_node_merge() {
+        let txt = make_textline().into();
+        let mut p = ExprNode {
+            ctx: ExprCtx {
+                span: 0..3,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::StringLiteral("bar".to_owned()),
+        };
+        let other = ExprNode {
+            ctx: ExprCtx {
+                span: 0..3,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::Identifier("foo".to_owned()),
+        };
+
+        let r = p.merge(other);
+
+        assert!(matches!(
+            r,
+            Err(ParserError::Invalid(InvalidParseError::InvalidExprTarget))
+        ));
+    }
 }
