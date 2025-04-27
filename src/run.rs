@@ -30,9 +30,7 @@ fn run(mode: RunMode, src: &mut impl TextSource) -> Result {
     let mut runtime = Interpreter::new(mode);
     let mut result = runtime.run(src);
     if matches!(result, Ok(Evaluation::Continuation)) {
-        result = runtime
-            .unsupported_continuation()
-            .map_or(result, |err| Err(err));
+        result = runtime.unsupported_continuation().map_or(result, Err);
     }
     print_result(&result);
     result?;

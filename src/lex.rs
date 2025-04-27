@@ -87,9 +87,9 @@ impl Lexer {
     }
 
     pub(crate) fn unsupported_continuation(&mut self) -> Option<LexerError> {
-        self.cont.take().map_or(None, |(mut lines, cont)| {
+        self.cont.take().map(|(mut lines, cont)| {
             debug_assert!(!lines.is_empty());
-            Some(lines.pop().unwrap().into_continuation_unsupported(cont))
+            lines.pop().unwrap().into_continuation_unsupported(cont)
         })
     }
 

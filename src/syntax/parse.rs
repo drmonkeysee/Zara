@@ -129,10 +129,9 @@ impl ExprNode {
     }
 
     fn merge_into(self, seq: &mut Vec<Expression>) -> MergeResult {
-        Ok(
-            <Self as TryInto<Option<Expression>>>::try_into(self)?
-                .map_or((), |expr| seq.push(expr)),
-        )
+        #[allow(unused_must_use, reason = "returns unit value")]
+        <Self as TryInto<Option<Expression>>>::try_into(self)?.map_or((), |expr| seq.push(expr));
+        Ok(())
     }
 }
 

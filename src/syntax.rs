@@ -30,7 +30,7 @@ pub(crate) enum ParserError {
 
 impl ParserError {
     pub(crate) fn display_message(&self) -> ParserErrorMessage {
-        ParserErrorMessage(&self)
+        ParserErrorMessage(self)
     }
 }
 
