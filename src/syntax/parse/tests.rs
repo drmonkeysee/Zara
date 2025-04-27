@@ -1424,4 +1424,86 @@ mod merge {
             Err(ParserError::Invalid(InvalidParseError::InvalidExprTarget))
         ));
     }
+
+    #[test]
+    fn bytevector_node_merge() {
+        let txt = make_textline().into();
+        let mut p = ExprNode {
+            ctx: ExprCtx {
+                span: 0..3,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::ByteVector(vec![Expression::constant(
+                Constant::Number(Number::real(24)),
+                ExprCtx {
+                    span: 0..3,
+                    txt: Rc::clone(&txt),
+                },
+            )]),
+        };
+        let other = ExprNode {
+            ctx: ExprCtx {
+                span: 3..6,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::Identifier("foo".to_owned()),
+        };
+
+        let r = p.merge(other);
+
+        assert!(matches!(r, Ok(())));
+        let seq = extract_or_fail!(p.mode, ParseMode::ByteVector);
+        assert_eq!(seq.len(), 2);
+        assert!(matches!(
+            &seq[1],
+            Expression {
+                ctx: ExprCtx {
+                    span: Range { start: 3, end: 6 },
+                    txt: line
+                },
+                kind: ExpressionKind::Identifier(s),
+            } if &**s == "foo" && Rc::ptr_eq(&txt, &line)
+        ));
+    }
+
+    #[test]
+    fn list_node_merge() {
+        let txt = make_textline().into();
+        let mut p = ExprNode {
+            ctx: ExprCtx {
+                span: 0..3,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::List(vec![Expression {
+                ctx: ExprCtx {
+                    span: 0..3,
+                    txt: Rc::clone(&txt),
+                },
+                kind: ExpressionKind::Identifier("+".into()),
+            }]),
+        };
+        let other = ExprNode {
+            ctx: ExprCtx {
+                span: 3..6,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::StringLiteral("foo".to_owned()),
+        };
+
+        let r = p.merge(other);
+
+        assert!(matches!(r, Ok(())));
+        let seq = extract_or_fail!(p.mode, ParseMode::List);
+        assert_eq!(seq.len(), 2);
+        assert!(matches!(
+            &seq[1],
+            Expression {
+                ctx: ExprCtx {
+                    span: Range { start: 3, end: 6 },
+                    txt: line
+                },
+                kind: ExpressionKind::Literal(Value::Constant(Constant::String(s))),
+            } if &**s == "foo" && Rc::ptr_eq(&txt, &line)
+        ));
+    }
 }
