@@ -109,8 +109,14 @@ impl ExprNode {
         }
     }
 
-    fn merge(&mut self, _other: ExprNode) -> MergeResult {
-        Err(ParserError::Invalid(InvalidParseError::InvalidExprTarget))
+    fn merge(&mut self, other: ExprNode) -> MergeResult {
+        match &mut self.mode {
+            ParseMode::ByteVector(seq) | ParseMode::List(seq) => {
+                Ok(<Self as TryInto<Option<Expression>>>::try_into(other)?
+                    .map_or((), |expr| seq.push(expr)))
+            }
+            _ => Err(ParserError::Invalid(InvalidParseError::InvalidExprTarget)),
+        }
     }
 
     fn into_continuation_unsupported(self) -> Option<ExpressionError> {
