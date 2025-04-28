@@ -71,6 +71,9 @@ impl Expression {
             ExpressionKind::Identifier(_) => {
                 todo!("this is dependent on current environment frame")
             }
+            ExpressionKind::List(_) => {
+                todo!("convert list into pairs, containing literals")
+            }
             ExpressionKind::Literal(v) => Some(v),
         }
     }
@@ -85,6 +88,8 @@ pub(super) enum ExpressionKind {
     },
     #[allow(dead_code, reason = "not yet implemented")]
     Identifier(Box<str>),
+    #[allow(dead_code, reason = "not yet implemented")]
+    List(Box<[Expression]>),
     Literal(Value),
 }
 
@@ -190,6 +195,7 @@ impl Display for TypeName<'_> {
         match self.0 {
             ExpressionKind::Call { .. } => f.write_str("procedure call"),
             ExpressionKind::Identifier(_) => f.write_str("identifier"),
+            ExpressionKind::List(_) => f.write_str("list"),
             ExpressionKind::Literal(val) => val.as_typename().fmt(f),
         }
     }
@@ -229,6 +235,13 @@ mod tests {
             let expr = ExpressionKind::Identifier("foo".into());
 
             assert_eq!(expr.as_typename().to_string(), "identifier");
+        }
+
+        #[test]
+        fn list_typename() {
+            let expr = ExpressionKind::List([].into());
+
+            assert_eq!(expr.as_typename().to_string(), "list");
         }
 
         #[test]

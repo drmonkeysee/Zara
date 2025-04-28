@@ -107,7 +107,7 @@ pub(super) struct ExprNode {
 impl ExprNode {
     fn parse(&mut self, token: Token, txt: &Rc<TextLine>) -> ParseFlow {
         match &mut self.mode {
-            ParseMode::ByteVector(seq) | ParseMode::List(seq) => parse_list(seq, token, txt),
+            ParseMode::ByteVector(seq) | ParseMode::List { seq, .. } => parse_list(seq, token, txt),
             ParseMode::CommentBlock => parse_comment_block(token, txt),
             ParseMode::CommentDatum(inner) => parse_comment_datum(inner, token, txt, &self.ctx),
             ParseMode::Identifier(buf) => parse_verbatim_identifier(buf, token, txt),
@@ -117,7 +117,7 @@ impl ExprNode {
 
     fn merge(&mut self, other: ExprNode) -> MergeResult {
         match &mut self.mode {
-            ParseMode::ByteVector(seq) | ParseMode::List(seq) => other.merge_into(seq),
+            ParseMode::ByteVector(seq) | ParseMode::List { seq, .. } => other.merge_into(seq),
             ParseMode::CommentDatum(_inner) => {
                 // TODO: e.g. invalid special form is commented-out properly #; (if foo)
                 todo!("compound datums must be treated as quoted")
@@ -132,7 +132,7 @@ impl ExprNode {
             ParseMode::CommentBlock => ExpressionErrorKind::CommentBlockUnterminated,
             ParseMode::CommentDatum(_) => ExpressionErrorKind::CommentDatumUnterminated,
             ParseMode::Identifier(_) => ExpressionErrorKind::IdentifierUnterminated,
-            ParseMode::List(_) => ExpressionErrorKind::ListUnterminated,
+            ParseMode::List { .. } => ExpressionErrorKind::ListUnterminated,
             ParseMode::StringLiteral(_) => ExpressionErrorKind::StrUnterminated,
         })
     }
@@ -156,7 +156,8 @@ impl TryFrom<ExprNode> for Option<Expression> {
                 ctx: value.ctx,
                 kind: ExpressionKind::Identifier(s.into()),
             })),
-            ParseMode::List(seq) => Ok(Some(convert_list(seq, value.ctx))),
+            ParseMode::List { quoted: false, seq } => Ok(Some(into_syntactic_form(seq, value.ctx))),
+            ParseMode::List { quoted: true, seq } => Ok(Some(into_list(seq, value.ctx))),
             ParseMode::StringLiteral(s) => Ok(Some(Expression::constant(
                 Constant::String(s.into()),
                 value.ctx,
@@ -232,7 +233,7 @@ enum ParseMode {
     CommentBlock,
     CommentDatum(Option<Expression>),
     Identifier(String),
-    List(Vec<Expression>),
+    List { quoted: bool, seq: Vec<Expression> },
     StringLiteral(String),
 }
 
@@ -287,7 +288,7 @@ fn parse_comment_datum(
         }))
     } else {
         let pos = token.span.end;
-        match parse_expr(token, txt)? {
+        match parse_expr(token, txt, true)? {
             None => ParseFlow::Continue(()),
             Some(expr) => {
                 inner.replace(expr);
@@ -300,7 +301,7 @@ fn parse_comment_datum(
     }
 }
 
-fn parse_expr(token: Token, txt: &Rc<TextLine>) -> ExprFlow {
+fn parse_expr(token: Token, txt: &Rc<TextLine>, quoted: bool) -> ExprFlow {
     match token.kind {
         TokenKind::ByteVector => ExprFlow::Break(ParseBreak::new(
             ParseMode::ByteVector(Vec::new()),
@@ -328,8 +329,6 @@ fn parse_expr(token: Token, txt: &Rc<TextLine>) -> ExprFlow {
                 txt: Rc::clone(txt),
             },
         ))),
-        // TODO: check for keywords/special forms here?
-        // need to handle cases where e.g. "if" is shadowed by a user definition
         TokenKind::Identifier(s) => ExprFlow::Continue(Some(Expression {
             ctx: ExprCtx {
                 span: token.span,
@@ -341,7 +340,10 @@ fn parse_expr(token: Token, txt: &Rc<TextLine>) -> ExprFlow {
             ExprFlow::Break(ParseBreak::new(ParseMode::identifier(s), token.span.start))
         }
         TokenKind::ParenLeft => ExprFlow::Break(ParseBreak::new(
-            ParseMode::List(Vec::new()),
+            ParseMode::List {
+                quoted,
+                seq: Vec::new(),
+            },
             token.span.start,
         )),
         TokenKind::StringBegin { s, line_cont } => ExprFlow::Break(ParseBreak::new(
@@ -383,7 +385,8 @@ fn parse_list(seq: &mut Vec<Expression>, token: Token, txt: &Rc<TextLine>) -> Pa
 }
 
 fn parse_sequence(seq: &mut Vec<Expression>, token: Token, txt: &Rc<TextLine>) -> ParseFlow {
-    if let Some(expr) = parse_expr(token, txt)? {
+    // TODO: quoted argument should be inherited from caller
+    if let Some(expr) = parse_expr(token, txt, false)? {
         seq.push(expr);
     }
     ParseFlow::Continue(())
@@ -469,7 +472,16 @@ fn into_comment_datum(inner: Option<Expression>, ctx: ExprCtx) -> ExprConvertRes
     }
 }
 
-fn convert_list(seq: Vec<Expression>, ctx: ExprCtx) -> Expression {
+fn into_list(seq: Vec<Expression>, ctx: ExprCtx) -> Expression {
+    Expression {
+        ctx,
+        kind: ExpressionKind::List(seq.into()),
+    }
+}
+
+fn into_syntactic_form(seq: Vec<Expression>, ctx: ExprCtx) -> Expression {
+    // TODO: check for keywords/special forms
+    // need to handle cases where e.g. "if" is shadowed by a user definition
     debug_assert!(
         !seq.is_empty(),
         "empty list is invalid syntax unless quoted"

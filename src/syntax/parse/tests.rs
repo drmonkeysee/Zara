@@ -17,7 +17,7 @@ mod expr {
         };
         let txt = make_textline().into();
 
-        let f = parse_expr(token, &txt);
+        let f = parse_expr(token, &txt, false);
 
         assert!(matches!(
             f,
@@ -37,7 +37,7 @@ mod expr {
         };
         let txt = make_textline().into();
 
-        let f = parse_expr(token, &txt);
+        let f = parse_expr(token, &txt, false);
 
         assert!(matches!(
             f,
@@ -60,7 +60,7 @@ mod expr {
         };
         let txt = make_textline().into();
 
-        let f = parse_expr(token, &txt);
+        let f = parse_expr(token, &txt, false);
 
         assert!(matches!(
             f,
@@ -84,7 +84,7 @@ mod expr {
         };
         let txt = make_textline().into();
 
-        let f = parse_expr(token, &txt);
+        let f = parse_expr(token, &txt, false);
 
         assert!(matches!(
             f,
@@ -105,7 +105,7 @@ mod expr {
         };
         let txt = make_textline().into();
 
-        let f = parse_expr(token, &txt);
+        let f = parse_expr(token, &txt, false);
 
         assert!(matches!(
             f,
@@ -127,7 +127,7 @@ mod expr {
         };
         let txt = make_textline().into();
 
-        let f = parse_expr(token, &txt);
+        let f = parse_expr(token, &txt, false);
 
         assert!(matches!(f, ExprFlow::Continue(None)));
     }
@@ -140,7 +140,7 @@ mod expr {
         };
         let txt = make_textline().into();
 
-        let f = parse_expr(token, &txt);
+        let f = parse_expr(token, &txt, false);
 
         assert!(matches!(
             f,
@@ -159,7 +159,7 @@ mod expr {
         };
         let txt = make_textline().into();
 
-        let f = parse_expr(token, &txt);
+        let f = parse_expr(token, &txt, false);
 
         assert!(matches!(
             f,
@@ -178,7 +178,7 @@ mod expr {
         };
         let txt = make_textline().into();
 
-        let f = parse_expr(token, &txt);
+        let f = parse_expr(token, &txt, false);
 
         assert!(matches!(
             f,
@@ -198,7 +198,7 @@ mod expr {
         };
         let txt = make_textline().into();
 
-        let f = parse_expr(token, &txt);
+        let f = parse_expr(token, &txt, false);
 
         assert!(matches!(
             f,
@@ -218,7 +218,7 @@ mod expr {
         };
         let txt = make_textline().into();
 
-        let f = parse_expr(token, &txt);
+        let f = parse_expr(token, &txt, false);
 
         assert!(matches!(
             f,
@@ -232,6 +232,27 @@ mod expr {
     }
 
     #[test]
+    fn start_form() {
+        let token = Token {
+            kind: TokenKind::ParenLeft,
+            span: 1..2,
+        };
+        let txt = make_textline().into();
+
+        let f = parse_expr(token, &txt, false);
+
+        assert!(matches!(
+            f,
+            ExprFlow::Break(ParseBreak::New(
+                ParseNew {
+                    mode: ParseMode::List { quoted: false, seq },
+                    start: 1
+                }
+            )) if seq.is_empty()
+        ));
+    }
+
+    #[test]
     fn start_list() {
         let token = Token {
             kind: TokenKind::ParenLeft,
@@ -239,16 +260,16 @@ mod expr {
         };
         let txt = make_textline().into();
 
-        let f = parse_expr(token, &txt);
+        let f = parse_expr(token, &txt, true);
 
         assert!(matches!(
             f,
             ExprFlow::Break(ParseBreak::New(
                 ParseNew {
-                    mode: ParseMode::List(vec),
+                    mode: ParseMode::List { quoted: true, seq },
                     start: 1
                 }
-            )) if vec.is_empty()
+            )) if seq.is_empty()
         ));
     }
 
@@ -260,7 +281,7 @@ mod expr {
         };
         let txt = make_textline().into();
 
-        let f = parse_expr(token, &txt);
+        let f = parse_expr(token, &txt, false);
 
         assert!(matches!(
             f,
@@ -665,10 +686,10 @@ mod sequence {
             f,
             ParseFlow::Break(ParseBreak::New(
                 ParseNew {
-                    mode: ParseMode::List(vec),
+                    mode: ParseMode::List { quoted: false, seq },
                     start: 1
                 }
-            )) if vec.is_empty()
+            )) if seq.is_empty()
         ));
         assert!(seq.is_empty());
     }
@@ -777,9 +798,9 @@ mod list {
         assert!(matches!(
             f,
             ParseFlow::Break(ParseBreak::New(ParseNew {
-                mode: ParseMode::List(vec),
+                mode: ParseMode::List { quoted: false, seq },
                 start: 6
-            })) if vec.is_empty()
+            })) if seq.is_empty()
         ));
         assert_eq!(seq.len(), 3);
     }
@@ -900,29 +921,32 @@ mod list {
                 span: 0..6,
                 txt: Rc::clone(&txt),
             },
-            mode: ParseMode::List(vec![
-                Expression {
-                    ctx: ExprCtx {
-                        span: 0..1,
-                        txt: Rc::clone(&txt),
+            mode: ParseMode::List {
+                quoted: false,
+                seq: vec![
+                    Expression {
+                        ctx: ExprCtx {
+                            span: 0..1,
+                            txt: Rc::clone(&txt),
+                        },
+                        kind: ExpressionKind::Identifier("+".into()),
                     },
-                    kind: ExpressionKind::Identifier("+".into()),
-                },
-                Expression::constant(
-                    Constant::Number(Number::real(4)),
-                    ExprCtx {
-                        span: 1..4,
-                        txt: Rc::clone(&txt),
-                    },
-                ),
-                Expression::constant(
-                    Constant::Number(Number::real(5)),
-                    ExprCtx {
-                        span: 4..6,
-                        txt: Rc::clone(&txt),
-                    },
-                ),
-            ]),
+                    Expression::constant(
+                        Constant::Number(Number::real(4)),
+                        ExprCtx {
+                            span: 1..4,
+                            txt: Rc::clone(&txt),
+                        },
+                    ),
+                    Expression::constant(
+                        Constant::Number(Number::real(5)),
+                        ExprCtx {
+                            span: 4..6,
+                            txt: Rc::clone(&txt),
+                        },
+                    ),
+                ],
+            },
         };
 
         let r: Result<Option<Expression>, _> = p.try_into();
@@ -1207,9 +1231,9 @@ mod comment {
         assert!(matches!(
             f,
             ParseFlow::Break(ParseBreak::New(ParseNew {
-                mode: ParseMode::List(v),
+                mode: ParseMode::List { quoted: true, seq },
                 start: 1
-            })) if v.is_empty(),
+            })) if seq.is_empty(),
         ));
         assert!(inner.is_none());
     }
@@ -1537,13 +1561,16 @@ mod merge {
                 span: 3..8,
                 txt: Rc::clone(&txt),
             },
-            mode: ParseMode::List(vec![Expression {
-                ctx: ExprCtx {
-                    span: 4..7,
-                    txt: Rc::clone(&txt),
-                },
-                kind: ExpressionKind::Identifier("foo".into()),
-            }]),
+            mode: ParseMode::List {
+                quoted: true,
+                seq: vec![Expression {
+                    ctx: ExprCtx {
+                        span: 4..7,
+                        txt: Rc::clone(&txt),
+                    },
+                    kind: ExpressionKind::Identifier("foo".into()),
+                }],
+            },
         };
 
         let r = p.merge(other);
@@ -1571,7 +1598,10 @@ mod merge {
                 span: 3..5,
                 txt: Rc::clone(&txt),
             },
-            mode: ParseMode::List(Vec::new()),
+            mode: ParseMode::List {
+                quoted: true,
+                seq: Vec::new(),
+            },
         };
 
         let r = p.merge(other);
@@ -1685,13 +1715,16 @@ mod merge {
                 span: 0..3,
                 txt: Rc::clone(&txt),
             },
-            mode: ParseMode::List(vec![Expression {
-                ctx: ExprCtx {
-                    span: 0..3,
-                    txt: Rc::clone(&txt),
-                },
-                kind: ExpressionKind::Identifier("+".into()),
-            }]),
+            mode: ParseMode::List {
+                quoted: false,
+                seq: vec![Expression {
+                    ctx: ExprCtx {
+                        span: 0..3,
+                        txt: Rc::clone(&txt),
+                    },
+                    kind: ExpressionKind::Identifier("+".into()),
+                }],
+            },
         };
         let other = ExprNode {
             ctx: ExprCtx {
@@ -1704,7 +1737,10 @@ mod merge {
         let r = p.merge(other);
 
         assert!(matches!(r, Ok(MergeFlow::Continue(()))));
-        let seq = extract_or_fail!(p.mode, ParseMode::List);
+        assert!(matches!(p.mode, ParseMode::List { quoted: false, .. }));
+        let ParseMode::List { seq, .. } = p.mode else {
+            unreachable!();
+        };
         assert_eq!(seq.len(), 2);
         assert!(matches!(
             &seq[1],
@@ -1807,29 +1843,32 @@ mod nodeutil {
     fn list_continuation() {
         let txt = make_textline().into();
         let p = ParseNode::new(
-            ParseMode::List(vec![
-                Expression {
-                    ctx: ExprCtx {
-                        span: 0..1,
-                        txt: Rc::clone(&txt),
+            ParseMode::List {
+                quoted: false,
+                seq: vec![
+                    Expression {
+                        ctx: ExprCtx {
+                            span: 0..1,
+                            txt: Rc::clone(&txt),
+                        },
+                        kind: ExpressionKind::Identifier("+".into()),
                     },
-                    kind: ExpressionKind::Identifier("+".into()),
-                },
-                Expression::constant(
-                    Constant::Number(Number::real(4)),
-                    ExprCtx {
-                        span: 1..4,
-                        txt: Rc::clone(&txt),
-                    },
-                ),
-                Expression::constant(
-                    Constant::Number(Number::real(5)),
-                    ExprCtx {
-                        span: 4..6,
-                        txt: Rc::clone(&txt),
-                    },
-                ),
-            ]),
+                    Expression::constant(
+                        Constant::Number(Number::real(4)),
+                        ExprCtx {
+                            span: 1..4,
+                            txt: Rc::clone(&txt),
+                        },
+                    ),
+                    Expression::constant(
+                        Constant::Number(Number::real(5)),
+                        ExprCtx {
+                            span: 4..6,
+                            txt: Rc::clone(&txt),
+                        },
+                    ),
+                ],
+            },
             3,
             Rc::clone(&txt),
         );
