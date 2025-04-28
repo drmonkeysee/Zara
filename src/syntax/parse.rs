@@ -116,7 +116,10 @@ impl ExprNode {
     fn merge(&mut self, other: ExprNode) -> MergeResult {
         match &mut self.mode {
             ParseMode::ByteVector(seq) | ParseMode::List(seq) => other.merge_into(seq),
-            ParseMode::CommentDatum(_inner) => todo!("merge and complete datum comment"),
+            ParseMode::CommentDatum(_inner) => {
+                // TODO: e.g. invalid special form is commented-out properly #; (if foo)
+                todo!("compound datums must be treated as quoted")
+            }
             _ => Err(ParserError::Invalid(InvalidParseError::InvalidExprTarget)),
         }
     }
