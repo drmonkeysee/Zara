@@ -4,7 +4,7 @@ mod parse;
 pub(crate) use self::expr::Program;
 use self::{
     expr::{ExprCtx, ExprEnd, Expression, ExpressionError, ExpressionKind, PeekableExt},
-    parse::{ParseBreak, ParseErrBreak, ParseErrFlow, ParseFlow, ParseNode},
+    parse::{MergeFlow, ParseBreak, ParseErrBreak, ParseErrFlow, ParseFlow, ParseNode},
 };
 use crate::{lex::TokenLine, txt::TextLine, value::Value};
 use std::{
@@ -184,22 +184,18 @@ impl ExpressionTree {
     ) -> ParseNode {
         let err = match self.parsers.pop() {
             None => InvalidParseError::MissingExprTarget,
-            Some(mut p) => {
-                match parser.into_expr_node(end) {
-                    None => InvalidParseError::InvalidExprSource,
-                    Some(done) => {
-                        match p.merge(done) {
-                            Err(ParserError::Invalid(err)) => err,
-                            Err(ParserError::Syntax(SyntaxError(errvec))) => {
-                                errs.extend(errvec);
-                                return p;
-                            }
-                            Ok(()) => return p,
-                            // TODO: if finalize return finalize_parser(p, end, errs) else return p
-                        }
+            Some(mut p) => match parser.into_expr_node(end) {
+                None => InvalidParseError::InvalidExprSource,
+                Some(done) => match p.merge(done) {
+                    Err(ParserError::Invalid(err)) => err,
+                    Err(ParserError::Syntax(SyntaxError(errvec))) => {
+                        errs.extend(errvec);
+                        return p;
                     }
-                }
-            }
+                    Ok(MergeFlow::Continue(_)) => return p,
+                    Ok(MergeFlow::Break(_)) => return self.finalize_parser(p, end, errs),
+                },
+            },
         };
         ParseNode::InvalidParseTree(err)
     }

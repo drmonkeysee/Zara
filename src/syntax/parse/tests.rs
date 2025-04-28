@@ -1389,7 +1389,7 @@ mod merge {
 
         let r = p.merge(other);
 
-        assert_eq!(ok_or_fail!(r), ());
+        assert!(matches!(r, Ok(MergeFlow::Continue(()))));
         let seq = extract_or_fail!(p, ParseNode::Prg);
         assert_eq!(seq.len(), 2);
         assert!(matches!(
@@ -1433,7 +1433,7 @@ mod merge {
     }
 
     #[test]
-    fn invalid_node_merge() {
+    fn invalid_merge() {
         let mut p = ParseNode::InvalidTokenStream;
         let other = ExprNode {
             ctx: ExprCtx {
@@ -1449,7 +1449,7 @@ mod merge {
     }
 
     #[test]
-    fn commentblock_node_merge() {
+    fn commentblock_merge() {
         let txt = make_textline().into();
         let mut p = ExprNode {
             ctx: ExprCtx {
@@ -1475,7 +1475,41 @@ mod merge {
     }
 
     #[test]
-    fn identifier_node_merge() {
+    fn comment_datum_merge() {
+        let txt = make_textline().into();
+        let mut p = ExprNode {
+            ctx: ExprCtx {
+                span: 0..3,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::CommentDatum(None),
+        };
+        let other = ExprNode {
+            ctx: ExprCtx {
+                span: 0..4,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::List(vec![Expression {
+                ctx: ExprCtx {
+                    span: 1..3,
+                    txt: Rc::clone(&txt),
+                },
+                kind: ExpressionKind::Identifier("foo".into()),
+            }]),
+        };
+
+        let r = p.merge(other);
+
+        assert!(false);
+
+        assert!(matches!(
+            r,
+            Err(ParserError::Invalid(InvalidParseError::InvalidExprTarget))
+        ));
+    }
+
+    #[test]
+    fn identifier_merge() {
         let txt = make_textline().into();
         let mut p = ExprNode {
             ctx: ExprCtx {
@@ -1501,7 +1535,7 @@ mod merge {
     }
 
     #[test]
-    fn string_node_merge() {
+    fn string_merge() {
         let txt = make_textline().into();
         let mut p = ExprNode {
             ctx: ExprCtx {
@@ -1527,7 +1561,7 @@ mod merge {
     }
 
     #[test]
-    fn bytevector_node_merge() {
+    fn bytevector_merge() {
         let txt = make_textline().into();
         let mut p = ExprNode {
             ctx: ExprCtx {
@@ -1552,7 +1586,7 @@ mod merge {
 
         let r = p.merge(other);
 
-        assert!(matches!(r, Ok(())));
+        assert!(matches!(r, Ok(MergeFlow::Continue(()))));
         let seq = extract_or_fail!(p.mode, ParseMode::ByteVector);
         assert_eq!(seq.len(), 2);
         assert!(matches!(
@@ -1568,7 +1602,7 @@ mod merge {
     }
 
     #[test]
-    fn list_node_merge() {
+    fn list_merge() {
         let txt = make_textline().into();
         let mut p = ExprNode {
             ctx: ExprCtx {
@@ -1593,7 +1627,7 @@ mod merge {
 
         let r = p.merge(other);
 
-        assert!(matches!(r, Ok(())));
+        assert!(matches!(r, Ok(MergeFlow::Continue(()))));
         let seq = extract_or_fail!(p.mode, ParseMode::List);
         assert_eq!(seq.len(), 2);
         assert!(matches!(

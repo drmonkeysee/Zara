@@ -17,7 +17,8 @@ use std::{ops::ControlFlow, rc::Rc};
 pub(super) type ParseFlow = ControlFlow<ParseBreak>;
 pub(super) type ExprConvertResult =
     Result<Option<Expression>, <Option<Expression> as TryFrom<ExprNode>>::Error>;
-pub(super) type MergeResult = Result<(), ParserError>;
+pub(super) type MergeFlow = ControlFlow<()>;
+pub(super) type MergeResult = Result<MergeFlow, ParserError>;
 pub(super) type ParseErrFlow = ControlFlow<ParseErrBreak>;
 
 pub(super) enum ParseNode {
@@ -61,7 +62,7 @@ impl ParseNode {
     pub(super) fn merge(&mut self, other: ExprNode) -> MergeResult {
         match self {
             Self::Expr(node) => node.merge(other),
-            Self::InvalidParseTree(_) | Self::InvalidTokenStream => Ok(()),
+            Self::InvalidParseTree(_) | Self::InvalidTokenStream => Ok(MergeFlow::Continue(())),
             Self::Prg(seq) => other.merge_into(seq),
         }
     }
@@ -139,7 +140,7 @@ impl ExprNode {
     fn merge_into(self, seq: &mut Vec<Expression>) -> MergeResult {
         #[allow(unused_must_use, reason = "returns unit value")]
         <Self as TryInto<Option<Expression>>>::try_into(self)?.map_or((), |expr| seq.push(expr));
-        Ok(())
+        Ok(MergeFlow::Continue(()))
     }
 }
 
