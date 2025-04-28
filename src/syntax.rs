@@ -472,7 +472,7 @@ mod tests {
         #[test]
         fn datum_comments_stack() {
             let mut et: ExpressionTree = Default::default();
-            // #u8(10 #; #; 11 12 13) -> #u8(10 13)
+            // NOTE: #u8(10 #; #; 11 12 13) -> #u8(10 13)
             let tokens = [make_tokenline([
                 TokenKind::ByteVector,
                 TokenKind::Constant(Constant::Number(Number::real(10))),
@@ -481,20 +481,20 @@ mod tests {
                 TokenKind::Constant(Constant::Number(Number::real(11))),
                 TokenKind::Constant(Constant::Number(Number::real(12))),
                 TokenKind::Constant(Constant::Number(Number::real(13))),
+                TokenKind::ParenRight,
             ])];
 
             let r = et.parse(tokens.into());
 
             let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
             let seq = prg.unwrap();
-            dbg!(&seq);
             assert_eq!(seq.len(), 1);
             assert!(matches!(
                 &seq[0],
                 Expression {
-                    ctx: ExprCtx { span: Range { start: 0, end: 1 }, txt },
+                    ctx: ExprCtx { span: Range { start: 0, end: 8 }, txt },
                     kind: ExpressionKind::Literal(Value::ByteVector(bv)),
-                } if txt.lineno == 1 && format!("{bv:?}") == ""
+                } if txt.lineno == 1 && format!("{bv:?}") == "[10, 13]"
             ));
             assert!(et.parsers.is_empty());
             assert!(et.errs.is_empty());
@@ -676,7 +676,7 @@ mod tests {
         #[test]
         fn unterminated_comment_datum_causes_other_errors() {
             let mut et: ExpressionTree = Default::default();
-            // (foo #u8(10 #;) #t) -> unterminated datum comment, invalid bytevector item
+            // NOTE: (foo #u8(10 #;) #t) -> unterminated datum comment, invalid bytevector item
             let tokens = [make_tokenline([
                 TokenKind::ParenLeft,
                 TokenKind::Identifier("foo".to_owned()),

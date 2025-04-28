@@ -125,7 +125,7 @@ fn into_char((_, ch): ScanItem) -> char {
     ch
 }
 
-fn eq_char(ch: char) -> impl FnMut(&ScanItem) -> bool {
+fn eq_char(ch: char) -> impl FnOnce(&ScanItem) -> bool {
     move |&(_, c)| c == ch
 }
 

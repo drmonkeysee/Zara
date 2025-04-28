@@ -63,7 +63,10 @@ impl ParseNode {
         match self {
             Self::Expr(node) => node.merge(other),
             Self::InvalidParseTree(_) | Self::InvalidTokenStream => Ok(MergeFlow::Continue(())),
-            Self::Prg(seq) => other.merge_into(seq),
+            Self::Prg(seq) => other.merge_into(|expr| {
+                seq.push(expr);
+                MergeFlow::Continue(())
+            }),
         }
     }
 
@@ -118,11 +121,14 @@ impl ExprNode {
 
     fn merge(&mut self, other: ExprNode) -> MergeResult {
         match &mut self.mode {
-            ParseMode::ByteVector(seq) | ParseMode::List { seq, .. } => other.merge_into(seq),
-            ParseMode::CommentDatum(_inner) => {
-                // TODO: e.g. invalid special form is commented-out properly #; (if foo)
-                todo!("compound datums must be treated as quoted")
-            }
+            ParseMode::ByteVector(seq) | ParseMode::List { seq, .. } => other.merge_into(|expr| {
+                seq.push(expr);
+                MergeFlow::Continue(())
+            }),
+            ParseMode::CommentDatum(inner) => other.merge_into(|expr| {
+                inner.replace(expr);
+                MergeFlow::Break(())
+            }),
             _ => Err(ParserError::Invalid(InvalidParseError::InvalidExprTarget)),
         }
     }
@@ -138,10 +144,9 @@ impl ExprNode {
         })
     }
 
-    fn merge_into(self, seq: &mut Vec<Expression>) -> MergeResult {
-        #[allow(unused_must_use, reason = "returns unit value")]
-        <Self as TryInto<Option<Expression>>>::try_into(self)?.map_or((), |expr| seq.push(expr));
-        Ok(MergeFlow::Continue(()))
+    fn merge_into(self, slot: impl FnOnce(Expression) -> MergeFlow) -> MergeResult {
+        Ok(<Self as TryInto<Option<Expression>>>::try_into(self)?
+            .map_or(MergeFlow::Continue(()), slot))
     }
 }
 

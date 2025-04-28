@@ -1635,11 +1635,17 @@ mod merge {
 
         let r = p.merge(other);
 
-        assert!(false);
-
+        assert!(matches!(r, Ok(MergeFlow::Break(()))));
+        let inner = some_or_fail!(extract_or_fail!(p.mode, ParseMode::CommentDatum));
         assert!(matches!(
-            r,
-            Err(ParserError::Invalid(InvalidParseError::InvalidExprTarget))
+            inner,
+            Expression {
+                ctx: ExprCtx {
+                    span: Range { start: 3, end: 6 },
+                    txt: line
+                },
+                kind: ExpressionKind::Identifier(s),
+            } if &*s == "foo" && Rc::ptr_eq(&txt, &line)
         ));
     }
 
@@ -1672,11 +1678,29 @@ mod merge {
 
         let r = p.merge(other);
 
-        assert!(false);
-
+        assert!(matches!(r, Ok(MergeFlow::Break(()))));
+        let inner = some_or_fail!(extract_or_fail!(p.mode, ParseMode::CommentDatum));
         assert!(matches!(
-            r,
-            Err(ParserError::Invalid(InvalidParseError::InvalidExprTarget))
+            inner,
+            Expression {
+                ctx: ExprCtx {
+                    span: Range { start: 3, end: 8 },
+                    txt: line
+                },
+                kind: ExpressionKind::List(_),
+            } if Rc::ptr_eq(&txt, &line)
+        ));
+        let lst = extract_or_fail!(inner.kind, ExpressionKind::List);
+        assert_eq!(lst.len(), 1);
+        assert!(matches!(
+            &lst[0],
+            Expression {
+                ctx: ExprCtx {
+                    span: Range { start: 4, end: 7 },
+                    txt: line
+                },
+                kind: ExpressionKind::Identifier(s),
+            } if &**s == "foo" && Rc::ptr_eq(&txt, &line)
         ));
     }
 
@@ -1703,11 +1727,17 @@ mod merge {
 
         let r = p.merge(other);
 
-        assert!(false);
-
+        assert!(matches!(r, Ok(MergeFlow::Break(()))));
+        let inner = some_or_fail!(extract_or_fail!(p.mode, ParseMode::CommentDatum));
         assert!(matches!(
-            r,
-            Err(ParserError::Invalid(InvalidParseError::InvalidExprTarget))
+            inner,
+            Expression {
+                ctx: ExprCtx {
+                    span: Range { start: 3, end: 5 },
+                    txt: line
+                },
+                kind: ExpressionKind::List(lst),
+            } if Rc::ptr_eq(&txt, &line) && lst.is_empty()
         ));
     }
 
