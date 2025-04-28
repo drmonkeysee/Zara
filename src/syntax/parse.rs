@@ -269,10 +269,9 @@ fn parse_comment_datum(
         })
     } else {
         let pos = token.span.end;
-        match parse_expr(token, txt) {
-            ExprFlow::Break(brk) => ParseFlow::Break(brk),
-            ExprFlow::Continue(None) => ParseFlow::Continue(()),
-            ExprFlow::Continue(Some(expr)) => {
+        match parse_expr(token, txt)? {
+            None => ParseFlow::Continue(()),
+            Some(expr) => {
                 inner.replace(expr);
                 ParseFlow::Break(ParseBreak::Complete(ExprEnd {
                     lineno: txt.lineno,
@@ -366,15 +365,10 @@ fn parse_list(seq: &mut Vec<Expression>, token: Token, txt: &Rc<TextLine>) -> Pa
 }
 
 fn parse_sequence(seq: &mut Vec<Expression>, token: Token, txt: &Rc<TextLine>) -> ParseFlow {
-    match parse_expr(token, txt) {
-        ExprFlow::Break(brk) => ParseFlow::Break(brk),
-        ExprFlow::Continue(expr) => {
-            if let Some(expr) = expr {
-                seq.push(expr);
-            }
-            ParseFlow::Continue(())
-        }
+    if let Some(expr) = parse_expr(token, txt)? {
+        seq.push(expr);
     }
+    ParseFlow::Continue(())
 }
 
 fn parse_str(buf: &mut String, token: Token, txt: &Rc<TextLine>) -> ParseFlow {
