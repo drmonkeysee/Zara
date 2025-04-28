@@ -1943,14 +1943,14 @@ mod nodeutil {
     }
 
     #[test]
-    fn failed_parse() {
+    fn invalid_node() {
         let p = ParseNode::InvalidTokenStream;
 
         assert!(p.is_invalid_parse());
     }
 
     #[test]
-    fn not_failed_parse() {
+    fn not_invalid_node() {
         let p = ParseNode::prg();
 
         assert!(!p.is_invalid_parse());
