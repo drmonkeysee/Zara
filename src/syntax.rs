@@ -154,6 +154,12 @@ impl ExpressionTree {
                     if bad_tokens {
                         parser = ParseNode::InvalidTokenStream;
                     }
+                    /* TODO:
+                    if bad tokens:
+                        parser = ParseNode::InvalidTokenStream;
+                    else if failed parser
+                        parser = parsers.pop() else EndOfParse
+                    */
                 }
                 ParseFlow::Break(ParseBreak::New(new)) => {
                     self.parsers.push(parser);
@@ -181,6 +187,7 @@ impl ExpressionTree {
             if let Some(done) = parser.into_expr_node(end) {
                 match p.merge(done) {
                     Ok(()) => return p,
+                    // TODO: if finalize return finalize_parser(p, end, errs) else return p
                     Err(ParserError::Invalid(err)) => err,
                     Err(ParserError::Syntax(SyntaxError(errvec))) => {
                         errs.extend(errvec);
