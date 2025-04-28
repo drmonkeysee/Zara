@@ -55,7 +55,7 @@ impl ParseNode {
         match self {
             Self::Expr(node) => node.parse(token, txt),
             Self::InvalidParseTree(_) | Self::InvalidTokenStream => ParseFlow::Continue(()),
-            Self::Prg(seq) => parse_sequence(seq, token, txt),
+            Self::Prg(seq) => parse_sequence(seq, token, txt, false),
         }
     }
 
@@ -107,10 +107,11 @@ pub(super) struct ExprNode {
 impl ExprNode {
     fn parse(&mut self, token: Token, txt: &Rc<TextLine>) -> ParseFlow {
         match &mut self.mode {
-            ParseMode::ByteVector(seq) | ParseMode::List { seq, .. } => parse_list(seq, token, txt),
+            ParseMode::ByteVector(seq) => parse_list(seq, token, txt, true),
             ParseMode::CommentBlock => parse_comment_block(token, txt),
             ParseMode::CommentDatum(inner) => parse_comment_datum(inner, token, txt, &self.ctx),
             ParseMode::Identifier(buf) => parse_verbatim_identifier(buf, token, txt),
+            ParseMode::List { quoted, seq } => parse_list(seq, token, txt, *quoted),
             ParseMode::StringLiteral(buf) => parse_str(buf, token, txt),
         }
     }
@@ -377,16 +378,25 @@ fn parse_expr(token: Token, txt: &Rc<TextLine>, quoted: bool) -> ExprFlow {
     }
 }
 
-fn parse_list(seq: &mut Vec<Expression>, token: Token, txt: &Rc<TextLine>) -> ParseFlow {
+fn parse_list(
+    seq: &mut Vec<Expression>,
+    token: Token,
+    txt: &Rc<TextLine>,
+    quoted: bool,
+) -> ParseFlow {
     match token.kind {
         TokenKind::ParenRight => ParseFlow::Break(ParseBreak::complete(txt.lineno, token.span.end)),
-        _ => parse_sequence(seq, token, txt),
+        _ => parse_sequence(seq, token, txt, quoted),
     }
 }
 
-fn parse_sequence(seq: &mut Vec<Expression>, token: Token, txt: &Rc<TextLine>) -> ParseFlow {
-    // TODO: quoted argument should be inherited from caller
-    if let Some(expr) = parse_expr(token, txt, false)? {
+fn parse_sequence(
+    seq: &mut Vec<Expression>,
+    token: Token,
+    txt: &Rc<TextLine>,
+    quoted: bool,
+) -> ParseFlow {
+    if let Some(expr) = parse_expr(token, txt, quoted)? {
         seq.push(expr);
     }
     ParseFlow::Continue(())

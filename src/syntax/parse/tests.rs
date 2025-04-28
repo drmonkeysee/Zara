@@ -620,7 +620,7 @@ mod sequence {
         };
         let txt = make_textline().into();
 
-        let f = parse_sequence(&mut seq, token, &txt);
+        let f = parse_sequence(&mut seq, token, &txt, false);
 
         assert!(matches!(f, ParseFlow::Continue(())));
         assert_eq!(seq.len(), 1);
@@ -658,7 +658,7 @@ mod sequence {
         };
         let txt = make_textline().into();
 
-        let f = parse_sequence(&mut seq, token, &txt);
+        let f = parse_sequence(&mut seq, token, &txt, false);
 
         assert!(matches!(f, ParseFlow::Continue(())));
         assert_eq!(seq.len(), 3);
@@ -680,7 +680,7 @@ mod sequence {
         };
         let txt = make_textline().into();
 
-        let f = parse_sequence(&mut seq, token, &txt);
+        let f = parse_sequence(&mut seq, token, &txt, false);
 
         assert!(matches!(
             f,
@@ -703,7 +703,7 @@ mod sequence {
         };
         let txt = make_textline().into();
 
-        let f = parse_sequence(&mut seq, token, &txt);
+        let f = parse_sequence(&mut seq, token, &txt, false);
 
         assert!(matches!(
             f,
@@ -753,7 +753,7 @@ mod list {
             span: 6..7,
         };
 
-        let f = parse_list(&mut seq, token, &txt);
+        let f = parse_list(&mut seq, token, &txt, false);
 
         assert!(matches!(
             f,
@@ -793,7 +793,7 @@ mod list {
             span: 6..7,
         };
 
-        let f = parse_list(&mut seq, token, &txt);
+        let f = parse_list(&mut seq, token, &txt, false);
 
         assert!(matches!(
             f,
@@ -814,7 +814,7 @@ mod list {
         };
         let txt = make_textline().into();
 
-        let f = parse_list(&mut seq, token, &txt);
+        let f = parse_list(&mut seq, token, &txt, false);
 
         assert!(matches!(
             f,
@@ -854,7 +854,7 @@ mod list {
             span: 6..7,
         };
 
-        let f = parse_list(&mut seq, token, &txt);
+        let f = parse_list(&mut seq, token, &txt, false);
 
         assert!(matches!(f, ParseFlow::Continue(())));
         assert_eq!(seq.len(), 4);
@@ -898,7 +898,7 @@ mod list {
             span: 6..7,
         };
 
-        let f = parse_list(&mut seq, token, &txt);
+        let f = parse_list(&mut seq, token, &txt, false);
 
         assert!(matches!(
             f,
@@ -914,7 +914,7 @@ mod list {
     }
 
     #[test]
-    fn node_into_procedure_call() {
+    fn into_procedure_call() {
         let txt = make_textline().into();
         let p = ExprNode {
             ctx: ExprCtx {
@@ -979,6 +979,77 @@ mod list {
         ));
         assert!(matches!(
             &args[1],
+            Expression {
+                ctx: ExprCtx { span: Range { start: 4, end: 6 }, txt: line },
+                kind: ExpressionKind::Literal(Value::Constant(Constant::Number(n))),
+            } if n.as_datum().to_string() == "5" && Rc::ptr_eq(&txt, &line)
+        ));
+    }
+
+    #[test]
+    fn into_quoted_list() {
+        let txt = make_textline().into();
+        let p = ExprNode {
+            ctx: ExprCtx {
+                span: 0..6,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::List {
+                quoted: true,
+                seq: vec![
+                    Expression {
+                        ctx: ExprCtx {
+                            span: 0..1,
+                            txt: Rc::clone(&txt),
+                        },
+                        kind: ExpressionKind::Identifier("+".into()),
+                    },
+                    Expression::constant(
+                        Constant::Number(Number::real(4)),
+                        ExprCtx {
+                            span: 1..4,
+                            txt: Rc::clone(&txt),
+                        },
+                    ),
+                    Expression::constant(
+                        Constant::Number(Number::real(5)),
+                        ExprCtx {
+                            span: 4..6,
+                            txt: Rc::clone(&txt),
+                        },
+                    ),
+                ],
+            },
+        };
+
+        let r: Result<Option<Expression>, _> = p.try_into();
+
+        let expr = some_or_fail!(ok_or_fail!(r));
+        assert!(matches!(
+            expr,
+            Expression {
+                ctx: ExprCtx { span: Range { start: 0, end: 6 }, txt: line },
+                kind: ExpressionKind::List(_),
+            } if Rc::ptr_eq(&txt, &line)
+        ));
+        let items = extract_or_fail!(expr.kind, ExpressionKind::List);
+        assert_eq!(items.len(), 3);
+        assert!(matches!(
+            &items[0],
+            Expression {
+                ctx: ExprCtx { span: Range { start: 0, end: 1 }, txt: line },
+                kind: ExpressionKind::Identifier(s),
+            } if &**s == "+" && Rc::ptr_eq(&txt, &line)
+        ));
+        assert!(matches!(
+            &items[1],
+            Expression {
+                ctx: ExprCtx { span: Range { start: 1, end: 4 }, txt: line },
+                kind: ExpressionKind::Literal(Value::Constant(Constant::Number(n))),
+            } if n.as_datum().to_string() == "4" && Rc::ptr_eq(&txt, &line)
+        ));
+        assert!(matches!(
+            &items[2],
             Expression {
                 ctx: ExprCtx { span: Range { start: 4, end: 6 }, txt: line },
                 kind: ExpressionKind::Literal(Value::Constant(Constant::Number(n))),
