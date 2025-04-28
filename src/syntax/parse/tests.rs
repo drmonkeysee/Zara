@@ -1246,6 +1246,30 @@ mod comment {
     }
 
     #[test]
+    fn datum_end_of_list() {
+        let token = Token {
+            kind: TokenKind::ParenRight,
+            span: 1..2,
+        };
+        let txt = make_textline().into();
+        let mut inner = None;
+
+        let f = parse_comment_datum(&mut inner, token, &txt);
+
+        assert!(matches!(
+            f,
+            ParseFlow::Break(ParseBreak::Err{
+                bad_tokens: false,
+                err: ExpressionError {
+                    ctx: ExprCtx { span: Range { start: 1, end: 2 }, txt: line },
+                    kind: ExpressionErrorKind::CommentDatumUnterminated,
+                },
+            }) if Rc::ptr_eq(&txt, &line),
+        ));
+        assert!(inner.is_none());
+    }
+
+    #[test]
     fn datum_into_expr() {
         let txt = make_textline().into();
         let p = ExprNode {

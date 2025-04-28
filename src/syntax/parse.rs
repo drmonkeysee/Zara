@@ -256,16 +256,29 @@ fn parse_comment_datum(
     token: Token,
     txt: &Rc<TextLine>,
 ) -> ParseFlow {
-    let pos = token.span.end;
-    match parse_expr(token, txt) {
-        ExprFlow::Break(brk) => ParseFlow::Break(brk),
-        ExprFlow::Continue(None) => ParseFlow::Continue(()),
-        ExprFlow::Continue(Some(expr)) => {
-            inner.replace(expr);
-            ParseFlow::Break(ParseBreak::Complete(ExprEnd {
-                lineno: txt.lineno,
-                pos,
-            }))
+    if matches!(token.kind, TokenKind::ParenRight) {
+        ParseFlow::Break(ParseBreak::Err {
+            bad_tokens: false,
+            err: ExpressionError {
+                ctx: ExprCtx {
+                    span: token.span,
+                    txt: Rc::clone(&txt),
+                },
+                kind: ExpressionErrorKind::CommentDatumUnterminated,
+            },
+        })
+    } else {
+        let pos = token.span.end;
+        match parse_expr(token, txt) {
+            ExprFlow::Break(brk) => ParseFlow::Break(brk),
+            ExprFlow::Continue(None) => ParseFlow::Continue(()),
+            ExprFlow::Continue(Some(expr)) => {
+                inner.replace(expr);
+                ParseFlow::Break(ParseBreak::Complete(ExprEnd {
+                    lineno: txt.lineno,
+                    pos,
+                }))
+            }
         }
     }
 }

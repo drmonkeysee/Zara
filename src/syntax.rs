@@ -328,7 +328,7 @@ mod tests {
 
     mod parsing {
         use super::*;
-        use crate::testutil::ok_or_fail;
+        use crate::{number::Number, testutil::ok_or_fail};
 
         #[test]
         fn no_tokens() {
@@ -466,6 +466,37 @@ mod tests {
             ));
 
             assert!(et.parsers.is_empty());
+        }
+
+        #[test]
+        fn datum_comments_stack() {
+            let mut et: ExpressionTree = Default::default();
+            // #u8(10 #; #; 11 12 13) -> #u8(10 13)
+            let tokens = [make_tokenline([
+                TokenKind::ByteVector,
+                TokenKind::Constant(Constant::Number(Number::real(10))),
+                TokenKind::CommentDatum,
+                TokenKind::CommentDatum,
+                TokenKind::Constant(Constant::Number(Number::real(11))),
+                TokenKind::Constant(Constant::Number(Number::real(12))),
+                TokenKind::Constant(Constant::Number(Number::real(13))),
+            ])];
+
+            let r = et.parse(tokens.into());
+
+            let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
+            let seq = prg.unwrap();
+            dbg!(&seq);
+            assert_eq!(seq.len(), 1);
+            assert!(matches!(
+                &seq[0],
+                Expression {
+                    ctx: ExprCtx { span: Range { start: 0, end: 1 }, txt },
+                    kind: ExpressionKind::Literal(Value::ByteVector(bv)),
+                } if txt.lineno == 1 && format!("{bv:?}") == ""
+            ));
+            assert!(et.parsers.is_empty());
+            assert!(et.errs.is_empty());
         }
 
         #[test]
@@ -637,6 +668,45 @@ mod tests {
 
             let err = extract_or_fail!(err_or_fail!(r), ParserError::Invalid);
             assert!(matches!(err, InvalidParseError::InvalidExprSource));
+            assert!(et.parsers.is_empty());
+            assert!(et.errs.is_empty());
+        }
+
+        #[test]
+        fn unterminated_comment_datum_causes_other_errors() {
+            let mut et: ExpressionTree = Default::default();
+            // (foo #u8(10 #;) #t) -> unterminated datum comment, invalid bytevector item
+            let tokens = [make_tokenline([
+                TokenKind::ParenLeft,
+                TokenKind::Identifier("foo".to_owned()),
+                TokenKind::ByteVector,
+                TokenKind::Constant(Constant::Number(Number::real(10))),
+                TokenKind::CommentDatum,
+                TokenKind::ParenRight,
+                TokenKind::Constant(Constant::Boolean(true)),
+                TokenKind::ParenRight,
+            ])];
+
+            let r = et.parse(tokens.into());
+
+            let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
+            dbg!(&errs);
+            assert_eq!(errs.len(), 2);
+            assert!(matches!(
+                &errs[0],
+                ExpressionError {
+                    ctx: ExprCtx { span: Range { start: 5, end: 6 }, txt },
+                    kind: ExpressionErrorKind::CommentDatumUnterminated,
+                } if txt.lineno == 1
+            ));
+            assert!(matches!(
+                &errs[1],
+                ExpressionError {
+                    ctx: ExprCtx { span: Range { start: 3, end: 4 }, txt },
+                    kind: ExpressionErrorKind::ByteVectorInvalidItem(ExpressionKind::Literal(
+                        Value::Constant(Constant::Boolean(true)))),
+                }  if txt.lineno == 1
+            ));
             assert!(et.parsers.is_empty());
             assert!(et.errs.is_empty());
         }
