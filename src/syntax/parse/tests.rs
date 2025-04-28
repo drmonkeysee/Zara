@@ -1170,8 +1170,12 @@ mod comment {
         };
         let txt = make_textline().into();
         let mut inner = None;
+        let ctx = ExprCtx {
+            span: 0..1,
+            txt: Rc::clone(&txt),
+        };
 
-        let f = parse_comment_datum(&mut inner, token, &txt);
+        let f = parse_comment_datum(&mut inner, token, &txt, &ctx);
 
         assert!(matches!(
             f,
@@ -1193,8 +1197,12 @@ mod comment {
         };
         let txt = make_textline().into();
         let mut inner = None;
+        let ctx = ExprCtx {
+            span: 0..1,
+            txt: Rc::clone(&txt),
+        };
 
-        let f = parse_comment_datum(&mut inner, token, &txt);
+        let f = parse_comment_datum(&mut inner, token, &txt, &ctx);
 
         assert!(matches!(
             f,
@@ -1214,8 +1222,12 @@ mod comment {
         };
         let txt = make_textline().into();
         let mut inner = None;
+        let ctx = ExprCtx {
+            span: 0..1,
+            txt: Rc::clone(&txt),
+        };
 
-        let f = parse_comment_datum(&mut inner, token, &txt);
+        let f = parse_comment_datum(&mut inner, token, &txt, &ctx);
 
         assert!(matches!(f, ParseFlow::Continue(()),));
         assert!(inner.is_none());
@@ -1229,8 +1241,12 @@ mod comment {
         };
         let txt = make_textline().into();
         let mut inner = None;
+        let ctx = ExprCtx {
+            span: 0..1,
+            txt: Rc::clone(&txt),
+        };
 
-        let f = parse_comment_datum(&mut inner, token, &txt);
+        let f = parse_comment_datum(&mut inner, token, &txt, &ctx);
 
         assert!(matches!(
             f,
@@ -1253,14 +1269,18 @@ mod comment {
         };
         let txt = make_textline().into();
         let mut inner = None;
+        let ctx = ExprCtx {
+            span: 0..1,
+            txt: Rc::clone(&txt),
+        };
 
-        let f = parse_comment_datum(&mut inner, token, &txt);
+        let f = parse_comment_datum(&mut inner, token, &txt, &ctx);
 
         assert!(matches!(
             f,
             ParseFlow::Break(ParseBreak::Err{
                 err: ExpressionError {
-                    ctx: ExprCtx { span: Range { start: 1, end: 2 }, txt: line },
+                    ctx: ExprCtx { span: Range { start: 0, end: 2 }, txt: line },
                     kind: ExpressionErrorKind::CommentDatumUnterminated,
                 },
                 flow: ParseErrFlow::Break(ParseErrBreak::FailedParser),

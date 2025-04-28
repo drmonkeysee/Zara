@@ -109,7 +109,7 @@ impl ExprNode {
         match &mut self.mode {
             ParseMode::ByteVector(seq) | ParseMode::List(seq) => parse_list(seq, token, txt),
             ParseMode::CommentBlock => parse_comment_block(token, txt),
-            ParseMode::CommentDatum(inner) => parse_comment_datum(inner, token, txt),
+            ParseMode::CommentDatum(inner) => parse_comment_datum(inner, token, txt, &self.ctx),
             ParseMode::Identifier(buf) => parse_verbatim_identifier(buf, token, txt),
             ParseMode::StringLiteral(buf) => parse_str(buf, token, txt),
         }
@@ -270,13 +270,19 @@ fn parse_comment_datum(
     inner: &mut Option<Expression>,
     token: Token,
     txt: &Rc<TextLine>,
+    node_ctx: &ExprCtx,
 ) -> ParseFlow {
     if matches!(token.kind, TokenKind::ParenRight) {
-        ParseFlow::Break(ParseBreak::failed_parser(ExpressionError {
-            ctx: ExprCtx {
-                span: token.span,
-                txt: Rc::clone(&txt),
+        let ctx = ExprCtx {
+            span: node_ctx.span.start..if txt.lineno == node_ctx.txt.lineno {
+                token.span.end
+            } else {
+                node_ctx.span.end
             },
+            txt: Rc::clone(&node_ctx.txt),
+        };
+        ParseFlow::Break(ParseBreak::failed_parser(ExpressionError {
+            ctx,
             kind: ExpressionErrorKind::CommentDatumUnterminated,
         }))
     } else {

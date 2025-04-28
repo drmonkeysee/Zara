@@ -695,7 +695,7 @@ mod tests {
             assert!(matches!(
                 &errs[0],
                 ExpressionError {
-                    ctx: ExprCtx { span: Range { start: 5, end: 6 }, txt },
+                    ctx: ExprCtx { span: Range { start: 4, end: 6 }, txt },
                     kind: ExpressionErrorKind::CommentDatumUnterminated,
                 } if txt.lineno == 1
             ));
@@ -741,9 +741,9 @@ mod tests {
             assert!(matches!(
                 &errs[0],
                 ExpressionError {
-                    ctx: ExprCtx { span: Range { start: 0, end: 1 }, txt },
+                    ctx: ExprCtx { span: Range { start: 0, end: 19 }, txt },
                     kind: ExpressionErrorKind::CommentDatumUnterminated,
-                } if txt.lineno == 2
+                } if txt.lineno == 1
             ));
             assert!(et.parsers.is_empty());
             assert!(et.errs.is_empty());
