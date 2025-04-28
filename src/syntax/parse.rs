@@ -18,6 +18,7 @@ pub(super) type ParseFlow = ControlFlow<ParseBreak>;
 pub(super) type ExprConvertResult =
     Result<Option<Expression>, <Option<Expression> as TryFrom<ExprNode>>::Error>;
 pub(super) type MergeResult = Result<(), ParserError>;
+pub(super) type ParseErrFlow = ControlFlow<ParseErrBreak>;
 
 pub(super) enum ParseNode {
     Expr(ExprNode),
@@ -164,11 +165,17 @@ impl TryFrom<ExprNode> for Option<Expression> {
 }
 
 #[derive(Debug)]
+pub(super) enum ParseErrBreak {
+    FailedParser,
+    InvalidTokenStream,
+}
+
+#[derive(Debug)]
 pub(super) enum ParseBreak {
     Complete(ExprEnd),
     Err {
-        bad_tokens: bool,
         err: ExpressionError,
+        flow: ParseErrFlow,
     },
     New(ParseNew),
 }
@@ -184,15 +191,22 @@ impl ParseBreak {
 
     fn recover(err: ExpressionError) -> Self {
         Self::Err {
-            bad_tokens: false,
             err,
+            flow: ParseErrFlow::Continue(()),
+        }
+    }
+
+    fn failed_parser(err: ExpressionError) -> Self {
+        Self::Err {
+            err,
+            flow: ParseErrFlow::Break(ParseErrBreak::FailedParser),
         }
     }
 
     fn token_failure(err: ExpressionError) -> Self {
         Self::Err {
-            bad_tokens: true,
             err,
+            flow: ParseErrFlow::Break(ParseErrBreak::InvalidTokenStream),
         }
     }
 }
@@ -257,16 +271,13 @@ fn parse_comment_datum(
     txt: &Rc<TextLine>,
 ) -> ParseFlow {
     if matches!(token.kind, TokenKind::ParenRight) {
-        ParseFlow::Break(ParseBreak::Err {
-            bad_tokens: false,
-            err: ExpressionError {
-                ctx: ExprCtx {
-                    span: token.span,
-                    txt: Rc::clone(&txt),
-                },
-                kind: ExpressionErrorKind::CommentDatumUnterminated,
+        ParseFlow::Break(ParseBreak::failed_parser(ExpressionError {
+            ctx: ExprCtx {
+                span: token.span,
+                txt: Rc::clone(&txt),
             },
-        })
+            kind: ExpressionErrorKind::CommentDatumUnterminated,
+        }))
     } else {
         let pos = token.span.end;
         match parse_expr(token, txt)? {

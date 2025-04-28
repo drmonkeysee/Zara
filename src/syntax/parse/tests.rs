@@ -110,11 +110,11 @@ mod expr {
         assert!(matches!(
             f,
             ExprFlow::Break(ParseBreak::Err {
-                bad_tokens: true,
                 err: ExpressionError {
                     ctx: ExprCtx { span: Range { start: 0, end: 3 }, txt: line },
                     kind: ExpressionErrorKind::SeqInvalid(TokenKind::StringEnd(_)),
                 },
+                flow: ParseErrFlow::Break(ParseErrBreak::InvalidTokenStream),
             }) if Rc::ptr_eq(&line, &txt)
         ));
     }
@@ -553,11 +553,11 @@ mod identifier {
         assert!(matches!(
             f,
             ParseFlow::Break(ParseBreak::Err {
-                bad_tokens: true,
                 err: ExpressionError {
                     ctx: ExprCtx { span: Range { start: 4, end: 5 }, txt: line },
                     kind: ExpressionErrorKind::IdentifierInvalid(TokenKind::ParenLeft),
                 },
+                flow: ParseErrFlow::Break(ParseErrBreak::InvalidTokenStream),
             }) if Rc::ptr_eq(&line, &txt)
         ));
         assert_eq!(s, "start\n");
@@ -687,11 +687,11 @@ mod sequence {
         assert!(matches!(
             f,
             ParseFlow::Break(ParseBreak::Err {
-                bad_tokens: true,
                 err: ExpressionError {
                     ctx: ExprCtx { span: Range { start: 0, end: 3 }, txt: line },
                     kind: ExpressionErrorKind::SeqInvalid(TokenKind::StringEnd(_)),
                 },
+                flow: ParseErrFlow::Break(ParseErrBreak::InvalidTokenStream),
             }) if Rc::ptr_eq(&line, &txt)
         ));
         assert!(seq.is_empty());
@@ -882,11 +882,11 @@ mod list {
         assert!(matches!(
             f,
             ParseFlow::Break(ParseBreak::Err {
-                bad_tokens: true,
                 err: ExpressionError {
                     ctx: ExprCtx { span: Range { start: 6, end: 7 }, txt: line },
                     kind: ExpressionErrorKind::SeqInvalid(TokenKind::StringDiscard),
                 },
+                flow: ParseErrFlow::Break(ParseErrBreak::InvalidTokenStream),
             }) if Rc::ptr_eq(&line, &txt)
         ));
         assert_eq!(seq.len(), 3);
@@ -1034,11 +1034,11 @@ mod string {
         assert!(matches!(
             f,
             ParseFlow::Break(ParseBreak::Err {
-                bad_tokens: true,
                 err: ExpressionError {
                     ctx: ExprCtx { span: Range { start: 4, end: 5 }, txt: line },
                     kind: ExpressionErrorKind::StrInvalid(TokenKind::ParenLeft),
                 },
+                flow: ParseErrFlow::Break(ParseErrBreak::InvalidTokenStream),
             }) if Rc::ptr_eq(&line, &txt)
         ));
         assert_eq!(s, "start\n");
@@ -1113,13 +1113,13 @@ mod comment {
         assert!(matches!(
             f,
             ParseFlow::Break(ParseBreak::Err {
-                bad_tokens: true,
                 err: ExpressionError {
                     ctx: ExprCtx { span: Range { start: 0, end: 4 }, txt: line },
                     kind: ExpressionErrorKind::CommentBlockInvalid(
                         TokenKind::CommentBlockBegin { .. }
                     ),
                 },
+                flow: ParseErrFlow::Break(ParseErrBreak::InvalidTokenStream),
             }) if Rc::ptr_eq(&line, &txt)
         ));
     }
@@ -1137,11 +1137,11 @@ mod comment {
         assert!(matches!(
             f,
             ParseFlow::Break(ParseBreak::Err {
-                bad_tokens: true,
                 err: ExpressionError {
                     ctx: ExprCtx { span: Range { start: 0, end: 1 }, txt: line },
                     kind: ExpressionErrorKind::CommentBlockInvalid(TokenKind::ParenLeft),
                 },
+                flow: ParseErrFlow::Break(ParseErrBreak::InvalidTokenStream),
             }) if Rc::ptr_eq(&line, &txt)
         ));
     }
@@ -1235,11 +1235,11 @@ mod comment {
         assert!(matches!(
             f,
             ParseFlow::Break(ParseBreak::Err{
-                bad_tokens: true,
                 err: ExpressionError {
                     ctx: ExprCtx { span: Range { start: 1, end: 2 }, txt: line },
                     kind: ExpressionErrorKind::SeqInvalid(TokenKind::StringDiscard),
                 },
+                flow: ParseErrFlow::Break(ParseErrBreak::InvalidTokenStream),
             }) if Rc::ptr_eq(&txt, &line),
         ));
         assert!(inner.is_none());
@@ -1259,11 +1259,11 @@ mod comment {
         assert!(matches!(
             f,
             ParseFlow::Break(ParseBreak::Err{
-                bad_tokens: false,
                 err: ExpressionError {
                     ctx: ExprCtx { span: Range { start: 1, end: 2 }, txt: line },
                     kind: ExpressionErrorKind::CommentDatumUnterminated,
                 },
+                flow: ParseErrFlow::Break(ParseErrBreak::FailedParser),
             }) if Rc::ptr_eq(&txt, &line),
         ));
         assert!(inner.is_none());

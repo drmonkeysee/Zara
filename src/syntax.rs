@@ -4,7 +4,7 @@ mod parse;
 pub(crate) use self::expr::Program;
 use self::{
     expr::{ExprCtx, ExprEnd, Expression, ExpressionError, ExpressionKind, PeekableExt},
-    parse::{ParseBreak, ParseFlow, ParseNode},
+    parse::{ParseBreak, ParseErrBreak, ParseErrFlow, ParseFlow, ParseNode},
 };
 use crate::{lex::TokenLine, txt::TextLine, value::Value};
 use std::{
@@ -149,17 +149,16 @@ impl ExpressionTree {
                 ParseFlow::Break(ParseBreak::Complete(end)) => {
                     parser = self.finalize_parser(parser, end, &mut errs);
                 }
-                ParseFlow::Break(ParseBreak::Err { bad_tokens, err }) => {
+                ParseFlow::Break(ParseBreak::Err { err, flow }) => {
                     errs.push(err);
-                    if bad_tokens {
-                        parser = ParseNode::InvalidTokenStream;
+                    if let ParseErrFlow::Break(brk) = flow {
+                        parser = match brk {
+                            ParseErrBreak::FailedParser => self.parsers.pop().unwrap_or(
+                                ParseNode::InvalidParseTree(InvalidParseError::EndOfParse),
+                            ),
+                            ParseErrBreak::InvalidTokenStream => ParseNode::InvalidTokenStream,
+                        }
                     }
-                    /* TODO:
-                    if bad tokens:
-                        parser = ParseNode::InvalidTokenStream;
-                    else if failed parser
-                        parser = parsers.pop() else EndOfParse
-                    */
                 }
                 ParseFlow::Break(ParseBreak::New(new)) => {
                     self.parsers.push(parser);
@@ -696,7 +695,6 @@ mod tests {
             let r = et.parse(tokens.into());
 
             let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
-            dbg!(&errs);
             assert_eq!(errs.len(), 2);
             assert!(matches!(
                 &errs[0],
@@ -708,10 +706,48 @@ mod tests {
             assert!(matches!(
                 &errs[1],
                 ExpressionError {
-                    ctx: ExprCtx { span: Range { start: 3, end: 4 }, txt },
+                    ctx: ExprCtx { span: Range { start: 6, end: 7 }, txt },
                     kind: ExpressionErrorKind::ByteVectorInvalidItem(ExpressionKind::Literal(
                         Value::Constant(Constant::Boolean(true)))),
                 }  if txt.lineno == 1
+            ));
+            assert!(et.parsers.is_empty());
+            assert!(et.errs.is_empty());
+        }
+
+        #[test]
+        fn failed_parser_into_unexpected_end_of_parse_discards_rest_of_input() {
+            let mut et: ExpressionTree = Default::default();
+            let tokens = [make_tokenline_no([TokenKind::CommentDatum], 1)];
+
+            let r = et.parse(tokens.into());
+
+            assert!(matches!(r, Ok(ParserOutput::Continuation)));
+            assert_eq!(et.parsers.len(), 2);
+
+            let datum_node = et.parsers.pop().unwrap();
+            et.parsers.clear();
+            et.parsers.push(datum_node);
+
+            let tokens = [make_tokenline_no(
+                [
+                    TokenKind::ParenRight,
+                    TokenKind::StringDiscard,
+                    TokenKind::IdentifierDiscard,
+                ],
+                2,
+            )];
+
+            let r = et.parse(tokens.into());
+
+            let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
+            assert_eq!(errs.len(), 1);
+            assert!(matches!(
+                &errs[0],
+                ExpressionError {
+                    ctx: ExprCtx { span: Range { start: 0, end: 1 }, txt },
+                    kind: ExpressionErrorKind::CommentDatumUnterminated,
+                } if txt.lineno == 2
             ));
             assert!(et.parsers.is_empty());
             assert!(et.errs.is_empty());
