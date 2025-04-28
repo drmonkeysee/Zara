@@ -1495,7 +1495,7 @@ mod merge {
     }
 
     #[test]
-    fn comment_datum_merge() {
+    fn comment_datum_simple_merge() {
         let txt = make_textline().into();
         let mut p = ExprNode {
             ctx: ExprCtx {
@@ -1506,16 +1506,72 @@ mod merge {
         };
         let other = ExprNode {
             ctx: ExprCtx {
-                span: 0..4,
+                span: 3..6,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::Identifier("foo".to_owned()),
+        };
+
+        let r = p.merge(other);
+
+        assert!(false);
+
+        assert!(matches!(
+            r,
+            Err(ParserError::Invalid(InvalidParseError::InvalidExprTarget))
+        ));
+    }
+
+    #[test]
+    fn comment_datum_compound_merge() {
+        let txt = make_textline().into();
+        let mut p = ExprNode {
+            ctx: ExprCtx {
+                span: 0..3,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::CommentDatum(None),
+        };
+        let other = ExprNode {
+            ctx: ExprCtx {
+                span: 3..8,
                 txt: Rc::clone(&txt),
             },
             mode: ParseMode::List(vec![Expression {
                 ctx: ExprCtx {
-                    span: 1..3,
+                    span: 4..7,
                     txt: Rc::clone(&txt),
                 },
                 kind: ExpressionKind::Identifier("foo".into()),
             }]),
+        };
+
+        let r = p.merge(other);
+
+        assert!(false);
+
+        assert!(matches!(
+            r,
+            Err(ParserError::Invalid(InvalidParseError::InvalidExprTarget))
+        ));
+    }
+
+    #[test]
+    fn comment_datum_empty_compound_merge() {
+        let txt = make_textline().into();
+        let mut p = ExprNode {
+            ctx: ExprCtx {
+                span: 0..3,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::CommentDatum(None),
+        };
+        let other = ExprNode {
+            ctx: ExprCtx {
+                span: 3..5,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::List(Vec::new()),
         };
 
         let r = p.merge(other);
