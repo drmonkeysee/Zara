@@ -183,22 +183,24 @@ impl ExpressionTree {
         end: ExprEnd,
         errs: &mut Vec<ExpressionError>,
     ) -> ParseNode {
-        let err = if let Some(mut p) = self.parsers.pop() {
-            if let Some(done) = parser.into_expr_node(end) {
-                match p.merge(done) {
-                    Ok(()) => return p,
-                    // TODO: if finalize return finalize_parser(p, end, errs) else return p
-                    Err(ParserError::Invalid(err)) => err,
-                    Err(ParserError::Syntax(SyntaxError(errvec))) => {
-                        errs.extend(errvec);
-                        return p;
+        let err = match self.parsers.pop() {
+            None => InvalidParseError::MissingExprTarget,
+            Some(mut p) => {
+                match parser.into_expr_node(end) {
+                    None => InvalidParseError::InvalidExprSource,
+                    Some(done) => {
+                        match p.merge(done) {
+                            Err(ParserError::Invalid(err)) => err,
+                            Err(ParserError::Syntax(SyntaxError(errvec))) => {
+                                errs.extend(errvec);
+                                return p;
+                            }
+                            Ok(()) => return p,
+                            // TODO: if finalize return finalize_parser(p, end, errs) else return p
+                        }
                     }
                 }
-            } else {
-                InvalidParseError::InvalidExprSource
             }
-        } else {
-            InvalidParseError::MissingExprTarget
         };
         ParseNode::InvalidParseTree(err)
     }
@@ -294,17 +296,14 @@ impl Display for SyntaxErrorLineMessage<'_> {
 }
 
 fn tokens_expr(token_lines: Box<[TokenLine]>) -> Option<Expression> {
-    if let Some(TokenLine(_, line)) = token_lines.first() {
-        Some(Expression {
-            ctx: ExprCtx {
-                span: 0..line.line.len(),
-                txt: line.clone().into(),
-            },
-            kind: ExpressionKind::Literal(Value::TokenList(token_lines)),
-        })
-    } else {
-        None
-    }
+    let TokenLine(_, line) = token_lines.first()?;
+    Some(Expression {
+        ctx: ExprCtx {
+            span: 0..line.line.len(),
+            txt: line.clone().into(),
+        },
+        kind: ExpressionKind::Literal(Value::TokenList(token_lines)),
+    })
 }
 
 #[cfg(test)]
