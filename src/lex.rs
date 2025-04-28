@@ -278,6 +278,7 @@ struct TokenErrorLineMessage<'a>(&'a TokenErrorLine);
 impl Display for TokenErrorLineMessage<'_> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         let TokenErrorLine(errs, txtline) = self.0;
+        f.write_str("Syntax Error\n")?;
         txtline.display_header().fmt(f)?;
 
         if errs.is_empty() {

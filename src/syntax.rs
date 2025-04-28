@@ -260,6 +260,7 @@ struct SyntaxErrorLineMessage<'a>((&'a TextLine, &'a [&'a ExpressionError]));
 impl Display for SyntaxErrorLineMessage<'_> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         let (txtline, errs) = self.0;
+        f.write_str("Syntax Error\n")?;
         txtline.display_header().fmt(f)?;
 
         if errs.is_empty() {
