@@ -1056,6 +1056,32 @@ mod list {
             } if n.as_datum().to_string() == "5" && Rc::ptr_eq(&txt, &line)
         ));
     }
+
+    #[test]
+    fn into_empty_quoted_list() {
+        let txt = make_textline().into();
+        let p = ExprNode {
+            ctx: ExprCtx {
+                span: 0..2,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::List {
+                quoted: true,
+                seq: Vec::new(),
+            },
+        };
+
+        let r: Result<Option<Expression>, _> = p.try_into();
+
+        let expr = some_or_fail!(ok_or_fail!(r));
+        assert!(matches!(
+            expr,
+            Expression {
+                ctx: ExprCtx { span: Range { start: 0, end: 2 }, txt: line },
+                kind: ExpressionKind::List(items),
+            } if Rc::ptr_eq(&txt, &line) && items.is_empty()
+        ));
+    }
 }
 
 mod string {
