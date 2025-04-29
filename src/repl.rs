@@ -1,4 +1,4 @@
-use rustyline::{DefaultEditor, Result};
+use rustyline::{Editor, Result, history::MemHistory};
 use std::rc::Rc;
 use zara::{
     Error, Evaluation, Interpreter, RunMode, Value,
@@ -9,7 +9,7 @@ const INPUT: &str = "λ:> ";
 const CONT: &str = "... ";
 
 pub(crate) struct Repl {
-    editor: DefaultEditor,
+    editor: ZaraEditor,
     prompt: &'static str,
     running: bool, // TODO: will be needed for repl quit
     runtime: Interpreter,
@@ -19,7 +19,7 @@ pub(crate) struct Repl {
 impl Repl {
     pub(crate) fn new(mode: RunMode) -> Result<Self> {
         Ok(Self {
-            editor: DefaultEditor::new()?,
+            editor: create_editor()?,
             prompt: INPUT,
             running: true,
             runtime: Interpreter::new(mode),
@@ -29,9 +29,16 @@ impl Repl {
 
     pub(crate) fn run(&mut self) -> Result<()> {
         while self.running {
-            self.src.set_line(self.editor.readline(self.prompt)?);
+            self.readline()?;
             self.runline();
         }
+        Ok(())
+    }
+
+    fn readline(&mut self) -> Result<()> {
+        let line = self.editor.readline(self.prompt)?;
+        self.editor.add_history_entry(&line)?;
+        self.src.set_line(line);
         Ok(())
     }
 
@@ -65,6 +72,8 @@ impl Repl {
         self.src.reset();
     }
 }
+
+type ZaraEditor = Editor<(), MemHistory>;
 
 struct ReplSource {
     ctx: Rc<TextContext>,
@@ -115,6 +124,10 @@ impl TextSource for ReplSource {
     fn lineno(&self) -> LineNumber {
         self.lineno
     }
+}
+
+fn create_editor() -> Result<ZaraEditor> {
+    ZaraEditor::with_history(Default::default(), Default::default())
 }
 
 #[cfg(test)]
