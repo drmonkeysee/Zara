@@ -1719,6 +1719,38 @@ mod quote {
         let txt = make_textline().into();
         let p = ExprNode {
             ctx: ExprCtx {
+                span: 0..1,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::Quote(Some(Expression {
+                ctx: ExprCtx {
+                    span: 3..13,
+                    txt: Rc::clone(&txt),
+                },
+                kind: ExpressionKind::List([].into()),
+            })),
+        };
+
+        let r: Result<Option<Expression>, _> = p.try_into();
+
+        let expr = some_or_fail!(ok_or_fail!(r));
+        assert!(matches!(
+            expr,
+            Expression {
+                ctx: ExprCtx {
+                    span: Range { start: 3, end: 13 },
+                    txt: line,
+                },
+                kind: ExpressionKind::List(seq),
+            } if Rc::ptr_eq(&txt, &line) && seq.is_empty()
+        ));
+    }
+
+    #[test]
+    fn missing_into_expr() {
+        let txt = make_textline().into();
+        let p = ExprNode {
+            ctx: ExprCtx {
                 span: 0..2,
                 txt: Rc::clone(&txt),
             },
