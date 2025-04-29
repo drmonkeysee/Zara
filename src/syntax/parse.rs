@@ -358,7 +358,22 @@ fn parse_expr(token: Token, txt: &Rc<TextLine>, quoted: bool) -> ExprFlow {
             token.span.start,
         )),
         TokenKind::Quote => {
-            ExprFlow::Break(ParseBreak::new(ParseMode::Quote(None), token.span.start))
+            let start = token.span.start;
+            let mode = if quoted {
+                ParseMode::List {
+                    quoted: true,
+                    seq: vec![Expression {
+                        ctx: ExprCtx {
+                            span: token.span,
+                            txt: Rc::clone(&txt),
+                        },
+                        kind: ExpressionKind::Identifier("quote".into()),
+                    }],
+                }
+            } else {
+                ParseMode::Quote(None)
+            };
+            ExprFlow::Break(ParseBreak::new(mode, start))
         }
         TokenKind::StringBegin { s, line_cont } => ExprFlow::Break(ParseBreak::new(
             ParseMode::string(s, !line_cont),
