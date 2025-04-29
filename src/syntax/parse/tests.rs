@@ -245,7 +245,7 @@ mod expr {
             f,
             ExprFlow::Break(ParseBreak::New(
                 ParseNew {
-                    mode: ParseMode::List { quoted: false, seq },
+                    mode: ParseMode::List { datum: false, seq },
                     start: 1
                 }
             )) if seq.is_empty()
@@ -266,7 +266,7 @@ mod expr {
             f,
             ExprFlow::Break(ParseBreak::New(
                 ParseNew {
-                    mode: ParseMode::List { quoted: true, seq },
+                    mode: ParseMode::List { datum: true, seq },
                     start: 1
                 }
             )) if seq.is_empty()
@@ -324,7 +324,7 @@ mod expr {
         assert!(matches!(
             f,
             ExprFlow::Break(ParseBreak::New(ParseNew {
-                mode: ParseMode::List { quoted: true, .. },
+                mode: ParseMode::List { datum: true, .. },
                 start: 1
             }))
         ));
@@ -393,7 +393,7 @@ mod datum {
         assert!(matches!(
             f,
             ParseFlow::Break(ParseBreak::New(ParseNew {
-                mode: ParseMode::List { quoted: true, seq },
+                mode: ParseMode::List { datum: true, seq },
                 start: 1
             })) if seq.is_empty(),
         ));
@@ -869,7 +869,7 @@ mod sequence {
             f,
             ParseFlow::Break(ParseBreak::New(
                 ParseNew {
-                    mode: ParseMode::List { quoted: false, seq },
+                    mode: ParseMode::List { datum: false, seq },
                     start: 1
                 }
             )) if seq.is_empty()
@@ -981,7 +981,7 @@ mod list {
         assert!(matches!(
             f,
             ParseFlow::Break(ParseBreak::New(ParseNew {
-                mode: ParseMode::List { quoted: false, seq },
+                mode: ParseMode::List { datum: false, seq },
                 start: 6
             })) if seq.is_empty()
         ));
@@ -1105,7 +1105,7 @@ mod list {
                 txt: Rc::clone(&txt),
             },
             mode: ParseMode::List {
-                quoted: false,
+                datum: false,
                 seq: vec![
                     Expression {
                         ctx: ExprCtx {
@@ -1178,7 +1178,7 @@ mod list {
                 txt: Rc::clone(&txt),
             },
             mode: ParseMode::List {
-                quoted: true,
+                datum: true,
                 seq: vec![
                     Expression {
                         ctx: ExprCtx {
@@ -1249,7 +1249,7 @@ mod list {
                 txt: Rc::clone(&txt),
             },
             mode: ParseMode::List {
-                quoted: true,
+                datum: true,
                 seq: Vec::new(),
             },
         };
@@ -1978,7 +1978,7 @@ mod merge {
                 txt: Rc::clone(&txt),
             },
             mode: ParseMode::List {
-                quoted: true,
+                datum: true,
                 seq: vec![Expression {
                     ctx: ExprCtx {
                         span: 4..7,
@@ -2033,7 +2033,7 @@ mod merge {
                 txt: Rc::clone(&txt),
             },
             mode: ParseMode::List {
-                quoted: true,
+                datum: true,
                 seq: Vec::new(),
             },
         };
@@ -2156,7 +2156,7 @@ mod merge {
                 txt: Rc::clone(&txt),
             },
             mode: ParseMode::List {
-                quoted: false,
+                datum: false,
                 seq: vec![Expression {
                     ctx: ExprCtx {
                         span: 0..3,
@@ -2177,7 +2177,7 @@ mod merge {
         let r = p.merge(other);
 
         assert!(matches!(r, Ok(MergeFlow::Continue(()))));
-        assert!(matches!(p.mode, ParseMode::List { quoted: false, .. }));
+        assert!(matches!(p.mode, ParseMode::List { datum: false, .. }));
         let ParseMode::List { seq, .. } = p.mode else {
             unreachable!();
         };
@@ -2284,7 +2284,7 @@ mod nodeutil {
         let txt = make_textline().into();
         let p = ParseNode::new(
             ParseMode::List {
-                quoted: false,
+                datum: false,
                 seq: vec![
                     Expression {
                         ctx: ExprCtx {
