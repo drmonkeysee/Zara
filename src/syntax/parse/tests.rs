@@ -310,6 +310,37 @@ mod expr {
             }))
         ));
     }
+
+    #[test]
+    fn start_quoted_quote() {
+        let token = Token {
+            kind: TokenKind::Quote,
+            span: 1..2,
+        };
+        let txt = make_textline().into();
+
+        let f = parse_expr(token, &txt, true);
+
+        assert!(matches!(
+            f,
+            ExprFlow::Break(ParseBreak::New(ParseNew {
+                mode: ParseMode::List { quoted: true, .. },
+                start: 1
+            }))
+        ));
+        let mode = extract_or_fail!(extract_or_fail!(f, ExprFlow::Break), ParseBreak::New).mode;
+        let ParseMode::List { seq, .. } = mode else {
+            unreachable!();
+        };
+        assert_eq!(seq.len(), 1);
+        assert!(matches!(
+            &seq[0],
+            Expression {
+                ctx: ExprCtx { span: Range { start: 1, end: 2 }, txt: line },
+                kind: ExpressionKind::Identifier(s),
+            } if Rc::ptr_eq(&txt, &line) && &**s == "quote"
+        ));
+    }
 }
 
 mod datum {
