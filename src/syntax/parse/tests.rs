@@ -291,6 +291,158 @@ mod expr {
             }))
         ));
     }
+
+    #[test]
+    fn start_quote() {
+        let token = Token {
+            kind: TokenKind::Quote,
+            span: 1..2,
+        };
+        let txt = make_textline().into();
+
+        let f = parse_expr(token, &txt, false);
+
+        assert!(matches!(
+            f,
+            ExprFlow::Break(ParseBreak::New(ParseNew {
+                mode: ParseMode::Quote(None),
+                start: 1
+            }))
+        ));
+    }
+}
+
+mod datum {
+    use super::*;
+
+    #[test]
+    fn datum_simple() {
+        let token = Token {
+            kind: TokenKind::Constant(Constant::Boolean(true)),
+            span: 1..3,
+        };
+        let txt = make_textline().into();
+        let mut inner = None;
+        let ctx = ExprCtx {
+            span: 0..1,
+            txt: Rc::clone(&txt),
+        };
+
+        let f = parse_datum(&mut inner, token, &txt, &ctx);
+
+        assert!(matches!(
+            f,
+            ParseFlow::Break(ParseBreak::Complete(ExprEnd { lineno: 1, pos: 3 })),
+        ));
+        let expr = some_or_fail!(inner);
+        assert!(matches!(
+            expr,
+            Expression {
+                ctx: ExprCtx { span: Range { start: 1, end: 3 }, txt: line },
+                kind: ExpressionKind::Literal(Value::Constant(Constant::Boolean(true)))
+            } if Rc::ptr_eq(&txt, &line)
+        ));
+    }
+
+    #[test]
+    fn datum_compound() {
+        let token = Token {
+            kind: TokenKind::ParenLeft,
+            span: 1..2,
+        };
+        let txt = make_textline().into();
+        let mut inner = None;
+        let ctx = ExprCtx {
+            span: 0..1,
+            txt: Rc::clone(&txt),
+        };
+
+        let f = parse_datum(&mut inner, token, &txt, &ctx);
+
+        assert!(matches!(
+            f,
+            ParseFlow::Break(ParseBreak::New(ParseNew {
+                mode: ParseMode::List { quoted: true, seq },
+                start: 1
+            })) if seq.is_empty(),
+        ));
+        assert!(inner.is_none());
+    }
+
+    #[test]
+    fn datum_no_expression() {
+        let token = Token {
+            kind: TokenKind::Comment,
+            span: 1..6,
+        };
+        let txt = make_textline().into();
+        let mut inner = None;
+        let ctx = ExprCtx {
+            span: 0..1,
+            txt: Rc::clone(&txt),
+        };
+
+        let f = parse_datum(&mut inner, token, &txt, &ctx);
+
+        assert!(matches!(f, ParseFlow::Continue(())));
+        assert!(inner.is_none());
+    }
+
+    #[test]
+    fn datum_invalid() {
+        let token = Token {
+            kind: TokenKind::StringDiscard,
+            span: 1..2,
+        };
+        let txt = make_textline().into();
+        let mut inner = None;
+        let ctx = ExprCtx {
+            span: 0..1,
+            txt: Rc::clone(&txt),
+        };
+
+        let f = parse_datum(&mut inner, token, &txt, &ctx);
+
+        assert!(matches!(
+            f,
+            ParseFlow::Break(ParseBreak::Err{
+                err: ExpressionError {
+                    ctx: ExprCtx { span: Range { start: 1, end: 2 }, txt: line },
+                    kind: ExpressionErrorKind::SeqInvalid(TokenKind::StringDiscard),
+                },
+                flow: ParseErrFlow::Break(ParseErrBreak::InvalidTokenStream),
+            }) if Rc::ptr_eq(&txt, &line),
+        ));
+        assert!(inner.is_none());
+    }
+
+    #[test]
+    fn datum_end_of_list() {
+        let token = Token {
+            kind: TokenKind::ParenRight,
+            span: 1..2,
+        };
+        let txt = make_textline().into();
+        let mut inner = None;
+        let ctx = ExprCtx {
+            span: 0..1,
+            txt: Rc::clone(&txt),
+        };
+
+        let f = parse_datum(&mut inner, token, &txt, &ctx);
+
+        assert!(matches!(
+            f,
+            ParseFlow::Break(ParseBreak::Err{
+                err: ExpressionError {
+                    ctx: ExprCtx { span: Range { start: 0, end: 2 }, txt: line },
+                    kind: ExpressionErrorKind::DatumExpected,
+                },
+                flow: ParseErrFlow::Break(ParseErrBreak::FailedParser),
+            }) if Rc::ptr_eq(&txt, &line),
+        ));
+        assert!(inner.is_none());
+    }
 }
 
 mod bytevector {
@@ -585,7 +737,7 @@ mod identifier {
     }
 
     #[test]
-    fn node_into_expr() {
+    fn into_expr() {
         let txt = make_textline().into();
         let p = ExprNode {
             ctx: ExprCtx {
@@ -1166,7 +1318,7 @@ mod string {
     }
 
     #[test]
-    fn node_into_expr() {
+    fn into_expr() {
         let txt = make_textline().into();
         let p = ExprNode {
             ctx: ExprCtx {
@@ -1284,133 +1436,6 @@ mod comment {
     }
 
     #[test]
-    fn datum_simple() {
-        let token = Token {
-            kind: TokenKind::Constant(Constant::Boolean(true)),
-            span: 1..3,
-        };
-        let txt = make_textline().into();
-        let mut inner = None;
-        let ctx = ExprCtx {
-            span: 0..1,
-            txt: Rc::clone(&txt),
-        };
-
-        let f = parse_comment_datum(&mut inner, token, &txt, &ctx);
-
-        assert!(matches!(
-            f,
-            ParseFlow::Break(ParseBreak::Complete(ExprEnd { lineno: 1, pos: 3 })),
-        ));
-        let expr = some_or_fail!(inner);
-        assert!(matches!(expr, Expression {
-                ctx: ExprCtx { span: Range { start: 1, end: 3 }, txt: line },
-                kind: ExpressionKind::Literal(Value::Constant(Constant::Boolean(true)))
-            } if Rc::ptr_eq(&txt, &line)
-        ));
-    }
-
-    #[test]
-    fn datum_compound() {
-        let token = Token {
-            kind: TokenKind::ParenLeft,
-            span: 1..2,
-        };
-        let txt = make_textline().into();
-        let mut inner = None;
-        let ctx = ExprCtx {
-            span: 0..1,
-            txt: Rc::clone(&txt),
-        };
-
-        let f = parse_comment_datum(&mut inner, token, &txt, &ctx);
-
-        assert!(matches!(
-            f,
-            ParseFlow::Break(ParseBreak::New(ParseNew {
-                mode: ParseMode::List { quoted: true, seq },
-                start: 1
-            })) if seq.is_empty(),
-        ));
-        assert!(inner.is_none());
-    }
-
-    #[test]
-    fn datum_no_expression() {
-        let token = Token {
-            kind: TokenKind::Comment,
-            span: 1..6,
-        };
-        let txt = make_textline().into();
-        let mut inner = None;
-        let ctx = ExprCtx {
-            span: 0..1,
-            txt: Rc::clone(&txt),
-        };
-
-        let f = parse_comment_datum(&mut inner, token, &txt, &ctx);
-
-        assert!(matches!(f, ParseFlow::Continue(()),));
-        assert!(inner.is_none());
-    }
-
-    #[test]
-    fn datum_invalid() {
-        let token = Token {
-            kind: TokenKind::StringDiscard,
-            span: 1..2,
-        };
-        let txt = make_textline().into();
-        let mut inner = None;
-        let ctx = ExprCtx {
-            span: 0..1,
-            txt: Rc::clone(&txt),
-        };
-
-        let f = parse_comment_datum(&mut inner, token, &txt, &ctx);
-
-        assert!(matches!(
-            f,
-            ParseFlow::Break(ParseBreak::Err{
-                err: ExpressionError {
-                    ctx: ExprCtx { span: Range { start: 1, end: 2 }, txt: line },
-                    kind: ExpressionErrorKind::SeqInvalid(TokenKind::StringDiscard),
-                },
-                flow: ParseErrFlow::Break(ParseErrBreak::InvalidTokenStream),
-            }) if Rc::ptr_eq(&txt, &line),
-        ));
-        assert!(inner.is_none());
-    }
-
-    #[test]
-    fn datum_end_of_list() {
-        let token = Token {
-            kind: TokenKind::ParenRight,
-            span: 1..2,
-        };
-        let txt = make_textline().into();
-        let mut inner = None;
-        let ctx = ExprCtx {
-            span: 0..1,
-            txt: Rc::clone(&txt),
-        };
-
-        let f = parse_comment_datum(&mut inner, token, &txt, &ctx);
-
-        assert!(matches!(
-            f,
-            ParseFlow::Break(ParseBreak::Err{
-                err: ExpressionError {
-                    ctx: ExprCtx { span: Range { start: 0, end: 2 }, txt: line },
-                    kind: ExpressionErrorKind::CommentDatumUnterminated,
-                },
-                flow: ParseErrFlow::Break(ParseErrBreak::FailedParser),
-            }) if Rc::ptr_eq(&txt, &line),
-        ));
-        assert!(inner.is_none());
-    }
-
-    #[test]
     fn datum_into_expr() {
         let txt = make_textline().into();
         let p = ExprNode {
@@ -1452,7 +1477,232 @@ mod comment {
             &errs[0],
             ExpressionError {
                 ctx: ExprCtx { span: Range { start: 0, end: 2 }, txt },
-                kind: ExpressionErrorKind::CommentDatumUnterminated,
+                kind: ExpressionErrorKind::DatumExpected,
+            } if txt.lineno == 1
+        ));
+    }
+}
+
+mod quote {
+    use super::*;
+
+    #[test]
+    fn constant_into_expr() {
+        let txt = make_textline().into();
+        let p = ExprNode {
+            ctx: ExprCtx {
+                span: 0..1,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::Quote(Some(Expression {
+                ctx: ExprCtx {
+                    span: 2..4,
+                    txt: Rc::clone(&txt),
+                },
+                kind: ExpressionKind::Literal(Value::Constant(Constant::Boolean(true))),
+            })),
+        };
+
+        let r: Result<Option<Expression>, _> = p.try_into();
+
+        let expr = some_or_fail!(ok_or_fail!(r));
+        assert!(matches!(
+            expr,
+            Expression {
+                ctx: ExprCtx {
+                    span: Range { start: 2, end: 4 },
+                    txt: line,
+                },
+                kind: ExpressionKind::Literal(Value::Constant(Constant::Boolean(true))),
+            } if Rc::ptr_eq(&txt, &line)
+        ));
+    }
+
+    #[test]
+    fn identifier_into_expr() {
+        let txt = make_textline().into();
+        let p = ExprNode {
+            ctx: ExprCtx {
+                span: 0..1,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::Quote(Some(Expression {
+                ctx: ExprCtx {
+                    span: 2..5,
+                    txt: Rc::clone(&txt),
+                },
+                kind: ExpressionKind::Identifier("foo".into()),
+            })),
+        };
+
+        let r: Result<Option<Expression>, _> = p.try_into();
+
+        let expr = some_or_fail!(ok_or_fail!(r));
+        assert!(matches!(
+            expr,
+            Expression {
+                ctx: ExprCtx {
+                    span: Range { start: 2, end: 5 },
+                    txt: line,
+                },
+                kind: ExpressionKind::Literal(_ /* symbol */),
+            } if Rc::ptr_eq(&txt, &line)
+        ));
+    }
+
+    #[test]
+    fn compound_into_expr() {
+        let txt = make_textline().into();
+        let p = ExprNode {
+            ctx: ExprCtx {
+                span: 0..1,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::Quote(Some(Expression {
+                ctx: ExprCtx {
+                    span: 3..13,
+                    txt: Rc::clone(&txt),
+                },
+                kind: ExpressionKind::List(
+                    [
+                        Expression {
+                            ctx: ExprCtx {
+                                span: 4..6,
+                                txt: Rc::clone(&txt),
+                            },
+                            kind: ExpressionKind::Literal(Value::Constant(Constant::Boolean(true))),
+                        },
+                        Expression {
+                            ctx: ExprCtx {
+                                span: 6..9,
+                                txt: Rc::clone(&txt),
+                            },
+                            kind: ExpressionKind::Identifier("foo".into()),
+                        },
+                        Expression {
+                            ctx: ExprCtx {
+                                span: 9..13,
+                                txt: Rc::clone(&txt),
+                            },
+                            kind: ExpressionKind::List(
+                                [
+                                    Expression {
+                                        ctx: ExprCtx {
+                                            span: 10..11,
+                                            txt: Rc::clone(&txt),
+                                        },
+                                        kind: ExpressionKind::Literal(Value::Constant(
+                                            Constant::Number(Number::real(4)),
+                                        )),
+                                    },
+                                    Expression {
+                                        ctx: ExprCtx {
+                                            span: 11..12,
+                                            txt: Rc::clone(&txt),
+                                        },
+                                        kind: ExpressionKind::Literal(Value::Constant(
+                                            Constant::Number(Number::real(5)),
+                                        )),
+                                    },
+                                ]
+                                .into(),
+                            ),
+                        },
+                    ]
+                    .into(),
+                ),
+            })),
+        };
+
+        let r: Result<Option<Expression>, _> = p.try_into();
+
+        let expr = some_or_fail!(ok_or_fail!(r));
+        assert!(matches!(
+            expr,
+            Expression {
+                ctx: ExprCtx {
+                    span: Range { start: 3, end: 13 },
+                    txt: line,
+                },
+                kind: ExpressionKind::List(_),
+            } if Rc::ptr_eq(&txt, &line)
+        ));
+        let seq = extract_or_fail!(expr.kind, ExpressionKind::List);
+        assert_eq!(seq.len(), 3);
+        assert!(matches!(
+            &seq[0],
+            Expression {
+                ctx: ExprCtx {
+                    span: Range { start: 4, end: 6 },
+                    txt: line,
+                },
+                kind: ExpressionKind::Literal(Value::Constant(Constant::Boolean(true))),
+            } if Rc::ptr_eq(&txt, &line)
+        ));
+        assert!(matches!(
+            &seq[1],
+            Expression {
+                ctx: ExprCtx {
+                    span: Range { start: 6, end: 9 },
+                    txt: line,
+                },
+                kind: ExpressionKind::Identifier(s),
+            } if Rc::ptr_eq(&txt, &line) && &**s == "foo"
+        ));
+        assert!(matches!(
+            &seq[2],
+            Expression {
+                ctx: ExprCtx {
+                    span: Range { start: 9, end: 13 },
+                    txt: line,
+                },
+                kind: ExpressionKind::List(_),
+            } if Rc::ptr_eq(&txt, &line)
+        ));
+        let inner_seq = extract_or_fail!(&seq[2].kind, ExpressionKind::List);
+        assert_eq!(inner_seq.len(), 2);
+        assert!(matches!(
+            &inner_seq[0],
+            Expression {
+                ctx: ExprCtx {
+                    span: Range { start: 10, end: 11 },
+                    txt: line,
+                },
+                kind: ExpressionKind::Literal(Value::Constant(Constant::Number(n))),
+            } if Rc::ptr_eq(&txt, &line) && n.as_datum().to_string() == "4"
+        ));
+        assert!(matches!(
+            &inner_seq[1],
+            Expression {
+                ctx: ExprCtx {
+                    span: Range { start: 11, end: 12 },
+                    txt: line,
+                },
+                kind: ExpressionKind::Literal(Value::Constant(Constant::Number(n))),
+            } if Rc::ptr_eq(&txt, &line) && n.as_datum().to_string() == "5"
+        ));
+    }
+
+    #[test]
+    fn empty_into_expr() {
+        let txt = make_textline().into();
+        let p = ExprNode {
+            ctx: ExprCtx {
+                span: 0..2,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::Quote(None),
+        };
+
+        let r: Result<Option<Expression>, _> = p.try_into();
+
+        let errs = err_or_fail!(r);
+        assert_eq!(errs.len(), 1);
+        assert!(matches!(
+            &errs[0],
+            ExpressionError {
+                ctx: ExprCtx { span: Range { start: 0, end: 2 }, txt },
+                kind: ExpressionErrorKind::DatumExpected,
             } if txt.lineno == 1
         ));
     }
@@ -1941,7 +2191,7 @@ mod nodeutil {
             &err,
             ExpressionError {
                 ctx: ExprCtx { span: Range { start: 3, end: 19 }, txt },
-                kind: ExpressionErrorKind::CommentDatumUnterminated,
+                kind: ExpressionErrorKind::DatumExpected,
             } if txt.lineno == 1
         ));
     }
@@ -2008,6 +2258,22 @@ mod nodeutil {
             ExpressionError {
                 ctx: ExprCtx { span: Range { start: 3, end: 19 }, txt },
                 kind: ExpressionErrorKind::ListUnterminated,
+            } if txt.lineno == 1
+        ));
+    }
+
+    #[test]
+    fn quote_continuation() {
+        let p = ParseNode::new(ParseMode::Quote(None), 3, make_textline());
+
+        let o = p.into_continuation_unsupported();
+
+        let err = some_or_fail!(o);
+        assert!(matches!(
+            &err,
+            ExpressionError {
+                ctx: ExprCtx { span: Range { start: 3, end: 19 }, txt },
+                kind: ExpressionErrorKind::DatumExpected,
             } if txt.lineno == 1
         ));
     }

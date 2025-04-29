@@ -124,7 +124,7 @@ pub(super) enum ExpressionErrorKind {
     ByteVectorUnterminated,
     CommentBlockInvalid(TokenKind),
     CommentBlockUnterminated,
-    CommentDatumUnterminated,
+    DatumExpected,
     IdentifierInvalid(TokenKind),
     IdentifierUnterminated,
     ListUnterminated,
@@ -145,7 +145,7 @@ impl Display for ExpressionErrorKind {
             Self::CommentBlockInvalid(t) => format_unexpected_error("comment block", t, f),
             // TODO: can i share tokenerrorkind display here
             Self::CommentBlockUnterminated => f.write_str("unterminated block comment"),
-            Self::CommentDatumUnterminated => f.write_str("expected datum"),
+            Self::DatumExpected => f.write_str("expected datum"),
             Self::IdentifierInvalid(t) => format_unexpected_error("verbatim identifier", t, f),
             Self::IdentifierUnterminated => f.write_str("unterminated verbatim identifier"),
             Self::ListUnterminated => f.write_str("unterminated list expression"),
@@ -390,13 +390,13 @@ mod tests {
         }
 
         #[test]
-        fn display_unterminated_block_datum() {
+        fn display_expected_datum() {
             let err = ExpressionError {
                 ctx: ExprCtx {
                     span: 0..5,
                     txt: make_textline().into(),
                 },
-                kind: ExpressionErrorKind::CommentDatumUnterminated,
+                kind: ExpressionErrorKind::DatumExpected,
             };
 
             assert_eq!(err.to_string(), "expected datum");

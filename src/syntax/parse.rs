@@ -112,7 +112,9 @@ impl ExprNode {
         match &mut self.mode {
             ParseMode::ByteVector(seq) => parse_list(seq, token, txt, true),
             ParseMode::CommentBlock => parse_comment_block(token, txt),
-            ParseMode::CommentDatum(inner) => parse_comment_datum(inner, token, txt, &self.ctx),
+            ParseMode::CommentDatum(inner) | ParseMode::Quote(inner) => {
+                parse_datum(inner, token, txt, &self.ctx)
+            }
             ParseMode::Identifier(buf) => parse_verbatim_identifier(buf, token, txt),
             ParseMode::List { quoted, seq } => parse_list(seq, token, txt, *quoted),
             ParseMode::StringLiteral(buf) => parse_str(buf, token, txt),
@@ -129,6 +131,7 @@ impl ExprNode {
                 inner.replace(expr);
                 MergeFlow::Break(())
             }),
+            ParseMode::Quote(_) => todo!(),
             _ => Err(ParserError::Invalid(InvalidParseError::InvalidExprTarget)),
         }
     }
@@ -137,7 +140,7 @@ impl ExprNode {
         self.ctx.into_error(match self.mode {
             ParseMode::ByteVector(_) => ExpressionErrorKind::ByteVectorUnterminated,
             ParseMode::CommentBlock => ExpressionErrorKind::CommentBlockUnterminated,
-            ParseMode::CommentDatum(_) => ExpressionErrorKind::CommentDatumUnterminated,
+            ParseMode::CommentDatum(_) | ParseMode::Quote(_) => ExpressionErrorKind::DatumExpected,
             ParseMode::Identifier(_) => ExpressionErrorKind::IdentifierUnterminated,
             ParseMode::List { .. } => ExpressionErrorKind::ListUnterminated,
             ParseMode::StringLiteral(_) => ExpressionErrorKind::StrUnterminated,
@@ -164,6 +167,7 @@ impl TryFrom<ExprNode> for Option<Expression> {
             })),
             ParseMode::List { quoted: false, seq } => Ok(Some(into_syntactic_form(seq, value.ctx))),
             ParseMode::List { quoted: true, seq } => Ok(Some(into_list(seq, value.ctx))),
+            ParseMode::Quote(_) => todo!(),
             ParseMode::StringLiteral(s) => Ok(Some(Expression::constant(
                 Constant::String(s.into()),
                 value.ctx,
@@ -240,6 +244,7 @@ enum ParseMode {
     CommentDatum(Option<Expression>),
     Identifier(String),
     List { quoted: bool, seq: Vec<Expression> },
+    Quote(Option<Expression>),
     StringLiteral(String),
 }
 
@@ -273,7 +278,7 @@ fn parse_comment_block(token: Token, txt: &Rc<TextLine>) -> ParseFlow {
     }
 }
 
-fn parse_comment_datum(
+fn parse_datum(
     inner: &mut Option<Expression>,
     token: Token,
     txt: &Rc<TextLine>,
@@ -290,7 +295,7 @@ fn parse_comment_datum(
         };
         ParseFlow::Break(ParseBreak::failed_parser(ExpressionError {
             ctx,
-            kind: ExpressionErrorKind::CommentDatumUnterminated,
+            kind: ExpressionErrorKind::DatumExpected,
         }))
     } else {
         let pos = token.span.end;
@@ -352,6 +357,9 @@ fn parse_expr(token: Token, txt: &Rc<TextLine>, quoted: bool) -> ExprFlow {
             },
             token.span.start,
         )),
+        TokenKind::Quote => {
+            ExprFlow::Break(ParseBreak::new(ParseMode::Quote(None), token.span.start))
+        }
         TokenKind::StringBegin { s, line_cont } => ExprFlow::Break(ParseBreak::new(
             ParseMode::string(s, !line_cont),
             token.span.start,
@@ -481,7 +489,7 @@ fn into_comment_datum(inner: Option<Expression>, ctx: ExprCtx) -> ExprConvertRes
     match inner {
         None => Err(vec![ExpressionError {
             ctx,
-            kind: ExpressionErrorKind::CommentDatumUnterminated,
+            kind: ExpressionErrorKind::DatumExpected,
         }]),
         Some(_) => Ok(None),
     }

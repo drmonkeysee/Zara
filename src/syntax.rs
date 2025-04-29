@@ -502,6 +502,48 @@ mod tests {
         }
 
         #[test]
+        fn quoting_quote() {
+            let mut et: ExpressionTree = Default::default();
+            // NOTE: ''a -> (quote a)
+            let tokens = [make_tokenline([
+                TokenKind::Quote,
+                TokenKind::Quote,
+                TokenKind::Identifier("a".to_owned()),
+            ])];
+
+            let r = et.parse(tokens.into());
+
+            let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
+            let seq = prg.unwrap();
+            assert_eq!(seq.len(), 1);
+            assert!(matches!(
+                &seq[0],
+                Expression {
+                    ctx: ExprCtx { span: Range { start: 0, end: 8 }, txt },
+                    kind: ExpressionKind::List(_),
+                } if txt.lineno == 1
+            ));
+            let inner_list = extract_or_fail!(&seq[0].kind, ExpressionKind::List);
+            assert_eq!(inner_list.len(), 2);
+            assert!(matches!(
+                &inner_list[0],
+                Expression {
+                    ctx: ExprCtx { span: Range { start: 0, end: 8 }, txt },
+                    kind: ExpressionKind::Literal(_ /* symbol "quote" */),
+                } if txt.lineno == 1
+            ));
+            assert!(matches!(
+                &inner_list[0],
+                Expression {
+                    ctx: ExprCtx { span: Range { start: 0, end: 8 }, txt },
+                    kind: ExpressionKind::Literal(_ /* symbol "a" */),
+                } if txt.lineno == 1
+            ));
+            assert!(et.parsers.is_empty());
+            assert!(et.errs.is_empty());
+        }
+
+        #[test]
         fn sequence_line_with_errors() {
             let mut et: ExpressionTree = Default::default();
             let tokens = [make_tokenline([
@@ -697,7 +739,7 @@ mod tests {
                 &errs[0],
                 ExpressionError {
                     ctx: ExprCtx { span: Range { start: 4, end: 6 }, txt },
-                    kind: ExpressionErrorKind::CommentDatumUnterminated,
+                    kind: ExpressionErrorKind::DatumExpected,
                 } if txt.lineno == 1
             ));
             assert!(matches!(
@@ -743,7 +785,7 @@ mod tests {
                 &errs[0],
                 ExpressionError {
                     ctx: ExprCtx { span: Range { start: 0, end: 19 }, txt },
-                    kind: ExpressionErrorKind::CommentDatumUnterminated,
+                    kind: ExpressionErrorKind::DatumExpected,
                 } if txt.lineno == 1
             ));
             assert!(et.parsers.is_empty());
