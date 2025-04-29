@@ -127,11 +127,10 @@ impl ExprNode {
                 seq.push(expr);
                 MergeFlow::Continue(())
             }),
-            ParseMode::CommentDatum(inner) => other.merge_into(|expr| {
+            ParseMode::CommentDatum(inner) | ParseMode::Quote(inner) => other.merge_into(|expr| {
                 inner.replace(expr);
                 MergeFlow::Break(())
             }),
-            ParseMode::Quote(_) => todo!(),
             _ => Err(ParserError::Invalid(InvalidParseError::InvalidExprTarget)),
         }
     }

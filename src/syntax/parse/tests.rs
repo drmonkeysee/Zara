@@ -1170,7 +1170,48 @@ mod list {
     }
 
     #[test]
-    fn into_quoted_list() {
+    fn into_quote_apply() {
+        let txt = make_textline().into();
+        let p = ExprNode {
+            ctx: ExprCtx {
+                span: 0..6,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::List {
+                datum: false,
+                seq: vec![
+                    Expression {
+                        ctx: ExprCtx {
+                            span: 0..5,
+                            txt: Rc::clone(&txt),
+                        },
+                        kind: ExpressionKind::Identifier("quote".into()),
+                    },
+                    Expression {
+                        ctx: ExprCtx {
+                            span: 5..8,
+                            txt: Rc::clone(&txt),
+                        },
+                        kind: ExpressionKind::Identifier("foo".into()),
+                    },
+                ],
+            },
+        };
+
+        let r: Result<Option<Expression>, _> = p.try_into();
+
+        let expr = some_or_fail!(ok_or_fail!(r));
+        assert!(matches!(
+            expr,
+            Expression {
+                ctx: ExprCtx { span: Range { start: 5, end: 8 }, txt: line },
+                kind: ExpressionKind::Literal(_ /* symbol */),
+            } if Rc::ptr_eq(&txt, &line)
+        ));
+    }
+
+    #[test]
+    fn into_datum_list() {
         let txt = make_textline().into();
         let p = ExprNode {
             ctx: ExprCtx {
@@ -1221,8 +1262,8 @@ mod list {
             &items[0],
             Expression {
                 ctx: ExprCtx { span: Range { start: 0, end: 1 }, txt: line },
-                kind: ExpressionKind::Identifier(s),
-            } if &**s == "+" && Rc::ptr_eq(&txt, &line)
+                kind: ExpressionKind::Literal(_ /* symbol */),
+            } if Rc::ptr_eq(&txt, &line)
         ));
         assert!(matches!(
             &items[1],
@@ -1241,7 +1282,7 @@ mod list {
     }
 
     #[test]
-    fn into_empty_quoted_list() {
+    fn into_empty_datum_list() {
         let txt = make_textline().into();
         let p = ExprNode {
             ctx: ExprCtx {
@@ -1677,8 +1718,8 @@ mod quote {
                     span: Range { start: 6, end: 9 },
                     txt: line,
                 },
-                kind: ExpressionKind::Identifier(s),
-            } if Rc::ptr_eq(&txt, &line) && &**s == "foo"
+                kind: ExpressionKind::Literal(_ /* symbol */),
+            } if Rc::ptr_eq(&txt, &line)
         ));
         assert!(matches!(
             &seq[2],
@@ -2012,8 +2053,8 @@ mod merge {
                     span: Range { start: 4, end: 7 },
                     txt: line
                 },
-                kind: ExpressionKind::Identifier(s),
-            } if &**s == "foo" && Rc::ptr_eq(&txt, &line)
+                kind: ExpressionKind::Literal(_ /* symbol */),
+            } if Rc::ptr_eq(&txt, &line)
         ));
     }
 
@@ -2042,6 +2083,132 @@ mod merge {
 
         assert!(matches!(r, Ok(MergeFlow::Break(()))));
         let inner = some_or_fail!(extract_or_fail!(p.mode, ParseMode::CommentDatum));
+        assert!(matches!(
+            inner,
+            Expression {
+                ctx: ExprCtx {
+                    span: Range { start: 3, end: 5 },
+                    txt: line
+                },
+                kind: ExpressionKind::List(lst),
+            } if Rc::ptr_eq(&txt, &line) && lst.is_empty()
+        ));
+    }
+
+    #[test]
+    fn quote_simple_merge() {
+        let txt = make_textline().into();
+        let mut p = ExprNode {
+            ctx: ExprCtx {
+                span: 0..3,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::Quote(None),
+        };
+        let other = ExprNode {
+            ctx: ExprCtx {
+                span: 3..6,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::Identifier("foo".to_owned()),
+        };
+
+        let r = p.merge(other);
+
+        assert!(matches!(r, Ok(MergeFlow::Break(()))));
+        let inner = some_or_fail!(extract_or_fail!(p.mode, ParseMode::Quote));
+        assert!(matches!(
+            inner,
+            Expression {
+                ctx: ExprCtx {
+                    span: Range { start: 3, end: 6 },
+                    txt: line
+                },
+                kind: ExpressionKind::Identifier(s),
+            } if &*s == "foo" && Rc::ptr_eq(&txt, &line)
+        ));
+    }
+
+    #[test]
+    fn quote_compound_merge() {
+        let txt = make_textline().into();
+        let mut p = ExprNode {
+            ctx: ExprCtx {
+                span: 0..3,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::Quote(None),
+        };
+        let other = ExprNode {
+            ctx: ExprCtx {
+                span: 3..8,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::List {
+                datum: true,
+                seq: vec![Expression {
+                    ctx: ExprCtx {
+                        span: 4..7,
+                        txt: Rc::clone(&txt),
+                    },
+                    kind: ExpressionKind::Identifier("foo".into()),
+                }],
+            },
+        };
+
+        let r = p.merge(other);
+
+        assert!(matches!(r, Ok(MergeFlow::Break(()))));
+        let inner = some_or_fail!(extract_or_fail!(p.mode, ParseMode::Quote));
+        assert!(matches!(
+            inner,
+            Expression {
+                ctx: ExprCtx {
+                    span: Range { start: 3, end: 8 },
+                    txt: line
+                },
+                kind: ExpressionKind::List(_),
+            } if Rc::ptr_eq(&txt, &line)
+        ));
+        let lst = extract_or_fail!(inner.kind, ExpressionKind::List);
+        assert_eq!(lst.len(), 1);
+        assert!(matches!(
+            &lst[0],
+            Expression {
+                ctx: ExprCtx {
+                    span: Range { start: 4, end: 7 },
+                    txt: line
+                },
+                kind: ExpressionKind::Literal(_ /* symbol */),
+            } if Rc::ptr_eq(&txt, &line)
+        ));
+    }
+
+    #[test]
+    fn quote_empty_compound_merge() {
+        let txt = make_textline().into();
+        let mut p = ExprNode {
+            ctx: ExprCtx {
+                span: 0..3,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::Quote(None),
+        };
+        let other = ExprNode {
+            ctx: ExprCtx {
+                span: 3..5,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::List {
+                datum: true,
+                seq: Vec::new(),
+            },
+        };
+
+        let r = p.merge(other);
+
+        assert!(matches!(r, Ok(MergeFlow::Break(()))));
+        let inner = some_or_fail!(extract_or_fail!(p.mode, ParseMode::Quote));
         assert!(matches!(
             inner,
             Expression {
