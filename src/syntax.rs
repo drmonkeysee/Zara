@@ -896,7 +896,7 @@ mod tests {
 
             assert_eq!(
                 err.display_message().to_string(),
-                "mylib:1 (lib/mylib.scm)\n\tline of source code\n\t^^^\n1: unterminated list expression\n"
+                "Syntax Error\nmylib:1 (lib/mylib.scm)\n\tline of source code\n\t^^^\n1: unterminated list expression\n"
             );
         }
 
