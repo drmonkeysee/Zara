@@ -125,6 +125,7 @@ pub(super) enum ExpressionErrorKind {
     CommentBlockInvalid(TokenKind),
     CommentBlockUnterminated,
     DatumExpected,
+    DatumInvalid(ExpressionKind),
     IdentifierInvalid(TokenKind),
     IdentifierUnterminated,
     ListUnterminated,
@@ -137,20 +138,21 @@ pub(super) enum ExpressionErrorKind {
 impl Display for ExpressionErrorKind {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
-            Self::ByteVectorInvalidItem(expr) => {
-                write!(f, "expected byte literal, got: {}", expr.as_typename())
+            Self::ByteVectorInvalidItem(k) => {
+                write!(f, "expected byte literal, got: {}", k.as_typename())
             }
             Self::ByteVectorInvalidNumber(err) => err.fmt(f),
             Self::ByteVectorUnterminated => f.write_str("unterminated bytevector"),
-            Self::CommentBlockInvalid(t) => format_unexpected_error("comment block", t, f),
+            Self::CommentBlockInvalid(t) => format_unexpected_token("comment block", t, f),
             // TODO: can i share tokenerrorkind display here
             Self::CommentBlockUnterminated => f.write_str("unterminated block comment"),
             Self::DatumExpected => f.write_str("expected datum"),
-            Self::IdentifierInvalid(t) => format_unexpected_error("verbatim identifier", t, f),
+            Self::DatumInvalid(k) => write!(f, "unexpected datum type: {}", k.as_typename()),
+            Self::IdentifierInvalid(t) => format_unexpected_token("verbatim identifier", t, f),
             Self::IdentifierUnterminated => f.write_str("unterminated verbatim identifier"),
             Self::ListUnterminated => f.write_str("unterminated list expression"),
-            Self::SeqInvalid(t) => format_unexpected_error("sequence", t, f),
-            Self::StrInvalid(t) => format_unexpected_error("string", t, f),
+            Self::SeqInvalid(t) => format_unexpected_token("sequence", t, f),
+            Self::StrInvalid(t) => format_unexpected_token("string", t, f),
             Self::StrUnterminated => f.write_str("unterminated string constant"),
             Self::Unimplemented(t) => write!(f, "{t} parsing not yet implemented"),
         }
@@ -201,7 +203,7 @@ impl Display for TypeName<'_> {
     }
 }
 
-fn format_unexpected_error(kind: &str, token: &TokenKind, f: &mut Formatter) -> fmt::Result {
+fn format_unexpected_token(kind: &str, token: &TokenKind, f: &mut Formatter) -> fmt::Result {
     write!(f, "unexpected token in {kind}: {token}")
 }
 
@@ -400,6 +402,30 @@ mod tests {
             };
 
             assert_eq!(err.to_string(), "expected datum");
+        }
+
+        #[test]
+        fn display_invalid_datum() {
+            let txt = make_textline().into();
+            let err = ExpressionError {
+                ctx: ExprCtx {
+                    span: 0..5,
+                    txt: Rc::clone(&txt),
+                },
+                kind: ExpressionErrorKind::DatumInvalid(ExpressionKind::Call {
+                    proc: Expression {
+                        ctx: ExprCtx {
+                            span: 0..1,
+                            txt: Rc::clone(&txt),
+                        },
+                        kind: ExpressionKind::Identifier("foo".into()),
+                    }
+                    .into(),
+                    args: [].into(),
+                }),
+            };
+
+            assert_eq!(err.to_string(), "unexpected datum type: procedure call");
         }
 
         #[test]

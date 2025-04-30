@@ -1788,6 +1788,53 @@ mod quote {
     }
 
     #[test]
+    fn invalid_into_expr() {
+        let txt = make_textline().into();
+        let p = ExprNode {
+            ctx: ExprCtx {
+                span: 0..2,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::Quote(Some(Expression {
+                ctx: ExprCtx {
+                    span: 3..10,
+                    txt: Rc::clone(&txt),
+                },
+                kind: ExpressionKind::Call {
+                    proc: Expression {
+                        ctx: ExprCtx {
+                            span: 4..7,
+                            txt: Rc::clone(&txt),
+                        },
+                        kind: ExpressionKind::Identifier("foo".into()),
+                    }
+                    .into(),
+                    args: [Expression {
+                        ctx: ExprCtx {
+                            span: 7..9,
+                            txt: Rc::clone(&txt),
+                        },
+                        kind: ExpressionKind::Literal(Value::Constant(Constant::Boolean(true))),
+                    }]
+                    .into(),
+                },
+            })),
+        };
+
+        let r: Result<Option<Expression>, _> = p.try_into();
+
+        let errs = err_or_fail!(r);
+        assert_eq!(errs.len(), 1);
+        assert!(matches!(
+            &errs[0],
+            ExpressionError {
+                ctx: ExprCtx { span: Range { start: 0, end: 10 }, txt },
+                kind: ExpressionErrorKind::DatumInvalid(ExpressionKind::Call { .. }),
+            } if txt.lineno == 1
+        ));
+    }
+
+    #[test]
     fn missing_into_expr() {
         let txt = make_textline().into();
         let p = ExprNode {
