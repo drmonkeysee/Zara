@@ -166,7 +166,7 @@ impl TryFrom<ExprNode> for Option<Expression> {
             })),
             ParseMode::List { datum: false, seq } => Ok(Some(into_syntactic_form(seq, value.ctx))),
             ParseMode::List { datum: true, seq } => Ok(Some(into_list(seq, value.ctx))),
-            ParseMode::Quote(_) => todo!(),
+            ParseMode::Quote(inner) => into_datum(inner, value.ctx),
             ParseMode::StringLiteral(s) => Ok(Some(Expression::constant(
                 Constant::String(s.into()),
                 value.ctx,
@@ -506,6 +506,21 @@ fn into_comment_datum(inner: Option<Expression>, ctx: ExprCtx) -> ExprConvertRes
             kind: ExpressionErrorKind::DatumExpected,
         }]),
         Some(_) => Ok(None),
+    }
+}
+
+fn into_datum(inner: Option<Expression>, ctx: ExprCtx) -> ExprConvertResult {
+    match inner {
+        None => Err(vec![ExpressionError {
+            ctx,
+            kind: ExpressionErrorKind::DatumExpected,
+        }]),
+        Some(expr) => match expr.kind {
+            ExpressionKind::Call { .. } => todo!(),
+            ExpressionKind::Literal(_) => Ok(Some(expr)),
+            ExpressionKind::Identifier(_) => todo!(),
+            ExpressionKind::List(_) => todo!(),
+        },
     }
 }
 
