@@ -339,6 +339,7 @@ fn parse_expr(token: Token, txt: &Rc<TextLine>, datum: bool) -> ExprFlow {
                 txt: Rc::clone(txt),
             },
         ))),
+        // TODO: need datum flag for identifier -> symbol
         TokenKind::Identifier(s) => ExprFlow::Continue(Some(Expression {
             ctx: ExprCtx {
                 span: token.span,
@@ -525,6 +526,7 @@ fn into_datum(inner: Option<Expression>, ctx: ExprCtx) -> ExprConvertResult {
                 }])
             }
             ExpressionKind::Literal(_) => Ok(Some(expr)),
+            // TODO: parse_expr should yield symbol, making identifier invalid
             ExpressionKind::Identifier(_) => todo!(),
             ExpressionKind::List(_) => todo!(),
         },
