@@ -123,22 +123,6 @@ pub(crate) struct ExpressionTree {
     parsers: Vec<ParseNode>,
 }
 
-pub(crate) struct ParserErrorMessage<'a>(&'a ParserError);
-
-impl Display for ParserErrorMessage<'_> {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        match self.0 {
-            ParserError::Invalid(err) => InvalidParseErrorMessage(err).fmt(f),
-            ParserError::Syntax(SyntaxError(errs)) => {
-                for (txt, errs) in errs.iter().peekable().groupby_txt() {
-                    SyntaxErrorLineMessage((txt, &errs)).fmt(f)?;
-                }
-                Ok(())
-            }
-        }
-    }
-}
-
 impl ExpressionTree {
     fn parse_line(&mut self, mut parser: ParseNode, line: TokenLine) -> ParseNode {
         let TokenLine(tokens, txt) = line;
@@ -232,6 +216,22 @@ impl Parser for ExpressionTree {
         let parser = self.parsers.pop();
         self.clear();
         Some(parser?.into_continuation_unsupported()?.into())
+    }
+}
+
+pub(crate) struct ParserErrorMessage<'a>(&'a ParserError);
+
+impl Display for ParserErrorMessage<'_> {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        match self.0 {
+            ParserError::Invalid(err) => InvalidParseErrorMessage(err).fmt(f),
+            ParserError::Syntax(SyntaxError(errs)) => {
+                for (txt, errs) in errs.iter().peekable().groupby_txt() {
+                    SyntaxErrorLineMessage((txt, &errs)).fmt(f)?;
+                }
+                Ok(())
+            }
+        }
     }
 }
 
