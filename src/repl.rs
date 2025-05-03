@@ -1,4 +1,4 @@
-use rustyline::{Editor, Result, history::MemHistory};
+use rustyline::{Config, Editor, Result, history::MemHistory};
 use std::rc::Rc;
 use zara::{
     Error, Evaluation, Interpreter, RunMode, Value,
@@ -127,7 +127,7 @@ impl TextSource for ReplSource {
 }
 
 fn create_editor() -> Result<ZaraEditor> {
-    ZaraEditor::with_history(Default::default(), Default::default())
+    ZaraEditor::with_history(Config::default(), MemHistory::default())
 }
 
 #[cfg(test)]

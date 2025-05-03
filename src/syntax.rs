@@ -334,7 +334,7 @@ mod tests {
 
         #[test]
         fn no_tokens() {
-            let mut et: ExpressionTree = Default::default();
+            let mut et = ExpressionTree::default();
             let tokens = [].into();
 
             let r = et.parse(tokens);
@@ -347,7 +347,7 @@ mod tests {
 
         #[test]
         fn single_literal_sequence() {
-            let mut et: ExpressionTree = Default::default();
+            let mut et = ExpressionTree::default();
             let tokens = [make_tokenline([TokenKind::Constant(Constant::Boolean(
                 true,
             ))])];
@@ -369,7 +369,7 @@ mod tests {
 
         #[test]
         fn multiple_literals_sequence() {
-            let mut et: ExpressionTree = Default::default();
+            let mut et = ExpressionTree::default();
             let tokens = [make_tokenline([
                 TokenKind::Constant(Constant::Boolean(true)),
                 TokenKind::Constant(Constant::Character('a')),
@@ -407,7 +407,7 @@ mod tests {
 
         #[test]
         fn sequence_multiple_lines() {
-            let mut et: ExpressionTree = Default::default();
+            let mut et = ExpressionTree::default();
             let tokens = [
                 make_tokenline_no(
                     [
@@ -472,7 +472,7 @@ mod tests {
 
         #[test]
         fn datum_comments_stack() {
-            let mut et: ExpressionTree = Default::default();
+            let mut et = ExpressionTree::default();
             // NOTE: #u8(10 #; #; 11 12 13) -> #u8(10 13)
             let tokens = [make_tokenline([
                 TokenKind::ByteVector,
@@ -503,7 +503,7 @@ mod tests {
 
         #[test]
         fn quoting_quote() {
-            let mut et: ExpressionTree = Default::default();
+            let mut et = ExpressionTree::default();
             // NOTE: ''a -> (quote a)
             let tokens = [make_tokenline([
                 TokenKind::Quote,
@@ -545,7 +545,7 @@ mod tests {
 
         #[test]
         fn sequence_line_with_errors() {
-            let mut et: ExpressionTree = Default::default();
+            let mut et = ExpressionTree::default();
             let tokens = [make_tokenline([
                 TokenKind::Constant(Constant::Boolean(true)),
                 TokenKind::DirectiveCase(true),
@@ -578,7 +578,7 @@ mod tests {
 
         #[test]
         fn multiple_sequence_lines_with_errors() {
-            let mut et: ExpressionTree = Default::default();
+            let mut et = ExpressionTree::default();
             let tokens = [
                 make_tokenline_no(
                     [
@@ -631,7 +631,7 @@ mod tests {
 
         #[test]
         fn parse_fail_skips_rest_of_tokens() {
-            let mut et: ExpressionTree = Default::default();
+            let mut et = ExpressionTree::default();
             let tokens = [
                 make_tokenline_no(
                     [
@@ -693,7 +693,7 @@ mod tests {
 
         #[test]
         fn invalid_parse_skips_rest_of_tokens() {
-            let mut et: ExpressionTree = Default::default();
+            let mut et = ExpressionTree::default();
             et.parsers.push(ParseNode::InvalidParseTree(
                 InvalidParseError::InvalidExprSource,
             ));
@@ -718,7 +718,7 @@ mod tests {
 
         #[test]
         fn unterminated_comment_datum_causes_other_errors() {
-            let mut et: ExpressionTree = Default::default();
+            let mut et = ExpressionTree::default();
             // NOTE: (foo #u8(10 #;) #t) -> unterminated datum comment, invalid bytevector item
             let tokens = [make_tokenline([
                 TokenKind::ParenLeft,
@@ -756,7 +756,7 @@ mod tests {
 
         #[test]
         fn failed_parser_into_unexpected_end_of_parse_discards_rest_of_input() {
-            let mut et: ExpressionTree = Default::default();
+            let mut et = ExpressionTree::default();
             let tokens = [make_tokenline_no([TokenKind::CommentDatum], 1)];
 
             let r = et.parse(tokens.into());
@@ -798,7 +798,7 @@ mod tests {
 
         #[test]
         fn no_continuation() {
-            let mut et: ExpressionTree = Default::default();
+            let mut et = ExpressionTree::default();
 
             let o = et.unsupported_continuation();
 
@@ -807,7 +807,7 @@ mod tests {
 
         #[test]
         fn continuation_to_error() {
-            let mut et: ExpressionTree = Default::default();
+            let mut et = ExpressionTree::default();
             let tokens = [make_tokenline([
                 TokenKind::Constant(Constant::Boolean(true)),
                 TokenKind::StringBegin {
@@ -840,7 +840,7 @@ mod tests {
 
         #[test]
         fn continuation_tied_to_expression_first_line() {
-            let mut et: ExpressionTree = Default::default();
+            let mut et = ExpressionTree::default();
             let tokens = [
                 make_tokenline_no(
                     [TokenKind::StringBegin {
@@ -882,7 +882,7 @@ mod tests {
 
         #[test]
         fn continuation_ignored_if_existing_errors() {
-            let mut et: ExpressionTree = Default::default();
+            let mut et = ExpressionTree::default();
             let tokens = [make_tokenline([
                 TokenKind::Constant(Constant::Boolean(true)),
                 TokenKind::DirectiveCase(true),
