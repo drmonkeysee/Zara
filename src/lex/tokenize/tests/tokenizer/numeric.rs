@@ -3997,6 +3997,61 @@ mod cartesian {
     }
 
     #[test]
+    fn radix_unity_inf_nan_combos() {
+        let combos = [
+            "#xa+i",
+            "#xa-i",
+            "#xa+inf.0i",
+            "#xa-inf.0i",
+            "#xa+nan.0i",
+            "#xa-nan.0i",
+            "#x+inf.0+ai",
+            "#x-inf.0+ai",
+            "#x+nan.0+ai",
+            "#x-nan.0+ai",
+            "#x+inf.0+inf.0i",
+            "#x-inf.0-inf.0i",
+            "#x+nan.0+nan.0i",
+            "#x-nan.0-nan.0i",
+            "#x+inf.0+nan.0i",
+            "#x+nan.0+inf.0i",
+            "#x-inf.0-nan.0i",
+            "#x-nan.0-inf.0i",
+            "#x+inf.0+i",
+            "#x-inf.0-i",
+            "#x+nan.0+i",
+            "#x-nan.0-i",
+        ];
+        for cpx in combos {
+            let mut s = Scanner::new(cpx);
+            let start = some_or_fail!(s.next_token());
+            let t = Tokenizer {
+                scanner: &mut s,
+                start,
+            };
+
+            let (r, c) = t.extract();
+
+            assert!(c.is_none());
+            let tok = ok_or_fail!(r);
+            assert!(matches!(
+                tok,
+                Token {
+                    kind: TokenKind::Constant(_),
+                    span: Range { start: 0, end },
+                } if end == cpx.len()
+            ));
+            let num = extract_number!(tok.kind);
+            let expected = if cpx.contains("-nan") {
+                cpx.replace("-nan", "+nan")
+            } else {
+                cpx.to_owned()
+            };
+            assert_eq!(num.as_datum().to_string(), expected);
+        }
+    }
+
+    #[test]
     fn radix_and_sign() {
         let radix = [
             ("#b", "101010", "101011"),
@@ -4780,6 +4835,50 @@ mod polar {
             ("+nan.0@+inf.0", "+nan.0+nan.0i"),
             ("-inf.0@-nan.0", "+nan.0+nan.0i"),
             ("-nan.0@-inf.0", "+nan.0+nan.0i"),
+        ];
+        for (cpx, exp) in combos {
+            let mut s = Scanner::new(cpx);
+            let start = some_or_fail!(s.next_token());
+            let t = Tokenizer {
+                scanner: &mut s,
+                start,
+            };
+
+            let (r, c) = t.extract();
+
+            assert!(c.is_none());
+            let tok = ok_or_fail!(r);
+            assert!(matches!(
+                tok,
+                Token {
+                    kind: TokenKind::Constant(_),
+                    span: Range { start: 0, end },
+                } if end == cpx.len()
+            ));
+            let num = extract_number!(tok.kind);
+            assert_eq!(num.as_datum().to_string(), exp);
+        }
+    }
+
+    #[test]
+    fn radix_inf_nan_combos() {
+        let combos = [
+            ("#xa@+inf.0", "+nan.0+nan.0i"),
+            ("#xa@-inf.0", "+nan.0+nan.0i"),
+            ("#xa@+nan.0", "+nan.0+nan.0i"),
+            ("#xa@-nan.0", "+nan.0+nan.0i"),
+            ("#x+inf.0@a", "-inf.0-inf.0i"),
+            ("#x-inf.0@a", "+inf.0+inf.0i"),
+            ("#x+nan.0@a", "+nan.0+nan.0i"),
+            ("#x-nan.0@a", "+nan.0+nan.0i"),
+            ("#x+inf.0@+inf.0", "+nan.0+nan.0i"),
+            ("#x-inf.0@-inf.0", "+nan.0+nan.0i"),
+            ("#x+nan.0@+nan.0", "+nan.0+nan.0i"),
+            ("#x-nan.0@-nan.0", "+nan.0+nan.0i"),
+            ("#x+inf.0@+nan.0", "+nan.0+nan.0i"),
+            ("#x+nan.0@+inf.0", "+nan.0+nan.0i"),
+            ("#x-inf.0@-nan.0", "+nan.0+nan.0i"),
+            ("#x-nan.0@-inf.0", "+nan.0+nan.0i"),
         ];
         for (cpx, exp) in combos {
             let mut s = Scanner::new(cpx);
