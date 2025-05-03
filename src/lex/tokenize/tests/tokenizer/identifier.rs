@@ -430,6 +430,53 @@ fn contains_reserved_char() {
     ));
 }
 
+#[test]
+fn contains_numeric_label() {
+    let mut s = Scanner::new("f+inf.0");
+    let start = some_or_fail!(s.next_token());
+    let t = Tokenizer {
+        scanner: &mut s,
+        start,
+    };
+
+    let (r, c) = t.extract();
+
+    assert!(c.is_none());
+    let tok = ok_or_fail!(r);
+    assert!(matches!(
+        tok,
+        Token {
+            kind: TokenKind::Identifier(txt),
+            span: Range { start: 0, end: 7 },
+        } if txt == "f+inf.0"
+    ));
+}
+
+#[test]
+fn infnan_numerator_is_identifier() {
+    let cases = ["+inf.0/5", "-inf.0/5", "+nan.0/5", "-nan.0/5"];
+    for case in cases {
+        let mut s = Scanner::new(case);
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scanner: &mut s,
+            start,
+        };
+
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
+        let tok = ok_or_fail!(r);
+        assert!(matches!(
+            tok,
+            Token {
+                kind: TokenKind::Identifier(txt),
+                span: Range { start: 0, end: 8 },
+            } if txt == case
+        ));
+    }
+}
+
 mod verbatim {
     use super::*;
 

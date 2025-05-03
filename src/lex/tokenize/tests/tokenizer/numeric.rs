@@ -1178,6 +1178,31 @@ mod rational {
     }
 
     #[test]
+    fn infnan_denominator() {
+        let cases = ["4/+inf.0", "4/-inf.0", "4/+nan.0", "4/-nan.0"];
+        for case in cases {
+            let mut s = Scanner::new(case);
+            let start = some_or_fail!(s.next_token());
+            let t = Tokenizer {
+                scanner: &mut s,
+                start,
+            };
+
+            let (r, c) = t.extract();
+
+            assert!(c.is_none());
+            let err = err_or_fail!(r);
+            assert!(matches!(
+                err,
+                TokenError {
+                    kind: TokenErrorKind::RationalInvalid,
+                    span: Range { start: 0, end: 8 },
+                }
+            ));
+        }
+    }
+
+    #[test]
     fn too_many_slashes() {
         let mut s = Scanner::new("4/5/6");
         let start = some_or_fail!(s.next_token());
@@ -1750,6 +1775,41 @@ mod float {
     }
 
     #[test]
+    fn radix_inf_nan() {
+        let cases = [
+            "#x+inf.0", "#x-inf.0", "#x+nan.0", "#x-nan.0", "#d+inf.0", "#d-inf.0", "#d+nan.0",
+            "#d-nan.0",
+        ];
+        for case in cases {
+            let mut s = Scanner::new(case);
+            let start = some_or_fail!(s.next_token());
+            let t = Tokenizer {
+                scanner: &mut s,
+                start,
+            };
+
+            let (r, c) = t.extract();
+
+            assert!(c.is_none());
+            let tok = ok_or_fail!(r);
+            assert!(matches!(
+                tok,
+                Token {
+                    kind: TokenKind::Constant(Constant::Number(_)),
+                    span: Range { start: 0, end },
+                } if end == case.len()
+            ));
+            let flt = extract_number!(tok.kind, Number::Real);
+            let expected = if case.contains("-nan") {
+                case[2..].replace("-nan", "+nan")
+            } else {
+                case[2..].to_owned()
+            };
+            assert_eq!(flt.to_string(), expected);
+        }
+    }
+
+    #[test]
     fn inexact_inf_nan() {
         let cases = ["#i+inf.0", "#i-inf.0", "#i+nan.0", "#i-nan.0"];
         for case in cases {
@@ -1776,6 +1836,47 @@ mod float {
                 case[2..].replace("-nan", "+nan")
             } else {
                 case[2..].to_owned()
+            };
+            assert_eq!(flt.to_string(), expected);
+        }
+    }
+
+    #[test]
+    fn inexact_radix_inf_nan() {
+        let cases = [
+            "#i#b+inf.0",
+            "#i#b-inf.0",
+            "#i#b+nan.0",
+            "#i#b-nan.0",
+            "#b#i+inf.0",
+            "#b#i-inf.0",
+            "#b#i+nan.0",
+            "#b#i-nan.0",
+        ];
+        for case in cases {
+            let mut s = Scanner::new(case);
+            let start = some_or_fail!(s.next_token());
+            let t = Tokenizer {
+                scanner: &mut s,
+                start,
+            };
+
+            let (r, c) = t.extract();
+
+            assert!(c.is_none());
+            let tok = ok_or_fail!(r);
+            assert!(matches!(
+                tok,
+                Token {
+                    kind: TokenKind::Constant(Constant::Number(_)),
+                    span: Range { start: 0, end },
+                } if end == case.len()
+            ));
+            let flt = extract_number!(tok.kind, Number::Real);
+            let expected = if case.contains("-nan") {
+                case[4..].replace("-nan", "+nan")
+            } else {
+                case[4..].to_owned()
             };
             assert_eq!(flt.to_string(), expected);
         }
@@ -2165,6 +2266,47 @@ mod float {
                 case[2..].replace("-nan", "+nan")
             } else {
                 case[2..].to_owned()
+            };
+            assert_eq!(flt.to_string(), expected);
+        }
+    }
+
+    #[test]
+    fn exact_radix_inf_nan() {
+        let cases = [
+            "#e#o+inf.0",
+            "#e#o-inf.0",
+            "#e#o+nan.0",
+            "#e#o-nan.0",
+            "#o#e+inf.0",
+            "#o#e-inf.0",
+            "#o#e+nan.0",
+            "#o#e-nan.0",
+        ];
+        for case in cases {
+            let mut s = Scanner::new(case);
+            let start = some_or_fail!(s.next_token());
+            let t = Tokenizer {
+                scanner: &mut s,
+                start,
+            };
+
+            let (r, c) = t.extract();
+
+            assert!(c.is_none());
+            let tok = ok_or_fail!(r);
+            assert!(matches!(
+                tok,
+                Token {
+                    kind: TokenKind::Constant(Constant::Number(_)),
+                    span: Range { start: 0, end },
+                } if end == case.len()
+            ));
+            let flt = extract_number!(tok.kind, Number::Real);
+            let expected = if case.contains("-nan") {
+                case[4..].replace("-nan", "+nan")
+            } else {
+                case[4..].to_owned()
             };
             assert_eq!(flt.to_string(), expected);
         }
