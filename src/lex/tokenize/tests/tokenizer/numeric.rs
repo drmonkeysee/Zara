@@ -1178,6 +1178,31 @@ mod rational {
     }
 
     #[test]
+    fn radix_infnan_numerator() {
+        let cases = ["#x+inf.0/a", "#x-inf.0/a", "#x+nan.0/a", "#x-nan.0/a"];
+        for case in cases {
+            let mut s = Scanner::new(case);
+            let start = some_or_fail!(s.next_token());
+            let t = Tokenizer {
+                scanner: &mut s,
+                start,
+            };
+
+            let (r, c) = t.extract();
+
+            assert!(c.is_none());
+            let err = err_or_fail!(r);
+            assert!(matches!(
+                err,
+                TokenError {
+                    kind: TokenErrorKind::RationalInvalid,
+                    span: Range { start: 0, end: 10 },
+                }
+            ));
+        }
+    }
+
+    #[test]
     fn infnan_denominator() {
         let cases = ["4/+inf.0", "4/-inf.0", "4/+nan.0", "4/-nan.0"];
         for case in cases {
