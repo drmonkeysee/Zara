@@ -97,13 +97,13 @@ impl<'me, 'txt> RealNumber<'me, 'txt> {
         let mut brk = Ok(BreakCondition::default());
         while let Some(item) = self.scanner.next_if_not_delimiter() {
             match self.classifier.classify(item) {
-                RealControl::Continue(Some(c)) => {
-                    self.classifier = c;
-                }
-                RealControl::Continue(None) => (),
                 RealControl::Break(b) => {
                     brk = b;
                     break;
+                }
+                RealControl::Continue(None) => (),
+                RealControl::Continue(Some(c)) => {
+                    self.classifier = c;
                 }
             }
         }
@@ -165,11 +165,11 @@ impl<'me, 'txt, R: Radix + Default> RadixNumber<'me, 'txt, R> {
         let mut brk = Ok(BreakCondition::default());
         while let Some(item) = self.scanner.next_if_not_delimiter() {
             match self.classifier.classify(item) {
-                RadixControl::Continue(u) => u,
                 RadixControl::Break(b) => {
                     brk = b;
                     break;
                 }
+                RadixControl::Continue(u) => u,
             }
         }
         let cond = self.classifier.finalize_condition(brk?);
@@ -221,6 +221,15 @@ impl<P: ClassifierProps> ConditionProcessor<'_, '_, P> {
         cond: &BreakCondition,
     ) -> TokenExtractResult {
         match cond {
+            BreakCondition::Fraction => {
+                if self.props.radix_infnan() {
+                    Err(TokenErrorKind::RationalInvalid)
+                } else {
+                    parser
+                        .parse_int()
+                        .and_then(|numerator| self.scan_denominator(numerator))
+                }
+            }
             BreakCondition::Sub(SubCondition::Complete) => self.complete(parser, false),
             BreakCondition::Sub(SubCondition::Complex { kind, start }) => {
                 if self.props.radix_infnan() {
@@ -255,15 +264,6 @@ impl<P: ClassifierProps> ConditionProcessor<'_, '_, P> {
                     Err(TokenErrorKind::ImaginaryMissingSign)
                 } else {
                     self.complete(parser, true)
-                }
-            }
-            BreakCondition::Fraction => {
-                if self.props.radix_infnan() {
-                    Err(TokenErrorKind::RationalInvalid)
-                } else {
-                    parser
-                        .parse_int()
-                        .and_then(|numerator| self.scan_denominator(numerator))
                 }
             }
         }
@@ -376,11 +376,11 @@ impl<'me, 'txt> Denominator<'me, 'txt> {
         };
         while let Some(item) = self.scanner.next_if_not_delimiter() {
             match classifier.classify(item) {
-                RadixControl::Continue(u) => u,
                 RadixControl::Break(b) => {
                     brk = b;
                     break;
                 }
+                RadixControl::Continue(u) => u,
             }
         }
         let cond = brk.map_err(|_| TokenErrorKind::RationalInvalid)?;
@@ -461,9 +461,9 @@ enum SubCondition<'txt> {
 impl<'txt> From<BreakCondition<'txt>> for SubCondition<'txt> {
     fn from(value: BreakCondition<'txt>) -> Self {
         match value {
-            BreakCondition::Sub(s) => s,
             // NOTE: Denominator ensures this case never happens
             BreakCondition::Fraction => unreachable!("unexpected break-to-sub conversion case"),
+            BreakCondition::Sub(s) => s,
         }
     }
 }
