@@ -127,6 +127,7 @@ mod tests {
         }
     }
 
+    // NOTE: most of these tests adapted from constant::tests::string
     mod symbol {
         use super::*;
 
