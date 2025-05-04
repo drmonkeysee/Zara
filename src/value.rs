@@ -152,6 +152,13 @@ mod tests {
         }
 
         #[test]
+        fn only_whitespace() {
+            let v = Value::Symbol("   ".into());
+
+            assert_eq!(v.as_datum().to_string(), "|   |");
+        }
+
+        #[test]
         fn alphanumeric() {
             let v = Value::Symbol("abc123!@$^&".into());
 
