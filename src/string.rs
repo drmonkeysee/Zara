@@ -41,7 +41,7 @@ impl Display for StrDatum<'_> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         f.write_char('"')?;
         for ch in self.0.chars() {
-            write_text_char(ch, f)?;
+            write_str_char(ch, f)?;
         }
         f.write_char('"')
     }
@@ -52,7 +52,7 @@ pub(crate) struct SymbolDatum<'a>(pub(crate) &'a str);
 impl Display for SymbolDatum<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         for ch in self.0.chars() {
-            write_text_char(ch, f)?;
+            write_str_char(ch, f)?;
         }
         Ok(())
     }
@@ -63,7 +63,7 @@ enum DisplayableChar {
     Hex(u32),
 }
 
-fn write_text_char(ch: char, f: &mut Formatter) -> fmt::Result {
+fn write_str_char(ch: char, f: &mut Formatter) -> fmt::Result {
     match ch {
         // NOTE: Rust displays NUL directly, fooling DisplayableChar,
         // so handle as a special case here.
@@ -75,11 +75,11 @@ fn write_text_char(ch: char, f: &mut Formatter) -> fmt::Result {
         '\t' => f.write_str("\\t"),
         '"' => f.write_str("\\\""),
         '\\' => f.write_str("\\\\"),
-        _ => write_str_chr(ch, f),
+        _ => write_literal_str_char(ch, f),
     }
 }
 
-fn write_str_chr(ch: char, f: &mut Formatter) -> fmt::Result {
+fn write_literal_str_char(ch: char, f: &mut Formatter) -> fmt::Result {
     match char_to_displayable(ch) {
         DisplayableChar::Char(ch) => f.write_char(ch),
         DisplayableChar::Hex(hex) => write!(f, "\\x{hex:x};"),
