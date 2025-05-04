@@ -130,7 +130,10 @@ impl<'me, 'txt, R: Radix + Default> RadixNumber<'me, 'txt, R> {
     pub(super) fn new(scanner: &'me mut Scanner<'txt>, exactness: Option<Exactness>) -> Self {
         let start = scanner.pos();
         Self {
-            classifier: Integral(IntSpec::default()),
+            classifier: Integral {
+                spec: IntSpec::default(),
+                ..Default::default()
+            },
             exactness,
             scanner,
             start,
@@ -144,11 +147,14 @@ impl<'me, 'txt, R: Radix + Default> RadixNumber<'me, 'txt, R> {
     ) -> Self {
         let (start, sign) = start;
         Self {
-            classifier: Integral(IntSpec {
-                magnitude: 1..1,
-                sign: Some(super::char_to_sign(sign)),
+            classifier: Integral {
+                spec: IntSpec {
+                    magnitude: 1..1,
+                    sign: Some(super::char_to_sign(sign)),
+                    ..Default::default()
+                },
                 ..Default::default()
-            }),
+            },
             exactness,
             scanner,
             start,
@@ -166,7 +172,7 @@ impl<'me, 'txt, R: Radix + Default> RadixNumber<'me, 'txt, R> {
                 }
             }
         }
-        let cond = brk?;
+        let cond = self.classifier.finalize_condition(brk?);
         let (props, parser) = self
             .classifier
             .commit(self.scanner.current_lexeme_at(self.start), self.exactness);
@@ -217,13 +223,25 @@ impl<P: ClassifierProps> ConditionProcessor<'_, '_, P> {
         match cond {
             BreakCondition::Sub(SubCondition::Complete) => self.complete(parser, false),
             BreakCondition::Sub(SubCondition::Complex { kind, start }) => {
-                // NOTE: delay application of exactness until final
-                // composition of complex number; specifically Polar
-                // will round-trip inputs through float representation,
-                // undoing any exactness applied to real part.
-                parser
-                    .parse(None)
-                    .and_then(|real| self.scan_imaginary(real, *kind, *start))
+                if self.props.radix_infnan() {
+                    if let Ok(TokenKind::Constant(Constant::Number(Number::Real(r)))) =
+                        parser.extract_radix_infnan()
+                    {
+                        Ok(r)
+                    } else {
+                        Err(match kind {
+                            ComplexKind::Cartesian => TokenErrorKind::ComplexInvalid,
+                            ComplexKind::Polar => TokenErrorKind::PolarInvalid,
+                        })
+                    }
+                } else {
+                    // NOTE: delay application of exactness until final
+                    // composition of complex number; specifically Polar
+                    // will round-trip inputs through float representation,
+                    // undoing any exactness applied to real part.
+                    parser.parse(None)
+                }
+                .and_then(|real| self.scan_imaginary(real, *kind, *start))
             }
             BreakCondition::Sub(SubCondition::Imaginary) => {
                 if let Some(item) = self.scanner.next_if_not_delimiter() {
@@ -239,9 +257,15 @@ impl<P: ClassifierProps> ConditionProcessor<'_, '_, P> {
                     self.complete(parser, true)
                 }
             }
-            BreakCondition::Fraction => parser
-                .parse_int()
-                .and_then(|numerator| self.scan_denominator(numerator)),
+            BreakCondition::Fraction => {
+                if self.props.radix_infnan() {
+                    Err(TokenErrorKind::RationalInvalid)
+                } else {
+                    parser
+                        .parse_int()
+                        .and_then(|numerator| self.scan_denominator(numerator))
+                }
+            }
         }
     }
 
@@ -316,6 +340,9 @@ impl<P: ClassifierProps> ConditionProcessor<'_, '_, P> {
         parser: N,
         is_imaginary: bool,
     ) -> TokenExtractResult {
+        if self.props.radix_infnan() {
+            return parser.extract_radix_infnan();
+        }
         if is_imaginary && self.props.is_empty() {
             if let Some(sign) = self.props.get_sign() {
                 return Ok(imaginary(sign, self.props.get_exactness()));
@@ -340,10 +367,13 @@ impl<'me, 'txt> Denominator<'me, 'txt> {
 
     fn scan<R: Radix + Default>(mut self) -> Result<(Integer, SubCondition<'txt>), TokenErrorKind> {
         let mut brk = Ok(BreakCondition::default());
-        let mut classifier = Integral::<R>(IntSpec {
-            sign: Some(Sign::Positive),
+        let mut classifier = Integral::<R> {
+            spec: IntSpec {
+                sign: Some(Sign::Positive),
+                ..Default::default()
+            },
             ..Default::default()
-        });
+        };
         while let Some(item) = self.scanner.next_if_not_delimiter() {
             match classifier.classify(item) {
                 RadixControl::Continue(u) => u,
@@ -390,6 +420,10 @@ enum BreakCondition<'txt> {
 }
 
 impl BreakCondition<'_> {
+    fn is_default(&self) -> bool {
+        matches!(self, BreakCondition::Sub(SubCondition::Complete))
+    }
+
     fn imaginary() -> Self {
         Self::Sub(SubCondition::Imaginary)
     }
@@ -443,6 +477,10 @@ trait ClassifierProps {
     fn cartesian_scan(&self, scanner: &mut Scanner, start: ScanItem) -> TokenExtractResult;
     fn polar_scan(&self, scanner: &mut Scanner) -> TokenExtractResult;
 
+    fn radix_infnan(&self) -> bool {
+        false
+    }
+
     fn has_sign(&self) -> bool {
         self.get_sign().is_some()
     }
@@ -451,6 +489,13 @@ trait ClassifierProps {
 trait ClassifierParser {
     fn parse(self, exactness: Option<Exactness>) -> ParseResult;
     fn parse_int(self) -> IntParseResult;
+
+    fn extract_radix_infnan(self) -> TokenExtractResult
+    where
+        Self: Sized,
+    {
+        Err(TokenErrorKind::NumberInvalid)
+    }
 }
 
 enum RealClassifier {
@@ -566,17 +611,80 @@ impl ClassifierParser for RealParser<'_> {
     }
 }
 
-struct Integral<R>(IntSpec<R>);
+#[derive(Default)]
+enum IntegralMode {
+    Inf(usize),
+    #[default]
+    Int,
+    Nan(usize),
+}
+
+#[derive(Default)]
+struct Integral<R> {
+    mode: IntegralMode,
+    spec: IntSpec<R>,
+}
 
 impl<R: Radix> Integral<R> {
     fn classify<'txt>(&mut self, item: ScanItem<'txt>) -> RadixControl<'txt> {
+        match &mut self.mode {
+            IntegralMode::Inf(end) | IntegralMode::Nan(end) => classify_radix_infnan(item, end),
+            IntegralMode::Int => self.classify_int(item),
+        }
+    }
+
+    fn finalize_condition<'txt>(&mut self, brk: BreakCondition<'txt>) -> BreakCondition<'txt> {
+        // NOTE: if inf scan only found 'i' then turns out this was imaginary, not infinity
+        if brk.is_default() {
+            if let IntegralMode::Inf(len) = self.mode {
+                if len == 2 {
+                    self.mode = IntegralMode::Int;
+                    return BreakCondition::imaginary();
+                }
+            }
+        }
+        brk
+    }
+
+    fn commit(self, input: &str, exactness: Option<Exactness>) -> (RadixProps<R>, RadixParser<R>) {
+        let infnan_len = match self.mode {
+            IntegralMode::Inf(len) | IntegralMode::Nan(len) => Some(len),
+            _ => None,
+        };
+        (
+            RadixProps {
+                infnan: infnan_len.is_some(),
+                props: RealProps {
+                    empty: self.spec.is_empty(),
+                    exactness,
+                    sign: self.spec.sign,
+                },
+                radix: PhantomData,
+            },
+            RadixParser {
+                infnan_len,
+                input,
+                spec: self.spec,
+            },
+        )
+    }
+
+    fn has_sign(&self) -> bool {
+        self.spec.has_sign()
+    }
+
+    fn is_empty(&self) -> bool {
+        self.spec.is_empty()
+    }
+
+    fn classify_int<'txt>(&mut self, item: ScanItem<'txt>) -> RadixControl<'txt> {
         let (idx, ch) = item;
         match ch {
             '+' | '-' => {
-                if self.0.is_empty() {
-                    if self.0.sign.is_none() {
-                        self.0.sign = Some(super::char_to_sign(ch));
-                        self.0.magnitude = 1..1;
+                if self.spec.is_empty() {
+                    if self.spec.sign.is_none() {
+                        self.spec.sign = Some(super::char_to_sign(ch));
+                        self.spec.magnitude = 1..1;
                         RadixControl::Continue(())
                     } else {
                         RadixControl::Break(Err(TokenErrorKind::NumberInvalid))
@@ -591,9 +699,26 @@ impl<R: Radix> Integral<R> {
             })),
             '/' => RadixControl::Break(Ok(BreakCondition::Fraction)),
             '@' => RadixControl::Break(Ok(BreakCondition::polar(item))),
-            'i' | 'I' => RadixControl::Break(Ok(BreakCondition::imaginary())),
-            _ if self.0.radix.is_digit(ch) => {
-                self.0.magnitude.end += 1;
+            'i' | 'I' => {
+                if self.is_empty() && self.has_sign() {
+                    // NOTE: length includes sign
+                    self.mode = IntegralMode::Inf(2);
+                    RadixControl::Continue(())
+                } else {
+                    RadixControl::Break(Ok(BreakCondition::imaginary()))
+                }
+            }
+            'n' | 'N' => {
+                if self.is_empty() && self.has_sign() {
+                    // NOTE: length includes sign
+                    self.mode = IntegralMode::Nan(2);
+                    RadixControl::Continue(())
+                } else {
+                    RadixControl::Break(Err(TokenErrorKind::NumberInvalid))
+                }
+            }
+            _ if self.spec.radix.is_digit(ch) => {
+                self.spec.magnitude.end += 1;
                 RadixControl::Continue(())
             }
             // NOTE: e|E hexadecimal is_digit is true, so check exponent after digit
@@ -608,34 +733,10 @@ impl<R: Radix> Integral<R> {
             })),
         }
     }
-
-    fn commit(self, input: &str, exactness: Option<Exactness>) -> (RadixProps<R>, RadixParser<R>) {
-        (
-            RadixProps {
-                props: RealProps {
-                    empty: self.0.is_empty(),
-                    exactness,
-                    sign: self.0.sign,
-                },
-                radix: PhantomData,
-            },
-            RadixParser {
-                input,
-                spec: self.0,
-            },
-        )
-    }
-
-    fn has_sign(&self) -> bool {
-        self.0.sign.is_some()
-    }
-
-    fn is_empty(&self) -> bool {
-        self.0.is_empty()
-    }
 }
 
 struct RadixProps<R> {
+    infnan: bool,
     props: RealProps,
     radix: PhantomData<R>,
 }
@@ -662,9 +763,14 @@ impl<R: Radix + Default> ClassifierProps for RadixProps<R> {
     fn polar_scan(&self, scanner: &mut Scanner) -> TokenExtractResult {
         RadixNumber::<R>::new(scanner, Some(Exactness::Exact)).scan()
     }
+
+    fn radix_infnan(&self) -> bool {
+        self.infnan
+    }
 }
 
 struct RadixParser<'txt, R> {
+    infnan_len: Option<usize>,
     input: &'txt str,
     spec: IntSpec<R>,
 }
@@ -676,6 +782,16 @@ impl<R: Radix> ClassifierParser for RadixParser<'_, R> {
 
     fn parse_int(self) -> IntParseResult {
         Ok(self.spec.into_exact(self.input)?)
+    }
+
+    fn extract_radix_infnan(self) -> TokenExtractResult {
+        super::numeric_label(
+            self.infnan_len.map_or(Ok(self.input), |len| {
+                self.input.get(0..len).ok_or(TokenErrorKind::NumberInvalid)
+            })?,
+            None,
+        )
+        .ok_or(TokenErrorKind::NumberInvalid)
     }
 }
 
@@ -824,6 +940,22 @@ impl Scientific {
         TokenErrorKind::NumericErrorAt {
             at: self.e_at,
             err: NumericError::ParseExponentFailure,
+        }
+    }
+}
+
+fn classify_radix_infnan<'txt>(item: ScanItem<'txt>, len: &mut usize) -> RadixControl<'txt> {
+    match item.1 {
+        '+' | '-' => RadixControl::Break(Ok(BreakCondition::cartesian(item))),
+        '/' => RadixControl::Break(Ok(BreakCondition::Fraction)),
+        '@' => RadixControl::Break(Ok(BreakCondition::polar(item))),
+        'i' | 'I' => {
+            *len += 1;
+            RadixControl::Break(Ok(BreakCondition::imaginary()))
+        }
+        _ => {
+            *len += 1;
+            RadixControl::Continue(())
         }
     }
 }

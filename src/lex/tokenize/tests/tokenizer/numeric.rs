@@ -1835,6 +1835,38 @@ mod float {
     }
 
     #[test]
+    fn radix_inf_nan_malformed() {
+        let cases = [
+            "#xinf.0",
+            "#xnan.0",
+            "#x+inf",
+            "#x+inf.0foo",
+            "#x+nan",
+            "#x+nan.0foo",
+        ];
+        for case in cases {
+            let mut s = Scanner::new(case);
+            let start = some_or_fail!(s.next_token());
+            let t = Tokenizer {
+                scanner: &mut s,
+                start,
+            };
+
+            let (r, c) = t.extract();
+
+            assert!(c.is_none());
+            let err = err_or_fail!(r);
+            assert!(matches!(
+                err,
+                TokenError {
+                    kind: TokenErrorKind::NumberInvalid,
+                    span: Range { start: 0, end },
+                } if end == case.len()
+            ));
+        }
+    }
+
+    #[test]
     fn inexact_inf_nan() {
         let cases = ["#i+inf.0", "#i-inf.0", "#i+nan.0", "#i-nan.0"];
         for case in cases {
@@ -4067,12 +4099,64 @@ mod cartesian {
                 } if end == cpx.len()
             ));
             let num = extract_number!(tok.kind);
-            let expected = if cpx.contains("-nan") {
-                cpx.replace("-nan", "+nan")
-            } else {
-                cpx.to_owned()
+            let mut expected = cpx.to_owned();
+            if expected.contains("-nan") {
+                expected = expected.replace("-nan", "+nan")
+            }
+            if expected.contains("xa") {
+                expected = expected.replace("xa", "x10")
+            }
+            if expected.contains("ai") {
+                expected = expected.replace("ai", "10i")
+            }
+            assert_eq!(num.as_datum().to_string(), expected[2..]);
+        }
+    }
+
+    #[test]
+    fn radix_malformed_inf_nan() {
+        let combos = [
+            "#xinf.0+ai",
+            "#x+inf+ai",
+            "#x+inf.0foo+ai",
+            "#xnan.0+ai",
+            "#x+nan+ai",
+            "#x+nan.0foo+ai",
+            "#xa+infi",
+            "#xa+inf.0fooi",
+            "#xa+nani",
+            "#xa+nan.0fooi",
+        ];
+        for (i, cpx) in combos.iter().enumerate() {
+            let mut s = Scanner::new(cpx);
+            let start = some_or_fail!(s.next_token());
+            let t = Tokenizer {
+                scanner: &mut s,
+                start,
             };
-            assert_eq!(num.as_datum().to_string(), expected);
+
+            let (r, c) = t.extract();
+
+            assert!(c.is_none());
+            let err = err_or_fail!(r);
+            // NOTE: missing sign causes lexing to fail before determining complex condition
+            if matches!(i, 0 | 3) {
+                assert!(matches!(
+                    err,
+                    TokenError {
+                        kind: TokenErrorKind::NumberInvalid,
+                        span: Range { start: 0, end },
+                    } if end == cpx.len()
+                ));
+            } else {
+                assert!(matches!(
+                    err,
+                    TokenError {
+                        kind: TokenErrorKind::ComplexInvalid,
+                        span: Range { start: 0, end },
+                    } if end == cpx.len()
+                ));
+            }
         }
     }
 
@@ -4926,6 +5010,52 @@ mod polar {
             ));
             let num = extract_number!(tok.kind);
             assert_eq!(num.as_datum().to_string(), exp);
+        }
+    }
+
+    #[test]
+    fn radix_malformed_inf_nan() {
+        let cases = [
+            "#xinf.0@a",
+            "#x+inf@a",
+            "#x+inf.0foo@a",
+            "#xnan.0@a",
+            "#x+nan@a",
+            "#x+nan.0foo@a",
+            "#xa@inf",
+            "#xa@inf.0foo",
+            "#xa@nan",
+            "#xa@nan.0foo",
+        ];
+        for (i, cpx) in cases.iter().enumerate() {
+            let mut s = Scanner::new(cpx);
+            let start = some_or_fail!(s.next_token());
+            let t = Tokenizer {
+                scanner: &mut s,
+                start,
+            };
+
+            let (r, c) = t.extract();
+
+            assert!(c.is_none());
+            let err = err_or_fail!(r);
+            if matches!(i, 0 | 3) {
+                assert!(matches!(
+                    err,
+                    TokenError {
+                        kind: TokenErrorKind::NumberInvalid,
+                        span: Range { start: 0, end },
+                    } if end == cpx.len()
+                ));
+            } else {
+                assert!(matches!(
+                    err,
+                    TokenError {
+                        kind: TokenErrorKind::PolarInvalid,
+                        span: Range { start: 0, end },
+                    } if end == cpx.len()
+                ));
+            }
         }
     }
 

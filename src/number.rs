@@ -456,6 +456,10 @@ impl<R: Radix> IntSpec<R> {
         self.magnitude.is_empty()
     }
 
+    pub(crate) fn has_sign(&self) -> bool {
+        self.sign.is_some()
+    }
+
     pub(crate) fn into_exact(self, input: &str) -> IntResult {
         parse_signed(&self, input)
     }
@@ -525,7 +529,7 @@ impl FloatSpec {
     pub(crate) fn into_exact(self, input: &str) -> RealResult {
         let mut buf = String::new();
         let mut num = IntSpec::<Decimal>::default();
-        if self.integral.sign.is_some() {
+        if self.integral.has_sign() {
             buf += input.get(0..1).unwrap_or_default();
             num.sign = self.integral.sign;
             num.magnitude = 1..1;
