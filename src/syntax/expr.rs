@@ -22,6 +22,10 @@ impl Program {
     }
 
     pub(crate) fn eval(self) -> Option<Value> {
+        #[allow(
+            clippy::double_ended_iterator_last,
+            reason = "iterator consumed intentionally"
+        )]
         self.0.into_iter().map(Expression::eval).last()?
     }
 

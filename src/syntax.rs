@@ -176,8 +176,8 @@ impl ExpressionTree {
                         errs.extend(errvec);
                         return p;
                     }
-                    Ok(MergeFlow::Continue(_)) => return p,
-                    Ok(MergeFlow::Break(_)) => return self.finalize_parser(p, end, errs),
+                    Ok(MergeFlow::Continue(())) => return p,
+                    Ok(MergeFlow::Break(())) => return self.finalize_parser(p, end, errs),
                 },
             },
         };

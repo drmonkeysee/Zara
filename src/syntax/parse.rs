@@ -159,7 +159,7 @@ impl TryFrom<ExprNode> for Option<Expression> {
         match value.mode {
             ParseMode::ByteVector(seq) => into_bytevector(seq, value.ctx),
             ParseMode::CommentBlock => Ok(None),
-            ParseMode::CommentDatum(inner) => into_comment_datum(inner, value.ctx),
+            ParseMode::CommentDatum(inner) => into_comment_datum(inner.as_ref(), value.ctx),
             ParseMode::Identifier(s) => Ok(Some(Expression {
                 ctx: value.ctx,
                 kind: ExpressionKind::Identifier(s.into()),
@@ -365,7 +365,7 @@ fn parse_expr(token: Token, txt: &Rc<TextLine>, datum: bool) -> ExprFlow {
                     seq: vec![Expression {
                         ctx: ExprCtx {
                             span: token.span,
-                            txt: Rc::clone(&txt),
+                            txt: Rc::clone(txt),
                         },
                         kind: ExpressionKind::Identifier("quote".into()),
                     }],
@@ -500,7 +500,7 @@ fn into_bytevector(seq: Vec<Expression>, ctx: ExprCtx) -> ExprConvertResult {
     }
 }
 
-fn into_comment_datum(inner: Option<Expression>, ctx: ExprCtx) -> ExprConvertResult {
+fn into_comment_datum(inner: Option<&Expression>, ctx: ExprCtx) -> ExprConvertResult {
     match inner {
         None => Err(vec![ExpressionError {
             ctx,

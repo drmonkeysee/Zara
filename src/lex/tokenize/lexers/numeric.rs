@@ -649,7 +649,7 @@ impl<R: Radix> Integral<R> {
     fn commit(self, input: &str, exactness: Option<Exactness>) -> (RadixProps<R>, RadixParser<R>) {
         let infnan_len = match self.mode {
             IntegralMode::Inf(len) | IntegralMode::Nan(len) => Some(len),
-            _ => None,
+            IntegralMode::Int => None,
         };
         (
             RadixProps {

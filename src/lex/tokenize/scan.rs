@@ -74,6 +74,10 @@ impl<'txt> Scanner<'txt> {
     }
 
     pub(super) fn end_of_line(&mut self) -> usize {
+        #[allow(
+            clippy::double_ended_iterator_last,
+            reason = "iterator consumed intentionally"
+        )]
         self.chars.by_ref().last();
         self.end()
     }

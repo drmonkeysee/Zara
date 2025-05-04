@@ -65,7 +65,7 @@ impl<'me, 'txt, P: FreeTextPolicy> FreeText<'me, 'txt, P> {
                 // NOTE: \EOL is a line continuation, mark end of buffer
                 self.possible_line_cont_idx = Some(self.buf.len());
             }
-        };
+        }
         Ok(())
     }
 
