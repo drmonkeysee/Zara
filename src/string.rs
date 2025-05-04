@@ -1,5 +1,6 @@
 pub(crate) mod identifier;
 use std::{
+    cell::Cell,
     cmp::Ordering,
     fmt::{self, Display, Formatter, Write},
 };
@@ -51,16 +52,69 @@ pub(crate) struct SymbolDatum<'a>(pub(crate) &'a str);
 
 impl Display for SymbolDatum<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        for ch in self.0.chars() {
-            write_str_char(ch, f)?;
+        let c = SymbolConverter::new(self.0);
+        let (output, verbatim) = c.into_string();
+        if verbatim {
+            write!(f, "|{output}|")
+        } else {
+            f.write_str(&output)
         }
-        Ok(())
     }
 }
 
 enum DisplayableChar {
     Char(char),
     Hex(u32),
+}
+
+struct SymbolConverter<'a> {
+    label: &'a str,
+    verbatim: Cell<bool>,
+}
+
+impl<'a> SymbolConverter<'a> {
+    fn new(label: &'a str) -> Self {
+        Self {
+            label,
+            verbatim: false.into(),
+        }
+    }
+
+    fn into_string(self) -> (String, bool) {
+        (self.to_string(), self.verbatim.get())
+    }
+
+    fn write_char(&self, ch: char, f: &mut Formatter<'_>) -> fmt::Result {
+        match ch {
+            // NOTE: verbatim delimiter
+            '|' => f.write_str("\\|"),
+            // NOTE: unlike for string, " is not a delimiter and should not be escaped
+            '"' => f.write_char(ch),
+            _ => write_str_char(ch, f),
+        }
+    }
+}
+
+impl Display for SymbolConverter<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        let mut chars = self.label.chars();
+        if let Some(ch) = chars.next() {
+            if !identifier::is_initial(ch) {
+                self.verbatim.set(true);
+            }
+            self.write_char(ch, f)?;
+            for ch in chars {
+                if !identifier::is_standard(ch) {
+                    self.verbatim.set(true);
+                }
+                self.write_char(ch, f)?;
+            }
+        } else {
+            // NOTE: empty string
+            self.verbatim.set(true);
+        }
+        Ok(())
+    }
 }
 
 fn write_str_char(ch: char, f: &mut Formatter) -> fmt::Result {

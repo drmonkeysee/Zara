@@ -166,7 +166,8 @@ mod tests {
 
                 let v = Value::Symbol(s.clone().into());
 
-                assert_eq!(v.as_datum().to_string(), format!("|{s}|"));
+                let expected = if case == '.' { s } else { format!("|{s}|") };
+                assert_eq!(v.as_datum().to_string(), expected);
             }
         }
 
@@ -252,7 +253,7 @@ bar"
                 ("\t", "\\t"),
                 ("\n", "\\n"),
                 ("\r", "\\r"),
-                ("\"", "\\\""),
+                ("\"", "\""),
                 ("\\", "\\\\"),
             ]);
         }
@@ -265,34 +266,37 @@ bar"
             }
         }
 
-        /***********************/
+        /***
+         * TODO:
+         * some of these test may no longer be verbatim after adding unicode support
+         ***/
 
         #[test]
         fn extended() {
             let v = Value::Symbol("λ".into());
 
-            assert_eq!(v.as_datum().to_string(), "λ");
+            assert_eq!(v.as_datum().to_string(), "|λ|");
         }
 
         #[test]
         fn emoji() {
             let v = Value::Symbol("🦀".into());
 
-            assert_eq!(v.as_datum().to_string(), "🦀");
+            assert_eq!(v.as_datum().to_string(), "|🦀|");
         }
 
         #[test]
         fn control_picture() {
             let v = Value::Symbol("\u{2401}".into());
 
-            assert_eq!(v.as_datum().to_string(), "␁");
+            assert_eq!(v.as_datum().to_string(), "|␁|");
         }
 
         #[test]
         fn replacement() {
             let v = Value::Symbol("\u{fffd}".into());
 
-            assert_eq!(v.as_datum().to_string(), "�");
+            assert_eq!(v.as_datum().to_string(), "|�|");
         }
     }
 }
