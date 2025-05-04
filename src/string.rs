@@ -41,30 +41,42 @@ impl Display for StrDatum<'_> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         f.write_char('"')?;
         for ch in self.0.chars() {
-            match ch {
-                // NOTE: Rust displays NUL directly, fooling DisplayableChar,
-                // so handle as a special case here.
-                '\x00' => f.write_str("\\x0;")?,
-                '\x07' => f.write_str("\\a")?,
-                '\x08' => f.write_str("\\b")?,
-                '\n' => f.write_str("\\n")?,
-                '\r' => f.write_str("\\r")?,
-                '\t' => f.write_str("\\t")?,
-                '"' => f.write_str("\\\"")?,
-                '\\' => f.write_str("\\\\")?,
-                _ => write_str_chr(ch, f)?,
-            }
+            write_text_char(ch, f)?;
         }
         f.write_char('"')
     }
 }
 
-#[allow(dead_code, reason = "not yet implemented")]
-pub(crate) struct SymbolDatum;
+pub(crate) struct SymbolDatum<'a>(pub(crate) &'a str);
+
+impl Display for SymbolDatum<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        for ch in self.0.chars() {
+            write_text_char(ch, f)?;
+        }
+        Ok(())
+    }
+}
 
 enum DisplayableChar {
     Char(char),
     Hex(u32),
+}
+
+fn write_text_char(ch: char, f: &mut Formatter) -> fmt::Result {
+    match ch {
+        // NOTE: Rust displays NUL directly, fooling DisplayableChar,
+        // so handle as a special case here.
+        '\x00' => f.write_str("\\x0;"),
+        '\x07' => f.write_str("\\a"),
+        '\x08' => f.write_str("\\b"),
+        '\n' => f.write_str("\\n"),
+        '\r' => f.write_str("\\r"),
+        '\t' => f.write_str("\\t"),
+        '"' => f.write_str("\\\""),
+        '\\' => f.write_str("\\\\"),
+        _ => write_str_chr(ch, f),
+    }
 }
 
 fn write_str_chr(ch: char, f: &mut Formatter) -> fmt::Result {

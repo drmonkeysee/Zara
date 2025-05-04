@@ -1,6 +1,7 @@
 use crate::{
     constant::Constant,
     lex::{DisplayTokenLines, TokenLine, TokenLinesMessage},
+    string::SymbolDatum,
     syntax::Program,
 };
 use std::fmt::{self, Display, Formatter};
@@ -10,6 +11,8 @@ pub(crate) enum Value {
     Ast(Program),
     ByteVector(Box<[u8]>),
     Constant(Constant),
+    #[allow(dead_code, reason = "not yet implemented")]
+    Symbol(Box<str>),
     TokenList(Box<[TokenLine]>),
 }
 
@@ -42,6 +45,7 @@ impl Display for Datum<'_> {
                     .join(" ")
             ),
             Value::Constant(con) => con.as_datum().fmt(f),
+            Value::Symbol(s) => SymbolDatum(s).fmt(f),
             Value::TokenList(lines) => DisplayTokenLines(lines).fmt(f),
         }
     }
@@ -67,6 +71,7 @@ impl Display for TypeName<'_> {
             Value::Ast(_) => f.write_str("abstract syntax tree"),
             Value::ByteVector(_) => f.write_str("bytevector"),
             Value::Constant(c) => c.as_typename().fmt(f),
+            Value::Symbol(_) => f.write_str("symbol"),
             Value::TokenList(_) => f.write_str("token list"),
         }
     }
@@ -112,6 +117,182 @@ mod tests {
             let v = Value::Constant(Constant::Boolean(true));
 
             assert_eq!(v.as_typename().to_string(), "boolean");
+        }
+
+        #[test]
+        fn symbol_typename() {
+            let v = Value::Symbol("foo".into());
+
+            assert_eq!(v.as_typename().to_string(), "symbol");
+        }
+    }
+
+    mod symbol {
+        use super::*;
+
+        #[test]
+        fn simple() {
+            let v = Value::Symbol("foo".into());
+
+            assert_eq!(v.as_datum().to_string(), "foo");
+        }
+
+        #[test]
+        fn empty() {
+            let v = Value::Symbol("".into());
+
+            assert_eq!(v.as_datum().to_string(), "||");
+        }
+
+        #[test]
+        fn whitespace() {
+            let v = Value::Symbol("foo bar".into());
+
+            assert_eq!(v.as_datum().to_string(), "|foo bar|");
+        }
+
+        #[test]
+        fn alphanumeric() {
+            let v = Value::Symbol("abc123!@$^&".into());
+
+            assert_eq!(v.as_datum().to_string(), "abc123!@$^&");
+        }
+
+        #[test]
+        fn special_lex_chars() {
+            let cases = ['(', ')', '\'', '`', '#', '"', ';', '.', ','];
+            for case in cases {
+                let s = format!("abc{case}123");
+
+                let v = Value::Symbol(s.clone().into());
+
+                assert_eq!(v.as_datum().to_string(), format!("|{s}|"));
+            }
+        }
+
+        #[test]
+        fn starts_with_number() {
+            let v = Value::Symbol("123abc".into());
+
+            assert_eq!(v.as_datum().to_string(), "|123abc|");
+        }
+
+        #[test]
+        fn null() {
+            let v = Value::Symbol("\0".into());
+
+            assert_eq!(v.as_datum().to_string(), "|\\x0;|");
+        }
+
+        #[test]
+        fn pipe() {
+            let v = Value::Symbol("|".into());
+
+            assert_eq!(v.as_datum().to_string(), "|\\||");
+        }
+
+        #[test]
+        fn one_digit_hex() {
+            let v = Value::Symbol("\x0c".into());
+
+            assert_eq!(v.as_datum().to_string(), "|\\xc;|");
+        }
+
+        #[test]
+        fn hex_uses_lowercase() {
+            let v = Value::Symbol("\x0C".into());
+
+            assert_eq!(v.as_datum().to_string(), "|\\xc;|");
+        }
+
+        #[test]
+        fn two_digit_hex() {
+            let v = Value::Symbol("\x1d".into());
+
+            assert_eq!(v.as_datum().to_string(), "|\\x1d;|");
+        }
+
+        #[test]
+        fn four_digit_hex() {
+            let v = Value::Symbol("\u{fff9}".into());
+
+            assert_eq!(v.as_datum().to_string(), "|\\xfff9;|");
+        }
+
+        #[test]
+        fn special_purpose_plane() {
+            let v = Value::Symbol("\u{e0001}".into());
+
+            assert_eq!(v.as_datum().to_string(), "|\\xe0001;|");
+        }
+
+        #[test]
+        fn private_use_plane() {
+            let v = Value::Symbol("\u{100001}".into());
+
+            assert_eq!(v.as_datum().to_string(), "|\\x100001;|");
+        }
+
+        #[test]
+        fn literal_endline() {
+            let v = Value::Symbol(
+                "foo
+bar"
+                .into(),
+            );
+
+            assert_eq!(v.as_datum().to_string(), "|foo\\nbar|");
+        }
+
+        #[test]
+        fn escape_sequences() {
+            check_escape_sequence(&[
+                ("\x07", "\\a"),
+                ("\x08", "\\b"),
+                ("\t", "\\t"),
+                ("\n", "\\n"),
+                ("\r", "\\r"),
+                ("\"", "\\\""),
+                ("\\", "\\\\"),
+            ]);
+        }
+
+        fn check_escape_sequence(cases: &[(&str, &str)]) {
+            for &(inp, exp) in cases {
+                let v = Value::Symbol(inp.into());
+
+                assert_eq!(v.as_datum().to_string(), format!("|{exp}|"));
+            }
+        }
+
+        /***********************/
+
+        #[test]
+        fn extended() {
+            let v = Value::Symbol("λ".into());
+
+            assert_eq!(v.as_datum().to_string(), "λ");
+        }
+
+        #[test]
+        fn emoji() {
+            let v = Value::Symbol("🦀".into());
+
+            assert_eq!(v.as_datum().to_string(), "🦀");
+        }
+
+        #[test]
+        fn control_picture() {
+            let v = Value::Symbol("\u{2401}".into());
+
+            assert_eq!(v.as_datum().to_string(), "␁");
+        }
+
+        #[test]
+        fn replacement() {
+            let v = Value::Symbol("\u{fffd}".into());
+
+            assert_eq!(v.as_datum().to_string(), "�");
         }
     }
 }
