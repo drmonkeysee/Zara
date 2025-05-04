@@ -3,6 +3,7 @@ pub mod eval;
 mod lex;
 mod number;
 pub mod src;
+mod string;
 mod syntax;
 #[cfg(test)]
 mod testutil;

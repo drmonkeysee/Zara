@@ -10,6 +10,7 @@ use crate::{
         },
     },
     number::{Decimal, Number, Radix},
+    string::identifier,
 };
 
 pub(in crate::lex::tokenize) struct Identifier<'me, 'txt> {
@@ -46,9 +47,9 @@ impl<'me, 'txt> Identifier<'me, 'txt> {
             VerbatimIdentifer::new(self.scanner).scan()
         } else if Decimal.is_digit(first) {
             RealNumber::new(self.scanner, self.start.0, self.exactness).scan()
-        } else if is_peculiar_initial(first) {
+        } else if identifier::is_peculiar_initial(first) {
             self.peculiar(first)
-        } else if is_initial(first) {
+        } else if identifier::is_initial(first) {
             self.standard()
         } else {
             invalid(first)
@@ -61,7 +62,7 @@ impl<'me, 'txt> Identifier<'me, 'txt> {
             match ch {
                 '+' | '-' => return self.maybe_infnan_complex(item, ComplexKind::Cartesian),
                 '@' => return self.maybe_infnan_complex(item, ComplexKind::Polar),
-                _ if is_standard(ch) => (),
+                _ if identifier::is_standard(ch) => (),
                 _ => return invalid(ch),
             }
         }
@@ -111,9 +112,9 @@ impl<'me, 'txt> Identifier<'me, 'txt> {
                 )
                 .scan(),
             }
-        } else if is_peculiar_initial(ch) {
+        } else if identifier::is_peculiar_initial(ch) {
             self.peculiar(ch)
-        } else if is_initial(ch) {
+        } else if identifier::is_initial(ch) {
             self.standard()
         } else {
             invalid(ch)
@@ -158,7 +159,7 @@ impl<'me, 'txt> Identifier<'me, 'txt> {
 
     fn rest_of_standard(&mut self) -> TokenExtractResult {
         while let Some(ch) = self.scanner.char_if_not_delimiter() {
-            if !is_standard(ch) {
+            if !identifier::is_standard(ch) {
                 return invalid(ch);
             }
         }
@@ -305,36 +306,6 @@ enum PeculiarState {
     MaybeFloat,
     MaybeSignedFloat,
     MaybeSignedNumber,
-}
-
-fn is_initial(ch: char) -> bool {
-    // TODO: disallow Mc, Me, Nd
-    is_letter(ch) || is_special_initial(ch)
-}
-
-fn is_standard(ch: char) -> bool {
-    is_initial(ch) || is_digit(ch) || is_peculiar_initial(ch)
-}
-
-fn is_letter(ch: char) -> bool {
-    // TODO: support Lu, Ll, Lt, Lm, Lo, Mn, Mc, Me, Nd, Nl, No, Pd, Pc, Po, Sc, Sm, Sk, So, Co, U+200C, U+200D
-    ch.is_ascii_alphabetic()
-}
-
-fn is_digit(ch: char) -> bool {
-    // TODO: support Nd, Nl, No
-    ch.is_ascii_digit()
-}
-
-fn is_special_initial(ch: char) -> bool {
-    matches!(
-        ch,
-        '!' | '$' | '%' | '&' | '*' | '/' | ':' | '<' | '=' | '>' | '?' | '@' | '^' | '_' | '~'
-    )
-}
-
-fn is_peculiar_initial(ch: char) -> bool {
-    matches!(ch, '+' | '-' | '.')
 }
 
 fn invalid(ch: char) -> TokenExtractResult {
