@@ -529,15 +529,15 @@ mod tests {
                 &inner_list[0],
                 Expression {
                     ctx: ExprCtx { span: Range { start: 0, end: 8 }, txt },
-                    kind: ExpressionKind::Literal(_ /* symbol "quote" */),
-                } if txt.lineno == 1
+                    kind: ExpressionKind::Literal(Value::Symbol(s)),
+                } if txt.lineno == 1 && &**s == "quote"
             ));
             assert!(matches!(
                 &inner_list[0],
                 Expression {
                     ctx: ExprCtx { span: Range { start: 0, end: 8 }, txt },
-                    kind: ExpressionKind::Literal(_ /* symbol "a" */),
-                } if txt.lineno == 1
+                    kind: ExpressionKind::Literal(Value::Symbol(s)),
+                } if txt.lineno == 1 && &**s == "a"
             ));
             assert!(et.parsers.is_empty());
             assert!(et.errs.is_empty());

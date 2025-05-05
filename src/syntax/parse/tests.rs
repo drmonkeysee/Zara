@@ -675,7 +675,7 @@ mod bytevector {
                     span: 3..6,
                     txt: Rc::clone(&txt),
                 },
-                kind: ExpressionKind::Variable("foo".into()), // TODO: symbol
+                kind: ExpressionKind::Literal(Value::Symbol("foo".into())),
             },
             Expression::constant(
                 Constant::Number(Number::real(26)),
@@ -701,7 +701,7 @@ mod bytevector {
             &errs[0],
             ExpressionError {
                 ctx: ExprCtx { span: Range { start: 3, end: 6 }, txt: line },
-                kind: ExpressionErrorKind::ByteVectorInvalidItem(ExpressionKind::Variable(s)),
+                kind: ExpressionErrorKind::ByteVectorInvalidItem(ExpressionKind::Literal(Value::Symbol(s))),
             } if &**s == "foo" && Rc::ptr_eq(&txt, &line)
         ));
     }
@@ -1659,7 +1659,7 @@ mod comment {
                     span: 3..5,
                     txt: Rc::clone(&txt),
                 },
-                kind: ExpressionKind::Variable("foo".into()), // TODO: symbol
+                kind: ExpressionKind::Literal(Value::Symbol("foo".into())),
             })),
         };
 
@@ -1742,7 +1742,7 @@ mod quote {
                     span: 2..5,
                     txt: Rc::clone(&txt),
                 },
-                kind: ExpressionKind::Variable("foo".into()), // TODO: symbol
+                kind: ExpressionKind::Literal(Value::Symbol("foo".into())),
             })),
         };
 
@@ -1756,8 +1756,8 @@ mod quote {
                     span: Range { start: 2, end: 5 },
                     txt: line,
                 },
-                kind: ExpressionKind::Literal(_ /* symbol */),
-            } if Rc::ptr_eq(&txt, &line)
+                kind: ExpressionKind::Literal(Value::Symbol(s)),
+            } if Rc::ptr_eq(&txt, &line) && &*s == "foo"
         ));
     }
 
@@ -1788,7 +1788,7 @@ mod quote {
                                 span: 6..9,
                                 txt: Rc::clone(&txt),
                             },
-                            kind: ExpressionKind::Variable("foo".into()),
+                            kind: ExpressionKind::Literal(Value::Symbol("foo".into())),
                         },
                         Expression {
                             ctx: ExprCtx {
@@ -1857,8 +1857,8 @@ mod quote {
                     span: Range { start: 6, end: 9 },
                     txt: line,
                 },
-                kind: ExpressionKind::Literal(_ /* symbol */),
-            } if Rc::ptr_eq(&txt, &line)
+                kind: ExpressionKind::Literal(Value::Symbol(s))
+            } if Rc::ptr_eq(&txt, &line) && &**s == "foo"
         ));
         assert!(matches!(
             &seq[2],
@@ -2253,7 +2253,7 @@ mod merge {
                         span: 4..7,
                         txt: Rc::clone(&txt),
                     },
-                    kind: ExpressionKind::Variable("foo".into()),
+                    kind: ExpressionKind::Literal(Value::Symbol("foo".into())),
                 }],
             },
         };
@@ -2281,8 +2281,8 @@ mod merge {
                     span: Range { start: 4, end: 7 },
                     txt: line
                 },
-                kind: ExpressionKind::Literal(_ /* symbol */),
-            } if Rc::ptr_eq(&txt, &line)
+                kind: ExpressionKind::Literal(Value::Symbol(s)),
+            } if Rc::ptr_eq(&txt, &line) && &**s == "foo"
         ));
     }
 
@@ -2382,7 +2382,7 @@ mod merge {
                         span: 4..7,
                         txt: Rc::clone(&txt),
                     },
-                    kind: ExpressionKind::Variable("foo".into()),
+                    kind: ExpressionKind::Literal(Value::Symbol("foo".into())),
                 }],
             },
         };
@@ -2410,8 +2410,8 @@ mod merge {
                     span: Range { start: 4, end: 7 },
                     txt: line
                 },
-                kind: ExpressionKind::Literal(_ /* symbol */),
-            } if Rc::ptr_eq(&txt, &line)
+                kind: ExpressionKind::Literal(Value::Symbol(s)),
+            } if Rc::ptr_eq(&txt, &line) && &**s == "foo"
         ));
     }
 
