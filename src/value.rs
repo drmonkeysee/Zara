@@ -11,7 +11,7 @@ pub(crate) enum Value {
     Ast(Program),
     ByteVector(Box<[u8]>),
     Constant(Constant),
-    #[allow(dead_code, reason = "not yet implemented")]
+    // TODO: figure out symbol table
     Symbol(Box<str>),
     TokenList(Box<[TokenLine]>),
 }
