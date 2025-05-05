@@ -875,7 +875,7 @@ mod identifier {
             expr,
             Expression {
                 ctx: ExprCtx { span: Range { start: 0, end: 3 }, txt: line },
-                kind: ExpressionKind::Variable(s),
+                kind: ExpressionKind::Literal(Value::Symbol(s)),
             } if &*s == "foo" && Rc::ptr_eq(&txt, &line)
         ));
     }
@@ -2210,7 +2210,7 @@ mod merge {
                 txt: Rc::clone(&txt),
             },
             mode: ParseMode::Identifier {
-                datum: false,
+                datum: true,
                 label: "foo".to_owned(),
             },
         };
@@ -2226,7 +2226,7 @@ mod merge {
                     span: Range { start: 3, end: 6 },
                     txt: line
                 },
-                kind: ExpressionKind::Variable(s),
+                kind: ExpressionKind::Literal(Value::Symbol(s)),
             } if &*s == "foo" && Rc::ptr_eq(&txt, &line)
         ));
     }
@@ -2355,7 +2355,7 @@ mod merge {
                     span: Range { start: 3, end: 6 },
                     txt: line
                 },
-                kind: ExpressionKind::Variable(s),
+                kind: ExpressionKind::Literal(Value::Symbol(s)),
             } if &*s == "foo" && Rc::ptr_eq(&txt, &line)
         ));
     }
@@ -2552,7 +2552,7 @@ mod merge {
                     span: Range { start: 3, end: 6 },
                     txt: line
                 },
-                kind: ExpressionKind::Variable(s),
+                kind: ExpressionKind::Literal(Value::Symbol(s)),
             } if &**s == "foo" && Rc::ptr_eq(&txt, &line)
         ));
     }
