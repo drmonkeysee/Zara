@@ -476,9 +476,10 @@ fn parse_verbatim_identifier(buf: &mut String, token: Token, txt: &Rc<TextLine>)
 }
 
 fn into_bytevector(seq: Vec<Expression>, ctx: ExprCtx) -> ExprConvertResult {
-    let (bytes, errs): (Vec<_>, Vec<_>) = seq
-        .into_iter()
-        .map(|expr| match expr.kind {
+    into_valid_sequence(
+        seq,
+        ctx,
+        |expr| match expr.kind {
             ExpressionKind::Literal(Value::Constant(Constant::Number(n))) => {
                 n.try_into().map_err(|err| ExpressionError {
                     ctx: expr.ctx,
@@ -489,16 +490,9 @@ fn into_bytevector(seq: Vec<Expression>, ctx: ExprCtx) -> ExprConvertResult {
                 ctx: expr.ctx,
                 kind: ExpressionErrorKind::ByteVectorInvalidItem(expr.kind),
             }),
-        })
-        .partition(Result::is_ok);
-    if errs.is_empty() {
-        Ok(Some(Expression {
-            ctx,
-            kind: ExpressionKind::Literal(Value::ByteVector(bytes.into_iter().flatten().collect())),
-        }))
-    } else {
-        Err(errs.into_iter().filter_map(Result::err).collect::<Vec<_>>())
-    }
+        },
+        |items| ExpressionKind::Literal(Value::ByteVector(items)),
+    )
 }
 
 fn into_comment_datum(inner: Option<&Expression>, ctx: ExprCtx) -> ExprConvertResult {
@@ -535,24 +529,18 @@ fn into_datum(inner: Option<Expression>, ctx: ExprCtx) -> ExprConvertResult {
 }
 
 fn into_list(seq: Vec<Expression>, ctx: ExprCtx) -> ExprConvertResult {
-    let (items, errs): (Vec<_>, Vec<_>) = seq
-        .into_iter()
-        .map(|expr| match expr.kind {
+    into_valid_sequence(
+        seq,
+        ctx,
+        |expr| match expr.kind {
             ExpressionKind::List(_) | ExpressionKind::Literal(_) => Ok(expr),
             _ => Err(ExpressionError {
                 ctx: expr.ctx,
                 kind: ExpressionErrorKind::DatumInvalid(expr.kind),
             }),
-        })
-        .partition(Result::is_ok);
-    if errs.is_empty() {
-        Ok(Some(Expression {
-            ctx,
-            kind: ExpressionKind::List(items.into_iter().flatten().collect()),
-        }))
-    } else {
-        Err(errs.into_iter().filter_map(Result::err).collect::<Vec<_>>())
-    }
+        },
+        |items| ExpressionKind::List(items),
+    )
 }
 
 fn into_syntactic_form(seq: Vec<Expression>, ctx: ExprCtx) -> Expression {
@@ -570,5 +558,22 @@ fn into_syntactic_form(seq: Vec<Expression>, ctx: ExprCtx) -> Expression {
             args: iter.collect(),
             proc: proc.into(),
         },
+    }
+}
+
+fn into_valid_sequence<T>(
+    seq: Vec<Expression>,
+    ctx: ExprCtx,
+    valid: impl FnMut(Expression) -> Result<T, ExpressionError>,
+    kind: impl FnOnce(Box<[T]>) -> ExpressionKind,
+) -> ExprConvertResult {
+    let (items, errs): (Vec<_>, Vec<_>) = seq.into_iter().map(valid).partition(Result::is_ok);
+    if errs.is_empty() {
+        Ok(Some(Expression {
+            ctx,
+            kind: kind(items.into_iter().flatten().collect()),
+        }))
+    } else {
+        Err(errs.into_iter().filter_map(Result::err).collect::<Vec<_>>())
     }
 }
