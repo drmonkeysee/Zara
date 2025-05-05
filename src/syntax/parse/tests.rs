@@ -171,7 +171,7 @@ mod expr {
     }
 
     #[test]
-    fn identifier() {
+    fn variable() {
         let token = Token {
             kind: TokenKind::Identifier("myproc".to_owned()),
             span: 0..6,
@@ -185,13 +185,13 @@ mod expr {
             ExprFlow::Continue(Some(
                 Expression {
                 ctx: ExprCtx { span: Range { start: 0, end: 6 }, txt: line },
-                kind: ExpressionKind::Identifier(s),
+                kind: ExpressionKind::Variable(s),
             })) if &*s == "myproc" && Rc::ptr_eq(&txt, &line)
         ));
     }
 
     #[test]
-    fn empty_identifier() {
+    fn empty_variable() {
         let token = Token {
             kind: TokenKind::Identifier("".to_owned()),
             span: 0..0,
@@ -205,7 +205,47 @@ mod expr {
             ExprFlow::Continue(Some(
                 Expression {
                 ctx: ExprCtx { span: Range { start: 0, end: 0 }, txt: line },
-                kind: ExpressionKind::Identifier(s),
+                kind: ExpressionKind::Variable(s),
+            })) if &*s == "" && Rc::ptr_eq(&txt, &line)
+        ));
+    }
+
+    #[test]
+    fn symbol() {
+        let token = Token {
+            kind: TokenKind::Identifier("foo".to_owned()),
+            span: 0..6,
+        };
+        let txt = make_textline().into();
+
+        let f = parse_expr(token, &txt, true);
+
+        assert!(matches!(
+            f,
+            ExprFlow::Continue(Some(
+                Expression {
+                ctx: ExprCtx { span: Range { start: 0, end: 6 }, txt: line },
+                kind: ExpressionKind::Variable(s),
+            })) if &*s == "foo" && Rc::ptr_eq(&txt, &line)
+        ));
+    }
+
+    #[test]
+    fn empty_symbol() {
+        let token = Token {
+            kind: TokenKind::Identifier("".to_owned()),
+            span: 0..0,
+        };
+        let txt = make_textline().into();
+
+        let f = parse_expr(token, &txt, true);
+
+        assert!(matches!(
+            f,
+            ExprFlow::Continue(Some(
+                Expression {
+                ctx: ExprCtx { span: Range { start: 0, end: 0 }, txt: line },
+                kind: ExpressionKind::Variable(s),
             })) if &*s == "" && Rc::ptr_eq(&txt, &line)
         ));
     }
@@ -358,7 +398,7 @@ mod expr {
             &seq[0],
             Expression {
                 ctx: ExprCtx { span: Range { start: 1, end: 2 }, txt: line },
-                kind: ExpressionKind::Identifier(s),
+                kind: ExpressionKind::Variable(s),
             } if Rc::ptr_eq(&txt, &line) && &**s == "quote"
         ));
     }
@@ -635,7 +675,7 @@ mod bytevector {
                     span: 3..6,
                     txt: Rc::clone(&txt),
                 },
-                kind: ExpressionKind::Identifier("foo".into()),
+                kind: ExpressionKind::Variable("foo".into()), // TODO: symbol
             },
             Expression::constant(
                 Constant::Number(Number::real(26)),
@@ -661,7 +701,7 @@ mod bytevector {
             &errs[0],
             ExpressionError {
                 ctx: ExprCtx { span: Range { start: 3, end: 6 }, txt: line },
-                kind: ExpressionErrorKind::ByteVectorInvalidItem(ExpressionKind::Identifier(s)),
+                kind: ExpressionErrorKind::ByteVectorInvalidItem(ExpressionKind::Variable(s)),
             } if &**s == "foo" && Rc::ptr_eq(&txt, &line)
         ));
     }
@@ -682,7 +722,7 @@ mod bytevector {
                     span: 3..6,
                     txt: Rc::clone(&txt),
                 },
-                kind: ExpressionKind::Identifier("foo".into()),
+                kind: ExpressionKind::Variable("foo".into()),
             },
             Expression::constant(
                 Constant::Number(Number::real(26)),
@@ -715,7 +755,7 @@ mod bytevector {
             &errs[0],
             ExpressionError {
                 ctx: ExprCtx { span: Range { start: 3, end: 6 }, txt: line },
-                kind: ExpressionErrorKind::ByteVectorInvalidItem(ExpressionKind::Identifier(s)),
+                kind: ExpressionErrorKind::ByteVectorInvalidItem(ExpressionKind::Variable(s)),
             } if &**s == "foo" && Rc::ptr_eq(&txt, &line)
         ));
         assert!(matches!(
@@ -809,7 +849,33 @@ mod identifier {
             expr,
             Expression {
                 ctx: ExprCtx { span: Range { start: 0, end: 3 }, txt: line },
-                kind: ExpressionKind::Identifier(s),
+                kind: ExpressionKind::Variable(s),
+            } if &*s == "foo" && Rc::ptr_eq(&txt, &line)
+        ));
+    }
+
+    #[test]
+    fn into_symbol() {
+        let txt = make_textline().into();
+        let p = ExprNode {
+            ctx: ExprCtx {
+                span: 0..3,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::Identifier {
+                datum: true,
+                label: "foo".to_owned(),
+            },
+        };
+
+        let r: Result<Option<Expression>, _> = p.try_into();
+
+        let expr = some_or_fail!(ok_or_fail!(r));
+        assert!(matches!(
+            expr,
+            Expression {
+                ctx: ExprCtx { span: Range { start: 0, end: 3 }, txt: line },
+                kind: ExpressionKind::Variable(s),
             } if &*s == "foo" && Rc::ptr_eq(&txt, &line)
         ));
     }
@@ -938,7 +1004,7 @@ mod list {
                     span: 0..1,
                     txt: Rc::clone(&txt),
                 },
-                kind: ExpressionKind::Identifier("+".into()),
+                kind: ExpressionKind::Variable("+".into()),
             },
             Expression::constant(
                 Constant::Number(Number::real(4)),
@@ -978,7 +1044,7 @@ mod list {
                     span: 0..1,
                     txt: Rc::clone(&txt),
                 },
-                kind: ExpressionKind::Identifier("+".into()),
+                kind: ExpressionKind::Variable("+".into()),
             },
             Expression::constant(
                 Constant::Number(Number::real(4)),
@@ -1039,7 +1105,7 @@ mod list {
                     span: 0..1,
                     txt: Rc::clone(&txt),
                 },
-                kind: ExpressionKind::Identifier("+".into()),
+                kind: ExpressionKind::Variable("+".into()),
             },
             Expression::constant(
                 Constant::Number(Number::real(4)),
@@ -1083,7 +1149,7 @@ mod list {
                     span: 0..1,
                     txt: Rc::clone(&txt),
                 },
-                kind: ExpressionKind::Identifier("+".into()),
+                kind: ExpressionKind::Variable("+".into()),
             },
             Expression::constant(
                 Constant::Number(Number::real(4)),
@@ -1136,7 +1202,7 @@ mod list {
                             span: 0..1,
                             txt: Rc::clone(&txt),
                         },
-                        kind: ExpressionKind::Identifier("+".into()),
+                        kind: ExpressionKind::Variable("+".into()),
                     },
                     Expression::constant(
                         Constant::Number(Number::real(4)),
@@ -1173,7 +1239,7 @@ mod list {
             &*proc,
             Expression {
                 ctx: ExprCtx { span: Range { start: 0, end: 1 }, txt: line },
-                kind: ExpressionKind::Identifier(s),
+                kind: ExpressionKind::Variable(s),
             } if &**s == "+" && Rc::ptr_eq(&txt, &line)
         ));
         assert_eq!(args.len(), 2);
@@ -1209,14 +1275,14 @@ mod list {
                             span: 0..5,
                             txt: Rc::clone(&txt),
                         },
-                        kind: ExpressionKind::Identifier("quote".into()),
+                        kind: ExpressionKind::Variable("quote".into()),
                     },
                     Expression {
                         ctx: ExprCtx {
                             span: 5..8,
                             txt: Rc::clone(&txt),
                         },
-                        kind: ExpressionKind::Identifier("foo".into()),
+                        kind: ExpressionKind::Variable("foo".into()),
                     },
                 ],
             },
@@ -1250,7 +1316,7 @@ mod list {
                             span: 0..1,
                             txt: Rc::clone(&txt),
                         },
-                        kind: ExpressionKind::Identifier("+".into()),
+                        kind: ExpressionKind::Variable("+".into()), // TODO: symbol
                     },
                     Expression::constant(
                         Constant::Number(Number::real(4)),
@@ -1347,7 +1413,7 @@ mod list {
                             span: 1..2,
                             txt: Rc::clone(&txt),
                         },
-                        kind: ExpressionKind::Identifier("+".into()),
+                        kind: ExpressionKind::Variable("+".into()),
                     },
                     Expression::constant(
                         Constant::Number(Number::real(4)),
@@ -1375,7 +1441,7 @@ mod list {
             &errs[0],
             ExpressionError {
                 ctx: ExprCtx { span: Range { start: 1, end: 2 }, txt: line },
-                kind: ExpressionErrorKind::DatumInvalid(ExpressionKind::Identifier(s)),
+                kind: ExpressionErrorKind::DatumInvalid(ExpressionKind::Variable(s)),
             } if Rc::ptr_eq(&txt, &line) && &**s == "foo"
         ));
     }
@@ -1593,7 +1659,7 @@ mod comment {
                     span: 3..5,
                     txt: Rc::clone(&txt),
                 },
-                kind: ExpressionKind::Identifier("foo".into()),
+                kind: ExpressionKind::Variable("foo".into()), // TODO: symbol
             })),
         };
 
@@ -1664,7 +1730,7 @@ mod quote {
     }
 
     #[test]
-    fn identifier_into_expr() {
+    fn symbol_into_expr() {
         let txt = make_textline().into();
         let p = ExprNode {
             ctx: ExprCtx {
@@ -1676,7 +1742,7 @@ mod quote {
                     span: 2..5,
                     txt: Rc::clone(&txt),
                 },
-                kind: ExpressionKind::Identifier("foo".into()),
+                kind: ExpressionKind::Variable("foo".into()), // TODO: symbol
             })),
         };
 
@@ -1722,7 +1788,7 @@ mod quote {
                                 span: 6..9,
                                 txt: Rc::clone(&txt),
                             },
-                            kind: ExpressionKind::Identifier("foo".into()),
+                            kind: ExpressionKind::Variable("foo".into()),
                         },
                         Expression {
                             ctx: ExprCtx {
@@ -1879,7 +1945,7 @@ mod quote {
                             span: 4..7,
                             txt: Rc::clone(&txt),
                         },
-                        kind: ExpressionKind::Identifier("foo".into()),
+                        kind: ExpressionKind::Variable("foo".into()),
                     }
                     .into(),
                     args: [Expression {
@@ -1904,6 +1970,36 @@ mod quote {
                 ctx: ExprCtx { span: Range { start: 0, end: 10 }, txt },
                 kind: ExpressionErrorKind::DatumInvalid(ExpressionKind::Call { .. }),
             } if txt.lineno == 1
+        ));
+    }
+
+    #[test]
+    fn variable_into_expr() {
+        let txt = make_textline().into();
+        let p = ExprNode {
+            ctx: ExprCtx {
+                span: 0..1,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::Quote(Some(Expression {
+                ctx: ExprCtx {
+                    span: 2..5,
+                    txt: Rc::clone(&txt),
+                },
+                kind: ExpressionKind::Variable("foo".into()),
+            })),
+        };
+
+        let r: Result<Option<Expression>, _> = p.try_into();
+
+        let errs = err_or_fail!(r);
+        assert_eq!(errs.len(), 1);
+        assert!(matches!(
+            &errs[0],
+            ExpressionError {
+                ctx: ExprCtx { span: Range { start: 0, end: 10 }, txt },
+                kind: ExpressionErrorKind::DatumInvalid(ExpressionKind::Variable(s)),
+            } if txt.lineno == 1 && &**s == "foo"
         ));
     }
 
@@ -2014,7 +2110,7 @@ mod merge {
             &seq[1],
             Expression {
                 ctx: ExprCtx { span: Range { start: 0, end: 3 }, txt: line },
-                kind: ExpressionKind::Identifier(s),
+                kind: ExpressionKind::Variable(s),
             } if &**s == "foo" && Rc::ptr_eq(&txt, &line)
         ));
     }
@@ -2033,7 +2129,7 @@ mod merge {
                     span: 0..3,
                     txt: Rc::clone(&txt),
                 },
-                kind: ExpressionKind::Identifier("foo".into()),
+                kind: ExpressionKind::Variable("foo".into()),
             }]),
         };
 
@@ -2045,7 +2141,7 @@ mod merge {
             &errs[0],
             ExpressionError {
                 ctx: ExprCtx { span: Range { start: 0, end: 3 }, txt: line },
-                kind: ExpressionErrorKind::ByteVectorInvalidItem(ExpressionKind::Identifier(s)),
+                kind: ExpressionErrorKind::ByteVectorInvalidItem(ExpressionKind::Variable(s)),
             } if &**s == "foo" && Rc::ptr_eq(&txt, &line)
         ));
     }
@@ -2130,7 +2226,7 @@ mod merge {
                     span: Range { start: 3, end: 6 },
                     txt: line
                 },
-                kind: ExpressionKind::Identifier(s),
+                kind: ExpressionKind::Variable(s),
             } if &*s == "foo" && Rc::ptr_eq(&txt, &line)
         ));
     }
@@ -2157,7 +2253,7 @@ mod merge {
                         span: 4..7,
                         txt: Rc::clone(&txt),
                     },
-                    kind: ExpressionKind::Identifier("foo".into()),
+                    kind: ExpressionKind::Variable("foo".into()),
                 }],
             },
         };
@@ -2259,7 +2355,7 @@ mod merge {
                     span: Range { start: 3, end: 6 },
                     txt: line
                 },
-                kind: ExpressionKind::Identifier(s),
+                kind: ExpressionKind::Variable(s),
             } if &*s == "foo" && Rc::ptr_eq(&txt, &line)
         ));
     }
@@ -2286,7 +2382,7 @@ mod merge {
                         span: 4..7,
                         txt: Rc::clone(&txt),
                     },
-                    kind: ExpressionKind::Identifier("foo".into()),
+                    kind: ExpressionKind::Variable("foo".into()),
                 }],
             },
         };
@@ -2456,7 +2552,7 @@ mod merge {
                     span: Range { start: 3, end: 6 },
                     txt: line
                 },
-                kind: ExpressionKind::Identifier(s),
+                kind: ExpressionKind::Variable(s),
             } if &**s == "foo" && Rc::ptr_eq(&txt, &line)
         ));
     }
@@ -2476,7 +2572,7 @@ mod merge {
                         span: 0..3,
                         txt: Rc::clone(&txt),
                     },
-                    kind: ExpressionKind::Identifier("+".into()),
+                    kind: ExpressionKind::Variable("+".into()),
                 }],
             },
         };
@@ -2608,7 +2704,7 @@ mod nodeutil {
                             span: 0..1,
                             txt: Rc::clone(&txt),
                         },
-                        kind: ExpressionKind::Identifier("+".into()),
+                        kind: ExpressionKind::Variable("+".into()),
                     },
                     Expression::constant(
                         Constant::Number(Number::real(4)),

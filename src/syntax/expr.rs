@@ -72,7 +72,7 @@ impl Expression {
     fn eval(self) -> Option<Value> {
         match self.kind {
             ExpressionKind::Call { .. } => todo!("no idea what to do here"),
-            ExpressionKind::Identifier(_) => {
+            ExpressionKind::Variable(_) => {
                 todo!("this is dependent on current environment frame")
             }
             ExpressionKind::List(_) => {
@@ -91,10 +91,10 @@ pub(super) enum ExpressionKind {
         proc: Box<Expression>,
     },
     #[allow(dead_code, reason = "not yet implemented")]
-    Identifier(Box<str>),
-    #[allow(dead_code, reason = "not yet implemented")]
     List(Box<[Expression]>),
     Literal(Value),
+    #[allow(dead_code, reason = "not yet implemented")]
+    Variable(Box<str>),
 }
 
 impl ExpressionKind {
@@ -200,7 +200,7 @@ impl Display for TypeName<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self.0 {
             ExpressionKind::Call { .. } => f.write_str("procedure call"),
-            ExpressionKind::Identifier(_) => f.write_str("identifier"),
+            ExpressionKind::Variable(_) => f.write_str("variable"),
             ExpressionKind::List(_) => f.write_str("list"),
             ExpressionKind::Literal(val) => val.as_typename().fmt(f),
         }
@@ -226,7 +226,7 @@ mod tests {
                     span: 0..5,
                     txt: make_textline().into(),
                 },
-                kind: ExpressionKind::Identifier("foo".into()),
+                kind: ExpressionKind::Variable("foo".into()),
             };
             let expr = ExpressionKind::Call {
                 args: [].into(),
@@ -237,10 +237,10 @@ mod tests {
         }
 
         #[test]
-        fn identifier_typename() {
-            let expr = ExpressionKind::Identifier("foo".into());
+        fn variable_typename() {
+            let expr = ExpressionKind::Variable("foo".into());
 
-            assert_eq!(expr.as_typename().to_string(), "identifier");
+            assert_eq!(expr.as_typename().to_string(), "variable");
         }
 
         #[test]
@@ -330,12 +330,12 @@ mod tests {
                     span: 0..5,
                     txt: make_textline().into(),
                 },
-                kind: ExpressionErrorKind::ByteVectorInvalidItem(ExpressionKind::Identifier(
+                kind: ExpressionErrorKind::ByteVectorInvalidItem(ExpressionKind::Variable(
                     "foobar".into(),
                 )),
             };
 
-            assert_eq!(err.to_string(), "expected byte literal, got: identifier");
+            assert_eq!(err.to_string(), "expected byte literal, got: variable");
         }
 
         #[test]
@@ -422,7 +422,7 @@ mod tests {
                             span: 0..1,
                             txt: Rc::clone(&txt),
                         },
-                        kind: ExpressionKind::Identifier("foo".into()),
+                        kind: ExpressionKind::Variable("foo".into()),
                     }
                     .into(),
                     args: [].into(),

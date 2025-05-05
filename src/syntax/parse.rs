@@ -162,7 +162,7 @@ impl TryFrom<ExprNode> for Option<Expression> {
             ParseMode::CommentDatum(inner) => into_comment_datum(inner.as_ref(), value.ctx),
             ParseMode::Identifier { datum, label } => Ok(Some(Expression {
                 ctx: value.ctx,
-                kind: ExpressionKind::Identifier(label.into()),
+                kind: ExpressionKind::Variable(label.into()),
             })),
             ParseMode::List { datum: false, seq } => Ok(Some(into_syntactic_form(seq, value.ctx))),
             ParseMode::List { datum: true, seq } => Ok(Some(into_list(seq, value.ctx))),
@@ -345,7 +345,7 @@ fn parse_expr(token: Token, txt: &Rc<TextLine>, datum: bool) -> ExprFlow {
                 span: token.span,
                 txt: Rc::clone(txt),
             },
-            kind: ExpressionKind::Identifier(s.into()),
+            kind: ExpressionKind::Variable(s.into()),
         })),
         TokenKind::IdentifierBegin(s) => ExprFlow::Break(ParseBreak::new(
             ParseMode::identifier(s, datum),
@@ -368,7 +368,7 @@ fn parse_expr(token: Token, txt: &Rc<TextLine>, datum: bool) -> ExprFlow {
                             span: token.span,
                             txt: Rc::clone(txt),
                         },
-                        kind: ExpressionKind::Identifier("quote".into()),
+                        kind: ExpressionKind::Variable("quote".into()), // TODO: symbol
                     }],
                 }
             } else {
@@ -528,7 +528,7 @@ fn into_datum(inner: Option<Expression>, ctx: ExprCtx) -> ExprConvertResult {
             }
             ExpressionKind::Literal(_) => Ok(Some(expr)),
             // TODO: parse_expr should yield symbol, making identifier invalid
-            ExpressionKind::Identifier(_) => todo!(),
+            ExpressionKind::Variable(_) => todo!(),
             ExpressionKind::List(_) => todo!(),
         },
     }
