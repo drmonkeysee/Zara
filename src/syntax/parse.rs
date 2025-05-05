@@ -512,7 +512,8 @@ fn into_datum(inner: Option<Expression>, ctx: ExprCtx) -> ExprConvertResult {
             kind: ExpressionErrorKind::DatumExpected,
         }]),
         Some(expr) => match expr.kind {
-            ExpressionKind::Call { .. } => {
+            ExpressionKind::List(_) | ExpressionKind::Literal(_) => Ok(Some(expr)),
+            _ => {
                 let mut expr_ctx = expr.ctx;
                 expr_ctx.span.start = ctx.span.start;
                 Err(vec![ExpressionError {
@@ -520,10 +521,6 @@ fn into_datum(inner: Option<Expression>, ctx: ExprCtx) -> ExprConvertResult {
                     kind: ExpressionErrorKind::DatumInvalid(expr.kind),
                 }])
             }
-            ExpressionKind::Literal(_) => Ok(Some(expr)),
-            // TODO: parse_expr should yield symbol, making identifier invalid
-            ExpressionKind::Variable(_) => todo!(),
-            ExpressionKind::List(_) => todo!(),
         },
     }
 }
