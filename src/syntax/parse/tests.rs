@@ -1330,6 +1330,55 @@ mod list {
             } if Rc::ptr_eq(&txt, &line) && items.is_empty()
         ));
     }
+
+    #[test]
+    fn into_invalid_datum_list() {
+        let txt = make_textline().into();
+        let p = ExprNode {
+            ctx: ExprCtx {
+                span: 0..8,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::List {
+                datum: true,
+                seq: vec![
+                    Expression {
+                        ctx: ExprCtx {
+                            span: 1..2,
+                            txt: Rc::clone(&txt),
+                        },
+                        kind: ExpressionKind::Identifier("+".into()),
+                    },
+                    Expression::constant(
+                        Constant::Number(Number::real(4)),
+                        ExprCtx {
+                            span: 2..5,
+                            txt: Rc::clone(&txt),
+                        },
+                    ),
+                    Expression::constant(
+                        Constant::Number(Number::real(5)),
+                        ExprCtx {
+                            span: 5..7,
+                            txt: Rc::clone(&txt),
+                        },
+                    ),
+                ],
+            },
+        };
+
+        let r: Result<Option<Expression>, _> = p.try_into();
+
+        let errs = err_or_fail!(r);
+        assert_eq!(errs.len(), 1);
+        assert!(matches!(
+            &errs[0],
+            ExpressionError {
+                ctx: ExprCtx { span: Range { start: 1, end: 2 }, txt: line },
+                kind: ExpressionErrorKind::DatumInvalid(ExpressionKind::Identifier(s)),
+            } if Rc::ptr_eq(&txt, &line) && &**s == "foo"
+        ));
+    }
 }
 
 mod string {
