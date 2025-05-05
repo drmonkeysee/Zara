@@ -225,7 +225,7 @@ mod expr {
             ExprFlow::Continue(Some(
                 Expression {
                 ctx: ExprCtx { span: Range { start: 0, end: 6 }, txt: line },
-                kind: ExpressionKind::Variable(s),
+                kind: ExpressionKind::Literal(Value::Symbol(s)),
             })) if &*s == "foo" && Rc::ptr_eq(&txt, &line)
         ));
     }
@@ -245,7 +245,7 @@ mod expr {
             ExprFlow::Continue(Some(
                 Expression {
                 ctx: ExprCtx { span: Range { start: 0, end: 0 }, txt: line },
-                kind: ExpressionKind::Variable(s),
+                kind: ExpressionKind::Literal(Value::Symbol(s)),
             })) if &*s == "" && Rc::ptr_eq(&txt, &line)
         ));
     }
@@ -1997,7 +1997,7 @@ mod quote {
         assert!(matches!(
             &errs[0],
             ExpressionError {
-                ctx: ExprCtx { span: Range { start: 0, end: 10 }, txt },
+                ctx: ExprCtx { span: Range { start: 0, end: 5 }, txt },
                 kind: ExpressionErrorKind::DatumInvalid(ExpressionKind::Variable(s)),
             } if txt.lineno == 1 && &**s == "foo"
         ));

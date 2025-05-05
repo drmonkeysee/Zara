@@ -339,13 +339,16 @@ fn parse_expr(token: Token, txt: &Rc<TextLine>, datum: bool) -> ExprFlow {
                 txt: Rc::clone(txt),
             },
         ))),
-        // TODO: need datum flag for identifier -> symbol
         TokenKind::Identifier(s) => ExprFlow::Continue(Some(Expression {
             ctx: ExprCtx {
                 span: token.span,
                 txt: Rc::clone(txt),
             },
-            kind: ExpressionKind::Variable(s.into()),
+            kind: if datum {
+                ExpressionKind::Literal(Value::Symbol(s.into()))
+            } else {
+                ExpressionKind::Variable(s.into())
+            },
         })),
         TokenKind::IdentifierBegin(s) => ExprFlow::Break(ParseBreak::new(
             ParseMode::identifier(s, datum),
