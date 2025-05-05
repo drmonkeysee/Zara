@@ -368,7 +368,7 @@ fn parse_expr(token: Token, txt: &Rc<TextLine>, datum: bool) -> ExprFlow {
                             span: token.span,
                             txt: Rc::clone(txt),
                         },
-                        kind: ExpressionKind::Variable("quote".into()), // TODO: symbol
+                        kind: ExpressionKind::Literal(Value::Symbol("quote".into())),
                     }],
                 }
             } else {

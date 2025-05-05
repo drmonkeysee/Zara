@@ -398,7 +398,7 @@ mod expr {
             &seq[0],
             Expression {
                 ctx: ExprCtx { span: Range { start: 1, end: 2 }, txt: line },
-                kind: ExpressionKind::Variable(s),
+                kind: ExpressionKind::Literal(Value::Symbol(s)),
             } if Rc::ptr_eq(&txt, &line) && &**s == "quote"
         ));
     }
