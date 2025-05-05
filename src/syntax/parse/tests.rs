@@ -1442,7 +1442,7 @@ mod list {
             ExpressionError {
                 ctx: ExprCtx { span: Range { start: 1, end: 2 }, txt: line },
                 kind: ExpressionErrorKind::DatumInvalid(ExpressionKind::Variable(s)),
-            } if Rc::ptr_eq(&txt, &line) && &**s == "foo"
+            } if Rc::ptr_eq(&txt, &line) && &**s == "+"
         ));
     }
 }

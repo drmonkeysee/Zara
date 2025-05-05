@@ -165,7 +165,7 @@ impl TryFrom<ExprNode> for Option<Expression> {
                 kind: ExpressionKind::Variable(label.into()),
             })),
             ParseMode::List { datum: false, seq } => Ok(Some(into_syntactic_form(seq, value.ctx))),
-            ParseMode::List { datum: true, seq } => Ok(Some(into_list(seq, value.ctx))),
+            ParseMode::List { datum: true, seq } => into_list(seq, value.ctx),
             ParseMode::Quote(inner) => into_datum(inner, value.ctx),
             ParseMode::StringLiteral(s) => Ok(Some(Expression::constant(
                 Constant::String(s.into()),
@@ -534,10 +534,24 @@ fn into_datum(inner: Option<Expression>, ctx: ExprCtx) -> ExprConvertResult {
     }
 }
 
-fn into_list(seq: Vec<Expression>, ctx: ExprCtx) -> Expression {
-    Expression {
-        ctx,
-        kind: ExpressionKind::List(seq.into()),
+fn into_list(seq: Vec<Expression>, ctx: ExprCtx) -> ExprConvertResult {
+    let (items, errs): (Vec<_>, Vec<_>) = seq
+        .into_iter()
+        .map(|expr| match expr.kind {
+            ExpressionKind::List(_) | ExpressionKind::Literal(_) => Ok(expr),
+            _ => Err(ExpressionError {
+                ctx: expr.ctx,
+                kind: ExpressionErrorKind::DatumInvalid(expr.kind),
+            }),
+        })
+        .partition(Result::is_ok);
+    if errs.is_empty() {
+        Ok(Some(Expression {
+            ctx,
+            kind: ExpressionKind::List(items.into_iter().flatten().collect()),
+        }))
+    } else {
+        Err(errs.into_iter().filter_map(Result::err).collect::<Vec<_>>())
     }
 }
 
