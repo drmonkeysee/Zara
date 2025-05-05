@@ -115,7 +115,7 @@ impl ExprNode {
             ParseMode::CommentDatum(inner) | ParseMode::Quote(inner) => {
                 parse_datum(inner, token, txt, &self.ctx)
             }
-            ParseMode::Identifier(buf) => parse_verbatim_identifier(buf, token, txt),
+            ParseMode::Identifier { datum, label } => parse_verbatim_identifier(label, token, txt),
             ParseMode::List { datum, seq } => parse_list(seq, token, txt, *datum),
             ParseMode::StringLiteral(buf) => parse_str(buf, token, txt),
         }
@@ -140,7 +140,7 @@ impl ExprNode {
             ParseMode::ByteVector(_) => ExpressionErrorKind::ByteVectorUnterminated,
             ParseMode::CommentBlock => ExpressionErrorKind::CommentBlockUnterminated,
             ParseMode::CommentDatum(_) | ParseMode::Quote(_) => ExpressionErrorKind::DatumExpected,
-            ParseMode::Identifier(_) => ExpressionErrorKind::IdentifierUnterminated,
+            ParseMode::Identifier { .. } => ExpressionErrorKind::IdentifierUnterminated,
             ParseMode::List { .. } => ExpressionErrorKind::ListUnterminated,
             ParseMode::StringLiteral(_) => ExpressionErrorKind::StrUnterminated,
         })
@@ -160,9 +160,9 @@ impl TryFrom<ExprNode> for Option<Expression> {
             ParseMode::ByteVector(seq) => into_bytevector(seq, value.ctx),
             ParseMode::CommentBlock => Ok(None),
             ParseMode::CommentDatum(inner) => into_comment_datum(inner.as_ref(), value.ctx),
-            ParseMode::Identifier(s) => Ok(Some(Expression {
+            ParseMode::Identifier { datum, label } => Ok(Some(Expression {
                 ctx: value.ctx,
-                kind: ExpressionKind::Identifier(s.into()),
+                kind: ExpressionKind::Identifier(label.into()),
             })),
             ParseMode::List { datum: false, seq } => Ok(Some(into_syntactic_form(seq, value.ctx))),
             ParseMode::List { datum: true, seq } => Ok(Some(into_list(seq, value.ctx))),
@@ -241,16 +241,16 @@ enum ParseMode {
     ByteVector(Vec<Expression>),
     CommentBlock,
     CommentDatum(Option<Expression>),
-    Identifier(String),
+    Identifier { datum: bool, label: String },
     List { datum: bool, seq: Vec<Expression> },
     Quote(Option<Expression>),
     StringLiteral(String),
 }
 
 impl ParseMode {
-    fn identifier(mut s: String) -> Self {
-        s.push('\n');
-        Self::Identifier(s)
+    fn identifier(mut label: String, datum: bool) -> Self {
+        label.push('\n');
+        Self::Identifier { datum, label }
     }
 
     fn string(mut s: String, newline: bool) -> Self {
@@ -347,9 +347,10 @@ fn parse_expr(token: Token, txt: &Rc<TextLine>, datum: bool) -> ExprFlow {
             },
             kind: ExpressionKind::Identifier(s.into()),
         })),
-        TokenKind::IdentifierBegin(s) => {
-            ExprFlow::Break(ParseBreak::new(ParseMode::identifier(s), token.span.start))
-        }
+        TokenKind::IdentifierBegin(s) => ExprFlow::Break(ParseBreak::new(
+            ParseMode::identifier(s, datum),
+            token.span.start,
+        )),
         TokenKind::ParenLeft => ExprFlow::Break(ParseBreak::new(
             ParseMode::List {
                 datum,

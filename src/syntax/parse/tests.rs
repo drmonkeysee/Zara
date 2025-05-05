@@ -224,10 +224,31 @@ mod expr {
             f,
             ExprFlow::Break(ParseBreak::New(
                 ParseNew {
-                    mode: ParseMode::Identifier(s),
+                    mode: ParseMode::Identifier { datum: false, label },
                     start: 3
                 }
-            )) if s == "start\n"
+            )) if label == "start\n"
+        ));
+    }
+
+    #[test]
+    fn start_datum_identifier() {
+        let token = Token {
+            kind: TokenKind::IdentifierBegin("start".to_owned()),
+            span: 3..8,
+        };
+        let txt = make_textline().into();
+
+        let f = parse_expr(token, &txt, true);
+
+        assert!(matches!(
+            f,
+            ExprFlow::Break(ParseBreak::New(
+                ParseNew {
+                    mode: ParseMode::Identifier { datum: true, label },
+                    start: 3
+                }
+            )) if label == "start\n"
         ));
     }
 
@@ -768,14 +789,17 @@ mod identifier {
     }
 
     #[test]
-    fn into_expr() {
+    fn into_variable() {
         let txt = make_textline().into();
         let p = ExprNode {
             ctx: ExprCtx {
                 span: 0..3,
                 txt: Rc::clone(&txt),
             },
-            mode: ParseMode::Identifier("foo".to_owned()),
+            mode: ParseMode::Identifier {
+                datum: false,
+                label: "foo".to_owned(),
+            },
         };
 
         let r: Result<Option<Expression>, _> = p.try_into();
@@ -1926,7 +1950,10 @@ mod merge {
                 span: 0..3,
                 txt: Rc::clone(&txt),
             },
-            mode: ParseMode::Identifier("foo".to_owned()),
+            mode: ParseMode::Identifier {
+                datum: false,
+                label: "foo".to_owned(),
+            },
         };
 
         let r = p.merge(other);
@@ -1982,7 +2009,10 @@ mod merge {
                 span: 0..3,
                 txt: make_textline().into(),
             },
-            mode: ParseMode::Identifier("foo".to_owned()),
+            mode: ParseMode::Identifier {
+                datum: false,
+                label: "foo".to_owned(),
+            },
         };
 
         let r = p.merge(other);
@@ -2005,7 +2035,10 @@ mod merge {
                 span: 0..3,
                 txt: Rc::clone(&txt),
             },
-            mode: ParseMode::Identifier("foo".to_owned()),
+            mode: ParseMode::Identifier {
+                datum: false,
+                label: "foo".to_owned(),
+            },
         };
 
         let r = p.merge(other);
@@ -2031,7 +2064,10 @@ mod merge {
                 span: 3..6,
                 txt: Rc::clone(&txt),
             },
-            mode: ParseMode::Identifier("foo".to_owned()),
+            mode: ParseMode::Identifier {
+                datum: false,
+                label: "foo".to_owned(),
+            },
         };
 
         let r = p.merge(other);
@@ -2157,7 +2193,10 @@ mod merge {
                 span: 3..6,
                 txt: Rc::clone(&txt),
             },
-            mode: ParseMode::Identifier("foo".to_owned()),
+            mode: ParseMode::Identifier {
+                datum: true,
+                label: "foo".to_owned(),
+            },
         };
 
         let r = p.merge(other);
@@ -2276,14 +2315,20 @@ mod merge {
                 span: 0..3,
                 txt: Rc::clone(&txt),
             },
-            mode: ParseMode::Identifier("bar".to_owned()),
+            mode: ParseMode::Identifier {
+                datum: false,
+                label: "bar".to_owned(),
+            },
         };
         let other = ExprNode {
             ctx: ExprCtx {
                 span: 0..3,
                 txt: Rc::clone(&txt),
             },
-            mode: ParseMode::Identifier("foo".to_owned()),
+            mode: ParseMode::Identifier {
+                datum: false,
+                label: "foo".to_owned(),
+            },
         };
 
         let r = p.merge(other);
@@ -2309,7 +2354,10 @@ mod merge {
                 span: 0..3,
                 txt: Rc::clone(&txt),
             },
-            mode: ParseMode::Identifier("foo".to_owned()),
+            mode: ParseMode::Identifier {
+                datum: false,
+                label: "foo".to_owned(),
+            },
         };
 
         let r = p.merge(other);
@@ -2341,7 +2389,10 @@ mod merge {
                 span: 3..6,
                 txt: Rc::clone(&txt),
             },
-            mode: ParseMode::Identifier("foo".to_owned()),
+            mode: ParseMode::Identifier {
+                datum: true,
+                label: "foo".to_owned(),
+            },
         };
 
         let r = p.merge(other);
@@ -2476,7 +2527,10 @@ mod nodeutil {
     #[test]
     fn identifier_continuation() {
         let p = ParseNode::new(
-            ParseMode::Identifier("myproc".to_owned()),
+            ParseMode::Identifier {
+                datum: false,
+                label: "myproc".to_owned(),
+            },
             3,
             make_textline(),
         );
