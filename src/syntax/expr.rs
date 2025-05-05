@@ -69,6 +69,20 @@ impl Expression {
         }
     }
 
+    pub(super) fn symbol(lbl: impl Into<Box<str>>, ctx: ExprCtx) -> Self {
+        Self {
+            ctx,
+            kind: ExpressionKind::Literal(Value::Symbol(lbl.into())),
+        }
+    }
+
+    pub(super) fn variable(lbl: impl Into<Box<str>>, ctx: ExprCtx) -> Self {
+        Self {
+            ctx,
+            kind: ExpressionKind::Variable(lbl.into()),
+        }
+    }
+
     fn eval(self) -> Option<Value> {
         match self.kind {
             ExpressionKind::Call { .. } => todo!("no idea what to do here"),
@@ -221,13 +235,13 @@ mod tests {
 
         #[test]
         fn call_typename() {
-            let proc = Expression {
-                ctx: ExprCtx {
+            let proc = Expression::variable(
+                "foo",
+                ExprCtx {
                     span: 0..5,
                     txt: make_textline().into(),
                 },
-                kind: ExpressionKind::Variable("foo".into()),
-            };
+            );
             let expr = ExpressionKind::Call {
                 args: [].into(),
                 proc: proc.into(),
@@ -417,13 +431,13 @@ mod tests {
                     txt: Rc::clone(&txt),
                 },
                 kind: ExpressionErrorKind::DatumInvalid(ExpressionKind::Call {
-                    proc: Expression {
-                        ctx: ExprCtx {
+                    proc: Expression::variable(
+                        "foo",
+                        ExprCtx {
                             span: 0..1,
                             txt: Rc::clone(&txt),
                         },
-                        kind: ExpressionKind::Variable("foo".into()),
-                    }
+                    )
                     .into(),
                     args: [].into(),
                 }),

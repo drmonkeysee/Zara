@@ -670,13 +670,13 @@ mod bytevector {
                     txt: Rc::clone(&txt),
                 },
             ),
-            Expression {
-                ctx: ExprCtx {
+            Expression::symbol(
+                "foo",
+                ExprCtx {
                     span: 3..6,
                     txt: Rc::clone(&txt),
                 },
-                kind: ExpressionKind::Literal(Value::Symbol("foo".into())),
-            },
+            ),
             Expression::constant(
                 Constant::Number(Number::real(26)),
                 ExprCtx {
@@ -717,13 +717,13 @@ mod bytevector {
                     txt: Rc::clone(&txt),
                 },
             ),
-            Expression {
-                ctx: ExprCtx {
+            Expression::variable(
+                "foo",
+                ExprCtx {
                     span: 3..6,
                     txt: Rc::clone(&txt),
                 },
-                kind: ExpressionKind::Variable("foo".into()),
-            },
+            ),
             Expression::constant(
                 Constant::Number(Number::real(26)),
                 ExprCtx {
@@ -999,13 +999,13 @@ mod list {
     fn end() {
         let txt = make_textline().into();
         let mut seq = vec![
-            Expression {
-                ctx: ExprCtx {
+            Expression::variable(
+                "+",
+                ExprCtx {
                     span: 0..1,
                     txt: Rc::clone(&txt),
                 },
-                kind: ExpressionKind::Variable("+".into()),
-            },
+            ),
             Expression::constant(
                 Constant::Number(Number::real(4)),
                 ExprCtx {
@@ -1039,13 +1039,13 @@ mod list {
     fn nested_list() {
         let txt = make_textline().into();
         let mut seq = vec![
-            Expression {
-                ctx: ExprCtx {
+            Expression::variable(
+                "+",
+                ExprCtx {
                     span: 0..1,
                     txt: Rc::clone(&txt),
                 },
-                kind: ExpressionKind::Variable("+".into()),
-            },
+            ),
             Expression::constant(
                 Constant::Number(Number::real(4)),
                 ExprCtx {
@@ -1100,13 +1100,13 @@ mod list {
     fn expression_item() {
         let txt = make_textline().into();
         let mut seq = vec![
-            Expression {
-                ctx: ExprCtx {
+            Expression::variable(
+                "+",
+                ExprCtx {
                     span: 0..1,
                     txt: Rc::clone(&txt),
                 },
-                kind: ExpressionKind::Variable("+".into()),
-            },
+            ),
             Expression::constant(
                 Constant::Number(Number::real(4)),
                 ExprCtx {
@@ -1144,13 +1144,13 @@ mod list {
     fn invalid_token() {
         let txt = make_textline().into();
         let mut seq = vec![
-            Expression {
-                ctx: ExprCtx {
+            Expression::variable(
+                "+",
+                ExprCtx {
                     span: 0..1,
                     txt: Rc::clone(&txt),
                 },
-                kind: ExpressionKind::Variable("+".into()),
-            },
+            ),
             Expression::constant(
                 Constant::Number(Number::real(4)),
                 ExprCtx {
@@ -1197,13 +1197,13 @@ mod list {
             mode: ParseMode::List {
                 datum: false,
                 seq: vec![
-                    Expression {
-                        ctx: ExprCtx {
+                    Expression::variable(
+                        "+",
+                        ExprCtx {
                             span: 0..1,
                             txt: Rc::clone(&txt),
                         },
-                        kind: ExpressionKind::Variable("+".into()),
-                    },
+                    ),
                     Expression::constant(
                         Constant::Number(Number::real(4)),
                         ExprCtx {
@@ -1270,20 +1270,20 @@ mod list {
             mode: ParseMode::List {
                 datum: false,
                 seq: vec![
-                    Expression {
-                        ctx: ExprCtx {
+                    Expression::variable(
+                        "quote",
+                        ExprCtx {
                             span: 1..6,
                             txt: Rc::clone(&txt),
                         },
-                        kind: ExpressionKind::Variable("quote".into()),
-                    },
-                    Expression {
-                        ctx: ExprCtx {
+                    ),
+                    Expression::variable(
+                        "foo",
+                        ExprCtx {
                             span: 6..9,
                             txt: Rc::clone(&txt),
                         },
-                        kind: ExpressionKind::Variable("foo".into()),
-                    },
+                    ),
                 ],
             },
         };
@@ -1311,13 +1311,13 @@ mod list {
             mode: ParseMode::List {
                 datum: true,
                 seq: vec![
-                    Expression {
-                        ctx: ExprCtx {
+                    Expression::symbol(
+                        "+",
+                        ExprCtx {
                             span: 0..1,
                             txt: Rc::clone(&txt),
                         },
-                        kind: ExpressionKind::Literal(Value::Symbol("+".into())),
-                    },
+                    ),
                     Expression::constant(
                         Constant::Number(Number::real(4)),
                         ExprCtx {
@@ -1408,13 +1408,13 @@ mod list {
             mode: ParseMode::List {
                 datum: true,
                 seq: vec![
-                    Expression {
-                        ctx: ExprCtx {
+                    Expression::variable(
+                        "+",
+                        ExprCtx {
                             span: 1..2,
                             txt: Rc::clone(&txt),
                         },
-                        kind: ExpressionKind::Variable("+".into()),
-                    },
+                    ),
                     Expression::constant(
                         Constant::Number(Number::real(4)),
                         ExprCtx {
@@ -1654,13 +1654,13 @@ mod comment {
                 span: 0..2,
                 txt: Rc::clone(&txt),
             },
-            mode: ParseMode::CommentDatum(Some(Expression {
-                ctx: ExprCtx {
+            mode: ParseMode::CommentDatum(Some(Expression::symbol(
+                "foo",
+                ExprCtx {
                     span: 3..5,
                     txt: Rc::clone(&txt),
                 },
-                kind: ExpressionKind::Literal(Value::Symbol("foo".into())),
-            })),
+            ))),
         };
 
         let r: Result<Option<Expression>, _> = p.try_into();
@@ -1705,13 +1705,13 @@ mod quote {
                 span: 0..1,
                 txt: Rc::clone(&txt),
             },
-            mode: ParseMode::Quote(Some(Expression {
-                ctx: ExprCtx {
+            mode: ParseMode::Quote(Some(Expression::constant(
+                Constant::Boolean(true),
+                ExprCtx {
                     span: 2..4,
                     txt: Rc::clone(&txt),
                 },
-                kind: ExpressionKind::Literal(Value::Constant(Constant::Boolean(true))),
-            })),
+            ))),
         };
 
         let r: Result<Option<Expression>, _> = p.try_into();
@@ -1737,13 +1737,13 @@ mod quote {
                 span: 0..1,
                 txt: Rc::clone(&txt),
             },
-            mode: ParseMode::Quote(Some(Expression {
-                ctx: ExprCtx {
+            mode: ParseMode::Quote(Some(Expression::symbol(
+                "foo",
+                ExprCtx {
                     span: 2..5,
                     txt: Rc::clone(&txt),
                 },
-                kind: ExpressionKind::Literal(Value::Symbol("foo".into())),
-            })),
+            ))),
         };
 
         let r: Result<Option<Expression>, _> = p.try_into();
@@ -1776,20 +1776,20 @@ mod quote {
                 },
                 kind: ExpressionKind::List(
                     [
-                        Expression {
-                            ctx: ExprCtx {
+                        Expression::constant(
+                            Constant::Boolean(true),
+                            ExprCtx {
                                 span: 4..6,
                                 txt: Rc::clone(&txt),
                             },
-                            kind: ExpressionKind::Literal(Value::Constant(Constant::Boolean(true))),
-                        },
-                        Expression {
-                            ctx: ExprCtx {
+                        ),
+                        Expression::symbol(
+                            "foo",
+                            ExprCtx {
                                 span: 6..9,
                                 txt: Rc::clone(&txt),
                             },
-                            kind: ExpressionKind::Literal(Value::Symbol("foo".into())),
-                        },
+                        ),
                         Expression {
                             ctx: ExprCtx {
                                 span: 9..13,
@@ -1797,24 +1797,20 @@ mod quote {
                             },
                             kind: ExpressionKind::List(
                                 [
-                                    Expression {
-                                        ctx: ExprCtx {
+                                    Expression::constant(
+                                        Constant::Number(Number::real(4)),
+                                        ExprCtx {
                                             span: 10..11,
                                             txt: Rc::clone(&txt),
                                         },
-                                        kind: ExpressionKind::Literal(Value::Constant(
-                                            Constant::Number(Number::real(4)),
-                                        )),
-                                    },
-                                    Expression {
-                                        ctx: ExprCtx {
+                                    ),
+                                    Expression::constant(
+                                        Constant::Number(Number::real(5)),
+                                        ExprCtx {
                                             span: 11..12,
                                             txt: Rc::clone(&txt),
                                         },
-                                        kind: ExpressionKind::Literal(Value::Constant(
-                                            Constant::Number(Number::real(5)),
-                                        )),
-                                    },
+                                    ),
                                 ]
                                 .into(),
                             ),
@@ -1940,21 +1936,21 @@ mod quote {
                     txt: Rc::clone(&txt),
                 },
                 kind: ExpressionKind::Call {
-                    proc: Expression {
-                        ctx: ExprCtx {
+                    proc: Expression::variable(
+                        "foo",
+                        ExprCtx {
                             span: 4..7,
                             txt: Rc::clone(&txt),
                         },
-                        kind: ExpressionKind::Variable("foo".into()),
-                    }
+                    )
                     .into(),
-                    args: [Expression {
-                        ctx: ExprCtx {
+                    args: [Expression::constant(
+                        Constant::Boolean(true),
+                        ExprCtx {
                             span: 7..9,
                             txt: Rc::clone(&txt),
                         },
-                        kind: ExpressionKind::Literal(Value::Constant(Constant::Boolean(true))),
-                    }]
+                    )]
                     .into(),
                 },
             })),
@@ -1981,13 +1977,13 @@ mod quote {
                 span: 0..1,
                 txt: Rc::clone(&txt),
             },
-            mode: ParseMode::Quote(Some(Expression {
-                ctx: ExprCtx {
+            mode: ParseMode::Quote(Some(Expression::variable(
+                "foo",
+                ExprCtx {
                     span: 2..5,
                     txt: Rc::clone(&txt),
                 },
-                kind: ExpressionKind::Variable("foo".into()),
-            })),
+            ))),
         };
 
         let r: Result<Option<Expression>, _> = p.try_into();
@@ -2083,13 +2079,13 @@ mod merge {
     #[test]
     fn prg_merge() {
         let txt = make_textline().into();
-        let mut p = ParseNode::Prg(vec![Expression {
-            ctx: ExprCtx {
+        let mut p = ParseNode::Prg(vec![Expression::constant(
+            Constant::Boolean(true),
+            ExprCtx {
                 span: 0..1,
                 txt: Rc::clone(&txt),
             },
-            kind: ExpressionKind::Literal(Value::Constant(Constant::Boolean(true))),
-        }]);
+        )]);
         let other = ExprNode {
             ctx: ExprCtx {
                 span: 0..3,
@@ -2124,13 +2120,13 @@ mod merge {
                 span: 0..3,
                 txt: Rc::clone(&txt),
             },
-            mode: ParseMode::ByteVector(vec![Expression {
-                ctx: ExprCtx {
+            mode: ParseMode::ByteVector(vec![Expression::variable(
+                "foo",
+                ExprCtx {
                     span: 0..3,
                     txt: Rc::clone(&txt),
                 },
-                kind: ExpressionKind::Variable("foo".into()),
-            }]),
+            )]),
         };
 
         let r = p.merge(other);
@@ -2248,13 +2244,13 @@ mod merge {
             },
             mode: ParseMode::List {
                 datum: true,
-                seq: vec![Expression {
-                    ctx: ExprCtx {
+                seq: vec![Expression::symbol(
+                    "foo",
+                    ExprCtx {
                         span: 4..7,
                         txt: Rc::clone(&txt),
                     },
-                    kind: ExpressionKind::Literal(Value::Symbol("foo".into())),
-                }],
+                )],
             },
         };
 
@@ -2377,13 +2373,13 @@ mod merge {
             },
             mode: ParseMode::List {
                 datum: true,
-                seq: vec![Expression {
-                    ctx: ExprCtx {
+                seq: vec![Expression::symbol(
+                    "foo",
+                    ExprCtx {
                         span: 4..7,
                         txt: Rc::clone(&txt),
                     },
-                    kind: ExpressionKind::Literal(Value::Symbol("foo".into())),
-                }],
+                )],
             },
         };
 
@@ -2567,13 +2563,13 @@ mod merge {
             },
             mode: ParseMode::List {
                 datum: false,
-                seq: vec![Expression {
-                    ctx: ExprCtx {
+                seq: vec![Expression::variable(
+                    "+",
+                    ExprCtx {
                         span: 0..3,
                         txt: Rc::clone(&txt),
                     },
-                    kind: ExpressionKind::Variable("+".into()),
-                }],
+                )],
             },
         };
         let other = ExprNode {
@@ -2699,13 +2695,13 @@ mod nodeutil {
             ParseMode::List {
                 datum: false,
                 seq: vec![
-                    Expression {
-                        ctx: ExprCtx {
+                    Expression::variable(
+                        "+",
+                        ExprCtx {
                             span: 0..1,
                             txt: Rc::clone(&txt),
                         },
-                        kind: ExpressionKind::Variable("+".into()),
-                    },
+                    ),
                     Expression::constant(
                         Constant::Number(Number::real(4)),
                         ExprCtx {

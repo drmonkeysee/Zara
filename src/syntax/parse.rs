@@ -160,10 +160,9 @@ impl TryFrom<ExprNode> for Option<Expression> {
             ParseMode::ByteVector(seq) => into_bytevector(seq, value.ctx),
             ParseMode::CommentBlock => Ok(None),
             ParseMode::CommentDatum(inner) => into_comment_datum(inner.as_ref(), value.ctx),
-            ParseMode::Identifier { datum, label } => Ok(Some(Expression {
-                ctx: value.ctx,
-                kind: label_to_expr(label, datum),
-            })),
+            ParseMode::Identifier { datum, label } => {
+                Ok(Some(label_to_expr(label, datum, value.ctx)))
+            }
             ParseMode::List { datum: false, seq } => Ok(Some(into_syntactic_form(seq, value.ctx))),
             ParseMode::List { datum: true, seq } => into_list(seq, value.ctx),
             ParseMode::Quote(inner) => into_datum(inner, value.ctx),
@@ -339,13 +338,14 @@ fn parse_expr(token: Token, txt: &Rc<TextLine>, datum: bool) -> ExprFlow {
                 txt: Rc::clone(txt),
             },
         ))),
-        TokenKind::Identifier(s) => ExprFlow::Continue(Some(Expression {
-            ctx: ExprCtx {
+        TokenKind::Identifier(s) => ExprFlow::Continue(Some(label_to_expr(
+            s,
+            datum,
+            ExprCtx {
                 span: token.span,
                 txt: Rc::clone(txt),
             },
-            kind: label_to_expr(s, datum),
-        })),
+        ))),
         TokenKind::IdentifierBegin(s) => ExprFlow::Break(ParseBreak::new(
             ParseMode::identifier(s, datum),
             token.span.start,
@@ -362,13 +362,13 @@ fn parse_expr(token: Token, txt: &Rc<TextLine>, datum: bool) -> ExprFlow {
             let mode = if datum {
                 ParseMode::List {
                     datum: true,
-                    seq: vec![Expression {
-                        ctx: ExprCtx {
+                    seq: vec![Expression::symbol(
+                        "quote",
+                        ExprCtx {
                             span: token.span,
                             txt: Rc::clone(txt),
                         },
-                        kind: ExpressionKind::Literal(Value::Symbol("quote".into())),
-                    }],
+                    )],
                 }
             } else {
                 ParseMode::Quote(None)
@@ -574,10 +574,10 @@ fn into_valid_sequence<T>(
     }
 }
 
-fn label_to_expr(label: String, datum: bool) -> ExpressionKind {
+fn label_to_expr(label: String, datum: bool, ctx: ExprCtx) -> Expression {
     if datum {
-        ExpressionKind::Literal(Value::Symbol(label.into()))
+        Expression::symbol(label, ctx)
     } else {
-        ExpressionKind::Variable(label.into())
+        Expression::variable(label, ctx)
     }
 }
