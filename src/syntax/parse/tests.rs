@@ -1264,7 +1264,7 @@ mod list {
         let txt = make_textline().into();
         let p = ExprNode {
             ctx: ExprCtx {
-                span: 0..6,
+                span: 0..10,
                 txt: Rc::clone(&txt),
             },
             mode: ParseMode::List {
@@ -1272,14 +1272,14 @@ mod list {
                 seq: vec![
                     Expression {
                         ctx: ExprCtx {
-                            span: 0..5,
+                            span: 1..6,
                             txt: Rc::clone(&txt),
                         },
                         kind: ExpressionKind::Variable("quote".into()),
                     },
                     Expression {
                         ctx: ExprCtx {
-                            span: 5..8,
+                            span: 6..9,
                             txt: Rc::clone(&txt),
                         },
                         kind: ExpressionKind::Variable("foo".into()),
@@ -1294,9 +1294,9 @@ mod list {
         assert!(matches!(
             expr,
             Expression {
-                ctx: ExprCtx { span: Range { start: 5, end: 8 }, txt: line },
-                kind: ExpressionKind::Literal(_ /* symbol */),
-            } if Rc::ptr_eq(&txt, &line)
+                ctx: ExprCtx { span: Range { start: 6, end: 9 }, txt: line },
+                kind: ExpressionKind::Literal(Value::Symbol(s)),
+            } if Rc::ptr_eq(&txt, &line) && &*s == "foo"
         ));
     }
 
@@ -1316,7 +1316,7 @@ mod list {
                             span: 0..1,
                             txt: Rc::clone(&txt),
                         },
-                        kind: ExpressionKind::Variable("+".into()), // TODO: symbol
+                        kind: ExpressionKind::Literal(Value::Symbol("+".into())),
                     },
                     Expression::constant(
                         Constant::Number(Number::real(4)),
@@ -1352,8 +1352,8 @@ mod list {
             &items[0],
             Expression {
                 ctx: ExprCtx { span: Range { start: 0, end: 1 }, txt: line },
-                kind: ExpressionKind::Literal(_ /* symbol */),
-            } if Rc::ptr_eq(&txt, &line)
+                kind: ExpressionKind::Literal(Value::Symbol(s)),
+            } if Rc::ptr_eq(&txt, &line) && &**s == "+"
         ));
         assert!(matches!(
             &items[1],
