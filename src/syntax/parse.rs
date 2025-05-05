@@ -115,7 +115,7 @@ impl ExprNode {
             ParseMode::CommentDatum(inner) | ParseMode::Quote(inner) => {
                 parse_datum(inner, token, txt, &self.ctx)
             }
-            ParseMode::Identifier { datum, label } => parse_verbatim_identifier(label, token, txt),
+            ParseMode::Identifier { label, .. } => parse_verbatim_identifier(label, token, txt),
             ParseMode::List { datum, seq } => parse_list(seq, token, txt, *datum),
             ParseMode::StringLiteral(buf) => parse_str(buf, token, txt),
         }
@@ -162,7 +162,7 @@ impl TryFrom<ExprNode> for Option<Expression> {
             ParseMode::CommentDatum(inner) => into_comment_datum(inner.as_ref(), value.ctx),
             ParseMode::Identifier { datum, label } => Ok(Some(Expression {
                 ctx: value.ctx,
-                kind: ExpressionKind::Variable(label.into()),
+                kind: label_to_expr(label, datum),
             })),
             ParseMode::List { datum: false, seq } => Ok(Some(into_syntactic_form(seq, value.ctx))),
             ParseMode::List { datum: true, seq } => into_list(seq, value.ctx),
@@ -344,11 +344,7 @@ fn parse_expr(token: Token, txt: &Rc<TextLine>, datum: bool) -> ExprFlow {
                 span: token.span,
                 txt: Rc::clone(txt),
             },
-            kind: if datum {
-                ExpressionKind::Literal(Value::Symbol(s.into()))
-            } else {
-                ExpressionKind::Variable(s.into())
-            },
+            kind: label_to_expr(s, datum),
         })),
         TokenKind::IdentifierBegin(s) => ExprFlow::Break(ParseBreak::new(
             ParseMode::identifier(s, datum),
@@ -575,5 +571,13 @@ fn into_valid_sequence<T>(
         }))
     } else {
         Err(errs.into_iter().filter_map(Result::err).collect::<Vec<_>>())
+    }
+}
+
+fn label_to_expr(label: String, datum: bool) -> ExpressionKind {
+    if datum {
+        ExpressionKind::Literal(Value::Symbol(label.into()))
+    } else {
+        ExpressionKind::Variable(label.into())
     }
 }
