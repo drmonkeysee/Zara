@@ -555,10 +555,9 @@ fn into_valid_sequence<T>(
 ) -> ExprConvertResult {
     let (items, errs): (Vec<_>, Vec<_>) = seq.into_iter().map(valid).partition(Result::is_ok);
     if errs.is_empty() {
-        Ok(Some(Expression {
-            ctx,
-            kind: kind(items.into_iter().flatten().collect()),
-        }))
+        Ok(Some(
+            ctx.into_expr(kind(items.into_iter().flatten().collect())),
+        ))
     } else {
         Err(errs.into_iter().filter_map(Result::err).collect::<Vec<_>>())
     }
