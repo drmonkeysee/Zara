@@ -48,6 +48,10 @@ pub(super) struct ExprCtx {
 }
 
 impl ExprCtx {
+    pub(super) fn into_expr(self, kind: ExpressionKind) -> Expression {
+        Expression { kind, ctx: self }
+    }
+
     pub(super) fn into_error(self, kind: ExpressionErrorKind) -> ExpressionError {
         ExpressionError { kind, ctx: self }
     }

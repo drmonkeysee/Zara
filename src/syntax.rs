@@ -293,13 +293,13 @@ impl Display for SyntaxErrorLineMessage<'_> {
 
 fn tokens_expr(token_lines: Box<[TokenLine]>) -> Option<Expression> {
     let TokenLine(_, line) = token_lines.first()?;
-    Some(Expression {
-        ctx: ExprCtx {
+    Some(
+        ExprCtx {
             span: 0..line.line.len(),
             txt: line.clone().into(),
-        },
-        kind: ExpressionKind::Literal(Value::TokenList(token_lines)),
-    })
+        }
+        .into_expr(ExpressionKind::Literal(Value::TokenList(token_lines))),
+    )
 }
 
 #[cfg(test)]

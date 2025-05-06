@@ -501,10 +501,9 @@ fn into_datum(inner: Option<Expression>, ctx: ExprCtx, datum: bool) -> ExprConve
         None => Err(vec![ctx.into_error(ExpressionErrorKind::DatumExpected)]),
         Some(expr) => match expr.kind {
             ExpressionKind::List(_) | ExpressionKind::Literal(_) => Ok(Some(if datum {
-                Expression {
-                    ctx: ctx.clone(),
-                    kind: ExpressionKind::List([Expression::symbol("quote", ctx), expr].into()),
-                }
+                ctx.clone().into_expr(ExpressionKind::List(
+                    [Expression::symbol("quote", ctx), expr].into(),
+                ))
             } else {
                 expr
             })),
@@ -542,13 +541,10 @@ fn into_syntactic_form(seq: Vec<Expression>, ctx: ExprCtx) -> Expression {
     );
     let mut iter = seq.into_iter();
     let proc = iter.next().unwrap();
-    Expression {
-        ctx,
-        kind: ExpressionKind::Call {
-            args: iter.collect(),
-            proc: proc.into(),
-        },
-    }
+    ctx.into_expr(ExpressionKind::Call {
+        args: iter.collect(),
+        proc: proc.into(),
+    })
 }
 
 fn into_valid_sequence<T>(
