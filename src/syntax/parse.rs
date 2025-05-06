@@ -206,7 +206,7 @@ impl ParseBreak {
         }
     }
 
-    fn failed_parser(err: ExpressionError) -> Self {
+    fn parser_failure(err: ExpressionError) -> Self {
         Self::Err {
             err,
             flow: ParseErrFlow::Break(ParseErrBreak::FailedParser),
@@ -266,13 +266,13 @@ fn parse_comment_block(token: Token, txt: &Rc<TextLine>) -> ParseFlow {
         TokenKind::CommentBlockEnd => {
             ParseFlow::Break(ParseBreak::complete(txt.lineno, token.span.end))
         }
-        _ => ParseFlow::Break(ParseBreak::token_failure(ExpressionError {
-            ctx: ExprCtx {
+        _ => ParseFlow::Break(ParseBreak::token_failure(
+            ExprCtx {
                 span: token.span,
                 txt: Rc::clone(txt),
-            },
-            kind: ExpressionErrorKind::CommentBlockInvalid(token.kind),
-        })),
+            }
+            .into_error(ExpressionErrorKind::CommentBlockInvalid(token.kind)),
+        )),
     }
 }
 
@@ -291,10 +291,9 @@ fn parse_datum(
             },
             txt: Rc::clone(&node_ctx.txt),
         };
-        ParseFlow::Break(ParseBreak::failed_parser(ExpressionError {
-            ctx,
-            kind: ExpressionErrorKind::DatumExpected,
-        }))
+        ParseFlow::Break(ParseBreak::parser_failure(
+            ctx.into_error(ExpressionErrorKind::DatumExpected),
+        ))
     } else {
         let pos = token.span.end;
         match parse_expr(token, txt, true)? {
@@ -387,22 +386,20 @@ fn parse_expr(token: Token, txt: &Rc<TextLine>, datum: bool) -> ExprFlow {
         | TokenKind::IdentifierFragment(_)
         | TokenKind::StringDiscard
         | TokenKind::StringEnd(_)
-        | TokenKind::StringFragment { .. } => {
-            ExprFlow::Break(ParseBreak::token_failure(ExpressionError {
-                ctx: ExprCtx {
-                    span: token.span,
-                    txt: Rc::clone(txt),
-                },
-                kind: ExpressionErrorKind::SeqInvalid(token.kind),
-            }))
-        }
-        _ => ExprFlow::Break(ParseBreak::recover(ExpressionError {
-            ctx: ExprCtx {
+        | TokenKind::StringFragment { .. } => ExprFlow::Break(ParseBreak::token_failure(
+            ExprCtx {
                 span: token.span,
                 txt: Rc::clone(txt),
-            },
-            kind: ExpressionErrorKind::Unimplemented(token.kind),
-        })),
+            }
+            .into_error(ExpressionErrorKind::SeqInvalid(token.kind)),
+        )),
+        _ => ExprFlow::Break(ParseBreak::recover(
+            ExprCtx {
+                span: token.span,
+                txt: Rc::clone(txt),
+            }
+            .into_error(ExpressionErrorKind::Unimplemented(token.kind)),
+        )),
     }
 }
 
@@ -443,13 +440,13 @@ fn parse_str(buf: &mut String, token: Token, txt: &Rc<TextLine>) -> ParseFlow {
             buf.push_str(&s);
             ParseFlow::Break(ParseBreak::complete(txt.lineno, token.span.end))
         }
-        _ => ParseFlow::Break(ParseBreak::token_failure(ExpressionError {
-            ctx: ExprCtx {
+        _ => ParseFlow::Break(ParseBreak::token_failure(
+            ExprCtx {
                 span: token.span,
                 txt: Rc::clone(txt),
-            },
-            kind: ExpressionErrorKind::StrInvalid(token.kind),
-        })),
+            }
+            .into_error(ExpressionErrorKind::StrInvalid(token.kind)),
+        )),
     }
 }
 
@@ -464,13 +461,13 @@ fn parse_verbatim_identifier(buf: &mut String, token: Token, txt: &Rc<TextLine>)
             buf.push_str(&s);
             ParseFlow::Break(ParseBreak::complete(txt.lineno, token.span.end))
         }
-        _ => ParseFlow::Break(ParseBreak::token_failure(ExpressionError {
-            ctx: ExprCtx {
+        _ => ParseFlow::Break(ParseBreak::token_failure(
+            ExprCtx {
                 span: token.span,
                 txt: Rc::clone(txt),
-            },
-            kind: ExpressionErrorKind::IdentifierInvalid(token.kind),
-        })),
+            }
+            .into_error(ExpressionErrorKind::IdentifierInvalid(token.kind)),
+        )),
     }
 }
 
@@ -480,15 +477,14 @@ fn into_bytevector(seq: Vec<Expression>, ctx: ExprCtx) -> ExprConvertResult {
         ctx,
         |expr| match expr.kind {
             ExpressionKind::Literal(Value::Constant(Constant::Number(n))) => {
-                n.try_into().map_err(|err| ExpressionError {
-                    ctx: expr.ctx,
-                    kind: ExpressionErrorKind::ByteVectorInvalidNumber(err),
+                n.try_into().map_err(|err| {
+                    expr.ctx
+                        .into_error(ExpressionErrorKind::ByteVectorInvalidNumber(err))
                 })
             }
-            _ => Err(ExpressionError {
-                ctx: expr.ctx,
-                kind: ExpressionErrorKind::ByteVectorInvalidItem(expr.kind),
-            }),
+            _ => Err(expr
+                .ctx
+                .into_error(ExpressionErrorKind::ByteVectorInvalidItem(expr.kind))),
         },
         |items| ExpressionKind::Literal(Value::ByteVector(items)),
     )
@@ -496,29 +492,22 @@ fn into_bytevector(seq: Vec<Expression>, ctx: ExprCtx) -> ExprConvertResult {
 
 fn into_comment_datum(inner: Option<&Expression>, ctx: ExprCtx) -> ExprConvertResult {
     match inner {
-        None => Err(vec![ExpressionError {
-            ctx,
-            kind: ExpressionErrorKind::DatumExpected,
-        }]),
+        None => Err(vec![ctx.into_error(ExpressionErrorKind::DatumExpected)]),
         Some(_) => Ok(None),
     }
 }
 
 fn into_datum(inner: Option<Expression>, ctx: ExprCtx) -> ExprConvertResult {
     match inner {
-        None => Err(vec![ExpressionError {
-            ctx,
-            kind: ExpressionErrorKind::DatumExpected,
-        }]),
+        None => Err(vec![ctx.into_error(ExpressionErrorKind::DatumExpected)]),
         Some(expr) => match expr.kind {
             ExpressionKind::List(_) | ExpressionKind::Literal(_) => Ok(Some(expr)),
             _ => {
                 let mut expr_ctx = expr.ctx;
                 expr_ctx.span.start = ctx.span.start;
-                Err(vec![ExpressionError {
-                    ctx: expr_ctx,
-                    kind: ExpressionErrorKind::DatumInvalid(expr.kind),
-                }])
+                Err(vec![
+                    expr_ctx.into_error(ExpressionErrorKind::DatumInvalid(expr.kind)),
+                ])
             }
         },
     }
@@ -530,10 +519,9 @@ fn into_list(seq: Vec<Expression>, ctx: ExprCtx) -> ExprConvertResult {
         ctx,
         |expr| match expr.kind {
             ExpressionKind::List(_) | ExpressionKind::Literal(_) => Ok(expr),
-            _ => Err(ExpressionError {
-                ctx: expr.ctx,
-                kind: ExpressionErrorKind::DatumInvalid(expr.kind),
-            }),
+            _ => Err(expr
+                .ctx
+                .into_error(ExpressionErrorKind::DatumInvalid(expr.kind))),
         },
         |items| ExpressionKind::List(items),
     )

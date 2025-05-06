@@ -339,56 +339,48 @@ mod tests {
 
         #[test]
         fn display_invalid_bytevector_item() {
-            let err = ExpressionError {
-                ctx: ExprCtx {
-                    span: 0..5,
-                    txt: make_textline().into(),
-                },
-                kind: ExpressionErrorKind::ByteVectorInvalidItem(ExpressionKind::Variable(
-                    "foobar".into(),
-                )),
-            };
+            let err = ExprCtx {
+                span: 0..5,
+                txt: make_textline().into(),
+            }
+            .into_error(ExpressionErrorKind::ByteVectorInvalidItem(
+                ExpressionKind::Variable("foobar".into()),
+            ));
 
             assert_eq!(err.to_string(), "expected byte literal, got: variable");
         }
 
         #[test]
         fn display_invalid_bytevector_number() {
-            let err = ExpressionError {
-                ctx: ExprCtx {
-                    span: 0..5,
-                    txt: make_textline().into(),
-                },
-                kind: ExpressionErrorKind::ByteVectorInvalidNumber(
-                    ByteConversionError::InvalidRange,
-                ),
-            };
+            let err = ExprCtx {
+                span: 0..5,
+                txt: make_textline().into(),
+            }
+            .into_error(ExpressionErrorKind::ByteVectorInvalidNumber(
+                ByteConversionError::InvalidRange,
+            ));
 
             assert_eq!(err.to_string(), "integer literal out of range: [0, 255]");
         }
 
         #[test]
         fn display_unterminated_bytevector() {
-            let err = ExpressionError {
-                ctx: ExprCtx {
-                    span: 0..5,
-                    txt: make_textline().into(),
-                },
-                kind: ExpressionErrorKind::ByteVectorUnterminated,
-            };
+            let err = ExprCtx {
+                span: 0..5,
+                txt: make_textline().into(),
+            }
+            .into_error(ExpressionErrorKind::ByteVectorUnterminated);
 
             assert_eq!(err.to_string(), "unterminated bytevector");
         }
 
         #[test]
         fn display_invalid_block_comment() {
-            let err = ExpressionError {
-                ctx: ExprCtx {
-                    span: 0..5,
-                    txt: make_textline().into(),
-                },
-                kind: ExpressionErrorKind::CommentBlockInvalid(TokenKind::Comment),
-            };
+            let err = ExprCtx {
+                span: 0..5,
+                txt: make_textline().into(),
+            }
+            .into_error(ExpressionErrorKind::CommentBlockInvalid(TokenKind::Comment));
 
             assert_eq!(
                 err.to_string(),
@@ -398,26 +390,22 @@ mod tests {
 
         #[test]
         fn display_unterminated_block_comment() {
-            let err = ExpressionError {
-                ctx: ExprCtx {
-                    span: 0..5,
-                    txt: make_textline().into(),
-                },
-                kind: ExpressionErrorKind::CommentBlockUnterminated,
-            };
+            let err = ExprCtx {
+                span: 0..5,
+                txt: make_textline().into(),
+            }
+            .into_error(ExpressionErrorKind::CommentBlockUnterminated);
 
             assert_eq!(err.to_string(), "unterminated block comment");
         }
 
         #[test]
         fn display_expected_datum() {
-            let err = ExpressionError {
-                ctx: ExprCtx {
-                    span: 0..5,
-                    txt: make_textline().into(),
-                },
-                kind: ExpressionErrorKind::DatumExpected,
-            };
+            let err = ExprCtx {
+                span: 0..5,
+                txt: make_textline().into(),
+            }
+            .into_error(ExpressionErrorKind::DatumExpected);
 
             assert_eq!(err.to_string(), "expected datum");
         }
@@ -425,36 +413,32 @@ mod tests {
         #[test]
         fn display_invalid_datum() {
             let txt = make_textline().into();
-            let err = ExpressionError {
-                ctx: ExprCtx {
-                    span: 0..5,
-                    txt: Rc::clone(&txt),
-                },
-                kind: ExpressionErrorKind::DatumInvalid(ExpressionKind::Call {
-                    proc: Expression::variable(
-                        "foo",
-                        ExprCtx {
-                            span: 0..1,
-                            txt: Rc::clone(&txt),
-                        },
-                    )
-                    .into(),
-                    args: [].into(),
-                }),
-            };
+            let err = ExprCtx {
+                span: 0..5,
+                txt: Rc::clone(&txt),
+            }
+            .into_error(ExpressionErrorKind::DatumInvalid(ExpressionKind::Call {
+                proc: Expression::variable(
+                    "foo",
+                    ExprCtx {
+                        span: 0..1,
+                        txt: Rc::clone(&txt),
+                    },
+                )
+                .into(),
+                args: [].into(),
+            }));
 
             assert_eq!(err.to_string(), "unexpected datum type: procedure call");
         }
 
         #[test]
         fn display_invalid_identifier() {
-            let err = ExpressionError {
-                ctx: ExprCtx {
-                    span: 0..5,
-                    txt: make_textline().into(),
-                },
-                kind: ExpressionErrorKind::IdentifierInvalid(TokenKind::Comment),
-            };
+            let err = ExprCtx {
+                span: 0..5,
+                txt: make_textline().into(),
+            }
+            .into_error(ExpressionErrorKind::IdentifierInvalid(TokenKind::Comment));
 
             assert_eq!(
                 err.to_string(),
@@ -467,39 +451,33 @@ mod tests {
 
         #[test]
         fn display_unterminated_identifier() {
-            let err = ExpressionError {
-                ctx: ExprCtx {
-                    span: 0..5,
-                    txt: make_textline().into(),
-                },
-                kind: ExpressionErrorKind::IdentifierUnterminated,
-            };
+            let err = ExprCtx {
+                span: 0..5,
+                txt: make_textline().into(),
+            }
+            .into_error(ExpressionErrorKind::IdentifierUnterminated);
 
             assert_eq!(err.to_string(), "unterminated verbatim identifier");
         }
 
         #[test]
         fn display_unterminated_list() {
-            let err = ExpressionError {
-                ctx: ExprCtx {
-                    span: 0..5,
-                    txt: make_textline().into(),
-                },
-                kind: ExpressionErrorKind::ListUnterminated,
-            };
+            let err = ExprCtx {
+                span: 0..5,
+                txt: make_textline().into(),
+            }
+            .into_error(ExpressionErrorKind::ListUnterminated);
 
             assert_eq!(err.to_string(), "unterminated list expression");
         }
 
         #[test]
         fn display_invalid_seq() {
-            let err = ExpressionError {
-                ctx: ExprCtx {
-                    span: 0..5,
-                    txt: make_textline().into(),
-                },
-                kind: ExpressionErrorKind::SeqInvalid(TokenKind::Comment),
-            };
+            let err = ExprCtx {
+                span: 0..5,
+                txt: make_textline().into(),
+            }
+            .into_error(ExpressionErrorKind::SeqInvalid(TokenKind::Comment));
 
             assert_eq!(
                 err.to_string(),
@@ -509,13 +487,11 @@ mod tests {
 
         #[test]
         fn display_invalid_str() {
-            let err = ExpressionError {
-                ctx: ExprCtx {
-                    span: 0..5,
-                    txt: make_textline().into(),
-                },
-                kind: ExpressionErrorKind::StrInvalid(TokenKind::Comment),
-            };
+            let err = ExprCtx {
+                span: 0..5,
+                txt: make_textline().into(),
+            }
+            .into_error(ExpressionErrorKind::StrInvalid(TokenKind::Comment));
 
             assert_eq!(
                 err.to_string(),
@@ -525,26 +501,22 @@ mod tests {
 
         #[test]
         fn display_unterminated_str() {
-            let err = ExpressionError {
-                ctx: ExprCtx {
-                    span: 0..5,
-                    txt: make_textline().into(),
-                },
-                kind: ExpressionErrorKind::StrUnterminated,
-            };
+            let err = ExprCtx {
+                span: 0..5,
+                txt: make_textline().into(),
+            }
+            .into_error(ExpressionErrorKind::StrUnterminated);
 
             assert_eq!(err.to_string(), "unterminated string constant");
         }
 
         #[test]
         fn display_unimplemented() {
-            let err = ExpressionError {
-                ctx: ExprCtx {
-                    span: 0..5,
-                    txt: make_textline().into(),
-                },
-                kind: ExpressionErrorKind::Unimplemented(TokenKind::Comment),
-            };
+            let err = ExprCtx {
+                span: 0..5,
+                txt: make_textline().into(),
+            }
+            .into_error(ExpressionErrorKind::Unimplemented(TokenKind::Comment));
 
             assert_eq!(
                 err.to_string(),
@@ -554,15 +526,13 @@ mod tests {
 
         #[test]
         fn byte_invalid_source() {
-            let err = ExpressionError {
-                ctx: ExprCtx {
-                    span: 0..5,
-                    txt: make_textline().into(),
-                },
-                kind: ExpressionErrorKind::ByteVectorInvalidNumber(
-                    ByteConversionError::InvalidRange,
-                ),
-            };
+            let err = ExprCtx {
+                span: 0..5,
+                txt: make_textline().into(),
+            }
+            .into_error(ExpressionErrorKind::ByteVectorInvalidNumber(
+                ByteConversionError::InvalidRange,
+            ));
 
             let inner = some_or_fail!(err.source());
 
@@ -574,13 +544,11 @@ mod tests {
 
         #[test]
         fn other_source() {
-            let err = ExpressionError {
-                ctx: ExprCtx {
-                    span: 0..5,
-                    txt: make_textline().into(),
-                },
-                kind: ExpressionErrorKind::StrUnterminated,
-            };
+            let err = ExprCtx {
+                span: 0..5,
+                txt: make_textline().into(),
+            }
+            .into_error(ExpressionErrorKind::StrUnterminated);
 
             let inner = err.source();
 
@@ -605,13 +573,11 @@ mod tests {
         #[test]
         fn single() {
             let txt = make_textline().into();
-            let errs = [ExpressionError {
-                ctx: ExprCtx {
-                    span: 0..5,
-                    txt: Rc::clone(&txt),
-                },
-                kind: ExpressionErrorKind::StrUnterminated,
-            }];
+            let errs = [ExprCtx {
+                span: 0..5,
+                txt: Rc::clone(&txt),
+            }
+            .into_error(ExpressionErrorKind::StrUnterminated)];
 
             let groups: Vec<_> = errs.iter().peekable().groupby_txt().collect();
 
@@ -626,27 +592,21 @@ mod tests {
         fn one_group() {
             let txt = make_textline().into();
             let errs = [
-                ExpressionError {
-                    ctx: ExprCtx {
-                        span: 0..5,
-                        txt: Rc::clone(&txt),
-                    },
-                    kind: ExpressionErrorKind::StrUnterminated,
-                },
-                ExpressionError {
-                    ctx: ExprCtx {
-                        span: 5..7,
-                        txt: Rc::clone(&txt),
-                    },
-                    kind: ExpressionErrorKind::ListUnterminated,
-                },
-                ExpressionError {
-                    ctx: ExprCtx {
-                        span: 7..10,
-                        txt: Rc::clone(&txt),
-                    },
-                    kind: ExpressionErrorKind::CommentBlockUnterminated,
-                },
+                ExprCtx {
+                    span: 0..5,
+                    txt: Rc::clone(&txt),
+                }
+                .into_error(ExpressionErrorKind::StrUnterminated),
+                ExprCtx {
+                    span: 5..7,
+                    txt: Rc::clone(&txt),
+                }
+                .into_error(ExpressionErrorKind::ListUnterminated),
+                ExprCtx {
+                    span: 7..10,
+                    txt: Rc::clone(&txt),
+                }
+                .into_error(ExpressionErrorKind::CommentBlockUnterminated),
             ];
 
             let groups: Vec<_> = errs.iter().peekable().groupby_txt().collect();
@@ -665,27 +625,21 @@ mod tests {
             let txt1 = make_textline_no(1).into();
             let txt2 = make_textline_no(2).into();
             let errs = [
-                ExpressionError {
-                    ctx: ExprCtx {
-                        span: 0..5,
-                        txt: Rc::clone(&txt1),
-                    },
-                    kind: ExpressionErrorKind::StrUnterminated,
-                },
-                ExpressionError {
-                    ctx: ExprCtx {
-                        span: 5..7,
-                        txt: Rc::clone(&txt1),
-                    },
-                    kind: ExpressionErrorKind::ListUnterminated,
-                },
-                ExpressionError {
-                    ctx: ExprCtx {
-                        span: 0..3,
-                        txt: Rc::clone(&txt2),
-                    },
-                    kind: ExpressionErrorKind::CommentBlockUnterminated,
-                },
+                ExprCtx {
+                    span: 0..5,
+                    txt: Rc::clone(&txt1),
+                }
+                .into_error(ExpressionErrorKind::StrUnterminated),
+                ExprCtx {
+                    span: 5..7,
+                    txt: Rc::clone(&txt1),
+                }
+                .into_error(ExpressionErrorKind::ListUnterminated),
+                ExprCtx {
+                    span: 0..3,
+                    txt: Rc::clone(&txt2),
+                }
+                .into_error(ExpressionErrorKind::CommentBlockUnterminated),
             ];
 
             let groups: Vec<_> = errs.iter().peekable().groupby_txt().collect();
@@ -709,27 +663,21 @@ mod tests {
             let txt1 = make_textline_no(1).into();
             let txt2 = make_textline_no(2).into();
             let errs = [
-                ExpressionError {
-                    ctx: ExprCtx {
-                        span: 0..5,
-                        txt: Rc::clone(&txt1),
-                    },
-                    kind: ExpressionErrorKind::StrUnterminated,
-                },
-                ExpressionError {
-                    ctx: ExprCtx {
-                        span: 0..3,
-                        txt: Rc::clone(&txt2),
-                    },
-                    kind: ExpressionErrorKind::CommentBlockUnterminated,
-                },
-                ExpressionError {
-                    ctx: ExprCtx {
-                        span: 5..7,
-                        txt: Rc::clone(&txt1),
-                    },
-                    kind: ExpressionErrorKind::ListUnterminated,
-                },
+                ExprCtx {
+                    span: 0..5,
+                    txt: Rc::clone(&txt1),
+                }
+                .into_error(ExpressionErrorKind::StrUnterminated),
+                ExprCtx {
+                    span: 0..3,
+                    txt: Rc::clone(&txt2),
+                }
+                .into_error(ExpressionErrorKind::CommentBlockUnterminated),
+                ExprCtx {
+                    span: 5..7,
+                    txt: Rc::clone(&txt1),
+                }
+                .into_error(ExpressionErrorKind::ListUnterminated),
             ];
 
             let groups: Vec<_> = errs.iter().peekable().groupby_txt().collect();

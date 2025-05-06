@@ -928,13 +928,13 @@ mod tests {
 
         #[test]
         fn display_syntax_message() {
-            let err = ParserError::Syntax(SyntaxError(vec![ExpressionError {
-                ctx: ExprCtx {
+            let err = ParserError::Syntax(SyntaxError(vec![
+                ExprCtx {
                     span: 0..3,
                     txt: make_textline().into(),
-                },
-                kind: ExpressionErrorKind::ListUnterminated,
-            }]));
+                }
+                .into_error(ExpressionErrorKind::ListUnterminated),
+            ]));
 
             assert_eq!(
                 err.display_message().to_string(),
