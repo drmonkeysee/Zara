@@ -519,7 +519,7 @@ mod tests {
             assert!(matches!(
                 &seq[0],
                 Expression {
-                    ctx: ExprCtx { span: Range { start: 0, end: 8 }, txt },
+                    ctx: ExprCtx { span: Range { start: 1, end: 3 }, txt },
                     kind: ExpressionKind::List(_),
                 } if txt.lineno == 1
             ));
@@ -528,14 +528,14 @@ mod tests {
             assert!(matches!(
                 &inner_list[0],
                 Expression {
-                    ctx: ExprCtx { span: Range { start: 0, end: 8 }, txt },
+                    ctx: ExprCtx { span: Range { start: 1, end: 3 }, txt },
                     kind: ExpressionKind::Literal(Value::Symbol(s)),
                 } if txt.lineno == 1 && &**s == "quote"
             ));
             assert!(matches!(
-                &inner_list[0],
+                &inner_list[1],
                 Expression {
-                    ctx: ExprCtx { span: Range { start: 0, end: 8 }, txt },
+                    ctx: ExprCtx { span: Range { start: 2, end: 3 }, txt },
                     kind: ExpressionKind::Literal(Value::Symbol(s)),
                 } if txt.lineno == 1 && &**s == "a"
             ));
