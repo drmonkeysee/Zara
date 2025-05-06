@@ -41,7 +41,7 @@ pub(super) struct ExpressionType<T> {
     pub(super) kind: T,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub(super) struct ExprCtx {
     pub(super) span: Range<usize>,
     pub(super) txt: Rc<TextLine>,

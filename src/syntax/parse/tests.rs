@@ -366,7 +366,10 @@ mod expr {
         assert!(matches!(
             f,
             ExprFlow::Break(ParseBreak::New(ParseNew {
-                mode: ParseMode::Quote(None),
+                mode: ParseMode::Quote {
+                    datum: false,
+                    inner: None
+                },
                 start: 1
             }))
         ));
@@ -385,21 +388,12 @@ mod expr {
         assert!(matches!(
             f,
             ExprFlow::Break(ParseBreak::New(ParseNew {
-                mode: ParseMode::List { datum: true, .. },
+                mode: ParseMode::Quote {
+                    datum: true,
+                    inner: None
+                },
                 start: 1
             }))
-        ));
-        let mode = extract_or_fail!(extract_or_fail!(f, ExprFlow::Break), ParseBreak::New).mode;
-        let ParseMode::List { seq, .. } = mode else {
-            unreachable!();
-        };
-        assert_eq!(seq.len(), 1);
-        assert!(matches!(
-            &seq[0],
-            Expression {
-                ctx: ExprCtx { span: Range { start: 1, end: 2 }, txt: line },
-                kind: ExpressionKind::Literal(Value::Symbol(s)),
-            } if Rc::ptr_eq(&txt, &line) && &**s == "quote"
         ));
     }
 }
@@ -1705,13 +1699,16 @@ mod quote {
                 span: 0..1,
                 txt: Rc::clone(&txt),
             },
-            mode: ParseMode::Quote(Some(Expression::constant(
-                Constant::Boolean(true),
-                ExprCtx {
-                    span: 2..4,
-                    txt: Rc::clone(&txt),
-                },
-            ))),
+            mode: ParseMode::Quote {
+                datum: false,
+                inner: Some(Expression::constant(
+                    Constant::Boolean(true),
+                    ExprCtx {
+                        span: 2..4,
+                        txt: Rc::clone(&txt),
+                    },
+                )),
+            },
         };
 
         let r: Result<Option<Expression>, _> = p.try_into();
@@ -1737,13 +1734,16 @@ mod quote {
                 span: 0..1,
                 txt: Rc::clone(&txt),
             },
-            mode: ParseMode::Quote(Some(Expression::symbol(
-                "foo",
-                ExprCtx {
-                    span: 2..5,
-                    txt: Rc::clone(&txt),
-                },
-            ))),
+            mode: ParseMode::Quote {
+                datum: false,
+                inner: Some(Expression::symbol(
+                    "foo",
+                    ExprCtx {
+                        span: 2..5,
+                        txt: Rc::clone(&txt),
+                    },
+                )),
+            },
         };
 
         let r: Result<Option<Expression>, _> = p.try_into();
@@ -1769,56 +1769,59 @@ mod quote {
                 span: 0..1,
                 txt: Rc::clone(&txt),
             },
-            mode: ParseMode::Quote(Some(Expression {
-                ctx: ExprCtx {
-                    span: 3..13,
-                    txt: Rc::clone(&txt),
-                },
-                kind: ExpressionKind::List(
-                    [
-                        Expression::constant(
-                            Constant::Boolean(true),
-                            ExprCtx {
-                                span: 4..6,
-                                txt: Rc::clone(&txt),
-                            },
-                        ),
-                        Expression::symbol(
-                            "foo",
-                            ExprCtx {
-                                span: 6..9,
-                                txt: Rc::clone(&txt),
-                            },
-                        ),
-                        Expression {
-                            ctx: ExprCtx {
-                                span: 9..13,
-                                txt: Rc::clone(&txt),
-                            },
-                            kind: ExpressionKind::List(
-                                [
-                                    Expression::constant(
-                                        Constant::Number(Number::real(4)),
-                                        ExprCtx {
-                                            span: 10..11,
-                                            txt: Rc::clone(&txt),
-                                        },
-                                    ),
-                                    Expression::constant(
-                                        Constant::Number(Number::real(5)),
-                                        ExprCtx {
-                                            span: 11..12,
-                                            txt: Rc::clone(&txt),
-                                        },
-                                    ),
-                                ]
-                                .into(),
+            mode: ParseMode::Quote {
+                datum: false,
+                inner: Some(Expression {
+                    ctx: ExprCtx {
+                        span: 3..13,
+                        txt: Rc::clone(&txt),
+                    },
+                    kind: ExpressionKind::List(
+                        [
+                            Expression::constant(
+                                Constant::Boolean(true),
+                                ExprCtx {
+                                    span: 4..6,
+                                    txt: Rc::clone(&txt),
+                                },
                             ),
-                        },
-                    ]
-                    .into(),
-                ),
-            })),
+                            Expression::symbol(
+                                "foo",
+                                ExprCtx {
+                                    span: 6..9,
+                                    txt: Rc::clone(&txt),
+                                },
+                            ),
+                            Expression {
+                                ctx: ExprCtx {
+                                    span: 9..13,
+                                    txt: Rc::clone(&txt),
+                                },
+                                kind: ExpressionKind::List(
+                                    [
+                                        Expression::constant(
+                                            Constant::Number(Number::real(4)),
+                                            ExprCtx {
+                                                span: 10..11,
+                                                txt: Rc::clone(&txt),
+                                            },
+                                        ),
+                                        Expression::constant(
+                                            Constant::Number(Number::real(5)),
+                                            ExprCtx {
+                                                span: 11..12,
+                                                txt: Rc::clone(&txt),
+                                            },
+                                        ),
+                                    ]
+                                    .into(),
+                                ),
+                            },
+                        ]
+                        .into(),
+                    ),
+                }),
+            },
         };
 
         let r: Result<Option<Expression>, _> = p.try_into();
@@ -1898,13 +1901,16 @@ mod quote {
                 span: 0..1,
                 txt: Rc::clone(&txt),
             },
-            mode: ParseMode::Quote(Some(Expression {
-                ctx: ExprCtx {
-                    span: 3..13,
-                    txt: Rc::clone(&txt),
-                },
-                kind: ExpressionKind::List([].into()),
-            })),
+            mode: ParseMode::Quote {
+                datum: false,
+                inner: Some(Expression {
+                    ctx: ExprCtx {
+                        span: 3..13,
+                        txt: Rc::clone(&txt),
+                    },
+                    kind: ExpressionKind::List([].into()),
+                }),
+            },
         };
 
         let r: Result<Option<Expression>, _> = p.try_into();
@@ -1923,6 +1929,63 @@ mod quote {
     }
 
     #[test]
+    fn quoted_constant_into_expr() {
+        let txt = make_textline().into();
+        let p = ExprNode {
+            ctx: ExprCtx {
+                span: 1..2,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::Quote {
+                datum: true,
+                inner: Some(Expression::constant(
+                    Constant::Boolean(true),
+                    ExprCtx {
+                        span: 2..4,
+                        txt: Rc::clone(&txt),
+                    },
+                )),
+            },
+        };
+
+        let r: Result<Option<Expression>, _> = p.try_into();
+
+        let expr = some_or_fail!(ok_or_fail!(r));
+        assert!(matches!(
+            expr,
+            Expression {
+                ctx: ExprCtx {
+                    span: Range { start: 1, end: 2 },
+                    txt: line,
+                },
+                kind: ExpressionKind::List(_),
+            } if Rc::ptr_eq(&txt, &line)
+        ));
+        let seq = extract_or_fail!(expr.kind, ExpressionKind::List);
+        assert_eq!(seq.len(), 2);
+        assert!(matches!(
+            &seq[0],
+            Expression {
+                ctx: ExprCtx {
+                    span: Range { start: 1, end: 2 },
+                    txt: line,
+                },
+                kind: ExpressionKind::Literal(Value::Symbol(s)),
+            } if Rc::ptr_eq(&txt, &line) && &**s == "quote"
+        ));
+        assert!(matches!(
+            &seq[1],
+            Expression {
+                ctx: ExprCtx {
+                    span: Range { start: 2, end: 4 },
+                    txt: line,
+                },
+                kind: ExpressionKind::Literal(Value::Constant(Constant::Boolean(true))),
+            } if Rc::ptr_eq(&txt, &line)
+        ));
+    }
+
+    #[test]
     fn invalid_into_expr() {
         let txt = make_textline().into();
         let p = ExprNode {
@@ -1930,30 +1993,33 @@ mod quote {
                 span: 0..2,
                 txt: Rc::clone(&txt),
             },
-            mode: ParseMode::Quote(Some(Expression {
-                ctx: ExprCtx {
-                    span: 3..10,
-                    txt: Rc::clone(&txt),
-                },
-                kind: ExpressionKind::Call {
-                    proc: Expression::variable(
-                        "foo",
-                        ExprCtx {
-                            span: 4..7,
-                            txt: Rc::clone(&txt),
-                        },
-                    )
-                    .into(),
-                    args: [Expression::constant(
-                        Constant::Boolean(true),
-                        ExprCtx {
-                            span: 7..9,
-                            txt: Rc::clone(&txt),
-                        },
-                    )]
-                    .into(),
-                },
-            })),
+            mode: ParseMode::Quote {
+                datum: false,
+                inner: Some(Expression {
+                    ctx: ExprCtx {
+                        span: 3..10,
+                        txt: Rc::clone(&txt),
+                    },
+                    kind: ExpressionKind::Call {
+                        proc: Expression::variable(
+                            "foo",
+                            ExprCtx {
+                                span: 4..7,
+                                txt: Rc::clone(&txt),
+                            },
+                        )
+                        .into(),
+                        args: [Expression::constant(
+                            Constant::Boolean(true),
+                            ExprCtx {
+                                span: 7..9,
+                                txt: Rc::clone(&txt),
+                            },
+                        )]
+                        .into(),
+                    },
+                }),
+            },
         };
 
         let r: Result<Option<Expression>, _> = p.try_into();
@@ -1977,13 +2043,16 @@ mod quote {
                 span: 0..1,
                 txt: Rc::clone(&txt),
             },
-            mode: ParseMode::Quote(Some(Expression::variable(
-                "foo",
-                ExprCtx {
-                    span: 2..5,
-                    txt: Rc::clone(&txt),
-                },
-            ))),
+            mode: ParseMode::Quote {
+                datum: false,
+                inner: Some(Expression::variable(
+                    "foo",
+                    ExprCtx {
+                        span: 2..5,
+                        txt: Rc::clone(&txt),
+                    },
+                )),
+            },
         };
 
         let r: Result<Option<Expression>, _> = p.try_into();
@@ -2007,7 +2076,10 @@ mod quote {
                 span: 0..2,
                 txt: Rc::clone(&txt),
             },
-            mode: ParseMode::Quote(None),
+            mode: ParseMode::Quote {
+                datum: false,
+                inner: None,
+            },
         };
 
         let r: Result<Option<Expression>, _> = p.try_into();
@@ -2327,7 +2399,10 @@ mod merge {
                 span: 0..3,
                 txt: Rc::clone(&txt),
             },
-            mode: ParseMode::Quote(None),
+            mode: ParseMode::Quote {
+                datum: false,
+                inner: None,
+            },
         };
         let other = ExprNode {
             ctx: ExprCtx {
@@ -2343,7 +2418,12 @@ mod merge {
         let r = p.merge(other);
 
         assert!(matches!(r, Ok(MergeFlow::Break(()))));
-        let inner = some_or_fail!(extract_or_fail!(p.mode, ParseMode::Quote));
+        let ParseMode::Quote {
+            inner: Some(inner), ..
+        } = p.mode
+        else {
+            unreachable!();
+        };
         assert!(matches!(
             inner,
             Expression {
@@ -2364,7 +2444,10 @@ mod merge {
                 span: 0..3,
                 txt: Rc::clone(&txt),
             },
-            mode: ParseMode::Quote(None),
+            mode: ParseMode::Quote {
+                datum: false,
+                inner: None,
+            },
         };
         let other = ExprNode {
             ctx: ExprCtx {
@@ -2386,7 +2469,12 @@ mod merge {
         let r = p.merge(other);
 
         assert!(matches!(r, Ok(MergeFlow::Break(()))));
-        let inner = some_or_fail!(extract_or_fail!(p.mode, ParseMode::Quote));
+        let ParseMode::Quote {
+            inner: Some(inner), ..
+        } = p.mode
+        else {
+            unreachable!();
+        };
         assert!(matches!(
             inner,
             Expression {
@@ -2419,7 +2507,10 @@ mod merge {
                 span: 0..3,
                 txt: Rc::clone(&txt),
             },
-            mode: ParseMode::Quote(None),
+            mode: ParseMode::Quote {
+                datum: false,
+                inner: None,
+            },
         };
         let other = ExprNode {
             ctx: ExprCtx {
@@ -2435,7 +2526,12 @@ mod merge {
         let r = p.merge(other);
 
         assert!(matches!(r, Ok(MergeFlow::Break(()))));
-        let inner = some_or_fail!(extract_or_fail!(p.mode, ParseMode::Quote));
+        let ParseMode::Quote {
+            inner: Some(inner), ..
+        } = p.mode
+        else {
+            unreachable!();
+        };
         assert!(matches!(
             inner,
             Expression {
@@ -2736,7 +2832,14 @@ mod nodeutil {
 
     #[test]
     fn quote_continuation() {
-        let p = ParseNode::new(ParseMode::Quote(None), 3, make_textline());
+        let p = ParseNode::new(
+            ParseMode::Quote {
+                datum: false,
+                inner: None,
+            },
+            3,
+            make_textline(),
+        );
 
         let o = p.into_continuation_unsupported();
 

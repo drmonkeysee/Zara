@@ -112,7 +112,7 @@ impl ExprNode {
         match &mut self.mode {
             ParseMode::ByteVector(seq) => parse_list(seq, token, txt, true),
             ParseMode::CommentBlock => parse_comment_block(token, txt),
-            ParseMode::CommentDatum(inner) | ParseMode::Quote(inner) => {
+            ParseMode::CommentDatum(inner) | ParseMode::Quote { inner, .. } => {
                 parse_datum(inner, token, txt, &self.ctx)
             }
             ParseMode::Identifier { label, .. } => parse_verbatim_identifier(label, token, txt),
@@ -127,10 +127,12 @@ impl ExprNode {
                 seq.push(expr);
                 MergeFlow::Continue(())
             }),
-            ParseMode::CommentDatum(inner) | ParseMode::Quote(inner) => other.merge_into(|expr| {
-                inner.replace(expr);
-                MergeFlow::Break(())
-            }),
+            ParseMode::CommentDatum(inner) | ParseMode::Quote { inner, .. } => {
+                other.merge_into(|expr| {
+                    inner.replace(expr);
+                    MergeFlow::Break(())
+                })
+            }
             _ => Err(ParserError::Invalid(InvalidParseError::InvalidExprTarget)),
         }
     }
@@ -139,7 +141,9 @@ impl ExprNode {
         self.ctx.into_error(match self.mode {
             ParseMode::ByteVector(_) => ExpressionErrorKind::ByteVectorUnterminated,
             ParseMode::CommentBlock => ExpressionErrorKind::CommentBlockUnterminated,
-            ParseMode::CommentDatum(_) | ParseMode::Quote(_) => ExpressionErrorKind::DatumExpected,
+            ParseMode::CommentDatum(_) | ParseMode::Quote { .. } => {
+                ExpressionErrorKind::DatumExpected
+            }
             ParseMode::Identifier { .. } => ExpressionErrorKind::IdentifierUnterminated,
             ParseMode::List { .. } => ExpressionErrorKind::ListUnterminated,
             ParseMode::StringLiteral(_) => ExpressionErrorKind::StrUnterminated,
@@ -165,7 +169,7 @@ impl TryFrom<ExprNode> for Option<Expression> {
             }
             ParseMode::List { datum: false, seq } => Ok(Some(into_syntactic_form(seq, value.ctx))),
             ParseMode::List { datum: true, seq } => into_list(seq, value.ctx),
-            ParseMode::Quote(inner) => into_datum(inner, value.ctx),
+            ParseMode::Quote { datum, inner } => into_datum(inner, value.ctx, datum),
             ParseMode::StringLiteral(s) => Ok(Some(Expression::constant(
                 Constant::String(s.into()),
                 value.ctx,
@@ -240,9 +244,18 @@ enum ParseMode {
     ByteVector(Vec<Expression>),
     CommentBlock,
     CommentDatum(Option<Expression>),
-    Identifier { datum: bool, label: String },
-    List { datum: bool, seq: Vec<Expression> },
-    Quote(Option<Expression>),
+    Identifier {
+        datum: bool,
+        label: String,
+    },
+    List {
+        datum: bool,
+        seq: Vec<Expression>,
+    },
+    Quote {
+        datum: bool,
+        inner: Option<Expression>,
+    },
     StringLiteral(String),
 }
 
@@ -356,24 +369,10 @@ fn parse_expr(token: Token, txt: &Rc<TextLine>, datum: bool) -> ExprFlow {
             },
             token.span.start,
         )),
-        TokenKind::Quote => {
-            let start = token.span.start;
-            let mode = if datum {
-                ParseMode::List {
-                    datum: true,
-                    seq: vec![Expression::symbol(
-                        "quote",
-                        ExprCtx {
-                            span: token.span,
-                            txt: Rc::clone(txt),
-                        },
-                    )],
-                }
-            } else {
-                ParseMode::Quote(None)
-            };
-            ExprFlow::Break(ParseBreak::new(mode, start))
-        }
+        TokenKind::Quote => ExprFlow::Break(ParseBreak::new(
+            ParseMode::Quote { datum, inner: None },
+            token.span.start,
+        )),
         TokenKind::StringBegin { s, line_cont } => ExprFlow::Break(ParseBreak::new(
             ParseMode::string(s, !line_cont),
             token.span.start,
@@ -497,11 +496,18 @@ fn into_comment_datum(inner: Option<&Expression>, ctx: ExprCtx) -> ExprConvertRe
     }
 }
 
-fn into_datum(inner: Option<Expression>, ctx: ExprCtx) -> ExprConvertResult {
+fn into_datum(inner: Option<Expression>, ctx: ExprCtx, datum: bool) -> ExprConvertResult {
     match inner {
         None => Err(vec![ctx.into_error(ExpressionErrorKind::DatumExpected)]),
         Some(expr) => match expr.kind {
-            ExpressionKind::List(_) | ExpressionKind::Literal(_) => Ok(Some(expr)),
+            ExpressionKind::List(_) | ExpressionKind::Literal(_) => Ok(Some(if datum {
+                Expression {
+                    ctx: ctx.clone(),
+                    kind: ExpressionKind::List([Expression::symbol("quote", ctx), expr].into()),
+                }
+            } else {
+                expr
+            })),
             _ => {
                 let mut expr_ctx = expr.ctx;
                 expr_ctx.span.start = ctx.span.start;
