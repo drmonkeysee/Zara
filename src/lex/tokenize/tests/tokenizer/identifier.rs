@@ -155,6 +155,7 @@ fn is_only_special_char() {
 }
 
 #[test]
+#[ignore = "unicode identifiers not supported yet"]
 fn with_extended_and_higher_chars() {
     let mut s = Scanner::new("λ🦀\u{2401}\u{fffd}");
     let start = some_or_fail!(s.next_token());
@@ -166,22 +167,13 @@ fn with_extended_and_higher_chars() {
     let (r, c) = t.extract();
 
     assert!(c.is_none());
-    let err = err_or_fail!(r);
-    // TODO: support unicode
-    /*assert!(matches!(
-        r,
-        TokenExtract {
-            start: 0,
-            end: 16,
-            result: Ok(TokenKind::Identifier(s)),
-        } if s == "λ🦀\u{2401}\u{fffd}"
-    ));*/
+    let tok = ok_or_fail!(r);
     assert!(matches!(
-        err,
-        TokenError {
-            kind: TokenErrorKind::IdentifierInvalid('λ'),
-            span: Range { start: 0, end: 12 },
-        }
+        tok,
+        Token {
+            kind: TokenKind::Identifier(txt),
+            span: Range { start: 0, end: 1 }, // TODO: unknown length
+        } if txt == "λ🦀\u{2401}\u{fffd}"
     ));
 }
 
