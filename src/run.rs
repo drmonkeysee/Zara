@@ -29,7 +29,7 @@ pub(crate) fn stdin(mode: RunMode) -> Result {
 fn run(mode: RunMode, src: &mut impl TextSource) -> Result {
     let mut runtime = Interpreter::new(mode);
     let mut result = runtime.run(src);
-    if matches!(result, Ok(Evaluation::Continuation)) {
+    if let Ok(Evaluation::Continuation) = result {
         result = runtime.unsupported_continuation().map_or(result, Err);
     }
     print_result(&result);

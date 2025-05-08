@@ -4188,7 +4188,7 @@ mod cartesian {
             assert!(c.is_none());
             let err = err_or_fail!(r);
             // NOTE: missing sign causes lexing to fail before determining complex condition
-            if matches!(i, 0 | 3) {
+            if let 0 | 3 = i {
                 assert!(matches!(
                     err,
                     TokenError {
@@ -5087,7 +5087,7 @@ mod polar {
 
             assert!(c.is_none());
             let err = err_or_fail!(r);
-            if matches!(i, 0 | 3) {
+            if let 0 | 3 = i {
                 assert!(matches!(
                     err,
                     TokenError {

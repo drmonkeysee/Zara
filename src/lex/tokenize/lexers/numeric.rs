@@ -274,7 +274,7 @@ impl<P: ClassifierProps> ConditionProcessor<'_, '_, P> {
         let mut real = Real::reduce(numerator, denominator)?;
         match cond {
             SubCondition::Complete => {
-                if matches!(self.props.get_exactness(), Some(Exactness::Inexact)) {
+                if let Some(Exactness::Inexact) = self.props.get_exactness() {
                     real = real.into_inexact();
                 }
                 Ok(real_to_token(real, false))
@@ -282,7 +282,7 @@ impl<P: ClassifierProps> ConditionProcessor<'_, '_, P> {
             SubCondition::Complex { kind, start } => self.scan_imaginary(real, kind, start),
             SubCondition::Imaginary => {
                 if self.props.has_sign() {
-                    if matches!(self.props.get_exactness(), Some(Exactness::Inexact)) {
+                    if let Some(Exactness::Inexact) = self.props.get_exactness() {
                         real = real.into_inexact();
                     }
                     Ok(real_to_token(real, true))

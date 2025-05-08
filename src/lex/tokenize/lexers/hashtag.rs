@@ -78,7 +78,7 @@ impl Hashtag<'_, '_> {
                     let rest = self.scanner.rest_of_token();
                     if rest.is_empty() {
                         Ok(TokenKind::Constant(Constant::Character(ch)))
-                    } else if matches!(ch, 'x' | 'X') {
+                    } else if let 'x' | 'X' = ch {
                         char_hex(rest)
                     } else {
                         char_name(ch, rest)

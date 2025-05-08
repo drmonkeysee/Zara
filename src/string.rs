@@ -83,16 +83,6 @@ impl<'a> SymbolConverter<'a> {
     fn into_string(self) -> (String, bool) {
         (self.to_string(), self.verbatim.get())
     }
-
-    fn write_char(&self, ch: char, f: &mut Formatter<'_>) -> fmt::Result {
-        match ch {
-            // NOTE: verbatim delimiter
-            '|' => f.write_str("\\|"),
-            // NOTE: unlike for string, " is not a delimiter and should not be escaped
-            '"' => f.write_char(ch),
-            _ => write_str_char(ch, f),
-        }
-    }
 }
 
 impl Display for SymbolConverter<'_> {
@@ -102,12 +92,12 @@ impl Display for SymbolConverter<'_> {
             if !identifier::is_initial(ch) {
                 self.verbatim.set(true);
             }
-            self.write_char(ch, f)?;
+            write_symbol_char(ch, f)?;
             for ch in chars {
                 if !identifier::is_standard(ch) {
                     self.verbatim.set(true);
                 }
-                self.write_char(ch, f)?;
+                write_symbol_char(ch, f)?;
             }
         } else {
             // NOTE: empty string
@@ -144,6 +134,16 @@ fn write_unnamed_char(ch: char, f: &mut Formatter) -> fmt::Result {
     match char_to_displayable(ch) {
         DisplayableChar::Char(ch) => f.write_char(ch),
         DisplayableChar::Hex(hex) => write!(f, "x{hex:x}"),
+    }
+}
+
+fn write_symbol_char(ch: char, f: &mut Formatter<'_>) -> fmt::Result {
+    match ch {
+        // NOTE: verbatim delimiter
+        '|' => f.write_str("\\|"),
+        // NOTE: unlike for string, " is not a delimiter and should not be escaped
+        '"' => f.write_char(ch),
+        _ => write_str_char(ch, f),
     }
 }
 

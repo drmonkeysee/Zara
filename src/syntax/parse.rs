@@ -249,7 +249,7 @@ impl ParseNew {
 type ExprFlow = ControlFlow<ParseBreak, Option<Expression>>;
 type ListFlow = ControlFlow<ParseBreak, Option<SyntacticForm>>;
 
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug)]
 enum SyntacticForm {
     Call,
     Datum,
@@ -264,7 +264,7 @@ impl SyntacticForm {
         }
     }
 
-    fn quoted(&self) -> bool {
+    fn quoted(self) -> bool {
         matches!(self, Self::Datum | Self::Quote)
     }
 }
@@ -325,7 +325,7 @@ fn parse_datum(
     txt: &Rc<TextLine>,
     node_ctx: &ExprCtx,
 ) -> ParseFlow {
-    if matches!(token.kind, TokenKind::ParenRight) {
+    if let TokenKind::ParenRight = token.kind {
         let ctx = ExprCtx {
             span: node_ctx.span.start..if txt.lineno == node_ctx.txt.lineno {
                 token.span.end
@@ -445,21 +445,20 @@ fn parse_list(
     txt: &Rc<TextLine>,
     quoted: bool,
 ) -> ListFlow {
-    match token.kind {
-        TokenKind::ParenRight => ListFlow::Break(ParseBreak::complete(txt.lineno, token.span.end)),
-        _ => {
-            let mut resolved_form = None;
-            if let Some(expr) = parse_expr(token, txt, quoted)? {
-                if !quoted && seq.is_empty() {
-                    if let ExpressionKind::Variable(lbl) = &expr.kind {
-                        // TODO: check for shadowed keywords here
-                        resolved_form = SyntacticForm::from_str(lbl);
-                    }
+    if let TokenKind::ParenRight = token.kind {
+        ListFlow::Break(ParseBreak::complete(txt.lineno, token.span.end))
+    } else {
+        let mut resolved_form = None;
+        if let Some(expr) = parse_expr(token, txt, quoted)? {
+            if !quoted && seq.is_empty() {
+                if let ExpressionKind::Variable(lbl) = &expr.kind {
+                    // TODO: check for shadowed keywords here
+                    resolved_form = SyntacticForm::from_str(lbl);
                 }
-                seq.push(expr);
-            };
-            ListFlow::Continue(resolved_form)
+            }
+            seq.push(expr);
         }
+        ListFlow::Continue(resolved_form)
     }
 }
 
@@ -598,7 +597,7 @@ fn into_list(seq: Vec<Expression>, ctx: ExprCtx) -> ExprConvertResult {
                 .ctx
                 .into_error(ExpressionErrorKind::DatumInvalid(expr.kind))),
         },
-        |items| ExpressionKind::List(items),
+        ExpressionKind::List,
     )
 }
 
