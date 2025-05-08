@@ -116,7 +116,7 @@ impl ExprNode {
                 parse_datum(inner, token, txt, &self.ctx)
             }
             ParseMode::Identifier { label, .. } => parse_verbatim_identifier(label, token, txt),
-            ParseMode::List { datum, seq } => parse_list(seq, token, txt, *datum),
+            ParseMode::List { quoted, seq } => parse_list(seq, token, txt, *quoted),
             ParseMode::StringLiteral(buf) => parse_str(buf, token, txt),
         }
     }
@@ -164,12 +164,12 @@ impl TryFrom<ExprNode> for Option<Expression> {
             ParseMode::ByteVector(seq) => into_bytevector(seq, value.ctx),
             ParseMode::CommentBlock => Ok(None),
             ParseMode::CommentDatum(inner) => into_comment_datum(inner.as_ref(), value.ctx),
-            ParseMode::Identifier { datum, label } => {
-                Ok(Some(label_to_expr(label, datum, value.ctx)))
+            ParseMode::Identifier { label, quoted } => {
+                Ok(Some(label_to_expr(label, quoted, value.ctx)))
             }
-            ParseMode::List { datum: false, seq } => Ok(Some(into_syntactic_form(seq, value.ctx))),
-            ParseMode::List { datum: true, seq } => into_list(seq, value.ctx),
-            ParseMode::Quote { datum, inner } => into_datum(inner, value.ctx, datum),
+            ParseMode::List { quoted: false, seq } => Ok(Some(into_syntactic_form(seq, value.ctx))),
+            ParseMode::List { quoted: true, seq } => into_list(seq, value.ctx),
+            ParseMode::Quote { inner, quoted } => into_datum(inner, value.ctx, quoted),
             ParseMode::StringLiteral(s) => Ok(Some(Expression::constant(
                 Constant::String(s.into()),
                 value.ctx,
@@ -245,24 +245,24 @@ enum ParseMode {
     CommentBlock,
     CommentDatum(Option<Expression>),
     Identifier {
-        datum: bool,
         label: String,
+        quoted: bool,
     },
     List {
-        datum: bool,
+        quoted: bool,
         seq: Vec<Expression>,
     },
     Quote {
-        datum: bool,
         inner: Option<Expression>,
+        quoted: bool,
     },
     StringLiteral(String),
 }
 
 impl ParseMode {
-    fn identifier(mut label: String, datum: bool) -> Self {
+    fn identifier(mut label: String, quoted: bool) -> Self {
         label.push('\n');
-        Self::Identifier { datum, label }
+        Self::Identifier { label, quoted }
     }
 
     fn string(mut s: String, newline: bool) -> Self {
@@ -322,7 +322,7 @@ fn parse_datum(
     }
 }
 
-fn parse_expr(token: Token, txt: &Rc<TextLine>, datum: bool) -> ExprFlow {
+fn parse_expr(token: Token, txt: &Rc<TextLine>, quoted: bool) -> ExprFlow {
     match token.kind {
         TokenKind::ByteVector => ExprFlow::Break(ParseBreak::new(
             ParseMode::ByteVector(Vec::new()),
@@ -352,25 +352,28 @@ fn parse_expr(token: Token, txt: &Rc<TextLine>, datum: bool) -> ExprFlow {
         ))),
         TokenKind::Identifier(s) => ExprFlow::Continue(Some(label_to_expr(
             s,
-            datum,
+            quoted,
             ExprCtx {
                 span: token.span,
                 txt: Rc::clone(txt),
             },
         ))),
         TokenKind::IdentifierBegin(s) => ExprFlow::Break(ParseBreak::new(
-            ParseMode::identifier(s, datum),
+            ParseMode::identifier(s, quoted),
             token.span.start,
         )),
         TokenKind::ParenLeft => ExprFlow::Break(ParseBreak::new(
             ParseMode::List {
-                datum,
+                quoted,
                 seq: Vec::new(),
             },
             token.span.start,
         )),
         TokenKind::Quote => ExprFlow::Break(ParseBreak::new(
-            ParseMode::Quote { datum, inner: None },
+            ParseMode::Quote {
+                inner: None,
+                quoted,
+            },
             token.span.start,
         )),
         TokenKind::StringBegin { s, line_cont } => ExprFlow::Break(ParseBreak::new(
@@ -406,11 +409,11 @@ fn parse_list(
     seq: &mut Vec<Expression>,
     token: Token,
     txt: &Rc<TextLine>,
-    datum: bool,
+    quoted: bool,
 ) -> ParseFlow {
     match token.kind {
         TokenKind::ParenRight => ParseFlow::Break(ParseBreak::complete(txt.lineno, token.span.end)),
-        _ => parse_sequence(seq, token, txt, datum),
+        _ => parse_sequence(seq, token, txt, quoted),
     }
 }
 
@@ -418,9 +421,9 @@ fn parse_sequence(
     seq: &mut Vec<Expression>,
     token: Token,
     txt: &Rc<TextLine>,
-    datum: bool,
+    quoted: bool,
 ) -> ParseFlow {
-    if let Some(expr) = parse_expr(token, txt, datum)? {
+    if let Some(expr) = parse_expr(token, txt, quoted)? {
         seq.push(expr);
     }
     ParseFlow::Continue(())
@@ -496,11 +499,11 @@ fn into_comment_datum(inner: Option<&Expression>, ctx: ExprCtx) -> ExprConvertRe
     }
 }
 
-fn into_datum(inner: Option<Expression>, ctx: ExprCtx, datum: bool) -> ExprConvertResult {
+fn into_datum(inner: Option<Expression>, ctx: ExprCtx, quoted: bool) -> ExprConvertResult {
     match inner {
         None => Err(vec![ctx.into_error(ExpressionErrorKind::DatumExpected)]),
         Some(expr) => match expr.kind {
-            ExpressionKind::List(_) | ExpressionKind::Literal(_) => Ok(Some(if datum {
+            ExpressionKind::List(_) | ExpressionKind::Literal(_) => Ok(Some(if quoted {
                 ctx.clone().into_expr(ExpressionKind::List(
                     [Expression::symbol("quote", ctx), expr].into(),
                 ))
@@ -563,8 +566,8 @@ fn into_valid_sequence<T>(
     }
 }
 
-fn label_to_expr(label: String, datum: bool, ctx: ExprCtx) -> Expression {
-    if datum {
+fn label_to_expr(label: String, quoted: bool, ctx: ExprCtx) -> Expression {
+    if quoted {
         Expression::symbol(label, ctx)
     } else {
         Expression::variable(label, ctx)

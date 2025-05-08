@@ -264,7 +264,7 @@ mod expr {
             f,
             ExprFlow::Break(ParseBreak::New(
                 ParseNew {
-                    mode: ParseMode::Identifier { datum: false, label },
+                    mode: ParseMode::Identifier { label, quoted: false },
                     start: 3
                 }
             )) if label == "start\n"
@@ -285,7 +285,7 @@ mod expr {
             f,
             ExprFlow::Break(ParseBreak::New(
                 ParseNew {
-                    mode: ParseMode::Identifier { datum: true, label },
+                    mode: ParseMode::Identifier { label, quoted: true },
                     start: 3
                 }
             )) if label == "start\n"
@@ -306,7 +306,7 @@ mod expr {
             f,
             ExprFlow::Break(ParseBreak::New(
                 ParseNew {
-                    mode: ParseMode::List { datum: false, seq },
+                    mode: ParseMode::List { quoted: false, seq },
                     start: 1
                 }
             )) if seq.is_empty()
@@ -327,7 +327,7 @@ mod expr {
             f,
             ExprFlow::Break(ParseBreak::New(
                 ParseNew {
-                    mode: ParseMode::List { datum: true, seq },
+                    mode: ParseMode::List { quoted: true, seq },
                     start: 1
                 }
             )) if seq.is_empty()
@@ -367,8 +367,8 @@ mod expr {
             f,
             ExprFlow::Break(ParseBreak::New(ParseNew {
                 mode: ParseMode::Quote {
-                    datum: false,
-                    inner: None
+                    inner: None,
+                    quoted: false,
                 },
                 start: 1
             }))
@@ -389,8 +389,8 @@ mod expr {
             f,
             ExprFlow::Break(ParseBreak::New(ParseNew {
                 mode: ParseMode::Quote {
-                    datum: true,
-                    inner: None
+                    inner: None,
+                    quoted: true,
                 },
                 start: 1
             }))
@@ -448,7 +448,7 @@ mod datum {
         assert!(matches!(
             f,
             ParseFlow::Break(ParseBreak::New(ParseNew {
-                mode: ParseMode::List { datum: true, seq },
+                mode: ParseMode::List { quoted: true, seq },
                 start: 1
             })) if seq.is_empty(),
         ));
@@ -831,8 +831,8 @@ mod identifier {
                 txt: Rc::clone(&txt),
             },
             mode: ParseMode::Identifier {
-                datum: false,
                 label: "foo".to_owned(),
+                quoted: false,
             },
         };
 
@@ -857,8 +857,8 @@ mod identifier {
                 txt: Rc::clone(&txt),
             },
             mode: ParseMode::Identifier {
-                datum: true,
                 label: "foo".to_owned(),
+                quoted: true,
             },
         };
 
@@ -953,7 +953,7 @@ mod sequence {
             f,
             ParseFlow::Break(ParseBreak::New(
                 ParseNew {
-                    mode: ParseMode::List { datum: false, seq },
+                    mode: ParseMode::List { quoted: false, seq },
                     start: 1
                 }
             )) if seq.is_empty()
@@ -1065,7 +1065,7 @@ mod list {
         assert!(matches!(
             f,
             ParseFlow::Break(ParseBreak::New(ParseNew {
-                mode: ParseMode::List { datum: false, seq },
+                mode: ParseMode::List { quoted: false, seq },
                 start: 6
             })) if seq.is_empty()
         ));
@@ -1189,7 +1189,7 @@ mod list {
                 txt: Rc::clone(&txt),
             },
             mode: ParseMode::List {
-                datum: false,
+                quoted: false,
                 seq: vec![
                     Expression::variable(
                         "+",
@@ -1263,7 +1263,7 @@ mod list {
                 txt: Rc::clone(&txt),
             },
             mode: ParseMode::List {
-                datum: false,
+                quoted: false,
                 seq: vec![
                     Expression::variable(
                         "quote",
@@ -1304,7 +1304,7 @@ mod list {
                 txt: Rc::clone(&txt),
             },
             mode: ParseMode::List {
-                datum: true,
+                quoted: true,
                 seq: vec![
                     Expression::symbol(
                         "+",
@@ -1375,7 +1375,7 @@ mod list {
                 txt: Rc::clone(&txt),
             },
             mode: ParseMode::List {
-                datum: true,
+                quoted: true,
                 seq: Vec::new(),
             },
         };
@@ -1401,7 +1401,7 @@ mod list {
                 txt: Rc::clone(&txt),
             },
             mode: ParseMode::List {
-                datum: true,
+                quoted: true,
                 seq: vec![
                     Expression::variable(
                         "+",
@@ -1701,7 +1701,6 @@ mod quote {
                 txt: Rc::clone(&txt),
             },
             mode: ParseMode::Quote {
-                datum: false,
                 inner: Some(Expression::constant(
                     Constant::Boolean(true),
                     ExprCtx {
@@ -1709,6 +1708,7 @@ mod quote {
                         txt: Rc::clone(&txt),
                     },
                 )),
+                quoted: false,
             },
         };
 
@@ -1736,7 +1736,6 @@ mod quote {
                 txt: Rc::clone(&txt),
             },
             mode: ParseMode::Quote {
-                datum: false,
                 inner: Some(Expression::symbol(
                     "foo",
                     ExprCtx {
@@ -1744,6 +1743,7 @@ mod quote {
                         txt: Rc::clone(&txt),
                     },
                 )),
+                quoted: false,
             },
         };
 
@@ -1771,7 +1771,6 @@ mod quote {
                 txt: Rc::clone(&txt),
             },
             mode: ParseMode::Quote {
-                datum: false,
                 inner: Some(
                     ExprCtx {
                         span: 3..13,
@@ -1820,6 +1819,7 @@ mod quote {
                         .into(),
                     )),
                 ),
+                quoted: false,
             },
         };
 
@@ -1901,7 +1901,6 @@ mod quote {
                 txt: Rc::clone(&txt),
             },
             mode: ParseMode::Quote {
-                datum: false,
                 inner: Some(
                     ExprCtx {
                         span: 3..13,
@@ -1909,6 +1908,7 @@ mod quote {
                     }
                     .into_expr(ExpressionKind::List([].into())),
                 ),
+                quoted: false,
             },
         };
 
@@ -1936,7 +1936,6 @@ mod quote {
                 txt: Rc::clone(&txt),
             },
             mode: ParseMode::Quote {
-                datum: true,
                 inner: Some(Expression::constant(
                     Constant::Boolean(true),
                     ExprCtx {
@@ -1944,6 +1943,7 @@ mod quote {
                         txt: Rc::clone(&txt),
                     },
                 )),
+                quoted: true,
             },
         };
 
@@ -1993,7 +1993,6 @@ mod quote {
                 txt: Rc::clone(&txt),
             },
             mode: ParseMode::Quote {
-                datum: false,
                 inner: Some(
                     ExprCtx {
                         span: 3..10,
@@ -2018,6 +2017,7 @@ mod quote {
                         .into(),
                     }),
                 ),
+                quoted: false,
             },
         };
 
@@ -2043,7 +2043,6 @@ mod quote {
                 txt: Rc::clone(&txt),
             },
             mode: ParseMode::Quote {
-                datum: false,
                 inner: Some(Expression::variable(
                     "foo",
                     ExprCtx {
@@ -2051,6 +2050,7 @@ mod quote {
                         txt: Rc::clone(&txt),
                     },
                 )),
+                quoted: false,
             },
         };
 
@@ -2076,8 +2076,8 @@ mod quote {
                 txt: Rc::clone(&txt),
             },
             mode: ParseMode::Quote {
-                datum: false,
                 inner: None,
+                quoted: false,
             },
         };
 
@@ -2163,8 +2163,8 @@ mod merge {
                 txt: Rc::clone(&txt),
             },
             mode: ParseMode::Identifier {
-                datum: false,
                 label: "foo".to_owned(),
+                quoted: false,
             },
         };
 
@@ -2222,8 +2222,8 @@ mod merge {
                 txt: make_textline().into(),
             },
             mode: ParseMode::Identifier {
-                datum: false,
                 label: "foo".to_owned(),
+                quoted: false,
             },
         };
 
@@ -2248,8 +2248,8 @@ mod merge {
                 txt: Rc::clone(&txt),
             },
             mode: ParseMode::Identifier {
-                datum: false,
                 label: "foo".to_owned(),
+                quoted: false,
             },
         };
 
@@ -2277,8 +2277,8 @@ mod merge {
                 txt: Rc::clone(&txt),
             },
             mode: ParseMode::Identifier {
-                datum: true,
                 label: "foo".to_owned(),
+                quoted: true,
             },
         };
 
@@ -2314,7 +2314,7 @@ mod merge {
                 txt: Rc::clone(&txt),
             },
             mode: ParseMode::List {
-                datum: true,
+                quoted: true,
                 seq: vec![Expression::symbol(
                     "foo",
                     ExprCtx {
@@ -2369,7 +2369,7 @@ mod merge {
                 txt: Rc::clone(&txt),
             },
             mode: ParseMode::List {
-                datum: true,
+                quoted: true,
                 seq: Vec::new(),
             },
         };
@@ -2399,8 +2399,8 @@ mod merge {
                 txt: Rc::clone(&txt),
             },
             mode: ParseMode::Quote {
-                datum: false,
                 inner: None,
+                quoted: false,
             },
         };
         let other = ExprNode {
@@ -2409,8 +2409,8 @@ mod merge {
                 txt: Rc::clone(&txt),
             },
             mode: ParseMode::Identifier {
-                datum: true,
                 label: "foo".to_owned(),
+                quoted: true,
             },
         };
 
@@ -2444,8 +2444,8 @@ mod merge {
                 txt: Rc::clone(&txt),
             },
             mode: ParseMode::Quote {
-                datum: false,
                 inner: None,
+                quoted: false,
             },
         };
         let other = ExprNode {
@@ -2454,7 +2454,7 @@ mod merge {
                 txt: Rc::clone(&txt),
             },
             mode: ParseMode::List {
-                datum: true,
+                quoted: true,
                 seq: vec![Expression::symbol(
                     "foo",
                     ExprCtx {
@@ -2507,8 +2507,8 @@ mod merge {
                 txt: Rc::clone(&txt),
             },
             mode: ParseMode::Quote {
-                datum: false,
                 inner: None,
+                quoted: false,
             },
         };
         let other = ExprNode {
@@ -2517,7 +2517,7 @@ mod merge {
                 txt: Rc::clone(&txt),
             },
             mode: ParseMode::List {
-                datum: true,
+                quoted: true,
                 seq: Vec::new(),
             },
         };
@@ -2552,8 +2552,8 @@ mod merge {
                 txt: Rc::clone(&txt),
             },
             mode: ParseMode::Identifier {
-                datum: false,
                 label: "bar".to_owned(),
+                quoted: false,
             },
         };
         let other = ExprNode {
@@ -2562,8 +2562,8 @@ mod merge {
                 txt: Rc::clone(&txt),
             },
             mode: ParseMode::Identifier {
-                datum: false,
                 label: "foo".to_owned(),
+                quoted: false,
             },
         };
 
@@ -2591,8 +2591,8 @@ mod merge {
                 txt: Rc::clone(&txt),
             },
             mode: ParseMode::Identifier {
-                datum: false,
                 label: "foo".to_owned(),
+                quoted: false,
             },
         };
 
@@ -2626,8 +2626,8 @@ mod merge {
                 txt: Rc::clone(&txt),
             },
             mode: ParseMode::Identifier {
-                datum: true,
                 label: "foo".to_owned(),
+                quoted: true,
             },
         };
 
@@ -2657,7 +2657,7 @@ mod merge {
                 txt: Rc::clone(&txt),
             },
             mode: ParseMode::List {
-                datum: false,
+                quoted: false,
                 seq: vec![Expression::variable(
                     "+",
                     ExprCtx {
@@ -2678,7 +2678,7 @@ mod merge {
         let r = p.merge(other);
 
         assert!(matches!(r, Ok(MergeFlow::Continue(()))));
-        assert!(matches!(p.mode, ParseMode::List { datum: false, .. }));
+        assert!(matches!(p.mode, ParseMode::List { quoted: false, .. }));
         let ParseMode::List { seq, .. } = p.mode else {
             unreachable!();
         };
@@ -2764,8 +2764,8 @@ mod nodeutil {
     fn identifier_continuation() {
         let p = ParseNode::new(
             ParseMode::Identifier {
-                datum: false,
                 label: "myproc".to_owned(),
+                quoted: false,
             },
             3,
             make_textline(),
@@ -2788,7 +2788,7 @@ mod nodeutil {
         let txt = make_textline().into();
         let p = ParseNode::new(
             ParseMode::List {
-                datum: false,
+                quoted: false,
                 seq: vec![
                     Expression::variable(
                         "+",
@@ -2833,8 +2833,8 @@ mod nodeutil {
     fn quote_continuation() {
         let p = ParseNode::new(
             ParseMode::Quote {
-                datum: false,
                 inner: None,
+                quoted: false,
             },
             3,
             make_textline(),
