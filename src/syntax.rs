@@ -544,6 +544,226 @@ mod tests {
         }
 
         #[test]
+        #[ignore = "quasiquote quoting shortforms not implemented yet"]
+        fn quoting_all_the_shortforms() {
+            let mut et = ExpressionTree::default();
+            // NOTE: '`(a ,(+ 1 2) ,@(map abs '(-1 -2 -3)))
+            //  -> (quasiquote (a (unquote (+ 1 2)) (unquote-splicing (map abs (quote (-1 -2 -3))))))
+            let tokens = [make_tokenline([
+                TokenKind::Quote,
+                TokenKind::Quasiquote,
+                TokenKind::ParenLeft,
+                TokenKind::Identifier("a".to_owned()),
+                TokenKind::Unquote,
+                TokenKind::ParenLeft,
+                TokenKind::Identifier("+".to_owned()),
+                TokenKind::Constant(Constant::Number(Number::real(1))),
+                TokenKind::Constant(Constant::Number(Number::real(2))),
+                TokenKind::ParenRight,
+                TokenKind::UnquoteSplice,
+                TokenKind::ParenLeft,
+                TokenKind::Identifier("map".to_owned()),
+                TokenKind::Identifier("abs".to_owned()),
+                TokenKind::Quote,
+                TokenKind::ParenLeft,
+                TokenKind::Constant(Constant::Number(Number::real(-1))),
+                TokenKind::Constant(Constant::Number(Number::real(-2))),
+                TokenKind::Constant(Constant::Number(Number::real(-3))),
+                TokenKind::ParenRight,
+                TokenKind::ParenRight,
+                TokenKind::ParenRight,
+            ])];
+
+            let r = et.parse(tokens.into());
+
+            let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
+            let seq = prg.unwrap();
+            assert_eq!(seq.len(), 1);
+            assert!(matches!(
+                &seq[0],
+                Expression {
+                    ctx: ExprCtx { span: Range { start: 1, end: 3 }, txt },
+                    kind: ExpressionKind::List(_),
+                } if txt.lineno == 1
+            ));
+
+            // (quasiquote (a (unquote (+ 1 2)) (unquote-splicing (map abs (quote (-1 -2 -3))))))
+            let list_one = extract_or_fail!(&seq[0].kind, ExpressionKind::List);
+            assert_eq!(list_one.len(), 2);
+            assert!(matches!(
+                &list_one[0],
+                Expression {
+                    ctx: ExprCtx { span: Range { start: 1, end: 3 }, txt },
+                    kind: ExpressionKind::Literal(Value::Symbol(s)),
+                } if txt.lineno == 1 && &**s == "quasiquote"
+            ));
+            assert!(matches!(
+                &list_one[1],
+                Expression {
+                    ctx: ExprCtx { span: Range { start: 2, end: 3 }, txt },
+                    kind: ExpressionKind::List(_)
+                } if txt.lineno == 1
+            ));
+
+            // (a (unquote (+ 1 2)) (unquote-splicing (map abs (quote (-1 -2 -3)))))
+            let list_two = extract_or_fail!(&list_one[1].kind, ExpressionKind::List);
+            assert_eq!(list_two.len(), 3);
+            assert!(matches!(
+                &list_two[0],
+                Expression {
+                    ctx: ExprCtx { span: Range { start: 1, end: 3 }, txt },
+                    kind: ExpressionKind::Literal(Value::Symbol(s)),
+                } if txt.lineno == 1 && &**s == "a"
+            ));
+            assert!(matches!(
+                &list_two[1],
+                Expression {
+                    ctx: ExprCtx { span: Range { start: 2, end: 3 }, txt },
+                    kind: ExpressionKind::List(_)
+                } if txt.lineno == 1
+            ));
+            assert!(matches!(
+                &list_two[2],
+                Expression {
+                    ctx: ExprCtx { span: Range { start: 2, end: 3 }, txt },
+                    kind: ExpressionKind::List(_)
+                } if txt.lineno == 1
+            ));
+
+            // (unquote (+ 1 2))
+            let list_three = extract_or_fail!(&list_two[1].kind, ExpressionKind::List);
+            assert_eq!(list_three.len(), 2);
+            assert!(matches!(
+                &list_three[0],
+                Expression {
+                    ctx: ExprCtx { span: Range { start: 1, end: 3 }, txt },
+                    kind: ExpressionKind::Literal(Value::Symbol(s)),
+                } if txt.lineno == 1 && &**s == "unquote"
+            ));
+            assert!(matches!(
+                &list_three[1],
+                Expression {
+                    ctx: ExprCtx { span: Range { start: 2, end: 3 }, txt },
+                    kind: ExpressionKind::List(_)
+                } if txt.lineno == 1
+            ));
+
+            // (+ 1 2)
+            let list_four = extract_or_fail!(&list_three[1].kind, ExpressionKind::List);
+            assert_eq!(list_four.len(), 3);
+            assert!(matches!(
+                &list_four[0],
+                Expression {
+                    ctx: ExprCtx { span: Range { start: 1, end: 3 }, txt },
+                    kind: ExpressionKind::Literal(Value::Symbol(s)),
+                } if txt.lineno == 1 && &**s == "+"
+            ));
+            assert!(matches!(
+                &list_four[1],
+                Expression {
+                    ctx: ExprCtx { span: Range { start: 2, end: 3 }, txt },
+                    kind: ExpressionKind::Literal(Value::Constant(Constant::Number(n)))
+                } if txt.lineno == 1 && n.as_datum().to_string() == "1"
+            ));
+            assert!(matches!(
+                &list_four[2],
+                Expression {
+                    ctx: ExprCtx { span: Range { start: 2, end: 3 }, txt },
+                    kind: ExpressionKind::Literal(Value::Constant(Constant::Number(n)))
+                } if txt.lineno == 1 && n.as_datum().to_string() == "2"
+            ));
+
+            // (unquote-splicing (map abs (quote (-1 -2 -3))))
+            let list_five = extract_or_fail!(&list_two[2].kind, ExpressionKind::List);
+            assert_eq!(list_five.len(), 2);
+            assert!(matches!(
+                &list_five[0],
+                Expression {
+                    ctx: ExprCtx { span: Range { start: 1, end: 3 }, txt },
+                    kind: ExpressionKind::Literal(Value::Symbol(s)),
+                } if txt.lineno == 1 && &**s == "unquote-splicing"
+            ));
+            assert!(matches!(
+                &list_five[1],
+                Expression {
+                    ctx: ExprCtx { span: Range { start: 2, end: 3 }, txt },
+                    kind: ExpressionKind::List(_)
+                } if txt.lineno == 1
+            ));
+
+            // (map abs (quote (-1 -2 -3)))
+            let list_six = extract_or_fail!(&list_five[1].kind, ExpressionKind::List);
+            assert_eq!(list_six.len(), 3);
+            assert!(matches!(
+                &list_six[0],
+                Expression {
+                    ctx: ExprCtx { span: Range { start: 1, end: 3 }, txt },
+                    kind: ExpressionKind::Literal(Value::Symbol(s)),
+                } if txt.lineno == 1 && &**s == "map"
+            ));
+            assert!(matches!(
+                &list_six[1],
+                Expression {
+                    ctx: ExprCtx { span: Range { start: 1, end: 3 }, txt },
+                    kind: ExpressionKind::Literal(Value::Symbol(s)),
+                } if txt.lineno == 1 && &**s == "abs"
+            ));
+            assert!(matches!(
+                &list_six[2],
+                Expression {
+                    ctx: ExprCtx { span: Range { start: 2, end: 3 }, txt },
+                    kind: ExpressionKind::List(_)
+                } if txt.lineno == 1
+            ));
+
+            // (quote (-1 -2 -3))
+            let list_seven = extract_or_fail!(&list_six[2].kind, ExpressionKind::List);
+            assert_eq!(list_seven.len(), 2);
+            assert!(matches!(
+                &list_seven[0],
+                Expression {
+                    ctx: ExprCtx { span: Range { start: 1, end: 3 }, txt },
+                    kind: ExpressionKind::Literal(Value::Symbol(s)),
+                } if txt.lineno == 1 && &**s == "quote"
+            ));
+            assert!(matches!(
+                &list_seven[1],
+                Expression {
+                    ctx: ExprCtx { span: Range { start: 2, end: 3 }, txt },
+                    kind: ExpressionKind::List(_)
+                } if txt.lineno == 1
+            ));
+
+            // (-1 -2 -3)
+            let list_eight = extract_or_fail!(&list_seven[1].kind, ExpressionKind::List);
+            assert_eq!(list_eight.len(), 3);
+            assert!(matches!(
+                &list_eight[0],
+                Expression {
+                    ctx: ExprCtx { span: Range { start: 1, end: 3 }, txt },
+                    kind: ExpressionKind::Literal(Value::Constant(Constant::Number(n)))
+                } if txt.lineno == 1 && n.as_datum().to_string() == "-1"
+            ));
+            assert!(matches!(
+                &list_eight[1],
+                Expression {
+                    ctx: ExprCtx { span: Range { start: 2, end: 3 }, txt },
+                    kind: ExpressionKind::Literal(Value::Constant(Constant::Number(n)))
+                } if txt.lineno == 1 && n.as_datum().to_string() == "-2"
+            ));
+            assert!(matches!(
+                &list_eight[2],
+                Expression {
+                    ctx: ExprCtx { span: Range { start: 2, end: 3 }, txt },
+                    kind: ExpressionKind::Literal(Value::Constant(Constant::Number(n)))
+                } if txt.lineno == 1 && n.as_datum().to_string() == "-3"
+            ));
+
+            assert!(et.parsers.is_empty());
+            assert!(et.errs.is_empty());
+        }
+
+        #[test]
         fn longform_quote_with_otherwise_invalid_syntax() {
             let mut et = ExpressionTree::default();
             // NOTE: (quote (if 5)) -> (if 5)
