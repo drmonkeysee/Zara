@@ -306,7 +306,7 @@ mod expr {
             f,
             ExprFlow::Break(ParseBreak::New(
                 ParseNew {
-                    mode: ParseMode::List { quoted: false, seq },
+                    mode: ParseMode::List { form: SyntacticForm::Call, seq },
                     start: 1
                 }
             )) if seq.is_empty()
@@ -327,7 +327,7 @@ mod expr {
             f,
             ExprFlow::Break(ParseBreak::New(
                 ParseNew {
-                    mode: ParseMode::List { quoted: true, seq },
+                    mode: ParseMode::List { form: SyntacticForm::Datum, seq },
                     start: 1
                 }
             )) if seq.is_empty()
@@ -448,7 +448,7 @@ mod datum {
         assert!(matches!(
             f,
             ParseFlow::Break(ParseBreak::New(ParseNew {
-                mode: ParseMode::List { quoted: true, seq },
+                mode: ParseMode::List { form: SyntacticForm::Datum, seq },
                 start: 1
             })) if seq.is_empty(),
         ));
@@ -953,7 +953,7 @@ mod sequence {
             f,
             ParseFlow::Break(ParseBreak::New(
                 ParseNew {
-                    mode: ParseMode::List { quoted: false, seq },
+                    mode: ParseMode::List { form: SyntacticForm::Call, seq },
                     start: 1
                 }
             )) if seq.is_empty()
@@ -1065,7 +1065,7 @@ mod list {
         assert!(matches!(
             f,
             ParseFlow::Break(ParseBreak::New(ParseNew {
-                mode: ParseMode::List { quoted: false, seq },
+                mode: ParseMode::List { form: SyntacticForm::Call, seq },
                 start: 6
             })) if seq.is_empty()
         ));
@@ -1189,7 +1189,7 @@ mod list {
                 txt: Rc::clone(&txt),
             },
             mode: ParseMode::List {
-                quoted: false,
+                form: SyntacticForm::Call,
                 seq: vec![
                     Expression::variable(
                         "+",
@@ -1263,7 +1263,7 @@ mod list {
                 txt: Rc::clone(&txt),
             },
             mode: ParseMode::List {
-                quoted: false,
+                form: SyntacticForm::Quote,
                 seq: vec![
                     Expression::variable(
                         "quote",
@@ -1304,7 +1304,7 @@ mod list {
                 txt: Rc::clone(&txt),
             },
             mode: ParseMode::List {
-                quoted: true,
+                form: SyntacticForm::Datum,
                 seq: vec![
                     Expression::symbol(
                         "+",
@@ -1375,7 +1375,7 @@ mod list {
                 txt: Rc::clone(&txt),
             },
             mode: ParseMode::List {
-                quoted: true,
+                form: SyntacticForm::Datum,
                 seq: Vec::new(),
             },
         };
@@ -1401,7 +1401,7 @@ mod list {
                 txt: Rc::clone(&txt),
             },
             mode: ParseMode::List {
-                quoted: true,
+                form: SyntacticForm::Datum,
                 seq: vec![
                     Expression::variable(
                         "+",
@@ -2314,7 +2314,7 @@ mod merge {
                 txt: Rc::clone(&txt),
             },
             mode: ParseMode::List {
-                quoted: true,
+                form: SyntacticForm::Datum,
                 seq: vec![Expression::symbol(
                     "foo",
                     ExprCtx {
@@ -2369,7 +2369,7 @@ mod merge {
                 txt: Rc::clone(&txt),
             },
             mode: ParseMode::List {
-                quoted: true,
+                form: SyntacticForm::Datum,
                 seq: Vec::new(),
             },
         };
@@ -2454,7 +2454,7 @@ mod merge {
                 txt: Rc::clone(&txt),
             },
             mode: ParseMode::List {
-                quoted: true,
+                form: SyntacticForm::Datum,
                 seq: vec![Expression::symbol(
                     "foo",
                     ExprCtx {
@@ -2517,7 +2517,7 @@ mod merge {
                 txt: Rc::clone(&txt),
             },
             mode: ParseMode::List {
-                quoted: true,
+                form: SyntacticForm::Datum,
                 seq: Vec::new(),
             },
         };
@@ -2657,7 +2657,7 @@ mod merge {
                 txt: Rc::clone(&txt),
             },
             mode: ParseMode::List {
-                quoted: false,
+                form: SyntacticForm::Call,
                 seq: vec![Expression::variable(
                     "+",
                     ExprCtx {
@@ -2678,7 +2678,13 @@ mod merge {
         let r = p.merge(other);
 
         assert!(matches!(r, Ok(MergeFlow::Continue(()))));
-        assert!(matches!(p.mode, ParseMode::List { quoted: false, .. }));
+        assert!(matches!(
+            p.mode,
+            ParseMode::List {
+                form: SyntacticForm::Call,
+                ..
+            }
+        ));
         let ParseMode::List { seq, .. } = p.mode else {
             unreachable!();
         };
@@ -2788,7 +2794,7 @@ mod nodeutil {
         let txt = make_textline().into();
         let p = ParseNode::new(
             ParseMode::List {
-                quoted: false,
+                form: SyntacticForm::Call,
                 seq: vec![
                     Expression::variable(
                         "+",
