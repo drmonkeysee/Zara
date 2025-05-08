@@ -544,6 +544,52 @@ mod tests {
         }
 
         #[test]
+        fn longform_quote_with_otherwise_invalid_syntax() {
+            let mut et = ExpressionTree::default();
+            // NOTE: (quote (if 5)) -> (if 5)
+            let tokens = [make_tokenline([
+                TokenKind::ParenLeft,
+                TokenKind::Identifier("quote".to_owned()),
+                TokenKind::ParenLeft,
+                TokenKind::Identifier("if".to_owned()),
+                TokenKind::Constant(Constant::Number(Number::real(5))),
+                TokenKind::ParenRight,
+                TokenKind::ParenRight,
+            ])];
+
+            let r = et.parse(tokens.into());
+
+            let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
+            let seq = prg.unwrap();
+            assert_eq!(seq.len(), 1);
+            assert!(matches!(
+                &seq[0],
+                Expression {
+                    ctx: ExprCtx { span: Range { start: 2, end: 6 }, txt },
+                    kind: ExpressionKind::List(_),
+                } if txt.lineno == 1
+            ));
+            let inner_list = extract_or_fail!(&seq[0].kind, ExpressionKind::List);
+            assert_eq!(inner_list.len(), 2);
+            assert!(matches!(
+                &inner_list[0],
+                Expression {
+                    ctx: ExprCtx { span: Range { start: 3, end: 4 }, txt },
+                    kind: ExpressionKind::Literal(Value::Symbol(s)),
+                } if txt.lineno == 1 && &**s == "if"
+            ));
+            assert!(matches!(
+                &inner_list[1],
+                Expression {
+                    ctx: ExprCtx { span: Range { start: 4, end: 5 }, txt },
+                    kind: ExpressionKind::Literal(Value::Constant(Constant::Number(n))),
+                } if txt.lineno == 1 && n.as_datum().to_string() == "5"
+            ));
+            assert!(et.parsers.is_empty());
+            assert!(et.errs.is_empty());
+        }
+
+        #[test]
         fn sequence_line_with_errors() {
             let mut et = ExpressionTree::default();
             let tokens = [make_tokenline([

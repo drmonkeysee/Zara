@@ -14,6 +14,8 @@ use crate::{
 };
 use std::{ops::ControlFlow, rc::Rc};
 
+const LONGFORM_QUOTE: &str = "quote";
+
 pub(super) type ParseFlow = ControlFlow<ParseBreak>;
 pub(super) type ExprConvertResult =
     Result<Option<Expression>, <Option<Expression> as TryFrom<ExprNode>>::Error>;
@@ -55,7 +57,7 @@ impl ParseNode {
         match self {
             Self::Expr(node) => node.parse(token, txt),
             Self::InvalidParseTree(_) | Self::InvalidTokenStream => ParseFlow::Continue(()),
-            Self::Prg(seq) => parse_sequence(seq, token, txt, false),
+            Self::Prg(seq) => parse_sequence(seq, token, txt),
         }
     }
 
@@ -110,13 +112,21 @@ pub(super) struct ExprNode {
 impl ExprNode {
     fn parse(&mut self, token: Token, txt: &Rc<TextLine>) -> ParseFlow {
         match &mut self.mode {
-            ParseMode::ByteVector(seq) => parse_list(seq, token, txt, true),
+            ParseMode::ByteVector(seq) => {
+                parse_list(seq, token, txt, true)?;
+                ParseFlow::Continue(())
+            }
             ParseMode::CommentBlock => parse_comment_block(token, txt),
             ParseMode::CommentDatum(inner) | ParseMode::Quote { inner, .. } => {
                 parse_datum(inner, token, txt, &self.ctx)
             }
             ParseMode::Identifier { label, .. } => parse_verbatim_identifier(label, token, txt),
-            ParseMode::List { form, seq } => parse_list(seq, token, txt, form.quoted()),
+            ParseMode::List { form, seq } => {
+                if let Some(new_form) = parse_list(seq, token, txt, form.quoted())? {
+                    *form = new_form;
+                }
+                ParseFlow::Continue(())
+            }
             ParseMode::StringLiteral(buf) => parse_str(buf, token, txt),
         }
     }
@@ -237,6 +247,7 @@ impl ParseNew {
 }
 
 type ExprFlow = ControlFlow<ParseBreak, Option<Expression>>;
+type ListFlow = ControlFlow<ParseBreak, Option<SyntacticForm>>;
 
 #[derive(Debug)]
 enum SyntacticForm {
@@ -246,6 +257,13 @@ enum SyntacticForm {
 }
 
 impl SyntacticForm {
+    fn from_str(s: &str) -> Option<Self> {
+        match s {
+            LONGFORM_QUOTE => Some(SyntacticForm::Quote),
+            _ => None,
+        }
+    }
+
     fn quoted(&self) -> bool {
         matches!(self, Self::Datum | Self::Quote)
     }
@@ -426,20 +444,27 @@ fn parse_list(
     token: Token,
     txt: &Rc<TextLine>,
     quoted: bool,
-) -> ParseFlow {
+) -> ListFlow {
     match token.kind {
-        TokenKind::ParenRight => ParseFlow::Break(ParseBreak::complete(txt.lineno, token.span.end)),
-        _ => parse_sequence(seq, token, txt, quoted),
+        TokenKind::ParenRight => ListFlow::Break(ParseBreak::complete(txt.lineno, token.span.end)),
+        _ => {
+            let mut resolved_form = None;
+            if let Some(expr) = parse_expr(token, txt, quoted)? {
+                if !quoted && seq.is_empty() {
+                    if let ExpressionKind::Variable(lbl) = &expr.kind {
+                        // TODO: check for shadowed keywords here
+                        resolved_form = SyntacticForm::from_str(lbl);
+                    }
+                }
+                seq.push(expr);
+            };
+            ListFlow::Continue(resolved_form)
+        }
     }
 }
 
-fn parse_sequence(
-    seq: &mut Vec<Expression>,
-    token: Token,
-    txt: &Rc<TextLine>,
-    quoted: bool,
-) -> ParseFlow {
-    if let Some(expr) = parse_expr(token, txt, quoted)? {
+fn parse_sequence(seq: &mut Vec<Expression>, token: Token, txt: &Rc<TextLine>) -> ParseFlow {
+    if let Some(expr) = parse_expr(token, txt, false)? {
         seq.push(expr);
     }
     ParseFlow::Continue(())
@@ -521,7 +546,7 @@ fn into_datum(inner: Option<Expression>, ctx: ExprCtx, quoted: bool) -> ExprConv
         Some(expr) => match expr.kind {
             ExpressionKind::List(_) | ExpressionKind::Literal(_) => Ok(Some(if quoted {
                 ctx.clone().into_expr(ExpressionKind::List(
-                    [Expression::symbol("quote", ctx), expr].into(),
+                    [Expression::symbol(LONGFORM_QUOTE, ctx), expr].into(),
                 ))
             } else {
                 expr
@@ -542,22 +567,25 @@ fn into_syntactic_form(
     seq: Vec<Expression>,
     ctx: ExprCtx,
 ) -> ExprConvertResult {
-    if matches!(form, SyntacticForm::Datum) {
-        return into_list(seq, ctx);
+    match form {
+        SyntacticForm::Call => {
+            debug_assert!(
+                !seq.is_empty(),
+                "empty list is invalid syntax unless quoted"
+            );
+            let mut iter = seq.into_iter();
+            let proc = iter.next().unwrap();
+            Ok(Some(ctx.into_expr(ExpressionKind::Call {
+                args: iter.collect(),
+                proc: proc.into(),
+            })))
+        }
+        SyntacticForm::Datum => into_list(seq, ctx),
+        SyntacticForm::Quote => {
+            debug_assert!(seq.len() == 2, "invalid syntax for quote");
+            Ok(Some(seq.into_iter().next_back().unwrap()))
+        }
     }
-
-    // TODO: check for keywords/special forms
-    // need to handle cases where e.g. "if" is shadowed by a user definition
-    debug_assert!(
-        !seq.is_empty(),
-        "empty list is invalid syntax unless quoted"
-    );
-    let mut iter = seq.into_iter();
-    let proc = iter.next().unwrap();
-    Ok(Some(ctx.into_expr(ExpressionKind::Call {
-        args: iter.collect(),
-        proc: proc.into(),
-    })))
 }
 
 fn into_list(seq: Vec<Expression>, ctx: ExprCtx) -> ExprConvertResult {

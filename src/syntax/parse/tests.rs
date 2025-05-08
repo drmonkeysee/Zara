@@ -887,7 +887,7 @@ mod sequence {
         };
         let txt = make_textline().into();
 
-        let f = parse_sequence(&mut seq, token, &txt, false);
+        let f = parse_sequence(&mut seq, token, &txt);
 
         assert!(matches!(f, ParseFlow::Continue(())));
         assert_eq!(seq.len(), 1);
@@ -925,7 +925,7 @@ mod sequence {
         };
         let txt = make_textline().into();
 
-        let f = parse_sequence(&mut seq, token, &txt, false);
+        let f = parse_sequence(&mut seq, token, &txt);
 
         assert!(matches!(f, ParseFlow::Continue(())));
         assert_eq!(seq.len(), 3);
@@ -947,7 +947,7 @@ mod sequence {
         };
         let txt = make_textline().into();
 
-        let f = parse_sequence(&mut seq, token, &txt, false);
+        let f = parse_sequence(&mut seq, token, &txt);
 
         assert!(matches!(
             f,
@@ -970,7 +970,7 @@ mod sequence {
         };
         let txt = make_textline().into();
 
-        let f = parse_sequence(&mut seq, token, &txt, false);
+        let f = parse_sequence(&mut seq, token, &txt);
 
         assert!(matches!(
             f,
@@ -1024,7 +1024,7 @@ mod list {
 
         assert!(matches!(
             f,
-            ParseFlow::Break(ParseBreak::Complete(ExprEnd { lineno: 1, pos: 7 }))
+            ListFlow::Break(ParseBreak::Complete(ExprEnd { lineno: 1, pos: 7 }))
         ));
         assert_eq!(seq.len(), 3);
     }
@@ -1064,7 +1064,7 @@ mod list {
 
         assert!(matches!(
             f,
-            ParseFlow::Break(ParseBreak::New(ParseNew {
+            ListFlow::Break(ParseBreak::New(ParseNew {
                 mode: ParseMode::List { form: SyntacticForm::Call, seq },
                 start: 6
             })) if seq.is_empty()
@@ -1085,7 +1085,7 @@ mod list {
 
         assert!(matches!(
             f,
-            ParseFlow::Break(ParseBreak::Complete(ExprEnd { lineno: 1, pos: 5 }))
+            ListFlow::Break(ParseBreak::Complete(ExprEnd { lineno: 1, pos: 5 }))
         ));
         assert!(seq.is_empty());
     }
@@ -1123,7 +1123,7 @@ mod list {
 
         let f = parse_list(&mut seq, token, &txt, false);
 
-        assert!(matches!(f, ParseFlow::Continue(())));
+        assert!(matches!(f, ListFlow::Continue(None)));
         assert_eq!(seq.len(), 4);
         assert!(matches!(
             &seq[3],
@@ -1169,7 +1169,7 @@ mod list {
 
         assert!(matches!(
             f,
-            ParseFlow::Break(ParseBreak::Err {
+            ListFlow::Break(ParseBreak::Err {
                 err: ExpressionError {
                     ctx: ExprCtx { span: Range { start: 6, end: 7 }, txt: line },
                     kind: ExpressionErrorKind::SeqInvalid(TokenKind::StringDiscard),
@@ -1254,7 +1254,6 @@ mod list {
     }
 
     #[test]
-    #[ignore = "(quote s-expr) -> symbol not implemented yet"]
     fn into_quote_apply() {
         let txt = make_textline().into();
         let p = ExprNode {
@@ -1272,7 +1271,7 @@ mod list {
                             txt: Rc::clone(&txt),
                         },
                     ),
-                    Expression::variable(
+                    Expression::symbol(
                         "foo",
                         ExprCtx {
                             span: 6..9,
