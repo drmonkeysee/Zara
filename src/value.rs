@@ -4,19 +4,31 @@ use crate::{
     string::SymbolDatum,
     syntax::Program,
 };
-use std::fmt::{self, Display, Formatter};
+use std::{
+    fmt::{self, Display, Formatter},
+    rc::Rc,
+};
 
 #[derive(Debug)]
 pub(crate) enum Value {
     Ast(Program),
     ByteVector(Box<[u8]>),
     Constant(Constant),
+    Pair(Option<Rc<Pair>>),
     // TODO: figure out symbol table
     Symbol(Box<str>),
     TokenList(Box<[TokenLine]>),
 }
 
 impl Value {
+    fn null() -> Self {
+        Self::Pair(None)
+    }
+
+    fn pair(p: impl Into<Rc<Pair>>) -> Self {
+        Self::Pair(Some(p.into()))
+    }
+
     pub(crate) fn as_datum(&self) -> Datum {
         Datum(self)
     }
@@ -27,6 +39,29 @@ impl Value {
 
     pub(crate) fn as_typename(&self) -> TypeName {
         TypeName(self)
+    }
+}
+
+#[derive(Debug)]
+pub(crate) struct Pair {
+    car: Value,
+    cdr: Rc<Value>,
+}
+
+impl Pair {
+    fn cons(car: Value, cdr: impl Into<Rc<Value>>) -> Self {
+        Self {
+            car,
+            cdr: cdr.into(),
+        }
+    }
+
+    fn is_list(&self) -> bool {
+        if let Value::Pair(p) = &*self.cdr {
+            p.as_ref().is_none_or(|r| r.is_list())
+        } else {
+            false
+        }
     }
 }
 
@@ -45,6 +80,7 @@ impl Display for Datum<'_> {
                     .join(" ")
             ),
             Value::Constant(con) => con.as_datum().fmt(f),
+            Value::Pair(_) => todo!("pair/list datum"),
             Value::Symbol(s) => SymbolDatum(s).fmt(f),
             Value::TokenList(lines) => DisplayTokenLines(lines).fmt(f),
         }
@@ -71,6 +107,8 @@ impl Display for TypeName<'_> {
             Value::Ast(_) => f.write_str("abstract syntax tree"),
             Value::ByteVector(_) => f.write_str("bytevector"),
             Value::Constant(c) => c.as_typename().fmt(f),
+            Value::Pair(None) => f.write_str("list"),
+            Value::Pair(Some(p)) => f.write_str(if p.is_list() { "list" } else { "pair" }),
             Value::Symbol(_) => f.write_str("symbol"),
             Value::TokenList(_) => f.write_str("token list"),
         }
@@ -124,6 +162,35 @@ mod tests {
             let v = Value::Symbol("foo".into());
 
             assert_eq!(v.as_typename().to_string(), "symbol");
+        }
+
+        #[test]
+        fn pair_typename() {
+            let p = Pair::cons(
+                Value::Constant(Constant::Boolean(true)),
+                Value::Constant(Constant::Character('a')),
+            );
+            let v = Value::pair(p);
+
+            assert_eq!(v.as_typename().to_string(), "pair");
+        }
+
+        #[test]
+        fn list_typename() {
+            let cdr = Value::pair(Pair::cons(
+                Value::Constant(Constant::Character('a')),
+                Value::null(),
+            ));
+            let v = Value::pair(Pair::cons(Value::Constant(Constant::Boolean(true)), cdr));
+
+            assert_eq!(v.as_typename().to_string(), "list");
+        }
+
+        #[test]
+        fn empty_list_typename() {
+            let v = Value::null();
+
+            assert_eq!(v.as_typename().to_string(), "list");
         }
     }
 
@@ -305,6 +372,86 @@ bar"
             let v = Value::Symbol("\u{fffd}".into());
 
             assert_eq!(v.as_datum().to_string(), "|�|");
+        }
+    }
+
+    mod pair {
+        use super::*;
+        use crate::number::Number;
+
+        #[test]
+        fn pair_is_not_list() {
+            // (#t . #f)
+            let p = Pair::cons(
+                Value::Constant(Constant::Boolean(true)),
+                Value::Constant(Constant::Boolean(false)),
+            );
+
+            assert!(!p.is_list());
+        }
+
+        #[test]
+        fn empty_cdr_is_list() {
+            // (#t)
+            let p = Pair::cons(Value::Constant(Constant::Boolean(true)), Value::null());
+
+            assert!(p.is_list());
+        }
+
+        #[test]
+        fn nested_is_list() {
+            // (1 2 3)
+            let p = Pair::cons(
+                Value::Constant(Constant::Number(Number::real(1))),
+                Value::pair(Pair::cons(
+                    Value::Constant(Constant::Number(Number::real(2))),
+                    Value::pair(Pair::cons(
+                        Value::Constant(Constant::Number(Number::real(3))),
+                        Value::null(),
+                    )),
+                )),
+            );
+
+            assert!(p.is_list());
+        }
+
+        #[test]
+        fn improper_list_is_not_list() {
+            // (1 2 . 3)
+            let p = Pair::cons(
+                Value::Constant(Constant::Number(Number::real(1))),
+                Value::pair(Pair::cons(
+                    Value::Constant(Constant::Number(Number::real(2))),
+                    Value::Constant(Constant::Number(Number::real(3))),
+                )),
+            );
+
+            assert!(!p.is_list());
+        }
+
+        #[test]
+        fn list_containing_pair_is_list() {
+            // ((1 . 2) 3)
+            let p = Pair::cons(
+                Value::pair(Pair::cons(
+                    Value::Constant(Constant::Number(Number::real(1))),
+                    Value::Constant(Constant::Number(Number::real(2))),
+                )),
+                Value::pair(Pair::cons(
+                    Value::Constant(Constant::Number(Number::real(3))),
+                    Value::null(),
+                )),
+            );
+
+            assert!(p.is_list());
+        }
+
+        #[test]
+        fn list_containing_empty_list_is_list() {
+            // (())
+            let p = Pair::cons(Value::null(), Value::null());
+
+            assert!(p.is_list());
         }
     }
 }
