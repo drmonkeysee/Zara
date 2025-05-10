@@ -544,9 +544,7 @@ fn into_datum(inner: Option<Expression>, ctx: ExprCtx, quoted: bool) -> ExprConv
         None => Err(vec![ctx.into_error(ExpressionErrorKind::DatumExpected)]),
         Some(expr) => match expr.kind {
             ExpressionKind::List(_) | ExpressionKind::Literal(_) => Ok(Some(if quoted {
-                ctx.clone().into_expr(ExpressionKind::List(
-                    [Expression::symbol(LONGFORM_QUOTE, ctx), expr].into(),
-                ))
+                Expression::list([Expression::symbol(LONGFORM_QUOTE, ctx.clone()), expr], ctx)
             } else {
                 expr
             })),

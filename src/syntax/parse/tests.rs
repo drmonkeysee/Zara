@@ -1770,54 +1770,50 @@ mod quote {
                 txt: Rc::clone(&txt),
             },
             mode: ParseMode::Quote {
-                inner: Some(
-                    ExprCtx {
-                        span: 3..13,
-                        txt: Rc::clone(&txt),
-                    }
-                    .into_expr(ExpressionKind::List(
-                        [
-                            Expression::constant(
-                                Constant::Boolean(true),
-                                ExprCtx {
-                                    span: 4..6,
-                                    txt: Rc::clone(&txt),
-                                },
-                            ),
-                            Expression::symbol(
-                                "foo",
-                                ExprCtx {
-                                    span: 6..9,
-                                    txt: Rc::clone(&txt),
-                                },
-                            ),
+                inner: Some(Expression::list(
+                    [
+                        Expression::constant(
+                            Constant::Boolean(true),
+                            ExprCtx {
+                                span: 4..6,
+                                txt: Rc::clone(&txt),
+                            },
+                        ),
+                        Expression::symbol(
+                            "foo",
+                            ExprCtx {
+                                span: 6..9,
+                                txt: Rc::clone(&txt),
+                            },
+                        ),
+                        Expression::list(
+                            [
+                                Expression::constant(
+                                    Constant::Number(Number::real(4)),
+                                    ExprCtx {
+                                        span: 10..11,
+                                        txt: Rc::clone(&txt),
+                                    },
+                                ),
+                                Expression::constant(
+                                    Constant::Number(Number::real(5)),
+                                    ExprCtx {
+                                        span: 11..12,
+                                        txt: Rc::clone(&txt),
+                                    },
+                                ),
+                            ],
                             ExprCtx {
                                 span: 9..13,
                                 txt: Rc::clone(&txt),
-                            }
-                            .into_expr(ExpressionKind::List(
-                                [
-                                    Expression::constant(
-                                        Constant::Number(Number::real(4)),
-                                        ExprCtx {
-                                            span: 10..11,
-                                            txt: Rc::clone(&txt),
-                                        },
-                                    ),
-                                    Expression::constant(
-                                        Constant::Number(Number::real(5)),
-                                        ExprCtx {
-                                            span: 11..12,
-                                            txt: Rc::clone(&txt),
-                                        },
-                                    ),
-                                ]
-                                .into(),
-                            )),
-                        ]
-                        .into(),
-                    )),
-                ),
+                            },
+                        ),
+                    ],
+                    ExprCtx {
+                        span: 3..13,
+                        txt: Rc::clone(&txt),
+                    },
+                )),
                 quoted: false,
             },
         };
@@ -1900,13 +1896,13 @@ mod quote {
                 txt: Rc::clone(&txt),
             },
             mode: ParseMode::Quote {
-                inner: Some(
+                inner: Some(Expression::list(
+                    [],
                     ExprCtx {
                         span: 3..13,
                         txt: Rc::clone(&txt),
-                    }
-                    .into_expr(ExpressionKind::List([].into())),
-                ),
+                    },
+                )),
                 quoted: false,
             },
         };

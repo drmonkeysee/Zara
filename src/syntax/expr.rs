@@ -73,6 +73,13 @@ impl Expression {
         }
     }
 
+    pub(super) fn list(items: impl Into<Box<[Expression]>>, ctx: ExprCtx) -> Self {
+        Self {
+            ctx,
+            kind: ExpressionKind::List(items.into()),
+        }
+    }
+
     pub(super) fn symbol(lbl: impl Into<Box<str>>, ctx: ExprCtx) -> Self {
         Self {
             ctx,
