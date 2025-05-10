@@ -1,3 +1,15 @@
+macro_rules! zlist {
+    () => {
+        Value::null()
+    };
+    ($e:expr $(,)?) => {
+        Value::pair(Pair::cons($e, zlist![]))
+    };
+    ($e:expr, $($es:expr),+ $(,)?) => {
+        Value::pair(Pair::cons($e, zlist![$($es),+]))
+    };
+}
+
 use crate::{
     constant::Constant,
     lex::{DisplayTokenLines, TokenLine, TokenLinesMessage},
@@ -8,6 +20,7 @@ use std::{
     fmt::{self, Display, Formatter},
     rc::Rc,
 };
+pub(crate) use zlist;
 
 #[derive(Debug)]
 pub(crate) enum Value {
@@ -21,12 +34,23 @@ pub(crate) enum Value {
 }
 
 impl Value {
-    fn null() -> Self {
+    pub(crate) fn null() -> Self {
         Self::Pair(None)
     }
 
-    fn pair(p: impl Into<Rc<Pair>>) -> Self {
+    pub(crate) fn pair(p: impl Into<Rc<Pair>>) -> Self {
         Self::Pair(Some(p.into()))
+    }
+
+    pub(crate) fn list<I>(items: I) -> Self
+    where
+        I: IntoIterator<Item = Self>,
+        <I as IntoIterator>::IntoIter: DoubleEndedIterator,
+    {
+        items
+            .into_iter()
+            .rev()
+            .fold(zlist![], |head, item| Self::pair(Pair::cons(item, head)))
     }
 
     pub(crate) fn as_datum(&self) -> Datum {
@@ -49,7 +73,7 @@ pub(crate) struct Pair {
 }
 
 impl Pair {
-    fn cons(car: Value, cdr: impl Into<Rc<Value>>) -> Self {
+    pub(crate) fn cons(car: Value, cdr: impl Into<Rc<Value>>) -> Self {
         Self {
             car,
             cdr: cdr.into(),
@@ -134,6 +158,7 @@ impl Display for TypeName<'_> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::number::Number;
 
     mod display {
         use super::*;
@@ -193,25 +218,24 @@ mod tests {
 
         #[test]
         fn list_typename() {
-            let cdr = Value::pair(Pair::cons(
+            let v = zlist![
+                Value::Constant(Constant::Boolean(true)),
                 Value::Constant(Constant::Character('a')),
-                Value::null(),
-            ));
-            let v = Value::pair(Pair::cons(Value::Constant(Constant::Boolean(true)), cdr));
+            ];
 
             assert_eq!(v.as_typename().to_string(), "list");
         }
 
         #[test]
         fn empty_list_typename() {
-            let v = Value::null();
+            let v = zlist![];
 
             assert_eq!(v.as_typename().to_string(), "list");
         }
 
         #[test]
         fn empty_list_display() {
-            let v = Value::null();
+            let v = zlist![];
 
             assert_eq!(v.as_datum().to_string(), "()")
         }
@@ -412,7 +436,6 @@ bar"
 
     mod pair {
         use super::*;
-        use crate::number::Number;
 
         #[test]
         fn pair_is_not_list() {
@@ -582,6 +605,77 @@ bar"
             let v = Value::pair(p);
 
             assert_eq!(v.as_datum().to_string(), "(())")
+        }
+    }
+
+    mod list {
+        use super::*;
+
+        #[test]
+        fn empty() {
+            let lst = zlist![];
+
+            assert_eq!(lst.as_datum().to_string(), "()");
+        }
+
+        #[test]
+        fn one() {
+            let lst = zlist![Value::Constant(Constant::Number(Number::real(5)))];
+
+            assert_eq!(lst.as_datum().to_string(), "(5)");
+        }
+
+        #[test]
+        fn three() {
+            let lst = zlist![
+                Value::Constant(Constant::Number(Number::real(5))),
+                Value::Symbol("a".into()),
+                Value::Constant(Constant::Boolean(true)),
+            ];
+
+            assert_eq!(lst.as_datum().to_string(), "(5 a #t)");
+        }
+
+        #[test]
+        fn nested() {
+            let lst = zlist![
+                Value::Constant(Constant::Number(Number::real(5))),
+                zlist![
+                    Value::Symbol("a".into()),
+                    Value::Constant(Constant::Boolean(true)),
+                ],
+            ];
+
+            assert_eq!(lst.as_datum().to_string(), "(5 (a #t))");
+        }
+
+        #[test]
+        fn ctor_empty() {
+            let lst = Value::list(vec![]);
+
+            assert_eq!(lst.as_datum().to_string(), "()");
+        }
+
+        #[test]
+        fn ctor_vec() {
+            let lst = Value::list(vec![
+                Value::Constant(Constant::Number(Number::real(5))),
+                Value::Symbol("a".into()),
+                Value::Constant(Constant::Boolean(true)),
+            ]);
+
+            assert_eq!(lst.as_datum().to_string(), "(5 a #t)");
+        }
+
+        #[test]
+        fn ctor_slice() {
+            let lst = Value::list([
+                Value::Constant(Constant::Number(Number::real(5))),
+                Value::Symbol("a".into()),
+                Value::Constant(Constant::Boolean(true)),
+            ]);
+
+            assert_eq!(lst.as_datum().to_string(), "(5 a #t)");
         }
     }
 }
