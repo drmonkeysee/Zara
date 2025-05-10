@@ -455,30 +455,7 @@ fn parse_list(
 ) -> ListFlow {
     match token.kind {
         TokenKind::ParenRight => ListFlow::Break(ParseBreak::complete(txt.lineno, token.span.end)),
-        TokenKind::PairJoiner => {
-            if quoted {
-                ListFlow::Break(if let Some(expr) = seq.pop() {
-                    let start = expr.ctx.span.start;
-                    ParseBreak::new(ParseMode::dotted_pair(expr), start)
-                } else {
-                    ParseBreak::recover(
-                        ExprCtx {
-                            span: token.span,
-                            txt: Rc::clone(txt),
-                        }
-                        .into_error(ExpressionErrorKind::PairIncomplete),
-                    )
-                })
-            } else {
-                ListFlow::Break(ParseBreak::recover(
-                    ExprCtx {
-                        span: token.span,
-                        txt: Rc::clone(txt),
-                    }
-                    .into_error(ExpressionErrorKind::PairUnexpected),
-                ))
-            }
-        }
+        TokenKind::PairJoiner => ListFlow::Break(start_dotted_pair(seq, token, txt, quoted)),
         _ => {
             let mut resolved_form = None;
             if let Some(expr) = parse_expr(token, txt, quoted)? {
@@ -492,6 +469,36 @@ fn parse_list(
             }
             ListFlow::Continue(resolved_form)
         }
+    }
+}
+
+fn start_dotted_pair(
+    seq: &mut Vec<Expression>,
+    token: Token,
+    txt: &Rc<TextLine>,
+    quoted: bool,
+) -> ParseBreak {
+    if quoted {
+        if let Some(expr) = seq.pop() {
+            let start = expr.ctx.span.start;
+            ParseBreak::new(ParseMode::dotted_pair(expr), start)
+        } else {
+            ParseBreak::recover(
+                ExprCtx {
+                    span: token.span,
+                    txt: Rc::clone(txt),
+                }
+                .into_error(ExpressionErrorKind::PairIncomplete),
+            )
+        }
+    } else {
+        ParseBreak::recover(
+            ExprCtx {
+                span: token.span,
+                txt: Rc::clone(txt),
+            }
+            .into_error(ExpressionErrorKind::PairUnexpected),
+        )
     }
 }
 
