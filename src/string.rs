@@ -89,7 +89,7 @@ impl Display for SymbolConverter<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let mut chars = self.label.chars();
         if let Some(ch) = chars.next() {
-            if !identifier::is_initial(ch) {
+            if !identifier::is_initial(ch) && !identifier::is_peculiar_initial(ch) {
                 self.verbatim.set(true);
             }
             write_symbol_char(ch, f)?;

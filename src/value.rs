@@ -277,6 +277,18 @@ mod tests {
         }
 
         #[test]
+        fn starts_with_peculiar() {
+            let cases = ['+', '-', '.'];
+            for case in cases {
+                let s = format!("{case}foo");
+
+                let v = Value::Symbol(s.clone().into());
+
+                assert_eq!(v.as_datum().to_string(), s);
+            }
+        }
+
+        #[test]
         fn null() {
             let v = Value::Symbol("\0".into());
 
