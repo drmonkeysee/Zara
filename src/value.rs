@@ -2,11 +2,8 @@ macro_rules! zlist {
     () => {
         Value::null()
     };
-    ($e:expr $(,)?) => {
-        Value::pair(Pair::cons($e, zlist![]))
-    };
-    ($e:expr, $($es:expr),+ $(,)?) => {
-        Value::pair(Pair::cons($e, zlist![$($es),+]))
+    ($exp:expr $(, $exps:expr)* $(,)?) => {
+        Value::pair(Pair::cons($exp, zlist![$($exps),*]))
     };
 }
 
