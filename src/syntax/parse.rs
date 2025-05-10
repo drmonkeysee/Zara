@@ -478,28 +478,23 @@ fn start_dotted_pair(
     txt: &Rc<TextLine>,
     quoted: bool,
 ) -> ParseBreak {
-    if quoted {
+    let err = if quoted {
         if let Some(expr) = seq.pop() {
             let start = expr.ctx.span.start;
-            ParseBreak::new(ParseMode::dotted_pair(expr), start)
+            return ParseBreak::new(ParseMode::dotted_pair(expr), start);
         } else {
-            ParseBreak::recover(
-                ExprCtx {
-                    span: token.span,
-                    txt: Rc::clone(txt),
-                }
-                .into_error(ExpressionErrorKind::PairIncomplete),
-            )
+            ExpressionErrorKind::PairIncomplete
         }
     } else {
-        ParseBreak::recover(
-            ExprCtx {
-                span: token.span,
-                txt: Rc::clone(txt),
-            }
-            .into_error(ExpressionErrorKind::PairUnexpected),
-        )
-    }
+        ExpressionErrorKind::PairUnexpected
+    };
+    ParseBreak::recover(
+        ExprCtx {
+            span: token.span,
+            txt: Rc::clone(txt),
+        }
+        .into_error(err),
+    )
 }
 
 fn parse_sequence(seq: &mut Vec<Expression>, token: Token, txt: &Rc<TextLine>) -> ParseFlow {
