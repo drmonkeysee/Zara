@@ -10,7 +10,7 @@ use crate::{
     lex::{Token, TokenKind},
     number::Number,
     txt::{LineNumber, TextLine},
-    value::Value,
+    value::{Pair, Value, zlist},
 };
 use std::{ops::ControlFlow, rc::Rc};
 
@@ -543,10 +543,14 @@ fn into_datum(inner: Option<Expression>, ctx: ExprCtx, quoted: bool) -> ExprConv
     match inner {
         None => Err(vec![ctx.into_error(ExpressionErrorKind::DatumExpected)]),
         Some(expr) => match expr.kind {
-            ExpressionKind::List(_) | ExpressionKind::Literal(_) => Ok(Some(if quoted {
-                Expression::list([Expression::symbol(LONGFORM_QUOTE, ctx.clone()), expr], ctx)
+            ExpressionKind::Literal(val) => Ok(Some(if quoted {
+                ctx.into_expr(ExpressionKind::Literal(zlist![
+                    Value::Symbol(LONGFORM_QUOTE.into()),
+                    val
+                ]))
             } else {
-                expr
+                // TODO: can i remove this redundant ctor somehow (it recreates expr)
+                expr.ctx.into_expr(ExpressionKind::Literal(val))
             })),
             _ => {
                 let mut expr_ctx = expr.ctx;
@@ -590,12 +594,12 @@ fn into_list(seq: Vec<Expression>, ctx: ExprCtx) -> ExprConvertResult {
         seq,
         ctx,
         |expr| match expr.kind {
-            ExpressionKind::List(_) | ExpressionKind::Literal(_) => Ok(expr),
+            ExpressionKind::Literal(val) => Ok(val),
             _ => Err(expr
                 .ctx
                 .into_error(ExpressionErrorKind::DatumInvalid(expr.kind))),
         },
-        ExpressionKind::List,
+        |vals| ExpressionKind::Literal(Value::list(vals)),
     )
 }
 

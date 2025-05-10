@@ -1337,32 +1337,11 @@ mod list {
             expr,
             Expression {
                 ctx: ExprCtx { span: Range { start: 0, end: 6 }, txt: line },
-                kind: ExpressionKind::List(_),
+                kind: ExpressionKind::Literal(Value::Pair(Some(_))),
             } if Rc::ptr_eq(&txt, &line)
         ));
-        let items = extract_or_fail!(expr.kind, ExpressionKind::List);
-        assert_eq!(items.len(), 3);
-        assert!(matches!(
-            &items[0],
-            Expression {
-                ctx: ExprCtx { span: Range { start: 0, end: 1 }, txt: line },
-                kind: ExpressionKind::Literal(Value::Symbol(s)),
-            } if Rc::ptr_eq(&txt, &line) && &**s == "+"
-        ));
-        assert!(matches!(
-            &items[1],
-            Expression {
-                ctx: ExprCtx { span: Range { start: 1, end: 4 }, txt: line },
-                kind: ExpressionKind::Literal(Value::Constant(Constant::Number(n))),
-            } if n.as_datum().to_string() == "4" && Rc::ptr_eq(&txt, &line)
-        ));
-        assert!(matches!(
-            &items[2],
-            Expression {
-                ctx: ExprCtx { span: Range { start: 4, end: 6 }, txt: line },
-                kind: ExpressionKind::Literal(Value::Constant(Constant::Number(n))),
-            } if n.as_datum().to_string() == "5" && Rc::ptr_eq(&txt, &line)
-        ));
+        let value = extract_or_fail!(expr.kind, ExpressionKind::Literal);
+        assert_eq!(value.as_datum().to_string(), "(+ 4 5)");
     }
 
     #[test]
@@ -1386,9 +1365,11 @@ mod list {
             expr,
             Expression {
                 ctx: ExprCtx { span: Range { start: 0, end: 2 }, txt: line },
-                kind: ExpressionKind::List(items),
-            } if Rc::ptr_eq(&txt, &line) && items.is_empty()
+                kind: ExpressionKind::Literal(Value::Pair(None)),
+            } if Rc::ptr_eq(&txt, &line)
         ));
+        let value = extract_or_fail!(expr.kind, ExpressionKind::Literal);
+        assert_eq!(value.as_datum().to_string(), "()");
     }
 
     #[test]
@@ -1692,7 +1673,7 @@ mod quote {
     use super::*;
 
     #[test]
-    fn constant_into_expr() {
+    fn literal_into_expr() {
         let txt = make_textline().into();
         let p = ExprNode {
             ctx: ExprCtx {
@@ -1762,167 +1743,6 @@ mod quote {
     }
 
     #[test]
-    fn compound_into_expr() {
-        let txt = make_textline().into();
-        let p = ExprNode {
-            ctx: ExprCtx {
-                span: 0..1,
-                txt: Rc::clone(&txt),
-            },
-            mode: ParseMode::Quote {
-                inner: Some(Expression::list(
-                    [
-                        Expression::constant(
-                            Constant::Boolean(true),
-                            ExprCtx {
-                                span: 4..6,
-                                txt: Rc::clone(&txt),
-                            },
-                        ),
-                        Expression::symbol(
-                            "foo",
-                            ExprCtx {
-                                span: 6..9,
-                                txt: Rc::clone(&txt),
-                            },
-                        ),
-                        Expression::list(
-                            [
-                                Expression::constant(
-                                    Constant::Number(Number::real(4)),
-                                    ExprCtx {
-                                        span: 10..11,
-                                        txt: Rc::clone(&txt),
-                                    },
-                                ),
-                                Expression::constant(
-                                    Constant::Number(Number::real(5)),
-                                    ExprCtx {
-                                        span: 11..12,
-                                        txt: Rc::clone(&txt),
-                                    },
-                                ),
-                            ],
-                            ExprCtx {
-                                span: 9..13,
-                                txt: Rc::clone(&txt),
-                            },
-                        ),
-                    ],
-                    ExprCtx {
-                        span: 3..13,
-                        txt: Rc::clone(&txt),
-                    },
-                )),
-                quoted: false,
-            },
-        };
-
-        let r: Result<Option<Expression>, _> = p.try_into();
-
-        let expr = some_or_fail!(ok_or_fail!(r));
-        assert!(matches!(
-            expr,
-            Expression {
-                ctx: ExprCtx {
-                    span: Range { start: 3, end: 13 },
-                    txt: line,
-                },
-                kind: ExpressionKind::List(_),
-            } if Rc::ptr_eq(&txt, &line)
-        ));
-        let seq = extract_or_fail!(expr.kind, ExpressionKind::List);
-        assert_eq!(seq.len(), 3);
-        assert!(matches!(
-            &seq[0],
-            Expression {
-                ctx: ExprCtx {
-                    span: Range { start: 4, end: 6 },
-                    txt: line,
-                },
-                kind: ExpressionKind::Literal(Value::Constant(Constant::Boolean(true))),
-            } if Rc::ptr_eq(&txt, &line)
-        ));
-        assert!(matches!(
-            &seq[1],
-            Expression {
-                ctx: ExprCtx {
-                    span: Range { start: 6, end: 9 },
-                    txt: line,
-                },
-                kind: ExpressionKind::Literal(Value::Symbol(s))
-            } if Rc::ptr_eq(&txt, &line) && &**s == "foo"
-        ));
-        assert!(matches!(
-            &seq[2],
-            Expression {
-                ctx: ExprCtx {
-                    span: Range { start: 9, end: 13 },
-                    txt: line,
-                },
-                kind: ExpressionKind::List(_),
-            } if Rc::ptr_eq(&txt, &line)
-        ));
-        let inner_seq = extract_or_fail!(&seq[2].kind, ExpressionKind::List);
-        assert_eq!(inner_seq.len(), 2);
-        assert!(matches!(
-            &inner_seq[0],
-            Expression {
-                ctx: ExprCtx {
-                    span: Range { start: 10, end: 11 },
-                    txt: line,
-                },
-                kind: ExpressionKind::Literal(Value::Constant(Constant::Number(n))),
-            } if Rc::ptr_eq(&txt, &line) && n.as_datum().to_string() == "4"
-        ));
-        assert!(matches!(
-            &inner_seq[1],
-            Expression {
-                ctx: ExprCtx {
-                    span: Range { start: 11, end: 12 },
-                    txt: line,
-                },
-                kind: ExpressionKind::Literal(Value::Constant(Constant::Number(n))),
-            } if Rc::ptr_eq(&txt, &line) && n.as_datum().to_string() == "5"
-        ));
-    }
-
-    #[test]
-    fn empty_into_expr() {
-        let txt = make_textline().into();
-        let p = ExprNode {
-            ctx: ExprCtx {
-                span: 0..1,
-                txt: Rc::clone(&txt),
-            },
-            mode: ParseMode::Quote {
-                inner: Some(Expression::list(
-                    [],
-                    ExprCtx {
-                        span: 3..13,
-                        txt: Rc::clone(&txt),
-                    },
-                )),
-                quoted: false,
-            },
-        };
-
-        let r: Result<Option<Expression>, _> = p.try_into();
-
-        let expr = some_or_fail!(ok_or_fail!(r));
-        assert!(matches!(
-            expr,
-            Expression {
-                ctx: ExprCtx {
-                    span: Range { start: 3, end: 13 },
-                    txt: line,
-                },
-                kind: ExpressionKind::List(seq),
-            } if Rc::ptr_eq(&txt, &line) && seq.is_empty()
-        ));
-    }
-
-    #[test]
     fn quoted_constant_into_expr() {
         let txt = make_textline().into();
         let p = ExprNode {
@@ -1952,31 +1772,11 @@ mod quote {
                     span: Range { start: 1, end: 2 },
                     txt: line,
                 },
-                kind: ExpressionKind::List(_),
+                kind: ExpressionKind::Literal(Value::Pair(Some(_))),
             } if Rc::ptr_eq(&txt, &line)
         ));
-        let seq = extract_or_fail!(expr.kind, ExpressionKind::List);
-        assert_eq!(seq.len(), 2);
-        assert!(matches!(
-            &seq[0],
-            Expression {
-                ctx: ExprCtx {
-                    span: Range { start: 1, end: 2 },
-                    txt: line,
-                },
-                kind: ExpressionKind::Literal(Value::Symbol(s)),
-            } if Rc::ptr_eq(&txt, &line) && &**s == "quote"
-        ));
-        assert!(matches!(
-            &seq[1],
-            Expression {
-                ctx: ExprCtx {
-                    span: Range { start: 2, end: 4 },
-                    txt: line,
-                },
-                kind: ExpressionKind::Literal(Value::Constant(Constant::Boolean(true))),
-            } if Rc::ptr_eq(&txt, &line)
-        ));
+        let value = extract_or_fail!(expr.kind, ExpressionKind::Literal);
+        assert_eq!(value.as_datum().to_string(), "(quote #t)");
     }
 
     #[test]
@@ -2331,21 +2131,11 @@ mod merge {
                     span: Range { start: 3, end: 8 },
                     txt: line
                 },
-                kind: ExpressionKind::List(_),
+                kind: ExpressionKind::Literal(Value::Pair(Some(_))),
             } if Rc::ptr_eq(&txt, &line)
         ));
-        let lst = extract_or_fail!(inner.kind, ExpressionKind::List);
-        assert_eq!(lst.len(), 1);
-        assert!(matches!(
-            &lst[0],
-            Expression {
-                ctx: ExprCtx {
-                    span: Range { start: 4, end: 7 },
-                    txt: line
-                },
-                kind: ExpressionKind::Literal(Value::Symbol(s)),
-            } if Rc::ptr_eq(&txt, &line) && &**s == "foo"
-        ));
+        let value = extract_or_fail!(inner.kind, ExpressionKind::Literal);
+        assert_eq!(value.as_datum().to_string(), "(foo)");
     }
 
     #[test]
@@ -2380,9 +2170,11 @@ mod merge {
                     span: Range { start: 3, end: 5 },
                     txt: line
                 },
-                kind: ExpressionKind::List(lst),
-            } if Rc::ptr_eq(&txt, &line) && lst.is_empty()
+                kind: ExpressionKind::Literal(Value::Pair(None)),
+            } if Rc::ptr_eq(&txt, &line)
         ));
+        let value = extract_or_fail!(inner.kind, ExpressionKind::Literal);
+        assert_eq!(value.as_datum().to_string(), "()");
     }
 
     #[test]
@@ -2476,21 +2268,11 @@ mod merge {
                     span: Range { start: 3, end: 8 },
                     txt: line
                 },
-                kind: ExpressionKind::List(_),
+                kind: ExpressionKind::Literal(Value::Pair(Some(_))),
             } if Rc::ptr_eq(&txt, &line)
         ));
-        let lst = extract_or_fail!(inner.kind, ExpressionKind::List);
-        assert_eq!(lst.len(), 1);
-        assert!(matches!(
-            &lst[0],
-            Expression {
-                ctx: ExprCtx {
-                    span: Range { start: 4, end: 7 },
-                    txt: line
-                },
-                kind: ExpressionKind::Literal(Value::Symbol(s)),
-            } if Rc::ptr_eq(&txt, &line) && &**s == "foo"
-        ));
+        let value = extract_or_fail!(inner.kind, ExpressionKind::Literal);
+        assert_eq!(value.as_datum().to_string(), "(foo)");
     }
 
     #[test]
@@ -2533,9 +2315,11 @@ mod merge {
                     span: Range { start: 3, end: 5 },
                     txt: line
                 },
-                kind: ExpressionKind::List(lst),
-            } if Rc::ptr_eq(&txt, &line) && lst.is_empty()
+                kind: ExpressionKind::Literal(Value::Pair(None)),
+            } if Rc::ptr_eq(&txt, &line)
         ));
+        let value = extract_or_fail!(inner.kind, ExpressionKind::Literal);
+        assert_eq!(value.as_datum().to_string(), "()");
     }
 
     #[test]

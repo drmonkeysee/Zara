@@ -73,13 +73,6 @@ impl Expression {
         }
     }
 
-    pub(super) fn list(items: impl Into<Box<[Expression]>>, ctx: ExprCtx) -> Self {
-        Self {
-            ctx,
-            kind: ExpressionKind::List(items.into()),
-        }
-    }
-
     pub(super) fn symbol(lbl: impl Into<Box<str>>, ctx: ExprCtx) -> Self {
         Self {
             ctx,
@@ -100,9 +93,6 @@ impl Expression {
             ExpressionKind::Variable(_) => {
                 todo!("this is dependent on current environment frame")
             }
-            ExpressionKind::List(_) => {
-                todo!("convert list into pairs, containing literals")
-            }
             ExpressionKind::Literal(v) => Some(v),
         }
     }
@@ -115,8 +105,6 @@ pub(super) enum ExpressionKind {
         args: Box<[Expression]>,
         proc: Box<Expression>,
     },
-    #[allow(dead_code, reason = "not yet implemented")]
-    List(Box<[Expression]>),
     Literal(Value),
     #[allow(dead_code, reason = "not yet implemented")]
     Variable(Box<str>),
@@ -226,7 +214,6 @@ impl Display for TypeName<'_> {
         match self.0 {
             ExpressionKind::Call { .. } => f.write_str("procedure call"),
             ExpressionKind::Variable(_) => f.write_str("variable"),
-            ExpressionKind::List(_) => f.write_str("list"),
             ExpressionKind::Literal(val) => val.as_typename().fmt(f),
         }
     }
@@ -266,13 +253,6 @@ mod tests {
             let expr = ExpressionKind::Variable("foo".into());
 
             assert_eq!(expr.as_typename().to_string(), "variable");
-        }
-
-        #[test]
-        fn list_typename() {
-            let expr = ExpressionKind::List([].into());
-
-            assert_eq!(expr.as_typename().to_string(), "list");
         }
 
         #[test]
