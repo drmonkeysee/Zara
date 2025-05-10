@@ -65,6 +65,21 @@ impl Pair {
     }
 }
 
+impl Display for Pair {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        self.car.as_datum().fmt(f)?;
+        if let Value::Pair(p) = &*self.cdr {
+            if let Some(p) = p {
+                write!(f, " {p}")?;
+            }
+            Ok(())
+        } else {
+            let d = self.cdr.as_datum();
+            write!(f, " . {d}")
+        }
+    }
+}
+
 pub(crate) struct Datum<'a>(&'a Value);
 
 impl Display for Datum<'_> {
@@ -80,7 +95,8 @@ impl Display for Datum<'_> {
                     .join(" ")
             ),
             Value::Constant(con) => con.as_datum().fmt(f),
-            Value::Pair(_) => todo!("pair/list datum"),
+            Value::Pair(None) => f.write_str("()"),
+            Value::Pair(Some(p)) => write!(f, "({p})"),
             Value::Symbol(s) => SymbolDatum(s).fmt(f),
             Value::TokenList(lines) => DisplayTokenLines(lines).fmt(f),
         }
@@ -191,6 +207,13 @@ mod tests {
             let v = Value::null();
 
             assert_eq!(v.as_typename().to_string(), "list");
+        }
+
+        #[test]
+        fn empty_list_display() {
+            let v = Value::null();
+
+            assert_eq!(v.as_datum().to_string(), "()")
         }
     }
 
@@ -452,6 +475,101 @@ bar"
             let p = Pair::cons(Value::null(), Value::null());
 
             assert!(p.is_list());
+        }
+
+        #[test]
+        fn pair_display() {
+            let p = Pair::cons(
+                Value::Constant(Constant::Boolean(true)),
+                Value::Constant(Constant::Boolean(false)),
+            );
+            let v = Value::pair(p);
+
+            assert_eq!(v.as_datum().to_string(), "(#t . #f)")
+        }
+
+        #[test]
+        fn empty_cdr_display() {
+            let p = Pair::cons(Value::Constant(Constant::Boolean(true)), Value::null());
+            let v = Value::pair(p);
+
+            assert_eq!(v.as_datum().to_string(), "(#t)")
+        }
+
+        #[test]
+        fn list_display() {
+            let p = Pair::cons(
+                Value::Constant(Constant::Number(Number::real(1))),
+                Value::pair(Pair::cons(
+                    Value::Constant(Constant::Number(Number::real(2))),
+                    Value::pair(Pair::cons(
+                        Value::Constant(Constant::Number(Number::real(3))),
+                        Value::null(),
+                    )),
+                )),
+            );
+            let v = Value::pair(p);
+
+            assert_eq!(v.as_datum().to_string(), "(1 2 3)")
+        }
+
+        #[test]
+        fn improper_list_display() {
+            let p = Pair::cons(
+                Value::Constant(Constant::Number(Number::real(1))),
+                Value::pair(Pair::cons(
+                    Value::Constant(Constant::Number(Number::real(2))),
+                    Value::Constant(Constant::Number(Number::real(3))),
+                )),
+            );
+            let v = Value::pair(p);
+
+            assert_eq!(v.as_datum().to_string(), "(1 2 . 3)")
+        }
+
+        #[test]
+        fn list_containing_pair_display() {
+            let p = Pair::cons(
+                Value::pair(Pair::cons(
+                    Value::Constant(Constant::Number(Number::real(1))),
+                    Value::Constant(Constant::Number(Number::real(2))),
+                )),
+                Value::pair(Pair::cons(
+                    Value::Constant(Constant::Number(Number::real(3))),
+                    Value::null(),
+                )),
+            );
+            let v = Value::pair(p);
+
+            assert_eq!(v.as_datum().to_string(), "((1 . 2) 3)")
+        }
+
+        #[test]
+        fn list_containing_list_display() {
+            let p = Pair::cons(
+                Value::Constant(Constant::Number(Number::real(1))),
+                Value::pair(Pair::cons(
+                    Value::pair(Pair::cons(
+                        Value::Constant(Constant::Number(Number::real(2))),
+                        Value::pair(Pair::cons(
+                            Value::Constant(Constant::Number(Number::real(3))),
+                            Value::null(),
+                        )),
+                    )),
+                    Value::null(),
+                )),
+            );
+            let v = Value::pair(p);
+
+            assert_eq!(v.as_datum().to_string(), "(1 (2 3))")
+        }
+
+        #[test]
+        fn list_containing_empty_list_display() {
+            let p = Pair::cons(Value::null(), Value::null());
+            let v = Value::pair(p);
+
+            assert_eq!(v.as_datum().to_string(), "(())")
         }
     }
 }
