@@ -146,6 +146,9 @@ pub(super) enum ExpressionErrorKind {
     IdentifierInvalid(TokenKind),
     IdentifierUnterminated,
     ListUnterminated,
+    PairIncomplete,
+    PairUnexpected,
+    PairUnterminated,
     SeqInvalid(TokenKind),
     StrInvalid(TokenKind),
     StrUnterminated,
@@ -168,6 +171,9 @@ impl Display for ExpressionErrorKind {
             Self::IdentifierInvalid(t) => format_unexpected_token("verbatim identifier", t, f),
             Self::IdentifierUnterminated => f.write_str("unterminated verbatim identifier"),
             Self::ListUnterminated => f.write_str("unterminated list expression"),
+            Self::PairIncomplete => f.write_str("missing first pair expression"),
+            Self::PairUnexpected => f.write_str("unexpected pair syntax in syntactic form"),
+            Self::PairUnterminated => f.write_str("unterminated pair expression"),
             Self::SeqInvalid(t) => format_unexpected_token("sequence", t, f),
             Self::StrInvalid(t) => format_unexpected_token("string", t, f),
             Self::StrUnterminated => f.write_str("unterminated string constant"),
@@ -460,6 +466,39 @@ mod tests {
             .into_error(ExpressionErrorKind::ListUnterminated);
 
             assert_eq!(err.to_string(), "unterminated list expression");
+        }
+
+        #[test]
+        fn display_incomplete_pair() {
+            let err = ExprCtx {
+                span: 0..5,
+                txt: make_textline().into(),
+            }
+            .into_error(ExpressionErrorKind::PairIncomplete);
+
+            assert_eq!(err.to_string(), "missing first pair expression");
+        }
+
+        #[test]
+        fn display_unexpected_pair() {
+            let err = ExprCtx {
+                span: 0..5,
+                txt: make_textline().into(),
+            }
+            .into_error(ExpressionErrorKind::PairUnexpected);
+
+            assert_eq!(err.to_string(), "unexpected pair syntax in syntactic form");
+        }
+
+        #[test]
+        fn display_unterminated_pair() {
+            let err = ExprCtx {
+                span: 0..5,
+                txt: make_textline().into(),
+            }
+            .into_error(ExpressionErrorKind::PairUnterminated);
+
+            assert_eq!(err.to_string(), "unterminated pair expression");
         }
 
         #[test]
