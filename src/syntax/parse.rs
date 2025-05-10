@@ -120,6 +120,7 @@ impl ExprNode {
             ParseMode::CommentDatum(inner) | ParseMode::Quote { inner, .. } => {
                 parse_datum(inner, token, txt, &self.ctx)
             }
+            ParseMode::DottedPair(..) => todo!("parse dotted pair"),
             ParseMode::Identifier { label, .. } => parse_verbatim_identifier(label, token, txt),
             ParseMode::List { form, seq } => {
                 if let Some(new_form) = parse_list(seq, token, txt, form.quoted())? {
@@ -154,6 +155,7 @@ impl ExprNode {
             ParseMode::CommentDatum(_) | ParseMode::Quote { .. } => {
                 ExpressionErrorKind::DatumExpected
             }
+            ParseMode::DottedPair(..) => ExpressionErrorKind::PairUnterminated,
             ParseMode::Identifier { .. } => ExpressionErrorKind::IdentifierUnterminated,
             ParseMode::List { .. } => ExpressionErrorKind::ListUnterminated,
             ParseMode::StringLiteral(_) => ExpressionErrorKind::StrUnterminated,
@@ -174,6 +176,7 @@ impl TryFrom<ExprNode> for Option<Expression> {
             ParseMode::ByteVector(seq) => into_bytevector(seq, value.ctx),
             ParseMode::CommentBlock => Ok(None),
             ParseMode::CommentDatum(inner) => into_comment_datum(inner.as_ref(), value.ctx),
+            ParseMode::DottedPair(..) => todo!("convert dotted pair"),
             ParseMode::Identifier { label, quoted } => {
                 Ok(Some(label_to_expr(label, quoted, value.ctx)))
             }
@@ -274,6 +277,7 @@ enum ParseMode {
     ByteVector(Vec<Expression>),
     CommentBlock,
     CommentDatum(Option<Expression>),
+    DottedPair(Expression, Option<Expression>),
     Identifier {
         label: String,
         quoted: bool,
@@ -293,6 +297,10 @@ impl ParseMode {
     fn identifier(mut label: String, quoted: bool) -> Self {
         label.push('\n');
         Self::Identifier { label, quoted }
+    }
+
+    fn dotted_pair(expr: Expression) -> Self {
+        Self::DottedPair(expr, None)
     }
 
     fn string(mut s: String, newline: bool) -> Self {
@@ -445,20 +453,45 @@ fn parse_list(
     txt: &Rc<TextLine>,
     quoted: bool,
 ) -> ListFlow {
-    if let TokenKind::ParenRight = token.kind {
-        ListFlow::Break(ParseBreak::complete(txt.lineno, token.span.end))
-    } else {
-        let mut resolved_form = None;
-        if let Some(expr) = parse_expr(token, txt, quoted)? {
-            if !quoted && seq.is_empty() {
-                if let ExpressionKind::Variable(lbl) = &expr.kind {
-                    // TODO: check for shadowed keywords here
-                    resolved_form = SyntacticForm::from_str(lbl);
-                }
+    match token.kind {
+        TokenKind::ParenRight => ListFlow::Break(ParseBreak::complete(txt.lineno, token.span.end)),
+        TokenKind::PairJoiner => {
+            if quoted {
+                ListFlow::Break(if let Some(expr) = seq.pop() {
+                    let start = expr.ctx.span.start;
+                    ParseBreak::new(ParseMode::dotted_pair(expr), start)
+                } else {
+                    ParseBreak::recover(
+                        ExprCtx {
+                            span: token.span,
+                            txt: Rc::clone(txt),
+                        }
+                        .into_error(ExpressionErrorKind::PairIncomplete),
+                    )
+                })
+            } else {
+                ListFlow::Break(ParseBreak::recover(
+                    ExprCtx {
+                        span: token.span,
+                        txt: Rc::clone(txt),
+                    }
+                    .into_error(ExpressionErrorKind::PairUnexpected),
+                ))
             }
-            seq.push(expr);
         }
-        ListFlow::Continue(resolved_form)
+        _ => {
+            let mut resolved_form = None;
+            if let Some(expr) = parse_expr(token, txt, quoted)? {
+                if !quoted && seq.is_empty() {
+                    if let ExpressionKind::Variable(lbl) = &expr.kind {
+                        // TODO: check for shadowed keywords here
+                        resolved_form = SyntacticForm::from_str(lbl);
+                    }
+                }
+                seq.push(expr);
+            }
+            ListFlow::Continue(resolved_form)
+        }
     }
 }
 

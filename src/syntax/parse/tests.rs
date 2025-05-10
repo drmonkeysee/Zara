@@ -1135,6 +1135,96 @@ mod list {
     }
 
     #[test]
+    fn start_dotted_pair() {
+        let txt = make_textline().into();
+        let mut seq = vec![Expression::constant(
+            Constant::Number(Number::real(4)),
+            ExprCtx {
+                span: 1..4,
+                txt: Rc::clone(&txt),
+            },
+        )];
+        let token = Token {
+            kind: TokenKind::PairJoiner,
+            span: 5..6,
+        };
+
+        let f = parse_list(&mut seq, token, &txt, true);
+
+        assert!(matches!(
+            f,
+            ListFlow::Break(ParseBreak::New(ParseNew {
+                mode: ParseMode::DottedPair(
+                    Expression {
+                        ctx: ExprCtx {
+                            span: Range { start: 1, end: 4 },
+                            txt: line,
+                        },
+                        kind: ExpressionKind::Literal(Value::Constant(Constant::Number(n)))
+                    },
+                    None
+                ),
+                start: 1
+            })) if Rc::ptr_eq(&txt, &line) && n.as_datum().to_string() == "4"
+        ));
+        assert!(seq.is_empty());
+    }
+
+    #[test]
+    fn start_dotted_pair_missing_first_element() {
+        let txt = make_textline().into();
+        let mut seq = vec![];
+        let token = Token {
+            kind: TokenKind::PairJoiner,
+            span: 1..2,
+        };
+
+        let f = parse_list(&mut seq, token, &txt, true);
+
+        assert!(matches!(
+            f,
+            ListFlow::Break(ParseBreak::Err {
+                err: ExpressionError {
+                    ctx: ExprCtx { span: Range { start: 1, end: 2 }, txt: line },
+                    kind: ExpressionErrorKind::PairIncomplete,
+                },
+                flow: ParseErrFlow::Continue(()),
+            }) if Rc::ptr_eq(&line, &txt)
+        ));
+        assert!(seq.is_empty());
+    }
+
+    #[test]
+    fn dotted_pair_in_non_datum() {
+        let txt = make_textline().into();
+        let mut seq = vec![Expression::constant(
+            Constant::Number(Number::real(4)),
+            ExprCtx {
+                span: 1..4,
+                txt: Rc::clone(&txt),
+            },
+        )];
+        let token = Token {
+            kind: TokenKind::PairJoiner,
+            span: 5..6,
+        };
+
+        let f = parse_list(&mut seq, token, &txt, false);
+
+        assert!(matches!(
+            f,
+            ListFlow::Break(ParseBreak::Err {
+                err: ExpressionError {
+                    ctx: ExprCtx { span: Range { start: 5, end: 6 }, txt: line },
+                    kind: ExpressionErrorKind::PairUnexpected,
+                },
+                flow: ParseErrFlow::Continue(()),
+            }) if Rc::ptr_eq(&line, &txt)
+        ));
+        assert_eq!(seq.len(), 1);
+    }
+
+    #[test]
     fn invalid_token() {
         let txt = make_textline().into();
         let mut seq = vec![
@@ -2610,6 +2700,36 @@ mod nodeutil {
             ExpressionError {
                 ctx: ExprCtx { span: Range { start: 3, end: 19 }, txt },
                 kind: ExpressionErrorKind::ListUnterminated,
+            } if txt.lineno == 1
+        ));
+    }
+
+    #[test]
+    fn pair_continuation() {
+        let txt = make_textline().into();
+        let p = ParseNode::new(
+            ParseMode::DottedPair(
+                Expression::constant(
+                    Constant::Number(Number::real(4)),
+                    ExprCtx {
+                        span: 1..4,
+                        txt: Rc::clone(&txt),
+                    },
+                ),
+                None,
+            ),
+            3,
+            Rc::clone(&txt),
+        );
+
+        let o = p.into_continuation_unsupported();
+
+        let err = some_or_fail!(o);
+        assert!(matches!(
+            &err,
+            ExpressionError {
+                ctx: ExprCtx { span: Range { start: 3, end: 19 }, txt },
+                kind: ExpressionErrorKind::PairUnterminated,
             } if txt.lineno == 1
         ));
     }
