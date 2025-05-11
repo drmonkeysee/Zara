@@ -334,14 +334,7 @@ fn parse_datum(
     node_ctx: &ExprCtx,
 ) -> ParseFlow {
     if let TokenKind::ParenRight = token.kind {
-        let ctx = ExprCtx {
-            span: node_ctx.span.start..if txt.lineno == node_ctx.txt.lineno {
-                token.span.end
-            } else {
-                node_ctx.span.end
-            },
-            txt: Rc::clone(&node_ctx.txt),
-        };
+        let ctx = extend_node_to_token(token.span.end, txt, node_ctx);
         ParseFlow::Break(ParseBreak::parser_failure(
             ctx.into_error(ExpressionErrorKind::DatumExpected),
         ))
@@ -356,6 +349,37 @@ fn parse_datum(
                     pos,
                 }))
             }
+        }
+    }
+}
+
+fn parse_pair(
+    second: &mut Option<Expression>,
+    token: Token,
+    txt: &Rc<TextLine>,
+    node_ctx: &ExprCtx,
+) -> ParseFlow {
+    if let TokenKind::ParenRight = token.kind {
+        ParseFlow::Break(if second.is_some() {
+            ParseBreak::Complete(ExprEnd {
+                lineno: txt.lineno,
+                pos: token.span.end,
+            })
+        } else {
+            let ctx = extend_node_to_token(token.span.end, txt, node_ctx);
+            ParseBreak::parser_failure(ctx.into_error(ExpressionErrorKind::DatumExpected))
+        })
+    } else {
+        if second.is_some() {
+            let ctx = extend_node_to_token(token.span.end, txt, node_ctx);
+            ParseFlow::Break(ParseBreak::recover(
+                ctx.into_error(ExpressionErrorKind::PairUnterminated),
+            ))
+        } else {
+            if let Some(expr) = parse_expr(token, txt, true)? {
+                second.replace(expr);
+            }
+            ParseFlow::Continue(())
         }
     }
 }
@@ -659,5 +683,16 @@ fn label_to_expr(label: String, quoted: bool, ctx: ExprCtx) -> Expression {
         Expression::symbol(label, ctx)
     } else {
         Expression::variable(label, ctx)
+    }
+}
+
+fn extend_node_to_token(token_end: usize, txt: &Rc<TextLine>, node_ctx: &ExprCtx) -> ExprCtx {
+    ExprCtx {
+        span: node_ctx.span.start..if txt.lineno == node_ctx.txt.lineno {
+            token_end
+        } else {
+            node_ctx.span.end
+        },
+        txt: Rc::clone(&node_ctx.txt),
     }
 }

@@ -402,7 +402,7 @@ mod datum {
     use super::*;
 
     #[test]
-    fn datum_simple() {
+    fn simple() {
         let token = Token {
             kind: TokenKind::Constant(Constant::Boolean(true)),
             span: 1..3,
@@ -431,7 +431,7 @@ mod datum {
     }
 
     #[test]
-    fn datum_compound() {
+    fn compound() {
         let token = Token {
             kind: TokenKind::ParenLeft,
             span: 1..2,
@@ -456,7 +456,7 @@ mod datum {
     }
 
     #[test]
-    fn datum_no_expression() {
+    fn no_expression() {
         let token = Token {
             kind: TokenKind::Comment,
             span: 1..6,
@@ -475,7 +475,7 @@ mod datum {
     }
 
     #[test]
-    fn datum_invalid() {
+    fn invalid() {
         let token = Token {
             kind: TokenKind::StringDiscard,
             span: 1..2,
@@ -503,7 +503,7 @@ mod datum {
     }
 
     #[test]
-    fn datum_end_of_list() {
+    fn end_of_list() {
         let token = Token {
             kind: TokenKind::ParenRight,
             span: 1..2,
@@ -528,6 +528,196 @@ mod datum {
             }) if Rc::ptr_eq(&txt, &line),
         ));
         assert!(inner.is_none());
+    }
+}
+
+mod dottedpair {
+    use super::*;
+
+    #[test]
+    fn simple() {
+        let token = Token {
+            kind: TokenKind::Constant(Constant::Boolean(true)),
+            span: 1..3,
+        };
+        let txt = make_textline().into();
+        let mut second = None;
+        let ctx = ExprCtx {
+            span: 0..1,
+            txt: Rc::clone(&txt),
+        };
+
+        let f = parse_pair(&mut second, token, &txt, &ctx);
+
+        assert!(matches!(f, ParseFlow::Continue(())));
+        let expr = some_or_fail!(second);
+        assert!(matches!(
+            expr,
+            Expression {
+                ctx: ExprCtx { span: Range { start: 1, end: 3 }, txt: line },
+                kind: ExpressionKind::Literal(Value::Constant(Constant::Boolean(true)))
+            } if Rc::ptr_eq(&txt, &line)
+        ));
+    }
+
+    #[test]
+    fn compound() {
+        let token = Token {
+            kind: TokenKind::ParenLeft,
+            span: 1..2,
+        };
+        let txt = make_textline().into();
+        let mut second = None;
+        let ctx = ExprCtx {
+            span: 0..1,
+            txt: Rc::clone(&txt),
+        };
+
+        let f = parse_pair(&mut second, token, &txt, &ctx);
+
+        assert!(matches!(
+            f,
+            ParseFlow::Break(ParseBreak::New(ParseNew {
+                mode: ParseMode::List { form: SyntacticForm::Datum, seq },
+                start: 1
+            })) if seq.is_empty(),
+        ));
+        assert!(second.is_none());
+    }
+
+    #[test]
+    fn end() {
+        let token = Token {
+            kind: TokenKind::ParenRight,
+            span: 6..7,
+        };
+        let txt = make_textline().into();
+        let mut second = Some(Expression {
+            ctx: ExprCtx {
+                span: 5..6,
+                txt: Rc::clone(&txt),
+            },
+            kind: ExpressionKind::Literal(Value::Symbol("foo".into())),
+        });
+        let ctx = ExprCtx {
+            span: 0..1,
+            txt: Rc::clone(&txt),
+        };
+
+        let f = parse_pair(&mut second, token, &txt, &ctx);
+
+        assert!(matches!(
+            f,
+            ParseFlow::Break(ParseBreak::Complete(ExprEnd { lineno: 1, pos: 7 }))
+        ));
+    }
+
+    #[test]
+    fn no_expression() {
+        let token = Token {
+            kind: TokenKind::Comment,
+            span: 1..6,
+        };
+        let txt = make_textline().into();
+        let mut second = None;
+        let ctx = ExprCtx {
+            span: 0..1,
+            txt: Rc::clone(&txt),
+        };
+
+        let f = parse_pair(&mut second, token, &txt, &ctx);
+
+        assert!(matches!(f, ParseFlow::Continue(())));
+        assert!(second.is_none());
+    }
+
+    #[test]
+    fn invalid() {
+        let token = Token {
+            kind: TokenKind::StringDiscard,
+            span: 1..2,
+        };
+        let txt = make_textline().into();
+        let mut second = None;
+        let ctx = ExprCtx {
+            span: 0..1,
+            txt: Rc::clone(&txt),
+        };
+
+        let f = parse_pair(&mut second, token, &txt, &ctx);
+
+        assert!(matches!(
+            f,
+            ParseFlow::Break(ParseBreak::Err{
+                err: ExpressionError {
+                    ctx: ExprCtx { span: Range { start: 1, end: 2 }, txt: line },
+                    kind: ExpressionErrorKind::SeqInvalid(TokenKind::StringDiscard),
+                },
+                flow: ParseErrFlow::Break(ParseErrBreak::InvalidTokenStream),
+            }) if Rc::ptr_eq(&txt, &line),
+        ));
+        assert!(second.is_none());
+    }
+
+    #[test]
+    fn pair_missing_datum() {
+        let token = Token {
+            kind: TokenKind::ParenRight,
+            span: 1..2,
+        };
+        let txt = make_textline().into();
+        let mut inner = None;
+        let ctx = ExprCtx {
+            span: 0..1,
+            txt: Rc::clone(&txt),
+        };
+
+        let f = parse_pair(&mut inner, token, &txt, &ctx);
+
+        assert!(matches!(
+            f,
+            ParseFlow::Break(ParseBreak::Err{
+                err: ExpressionError {
+                    ctx: ExprCtx { span: Range { start: 0, end: 2 }, txt: line },
+                    kind: ExpressionErrorKind::DatumExpected,
+                },
+                flow: ParseErrFlow::Break(ParseErrBreak::FailedParser),
+            }) if Rc::ptr_eq(&txt, &line),
+        ));
+        assert!(inner.is_none());
+    }
+
+    #[test]
+    fn unterminated() {
+        let token = Token {
+            kind: TokenKind::Constant(Constant::Boolean(true)),
+            span: 1..3,
+        };
+        let txt = make_textline().into();
+        let mut second = Some(Expression {
+            ctx: ExprCtx {
+                span: 5..6,
+                txt: Rc::clone(&txt),
+            },
+            kind: ExpressionKind::Literal(Value::Symbol("foo".into())),
+        });
+        let ctx = ExprCtx {
+            span: 0..1,
+            txt: Rc::clone(&txt),
+        };
+
+        let f = parse_pair(&mut second, token, &txt, &ctx);
+
+        assert!(matches!(
+            f,
+            ParseFlow::Break(ParseBreak::Err{
+                err: ExpressionError {
+                    ctx: ExprCtx { span: Range { start: 0, end: 3 }, txt: line },
+                    kind: ExpressionErrorKind::PairUnterminated,
+                },
+                flow: ParseErrFlow::Continue(()),
+            }) if Rc::ptr_eq(&txt, &line),
+        ));
     }
 }
 
