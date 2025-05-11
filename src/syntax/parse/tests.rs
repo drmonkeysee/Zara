@@ -719,6 +719,198 @@ mod dottedpair {
             }) if Rc::ptr_eq(&txt, &line),
         ));
     }
+
+    #[test]
+    fn literal_into_expr() {
+        let txt = make_textline().into();
+        let p = ExprNode {
+            ctx: ExprCtx {
+                span: 2..6,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::DottedPair(
+                Expression::constant(
+                    Constant::Boolean(false),
+                    ExprCtx {
+                        span: 2..4,
+                        txt: Rc::clone(&txt),
+                    },
+                ),
+                Some(Expression::constant(
+                    Constant::Boolean(true),
+                    ExprCtx {
+                        span: 4..6,
+                        txt: Rc::clone(&txt),
+                    },
+                )),
+            ),
+        };
+
+        let r: Result<Option<Expression>, _> = p.try_into();
+
+        let expr = some_or_fail!(ok_or_fail!(r));
+        assert!(matches!(
+            expr,
+            Expression {
+                ctx: ExprCtx {
+                    span: Range { start: 2, end: 6 },
+                    txt: line,
+                },
+                kind: ExpressionKind::Literal(Value::Pair(Some(p))),
+            } if Rc::ptr_eq(&txt, &line) && p.to_string() == "#f . #t"
+        ));
+    }
+
+    #[test]
+    fn invalid_first_into_expr() {
+        let txt = make_textline().into();
+        let p = ExprNode {
+            ctx: ExprCtx {
+                span: 2..6,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::DottedPair(
+                Expression::variable(
+                    "ab".to_owned(),
+                    ExprCtx {
+                        span: 2..4,
+                        txt: Rc::clone(&txt),
+                    },
+                ),
+                Some(Expression::constant(
+                    Constant::Boolean(true),
+                    ExprCtx {
+                        span: 4..6,
+                        txt: Rc::clone(&txt),
+                    },
+                )),
+            ),
+        };
+
+        let r: Result<Option<Expression>, _> = p.try_into();
+
+        let errs = err_or_fail!(r);
+        assert_eq!(errs.len(), 1);
+        assert!(matches!(
+            &errs[0],
+            ExpressionError {
+                ctx: ExprCtx { span: Range { start: 2, end: 4 }, txt },
+                kind: ExpressionErrorKind::DatumInvalid(ExpressionKind::Variable(s)),
+            } if txt.lineno == 1 && &**s == "ab"
+        ));
+    }
+
+    #[test]
+    fn invalid_second_into_expr() {
+        let txt = make_textline().into();
+        let p = ExprNode {
+            ctx: ExprCtx {
+                span: 2..6,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::DottedPair(
+                Expression::constant(
+                    Constant::Boolean(false),
+                    ExprCtx {
+                        span: 2..4,
+                        txt: Rc::clone(&txt),
+                    },
+                ),
+                Some(Expression::variable(
+                    "ab".to_owned(),
+                    ExprCtx {
+                        span: 4..6,
+                        txt: Rc::clone(&txt),
+                    },
+                )),
+            ),
+        };
+
+        let r: Result<Option<Expression>, _> = p.try_into();
+
+        let errs = err_or_fail!(r);
+        assert_eq!(errs.len(), 1);
+        assert!(matches!(
+            &errs[0],
+            ExpressionError {
+                ctx: ExprCtx { span: Range { start: 4, end: 6 }, txt },
+                kind: ExpressionErrorKind::DatumInvalid(ExpressionKind::Variable(s)),
+            } if txt.lineno == 1 && &**s == "ab"
+        ));
+    }
+
+    #[test]
+    fn missing_into_expr() {
+        let txt = make_textline().into();
+        let p = ExprNode {
+            ctx: ExprCtx {
+                span: 2..4,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::DottedPair(
+                Expression::constant(
+                    Constant::Boolean(false),
+                    ExprCtx {
+                        span: 2..4,
+                        txt: Rc::clone(&txt),
+                    },
+                ),
+                None,
+            ),
+        };
+
+        let r: Result<Option<Expression>, _> = p.try_into();
+
+        let errs = err_or_fail!(r);
+        assert_eq!(errs.len(), 1);
+        assert!(matches!(
+            &errs[0],
+            ExpressionError {
+                ctx: ExprCtx { span: Range { start: 2, end: 4 }, txt },
+                kind: ExpressionErrorKind::DatumExpected,
+            } if txt.lineno == 1
+        ));
+    }
+
+    #[test]
+    fn multiple_into_expr_errors() {
+        let txt = make_textline().into();
+        let p = ExprNode {
+            ctx: ExprCtx {
+                span: 2..6,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::DottedPair(
+                Expression::variable(
+                    "ab".to_owned(),
+                    ExprCtx {
+                        span: 2..4,
+                        txt: Rc::clone(&txt),
+                    },
+                ),
+                None,
+            ),
+        };
+
+        let r: Result<Option<Expression>, _> = p.try_into();
+
+        let errs = err_or_fail!(r);
+        assert_eq!(errs.len(), 2);
+        assert!(matches!(
+            &errs[0],
+            ExpressionError {
+                ctx: ExprCtx { span: Range { start: 2, end: 4 }, txt },
+                kind: ExpressionErrorKind::DatumInvalid(ExpressionKind::Variable(s)),
+            } if txt.lineno == 1 && &**s == "ab"
+        ));
+        assert!(matches!(
+            &errs[1],
+            ExpressionError {
+                ctx: ExprCtx { span: Range { start: 2, end: 6 }, txt },
+                kind: ExpressionErrorKind::DatumExpected,
+            } if txt.lineno == 1
+        ));
+    }
 }
 
 mod bytevector {

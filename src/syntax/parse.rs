@@ -120,7 +120,7 @@ impl ExprNode {
             ParseMode::CommentDatum(inner) | ParseMode::Quote { inner, .. } => {
                 parse_datum(inner, token, txt, &self.ctx)
             }
-            ParseMode::DottedPair(..) => todo!("parse dotted pair"),
+            ParseMode::DottedPair(_, second) => parse_pair(second, token, txt, &self.ctx),
             ParseMode::Identifier { label, .. } => parse_verbatim_identifier(label, token, txt),
             ParseMode::List { form, seq } => {
                 if let Some(new_form) = parse_list(seq, token, txt, form.quoted())? {
@@ -190,7 +190,7 @@ impl TryFrom<ExprNode> for Option<Expression> {
             ParseMode::ByteVector(seq) => into_bytevector(seq, value.ctx),
             ParseMode::CommentBlock => Ok(None),
             ParseMode::CommentDatum(inner) => into_comment_datum(inner.as_ref(), value.ctx),
-            ParseMode::DottedPair(..) => todo!("convert dotted pair"),
+            ParseMode::DottedPair(first, second) => into_pair(first, second, value.ctx),
             ParseMode::Identifier { label, quoted } => {
                 Ok(Some(label_to_expr(label, quoted, value.ctx)))
             }
@@ -637,7 +637,35 @@ fn into_datum(inner: Option<Expression>, ctx: ExprCtx, quoted: bool) -> ExprConv
 }
 
 fn into_pair(first: Expression, second: Option<Expression>, ctx: ExprCtx) -> ExprConvertResult {
-    todo!("convert to Pair");
+    let car = if let ExpressionKind::Literal(first) = first.kind {
+        Ok(first)
+    } else {
+        Err(first
+            .ctx
+            .clone()
+            .into_error(ExpressionErrorKind::DatumInvalid(first.kind)))
+    };
+    let cdr = if let Some(second) = second {
+        if let ExpressionKind::Literal(second) = second.kind {
+            Ok(second)
+        } else {
+            Err(second
+                .ctx
+                .into_error(ExpressionErrorKind::DatumInvalid(second.kind)))
+        }
+    } else {
+        Err(ctx.clone().into_error(ExpressionErrorKind::DatumExpected))
+    };
+    // TODO: replace with chained lets?
+    match (car, cdr) {
+        (Ok(car), Ok(cdr)) => Ok(Some(Expression {
+            ctx,
+            kind: ExpressionKind::Literal(Value::pair(Pair::cons(car, cdr))),
+        })),
+        (Err(car), Ok(_)) => Err(vec![car]),
+        (Ok(_), Err(cdr)) => Err(vec![cdr]),
+        (Err(car), Err(cdr)) => Err(vec![car, cdr]),
+    }
 }
 
 fn into_syntactic_form(
