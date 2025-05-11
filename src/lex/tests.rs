@@ -1295,7 +1295,7 @@ mod error {
 
         assert_eq!(
             err.display_message().to_string(),
-            "Syntax Error\nmylib:1 (lib/mylib.scm)\n\
+            "Lexical Error\nmylib:1 (lib/mylib.scm)\n\
                 \tline of source code\n"
         );
     }
@@ -1312,7 +1312,7 @@ mod error {
 
         assert_eq!(
             err.display_message().to_string(),
-            "Syntax Error\nmylib:1 (lib/mylib.scm)\n\
+            "Lexical Error\nmylib:1 (lib/mylib.scm)\n\
                 \tline of source code\n\
                 \t     ^^\n\
                 6: numeric error - unimplemented number parse: 'myerr'\n"
@@ -1331,7 +1331,7 @@ mod error {
 
         assert_eq!(
             err.display_message().to_string(),
-            "Syntax Error\nmylib:1 (lib/mylib.scm)\n\
+            "Lexical Error\nmylib:1 (lib/mylib.scm)\n\
                 \tline of source code\n\
                 \t^^^^\n\
                 1: numeric error - unimplemented number parse: 'myerr'\n"
@@ -1358,7 +1358,7 @@ mod error {
 
         assert_eq!(
             err.display_message().to_string(),
-            "Syntax Error\nmylib:1 (lib/mylib.scm)\n\
+            "Lexical Error\nmylib:1 (lib/mylib.scm)\n\
                 \tline of source code\n\
                 \t     ^^        ^^^^\n\
                 6: numeric error - unimplemented number parse: 'myerr'\n\
@@ -1386,7 +1386,7 @@ mod error {
 
         assert_eq!(
             err.display_message().to_string(),
-            "Syntax Error\nmylib:1\n\
+            "Lexical Error\nmylib:1\n\
                 \tline of source code\n\
                 \t     ^^\n\
                 6: numeric error - unimplemented number parse: 'myerr'\n"
@@ -1405,7 +1405,7 @@ mod error {
 
         assert_eq!(
             err.display_message().to_string(),
-            "Syntax Error\nmylib:1 (lib/mylib.scm)\n\
+            "Lexical Error\nmylib:1 (lib/mylib.scm)\n\
                 \tline of source code\n\
                 \t\n\
                 6: numeric error - unimplemented number parse: 'myerr'\n"
@@ -1424,7 +1424,7 @@ mod error {
 
         assert_eq!(
             err.display_message().to_string(),
-            "Syntax Error\nmylib:1 (lib/mylib.scm)\n\
+            "Lexical Error\nmylib:1 (lib/mylib.scm)\n\
                 \tline of source code\n\
                 \t               ^^^^^^^^^^\n\
                 16: numeric error - unimplemented number parse: 'myerr'\n"
