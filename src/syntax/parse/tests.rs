@@ -2603,6 +2603,162 @@ mod merge {
     }
 
     #[test]
+    fn pair_simple_merge() {
+        let txt = make_textline().into();
+        let mut p = ExprNode {
+            ctx: ExprCtx {
+                span: 0..3,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::DottedPair(
+                Expression {
+                    ctx: ExprCtx {
+                        span: 0..2,
+                        txt: Rc::clone(&txt),
+                    },
+                    kind: ExpressionKind::Literal(Value::Symbol("a".into())),
+                },
+                None,
+            ),
+        };
+        let other = ExprNode {
+            ctx: ExprCtx {
+                span: 3..6,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::Identifier {
+                label: "foo".to_owned(),
+                quoted: true,
+            },
+        };
+
+        let r = p.merge(other);
+
+        assert!(matches!(r, Ok(MergeFlow::Continue(()))));
+        let ParseMode::DottedPair(_, Some(second)) = p.mode else {
+            unreachable!();
+        };
+        assert!(matches!(
+            second,
+            Expression {
+                ctx: ExprCtx {
+                    span: Range { start: 3, end: 6 },
+                    txt: line
+                },
+                kind: ExpressionKind::Literal(Value::Symbol(s)),
+            } if &*s == "foo" && Rc::ptr_eq(&txt, &line)
+        ));
+    }
+
+    #[test]
+    fn pair_compound_merge() {
+        let txt = make_textline().into();
+        let mut p = ExprNode {
+            ctx: ExprCtx {
+                span: 0..3,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::DottedPair(
+                Expression {
+                    ctx: ExprCtx {
+                        span: 0..2,
+                        txt: Rc::clone(&txt),
+                    },
+                    kind: ExpressionKind::Literal(Value::Symbol("a".into())),
+                },
+                None,
+            ),
+        };
+        let other = ExprNode {
+            ctx: ExprCtx {
+                span: 3..8,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::List {
+                form: SyntacticForm::Datum,
+                seq: vec![Expression::symbol(
+                    "foo",
+                    ExprCtx {
+                        span: 4..7,
+                        txt: Rc::clone(&txt),
+                    },
+                )],
+            },
+        };
+
+        let r = p.merge(other);
+
+        assert!(matches!(r, Ok(MergeFlow::Continue(()))));
+        let ParseMode::DottedPair(_, Some(second)) = p.mode else {
+            unreachable!();
+        };
+        assert!(matches!(
+            second,
+            Expression {
+                ctx: ExprCtx {
+                    span: Range { start: 3, end: 8 },
+                    txt: line
+                },
+                kind: ExpressionKind::Literal(Value::Pair(Some(_))),
+            } if Rc::ptr_eq(&txt, &line)
+        ));
+        let value = extract_or_fail!(second.kind, ExpressionKind::Literal);
+        assert_eq!(value.as_datum().to_string(), "(foo)");
+    }
+
+    #[test]
+    fn pair_invalid_merge() {
+        let txt = make_textline().into();
+        let mut p = ExprNode {
+            ctx: ExprCtx {
+                span: 0..3,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::DottedPair(
+                Expression {
+                    ctx: ExprCtx {
+                        span: 0..2,
+                        txt: Rc::clone(&txt),
+                    },
+                    kind: ExpressionKind::Literal(Value::Symbol("a".into())),
+                },
+                Some(Expression {
+                    ctx: ExprCtx {
+                        span: 2..3,
+                        txt: Rc::clone(&txt),
+                    },
+                    kind: ExpressionKind::Literal(Value::Symbol("b".into())),
+                }),
+            ),
+        };
+        let other = ExprNode {
+            ctx: ExprCtx {
+                span: 3..6,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::Identifier {
+                label: "foo".to_owned(),
+                quoted: true,
+            },
+        };
+
+        let r = p.merge(other);
+
+        let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
+        assert_eq!(errs.len(), 1);
+        assert!(matches!(
+            &errs[0],
+            ExpressionError {
+                ctx: ExprCtx {
+                    span: Range { start: 0, end: 3 },
+                    txt: line
+                },
+                kind: ExpressionErrorKind::PairUnterminated,
+            } if Rc::ptr_eq(&txt, &line)
+        ));
+    }
+
+    #[test]
     fn identifier_merge() {
         let txt = make_textline().into();
         let mut p = ExprNode {

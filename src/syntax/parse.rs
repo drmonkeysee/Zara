@@ -2,7 +2,7 @@
 mod tests;
 
 use super::{
-    InvalidParseError, ParserError, Program,
+    InvalidParseError, ParserError, Program, SyntaxError,
     expr::{ExprCtx, ExprEnd, Expression, ExpressionError, ExpressionErrorKind, ExpressionKind},
 };
 use crate::{
@@ -143,6 +143,20 @@ impl ExprNode {
                     inner.replace(expr);
                     MergeFlow::Break(())
                 })
+            }
+            ParseMode::DottedPair(_, second) => {
+                if second.is_some() {
+                    Err(ParserError::Syntax(SyntaxError(vec![
+                        self.ctx
+                            .clone()
+                            .into_error(ExpressionErrorKind::PairUnterminated),
+                    ])))
+                } else {
+                    other.merge_into(|expr| {
+                        second.replace(expr);
+                        MergeFlow::Continue(())
+                    })
+                }
             }
             _ => Err(ParserError::Invalid(InvalidParseError::InvalidExprTarget)),
         }
@@ -620,6 +634,10 @@ fn into_datum(inner: Option<Expression>, ctx: ExprCtx, quoted: bool) -> ExprConv
             }
         },
     }
+}
+
+fn into_pair(first: Expression, second: Option<Expression>, ctx: ExprCtx) -> ExprConvertResult {
+    todo!("convert to Pair");
 }
 
 fn into_syntactic_form(
