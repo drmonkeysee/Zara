@@ -847,6 +847,145 @@ mod tests {
         }
 
         #[test]
+        fn pair_ignores_datum_comment() {
+            let mut et = ExpressionTree::default();
+            // NOTE: '(a . #; b c) -> (a . c)
+            let tokens = [make_tokenline([
+                TokenKind::Quote,
+                TokenKind::ParenLeft,
+                TokenKind::Identifier("a".to_owned()),
+                TokenKind::PairJoiner,
+                TokenKind::CommentDatum,
+                TokenKind::Identifier("b".to_owned()),
+                TokenKind::Identifier("c".to_owned()),
+                TokenKind::ParenRight,
+            ])];
+
+            let r = et.parse(tokens.into());
+
+            let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
+            let seq = prg.unwrap();
+            assert_eq!(seq.len(), 1);
+            assert!(matches!(
+                &seq[0],
+                Expression {
+                    ctx: ExprCtx { span: Range { start: 1, end: 8 }, txt },
+                    kind: ExpressionKind::Literal(Value::Pair(Some(_))),
+                } if txt.lineno == 1
+            ));
+            let value = extract_or_fail!(&seq[0].kind, ExpressionKind::Literal);
+            assert_eq!(value.as_datum().to_string(), "(a . c)");
+
+            assert!(et.parsers.is_empty());
+            assert!(et.errs.is_empty());
+        }
+
+        #[test]
+        fn pair_ignores_compound_datum_comment() {
+            let mut et = ExpressionTree::default();
+            // NOTE: '(a . #; (b c) d) -> (a . d)
+            let tokens = [make_tokenline([
+                TokenKind::Quote,
+                TokenKind::ParenLeft,
+                TokenKind::Identifier("a".to_owned()),
+                TokenKind::PairJoiner,
+                TokenKind::CommentDatum,
+                TokenKind::ParenLeft,
+                TokenKind::Identifier("b".to_owned()),
+                TokenKind::Identifier("c".to_owned()),
+                TokenKind::ParenRight,
+                TokenKind::Identifier("d".to_owned()),
+                TokenKind::ParenRight,
+            ])];
+
+            let r = et.parse(tokens.into());
+
+            let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
+            let seq = prg.unwrap();
+            assert_eq!(seq.len(), 1);
+            assert!(matches!(
+                &seq[0],
+                Expression {
+                    ctx: ExprCtx { span: Range { start: 1, end: 8 }, txt },
+                    kind: ExpressionKind::Literal(Value::Pair(Some(_))),
+                } if txt.lineno == 1
+            ));
+            let value = extract_or_fail!(&seq[0].kind, ExpressionKind::Literal);
+            assert_eq!(value.as_datum().to_string(), "(a . d)");
+
+            assert!(et.parsers.is_empty());
+            assert!(et.errs.is_empty());
+        }
+
+        #[test]
+        fn pair_ignores_comment_block() {
+            let mut et = ExpressionTree::default();
+            // NOTE: '(a . #| foo |# b) -> (a . b)
+            let tokens = [make_tokenline([
+                TokenKind::Quote,
+                TokenKind::ParenLeft,
+                TokenKind::Identifier("a".to_owned()),
+                TokenKind::PairJoiner,
+                TokenKind::Comment,
+                TokenKind::Identifier("b".to_owned()),
+                TokenKind::ParenRight,
+            ])];
+
+            let r = et.parse(tokens.into());
+
+            let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
+            let seq = prg.unwrap();
+            assert_eq!(seq.len(), 1);
+            dbg!(&seq[0]);
+            assert!(matches!(
+                &seq[0],
+                Expression {
+                    ctx: ExprCtx { span: Range { start: 1, end: 7 }, txt },
+                    kind: ExpressionKind::Literal(Value::Pair(Some(_))),
+                } if txt.lineno == 1
+            ));
+            let value = extract_or_fail!(&seq[0].kind, ExpressionKind::Literal);
+            assert_eq!(value.as_datum().to_string(), "(a . b)");
+
+            assert!(et.parsers.is_empty());
+            assert!(et.errs.is_empty());
+        }
+
+        #[test]
+        fn pair_ignores_trailing_comment_block() {
+            let mut et = ExpressionTree::default();
+            // NOTE: '(a . b #| foo |# ) -> (a . b)
+            let tokens = [make_tokenline([
+                TokenKind::Quote,
+                TokenKind::ParenLeft,
+                TokenKind::Identifier("a".to_owned()),
+                TokenKind::PairJoiner,
+                TokenKind::Identifier("b".to_owned()),
+                TokenKind::Comment,
+                TokenKind::ParenRight,
+            ])];
+
+            let r = et.parse(tokens.into());
+
+            let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
+            let seq = prg.unwrap();
+            assert_eq!(seq.len(), 1);
+            dbg!(&seq[0]);
+            assert!(matches!(
+                &seq[0],
+                Expression {
+                    ctx: ExprCtx { span: Range { start: 1, end: 7 }, txt },
+                    kind: ExpressionKind::Literal(Value::Pair(Some(_))),
+                } if txt.lineno == 1
+            ));
+            let value = extract_or_fail!(&seq[0].kind, ExpressionKind::Literal);
+            assert_eq!(value.as_datum().to_string(), "(a . b)");
+
+            assert!(et.parsers.is_empty());
+            assert!(et.errs.is_empty());
+        }
+
+        #[test]
         fn sequence_line_with_errors() {
             let mut et = ExpressionTree::default();
             let tokens = [make_tokenline([
@@ -1179,6 +1318,66 @@ mod tests {
                 ExpressionError {
                     ctx: ExprCtx { span: Range { start: 2, end: 3 }, txt },
                     kind: ExpressionErrorKind::PairIncomplete,
+                } if txt.lineno == 1
+            ));
+
+            assert!(et.parsers.is_empty());
+            assert!(et.errs.is_empty());
+        }
+
+        #[test]
+        fn double_dotted_pair() {
+            let mut et = ExpressionTree::default();
+            // NOTE: '(a . . b) -> err
+            let tokens = [make_tokenline([
+                TokenKind::Quote,
+                TokenKind::ParenLeft,
+                TokenKind::Identifier("a".to_owned()),
+                TokenKind::PairJoiner,
+                TokenKind::PairJoiner,
+                TokenKind::Identifier("b".to_owned()),
+                TokenKind::ParenRight,
+            ])];
+
+            let r = et.parse(tokens.into());
+
+            let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
+            assert_eq!(errs.len(), 1);
+            assert!(matches!(
+                &errs[0],
+                ExpressionError {
+                    ctx: ExprCtx { span: Range { start: 4, end: 5 }, txt },
+                    kind: ExpressionErrorKind::PairUnterminated,
+                } if txt.lineno == 1
+            ));
+
+            assert!(et.parsers.is_empty());
+            assert!(et.errs.is_empty());
+        }
+
+        #[test]
+        fn pair_comment_datum_leaves_pair_open() {
+            let mut et = ExpressionTree::default();
+            // NOTE: '(a . #; b) -> err
+            let tokens = [make_tokenline([
+                TokenKind::Quote,
+                TokenKind::ParenLeft,
+                TokenKind::Identifier("a".to_owned()),
+                TokenKind::PairJoiner,
+                TokenKind::CommentDatum,
+                TokenKind::Identifier("b".to_owned()),
+                TokenKind::ParenRight,
+            ])];
+
+            let r = et.parse(tokens.into());
+
+            let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
+            assert_eq!(errs.len(), 1);
+            assert!(matches!(
+                &errs[0],
+                ExpressionError {
+                    ctx: ExprCtx { span: Range { start: 4, end: 5 }, txt },
+                    kind: ExpressionErrorKind::PairUnterminated,
                 } if txt.lineno == 1
             ));
 

@@ -1266,6 +1266,84 @@ mod list {
     }
 
     #[test]
+    fn open_dotted_pair_does_nothing_if_no_expr() {
+        let txt = make_textline().into();
+        let mut seq = vec![Expression::constant(
+            Constant::Number(Number::real(4)),
+            ExprCtx {
+                span: 1..4,
+                txt: Rc::clone(&txt),
+            },
+        )];
+        let token = Token {
+            kind: TokenKind::Comment,
+            span: 5..8,
+        };
+        let mut frm = SyntacticForm::PairOpen;
+
+        let f = frm.parse_list(&mut seq, token, &txt);
+
+        assert!(matches!(frm, SyntacticForm::PairOpen));
+        assert!(matches!(f, ParseFlow::Continue(())));
+        assert_eq!(seq.len(), 1);
+    }
+
+    #[test]
+    fn closed_dotted_pair_does_nothing_if_no_expr() {
+        let txt = make_textline().into();
+        let mut seq = vec![Expression::constant(
+            Constant::Number(Number::real(4)),
+            ExprCtx {
+                span: 1..4,
+                txt: Rc::clone(&txt),
+            },
+        )];
+        let token = Token {
+            kind: TokenKind::Comment,
+            span: 5..8,
+        };
+        let mut frm = SyntacticForm::PairClosed;
+
+        let f = frm.parse_list(&mut seq, token, &txt);
+
+        assert!(matches!(frm, SyntacticForm::PairClosed));
+        assert!(matches!(f, ParseFlow::Continue(())));
+        assert_eq!(seq.len(), 1);
+    }
+
+    #[test]
+    fn open_dotted_pair_hits_end_of_list() {
+        let txt = make_textline().into();
+        let mut seq = vec![Expression::constant(
+            Constant::Number(Number::real(4)),
+            ExprCtx {
+                span: 1..4,
+                txt: Rc::clone(&txt),
+            },
+        )];
+        let token = Token {
+            kind: TokenKind::ParenRight,
+            span: 5..6,
+        };
+        let mut frm = SyntacticForm::PairOpen;
+
+        let f = frm.parse_list(&mut seq, token, &txt);
+
+        assert!(matches!(frm, SyntacticForm::PairOpen));
+        assert!(matches!(
+            f,
+            ParseFlow::Break(ParseBreak::Err {
+                err: ExpressionError {
+                    ctx: ExprCtx { span: Range { start: 5, end: 6 }, txt: line },
+                    kind: ExpressionErrorKind::PairUnterminated,
+                },
+                flow: ParseErrFlow::Break(ParseErrBreak::FailedParser),
+            }) if Rc::ptr_eq(&line, &txt)
+        ));
+        assert_eq!(seq.len(), 1);
+    }
+
+    #[test]
     fn double_dotted_open_pair() {
         let txt = make_textline().into();
         let mut seq = vec![Expression::constant(
@@ -2805,6 +2883,55 @@ mod merge {
                 kind: ExpressionKind::Literal(Value::Symbol(s)),
             } if &**s == "foo" && Rc::ptr_eq(&txt, &line)
         ));
+    }
+
+    #[test]
+    fn pair_merge_does_nothing_if_no_expr() {
+        let txt = make_textline().into();
+        let mut p = ExprNode {
+            ctx: ExprCtx {
+                span: 0..3,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::List {
+                form: SyntacticForm::PairOpen,
+                seq: vec![Expression {
+                    ctx: ExprCtx {
+                        span: 0..2,
+                        txt: Rc::clone(&txt),
+                    },
+                    kind: ExpressionKind::Literal(Value::Symbol("a".into())),
+                }],
+            },
+        };
+        let other = ExprNode {
+            ctx: ExprCtx {
+                span: 3..6,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::CommentDatum(Some(Expression {
+                ctx: ExprCtx {
+                    span: 2..4,
+                    txt: Rc::clone(&txt),
+                },
+                kind: ExpressionKind::Literal(Value::Symbol("b".into())),
+            })),
+        };
+
+        let r = p.merge(other);
+
+        assert!(matches!(r, Ok(MergeFlow::Continue(()))));
+        assert!(matches!(
+            p.mode,
+            ParseMode::List {
+                form: SyntacticForm::PairOpen,
+                ..
+            }
+        ));
+        let ParseMode::List { seq, .. } = p.mode else {
+            unreachable!();
+        };
+        assert_eq!(seq.len(), 1);
     }
 
     #[test]

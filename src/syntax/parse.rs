@@ -291,7 +291,17 @@ impl SyntacticForm {
     ) -> ParseFlow {
         match token.kind {
             TokenKind::ParenRight => {
-                ParseFlow::Break(ParseBreak::complete(txt.lineno, token.span.end))
+                if let SyntacticForm::PairOpen = self {
+                    ParseFlow::Break(ParseBreak::parser_failure(
+                        ExprCtx {
+                            span: token.span,
+                            txt: Rc::clone(txt),
+                        }
+                        .into_error(ExpressionErrorKind::PairUnterminated),
+                    ))
+                } else {
+                    ParseFlow::Break(ParseBreak::complete(txt.lineno, token.span.end))
+                }
             }
             TokenKind::PairJoiner => match self {
                 SyntacticForm::Datum => {
@@ -327,21 +337,23 @@ impl SyntacticForm {
                 )),
             },
             _ => {
-                if let SyntacticForm::PairClosed = self {
-                    *self = SyntacticForm::Datum;
-                    return ParseFlow::Break(ParseBreak::recover(
-                        ExprCtx {
-                            span: token.span,
-                            txt: Rc::clone(txt),
-                        }
-                        .into_error(ExpressionErrorKind::PairUnterminated),
-                    ));
-                }
                 let quoted = self.quoted();
+                let token_span = token.span.clone();
                 if let Some(expr) = parse_expr(token, txt, quoted)? {
-                    if let SyntacticForm::PairOpen = self {
-                        *self = SyntacticForm::PairClosed;
-                    }
+                    match self {
+                        SyntacticForm::PairClosed => {
+                            *self = SyntacticForm::Datum;
+                            return ParseFlow::Break(ParseBreak::recover(
+                                ExprCtx {
+                                    span: token_span,
+                                    txt: Rc::clone(txt),
+                                }
+                                .into_error(ExpressionErrorKind::PairUnterminated),
+                            ));
+                        }
+                        SyntacticForm::PairOpen => *self = SyntacticForm::PairClosed,
+                        _ => (),
+                    };
                     if !quoted && seq.is_empty() {
                         if let ExpressionKind::Variable(lbl) = &expr.kind {
                             // TODO: check for shadowed keywords here
