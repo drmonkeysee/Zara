@@ -47,10 +47,7 @@ impl ParseNode {
     }
 
     pub(super) fn is_invalid_parse(&self) -> bool {
-        matches!(
-            self,
-            ParseNode::InvalidParseTree(_) | ParseNode::InvalidTokenStream
-        )
+        matches!(self, Self::InvalidParseTree(_) | Self::InvalidTokenStream)
     }
 
     pub(super) fn parse(&mut self, token: Token, txt: &Rc<TextLine>) -> ParseFlow {
@@ -123,7 +120,7 @@ impl ExprNode {
         }
     }
 
-    fn merge(&mut self, other: ExprNode) -> MergeResult {
+    fn merge(&mut self, other: Self) -> MergeResult {
         match &mut self.mode {
             ParseMode::ByteVector(seq) => other.merge_into(|expr| {
                 seq.push(expr);
@@ -253,7 +250,7 @@ enum SyntacticForm {
 impl SyntacticForm {
     fn from_str(s: &str) -> Option<Self> {
         match s {
-            LONGFORM_QUOTE => Some(SyntacticForm::Quote),
+            LONGFORM_QUOTE => Some(Self::Quote),
             _ => None,
         }
     }

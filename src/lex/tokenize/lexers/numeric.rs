@@ -421,7 +421,7 @@ enum BreakCondition<'txt> {
 
 impl BreakCondition<'_> {
     fn is_default(&self) -> bool {
-        matches!(self, BreakCondition::Sub(SubCondition::Complete))
+        matches!(self, Self::Sub(SubCondition::Complete))
     }
 
     fn imaginary() -> Self {
@@ -445,7 +445,7 @@ impl BreakCondition<'_> {
 
 impl Default for BreakCondition<'_> {
     fn default() -> Self {
-        BreakCondition::Sub(SubCondition::Complete)
+        Self::Sub(SubCondition::Complete)
     }
 }
 

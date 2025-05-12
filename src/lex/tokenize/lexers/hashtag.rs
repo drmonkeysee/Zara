@@ -228,7 +228,7 @@ impl NumberKind {
         failure: TokenErrorKind,
         scanner: &mut Scanner,
         ch: Option<char>,
-    ) -> Result<NumberKind, TokenErrorKind> {
+    ) -> Result<Self, TokenErrorKind> {
         match ch.or_else(|| scanner.char_if_not_delimiter()) {
             Some('b' | 'B') => Ok(Self::Binary),
             Some('d' | 'D') => Ok(Self::Decimal),

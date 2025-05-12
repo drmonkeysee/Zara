@@ -354,7 +354,7 @@ pub(crate) enum Sign {
 
 impl Display for Sign {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        if *self == Sign::Negative {
+        if *self == Self::Negative {
             f.write_char('-')
         } else if f.sign_plus() {
             f.write_char('+')

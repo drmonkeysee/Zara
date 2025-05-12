@@ -60,7 +60,7 @@ impl Value {
             .rev()
             .reduce(|head, item| Self::pair(Pair::cons(item, head)))
         {
-            None => Value::null(),
+            None => Self::null(),
             Some(val) => val,
         }
     }
