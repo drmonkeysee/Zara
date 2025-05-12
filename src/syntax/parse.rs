@@ -136,23 +136,23 @@ impl ExprNode {
                 })
             }
             ParseMode::List { form, seq } => {
-                match form {
-                    SyntacticForm::PairClosed => {
-                        return Err(ParserError::Syntax(SyntaxError(vec![
-                            self.ctx
-                                .clone()
-                                .into_error(ExpressionErrorKind::PairUnterminated),
-                        ])));
+                if let Some(expr) = other.try_into()? {
+                    match form {
+                        SyntacticForm::PairClosed => {
+                            return Err(ParserError::Syntax(SyntaxError(vec![
+                                self.ctx
+                                    .clone()
+                                    .into_error(ExpressionErrorKind::PairUnterminated),
+                            ])));
+                        }
+                        SyntacticForm::PairOpen => {
+                            *form = SyntacticForm::PairClosed;
+                        }
+                        _ => (),
                     }
-                    SyntacticForm::PairOpen => {
-                        *form = SyntacticForm::PairClosed;
-                    }
-                    _ => (),
-                }
-                other.merge_into(|expr| {
                     seq.push(expr);
-                    MergeFlow::Continue(())
-                })
+                }
+                Ok(MergeFlow::Continue(()))
             }
             _ => Err(ParserError::Invalid(InvalidParseError::InvalidExprTarget)),
         }

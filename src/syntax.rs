@@ -132,6 +132,7 @@ impl ExpressionTree {
             match parser.parse(token, &txt) {
                 ParseFlow::Break(ParseBreak::Complete(end)) => {
                     parser = self.finalize_parser(parser, end, &mut errs);
+                    eprintln!("FINALIZED");
                 }
                 ParseFlow::Break(ParseBreak::Err { err, flow }) => {
                     errs.push(err);
@@ -906,7 +907,7 @@ mod tests {
             assert!(matches!(
                 &seq[0],
                 Expression {
-                    ctx: ExprCtx { span: Range { start: 1, end: 8 }, txt },
+                    ctx: ExprCtx { span: Range { start: 1, end: 11 }, txt },
                     kind: ExpressionKind::Literal(Value::Pair(Some(_))),
                 } if txt.lineno == 1
             ));
@@ -1376,7 +1377,47 @@ mod tests {
             assert!(matches!(
                 &errs[0],
                 ExpressionError {
-                    ctx: ExprCtx { span: Range { start: 4, end: 5 }, txt },
+                    ctx: ExprCtx { span: Range { start: 6, end: 7 }, txt },
+                    kind: ExpressionErrorKind::PairUnterminated,
+                } if txt.lineno == 1
+            ));
+
+            assert!(et.parsers.is_empty());
+            assert!(et.errs.is_empty());
+        }
+
+        #[test]
+        fn invalid_syntax_pair_member() {
+            let mut et = ExpressionTree::default();
+            // NOTE: '(a . #u8(1 b 2)) -> err
+            let tokens = [make_tokenline([
+                TokenKind::Quote,
+                TokenKind::ParenLeft,
+                TokenKind::Identifier("a".to_owned()),
+                TokenKind::PairJoiner,
+                TokenKind::ByteVector,
+                TokenKind::Constant(Constant::Number(Number::real(1))),
+                TokenKind::Identifier("b".to_owned()),
+                TokenKind::Constant(Constant::Number(Number::real(2))),
+                TokenKind::ParenRight,
+                TokenKind::ParenRight,
+            ])];
+
+            let r = et.parse(tokens.into());
+
+            let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
+            assert_eq!(errs.len(), 2);
+            assert!(matches!(
+                &errs[0],
+                ExpressionError {
+                    ctx: ExprCtx { span: Range { start: 6, end: 7 }, txt },
+                    kind: ExpressionErrorKind::ByteVectorInvalidItem(ExpressionKind::Literal(Value::Symbol(s))),
+                } if txt.lineno == 1 && &**s == "b"
+            ));
+            assert!(matches!(
+                &errs[1],
+                ExpressionError {
+                    ctx: ExprCtx { span: Range { start: 9, end: 10 }, txt },
                     kind: ExpressionErrorKind::PairUnterminated,
                 } if txt.lineno == 1
             ));
