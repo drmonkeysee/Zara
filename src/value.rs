@@ -50,6 +50,21 @@ impl Value {
             .fold(zlist![], |head, item| Self::pair(Pair::cons(item, head)))
     }
 
+    pub(crate) fn improper_list<I>(items: I) -> Self
+    where
+        I: IntoIterator<Item = Self>,
+        <I as IntoIterator>::IntoIter: DoubleEndedIterator,
+    {
+        match items
+            .into_iter()
+            .rev()
+            .reduce(|head, item| Self::pair(Pair::cons(item, head)))
+        {
+            None => Value::null(),
+            Some(val) => val,
+        }
+    }
+
     pub(crate) fn as_datum(&self) -> Datum {
         Datum(self)
     }
@@ -673,6 +688,44 @@ bar"
             ]);
 
             assert_eq!(lst.as_datum().to_string(), "(5 a #t)");
+        }
+
+        #[test]
+        fn improper_ctor_empty() {
+            let lst = Value::improper_list(vec![]);
+
+            assert_eq!(lst.as_datum().to_string(), "()");
+        }
+
+        #[test]
+        fn improper_ctor_single() {
+            let lst =
+                Value::improper_list(vec![Value::Constant(Constant::Number(Number::real(5)))]);
+
+            assert!(matches!(lst, Value::Constant(_)));
+            assert_eq!(lst.as_datum().to_string(), "5");
+        }
+
+        #[test]
+        fn improper_ctor_vec() {
+            let lst = Value::improper_list(vec![
+                Value::Constant(Constant::Number(Number::real(5))),
+                Value::Symbol("a".into()),
+                Value::Constant(Constant::Boolean(true)),
+            ]);
+
+            assert_eq!(lst.as_datum().to_string(), "(5 a . #t)");
+        }
+
+        #[test]
+        fn improper_ctor_slice() {
+            let lst = Value::improper_list([
+                Value::Constant(Constant::Number(Number::real(5))),
+                Value::Symbol("a".into()),
+                Value::Constant(Constant::Boolean(true)),
+            ]);
+
+            assert_eq!(lst.as_datum().to_string(), "(5 a . #t)");
         }
     }
 }
