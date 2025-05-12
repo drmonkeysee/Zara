@@ -112,29 +112,20 @@ pub(super) struct ExprNode {
 impl ExprNode {
     fn parse(&mut self, token: Token, txt: &Rc<TextLine>) -> ParseFlow {
         match &mut self.mode {
-            ParseMode::ByteVector(seq) => {
-                parse_list(seq, token, txt, true)?;
-                ParseFlow::Continue(())
-            }
+            ParseMode::ByteVector(seq) => SyntacticForm::Datum.parse_list(seq, token, txt),
             ParseMode::CommentBlock => parse_comment_block(token, txt),
             ParseMode::CommentDatum(inner) | ParseMode::Quote { inner, .. } => {
                 parse_datum(inner, token, txt, &self.ctx)
             }
-            ParseMode::DottedPair(_, second) => parse_pair(second, token, txt, &self.ctx),
             ParseMode::Identifier { label, .. } => parse_verbatim_identifier(label, token, txt),
-            ParseMode::List { form, seq } => {
-                if let Some(new_form) = parse_list(seq, token, txt, form.quoted())? {
-                    *form = new_form;
-                }
-                ParseFlow::Continue(())
-            }
+            ParseMode::List { form, seq } => form.parse_list(seq, token, txt),
             ParseMode::StringLiteral(buf) => parse_str(buf, token, txt),
         }
     }
 
     fn merge(&mut self, other: ExprNode) -> MergeResult {
         match &mut self.mode {
-            ParseMode::ByteVector(seq) | ParseMode::List { seq, .. } => other.merge_into(|expr| {
+            ParseMode::ByteVector(seq) => other.merge_into(|expr| {
                 seq.push(expr);
                 MergeFlow::Continue(())
             }),
@@ -144,19 +135,24 @@ impl ExprNode {
                     MergeFlow::Break(())
                 })
             }
-            ParseMode::DottedPair(_, second) => {
-                if second.is_some() {
-                    Err(ParserError::Syntax(SyntaxError(vec![
-                        self.ctx
-                            .clone()
-                            .into_error(ExpressionErrorKind::PairUnterminated),
-                    ])))
-                } else {
-                    other.merge_into(|expr| {
-                        second.replace(expr);
-                        MergeFlow::Continue(())
-                    })
+            ParseMode::List { form, seq } => {
+                match form {
+                    SyntacticForm::PairClosed => {
+                        return Err(ParserError::Syntax(SyntaxError(vec![
+                            self.ctx
+                                .clone()
+                                .into_error(ExpressionErrorKind::PairUnterminated),
+                        ])));
+                    }
+                    SyntacticForm::PairOpen => {
+                        *form = SyntacticForm::PairClosed;
+                    }
+                    _ => (),
                 }
+                other.merge_into(|expr| {
+                    seq.push(expr);
+                    MergeFlow::Continue(())
+                })
             }
             _ => Err(ParserError::Invalid(InvalidParseError::InvalidExprTarget)),
         }
@@ -169,7 +165,6 @@ impl ExprNode {
             ParseMode::CommentDatum(_) | ParseMode::Quote { .. } => {
                 ExpressionErrorKind::DatumExpected
             }
-            ParseMode::DottedPair(..) => ExpressionErrorKind::PairUnterminated,
             ParseMode::Identifier { .. } => ExpressionErrorKind::IdentifierUnterminated,
             ParseMode::List { .. } => ExpressionErrorKind::ListUnterminated,
             ParseMode::StringLiteral(_) => ExpressionErrorKind::StrUnterminated,
@@ -190,7 +185,6 @@ impl TryFrom<ExprNode> for Option<Expression> {
             ParseMode::ByteVector(seq) => into_bytevector(seq, value.ctx),
             ParseMode::CommentBlock => Ok(None),
             ParseMode::CommentDatum(inner) => into_comment_datum(inner.as_ref(), value.ctx),
-            ParseMode::DottedPair(first, second) => into_pair(first, second, value.ctx),
             ParseMode::Identifier { label, quoted } => {
                 Ok(Some(label_to_expr(label, quoted, value.ctx)))
             }
@@ -264,12 +258,13 @@ impl ParseNew {
 }
 
 type ExprFlow = ControlFlow<ParseBreak, Option<Expression>>;
-type ListFlow = ControlFlow<ParseBreak, Option<SyntacticForm>>;
 
 #[derive(Clone, Copy, Debug)]
 enum SyntacticForm {
     Call,
     Datum,
+    PairClosed,
+    PairOpen,
     Quote,
 }
 
@@ -282,7 +277,84 @@ impl SyntacticForm {
     }
 
     fn quoted(self) -> bool {
-        matches!(self, Self::Datum | Self::Quote)
+        matches!(
+            self,
+            Self::Datum | Self::PairClosed | Self::PairOpen | Self::Quote
+        )
+    }
+
+    fn parse_list(
+        &mut self,
+        seq: &mut Vec<Expression>,
+        token: Token,
+        txt: &Rc<TextLine>,
+    ) -> ParseFlow {
+        match token.kind {
+            TokenKind::ParenRight => {
+                ParseFlow::Break(ParseBreak::complete(txt.lineno, token.span.end))
+            }
+            TokenKind::PairJoiner => match self {
+                SyntacticForm::Datum => {
+                    if seq.is_empty() {
+                        ParseFlow::Break(ParseBreak::recover(
+                            ExprCtx {
+                                span: token.span,
+                                txt: Rc::clone(txt),
+                            }
+                            .into_error(ExpressionErrorKind::PairIncomplete),
+                        ))
+                    } else {
+                        *self = SyntacticForm::PairOpen;
+                        ParseFlow::Continue(())
+                    }
+                }
+                SyntacticForm::PairClosed | SyntacticForm::PairOpen => {
+                    *self = SyntacticForm::Datum;
+                    ParseFlow::Break(ParseBreak::recover(
+                        ExprCtx {
+                            span: token.span,
+                            txt: Rc::clone(txt),
+                        }
+                        .into_error(ExpressionErrorKind::PairUnterminated),
+                    ))
+                }
+                _ => ParseFlow::Break(ParseBreak::recover(
+                    ExprCtx {
+                        span: token.span,
+                        txt: Rc::clone(txt),
+                    }
+                    .into_error(ExpressionErrorKind::PairUnexpected),
+                )),
+            },
+            _ => {
+                if let SyntacticForm::PairClosed = self {
+                    *self = SyntacticForm::Datum;
+                    return ParseFlow::Break(ParseBreak::recover(
+                        ExprCtx {
+                            span: token.span,
+                            txt: Rc::clone(txt),
+                        }
+                        .into_error(ExpressionErrorKind::PairUnterminated),
+                    ));
+                }
+                let quoted = self.quoted();
+                if let Some(expr) = parse_expr(token, txt, quoted)? {
+                    if let SyntacticForm::PairOpen = self {
+                        *self = SyntacticForm::PairClosed;
+                    }
+                    if !quoted && seq.is_empty() {
+                        if let ExpressionKind::Variable(lbl) = &expr.kind {
+                            // TODO: check for shadowed keywords here
+                            if let Some(f) = SyntacticForm::from_str(lbl) {
+                                *self = f
+                            }
+                        }
+                    }
+                    seq.push(expr);
+                }
+                ParseFlow::Continue(())
+            }
+        }
     }
 }
 
@@ -291,7 +363,6 @@ enum ParseMode {
     ByteVector(Vec<Expression>),
     CommentBlock,
     CommentDatum(Option<Expression>),
-    DottedPair(Expression, Option<Expression>),
     Identifier {
         label: String,
         quoted: bool,
@@ -311,10 +382,6 @@ impl ParseMode {
     fn identifier(mut label: String, quoted: bool) -> Self {
         label.push('\n');
         Self::Identifier { label, quoted }
-    }
-
-    fn dotted_pair(expr: Expression) -> Self {
-        Self::DottedPair(expr, None)
     }
 
     fn string(mut s: String, newline: bool) -> Self {
@@ -363,37 +430,6 @@ fn parse_datum(
                     pos,
                 }))
             }
-        }
-    }
-}
-
-fn parse_pair(
-    second: &mut Option<Expression>,
-    token: Token,
-    txt: &Rc<TextLine>,
-    node_ctx: &ExprCtx,
-) -> ParseFlow {
-    if let TokenKind::ParenRight = token.kind {
-        ParseFlow::Break(if second.is_some() {
-            ParseBreak::Complete(ExprEnd {
-                lineno: txt.lineno,
-                pos: token.span.end,
-            })
-        } else {
-            let ctx = extend_node_to_token(token.span.end, txt, node_ctx);
-            ParseBreak::parser_failure(ctx.into_error(ExpressionErrorKind::DatumExpected))
-        })
-    } else {
-        if second.is_some() {
-            let ctx = extend_node_to_token(token.span.end, txt, node_ctx);
-            ParseFlow::Break(ParseBreak::recover(
-                ctx.into_error(ExpressionErrorKind::PairUnterminated),
-            ))
-        } else {
-            if let Some(expr) = parse_expr(token, txt, true)? {
-                second.replace(expr);
-            }
-            ParseFlow::Continue(())
         }
     }
 }
@@ -449,6 +485,13 @@ fn parse_expr(token: Token, txt: &Rc<TextLine>, quoted: bool) -> ExprFlow {
             },
             token.span.start,
         )),
+        TokenKind::PairJoiner => ExprFlow::Break(ParseBreak::recover(
+            ExprCtx {
+                span: token.span,
+                txt: Rc::clone(txt),
+            }
+            .into_error(ExpressionErrorKind::PairUnexpected),
+        )),
         TokenKind::Quote => ExprFlow::Break(ParseBreak::new(
             ParseMode::Quote {
                 inner: None,
@@ -483,56 +526,6 @@ fn parse_expr(token: Token, txt: &Rc<TextLine>, quoted: bool) -> ExprFlow {
             .into_error(ExpressionErrorKind::Unimplemented(token.kind)),
         )),
     }
-}
-
-fn parse_list(
-    seq: &mut Vec<Expression>,
-    token: Token,
-    txt: &Rc<TextLine>,
-    quoted: bool,
-) -> ListFlow {
-    match token.kind {
-        TokenKind::ParenRight => ListFlow::Break(ParseBreak::complete(txt.lineno, token.span.end)),
-        TokenKind::PairJoiner => ListFlow::Break(start_dotted_pair(seq, token, txt, quoted)),
-        _ => {
-            let mut resolved_form = None;
-            if let Some(expr) = parse_expr(token, txt, quoted)? {
-                if !quoted && seq.is_empty() {
-                    if let ExpressionKind::Variable(lbl) = &expr.kind {
-                        // TODO: check for shadowed keywords here
-                        resolved_form = SyntacticForm::from_str(lbl);
-                    }
-                }
-                seq.push(expr);
-            }
-            ListFlow::Continue(resolved_form)
-        }
-    }
-}
-
-fn start_dotted_pair(
-    seq: &mut Vec<Expression>,
-    token: Token,
-    txt: &Rc<TextLine>,
-    quoted: bool,
-) -> ParseBreak {
-    let err = if quoted {
-        if let Some(expr) = seq.pop() {
-            let start = expr.ctx.span.start;
-            return ParseBreak::new(ParseMode::dotted_pair(expr), start);
-        } else {
-            ExpressionErrorKind::PairIncomplete
-        }
-    } else {
-        ExpressionErrorKind::PairUnexpected
-    };
-    ParseBreak::recover(
-        ExprCtx {
-            span: token.span,
-            txt: Rc::clone(txt),
-        }
-        .into_error(err),
-    )
 }
 
 fn parse_sequence(seq: &mut Vec<Expression>, token: Token, txt: &Rc<TextLine>) -> ParseFlow {
@@ -636,38 +629,6 @@ fn into_datum(inner: Option<Expression>, ctx: ExprCtx, quoted: bool) -> ExprConv
     }
 }
 
-fn into_pair(first: Expression, second: Option<Expression>, ctx: ExprCtx) -> ExprConvertResult {
-    let car = if let ExpressionKind::Literal(first) = first.kind {
-        Ok(first)
-    } else {
-        Err(first
-            .ctx
-            .clone()
-            .into_error(ExpressionErrorKind::DatumInvalid(first.kind)))
-    };
-    let cdr = if let Some(second) = second {
-        if let ExpressionKind::Literal(second) = second.kind {
-            Ok(second)
-        } else {
-            Err(second
-                .ctx
-                .into_error(ExpressionErrorKind::DatumInvalid(second.kind)))
-        }
-    } else {
-        Err(ctx.clone().into_error(ExpressionErrorKind::DatumExpected))
-    };
-    // TODO: replace with chained lets?
-    match (car, cdr) {
-        (Ok(car), Ok(cdr)) => Ok(Some(Expression {
-            ctx,
-            kind: ExpressionKind::Literal(Value::pair(Pair::cons(car, cdr))),
-        })),
-        (Err(car), Ok(_)) => Err(vec![car]),
-        (Ok(_), Err(cdr)) => Err(vec![cdr]),
-        (Err(car), Err(cdr)) => Err(vec![car, cdr]),
-    }
-}
-
 fn into_syntactic_form(
     form: SyntacticForm,
     seq: Vec<Expression>,
@@ -686,7 +647,9 @@ fn into_syntactic_form(
                 proc: proc.into(),
             })))
         }
-        SyntacticForm::Datum => into_list(seq, ctx),
+        SyntacticForm::Datum => into_list(seq, ctx, false),
+        SyntacticForm::PairClosed => into_list(seq, ctx, true),
+        SyntacticForm::PairOpen => Err(vec![ctx.into_error(ExpressionErrorKind::PairUnterminated)]),
         SyntacticForm::Quote => {
             debug_assert!(seq.len() == 2, "invalid syntax for quote");
             Ok(Some(seq.into_iter().next_back().unwrap()))
@@ -694,7 +657,7 @@ fn into_syntactic_form(
     }
 }
 
-fn into_list(seq: Vec<Expression>, ctx: ExprCtx) -> ExprConvertResult {
+fn into_list(seq: Vec<Expression>, ctx: ExprCtx, improper: bool) -> ExprConvertResult {
     into_valid_sequence(
         seq,
         ctx,
@@ -704,7 +667,13 @@ fn into_list(seq: Vec<Expression>, ctx: ExprCtx) -> ExprConvertResult {
                 .ctx
                 .into_error(ExpressionErrorKind::DatumInvalid(expr.kind))),
         },
-        |vals| ExpressionKind::Literal(Value::list(vals)),
+        |vals| {
+            ExpressionKind::Literal(if improper {
+                Value::improper_list(vals)
+            } else {
+                Value::list(vals)
+            })
+        },
     )
 }
 

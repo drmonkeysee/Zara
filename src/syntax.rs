@@ -726,7 +726,7 @@ mod tests {
             assert!(matches!(
                 &seq[0],
                 Expression {
-                    ctx: ExprCtx { span: Range { start: 1, end: 6 }, txt },
+                    ctx: ExprCtx { span: Range { start: 1, end: 7 }, txt },
                     kind: ExpressionKind::Literal(Value::Pair(Some(_))),
                 } if txt.lineno == 1
             ));
@@ -740,6 +740,7 @@ mod tests {
         #[test]
         fn pair_with_list_cdr() {
             let mut et = ExpressionTree::default();
+            // NOTE: '(a . (b c)) -> (a b c)
             let tokens = [make_tokenline([
                 TokenKind::Quote,
                 TokenKind::ParenLeft,
@@ -765,7 +766,7 @@ mod tests {
                 } if txt.lineno == 1
             ));
             let value = extract_or_fail!(&seq[0].kind, ExpressionKind::Literal);
-            assert_eq!(value.as_datum().to_string(), "(a . (b c))");
+            assert_eq!(value.as_datum().to_string(), "(a b c)");
 
             assert!(et.parsers.is_empty());
             assert!(et.errs.is_empty());
@@ -801,12 +802,45 @@ mod tests {
             assert!(matches!(
                 &seq[0],
                 Expression {
-                    ctx: ExprCtx { span: Range { start: 1, end: 6 }, txt },
+                    ctx: ExprCtx { span: Range { start: 1, end: 15 }, txt },
                     kind: ExpressionKind::Literal(Value::Pair(Some(_))),
                 } if txt.lineno == 1
             ));
             let value = extract_or_fail!(&seq[0].kind, ExpressionKind::Literal);
             assert_eq!(value.as_datum().to_string(), "(a b c)");
+
+            assert!(et.parsers.is_empty());
+            assert!(et.errs.is_empty());
+        }
+
+        #[test]
+        fn list_of_pair() {
+            let mut et = ExpressionTree::default();
+            let tokens = [make_tokenline([
+                TokenKind::Quote,
+                TokenKind::ParenLeft,
+                TokenKind::ParenLeft,
+                TokenKind::Identifier("a".to_owned()),
+                TokenKind::PairJoiner,
+                TokenKind::Identifier("b".to_owned()),
+                TokenKind::ParenRight,
+                TokenKind::ParenRight,
+            ])];
+
+            let r = et.parse(tokens.into());
+
+            let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
+            let seq = prg.unwrap();
+            assert_eq!(seq.len(), 1);
+            assert!(matches!(
+                &seq[0],
+                Expression {
+                    ctx: ExprCtx { span: Range { start: 1, end: 8 }, txt },
+                    kind: ExpressionKind::Literal(Value::Pair(Some(_))),
+                } if txt.lineno == 1
+            ));
+            let value = extract_or_fail!(&seq[0].kind, ExpressionKind::Literal);
+            assert_eq!(value.as_datum().to_string(), "((a . b))");
 
             assert!(et.parsers.is_empty());
             assert!(et.errs.is_empty());
@@ -1079,16 +1113,11 @@ mod tests {
             let r = et.parse(tokens.into());
 
             let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
-            // TODO: fails due to recover fail state, it does not close the
-            // exprnode and continues parsing DottedPair.
-            // need to tokens until delimiter and discard node
-            // (need to fix pair stealing list's closing paren first).
-            dbg!(&errs);
             assert_eq!(errs.len(), 1);
             assert!(matches!(
                 &errs[0],
                 ExpressionError {
-                    ctx: ExprCtx { span: Range { start: 0, end: 19 }, txt },
+                    ctx: ExprCtx { span: Range { start: 5, end: 6 }, txt },
                     kind: ExpressionErrorKind::PairUnterminated,
                 } if txt.lineno == 1
             ));
@@ -1118,7 +1147,7 @@ mod tests {
             assert!(matches!(
                 &errs[0],
                 ExpressionError {
-                    ctx: ExprCtx { span: Range { start: 2, end: 6 }, txt },
+                    ctx: ExprCtx { span: Range { start: 5, end: 6 }, txt },
                     kind: ExpressionErrorKind::PairUnterminated,
                 } if txt.lineno == 1
             ));
