@@ -1527,6 +1527,33 @@ mod list {
     }
 
     #[test]
+    fn into_empty_procedure_call() {
+        let txt = make_textline().into();
+        let p = ExprNode {
+            ctx: ExprCtx {
+                span: 0..8,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::List {
+                form: SyntacticForm::Call,
+                seq: vec![],
+            },
+        };
+
+        let r: Result<Option<Expression>, _> = p.try_into();
+
+        let errs = err_or_fail!(r);
+        assert_eq!(errs.len(), 1);
+        assert!(matches!(
+            &errs[0],
+            ExpressionError {
+                ctx: ExprCtx { span: Range { start: 0, end: 8 }, txt: line },
+                kind: ExpressionErrorKind::ProcedureEmpty,
+            } if Rc::ptr_eq(&txt, &line)
+        ));
+    }
+
+    #[test]
     fn into_quote_apply() {
         let txt = make_textline().into();
         let p = ExprNode {

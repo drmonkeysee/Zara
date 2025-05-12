@@ -662,16 +662,14 @@ fn into_syntactic_form(
 ) -> ExprConvertResult {
     match form {
         SyntacticForm::Call => {
-            debug_assert!(
-                !seq.is_empty(),
-                "empty list is invalid syntax unless quoted"
-            );
             let mut iter = seq.into_iter();
-            let proc = iter.next().unwrap();
-            Ok(Some(ctx.into_expr(ExpressionKind::Call {
-                args: iter.collect(),
-                proc: proc.into(),
-            })))
+            match iter.next() {
+                None => Err(vec![ctx.into_error(ExpressionErrorKind::ProcedureEmpty)]),
+                Some(proc) => Ok(Some(ctx.into_expr(ExpressionKind::Call {
+                    args: iter.collect(),
+                    proc: proc.into(),
+                }))),
+            }
         }
         SyntacticForm::Datum => into_list(seq, ctx, false),
         SyntacticForm::PairClosed => into_list(seq, ctx, true),

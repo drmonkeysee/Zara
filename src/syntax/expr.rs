@@ -149,6 +149,7 @@ pub(super) enum ExpressionErrorKind {
     PairIncomplete,
     PairUnexpected,
     PairUnterminated,
+    ProcedureEmpty,
     SeqInvalid(TokenKind),
     StrInvalid(TokenKind),
     StrUnterminated,
@@ -174,6 +175,7 @@ impl Display for ExpressionErrorKind {
             Self::PairIncomplete => f.write_str("missing first pair expression"),
             Self::PairUnexpected => f.write_str("unexpected pair syntax in syntactic form"),
             Self::PairUnterminated => f.write_str("unterminated pair expression"),
+            Self::ProcedureEmpty => f.write_str("empty procedure call"),
             Self::SeqInvalid(t) => format_unexpected_token("sequence", t, f),
             Self::StrInvalid(t) => format_unexpected_token("string", t, f),
             Self::StrUnterminated => f.write_str("unterminated string constant"),
@@ -499,6 +501,17 @@ mod tests {
             .into_error(ExpressionErrorKind::PairUnterminated);
 
             assert_eq!(err.to_string(), "unterminated pair expression");
+        }
+
+        #[test]
+        fn display_empty_procedure_call() {
+            let err = ExprCtx {
+                span: 0..5,
+                txt: make_textline().into(),
+            }
+            .into_error(ExpressionErrorKind::ProcedureEmpty);
+
+            assert_eq!(err.to_string(), "empty procedure call");
         }
 
         #[test]

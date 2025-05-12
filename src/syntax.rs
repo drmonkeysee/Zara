@@ -273,13 +273,21 @@ impl Display for SyntaxErrorLineMessage<'_> {
             .iter()
             .filter_map(|err| (!err.ctx.span.is_empty()).then_some(&err.ctx.span))
         {
+            let mut newline = "";
+            let start = match span.start.checked_sub(cursor) {
+                None => {
+                    newline = "\n\t";
+                    span.start
+                }
+                Some(start) => start,
+            };
             write!(
                 f,
-                "{0:>1$}{2:^<3$}",
+                "{newline}{0:>1$}{2:^<3$}",
                 "^",
-                span.start + 1 - cursor,
+                start + 1,
                 "",
-                span.len() - 1
+                span.len() - 1,
             )?;
             cursor = span.end;
         }
@@ -1450,6 +1458,39 @@ mod tests {
             assert!(et.parsers.is_empty());
             assert!(et.errs.is_empty());
         }
+
+        #[test]
+        fn unquoted_empty_pair() {
+            let mut et = ExpressionTree::default();
+            // NOTE: ( . ) -> err
+            let tokens = [make_tokenline([
+                TokenKind::ParenLeft,
+                TokenKind::PairJoiner,
+                TokenKind::ParenRight,
+            ])];
+
+            let r = et.parse(tokens.into());
+
+            let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
+            assert_eq!(errs.len(), 2);
+            assert!(matches!(
+                &errs[0],
+                ExpressionError {
+                    ctx: ExprCtx { span: Range { start: 1, end: 2 }, txt },
+                    kind: ExpressionErrorKind::PairUnexpected,
+                } if txt.lineno == 1
+            ));
+            assert!(matches!(
+                &errs[1],
+                ExpressionError {
+                    ctx: ExprCtx { span: Range { start: 0, end: 3 }, txt },
+                    kind: ExpressionErrorKind::ProcedureEmpty,
+                } if txt.lineno == 1
+            ));
+
+            assert!(et.parsers.is_empty());
+            assert!(et.errs.is_empty());
+        }
     }
 
     mod continuation {
@@ -1598,6 +1639,72 @@ mod tests {
             assert_eq!(
                 err.display_message().to_string(),
                 "Syntax Error\nmylib:1 (lib/mylib.scm)\n\tline of source code\n\t^^^\n1: unterminated list expression\n"
+            );
+        }
+
+        #[test]
+        fn display_overlap_suffix_syntax_messages() {
+            let txt = make_textline().into();
+            let err = ParserError::Syntax(SyntaxError(vec![
+                ExprCtx {
+                    span: 2..4,
+                    txt: Rc::clone(&txt),
+                }
+                .into_error(ExpressionErrorKind::ListUnterminated),
+                ExprCtx {
+                    span: 3..6,
+                    txt: Rc::clone(&txt),
+                }
+                .into_error(ExpressionErrorKind::ListUnterminated),
+            ]));
+
+            assert_eq!(
+                err.display_message().to_string(),
+                "Syntax Error\nmylib:1 (lib/mylib.scm)\n\tline of source code\n\t  ^^\n\t   ^^^\n3: unterminated list expression\n4: unterminated list expression\n"
+            );
+        }
+
+        #[test]
+        fn display_overlap_prefix_syntax_messages() {
+            let txt = make_textline().into();
+            let err = ParserError::Syntax(SyntaxError(vec![
+                ExprCtx {
+                    span: 2..4,
+                    txt: Rc::clone(&txt),
+                }
+                .into_error(ExpressionErrorKind::ListUnterminated),
+                ExprCtx {
+                    span: 0..3,
+                    txt: Rc::clone(&txt),
+                }
+                .into_error(ExpressionErrorKind::ListUnterminated),
+            ]));
+
+            assert_eq!(
+                err.display_message().to_string(),
+                "Syntax Error\nmylib:1 (lib/mylib.scm)\n\tline of source code\n\t  ^^\n\t^^^\n3: unterminated list expression\n1: unterminated list expression\n"
+            );
+        }
+
+        #[test]
+        fn display_encompassed_syntax_messages() {
+            let txt = make_textline().into();
+            let err = ParserError::Syntax(SyntaxError(vec![
+                ExprCtx {
+                    span: 2..4,
+                    txt: Rc::clone(&txt),
+                }
+                .into_error(ExpressionErrorKind::ListUnterminated),
+                ExprCtx {
+                    span: 0..5,
+                    txt: Rc::clone(&txt),
+                }
+                .into_error(ExpressionErrorKind::ListUnterminated),
+            ]));
+
+            assert_eq!(
+                err.display_message().to_string(),
+                "Syntax Error\nmylib:1 (lib/mylib.scm)\n\tline of source code\n\t  ^^\n\t^^^^^\n3: unterminated list expression\n1: unterminated list expression\n"
             );
         }
 
