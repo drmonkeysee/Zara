@@ -132,7 +132,6 @@ impl ExpressionTree {
             match parser.parse(token, &txt) {
                 ParseFlow::Break(ParseBreak::Complete(end)) => {
                     parser = self.finalize_parser(parser, end, &mut errs);
-                    eprintln!("FINALIZED");
                 }
                 ParseFlow::Break(ParseBreak::Err { err, flow }) => {
                     errs.push(err);
@@ -937,7 +936,6 @@ mod tests {
             let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
             let seq = prg.unwrap();
             assert_eq!(seq.len(), 1);
-            dbg!(&seq[0]);
             assert!(matches!(
                 &seq[0],
                 Expression {
@@ -971,7 +969,6 @@ mod tests {
             let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
             let seq = prg.unwrap();
             assert_eq!(seq.len(), 1);
-            dbg!(&seq[0]);
             assert!(matches!(
                 &seq[0],
                 Expression {
