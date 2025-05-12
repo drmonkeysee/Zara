@@ -2839,13 +2839,13 @@ mod merge {
             },
             mode: ParseMode::List {
                 form: SyntacticForm::PairOpen,
-                seq: vec![Expression {
-                    ctx: ExprCtx {
+                seq: vec![
+                    ExprCtx {
                         span: 0..2,
                         txt: Rc::clone(&txt),
-                    },
-                    kind: ExpressionKind::Literal(Value::Symbol("a".into())),
-                }],
+                    }
+                    .into_expr(ExpressionKind::Literal(Value::Symbol("a".into()))),
+                ],
             },
         };
         let other = ExprNode {
@@ -2895,13 +2895,13 @@ mod merge {
             },
             mode: ParseMode::List {
                 form: SyntacticForm::PairOpen,
-                seq: vec![Expression {
-                    ctx: ExprCtx {
+                seq: vec![
+                    ExprCtx {
                         span: 0..2,
                         txt: Rc::clone(&txt),
-                    },
-                    kind: ExpressionKind::Literal(Value::Symbol("a".into())),
-                }],
+                    }
+                    .into_expr(ExpressionKind::Literal(Value::Symbol("a".into()))),
+                ],
             },
         };
         let other = ExprNode {
@@ -2909,13 +2909,13 @@ mod merge {
                 span: 3..6,
                 txt: Rc::clone(&txt),
             },
-            mode: ParseMode::CommentDatum(Some(Expression {
-                ctx: ExprCtx {
+            mode: ParseMode::CommentDatum(Some(
+                ExprCtx {
                     span: 2..4,
                     txt: Rc::clone(&txt),
-                },
-                kind: ExpressionKind::Literal(Value::Symbol("b".into())),
-            })),
+                }
+                .into_expr(ExpressionKind::Literal(Value::Symbol("b".into()))),
+            )),
         };
 
         let r = p.merge(other);
@@ -2945,20 +2945,16 @@ mod merge {
             mode: ParseMode::List {
                 form: SyntacticForm::PairClosed,
                 seq: vec![
-                    Expression {
-                        ctx: ExprCtx {
-                            span: 0..2,
-                            txt: Rc::clone(&txt),
-                        },
-                        kind: ExpressionKind::Literal(Value::Symbol("a".into())),
-                    },
-                    Expression {
-                        ctx: ExprCtx {
-                            span: 2..3,
-                            txt: Rc::clone(&txt),
-                        },
-                        kind: ExpressionKind::Literal(Value::Symbol("b".into())),
-                    },
+                    ExprCtx {
+                        span: 0..2,
+                        txt: Rc::clone(&txt),
+                    }
+                    .into_expr(ExpressionKind::Literal(Value::Symbol("a".into()))),
+                    ExprCtx {
+                        span: 2..3,
+                        txt: Rc::clone(&txt),
+                    }
+                    .into_expr(ExpressionKind::Literal(Value::Symbol("b".into()))),
                 ],
             },
         };
