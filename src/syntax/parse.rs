@@ -179,7 +179,7 @@ impl TryFrom<ExprNode> for Option<Expression> {
 
 #[derive(Debug)]
 pub(super) enum ParseErrBreak {
-    FailedParser,
+    FailedNode,
     InvalidTokenStream,
 }
 
@@ -209,10 +209,10 @@ impl ParseBreak {
         }
     }
 
-    fn parser_failure(err: ExpressionError) -> Self {
+    fn node_failure(err: ExpressionError) -> Self {
         Self::Err {
             err,
-            flow: ParseErrFlow::Break(ParseErrBreak::FailedParser),
+            flow: ParseErrFlow::Break(ParseErrBreak::FailedNode),
         }
     }
 
@@ -302,7 +302,7 @@ impl SyntacticForm {
 
     fn close_list(&mut self, token: Token, txt: &Rc<TextLine>) -> ParseFlow {
         if let Self::PairOpen = self {
-            ParseFlow::Break(ParseBreak::parser_failure(
+            ParseFlow::Break(ParseBreak::node_failure(
                 ExprCtx {
                     span: token.span,
                     txt: Rc::clone(txt),
@@ -439,7 +439,7 @@ fn parse_datum(
 ) -> ParseFlow {
     if let TokenKind::ParenRight = token.kind {
         let ctx = extend_node_to_token(token.span.end, txt, node_ctx);
-        ParseFlow::Break(ParseBreak::parser_failure(
+        ParseFlow::Break(ParseBreak::node_failure(
             ctx.into_error(ExpressionErrorKind::DatumExpected),
         ))
     } else {

@@ -546,7 +546,7 @@ mod datum {
                     ctx: ExprCtx { span: Range { start: 0, end: 2 }, txt: line },
                     kind: ExpressionErrorKind::DatumExpected,
                 },
-                flow: ParseErrFlow::Break(ParseErrBreak::FailedParser),
+                flow: ParseErrFlow::Break(ParseErrBreak::FailedNode),
             }) if Rc::ptr_eq(&txt, &line),
         ));
         assert!(inner.is_none());
@@ -1337,7 +1337,7 @@ mod list {
                     ctx: ExprCtx { span: Range { start: 5, end: 6 }, txt: line },
                     kind: ExpressionErrorKind::PairUnterminated,
                 },
-                flow: ParseErrFlow::Break(ParseErrBreak::FailedParser),
+                flow: ParseErrFlow::Break(ParseErrBreak::FailedNode),
             }) if Rc::ptr_eq(&line, &txt)
         ));
         assert_eq!(seq.len(), 1);

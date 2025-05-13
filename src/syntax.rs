@@ -139,7 +139,7 @@ impl ExpressionTree {
                     errs.push(err);
                     if let ParseErrFlow::Break(brk) = flow {
                         parser = match brk {
-                            ParseErrBreak::FailedParser => self.parsers.pop().unwrap_or(
+                            ParseErrBreak::FailedNode => self.parsers.pop().unwrap_or(
                                 ParseNode::InvalidParseTree(InvalidParseError::EndOfParse),
                             ),
                             ParseErrBreak::InvalidTokenStream => ParseNode::InvalidTokenStream,
