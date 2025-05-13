@@ -193,6 +193,68 @@ mod parsing {
     }
 
     #[test]
+    fn datum_comment_allows_otherwise_invalid_syntax() {
+        let mut et = ExpressionTree::default();
+        // NOTE: (+ #; (if 5) 2 3) -> (+ 2 3)
+        let tokens = [make_tokenline([
+            TokenKind::ParenLeft,
+            TokenKind::Identifier("+".to_owned()),
+            TokenKind::CommentDatum,
+            TokenKind::ParenLeft,
+            TokenKind::Identifier("if".to_owned()),
+            TokenKind::Constant(Constant::Number(Number::real(5))),
+            TokenKind::ParenRight,
+            TokenKind::Constant(Constant::Number(Number::real(2))),
+            TokenKind::Constant(Constant::Number(Number::real(3))),
+            TokenKind::ParenRight,
+        ])];
+
+        let r = et.parse(tokens.into());
+
+        let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
+        let seq = prg.unwrap();
+        assert_eq!(seq.len(), 1);
+        let expr = &seq[0];
+        assert!(matches!(
+            expr,
+            Expression {
+                ctx: ExprCtx {
+                    span: Range { start: 0, end: 10 },
+                    ..
+                },
+                kind: ExpressionKind::Call { .. },
+            }
+        ));
+        let ExpressionKind::Call { args, proc } = &expr.kind else {
+            unreachable!();
+        };
+        assert!(matches!(
+            &**proc,
+            Expression {
+                ctx: ExprCtx { span: Range { start: 1, end: 2 }, .. },
+                kind: ExpressionKind::Variable(s),
+            } if &**s == "+"
+        ));
+        assert_eq!(args.len(), 2);
+        assert!(matches!(
+            &args[0],
+            Expression {
+                ctx: ExprCtx { span: Range { start: 7, end: 8 }, .. },
+                kind: ExpressionKind::Literal(Value::Constant(Constant::Number(n))),
+            } if n.as_datum().to_string() == "2"
+        ));
+        assert!(matches!(
+            &args[1],
+            Expression {
+                ctx: ExprCtx { span: Range { start: 8, end: 9 }, .. },
+                kind: ExpressionKind::Literal(Value::Constant(Constant::Number(n))),
+            } if n.as_datum().to_string() == "3"
+        ));
+        assert!(et.parsers.is_empty());
+        assert!(et.errs.is_empty());
+    }
+
+    #[test]
     fn quoting_quote() {
         let mut et = ExpressionTree::default();
         // NOTE: ''a -> (quote a)
