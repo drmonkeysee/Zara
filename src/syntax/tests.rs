@@ -373,7 +373,7 @@ mod parsing {
             TokenKind::ParenLeft,
             TokenKind::Identifier("a".to_owned()),
             TokenKind::PairJoiner,
-            TokenKind::Identifier("c".to_owned()),
+            TokenKind::Identifier("b".to_owned()),
             TokenKind::ParenRight,
         ])];
 
@@ -390,7 +390,7 @@ mod parsing {
             } if txt.lineno == 1
         ));
         let value = extract_or_fail!(&seq[0].kind, ExpressionKind::Literal);
-        assert_eq!(value.as_datum().to_string(), "(a . c)");
+        assert_eq!(value.as_datum().to_string(), "(a . b)");
 
         assert!(et.parsers.is_empty());
         assert!(et.errs.is_empty());
@@ -886,7 +886,7 @@ mod parsing {
     }
 
     #[test]
-    fn failed_parser_into_unexpected_end_of_parse_discards_rest_of_input() {
+    fn failed_node_into_unexpected_end_of_parse_discards_rest_of_input() {
         let mut et = ExpressionTree::default();
         let tokens = [make_tokenline_no([TokenKind::CommentDatum], 1)];
 
