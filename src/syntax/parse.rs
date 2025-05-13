@@ -301,17 +301,17 @@ impl SyntacticForm {
     }
 
     fn close_list(&mut self, token: Token, txt: &Rc<TextLine>) -> ParseFlow {
-        if let Self::PairOpen = self {
-            ParseFlow::Break(ParseBreak::node_failure(
+        ParseFlow::Break(if let Self::PairOpen = self {
+            ParseBreak::node_failure(
                 ExprCtx {
                     span: token.span,
                     txt: Rc::clone(txt),
                 }
                 .into_error(ExpressionErrorKind::PairUnterminated),
-            ))
+            )
         } else {
-            ParseFlow::Break(ParseBreak::complete(txt.lineno, token.span.end))
-        }
+            ParseBreak::complete(txt.lineno, token.span.end)
+        })
     }
 
     fn dotted_pair(
