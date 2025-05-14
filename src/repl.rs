@@ -2,7 +2,8 @@ use rustyline::{Config, Editor, Result, history::MemHistory};
 use std::rc::Rc;
 use zara::{
     Error, Evaluation, Interpreter, RunMode, Value,
-    txt::{LineNumber, TextContext, TextLine, TextResult, TextSource},
+    src::StringSource,
+    txt::{LineNumber, TextContext, TextResult, TextSource},
 };
 
 const INPUT: &str = "λ:> ";
@@ -44,7 +45,7 @@ impl Repl {
 
     fn runline(&mut self) {
         match self.runtime.run(&mut self.src) {
-            Ok(Evaluation::Continuation) => self.prep_continuation(),
+            Ok(Evaluation::Continuation) => self.continuation(),
             Ok(Evaluation::Val(v)) => self.print_value(v.as_ref()),
             Err(err) => self.print_err(&err),
         }
@@ -62,44 +63,28 @@ impl Repl {
         self.reset();
     }
 
-    fn prep_continuation(&mut self) {
+    fn continuation(&mut self) {
         self.prompt = CONT;
-        self.src.advance();
     }
 
     fn reset(&mut self) {
         self.prompt = INPUT;
-        self.src.reset();
     }
 }
 
 type ZaraEditor = Editor<(), MemHistory>;
 
-struct ReplSource {
-    ctx: Rc<TextContext>,
-    line: Option<String>,
-    lineno: LineNumber,
-}
+struct ReplSource(StringSource);
 
 impl ReplSource {
     fn new() -> Self {
-        Self {
-            ctx: TextContext::named("<repl>").into(),
-            line: None,
-            lineno: 1,
-        }
+        Self(StringSource::empty("<repl>"))
     }
 
+    // NOTE: line may actually be multiple line breaks if the input was
+    // copy+pasted into the terminal.
     fn set_line(&mut self, line: String) {
-        self.line = Some(line);
-    }
-
-    fn advance(&mut self) {
-        self.lineno += 1;
-    }
-
-    fn reset(&mut self) {
-        self.lineno = 1;
+        self.0.set(line);
     }
 }
 
@@ -107,114 +92,21 @@ impl Iterator for ReplSource {
     type Item = TextResult;
 
     fn next(&mut self) -> Option<Self::Item> {
-        Some(Ok(TextLine {
-            ctx: self.context(),
-            line: self.line.take()?,
-            lineno: self.lineno(),
-        }))
+        self.0.next()
     }
 }
 
 // TODO: can this be a macro
 impl TextSource for ReplSource {
     fn context(&self) -> Rc<TextContext> {
-        Rc::clone(&self.ctx)
+        self.0.context()
     }
 
     fn lineno(&self) -> LineNumber {
-        self.lineno
+        self.0.lineno()
     }
 }
 
 fn create_editor() -> Result<ZaraEditor> {
     ZaraEditor::with_history(Config::default(), MemHistory::default())
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn source_create() {
-        let target = ReplSource::new();
-
-        assert!(matches!(
-            target.ctx.as_ref(),
-            TextContext {
-                name,
-                path: None
-            } if name == "<repl>"
-        ));
-        assert!(target.line.is_none());
-        assert_eq!(target.lineno(), 1);
-    }
-
-    #[test]
-    fn source_set_line() {
-        let mut target = ReplSource::new();
-
-        target.set_line("foo".to_owned());
-
-        assert!(target.line.is_some());
-        assert_eq!(target.line.unwrap(), "foo");
-    }
-
-    #[test]
-    fn source_advance() {
-        let mut target = ReplSource::new();
-
-        target.advance();
-
-        assert_eq!(target.lineno(), 2);
-    }
-
-    #[test]
-    fn source_reset() {
-        let mut target = ReplSource::new();
-
-        target.advance();
-        target.advance();
-
-        assert_eq!(target.lineno(), 3);
-
-        target.reset();
-
-        assert_eq!(target.lineno(), 1);
-    }
-
-    #[test]
-    fn source_context() {
-        let target = ReplSource::new();
-
-        let ctx = target.context();
-
-        assert!(Rc::ptr_eq(&ctx, &target.ctx));
-    }
-
-    #[test]
-    fn source_iterator() {
-        let mut target = ReplSource::new();
-
-        let line = target.next();
-
-        assert!(line.is_none());
-
-        target.set_line("foo".to_owned());
-
-        let line = target.next();
-
-        assert!(line.is_some());
-        assert!(matches!(
-            line.unwrap(),
-            Ok(TextLine {
-                ctx,
-                line,
-                lineno: 1,
-            }) if Rc::ptr_eq(&ctx, &target.ctx) && line == "foo"
-        ));
-
-        let line = target.next();
-
-        assert!(line.is_none());
-    }
 }

@@ -8,22 +8,38 @@ use std::{
 
 pub struct StringSource {
     ctx: Rc<TextContext>,
-    lines: <Vec<String> as IntoIterator>::IntoIter,
+    lines: Option<<Vec<String> as IntoIterator>::IntoIter>,
     lineno: LineNumber,
 }
 
 impl StringSource {
-    pub fn new(src: impl Into<String>, name: impl Into<String>) -> Self {
+    pub fn empty(name: impl Into<String>) -> Self {
         Self {
             ctx: TextContext::named(name).into(),
-            lines: src
-                .into()
+            lines: None,
+            lineno: 0,
+        }
+    }
+
+    pub fn new(src: impl Into<String>, name: impl Into<String>) -> Self {
+        let mut me = Self::empty(name);
+        me.set(src);
+        me
+    }
+
+    pub fn set(&mut self, src: impl Into<String>) {
+        self.lineno = 0;
+        self.lines = Some(
+            src.into()
                 .lines()
                 .map(String::from)
                 .collect::<Vec<_>>()
                 .into_iter(),
-            lineno: 0,
-        }
+        );
+    }
+
+    pub fn clear(&mut self) {
+        self.lines = None;
     }
 }
 
@@ -34,7 +50,7 @@ impl Iterator for StringSource {
         self.lineno += 1;
         Some(Ok(TextLine {
             ctx: self.context(),
-            line: self.lines.next()?,
+            line: self.lines.as_mut()?.next()?,
             lineno: self.lineno(),
         }))
     }
@@ -157,6 +173,20 @@ mod tests {
         use super::*;
 
         #[test]
+        fn empty() {
+            let target = StringSource::empty("test");
+
+            assert!(matches!(
+                target.ctx.as_ref(),
+                TextContext {
+                    name,
+                    path: None
+                } if name == "test"
+            ));
+            assert_eq!(target.lineno(), 0);
+        }
+
+        #[test]
         fn create_from_str() {
             let src = "line of source code";
 
@@ -179,6 +209,15 @@ mod tests {
             let ctx = target.context();
 
             assert!(Rc::ptr_eq(&ctx, &target.ctx));
+        }
+
+        #[test]
+        fn iterate_empty() {
+            let mut target = StringSource::empty("test");
+
+            let line = target.next();
+
+            assert!(line.is_none());
         }
 
         #[test]
@@ -444,6 +483,85 @@ mod tests {
                     lineno: 6,
                 }) if Rc::ptr_eq(&ctx, &target.ctx) && line == "\t"
             ));
+
+            let line = target.next();
+
+            assert!(line.is_none());
+        }
+
+        #[test]
+        fn reset_lines() {
+            let src = "line1\nline2\nline3\n";
+            let mut target = StringSource::new(src, "test");
+
+            let line = some_or_fail!(target.next());
+
+            assert!(matches!(
+                line,
+                Ok(TextLine {
+                    ctx,
+                    line,
+                    lineno: 1,
+                }) if Rc::ptr_eq(&ctx, &target.ctx) && line == "line1"
+            ));
+
+            let line = some_or_fail!(target.next());
+
+            assert!(matches!(
+                line,
+                Ok(TextLine {
+                    ctx,
+                    line,
+                    lineno: 2,
+                }) if Rc::ptr_eq(&ctx, &target.ctx) && line == "line2"
+            ));
+
+            target.set("a different line");
+
+            let line = some_or_fail!(target.next());
+
+            assert!(matches!(
+                line,
+                Ok(TextLine {
+                    ctx,
+                    line,
+                    lineno: 1,
+                }) if Rc::ptr_eq(&ctx, &target.ctx) && line == "a different line"
+            ));
+
+            let line = target.next();
+
+            assert!(line.is_none());
+        }
+
+        #[test]
+        fn clear_lines() {
+            let src = "line1\nline2\nline3\n";
+            let mut target = StringSource::new(src, "test");
+
+            let line = some_or_fail!(target.next());
+
+            assert!(matches!(
+                line,
+                Ok(TextLine {
+                    ctx,
+                    line,
+                    lineno: 1,
+                }) if Rc::ptr_eq(&ctx, &target.ctx) && line == "line1"
+            ));
+
+            let line = some_or_fail!(target.next());
+
+            assert!(matches!(
+                line,
+                Ok(TextLine {
+                    ctx,
+                    line,
+                    lineno: 2,
+                }) if Rc::ptr_eq(&ctx, &target.ctx) && line == "line2"
+            ));
+
+            target.clear();
 
             let line = target.next();
 
