@@ -8,16 +8,16 @@ use std::{
 
 pub struct StringSource {
     ctx: Rc<TextContext>,
-    lines: Option<<Vec<String> as IntoIterator>::IntoIter>,
     lineno: LineNumber,
+    lines: Option<<Vec<String> as IntoIterator>::IntoIter>,
 }
 
 impl StringSource {
     pub fn empty(name: impl Into<String>) -> Self {
         Self {
             ctx: TextContext::named(name).into(),
-            lines: None,
             lineno: 0,
+            lines: None,
         }
     }
 
