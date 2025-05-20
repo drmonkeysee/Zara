@@ -260,7 +260,6 @@ impl Display for InvalidParseErrorMessage<'_> {
 
 struct SyntaxErrorLineMessage<'a>((&'a TextLine, &'a [&'a ExpressionError]));
 
-// TODO: unify this with token error message
 impl Display for SyntaxErrorLineMessage<'_> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         let (txtline, errs) = self.0;
@@ -299,12 +298,12 @@ impl Display for SyntaxErrorLineMessage<'_> {
 }
 
 struct PartitionByOverlap<'a> {
-    groups: <Vec<Vec<&'a Range<usize>>> as IntoIterator>::IntoIter,
+    groups: <Vec<<Self as Iterator>::Item> as IntoIterator>::IntoIter,
 }
 
 impl<'a> PartitionByOverlap<'a> {
     fn new<I: IntoIterator<Item = &'a Range<usize>>>(iter: I) -> Self {
-        let mut groups = Vec::<Vec<&'a Range<usize>>>::new();
+        let mut groups = Vec::<<Self as Iterator>::Item>::new();
         for span in iter {
             match groups
                 .iter_mut()
@@ -332,10 +331,11 @@ trait FilterMapExt<'a> {
     fn partition_overlap(self) -> PartitionByOverlap<'a>;
 }
 
-impl<'a, I, F> FilterMapExt<'a> for FilterMap<I, F>
-where
+impl<
+    'a,
     I: Iterator<Item = &'a &'a ExpressionError>,
     F: FnMut(&'a &'a ExpressionError) -> Option<&'a Range<usize>>,
+> FilterMapExt<'a> for FilterMap<I, F>
 {
     fn partition_overlap(self) -> PartitionByOverlap<'a> {
         PartitionByOverlap::new(self)
