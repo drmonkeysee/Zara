@@ -608,7 +608,11 @@ mod tests {
         fn empty() {
             let errs = Vec::new();
 
-            let groups: Vec<_> = errs.into_iter().peekable().groupby_txt().collect();
+            let groups = errs
+                .into_iter()
+                .peekable()
+                .groupby_txt()
+                .collect::<Vec<_>>();
 
             assert!(groups.is_empty());
         }
@@ -622,7 +626,7 @@ mod tests {
             }
             .into_error(ExpressionErrorKind::StrUnterminated)];
 
-            let groups: Vec<_> = errs.iter().peekable().groupby_txt().collect();
+            let groups = errs.iter().peekable().groupby_txt().collect::<Vec<_>>();
 
             assert_eq!(groups.len(), 1);
             let (key, group) = &groups[0];
@@ -652,7 +656,7 @@ mod tests {
                 .into_error(ExpressionErrorKind::CommentBlockUnterminated),
             ];
 
-            let groups: Vec<_> = errs.iter().peekable().groupby_txt().collect();
+            let groups = errs.iter().peekable().groupby_txt().collect::<Vec<_>>();
 
             assert_eq!(groups.len(), 1);
             let (key, group) = &groups[0];
@@ -685,7 +689,7 @@ mod tests {
                 .into_error(ExpressionErrorKind::CommentBlockUnterminated),
             ];
 
-            let groups: Vec<_> = errs.iter().peekable().groupby_txt().collect();
+            let groups = errs.iter().peekable().groupby_txt().collect::<Vec<_>>();
 
             assert_eq!(groups.len(), 2);
 
@@ -723,7 +727,7 @@ mod tests {
                 .into_error(ExpressionErrorKind::ListUnterminated),
             ];
 
-            let groups: Vec<_> = errs.iter().peekable().groupby_txt().collect();
+            let groups = errs.iter().peekable().groupby_txt().collect::<Vec<_>>();
 
             assert_eq!(groups.len(), 3);
 

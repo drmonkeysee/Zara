@@ -4,7 +4,7 @@ use super::*;
 fn empty_string() {
     let s = TokenStream::new("", None);
 
-    let r: Vec<_> = s.collect();
+    let r = s.collect::<Vec<_>>();
 
     assert!(r.is_empty());
 }
@@ -13,7 +13,7 @@ fn empty_string() {
 fn whitespace() {
     let s = TokenStream::new("   \t  \r  \n  ", None);
 
-    let r: Vec<_> = s.collect();
+    let r = s.collect::<Vec<_>>();
 
     assert!(r.is_empty());
 }
@@ -22,7 +22,7 @@ fn whitespace() {
 fn single_token() {
     let s = TokenStream::new("(", None);
 
-    let r: Vec<_> = s.collect();
+    let r = s.collect::<Vec<_>>();
 
     assert_eq!(r.len(), 1);
     assert!(matches!(
@@ -38,7 +38,7 @@ fn single_token() {
 fn single_token_with_whitespace() {
     let s = TokenStream::new("  (   ", None);
 
-    let r: Vec<_> = s.collect();
+    let r = s.collect::<Vec<_>>();
 
     assert_eq!(r.len(), 1);
     assert!(matches!(
@@ -54,7 +54,7 @@ fn single_token_with_whitespace() {
 fn multiple_tokens() {
     let s = TokenStream::new("(#t)", None);
 
-    let r: Vec<_> = s.collect();
+    let r = s.collect::<Vec<_>>();
 
     assert_eq!(r.len(), 3);
     assert!(matches!(
@@ -84,7 +84,7 @@ fn multiple_tokens() {
 fn multiple_tokens_with_whitespace() {
     let s = TokenStream::new("   (   #t    )   ", None);
 
-    let r: Vec<_> = s.collect();
+    let r = s.collect::<Vec<_>>();
 
     assert_eq!(r.len(), 3);
     assert!(matches!(
@@ -114,7 +114,7 @@ fn multiple_tokens_with_whitespace() {
 fn multiple_numbers() {
     let s = TokenStream::new("10 -22 13.45 4.5e2 12e-3 4/5 5+3i", None);
 
-    let r: Vec<_> = s.collect();
+    let r = s.collect::<Vec<_>>();
 
     assert_eq!(r.len(), 7);
     assert!(matches!(
@@ -172,7 +172,7 @@ fn multiple_numbers() {
 fn tokens_with_invalid_token() {
     let s = TokenStream::new("(#tdf)", None);
 
-    let r: Vec<_> = s.collect();
+    let r = s.collect::<Vec<_>>();
 
     assert_eq!(r.len(), 3);
     assert!(matches!(
@@ -202,7 +202,7 @@ fn tokens_with_invalid_token() {
 fn tokens_with_unterminated_token() {
     let s = TokenStream::new("(#)", None);
 
-    let r: Vec<_> = s.collect();
+    let r = s.collect::<Vec<_>>();
 
     assert_eq!(r.len(), 3);
     assert!(matches!(
@@ -232,7 +232,7 @@ fn tokens_with_unterminated_token() {
 fn tokens_with_unterminated_token_to_whitespace() {
     let s = TokenStream::new("# #f", None);
 
-    let r: Vec<_> = s.collect();
+    let r = s.collect::<Vec<_>>();
 
     assert_eq!(r.len(), 2);
     assert!(matches!(
@@ -255,7 +255,7 @@ fn tokens_with_unterminated_token_to_whitespace() {
 fn hash_is_a_token_boundary() {
     let s = TokenStream::new("#t#f", None);
 
-    let r: Vec<_> = s.collect();
+    let r = s.collect::<Vec<_>>();
 
     assert_eq!(r.len(), 2);
     assert!(matches!(
@@ -278,7 +278,7 @@ fn hash_is_a_token_boundary() {
 fn quote_is_a_token_boundary() {
     let s = TokenStream::new("#t'#f", None);
 
-    let r: Vec<_> = s.collect();
+    let r = s.collect::<Vec<_>>();
 
     assert_eq!(r.len(), 3);
     assert!(matches!(
@@ -308,7 +308,7 @@ fn quote_is_a_token_boundary() {
 fn quasiquote_is_a_token_boundary() {
     let s = TokenStream::new("#t`#f", None);
 
-    let r: Vec<_> = s.collect();
+    let r = s.collect::<Vec<_>>();
 
     assert_eq!(r.len(), 3);
     assert!(matches!(
@@ -338,7 +338,7 @@ fn quasiquote_is_a_token_boundary() {
 fn unquote_is_a_token_boundary() {
     let s = TokenStream::new("#t,#f", None);
 
-    let r: Vec<_> = s.collect();
+    let r = s.collect::<Vec<_>>();
 
     assert_eq!(r.len(), 3);
     assert!(matches!(
@@ -368,7 +368,7 @@ fn unquote_is_a_token_boundary() {
 fn pair_join_is_not_a_token_boundary() {
     let s = TokenStream::new("#t.#f", None);
 
-    let r: Vec<_> = s.collect();
+    let r = s.collect::<Vec<_>>();
 
     assert_eq!(r.len(), 2);
     assert!(matches!(
@@ -394,7 +394,7 @@ fn block_comment_fragment_uses_whole_line() {
         Some(TokenContinuation::BlockComment { depth: 2 }),
     );
 
-    let r: Vec<_> = s.collect();
+    let r = s.collect::<Vec<_>>();
 
     assert_eq!(r.len(), 1);
     assert!(matches!(
@@ -413,7 +413,7 @@ fn block_comment_end_continues_tokenizing() {
         Some(TokenContinuation::BlockComment { depth: 0 }),
     );
 
-    let r: Vec<_> = s.collect();
+    let r = s.collect::<Vec<_>>();
 
     assert_eq!(r.len(), 2);
     assert!(matches!(
@@ -439,7 +439,7 @@ fn string_fragment_uses_whole_line() {
         Some(TokenContinuation::StringLiteral { line_cont: false }),
     );
 
-    let r: Vec<_> = s.collect();
+    let r = s.collect::<Vec<_>>();
 
     assert_eq!(r.len(), 1);
     assert!(matches!(
@@ -458,7 +458,7 @@ fn string_end_continues_tokenizing() {
         Some(TokenContinuation::StringLiteral { line_cont: false }),
     );
 
-    let r: Vec<_> = s.collect();
+    let r = s.collect::<Vec<_>>();
 
     assert_eq!(r.len(), 2);
     assert!(matches!(
@@ -481,7 +481,7 @@ fn string_end_continues_tokenizing() {
 fn finishes_parsing_string_if_error() {
     let s = TokenStream::new("\"foo \\e bar\" #t", None);
 
-    let r: Vec<_> = s.collect();
+    let r = s.collect::<Vec<_>>();
 
     assert_eq!(r.len(), 3);
     assert!(matches!(
@@ -511,7 +511,7 @@ fn finishes_parsing_string_if_error() {
 fn unterminated_hex_does_not_consume_end_of_string() {
     let s = TokenStream::new("\"\\x42\" #t", None);
 
-    let r: Vec<_> = s.collect();
+    let r = s.collect::<Vec<_>>();
 
     assert_eq!(r.len(), 3);
     assert!(matches!(
@@ -541,7 +541,7 @@ fn unterminated_hex_does_not_consume_end_of_string() {
 fn unterminated_hex_does_not_consume_string_escape_sequence() {
     let s = TokenStream::new("\"\\x42\\\"\" #t", None);
 
-    let r: Vec<_> = s.collect();
+    let r = s.collect::<Vec<_>>();
 
     assert_eq!(r.len(), 3);
     assert!(matches!(
@@ -571,7 +571,7 @@ fn unterminated_hex_does_not_consume_string_escape_sequence() {
 fn multiple_string_errors() {
     let s = TokenStream::new("\"foo \\xdeadbeef; bar \\e baz\" #t", None);
 
-    let r: Vec<_> = s.collect();
+    let r = s.collect::<Vec<_>>();
 
     assert_eq!(r.len(), 4);
     assert!(matches!(
@@ -608,7 +608,7 @@ fn multiple_string_errors() {
 fn open_string_with_error() {
     let s = TokenStream::new("\"foo \\e bar", None);
 
-    let r: Vec<_> = s.collect();
+    let r = s.collect::<Vec<_>>();
 
     assert_eq!(r.len(), 2);
     assert!(matches!(
@@ -631,7 +631,7 @@ fn open_string_with_error() {
 fn invalid_identifer_consumes_token() {
     let s = TokenStream::new(".]bar", None);
 
-    let r: Vec<_> = s.collect();
+    let r = s.collect::<Vec<_>>();
 
     assert_eq!(r.len(), 1);
     assert!(matches!(
@@ -650,7 +650,7 @@ fn identifier_fragment_uses_whole_line() {
         Some(TokenContinuation::VerbatimIdentifier),
     );
 
-    let r: Vec<_> = s.collect();
+    let r = s.collect::<Vec<_>>();
 
     assert_eq!(r.len(), 1);
     assert!(matches!(
@@ -669,7 +669,7 @@ fn identifier_end_continues_tokenizing() {
         Some(TokenContinuation::VerbatimIdentifier),
     );
 
-    let r: Vec<_> = s.collect();
+    let r = s.collect::<Vec<_>>();
 
     assert_eq!(r.len(), 2);
     assert!(matches!(
@@ -692,7 +692,7 @@ fn identifier_end_continues_tokenizing() {
 fn finishes_parsing_identifier_if_error() {
     let s = TokenStream::new("|foo \\e bar| #t", None);
 
-    let r: Vec<_> = s.collect();
+    let r = s.collect::<Vec<_>>();
 
     assert_eq!(r.len(), 3);
     assert!(matches!(
@@ -722,7 +722,7 @@ fn finishes_parsing_identifier_if_error() {
 fn unterminated_hex_does_not_consume_end_of_identifier() {
     let s = TokenStream::new("|\\x42| #t", None);
 
-    let r: Vec<_> = s.collect();
+    let r = s.collect::<Vec<_>>();
 
     assert_eq!(r.len(), 3);
     assert!(matches!(
@@ -752,7 +752,7 @@ fn unterminated_hex_does_not_consume_end_of_identifier() {
 fn unterminated_hex_does_not_consume_identifier_escape_sequence() {
     let s = TokenStream::new("|\\x42\\|| #t", None);
 
-    let r: Vec<_> = s.collect();
+    let r = s.collect::<Vec<_>>();
 
     assert_eq!(r.len(), 3);
     assert!(matches!(
@@ -782,7 +782,7 @@ fn unterminated_hex_does_not_consume_identifier_escape_sequence() {
 fn multiple_identifier_errors() {
     let s = TokenStream::new("|foo \\xdeadbeef; bar \\e baz| #t", None);
 
-    let r: Vec<_> = s.collect();
+    let r = s.collect::<Vec<_>>();
 
     assert_eq!(r.len(), 4);
     assert!(matches!(
@@ -819,7 +819,7 @@ fn multiple_identifier_errors() {
 fn open_identifier_with_error() {
     let s = TokenStream::new("|foo \\e bar", None);
 
-    let r: Vec<_> = s.collect();
+    let r = s.collect::<Vec<_>>();
 
     assert_eq!(r.len(), 2);
     assert!(matches!(
@@ -842,7 +842,7 @@ fn open_identifier_with_error() {
 fn exactness_following_invalid_hash() {
     let s = TokenStream::new("#c#e", None);
 
-    let r: Vec<_> = s.collect();
+    let r = s.collect::<Vec<_>>();
 
     assert_eq!(r.len(), 2);
     assert!(matches!(
@@ -865,7 +865,7 @@ fn exactness_following_invalid_hash() {
 fn radix_following_invalid_hash() {
     let s = TokenStream::new("#c#x", None);
 
-    let r: Vec<_> = s.collect();
+    let r = s.collect::<Vec<_>>();
 
     assert_eq!(r.len(), 2);
     assert!(matches!(

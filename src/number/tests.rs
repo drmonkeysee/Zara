@@ -835,14 +835,14 @@ mod float {
 
     #[test]
     fn into_float() {
-        let n: Real = Real::Float(1.5);
+        let n = Real::Float(1.5);
 
         assert_eq!(n.into_float(), 1.5);
     }
 
     #[test]
     fn into_inexact() {
-        let n: Real = Real::Float(1.5);
+        let n = Real::Float(1.5);
 
         let r = n.into_inexact();
 
@@ -852,7 +852,7 @@ mod float {
 
     #[test]
     fn into_exact() {
-        let n: Real = Real::Float(4.0);
+        let n = Real::Float(4.0);
 
         let n = n.into_exact();
 
@@ -863,7 +863,7 @@ mod float {
 
     #[test]
     fn into_exact_rational() {
-        let n: Real = Real::Float(1.5);
+        let n = Real::Float(1.5);
 
         let n = n.into_exact();
 
@@ -876,7 +876,7 @@ mod float {
 
     #[test]
     fn into_exact_zero() {
-        let n: Real = Real::Float(0.0);
+        let n = Real::Float(0.0);
 
         let n = n.into_exact();
 
@@ -887,7 +887,7 @@ mod float {
 
     #[test]
     fn into_exact_negative_zero() {
-        let n: Real = Real::Float(-0.0);
+        let n = Real::Float(-0.0);
 
         let n = n.into_exact();
 
@@ -898,7 +898,7 @@ mod float {
 
     #[test]
     fn into_exact_exponent() {
-        let n: Real = Real::Float(4e2);
+        let n = Real::Float(4e2);
 
         let n = n.into_exact();
 
@@ -909,7 +909,7 @@ mod float {
 
     #[test]
     fn into_exact_fraction_exponent() {
-        let n: Real = Real::Float(4.2e3);
+        let n = Real::Float(4.2e3);
 
         let n = n.into_exact();
 
@@ -920,7 +920,7 @@ mod float {
 
     #[test]
     fn into_exact_infinite() {
-        let n: Real = Real::Float(f64::INFINITY);
+        let n = Real::Float(f64::INFINITY);
 
         let n = n.into_exact();
 
@@ -930,7 +930,7 @@ mod float {
 
     #[test]
     fn into_exact_nan() {
-        let n: Real = Real::Float(f64::NAN);
+        let n = Real::Float(f64::NAN);
 
         let n = n.into_exact();
 
@@ -941,7 +941,7 @@ mod float {
     #[test]
     fn round_trip() {
         let expected = 4.23452e-2;
-        let n: Real = Real::Float(expected);
+        let n = Real::Float(expected);
 
         let r = n.into_exact();
         assert!(matches!(r, Real::Rational(_)));
