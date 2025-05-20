@@ -1,12 +1,12 @@
 #[cfg(test)]
 mod tests;
 
+use crate::txt::TxtSpan;
 use std::{
     cmp::Ordering,
     error::Error,
     fmt::{self, Display, Formatter, Write},
     num::{IntErrorKind, ParseFloatError, ParseIntError},
-    ops::Range,
     result::Result,
 };
 
@@ -446,7 +446,7 @@ impl Radix for Hexadecimal {
 
 #[derive(Clone, Default)]
 pub(crate) struct IntSpec<R> {
-    pub(crate) magnitude: Range<usize>,
+    pub(crate) magnitude: TxtSpan,
     pub(crate) radix: R,
     pub(crate) sign: Option<Sign>,
 }
@@ -471,8 +471,8 @@ impl<R: Radix> IntSpec<R> {
 
 #[derive(Clone, Default)]
 pub(crate) struct FloatSpec {
-    pub(crate) exponent: Range<usize>,
-    pub(crate) fraction: Range<usize>,
+    pub(crate) exponent: TxtSpan,
+    pub(crate) fraction: TxtSpan,
     pub(crate) integral: IntSpec<Decimal>,
 }
 

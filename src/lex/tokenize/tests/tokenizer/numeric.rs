@@ -45,7 +45,7 @@ mod integer {
             tok,
             Token {
                 kind: TokenKind::Constant(Constant::Number(_)),
-                span: Range { start: 0, end: 1 },
+                span: TxtSpan { start: 0, end: 1 },
             }
         ));
         let int = extract_number!(tok.kind, Number::Real, Real::Integer);
@@ -69,7 +69,7 @@ mod integer {
             tok,
             Token {
                 kind: TokenKind::Constant(Constant::Number(_)),
-                span: Range { start: 0, end: 2 },
+                span: TxtSpan { start: 0, end: 2 },
             }
         ));
         let int = extract_number!(tok.kind, Number::Real, Real::Integer);
@@ -93,7 +93,7 @@ mod integer {
             tok,
             Token {
                 kind: TokenKind::Constant(Constant::Number(_)),
-                span: Range { start: 0, end: 2 },
+                span: TxtSpan { start: 0, end: 2 },
             }
         ));
         let int = extract_number!(tok.kind, Number::Real, Real::Integer);
@@ -117,7 +117,7 @@ mod integer {
             tok,
             Token {
                 kind: TokenKind::Constant(Constant::Number(_)),
-                span: Range { start: 0, end: 1 },
+                span: TxtSpan { start: 0, end: 1 },
             }
         ));
         let int = extract_number!(tok.kind, Number::Real, Real::Integer);
@@ -141,7 +141,7 @@ mod integer {
             tok,
             Token {
                 kind: TokenKind::Constant(Constant::Number(_)),
-                span: Range { start: 0, end: 2 },
+                span: TxtSpan { start: 0, end: 2 },
             }
         ));
         let int = extract_number!(tok.kind, Number::Real, Real::Integer);
@@ -166,7 +166,7 @@ mod integer {
             tok,
             Token {
                 kind: TokenKind::Constant(Constant::Number(_)),
-                span: Range { start: 0, end: 19 },
+                span: TxtSpan { start: 0, end: 19 },
             }
         ));
         let int = extract_number!(tok.kind, Number::Real, Real::Integer);
@@ -191,7 +191,7 @@ mod integer {
             tok,
             Token {
                 kind: TokenKind::Constant(Constant::Number(_)),
-                span: Range { start: 0, end: 20 },
+                span: TxtSpan { start: 0, end: 20 },
             }
         ));
         let int = extract_number!(tok.kind, Number::Real, Real::Integer);
@@ -216,7 +216,7 @@ mod integer {
             tok,
             Token {
                 kind: TokenKind::Constant(Constant::Number(_)),
-                span: Range { start: 0, end: 20 },
+                span: TxtSpan { start: 0, end: 20 },
             }
         ));
         let int = extract_number!(tok.kind, Number::Real, Real::Integer);
@@ -241,7 +241,7 @@ mod integer {
             tok,
             Token {
                 kind: TokenKind::Constant(Constant::Number(_)),
-                span: Range { start: 0, end: 21 },
+                span: TxtSpan { start: 0, end: 21 },
             }
         ));
         let int = extract_number!(tok.kind, Number::Real, Real::Integer);
@@ -266,7 +266,7 @@ mod integer {
             tok,
             Token {
                 kind: TokenKind::Constant(Constant::Number(_)),
-                span: Range { start: 0, end: 21 },
+                span: TxtSpan { start: 0, end: 21 },
             }
         ));
         let int = extract_number!(tok.kind, Number::Real, Real::Integer);
@@ -296,7 +296,7 @@ mod integer {
                 tok,
                 Token {
                     kind: TokenKind::Constant(Constant::Number(_)),
-                    span: Range { start: 0, end },
+                    span: TxtSpan { start: 0, end },
                 } if end == case.len()
             ));
             let int = extract_number!(tok.kind, Number::Real, Real::Integer);
@@ -324,7 +324,7 @@ mod integer {
                 tok,
                 Token {
                     kind: TokenKind::Constant(Constant::Number(_)),
-                    span: Range { start: 0, end },
+                    span: TxtSpan { start: 0, end },
                 } if end == case.len()
             ));
             let int = extract_number!(tok.kind, Number::Real, Real::Integer);
@@ -349,7 +349,7 @@ mod integer {
             tok,
             Token {
                 kind: TokenKind::Constant(Constant::Number(_)),
-                span: Range { start: 0, end: 3 },
+                span: TxtSpan { start: 0, end: 3 },
             }
         ));
         let int = extract_number!(tok.kind, Number::Real, Real::Integer);
@@ -375,7 +375,7 @@ mod integer {
                 tok,
                 Token {
                     kind: TokenKind::Constant(Constant::Number(_)),
-                    span: Range { start: 0, end: 5 },
+                    span: TxtSpan { start: 0, end: 5 },
                 }
             ));
             let int = extract_number!(tok.kind, Number::Real, Real::Integer);
@@ -402,7 +402,7 @@ mod integer {
                 tok,
                 Token {
                     kind: TokenKind::Constant(Constant::Number(_)),
-                    span: Range { start: 0, end: 5 },
+                    span: TxtSpan { start: 0, end: 5 },
                 }
             ));
             let int = extract_number!(tok.kind, Number::Real, Real::Integer);
@@ -429,7 +429,7 @@ mod integer {
                 tok,
                 Token {
                     kind: TokenKind::Constant(Constant::Number(_)),
-                    span: Range { start: 0, end },
+                    span: TxtSpan { start: 0, end },
                 } if end == case.len()
             ));
             let r = extract_number!(tok.kind, Number::Real);
@@ -454,7 +454,7 @@ mod integer {
             tok,
             Token {
                 kind: TokenKind::Constant(Constant::Number(_)),
-                span: Range { start: 0, end: 3 },
+                span: TxtSpan { start: 0, end: 3 },
             }
         ));
         let r = extract_number!(tok.kind, Number::Real);
@@ -478,7 +478,7 @@ mod integer {
             tok,
             Token {
                 kind: TokenKind::Constant(Constant::Number(_)),
-                span: Range { start: 0, end: 4 },
+                span: TxtSpan { start: 0, end: 4 },
             }
         ));
         let r = extract_number!(tok.kind, Number::Real);
@@ -502,7 +502,7 @@ mod integer {
             tok,
             Token {
                 kind: TokenKind::Constant(Constant::Number(_)),
-                span: Range { start: 0, end: 7 },
+                span: TxtSpan { start: 0, end: 7 },
             }
         ));
         let r = extract_number!(tok.kind, Number::Real);
@@ -527,7 +527,7 @@ mod integer {
             tok,
             Token {
                 kind: TokenKind::Constant(Constant::Number(_)),
-                span: Range { start: 0, end },
+                span: TxtSpan { start: 0, end },
             } if end == input.len()
         ));
         let r = extract_number!(tok.kind, Number::Real);
@@ -553,7 +553,7 @@ mod integer {
                 err,
                 TokenError {
                     kind: TokenErrorKind::NumberInvalid,
-                    span: Range { start: 0, end },
+                    span: TxtSpan { start: 0, end },
                 } if end == case.len()
             ));
         }
@@ -580,7 +580,7 @@ mod rational {
             tok,
             Token {
                 kind: TokenKind::Constant(Constant::Number(_)),
-                span: Range { start: 0, end: 3 },
+                span: TxtSpan { start: 0, end: 3 },
             }
         ));
         let rat = extract_number!(tok.kind, Number::Real, Real::Rational);
@@ -604,7 +604,7 @@ mod rational {
             tok,
             Token {
                 kind: TokenKind::Constant(Constant::Number(_)),
-                span: Range { start: 0, end: 4 },
+                span: TxtSpan { start: 0, end: 4 },
             }
         ));
         let rat = extract_number!(tok.kind, Number::Real, Real::Rational);
@@ -628,7 +628,7 @@ mod rational {
             tok,
             Token {
                 kind: TokenKind::Constant(Constant::Number(_)),
-                span: Range { start: 0, end: 3 },
+                span: TxtSpan { start: 0, end: 3 },
             }
         ));
         let rat = extract_number!(tok.kind, Number::Real, Real::Integer);
@@ -652,7 +652,7 @@ mod rational {
             err,
             TokenError {
                 kind: TokenErrorKind::NumericError(NumericError::DivideByZero),
-                span: Range { start: 0, end: 3 },
+                span: TxtSpan { start: 0, end: 3 },
             }
         ));
     }
@@ -674,7 +674,7 @@ mod rational {
             tok,
             Token {
                 kind: TokenKind::Constant(Constant::Number(_)),
-                span: Range { start: 0, end: 4 },
+                span: TxtSpan { start: 0, end: 4 },
             }
         ));
         let rat = extract_number!(tok.kind, Number::Real, Real::Rational);
@@ -698,7 +698,7 @@ mod rational {
             tok,
             Token {
                 kind: TokenKind::Constant(Constant::Number(_)),
-                span: Range { start: 0, end: 4 },
+                span: TxtSpan { start: 0, end: 4 },
             }
         ));
         let rat = extract_number!(tok.kind, Number::Real, Real::Integer);
@@ -722,7 +722,7 @@ mod rational {
             tok,
             Token {
                 kind: TokenKind::Constant(Constant::Number(_)),
-                span: Range { start: 0, end: 5 },
+                span: TxtSpan { start: 0, end: 5 },
             }
         ));
         let rat = extract_number!(tok.kind, Number::Real, Real::Integer);
@@ -746,7 +746,7 @@ mod rational {
             tok,
             Token {
                 kind: TokenKind::Constant(Constant::Number(_)),
-                span: Range { start: 0, end: 4 },
+                span: TxtSpan { start: 0, end: 4 },
             }
         ));
         let rat = extract_number!(tok.kind, Number::Real, Real::Integer);
@@ -771,7 +771,7 @@ mod rational {
             tok,
             Token {
                 kind: TokenKind::Constant(Constant::Number(_)),
-                span: Range { start: 0, end: 23 },
+                span: TxtSpan { start: 0, end: 23 },
             }
         ));
         let rat = extract_number!(tok.kind, Number::Real, Real::Rational);
@@ -795,7 +795,7 @@ mod rational {
             tok,
             Token {
                 kind: TokenKind::Constant(Constant::Number(_)),
-                span: Range { start: 0, end: 4 },
+                span: TxtSpan { start: 0, end: 4 },
             }
         ));
         let rat = extract_number!(tok.kind, Number::Real, Real::Rational);
@@ -830,7 +830,7 @@ mod rational {
                 tok,
                 Token {
                     kind: TokenKind::Constant(Constant::Number(_)),
-                    span: Range { start: 0, end },
+                    span: TxtSpan { start: 0, end },
                 } if end == case.len()
             ));
             let rat = extract_number!(tok.kind, Number::Real, Real::Rational);
@@ -860,7 +860,7 @@ mod rational {
             tok,
             Token {
                 kind: TokenKind::Constant(Constant::Number(_)),
-                span: Range { start: 0, end: 5 },
+                span: TxtSpan { start: 0, end: 5 },
             }
         ));
         let rat = extract_number!(tok.kind, Number::Real, Real::Rational);
@@ -886,7 +886,7 @@ mod rational {
                 tok,
                 Token {
                     kind: TokenKind::Constant(Constant::Number(_)),
-                    span: Range { start: 0, end: 7 },
+                    span: TxtSpan { start: 0, end: 7 },
                 }
             ));
             let rat = extract_number!(tok.kind, Number::Real, Real::Rational);
@@ -913,7 +913,7 @@ mod rational {
                 tok,
                 Token {
                     kind: TokenKind::Constant(Constant::Number(_)),
-                    span: Range { start: 0, end: 7 },
+                    span: TxtSpan { start: 0, end: 7 },
                 }
             ));
             let rat = extract_number!(tok.kind, Number::Real, Real::Rational);
@@ -940,7 +940,7 @@ mod rational {
                 tok,
                 Token {
                     kind: TokenKind::Constant(Constant::Number(_)),
-                    span: Range { start: 0, end },
+                    span: TxtSpan { start: 0, end },
                 } if end == case.len()
             ));
             let flt = extract_number!(tok.kind, Number::Real);
@@ -965,7 +965,7 @@ mod rational {
             tok,
             Token {
                 kind: TokenKind::Constant(Constant::Number(_)),
-                span: Range { start: 0, end: 6 },
+                span: TxtSpan { start: 0, end: 6 },
             }
         ));
         let flt = extract_number!(tok.kind, Number::Real);
@@ -989,7 +989,7 @@ mod rational {
             tok,
             Token {
                 kind: TokenKind::Constant(Constant::Number(_)),
-                span: Range { start: 0, end: 7 },
+                span: TxtSpan { start: 0, end: 7 },
             }
         ));
         let flt = extract_number!(tok.kind, Number::Real);
@@ -1013,7 +1013,7 @@ mod rational {
             tok,
             Token {
                 kind: TokenKind::Constant(Constant::Number(_)),
-                span: Range { start: 0, end: 6 },
+                span: TxtSpan { start: 0, end: 6 },
             }
         ));
         let flt = extract_number!(tok.kind, Number::Real);
@@ -1038,7 +1038,7 @@ mod rational {
             tok,
             Token {
                 kind: TokenKind::Constant(Constant::Number(_)),
-                span: Range { start: 0, end },
+                span: TxtSpan { start: 0, end },
             } if end == input.len()
         ));
         let flt = extract_number!(tok.kind, Number::Real);
@@ -1062,7 +1062,7 @@ mod rational {
             err,
             TokenError {
                 kind: TokenErrorKind::RationalInvalid,
-                span: Range { start: 0, end: 4 },
+                span: TxtSpan { start: 0, end: 4 },
             }
         ));
     }
@@ -1084,7 +1084,7 @@ mod rational {
             err,
             TokenError {
                 kind: TokenErrorKind::RationalInvalid,
-                span: Range { start: 0, end: 4 },
+                span: TxtSpan { start: 0, end: 4 },
             }
         ));
     }
@@ -1106,7 +1106,7 @@ mod rational {
             err,
             TokenError {
                 kind: TokenErrorKind::RationalInvalid,
-                span: Range { start: 0, end: 5 },
+                span: TxtSpan { start: 0, end: 5 },
             }
         ));
     }
@@ -1128,7 +1128,7 @@ mod rational {
             err,
             TokenError {
                 kind: TokenErrorKind::RationalInvalid,
-                span: Range { start: 0, end: 2 },
+                span: TxtSpan { start: 0, end: 2 },
             }
         ));
     }
@@ -1150,7 +1150,7 @@ mod rational {
             err,
             TokenError {
                 kind: TokenErrorKind::RationalInvalid,
-                span: Range { start: 0, end: 5 },
+                span: TxtSpan { start: 0, end: 5 },
             }
         ));
     }
@@ -1172,7 +1172,7 @@ mod rational {
             err,
             TokenError {
                 kind: TokenErrorKind::RationalInvalid,
-                span: Range { start: 0, end: 5 },
+                span: TxtSpan { start: 0, end: 5 },
             }
         ));
     }
@@ -1196,7 +1196,7 @@ mod rational {
                 err,
                 TokenError {
                     kind: TokenErrorKind::RationalInvalid,
-                    span: Range { start: 0, end: 10 },
+                    span: TxtSpan { start: 0, end: 10 },
                 }
             ));
         }
@@ -1221,7 +1221,7 @@ mod rational {
                 err,
                 TokenError {
                     kind: TokenErrorKind::RationalInvalid,
-                    span: Range { start: 0, end: 8 },
+                    span: TxtSpan { start: 0, end: 8 },
                 }
             ));
         }
@@ -1244,7 +1244,7 @@ mod rational {
             err,
             TokenError {
                 kind: TokenErrorKind::RationalInvalid,
-                span: Range { start: 0, end: 5 },
+                span: TxtSpan { start: 0, end: 5 },
             }
         ));
     }
@@ -1266,7 +1266,7 @@ mod rational {
             err,
             TokenError {
                 kind: TokenErrorKind::NumberInvalid,
-                span: Range { start: 0, end: 4 },
+                span: TxtSpan { start: 0, end: 4 },
             }
         ));
     }
@@ -1288,7 +1288,7 @@ mod rational {
             err,
             TokenError {
                 kind: TokenErrorKind::RationalInvalid,
-                span: Range { start: 0, end: 2 },
+                span: TxtSpan { start: 0, end: 2 },
             }
         ));
     }
@@ -1310,7 +1310,7 @@ mod rational {
             err,
             TokenError {
                 kind: TokenErrorKind::RationalInvalid,
-                span: Range { start: 0, end: 7 },
+                span: TxtSpan { start: 0, end: 7 },
             }
         ));
     }
@@ -1336,7 +1336,7 @@ mod float {
             tok,
             Token {
                 kind: TokenKind::Constant(Constant::Number(_)),
-                span: Range { start: 0, end: 5 },
+                span: TxtSpan { start: 0, end: 5 },
             }
         ));
         let flt = extract_number!(tok.kind, Number::Real);
@@ -1360,7 +1360,7 @@ mod float {
             tok,
             Token {
                 kind: TokenKind::Constant(Constant::Number(_)),
-                span: Range { start: 0, end: 6 },
+                span: TxtSpan { start: 0, end: 6 },
             }
         ));
         let flt = extract_number!(tok.kind, Number::Real);
@@ -1384,7 +1384,7 @@ mod float {
             tok,
             Token {
                 kind: TokenKind::Constant(Constant::Number(_)),
-                span: Range { start: 0, end: 6 },
+                span: TxtSpan { start: 0, end: 6 },
             }
         ));
         let flt = extract_number!(tok.kind, Number::Real);
@@ -1408,7 +1408,7 @@ mod float {
             tok,
             Token {
                 kind: TokenKind::Constant(Constant::Number(_)),
-                span: Range { start: 0, end: 2 },
+                span: TxtSpan { start: 0, end: 2 },
             }
         ));
         let flt = extract_number!(tok.kind, Number::Real);
@@ -1432,7 +1432,7 @@ mod float {
             tok,
             Token {
                 kind: TokenKind::Constant(Constant::Number(_)),
-                span: Range { start: 0, end: 3 },
+                span: TxtSpan { start: 0, end: 3 },
             }
         ));
         let flt = extract_number!(tok.kind, Number::Real);
@@ -1456,7 +1456,7 @@ mod float {
             tok,
             Token {
                 kind: TokenKind::Constant(Constant::Number(_)),
-                span: Range { start: 0, end: 3 },
+                span: TxtSpan { start: 0, end: 3 },
             }
         ));
         let flt = extract_number!(tok.kind, Number::Real);
@@ -1480,7 +1480,7 @@ mod float {
             tok,
             Token {
                 kind: TokenKind::Constant(Constant::Number(_)),
-                span: Range { start: 0, end: 2 },
+                span: TxtSpan { start: 0, end: 2 },
             }
         ));
         let flt = extract_number!(tok.kind, Number::Real);
@@ -1504,7 +1504,7 @@ mod float {
             tok,
             Token {
                 kind: TokenKind::Constant(Constant::Number(_)),
-                span: Range { start: 0, end: 4 },
+                span: TxtSpan { start: 0, end: 4 },
             }
         ));
         let flt = extract_number!(tok.kind, Number::Real);
@@ -1528,7 +1528,7 @@ mod float {
             tok,
             Token {
                 kind: TokenKind::Constant(Constant::Number(_)),
-                span: Range { start: 0, end: 5 },
+                span: TxtSpan { start: 0, end: 5 },
             }
         ));
         let flt = extract_number!(tok.kind, Number::Real);
@@ -1552,7 +1552,7 @@ mod float {
             tok,
             Token {
                 kind: TokenKind::Constant(Constant::Number(_)),
-                span: Range { start: 0, end: 4 },
+                span: TxtSpan { start: 0, end: 4 },
             }
         ));
         let flt = extract_number!(tok.kind, Number::Real);
@@ -1576,7 +1576,7 @@ mod float {
             tok,
             Token {
                 kind: TokenKind::Constant(Constant::Number(_)),
-                span: Range { start: 0, end: 4 },
+                span: TxtSpan { start: 0, end: 4 },
             }
         ));
         let flt = extract_number!(tok.kind, Number::Real);
@@ -1600,7 +1600,7 @@ mod float {
             tok,
             Token {
                 kind: TokenKind::Constant(Constant::Number(_)),
-                span: Range { start: 0, end: 5 },
+                span: TxtSpan { start: 0, end: 5 },
             }
         ));
         let flt = extract_number!(tok.kind, Number::Real);
@@ -1624,7 +1624,7 @@ mod float {
             tok,
             Token {
                 kind: TokenKind::Constant(Constant::Number(_)),
-                span: Range { start: 0, end: 7 },
+                span: TxtSpan { start: 0, end: 7 },
             }
         ));
         let flt = extract_number!(tok.kind, Number::Real);
@@ -1648,7 +1648,7 @@ mod float {
             tok,
             Token {
                 kind: TokenKind::Constant(Constant::Number(_)),
-                span: Range { start: 0, end: 8 },
+                span: TxtSpan { start: 0, end: 8 },
             }
         ));
         let flt = extract_number!(tok.kind, Number::Real);
@@ -1672,7 +1672,7 @@ mod float {
             tok,
             Token {
                 kind: TokenKind::Constant(Constant::Number(_)),
-                span: Range { start: 0, end: 9 },
+                span: TxtSpan { start: 0, end: 9 },
             }
         ));
         let flt = extract_number!(tok.kind, Number::Real);
@@ -1696,7 +1696,7 @@ mod float {
             tok,
             Token {
                 kind: TokenKind::Constant(Constant::Number(_)),
-                span: Range { start: 0, end: 10 },
+                span: TxtSpan { start: 0, end: 10 },
             }
         ));
         let flt = extract_number!(tok.kind, Number::Real);
@@ -1720,7 +1720,7 @@ mod float {
             tok,
             Token {
                 kind: TokenKind::Constant(Constant::Number(_)),
-                span: Range { start: 0, end: 6 },
+                span: TxtSpan { start: 0, end: 6 },
             }
         ));
         let flt = extract_number!(tok.kind, Number::Real);
@@ -1744,7 +1744,7 @@ mod float {
             tok,
             Token {
                 kind: TokenKind::Constant(Constant::Number(_)),
-                span: Range { start: 0, end: 6 },
+                span: TxtSpan { start: 0, end: 6 },
             }
         ));
         let flt = extract_number!(tok.kind, Number::Real);
@@ -1768,7 +1768,7 @@ mod float {
             tok,
             Token {
                 kind: TokenKind::Constant(Constant::Number(_)),
-                span: Range { start: 0, end: 6 },
+                span: TxtSpan { start: 0, end: 6 },
             }
         ));
         let flt = extract_number!(tok.kind, Number::Real);
@@ -1792,7 +1792,7 @@ mod float {
             tok,
             Token {
                 kind: TokenKind::Constant(Constant::Number(_)),
-                span: Range { start: 0, end: 7 },
+                span: TxtSpan { start: 0, end: 7 },
             }
         ));
         let flt = extract_number!(tok.kind, Number::Real);
@@ -1821,7 +1821,7 @@ mod float {
                 tok,
                 Token {
                     kind: TokenKind::Constant(Constant::Number(_)),
-                    span: Range { start: 0, end },
+                    span: TxtSpan { start: 0, end },
                 } if end == case.len()
             ));
             let flt = extract_number!(tok.kind, Number::Real);
@@ -1860,7 +1860,7 @@ mod float {
                 err,
                 TokenError {
                     kind: TokenErrorKind::NumberInvalid,
-                    span: Range { start: 0, end },
+                    span: TxtSpan { start: 0, end },
                 } if end == case.len()
             ));
         }
@@ -1885,7 +1885,7 @@ mod float {
                 tok,
                 Token {
                     kind: TokenKind::Constant(Constant::Number(_)),
-                    span: Range { start: 0, end },
+                    span: TxtSpan { start: 0, end },
                 } if end == case.len()
             ));
             let flt = extract_number!(tok.kind, Number::Real);
@@ -1926,7 +1926,7 @@ mod float {
                 tok,
                 Token {
                     kind: TokenKind::Constant(Constant::Number(_)),
-                    span: Range { start: 0, end },
+                    span: TxtSpan { start: 0, end },
                 } if end == case.len()
             ));
             let flt = extract_number!(tok.kind, Number::Real);
@@ -1958,7 +1958,7 @@ mod float {
                 tok,
                 Token {
                     kind: TokenKind::Constant(Constant::Number(_)),
-                    span: Range { start: 0, end: 9 },
+                    span: TxtSpan { start: 0, end: 9 },
                 }
             ));
             let flt = extract_number!(tok.kind, Number::Real);
@@ -1985,7 +1985,7 @@ mod float {
                 tok,
                 Token {
                     kind: TokenKind::Constant(Constant::Number(_)),
-                    span: Range { start: 0, end: 9 },
+                    span: TxtSpan { start: 0, end: 9 },
                 }
             ));
             let flt = extract_number!(tok.kind, Number::Real);
@@ -2012,7 +2012,7 @@ mod float {
                 tok,
                 Token {
                     kind: TokenKind::Constant(Constant::Number(_)),
-                    span: Range { start: 0, end },
+                    span: TxtSpan { start: 0, end },
                 } if end == case.len()
             ));
             let int = extract_number!(tok.kind, Number::Real, Real::Integer);
@@ -2037,7 +2037,7 @@ mod float {
             tok,
             Token {
                 kind: TokenKind::Constant(Constant::Number(_)),
-                span: Range { start: 0, end: 5 },
+                span: TxtSpan { start: 0, end: 5 },
             }
         ));
         let int = extract_number!(tok.kind, Number::Real, Real::Integer);
@@ -2061,7 +2061,7 @@ mod float {
             tok,
             Token {
                 kind: TokenKind::Constant(Constant::Number(_)),
-                span: Range { start: 0, end: 6 },
+                span: TxtSpan { start: 0, end: 6 },
             }
         ));
         let int = extract_number!(tok.kind, Number::Real, Real::Integer);
@@ -2085,7 +2085,7 @@ mod float {
             tok,
             Token {
                 kind: TokenKind::Constant(Constant::Number(_)),
-                span: Range { start: 0, end: 7 },
+                span: TxtSpan { start: 0, end: 7 },
             }
         ));
         let rat = extract_number!(tok.kind, Number::Real, Real::Rational);
@@ -2111,7 +2111,7 @@ mod float {
                 tok,
                 Token {
                     kind: TokenKind::Constant(Constant::Number(_)),
-                    span: Range { start: 0, end },
+                    span: TxtSpan { start: 0, end },
                 } if end == case.len()
             ));
             let rat = extract_number!(tok.kind, Number::Real, Real::Rational);
@@ -2138,7 +2138,7 @@ mod float {
                 tok,
                 Token {
                     kind: TokenKind::Constant(Constant::Number(_)),
-                    span: Range { start: 0, end },
+                    span: TxtSpan { start: 0, end },
                 } if end == case.len()
             ));
             let rat = extract_number!(tok.kind, Number::Real, Real::Rational);
@@ -2165,7 +2165,7 @@ mod float {
                 tok,
                 Token {
                     kind: TokenKind::Constant(Constant::Number(_)),
-                    span: Range { start: 0, end },
+                    span: TxtSpan { start: 0, end },
                 } if end == case.len()
             ));
             let int = extract_number!(tok.kind, Number::Real, Real::Integer);
@@ -2190,7 +2190,7 @@ mod float {
             tok,
             Token {
                 kind: TokenKind::Constant(Constant::Number(_)),
-                span: Range { start: 0, end: 6 },
+                span: TxtSpan { start: 0, end: 6 },
             }
         ));
         let rat = extract_number!(tok.kind, Number::Real, Real::Rational);
@@ -2214,7 +2214,7 @@ mod float {
             tok,
             Token {
                 kind: TokenKind::Constant(Constant::Number(_)),
-                span: Range { start: 0, end: 8 },
+                span: TxtSpan { start: 0, end: 8 },
             }
         ));
         let int = extract_number!(tok.kind, Number::Real, Real::Integer);
@@ -2238,7 +2238,7 @@ mod float {
             tok,
             Token {
                 kind: TokenKind::Constant(Constant::Number(_)),
-                span: Range { start: 0, end: 6 },
+                span: TxtSpan { start: 0, end: 6 },
             }
         ));
         let int = extract_number!(tok.kind, Number::Real, Real::Integer);
@@ -2262,7 +2262,7 @@ mod float {
             tok,
             Token {
                 kind: TokenKind::Constant(Constant::Number(_)),
-                span: Range { start: 0, end: 12 },
+                span: TxtSpan { start: 0, end: 12 },
             }
         ));
         let rat = extract_number!(tok.kind, Number::Real, Real::Rational);
@@ -2288,7 +2288,7 @@ mod float {
                 tok,
                 Token {
                     kind: TokenKind::Constant(Constant::Number(_)),
-                    span: Range { start: 0, end },
+                    span: TxtSpan { start: 0, end },
                 } if end == case.len()
             ));
             let int = extract_number!(tok.kind, Number::Real, Real::Integer);
@@ -2315,7 +2315,7 @@ mod float {
                 tok,
                 Token {
                     kind: TokenKind::Constant(Constant::Number(_)),
-                    span: Range { start: 0, end },
+                    span: TxtSpan { start: 0, end },
                 } if end == case.len()
             ));
             let flt = extract_number!(tok.kind, Number::Real);
@@ -2356,7 +2356,7 @@ mod float {
                 tok,
                 Token {
                     kind: TokenKind::Constant(Constant::Number(_)),
-                    span: Range { start: 0, end },
+                    span: TxtSpan { start: 0, end },
                 } if end == case.len()
             ));
             let flt = extract_number!(tok.kind, Number::Real);
@@ -2386,7 +2386,7 @@ mod float {
             err,
             TokenError {
                 kind: TokenErrorKind::NumberInvalid,
-                span: Range { start: 0, end: 7 },
+                span: TxtSpan { start: 0, end: 7 },
             }
         ));
     }
@@ -2408,7 +2408,7 @@ mod float {
             tok,
             Token {
                 kind: TokenKind::Constant(Constant::Number(_)),
-                span: Range { start: 0, end: 6 },
+                span: TxtSpan { start: 0, end: 6 },
             }
         ));
         let flt = extract_number!(tok.kind, Number::Real);
@@ -2432,7 +2432,7 @@ mod float {
             tok,
             Token {
                 kind: TokenKind::Constant(Constant::Number(_)),
-                span: Range { start: 0, end: 6 },
+                span: TxtSpan { start: 0, end: 6 },
             }
         ));
         let flt = extract_number!(tok.kind, Number::Real);
@@ -2456,7 +2456,7 @@ mod float {
             err,
             TokenError {
                 kind: TokenErrorKind::NumberInvalid,
-                span: Range { start: 0, end: 7 },
+                span: TxtSpan { start: 0, end: 7 },
             }
         ));
     }
@@ -2478,7 +2478,7 @@ mod float {
             tok,
             Token {
                 kind: TokenKind::Constant(Constant::Number(_)),
-                span: Range { start: 0, end: 6 },
+                span: TxtSpan { start: 0, end: 6 },
             }
         ));
         let flt = extract_number!(tok.kind, Number::Real);
@@ -2502,7 +2502,7 @@ mod float {
             tok,
             Token {
                 kind: TokenKind::Constant(Constant::Number(_)),
-                span: Range { start: 0, end: 7 },
+                span: TxtSpan { start: 0, end: 7 },
             }
         ));
         let flt = extract_number!(tok.kind, Number::Real);
@@ -2532,7 +2532,7 @@ mod float {
                 err,
                 TokenError {
                     kind: TokenErrorKind::NumberInvalidDecimalPoint { at: 3, radix },
-                    span: Range { start: 3, end },
+                    span: TxtSpan { start: 3, end },
                 } if radix == label && end == case.len()
             ));
         }
@@ -2555,7 +2555,7 @@ mod float {
             tok,
             Token {
                 kind: TokenKind::Constant(Constant::Number(_)),
-                span: Range { start: 0, end: 6 },
+                span: TxtSpan { start: 0, end: 6 },
             }
         ));
         let flt = extract_number!(tok.kind, Number::Real);
@@ -2581,7 +2581,7 @@ mod float {
                 err,
                 TokenError {
                     kind: TokenErrorKind::NumberInvalidExponent { at: 4, radix },
-                    span: Range { start: 4, end },
+                    span: TxtSpan { start: 4, end },
                 } if radix == label && end == case.len()
             ));
         }
@@ -2604,7 +2604,7 @@ mod float {
             tok,
             Token {
                 kind: TokenKind::Constant(Constant::Number(_)),
-                span: Range { start: 0, end: 7 },
+                span: TxtSpan { start: 0, end: 7 },
             }
         ));
         let num = extract_number!(tok.kind, Number::Real);
@@ -2628,7 +2628,7 @@ mod float {
             err,
             TokenError {
                 kind: TokenErrorKind::NumberUnexpectedDecimalPoint { at: 5 },
-                span: Range { start: 5, end: 8 },
+                span: TxtSpan { start: 5, end: 8 },
             }
         ));
     }
@@ -2653,7 +2653,7 @@ mod float {
                     at: 5,
                     err: NumericError::ParseExponentFailure
                 },
-                span: Range { start: 5, end: 6 },
+                span: TxtSpan { start: 5, end: 6 },
             }
         ));
     }
@@ -2678,7 +2678,7 @@ mod float {
                     at: 1,
                     err: NumericError::ParseExponentFailure
                 },
-                span: Range { start: 1, end: 2 },
+                span: TxtSpan { start: 1, end: 2 },
             }
         ));
     }
@@ -2703,7 +2703,7 @@ mod float {
                     at: 5,
                     err: NumericError::ParseExponentFailure
                 },
-                span: Range { start: 5, end: 7 },
+                span: TxtSpan { start: 5, end: 7 },
             }
         ));
     }
@@ -2728,7 +2728,7 @@ mod float {
                     at: 1,
                     err: NumericError::ParseExponentFailure
                 },
-                span: Range { start: 1, end: 3 },
+                span: TxtSpan { start: 1, end: 3 },
             }
         ));
     }
@@ -2753,7 +2753,7 @@ mod float {
                     at: 5,
                     err: NumericError::ParseExponentFailure
                 },
-                span: Range { start: 5, end: 9 },
+                span: TxtSpan { start: 5, end: 9 },
             }
         ));
     }
@@ -2778,7 +2778,7 @@ mod float {
                     at: 5,
                     err: NumericError::ParseExponentFailure
                 },
-                span: Range { start: 5, end: 8 },
+                span: TxtSpan { start: 5, end: 8 },
             }
         ));
     }
@@ -2805,7 +2805,7 @@ mod float {
                         at: 5,
                         err: NumericError::ParseExponentFailure
                     },
-                    span: Range { start: 5, end },
+                    span: TxtSpan { start: 5, end },
                 } if end == case.len()
             ));
         }
@@ -2834,7 +2834,7 @@ mod float {
                         at: 5,
                         err: NumericError::ParseExponentOutOfRange
                     },
-                    span: Range { start: 5, end },
+                    span: TxtSpan { start: 5, end },
                 } if end == input.len()
             ));
         }
@@ -2861,7 +2861,7 @@ mod imaginary {
             tok,
             Token {
                 kind: TokenKind::Imaginary(_),
-                span: Range { start: 0, end: 2 },
+                span: TxtSpan { start: 0, end: 2 },
             }
         ));
         let r = extract_or_fail!(tok.kind, TokenKind::Imaginary);
@@ -2885,7 +2885,7 @@ mod imaginary {
             tok,
             Token {
                 kind: TokenKind::Imaginary(_),
-                span: Range { start: 0, end: 2 },
+                span: TxtSpan { start: 0, end: 2 },
             }
         ));
         let r = extract_or_fail!(tok.kind, TokenKind::Imaginary);
@@ -2909,7 +2909,7 @@ mod imaginary {
             err,
             TokenError {
                 kind: TokenErrorKind::ImaginaryMissingSign,
-                span: Range { start: 0, end: 2 },
+                span: TxtSpan { start: 0, end: 2 },
             }
         ));
     }
@@ -2931,7 +2931,7 @@ mod imaginary {
             err,
             TokenError {
                 kind: TokenErrorKind::ImaginaryInvalid,
-                span: Range { start: 0, end: 4 },
+                span: TxtSpan { start: 0, end: 4 },
             }
         ));
     }
@@ -2953,7 +2953,7 @@ mod imaginary {
             err,
             TokenError {
                 kind: TokenErrorKind::ImaginaryInvalid,
-                span: Range { start: 0, end: 4 },
+                span: TxtSpan { start: 0, end: 4 },
             }
         ));
     }
@@ -2975,7 +2975,7 @@ mod imaginary {
             tok,
             Token {
                 kind: TokenKind::Imaginary(_),
-                span: Range { start: 0, end: 3 },
+                span: TxtSpan { start: 0, end: 3 },
             }
         ));
         let r = extract_or_fail!(tok.kind, TokenKind::Imaginary);
@@ -2999,7 +2999,7 @@ mod imaginary {
             tok,
             Token {
                 kind: TokenKind::Imaginary(_),
-                span: Range { start: 0, end: 3 },
+                span: TxtSpan { start: 0, end: 3 },
             }
         ));
         let r = extract_or_fail!(tok.kind, TokenKind::Imaginary);
@@ -3023,7 +3023,7 @@ mod imaginary {
             tok,
             Token {
                 kind: TokenKind::Imaginary(_),
-                span: Range { start: 0, end: 5 },
+                span: TxtSpan { start: 0, end: 5 },
             }
         ));
         let r = extract_or_fail!(tok.kind, TokenKind::Imaginary);
@@ -3047,7 +3047,7 @@ mod imaginary {
             tok,
             Token {
                 kind: TokenKind::Imaginary(_),
-                span: Range { start: 0, end: 5 },
+                span: TxtSpan { start: 0, end: 5 },
             }
         ));
         let r = extract_or_fail!(tok.kind, TokenKind::Imaginary);
@@ -3077,7 +3077,7 @@ mod imaginary {
                 tok,
                 Token {
                     kind: TokenKind::Imaginary(_),
-                    span: Range { start: 0, end },
+                    span: TxtSpan { start: 0, end },
                 } if end == case.len()
             ));
             let r = extract_or_fail!(tok.kind, TokenKind::Imaginary);
@@ -3109,7 +3109,7 @@ mod imaginary {
                 tok,
                 Token {
                     kind: TokenKind::Imaginary(_),
-                    span: Range { start: 0, end },
+                    span: TxtSpan { start: 0, end },
                 } if end == case.len()
             ));
             let r = extract_or_fail!(tok.kind, TokenKind::Imaginary);
@@ -3137,7 +3137,7 @@ mod imaginary {
                 tok,
                 Token {
                     kind: TokenKind::Imaginary(_),
-                    span: Range { start: 0, end: 7 },
+                    span: TxtSpan { start: 0, end: 7 },
                 }
             ));
             let r = extract_or_fail!(tok.kind, TokenKind::Imaginary);
@@ -3164,7 +3164,7 @@ mod imaginary {
                 tok,
                 Token {
                     kind: TokenKind::Imaginary(_),
-                    span: Range { start: 0, end: 7 },
+                    span: TxtSpan { start: 0, end: 7 },
                 }
             ));
             let r = extract_or_fail!(tok.kind, TokenKind::Imaginary);
@@ -3191,7 +3191,7 @@ mod imaginary {
                 tok,
                 Token {
                     kind: TokenKind::Imaginary(_),
-                    span: Range { start: 0, end: 11 },
+                    span: TxtSpan { start: 0, end: 11 },
                 }
             ));
             let r = extract_or_fail!(tok.kind, TokenKind::Imaginary);
@@ -3218,7 +3218,7 @@ mod imaginary {
                 tok,
                 Token {
                     kind: TokenKind::Imaginary(_),
-                    span: Range { start: 0, end: 11 },
+                    span: TxtSpan { start: 0, end: 11 },
                 }
             ));
             let r = extract_or_fail!(tok.kind, TokenKind::Imaginary);
@@ -3243,7 +3243,7 @@ mod imaginary {
             tok,
             Token {
                 kind: TokenKind::Imaginary(_),
-                span: Range { start: 0, end: 4 },
+                span: TxtSpan { start: 0, end: 4 },
             }
         ));
         let r = extract_or_fail!(tok.kind, TokenKind::Imaginary);
@@ -3267,7 +3267,7 @@ mod imaginary {
             tok,
             Token {
                 kind: TokenKind::Imaginary(_),
-                span: Range { start: 0, end: 5 },
+                span: TxtSpan { start: 0, end: 5 },
             }
         ));
         let r = extract_or_fail!(tok.kind, TokenKind::Imaginary);
@@ -3291,7 +3291,7 @@ mod imaginary {
             tok,
             Token {
                 kind: TokenKind::Imaginary(_),
-                span: Range { start: 0, end: 7 },
+                span: TxtSpan { start: 0, end: 7 },
             }
         ));
         let r = extract_or_fail!(tok.kind, TokenKind::Imaginary);
@@ -3315,7 +3315,7 @@ mod imaginary {
             err,
             TokenError {
                 kind: TokenErrorKind::ImaginaryMissingSign,
-                span: Range { start: 0, end: 4 },
+                span: TxtSpan { start: 0, end: 4 },
             }
         ));
     }
@@ -3337,7 +3337,7 @@ mod imaginary {
             err,
             TokenError {
                 kind: TokenErrorKind::ImaginaryInvalid,
-                span: Range { start: 0, end: 5 },
+                span: TxtSpan { start: 0, end: 5 },
             }
         ));
     }
@@ -3359,7 +3359,7 @@ mod imaginary {
             err,
             TokenError {
                 kind: TokenErrorKind::RationalInvalid,
-                span: Range { start: 0, end: 4 },
+                span: TxtSpan { start: 0, end: 4 },
             }
         ));
     }
@@ -3381,7 +3381,7 @@ mod imaginary {
             tok,
             Token {
                 kind: TokenKind::Imaginary(_),
-                span: Range { start: 0, end: 5 },
+                span: TxtSpan { start: 0, end: 5 },
             }
         ));
         let r = extract_or_fail!(tok.kind, TokenKind::Imaginary);
@@ -3405,7 +3405,7 @@ mod imaginary {
             tok,
             Token {
                 kind: TokenKind::Imaginary(_),
-                span: Range { start: 0, end: 7 },
+                span: TxtSpan { start: 0, end: 7 },
             }
         ));
         let r = extract_or_fail!(tok.kind, TokenKind::Imaginary);
@@ -3429,7 +3429,7 @@ mod imaginary {
             tok,
             Token {
                 kind: TokenKind::Imaginary(_),
-                span: Range { start: 0, end: 8 },
+                span: TxtSpan { start: 0, end: 8 },
             }
         ));
         let r = extract_or_fail!(tok.kind, TokenKind::Imaginary);
@@ -3453,7 +3453,7 @@ mod imaginary {
             tok,
             Token {
                 kind: TokenKind::Imaginary(_),
-                span: Range { start: 0, end: 8 },
+                span: TxtSpan { start: 0, end: 8 },
             }
         ));
         let r = extract_or_fail!(tok.kind, TokenKind::Imaginary);
@@ -3480,7 +3480,7 @@ mod imaginary {
                     at: 4,
                     err: NumericError::ParseExponentFailure
                 },
-                span: Range { start: 4, end: 6 },
+                span: TxtSpan { start: 4, end: 6 },
             }
         ));
     }
@@ -3502,7 +3502,7 @@ mod imaginary {
             tok,
             Token {
                 kind: TokenKind::Imaginary(_),
-                span: Range { start: 0, end: 2 },
+                span: TxtSpan { start: 0, end: 2 },
             }
         ));
         let r = extract_or_fail!(tok.kind, TokenKind::Imaginary);
@@ -3526,7 +3526,7 @@ mod imaginary {
             tok,
             Token {
                 kind: TokenKind::Imaginary(_),
-                span: Range { start: 0, end: 3 },
+                span: TxtSpan { start: 0, end: 3 },
             }
         ));
         let r = extract_or_fail!(tok.kind, TokenKind::Imaginary);
@@ -3550,7 +3550,7 @@ mod imaginary {
             tok,
             Token {
                 kind: TokenKind::Imaginary(_),
-                span: Range { start: 0, end: 7 },
+                span: TxtSpan { start: 0, end: 7 },
             }
         ));
         let r = extract_or_fail!(tok.kind, TokenKind::Imaginary);
@@ -3574,7 +3574,7 @@ mod imaginary {
             tok,
             Token {
                 kind: TokenKind::Imaginary(_),
-                span: Range { start: 0, end: 9 },
+                span: TxtSpan { start: 0, end: 9 },
             }
         ));
         let r = extract_or_fail!(tok.kind, TokenKind::Imaginary);
@@ -3598,7 +3598,7 @@ mod imaginary {
             tok,
             Token {
                 kind: TokenKind::Imaginary(_),
-                span: Range { start: 0, end: 7 },
+                span: TxtSpan { start: 0, end: 7 },
             }
         ));
         let r = extract_or_fail!(tok.kind, TokenKind::Imaginary);
@@ -3622,7 +3622,7 @@ mod imaginary {
             tok,
             Token {
                 kind: TokenKind::Imaginary(_),
-                span: Range { start: 0, end: 7 },
+                span: TxtSpan { start: 0, end: 7 },
             }
         ));
         let r = extract_or_fail!(tok.kind, TokenKind::Imaginary);
@@ -3646,7 +3646,7 @@ mod imaginary {
             tok,
             Token {
                 kind: TokenKind::Imaginary(_),
-                span: Range { start: 0, end: 7 },
+                span: TxtSpan { start: 0, end: 7 },
             }
         ));
         let r = extract_or_fail!(tok.kind, TokenKind::Imaginary);
@@ -3670,7 +3670,7 @@ mod imaginary {
             tok,
             Token {
                 kind: TokenKind::Imaginary(_),
-                span: Range { start: 0, end: 9 },
+                span: TxtSpan { start: 0, end: 9 },
             }
         ));
         let r = extract_or_fail!(tok.kind, TokenKind::Imaginary);
@@ -3694,7 +3694,7 @@ mod imaginary {
             tok,
             Token {
                 kind: TokenKind::Imaginary(_),
-                span: Range { start: 0, end: 7 },
+                span: TxtSpan { start: 0, end: 7 },
             }
         ));
         let r = extract_or_fail!(tok.kind, TokenKind::Imaginary);
@@ -3718,7 +3718,7 @@ mod imaginary {
             tok,
             Token {
                 kind: TokenKind::Imaginary(_),
-                span: Range { start: 0, end: 7 },
+                span: TxtSpan { start: 0, end: 7 },
             }
         ));
         let r = extract_or_fail!(tok.kind, TokenKind::Imaginary);
@@ -3742,7 +3742,7 @@ mod imaginary {
             err,
             TokenError {
                 kind: TokenErrorKind::ImaginaryInvalid,
-                span: Range { start: 0, end: 4 },
+                span: TxtSpan { start: 0, end: 4 },
             }
         ));
     }
@@ -3768,7 +3768,7 @@ mod cartesian {
             tok,
             Token {
                 kind: TokenKind::Constant(_),
-                span: Range { start: 0, end: 4 },
+                span: TxtSpan { start: 0, end: 4 },
             }
         ));
         let num = extract_number!(tok.kind);
@@ -3792,7 +3792,7 @@ mod cartesian {
             tok,
             Token {
                 kind: TokenKind::Constant(_),
-                span: Range { start: 0, end: 3 },
+                span: TxtSpan { start: 0, end: 3 },
             }
         ));
         let num = extract_number!(tok.kind);
@@ -3816,7 +3816,7 @@ mod cartesian {
             tok,
             Token {
                 kind: TokenKind::Constant(_),
-                span: Range { start: 0, end: 4 },
+                span: TxtSpan { start: 0, end: 4 },
             }
         ));
         let num = extract_number!(tok.kind);
@@ -3840,7 +3840,7 @@ mod cartesian {
             tok,
             Token {
                 kind: TokenKind::Constant(_),
-                span: Range { start: 0, end: 4 },
+                span: TxtSpan { start: 0, end: 4 },
             }
         ));
         let num = extract_number!(tok.kind);
@@ -3864,7 +3864,7 @@ mod cartesian {
             tok,
             Token {
                 kind: TokenKind::Constant(_),
-                span: Range { start: 0, end: 4 },
+                span: TxtSpan { start: 0, end: 4 },
             }
         ));
         let num = extract_number!(tok.kind);
@@ -3888,7 +3888,7 @@ mod cartesian {
             tok,
             Token {
                 kind: TokenKind::Constant(_),
-                span: Range { start: 0, end: 4 },
+                span: TxtSpan { start: 0, end: 4 },
             }
         ));
         let num = extract_number!(tok.kind);
@@ -3912,7 +3912,7 @@ mod cartesian {
             tok,
             Token {
                 kind: TokenKind::Constant(_),
-                span: Range { start: 0, end: 5 },
+                span: TxtSpan { start: 0, end: 5 },
             }
         ));
         let num = extract_number!(tok.kind);
@@ -3936,7 +3936,7 @@ mod cartesian {
             tok,
             Token {
                 kind: TokenKind::Constant(_),
-                span: Range { start: 0, end: 5 },
+                span: TxtSpan { start: 0, end: 5 },
             }
         ));
         let num = extract_number!(tok.kind);
@@ -3960,7 +3960,7 @@ mod cartesian {
             tok,
             Token {
                 kind: TokenKind::Constant(_),
-                span: Range { start: 0, end: 5 },
+                span: TxtSpan { start: 0, end: 5 },
             }
         ));
         let num = extract_number!(tok.kind);
@@ -3984,7 +3984,7 @@ mod cartesian {
             tok,
             Token {
                 kind: TokenKind::Constant(_),
-                span: Range { start: 0, end: 4 },
+                span: TxtSpan { start: 0, end: 4 },
             }
         ));
         let num = extract_number!(tok.kind);
@@ -4008,7 +4008,7 @@ mod cartesian {
             tok,
             Token {
                 kind: TokenKind::Constant(_),
-                span: Range { start: 0, end: 5 },
+                span: TxtSpan { start: 0, end: 5 },
             }
         ));
         let num = extract_number!(tok.kind);
@@ -4038,7 +4038,7 @@ mod cartesian {
                 tok,
                 Token {
                     kind: TokenKind::Constant(_),
-                    span: Range { start: 0, end },
+                    span: TxtSpan { start: 0, end },
                 } if end == cpx.len()
             ));
             let num = extract_number!(tok.kind);
@@ -4088,7 +4088,7 @@ mod cartesian {
                 tok,
                 Token {
                     kind: TokenKind::Constant(_),
-                    span: Range { start: 0, end },
+                    span: TxtSpan { start: 0, end },
                 } if end == cpx.len()
             ));
             let num = extract_number!(tok.kind);
@@ -4143,7 +4143,7 @@ mod cartesian {
                 tok,
                 Token {
                     kind: TokenKind::Constant(_),
-                    span: Range { start: 0, end },
+                    span: TxtSpan { start: 0, end },
                 } if end == cpx.len()
             ));
             let num = extract_number!(tok.kind);
@@ -4193,7 +4193,7 @@ mod cartesian {
                     err,
                     TokenError {
                         kind: TokenErrorKind::NumberInvalid,
-                        span: Range { start: 0, end },
+                        span: TxtSpan { start: 0, end },
                     } if end == cpx.len()
                 ));
             } else {
@@ -4201,7 +4201,7 @@ mod cartesian {
                     err,
                     TokenError {
                         kind: TokenErrorKind::ComplexInvalid,
-                        span: Range { start: 0, end },
+                        span: TxtSpan { start: 0, end },
                     } if end == cpx.len()
                 ));
             }
@@ -4244,7 +4244,7 @@ mod cartesian {
                 tok,
                 Token {
                     kind: TokenKind::Constant(Constant::Number(_)),
-                    span: Range { start: 0, end },
+                    span: TxtSpan { start: 0, end },
                 } if end == case.len()
             ));
             let num = extract_number!(tok.kind);
@@ -4274,7 +4274,7 @@ mod cartesian {
             tok,
             Token {
                 kind: TokenKind::Constant(_),
-                span: Range { start: 0, end: 16 },
+                span: TxtSpan { start: 0, end: 16 },
             }
         ));
         let num = extract_number!(tok.kind);
@@ -4300,7 +4300,7 @@ mod cartesian {
                 tok,
                 Token {
                     kind: TokenKind::Constant(_),
-                    span: Range { start: 0, end: 8 },
+                    span: TxtSpan { start: 0, end: 8 },
                 }
             ));
             let num = extract_number!(tok.kind);
@@ -4327,7 +4327,7 @@ mod cartesian {
                 tok,
                 Token {
                     kind: TokenKind::Constant(_),
-                    span: Range { start: 0, end: 8 },
+                    span: TxtSpan { start: 0, end: 8 },
                 }
             ));
             let num = extract_number!(tok.kind);
@@ -4354,7 +4354,7 @@ mod cartesian {
                 tok,
                 Token {
                     kind: TokenKind::Constant(_),
-                    span: Range { start: 0, end: 13 },
+                    span: TxtSpan { start: 0, end: 13 },
                 }
             ));
             let num = extract_number!(tok.kind);
@@ -4381,7 +4381,7 @@ mod cartesian {
                 tok,
                 Token {
                     kind: TokenKind::Constant(_),
-                    span: Range { start: 0, end: 13 },
+                    span: TxtSpan { start: 0, end: 13 },
                 }
             ));
             let num = extract_number!(tok.kind);
@@ -4406,7 +4406,7 @@ mod cartesian {
             tok,
             Token {
                 kind: TokenKind::Constant(_),
-                span: Range { start: 0, end: 8 },
+                span: TxtSpan { start: 0, end: 8 },
             }
         ));
         let num = extract_number!(tok.kind);
@@ -4430,7 +4430,7 @@ mod cartesian {
             tok,
             Token {
                 kind: TokenKind::Constant(_),
-                span: Range { start: 0, end: 12 },
+                span: TxtSpan { start: 0, end: 12 },
             }
         ));
         let num = extract_number!(tok.kind);
@@ -4454,7 +4454,7 @@ mod cartesian {
             tok,
             Token {
                 kind: TokenKind::Constant(_),
-                span: Range { start: 0, end: 10 },
+                span: TxtSpan { start: 0, end: 10 },
             }
         ));
         let num = extract_number!(tok.kind);
@@ -4478,7 +4478,7 @@ mod cartesian {
             err,
             TokenError {
                 kind: TokenErrorKind::ComplexInvalid,
-                span: Range { start: 0, end: 2 },
+                span: TxtSpan { start: 0, end: 2 },
             }
         ));
     }
@@ -4500,7 +4500,7 @@ mod cartesian {
             err,
             TokenError {
                 kind: TokenErrorKind::ComplexInvalid,
-                span: Range { start: 0, end: 4 },
+                span: TxtSpan { start: 0, end: 4 },
             }
         ));
     }
@@ -4522,7 +4522,7 @@ mod cartesian {
             err,
             TokenError {
                 kind: TokenErrorKind::ComplexInvalid,
-                span: Range { start: 0, end: 10 },
+                span: TxtSpan { start: 0, end: 10 },
             }
         ));
     }
@@ -4544,7 +4544,7 @@ mod cartesian {
             err,
             TokenError {
                 kind: TokenErrorKind::ComplexInvalid,
-                span: Range { start: 0, end: 6 },
+                span: TxtSpan { start: 0, end: 6 },
             }
         ));
     }
@@ -4566,7 +4566,7 @@ mod cartesian {
             err,
             TokenError {
                 kind: TokenErrorKind::ComplexInvalid,
-                span: Range { start: 0, end: 2 },
+                span: TxtSpan { start: 0, end: 2 },
             }
         ));
     }
@@ -4588,7 +4588,7 @@ mod cartesian {
             err,
             TokenError {
                 kind: TokenErrorKind::ComplexInvalid,
-                span: Range { start: 0, end: 8 },
+                span: TxtSpan { start: 0, end: 8 },
             }
         ));
     }
@@ -4610,7 +4610,7 @@ mod cartesian {
             err,
             TokenError {
                 kind: TokenErrorKind::ComplexInvalid,
-                span: Range { start: 0, end: 2 },
+                span: TxtSpan { start: 0, end: 2 },
             }
         ));
     }
@@ -4636,7 +4636,7 @@ mod polar {
             tok,
             Token {
                 kind: TokenKind::Constant(_),
-                span: Range { start: 0, end: 3 },
+                span: TxtSpan { start: 0, end: 3 },
             }
         ));
         let num = extract_number!(tok.kind);
@@ -4663,7 +4663,7 @@ mod polar {
             tok,
             Token {
                 kind: TokenKind::Constant(_),
-                span: Range { start: 0, end: 4 },
+                span: TxtSpan { start: 0, end: 4 },
             }
         ));
         let num = extract_number!(tok.kind);
@@ -4690,7 +4690,7 @@ mod polar {
             tok,
             Token {
                 kind: TokenKind::Constant(_),
-                span: Range { start: 0, end: 4 },
+                span: TxtSpan { start: 0, end: 4 },
             }
         ));
         let num = extract_number!(tok.kind);
@@ -4717,7 +4717,7 @@ mod polar {
             tok,
             Token {
                 kind: TokenKind::Constant(_),
-                span: Range { start: 0, end: 5 },
+                span: TxtSpan { start: 0, end: 5 },
             }
         ));
         let num = extract_number!(tok.kind);
@@ -4744,7 +4744,7 @@ mod polar {
             tok,
             Token {
                 kind: TokenKind::Constant(_),
-                span: Range { start: 0, end: 3 },
+                span: TxtSpan { start: 0, end: 3 },
             }
         ));
         let num = extract_number!(tok.kind);
@@ -4768,7 +4768,7 @@ mod polar {
             tok,
             Token {
                 kind: TokenKind::Constant(_),
-                span: Range { start: 0, end: 7 },
+                span: TxtSpan { start: 0, end: 7 },
             }
         ));
         let num = extract_number!(tok.kind);
@@ -4792,7 +4792,7 @@ mod polar {
             tok,
             Token {
                 kind: TokenKind::Constant(_),
-                span: Range { start: 0, end: 4 },
+                span: TxtSpan { start: 0, end: 4 },
             }
         ));
         let num = extract_number!(tok.kind);
@@ -4816,7 +4816,7 @@ mod polar {
             tok,
             Token {
                 kind: TokenKind::Constant(_),
-                span: Range { start: 0, end: 3 },
+                span: TxtSpan { start: 0, end: 3 },
             }
         ));
         let num = extract_number!(tok.kind);
@@ -4840,7 +4840,7 @@ mod polar {
             tok,
             Token {
                 kind: TokenKind::Constant(_),
-                span: Range { start: 0, end: 7 },
+                span: TxtSpan { start: 0, end: 7 },
             }
         ));
         let num = extract_number!(tok.kind);
@@ -4864,7 +4864,7 @@ mod polar {
             tok,
             Token {
                 kind: TokenKind::Constant(_),
-                span: Range { start: 0, end: 4 },
+                span: TxtSpan { start: 0, end: 4 },
             }
         ));
         let num = extract_number!(tok.kind);
@@ -4888,7 +4888,7 @@ mod polar {
             tok,
             Token {
                 kind: TokenKind::Constant(_),
-                span: Range { start: 0, end: 3 },
+                span: TxtSpan { start: 0, end: 3 },
             }
         ));
         let num = extract_number!(tok.kind);
@@ -4913,7 +4913,7 @@ mod polar {
             tok,
             Token {
                 kind: TokenKind::Constant(_),
-                span: Range { start: 0, end: 20 },
+                span: TxtSpan { start: 0, end: 20 },
             }
         ));
         let num = extract_number!(tok.kind);
@@ -4965,7 +4965,7 @@ mod polar {
                 tok,
                 Token {
                     kind: TokenKind::Constant(_),
-                    span: Range { start: 0, end },
+                    span: TxtSpan { start: 0, end },
                 } if end == cpx.len()
             ));
             let num = extract_number!(tok.kind);
@@ -5009,7 +5009,7 @@ mod polar {
                 tok,
                 Token {
                     kind: TokenKind::Constant(_),
-                    span: Range { start: 0, end },
+                    span: TxtSpan { start: 0, end },
                 } if end == cpx.len()
             ));
             let num = extract_number!(tok.kind);
@@ -5053,7 +5053,7 @@ mod polar {
                 tok,
                 Token {
                     kind: TokenKind::Constant(_),
-                    span: Range { start: 0, end },
+                    span: TxtSpan { start: 0, end },
                 } if end == cpx.len()
             ));
             let num = extract_number!(tok.kind);
@@ -5092,7 +5092,7 @@ mod polar {
                     err,
                     TokenError {
                         kind: TokenErrorKind::NumberInvalid,
-                        span: Range { start: 0, end },
+                        span: TxtSpan { start: 0, end },
                     } if end == cpx.len()
                 ));
             } else {
@@ -5100,7 +5100,7 @@ mod polar {
                     err,
                     TokenError {
                         kind: TokenErrorKind::PolarInvalid,
-                        span: Range { start: 0, end },
+                        span: TxtSpan { start: 0, end },
                     } if end == cpx.len()
                 ));
             }
@@ -5135,7 +5135,7 @@ mod polar {
                 tok,
                 Token {
                     kind: TokenKind::Constant(Constant::Number(_)),
-                    span: Range { start: 0, end },
+                    span: TxtSpan { start: 0, end },
                 } if end == case.len()
             ));
             let num = extract_number!(tok.kind);
@@ -5165,7 +5165,7 @@ mod polar {
             tok,
             Token {
                 kind: TokenKind::Constant(_),
-                span: Range { start: 0, end: 15 },
+                span: TxtSpan { start: 0, end: 15 },
             }
         ));
         let num = extract_number!(tok.kind);
@@ -5194,7 +5194,7 @@ mod polar {
                 tok,
                 Token {
                     kind: TokenKind::Constant(_),
-                    span: Range { start: 0, end: 12 },
+                    span: TxtSpan { start: 0, end: 12 },
                 }
             ));
             let num = extract_number!(tok.kind);
@@ -5224,7 +5224,7 @@ mod polar {
                 tok,
                 Token {
                     kind: TokenKind::Constant(_),
-                    span: Range { start: 0, end: 12 },
+                    span: TxtSpan { start: 0, end: 12 },
                 }
             ));
             let num = extract_number!(tok.kind);
@@ -5254,7 +5254,7 @@ mod polar {
                 tok,
                 Token {
                     kind: TokenKind::Constant(_),
-                    span: Range { start: 0, end },
+                    span: TxtSpan { start: 0, end },
                 } if end == case.len()
             ));
             let num = extract_number!(tok.kind);
@@ -5284,7 +5284,7 @@ mod polar {
                 tok,
                 Token {
                     kind: TokenKind::Constant(_),
-                    span: Range { start: 0, end },
+                    span: TxtSpan { start: 0, end },
                 } if end == case.len()
             ));
             let num = extract_number!(tok.kind);
@@ -5314,7 +5314,7 @@ mod polar {
                 tok,
                 Token {
                     kind: TokenKind::Constant(_),
-                    span: Range { start: 0, end },
+                    span: TxtSpan { start: 0, end },
                 } if end == case.len()
             ));
             let num = extract_number!(tok.kind);
@@ -5344,7 +5344,7 @@ mod polar {
                 tok,
                 Token {
                     kind: TokenKind::Constant(_),
-                    span: Range { start: 0, end },
+                    span: TxtSpan { start: 0, end },
                 } if end == case.len()
             ));
             let num = extract_number!(tok.kind);
@@ -5372,7 +5372,7 @@ mod polar {
             tok,
             Token {
                 kind: TokenKind::Constant(_),
-                span: Range { start: 0, end: 9 },
+                span: TxtSpan { start: 0, end: 9 },
             }
         ));
         let num = extract_number!(tok.kind);
@@ -5396,7 +5396,7 @@ mod polar {
             tok,
             Token {
                 kind: TokenKind::Constant(_),
-                span: Range { start: 0, end: 9 },
+                span: TxtSpan { start: 0, end: 9 },
             }
         ));
         let num = extract_number!(tok.kind);
@@ -5420,7 +5420,7 @@ mod polar {
             tok,
             Token {
                 kind: TokenKind::Constant(_),
-                span: Range { start: 0, end: 5 },
+                span: TxtSpan { start: 0, end: 5 },
             }
         ));
         let num = extract_number!(tok.kind);
@@ -5444,7 +5444,7 @@ mod polar {
             tok,
             Token {
                 kind: TokenKind::Constant(_),
-                span: Range { start: 0, end: 5 },
+                span: TxtSpan { start: 0, end: 5 },
             }
         ));
         let num = extract_number!(tok.kind);
@@ -5468,7 +5468,7 @@ mod polar {
             tok,
             Token {
                 kind: TokenKind::Constant(_),
-                span: Range { start: 0, end: 9 },
+                span: TxtSpan { start: 0, end: 9 },
             }
         ));
         let num = extract_number!(tok.kind);
@@ -5495,7 +5495,7 @@ mod polar {
             err,
             TokenError {
                 kind: TokenErrorKind::PolarInvalid,
-                span: Range { start: 0, end: 4 },
+                span: TxtSpan { start: 0, end: 4 },
             }
         ));
     }
@@ -5517,7 +5517,7 @@ mod polar {
             err,
             TokenError {
                 kind: TokenErrorKind::PolarInvalid,
-                span: Range { start: 0, end: 2 },
+                span: TxtSpan { start: 0, end: 2 },
             }
         ));
     }
@@ -5539,7 +5539,7 @@ mod polar {
             err,
             TokenError {
                 kind: TokenErrorKind::PolarInvalid,
-                span: Range { start: 0, end: 5 },
+                span: TxtSpan { start: 0, end: 5 },
             }
         ));
     }
@@ -5561,7 +5561,7 @@ mod polar {
             err,
             TokenError {
                 kind: TokenErrorKind::PolarInvalid,
-                span: Range { start: 0, end: 2 },
+                span: TxtSpan { start: 0, end: 2 },
             }
         ));
     }
@@ -5583,7 +5583,7 @@ mod polar {
             err,
             TokenError {
                 kind: TokenErrorKind::PolarInvalid,
-                span: Range { start: 0, end: 7 },
+                span: TxtSpan { start: 0, end: 7 },
             }
         ));
     }
@@ -5605,7 +5605,7 @@ mod polar {
             err,
             TokenError {
                 kind: TokenErrorKind::PolarInvalid,
-                span: Range { start: 0, end: 2 },
+                span: TxtSpan { start: 0, end: 2 },
             }
         ));
     }
@@ -5631,7 +5631,7 @@ mod identifiers {
             tok,
             Token {
                 kind: TokenKind::Identifier(txt),
-                span: Range { start: 0, end: 3 },
+                span: TxtSpan { start: 0, end: 3 },
             } if txt == "+-4"
         ));
     }
@@ -5653,7 +5653,7 @@ mod identifiers {
             tok,
             Token {
                 kind: TokenKind::Identifier(txt),
-                span: Range { start: 0, end: 3 },
+                span: TxtSpan { start: 0, end: 3 },
             } if txt == "+@4"
         ));
     }
@@ -5675,7 +5675,7 @@ mod identifiers {
             tok,
             Token {
                 kind: TokenKind::Identifier(txt),
-                span: Range { start: 0, end: 4 },
+                span: TxtSpan { start: 0, end: 4 },
             } if txt == "+..4"
         ));
     }
@@ -5697,7 +5697,7 @@ mod identifiers {
             tok,
             Token {
                 kind: TokenKind::Identifier(txt),
-                span: Range { start: 0, end: 4 },
+                span: TxtSpan { start: 0, end: 4 },
             } if txt == "+.-4"
         ));
     }
@@ -5719,7 +5719,7 @@ mod identifiers {
             tok,
             Token {
                 kind: TokenKind::Identifier(txt),
-                span: Range { start: 0, end: 3 },
+                span: TxtSpan { start: 0, end: 3 },
             } if txt == "..4"
         ));
     }
@@ -5741,7 +5741,7 @@ mod identifiers {
             tok,
             Token {
                 kind: TokenKind::Identifier(txt),
-                span: Range { start: 0, end: 3 },
+                span: TxtSpan { start: 0, end: 3 },
             } if txt == ".-4"
         ));
     }
@@ -5763,7 +5763,7 @@ mod identifiers {
             tok,
             Token {
                 kind: TokenKind::Identifier(txt),
-                span: Range { start: 0, end: 3 },
+                span: TxtSpan { start: 0, end: 3 },
             } if txt == ".@4"
         ));
     }
@@ -5785,7 +5785,7 @@ mod identifiers {
             tok,
             Token {
                 kind: TokenKind::Identifier(txt),
-                span: Range { start: 0, end: 2 },
+                span: TxtSpan { start: 0, end: 2 },
             } if txt == "@4"
         ));
     }
@@ -5807,7 +5807,7 @@ mod identifiers {
             tok,
             Token {
                 kind: TokenKind::Identifier(txt),
-                span: Range { start: 0, end: 5 },
+                span: TxtSpan { start: 0, end: 5 },
             } if txt == "inf.0"
         ));
     }
@@ -5829,7 +5829,7 @@ mod identifiers {
             tok,
             Token {
                 kind: TokenKind::Identifier(txt),
-                span: Range { start: 0, end: 10 },
+                span: TxtSpan { start: 0, end: 10 },
             } if txt == "+inf.0+foo"
         ));
     }
@@ -5851,7 +5851,7 @@ mod identifiers {
             tok,
             Token {
                 kind: TokenKind::Identifier(txt),
-                span: Range { start: 0, end: 13 },
+                span: TxtSpan { start: 0, end: 13 },
             } if txt == "+inf.0+4.2.2i"
         ));
     }
@@ -5873,7 +5873,7 @@ mod identifiers {
             tok,
             Token {
                 kind: TokenKind::Identifier(txt),
-                span: Range { start: 0, end: 7 },
+                span: TxtSpan { start: 0, end: 7 },
             } if txt == "+inf.0+"
         ));
     }
@@ -5895,7 +5895,7 @@ mod identifiers {
             tok,
             Token {
                 kind: TokenKind::Identifier(txt),
-                span: Range { start: 0, end: 10 },
+                span: TxtSpan { start: 0, end: 10 },
             } if txt == "+inf.0@foo"
         ));
     }
@@ -5917,7 +5917,7 @@ mod identifiers {
             tok,
             Token {
                 kind: TokenKind::Identifier(txt),
-                span: Range { start: 0, end: 7 },
+                span: TxtSpan { start: 0, end: 7 },
             } if txt == "+inf.0@"
         ));
     }
@@ -5939,7 +5939,7 @@ mod identifiers {
             tok,
             Token {
                 kind: TokenKind::Identifier(txt),
-                span: Range { start: 0, end: 9 },
+                span: TxtSpan { start: 0, end: 9 },
             } if txt == "+inf.0@4i"
         ));
     }
@@ -5961,7 +5961,7 @@ mod identifiers {
             tok,
             Token {
                 kind: TokenKind::Identifier(txt),
-                span: Range { start: 0, end: 12 },
+                span: TxtSpan { start: 0, end: 12 },
             } if txt == "+inf.0@4.2.2"
         ));
     }
@@ -5983,7 +5983,7 @@ mod identifiers {
             tok,
             Token {
                 kind: TokenKind::Identifier(txt),
-                span: Range { start: 0, end: 5 },
+                span: TxtSpan { start: 0, end: 5 },
             } if txt == "nan.0"
         ));
     }
@@ -6005,7 +6005,7 @@ mod identifiers {
             tok,
             Token {
                 kind: TokenKind::Identifier(txt),
-                span: Range { start: 0, end: 10 },
+                span: TxtSpan { start: 0, end: 10 },
             } if txt == "+nan.0-bar"
         ));
     }
@@ -6027,7 +6027,7 @@ mod identifiers {
             tok,
             Token {
                 kind: TokenKind::Identifier(txt),
-                span: Range { start: 0, end: 10 },
+                span: TxtSpan { start: 0, end: 10 },
             } if txt == "+nan.0@bar"
         ));
     }
@@ -6049,7 +6049,7 @@ mod identifiers {
             tok,
             Token {
                 kind: TokenKind::Identifier(txt),
-                span: Range { start: 0, end: 9 },
+                span: TxtSpan { start: 0, end: 9 },
             } if txt == "+nan.0@4i"
         ));
     }
@@ -6071,7 +6071,7 @@ mod identifiers {
             tok,
             Token {
                 kind: TokenKind::Identifier(txt),
-                span: Range { start: 0, end: 4 },
+                span: TxtSpan { start: 0, end: 4 },
             } if txt == "+i+4"
         ));
     }
@@ -6093,7 +6093,7 @@ mod identifiers {
             tok,
             Token {
                 kind: TokenKind::Identifier(txt),
-                span: Range { start: 0, end: 4 },
+                span: TxtSpan { start: 0, end: 4 },
             } if txt == "+i@4"
         ));
     }
@@ -6115,7 +6115,7 @@ mod identifiers {
             tok,
             Token {
                 kind: TokenKind::Identifier(txt),
-                span: Range { start: 0, end: 1 },
+                span: TxtSpan { start: 0, end: 1 },
             } if txt == "i"
         ));
     }
@@ -6137,7 +6137,7 @@ mod identifiers {
             tok,
             Token {
                 kind: TokenKind::Identifier(txt),
-                span: Range { start: 0, end: 3 },
+                span: TxtSpan { start: 0, end: 3 },
             } if txt == "+.i"
         ));
     }
@@ -6159,7 +6159,7 @@ mod identifiers {
             tok,
             Token {
                 kind: TokenKind::Identifier(txt),
-                span: Range { start: 0, end: 1 },
+                span: TxtSpan { start: 0, end: 1 },
             } if txt == "i"
         ));
     }
@@ -6181,7 +6181,7 @@ mod identifiers {
             tok,
             Token {
                 kind: TokenKind::Identifier(txt),
-                span: Range { start: 0, end: 10 },
+                span: TxtSpan { start: 0, end: 10 },
             } if txt == "+inf.0ifni"
         ));
     }
@@ -6203,7 +6203,7 @@ mod identifiers {
             tok,
             Token {
                 kind: TokenKind::Identifier(txt),
-                span: Range { start: 0, end: 10 },
+                span: TxtSpan { start: 0, end: 10 },
             } if txt == "+nan.0inon"
         ));
     }
@@ -6232,7 +6232,7 @@ mod identifiers {
                 err,
                 TokenError {
                     kind: TokenErrorKind::IdentifierInvalid('{'),
-                    span: Range { start: 0, end },
+                    span: TxtSpan { start: 0, end },
                 } if end == case.len()
             ));
         }

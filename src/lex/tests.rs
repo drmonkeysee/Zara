@@ -12,9 +12,9 @@ mod lexer {
     };
     use crate::{
         testutil::{err_or_fail, ok_or_fail, some_or_fail},
-        txt::{LineNumber, TextResult},
+        txt::{LineNumber, TextResult, TxtSpan},
     };
-    use std::{ops::Range, rc::Rc, str::Lines};
+    use std::{rc::Rc, str::Lines};
 
     struct MockTxtSource<'a> {
         ctx: Rc<TextContext>,
@@ -93,7 +93,7 @@ mod lexer {
             line.0[0],
             TokenType {
                 kind: TokenKind::Constant(Constant::Boolean(true)),
-                span: Range { start: 0, end: 2 }
+                span: TxtSpan { start: 0, end: 2 }
             }
         ));
         assert!(matches!(
@@ -123,21 +123,21 @@ mod lexer {
             line.0[0],
             TokenType {
                 kind: TokenKind::Constant(Constant::Boolean(true)),
-                span: Range { start: 0, end: 2 }
+                span: TxtSpan { start: 0, end: 2 }
             }
         ));
         assert!(matches!(
             line.0[1],
             TokenType {
                 kind: TokenKind::Constant(Constant::Boolean(false)),
-                span: Range { start: 3, end: 5 }
+                span: TxtSpan { start: 3, end: 5 }
             }
         ));
         assert!(matches!(
             line.0[2],
             TokenType {
                 kind: TokenKind::Constant(Constant::Character('a')),
-                span: Range { start: 6, end: 9 }
+                span: TxtSpan { start: 6, end: 9 }
             }
         ));
         assert!(matches!(
@@ -167,7 +167,7 @@ mod lexer {
             line.0[0],
             TokenType {
                 kind: TokenKind::Constant(Constant::Boolean(true)),
-                span: Range { start: 0, end: 2 }
+                span: TxtSpan { start: 0, end: 2 }
             }
         ));
         assert!(matches!(
@@ -184,14 +184,14 @@ mod lexer {
             line.0[0],
             TokenType {
                 kind: TokenKind::Constant(Constant::Boolean(false)),
-                span: Range { start: 2, end: 4 }
+                span: TxtSpan { start: 2, end: 4 }
             }
         ));
         assert!(matches!(
             line.0[1],
             TokenType {
                 kind: TokenKind::Constant(Constant::Character('a')),
-                span: Range { start: 5, end: 8 }
+                span: TxtSpan { start: 5, end: 8 }
             }
         ));
         assert!(matches!(
@@ -209,14 +209,14 @@ mod lexer {
             line.0[0],
             TokenType {
                 kind: TokenKind::Constant(Constant::Boolean(false)),
-                span: Range { start: 0, end: 2 }
+                span: TxtSpan { start: 0, end: 2 }
             }
         ));
         assert!(matches!(
             line.0[1],
             TokenType {
                 kind: TokenKind::Constant(Constant::Boolean(false)),
-                span: Range { start: 3, end: 5 }
+                span: TxtSpan { start: 3, end: 5 }
             }
         ));
         assert!(matches!(
@@ -246,14 +246,14 @@ mod lexer {
             errs[0],
             TokenType {
                 kind: TokenErrorKind::HashInvalid,
-                span: Range { start: 1, end: 3 }
+                span: TxtSpan { start: 1, end: 3 }
             }
         ));
         assert!(matches!(
             errs[1],
             TokenType {
                 kind: TokenErrorKind::HashInvalid,
-                span: Range { start: 7, end: 9 }
+                span: TxtSpan { start: 7, end: 9 }
             }
         ));
         assert!(matches!(
@@ -270,7 +270,7 @@ mod lexer {
             errs[0],
             TokenType {
                 kind: TokenErrorKind::HashInvalid,
-                span: Range { start: 3, end: 5 }
+                span: TxtSpan { start: 3, end: 5 }
             }
         ));
         assert!(matches!(
@@ -317,14 +317,14 @@ mod lexer {
             errs[0],
             TokenType {
                 kind: TokenErrorKind::HashInvalid,
-                span: Range { start: 1, end: 3 }
+                span: TxtSpan { start: 1, end: 3 }
             }
         ));
         assert!(matches!(
             errs[1],
             TokenType {
                 kind: TokenErrorKind::HashInvalid,
-                span: Range { start: 7, end: 9 }
+                span: TxtSpan { start: 7, end: 9 }
             }
         ));
         assert!(matches!(
@@ -359,14 +359,14 @@ mod lexer {
             line.0[0],
             TokenType {
                 kind: TokenKind::Constant(Constant::Boolean(true)),
-                span: Range { start: 0, end: 2 }
+                span: TxtSpan { start: 0, end: 2 }
             }
         ));
         assert!(matches!(
             line.0[1],
             TokenType {
                 kind: TokenKind::CommentBlockBegin { depth: 0 },
-                span: Range { start: 3, end: 16 }
+                span: TxtSpan { start: 3, end: 16 }
             }
         ));
         assert!(matches!(
@@ -425,7 +425,7 @@ mod lexer {
             line.0[0],
             TokenType {
                 kind: TokenKind::CommentBlockBegin { depth: 0 },
-                span: Range { start: 0, end: 14 }
+                span: TxtSpan { start: 0, end: 14 }
             }
         ));
         assert!(matches!(
@@ -441,7 +441,7 @@ mod lexer {
             line.0[0],
             TokenType {
                 kind: TokenKind::CommentBlockEnd,
-                span: Range { start: 0, end: 10 }
+                span: TxtSpan { start: 0, end: 10 }
             }
         ));
         assert!(matches!(
@@ -471,7 +471,7 @@ mod lexer {
             line.0[0],
             TokenType {
                 kind: TokenKind::CommentBlockBegin { depth: 0 },
-                span: Range { start: 0, end: 8 }
+                span: TxtSpan { start: 0, end: 8 }
             }
         ));
         assert!(matches!(
@@ -487,7 +487,7 @@ mod lexer {
             line.0[0],
             TokenType {
                 kind: TokenKind::CommentBlockFragment { depth: 0 },
-                span: Range { start: 0, end: 4 }
+                span: TxtSpan { start: 0, end: 4 }
             }
         ));
         assert!(matches!(
@@ -503,7 +503,7 @@ mod lexer {
             line.0[0],
             TokenType {
                 kind: TokenKind::CommentBlockEnd,
-                span: Range { start: 0, end: 10 }
+                span: TxtSpan { start: 0, end: 10 }
             }
         ));
         assert!(matches!(
@@ -533,7 +533,7 @@ mod lexer {
             errs[0],
             TokenType {
                 kind: TokenErrorKind::HashInvalid,
-                span: Range { start: 3, end: 5 }
+                span: TxtSpan { start: 3, end: 5 }
             }
         ));
         assert!(matches!(
@@ -550,7 +550,7 @@ mod lexer {
             errs[0],
             TokenType {
                 kind: TokenErrorKind::HashInvalid,
-                span: Range { start: 14, end: 16 }
+                span: TxtSpan { start: 14, end: 16 }
             }
         ));
         assert!(matches!(
@@ -580,7 +580,7 @@ mod lexer {
             errs[0],
             TokenType {
                 kind: TokenErrorKind::HashInvalid,
-                span: Range { start: 3, end: 5 }
+                span: TxtSpan { start: 3, end: 5 }
             }
         ));
         assert!(matches!(
@@ -610,7 +610,7 @@ mod lexer {
             &line.0[0],
             TokenType {
                 kind: TokenKind::StringBegin { s, line_cont: false },
-                span: Range { start: 0, end: 13 }
+                span: TxtSpan { start: 0, end: 13 }
             } if s == " double line"
         ));
         assert!(matches!(
@@ -626,7 +626,7 @@ mod lexer {
             &line.0[0],
             TokenType {
                 kind: TokenKind::StringEnd(s),
-                span: Range { start: 0, end: 8 }
+                span: TxtSpan { start: 0, end: 8 }
             } if s == "string "
         ));
         assert!(matches!(
@@ -656,7 +656,7 @@ mod lexer {
             &line.0[0],
             TokenType {
                 kind: TokenKind::StringBegin { s, line_cont: false },
-                span: Range { start: 0, end: 7 }
+                span: TxtSpan { start: 0, end: 7 }
             } if s == " multi"
         ));
         assert!(matches!(
@@ -672,7 +672,7 @@ mod lexer {
             &line.0[0],
             TokenType {
                 kind: TokenKind::StringFragment { s, line_cont: false },
-                span: Range { start: 0, end: 4 }
+                span: TxtSpan { start: 0, end: 4 }
             } if s == "line"
         ));
         assert!(matches!(
@@ -688,7 +688,7 @@ mod lexer {
             &line.0[0],
             TokenType {
                 kind: TokenKind::StringEnd(s),
-                span: Range { start: 0, end: 8 }
+                span: TxtSpan { start: 0, end: 8 }
             } if s == "string "
         ));
         assert!(matches!(
@@ -718,7 +718,7 @@ mod lexer {
             errs[0],
             TokenType {
                 kind: TokenErrorKind::StringExpectedHex { at: 9 },
-                span: Range { start: 9, end: 14 }
+                span: TxtSpan { start: 9, end: 14 }
             }
         ));
         assert!(matches!(
@@ -748,7 +748,7 @@ mod lexer {
             errs[0],
             TokenType {
                 kind: TokenErrorKind::StringExpectedHex { at: 9 },
-                span: Range { start: 9, end: 14 }
+                span: TxtSpan { start: 9, end: 14 }
             }
         ));
         assert!(matches!(
@@ -765,7 +765,7 @@ mod lexer {
             errs[0],
             TokenType {
                 kind: TokenErrorKind::HashInvalid,
-                span: Range { start: 11, end: 13 }
+                span: TxtSpan { start: 11, end: 13 }
             }
         ));
         assert!(matches!(
@@ -795,7 +795,7 @@ mod lexer {
             errs[0],
             TokenType {
                 kind: TokenErrorKind::StringExpectedHex { at: 9 },
-                span: Range { start: 9, end: 14 }
+                span: TxtSpan { start: 9, end: 14 }
             }
         ));
         assert!(matches!(
@@ -826,14 +826,14 @@ mod lexer {
             errs[0],
             TokenType {
                 kind: TokenErrorKind::StringUnterminatedHex { at: 8 },
-                span: Range { start: 8, end: 12 }
+                span: TxtSpan { start: 8, end: 12 }
             }
         ));
         assert!(matches!(
             errs[1],
             TokenType {
                 kind: TokenErrorKind::HashInvalid,
-                span: Range { start: 29, end: 31 }
+                span: TxtSpan { start: 29, end: 31 }
             }
         ));
         assert!(matches!(
@@ -863,7 +863,7 @@ mod lexer {
             errs[0],
             TokenType {
                 kind: TokenErrorKind::HashInvalid,
-                span: Range { start: 3, end: 5 }
+                span: TxtSpan { start: 3, end: 5 }
             }
         ));
         assert!(matches!(
@@ -893,7 +893,7 @@ mod lexer {
             &line.0[0],
             TokenType {
                 kind: TokenKind::IdentifierBegin(s),
-                span: Range { start: 0, end: 13 }
+                span: TxtSpan { start: 0, end: 13 }
             } if s == " double line"
         ));
         assert!(matches!(
@@ -909,7 +909,7 @@ mod lexer {
             &line.0[0],
             TokenType {
                 kind: TokenKind::IdentifierEnd(s),
-                span: Range { start: 0, end: 10 }
+                span: TxtSpan { start: 0, end: 10 }
             } if s == "verbatim "
         ));
         assert!(matches!(
@@ -939,7 +939,7 @@ mod lexer {
             &line.0[0],
             TokenType {
                 kind: TokenKind::IdentifierBegin(s),
-                span: Range { start: 0, end: 7 }
+                span: TxtSpan { start: 0, end: 7 }
             } if s == " multi"
         ));
         assert!(matches!(
@@ -955,7 +955,7 @@ mod lexer {
             &line.0[0],
             TokenType {
                 kind: TokenKind::IdentifierFragment(s),
-                span: Range { start: 0, end: 4 }
+                span: TxtSpan { start: 0, end: 4 }
             } if s == "line"
         ));
         assert!(matches!(
@@ -971,7 +971,7 @@ mod lexer {
             &line.0[0],
             TokenType {
                 kind: TokenKind::IdentifierEnd(s),
-                span: Range { start: 0, end: 10 }
+                span: TxtSpan { start: 0, end: 10 }
             } if s == "verbatim "
         ));
         assert!(matches!(
@@ -1001,7 +1001,7 @@ mod lexer {
             errs[0],
             TokenType {
                 kind: TokenErrorKind::IdentifierExpectedHex { at: 9 },
-                span: Range { start: 9, end: 14 }
+                span: TxtSpan { start: 9, end: 14 }
             }
         ));
         assert!(matches!(
@@ -1031,7 +1031,7 @@ mod lexer {
             errs[0],
             TokenType {
                 kind: TokenErrorKind::IdentifierExpectedHex { at: 9 },
-                span: Range { start: 9, end: 14 }
+                span: TxtSpan { start: 9, end: 14 }
             }
         ));
         assert!(matches!(
@@ -1048,7 +1048,7 @@ mod lexer {
             errs[0],
             TokenType {
                 kind: TokenErrorKind::HashInvalid,
-                span: Range { start: 13, end: 15 }
+                span: TxtSpan { start: 13, end: 15 }
             }
         ));
         assert!(matches!(
@@ -1079,14 +1079,14 @@ mod lexer {
             errs[0],
             TokenType {
                 kind: TokenErrorKind::IdentifierUnterminatedHex { at: 8 },
-                span: Range { start: 8, end: 12 }
+                span: TxtSpan { start: 8, end: 12 }
             }
         ));
         assert!(matches!(
             errs[1],
             TokenType {
                 kind: TokenErrorKind::HashInvalid,
-                span: Range { start: 31, end: 33 }
+                span: TxtSpan { start: 31, end: 33 }
             }
         ));
         assert!(matches!(
@@ -1116,7 +1116,7 @@ mod lexer {
             errs[0],
             TokenType {
                 kind: TokenErrorKind::HashInvalid,
-                span: Range { start: 3, end: 5 }
+                span: TxtSpan { start: 3, end: 5 }
             }
         ));
         assert!(matches!(
@@ -1150,7 +1150,7 @@ mod lexer {
             errs[0],
             TokenType {
                 kind: TokenErrorKind::BlockCommentUnterminated,
-                span: Range { start: 3, end: 16 }
+                span: TxtSpan { start: 3, end: 16 }
             }
         ));
         assert!(matches!(

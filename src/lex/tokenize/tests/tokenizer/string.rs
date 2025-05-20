@@ -17,7 +17,7 @@ fn empty() {
         tok,
         Token {
             kind: TokenKind::Constant(Constant::String(txt)),
-            span: Range { start: 0, end: 2 },
+            span: TxtSpan { start: 0, end: 2 },
         } if txt.as_ref() == ""
     ));
 }
@@ -39,7 +39,7 @@ fn alphanumeric() {
         tok,
         Token {
             kind: TokenKind::Constant(Constant::String(txt)),
-            span: Range { start: 0, end: 11 },
+            span: TxtSpan { start: 0, end: 11 },
         } if txt.as_ref() == "abc123!@#"
     ));
 }
@@ -61,7 +61,7 @@ fn raw_extended_and_higher_char() {
         tok,
         Token {
             kind: TokenKind::Constant(Constant::String(txt)),
-            span: Range { start: 0, end: 17 },
+            span: TxtSpan { start: 0, end: 17 },
         } if txt.as_ref() == "λ 🦀 ␁ �"
     ));
 }
@@ -83,7 +83,7 @@ fn contains_verbatim_identifier() {
         tok,
         Token {
             kind: TokenKind::Constant(Constant::String(txt)),
-            span: Range { start: 0, end: 20 },
+            span: TxtSpan { start: 0, end: 20 },
         } if txt.as_ref() == "foo |verbatim| bar"
     ));
 }
@@ -105,7 +105,7 @@ fn raw_escape_sequences() {
         tok,
         Token {
             kind: TokenKind::Constant(Constant::String(txt)),
-            span: Range { start: 0, end: 45 },
+            span: TxtSpan { start: 0, end: 45 },
         } if txt.as_ref() == "a:\x07, b:\x08, d:\x7f, e:\x1b, n:\n, 0:\0, r:\r, t:\t, v:|"
     ));
 }
@@ -127,7 +127,7 @@ fn escape_sequences() {
         tok,
         Token {
             kind: TokenKind::Constant(Constant::String(txt)),
-            span: Range { start: 0, end: 46 },
+            span: TxtSpan { start: 0, end: 46 },
         } if txt.as_ref() == "a:\x07, b:\x08, n:\n, r:\r, t:\t, q:\", s:\\, v:|"
     ));
 }
@@ -149,7 +149,7 @@ fn whitespace_escape() {
         tok,
         Token {
             kind: TokenKind::Constant(Constant::String(txt)),
-            span: Range { start: 0, end: 12 },
+            span: TxtSpan { start: 0, end: 12 },
         } if txt.as_ref() == "foo   bar"
     ));
 }
@@ -173,7 +173,7 @@ fn hex_escape_sequences() {
         tok,
         Token {
             kind: TokenKind::Constant(Constant::String(txt)),
-            span: Range { start: 0, end: 93 },
+            span: TxtSpan { start: 0, end: 93 },
         } if txt.as_ref() == "a:\x07, b:\x08, d:\x7f, e:\x1b, n:\n, 0:\0, r:\r, t:\t, q:\", s:\\, v:|"
     ));
 }
@@ -195,7 +195,7 @@ fn hex_case_insensitive() {
         tok,
         Token {
             kind: TokenKind::Constant(Constant::String(txt)),
-            span: Range { start: 0, end: 13 },
+            span: TxtSpan { start: 0, end: 13 },
         } if txt.as_ref() == "J J"
     ));
 }
@@ -217,7 +217,7 @@ fn higher_plane_raw() {
         tok,
         Token {
             kind: TokenKind::Constant(Constant::String(txt)),
-            span: Range { start: 0, end: 15 },
+            span: TxtSpan { start: 0, end: 15 },
         } if txt.as_ref() == "\u{fff9} \u{e0001} \u{100001}"
     ));
 }
@@ -239,7 +239,7 @@ fn higher_plane_hex() {
         tok,
         Token {
             kind: TokenKind::Constant(Constant::String(txt)),
-            span: Range { start: 0, end: 28 },
+            span: TxtSpan { start: 0, end: 28 },
         } if txt.as_ref() == "\u{fff9} \u{e0001} \u{100001}"
     ));
 }
@@ -261,7 +261,7 @@ fn invalid_escape() {
         err,
         TokenError {
             kind: TokenErrorKind::StringEscapeInvalid { at: 1, ch: 'B' },
-            span: Range { start: 1, end: 3 },
+            span: TxtSpan { start: 1, end: 3 },
         }
     ));
 }
@@ -283,7 +283,7 @@ fn hex_sign_invalid() {
         err,
         TokenError {
             kind: TokenErrorKind::StringExpectedHex { at: 1 },
-            span: Range { start: 1, end: 6 },
+            span: TxtSpan { start: 1, end: 6 },
         }
     ));
 }
@@ -305,7 +305,7 @@ fn hex_too_large() {
         err,
         TokenError {
             kind: TokenErrorKind::StringInvalidHex { at: 1 },
-            span: Range { start: 1, end: 12 },
+            span: TxtSpan { start: 1, end: 12 },
         }
     ));
 }
@@ -327,7 +327,7 @@ fn hex_malformed() {
         err,
         TokenError {
             kind: TokenErrorKind::StringExpectedHex { at: 1 },
-            span: Range { start: 1, end: 11 },
+            span: TxtSpan { start: 1, end: 11 },
         }
     ));
 }
@@ -349,7 +349,7 @@ fn hex_unterminated() {
         err,
         TokenError {
             kind: TokenErrorKind::StringUnterminatedHex { at: 1 },
-            span: Range { start: 1, end: 6 },
+            span: TxtSpan { start: 1, end: 6 },
         }
     ));
 }
@@ -373,7 +373,7 @@ fn discard() {
         tok,
         Token {
             kind: TokenKind::StringDiscard,
-            span: Range { start: 11, end: 24 },
+            span: TxtSpan { start: 11, end: 24 },
         }
     ));
 }
@@ -395,7 +395,7 @@ fn begin() {
         tok,
         Token {
             kind: TokenKind::StringBegin { s, line_cont: false },
-            span: Range { start: 0, end: 17 },
+            span: TxtSpan { start: 0, end: 17 },
         } if s == "beginning string"
     ));
 }
@@ -417,7 +417,7 @@ fn begin_with_line_continuation() {
         tok,
         Token {
             kind: TokenKind::StringBegin { s, line_cont: true },
-            span: Range { start: 0, end: 18 },
+            span: TxtSpan { start: 0, end: 18 },
         } if s == "beginning string"
     ));
 }
@@ -439,7 +439,7 @@ fn begin_with_line_continuation_includes_leading_whitespace() {
         tok,
         Token {
             kind: TokenKind::StringBegin { s, line_cont: true },
-            span: Range { start: 0, end: 22 },
+            span: TxtSpan { start: 0, end: 22 },
         } if s == "beginning string    "
     ));
 }
@@ -461,7 +461,7 @@ fn begin_with_line_continuation_excludes_trailing_whitespace() {
         tok,
         Token {
             kind: TokenKind::StringBegin { s, line_cont: true },
-            span: Range { start: 0, end: 22 },
+            span: TxtSpan { start: 0, end: 22 },
         } if s == "beginning string"
     ));
 }
@@ -483,7 +483,7 @@ fn begin_only_counts_final_slash_as_line_continuation() {
         tok,
         Token {
             kind: TokenKind::StringBegin { s, line_cont: true },
-            span: Range { start: 0, end: 26 },
+            span: TxtSpan { start: 0, end: 26 },
         } if s == "beginning string    "
     ));
 }
@@ -505,7 +505,7 @@ fn fragment() {
         tok,
         Token {
             kind: TokenKind::StringFragment { s, line_cont: false },
-            span: Range { start: 0, end: 16 },
+            span: TxtSpan { start: 0, end: 16 },
         } if s == "continued string"
     ));
 }
@@ -527,7 +527,7 @@ fn fragment_includes_whitespace() {
         tok,
         Token {
             kind: TokenKind::StringFragment { s, line_cont: false },
-            span: Range { start: 0, end: 19 },
+            span: TxtSpan { start: 0, end: 19 },
         } if s == "   continued string"
     ));
 }
@@ -549,7 +549,7 @@ fn fragment_with_line_continuation() {
         tok,
         Token {
             kind: TokenKind::StringFragment { s, line_cont: true },
-            span: Range { start: 0, end: 24 },
+            span: TxtSpan { start: 0, end: 24 },
         } if s == "continued string    "
     ));
 }
@@ -571,7 +571,7 @@ fn fragment_from_string_continuation() {
         tok,
         Token {
             kind: TokenKind::StringFragment { s, line_cont: false },
-            span: Range { start: 0, end: 16 },
+            span: TxtSpan { start: 0, end: 16 },
         } if s == "continued string"
     ));
 }
@@ -593,7 +593,7 @@ fn fragment_from_string_continuation_ignores_leading_whitespace() {
         tok,
         Token {
             kind: TokenKind::StringFragment { s, line_cont: false },
-            span: Range { start: 0, end: 22 },
+            span: TxtSpan { start: 0, end: 22 },
         } if s == "continued string   "
     ));
 }
@@ -615,7 +615,7 @@ fn fragment_from_string_continuation_all_whitespace() {
         tok,
         Token {
             kind: TokenKind::StringFragment { s, line_cont: false },
-            span: Range { start: 0, end: 6 },
+            span: TxtSpan { start: 0, end: 6 },
         } if s == ""
     ));
 }
@@ -637,7 +637,7 @@ fn fragment_from_string_continuation_to_string_continuation() {
         tok,
         Token {
             kind: TokenKind::StringFragment { s, line_cont: true },
-            span: Range { start: 0, end: 27 },
+            span: TxtSpan { start: 0, end: 27 },
         } if s == "continued string    "
     ));
 }
@@ -659,7 +659,7 @@ fn end() {
         tok,
         Token {
             kind: TokenKind::StringEnd(txt),
-            span: Range { start: 0, end: 11 },
+            span: TxtSpan { start: 0, end: 11 },
         } if txt == "end string"
     ));
 }
@@ -681,7 +681,7 @@ fn end_includes_whitespace() {
         tok,
         Token {
             kind: TokenKind::StringEnd(txt),
-            span: Range { start: 0, end: 16 },
+            span: TxtSpan { start: 0, end: 16 },
         } if txt == "   end string  "
     ));
 }
@@ -703,7 +703,7 @@ fn end_with_escaped_whitespace() {
         tok,
         Token {
             kind: TokenKind::StringEnd(txt),
-            span: Range { start: 0, end: 19 },
+            span: TxtSpan { start: 0, end: 19 },
         } if txt == "end string      "
     ));
 }
@@ -725,7 +725,7 @@ fn end_from_string_continuation() {
         tok,
         Token {
             kind: TokenKind::StringEnd(txt),
-            span: Range { start: 0, end: 11 },
+            span: TxtSpan { start: 0, end: 11 },
         } if txt == "end string"
     ));
 }
@@ -747,7 +747,7 @@ fn end_from_string_continuation_ignores_leading_whitespace() {
         tok,
         Token {
             kind: TokenKind::StringEnd(txt),
-            span: Range { start: 0, end: 17 },
+            span: TxtSpan { start: 0, end: 17 },
         } if txt == "end string   "
     ));
 }
@@ -769,7 +769,7 @@ fn end_from_string_continuation_all_whitespace() {
         tok,
         Token {
             kind: TokenKind::StringEnd(txt),
-            span: Range { start: 0, end: 7 },
+            span: TxtSpan { start: 0, end: 7 },
         } if txt == ""
     ));
 }

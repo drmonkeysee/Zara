@@ -17,7 +17,7 @@ fn unterminated() {
         err,
         TokenError {
             kind: TokenErrorKind::HashUnterminated,
-            span: Range { start: 0, end: 1 },
+            span: TxtSpan { start: 0, end: 1 },
         }
     ));
 }
@@ -39,7 +39,7 @@ fn unterminated_with_whitespace() {
         err,
         TokenError {
             kind: TokenErrorKind::HashUnterminated,
-            span: Range { start: 0, end: 1 },
+            span: TxtSpan { start: 0, end: 1 },
         }
     ));
 }
@@ -61,7 +61,7 @@ fn unterminated_with_delimiter() {
         err,
         TokenError {
             kind: TokenErrorKind::HashUnterminated,
-            span: Range { start: 0, end: 1 },
+            span: TxtSpan { start: 0, end: 1 },
         }
     ));
 }
@@ -83,7 +83,7 @@ fn invalid() {
         err,
         TokenError {
             kind: TokenErrorKind::HashInvalid,
-            span: Range { start: 0, end: 2 },
+            span: TxtSpan { start: 0, end: 2 },
         }
     ));
 }
@@ -105,7 +105,7 @@ fn invalid_long() {
         err,
         TokenError {
             kind: TokenErrorKind::HashInvalid,
-            span: Range { start: 0, end: 20 },
+            span: TxtSpan { start: 0, end: 20 },
         }
     ));
 }
@@ -127,7 +127,7 @@ fn directive_fold_case() {
         tok,
         Token {
             kind: TokenKind::DirectiveCase(true),
-            span: Range { start: 0, end: 11 },
+            span: TxtSpan { start: 0, end: 11 },
         }
     ));
 }
@@ -149,7 +149,7 @@ fn directive_no_fold_case() {
         tok,
         Token {
             kind: TokenKind::DirectiveCase(false),
-            span: Range { start: 0, end: 14 },
+            span: TxtSpan { start: 0, end: 14 },
         }
     ));
 }
@@ -171,7 +171,7 @@ fn directive_case_insensitive() {
         tok,
         Token {
             kind: TokenKind::DirectiveCase(true),
-            span: Range { start: 0, end: 11 },
+            span: TxtSpan { start: 0, end: 11 },
         }
     ));
 }
@@ -193,7 +193,7 @@ fn directive_fold_case_followed_by_token() {
         tok,
         Token {
             kind: TokenKind::DirectiveCase(true),
-            span: Range { start: 0, end: 11 },
+            span: TxtSpan { start: 0, end: 11 },
         }
     ));
 }
@@ -215,7 +215,7 @@ fn directive_expected() {
         err,
         TokenError {
             kind: TokenErrorKind::DirectiveExpected,
-            span: Range { start: 0, end: 2 },
+            span: TxtSpan { start: 0, end: 2 },
         }
     ));
 }
@@ -237,7 +237,7 @@ fn directive_invalid() {
         err,
         TokenError {
             kind: TokenErrorKind::DirectiveInvalid,
-            span: Range { start: 0, end: 8 },
+            span: TxtSpan { start: 0, end: 8 },
         }
     ));
 }
@@ -259,7 +259,7 @@ fn vector() {
         tok,
         Token {
             kind: TokenKind::Vector,
-            span: Range { start: 0, end: 2 },
+            span: TxtSpan { start: 0, end: 2 },
         }
     ));
 }
@@ -283,7 +283,7 @@ fn radix_with_no_number() {
             err,
             TokenError {
                 kind: TokenErrorKind::NumberExpected,
-                span: Range { start: 0, end: 2 },
+                span: TxtSpan { start: 0, end: 2 },
             }
         ));
     }
@@ -308,7 +308,7 @@ fn radix_with_invalid_number() {
             err,
             TokenError {
                 kind: TokenErrorKind::NumberExpected,
-                span: Range { start: 0, end: 5 },
+                span: TxtSpan { start: 0, end: 5 },
             }
         ));
     }
@@ -331,7 +331,7 @@ fn decimal_radix_with_malformed_number() {
         err,
         TokenError {
             kind: TokenErrorKind::NumberUnexpectedDecimalPoint { at: 5 },
-            span: Range { start: 5, end: 7 },
+            span: TxtSpan { start: 5, end: 7 },
         }
     ));
 }
@@ -353,7 +353,7 @@ fn radix_with_malformed_number() {
         err,
         TokenError {
             kind: TokenErrorKind::NumberInvalid,
-            span: Range { start: 0, end: 8 },
+            span: TxtSpan { start: 0, end: 8 },
         }
     ));
 }
@@ -377,7 +377,7 @@ fn exactness_with_no_number() {
             err,
             TokenError {
                 kind: TokenErrorKind::NumberExpected,
-                span: Range { start: 0, end: 2 },
+                span: TxtSpan { start: 0, end: 2 },
             }
         ));
     }
@@ -402,7 +402,7 @@ fn exactness_with_invalid_number() {
             err,
             TokenError {
                 kind: TokenErrorKind::NumberExpected,
-                span: Range { start: 0, end: 5 },
+                span: TxtSpan { start: 0, end: 5 },
             }
         ));
     }
@@ -427,7 +427,7 @@ fn exactness_with_malformed_number() {
             err,
             TokenError {
                 kind: TokenErrorKind::NumberInvalid,
-                span: Range { start: 0, end: 6 },
+                span: TxtSpan { start: 0, end: 6 },
             }
         ));
     }
@@ -450,7 +450,7 @@ fn exactness_missing_radix() {
         err,
         TokenError {
             kind: TokenErrorKind::RadixExpected { at: 2 },
-            span: Range { start: 2, end: 3 },
+            span: TxtSpan { start: 2, end: 3 },
         }
     ));
 }
@@ -472,7 +472,7 @@ fn exactness_malformed_radix() {
         err,
         TokenError {
             kind: TokenErrorKind::RadixExpected { at: 2 },
-            span: Range { start: 2, end: 7 },
+            span: TxtSpan { start: 2, end: 7 },
         }
     ));
 }
@@ -494,7 +494,7 @@ fn radix_missing_exactness() {
         err,
         TokenError {
             kind: TokenErrorKind::ExactnessExpected { at: 2 },
-            span: Range { start: 2, end: 3 },
+            span: TxtSpan { start: 2, end: 3 },
         }
     ));
 }
@@ -516,7 +516,7 @@ fn radix_malformed_exactness() {
         err,
         TokenError {
             kind: TokenErrorKind::ExactnessExpected { at: 2 },
-            span: Range { start: 2, end: 9 },
+            span: TxtSpan { start: 2, end: 9 },
         }
     ));
 }
@@ -541,7 +541,7 @@ mod comments {
             tok,
             Token {
                 kind: TokenKind::Comment,
-                span: Range { start: 0, end: 4 },
+                span: TxtSpan { start: 0, end: 4 },
             }
         ));
     }
@@ -563,7 +563,7 @@ mod comments {
             tok,
             Token {
                 kind: TokenKind::Comment,
-                span: Range { start: 0, end: 18 },
+                span: TxtSpan { start: 0, end: 18 },
             }
         ));
     }
@@ -585,7 +585,7 @@ mod comments {
             tok,
             Token {
                 kind: TokenKind::Comment,
-                span: Range { start: 0, end: 20 },
+                span: TxtSpan { start: 0, end: 20 },
             }
         ));
     }
@@ -607,7 +607,7 @@ mod comments {
             tok,
             Token {
                 kind: TokenKind::Comment,
-                span: Range { start: 0, end: 17 },
+                span: TxtSpan { start: 0, end: 17 },
             }
         ));
     }
@@ -629,7 +629,7 @@ mod comments {
             tok,
             Token {
                 kind: TokenKind::Comment,
-                span: Range { start: 0, end: 35 },
+                span: TxtSpan { start: 0, end: 35 },
             }
         ));
     }
@@ -651,7 +651,7 @@ mod comments {
             tok,
             Token {
                 kind: TokenKind::Comment,
-                span: Range { start: 0, end: 13 },
+                span: TxtSpan { start: 0, end: 13 },
             }
         ));
     }
@@ -673,7 +673,7 @@ mod comments {
             tok,
             Token {
                 kind: TokenKind::CommentBlockBegin { depth: 0 },
-                span: Range { start: 0, end: 28 },
+                span: TxtSpan { start: 0, end: 28 },
             }
         ));
     }
@@ -695,7 +695,7 @@ mod comments {
             tok,
             Token {
                 kind: TokenKind::CommentBlockBegin { depth: 0 },
-                span: Range { start: 0, end: 24 },
+                span: TxtSpan { start: 0, end: 24 },
             }
         ));
     }
@@ -717,7 +717,7 @@ mod comments {
             tok,
             Token {
                 kind: TokenKind::CommentBlockBegin { depth: 0 },
-                span: Range { start: 0, end: 24 },
+                span: TxtSpan { start: 0, end: 24 },
             }
         ));
     }
@@ -739,7 +739,7 @@ mod comments {
             tok,
             Token {
                 kind: TokenKind::CommentBlockBegin { depth: 0 },
-                span: Range { start: 0, end: 33 },
+                span: TxtSpan { start: 0, end: 33 },
             }
         ));
     }
@@ -761,7 +761,7 @@ mod comments {
             tok,
             Token {
                 kind: TokenKind::CommentBlockBegin { depth: 1 },
-                span: Range { start: 0, end: 21 },
+                span: TxtSpan { start: 0, end: 21 },
             }
         ));
     }
@@ -783,7 +783,7 @@ mod comments {
             tok,
             Token {
                 kind: TokenKind::CommentBlockBegin { depth: 2 },
-                span: Range { start: 0, end: 30 },
+                span: TxtSpan { start: 0, end: 30 },
             }
         ));
     }
@@ -805,7 +805,7 @@ mod comments {
             tok,
             Token {
                 kind: TokenKind::CommentBlockFragment { depth: 0 },
-                span: Range { start: 0, end: 17 },
+                span: TxtSpan { start: 0, end: 17 },
             }
         ));
     }
@@ -827,7 +827,7 @@ mod comments {
             tok,
             Token {
                 kind: TokenKind::CommentBlockFragment { depth: 0 },
-                span: Range { start: 0, end: 20 },
+                span: TxtSpan { start: 0, end: 20 },
             }
         ));
     }
@@ -849,7 +849,7 @@ mod comments {
             tok,
             Token {
                 kind: TokenKind::CommentBlockFragment { depth: 0 },
-                span: Range { start: 0, end: 36 },
+                span: TxtSpan { start: 0, end: 36 },
             }
         ));
     }
@@ -871,7 +871,7 @@ mod comments {
             tok,
             Token {
                 kind: TokenKind::CommentBlockFragment { depth: 1 },
-                span: Range { start: 0, end: 30 },
+                span: TxtSpan { start: 0, end: 30 },
             }
         ));
     }
@@ -893,7 +893,7 @@ mod comments {
             tok,
             Token {
                 kind: TokenKind::CommentBlockFragment { depth: 3 },
-                span: Range { start: 0, end: 30 },
+                span: TxtSpan { start: 0, end: 30 },
             }
         ));
     }
@@ -915,7 +915,7 @@ mod comments {
             tok,
             Token {
                 kind: TokenKind::CommentBlockEnd,
-                span: Range { start: 0, end: 14 },
+                span: TxtSpan { start: 0, end: 14 },
             }
         ));
     }
@@ -937,7 +937,7 @@ mod comments {
             tok,
             Token {
                 kind: TokenKind::CommentBlockEnd,
-                span: Range { start: 0, end: 16 },
+                span: TxtSpan { start: 0, end: 16 },
             }
         ));
     }
@@ -959,7 +959,7 @@ mod comments {
             tok,
             Token {
                 kind: TokenKind::CommentBlockEnd,
-                span: Range { start: 0, end: 14 },
+                span: TxtSpan { start: 0, end: 14 },
             }
         ));
     }
@@ -981,7 +981,7 @@ mod comments {
             tok,
             Token {
                 kind: TokenKind::CommentBlockEnd,
-                span: Range { start: 0, end: 27 },
+                span: TxtSpan { start: 0, end: 27 },
             }
         ));
     }
@@ -1003,7 +1003,7 @@ mod comments {
             tok,
             Token {
                 kind: TokenKind::CommentBlockEnd,
-                span: Range { start: 0, end: 25 },
+                span: TxtSpan { start: 0, end: 25 },
             }
         ));
     }
@@ -1025,7 +1025,7 @@ mod comments {
             tok,
             Token {
                 kind: TokenKind::CommentDatum,
-                span: Range { start: 0, end: 2 },
+                span: TxtSpan { start: 0, end: 2 },
             }
         ));
     }
@@ -1047,7 +1047,7 @@ mod comments {
             tok,
             Token {
                 kind: TokenKind::CommentDatum,
-                span: Range { start: 0, end: 2 },
+                span: TxtSpan { start: 0, end: 2 },
             }
         ));
     }
@@ -1069,7 +1069,7 @@ mod comments {
             tok,
             Token {
                 kind: TokenKind::CommentDatum,
-                span: Range { start: 0, end: 2 },
+                span: TxtSpan { start: 0, end: 2 },
             }
         ));
     }

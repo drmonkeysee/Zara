@@ -26,7 +26,7 @@ fn left_paren() {
         tok,
         Token {
             kind: TokenKind::ParenLeft,
-            span: Range { start: 0, end: 1 },
+            span: TxtSpan { start: 0, end: 1 },
         }
     ));
 }
@@ -48,7 +48,7 @@ fn right_paren() {
         tok,
         Token {
             kind: TokenKind::ParenRight,
-            span: Range { start: 0, end: 1 },
+            span: TxtSpan { start: 0, end: 1 },
         }
     ));
 }
@@ -70,7 +70,7 @@ fn pair_joiner() {
         tok,
         Token {
             kind: TokenKind::PairJoiner,
-            span: Range { start: 0, end: 1 },
+            span: TxtSpan { start: 0, end: 1 },
         }
     ));
 }
@@ -92,7 +92,7 @@ fn pair_joiner_with_whitespace() {
         tok,
         Token {
             kind: TokenKind::PairJoiner,
-            span: Range { start: 1, end: 2 },
+            span: TxtSpan { start: 1, end: 2 },
         }
     ));
 }
@@ -114,7 +114,7 @@ fn pair_joiner_prefixed_is_identifier() {
         tok,
         Token {
             kind: TokenKind::Identifier(txt),
-            span: Range { start: 0, end: 2 },
+            span: TxtSpan { start: 0, end: 2 },
         } if txt == "a."
     ));
 }
@@ -136,7 +136,7 @@ fn pair_joiner_postfixed_is_identifier() {
         tok,
         Token {
             kind: TokenKind::Identifier(txt),
-            span: Range { start: 0, end: 2 },
+            span: TxtSpan { start: 0, end: 2 },
         } if txt == ".a"
     ));
 }
@@ -158,7 +158,7 @@ fn pair_joiner_followed_by_delimiter() {
         tok,
         Token {
             kind: TokenKind::PairJoiner,
-            span: Range { start: 0, end: 1 },
+            span: TxtSpan { start: 0, end: 1 },
         }
     ));
 }
@@ -180,7 +180,7 @@ fn token_ends_at_whitespace() {
         tok,
         Token {
             kind: TokenKind::ParenLeft,
-            span: Range { start: 0, end: 1 },
+            span: TxtSpan { start: 0, end: 1 },
         }
     ));
 }
@@ -202,7 +202,7 @@ fn token_ends_at_delimiter() {
         tok,
         Token {
             kind: TokenKind::ParenLeft,
-            span: Range { start: 0, end: 1 },
+            span: TxtSpan { start: 0, end: 1 },
         }
     ));
 }
@@ -224,7 +224,7 @@ fn comment() {
         tok,
         Token {
             kind: TokenKind::Comment,
-            span: Range { start: 0, end: 1 },
+            span: TxtSpan { start: 0, end: 1 },
         }
     ));
 }
@@ -246,7 +246,7 @@ fn comment_with_text() {
         tok,
         Token {
             kind: TokenKind::Comment,
-            span: Range { start: 0, end: 34 },
+            span: TxtSpan { start: 0, end: 34 },
         }
     ));
 }

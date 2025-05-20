@@ -17,7 +17,7 @@ fn true_short() {
         tok,
         Token {
             kind: TokenKind::Constant(Constant::Boolean(true)),
-            span: Range { start: 0, end: 2 },
+            span: TxtSpan { start: 0, end: 2 },
         }
     ));
 }
@@ -39,7 +39,7 @@ fn true_long() {
         tok,
         Token {
             kind: TokenKind::Constant(Constant::Boolean(true)),
-            span: Range { start: 0, end: 5 },
+            span: TxtSpan { start: 0, end: 5 },
         }
     ));
 }
@@ -61,7 +61,7 @@ fn true_uppercase() {
         tok,
         Token {
             kind: TokenKind::Constant(Constant::Boolean(true)),
-            span: Range { start: 0, end: 5 },
+            span: TxtSpan { start: 0, end: 5 },
         }
     ));
 }
@@ -83,7 +83,7 @@ fn true_malformed() {
         err,
         TokenError {
             kind: TokenErrorKind::BooleanExpected(true),
-            span: Range { start: 0, end: 8 },
+            span: TxtSpan { start: 0, end: 8 },
         }
     ));
 }
@@ -105,7 +105,7 @@ fn false_short() {
         tok,
         Token {
             kind: TokenKind::Constant(Constant::Boolean(false)),
-            span: Range { start: 0, end: 2 },
+            span: TxtSpan { start: 0, end: 2 },
         }
     ));
 }
@@ -127,7 +127,7 @@ fn false_long() {
         tok,
         Token {
             kind: TokenKind::Constant(Constant::Boolean(false)),
-            span: Range { start: 0, end: 6 },
+            span: TxtSpan { start: 0, end: 6 },
         }
     ));
 }
@@ -149,7 +149,7 @@ fn false_uppercase() {
         tok,
         Token {
             kind: TokenKind::Constant(Constant::Boolean(false)),
-            span: Range { start: 0, end: 6 },
+            span: TxtSpan { start: 0, end: 6 },
         }
     ));
 }
@@ -171,7 +171,7 @@ fn false_malformed() {
         err,
         TokenError {
             kind: TokenErrorKind::BooleanExpected(false),
-            span: Range { start: 0, end: 5 },
+            span: TxtSpan { start: 0, end: 5 },
         }
     ));
 }

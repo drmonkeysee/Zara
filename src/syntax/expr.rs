@@ -2,14 +2,13 @@ use crate::{
     constant::Constant,
     lex::TokenKind,
     number::ByteConversionError,
-    txt::{LineNumber, TextLine},
+    txt::{LineNumber, TextLine, TxtSpan},
     value::Value,
 };
 use std::{
     error::Error,
     fmt::{self, Display, Formatter},
     iter::Peekable,
-    ops::Range,
     rc::Rc,
 };
 
@@ -43,7 +42,7 @@ pub(super) struct ExpressionType<T> {
 
 #[derive(Clone, Debug)]
 pub(super) struct ExprCtx {
-    pub(super) span: Range<usize>,
+    pub(super) span: TxtSpan,
     pub(super) txt: Rc<TextLine>,
 }
 

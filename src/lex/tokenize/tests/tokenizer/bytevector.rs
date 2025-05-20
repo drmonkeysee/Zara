@@ -17,7 +17,7 @@ fn basic_token() {
         tok,
         Token {
             kind: TokenKind::ByteVector,
-            span: Range { start: 0, end: 4 },
+            span: TxtSpan { start: 0, end: 4 },
         }
     ));
 }
@@ -39,7 +39,7 @@ fn uppercase() {
         tok,
         Token {
             kind: TokenKind::ByteVector,
-            span: Range { start: 0, end: 4 },
+            span: TxtSpan { start: 0, end: 4 },
         }
     ));
 }
@@ -61,7 +61,7 @@ fn ends_at_paren() {
         tok,
         Token {
             kind: TokenKind::ByteVector,
-            span: Range { start: 0, end: 4 },
+            span: TxtSpan { start: 0, end: 4 },
         }
     ));
 }
@@ -83,7 +83,7 @@ fn unterminated() {
         err,
         TokenError {
             kind: TokenErrorKind::ByteVectorExpected,
-            span: Range { start: 0, end: 2 },
+            span: TxtSpan { start: 0, end: 2 },
         }
     ));
 }
@@ -105,7 +105,7 @@ fn wrong_number() {
         err,
         TokenError {
             kind: TokenErrorKind::ByteVectorExpected,
-            span: Range { start: 0, end: 3 },
+            span: TxtSpan { start: 0, end: 3 },
         }
     ));
 }
@@ -127,7 +127,7 @@ fn extra_number() {
         err,
         TokenError {
             kind: TokenErrorKind::ByteVectorExpected,
-            span: Range { start: 0, end: 4 },
+            span: TxtSpan { start: 0, end: 4 },
         }
     ));
 }
@@ -149,7 +149,7 @@ fn no_paren() {
         err,
         TokenError {
             kind: TokenErrorKind::ByteVectorExpected,
-            span: Range { start: 0, end: 3 },
+            span: TxtSpan { start: 0, end: 3 },
         }
     ));
 }
@@ -171,7 +171,7 @@ fn no_paren_whitespace() {
         err,
         TokenError {
             kind: TokenErrorKind::ByteVectorExpected,
-            span: Range { start: 0, end: 3 },
+            span: TxtSpan { start: 0, end: 3 },
         }
     ));
 }
@@ -193,7 +193,7 @@ fn no_paren_extra_chars() {
         err,
         TokenError {
             kind: TokenErrorKind::ByteVectorExpected,
-            span: Range { start: 0, end: 6 },
+            span: TxtSpan { start: 0, end: 6 },
         }
     ));
 }

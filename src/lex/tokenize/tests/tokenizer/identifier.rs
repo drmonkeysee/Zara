@@ -17,7 +17,7 @@ fn standard_identifier() {
         tok,
         Token {
             kind: TokenKind::Identifier(txt),
-            span: Range { start: 0, end: 3 },
+            span: TxtSpan { start: 0, end: 3 },
         } if txt == "foo"
     ));
 }
@@ -39,7 +39,7 @@ fn with_digits() {
         tok,
         Token {
             kind: TokenKind::Identifier(txt),
-            span: Range { start: 0, end: 3 },
+            span: TxtSpan { start: 0, end: 3 },
         } if txt == "a24"
     ));
 }
@@ -61,7 +61,7 @@ fn with_special_chars() {
         tok,
         Token {
             kind: TokenKind::Identifier(txt),
-            span: Range { start: 0, end: 16 },
+            span: TxtSpan { start: 0, end: 16 },
         } if txt == "foo?bar@baz.beef"
     ));
 }
@@ -83,7 +83,7 @@ fn stops_at_delimiter() {
         tok,
         Token {
             kind: TokenKind::Identifier(txt),
-            span: Range { start: 0, end: 3 },
+            span: TxtSpan { start: 0, end: 3 },
         } if txt == "abc"
     ));
 }
@@ -105,7 +105,7 @@ fn starts_with_special_char() {
         tok,
         Token {
             kind: TokenKind::Identifier(txt),
-            span: Range { start: 0, end: 4 },
+            span: TxtSpan { start: 0, end: 4 },
         } if txt == "!foo"
     ));
 }
@@ -127,7 +127,7 @@ fn ends_with_peculiar_chars() {
         tok,
         Token {
             kind: TokenKind::Identifier(txt),
-            span: Range { start: 0, end: 3 },
+            span: TxtSpan { start: 0, end: 3 },
         } if txt == "c++"
     ));
 }
@@ -149,7 +149,7 @@ fn is_only_special_char() {
         tok,
         Token {
             kind: TokenKind::Identifier(txt),
-            span: Range { start: 0, end: 1 },
+            span: TxtSpan { start: 0, end: 1 },
         } if txt == "!"
     ));
 }
@@ -172,7 +172,7 @@ fn with_extended_and_higher_chars() {
         tok,
         Token {
             kind: TokenKind::Identifier(txt),
-            span: Range { start: 0, end: 1 }, // TODO: unknown length
+            span: TxtSpan { start: 0, end: 1 }, // TODO: unknown length
         } if txt == "λ🦀\u{2401}\u{fffd}"
     ));
 }
@@ -194,7 +194,7 @@ fn peculiar_identifier() {
         tok,
         Token {
             kind: TokenKind::Identifier(txt),
-            span: Range { start: 0, end: 4 },
+            span: TxtSpan { start: 0, end: 4 },
         } if txt == "+foo"
     ));
 }
@@ -218,7 +218,7 @@ fn sign_identifier() {
             tok,
             Token {
                 kind: TokenKind::Identifier(txt),
-                span: Range { start: 0, end: 1},
+                span: TxtSpan { start: 0, end: 1},
             } if txt == case
         ));
     }
@@ -241,7 +241,7 @@ fn double_sign_identifier() {
         tok,
         Token {
             kind: TokenKind::Identifier(txt),
-            span: Range { start: 0, end: 2 },
+            span: TxtSpan { start: 0, end: 2 },
         } if txt == "+-"
     ));
 }
@@ -263,7 +263,7 @@ fn sign_dot_identifier() {
         tok,
         Token {
             kind: TokenKind::Identifier(txt),
-            span: Range { start: 0, end: 2 },
+            span: TxtSpan { start: 0, end: 2 },
         } if txt == "+."
     ));
 }
@@ -285,7 +285,7 @@ fn dot_sign_identifier() {
         tok,
         Token {
             kind: TokenKind::Identifier(txt),
-            span: Range { start: 0, end: 2 },
+            span: TxtSpan { start: 0, end: 2 },
         } if txt == ".+"
     ));
 }
@@ -307,7 +307,7 @@ fn double_period_identifier() {
         tok,
         Token {
             kind: TokenKind::Identifier(txt),
-            span: Range { start: 0, end: 2 },
+            span: TxtSpan { start: 0, end: 2 },
         } if txt == ".."
     ));
 }
@@ -329,7 +329,7 @@ fn double_period_word_identifier() {
         tok,
         Token {
             kind: TokenKind::Identifier(txt),
-            span: Range { start: 0, end: 5 },
+            span: TxtSpan { start: 0, end: 5 },
         } if txt == "..foo"
     ));
 }
@@ -351,7 +351,7 @@ fn period_identifier() {
         tok,
         Token {
             kind: TokenKind::Identifier(txt),
-            span: Range { start: 0, end: 4 },
+            span: TxtSpan { start: 0, end: 4 },
         } if txt == ".foo"
     ));
 }
@@ -373,7 +373,7 @@ fn start_digit() {
         err,
         TokenError {
             kind: TokenErrorKind::NumberInvalid,
-            span: Range { start: 0, end: 4 },
+            span: TxtSpan { start: 0, end: 4 },
         }
     ));
 }
@@ -395,7 +395,7 @@ fn start_reserved_char() {
         err,
         TokenError {
             kind: TokenErrorKind::IdentifierInvalid('{'),
-            span: Range { start: 0, end: 4 },
+            span: TxtSpan { start: 0, end: 4 },
         }
     ));
 }
@@ -417,7 +417,7 @@ fn contains_reserved_char() {
         err,
         TokenError {
             kind: TokenErrorKind::IdentifierInvalid('{'),
-            span: Range { start: 0, end: 7 },
+            span: TxtSpan { start: 0, end: 7 },
         }
     ));
 }
@@ -439,7 +439,7 @@ fn contains_numeric_label() {
         tok,
         Token {
             kind: TokenKind::Identifier(txt),
-            span: Range { start: 0, end: 7 },
+            span: TxtSpan { start: 0, end: 7 },
         } if txt == "f+inf.0"
     ));
 }
@@ -463,7 +463,7 @@ fn infnan_numerator_is_identifier() {
             tok,
             Token {
                 kind: TokenKind::Identifier(txt),
-                span: Range { start: 0, end: 8 },
+                span: TxtSpan { start: 0, end: 8 },
             } if txt == case
         ));
     }
@@ -489,7 +489,7 @@ mod verbatim {
             tok,
             Token {
                 kind: TokenKind::Identifier(txt),
-                span: Range { start: 0, end: 2 },
+                span: TxtSpan { start: 0, end: 2 },
             } if txt == ""
         ));
     }
@@ -511,7 +511,7 @@ mod verbatim {
             tok,
             Token {
                 kind: TokenKind::Identifier(txt),
-                span: Range { start: 0, end: 5 },
+                span: TxtSpan { start: 0, end: 5 },
             } if txt == "foo"
         ));
     }
@@ -533,7 +533,7 @@ mod verbatim {
             tok,
             Token {
                 kind: TokenKind::Identifier(txt),
-                span: Range { start: 0, end: 11 },
+                span: TxtSpan { start: 0, end: 11 },
             } if txt == " foo bar "
         ));
     }
@@ -555,7 +555,7 @@ mod verbatim {
             tok,
             Token {
                 kind: TokenKind::Identifier(txt),
-                span: Range { start: 0, end: 12 },
+                span: TxtSpan { start: 0, end: 12 },
             } if txt == " foo|bar "
         ));
     }
@@ -577,7 +577,7 @@ mod verbatim {
             tok,
             Token {
                 kind: TokenKind::Identifier(txt),
-                span: Range { start: 0, end: 18 },
+                span: TxtSpan { start: 0, end: 18 },
             } if txt == "foo \"string\" bar"
         ));
     }
@@ -599,7 +599,7 @@ mod verbatim {
             tok,
             Token {
                 kind: TokenKind::Identifier(txt),
-                span: Range { start: 0, end: 11 },
+                span: TxtSpan { start: 0, end: 11 },
             } if txt == "abc123!@#"
         ));
     }
@@ -621,7 +621,7 @@ mod verbatim {
             tok,
             Token {
                 kind: TokenKind::Identifier(txt),
-                span: Range { start: 0, end: 6 },
+                span: TxtSpan { start: 0, end: 6 },
             } if txt == "1234"
         ));
     }
@@ -643,7 +643,7 @@ mod verbatim {
             tok,
             Token {
                 kind: TokenKind::Identifier(txt),
-                span: Range { start: 0, end: 17 },
+                span: TxtSpan { start: 0, end: 17 },
             } if txt == "λ 🦀 ␁ �"
         ));
     }
@@ -665,7 +665,7 @@ mod verbatim {
             tok,
             Token {
                 kind: TokenKind::Identifier(txt),
-                span: Range { start: 0, end: 45 },
+                span: TxtSpan { start: 0, end: 45 },
             } if txt == "a:\x07, b:\x08, d:\x7f, e:\x1b, n:\n, 0:\0, r:\r, t:\t, q:\""
         ));
     }
@@ -687,7 +687,7 @@ mod verbatim {
             tok,
             Token {
                 kind: TokenKind::Identifier(txt),
-                span: Range { start: 0, end: 46 },
+                span: TxtSpan { start: 0, end: 46 },
             } if txt == "a:\x07, b:\x08, n:\n, r:\r, t:\t, q:\", s:\\, v:|"
         ));
     }
@@ -709,7 +709,7 @@ mod verbatim {
             tok,
             Token {
                 kind: TokenKind::Identifier(txt),
-                span: Range { start: 0, end: 12 },
+                span: TxtSpan { start: 0, end: 12 },
             } if txt == "foo   bar"
         ));
     }
@@ -733,7 +733,7 @@ mod verbatim {
             tok,
             Token {
                 kind: TokenKind::Identifier(txt),
-                span: Range { start: 0, end: 93 },
+                span: TxtSpan { start: 0, end: 93 },
             } if txt == "a:\x07, b:\x08, d:\x7f, e:\x1b, n:\n, 0:\0, r:\r, t:\t, q:\", s:\\, v:|"
         ));
     }
@@ -755,7 +755,7 @@ mod verbatim {
             tok,
             Token {
                 kind: TokenKind::Identifier(txt),
-                span: Range { start: 0, end: 13 },
+                span: TxtSpan { start: 0, end: 13 },
             } if txt == "J J"
         ));
     }
@@ -777,7 +777,7 @@ mod verbatim {
             tok,
             Token {
                 kind: TokenKind::Identifier(txt),
-                span: Range { start: 0, end: 15 },
+                span: TxtSpan { start: 0, end: 15 },
             } if txt == "\u{fff9} \u{e0001} \u{100001}"
         ));
     }
@@ -799,7 +799,7 @@ mod verbatim {
             tok,
             Token {
                 kind: TokenKind::Identifier(txt),
-                span: Range { start: 0, end: 28 },
+                span: TxtSpan { start: 0, end: 28 },
             } if txt == "\u{fff9} \u{e0001} \u{100001}"
         ));
     }
@@ -821,7 +821,7 @@ mod verbatim {
             err,
             TokenError {
                 kind: TokenErrorKind::IdentifierEscapeInvalid { at: 1, ch: 'B' },
-                span: Range { start: 1, end: 3 },
+                span: TxtSpan { start: 1, end: 3 },
             }
         ));
     }
@@ -843,7 +843,7 @@ mod verbatim {
             err,
             TokenError {
                 kind: TokenErrorKind::IdentifierExpectedHex { at: 1 },
-                span: Range { start: 1, end: 6 },
+                span: TxtSpan { start: 1, end: 6 },
             }
         ));
     }
@@ -865,7 +865,7 @@ mod verbatim {
             err,
             TokenError {
                 kind: TokenErrorKind::IdentifierInvalidHex { at: 1 },
-                span: Range { start: 1, end: 12 },
+                span: TxtSpan { start: 1, end: 12 },
             }
         ));
     }
@@ -887,7 +887,7 @@ mod verbatim {
             err,
             TokenError {
                 kind: TokenErrorKind::IdentifierExpectedHex { at: 1 },
-                span: Range { start: 1, end: 11 },
+                span: TxtSpan { start: 1, end: 11 },
             }
         ));
     }
@@ -909,7 +909,7 @@ mod verbatim {
             err,
             TokenError {
                 kind: TokenErrorKind::IdentifierUnterminatedHex { at: 1 },
-                span: Range { start: 1, end: 6 },
+                span: TxtSpan { start: 1, end: 6 },
             }
         ));
     }
@@ -933,7 +933,7 @@ mod verbatim {
             tok,
             Token {
                 kind: TokenKind::IdentifierDiscard,
-                span: Range { start: 11, end: 24 },
+                span: TxtSpan { start: 11, end: 24 },
             }
         ));
     }
@@ -955,7 +955,7 @@ mod verbatim {
             tok,
             Token {
                 kind: TokenKind::IdentifierBegin(txt),
-                span: Range { start: 0, end: 19 },
+                span: TxtSpan { start: 0, end: 19 },
             } if txt == "beginning verbatim"
         ));
     }
@@ -977,7 +977,7 @@ mod verbatim {
             tok,
             Token {
                 kind: TokenKind::IdentifierBegin(txt),
-                span: Range { start: 0, end: 20 },
+                span: TxtSpan { start: 0, end: 20 },
             } if txt == "beginning verbatim"
         ));
     }
@@ -999,7 +999,7 @@ mod verbatim {
             tok,
             Token {
                 kind: TokenKind::IdentifierBegin(txt),
-                span: Range { start: 0, end: 24 },
+                span: TxtSpan { start: 0, end: 24 },
             } if txt == "beginning verbatim    "
         ));
     }
@@ -1021,7 +1021,7 @@ mod verbatim {
             tok,
             Token {
                 kind: TokenKind::IdentifierBegin(txt),
-                span: Range { start: 0, end: 24 },
+                span: TxtSpan { start: 0, end: 24 },
             } if txt == "beginning verbatim    "
         ));
     }
@@ -1043,7 +1043,7 @@ mod verbatim {
             tok,
             Token {
                 kind: TokenKind::IdentifierFragment(txt),
-                span: Range { start: 0, end: 18 },
+                span: TxtSpan { start: 0, end: 18 },
             } if txt == "continued verbatim"
         ));
     }
@@ -1065,7 +1065,7 @@ mod verbatim {
             tok,
             Token {
                 kind: TokenKind::IdentifierFragment(txt),
-                span: Range { start: 0, end: 21 },
+                span: TxtSpan { start: 0, end: 21 },
             } if txt == "   continued verbatim"
         ));
     }
@@ -1087,7 +1087,7 @@ mod verbatim {
             tok,
             Token {
                 kind: TokenKind::IdentifierFragment(txt),
-                span: Range { start: 0, end: 26 },
+                span: TxtSpan { start: 0, end: 26 },
             } if txt == "continued verbatim      "
         ));
     }
@@ -1109,7 +1109,7 @@ mod verbatim {
             tok,
             Token {
                 kind: TokenKind::IdentifierEnd(txt),
-                span: Range { start: 0, end: 13 },
+                span: TxtSpan { start: 0, end: 13 },
             } if txt == "end verbatim"
         ));
     }
@@ -1131,7 +1131,7 @@ mod verbatim {
             tok,
             Token {
                 kind: TokenKind::IdentifierEnd(txt),
-                span: Range { start: 0, end: 18 },
+                span: TxtSpan { start: 0, end: 18 },
             } if txt == "   end verbatim  "
         ));
     }
@@ -1153,7 +1153,7 @@ mod verbatim {
             tok,
             Token {
                 kind: TokenKind::IdentifierEnd(txt),
-                span: Range { start: 0, end: 21 },
+                span: TxtSpan { start: 0, end: 21 },
             } if txt == "end verbatim      "
         ));
     }

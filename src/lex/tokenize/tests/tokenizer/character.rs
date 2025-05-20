@@ -17,7 +17,7 @@ fn ascii_literal() {
         tok,
         Token {
             kind: TokenKind::Constant(Constant::Character('a')),
-            span: Range { start: 0, end: 3 },
+            span: TxtSpan { start: 0, end: 3 },
         }
     ));
 }
@@ -39,7 +39,7 @@ fn ascii_uppercase_literal() {
         tok,
         Token {
             kind: TokenKind::Constant(Constant::Character('A')),
-            span: Range { start: 0, end: 3 },
+            span: TxtSpan { start: 0, end: 3 },
         }
     ));
 }
@@ -61,7 +61,7 @@ fn extended_literal() {
         tok,
         Token {
             kind: TokenKind::Constant(Constant::Character('λ')),
-            span: Range { start: 0, end: 4 },
+            span: TxtSpan { start: 0, end: 4 },
         }
     ));
 }
@@ -83,7 +83,7 @@ fn emoji_literal() {
         tok,
         Token {
             kind: TokenKind::Constant(Constant::Character('🦀')),
-            span: Range { start: 0, end: 6 },
+            span: TxtSpan { start: 0, end: 6 },
         }
     ));
 }
@@ -110,7 +110,7 @@ fn space_literal() {
         tok,
         Token {
             kind: TokenKind::Constant(Constant::Character(' ')),
-            span: Range { start: 0, end: 3 },
+            span: TxtSpan { start: 0, end: 3 },
         }
     ));
 }
@@ -132,7 +132,7 @@ fn tab_literal() {
         tok,
         Token {
             kind: TokenKind::Constant(Constant::Character('\t')),
-            span: Range { start: 0, end: 3 },
+            span: TxtSpan { start: 0, end: 3 },
         }
     ));
 }
@@ -169,7 +169,7 @@ fn name_does_not_match_uppercase() {
         err,
         TokenError {
             kind: TokenErrorKind::CharacterExpected,
-            span: Range { start: 0, end: 7 },
+            span: TxtSpan { start: 0, end: 7 },
         }
     ));
 }
@@ -191,7 +191,7 @@ fn space_followed_by_alpha() {
         tok,
         Token {
             kind: TokenKind::Constant(Constant::Character(' ')),
-            span: Range { start: 0, end: 3 },
+            span: TxtSpan { start: 0, end: 3 },
         }
     ));
 }
@@ -213,7 +213,7 @@ fn alpha_followed_by_alpha() {
         err,
         TokenError {
             kind: TokenErrorKind::CharacterExpected,
-            span: Range { start: 0, end: 4 },
+            span: TxtSpan { start: 0, end: 4 },
         }
     ));
 }
@@ -235,7 +235,7 @@ fn emoji_followed_by_alpha() {
         err,
         TokenError {
             kind: TokenErrorKind::CharacterExpected,
-            span: Range { start: 0, end: 7 },
+            span: TxtSpan { start: 0, end: 7 },
         }
     ));
 }
@@ -257,7 +257,7 @@ fn alpha_followed_by_delimiter() {
         tok,
         Token {
             kind: TokenKind::Constant(Constant::Character('a')),
-            span: Range { start: 0, end: 3 },
+            span: TxtSpan { start: 0, end: 3 },
         }
     ));
 }
@@ -279,7 +279,7 @@ fn letter_x_is_not_hex() {
         tok,
         Token {
             kind: TokenKind::Constant(Constant::Character('x')),
-            span: Range { start: 0, end: 3 },
+            span: TxtSpan { start: 0, end: 3 },
         }
     ));
 }
@@ -301,7 +301,7 @@ fn hex_zero() {
         tok,
         Token {
             kind: TokenKind::Constant(Constant::Character('\0')),
-            span: Range { start: 0, end: 4 },
+            span: TxtSpan { start: 0, end: 4 },
         }
     ));
 }
@@ -323,7 +323,7 @@ fn hex_lowercase() {
         tok,
         Token {
             kind: TokenKind::Constant(Constant::Character('\n')),
-            span: Range { start: 0, end: 4 },
+            span: TxtSpan { start: 0, end: 4 },
         }
     ));
 }
@@ -345,7 +345,7 @@ fn hex_uppercase() {
         tok,
         Token {
             kind: TokenKind::Constant(Constant::Character('\n')),
-            span: Range { start: 0, end: 4 },
+            span: TxtSpan { start: 0, end: 4 },
         }
     ));
 }
@@ -367,7 +367,7 @@ fn hex_uppercase_indicator() {
         tok,
         Token {
             kind: TokenKind::Constant(Constant::Character('\n')),
-            span: Range { start: 0, end: 4 },
+            span: TxtSpan { start: 0, end: 4 },
         }
     ));
 }
@@ -399,7 +399,7 @@ fn hex_sign_invalid() {
         err,
         TokenError {
             kind: TokenErrorKind::CharacterExpectedHex,
-            span: Range { start: 0, end: 5 },
+            span: TxtSpan { start: 0, end: 5 },
         }
     ));
 }
@@ -421,7 +421,7 @@ fn hex_too_large() {
         err,
         TokenError {
             kind: TokenErrorKind::CharacterInvalidHex,
-            span: Range { start: 0, end: 11 },
+            span: TxtSpan { start: 0, end: 11 },
         }
     ));
 }
@@ -443,7 +443,7 @@ fn hex_malformed() {
         err,
         TokenError {
             kind: TokenErrorKind::CharacterExpectedHex,
-            span: Range { start: 0, end: 10 },
+            span: TxtSpan { start: 0, end: 10 },
         }
     ));
 }
@@ -467,7 +467,7 @@ fn check_character_list(cases: &[(&str, char)]) {
                 tok,
                 Token {
                     kind: TokenKind::Constant(Constant::Character(ch)),
-                    span: Range { start: 0, end },
+                    span: TxtSpan { start: 0, end },
                 } if ch == exp && end == input.len()
             ),
             "Unexpected match for character input ({inp}, {exp})"

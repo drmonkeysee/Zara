@@ -1,6 +1,7 @@
 use std::{
     error::Error,
     fmt::{self, Display, Formatter},
+    ops::Range,
     path::PathBuf,
     rc::Rc,
 };
@@ -110,6 +111,8 @@ impl Display for TextErrorHeader<'_> {
         writeln!(f, "\t{}", self.0)
     }
 }
+
+pub(crate) type TxtSpan = Range<usize>;
 
 fn format_header(ctx: &TextContext, lineno: LineNumber, f: &mut Formatter) -> fmt::Result {
     write!(f, "{}:{}", ctx.name, lineno)?;

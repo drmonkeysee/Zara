@@ -8,13 +8,16 @@ use self::{
     expr::{ExprCtx, ExprEnd, Expression, ExpressionError, ExpressionKind, PeekableExt},
     parse::{MergeFlow, ParseBreak, ParseErrBreak, ParseErrFlow, ParseFlow, ParseNode},
 };
-use crate::{lex::TokenLine, txt::TextLine, value::Value};
+use crate::{
+    lex::TokenLine,
+    txt::{TextLine, TxtSpan},
+    value::Value,
+};
 use std::{
     error::Error,
     fmt::{self, Display, Formatter, Write},
     iter::FilterMap,
     mem,
-    ops::Range,
     rc::Rc,
 };
 
@@ -302,7 +305,7 @@ struct PartitionByOverlap<'a> {
 }
 
 impl<'a> PartitionByOverlap<'a> {
-    fn new<I: IntoIterator<Item = &'a Range<usize>>>(iter: I) -> Self {
+    fn new<I: IntoIterator<Item = &'a TxtSpan>>(iter: I) -> Self {
         let mut groups = Vec::<<Self as Iterator>::Item>::new();
         for span in iter {
             match groups
@@ -320,7 +323,7 @@ impl<'a> PartitionByOverlap<'a> {
 }
 
 impl<'a> Iterator for PartitionByOverlap<'a> {
-    type Item = Vec<&'a Range<usize>>;
+    type Item = Vec<&'a TxtSpan>;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.groups.next()
@@ -334,7 +337,7 @@ trait FilterMapExt<'a> {
 impl<
     'a,
     I: Iterator<Item = &'a &'a ExpressionError>,
-    F: FnMut(&'a &'a ExpressionError) -> Option<&'a Range<usize>>,
+    F: FnMut(&'a &'a ExpressionError) -> Option<&'a TxtSpan>,
 > FilterMapExt<'a> for FilterMap<I, F>
 {
     fn partition_overlap(self) -> PartitionByOverlap<'a> {

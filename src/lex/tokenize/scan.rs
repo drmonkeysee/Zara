@@ -1,4 +1,5 @@
-use std::{iter::Peekable, ops::Range, str::CharIndices};
+use crate::txt::TxtSpan;
+use std::{iter::Peekable, str::CharIndices};
 
 pub(super) type ScanItem<'txt> = <CharIndices<'txt> as Iterator>::Item;
 
@@ -54,7 +55,7 @@ impl<'txt> Scanner<'txt> {
         self.lexeme(cur..end)
     }
 
-    pub(super) fn lexeme(&self, range: Range<usize>) -> &'txt str {
+    pub(super) fn lexeme(&self, range: TxtSpan) -> &'txt str {
         self.textline.get(range).unwrap_or_default()
     }
 

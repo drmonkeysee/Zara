@@ -17,7 +17,7 @@ fn quote() {
         tok,
         Token {
             kind: TokenKind::Quote,
-            span: Range { start: 0, end: 1 },
+            span: TxtSpan { start: 0, end: 1 },
         }
     ));
 }
@@ -39,7 +39,7 @@ fn quasiquote() {
         tok,
         Token {
             kind: TokenKind::Quasiquote,
-            span: Range { start: 0, end: 1 },
+            span: TxtSpan { start: 0, end: 1 },
         }
     ));
 }
@@ -61,7 +61,7 @@ fn unquote() {
         tok,
         Token {
             kind: TokenKind::Unquote,
-            span: Range { start: 0, end: 1 },
+            span: TxtSpan { start: 0, end: 1 },
         }
     ));
 }
@@ -83,7 +83,7 @@ fn unquote_followed_by_non_splice() {
         tok,
         Token {
             kind: TokenKind::Unquote,
-            span: Range { start: 0, end: 1 },
+            span: TxtSpan { start: 0, end: 1 },
         }
     ));
 }
@@ -105,7 +105,7 @@ fn unquote_splicing() {
         tok,
         Token {
             kind: TokenKind::UnquoteSplice,
-            span: Range { start: 0, end: 2 },
+            span: TxtSpan { start: 0, end: 2 },
         }
     ));
 }
@@ -127,7 +127,7 @@ fn unquote_whitespace_between_splice() {
         tok,
         Token {
             kind: TokenKind::Unquote,
-            span: Range { start: 0, end: 1 },
+            span: TxtSpan { start: 0, end: 1 },
         }
     ));
 }

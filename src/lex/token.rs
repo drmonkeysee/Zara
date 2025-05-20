@@ -1,17 +1,17 @@
 use crate::{
     constant::Constant,
     number::{NumericError, Real},
+    txt::TxtSpan,
 };
 use std::{
     error::Error,
     fmt::{self, Display, Formatter},
-    ops::Range,
 };
 
 #[derive(Debug)]
 pub(crate) struct TokenType<T> {
     pub(crate) kind: T,
-    pub(crate) span: Range<usize>,
+    pub(crate) span: TxtSpan,
 }
 
 pub(crate) type Token = TokenType<TokenKind>;

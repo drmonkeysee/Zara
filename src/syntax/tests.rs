@@ -5,7 +5,6 @@ use crate::{
     testutil::{err_or_fail, extract_or_fail, make_textline_no, some_or_fail},
     txt::LineNumber,
 };
-use std::ops::Range;
 
 fn make_tokenline(kinds: impl IntoIterator<Item = TokenKind>) -> TokenLine {
     make_tokenline_no(kinds, 1)
@@ -51,7 +50,7 @@ mod parsing {
         assert!(matches!(
             &seq[0],
             Expression {
-                ctx: ExprCtx { span: Range { start: 0, end: 1 }, txt },
+                ctx: ExprCtx { span: TxtSpan { start: 0, end: 1 }, txt },
                 kind: ExpressionKind::Literal(Value::Constant(Constant::Boolean(true))),
             } if txt.lineno == 1
         ));
@@ -75,21 +74,21 @@ mod parsing {
         assert!(matches!(
             &seq[0],
             Expression {
-                ctx: ExprCtx { span: Range { start: 0, end: 1 }, txt },
+                ctx: ExprCtx { span: TxtSpan { start: 0, end: 1 }, txt },
                 kind: ExpressionKind::Literal(Value::Constant(Constant::Boolean(true))),
             } if txt.lineno == 1
         ));
         assert!(matches!(
             &seq[1],
             Expression {
-                ctx: ExprCtx { span: Range { start: 1, end: 2 }, txt },
+                ctx: ExprCtx { span: TxtSpan { start: 1, end: 2 }, txt },
                 kind: ExpressionKind::Literal(Value::Constant(Constant::Character('a'))),
             } if txt.lineno == 1
         ));
         assert!(matches!(
             &seq[2],
             Expression {
-                ctx: ExprCtx { span: Range { start: 2, end: 3 }, txt },
+                ctx: ExprCtx { span: TxtSpan { start: 2, end: 3 }, txt },
                 kind: ExpressionKind::Literal(Value::Constant(Constant::String(s))),
             } if txt.lineno == 1 && &**s == "foo"
         ));
@@ -125,35 +124,35 @@ mod parsing {
         assert!(matches!(
             &seq[0],
             Expression {
-                ctx: ExprCtx { span: Range { start: 0, end: 1 }, txt },
+                ctx: ExprCtx { span: TxtSpan { start: 0, end: 1 }, txt },
                 kind: ExpressionKind::Literal(Value::Constant(Constant::Boolean(true))),
             } if txt.lineno == 1
         ));
         assert!(matches!(
             &seq[1],
             Expression {
-                ctx: ExprCtx { span: Range { start: 1, end: 2 }, txt },
+                ctx: ExprCtx { span: TxtSpan { start: 1, end: 2 }, txt },
                 kind: ExpressionKind::Literal(Value::Constant(Constant::Character('a'))),
             } if txt.lineno == 1
         ));
         assert!(matches!(
             &seq[2],
             Expression {
-                ctx: ExprCtx { span: Range { start: 2, end: 3 }, txt },
+                ctx: ExprCtx { span: TxtSpan { start: 2, end: 3 }, txt },
                 kind: ExpressionKind::Literal(Value::Constant(Constant::String(s))),
             } if txt.lineno == 1 && &**s == "foo"
         ));
         assert!(matches!(
             &seq[3],
             Expression {
-                ctx: ExprCtx { span: Range { start: 0, end: 1 }, txt },
+                ctx: ExprCtx { span: TxtSpan { start: 0, end: 1 }, txt },
                 kind: ExpressionKind::Literal(Value::Constant(Constant::Boolean(false))),
             } if txt.lineno == 2
         ));
         assert!(matches!(
             &seq[4],
             Expression {
-                ctx: ExprCtx { span: Range { start: 1, end: 2 }, txt },
+                ctx: ExprCtx { span: TxtSpan { start: 1, end: 2 }, txt },
                 kind: ExpressionKind::Literal(Value::Constant(Constant::Character('b'))),
             } if txt.lineno == 2
         ));
@@ -184,7 +183,7 @@ mod parsing {
         assert!(matches!(
             &seq[0],
             Expression {
-                ctx: ExprCtx { span: Range { start: 0, end: 8 }, txt },
+                ctx: ExprCtx { span: TxtSpan { start: 0, end: 8 }, txt },
                 kind: ExpressionKind::Literal(Value::ByteVector(bv)),
             } if txt.lineno == 1 && format!("{bv:?}") == "[10, 13]"
         ));
@@ -219,7 +218,7 @@ mod parsing {
             expr,
             Expression {
                 ctx: ExprCtx {
-                    span: Range { start: 0, end: 10 },
+                    span: TxtSpan { start: 0, end: 10 },
                     ..
                 },
                 kind: ExpressionKind::Call { .. },
@@ -231,7 +230,7 @@ mod parsing {
         assert!(matches!(
             &**proc,
             Expression {
-                ctx: ExprCtx { span: Range { start: 1, end: 2 }, .. },
+                ctx: ExprCtx { span: TxtSpan { start: 1, end: 2 }, .. },
                 kind: ExpressionKind::Variable(s),
             } if &**s == "+"
         ));
@@ -239,14 +238,14 @@ mod parsing {
         assert!(matches!(
             &args[0],
             Expression {
-                ctx: ExprCtx { span: Range { start: 7, end: 8 }, .. },
+                ctx: ExprCtx { span: TxtSpan { start: 7, end: 8 }, .. },
                 kind: ExpressionKind::Literal(Value::Constant(Constant::Number(n))),
             } if n.as_datum().to_string() == "2"
         ));
         assert!(matches!(
             &args[1],
             Expression {
-                ctx: ExprCtx { span: Range { start: 8, end: 9 }, .. },
+                ctx: ExprCtx { span: TxtSpan { start: 8, end: 9 }, .. },
                 kind: ExpressionKind::Literal(Value::Constant(Constant::Number(n))),
             } if n.as_datum().to_string() == "3"
         ));
@@ -272,7 +271,7 @@ mod parsing {
         assert!(matches!(
             &seq[0],
             Expression {
-                ctx: ExprCtx { span: Range { start: 1, end: 3 }, txt },
+                ctx: ExprCtx { span: TxtSpan { start: 1, end: 3 }, txt },
                 kind: ExpressionKind::Literal(Value::Pair(Some(_))),
             } if txt.lineno == 1
         ));
@@ -321,7 +320,7 @@ mod parsing {
         assert!(matches!(
             &seq[0],
             Expression {
-                ctx: ExprCtx { span: Range { start: 1, end: 3 }, txt },
+                ctx: ExprCtx { span: TxtSpan { start: 1, end: 3 }, txt },
                 kind: ExpressionKind::Literal(Value::Pair(Some(_))),
             } if txt.lineno == 1
         ));
@@ -357,7 +356,7 @@ mod parsing {
         assert!(matches!(
             &seq[0],
             Expression {
-                ctx: ExprCtx { span: Range { start: 2, end: 6 }, txt },
+                ctx: ExprCtx { span: TxtSpan { start: 2, end: 6 }, txt },
                 kind: ExpressionKind::Literal(Value::Pair(Some(_))),
             } if txt.lineno == 1
         ));
@@ -388,7 +387,7 @@ mod parsing {
         assert!(matches!(
             &seq[0],
             Expression {
-                ctx: ExprCtx { span: Range { start: 1, end: 6 }, txt },
+                ctx: ExprCtx { span: TxtSpan { start: 1, end: 6 }, txt },
                 kind: ExpressionKind::Literal(Value::Pair(Some(_))),
             } if txt.lineno == 1
         ));
@@ -416,7 +415,7 @@ mod parsing {
         assert!(matches!(
             &seq[0],
             Expression {
-                ctx: ExprCtx { span: Range { start: 1, end: 3 }, txt },
+                ctx: ExprCtx { span: TxtSpan { start: 1, end: 3 }, txt },
                 kind: ExpressionKind::Literal(Value::Pair(None)),
             } if txt.lineno == 1
         ));
@@ -447,7 +446,7 @@ mod parsing {
         assert!(matches!(
             &seq[0],
             Expression {
-                ctx: ExprCtx { span: Range { start: 1, end: 6 }, txt },
+                ctx: ExprCtx { span: TxtSpan { start: 1, end: 6 }, txt },
                 kind: ExpressionKind::Literal(Value::Pair(Some(_))),
             } if txt.lineno == 1
         ));
@@ -479,7 +478,7 @@ mod parsing {
         assert!(matches!(
             &seq[0],
             Expression {
-                ctx: ExprCtx { span: Range { start: 1, end: 7 }, txt },
+                ctx: ExprCtx { span: TxtSpan { start: 1, end: 7 }, txt },
                 kind: ExpressionKind::Literal(Value::Pair(Some(_))),
             } if txt.lineno == 1
         ));
@@ -514,7 +513,7 @@ mod parsing {
         assert!(matches!(
             &seq[0],
             Expression {
-                ctx: ExprCtx { span: Range { start: 1, end: 9 }, txt },
+                ctx: ExprCtx { span: TxtSpan { start: 1, end: 9 }, txt },
                 kind: ExpressionKind::Literal(Value::Pair(Some(_))),
             } if txt.lineno == 1
         ));
@@ -555,7 +554,7 @@ mod parsing {
         assert!(matches!(
             &seq[0],
             Expression {
-                ctx: ExprCtx { span: Range { start: 1, end: 15 }, txt },
+                ctx: ExprCtx { span: TxtSpan { start: 1, end: 15 }, txt },
                 kind: ExpressionKind::Literal(Value::Pair(Some(_))),
             } if txt.lineno == 1
         ));
@@ -588,7 +587,7 @@ mod parsing {
         assert!(matches!(
             &seq[0],
             Expression {
-                ctx: ExprCtx { span: Range { start: 1, end: 8 }, txt },
+                ctx: ExprCtx { span: TxtSpan { start: 1, end: 8 }, txt },
                 kind: ExpressionKind::Literal(Value::Pair(Some(_))),
             } if txt.lineno == 1
         ));
@@ -622,7 +621,7 @@ mod parsing {
         assert!(matches!(
             &seq[0],
             Expression {
-                ctx: ExprCtx { span: Range { start: 1, end: 8 }, txt },
+                ctx: ExprCtx { span: TxtSpan { start: 1, end: 8 }, txt },
                 kind: ExpressionKind::Literal(Value::Pair(Some(_))),
             } if txt.lineno == 1
         ));
@@ -659,7 +658,7 @@ mod parsing {
         assert!(matches!(
             &seq[0],
             Expression {
-                ctx: ExprCtx { span: Range { start: 1, end: 11 }, txt },
+                ctx: ExprCtx { span: TxtSpan { start: 1, end: 11 }, txt },
                 kind: ExpressionKind::Literal(Value::Pair(Some(_))),
             } if txt.lineno == 1
         ));
@@ -692,7 +691,7 @@ mod parsing {
         assert!(matches!(
             &seq[0],
             Expression {
-                ctx: ExprCtx { span: Range { start: 1, end: 7 }, txt },
+                ctx: ExprCtx { span: TxtSpan { start: 1, end: 7 }, txt },
                 kind: ExpressionKind::Literal(Value::Pair(Some(_))),
             } if txt.lineno == 1
         ));
@@ -725,7 +724,7 @@ mod parsing {
         assert!(matches!(
             &seq[0],
             Expression {
-                ctx: ExprCtx { span: Range { start: 1, end: 7 }, txt },
+                ctx: ExprCtx { span: TxtSpan { start: 1, end: 7 }, txt },
                 kind: ExpressionKind::Literal(Value::Pair(Some(_))),
             } if txt.lineno == 1
         ));
@@ -754,14 +753,14 @@ mod parsing {
         assert!(matches!(
             &errs[0],
             ExpressionError {
-                ctx: ExprCtx { span: Range { start: 1, end: 2 }, txt },
+                ctx: ExprCtx { span: TxtSpan { start: 1, end: 2 }, txt },
                 kind: ExpressionErrorKind::Unimplemented(TokenKind::DirectiveCase(true)),
             } if txt.lineno == 1
         ));
         assert!(matches!(
             &errs[1],
             ExpressionError {
-                ctx: ExprCtx { span: Range { start: 3, end: 4 }, txt },
+                ctx: ExprCtx { span: TxtSpan { start: 3, end: 4 }, txt },
                 kind: ExpressionErrorKind::Unimplemented(TokenKind::DirectiveCase(false)),
             }  if txt.lineno == 1
         ));
@@ -800,21 +799,21 @@ mod parsing {
         assert!(matches!(
             &errs[0],
             ExpressionError {
-                ctx: ExprCtx { span: Range { start: 1, end: 2 }, txt },
+                ctx: ExprCtx { span: TxtSpan { start: 1, end: 2 }, txt },
                 kind: ExpressionErrorKind::Unimplemented(TokenKind::DirectiveCase(true)),
             } if txt.lineno == 1
         ));
         assert!(matches!(
             &errs[1],
             ExpressionError {
-                ctx: ExprCtx { span: Range { start: 3, end: 4 }, txt },
+                ctx: ExprCtx { span: TxtSpan { start: 3, end: 4 }, txt },
                 kind: ExpressionErrorKind::Unimplemented(TokenKind::DirectiveCase(false)),
             }  if txt.lineno == 1
         ));
         assert!(matches!(
             &errs[2],
             ExpressionError {
-                ctx: ExprCtx { span: Range { start: 0, end: 1 }, txt },
+                ctx: ExprCtx { span: TxtSpan { start: 0, end: 1 }, txt },
                 kind: ExpressionErrorKind::SeqInvalid(TokenKind::StringDiscard),
             }  if txt.lineno == 2
         ));
@@ -862,21 +861,21 @@ mod parsing {
         assert!(matches!(
             &errs[0],
             ExpressionError {
-                ctx: ExprCtx { span: Range { start: 1, end: 2 }, txt },
+                ctx: ExprCtx { span: TxtSpan { start: 1, end: 2 }, txt },
                 kind: ExpressionErrorKind::Unimplemented(TokenKind::DirectiveCase(true)),
             } if txt.lineno == 1
         ));
         assert!(matches!(
             &errs[1],
             ExpressionError {
-                ctx: ExprCtx { span: Range { start: 3, end: 4 }, txt },
+                ctx: ExprCtx { span: TxtSpan { start: 3, end: 4 }, txt },
                 kind: ExpressionErrorKind::Unimplemented(TokenKind::DirectiveCase(false)),
             }  if txt.lineno == 1
         ));
         assert!(matches!(
             &errs[2],
             ExpressionError {
-                ctx: ExprCtx { span: Range { start: 1, end: 2 }, txt },
+                ctx: ExprCtx { span: TxtSpan { start: 1, end: 2 }, txt },
                 kind: ExpressionErrorKind::SeqInvalid(TokenKind::IdentifierDiscard),
             }  if txt.lineno == 2
         ));
@@ -931,14 +930,14 @@ mod parsing {
         assert!(matches!(
             &errs[0],
             ExpressionError {
-                ctx: ExprCtx { span: Range { start: 4, end: 6 }, txt },
+                ctx: ExprCtx { span: TxtSpan { start: 4, end: 6 }, txt },
                 kind: ExpressionErrorKind::DatumExpected,
             } if txt.lineno == 1
         ));
         assert!(matches!(
             &errs[1],
             ExpressionError {
-                ctx: ExprCtx { span: Range { start: 6, end: 7 }, txt },
+                ctx: ExprCtx { span: TxtSpan { start: 6, end: 7 }, txt },
                 kind: ExpressionErrorKind::ByteVectorInvalidItem(ExpressionKind::Literal(
                     Value::Constant(Constant::Boolean(true)))),
             }  if txt.lineno == 1
@@ -977,7 +976,7 @@ mod parsing {
         assert!(matches!(
             &errs[0],
             ExpressionError {
-                ctx: ExprCtx { span: Range { start: 0, end: 19 }, txt },
+                ctx: ExprCtx { span: TxtSpan { start: 0, end: 19 }, txt },
                 kind: ExpressionErrorKind::DatumExpected,
             } if txt.lineno == 1
         ));
@@ -1007,7 +1006,7 @@ mod parsing {
         assert!(matches!(
             &errs[0],
             ExpressionError {
-                ctx: ExprCtx { span: Range { start: 5, end: 6 }, txt },
+                ctx: ExprCtx { span: TxtSpan { start: 5, end: 6 }, txt },
                 kind: ExpressionErrorKind::PairUnterminated,
             } if txt.lineno == 1
         ));
@@ -1037,7 +1036,7 @@ mod parsing {
         assert!(matches!(
             &errs[0],
             ExpressionError {
-                ctx: ExprCtx { span: Range { start: 5, end: 6 }, txt },
+                ctx: ExprCtx { span: TxtSpan { start: 5, end: 6 }, txt },
                 kind: ExpressionErrorKind::PairUnterminated,
             } if txt.lineno == 1
         ));
@@ -1067,7 +1066,7 @@ mod parsing {
         assert!(matches!(
             &errs[0],
             ExpressionError {
-                ctx: ExprCtx { span: Range { start: 2, end: 3 }, txt },
+                ctx: ExprCtx { span: TxtSpan { start: 2, end: 3 }, txt },
                 kind: ExpressionErrorKind::PairIncomplete,
             } if txt.lineno == 1
         ));
@@ -1097,7 +1096,7 @@ mod parsing {
         assert!(matches!(
             &errs[0],
             ExpressionError {
-                ctx: ExprCtx { span: Range { start: 4, end: 5 }, txt },
+                ctx: ExprCtx { span: TxtSpan { start: 4, end: 5 }, txt },
                 kind: ExpressionErrorKind::PairUnterminated,
             } if txt.lineno == 1
         ));
@@ -1127,7 +1126,7 @@ mod parsing {
         assert!(matches!(
             &errs[0],
             ExpressionError {
-                ctx: ExprCtx { span: Range { start: 6, end: 7 }, txt },
+                ctx: ExprCtx { span: TxtSpan { start: 6, end: 7 }, txt },
                 kind: ExpressionErrorKind::PairUnterminated,
             } if txt.lineno == 1
         ));
@@ -1160,14 +1159,14 @@ mod parsing {
         assert!(matches!(
             &errs[0],
             ExpressionError {
-                ctx: ExprCtx { span: Range { start: 6, end: 7 }, txt },
+                ctx: ExprCtx { span: TxtSpan { start: 6, end: 7 }, txt },
                 kind: ExpressionErrorKind::ByteVectorInvalidItem(ExpressionKind::Literal(Value::Symbol(s))),
             } if txt.lineno == 1 && &**s == "b"
         ));
         assert!(matches!(
             &errs[1],
             ExpressionError {
-                ctx: ExprCtx { span: Range { start: 9, end: 10 }, txt },
+                ctx: ExprCtx { span: TxtSpan { start: 9, end: 10 }, txt },
                 kind: ExpressionErrorKind::PairUnterminated,
             } if txt.lineno == 1
         ));
@@ -1195,7 +1194,7 @@ mod parsing {
         assert!(matches!(
             &errs[0],
             ExpressionError {
-                ctx: ExprCtx { span: Range { start: 2, end: 3 }, txt },
+                ctx: ExprCtx { span: TxtSpan { start: 2, end: 3 }, txt },
                 kind: ExpressionErrorKind::PairUnexpected,
             } if txt.lineno == 1
         ));
@@ -1221,14 +1220,14 @@ mod parsing {
         assert!(matches!(
             &errs[0],
             ExpressionError {
-                ctx: ExprCtx { span: Range { start: 1, end: 2 }, txt },
+                ctx: ExprCtx { span: TxtSpan { start: 1, end: 2 }, txt },
                 kind: ExpressionErrorKind::PairUnexpected,
             } if txt.lineno == 1
         ));
         assert!(matches!(
             &errs[1],
             ExpressionError {
-                ctx: ExprCtx { span: Range { start: 0, end: 3 }, txt },
+                ctx: ExprCtx { span: TxtSpan { start: 0, end: 3 }, txt },
                 kind: ExpressionErrorKind::ProcedureEmpty,
             } if txt.lineno == 1
         ));
@@ -1274,7 +1273,7 @@ mod continuation {
         assert!(matches!(
             &errs[0],
             ExpressionError {
-                ctx: ExprCtx { span: Range { start: 1, end: 19 }, txt },
+                ctx: ExprCtx { span: TxtSpan { start: 1, end: 19 }, txt },
                 kind: ExpressionErrorKind::StrUnterminated,
             } if txt.lineno == 1
         ));
@@ -1316,7 +1315,7 @@ mod continuation {
         assert!(matches!(
             &errs[0],
             ExpressionError {
-                ctx: ExprCtx { span: Range { start: 0, end: 19 }, txt },
+                ctx: ExprCtx { span: TxtSpan { start: 0, end: 19 }, txt },
                 kind: ExpressionErrorKind::StrUnterminated,
             } if txt.lineno == 1
         ));
@@ -1344,7 +1343,7 @@ mod continuation {
         assert!(matches!(
             &errs[0],
             ExpressionError {
-                ctx: ExprCtx { span: Range { start: 1, end: 2 }, txt },
+                ctx: ExprCtx { span: TxtSpan { start: 1, end: 2 }, txt },
                 kind: ExpressionErrorKind::Unimplemented(TokenKind::DirectiveCase(true)),
             } if txt.lineno == 1
         ));
@@ -1532,7 +1531,7 @@ mod partition {
         assert_eq!(groups.len(), 1);
         let g = &groups[0];
         assert_eq!(g.len(), 1);
-        assert!(matches!(&g[0], Range { start: 0, end: 5 }));
+        assert!(matches!(&g[0], TxtSpan { start: 0, end: 5 }));
     }
 
     #[test]
@@ -1545,9 +1544,9 @@ mod partition {
         assert_eq!(groups.len(), 1);
         let g = &groups[0];
         assert_eq!(g.len(), 3);
-        assert!(matches!(&g[0], Range { start: 0, end: 5 }));
-        assert!(matches!(&g[1], Range { start: 6, end: 9 }));
-        assert!(matches!(&g[2], Range { start: 9, end: 13 }));
+        assert!(matches!(&g[0], TxtSpan { start: 0, end: 5 }));
+        assert!(matches!(&g[1], TxtSpan { start: 6, end: 9 }));
+        assert!(matches!(&g[2], TxtSpan { start: 9, end: 13 }));
     }
 
     #[test]
@@ -1560,9 +1559,9 @@ mod partition {
         assert_eq!(groups.len(), 1);
         let g = &groups[0];
         assert_eq!(g.len(), 3);
-        assert!(matches!(&g[0], Range { start: 0, end: 5 }));
-        assert!(matches!(&g[1], Range { start: 5, end: 8 }));
-        assert!(matches!(&g[2], Range { start: 8, end: 12 }));
+        assert!(matches!(&g[0], TxtSpan { start: 0, end: 5 }));
+        assert!(matches!(&g[1], TxtSpan { start: 5, end: 8 }));
+        assert!(matches!(&g[2], TxtSpan { start: 8, end: 12 }));
     }
 
     #[test]
@@ -1575,13 +1574,13 @@ mod partition {
         assert_eq!(groups.len(), 3);
         let g = &groups[0];
         assert_eq!(g.len(), 1);
-        assert!(matches!(&g[0], Range { start: 0, end: 5 }));
+        assert!(matches!(&g[0], TxtSpan { start: 0, end: 5 }));
         let g = &groups[1];
         assert_eq!(g.len(), 1);
-        assert!(matches!(&g[0], Range { start: 3, end: 6 }));
+        assert!(matches!(&g[0], TxtSpan { start: 3, end: 6 }));
         let g = &groups[2];
         assert_eq!(g.len(), 1);
-        assert!(matches!(&g[0], Range { start: 4, end: 8 }));
+        assert!(matches!(&g[0], TxtSpan { start: 4, end: 8 }));
     }
 
     #[test]
@@ -1594,11 +1593,11 @@ mod partition {
         assert_eq!(groups.len(), 2);
         let g = &groups[0];
         assert_eq!(g.len(), 2);
-        assert!(matches!(&g[0], Range { start: 0, end: 5 }));
-        assert!(matches!(&g[1], Range { start: 5, end: 8 }));
+        assert!(matches!(&g[0], TxtSpan { start: 0, end: 5 }));
+        assert!(matches!(&g[1], TxtSpan { start: 5, end: 8 }));
         let g = &groups[1];
         assert_eq!(g.len(), 1);
-        assert!(matches!(&g[0], Range { start: 3, end: 6 }));
+        assert!(matches!(&g[0], TxtSpan { start: 3, end: 6 }));
     }
 
     #[test]
@@ -1611,12 +1610,12 @@ mod partition {
         assert_eq!(groups.len(), 2);
         let g = &groups[0];
         assert_eq!(g.len(), 2);
-        assert!(matches!(&g[0], Range { start: 0, end: 5 }));
-        assert!(matches!(&g[1], Range { start: 5, end: 8 }));
+        assert!(matches!(&g[0], TxtSpan { start: 0, end: 5 }));
+        assert!(matches!(&g[1], TxtSpan { start: 5, end: 8 }));
         let g = &groups[1];
         assert_eq!(g.len(), 2);
-        assert!(matches!(&g[0], Range { start: 3, end: 6 }));
-        assert!(matches!(&g[1], Range { start: 7, end: 10 }));
+        assert!(matches!(&g[0], TxtSpan { start: 3, end: 6 }));
+        assert!(matches!(&g[1], TxtSpan { start: 7, end: 10 }));
     }
 
     #[test]
@@ -1629,10 +1628,10 @@ mod partition {
         assert_eq!(groups.len(), 2);
         let g = &groups[0];
         assert_eq!(g.len(), 1);
-        assert!(matches!(&g[0], Range { start: 0, end: 10 }));
+        assert!(matches!(&g[0], TxtSpan { start: 0, end: 10 }));
         let g = &groups[1];
         assert_eq!(g.len(), 2);
-        assert!(matches!(&g[0], Range { start: 2, end: 5 }));
-        assert!(matches!(&g[1], Range { start: 5, end: 8 }));
+        assert!(matches!(&g[0], TxtSpan { start: 2, end: 5 }));
+        assert!(matches!(&g[1], TxtSpan { start: 5, end: 8 }));
     }
 }

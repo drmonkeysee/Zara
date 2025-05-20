@@ -1,9 +1,9 @@
 use super::*;
 use crate::{
     testutil::{err_or_fail, extract_or_fail, make_textline, ok_or_fail, some_or_fail},
+    txt::TxtSpan,
     value::Value,
 };
-use std::ops::Range;
 
 mod expr {
     use super::*;
@@ -23,7 +23,7 @@ mod expr {
             f,
             ExprFlow::Continue(Some(
                 Expression {
-                ctx: ExprCtx { span: Range { start: 0, end: 3 }, txt: line },
+                ctx: ExprCtx { span: TxtSpan { start: 0, end: 3 }, txt: line },
                 kind: ExpressionKind::Literal(Value::Constant(Constant::Boolean(true))),
             })) if Rc::ptr_eq(&txt, &line)
         ));
@@ -43,7 +43,7 @@ mod expr {
             f,
             ExprFlow::Continue(Some(
                 Expression {
-                ctx: ExprCtx { span: Range { start: 0, end: 3 }, txt: line },
+                ctx: ExprCtx { span: TxtSpan { start: 0, end: 3 }, txt: line },
                 kind: ExpressionKind::Literal(Value::Constant(Constant::Number(n))),
             })) if n.as_datum().to_string() == "+1.2i" && Rc::ptr_eq(&txt, &line)
         ));
@@ -111,7 +111,7 @@ mod expr {
             f,
             ExprFlow::Break(ParseBreak::Err {
                 err: ExpressionError {
-                    ctx: ExprCtx { span: Range { start: 0, end: 3 }, txt: line },
+                    ctx: ExprCtx { span: TxtSpan { start: 0, end: 3 }, txt: line },
                     kind: ExpressionErrorKind::SeqInvalid(TokenKind::StringEnd(_)),
                 },
                 flow: ParseErrFlow::Break(ParseErrBreak::InvalidTokenStream),
@@ -133,7 +133,7 @@ mod expr {
             f,
             ExprFlow::Break(ParseBreak::Err {
                 err: ExpressionError {
-                    ctx: ExprCtx { span: Range { start: 2, end: 3 }, txt: line },
+                    ctx: ExprCtx { span: TxtSpan { start: 2, end: 3 }, txt: line },
                     kind: ExpressionErrorKind::PairUnexpected,
                 },
                 flow: ParseErrFlow::Continue(()),
@@ -206,7 +206,7 @@ mod expr {
             f,
             ExprFlow::Continue(Some(
                 Expression {
-                ctx: ExprCtx { span: Range { start: 0, end: 6 }, txt: line },
+                ctx: ExprCtx { span: TxtSpan { start: 0, end: 6 }, txt: line },
                 kind: ExpressionKind::Variable(s),
             })) if &*s == "myproc" && Rc::ptr_eq(&txt, &line)
         ));
@@ -226,7 +226,7 @@ mod expr {
             f,
             ExprFlow::Continue(Some(
                 Expression {
-                ctx: ExprCtx { span: Range { start: 0, end: 0 }, txt: line },
+                ctx: ExprCtx { span: TxtSpan { start: 0, end: 0 }, txt: line },
                 kind: ExpressionKind::Variable(s),
             })) if &*s == "" && Rc::ptr_eq(&txt, &line)
         ));
@@ -246,7 +246,7 @@ mod expr {
             f,
             ExprFlow::Continue(Some(
                 Expression {
-                ctx: ExprCtx { span: Range { start: 0, end: 6 }, txt: line },
+                ctx: ExprCtx { span: TxtSpan { start: 0, end: 6 }, txt: line },
                 kind: ExpressionKind::Literal(Value::Symbol(s)),
             })) if &*s == "foo" && Rc::ptr_eq(&txt, &line)
         ));
@@ -266,7 +266,7 @@ mod expr {
             f,
             ExprFlow::Continue(Some(
                 Expression {
-                ctx: ExprCtx { span: Range { start: 0, end: 0 }, txt: line },
+                ctx: ExprCtx { span: TxtSpan { start: 0, end: 0 }, txt: line },
                 kind: ExpressionKind::Literal(Value::Symbol(s)),
             })) if &*s == "" && Rc::ptr_eq(&txt, &line)
         ));
@@ -446,7 +446,7 @@ mod datum {
         assert!(matches!(
             expr,
             Expression {
-                ctx: ExprCtx { span: Range { start: 1, end: 3 }, txt: line },
+                ctx: ExprCtx { span: TxtSpan { start: 1, end: 3 }, txt: line },
                 kind: ExpressionKind::Literal(Value::Constant(Constant::Boolean(true)))
             } if Rc::ptr_eq(&txt, &line)
         ));
@@ -515,7 +515,7 @@ mod datum {
             f,
             ParseFlow::Break(ParseBreak::Err{
                 err: ExpressionError {
-                    ctx: ExprCtx { span: Range { start: 1, end: 2 }, txt: line },
+                    ctx: ExprCtx { span: TxtSpan { start: 1, end: 2 }, txt: line },
                     kind: ExpressionErrorKind::SeqInvalid(TokenKind::StringDiscard),
                 },
                 flow: ParseErrFlow::Break(ParseErrBreak::InvalidTokenStream),
@@ -543,7 +543,7 @@ mod datum {
             f,
             ParseFlow::Break(ParseBreak::Err{
                 err: ExpressionError {
-                    ctx: ExprCtx { span: Range { start: 0, end: 2 }, txt: line },
+                    ctx: ExprCtx { span: TxtSpan { start: 0, end: 2 }, txt: line },
                     kind: ExpressionErrorKind::DatumExpected,
                 },
                 flow: ParseErrFlow::Break(ParseErrBreak::FailedNode),
@@ -581,7 +581,7 @@ mod bytevector {
         assert!(matches!(
             expr,
             Expression {
-                ctx: ExprCtx { span: Range { start: 0, end: 3 }, txt: line },
+                ctx: ExprCtx { span: TxtSpan { start: 0, end: 3 }, txt: line },
                 kind: ExpressionKind::Literal(Value::ByteVector(_)),
             } if Rc::ptr_eq(&txt, &line)
         ));
@@ -633,7 +633,7 @@ mod bytevector {
         assert!(matches!(
             expr,
             Expression {
-                ctx: ExprCtx { span: Range { start: 0, end: 9 }, txt: line },
+                ctx: ExprCtx { span: TxtSpan { start: 0, end: 9 }, txt: line },
                 kind: ExpressionKind::Literal(Value::ByteVector(_)),
             } if Rc::ptr_eq(&txt, &line)
         ));
@@ -664,7 +664,7 @@ mod bytevector {
         assert!(matches!(
             expr,
             Expression {
-                ctx: ExprCtx { span: Range { start: 0, end: 3 }, txt: line },
+                ctx: ExprCtx { span: TxtSpan { start: 0, end: 3 }, txt: line },
                 kind: ExpressionKind::Literal(Value::ByteVector(_)),
             } if Rc::ptr_eq(&txt, &line)
         ));
@@ -716,7 +716,7 @@ mod bytevector {
         assert!(matches!(
             &errs[0],
             ExpressionError {
-                ctx: ExprCtx { span: Range { start: 3, end: 6 }, txt: line },
+                ctx: ExprCtx { span: TxtSpan { start: 3, end: 6 }, txt: line },
                 kind: ExpressionErrorKind::ByteVectorInvalidItem(ExpressionKind::Literal(Value::Symbol(s))),
             } if &**s == "foo" && Rc::ptr_eq(&txt, &line)
         ));
@@ -770,14 +770,14 @@ mod bytevector {
         assert!(matches!(
             &errs[0],
             ExpressionError {
-                ctx: ExprCtx { span: Range { start: 3, end: 6 }, txt: line },
+                ctx: ExprCtx { span: TxtSpan { start: 3, end: 6 }, txt: line },
                 kind: ExpressionErrorKind::ByteVectorInvalidItem(ExpressionKind::Variable(s)),
             } if &**s == "foo" && Rc::ptr_eq(&txt, &line)
         ));
         assert!(matches!(
             &errs[1],
             ExpressionError {
-                ctx: ExprCtx { span: Range { start: 9, end: 12 }, txt: line },
+                ctx: ExprCtx { span: TxtSpan { start: 9, end: 12 }, txt: line },
                 kind: ExpressionErrorKind::ByteVectorInvalidNumber(ByteConversionError::InvalidType(s)),
             } if s == "floating-point" && Rc::ptr_eq(&txt, &line)
         ));
@@ -835,7 +835,7 @@ mod identifier {
             f,
             ParseFlow::Break(ParseBreak::Err {
                 err: ExpressionError {
-                    ctx: ExprCtx { span: Range { start: 4, end: 5 }, txt: line },
+                    ctx: ExprCtx { span: TxtSpan { start: 4, end: 5 }, txt: line },
                     kind: ExpressionErrorKind::IdentifierInvalid(TokenKind::ParenLeft),
                 },
                 flow: ParseErrFlow::Break(ParseErrBreak::InvalidTokenStream),
@@ -864,7 +864,7 @@ mod identifier {
         assert!(matches!(
             expr,
             Expression {
-                ctx: ExprCtx { span: Range { start: 0, end: 3 }, txt: line },
+                ctx: ExprCtx { span: TxtSpan { start: 0, end: 3 }, txt: line },
                 kind: ExpressionKind::Variable(s),
             } if &*s == "foo" && Rc::ptr_eq(&txt, &line)
         ));
@@ -890,7 +890,7 @@ mod identifier {
         assert!(matches!(
             expr,
             Expression {
-                ctx: ExprCtx { span: Range { start: 0, end: 3 }, txt: line },
+                ctx: ExprCtx { span: TxtSpan { start: 0, end: 3 }, txt: line },
                 kind: ExpressionKind::Literal(Value::Symbol(s)),
             } if &*s == "foo" && Rc::ptr_eq(&txt, &line)
         ));
@@ -916,7 +916,7 @@ mod sequence {
         assert!(matches!(
             &seq[0],
             Expression {
-                ctx: ExprCtx { span: Range { start: 0, end: 3 }, txt: line },
+                ctx: ExprCtx { span: TxtSpan { start: 0, end: 3 }, txt: line },
                 kind: ExpressionKind::Literal(Value::Constant(Constant::Boolean(true))),
             } if Rc::ptr_eq(&txt, &line)
         ));
@@ -954,7 +954,7 @@ mod sequence {
         assert!(matches!(
             &seq[2],
             Expression {
-                ctx: ExprCtx { span: Range { start: 6, end: 9 }, txt: line },
+                ctx: ExprCtx { span: TxtSpan { start: 6, end: 9 }, txt: line },
                 kind: ExpressionKind::Literal(Value::Constant(Constant::Boolean(true))),
             } if Rc::ptr_eq(&txt, &line)
         ));
@@ -998,7 +998,7 @@ mod sequence {
             f,
             ParseFlow::Break(ParseBreak::Err {
                 err: ExpressionError {
-                    ctx: ExprCtx { span: Range { start: 0, end: 3 }, txt: line },
+                    ctx: ExprCtx { span: TxtSpan { start: 0, end: 3 }, txt: line },
                     kind: ExpressionErrorKind::SeqInvalid(TokenKind::StringEnd(_)),
                 },
                 flow: ParseErrFlow::Break(ParseErrBreak::InvalidTokenStream),
@@ -1150,7 +1150,7 @@ mod list {
         assert!(matches!(
             &seq[3],
             Expression {
-                ctx: ExprCtx { span: Range { start: 6, end: 7 }, txt: line },
+                ctx: ExprCtx { span: TxtSpan { start: 6, end: 7 }, txt: line },
                 kind: ExpressionKind::Literal(Value::Constant(Constant::Number(n))),
             } if n.as_datum().to_string() == "10" && Rc::ptr_eq(&txt, &line)
         ));
@@ -1196,7 +1196,7 @@ mod list {
             f,
             ParseFlow::Break(ParseBreak::Err {
                 err: ExpressionError {
-                    ctx: ExprCtx { span: Range { start: 1, end: 2 }, txt: line },
+                    ctx: ExprCtx { span: TxtSpan { start: 1, end: 2 }, txt: line },
                     kind: ExpressionErrorKind::PairIncomplete,
                 },
                 flow: ParseErrFlow::Continue(()),
@@ -1226,7 +1226,7 @@ mod list {
             f,
             ParseFlow::Break(ParseBreak::Err {
                 err: ExpressionError {
-                    ctx: ExprCtx { span: Range { start: 5, end: 6 }, txt: line },
+                    ctx: ExprCtx { span: TxtSpan { start: 5, end: 6 }, txt: line },
                     kind: ExpressionErrorKind::PairUnexpected,
                 },
                 flow: ParseErrFlow::Continue(()),
@@ -1259,7 +1259,7 @@ mod list {
         assert!(matches!(
             &seq[1],
             Expression {
-                ctx: ExprCtx { span: Range { start: 5, end: 8 }, txt: line },
+                ctx: ExprCtx { span: TxtSpan { start: 5, end: 8 }, txt: line },
                 kind: ExpressionKind::Literal(Value::Symbol(s)),
             } if &**s == "foo" && Rc::ptr_eq(&txt, &line)
         ));
@@ -1334,7 +1334,7 @@ mod list {
             f,
             ParseFlow::Break(ParseBreak::Err {
                 err: ExpressionError {
-                    ctx: ExprCtx { span: Range { start: 5, end: 6 }, txt: line },
+                    ctx: ExprCtx { span: TxtSpan { start: 5, end: 6 }, txt: line },
                     kind: ExpressionErrorKind::PairUnterminated,
                 },
                 flow: ParseErrFlow::Break(ParseErrBreak::FailedNode),
@@ -1366,7 +1366,7 @@ mod list {
             f,
             ParseFlow::Break(ParseBreak::Err {
                 err: ExpressionError {
-                    ctx: ExprCtx { span: Range { start: 5, end: 6 }, txt: line },
+                    ctx: ExprCtx { span: TxtSpan { start: 5, end: 6 }, txt: line },
                     kind: ExpressionErrorKind::PairUnterminated,
                 },
                 flow: ParseErrFlow::Continue(()),
@@ -1398,7 +1398,7 @@ mod list {
             f,
             ParseFlow::Break(ParseBreak::Err {
                 err: ExpressionError {
-                    ctx: ExprCtx { span: Range { start: 5, end: 6 }, txt: line },
+                    ctx: ExprCtx { span: TxtSpan { start: 5, end: 6 }, txt: line },
                     kind: ExpressionErrorKind::PairUnterminated,
                 },
                 flow: ParseErrFlow::Continue(()),
@@ -1444,7 +1444,7 @@ mod list {
             f,
             ParseFlow::Break(ParseBreak::Err {
                 err: ExpressionError {
-                    ctx: ExprCtx { span: Range { start: 6, end: 7 }, txt: line },
+                    ctx: ExprCtx { span: TxtSpan { start: 6, end: 7 }, txt: line },
                     kind: ExpressionErrorKind::SeqInvalid(TokenKind::StringDiscard),
                 },
                 flow: ParseErrFlow::Break(ParseErrBreak::InvalidTokenStream),
@@ -1495,7 +1495,7 @@ mod list {
         assert!(matches!(
             expr,
             Expression {
-                ctx: ExprCtx { span: Range { start: 0, end: 6 }, txt: line },
+                ctx: ExprCtx { span: TxtSpan { start: 0, end: 6 }, txt: line },
                 kind: ExpressionKind::Call { .. },
             } if Rc::ptr_eq(&txt, &line)
         ));
@@ -1505,7 +1505,7 @@ mod list {
         assert!(matches!(
             &*proc,
             Expression {
-                ctx: ExprCtx { span: Range { start: 0, end: 1 }, txt: line },
+                ctx: ExprCtx { span: TxtSpan { start: 0, end: 1 }, txt: line },
                 kind: ExpressionKind::Variable(s),
             } if &**s == "+" && Rc::ptr_eq(&txt, &line)
         ));
@@ -1513,14 +1513,14 @@ mod list {
         assert!(matches!(
             &args[0],
             Expression {
-                ctx: ExprCtx { span: Range { start: 1, end: 4 }, txt: line },
+                ctx: ExprCtx { span: TxtSpan { start: 1, end: 4 }, txt: line },
                 kind: ExpressionKind::Literal(Value::Constant(Constant::Number(n))),
             } if n.as_datum().to_string() == "4" && Rc::ptr_eq(&txt, &line)
         ));
         assert!(matches!(
             &args[1],
             Expression {
-                ctx: ExprCtx { span: Range { start: 4, end: 6 }, txt: line },
+                ctx: ExprCtx { span: TxtSpan { start: 4, end: 6 }, txt: line },
                 kind: ExpressionKind::Literal(Value::Constant(Constant::Number(n))),
             } if n.as_datum().to_string() == "5" && Rc::ptr_eq(&txt, &line)
         ));
@@ -1547,7 +1547,7 @@ mod list {
         assert!(matches!(
             &errs[0],
             ExpressionError {
-                ctx: ExprCtx { span: Range { start: 0, end: 8 }, txt: line },
+                ctx: ExprCtx { span: TxtSpan { start: 0, end: 8 }, txt: line },
                 kind: ExpressionErrorKind::ProcedureEmpty,
             } if Rc::ptr_eq(&txt, &line)
         ));
@@ -1588,7 +1588,7 @@ mod list {
         assert!(matches!(
             expr,
             Expression {
-                ctx: ExprCtx { span: Range { start: 6, end: 9 }, txt: line },
+                ctx: ExprCtx { span: TxtSpan { start: 6, end: 9 }, txt: line },
                 kind: ExpressionKind::Literal(Value::Symbol(s)),
             } if Rc::ptr_eq(&txt, &line) && &*s == "foo"
         ));
@@ -1636,7 +1636,7 @@ mod list {
         assert!(matches!(
             expr,
             Expression {
-                ctx: ExprCtx { span: Range { start: 0, end: 6 }, txt: line },
+                ctx: ExprCtx { span: TxtSpan { start: 0, end: 6 }, txt: line },
                 kind: ExpressionKind::Literal(Value::Pair(Some(_))),
             } if Rc::ptr_eq(&txt, &line)
         ));
@@ -1664,7 +1664,7 @@ mod list {
         assert!(matches!(
             expr,
             Expression {
-                ctx: ExprCtx { span: Range { start: 0, end: 2 }, txt: line },
+                ctx: ExprCtx { span: TxtSpan { start: 0, end: 2 }, txt: line },
                 kind: ExpressionKind::Literal(Value::Pair(None)),
             } if Rc::ptr_eq(&txt, &line)
         ));
@@ -1715,7 +1715,7 @@ mod list {
         assert!(matches!(
             &errs[0],
             ExpressionError {
-                ctx: ExprCtx { span: Range { start: 1, end: 2 }, txt: line },
+                ctx: ExprCtx { span: TxtSpan { start: 1, end: 2 }, txt: line },
                 kind: ExpressionErrorKind::DatumInvalid(ExpressionKind::Variable(s)),
             } if Rc::ptr_eq(&txt, &line) && &**s == "+"
         ));
@@ -1756,7 +1756,7 @@ mod list {
         assert!(matches!(
             expr,
             Expression {
-                ctx: ExprCtx { span: Range { start: 0, end: 8 }, txt: line },
+                ctx: ExprCtx { span: TxtSpan { start: 0, end: 8 }, txt: line },
                 kind: ExpressionKind::Literal(Value::Pair(Some(_))),
             } if Rc::ptr_eq(&txt, &line)
         ));
@@ -1791,7 +1791,7 @@ mod list {
         assert!(matches!(
             &errs[0],
             ExpressionError {
-                ctx: ExprCtx { span: Range { start: 0, end: 8 }, txt: line },
+                ctx: ExprCtx { span: TxtSpan { start: 0, end: 8 }, txt: line },
                 kind: ExpressionErrorKind::PairUnterminated,
             } if Rc::ptr_eq(&txt, &line)
         ));
@@ -1870,7 +1870,7 @@ mod string {
             f,
             ParseFlow::Break(ParseBreak::Err {
                 err: ExpressionError {
-                    ctx: ExprCtx { span: Range { start: 4, end: 5 }, txt: line },
+                    ctx: ExprCtx { span: TxtSpan { start: 4, end: 5 }, txt: line },
                     kind: ExpressionErrorKind::StrInvalid(TokenKind::ParenLeft),
                 },
                 flow: ParseErrFlow::Break(ParseErrBreak::InvalidTokenStream),
@@ -1896,7 +1896,7 @@ mod string {
         assert!(matches!(
             expr,
             Expression {
-                ctx: ExprCtx { span: Range { start: 0, end: 3 }, txt: line },
+                ctx: ExprCtx { span: TxtSpan { start: 0, end: 3 }, txt: line },
                 kind: ExpressionKind::Literal(Value::Constant(Constant::String(s))),
             } if &*s == "foo" && Rc::ptr_eq(&txt, &line)
         ));
@@ -1949,7 +1949,7 @@ mod comment {
             f,
             ParseFlow::Break(ParseBreak::Err {
                 err: ExpressionError {
-                    ctx: ExprCtx { span: Range { start: 0, end: 4 }, txt: line },
+                    ctx: ExprCtx { span: TxtSpan { start: 0, end: 4 }, txt: line },
                     kind: ExpressionErrorKind::CommentBlockInvalid(
                         TokenKind::CommentBlockBegin { .. }
                     ),
@@ -1973,7 +1973,7 @@ mod comment {
             f,
             ParseFlow::Break(ParseBreak::Err {
                 err: ExpressionError {
-                    ctx: ExprCtx { span: Range { start: 0, end: 1 }, txt: line },
+                    ctx: ExprCtx { span: TxtSpan { start: 0, end: 1 }, txt: line },
                     kind: ExpressionErrorKind::CommentBlockInvalid(TokenKind::ParenLeft),
                 },
                 flow: ParseErrFlow::Break(ParseErrBreak::InvalidTokenStream),
@@ -2038,7 +2038,7 @@ mod comment {
         assert!(matches!(
             &errs[0],
             ExpressionError {
-                ctx: ExprCtx { span: Range { start: 0, end: 2 }, txt },
+                ctx: ExprCtx { span: TxtSpan { start: 0, end: 2 }, txt },
                 kind: ExpressionErrorKind::DatumExpected,
             } if txt.lineno == 1
         ));
@@ -2075,7 +2075,7 @@ mod quote {
             expr,
             Expression {
                 ctx: ExprCtx {
-                    span: Range { start: 2, end: 4 },
+                    span: TxtSpan { start: 2, end: 4 },
                     txt: line,
                 },
                 kind: ExpressionKind::Literal(Value::Constant(Constant::Boolean(true))),
@@ -2110,7 +2110,7 @@ mod quote {
             expr,
             Expression {
                 ctx: ExprCtx {
-                    span: Range { start: 2, end: 5 },
+                    span: TxtSpan { start: 2, end: 5 },
                     txt: line,
                 },
                 kind: ExpressionKind::Literal(Value::Symbol(s)),
@@ -2145,7 +2145,7 @@ mod quote {
             expr,
             Expression {
                 ctx: ExprCtx {
-                    span: Range { start: 1, end: 2 },
+                    span: TxtSpan { start: 1, end: 2 },
                     txt: line,
                 },
                 kind: ExpressionKind::Literal(Value::Pair(Some(_))),
@@ -2199,7 +2199,7 @@ mod quote {
         assert!(matches!(
             &errs[0],
             ExpressionError {
-                ctx: ExprCtx { span: Range { start: 0, end: 10 }, txt },
+                ctx: ExprCtx { span: TxtSpan { start: 0, end: 10 }, txt },
                 kind: ExpressionErrorKind::DatumInvalid(ExpressionKind::Call { .. }),
             } if txt.lineno == 1
         ));
@@ -2232,7 +2232,7 @@ mod quote {
         assert!(matches!(
             &errs[0],
             ExpressionError {
-                ctx: ExprCtx { span: Range { start: 0, end: 5 }, txt },
+                ctx: ExprCtx { span: TxtSpan { start: 0, end: 5 }, txt },
                 kind: ExpressionErrorKind::DatumInvalid(ExpressionKind::Variable(s)),
             } if txt.lineno == 1 && &**s == "foo"
         ));
@@ -2259,7 +2259,7 @@ mod quote {
         assert!(matches!(
             &errs[0],
             ExpressionError {
-                ctx: ExprCtx { span: Range { start: 0, end: 2 }, txt },
+                ctx: ExprCtx { span: TxtSpan { start: 0, end: 2 }, txt },
                 kind: ExpressionErrorKind::DatumExpected,
             } if txt.lineno == 1
         ));
@@ -2288,7 +2288,7 @@ mod program {
         assert!(matches!(
             &seq[0],
             Expression {
-                ctx: ExprCtx { span: Range { start: 0, end: 3 }, txt: line },
+                ctx: ExprCtx { span: TxtSpan { start: 0, end: 3 }, txt: line },
                 kind: ExpressionKind::Literal(Value::Constant(Constant::Number(n))),
             } if n.as_datum().to_string() == "24" && Rc::ptr_eq(&txt, &line)
         ));
@@ -2347,7 +2347,7 @@ mod merge {
         assert!(matches!(
             &seq[1],
             Expression {
-                ctx: ExprCtx { span: Range { start: 0, end: 3 }, txt: line },
+                ctx: ExprCtx { span: TxtSpan { start: 0, end: 3 }, txt: line },
                 kind: ExpressionKind::Variable(s),
             } if &**s == "foo" && Rc::ptr_eq(&txt, &line)
         ));
@@ -2378,7 +2378,7 @@ mod merge {
         assert!(matches!(
             &errs[0],
             ExpressionError {
-                ctx: ExprCtx { span: Range { start: 0, end: 3 }, txt: line },
+                ctx: ExprCtx { span: TxtSpan { start: 0, end: 3 }, txt: line },
                 kind: ExpressionErrorKind::ByteVectorInvalidItem(ExpressionKind::Variable(s)),
             } if &**s == "foo" && Rc::ptr_eq(&txt, &line)
         ));
@@ -2461,7 +2461,7 @@ mod merge {
             inner,
             Expression {
                 ctx: ExprCtx {
-                    span: Range { start: 3, end: 6 },
+                    span: TxtSpan { start: 3, end: 6 },
                     txt: line
                 },
                 kind: ExpressionKind::Literal(Value::Symbol(s)),
@@ -2504,7 +2504,7 @@ mod merge {
             inner,
             Expression {
                 ctx: ExprCtx {
-                    span: Range { start: 3, end: 8 },
+                    span: TxtSpan { start: 3, end: 8 },
                     txt: line
                 },
                 kind: ExpressionKind::Literal(Value::Pair(Some(_))),
@@ -2543,7 +2543,7 @@ mod merge {
             inner,
             Expression {
                 ctx: ExprCtx {
-                    span: Range { start: 3, end: 5 },
+                    span: TxtSpan { start: 3, end: 5 },
                     txt: line
                 },
                 kind: ExpressionKind::Literal(Value::Pair(None)),
@@ -2590,7 +2590,7 @@ mod merge {
             inner,
             Expression {
                 ctx: ExprCtx {
-                    span: Range { start: 3, end: 6 },
+                    span: TxtSpan { start: 3, end: 6 },
                     txt: line
                 },
                 kind: ExpressionKind::Literal(Value::Symbol(s)),
@@ -2641,7 +2641,7 @@ mod merge {
             inner,
             Expression {
                 ctx: ExprCtx {
-                    span: Range { start: 3, end: 8 },
+                    span: TxtSpan { start: 3, end: 8 },
                     txt: line
                 },
                 kind: ExpressionKind::Literal(Value::Pair(Some(_))),
@@ -2688,7 +2688,7 @@ mod merge {
             inner,
             Expression {
                 ctx: ExprCtx {
-                    span: Range { start: 3, end: 5 },
+                    span: TxtSpan { start: 3, end: 5 },
                     txt: line
                 },
                 kind: ExpressionKind::Literal(Value::Pair(None)),
@@ -2795,7 +2795,7 @@ mod merge {
             &seq[1],
             Expression {
                 ctx: ExprCtx {
-                    span: Range { start: 3, end: 6 },
+                    span: TxtSpan { start: 3, end: 6 },
                     txt: line
                 },
                 kind: ExpressionKind::Literal(Value::Symbol(s)),
@@ -2848,7 +2848,7 @@ mod merge {
             &seq[1],
             Expression {
                 ctx: ExprCtx {
-                    span: Range { start: 3, end: 6 },
+                    span: TxtSpan { start: 3, end: 6 },
                     txt: line
                 },
                 kind: ExpressionKind::Literal(Value::Constant(Constant::String(s))),
@@ -2904,7 +2904,7 @@ mod merge {
             &seq[1],
             Expression {
                 ctx: ExprCtx {
-                    span: Range { start: 3, end: 6 },
+                    span: TxtSpan { start: 3, end: 6 },
                     txt: line
                 },
                 kind: ExpressionKind::Literal(Value::Symbol(s)),
@@ -3004,7 +3004,7 @@ mod merge {
             &errs[0],
             ExpressionError {
                 ctx: ExprCtx {
-                    span: Range { start: 0, end: 3 },
+                    span: TxtSpan { start: 0, end: 3 },
                     txt: line
                 },
                 kind: ExpressionErrorKind::PairUnterminated,
@@ -3039,7 +3039,7 @@ mod nodeutil {
         assert!(matches!(
             &err,
             ExpressionError {
-                ctx: ExprCtx { span: Range { start: 3, end: 19 }, txt },
+                ctx: ExprCtx { span: TxtSpan { start: 3, end: 19 }, txt },
                 kind: ExpressionErrorKind::StrUnterminated,
             } if txt.lineno == 1
         ));
@@ -3055,7 +3055,7 @@ mod nodeutil {
         assert!(matches!(
             &err,
             ExpressionError {
-                ctx: ExprCtx { span: Range { start: 3, end: 19 }, txt },
+                ctx: ExprCtx { span: TxtSpan { start: 3, end: 19 }, txt },
                 kind: ExpressionErrorKind::CommentBlockUnterminated,
             } if txt.lineno == 1
         ));
@@ -3071,7 +3071,7 @@ mod nodeutil {
         assert!(matches!(
             &err,
             ExpressionError {
-                ctx: ExprCtx { span: Range { start: 3, end: 19 }, txt },
+                ctx: ExprCtx { span: TxtSpan { start: 3, end: 19 }, txt },
                 kind: ExpressionErrorKind::DatumExpected,
             } if txt.lineno == 1
         ));
@@ -3094,7 +3094,7 @@ mod nodeutil {
         assert!(matches!(
             &err,
             ExpressionError {
-                ctx: ExprCtx { span: Range { start: 3, end: 19 }, txt },
+                ctx: ExprCtx { span: TxtSpan { start: 3, end: 19 }, txt },
                 kind: ExpressionErrorKind::IdentifierUnterminated,
             } if txt.lineno == 1
         ));
@@ -3140,7 +3140,7 @@ mod nodeutil {
         assert!(matches!(
             &err,
             ExpressionError {
-                ctx: ExprCtx { span: Range { start: 3, end: 19 }, txt },
+                ctx: ExprCtx { span: TxtSpan { start: 3, end: 19 }, txt },
                 kind: ExpressionErrorKind::ListUnterminated,
             } if txt.lineno == 1
         ));
@@ -3163,7 +3163,7 @@ mod nodeutil {
         assert!(matches!(
             &err,
             ExpressionError {
-                ctx: ExprCtx { span: Range { start: 3, end: 19 }, txt },
+                ctx: ExprCtx { span: TxtSpan { start: 3, end: 19 }, txt },
                 kind: ExpressionErrorKind::DatumExpected,
             } if txt.lineno == 1
         ));
@@ -3185,7 +3185,7 @@ mod nodeutil {
             exp,
             ExprNode {
                 ctx: ExprCtx {
-                    span: Range { start: 3, end: 8 },
+                    span: TxtSpan { start: 3, end: 8 },
                     txt: line
                 },
                 mode: ParseMode::StringLiteral(s)
@@ -3209,7 +3209,7 @@ mod nodeutil {
             exp,
             ExprNode {
                 ctx: ExprCtx {
-                    span: Range { start: 3, end: 19 },
+                    span: TxtSpan { start: 3, end: 19 },
                     txt: line
                 },
                 mode: ParseMode::StringLiteral(s)
