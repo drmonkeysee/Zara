@@ -12,7 +12,9 @@ use crate::{lex::TokenLine, txt::TextLine, value::Value};
 use std::{
     error::Error,
     fmt::{self, Display, Formatter, Write},
+    iter::FilterMap,
     mem,
+    ops::Range,
     rc::Rc,
 };
 
@@ -269,35 +271,74 @@ impl Display for SyntaxErrorLineMessage<'_> {
             return Ok(());
         }
 
-        let mut cursor = 0;
-        f.write_char('\t')?;
-        for span in errs
+        for group in errs
             .iter()
             .filter_map(|err| (!err.ctx.span.is_empty()).then_some(&err.ctx.span))
+            .partition_overlap()
         {
-            let mut newline = "";
-            let start = match span.start.checked_sub(cursor) {
-                None => {
-                    newline = "\n\t";
-                    span.start
-                }
-                Some(start) => start,
-            };
-            write!(
-                f,
-                "{newline}{0:>1$}{2:^<3$}",
-                "^",
-                start + 1,
-                "",
-                span.len() - 1,
-            )?;
-            cursor = span.end;
+            let mut cursor = 0;
+            f.write_char('\t')?;
+            for span in group {
+                write!(
+                    f,
+                    "{0:>1$}{2:^<3$}",
+                    "^",
+                    span.start + 1 - cursor,
+                    "",
+                    span.len() - 1,
+                )?;
+                cursor = span.end;
+            }
+            f.write_char('\n')?;
         }
-        f.write_char('\n')?;
         for err in errs {
             writeln!(f, "{}: {err}", err.ctx.span.start + 1)?;
         }
         Ok(())
+    }
+}
+
+struct PartitionByOverlap<'a> {
+    groups: <Vec<Vec<&'a Range<usize>>> as IntoIterator>::IntoIter,
+}
+
+impl<'a> PartitionByOverlap<'a> {
+    fn new<I: IntoIterator<Item = &'a Range<usize>>>(iter: I) -> Self {
+        let mut groups = Vec::<Vec<&'a Range<usize>>>::new();
+        for span in iter {
+            match groups
+                .iter_mut()
+                .find(|g| g.last().is_none_or(|last| span.start >= last.end))
+            {
+                None => groups.push(vec![span]),
+                Some(g) => g.push(span),
+            }
+        }
+        Self {
+            groups: groups.into_iter(),
+        }
+    }
+}
+
+impl<'a> Iterator for PartitionByOverlap<'a> {
+    type Item = Vec<&'a Range<usize>>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.groups.next()
+    }
+}
+
+trait FilterMapExt<'a> {
+    fn partition_overlap(self) -> PartitionByOverlap<'a>;
+}
+
+impl<'a, I, F> FilterMapExt<'a> for FilterMap<I, F>
+where
+    I: Iterator<Item = &'a &'a ExpressionError>,
+    F: FnMut(&'a &'a ExpressionError) -> Option<&'a Range<usize>>,
+{
+    fn partition_overlap(self) -> PartitionByOverlap<'a> {
+        PartitionByOverlap::new(self)
     }
 }
 

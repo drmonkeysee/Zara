@@ -1508,3 +1508,131 @@ mod errors {
         ));
     }
 }
+
+mod partition {
+    use super::*;
+
+    #[test]
+    fn empty() {
+        let spans = [];
+        let p = PartitionByOverlap::new(spans);
+
+        let groups = p.into_iter().collect::<Vec<_>>();
+
+        assert!(groups.is_empty());
+    }
+
+    #[test]
+    fn one_span() {
+        let spans = [0..5];
+        let p = PartitionByOverlap::new(spans.iter());
+
+        let groups = p.into_iter().collect::<Vec<_>>();
+
+        assert_eq!(groups.len(), 1);
+        let g = &groups[0];
+        assert_eq!(g.len(), 1);
+        assert!(matches!(&g[0], Range { start: 0, end: 5 }));
+    }
+
+    #[test]
+    fn no_overlap() {
+        let spans = [0..5, 6..9, 9..13];
+        let p = PartitionByOverlap::new(spans.iter());
+
+        let groups = p.into_iter().collect::<Vec<_>>();
+
+        assert_eq!(groups.len(), 1);
+        let g = &groups[0];
+        assert_eq!(g.len(), 3);
+        assert!(matches!(&g[0], Range { start: 0, end: 5 }));
+        assert!(matches!(&g[1], Range { start: 6, end: 9 }));
+        assert!(matches!(&g[2], Range { start: 9, end: 13 }));
+    }
+
+    #[test]
+    fn contiguous() {
+        let spans = [0..5, 5..8, 8..12];
+        let p = PartitionByOverlap::new(spans.iter());
+
+        let groups = p.into_iter().collect::<Vec<_>>();
+
+        assert_eq!(groups.len(), 1);
+        let g = &groups[0];
+        assert_eq!(g.len(), 3);
+        assert!(matches!(&g[0], Range { start: 0, end: 5 }));
+        assert!(matches!(&g[1], Range { start: 5, end: 8 }));
+        assert!(matches!(&g[2], Range { start: 8, end: 12 }));
+    }
+
+    #[test]
+    fn stacked() {
+        let spans = [0..5, 3..6, 4..8];
+        let p = PartitionByOverlap::new(spans.iter());
+
+        let groups = p.into_iter().collect::<Vec<_>>();
+
+        assert_eq!(groups.len(), 3);
+        let g = &groups[0];
+        assert_eq!(g.len(), 1);
+        assert!(matches!(&g[0], Range { start: 0, end: 5 }));
+        let g = &groups[1];
+        assert_eq!(g.len(), 1);
+        assert!(matches!(&g[0], Range { start: 3, end: 6 }));
+        let g = &groups[2];
+        assert_eq!(g.len(), 1);
+        assert!(matches!(&g[0], Range { start: 4, end: 8 }));
+    }
+
+    #[test]
+    fn middle_overlap() {
+        let spans = [0..5, 3..6, 5..8];
+        let p = PartitionByOverlap::new(spans.iter());
+
+        let groups = p.into_iter().collect::<Vec<_>>();
+
+        assert_eq!(groups.len(), 2);
+        let g = &groups[0];
+        assert_eq!(g.len(), 2);
+        assert!(matches!(&g[0], Range { start: 0, end: 5 }));
+        assert!(matches!(&g[1], Range { start: 5, end: 8 }));
+        let g = &groups[1];
+        assert_eq!(g.len(), 1);
+        assert!(matches!(&g[0], Range { start: 3, end: 6 }));
+    }
+
+    #[test]
+    fn zig_zag() {
+        let spans = [0..5, 3..6, 5..8, 7..10];
+        let p = PartitionByOverlap::new(spans.iter());
+
+        let groups = p.into_iter().collect::<Vec<_>>();
+
+        assert_eq!(groups.len(), 2);
+        let g = &groups[0];
+        assert_eq!(g.len(), 2);
+        assert!(matches!(&g[0], Range { start: 0, end: 5 }));
+        assert!(matches!(&g[1], Range { start: 5, end: 8 }));
+        let g = &groups[1];
+        assert_eq!(g.len(), 2);
+        assert!(matches!(&g[0], Range { start: 3, end: 6 }));
+        assert!(matches!(&g[1], Range { start: 7, end: 10 }));
+    }
+
+    #[test]
+    fn contained() {
+        let spans = [0..10, 2..5, 5..8];
+        let p = PartitionByOverlap::new(spans.iter());
+
+        let groups = p.into_iter().collect::<Vec<_>>();
+
+        assert_eq!(groups.len(), 2);
+        let g = &groups[0];
+        assert_eq!(g.len(), 1);
+        assert!(matches!(&g[0], Range { start: 0, end: 10 }));
+        let g = &groups[1];
+        assert_eq!(g.len(), 2);
+        assert!(matches!(&g[0], Range { start: 2, end: 5 }));
+        assert!(matches!(&g[1], Range { start: 5, end: 8 }));
+    }
+}
