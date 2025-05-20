@@ -203,13 +203,13 @@ impl<'a, I: Iterator<Item = &'a ExpressionError>> Iterator for GroupBy<Peekable<
     }
 }
 
-pub(super) trait PeekableExt<I: Iterator> {
+pub(super) trait PeekableExt {
     fn groupby_txt(self) -> GroupBy<Self>
     where
         Self: Sized;
 }
 
-impl<'a, I: Iterator<Item = &'a ExpressionError>> PeekableExt<I> for Peekable<I> {
+impl<'a, I: Iterator<Item = &'a ExpressionError>> PeekableExt for Peekable<I> {
     fn groupby_txt(self) -> GroupBy<Self> {
         GroupBy { peek: self }
     }
