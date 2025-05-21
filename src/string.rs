@@ -68,14 +68,14 @@ enum DisplayableChar {
 }
 
 struct SymbolConverter<'a> {
-    label: &'a str,
+    name: &'a str,
     verbatim: Cell<bool>,
 }
 
 impl<'a> SymbolConverter<'a> {
-    fn new(label: &'a str) -> Self {
+    fn new(name: &'a str) -> Self {
         Self {
-            label,
+            name,
             verbatim: false.into(),
         }
     }
@@ -87,7 +87,7 @@ impl<'a> SymbolConverter<'a> {
 
 impl Display for SymbolConverter<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        let mut chars = self.label.chars();
+        let mut chars = self.name.chars();
         match chars.next() {
             None => self.verbatim.set(true), // NOTE: empty string
             Some(ch) => {

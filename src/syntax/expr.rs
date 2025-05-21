@@ -72,17 +72,17 @@ impl Expression {
         }
     }
 
-    pub(super) fn symbol(lbl: impl Into<Box<str>>, ctx: ExprCtx) -> Self {
+    pub(super) fn symbol(name: impl Into<Box<str>>, ctx: ExprCtx) -> Self {
         Self {
             ctx,
-            kind: ExpressionKind::Literal(Value::Symbol(lbl.into())),
+            kind: ExpressionKind::Literal(Value::Symbol(name.into())),
         }
     }
 
-    pub(super) fn variable(lbl: impl Into<Box<str>>, ctx: ExprCtx) -> Self {
+    pub(super) fn variable(name: impl Into<Box<str>>, ctx: ExprCtx) -> Self {
         Self {
             ctx,
-            kind: ExpressionKind::Variable(lbl.into()),
+            kind: ExpressionKind::Variable(name.into()),
         }
     }
 

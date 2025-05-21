@@ -286,10 +286,10 @@ mod expr {
             f,
             ExprFlow::Break(ParseBreak::New(
                 ParseNew {
-                    mode: ParseMode::Identifier { label, quoted: false },
+                    mode: ParseMode::Identifier { name, quoted: false },
                     start: 3
                 }
-            )) if label == "start\n"
+            )) if name == "start\n"
         ));
     }
 
@@ -307,10 +307,10 @@ mod expr {
             f,
             ExprFlow::Break(ParseBreak::New(
                 ParseNew {
-                    mode: ParseMode::Identifier { label, quoted: true },
+                    mode: ParseMode::Identifier { name, quoted: true },
                     start: 3
                 }
-            )) if label == "start\n"
+            )) if name == "start\n"
         ));
     }
 
@@ -1111,7 +1111,7 @@ mod identifier {
                 txt: Rc::clone(&txt),
             },
             mode: ParseMode::Identifier {
-                label: "foo".to_owned(),
+                name: "foo".to_owned(),
                 quoted: false,
             },
         };
@@ -1137,7 +1137,7 @@ mod identifier {
                 txt: Rc::clone(&txt),
             },
             mode: ParseMode::Identifier {
-                label: "foo".to_owned(),
+                name: "foo".to_owned(),
                 quoted: true,
             },
         };
@@ -2592,7 +2592,7 @@ mod merge {
                 txt: Rc::clone(&txt),
             },
             mode: ParseMode::Identifier {
-                label: "foo".to_owned(),
+                name: "foo".to_owned(),
                 quoted: false,
             },
         };
@@ -2651,7 +2651,7 @@ mod merge {
                 txt: make_textline().into(),
             },
             mode: ParseMode::Identifier {
-                label: "foo".to_owned(),
+                name: "foo".to_owned(),
                 quoted: false,
             },
         };
@@ -2677,7 +2677,7 @@ mod merge {
                 txt: Rc::clone(&txt),
             },
             mode: ParseMode::Identifier {
-                label: "foo".to_owned(),
+                name: "foo".to_owned(),
                 quoted: false,
             },
         };
@@ -2706,7 +2706,7 @@ mod merge {
                 txt: Rc::clone(&txt),
             },
             mode: ParseMode::Identifier {
-                label: "foo".to_owned(),
+                name: "foo".to_owned(),
                 quoted: true,
             },
         };
@@ -2830,7 +2830,7 @@ mod merge {
                 txt: Rc::clone(&txt),
             },
             mode: ParseMode::Identifier {
-                label: "foo".to_owned(),
+                name: "foo".to_owned(),
                 quoted: true,
             },
         };
@@ -2965,7 +2965,7 @@ mod merge {
                 txt: Rc::clone(&txt),
             },
             mode: ParseMode::Identifier {
-                label: "bar".to_owned(),
+                name: "bar".to_owned(),
                 quoted: false,
             },
         };
@@ -2975,7 +2975,7 @@ mod merge {
                 txt: Rc::clone(&txt),
             },
             mode: ParseMode::Identifier {
-                label: "foo".to_owned(),
+                name: "foo".to_owned(),
                 quoted: false,
             },
         };
@@ -3004,7 +3004,7 @@ mod merge {
                 txt: Rc::clone(&txt),
             },
             mode: ParseMode::Identifier {
-                label: "foo".to_owned(),
+                name: "foo".to_owned(),
                 quoted: false,
             },
         };
@@ -3039,7 +3039,7 @@ mod merge {
                 txt: Rc::clone(&txt),
             },
             mode: ParseMode::Identifier {
-                label: "foo".to_owned(),
+                name: "foo".to_owned(),
                 quoted: true,
             },
         };
@@ -3083,7 +3083,7 @@ mod merge {
                 txt: Rc::clone(&txt),
             },
             mode: ParseMode::Identifier {
-                label: "foo".to_owned(),
+                name: "foo".to_owned(),
                 quoted: true,
             },
         };
@@ -3183,7 +3183,7 @@ mod merge {
                 txt: Rc::clone(&txt),
             },
             mode: ParseMode::Identifier {
-                label: "foo".to_owned(),
+                name: "foo".to_owned(),
                 quoted: true,
             },
         };
@@ -3293,7 +3293,7 @@ mod merge {
                 txt: Rc::clone(&txt),
             },
             mode: ParseMode::Identifier {
-                label: "foo".to_owned(),
+                name: "foo".to_owned(),
                 quoted: true,
             },
         };
@@ -3399,7 +3399,7 @@ mod nodeutil {
     fn identifier_continuation() {
         let p = ParseNode::new(
             ParseMode::Identifier {
-                label: "myproc".to_owned(),
+                name: "myproc".to_owned(),
                 quoted: false,
             },
             3,

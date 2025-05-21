@@ -114,7 +114,7 @@ impl ExprNode {
             ParseMode::CommentDatum(inner) | ParseMode::Quote { inner, .. } => {
                 parse_datum(inner, token, txt, &self.ctx)
             }
-            ParseMode::Identifier { label, .. } => parse_verbatim_identifier(label, token, txt),
+            ParseMode::Identifier { name, .. } => parse_verbatim_identifier(name, token, txt),
             ParseMode::List { form, seq } => form.parse_list(seq, token, txt),
             ParseMode::StringLiteral(buf) => parse_str(buf, token, txt),
         }
@@ -165,8 +165,8 @@ impl TryFrom<ExprNode> for Option<Expression> {
             ParseMode::ByteVector(seq) => into_bytevector(seq, value.ctx),
             ParseMode::CommentBlock => Ok(None),
             ParseMode::CommentDatum(inner) => into_comment_datum(inner.as_ref(), value.ctx),
-            ParseMode::Identifier { label, quoted } => {
-                Ok(Some(label_to_expr(label, quoted, value.ctx)))
+            ParseMode::Identifier { name, quoted } => {
+                Ok(Some(identifier_to_expr(name, quoted, value.ctx)))
             }
             ParseMode::List { form, seq } => into_syntactic_form(form, seq, value.ctx),
             ParseMode::Quote { inner, quoted } => into_datum(inner, value.ctx, quoted),
@@ -369,9 +369,9 @@ impl SyntacticForm {
                 _ => (),
             };
             if !quoted && seq.is_empty() {
-                if let ExpressionKind::Variable(lbl) = &expr.kind {
+                if let ExpressionKind::Variable(name) = &expr.kind {
                     // TODO: check for shadowed keywords here
-                    if let Some(f) = Self::from_str(lbl) {
+                    if let Some(f) = Self::from_str(name) {
                         *self = f
                     }
                 }
@@ -388,7 +388,7 @@ enum ParseMode {
     CommentBlock,
     CommentDatum(Option<Expression>),
     Identifier {
-        label: String,
+        name: String,
         quoted: bool,
     },
     List {
@@ -404,9 +404,9 @@ enum ParseMode {
 }
 
 impl ParseMode {
-    fn identifier(mut label: String, quoted: bool) -> Self {
-        label.push('\n');
-        Self::Identifier { label, quoted }
+    fn identifier(mut name: String, quoted: bool) -> Self {
+        name.push('\n');
+        Self::Identifier { name, quoted }
     }
 
     fn string(mut s: String, newline: bool) -> Self {
@@ -490,7 +490,7 @@ fn parse_expr(token: Token, txt: &Rc<TextLine>, quoted: bool) -> ExprFlow {
                 txt: Rc::clone(txt),
             },
         ))),
-        TokenKind::Identifier(s) => ExprFlow::Continue(Some(label_to_expr(
+        TokenKind::Identifier(s) => ExprFlow::Continue(Some(identifier_to_expr(
             s,
             quoted,
             ExprCtx {
@@ -749,11 +749,11 @@ fn into_valid_sequence<T>(
     }
 }
 
-fn label_to_expr(label: String, quoted: bool, ctx: ExprCtx) -> Expression {
+fn identifier_to_expr(name: String, quoted: bool, ctx: ExprCtx) -> Expression {
     if quoted {
-        Expression::symbol(label, ctx)
+        Expression::symbol(name, ctx)
     } else {
-        Expression::variable(label, ctx)
+        Expression::variable(name, ctx)
     }
 }
 
