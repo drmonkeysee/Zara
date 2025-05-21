@@ -173,7 +173,7 @@ impl Display for ExpressionErrorKind {
             Self::IdentifierUnterminated => f.write_str("unterminated verbatim identifier"),
             Self::ListUnterminated => f.write_str("unterminated list expression"),
             Self::PairIncomplete => f.write_str("missing first pair expression"),
-            Self::PairUnexpected => f.write_str("unexpected pair syntax in syntactic form"),
+            Self::PairUnexpected => f.write_str("unexpected pair syntax"),
             Self::PairUnterminated => f.write_str("unterminated pair expression"),
             Self::ProcedureEmpty => f.write_str("empty procedure call"),
             Self::SeqInvalid(t) => format_unexpected_token("sequence", t, f),
@@ -517,7 +517,7 @@ mod tests {
             }
             .into_error(ExpressionErrorKind::PairUnexpected);
 
-            assert_eq!(err.to_string(), "unexpected pair syntax in syntactic form");
+            assert_eq!(err.to_string(), "unexpected pair syntax");
         }
 
         #[test]

@@ -109,9 +109,7 @@ pub(super) struct ExprNode {
 impl ExprNode {
     fn parse(&mut self, token: Token, txt: &Rc<TextLine>) -> ParseFlow {
         match &mut self.mode {
-            ParseMode::ByteVector(seq) | ParseMode::Vector(seq) => {
-                SyntacticForm::Datum.parse_list(seq, token, txt)
-            }
+            ParseMode::ByteVector(seq) | ParseMode::Vector(seq) => parse_vector(seq, token, txt),
             ParseMode::CommentBlock => parse_comment_block(token, txt),
             ParseMode::CommentDatum(inner) | ParseMode::Quote { inner, .. } => {
                 parse_datum(inner, token, txt, &self.ctx)
@@ -559,6 +557,18 @@ fn parse_expr(token: Token, txt: &Rc<TextLine>, quoted: bool) -> ExprFlow {
             }
             .into_error(ExpressionErrorKind::Unimplemented(token.kind)),
         )),
+    }
+}
+
+fn parse_vector(seq: &mut Vec<Expression>, token: Token, txt: &Rc<TextLine>) -> ParseFlow {
+    match token.kind {
+        TokenKind::ParenRight => ParseFlow::Break(ParseBreak::complete(txt.lineno, token.span.end)),
+        _ => {
+            if let Some(expr) = parse_expr(token, txt, true)? {
+                seq.push(expr);
+            }
+            ParseFlow::Continue(())
+        }
     }
 }
 

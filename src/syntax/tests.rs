@@ -1265,6 +1265,62 @@ mod parsing {
         assert!(et.parsers.is_empty());
         assert!(et.errs.is_empty());
     }
+
+    #[test]
+    fn bytevector_with_pair_joiner() {
+        let mut et = ExpressionTree::default();
+        // NOTE: #(a . b) -> err (pair not allowed)
+        let tokens = [make_tokenline([
+            TokenKind::ByteVector,
+            TokenKind::Constant(Constant::Number(Number::real(11))),
+            TokenKind::PairJoiner,
+            TokenKind::Constant(Constant::Number(Number::real(13))),
+            TokenKind::ParenRight,
+        ])];
+
+        let r = et.parse(tokens.into());
+
+        let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
+        assert_eq!(errs.len(), 1);
+        assert!(matches!(
+            &errs[0],
+            ExpressionError {
+                ctx: ExprCtx { span: TxtSpan { start: 2, end: 3 }, txt },
+                kind: ExpressionErrorKind::PairUnexpected,
+            } if txt.lineno == 1
+        ));
+
+        assert!(et.parsers.is_empty());
+        assert!(et.errs.is_empty());
+    }
+
+    #[test]
+    fn vector_with_pair_joiner() {
+        let mut et = ExpressionTree::default();
+        // NOTE: #(a . b) -> err (pair not allowed)
+        let tokens = [make_tokenline([
+            TokenKind::Vector,
+            TokenKind::Identifier("a".to_owned()),
+            TokenKind::PairJoiner,
+            TokenKind::Identifier("b".to_owned()),
+            TokenKind::ParenRight,
+        ])];
+
+        let r = et.parse(tokens.into());
+
+        let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
+        assert_eq!(errs.len(), 1);
+        assert!(matches!(
+            &errs[0],
+            ExpressionError {
+                ctx: ExprCtx { span: TxtSpan { start: 2, end: 3 }, txt },
+                kind: ExpressionErrorKind::PairUnexpected,
+            } if txt.lineno == 1
+        ));
+
+        assert!(et.parsers.is_empty());
+        assert!(et.errs.is_empty());
+    }
 }
 
 mod continuation {
