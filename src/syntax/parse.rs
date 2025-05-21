@@ -318,7 +318,7 @@ impl SyntacticForm {
 
     fn dotted_pair(
         &mut self,
-        seq: &mut Vec<Expression>,
+        seq: &mut [Expression],
         token: Token,
         txt: &Rc<TextLine>,
     ) -> ParseFlow {
@@ -368,12 +368,12 @@ impl SyntacticForm {
                 }
                 Self::PairOpen => *self = Self::PairClosed,
                 _ => (),
-            };
+            }
             if !quoted && seq.is_empty() {
                 if let ExpressionKind::Variable(name) = &expr.kind {
                     // TODO: check for shadowed keywords here
                     if let Some(f) = Self::from_str(name) {
-                        *self = f
+                        *self = f;
                     }
                 }
             }
@@ -559,14 +559,13 @@ fn parse_expr(token: Token, txt: &Rc<TextLine>, quoted: bool) -> ExprFlow {
 }
 
 fn parse_vector(seq: &mut Vec<Expression>, token: Token, txt: &Rc<TextLine>) -> ParseFlow {
-    match token.kind {
-        TokenKind::ParenRight => ParseFlow::Break(ParseBreak::complete(txt.lineno, token.span.end)),
-        _ => {
-            if let Some(expr) = parse_expr(token, txt, true)? {
-                seq.push(expr);
-            }
-            ParseFlow::Continue(())
+    if let TokenKind::ParenRight = token.kind {
+        ParseFlow::Break(ParseBreak::complete(txt.lineno, token.span.end))
+    } else {
+        if let Some(expr) = parse_expr(token, txt, true)? {
+            seq.push(expr);
         }
+        ParseFlow::Continue(())
     }
 }
 
@@ -664,24 +663,25 @@ fn into_comment_datum(inner: Option<&Expression>, ctx: ExprCtx) -> ExprConvertRe
 fn into_datum(inner: Option<Expression>, ctx: ExprCtx, quoted: bool) -> ExprConvertResult {
     match inner {
         None => Err(vec![ctx.into_error(ExpressionErrorKind::DatumExpected)]),
-        Some(expr) => match expr.kind {
-            ExpressionKind::Literal(val) => Ok(Some(if quoted {
-                ctx.into_expr(ExpressionKind::Literal(zlist![
-                    Value::Symbol(LONGFORM_QUOTE.into()),
-                    val
-                ]))
+        Some(expr) => {
+            if let ExpressionKind::Literal(val) = expr.kind {
+                Ok(Some(if quoted {
+                    ctx.into_expr(ExpressionKind::Literal(zlist![
+                        Value::Symbol(LONGFORM_QUOTE.into()),
+                        val
+                    ]))
+                } else {
+                    // TODO: can i remove this redundant ctor somehow (it recreates expr)
+                    expr.ctx.into_expr(ExpressionKind::Literal(val))
+                }))
             } else {
-                // TODO: can i remove this redundant ctor somehow (it recreates expr)
-                expr.ctx.into_expr(ExpressionKind::Literal(val))
-            })),
-            _ => {
                 let mut expr_ctx = expr.ctx;
                 expr_ctx.span.start = ctx.span.start;
                 Err(vec![
                     expr_ctx.into_error(ExpressionErrorKind::DatumInvalid(expr.kind)),
                 ])
             }
-        },
+        }
     }
 }
 

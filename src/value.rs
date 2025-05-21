@@ -87,6 +87,7 @@ pub(crate) struct Pair {
 }
 
 impl Pair {
+    #[allow(clippy::similar_names, reason = "lisp terms-of-art")]
     pub(crate) fn cons(car: Value, cdr: impl Into<Rc<Value>>) -> Self {
         Self {
             car,
