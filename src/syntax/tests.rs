@@ -368,6 +368,36 @@ mod parsing {
     }
 
     #[test]
+    fn vector_with_otherwise_invalid_syntax() {
+        let mut et = ExpressionTree::default();
+        // NOTE: #(if 5) -> #(if 5)
+        let tokens = [make_tokenline([
+            TokenKind::Vector,
+            TokenKind::Identifier("if".to_owned()),
+            TokenKind::Constant(Constant::Number(Number::real(5))),
+            TokenKind::ParenRight,
+        ])];
+
+        let r = et.parse(tokens.into());
+
+        let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
+        let seq = prg.unwrap();
+        assert_eq!(seq.len(), 1);
+        assert!(matches!(
+            &seq[0],
+            Expression {
+                ctx: ExprCtx { span: TxtSpan { start: 0, end: 4 }, txt },
+                kind: ExpressionKind::Literal(Value::Vector(_)),
+            } if txt.lineno == 1
+        ));
+        let value = extract_or_fail!(&seq[0].kind, ExpressionKind::Literal);
+        assert_eq!(value.as_datum().to_string(), "#(if 5)");
+
+        assert!(et.parsers.is_empty());
+        assert!(et.errs.is_empty());
+    }
+
+    #[test]
     fn standard_list() {
         let mut et = ExpressionTree::default();
         let tokens = [make_tokenline([
