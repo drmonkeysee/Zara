@@ -28,6 +28,7 @@ pub(crate) enum Value {
     // TODO: figure out symbol table
     Symbol(Box<str>),
     TokenList(Box<[TokenLine]>),
+    // TODO: vector needs ref-cells for item equivalence and self-referencing
     Vector(Box<[Value]>),
 }
 
