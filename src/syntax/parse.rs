@@ -109,7 +109,9 @@ pub(super) struct ExprNode {
 impl ExprNode {
     fn parse(&mut self, token: Token, txt: &Rc<TextLine>) -> ParseFlow {
         match &mut self.mode {
-            ParseMode::ByteVector(seq) => SyntacticForm::Datum.parse_list(seq, token, txt),
+            ParseMode::ByteVector(seq) | ParseMode::Vector(seq) => {
+                SyntacticForm::Datum.parse_list(seq, token, txt)
+            }
             ParseMode::CommentBlock => parse_comment_block(token, txt),
             ParseMode::CommentDatum(inner) | ParseMode::Quote { inner, .. } => {
                 parse_datum(inner, token, txt, &self.ctx)
@@ -122,7 +124,7 @@ impl ExprNode {
 
     fn merge(&mut self, other: Self) -> MergeResult {
         match &mut self.mode {
-            ParseMode::ByteVector(seq) => other.merge_into(|expr| {
+            ParseMode::ByteVector(seq) | ParseMode::Vector(seq) => other.merge_into(|expr| {
                 seq.push(expr);
                 MergeFlow::Continue(())
             }),
@@ -147,6 +149,7 @@ impl ExprNode {
             ParseMode::Identifier { .. } => ExpressionErrorKind::IdentifierUnterminated,
             ParseMode::List { .. } => ExpressionErrorKind::ListUnterminated,
             ParseMode::StringLiteral(_) => ExpressionErrorKind::StrUnterminated,
+            ParseMode::Vector(_) => ExpressionErrorKind::VectorUnterminated,
         })
     }
 
@@ -173,6 +176,7 @@ impl TryFrom<ExprNode> for Option<Expression> {
                 Constant::String(s.into()),
                 value.ctx,
             ))),
+            ParseMode::Vector(seq) => into_vector(seq, value.ctx),
         }
     }
 }
@@ -399,6 +403,7 @@ enum ParseMode {
         quoted: bool,
     },
     StringLiteral(String),
+    Vector(Vec<Expression>),
 }
 
 impl ParseMode {
@@ -526,6 +531,10 @@ fn parse_expr(token: Token, txt: &Rc<TextLine>, quoted: bool) -> ExprFlow {
             ParseMode::string(s, !line_cont),
             token.span.start,
         )),
+        TokenKind::Vector => ExprFlow::Break(ParseBreak::new(
+            ParseMode::Vector(Vec::new()),
+            token.span.start,
+        )),
         // TODO: this should reduce to _ => once Unimplemented is removed
         TokenKind::CommentBlockFragment { .. }
         | TokenKind::CommentBlockEnd
@@ -618,6 +627,20 @@ fn into_bytevector(seq: Vec<Expression>, ctx: ExprCtx) -> ExprConvertResult {
                 .into_error(ExpressionErrorKind::ByteVectorInvalidItem(expr.kind))),
         },
         |items| ExpressionKind::Literal(Value::ByteVector(items)),
+    )
+}
+
+fn into_vector(seq: Vec<Expression>, ctx: ExprCtx) -> ExprConvertResult {
+    into_valid_sequence(
+        seq,
+        ctx,
+        |expr| match expr.kind {
+            ExpressionKind::Literal(v) => Ok(v),
+            _ => Err(expr
+                .ctx
+                .into_error(ExpressionErrorKind::VectorInvalidItem(expr.kind))),
+        },
+        |items| ExpressionKind::Literal(Value::Vector(items)),
     )
 }
 

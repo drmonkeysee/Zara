@@ -153,6 +153,8 @@ pub(super) enum ExpressionErrorKind {
     StrInvalid(TokenKind),
     StrUnterminated,
     Unimplemented(TokenKind),
+    VectorInvalidItem(ExpressionKind),
+    VectorUnterminated,
 }
 
 impl Display for ExpressionErrorKind {
@@ -179,6 +181,10 @@ impl Display for ExpressionErrorKind {
             Self::StrInvalid(t) => format_unexpected_token("string", t, f),
             Self::StrUnterminated => f.write_str("unterminated string constant"),
             Self::Unimplemented(t) => write!(f, "{t} parsing not yet implemented"),
+            Self::VectorInvalidItem(k) => {
+                write!(f, "unexpected vector item type: {}", k.as_typename())
+            }
+            Self::VectorUnterminated => f.write_str("unterminated vector"),
         }
     }
 }
@@ -395,6 +401,30 @@ mod tests {
             .into_error(ExpressionErrorKind::CommentBlockUnterminated);
 
             assert_eq!(err.to_string(), "unterminated block comment");
+        }
+
+        #[test]
+        fn display_invalid_vector_item() {
+            let err = ExprCtx {
+                span: 0..5,
+                txt: make_textline().into(),
+            }
+            .into_error(ExpressionErrorKind::VectorInvalidItem(
+                ExpressionKind::Variable("foobar".into()),
+            ));
+
+            assert_eq!(err.to_string(), "unexpected vector item type: variable");
+        }
+
+        #[test]
+        fn display_unterminated_vector() {
+            let err = ExprCtx {
+                span: 0..5,
+                txt: make_textline().into(),
+            }
+            .into_error(ExpressionErrorKind::VectorUnterminated);
+
+            assert_eq!(err.to_string(), "unterminated vector");
         }
 
         #[test]

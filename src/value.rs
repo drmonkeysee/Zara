@@ -28,6 +28,7 @@ pub(crate) enum Value {
     // TODO: figure out symbol table
     Symbol(Box<str>),
     TokenList(Box<[TokenLine]>),
+    Vector(Box<[Value]>),
 }
 
 impl Value {
@@ -122,19 +123,13 @@ impl Display for Datum<'_> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self.0 {
             Value::Ast(prg) => write!(f, "{{{prg:?}}}"),
-            Value::ByteVector(bv) => write!(
-                f,
-                "#u8({})",
-                bv.iter()
-                    .map(ToString::to_string)
-                    .collect::<Vec<_>>()
-                    .join(" ")
-            ),
+            Value::ByteVector(bv) => write_seq("#u8", bv, ToString::to_string, f),
             Value::Constant(con) => con.as_datum().fmt(f),
             Value::Pair(None) => f.write_str("()"),
             Value::Pair(Some(p)) => write!(f, "({p})"),
             Value::Symbol(s) => SymbolDatum(s).fmt(f),
             Value::TokenList(lines) => DisplayTokenLines(lines).fmt(f),
+            Value::Vector(v) => write_seq("#", v, |v| v.as_datum().to_string(), f),
         }
     }
 }
@@ -163,8 +158,22 @@ impl Display for TypeName<'_> {
             Value::Pair(Some(p)) => f.write_str(if p.is_list() { "list" } else { "pair" }),
             Value::Symbol(_) => f.write_str("symbol"),
             Value::TokenList(_) => f.write_str("token list"),
+            Value::Vector(_) => f.write_str("vector"),
         }
     }
+}
+
+fn write_seq<'a, T: 'a>(
+    prefix: &str,
+    seq: impl IntoIterator<Item = &'a T>,
+    to_str: impl FnMut(&'a T) -> String,
+    f: &mut Formatter<'_>,
+) -> fmt::Result {
+    write!(
+        f,
+        "{prefix}({})",
+        seq.into_iter().map(to_str).collect::<Vec<_>>().join(" ")
+    )
 }
 
 #[cfg(test)]
@@ -250,6 +259,37 @@ mod tests {
             let v = zlist![];
 
             assert_eq!(v.as_datum().to_string(), "()")
+        }
+
+        #[test]
+        fn vector_typename() {
+            let v = Value::Vector([].into());
+
+            assert_eq!(v.as_typename().to_string(), "vector");
+        }
+
+        #[test]
+        fn vector_datum() {
+            let v = Value::Vector(
+                [
+                    Value::Constant(Constant::String("foo".into())),
+                    Value::Symbol("a".into()),
+                    zlist![
+                        Value::Constant(Constant::Boolean(true)),
+                        Value::Constant(Constant::Character('a')),
+                    ],
+                ]
+                .into(),
+            );
+
+            assert_eq!(v.as_datum().to_string(), "#(\"foo\" a (#t #\\a))");
+        }
+
+        #[test]
+        fn empty_vector_datum() {
+            let v = Value::Vector([].into());
+
+            assert_eq!(v.as_datum().to_string(), "#()");
         }
     }
 
