@@ -233,12 +233,15 @@ impl<P: ClassifierProps> ConditionProcessor<'_, '_, P> {
             BreakCondition::Sub(SubCondition::Complete) => self.complete(parser, false),
             BreakCondition::Sub(SubCondition::Complex { kind, start }) => {
                 if self.props.radix_infnan() {
-                    match parser.extract_radix_infnan() {
-                        Ok(TokenKind::Constant(Constant::Number(Number::Real(r)))) => Ok(r),
-                        _ => Err(match kind {
+                    if let Ok(TokenKind::Constant(Constant::Number(Number::Real(r)))) =
+                        parser.extract_radix_infnan()
+                    {
+                        Ok(r)
+                    } else {
+                        Err(match kind {
                             ComplexKind::Cartesian => TokenErrorKind::ComplexInvalid,
                             ComplexKind::Polar => TokenErrorKind::PolarInvalid,
-                        }),
+                        })
                     }
                 } else {
                     // NOTE: delay application of exactness until final

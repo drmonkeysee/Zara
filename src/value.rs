@@ -95,9 +95,10 @@ impl Pair {
     }
 
     fn is_list(&self) -> bool {
-        match &*self.cdr {
-            Value::Pair(p) => p.as_ref().is_none_or(|r| r.is_list()),
-            _ => false,
+        if let Value::Pair(p) = &*self.cdr {
+            p.as_ref().is_none_or(|r| r.is_list())
+        } else {
+            false
         }
     }
 }
@@ -105,17 +106,14 @@ impl Pair {
 impl Display for Pair {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         self.car.as_datum().fmt(f)?;
-        match &*self.cdr {
-            Value::Pair(p) => {
-                if let Some(p) = p {
-                    write!(f, " {p}")?;
-                }
-                Ok(())
+        if let Value::Pair(p) = &*self.cdr {
+            if let Some(p) = p {
+                write!(f, " {p}")?;
             }
-            _ => {
-                let d = self.cdr.as_datum();
-                write!(f, " . {d}")
-            }
+            Ok(())
+        } else {
+            let d = self.cdr.as_datum();
+            write!(f, " . {d}")
         }
     }
 }

@@ -125,9 +125,10 @@ impl Display for ExpressionError {
 
 impl Error for ExpressionError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
-        match &self.kind {
-            ExpressionErrorKind::ByteVectorInvalidNumber(inner) => Some(inner),
-            _ => None,
+        if let ExpressionErrorKind::ByteVectorInvalidNumber(inner) = &self.kind {
+            Some(inner)
+        } else {
+            None
         }
     }
 }

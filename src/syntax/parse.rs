@@ -70,21 +70,21 @@ impl ParseNode {
     }
 
     pub(super) fn into_expr_node(self, end: ExprEnd) -> Option<ExprNode> {
-        match self {
-            Self::Expr(mut node) => {
-                if end.lineno == node.ctx.txt.lineno {
-                    node.ctx.span.end = end.pos;
-                }
-                Some(node)
+        if let Self::Expr(mut node) = self {
+            if end.lineno == node.ctx.txt.lineno {
+                node.ctx.span.end = end.pos;
             }
-            _ => None,
+            Some(node)
+        } else {
+            None
         }
     }
 
     pub(super) fn into_continuation_unsupported(self) -> Option<ExpressionError> {
-        match self {
-            Self::Expr(node) => Some(node.into_continuation_unsupported()),
-            _ => None,
+        if let Self::Expr(node) = self {
+            Some(node.into_continuation_unsupported())
+        } else {
+            None
         }
     }
 }
@@ -303,15 +303,16 @@ impl SyntacticForm {
     }
 
     fn close_list(&mut self, token: Token, txt: &Rc<TextLine>) -> ParseFlow {
-        ParseFlow::Break(match self {
-            Self::PairOpen => ParseBreak::node_failure(
+        ParseFlow::Break(if let Self::PairOpen = self {
+            ParseBreak::node_failure(
                 ExprCtx {
                     span: token.span,
                     txt: Rc::clone(txt),
                 }
                 .into_error(ExpressionErrorKind::PairUnterminated),
-            ),
-            _ => ParseBreak::complete(txt.lineno, token.span.end),
+            )
+        } else {
+            ParseBreak::complete(txt.lineno, token.span.end)
         })
     }
 
@@ -439,24 +440,21 @@ fn parse_datum(
     txt: &Rc<TextLine>,
     node_ctx: &ExprCtx,
 ) -> ParseFlow {
-    match token.kind {
-        TokenKind::ParenRight => {
-            let ctx = extend_node_to_token(token.span.end, txt, node_ctx);
-            ParseFlow::Break(ParseBreak::node_failure(
-                ctx.into_error(ExpressionErrorKind::DatumExpected),
-            ))
-        }
-        _ => {
-            let pos = token.span.end;
-            match parse_expr(token, txt, true)? {
-                None => ParseFlow::Continue(()),
-                Some(expr) => {
-                    inner.replace(expr);
-                    ParseFlow::Break(ParseBreak::Complete(ExprEnd {
-                        lineno: txt.lineno,
-                        pos,
-                    }))
-                }
+    if let TokenKind::ParenRight = token.kind {
+        let ctx = extend_node_to_token(token.span.end, txt, node_ctx);
+        ParseFlow::Break(ParseBreak::node_failure(
+            ctx.into_error(ExpressionErrorKind::DatumExpected),
+        ))
+    } else {
+        let pos = token.span.end;
+        match parse_expr(token, txt, true)? {
+            None => ParseFlow::Continue(()),
+            Some(expr) => {
+                inner.replace(expr);
+                ParseFlow::Break(ParseBreak::Complete(ExprEnd {
+                    lineno: txt.lineno,
+                    pos,
+                }))
             }
         }
     }
