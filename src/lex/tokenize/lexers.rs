@@ -147,13 +147,13 @@ fn char_to_sign(ch: char) -> Sign {
     }
 }
 
-fn numeric_label(txt: &str, exactness: Option<Exactness>) -> Option<TokenKind> {
-    let sign = num_lbl_sign(txt)?;
+fn numeric_symbol(txt: &str, exactness: Option<Exactness>) -> Option<TokenKind> {
+    let sign = num_symbol_sign(txt)?;
     let txt = txt.get(1..)?;
-    let label = txt.to_ascii_lowercase();
-    let is_imaginary = label.ends_with('i');
-    let end = label.len() - usize::from(is_imaginary);
-    match label.get(..end)? {
+    let symbol = txt.to_ascii_lowercase();
+    let is_imaginary = symbol.ends_with('i');
+    let end = symbol.len() - usize::from(is_imaginary);
+    match symbol.get(..end)? {
         "" => Some(numeric::imaginary(sign, exactness)),
         "inf.0" => Some(numeric::infinity(sign, is_imaginary)),
         "nan.0" => Some(numeric::nan(is_imaginary)),
@@ -161,7 +161,7 @@ fn numeric_label(txt: &str, exactness: Option<Exactness>) -> Option<TokenKind> {
     }
 }
 
-fn num_lbl_sign(txt: &str) -> Option<Sign> {
+fn num_symbol_sign(txt: &str) -> Option<Sign> {
     if txt.starts_with('+') {
         Some(Sign::Positive)
     } else if txt.starts_with('-') {

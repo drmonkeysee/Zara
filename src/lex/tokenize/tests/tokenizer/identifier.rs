@@ -423,7 +423,7 @@ fn contains_reserved_char() {
 }
 
 #[test]
-fn contains_numeric_label() {
+fn contains_numeric_symbol() {
     let mut s = Scanner::new("f+inf.0");
     let start = some_or_fail!(s.next_token());
     let t = Tokenizer {

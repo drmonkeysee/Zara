@@ -68,7 +68,7 @@ impl<'me, 'txt> Identifier<'me, 'txt> {
         }
         let exactness = self.exactness;
         let txt = self.get_lexeme();
-        Ok(super::numeric_label(txt, exactness)
+        Ok(super::numeric_symbol(txt, exactness)
             .unwrap_or_else(|| TokenKind::Identifier(txt.to_owned())))
     }
 
@@ -123,7 +123,7 @@ impl<'me, 'txt> Identifier<'me, 'txt> {
 
     fn maybe_infnan_complex(&mut self, item: ScanItem, kind: ComplexKind) -> TokenExtractResult {
         if let Some(TokenKind::Constant(Constant::Number(Number::Real(real)))) =
-            super::numeric_label(self.scanner.lexeme(self.start.0..item.0), self.exactness)
+            super::numeric_symbol(self.scanner.lexeme(self.start.0..item.0), self.exactness)
         {
             let invalid_tok = match kind {
                 ComplexKind::Cartesian => {

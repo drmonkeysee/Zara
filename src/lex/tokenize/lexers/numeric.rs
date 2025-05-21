@@ -782,7 +782,7 @@ impl<R: Radix> ClassifierParser for RadixParser<'_, R> {
     }
 
     fn extract_radix_infnan(self) -> TokenExtractResult {
-        super::numeric_label(
+        super::numeric_symbol(
             self.infnan_len.map_or(Ok(self.input), |len| {
                 self.input.get(0..len).ok_or(TokenErrorKind::NumberInvalid)
             })?,
