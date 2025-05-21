@@ -38,6 +38,8 @@ pub(crate) enum TokenKind {
     IdentifierEnd(String),
     IdentifierFragment(String),
     Imaginary(Real),
+    LabelDef(String),
+    LabelRef(String),
     PairJoiner,
     ParenLeft,
     ParenRight,
@@ -90,6 +92,8 @@ impl Display for TokenKind {
             Self::IdentifierEnd(_) => f.write_str("IDENTEND"),
             Self::IdentifierFragment(_) => f.write_str("IDENTFRAGMENT"),
             Self::Imaginary(r) => write!(f, "IMAGINARY<{}>", r.as_token_descriptor()),
+            Self::LabelDef(_) => f.write_str("LABELDEF"),
+            Self::LabelRef(_) => f.write_str("LABELREF"),
             Self::PairJoiner => f.write_str("PAIR"),
             Self::ParenLeft => f.write_str("LEFTPAREN"),
             Self::ParenRight => f.write_str("RIGHTPAREN"),
@@ -151,6 +155,8 @@ pub(super) enum TokenErrorKind {
     IdentifierUnterminatedHex { at: usize },
     ImaginaryInvalid,
     ImaginaryMissingSign,
+    LabelInvalid,
+    LabelUnterminated,
     NumberExpected,
     NumberInvalid,
     NumberInvalidDecimalPoint { at: usize, radix: &'static str },
@@ -243,6 +249,8 @@ impl Display for TokenErrorKind {
             Self::IdentifierUnterminated => f.write_str("unterminated verbatim identifier"),
             Self::ImaginaryInvalid => f.write_str("invalid imaginary constant"),
             Self::ImaginaryMissingSign => f.write_str("missing explicit sign on imaginary number"),
+            Self::LabelInvalid => f.write_str("invalid datum label: only digits [0, 9] allowed"),
+            Self::LabelUnterminated => f.write_str("unterminated datum label"),
             Self::NumberExpected => f.write_str("expected numeric constant"),
             Self::NumberInvalid => f.write_str("invalid numeric constant"),
             Self::NumberInvalidDecimalPoint { radix, .. } => {
@@ -385,6 +393,26 @@ mod tests {
             };
 
             assert_eq!(token.to_string(), "CONSTANT<BOOL>[0..2]");
+        }
+
+        #[test]
+        fn display_label_definition() {
+            let token = Token {
+                kind: TokenKind::LabelDef("12345".to_owned()),
+                span: 0..7,
+            };
+
+            assert_eq!(token.to_string(), "LABELDEF[0..7]");
+        }
+
+        #[test]
+        fn display_label_reference() {
+            let token = Token {
+                kind: TokenKind::LabelRef("12345".to_owned()),
+                span: 0..7,
+            };
+
+            assert_eq!(token.to_string(), "LABELREF[0..7]");
         }
 
         #[test]
@@ -975,6 +1003,29 @@ mod tests {
             };
 
             assert_eq!(err.to_string(), "unterminated verbatim identifier");
+        }
+
+        #[test]
+        fn display_label_invalid() {
+            let err = TokenError {
+                kind: TokenErrorKind::LabelInvalid,
+                span: 0..1,
+            };
+
+            assert_eq!(
+                err.to_string(),
+                "invalid datum label: only digits [0, 9] allowed"
+            );
+        }
+
+        #[test]
+        fn display_label_unterminated() {
+            let err = TokenError {
+                kind: TokenErrorKind::LabelUnterminated,
+                span: 0..1,
+            };
+
+            assert_eq!(err.to_string(), "unterminated datum label");
         }
 
         #[test]
