@@ -4,7 +4,10 @@ use crate::{
     lex::{
         TokenKind,
         token::TokenErrorKind,
-        tokenize::{TokenExtractResult, scan::Scanner},
+        tokenize::{
+            TokenExtractResult,
+            scan::{ScanItem, Scanner},
+        },
     },
     number::{Binary, Hexadecimal, Octal, Radix},
 };
@@ -20,14 +23,15 @@ pub(in crate::lex::tokenize) struct Hashtag<'me, 'txt> {
 
 impl Hashtag<'_, '_> {
     pub(in crate::lex::tokenize) fn scan(&mut self) -> TokenExtractResult {
-        match self.scanner.char_if_not_token_boundary() {
-            Some(ch) => self.constant(ch),
+        match self.scanner.next_if_not_token_boundary() {
+            Some(item) => self.constant(item),
             None => self.comment(),
         }
     }
 
-    fn constant(&mut self, ch: char) -> TokenExtractResult {
+    fn constant(&mut self, (idx, ch): ScanItem) -> TokenExtractResult {
         match ch {
+            '!' => self.directive(),
             '(' => Ok(TokenKind::Vector),
             EXACTL | EXACTU => self.exactness(Exactness::Exact),
             'f' | 'F' => self.boolean(false),
@@ -35,7 +39,7 @@ impl Hashtag<'_, '_> {
             't' | 'T' => self.boolean(true),
             'u' | 'U' => self.bytevector(),
             '\\' => self.character(),
-            '!' => self.directive(),
+            _ if ch.is_ascii_digit() => self.label(idx),
             _ => self.number(ch),
         }
     }
@@ -114,6 +118,36 @@ impl Hashtag<'_, '_> {
             num.scan(self.scanner, Some(exactness))
         } else {
             NumberKind::Decimal.scan(self.scanner, Some(exactness))
+        }
+    }
+
+    fn label(&mut self, start: usize) -> TokenExtractResult {
+        let mut non_digit = false;
+        while let Some((idx, ch)) = self.scanner.next_if_not_delimiter() {
+            match ch {
+                '=' => {
+                    return if non_digit {
+                        Err(TokenErrorKind::LabelInvalid)
+                    } else {
+                        Ok(TokenKind::LabelDef(
+                            self.scanner.lexeme(start..idx).to_owned(),
+                        ))
+                    };
+                }
+                _ if ch.is_ascii_digit() => (),
+                _ => non_digit = true,
+            }
+        }
+        if let Some(idx) = self.scanner.char_if_eq('#') {
+            if non_digit {
+                Err(TokenErrorKind::LabelInvalid)
+            } else {
+                Ok(TokenKind::LabelRef(
+                    self.scanner.lexeme(start..idx).to_owned(),
+                ))
+            }
+        } else {
+            Err(TokenErrorKind::LabelUnterminated)
         }
     }
 

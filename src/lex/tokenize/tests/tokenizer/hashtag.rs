@@ -521,6 +521,270 @@ fn radix_malformed_exactness() {
     ));
 }
 
+#[test]
+fn label_definition() {
+    let mut s = Scanner::new("#0=");
+    let start = some_or_fail!(s.next_token());
+    let t = Tokenizer {
+        scanner: &mut s,
+        start,
+    };
+
+    let (r, c) = t.extract();
+
+    assert!(c.is_none());
+    let tok = ok_or_fail!(r);
+    assert!(matches!(
+        tok,
+        Token {
+            kind: TokenKind::LabelDef(s),
+            span: TxtSpan { start: 0, end: 3 },
+        } if s == "0"
+    ));
+}
+
+#[test]
+fn label_reference() {
+    let mut s = Scanner::new("#0#");
+    let start = some_or_fail!(s.next_token());
+    let t = Tokenizer {
+        scanner: &mut s,
+        start,
+    };
+
+    let (r, c) = t.extract();
+
+    assert!(c.is_none());
+    let tok = ok_or_fail!(r);
+    assert!(matches!(
+        tok,
+        Token {
+            kind: TokenKind::LabelRef(s),
+            span: TxtSpan { start: 0, end: 3 },
+        } if s == "0"
+    ));
+}
+
+#[test]
+fn label_def_multi_digits() {
+    let mut s = Scanner::new("#123=");
+    let start = some_or_fail!(s.next_token());
+    let t = Tokenizer {
+        scanner: &mut s,
+        start,
+    };
+
+    let (r, c) = t.extract();
+
+    assert!(c.is_none());
+    let tok = ok_or_fail!(r);
+    assert!(matches!(
+        tok,
+        Token {
+            kind: TokenKind::LabelDef(s),
+            span: TxtSpan { start: 0, end: 5 },
+        } if s == "123"
+    ));
+}
+
+#[test]
+fn label_ref_multi_digits() {
+    let mut s = Scanner::new("#987#");
+    let start = some_or_fail!(s.next_token());
+    let t = Tokenizer {
+        scanner: &mut s,
+        start,
+    };
+
+    let (r, c) = t.extract();
+
+    assert!(c.is_none());
+    let tok = ok_or_fail!(r);
+    assert!(matches!(
+        tok,
+        Token {
+            kind: TokenKind::LabelRef(s),
+            span: TxtSpan { start: 0, end: 5 },
+        } if s == "987"
+    ));
+}
+
+#[test]
+fn label_def_extreme_digits() {
+    let mut s = Scanner::new("#12345678909876543210123456789=");
+    let start = some_or_fail!(s.next_token());
+    let t = Tokenizer {
+        scanner: &mut s,
+        start,
+    };
+
+    let (r, c) = t.extract();
+
+    assert!(c.is_none());
+    let tok = ok_or_fail!(r);
+    assert!(matches!(
+        tok,
+        Token {
+            kind: TokenKind::LabelDef(s),
+            span: TxtSpan { start: 0, end: 31 },
+        } if s == "12345678909876543210123456789"
+    ));
+}
+
+#[test]
+fn label_ref_extreme_digits() {
+    let mut s = Scanner::new("#98765432101234567890987654321#");
+    let start = some_or_fail!(s.next_token());
+    let t = Tokenizer {
+        scanner: &mut s,
+        start,
+    };
+
+    let (r, c) = t.extract();
+
+    assert!(c.is_none());
+    let tok = ok_or_fail!(r);
+    assert!(matches!(
+        tok,
+        Token {
+            kind: TokenKind::LabelRef(s),
+            span: TxtSpan { start: 0, end: 31 },
+        } if s == "98765432101234567890987654321"
+    ));
+}
+
+#[test]
+fn label_incomplete() {
+    let mut s = Scanner::new("#0");
+    let start = some_or_fail!(s.next_token());
+    let t = Tokenizer {
+        scanner: &mut s,
+        start,
+    };
+
+    let (r, c) = t.extract();
+
+    assert!(c.is_none());
+    let err = err_or_fail!(r);
+    assert!(matches!(
+        err,
+        TokenError {
+            kind: TokenErrorKind::LabelUnterminated,
+            span: TxtSpan { start: 0, end: 2 },
+        }
+    ));
+}
+
+#[test]
+fn label_incomplete_ends_at_token_boundary() {
+    let mut s = Scanner::new("#0(");
+    let start = some_or_fail!(s.next_token());
+    let t = Tokenizer {
+        scanner: &mut s,
+        start,
+    };
+
+    let (r, c) = t.extract();
+
+    assert!(c.is_none());
+    let err = err_or_fail!(r);
+    assert!(matches!(
+        err,
+        TokenError {
+            kind: TokenErrorKind::LabelUnterminated,
+            span: TxtSpan { start: 0, end: 2 },
+        }
+    ));
+}
+
+#[test]
+fn label_def_nondigits() {
+    let mut s = Scanner::new("#0ab=");
+    let start = some_or_fail!(s.next_token());
+    let t = Tokenizer {
+        scanner: &mut s,
+        start,
+    };
+
+    let (r, c) = t.extract();
+
+    assert!(c.is_none());
+    let err = err_or_fail!(r);
+    assert!(matches!(
+        err,
+        TokenError {
+            kind: TokenErrorKind::LabelInvalid,
+            span: TxtSpan { start: 0, end: 5 },
+        }
+    ));
+}
+
+#[test]
+fn label_def_invalid_eats_until_delimiter() {
+    let mut s = Scanner::new("#0ab=123foo(");
+    let start = some_or_fail!(s.next_token());
+    let t = Tokenizer {
+        scanner: &mut s,
+        start,
+    };
+
+    let (r, c) = t.extract();
+
+    assert!(c.is_none());
+    let err = err_or_fail!(r);
+    assert!(matches!(
+        err,
+        TokenError {
+            kind: TokenErrorKind::LabelInvalid,
+            span: TxtSpan { start: 0, end: 11 },
+        }
+    ));
+}
+
+#[test]
+fn label_ref_nondigits() {
+    let mut s = Scanner::new("#0ab#");
+    let start = some_or_fail!(s.next_token());
+    let t = Tokenizer {
+        scanner: &mut s,
+        start,
+    };
+
+    let (r, c) = t.extract();
+
+    assert!(c.is_none());
+    let err = err_or_fail!(r);
+    assert!(matches!(
+        err,
+        TokenError {
+            kind: TokenErrorKind::LabelInvalid,
+            span: TxtSpan { start: 0, end: 5 },
+        }
+    ));
+}
+
+#[test]
+fn label_incomplete_nondigits_ends_at_token_boundary() {
+    let mut s = Scanner::new("#0abdef(");
+    let start = some_or_fail!(s.next_token());
+    let t = Tokenizer {
+        scanner: &mut s,
+        start,
+    };
+
+    let (r, c) = t.extract();
+
+    assert!(c.is_none());
+    let err = err_or_fail!(r);
+    assert!(matches!(
+        err,
+        TokenError {
+            kind: TokenErrorKind::LabelUnterminated,
+            span: TxtSpan { start: 0, end: 7 },
+        }
+    ));
+}
+
 mod comments {
     use super::*;
 

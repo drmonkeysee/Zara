@@ -883,3 +883,26 @@ fn radix_following_invalid_hash() {
         })
     ));
 }
+
+#[test]
+fn label_ref_shares_hashtag() {
+    let s = TokenStream::new("#0#t", None);
+
+    let r = s.collect::<Vec<_>>();
+
+    assert_eq!(r.len(), 2);
+    assert!(matches!(
+        &r[0],
+        Ok(Token {
+            kind: TokenKind::LabelRef(s),
+            span: TxtSpan { start: 0, end: 3 }
+        }) if s == "0"
+    ));
+    assert!(matches!(
+        &r[1],
+        Ok(Token {
+            kind: TokenKind::Identifier(s),
+            span: TxtSpan { start: 3, end: 4 }
+        }) if s == "t"
+    ));
+}

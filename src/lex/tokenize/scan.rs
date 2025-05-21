@@ -24,6 +24,10 @@ impl<'txt> Scanner<'txt> {
         self.chars.next_if(not_delimiter)
     }
 
+    pub(super) fn next_if_not_token_boundary(&mut self) -> Option<ScanItem> {
+        self.chars.next_if(not_token_boundary)
+    }
+
     pub(super) fn char(&mut self) -> Option<char> {
         self.next().map(into_char)
     }
@@ -37,7 +41,7 @@ impl<'txt> Scanner<'txt> {
     }
 
     pub(super) fn char_if_not_token_boundary(&mut self) -> Option<char> {
-        self.chars.next_if(not_token_boundary).map(into_char)
+        self.next_if_not_token_boundary().map(into_char)
     }
 
     pub(super) fn find_any_char(&mut self, chars: &[char]) -> Option<ScanItem> {
@@ -305,6 +309,24 @@ mod tests {
             let r = some_or_fail!(s.next_if_not_delimiter());
 
             assert_eq!(r, (0, 'a'));
+        }
+
+        #[test]
+        fn next_if_not_token_boundary_rparen() {
+            let mut s = Scanner::new(")abc");
+
+            let r = s.next_if_not_token_boundary();
+
+            assert!(r.is_none());
+        }
+
+        #[test]
+        fn next_if_not_token_boundary_lparen() {
+            let mut s = Scanner::new("(abc");
+
+            let r = some_or_fail!(s.next_if_not_token_boundary());
+
+            assert_eq!(r, (0, '('));
         }
 
         #[test]
