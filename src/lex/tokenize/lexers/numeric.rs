@@ -142,10 +142,9 @@ impl<'me, 'txt, R: Radix + Default> RadixNumber<'me, 'txt, R> {
 
     fn with_sign(
         scanner: &'me mut Scanner<'txt>,
-        start: ScanItem,
+        (start, sign): ScanItem,
         exactness: Option<Exactness>,
     ) -> Self {
-        let (start, sign) = start;
         Self {
             classifier: Integral {
                 spec: IntSpec {
