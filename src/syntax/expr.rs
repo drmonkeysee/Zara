@@ -106,7 +106,6 @@ pub(super) enum ExpressionKind {
         proc: Box<Expression>,
     },
     Literal(Value),
-    #[allow(dead_code, reason = "not yet implemented")]
     Variable(Box<str>),
 }
 
