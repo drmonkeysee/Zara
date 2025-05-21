@@ -2,10 +2,9 @@ macro_rules! extract_or_fail {
     ($exp:expr, $variant:path) => {{
         let var = $exp;
         assert!(matches!(var, $variant(..)));
-        if let $variant(inner) = var {
-            inner
-        } else {
-            unreachable!();
+        match var {
+            $variant(inner) => inner,
+            _ => unreachable!(),
         }
     }};
 }
