@@ -24,12 +24,12 @@ impl Frame {
         }
     }
 
-    pub(crate) fn lookup(&self, var: &str) -> Option<Rc<Value>> {
-        self.bindings.get(var).map(Rc::clone)
+    pub(crate) fn lookup(&self, name: &str) -> Option<Rc<Value>> {
+        self.bindings.get(name).map(Rc::clone)
     }
 
-    pub(super) fn bind(&mut self, var: impl Into<Box<str>>, val: impl Into<Rc<Value>>) {
-        self.bindings.insert(var.into(), val.into());
+    pub(super) fn bind(&mut self, name: impl Into<Box<str>>, val: impl Into<Rc<Value>>) {
+        self.bindings.insert(name.into(), val.into());
     }
 }
 

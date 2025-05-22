@@ -87,7 +87,6 @@ impl Expression {
         }
     }
 
-    #[allow(clippy::unnecessary_wraps, reason = "not yet implemented")]
     fn eval(self, env: &Frame) -> Option<Rc<Value>> {
         match self.kind {
             ExpressionKind::Call { .. } => todo!("no idea what to do here"),
