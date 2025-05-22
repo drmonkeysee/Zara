@@ -91,8 +91,8 @@ impl Expression {
     fn eval(self, env: &Frame) -> Option<Rc<Value>> {
         match self.kind {
             ExpressionKind::Call { .. } => todo!("no idea what to do here"),
-            ExpressionKind::Variable(name) => env.lookup(&name), // TODO: return unbound variable error condition
             ExpressionKind::Literal(v) => Some(v.into()),
+            ExpressionKind::Variable(name) => env.lookup(&name), // TODO: return unbound variable error condition
         }
     }
 }
