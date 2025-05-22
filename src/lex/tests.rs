@@ -67,7 +67,7 @@ mod lexer {
     #[test]
     fn empty_line() {
         let mut src = MockTxtSource::new("");
-        let mut target = Lexer::new();
+        let mut target = Lexer::default();
 
         let r = target.tokenize(&mut src);
 
@@ -80,7 +80,7 @@ mod lexer {
     #[test]
     fn single_token() {
         let mut src = MockTxtSource::new("#t");
-        let mut target = Lexer::new();
+        let mut target = Lexer::default();
 
         let r = target.tokenize(&mut src);
 
@@ -110,7 +110,7 @@ mod lexer {
     #[test]
     fn multi_tokens() {
         let mut src = MockTxtSource::new("#t #f #\\a");
-        let mut target = Lexer::new();
+        let mut target = Lexer::default();
 
         let r = target.tokenize(&mut src);
 
@@ -154,7 +154,7 @@ mod lexer {
     #[test]
     fn multi_lines() {
         let mut src = MockTxtSource::new("#t\n  #f #\\a\n#f #f\n");
-        let mut target = Lexer::new();
+        let mut target = Lexer::default();
 
         let r = target.tokenize(&mut src);
 
@@ -233,7 +233,7 @@ mod lexer {
     #[test]
     fn multi_lines_with_errors() {
         let mut src = MockTxtSource::new("#t\n #z #f #z #\\a\n#f #z #f");
-        let mut target = Lexer::new();
+        let mut target = Lexer::default();
 
         let r = target.tokenize(&mut src);
 
@@ -287,7 +287,7 @@ mod lexer {
     #[test]
     fn multi_lines_with_read_error() {
         let mut src = MockTxtSource::new("#t\nBAD BYTES\n#f #f\n");
-        let mut target = Lexer::new();
+        let mut target = Lexer::default();
 
         let r = target.tokenize(&mut src);
 
@@ -304,7 +304,7 @@ mod lexer {
     #[test]
     fn mixed_errors() {
         let mut src = MockTxtSource::new("#t\n #z #f #z #\\a\nBAD BYTES");
-        let mut target = Lexer::new();
+        let mut target = Lexer::default();
 
         let r = target.tokenize(&mut src);
 
@@ -345,7 +345,7 @@ mod lexer {
     #[test]
     fn continuation_token_persists_on_lexer() {
         let mut src = MockTxtSource::new("#t #|trailing...");
-        let mut target = Lexer::new();
+        let mut target = Lexer::default();
 
         let r = target.tokenize(&mut src);
 
@@ -383,7 +383,7 @@ mod lexer {
     #[test]
     fn continuation_cleared_on_completion_followed_by_error() {
         let mut src = MockTxtSource::new("#t #|trailing...");
-        let mut target = Lexer::new();
+        let mut target = Lexer::default();
 
         let r = target.tokenize(&mut src);
 
@@ -401,7 +401,7 @@ mod lexer {
     #[test]
     fn continuation_cleared_on_error_and_exhausted_source() {
         let mut src = MockTxtSource::new("#t #z #|trailing...");
-        let mut target = Lexer::new();
+        let mut target = Lexer::default();
 
         let r = target.tokenize(&mut src);
 
@@ -412,7 +412,7 @@ mod lexer {
     #[test]
     fn double_line_comment() {
         let mut src = MockTxtSource::new("#| double line\ncomment |#");
-        let mut target = Lexer::new();
+        let mut target = Lexer::default();
 
         let r = target.tokenize(&mut src);
 
@@ -458,7 +458,7 @@ mod lexer {
     #[test]
     fn multi_line_comment() {
         let mut src = MockTxtSource::new("#| multi\nline\ncomment |#");
-        let mut target = Lexer::new();
+        let mut target = Lexer::default();
 
         let r = target.tokenize(&mut src);
 
@@ -520,7 +520,7 @@ mod lexer {
     #[test]
     fn double_line_comment_when_prefixed_by_error_and_followed_by_error() {
         let mut src = MockTxtSource::new("#t #z #| double line\n#z comment |# #z");
-        let mut target = Lexer::new();
+        let mut target = Lexer::default();
 
         let r = target.tokenize(&mut src);
 
@@ -567,7 +567,7 @@ mod lexer {
     #[test]
     fn double_line_comment_when_prefixed_by_error() {
         let mut src = MockTxtSource::new("#t #z #| double line\n#z comment |#");
-        let mut target = Lexer::new();
+        let mut target = Lexer::default();
 
         let r = target.tokenize(&mut src);
 
@@ -597,7 +597,7 @@ mod lexer {
     #[test]
     fn double_line_string() {
         let mut src = MockTxtSource::new("\" double line\nstring \"");
-        let mut target = Lexer::new();
+        let mut target = Lexer::default();
 
         let r = target.tokenize(&mut src);
 
@@ -643,7 +643,7 @@ mod lexer {
     #[test]
     fn multi_line_string() {
         let mut src = MockTxtSource::new("\" multi\nline\nstring \"");
-        let mut target = Lexer::new();
+        let mut target = Lexer::default();
 
         let r = target.tokenize(&mut src);
 
@@ -705,7 +705,7 @@ mod lexer {
     #[test]
     fn double_line_string_with_errors() {
         let mut src = MockTxtSource::new("\" double \\xZZ; line\n#z string\"");
-        let mut target = Lexer::new();
+        let mut target = Lexer::default();
 
         let r = target.tokenize(&mut src);
 
@@ -735,7 +735,7 @@ mod lexer {
     #[test]
     fn double_line_string_with_errors_followed_by_other_error() {
         let mut src = MockTxtSource::new("\" double \\xZZ; line\n#z string\" #z");
-        let mut target = Lexer::new();
+        let mut target = Lexer::default();
 
         let r = target.tokenize(&mut src);
 
@@ -782,7 +782,7 @@ mod lexer {
     #[test]
     fn double_line_string_with_errors_and_line_continuation() {
         let mut src = MockTxtSource::new("\" double \\xZZ; line \\\n   #z string\"");
-        let mut target = Lexer::new();
+        let mut target = Lexer::default();
 
         let r = target.tokenize(&mut src);
 
@@ -813,7 +813,7 @@ mod lexer {
     fn double_line_input_with_unterminated_hex_string_error_on_one_line() {
         let mut src =
             MockTxtSource::new("\"single \\x42 line string\" #t #z\"double\n#z line string\"");
-        let mut target = Lexer::new();
+        let mut target = Lexer::default();
 
         let r = target.tokenize(&mut src);
 
@@ -850,7 +850,7 @@ mod lexer {
     #[test]
     fn double_line_string_prefixed_with_error() {
         let mut src = MockTxtSource::new("#t #z \" double line\n#z string\"");
-        let mut target = Lexer::new();
+        let mut target = Lexer::default();
 
         let r = target.tokenize(&mut src);
 
@@ -880,7 +880,7 @@ mod lexer {
     #[test]
     fn double_line_identifier() {
         let mut src = MockTxtSource::new("| double line\nverbatim |");
-        let mut target = Lexer::new();
+        let mut target = Lexer::default();
 
         let r = target.tokenize(&mut src);
 
@@ -926,7 +926,7 @@ mod lexer {
     #[test]
     fn multi_line_identifier() {
         let mut src = MockTxtSource::new("| multi\nline\nverbatim |");
-        let mut target = Lexer::new();
+        let mut target = Lexer::default();
 
         let r = target.tokenize(&mut src);
 
@@ -988,7 +988,7 @@ mod lexer {
     #[test]
     fn double_line_identifier_with_errors() {
         let mut src = MockTxtSource::new("| double \\xZZ; line\n#z verbatim|");
-        let mut target = Lexer::new();
+        let mut target = Lexer::default();
 
         let r = target.tokenize(&mut src);
 
@@ -1018,7 +1018,7 @@ mod lexer {
     #[test]
     fn double_line_identifier_with_errors_followed_by_other_error() {
         let mut src = MockTxtSource::new("| double \\xZZ; line\n#z verbatim| #z");
-        let mut target = Lexer::new();
+        let mut target = Lexer::default();
 
         let r = target.tokenize(&mut src);
 
@@ -1066,7 +1066,7 @@ mod lexer {
     fn double_line_input_with_unterminated_hex_identifier_error_on_one_line() {
         let mut src =
             MockTxtSource::new("|single \\x42 line verbatim| #t #z|double\n#z line verbatim|");
-        let mut target = Lexer::new();
+        let mut target = Lexer::default();
 
         let r = target.tokenize(&mut src);
 
@@ -1103,7 +1103,7 @@ mod lexer {
     #[test]
     fn double_line_identifier_prefixed_with_error() {
         let mut src = MockTxtSource::new("#t #z | double line\n#z verbatim|");
-        let mut target = Lexer::new();
+        let mut target = Lexer::default();
 
         let r = target.tokenize(&mut src);
 
@@ -1133,7 +1133,7 @@ mod lexer {
     #[test]
     fn continuation_token_converted_to_error_for_unsupported() {
         let mut src = MockTxtSource::new("#t #|trailing...");
-        let mut target = Lexer::new();
+        let mut target = Lexer::default();
 
         let r = target.tokenize(&mut src);
 
@@ -1167,7 +1167,7 @@ mod lexer {
     #[test]
     fn unsupported_returns_none_if_no_continuation() {
         let mut src = MockTxtSource::new("#t #f #\\a");
-        let mut target = Lexer::new();
+        let mut target = Lexer::default();
 
         let r = target.tokenize(&mut src);
 

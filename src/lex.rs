@@ -59,18 +59,15 @@ impl From<LineFailure> for LexerError {
     }
 }
 
+#[derive(Default)]
 pub(crate) struct Lexer {
     cont: Option<(Vec<TokenLine>, TokenContinuation)>,
 }
 
 impl Lexer {
-    pub(crate) fn new() -> Self {
-        Self { cont: None }
-    }
-
     pub(crate) fn tokenize(&mut self, src: &mut impl TextSource) -> LexerResult {
         let (mut d, prev) = self.cont.take().map_or_else(
-            || (LexerDriver::new(), None),
+            || (LexerDriver::default(), None),
             |(prev_lines, token_cont)| (LexerDriver::cont(token_cont), Some(prev_lines)),
         );
         let mut new_lines = d.tokenize(src)?;
@@ -309,15 +306,12 @@ impl Display for TokenErrorLineMessage<'_> {
     }
 }
 
+#[derive(Default)]
 struct LexerDriver {
     cont: Option<TokenContinuation>,
 }
 
 impl LexerDriver {
-    fn new() -> Self {
-        Self { cont: None }
-    }
-
     fn cont(cont: TokenContinuation) -> Self {
         Self { cont: Some(cont) }
     }

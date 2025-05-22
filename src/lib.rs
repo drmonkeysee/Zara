@@ -69,7 +69,7 @@ impl Interpreter {
     #[must_use]
     pub fn new(mode: RunMode) -> Self {
         Self {
-            lexer: Lexer::new(),
+            lexer: Lexer::default(),
             runner: resolve_executor(mode),
         }
     }
