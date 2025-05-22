@@ -14,7 +14,7 @@ pub enum Evaluation {
 }
 
 impl Evaluation {
-    fn val(v: Option<value::Value>) -> Self {
+    fn val(v: Option<Rc<value::Value>>) -> Self {
         Self::Val(Value::wrap(v))
     }
 
@@ -25,10 +25,10 @@ impl Evaluation {
 }
 
 #[derive(Debug)]
-pub struct Value(value::Value);
+pub struct Value(Rc<value::Value>);
 
 impl Value {
-    fn wrap(v: Option<value::Value>) -> Option<Self> {
+    fn wrap(v: Option<Rc<value::Value>>) -> Option<Self> {
         Some(Self(v?))
     }
 
@@ -66,7 +66,7 @@ pub(crate) struct Ast;
 
 impl Evaluator for Ast {
     fn evaluate(&self, prg: Program) -> Evaluation {
-        Evaluation::val(Some(value::Value::Ast(prg)))
+        Evaluation::val(Some(value::Value::Ast(prg).into()))
     }
 }
 

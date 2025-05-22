@@ -20,7 +20,7 @@ impl Program {
         Self(seq.into())
     }
 
-    pub(crate) fn eval(self) -> Option<Value> {
+    pub(crate) fn eval(self) -> Option<Rc<Value>> {
         #[allow(
             clippy::double_ended_iterator_last,
             reason = "iterator consumed intentionally"
@@ -87,13 +87,13 @@ impl Expression {
     }
 
     #[allow(clippy::unnecessary_wraps, reason = "not yet implemented")]
-    fn eval(self) -> Option<Value> {
+    fn eval(self) -> Option<Rc<Value>> {
         match self.kind {
             ExpressionKind::Call { .. } => todo!("no idea what to do here"),
             ExpressionKind::Variable(_) => {
                 todo!("this is dependent on current environment frame")
             }
-            ExpressionKind::Literal(v) => Some(v),
+            ExpressionKind::Literal(v) => Some(v.into()),
         }
     }
 }
@@ -292,7 +292,7 @@ mod tests {
             let o = expr.eval();
 
             let v = some_or_fail!(o);
-            assert!(matches!(v, Value::Constant(Constant::Boolean(true))));
+            assert!(matches!(*v, Value::Constant(Constant::Boolean(true))));
         }
 
         #[test]
@@ -334,7 +334,7 @@ mod tests {
             let o = prg.eval();
 
             let v = some_or_fail!(o);
-            assert!(matches!(v, Value::Constant(Constant::Character('b'))));
+            assert!(matches!(*v, Value::Constant(Constant::Character('b'))));
         }
     }
 
