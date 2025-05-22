@@ -15,12 +15,12 @@ pub(super) struct Frame {
 }
 
 impl Frame {
-    pub(super) fn new(symbols: impl Into<Weak<SymbolTable>>) -> Self {
+    pub(super) fn root(symbols: Weak<SymbolTable>) -> Self {
         Self {
             bindings: HashMap::new(),
             child: None,
             parent: None,
-            symbols: symbols.into(),
+            symbols,
         }
     }
 }

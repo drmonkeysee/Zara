@@ -85,7 +85,7 @@ impl Default for Environment {
     fn default() -> Self {
         let s = Rc::new(SymbolTable::default());
         Self {
-            global: Frame::new(Rc::downgrade(&s)).into(),
+            global: Frame::root(Rc::downgrade(&s)).into(),
             symbols: s,
         }
     }
