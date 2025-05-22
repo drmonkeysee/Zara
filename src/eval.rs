@@ -1,5 +1,11 @@
+mod env;
+
+use self::env::{Frame, SymbolTable};
 use crate::{syntax::Program, value};
-use std::fmt::{self, Display, Formatter};
+use std::{
+    fmt::{self, Display, Formatter},
+    rc::Rc,
+};
 
 #[derive(Debug)]
 pub enum Evaluation {
@@ -64,10 +70,23 @@ impl Evaluator for Ast {
     }
 }
 
-pub(crate) struct Environment;
+pub(crate) struct Environment {
+    global: Rc<Frame>,
+    symbols: Rc<SymbolTable>,
+}
 
 impl Evaluator for Environment {
     fn evaluate(&self, prg: Program) -> Evaluation {
         Evaluation::val(prg.eval())
+    }
+}
+
+impl Default for Environment {
+    fn default() -> Self {
+        let s = Rc::new(SymbolTable);
+        Self {
+            global: Frame::new(Rc::downgrade(&s)).into(),
+            symbols: s,
+        }
     }
 }

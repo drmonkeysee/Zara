@@ -203,7 +203,7 @@ impl<P: Parser, E: Evaluator> Executor for Engine<P, E> {
 fn resolve_executor(mode: RunMode) -> Box<dyn Executor> {
     match mode {
         RunMode::Evaluate => Box::new(Engine {
-            evaluator: Environment,
+            evaluator: Environment::default(),
             parser: ExpressionTree::default(),
         }),
         RunMode::SyntaxTree => Box::new(Engine {
@@ -211,7 +211,7 @@ fn resolve_executor(mode: RunMode) -> Box<dyn Executor> {
             parser: ExpressionTree::default(),
         }),
         RunMode::Tokenize => Box::new(Engine {
-            evaluator: Environment,
+            evaluator: Environment::default(),
             parser: TokenList,
         }),
         RunMode::TokenTree => Box::new(Engine {
