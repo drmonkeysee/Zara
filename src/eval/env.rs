@@ -6,7 +6,7 @@ use std::{
 
 // TODO: these Box<str>s may need to be Rc<str>s
 
-pub(super) struct Frame {
+pub(crate) struct Frame {
     bindings: HashMap<Box<str>, Rc<Value>>,
     // TODO: is there ever more than one child?
     child: Option<Box<Frame>>,
@@ -22,6 +22,14 @@ impl Frame {
             parent: None,
             symbols,
         }
+    }
+
+    pub(crate) fn lookup(&self, var: &str) -> Option<Rc<Value>> {
+        self.bindings.get(var).map(Rc::clone)
+    }
+
+    pub(super) fn bind(&mut self, var: impl Into<Box<str>>, val: impl Into<Rc<Value>>) {
+        self.bindings.insert(var.into(), val.into());
     }
 }
 

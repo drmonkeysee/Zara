@@ -1,5 +1,6 @@
 use crate::{
     constant::Constant,
+    eval::Frame,
     lex::TokenKind,
     number::ByteConversionError,
     txt::{LineNumber, TextLine, TxtSpan},
@@ -20,12 +21,12 @@ impl Program {
         Self(seq.into())
     }
 
-    pub(crate) fn eval(self) -> Option<Rc<Value>> {
+    pub(crate) fn eval(self, env: &Frame) -> Option<Rc<Value>> {
         #[allow(
             clippy::double_ended_iterator_last,
             reason = "iterator consumed intentionally"
         )]
-        self.0.into_iter().map(Expression::eval).last()?
+        self.0.into_iter().map(|expr| expr.eval(env)).last()?
     }
 
     #[cfg(test)]
@@ -87,12 +88,10 @@ impl Expression {
     }
 
     #[allow(clippy::unnecessary_wraps, reason = "not yet implemented")]
-    fn eval(self) -> Option<Rc<Value>> {
+    fn eval(self, env: &Frame) -> Option<Rc<Value>> {
         match self.kind {
             ExpressionKind::Call { .. } => todo!("no idea what to do here"),
-            ExpressionKind::Variable(_) => {
-                todo!("this is dependent on current environment frame")
-            }
+            ExpressionKind::Variable(name) => env.lookup(&name), // TODO: return unbound variable error condition
             ExpressionKind::Literal(v) => Some(v.into()),
         }
     }

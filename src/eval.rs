@@ -1,6 +1,7 @@
 mod env;
 
-use self::env::{Frame, SymbolTable};
+pub(crate) use self::env::Frame;
+use self::env::SymbolTable;
 use crate::{syntax::Program, value};
 use std::{
     fmt::{self, Display, Formatter},
@@ -77,16 +78,23 @@ pub(crate) struct Environment {
 
 impl Evaluator for Environment {
     fn evaluate(&self, prg: Program) -> Evaluation {
-        Evaluation::val(prg.eval())
+        Evaluation::val(prg.eval(&self.global))
     }
 }
 
 impl Default for Environment {
     fn default() -> Self {
         let s = Rc::new(SymbolTable::default());
-        Self {
+        let mut me = Self {
             global: Frame::root(Rc::downgrade(&s)).into(),
             symbols: s,
-        }
+        };
+        Rc::get_mut(&mut me.global).unwrap().bind(
+            "x",
+            value::Value::Constant(crate::constant::Constant::Number(
+                crate::number::Number::real(5),
+            )),
+        );
+        me
     }
 }
