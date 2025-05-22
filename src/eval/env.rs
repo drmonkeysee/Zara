@@ -4,6 +4,8 @@ use std::{
     rc::{Rc, Weak},
 };
 
+// TODO: these Box<str>s may need to be Rc<str>s
+
 pub(super) struct Frame {
     bindings: HashMap<Box<str>, Rc<Value>>,
     // TODO: is there ever more than one child?
@@ -23,4 +25,7 @@ impl Frame {
     }
 }
 
-pub(super) struct SymbolTable;
+#[derive(Default)]
+pub(super) struct SymbolTable {
+    interned: Vec<Box<str>>,
+}

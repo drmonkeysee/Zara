@@ -83,7 +83,7 @@ impl Evaluator for Environment {
 
 impl Default for Environment {
     fn default() -> Self {
-        let s = Rc::new(SymbolTable);
+        let s = Rc::new(SymbolTable::default());
         Self {
             global: Frame::new(Rc::downgrade(&s)).into(),
             symbols: s,
