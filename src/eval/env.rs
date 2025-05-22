@@ -5,7 +5,7 @@ use std::{
 };
 
 pub(super) struct Frame {
-    bindings: HashMap<String, Rc<Value>>,
+    bindings: HashMap<Box<str>, Rc<Value>>,
     // TODO: is there ever more than one child?
     child: Option<Box<Frame>>,
     parent: Option<Weak<Frame>>,
