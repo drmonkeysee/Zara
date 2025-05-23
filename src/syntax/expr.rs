@@ -89,7 +89,16 @@ impl Expression {
 
     fn eval(self, env: &Frame) -> Option<Rc<Value>> {
         match self.kind {
-            ExpressionKind::Call { .. } => todo!("no idea what to do here"),
+            ExpressionKind::Call { .. } => {
+                /*
+                eval proc
+                check type and arity
+                eval args
+                create call frame
+                call proc(args, call frame)
+                */
+                todo!("proc call not implemented")
+            }
             ExpressionKind::Literal(v) => Some(v.into()),
             ExpressionKind::Variable(n) => env.lookup(&n), // TODO: return unbound variable error condition
         }
