@@ -131,7 +131,7 @@ impl Display for Datum<'_> {
             Value::Constant(con) => con.as_datum().fmt(f),
             Value::Pair(None) => f.write_str("()"),
             Value::Pair(Some(p)) => write!(f, "({p})"),
-            Value::Procedure(_) => todo!("procedure datum"),
+            Value::Procedure(p) => p.as_datum().fmt(f),
             Value::Symbol(s) => SymbolDatum(s).fmt(f),
             Value::TokenList(lines) => DisplayTokenLines(lines).fmt(f),
             Value::Vector(v) => write_seq("#", v, |v| v.as_datum().to_string(), f),
@@ -161,7 +161,7 @@ impl Display for TypeName<'_> {
             Value::Constant(c) => c.as_typename().fmt(f),
             Value::Pair(None) => f.write_str("list"),
             Value::Pair(Some(p)) => f.write_str(if p.is_list() { "list" } else { "pair" }),
-            Value::Procedure(_) => todo!("procedure typename"),
+            Value::Procedure(p) => p.as_typename().fmt(f),
             Value::Symbol(_) => f.write_str("symbol"),
             Value::TokenList(_) => f.write_str("token list"),
             Value::Vector(_) => f.write_str("vector"),
@@ -296,6 +296,20 @@ mod tests {
             let v = Value::Vector([].into());
 
             assert_eq!(v.as_datum().to_string(), "#()");
+        }
+
+        #[test]
+        fn procedure_typename() {
+            let v = Value::Procedure(Procedure::intrinsic("foo", 0..0, |_, _| None));
+
+            assert_eq!(v.as_typename().to_string(), "procedure");
+        }
+
+        #[test]
+        fn procedure_datum() {
+            let v = Value::Procedure(Procedure::intrinsic("foo", 0..0, |_, _| None));
+
+            assert_eq!(v.as_datum().to_string(), "#<procedure foo>");
         }
     }
 
