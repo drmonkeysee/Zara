@@ -1,4 +1,5 @@
 mod constant;
+mod core;
 pub mod eval;
 mod lex;
 mod number;

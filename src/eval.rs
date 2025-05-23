@@ -1,9 +1,12 @@
 mod env;
 mod form;
 
-pub(crate) use self::env::Frame;
 use self::env::SymbolTable;
-use crate::{syntax::Program, value};
+pub(crate) use self::{
+    env::Frame,
+    form::{IntrinsicFn, Procedure},
+};
+use crate::{core, syntax::Program, value};
 use std::{
     fmt::{self, Display, Formatter},
     rc::Rc,
@@ -86,16 +89,17 @@ impl Evaluator for Environment {
 impl Default for Environment {
     fn default() -> Self {
         let s = Rc::new(SymbolTable::default());
-        let mut me = Self {
-            global: Frame::root(Rc::downgrade(&s)).into(),
-            symbols: s,
-        };
-        Rc::get_mut(&mut me.global).unwrap().bind(
+        let mut env = Frame::root(Rc::downgrade(&s));
+        core::load(&mut env);
+        env.bind(
             "x",
             value::Value::Constant(crate::constant::Constant::Number(
                 crate::number::Number::real(5),
             )),
         );
-        me
+        Self {
+            global: env.into(),
+            symbols: s,
+        }
     }
 }

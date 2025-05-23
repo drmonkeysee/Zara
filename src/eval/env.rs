@@ -28,7 +28,7 @@ impl Frame {
         self.bindings.get(name).map(Rc::clone)
     }
 
-    pub(super) fn bind(&mut self, name: impl Into<Box<str>>, val: impl Into<Rc<Value>>) {
+    pub(crate) fn bind(&mut self, name: impl Into<Box<str>>, val: impl Into<Rc<Value>>) {
         self.bindings.insert(name.into(), val.into());
     }
 }
