@@ -161,7 +161,7 @@ impl Display for TypeName<'_> {
             Value::Constant(c) => c.as_typename().fmt(f),
             Value::Pair(None) => f.write_str("list"),
             Value::Pair(Some(p)) => f.write_str(if p.is_list() { "list" } else { "pair" }),
-            Value::Procedure(p) => p.as_typename().fmt(f),
+            Value::Procedure(_) => f.write_str("procedure"),
             Value::Symbol(_) => f.write_str("symbol"),
             Value::TokenList(_) => f.write_str("token list"),
             Value::Vector(_) => f.write_str("vector"),

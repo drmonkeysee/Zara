@@ -31,10 +31,6 @@ impl Procedure {
     pub(crate) fn as_datum(&self) -> Datum {
         Datum(self)
     }
-
-    pub(crate) fn as_typename(&self) -> TypeName {
-        TypeName
-    }
 }
 
 #[derive(Debug)]
@@ -53,24 +49,9 @@ impl Display for Datum<'_> {
     }
 }
 
-pub(crate) struct TypeName;
-
-impl Display for TypeName {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        f.write_str("procedure")
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn typename() {
-        let p = Procedure::intrinsic("foo", 0..0, |_, _| None);
-
-        assert_eq!(p.as_typename().to_string(), "procedure");
-    }
 
     #[test]
     fn intrinsic_datum_zero_arity() {
