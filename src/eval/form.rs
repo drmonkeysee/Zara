@@ -65,7 +65,7 @@ fn write_arity(arity: &Range<u8>, f: &mut Formatter<'_>) -> fmt::Result {
         } else {
             iter::repeat_n("?", arity.len())
         });
-        f.write_str(&params.collect::<Box<[_]>>().join(" "))?;
+        f.write_str(&params.collect::<Vec<_>>().join(" "))?;
         f.write_char(')')
     }
 }
