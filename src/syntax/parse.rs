@@ -447,16 +447,13 @@ fn parse_datum(
         ))
     } else {
         let pos = token.span.end;
-        match parse_expr(token, txt, true)? {
-            None => ParseFlow::Continue(()),
-            Some(expr) => {
-                inner.replace(expr);
-                ParseFlow::Break(ParseBreak::Complete(ExprEnd {
-                    lineno: txt.lineno,
-                    pos,
-                }))
-            }
-        }
+        parse_expr(token, txt, true)?.map_or(ParseFlow::Continue(()), |expr| {
+            inner.replace(expr);
+            ParseFlow::Break(ParseBreak::Complete(ExprEnd {
+                lineno: txt.lineno,
+                pos,
+            }))
+        })
     }
 }
 
@@ -654,10 +651,10 @@ fn into_vector(seq: Vec<Expression>, ctx: ExprCtx) -> ExprConvertResult {
 }
 
 fn into_comment_datum(inner: Option<&Expression>, ctx: ExprCtx) -> ExprConvertResult {
-    match inner {
-        None => Err(vec![ctx.into_error(ExpressionErrorKind::DatumExpected)]),
-        Some(_) => Ok(None),
-    }
+    inner.map_or_else(
+        || Err(vec![ctx.into_error(ExpressionErrorKind::DatumExpected)]),
+        |_| Ok(None),
+    )
 }
 
 fn into_datum(inner: Option<Expression>, ctx: ExprCtx, quoted: bool) -> ExprConvertResult {

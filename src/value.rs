@@ -61,14 +61,11 @@ impl Value {
         I: IntoIterator<Item = Self>,
         <I as IntoIterator>::IntoIter: DoubleEndedIterator,
     {
-        match items
+        items
             .into_iter()
             .rev()
             .reduce(|head, item| Self::pair(Pair::cons(item, head)))
-        {
-            None => Self::null(),
-            Some(val) => val,
-        }
+            .unwrap_or_else(Self::null)
     }
 
     pub(crate) fn as_datum(&self) -> Datum {
