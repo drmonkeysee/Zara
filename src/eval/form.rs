@@ -4,7 +4,8 @@ use crate::{
     value::{Value, ValueRef},
 };
 use std::{
-    fmt::{self, Display, Formatter},
+    fmt::{self, Display, Formatter, Write},
+    iter,
     ops::Range,
     rc::Rc,
 };
@@ -48,7 +49,24 @@ pub(crate) struct Datum<'a>(&'a Procedure);
 
 impl Display for Datum<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "#<procedure {}>", self.0.name)
+        write!(f, "#<procedure {}", self.0.name)?;
+        write_arity(&self.0.arity, f)?;
+        f.write_char('>')
+    }
+}
+
+fn write_arity(arity: &Range<u8>, f: &mut Formatter<'_>) -> fmt::Result {
+    if arity.start == 0 && arity.len() == 0 {
+        Ok(())
+    } else {
+        f.write_str(" (")?;
+        let params = iter::repeat_n("_", arity.start.into()).chain(if arity.end == u8::MAX {
+            iter::repeat_n("…", 1)
+        } else {
+            iter::repeat_n("?", arity.len())
+        });
+        f.write_str(&params.collect::<Box<[_]>>().join(" "))?;
+        f.write_char(')')
     }
 }
 

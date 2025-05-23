@@ -9,5 +9,5 @@ pub(super) fn load(env: &mut Frame) {
 }
 
 fn current_second(args: &[Rc<Value>], env: &Frame) -> ValueRef {
-    todo!();
+    todo!("current second");
 }
