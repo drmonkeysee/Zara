@@ -105,8 +105,8 @@ impl Display for ByteConversionError {
                     u8::MAX
                 )
             }
-            Self::InvalidType(name) => {
-                write!(f, "expected integer literal but got numeric type: {name}")
+            Self::InvalidType(n) => {
+                write!(f, "expected integer literal but got numeric type: {n}")
             }
         }
     }

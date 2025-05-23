@@ -370,9 +370,9 @@ impl SyntacticForm {
                 _ => (),
             }
             if !quoted && seq.is_empty() {
-                if let ExpressionKind::Variable(name) = &expr.kind {
+                if let ExpressionKind::Variable(n) = &expr.kind {
                     // TODO: check for shadowed keywords here
-                    if let Some(f) = Self::from_str(name) {
+                    if let Some(f) = Self::from_str(n) {
                         *self = f;
                     }
                 }
