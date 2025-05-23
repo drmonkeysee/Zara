@@ -33,7 +33,7 @@ pub struct Value(value::ValueRef);
 
 impl Value {
     #[must_use]
-    pub fn is_empty(&self) -> bool {
+    pub fn is_unspecified(&self) -> bool {
         self.0.is_none()
     }
 
