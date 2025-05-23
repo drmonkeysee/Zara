@@ -285,6 +285,7 @@ mod tests {
 
     mod eval {
         use super::*;
+        use crate::eval::SymbolTable;
 
         #[test]
         fn constant() {
@@ -295,8 +296,10 @@ mod tests {
                     txt: make_textline().into(),
                 },
             );
+            let s = Rc::new(SymbolTable::default());
+            let env = Frame::root(Rc::downgrade(&s));
 
-            let o = expr.eval();
+            let o = expr.eval(&env);
 
             let v = some_or_fail!(o);
             assert!(matches!(*v, Value::Constant(Constant::Boolean(true))));
@@ -305,8 +308,10 @@ mod tests {
         #[test]
         fn empty_program() {
             let prg = Program::new([]);
+            let s = Rc::new(SymbolTable::default());
+            let env = Frame::root(Rc::downgrade(&s));
 
-            let o = prg.eval();
+            let o = prg.eval(&env);
 
             assert!(o.is_none());
         }
@@ -337,8 +342,10 @@ mod tests {
                     },
                 ),
             ]);
+            let s = Rc::new(SymbolTable::default());
+            let env = Frame::root(Rc::downgrade(&s));
 
-            let o = prg.eval();
+            let o = prg.eval(&env);
 
             let v = some_or_fail!(o);
             assert!(matches!(*v, Value::Constant(Constant::Character('b'))));

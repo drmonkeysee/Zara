@@ -1,9 +1,8 @@
 mod env;
 mod form;
 
-use self::env::SymbolTable;
 pub(crate) use self::{
-    env::Frame,
+    env::{Frame, SymbolTable},
     form::{IntrinsicFn, Procedure},
 };
 use crate::{core, syntax::Program, value};

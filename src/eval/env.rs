@@ -15,7 +15,7 @@ pub(crate) struct Frame {
 }
 
 impl Frame {
-    pub(super) fn root(symbols: Weak<SymbolTable>) -> Self {
+    pub(crate) fn root(symbols: Weak<SymbolTable>) -> Self {
         Self {
             bindings: HashMap::new(),
             child: None,
@@ -34,6 +34,6 @@ impl Frame {
 }
 
 #[derive(Default)]
-pub(super) struct SymbolTable {
+pub(crate) struct SymbolTable {
     interned: Vec<Box<str>>,
 }
