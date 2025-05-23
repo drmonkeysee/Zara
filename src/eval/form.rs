@@ -1,12 +1,15 @@
 use super::Frame;
-use crate::{syntax::Program, value::Value};
+use crate::{
+    syntax::Program,
+    value::{Value, ValueRef},
+};
 use std::{
     fmt::{self, Display, Formatter},
     ops::Range,
     rc::Rc,
 };
 
-pub(crate) type IntrinsicFn = fn(&[Rc<Value>], &Frame) -> Option<Rc<Value>>;
+pub(crate) type IntrinsicFn = fn(&[Rc<Value>], &Frame) -> ValueRef;
 
 #[derive(Debug)]
 pub(crate) struct Procedure {

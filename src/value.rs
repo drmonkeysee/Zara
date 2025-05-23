@@ -20,6 +20,8 @@ use std::{
 };
 pub(crate) use zlist;
 
+pub(crate) type ValueRef = Option<Rc<Value>>;
+
 #[derive(Debug)]
 pub(crate) enum Value {
     Ast(Program),

@@ -14,12 +14,12 @@ use std::{
 #[derive(Debug)]
 pub enum Evaluation {
     Continuation,
-    Val(Option<Value>),
+    Val(Value),
 }
 
 impl Evaluation {
-    fn val(v: Option<Rc<value::Value>>) -> Self {
-        Self::Val(Value::wrap(v))
+    fn val(v: value::ValueRef) -> Self {
+        Self::Val(Value(v))
     }
 
     #[must_use]
@@ -29,24 +29,25 @@ impl Evaluation {
 }
 
 #[derive(Debug)]
-pub struct Value(Rc<value::Value>);
+pub struct Value(value::ValueRef);
 
 impl Value {
-    fn wrap(v: Option<Rc<value::Value>>) -> Option<Self> {
-        Some(Self(v?))
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.0.is_none()
     }
 
     #[must_use]
     pub fn as_datum(&self) -> Datum {
-        Datum(self.0.as_datum())
+        Datum(self.0.as_ref().map(|v| v.as_datum()))
     }
 }
 
-pub struct Datum<'a>(value::Datum<'a>);
+pub struct Datum<'a>(Option<value::Datum<'a>>);
 
 impl Display for Datum<'_> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        self.0.fmt(f)
+        self.0.as_ref().map_or(Ok(()), |d| d.fmt(f))
     }
 }
 
@@ -56,8 +57,7 @@ impl Display for EvaluationMessage<'_> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self.0 {
             Evaluation::Continuation => f.write_str("fatal error: unexpected continuation"),
-            Evaluation::Val(None) => Ok(()),
-            Evaluation::Val(Some(v)) => v.0.display_message().fmt(f),
+            Evaluation::Val(v) => v.0.as_ref().map_or(Ok(()), |v| v.display_message().fmt(f)),
         }
     }
 }
@@ -90,12 +90,6 @@ impl Default for Environment {
         let s = Rc::new(SymbolTable::default());
         let mut env = Frame::root(Rc::downgrade(&s));
         core::load(&mut env);
-        env.bind(
-            "x",
-            value::Value::Constant(crate::constant::Constant::Number(
-                crate::number::Number::real(5),
-            )),
-        );
         Self {
             global: env.into(),
             symbols: s,

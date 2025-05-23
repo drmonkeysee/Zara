@@ -41,13 +41,13 @@ impl Repl {
     fn runline(&mut self) {
         match self.runtime.run(&mut self.src) {
             Ok(Evaluation::Continuation) => self.continuation(),
-            Ok(Evaluation::Val(v)) => self.print_value(v.as_ref()),
+            Ok(Evaluation::Val(v)) => self.print_value(&v),
             Err(err) => self.print_err(&err),
         }
     }
 
-    fn print_value(&mut self, v: Option<&Value>) {
-        if let Some(v) = v {
+    fn print_value(&mut self, v: &Value) {
+        if !v.is_empty() {
             println!("==> {}", v.as_datum());
         }
         self.reset();

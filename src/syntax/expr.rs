@@ -4,7 +4,7 @@ use crate::{
     lex::TokenKind,
     number::ByteConversionError,
     txt::{LineNumber, TextLine, TxtSpan},
-    value::Value,
+    value::{Value, ValueRef},
 };
 use std::{
     error::Error,
@@ -21,7 +21,7 @@ impl Program {
         Self(seq.into())
     }
 
-    pub(crate) fn eval(self, env: &Frame) -> Option<Rc<Value>> {
+    pub(crate) fn eval(self, env: &Frame) -> ValueRef {
         #[allow(
             clippy::double_ended_iterator_last,
             reason = "iterator consumed intentionally"
@@ -87,7 +87,7 @@ impl Expression {
         }
     }
 
-    fn eval(self, env: &Frame) -> Option<Rc<Value>> {
+    fn eval(self, env: &Frame) -> ValueRef {
         match self.kind {
             ExpressionKind::Call { .. } => {
                 /*
