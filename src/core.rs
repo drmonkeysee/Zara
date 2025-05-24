@@ -13,7 +13,7 @@ pub(crate) fn load(env: &mut Frame) {
 fn bind_intrinsic(env: &mut Frame, name: &str, arity: Range<u8>, body: IntrinsicFn) {
     env.bind(
         name,
-        Value::Procedure(Procedure::intrinsic(name, arity, body)),
+        Value::Procedure(Procedure::intrinsic(name, arity, body).into()),
     );
 
     // TODO: test variable
