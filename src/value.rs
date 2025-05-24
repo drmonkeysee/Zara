@@ -20,7 +20,8 @@ use std::{
 };
 pub(crate) use zlist;
 
-pub(crate) type ValueRef = Option<Rc<Value>>;
+pub(crate) type ValueRef = Rc<Value>;
+pub(crate) type ValueObj = Option<ValueRef>;
 
 #[derive(Debug)]
 pub(crate) enum Value {
@@ -83,13 +84,14 @@ impl Value {
 
 #[derive(Debug)]
 pub(crate) struct Pair {
+    // TODO: i think this needs to be a value ref, e.g. (cdr foo)
     car: Value,
-    cdr: Rc<Value>,
+    cdr: ValueRef,
 }
 
 impl Pair {
     #[allow(clippy::similar_names, reason = "lisp terms-of-art")]
-    pub(crate) fn cons(car: Value, cdr: impl Into<Rc<Value>>) -> Self {
+    pub(crate) fn cons(car: Value, cdr: impl Into<ValueRef>) -> Self {
         Self {
             car,
             cdr: cdr.into(),
@@ -123,7 +125,7 @@ impl Display for Pair {
 #[derive(Debug)]
 pub(crate) struct Condition {
     kind: ConditionKind,
-    irritants: ValueRef,
+    irritants: ValueObj,
     msg: Box<str>,
 }
 

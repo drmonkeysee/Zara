@@ -8,7 +8,7 @@ pub(crate) use self::{
 use crate::{
     core,
     syntax::Program,
-    value::{Condition, Value as ValueImpl, ValueRef},
+    value::{Condition, Value as ValueImpl, ValueObj},
 };
 use std::{
     fmt::{self, Display, Formatter},
@@ -37,7 +37,7 @@ impl Evaluation {
 }
 
 #[derive(Debug)]
-pub struct Value(ValueRef);
+pub struct Value(ValueObj);
 
 impl Value {
     #[must_use]
@@ -88,7 +88,7 @@ impl Display for EvaluationMessage<'_> {
     }
 }
 
-pub(crate) type EvalResult = Result<ValueRef, Exception>;
+pub(crate) type EvalResult = Result<ValueObj, Exception>;
 
 pub(crate) trait Evaluator {
     fn evaluate(&self, prg: Program) -> Evaluation;
