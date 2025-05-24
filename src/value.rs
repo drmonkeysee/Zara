@@ -15,7 +15,7 @@ use crate::{
     syntax::Program,
 };
 use std::{
-    fmt::{self, Display, Formatter},
+    fmt::{self, Display, Formatter, Write},
     rc::Rc,
 };
 pub(crate) use zlist;
@@ -29,6 +29,7 @@ pub(crate) enum Value {
     Constant(Constant),
     Pair(Option<Rc<Pair>>),
     Procedure(Procedure),
+    Signal(Condition),
     // TODO: figure out symbol table
     Symbol(Box<str>),
     TokenList(Box<[TokenLine]>),
@@ -120,6 +121,27 @@ impl Display for Pair {
     }
 }
 
+#[derive(Debug)]
+pub(crate) struct Condition {
+    kind: ConditionKind,
+    irritants: ValueRef,
+    msg: Box<str>,
+}
+
+impl Condition {
+    pub(crate) fn binding(name: &str) -> Self {
+        Self {
+            kind: ConditionKind::Env,
+            irritants: None,
+            msg: format!("unbound variable: {name}").into(),
+        }
+    }
+
+    pub(crate) fn as_datum(&self) -> ConditionDatum {
+        ConditionDatum(self)
+    }
+}
+
 pub(crate) struct Datum<'a>(&'a Value);
 
 impl Display for Datum<'_> {
@@ -131,6 +153,7 @@ impl Display for Datum<'_> {
             Value::Pair(None) => f.write_str("()"),
             Value::Pair(Some(p)) => write!(f, "({p})"),
             Value::Procedure(p) => p.as_datum().fmt(f),
+            Value::Signal(c) => c.as_datum().fmt(f),
             Value::Symbol(s) => SymbolDatum(s).fmt(f),
             Value::TokenList(lines) => DisplayTokenLines(lines).fmt(f),
             Value::Vector(v) => write_seq("#", v, |v| v.as_datum().to_string(), f),
@@ -161,9 +184,41 @@ impl Display for TypeName<'_> {
             Value::Pair(None) => f.write_str("list"),
             Value::Pair(Some(p)) => f.write_str(if p.is_list() { "list" } else { "pair" }),
             Value::Procedure(_) => f.write_str("procedure"),
+            Value::Signal(_) => f.write_str("signal condition"),
             Value::Symbol(_) => f.write_str("symbol"),
             Value::TokenList(_) => f.write_str("token list"),
             Value::Vector(_) => f.write_str("vector"),
+        }
+    }
+}
+
+pub(crate) struct ConditionDatum<'a>(&'a Condition);
+
+impl Display for ConditionDatum<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "#<{} \"{}\"", self.0.kind, self.0.msg)?;
+        if let Some(v) = &self.0.irritants {
+            write!(f, " {}", v.as_datum())?;
+        }
+        f.write_char('>')
+    }
+}
+
+#[derive(Debug)]
+enum ConditionKind {
+    Env,
+    File,
+    General,
+    Read,
+}
+
+impl Display for ConditionKind {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Env => f.write_str("env-error"),
+            Self::File => f.write_str("file-error"),
+            Self::General => f.write_str("exception"),
+            Self::Read => f.write_str("read-error"),
         }
     }
 }
@@ -309,6 +364,28 @@ mod tests {
             let v = Value::Procedure(Procedure::intrinsic("foo", 0..0, |_, _| None));
 
             assert_eq!(v.as_datum().to_string(), "#<procedure foo>");
+        }
+
+        #[test]
+        fn condition_typename() {
+            let v = Value::Signal(Condition {
+                kind: ConditionKind::General,
+                msg: "foo".into(),
+                irritants: None,
+            });
+
+            assert_eq!(v.as_typename().to_string(), "signal condition");
+        }
+
+        #[test]
+        fn condition_datum() {
+            let v = Value::Signal(Condition {
+                kind: ConditionKind::General,
+                msg: "foo".into(),
+                irritants: None,
+            });
+
+            assert_eq!(v.as_datum().to_string(), "#<exception \"foo\">");
         }
     }
 
@@ -785,6 +862,82 @@ bar"
             ]);
 
             assert_eq!(lst.as_datum().to_string(), "(5 a . #t)");
+        }
+    }
+
+    mod condition {
+        use super::*;
+
+        #[test]
+        fn display_empty_condition() {
+            let c = Condition {
+                kind: ConditionKind::General,
+                msg: "foo".into(),
+                irritants: None,
+            };
+
+            assert_eq!(c.as_datum().to_string(), "#<exception \"foo\">");
+        }
+
+        #[test]
+        fn display_list_irritants() {
+            let c = Condition {
+                kind: ConditionKind::General,
+                msg: "foo".into(),
+                irritants: Some(
+                    zlist![
+                        Value::Symbol("a".into()),
+                        Value::Constant(Constant::Number(Number::real(5)))
+                    ]
+                    .into(),
+                ),
+            };
+
+            assert_eq!(c.as_datum().to_string(), "#<exception \"foo\" (a 5)>");
+        }
+
+        #[test]
+        fn display_value_irritant() {
+            let c = Condition {
+                kind: ConditionKind::General,
+                msg: "foo".into(),
+                irritants: Some(Value::Constant(Constant::Boolean(true)).into()),
+            };
+
+            assert_eq!(c.as_datum().to_string(), "#<exception \"foo\" #t>");
+        }
+
+        #[test]
+        fn display_env_condition() {
+            let c = Condition {
+                kind: ConditionKind::Env,
+                msg: "foo".into(),
+                irritants: None,
+            };
+
+            assert_eq!(c.as_datum().to_string(), "#<env-error \"foo\">");
+        }
+
+        #[test]
+        fn display_file_condition() {
+            let c = Condition {
+                kind: ConditionKind::File,
+                msg: "foo".into(),
+                irritants: None,
+            };
+
+            assert_eq!(c.as_datum().to_string(), "#<file-error \"foo\">");
+        }
+
+        #[test]
+        fn display_read_condition() {
+            let c = Condition {
+                kind: ConditionKind::Read,
+                msg: "foo".into(),
+                irritants: None,
+            };
+
+            assert_eq!(c.as_datum().to_string(), "#<read-error \"foo\">");
         }
     }
 }

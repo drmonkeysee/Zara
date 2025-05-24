@@ -42,7 +42,7 @@ enum Body {
     Intrinsic(IntrinsicFn),
     // TODO: this likely has to be a 3rd thing: Body to exclude constructs
     // that can only appear at top-level program.
-    Lambda(Box<Program> /*, TODO: need parameter names? */),
+    Lambda(Program /*, TODO: need parameter names? */),
 }
 
 pub(crate) struct Datum<'a>(&'a Procedure);

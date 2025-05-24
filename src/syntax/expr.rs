@@ -1,10 +1,10 @@
 use crate::{
     constant::Constant,
-    eval::Frame,
+    eval::{EvalResult, Exception, Frame},
     lex::TokenKind,
     number::ByteConversionError,
     txt::{LineNumber, TextLine, TxtSpan},
-    value::{Value, ValueRef},
+    value::{Condition, Value},
 };
 use std::{
     error::Error,
@@ -21,12 +21,16 @@ impl Program {
         Self(seq.into())
     }
 
-    pub(crate) fn eval(self, env: &Frame) -> ValueRef {
+    pub(crate) fn eval(self, env: &Frame) -> EvalResult {
         #[allow(
             clippy::double_ended_iterator_last,
             reason = "iterator consumed intentionally"
         )]
-        self.0.into_iter().map(|expr| expr.eval(env)).last()?
+        self.0
+            .into_iter()
+            .map(|expr| expr.eval(env))
+            .last()
+            .unwrap_or(Ok(None))
     }
 
     #[cfg(test)]
@@ -87,7 +91,7 @@ impl Expression {
         }
     }
 
-    fn eval(self, env: &Frame) -> ValueRef {
+    fn eval(self, env: &Frame) -> EvalResult {
         match self.kind {
             ExpressionKind::Call { .. } => {
                 /*
@@ -99,8 +103,11 @@ impl Expression {
                 */
                 todo!("proc call not implemented")
             }
-            ExpressionKind::Literal(v) => Some(v.into()),
-            ExpressionKind::Variable(n) => env.lookup(&n), // TODO: return unbound variable error condition
+            ExpressionKind::Literal(v) => Ok(Some(v.into())),
+            ExpressionKind::Variable(n) => env.lookup(&n).map_or_else(
+                || Err(Exception::new(Condition::binding(&n))),
+                |v| Ok(Some(v)),
+            ),
         }
     }
 }
@@ -285,7 +292,10 @@ mod tests {
 
     mod eval {
         use super::*;
-        use crate::eval::SymbolTable;
+        use crate::{
+            eval::SymbolTable,
+            testutil::{err_or_fail, ok_or_fail},
+        };
 
         #[test]
         fn constant() {
@@ -299,10 +309,50 @@ mod tests {
             let s = Rc::new(SymbolTable::default());
             let env = Frame::root(Rc::downgrade(&s));
 
-            let o = expr.eval(&env);
+            let r = expr.eval(&env);
 
-            let v = some_or_fail!(o);
+            let v = some_or_fail!(ok_or_fail!(r));
             assert!(matches!(*v, Value::Constant(Constant::Boolean(true))));
+        }
+
+        #[test]
+        fn variable() {
+            let expr = Expression::variable(
+                "x",
+                ExprCtx {
+                    span: 0..6,
+                    txt: make_textline().into(),
+                },
+            );
+            let s = Rc::new(SymbolTable::default());
+            let mut env = Frame::root(Rc::downgrade(&s));
+            env.bind("x", Value::Constant(Constant::String("foo".into())));
+
+            let r = expr.eval(&env);
+
+            let v = some_or_fail!(ok_or_fail!(r));
+            assert!(matches!(&*v, Value::Constant(Constant::String(s)) if &**s == "foo"));
+        }
+
+        #[test]
+        fn missing_variable() {
+            let expr = Expression::variable(
+                "x",
+                ExprCtx {
+                    span: 0..6,
+                    txt: make_textline().into(),
+                },
+            );
+            let s = Rc::new(SymbolTable::default());
+            let env = Frame::root(Rc::downgrade(&s));
+
+            let r = expr.eval(&env);
+
+            let err = err_or_fail!(r);
+            assert_eq!(
+                err.as_datum().to_string(),
+                "#<env-error \"unbound variable: x\">"
+            );
         }
 
         #[test]
@@ -311,8 +361,9 @@ mod tests {
             let s = Rc::new(SymbolTable::default());
             let env = Frame::root(Rc::downgrade(&s));
 
-            let o = prg.eval(&env);
+            let r = prg.eval(&env);
 
+            let o = ok_or_fail!(r);
             assert!(o.is_none());
         }
 
@@ -345,9 +396,9 @@ mod tests {
             let s = Rc::new(SymbolTable::default());
             let env = Frame::root(Rc::downgrade(&s));
 
-            let o = prg.eval(&env);
+            let r = prg.eval(&env);
 
-            let v = some_or_fail!(o);
+            let v = some_or_fail!(ok_or_fail!(r));
             assert!(matches!(*v, Value::Constant(Constant::Character('b'))));
         }
     }

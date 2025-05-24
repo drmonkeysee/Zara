@@ -1,5 +1,5 @@
 use rustyline::{Config, Editor, Result, history::MemHistory};
-use zara::{Error, Evaluation, Interpreter, RunMode, Value, src::StringSource};
+use zara::{Error, Evaluation, Exception, Interpreter, RunMode, Value, src::StringSource};
 
 const INPUT: &str = "λ:> ";
 const CONT: &str = "... ";
@@ -41,9 +41,15 @@ impl Repl {
     fn runline(&mut self) {
         match self.runtime.run(&mut self.src) {
             Ok(Evaluation::Continuation) => self.continuation(),
+            Ok(Evaluation::Ex(ex)) => self.print_exception(&ex),
             Ok(Evaluation::Val(v)) => self.print_value(&v),
             Err(err) => self.print_err(&err),
         }
+    }
+
+    fn print_exception(&mut self, ex: &Exception) {
+        println!("unhandled-exception => {}", ex.as_datum());
+        self.reset();
     }
 
     fn print_value(&mut self, v: &Value) {

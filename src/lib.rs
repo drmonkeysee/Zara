@@ -11,7 +11,7 @@ mod testutil;
 pub mod txt;
 mod value;
 
-pub use self::eval::{Evaluation, Value};
+pub use self::eval::{Evaluation, Exception, Value};
 use self::{
     eval::{Ast, Environment, Evaluator},
     lex::{Lexer, LexerError, LexerOutput, TokenLine},
