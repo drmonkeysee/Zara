@@ -50,7 +50,7 @@ enum Body {
 }
 
 fn write_arity(arity: &Range<u8>, f: &mut Formatter<'_>) -> fmt::Result {
-    if arity.start == 0 && arity.len() == 0 {
+    if arity.start == 0 && arity.is_empty() {
         Ok(())
     } else {
         f.write_str(" (")?;

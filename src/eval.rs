@@ -5,7 +5,11 @@ pub(crate) use self::{
     env::{Frame, SymbolTable},
     form::{IntrinsicFn, Procedure},
 };
-use crate::{core, syntax::Program, value};
+use crate::{
+    core,
+    syntax::Program,
+    value::{Condition, Value as ValueImpl, ValueRef},
+};
 use std::{
     fmt::{self, Display, Formatter},
     rc::Rc,
@@ -33,7 +37,7 @@ impl Evaluation {
 }
 
 #[derive(Debug)]
-pub struct Value(value::ValueRef);
+pub struct Value(ValueRef);
 
 impl Value {
     #[must_use]
@@ -49,15 +53,16 @@ impl Display for Value {
 }
 
 #[derive(Debug)]
-pub struct Exception(Rc<value::Condition>);
+pub struct Exception(Rc<Condition>);
 
 impl Exception {
-    pub(crate) fn new(cond: impl Into<Rc<value::Condition>>) -> Self {
+    pub(crate) fn new(cond: impl Into<Rc<Condition>>) -> Self {
         Self(cond.into())
     }
 }
 
 impl Exception {
+    #[must_use]
     pub fn as_datum(&self) -> ExceptionDatum {
         ExceptionDatum(self)
     }
@@ -83,7 +88,7 @@ impl Display for EvaluationMessage<'_> {
     }
 }
 
-pub(crate) type EvalResult = Result<value::ValueRef, Exception>;
+pub(crate) type EvalResult = Result<ValueRef, Exception>;
 
 pub(crate) trait Evaluator {
     fn evaluate(&self, prg: Program) -> Evaluation;
@@ -93,7 +98,7 @@ pub(crate) struct Ast;
 
 impl Evaluator for Ast {
     fn evaluate(&self, prg: Program) -> Evaluation {
-        Evaluation::result(Ok(Some(value::Value::Ast(prg).into())))
+        Evaluation::result(Ok(Some(ValueImpl::Ast(prg).into())))
     }
 }
 
