@@ -54,7 +54,7 @@ impl Repl {
 
     fn print_value(&mut self, v: &Value) {
         if !v.is_unspecified() {
-            println!("==> {}", v.as_datum());
+            println!("==> {v}");
         }
         self.reset();
     }

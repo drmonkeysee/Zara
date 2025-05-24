@@ -31,9 +31,13 @@ impl Procedure {
             name: name.into(),
         }
     }
+}
 
-    pub(crate) fn as_datum(&self) -> Datum {
-        Datum(self)
+impl Display for Procedure {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "#<procedure {}", self.name)?;
+        write_arity(&self.arity, f)?;
+        f.write_char('>')
     }
 }
 
@@ -43,16 +47,6 @@ enum Body {
     // TODO: this likely has to be a 3rd thing: Body to exclude constructs
     // that can only appear at top-level program.
     Lambda(Program /*, TODO: need parameter names? */),
-}
-
-pub(crate) struct Datum<'a>(&'a Procedure);
-
-impl Display for Datum<'_> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "#<procedure {}", self.0.name)?;
-        write_arity(&self.0.arity, f)?;
-        f.write_char('>')
-    }
 }
 
 fn write_arity(arity: &Range<u8>, f: &mut Formatter<'_>) -> fmt::Result {
@@ -75,51 +69,51 @@ mod tests {
     use super::*;
 
     #[test]
-    fn intrinsic_datum_zero_arity() {
+    fn intrinsic_zero_arity() {
         let p = Procedure::intrinsic("foo", 0..0, |_, _| None);
 
-        assert_eq!(p.as_datum().to_string(), "#<procedure foo>");
+        assert_eq!(p.to_string(), "#<procedure foo>");
     }
 
     #[test]
-    fn intrinsic_datum_single_arity() {
+    fn intrinsic_single_arity() {
         let p = Procedure::intrinsic("foo", 1..1, |_, _| None);
 
-        assert_eq!(p.as_datum().to_string(), "#<procedure foo (_)>");
+        assert_eq!(p.to_string(), "#<procedure foo (_)>");
     }
 
     #[test]
-    fn intrinsic_datum_multi_arity() {
+    fn intrinsic_multi_arity() {
         let p = Procedure::intrinsic("foo", 3..3, |_, _| None);
 
-        assert_eq!(p.as_datum().to_string(), "#<procedure foo (_ _ _)>");
+        assert_eq!(p.to_string(), "#<procedure foo (_ _ _)>");
     }
 
     #[test]
-    fn intrinsic_datum_optional() {
+    fn intrinsic_optional() {
         let p = Procedure::intrinsic("foo", 0..1, |_, _| None);
 
-        assert_eq!(p.as_datum().to_string(), "#<procedure foo (?)>");
+        assert_eq!(p.to_string(), "#<procedure foo (?)>");
     }
 
     #[test]
-    fn intrinsic_datum_multi_optional() {
+    fn intrinsic_multi_optional() {
         let p = Procedure::intrinsic("foo", 1..3, |_, _| None);
 
-        assert_eq!(p.as_datum().to_string(), "#<procedure foo (_ ? ?)>");
+        assert_eq!(p.to_string(), "#<procedure foo (_ ? ?)>");
     }
 
     #[test]
-    fn intrinsic_datum_open_arity() {
+    fn intrinsic_open_arity() {
         let p = Procedure::intrinsic("foo", 0..255, |_, _| None);
 
-        assert_eq!(p.as_datum().to_string(), "#<procedure foo (…)>");
+        assert_eq!(p.to_string(), "#<procedure foo (…)>");
     }
 
     #[test]
-    fn intrinsic_datum_required_params_with_open_arity() {
+    fn intrinsic_required_params_with_open_arity() {
         let p = Procedure::intrinsic("foo", 2..255, |_, _| None);
 
-        assert_eq!(p.as_datum().to_string(), "#<procedure foo (_ _ …)>");
+        assert_eq!(p.to_string(), "#<procedure foo (_ _ …)>");
     }
 }

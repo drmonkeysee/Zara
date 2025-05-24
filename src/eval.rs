@@ -40,18 +40,11 @@ impl Value {
     pub fn is_unspecified(&self) -> bool {
         self.0.is_none()
     }
-
-    #[must_use]
-    pub fn as_datum(&self) -> Datum {
-        Datum(self.0.as_ref().map(|v| v.as_datum()))
-    }
 }
 
-pub struct Datum<'a>(Option<value::Datum<'a>>);
-
-impl Display for Datum<'_> {
+impl Display for Value {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        self.0.as_ref().map_or(Ok(()), |d| d.fmt(f))
+        self.0.as_ref().map_or(Ok(()), |v| v.as_datum().fmt(f))
     }
 }
 

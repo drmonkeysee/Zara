@@ -152,7 +152,7 @@ impl Display for Datum<'_> {
             Value::Constant(con) => con.as_datum().fmt(f),
             Value::Pair(None) => f.write_str("()"),
             Value::Pair(Some(p)) => write!(f, "({p})"),
-            Value::Procedure(p) => p.as_datum().fmt(f),
+            Value::Procedure(p) => p.fmt(f),
             Value::Signal(c) => c.as_datum().fmt(f),
             Value::Symbol(s) => SymbolDatum(s).fmt(f),
             Value::TokenList(lines) => DisplayTokenLines(lines).fmt(f),
