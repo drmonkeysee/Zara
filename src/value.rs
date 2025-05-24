@@ -29,7 +29,6 @@ pub(crate) enum Value {
     Constant(Constant),
     Pair(Option<Rc<Pair>>),
     Procedure(Box<Procedure>),
-    Signal(Box<Condition>),
     // TODO: figure out symbol table
     Symbol(Box<str>),
     TokenList(Box<[TokenLine]>),
@@ -153,7 +152,6 @@ impl Display for Datum<'_> {
             Value::Pair(None) => f.write_str("()"),
             Value::Pair(Some(p)) => write!(f, "({p})"),
             Value::Procedure(p) => p.fmt(f),
-            Value::Signal(c) => c.as_datum().fmt(f),
             Value::Symbol(s) => SymbolDatum(s).fmt(f),
             Value::TokenList(lines) => DisplayTokenLines(lines).fmt(f),
             Value::Vector(v) => write_seq("#", v, |v| v.as_datum().to_string(), f),
@@ -184,7 +182,6 @@ impl Display for TypeName<'_> {
             Value::Pair(None) => f.write_str("list"),
             Value::Pair(Some(p)) => f.write_str(if p.is_list() { "list" } else { "pair" }),
             Value::Procedure(_) => f.write_str("procedure"),
-            Value::Signal(_) => f.write_str("signal condition"),
             Value::Symbol(_) => f.write_str("symbol"),
             Value::TokenList(_) => f.write_str("token list"),
             Value::Vector(_) => f.write_str("vector"),
@@ -364,34 +361,6 @@ mod tests {
             let v = Value::Procedure(Procedure::intrinsic("foo", 0..0, |_, _| None).into());
 
             assert_eq!(v.as_datum().to_string(), "#<procedure foo>");
-        }
-
-        #[test]
-        fn condition_typename() {
-            let v = Value::Signal(
-                Condition {
-                    kind: ConditionKind::General,
-                    msg: "foo".into(),
-                    irritants: None,
-                }
-                .into(),
-            );
-
-            assert_eq!(v.as_typename().to_string(), "signal condition");
-        }
-
-        #[test]
-        fn condition_datum() {
-            let v = Value::Signal(
-                Condition {
-                    kind: ConditionKind::General,
-                    msg: "foo".into(),
-                    irritants: None,
-                }
-                .into(),
-            );
-
-            assert_eq!(v.as_datum().to_string(), "#<exception \"foo\">");
         }
     }
 
