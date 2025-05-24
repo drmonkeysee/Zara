@@ -13,7 +13,6 @@ pub(crate) type IntrinsicFn = fn(&[ValueRef], &Frame) -> ValueObj;
 
 #[derive(Debug)]
 pub(crate) struct Procedure {
-    arity: Range<u8>,
     body: Body,
     name: Box<str>,
 }
@@ -22,11 +21,10 @@ impl Procedure {
     pub(crate) fn intrinsic(
         name: impl Into<Box<str>>,
         arity: Range<u8>,
-        body: IntrinsicFn,
+        func: IntrinsicFn,
     ) -> Self {
         Self {
-            arity,
-            body: Body::Intrinsic(body),
+            body: Body::Intrinsic { arity, func },
             name: name.into(),
         }
     }
@@ -35,14 +33,17 @@ impl Procedure {
 impl Display for Procedure {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "#<procedure {}", self.name)?;
-        write_arity(&self.arity, f)?;
+        match &self.body {
+            Body::Intrinsic { arity, .. } => write_arity(arity, f)?,
+            Body::Lambda(_) => todo!("lambda proc datum"),
+        }
         f.write_char('>')
     }
 }
 
 #[derive(Debug)]
 enum Body {
-    Intrinsic(IntrinsicFn),
+    Intrinsic { arity: Range<u8>, func: IntrinsicFn },
     // TODO: this likely has to be a 3rd thing: Body to exclude constructs
     // that can only appear at top-level program.
     Lambda(Program /*, TODO: need parameter names? */),
