@@ -1,15 +1,12 @@
 use super::Frame;
-use crate::{
-    syntax::Program,
-    value::{ValueObj, ValueRef},
-};
+use crate::{syntax::Program, value::ValueRef};
 use std::{
     fmt::{self, Display, Formatter, Write},
     iter,
     ops::Range,
 };
 
-pub(crate) type IntrinsicFn = fn(&[ValueRef], &Frame) -> ValueObj;
+pub(crate) type IntrinsicFn = fn(&[ValueRef], &Frame) -> ValueRef;
 
 #[derive(Debug)]
 pub(crate) struct Procedure {
@@ -67,52 +64,53 @@ fn write_arity(arity: &Range<u8>, f: &mut Formatter<'_>) -> fmt::Result {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::value::Value;
 
     #[test]
     fn intrinsic_zero_arity() {
-        let p = Procedure::intrinsic("foo", 0..0, |_, _| None);
+        let p = Procedure::intrinsic("foo", 0..0, |_, _| Value::Unspecified.into());
 
         assert_eq!(p.to_string(), "#<procedure foo>");
     }
 
     #[test]
     fn intrinsic_single_arity() {
-        let p = Procedure::intrinsic("foo", 1..1, |_, _| None);
+        let p = Procedure::intrinsic("foo", 1..1, |_, _| Value::Unspecified.into());
 
         assert_eq!(p.to_string(), "#<procedure foo (_)>");
     }
 
     #[test]
     fn intrinsic_multi_arity() {
-        let p = Procedure::intrinsic("foo", 3..3, |_, _| None);
+        let p = Procedure::intrinsic("foo", 3..3, |_, _| Value::Unspecified.into());
 
         assert_eq!(p.to_string(), "#<procedure foo (_ _ _)>");
     }
 
     #[test]
     fn intrinsic_optional() {
-        let p = Procedure::intrinsic("foo", 0..1, |_, _| None);
+        let p = Procedure::intrinsic("foo", 0..1, |_, _| Value::Unspecified.into());
 
         assert_eq!(p.to_string(), "#<procedure foo (?)>");
     }
 
     #[test]
     fn intrinsic_multi_optional() {
-        let p = Procedure::intrinsic("foo", 1..3, |_, _| None);
+        let p = Procedure::intrinsic("foo", 1..3, |_, _| Value::Unspecified.into());
 
         assert_eq!(p.to_string(), "#<procedure foo (_ ? ?)>");
     }
 
     #[test]
     fn intrinsic_open_arity() {
-        let p = Procedure::intrinsic("foo", 0..255, |_, _| None);
+        let p = Procedure::intrinsic("foo", 0..255, |_, _| Value::Unspecified.into());
 
         assert_eq!(p.to_string(), "#<procedure foo (…)>");
     }
 
     #[test]
     fn intrinsic_required_params_with_open_arity() {
-        let p = Procedure::intrinsic("foo", 2..255, |_, _| None);
+        let p = Procedure::intrinsic("foo", 2..255, |_, _| Value::Unspecified.into());
 
         assert_eq!(p.to_string(), "#<procedure foo (_ _ …)>");
     }

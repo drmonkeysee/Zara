@@ -21,7 +21,6 @@ use std::{
 pub(crate) use zlist;
 
 pub(crate) type ValueRef = Rc<Value>;
-pub(crate) type ValueObj = Option<ValueRef>;
 
 #[derive(Debug)]
 pub(crate) enum Value {
@@ -126,7 +125,7 @@ impl Display for Pair {
 #[derive(Debug)]
 pub(crate) struct Condition {
     kind: ConditionKind,
-    irritants: ValueObj,
+    irritants: ValueRef,
     msg: Box<str>,
 }
 
@@ -134,7 +133,7 @@ impl Condition {
     pub(crate) fn binding(name: &str) -> Self {
         Self {
             kind: ConditionKind::Env,
-            irritants: None,
+            irritants: Value::Unspecified.into(),
             msg: format!("unbound variable: {name}").into(),
         }
     }
@@ -199,8 +198,9 @@ pub(crate) struct ConditionDatum<'a>(&'a Condition);
 impl Display for ConditionDatum<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "#<{} \"{}\"", self.0.kind, self.0.msg)?;
-        if let Some(v) = &self.0.irritants {
-            write!(f, " {}", v.as_datum())?;
+        match &*self.0.irritants {
+            Value::Unspecified => (),
+            v @ _ => write!(f, " {}", v.as_datum())?,
         }
         f.write_char('>')
     }
@@ -370,14 +370,18 @@ mod tests {
 
         #[test]
         fn procedure_typename() {
-            let v = Value::Procedure(Procedure::intrinsic("foo", 0..0, |_, _| None).into());
+            let v = Value::Procedure(
+                Procedure::intrinsic("foo", 0..0, |_, _| Value::Unspecified.into()).into(),
+            );
 
             assert_eq!(v.as_typename().to_string(), "procedure");
         }
 
         #[test]
         fn procedure_datum() {
-            let v = Value::Procedure(Procedure::intrinsic("foo", 0..0, |_, _| None).into());
+            let v = Value::Procedure(
+                Procedure::intrinsic("foo", 0..0, |_, _| Value::Unspecified.into()).into(),
+            );
 
             assert_eq!(v.as_datum().to_string(), "#<procedure foo>");
         }
@@ -867,7 +871,7 @@ bar"
             let c = Condition {
                 kind: ConditionKind::General,
                 msg: "foo".into(),
-                irritants: None,
+                irritants: Value::Unspecified.into(),
             };
 
             assert_eq!(c.as_datum().to_string(), "#<exception \"foo\">");
@@ -878,13 +882,11 @@ bar"
             let c = Condition {
                 kind: ConditionKind::General,
                 msg: "foo".into(),
-                irritants: Some(
-                    zlist![
-                        Value::Symbol("a".into()),
-                        Value::Constant(Constant::Number(Number::real(5)))
-                    ]
-                    .into(),
-                ),
+                irritants: zlist![
+                    Value::Symbol("a".into()),
+                    Value::Constant(Constant::Number(Number::real(5)))
+                ]
+                .into(),
             };
 
             assert_eq!(c.as_datum().to_string(), "#<exception \"foo\" (a 5)>");
@@ -895,7 +897,7 @@ bar"
             let c = Condition {
                 kind: ConditionKind::General,
                 msg: "foo".into(),
-                irritants: Some(Value::Constant(Constant::Boolean(true)).into()),
+                irritants: Value::Constant(Constant::Boolean(true)).into(),
             };
 
             assert_eq!(c.as_datum().to_string(), "#<exception \"foo\" #t>");
@@ -906,7 +908,7 @@ bar"
             let c = Condition {
                 kind: ConditionKind::Env,
                 msg: "foo".into(),
-                irritants: None,
+                irritants: Value::Unspecified.into(),
             };
 
             assert_eq!(c.as_datum().to_string(), "#<env-error \"foo\">");
@@ -917,7 +919,7 @@ bar"
             let c = Condition {
                 kind: ConditionKind::File,
                 msg: "foo".into(),
-                irritants: None,
+                irritants: Value::Unspecified.into(),
             };
 
             assert_eq!(c.as_datum().to_string(), "#<file-error \"foo\">");
@@ -928,7 +930,7 @@ bar"
             let c = Condition {
                 kind: ConditionKind::Read,
                 msg: "foo".into(),
-                irritants: None,
+                irritants: Value::Unspecified.into(),
             };
 
             assert_eq!(c.as_datum().to_string(), "#<read-error \"foo\">");

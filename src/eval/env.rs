@@ -1,4 +1,4 @@
-use crate::value::{ValueObj, ValueRef};
+use crate::value::ValueRef;
 use std::{
     collections::HashMap,
     rc::{Rc, Weak},
@@ -24,7 +24,7 @@ impl Frame {
         }
     }
 
-    pub(crate) fn lookup(&self, name: &str) -> ValueObj {
+    pub(crate) fn lookup(&self, name: &str) -> Option<ValueRef> {
         self.bindings.get(name).map(Rc::clone)
     }
 

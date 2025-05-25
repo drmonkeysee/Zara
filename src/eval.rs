@@ -8,7 +8,7 @@ pub(crate) use self::{
 use crate::{
     core,
     syntax::Program,
-    value::{Condition, Value as ValueImpl, ValueObj},
+    value::{Condition, Value as ValueImpl, ValueRef},
 };
 use std::{
     fmt::{self, Display, Formatter},
@@ -37,18 +37,18 @@ impl Evaluation {
 }
 
 #[derive(Debug)]
-pub struct Value(ValueObj);
+pub struct Value(ValueRef);
 
 impl Value {
     #[must_use]
     pub fn is_unspecified(&self) -> bool {
-        self.0.is_none()
+        matches!(*self.0, ValueImpl::Unspecified)
     }
 }
 
 impl Display for Value {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        self.0.as_ref().map_or(Ok(()), |v| v.as_datum().fmt(f))
+        self.0.as_datum().fmt(f)
     }
 }
 
@@ -83,12 +83,12 @@ impl Display for EvaluationMessage<'_> {
         match self.0 {
             Evaluation::Continuation => f.write_str("fatal error: unexpected continuation"),
             Evaluation::Ex(_) => todo!("exception cli message"),
-            Evaluation::Val(v) => v.0.as_ref().map_or(Ok(()), |v| v.display_message().fmt(f)),
+            Evaluation::Val(v) => v.0.display_message().fmt(f),
         }
     }
 }
 
-pub(crate) type EvalResult = Result<ValueObj, Exception>;
+pub(crate) type EvalResult = Result<ValueRef, Exception>;
 
 pub(crate) trait Evaluator {
     fn evaluate(&self, prg: Program) -> Evaluation;
@@ -98,7 +98,7 @@ pub(crate) struct Ast;
 
 impl Evaluator for Ast {
     fn evaluate(&self, prg: Program) -> Evaluation {
-        Evaluation::result(Ok(Some(ValueImpl::Ast(prg).into())))
+        Evaluation::result(Ok(ValueImpl::Ast(prg).into()))
     }
 }
 

@@ -30,7 +30,7 @@ impl Program {
             .into_iter()
             .map(|expr| expr.eval(env))
             .last()
-            .unwrap_or(Ok(None))
+            .unwrap_or(Ok(Value::Unspecified.into()))
     }
 
     #[cfg(test)]
@@ -103,11 +103,10 @@ impl Expression {
                 */
                 todo!("proc call not implemented")
             }
-            ExpressionKind::Literal(v) => Ok(Some(v.into())),
-            ExpressionKind::Variable(n) => env.lookup(&n).map_or_else(
-                || Err(Exception::new(Condition::binding(&n))),
-                |v| Ok(Some(v)),
-            ),
+            ExpressionKind::Literal(v) => Ok(v.into()),
+            ExpressionKind::Variable(n) => env
+                .lookup(&n)
+                .ok_or_else(|| Exception::new(Condition::binding(&n))),
         }
     }
 }
@@ -311,7 +310,7 @@ mod tests {
 
             let r = expr.eval(&env);
 
-            let v = some_or_fail!(ok_or_fail!(r));
+            let v = ok_or_fail!(r);
             assert!(matches!(*v, Value::Constant(Constant::Boolean(true))));
         }
 
@@ -330,7 +329,7 @@ mod tests {
 
             let r = expr.eval(&env);
 
-            let v = some_or_fail!(ok_or_fail!(r));
+            let v = ok_or_fail!(r);
             assert!(matches!(&*v, Value::Constant(Constant::String(s)) if &**s == "foo"));
         }
 
@@ -363,8 +362,8 @@ mod tests {
 
             let r = prg.eval(&env);
 
-            let o = ok_or_fail!(r);
-            assert!(o.is_none());
+            let v = ok_or_fail!(r);
+            assert!(matches!(*v, Value::Unspecified));
         }
 
         #[test]
@@ -398,7 +397,7 @@ mod tests {
 
             let r = prg.eval(&env);
 
-            let v = some_or_fail!(ok_or_fail!(r));
+            let v = ok_or_fail!(r);
             assert!(matches!(*v, Value::Constant(Constant::Character('b'))));
         }
     }

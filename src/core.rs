@@ -16,11 +16,12 @@ fn bind_intrinsic(env: &mut Frame, name: &str, arity: Range<u8>, body: Intrinsic
         Value::Procedure(Procedure::intrinsic(name, arity, body).into()),
     );
 
-    // TODO: test variable
+    // TODO: test variables
     env.bind(
         "x",
         Value::Constant(crate::constant::Constant::Number(
             crate::number::Number::real(5),
         )),
     );
+    env.bind("z", Value::Unspecified);
 }
