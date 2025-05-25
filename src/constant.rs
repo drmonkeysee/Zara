@@ -13,10 +13,6 @@ pub(crate) enum Constant {
 }
 
 impl Constant {
-    pub(crate) fn as_datum(&self) -> Datum {
-        Datum(self)
-    }
-
     pub(crate) fn as_token_descriptor(&self) -> TokenDescriptor {
         TokenDescriptor(self)
     }
@@ -26,15 +22,13 @@ impl Constant {
     }
 }
 
-pub(crate) struct Datum<'a>(&'a Constant);
-
-impl Display for Datum<'_> {
+impl Display for Constant {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        match self.0 {
-            Constant::Boolean(b) => write!(f, "#{}", if *b { 't' } else { 'f' }),
-            Constant::Character(c) => write!(f, "#\\{}", CharDatum::new(*c)),
-            Constant::Number(n) => n.as_datum().fmt(f),
-            Constant::String(s) => StrDatum(s).fmt(f),
+        match self {
+            Self::Boolean(b) => write!(f, "#{}", if *b { 't' } else { 'f' }),
+            Self::Character(c) => write!(f, "#\\{}", CharDatum::new(*c)),
+            Self::Number(n) => n.fmt(f),
+            Self::String(s) => StrDatum(s).fmt(f),
         }
     }
 }
@@ -83,14 +77,14 @@ mod tests {
         fn display_true() {
             let b = Constant::Boolean(true);
 
-            assert_eq!(b.as_datum().to_string(), "#t");
+            assert_eq!(b.to_string(), "#t");
         }
 
         #[test]
         fn display_false() {
             let b = Constant::Boolean(false);
 
-            assert_eq!(b.as_datum().to_string(), "#f");
+            assert_eq!(b.to_string(), "#f");
         }
 
         #[test]
@@ -115,77 +109,77 @@ mod tests {
         fn display_ascii() {
             let c = Constant::Character('a');
 
-            assert_eq!(c.as_datum().to_string(), "#\\a");
+            assert_eq!(c.to_string(), "#\\a");
         }
 
         #[test]
         fn display_extended_char() {
             let c = Constant::Character('λ');
 
-            assert_eq!(c.as_datum().to_string(), "#\\λ");
+            assert_eq!(c.to_string(), "#\\λ");
         }
 
         #[test]
         fn display_emoji() {
             let c = Constant::Character('🦀');
 
-            assert_eq!(c.as_datum().to_string(), "#\\🦀");
+            assert_eq!(c.to_string(), "#\\🦀");
         }
 
         #[test]
         fn display_control_picture() {
             let c = Constant::Character('\u{2401}');
 
-            assert_eq!(c.as_datum().to_string(), "#\\␁");
+            assert_eq!(c.to_string(), "#\\␁");
         }
 
         #[test]
         fn display_replacement_char() {
             let c = Constant::Character('\u{fffd}');
 
-            assert_eq!(c.as_datum().to_string(), "#\\�");
+            assert_eq!(c.to_string(), "#\\�");
         }
 
         #[test]
         fn display_one_digit_hex() {
             let c = Constant::Character('\x0c');
 
-            assert_eq!(c.as_datum().to_string(), "#\\xc");
+            assert_eq!(c.to_string(), "#\\xc");
         }
 
         #[test]
         fn display_hex_uses_lowercase() {
             let c = Constant::Character('\x0C');
 
-            assert_eq!(c.as_datum().to_string(), "#\\xc");
+            assert_eq!(c.to_string(), "#\\xc");
         }
 
         #[test]
         fn display_two_digit_hex() {
             let c = Constant::Character('\x1d');
 
-            assert_eq!(c.as_datum().to_string(), "#\\x1d");
+            assert_eq!(c.to_string(), "#\\x1d");
         }
 
         #[test]
         fn display_four_digit_hex() {
             let c = Constant::Character('\u{fff9}');
 
-            assert_eq!(c.as_datum().to_string(), "#\\xfff9");
+            assert_eq!(c.to_string(), "#\\xfff9");
         }
 
         #[test]
         fn display_special_purpose_plane() {
             let c = Constant::Character('\u{e0001}');
 
-            assert_eq!(c.as_datum().to_string(), "#\\xe0001");
+            assert_eq!(c.to_string(), "#\\xe0001");
         }
 
         #[test]
         fn display_private_use_plane() {
             let c = Constant::Character('\u{100001}');
 
-            assert_eq!(c.as_datum().to_string(), "#\\x100001");
+            assert_eq!(c.to_string(), "#\\x100001");
         }
 
         #[test]
@@ -212,7 +206,7 @@ mod tests {
             for &(inp, exp) in cases {
                 let c = Constant::Character(inp);
 
-                assert_eq!(c.as_datum().to_string(), format!("#\\{exp}"));
+                assert_eq!(c.to_string(), format!("#\\{exp}"));
             }
         }
 
@@ -238,98 +232,98 @@ mod tests {
         fn display_empty() {
             let s = Constant::String("".into());
 
-            assert_eq!(s.as_datum().to_string(), "\"\"");
+            assert_eq!(s.to_string(), "\"\"");
         }
 
         #[test]
         fn display_alphanumeric() {
             let s = Constant::String("abc123!@#".into());
 
-            assert_eq!(s.as_datum().to_string(), "\"abc123!@#\"");
+            assert_eq!(s.to_string(), "\"abc123!@#\"");
         }
 
         #[test]
         fn display_extended() {
             let s = Constant::String("λ".into());
 
-            assert_eq!(s.as_datum().to_string(), "\"λ\"");
+            assert_eq!(s.to_string(), "\"λ\"");
         }
 
         #[test]
         fn display_emoji() {
             let s = Constant::String("🦀".into());
 
-            assert_eq!(s.as_datum().to_string(), "\"🦀\"");
+            assert_eq!(s.to_string(), "\"🦀\"");
         }
 
         #[test]
         fn display_control_picture() {
             let s = Constant::String("\u{2401}".into());
 
-            assert_eq!(s.as_datum().to_string(), "\"␁\"");
+            assert_eq!(s.to_string(), "\"␁\"");
         }
 
         #[test]
         fn display_replacement() {
             let s = Constant::String("\u{fffd}".into());
 
-            assert_eq!(s.as_datum().to_string(), "\"�\"");
+            assert_eq!(s.to_string(), "\"�\"");
         }
 
         #[test]
         fn display_null() {
             let s = Constant::String("\0".into());
 
-            assert_eq!(s.as_datum().to_string(), "\"\\x0;\"");
+            assert_eq!(s.to_string(), "\"\\x0;\"");
         }
 
         #[test]
         fn display_pipe() {
             let s = Constant::String("|".into());
 
-            assert_eq!(s.as_datum().to_string(), "\"|\"");
+            assert_eq!(s.to_string(), "\"|\"");
         }
 
         #[test]
         fn display_one_digit_hex() {
             let s = Constant::String("\x0c".into());
 
-            assert_eq!(s.as_datum().to_string(), "\"\\xc;\"");
+            assert_eq!(s.to_string(), "\"\\xc;\"");
         }
 
         #[test]
         fn display_hex_uses_lowercase() {
             let s = Constant::String("\x0C".into());
 
-            assert_eq!(s.as_datum().to_string(), "\"\\xc;\"");
+            assert_eq!(s.to_string(), "\"\\xc;\"");
         }
 
         #[test]
         fn display_two_digit_hex() {
             let s = Constant::String("\x1d".into());
 
-            assert_eq!(s.as_datum().to_string(), "\"\\x1d;\"");
+            assert_eq!(s.to_string(), "\"\\x1d;\"");
         }
 
         #[test]
         fn display_four_digit_hex() {
             let s = Constant::String("\u{fff9}".into());
 
-            assert_eq!(s.as_datum().to_string(), "\"\\xfff9;\"");
+            assert_eq!(s.to_string(), "\"\\xfff9;\"");
         }
 
         #[test]
         fn display_special_purpose_plane() {
             let s = Constant::String("\u{e0001}".into());
 
-            assert_eq!(s.as_datum().to_string(), "\"\\xe0001;\"");
+            assert_eq!(s.to_string(), "\"\\xe0001;\"");
         }
 
         #[test]
         fn display_private_use_plane() {
             let s = Constant::String("\u{100001}".into());
 
-            assert_eq!(s.as_datum().to_string(), "\"\\x100001;\"");
+            assert_eq!(s.to_string(), "\"\\x100001;\"");
         }
 
         #[test]
@@ -340,7 +334,7 @@ bar"
                 .into(),
             );
 
-            assert_eq!(s.as_datum().to_string(), "\"foo\\nbar\"");
+            assert_eq!(s.to_string(), "\"foo\\nbar\"");
         }
 
         #[test]
@@ -360,7 +354,7 @@ bar"
             for &(inp, exp) in cases {
                 let s = Constant::String(inp.into());
 
-                assert_eq!(s.as_datum().to_string(), format!("\"{exp}\""));
+                assert_eq!(s.to_string(), format!("\"{exp}\""));
             }
         }
 
@@ -409,14 +403,14 @@ bar"
         fn display_int() {
             let n = Constant::Number(Number::real(23));
 
-            assert_eq!(n.as_datum().to_string(), "23");
+            assert_eq!(n.to_string(), "23");
         }
 
         #[test]
         fn display_float() {
             let n = Constant::Number(Number::real(234.23));
 
-            assert_eq!(n.as_datum().to_string(), "234.23");
+            assert_eq!(n.to_string(), "234.23");
         }
 
         #[test]
@@ -424,14 +418,14 @@ bar"
             let r = ok_or_fail!(Real::reduce(3, 4));
             let n = Constant::Number(Number::Real(r));
 
-            assert_eq!(n.as_datum().to_string(), "3/4");
+            assert_eq!(n.to_string(), "3/4");
         }
 
         #[test]
         fn display_complex() {
             let n = Constant::Number(Number::complex(4, 5));
 
-            assert_eq!(n.as_datum().to_string(), "4+5i");
+            assert_eq!(n.to_string(), "4+5i");
         }
 
         #[test]

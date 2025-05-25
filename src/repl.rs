@@ -48,7 +48,7 @@ impl Repl {
     }
 
     fn print_exception(&mut self, ex: &Exception) {
-        println!("unhandled-exception => {}", ex.as_datum());
+        println!("unhandled-exception => {ex}");
         self.reset();
     }
 

@@ -48,7 +48,7 @@ impl Value {
 
 impl Display for Value {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        self.0.as_datum().fmt(f)
+        self.0.fmt(f)
     }
 }
 
@@ -61,18 +61,9 @@ impl Exception {
     }
 }
 
-impl Exception {
-    #[must_use]
-    pub fn as_datum(&self) -> ExceptionDatum {
-        ExceptionDatum(self)
-    }
-}
-
-pub struct ExceptionDatum<'a>(&'a Exception);
-
-impl Display for ExceptionDatum<'_> {
+impl Display for Exception {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        self.0.0.as_datum().fmt(f)
+        self.0.fmt(f)
     }
 }
 

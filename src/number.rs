@@ -48,10 +48,6 @@ impl Number {
         Self::Real(value.into())
     }
 
-    pub(crate) fn as_datum(&self) -> Datum {
-        Datum(self)
-    }
-
     pub(crate) fn as_token_descriptor(&self) -> TokenDescriptor {
         TokenDescriptor(self)
     }
@@ -72,6 +68,18 @@ impl Number {
 
     fn as_typename(&self) -> NumericTypeName {
         NumericTypeName(self)
+    }
+}
+
+impl Display for Number {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        match self {
+            Self::Complex(Complex(c)) => {
+                ComplexRealDatum(&c.0).fmt(f)?;
+                ComplexImagDatum(&c.1).fmt(f)
+            }
+            Self::Real(r) => r.fmt(f),
+        }
     }
 }
 
@@ -618,20 +626,6 @@ impl Error for NumericError {}
 impl From<ParseFloatError> for NumericError {
     fn from(_value: ParseFloatError) -> Self {
         Self::ParseFailure
-    }
-}
-
-pub(crate) struct Datum<'a>(&'a Number);
-
-impl Display for Datum<'_> {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        match self.0 {
-            Number::Complex(Complex(c)) => {
-                ComplexRealDatum(&c.0).fmt(f)?;
-                ComplexImagDatum(&c.1).fmt(f)
-            }
-            Number::Real(r) => r.fmt(f),
-        }
     }
 }
 

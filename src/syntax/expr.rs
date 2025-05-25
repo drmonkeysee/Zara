@@ -348,10 +348,7 @@ mod tests {
             let r = expr.eval(&env);
 
             let err = err_or_fail!(r);
-            assert_eq!(
-                err.as_datum().to_string(),
-                "#<env-error \"unbound variable: x\">"
-            );
+            assert_eq!(err.to_string(), "#<env-error \"unbound variable: x\">");
         }
 
         #[test]

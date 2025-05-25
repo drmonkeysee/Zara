@@ -3772,7 +3772,7 @@ mod cartesian {
             }
         ));
         let num = extract_number!(tok.kind);
-        assert_eq!(num.as_datum().to_string(), "4+3i");
+        assert_eq!(num.to_string(), "4+3i");
     }
 
     #[test]
@@ -3796,7 +3796,7 @@ mod cartesian {
             }
         ));
         let num = extract_number!(tok.kind);
-        assert_eq!(num.as_datum().to_string(), "4+i");
+        assert_eq!(num.to_string(), "4+i");
     }
 
     #[test]
@@ -3820,7 +3820,7 @@ mod cartesian {
             }
         ));
         let num = extract_number!(tok.kind);
-        assert_eq!(num.as_datum().to_string(), "4+i");
+        assert_eq!(num.to_string(), "4+i");
     }
 
     #[test]
@@ -3844,7 +3844,7 @@ mod cartesian {
             }
         ));
         let num = extract_number!(tok.kind);
-        assert_eq!(num.as_datum().to_string(), "4");
+        assert_eq!(num.to_string(), "4");
     }
 
     #[test]
@@ -3868,7 +3868,7 @@ mod cartesian {
             }
         ));
         let num = extract_number!(tok.kind);
-        assert_eq!(num.as_datum().to_string(), "4");
+        assert_eq!(num.to_string(), "4");
     }
 
     #[test]
@@ -3892,7 +3892,7 @@ mod cartesian {
             }
         ));
         let num = extract_number!(tok.kind);
-        assert_eq!(num.as_datum().to_string(), "+3i");
+        assert_eq!(num.to_string(), "+3i");
     }
 
     #[test]
@@ -3916,7 +3916,7 @@ mod cartesian {
             }
         ));
         let num = extract_number!(tok.kind);
-        assert_eq!(num.as_datum().to_string(), "+3i");
+        assert_eq!(num.to_string(), "+3i");
     }
 
     #[test]
@@ -3940,7 +3940,7 @@ mod cartesian {
             }
         ));
         let num = extract_number!(tok.kind);
-        assert_eq!(num.as_datum().to_string(), "4+3i");
+        assert_eq!(num.to_string(), "4+3i");
     }
 
     #[test]
@@ -3964,7 +3964,7 @@ mod cartesian {
             }
         ));
         let num = extract_number!(tok.kind);
-        assert_eq!(num.as_datum().to_string(), "-4+3i");
+        assert_eq!(num.to_string(), "-4+3i");
     }
 
     #[test]
@@ -3988,7 +3988,7 @@ mod cartesian {
             }
         ));
         let num = extract_number!(tok.kind);
-        assert_eq!(num.as_datum().to_string(), "4-3i");
+        assert_eq!(num.to_string(), "4-3i");
     }
 
     #[test]
@@ -4012,7 +4012,7 @@ mod cartesian {
             }
         ));
         let num = extract_number!(tok.kind);
-        assert_eq!(num.as_datum().to_string(), "-4-3i");
+        assert_eq!(num.to_string(), "-4-3i");
     }
 
     #[test]
@@ -4042,7 +4042,7 @@ mod cartesian {
                 } if end == cpx.len()
             ));
             let num = extract_number!(tok.kind);
-            assert_eq!(num.as_datum().to_string(), cpx);
+            assert_eq!(num.to_string(), cpx);
         }
     }
 
@@ -4097,7 +4097,7 @@ mod cartesian {
             } else {
                 cpx.to_owned()
             };
-            assert_eq!(num.as_datum().to_string(), expected);
+            assert_eq!(num.to_string(), expected);
         }
     }
 
@@ -4157,7 +4157,7 @@ mod cartesian {
             if expected.contains("ai") {
                 expected = expected.replace("ai", "10i")
             }
-            assert_eq!(num.as_datum().to_string(), expected[2..]);
+            assert_eq!(num.to_string(), expected[2..]);
         }
     }
 
@@ -4253,7 +4253,7 @@ mod cartesian {
             } else {
                 "42+43i"
             };
-            assert_eq!(num.as_datum().to_string(), expected);
+            assert_eq!(num.to_string(), expected);
         }
     }
 
@@ -4278,7 +4278,7 @@ mod cartesian {
             }
         ));
         let num = extract_number!(tok.kind);
-        assert_eq!(num.as_datum().to_string(), "4/5+2/3i");
+        assert_eq!(num.to_string(), "4/5+2/3i");
     }
 
     #[test]
@@ -4304,7 +4304,7 @@ mod cartesian {
                 }
             ));
             let num = extract_number!(tok.kind);
-            assert_eq!(num.as_datum().to_string(), "11+10i");
+            assert_eq!(num.to_string(), "11+10i");
         }
     }
 
@@ -4331,7 +4331,7 @@ mod cartesian {
                 }
             ));
             let num = extract_number!(tok.kind);
-            assert_eq!(num.as_datum().to_string(), "11+10i");
+            assert_eq!(num.to_string(), "11+10i");
         }
     }
 
@@ -4358,7 +4358,7 @@ mod cartesian {
                 }
             ));
             let num = extract_number!(tok.kind);
-            assert_eq!(num.as_datum().to_string(), "3.5+12.2i");
+            assert_eq!(num.to_string(), "3.5+12.2i");
         }
     }
 
@@ -4385,7 +4385,7 @@ mod cartesian {
                 }
             ));
             let num = extract_number!(tok.kind);
-            assert_eq!(num.as_datum().to_string(), "3.5+12.2i");
+            assert_eq!(num.to_string(), "3.5+12.2i");
         }
     }
 
@@ -4410,7 +4410,7 @@ mod cartesian {
             }
         ));
         let num = extract_number!(tok.kind);
-        assert_eq!(num.as_datum().to_string(), "4.0+1.5i");
+        assert_eq!(num.to_string(), "4.0+1.5i");
     }
 
     #[test]
@@ -4434,7 +4434,7 @@ mod cartesian {
             }
         ));
         let num = extract_number!(tok.kind);
-        assert_eq!(num.as_datum().to_string(), "21/5+3200i");
+        assert_eq!(num.to_string(), "21/5+3200i");
     }
 
     #[test]
@@ -4458,7 +4458,7 @@ mod cartesian {
             }
         ));
         let num = extract_number!(tok.kind);
-        assert_eq!(num.as_datum().to_string(), "12.0+0.9090909090909091i");
+        assert_eq!(num.to_string(), "12.0+0.9090909090909091i");
     }
 
     #[test]
@@ -4640,10 +4640,7 @@ mod polar {
             }
         ));
         let num = extract_number!(tok.kind);
-        assert_eq!(
-            num.as_datum().to_string(),
-            "-3.9599699864017817+0.5644800322394689i"
-        );
+        assert_eq!(num.to_string(), "-3.9599699864017817+0.5644800322394689i");
     }
 
     #[test]
@@ -4667,10 +4664,7 @@ mod polar {
             }
         ));
         let num = extract_number!(tok.kind);
-        assert_eq!(
-            num.as_datum().to_string(),
-            "3.9599699864017817-0.5644800322394689i"
-        );
+        assert_eq!(num.to_string(), "3.9599699864017817-0.5644800322394689i");
     }
 
     #[test]
@@ -4694,10 +4688,7 @@ mod polar {
             }
         ));
         let num = extract_number!(tok.kind);
-        assert_eq!(
-            num.as_datum().to_string(),
-            "-3.9599699864017817-0.5644800322394689i"
-        );
+        assert_eq!(num.to_string(), "-3.9599699864017817-0.5644800322394689i");
     }
 
     #[test]
@@ -4721,10 +4712,7 @@ mod polar {
             }
         ));
         let num = extract_number!(tok.kind);
-        assert_eq!(
-            num.as_datum().to_string(),
-            "3.9599699864017817+0.5644800322394689i"
-        );
+        assert_eq!(num.to_string(), "3.9599699864017817+0.5644800322394689i");
     }
 
     #[test]
@@ -4748,7 +4736,7 @@ mod polar {
             }
         ));
         let num = extract_number!(tok.kind);
-        assert_eq!(num.as_datum().to_string(), "0");
+        assert_eq!(num.to_string(), "0");
     }
 
     #[test]
@@ -4772,7 +4760,7 @@ mod polar {
             }
         ));
         let num = extract_number!(tok.kind);
-        assert_eq!(num.as_datum().to_string(), "0.0");
+        assert_eq!(num.to_string(), "0.0");
     }
 
     #[test]
@@ -4796,7 +4784,7 @@ mod polar {
             }
         ));
         let num = extract_number!(tok.kind);
-        assert_eq!(num.as_datum().to_string(), "0");
+        assert_eq!(num.to_string(), "0");
     }
 
     #[test]
@@ -4820,7 +4808,7 @@ mod polar {
             }
         ));
         let num = extract_number!(tok.kind);
-        assert_eq!(num.as_datum().to_string(), "4");
+        assert_eq!(num.to_string(), "4");
     }
 
     #[test]
@@ -4844,7 +4832,7 @@ mod polar {
             }
         ));
         let num = extract_number!(tok.kind);
-        assert_eq!(num.as_datum().to_string(), "4.0");
+        assert_eq!(num.to_string(), "4.0");
     }
 
     #[test]
@@ -4868,7 +4856,7 @@ mod polar {
             }
         ));
         let num = extract_number!(tok.kind);
-        assert_eq!(num.as_datum().to_string(), "4");
+        assert_eq!(num.to_string(), "4");
     }
 
     #[test]
@@ -4892,7 +4880,7 @@ mod polar {
             }
         ));
         let num = extract_number!(tok.kind);
-        assert_eq!(num.as_datum().to_string(), "0");
+        assert_eq!(num.to_string(), "0");
     }
 
     #[test]
@@ -4917,10 +4905,7 @@ mod polar {
             }
         ));
         let num = extract_number!(tok.kind);
-        assert_eq!(
-            num.as_datum().to_string(),
-            "0.7071067811865476+0.7071067811865475i"
-        );
+        assert_eq!(num.to_string(), "0.7071067811865476+0.7071067811865475i");
     }
 
     #[test]
@@ -4969,7 +4954,7 @@ mod polar {
                 } if end == cpx.len()
             ));
             let num = extract_number!(tok.kind);
-            assert_eq!(num.as_datum().to_string(), expected[idx]);
+            assert_eq!(num.to_string(), expected[idx]);
         }
     }
 
@@ -5013,7 +4998,7 @@ mod polar {
                 } if end == cpx.len()
             ));
             let num = extract_number!(tok.kind);
-            assert_eq!(num.as_datum().to_string(), exp);
+            assert_eq!(num.to_string(), exp);
         }
     }
 
@@ -5057,7 +5042,7 @@ mod polar {
                 } if end == cpx.len()
             ));
             let num = extract_number!(tok.kind);
-            assert_eq!(num.as_datum().to_string(), exp);
+            assert_eq!(num.to_string(), exp);
         }
     }
 
@@ -5144,7 +5129,7 @@ mod polar {
             } else {
                 "23.31475866386628-34.934539190401125i"
             };
-            assert_eq!(num.as_datum().to_string(), expected);
+            assert_eq!(num.to_string(), expected);
         }
     }
 
@@ -5169,10 +5154,7 @@ mod polar {
             }
         ));
         let num = extract_number!(tok.kind);
-        assert_eq!(
-            num.as_datum().to_string(),
-            "0.6287098086215585+0.4946958424557896i"
-        );
+        assert_eq!(num.to_string(), "0.6287098086215585+0.4946958424557896i");
     }
 
     #[test]
@@ -5198,10 +5180,7 @@ mod polar {
                 }
             ));
             let num = extract_number!(tok.kind);
-            assert_eq!(
-                num.as_datum().to_string(),
-                "3.2677177542612306-1.2538024878289005i"
-            );
+            assert_eq!(num.to_string(), "3.2677177542612306-1.2538024878289005i");
         }
     }
 
@@ -5228,10 +5207,7 @@ mod polar {
                 }
             ));
             let num = extract_number!(tok.kind);
-            assert_eq!(
-                num.as_datum().to_string(),
-                "3.2677177542612306-1.2538024878289005i",
-            );
+            assert_eq!(num.to_string(), "3.2677177542612306-1.2538024878289005i",);
         }
     }
 
@@ -5258,10 +5234,7 @@ mod polar {
                 } if end == case.len()
             ));
             let num = extract_number!(tok.kind);
-            assert_eq!(
-                num.as_datum().to_string(),
-                "2.0901201280414963+2.1520682726985685i"
-            );
+            assert_eq!(num.to_string(), "2.0901201280414963+2.1520682726985685i");
         }
     }
 
@@ -5288,10 +5261,7 @@ mod polar {
                 } if end == case.len()
             ));
             let num = extract_number!(tok.kind);
-            assert_eq!(
-                num.as_datum().to_string(),
-                "-2.0901201280414963-2.1520682726985685i"
-            );
+            assert_eq!(num.to_string(), "-2.0901201280414963-2.1520682726985685i");
         }
     }
 
@@ -5319,7 +5289,7 @@ mod polar {
             ));
             let num = extract_number!(tok.kind);
             assert_eq!(
-                num.as_datum().to_string(),
+                num.to_string(),
                 "20901201280414963/10000000000000000+4304136545397137/2000000000000000i"
             );
         }
@@ -5349,7 +5319,7 @@ mod polar {
             ));
             let num = extract_number!(tok.kind);
             assert_eq!(
-                num.as_datum().to_string(),
+                num.to_string(),
                 "-20901201280414963/10000000000000000-4304136545397137/2000000000000000i"
             );
         }
@@ -5376,7 +5346,7 @@ mod polar {
             }
         ));
         let num = extract_number!(tok.kind);
-        assert_eq!(num.as_datum().to_string(), "0");
+        assert_eq!(num.to_string(), "0");
     }
 
     #[test]
@@ -5400,7 +5370,7 @@ mod polar {
             }
         ));
         let num = extract_number!(tok.kind);
-        assert_eq!(num.as_datum().to_string(), "4");
+        assert_eq!(num.to_string(), "4");
     }
 
     #[test]
@@ -5424,7 +5394,7 @@ mod polar {
             }
         ));
         let num = extract_number!(tok.kind);
-        assert_eq!(num.as_datum().to_string(), "0.0");
+        assert_eq!(num.to_string(), "0.0");
     }
 
     #[test]
@@ -5448,7 +5418,7 @@ mod polar {
             }
         ));
         let num = extract_number!(tok.kind);
-        assert_eq!(num.as_datum().to_string(), "4.0");
+        assert_eq!(num.to_string(), "4.0");
     }
 
     #[test]
@@ -5472,10 +5442,7 @@ mod polar {
             }
         ));
         let num = extract_number!(tok.kind);
-        assert_eq!(
-            num.as_datum().to_string(),
-            "7.373558717381609+9.46734555413109i"
-        );
+        assert_eq!(num.to_string(), "7.373558717381609+9.46734555413109i");
     }
 
     #[test]

@@ -45,7 +45,7 @@ mod expr {
                 Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 0, end: 3 }, txt: line },
                 kind: ExpressionKind::Literal(Value::Constant(Constant::Number(n))),
-            })) if n.as_datum().to_string() == "+1.2i" && Rc::ptr_eq(&txt, &line)
+            })) if n.to_string() == "+1.2i" && Rc::ptr_eq(&txt, &line)
         ));
     }
 
@@ -893,7 +893,7 @@ mod vector {
         assert!(matches!(&v[1], Value::Pair(None)));
         assert!(matches!(
             &v[2],
-            Value::Constant(Constant::Number(n)) if n.as_datum().to_string() == "26"
+            Value::Constant(Constant::Number(n)) if n.to_string() == "26"
         ));
     }
 
@@ -1410,7 +1410,7 @@ mod list {
             Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 6, end: 7 }, txt: line },
                 kind: ExpressionKind::Literal(Value::Constant(Constant::Number(n))),
-            } if n.as_datum().to_string() == "10" && Rc::ptr_eq(&txt, &line)
+            } if n.to_string() == "10" && Rc::ptr_eq(&txt, &line)
         ));
     }
 
@@ -1773,14 +1773,14 @@ mod list {
             Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 1, end: 4 }, txt: line },
                 kind: ExpressionKind::Literal(Value::Constant(Constant::Number(n))),
-            } if n.as_datum().to_string() == "4" && Rc::ptr_eq(&txt, &line)
+            } if n.to_string() == "4" && Rc::ptr_eq(&txt, &line)
         ));
         assert!(matches!(
             &args[1],
             Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 4, end: 6 }, txt: line },
                 kind: ExpressionKind::Literal(Value::Constant(Constant::Number(n))),
-            } if n.as_datum().to_string() == "5" && Rc::ptr_eq(&txt, &line)
+            } if n.to_string() == "5" && Rc::ptr_eq(&txt, &line)
         ));
     }
 
@@ -1899,7 +1899,7 @@ mod list {
             } if Rc::ptr_eq(&txt, &line)
         ));
         let value = extract_or_fail!(expr.kind, ExpressionKind::Literal);
-        assert_eq!(value.as_datum().to_string(), "(+ 4 5)");
+        assert_eq!(value.to_string(), "(+ 4 5)");
     }
 
     #[test]
@@ -1927,7 +1927,7 @@ mod list {
             } if Rc::ptr_eq(&txt, &line)
         ));
         let value = extract_or_fail!(expr.kind, ExpressionKind::Literal);
-        assert_eq!(value.as_datum().to_string(), "()");
+        assert_eq!(value.to_string(), "()");
     }
 
     #[test]
@@ -2019,7 +2019,7 @@ mod list {
             } if Rc::ptr_eq(&txt, &line)
         ));
         let value = extract_or_fail!(expr.kind, ExpressionKind::Literal);
-        assert_eq!(value.as_datum().to_string(), "(4 . 5)");
+        assert_eq!(value.to_string(), "(4 . 5)");
     }
 
     #[test]
@@ -2410,7 +2410,7 @@ mod quote {
             } if Rc::ptr_eq(&txt, &line)
         ));
         let value = extract_or_fail!(expr.kind, ExpressionKind::Literal);
-        assert_eq!(value.as_datum().to_string(), "(quote #t)");
+        assert_eq!(value.to_string(), "(quote #t)");
     }
 
     #[test]
@@ -2548,7 +2548,7 @@ mod program {
             Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 0, end: 3 }, txt: line },
                 kind: ExpressionKind::Literal(Value::Constant(Constant::Number(n))),
-            } if n.as_datum().to_string() == "24" && Rc::ptr_eq(&txt, &line)
+            } if n.to_string() == "24" && Rc::ptr_eq(&txt, &line)
         ));
     }
 
@@ -2769,7 +2769,7 @@ mod merge {
             } if Rc::ptr_eq(&txt, &line)
         ));
         let value = extract_or_fail!(inner.kind, ExpressionKind::Literal);
-        assert_eq!(value.as_datum().to_string(), "(foo)");
+        assert_eq!(value.to_string(), "(foo)");
     }
 
     #[test]
@@ -2808,7 +2808,7 @@ mod merge {
             } if Rc::ptr_eq(&txt, &line)
         ));
         let value = extract_or_fail!(inner.kind, ExpressionKind::Literal);
-        assert_eq!(value.as_datum().to_string(), "()");
+        assert_eq!(value.to_string(), "()");
     }
 
     #[test]
@@ -2906,7 +2906,7 @@ mod merge {
             } if Rc::ptr_eq(&txt, &line)
         ));
         let value = extract_or_fail!(inner.kind, ExpressionKind::Literal);
-        assert_eq!(value.as_datum().to_string(), "(foo)");
+        assert_eq!(value.to_string(), "(foo)");
     }
 
     #[test]
@@ -2953,7 +2953,7 @@ mod merge {
             } if Rc::ptr_eq(&txt, &line)
         ));
         let value = extract_or_fail!(inner.kind, ExpressionKind::Literal);
-        assert_eq!(value.as_datum().to_string(), "()");
+        assert_eq!(value.to_string(), "()");
     }
 
     #[test]

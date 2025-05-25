@@ -94,161 +94,161 @@ mod display {
     fn zero() {
         let n = Number::real(0);
 
-        assert_eq!(n.as_datum().to_string(), "0");
+        assert_eq!(n.to_string(), "0");
     }
 
     #[test]
     fn negative_int_zero() {
         let n = Number::real(-0);
 
-        assert_eq!(n.as_datum().to_string(), "0");
+        assert_eq!(n.to_string(), "0");
     }
 
     #[test]
     fn positive_int() {
         let n = Number::real(23);
 
-        assert_eq!(n.as_datum().to_string(), "23");
+        assert_eq!(n.to_string(), "23");
     }
 
     #[test]
     fn negative_int() {
         let n = Number::real(-32);
 
-        assert_eq!(n.as_datum().to_string(), "-32");
+        assert_eq!(n.to_string(), "-32");
     }
 
     #[test]
     fn int_max() {
         let n = Number::real(i64::MAX);
 
-        assert_eq!(n.as_datum().to_string(), "9223372036854775807");
+        assert_eq!(n.to_string(), "9223372036854775807");
     }
 
     #[test]
     fn int_min() {
         let n = Number::real(i64::MIN);
 
-        assert_eq!(n.as_datum().to_string(), "-9223372036854775808");
+        assert_eq!(n.to_string(), "-9223372036854775808");
     }
 
     #[test]
     fn positive_zero() {
         let n = Number::real(0.0);
 
-        assert_eq!(n.as_datum().to_string(), "0.0");
+        assert_eq!(n.to_string(), "0.0");
     }
 
     #[test]
     fn negative_zero() {
         let n = Number::real(-0.0);
 
-        assert_eq!(n.as_datum().to_string(), "-0.0");
+        assert_eq!(n.to_string(), "-0.0");
     }
 
     #[test]
     fn whole_float() {
         let n = Number::real(1.0);
 
-        assert_eq!(n.as_datum().to_string(), "1.0");
+        assert_eq!(n.to_string(), "1.0");
     }
 
     #[test]
     fn positive_float() {
         let n = Number::real(234.23);
 
-        assert_eq!(n.as_datum().to_string(), "234.23");
+        assert_eq!(n.to_string(), "234.23");
     }
 
     #[test]
     fn negative_float() {
         let n = Number::real(-789.34);
 
-        assert_eq!(n.as_datum().to_string(), "-789.34");
+        assert_eq!(n.to_string(), "-789.34");
     }
 
     #[test]
     fn fractional_float() {
         let n = Number::real(0.0567);
 
-        assert_eq!(n.as_datum().to_string(), "0.0567");
+        assert_eq!(n.to_string(), "0.0567");
     }
 
     #[test]
     fn with_trailing_zeros() {
         let n = Number::real(234.23000);
 
-        assert_eq!(n.as_datum().to_string(), "234.23");
+        assert_eq!(n.to_string(), "234.23");
     }
 
     #[test]
     fn large_exponent() {
         let n = Number::real(1e29);
 
-        assert_eq!(n.as_datum().to_string(), "1e29");
+        assert_eq!(n.to_string(), "1e29");
     }
 
     #[test]
     fn small_exponent() {
         let n = Number::real(1e-29);
 
-        assert_eq!(n.as_datum().to_string(), "1e-29");
+        assert_eq!(n.to_string(), "1e-29");
     }
 
     #[test]
     fn rounding_error() {
         let n = Number::real(0.1 + 0.2);
 
-        assert_eq!(n.as_datum().to_string(), "0.30000000000000004");
+        assert_eq!(n.to_string(), "0.30000000000000004");
     }
 
     #[test]
     fn max_float() {
         let n = Number::real(f64::MAX);
 
-        assert_eq!(n.as_datum().to_string(), "1.7976931348623157e308");
+        assert_eq!(n.to_string(), "1.7976931348623157e308");
     }
 
     #[test]
     fn min_float() {
         let n = Number::real(f64::MIN);
 
-        assert_eq!(n.as_datum().to_string(), "-1.7976931348623157e308");
+        assert_eq!(n.to_string(), "-1.7976931348623157e308");
     }
 
     #[test]
     fn positive_min_float() {
         let n = Number::real(f64::MIN_POSITIVE);
 
-        assert_eq!(n.as_datum().to_string(), "2.2250738585072014e-308");
+        assert_eq!(n.to_string(), "2.2250738585072014e-308");
     }
 
     #[test]
     fn epsilon() {
         let n = Number::real(f64::EPSILON);
 
-        assert_eq!(n.as_datum().to_string(), "2.220446049250313e-16");
+        assert_eq!(n.to_string(), "2.220446049250313e-16");
     }
 
     #[test]
     fn infinity() {
         let n = Number::real(f64::INFINITY);
 
-        assert_eq!(n.as_datum().to_string(), "+inf.0");
+        assert_eq!(n.to_string(), "+inf.0");
     }
 
     #[test]
     fn negative_infinity() {
         let n = Number::real(f64::NEG_INFINITY);
 
-        assert_eq!(n.as_datum().to_string(), "-inf.0");
+        assert_eq!(n.to_string(), "-inf.0");
     }
 
     #[test]
     fn nan() {
         let n = Number::real(f64::NAN);
 
-        assert_eq!(n.as_datum().to_string(), "+nan.0");
+        assert_eq!(n.to_string(), "+nan.0");
     }
 
     #[test]
@@ -256,77 +256,77 @@ mod display {
         let n = Number::real(-f64::NAN);
 
         // NOTE: sign is ignored for NAN
-        assert_eq!(n.as_datum().to_string(), "+nan.0");
+        assert_eq!(n.to_string(), "+nan.0");
     }
 
     #[test]
     fn positive_rational() {
         let n = Number::Real(ok_or_fail!(Real::reduce(3, 4)));
 
-        assert_eq!(n.as_datum().to_string(), "3/4");
+        assert_eq!(n.to_string(), "3/4");
     }
 
     #[test]
     fn negative_numerator() {
         let n = Number::Real(ok_or_fail!(Real::reduce(-3, 4)));
 
-        assert_eq!(n.as_datum().to_string(), "-3/4");
+        assert_eq!(n.to_string(), "-3/4");
     }
 
     #[test]
     fn negative_denominator() {
         let n = Number::Real(ok_or_fail!(Real::reduce(3, -4)));
 
-        assert_eq!(n.as_datum().to_string(), "-3/4");
+        assert_eq!(n.to_string(), "-3/4");
     }
 
     #[test]
     fn negative_numerator_and_denominator() {
         let n = Number::Real(ok_or_fail!(Real::reduce(-3, -4)));
 
-        assert_eq!(n.as_datum().to_string(), "3/4");
+        assert_eq!(n.to_string(), "3/4");
     }
 
     #[test]
     fn greater_than_one_rational() {
         let n = Number::Real(ok_or_fail!(Real::reduce(4, 3)));
 
-        assert_eq!(n.as_datum().to_string(), "4/3");
+        assert_eq!(n.to_string(), "4/3");
     }
 
     #[test]
     fn basic_complex() {
         let n = Number::complex(4, 5);
 
-        assert_eq!(n.as_datum().to_string(), "4+5i");
+        assert_eq!(n.to_string(), "4+5i");
     }
 
     #[test]
     fn complex_negative_real() {
         let n = Number::complex(-4, 5);
 
-        assert_eq!(n.as_datum().to_string(), "-4+5i");
+        assert_eq!(n.to_string(), "-4+5i");
     }
 
     #[test]
     fn complex_negative_imag() {
         let n = Number::complex(4, -5);
 
-        assert_eq!(n.as_datum().to_string(), "4-5i");
+        assert_eq!(n.to_string(), "4-5i");
     }
 
     #[test]
     fn complex_negative() {
         let n = Number::complex(-4, -5);
 
-        assert_eq!(n.as_datum().to_string(), "-4-5i");
+        assert_eq!(n.to_string(), "-4-5i");
     }
 
     #[test]
     fn complex_float() {
         let n = Number::complex(4.2, 5.3);
 
-        assert_eq!(n.as_datum().to_string(), "4.2+5.3i");
+        assert_eq!(n.to_string(), "4.2+5.3i");
     }
 
     #[test]
@@ -335,7 +335,7 @@ mod display {
         let i = ok_or_fail!(Real::reduce(5, 2));
         let n = Number::complex(r, i);
 
-        assert_eq!(n.as_datum().to_string(), "3/5+5/2i");
+        assert_eq!(n.to_string(), "3/5+5/2i");
     }
 
     #[test]
@@ -344,7 +344,7 @@ mod display {
         let i = ok_or_fail!(Real::reduce(5, 2));
         let n = Number::complex(r, i);
 
-        assert_eq!(n.as_datum().to_string(), "-3/5+5/2i");
+        assert_eq!(n.to_string(), "-3/5+5/2i");
     }
 
     #[test]
@@ -353,7 +353,7 @@ mod display {
         let i = ok_or_fail!(Real::reduce(-5, 2));
         let n = Number::complex(r, i);
 
-        assert_eq!(n.as_datum().to_string(), "3/5-5/2i");
+        assert_eq!(n.to_string(), "3/5-5/2i");
     }
 
     #[test]
@@ -362,7 +362,7 @@ mod display {
         let i = ok_or_fail!(Real::reduce(-5, 2));
         let n = Number::complex(r, i);
 
-        assert_eq!(n.as_datum().to_string(), "-3/5-5/2i");
+        assert_eq!(n.to_string(), "-3/5-5/2i");
     }
 
     #[test]
@@ -370,7 +370,7 @@ mod display {
         let r = ok_or_fail!(Real::reduce(3, 5));
         let n = Number::complex(r, 5);
 
-        assert_eq!(n.as_datum().to_string(), "3/5+5i");
+        assert_eq!(n.to_string(), "3/5+5i");
     }
 
     #[test]
@@ -378,7 +378,7 @@ mod display {
         let i = ok_or_fail!(Real::reduce(5, 2));
         let n = Number::complex(3, i);
 
-        assert_eq!(n.as_datum().to_string(), "3+5/2i");
+        assert_eq!(n.to_string(), "3+5/2i");
     }
 
     #[test]
@@ -386,7 +386,7 @@ mod display {
         let i = ok_or_fail!(Real::reduce(5, 2));
         let n = Number::complex(3.032, i);
 
-        assert_eq!(n.as_datum().to_string(), "3.032+5/2i");
+        assert_eq!(n.to_string(), "3.032+5/2i");
     }
 
     #[test]
@@ -394,49 +394,49 @@ mod display {
         let r = ok_or_fail!(Real::reduce(3, 5));
         let n = Number::complex(r, -6.34);
 
-        assert_eq!(n.as_datum().to_string(), "3/5-6.34i");
+        assert_eq!(n.to_string(), "3/5-6.34i");
     }
 
     #[test]
     fn complex_zero_real() {
         let n = Number::complex(0, 5);
 
-        assert_eq!(n.as_datum().to_string(), "+5i");
+        assert_eq!(n.to_string(), "+5i");
     }
 
     #[test]
     fn complex_negative_zero_real() {
         let n = Number::complex(0, -5);
 
-        assert_eq!(n.as_datum().to_string(), "-5i");
+        assert_eq!(n.to_string(), "-5i");
     }
 
     #[test]
     fn complex_zero_imag() {
         let n = Number::complex(4, 0);
 
-        assert_eq!(n.as_datum().to_string(), "4");
+        assert_eq!(n.to_string(), "4");
     }
 
     #[test]
     fn complex_unity_imag() {
         let n = Number::complex(4, 1);
 
-        assert_eq!(n.as_datum().to_string(), "4+i");
+        assert_eq!(n.to_string(), "4+i");
     }
 
     #[test]
     fn complex_zero_real_unity_imag() {
         let n = Number::complex(0, 1);
 
-        assert_eq!(n.as_datum().to_string(), "+i");
+        assert_eq!(n.to_string(), "+i");
     }
 
     #[test]
     fn complex_zero_real_negative_unity_imag() {
         let n = Number::complex(0, -1);
 
-        assert_eq!(n.as_datum().to_string(), "-i");
+        assert_eq!(n.to_string(), "-i");
     }
 
     #[test]
@@ -444,21 +444,21 @@ mod display {
         let i = ok_or_fail!(Real::reduce(5, 5));
         let n = Number::complex(0, i);
 
-        assert_eq!(n.as_datum().to_string(), "+i");
+        assert_eq!(n.to_string(), "+i");
     }
 
     #[test]
     fn complex_inexact_unity_imag() {
         let n = Number::complex(4, 1.0);
 
-        assert_eq!(n.as_datum().to_string(), "4+1.0i");
+        assert_eq!(n.to_string(), "4+1.0i");
     }
 
     #[test]
     fn complex_zero() {
         let n = Number::complex(0, 0);
 
-        assert_eq!(n.as_datum().to_string(), "0");
+        assert_eq!(n.to_string(), "0");
     }
 
     #[test]

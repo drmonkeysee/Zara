@@ -69,16 +69,29 @@ impl Value {
             .unwrap_or_else(Self::null)
     }
 
-    pub(crate) fn as_datum(&self) -> Datum {
-        Datum(self)
-    }
-
     pub(crate) fn display_message(&self) -> ValueMessage {
         ValueMessage(self)
     }
 
     pub(crate) fn as_typename(&self) -> TypeName {
         TypeName(self)
+    }
+}
+
+impl Display for Value {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        match self {
+            Self::Ast(prg) => write!(f, "{{{prg:?}}}"),
+            Self::ByteVector(bv) => write_seq("#u8", bv, ToString::to_string, f),
+            Self::Constant(con) => con.fmt(f),
+            Self::Pair(None) => f.write_str("()"),
+            Self::Pair(Some(p)) => write!(f, "({p})"),
+            Self::Procedure(p) => p.fmt(f),
+            Self::Symbol(s) => SymbolDatum(s).fmt(f),
+            Self::TokenList(lines) => DisplayTokenLines(lines).fmt(f),
+            Self::Unspecified => f.write_str("#<unspecified>"),
+            Self::Vector(v) => write_seq("#", v, |v| v.to_string(), f),
+        }
     }
 }
 
@@ -109,15 +122,14 @@ impl Pair {
 
 impl Display for Pair {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        self.car.as_datum().fmt(f)?;
+        self.car.fmt(f)?;
         if let Value::Pair(p) = &*self.cdr {
             if let Some(p) = p {
                 write!(f, " {p}")?;
             }
             Ok(())
         } else {
-            let d = self.cdr.as_datum();
-            write!(f, " . {d}")
+            write!(f, " . {}", self.cdr)
         }
     }
 }
@@ -137,28 +149,16 @@ impl Condition {
             msg: format!("unbound variable: {name}").into(),
         }
     }
-
-    pub(crate) fn as_datum(&self) -> ConditionDatum {
-        ConditionDatum(self)
-    }
 }
 
-pub(crate) struct Datum<'a>(&'a Value);
-
-impl Display for Datum<'_> {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        match self.0 {
-            Value::Ast(prg) => write!(f, "{{{prg:?}}}"),
-            Value::ByteVector(bv) => write_seq("#u8", bv, ToString::to_string, f),
-            Value::Constant(con) => con.as_datum().fmt(f),
-            Value::Pair(None) => f.write_str("()"),
-            Value::Pair(Some(p)) => write!(f, "({p})"),
-            Value::Procedure(p) => p.fmt(f),
-            Value::Symbol(s) => SymbolDatum(s).fmt(f),
-            Value::TokenList(lines) => DisplayTokenLines(lines).fmt(f),
-            Value::Unspecified => f.write_str("#<unspecified>"),
-            Value::Vector(v) => write_seq("#", v, |v| v.as_datum().to_string(), f),
+impl Display for Condition {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "#<{} \"{}\"", self.kind, self.msg)?;
+        match &*self.irritants {
+            Value::Unspecified => (),
+            v @ _ => write!(f, " {v}")?,
         }
+        f.write_char('>')
     }
 }
 
@@ -190,19 +190,6 @@ impl Display for TypeName<'_> {
             Value::Unspecified => f.write_str("unspecified"),
             Value::Vector(_) => f.write_str("vector"),
         }
-    }
-}
-
-pub(crate) struct ConditionDatum<'a>(&'a Condition);
-
-impl Display for ConditionDatum<'_> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "#<{} \"{}\"", self.0.kind, self.0.msg)?;
-        match &*self.0.irritants {
-            Value::Unspecified => (),
-            v @ _ => write!(f, " {}", v.as_datum())?,
-        }
-        f.write_char('>')
     }
 }
 
@@ -247,17 +234,17 @@ mod tests {
         use super::*;
 
         #[test]
-        fn bytevector_datum() {
+        fn bytevector_display() {
             let v = Value::ByteVector([1, 2, 3].into());
 
-            assert_eq!(v.as_datum().to_string(), "#u8(1 2 3)");
+            assert_eq!(v.to_string(), "#u8(1 2 3)");
         }
 
         #[test]
-        fn empty_bytevector_datum() {
+        fn empty_bytevector_display() {
             let v = Value::ByteVector([].into());
 
-            assert_eq!(v.as_datum().to_string(), "#u8()");
+            assert_eq!(v.to_string(), "#u8()");
         }
 
         #[test]
@@ -268,10 +255,10 @@ mod tests {
         }
 
         #[test]
-        fn constant_datum() {
+        fn constant_display() {
             let v = Value::Constant(Constant::Boolean(true));
 
-            assert_eq!(v.as_datum().to_string(), "#t");
+            assert_eq!(v.to_string(), "#t");
         }
 
         #[test]
@@ -320,7 +307,7 @@ mod tests {
         fn empty_list_display() {
             let v = zlist![];
 
-            assert_eq!(v.as_datum().to_string(), "()")
+            assert_eq!(v.to_string(), "()")
         }
 
         #[test]
@@ -331,10 +318,10 @@ mod tests {
         }
 
         #[test]
-        fn unspecified_datum() {
+        fn unspecified_display() {
             let v = Value::Unspecified;
 
-            assert_eq!(v.as_datum().to_string(), "#<unspecified>");
+            assert_eq!(v.to_string(), "#<unspecified>");
         }
 
         #[test]
@@ -345,7 +332,7 @@ mod tests {
         }
 
         #[test]
-        fn vector_datum() {
+        fn vector_display() {
             let v = Value::Vector(
                 [
                     Value::Constant(Constant::String("foo".into())),
@@ -358,14 +345,14 @@ mod tests {
                 .into(),
             );
 
-            assert_eq!(v.as_datum().to_string(), "#(\"foo\" a (#t #\\a))");
+            assert_eq!(v.to_string(), "#(\"foo\" a (#t #\\a))");
         }
 
         #[test]
-        fn empty_vector_datum() {
+        fn empty_vector_display() {
             let v = Value::Vector([].into());
 
-            assert_eq!(v.as_datum().to_string(), "#()");
+            assert_eq!(v.to_string(), "#()");
         }
 
         #[test]
@@ -378,12 +365,12 @@ mod tests {
         }
 
         #[test]
-        fn procedure_datum() {
+        fn procedure_display() {
             let v = Value::Procedure(
                 Procedure::intrinsic("foo", 0..0, |_, _| Value::Unspecified.into()).into(),
             );
 
-            assert_eq!(v.as_datum().to_string(), "#<procedure foo>");
+            assert_eq!(v.to_string(), "#<procedure foo>");
         }
     }
 
@@ -395,35 +382,35 @@ mod tests {
         fn simple() {
             let v = Value::Symbol("foo".into());
 
-            assert_eq!(v.as_datum().to_string(), "foo");
+            assert_eq!(v.to_string(), "foo");
         }
 
         #[test]
         fn empty() {
             let v = Value::Symbol("".into());
 
-            assert_eq!(v.as_datum().to_string(), "||");
+            assert_eq!(v.to_string(), "||");
         }
 
         #[test]
         fn whitespace() {
             let v = Value::Symbol("foo bar".into());
 
-            assert_eq!(v.as_datum().to_string(), "|foo bar|");
+            assert_eq!(v.to_string(), "|foo bar|");
         }
 
         #[test]
         fn only_whitespace() {
             let v = Value::Symbol("   ".into());
 
-            assert_eq!(v.as_datum().to_string(), "|   |");
+            assert_eq!(v.to_string(), "|   |");
         }
 
         #[test]
         fn alphanumeric() {
             let v = Value::Symbol("abc123!@$^&".into());
 
-            assert_eq!(v.as_datum().to_string(), "abc123!@$^&");
+            assert_eq!(v.to_string(), "abc123!@$^&");
         }
 
         #[test]
@@ -435,7 +422,7 @@ mod tests {
                 let v = Value::Symbol(s.clone().into());
 
                 let expected = if case == '.' { s } else { format!("|{s}|") };
-                assert_eq!(v.as_datum().to_string(), expected);
+                assert_eq!(v.to_string(), expected);
             }
         }
 
@@ -443,7 +430,7 @@ mod tests {
         fn starts_with_number() {
             let v = Value::Symbol("123abc".into());
 
-            assert_eq!(v.as_datum().to_string(), "|123abc|");
+            assert_eq!(v.to_string(), "|123abc|");
         }
 
         #[test]
@@ -454,7 +441,7 @@ mod tests {
 
                 let v = Value::Symbol(s.clone().into());
 
-                assert_eq!(v.as_datum().to_string(), s);
+                assert_eq!(v.to_string(), s);
             }
         }
 
@@ -462,56 +449,56 @@ mod tests {
         fn null() {
             let v = Value::Symbol("\0".into());
 
-            assert_eq!(v.as_datum().to_string(), "|\\x0;|");
+            assert_eq!(v.to_string(), "|\\x0;|");
         }
 
         #[test]
         fn pipe() {
             let v = Value::Symbol("|".into());
 
-            assert_eq!(v.as_datum().to_string(), "|\\||");
+            assert_eq!(v.to_string(), "|\\||");
         }
 
         #[test]
         fn one_digit_hex() {
             let v = Value::Symbol("\x0c".into());
 
-            assert_eq!(v.as_datum().to_string(), "|\\xc;|");
+            assert_eq!(v.to_string(), "|\\xc;|");
         }
 
         #[test]
         fn hex_uses_lowercase() {
             let v = Value::Symbol("\x0C".into());
 
-            assert_eq!(v.as_datum().to_string(), "|\\xc;|");
+            assert_eq!(v.to_string(), "|\\xc;|");
         }
 
         #[test]
         fn two_digit_hex() {
             let v = Value::Symbol("\x1d".into());
 
-            assert_eq!(v.as_datum().to_string(), "|\\x1d;|");
+            assert_eq!(v.to_string(), "|\\x1d;|");
         }
 
         #[test]
         fn four_digit_hex() {
             let v = Value::Symbol("\u{fff9}".into());
 
-            assert_eq!(v.as_datum().to_string(), "|\\xfff9;|");
+            assert_eq!(v.to_string(), "|\\xfff9;|");
         }
 
         #[test]
         fn special_purpose_plane() {
             let v = Value::Symbol("\u{e0001}".into());
 
-            assert_eq!(v.as_datum().to_string(), "|\\xe0001;|");
+            assert_eq!(v.to_string(), "|\\xe0001;|");
         }
 
         #[test]
         fn private_use_plane() {
             let v = Value::Symbol("\u{100001}".into());
 
-            assert_eq!(v.as_datum().to_string(), "|\\x100001;|");
+            assert_eq!(v.to_string(), "|\\x100001;|");
         }
 
         #[test]
@@ -522,7 +509,7 @@ bar"
                 .into(),
             );
 
-            assert_eq!(v.as_datum().to_string(), "|foo\\nbar|");
+            assert_eq!(v.to_string(), "|foo\\nbar|");
         }
 
         #[test]
@@ -542,7 +529,7 @@ bar"
             for &(inp, exp) in cases {
                 let v = Value::Symbol(inp.into());
 
-                assert_eq!(v.as_datum().to_string(), format!("|{exp}|"));
+                assert_eq!(v.to_string(), format!("|{exp}|"));
             }
         }
 
@@ -555,28 +542,28 @@ bar"
         fn extended() {
             let v = Value::Symbol("λ".into());
 
-            assert_eq!(v.as_datum().to_string(), "|λ|");
+            assert_eq!(v.to_string(), "|λ|");
         }
 
         #[test]
         fn emoji() {
             let v = Value::Symbol("🦀".into());
 
-            assert_eq!(v.as_datum().to_string(), "|🦀|");
+            assert_eq!(v.to_string(), "|🦀|");
         }
 
         #[test]
         fn control_picture() {
             let v = Value::Symbol("\u{2401}".into());
 
-            assert_eq!(v.as_datum().to_string(), "|␁|");
+            assert_eq!(v.to_string(), "|␁|");
         }
 
         #[test]
         fn replacement() {
             let v = Value::Symbol("\u{fffd}".into());
 
-            assert_eq!(v.as_datum().to_string(), "|�|");
+            assert_eq!(v.to_string(), "|�|");
         }
     }
 
@@ -666,7 +653,7 @@ bar"
             );
             let v = Value::pair(p);
 
-            assert_eq!(v.as_datum().to_string(), "(#t . #f)")
+            assert_eq!(v.to_string(), "(#t . #f)")
         }
 
         #[test]
@@ -674,7 +661,7 @@ bar"
             let p = Pair::cons(Value::Constant(Constant::Boolean(true)), Value::null());
             let v = Value::pair(p);
 
-            assert_eq!(v.as_datum().to_string(), "(#t)")
+            assert_eq!(v.to_string(), "(#t)")
         }
 
         #[test]
@@ -691,7 +678,7 @@ bar"
             );
             let v = Value::pair(p);
 
-            assert_eq!(v.as_datum().to_string(), "(1 2 3)")
+            assert_eq!(v.to_string(), "(1 2 3)")
         }
 
         #[test]
@@ -705,7 +692,7 @@ bar"
             );
             let v = Value::pair(p);
 
-            assert_eq!(v.as_datum().to_string(), "(1 2 . 3)")
+            assert_eq!(v.to_string(), "(1 2 . 3)")
         }
 
         #[test]
@@ -722,7 +709,7 @@ bar"
             );
             let v = Value::pair(p);
 
-            assert_eq!(v.as_datum().to_string(), "((1 . 2) 3)")
+            assert_eq!(v.to_string(), "((1 . 2) 3)")
         }
 
         #[test]
@@ -742,7 +729,7 @@ bar"
             );
             let v = Value::pair(p);
 
-            assert_eq!(v.as_datum().to_string(), "(1 (2 3))")
+            assert_eq!(v.to_string(), "(1 (2 3))")
         }
 
         #[test]
@@ -750,7 +737,7 @@ bar"
             let p = Pair::cons(Value::null(), Value::null());
             let v = Value::pair(p);
 
-            assert_eq!(v.as_datum().to_string(), "(())")
+            assert_eq!(v.to_string(), "(())")
         }
     }
 
@@ -761,14 +748,14 @@ bar"
         fn empty() {
             let lst = zlist![];
 
-            assert_eq!(lst.as_datum().to_string(), "()");
+            assert_eq!(lst.to_string(), "()");
         }
 
         #[test]
         fn one() {
             let lst = zlist![Value::Constant(Constant::Number(Number::real(5)))];
 
-            assert_eq!(lst.as_datum().to_string(), "(5)");
+            assert_eq!(lst.to_string(), "(5)");
         }
 
         #[test]
@@ -779,7 +766,7 @@ bar"
                 Value::Constant(Constant::Boolean(true)),
             ];
 
-            assert_eq!(lst.as_datum().to_string(), "(5 a #t)");
+            assert_eq!(lst.to_string(), "(5 a #t)");
         }
 
         #[test]
@@ -792,14 +779,14 @@ bar"
                 ],
             ];
 
-            assert_eq!(lst.as_datum().to_string(), "(5 (a #t))");
+            assert_eq!(lst.to_string(), "(5 (a #t))");
         }
 
         #[test]
         fn ctor_empty() {
             let lst = Value::list(vec![]);
 
-            assert_eq!(lst.as_datum().to_string(), "()");
+            assert_eq!(lst.to_string(), "()");
         }
 
         #[test]
@@ -810,7 +797,7 @@ bar"
                 Value::Constant(Constant::Boolean(true)),
             ]);
 
-            assert_eq!(lst.as_datum().to_string(), "(5 a #t)");
+            assert_eq!(lst.to_string(), "(5 a #t)");
         }
 
         #[test]
@@ -821,14 +808,14 @@ bar"
                 Value::Constant(Constant::Boolean(true)),
             ]);
 
-            assert_eq!(lst.as_datum().to_string(), "(5 a #t)");
+            assert_eq!(lst.to_string(), "(5 a #t)");
         }
 
         #[test]
         fn improper_ctor_empty() {
             let lst = Value::improper_list(vec![]);
 
-            assert_eq!(lst.as_datum().to_string(), "()");
+            assert_eq!(lst.to_string(), "()");
         }
 
         #[test]
@@ -837,7 +824,7 @@ bar"
                 Value::improper_list(vec![Value::Constant(Constant::Number(Number::real(5)))]);
 
             assert!(matches!(lst, Value::Constant(_)));
-            assert_eq!(lst.as_datum().to_string(), "5");
+            assert_eq!(lst.to_string(), "5");
         }
 
         #[test]
@@ -848,7 +835,7 @@ bar"
                 Value::Constant(Constant::Boolean(true)),
             ]);
 
-            assert_eq!(lst.as_datum().to_string(), "(5 a . #t)");
+            assert_eq!(lst.to_string(), "(5 a . #t)");
         }
 
         #[test]
@@ -859,7 +846,7 @@ bar"
                 Value::Constant(Constant::Boolean(true)),
             ]);
 
-            assert_eq!(lst.as_datum().to_string(), "(5 a . #t)");
+            assert_eq!(lst.to_string(), "(5 a . #t)");
         }
     }
 
@@ -874,7 +861,7 @@ bar"
                 irritants: Value::Unspecified.into(),
             };
 
-            assert_eq!(c.as_datum().to_string(), "#<exception \"foo\">");
+            assert_eq!(c.to_string(), "#<exception \"foo\">");
         }
 
         #[test]
@@ -889,7 +876,7 @@ bar"
                 .into(),
             };
 
-            assert_eq!(c.as_datum().to_string(), "#<exception \"foo\" (a 5)>");
+            assert_eq!(c.to_string(), "#<exception \"foo\" (a 5)>");
         }
 
         #[test]
@@ -900,7 +887,7 @@ bar"
                 irritants: Value::Constant(Constant::Boolean(true)).into(),
             };
 
-            assert_eq!(c.as_datum().to_string(), "#<exception \"foo\" #t>");
+            assert_eq!(c.to_string(), "#<exception \"foo\" #t>");
         }
 
         #[test]
@@ -911,7 +898,7 @@ bar"
                 irritants: Value::Unspecified.into(),
             };
 
-            assert_eq!(c.as_datum().to_string(), "#<env-error \"foo\">");
+            assert_eq!(c.to_string(), "#<env-error \"foo\">");
         }
 
         #[test]
@@ -922,7 +909,7 @@ bar"
                 irritants: Value::Unspecified.into(),
             };
 
-            assert_eq!(c.as_datum().to_string(), "#<file-error \"foo\">");
+            assert_eq!(c.to_string(), "#<file-error \"foo\">");
         }
 
         #[test]
@@ -933,7 +920,7 @@ bar"
                 irritants: Value::Unspecified.into(),
             };
 
-            assert_eq!(c.as_datum().to_string(), "#<read-error \"foo\">");
+            assert_eq!(c.to_string(), "#<read-error \"foo\">");
         }
     }
 }
