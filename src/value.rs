@@ -34,7 +34,7 @@ pub(crate) enum Value {
     TokenList(Box<[TokenLine]>),
     Unspecified,
     // TODO: vector needs ref-cells for item equivalence and self-referencing
-    Vector(Box<[Value]>),
+    Vector(Box<[ValueRef]>),
 }
 
 impl Value {
@@ -69,6 +69,10 @@ impl Value {
             .unwrap_or_else(Self::null)
     }
 
+    pub(crate) fn vector(items: impl IntoIterator<Item = Self>) -> Self {
+        Self::Vector(items.into_iter().map(Rc::new).collect())
+    }
+
     pub(crate) fn display_message(&self) -> ValueMessage {
         ValueMessage(self)
     }
@@ -97,16 +101,15 @@ impl Display for Value {
 
 #[derive(Debug)]
 pub(crate) struct Pair {
-    // TODO: i think this needs to be a value ref, e.g. (cdr foo)
-    car: Value,
+    car: ValueRef,
     cdr: ValueRef,
 }
 
 impl Pair {
     #[allow(clippy::similar_names, reason = "lisp terms-of-art")]
-    pub(crate) fn cons(car: Value, cdr: impl Into<ValueRef>) -> Self {
+    pub(crate) fn cons(car: impl Into<ValueRef>, cdr: impl Into<ValueRef>) -> Self {
         Self {
-            car,
+            car: car.into(),
             cdr: cdr.into(),
         }
     }
@@ -326,31 +329,28 @@ mod tests {
 
         #[test]
         fn vector_typename() {
-            let v = Value::Vector([].into());
+            let v = Value::vector([]);
 
             assert_eq!(v.as_typename().to_string(), "vector");
         }
 
         #[test]
         fn vector_display() {
-            let v = Value::Vector(
-                [
-                    Value::Constant(Constant::String("foo".into())),
-                    Value::Symbol("a".into()),
-                    zlist![
-                        Value::Constant(Constant::Boolean(true)),
-                        Value::Constant(Constant::Character('a')),
-                    ],
-                ]
-                .into(),
-            );
+            let v = Value::vector([
+                Value::Constant(Constant::String("foo".into())),
+                Value::Symbol("a".into()),
+                zlist![
+                    Value::Constant(Constant::Boolean(true)),
+                    Value::Constant(Constant::Character('a')),
+                ],
+            ]);
 
             assert_eq!(v.to_string(), "#(\"foo\" a (#t #\\a))");
         }
 
         #[test]
         fn empty_vector_display() {
-            let v = Value::Vector([].into());
+            let v = Value::vector([]);
 
             assert_eq!(v.to_string(), "#()");
         }

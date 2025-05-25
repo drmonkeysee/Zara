@@ -839,7 +839,7 @@ mod vector {
             Value::Vector
         );
         assert_eq!(v.len(), 1);
-        assert!(matches!(&v[0], Value::Constant(Constant::String(s)) if &**s == "foo"));
+        assert!(matches!(&**&v[0], Value::Constant(Constant::String(s)) if &**s == "foo"));
     }
 
     #[test]
@@ -889,10 +889,10 @@ mod vector {
             Value::Vector
         );
         assert_eq!(v.len(), 3);
-        assert!(matches!(&v[0], Value::Symbol(s) if &**s == "a"));
-        assert!(matches!(&v[1], Value::Pair(None)));
+        assert!(matches!(&**&v[0], Value::Symbol(s) if &**s == "a"));
+        assert!(matches!(&**&v[1], Value::Pair(None)));
         assert!(matches!(
-            &v[2],
+            &**&v[2],
             Value::Constant(Constant::Number(n)) if n.to_string() == "26"
         ));
     }

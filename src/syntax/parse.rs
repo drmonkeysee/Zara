@@ -646,7 +646,7 @@ fn into_vector(seq: Vec<Expression>, ctx: ExprCtx) -> ExprConvertResult {
                 .ctx
                 .into_error(ExpressionErrorKind::VectorInvalidItem(expr.kind))),
         },
-        |items| ExpressionKind::Literal(Value::Vector(items)),
+        |items| ExpressionKind::Literal(Value::vector(items)),
     )
 }
 
