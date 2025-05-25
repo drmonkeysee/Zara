@@ -93,27 +93,7 @@ impl Expression {
 
     fn eval(self, env: &Frame) -> EvalResult {
         match self.kind {
-            ExpressionKind::Call { args, proc } => {
-                let proc = proc.eval(env)?;
-                let Value::Procedure(p) = &*proc else {
-                    return Err(Exception::new(Condition::proc_error(
-                        &proc.as_typename().to_string(),
-                    )));
-                };
-                if !p.matches_arity(args.len()) {
-                    return Err(Exception::new(Condition::arity_error(
-                        p.name(),
-                        p.arity(),
-                        args.len(),
-                    )));
-                }
-                /*
-                eval args
-                create call frame
-                call proc(args, call frame)
-                */
-                todo!("proc call not implemented")
-            }
+            ExpressionKind::Call { args, proc } => eval_call(proc, args, env),
             ExpressionKind::Literal(v) => Ok(v.into()),
             ExpressionKind::Variable(n) => env
                 .lookup(&n)
@@ -254,6 +234,28 @@ impl Display for TypeName<'_> {
             ExpressionKind::Literal(val) => val.as_typename().fmt(f),
         }
     }
+}
+
+fn eval_call(proc: Box<Expression>, args: Box<[Expression]>, env: &Frame) -> EvalResult {
+    let proc = proc.eval(env)?;
+    let Value::Procedure(p) = &*proc else {
+        return Err(Exception::new(Condition::proc_error(
+            &proc.as_typename().to_string(),
+        )));
+    };
+    if !p.matches_arity(args.len()) {
+        return Err(Exception::new(Condition::arity_error(
+            p.name(),
+            p.arity(),
+            args.len(),
+        )));
+    }
+    /*
+    eval args
+    create call frame
+    call proc(args, call frame)
+    */
+    todo!("proc call not implemented")
 }
 
 fn format_unexpected_token(kind: &str, token: &TokenKind, f: &mut Formatter) -> fmt::Result {
