@@ -4,7 +4,7 @@ use crate::{
     lex::TokenKind,
     number::ByteConversionError,
     txt::{LineNumber, TextLine, TxtSpan},
-    value::{Condition, Value},
+    value::{Condition, Value, ValueRef},
 };
 use std::{
     error::Error,
@@ -250,10 +250,13 @@ fn eval_call(proc: Box<Expression>, args: Box<[Expression]>, env: &Frame) -> Eva
             args.len(),
         )));
     }
+    let args = args
+        .into_iter()
+        .map(|expr| expr.eval(env))
+        .collect::<Result<Vec<ValueRef>, Exception>>()?;
     /*
-    eval args
-    create call frame
-    call proc(args, call frame)
+    let call_frame = ???;
+    p.apply(&args, &call_frame);
     */
     todo!("proc call not implemented")
 }
@@ -631,6 +634,77 @@ mod tests {
                     err.to_string(),
                     "#<env-error \"foo arity mismatch - expected at least: 1, found: 0\">"
                 );
+            }
+
+            #[test]
+            fn call_args_eval_failure() {
+                let txt = make_textline().into();
+                let expr = ExprCtx {
+                    span: 0..13,
+                    txt: Rc::clone(&txt),
+                }
+                .into_expr(ExpressionKind::Call {
+                    proc: Expression::variable(
+                        "foo",
+                        ExprCtx {
+                            span: 1..4,
+                            txt: Rc::clone(&txt),
+                        },
+                    )
+                    .into(),
+                    args: [
+                        Expression::constant(
+                            Constant::Number(Number::real(5)),
+                            ExprCtx {
+                                span: 5..6,
+                                txt: Rc::clone(&txt),
+                            },
+                        ),
+                        Expression::variable(
+                            "x",
+                            ExprCtx {
+                                span: 7..8,
+                                txt: Rc::clone(&txt),
+                            },
+                        )
+                        .into(),
+                        Expression::variable(
+                            "y",
+                            ExprCtx {
+                                span: 9..10,
+                                txt: Rc::clone(&txt),
+                            },
+                        )
+                        .into(),
+                        Expression::variable(
+                            "z",
+                            ExprCtx {
+                                span: 11..12,
+                                txt: Rc::clone(&txt),
+                            },
+                        )
+                        .into(),
+                    ]
+                    .into(),
+                });
+                let s = Rc::new(SymbolTable::default());
+                let mut env = Frame::root(Rc::downgrade(&s));
+                env.bind(
+                    "foo",
+                    Value::Procedure(
+                        Procedure::intrinsic("foo", 4..4, |_, _| {
+                            Value::Symbol("bar".into()).into()
+                        })
+                        .into(),
+                    ),
+                );
+                env.bind("y", Value::Constant(Constant::String("beef".into())));
+
+                let r = expr.eval(&env);
+
+                // NOTE: missing variable "z" is not hit
+                let err = err_or_fail!(r);
+                assert_eq!(err.to_string(), "#<env-error \"unbound variable: x\">");
             }
         }
     }

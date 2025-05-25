@@ -39,6 +39,13 @@ impl Procedure {
         (self.arity.is_empty() && self.arity.start as usize == args_len)
             || (self.arity.start as usize <= args_len && args_len <= self.arity.len())
     }
+
+    pub(crate) fn apply(&self, args: &[ValueRef], env: &Frame) -> ValueRef {
+        match self.body {
+            Body::Intrinsic(func) => func(args, env),
+            Body::Lambda(_) => todo!("lambda apply"),
+        }
+    }
 }
 
 impl Display for Procedure {
@@ -75,7 +82,8 @@ fn write_arity(arity: &Arity, f: &mut Formatter<'_>) -> fmt::Result {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::value::Value;
+    use crate::{constant::Constant, eval::SymbolTable, value::Value};
+    use std::rc::Rc;
 
     #[test]
     fn intrinsic_zero_arity() {
@@ -180,5 +188,32 @@ mod tests {
         let p = Procedure::intrinsic("foo", 255..255, |_, _| Value::Unspecified.into());
 
         assert!(!p.matches_arity(256));
+    }
+
+    #[test]
+    fn apply_zero_arity() {
+        let p = Procedure::intrinsic("foo", 0..0, |_, _| {
+            Value::Constant(Constant::String("bar".into())).into()
+        });
+        let s = Rc::new(SymbolTable::default());
+        let env = Frame::root(Rc::downgrade(&s));
+
+        let v = p.apply(&[], &env);
+
+        assert!(matches!(&*v, Value::Constant(Constant::String(s)) if &**s == "bar"));
+    }
+
+    #[test]
+    fn apply_single_arity() {
+        let p = Procedure::intrinsic("foo", 1..1, |args, _| Rc::clone(&args[0]));
+        let s = Rc::new(SymbolTable::default());
+        let env = Frame::root(Rc::downgrade(&s));
+        let args = [Value::Constant(Constant::String("baz".into())).into()];
+
+        let v = p.apply(&args, &env);
+
+        assert!(
+            matches!(&*v, Value::Constant(Constant::String(s)) if &**s == "baz" && Rc::ptr_eq(&args[0], &v))
+        );
     }
 }
