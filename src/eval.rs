@@ -3,7 +3,7 @@ mod form;
 
 pub(crate) use self::{
     env::{Frame, SymbolTable},
-    form::{IntrinsicFn, Procedure},
+    form::{Arity, IntrinsicFn, MAX_ARITY, Procedure},
 };
 use crate::{
     core,

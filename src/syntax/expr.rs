@@ -93,10 +93,21 @@ impl Expression {
 
     fn eval(self, env: &Frame) -> EvalResult {
         match self.kind {
-            ExpressionKind::Call { .. } => {
+            ExpressionKind::Call { args, proc } => {
+                let proc = proc.eval(env)?;
+                let Value::Procedure(p) = &*proc else {
+                    return Err(Exception::new(Condition::proc_error(
+                        &proc.as_typename().to_string(),
+                    )));
+                };
+                if !p.matches_arity(args.len()) {
+                    return Err(Exception::new(Condition::arity_error(
+                        p.name(),
+                        p.arity(),
+                        args.len(),
+                    )));
+                }
                 /*
-                eval proc
-                check type and arity
                 eval args
                 create call frame
                 call proc(args, call frame)
@@ -106,7 +117,7 @@ impl Expression {
             ExpressionKind::Literal(v) => Ok(v.into()),
             ExpressionKind::Variable(n) => env
                 .lookup(&n)
-                .ok_or_else(|| Exception::new(Condition::binding(&n))),
+                .ok_or_else(|| Exception::new(Condition::bind_error(&n))),
         }
     }
 }
@@ -396,6 +407,229 @@ mod tests {
 
             let v = ok_or_fail!(r);
             assert!(matches!(*v, Value::Constant(Constant::Character('b'))));
+        }
+
+        mod forms {
+            use super::*;
+            use crate::{eval::Procedure, number::Number};
+
+            #[test]
+            fn call_no_args() {
+                let txt = make_textline().into();
+                let expr = ExprCtx {
+                    span: 0..5,
+                    txt: Rc::clone(&txt),
+                }
+                .into_expr(ExpressionKind::Call {
+                    proc: Expression::variable(
+                        "foo",
+                        ExprCtx {
+                            span: 1..4,
+                            txt: Rc::clone(&txt),
+                        },
+                    )
+                    .into(),
+                    args: [].into(),
+                });
+                let s = Rc::new(SymbolTable::default());
+                let mut env = Frame::root(Rc::downgrade(&s));
+                env.bind(
+                    "foo",
+                    Value::Procedure(
+                        Procedure::intrinsic("foo", 0..0, |_, _| {
+                            Value::Symbol("bar".into()).into()
+                        })
+                        .into(),
+                    ),
+                );
+
+                let r = expr.eval(&env);
+
+                let v = ok_or_fail!(r);
+                assert!(matches!(&*v, Value::Symbol(s) if &**s == "foo"));
+            }
+
+            #[test]
+            fn call_unbound_procedure() {
+                let txt = make_textline().into();
+                let expr = ExprCtx {
+                    span: 0..5,
+                    txt: Rc::clone(&txt),
+                }
+                .into_expr(ExpressionKind::Call {
+                    proc: Expression::variable(
+                        "foo",
+                        ExprCtx {
+                            span: 1..4,
+                            txt: Rc::clone(&txt),
+                        },
+                    )
+                    .into(),
+                    args: [].into(),
+                });
+                let s = Rc::new(SymbolTable::default());
+                let env = Frame::root(Rc::downgrade(&s));
+
+                let r = expr.eval(&env);
+
+                let err = err_or_fail!(r);
+                assert_eq!(err.to_string(), "#<env-error \"unbound variable: foo\">");
+            }
+
+            #[test]
+            fn call_not_a_procedure() {
+                let txt = make_textline().into();
+                let expr = ExprCtx {
+                    span: 0..5,
+                    txt: Rc::clone(&txt),
+                }
+                .into_expr(ExpressionKind::Call {
+                    proc: Expression::variable(
+                        "foo",
+                        ExprCtx {
+                            span: 1..4,
+                            txt: Rc::clone(&txt),
+                        },
+                    )
+                    .into(),
+                    args: [].into(),
+                });
+                let s = Rc::new(SymbolTable::default());
+                let mut env = Frame::root(Rc::downgrade(&s));
+                env.bind("foo", Value::Constant(Constant::String("foo".into())));
+
+                let r = expr.eval(&env);
+
+                let err = err_or_fail!(r);
+                assert_eq!(
+                    err.to_string(),
+                    "#<env-error \"expected procedure, found: string\">"
+                );
+            }
+
+            #[test]
+            fn call_too_many_args() {
+                let txt = make_textline().into();
+                let expr = ExprCtx {
+                    span: 0..7,
+                    txt: Rc::clone(&txt),
+                }
+                .into_expr(ExpressionKind::Call {
+                    proc: Expression::variable(
+                        "foo",
+                        ExprCtx {
+                            span: 1..4,
+                            txt: Rc::clone(&txt),
+                        },
+                    )
+                    .into(),
+                    args: [Expression::constant(
+                        Constant::Number(Number::real(5)),
+                        ExprCtx {
+                            span: 5..6,
+                            txt: Rc::clone(&txt),
+                        },
+                    )]
+                    .into(),
+                });
+                let s = Rc::new(SymbolTable::default());
+                let mut env = Frame::root(Rc::downgrade(&s));
+                env.bind(
+                    "foo",
+                    Value::Procedure(
+                        Procedure::intrinsic("foo", 0..0, |_, _| {
+                            Value::Symbol("bar".into()).into()
+                        })
+                        .into(),
+                    ),
+                );
+
+                let r = expr.eval(&env);
+
+                let err = err_or_fail!(r);
+                assert_eq!(
+                    err.to_string(),
+                    "#<env-error \"foo arity mismatch - expected: 0, found: 1\">"
+                );
+            }
+
+            #[test]
+            fn call_too_few_args() {
+                let txt = make_textline().into();
+                let expr = ExprCtx {
+                    span: 0..7,
+                    txt: Rc::clone(&txt),
+                }
+                .into_expr(ExpressionKind::Call {
+                    proc: Expression::variable(
+                        "foo",
+                        ExprCtx {
+                            span: 1..4,
+                            txt: Rc::clone(&txt),
+                        },
+                    )
+                    .into(),
+                    args: [].into(),
+                });
+                let s = Rc::new(SymbolTable::default());
+                let mut env = Frame::root(Rc::downgrade(&s));
+                env.bind(
+                    "foo",
+                    Value::Procedure(
+                        Procedure::intrinsic("foo", 1..1, |_, _| {
+                            Value::Symbol("bar".into()).into()
+                        })
+                        .into(),
+                    ),
+                );
+
+                let r = expr.eval(&env);
+
+                let err = err_or_fail!(r);
+                assert_eq!(
+                    err.to_string(),
+                    "#<env-error \"foo arity mismatch - expected: 1, found: 0\">"
+                );
+            }
+
+            #[test]
+            fn call_too_few_args_variable_arity() {
+                let txt = make_textline().into();
+                let expr = ExprCtx {
+                    span: 0..7,
+                    txt: Rc::clone(&txt),
+                }
+                .into_expr(ExpressionKind::Call {
+                    proc: Expression::variable(
+                        "foo",
+                        ExprCtx {
+                            span: 1..4,
+                            txt: Rc::clone(&txt),
+                        },
+                    )
+                    .into(),
+                    args: [].into(),
+                });
+                let s = Rc::new(SymbolTable::default());
+                let mut env = Frame::root(Rc::downgrade(&s));
+                env.bind(
+                    "foo",
+                    Value::Procedure(
+                        Procedure::intrinsic("foo", 1..2, |_, _| {
+                            Value::Symbol("bar".into()).into()
+                        })
+                        .into(),
+                    ),
+                );
+
+                let r = expr.eval(&env);
+
+                let err = err_or_fail!(r);
+                assert_eq!(
+                    err.to_string(),
+                    "#<env-error \"foo arity mismatch - expected at least: 1, found: 0\">"
+                );
+            }
         }
     }
 

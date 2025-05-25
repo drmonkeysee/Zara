@@ -1,16 +1,15 @@
 mod time;
 
 use crate::{
-    eval::{Frame, IntrinsicFn, Procedure},
+    eval::{Arity, Frame, IntrinsicFn, Procedure},
     value::Value,
 };
-use std::ops::Range;
 
 pub(crate) fn load(env: &mut Frame) {
     time::load(env);
 }
 
-fn bind_intrinsic(env: &mut Frame, name: &str, arity: Range<u8>, body: IntrinsicFn) {
+fn bind_intrinsic(env: &mut Frame, name: &str, arity: Arity, body: IntrinsicFn) {
     env.bind(
         name,
         Value::Procedure(Procedure::intrinsic(name, arity, body).into()),

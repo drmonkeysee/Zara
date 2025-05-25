@@ -537,7 +537,7 @@ mod error {
 
         assert_eq!(
             err.to_string(),
-            "expected integer literal but got numeric type: foobar"
+            "expected integer literal, got numeric type: foobar"
         );
     }
 

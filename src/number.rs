@@ -114,7 +114,7 @@ impl Display for ByteConversionError {
                 )
             }
             Self::InvalidType(n) => {
-                write!(f, "expected integer literal but got numeric type: {n}")
+                write!(f, "expected integer literal, got numeric type: {n}")
             }
         }
     }

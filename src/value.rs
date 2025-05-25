@@ -9,7 +9,7 @@ macro_rules! zlist {
 
 use crate::{
     constant::Constant,
-    eval::Procedure,
+    eval::{Arity, MAX_ARITY, Procedure},
     lex::{DisplayTokenLines, TokenLine, TokenLinesMessage},
     string::SymbolDatum,
     syntax::Program,
@@ -145,11 +145,36 @@ pub(crate) struct Condition {
 }
 
 impl Condition {
-    pub(crate) fn binding(name: &str) -> Self {
+    pub(crate) fn bind_error(name: &str) -> Self {
         Self {
             kind: ConditionKind::Env,
             irritants: Value::Unspecified.into(),
             msg: format!("unbound variable: {name}").into(),
+        }
+    }
+
+    pub(crate) fn proc_error(typename: &str) -> Self {
+        Self {
+            kind: ConditionKind::Env,
+            irritants: Value::Unspecified.into(),
+            msg: format!("expected procedure, found: {typename}").into(),
+        }
+    }
+
+    pub(crate) fn arity_error(name: &str, expected: &Arity, actual: usize) -> Self {
+        let expected = if actual > MAX_ARITY as usize {
+            format!("args exceed max arity: {MAX_ARITY}")
+        } else {
+            format!(
+                "expected{}: {}",
+                if expected.is_empty() { "" } else { " at least" },
+                expected.start
+            )
+        };
+        Self {
+            kind: ConditionKind::Env,
+            irritants: Value::Unspecified.into(),
+            msg: format!("{name} arity mismatch - {expected}, found: {actual}",).into(),
         }
     }
 }
