@@ -383,7 +383,7 @@ mod tests {
         #[test]
         fn procedure_typename() {
             let v = Value::Procedure(
-                Procedure::intrinsic("foo", 0..0, |_, _| Value::Unspecified.into()).into(),
+                Procedure::intrinsic("foo", 0..0, |_, _| Ok(Value::Unspecified.into())).into(),
             );
 
             assert_eq!(v.as_typename().to_string(), "procedure");
@@ -392,7 +392,7 @@ mod tests {
         #[test]
         fn procedure_display() {
             let v = Value::Procedure(
-                Procedure::intrinsic("foo", 0..0, |_, _| Value::Unspecified.into()).into(),
+                Procedure::intrinsic("foo", 0..0, |_, _| Ok(Value::Unspecified.into())).into(),
             );
 
             assert_eq!(v.to_string(), "#<procedure foo>");

@@ -254,11 +254,8 @@ fn eval_call(proc: Box<Expression>, args: Box<[Expression]>, env: &Frame) -> Eva
         .into_iter()
         .map(|expr| expr.eval(env))
         .collect::<Result<Vec<ValueRef>, Exception>>()?;
-    /*
-    let call_frame = ???;
-    p.apply(&args, &call_frame);
-    */
-    todo!("proc call not implemented")
+    // TODO: do intrinsic calls need their own call frame?
+    p.apply(&args, &env)
 }
 
 fn format_unexpected_token(kind: &str, token: &TokenKind, f: &mut Formatter) -> fmt::Result {
@@ -442,7 +439,7 @@ mod tests {
                     "foo",
                     Value::Procedure(
                         Procedure::intrinsic("foo", 0..0, |_, _| {
-                            Value::Symbol("bar".into()).into()
+                            Ok(Value::Symbol("bar".into()).into())
                         })
                         .into(),
                     ),
@@ -451,7 +448,7 @@ mod tests {
                 let r = expr.eval(&env);
 
                 let v = ok_or_fail!(r);
-                assert!(matches!(&*v, Value::Symbol(s) if &**s == "foo"));
+                assert!(matches!(&*v, Value::Symbol(s) if &**s == "bar"));
             }
 
             #[test]
@@ -543,7 +540,7 @@ mod tests {
                     "foo",
                     Value::Procedure(
                         Procedure::intrinsic("foo", 0..0, |_, _| {
-                            Value::Symbol("bar".into()).into()
+                            Ok(Value::Symbol("bar".into()).into())
                         })
                         .into(),
                     ),
@@ -582,7 +579,7 @@ mod tests {
                     "foo",
                     Value::Procedure(
                         Procedure::intrinsic("foo", 1..1, |_, _| {
-                            Value::Symbol("bar".into()).into()
+                            Ok(Value::Symbol("bar".into()).into())
                         })
                         .into(),
                     ),
@@ -621,7 +618,7 @@ mod tests {
                     "foo",
                     Value::Procedure(
                         Procedure::intrinsic("foo", 1..2, |_, _| {
-                            Value::Symbol("bar".into()).into()
+                            Ok(Value::Symbol("bar".into()).into())
                         })
                         .into(),
                     ),
@@ -693,7 +690,7 @@ mod tests {
                     "foo",
                     Value::Procedure(
                         Procedure::intrinsic("foo", 4..4, |_, _| {
-                            Value::Symbol("bar".into()).into()
+                            Ok(Value::Symbol("bar".into()).into())
                         })
                         .into(),
                     ),

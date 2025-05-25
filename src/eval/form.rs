@@ -1,4 +1,4 @@
-use super::Frame;
+use super::{EvalResult, Frame};
 use crate::{syntax::Program, value::ValueRef};
 use std::{
     fmt::{self, Display, Formatter, Write},
@@ -8,7 +8,7 @@ use std::{
 
 pub(crate) const MAX_ARITY: u8 = u8::MAX;
 
-pub(crate) type IntrinsicFn = fn(&[ValueRef], &Frame) -> ValueRef;
+pub(crate) type IntrinsicFn = fn(&[ValueRef], &Frame) -> EvalResult;
 pub(crate) type Arity = Range<u8>;
 
 #[derive(Debug)]
@@ -40,7 +40,7 @@ impl Procedure {
             || (self.arity.start as usize <= args_len && args_len <= self.arity.len())
     }
 
-    pub(crate) fn apply(&self, args: &[ValueRef], env: &Frame) -> ValueRef {
+    pub(crate) fn apply(&self, args: &[ValueRef], env: &Frame) -> EvalResult {
         match self.body {
             Body::Intrinsic(func) => func(args, env),
             Body::Lambda(_) => todo!("lambda apply"),
@@ -82,110 +82,110 @@ fn write_arity(arity: &Arity, f: &mut Formatter<'_>) -> fmt::Result {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{constant::Constant, eval::SymbolTable, value::Value};
+    use crate::{constant::Constant, eval::SymbolTable, testutil::ok_or_fail, value::Value};
     use std::rc::Rc;
 
     #[test]
     fn intrinsic_zero_arity() {
-        let p = Procedure::intrinsic("foo", 0..0, |_, _| Value::Unspecified.into());
+        let p = Procedure::intrinsic("foo", 0..0, |_, _| Ok(Value::Unspecified.into()));
 
         assert_eq!(p.to_string(), "#<procedure foo>");
     }
 
     #[test]
     fn intrinsic_single_arity() {
-        let p = Procedure::intrinsic("foo", 1..1, |_, _| Value::Unspecified.into());
+        let p = Procedure::intrinsic("foo", 1..1, |_, _| Ok(Value::Unspecified.into()));
 
         assert_eq!(p.to_string(), "#<procedure foo (_)>");
     }
 
     #[test]
     fn intrinsic_multi_arity() {
-        let p = Procedure::intrinsic("foo", 3..3, |_, _| Value::Unspecified.into());
+        let p = Procedure::intrinsic("foo", 3..3, |_, _| Ok(Value::Unspecified.into()));
 
         assert_eq!(p.to_string(), "#<procedure foo (_ _ _)>");
     }
 
     #[test]
     fn intrinsic_optional() {
-        let p = Procedure::intrinsic("foo", 0..1, |_, _| Value::Unspecified.into());
+        let p = Procedure::intrinsic("foo", 0..1, |_, _| Ok(Value::Unspecified.into()));
 
         assert_eq!(p.to_string(), "#<procedure foo (?)>");
     }
 
     #[test]
     fn intrinsic_multi_optional() {
-        let p = Procedure::intrinsic("foo", 1..3, |_, _| Value::Unspecified.into());
+        let p = Procedure::intrinsic("foo", 1..3, |_, _| Ok(Value::Unspecified.into()));
 
         assert_eq!(p.to_string(), "#<procedure foo (_ ? ?)>");
     }
 
     #[test]
     fn intrinsic_open_arity() {
-        let p = Procedure::intrinsic("foo", 0..255, |_, _| Value::Unspecified.into());
+        let p = Procedure::intrinsic("foo", 0..255, |_, _| Ok(Value::Unspecified.into()));
 
         assert_eq!(p.to_string(), "#<procedure foo (…)>");
     }
 
     #[test]
     fn intrinsic_required_params_with_open_arity() {
-        let p = Procedure::intrinsic("foo", 2..255, |_, _| Value::Unspecified.into());
+        let p = Procedure::intrinsic("foo", 2..255, |_, _| Ok(Value::Unspecified.into()));
 
         assert_eq!(p.to_string(), "#<procedure foo (_ _ …)>");
     }
 
     #[test]
     fn matches_zero_arity() {
-        let p = Procedure::intrinsic("foo", 0..0, |_, _| Value::Unspecified.into());
+        let p = Procedure::intrinsic("foo", 0..0, |_, _| Ok(Value::Unspecified.into()));
 
         assert!(p.matches_arity(0));
     }
 
     #[test]
     fn matches_single_arity() {
-        let p = Procedure::intrinsic("foo", 1..1, |_, _| Value::Unspecified.into());
+        let p = Procedure::intrinsic("foo", 1..1, |_, _| Ok(Value::Unspecified.into()));
 
         assert!(p.matches_arity(1));
     }
 
     #[test]
     fn matches_max_arity() {
-        let p = Procedure::intrinsic("foo", 255..255, |_, _| Value::Unspecified.into());
+        let p = Procedure::intrinsic("foo", 255..255, |_, _| Ok(Value::Unspecified.into()));
 
         assert!(p.matches_arity(MAX_ARITY as usize));
     }
 
     #[test]
     fn matches_min_variable_arity() {
-        let p = Procedure::intrinsic("foo", 0..3, |_, _| Value::Unspecified.into());
+        let p = Procedure::intrinsic("foo", 0..3, |_, _| Ok(Value::Unspecified.into()));
 
         assert!(p.matches_arity(0));
     }
 
     #[test]
     fn matches_max_variable_arity() {
-        let p = Procedure::intrinsic("foo", 0..3, |_, _| Value::Unspecified.into());
+        let p = Procedure::intrinsic("foo", 0..3, |_, _| Ok(Value::Unspecified.into()));
 
         assert!(p.matches_arity(3));
     }
 
     #[test]
     fn matches_exceeds_variable_arity() {
-        let p = Procedure::intrinsic("foo", 0..3, |_, _| Value::Unspecified.into());
+        let p = Procedure::intrinsic("foo", 0..3, |_, _| Ok(Value::Unspecified.into()));
 
         assert!(!p.matches_arity(4));
     }
 
     #[test]
     fn matches_less_than_min_variable_arity() {
-        let p = Procedure::intrinsic("foo", 2..5, |_, _| Value::Unspecified.into());
+        let p = Procedure::intrinsic("foo", 2..5, |_, _| Ok(Value::Unspecified.into()));
 
         assert!(!p.matches_arity(1));
     }
 
     #[test]
     fn exceeds_max_arity() {
-        let p = Procedure::intrinsic("foo", 255..255, |_, _| Value::Unspecified.into());
+        let p = Procedure::intrinsic("foo", 255..255, |_, _| Ok(Value::Unspecified.into()));
 
         assert!(!p.matches_arity(256));
     }
@@ -193,25 +193,27 @@ mod tests {
     #[test]
     fn apply_zero_arity() {
         let p = Procedure::intrinsic("foo", 0..0, |_, _| {
-            Value::Constant(Constant::String("bar".into())).into()
+            Ok(Value::Constant(Constant::String("bar".into())).into())
         });
         let s = Rc::new(SymbolTable::default());
         let env = Frame::root(Rc::downgrade(&s));
 
-        let v = p.apply(&[], &env);
+        let r = p.apply(&[], &env);
 
+        let v = ok_or_fail!(r);
         assert!(matches!(&*v, Value::Constant(Constant::String(s)) if &**s == "bar"));
     }
 
     #[test]
     fn apply_single_arity() {
-        let p = Procedure::intrinsic("foo", 1..1, |args, _| Rc::clone(&args[0]));
+        let p = Procedure::intrinsic("foo", 1..1, |args, _| Ok(Rc::clone(&args[0])));
         let s = Rc::new(SymbolTable::default());
         let env = Frame::root(Rc::downgrade(&s));
         let args = [Value::Constant(Constant::String("baz".into())).into()];
 
-        let v = p.apply(&args, &env);
+        let r = p.apply(&args, &env);
 
+        let v = ok_or_fail!(r);
         assert!(
             matches!(&*v, Value::Constant(Constant::String(s)) if &**s == "baz" && Rc::ptr_eq(&args[0], &v))
         );
