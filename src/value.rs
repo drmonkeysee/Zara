@@ -33,6 +33,7 @@ pub(crate) enum Value {
     // TODO: figure out symbol table
     Symbol(Box<str>),
     TokenList(Box<[TokenLine]>),
+    Unspecified,
     // TODO: vector needs ref-cells for item equivalence and self-referencing
     Vector(Box<[Value]>),
 }
@@ -156,6 +157,7 @@ impl Display for Datum<'_> {
             Value::Procedure(p) => p.fmt(f),
             Value::Symbol(s) => SymbolDatum(s).fmt(f),
             Value::TokenList(lines) => DisplayTokenLines(lines).fmt(f),
+            Value::Unspecified => f.write_str("#<unspecified>"),
             Value::Vector(v) => write_seq("#", v, |v| v.as_datum().to_string(), f),
         }
     }
@@ -186,6 +188,7 @@ impl Display for TypeName<'_> {
             Value::Procedure(_) => f.write_str("procedure"),
             Value::Symbol(_) => f.write_str("symbol"),
             Value::TokenList(_) => f.write_str("token list"),
+            Value::Unspecified => f.write_str("unspecified"),
             Value::Vector(_) => f.write_str("vector"),
         }
     }
@@ -318,6 +321,20 @@ mod tests {
             let v = zlist![];
 
             assert_eq!(v.as_datum().to_string(), "()")
+        }
+
+        #[test]
+        fn unspecified_typename() {
+            let v = Value::Unspecified;
+
+            assert_eq!(v.as_typename().to_string(), "unspecified");
+        }
+
+        #[test]
+        fn unspecified_datum() {
+            let v = Value::Unspecified;
+
+            assert_eq!(v.as_datum().to_string(), "#<unspecified>");
         }
 
         #[test]
