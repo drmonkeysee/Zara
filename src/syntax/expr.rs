@@ -452,6 +452,78 @@ mod tests {
             }
 
             #[test]
+            fn call_with_args() {
+                let txt = make_textline().into();
+                let expr = ExprCtx {
+                    span: 0..18,
+                    txt: Rc::clone(&txt),
+                }
+                .into_expr(ExpressionKind::Call {
+                    proc: Expression::variable(
+                        "foo",
+                        ExprCtx {
+                            span: 1..4,
+                            txt: Rc::clone(&txt),
+                        },
+                    )
+                    .into(),
+                    args: [
+                        Expression::constant(
+                            Constant::String("one".into()),
+                            ExprCtx {
+                                span: 5..8,
+                                txt: Rc::clone(&txt),
+                            },
+                        ),
+                        Expression::constant(
+                            Constant::String("two".into()),
+                            ExprCtx {
+                                span: 9..12,
+                                txt: Rc::clone(&txt),
+                            },
+                        ),
+                        Expression::constant(
+                            Constant::String("three".into()),
+                            ExprCtx {
+                                span: 13..16,
+                                txt: Rc::clone(&txt),
+                            },
+                        ),
+                    ]
+                    .into(),
+                });
+                let s = Rc::new(SymbolTable::default());
+                let mut env = Frame::root(Rc::downgrade(&s));
+                env.bind(
+                    "foo",
+                    Value::Procedure(
+                        Procedure::intrinsic("foo", 3..3, |args, _| {
+                            let s = args
+                                .iter()
+                                .map(|v| {
+                                    if let Value::Constant(Constant::String(s)) = &**v {
+                                        s.clone()
+                                    } else {
+                                        unreachable!()
+                                    }
+                                })
+                                .collect::<Vec<_>>()
+                                .join(", ");
+                            Ok(Rc::new(Value::Constant(Constant::String(s.into()))))
+                        })
+                        .into(),
+                    ),
+                );
+
+                let r = expr.eval(&env);
+
+                let v = ok_or_fail!(r);
+                assert!(
+                    matches!(&*v, Value::Constant(Constant::String(s)) if &**s == "one, two, three")
+                );
+            }
+
+            #[test]
             fn call_unbound_procedure() {
                 let txt = make_textline().into();
                 let expr = ExprCtx {
