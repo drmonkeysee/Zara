@@ -2,7 +2,6 @@ use super::*;
 use crate::{
     testutil::{err_or_fail, extract_or_fail, make_textline, ok_or_fail, some_or_fail},
     txt::TxtSpan,
-    value::Value,
 };
 
 mod expr {
