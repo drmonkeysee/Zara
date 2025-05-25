@@ -195,7 +195,7 @@ mod tests {
         let p = Procedure::intrinsic("foo", 0..0, |_, _| {
             Ok(Value::Constant(Constant::String("bar".into())).into())
         });
-        let s = Rc::new(SymbolTable::default());
+        let s = SymbolTable::default().into();
         let env = Frame::root(Rc::downgrade(&s));
 
         let r = p.apply(&[], &env);
@@ -206,16 +206,19 @@ mod tests {
 
     #[test]
     fn apply_single_arity() {
-        let p = Procedure::intrinsic("foo", 1..1, |args, _| Ok(Rc::clone(&args[0])));
-        let s = Rc::new(SymbolTable::default());
+        let p = Procedure::intrinsic("foo", 1..1, |args, _| {
+            let Value::Constant(Constant::String(s)) = &*args[0] else {
+                unreachable!()
+            };
+            Ok(Value::Constant(Constant::String(format!("bar {s}").into())).into())
+        });
+        let s = SymbolTable::default().into();
         let env = Frame::root(Rc::downgrade(&s));
         let args = [Value::Constant(Constant::String("baz".into())).into()];
 
         let r = p.apply(&args, &env);
 
         let v = ok_or_fail!(r);
-        assert!(
-            matches!(&*v, Value::Constant(Constant::String(s)) if &**s == "baz" && Rc::ptr_eq(&args[0], &v))
-        );
+        assert!(matches!(&*v, Value::Constant(Constant::String(s)) if &**s == "bar baz"));
     }
 }

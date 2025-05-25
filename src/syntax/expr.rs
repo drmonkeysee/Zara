@@ -318,7 +318,7 @@ mod tests {
                     txt: make_textline().into(),
                 },
             );
-            let s = Rc::new(SymbolTable::default());
+            let s = SymbolTable::default().into();
             let env = Frame::root(Rc::downgrade(&s));
 
             let r = expr.eval(&env);
@@ -336,7 +336,7 @@ mod tests {
                     txt: make_textline().into(),
                 },
             );
-            let s = Rc::new(SymbolTable::default());
+            let s = SymbolTable::default().into();
             let mut env = Frame::root(Rc::downgrade(&s));
             env.bind("x", Value::Constant(Constant::String("foo".into())));
 
@@ -355,7 +355,7 @@ mod tests {
                     txt: make_textline().into(),
                 },
             );
-            let s = Rc::new(SymbolTable::default());
+            let s = SymbolTable::default().into();
             let env = Frame::root(Rc::downgrade(&s));
 
             let r = expr.eval(&env);
@@ -367,7 +367,7 @@ mod tests {
         #[test]
         fn empty_program() {
             let prg = Program::new([]);
-            let s = Rc::new(SymbolTable::default());
+            let s = SymbolTable::default().into();
             let env = Frame::root(Rc::downgrade(&s));
 
             let r = prg.eval(&env);
@@ -402,7 +402,7 @@ mod tests {
                     },
                 ),
             ]);
-            let s = Rc::new(SymbolTable::default());
+            let s = SymbolTable::default().into();
             let env = Frame::root(Rc::downgrade(&s));
 
             let r = prg.eval(&env);
@@ -433,7 +433,7 @@ mod tests {
                     .into(),
                     args: [].into(),
                 });
-                let s = Rc::new(SymbolTable::default());
+                let s = SymbolTable::default().into();
                 let mut env = Frame::root(Rc::downgrade(&s));
                 env.bind(
                     "foo",
@@ -492,7 +492,7 @@ mod tests {
                     ]
                     .into(),
                 });
-                let s = Rc::new(SymbolTable::default());
+                let s = SymbolTable::default().into();
                 let mut env = Frame::root(Rc::downgrade(&s));
                 env.bind(
                     "foo",
@@ -501,15 +501,14 @@ mod tests {
                             let s = args
                                 .iter()
                                 .map(|v| {
-                                    if let Value::Constant(Constant::String(s)) = &**v {
-                                        s.clone()
-                                    } else {
+                                    let Value::Constant(Constant::String(s)) = &**v else {
                                         unreachable!()
-                                    }
+                                    };
+                                    s.clone()
                                 })
                                 .collect::<Vec<_>>()
                                 .join(", ");
-                            Ok(Rc::new(Value::Constant(Constant::String(s.into()))))
+                            Ok(Value::Constant(Constant::String(s.into())).into())
                         })
                         .into(),
                     ),
@@ -541,7 +540,7 @@ mod tests {
                     .into(),
                     args: [].into(),
                 });
-                let s = Rc::new(SymbolTable::default());
+                let s = SymbolTable::default().into();
                 let env = Frame::root(Rc::downgrade(&s));
 
                 let r = expr.eval(&env);
@@ -568,7 +567,7 @@ mod tests {
                     .into(),
                     args: [].into(),
                 });
-                let s = Rc::new(SymbolTable::default());
+                let s = SymbolTable::default().into();
                 let mut env = Frame::root(Rc::downgrade(&s));
                 env.bind("foo", Value::Constant(Constant::String("foo".into())));
 
@@ -606,7 +605,7 @@ mod tests {
                     )]
                     .into(),
                 });
-                let s = Rc::new(SymbolTable::default());
+                let s = SymbolTable::default().into();
                 let mut env = Frame::root(Rc::downgrade(&s));
                 env.bind(
                     "foo",
@@ -645,7 +644,7 @@ mod tests {
                     .into(),
                     args: [].into(),
                 });
-                let s = Rc::new(SymbolTable::default());
+                let s = SymbolTable::default().into();
                 let mut env = Frame::root(Rc::downgrade(&s));
                 env.bind(
                     "foo",
@@ -684,7 +683,7 @@ mod tests {
                     .into(),
                     args: [].into(),
                 });
-                let s = Rc::new(SymbolTable::default());
+                let s = SymbolTable::default().into();
                 let mut env = Frame::root(Rc::downgrade(&s));
                 env.bind(
                     "foo",
@@ -756,7 +755,7 @@ mod tests {
                     ]
                     .into(),
                 });
-                let s = Rc::new(SymbolTable::default());
+                let s = SymbolTable::default().into();
                 let mut env = Frame::root(Rc::downgrade(&s));
                 env.bind(
                     "foo",

@@ -106,7 +106,7 @@ impl Evaluator for Environment {
 
 impl Default for Environment {
     fn default() -> Self {
-        let s = Rc::new(SymbolTable::default());
+        let s = SymbolTable::default().into();
         let mut env = Frame::root(Rc::downgrade(&s));
         core::load(&mut env);
         Self {
