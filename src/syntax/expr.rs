@@ -1,6 +1,7 @@
 use crate::{
+    Exception,
     constant::Constant,
-    eval::{EvalResult, Exception, Frame},
+    eval::{EvalResult, Frame},
     lex::TokenKind,
     number::ByteConversionError,
     txt::{LineNumber, TextLine, TxtSpan},

@@ -177,6 +177,14 @@ impl Condition {
             msg: format!("{name} arity mismatch - {expected}, found: {actual}",).into(),
         }
     }
+
+    pub(crate) fn system_error(msg: impl Into<Box<str>>) -> Self {
+        Self {
+            kind: ConditionKind::System,
+            irritants: Value::Unspecified.into(),
+            msg: msg.into(),
+        }
+    }
 }
 
 impl Display for Condition {
@@ -227,6 +235,7 @@ enum ConditionKind {
     File,
     General,
     Read,
+    System,
 }
 
 impl Display for ConditionKind {
@@ -236,6 +245,7 @@ impl Display for ConditionKind {
             Self::File => f.write_str("file-error"),
             Self::General => f.write_str("exception"),
             Self::Read => f.write_str("read-error"),
+            Self::System => f.write_str("sys-error"),
         }
     }
 }
@@ -946,6 +956,17 @@ bar"
             };
 
             assert_eq!(c.to_string(), "#<read-error \"foo\">");
+        }
+
+        #[test]
+        fn display_system_condition() {
+            let c = Condition {
+                kind: ConditionKind::System,
+                msg: "foo".into(),
+                irritants: Value::Unspecified.into(),
+            };
+
+            assert_eq!(c.to_string(), "#<sys-error \"foo\">");
         }
     }
 }
