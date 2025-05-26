@@ -256,7 +256,7 @@ fn eval_call(proc: Box<Expression>, args: Box<[Expression]>, env: &Frame) -> Eva
         .map(|expr| expr.eval(env))
         .collect::<Result<Vec<ValueRef>, Exception>>()?;
     // TODO: do intrinsic calls need their own call frame?
-    p.apply(&args, &env)
+    p.apply(&args, env)
 }
 
 fn format_unexpected_token(kind: &str, token: &TokenKind, f: &mut Formatter) -> fmt::Result {
