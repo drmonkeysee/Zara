@@ -70,8 +70,20 @@ impl Value {
             .unwrap_or_else(Self::null)
     }
 
+    pub(crate) fn bool(b: bool) -> Self {
+        Self::Constant(Constant::Boolean(b))
+    }
+
+    pub(crate) fn char(ch: char) -> Self {
+        Self::Constant(Constant::Character(ch))
+    }
+
     pub(crate) fn number(r: impl Into<Real>) -> Self {
         Self::Constant(Constant::Number(Number::real(r)))
+    }
+
+    pub(crate) fn string(s: impl Into<Box<str>>) -> Self {
+        Self::Constant(Constant::String(s.into()))
     }
 
     pub(crate) fn vector(items: impl IntoIterator<Item = Self>) -> Self {
@@ -271,7 +283,6 @@ fn write_seq<'a, T: 'a>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::number::Number;
 
     mod display {
         use super::*;
@@ -299,14 +310,14 @@ mod tests {
 
         #[test]
         fn constant_display() {
-            let v = Value::Constant(Constant::Boolean(true));
+            let v = Value::bool(true);
 
             assert_eq!(v.to_string(), "#t");
         }
 
         #[test]
         fn constant_typename() {
-            let v = Value::Constant(Constant::Boolean(true));
+            let v = Value::bool(true);
 
             assert_eq!(v.as_typename().to_string(), "boolean");
         }
@@ -320,10 +331,7 @@ mod tests {
 
         #[test]
         fn pair_typename() {
-            let p = Pair::cons(
-                Value::Constant(Constant::Boolean(true)),
-                Value::Constant(Constant::Character('a')),
-            );
+            let p = Pair::cons(Value::bool(true), Value::char('a'));
             let v = Value::pair(p);
 
             assert_eq!(v.as_typename().to_string(), "pair");
@@ -331,10 +339,7 @@ mod tests {
 
         #[test]
         fn list_typename() {
-            let v = zlist![
-                Value::Constant(Constant::Boolean(true)),
-                Value::Constant(Constant::Character('a')),
-            ];
+            let v = zlist![Value::bool(true), Value::char('a'),];
 
             assert_eq!(v.as_typename().to_string(), "list");
         }
@@ -377,12 +382,9 @@ mod tests {
         #[test]
         fn vector_display() {
             let v = Value::vector([
-                Value::Constant(Constant::String("foo".into())),
+                Value::string("foo"),
                 Value::Symbol("a".into()),
-                zlist![
-                    Value::Constant(Constant::Boolean(true)),
-                    Value::Constant(Constant::Character('a')),
-                ],
+                zlist![Value::bool(true), Value::char('a'),],
             ]);
 
             assert_eq!(v.to_string(), "#(\"foo\" a (#t #\\a))");
@@ -613,10 +615,7 @@ bar"
         #[test]
         fn pair_is_not_list() {
             // (#t . #f)
-            let p = Pair::cons(
-                Value::Constant(Constant::Boolean(true)),
-                Value::Constant(Constant::Boolean(false)),
-            );
+            let p = Pair::cons(Value::bool(true), Value::bool(false));
 
             assert!(!p.is_list());
         }
@@ -624,7 +623,7 @@ bar"
         #[test]
         fn empty_cdr_is_list() {
             // (#t)
-            let p = Pair::cons(Value::Constant(Constant::Boolean(true)), Value::null());
+            let p = Pair::cons(Value::bool(true), Value::null());
 
             assert!(p.is_list());
         }
@@ -675,10 +674,7 @@ bar"
 
         #[test]
         fn pair_display() {
-            let p = Pair::cons(
-                Value::Constant(Constant::Boolean(true)),
-                Value::Constant(Constant::Boolean(false)),
-            );
+            let p = Pair::cons(Value::bool(true), Value::bool(false));
             let v = Value::pair(p);
 
             assert_eq!(v.to_string(), "(#t . #f)")
@@ -686,7 +682,7 @@ bar"
 
         #[test]
         fn empty_cdr_display() {
-            let p = Pair::cons(Value::Constant(Constant::Boolean(true)), Value::null());
+            let p = Pair::cons(Value::bool(true), Value::null());
             let v = Value::pair(p);
 
             assert_eq!(v.to_string(), "(#t)")
@@ -776,7 +772,7 @@ bar"
             let lst = zlist![
                 Value::number(5),
                 Value::Symbol("a".into()),
-                Value::Constant(Constant::Boolean(true)),
+                Value::bool(true),
             ];
 
             assert_eq!(lst.to_string(), "(5 a #t)");
@@ -786,10 +782,7 @@ bar"
         fn nested() {
             let lst = zlist![
                 Value::number(5),
-                zlist![
-                    Value::Symbol("a".into()),
-                    Value::Constant(Constant::Boolean(true)),
-                ],
+                zlist![Value::Symbol("a".into()), Value::bool(true),],
             ];
 
             assert_eq!(lst.to_string(), "(5 (a #t))");
@@ -807,7 +800,7 @@ bar"
             let lst = Value::list(vec![
                 Value::number(5),
                 Value::Symbol("a".into()),
-                Value::Constant(Constant::Boolean(true)),
+                Value::bool(true),
             ]);
 
             assert_eq!(lst.to_string(), "(5 a #t)");
@@ -818,7 +811,7 @@ bar"
             let lst = Value::list([
                 Value::number(5),
                 Value::Symbol("a".into()),
-                Value::Constant(Constant::Boolean(true)),
+                Value::bool(true),
             ]);
 
             assert_eq!(lst.to_string(), "(5 a #t)");
@@ -844,7 +837,7 @@ bar"
             let lst = Value::improper_list(vec![
                 Value::number(5),
                 Value::Symbol("a".into()),
-                Value::Constant(Constant::Boolean(true)),
+                Value::bool(true),
             ]);
 
             assert_eq!(lst.to_string(), "(5 a . #t)");
@@ -855,7 +848,7 @@ bar"
             let lst = Value::improper_list([
                 Value::number(5),
                 Value::Symbol("a".into()),
-                Value::Constant(Constant::Boolean(true)),
+                Value::bool(true),
             ]);
 
             assert_eq!(lst.to_string(), "(5 a . #t)");
@@ -892,7 +885,7 @@ bar"
             let c = Condition {
                 kind: ConditionKind::General,
                 msg: "foo".into(),
-                irritants: Value::Constant(Constant::Boolean(true)).into(),
+                irritants: Value::bool(true).into(),
             };
 
             assert_eq!(c.to_string(), "#<exception \"foo\" #t>");

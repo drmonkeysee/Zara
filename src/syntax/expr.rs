@@ -339,7 +339,7 @@ mod tests {
             );
             let s = SymbolTable::default().into();
             let mut env = Frame::root(Rc::downgrade(&s));
-            env.bind("x", Value::Constant(Constant::String("foo".into())));
+            env.bind("x", Value::string("foo"));
 
             let r = expr.eval(&env);
 
@@ -509,7 +509,7 @@ mod tests {
                                 })
                                 .collect::<Vec<_>>()
                                 .join(", ");
-                            Ok(Value::Constant(Constant::String(s.into())).into())
+                            Ok(Value::string(s).into())
                         })
                         .into(),
                     ),
@@ -570,7 +570,7 @@ mod tests {
                 });
                 let s = SymbolTable::default().into();
                 let mut env = Frame::root(Rc::downgrade(&s));
-                env.bind("foo", Value::Constant(Constant::String("foo".into())));
+                env.bind("foo", Value::string("foo"));
 
                 let r = expr.eval(&env);
 
@@ -767,7 +767,7 @@ mod tests {
                         .into(),
                     ),
                 );
-                env.bind("y", Value::Constant(Constant::String("beef".into())));
+                env.bind("y", Value::string("beef"));
 
                 let r = expr.eval(&env);
 

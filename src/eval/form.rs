@@ -192,9 +192,7 @@ mod tests {
 
     #[test]
     fn apply_zero_arity() {
-        let p = Procedure::intrinsic("foo", 0..0, |_, _| {
-            Ok(Value::Constant(Constant::String("bar".into())).into())
-        });
+        let p = Procedure::intrinsic("foo", 0..0, |_, _| Ok(Value::string("bar").into()));
         let s = SymbolTable::default().into();
         let env = Frame::root(Rc::downgrade(&s));
 
@@ -210,11 +208,11 @@ mod tests {
             let Value::Constant(Constant::String(s)) = &*args[0] else {
                 unreachable!()
             };
-            Ok(Value::Constant(Constant::String(format!("bar {s}").into())).into())
+            Ok(Value::string(format!("bar {s}")).into())
         });
         let s = SymbolTable::default().into();
         let env = Frame::root(Rc::downgrade(&s));
-        let args = [Value::Constant(Constant::String("baz".into())).into()];
+        let args = [Value::string("baz").into()];
 
         let r = p.apply(&args, &env);
 
