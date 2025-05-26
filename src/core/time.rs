@@ -1,8 +1,6 @@
 use crate::{
     Exception,
-    constant::Constant,
     eval::{EvalResult, Frame},
-    number::Number,
     value::{Condition, Value, ValueRef},
 };
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -18,6 +16,6 @@ fn current_second(_args: &[ValueRef], _env: &Frame) -> EvalResult {
                 "system time failure",
             )))
         },
-        |d| Ok(Value::Constant(Constant::Number(Number::real(d.as_secs_f64()))).into()),
+        |d| Ok(Value::number(d.as_secs_f64()).into()),
     )
 }

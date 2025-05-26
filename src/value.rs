@@ -11,6 +11,7 @@ use crate::{
     constant::Constant,
     eval::{Arity, MAX_ARITY, Procedure},
     lex::{DisplayTokenLines, TokenLine, TokenLinesMessage},
+    number::{Number, Real},
     string::SymbolDatum,
     syntax::Program,
 };
@@ -67,6 +68,10 @@ impl Value {
             .rev()
             .reduce(|head, item| Self::pair(Pair::cons(item, head)))
             .unwrap_or_else(Self::null)
+    }
+
+    pub(crate) fn number(r: impl Into<Real>) -> Self {
+        Self::Constant(Constant::Number(Number::real(r)))
     }
 
     pub(crate) fn vector(items: impl IntoIterator<Item = Self>) -> Self {
@@ -628,13 +633,10 @@ bar"
         fn nested_is_list() {
             // (1 2 3)
             let p = Pair::cons(
-                Value::Constant(Constant::Number(Number::real(1))),
+                Value::number(1),
                 Value::pair(Pair::cons(
-                    Value::Constant(Constant::Number(Number::real(2))),
-                    Value::pair(Pair::cons(
-                        Value::Constant(Constant::Number(Number::real(3))),
-                        Value::null(),
-                    )),
+                    Value::number(2),
+                    Value::pair(Pair::cons(Value::number(3), Value::null())),
                 )),
             );
 
@@ -645,11 +647,8 @@ bar"
         fn improper_list_is_not_list() {
             // (1 2 . 3)
             let p = Pair::cons(
-                Value::Constant(Constant::Number(Number::real(1))),
-                Value::pair(Pair::cons(
-                    Value::Constant(Constant::Number(Number::real(2))),
-                    Value::Constant(Constant::Number(Number::real(3))),
-                )),
+                Value::number(1),
+                Value::pair(Pair::cons(Value::number(2), Value::number(3))),
             );
 
             assert!(!p.is_list());
@@ -659,14 +658,8 @@ bar"
         fn list_containing_pair_is_list() {
             // ((1 . 2) 3)
             let p = Pair::cons(
-                Value::pair(Pair::cons(
-                    Value::Constant(Constant::Number(Number::real(1))),
-                    Value::Constant(Constant::Number(Number::real(2))),
-                )),
-                Value::pair(Pair::cons(
-                    Value::Constant(Constant::Number(Number::real(3))),
-                    Value::null(),
-                )),
+                Value::pair(Pair::cons(Value::number(1), Value::number(2))),
+                Value::pair(Pair::cons(Value::number(3), Value::null())),
             );
 
             assert!(p.is_list());
@@ -702,13 +695,10 @@ bar"
         #[test]
         fn list_display() {
             let p = Pair::cons(
-                Value::Constant(Constant::Number(Number::real(1))),
+                Value::number(1),
                 Value::pair(Pair::cons(
-                    Value::Constant(Constant::Number(Number::real(2))),
-                    Value::pair(Pair::cons(
-                        Value::Constant(Constant::Number(Number::real(3))),
-                        Value::null(),
-                    )),
+                    Value::number(2),
+                    Value::pair(Pair::cons(Value::number(3), Value::null())),
                 )),
             );
             let v = Value::pair(p);
@@ -719,11 +709,8 @@ bar"
         #[test]
         fn improper_list_display() {
             let p = Pair::cons(
-                Value::Constant(Constant::Number(Number::real(1))),
-                Value::pair(Pair::cons(
-                    Value::Constant(Constant::Number(Number::real(2))),
-                    Value::Constant(Constant::Number(Number::real(3))),
-                )),
+                Value::number(1),
+                Value::pair(Pair::cons(Value::number(2), Value::number(3))),
             );
             let v = Value::pair(p);
 
@@ -733,14 +720,8 @@ bar"
         #[test]
         fn list_containing_pair_display() {
             let p = Pair::cons(
-                Value::pair(Pair::cons(
-                    Value::Constant(Constant::Number(Number::real(1))),
-                    Value::Constant(Constant::Number(Number::real(2))),
-                )),
-                Value::pair(Pair::cons(
-                    Value::Constant(Constant::Number(Number::real(3))),
-                    Value::null(),
-                )),
+                Value::pair(Pair::cons(Value::number(1), Value::number(2))),
+                Value::pair(Pair::cons(Value::number(3), Value::null())),
             );
             let v = Value::pair(p);
 
@@ -750,14 +731,11 @@ bar"
         #[test]
         fn list_containing_list_display() {
             let p = Pair::cons(
-                Value::Constant(Constant::Number(Number::real(1))),
+                Value::number(1),
                 Value::pair(Pair::cons(
                     Value::pair(Pair::cons(
-                        Value::Constant(Constant::Number(Number::real(2))),
-                        Value::pair(Pair::cons(
-                            Value::Constant(Constant::Number(Number::real(3))),
-                            Value::null(),
-                        )),
+                        Value::number(2),
+                        Value::pair(Pair::cons(Value::number(3), Value::null())),
                     )),
                     Value::null(),
                 )),
@@ -788,7 +766,7 @@ bar"
 
         #[test]
         fn one() {
-            let lst = zlist![Value::Constant(Constant::Number(Number::real(5)))];
+            let lst = zlist![Value::number(5)];
 
             assert_eq!(lst.to_string(), "(5)");
         }
@@ -796,7 +774,7 @@ bar"
         #[test]
         fn three() {
             let lst = zlist![
-                Value::Constant(Constant::Number(Number::real(5))),
+                Value::number(5),
                 Value::Symbol("a".into()),
                 Value::Constant(Constant::Boolean(true)),
             ];
@@ -807,7 +785,7 @@ bar"
         #[test]
         fn nested() {
             let lst = zlist![
-                Value::Constant(Constant::Number(Number::real(5))),
+                Value::number(5),
                 zlist![
                     Value::Symbol("a".into()),
                     Value::Constant(Constant::Boolean(true)),
@@ -827,7 +805,7 @@ bar"
         #[test]
         fn ctor_vec() {
             let lst = Value::list(vec![
-                Value::Constant(Constant::Number(Number::real(5))),
+                Value::number(5),
                 Value::Symbol("a".into()),
                 Value::Constant(Constant::Boolean(true)),
             ]);
@@ -838,7 +816,7 @@ bar"
         #[test]
         fn ctor_slice() {
             let lst = Value::list([
-                Value::Constant(Constant::Number(Number::real(5))),
+                Value::number(5),
                 Value::Symbol("a".into()),
                 Value::Constant(Constant::Boolean(true)),
             ]);
@@ -855,8 +833,7 @@ bar"
 
         #[test]
         fn improper_ctor_single() {
-            let lst =
-                Value::improper_list(vec![Value::Constant(Constant::Number(Number::real(5)))]);
+            let lst = Value::improper_list(vec![Value::number(5)]);
 
             assert!(matches!(lst, Value::Constant(_)));
             assert_eq!(lst.to_string(), "5");
@@ -865,7 +842,7 @@ bar"
         #[test]
         fn improper_ctor_vec() {
             let lst = Value::improper_list(vec![
-                Value::Constant(Constant::Number(Number::real(5))),
+                Value::number(5),
                 Value::Symbol("a".into()),
                 Value::Constant(Constant::Boolean(true)),
             ]);
@@ -876,7 +853,7 @@ bar"
         #[test]
         fn improper_ctor_slice() {
             let lst = Value::improper_list([
-                Value::Constant(Constant::Number(Number::real(5))),
+                Value::number(5),
                 Value::Symbol("a".into()),
                 Value::Constant(Constant::Boolean(true)),
             ]);
@@ -904,11 +881,7 @@ bar"
             let c = Condition {
                 kind: ConditionKind::General,
                 msg: "foo".into(),
-                irritants: zlist![
-                    Value::Symbol("a".into()),
-                    Value::Constant(Constant::Number(Number::real(5)))
-                ]
-                .into(),
+                irritants: zlist![Value::Symbol("a".into()), Value::number(5)].into(),
             };
 
             assert_eq!(c.to_string(), "#<exception \"foo\" (a 5)>");
