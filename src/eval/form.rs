@@ -196,9 +196,9 @@ mod tests {
     #[test]
     fn apply_zero_arity() {
         let p = Procedure::intrinsic("foo", 0..0, |_, _| Ok(Value::string("bar").into()));
-        let env = TestEnv::default();
-
-        let r = p.apply(&[], &env.frame);
+        let mut env = TestEnv::default();
+        let f = env.new_frame();
+        let r = p.apply(&[], &f);
 
         let v = ok_or_fail!(r);
         assert!(matches!(&*v, Value::Constant(Constant::String(s)) if &**s == "bar"));
@@ -212,10 +212,11 @@ mod tests {
             };
             Ok(Value::string(format!("bar {s}")).into())
         });
-        let env = TestEnv::default();
+        let mut env = TestEnv::default();
+        let f = env.new_frame();
         let args = [Value::string("baz").into()];
 
-        let r = p.apply(&args, &env.frame);
+        let r = p.apply(&args, &f);
 
         let v = ok_or_fail!(r);
         assert!(matches!(&*v, Value::Constant(Constant::String(s)) if &**s == "bar baz"));

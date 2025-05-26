@@ -1,26 +1,26 @@
 mod time;
 
 use crate::{
-    eval::{Arity, Frame, IntrinsicFn, Procedure},
+    eval::{Arity, Binding, IntrinsicFn, Procedure},
     value::Value,
 };
 
-pub(crate) fn load(env: &mut Frame) {
-    time::load(env);
-}
-
-fn bind_intrinsic(env: &mut Frame, name: &str, arity: Arity, body: IntrinsicFn) {
-    env.bind(
-        name,
-        Value::Procedure(Procedure::intrinsic(name, arity, body).into()),
-    );
+pub(crate) fn load(scope: &mut Binding) {
+    time::load(scope);
 
     // TODO: test variables
-    env.bind(
+    scope.bind(
         "x",
         Value::Constant(crate::constant::Constant::Number(
             crate::number::Number::real(5),
         )),
     );
-    env.bind("z", Value::Unspecified);
+    scope.bind("z", Value::Unspecified);
+}
+
+fn bind_intrinsic(scope: &mut Binding, name: &str, arity: Arity, body: IntrinsicFn) {
+    scope.bind(
+        name,
+        Value::Procedure(Procedure::intrinsic(name, arity, body).into()),
+    );
 }

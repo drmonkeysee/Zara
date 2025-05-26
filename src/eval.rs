@@ -2,7 +2,7 @@ mod env;
 mod form;
 
 pub(crate) use self::{
-    env::{Frame, SymbolTable, System},
+    env::{Binding, Frame, SymbolTable, System},
     form::{Arity, IntrinsicFn, MAX_ARITY, Procedure},
 };
 use crate::{
@@ -82,39 +82,42 @@ impl Display for EvaluationMessage<'_> {
 pub(crate) type EvalResult = Result<ValueRef, Exception>;
 
 pub(crate) trait Evaluator {
-    fn evaluate(&self, prg: Program) -> Evaluation;
+    fn evaluate(&mut self, prg: Program) -> Evaluation;
 }
 
 pub(crate) struct Ast;
 
 impl Evaluator for Ast {
-    fn evaluate(&self, prg: Program) -> Evaluation {
+    fn evaluate(&mut self, prg: Program) -> Evaluation {
         Evaluation::result(Ok(ValueImpl::Ast(prg).into()))
     }
 }
 
 pub(crate) struct Environment {
-    global: Rc<Frame>,
-    symbols: Rc<SymbolTable>,
-    system: Rc<System>,
+    global: Binding,
+    symbols: SymbolTable,
+    system: System,
 }
 
 impl Evaluator for Environment {
-    fn evaluate(&self, prg: Program) -> Evaluation {
-        Evaluation::result(prg.eval(&self.global))
+    fn evaluate(&mut self, prg: Program) -> Evaluation {
+        let frame = Frame {
+            bnd: &mut self.global,
+            sym: &self.symbols,
+            sys: &self.system,
+        };
+        Evaluation::result(prg.eval(&frame))
     }
 }
 
 impl Default for Environment {
     fn default() -> Self {
-        let sym = SymbolTable::default().into();
-        let sys = System::new().into();
-        let mut env = Frame::root(Rc::downgrade(&sym), Rc::downgrade(&sys));
-        core::load(&mut env);
+        let mut global = Binding::default();
+        core::load(&mut global);
         Self {
-            global: env.into(),
-            symbols: sym,
-            system: sys,
+            global,
+            symbols: SymbolTable::default(),
+            system: System::new(),
         }
     }
 }

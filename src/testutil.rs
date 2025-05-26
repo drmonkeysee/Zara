@@ -35,10 +35,10 @@ macro_rules! some_or_fail {
 }
 
 use crate::{
-    eval::{Frame, SymbolTable, System},
+    eval::{Binding, Frame, SymbolTable, System},
     txt::{LineNumber, TextContext, TextLine},
 };
-use std::{path::Path, rc::Rc};
+use std::path::Path;
 pub(crate) use {err_or_fail, extract_or_fail, ok_or_fail, some_or_fail};
 
 pub(crate) fn make_textline() -> TextLine {
@@ -58,19 +58,27 @@ pub(crate) fn make_textline_no(lineno: LineNumber) -> TextLine {
 }
 
 pub(crate) struct TestEnv {
-    pub(crate) frame: Rc<Frame>,
-    pub(crate) symbols: Rc<SymbolTable>,
-    pub(crate) system: Rc<System>,
+    pub(crate) binding: Binding,
+    pub(crate) symbols: SymbolTable,
+    pub(crate) system: System,
+}
+
+impl TestEnv {
+    pub(crate) fn new_frame(&mut self) -> Frame {
+        Frame {
+            bnd: &mut self.binding,
+            sym: &self.symbols,
+            sys: &self.system,
+        }
+    }
 }
 
 impl Default for TestEnv {
     fn default() -> Self {
-        let sym = SymbolTable::default().into();
-        let sys = System::new().into();
         Self {
-            frame: Frame::root(Rc::downgrade(&sym), Rc::downgrade(&sys)).into(),
-            symbols: sym,
-            system: sys,
+            binding: Binding::default(),
+            symbols: SymbolTable::default(),
+            system: System::new(),
         }
     }
 }

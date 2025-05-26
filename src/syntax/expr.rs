@@ -97,6 +97,7 @@ impl Expression {
             ExpressionKind::Call { args, proc } => eval_call(proc, args, env),
             ExpressionKind::Literal(v) => Ok(v.into()),
             ExpressionKind::Variable(n) => env
+                .bnd
                 .lookup(&n)
                 .ok_or_else(|| Exception::new(Condition::bind_error(&n))),
         }
@@ -316,9 +317,10 @@ mod tests {
                     txt: make_textline().into(),
                 },
             );
-            let env = TestEnv::default();
+            let mut env = TestEnv::default();
+            let f = env.new_frame();
 
-            let r = expr.eval(&env.frame);
+            let r = expr.eval(&f);
 
             let v = ok_or_fail!(r);
             assert!(matches!(*v, Value::Constant(Constant::Boolean(true))));
@@ -334,10 +336,10 @@ mod tests {
                 },
             );
             let mut env = TestEnv::default();
-            let f = Rc::get_mut(&mut env.frame).unwrap();
-            f.bind("x", Value::string("foo"));
+            env.binding.bind("x", Value::string("foo"));
+            let f = env.new_frame();
 
-            let r = expr.eval(&env.frame);
+            let r = expr.eval(&f);
 
             let v = ok_or_fail!(r);
             assert!(matches!(&*v, Value::Constant(Constant::String(s)) if &**s == "foo"));
@@ -352,9 +354,10 @@ mod tests {
                     txt: make_textline().into(),
                 },
             );
-            let env = TestEnv::default();
+            let mut env = TestEnv::default();
+            let f = env.new_frame();
 
-            let r = expr.eval(&env.frame);
+            let r = expr.eval(&f);
 
             let err = err_or_fail!(r);
             assert_eq!(err.to_string(), "#<env-error \"unbound variable: x\">");
@@ -363,9 +366,10 @@ mod tests {
         #[test]
         fn empty_program() {
             let prg = Program::new([]);
-            let env = TestEnv::default();
+            let mut env = TestEnv::default();
+            let f = env.new_frame();
 
-            let r = prg.eval(&env.frame);
+            let r = prg.eval(&f);
 
             let v = ok_or_fail!(r);
             assert!(matches!(*v, Value::Unspecified));
@@ -397,9 +401,10 @@ mod tests {
                     },
                 ),
             ]);
-            let env = TestEnv::default();
+            let mut env = TestEnv::default();
+            let f = env.new_frame();
 
-            let r = prg.eval(&env.frame);
+            let r = prg.eval(&f);
 
             let v = ok_or_fail!(r);
             assert!(matches!(*v, Value::Constant(Constant::Character('b'))));
@@ -428,8 +433,7 @@ mod tests {
                     args: [].into(),
                 });
                 let mut env = TestEnv::default();
-                let f = Rc::get_mut(&mut env.frame).unwrap();
-                f.bind(
+                env.binding.bind(
                     "foo",
                     Value::Procedure(
                         Procedure::intrinsic("foo", 0..0, |_, _| {
@@ -438,8 +442,9 @@ mod tests {
                         .into(),
                     ),
                 );
+                let f = env.new_frame();
 
-                let r = expr.eval(&env.frame);
+                let r = expr.eval(&f);
 
                 let v = ok_or_fail!(r);
                 assert!(matches!(&*v, Value::Symbol(s) if &**s == "bar"));
@@ -487,8 +492,7 @@ mod tests {
                     .into(),
                 });
                 let mut env = TestEnv::default();
-                let f = Rc::get_mut(&mut env.frame).unwrap();
-                f.bind(
+                env.binding.bind(
                     "foo",
                     Value::Procedure(
                         Procedure::intrinsic("foo", 3..3, |args, _| {
@@ -507,8 +511,9 @@ mod tests {
                         .into(),
                     ),
                 );
+                let f = env.new_frame();
 
-                let r = expr.eval(&env.frame);
+                let r = expr.eval(&f);
 
                 let v = ok_or_fail!(r);
                 assert!(
@@ -534,9 +539,10 @@ mod tests {
                     .into(),
                     args: [].into(),
                 });
-                let env = TestEnv::default();
+                let mut env = TestEnv::default();
+                let f = env.new_frame();
 
-                let r = expr.eval(&env.frame);
+                let r = expr.eval(&f);
 
                 let err = err_or_fail!(r);
                 assert_eq!(err.to_string(), "#<env-error \"unbound variable: foo\">");
@@ -561,10 +567,10 @@ mod tests {
                     args: [].into(),
                 });
                 let mut env = TestEnv::default();
-                let f = Rc::get_mut(&mut env.frame).unwrap();
-                f.bind("foo", Value::string("foo"));
+                env.binding.bind("foo", Value::string("foo"));
+                let f = env.new_frame();
 
-                let r = expr.eval(&env.frame);
+                let r = expr.eval(&f);
 
                 let err = err_or_fail!(r);
                 assert_eq!(
@@ -599,8 +605,7 @@ mod tests {
                     .into(),
                 });
                 let mut env = TestEnv::default();
-                let f = Rc::get_mut(&mut env.frame).unwrap();
-                f.bind(
+                env.binding.bind(
                     "foo",
                     Value::Procedure(
                         Procedure::intrinsic("foo", 0..0, |_, _| {
@@ -609,8 +614,9 @@ mod tests {
                         .into(),
                     ),
                 );
+                let f = env.new_frame();
 
-                let r = expr.eval(&env.frame);
+                let r = expr.eval(&f);
 
                 let err = err_or_fail!(r);
                 assert_eq!(
@@ -638,8 +644,7 @@ mod tests {
                     args: [].into(),
                 });
                 let mut env = TestEnv::default();
-                let f = Rc::get_mut(&mut env.frame).unwrap();
-                f.bind(
+                env.binding.bind(
                     "foo",
                     Value::Procedure(
                         Procedure::intrinsic("foo", 1..1, |_, _| {
@@ -648,8 +653,9 @@ mod tests {
                         .into(),
                     ),
                 );
+                let f = env.new_frame();
 
-                let r = expr.eval(&env.frame);
+                let r = expr.eval(&f);
 
                 let err = err_or_fail!(r);
                 assert_eq!(
@@ -677,8 +683,7 @@ mod tests {
                     args: [].into(),
                 });
                 let mut env = TestEnv::default();
-                let f = Rc::get_mut(&mut env.frame).unwrap();
-                f.bind(
+                env.binding.bind(
                     "foo",
                     Value::Procedure(
                         Procedure::intrinsic("foo", 1..2, |_, _| {
@@ -687,8 +692,9 @@ mod tests {
                         .into(),
                     ),
                 );
+                let f = env.new_frame();
 
-                let r = expr.eval(&env.frame);
+                let r = expr.eval(&f);
 
                 let err = err_or_fail!(r);
                 assert_eq!(
@@ -749,8 +755,7 @@ mod tests {
                     .into(),
                 });
                 let mut env = TestEnv::default();
-                let f = Rc::get_mut(&mut env.frame).unwrap();
-                f.bind(
+                env.binding.bind(
                     "foo",
                     Value::Procedure(
                         Procedure::intrinsic("foo", 4..4, |_, _| {
@@ -759,9 +764,10 @@ mod tests {
                         .into(),
                     ),
                 );
-                f.bind("y", Value::string("beef"));
+                env.binding.bind("y", Value::string("beef"));
+                let f = env.new_frame();
 
-                let r = expr.eval(&env.frame);
+                let r = expr.eval(&f);
 
                 // NOTE: missing variable "z" is not hit
                 let err = err_or_fail!(r);

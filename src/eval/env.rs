@@ -1,34 +1,22 @@
 use crate::value::ValueRef;
-use std::{
-    collections::HashMap,
-    rc::{Rc, Weak},
-    time::Instant,
-};
+use std::{collections::HashMap, rc::Rc, time::Instant};
 
-// TODO: these Box<str>s may need to be Rc<str>s
-
-pub(crate) struct Frame {
-    bindings: HashMap<Box<str>, ValueRef>,
-    symbols: Weak<SymbolTable>,
-    sys: Weak<System>,
-    // TODO: add parent reference (weak or rc?)
+pub(crate) struct Frame<'a> {
+    pub(crate) bnd: &'a mut Binding,
+    pub(crate) sym: &'a SymbolTable,
+    pub(crate) sys: &'a System,
 }
 
-impl Frame {
-    pub(crate) fn root(symbols: Weak<SymbolTable>, sys: Weak<System>) -> Self {
-        Self {
-            bindings: HashMap::new(),
-            symbols,
-            sys,
-        }
-    }
+#[derive(Default)]
+pub(crate) struct Binding(HashMap<Box<str>, ValueRef>);
 
+impl Binding {
     pub(crate) fn lookup(&self, name: &str) -> Option<ValueRef> {
-        self.bindings.get(name).map(Rc::clone)
+        self.0.get(name).map(Rc::clone)
     }
 
     pub(crate) fn bind(&mut self, name: impl Into<Box<str>>, val: impl Into<ValueRef>) {
-        self.bindings.insert(name.into(), val.into());
+        self.0.insert(name.into(), val.into());
     }
 }
 
