@@ -2,7 +2,7 @@ mod env;
 mod form;
 
 pub(crate) use self::{
-    env::{Frame, SymbolTable},
+    env::{Frame, SymbolTable, System},
     form::{Arity, IntrinsicFn, MAX_ARITY, Procedure},
 };
 use crate::{
@@ -96,6 +96,7 @@ impl Evaluator for Ast {
 pub(crate) struct Environment {
     global: Rc<Frame>,
     symbols: Rc<SymbolTable>,
+    system: Rc<System>,
 }
 
 impl Evaluator for Environment {
@@ -106,12 +107,14 @@ impl Evaluator for Environment {
 
 impl Default for Environment {
     fn default() -> Self {
-        let s = SymbolTable::default().into();
-        let mut env = Frame::root(Rc::downgrade(&s));
+        let sym = SymbolTable::default().into();
+        let sys = System::new().into();
+        let mut env = Frame::root(Rc::downgrade(&sym), Rc::downgrade(&sys));
         core::load(&mut env);
         Self {
             global: env.into(),
-            symbols: s,
+            symbols: sym,
+            system: sys,
         }
     }
 }

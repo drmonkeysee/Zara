@@ -82,8 +82,11 @@ fn write_arity(arity: &Arity, f: &mut Formatter<'_>) -> fmt::Result {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{constant::Constant, eval::SymbolTable, testutil::ok_or_fail, value::Value};
-    use std::rc::Rc;
+    use crate::{
+        constant::Constant,
+        testutil::{TestEnv, ok_or_fail},
+        value::Value,
+    };
 
     #[test]
     fn intrinsic_zero_arity() {
@@ -193,10 +196,9 @@ mod tests {
     #[test]
     fn apply_zero_arity() {
         let p = Procedure::intrinsic("foo", 0..0, |_, _| Ok(Value::string("bar").into()));
-        let s = SymbolTable::default().into();
-        let env = Frame::root(Rc::downgrade(&s));
+        let env = TestEnv::default();
 
-        let r = p.apply(&[], &env);
+        let r = p.apply(&[], &env.frame);
 
         let v = ok_or_fail!(r);
         assert!(matches!(&*v, Value::Constant(Constant::String(s)) if &**s == "bar"));
@@ -210,11 +212,10 @@ mod tests {
             };
             Ok(Value::string(format!("bar {s}")).into())
         });
-        let s = SymbolTable::default().into();
-        let env = Frame::root(Rc::downgrade(&s));
+        let env = TestEnv::default();
         let args = [Value::string("baz").into()];
 
-        let r = p.apply(&args, &env);
+        let r = p.apply(&args, &env.frame);
 
         let v = ok_or_fail!(r);
         assert!(matches!(&*v, Value::Constant(Constant::String(s)) if &**s == "bar baz"));

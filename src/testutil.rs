@@ -34,8 +34,11 @@ macro_rules! some_or_fail {
     }};
 }
 
-use crate::txt::{LineNumber, TextContext, TextLine};
-use std::path::Path;
+use crate::{
+    eval::{Frame, SymbolTable, System},
+    txt::{LineNumber, TextContext, TextLine},
+};
+use std::{path::Path, rc::Rc};
 pub(crate) use {err_or_fail, extract_or_fail, ok_or_fail, some_or_fail};
 
 pub(crate) fn make_textline() -> TextLine {
@@ -51,5 +54,23 @@ pub(crate) fn make_textline_no(lineno: LineNumber) -> TextLine {
         .into(),
         line: "line of source code".to_owned(),
         lineno,
+    }
+}
+
+pub(crate) struct TestEnv {
+    pub(crate) frame: Rc<Frame>,
+    pub(crate) symbols: Rc<SymbolTable>,
+    pub(crate) system: Rc<System>,
+}
+
+impl Default for TestEnv {
+    fn default() -> Self {
+        let sym = SymbolTable::default().into();
+        let sys = System::new().into();
+        Self {
+            frame: Frame::root(Rc::downgrade(&sym), Rc::downgrade(&sys)).into(),
+            symbols: sym,
+            system: sys,
+        }
     }
 }
