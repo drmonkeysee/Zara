@@ -1,3 +1,4 @@
+mod procctx;
 mod time;
 
 use crate::{
@@ -12,6 +13,7 @@ use crate::{
  */
 
 pub(crate) fn load(scope: &mut Binding) {
+    procctx::load(scope);
     time::load(scope);
 
     // TODO: test variables
