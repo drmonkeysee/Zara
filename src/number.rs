@@ -121,11 +121,22 @@ macro_rules! try_int_conversion {
                 }
             }
         }
+
+        impl TryFrom<&Number> for $type {
+            type Error = $err;
+
+            fn try_from(value: &Number) -> Result<Self, Self::Error> {
+                match value {
+                    Number::Real(Real::Integer(n)) => n.$convert(),
+                    _ => Err($err::InvalidType(value.as_typename().to_string())),
+                }
+            }
+        }
     };
 }
 
-try_int_conversion!(u8, try_into_u8, ByteConversionError);
-try_int_conversion!(i32, try_into_i32, IntConversionError);
+try_int_conversion!(u8, try_to_u8, ByteConversionError);
+try_int_conversion!(i32, try_to_i32, IntConversionError);
 
 #[derive(Debug)]
 pub(crate) struct Complex(Box<(Real, Real)>);
@@ -319,7 +330,7 @@ impl Integer {
         }
     }
 
-    fn try_into_u8(self) -> Result<u8, ByteConversionError> {
+    fn try_to_u8(&self) -> Result<u8, ByteConversionError> {
         if self.is_negative() {
             return Err(ByteConversionError::InvalidRange);
         }
@@ -329,12 +340,12 @@ impl Integer {
         u.try_into().map_err(|_| ByteConversionError::InvalidRange)
     }
 
-    fn try_into_i32(self) -> Result<i32, IntConversionError> {
+    fn try_to_i32(&self) -> Result<i32, IntConversionError> {
         let Precision::Single(u) = self.precision else {
             return Err(IntConversionError::InvalidRange);
         };
         if self.is_negative() {
-            if u <= i64::MIN as u64 {
+            if u <= (i32::MAX as u64) + 1 {
                 (-(u as i64)).try_into()
             } else {
                 return Err(IntConversionError::InvalidRange);

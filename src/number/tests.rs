@@ -829,7 +829,7 @@ mod integer {
             sign: Sign::Positive,
         };
 
-        let r = i.try_into_u8();
+        let r = i.try_to_u8();
 
         let err = err_or_fail!(r);
         assert!(matches!(err, ByteConversionError::InvalidRange));
@@ -886,7 +886,7 @@ mod integer {
     }
 
     #[test]
-    fn too_large_into_int() {
+    fn one_above_max_into_int() {
         let n = Number::real(2147483648);
 
         let r: Result<i32, _> = n.try_into();
@@ -896,7 +896,7 @@ mod integer {
     }
 
     #[test]
-    fn too_negative_into_int() {
+    fn one_below_min_into_int() {
         let n = Number::real(-2147483649);
 
         let r: Result<i32, _> = n.try_into();
@@ -936,13 +936,23 @@ mod integer {
     }
 
     #[test]
+    fn negative_max_i64_into_int() {
+        let n = Number::real((Sign::Negative, 9223372036854775807));
+
+        let r: Result<i32, _> = n.try_into();
+
+        let err = err_or_fail!(r);
+        assert!(matches!(err, IntConversionError::InvalidRange));
+    }
+
+    #[test]
     fn multiple_into_int() {
         let i = Integer {
             precision: Precision::Multiple([24].into()),
             sign: Sign::Positive,
         };
 
-        let r = i.try_into_i32();
+        let r = i.try_to_i32();
 
         let err = err_or_fail!(r);
         assert!(matches!(err, IntConversionError::InvalidRange));
