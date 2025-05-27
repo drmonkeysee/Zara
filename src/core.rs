@@ -5,6 +5,12 @@ use crate::{
     value::Value,
 };
 
+/*
+ * All intrinsic functions assume required arguments are present and will use
+ * unchecked access to retrieve them; arity is checked by call-expr evaluation
+ * so this should always be a safe assumption.
+ */
+
 pub(crate) fn load(scope: &mut Binding) {
     time::load(scope);
 

@@ -1,6 +1,7 @@
 use crate::{
     Exception,
     eval::{Binding, EvalResult, Frame},
+    number::Sign,
     value::{Condition, Value, ValueRef},
 };
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -11,8 +12,12 @@ pub(super) fn load(scope: &mut Binding) {
     super::bind_intrinsic(scope, "jiffies-per-second", 0..0, jiffies_per_second);
 }
 
-fn current_jiffy(_args: &[ValueRef], _env: &Frame) -> EvalResult {
-    todo!("current-jiffy");
+fn current_jiffy(_args: &[ValueRef], env: &Frame) -> EvalResult {
+    Ok(Value::number((
+        Sign::Positive,
+        env.sys.start_time.elapsed().as_micros() as u64,
+    ))
+    .into())
 }
 
 fn current_second(_args: &[ValueRef], _env: &Frame) -> EvalResult {
@@ -27,5 +32,6 @@ fn current_second(_args: &[ValueRef], _env: &Frame) -> EvalResult {
 }
 
 fn jiffies_per_second(_args: &[ValueRef], _env: &Frame) -> EvalResult {
-    todo!("jiffies-per-second");
+    // NOTE: jiffy = microsecond (µs)
+    Ok(Value::number(1_000_000).into())
 }
