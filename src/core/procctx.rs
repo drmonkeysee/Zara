@@ -51,7 +51,7 @@ fn get_environment_variables(_args: &[ValueRef], _env: &Frame) -> EvalResult {
 fn resolve_exit_code(v: Option<&ValueRef>) -> i32 {
     v.map_or(EXIT_SUCCESS, |val| match &**val {
         Value::Constant(Constant::Boolean(true)) => EXIT_SUCCESS,
-        Value::Constant(Constant::Number(n)) => todo!("convert to exit code"),
+        Value::Constant(Constant::Number(n)) => n.try_into().unwrap_or(EXIT_FAILURE),
         _ => EXIT_FAILURE,
     })
 }
