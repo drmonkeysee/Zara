@@ -83,44 +83,49 @@ impl Display for Number {
     }
 }
 
-impl TryFrom<Number> for u8 {
-    type Error = ByteConversionError;
-
-    fn try_from(value: Number) -> Result<Self, Self::Error> {
-        match value {
-            Number::Real(Real::Integer(n)) => n.try_into_u8(),
-            _ => Err(ByteConversionError::InvalidType(
-                value.as_typename().to_string(),
-            )),
+macro_rules! try_int_conversion {
+    ($type:ty, $convert:ident, $err:ident) => {
+        #[derive(Debug)]
+        pub(crate) enum $err {
+            InvalidRange,
+            InvalidType(String),
         }
-    }
-}
 
-#[derive(Debug)]
-pub(crate) enum ByteConversionError {
-    InvalidRange,
-    InvalidType(String),
-}
-
-impl Display for ByteConversionError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::InvalidRange => {
-                write!(
-                    f,
-                    "integer literal out of range: [{}, {}]",
-                    u8::MIN,
-                    u8::MAX
-                )
-            }
-            Self::InvalidType(n) => {
-                write!(f, "expected integer literal, got numeric type: {n}")
+        impl Display for $err {
+            fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+                match self {
+                    Self::InvalidRange => {
+                        write!(
+                            f,
+                            "integer literal out of range: [{}, {}]",
+                            <$type>::MIN,
+                            <$type>::MAX
+                        )
+                    }
+                    Self::InvalidType(n) => {
+                        write!(f, "expected integer literal, got numeric type: {n}")
+                    }
+                }
             }
         }
-    }
+
+        impl Error for $err {}
+
+        impl TryFrom<Number> for $type {
+            type Error = $err;
+
+            fn try_from(value: Number) -> Result<Self, Self::Error> {
+                match value {
+                    Number::Real(Real::Integer(n)) => n.$convert(),
+                    _ => Err($err::InvalidType(value.as_typename().to_string())),
+                }
+            }
+        }
+    };
 }
 
-impl Error for ByteConversionError {}
+try_int_conversion!(u8, try_into_u8, ByteConversionError);
+try_int_conversion!(i32, try_into_i32, IntConversionError);
 
 #[derive(Debug)]
 pub(crate) struct Complex(Box<(Real, Real)>);
@@ -322,6 +327,22 @@ impl Integer {
             return Err(ByteConversionError::InvalidRange);
         };
         u.try_into().map_err(|_| ByteConversionError::InvalidRange)
+    }
+
+    fn try_into_i32(self) -> Result<i32, IntConversionError> {
+        let Precision::Single(u) = self.precision else {
+            return Err(IntConversionError::InvalidRange);
+        };
+        if self.is_negative() {
+            if u <= i64::MIN as u64 {
+                (-(u as i64)).try_into()
+            } else {
+                return Err(IntConversionError::InvalidRange);
+            }
+        } else {
+            u.try_into()
+        }
+        .map_err(|_| IntConversionError::InvalidRange)
     }
 }
 

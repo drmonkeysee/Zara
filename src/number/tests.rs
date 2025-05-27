@@ -547,6 +547,26 @@ mod error {
 
         assert_eq!(err.to_string(), "integer literal out of range: [0, 255]");
     }
+
+    #[test]
+    fn display_int_invalid_type() {
+        let err = IntConversionError::InvalidType("foobar".to_owned());
+
+        assert_eq!(
+            err.to_string(),
+            "expected integer literal, got numeric type: foobar"
+        );
+    }
+
+    #[test]
+    fn display_int_out_of_range() {
+        let err = IntConversionError::InvalidRange;
+
+        assert_eq!(
+            err.to_string(),
+            "integer literal out of range: [-2147483648, 2147483647]"
+        );
+    }
 }
 
 mod integer {
@@ -814,6 +834,119 @@ mod integer {
         let err = err_or_fail!(r);
         assert!(matches!(err, ByteConversionError::InvalidRange));
     }
+
+    #[test]
+    fn single_into_int() {
+        let n = Number::real(12);
+
+        let r = n.try_into();
+
+        let i: i32 = ok_or_fail!(r);
+        assert_eq!(i, 12);
+    }
+
+    #[test]
+    fn zero_into_int() {
+        let n = Number::real(0);
+
+        let r = n.try_into();
+
+        let i: i32 = ok_or_fail!(r);
+        assert_eq!(i, 0);
+    }
+
+    #[test]
+    fn negative_into_int() {
+        let n = Number::real(-12);
+
+        let r = n.try_into();
+
+        let i: i32 = ok_or_fail!(r);
+        assert_eq!(i, -12);
+    }
+
+    #[test]
+    fn min_into_int() {
+        let n = Number::real(-2147483648);
+
+        let r = n.try_into();
+
+        let i: i32 = ok_or_fail!(r);
+        assert_eq!(i, -2147483648);
+    }
+
+    #[test]
+    fn max_into_int() {
+        let n = Number::real(2147483647);
+
+        let r = n.try_into();
+
+        let i: i32 = ok_or_fail!(r);
+        assert_eq!(i, 2147483647);
+    }
+
+    #[test]
+    fn too_large_into_int() {
+        let n = Number::real(2147483648);
+
+        let r: Result<i32, _> = n.try_into();
+
+        let err = err_or_fail!(r);
+        assert!(matches!(err, IntConversionError::InvalidRange));
+    }
+
+    #[test]
+    fn too_negative_into_int() {
+        let n = Number::real(-2147483649);
+
+        let r: Result<i32, _> = n.try_into();
+
+        let err = err_or_fail!(r);
+        assert!(matches!(err, IntConversionError::InvalidRange));
+    }
+
+    #[test]
+    fn max_u64_into_int() {
+        let n = Number::real((Sign::Positive, 18446744073709551615));
+
+        let r: Result<i32, _> = n.try_into();
+
+        let err = err_or_fail!(r);
+        assert!(matches!(err, IntConversionError::InvalidRange));
+    }
+
+    #[test]
+    fn max_negative_u64_into_int() {
+        let n = Number::real((Sign::Negative, 18446744073709551615));
+
+        let r: Result<i32, _> = n.try_into();
+
+        let err = err_or_fail!(r);
+        assert!(matches!(err, IntConversionError::InvalidRange));
+    }
+
+    #[test]
+    fn min_i64_into_int() {
+        let n = Number::real((Sign::Negative, 9223372036854775808));
+
+        let r: Result<i32, _> = n.try_into();
+
+        let err = err_or_fail!(r);
+        assert!(matches!(err, IntConversionError::InvalidRange));
+    }
+
+    #[test]
+    fn multiple_into_int() {
+        let i = Integer {
+            precision: Precision::Multiple([24].into()),
+            sign: Sign::Positive,
+        };
+
+        let r = i.try_into_i32();
+
+        let err = err_or_fail!(r);
+        assert!(matches!(err, IntConversionError::InvalidRange));
+    }
 }
 
 mod float {
@@ -951,7 +1084,7 @@ mod float {
     }
 
     #[test]
-    fn float_into_type() {
+    fn float_into_byte() {
         let n = Number::real(1.2);
 
         let r: Result<u8, _> = n.try_into();
@@ -960,6 +1093,19 @@ mod float {
         assert!(matches!(
             err,
             ByteConversionError::InvalidType(s)
+            if s == "floating-point"));
+    }
+
+    #[test]
+    fn float_into_int() {
+        let n = Number::real(1.2);
+
+        let r: Result<i32, _> = n.try_into();
+
+        let err = err_or_fail!(r);
+        assert!(matches!(
+            err,
+            IntConversionError::InvalidType(s)
             if s == "floating-point"));
     }
 }
@@ -1232,6 +1378,21 @@ mod rational {
             ByteConversionError::InvalidType(s)
             if s == "rational"));
     }
+
+    #[test]
+    fn rational_into_int() {
+        let rat = Real::reduce(4, 5);
+
+        let n = Number::real(ok_or_fail!(rat));
+
+        let r: Result<i32, _> = n.try_into();
+
+        let err = err_or_fail!(r);
+        assert!(matches!(
+            err,
+            IntConversionError::InvalidType(s)
+            if s == "rational"));
+    }
 }
 
 mod complex {
@@ -1430,6 +1591,19 @@ mod complex {
         assert!(matches!(
             err,
             ByteConversionError::InvalidType(s)
+            if s == "complex"));
+    }
+
+    #[test]
+    fn complex_into_int() {
+        let n = Number::complex(4, 5);
+
+        let r: Result<i32, _> = n.try_into();
+
+        let err = err_or_fail!(r);
+        assert!(matches!(
+            err,
+            IntConversionError::InvalidType(s)
             if s == "complex"));
     }
 }
