@@ -94,7 +94,7 @@ impl Expression {
 
     fn eval(self, env: &Frame) -> EvalResult {
         match self.kind {
-            ExpressionKind::Call { args, proc } => eval_call(proc, args, env),
+            ExpressionKind::Call { args, proc } => eval_call(*proc, args, env),
             ExpressionKind::Literal(v) => Ok(v.into()),
             ExpressionKind::Variable(n) => env
                 .bnd
@@ -238,7 +238,7 @@ impl Display for TypeName<'_> {
     }
 }
 
-fn eval_call(proc: Box<Expression>, args: Box<[Expression]>, env: &Frame) -> EvalResult {
+fn eval_call(proc: Expression, args: Box<[Expression]>, env: &Frame) -> EvalResult {
     let proc = proc.eval(env)?;
     let Value::Procedure(p) = &*proc else {
         return Err(Exception::new(Condition::proc_error(

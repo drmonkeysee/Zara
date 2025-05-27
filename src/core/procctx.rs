@@ -32,7 +32,7 @@ fn command_line(_args: &[ValueRef], _env: &Frame) -> EvalResult {
 }
 
 fn emergency_exit(args: &[ValueRef], _env: &Frame) -> EvalResult {
-    process::exit(resolve_exit_code(args.get(0)));
+    process::exit(resolve_exit_code(args.first()));
 }
 
 fn exit(_args: &[ValueRef], _env: &Frame) -> EvalResult {

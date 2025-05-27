@@ -111,7 +111,7 @@ impl Display for Value {
             Self::Symbol(s) => SymbolDatum(s).fmt(f),
             Self::TokenList(lines) => DisplayTokenLines(lines).fmt(f),
             Self::Unspecified => f.write_str("#<unspecified>"),
-            Self::Vector(v) => write_seq("#", v, |v| v.to_string(), f),
+            Self::Vector(v) => write_seq("#", v, ToString::to_string, f),
         }
     }
 }
@@ -209,7 +209,7 @@ impl Display for Condition {
         write!(f, "#<{} \"{}\"", self.kind, self.msg)?;
         match &*self.irritants {
             Value::Unspecified => (),
-            v @ _ => write!(f, " {v}")?,
+            v => write!(f, " {v}")?,
         }
         f.write_char('>')
     }
