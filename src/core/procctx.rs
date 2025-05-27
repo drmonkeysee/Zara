@@ -2,7 +2,6 @@
 use crate::{
     constant::Constant,
     eval::{Binding, EvalResult, Frame},
-    number::{Integer, Number, Real},
     value::{Value, ValueRef},
 };
 use std::process;
