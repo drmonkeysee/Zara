@@ -669,7 +669,7 @@ impl Display for RealTokenDescriptor<'_> {
     }
 }
 
-#[derive(Clone, Debug, Eq)]
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
 enum Precision {
     Single(u64),
     #[allow(dead_code, reason = "not yet implemented")]
@@ -685,36 +685,6 @@ impl Precision {
                     *self = Self::Single(*a / gcd);
                     *other = Self::Single(*b / gcd);
                 }
-                Self::Multiple(_) => todo!(),
-            },
-            Self::Multiple(_) => todo!(),
-        }
-    }
-}
-
-impl PartialEq for Precision {
-    fn eq(&self, other: &Self) -> bool {
-        match self {
-            Self::Single(a) => match other {
-                Self::Single(b) => a.eq(b),
-                Self::Multiple(_) => todo!(),
-            },
-            Self::Multiple(_) => todo!(),
-        }
-    }
-}
-
-impl PartialOrd for Precision {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl Ord for Precision {
-    fn cmp(&self, other: &Self) -> Ordering {
-        match self {
-            Self::Single(a) => match other {
-                Self::Single(b) => a.cmp(b),
                 Self::Multiple(_) => todo!(),
             },
             Self::Multiple(_) => todo!(),
