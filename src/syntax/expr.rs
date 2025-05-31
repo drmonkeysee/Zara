@@ -13,11 +13,11 @@ use std::{
     rc::Rc,
 };
 
-#[derive(Clone, Debug)]
-pub(crate) struct Program(Rc<[Expression]>);
+#[derive(Debug)]
+pub(crate) struct Program(Box<[Expression]>);
 
 impl Program {
-    pub(super) fn new(seq: impl Into<Rc<[Expression]>>) -> Self {
+    pub(super) fn new(seq: impl Into<Box<[Expression]>>) -> Self {
         Self(seq.into())
     }
 
@@ -34,7 +34,7 @@ impl Program {
     }
 
     #[cfg(test)]
-    pub(super) fn unwrap(self) -> Rc<[Expression]> {
+    pub(super) fn unwrap(self) -> Box<[Expression]> {
         self.0
     }
 }

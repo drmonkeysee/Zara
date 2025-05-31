@@ -89,7 +89,7 @@ pub(crate) struct Ast;
 
 impl Evaluator for Ast {
     fn evaluate(&mut self, prg: Program) -> Evaluation {
-        Evaluation::result(Ok(ValueImpl::Ast(prg)))
+        Evaluation::result(Ok(ValueImpl::Ast(prg.into())))
     }
 }
 

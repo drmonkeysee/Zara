@@ -115,7 +115,7 @@ pub(crate) struct TokenList;
 impl Parser for TokenList {
     fn parse(&mut self, token_lines: Box<[TokenLine]>) -> ParserResult {
         Ok(ParserOutput::Complete(Program::new(
-            tokens_expr(token_lines).into_iter().collect::<Rc<[_]>>(),
+            tokens_expr(token_lines).into_iter().collect::<Box<[_]>>(),
         )))
     }
 

@@ -7,6 +7,7 @@ use std::{
     error::Error,
     fmt::{self, Display, Formatter, Write},
     num::{IntErrorKind, ParseFloatError, ParseIntError},
+    rc::Rc,
     result::Result,
 };
 
@@ -673,7 +674,7 @@ impl Display for RealTokenDescriptor<'_> {
 enum Precision {
     Single(u64),
     #[allow(dead_code, reason = "not yet implemented")]
-    Multiple(Box<[u64]>),
+    Multiple(Rc<[u64]>),
 }
 
 impl Precision {

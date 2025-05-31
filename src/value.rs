@@ -22,7 +22,7 @@ pub(crate) use zlist;
 
 #[derive(Clone, Debug)]
 pub(crate) enum Value {
-    Ast(Program),
+    Ast(Rc<Program>),
     Boolean(bool),
     ByteVector(Rc<[u8]>),
     Character(char),
