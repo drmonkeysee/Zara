@@ -20,8 +20,6 @@ use std::{
 };
 pub(crate) use zlist;
 
-pub(crate) type ValueRef = Rc<Value>;
-
 #[derive(Debug)]
 pub(crate) enum Value {
     Ast(Program),
@@ -155,7 +153,7 @@ impl Display for Pair {
 #[derive(Debug)]
 pub(crate) struct Condition {
     kind: ConditionKind,
-    irritants: ValueRef,
+    irritants: Value,
     msg: Box<str>,
 }
 
@@ -163,7 +161,7 @@ impl Condition {
     pub(crate) fn bind_error(name: &str) -> Self {
         Self {
             kind: ConditionKind::Env,
-            irritants: Value::Unspecified.into(),
+            irritants: Value::Unspecified,
             msg: format!("unbound variable: {name}").into(),
         }
     }
@@ -171,7 +169,7 @@ impl Condition {
     pub(crate) fn proc_error(typename: &str) -> Self {
         Self {
             kind: ConditionKind::Env,
-            irritants: Value::Unspecified.into(),
+            irritants: Value::Unspecified,
             msg: format!("expected procedure, found: {typename}").into(),
         }
     }
@@ -188,7 +186,7 @@ impl Condition {
         };
         Self {
             kind: ConditionKind::Env,
-            irritants: Value::Unspecified.into(),
+            irritants: Value::Unspecified,
             msg: format!("{name} arity mismatch - {expected}, found: {actual}",).into(),
         }
     }
@@ -196,7 +194,7 @@ impl Condition {
     pub(crate) fn system_error(msg: impl Into<Box<str>>) -> Self {
         Self {
             kind: ConditionKind::System,
-            irritants: Value::Unspecified.into(),
+            irritants: Value::Unspecified,
             msg: msg.into(),
         }
     }
@@ -205,7 +203,7 @@ impl Condition {
 impl Display for Condition {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "#<{} \"{}\"", self.kind, self.msg)?;
-        match &*self.irritants {
+        match &self.irritants {
             Value::Unspecified => (),
             v => write!(f, " {v}")?,
         }
@@ -431,7 +429,7 @@ mod tests {
         #[test]
         fn procedure_typename() {
             let v = Value::Procedure(
-                Procedure::intrinsic("foo", 0..0, |_, _| Ok(Value::Unspecified.into())).into(),
+                Procedure::intrinsic("foo", 0..0, |_, _| Ok(Value::Unspecified)).into(),
             );
 
             assert_eq!(v.as_typename().to_string(), "procedure");
@@ -440,7 +438,7 @@ mod tests {
         #[test]
         fn procedure_display() {
             let v = Value::Procedure(
-                Procedure::intrinsic("foo", 0..0, |_, _| Ok(Value::Unspecified.into())).into(),
+                Procedure::intrinsic("foo", 0..0, |_, _| Ok(Value::Unspecified)).into(),
             );
 
             assert_eq!(v.to_string(), "#<procedure foo>");
@@ -1158,7 +1156,7 @@ bar",
             let c = Condition {
                 kind: ConditionKind::General,
                 msg: "foo".into(),
-                irritants: Value::Unspecified.into(),
+                irritants: Value::Unspecified,
             };
 
             assert_eq!(c.to_string(), "#<exception \"foo\">");
@@ -1169,7 +1167,7 @@ bar",
             let c = Condition {
                 kind: ConditionKind::General,
                 msg: "foo".into(),
-                irritants: zlist![Value::symbol("a"), Value::real(5)].into(),
+                irritants: zlist![Value::symbol("a"), Value::real(5)],
             };
 
             assert_eq!(c.to_string(), "#<exception \"foo\" (a 5)>");
@@ -1180,7 +1178,7 @@ bar",
             let c = Condition {
                 kind: ConditionKind::General,
                 msg: "foo".into(),
-                irritants: Value::Boolean(true).into(),
+                irritants: Value::Boolean(true),
             };
 
             assert_eq!(c.to_string(), "#<exception \"foo\" #t>");
@@ -1191,7 +1189,7 @@ bar",
             let c = Condition {
                 kind: ConditionKind::Env,
                 msg: "foo".into(),
-                irritants: Value::Unspecified.into(),
+                irritants: Value::Unspecified,
             };
 
             assert_eq!(c.to_string(), "#<env-error \"foo\">");
@@ -1202,7 +1200,7 @@ bar",
             let c = Condition {
                 kind: ConditionKind::File,
                 msg: "foo".into(),
-                irritants: Value::Unspecified.into(),
+                irritants: Value::Unspecified,
             };
 
             assert_eq!(c.to_string(), "#<file-error \"foo\">");
@@ -1213,7 +1211,7 @@ bar",
             let c = Condition {
                 kind: ConditionKind::Read,
                 msg: "foo".into(),
-                irritants: Value::Unspecified.into(),
+                irritants: Value::Unspecified,
             };
 
             assert_eq!(c.to_string(), "#<read-error \"foo\">");
@@ -1224,7 +1222,7 @@ bar",
             let c = Condition {
                 kind: ConditionKind::System,
                 msg: "foo".into(),
-                irritants: Value::Unspecified.into(),
+                irritants: Value::Unspecified,
             };
 
             assert_eq!(c.to_string(), "#<sys-error \"foo\">");

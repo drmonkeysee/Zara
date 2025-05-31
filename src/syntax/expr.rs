@@ -4,7 +4,7 @@ use crate::{
     lex::TokenKind,
     number::NumericError,
     txt::{LineNumber, TextLine, TxtSpan},
-    value::{Condition, Value, ValueRef},
+    value::{Condition, Value},
 };
 use std::{
     error::Error,
@@ -30,7 +30,7 @@ impl Program {
             .into_iter()
             .map(|expr| expr.eval(env))
             .last()
-            .unwrap_or(Ok(Value::Unspecified.into()))
+            .unwrap_or(Ok(Value::Unspecified))
     }
 
     #[cfg(test)]
@@ -94,7 +94,7 @@ impl Expression {
     fn eval(self, env: &Frame) -> EvalResult {
         match self.kind {
             ExpressionKind::Call { args, proc } => eval_call(*proc, args, env),
-            ExpressionKind::Literal(v) => Ok(v.into()),
+            ExpressionKind::Literal(v) => Ok(v),
             ExpressionKind::Variable(n) => env
                 .bnd
                 .lookup(&n)
@@ -239,7 +239,7 @@ impl Display for TypeName<'_> {
 
 fn eval_call(proc: Expression, args: Box<[Expression]>, env: &Frame) -> EvalResult {
     let proc = proc.eval(env)?;
-    let Value::Procedure(p) = &*proc else {
+    let Value::Procedure(p) = proc else {
         return Err(Exception::new(Condition::proc_error(
             &proc.as_typename().to_string(),
         )));
@@ -254,7 +254,7 @@ fn eval_call(proc: Expression, args: Box<[Expression]>, env: &Frame) -> EvalResu
     let args = args
         .into_iter()
         .map(|expr| expr.eval(env))
-        .collect::<Result<Vec<ValueRef>, Exception>>()?;
+        .collect::<Result<Vec<Value>, Exception>>()?;
     // TODO: do intrinsic calls need their own call frame?
     p.apply(&args, env)
 }
@@ -320,7 +320,7 @@ mod tests {
             let r = expr.eval(&f);
 
             let v = ok_or_fail!(r);
-            assert!(matches!(*v, Value::Boolean(true)));
+            assert!(matches!(v, Value::Boolean(true)));
         }
 
         #[test]
@@ -339,7 +339,7 @@ mod tests {
             let r = expr.eval(&f);
 
             let v = ok_or_fail!(r);
-            assert!(matches!(&*v, Value::String(s) if &**s == "foo"));
+            assert!(matches!(v, Value::String(s) if &*s == "foo"));
         }
 
         #[test]
@@ -369,7 +369,7 @@ mod tests {
             let r = prg.eval(&f);
 
             let v = ok_or_fail!(r);
-            assert!(matches!(*v, Value::Unspecified));
+            assert!(matches!(v, Value::Unspecified));
         }
 
         #[test]
@@ -398,7 +398,7 @@ mod tests {
             let r = prg.eval(&f);
 
             let v = ok_or_fail!(r);
-            assert!(matches!(*v, Value::Character('b')));
+            assert!(matches!(v, Value::Character('b')));
         }
 
         mod forms {
@@ -427,8 +427,7 @@ mod tests {
                 env.binding.bind(
                     "foo",
                     Value::Procedure(
-                        Procedure::intrinsic("foo", 0..0, |_, _| Ok(Value::symbol("bar").into()))
-                            .into(),
+                        Procedure::intrinsic("foo", 0..0, |_, _| Ok(Value::symbol("bar"))).into(),
                     ),
                 );
                 let f = env.new_frame();
@@ -436,7 +435,7 @@ mod tests {
                 let r = expr.eval(&f);
 
                 let v = ok_or_fail!(r);
-                assert!(matches!(&*v, Value::Symbol(s) if &**s == "bar"));
+                assert!(matches!(v, Value::Symbol(s) if &*s == "bar"));
             }
 
             #[test]
@@ -488,14 +487,12 @@ mod tests {
                             let s = args
                                 .iter()
                                 .map(|v| {
-                                    let Value::String(s) = &**v else {
-                                        unreachable!()
-                                    };
+                                    let Value::String(s) = v else { unreachable!() };
                                     s.clone()
                                 })
                                 .collect::<Vec<_>>()
                                 .join(", ");
-                            Ok(Value::string(s).into())
+                            Ok(Value::string(s))
                         })
                         .into(),
                     ),
@@ -505,7 +502,7 @@ mod tests {
                 let r = expr.eval(&f);
 
                 let v = ok_or_fail!(r);
-                assert!(matches!(&*v, Value::String(s) if &**s == "one, two, three"));
+                assert!(matches!(v, Value::String(s) if &*s == "one, two, three"));
             }
 
             #[test]
@@ -593,8 +590,7 @@ mod tests {
                 env.binding.bind(
                     "foo",
                     Value::Procedure(
-                        Procedure::intrinsic("foo", 0..0, |_, _| Ok(Value::symbol("bar").into()))
-                            .into(),
+                        Procedure::intrinsic("foo", 0..0, |_, _| Ok(Value::symbol("bar"))).into(),
                     ),
                 );
                 let f = env.new_frame();
@@ -630,8 +626,7 @@ mod tests {
                 env.binding.bind(
                     "foo",
                     Value::Procedure(
-                        Procedure::intrinsic("foo", 1..1, |_, _| Ok(Value::symbol("bar").into()))
-                            .into(),
+                        Procedure::intrinsic("foo", 1..1, |_, _| Ok(Value::symbol("bar"))).into(),
                     ),
                 );
                 let f = env.new_frame();
@@ -667,8 +662,7 @@ mod tests {
                 env.binding.bind(
                     "foo",
                     Value::Procedure(
-                        Procedure::intrinsic("foo", 1..2, |_, _| Ok(Value::symbol("bar").into()))
-                            .into(),
+                        Procedure::intrinsic("foo", 1..2, |_, _| Ok(Value::symbol("bar"))).into(),
                     ),
                 );
                 let f = env.new_frame();
@@ -735,8 +729,7 @@ mod tests {
                 env.binding.bind(
                     "foo",
                     Value::Procedure(
-                        Procedure::intrinsic("foo", 4..4, |_, _| Ok(Value::symbol("bar").into()))
-                            .into(),
+                        Procedure::intrinsic("foo", 4..4, |_, _| Ok(Value::symbol("bar"))).into(),
                     ),
                 );
                 env.binding.bind("y", Value::string("beef"));

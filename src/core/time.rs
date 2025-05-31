@@ -3,7 +3,7 @@ use crate::{
     Exception,
     eval::{Binding, EvalResult, Frame},
     number::Sign,
-    value::{Condition, Value, ValueRef},
+    value::{Condition, Value},
 };
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -13,26 +13,25 @@ pub(super) fn load(scope: &mut Binding) {
     super::bind_intrinsic(scope, "jiffies-per-second", 0..0, jiffies_per_second);
 }
 
-fn current_jiffy(_args: &[ValueRef], env: &Frame) -> EvalResult {
+fn current_jiffy(_args: &[Value], env: &Frame) -> EvalResult {
     Ok(Value::real((
         Sign::Positive,
         env.sys.start_time.elapsed().as_micros() as u64,
-    ))
-    .into())
+    )))
 }
 
-fn current_second(_args: &[ValueRef], _env: &Frame) -> EvalResult {
+fn current_second(_args: &[Value], _env: &Frame) -> EvalResult {
     SystemTime::now().duration_since(UNIX_EPOCH).map_or_else(
         |_| {
             Err(Exception::new(Condition::system_error(
                 "system time failure",
             )))
         },
-        |d| Ok(Value::real(d.as_secs_f64()).into()),
+        |d| Ok(Value::real(d.as_secs_f64())),
     )
 }
 
-fn jiffies_per_second(_args: &[ValueRef], _env: &Frame) -> EvalResult {
+fn jiffies_per_second(_args: &[Value], _env: &Frame) -> EvalResult {
     // NOTE: jiffy = microsecond (µs)
-    Ok(Value::real(1_000_000).into())
+    Ok(Value::real(1_000_000))
 }

@@ -8,7 +8,7 @@ pub(crate) use self::{
 use crate::{
     core,
     syntax::Program,
-    value::{Condition, Value as ValueImpl, ValueRef},
+    value::{Condition, Value as ValueImpl},
 };
 use std::{
     fmt::{self, Display, Formatter},
@@ -37,12 +37,12 @@ impl Evaluation {
 }
 
 #[derive(Debug)]
-pub struct Value(ValueRef);
+pub struct Value(ValueImpl);
 
 impl Value {
     #[must_use]
     pub fn is_unspecified(&self) -> bool {
-        matches!(*self.0, ValueImpl::Unspecified)
+        matches!(self.0, ValueImpl::Unspecified)
     }
 }
 
@@ -79,7 +79,7 @@ impl Display for EvaluationMessage<'_> {
     }
 }
 
-pub(crate) type EvalResult = Result<ValueRef, Exception>;
+pub(crate) type EvalResult = Result<ValueImpl, Exception>;
 
 pub(crate) trait Evaluator {
     fn evaluate(&mut self, prg: Program) -> Evaluation;
@@ -89,7 +89,7 @@ pub(crate) struct Ast;
 
 impl Evaluator for Ast {
     fn evaluate(&mut self, prg: Program) -> Evaluation {
-        Evaluation::result(Ok(ValueImpl::Ast(prg).into()))
+        Evaluation::result(Ok(ValueImpl::Ast(prg)))
     }
 }
 

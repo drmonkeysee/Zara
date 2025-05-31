@@ -1,7 +1,7 @@
 // (scheme process-context)
 use crate::{
     eval::{Binding, EvalResult, Frame},
-    value::{Value, ValueRef},
+    value::Value,
 };
 use std::process;
 
@@ -26,28 +26,28 @@ pub(super) fn load(scope: &mut Binding) {
     );
 }
 
-fn command_line(_args: &[ValueRef], _env: &Frame) -> EvalResult {
+fn command_line(_args: &[Value], _env: &Frame) -> EvalResult {
     todo!("command_line");
 }
 
-fn emergency_exit(args: &[ValueRef], _env: &Frame) -> EvalResult {
+fn emergency_exit(args: &[Value], _env: &Frame) -> EvalResult {
     process::exit(resolve_exit_code(args.first()));
 }
 
-fn exit(_args: &[ValueRef], _env: &Frame) -> EvalResult {
+fn exit(_args: &[Value], _env: &Frame) -> EvalResult {
     todo!("exit");
 }
 
-fn get_environment_variable(_args: &[ValueRef], _env: &Frame) -> EvalResult {
+fn get_environment_variable(_args: &[Value], _env: &Frame) -> EvalResult {
     todo!("get_environment_variable");
 }
 
-fn get_environment_variables(_args: &[ValueRef], _env: &Frame) -> EvalResult {
+fn get_environment_variables(_args: &[Value], _env: &Frame) -> EvalResult {
     todo!("get_environment_variables");
 }
 
-fn resolve_exit_code(v: Option<&ValueRef>) -> i32 {
-    v.map_or(EXIT_SUCCESS, |val| match &**val {
+fn resolve_exit_code(v: Option<&Value>) -> i32 {
+    v.map_or(EXIT_SUCCESS, |val| match val {
         Value::Boolean(true) => EXIT_SUCCESS,
         Value::Number(n) => n.try_into().unwrap_or(EXIT_FAILURE),
         _ => EXIT_FAILURE,
