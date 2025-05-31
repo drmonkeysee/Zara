@@ -533,7 +533,7 @@ mod error {
 
     #[test]
     fn display_byte_invalid_type() {
-        let err = ByteConversionError::InvalidType("foobar".to_owned());
+        let err = NumericError::ByteConversionInvalidType("foobar".to_owned());
 
         assert_eq!(
             err.to_string(),
@@ -543,14 +543,14 @@ mod error {
 
     #[test]
     fn display_byte_out_of_range() {
-        let err = ByteConversionError::InvalidRange;
+        let err = NumericError::ByteConversionInvalidRange;
 
         assert_eq!(err.to_string(), "integer literal out of range: [0, 255]");
     }
 
     #[test]
     fn display_int_invalid_type() {
-        let err = IntConversionError::InvalidType("foobar".to_owned());
+        let err = NumericError::IntConversionInvalidType("foobar".to_owned());
 
         assert_eq!(
             err.to_string(),
@@ -560,7 +560,7 @@ mod error {
 
     #[test]
     fn display_int_out_of_range() {
-        let err = IntConversionError::InvalidRange;
+        let err = NumericError::IntConversionInvalidRange;
 
         assert_eq!(
             err.to_string(),
@@ -809,7 +809,7 @@ mod integer {
         let r: Result<u8, _> = n.try_into();
 
         let err = err_or_fail!(r);
-        assert!(matches!(err, ByteConversionError::InvalidRange));
+        assert!(matches!(err, NumericError::ByteConversionInvalidRange));
     }
 
     #[test]
@@ -819,7 +819,7 @@ mod integer {
         let r: Result<u8, _> = n.try_into();
 
         let err = err_or_fail!(r);
-        assert!(matches!(err, ByteConversionError::InvalidRange));
+        assert!(matches!(err, NumericError::ByteConversionInvalidRange));
     }
 
     #[test]
@@ -832,7 +832,7 @@ mod integer {
         let r = i.try_to_u8();
 
         let err = err_or_fail!(r);
-        assert!(matches!(err, ByteConversionError::InvalidRange));
+        assert!(matches!(err, NumericError::ByteConversionInvalidRange));
     }
 
     #[test]
@@ -892,7 +892,7 @@ mod integer {
         let r: Result<i32, _> = n.try_into();
 
         let err = err_or_fail!(r);
-        assert!(matches!(err, IntConversionError::InvalidRange));
+        assert!(matches!(err, NumericError::IntConversionInvalidRange));
     }
 
     #[test]
@@ -902,7 +902,7 @@ mod integer {
         let r: Result<i32, _> = n.try_into();
 
         let err = err_or_fail!(r);
-        assert!(matches!(err, IntConversionError::InvalidRange));
+        assert!(matches!(err, NumericError::IntConversionInvalidRange));
     }
 
     #[test]
@@ -912,7 +912,7 @@ mod integer {
         let r: Result<i32, _> = n.try_into();
 
         let err = err_or_fail!(r);
-        assert!(matches!(err, IntConversionError::InvalidRange));
+        assert!(matches!(err, NumericError::IntConversionInvalidRange));
     }
 
     #[test]
@@ -922,7 +922,7 @@ mod integer {
         let r: Result<i32, _> = n.try_into();
 
         let err = err_or_fail!(r);
-        assert!(matches!(err, IntConversionError::InvalidRange));
+        assert!(matches!(err, NumericError::IntConversionInvalidRange));
     }
 
     #[test]
@@ -932,7 +932,7 @@ mod integer {
         let r: Result<i32, _> = n.try_into();
 
         let err = err_or_fail!(r);
-        assert!(matches!(err, IntConversionError::InvalidRange));
+        assert!(matches!(err, NumericError::IntConversionInvalidRange));
     }
 
     #[test]
@@ -942,7 +942,7 @@ mod integer {
         let r: Result<i32, _> = n.try_into();
 
         let err = err_or_fail!(r);
-        assert!(matches!(err, IntConversionError::InvalidRange));
+        assert!(matches!(err, NumericError::IntConversionInvalidRange));
     }
 
     #[test]
@@ -955,7 +955,7 @@ mod integer {
         let r = i.try_to_i32();
 
         let err = err_or_fail!(r);
-        assert!(matches!(err, IntConversionError::InvalidRange));
+        assert!(matches!(err, NumericError::IntConversionInvalidRange));
     }
 }
 
@@ -1102,7 +1102,7 @@ mod float {
         let err = err_or_fail!(r);
         assert!(matches!(
             err,
-            ByteConversionError::InvalidType(s)
+            NumericError::ByteConversionInvalidType(s)
             if s == "floating-point"));
     }
 
@@ -1115,7 +1115,7 @@ mod float {
         let err = err_or_fail!(r);
         assert!(matches!(
             err,
-            IntConversionError::InvalidType(s)
+            NumericError::IntConversionInvalidType(s)
             if s == "floating-point"));
     }
 }
@@ -1385,7 +1385,7 @@ mod rational {
         let err = err_or_fail!(r);
         assert!(matches!(
             err,
-            ByteConversionError::InvalidType(s)
+            NumericError::ByteConversionInvalidType(s)
             if s == "rational"));
     }
 
@@ -1400,7 +1400,7 @@ mod rational {
         let err = err_or_fail!(r);
         assert!(matches!(
             err,
-            IntConversionError::InvalidType(s)
+            NumericError::IntConversionInvalidType(s)
             if s == "rational"));
     }
 }
@@ -1600,7 +1600,7 @@ mod complex {
         let err = err_or_fail!(r);
         assert!(matches!(
             err,
-            ByteConversionError::InvalidType(s)
+            NumericError::ByteConversionInvalidType(s)
             if s == "complex"));
     }
 
@@ -1613,7 +1613,7 @@ mod complex {
         let err = err_or_fail!(r);
         assert!(matches!(
             err,
-            IntConversionError::InvalidType(s)
+            NumericError::IntConversionInvalidType(s)
             if s == "complex"));
     }
 }

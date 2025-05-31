@@ -3,7 +3,7 @@ use crate::{
     constant::Constant,
     eval::{EvalResult, Frame},
     lex::TokenKind,
-    number::ByteConversionError,
+    number::NumericError,
     txt::{LineNumber, TextLine, TxtSpan},
     value::{Condition, Value, ValueRef},
 };
@@ -142,7 +142,7 @@ impl Error for ExpressionError {
 #[derive(Debug)]
 pub(super) enum ExpressionErrorKind {
     ByteVectorInvalidItem(ExpressionKind),
-    ByteVectorInvalidNumber(ByteConversionError),
+    ByteVectorInvalidNumber(NumericError),
     ByteVectorUnterminated,
     CommentBlockInvalid(TokenKind),
     CommentBlockUnterminated,
@@ -799,7 +799,7 @@ mod tests {
                 txt: make_textline().into(),
             }
             .into_error(ExpressionErrorKind::ByteVectorInvalidNumber(
-                ByteConversionError::InvalidRange,
+                NumericError::ByteConversionInvalidRange,
             ));
 
             assert_eq!(err.to_string(), "integer literal out of range: [0, 255]");
@@ -1041,14 +1041,14 @@ mod tests {
                 txt: make_textline().into(),
             }
             .into_error(ExpressionErrorKind::ByteVectorInvalidNumber(
-                ByteConversionError::InvalidRange,
+                NumericError::ByteConversionInvalidRange,
             ));
 
             let inner = some_or_fail!(err.source());
 
             assert!(matches!(
-                inner.downcast_ref::<ByteConversionError>().unwrap(),
-                ByteConversionError::InvalidRange
+                inner.downcast_ref::<NumericError>().unwrap(),
+                NumericError::ByteConversionInvalidRange
             ));
         }
 

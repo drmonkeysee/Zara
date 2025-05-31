@@ -84,59 +84,30 @@ impl Display for Number {
 }
 
 macro_rules! try_int_conversion {
-    ($type:ty, $convert:ident, $err:ident) => {
-        #[derive(Debug)]
-        pub(crate) enum $err {
-            InvalidRange,
-            InvalidType(String),
-        }
-
-        impl Display for $err {
-            fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-                match self {
-                    Self::InvalidRange => {
-                        write!(
-                            f,
-                            "integer literal out of range: [{}, {}]",
-                            <$type>::MIN,
-                            <$type>::MAX
-                        )
-                    }
-                    Self::InvalidType(n) => {
-                        write!(f, "expected integer literal, got numeric type: {n}")
-                    }
-                }
-            }
-        }
-
-        impl Error for $err {}
-
+    ($type:ty, $convert:ident, $type_err:ident) => {
         impl TryFrom<Number> for $type {
-            type Error = $err;
+            type Error = NumericError;
 
             fn try_from(value: Number) -> Result<Self, Self::Error> {
-                match value {
-                    Number::Real(Real::Integer(n)) => n.$convert(),
-                    _ => Err($err::InvalidType(value.as_typename().to_string())),
-                }
+                <Self as TryFrom<&Number>>::try_from(&value)
             }
         }
 
         impl TryFrom<&Number> for $type {
-            type Error = $err;
+            type Error = NumericError;
 
             fn try_from(value: &Number) -> Result<Self, Self::Error> {
                 match value {
                     Number::Real(Real::Integer(n)) => n.$convert(),
-                    _ => Err($err::InvalidType(value.as_typename().to_string())),
+                    _ => Err(Self::Error::$type_err(value.as_typename().to_string())),
                 }
             }
         }
     };
 }
 
-try_int_conversion!(u8, try_to_u8, ByteConversionError);
-try_int_conversion!(i32, try_to_i32, IntConversionError);
+try_int_conversion!(u8, try_to_u8, ByteConversionInvalidType);
+try_int_conversion!(i32, try_to_i32, IntConversionInvalidType);
 
 #[derive(Debug)]
 pub(crate) struct Complex(Box<(Real, Real)>);
@@ -330,30 +301,31 @@ impl Integer {
         }
     }
 
-    fn try_to_u8(&self) -> Result<u8, ByteConversionError> {
+    fn try_to_u8(&self) -> Result<u8, NumericError> {
         if self.is_negative() {
-            return Err(ByteConversionError::InvalidRange);
+            return Err(NumericError::ByteConversionInvalidRange);
         }
         let Precision::Single(u) = self.precision else {
-            return Err(ByteConversionError::InvalidRange);
+            return Err(NumericError::ByteConversionInvalidRange);
         };
-        u.try_into().map_err(|_| ByteConversionError::InvalidRange)
+        u.try_into()
+            .map_err(|_| NumericError::ByteConversionInvalidRange)
     }
 
-    fn try_to_i32(&self) -> Result<i32, IntConversionError> {
+    fn try_to_i32(&self) -> Result<i32, NumericError> {
         let Precision::Single(u) = self.precision else {
-            return Err(IntConversionError::InvalidRange);
+            return Err(NumericError::IntConversionInvalidRange);
         };
         if self.is_negative() {
             if u <= (i32::MAX as u64) + 1 {
                 (-(u as i64)).try_into()
             } else {
-                return Err(IntConversionError::InvalidRange);
+                return Err(NumericError::IntConversionInvalidRange);
             }
         } else {
             u.try_into()
         }
-        .map_err(|_| IntConversionError::InvalidRange)
+        .map_err(|_| NumericError::IntConversionInvalidRange)
     }
 }
 
@@ -632,7 +604,11 @@ impl FloatSpec {
 
 #[derive(Debug)]
 pub(crate) enum NumericError {
+    ByteConversionInvalidRange,
+    ByteConversionInvalidType(String),
     DivideByZero,
+    IntConversionInvalidRange,
+    IntConversionInvalidType(String),
     ParseExponentFailure,
     ParseExponentOutOfRange,
     ParseFailure,
@@ -642,7 +618,16 @@ pub(crate) enum NumericError {
 impl Display for NumericError {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
+            Self::ByteConversionInvalidRange => {
+                write_intconversion_range_error(u8::MIN, u8::MAX, f)
+            }
+            Self::ByteConversionInvalidType(n) | Self::IntConversionInvalidType(n) => {
+                write!(f, "expected integer literal, got numeric type: {n}")
+            }
             Self::DivideByZero => f.write_str("divide by zero"),
+            Self::IntConversionInvalidRange => {
+                write_intconversion_range_error(i32::MIN, i32::MAX, f)
+            }
             Self::ParseExponentOutOfRange => {
                 write!(f, "exponent out of range: [{}, {}]", i32::MIN, i32::MAX)
             }
@@ -857,4 +842,12 @@ fn parse_sign_magnitude<R: Radix>(spec: &IntSpec<R>, input: &str) -> IntResult {
 
 fn parse_multi_precision<R: Radix>(_spec: &IntSpec<R>, input: &str) -> IntResult {
     Err(NumericError::Unimplemented(input.to_owned()))
+}
+
+fn write_intconversion_range_error(
+    min: impl Display,
+    max: impl Display,
+    f: &mut Formatter,
+) -> fmt::Result {
+    write!(f, "integer literal out of range: [{}, {}]", min, max)
 }

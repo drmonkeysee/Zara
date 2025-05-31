@@ -573,7 +573,7 @@ mod datum {
 
 mod bytevector {
     use super::*;
-    use crate::number::ByteConversionError;
+    use crate::number::NumericError;
 
     #[test]
     fn byte() {
@@ -796,7 +796,7 @@ mod bytevector {
             &errs[1],
             ExpressionError {
                 ctx: ExprCtx { span: TxtSpan { start: 9, end: 12 }, txt: line },
-                kind: ExpressionErrorKind::ByteVectorInvalidNumber(ByteConversionError::InvalidType(s)),
+                kind: ExpressionErrorKind::ByteVectorInvalidNumber(NumericError::ByteConversionInvalidType(s)),
             } if s == "floating-point" && Rc::ptr_eq(&txt, &line)
         ));
     }
