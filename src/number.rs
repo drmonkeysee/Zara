@@ -13,7 +13,7 @@ use std::{
 pub(crate) type RealResult = Result<Real, NumericError>;
 pub(crate) type IntResult = Result<Integer, NumericError>;
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub(crate) enum Number {
     Complex(Complex),
     Real(Real),
@@ -109,10 +109,10 @@ macro_rules! try_int_conversion {
 try_int_conversion!(u8, try_to_u8, ByteConversionInvalidType);
 try_int_conversion!(i32, try_to_i32, IntConversionInvalidType);
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub(crate) struct Complex(Box<(Real, Real)>);
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub(crate) enum Real {
     Float(f64),
     Integer(Integer),
@@ -207,7 +207,7 @@ impl<T: Into<Integer>> From<T> for Real {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub(crate) struct Rational(Box<(Integer, Integer)>);
 
 impl Rational {
@@ -234,7 +234,7 @@ impl Display for Rational {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub(crate) struct Integer {
     precision: Precision,
     sign: Sign,
@@ -669,7 +669,7 @@ impl Display for RealTokenDescriptor<'_> {
     }
 }
 
-#[derive(Debug, Eq)]
+#[derive(Clone, Debug, Eq)]
 enum Precision {
     Single(u64),
     #[allow(dead_code, reason = "not yet implemented")]

@@ -115,7 +115,7 @@ pub(crate) struct TokenList;
 impl Parser for TokenList {
     fn parse(&mut self, token_lines: Box<[TokenLine]>) -> ParserResult {
         Ok(ParserOutput::Complete(Program::new(
-            tokens_expr(token_lines).into_iter().collect::<Box<[_]>>(),
+            tokens_expr(token_lines).into_iter().collect::<Rc<[_]>>(),
         )))
     }
 
@@ -352,6 +352,8 @@ fn tokens_expr(token_lines: Box<[TokenLine]>) -> Option<Expression> {
             span: 0..line.line.len(),
             txt: line.clone().into(),
         }
-        .into_expr(ExpressionKind::Literal(Value::TokenList(token_lines))),
+        .into_expr(ExpressionKind::Literal(Value::TokenList(
+            token_lines.into(),
+        ))),
     )
 }

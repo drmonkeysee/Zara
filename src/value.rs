@@ -20,7 +20,7 @@ use std::{
 };
 pub(crate) use zlist;
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub(crate) enum Value {
     Ast(Program),
     Boolean(bool),
@@ -32,9 +32,8 @@ pub(crate) enum Value {
     String(Rc<str>),
     // TODO: figure out symbol table
     Symbol(Rc<str>),
-    TokenList(Box<[TokenLine]>),
+    TokenList(Rc<[TokenLine]>),
     Unspecified,
-    // TODO: vector needs ref-cells for item equivalence and self-referencing
     Vector(Rc<[Value]>),
 }
 

@@ -13,15 +13,15 @@ use std::{
     rc::Rc,
 };
 
-#[derive(Debug)]
-pub(crate) struct Program(Box<[Expression]>);
+#[derive(Clone, Debug)]
+pub(crate) struct Program(Rc<[Expression]>);
 
 impl Program {
-    pub(super) fn new(seq: impl Into<Box<[Expression]>>) -> Self {
+    pub(super) fn new(seq: impl Into<Rc<[Expression]>>) -> Self {
         Self(seq.into())
     }
 
-    pub(crate) fn eval(self, env: &Frame) -> EvalResult {
+    pub(crate) fn eval(&self, env: &Frame) -> EvalResult {
         #[allow(
             clippy::double_ended_iterator_last,
             reason = "iterator consumed intentionally"
@@ -34,7 +34,7 @@ impl Program {
     }
 
     #[cfg(test)]
-    pub(super) fn unwrap(self) -> Box<[Expression]> {
+    pub(super) fn unwrap(self) -> Rc<[Expression]> {
         self.0
     }
 }
@@ -91,10 +91,10 @@ impl Expression {
         }
     }
 
-    fn eval(self, env: &Frame) -> EvalResult {
-        match self.kind {
-            ExpressionKind::Call { args, proc } => eval_call(*proc, args, env),
-            ExpressionKind::Literal(v) => Ok(v),
+    fn eval(&self, env: &Frame) -> EvalResult {
+        match &self.kind {
+            ExpressionKind::Call { args, proc } => eval_call(proc, args, env),
+            ExpressionKind::Literal(v) => Ok(v.clone()),
             ExpressionKind::Variable(n) => env
                 .bnd
                 .lookup(&n)
@@ -237,7 +237,7 @@ impl Display for TypeName<'_> {
     }
 }
 
-fn eval_call(proc: Expression, args: Box<[Expression]>, env: &Frame) -> EvalResult {
+fn eval_call(proc: &Expression, args: &[Expression], env: &Frame) -> EvalResult {
     let proc = proc.eval(env)?;
     let Value::Procedure(p) = proc else {
         return Err(Exception::new(Condition::proc_error(
