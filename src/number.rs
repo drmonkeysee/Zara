@@ -849,5 +849,5 @@ fn write_intconversion_range_error(
     max: impl Display,
     f: &mut Formatter,
 ) -> fmt::Result {
-    write!(f, "integer literal out of range: [{}, {}]", min, max)
+    write!(f, "integer literal out of range: [{min}, {max}]")
 }

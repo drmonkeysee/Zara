@@ -27,7 +27,7 @@ impl Program {
             reason = "iterator consumed intentionally"
         )]
         self.0
-            .into_iter()
+            .iter()
             .map(|expr| expr.eval(env))
             .last()
             .unwrap_or(Ok(Value::Unspecified))
@@ -97,8 +97,8 @@ impl Expression {
             ExpressionKind::Literal(v) => Ok(v.clone()),
             ExpressionKind::Variable(n) => env
                 .bnd
-                .lookup(&n)
-                .ok_or_else(|| Exception::new(Condition::bind_error(&n))),
+                .lookup(n)
+                .ok_or_else(|| Exception::new(Condition::bind_error(n))),
         }
     }
 }
@@ -252,7 +252,7 @@ fn eval_call(proc: &Expression, args: &[Expression], env: &Frame) -> EvalResult 
         )));
     }
     let args = args
-        .into_iter()
+        .iter()
         .map(|expr| expr.eval(env))
         .collect::<Result<Vec<Value>, Exception>>()?;
     // TODO: do intrinsic calls need their own call frame?

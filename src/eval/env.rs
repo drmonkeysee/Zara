@@ -12,7 +12,7 @@ pub(crate) struct Binding(HashMap<Box<str>, Value>);
 
 impl Binding {
     pub(crate) fn lookup(&self, name: &str) -> Option<Value> {
-        self.0.get(name).map(Value::clone)
+        self.0.get(name).cloned()
     }
 
     pub(crate) fn bind(&mut self, name: impl Into<Box<str>>, val: Value) {
@@ -20,7 +20,6 @@ impl Binding {
     }
 }
 
-#[derive(Default)]
 pub(crate) struct SymbolTable;
 
 pub(crate) struct System {

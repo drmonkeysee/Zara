@@ -99,7 +99,7 @@ impl Display for Value {
         match self {
             Self::Ast(prg) => write!(f, "{{{prg:?}}}"),
             Self::Boolean(b) => write!(f, "#{}", if *b { 't' } else { 'f' }),
-            Self::ByteVector(bv) => write_seq("#u8", &**bv, f),
+            Self::ByteVector(bv) => write_seq("#u8", bv, f),
             Self::Character(c) => write!(f, "#\\{}", CharDatum::new(*c)),
             Self::Number(n) => n.fmt(f),
             Self::Pair(None) => f.write_str("()"),
@@ -109,7 +109,7 @@ impl Display for Value {
             Self::Symbol(s) => SymbolDatum(s).fmt(f),
             Self::TokenList(lines) => DisplayTokenLines(lines).fmt(f),
             Self::Unspecified => f.write_str("#<unspecified>"),
-            Self::Vector(v) => write_seq("#", &**v, f),
+            Self::Vector(v) => write_seq("#", v, f),
         }
     }
 }

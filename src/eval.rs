@@ -116,7 +116,7 @@ impl Default for Environment {
         core::load(&mut global);
         Self {
             global,
-            symbols: SymbolTable::default(),
+            symbols: SymbolTable,
             system: System::new(),
         }
     }

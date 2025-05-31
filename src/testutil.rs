@@ -77,7 +77,7 @@ impl Default for TestEnv {
     fn default() -> Self {
         Self {
             binding: Binding::default(),
-            symbols: SymbolTable::default(),
+            symbols: SymbolTable,
             system: System::new(),
         }
     }
