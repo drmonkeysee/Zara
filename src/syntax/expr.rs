@@ -21,13 +21,13 @@ impl Program {
         Self(seq.into())
     }
 
-    pub(crate) fn eval(&self, env: &Frame) -> EvalResult {
+    pub(crate) fn eval(self, env: &Frame) -> EvalResult {
         #[allow(
             clippy::double_ended_iterator_last,
             reason = "iterator consumed intentionally"
         )]
         self.0
-            .iter()
+            .into_iter()
             .map(|expr| expr.eval(env))
             .last()
             .unwrap_or(Ok(Value::Unspecified))
@@ -91,14 +91,14 @@ impl Expression {
         }
     }
 
-    fn eval(&self, env: &Frame) -> EvalResult {
-        match &self.kind {
-            ExpressionKind::Call { args, proc } => eval_call(proc, args, env),
-            ExpressionKind::Literal(v) => Ok(v.clone()),
+    fn eval(self, env: &Frame) -> EvalResult {
+        match self.kind {
+            ExpressionKind::Call { args, proc } => eval_call(*proc, args, env),
+            ExpressionKind::Literal(v) => Ok(v),
             ExpressionKind::Variable(n) => env
                 .bnd
-                .lookup(n)
-                .ok_or_else(|| Exception(Condition::bind_error(n))),
+                .lookup(&n)
+                .ok_or_else(|| Exception(Condition::bind_error(&n))),
         }
     }
 }
@@ -237,7 +237,7 @@ impl Display for TypeName<'_> {
     }
 }
 
-fn eval_call(proc: &Expression, args: &[Expression], env: &Frame) -> EvalResult {
+fn eval_call(proc: Expression, args: Box<[Expression]>, env: &Frame) -> EvalResult {
     let proc = proc.eval(env)?;
     let Value::Procedure(p) = proc else {
         return Err(Exception(Condition::proc_error(
@@ -252,7 +252,7 @@ fn eval_call(proc: &Expression, args: &[Expression], env: &Frame) -> EvalResult 
         )));
     }
     let args = args
-        .iter()
+        .into_iter()
         .map(|expr| expr.eval(env))
         .collect::<Result<Vec<Value>, Exception>>()?;
     // TODO: do intrinsic calls need their own call frame?
