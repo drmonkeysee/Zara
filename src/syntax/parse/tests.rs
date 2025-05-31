@@ -9,7 +9,7 @@ mod expr {
     use crate::number::Real;
 
     #[test]
-    fn constant() {
+    fn literal() {
         let token = Token {
             kind: TokenKind::Boolean(true),
             span: 0..3,
@@ -2316,7 +2316,7 @@ mod quote {
     }
 
     #[test]
-    fn quoted_constant_into_expr() {
+    fn quoted_literal_into_expr() {
         let txt = make_textline().into();
         let p = ExprNode {
             ctx: ExprCtx {

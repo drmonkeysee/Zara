@@ -184,7 +184,7 @@ impl Display for ExpressionErrorKind {
             Self::ProcedureEmpty => f.write_str("empty procedure call"),
             Self::SeqInvalid(t) => format_unexpected_token("sequence", t, f),
             Self::StrInvalid(t) => format_unexpected_token("string", t, f),
-            Self::StrUnterminated => f.write_str("unterminated string constant"),
+            Self::StrUnterminated => f.write_str("unterminated string literal"),
             Self::Unimplemented(t) => write!(f, "{t} parsing not yet implemented"),
             Self::VectorInvalidItem(k) => {
                 write!(f, "unexpected vector item type: {}", k.as_typename())
@@ -308,7 +308,7 @@ mod tests {
         use crate::testutil::{err_or_fail, ok_or_fail};
 
         #[test]
-        fn constant() {
+        fn literal() {
             let expr = ExprCtx {
                 span: 0..6,
                 txt: make_textline().into(),
@@ -992,7 +992,7 @@ mod tests {
             }
             .into_error(ExpressionErrorKind::StrUnterminated);
 
-            assert_eq!(err.to_string(), "unterminated string constant");
+            assert_eq!(err.to_string(), "unterminated string literal");
         }
 
         #[test]

@@ -233,14 +233,14 @@ impl Display for TokenErrorKind {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
             Self::BlockCommentUnterminated => f.write_str("unterminated block comment"),
-            Self::BooleanExpected(b) => write!(f, "expected boolean constant: {b}"),
-            Self::ByteVectorExpected => f.write_str("expected bytevector constant: #u8(…)"),
-            Self::CharacterExpected => f.write_str("expected character constant"),
+            Self::BooleanExpected(b) => write!(f, "expected boolean literal: {b}"),
+            Self::ByteVectorExpected => f.write_str("expected bytevector literal: #u8(…)"),
+            Self::CharacterExpected => f.write_str("expected character literal"),
             Self::CharacterExpectedHex => f.write_str("expected character hex-sequence"),
             Self::CharacterInvalidHex => {
                 format_char_range_error("character hex-sequence out of valid range", f)
             }
-            Self::ComplexInvalid => f.write_str("invalid complex constant"),
+            Self::ComplexInvalid => f.write_str("invalid complex literal"),
             Self::DirectiveExpected => f.write_str("expected directive: fold-case or no-fold-case"),
             Self::DirectiveInvalid => {
                 f.write_str("unsupported directive: expected fold-case or no-fold-case")
@@ -248,8 +248,8 @@ impl Display for TokenErrorKind {
             Self::ExactnessExpected { .. } => {
                 f.write_str("expected exactness prefix, one of: #e #i")
             }
-            Self::HashInvalid => f.write_str("invalid #-constant"),
-            Self::HashUnterminated => f.write_str("unterminated #-constant"),
+            Self::HashInvalid => f.write_str("invalid #-literal"),
+            Self::HashUnterminated => f.write_str("unterminated #-literal"),
             Self::IdentifierInvalid(ch) => write!(f, "invalid identifier character: {ch}"),
             Self::IdentifierEscapeInvalid { ch, .. } | Self::StringEscapeInvalid { ch, .. } => {
                 write!(f, "invalid escape sequence: \\{ch}")
@@ -264,12 +264,12 @@ impl Display for TokenErrorKind {
                 f.write_str("unterminated hex-escape")
             }
             Self::IdentifierUnterminated => f.write_str("unterminated verbatim identifier"),
-            Self::ImaginaryInvalid => f.write_str("invalid imaginary constant"),
+            Self::ImaginaryInvalid => f.write_str("invalid imaginary literal"),
             Self::ImaginaryMissingSign => f.write_str("missing explicit sign on imaginary number"),
             Self::LabelInvalid => f.write_str("invalid datum label: only digits [0, 9] allowed"),
             Self::LabelUnterminated => f.write_str("unterminated datum label"),
-            Self::NumberExpected => f.write_str("expected numeric constant"),
-            Self::NumberInvalid => f.write_str("invalid numeric constant"),
+            Self::NumberExpected => f.write_str("expected numeric literal"),
+            Self::NumberInvalid => f.write_str("invalid numeric literal"),
             Self::NumberInvalidDecimalPoint { radix, .. } => {
                 write!(f, "{radix} radix does not support decimal notation")
             }
@@ -280,10 +280,10 @@ impl Display for TokenErrorKind {
             Self::NumericError(err) | Self::NumericErrorAt { err, .. } => {
                 write!(f, "numeric error - {err}")
             }
-            Self::PolarInvalid => f.write_str("invalid polar constant"),
+            Self::PolarInvalid => f.write_str("invalid polar literal"),
             Self::RadixExpected { .. } => f.write_str("expected radix prefix, one of: #b #o #d #x"),
-            Self::RationalInvalid => f.write_str("invalid rational constant"),
-            Self::StringUnterminated => f.write_str("unterminated string constant"),
+            Self::RationalInvalid => f.write_str("invalid rational literal"),
+            Self::StringUnterminated => f.write_str("unterminated string literal"),
         }
     }
 }
@@ -791,7 +791,7 @@ mod tests {
                 span: 0..1,
             };
 
-            assert_eq!(err.to_string(), "expected boolean constant: true");
+            assert_eq!(err.to_string(), "expected boolean literal: true");
         }
 
         #[test]
@@ -801,7 +801,7 @@ mod tests {
                 span: 0..1,
             };
 
-            assert_eq!(err.to_string(), "expected bytevector constant: #u8(…)");
+            assert_eq!(err.to_string(), "expected bytevector literal: #u8(…)");
         }
 
         #[test]
@@ -811,7 +811,7 @@ mod tests {
                 span: 0..1,
             };
 
-            assert_eq!(err.to_string(), "expected character constant");
+            assert_eq!(err.to_string(), "expected character literal");
         }
 
         #[test]
@@ -937,7 +937,7 @@ mod tests {
                 span: 0..1,
             };
 
-            assert_eq!(err.to_string(), "invalid #-constant");
+            assert_eq!(err.to_string(), "invalid #-literal");
         }
 
         #[test]
@@ -947,7 +947,7 @@ mod tests {
                 span: 0..1,
             };
 
-            assert_eq!(err.to_string(), "unterminated #-constant");
+            assert_eq!(err.to_string(), "unterminated #-literal");
         }
 
         #[test]
@@ -1061,7 +1061,7 @@ mod tests {
                 span: 0..1,
             };
 
-            assert_eq!(err.to_string(), "unterminated string constant");
+            assert_eq!(err.to_string(), "unterminated string literal");
         }
 
         #[test]
@@ -1114,7 +1114,7 @@ mod tests {
                 span: 0..1,
             };
 
-            assert_eq!(err.to_string(), "expected numeric constant");
+            assert_eq!(err.to_string(), "expected numeric literal");
         }
 
         #[test]
@@ -1124,7 +1124,7 @@ mod tests {
                 span: 0..1,
             };
 
-            assert_eq!(err.to_string(), "invalid numeric constant");
+            assert_eq!(err.to_string(), "invalid numeric literal");
         }
 
         #[test]
@@ -1186,7 +1186,7 @@ mod tests {
                 span: 0..1,
             };
 
-            assert_eq!(err.to_string(), "invalid imaginary constant");
+            assert_eq!(err.to_string(), "invalid imaginary literal");
         }
 
         #[test]
@@ -1196,7 +1196,7 @@ mod tests {
                 span: 0..1,
             };
 
-            assert_eq!(err.to_string(), "invalid rational constant");
+            assert_eq!(err.to_string(), "invalid rational literal");
         }
 
         #[test]
@@ -1206,7 +1206,7 @@ mod tests {
                 span: 0..1,
             };
 
-            assert_eq!(err.to_string(), "invalid complex constant");
+            assert_eq!(err.to_string(), "invalid complex literal");
         }
 
         #[test]
@@ -1216,7 +1216,7 @@ mod tests {
                 span: 0..1,
             };
 
-            assert_eq!(err.to_string(), "invalid polar constant");
+            assert_eq!(err.to_string(), "invalid polar literal");
         }
 
         #[test]

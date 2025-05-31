@@ -1361,7 +1361,7 @@ mod error {
                 \tline of source code\n\
                 \t     ^^        ^^^^\n\
                 6: numeric error - unimplemented number parse: 'myerr'\n\
-                16: expected character constant\n"
+                16: expected character literal\n"
         );
     }
 

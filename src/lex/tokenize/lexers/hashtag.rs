@@ -23,12 +23,12 @@ pub(in crate::lex::tokenize) struct Hashtag<'me, 'txt> {
 impl Hashtag<'_, '_> {
     pub(in crate::lex::tokenize) fn scan(&mut self) -> TokenExtractResult {
         match self.scanner.next_if_not_token_boundary() {
-            Some(item) => self.constant(item),
+            Some(item) => self.literal(item),
             None => self.comment(),
         }
     }
 
-    fn constant(&mut self, (idx, ch): ScanItem) -> TokenExtractResult {
+    fn literal(&mut self, (idx, ch): ScanItem) -> TokenExtractResult {
         match ch {
             '!' => self.directive(),
             '(' => Ok(TokenKind::Vector),
