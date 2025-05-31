@@ -9,7 +9,7 @@ mod expr {
     use crate::number::Real;
 
     #[test]
-    fn literal() {
+    fn boolean() {
         let token = Token {
             kind: TokenKind::Boolean(true),
             span: 0..3,
@@ -25,6 +25,46 @@ mod expr {
                 ctx: ExprCtx { span: TxtSpan { start: 0, end: 3 }, txt: line },
                 kind: ExpressionKind::Literal(Value::Boolean(true)),
             })) if Rc::ptr_eq(&txt, &line)
+        ));
+    }
+
+    #[test]
+    fn character() {
+        let token = Token {
+            kind: TokenKind::Character('a'),
+            span: 0..3,
+        };
+        let txt = make_textline().into();
+
+        let f = parse_expr(token, &txt, false);
+
+        assert!(matches!(
+            f,
+            ExprFlow::Continue(Some(
+                Expression {
+                ctx: ExprCtx { span: TxtSpan { start: 0, end: 3 }, txt: line },
+                kind: ExpressionKind::Literal(Value::Character('a')),
+            })) if Rc::ptr_eq(&txt, &line)
+        ));
+    }
+
+    #[test]
+    fn number() {
+        let token = Token {
+            kind: TokenKind::Number(Number::real(45)),
+            span: 0..3,
+        };
+        let txt = make_textline().into();
+
+        let f = parse_expr(token, &txt, false);
+
+        assert!(matches!(
+            f,
+            ExprFlow::Continue(Some(
+                Expression {
+                ctx: ExprCtx { span: TxtSpan { start: 0, end: 3 }, txt: line },
+                kind: ExpressionKind::Literal(Value::Number(n)),
+            })) if Rc::ptr_eq(&txt, &line) && n.to_string() == "45"
         ));
     }
 
@@ -45,6 +85,26 @@ mod expr {
                 ctx: ExprCtx { span: TxtSpan { start: 0, end: 3 }, txt: line },
                 kind: ExpressionKind::Literal(Value::Number(n)),
             })) if n.to_string() == "+1.2i" && Rc::ptr_eq(&txt, &line)
+        ));
+    }
+
+    #[test]
+    fn string() {
+        let token = Token {
+            kind: TokenKind::String("foo".to_owned()),
+            span: 0..3,
+        };
+        let txt = make_textline().into();
+
+        let f = parse_expr(token, &txt, false);
+
+        assert!(matches!(
+            f,
+            ExprFlow::Continue(Some(
+                Expression {
+                ctx: ExprCtx { span: TxtSpan { start: 0, end: 3 }, txt: line },
+                kind: ExpressionKind::Literal(Value::String(s)),
+            })) if Rc::ptr_eq(&txt, &line) && &*s == "foo"
         ));
     }
 
