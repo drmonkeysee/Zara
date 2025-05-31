@@ -8,11 +8,10 @@ macro_rules! zlist {
 }
 
 use crate::{
-    constant::Constant,
     eval::{Arity, MAX_ARITY, Procedure},
     lex::{DisplayTokenLines, TokenLine, TokenLinesMessage},
     number::{Number, Real},
-    string::SymbolDatum,
+    string::{CharDatum, StrDatum, SymbolDatum},
     syntax::Program,
 };
 use std::{
@@ -26,16 +25,19 @@ pub(crate) type ValueRef = Rc<Value>;
 #[derive(Debug)]
 pub(crate) enum Value {
     Ast(Program),
-    ByteVector(Box<[u8]>),
-    Constant(Constant),
+    Boolean(bool),
+    ByteVector(Rc<[u8]>),
+    Character(char),
+    Number(Number),
     Pair(Option<Rc<Pair>>),
-    Procedure(Box<Procedure>),
+    Procedure(Rc<Procedure>),
+    String(Rc<str>),
     // TODO: figure out symbol table
-    Symbol(Box<str>),
+    Symbol(Rc<str>),
     TokenList(Box<[TokenLine]>),
     Unspecified,
     // TODO: vector needs ref-cells for item equivalence and self-referencing
-    Vector(Box<[ValueRef]>),
+    Vector(Rc<[Value]>),
 }
 
 impl Value {
@@ -70,24 +72,20 @@ impl Value {
             .unwrap_or_else(Self::null)
     }
 
-    pub(crate) fn bool(b: bool) -> Self {
-        Self::Constant(Constant::Boolean(b))
-    }
-
-    pub(crate) fn char(ch: char) -> Self {
-        Self::Constant(Constant::Character(ch))
-    }
-
     pub(crate) fn number(r: impl Into<Real>) -> Self {
-        Self::Constant(Constant::Number(Number::real(r)))
+        Self::Number(Number::real(r))
     }
 
-    pub(crate) fn string(s: impl Into<Box<str>>) -> Self {
-        Self::Constant(Constant::String(s.into()))
+    pub(crate) fn string(s: impl Into<Rc<str>>) -> Self {
+        Self::String(s.into())
+    }
+
+    pub(crate) fn symbol(s: impl Into<Rc<str>>) -> Self {
+        Self::Symbol(s.into())
     }
 
     pub(crate) fn vector(items: impl IntoIterator<Item = Self>) -> Self {
-        Self::Vector(items.into_iter().map(Rc::new).collect())
+        Self::Vector(items.into_iter().collect::<Rc<[_]>>())
     }
 
     pub(crate) fn display_message(&self) -> ValueMessage {
@@ -103,36 +101,36 @@ impl Display for Value {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
             Self::Ast(prg) => write!(f, "{{{prg:?}}}"),
-            Self::ByteVector(bv) => write_seq("#u8", bv, ToString::to_string, f),
-            Self::Constant(con) => con.fmt(f),
+            Self::Boolean(b) => write!(f, "#{}", if *b { 't' } else { 'f' }),
+            Self::ByteVector(bv) => write_seq("#u8", &**bv, f),
+            Self::Character(c) => write!(f, "#\\{}", CharDatum::new(*c)),
+            Self::Number(n) => n.fmt(f),
             Self::Pair(None) => f.write_str("()"),
             Self::Pair(Some(p)) => write!(f, "({p})"),
             Self::Procedure(p) => p.fmt(f),
+            Self::String(s) => StrDatum(s).fmt(f),
             Self::Symbol(s) => SymbolDatum(s).fmt(f),
             Self::TokenList(lines) => DisplayTokenLines(lines).fmt(f),
             Self::Unspecified => f.write_str("#<unspecified>"),
-            Self::Vector(v) => write_seq("#", v, ToString::to_string, f),
+            Self::Vector(v) => write_seq("#", &**v, f),
         }
     }
 }
 
 #[derive(Debug)]
 pub(crate) struct Pair {
-    car: ValueRef,
-    cdr: ValueRef,
+    car: Value,
+    cdr: Value,
 }
 
 impl Pair {
     #[allow(clippy::similar_names, reason = "lisp terms-of-art")]
-    pub(crate) fn cons(car: impl Into<ValueRef>, cdr: impl Into<ValueRef>) -> Self {
-        Self {
-            car: car.into(),
-            cdr: cdr.into(),
-        }
+    pub(crate) fn cons(car: Value, cdr: Value) -> Self {
+        Self { car, cdr }
     }
 
     fn is_list(&self) -> bool {
-        if let Value::Pair(p) = &*self.cdr {
+        if let Value::Pair(p) = &self.cdr {
             p.as_ref().is_none_or(|r| r.is_list())
         } else {
             false
@@ -143,7 +141,7 @@ impl Pair {
 impl Display for Pair {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         self.car.fmt(f)?;
-        if let Value::Pair(p) = &*self.cdr {
+        if let Value::Pair(p) = &self.cdr {
             if let Some(p) = p {
                 write!(f, " {p}")?;
             }
@@ -233,11 +231,14 @@ impl Display for TypeName<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self.0 {
             Value::Ast(_) => f.write_str("abstract syntax tree"),
+            Value::Boolean(_) => f.write_str("boolean"),
             Value::ByteVector(_) => f.write_str("bytevector"),
-            Value::Constant(c) => c.as_typename().fmt(f),
+            Value::Character(_) => f.write_str("character"),
+            Value::Number(_) => f.write_str("number"),
             Value::Pair(None) => f.write_str("list"),
             Value::Pair(Some(p)) => f.write_str(if p.is_list() { "list" } else { "pair" }),
             Value::Procedure(_) => f.write_str("procedure"),
+            Value::String(_) => f.write_str("string"),
             Value::Symbol(_) => f.write_str("symbol"),
             Value::TokenList(_) => f.write_str("token list"),
             Value::Unspecified => f.write_str("unspecified"),
@@ -267,16 +268,18 @@ impl Display for ConditionKind {
     }
 }
 
-fn write_seq<'a, T: 'a>(
+fn write_seq<'a, T: 'a + Display>(
     prefix: &str,
-    seq: impl IntoIterator<Item = &'a T>,
-    to_str: impl FnMut(&'a T) -> String,
+    seq: &'a [T],
     f: &mut Formatter<'_>,
 ) -> fmt::Result {
     write!(
         f,
         "{prefix}({})",
-        seq.into_iter().map(to_str).collect::<Vec<_>>().join(" ")
+        seq.iter()
+            .map(ToString::to_string)
+            .collect::<Vec<_>>()
+            .join(" ")
     )
 }
 
@@ -309,29 +312,57 @@ mod tests {
         }
 
         #[test]
-        fn constant_display() {
-            let v = Value::bool(true);
+        fn boolean_true() {
+            let v = Value::Boolean(true);
 
             assert_eq!(v.to_string(), "#t");
         }
 
         #[test]
-        fn constant_typename() {
-            let v = Value::bool(true);
+        fn boolean_false() {
+            let v = Value::Boolean(false);
+
+            assert_eq!(v.to_string(), "#f");
+        }
+
+        #[test]
+        fn boolean_typename() {
+            let v = Value::Boolean(false);
 
             assert_eq!(v.as_typename().to_string(), "boolean");
         }
 
         #[test]
+        fn character_typename() {
+            let v = Value::Character('a');
+
+            assert_eq!(v.as_typename().to_string(), "character");
+        }
+
+        #[test]
+        fn display_typename() {
+            let v = Value::number(42);
+
+            assert_eq!(v.as_typename().to_string(), "number");
+        }
+
+        #[test]
+        fn string_typename() {
+            let v = Value::string("foo");
+
+            assert_eq!(v.as_typename().to_string(), "string");
+        }
+
+        #[test]
         fn symbol_typename() {
-            let v = Value::Symbol("foo".into());
+            let v = Value::symbol("foo");
 
             assert_eq!(v.as_typename().to_string(), "symbol");
         }
 
         #[test]
         fn pair_typename() {
-            let p = Pair::cons(Value::bool(true), Value::char('a'));
+            let p = Pair::cons(Value::Boolean(true), Value::Character('a'));
             let v = Value::pair(p);
 
             assert_eq!(v.as_typename().to_string(), "pair");
@@ -339,7 +370,7 @@ mod tests {
 
         #[test]
         fn list_typename() {
-            let v = zlist![Value::bool(true), Value::char('a'),];
+            let v = zlist![Value::Boolean(true), Value::Character('a')];
 
             assert_eq!(v.as_typename().to_string(), "list");
         }
@@ -383,8 +414,8 @@ mod tests {
         fn vector_display() {
             let v = Value::vector([
                 Value::string("foo"),
-                Value::Symbol("a".into()),
-                zlist![Value::bool(true), Value::char('a'),],
+                Value::symbol("a"),
+                zlist![Value::Boolean(true), Value::Character('a')],
             ]);
 
             assert_eq!(v.to_string(), "#(\"foo\" a (#t #\\a))");
@@ -416,41 +447,317 @@ mod tests {
         }
     }
 
-    // NOTE: most of these tests adapted from constant::tests::string
+    mod character {
+        use super::*;
+
+        #[test]
+        fn display_ascii() {
+            let v = Value::Character('a');
+
+            assert_eq!(v.to_string(), "#\\a");
+        }
+
+        #[test]
+        fn display_extended_char() {
+            let v = Value::Character('λ');
+
+            assert_eq!(v.to_string(), "#\\λ");
+        }
+
+        #[test]
+        fn display_emoji() {
+            let v = Value::Character('🦀');
+
+            assert_eq!(v.to_string(), "#\\🦀");
+        }
+
+        #[test]
+        fn display_control_picture() {
+            let v = Value::Character('\u{2401}');
+
+            assert_eq!(v.to_string(), "#\\␁");
+        }
+
+        #[test]
+        fn display_replacement_char() {
+            let v = Value::Character('\u{fffd}');
+
+            assert_eq!(v.to_string(), "#\\�");
+        }
+
+        #[test]
+        fn display_one_digit_hex() {
+            let v = Value::Character('\x0c');
+
+            assert_eq!(v.to_string(), "#\\xc");
+        }
+
+        #[test]
+        fn display_hex_uses_lowercase() {
+            let v = Value::Character('\x0C');
+
+            assert_eq!(v.to_string(), "#\\xc");
+        }
+
+        #[test]
+        fn display_two_digit_hex() {
+            let v = Value::Character('\x1d');
+
+            assert_eq!(v.to_string(), "#\\x1d");
+        }
+
+        #[test]
+        fn display_four_digit_hex() {
+            let v = Value::Character('\u{fff9}');
+
+            assert_eq!(v.to_string(), "#\\xfff9");
+        }
+
+        #[test]
+        fn display_special_purpose_plane() {
+            let v = Value::Character('\u{e0001}');
+
+            assert_eq!(v.to_string(), "#\\xe0001");
+        }
+
+        #[test]
+        fn display_private_use_plane() {
+            let v = Value::Character('\u{100001}');
+
+            assert_eq!(v.to_string(), "#\\x100001");
+        }
+
+        #[test]
+        fn display_character_name() {
+            check_character_list(&[
+                ('\x07', "alarm"),
+                ('\x08', "backspace"),
+                ('\x7f', "delete"),
+                ('\x1b', "escape"),
+                ('\n', "newline"),
+                ('\0', "null"),
+                ('\r', "return"),
+                (' ', "space"),
+                ('\t', "tab"),
+            ]);
+        }
+
+        #[test]
+        fn display_string_escape_characters() {
+            check_character_list(&[('"', "\""), ('\'', "'"), ('\\', "\\"), ('\n', "newline")]);
+        }
+
+        fn check_character_list(cases: &[(char, &str)]) {
+            for &(inp, exp) in cases {
+                let v = Value::Character(inp);
+
+                assert_eq!(v.to_string(), format!("#\\{exp}"));
+            }
+        }
+    }
+
+    mod number {
+        use super::*;
+        use crate::testutil::ok_or_fail;
+
+        #[test]
+        fn display_int() {
+            let v = Value::number(23);
+
+            assert_eq!(v.to_string(), "23");
+        }
+
+        #[test]
+        fn display_float() {
+            let v = Value::number(234.23);
+
+            assert_eq!(v.to_string(), "234.23");
+        }
+
+        #[test]
+        fn display_rational() {
+            let r = ok_or_fail!(Real::reduce(3, 4));
+            let v = Value::number(r);
+
+            assert_eq!(v.to_string(), "3/4");
+        }
+
+        #[test]
+        fn display_complex() {
+            let v = Value::Number(Number::complex(4, 5));
+
+            assert_eq!(v.to_string(), "4+5i");
+        }
+    }
+
+    mod string {
+        use super::*;
+
+        #[test]
+        fn display_empty() {
+            let v = Value::string("");
+
+            assert_eq!(v.to_string(), "\"\"");
+        }
+
+        #[test]
+        fn display_alphanumeric() {
+            let v = Value::string("abc123!@#");
+
+            assert_eq!(v.to_string(), "\"abc123!@#\"");
+        }
+
+        #[test]
+        fn display_extended() {
+            let v = Value::string("λ");
+
+            assert_eq!(v.to_string(), "\"λ\"");
+        }
+
+        #[test]
+        fn display_emoji() {
+            let v = Value::string("🦀");
+
+            assert_eq!(v.to_string(), "\"🦀\"");
+        }
+
+        #[test]
+        fn display_control_picture() {
+            let v = Value::string("\u{2401}");
+
+            assert_eq!(v.to_string(), "\"␁\"");
+        }
+
+        #[test]
+        fn display_replacement() {
+            let v = Value::string("\u{fffd}");
+
+            assert_eq!(v.to_string(), "\"�\"");
+        }
+
+        #[test]
+        fn display_null() {
+            let v = Value::string("\0");
+
+            assert_eq!(v.to_string(), "\"\\x0;\"");
+        }
+
+        #[test]
+        fn display_pipe() {
+            let v = Value::string("|");
+
+            assert_eq!(v.to_string(), "\"|\"");
+        }
+
+        #[test]
+        fn display_one_digit_hex() {
+            let v = Value::string("\x0c");
+
+            assert_eq!(v.to_string(), "\"\\xc;\"");
+        }
+
+        #[test]
+        fn display_hex_uses_lowercase() {
+            let v = Value::string("\x0C");
+
+            assert_eq!(v.to_string(), "\"\\xc;\"");
+        }
+
+        #[test]
+        fn display_two_digit_hex() {
+            let v = Value::string("\x1d");
+
+            assert_eq!(v.to_string(), "\"\\x1d;\"");
+        }
+
+        #[test]
+        fn display_four_digit_hex() {
+            let v = Value::string("\u{fff9}");
+
+            assert_eq!(v.to_string(), "\"\\xfff9;\"");
+        }
+
+        #[test]
+        fn display_special_purpose_plane() {
+            let v = Value::string("\u{e0001}");
+
+            assert_eq!(v.to_string(), "\"\\xe0001;\"");
+        }
+
+        #[test]
+        fn display_private_use_plane() {
+            let v = Value::string("\u{100001}");
+
+            assert_eq!(v.to_string(), "\"\\x100001;\"");
+        }
+
+        #[test]
+        fn display_literal_endline() {
+            let v = Value::string(
+                "foo
+bar",
+            );
+
+            assert_eq!(v.to_string(), "\"foo\\nbar\"");
+        }
+
+        #[test]
+        fn display_escape_sequences() {
+            check_escape_sequence(&[
+                ("\x07", "\\a"),
+                ("\x08", "\\b"),
+                ("\t", "\\t"),
+                ("\n", "\\n"),
+                ("\r", "\\r"),
+                ("\"", "\\\""),
+                ("\\", "\\\\"),
+            ]);
+        }
+
+        fn check_escape_sequence(cases: &[(&str, &str)]) {
+            for &(inp, exp) in cases {
+                let v = Value::string(inp);
+
+                assert_eq!(v.to_string(), format!("\"{exp}\""));
+            }
+        }
+    }
+
+    // NOTE: most of these tests adapted from string module above
     mod symbol {
         use super::*;
 
         #[test]
         fn simple() {
-            let v = Value::Symbol("foo".into());
+            let v = Value::symbol("foo");
 
             assert_eq!(v.to_string(), "foo");
         }
 
         #[test]
         fn empty() {
-            let v = Value::Symbol("".into());
+            let v = Value::symbol("");
 
             assert_eq!(v.to_string(), "||");
         }
 
         #[test]
         fn whitespace() {
-            let v = Value::Symbol("foo bar".into());
+            let v = Value::symbol("foo bar");
 
             assert_eq!(v.to_string(), "|foo bar|");
         }
 
         #[test]
         fn only_whitespace() {
-            let v = Value::Symbol("   ".into());
+            let v = Value::symbol("   ");
 
             assert_eq!(v.to_string(), "|   |");
         }
 
         #[test]
         fn alphanumeric() {
-            let v = Value::Symbol("abc123!@$^&".into());
+            let v = Value::symbol("abc123!@$^&");
 
             assert_eq!(v.to_string(), "abc123!@$^&");
         }
@@ -461,7 +768,7 @@ mod tests {
             for case in cases {
                 let s = format!("abc{case}123");
 
-                let v = Value::Symbol(s.clone().into());
+                let v = Value::symbol(s.clone());
 
                 let expected = if case == '.' { s } else { format!("|{s}|") };
                 assert_eq!(v.to_string(), expected);
@@ -470,7 +777,7 @@ mod tests {
 
         #[test]
         fn starts_with_number() {
-            let v = Value::Symbol("123abc".into());
+            let v = Value::symbol("123abc");
 
             assert_eq!(v.to_string(), "|123abc|");
         }
@@ -481,7 +788,7 @@ mod tests {
             for case in cases {
                 let s = format!("{case}foo");
 
-                let v = Value::Symbol(s.clone().into());
+                let v = Value::symbol(s.clone());
 
                 assert_eq!(v.to_string(), s);
             }
@@ -489,66 +796,65 @@ mod tests {
 
         #[test]
         fn null() {
-            let v = Value::Symbol("\0".into());
+            let v = Value::symbol("\0");
 
             assert_eq!(v.to_string(), "|\\x0;|");
         }
 
         #[test]
         fn pipe() {
-            let v = Value::Symbol("|".into());
+            let v = Value::symbol("|");
 
             assert_eq!(v.to_string(), "|\\||");
         }
 
         #[test]
         fn one_digit_hex() {
-            let v = Value::Symbol("\x0c".into());
+            let v = Value::symbol("\x0c");
 
             assert_eq!(v.to_string(), "|\\xc;|");
         }
 
         #[test]
         fn hex_uses_lowercase() {
-            let v = Value::Symbol("\x0C".into());
+            let v = Value::symbol("\x0C");
 
             assert_eq!(v.to_string(), "|\\xc;|");
         }
 
         #[test]
         fn two_digit_hex() {
-            let v = Value::Symbol("\x1d".into());
+            let v = Value::symbol("\x1d");
 
             assert_eq!(v.to_string(), "|\\x1d;|");
         }
 
         #[test]
         fn four_digit_hex() {
-            let v = Value::Symbol("\u{fff9}".into());
+            let v = Value::symbol("\u{fff9}");
 
             assert_eq!(v.to_string(), "|\\xfff9;|");
         }
 
         #[test]
         fn special_purpose_plane() {
-            let v = Value::Symbol("\u{e0001}".into());
+            let v = Value::symbol("\u{e0001}");
 
             assert_eq!(v.to_string(), "|\\xe0001;|");
         }
 
         #[test]
         fn private_use_plane() {
-            let v = Value::Symbol("\u{100001}".into());
+            let v = Value::symbol("\u{100001}");
 
             assert_eq!(v.to_string(), "|\\x100001;|");
         }
 
         #[test]
         fn literal_endline() {
-            let v = Value::Symbol(
+            let v = Value::symbol(
                 "foo
-bar"
-                .into(),
+bar",
             );
 
             assert_eq!(v.to_string(), "|foo\\nbar|");
@@ -569,7 +875,7 @@ bar"
 
         fn check_escape_sequence(cases: &[(&str, &str)]) {
             for &(inp, exp) in cases {
-                let v = Value::Symbol(inp.into());
+                let v = Value::symbol(inp);
 
                 assert_eq!(v.to_string(), format!("|{exp}|"));
             }
@@ -582,28 +888,28 @@ bar"
 
         #[test]
         fn extended() {
-            let v = Value::Symbol("λ".into());
+            let v = Value::symbol("λ");
 
             assert_eq!(v.to_string(), "|λ|");
         }
 
         #[test]
         fn emoji() {
-            let v = Value::Symbol("🦀".into());
+            let v = Value::symbol("🦀");
 
             assert_eq!(v.to_string(), "|🦀|");
         }
 
         #[test]
         fn control_picture() {
-            let v = Value::Symbol("\u{2401}".into());
+            let v = Value::symbol("\u{2401}");
 
             assert_eq!(v.to_string(), "|␁|");
         }
 
         #[test]
         fn replacement() {
-            let v = Value::Symbol("\u{fffd}".into());
+            let v = Value::symbol("\u{fffd}");
 
             assert_eq!(v.to_string(), "|�|");
         }
@@ -615,7 +921,7 @@ bar"
         #[test]
         fn pair_is_not_list() {
             // (#t . #f)
-            let p = Pair::cons(Value::bool(true), Value::bool(false));
+            let p = Pair::cons(Value::Boolean(true), Value::Boolean(false));
 
             assert!(!p.is_list());
         }
@@ -623,7 +929,7 @@ bar"
         #[test]
         fn empty_cdr_is_list() {
             // (#t)
-            let p = Pair::cons(Value::bool(true), Value::null());
+            let p = Pair::cons(Value::Boolean(true), Value::null());
 
             assert!(p.is_list());
         }
@@ -674,7 +980,7 @@ bar"
 
         #[test]
         fn pair_display() {
-            let p = Pair::cons(Value::bool(true), Value::bool(false));
+            let p = Pair::cons(Value::Boolean(true), Value::Boolean(false));
             let v = Value::pair(p);
 
             assert_eq!(v.to_string(), "(#t . #f)")
@@ -682,7 +988,7 @@ bar"
 
         #[test]
         fn empty_cdr_display() {
-            let p = Pair::cons(Value::bool(true), Value::null());
+            let p = Pair::cons(Value::Boolean(true), Value::null());
             let v = Value::pair(p);
 
             assert_eq!(v.to_string(), "(#t)")
@@ -769,11 +1075,7 @@ bar"
 
         #[test]
         fn three() {
-            let lst = zlist![
-                Value::number(5),
-                Value::Symbol("a".into()),
-                Value::bool(true),
-            ];
+            let lst = zlist![Value::number(5), Value::symbol("a"), Value::Boolean(true)];
 
             assert_eq!(lst.to_string(), "(5 a #t)");
         }
@@ -782,7 +1084,7 @@ bar"
         fn nested() {
             let lst = zlist![
                 Value::number(5),
-                zlist![Value::Symbol("a".into()), Value::bool(true),],
+                zlist![Value::symbol("a"), Value::Boolean(true)],
             ];
 
             assert_eq!(lst.to_string(), "(5 (a #t))");
@@ -799,8 +1101,8 @@ bar"
         fn ctor_vec() {
             let lst = Value::list(vec![
                 Value::number(5),
-                Value::Symbol("a".into()),
-                Value::bool(true),
+                Value::symbol("a"),
+                Value::Boolean(true),
             ]);
 
             assert_eq!(lst.to_string(), "(5 a #t)");
@@ -808,11 +1110,7 @@ bar"
 
         #[test]
         fn ctor_slice() {
-            let lst = Value::list([
-                Value::number(5),
-                Value::Symbol("a".into()),
-                Value::bool(true),
-            ]);
+            let lst = Value::list([Value::number(5), Value::symbol("a"), Value::Boolean(true)]);
 
             assert_eq!(lst.to_string(), "(5 a #t)");
         }
@@ -828,7 +1126,7 @@ bar"
         fn improper_ctor_single() {
             let lst = Value::improper_list(vec![Value::number(5)]);
 
-            assert!(matches!(lst, Value::Constant(_)));
+            assert!(matches!(lst, Value::Number(_)));
             assert_eq!(lst.to_string(), "5");
         }
 
@@ -836,8 +1134,8 @@ bar"
         fn improper_ctor_vec() {
             let lst = Value::improper_list(vec![
                 Value::number(5),
-                Value::Symbol("a".into()),
-                Value::bool(true),
+                Value::symbol("a"),
+                Value::Boolean(true),
             ]);
 
             assert_eq!(lst.to_string(), "(5 a . #t)");
@@ -845,11 +1143,8 @@ bar"
 
         #[test]
         fn improper_ctor_slice() {
-            let lst = Value::improper_list([
-                Value::number(5),
-                Value::Symbol("a".into()),
-                Value::bool(true),
-            ]);
+            let lst =
+                Value::improper_list([Value::number(5), Value::symbol("a"), Value::Boolean(true)]);
 
             assert_eq!(lst.to_string(), "(5 a . #t)");
         }
@@ -874,7 +1169,7 @@ bar"
             let c = Condition {
                 kind: ConditionKind::General,
                 msg: "foo".into(),
-                irritants: zlist![Value::Symbol("a".into()), Value::number(5)].into(),
+                irritants: zlist![Value::symbol("a"), Value::number(5)].into(),
             };
 
             assert_eq!(c.to_string(), "#<exception \"foo\" (a 5)>");
@@ -885,7 +1180,7 @@ bar"
             let c = Condition {
                 kind: ConditionKind::General,
                 msg: "foo".into(),
-                irritants: Value::bool(true).into(),
+                irritants: Value::Boolean(true).into(),
             };
 
             assert_eq!(c.to_string(), "#<exception \"foo\" #t>");

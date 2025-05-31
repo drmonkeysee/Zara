@@ -17,12 +17,7 @@ pub(crate) fn load(scope: &mut Binding) {
     time::load(scope);
 
     // TODO: test variables
-    scope.bind(
-        "x",
-        Value::Constant(crate::constant::Constant::Number(
-            crate::number::Number::real(5),
-        )),
-    );
+    scope.bind("x", Value::number(5));
     scope.bind("z", Value::Unspecified);
 }
 

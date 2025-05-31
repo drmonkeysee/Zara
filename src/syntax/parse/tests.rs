@@ -23,7 +23,7 @@ mod expr {
             ExprFlow::Continue(Some(
                 Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 0, end: 3 }, txt: line },
-                kind: ExpressionKind::Literal(Value::Constant(Constant::Boolean(true))),
+                kind: ExpressionKind::Literal(Value::Boolean(true)),
             })) if Rc::ptr_eq(&txt, &line)
         ));
     }
@@ -43,7 +43,7 @@ mod expr {
             ExprFlow::Continue(Some(
                 Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 0, end: 3 }, txt: line },
-                kind: ExpressionKind::Literal(Value::Constant(Constant::Number(n))),
+                kind: ExpressionKind::Literal(Value::Number(n)),
             })) if n.to_string() == "+1.2i" && Rc::ptr_eq(&txt, &line)
         ));
     }
@@ -465,7 +465,7 @@ mod datum {
             expr,
             Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 1, end: 3 }, txt: line },
-                kind: ExpressionKind::Literal(Value::Constant(Constant::Boolean(true)))
+                kind: ExpressionKind::Literal(Value::Boolean(true))
             } if Rc::ptr_eq(&txt, &line)
         ));
     }
@@ -838,7 +838,7 @@ mod vector {
             Value::Vector
         );
         assert_eq!(v.len(), 1);
-        assert!(matches!(&**&v[0], Value::Constant(Constant::String(s)) if &**s == "foo"));
+        assert!(matches!(&v[0], Value::String(s) if &**s == "foo"));
     }
 
     #[test]
@@ -888,11 +888,11 @@ mod vector {
             Value::Vector
         );
         assert_eq!(v.len(), 3);
-        assert!(matches!(&**&v[0], Value::Symbol(s) if &**s == "a"));
-        assert!(matches!(&**&v[1], Value::Pair(None)));
+        assert!(matches!(&v[0], Value::Symbol(s) if &**s == "a"));
+        assert!(matches!(&v[1], Value::Pair(None)));
         assert!(matches!(
-            &**&v[2],
-            Value::Constant(Constant::Number(n)) if n.to_string() == "26"
+            &v[2],
+            Value::Number(n) if n.to_string() == "26"
         ));
     }
 
@@ -1174,7 +1174,7 @@ mod sequence {
             &seq[0],
             Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 0, end: 3 }, txt: line },
-                kind: ExpressionKind::Literal(Value::Constant(Constant::Boolean(true))),
+                kind: ExpressionKind::Literal(Value::Boolean(true)),
             } if Rc::ptr_eq(&txt, &line)
         ));
     }
@@ -1212,7 +1212,7 @@ mod sequence {
             &seq[2],
             Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 6, end: 9 }, txt: line },
-                kind: ExpressionKind::Literal(Value::Constant(Constant::Boolean(true))),
+                kind: ExpressionKind::Literal(Value::Boolean(true)),
             } if Rc::ptr_eq(&txt, &line)
         ));
     }
@@ -1408,7 +1408,7 @@ mod list {
             &seq[3],
             Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 6, end: 7 }, txt: line },
-                kind: ExpressionKind::Literal(Value::Constant(Constant::Number(n))),
+                kind: ExpressionKind::Literal(Value::Number(n)),
             } if n.to_string() == "10" && Rc::ptr_eq(&txt, &line)
         ));
     }
@@ -1771,14 +1771,14 @@ mod list {
             &args[0],
             Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 1, end: 4 }, txt: line },
-                kind: ExpressionKind::Literal(Value::Constant(Constant::Number(n))),
+                kind: ExpressionKind::Literal(Value::Number(n)),
             } if n.to_string() == "4" && Rc::ptr_eq(&txt, &line)
         ));
         assert!(matches!(
             &args[1],
             Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 4, end: 6 }, txt: line },
-                kind: ExpressionKind::Literal(Value::Constant(Constant::Number(n))),
+                kind: ExpressionKind::Literal(Value::Number(n)),
             } if n.to_string() == "5" && Rc::ptr_eq(&txt, &line)
         ));
     }
@@ -2154,7 +2154,7 @@ mod string {
             expr,
             Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 0, end: 3 }, txt: line },
-                kind: ExpressionKind::Literal(Value::Constant(Constant::String(s))),
+                kind: ExpressionKind::Literal(Value::String(s)),
             } if &*s == "foo" && Rc::ptr_eq(&txt, &line)
         ));
     }
@@ -2335,7 +2335,7 @@ mod quote {
                     span: TxtSpan { start: 2, end: 4 },
                     txt: line,
                 },
-                kind: ExpressionKind::Literal(Value::Constant(Constant::Boolean(true))),
+                kind: ExpressionKind::Literal(Value::Boolean(true)),
             } if Rc::ptr_eq(&txt, &line)
         ));
     }
@@ -2546,7 +2546,7 @@ mod program {
             &seq[0],
             Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 0, end: 3 }, txt: line },
-                kind: ExpressionKind::Literal(Value::Constant(Constant::Number(n))),
+                kind: ExpressionKind::Literal(Value::Number(n)),
             } if n.to_string() == "24" && Rc::ptr_eq(&txt, &line)
         ));
     }
@@ -3152,7 +3152,7 @@ mod merge {
                     span: TxtSpan { start: 3, end: 6 },
                     txt: line
                 },
-                kind: ExpressionKind::Literal(Value::Constant(Constant::String(s))),
+                kind: ExpressionKind::Literal(Value::String(s)),
             } if &**s == "foo" && Rc::ptr_eq(&txt, &line)
         ));
     }
@@ -3172,7 +3172,7 @@ mod merge {
                         span: 0..2,
                         txt: Rc::clone(&txt),
                     }
-                    .into_expr(ExpressionKind::Literal(Value::Symbol("a".into()))),
+                    .into_expr(ExpressionKind::Literal(Value::symbol("a"))),
                 ],
             },
         };
@@ -3228,7 +3228,7 @@ mod merge {
                         span: 0..2,
                         txt: Rc::clone(&txt),
                     }
-                    .into_expr(ExpressionKind::Literal(Value::Symbol("a".into()))),
+                    .into_expr(ExpressionKind::Literal(Value::symbol("a"))),
                 ],
             },
         };
@@ -3242,7 +3242,7 @@ mod merge {
                     span: 2..4,
                     txt: Rc::clone(&txt),
                 }
-                .into_expr(ExpressionKind::Literal(Value::Symbol("b".into()))),
+                .into_expr(ExpressionKind::Literal(Value::symbol("b"))),
             )),
         };
 
@@ -3277,12 +3277,12 @@ mod merge {
                         span: 0..2,
                         txt: Rc::clone(&txt),
                     }
-                    .into_expr(ExpressionKind::Literal(Value::Symbol("a".into()))),
+                    .into_expr(ExpressionKind::Literal(Value::symbol("a"))),
                     ExprCtx {
                         span: 2..3,
                         txt: Rc::clone(&txt),
                     }
-                    .into_expr(ExpressionKind::Literal(Value::Symbol("b".into()))),
+                    .into_expr(ExpressionKind::Literal(Value::symbol("b"))),
                 ],
             },
         };

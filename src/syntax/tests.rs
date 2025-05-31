@@ -51,7 +51,7 @@ mod parsing {
             &seq[0],
             Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 0, end: 1 }, txt },
-                kind: ExpressionKind::Literal(Value::Constant(Constant::Boolean(true))),
+                kind: ExpressionKind::Literal(Value::Boolean(true)),
             } if txt.lineno == 1
         ));
         assert!(et.parsers.is_empty());
@@ -75,21 +75,21 @@ mod parsing {
             &seq[0],
             Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 0, end: 1 }, txt },
-                kind: ExpressionKind::Literal(Value::Constant(Constant::Boolean(true))),
+                kind: ExpressionKind::Literal(Value::Boolean(true)),
             } if txt.lineno == 1
         ));
         assert!(matches!(
             &seq[1],
             Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 1, end: 2 }, txt },
-                kind: ExpressionKind::Literal(Value::Constant(Constant::Character('a'))),
+                kind: ExpressionKind::Literal(Value::Character('a')),
             } if txt.lineno == 1
         ));
         assert!(matches!(
             &seq[2],
             Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 2, end: 3 }, txt },
-                kind: ExpressionKind::Literal(Value::Constant(Constant::String(s))),
+                kind: ExpressionKind::Literal(Value::String(s)),
             } if txt.lineno == 1 && &**s == "foo"
         ));
         assert!(et.parsers.is_empty());
@@ -125,35 +125,35 @@ mod parsing {
             &seq[0],
             Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 0, end: 1 }, txt },
-                kind: ExpressionKind::Literal(Value::Constant(Constant::Boolean(true))),
+                kind: ExpressionKind::Literal(Value::Boolean(true)),
             } if txt.lineno == 1
         ));
         assert!(matches!(
             &seq[1],
             Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 1, end: 2 }, txt },
-                kind: ExpressionKind::Literal(Value::Constant(Constant::Character('a'))),
+                kind: ExpressionKind::Literal(Value::Character('a')),
             } if txt.lineno == 1
         ));
         assert!(matches!(
             &seq[2],
             Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 2, end: 3 }, txt },
-                kind: ExpressionKind::Literal(Value::Constant(Constant::String(s))),
+                kind: ExpressionKind::Literal(Value::String(s)),
             } if txt.lineno == 1 && &**s == "foo"
         ));
         assert!(matches!(
             &seq[3],
             Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 0, end: 1 }, txt },
-                kind: ExpressionKind::Literal(Value::Constant(Constant::Boolean(false))),
+                kind: ExpressionKind::Literal(Value::Boolean(false)),
             } if txt.lineno == 2
         ));
         assert!(matches!(
             &seq[4],
             Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 1, end: 2 }, txt },
-                kind: ExpressionKind::Literal(Value::Constant(Constant::Character('b'))),
+                kind: ExpressionKind::Literal(Value::Character('b')),
             } if txt.lineno == 2
         ));
 
@@ -239,14 +239,14 @@ mod parsing {
             &args[0],
             Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 7, end: 8 }, .. },
-                kind: ExpressionKind::Literal(Value::Constant(Constant::Number(n))),
+                kind: ExpressionKind::Literal(Value::Number(n)),
             } if n.to_string() == "2"
         ));
         assert!(matches!(
             &args[1],
             Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 8, end: 9 }, .. },
-                kind: ExpressionKind::Literal(Value::Constant(Constant::Number(n))),
+                kind: ExpressionKind::Literal(Value::Number(n)),
             } if n.to_string() == "3"
         ));
         assert!(et.parsers.is_empty());
@@ -969,7 +969,7 @@ mod parsing {
             ExpressionError {
                 ctx: ExprCtx { span: TxtSpan { start: 6, end: 7 }, txt },
                 kind: ExpressionErrorKind::ByteVectorInvalidItem(ExpressionKind::Literal(
-                    Value::Constant(Constant::Boolean(true)))),
+                    Value::Boolean(true))),
             }  if txt.lineno == 1
         ));
         assert!(et.parsers.is_empty());

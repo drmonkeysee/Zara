@@ -83,7 +83,6 @@ fn write_arity(arity: &Arity, f: &mut Formatter<'_>) -> fmt::Result {
 mod tests {
     use super::*;
     use crate::{
-        constant::Constant,
         testutil::{TestEnv, ok_or_fail},
         value::Value,
     };
@@ -201,13 +200,13 @@ mod tests {
         let r = p.apply(&[], &f);
 
         let v = ok_or_fail!(r);
-        assert!(matches!(&*v, Value::Constant(Constant::String(s)) if &**s == "bar"));
+        assert!(matches!(&*v, Value::String(s) if &**s == "bar"));
     }
 
     #[test]
     fn apply_single_arity() {
         let p = Procedure::intrinsic("foo", 1..1, |args, _| {
-            let Value::Constant(Constant::String(s)) = &*args[0] else {
+            let Value::String(s) = &*args[0] else {
                 unreachable!()
             };
             Ok(Value::string(format!("bar {s}")).into())
@@ -219,6 +218,6 @@ mod tests {
         let r = p.apply(&args, &f);
 
         let v = ok_or_fail!(r);
-        assert!(matches!(&*v, Value::Constant(Constant::String(s)) if &**s == "bar baz"));
+        assert!(matches!(&*v, Value::String(s) if &**s == "bar baz"));
     }
 }

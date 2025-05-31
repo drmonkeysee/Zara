@@ -74,14 +74,19 @@ impl Expression {
     pub(super) fn constant(con: Constant, ctx: ExprCtx) -> Self {
         Self {
             ctx,
-            kind: ExpressionKind::Literal(Value::Constant(con)),
+            kind: ExpressionKind::Literal(match con {
+                Constant::Boolean(b) => Value::Boolean(b),
+                Constant::Character(c) => Value::Character(c),
+                Constant::Number(n) => Value::Number(n),
+                Constant::String(s) => Value::string(s),
+            }),
         }
     }
 
-    pub(super) fn symbol(name: impl Into<Box<str>>, ctx: ExprCtx) -> Self {
+    pub(super) fn symbol(name: impl Into<Rc<str>>, ctx: ExprCtx) -> Self {
         Self {
             ctx,
-            kind: ExpressionKind::Literal(Value::Symbol(name.into())),
+            kind: ExpressionKind::Literal(Value::symbol(name)),
         }
     }
 
@@ -323,7 +328,7 @@ mod tests {
             let r = expr.eval(&f);
 
             let v = ok_or_fail!(r);
-            assert!(matches!(*v, Value::Constant(Constant::Boolean(true))));
+            assert!(matches!(*v, Value::Boolean(true)));
         }
 
         #[test]
@@ -342,7 +347,7 @@ mod tests {
             let r = expr.eval(&f);
 
             let v = ok_or_fail!(r);
-            assert!(matches!(&*v, Value::Constant(Constant::String(s)) if &**s == "foo"));
+            assert!(matches!(&*v, Value::String(s) if &**s == "foo"));
         }
 
         #[test]
@@ -407,7 +412,7 @@ mod tests {
             let r = prg.eval(&f);
 
             let v = ok_or_fail!(r);
-            assert!(matches!(*v, Value::Constant(Constant::Character('b'))));
+            assert!(matches!(*v, Value::Character('b')));
         }
 
         mod forms {
@@ -436,10 +441,8 @@ mod tests {
                 env.binding.bind(
                     "foo",
                     Value::Procedure(
-                        Procedure::intrinsic("foo", 0..0, |_, _| {
-                            Ok(Value::Symbol("bar".into()).into())
-                        })
-                        .into(),
+                        Procedure::intrinsic("foo", 0..0, |_, _| Ok(Value::symbol("bar").into()))
+                            .into(),
                     ),
                 );
                 let f = env.new_frame();
@@ -499,7 +502,7 @@ mod tests {
                             let s = args
                                 .iter()
                                 .map(|v| {
-                                    let Value::Constant(Constant::String(s)) = &**v else {
+                                    let Value::String(s) = &**v else {
                                         unreachable!()
                                     };
                                     s.clone()
@@ -516,9 +519,7 @@ mod tests {
                 let r = expr.eval(&f);
 
                 let v = ok_or_fail!(r);
-                assert!(
-                    matches!(&*v, Value::Constant(Constant::String(s)) if &**s == "one, two, three")
-                );
+                assert!(matches!(&*v, Value::String(s) if &**s == "one, two, three"));
             }
 
             #[test]
@@ -608,10 +609,8 @@ mod tests {
                 env.binding.bind(
                     "foo",
                     Value::Procedure(
-                        Procedure::intrinsic("foo", 0..0, |_, _| {
-                            Ok(Value::Symbol("bar".into()).into())
-                        })
-                        .into(),
+                        Procedure::intrinsic("foo", 0..0, |_, _| Ok(Value::symbol("bar").into()))
+                            .into(),
                     ),
                 );
                 let f = env.new_frame();
@@ -647,10 +646,8 @@ mod tests {
                 env.binding.bind(
                     "foo",
                     Value::Procedure(
-                        Procedure::intrinsic("foo", 1..1, |_, _| {
-                            Ok(Value::Symbol("bar".into()).into())
-                        })
-                        .into(),
+                        Procedure::intrinsic("foo", 1..1, |_, _| Ok(Value::symbol("bar").into()))
+                            .into(),
                     ),
                 );
                 let f = env.new_frame();
@@ -686,10 +683,8 @@ mod tests {
                 env.binding.bind(
                     "foo",
                     Value::Procedure(
-                        Procedure::intrinsic("foo", 1..2, |_, _| {
-                            Ok(Value::Symbol("bar".into()).into())
-                        })
-                        .into(),
+                        Procedure::intrinsic("foo", 1..2, |_, _| Ok(Value::symbol("bar").into()))
+                            .into(),
                     ),
                 );
                 let f = env.new_frame();
@@ -758,10 +753,8 @@ mod tests {
                 env.binding.bind(
                     "foo",
                     Value::Procedure(
-                        Procedure::intrinsic("foo", 4..4, |_, _| {
-                            Ok(Value::Symbol("bar".into()).into())
-                        })
-                        .into(),
+                        Procedure::intrinsic("foo", 4..4, |_, _| Ok(Value::symbol("bar").into()))
+                            .into(),
                     ),
                 );
                 env.binding.bind("y", Value::string("beef"));

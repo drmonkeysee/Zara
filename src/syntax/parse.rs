@@ -622,17 +622,15 @@ fn into_bytevector(seq: Vec<Expression>, ctx: ExprCtx) -> ExprConvertResult {
         seq,
         ctx,
         |expr| match expr.kind {
-            ExpressionKind::Literal(Value::Constant(Constant::Number(n))) => {
-                n.try_into().map_err(|err| {
-                    expr.ctx
-                        .into_error(ExpressionErrorKind::ByteVectorInvalidNumber(err))
-                })
-            }
+            ExpressionKind::Literal(Value::Number(n)) => n.try_into().map_err(|err| {
+                expr.ctx
+                    .into_error(ExpressionErrorKind::ByteVectorInvalidNumber(err))
+            }),
             _ => Err(expr
                 .ctx
                 .into_error(ExpressionErrorKind::ByteVectorInvalidItem(expr.kind))),
         },
-        |items| ExpressionKind::Literal(Value::ByteVector(items)),
+        |items| ExpressionKind::Literal(Value::ByteVector(items.into())),
     )
 }
 
@@ -664,7 +662,7 @@ fn into_datum(inner: Option<Expression>, ctx: ExprCtx, quoted: bool) -> ExprConv
             if let ExpressionKind::Literal(val) = expr.kind {
                 Ok(Some(if quoted {
                     ctx.into_expr(ExpressionKind::Literal(zlist![
-                        Value::Symbol(LONGFORM_QUOTE.into()),
+                        Value::symbol(LONGFORM_QUOTE),
                         val
                     ]))
                 } else {
@@ -732,7 +730,7 @@ fn into_valid_sequence<T>(
     seq: Vec<Expression>,
     ctx: ExprCtx,
     valid: impl FnMut(Expression) -> Result<T, ExpressionError>,
-    kind: impl FnOnce(Box<[T]>) -> ExpressionKind,
+    kind: impl FnOnce(Vec<T>) -> ExpressionKind,
 ) -> ExprConvertResult {
     let (items, errs): (Vec<_>, Vec<_>) = seq.into_iter().map(valid).partition(Result::is_ok);
     if errs.is_empty() {
