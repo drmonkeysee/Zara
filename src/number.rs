@@ -318,7 +318,7 @@ impl Integer {
             return Err(NumericError::IntConversionInvalidRange);
         };
         if self.is_negative() {
-            if u <= (i32::MAX as u64) + 1 {
+            if u <= i32::MIN.unsigned_abs() as u64 {
                 (-(u as i64)).try_into()
             } else {
                 return Err(NumericError::IntConversionInvalidRange);
