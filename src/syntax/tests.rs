@@ -1,6 +1,5 @@
 use super::{expr::ExpressionErrorKind, *};
 use crate::{
-    constant::Constant,
     lex::{Token, TokenKind},
     testutil::{err_or_fail, extract_or_fail, make_textline_no, some_or_fail},
     txt::LineNumber,
@@ -38,9 +37,7 @@ mod parsing {
     #[test]
     fn single_literal_sequence() {
         let mut et = ExpressionTree::default();
-        let tokens = [make_tokenline([TokenKind::Constant(Constant::Boolean(
-            true,
-        ))])];
+        let tokens = [make_tokenline([TokenKind::Boolean(true)])];
 
         let r = et.parse(tokens.into());
 
@@ -61,9 +58,9 @@ mod parsing {
     fn multiple_literals_sequence() {
         let mut et = ExpressionTree::default();
         let tokens = [make_tokenline([
-            TokenKind::Constant(Constant::Boolean(true)),
-            TokenKind::Constant(Constant::Character('a')),
-            TokenKind::Constant(Constant::String("foo".into())),
+            TokenKind::Boolean(true),
+            TokenKind::Character('a'),
+            TokenKind::String("foo".into()),
         ])];
 
         let r = et.parse(tokens.into());
@@ -101,19 +98,13 @@ mod parsing {
         let tokens = [
             make_tokenline_no(
                 [
-                    TokenKind::Constant(Constant::Boolean(true)),
-                    TokenKind::Constant(Constant::Character('a')),
-                    TokenKind::Constant(Constant::String("foo".into())),
+                    TokenKind::Boolean(true),
+                    TokenKind::Character('a'),
+                    TokenKind::String("foo".into()),
                 ],
                 1,
             ),
-            make_tokenline_no(
-                [
-                    TokenKind::Constant(Constant::Boolean(false)),
-                    TokenKind::Constant(Constant::Character('b')),
-                ],
-                2,
-            ),
+            make_tokenline_no([TokenKind::Boolean(false), TokenKind::Character('b')], 2),
         ];
 
         let r = et.parse(tokens.into());
@@ -166,12 +157,12 @@ mod parsing {
         // NOTE: #u8(10 #; #; 11 12 13) -> #u8(10 13)
         let tokens = [make_tokenline([
             TokenKind::ByteVector,
-            TokenKind::Constant(Constant::Number(Number::real(10))),
+            TokenKind::Number(Number::real(10)),
             TokenKind::CommentDatum,
             TokenKind::CommentDatum,
-            TokenKind::Constant(Constant::Number(Number::real(11))),
-            TokenKind::Constant(Constant::Number(Number::real(12))),
-            TokenKind::Constant(Constant::Number(Number::real(13))),
+            TokenKind::Number(Number::real(11)),
+            TokenKind::Number(Number::real(12)),
+            TokenKind::Number(Number::real(13)),
             TokenKind::ParenRight,
         ])];
 
@@ -201,10 +192,10 @@ mod parsing {
             TokenKind::CommentDatum,
             TokenKind::ParenLeft,
             TokenKind::Identifier("if".to_owned()),
-            TokenKind::Constant(Constant::Number(Number::real(5))),
+            TokenKind::Number(Number::real(5)),
             TokenKind::ParenRight,
-            TokenKind::Constant(Constant::Number(Number::real(2))),
-            TokenKind::Constant(Constant::Number(Number::real(3))),
+            TokenKind::Number(Number::real(2)),
+            TokenKind::Number(Number::real(3)),
             TokenKind::ParenRight,
         ])];
 
@@ -296,8 +287,8 @@ mod parsing {
             TokenKind::Unquote,
             TokenKind::ParenLeft,
             TokenKind::Identifier("+".to_owned()),
-            TokenKind::Constant(Constant::Number(Number::real(1))),
-            TokenKind::Constant(Constant::Number(Number::real(2))),
+            TokenKind::Number(Number::real(1)),
+            TokenKind::Number(Number::real(2)),
             TokenKind::ParenRight,
             TokenKind::UnquoteSplice,
             TokenKind::ParenLeft,
@@ -305,9 +296,9 @@ mod parsing {
             TokenKind::Identifier("abs".to_owned()),
             TokenKind::Quote,
             TokenKind::ParenLeft,
-            TokenKind::Constant(Constant::Number(Number::real(-1))),
-            TokenKind::Constant(Constant::Number(Number::real(-2))),
-            TokenKind::Constant(Constant::Number(Number::real(-3))),
+            TokenKind::Number(Number::real(-1)),
+            TokenKind::Number(Number::real(-2)),
+            TokenKind::Number(Number::real(-3)),
             TokenKind::ParenRight,
             TokenKind::ParenRight,
             TokenKind::ParenRight,
@@ -343,7 +334,7 @@ mod parsing {
             TokenKind::Identifier("quote".to_owned()),
             TokenKind::ParenLeft,
             TokenKind::Identifier("if".to_owned()),
-            TokenKind::Constant(Constant::Number(Number::real(5))),
+            TokenKind::Number(Number::real(5)),
             TokenKind::ParenRight,
             TokenKind::ParenRight,
         ])];
@@ -374,7 +365,7 @@ mod parsing {
         let tokens = [make_tokenline([
             TokenKind::Vector,
             TokenKind::Identifier("if".to_owned()),
-            TokenKind::Constant(Constant::Number(Number::real(5))),
+            TokenKind::Number(Number::real(5)),
             TokenKind::ParenRight,
         ])];
 
@@ -769,11 +760,11 @@ mod parsing {
     fn sequence_line_with_errors() {
         let mut et = ExpressionTree::default();
         let tokens = [make_tokenline([
-            TokenKind::Constant(Constant::Boolean(true)),
+            TokenKind::Boolean(true),
             TokenKind::DirectiveCase(true),
-            TokenKind::Constant(Constant::Character('a')),
+            TokenKind::Character('a'),
             TokenKind::DirectiveCase(false),
-            TokenKind::Constant(Constant::String("foo".into())),
+            TokenKind::String("foo".into()),
         ])];
 
         let r = et.parse(tokens.into());
@@ -804,19 +795,19 @@ mod parsing {
         let tokens = [
             make_tokenline_no(
                 [
-                    TokenKind::Constant(Constant::Boolean(true)),
+                    TokenKind::Boolean(true),
                     TokenKind::DirectiveCase(true),
-                    TokenKind::Constant(Constant::Character('a')),
+                    TokenKind::Character('a'),
                     TokenKind::DirectiveCase(false),
-                    TokenKind::Constant(Constant::String("foo".into())),
+                    TokenKind::String("foo".into()),
                 ],
                 1,
             ),
             make_tokenline_no(
                 [
                     TokenKind::StringDiscard,
-                    TokenKind::Constant(Constant::Boolean(false)),
-                    TokenKind::Constant(Constant::Character('b')),
+                    TokenKind::Boolean(false),
+                    TokenKind::Character('b'),
                 ],
                 2,
             ),
@@ -857,19 +848,19 @@ mod parsing {
         let tokens = [
             make_tokenline_no(
                 [
-                    TokenKind::Constant(Constant::Boolean(true)),
+                    TokenKind::Boolean(true),
                     TokenKind::DirectiveCase(true),
-                    TokenKind::Constant(Constant::Character('a')),
+                    TokenKind::Character('a'),
                     TokenKind::DirectiveCase(false),
-                    TokenKind::Constant(Constant::String("foo".into())),
+                    TokenKind::String("foo".into()),
                 ],
                 1,
             ),
             make_tokenline_no(
                 [
-                    TokenKind::Constant(Constant::Character('c')),
+                    TokenKind::Character('c'),
                     TokenKind::IdentifierDiscard,
-                    TokenKind::Constant(Constant::Character('d')),
+                    TokenKind::Character('d'),
                     TokenKind::CommentDatum,
                 ],
                 2,
@@ -877,8 +868,8 @@ mod parsing {
             make_tokenline_no(
                 [
                     TokenKind::CommentDatum,
-                    TokenKind::Constant(Constant::Boolean(false)),
-                    TokenKind::Constant(Constant::Character('b')),
+                    TokenKind::Boolean(false),
+                    TokenKind::Character('b'),
                 ],
                 3,
             ),
@@ -921,11 +912,11 @@ mod parsing {
         ));
         let tokens = [make_tokenline_no(
             [
-                TokenKind::Constant(Constant::Boolean(true)),
+                TokenKind::Boolean(true),
                 TokenKind::DirectiveCase(true),
-                TokenKind::Constant(Constant::Character('a')),
+                TokenKind::Character('a'),
                 TokenKind::DirectiveCase(false),
-                TokenKind::Constant(Constant::String("foo".into())),
+                TokenKind::String("foo".into()),
             ],
             1,
         )];
@@ -946,10 +937,10 @@ mod parsing {
             TokenKind::ParenLeft,
             TokenKind::Identifier("foo".to_owned()),
             TokenKind::ByteVector,
-            TokenKind::Constant(Constant::Number(Number::real(10))),
+            TokenKind::Number(Number::real(10)),
             TokenKind::CommentDatum,
             TokenKind::ParenRight,
-            TokenKind::Constant(Constant::Boolean(true)),
+            TokenKind::Boolean(true),
             TokenKind::ParenRight,
         ])];
 
@@ -1175,9 +1166,9 @@ mod parsing {
             TokenKind::Identifier("a".to_owned()),
             TokenKind::PairJoiner,
             TokenKind::ByteVector,
-            TokenKind::Constant(Constant::Number(Number::real(1))),
+            TokenKind::Number(Number::real(1)),
             TokenKind::Identifier("b".to_owned()),
-            TokenKind::Constant(Constant::Number(Number::real(2))),
+            TokenKind::Number(Number::real(2)),
             TokenKind::ParenRight,
             TokenKind::ParenRight,
         ])];
@@ -1272,9 +1263,9 @@ mod parsing {
         // NOTE: #(a . b) -> err (pair not allowed)
         let tokens = [make_tokenline([
             TokenKind::ByteVector,
-            TokenKind::Constant(Constant::Number(Number::real(11))),
+            TokenKind::Number(Number::real(11)),
             TokenKind::PairJoiner,
-            TokenKind::Constant(Constant::Number(Number::real(13))),
+            TokenKind::Number(Number::real(13)),
             TokenKind::ParenRight,
         ])];
 
@@ -1339,7 +1330,7 @@ mod continuation {
     fn continuation_to_error() {
         let mut et = ExpressionTree::default();
         let tokens = [make_tokenline([
-            TokenKind::Constant(Constant::Boolean(true)),
+            TokenKind::Boolean(true),
             TokenKind::StringBegin {
                 s: "foo".to_owned(),
                 line_cont: false,
@@ -1414,7 +1405,7 @@ mod continuation {
     fn continuation_ignored_if_existing_errors() {
         let mut et = ExpressionTree::default();
         let tokens = [make_tokenline([
-            TokenKind::Constant(Constant::Boolean(true)),
+            TokenKind::Boolean(true),
             TokenKind::DirectiveCase(true),
             TokenKind::StringBegin {
                 s: "foo".to_owned(),

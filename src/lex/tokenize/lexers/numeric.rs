@@ -1,6 +1,5 @@
 use super::{ComplexKind, Exactness, Identifier};
 use crate::{
-    constant::Constant,
     lex::{
         TokenKind,
         token::TokenErrorKind,
@@ -232,9 +231,7 @@ impl<P: ClassifierProps> ConditionProcessor<'_, '_, P> {
             BreakCondition::Sub(SubCondition::Complete) => self.complete(parser, false),
             BreakCondition::Sub(SubCondition::Complex { kind, start }) => {
                 if self.props.radix_infnan() {
-                    if let Ok(TokenKind::Constant(Constant::Number(Number::Real(r)))) =
-                        parser.extract_radix_infnan()
-                    {
+                    if let Ok(TokenKind::Number(Number::Real(r))) = parser.extract_radix_infnan() {
                         Ok(r)
                     } else {
                         Err(match kind {
@@ -308,9 +305,7 @@ impl<P: ClassifierProps> ConditionProcessor<'_, '_, P> {
                             Some(Exactness::Inexact) => real.into_inexact(),
                             None => real,
                         };
-                        Ok(TokenKind::Constant(Constant::Number(Number::complex(
-                            real, imag,
-                        ))))
+                        Ok(TokenKind::Number(Number::complex(real, imag)))
                     }
                     _ => Err(TokenErrorKind::ComplexInvalid),
                 }
@@ -318,15 +313,13 @@ impl<P: ClassifierProps> ConditionProcessor<'_, '_, P> {
             ComplexKind::Polar => {
                 debug_assert_eq!(start.1, '@');
                 match self.props.polar_scan(self.scanner) {
-                    Ok(TokenKind::Constant(Constant::Number(Number::Real(rads)))) => {
+                    Ok(TokenKind::Number(Number::Real(rads))) => {
                         let pol = Number::polar(real, rads);
-                        Ok(TokenKind::Constant(Constant::Number(
-                            match self.props.get_exactness() {
-                                Some(Exactness::Exact) => pol.into_exact(),
-                                Some(Exactness::Inexact) => pol.into_inexact(),
-                                None => pol,
-                            },
-                        )))
+                        Ok(TokenKind::Number(match self.props.get_exactness() {
+                            Some(Exactness::Exact) => pol.into_exact(),
+                            Some(Exactness::Inexact) => pol.into_inexact(),
+                            None => pol,
+                        }))
                     }
                     _ => Err(TokenErrorKind::PolarInvalid),
                 }
@@ -963,7 +956,7 @@ fn real_to_token(r: impl Into<Real>, is_imaginary: bool) -> TokenKind {
     if is_imaginary {
         TokenKind::Imaginary(r.into())
     } else {
-        TokenKind::Constant(Constant::Number(Number::real(r)))
+        TokenKind::Number(Number::real(r))
     }
 }
 

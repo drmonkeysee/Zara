@@ -1,6 +1,5 @@
 use super::{Exactness, HexParse, Identifier, RadixNumber};
 use crate::{
-    constant::Constant,
     lex::{
         TokenKind,
         token::TokenErrorKind,
@@ -53,7 +52,7 @@ impl Hashtag<'_, '_> {
     fn boolean(&mut self, val: bool) -> TokenExtractResult {
         let rest = self.scanner.rest_of_token();
         if rest.is_empty() || rest.eq_ignore_ascii_case(if val { "rue" } else { "alse" }) {
-            Ok(TokenKind::Constant(Constant::Boolean(val)))
+            Ok(TokenKind::Boolean(val))
         } else {
             Err(TokenErrorKind::BooleanExpected(val))
         }
@@ -75,13 +74,13 @@ impl Hashtag<'_, '_> {
     fn character(&mut self) -> TokenExtractResult {
         self.scanner
             .char()
-            .map_or(Ok(TokenKind::Constant(Constant::Character('\n'))), |ch| {
+            .map_or(Ok(TokenKind::Character('\n')), |ch| {
                 if ch.is_ascii_whitespace() {
-                    Ok(TokenKind::Constant(Constant::Character(ch)))
+                    Ok(TokenKind::Character(ch))
                 } else {
                     let rest = self.scanner.rest_of_token();
                     if rest.is_empty() {
-                        Ok(TokenKind::Constant(Constant::Character(ch)))
+                        Ok(TokenKind::Character(ch))
                     } else if let 'x' | 'X' = ch {
                         char_hex(rest)
                     } else {
@@ -294,7 +293,7 @@ fn decimal(scanner: &mut Scanner, exactness: Option<Exactness>) -> TokenExtractR
         let result = Identifier::with_exactness(scanner, item, exactness).scan();
         match result {
             Err(TokenErrorKind::IdentifierInvalid(_)) => (),
-            Ok(TokenKind::Constant(Constant::Number(_)) | TokenKind::Imaginary(_)) | Err(_) => {
+            Ok(TokenKind::Number(_) | TokenKind::Imaginary(_)) | Err(_) => {
                 return result;
             }
             _ => (),
@@ -307,27 +306,23 @@ fn char_hex(rest: &str) -> TokenExtractResult {
     match super::parse_char_hex(rest) {
         HexParse::Invalid => Err(TokenErrorKind::CharacterInvalidHex),
         HexParse::Unexpected => Err(TokenErrorKind::CharacterExpectedHex),
-        HexParse::Valid(ch) => Ok(TokenKind::Constant(Constant::Character(ch))),
+        HexParse::Valid(ch) => Ok(TokenKind::Character(ch)),
     }
 }
 
 fn char_name(ch: char, rest: &str) -> TokenExtractResult {
     match (ch, rest) {
-        ('a', "larm") => Ok(char_lit('\x07')),
-        ('b', "ackspace") => Ok(char_lit('\x08')),
-        ('d', "elete") => Ok(char_lit('\x7f')),
-        ('e', "scape") => Ok(char_lit('\x1b')),
-        ('n', "ewline") => Ok(char_lit('\n')),
-        ('n', "ull") => Ok(char_lit('\0')),
-        ('r', "eturn") => Ok(char_lit('\r')),
-        ('s', "pace") => Ok(char_lit(' ')),
-        ('t', "ab") => Ok(char_lit('\t')),
+        ('a', "larm") => Ok(TokenKind::Character('\x07')),
+        ('b', "ackspace") => Ok(TokenKind::Character('\x08')),
+        ('d', "elete") => Ok(TokenKind::Character('\x7f')),
+        ('e', "scape") => Ok(TokenKind::Character('\x1b')),
+        ('n', "ewline") => Ok(TokenKind::Character('\n')),
+        ('n', "ull") => Ok(TokenKind::Character('\0')),
+        ('r', "eturn") => Ok(TokenKind::Character('\r')),
+        ('s', "pace") => Ok(TokenKind::Character(' ')),
+        ('t', "ab") => Ok(TokenKind::Character('\t')),
         _ => Err(TokenErrorKind::CharacterExpected),
     }
-}
-
-fn char_lit(ch: char) -> TokenKind {
-    TokenKind::Constant(Constant::Character(ch))
 }
 
 // NOTE: state functionality is covered by Tokenizer and Continuation tests

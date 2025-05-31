@@ -1,6 +1,5 @@
 use super::*;
 use crate::{
-    constant::Constant,
     testutil::{extract_or_fail, make_textline},
     txt::TextContext,
 };
@@ -92,7 +91,7 @@ mod lexer {
         assert!(matches!(
             line.0[0],
             TokenType {
-                kind: TokenKind::Constant(Constant::Boolean(true)),
+                kind: TokenKind::Boolean(true),
                 span: TxtSpan { start: 0, end: 2 }
             }
         ));
@@ -122,21 +121,21 @@ mod lexer {
         assert!(matches!(
             line.0[0],
             TokenType {
-                kind: TokenKind::Constant(Constant::Boolean(true)),
+                kind: TokenKind::Boolean(true),
                 span: TxtSpan { start: 0, end: 2 }
             }
         ));
         assert!(matches!(
             line.0[1],
             TokenType {
-                kind: TokenKind::Constant(Constant::Boolean(false)),
+                kind: TokenKind::Boolean(false),
                 span: TxtSpan { start: 3, end: 5 }
             }
         ));
         assert!(matches!(
             line.0[2],
             TokenType {
-                kind: TokenKind::Constant(Constant::Character('a')),
+                kind: TokenKind::Character('a'),
                 span: TxtSpan { start: 6, end: 9 }
             }
         ));
@@ -166,7 +165,7 @@ mod lexer {
         assert!(matches!(
             line.0[0],
             TokenType {
-                kind: TokenKind::Constant(Constant::Boolean(true)),
+                kind: TokenKind::Boolean(true),
                 span: TxtSpan { start: 0, end: 2 }
             }
         ));
@@ -183,14 +182,14 @@ mod lexer {
         assert!(matches!(
             line.0[0],
             TokenType {
-                kind: TokenKind::Constant(Constant::Boolean(false)),
+                kind: TokenKind::Boolean(false),
                 span: TxtSpan { start: 2, end: 4 }
             }
         ));
         assert!(matches!(
             line.0[1],
             TokenType {
-                kind: TokenKind::Constant(Constant::Character('a')),
+                kind: TokenKind::Character('a'),
                 span: TxtSpan { start: 5, end: 8 }
             }
         ));
@@ -208,14 +207,14 @@ mod lexer {
         assert!(matches!(
             line.0[0],
             TokenType {
-                kind: TokenKind::Constant(Constant::Boolean(false)),
+                kind: TokenKind::Boolean(false),
                 span: TxtSpan { start: 0, end: 2 }
             }
         ));
         assert!(matches!(
             line.0[1],
             TokenType {
-                kind: TokenKind::Constant(Constant::Boolean(false)),
+                kind: TokenKind::Boolean(false),
                 span: TxtSpan { start: 3, end: 5 }
             }
         ));
@@ -358,7 +357,7 @@ mod lexer {
         assert!(matches!(
             line.0[0],
             TokenType {
-                kind: TokenKind::Constant(Constant::Boolean(true)),
+                kind: TokenKind::Boolean(true),
                 span: TxtSpan { start: 0, end: 2 }
             }
         ));
@@ -1478,7 +1477,7 @@ mod display {
                     span: 0..1,
                 },
                 Token {
-                    kind: TokenKind::Constant(Constant::Boolean(false)),
+                    kind: TokenKind::Boolean(false),
                     span: 1..3,
                 },
                 Token {
@@ -1501,7 +1500,7 @@ mod display {
 
         assert_eq!(
             target.to_string(),
-            "[1:LEFTPAREN[0..1]('('), CONSTANT<BOOL>[1..3]('#f'), RIGHTPAREN[3..4](')')]"
+            "[1:LEFTPAREN[0..1]('('), BOOL[1..3]('#f'), RIGHTPAREN[3..4](')')]"
         );
     }
 
@@ -1515,7 +1514,7 @@ mod display {
                         span: 0..1,
                     },
                     Token {
-                        kind: TokenKind::Constant(Constant::Boolean(false)),
+                        kind: TokenKind::Boolean(false),
                         span: 1..3,
                     },
                     Token {
@@ -1540,7 +1539,7 @@ mod display {
                         span: 0..1,
                     },
                     Token {
-                        kind: TokenKind::Constant(Constant::Boolean(true)),
+                        kind: TokenKind::Boolean(true),
                         span: 2..4,
                     },
                     Token {
@@ -1565,7 +1564,7 @@ mod display {
                         span: 0..1,
                     },
                     Token {
-                        kind: TokenKind::Constant(Constant::Character('a')),
+                        kind: TokenKind::Character('a'),
                         span: 1..4,
                     },
                     Token {
@@ -1590,9 +1589,9 @@ mod display {
         assert_eq!(
             target.to_string(),
             "[\n\
-                \t1:LEFTPAREN[0..1]('('), CONSTANT<BOOL>[1..3]('#f'), RIGHTPAREN[3..4](')'),\n\
-                \t2:LEFTPAREN[0..1]('('), CONSTANT<BOOL>[2..4]('#t'), RIGHTPAREN[5..6](')'),\n\
-                \t3:LEFTPAREN[0..1]('('), CONSTANT<CHAR>[1..4]('#\\a'), RIGHTPAREN[4..5](')'),\n\
+                \t1:LEFTPAREN[0..1]('('), BOOL[1..3]('#f'), RIGHTPAREN[3..4](')'),\n\
+                \t2:LEFTPAREN[0..1]('('), BOOL[2..4]('#t'), RIGHTPAREN[5..6](')'),\n\
+                \t3:LEFTPAREN[0..1]('('), CHAR[1..4]('#\\a'), RIGHTPAREN[4..5](')'),\n\
                 ]"
         );
     }

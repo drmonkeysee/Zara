@@ -67,7 +67,7 @@ fn multiple_tokens() {
     assert!(matches!(
         r[1],
         Ok(Token {
-            kind: TokenKind::Constant(Constant::Boolean(true)),
+            kind: TokenKind::Boolean(true),
             span: TxtSpan { start: 1, end: 3 }
         })
     ));
@@ -97,7 +97,7 @@ fn multiple_tokens_with_whitespace() {
     assert!(matches!(
         r[1],
         Ok(Token {
-            kind: TokenKind::Constant(Constant::Boolean(true)),
+            kind: TokenKind::Boolean(true),
             span: TxtSpan { start: 7, end: 9 }
         })
     ));
@@ -120,49 +120,49 @@ fn multiple_numbers() {
     assert!(matches!(
         r[0],
         Ok(Token {
-            kind: TokenKind::Constant(Constant::Number(_)),
+            kind: TokenKind::Number(_),
             span: TxtSpan { start: 0, end: 2 }
         })
     ));
     assert!(matches!(
         r[1],
         Ok(Token {
-            kind: TokenKind::Constant(Constant::Number(_)),
+            kind: TokenKind::Number(_),
             span: TxtSpan { start: 3, end: 6 }
         })
     ));
     assert!(matches!(
         r[2],
         Ok(Token {
-            kind: TokenKind::Constant(Constant::Number(_)),
+            kind: TokenKind::Number(_),
             span: TxtSpan { start: 7, end: 12 }
         })
     ));
     assert!(matches!(
         r[3],
         Ok(Token {
-            kind: TokenKind::Constant(Constant::Number(_)),
+            kind: TokenKind::Number(_),
             span: TxtSpan { start: 13, end: 18 }
         })
     ));
     assert!(matches!(
         r[4],
         Ok(Token {
-            kind: TokenKind::Constant(Constant::Number(_)),
+            kind: TokenKind::Number(_),
             span: TxtSpan { start: 19, end: 24 }
         })
     ));
     assert!(matches!(
         r[5],
         Ok(Token {
-            kind: TokenKind::Constant(Constant::Number(_)),
+            kind: TokenKind::Number(_),
             span: TxtSpan { start: 25, end: 28 }
         })
     ));
     assert!(matches!(
         r[6],
         Ok(Token {
-            kind: TokenKind::Constant(Constant::Number(_)),
+            kind: TokenKind::Number(_),
             span: TxtSpan { start: 29, end: 33 }
         })
     ));
@@ -245,7 +245,7 @@ fn tokens_with_unterminated_token_to_whitespace() {
     assert!(matches!(
         r[1],
         Ok(Token {
-            kind: TokenKind::Constant(Constant::Boolean(false)),
+            kind: TokenKind::Boolean(false),
             span: TxtSpan { start: 2, end: 4 }
         })
     ));
@@ -261,14 +261,14 @@ fn hash_is_a_token_boundary() {
     assert!(matches!(
         r[0],
         Ok(Token {
-            kind: TokenKind::Constant(Constant::Boolean(true)),
+            kind: TokenKind::Boolean(true),
             span: TxtSpan { start: 0, end: 2 }
         })
     ));
     assert!(matches!(
         r[1],
         Ok(Token {
-            kind: TokenKind::Constant(Constant::Boolean(false)),
+            kind: TokenKind::Boolean(false),
             span: TxtSpan { start: 2, end: 4 }
         })
     ));
@@ -284,7 +284,7 @@ fn quote_is_a_token_boundary() {
     assert!(matches!(
         r[0],
         Ok(Token {
-            kind: TokenKind::Constant(Constant::Boolean(true)),
+            kind: TokenKind::Boolean(true),
             span: TxtSpan { start: 0, end: 2 }
         })
     ));
@@ -298,7 +298,7 @@ fn quote_is_a_token_boundary() {
     assert!(matches!(
         r[2],
         Ok(Token {
-            kind: TokenKind::Constant(Constant::Boolean(false)),
+            kind: TokenKind::Boolean(false),
             span: TxtSpan { start: 3, end: 5 }
         })
     ));
@@ -314,7 +314,7 @@ fn quasiquote_is_a_token_boundary() {
     assert!(matches!(
         r[0],
         Ok(Token {
-            kind: TokenKind::Constant(Constant::Boolean(true)),
+            kind: TokenKind::Boolean(true),
             span: TxtSpan { start: 0, end: 2 }
         })
     ));
@@ -328,7 +328,7 @@ fn quasiquote_is_a_token_boundary() {
     assert!(matches!(
         r[2],
         Ok(Token {
-            kind: TokenKind::Constant(Constant::Boolean(false)),
+            kind: TokenKind::Boolean(false),
             span: TxtSpan { start: 3, end: 5 }
         })
     ));
@@ -344,7 +344,7 @@ fn unquote_is_a_token_boundary() {
     assert!(matches!(
         r[0],
         Ok(Token {
-            kind: TokenKind::Constant(Constant::Boolean(true)),
+            kind: TokenKind::Boolean(true),
             span: TxtSpan { start: 0, end: 2 }
         })
     ));
@@ -358,7 +358,7 @@ fn unquote_is_a_token_boundary() {
     assert!(matches!(
         r[2],
         Ok(Token {
-            kind: TokenKind::Constant(Constant::Boolean(false)),
+            kind: TokenKind::Boolean(false),
             span: TxtSpan { start: 3, end: 5 }
         })
     ));
@@ -381,7 +381,7 @@ fn pair_join_is_not_a_token_boundary() {
     assert!(matches!(
         r[1],
         Ok(Token {
-            kind: TokenKind::Constant(Constant::Boolean(false)),
+            kind: TokenKind::Boolean(false),
             span: TxtSpan { start: 3, end: 5 }
         })
     ));
@@ -426,7 +426,7 @@ fn block_comment_end_continues_tokenizing() {
     assert!(matches!(
         r[1],
         Ok(Token {
-            kind: TokenKind::Constant(Constant::Boolean(false)),
+            kind: TokenKind::Boolean(false),
             span: TxtSpan { start: 15, end: 17 }
         })
     ));
@@ -471,7 +471,7 @@ fn string_end_continues_tokenizing() {
     assert!(matches!(
         r[1],
         Ok(Token {
-            kind: TokenKind::Constant(Constant::Boolean(false)),
+            kind: TokenKind::Boolean(false),
             span: TxtSpan { start: 13, end: 15 }
         })
     ));
@@ -501,7 +501,7 @@ fn finishes_parsing_string_if_error() {
     assert!(matches!(
         r[2],
         Ok(Token {
-            kind: TokenKind::Constant(Constant::Boolean(true)),
+            kind: TokenKind::Boolean(true),
             span: TxtSpan { start: 13, end: 15 }
         })
     ));
@@ -531,7 +531,7 @@ fn unterminated_hex_does_not_consume_end_of_string() {
     assert!(matches!(
         r[2],
         Ok(Token {
-            kind: TokenKind::Constant(Constant::Boolean(true)),
+            kind: TokenKind::Boolean(true),
             span: TxtSpan { start: 7, end: 9 }
         })
     ));
@@ -561,7 +561,7 @@ fn unterminated_hex_does_not_consume_string_escape_sequence() {
     assert!(matches!(
         r[2],
         Ok(Token {
-            kind: TokenKind::Constant(Constant::Boolean(true)),
+            kind: TokenKind::Boolean(true),
             span: TxtSpan { start: 9, end: 11 }
         })
     ));
@@ -598,7 +598,7 @@ fn multiple_string_errors() {
     assert!(matches!(
         r[3],
         Ok(Token {
-            kind: TokenKind::Constant(Constant::Boolean(true)),
+            kind: TokenKind::Boolean(true),
             span: TxtSpan { start: 29, end: 31 }
         })
     ));
@@ -682,7 +682,7 @@ fn identifier_end_continues_tokenizing() {
     assert!(matches!(
         r[1],
         Ok(Token {
-            kind: TokenKind::Constant(Constant::Boolean(false)),
+            kind: TokenKind::Boolean(false),
             span: TxtSpan { start: 15, end: 17 }
         })
     ));
@@ -712,7 +712,7 @@ fn finishes_parsing_identifier_if_error() {
     assert!(matches!(
         r[2],
         Ok(Token {
-            kind: TokenKind::Constant(Constant::Boolean(true)),
+            kind: TokenKind::Boolean(true),
             span: TxtSpan { start: 13, end: 15 }
         })
     ));
@@ -742,7 +742,7 @@ fn unterminated_hex_does_not_consume_end_of_identifier() {
     assert!(matches!(
         r[2],
         Ok(Token {
-            kind: TokenKind::Constant(Constant::Boolean(true)),
+            kind: TokenKind::Boolean(true),
             span: TxtSpan { start: 7, end: 9 }
         })
     ));
@@ -772,7 +772,7 @@ fn unterminated_hex_does_not_consume_identifier_escape_sequence() {
     assert!(matches!(
         r[2],
         Ok(Token {
-            kind: TokenKind::Constant(Constant::Boolean(true)),
+            kind: TokenKind::Boolean(true),
             span: TxtSpan { start: 9, end: 11 }
         })
     ));
@@ -809,7 +809,7 @@ fn multiple_identifier_errors() {
     assert!(matches!(
         r[3],
         Ok(Token {
-            kind: TokenKind::Constant(Constant::Boolean(true)),
+            kind: TokenKind::Boolean(true),
             span: TxtSpan { start: 29, end: 31 }
         })
     ));

@@ -1,6 +1,5 @@
 use crate::{
     Exception,
-    constant::Constant,
     eval::{EvalResult, Frame},
     lex::TokenKind,
     number::NumericError,
@@ -71,15 +70,10 @@ pub(super) struct ExprEnd {
 pub(super) type Expression = ExpressionType<ExpressionKind>;
 
 impl Expression {
-    pub(super) fn constant(con: Constant, ctx: ExprCtx) -> Self {
+    pub(super) fn string(value: impl Into<Rc<str>>, ctx: ExprCtx) -> Self {
         Self {
             ctx,
-            kind: ExpressionKind::Literal(match con {
-                Constant::Boolean(b) => Value::Boolean(b),
-                Constant::Character(c) => Value::Character(c),
-                Constant::Number(n) => Value::Number(n),
-                Constant::String(s) => Value::string(s),
-            }),
+            kind: ExpressionKind::Literal(Value::string(value)),
         }
     }
 
@@ -315,13 +309,11 @@ mod tests {
 
         #[test]
         fn constant() {
-            let expr = Expression::constant(
-                Constant::Boolean(true),
-                ExprCtx {
-                    span: 0..6,
-                    txt: make_textline().into(),
-                },
-            );
+            let expr = ExprCtx {
+                span: 0..6,
+                txt: make_textline().into(),
+            }
+            .into_expr(ExpressionKind::Literal(Value::Boolean(true)));
             let mut env = TestEnv::default();
             let f = env.new_frame();
 
@@ -384,27 +376,21 @@ mod tests {
         fn program() {
             let txt = make_textline().into();
             let prg = Program::new([
-                Expression::constant(
-                    Constant::Boolean(true),
-                    ExprCtx {
-                        span: 0..6,
-                        txt: Rc::clone(&txt),
-                    },
-                ),
-                Expression::constant(
-                    Constant::Character('a'),
-                    ExprCtx {
-                        span: 6..8,
-                        txt: Rc::clone(&txt),
-                    },
-                ),
-                Expression::constant(
-                    Constant::Character('b'),
-                    ExprCtx {
-                        span: 8..10,
-                        txt: Rc::clone(&txt),
-                    },
-                ),
+                ExprCtx {
+                    span: 0..6,
+                    txt: Rc::clone(&txt),
+                }
+                .into_expr(ExpressionKind::Literal(Value::Boolean(true))),
+                ExprCtx {
+                    span: 6..8,
+                    txt: Rc::clone(&txt),
+                }
+                .into_expr(ExpressionKind::Literal(Value::Character('a'))),
+                ExprCtx {
+                    span: 8..10,
+                    txt: Rc::clone(&txt),
+                }
+                .into_expr(ExpressionKind::Literal(Value::Character('b'))),
             ]);
             let mut env = TestEnv::default();
             let f = env.new_frame();
@@ -417,7 +403,7 @@ mod tests {
 
         mod forms {
             use super::*;
-            use crate::{eval::Procedure, number::Number};
+            use crate::eval::Procedure;
 
             #[test]
             fn call_no_args() {
@@ -470,22 +456,22 @@ mod tests {
                     )
                     .into(),
                     args: [
-                        Expression::constant(
-                            Constant::String("one".into()),
+                        Expression::string(
+                            "one",
                             ExprCtx {
                                 span: 5..8,
                                 txt: Rc::clone(&txt),
                             },
                         ),
-                        Expression::constant(
-                            Constant::String("two".into()),
+                        Expression::string(
+                            "two",
                             ExprCtx {
                                 span: 9..12,
                                 txt: Rc::clone(&txt),
                             },
                         ),
-                        Expression::constant(
-                            Constant::String("three".into()),
+                        Expression::string(
+                            "three",
                             ExprCtx {
                                 span: 13..16,
                                 txt: Rc::clone(&txt),
@@ -596,13 +582,11 @@ mod tests {
                         },
                     )
                     .into(),
-                    args: [Expression::constant(
-                        Constant::Number(Number::real(5)),
-                        ExprCtx {
-                            span: 5..6,
-                            txt: Rc::clone(&txt),
-                        },
-                    )]
+                    args: [ExprCtx {
+                        span: 5..6,
+                        txt: Rc::clone(&txt),
+                    }
+                    .into_expr(ExpressionKind::Literal(Value::number(5)))]
                     .into(),
                 });
                 let mut env = TestEnv::default();
@@ -715,13 +699,11 @@ mod tests {
                     )
                     .into(),
                     args: [
-                        Expression::constant(
-                            Constant::Number(Number::real(5)),
-                            ExprCtx {
-                                span: 5..6,
-                                txt: Rc::clone(&txt),
-                            },
-                        ),
+                        ExprCtx {
+                            span: 5..6,
+                            txt: Rc::clone(&txt),
+                        }
+                        .into_expr(ExpressionKind::Literal(Value::number(5))),
                         Expression::variable(
                             "x",
                             ExprCtx {

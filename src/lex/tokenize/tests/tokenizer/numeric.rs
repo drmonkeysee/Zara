@@ -7,19 +7,16 @@ use crate::{
 macro_rules! extract_number {
     ($exp:expr) => {{
         let tok = $exp;
-        let con = extract_or_fail!(tok, TokenKind::Constant);
-        extract_or_fail!(con, Constant::Number)
+        extract_or_fail!(tok, TokenKind::Number)
     }};
     ($exp:expr, $real:path) => {{
         let tok = $exp;
-        let con = extract_or_fail!(tok, TokenKind::Constant);
-        let num = extract_or_fail!(con, Constant::Number);
+        let num = extract_or_fail!(tok, TokenKind::Number);
         extract_or_fail!(num, $real)
     }};
     ($exp:expr, $real:path, $kind:path) => {{
         let tok = $exp;
-        let con = extract_or_fail!(tok, TokenKind::Constant);
-        let num = extract_or_fail!(con, Constant::Number);
+        let num = extract_or_fail!(tok, TokenKind::Number);
         let r = extract_or_fail!(num, $real);
         extract_or_fail!(r, $kind)
     }};
@@ -44,7 +41,7 @@ mod integer {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(Constant::Number(_)),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 1 },
             }
         ));
@@ -68,7 +65,7 @@ mod integer {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(Constant::Number(_)),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 2 },
             }
         ));
@@ -92,7 +89,7 @@ mod integer {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(Constant::Number(_)),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 2 },
             }
         ));
@@ -116,7 +113,7 @@ mod integer {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(Constant::Number(_)),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 1 },
             }
         ));
@@ -140,7 +137,7 @@ mod integer {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(Constant::Number(_)),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 2 },
             }
         ));
@@ -165,7 +162,7 @@ mod integer {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(Constant::Number(_)),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 19 },
             }
         ));
@@ -190,7 +187,7 @@ mod integer {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(Constant::Number(_)),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 20 },
             }
         ));
@@ -215,7 +212,7 @@ mod integer {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(Constant::Number(_)),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 20 },
             }
         ));
@@ -240,7 +237,7 @@ mod integer {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(Constant::Number(_)),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 21 },
             }
         ));
@@ -265,7 +262,7 @@ mod integer {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(Constant::Number(_)),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 21 },
             }
         ));
@@ -295,7 +292,7 @@ mod integer {
             assert!(matches!(
                 tok,
                 Token {
-                    kind: TokenKind::Constant(Constant::Number(_)),
+                    kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end },
                 } if end == case.len()
             ));
@@ -323,7 +320,7 @@ mod integer {
             assert!(matches!(
                 tok,
                 Token {
-                    kind: TokenKind::Constant(Constant::Number(_)),
+                    kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end },
                 } if end == case.len()
             ));
@@ -348,7 +345,7 @@ mod integer {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(Constant::Number(_)),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 3 },
             }
         ));
@@ -374,7 +371,7 @@ mod integer {
             assert!(matches!(
                 tok,
                 Token {
-                    kind: TokenKind::Constant(Constant::Number(_)),
+                    kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end: 5 },
                 }
             ));
@@ -401,7 +398,7 @@ mod integer {
             assert!(matches!(
                 tok,
                 Token {
-                    kind: TokenKind::Constant(Constant::Number(_)),
+                    kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end: 5 },
                 }
             ));
@@ -428,7 +425,7 @@ mod integer {
             assert!(matches!(
                 tok,
                 Token {
-                    kind: TokenKind::Constant(Constant::Number(_)),
+                    kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end },
                 } if end == case.len()
             ));
@@ -453,7 +450,7 @@ mod integer {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(Constant::Number(_)),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 3 },
             }
         ));
@@ -477,7 +474,7 @@ mod integer {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(Constant::Number(_)),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 4 },
             }
         ));
@@ -501,7 +498,7 @@ mod integer {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(Constant::Number(_)),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 7 },
             }
         ));
@@ -526,7 +523,7 @@ mod integer {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(Constant::Number(_)),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end },
             } if end == input.len()
         ));
@@ -579,7 +576,7 @@ mod rational {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(Constant::Number(_)),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 3 },
             }
         ));
@@ -603,7 +600,7 @@ mod rational {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(Constant::Number(_)),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 4 },
             }
         ));
@@ -627,7 +624,7 @@ mod rational {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(Constant::Number(_)),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 3 },
             }
         ));
@@ -673,7 +670,7 @@ mod rational {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(Constant::Number(_)),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 4 },
             }
         ));
@@ -697,7 +694,7 @@ mod rational {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(Constant::Number(_)),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 4 },
             }
         ));
@@ -721,7 +718,7 @@ mod rational {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(Constant::Number(_)),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 5 },
             }
         ));
@@ -745,7 +742,7 @@ mod rational {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(Constant::Number(_)),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 4 },
             }
         ));
@@ -770,7 +767,7 @@ mod rational {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(Constant::Number(_)),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 23 },
             }
         ));
@@ -794,7 +791,7 @@ mod rational {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(Constant::Number(_)),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 4 },
             }
         ));
@@ -829,7 +826,7 @@ mod rational {
             assert!(matches!(
                 tok,
                 Token {
-                    kind: TokenKind::Constant(Constant::Number(_)),
+                    kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end },
                 } if end == case.len()
             ));
@@ -859,7 +856,7 @@ mod rational {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(Constant::Number(_)),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 5 },
             }
         ));
@@ -885,7 +882,7 @@ mod rational {
             assert!(matches!(
                 tok,
                 Token {
-                    kind: TokenKind::Constant(Constant::Number(_)),
+                    kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end: 7 },
                 }
             ));
@@ -912,7 +909,7 @@ mod rational {
             assert!(matches!(
                 tok,
                 Token {
-                    kind: TokenKind::Constant(Constant::Number(_)),
+                    kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end: 7 },
                 }
             ));
@@ -939,7 +936,7 @@ mod rational {
             assert!(matches!(
                 tok,
                 Token {
-                    kind: TokenKind::Constant(Constant::Number(_)),
+                    kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end },
                 } if end == case.len()
             ));
@@ -964,7 +961,7 @@ mod rational {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(Constant::Number(_)),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 6 },
             }
         ));
@@ -988,7 +985,7 @@ mod rational {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(Constant::Number(_)),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 7 },
             }
         ));
@@ -1012,7 +1009,7 @@ mod rational {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(Constant::Number(_)),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 6 },
             }
         ));
@@ -1037,7 +1034,7 @@ mod rational {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(Constant::Number(_)),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end },
             } if end == input.len()
         ));
@@ -1335,7 +1332,7 @@ mod float {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(Constant::Number(_)),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 5 },
             }
         ));
@@ -1359,7 +1356,7 @@ mod float {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(Constant::Number(_)),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 6 },
             }
         ));
@@ -1383,7 +1380,7 @@ mod float {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(Constant::Number(_)),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 6 },
             }
         ));
@@ -1407,7 +1404,7 @@ mod float {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(Constant::Number(_)),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 2 },
             }
         ));
@@ -1431,7 +1428,7 @@ mod float {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(Constant::Number(_)),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 3 },
             }
         ));
@@ -1455,7 +1452,7 @@ mod float {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(Constant::Number(_)),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 3 },
             }
         ));
@@ -1479,7 +1476,7 @@ mod float {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(Constant::Number(_)),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 2 },
             }
         ));
@@ -1503,7 +1500,7 @@ mod float {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(Constant::Number(_)),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 4 },
             }
         ));
@@ -1527,7 +1524,7 @@ mod float {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(Constant::Number(_)),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 5 },
             }
         ));
@@ -1551,7 +1548,7 @@ mod float {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(Constant::Number(_)),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 4 },
             }
         ));
@@ -1575,7 +1572,7 @@ mod float {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(Constant::Number(_)),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 4 },
             }
         ));
@@ -1599,7 +1596,7 @@ mod float {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(Constant::Number(_)),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 5 },
             }
         ));
@@ -1623,7 +1620,7 @@ mod float {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(Constant::Number(_)),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 7 },
             }
         ));
@@ -1647,7 +1644,7 @@ mod float {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(Constant::Number(_)),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 8 },
             }
         ));
@@ -1671,7 +1668,7 @@ mod float {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(Constant::Number(_)),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 9 },
             }
         ));
@@ -1695,7 +1692,7 @@ mod float {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(Constant::Number(_)),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 10 },
             }
         ));
@@ -1719,7 +1716,7 @@ mod float {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(Constant::Number(_)),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 6 },
             }
         ));
@@ -1743,7 +1740,7 @@ mod float {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(Constant::Number(_)),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 6 },
             }
         ));
@@ -1767,7 +1764,7 @@ mod float {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(Constant::Number(_)),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 6 },
             }
         ));
@@ -1791,7 +1788,7 @@ mod float {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(Constant::Number(_)),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 7 },
             }
         ));
@@ -1820,7 +1817,7 @@ mod float {
             assert!(matches!(
                 tok,
                 Token {
-                    kind: TokenKind::Constant(Constant::Number(_)),
+                    kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end },
                 } if end == case.len()
             ));
@@ -1884,7 +1881,7 @@ mod float {
             assert!(matches!(
                 tok,
                 Token {
-                    kind: TokenKind::Constant(Constant::Number(_)),
+                    kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end },
                 } if end == case.len()
             ));
@@ -1925,7 +1922,7 @@ mod float {
             assert!(matches!(
                 tok,
                 Token {
-                    kind: TokenKind::Constant(Constant::Number(_)),
+                    kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end },
                 } if end == case.len()
             ));
@@ -1957,7 +1954,7 @@ mod float {
             assert!(matches!(
                 tok,
                 Token {
-                    kind: TokenKind::Constant(Constant::Number(_)),
+                    kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end: 9 },
                 }
             ));
@@ -1984,7 +1981,7 @@ mod float {
             assert!(matches!(
                 tok,
                 Token {
-                    kind: TokenKind::Constant(Constant::Number(_)),
+                    kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end: 9 },
                 }
             ));
@@ -2011,7 +2008,7 @@ mod float {
             assert!(matches!(
                 tok,
                 Token {
-                    kind: TokenKind::Constant(Constant::Number(_)),
+                    kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end },
                 } if end == case.len()
             ));
@@ -2036,7 +2033,7 @@ mod float {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(Constant::Number(_)),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 5 },
             }
         ));
@@ -2060,7 +2057,7 @@ mod float {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(Constant::Number(_)),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 6 },
             }
         ));
@@ -2084,7 +2081,7 @@ mod float {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(Constant::Number(_)),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 7 },
             }
         ));
@@ -2110,7 +2107,7 @@ mod float {
             assert!(matches!(
                 tok,
                 Token {
-                    kind: TokenKind::Constant(Constant::Number(_)),
+                    kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end },
                 } if end == case.len()
             ));
@@ -2137,7 +2134,7 @@ mod float {
             assert!(matches!(
                 tok,
                 Token {
-                    kind: TokenKind::Constant(Constant::Number(_)),
+                    kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end },
                 } if end == case.len()
             ));
@@ -2164,7 +2161,7 @@ mod float {
             assert!(matches!(
                 tok,
                 Token {
-                    kind: TokenKind::Constant(Constant::Number(_)),
+                    kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end },
                 } if end == case.len()
             ));
@@ -2189,7 +2186,7 @@ mod float {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(Constant::Number(_)),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 6 },
             }
         ));
@@ -2213,7 +2210,7 @@ mod float {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(Constant::Number(_)),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 8 },
             }
         ));
@@ -2237,7 +2234,7 @@ mod float {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(Constant::Number(_)),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 6 },
             }
         ));
@@ -2261,7 +2258,7 @@ mod float {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(Constant::Number(_)),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 12 },
             }
         ));
@@ -2287,7 +2284,7 @@ mod float {
             assert!(matches!(
                 tok,
                 Token {
-                    kind: TokenKind::Constant(Constant::Number(_)),
+                    kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end },
                 } if end == case.len()
             ));
@@ -2314,7 +2311,7 @@ mod float {
             assert!(matches!(
                 tok,
                 Token {
-                    kind: TokenKind::Constant(Constant::Number(_)),
+                    kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end },
                 } if end == case.len()
             ));
@@ -2355,7 +2352,7 @@ mod float {
             assert!(matches!(
                 tok,
                 Token {
-                    kind: TokenKind::Constant(Constant::Number(_)),
+                    kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end },
                 } if end == case.len()
             ));
@@ -2407,7 +2404,7 @@ mod float {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(Constant::Number(_)),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 6 },
             }
         ));
@@ -2431,7 +2428,7 @@ mod float {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(Constant::Number(_)),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 6 },
             }
         ));
@@ -2477,7 +2474,7 @@ mod float {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(Constant::Number(_)),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 6 },
             }
         ));
@@ -2501,7 +2498,7 @@ mod float {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(Constant::Number(_)),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 7 },
             }
         ));
@@ -2554,7 +2551,7 @@ mod float {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(Constant::Number(_)),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 6 },
             }
         ));
@@ -2603,7 +2600,7 @@ mod float {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(Constant::Number(_)),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 7 },
             }
         ));
@@ -3767,7 +3764,7 @@ mod cartesian {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(_),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 4 },
             }
         ));
@@ -3791,7 +3788,7 @@ mod cartesian {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(_),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 3 },
             }
         ));
@@ -3815,7 +3812,7 @@ mod cartesian {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(_),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 4 },
             }
         ));
@@ -3839,7 +3836,7 @@ mod cartesian {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(_),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 4 },
             }
         ));
@@ -3863,7 +3860,7 @@ mod cartesian {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(_),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 4 },
             }
         ));
@@ -3887,7 +3884,7 @@ mod cartesian {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(_),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 4 },
             }
         ));
@@ -3911,7 +3908,7 @@ mod cartesian {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(_),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 5 },
             }
         ));
@@ -3935,7 +3932,7 @@ mod cartesian {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(_),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 5 },
             }
         ));
@@ -3959,7 +3956,7 @@ mod cartesian {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(_),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 5 },
             }
         ));
@@ -3983,7 +3980,7 @@ mod cartesian {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(_),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 4 },
             }
         ));
@@ -4007,7 +4004,7 @@ mod cartesian {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(_),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 5 },
             }
         ));
@@ -4037,7 +4034,7 @@ mod cartesian {
             assert!(matches!(
                 tok,
                 Token {
-                    kind: TokenKind::Constant(_),
+                    kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end },
                 } if end == cpx.len()
             ));
@@ -4087,7 +4084,7 @@ mod cartesian {
             assert!(matches!(
                 tok,
                 Token {
-                    kind: TokenKind::Constant(_),
+                    kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end },
                 } if end == cpx.len()
             ));
@@ -4142,7 +4139,7 @@ mod cartesian {
             assert!(matches!(
                 tok,
                 Token {
-                    kind: TokenKind::Constant(_),
+                    kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end },
                 } if end == cpx.len()
             ));
@@ -4243,7 +4240,7 @@ mod cartesian {
             assert!(matches!(
                 tok,
                 Token {
-                    kind: TokenKind::Constant(Constant::Number(_)),
+                    kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end },
                 } if end == case.len()
             ));
@@ -4273,7 +4270,7 @@ mod cartesian {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(_),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 16 },
             }
         ));
@@ -4299,7 +4296,7 @@ mod cartesian {
             assert!(matches!(
                 tok,
                 Token {
-                    kind: TokenKind::Constant(_),
+                    kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end: 8 },
                 }
             ));
@@ -4326,7 +4323,7 @@ mod cartesian {
             assert!(matches!(
                 tok,
                 Token {
-                    kind: TokenKind::Constant(_),
+                    kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end: 8 },
                 }
             ));
@@ -4353,7 +4350,7 @@ mod cartesian {
             assert!(matches!(
                 tok,
                 Token {
-                    kind: TokenKind::Constant(_),
+                    kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end: 13 },
                 }
             ));
@@ -4380,7 +4377,7 @@ mod cartesian {
             assert!(matches!(
                 tok,
                 Token {
-                    kind: TokenKind::Constant(_),
+                    kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end: 13 },
                 }
             ));
@@ -4405,7 +4402,7 @@ mod cartesian {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(_),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 8 },
             }
         ));
@@ -4429,7 +4426,7 @@ mod cartesian {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(_),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 12 },
             }
         ));
@@ -4453,7 +4450,7 @@ mod cartesian {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(_),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 10 },
             }
         ));
@@ -4635,7 +4632,7 @@ mod polar {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(_),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 3 },
             }
         ));
@@ -4659,7 +4656,7 @@ mod polar {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(_),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 4 },
             }
         ));
@@ -4683,7 +4680,7 @@ mod polar {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(_),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 4 },
             }
         ));
@@ -4707,7 +4704,7 @@ mod polar {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(_),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 5 },
             }
         ));
@@ -4731,7 +4728,7 @@ mod polar {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(_),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 3 },
             }
         ));
@@ -4755,7 +4752,7 @@ mod polar {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(_),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 7 },
             }
         ));
@@ -4779,7 +4776,7 @@ mod polar {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(_),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 4 },
             }
         ));
@@ -4803,7 +4800,7 @@ mod polar {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(_),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 3 },
             }
         ));
@@ -4827,7 +4824,7 @@ mod polar {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(_),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 7 },
             }
         ));
@@ -4851,7 +4848,7 @@ mod polar {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(_),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 4 },
             }
         ));
@@ -4875,7 +4872,7 @@ mod polar {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(_),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 3 },
             }
         ));
@@ -4900,7 +4897,7 @@ mod polar {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(_),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 20 },
             }
         ));
@@ -4949,7 +4946,7 @@ mod polar {
             assert!(matches!(
                 tok,
                 Token {
-                    kind: TokenKind::Constant(_),
+                    kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end },
                 } if end == cpx.len()
             ));
@@ -4993,7 +4990,7 @@ mod polar {
             assert!(matches!(
                 tok,
                 Token {
-                    kind: TokenKind::Constant(_),
+                    kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end },
                 } if end == cpx.len()
             ));
@@ -5037,7 +5034,7 @@ mod polar {
             assert!(matches!(
                 tok,
                 Token {
-                    kind: TokenKind::Constant(_),
+                    kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end },
                 } if end == cpx.len()
             ));
@@ -5119,7 +5116,7 @@ mod polar {
             assert!(matches!(
                 tok,
                 Token {
-                    kind: TokenKind::Constant(Constant::Number(_)),
+                    kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end },
                 } if end == case.len()
             ));
@@ -5149,7 +5146,7 @@ mod polar {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(_),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 15 },
             }
         ));
@@ -5175,7 +5172,7 @@ mod polar {
             assert!(matches!(
                 tok,
                 Token {
-                    kind: TokenKind::Constant(_),
+                    kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end: 12 },
                 }
             ));
@@ -5202,7 +5199,7 @@ mod polar {
             assert!(matches!(
                 tok,
                 Token {
-                    kind: TokenKind::Constant(_),
+                    kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end: 12 },
                 }
             ));
@@ -5229,7 +5226,7 @@ mod polar {
             assert!(matches!(
                 tok,
                 Token {
-                    kind: TokenKind::Constant(_),
+                    kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end },
                 } if end == case.len()
             ));
@@ -5256,7 +5253,7 @@ mod polar {
             assert!(matches!(
                 tok,
                 Token {
-                    kind: TokenKind::Constant(_),
+                    kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end },
                 } if end == case.len()
             ));
@@ -5283,7 +5280,7 @@ mod polar {
             assert!(matches!(
                 tok,
                 Token {
-                    kind: TokenKind::Constant(_),
+                    kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end },
                 } if end == case.len()
             ));
@@ -5313,7 +5310,7 @@ mod polar {
             assert!(matches!(
                 tok,
                 Token {
-                    kind: TokenKind::Constant(_),
+                    kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end },
                 } if end == case.len()
             ));
@@ -5341,7 +5338,7 @@ mod polar {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(_),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 9 },
             }
         ));
@@ -5365,7 +5362,7 @@ mod polar {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(_),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 9 },
             }
         ));
@@ -5389,7 +5386,7 @@ mod polar {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(_),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 5 },
             }
         ));
@@ -5413,7 +5410,7 @@ mod polar {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(_),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 5 },
             }
         ));
@@ -5437,7 +5434,7 @@ mod polar {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::Constant(_),
+                kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 9 },
             }
         ));

@@ -1,6 +1,5 @@
 use crate::{
-    constant::Constant,
-    number::{NumericError, Real},
+    number::{Number, NumericError, Real},
     txt::TxtSpan,
 };
 use std::{
@@ -24,7 +23,9 @@ impl Display for Token {
 
 #[derive(Debug)]
 pub(crate) enum TokenKind {
+    Boolean(bool),
     ByteVector,
+    Character(char),
     Comment,
     CommentBlockBegin {
         depth: usize,
@@ -34,7 +35,6 @@ pub(crate) enum TokenKind {
         depth: usize,
     },
     CommentDatum,
-    Constant(Constant),
     DirectiveCase(bool),
     Identifier(String),
     IdentifierBegin(String),
@@ -46,11 +46,13 @@ pub(crate) enum TokenKind {
     LabelDef(String),
     #[allow(dead_code, reason = "not yet implemented")]
     LabelRef(String),
+    Number(Number),
     PairJoiner,
     ParenLeft,
     ParenRight,
     Quasiquote,
     Quote,
+    String(String),
     StringBegin {
         s: String,
         line_cont: bool,
@@ -90,13 +92,14 @@ impl TokenKind {
 impl Display for TokenKind {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
+            Self::Boolean(_) => f.write_str("BOOL"),
             Self::ByteVector => f.write_str("BYTEVECTOR"),
+            Self::Character(_) => f.write_str("CHAR"),
             Self::Comment => f.write_str("COMMENT"),
             Self::CommentBlockBegin { depth } => write!(f, "COMMENTBEGIN<{depth:?}>"),
             Self::CommentBlockEnd => f.write_str("COMMENTEND"),
             Self::CommentBlockFragment { depth } => write!(f, "COMMENTFRAGMENT<{depth:?}>"),
             Self::CommentDatum => f.write_str("DATUMCOMMENT"),
-            Self::Constant(con) => write!(f, "CONSTANT<{}>", con.as_token_descriptor()),
             Self::DirectiveCase(fold) => write!(f, "FOLDCASE<{fold:?}>"),
             Self::Identifier(_) => f.write_str("IDENTIFIER"),
             Self::IdentifierBegin(_) => f.write_str("IDENTBEGIN"),
@@ -106,11 +109,13 @@ impl Display for TokenKind {
             Self::Imaginary(r) => write!(f, "IMAGINARY<{}>", r.as_token_descriptor()),
             Self::LabelDef(_) => f.write_str("LABELDEF"),
             Self::LabelRef(_) => f.write_str("LABELREF"),
+            Self::Number(n) => write!(f, "NUM<{}>", n.as_token_descriptor()),
             Self::PairJoiner => f.write_str("PAIR"),
             Self::ParenLeft => f.write_str("LEFTPAREN"),
             Self::ParenRight => f.write_str("RIGHTPAREN"),
             Self::Quasiquote => f.write_str("QUASIQUOTE"),
             Self::Quote => f.write_str("QUOTE"),
+            Self::String(_) => f.write_str("STR"),
             Self::StringBegin { line_cont, .. } => {
                 write!(f, "STRBEGIN{}", line_cont_token(*line_cont))
             }
@@ -326,6 +331,7 @@ mod tests {
 
     mod token {
         use super::*;
+        use crate::testutil::ok_or_fail;
 
         #[test]
         fn display_bytevector() {
@@ -398,13 +404,74 @@ mod tests {
         }
 
         #[test]
-        fn display_constant() {
+        fn bool_token() {
             let token = Token {
-                kind: TokenKind::Constant(Constant::Boolean(true)),
+                kind: TokenKind::Boolean(false),
                 span: 0..2,
             };
 
-            assert_eq!(token.to_string(), "CONSTANT<BOOL>[0..2]");
+            assert_eq!(token.to_string(), "BOOL[0..2]");
+        }
+
+        #[test]
+        fn char_token() {
+            let token = Token {
+                kind: TokenKind::Character('a'),
+                span: 0..3,
+            };
+
+            assert_eq!(token.to_string(), "CHAR[0..3]");
+        }
+
+        #[test]
+        fn string_token() {
+            let token = Token {
+                kind: TokenKind::String("foo".to_owned()),
+                span: 0..5,
+            };
+
+            assert_eq!(token.to_string(), "STR[0..5]");
+        }
+
+        #[test]
+        fn integer_token() {
+            let token = Token {
+                kind: TokenKind::Number(Number::real(42)),
+                span: 0..5,
+            };
+
+            assert_eq!(token.to_string(), "NUM<INT>[0..5]");
+        }
+
+        #[test]
+        fn float_token() {
+            let token = Token {
+                kind: TokenKind::Number(Number::real(4.2)),
+                span: 0..5,
+            };
+
+            assert_eq!(token.to_string(), "NUM<FLT>[0..5]");
+        }
+
+        #[test]
+        fn rational_token() {
+            let r = ok_or_fail!(Real::reduce(4, 5));
+            let token = Token {
+                kind: TokenKind::Number(Number::real(r)),
+                span: 0..5,
+            };
+
+            assert_eq!(token.to_string(), "NUM<RAT>[0..5]");
+        }
+
+        #[test]
+        fn complex_token() {
+            let token = Token {
+                kind: TokenKind::Number(Number::complex(3, 5)),
+                span: 0..5,
+            };
+
+            assert_eq!(token.to_string(), "NUM<CPX>[0..5]");
         }
 
         #[test]

@@ -16,7 +16,7 @@ fn empty() {
     assert!(matches!(
         tok,
         Token {
-            kind: TokenKind::Constant(Constant::String(txt)),
+            kind: TokenKind::String(txt),
             span: TxtSpan { start: 0, end: 2 },
         } if txt == ""
     ));
@@ -38,7 +38,7 @@ fn alphanumeric() {
     assert!(matches!(
         tok,
         Token {
-            kind: TokenKind::Constant(Constant::String(txt)),
+            kind: TokenKind::String(txt),
             span: TxtSpan { start: 0, end: 11 },
         } if txt == "abc123!@#"
     ));
@@ -60,7 +60,7 @@ fn raw_extended_and_higher_char() {
     assert!(matches!(
         tok,
         Token {
-            kind: TokenKind::Constant(Constant::String(txt)),
+            kind: TokenKind::String(txt),
             span: TxtSpan { start: 0, end: 17 },
         } if txt == "λ 🦀 ␁ �"
     ));
@@ -82,7 +82,7 @@ fn contains_verbatim_identifier() {
     assert!(matches!(
         tok,
         Token {
-            kind: TokenKind::Constant(Constant::String(txt)),
+            kind: TokenKind::String(txt),
             span: TxtSpan { start: 0, end: 20 },
         } if txt == "foo |verbatim| bar"
     ));
@@ -104,7 +104,7 @@ fn raw_escape_sequences() {
     assert!(matches!(
         tok,
         Token {
-            kind: TokenKind::Constant(Constant::String(txt)),
+            kind: TokenKind::String(txt),
             span: TxtSpan { start: 0, end: 45 },
         } if txt == "a:\x07, b:\x08, d:\x7f, e:\x1b, n:\n, 0:\0, r:\r, t:\t, v:|"
     ));
@@ -126,7 +126,7 @@ fn escape_sequences() {
     assert!(matches!(
         tok,
         Token {
-            kind: TokenKind::Constant(Constant::String(txt)),
+            kind: TokenKind::String(txt),
             span: TxtSpan { start: 0, end: 46 },
         } if txt == "a:\x07, b:\x08, n:\n, r:\r, t:\t, q:\", s:\\, v:|"
     ));
@@ -148,7 +148,7 @@ fn whitespace_escape() {
     assert!(matches!(
         tok,
         Token {
-            kind: TokenKind::Constant(Constant::String(txt)),
+            kind: TokenKind::String(txt),
             span: TxtSpan { start: 0, end: 12 },
         } if txt == "foo   bar"
     ));
@@ -172,7 +172,7 @@ fn hex_escape_sequences() {
     assert!(matches!(
         tok,
         Token {
-            kind: TokenKind::Constant(Constant::String(txt)),
+            kind: TokenKind::String(txt),
             span: TxtSpan { start: 0, end: 93 },
         } if txt == "a:\x07, b:\x08, d:\x7f, e:\x1b, n:\n, 0:\0, r:\r, t:\t, q:\", s:\\, v:|"
     ));
@@ -194,7 +194,7 @@ fn hex_case_insensitive() {
     assert!(matches!(
         tok,
         Token {
-            kind: TokenKind::Constant(Constant::String(txt)),
+            kind: TokenKind::String(txt),
             span: TxtSpan { start: 0, end: 13 },
         } if txt == "J J"
     ));
@@ -216,7 +216,7 @@ fn higher_plane_raw() {
     assert!(matches!(
         tok,
         Token {
-            kind: TokenKind::Constant(Constant::String(txt)),
+            kind: TokenKind::String(txt),
             span: TxtSpan { start: 0, end: 15 },
         } if txt == "\u{fff9} \u{e0001} \u{100001}"
     ));
@@ -238,7 +238,7 @@ fn higher_plane_hex() {
     assert!(matches!(
         tok,
         Token {
-            kind: TokenKind::Constant(Constant::String(txt)),
+            kind: TokenKind::String(txt),
             span: TxtSpan { start: 0, end: 28 },
         } if txt == "\u{fff9} \u{e0001} \u{100001}"
     ));

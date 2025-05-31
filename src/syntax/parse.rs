@@ -6,7 +6,6 @@ use super::{
     expr::{ExprCtx, ExprEnd, Expression, ExpressionError, ExpressionErrorKind, ExpressionKind},
 };
 use crate::{
-    constant::Constant,
     lex::{Token, TokenKind},
     number::Number,
     txt::{LineNumber, TextLine},
@@ -170,10 +169,7 @@ impl TryFrom<ExprNode> for Option<Expression> {
             }
             ParseMode::List { form, seq } => into_syntactic_form(form, seq, value.ctx),
             ParseMode::Quote { inner, quoted } => into_datum(inner, value.ctx, quoted),
-            ParseMode::StringLiteral(s) => Ok(Some(Expression::constant(
-                Constant::String(s.into()),
-                value.ctx,
-            ))),
+            ParseMode::StringLiteral(s) => Ok(Some(Expression::string(s, value.ctx))),
             ParseMode::Vector(seq) => into_vector(seq, value.ctx),
         }
     }
@@ -459,9 +455,23 @@ fn parse_datum(
 
 fn parse_expr(token: Token, txt: &Rc<TextLine>, quoted: bool) -> ExprFlow {
     match token.kind {
+        TokenKind::Boolean(b) => ExprFlow::Continue(Some(
+            ExprCtx {
+                span: token.span,
+                txt: Rc::clone(txt),
+            }
+            .into_expr(ExpressionKind::Literal(Value::Boolean(b))),
+        )),
         TokenKind::ByteVector => ExprFlow::Break(ParseBreak::new(
             ParseMode::ByteVector(Vec::new()),
             token.span.start,
+        )),
+        TokenKind::Character(c) => ExprFlow::Continue(Some(
+            ExprCtx {
+                span: token.span,
+                txt: Rc::clone(txt),
+            }
+            .into_expr(ExpressionKind::Literal(Value::Character(c))),
         )),
         TokenKind::Comment => ExprFlow::Continue(None),
         TokenKind::CommentBlockBegin { .. } => {
@@ -471,20 +481,13 @@ fn parse_expr(token: Token, txt: &Rc<TextLine>, quoted: bool) -> ExprFlow {
             ParseMode::CommentDatum(None),
             token.span.start,
         )),
-        TokenKind::Constant(con) => ExprFlow::Continue(Some(Expression::constant(
-            con,
+        TokenKind::Imaginary(r) => ExprFlow::Continue(Some(
             ExprCtx {
                 span: token.span,
                 txt: Rc::clone(txt),
-            },
-        ))),
-        TokenKind::Imaginary(r) => ExprFlow::Continue(Some(Expression::constant(
-            Constant::Number(Number::imaginary(r)),
-            ExprCtx {
-                span: token.span,
-                txt: Rc::clone(txt),
-            },
-        ))),
+            }
+            .into_expr(ExpressionKind::Literal(Value::Number(Number::imaginary(r)))),
+        )),
         TokenKind::Identifier(s) => ExprFlow::Continue(Some(identifier_to_expr(
             s,
             quoted,
@@ -496,6 +499,13 @@ fn parse_expr(token: Token, txt: &Rc<TextLine>, quoted: bool) -> ExprFlow {
         TokenKind::IdentifierBegin(s) => ExprFlow::Break(ParseBreak::new(
             ParseMode::identifier(s, quoted),
             token.span.start,
+        )),
+        TokenKind::Number(n) => ExprFlow::Continue(Some(
+            ExprCtx {
+                span: token.span,
+                txt: Rc::clone(txt),
+            }
+            .into_expr(ExpressionKind::Literal(Value::Number(n))),
         )),
         TokenKind::PairJoiner => ExprFlow::Break(ParseBreak::recover(
             ExprCtx {
@@ -522,6 +532,13 @@ fn parse_expr(token: Token, txt: &Rc<TextLine>, quoted: bool) -> ExprFlow {
             },
             token.span.start,
         )),
+        TokenKind::String(s) => ExprFlow::Continue(Some(Expression::string(
+            s,
+            ExprCtx {
+                span: token.span,
+                txt: Rc::clone(txt),
+            },
+        ))),
         TokenKind::StringBegin { s, line_cont } => ExprFlow::Break(ParseBreak::new(
             ParseMode::string(s, !line_cont),
             token.span.start,

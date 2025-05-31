@@ -16,7 +16,7 @@ fn ascii_literal() {
     assert!(matches!(
         tok,
         Token {
-            kind: TokenKind::Constant(Constant::Character('a')),
+            kind: TokenKind::Character('a'),
             span: TxtSpan { start: 0, end: 3 },
         }
     ));
@@ -38,7 +38,7 @@ fn ascii_uppercase_literal() {
     assert!(matches!(
         tok,
         Token {
-            kind: TokenKind::Constant(Constant::Character('A')),
+            kind: TokenKind::Character('A'),
             span: TxtSpan { start: 0, end: 3 },
         }
     ));
@@ -60,7 +60,7 @@ fn extended_literal() {
     assert!(matches!(
         tok,
         Token {
-            kind: TokenKind::Constant(Constant::Character('λ')),
+            kind: TokenKind::Character('λ'),
             span: TxtSpan { start: 0, end: 4 },
         }
     ));
@@ -82,7 +82,7 @@ fn emoji_literal() {
     assert!(matches!(
         tok,
         Token {
-            kind: TokenKind::Constant(Constant::Character('🦀')),
+            kind: TokenKind::Character('🦀'),
             span: TxtSpan { start: 0, end: 6 },
         }
     ));
@@ -109,7 +109,7 @@ fn space_literal() {
     assert!(matches!(
         tok,
         Token {
-            kind: TokenKind::Constant(Constant::Character(' ')),
+            kind: TokenKind::Character(' '),
             span: TxtSpan { start: 0, end: 3 },
         }
     ));
@@ -131,7 +131,7 @@ fn tab_literal() {
     assert!(matches!(
         tok,
         Token {
-            kind: TokenKind::Constant(Constant::Character('\t')),
+            kind: TokenKind::Character('\t'),
             span: TxtSpan { start: 0, end: 3 },
         }
     ));
@@ -190,7 +190,7 @@ fn space_followed_by_alpha() {
     assert!(matches!(
         tok,
         Token {
-            kind: TokenKind::Constant(Constant::Character(' ')),
+            kind: TokenKind::Character(' '),
             span: TxtSpan { start: 0, end: 3 },
         }
     ));
@@ -256,7 +256,7 @@ fn alpha_followed_by_delimiter() {
     assert!(matches!(
         tok,
         Token {
-            kind: TokenKind::Constant(Constant::Character('a')),
+            kind: TokenKind::Character('a'),
             span: TxtSpan { start: 0, end: 3 },
         }
     ));
@@ -278,7 +278,7 @@ fn letter_x_is_not_hex() {
     assert!(matches!(
         tok,
         Token {
-            kind: TokenKind::Constant(Constant::Character('x')),
+            kind: TokenKind::Character('x'),
             span: TxtSpan { start: 0, end: 3 },
         }
     ));
@@ -300,7 +300,7 @@ fn hex_zero() {
     assert!(matches!(
         tok,
         Token {
-            kind: TokenKind::Constant(Constant::Character('\0')),
+            kind: TokenKind::Character('\0'),
             span: TxtSpan { start: 0, end: 4 },
         }
     ));
@@ -322,7 +322,7 @@ fn hex_lowercase() {
     assert!(matches!(
         tok,
         Token {
-            kind: TokenKind::Constant(Constant::Character('\n')),
+            kind: TokenKind::Character('\n'),
             span: TxtSpan { start: 0, end: 4 },
         }
     ));
@@ -344,7 +344,7 @@ fn hex_uppercase() {
     assert!(matches!(
         tok,
         Token {
-            kind: TokenKind::Constant(Constant::Character('\n')),
+            kind: TokenKind::Character('\n'),
             span: TxtSpan { start: 0, end: 4 },
         }
     ));
@@ -366,7 +366,7 @@ fn hex_uppercase_indicator() {
     assert!(matches!(
         tok,
         Token {
-            kind: TokenKind::Constant(Constant::Character('\n')),
+            kind: TokenKind::Character('\n'),
             span: TxtSpan { start: 0, end: 4 },
         }
     ));
@@ -466,7 +466,7 @@ fn check_character_list(cases: &[(&str, char)]) {
             matches!(
                 tok,
                 Token {
-                    kind: TokenKind::Constant(Constant::Character(ch)),
+                    kind: TokenKind::Character(ch),
                     span: TxtSpan { start: 0, end },
                 } if ch == exp && end == input.len()
             ),

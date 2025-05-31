@@ -1,6 +1,5 @@
 use super::{ComplexKind, Exactness, FreeText, FreeTextPolicy, RealNumber};
 use crate::{
-    constant::Constant,
     lex::{
         TokenKind,
         token::TokenErrorKind,
@@ -122,28 +121,22 @@ impl<'me, 'txt> Identifier<'me, 'txt> {
     }
 
     fn maybe_infnan_complex(&mut self, item: ScanItem, kind: ComplexKind) -> TokenExtractResult {
-        if let Some(TokenKind::Constant(Constant::Number(Number::Real(real)))) =
+        if let Some(TokenKind::Number(Number::Real(real))) =
             super::numeric_symbol(self.scanner.lexeme(self.start.0..item.0), self.exactness)
         {
             let invalid_tok = match kind {
                 ComplexKind::Cartesian => {
                     let result = Identifier::new(self.scanner, item).scan();
                     if let Ok(TokenKind::Imaginary(imag)) = result {
-                        return Ok(TokenKind::Constant(Constant::Number(Number::complex(
-                            real, imag,
-                        ))));
+                        return Ok(TokenKind::Number(Number::complex(real, imag)));
                     }
                     Some(result)
                 }
                 ComplexKind::Polar => match self.scanner.next_if_not_delimiter() {
                     Some(first) => {
                         let result = Identifier::new(self.scanner, first).scan();
-                        if let Ok(TokenKind::Constant(Constant::Number(Number::Real(rads)))) =
-                            result
-                        {
-                            return Ok(TokenKind::Constant(Constant::Number(Number::polar(
-                                real, rads,
-                            ))));
+                        if let Ok(TokenKind::Number(Number::Real(rads))) = result {
+                            return Ok(TokenKind::Number(Number::polar(real, rads)));
                         }
                         Some(result)
                     }
