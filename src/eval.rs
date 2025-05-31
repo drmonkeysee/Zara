@@ -10,10 +10,7 @@ use crate::{
     syntax::Program,
     value::{Condition, Value as ValueImpl},
 };
-use std::{
-    fmt::{self, Display, Formatter},
-    rc::Rc,
-};
+use std::fmt::{self, Display, Formatter};
 
 #[derive(Debug)]
 pub enum Evaluation {
@@ -53,13 +50,7 @@ impl Display for Value {
 }
 
 #[derive(Debug)]
-pub struct Exception(Rc<Condition>);
-
-impl Exception {
-    pub(crate) fn new(cond: impl Into<Rc<Condition>>) -> Self {
-        Self(cond.into())
-    }
-}
+pub struct Exception(pub(crate) Condition);
 
 impl Display for Exception {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {

@@ -22,11 +22,7 @@ fn current_jiffy(_args: &[Value], env: &Frame) -> EvalResult {
 
 fn current_second(_args: &[Value], _env: &Frame) -> EvalResult {
     SystemTime::now().duration_since(UNIX_EPOCH).map_or_else(
-        |_| {
-            Err(Exception::new(Condition::system_error(
-                "system time failure",
-            )))
-        },
+        |_| Err(Exception(Condition::system_error("system time failure"))),
         |d| Ok(Value::real(d.as_secs_f64())),
     )
 }
