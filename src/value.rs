@@ -72,7 +72,7 @@ impl Value {
             .unwrap_or_else(Self::null)
     }
 
-    pub(crate) fn number(r: impl Into<Real>) -> Self {
+    pub(crate) fn real(r: impl Into<Real>) -> Self {
         Self::Number(Number::real(r))
     }
 
@@ -341,7 +341,7 @@ mod tests {
 
         #[test]
         fn display_typename() {
-            let v = Value::number(42);
+            let v = Value::real(42);
 
             assert_eq!(v.as_typename().to_string(), "number");
         }
@@ -562,14 +562,14 @@ mod tests {
 
         #[test]
         fn display_int() {
-            let v = Value::number(23);
+            let v = Value::real(23);
 
             assert_eq!(v.to_string(), "23");
         }
 
         #[test]
         fn display_float() {
-            let v = Value::number(234.23);
+            let v = Value::real(234.23);
 
             assert_eq!(v.to_string(), "234.23");
         }
@@ -577,7 +577,7 @@ mod tests {
         #[test]
         fn display_rational() {
             let r = ok_or_fail!(Real::reduce(3, 4));
-            let v = Value::number(r);
+            let v = Value::real(r);
 
             assert_eq!(v.to_string(), "3/4");
         }
@@ -938,10 +938,10 @@ bar",
         fn nested_is_list() {
             // (1 2 3)
             let p = Pair::cons(
-                Value::number(1),
+                Value::real(1),
                 Value::pair(Pair::cons(
-                    Value::number(2),
-                    Value::pair(Pair::cons(Value::number(3), Value::null())),
+                    Value::real(2),
+                    Value::pair(Pair::cons(Value::real(3), Value::null())),
                 )),
             );
 
@@ -952,8 +952,8 @@ bar",
         fn improper_list_is_not_list() {
             // (1 2 . 3)
             let p = Pair::cons(
-                Value::number(1),
-                Value::pair(Pair::cons(Value::number(2), Value::number(3))),
+                Value::real(1),
+                Value::pair(Pair::cons(Value::real(2), Value::real(3))),
             );
 
             assert!(!p.is_list());
@@ -963,8 +963,8 @@ bar",
         fn list_containing_pair_is_list() {
             // ((1 . 2) 3)
             let p = Pair::cons(
-                Value::pair(Pair::cons(Value::number(1), Value::number(2))),
-                Value::pair(Pair::cons(Value::number(3), Value::null())),
+                Value::pair(Pair::cons(Value::real(1), Value::real(2))),
+                Value::pair(Pair::cons(Value::real(3), Value::null())),
             );
 
             assert!(p.is_list());
@@ -997,10 +997,10 @@ bar",
         #[test]
         fn list_display() {
             let p = Pair::cons(
-                Value::number(1),
+                Value::real(1),
                 Value::pair(Pair::cons(
-                    Value::number(2),
-                    Value::pair(Pair::cons(Value::number(3), Value::null())),
+                    Value::real(2),
+                    Value::pair(Pair::cons(Value::real(3), Value::null())),
                 )),
             );
             let v = Value::pair(p);
@@ -1011,8 +1011,8 @@ bar",
         #[test]
         fn improper_list_display() {
             let p = Pair::cons(
-                Value::number(1),
-                Value::pair(Pair::cons(Value::number(2), Value::number(3))),
+                Value::real(1),
+                Value::pair(Pair::cons(Value::real(2), Value::real(3))),
             );
             let v = Value::pair(p);
 
@@ -1022,8 +1022,8 @@ bar",
         #[test]
         fn list_containing_pair_display() {
             let p = Pair::cons(
-                Value::pair(Pair::cons(Value::number(1), Value::number(2))),
-                Value::pair(Pair::cons(Value::number(3), Value::null())),
+                Value::pair(Pair::cons(Value::real(1), Value::real(2))),
+                Value::pair(Pair::cons(Value::real(3), Value::null())),
             );
             let v = Value::pair(p);
 
@@ -1033,11 +1033,11 @@ bar",
         #[test]
         fn list_containing_list_display() {
             let p = Pair::cons(
-                Value::number(1),
+                Value::real(1),
                 Value::pair(Pair::cons(
                     Value::pair(Pair::cons(
-                        Value::number(2),
-                        Value::pair(Pair::cons(Value::number(3), Value::null())),
+                        Value::real(2),
+                        Value::pair(Pair::cons(Value::real(3), Value::null())),
                     )),
                     Value::null(),
                 )),
@@ -1068,14 +1068,14 @@ bar",
 
         #[test]
         fn one() {
-            let lst = zlist![Value::number(5)];
+            let lst = zlist![Value::real(5)];
 
             assert_eq!(lst.to_string(), "(5)");
         }
 
         #[test]
         fn three() {
-            let lst = zlist![Value::number(5), Value::symbol("a"), Value::Boolean(true)];
+            let lst = zlist![Value::real(5), Value::symbol("a"), Value::Boolean(true)];
 
             assert_eq!(lst.to_string(), "(5 a #t)");
         }
@@ -1083,7 +1083,7 @@ bar",
         #[test]
         fn nested() {
             let lst = zlist![
-                Value::number(5),
+                Value::real(5),
                 zlist![Value::symbol("a"), Value::Boolean(true)],
             ];
 
@@ -1100,7 +1100,7 @@ bar",
         #[test]
         fn ctor_vec() {
             let lst = Value::list(vec![
-                Value::number(5),
+                Value::real(5),
                 Value::symbol("a"),
                 Value::Boolean(true),
             ]);
@@ -1110,7 +1110,7 @@ bar",
 
         #[test]
         fn ctor_slice() {
-            let lst = Value::list([Value::number(5), Value::symbol("a"), Value::Boolean(true)]);
+            let lst = Value::list([Value::real(5), Value::symbol("a"), Value::Boolean(true)]);
 
             assert_eq!(lst.to_string(), "(5 a #t)");
         }
@@ -1124,7 +1124,7 @@ bar",
 
         #[test]
         fn improper_ctor_single() {
-            let lst = Value::improper_list(vec![Value::number(5)]);
+            let lst = Value::improper_list(vec![Value::real(5)]);
 
             assert!(matches!(lst, Value::Number(_)));
             assert_eq!(lst.to_string(), "5");
@@ -1133,7 +1133,7 @@ bar",
         #[test]
         fn improper_ctor_vec() {
             let lst = Value::improper_list(vec![
-                Value::number(5),
+                Value::real(5),
                 Value::symbol("a"),
                 Value::Boolean(true),
             ]);
@@ -1144,7 +1144,7 @@ bar",
         #[test]
         fn improper_ctor_slice() {
             let lst =
-                Value::improper_list([Value::number(5), Value::symbol("a"), Value::Boolean(true)]);
+                Value::improper_list([Value::real(5), Value::symbol("a"), Value::Boolean(true)]);
 
             assert_eq!(lst.to_string(), "(5 a . #t)");
         }
@@ -1169,7 +1169,7 @@ bar",
             let c = Condition {
                 kind: ConditionKind::General,
                 msg: "foo".into(),
-                irritants: zlist![Value::symbol("a"), Value::number(5)].into(),
+                irritants: zlist![Value::symbol("a"), Value::real(5)].into(),
             };
 
             assert_eq!(c.to_string(), "#<exception \"foo\" (a 5)>");

@@ -586,7 +586,7 @@ mod tests {
                         span: 5..6,
                         txt: Rc::clone(&txt),
                     }
-                    .into_expr(ExpressionKind::Literal(Value::number(5)))]
+                    .into_expr(ExpressionKind::Literal(Value::real(5)))]
                     .into(),
                 });
                 let mut env = TestEnv::default();
@@ -703,7 +703,7 @@ mod tests {
                             span: 5..6,
                             txt: Rc::clone(&txt),
                         }
-                        .into_expr(ExpressionKind::Literal(Value::number(5))),
+                        .into_expr(ExpressionKind::Literal(Value::real(5))),
                         Expression::variable(
                             "x",
                             ExprCtx {

@@ -643,7 +643,7 @@ mod bytevector {
                 span: 0..3,
                 txt: Rc::clone(&txt),
             }
-            .into_expr(ExpressionKind::Literal(Value::number(24))),
+            .into_expr(ExpressionKind::Literal(Value::real(24))),
         ];
         let node = ExprNode {
             ctx: ExprCtx {
@@ -679,17 +679,17 @@ mod bytevector {
                 span: 0..3,
                 txt: Rc::clone(&txt),
             }
-            .into_expr(ExpressionKind::Literal(Value::number(24))),
+            .into_expr(ExpressionKind::Literal(Value::real(24))),
             ExprCtx {
                 span: 3..6,
                 txt: Rc::clone(&txt),
             }
-            .into_expr(ExpressionKind::Literal(Value::number(25))),
+            .into_expr(ExpressionKind::Literal(Value::real(25))),
             ExprCtx {
                 span: 6..9,
                 txt: Rc::clone(&txt),
             }
-            .into_expr(ExpressionKind::Literal(Value::number(26))),
+            .into_expr(ExpressionKind::Literal(Value::real(26))),
         ];
         let node = ExprNode {
             ctx: ExprCtx {
@@ -755,7 +755,7 @@ mod bytevector {
                 span: 0..3,
                 txt: Rc::clone(&txt),
             }
-            .into_expr(ExpressionKind::Literal(Value::number(24))),
+            .into_expr(ExpressionKind::Literal(Value::real(24))),
             Expression::symbol(
                 "foo",
                 ExprCtx {
@@ -767,7 +767,7 @@ mod bytevector {
                 span: 6..9,
                 txt: Rc::clone(&txt),
             }
-            .into_expr(ExpressionKind::Literal(Value::number(26))),
+            .into_expr(ExpressionKind::Literal(Value::real(26))),
         ];
         let node = ExprNode {
             ctx: ExprCtx {
@@ -798,7 +798,7 @@ mod bytevector {
                 span: 0..3,
                 txt: Rc::clone(&txt),
             }
-            .into_expr(ExpressionKind::Literal(Value::number(24))),
+            .into_expr(ExpressionKind::Literal(Value::real(24))),
             Expression::variable(
                 "foo",
                 ExprCtx {
@@ -810,12 +810,12 @@ mod bytevector {
                 span: 6..9,
                 txt: Rc::clone(&txt),
             }
-            .into_expr(ExpressionKind::Literal(Value::number(26))),
+            .into_expr(ExpressionKind::Literal(Value::real(26))),
             ExprCtx {
                 span: 9..12,
                 txt: Rc::clone(&txt),
             }
-            .into_expr(ExpressionKind::Literal(Value::number(1.2))),
+            .into_expr(ExpressionKind::Literal(Value::real(1.2))),
         ];
         let node = ExprNode {
             ctx: ExprCtx {
@@ -905,7 +905,7 @@ mod vector {
                 span: 6..9,
                 txt: Rc::clone(&txt),
             }
-            .into_expr(ExpressionKind::Literal(Value::number(26))),
+            .into_expr(ExpressionKind::Literal(Value::real(26))),
         ];
         let node = ExprNode {
             ctx: ExprCtx {
@@ -988,7 +988,7 @@ mod vector {
                 span: 6..9,
                 txt: Rc::clone(&txt),
             }
-            .into_expr(ExpressionKind::Literal(Value::number(26))),
+            .into_expr(ExpressionKind::Literal(Value::real(26))),
         ];
         let node = ExprNode {
             ctx: ExprCtx {
@@ -1019,7 +1019,7 @@ mod vector {
                 span: 0..3,
                 txt: Rc::clone(&txt),
             }
-            .into_expr(ExpressionKind::Literal(Value::number(24))),
+            .into_expr(ExpressionKind::Literal(Value::real(24))),
             Expression::variable(
                 "foo",
                 ExprCtx {
@@ -1031,7 +1031,7 @@ mod vector {
                 span: 6..9,
                 txt: Rc::clone(&txt),
             }
-            .into_expr(ExpressionKind::Literal(Value::number(26))),
+            .into_expr(ExpressionKind::Literal(Value::real(26))),
             ExprCtx {
                 span: 9..12,
                 txt: Rc::clone(&txt),
@@ -1223,12 +1223,12 @@ mod sequence {
                 span: 1..4,
                 txt: Rc::clone(&txt),
             }
-            .into_expr(ExpressionKind::Literal(Value::number(4))),
+            .into_expr(ExpressionKind::Literal(Value::real(4))),
             ExprCtx {
                 span: 4..6,
                 txt: Rc::clone(&txt),
             }
-            .into_expr(ExpressionKind::Literal(Value::number(5))),
+            .into_expr(ExpressionKind::Literal(Value::real(5))),
         ];
         let token = Token {
             kind: TokenKind::Boolean(true),
@@ -1315,12 +1315,12 @@ mod list {
                 span: 1..4,
                 txt: Rc::clone(&txt),
             }
-            .into_expr(ExpressionKind::Literal(Value::number(4))),
+            .into_expr(ExpressionKind::Literal(Value::real(4))),
             ExprCtx {
                 span: 4..6,
                 txt: Rc::clone(&txt),
             }
-            .into_expr(ExpressionKind::Literal(Value::number(5))),
+            .into_expr(ExpressionKind::Literal(Value::real(5))),
         ];
         let token = Token {
             kind: TokenKind::ParenRight,
@@ -1351,12 +1351,12 @@ mod list {
                 span: 1..4,
                 txt: Rc::clone(&txt),
             }
-            .into_expr(ExpressionKind::Literal(Value::number(4))),
+            .into_expr(ExpressionKind::Literal(Value::real(4))),
             ExprCtx {
                 span: 4..6,
                 txt: Rc::clone(&txt),
             }
-            .into_expr(ExpressionKind::Literal(Value::number(5))),
+            .into_expr(ExpressionKind::Literal(Value::real(5))),
         ];
         let token = Token {
             kind: TokenKind::ParenLeft,
@@ -1408,12 +1408,12 @@ mod list {
                 span: 1..4,
                 txt: Rc::clone(&txt),
             }
-            .into_expr(ExpressionKind::Literal(Value::number(4))),
+            .into_expr(ExpressionKind::Literal(Value::real(4))),
             ExprCtx {
                 span: 4..6,
                 txt: Rc::clone(&txt),
             }
-            .into_expr(ExpressionKind::Literal(Value::number(5))),
+            .into_expr(ExpressionKind::Literal(Value::real(5))),
         ];
         let token = Token {
             kind: TokenKind::Number(Number::real(10)),
@@ -1441,7 +1441,7 @@ mod list {
                 span: 1..4,
                 txt: Rc::clone(&txt),
             }
-            .into_expr(ExpressionKind::Literal(Value::number(4))),
+            .into_expr(ExpressionKind::Literal(Value::real(4))),
         ];
         let token = Token {
             kind: TokenKind::PairJoiner,
@@ -1490,7 +1490,7 @@ mod list {
                 span: 1..4,
                 txt: Rc::clone(&txt),
             }
-            .into_expr(ExpressionKind::Literal(Value::number(4))),
+            .into_expr(ExpressionKind::Literal(Value::real(4))),
         ];
         let token = Token {
             kind: TokenKind::PairJoiner,
@@ -1520,7 +1520,7 @@ mod list {
                 span: 1..4,
                 txt: Rc::clone(&txt),
             }
-            .into_expr(ExpressionKind::Literal(Value::number(4))),
+            .into_expr(ExpressionKind::Literal(Value::real(4))),
         ];
         let token = Token {
             kind: TokenKind::Identifier("foo".to_owned()),
@@ -1550,7 +1550,7 @@ mod list {
                 span: 1..4,
                 txt: Rc::clone(&txt),
             }
-            .into_expr(ExpressionKind::Literal(Value::number(4))),
+            .into_expr(ExpressionKind::Literal(Value::real(4))),
         ];
         let token = Token {
             kind: TokenKind::Comment,
@@ -1573,7 +1573,7 @@ mod list {
                 span: 1..4,
                 txt: Rc::clone(&txt),
             }
-            .into_expr(ExpressionKind::Literal(Value::number(4))),
+            .into_expr(ExpressionKind::Literal(Value::real(4))),
         ];
         let token = Token {
             kind: TokenKind::Comment,
@@ -1596,7 +1596,7 @@ mod list {
                 span: 1..4,
                 txt: Rc::clone(&txt),
             }
-            .into_expr(ExpressionKind::Literal(Value::number(4))),
+            .into_expr(ExpressionKind::Literal(Value::real(4))),
         ];
         let token = Token {
             kind: TokenKind::ParenRight,
@@ -1628,7 +1628,7 @@ mod list {
                 span: 1..4,
                 txt: Rc::clone(&txt),
             }
-            .into_expr(ExpressionKind::Literal(Value::number(4))),
+            .into_expr(ExpressionKind::Literal(Value::real(4))),
         ];
         let token = Token {
             kind: TokenKind::PairJoiner,
@@ -1660,7 +1660,7 @@ mod list {
                 span: 1..4,
                 txt: Rc::clone(&txt),
             }
-            .into_expr(ExpressionKind::Literal(Value::number(4))),
+            .into_expr(ExpressionKind::Literal(Value::real(4))),
         ];
         let token = Token {
             kind: TokenKind::PairJoiner,
@@ -1699,12 +1699,12 @@ mod list {
                 span: 1..4,
                 txt: Rc::clone(&txt),
             }
-            .into_expr(ExpressionKind::Literal(Value::number(4))),
+            .into_expr(ExpressionKind::Literal(Value::real(4))),
             ExprCtx {
                 span: 4..6,
                 txt: Rc::clone(&txt),
             }
-            .into_expr(ExpressionKind::Literal(Value::number(5))),
+            .into_expr(ExpressionKind::Literal(Value::real(5))),
         ];
         let token = Token {
             kind: TokenKind::StringDiscard,
@@ -1748,12 +1748,12 @@ mod list {
                         span: 1..4,
                         txt: Rc::clone(&txt),
                     }
-                    .into_expr(ExpressionKind::Literal(Value::number(4))),
+                    .into_expr(ExpressionKind::Literal(Value::real(4))),
                     ExprCtx {
                         span: 4..6,
                         txt: Rc::clone(&txt),
                     }
-                    .into_expr(ExpressionKind::Literal(Value::number(5))),
+                    .into_expr(ExpressionKind::Literal(Value::real(5))),
                 ],
             },
         };
@@ -1885,12 +1885,12 @@ mod list {
                         span: 1..4,
                         txt: Rc::clone(&txt),
                     }
-                    .into_expr(ExpressionKind::Literal(Value::number(4))),
+                    .into_expr(ExpressionKind::Literal(Value::real(4))),
                     ExprCtx {
                         span: 4..6,
                         txt: Rc::clone(&txt),
                     }
-                    .into_expr(ExpressionKind::Literal(Value::number(5))),
+                    .into_expr(ExpressionKind::Literal(Value::real(5))),
                 ],
             },
         };
@@ -1959,12 +1959,12 @@ mod list {
                         span: 2..5,
                         txt: Rc::clone(&txt),
                     }
-                    .into_expr(ExpressionKind::Literal(Value::number(4))),
+                    .into_expr(ExpressionKind::Literal(Value::real(4))),
                     ExprCtx {
                         span: 5..7,
                         txt: Rc::clone(&txt),
                     }
-                    .into_expr(ExpressionKind::Literal(Value::number(5))),
+                    .into_expr(ExpressionKind::Literal(Value::real(5))),
                 ],
             },
         };
@@ -1997,12 +1997,12 @@ mod list {
                         span: 1..2,
                         txt: Rc::clone(&txt),
                     }
-                    .into_expr(ExpressionKind::Literal(Value::number(4))),
+                    .into_expr(ExpressionKind::Literal(Value::real(4))),
                     ExprCtx {
                         span: 6..7,
                         txt: Rc::clone(&txt),
                     }
-                    .into_expr(ExpressionKind::Literal(Value::number(5))),
+                    .into_expr(ExpressionKind::Literal(Value::real(5))),
                 ],
             },
         };
@@ -2036,7 +2036,7 @@ mod list {
                         span: 1..2,
                         txt: Rc::clone(&txt),
                     }
-                    .into_expr(ExpressionKind::Literal(Value::number(4))),
+                    .into_expr(ExpressionKind::Literal(Value::real(4))),
                 ],
             },
         };
@@ -2532,7 +2532,7 @@ mod program {
                 span: 0..3,
                 txt: Rc::clone(&txt),
             }
-            .into_expr(ExpressionKind::Literal(Value::number(24))),
+            .into_expr(ExpressionKind::Literal(Value::real(24))),
         ]);
 
         let r = p.try_into();
@@ -3027,7 +3027,7 @@ mod merge {
                     span: 0..3,
                     txt: Rc::clone(&txt),
                 }
-                .into_expr(ExpressionKind::Literal(Value::number(24))),
+                .into_expr(ExpressionKind::Literal(Value::real(24))),
             ]),
         };
         let other = ExprNode {
@@ -3433,12 +3433,12 @@ mod nodeutil {
                         span: 1..4,
                         txt: Rc::clone(&txt),
                     }
-                    .into_expr(ExpressionKind::Literal(Value::number(4))),
+                    .into_expr(ExpressionKind::Literal(Value::real(4))),
                     ExprCtx {
                         span: 4..6,
                         txt: Rc::clone(&txt),
                     }
-                    .into_expr(ExpressionKind::Literal(Value::number(5))),
+                    .into_expr(ExpressionKind::Literal(Value::real(5))),
                 ],
             },
             3,

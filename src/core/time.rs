@@ -14,7 +14,7 @@ pub(super) fn load(scope: &mut Binding) {
 }
 
 fn current_jiffy(_args: &[ValueRef], env: &Frame) -> EvalResult {
-    Ok(Value::number((
+    Ok(Value::real((
         Sign::Positive,
         env.sys.start_time.elapsed().as_micros() as u64,
     ))
@@ -28,11 +28,11 @@ fn current_second(_args: &[ValueRef], _env: &Frame) -> EvalResult {
                 "system time failure",
             )))
         },
-        |d| Ok(Value::number(d.as_secs_f64()).into()),
+        |d| Ok(Value::real(d.as_secs_f64()).into()),
     )
 }
 
 fn jiffies_per_second(_args: &[ValueRef], _env: &Frame) -> EvalResult {
     // NOTE: jiffy = microsecond (µs)
-    Ok(Value::number(1_000_000).into())
+    Ok(Value::real(1_000_000).into())
 }
