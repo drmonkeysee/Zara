@@ -305,7 +305,10 @@ mod tests {
 
     mod eval {
         use super::*;
-        use crate::testutil::{err_or_fail, ok_or_fail};
+        use crate::{
+            eval::Procedure,
+            testutil::{err_or_fail, ok_or_fail},
+        };
 
         #[test]
         fn literal() {
@@ -360,50 +363,109 @@ mod tests {
             assert_eq!(err.to_string(), "#<env-error \"unbound variable: x\">");
         }
 
-        #[test]
-        fn empty_program() {
-            let prg = Program::new([]);
-            let mut env = TestEnv::default();
-            let f = env.new_frame();
+        mod program {
+            use super::*;
 
-            let r = prg.eval(&f);
+            #[test]
+            fn empty() {
+                let prg = Program::new([]);
+                let mut env = TestEnv::default();
+                let f = env.new_frame();
 
-            let v = ok_or_fail!(r);
-            assert!(matches!(v, Value::Unspecified));
-        }
+                let r = prg.eval(&f);
 
-        #[test]
-        fn program() {
-            let txt = make_textline().into();
-            let prg = Program::new([
-                ExprCtx {
-                    span: 0..6,
-                    txt: Rc::clone(&txt),
-                }
-                .into_expr(ExpressionKind::Literal(Value::Boolean(true))),
-                ExprCtx {
-                    span: 6..8,
-                    txt: Rc::clone(&txt),
-                }
-                .into_expr(ExpressionKind::Literal(Value::Character('a'))),
-                ExprCtx {
-                    span: 8..10,
-                    txt: Rc::clone(&txt),
-                }
-                .into_expr(ExpressionKind::Literal(Value::Character('b'))),
-            ]);
-            let mut env = TestEnv::default();
-            let f = env.new_frame();
+                let v = ok_or_fail!(r);
+                assert!(matches!(v, Value::Unspecified));
+            }
 
-            let r = prg.eval(&f);
+            #[test]
+            fn simple() {
+                let txt = make_textline().into();
+                let prg = Program::new([
+                    ExprCtx {
+                        span: 0..6,
+                        txt: Rc::clone(&txt),
+                    }
+                    .into_expr(ExpressionKind::Literal(Value::Boolean(true))),
+                    ExprCtx {
+                        span: 6..8,
+                        txt: Rc::clone(&txt),
+                    }
+                    .into_expr(ExpressionKind::Literal(Value::Character('a'))),
+                    ExprCtx {
+                        span: 8..10,
+                        txt: Rc::clone(&txt),
+                    }
+                    .into_expr(ExpressionKind::Literal(Value::Character('b'))),
+                ]);
+                let mut env = TestEnv::default();
+                let f = env.new_frame();
 
-            let v = ok_or_fail!(r);
-            assert!(matches!(v, Value::Character('b')));
+                let r = prg.eval(&f);
+
+                let v = ok_or_fail!(r);
+                assert!(matches!(v, Value::Character('b')));
+            }
+
+            #[test]
+            fn multiple_procedures() {
+                let txt = make_textline().into();
+                let prg = Program::new([
+                    ExprCtx {
+                        span: 0..5,
+                        txt: Rc::clone(&txt),
+                    }
+                    .into_expr(ExpressionKind::Call {
+                        proc: Expression::variable(
+                            "foo",
+                            ExprCtx {
+                                span: 1..4,
+                                txt: Rc::clone(&txt),
+                            },
+                        )
+                        .into(),
+                        args: [].into(),
+                    }),
+                    ExprCtx {
+                        span: 6..11,
+                        txt: Rc::clone(&txt),
+                    }
+                    .into_expr(ExpressionKind::Call {
+                        proc: Expression::variable(
+                            "baz",
+                            ExprCtx {
+                                span: 7..10,
+                                txt: Rc::clone(&txt),
+                            },
+                        )
+                        .into(),
+                        args: [].into(),
+                    }),
+                ]);
+                let mut env = TestEnv::default();
+                env.binding.bind(
+                    "foo",
+                    Value::Procedure(
+                        Procedure::intrinsic("foo", 0..0, |_, _| Ok(Value::symbol("bar"))).into(),
+                    ),
+                );
+                env.binding.bind(
+                    "baz",
+                    Value::Procedure(
+                        Procedure::intrinsic("baz", 0..0, |_, _| Ok(Value::Character('a'))).into(),
+                    ),
+                );
+                let f = env.new_frame();
+
+                let r = prg.eval(&f);
+
+                let v = ok_or_fail!(r);
+                assert!(matches!(v, Value::Character('a')));
+            }
         }
 
         mod forms {
             use super::*;
-            use crate::eval::Procedure;
 
             #[test]
             fn call_no_args() {
