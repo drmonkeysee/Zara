@@ -2,9 +2,10 @@ use crate::{cli::Result, repl::Repl};
 use std::{
     io::{self, IsTerminal, Stdin},
     path::Path,
+    process::ExitCode,
 };
 use zara::{
-    Evaluation, Interpreter, RunMode,
+    Evaluation, Exception, Interpreter, RunMode,
     src::{FileSource, LineInputAdapter, LineInputSource, StringSource},
     txt::TextSource,
 };
@@ -31,10 +32,12 @@ fn run(mode: RunMode, src: &mut impl TextSource) -> Result {
     let mut result = runtime.run(src);
     if let Ok(Evaluation::Continuation) = result {
         result = runtime.unsupported_continuation().map_or(result, Err);
+    } else if let Ok(Evaluation::Ex(Exception::Exit(code))) = result {
+        return Ok(code);
     }
     print_result(&result);
     result?;
-    Ok(())
+    Ok(ExitCode::SUCCESS)
 }
 
 fn print_result(result: &zara::Result) {

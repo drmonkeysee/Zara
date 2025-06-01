@@ -7,7 +7,7 @@ use std::{
     result,
 };
 
-pub(crate) type Result = result::Result<(), Error>;
+pub(crate) type Result = result::Result<ExitCode, Error>;
 
 #[derive(Debug)]
 pub(crate) enum Error {

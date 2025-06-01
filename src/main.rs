@@ -37,13 +37,17 @@ fn execute(args: Args) -> Result {
     eprintln!("Run Args: {:?}", args.runargs);
     match args.cmd {
         Cmd::Help => args::usage(&args.me),
-        Cmd::Run => match args.input {
-            Input::File(p) => run::file(args.mode, p)?,
-            Input::Prg(p) => run::prg(args.mode, p)?,
-            Input::Repl => run::repl(args.mode)?,
-            Input::Stdin => run::stdin(args.mode)?,
-        },
+        Cmd::Run => return exec_run(args),
         Cmd::Version => args::version(),
     }
-    Ok(())
+    Ok(ExitCode::SUCCESS)
+}
+
+fn exec_run(args: Args) -> Result {
+    match args.input {
+        Input::File(p) => run::file(args.mode, p),
+        Input::Prg(p) => run::prg(args.mode, p),
+        Input::Repl => run::repl(args.mode),
+        Input::Stdin => run::stdin(args.mode),
+    }
 }
