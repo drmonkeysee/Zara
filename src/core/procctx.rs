@@ -42,7 +42,7 @@ fn emergency_exit(args: &[Value], _env: &mut Frame) -> EvalResult {
 }
 
 fn exit(args: &[Value], _env: &mut Frame) -> EvalResult {
-    Err(Exception::exit(resolve_exit(
+    Err(Exception::Exit(resolve_exit(
         args.first(),
         ExitCode::SUCCESS,
         ExitCode::FAILURE,

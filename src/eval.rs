@@ -59,10 +59,6 @@ pub enum Exception {
 }
 
 impl Exception {
-    pub(crate) fn exit(code: ExitCode) -> Self {
-        Self::Exit(code)
-    }
-
     pub(crate) fn signal(cond: Condition) -> Self {
         Self::Signal(Signal(cond))
     }
