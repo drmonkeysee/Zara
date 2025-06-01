@@ -30,10 +30,11 @@ pub(crate) fn stdin(mode: RunMode) -> Result {
 fn run(mode: RunMode, src: &mut impl TextSource) -> Result {
     let mut runtime = Interpreter::new(mode);
     let mut result = runtime.run(src);
+    if let Ok(Evaluation::Ex(Exception::Exit(code))) = result {
+        return Ok(code);
+    }
     if let Ok(Evaluation::Continuation) = result {
         result = runtime.unsupported_continuation().map_or(result, Err);
-    } else if let Ok(Evaluation::Ex(Exception::Exit(code))) = result {
-        return Ok(code);
     }
     print_result(&result);
     result?;
