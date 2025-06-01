@@ -10,7 +10,10 @@ use crate::{
     syntax::Program,
     value::{Condition, Value as ValueImpl},
 };
-use std::fmt::{self, Display, Formatter};
+use std::{
+    fmt::{self, Display, Formatter},
+    process::ExitCode,
+};
 
 #[derive(Debug)]
 pub enum Evaluation {
@@ -51,12 +54,12 @@ impl Display for Value {
 
 #[derive(Debug)]
 pub enum Exception {
-    Exit(i32),
+    Exit(ExitCode),
     Signal(Signal),
 }
 
 impl Exception {
-    pub(crate) fn exit(code: i32) -> Self {
+    pub(crate) fn exit(code: ExitCode) -> Self {
         Self::Exit(code)
     }
 
