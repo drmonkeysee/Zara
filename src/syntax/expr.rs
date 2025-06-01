@@ -22,15 +22,13 @@ impl Program {
     }
 
     pub(crate) fn eval(self, env: &mut Frame) -> EvalResult {
-        #[allow(
-            clippy::double_ended_iterator_last,
-            reason = "iterator consumed intentionally"
-        )]
-        self.0
+        Ok(self
+            .0
             .into_iter()
             .map(|expr| expr.eval(env))
-            .last()
-            .unwrap_or(Ok(Value::Unspecified))
+            .collect::<Result<Vec<Value>, Exception>>()?
+            .pop()
+            .unwrap_or(Value::Unspecified))
     }
 
     #[cfg(test)]
@@ -467,6 +465,96 @@ mod tests {
                 assert!(matches!(v, Value::Character('a')));
                 assert!(env.binding.lookup("foo_called").is_some());
             }
+
+            #[test]
+            fn exception_interrupts_execution() {
+                let txt = make_textline().into();
+                let prg = Program::new([
+                    ExprCtx {
+                        span: 0..18,
+                        txt: Rc::clone(&txt),
+                    }
+                    .into_expr(ExpressionKind::Call {
+                        proc: Expression::variable(
+                            "foo",
+                            ExprCtx {
+                                span: 1..4,
+                                txt: Rc::clone(&txt),
+                            },
+                        )
+                        .into(),
+                        args: [].into(),
+                    }),
+                    ExprCtx {
+                        span: 6..12,
+                        txt: Rc::clone(&txt),
+                    }
+                    .into_expr(ExpressionKind::Call {
+                        proc: Expression::variable(
+                            "fail",
+                            ExprCtx {
+                                span: 7..11,
+                                txt: Rc::clone(&txt),
+                            },
+                        )
+                        .into(),
+                        args: [].into(),
+                    }),
+                    ExprCtx {
+                        span: 13..18,
+                        txt: Rc::clone(&txt),
+                    }
+                    .into_expr(ExpressionKind::Call {
+                        proc: Expression::variable(
+                            "baz",
+                            ExprCtx {
+                                span: 14..17,
+                                txt: Rc::clone(&txt),
+                            },
+                        )
+                        .into(),
+                        args: [].into(),
+                    }),
+                ]);
+                let mut env = TestEnv::default();
+                env.binding.bind(
+                    "foo",
+                    Value::Procedure(
+                        Procedure::intrinsic("foo", 0..0, |_, f| {
+                            f.bnd.bind("foo_called", Value::Boolean(true));
+                            Ok(Value::symbol("bar"))
+                        })
+                        .into(),
+                    ),
+                );
+                env.binding.bind(
+                    "fail",
+                    Value::Procedure(
+                        Procedure::intrinsic("baz", 0..0, |_, _| {
+                            Err(Exception(Condition::system_error("oh no")))
+                        })
+                        .into(),
+                    ),
+                );
+                env.binding.bind(
+                    "baz",
+                    Value::Procedure(
+                        Procedure::intrinsic("baz", 0..0, |_, f| {
+                            f.bnd.bind("baz_called", Value::Boolean(true));
+                            Ok(Value::Character('a'))
+                        })
+                        .into(),
+                    ),
+                );
+                let mut f = env.new_frame();
+
+                let r = prg.eval(&mut f);
+
+                let v = err_or_fail!(r);
+                assert_eq!(v.0.to_string(), "#<sys-error \"oh no\">");
+                assert!(env.binding.lookup("foo_called").is_some());
+                assert!(env.binding.lookup("baz_called").is_none());
+            }
         }
 
         mod forms {
@@ -796,7 +884,11 @@ mod tests {
                 env.binding.bind(
                     "foo",
                     Value::Procedure(
-                        Procedure::intrinsic("foo", 4..4, |_, _| Ok(Value::symbol("bar"))).into(),
+                        Procedure::intrinsic("foo", 4..4, |_, f| {
+                            f.bnd.bind("foo_called", Value::Boolean(true));
+                            Ok(Value::symbol("bar"))
+                        })
+                        .into(),
                     ),
                 );
                 env.binding.bind("y", Value::string("beef"));
@@ -807,6 +899,7 @@ mod tests {
                 // NOTE: missing variable "z" is not hit
                 let err = err_or_fail!(r);
                 assert_eq!(err.to_string(), "#<env-error \"unbound variable: x\">");
+                assert!(f.bnd.lookup("foo_called").is_none());
             }
         }
     }
