@@ -701,35 +701,35 @@ mod integer {
 
     #[test]
     fn single_into_float() {
-        let n: Real = 42.into();
+        let n = Real::from(42);
 
         assert_eq!(n.into_float(), 42.0);
     }
 
     #[test]
     fn zero_into_float() {
-        let n: Real = 0.into();
+        let n = Real::from(0);
 
         assert_eq!(n.into_float(), 0.0);
     }
 
     #[test]
     fn negative_into_float() {
-        let n: Real = (-42).into();
+        let n = Real::from(-42);
 
         assert_eq!(n.into_float(), -42.0);
     }
 
     #[test]
     fn imax_into_float() {
-        let n: Real = i64::MAX.into();
+        let n = Real::from(i64::MAX);
 
         assert_eq!(n.into_float(), 9.223372036854776e18);
     }
 
     #[test]
     fn imin_into_float() {
-        let n: Real = i64::MIN.into();
+        let n = Real::from(i64::MIN);
 
         assert_eq!(n.into_float(), -9.223372036854776e18);
     }
@@ -737,7 +737,7 @@ mod integer {
     #[test]
     fn umax_into_float() {
         let u = Integer::single(u64::MAX, Sign::Positive);
-        let n: Real = u.into();
+        let n = Real::from(u);
 
         assert_eq!(n.into_float(), 1.8446744073709552e19);
     }
@@ -745,7 +745,7 @@ mod integer {
     #[test]
     fn umin_into_float() {
         let u = Integer::single(u64::MAX, Sign::Negative);
-        let n: Real = u.into();
+        let n = Real::from(u);
 
         assert_eq!(n.into_float(), -1.8446744073709552e19);
     }

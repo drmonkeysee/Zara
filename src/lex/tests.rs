@@ -1448,8 +1448,7 @@ mod error {
             make_textline(),
         );
 
-        let line_err = LineFailure::from(target);
-        let err = LexerError::from(line_err);
+        let err = LexerError::from(LineFailure::from(target));
 
         let err_lines = err.0;
         assert_eq!(err_lines.len(), 1);

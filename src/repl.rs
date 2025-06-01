@@ -9,7 +9,7 @@ pub(crate) struct Repl {
     editor: ZaraEditor,
     exit: ExitCode,
     prompt: &'static str,
-    running: bool, // TODO: will be needed for repl quit
+    running: bool,
     runtime: Interpreter,
     src: StringSource,
 }
