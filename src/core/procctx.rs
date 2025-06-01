@@ -1,5 +1,6 @@
 // (scheme process-context)
 use crate::{
+    Exception,
     eval::{Binding, EvalResult, Frame},
     value::Value,
 };
@@ -34,8 +35,8 @@ fn emergency_exit(args: &[Value], _env: &mut Frame) -> EvalResult {
     process::exit(resolve_exit_code(args.first()));
 }
 
-fn exit(_args: &[Value], _env: &mut Frame) -> EvalResult {
-    todo!("exit");
+fn exit(args: &[Value], _env: &mut Frame) -> EvalResult {
+    Err(Exception::exit(resolve_exit_code(args.first())))
 }
 
 fn get_environment_variable(_args: &[Value], _env: &mut Frame) -> EvalResult {

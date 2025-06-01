@@ -56,7 +56,7 @@ pub enum Exception {
 }
 
 impl Exception {
-    fn exit(code: i32) -> Self {
+    pub(crate) fn exit(code: i32) -> Self {
         Self::Exit(code)
     }
 
