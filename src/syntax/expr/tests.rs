@@ -266,7 +266,7 @@ mod eval {
                 "fail",
                 Value::Procedure(
                     Procedure::intrinsic("baz", 0..0, |_, _| {
-                        Err(Exception(Condition::system_error("oh no")))
+                        Err(Exception::signal(Condition::system_error("oh no")))
                     })
                     .into(),
                 ),
@@ -286,7 +286,7 @@ mod eval {
             let r = prg.eval(&mut f);
 
             let v = err_or_fail!(r);
-            assert_eq!(v.0.to_string(), "#<sys-error \"oh no\">");
+            assert_eq!(v.to_string(), "#<sys-error \"oh no\">");
             assert!(env.binding.lookup("foo_called").is_some());
             assert!(env.binding.lookup("baz_called").is_none());
         }

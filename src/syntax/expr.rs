@@ -99,7 +99,7 @@ impl Expression {
             ExpressionKind::Variable(n) => env
                 .scope
                 .lookup(&n)
-                .ok_or_else(|| Exception(Condition::bind_error(&n))),
+                .ok_or_else(|| Exception::signal(Condition::bind_error(&n))),
         }
     }
 }
@@ -241,12 +241,12 @@ impl Display for TypeName<'_> {
 fn eval_call(proc: Expression, args: Box<[Expression]>, env: &mut Frame) -> EvalResult {
     let proc = proc.eval(env)?;
     let Value::Procedure(p) = proc else {
-        return Err(Exception(Condition::proc_error(
+        return Err(Exception::signal(Condition::proc_error(
             &proc.as_typename().to_string(),
         )));
     };
     if !p.matches_arity(args.len()) {
-        return Err(Exception(Condition::arity_error(
+        return Err(Exception::signal(Condition::arity_error(
             p.name(),
             p.arity(),
             args.len(),

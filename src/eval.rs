@@ -50,13 +50,32 @@ impl Display for Value {
 }
 
 #[derive(Debug)]
-pub struct Exception(pub(crate) Condition);
+pub enum Exception {
+    Exit(i32),
+    Signal(Signal),
+}
+
+impl Exception {
+    fn exit(code: i32) -> Self {
+        Self::Exit(code)
+    }
+
+    pub(crate) fn signal(cond: Condition) -> Self {
+        Self::Signal(Signal(cond))
+    }
+}
 
 impl Display for Exception {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        self.0.fmt(f)
+        match self {
+            Self::Exit(_) => Ok(()),
+            Self::Signal(Signal(cnd)) => cnd.fmt(f),
+        }
     }
 }
+
+#[derive(Debug)]
+pub struct Signal(Condition);
 
 pub struct EvaluationMessage<'a>(&'a Evaluation);
 

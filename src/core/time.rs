@@ -20,13 +20,17 @@ fn current_jiffy(_args: &[Value], env: &mut Frame) -> EvalResult {
         .elapsed()
         .as_micros()
         .try_into()
-        .map_err(|_| Exception(Condition::system_error("jiffy clock overflow")))?;
+        .map_err(|_| Exception::signal(Condition::system_error("jiffy clock overflow")))?;
     Ok(Value::real((Sign::Positive, jiffies)))
 }
 
 fn current_second(_args: &[Value], _env: &mut Frame) -> EvalResult {
     SystemTime::now().duration_since(UNIX_EPOCH).map_or_else(
-        |_| Err(Exception(Condition::system_error("system time failure"))),
+        |_| {
+            Err(Exception::signal(Condition::system_error(
+                "system time failure",
+            )))
+        },
         |d| Ok(Value::real(d.as_secs_f64())),
     )
 }
