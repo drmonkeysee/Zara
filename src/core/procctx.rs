@@ -5,7 +5,10 @@ use crate::{
     number::Number,
     value::Value,
 };
-use std::process::{self, ExitCode};
+use std::{
+    env,
+    process::{self, ExitCode},
+};
 
 const PEXIT_SUCCESS: i32 = 0;
 const PEXIT_FAILURE: i32 = 1;
@@ -55,7 +58,11 @@ fn get_environment_variable(_args: &[Value], _env: &mut Frame) -> EvalResult {
 }
 
 fn get_environment_variables(_args: &[Value], _env: &mut Frame) -> EvalResult {
-    todo!("get_environment_variables");
+    Ok(Value::list(
+        env::vars()
+            .map(|(n, v)| Value::cons(Value::string(n), Value::string(v)))
+            .collect::<Vec<_>>(),
+    ))
 }
 
 fn resolve_exit<T: Copy>(
