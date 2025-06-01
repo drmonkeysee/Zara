@@ -10,7 +10,7 @@ mod testutil;
 pub mod txt;
 mod value;
 
-pub use self::eval::{Evaluation, Exception, Value};
+pub use self::eval::{Evaluation, Exception, Signal, Value};
 use self::{
     eval::{Ast, Environment, Evaluator},
     lex::{Lexer, LexerError, LexerOutput, TokenLine},

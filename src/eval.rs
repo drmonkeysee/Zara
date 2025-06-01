@@ -65,17 +65,14 @@ impl Exception {
     }
 }
 
-impl Display for Exception {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Exit(_) => Ok(()),
-            Self::Signal(Signal(cnd)) => cnd.fmt(f),
-        }
-    }
-}
-
 #[derive(Debug)]
 pub struct Signal(Condition);
+
+impl Display for Signal {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
 
 pub struct EvaluationMessage<'a>(&'a Evaluation);
 

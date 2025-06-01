@@ -40,7 +40,7 @@ mod eval {
     use super::*;
     use crate::{
         eval::Procedure,
-        testutil::{err_or_fail, ok_or_fail},
+        testutil::{err_or_fail, extract_or_fail, ok_or_fail},
     };
 
     #[test]
@@ -92,7 +92,7 @@ mod eval {
 
         let r = expr.eval(&mut f);
 
-        let err = err_or_fail!(r);
+        let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
         assert_eq!(err.to_string(), "#<env-error \"unbound variable: x\">");
     }
 
@@ -285,8 +285,8 @@ mod eval {
 
             let r = prg.eval(&mut f);
 
-            let v = err_or_fail!(r);
-            assert_eq!(v.to_string(), "#<sys-error \"oh no\">");
+            let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
+            assert_eq!(err.to_string(), "#<sys-error \"oh no\">");
             assert!(env.binding.lookup("foo_called").is_some());
             assert!(env.binding.lookup("baz_called").is_none());
         }
@@ -418,7 +418,7 @@ mod eval {
 
             let r = expr.eval(&mut f);
 
-            let err = err_or_fail!(r);
+            let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
             assert_eq!(err.to_string(), "#<env-error \"unbound variable: foo\">");
         }
 
@@ -446,7 +446,7 @@ mod eval {
 
             let r = expr.eval(&mut f);
 
-            let err = err_or_fail!(r);
+            let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
             assert_eq!(
                 err.to_string(),
                 "#<env-error \"expected procedure, found: string\">"
@@ -487,7 +487,7 @@ mod eval {
 
             let r = expr.eval(&mut f);
 
-            let err = err_or_fail!(r);
+            let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
             assert_eq!(
                 err.to_string(),
                 "#<env-error \"foo arity mismatch - expected: 0, found: 1\">"
@@ -523,7 +523,7 @@ mod eval {
 
             let r = expr.eval(&mut f);
 
-            let err = err_or_fail!(r);
+            let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
             assert_eq!(
                 err.to_string(),
                 "#<env-error \"foo arity mismatch - expected: 1, found: 0\">"
@@ -559,7 +559,7 @@ mod eval {
 
             let r = expr.eval(&mut f);
 
-            let err = err_or_fail!(r);
+            let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
             assert_eq!(
                 err.to_string(),
                 "#<env-error \"foo arity mismatch - expected at least: 1, found: 0\">"
@@ -632,7 +632,7 @@ mod eval {
             let r = expr.eval(&mut f);
 
             // NOTE: missing variable "z" is not hit
-            let err = err_or_fail!(r);
+            let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
             assert_eq!(err.to_string(), "#<env-error \"unbound variable: x\">");
             assert!(f.scope.lookup("foo_called").is_none());
         }
