@@ -14,10 +14,14 @@ pub(super) fn load(scope: &mut Binding) {
 }
 
 fn current_jiffy(_args: &[Value], env: &Frame) -> EvalResult {
-    Ok(Value::real((
-        Sign::Positive,
-        env.sys.start_time.elapsed().as_micros() as u64,
-    )))
+    let jiffies = env
+        .sys
+        .start_time
+        .elapsed()
+        .as_micros()
+        .try_into()
+        .map_err(|_| Exception(Condition::system_error("jiffy clock overflow")))?;
+    Ok(Value::real((Sign::Positive, jiffies)))
 }
 
 fn current_second(_args: &[Value], _env: &Frame) -> EvalResult {
@@ -27,6 +31,7 @@ fn current_second(_args: &[Value], _env: &Frame) -> EvalResult {
     )
 }
 
+#[allow(clippy::unnecessary_wraps, reason = "infallible intrinsic")]
 fn jiffies_per_second(_args: &[Value], _env: &Frame) -> EvalResult {
     // NOTE: jiffy = microsecond (µs)
     Ok(Value::real(1_000_000))

@@ -318,7 +318,8 @@ impl Integer {
             return Err(NumericError::IntConversionInvalidRange);
         };
         if self.is_negative() {
-            if u <= i32::MIN.unsigned_abs() as u64 {
+            if u <= i32::MIN.unsigned_abs().into() {
+                #[allow(clippy::cast_possible_wrap, reason = "guarded against wrapping")]
                 (-(u as i64)).try_into()
             } else {
                 return Err(NumericError::IntConversionInvalidRange);
