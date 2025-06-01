@@ -97,7 +97,7 @@ impl Expression {
             ExpressionKind::Call { args, proc } => eval_call(*proc, args, env),
             ExpressionKind::Literal(v) => Ok(v),
             ExpressionKind::Variable(n) => env
-                .bnd
+                .scope
                 .lookup(&n)
                 .ok_or_else(|| Exception(Condition::bind_error(&n))),
         }

@@ -2,7 +2,7 @@ use crate::value::Value;
 use std::{collections::HashMap, time::Instant};
 
 pub(crate) struct Frame<'a> {
-    pub(crate) bnd: &'a mut Binding,
+    pub(crate) scope: &'a mut Binding,
     pub(crate) sym: &'a SymbolTable,
     pub(crate) sys: &'a System,
 }

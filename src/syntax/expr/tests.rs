@@ -180,7 +180,7 @@ mod eval {
                 "foo",
                 Value::Procedure(
                     Procedure::intrinsic("foo", 0..0, |_, f| {
-                        f.bnd.bind("foo_called", Value::Boolean(true));
+                        f.scope.bind("foo_called", Value::Boolean(true));
                         Ok(Value::symbol("bar"))
                     })
                     .into(),
@@ -256,7 +256,7 @@ mod eval {
                 "foo",
                 Value::Procedure(
                     Procedure::intrinsic("foo", 0..0, |_, f| {
-                        f.bnd.bind("foo_called", Value::Boolean(true));
+                        f.scope.bind("foo_called", Value::Boolean(true));
                         Ok(Value::symbol("bar"))
                     })
                     .into(),
@@ -275,7 +275,7 @@ mod eval {
                 "baz",
                 Value::Procedure(
                     Procedure::intrinsic("baz", 0..0, |_, f| {
-                        f.bnd.bind("baz_called", Value::Boolean(true));
+                        f.scope.bind("baz_called", Value::Boolean(true));
                         Ok(Value::Character('a'))
                     })
                     .into(),
@@ -620,7 +620,7 @@ mod eval {
                 "foo",
                 Value::Procedure(
                     Procedure::intrinsic("foo", 4..4, |_, f| {
-                        f.bnd.bind("foo_called", Value::Boolean(true));
+                        f.scope.bind("foo_called", Value::Boolean(true));
                         Ok(Value::symbol("bar"))
                     })
                     .into(),
@@ -634,7 +634,7 @@ mod eval {
             // NOTE: missing variable "z" is not hit
             let err = err_or_fail!(r);
             assert_eq!(err.to_string(), "#<env-error \"unbound variable: x\">");
-            assert!(f.bnd.lookup("foo_called").is_none());
+            assert!(f.scope.lookup("foo_called").is_none());
         }
     }
 }

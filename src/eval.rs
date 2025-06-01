@@ -93,7 +93,7 @@ pub(crate) struct Environment {
 impl Evaluator for Environment {
     fn evaluate(&mut self, prg: Program) -> Evaluation {
         let mut frame = Frame {
-            bnd: &mut self.global,
+            scope: &mut self.global,
             sym: &self.symbols,
             sys: &self.system,
         };

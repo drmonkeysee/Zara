@@ -66,7 +66,7 @@ pub(crate) struct TestEnv {
 impl TestEnv {
     pub(crate) fn new_frame(&mut self) -> Frame {
         Frame {
-            bnd: &mut self.binding,
+            scope: &mut self.binding,
             sym: &self.symbols,
             sys: &self.system,
         }
