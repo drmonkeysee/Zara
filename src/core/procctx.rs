@@ -26,23 +26,23 @@ pub(super) fn load(scope: &mut Binding) {
     );
 }
 
-fn command_line(_args: &[Value], _env: &Frame) -> EvalResult {
+fn command_line(_args: &[Value], _env: &mut Frame) -> EvalResult {
     todo!("command_line");
 }
 
-fn emergency_exit(args: &[Value], _env: &Frame) -> EvalResult {
+fn emergency_exit(args: &[Value], _env: &mut Frame) -> EvalResult {
     process::exit(resolve_exit_code(args.first()));
 }
 
-fn exit(_args: &[Value], _env: &Frame) -> EvalResult {
+fn exit(_args: &[Value], _env: &mut Frame) -> EvalResult {
     todo!("exit");
 }
 
-fn get_environment_variable(_args: &[Value], _env: &Frame) -> EvalResult {
+fn get_environment_variable(_args: &[Value], _env: &mut Frame) -> EvalResult {
     todo!("get_environment_variable");
 }
 
-fn get_environment_variables(_args: &[Value], _env: &Frame) -> EvalResult {
+fn get_environment_variables(_args: &[Value], _env: &mut Frame) -> EvalResult {
     todo!("get_environment_variables");
 }
 

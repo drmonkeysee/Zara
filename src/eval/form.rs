@@ -8,7 +8,7 @@ use std::{
 
 pub(crate) const MAX_ARITY: u8 = u8::MAX;
 
-pub(crate) type IntrinsicFn = fn(&[Value], &Frame) -> EvalResult;
+pub(crate) type IntrinsicFn = fn(&[Value], &mut Frame) -> EvalResult;
 pub(crate) type Arity = Range<u8>;
 
 #[derive(Debug)]
@@ -40,7 +40,7 @@ impl Procedure {
             || (self.arity.start as usize <= args_len && args_len <= self.arity.len())
     }
 
-    pub(crate) fn apply(&self, args: &[Value], env: &Frame) -> EvalResult {
+    pub(crate) fn apply(&self, args: &[Value], env: &mut Frame) -> EvalResult {
         match self.body {
             Body::Intrinsic(func) => func(args, env),
             Body::Lambda(_) => todo!("lambda apply"),
@@ -196,8 +196,8 @@ mod tests {
     fn apply_zero_arity() {
         let p = Procedure::intrinsic("foo", 0..0, |_, _| Ok(Value::string("bar")));
         let mut env = TestEnv::default();
-        let f = env.new_frame();
-        let r = p.apply(&[], &f);
+        let mut f = env.new_frame();
+        let r = p.apply(&[], &mut f);
 
         let v = ok_or_fail!(r);
         assert!(matches!(v, Value::String(s) if &*s == "bar"));
@@ -212,10 +212,10 @@ mod tests {
             Ok(Value::string(format!("bar {s}")))
         });
         let mut env = TestEnv::default();
-        let f = env.new_frame();
+        let mut f = env.new_frame();
         let args = [Value::string("baz")];
 
-        let r = p.apply(&args, &f);
+        let r = p.apply(&args, &mut f);
 
         let v = ok_or_fail!(r);
         assert!(matches!(v, Value::String(s) if &*s == "bar baz"));
