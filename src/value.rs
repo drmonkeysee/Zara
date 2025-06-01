@@ -35,6 +35,13 @@ pub(crate) enum Value {
     TokenList(Rc<[TokenLine]>),
     Unspecified,
     Vector(Rc<[Value]>),
+    /*
+     * TODO: Mutable Values
+     * StringMut(Rc<RefCell<str>>)
+     * PairMut(Option<Rc<RefCell<Pair>>>) ?? is refcell needed here? or is mut just swapping out the pair value
+     * VectorMut(Rc<RefCell<[Value]>>)
+     * ByteVectorMut(Rc<RefCell<[u8]>>)
+     */
 }
 
 impl Value {
