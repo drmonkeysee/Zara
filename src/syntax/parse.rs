@@ -9,7 +9,7 @@ use crate::{
     lex::{Token, TokenKind},
     number::Number,
     txt::{LineNumber, TextLine},
-    value::{Pair, Value, zlist},
+    value::{Value, zlist},
 };
 use std::{ops::ControlFlow, rc::Rc};
 

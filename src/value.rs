@@ -3,7 +3,7 @@ macro_rules! zlist {
         Value::null()
     };
     ($exp:expr $(, $exps:expr)* $(,)?) => {
-        Value::pair(Pair::cons($exp, zlist![$($exps),*]))
+        Value::cons($exp, zlist![$($exps),*])
     };
 }
 
@@ -49,8 +49,8 @@ impl Value {
         Self::Pair(None)
     }
 
-    pub(crate) fn pair(p: impl Into<Rc<Pair>>) -> Self {
-        Self::Pair(Some(p.into()))
+    pub(crate) fn cons(car: Value, cdr: Value) -> Self {
+        Self::Pair(Some(Pair::cons(car, cdr).into()))
     }
 
     pub(crate) fn list<I>(items: I) -> Self
@@ -61,7 +61,7 @@ impl Value {
         items
             .into_iter()
             .rev()
-            .fold(zlist![], |head, item| Self::pair(Pair::cons(item, head)))
+            .fold(zlist![], |head, item| Self::cons(item, head))
     }
 
     pub(crate) fn improper_list<I>(items: I) -> Self
@@ -72,7 +72,7 @@ impl Value {
         items
             .into_iter()
             .rev()
-            .reduce(|head, item| Self::pair(Pair::cons(item, head)))
+            .reduce(|head, item| Self::cons(item, head))
             .unwrap_or_else(Self::null)
     }
 
@@ -366,8 +366,7 @@ mod tests {
 
         #[test]
         fn pair_typename() {
-            let p = Pair::cons(Value::Boolean(true), Value::Character('a'));
-            let v = Value::pair(p);
+            let v = Value::cons(Value::Boolean(true), Value::Character('a'));
 
             assert_eq!(v.as_typename().to_string(), "pair");
         }
@@ -943,10 +942,7 @@ bar",
             // (1 2 3)
             let p = Pair::cons(
                 Value::real(1),
-                Value::pair(Pair::cons(
-                    Value::real(2),
-                    Value::pair(Pair::cons(Value::real(3), Value::null())),
-                )),
+                Value::cons(Value::real(2), Value::cons(Value::real(3), Value::null())),
             );
 
             assert!(p.is_list());
@@ -955,10 +951,7 @@ bar",
         #[test]
         fn improper_list_is_not_list() {
             // (1 2 . 3)
-            let p = Pair::cons(
-                Value::real(1),
-                Value::pair(Pair::cons(Value::real(2), Value::real(3))),
-            );
+            let p = Pair::cons(Value::real(1), Value::cons(Value::real(2), Value::real(3)));
 
             assert!(!p.is_list());
         }
@@ -967,8 +960,8 @@ bar",
         fn list_containing_pair_is_list() {
             // ((1 . 2) 3)
             let p = Pair::cons(
-                Value::pair(Pair::cons(Value::real(1), Value::real(2))),
-                Value::pair(Pair::cons(Value::real(3), Value::null())),
+                Value::cons(Value::real(1), Value::real(2)),
+                Value::cons(Value::real(3), Value::null()),
             );
 
             assert!(p.is_list());
@@ -984,77 +977,61 @@ bar",
 
         #[test]
         fn pair_display() {
-            let p = Pair::cons(Value::Boolean(true), Value::Boolean(false));
-            let v = Value::pair(p);
+            let v = Value::cons(Value::Boolean(true), Value::Boolean(false));
 
             assert_eq!(v.to_string(), "(#t . #f)")
         }
 
         #[test]
         fn empty_cdr_display() {
-            let p = Pair::cons(Value::Boolean(true), Value::null());
-            let v = Value::pair(p);
+            let v = Value::cons(Value::Boolean(true), Value::null());
 
             assert_eq!(v.to_string(), "(#t)")
         }
 
         #[test]
         fn list_display() {
-            let p = Pair::cons(
+            let v = Value::cons(
                 Value::real(1),
-                Value::pair(Pair::cons(
-                    Value::real(2),
-                    Value::pair(Pair::cons(Value::real(3), Value::null())),
-                )),
+                Value::cons(Value::real(2), Value::cons(Value::real(3), Value::null())),
             );
-            let v = Value::pair(p);
 
             assert_eq!(v.to_string(), "(1 2 3)")
         }
 
         #[test]
         fn improper_list_display() {
-            let p = Pair::cons(
-                Value::real(1),
-                Value::pair(Pair::cons(Value::real(2), Value::real(3))),
-            );
-            let v = Value::pair(p);
+            let v = Value::cons(Value::real(1), Value::cons(Value::real(2), Value::real(3)));
 
             assert_eq!(v.to_string(), "(1 2 . 3)")
         }
 
         #[test]
         fn list_containing_pair_display() {
-            let p = Pair::cons(
-                Value::pair(Pair::cons(Value::real(1), Value::real(2))),
-                Value::pair(Pair::cons(Value::real(3), Value::null())),
+            let v = Value::cons(
+                Value::cons(Value::real(1), Value::real(2)),
+                Value::cons(Value::real(3), Value::null()),
             );
-            let v = Value::pair(p);
 
             assert_eq!(v.to_string(), "((1 . 2) 3)")
         }
 
         #[test]
         fn list_containing_list_display() {
-            let p = Pair::cons(
+            let v = Value::cons(
                 Value::real(1),
-                Value::pair(Pair::cons(
-                    Value::pair(Pair::cons(
-                        Value::real(2),
-                        Value::pair(Pair::cons(Value::real(3), Value::null())),
-                    )),
+                Value::cons(
+                    Value::cons(Value::real(2), Value::cons(Value::real(3), Value::null())),
                     Value::null(),
-                )),
+                ),
             );
-            let v = Value::pair(p);
 
             assert_eq!(v.to_string(), "(1 (2 3))")
         }
 
         #[test]
         fn list_containing_empty_list_display() {
-            let p = Pair::cons(Value::null(), Value::null());
-            let v = Value::pair(p);
+            let v = Value::cons(Value::null(), Value::null());
 
             assert_eq!(v.to_string(), "(())")
         }
