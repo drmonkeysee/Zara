@@ -37,8 +37,7 @@ fn run(mode: RunMode, src: &mut impl TextSource) -> Result {
         result = runtime.unsupported_continuation().map_or(result, Err);
     }
     print_result(&result);
-    result?;
-    Ok(ExitCode::SUCCESS)
+    result.map_or_else(|err| Err(err.into()), |_| Ok(ExitCode::SUCCESS))
 }
 
 fn print_result(result: &zara::Result) {

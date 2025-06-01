@@ -24,10 +24,7 @@ pub enum Evaluation {
 
 impl Evaluation {
     fn result(r: EvalResult) -> Self {
-        match r {
-            Err(ex) => Self::Ex(ex),
-            Ok(v) => Self::Val(Value(v)),
-        }
+        r.map_or_else(Self::Ex, |v| Self::Val(Value(v)))
     }
 
     #[must_use]
