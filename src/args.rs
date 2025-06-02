@@ -41,6 +41,23 @@ impl Args {
         args.fold(this, Self::match_arg)
     }
 
+    pub(crate) fn compose_run_args(&self) -> Vec<&str> {
+        [if let Input::File(p) = &self.input {
+            p.to_str().unwrap_or(self.me.as_str())
+        } else {
+            self.me.as_str()
+        }]
+        .into_iter()
+        .chain(
+            self.runargs
+                .as_ref()
+                .into_iter()
+                .flatten()
+                .map(String::as_str),
+        )
+        .collect()
+    }
+
     fn match_arg(self, arg: String) -> Self {
         if self.has_run_target() {
             self.match_target_arg(arg)
@@ -231,7 +248,7 @@ mod tests {
         let result = Args::parse(args);
 
         assert!(matches!(
-            result,
+            &result,
             Args {
                 cmd: Cmd::Run,
                 input: Input::Repl,
@@ -240,6 +257,7 @@ mod tests {
                 runargs: None,
             } if me == "zara"
         ));
+        assert_eq!(result.compose_run_args(), ["zara"]);
     }
 
     #[test]
@@ -249,7 +267,7 @@ mod tests {
         let result = Args::parse(args.into_iter().map(String::from));
 
         assert!(matches!(
-            result,
+            &result,
             Args {
                 cmd: Cmd::Run,
                 input: Input::Repl,
@@ -258,6 +276,7 @@ mod tests {
                 runargs: None,
             } if me == "foo/me"
         ));
+        assert_eq!(result.compose_run_args(), ["foo/me"]);
     }
 
     #[test]
@@ -267,7 +286,7 @@ mod tests {
         let result = Args::parse(args.into_iter().map(String::from));
 
         assert!(matches!(
-            result,
+            &result,
             Args {
                 cmd: Cmd::Run,
                 input: Input::Repl,
@@ -276,6 +295,10 @@ mod tests {
                 runargs: Some(_),
             } if me == "foo/me"
         ));
+        assert_eq!(
+            result.compose_run_args(),
+            ["foo/me", "arg1", "arg2", "--arg3=1"]
+        );
         assert_eq!(result.runargs.unwrap(), ["arg1", "arg2", "--arg3=1"]);
     }
 
@@ -320,6 +343,7 @@ mod tests {
                 runargs: None,
             },
         ));
+        assert_eq!(result.compose_run_args(), ["foo/me"]);
     }
 
     #[test]
@@ -330,7 +354,7 @@ mod tests {
         let result = Args::parse(args.into_iter().map(String::from));
 
         assert!(matches!(
-            result,
+            &result,
             Args {
                 cmd: Cmd::Run,
                 input: Input::Prg(s),
@@ -339,6 +363,7 @@ mod tests {
                 runargs: None,
             } if s == input,
         ));
+        assert_eq!(result.compose_run_args(), ["foo/me"]);
     }
 
     #[test]
@@ -357,6 +382,10 @@ mod tests {
                 runargs: Some(_),
             },
         ));
+        assert_eq!(
+            result.compose_run_args(),
+            ["foo/me", "arg1", "arg2", "--arg3=1"]
+        );
         assert_eq!(result.runargs.unwrap(), ["arg1", "arg2", "--arg3=1"]);
     }
 
@@ -368,7 +397,7 @@ mod tests {
         let result = Args::parse(args.into_iter().map(String::from));
 
         assert!(matches!(
-            result,
+            &result,
             Args {
                 cmd: Cmd::Run,
                 input: Input::Prg(s),
@@ -377,6 +406,10 @@ mod tests {
                 runargs: Some(_),
             } if s == input,
         ));
+        assert_eq!(
+            result.compose_run_args(),
+            ["foo/me", "arg1", "arg2", "--arg3=1"]
+        );
         assert_eq!(result.runargs.unwrap(), ["arg1", "arg2", "--arg3=1"]);
     }
 
@@ -483,7 +516,7 @@ mod tests {
         let result = Args::parse(args.into_iter().map(String::from));
 
         assert!(matches!(
-            result,
+            &result,
             Args {
                 cmd: Cmd::Run,
                 input: Input::File(p),
@@ -492,6 +525,7 @@ mod tests {
                 runargs: None,
             } if p.to_str().unwrap() == "my/file"
         ));
+        assert_eq!(result.compose_run_args(), ["my/file"]);
     }
 
     #[test]
@@ -501,7 +535,7 @@ mod tests {
         let result = Args::parse(args.into_iter().map(String::from));
 
         assert!(matches!(
-            result,
+            &result,
             Args {
                 cmd: Cmd::Run,
                 input: Input::File(p),
@@ -510,6 +544,10 @@ mod tests {
                 runargs: Some(_),
             } if p.to_str().unwrap() == "my/file"
         ));
+        assert_eq!(
+            result.compose_run_args(),
+            ["my/file", "arg1", "arg2", "--arg3=1"]
+        );
         assert_eq!(result.runargs.unwrap(), ["arg1", "arg2", "--arg3=1"]);
     }
 
@@ -520,7 +558,7 @@ mod tests {
         let result = Args::parse(args.into_iter().map(String::from));
 
         assert!(matches!(
-            result,
+            &result,
             Args {
                 cmd: Cmd::Run,
                 input: Input::File(p),
@@ -529,6 +567,10 @@ mod tests {
                 runargs: Some(_),
             } if me == "foo/me" && p.to_str().unwrap() == "my/file"
         ));
+        assert_eq!(
+            result.compose_run_args(),
+            ["my/file", "--version", "-T", "-ST"]
+        );
         assert_eq!(result.runargs.unwrap(), ["--version", "-T", "-ST"]);
     }
 
@@ -539,7 +581,7 @@ mod tests {
         let result = Args::parse(args.into_iter().map(String::from));
 
         assert!(matches!(
-            result,
+            &result,
             Args {
                 cmd: Cmd::Run,
                 input: Input::Repl,
@@ -548,6 +590,10 @@ mod tests {
                 runargs: Some(_),
             } if me == "foo/me"
         ));
+        assert_eq!(
+            result.compose_run_args(),
+            ["foo/me", "--version", "-T", "-ST"]
+        );
         assert_eq!(result.runargs.unwrap(), ["--version", "-T", "-ST"]);
     }
 }
