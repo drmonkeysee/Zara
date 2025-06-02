@@ -104,7 +104,7 @@ mod expr {
                 Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 0, end: 3 }, txt: line },
                 kind: ExpressionKind::Literal(Value::String(s)),
-            })) if Rc::ptr_eq(&txt, &line) && &*s == "foo"
+            })) if Rc::ptr_eq(&txt, &line) && s.as_ref() == "foo"
         ));
     }
 
@@ -267,7 +267,7 @@ mod expr {
                 Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 0, end: 6 }, txt: line },
                 kind: ExpressionKind::Variable(s),
-            })) if &*s == "myproc" && Rc::ptr_eq(&txt, &line)
+            })) if s.as_ref() == "myproc" && Rc::ptr_eq(&txt, &line)
         ));
     }
 
@@ -287,7 +287,7 @@ mod expr {
                 Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 0, end: 0 }, txt: line },
                 kind: ExpressionKind::Variable(s),
-            })) if &*s == "" && Rc::ptr_eq(&txt, &line)
+            })) if s.as_ref() == "" && Rc::ptr_eq(&txt, &line)
         ));
     }
 
@@ -307,7 +307,7 @@ mod expr {
                 Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 0, end: 6 }, txt: line },
                 kind: ExpressionKind::Literal(Value::Symbol(s)),
-            })) if &*s == "foo" && Rc::ptr_eq(&txt, &line)
+            })) if s.as_ref() == "foo" && Rc::ptr_eq(&txt, &line)
         ));
     }
 
@@ -327,7 +327,7 @@ mod expr {
                 Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 0, end: 0 }, txt: line },
                 kind: ExpressionKind::Literal(Value::Symbol(s)),
-            })) if &*s == "" && Rc::ptr_eq(&txt, &line)
+            })) if s.as_ref() == "" && Rc::ptr_eq(&txt, &line)
         ));
     }
 
@@ -786,7 +786,7 @@ mod bytevector {
             ExpressionError {
                 ctx: ExprCtx { span: TxtSpan { start: 3, end: 6 }, txt: line },
                 kind: ExpressionErrorKind::ByteVectorInvalidItem(ExpressionKind::Literal(Value::Symbol(s))),
-            } if &**s == "foo" && Rc::ptr_eq(&txt, &line)
+            } if s.as_ref() == "foo" && Rc::ptr_eq(&txt, &line)
         ));
     }
 
@@ -834,7 +834,7 @@ mod bytevector {
             ExpressionError {
                 ctx: ExprCtx { span: TxtSpan { start: 3, end: 6 }, txt: line },
                 kind: ExpressionErrorKind::ByteVectorInvalidItem(ExpressionKind::Variable(s)),
-            } if &**s == "foo" && Rc::ptr_eq(&txt, &line)
+            } if s.as_ref() == "foo" && Rc::ptr_eq(&txt, &line)
         ));
         assert!(matches!(
             &errs[1],
@@ -882,7 +882,7 @@ mod vector {
             Value::Vector
         );
         assert_eq!(v.len(), 1);
-        assert!(matches!(&v[0], Value::String(s) if &**s == "foo"));
+        assert!(matches!(&v[0], Value::String(s) if s.as_ref() == "foo"));
     }
 
     #[test]
@@ -930,7 +930,7 @@ mod vector {
             Value::Vector
         );
         assert_eq!(v.len(), 3);
-        assert!(matches!(&v[0], Value::Symbol(s) if &**s == "a"));
+        assert!(matches!(&v[0], Value::Symbol(s) if s.as_ref() == "a"));
         assert!(matches!(&v[1], Value::Pair(None)));
         assert!(matches!(
             &v[2],
@@ -1007,7 +1007,7 @@ mod vector {
             ExpressionError {
                 ctx: ExprCtx { span: TxtSpan { start: 3, end: 6 }, txt: line },
                 kind: ExpressionErrorKind::VectorInvalidItem(ExpressionKind::Variable(s)),
-            } if &**s == "foo" && Rc::ptr_eq(&txt, &line)
+            } if s.as_ref() == "foo" && Rc::ptr_eq(&txt, &line)
         ));
     }
 
@@ -1065,7 +1065,7 @@ mod vector {
             ExpressionError {
                 ctx: ExprCtx { span: TxtSpan { start: 3, end: 6 }, txt: line },
                 kind: ExpressionErrorKind::VectorInvalidItem(ExpressionKind::Variable(s)),
-            } if &**s == "foo" && Rc::ptr_eq(&txt, &line)
+            } if s.as_ref() == "foo" && Rc::ptr_eq(&txt, &line)
         ));
         assert!(matches!(
             &errs[1],
@@ -1159,7 +1159,7 @@ mod identifier {
             Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 0, end: 3 }, txt: line },
                 kind: ExpressionKind::Variable(s),
-            } if &*s == "foo" && Rc::ptr_eq(&txt, &line)
+            } if s.as_ref() == "foo" && Rc::ptr_eq(&txt, &line)
         ));
     }
 
@@ -1185,7 +1185,7 @@ mod identifier {
             Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 0, end: 3 }, txt: line },
                 kind: ExpressionKind::Literal(Value::Symbol(s)),
-            } if &*s == "foo" && Rc::ptr_eq(&txt, &line)
+            } if s.as_ref() == "foo" && Rc::ptr_eq(&txt, &line)
         ));
     }
 }
@@ -1538,7 +1538,7 @@ mod list {
             Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 5, end: 8 }, txt: line },
                 kind: ExpressionKind::Literal(Value::Symbol(s)),
-            } if &**s == "foo" && Rc::ptr_eq(&txt, &line)
+            } if s.as_ref() == "foo" && Rc::ptr_eq(&txt, &line)
         ));
     }
 
@@ -1772,11 +1772,11 @@ mod list {
             unreachable!();
         };
         assert!(matches!(
-            &*proc,
+            proc.as_ref(),
             Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 0, end: 1 }, txt: line },
                 kind: ExpressionKind::Variable(s),
-            } if &**s == "+" && Rc::ptr_eq(&txt, &line)
+            } if s.as_ref() == "+" && Rc::ptr_eq(&txt, &line)
         ));
         assert_eq!(args.len(), 2);
         assert!(matches!(
@@ -1859,7 +1859,7 @@ mod list {
             Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 6, end: 9 }, txt: line },
                 kind: ExpressionKind::Literal(Value::Symbol(s)),
-            } if Rc::ptr_eq(&txt, &line) && &*s == "foo"
+            } if Rc::ptr_eq(&txt, &line) && s.as_ref() == "foo"
         ));
     }
 
@@ -1978,7 +1978,7 @@ mod list {
             ExpressionError {
                 ctx: ExprCtx { span: TxtSpan { start: 1, end: 2 }, txt: line },
                 kind: ExpressionErrorKind::DatumInvalid(ExpressionKind::Variable(s)),
-            } if Rc::ptr_eq(&txt, &line) && &**s == "+"
+            } if Rc::ptr_eq(&txt, &line) && s.as_ref() == "+"
         ));
     }
 
@@ -2155,7 +2155,7 @@ mod string {
             Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 0, end: 3 }, txt: line },
                 kind: ExpressionKind::Literal(Value::String(s)),
-            } if &*s == "foo" && Rc::ptr_eq(&txt, &line)
+            } if s.as_ref() == "foo" && Rc::ptr_eq(&txt, &line)
         ));
     }
 }
@@ -2371,7 +2371,7 @@ mod quote {
                     txt: line,
                 },
                 kind: ExpressionKind::Literal(Value::Symbol(s)),
-            } if Rc::ptr_eq(&txt, &line) && &*s == "foo"
+            } if Rc::ptr_eq(&txt, &line) && s.as_ref() == "foo"
         ));
     }
 
@@ -2489,7 +2489,7 @@ mod quote {
             ExpressionError {
                 ctx: ExprCtx { span: TxtSpan { start: 0, end: 5 }, txt },
                 kind: ExpressionErrorKind::DatumInvalid(ExpressionKind::Variable(s)),
-            } if txt.lineno == 1 && &**s == "foo"
+            } if txt.lineno == 1 && s.as_ref() == "foo"
         ));
     }
 
@@ -2604,7 +2604,7 @@ mod merge {
             Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 0, end: 3 }, txt: line },
                 kind: ExpressionKind::Variable(s),
-            } if &**s == "foo" && Rc::ptr_eq(&txt, &line)
+            } if s.as_ref() == "foo" && Rc::ptr_eq(&txt, &line)
         ));
     }
 
@@ -2635,7 +2635,7 @@ mod merge {
             ExpressionError {
                 ctx: ExprCtx { span: TxtSpan { start: 0, end: 3 }, txt: line },
                 kind: ExpressionErrorKind::ByteVectorInvalidItem(ExpressionKind::Variable(s)),
-            } if &**s == "foo" && Rc::ptr_eq(&txt, &line)
+            } if s.as_ref() == "foo" && Rc::ptr_eq(&txt, &line)
         ));
     }
 
@@ -2720,7 +2720,7 @@ mod merge {
                     txt: line
                 },
                 kind: ExpressionKind::Literal(Value::Symbol(s)),
-            } if &*s == "foo" && Rc::ptr_eq(&txt, &line)
+            } if s.as_ref() == "foo" && Rc::ptr_eq(&txt, &line)
         ));
     }
 
@@ -2849,7 +2849,7 @@ mod merge {
                     txt: line
                 },
                 kind: ExpressionKind::Literal(Value::Symbol(s)),
-            } if &*s == "foo" && Rc::ptr_eq(&txt, &line)
+            } if s.as_ref() == "foo" && Rc::ptr_eq(&txt, &line)
         ));
     }
 
@@ -3054,7 +3054,7 @@ mod merge {
                     txt: line
                 },
                 kind: ExpressionKind::Literal(Value::Symbol(s)),
-            } if &**s == "foo" && Rc::ptr_eq(&txt, &line)
+            } if s.as_ref() == "foo" && Rc::ptr_eq(&txt, &line)
         ));
     }
 
@@ -3098,7 +3098,7 @@ mod merge {
                     txt: line
                 },
                 kind: ExpressionKind::Literal(Value::Symbol(s)),
-            } if &**s == "foo" && Rc::ptr_eq(&txt, &line)
+            } if s.as_ref() == "foo" && Rc::ptr_eq(&txt, &line)
         ));
     }
 
@@ -3151,7 +3151,7 @@ mod merge {
                     txt: line
                 },
                 kind: ExpressionKind::Literal(Value::String(s)),
-            } if &**s == "foo" && Rc::ptr_eq(&txt, &line)
+            } if s.as_ref() == "foo" && Rc::ptr_eq(&txt, &line)
         ));
     }
 
@@ -3207,7 +3207,7 @@ mod merge {
                     txt: line
                 },
                 kind: ExpressionKind::Literal(Value::Symbol(s)),
-            } if &**s == "foo" && Rc::ptr_eq(&txt, &line)
+            } if s.as_ref() == "foo" && Rc::ptr_eq(&txt, &line)
         ));
     }
 

@@ -75,7 +75,7 @@ mod eval {
         let r = expr.eval(&mut f);
 
         let v = ok_or_fail!(r);
-        assert!(matches!(v, Value::String(s) if &*s == "foo"));
+        assert!(matches!(v, Value::String(s) if s.as_ref() == "foo"));
     }
 
     #[test]
@@ -266,7 +266,7 @@ mod eval {
                 "fail",
                 Value::Procedure(
                     Procedure::intrinsic("baz", 0..0, |_, _| {
-                        Err(Exception::signal(Condition::system_error("oh no")))
+                        Err(Condition::system_error("oh no").into())
                     })
                     .into(),
                 ),
@@ -325,7 +325,7 @@ mod eval {
             let r = expr.eval(&mut f);
 
             let v = ok_or_fail!(r);
-            assert!(matches!(v, Value::Symbol(s) if &*s == "bar"));
+            assert!(matches!(v, Value::Symbol(s) if s.as_ref() == "bar"));
         }
 
         #[test]
@@ -392,7 +392,7 @@ mod eval {
             let r = expr.eval(&mut f);
 
             let v = ok_or_fail!(r);
-            assert!(matches!(v, Value::String(s) if &*s == "one, two, three"));
+            assert!(matches!(v, Value::String(s) if s.as_ref() == "one, two, three"));
         }
 
         #[test]
@@ -449,7 +449,7 @@ mod eval {
             let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
             assert_eq!(
                 err.to_string(),
-                "#<env-error \"expected procedure, found: string\">"
+                "#<env-error \"expected procedure, got: string\">"
             );
         }
 
@@ -490,7 +490,7 @@ mod eval {
             let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
             assert_eq!(
                 err.to_string(),
-                "#<env-error \"foo arity mismatch - expected: 0, found: 1\">"
+                "#<env-error \"foo arity mismatch - expected: 0, got: 1\">"
             );
         }
 
@@ -526,7 +526,7 @@ mod eval {
             let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
             assert_eq!(
                 err.to_string(),
-                "#<env-error \"foo arity mismatch - expected: 1, found: 0\">"
+                "#<env-error \"foo arity mismatch - expected: 1, got: 0\">"
             );
         }
 
@@ -562,7 +562,7 @@ mod eval {
             let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
             assert_eq!(
                 err.to_string(),
-                "#<env-error \"foo arity mismatch - expected at least: 1, found: 0\">"
+                "#<env-error \"foo arity mismatch - expected at least: 1, got: 0\">"
             );
         }
 

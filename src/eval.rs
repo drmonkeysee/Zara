@@ -61,6 +61,12 @@ impl Exception {
     }
 }
 
+impl From<Condition> for Exception {
+    fn from(value: Condition) -> Self {
+        Exception::signal(value)
+    }
+}
+
 #[derive(Debug)]
 pub struct Signal(Condition);
 

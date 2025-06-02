@@ -200,7 +200,7 @@ mod tests {
         let r = p.apply(&[], &mut f);
 
         let v = ok_or_fail!(r);
-        assert!(matches!(v, Value::String(s) if &*s == "bar"));
+        assert!(matches!(v, Value::String(s) if s.as_ref() == "bar"));
     }
 
     #[test]
@@ -218,6 +218,6 @@ mod tests {
         let r = p.apply(&args, &mut f);
 
         let v = ok_or_fail!(r);
-        assert!(matches!(v, Value::String(s) if &*s == "bar baz"));
+        assert!(matches!(v, Value::String(s) if s.as_ref() == "bar baz"));
     }
 }

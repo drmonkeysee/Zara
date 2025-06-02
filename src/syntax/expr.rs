@@ -240,16 +240,10 @@ impl Display for TypeName<'_> {
 fn eval_call(proc: Expression, args: Box<[Expression]>, env: &mut Frame) -> EvalResult {
     let proc = proc.eval(env)?;
     let Value::Procedure(p) = proc else {
-        return Err(Exception::signal(Condition::proc_error(
-            &proc.as_typename().to_string(),
-        )));
+        return Err(Condition::proc_error(&proc.as_typename().to_string()).into());
     };
     if !p.matches_arity(args.len()) {
-        return Err(Exception::signal(Condition::arity_error(
-            p.name(),
-            p.arity(),
-            args.len(),
-        )));
+        return Err(Condition::arity_error(p.name(), p.arity(), args.len()).into());
     }
     let args = args
         .into_iter()

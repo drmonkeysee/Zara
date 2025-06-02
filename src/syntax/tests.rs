@@ -87,7 +87,7 @@ mod parsing {
             Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 2, end: 3 }, txt },
                 kind: ExpressionKind::Literal(Value::String(s)),
-            } if txt.lineno == 1 && &**s == "foo"
+            } if txt.lineno == 1 && s.as_ref() == "foo"
         ));
         assert!(et.parsers.is_empty());
     }
@@ -131,7 +131,7 @@ mod parsing {
             Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 2, end: 3 }, txt },
                 kind: ExpressionKind::Literal(Value::String(s)),
-            } if txt.lineno == 1 && &**s == "foo"
+            } if txt.lineno == 1 && s.as_ref() == "foo"
         ));
         assert!(matches!(
             &seq[3],
@@ -219,11 +219,11 @@ mod parsing {
             unreachable!();
         };
         assert!(matches!(
-            &**proc,
+            proc.as_ref(),
             Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 1, end: 2 }, .. },
                 kind: ExpressionKind::Variable(s),
-            } if &**s == "+"
+            } if s.as_ref() == "+"
         ));
         assert_eq!(args.len(), 2);
         assert!(matches!(
@@ -1182,7 +1182,7 @@ mod parsing {
             ExpressionError {
                 ctx: ExprCtx { span: TxtSpan { start: 6, end: 7 }, txt },
                 kind: ExpressionErrorKind::ByteVectorInvalidItem(ExpressionKind::Literal(Value::Symbol(s))),
-            } if txt.lineno == 1 && &**s == "b"
+            } if txt.lineno == 1 && s.as_ref() == "b"
         ));
         assert!(matches!(
             &errs[1],

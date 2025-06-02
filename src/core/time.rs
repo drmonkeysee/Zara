@@ -26,11 +26,7 @@ fn current_jiffy(_args: &[Value], env: &mut Frame) -> EvalResult {
 
 fn current_second(_args: &[Value], _env: &mut Frame) -> EvalResult {
     SystemTime::now().duration_since(UNIX_EPOCH).map_or_else(
-        |_| {
-            Err(Exception::signal(Condition::system_error(
-                "system time negative overflow",
-            )))
-        },
+        |_| Err(Condition::system_error("system time negative overflow").into()),
         |d| Ok(Value::real(d.as_secs_f64())),
     )
 }
