@@ -41,11 +41,11 @@ impl Args {
         args.fold(this, Self::match_arg)
     }
 
-    pub(crate) fn compose_run_args(&self) -> Vec<&str> {
+    pub(crate) fn compose_run_args(&self) -> Vec<String> {
         [if let Input::File(p) = &self.input {
-            p.to_str().unwrap_or(self.me.as_str())
+            p.to_str().unwrap_or(self.me.as_str()).to_owned()
         } else {
-            self.me.as_str()
+            self.me.clone()
         }]
         .into_iter()
         .chain(
@@ -53,7 +53,7 @@ impl Args {
                 .as_ref()
                 .into_iter()
                 .flatten()
-                .map(String::as_str),
+                .map(String::clone),
         )
         .collect()
     }

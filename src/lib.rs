@@ -67,7 +67,7 @@ pub struct Interpreter {
 
 impl Interpreter {
     #[must_use]
-    pub fn new<'a>(mode: RunMode, args: impl IntoIterator<Item = &'a str>) -> Self {
+    pub fn new(mode: RunMode, args: impl IntoIterator<Item = String>) -> Self {
         Self {
             lexer: Lexer::default(),
             runner: resolve_executor(mode, args),
@@ -200,10 +200,7 @@ impl<P: Parser, E: Evaluator> Executor for Engine<P, E> {
     }
 }
 
-fn resolve_executor<'a>(
-    mode: RunMode,
-    args: impl IntoIterator<Item = &'a str>,
-) -> Box<dyn Executor> {
+fn resolve_executor(mode: RunMode, args: impl IntoIterator<Item = String>) -> Box<dyn Executor> {
     match mode {
         RunMode::Evaluate => Box::new(Engine {
             evaluator: Environment::new(args),

@@ -15,7 +15,7 @@ pub(crate) struct Repl {
 }
 
 impl Repl {
-    pub(crate) fn new<'a>(mode: RunMode, args: impl IntoIterator<Item = &'a str>) -> Result<Self> {
+    pub(crate) fn new(mode: RunMode, args: impl IntoIterator<Item = String>) -> Result<Self> {
         Ok(Self {
             editor: create_editor()?,
             exit: ExitCode::SUCCESS,

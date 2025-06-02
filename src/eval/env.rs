@@ -29,7 +29,7 @@ pub(crate) struct System {
 }
 
 impl System {
-    pub(crate) fn new<'a>(args: impl IntoIterator<Item = &'a str>) -> Self {
+    pub(crate) fn new(args: impl IntoIterator<Item = String>) -> Self {
         Self {
             args: Value::list(args.into_iter().map(Value::string).collect::<Vec<_>>()),
             start_time: Instant::now(),

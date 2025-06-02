@@ -120,7 +120,7 @@ impl Evaluator for Environment {
 }
 
 impl Environment {
-    pub(crate) fn new<'a>(args: impl IntoIterator<Item = &'a str>) -> Self {
+    pub(crate) fn new(args: impl IntoIterator<Item = String>) -> Self {
         let mut global = Binding::default();
         core::load(&mut global);
         Self {

@@ -10,36 +10,32 @@ use zara::{
     txt::TextSource,
 };
 
-pub(crate) fn file<'a>(
+pub(crate) fn file(
     mode: RunMode,
     prg: impl AsRef<Path>,
-    args: impl IntoIterator<Item = &'a str>,
+    args: impl IntoIterator<Item = String>,
 ) -> Result {
     run(mode, &mut FileSource::file(prg)?, args)
 }
 
-pub(crate) fn prg<'a>(
+pub(crate) fn prg(
     mode: RunMode,
     prg: impl Into<String>,
-    args: impl IntoIterator<Item = &'a str>,
+    args: impl IntoIterator<Item = String>,
 ) -> Result {
     run(mode, &mut StringSource::new(prg, "<stdin prg>"), args)
 }
 
-pub(crate) fn repl<'a>(mode: RunMode, args: impl IntoIterator<Item = &'a str>) -> Result {
+pub(crate) fn repl(mode: RunMode, args: impl IntoIterator<Item = String>) -> Result {
     let mut r = Repl::new(mode, args)?;
     Ok(r.run()?)
 }
 
-pub(crate) fn stdin<'a>(mode: RunMode, args: impl IntoIterator<Item = &'a str>) -> Result {
+pub(crate) fn stdin(mode: RunMode, args: impl IntoIterator<Item = String>) -> Result {
     run(mode, &mut stdin_source(), args)
 }
 
-fn run<'a>(
-    mode: RunMode,
-    src: &mut impl TextSource,
-    args: impl IntoIterator<Item = &'a str>,
-) -> Result {
+fn run(mode: RunMode, src: &mut impl TextSource, args: impl IntoIterator<Item = String>) -> Result {
     let mut runtime = Interpreter::new(mode, args);
     let mut result = runtime.run(src);
     if let Ok(Evaluation::Ex(Exception::Exit(code))) = result {
