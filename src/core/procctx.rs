@@ -3,10 +3,10 @@ use crate::{
     Exception,
     eval::{Binding, EvalResult, Frame},
     number::Number,
-    value::Value,
+    value::{Condition, TypeName, Value},
 };
 use std::{
-    env,
+    env::{self, VarError},
     process::{self, ExitCode},
 };
 
@@ -53,8 +53,20 @@ fn exit(args: &[Value], _env: &mut Frame) -> EvalResult {
     )))
 }
 
-fn get_environment_variable(_args: &[Value], _env: &mut Frame) -> EvalResult {
-    todo!("get_environment_variable");
+fn get_environment_variable(args: &[Value], _env: &mut Frame) -> EvalResult {
+    let arg = args.first().unwrap();
+    let Value::String(s) = arg else {
+        return Err(Condition::arg_error("0", TypeName::STRING, arg).into());
+    };
+    env::var(s.as_ref()).map_or_else(
+        |err| match err {
+            VarError::NotPresent => Ok(Value::Boolean(false)),
+            VarError::NotUnicode(_) => {
+                Err(Condition::system_error("invalid env var format").into())
+            }
+        },
+        |v| Ok(Value::string(v)),
+    )
 }
 
 fn get_environment_variables(_args: &[Value], _env: &mut Frame) -> EvalResult {

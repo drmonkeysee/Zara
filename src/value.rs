@@ -176,7 +176,19 @@ impl Condition {
         Self {
             kind: ConditionKind::Env,
             irritants: Value::Unspecified,
-            msg: format!("expected procedure, found: {typename}").into(),
+            msg: format!("expected procedure, got: {typename}").into(),
+        }
+    }
+
+    pub(crate) fn arg_error(name: &str, expected_type: &str, arg: &Value) -> Self {
+        Self {
+            kind: ConditionKind::Env,
+            irritants: zlist![arg.clone()],
+            msg: format!(
+                "invalid type for arg `{name}` - expected: {expected_type}, got: {}",
+                arg.as_typename()
+            )
+            .into(),
         }
     }
 
@@ -193,7 +205,7 @@ impl Condition {
         Self {
             kind: ConditionKind::Env,
             irritants: Value::Unspecified,
-            msg: format!("{name} arity mismatch - {expected}, found: {actual}",).into(),
+            msg: format!("{name} arity mismatch - {expected}, got: {actual}",).into(),
         }
     }
 
@@ -231,6 +243,10 @@ impl Display for ValueMessage<'_> {
 
 pub(crate) struct TypeName<'a>(&'a Value);
 
+impl TypeName<'_> {
+    pub(crate) const STRING: &'static str = "string";
+}
+
 impl Display for TypeName<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self.0 {
@@ -242,7 +258,7 @@ impl Display for TypeName<'_> {
             Value::Pair(None) => f.write_str("list"),
             Value::Pair(Some(p)) => f.write_str(if p.is_list() { "list" } else { "pair" }),
             Value::Procedure(_) => f.write_str("procedure"),
-            Value::String(_) => f.write_str("string"),
+            Value::String(_) => f.write_str(Self::STRING),
             Value::Symbol(_) => f.write_str("symbol"),
             Value::TokenList(_) => f.write_str("token list"),
             Value::Unspecified => f.write_str("unspecified"),
