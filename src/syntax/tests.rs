@@ -1606,9 +1606,7 @@ mod partition {
         let groups = p.into_iter().collect::<Vec<_>>();
 
         assert_eq!(groups.len(), 1);
-        let g = &groups[0];
-        assert_eq!(g.len(), 1);
-        assert!(matches!(&g[0], TxtSpan { start: 0, end: 5 }));
+        assert!(matches!(groups[0][..], [TxtSpan { start: 0, end: 5 }]));
     }
 
     #[test]
@@ -1619,11 +1617,14 @@ mod partition {
         let groups = p.into_iter().collect::<Vec<_>>();
 
         assert_eq!(groups.len(), 1);
-        let g = &groups[0];
-        assert_eq!(g.len(), 3);
-        assert!(matches!(&g[0], TxtSpan { start: 0, end: 5 }));
-        assert!(matches!(&g[1], TxtSpan { start: 6, end: 9 }));
-        assert!(matches!(&g[2], TxtSpan { start: 9, end: 13 }));
+        assert!(matches!(
+            groups[0][..],
+            [
+                TxtSpan { start: 0, end: 5 },
+                TxtSpan { start: 6, end: 9 },
+                TxtSpan { start: 9, end: 13 }
+            ]
+        ));
     }
 
     #[test]
@@ -1634,11 +1635,14 @@ mod partition {
         let groups = p.into_iter().collect::<Vec<_>>();
 
         assert_eq!(groups.len(), 1);
-        let g = &groups[0];
-        assert_eq!(g.len(), 3);
-        assert!(matches!(&g[0], TxtSpan { start: 0, end: 5 }));
-        assert!(matches!(&g[1], TxtSpan { start: 5, end: 8 }));
-        assert!(matches!(&g[2], TxtSpan { start: 8, end: 12 }));
+        assert!(matches!(
+            groups[0][..],
+            [
+                TxtSpan { start: 0, end: 5 },
+                TxtSpan { start: 5, end: 8 },
+                TxtSpan { start: 8, end: 12 }
+            ]
+        ));
     }
 
     #[test]
@@ -1649,15 +1653,9 @@ mod partition {
         let groups = p.into_iter().collect::<Vec<_>>();
 
         assert_eq!(groups.len(), 3);
-        let g = &groups[0];
-        assert_eq!(g.len(), 1);
-        assert!(matches!(&g[0], TxtSpan { start: 0, end: 5 }));
-        let g = &groups[1];
-        assert_eq!(g.len(), 1);
-        assert!(matches!(&g[0], TxtSpan { start: 3, end: 6 }));
-        let g = &groups[2];
-        assert_eq!(g.len(), 1);
-        assert!(matches!(&g[0], TxtSpan { start: 4, end: 8 }));
+        assert!(matches!(groups[0][..], [TxtSpan { start: 0, end: 5 }]));
+        assert!(matches!(groups[1][..], [TxtSpan { start: 3, end: 6 }]));
+        assert!(matches!(groups[2][..], [TxtSpan { start: 4, end: 8 }]));
     }
 
     #[test]
@@ -1668,13 +1666,11 @@ mod partition {
         let groups = p.into_iter().collect::<Vec<_>>();
 
         assert_eq!(groups.len(), 2);
-        let g = &groups[0];
-        assert_eq!(g.len(), 2);
-        assert!(matches!(&g[0], TxtSpan { start: 0, end: 5 }));
-        assert!(matches!(&g[1], TxtSpan { start: 5, end: 8 }));
-        let g = &groups[1];
-        assert_eq!(g.len(), 1);
-        assert!(matches!(&g[0], TxtSpan { start: 3, end: 6 }));
+        assert!(matches!(
+            groups[0][..],
+            [TxtSpan { start: 0, end: 5 }, TxtSpan { start: 5, end: 8 }]
+        ));
+        assert!(matches!(groups[1][..], [TxtSpan { start: 3, end: 6 }]));
     }
 
     #[test]
@@ -1685,14 +1681,14 @@ mod partition {
         let groups = p.into_iter().collect::<Vec<_>>();
 
         assert_eq!(groups.len(), 2);
-        let g = &groups[0];
-        assert_eq!(g.len(), 2);
-        assert!(matches!(&g[0], TxtSpan { start: 0, end: 5 }));
-        assert!(matches!(&g[1], TxtSpan { start: 5, end: 8 }));
-        let g = &groups[1];
-        assert_eq!(g.len(), 2);
-        assert!(matches!(&g[0], TxtSpan { start: 3, end: 6 }));
-        assert!(matches!(&g[1], TxtSpan { start: 7, end: 10 }));
+        assert!(matches!(
+            groups[0][..],
+            [TxtSpan { start: 0, end: 5 }, TxtSpan { start: 5, end: 8 }]
+        ));
+        assert!(matches!(
+            groups[1][..],
+            [TxtSpan { start: 3, end: 6 }, TxtSpan { start: 7, end: 10 }]
+        ));
     }
 
     #[test]
@@ -1703,12 +1699,10 @@ mod partition {
         let groups = p.into_iter().collect::<Vec<_>>();
 
         assert_eq!(groups.len(), 2);
-        let g = &groups[0];
-        assert_eq!(g.len(), 1);
-        assert!(matches!(&g[0], TxtSpan { start: 0, end: 10 }));
-        let g = &groups[1];
-        assert_eq!(g.len(), 2);
-        assert!(matches!(&g[0], TxtSpan { start: 2, end: 5 }));
-        assert!(matches!(&g[1], TxtSpan { start: 5, end: 8 }));
+        assert!(matches!(groups[0][..], [TxtSpan { start: 0, end: 10 }]));
+        assert!(matches!(
+            groups[1][..],
+            [TxtSpan { start: 2, end: 5 }, TxtSpan { start: 5, end: 8 }]
+        ));
     }
 }

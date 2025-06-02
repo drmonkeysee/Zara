@@ -667,8 +667,7 @@ mod bytevector {
             extract_or_fail!(expr.kind, ExpressionKind::Literal),
             Value::ByteVector
         );
-        assert_eq!(bv.len(), 1);
-        assert_eq!(bv[0], 24);
+        assert_eq!(*bv, [24]);
     }
 
     #[test]
@@ -713,10 +712,7 @@ mod bytevector {
             extract_or_fail!(expr.kind, ExpressionKind::Literal),
             Value::ByteVector
         );
-        assert_eq!(bv.len(), 3);
-        assert_eq!(bv[0], 24);
-        assert_eq!(bv[1], 25);
-        assert_eq!(bv[2], 26);
+        assert_eq!(*bv, [24, 25, 26]);
     }
 
     #[test]
