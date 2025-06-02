@@ -31,8 +31,8 @@ pub(super) fn load(scope: &mut Binding) {
     );
 }
 
-fn command_line(_args: &[Value], _env: &mut Frame) -> EvalResult {
-    todo!("command_line");
+fn command_line(_args: &[Value], env: &mut Frame) -> EvalResult {
+    Ok(env.sys.args.clone())
 }
 
 fn emergency_exit(args: &[Value], _env: &mut Frame) -> EvalResult {
