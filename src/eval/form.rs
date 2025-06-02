@@ -61,6 +61,7 @@ enum Body {
     Intrinsic(IntrinsicFn),
     // TODO: this likely has to be a 3rd thing: Body to exclude constructs
     // that can only appear at top-level program.
+    #[allow(dead_code, reason = "not yet implemented")]
     Lambda(Program /*, TODO: need parameter names? */),
 }
 

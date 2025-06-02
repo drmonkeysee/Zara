@@ -14,7 +14,7 @@ use std::{
 
 fn main() -> Exit {
     let args = Args::parse(env::args());
-    execute(args).into()
+    execute(&args).into()
 }
 
 // NOTE: newtype to have more control over exit output rather than the
@@ -33,7 +33,7 @@ impl From<Result> for Exit {
     }
 }
 
-fn execute(args: Args) -> Result {
+fn execute(args: &Args) -> Result {
     eprintln!("Run Args: {:?}", args.runargs);
     match args.cmd {
         Cmd::Help => args::usage(&args.me),
@@ -43,7 +43,7 @@ fn execute(args: Args) -> Result {
     Ok(ExitCode::SUCCESS)
 }
 
-fn exec_run(args: Args) -> Result {
+fn exec_run(args: &Args) -> Result {
     let run_args = args.compose_run_args();
     match &args.input {
         Input::File(p) => run::file(args.mode, p, run_args),

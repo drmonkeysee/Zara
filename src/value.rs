@@ -271,8 +271,11 @@ impl Display for TypeName<'_> {
 #[derive(Debug)]
 enum ConditionKind {
     Env,
+    #[allow(dead_code, reason = "not yet implemented")]
     File,
+    #[allow(dead_code, reason = "not yet implemented")]
     General,
+    #[allow(dead_code, reason = "not yet implemented")]
     Read,
     System,
 }

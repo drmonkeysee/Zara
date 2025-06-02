@@ -31,6 +31,7 @@ pub(super) fn load(scope: &mut Binding) {
     );
 }
 
+#[allow(clippy::unnecessary_wraps, reason = "infallible intrinsic")]
 fn command_line(_args: &[Value], env: &mut Frame) -> EvalResult {
     Ok(env.sys.args.clone())
 }
