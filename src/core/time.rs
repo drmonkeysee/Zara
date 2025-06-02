@@ -28,7 +28,7 @@ fn current_second(_args: &[Value], _env: &mut Frame) -> EvalResult {
     SystemTime::now().duration_since(UNIX_EPOCH).map_or_else(
         |_| {
             Err(Exception::signal(Condition::system_error(
-                "system time failure",
+                "system time negative overflow",
             )))
         },
         |d| Ok(Value::real(d.as_secs_f64())),
