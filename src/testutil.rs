@@ -38,7 +38,7 @@ use crate::{
     eval::{Binding, Frame, SymbolTable, System},
     txt::{LineNumber, TextContext, TextLine},
 };
-use std::path::Path;
+use std::{iter, path::Path};
 pub(crate) use {err_or_fail, extract_or_fail, ok_or_fail, some_or_fail};
 
 pub(crate) fn make_textline() -> TextLine {
@@ -78,7 +78,7 @@ impl Default for TestEnv {
         Self {
             binding: Binding::default(),
             symbols: SymbolTable,
-            system: System::new(),
+            system: System::new(iter::empty()),
         }
     }
 }

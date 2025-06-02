@@ -23,13 +23,14 @@ impl Binding {
 pub(crate) struct SymbolTable;
 
 pub(crate) struct System {
-    // TODO: run_args, including zara or program file name
+    pub(crate) args: Value,
     pub(crate) start_time: Instant,
 }
 
 impl System {
-    pub(crate) fn new() -> Self {
+    pub(crate) fn new<'a>(args: impl IntoIterator<Item = &'a str>) -> Self {
         Self {
+            args: Value::list(args.into_iter().map(Value::string).collect::<Vec<_>>()),
             start_time: Instant::now(),
         }
     }

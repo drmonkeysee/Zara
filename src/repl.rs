@@ -15,13 +15,13 @@ pub(crate) struct Repl {
 }
 
 impl Repl {
-    pub(crate) fn new(mode: RunMode) -> Result<Self> {
+    pub(crate) fn new<'a>(mode: RunMode, args: impl IntoIterator<Item = &'a str>) -> Result<Self> {
         Ok(Self {
             editor: create_editor()?,
             exit: ExitCode::SUCCESS,
             prompt: INPUT,
             running: true,
-            runtime: Interpreter::new(mode),
+            runtime: Interpreter::new(mode, args),
             src: StringSource::empty("<repl>"),
         })
     }

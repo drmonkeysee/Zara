@@ -119,14 +119,14 @@ impl Evaluator for Environment {
     }
 }
 
-impl Default for Environment {
-    fn default() -> Self {
+impl Environment {
+    pub(crate) fn new<'a>(args: impl IntoIterator<Item = &'a str>) -> Self {
         let mut global = Binding::default();
         core::load(&mut global);
         Self {
             global,
             symbols: SymbolTable,
-            system: System::new(),
+            system: System::new(args),
         }
     }
 }

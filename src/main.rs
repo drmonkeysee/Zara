@@ -44,10 +44,11 @@ fn execute(args: Args) -> Result {
 }
 
 fn exec_run(args: Args) -> Result {
-    match args.input {
-        Input::File(p) => run::file(args.mode, p),
-        Input::Prg(p) => run::prg(args.mode, p),
-        Input::Repl => run::repl(args.mode),
-        Input::Stdin => run::stdin(args.mode),
+    let run_args = args.compose_run_args();
+    match &args.input {
+        Input::File(p) => run::file(args.mode, p, run_args),
+        Input::Prg(p) => run::prg(args.mode, p, run_args),
+        Input::Repl => run::repl(args.mode, run_args),
+        Input::Stdin => run::stdin(args.mode, run_args),
     }
 }
