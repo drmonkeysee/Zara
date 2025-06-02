@@ -49,6 +49,7 @@ impl Value {
         Self::Pair(None)
     }
 
+    #[allow(clippy::similar_names, reason = "lisp terms-of-art")]
     pub(crate) fn cons(car: Value, cdr: Value) -> Self {
         Self::Pair(Some(Pair::cons(car, cdr).into()))
     }

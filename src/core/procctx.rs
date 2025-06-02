@@ -69,6 +69,7 @@ fn get_environment_variable(args: &[Value], _env: &mut Frame) -> EvalResult {
     )
 }
 
+#[allow(clippy::unnecessary_wraps, reason = "infallible intrinsic")]
 fn get_environment_variables(_args: &[Value], _env: &mut Frame) -> EvalResult {
     Ok(Value::list(
         env::vars()
