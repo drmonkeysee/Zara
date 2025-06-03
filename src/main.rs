@@ -34,7 +34,6 @@ impl From<Result> for Exit {
 }
 
 fn execute(args: Args) -> Result {
-    eprintln!("Run Args: {:?}", args.runargs);
     match args.cmd {
         Cmd::Help => args::usage(&args.me),
         Cmd::Run => return exec_run(args),
