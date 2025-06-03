@@ -41,8 +41,8 @@ impl Args {
         args.fold(this, Self::match_arg)
     }
 
-    pub(crate) fn compose_run_args(&self) -> Vec<String> {
-        [if let Input::File(p) = &self.input {
+    pub(crate) fn decompose(self) -> (Input, RunMode, Vec<String>) {
+        let runargs = [if let Input::File(p) = &self.input {
             p.to_str().unwrap_or(self.me.as_str()).to_owned()
         } else {
             self.me.clone()
@@ -55,7 +55,8 @@ impl Args {
                 .flatten()
                 .map(String::clone),
         )
-        .collect()
+        .collect();
+        (self.input, self.mode, runargs)
     }
 
     fn match_arg(self, arg: String) -> Self {
