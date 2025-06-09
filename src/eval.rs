@@ -1,14 +1,14 @@
 mod env;
 mod form;
 
-use self::env::EnvNamespace;
+use self::env::{EnvNamespace, SimpleNamespace};
 pub(crate) use self::{
     env::{Binding, Frame, SymbolTable, System},
     form::{Arity, IntrinsicFn, MAX_ARITY, Procedure},
 };
 use crate::{
     core,
-    syntax::{Namespace, Program, SimpleNamespace},
+    syntax::{Namespace, Program},
     value::{Condition, Value as ValueImpl},
 };
 use std::{

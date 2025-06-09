@@ -14,7 +14,6 @@ use crate::{
     value::Value,
 };
 use std::{
-    collections::HashSet,
     error::Error,
     fmt::{self, Display, Formatter, Write},
     iter::FilterMap,
@@ -63,23 +62,6 @@ pub(crate) trait Namespace {
     fn name_defined(&self, name: &str) -> bool;
     fn get_symbol(&self, symbol: &str) -> Value;
     fn add_name(&mut self, name: &str);
-}
-
-#[derive(Default)]
-pub(crate) struct SimpleNamespace(HashSet<String>);
-
-impl Namespace for SimpleNamespace {
-    fn name_defined(&self, name: &str) -> bool {
-        self.0.contains(name)
-    }
-
-    fn get_symbol(&self, symbol: &str) -> Value {
-        Value::symbol(symbol)
-    }
-
-    fn add_name(&mut self, name: &str) {
-        self.0.insert(name.to_owned());
-    }
 }
 
 #[derive(Debug)]

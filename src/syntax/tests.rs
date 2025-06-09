@@ -5,6 +5,20 @@ use crate::{
     txt::LineNumber,
 };
 
+struct TestNamespace;
+
+impl Namespace for TestNamespace {
+    fn name_defined(&self, _name: &str) -> bool {
+        false
+    }
+
+    fn get_symbol(&self, _symbol: &str) -> Value {
+        Value::Unspecified
+    }
+
+    fn add_name(&mut self, _name: &str) {}
+}
+
 fn make_tokenline(kinds: impl IntoIterator<Item = TokenKind>) -> TokenLine {
     make_tokenline_no(kinds, 1)
 }
@@ -26,7 +40,7 @@ mod parsing {
         let mut et = ExpressionTree::default();
         let tokens = [].into();
 
-        let r = et.parse(tokens, SimpleNamespace::default());
+        let r = et.parse(tokens, TestNamespace);
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
         let seq = prg.unwrap();
@@ -39,7 +53,7 @@ mod parsing {
         let mut et = ExpressionTree::default();
         let tokens = [make_tokenline([TokenKind::Boolean(true)])];
 
-        let r = et.parse(tokens.into(), SimpleNamespace::default());
+        let r = et.parse(tokens.into(), TestNamespace);
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
         let seq = prg.unwrap();
@@ -63,7 +77,7 @@ mod parsing {
             TokenKind::String("foo".into()),
         ])];
 
-        let r = et.parse(tokens.into(), SimpleNamespace::default());
+        let r = et.parse(tokens.into(), TestNamespace);
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
         let seq = prg.unwrap();
@@ -107,7 +121,7 @@ mod parsing {
             make_tokenline_no([TokenKind::Boolean(false), TokenKind::Character('b')], 2),
         ];
 
-        let r = et.parse(tokens.into(), SimpleNamespace::default());
+        let r = et.parse(tokens.into(), TestNamespace);
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
         let seq = prg.unwrap();
@@ -166,7 +180,7 @@ mod parsing {
             TokenKind::ParenRight,
         ])];
 
-        let r = et.parse(tokens.into(), SimpleNamespace::default());
+        let r = et.parse(tokens.into(), TestNamespace);
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
         let seq = prg.unwrap();
@@ -198,7 +212,7 @@ mod parsing {
             TokenKind::ParenRight,
         ])];
 
-        let r = et.parse(tokens.into(), SimpleNamespace::default());
+        let r = et.parse(tokens.into(), TestNamespace);
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
         let seq = prg.unwrap();
@@ -252,7 +266,7 @@ mod parsing {
             TokenKind::Identifier("a".to_owned()),
         ])];
 
-        let r = et.parse(tokens.into(), SimpleNamespace::default());
+        let r = et.parse(tokens.into(), TestNamespace);
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
         let seq = prg.unwrap();
@@ -301,7 +315,7 @@ mod parsing {
             TokenKind::ParenRight,
         ])];
 
-        let r = et.parse(tokens.into(), SimpleNamespace::default());
+        let r = et.parse(tokens.into(), TestNamespace);
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
         let seq = prg.unwrap();
@@ -335,7 +349,7 @@ mod parsing {
             TokenKind::ParenRight,
         ])];
 
-        let r = et.parse(tokens.into(), SimpleNamespace::default());
+        let r = et.parse(tokens.into(), TestNamespace);
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
         let seq = prg.unwrap();
@@ -364,7 +378,7 @@ mod parsing {
             TokenKind::ParenRight,
         ])];
 
-        let r = et.parse(tokens.into(), SimpleNamespace::default());
+        let r = et.parse(tokens.into(), TestNamespace);
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
         let seq = prg.unwrap();
@@ -394,7 +408,7 @@ mod parsing {
             TokenKind::ParenRight,
         ])];
 
-        let r = et.parse(tokens.into(), SimpleNamespace::default());
+        let r = et.parse(tokens.into(), TestNamespace);
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
         let seq = prg.unwrap();
@@ -421,7 +435,7 @@ mod parsing {
             TokenKind::ParenRight,
         ])];
 
-        let r = et.parse(tokens.into(), SimpleNamespace::default());
+        let r = et.parse(tokens.into(), TestNamespace);
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
         let seq = prg.unwrap();
@@ -451,7 +465,7 @@ mod parsing {
             TokenKind::ParenRight,
         ])];
 
-        let r = et.parse(tokens.into(), SimpleNamespace::default());
+        let r = et.parse(tokens.into(), TestNamespace);
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
         let seq = prg.unwrap();
@@ -482,7 +496,7 @@ mod parsing {
             TokenKind::ParenRight,
         ])];
 
-        let r = et.parse(tokens.into(), SimpleNamespace::default());
+        let r = et.parse(tokens.into(), TestNamespace);
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
         let seq = prg.unwrap();
@@ -516,7 +530,7 @@ mod parsing {
             TokenKind::ParenRight,
         ])];
 
-        let r = et.parse(tokens.into(), SimpleNamespace::default());
+        let r = et.parse(tokens.into(), TestNamespace);
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
         let seq = prg.unwrap();
@@ -556,7 +570,7 @@ mod parsing {
             TokenKind::ParenRight,
         ])];
 
-        let r = et.parse(tokens.into(), SimpleNamespace::default());
+        let r = et.parse(tokens.into(), TestNamespace);
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
         let seq = prg.unwrap();
@@ -588,7 +602,7 @@ mod parsing {
             TokenKind::ParenRight,
         ])];
 
-        let r = et.parse(tokens.into(), SimpleNamespace::default());
+        let r = et.parse(tokens.into(), TestNamespace);
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
         let seq = prg.unwrap();
@@ -621,7 +635,7 @@ mod parsing {
             TokenKind::ParenRight,
         ])];
 
-        let r = et.parse(tokens.into(), SimpleNamespace::default());
+        let r = et.parse(tokens.into(), TestNamespace);
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
         let seq = prg.unwrap();
@@ -657,7 +671,7 @@ mod parsing {
             TokenKind::ParenRight,
         ])];
 
-        let r = et.parse(tokens.into(), SimpleNamespace::default());
+        let r = et.parse(tokens.into(), TestNamespace);
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
         let seq = prg.unwrap();
@@ -689,7 +703,7 @@ mod parsing {
             TokenKind::ParenRight,
         ])];
 
-        let r = et.parse(tokens.into(), SimpleNamespace::default());
+        let r = et.parse(tokens.into(), TestNamespace);
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
         let seq = prg.unwrap();
@@ -721,7 +735,7 @@ mod parsing {
             TokenKind::ParenRight,
         ])];
 
-        let r = et.parse(tokens.into(), SimpleNamespace::default());
+        let r = et.parse(tokens.into(), TestNamespace);
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
         let seq = prg.unwrap();
@@ -750,7 +764,7 @@ mod parsing {
             TokenKind::String("foo".into()),
         ])];
 
-        let r = et.parse(tokens.into(), SimpleNamespace::default());
+        let r = et.parse(tokens.into(), TestNamespace);
 
         let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
         assert_eq!(errs.len(), 2);
@@ -795,7 +809,7 @@ mod parsing {
             ),
         ];
 
-        let r = et.parse(tokens.into(), SimpleNamespace::default());
+        let r = et.parse(tokens.into(), TestNamespace);
 
         let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
         assert_eq!(errs.len(), 3);
@@ -856,7 +870,7 @@ mod parsing {
             ),
         ];
 
-        let r = et.parse(tokens.into(), SimpleNamespace::default());
+        let r = et.parse(tokens.into(), TestNamespace);
 
         let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
         assert_eq!(errs.len(), 3);
@@ -901,7 +915,7 @@ mod parsing {
             1,
         )];
 
-        let r = et.parse(tokens.into(), SimpleNamespace::default());
+        let r = et.parse(tokens.into(), TestNamespace);
 
         let err = extract_or_fail!(err_or_fail!(r), ParserError::Invalid);
         assert!(matches!(err, InvalidParseError::InvalidExprSource));
@@ -923,7 +937,7 @@ mod parsing {
             TokenKind::ParenRight,
         ])];
 
-        let r = et.parse(tokens.into(), SimpleNamespace::default());
+        let r = et.parse(tokens.into(), TestNamespace);
 
         let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
         assert_eq!(errs.len(), 2);
@@ -950,7 +964,7 @@ mod parsing {
         let mut et = ExpressionTree::default();
         let tokens = [make_tokenline_no([TokenKind::CommentDatum], 1)];
 
-        let r = et.parse(tokens.into(), SimpleNamespace::default());
+        let r = et.parse(tokens.into(), TestNamespace);
 
         assert!(matches!(r, Ok(ParserOutput::Continuation)));
         assert_eq!(et.parsers.len(), 2);
@@ -968,7 +982,7 @@ mod parsing {
             2,
         )];
 
-        let r = et.parse(tokens.into(), SimpleNamespace::default());
+        let r = et.parse(tokens.into(), TestNamespace);
 
         let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
         assert_eq!(errs.len(), 1);
@@ -997,7 +1011,7 @@ mod parsing {
             TokenKind::ParenRight,
         ])];
 
-        let r = et.parse(tokens.into(), SimpleNamespace::default());
+        let r = et.parse(tokens.into(), TestNamespace);
 
         let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
         assert_eq!(errs.len(), 1);
@@ -1026,7 +1040,7 @@ mod parsing {
             TokenKind::ParenRight,
         ])];
 
-        let r = et.parse(tokens.into(), SimpleNamespace::default());
+        let r = et.parse(tokens.into(), TestNamespace);
 
         let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
         assert_eq!(errs.len(), 1);
@@ -1055,7 +1069,7 @@ mod parsing {
             TokenKind::ParenRight,
         ])];
 
-        let r = et.parse(tokens.into(), SimpleNamespace::default());
+        let r = et.parse(tokens.into(), TestNamespace);
 
         let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
         assert_eq!(errs.len(), 1);
@@ -1084,7 +1098,7 @@ mod parsing {
             TokenKind::ParenRight,
         ])];
 
-        let r = et.parse(tokens.into(), SimpleNamespace::default());
+        let r = et.parse(tokens.into(), TestNamespace);
 
         let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
         assert_eq!(errs.len(), 1);
@@ -1113,7 +1127,7 @@ mod parsing {
             TokenKind::ParenRight,
         ])];
 
-        let r = et.parse(tokens.into(), SimpleNamespace::default());
+        let r = et.parse(tokens.into(), TestNamespace);
 
         let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
         assert_eq!(errs.len(), 1);
@@ -1145,7 +1159,7 @@ mod parsing {
             TokenKind::ParenRight,
         ])];
 
-        let r = et.parse(tokens.into(), SimpleNamespace::default());
+        let r = et.parse(tokens.into(), TestNamespace);
 
         let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
         assert_eq!(errs.len(), 2);
@@ -1179,7 +1193,7 @@ mod parsing {
             TokenKind::ParenRight,
         ])];
 
-        let r = et.parse(tokens.into(), SimpleNamespace::default());
+        let r = et.parse(tokens.into(), TestNamespace);
 
         let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
         assert_eq!(errs.len(), 1);
@@ -1204,7 +1218,7 @@ mod parsing {
             TokenKind::ParenRight,
         ])];
 
-        let r = et.parse(tokens.into(), SimpleNamespace::default());
+        let r = et.parse(tokens.into(), TestNamespace);
 
         let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
         assert_eq!(errs.len(), 2);
@@ -1238,7 +1252,7 @@ mod parsing {
             TokenKind::ParenRight,
         ])];
 
-        let r = et.parse(tokens.into(), SimpleNamespace::default());
+        let r = et.parse(tokens.into(), TestNamespace);
 
         let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
         assert_eq!(errs.len(), 1);
@@ -1265,7 +1279,7 @@ mod parsing {
             TokenKind::ParenRight,
         ])];
 
-        let r = et.parse(tokens.into(), SimpleNamespace::default());
+        let r = et.parse(tokens.into(), TestNamespace);
 
         let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
         assert_eq!(errs.len(), 1);
@@ -1304,7 +1318,7 @@ mod continuation {
             },
         ])];
 
-        let r = et.parse(tokens.into(), SimpleNamespace::default());
+        let r = et.parse(tokens.into(), TestNamespace);
 
         assert!(matches!(r, Ok(ParserOutput::Continuation)));
         assert_eq!(et.parsers.len(), 2);
@@ -1344,7 +1358,7 @@ mod continuation {
             ),
         ];
 
-        let r = et.parse(tokens.into(), SimpleNamespace::default());
+        let r = et.parse(tokens.into(), TestNamespace);
 
         assert!(matches!(r, Ok(ParserOutput::Continuation)));
         assert_eq!(et.parsers.len(), 2);
@@ -1376,7 +1390,7 @@ mod continuation {
             },
         ])];
 
-        let r = et.parse(tokens.into(), SimpleNamespace::default());
+        let r = et.parse(tokens.into(), TestNamespace);
 
         let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
         assert_eq!(errs.len(), 1);
