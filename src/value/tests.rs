@@ -919,3 +919,45 @@ mod condition {
         assert_eq!(c.to_string(), "#<sys-error \"foo\">");
     }
 }
+
+mod cloning {
+    use super::*;
+    use crate::testutil::extract_or_fail;
+
+    #[test]
+    fn clone_with_underlying_cloneable() {
+        let v = Value::symbol("foo");
+
+        let c = v.clone();
+
+        assert!(Rc::ptr_eq(
+            &extract_or_fail!(v, Value::Symbol),
+            &extract_or_fail!(c, Value::Symbol)
+        ));
+    }
+
+    #[test]
+    fn clone_with_underlying_move_only() {
+        let v = zlist![Value::Unspecified];
+        dbg!(&v);
+
+        let c = v.clone();
+
+        assert!(Rc::ptr_eq(
+            &extract_or_fail!(extract_or_fail!(v, Value::Pair), Some),
+            &extract_or_fail!(extract_or_fail!(c, Value::Pair), Some)
+        ));
+    }
+
+    #[test]
+    fn clone_with_underlying_primitive_slice() {
+        let v = Value::ByteVector([1, 2, 3].into());
+
+        let c = v.clone();
+
+        assert!(Rc::ptr_eq(
+            &extract_or_fail!(v, Value::ByteVector),
+            &extract_or_fail!(c, Value::ByteVector)
+        ));
+    }
+}
