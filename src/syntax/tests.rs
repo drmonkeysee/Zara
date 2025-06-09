@@ -179,7 +179,6 @@ mod parsing {
             } if txt.lineno == 1 && format!("{bv:?}") == "[10, 13]"
         ));
         assert!(et.parsers.is_empty());
-        assert!(et.errs.is_empty());
     }
 
     #[test]
@@ -241,7 +240,6 @@ mod parsing {
             } if n.to_string() == "3"
         ));
         assert!(et.parsers.is_empty());
-        assert!(et.errs.is_empty());
     }
 
     #[test]
@@ -270,7 +268,6 @@ mod parsing {
         assert_eq!(value.to_string(), "(quote a)");
 
         assert!(et.parsers.is_empty());
-        assert!(et.errs.is_empty());
     }
 
     #[test]
@@ -322,7 +319,6 @@ mod parsing {
         );
 
         assert!(et.parsers.is_empty());
-        assert!(et.errs.is_empty());
     }
 
     #[test]
@@ -355,7 +351,6 @@ mod parsing {
         assert_eq!(value.to_string(), "(if 5)");
 
         assert!(et.parsers.is_empty());
-        assert!(et.errs.is_empty());
     }
 
     #[test]
@@ -385,7 +380,6 @@ mod parsing {
         assert_eq!(value.to_string(), "#(if 5)");
 
         assert!(et.parsers.is_empty());
-        assert!(et.errs.is_empty());
     }
 
     #[test]
@@ -416,7 +410,6 @@ mod parsing {
         assert_eq!(value.to_string(), "(a b c)");
 
         assert!(et.parsers.is_empty());
-        assert!(et.errs.is_empty());
     }
 
     #[test]
@@ -444,7 +437,6 @@ mod parsing {
         assert_eq!(value.to_string(), "()");
 
         assert!(et.parsers.is_empty());
-        assert!(et.errs.is_empty());
     }
 
     #[test]
@@ -475,7 +467,6 @@ mod parsing {
         assert_eq!(value.to_string(), "(a . b)");
 
         assert!(et.parsers.is_empty());
-        assert!(et.errs.is_empty());
     }
 
     #[test]
@@ -507,7 +498,6 @@ mod parsing {
         assert_eq!(value.to_string(), "(a b . c)");
 
         assert!(et.parsers.is_empty());
-        assert!(et.errs.is_empty());
     }
 
     #[test]
@@ -542,7 +532,6 @@ mod parsing {
         assert_eq!(value.to_string(), "(a b c)");
 
         assert!(et.parsers.is_empty());
-        assert!(et.errs.is_empty());
     }
 
     #[test]
@@ -583,7 +572,6 @@ mod parsing {
         assert_eq!(value.to_string(), "(a b c)");
 
         assert!(et.parsers.is_empty());
-        assert!(et.errs.is_empty());
     }
 
     #[test]
@@ -616,7 +604,6 @@ mod parsing {
         assert_eq!(value.to_string(), "((a . b))");
 
         assert!(et.parsers.is_empty());
-        assert!(et.errs.is_empty());
     }
 
     #[test]
@@ -650,7 +637,6 @@ mod parsing {
         assert_eq!(value.to_string(), "(a . c)");
 
         assert!(et.parsers.is_empty());
-        assert!(et.errs.is_empty());
     }
 
     #[test]
@@ -687,7 +673,6 @@ mod parsing {
         assert_eq!(value.to_string(), "(a . d)");
 
         assert!(et.parsers.is_empty());
-        assert!(et.errs.is_empty());
     }
 
     #[test]
@@ -720,7 +705,6 @@ mod parsing {
         assert_eq!(value.to_string(), "(a . b)");
 
         assert!(et.parsers.is_empty());
-        assert!(et.errs.is_empty());
     }
 
     #[test]
@@ -753,7 +737,6 @@ mod parsing {
         assert_eq!(value.to_string(), "(a . b)");
 
         assert!(et.parsers.is_empty());
-        assert!(et.errs.is_empty());
     }
 
     #[test]
@@ -786,7 +769,6 @@ mod parsing {
             }  if txt.lineno == 1
         ));
         assert!(et.parsers.is_empty());
-        assert!(et.errs.is_empty());
     }
 
     #[test]
@@ -839,7 +821,6 @@ mod parsing {
             }  if txt.lineno == 2
         ));
         assert!(et.parsers.is_empty());
-        assert!(et.errs.is_empty());
     }
 
     #[test]
@@ -901,7 +882,6 @@ mod parsing {
             }  if txt.lineno == 2
         ));
         assert!(et.parsers.is_empty());
-        assert!(et.errs.is_empty());
     }
 
     #[test]
@@ -926,7 +906,6 @@ mod parsing {
         let err = extract_or_fail!(err_or_fail!(r), ParserError::Invalid);
         assert!(matches!(err, InvalidParseError::InvalidExprSource));
         assert!(et.parsers.is_empty());
-        assert!(et.errs.is_empty());
     }
 
     #[test]
@@ -964,7 +943,6 @@ mod parsing {
             }  if txt.lineno == 1
         ));
         assert!(et.parsers.is_empty());
-        assert!(et.errs.is_empty());
     }
 
     #[test]
@@ -1002,7 +980,6 @@ mod parsing {
             } if txt.lineno == 1
         ));
         assert!(et.parsers.is_empty());
-        assert!(et.errs.is_empty());
     }
 
     #[test]
@@ -1033,7 +1010,6 @@ mod parsing {
         ));
 
         assert!(et.parsers.is_empty());
-        assert!(et.errs.is_empty());
     }
 
     #[test]
@@ -1063,7 +1039,6 @@ mod parsing {
         ));
 
         assert!(et.parsers.is_empty());
-        assert!(et.errs.is_empty());
     }
 
     #[test]
@@ -1093,7 +1068,6 @@ mod parsing {
         ));
 
         assert!(et.parsers.is_empty());
-        assert!(et.errs.is_empty());
     }
 
     #[test]
@@ -1123,7 +1097,6 @@ mod parsing {
         ));
 
         assert!(et.parsers.is_empty());
-        assert!(et.errs.is_empty());
     }
 
     #[test]
@@ -1153,7 +1126,6 @@ mod parsing {
         ));
 
         assert!(et.parsers.is_empty());
-        assert!(et.errs.is_empty());
     }
 
     #[test]
@@ -1193,7 +1165,6 @@ mod parsing {
         ));
 
         assert!(et.parsers.is_empty());
-        assert!(et.errs.is_empty());
     }
 
     #[test]
@@ -1221,7 +1192,6 @@ mod parsing {
         ));
 
         assert!(et.parsers.is_empty());
-        assert!(et.errs.is_empty());
     }
 
     #[test]
@@ -1254,7 +1224,6 @@ mod parsing {
         ));
 
         assert!(et.parsers.is_empty());
-        assert!(et.errs.is_empty());
     }
 
     #[test]
@@ -1282,7 +1251,6 @@ mod parsing {
         ));
 
         assert!(et.parsers.is_empty());
-        assert!(et.errs.is_empty());
     }
 
     #[test]
@@ -1310,7 +1278,6 @@ mod parsing {
         ));
 
         assert!(et.parsers.is_empty());
-        assert!(et.errs.is_empty());
     }
 }
 
@@ -1341,7 +1308,6 @@ mod continuation {
 
         assert!(matches!(r, Ok(ParserOutput::Continuation)));
         assert_eq!(et.parsers.len(), 2);
-        assert!(et.errs.is_empty());
 
         let o = et.unsupported_continuation();
 
@@ -1356,7 +1322,6 @@ mod continuation {
         ));
 
         assert!(et.parsers.is_empty());
-        assert!(et.errs.is_empty());
     }
 
     #[test]
@@ -1383,7 +1348,6 @@ mod continuation {
 
         assert!(matches!(r, Ok(ParserOutput::Continuation)));
         assert_eq!(et.parsers.len(), 2);
-        assert!(et.errs.is_empty());
 
         let o = et.unsupported_continuation();
 
@@ -1398,7 +1362,6 @@ mod continuation {
         ));
 
         assert!(et.parsers.is_empty());
-        assert!(et.errs.is_empty());
     }
 
     #[test]
@@ -1425,7 +1388,6 @@ mod continuation {
             } if txt.lineno == 1
         ));
         assert!(et.parsers.is_empty());
-        assert!(et.errs.is_empty());
     }
 }
 

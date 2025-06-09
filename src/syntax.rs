@@ -17,7 +17,6 @@ use std::{
     error::Error,
     fmt::{self, Display, Formatter, Write},
     iter::FilterMap,
-    mem,
     rc::Rc,
 };
 
@@ -126,11 +125,70 @@ impl Parser for TokenList {
 
 #[derive(Default)]
 pub(crate) struct ExpressionTree {
-    errs: Vec<ExpressionError>,
     parsers: Vec<ParseNode>,
 }
 
-impl ExpressionTree {
+impl Parser for ExpressionTree {
+    fn parse(&mut self, token_lines: Box<[TokenLine]>) -> ParserResult {
+        ParseDriver::new(&mut self.parsers).parse(token_lines)
+    }
+
+    fn unsupported_continuation(&mut self) -> Option<ParserError> {
+        let parser = self.parsers.pop();
+        self.parsers.clear();
+        Some(parser?.into_continuation_unsupported()?.into())
+    }
+}
+
+pub(crate) struct ParserErrorMessage<'a>(&'a ParserError);
+
+impl Display for ParserErrorMessage<'_> {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        match self.0 {
+            ParserError::Invalid(err) => InvalidParseErrorMessage(err).fmt(f),
+            ParserError::Syntax(SyntaxError(errs)) => {
+                for (txt, errs) in errs.iter().peekable().groupby_txt() {
+                    SyntaxErrorLineMessage((txt, &errs)).fmt(f)?;
+                }
+                Ok(())
+            }
+        }
+    }
+}
+
+struct ParseDriver<'a> {
+    errs: Vec<ExpressionError>,
+    parsers: &'a mut Vec<ParseNode>,
+}
+
+impl<'a> ParseDriver<'a> {
+    fn new(parsers: &'a mut Vec<ParseNode>) -> Self {
+        Self {
+            errs: Vec::new(),
+            parsers,
+        }
+    }
+
+    fn parse(mut self, token_lines: Box<[TokenLine]>) -> ParserResult {
+        let parser = token_lines
+            .into_iter()
+            .fold(self.parsers.pop().unwrap_or(ParseNode::prg()), |p, ln| {
+                self.parse_line(p, ln)
+            });
+
+        if self.errs.is_empty() {
+            Ok(if self.parsers.is_empty() {
+                ParserOutput::Complete(parser.try_into()?)
+            } else {
+                self.parsers.push(parser);
+                ParserOutput::Continuation
+            })
+        } else {
+            self.parsers.clear();
+            Err(self.errs.into())
+        }
+    }
+
     fn parse_line(&mut self, mut parser: ParseNode, line: TokenLine) -> ParseNode {
         let TokenLine(tokens, txt) = line;
         let txt = txt.into();
@@ -189,56 +247,6 @@ impl ExpressionTree {
             },
         };
         ParseNode::InvalidParseTree(err)
-    }
-
-    fn clear(&mut self) {
-        // TODO: should i ever shrink the allocations?
-        self.parsers.clear();
-        self.errs.clear();
-    }
-}
-
-impl Parser for ExpressionTree {
-    fn parse(&mut self, token_lines: Box<[TokenLine]>) -> ParserResult {
-        let parser = token_lines
-            .into_iter()
-            .fold(self.parsers.pop().unwrap_or(ParseNode::prg()), |p, ln| {
-                self.parse_line(p, ln)
-            });
-
-        if self.errs.is_empty() {
-            Ok(if self.parsers.is_empty() {
-                ParserOutput::Complete(parser.try_into()?)
-            } else {
-                self.parsers.push(parser);
-                ParserOutput::Continuation
-            })
-        } else {
-            self.parsers.clear();
-            Err(mem::take(&mut self.errs).into())
-        }
-    }
-
-    fn unsupported_continuation(&mut self) -> Option<ParserError> {
-        let parser = self.parsers.pop();
-        self.clear();
-        Some(parser?.into_continuation_unsupported()?.into())
-    }
-}
-
-pub(crate) struct ParserErrorMessage<'a>(&'a ParserError);
-
-impl Display for ParserErrorMessage<'_> {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        match self.0 {
-            ParserError::Invalid(err) => InvalidParseErrorMessage(err).fmt(f),
-            ParserError::Syntax(SyntaxError(errs)) => {
-                for (txt, errs) in errs.iter().peekable().groupby_txt() {
-                    SyntaxErrorLineMessage((txt, &errs)).fmt(f)?;
-                }
-                Ok(())
-            }
-        }
     }
 }
 
