@@ -1,4 +1,4 @@
-use crate::value::Value;
+use crate::{syntax::Namespace, value::Value};
 use std::{collections::HashMap, time::Instant};
 
 pub(crate) struct Frame<'a> {
@@ -6,6 +6,22 @@ pub(crate) struct Frame<'a> {
     #[allow(dead_code, reason = "not yet implemented")]
     pub(crate) sym: &'a SymbolTable,
     pub(crate) sys: &'a System,
+}
+
+pub(crate) struct EnvNamespace;
+
+impl Namespace for EnvNamespace {
+    fn name_defined(&self, name: &str) -> bool {
+        todo!()
+    }
+
+    fn get_symbol(&self, symbol: &str) -> Value {
+        todo!()
+    }
+
+    fn add_name(&mut self, name: &str) {
+        todo!()
+    }
 }
 
 #[derive(Default)]
