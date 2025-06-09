@@ -22,6 +22,42 @@ use std::{
 
 pub(crate) type ParserResult = Result<ParserOutput, ParserError>;
 
+pub(crate) trait Parser {
+    fn parse(&mut self, token_lines: Box<[TokenLine]>) -> ParserResult;
+    fn unsupported_continuation(&mut self) -> Option<ParserError>;
+}
+
+#[derive(Default)]
+pub(crate) struct ExpressionTree {
+    parsers: Vec<ParseNode>,
+}
+
+impl Parser for ExpressionTree {
+    fn parse(&mut self, token_lines: Box<[TokenLine]>) -> ParserResult {
+        ParseDriver::new(&mut self.parsers).parse(token_lines)
+    }
+
+    fn unsupported_continuation(&mut self) -> Option<ParserError> {
+        let parser = self.parsers.pop();
+        self.parsers.clear();
+        Some(parser?.into_continuation_unsupported()?.into())
+    }
+}
+
+pub(crate) struct TokenList;
+
+impl Parser for TokenList {
+    fn parse(&mut self, token_lines: Box<[TokenLine]>) -> ParserResult {
+        Ok(ParserOutput::Complete(Program::new(
+            tokens_expr(token_lines).into_iter().collect::<Box<[_]>>(),
+        )))
+    }
+
+    fn unsupported_continuation(&mut self) -> Option<ParserError> {
+        None
+    }
+}
+
 #[derive(Debug)]
 pub(crate) enum ParserOutput {
     Complete(Program),
@@ -103,42 +139,6 @@ impl Display for SyntaxError {
 }
 
 impl Error for SyntaxError {}
-
-pub(crate) trait Parser {
-    fn parse(&mut self, token_lines: Box<[TokenLine]>) -> ParserResult;
-    fn unsupported_continuation(&mut self) -> Option<ParserError>;
-}
-
-pub(crate) struct TokenList;
-
-impl Parser for TokenList {
-    fn parse(&mut self, token_lines: Box<[TokenLine]>) -> ParserResult {
-        Ok(ParserOutput::Complete(Program::new(
-            tokens_expr(token_lines).into_iter().collect::<Box<[_]>>(),
-        )))
-    }
-
-    fn unsupported_continuation(&mut self) -> Option<ParserError> {
-        None
-    }
-}
-
-#[derive(Default)]
-pub(crate) struct ExpressionTree {
-    parsers: Vec<ParseNode>,
-}
-
-impl Parser for ExpressionTree {
-    fn parse(&mut self, token_lines: Box<[TokenLine]>) -> ParserResult {
-        ParseDriver::new(&mut self.parsers).parse(token_lines)
-    }
-
-    fn unsupported_continuation(&mut self) -> Option<ParserError> {
-        let parser = self.parsers.pop();
-        self.parsers.clear();
-        Some(parser?.into_continuation_unsupported()?.into())
-    }
-}
 
 pub(crate) struct ParserErrorMessage<'a>(&'a ParserError);
 

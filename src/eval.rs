@@ -15,6 +15,47 @@ use std::{
     process::ExitCode,
 };
 
+pub(crate) trait Evaluator {
+    fn evaluate(&mut self, prg: Program) -> Evaluation;
+}
+
+pub(crate) struct Environment {
+    global: Binding,
+    symbols: SymbolTable,
+    system: System,
+}
+
+impl Evaluator for Environment {
+    fn evaluate(&mut self, prg: Program) -> Evaluation {
+        let mut frame = Frame {
+            scope: &mut self.global,
+            sym: &self.symbols,
+            sys: &self.system,
+        };
+        Evaluation::result(prg.eval(&mut frame))
+    }
+}
+
+impl Environment {
+    pub(crate) fn new(args: impl IntoIterator<Item = String>) -> Self {
+        let mut global = Binding::default();
+        core::load(&mut global);
+        Self {
+            global,
+            symbols: SymbolTable,
+            system: System::new(args),
+        }
+    }
+}
+
+pub(crate) struct Ast;
+
+impl Evaluator for Ast {
+    fn evaluate(&mut self, prg: Program) -> Evaluation {
+        Evaluation::result(Ok(ValueImpl::Ast(prg.into())))
+    }
+}
+
 #[derive(Debug)]
 pub enum Evaluation {
     Continuation,
@@ -89,44 +130,3 @@ impl Display for EvaluationMessage<'_> {
 }
 
 pub(crate) type EvalResult = Result<ValueImpl, Exception>;
-
-pub(crate) trait Evaluator {
-    fn evaluate(&mut self, prg: Program) -> Evaluation;
-}
-
-pub(crate) struct Ast;
-
-impl Evaluator for Ast {
-    fn evaluate(&mut self, prg: Program) -> Evaluation {
-        Evaluation::result(Ok(ValueImpl::Ast(prg.into())))
-    }
-}
-
-pub(crate) struct Environment {
-    global: Binding,
-    symbols: SymbolTable,
-    system: System,
-}
-
-impl Evaluator for Environment {
-    fn evaluate(&mut self, prg: Program) -> Evaluation {
-        let mut frame = Frame {
-            scope: &mut self.global,
-            sym: &self.symbols,
-            sys: &self.system,
-        };
-        Evaluation::result(prg.eval(&mut frame))
-    }
-}
-
-impl Environment {
-    pub(crate) fn new(args: impl IntoIterator<Item = String>) -> Self {
-        let mut global = Binding::default();
-        core::load(&mut global);
-        Self {
-            global,
-            symbols: SymbolTable,
-            system: System::new(args),
-        }
-    }
-}

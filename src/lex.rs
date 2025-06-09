@@ -17,6 +17,43 @@ use std::{
 
 pub(crate) type LexerResult = Result<LexerOutput, LexerError>;
 
+#[derive(Default)]
+pub(crate) struct Lexer {
+    cont: Option<(Vec<TokenLine>, TokenContinuation)>,
+}
+
+impl Lexer {
+    pub(crate) fn tokenize(&mut self, src: &mut impl TextSource) -> LexerResult {
+        let (mut d, prev) = self.cont.take().map_or_else(
+            || (LexerDriver::default(), None),
+            |(prev_lines, token_cont)| (LexerDriver::cont(token_cont), Some(prev_lines)),
+        );
+        let mut new_lines = d.tokenize(src)?;
+        let lines = prev
+            .map(|mut p| {
+                p.append(&mut new_lines);
+                p
+            })
+            .unwrap_or(new_lines);
+        Ok(match d.cont.take() {
+            Some(token_cont) => self.continuation(token_cont, lines),
+            None => LexerOutput::Complete(lines.into()),
+        })
+    }
+
+    pub(crate) fn unsupported_continuation(&mut self) -> Option<LexerError> {
+        self.cont.take().map(|(mut lines, cont)| {
+            debug_assert!(!lines.is_empty());
+            lines.pop().unwrap().into_continuation_unsupported(cont)
+        })
+    }
+
+    fn continuation(&mut self, cont: TokenContinuation, lines: Vec<TokenLine>) -> LexerOutput {
+        self.cont = Some((lines, cont));
+        LexerOutput::Continuation
+    }
+}
+
 #[derive(Debug)]
 pub(crate) enum LexerOutput {
     Complete(Box<[TokenLine]>),
@@ -56,43 +93,6 @@ impl Error for LexerError {}
 impl From<LineFailure> for LexerError {
     fn from(value: LineFailure) -> Self {
         Self(vec![value])
-    }
-}
-
-#[derive(Default)]
-pub(crate) struct Lexer {
-    cont: Option<(Vec<TokenLine>, TokenContinuation)>,
-}
-
-impl Lexer {
-    pub(crate) fn tokenize(&mut self, src: &mut impl TextSource) -> LexerResult {
-        let (mut d, prev) = self.cont.take().map_or_else(
-            || (LexerDriver::default(), None),
-            |(prev_lines, token_cont)| (LexerDriver::cont(token_cont), Some(prev_lines)),
-        );
-        let mut new_lines = d.tokenize(src)?;
-        let lines = prev
-            .map(|mut p| {
-                p.append(&mut new_lines);
-                p
-            })
-            .unwrap_or(new_lines);
-        Ok(match d.cont.take() {
-            Some(token_cont) => self.continuation(token_cont, lines),
-            None => LexerOutput::Complete(lines.into()),
-        })
-    }
-
-    pub(crate) fn unsupported_continuation(&mut self) -> Option<LexerError> {
-        self.cont.take().map(|(mut lines, cont)| {
-            debug_assert!(!lines.is_empty());
-            lines.pop().unwrap().into_continuation_unsupported(cont)
-        })
-    }
-
-    fn continuation(&mut self, cont: TokenContinuation, lines: Vec<TokenLine>) -> LexerOutput {
-        self.cont = Some((lines, cont));
-        LexerOutput::Continuation
     }
 }
 
