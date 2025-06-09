@@ -50,25 +50,16 @@ impl Namespace for EnvNamespace {
     fn get_symbol(&self, symbol: &str) -> Value {
         todo!()
     }
-
-    fn add_name(&mut self, name: &str) {
-        todo!()
-    }
 }
 
-#[derive(Default)]
-pub(super) struct SimpleNamespace(HashSet<String>);
+pub(super) struct SimpleNamespace;
 
 impl Namespace for SimpleNamespace {
-    fn name_defined(&self, name: &str) -> bool {
-        self.0.contains(name)
+    fn name_defined(&self, _name: &str) -> bool {
+        false
     }
 
     fn get_symbol(&self, symbol: &str) -> Value {
         Value::symbol(symbol)
-    }
-
-    fn add_name(&mut self, name: &str) {
-        self.0.insert(name.to_owned());
     }
 }

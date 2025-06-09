@@ -15,8 +15,6 @@ impl Namespace for TestNamespace {
     fn get_symbol(&self, _symbol: &str) -> Value {
         Value::Unspecified
     }
-
-    fn add_name(&mut self, _name: &str) {}
 }
 
 fn make_tokenline(kinds: impl IntoIterator<Item = TokenKind>) -> TokenLine {

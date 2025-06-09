@@ -62,7 +62,7 @@ impl Evaluator for Ast {
     }
 
     fn create_namespace(&self) -> impl Namespace {
-        SimpleNamespace::default()
+        SimpleNamespace
     }
 }
 
