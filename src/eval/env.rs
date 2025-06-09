@@ -8,7 +8,7 @@ pub(crate) struct Frame<'a> {
     pub(crate) sys: &'a System,
 }
 
-pub(crate) struct EnvNamespace;
+pub(super) struct EnvNamespace;
 
 impl Namespace for EnvNamespace {
     fn name_defined(&self, name: &str) -> bool {

@@ -1,13 +1,14 @@
 mod env;
 mod form;
 
+use self::env::EnvNamespace;
 pub(crate) use self::{
     env::{Binding, Frame, SymbolTable, System},
     form::{Arity, IntrinsicFn, MAX_ARITY, Procedure},
 };
 use crate::{
     core,
-    syntax::Program,
+    syntax::{Namespace, Program, SimpleNamespace},
     value::{Condition, Value as ValueImpl},
 };
 use std::{
@@ -17,6 +18,7 @@ use std::{
 
 pub(crate) trait Evaluator {
     fn evaluate(&mut self, prg: Program) -> Evaluation;
+    fn create_namespace(&self) -> impl Namespace;
 }
 
 pub(crate) struct Environment {
@@ -33,6 +35,10 @@ impl Evaluator for Environment {
             sys: &self.system,
         };
         Evaluation::result(prg.eval(&mut frame))
+    }
+
+    fn create_namespace(&self) -> impl Namespace {
+        EnvNamespace
     }
 }
 
@@ -53,6 +59,10 @@ pub(crate) struct Ast;
 impl Evaluator for Ast {
     fn evaluate(&mut self, prg: Program) -> Evaluation {
         Evaluation::result(Ok(ValueImpl::Ast(prg.into())))
+    }
+
+    fn create_namespace(&self) -> impl Namespace {
+        SimpleNamespace::default()
     }
 }
 

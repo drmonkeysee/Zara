@@ -14,7 +14,7 @@ pub use self::eval::{Evaluation, Exception, Signal, Value};
 use self::{
     eval::{Ast, Environment, Evaluator},
     lex::{Lexer, LexerError, LexerOutput, TokenLine},
-    syntax::{EmptyNamespace, ExpressionTree, Parser, ParserError, ParserOutput, TokenList},
+    syntax::{ExpressionTree, Parser, ParserError, ParserOutput, TokenList},
     txt::TextSource,
 };
 use std::{
@@ -189,10 +189,15 @@ struct Engine<P, E> {
 
 impl<P: Parser, E: Evaluator> Executor for Engine<P, E> {
     fn exec(&mut self, token_lines: Box<[TokenLine]>) -> ExecResult {
-        Ok(match self.parser.parse(token_lines, EmptyNamespace)? {
-            ParserOutput::Complete(prg) => self.evaluator.evaluate(prg),
-            ParserOutput::Continuation => Evaluation::Continuation,
-        })
+        Ok(
+            match self
+                .parser
+                .parse(token_lines, self.evaluator.create_namespace())?
+            {
+                ParserOutput::Complete(prg) => self.evaluator.evaluate(prg),
+                ParserOutput::Continuation => Evaluation::Continuation,
+            },
+        )
     }
 
     fn unsupported_continuation(&mut self) -> Option<ExecError> {
