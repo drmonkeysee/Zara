@@ -1,6 +1,7 @@
 use crate::{syntax::Namespace, value::Value};
 use std::{
     collections::{HashMap, HashSet},
+    rc::Rc,
     time::Instant,
 };
 
@@ -24,7 +25,8 @@ impl Binding {
     }
 }
 
-pub(crate) struct SymbolTable;
+#[derive(Default)]
+pub(crate) struct SymbolTable(HashSet<Rc<str>>);
 
 pub(crate) struct System {
     pub(crate) args: Value,

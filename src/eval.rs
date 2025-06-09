@@ -48,7 +48,7 @@ impl Environment {
         core::load(&mut global);
         Self {
             global,
-            symbols: SymbolTable,
+            symbols: SymbolTable::default(),
             system: System::new(args),
         }
     }
