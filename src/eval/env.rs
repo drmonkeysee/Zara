@@ -30,7 +30,12 @@ pub(crate) struct SymbolTable(HashSet<Rc<str>>);
 
 impl SymbolTable {
     fn get(&mut self, name: &str) -> Rc<str> {
-        todo!();
+        if let Some(s) = self.0.get(name) {
+            Rc::clone(s)
+        } else {
+            self.0.insert(name.into());
+            self.get(name)
+        }
     }
 }
 
@@ -52,7 +57,7 @@ pub(super) struct EnvNamespace<'a>(pub(super) Frame<'a>);
 
 impl Namespace for EnvNamespace<'_> {
     fn name_defined(&self, name: &str) -> bool {
-        todo!()
+        todo!("env name defined")
     }
 
     fn get_symbol(&mut self, symbol: &str) -> Rc<str> {
@@ -69,5 +74,30 @@ impl Namespace for SimpleNamespace {
 
     fn get_symbol(&mut self, symbol: &str) -> Rc<str> {
         symbol.into()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn same_symbols() {
+        let mut s = SymbolTable::default();
+
+        let a = s.get("foo");
+        let b = s.get("foo");
+
+        assert!(Rc::ptr_eq(&a, &b));
+    }
+
+    #[test]
+    fn different_symbols() {
+        let mut s = SymbolTable::default();
+
+        let a = s.get("foo");
+        let b = s.get("bar");
+
+        assert!(!Rc::ptr_eq(&a, &b));
     }
 }
