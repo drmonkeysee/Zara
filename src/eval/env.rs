@@ -19,6 +19,16 @@ impl Binding {
         self.0.get(name).cloned()
     }
 
+    pub(crate) fn get_refs(&self) -> impl IntoIterator<Item = (&str, &Value)> {
+        let mut vec = self
+            .0
+            .iter()
+            .map(|(k, v)| (k.as_ref(), v))
+            .collect::<Vec<_>>();
+        vec.sort_by_key(|(k, _)| *k);
+        vec
+    }
+
     pub(crate) fn bind(&mut self, name: impl Into<Box<str>>, val: Value) {
         self.0.insert(name.into(), val);
     }
@@ -86,57 +96,99 @@ impl Namespace for SimpleNamespace {
 mod tests {
     use super::*;
 
-    #[test]
-    fn same_symbols() {
-        let mut s = SymbolTable::default();
+    mod bindings {
+        use super::*;
 
-        let a = s.get("foo");
-        let b = s.get("foo");
+        #[test]
+        fn get_refs_empty() {
+            let b = Binding::default();
 
-        assert!(Rc::ptr_eq(&a, &b));
+            let all = b.get_refs();
+
+            let vec = all.into_iter().collect::<Vec<_>>();
+            assert!(vec.is_empty());
+        }
+
+        #[test]
+        fn get_refs_single() {
+            let mut b = Binding::default();
+            b.bind("foo", Value::Unspecified);
+
+            let all = b.get_refs();
+
+            let keys = all.into_iter().map(|(k, _)| k).collect::<Vec<_>>();
+            assert_eq!(keys, ["foo"]);
+        }
+
+        #[test]
+        fn get_refs_alphabetical() {
+            let mut b = Binding::default();
+            b.bind("foo", Value::Unspecified);
+            b.bind("bar", Value::Unspecified);
+            b.bind("baz", Value::Unspecified);
+
+            let all = b.get_refs();
+
+            let keys = all.into_iter().map(|(k, _)| k).collect::<Vec<_>>();
+            assert_eq!(keys, ["bar", "baz", "foo"]);
+        }
     }
 
-    #[test]
-    fn different_symbols() {
-        let mut s = SymbolTable::default();
+    mod symbols {
+        use super::*;
 
-        let a = s.get("foo");
-        let b = s.get("bar");
+        #[test]
+        fn same_symbols() {
+            let mut s = SymbolTable::default();
 
-        assert!(!Rc::ptr_eq(&a, &b));
-    }
+            let a = s.get("foo");
+            let b = s.get("foo");
 
-    #[test]
-    fn get_refs_empty() {
-        let s = SymbolTable::default();
+            assert!(Rc::ptr_eq(&a, &b));
+        }
 
-        let all = s.get_refs();
+        #[test]
+        fn different_symbols() {
+            let mut s = SymbolTable::default();
 
-        let vec = all.into_iter().collect::<Vec<_>>();
-        assert!(vec.is_empty());
-    }
+            let a = s.get("foo");
+            let b = s.get("bar");
 
-    #[test]
-    fn get_refs_single() {
-        let mut s = SymbolTable::default();
-        s.get("foo");
+            assert!(!Rc::ptr_eq(&a, &b));
+        }
 
-        let all = s.get_refs();
+        #[test]
+        fn get_refs_empty() {
+            let s = SymbolTable::default();
 
-        let vec = all.into_iter().map(|s| Rc::as_ref(s)).collect::<Vec<_>>();
-        assert_eq!(vec, ["foo"]);
-    }
+            let all = s.get_refs();
 
-    #[test]
-    fn get_refs_alphabetical() {
-        let mut s = SymbolTable::default();
-        s.get("foo");
-        s.get("bar");
-        s.get("baz");
+            let vec = all.into_iter().collect::<Vec<_>>();
+            assert!(vec.is_empty());
+        }
 
-        let all = s.get_refs();
+        #[test]
+        fn get_refs_single() {
+            let mut s = SymbolTable::default();
+            s.get("foo");
 
-        let vec = all.into_iter().map(|s| Rc::as_ref(s)).collect::<Vec<_>>();
-        assert_eq!(vec, ["bar", "baz", "foo"]);
+            let all = s.get_refs();
+
+            let vec = all.into_iter().map(|s| Rc::as_ref(s)).collect::<Vec<_>>();
+            assert_eq!(vec, ["foo"]);
+        }
+
+        #[test]
+        fn get_refs_alphabetical() {
+            let mut s = SymbolTable::default();
+            s.get("foo");
+            s.get("bar");
+            s.get("baz");
+
+            let all = s.get_refs();
+
+            let vec = all.into_iter().map(|s| Rc::as_ref(s)).collect::<Vec<_>>();
+            assert_eq!(vec, ["bar", "baz", "foo"]);
+        }
     }
 }
