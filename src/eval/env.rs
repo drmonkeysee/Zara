@@ -7,7 +7,6 @@ use std::{
 
 pub(crate) struct Frame<'a> {
     pub(crate) scope: &'a mut Binding,
-    #[allow(dead_code, reason = "not yet implemented")]
     pub(crate) sym: &'a mut SymbolTable,
     pub(crate) sys: &'a System,
 }
