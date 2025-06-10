@@ -12,7 +12,7 @@ impl Namespace for TestNamespace {
         false
     }
 
-    fn get_symbol(&self, _symbol: &str) -> Value {
+    fn get_symbol(&mut self, _symbol: &str) -> Value {
         Value::Unspecified
     }
 }

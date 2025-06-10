@@ -60,7 +60,7 @@ impl Parser for TokenList {
 
 pub(crate) trait Namespace {
     fn name_defined(&self, name: &str) -> bool;
-    fn get_symbol(&self, symbol: &str) -> Value;
+    fn get_symbol(&mut self, symbol: &str) -> Value;
 }
 
 #[derive(Debug)]

@@ -18,7 +18,7 @@ use std::{
 
 pub(crate) trait Evaluator {
     fn evaluate(&mut self, prg: Program) -> Evaluation;
-    fn create_namespace(&self) -> impl Namespace;
+    fn create_namespace(&mut self) -> impl Namespace;
 }
 
 pub(crate) struct Environment {
@@ -27,18 +27,24 @@ pub(crate) struct Environment {
     system: System,
 }
 
+impl Environment {
+    fn make_frame(&mut self) -> Frame {
+        Frame {
+            scope: &mut self.global,
+            sym: &mut self.symbols,
+            sys: &self.system,
+        }
+    }
+}
+
 impl Evaluator for Environment {
     fn evaluate(&mut self, prg: Program) -> Evaluation {
-        let mut frame = Frame {
-            scope: &mut self.global,
-            sym: &self.symbols,
-            sys: &self.system,
-        };
+        let mut frame = self.make_frame();
         Evaluation::result(prg.eval(&mut frame))
     }
 
-    fn create_namespace(&self) -> impl Namespace {
-        EnvNamespace
+    fn create_namespace(&mut self) -> impl Namespace {
+        EnvNamespace(self.make_frame())
     }
 }
 
@@ -61,7 +67,7 @@ impl Evaluator for Ast {
         Evaluation::result(Ok(ValueImpl::Ast(prg.into())))
     }
 
-    fn create_namespace(&self) -> impl Namespace {
+    fn create_namespace(&mut self) -> impl Namespace {
         SimpleNamespace
     }
 }

@@ -67,7 +67,7 @@ impl TestEnv {
     pub(crate) fn new_frame(&mut self) -> Frame {
         Frame {
             scope: &mut self.binding,
-            sym: &self.symbols,
+            sym: &mut self.symbols,
             sys: &self.system,
         }
     }
@@ -77,7 +77,7 @@ impl Default for TestEnv {
     fn default() -> Self {
         Self {
             binding: Binding::default(),
-            symbols: SymbolTable,
+            symbols: SymbolTable::default(),
             system: System::new(iter::empty()),
         }
     }

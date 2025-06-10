@@ -8,7 +8,7 @@ use std::{
 pub(crate) struct Frame<'a> {
     pub(crate) scope: &'a mut Binding,
     #[allow(dead_code, reason = "not yet implemented")]
-    pub(crate) sym: &'a SymbolTable,
+    pub(crate) sym: &'a mut SymbolTable,
     pub(crate) sys: &'a System,
 }
 
@@ -28,6 +28,12 @@ impl Binding {
 #[derive(Default)]
 pub(crate) struct SymbolTable(HashSet<Rc<str>>);
 
+impl SymbolTable {
+    fn get(&mut self, name: &str) -> Rc<str> {
+        todo!();
+    }
+}
+
 pub(crate) struct System {
     pub(crate) args: Value,
     pub(crate) start_time: Instant,
@@ -42,15 +48,15 @@ impl System {
     }
 }
 
-pub(super) struct EnvNamespace;
+pub(super) struct EnvNamespace<'a>(pub(super) Frame<'a>);
 
-impl Namespace for EnvNamespace {
+impl Namespace for EnvNamespace<'_> {
     fn name_defined(&self, name: &str) -> bool {
         todo!()
     }
 
-    fn get_symbol(&self, symbol: &str) -> Value {
-        todo!()
+    fn get_symbol(&mut self, symbol: &str) -> Value {
+        Value::symbol(self.0.sym.get(symbol))
     }
 }
 
@@ -61,7 +67,7 @@ impl Namespace for SimpleNamespace {
         false
     }
 
-    fn get_symbol(&self, symbol: &str) -> Value {
+    fn get_symbol(&mut self, symbol: &str) -> Value {
         Value::symbol(symbol)
     }
 }
