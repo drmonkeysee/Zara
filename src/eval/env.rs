@@ -55,8 +55,8 @@ impl Namespace for EnvNamespace<'_> {
         todo!()
     }
 
-    fn get_symbol(&mut self, symbol: &str) -> Value {
-        Value::symbol(self.0.sym.get(symbol))
+    fn get_symbol(&mut self, symbol: &str) -> Rc<str> {
+        self.0.sym.get(symbol)
     }
 }
 
@@ -67,7 +67,7 @@ impl Namespace for SimpleNamespace {
         false
     }
 
-    fn get_symbol(&mut self, symbol: &str) -> Value {
-        Value::symbol(symbol)
+    fn get_symbol(&mut self, symbol: &str) -> Rc<str> {
+        symbol.into()
     }
 }

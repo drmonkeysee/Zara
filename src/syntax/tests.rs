@@ -1,21 +1,9 @@
 use super::{expr::ExpressionErrorKind, *};
 use crate::{
     lex::{Token, TokenKind},
-    testutil::{err_or_fail, extract_or_fail, make_textline_no, some_or_fail},
+    testutil::{TestNamespace, err_or_fail, extract_or_fail, make_textline_no, some_or_fail},
     txt::LineNumber,
 };
-
-struct TestNamespace;
-
-impl Namespace for TestNamespace {
-    fn name_defined(&self, _name: &str) -> bool {
-        false
-    }
-
-    fn get_symbol(&mut self, _symbol: &str) -> Value {
-        Value::Unspecified
-    }
-}
 
 fn make_tokenline(kinds: impl IntoIterator<Item = TokenKind>) -> TokenLine {
     make_tokenline_no(kinds, 1)

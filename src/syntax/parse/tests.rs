@@ -1,6 +1,8 @@
 use super::*;
 use crate::{
-    testutil::{err_or_fail, extract_or_fail, make_textline, ok_or_fail, some_or_fail},
+    testutil::{
+        TestNamespace, err_or_fail, extract_or_fail, make_textline, ok_or_fail, some_or_fail,
+    },
     txt::TxtSpan,
 };
 
@@ -15,8 +17,9 @@ mod expr {
             span: 0..3,
         };
         let txt = make_textline().into();
+        let mut ns = TestNamespace;
 
-        let f = parse_expr(token, &txt, false);
+        let f = parse_expr(token, &txt, false, &mut ns);
 
         assert!(matches!(
             f,
@@ -35,8 +38,9 @@ mod expr {
             span: 0..3,
         };
         let txt = make_textline().into();
+        let mut ns = TestNamespace;
 
-        let f = parse_expr(token, &txt, false);
+        let f = parse_expr(token, &txt, false, &mut ns);
 
         assert!(matches!(
             f,
@@ -55,8 +59,9 @@ mod expr {
             span: 0..3,
         };
         let txt = make_textline().into();
+        let mut ns = TestNamespace;
 
-        let f = parse_expr(token, &txt, false);
+        let f = parse_expr(token, &txt, false, &mut ns);
 
         assert!(matches!(
             f,
@@ -75,8 +80,9 @@ mod expr {
             span: 0..3,
         };
         let txt = make_textline().into();
+        let mut ns = TestNamespace;
 
-        let f = parse_expr(token, &txt, false);
+        let f = parse_expr(token, &txt, false, &mut ns);
 
         assert!(matches!(
             f,
@@ -95,8 +101,9 @@ mod expr {
             span: 0..3,
         };
         let txt = make_textline().into();
+        let mut ns = TestNamespace;
 
-        let f = parse_expr(token, &txt, false);
+        let f = parse_expr(token, &txt, false, &mut ns);
 
         assert!(matches!(
             f,
@@ -118,8 +125,9 @@ mod expr {
             span: 3..8,
         };
         let txt = make_textline().into();
+        let mut ns = TestNamespace;
 
-        let f = parse_expr(token, &txt, false);
+        let f = parse_expr(token, &txt, false, &mut ns);
 
         assert!(matches!(
             f,
@@ -142,8 +150,9 @@ mod expr {
             span: 3..8,
         };
         let txt = make_textline().into();
+        let mut ns = TestNamespace;
 
-        let f = parse_expr(token, &txt, false);
+        let f = parse_expr(token, &txt, false, &mut ns);
 
         assert!(matches!(
             f,
@@ -163,8 +172,9 @@ mod expr {
             span: 0..3,
         };
         let txt = make_textline().into();
+        let mut ns = TestNamespace;
 
-        let f = parse_expr(token, &txt, false);
+        let f = parse_expr(token, &txt, false, &mut ns);
 
         assert!(matches!(
             f,
@@ -185,8 +195,9 @@ mod expr {
             span: 2..3,
         };
         let txt = make_textline().into();
+        let mut ns = TestNamespace;
 
-        let f = parse_expr(token, &txt, false);
+        let f = parse_expr(token, &txt, false, &mut ns);
 
         assert!(matches!(
             f,
@@ -207,8 +218,9 @@ mod expr {
             span: 0..3,
         };
         let txt = make_textline().into();
+        let mut ns = TestNamespace;
 
-        let f = parse_expr(token, &txt, false);
+        let f = parse_expr(token, &txt, false, &mut ns);
 
         assert!(matches!(f, ExprFlow::Continue(None)));
     }
@@ -220,8 +232,9 @@ mod expr {
             span: 3..6,
         };
         let txt = make_textline().into();
+        let mut ns = TestNamespace;
 
-        let f = parse_expr(token, &txt, false);
+        let f = parse_expr(token, &txt, false, &mut ns);
 
         assert!(matches!(
             f,
@@ -239,8 +252,9 @@ mod expr {
             span: 3..6,
         };
         let txt = make_textline().into();
+        let mut ns = TestNamespace;
 
-        let f = parse_expr(token, &txt, false);
+        let f = parse_expr(token, &txt, false, &mut ns);
 
         assert!(matches!(
             f,
@@ -258,8 +272,9 @@ mod expr {
             span: 0..6,
         };
         let txt = make_textline().into();
+        let mut ns = TestNamespace;
 
-        let f = parse_expr(token, &txt, false);
+        let f = parse_expr(token, &txt, false, &mut ns);
 
         assert!(matches!(
             f,
@@ -278,8 +293,9 @@ mod expr {
             span: 0..0,
         };
         let txt = make_textline().into();
+        let mut ns = TestNamespace;
 
-        let f = parse_expr(token, &txt, false);
+        let f = parse_expr(token, &txt, false, &mut ns);
 
         assert!(matches!(
             f,
@@ -298,8 +314,9 @@ mod expr {
             span: 0..6,
         };
         let txt = make_textline().into();
+        let mut ns = TestNamespace;
 
-        let f = parse_expr(token, &txt, true);
+        let f = parse_expr(token, &txt, true, &mut ns);
 
         assert!(matches!(
             f,
@@ -318,8 +335,9 @@ mod expr {
             span: 0..0,
         };
         let txt = make_textline().into();
+        let mut ns = TestNamespace;
 
-        let f = parse_expr(token, &txt, true);
+        let f = parse_expr(token, &txt, true, &mut ns);
 
         assert!(matches!(
             f,
@@ -338,8 +356,9 @@ mod expr {
             span: 3..8,
         };
         let txt = make_textline().into();
+        let mut ns = TestNamespace;
 
-        let f = parse_expr(token, &txt, false);
+        let f = parse_expr(token, &txt, false, &mut ns);
 
         assert!(matches!(
             f,
@@ -359,8 +378,9 @@ mod expr {
             span: 3..8,
         };
         let txt = make_textline().into();
+        let mut ns = TestNamespace;
 
-        let f = parse_expr(token, &txt, true);
+        let f = parse_expr(token, &txt, true, &mut ns);
 
         assert!(matches!(
             f,
@@ -380,8 +400,9 @@ mod expr {
             span: 1..2,
         };
         let txt = make_textline().into();
+        let mut ns = TestNamespace;
 
-        let f = parse_expr(token, &txt, false);
+        let f = parse_expr(token, &txt, false, &mut ns);
 
         assert!(matches!(
             f,
@@ -401,8 +422,9 @@ mod expr {
             span: 1..2,
         };
         let txt = make_textline().into();
+        let mut ns = TestNamespace;
 
-        let f = parse_expr(token, &txt, true);
+        let f = parse_expr(token, &txt, true, &mut ns);
 
         assert!(matches!(
             f,
@@ -422,8 +444,9 @@ mod expr {
             span: 1..2,
         };
         let txt = make_textline().into();
+        let mut ns = TestNamespace;
 
-        let f = parse_expr(token, &txt, false);
+        let f = parse_expr(token, &txt, false, &mut ns);
 
         assert!(matches!(
             f,
@@ -441,8 +464,9 @@ mod expr {
             span: 1..2,
         };
         let txt = make_textline().into();
+        let mut ns = TestNamespace;
 
-        let f = parse_expr(token, &txt, false);
+        let f = parse_expr(token, &txt, false, &mut ns);
 
         assert!(matches!(
             f,
@@ -463,8 +487,9 @@ mod expr {
             span: 1..2,
         };
         let txt = make_textline().into();
+        let mut ns = TestNamespace;
 
-        let f = parse_expr(token, &txt, true);
+        let f = parse_expr(token, &txt, true, &mut ns);
 
         assert!(matches!(
             f,
@@ -485,8 +510,9 @@ mod expr {
             span: 1..2,
         };
         let txt = make_textline().into();
+        let mut ns = TestNamespace;
 
-        let f = parse_expr(token, &txt, false);
+        let f = parse_expr(token, &txt, false, &mut ns);
 
         assert!(matches!(
             f,
@@ -513,8 +539,9 @@ mod datum {
             span: 0..1,
             txt: Rc::clone(&txt),
         };
+        let mut ns = TestNamespace;
 
-        let f = parse_datum(&mut inner, token, &txt, &ctx);
+        let f = parse_datum(&mut inner, token, &txt, &ctx, &mut ns);
 
         assert!(matches!(
             f,
@@ -542,8 +569,9 @@ mod datum {
             span: 0..1,
             txt: Rc::clone(&txt),
         };
+        let mut ns = TestNamespace;
 
-        let f = parse_datum(&mut inner, token, &txt, &ctx);
+        let f = parse_datum(&mut inner, token, &txt, &ctx, &mut ns);
 
         assert!(matches!(
             f,
@@ -567,8 +595,9 @@ mod datum {
             span: 0..1,
             txt: Rc::clone(&txt),
         };
+        let mut ns = TestNamespace;
 
-        let f = parse_datum(&mut inner, token, &txt, &ctx);
+        let f = parse_datum(&mut inner, token, &txt, &ctx, &mut ns);
 
         assert!(matches!(f, ParseFlow::Continue(())));
         assert!(inner.is_none());
@@ -586,8 +615,9 @@ mod datum {
             span: 0..1,
             txt: Rc::clone(&txt),
         };
+        let mut ns = TestNamespace;
 
-        let f = parse_datum(&mut inner, token, &txt, &ctx);
+        let f = parse_datum(&mut inner, token, &txt, &ctx, &mut ns);
 
         assert!(matches!(
             f,
@@ -614,8 +644,9 @@ mod datum {
             span: 0..1,
             txt: Rc::clone(&txt),
         };
+        let mut ns = TestNamespace;
 
-        let f = parse_datum(&mut inner, token, &txt, &ctx);
+        let f = parse_datum(&mut inner, token, &txt, &ctx, &mut ns);
 
         assert!(matches!(
             f,
@@ -652,8 +683,9 @@ mod bytevector {
             },
             mode: ParseMode::ByteVector(seq),
         };
+        let mut ns = TestNamespace;
 
-        let r: Result<Option<Expression>, _> = node.try_into();
+        let r = node.try_into_expr(&mut ns);
 
         let expr = some_or_fail!(ok_or_fail!(r));
         assert!(matches!(
@@ -697,8 +729,9 @@ mod bytevector {
             },
             mode: ParseMode::ByteVector(seq),
         };
+        let mut ns = TestNamespace;
 
-        let r: Result<Option<Expression>, _> = node.try_into();
+        let r = node.try_into_expr(&mut ns);
 
         let expr = some_or_fail!(ok_or_fail!(r));
         assert!(matches!(
@@ -725,8 +758,9 @@ mod bytevector {
             },
             mode: ParseMode::ByteVector(Vec::new()),
         };
+        let mut ns = TestNamespace;
 
-        let r: Result<Option<Expression>, _> = node.try_into();
+        let r = node.try_into_expr(&mut ns);
 
         let expr = some_or_fail!(ok_or_fail!(r));
         assert!(matches!(
@@ -772,8 +806,9 @@ mod bytevector {
             },
             mode: ParseMode::ByteVector(seq),
         };
+        let mut ns = TestNamespace;
 
-        let r: Result<Option<Expression>, _> = node.try_into();
+        let r = node.try_into_expr(&mut ns);
 
         let errs = err_or_fail!(r);
         assert_eq!(errs.len(), 1);
@@ -820,8 +855,9 @@ mod bytevector {
             },
             mode: ParseMode::ByteVector(seq),
         };
+        let mut ns = TestNamespace;
 
-        let r: Result<Option<Expression>, _> = node.try_into();
+        let r = node.try_into_expr(&mut ns);
 
         let errs = err_or_fail!(r);
         assert_eq!(errs.len(), 2);
@@ -862,8 +898,9 @@ mod vector {
             },
             mode: ParseMode::Vector(seq),
         };
+        let mut ns = TestNamespace;
 
-        let r: Result<Option<Expression>, _> = node.try_into();
+        let r = node.try_into_expr(&mut ns);
 
         let expr = some_or_fail!(ok_or_fail!(r));
         assert!(matches!(
@@ -910,8 +947,9 @@ mod vector {
             },
             mode: ParseMode::Vector(seq),
         };
+        let mut ns = TestNamespace;
 
-        let r: Result<Option<Expression>, _> = node.try_into();
+        let r = node.try_into_expr(&mut ns);
 
         let expr = some_or_fail!(ok_or_fail!(r));
         assert!(matches!(
@@ -944,8 +982,9 @@ mod vector {
             },
             mode: ParseMode::Vector(Vec::new()),
         };
+        let mut ns = TestNamespace;
 
-        let r: Result<Option<Expression>, _> = node.try_into();
+        let r = node.try_into_expr(&mut ns);
 
         let expr = some_or_fail!(ok_or_fail!(r));
         assert!(matches!(
@@ -993,8 +1032,9 @@ mod vector {
             },
             mode: ParseMode::Vector(seq),
         };
+        let mut ns = TestNamespace;
 
-        let r: Result<Option<Expression>, _> = node.try_into();
+        let r = node.try_into_expr(&mut ns);
 
         let errs = err_or_fail!(r);
         assert_eq!(errs.len(), 1);
@@ -1051,8 +1091,9 @@ mod vector {
             },
             mode: ParseMode::Vector(seq),
         };
+        let mut ns = TestNamespace;
 
-        let r: Result<Option<Expression>, _> = node.try_into();
+        let r = node.try_into_expr(&mut ns);
 
         let errs = err_or_fail!(r);
         assert_eq!(errs.len(), 2);
@@ -1146,8 +1187,9 @@ mod identifier {
                 quoted: false,
             },
         };
+        let mut ns = TestNamespace;
 
-        let r: Result<Option<Expression>, _> = p.try_into();
+        let r = p.try_into_expr(&mut ns);
 
         let expr = some_or_fail!(ok_or_fail!(r));
         assert!(matches!(
@@ -1172,8 +1214,9 @@ mod identifier {
                 quoted: true,
             },
         };
+        let mut ns = TestNamespace;
 
-        let r: Result<Option<Expression>, _> = p.try_into();
+        let r = p.try_into_expr(&mut ns);
 
         let expr = some_or_fail!(ok_or_fail!(r));
         assert!(matches!(
@@ -1197,8 +1240,9 @@ mod sequence {
             span: 0..3,
         };
         let txt = make_textline().into();
+        let mut ns = TestNamespace;
 
-        let f = parse_sequence(&mut seq, token, &txt);
+        let f = parse_sequence(&mut seq, token, &txt, &mut ns);
 
         assert!(matches!(f, ParseFlow::Continue(())));
         assert_eq!(seq.len(), 1);
@@ -1231,8 +1275,9 @@ mod sequence {
             span: 6..9,
         };
         let txt = make_textline().into();
+        let mut ns = TestNamespace;
 
-        let f = parse_sequence(&mut seq, token, &txt);
+        let f = parse_sequence(&mut seq, token, &txt, &mut ns);
 
         assert!(matches!(f, ParseFlow::Continue(())));
         assert_eq!(seq.len(), 3);
@@ -1253,8 +1298,9 @@ mod sequence {
             span: 1..2,
         };
         let txt = make_textline().into();
+        let mut ns = TestNamespace;
 
-        let f = parse_sequence(&mut seq, token, &txt);
+        let f = parse_sequence(&mut seq, token, &txt, &mut ns);
 
         assert!(matches!(
             f,
@@ -1276,8 +1322,9 @@ mod sequence {
             span: 0..3,
         };
         let txt = make_textline().into();
+        let mut ns = TestNamespace;
 
-        let f = parse_sequence(&mut seq, token, &txt);
+        let f = parse_sequence(&mut seq, token, &txt, &mut ns);
 
         assert!(matches!(
             f,
@@ -1322,8 +1369,9 @@ mod list {
             kind: TokenKind::ParenRight,
             span: 6..7,
         };
+        let mut ns = TestNamespace;
 
-        let f = SyntacticForm::Call.parse_list(&mut seq, token, &txt);
+        let f = SyntacticForm::Call.parse_list(&mut seq, token, &txt, &mut ns);
 
         assert!(matches!(
             f,
@@ -1358,8 +1406,9 @@ mod list {
             kind: TokenKind::ParenLeft,
             span: 6..7,
         };
+        let mut ns = TestNamespace;
 
-        let f = SyntacticForm::Call.parse_list(&mut seq, token, &txt);
+        let f = SyntacticForm::Call.parse_list(&mut seq, token, &txt, &mut ns);
 
         assert!(matches!(
             f,
@@ -1379,8 +1428,9 @@ mod list {
             span: 4..5,
         };
         let txt = make_textline().into();
+        let mut ns = TestNamespace;
 
-        let f = SyntacticForm::Call.parse_list(&mut seq, token, &txt);
+        let f = SyntacticForm::Call.parse_list(&mut seq, token, &txt, &mut ns);
 
         assert!(matches!(
             f,
@@ -1415,8 +1465,9 @@ mod list {
             kind: TokenKind::Number(Number::real(10)),
             span: 6..7,
         };
+        let mut ns = TestNamespace;
 
-        let f = SyntacticForm::Call.parse_list(&mut seq, token, &txt);
+        let f = SyntacticForm::Call.parse_list(&mut seq, token, &txt, &mut ns);
 
         assert!(matches!(f, ParseFlow::Continue(())));
         assert_eq!(seq.len(), 4);
@@ -1443,9 +1494,10 @@ mod list {
             kind: TokenKind::PairJoiner,
             span: 5..6,
         };
+        let mut ns = TestNamespace;
         let mut frm = SyntacticForm::Datum;
 
-        let f = frm.parse_list(&mut seq, token, &txt);
+        let f = frm.parse_list(&mut seq, token, &txt, &mut ns);
 
         assert!(matches!(frm, SyntacticForm::PairOpen));
         assert!(matches!(f, ParseFlow::Continue(())));
@@ -1460,9 +1512,10 @@ mod list {
             kind: TokenKind::PairJoiner,
             span: 1..2,
         };
+        let mut ns = TestNamespace;
         let mut frm = SyntacticForm::Datum;
 
-        let f = frm.parse_list(&mut seq, token, &txt);
+        let f = frm.parse_list(&mut seq, token, &txt, &mut ns);
 
         assert!(matches!(frm, SyntacticForm::Datum));
         assert!(matches!(
@@ -1492,8 +1545,9 @@ mod list {
             kind: TokenKind::PairJoiner,
             span: 5..6,
         };
+        let mut ns = TestNamespace;
 
-        let f = SyntacticForm::Call.parse_list(&mut seq, token, &txt);
+        let f = SyntacticForm::Call.parse_list(&mut seq, token, &txt, &mut ns);
 
         assert!(matches!(
             f,
@@ -1522,9 +1576,10 @@ mod list {
             kind: TokenKind::Identifier("foo".to_owned()),
             span: 5..8,
         };
+        let mut ns = TestNamespace;
         let mut frm = SyntacticForm::PairOpen;
 
-        let f = frm.parse_list(&mut seq, token, &txt);
+        let f = frm.parse_list(&mut seq, token, &txt, &mut ns);
 
         assert!(matches!(frm, SyntacticForm::PairClosed));
         assert!(matches!(f, ParseFlow::Continue(())));
@@ -1552,9 +1607,10 @@ mod list {
             kind: TokenKind::Comment,
             span: 5..8,
         };
+        let mut ns = TestNamespace;
         let mut frm = SyntacticForm::PairOpen;
 
-        let f = frm.parse_list(&mut seq, token, &txt);
+        let f = frm.parse_list(&mut seq, token, &txt, &mut ns);
 
         assert!(matches!(frm, SyntacticForm::PairOpen));
         assert!(matches!(f, ParseFlow::Continue(())));
@@ -1575,9 +1631,10 @@ mod list {
             kind: TokenKind::Comment,
             span: 5..8,
         };
+        let mut ns = TestNamespace;
         let mut frm = SyntacticForm::PairClosed;
 
-        let f = frm.parse_list(&mut seq, token, &txt);
+        let f = frm.parse_list(&mut seq, token, &txt, &mut ns);
 
         assert!(matches!(frm, SyntacticForm::PairClosed));
         assert!(matches!(f, ParseFlow::Continue(())));
@@ -1598,9 +1655,10 @@ mod list {
             kind: TokenKind::ParenRight,
             span: 5..6,
         };
+        let mut ns = TestNamespace;
         let mut frm = SyntacticForm::PairOpen;
 
-        let f = frm.parse_list(&mut seq, token, &txt);
+        let f = frm.parse_list(&mut seq, token, &txt, &mut ns);
 
         assert!(matches!(frm, SyntacticForm::PairOpen));
         assert!(matches!(
@@ -1630,9 +1688,10 @@ mod list {
             kind: TokenKind::PairJoiner,
             span: 5..6,
         };
+        let mut ns = TestNamespace;
         let mut frm = SyntacticForm::PairOpen;
 
-        let f = frm.parse_list(&mut seq, token, &txt);
+        let f = frm.parse_list(&mut seq, token, &txt, &mut ns);
 
         assert!(matches!(frm, SyntacticForm::Datum));
         assert!(matches!(
@@ -1662,9 +1721,10 @@ mod list {
             kind: TokenKind::PairJoiner,
             span: 5..6,
         };
+        let mut ns = TestNamespace;
         let mut frm = SyntacticForm::PairClosed;
 
-        let f = frm.parse_list(&mut seq, token, &txt);
+        let f = frm.parse_list(&mut seq, token, &txt, &mut ns);
 
         assert!(matches!(frm, SyntacticForm::Datum));
         assert!(matches!(
@@ -1706,8 +1766,9 @@ mod list {
             kind: TokenKind::StringDiscard,
             span: 6..7,
         };
+        let mut ns = TestNamespace;
 
-        let f = SyntacticForm::Call.parse_list(&mut seq, token, &txt);
+        let f = SyntacticForm::Call.parse_list(&mut seq, token, &txt, &mut ns);
 
         assert!(matches!(
             f,
@@ -1753,8 +1814,9 @@ mod list {
                 ],
             },
         };
+        let mut ns = TestNamespace;
 
-        let r: Result<Option<Expression>, _> = p.try_into();
+        let r = p.try_into_expr(&mut ns);
 
         let expr = some_or_fail!(ok_or_fail!(r));
         assert!(matches!(
@@ -1804,8 +1866,9 @@ mod list {
                 seq: vec![],
             },
         };
+        let mut ns = TestNamespace;
 
-        let r: Result<Option<Expression>, _> = p.try_into();
+        let r = p.try_into_expr(&mut ns);
 
         let errs = err_or_fail!(r);
         assert_eq!(errs.len(), 1);
@@ -1846,8 +1909,9 @@ mod list {
                 ],
             },
         };
+        let mut ns = TestNamespace;
 
-        let r: Result<Option<Expression>, _> = p.try_into();
+        let r = p.try_into_expr(&mut ns);
 
         let expr = some_or_fail!(ok_or_fail!(r));
         assert!(matches!(
@@ -1890,8 +1954,9 @@ mod list {
                 ],
             },
         };
+        let mut ns = TestNamespace;
 
-        let r: Result<Option<Expression>, _> = p.try_into();
+        let r = p.try_into_expr(&mut ns);
 
         let expr = some_or_fail!(ok_or_fail!(r));
         assert!(matches!(
@@ -1918,8 +1983,9 @@ mod list {
                 seq: Vec::new(),
             },
         };
+        let mut ns = TestNamespace;
 
-        let r: Result<Option<Expression>, _> = p.try_into();
+        let r = p.try_into_expr(&mut ns);
 
         let expr = some_or_fail!(ok_or_fail!(r));
         assert!(matches!(
@@ -1964,8 +2030,9 @@ mod list {
                 ],
             },
         };
+        let mut ns = TestNamespace;
 
-        let r: Result<Option<Expression>, _> = p.try_into();
+        let r = p.try_into_expr(&mut ns);
 
         let errs = err_or_fail!(r);
         assert_eq!(errs.len(), 1);
@@ -2002,8 +2069,9 @@ mod list {
                 ],
             },
         };
+        let mut ns = TestNamespace;
 
-        let r: Result<Option<Expression>, _> = p.try_into();
+        let r = p.try_into_expr(&mut ns);
 
         let expr = some_or_fail!(ok_or_fail!(r));
         assert!(matches!(
@@ -2036,8 +2104,9 @@ mod list {
                 ],
             },
         };
+        let mut ns = TestNamespace;
 
-        let r: Result<Option<Expression>, _> = p.try_into();
+        let r = p.try_into_expr(&mut ns);
 
         let errs = err_or_fail!(r);
         assert_eq!(errs.len(), 1);
@@ -2142,8 +2211,9 @@ mod string {
             },
             mode: ParseMode::StringLiteral("foo".to_owned()),
         };
+        let mut ns = TestNamespace;
 
-        let r: Result<Option<Expression>, _> = p.try_into();
+        let r = p.try_into_expr(&mut ns);
 
         let expr = some_or_fail!(ok_or_fail!(r));
         assert!(matches!(
@@ -2243,8 +2313,9 @@ mod comment {
             },
             mode: ParseMode::CommentBlock,
         };
+        let mut ns = TestNamespace;
 
-        let r: Result<Option<Expression>, _> = p.try_into();
+        let r = p.try_into_expr(&mut ns);
 
         let o = ok_or_fail!(r);
         assert!(o.is_none());
@@ -2266,8 +2337,9 @@ mod comment {
                 },
             ))),
         };
+        let mut ns = TestNamespace;
 
-        let r: Result<Option<Expression>, _> = p.try_into();
+        let r = p.try_into_expr(&mut ns);
 
         let o = ok_or_fail!(r);
         assert!(o.is_none());
@@ -2283,8 +2355,9 @@ mod comment {
             },
             mode: ParseMode::CommentDatum(None),
         };
+        let mut ns = TestNamespace;
 
-        let r: Result<Option<Expression>, _> = p.try_into();
+        let r = p.try_into_expr(&mut ns);
 
         let errs = err_or_fail!(r);
         assert_eq!(errs.len(), 1);
@@ -2320,8 +2393,9 @@ mod quote {
                 quoted: false,
             },
         };
+        let mut ns = TestNamespace;
 
-        let r: Result<Option<Expression>, _> = p.try_into();
+        let r = p.try_into_expr(&mut ns);
 
         let expr = some_or_fail!(ok_or_fail!(r));
         assert!(matches!(
@@ -2355,8 +2429,9 @@ mod quote {
                 quoted: false,
             },
         };
+        let mut ns = TestNamespace;
 
-        let r: Result<Option<Expression>, _> = p.try_into();
+        let r = p.try_into_expr(&mut ns);
 
         let expr = some_or_fail!(ok_or_fail!(r));
         assert!(matches!(
@@ -2390,8 +2465,9 @@ mod quote {
                 quoted: true,
             },
         };
+        let mut ns = TestNamespace;
 
-        let r: Result<Option<Expression>, _> = p.try_into();
+        let r = p.try_into_expr(&mut ns);
 
         let expr = some_or_fail!(ok_or_fail!(r));
         assert!(matches!(
@@ -2442,8 +2518,9 @@ mod quote {
                 quoted: false,
             },
         };
+        let mut ns = TestNamespace;
 
-        let r: Result<Option<Expression>, _> = p.try_into();
+        let r = p.try_into_expr(&mut ns);
 
         let errs = err_or_fail!(r);
         assert_eq!(errs.len(), 1);
@@ -2475,8 +2552,9 @@ mod quote {
                 quoted: false,
             },
         };
+        let mut ns = TestNamespace;
 
-        let r: Result<Option<Expression>, _> = p.try_into();
+        let r = p.try_into_expr(&mut ns);
 
         let errs = err_or_fail!(r);
         assert_eq!(errs.len(), 1);
@@ -2502,8 +2580,9 @@ mod quote {
                 quoted: false,
             },
         };
+        let mut ns = TestNamespace;
 
-        let r: Result<Option<Expression>, _> = p.try_into();
+        let r = p.try_into_expr(&mut ns);
 
         let errs = err_or_fail!(r);
         assert_eq!(errs.len(), 1);
@@ -2589,8 +2668,9 @@ mod merge {
                 quoted: false,
             },
         };
+        let mut ns = TestNamespace;
 
-        let r = p.merge(other);
+        let r = p.merge(other, &mut ns);
 
         assert!(matches!(r, Ok(MergeFlow::Continue(()))));
         let seq = extract_or_fail!(p, ParseNode::Prg);
@@ -2621,8 +2701,9 @@ mod merge {
                 },
             )]),
         };
+        let mut ns = TestNamespace;
 
-        let r = p.merge(other);
+        let r = p.merge(other, &mut ns);
 
         let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
         assert_eq!(errs.len(), 1);
@@ -2648,8 +2729,9 @@ mod merge {
                 quoted: false,
             },
         };
+        let mut ns = TestNamespace;
 
-        let r = p.merge(other);
+        let r = p.merge(other, &mut ns);
 
         assert!(r.is_ok());
     }
@@ -2674,8 +2756,9 @@ mod merge {
                 quoted: false,
             },
         };
+        let mut ns = TestNamespace;
 
-        let r = p.merge(other);
+        let r = p.merge(other, &mut ns);
 
         assert!(matches!(
             r,
@@ -2703,8 +2786,9 @@ mod merge {
                 quoted: true,
             },
         };
+        let mut ns = TestNamespace;
 
-        let r = p.merge(other);
+        let r = p.merge(other, &mut ns);
 
         assert!(matches!(r, Ok(MergeFlow::Break(()))));
         let inner = some_or_fail!(extract_or_fail!(p.mode, ParseMode::CommentDatum));
@@ -2746,8 +2830,9 @@ mod merge {
                 )],
             },
         };
+        let mut ns = TestNamespace;
 
-        let r = p.merge(other);
+        let r = p.merge(other, &mut ns);
 
         assert!(matches!(r, Ok(MergeFlow::Break(()))));
         let inner = some_or_fail!(extract_or_fail!(p.mode, ParseMode::CommentDatum));
@@ -2785,8 +2870,9 @@ mod merge {
                 seq: Vec::new(),
             },
         };
+        let mut ns = TestNamespace;
 
-        let r = p.merge(other);
+        let r = p.merge(other, &mut ns);
 
         assert!(matches!(r, Ok(MergeFlow::Break(()))));
         let inner = some_or_fail!(extract_or_fail!(p.mode, ParseMode::CommentDatum));
@@ -2827,8 +2913,9 @@ mod merge {
                 quoted: true,
             },
         };
+        let mut ns = TestNamespace;
 
-        let r = p.merge(other);
+        let r = p.merge(other, &mut ns);
 
         assert!(matches!(r, Ok(MergeFlow::Break(()))));
         let ParseMode::Quote {
@@ -2878,8 +2965,9 @@ mod merge {
                 )],
             },
         };
+        let mut ns = TestNamespace;
 
-        let r = p.merge(other);
+        let r = p.merge(other, &mut ns);
 
         assert!(matches!(r, Ok(MergeFlow::Break(()))));
         let ParseMode::Quote {
@@ -2925,8 +3013,9 @@ mod merge {
                 seq: Vec::new(),
             },
         };
+        let mut ns = TestNamespace;
 
-        let r = p.merge(other);
+        let r = p.merge(other, &mut ns);
 
         assert!(matches!(r, Ok(MergeFlow::Break(()))));
         let ParseMode::Quote {
@@ -2972,8 +3061,9 @@ mod merge {
                 quoted: false,
             },
         };
+        let mut ns = TestNamespace;
 
-        let r = p.merge(other);
+        let r = p.merge(other, &mut ns);
 
         assert!(matches!(
             r,
@@ -3001,8 +3091,9 @@ mod merge {
                 quoted: false,
             },
         };
+        let mut ns = TestNamespace;
 
-        let r = p.merge(other);
+        let r = p.merge(other, &mut ns);
 
         assert!(matches!(
             r,
@@ -3036,8 +3127,9 @@ mod merge {
                 quoted: true,
             },
         };
+        let mut ns = TestNamespace;
 
-        let r = p.merge(other);
+        let r = p.merge(other, &mut ns);
 
         assert!(matches!(r, Ok(MergeFlow::Continue(()))));
         let seq = extract_or_fail!(p.mode, ParseMode::ByteVector);
@@ -3080,8 +3172,9 @@ mod merge {
                 quoted: true,
             },
         };
+        let mut ns = TestNamespace;
 
-        let r = p.merge(other);
+        let r = p.merge(other, &mut ns);
 
         assert!(matches!(r, Ok(MergeFlow::Continue(()))));
         let seq = extract_or_fail!(p.mode, ParseMode::Vector);
@@ -3124,8 +3217,9 @@ mod merge {
             },
             mode: ParseMode::StringLiteral("foo".to_owned()),
         };
+        let mut ns = TestNamespace;
 
-        let r = p.merge(other);
+        let r = p.merge(other, &mut ns);
 
         assert!(matches!(r, Ok(MergeFlow::Continue(()))));
         assert!(matches!(
@@ -3180,8 +3274,9 @@ mod merge {
                 quoted: true,
             },
         };
+        let mut ns = TestNamespace;
 
-        let r = p.merge(other);
+        let r = p.merge(other, &mut ns);
 
         assert!(matches!(r, Ok(MergeFlow::Continue(()))));
         assert!(matches!(
@@ -3239,8 +3334,9 @@ mod merge {
                 .into_expr(ExpressionKind::Literal(Value::symbol("b"))),
             )),
         };
+        let mut ns = TestNamespace;
 
-        let r = p.merge(other);
+        let r = p.merge(other, &mut ns);
 
         assert!(matches!(r, Ok(MergeFlow::Continue(()))));
         assert!(matches!(
@@ -3290,8 +3386,9 @@ mod merge {
                 quoted: true,
             },
         };
+        let mut ns = TestNamespace;
 
-        let r = p.merge(other);
+        let r = p.merge(other, &mut ns);
 
         let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
         assert_eq!(errs.len(), 1);
@@ -3571,8 +3668,9 @@ mod nodeutil {
             span: 0..6,
         };
         let txt = make_textline().into();
+        let mut ns = TestNamespace;
 
-        let r = p.parse(token, &txt);
+        let r = p.parse(token, &txt, &mut ns);
 
         assert!(r.is_continue());
     }

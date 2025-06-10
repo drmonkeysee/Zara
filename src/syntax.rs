@@ -34,7 +34,7 @@ pub(crate) struct ExpressionTree {
 
 impl Parser for ExpressionTree {
     fn parse(&mut self, token_lines: Box<[TokenLine]>, ns: impl Namespace) -> ParserResult {
-        ParseDriver::new(&mut self.parsers).parse(token_lines)
+        ParseDriver::new(&mut self.parsers).parse(token_lines, ns)
     }
 
     fn unsupported_continuation(&mut self) -> Option<ParserError> {
@@ -60,7 +60,7 @@ impl Parser for TokenList {
 
 pub(crate) trait Namespace {
     fn name_defined(&self, name: &str) -> bool;
-    fn get_symbol(&mut self, symbol: &str) -> Value;
+    fn get_symbol(&mut self, symbol: &str) -> Rc<str>;
 }
 
 #[derive(Debug)]
@@ -174,11 +174,11 @@ impl<'a> ParseDriver<'a> {
         }
     }
 
-    fn parse(mut self, token_lines: Box<[TokenLine]>) -> ParserResult {
+    fn parse(mut self, token_lines: Box<[TokenLine]>, mut ns: impl Namespace) -> ParserResult {
         let parser = token_lines
             .into_iter()
             .fold(self.parsers.pop().unwrap_or(ParseNode::prg()), |p, ln| {
-                self.parse_line(p, ln)
+                self.parse_line(p, ln, &mut ns)
             });
 
         if self.errs.is_empty() {
@@ -194,14 +194,19 @@ impl<'a> ParseDriver<'a> {
         }
     }
 
-    fn parse_line(&mut self, mut parser: ParseNode, line: TokenLine) -> ParseNode {
+    fn parse_line(
+        &mut self,
+        mut parser: ParseNode,
+        line: TokenLine,
+        ns: &mut impl Namespace,
+    ) -> ParseNode {
         let TokenLine(tokens, txt) = line;
         let txt = txt.into();
         let mut errs = Vec::new();
         for token in tokens {
-            match parser.parse(token, &txt) {
+            match parser.parse(token, &txt, ns) {
                 ParseFlow::Break(ParseBreak::Complete(end)) => {
-                    parser = self.finalize_parser(parser, end, &mut errs);
+                    parser = self.finalize_parser(parser, end, &mut errs, ns);
                 }
                 ParseFlow::Break(ParseBreak::Err { err, flow }) => {
                     errs.push(err);
@@ -235,19 +240,20 @@ impl<'a> ParseDriver<'a> {
         parser: ParseNode,
         end: ExprEnd,
         errs: &mut Vec<ExpressionError>,
+        ns: &mut impl Namespace,
     ) -> ParseNode {
         let err = match self.parsers.pop() {
             None => InvalidParseError::MissingExprTarget,
             Some(mut p) => match parser.into_expr_node(end) {
                 None => InvalidParseError::InvalidExprSource,
-                Some(done) => match p.merge(done) {
+                Some(done) => match p.merge(done, ns) {
                     Err(ParserError::Invalid(err)) => err,
                     Err(ParserError::Syntax(SyntaxError(errvec))) => {
                         errs.extend(errvec);
                         return p;
                     }
                     Ok(MergeFlow::Continue(())) => return p,
-                    Ok(MergeFlow::Break(())) => return self.finalize_parser(p, end, errs),
+                    Ok(MergeFlow::Break(())) => return self.finalize_parser(p, end, errs, ns),
                 },
             },
         };
