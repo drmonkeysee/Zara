@@ -7,7 +7,7 @@ pub(crate) use self::{
     form::{Arity, IntrinsicFn, MAX_ARITY, Procedure},
 };
 use crate::{
-    core,
+    core, ext,
     syntax::{Namespace, Program},
     value::{Condition, Value as ValueImpl},
 };
@@ -52,6 +52,7 @@ impl Environment {
     pub(crate) fn new(args: impl IntoIterator<Item = String>) -> Self {
         let mut global = Binding::default();
         core::load(&mut global);
+        ext::load(&mut global);
         Self {
             global,
             symbols: SymbolTable::default(),
