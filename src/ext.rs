@@ -23,7 +23,7 @@ pub(crate) fn load(scope: &mut Binding) {
 fn symbol_table(_args: &[Value], env: &mut Frame) -> EvalResult {
     Ok(Value::list(
         env.sym
-            .get_all()
+            .get_refs()
             .into_iter()
             .map(|s| Value::symbol(Rc::clone(s)))
             .collect::<Vec<_>>(),

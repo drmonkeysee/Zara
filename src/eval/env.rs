@@ -28,7 +28,7 @@ impl Binding {
 pub(crate) struct SymbolTable(HashSet<Rc<str>>);
 
 impl SymbolTable {
-    pub(crate) fn get_all(&self) -> impl IntoIterator<Item = &Rc<str>> {
+    pub(crate) fn get_refs(&self) -> impl IntoIterator<Item = &Rc<str>> {
         let mut vec = self.0.iter().collect::<Vec<_>>();
         vec.sort();
         vec
@@ -107,34 +107,34 @@ mod tests {
     }
 
     #[test]
-    fn get_all_empty() {
+    fn get_refs_empty() {
         let s = SymbolTable::default();
 
-        let all = s.get_all();
+        let all = s.get_refs();
 
         let vec = all.into_iter().collect::<Vec<_>>();
         assert!(vec.is_empty());
     }
 
     #[test]
-    fn get_all_single() {
+    fn get_refs_single() {
         let mut s = SymbolTable::default();
         s.get("foo");
 
-        let all = s.get_all();
+        let all = s.get_refs();
 
         let vec = all.into_iter().map(|s| Rc::as_ref(s)).collect::<Vec<_>>();
         assert_eq!(vec, ["foo"]);
     }
 
     #[test]
-    fn get_all_alphabetical() {
+    fn get_refs_alphabetical() {
         let mut s = SymbolTable::default();
         s.get("foo");
         s.get("bar");
         s.get("baz");
 
-        let all = s.get_all();
+        let all = s.get_refs();
 
         let vec = all.into_iter().map(|s| Rc::as_ref(s)).collect::<Vec<_>>();
         assert_eq!(vec, ["bar", "baz", "foo"]);
