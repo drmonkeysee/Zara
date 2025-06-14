@@ -7,18 +7,20 @@ macro_rules! zlist {
     };
 }
 
+mod condition;
 #[cfg(test)]
 mod tests;
 
+pub(crate) use self::condition::Condition;
 use crate::{
-    eval::{Arity, MAX_ARITY, Procedure},
+    eval::Procedure,
     lex::{DisplayTokenLines, TokenLine, TokenLinesMessage},
     number::{Number, Real},
     string::{CharDatum, StrDatum, SymbolDatum},
     syntax::Program,
 };
 use std::{
-    fmt::{self, Display, Formatter, Write},
+    fmt::{self, Display, Formatter},
     rc::Rc,
 };
 pub(crate) use zlist;
@@ -154,79 +156,6 @@ impl Display for Pair {
     }
 }
 
-#[derive(Debug)]
-pub(crate) struct Condition {
-    kind: ConditionKind,
-    irritants: Value,
-    msg: Box<str>,
-}
-
-impl Condition {
-    pub(crate) fn bind_error(name: &str) -> Self {
-        Self {
-            kind: ConditionKind::Env,
-            irritants: Value::Unspecified,
-            msg: format!("unbound variable: {name}").into(),
-        }
-    }
-
-    pub(crate) fn proc_error(typename: &str) -> Self {
-        Self {
-            kind: ConditionKind::Env,
-            irritants: Value::Unspecified,
-            msg: format!("expected procedure, got: {typename}").into(),
-        }
-    }
-
-    pub(crate) fn arg_error(name: &str, expected_type: &str, arg: &Value) -> Self {
-        Self {
-            kind: ConditionKind::Env,
-            irritants: zlist![arg.clone()],
-            msg: format!(
-                "invalid type for arg `{name}` - expected: {expected_type}, got: {}",
-                arg.as_typename()
-            )
-            .into(),
-        }
-    }
-
-    pub(crate) fn arity_error(name: &str, expected: &Arity, actual: usize) -> Self {
-        let expected = if actual > MAX_ARITY as usize {
-            format!("args exceed max arity: {MAX_ARITY}")
-        } else {
-            format!(
-                "expected{}: {}",
-                if expected.is_empty() { "" } else { " at least" },
-                expected.start
-            )
-        };
-        Self {
-            kind: ConditionKind::Env,
-            irritants: Value::Unspecified,
-            msg: format!("{name} arity mismatch - {expected}, got: {actual}",).into(),
-        }
-    }
-
-    pub(crate) fn system_error(msg: impl Into<Box<str>>) -> Self {
-        Self {
-            kind: ConditionKind::System,
-            irritants: Value::Unspecified,
-            msg: msg.into(),
-        }
-    }
-}
-
-impl Display for Condition {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "#<{} \"{}\"", self.kind, self.msg)?;
-        match &self.irritants {
-            Value::Unspecified => (),
-            v => write!(f, " {v}")?,
-        }
-        f.write_char('>')
-    }
-}
-
 pub(crate) struct ValueMessage<'a>(&'a Value);
 
 impl Display for ValueMessage<'_> {
@@ -261,30 +190,6 @@ impl Display for TypeName<'_> {
             Value::TokenList(_) => f.write_str("token list"),
             Value::Unspecified => f.write_str("unspecified"),
             Value::Vector(_) => f.write_str("vector"),
-        }
-    }
-}
-
-#[derive(Debug)]
-enum ConditionKind {
-    Env,
-    #[allow(dead_code, reason = "not yet implemented")]
-    File,
-    #[allow(dead_code, reason = "not yet implemented")]
-    General,
-    #[allow(dead_code, reason = "not yet implemented")]
-    Read,
-    System,
-}
-
-impl Display for ConditionKind {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Env => f.write_str("env-error"),
-            Self::File => f.write_str("file-error"),
-            Self::General => f.write_str("exception"),
-            Self::Read => f.write_str("read-error"),
-            Self::System => f.write_str("sys-error"),
         }
     }
 }
