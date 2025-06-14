@@ -9,15 +9,16 @@ macro_rules! predicate {
 }
 
 use crate::{
+    Exception,
     eval::{Binding, EvalResult, Frame, MAX_ARITY},
     number::{Number, Real},
-    value::Value,
+    value::{Condition, TypeName, Value},
 };
 
 pub(super) fn load(scope: &mut Binding) {
     // boolean
     super::bind_intrinsic(scope, "boolean?", 1..1, is_boolean);
-    super::bind_intrinsic(scope, "boolean=?", 0..MAX_ARITY, all_boolean);
+    super::bind_intrinsic(scope, "boolean=?", 0..MAX_ARITY, all_boolean_equal);
     super::bind_intrinsic(scope, "not", 1..1, not);
 
     // number
@@ -42,10 +43,23 @@ pub(super) fn load(scope: &mut Binding) {
 predicate!(is_boolean, Value::Boolean(_));
 predicate!(not, Value::Boolean(false));
 
-fn all_boolean(args: &[Value], _env: &mut Frame) -> EvalResult {
-    Ok(Value::Boolean(
-        args.iter().all(|v| matches!(v, Value::Boolean(_))),
-    ))
+fn all_boolean_equal(args: &[Value], _env: &mut Frame) -> EvalResult {
+    let mut it = args.iter().enumerate();
+    let first = match it.next() {
+        None => return Ok(Value::Boolean(true)),
+        Some((_, Value::Boolean(b))) => b,
+        Some((idx, v)) => {
+            return Err(Condition::arg_error(&idx.to_string(), TypeName::BOOL, v).into());
+        }
+    };
+    let result: Result<_, Exception> = it.try_fold(true, |acc, (idx, val)| {
+        if let Value::Boolean(b) = val {
+            Ok(acc && b == first)
+        } else {
+            Err(Condition::arg_error(&idx.to_string(), TypeName::BOOL, val).into())
+        }
+    });
+    Ok(Value::Boolean(result?))
 }
 
 //
@@ -65,3 +79,115 @@ predicate!(is_nan, Value::Number(n) if n.is_nan());
 predicate!(is_number, Value::Number(_));
 predicate!(is_rational, Value::Number(Number::Real(r)) if r.is_rational());
 predicate!(is_real, Value::Number(Number::Real(_)));
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::testutil::{TestEnv, err_or_fail, extract_or_fail, ok_or_fail};
+
+    #[test]
+    fn all_boolean_empty() {
+        let args = [];
+        let mut env = TestEnv::default();
+
+        let r = all_boolean_equal(&args, &mut env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert!(matches!(v, Value::Boolean(true)));
+    }
+
+    #[test]
+    fn all_boolean_single() {
+        let cases = [[Value::Boolean(true)], [Value::Boolean(false)]];
+        for case in cases {
+            let mut env = TestEnv::default();
+
+            let r = all_boolean_equal(&case, &mut env.new_frame());
+
+            let v = ok_or_fail!(r);
+            assert!(matches!(v, Value::Boolean(true)));
+        }
+    }
+
+    #[test]
+    fn all_boolean_trues() {
+        let args = [
+            Value::Boolean(true),
+            Value::Boolean(true),
+            Value::Boolean(true),
+        ];
+        let mut env = TestEnv::default();
+
+        let r = all_boolean_equal(&args, &mut env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert!(matches!(v, Value::Boolean(true)));
+    }
+
+    #[test]
+    fn all_boolean_falses() {
+        let args = [
+            Value::Boolean(false),
+            Value::Boolean(false),
+            Value::Boolean(false),
+        ];
+        let mut env = TestEnv::default();
+
+        let r = all_boolean_equal(&args, &mut env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert!(matches!(v, Value::Boolean(true)));
+    }
+
+    #[test]
+    fn all_boolean_mix() {
+        let args = [
+            Value::Boolean(false),
+            Value::Boolean(true),
+            Value::Boolean(false),
+        ];
+        let mut env = TestEnv::default();
+
+        let r = all_boolean_equal(&args, &mut env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert!(matches!(v, Value::Boolean(false)));
+    }
+
+    #[test]
+    fn all_boolean_invalid_param() {
+        let args = [
+            Value::Boolean(false),
+            Value::String("foo".into()),
+            Value::Boolean(false),
+        ];
+        let mut env = TestEnv::default();
+
+        let r = all_boolean_equal(&args, &mut env.new_frame());
+
+        let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
+        assert_eq!(
+            err.to_string(),
+            "#<env-error \"invalid type for arg `1` - expected: boolean, got: string\" (\"foo\")>"
+        );
+    }
+
+    #[test]
+    fn all_boolean_bails_on_first_invalid_param() {
+        let args = [
+            Value::Boolean(false),
+            Value::String("foo".into()),
+            Value::Boolean(false),
+            Value::null(),
+        ];
+        let mut env = TestEnv::default();
+
+        let r = all_boolean_equal(&args, &mut env.new_frame());
+
+        let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
+        assert_eq!(
+            err.to_string(),
+            "#<env-error \"invalid type for arg `1` - expected: boolean, got: string\" (\"foo\")>"
+        );
+    }
+}

@@ -171,6 +171,7 @@ impl Display for ValueMessage<'_> {
 pub(crate) struct TypeName<'a>(&'a Value);
 
 impl TypeName<'_> {
+    pub(crate) const BOOL: &'static str = "boolean";
     pub(crate) const STRING: &'static str = "string";
 }
 
@@ -178,7 +179,7 @@ impl Display for TypeName<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self.0 {
             Value::Ast(_) => f.write_str("abstract syntax tree"),
-            Value::Boolean(_) => f.write_str("boolean"),
+            Value::Boolean(_) => f.write_str(Self::BOOL),
             Value::ByteVector(_) => f.write_str("bytevector"),
             Value::Character(_) => f.write_str("character"),
             Value::Number(_) => f.write_str("number"),
