@@ -35,11 +35,10 @@ macro_rules! some_or_fail {
 }
 
 use crate::{
-    eval::{Binding, Frame, SymbolTable, System},
-    syntax::Namespace,
+    eval::{Binding, Frame, Namespace, SymbolTable, System},
     txt::{LineNumber, TextContext, TextLine},
 };
-use std::{iter, path::Path, rc::Rc};
+use std::{iter, path::Path};
 pub(crate) use {err_or_fail, extract_or_fail, ok_or_fail, some_or_fail};
 
 pub(crate) fn make_textline() -> TextLine {
@@ -72,6 +71,10 @@ impl TestEnv {
             sys: &self.system,
         }
     }
+
+    pub(crate) fn new_namespace(&mut self) -> Namespace {
+        Namespace(self.new_frame())
+    }
 }
 
 impl Default for TestEnv {
@@ -81,17 +84,5 @@ impl Default for TestEnv {
             symbols: SymbolTable::default(),
             system: System::new(iter::empty()),
         }
-    }
-}
-
-pub(crate) struct TestNamespace;
-
-impl Namespace for TestNamespace {
-    fn name_defined(&self, _name: &str) -> bool {
-        false
-    }
-
-    fn get_symbol(&mut self, symbol: &str) -> Rc<str> {
-        symbol.into()
     }
 }

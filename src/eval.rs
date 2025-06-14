@@ -1,14 +1,13 @@
 mod env;
 mod form;
 
-use self::env::EnvNamespace;
 pub(crate) use self::{
-    env::{Binding, Frame, SymbolTable, System},
+    env::{Binding, Frame, Namespace, SymbolTable, System},
     form::{Arity, IntrinsicFn, MAX_ARITY, Procedure},
 };
 use crate::{
     core, ext,
-    syntax::{Namespace, Program},
+    syntax::Program,
     value::{Condition, Value as ValueImpl},
 };
 use std::{
@@ -49,8 +48,8 @@ impl<T: Evaluator + Default> Environment<T> {
         T::default().eval(prg, &mut frame)
     }
 
-    pub(crate) fn create_namespace(&mut self) -> impl Namespace {
-        EnvNamespace(self.make_frame())
+    pub(crate) fn make_namespace(&mut self) -> Namespace {
+        Namespace(self.make_frame())
     }
 
     fn make_frame(&mut self) -> Frame {

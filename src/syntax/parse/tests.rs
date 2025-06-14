@@ -1,8 +1,6 @@
 use super::*;
 use crate::{
-    testutil::{
-        TestNamespace, err_or_fail, extract_or_fail, make_textline, ok_or_fail, some_or_fail,
-    },
+    testutil::{TestEnv, err_or_fail, extract_or_fail, make_textline, ok_or_fail, some_or_fail},
     txt::TxtSpan,
 };
 
@@ -17,7 +15,8 @@ mod expr {
             span: 0..3,
         };
         let txt = make_textline().into();
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let f = parse_expr(token, &txt, false, &mut ns);
 
@@ -38,7 +37,8 @@ mod expr {
             span: 0..3,
         };
         let txt = make_textline().into();
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let f = parse_expr(token, &txt, false, &mut ns);
 
@@ -59,7 +59,8 @@ mod expr {
             span: 0..3,
         };
         let txt = make_textline().into();
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let f = parse_expr(token, &txt, false, &mut ns);
 
@@ -80,7 +81,8 @@ mod expr {
             span: 0..3,
         };
         let txt = make_textline().into();
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let f = parse_expr(token, &txt, false, &mut ns);
 
@@ -101,7 +103,8 @@ mod expr {
             span: 0..3,
         };
         let txt = make_textline().into();
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let f = parse_expr(token, &txt, false, &mut ns);
 
@@ -125,7 +128,8 @@ mod expr {
             span: 3..8,
         };
         let txt = make_textline().into();
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let f = parse_expr(token, &txt, false, &mut ns);
 
@@ -150,7 +154,8 @@ mod expr {
             span: 3..8,
         };
         let txt = make_textline().into();
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let f = parse_expr(token, &txt, false, &mut ns);
 
@@ -172,7 +177,8 @@ mod expr {
             span: 0..3,
         };
         let txt = make_textline().into();
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let f = parse_expr(token, &txt, false, &mut ns);
 
@@ -195,7 +201,8 @@ mod expr {
             span: 2..3,
         };
         let txt = make_textline().into();
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let f = parse_expr(token, &txt, false, &mut ns);
 
@@ -218,7 +225,8 @@ mod expr {
             span: 0..3,
         };
         let txt = make_textline().into();
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let f = parse_expr(token, &txt, false, &mut ns);
 
@@ -232,7 +240,8 @@ mod expr {
             span: 3..6,
         };
         let txt = make_textline().into();
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let f = parse_expr(token, &txt, false, &mut ns);
 
@@ -252,7 +261,8 @@ mod expr {
             span: 3..6,
         };
         let txt = make_textline().into();
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let f = parse_expr(token, &txt, false, &mut ns);
 
@@ -272,7 +282,8 @@ mod expr {
             span: 0..6,
         };
         let txt = make_textline().into();
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let f = parse_expr(token, &txt, false, &mut ns);
 
@@ -293,7 +304,8 @@ mod expr {
             span: 0..0,
         };
         let txt = make_textline().into();
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let f = parse_expr(token, &txt, false, &mut ns);
 
@@ -314,7 +326,8 @@ mod expr {
             span: 0..6,
         };
         let txt = make_textline().into();
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let f = parse_expr(token, &txt, true, &mut ns);
 
@@ -335,7 +348,8 @@ mod expr {
             span: 0..0,
         };
         let txt = make_textline().into();
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let f = parse_expr(token, &txt, true, &mut ns);
 
@@ -356,7 +370,8 @@ mod expr {
             span: 3..8,
         };
         let txt = make_textline().into();
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let f = parse_expr(token, &txt, false, &mut ns);
 
@@ -378,7 +393,8 @@ mod expr {
             span: 3..8,
         };
         let txt = make_textline().into();
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let f = parse_expr(token, &txt, true, &mut ns);
 
@@ -400,7 +416,8 @@ mod expr {
             span: 1..2,
         };
         let txt = make_textline().into();
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let f = parse_expr(token, &txt, false, &mut ns);
 
@@ -422,7 +439,8 @@ mod expr {
             span: 1..2,
         };
         let txt = make_textline().into();
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let f = parse_expr(token, &txt, true, &mut ns);
 
@@ -444,7 +462,8 @@ mod expr {
             span: 1..2,
         };
         let txt = make_textline().into();
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let f = parse_expr(token, &txt, false, &mut ns);
 
@@ -464,7 +483,8 @@ mod expr {
             span: 1..2,
         };
         let txt = make_textline().into();
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let f = parse_expr(token, &txt, false, &mut ns);
 
@@ -487,7 +507,8 @@ mod expr {
             span: 1..2,
         };
         let txt = make_textline().into();
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let f = parse_expr(token, &txt, true, &mut ns);
 
@@ -510,7 +531,8 @@ mod expr {
             span: 1..2,
         };
         let txt = make_textline().into();
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let f = parse_expr(token, &txt, false, &mut ns);
 
@@ -539,7 +561,8 @@ mod datum {
             span: 0..1,
             txt: Rc::clone(&txt),
         };
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let f = parse_datum(&mut inner, token, &txt, &ctx, &mut ns);
 
@@ -569,7 +592,8 @@ mod datum {
             span: 0..1,
             txt: Rc::clone(&txt),
         };
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let f = parse_datum(&mut inner, token, &txt, &ctx, &mut ns);
 
@@ -595,7 +619,8 @@ mod datum {
             span: 0..1,
             txt: Rc::clone(&txt),
         };
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let f = parse_datum(&mut inner, token, &txt, &ctx, &mut ns);
 
@@ -615,7 +640,8 @@ mod datum {
             span: 0..1,
             txt: Rc::clone(&txt),
         };
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let f = parse_datum(&mut inner, token, &txt, &ctx, &mut ns);
 
@@ -644,7 +670,8 @@ mod datum {
             span: 0..1,
             txt: Rc::clone(&txt),
         };
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let f = parse_datum(&mut inner, token, &txt, &ctx, &mut ns);
 
@@ -683,7 +710,8 @@ mod bytevector {
             },
             mode: ParseMode::ByteVector(seq),
         };
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let r = node.try_into_expr(&mut ns);
 
@@ -729,7 +757,8 @@ mod bytevector {
             },
             mode: ParseMode::ByteVector(seq),
         };
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let r = node.try_into_expr(&mut ns);
 
@@ -758,7 +787,8 @@ mod bytevector {
             },
             mode: ParseMode::ByteVector(Vec::new()),
         };
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let r = node.try_into_expr(&mut ns);
 
@@ -806,7 +836,8 @@ mod bytevector {
             },
             mode: ParseMode::ByteVector(seq),
         };
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let r = node.try_into_expr(&mut ns);
 
@@ -855,7 +886,8 @@ mod bytevector {
             },
             mode: ParseMode::ByteVector(seq),
         };
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let r = node.try_into_expr(&mut ns);
 
@@ -898,7 +930,8 @@ mod vector {
             },
             mode: ParseMode::Vector(seq),
         };
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let r = node.try_into_expr(&mut ns);
 
@@ -947,7 +980,8 @@ mod vector {
             },
             mode: ParseMode::Vector(seq),
         };
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let r = node.try_into_expr(&mut ns);
 
@@ -982,7 +1016,8 @@ mod vector {
             },
             mode: ParseMode::Vector(Vec::new()),
         };
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let r = node.try_into_expr(&mut ns);
 
@@ -1032,7 +1067,8 @@ mod vector {
             },
             mode: ParseMode::Vector(seq),
         };
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let r = node.try_into_expr(&mut ns);
 
@@ -1091,7 +1127,8 @@ mod vector {
             },
             mode: ParseMode::Vector(seq),
         };
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let r = node.try_into_expr(&mut ns);
 
@@ -1187,7 +1224,8 @@ mod identifier {
                 quoted: false,
             },
         };
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let r = p.try_into_expr(&mut ns);
 
@@ -1214,7 +1252,8 @@ mod identifier {
                 quoted: true,
             },
         };
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let r = p.try_into_expr(&mut ns);
 
@@ -1240,7 +1279,8 @@ mod sequence {
             span: 0..3,
         };
         let txt = make_textline().into();
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let f = parse_sequence(&mut seq, token, &txt, &mut ns);
 
@@ -1275,7 +1315,8 @@ mod sequence {
             span: 6..9,
         };
         let txt = make_textline().into();
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let f = parse_sequence(&mut seq, token, &txt, &mut ns);
 
@@ -1298,7 +1339,8 @@ mod sequence {
             span: 1..2,
         };
         let txt = make_textline().into();
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let f = parse_sequence(&mut seq, token, &txt, &mut ns);
 
@@ -1322,7 +1364,8 @@ mod sequence {
             span: 0..3,
         };
         let txt = make_textline().into();
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let f = parse_sequence(&mut seq, token, &txt, &mut ns);
 
@@ -1369,7 +1412,8 @@ mod list {
             kind: TokenKind::ParenRight,
             span: 6..7,
         };
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let f = SyntacticForm::Call.parse_list(&mut seq, token, &txt, &mut ns);
 
@@ -1406,7 +1450,8 @@ mod list {
             kind: TokenKind::ParenLeft,
             span: 6..7,
         };
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let f = SyntacticForm::Call.parse_list(&mut seq, token, &txt, &mut ns);
 
@@ -1428,7 +1473,8 @@ mod list {
             span: 4..5,
         };
         let txt = make_textline().into();
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let f = SyntacticForm::Call.parse_list(&mut seq, token, &txt, &mut ns);
 
@@ -1465,7 +1511,8 @@ mod list {
             kind: TokenKind::Number(Number::real(10)),
             span: 6..7,
         };
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let f = SyntacticForm::Call.parse_list(&mut seq, token, &txt, &mut ns);
 
@@ -1494,7 +1541,8 @@ mod list {
             kind: TokenKind::PairJoiner,
             span: 5..6,
         };
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
         let mut frm = SyntacticForm::Datum;
 
         let f = frm.parse_list(&mut seq, token, &txt, &mut ns);
@@ -1512,7 +1560,8 @@ mod list {
             kind: TokenKind::PairJoiner,
             span: 1..2,
         };
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
         let mut frm = SyntacticForm::Datum;
 
         let f = frm.parse_list(&mut seq, token, &txt, &mut ns);
@@ -1545,7 +1594,8 @@ mod list {
             kind: TokenKind::PairJoiner,
             span: 5..6,
         };
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let f = SyntacticForm::Call.parse_list(&mut seq, token, &txt, &mut ns);
 
@@ -1576,7 +1626,8 @@ mod list {
             kind: TokenKind::Identifier("foo".to_owned()),
             span: 5..8,
         };
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
         let mut frm = SyntacticForm::PairOpen;
 
         let f = frm.parse_list(&mut seq, token, &txt, &mut ns);
@@ -1607,7 +1658,8 @@ mod list {
             kind: TokenKind::Comment,
             span: 5..8,
         };
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
         let mut frm = SyntacticForm::PairOpen;
 
         let f = frm.parse_list(&mut seq, token, &txt, &mut ns);
@@ -1631,7 +1683,8 @@ mod list {
             kind: TokenKind::Comment,
             span: 5..8,
         };
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
         let mut frm = SyntacticForm::PairClosed;
 
         let f = frm.parse_list(&mut seq, token, &txt, &mut ns);
@@ -1655,7 +1708,8 @@ mod list {
             kind: TokenKind::ParenRight,
             span: 5..6,
         };
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
         let mut frm = SyntacticForm::PairOpen;
 
         let f = frm.parse_list(&mut seq, token, &txt, &mut ns);
@@ -1688,7 +1742,8 @@ mod list {
             kind: TokenKind::PairJoiner,
             span: 5..6,
         };
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
         let mut frm = SyntacticForm::PairOpen;
 
         let f = frm.parse_list(&mut seq, token, &txt, &mut ns);
@@ -1721,7 +1776,8 @@ mod list {
             kind: TokenKind::PairJoiner,
             span: 5..6,
         };
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
         let mut frm = SyntacticForm::PairClosed;
 
         let f = frm.parse_list(&mut seq, token, &txt, &mut ns);
@@ -1766,7 +1822,8 @@ mod list {
             kind: TokenKind::StringDiscard,
             span: 6..7,
         };
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let f = SyntacticForm::Call.parse_list(&mut seq, token, &txt, &mut ns);
 
@@ -1814,7 +1871,8 @@ mod list {
                 ],
             },
         };
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let r = p.try_into_expr(&mut ns);
 
@@ -1866,7 +1924,8 @@ mod list {
                 seq: vec![],
             },
         };
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let r = p.try_into_expr(&mut ns);
 
@@ -1909,7 +1968,8 @@ mod list {
                 ],
             },
         };
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let r = p.try_into_expr(&mut ns);
 
@@ -1954,7 +2014,8 @@ mod list {
                 ],
             },
         };
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let r = p.try_into_expr(&mut ns);
 
@@ -1983,7 +2044,8 @@ mod list {
                 seq: Vec::new(),
             },
         };
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let r = p.try_into_expr(&mut ns);
 
@@ -2030,7 +2092,8 @@ mod list {
                 ],
             },
         };
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let r = p.try_into_expr(&mut ns);
 
@@ -2069,7 +2132,8 @@ mod list {
                 ],
             },
         };
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let r = p.try_into_expr(&mut ns);
 
@@ -2104,7 +2168,8 @@ mod list {
                 ],
             },
         };
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let r = p.try_into_expr(&mut ns);
 
@@ -2211,7 +2276,8 @@ mod string {
             },
             mode: ParseMode::StringLiteral("foo".to_owned()),
         };
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let r = p.try_into_expr(&mut ns);
 
@@ -2313,7 +2379,8 @@ mod comment {
             },
             mode: ParseMode::CommentBlock,
         };
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let r = p.try_into_expr(&mut ns);
 
@@ -2337,7 +2404,8 @@ mod comment {
                 },
             ))),
         };
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let r = p.try_into_expr(&mut ns);
 
@@ -2355,7 +2423,8 @@ mod comment {
             },
             mode: ParseMode::CommentDatum(None),
         };
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let r = p.try_into_expr(&mut ns);
 
@@ -2393,7 +2462,8 @@ mod quote {
                 quoted: false,
             },
         };
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let r = p.try_into_expr(&mut ns);
 
@@ -2429,7 +2499,8 @@ mod quote {
                 quoted: false,
             },
         };
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let r = p.try_into_expr(&mut ns);
 
@@ -2465,7 +2536,8 @@ mod quote {
                 quoted: true,
             },
         };
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let r = p.try_into_expr(&mut ns);
 
@@ -2518,7 +2590,8 @@ mod quote {
                 quoted: false,
             },
         };
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let r = p.try_into_expr(&mut ns);
 
@@ -2552,7 +2625,8 @@ mod quote {
                 quoted: false,
             },
         };
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let r = p.try_into_expr(&mut ns);
 
@@ -2580,7 +2654,8 @@ mod quote {
                 quoted: false,
             },
         };
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let r = p.try_into_expr(&mut ns);
 
@@ -2668,7 +2743,8 @@ mod merge {
                 quoted: false,
             },
         };
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let r = p.merge(other, &mut ns);
 
@@ -2701,7 +2777,8 @@ mod merge {
                 },
             )]),
         };
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let r = p.merge(other, &mut ns);
 
@@ -2729,7 +2806,8 @@ mod merge {
                 quoted: false,
             },
         };
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let r = p.merge(other, &mut ns);
 
@@ -2756,7 +2834,8 @@ mod merge {
                 quoted: false,
             },
         };
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let r = p.merge(other, &mut ns);
 
@@ -2786,7 +2865,8 @@ mod merge {
                 quoted: true,
             },
         };
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let r = p.merge(other, &mut ns);
 
@@ -2830,7 +2910,8 @@ mod merge {
                 )],
             },
         };
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let r = p.merge(other, &mut ns);
 
@@ -2870,7 +2951,8 @@ mod merge {
                 seq: Vec::new(),
             },
         };
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let r = p.merge(other, &mut ns);
 
@@ -2913,7 +2995,8 @@ mod merge {
                 quoted: true,
             },
         };
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let r = p.merge(other, &mut ns);
 
@@ -2965,7 +3048,8 @@ mod merge {
                 )],
             },
         };
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let r = p.merge(other, &mut ns);
 
@@ -3013,7 +3097,8 @@ mod merge {
                 seq: Vec::new(),
             },
         };
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let r = p.merge(other, &mut ns);
 
@@ -3061,7 +3146,8 @@ mod merge {
                 quoted: false,
             },
         };
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let r = p.merge(other, &mut ns);
 
@@ -3091,7 +3177,8 @@ mod merge {
                 quoted: false,
             },
         };
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let r = p.merge(other, &mut ns);
 
@@ -3127,7 +3214,8 @@ mod merge {
                 quoted: true,
             },
         };
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let r = p.merge(other, &mut ns);
 
@@ -3172,7 +3260,8 @@ mod merge {
                 quoted: true,
             },
         };
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let r = p.merge(other, &mut ns);
 
@@ -3217,7 +3306,8 @@ mod merge {
             },
             mode: ParseMode::StringLiteral("foo".to_owned()),
         };
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let r = p.merge(other, &mut ns);
 
@@ -3274,7 +3364,8 @@ mod merge {
                 quoted: true,
             },
         };
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let r = p.merge(other, &mut ns);
 
@@ -3334,7 +3425,8 @@ mod merge {
                 .into_expr(ExpressionKind::Literal(Value::symbol("b"))),
             )),
         };
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let r = p.merge(other, &mut ns);
 
@@ -3386,7 +3478,8 @@ mod merge {
                 quoted: true,
             },
         };
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let r = p.merge(other, &mut ns);
 
@@ -3668,7 +3761,8 @@ mod nodeutil {
             span: 0..6,
         };
         let txt = make_textline().into();
-        let mut ns = TestNamespace;
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
 
         let r = p.parse(token, &txt, &mut ns);
 

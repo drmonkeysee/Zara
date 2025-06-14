@@ -9,6 +9,7 @@ use self::{
     parse::{MergeFlow, ParseBreak, ParseErrBreak, ParseErrFlow, ParseFlow, ParseNode},
 };
 use crate::{
+    eval::Namespace,
     lex::TokenLine,
     txt::{TextLine, TxtSpan},
     value::Value,
@@ -23,7 +24,7 @@ use std::{
 pub(crate) type ParserResult = Result<ParserOutput, ParserError>;
 
 pub(crate) trait Parser {
-    fn parse(&mut self, token_lines: Box<[TokenLine]>, ns: impl Namespace) -> ParserResult;
+    fn parse(&mut self, token_lines: Box<[TokenLine]>, ns: Namespace) -> ParserResult;
     fn unsupported_continuation(&mut self) -> Option<ParserError>;
 }
 
@@ -33,7 +34,7 @@ pub(crate) struct ExpressionTree {
 }
 
 impl Parser for ExpressionTree {
-    fn parse(&mut self, token_lines: Box<[TokenLine]>, ns: impl Namespace) -> ParserResult {
+    fn parse(&mut self, token_lines: Box<[TokenLine]>, ns: Namespace) -> ParserResult {
         ParseDriver::new(&mut self.parsers).parse(token_lines, ns)
     }
 
@@ -47,7 +48,7 @@ impl Parser for ExpressionTree {
 pub(crate) struct TokenList;
 
 impl Parser for TokenList {
-    fn parse(&mut self, token_lines: Box<[TokenLine]>, _ns: impl Namespace) -> ParserResult {
+    fn parse(&mut self, token_lines: Box<[TokenLine]>, _ns: Namespace) -> ParserResult {
         Ok(ParserOutput::Complete(Program::new(
             tokens_expr(token_lines).into_iter().collect::<Box<[_]>>(),
         )))
@@ -56,11 +57,6 @@ impl Parser for TokenList {
     fn unsupported_continuation(&mut self) -> Option<ParserError> {
         None
     }
-}
-
-pub(crate) trait Namespace {
-    fn name_defined(&self, name: &str) -> bool;
-    fn get_symbol(&mut self, symbol: &str) -> Rc<str>;
 }
 
 #[derive(Debug)]
@@ -174,7 +170,7 @@ impl<'a> ParseDriver<'a> {
         }
     }
 
-    fn parse(mut self, token_lines: Box<[TokenLine]>, mut ns: impl Namespace) -> ParserResult {
+    fn parse(mut self, token_lines: Box<[TokenLine]>, mut ns: Namespace) -> ParserResult {
         let parser = token_lines
             .into_iter()
             .fold(self.parsers.pop().unwrap_or(ParseNode::prg()), |p, ln| {
@@ -198,7 +194,7 @@ impl<'a> ParseDriver<'a> {
         &mut self,
         mut parser: ParseNode,
         line: TokenLine,
-        ns: &mut impl Namespace,
+        ns: &mut Namespace,
     ) -> ParseNode {
         let TokenLine(tokens, txt) = line;
         let txt = txt.into();
@@ -240,7 +236,7 @@ impl<'a> ParseDriver<'a> {
         parser: ParseNode,
         end: ExprEnd,
         errs: &mut Vec<ExpressionError>,
-        ns: &mut impl Namespace,
+        ns: &mut Namespace,
     ) -> ParseNode {
         let err = match self.parsers.pop() {
             None => InvalidParseError::MissingExprTarget,

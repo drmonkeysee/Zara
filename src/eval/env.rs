@@ -1,4 +1,4 @@
-use crate::{syntax::Namespace, value::Value};
+use crate::value::Value;
 use std::{
     collections::{HashMap, HashSet},
     rc::Rc,
@@ -68,27 +68,15 @@ impl System {
     }
 }
 
-pub(super) struct EnvNamespace<'a>(pub(super) Frame<'a>);
+pub(crate) struct Namespace<'a>(pub(crate) Frame<'a>);
 
-impl Namespace for EnvNamespace<'_> {
-    fn name_defined(&self, name: &str) -> bool {
+impl Namespace<'_> {
+    pub(crate) fn name_defined(&self, name: &str) -> bool {
         todo!("env name defined")
     }
 
-    fn get_symbol(&mut self, symbol: &str) -> Rc<str> {
+    pub(crate) fn get_symbol(&mut self, symbol: &str) -> Rc<str> {
         self.0.sym.get(symbol)
-    }
-}
-
-pub(super) struct SimpleNamespace;
-
-impl Namespace for SimpleNamespace {
-    fn name_defined(&self, _name: &str) -> bool {
-        false
-    }
-
-    fn get_symbol(&mut self, symbol: &str) -> Rc<str> {
-        symbol.into()
     }
 }
 

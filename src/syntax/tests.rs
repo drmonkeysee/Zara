@@ -1,7 +1,7 @@
 use super::{expr::ExpressionErrorKind, *};
 use crate::{
     lex::{Token, TokenKind},
-    testutil::{TestNamespace, err_or_fail, extract_or_fail, make_textline_no, some_or_fail},
+    testutil::{TestEnv, err_or_fail, extract_or_fail, make_textline_no, some_or_fail},
     txt::LineNumber,
 };
 
@@ -25,8 +25,9 @@ mod parsing {
     fn no_tokens() {
         let mut et = ExpressionTree::default();
         let tokens = [].into();
+        let mut env = TestEnv::default();
 
-        let r = et.parse(tokens, TestNamespace);
+        let r = et.parse(tokens, env.new_namespace());
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
         let seq = prg.unwrap();
@@ -38,8 +39,9 @@ mod parsing {
     fn single_literal_sequence() {
         let mut et = ExpressionTree::default();
         let tokens = [make_tokenline([TokenKind::Boolean(true)])];
+        let mut env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), TestNamespace);
+        let r = et.parse(tokens.into(), env.new_namespace());
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
         let seq = prg.unwrap();
@@ -62,8 +64,9 @@ mod parsing {
             TokenKind::Character('a'),
             TokenKind::String("foo".into()),
         ])];
+        let mut env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), TestNamespace);
+        let r = et.parse(tokens.into(), env.new_namespace());
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
         let seq = prg.unwrap();
@@ -106,8 +109,9 @@ mod parsing {
             ),
             make_tokenline_no([TokenKind::Boolean(false), TokenKind::Character('b')], 2),
         ];
+        let mut env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), TestNamespace);
+        let r = et.parse(tokens.into(), env.new_namespace());
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
         let seq = prg.unwrap();
@@ -165,8 +169,9 @@ mod parsing {
             TokenKind::Number(Number::real(13)),
             TokenKind::ParenRight,
         ])];
+        let mut env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), TestNamespace);
+        let r = et.parse(tokens.into(), env.new_namespace());
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
         let seq = prg.unwrap();
@@ -197,8 +202,9 @@ mod parsing {
             TokenKind::Number(Number::real(3)),
             TokenKind::ParenRight,
         ])];
+        let mut env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), TestNamespace);
+        let r = et.parse(tokens.into(), env.new_namespace());
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
         let seq = prg.unwrap();
@@ -251,8 +257,9 @@ mod parsing {
             TokenKind::Quote,
             TokenKind::Identifier("a".to_owned()),
         ])];
+        let mut env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), TestNamespace);
+        let r = et.parse(tokens.into(), env.new_namespace());
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
         let seq = prg.unwrap();
@@ -300,8 +307,9 @@ mod parsing {
             TokenKind::ParenRight,
             TokenKind::ParenRight,
         ])];
+        let mut env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), TestNamespace);
+        let r = et.parse(tokens.into(), env.new_namespace());
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
         let seq = prg.unwrap();
@@ -334,8 +342,9 @@ mod parsing {
             TokenKind::ParenRight,
             TokenKind::ParenRight,
         ])];
+        let mut env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), TestNamespace);
+        let r = et.parse(tokens.into(), env.new_namespace());
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
         let seq = prg.unwrap();
@@ -363,8 +372,9 @@ mod parsing {
             TokenKind::Number(Number::real(5)),
             TokenKind::ParenRight,
         ])];
+        let mut env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), TestNamespace);
+        let r = et.parse(tokens.into(), env.new_namespace());
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
         let seq = prg.unwrap();
@@ -393,8 +403,9 @@ mod parsing {
             TokenKind::Identifier("c".to_owned()),
             TokenKind::ParenRight,
         ])];
+        let mut env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), TestNamespace);
+        let r = et.parse(tokens.into(), env.new_namespace());
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
         let seq = prg.unwrap();
@@ -420,8 +431,9 @@ mod parsing {
             TokenKind::ParenLeft,
             TokenKind::ParenRight,
         ])];
+        let mut env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), TestNamespace);
+        let r = et.parse(tokens.into(), env.new_namespace());
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
         let seq = prg.unwrap();
@@ -450,8 +462,9 @@ mod parsing {
             TokenKind::Identifier("b".to_owned()),
             TokenKind::ParenRight,
         ])];
+        let mut env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), TestNamespace);
+        let r = et.parse(tokens.into(), env.new_namespace());
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
         let seq = prg.unwrap();
@@ -481,8 +494,9 @@ mod parsing {
             TokenKind::Identifier("c".to_owned()),
             TokenKind::ParenRight,
         ])];
+        let mut env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), TestNamespace);
+        let r = et.parse(tokens.into(), env.new_namespace());
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
         let seq = prg.unwrap();
@@ -515,8 +529,9 @@ mod parsing {
             TokenKind::ParenRight,
             TokenKind::ParenRight,
         ])];
+        let mut env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), TestNamespace);
+        let r = et.parse(tokens.into(), env.new_namespace());
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
         let seq = prg.unwrap();
@@ -555,8 +570,9 @@ mod parsing {
             TokenKind::ParenRight,
             TokenKind::ParenRight,
         ])];
+        let mut env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), TestNamespace);
+        let r = et.parse(tokens.into(), env.new_namespace());
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
         let seq = prg.unwrap();
@@ -587,8 +603,9 @@ mod parsing {
             TokenKind::ParenRight,
             TokenKind::ParenRight,
         ])];
+        let mut env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), TestNamespace);
+        let r = et.parse(tokens.into(), env.new_namespace());
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
         let seq = prg.unwrap();
@@ -620,8 +637,9 @@ mod parsing {
             TokenKind::Identifier("c".to_owned()),
             TokenKind::ParenRight,
         ])];
+        let mut env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), TestNamespace);
+        let r = et.parse(tokens.into(), env.new_namespace());
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
         let seq = prg.unwrap();
@@ -656,8 +674,9 @@ mod parsing {
             TokenKind::Identifier("d".to_owned()),
             TokenKind::ParenRight,
         ])];
+        let mut env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), TestNamespace);
+        let r = et.parse(tokens.into(), env.new_namespace());
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
         let seq = prg.unwrap();
@@ -688,8 +707,9 @@ mod parsing {
             TokenKind::Identifier("b".to_owned()),
             TokenKind::ParenRight,
         ])];
+        let mut env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), TestNamespace);
+        let r = et.parse(tokens.into(), env.new_namespace());
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
         let seq = prg.unwrap();
@@ -720,8 +740,9 @@ mod parsing {
             TokenKind::Comment,
             TokenKind::ParenRight,
         ])];
+        let mut env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), TestNamespace);
+        let r = et.parse(tokens.into(), env.new_namespace());
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
         let seq = prg.unwrap();
@@ -749,8 +770,9 @@ mod parsing {
             TokenKind::DirectiveCase(false),
             TokenKind::String("foo".into()),
         ])];
+        let mut env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), TestNamespace);
+        let r = et.parse(tokens.into(), env.new_namespace());
 
         let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
         assert_eq!(errs.len(), 2);
@@ -794,8 +816,9 @@ mod parsing {
                 2,
             ),
         ];
+        let mut env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), TestNamespace);
+        let r = et.parse(tokens.into(), env.new_namespace());
 
         let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
         assert_eq!(errs.len(), 3);
@@ -855,8 +878,9 @@ mod parsing {
                 3,
             ),
         ];
+        let mut env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), TestNamespace);
+        let r = et.parse(tokens.into(), env.new_namespace());
 
         let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
         assert_eq!(errs.len(), 3);
@@ -900,8 +924,9 @@ mod parsing {
             ],
             1,
         )];
+        let mut env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), TestNamespace);
+        let r = et.parse(tokens.into(), env.new_namespace());
 
         let err = extract_or_fail!(err_or_fail!(r), ParserError::Invalid);
         assert!(matches!(err, InvalidParseError::InvalidExprSource));
@@ -922,8 +947,9 @@ mod parsing {
             TokenKind::Boolean(true),
             TokenKind::ParenRight,
         ])];
+        let mut env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), TestNamespace);
+        let r = et.parse(tokens.into(), env.new_namespace());
 
         let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
         assert_eq!(errs.len(), 2);
@@ -949,8 +975,9 @@ mod parsing {
     fn failed_node_into_unexpected_end_of_parse_discards_rest_of_input() {
         let mut et = ExpressionTree::default();
         let tokens = [make_tokenline_no([TokenKind::CommentDatum], 1)];
+        let mut env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), TestNamespace);
+        let r = et.parse(tokens.into(), env.new_namespace());
 
         assert!(matches!(r, Ok(ParserOutput::Continuation)));
         assert_eq!(et.parsers.len(), 2);
@@ -967,8 +994,9 @@ mod parsing {
             ],
             2,
         )];
+        let mut env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), TestNamespace);
+        let r = et.parse(tokens.into(), env.new_namespace());
 
         let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
         assert_eq!(errs.len(), 1);
@@ -996,8 +1024,9 @@ mod parsing {
             TokenKind::Identifier("c".to_owned()),
             TokenKind::ParenRight,
         ])];
+        let mut env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), TestNamespace);
+        let r = et.parse(tokens.into(), env.new_namespace());
 
         let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
         assert_eq!(errs.len(), 1);
@@ -1025,8 +1054,9 @@ mod parsing {
             TokenKind::Identifier("c".to_owned()),
             TokenKind::ParenRight,
         ])];
+        let mut env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), TestNamespace);
+        let r = et.parse(tokens.into(), env.new_namespace());
 
         let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
         assert_eq!(errs.len(), 1);
@@ -1054,8 +1084,9 @@ mod parsing {
             TokenKind::Identifier("c".to_owned()),
             TokenKind::ParenRight,
         ])];
+        let mut env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), TestNamespace);
+        let r = et.parse(tokens.into(), env.new_namespace());
 
         let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
         assert_eq!(errs.len(), 1);
@@ -1083,8 +1114,9 @@ mod parsing {
             TokenKind::Identifier("b".to_owned()),
             TokenKind::ParenRight,
         ])];
+        let mut env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), TestNamespace);
+        let r = et.parse(tokens.into(), env.new_namespace());
 
         let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
         assert_eq!(errs.len(), 1);
@@ -1112,8 +1144,9 @@ mod parsing {
             TokenKind::Identifier("b".to_owned()),
             TokenKind::ParenRight,
         ])];
+        let mut env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), TestNamespace);
+        let r = et.parse(tokens.into(), env.new_namespace());
 
         let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
         assert_eq!(errs.len(), 1);
@@ -1144,8 +1177,9 @@ mod parsing {
             TokenKind::ParenRight,
             TokenKind::ParenRight,
         ])];
+        let mut env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), TestNamespace);
+        let r = et.parse(tokens.into(), env.new_namespace());
 
         let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
         assert_eq!(errs.len(), 2);
@@ -1178,8 +1212,9 @@ mod parsing {
             TokenKind::Identifier("b".to_owned()),
             TokenKind::ParenRight,
         ])];
+        let mut env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), TestNamespace);
+        let r = et.parse(tokens.into(), env.new_namespace());
 
         let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
         assert_eq!(errs.len(), 1);
@@ -1203,8 +1238,9 @@ mod parsing {
             TokenKind::PairJoiner,
             TokenKind::ParenRight,
         ])];
+        let mut env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), TestNamespace);
+        let r = et.parse(tokens.into(), env.new_namespace());
 
         let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
         assert_eq!(errs.len(), 2);
@@ -1237,8 +1273,9 @@ mod parsing {
             TokenKind::Number(Number::real(13)),
             TokenKind::ParenRight,
         ])];
+        let mut env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), TestNamespace);
+        let r = et.parse(tokens.into(), env.new_namespace());
 
         let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
         assert_eq!(errs.len(), 1);
@@ -1264,8 +1301,9 @@ mod parsing {
             TokenKind::Identifier("b".to_owned()),
             TokenKind::ParenRight,
         ])];
+        let mut env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), TestNamespace);
+        let r = et.parse(tokens.into(), env.new_namespace());
 
         let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
         assert_eq!(errs.len(), 1);
@@ -1303,8 +1341,9 @@ mod continuation {
                 line_cont: false,
             },
         ])];
+        let mut env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), TestNamespace);
+        let r = et.parse(tokens.into(), env.new_namespace());
 
         assert!(matches!(r, Ok(ParserOutput::Continuation)));
         assert_eq!(et.parsers.len(), 2);
@@ -1343,8 +1382,9 @@ mod continuation {
                 2,
             ),
         ];
+        let mut env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), TestNamespace);
+        let r = et.parse(tokens.into(), env.new_namespace());
 
         assert!(matches!(r, Ok(ParserOutput::Continuation)));
         assert_eq!(et.parsers.len(), 2);
@@ -1375,8 +1415,9 @@ mod continuation {
                 line_cont: false,
             },
         ])];
+        let mut env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), TestNamespace);
+        let r = et.parse(tokens.into(), env.new_namespace());
 
         let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
         assert_eq!(errs.len(), 1);
