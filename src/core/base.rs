@@ -1,7 +1,7 @@
 // (scheme base)
 use crate::{
     eval::{Binding, EvalResult, Frame, MAX_ARITY},
-    number::Number,
+    number::{Number, Real},
     value::Value,
 };
 
@@ -15,8 +15,12 @@ pub(super) fn load(scope: &mut Binding) {
     // NOTE: complex and number predicates are identical sets
     super::bind_intrinsic(scope, "complex?", 1..1, is_number);
     super::bind_intrinsic(scope, "exact?", 1..1, is_exact);
+    super::bind_intrinsic(scope, "exact-integer?", 1..1, is_exact_integer);
+    super::bind_intrinsic(scope, "finite?", 1..1, is_finite);
     super::bind_intrinsic(scope, "inexact?", 1..1, is_inexact);
+    super::bind_intrinsic(scope, "infinite?", 1..1, is_infinite);
     super::bind_intrinsic(scope, "integer?", 1..1, is_integer);
+    super::bind_intrinsic(scope, "nan?", 1..1, is_nan);
     super::bind_intrinsic(scope, "number?", 1..1, is_number);
     super::bind_intrinsic(scope, "rational?", 1..1, is_rational);
     super::bind_intrinsic(scope, "real?", 1..1, is_real);
@@ -54,6 +58,22 @@ fn is_exact(args: &[Value], _env: &mut Frame) -> EvalResult {
     )))
 }
 
+fn is_exact_integer(args: &[Value], _env: &mut Frame) -> EvalResult {
+    let arg = args.first().unwrap();
+    Ok(Value::Boolean(matches!(
+        arg,
+        Value::Number(Number::Real(Real::Integer(_)))
+    )))
+}
+
+fn is_finite(args: &[Value], _env: &mut Frame) -> EvalResult {
+    let arg = args.first().unwrap();
+    Ok(Value::Boolean(matches!(
+        arg,
+        Value::Number(n) if !n.is_infinite() && !n.is_nan()
+    )))
+}
+
 fn is_inexact(args: &[Value], _env: &mut Frame) -> EvalResult {
     let arg = args.first().unwrap();
     Ok(Value::Boolean(matches!(
@@ -62,11 +82,27 @@ fn is_inexact(args: &[Value], _env: &mut Frame) -> EvalResult {
     )))
 }
 
+fn is_infinite(args: &[Value], _env: &mut Frame) -> EvalResult {
+    let arg = args.first().unwrap();
+    Ok(Value::Boolean(matches!(
+        arg,
+        Value::Number(n) if n.is_infinite()
+    )))
+}
+
 fn is_integer(args: &[Value], _env: &mut Frame) -> EvalResult {
     let arg = args.first().unwrap();
     Ok(Value::Boolean(matches!(
         arg,
         Value::Number(Number::Real(r)) if r.is_integer()
+    )))
+}
+
+fn is_nan(args: &[Value], _env: &mut Frame) -> EvalResult {
+    let arg = args.first().unwrap();
+    Ok(Value::Boolean(matches!(
+        arg,
+        Value::Number(n) if n.is_nan()
     )))
 }
 

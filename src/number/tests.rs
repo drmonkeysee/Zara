@@ -985,6 +985,20 @@ mod integer {
 
         assert!(r.is_exact_zero());
     }
+
+    #[test]
+    fn not_is_infinite() {
+        let r = Real::Integer(0.into());
+
+        assert!(!r.is_infinite());
+    }
+
+    #[test]
+    fn not_is_nan() {
+        let r = Real::Integer(0.into());
+
+        assert!(!r.is_nan());
+    }
 }
 
 mod float {
@@ -1236,6 +1250,37 @@ mod float {
         let r = Real::Float(-0.0);
 
         assert!(!r.is_exact_zero());
+    }
+
+    #[test]
+    fn not_is_infinite() {
+        let r = Real::Float(3.4);
+
+        assert!(!r.is_infinite());
+    }
+
+    #[test]
+    fn is_infinite() {
+        let cases = [f64::INFINITY, f64::NEG_INFINITY];
+        for case in cases {
+            let r = Real::Float(case);
+
+            assert!(r.is_infinite());
+        }
+    }
+
+    #[test]
+    fn not_is_nan() {
+        let r = Real::Float(3.4);
+
+        assert!(!r.is_nan());
+    }
+
+    #[test]
+    fn is_nan() {
+        let r = Real::Float(f64::NAN);
+
+        assert!(r.is_nan());
     }
 }
 
@@ -1550,6 +1595,20 @@ mod rational {
 
         assert!(!rat.is_inexact());
     }
+
+    #[test]
+    fn not_is_infinite() {
+        let rat = ok_or_fail!(Real::reduce(4, 5));
+
+        assert!(!rat.is_infinite());
+    }
+
+    #[test]
+    fn not_is_nan() {
+        let rat = ok_or_fail!(Real::reduce(4, 5));
+
+        assert!(!rat.is_nan());
+    }
 }
 
 mod complex {
@@ -1845,6 +1904,49 @@ mod complex {
         let n = Number::complex(4, 5.6);
 
         assert!(n.is_inexact());
+    }
+
+    #[test]
+    fn not_is_infinite() {
+        let r = Number::complex(4.5, 5.6);
+
+        assert!(!r.is_infinite());
+    }
+
+    #[test]
+    fn not_is_nan() {
+        let r = Number::complex(4.5, 5.6);
+
+        assert!(!r.is_nan());
+    }
+
+    #[test]
+    fn is_infinite() {
+        let cases = [
+            (4.5, f64::INFINITY),
+            (4.5, f64::NEG_INFINITY),
+            (f64::INFINITY, 5.6),
+            (f64::NEG_INFINITY, 5.6),
+            (f64::INFINITY, f64::INFINITY),
+            (f64::INFINITY, f64::NEG_INFINITY),
+            (f64::NEG_INFINITY, f64::INFINITY),
+            (f64::NEG_INFINITY, f64::NEG_INFINITY),
+        ];
+        for case in cases {
+            let r = Number::complex(case.0, case.1);
+
+            assert!(r.is_infinite());
+        }
+    }
+
+    #[test]
+    fn is_nan() {
+        let cases = [(4.5, f64::NAN), (f64::NAN, 5.6), (f64::NAN, f64::NAN)];
+        for case in cases {
+            let r = Number::complex(case.0, case.1);
+
+            assert!(r.is_nan());
+        }
     }
 }
 

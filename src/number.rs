@@ -56,6 +56,20 @@ impl Number {
         }
     }
 
+    pub(crate) fn is_infinite(&self) -> bool {
+        match self {
+            Self::Complex(Complex(c)) => c.0.is_infinite() || c.1.is_infinite(),
+            Self::Real(r) => r.is_infinite(),
+        }
+    }
+
+    pub(crate) fn is_nan(&self) -> bool {
+        match self {
+            Self::Complex(Complex(c)) => c.0.is_nan() || c.1.is_nan(),
+            Self::Real(r) => r.is_nan(),
+        }
+    }
+
     pub(crate) fn as_token_descriptor(&self) -> TokenDescriptor {
         TokenDescriptor(self)
     }
@@ -146,6 +160,22 @@ impl Real {
 
     pub(crate) fn is_inexact(&self) -> bool {
         matches!(self, Self::Float(_))
+    }
+
+    pub(crate) fn is_infinite(&self) -> bool {
+        if let Self::Float(f) = self {
+            f.is_infinite()
+        } else {
+            false
+        }
+    }
+
+    pub(crate) fn is_nan(&self) -> bool {
+        if let Self::Float(f) = self {
+            f.is_nan()
+        } else {
+            false
+        }
     }
 
     pub(crate) fn as_token_descriptor(&self) -> RealTokenDescriptor {
