@@ -1,3 +1,4 @@
+mod base;
 mod procctx;
 mod time;
 
@@ -15,6 +16,7 @@ use crate::{
  */
 
 pub(crate) fn load(scope: &mut Binding) {
+    base::load(scope);
     procctx::load(scope);
     time::load(scope);
 }
