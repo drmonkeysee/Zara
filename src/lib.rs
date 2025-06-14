@@ -13,7 +13,7 @@ mod value;
 
 pub use self::eval::{Evaluation, Exception, Signal, Value};
 use self::{
-    eval::{Ast, Environment, Evaluator},
+    eval::{Ast, Environment, Eval, Evaluator},
     lex::{Lexer, LexerError, LexerOutput, TokenLine},
     syntax::{ExpressionTree, Parser, ParserError, ParserOutput, TokenList},
     txt::TextSource,
@@ -184,11 +184,11 @@ impl From<ParserError> for ExecError {
 }
 
 struct Engine<P, E> {
-    evaluator: E,
+    evaluator: Environment<E>,
     parser: P,
 }
 
-impl<P: Parser, E: Evaluator> Executor for Engine<P, E> {
+impl<P: Parser, E: Evaluator + Default> Executor for Engine<P, E> {
     fn exec(&mut self, token_lines: Box<[TokenLine]>) -> ExecResult {
         Ok(
             match self
@@ -209,19 +209,19 @@ impl<P: Parser, E: Evaluator> Executor for Engine<P, E> {
 fn resolve_executor(mode: RunMode, args: impl IntoIterator<Item = String>) -> Box<dyn Executor> {
     match mode {
         RunMode::Evaluate => Box::new(Engine {
-            evaluator: Environment::new(args),
+            evaluator: Eval::new(args),
             parser: ExpressionTree::default(),
         }),
         RunMode::SyntaxTree => Box::new(Engine {
-            evaluator: Ast,
+            evaluator: Ast::new(args),
             parser: ExpressionTree::default(),
         }),
         RunMode::Tokenize => Box::new(Engine {
-            evaluator: Environment::new(args),
+            evaluator: Eval::new(args),
             parser: TokenList,
         }),
         RunMode::TokenTree => Box::new(Engine {
-            evaluator: Ast,
+            evaluator: Ast::new(args),
             parser: TokenList,
         }),
     }

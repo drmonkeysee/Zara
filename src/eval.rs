@@ -1,7 +1,7 @@
 mod env;
 mod form;
 
-use self::env::{EnvNamespace, SimpleNamespace};
+use self::env::EnvNamespace;
 pub(crate) use self::{
     env::{Binding, Frame, SymbolTable, System},
     form::{Arity, IntrinsicFn, MAX_ARITY, Procedure},
@@ -13,21 +13,46 @@ use crate::{
 };
 use std::{
     fmt::{self, Display, Formatter},
+    marker::PhantomData,
     process::ExitCode,
 };
 
+pub(crate) type Eval = Environment<EvalDriver>;
+pub(crate) type Ast = Environment<AstDriver>;
+
 pub(crate) trait Evaluator {
-    fn evaluate(&mut self, prg: Program) -> Evaluation;
-    fn create_namespace(&mut self) -> impl Namespace;
+    fn eval(&self, prg: Program, frame: &mut Frame) -> Evaluation;
 }
 
-pub(crate) struct Environment {
+pub(crate) struct Environment<T> {
+    driver: PhantomData<T>,
     global: Binding,
     symbols: SymbolTable,
     system: System,
 }
 
-impl Environment {
+impl<T: Evaluator + Default> Environment<T> {
+    pub(crate) fn new(args: impl IntoIterator<Item = String>) -> Self {
+        let mut global = Binding::default();
+        core::load(&mut global);
+        ext::load(&mut global);
+        Self {
+            driver: PhantomData,
+            global,
+            symbols: SymbolTable::default(),
+            system: System::new(args),
+        }
+    }
+
+    pub(crate) fn evaluate(&mut self, prg: Program) -> Evaluation {
+        let mut frame = self.make_frame();
+        T::default().eval(prg, &mut frame)
+    }
+
+    pub(crate) fn create_namespace(&mut self) -> impl Namespace {
+        EnvNamespace(self.make_frame())
+    }
+
     fn make_frame(&mut self) -> Frame {
         Frame {
             scope: &mut self.global,
@@ -37,39 +62,21 @@ impl Environment {
     }
 }
 
-impl Evaluator for Environment {
-    fn evaluate(&mut self, prg: Program) -> Evaluation {
-        let mut frame = self.make_frame();
-        Evaluation::result(prg.eval(&mut frame))
-    }
+#[derive(Default)]
+pub(crate) struct EvalDriver;
 
-    fn create_namespace(&mut self) -> impl Namespace {
-        EnvNamespace(self.make_frame())
+impl Evaluator for EvalDriver {
+    fn eval(&self, prg: Program, frame: &mut Frame) -> Evaluation {
+        Evaluation::result(prg.eval(frame))
     }
 }
 
-impl Environment {
-    pub(crate) fn new(args: impl IntoIterator<Item = String>) -> Self {
-        let mut global = Binding::default();
-        core::load(&mut global);
-        ext::load(&mut global);
-        Self {
-            global,
-            symbols: SymbolTable::default(),
-            system: System::new(args),
-        }
-    }
-}
+#[derive(Default)]
+pub(crate) struct AstDriver;
 
-pub(crate) struct Ast;
-
-impl Evaluator for Ast {
-    fn evaluate(&mut self, prg: Program) -> Evaluation {
+impl Evaluator for AstDriver {
+    fn eval(&self, prg: Program, _frame: &mut Frame) -> Evaluation {
         Evaluation::result(Ok(ValueImpl::Ast(prg.into())))
-    }
-
-    fn create_namespace(&mut self) -> impl Namespace {
-        SimpleNamespace
     }
 }
 
