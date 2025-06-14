@@ -63,7 +63,7 @@ fn get_environment_variable(args: &[Value], _env: &mut Frame) -> EvalResult {
         |err| match err {
             VarError::NotPresent => Ok(Value::Boolean(false)),
             VarError::NotUnicode(_) => {
-                Err(Condition::system_error("invalid env var format").into())
+                Err(Condition::system_error("invalid env var encoding").into())
             }
         },
         |v| Ok(Value::string(v)),

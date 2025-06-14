@@ -33,7 +33,6 @@ pub(crate) enum Value {
     Pair(Option<Rc<Pair>>),
     Procedure(Rc<Procedure>),
     String(Rc<str>),
-    // TODO: figure out symbol table
     Symbol(Rc<str>),
     TokenList(Rc<[TokenLine]>),
     Unspecified,
@@ -54,7 +53,7 @@ impl Value {
 
     #[allow(clippy::similar_names, reason = "lisp terms-of-art")]
     pub(crate) fn cons(car: Value, cdr: Value) -> Self {
-        Self::Pair(Some(Pair::cons(car, cdr).into()))
+        Self::Pair(Some(Pair { car, cdr }.into()))
     }
 
     pub(crate) fn list<I>(items: I) -> Self
@@ -132,11 +131,6 @@ pub(crate) struct Pair {
 }
 
 impl Pair {
-    #[allow(clippy::similar_names, reason = "lisp terms-of-art")]
-    pub(crate) fn cons(car: Value, cdr: Value) -> Self {
-        Self { car, cdr }
-    }
-
     fn is_list(&self) -> bool {
         if let Value::Pair(p) = &self.cdr {
             p.as_ref().is_none_or(|r| r.is_list())

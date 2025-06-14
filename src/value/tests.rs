@@ -633,7 +633,10 @@ mod pair {
     #[test]
     fn pair_is_not_list() {
         // (#t . #f)
-        let p = Pair::cons(Value::Boolean(true), Value::Boolean(false));
+        let p = Pair {
+            car: Value::Boolean(true),
+            cdr: Value::Boolean(false),
+        };
 
         assert!(!p.is_list());
     }
@@ -641,7 +644,10 @@ mod pair {
     #[test]
     fn empty_cdr_is_list() {
         // (#t)
-        let p = Pair::cons(Value::Boolean(true), Value::null());
+        let p = Pair {
+            car: Value::Boolean(true),
+            cdr: Value::null(),
+        };
 
         assert!(p.is_list());
     }
@@ -649,10 +655,10 @@ mod pair {
     #[test]
     fn nested_is_list() {
         // (1 2 3)
-        let p = Pair::cons(
-            Value::real(1),
-            Value::cons(Value::real(2), Value::cons(Value::real(3), Value::null())),
-        );
+        let p = Pair {
+            car: Value::real(1),
+            cdr: Value::cons(Value::real(2), Value::cons(Value::real(3), Value::null())),
+        };
 
         assert!(p.is_list());
     }
@@ -660,7 +666,10 @@ mod pair {
     #[test]
     fn improper_list_is_not_list() {
         // (1 2 . 3)
-        let p = Pair::cons(Value::real(1), Value::cons(Value::real(2), Value::real(3)));
+        let p = Pair {
+            car: Value::real(1),
+            cdr: Value::cons(Value::real(2), Value::real(3)),
+        };
 
         assert!(!p.is_list());
     }
@@ -668,10 +677,10 @@ mod pair {
     #[test]
     fn list_containing_pair_is_list() {
         // ((1 . 2) 3)
-        let p = Pair::cons(
-            Value::cons(Value::real(1), Value::real(2)),
-            Value::cons(Value::real(3), Value::null()),
-        );
+        let p = Pair {
+            car: Value::cons(Value::real(1), Value::real(2)),
+            cdr: Value::cons(Value::real(3), Value::null()),
+        };
 
         assert!(p.is_list());
     }
@@ -679,7 +688,10 @@ mod pair {
     #[test]
     fn list_containing_empty_list_is_list() {
         // (())
-        let p = Pair::cons(Value::null(), Value::null());
+        let p = Pair {
+            car: Value::null(),
+            cdr: Value::null(),
+        };
 
         assert!(p.is_list());
     }

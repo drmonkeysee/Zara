@@ -83,10 +83,7 @@ fn write_arity(arity: &Arity, f: &mut Formatter<'_>) -> fmt::Result {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{
-        testutil::{TestEnv, ok_or_fail},
-        value::Value,
-    };
+    use crate::testutil::{TestEnv, ok_or_fail};
 
     #[test]
     fn intrinsic_zero_arity() {
