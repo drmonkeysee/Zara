@@ -49,6 +49,13 @@ impl Number {
         Self::Real(value.into())
     }
 
+    pub(crate) fn is_inexact(&self) -> bool {
+        match self {
+            Self::Complex(Complex(c)) => c.0.is_inexact() || c.1.is_inexact(),
+            Self::Real(r) => r.is_inexact(),
+        }
+    }
+
     pub(crate) fn as_token_descriptor(&self) -> TokenDescriptor {
         TokenDescriptor(self)
     }
@@ -121,6 +128,26 @@ pub(crate) enum Real {
 }
 
 impl Real {
+    pub(crate) fn is_rational(&self) -> bool {
+        if let Self::Float(f) = self {
+            f.is_finite()
+        } else {
+            true
+        }
+    }
+
+    pub(crate) fn is_integer(&self) -> bool {
+        match self {
+            Self::Float(f) => f.fract() == 0.0,
+            Self::Integer(_) => true,
+            Self::Rational(_) => false,
+        }
+    }
+
+    pub(crate) fn is_inexact(&self) -> bool {
+        matches!(self, Self::Float(_))
+    }
+
     pub(crate) fn as_token_descriptor(&self) -> RealTokenDescriptor {
         RealTokenDescriptor(self)
     }

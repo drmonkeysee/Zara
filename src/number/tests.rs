@@ -957,6 +957,27 @@ mod integer {
         let err = err_or_fail!(r);
         assert!(matches!(err, NumericError::IntConversionInvalidRange));
     }
+
+    #[test]
+    fn is_integer() {
+        let r = Real::Integer(12.into());
+
+        assert!(r.is_integer());
+    }
+
+    #[test]
+    fn is_rational() {
+        let r = Real::Integer(12.into());
+
+        assert!(r.is_rational());
+    }
+
+    #[test]
+    fn not_is_inexact() {
+        let r = Real::Integer(12.into());
+
+        assert!(!r.is_inexact());
+    }
 }
 
 mod float {
@@ -1117,6 +1138,83 @@ mod float {
             err,
             NumericError::IntConversionInvalidType(s)
             if s == "floating-point"));
+    }
+
+    #[test]
+    fn not_is_integer() {
+        let r = Real::Float(3.5);
+
+        assert!(!r.is_integer());
+    }
+
+    #[test]
+    fn is_integer_if_zero_fractional() {
+        let r = Real::Float(3.0);
+
+        assert!(r.is_integer());
+    }
+
+    #[test]
+    fn not_is_integer_if_infinite() {
+        let r = Real::Float(f64::INFINITY);
+
+        assert!(!r.is_integer());
+    }
+
+    #[test]
+    fn not_is_integer_if_negative_infinite() {
+        let r = Real::Float(f64::NEG_INFINITY);
+
+        assert!(!r.is_integer());
+    }
+
+    #[test]
+    fn not_is_integer_if_nan() {
+        let r = Real::Float(f64::NAN);
+
+        assert!(!r.is_integer());
+    }
+
+    #[test]
+    fn is_rational_if_finite() {
+        let r = Real::Float(3.5);
+
+        assert!(r.is_rational());
+    }
+
+    #[test]
+    fn not_is_rational_if_infinite() {
+        let r = Real::Float(f64::INFINITY);
+
+        assert!(!r.is_rational());
+    }
+
+    #[test]
+    fn not_is_rational_if_negative_infinite() {
+        let r = Real::Float(f64::NEG_INFINITY);
+
+        assert!(!r.is_rational());
+    }
+
+    #[test]
+    fn not_is_rational_if_nan() {
+        let r = Real::Float(f64::NAN);
+
+        assert!(!r.is_rational());
+    }
+
+    #[test]
+    fn is_inexact() {
+        let r = Real::Float(3.5);
+
+        assert!(r.is_inexact());
+    }
+
+    #[test]
+    fn is_inexact_with_zero_fraction() {
+        let r = Real::Float(3.0);
+
+        assert!(r.is_inexact());
     }
 }
 
@@ -1403,6 +1501,34 @@ mod rational {
             NumericError::IntConversionInvalidType(s)
             if s == "rational"));
     }
+
+    #[test]
+    fn not_is_integer() {
+        let rat = ok_or_fail!(Real::reduce(4, 5));
+
+        assert!(!rat.is_integer());
+    }
+
+    #[test]
+    fn reduce_is_integer() {
+        let rat = ok_or_fail!(Real::reduce(8, 4));
+
+        assert!(rat.is_integer());
+    }
+
+    #[test]
+    fn is_rational() {
+        let rat = ok_or_fail!(Real::reduce(4, 5));
+
+        assert!(rat.is_rational());
+    }
+
+    #[test]
+    fn not_is_inexact() {
+        let rat = ok_or_fail!(Real::reduce(4, 5));
+
+        assert!(!rat.is_inexact());
+    }
 }
 
 mod complex {
@@ -1615,6 +1741,41 @@ mod complex {
             err,
             NumericError::IntConversionInvalidType(s)
             if s == "complex"));
+    }
+
+    #[test]
+    fn inexact_parts_is_inexact() {
+        let n = Number::complex(4.3, 5.6);
+
+        assert!(n.is_inexact());
+    }
+
+    #[test]
+    fn inexact_parts_with_zero_frac_is_inexact() {
+        let n = Number::complex(4.0, 5.0);
+
+        assert!(n.is_inexact());
+    }
+
+    #[test]
+    fn not_inexact_parts_with_exact_parts() {
+        let n = Number::complex(4, ok_or_fail!(Real::reduce(4, 5)));
+
+        assert!(!n.is_inexact());
+    }
+
+    #[test]
+    fn inexact_if_inexact_real() {
+        let n = Number::complex(4.3, 6);
+
+        assert!(n.is_inexact());
+    }
+
+    #[test]
+    fn inexact_if_inexact_imag() {
+        let n = Number::complex(4, 5.6);
+
+        assert!(n.is_inexact());
     }
 }
 
