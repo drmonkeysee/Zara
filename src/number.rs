@@ -23,7 +23,7 @@ pub(crate) enum Number {
 impl Number {
     pub(crate) fn complex(real: impl Into<Real>, imag: impl Into<Real>) -> Self {
         let (real, imag) = (real.into(), imag.into());
-        if imag.is_zero() {
+        if imag.is_exact_zero() {
             Self::real(real)
         } else {
             Self::Complex(Complex((real, imag).into()))
@@ -32,7 +32,7 @@ impl Number {
 
     pub(crate) fn polar(magnitude: impl Into<Real>, radians: impl Into<Real>) -> Self {
         let (mag, rad) = (magnitude.into(), radians.into());
-        if mag.is_zero() || rad.is_zero() {
+        if mag.is_exact_zero() || rad.is_exact_zero() {
             Self::real(mag)
         } else {
             let (mag, rad) = (mag.into_float(), rad.into_float());
@@ -201,6 +201,14 @@ impl Real {
             Self::Float(f) => *f == 0.0,
             Self::Integer(n) => n.is_zero(),
             Self::Rational(r) => r.is_zero(),
+        }
+    }
+
+    fn is_exact_zero(&self) -> bool {
+        if let Self::Float(_) = self {
+            false
+        } else {
+            self.is_zero()
         }
     }
 

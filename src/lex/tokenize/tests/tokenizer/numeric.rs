@@ -3845,6 +3845,30 @@ mod cartesian {
     }
 
     #[test]
+    fn zero_float_imaginary_part() {
+        let mut s = Scanner::new("4+0.0i");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scanner: &mut s,
+            start,
+        };
+
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
+        let tok = ok_or_fail!(r);
+        assert!(matches!(
+            tok,
+            Token {
+                kind: TokenKind::Number(_),
+                span: TxtSpan { start: 0, end: 6 },
+            }
+        ));
+        let num = extract_number!(tok.kind);
+        assert_eq!(num.to_string(), "4+0.0i");
+    }
+
+    #[test]
     fn negative_zero_imaginary_part() {
         let mut s = Scanner::new("4-0i");
         let start = some_or_fail!(s.next_token());
@@ -3866,6 +3890,30 @@ mod cartesian {
         ));
         let num = extract_number!(tok.kind);
         assert_eq!(num.to_string(), "4");
+    }
+
+    #[test]
+    fn negative_zero_float_imaginary_part() {
+        let mut s = Scanner::new("4-0.0i");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scanner: &mut s,
+            start,
+        };
+
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
+        let tok = ok_or_fail!(r);
+        assert!(matches!(
+            tok,
+            Token {
+                kind: TokenKind::Number(_),
+                span: TxtSpan { start: 0, end: 6 },
+            }
+        ));
+        let num = extract_number!(tok.kind);
+        assert_eq!(num.to_string(), "4-0.0i");
     }
 
     #[test]
@@ -3893,6 +3941,30 @@ mod cartesian {
     }
 
     #[test]
+    fn zero_float_real_part() {
+        let mut s = Scanner::new("0.0+3i");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scanner: &mut s,
+            start,
+        };
+
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
+        let tok = ok_or_fail!(r);
+        assert!(matches!(
+            tok,
+            Token {
+                kind: TokenKind::Number(_),
+                span: TxtSpan { start: 0, end: 6 },
+            }
+        ));
+        let num = extract_number!(tok.kind);
+        assert_eq!(num.to_string(), "0.0+3i");
+    }
+
+    #[test]
     fn negative_zero_real_part() {
         let mut s = Scanner::new("-0+3i");
         let start = some_or_fail!(s.next_token());
@@ -3914,6 +3986,30 @@ mod cartesian {
         ));
         let num = extract_number!(tok.kind);
         assert_eq!(num.to_string(), "+3i");
+    }
+
+    #[test]
+    fn negative_zero_float_real_part() {
+        let mut s = Scanner::new("-0.0+3i");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scanner: &mut s,
+            start,
+        };
+
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
+        let tok = ok_or_fail!(r);
+        assert!(matches!(
+            tok,
+            Token {
+                kind: TokenKind::Number(_),
+                span: TxtSpan { start: 0, end: 7 },
+            }
+        ));
+        let num = extract_number!(tok.kind);
+        assert_eq!(num.to_string(), "-0.0+3i");
     }
 
     #[test]
@@ -4757,7 +4853,7 @@ mod polar {
             }
         ));
         let num = extract_number!(tok.kind);
-        assert_eq!(num.to_string(), "0.0");
+        assert_eq!(num.to_string(), "-0.0+0.0i");
     }
 
     #[test]
@@ -4829,7 +4925,7 @@ mod polar {
             }
         ));
         let num = extract_number!(tok.kind);
-        assert_eq!(num.to_string(), "4.0");
+        assert_eq!(num.to_string(), "4.0+0.0i");
     }
 
     #[test]

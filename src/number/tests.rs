@@ -978,6 +978,13 @@ mod integer {
 
         assert!(!r.is_inexact());
     }
+
+    #[test]
+    fn is_exact_zero() {
+        let r = Real::Integer(0.into());
+
+        assert!(r.is_exact_zero());
+    }
 }
 
 mod float {
@@ -1215,6 +1222,20 @@ mod float {
         let r = Real::Float(3.0);
 
         assert!(r.is_inexact());
+    }
+
+    #[test]
+    fn not_is_exact_zero() {
+        let r = Real::Float(0.0);
+
+        assert!(!r.is_exact_zero());
+    }
+
+    #[test]
+    fn not_is_exact_negative_zero() {
+        let r = Real::Float(-0.0);
+
+        assert!(!r.is_exact_zero());
     }
 }
 
@@ -1571,6 +1592,18 @@ mod complex {
     }
 
     #[test]
+    fn inexact_zero_imaginary_does_not_reduce() {
+        let c = Number::complex(4, 0.0);
+
+        let ri = extract_or_fail!(c, Number::Complex);
+        let int = extract_or_fail!(ri.0.0, Real::Integer);
+        assert!(!int.is_zero());
+        assert_eq!(extract_or_fail!(int.precision, Precision::Single), 4);
+        let flt = extract_or_fail!(ri.0.1, Real::Float);
+        assert_eq!(0.0, flt);
+    }
+
+    #[test]
     fn imaginary_only() {
         let c = Number::imaginary(3);
 
@@ -1584,8 +1617,31 @@ mod complex {
     }
 
     #[test]
+    fn inexact_zero_real_does_not_reduce() {
+        let c = Number::complex(0.0, 3);
+
+        let ri = extract_or_fail!(c, Number::Complex);
+        let flt = extract_or_fail!(ri.0.0, Real::Float);
+        assert_eq!(0.0, flt);
+        let int = extract_or_fail!(ri.0.1, Real::Integer);
+        assert!(!int.is_zero());
+        assert_eq!(extract_or_fail!(int.precision, Precision::Single), 3);
+    }
+
+    #[test]
     fn polar() {
         let c = Number::polar(4, 3);
+
+        let ri = extract_or_fail!(c, Number::Complex);
+        let r = extract_or_fail!(ri.0.0, Real::Float);
+        assert_eq!(r, -3.9599699864017817);
+        let i = extract_or_fail!(ri.0.1, Real::Float);
+        assert_eq!(i, 0.5644800322394689);
+    }
+
+    #[test]
+    fn polar_floats() {
+        let c = Number::polar(4.0, 3.0);
 
         let ri = extract_or_fail!(c, Number::Complex);
         let r = extract_or_fail!(ri.0.0, Real::Float);
@@ -1638,6 +1694,17 @@ mod complex {
     }
 
     #[test]
+    fn zero_mag_float_does_not_reduce() {
+        let c = Number::polar(0.0, 3);
+
+        let ri = extract_or_fail!(c, Number::Complex);
+        let flt = extract_or_fail!(ri.0.0, Real::Float);
+        assert_eq!(flt, 0.0);
+        let flt = extract_or_fail!(ri.0.1, Real::Float);
+        assert_eq!(flt, 0.0);
+    }
+
+    #[test]
     fn zero_angle() {
         let c = Number::polar(4, 0);
 
@@ -1648,12 +1715,14 @@ mod complex {
     }
 
     #[test]
-    fn zero_angle_float() {
-        let c = Number::polar(4.0, 0.0);
+    fn zero_angle_float_does_not_reduce() {
+        let c = Number::polar(4, 0.0);
 
-        let r = extract_or_fail!(c, Number::Real);
-        let f = extract_or_fail!(r, Real::Float);
-        assert_eq!(f, 4.0);
+        let ri = extract_or_fail!(c, Number::Complex);
+        let flt = extract_or_fail!(ri.0.0, Real::Float);
+        assert_eq!(flt, 4.0);
+        let flt = extract_or_fail!(ri.0.1, Real::Float);
+        assert_eq!(flt, 0.0);
     }
 
     #[test]
