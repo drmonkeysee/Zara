@@ -32,7 +32,7 @@ macro_rules! real_predicate {
                     Err(Condition::arg_type_error(
                         FIRST_ARG_LABEL,
                         REAL_ARG_TNAME,
-                        COMPLEX_ARG_TNAME,
+                        NumericTypeName::COMPLEX,
                         arg,
                     )
                     .into())
@@ -48,12 +48,11 @@ use super::FIRST_ARG_LABEL;
 use crate::{
     Exception,
     eval::{Binding, EvalResult, Frame, MAX_ARITY},
-    number::{Number, Real},
+    number::{Number, NumericTypeName, Real},
     value::{Condition, TypeName, Value},
 };
 
-const COMPLEX_ARG_TNAME: &'static str = "complex number";
-const REAL_ARG_TNAME: &'static str = "real number";
+const REAL_ARG_TNAME: &'static str = "real";
 
 pub(super) fn load(scope: &mut Binding) {
     // boolean
@@ -64,6 +63,7 @@ pub(super) fn load(scope: &mut Binding) {
     // number
     // NOTE: complex and number predicates are identical sets
     super::bind_intrinsic(scope, "complex?", 1..1, is_number);
+    super::bind_intrinsic(scope, "even?", 1..1, is_even);
     super::bind_intrinsic(scope, "exact?", 1..1, is_exact);
     super::bind_intrinsic(scope, "exact-integer?", 1..1, is_exact_integer);
     super::bind_intrinsic(scope, "finite?", 1..1, is_finite);
@@ -73,6 +73,7 @@ pub(super) fn load(scope: &mut Binding) {
     super::bind_intrinsic(scope, "nan?", 1..1, is_nan);
     super::bind_intrinsic(scope, "negative?", 1..1, is_negative);
     super::bind_intrinsic(scope, "number?", 1..1, is_number);
+    super::bind_intrinsic(scope, "odd?", 1..1, is_odd);
     super::bind_intrinsic(scope, "positive?", 1..1, is_positive);
     super::bind_intrinsic(scope, "rational?", 1..1, is_rational);
     super::bind_intrinsic(scope, "real?", 1..1, is_real);
@@ -140,6 +141,28 @@ predicate!(is_rational, Value::Number(Number::Real(r)) if r.is_rational());
 predicate!(is_real, Value::Number(Number::Real(_)));
 try_predicate!(is_zero, Value::Number, TypeName::NUMBER, |n: &Number| n
     .is_zero());
+
+fn is_even(args: &[Value], _env: &mut Frame) -> EvalResult {
+    let arg = args.first().unwrap();
+    if let Value::Number(num) = arg {
+        if let Number::Real(Real::Integer(n)) = num {
+            return Ok(Value::Boolean(n.is_even()));
+        }
+        Err(Condition::arg_type_error(
+            FIRST_ARG_LABEL,
+            NumericTypeName::INTEGER,
+            num.as_typename(),
+            arg,
+        )
+        .into())
+    } else {
+        Err(Condition::arg_error(FIRST_ARG_LABEL, NumericTypeName::INTEGER, arg).into())
+    }
+}
+
+fn is_odd(args: &[Value], _env: &mut Frame) -> EvalResult {
+    todo!();
+}
 
 #[cfg(test)]
 mod tests {

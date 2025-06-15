@@ -81,6 +81,10 @@ impl Number {
         TokenDescriptor(self)
     }
 
+    pub(crate) fn as_typename(&self) -> NumericTypeName {
+        NumericTypeName(self)
+    }
+
     pub(crate) fn into_exact(self) -> Self {
         match self {
             Self::Complex(Complex(c)) => Self::complex(c.0.into_exact(), c.1.into_exact()),
@@ -93,10 +97,6 @@ impl Number {
             Self::Complex(Complex(c)) => Self::complex(c.0.into_inexact(), c.1.into_inexact()),
             Self::Real(r) => Self::Real(r.into_inexact()),
         }
-    }
-
-    fn as_typename(&self) -> NumericTypeName {
-        NumericTypeName(self)
     }
 }
 
@@ -346,6 +346,10 @@ impl Integer {
             precision: Precision::Single(magnitude),
             sign,
         }
+    }
+
+    pub(crate) fn is_even(&self) -> bool {
+        todo!();
     }
 
     fn is_positive(&self) -> bool {
@@ -771,6 +775,24 @@ impl Display for RealTokenDescriptor<'_> {
     }
 }
 
+pub(crate) struct NumericTypeName<'a>(&'a Number);
+
+impl NumericTypeName<'_> {
+    pub(crate) const COMPLEX: &'static str = "complex";
+    pub(crate) const INTEGER: &'static str = "integer";
+}
+
+impl Display for NumericTypeName<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self.0 {
+            Number::Complex(_) => f.write_str(Self::COMPLEX),
+            Number::Real(Real::Float(_)) => f.write_str("floating-point"),
+            Number::Real(Real::Integer(_)) => f.write_str(Self::INTEGER),
+            Number::Real(Real::Rational(_)) => f.write_str("rational"),
+        }
+    }
+}
+
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
 enum Precision {
     Single(u64),
@@ -859,19 +881,6 @@ impl RadixPrivate for Decimal {
             .map_or(Err(NumericError::ParseFailure), |fstr| {
                 Ok(fstr.parse::<f64>()?.into())
             })
-    }
-}
-
-struct NumericTypeName<'a>(&'a Number);
-
-impl Display for NumericTypeName<'_> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        match self.0 {
-            Number::Complex(_) => f.write_str("complex"),
-            Number::Real(Real::Float(_)) => f.write_str("floating-point"),
-            Number::Real(Real::Integer(_)) => f.write_str("integer"),
-            Number::Real(Real::Rational(_)) => f.write_str("rational"),
-        }
     }
 }
 
