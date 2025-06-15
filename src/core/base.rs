@@ -32,12 +32,18 @@ use crate::{
 const REAL_ARG_TNAME: &'static str = "real";
 
 pub(super) fn load(scope: &mut Binding) {
-    // boolean
+    // booleans
     super::bind_intrinsic(scope, "boolean?", 1..1, is_boolean);
     super::bind_intrinsic(scope, "boolean=?", 0..MAX_ARITY, all_boolean_equal);
     super::bind_intrinsic(scope, "not", 1..1, not);
 
-    // number
+    // bytevectors
+    super::bind_intrinsic(scope, "bytevector?", 1..1, is_bytevector);
+
+    // characters
+    super::bind_intrinsic(scope, "char?", 1..1, is_char);
+
+    // numbers
     // NOTE: complex and number predicates are identical sets
     super::bind_intrinsic(scope, "complex?", 1..1, is_number);
     super::bind_intrinsic(scope, "even?", 1..1, is_even);
@@ -60,10 +66,22 @@ pub(super) fn load(scope: &mut Binding) {
     super::bind_intrinsic(scope, "list?", 1..1, is_list);
     super::bind_intrinsic(scope, "null?", 1..1, is_null);
     super::bind_intrinsic(scope, "pair?", 1..1, is_pair);
+
+    // procedures
+    super::bind_intrinsic(scope, "procedure?", 1..1, is_procedure);
+
+    // strings
+    super::bind_intrinsic(scope, "string?", 1..1, is_string);
+
+    // symbols
+    super::bind_intrinsic(scope, "symbol?", 1..1, is_symbol);
+
+    // vectors
+    super::bind_intrinsic(scope, "vector?", 1..1, is_vector);
 }
 
 //
-// Boolean
+// Booleans
 //
 
 predicate!(is_boolean, Value::Boolean(_));
@@ -89,7 +107,19 @@ fn all_boolean_equal(args: &[Value], _env: &mut Frame) -> EvalResult {
 }
 
 //
-// Number
+// Bytevectors
+//
+
+predicate!(is_bytevector, Value::ByteVector(_));
+
+//
+// Characters
+//
+
+predicate!(is_char, Value::Character(_));
+
+//
+// Numbers
 //
 
 try_predicate!(is_exact, Value::Number, TypeName::NUMBER, |n: &Number| {
@@ -188,6 +218,30 @@ fn is_list(args: &[Value], _env: &mut Frame) -> EvalResult {
         _ => false,
     }))
 }
+
+//
+// Procedures
+//
+
+predicate!(is_procedure, Value::Procedure(_));
+
+//
+// Strings
+//
+
+predicate!(is_string, Value::String(_));
+
+//
+// Symbols
+//
+
+predicate!(is_symbol, Value::Symbol(_));
+
+//
+// Vectors
+//
+
+predicate!(is_vector, Value::Vector(_));
 
 #[cfg(test)]
 mod tests {
