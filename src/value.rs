@@ -7,6 +7,16 @@ macro_rules! zlist {
     };
 }
 
+macro_rules! same_obj {
+    ($kind:path, $a:expr, $other:expr $(,)?) => {
+        if let $kind(b) = $other {
+            Rc::ptr_eq($a, b)
+        } else {
+            false
+        }
+    };
+}
+
 mod condition;
 #[cfg(test)]
 mod tests;
@@ -99,12 +109,32 @@ impl Value {
 
     // NOTE: procedure eq? -> is same object
     pub(crate) fn is(&self, other: &Self) -> bool {
-        todo!();
+        match self {
+            Self::Ast(a) => same_obj!(Self::Ast, a, other),
+            Self::Boolean(a) => matches!(other, Self::Boolean(b) if a == b),
+            Self::ByteVector(a) => same_obj!(Self::ByteVector, a, other),
+            Self::Character(_) => false,
+            Self::Number(_) => false,
+            Self::Pair(None) => matches!(other, Self::Pair(None)),
+            Self::Pair(Some(a)) => {
+                if let Self::Pair(Some(b)) = other {
+                    Rc::ptr_eq(a, b)
+                } else {
+                    false
+                }
+            }
+            Self::Procedure(a) => same_obj!(Self::Procedure, a, other),
+            Self::String(a) => same_obj!(Self::String, a, other),
+            Self::Symbol(a) => same_obj!(Self::Symbol, a, other),
+            Self::TokenList(a) => same_obj!(Self::TokenList, a, other),
+            Self::Unspecified => matches!(other, Self::Unspecified),
+            Self::Vector(a) => same_obj!(Self::Vector, a, other),
+        }
     }
 
     // NOTE: procedure eqv? -> is equivalent object
     pub(crate) fn eqv(&self, other: &Self) -> bool {
-        todo!();
+        self.is(other) || todo!();
     }
 
     pub(crate) fn display_message(&self) -> ValueMessage {
@@ -119,7 +149,7 @@ impl Value {
 // NOTE: procedure equal? -> value equality (partial only due to NAN)
 impl PartialEq for Value {
     fn eq(&self, other: &Self) -> bool {
-        todo!()
+        self.eqv(other) || todo!();
     }
 }
 
