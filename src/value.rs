@@ -97,12 +97,29 @@ impl Value {
         Self::Vector(items.into_iter().collect::<Rc<[_]>>())
     }
 
+    // NOTE: procedure eq? -> is same object
+    pub(crate) fn is(&self, other: &Self) -> bool {
+        todo!();
+    }
+
+    // NOTE: procedure eqv? -> is equivalent object
+    pub(crate) fn eqv(&self, other: &Self) -> bool {
+        todo!();
+    }
+
     pub(crate) fn display_message(&self) -> ValueMessage {
         ValueMessage(self)
     }
 
     pub(crate) fn as_typename(&self) -> TypeName {
         TypeName(self)
+    }
+}
+
+// NOTE: procedure equal? -> value equality (partial only due to NAN)
+impl PartialEq for Value {
+    fn eq(&self, other: &Self) -> bool {
+        todo!()
     }
 }
 
