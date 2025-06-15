@@ -353,4 +353,112 @@ mod tests {
             "#<env-error \"invalid type for arg `1` - expected: boolean, got: string\" (\"foo\")>"
         );
     }
+
+    #[test]
+    fn is_even_integer() {
+        let args = [Value::Number(Number::real(4))];
+        let mut env = TestEnv::default();
+
+        let r = is_even(&args, &mut env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert!(matches!(v, Value::Boolean(true)));
+
+        let r = is_odd(&args, &mut env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert!(matches!(v, Value::Boolean(false)));
+    }
+
+    #[test]
+    fn is_even_float_with_no_frac() {
+        let args = [Value::Number(Number::real(4.0))];
+        let mut env = TestEnv::default();
+
+        let r = is_even(&args, &mut env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert!(matches!(v, Value::Boolean(true)));
+
+        let r = is_odd(&args, &mut env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert!(matches!(v, Value::Boolean(false)));
+    }
+
+    #[test]
+    fn is_even_float_with_frac() {
+        let args = [Value::Number(Number::real(4.2))];
+        let mut env = TestEnv::default();
+
+        let r = is_even(&args, &mut env.new_frame());
+
+        let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
+        assert_eq!(
+            err.to_string(),
+            "#<env-error \"invalid type for arg `0` - expected: integer, got: floating-point\" (4.2)>"
+        );
+
+        let r = is_odd(&args, &mut env.new_frame());
+
+        let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
+        assert_eq!(
+            err.to_string(),
+            "#<env-error \"invalid type for arg `0` - expected: integer, got: floating-point\" (4.2)>"
+        );
+    }
+
+    #[test]
+    fn is_odd_integer() {
+        let args = [Value::Number(Number::real(3))];
+        let mut env = TestEnv::default();
+
+        let r = is_even(&args, &mut env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert!(matches!(v, Value::Boolean(false)));
+
+        let r = is_odd(&args, &mut env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert!(matches!(v, Value::Boolean(true)));
+    }
+
+    #[test]
+    fn is_odd_float_with_no_frac() {
+        let args = [Value::Number(Number::real(3.0))];
+        let mut env = TestEnv::default();
+
+        let r = is_even(&args, &mut env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert!(matches!(v, Value::Boolean(false)));
+
+        let r = is_odd(&args, &mut env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert!(matches!(v, Value::Boolean(true)));
+    }
+
+    #[test]
+    fn is_odd_float_with_frac() {
+        let args = [Value::Number(Number::real(3.2))];
+        let mut env = TestEnv::default();
+
+        let r = is_even(&args, &mut env.new_frame());
+
+        let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
+        assert_eq!(
+            err.to_string(),
+            "#<env-error \"invalid type for arg `0` - expected: integer, got: floating-point\" (3.2)>"
+        );
+
+        let r = is_odd(&args, &mut env.new_frame());
+
+        let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
+        assert_eq!(
+            err.to_string(),
+            "#<env-error \"invalid type for arg `0` - expected: integer, got: floating-point\" (3.2)>"
+        );
+    }
 }
