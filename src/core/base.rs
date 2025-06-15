@@ -8,12 +8,29 @@ macro_rules! predicate {
     };
 }
 
+macro_rules! try_predicate {
+    ($name:ident, $kind:path, $valname:expr, $pred:expr $(,)?) => {
+        fn $name(args: &[Value], _env: &mut Frame) -> EvalResult {
+            let arg = args.first().unwrap();
+            if let $kind(val) = arg {
+                Ok(Value::Boolean($pred(val)))
+            } else {
+                Err(Condition::arg_error(FIRST_ARG_LABEL, $valname, arg).into())
+            }
+        }
+    };
+}
+
+use super::FIRST_ARG_LABEL;
 use crate::{
     Exception,
     eval::{Binding, EvalResult, Frame, MAX_ARITY},
     number::{Number, Real},
     value::{Condition, TypeName, Value},
 };
+
+const COMPLEX_ARG_TNAME: &'static str = "complex number";
+const REAL_ARG_TNAME: &'static str = "real number";
 
 pub(super) fn load(scope: &mut Binding) {
     // boolean
@@ -32,8 +49,10 @@ pub(super) fn load(scope: &mut Binding) {
     super::bind_intrinsic(scope, "integer?", 1..1, is_integer);
     super::bind_intrinsic(scope, "nan?", 1..1, is_nan);
     super::bind_intrinsic(scope, "number?", 1..1, is_number);
+    super::bind_intrinsic(scope, "positive?", 1..1, is_positive);
     super::bind_intrinsic(scope, "rational?", 1..1, is_rational);
     super::bind_intrinsic(scope, "real?", 1..1, is_real);
+    super::bind_intrinsic(scope, "zero?", 1..1, is_zero);
 }
 
 //
@@ -66,19 +85,51 @@ fn all_boolean_equal(args: &[Value], _env: &mut Frame) -> EvalResult {
 // Number
 //
 
-predicate!(is_exact, Value::Number(n) if !n.is_inexact());
-predicate!(
+try_predicate!(is_exact, Value::Number, TypeName::NUMBER, |n: &Number| {
+    !n.is_inexact()
+});
+try_predicate!(
     is_exact_integer,
-    Value::Number(Number::Real(Real::Integer(_))),
+    Value::Number,
+    TypeName::NUMBER,
+    |n: &Number| matches!(n, Number::Real(Real::Integer(_)))
 );
-predicate!(is_finite, Value::Number(n) if !n.is_infinite() && !n.is_nan());
-predicate!(is_inexact, Value::Number(n) if n.is_inexact());
-predicate!(is_infinite, Value::Number(n) if n.is_infinite());
+try_predicate!(is_finite, Value::Number, TypeName::NUMBER, |n: &Number| {
+    !n.is_infinite() && !n.is_nan()
+});
+try_predicate!(is_inexact, Value::Number, TypeName::NUMBER, |n: &Number| {
+    n.is_inexact()
+});
+try_predicate!(
+    is_infinite,
+    Value::Number,
+    TypeName::NUMBER,
+    |n: &Number| n.is_infinite()
+);
 predicate!(is_integer, Value::Number(Number::Real(r)) if r.is_integer());
-predicate!(is_nan, Value::Number(n) if n.is_nan());
+try_predicate!(is_nan, Value::Number, TypeName::NUMBER, |n: &Number| n
+    .is_nan());
 predicate!(is_number, Value::Number(_));
 predicate!(is_rational, Value::Number(Number::Real(r)) if r.is_rational());
 predicate!(is_real, Value::Number(Number::Real(_)));
+try_predicate!(is_zero, Value::Number, TypeName::NUMBER, |n: &Number| n
+    .is_zero());
+
+fn is_positive(args: &[Value], _env: &mut Frame) -> EvalResult {
+    let arg = args.first().unwrap();
+    if let Value::Number(n) = arg {
+        if let Number::Real(r) = n {
+            Ok(Value::Boolean(r.is_positive()))
+        } else {
+            Err(
+                Condition::arg_type_error(FIRST_ARG_LABEL, REAL_ARG_TNAME, COMPLEX_ARG_TNAME, arg)
+                    .into(),
+            )
+        }
+    } else {
+        Err(Condition::arg_error(FIRST_ARG_LABEL, REAL_ARG_TNAME, arg).into())
+    }
+}
 
 #[cfg(test)]
 mod tests {

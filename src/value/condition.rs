@@ -27,12 +27,20 @@ impl Condition {
     }
 
     pub(crate) fn arg_error(name: &str, expected_type: &str, arg: &Value) -> Self {
+        Self::arg_type_error(name, expected_type, arg.as_typename(), arg)
+    }
+
+    pub(crate) fn arg_type_error(
+        name: &str,
+        expected_type: &str,
+        actual_type: impl Display,
+        arg: &Value,
+    ) -> Self {
         Self {
             kind: ConditionKind::Env,
             irritants: zlist![arg.clone()],
             msg: format!(
-                "invalid type for arg `{name}` - expected: {expected_type}, got: {}",
-                arg.as_typename()
+                "invalid type for arg `{name}` - expected: {expected_type}, got: {actual_type}",
             )
             .into(),
         }

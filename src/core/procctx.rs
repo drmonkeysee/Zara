@@ -1,4 +1,5 @@
 // (scheme process-context)
+use super::FIRST_ARG_LABEL;
 use crate::{
     Exception,
     eval::{Binding, EvalResult, Frame},
@@ -57,7 +58,7 @@ fn exit(args: &[Value], _env: &mut Frame) -> EvalResult {
 fn get_environment_variable(args: &[Value], _env: &mut Frame) -> EvalResult {
     let arg = args.first().unwrap();
     let Value::String(s) = arg else {
-        return Err(Condition::arg_error("0", TypeName::STRING, arg).into());
+        return Err(Condition::arg_error(FIRST_ARG_LABEL, TypeName::STRING, arg).into());
     };
     env::var(s.as_ref()).map_or_else(
         |err| match err {

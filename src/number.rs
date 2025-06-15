@@ -70,6 +70,13 @@ impl Number {
         }
     }
 
+    pub(crate) fn is_zero(&self) -> bool {
+        match self {
+            Self::Complex(Complex(c)) => c.0.is_zero() && c.1.is_zero(),
+            Self::Real(r) => r.is_zero(),
+        }
+    }
+
     pub(crate) fn as_token_descriptor(&self) -> TokenDescriptor {
         TokenDescriptor(self)
     }
@@ -158,24 +165,8 @@ impl Real {
         }
     }
 
-    pub(crate) fn is_inexact(&self) -> bool {
-        matches!(self, Self::Float(_))
-    }
-
-    pub(crate) fn is_infinite(&self) -> bool {
-        if let Self::Float(f) = self {
-            f.is_infinite()
-        } else {
-            false
-        }
-    }
-
-    pub(crate) fn is_nan(&self) -> bool {
-        if let Self::Float(f) = self {
-            f.is_nan()
-        } else {
-            false
-        }
+    pub(crate) fn is_positive(&self) -> bool {
+        todo!();
     }
 
     pub(crate) fn as_token_descriptor(&self) -> RealTokenDescriptor {
@@ -239,6 +230,26 @@ impl Real {
             false
         } else {
             self.is_zero()
+        }
+    }
+
+    fn is_inexact(&self) -> bool {
+        matches!(self, Self::Float(_))
+    }
+
+    fn is_infinite(&self) -> bool {
+        if let Self::Float(f) = self {
+            f.is_infinite()
+        } else {
+            false
+        }
+    }
+
+    fn is_nan(&self) -> bool {
+        if let Self::Float(f) = self {
+            f.is_nan()
+        } else {
+            false
         }
     }
 
