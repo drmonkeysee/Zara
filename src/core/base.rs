@@ -21,6 +21,29 @@ macro_rules! try_predicate {
     };
 }
 
+macro_rules! real_predicate {
+    ($name:ident, $pred:expr $(,)?) => {
+        fn $name(args: &[Value], _env: &mut Frame) -> EvalResult {
+            let arg = args.first().unwrap();
+            if let Value::Number(n) = arg {
+                if let Number::Real(r) = n {
+                    Ok(Value::Boolean($pred(r)))
+                } else {
+                    Err(Condition::arg_type_error(
+                        FIRST_ARG_LABEL,
+                        REAL_ARG_TNAME,
+                        COMPLEX_ARG_TNAME,
+                        arg,
+                    )
+                    .into())
+                }
+            } else {
+                Err(Condition::arg_error(FIRST_ARG_LABEL, REAL_ARG_TNAME, arg).into())
+            }
+        }
+    };
+}
+
 use super::FIRST_ARG_LABEL;
 use crate::{
     Exception,
@@ -110,43 +133,13 @@ try_predicate!(
 predicate!(is_integer, Value::Number(Number::Real(r)) if r.is_integer());
 try_predicate!(is_nan, Value::Number, TypeName::NUMBER, |n: &Number| n
     .is_nan());
+real_predicate!(is_negative, |r: &Real| r.is_negative());
 predicate!(is_number, Value::Number(_));
+real_predicate!(is_positive, |r: &Real| r.is_positive());
 predicate!(is_rational, Value::Number(Number::Real(r)) if r.is_rational());
 predicate!(is_real, Value::Number(Number::Real(_)));
 try_predicate!(is_zero, Value::Number, TypeName::NUMBER, |n: &Number| n
     .is_zero());
-
-fn is_negative(args: &[Value], _env: &mut Frame) -> EvalResult {
-    let arg = args.first().unwrap();
-    if let Value::Number(n) = arg {
-        if let Number::Real(r) = n {
-            Ok(Value::Boolean(r.is_negative()))
-        } else {
-            Err(
-                Condition::arg_type_error(FIRST_ARG_LABEL, REAL_ARG_TNAME, COMPLEX_ARG_TNAME, arg)
-                    .into(),
-            )
-        }
-    } else {
-        Err(Condition::arg_error(FIRST_ARG_LABEL, REAL_ARG_TNAME, arg).into())
-    }
-}
-
-fn is_positive(args: &[Value], _env: &mut Frame) -> EvalResult {
-    let arg = args.first().unwrap();
-    if let Value::Number(n) = arg {
-        if let Number::Real(r) = n {
-            Ok(Value::Boolean(r.is_positive()))
-        } else {
-            Err(
-                Condition::arg_type_error(FIRST_ARG_LABEL, REAL_ARG_TNAME, COMPLEX_ARG_TNAME, arg)
-                    .into(),
-            )
-        }
-    } else {
-        Err(Condition::arg_error(FIRST_ARG_LABEL, REAL_ARG_TNAME, arg).into())
-    }
-}
 
 #[cfg(test)]
 mod tests {
