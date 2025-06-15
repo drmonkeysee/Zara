@@ -51,28 +51,28 @@ impl Number {
 
     pub(crate) fn is_inexact(&self) -> bool {
         match self {
-            Self::Complex(Complex(c)) => c.0.is_inexact() || c.1.is_inexact(),
+            Self::Complex(Complex(z)) => z.0.is_inexact() || z.1.is_inexact(),
             Self::Real(r) => r.is_inexact(),
         }
     }
 
     pub(crate) fn is_infinite(&self) -> bool {
         match self {
-            Self::Complex(Complex(c)) => c.0.is_infinite() || c.1.is_infinite(),
+            Self::Complex(Complex(z)) => z.0.is_infinite() || z.1.is_infinite(),
             Self::Real(r) => r.is_infinite(),
         }
     }
 
     pub(crate) fn is_nan(&self) -> bool {
         match self {
-            Self::Complex(Complex(c)) => c.0.is_nan() || c.1.is_nan(),
+            Self::Complex(Complex(z)) => z.0.is_nan() || z.1.is_nan(),
             Self::Real(r) => r.is_nan(),
         }
     }
 
     pub(crate) fn is_zero(&self) -> bool {
         match self {
-            Self::Complex(Complex(c)) => c.0.is_zero() && c.1.is_zero(),
+            Self::Complex(Complex(z)) => z.0.is_zero() && z.1.is_zero(),
             Self::Real(r) => r.is_zero(),
         }
     }
@@ -87,14 +87,14 @@ impl Number {
 
     pub(crate) fn into_exact(self) -> Self {
         match self {
-            Self::Complex(Complex(c)) => Self::complex(c.0.into_exact(), c.1.into_exact()),
+            Self::Complex(Complex(z)) => Self::complex(z.0.into_exact(), z.1.into_exact()),
             Self::Real(r) => Self::Real(r.into_exact()),
         }
     }
 
     pub(crate) fn into_inexact(self) -> Self {
         match self {
-            Self::Complex(Complex(c)) => Self::complex(c.0.into_inexact(), c.1.into_inexact()),
+            Self::Complex(Complex(z)) => Self::complex(z.0.into_inexact(), z.1.into_inexact()),
             Self::Real(r) => Self::Real(r.into_inexact()),
         }
     }
@@ -110,9 +110,9 @@ impl Number {
 impl Display for Number {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
-            Self::Complex(Complex(c)) => {
-                ComplexRealDatum(&c.0).fmt(f)?;
-                ComplexImagDatum(&c.1).fmt(f)
+            Self::Complex(Complex(z)) => {
+                ComplexRealDatum(&z.0).fmt(f)?;
+                ComplexImagDatum(&z.1).fmt(f)
             }
             Self::Real(r) => r.fmt(f),
         }
@@ -315,9 +315,11 @@ impl<T: Into<Integer>> From<T> for Real {
 #[derive(Clone, Debug)]
 pub(crate) struct Rational(Box<(Integer, Integer)>);
 
+// NOTE: all predicates assume instance was normalized through Real::reduce
+// i.e. sign is attached to numerator, no zero denominator, etc.
 impl Rational {
     fn is_positive(&self) -> bool {
-        self.0.0.is_positive() && self.0.1.is_positive()
+        self.0.0.is_positive()
     }
 
     fn is_zero(&self) -> bool {
@@ -325,7 +327,7 @@ impl Rational {
     }
 
     fn is_negative(&self) -> bool {
-        self.0.0.is_negative() || self.0.1.is_negative()
+        self.0.0.is_negative()
     }
 
     fn into_inexact(self) -> Real {

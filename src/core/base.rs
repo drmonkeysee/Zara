@@ -187,12 +187,12 @@ fn real_predicate(arg: &Value, pred: impl FnOnce(&Real) -> bool) -> EvalResult {
 }
 
 fn int_predicate(arg: &Value, pred: impl FnOnce(&Integer) -> bool) -> EvalResult {
-    if let Value::Number(num) = arg {
-        match num.clone().into_exact_integer() {
+    if let Value::Number(n) = arg {
+        match n.clone().into_exact_integer() {
             None => Err(Condition::arg_type_error(
                 FIRST_ARG_LABEL,
                 NumericTypeName::INTEGER,
-                num.as_typename(),
+                n.as_typename(),
                 arg,
             )
             .into()),

@@ -1746,6 +1746,13 @@ mod rational {
     }
 
     #[test]
+    fn unreduced_zero_denomintor_ignored_for_is_zero() {
+        let r = Rational((7.into(), 0.into()).into());
+
+        assert!(!r.is_zero());
+    }
+
+    #[test]
     fn positive_into_float() {
         let r = ok_or_fail!(Real::reduce(4, 5));
 
@@ -1910,10 +1917,10 @@ mod rational {
     }
 
     #[test]
-    fn negative_denom_is_not_positive() {
+    fn negative_denom_not_checked_for_is_positive() {
         let rat = Rational((4.into(), (-5).into()).into());
 
-        assert!(!rat.is_positive());
+        assert!(rat.is_positive());
     }
 
     #[test]
@@ -1938,10 +1945,10 @@ mod rational {
     }
 
     #[test]
-    fn negative_denom_is_negative() {
+    fn negative_denom_not_checked_for_is_negative() {
         let rat = Rational((4.into(), (-5).into()).into());
 
-        assert!(rat.is_negative());
+        assert!(!rat.is_negative());
     }
 
     #[test]
