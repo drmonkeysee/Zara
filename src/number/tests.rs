@@ -1041,6 +1041,26 @@ mod integer {
 
         assert!(!r.is_negative());
     }
+
+    #[test]
+    fn is_even() {
+        let cases = [4, 0, -4];
+        for case in cases {
+            let n: Integer = case.into();
+
+            assert!(n.is_even())
+        }
+    }
+
+    #[test]
+    fn is_odd() {
+        let cases = [3, -3];
+        for case in cases {
+            let n: Integer = case.into();
+
+            assert!(!n.is_even())
+        }
+    }
 }
 
 mod float {

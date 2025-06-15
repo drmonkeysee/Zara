@@ -349,7 +349,7 @@ impl Integer {
     }
 
     pub(crate) fn is_even(&self) -> bool {
-        todo!();
+        self.precision.is_even()
     }
 
     fn is_positive(&self) -> bool {
@@ -801,6 +801,13 @@ enum Precision {
 }
 
 impl Precision {
+    fn is_even(&self) -> bool {
+        match self {
+            Self::Single(u) => u % 2 == 0,
+            Self::Multiple(_) => todo!(),
+        }
+    }
+
     fn reduce(&mut self, other: &mut Self) {
         match self {
             Self::Single(a) => match other {

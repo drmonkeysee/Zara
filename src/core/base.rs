@@ -21,34 +21,11 @@ macro_rules! try_predicate {
     };
 }
 
-macro_rules! real_predicate {
-    ($name:ident, $pred:expr $(,)?) => {
-        fn $name(args: &[Value], _env: &mut Frame) -> EvalResult {
-            let arg = args.first().unwrap();
-            if let Value::Number(n) = arg {
-                if let Number::Real(r) = n {
-                    Ok(Value::Boolean($pred(r)))
-                } else {
-                    Err(Condition::arg_type_error(
-                        FIRST_ARG_LABEL,
-                        REAL_ARG_TNAME,
-                        NumericTypeName::COMPLEX,
-                        arg,
-                    )
-                    .into())
-                }
-            } else {
-                Err(Condition::arg_error(FIRST_ARG_LABEL, REAL_ARG_TNAME, arg).into())
-            }
-        }
-    };
-}
-
 use super::FIRST_ARG_LABEL;
 use crate::{
     Exception,
     eval::{Binding, EvalResult, Frame, MAX_ARITY},
-    number::{Number, NumericTypeName, Real},
+    number::{Integer, Number, NumericTypeName, Real},
     value::{Condition, TypeName, Value},
 };
 
@@ -134,19 +111,50 @@ try_predicate!(
 predicate!(is_integer, Value::Number(Number::Real(r)) if r.is_integer());
 try_predicate!(is_nan, Value::Number, TypeName::NUMBER, |n: &Number| n
     .is_nan());
-real_predicate!(is_negative, |r: &Real| r.is_negative());
 predicate!(is_number, Value::Number(_));
-real_predicate!(is_positive, |r: &Real| r.is_positive());
 predicate!(is_rational, Value::Number(Number::Real(r)) if r.is_rational());
 predicate!(is_real, Value::Number(Number::Real(_)));
 try_predicate!(is_zero, Value::Number, TypeName::NUMBER, |n: &Number| n
     .is_zero());
 
 fn is_even(args: &[Value], _env: &mut Frame) -> EvalResult {
-    let arg = args.first().unwrap();
+    int_predicate(args.first().unwrap(), Integer::is_even)
+}
+
+fn is_negative(args: &[Value], _env: &mut Frame) -> EvalResult {
+    real_predicate(args.first().unwrap(), Real::is_negative)
+}
+
+fn is_odd(args: &[Value], _env: &mut Frame) -> EvalResult {
+    int_predicate(args.first().unwrap(), |n| !n.is_even())
+}
+
+fn is_positive(args: &[Value], _env: &mut Frame) -> EvalResult {
+    real_predicate(args.first().unwrap(), Real::is_positive)
+}
+
+fn real_predicate(arg: &Value, pred: impl FnOnce(&Real) -> bool) -> EvalResult {
+    if let Value::Number(n) = arg {
+        if let Number::Real(r) = n {
+            Ok(Value::Boolean(pred(r)))
+        } else {
+            Err(Condition::arg_type_error(
+                FIRST_ARG_LABEL,
+                REAL_ARG_TNAME,
+                NumericTypeName::COMPLEX,
+                arg,
+            )
+            .into())
+        }
+    } else {
+        Err(Condition::arg_error(FIRST_ARG_LABEL, REAL_ARG_TNAME, arg).into())
+    }
+}
+
+fn int_predicate(arg: &Value, pred: impl FnOnce(&Integer) -> bool) -> EvalResult {
     if let Value::Number(num) = arg {
         if let Number::Real(Real::Integer(n)) = num {
-            return Ok(Value::Boolean(n.is_even()));
+            return Ok(Value::Boolean(pred(n)));
         }
         Err(Condition::arg_type_error(
             FIRST_ARG_LABEL,
@@ -158,10 +166,6 @@ fn is_even(args: &[Value], _env: &mut Frame) -> EvalResult {
     } else {
         Err(Condition::arg_error(FIRST_ARG_LABEL, NumericTypeName::INTEGER, arg).into())
     }
-}
-
-fn is_odd(args: &[Value], _env: &mut Frame) -> EvalResult {
-    todo!();
 }
 
 #[cfg(test)]
