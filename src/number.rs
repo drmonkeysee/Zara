@@ -204,9 +204,9 @@ impl Real {
 
     pub(crate) fn is_negative(&self) -> bool {
         match self {
-            Self::Float(f) => todo!(),
-            Self::Integer(n) => todo!(),
-            Self::Rational(q) => todo!(),
+            Self::Float(f) => *f < 0.0,
+            Self::Integer(n) => n.is_negative(),
+            Self::Rational(q) => q.is_negative(),
         }
     }
 
@@ -306,6 +306,10 @@ impl Rational {
 
     fn is_zero(&self) -> bool {
         self.0.0.is_zero()
+    }
+
+    fn is_negative(&self) -> bool {
+        self.0.0.is_negative() || self.0.1.is_negative()
     }
 
     fn into_inexact(self) -> Real {

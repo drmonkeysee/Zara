@@ -1020,6 +1020,27 @@ mod integer {
 
         assert!(!r.is_positive());
     }
+
+    #[test]
+    fn is_negative() {
+        let r = Real::Integer((-4).into());
+
+        assert!(r.is_negative());
+    }
+
+    #[test]
+    fn zero_is_not_negative() {
+        let r = Real::Integer(0.into());
+
+        assert!(!r.is_negative());
+    }
+
+    #[test]
+    fn positive_is_not_negative() {
+        let r = Real::Integer(4.into());
+
+        assert!(!r.is_negative());
+    }
 }
 
 mod float {
@@ -1351,6 +1372,55 @@ mod float {
         let r = Real::Float(f64::NAN);
 
         assert!(!r.is_positive());
+    }
+
+    #[test]
+    fn is_negative() {
+        let r = Real::Float(-4.0);
+
+        assert!(r.is_negative());
+    }
+
+    #[test]
+    fn zero_is_not_negative() {
+        let r = Real::Float(0.0);
+
+        assert!(!r.is_negative());
+    }
+
+    #[test]
+    fn negative_zero_is_not_negative() {
+        let r = Real::Float(-0.0);
+
+        assert!(!r.is_negative());
+    }
+
+    #[test]
+    fn positive_is_not_negative() {
+        let r = Real::Float(4.0);
+
+        assert!(!r.is_negative());
+    }
+
+    #[test]
+    fn positive_infinity_is_not_negative() {
+        let r = Real::Float(f64::INFINITY);
+
+        assert!(!r.is_negative());
+    }
+
+    #[test]
+    fn negative_infinity_is_negative() {
+        let r = Real::Float(f64::NEG_INFINITY);
+
+        assert!(r.is_negative());
+    }
+
+    #[test]
+    fn nan_is_not_negative() {
+        let r = Real::Float(f64::NAN);
+
+        assert!(!r.is_negative());
     }
 }
 
@@ -1706,6 +1776,34 @@ mod rational {
         let rat = Rational((4.into(), (-5).into()).into());
 
         assert!(!rat.is_positive());
+    }
+
+    #[test]
+    fn is_negative() {
+        let rat = ok_or_fail!(Real::reduce(-4, 5));
+
+        assert!(rat.is_negative());
+    }
+
+    #[test]
+    fn zero_is_not_negative() {
+        let rat = ok_or_fail!(Real::reduce(0, 5));
+
+        assert!(!rat.is_negative());
+    }
+
+    #[test]
+    fn positive_is_not_negative() {
+        let rat = ok_or_fail!(Real::reduce(4, 5));
+
+        assert!(!rat.is_negative());
+    }
+
+    #[test]
+    fn negative_denom_is_negative() {
+        let rat = Rational((4.into(), (-5).into()).into());
+
+        assert!(rat.is_negative());
     }
 }
 
