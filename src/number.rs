@@ -98,6 +98,13 @@ impl Number {
             Self::Real(r) => Self::Real(r.into_inexact()),
         }
     }
+
+    pub(crate) fn into_exact_integer(self) -> Option<Integer> {
+        match self {
+            Self::Complex(_) => None,
+            Self::Real(r) => r.into_exact_integer(),
+        }
+    }
 }
 
 impl Display for Number {
@@ -226,6 +233,15 @@ impl Real {
             Self::Float(_) => self,
             Self::Integer(n) => n.into_inexact(),
             Self::Rational(q) => q.into_inexact(),
+        }
+    }
+
+    pub(crate) fn into_exact_integer(self) -> Option<Integer> {
+        match self {
+            // TODO: this may not work for int-floats > 2^53 and definitely not for >= 2^64
+            Self::Float(f) if f.fract() == 0.0 => Some((f as i64).into()),
+            Self::Integer(n) => Some(n),
+            _ => None,
         }
     }
 

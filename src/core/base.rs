@@ -188,16 +188,16 @@ fn real_predicate(arg: &Value, pred: impl FnOnce(&Real) -> bool) -> EvalResult {
 
 fn int_predicate(arg: &Value, pred: impl FnOnce(&Integer) -> bool) -> EvalResult {
     if let Value::Number(num) = arg {
-        if let Number::Real(Real::Integer(n)) = num {
-            return Ok(Value::Boolean(pred(n)));
+        match num.clone().into_exact_integer() {
+            None => Err(Condition::arg_type_error(
+                FIRST_ARG_LABEL,
+                NumericTypeName::INTEGER,
+                num.as_typename(),
+                arg,
+            )
+            .into()),
+            Some(n) => Ok(Value::Boolean(pred(&n))),
         }
-        Err(Condition::arg_type_error(
-            FIRST_ARG_LABEL,
-            NumericTypeName::INTEGER,
-            num.as_typename(),
-            arg,
-        )
-        .into())
     } else {
         Err(Condition::arg_error(FIRST_ARG_LABEL, NumericTypeName::INTEGER, arg).into())
     }
