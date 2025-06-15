@@ -48,6 +48,7 @@ pub(super) fn load(scope: &mut Binding) {
     super::bind_intrinsic(scope, "infinite?", 1..1, is_infinite);
     super::bind_intrinsic(scope, "integer?", 1..1, is_integer);
     super::bind_intrinsic(scope, "nan?", 1..1, is_nan);
+    super::bind_intrinsic(scope, "negative?", 1..1, is_negative);
     super::bind_intrinsic(scope, "number?", 1..1, is_number);
     super::bind_intrinsic(scope, "positive?", 1..1, is_positive);
     super::bind_intrinsic(scope, "rational?", 1..1, is_rational);
@@ -114,6 +115,22 @@ predicate!(is_rational, Value::Number(Number::Real(r)) if r.is_rational());
 predicate!(is_real, Value::Number(Number::Real(_)));
 try_predicate!(is_zero, Value::Number, TypeName::NUMBER, |n: &Number| n
     .is_zero());
+
+fn is_negative(args: &[Value], _env: &mut Frame) -> EvalResult {
+    let arg = args.first().unwrap();
+    if let Value::Number(n) = arg {
+        if let Number::Real(r) = n {
+            Ok(Value::Boolean(r.is_negative()))
+        } else {
+            Err(
+                Condition::arg_type_error(FIRST_ARG_LABEL, REAL_ARG_TNAME, COMPLEX_ARG_TNAME, arg)
+                    .into(),
+            )
+        }
+    } else {
+        Err(Condition::arg_error(FIRST_ARG_LABEL, REAL_ARG_TNAME, arg).into())
+    }
+}
 
 fn is_positive(args: &[Value], _env: &mut Frame) -> EvalResult {
     let arg = args.first().unwrap();

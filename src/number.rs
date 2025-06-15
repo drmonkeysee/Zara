@@ -149,30 +149,6 @@ pub(crate) enum Real {
 }
 
 impl Real {
-    pub(crate) fn is_rational(&self) -> bool {
-        if let Self::Float(f) = self {
-            f.is_finite()
-        } else {
-            true
-        }
-    }
-
-    pub(crate) fn is_integer(&self) -> bool {
-        match self {
-            Self::Float(f) => f.fract() == 0.0,
-            Self::Integer(_) => true,
-            Self::Rational(_) => false,
-        }
-    }
-
-    pub(crate) fn is_positive(&self) -> bool {
-        todo!();
-    }
-
-    pub(crate) fn as_token_descriptor(&self) -> RealTokenDescriptor {
-        RealTokenDescriptor(self)
-    }
-
     pub(crate) fn reduce(
         numerator: impl Into<Integer>,
         denominator: impl Into<Integer>,
@@ -202,6 +178,42 @@ impl Real {
         Ok(Self::Rational(Rational((n, d).into())))
     }
 
+    pub(crate) fn is_rational(&self) -> bool {
+        if let Self::Float(f) = self {
+            f.is_finite()
+        } else {
+            true
+        }
+    }
+
+    pub(crate) fn is_integer(&self) -> bool {
+        match self {
+            Self::Float(f) => f.fract() == 0.0,
+            Self::Integer(_) => true,
+            Self::Rational(_) => false,
+        }
+    }
+
+    pub(crate) fn is_positive(&self) -> bool {
+        match self {
+            Self::Float(f) => *f > 0.0,
+            Self::Integer(n) => n.is_positive(),
+            Self::Rational(q) => q.is_positive(),
+        }
+    }
+
+    pub(crate) fn is_negative(&self) -> bool {
+        match self {
+            Self::Float(f) => todo!(),
+            Self::Integer(n) => todo!(),
+            Self::Rational(q) => todo!(),
+        }
+    }
+
+    pub(crate) fn as_token_descriptor(&self) -> RealTokenDescriptor {
+        RealTokenDescriptor(self)
+    }
+
     pub(crate) fn into_exact(self) -> Self {
         match self {
             Self::Float(f) => FloatSpec::float_to_exact(f),
@@ -213,7 +225,7 @@ impl Real {
         match self {
             Self::Float(_) => self,
             Self::Integer(n) => n.into_inexact(),
-            Self::Rational(r) => r.into_inexact(),
+            Self::Rational(q) => q.into_inexact(),
         }
     }
 
@@ -221,7 +233,7 @@ impl Real {
         match self {
             Self::Float(f) => *f == 0.0,
             Self::Integer(n) => n.is_zero(),
-            Self::Rational(r) => r.is_zero(),
+            Self::Rational(q) => q.is_zero(),
         }
     }
 
@@ -257,7 +269,7 @@ impl Real {
         match self {
             Self::Float(f) => f,
             Self::Integer(n) => n.into_float(),
-            Self::Rational(r) => r.into_float(),
+            Self::Rational(q) => q.into_float(),
         }
     }
 }
@@ -267,7 +279,7 @@ impl Display for Real {
         match self {
             Self::Float(d) => FloatDatum(d).fmt(f),
             Self::Integer(n) => n.fmt(f),
-            Self::Rational(r) => r.fmt(f),
+            Self::Rational(q) => q.fmt(f),
         }
     }
 }
@@ -288,6 +300,10 @@ impl<T: Into<Integer>> From<T> for Real {
 pub(crate) struct Rational(Box<(Integer, Integer)>);
 
 impl Rational {
+    fn is_positive(&self) -> bool {
+        self.0.0.is_positive() && self.0.1.is_positive()
+    }
+
     fn is_zero(&self) -> bool {
         self.0.0.is_zero()
     }
@@ -328,8 +344,8 @@ impl Integer {
         }
     }
 
-    fn into_inexact(self) -> Real {
-        Real::Float(self.into_float())
+    fn is_positive(&self) -> bool {
+        self.sign == Sign::Positive
     }
 
     fn is_zero(&self) -> bool {
@@ -349,33 +365,6 @@ impl Integer {
 
     fn cmp_magnitude(&self, other: &Self) -> Ordering {
         self.precision.cmp(&other.precision)
-    }
-
-    fn make_positive(&mut self) {
-        if self.sign == Sign::Negative {
-            self.sign = Sign::Positive;
-        }
-    }
-
-    fn make_negative(&mut self) {
-        if self.sign == Sign::Positive {
-            self.sign = Sign::Negative;
-        }
-    }
-
-    fn reduce(&mut self, other: &mut Self) {
-        self.precision.reduce(&mut other.precision);
-    }
-
-    fn into_float(self) -> f64 {
-        match self.precision {
-            Precision::Single(u) => {
-                #[allow(clippy::cast_precision_loss)]
-                let f = u as f64;
-                if self.sign == Sign::Negative { -f } else { f }
-            }
-            Precision::Multiple(_) => todo!(),
-        }
     }
 
     fn try_to_u8(&self) -> Result<u8, NumericError> {
@@ -404,6 +393,37 @@ impl Integer {
             u.try_into()
         }
         .map_err(|_| NumericError::IntConversionInvalidRange)
+    }
+
+    fn make_positive(&mut self) {
+        if self.sign == Sign::Negative {
+            self.sign = Sign::Positive;
+        }
+    }
+
+    fn make_negative(&mut self) {
+        if self.sign == Sign::Positive {
+            self.sign = Sign::Negative;
+        }
+    }
+
+    fn reduce(&mut self, other: &mut Self) {
+        self.precision.reduce(&mut other.precision);
+    }
+
+    fn into_inexact(self) -> Real {
+        Real::Float(self.into_float())
+    }
+
+    fn into_float(self) -> f64 {
+        match self.precision {
+            Precision::Single(u) => {
+                #[allow(clippy::cast_precision_loss)]
+                let f = u as f64;
+                if self.sign == Sign::Negative { -f } else { f }
+            }
+            Precision::Multiple(_) => todo!(),
+        }
     }
 }
 
