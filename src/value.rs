@@ -133,7 +133,7 @@ pub(crate) struct Pair {
 }
 
 impl Pair {
-    fn is_list(&self) -> bool {
+    pub(crate) fn is_list(&self) -> bool {
         if let Value::Pair(p) = &self.cdr {
             p.as_ref().is_none_or(|r| r.is_list())
         } else {

@@ -55,6 +55,11 @@ pub(super) fn load(scope: &mut Binding) {
     super::bind_intrinsic(scope, "rational?", 1..1, is_rational);
     super::bind_intrinsic(scope, "real?", 1..1, is_real);
     super::bind_intrinsic(scope, "zero?", 1..1, is_zero);
+
+    // pairs and lists
+    super::bind_intrinsic(scope, "list?", 1..1, is_list);
+    super::bind_intrinsic(scope, "null?", 1..1, is_null);
+    super::bind_intrinsic(scope, "pair?", 1..1, is_pair);
 }
 
 //
@@ -166,6 +171,22 @@ fn int_predicate(arg: &Value, pred: impl FnOnce(&Integer) -> bool) -> EvalResult
     } else {
         Err(Condition::arg_error(FIRST_ARG_LABEL, NumericTypeName::INTEGER, arg).into())
     }
+}
+
+//
+// Pairs and Lists
+//
+
+predicate!(is_null, Value::Pair(None));
+predicate!(is_pair, Value::Pair(Some(_)));
+
+fn is_list(args: &[Value], _env: &mut Frame) -> EvalResult {
+    let arg = args.first().unwrap();
+    Ok(Value::Boolean(match arg {
+        Value::Pair(None) => true,
+        Value::Pair(Some(p)) => p.is_list(),
+        _ => false,
+    }))
 }
 
 #[cfg(test)]
