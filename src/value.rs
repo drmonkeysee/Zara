@@ -141,7 +141,7 @@ impl PartialEq for Value {
             || match (self, other) {
                 (Self::ByteVector(a), Self::ByteVector(b)) => a == b,
                 (Self::Pair(Some(a)), Self::Pair(Some(b))) => a == b,
-                (Self::String(a), Self::String(b)) | (Self::Symbol(a), Self::Symbol(b)) => a == b,
+                (Self::String(a), Self::String(b)) => a == b,
                 (Self::Vector(a), Self::Vector(b)) => a == b,
                 _ => false,
             }

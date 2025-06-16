@@ -1097,14 +1097,16 @@ mod equivalence {
         assert!(a == b);
     }
 
+    // NOTE: symbols are assumed to be interned and won't ever fall through all
+    // the way to equality check.
     #[test]
-    fn equal_symbols() {
+    fn symbols_are_not_equal() {
         let a = Value::Symbol("foo".into());
         let b = Value::Symbol("foo".into());
 
         assert!(!a.is(&b));
         assert!(!a.is_eqv(&b));
-        assert!(a == b);
+        assert!(a != b);
     }
 
     #[test]
