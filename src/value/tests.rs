@@ -910,7 +910,7 @@ mod equivalence {
     #[test]
     fn never_the_same() {
         let cases = [
-            (Value::Character('a'), Value::Character('b')),
+            (Value::Character('a'), Value::Character('a')),
             (
                 Value::Number(Number::real(4)),
                 Value::Number(Number::real(4)),
@@ -992,5 +992,21 @@ mod equivalence {
         ];
 
         assert!(lst.is(&lst));
+    }
+
+    #[test]
+    fn same_characters_are_equivalent() {
+        let a = Value::Character('a');
+        let b = Value::Character('a');
+
+        assert!(a.is_eqv(&b));
+    }
+
+    #[test]
+    fn diff_characters_are_not_equivalent() {
+        let a = Value::Character('a');
+        let b = Value::Character('b');
+
+        assert!(!a.is_eqv(&b));
     }
 }

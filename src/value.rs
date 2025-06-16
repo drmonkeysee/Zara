@@ -116,8 +116,13 @@ impl Value {
     }
 
     // NOTE: procedure eqv? -> is equivalent object
-    pub(crate) fn eqv(&self, other: &Self) -> bool {
-        todo!();
+    pub(crate) fn is_eqv(&self, other: &Self) -> bool {
+        self.is(other)
+            || match (self, other) {
+                (Self::Character(a), Self::Character(b)) => a == b,
+                (Self::Number(a), Self::Number(b)) => todo!(), //a.eqv(b),
+                _ => false,
+            }
     }
 
     pub(crate) fn display_message(&self) -> ValueMessage {
