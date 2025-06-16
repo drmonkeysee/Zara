@@ -2500,11 +2500,11 @@ mod equivalence {
     }
 
     #[test]
-    fn nans_are_not_equivalent() {
+    fn nans_are_equivalent() {
         let a = Number::real(f64::NAN);
         let b = Number::real(f64::NAN);
 
-        assert!(!a.is_eqv(&b));
+        assert!(a.is_eqv(&b));
     }
 
     #[test]

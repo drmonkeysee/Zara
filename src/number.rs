@@ -237,6 +237,7 @@ impl Real {
 
     pub(crate) fn is_eqv(&self, other: &Self) -> bool {
         match (self, other) {
+            (Self::Float(a), Self::Float(b)) if a.is_nan() && b.is_nan() => true,
             (Self::Float(a), Self::Float(b)) => a == b,
             (Self::Integer(a), Self::Integer(b)) => a == b,
             (Self::Rational(a), Self::Rational(b)) => a == b,
