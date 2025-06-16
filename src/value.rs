@@ -120,7 +120,7 @@ impl Value {
         self.is(other)
             || match (self, other) {
                 (Self::Character(a), Self::Character(b)) => a == b,
-                (Self::Number(a), Self::Number(b)) => todo!(), //a.eqv(b),
+                (Self::Number(a), Self::Number(b)) => a.is_eqv(b),
                 _ => false,
             }
     }

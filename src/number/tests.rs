@@ -2415,3 +2415,127 @@ mod specs {
         assert!(matches!(err, NumericError::ParseFailure));
     }
 }
+
+mod equivalence {
+    use super::*;
+
+    #[test]
+    fn real_not_equivalent_to_complex() {
+        let z = Number::complex(4, 5);
+        let r = Number::real(4);
+
+        assert!(!z.is_eqv(&r));
+    }
+
+    #[test]
+    fn inexact_equivalent_to_inexact() {
+        let a = Number::real(4.2);
+        let b = Number::real(4.2);
+
+        assert!(a.is_eqv(&b));
+    }
+
+    #[test]
+    fn exact_equivalent_to_exact() {
+        let a = Number::real(4);
+        let b = Number::real(4);
+
+        assert!(a.is_eqv(&b));
+    }
+
+    #[test]
+    fn exact_rational_equivalent_to_exact() {
+        let a = Number::real(ok_or_fail!(Real::reduce(4, 5)));
+        let b = Number::real(ok_or_fail!(Real::reduce(8, 10)));
+
+        assert!(a.is_eqv(&b));
+    }
+
+    #[test]
+    fn inexact_not_equivalent_to_exact() {
+        let a = Number::real(4.0);
+        let b = Number::real(4);
+
+        assert!(!a.is_eqv(&b));
+    }
+
+    #[test]
+    fn inexact_zeros_are_equivalent() {
+        let a = Number::real(0.0);
+        let b = Number::real(-0.0);
+
+        assert!(a.is_eqv(&b));
+    }
+
+    #[test]
+    fn infinities_are_equivalent() {
+        let a = Number::real(f64::INFINITY);
+        let b = Number::real(f64::INFINITY);
+
+        assert!(a.is_eqv(&b));
+    }
+
+    #[test]
+    fn nans_are_not_equivalent() {
+        let a = Number::real(f64::NAN);
+        let b = Number::real(f64::NAN);
+
+        assert!(!a.is_eqv(&b));
+    }
+
+    #[test]
+    fn inexact_different_values() {
+        let a = Number::real(4.2);
+        let b = Number::real(5.2);
+
+        assert!(!a.is_eqv(&b));
+    }
+
+    #[test]
+    fn exact_different_values() {
+        let a = Number::real(4);
+        let b = Number::real(5);
+
+        assert!(!a.is_eqv(&b));
+    }
+
+    #[test]
+    fn exact_rational_different_values() {
+        let a = Number::real(ok_or_fail!(Real::reduce(4, 5)));
+        let b = Number::real(ok_or_fail!(Real::reduce(3, 4)));
+
+        assert!(!a.is_eqv(&b));
+    }
+
+    #[test]
+    fn complex_inexact_equivalent() {
+        let a = Number::complex(4.2, 5.3);
+        let b = Number::complex(4.2, 5.3);
+
+        assert!(a.is_eqv(&b));
+    }
+
+    #[test]
+    fn complex_exact_equivalent() {
+        let a = Number::complex(4, 5);
+        let b = Number::complex(4, 5);
+
+        assert!(a.is_eqv(&b));
+    }
+
+    #[test]
+    fn complex_mixed_equivalent() {
+        let a = Number::complex(4, 5.3);
+        let b = Number::complex(4, 5.3);
+
+        assert!(a.is_eqv(&b));
+    }
+
+    #[test]
+    fn complex_mismatched_not_equivalent() {
+        let a = Number::complex(4.0, 5);
+        let b = Number::complex(4, 5.0);
+
+        assert!(!a.is_eqv(&b));
+    }
+}

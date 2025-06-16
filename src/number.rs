@@ -77,6 +77,16 @@ impl Number {
         }
     }
 
+    pub(crate) fn is_eqv(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Self::Complex(Complex(a)), Self::Complex(Complex(b))) => {
+                a.0.is_eqv(&b.0) && a.1.is_eqv(&b.1)
+            }
+            (Self::Real(a), Self::Real(b)) => a.is_eqv(b),
+            _ => false,
+        }
+    }
+
     pub(crate) fn as_token_descriptor(&self) -> TokenDescriptor {
         TokenDescriptor(self)
     }
@@ -155,6 +165,14 @@ pub(crate) enum Real {
     Rational(Rational),
 }
 
+/*
+ * All predicates and equivalence relationships assume any Rational values
+ * are created through Real::reduce and thus normalized, including:
+ * sign attached to numerator, no zero denominator, evenly-dividing denominator
+ * reduces to an Integer, etc. This way we don't have to worry about whether
+ * 4/5 == 8/10 or whether 5/1 should be considered an Integer or a Rational.
+ */
+
 impl Real {
     pub(crate) fn reduce(
         numerator: impl Into<Integer>,
@@ -214,6 +232,15 @@ impl Real {
             Self::Float(f) => *f < 0.0,
             Self::Integer(n) => n.is_negative(),
             Self::Rational(q) => q.is_negative(),
+        }
+    }
+
+    pub(crate) fn is_eqv(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Self::Float(a), Self::Float(b)) => a == b,
+            (Self::Integer(a), Self::Integer(b)) => a == b,
+            (Self::Rational(a), Self::Rational(b)) => a == b,
+            _ => false,
         }
     }
 
@@ -312,11 +339,9 @@ impl<T: Into<Integer>> From<T> for Real {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq)]
 pub(crate) struct Rational(Box<(Integer, Integer)>);
 
-// NOTE: all predicates assume instance was normalized through Real::reduce
-// i.e. sign is attached to numerator, no zero denominator, etc.
 impl Rational {
     fn is_positive(&self) -> bool {
         self.0.0.is_positive()
@@ -341,6 +366,12 @@ impl Rational {
     }
 }
 
+impl PartialEq for Rational {
+    fn eq(&self, other: &Self) -> bool {
+        self.0.0 == other.0.0 && self.0.1 == other.0.1
+    }
+}
+
 impl Display for Rational {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         let r = &self.0;
@@ -349,7 +380,7 @@ impl Display for Rational {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq)]
 pub(crate) struct Integer {
     precision: Precision,
     sign: Sign,
@@ -450,6 +481,12 @@ impl Integer {
             }
             Precision::Multiple(_) => todo!(),
         }
+    }
+}
+
+impl PartialEq for Integer {
+    fn eq(&self, other: &Self) -> bool {
+        todo!()
     }
 }
 
