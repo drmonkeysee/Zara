@@ -134,12 +134,21 @@ impl Value {
     }
 }
 
-// NOTE: procedure equal? -> value equality (partial only due to NAN)
+// NOTE: procedure equal? -> value equality
 impl PartialEq for Value {
     fn eq(&self, other: &Self) -> bool {
-        todo!();
+        self.is_eqv(other)
+            || match (self, other) {
+                (Self::ByteVector(a), Self::ByteVector(b)) => a == b,
+                (Self::Pair(Some(a)), Self::Pair(Some(b))) => a == b,
+                (Self::String(a), Self::String(b)) | (Self::Symbol(a), Self::Symbol(b)) => a == b,
+                (Self::Vector(a), Self::Vector(b)) => a == b,
+                _ => false,
+            }
     }
 }
+
+impl Eq for Value {}
 
 impl Display for Value {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
@@ -161,7 +170,7 @@ impl Display for Value {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub(crate) struct Pair {
     car: Value,
     cdr: Value,

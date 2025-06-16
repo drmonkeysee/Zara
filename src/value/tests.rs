@@ -1009,4 +1009,160 @@ mod equivalence {
 
         assert!(!a.is_eqv(&b));
     }
+
+    #[test]
+    fn equal_bytevectors() {
+        let a = Value::ByteVector([1, 2, 3].into());
+        let b = Value::ByteVector([1, 2, 3].into());
+
+        assert!(!a.is(&b));
+        assert!(!a.is_eqv(&b));
+        assert!(a == b);
+    }
+
+    #[test]
+    fn unequal_bytevectors() {
+        let a = Value::ByteVector([1, 2, 3].into());
+        let b = Value::ByteVector([1, 2, 3, 4].into());
+
+        assert!(!a.is(&b));
+        assert!(!a.is_eqv(&b));
+        assert!(a != b);
+    }
+
+    #[test]
+    fn equal_pairs() {
+        let a = Value::cons(Value::Number(Number::real(4)), Value::Character('a'));
+        let b = Value::cons(Value::Number(Number::real(4)), Value::Character('a'));
+
+        assert!(!a.is(&b));
+        assert!(!a.is_eqv(&b));
+        assert!(a == b);
+    }
+
+    #[test]
+    fn non_equal_pairs_if_elements_not_equivalent() {
+        let a = Value::cons(Value::Number(Number::real(4)), Value::Character('a'));
+        let b = Value::cons(Value::Number(Number::real(4.0)), Value::Character('a'));
+
+        assert!(!a.is(&b));
+        assert!(!a.is_eqv(&b));
+        assert!(a != b);
+    }
+
+    #[test]
+    fn equal_lists() {
+        let a = zlist![
+            Value::Boolean(true),
+            Value::Character('b'),
+            Value::Number(Number::real(3))
+        ];
+        let b = zlist![
+            Value::Boolean(true),
+            Value::Character('b'),
+            Value::Number(Number::real(3))
+        ];
+
+        assert!(!a.is(&b));
+        assert!(!a.is_eqv(&b));
+        assert!(a == b);
+    }
+
+    #[test]
+    fn unequal_lists_if_one_is_longer() {
+        let a = zlist![
+            Value::Boolean(true),
+            Value::Character('b'),
+            Value::Number(Number::real(3))
+        ];
+        let b = zlist![
+            Value::Boolean(true),
+            Value::Character('b'),
+            Value::Number(Number::real(3)),
+            Value::Boolean(false),
+        ];
+
+        assert!(!a.is(&b));
+        assert!(!a.is_eqv(&b));
+        assert!(a != b);
+    }
+
+    #[test]
+    fn equal_strings() {
+        let a = Value::String("foo".into());
+        let b = Value::String("foo".into());
+
+        assert!(!a.is(&b));
+        assert!(!a.is_eqv(&b));
+        assert!(a == b);
+    }
+
+    #[test]
+    fn equal_symbols() {
+        let a = Value::Symbol("foo".into());
+        let b = Value::Symbol("foo".into());
+
+        assert!(!a.is(&b));
+        assert!(!a.is_eqv(&b));
+        assert!(a == b);
+    }
+
+    #[test]
+    fn strings_do_not_equal_symbols() {
+        let a = Value::String("foo".into());
+        let b = Value::Symbol("foo".into());
+
+        assert!(!a.is(&b));
+        assert!(!a.is_eqv(&b));
+        assert!(a != b);
+    }
+
+    #[test]
+    fn equal_vectors() {
+        let a = Value::Vector(
+            [
+                Value::Boolean(true),
+                Value::Character('b'),
+                Value::Number(Number::real(3)),
+            ]
+            .into(),
+        );
+        let b = Value::Vector(
+            [
+                Value::Boolean(true),
+                Value::Character('b'),
+                Value::Number(Number::real(3)),
+            ]
+            .into(),
+        );
+
+        assert!(!a.is(&b));
+        assert!(!a.is_eqv(&b));
+        assert!(a == b);
+    }
+
+    #[test]
+    fn unequal_vectors() {
+        let a = Value::Vector(
+            [
+                Value::Boolean(true),
+                Value::Character('b'),
+                Value::Number(Number::real(3)),
+            ]
+            .into(),
+        );
+        let b = Value::Vector(
+            [
+                Value::Boolean(true),
+                Value::Character('b'),
+                Value::Number(Number::real(3)),
+                Value::Boolean(false),
+            ]
+            .into(),
+        );
+
+        assert!(!a.is(&b));
+        assert!(!a.is_eqv(&b));
+        assert!(a != b);
+    }
 }

@@ -45,6 +45,7 @@ pub(super) fn load(scope: &mut Binding) {
 
     // equivalence
     super::bind_intrinsic(scope, "eq?", 2..2, is_eq);
+    super::bind_intrinsic(scope, "equal?", 2..2, is_equal);
     super::bind_intrinsic(scope, "eqv?", 2..2, is_eqv);
 
     // numbers
@@ -130,6 +131,12 @@ fn is_eq(args: &[Value], _env: &mut Frame) -> EvalResult {
     let a = args.first().unwrap();
     let b = args.get(1).unwrap();
     Ok(Value::Boolean(a.is(b)))
+}
+
+fn is_equal(args: &[Value], _env: &mut Frame) -> EvalResult {
+    let a = args.first().unwrap();
+    let b = args.get(1).unwrap();
+    Ok(Value::Boolean(a == b))
 }
 
 fn is_eqv(args: &[Value], _env: &mut Frame) -> EvalResult {
