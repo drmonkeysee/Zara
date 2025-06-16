@@ -2444,6 +2444,30 @@ mod equivalence {
     }
 
     #[test]
+    fn exact_zeros_equivalent() {
+        let a = Number::real(0);
+        let b = Number::real(0);
+
+        assert!(a.is_eqv(&b));
+    }
+
+    #[test]
+    fn exact_negatives_equivalent() {
+        let a = Number::real(-4);
+        let b = Number::real(-4);
+
+        assert!(a.is_eqv(&b));
+    }
+
+    #[test]
+    fn mixed_sign_not_equivalent() {
+        let a = Number::real(4);
+        let b = Number::real(-4);
+
+        assert!(!a.is_eqv(&b));
+    }
+
+    #[test]
     fn exact_rational_equivalent_to_exact() {
         let a = Number::real(ok_or_fail!(Real::reduce(4, 5)));
         let b = Number::real(ok_or_fail!(Real::reduce(8, 10)));

@@ -339,7 +339,7 @@ impl<T: Into<Integer>> From<T> for Real {
     }
 }
 
-#[derive(Clone, Debug, Eq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub(crate) struct Rational(Box<(Integer, Integer)>);
 
 impl Rational {
@@ -366,12 +366,6 @@ impl Rational {
     }
 }
 
-impl PartialEq for Rational {
-    fn eq(&self, other: &Self) -> bool {
-        self.0.0 == other.0.0 && self.0.1 == other.0.1
-    }
-}
-
 impl Display for Rational {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         let r = &self.0;
@@ -380,7 +374,7 @@ impl Display for Rational {
     }
 }
 
-#[derive(Clone, Debug, Eq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub(crate) struct Integer {
     precision: Precision,
     sign: Sign,
@@ -481,12 +475,6 @@ impl Integer {
             }
             Precision::Multiple(_) => todo!(),
         }
-    }
-}
-
-impl PartialEq for Integer {
-    fn eq(&self, other: &Self) -> bool {
-        todo!()
     }
 }
 
