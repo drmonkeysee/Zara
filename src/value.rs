@@ -7,16 +7,6 @@ macro_rules! zlist {
     };
 }
 
-macro_rules! same_obj {
-    ($kind:path, $a:expr, $other:expr $(,)?) => {
-        if let $kind(b) = $other {
-            Rc::ptr_eq($a, b)
-        } else {
-            false
-        }
-    };
-}
-
 mod condition;
 #[cfg(test)]
 mod tests;
@@ -109,26 +99,19 @@ impl Value {
 
     // NOTE: procedure eq? -> is same object
     pub(crate) fn is(&self, other: &Self) -> bool {
-        match self {
-            Self::Ast(a) => same_obj!(Self::Ast, a, other),
-            Self::Boolean(a) => matches!(other, Self::Boolean(b) if a == b),
-            Self::ByteVector(a) => same_obj!(Self::ByteVector, a, other),
-            Self::Character(_) => false,
-            Self::Number(_) => false,
-            Self::Pair(None) => matches!(other, Self::Pair(None)),
-            Self::Pair(Some(a)) => {
-                if let Self::Pair(Some(b)) = other {
-                    Rc::ptr_eq(a, b)
-                } else {
-                    false
-                }
+        match (self, other) {
+            (Self::Ast(a), Self::Ast(b)) => Rc::ptr_eq(a, b),
+            (Self::Boolean(a), Self::Boolean(b)) => a == b,
+            (Self::ByteVector(a), Self::ByteVector(b)) => Rc::ptr_eq(a, b),
+            (Self::Pair(None), Self::Pair(None)) | (Self::Unspecified, Self::Unspecified) => true,
+            (Self::Pair(Some(a)), Self::Pair(Some(b))) => Rc::ptr_eq(a, b),
+            (Self::Procedure(a), Self::Procedure(b)) => Rc::ptr_eq(a, b),
+            (Self::String(a), Self::String(b)) | (Self::Symbol(a), Self::Symbol(b)) => {
+                Rc::ptr_eq(a, b)
             }
-            Self::Procedure(a) => same_obj!(Self::Procedure, a, other),
-            Self::String(a) => same_obj!(Self::String, a, other),
-            Self::Symbol(a) => same_obj!(Self::Symbol, a, other),
-            Self::TokenList(a) => same_obj!(Self::TokenList, a, other),
-            Self::Unspecified => matches!(other, Self::Unspecified),
-            Self::Vector(a) => same_obj!(Self::Vector, a, other),
+            (Self::TokenList(a), Self::TokenList(b)) => Rc::ptr_eq(a, b),
+            (Self::Vector(a), Self::Vector(b)) => Rc::ptr_eq(a, b),
+            _ => false,
         }
     }
 
