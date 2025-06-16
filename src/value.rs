@@ -117,7 +117,7 @@ impl Value {
 
     // NOTE: procedure eqv? -> is equivalent object
     pub(crate) fn eqv(&self, other: &Self) -> bool {
-        self.is(other) || todo!();
+        todo!();
     }
 
     pub(crate) fn display_message(&self) -> ValueMessage {
@@ -132,7 +132,7 @@ impl Value {
 // NOTE: procedure equal? -> value equality (partial only due to NAN)
 impl PartialEq for Value {
     fn eq(&self, other: &Self) -> bool {
-        self.eqv(other) || todo!();
+        todo!();
     }
 }
 

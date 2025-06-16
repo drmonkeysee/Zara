@@ -827,16 +827,13 @@ impl Precision {
     }
 
     fn reduce(&mut self, other: &mut Self) {
-        match self {
-            Self::Single(a) => match other {
-                Self::Single(b) => {
-                    let gcd = gcd_euclidean(*a, *b);
-                    *self = Self::Single(*a / gcd);
-                    *other = Self::Single(*b / gcd);
-                }
-                Self::Multiple(_) => todo!(),
-            },
-            Self::Multiple(_) => todo!(),
+        match (&self, &other) {
+            (Self::Single(a), Self::Single(b)) => {
+                let gcd = gcd_euclidean(*a, *b);
+                *self = Self::Single(*a / gcd);
+                *other = Self::Single(*b / gcd);
+            }
+            _ => todo!(),
         }
     }
 }
