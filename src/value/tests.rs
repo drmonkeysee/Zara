@@ -1165,4 +1165,29 @@ mod equivalence {
         assert!(!a.is_eqv(&b));
         assert!(a != b);
     }
+
+    #[test]
+    fn unequal_vectors_with_unequivalent_items() {
+        let a = Value::Vector(
+            [
+                Value::Boolean(true),
+                Value::Character('b'),
+                Value::Number(Number::real(3)),
+            ]
+            .into(),
+        );
+        let b = Value::Vector(
+            [
+                Value::Boolean(true),
+                Value::Character('b'),
+                Value::Number(Number::real(3.0)),
+                Value::Boolean(false),
+            ]
+            .into(),
+        );
+
+        assert!(!a.is(&b));
+        assert!(!a.is_eqv(&b));
+        assert!(a != b);
+    }
 }
