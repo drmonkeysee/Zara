@@ -43,6 +43,9 @@ pub(super) fn load(scope: &mut Binding) {
     // characters
     super::bind_intrinsic(scope, "char?", 1..1, is_char);
 
+    // equivalence
+    super::bind_intrinsic(scope, "eq?", 2..2, is_eq);
+
     // numbers
     // NOTE: complex and number predicates are identical sets
     super::bind_intrinsic(scope, "complex?", 1..1, is_number);
@@ -117,6 +120,16 @@ predicate!(is_bytevector, Value::ByteVector(_));
 //
 
 predicate!(is_char, Value::Character(_));
+
+//
+// Equivalence
+//
+
+fn is_eq(args: &[Value], _env: &mut Frame) -> EvalResult {
+    let a = args.first().unwrap();
+    let b = args.get(1).unwrap();
+    Ok(Value::Boolean(a.is(b)))
+}
 
 //
 // Numbers

@@ -892,3 +892,105 @@ mod cloning {
         ));
     }
 }
+
+mod equivalence {
+    use super::*;
+
+    #[test]
+    fn always_the_same() {
+        let cases = [
+            (Value::null(), Value::null()),
+            (Value::Unspecified, Value::Unspecified),
+        ];
+        for (a, b) in cases {
+            assert!(a.is(&b));
+        }
+    }
+
+    #[test]
+    fn never_the_same() {
+        let cases = [
+            (Value::Character('a'), Value::Character('b')),
+            (
+                Value::Number(Number::real(4)),
+                Value::Number(Number::real(4)),
+            ),
+        ];
+        for (a, b) in cases {
+            assert!(!a.is(&b));
+        }
+    }
+
+    #[test]
+    fn boolean_identity() {
+        let cases = [
+            (Value::Boolean(true), Value::Boolean(true), true),
+            (Value::Boolean(true), Value::Boolean(false), false),
+            (Value::Boolean(false), Value::Boolean(true), false),
+            (Value::Boolean(false), Value::Boolean(false), true),
+        ];
+        for (a, b, expected) in cases {
+            assert_eq!(a.is(&b), expected);
+        }
+    }
+
+    #[test]
+    fn diff_types_never_the_same() {
+        let cases = [
+            (Value::Symbol("foo".into()), Value::String("foo".into())),
+            (Value::Vector([].into()), Value::ByteVector([].into())),
+        ];
+        for (a, b) in cases {
+            assert!(!a.is(&b));
+        }
+    }
+
+    #[test]
+    fn same_string_ptr_in_string_and_symbol_not_same() {
+        let s = "foo".into();
+        let a = Value::String(Rc::clone(&s));
+        let b = Value::Symbol(Rc::clone(&s));
+
+        assert!(!a.is(&b));
+    }
+
+    #[test]
+    fn string_pointers_or_symbol_pointers_are_the_same() {
+        let s = "foo".into();
+
+        let a = Value::String(Rc::clone(&s));
+        let b = Value::String(Rc::clone(&s));
+
+        assert!(a.is(&b));
+
+        let a = Value::Symbol(Rc::clone(&s));
+        let b = Value::Symbol(Rc::clone(&s));
+
+        assert!(a.is(&b));
+    }
+
+    #[test]
+    fn different_pointers_are_not_the_same() {
+        let s = "foo";
+
+        let a = Value::String(s.into());
+        let b = Value::String(s.into());
+
+        assert!(!a.is(&b));
+
+        let a = Value::Symbol(s.into());
+        let b = Value::Symbol(s.into());
+
+        assert!(!a.is(&b));
+    }
+
+    #[test]
+    fn identity_is_the_same() {
+        let lst = zlist![
+            Value::Number(Number::real(4)),
+            Value::Number(Number::real(5))
+        ];
+
+        assert!(lst.is(&lst));
+    }
+}
