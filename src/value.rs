@@ -170,7 +170,7 @@ impl Display for Value {
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Eq, PartialEq)]
 pub(crate) struct Pair {
     car: Value,
     cdr: Value,

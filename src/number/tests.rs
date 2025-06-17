@@ -1514,28 +1514,28 @@ mod float {
 
     #[test]
     fn max_continuous_integer_into_exact_integer() {
-        let r = Real::Float(9007199254740992.0); // 2^53
+        let r = Real::Float(FMAX_INT);
 
         let o = r.into_exact_integer();
 
         let n = some_or_fail!(o);
         assert_eq!(
             extract_or_fail!(n.precision, Precision::Single),
-            9007199254740992
+            9007199254740991
         );
         assert_eq!(n.sign, Sign::Positive);
     }
 
     #[test]
     fn min_continuous_integer_into_exact_integer() {
-        let r = Real::Float(-9007199254740992.0); // -2^53
+        let r = Real::Float(-FMAX_INT);
 
         let o = r.into_exact_integer();
 
         let n = some_or_fail!(o);
         assert_eq!(
             extract_or_fail!(n.precision, Precision::Single),
-            9007199254740992
+            9007199254740991
         );
         assert_eq!(n.sign, Sign::Negative);
     }

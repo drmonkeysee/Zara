@@ -11,6 +11,10 @@ use std::{
     result::Result,
 };
 
+// NOTE: 2^53 - 1; maximum safe integer in f64 format
+// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/MAX_SAFE_INTEGER
+const FMAX_INT: f64 = 9_007_199_254_740_991.0;
+
 pub(crate) type RealResult = Result<Real, NumericError>;
 pub(crate) type IntResult = Result<Integer, NumericError>;
 
@@ -238,6 +242,10 @@ impl Real {
     pub(crate) fn is_eqv(&self, other: &Self) -> bool {
         match (self, other) {
             (Self::Float(a), Self::Float(b)) if a.is_nan() && b.is_nan() => true,
+            #[allow(
+                clippy::float_cmp,
+                reason = "underlying implementation does not hide epsilon inequality"
+            )]
             (Self::Float(a), Self::Float(b)) => a == b,
             (Self::Integer(a), Self::Integer(b)) => a == b,
             (Self::Rational(a), Self::Rational(b)) => a == b,
@@ -266,8 +274,17 @@ impl Real {
 
     pub(crate) fn into_exact_integer(self) -> Option<Integer> {
         match self {
-            // TODO: this may not work for int-floats > 2^53 and definitely not for >= 2^64
-            Self::Float(f) if f.fract() == 0.0 => Some((f as i64).into()),
+            Self::Float(f) if f.fract() == 0.0 => {
+                if (-FMAX_INT..=FMAX_INT).contains(&f) {
+                    #[allow(
+                        clippy::cast_possible_truncation,
+                        reason = "guarded against truncation"
+                    )]
+                    Some((f as i64).into())
+                } else {
+                    todo!("convert f64 to multi-precision integer somehow")
+                }
+            }
             Self::Integer(n) => Some(n),
             _ => None,
         }

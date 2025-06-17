@@ -15,7 +15,7 @@ use crate::{
  * so this should always be a safe assumption.
  */
 
-const FIRST_ARG_LABEL: &'static str = "0";
+const FIRST_ARG_LABEL: &str = "0";
 
 pub(crate) fn load(scope: &mut Binding) {
     base::load(scope);

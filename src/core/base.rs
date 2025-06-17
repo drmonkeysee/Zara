@@ -29,7 +29,7 @@ use crate::{
     value::{Condition, TypeName, Value},
 };
 
-const REAL_ARG_TNAME: &'static str = "real";
+const REAL_ARG_TNAME: &str = "real";
 
 pub(super) fn load(scope: &mut Binding) {
     // booleans
@@ -127,18 +127,21 @@ predicate!(is_char, Value::Character(_));
 // Equivalence
 //
 
+#[allow(clippy::unnecessary_wraps, reason = "infallible intrinsic")]
 fn is_eq(args: &[Value], _env: &mut Frame) -> EvalResult {
     let a = args.first().unwrap();
     let b = args.get(1).unwrap();
     Ok(Value::Boolean(a.is(b)))
 }
 
+#[allow(clippy::unnecessary_wraps, reason = "infallible intrinsic")]
 fn is_equal(args: &[Value], _env: &mut Frame) -> EvalResult {
     let a = args.first().unwrap();
     let b = args.get(1).unwrap();
     Ok(Value::Boolean(a == b))
 }
 
+#[allow(clippy::unnecessary_wraps, reason = "infallible intrinsic")]
 fn is_eqv(args: &[Value], _env: &mut Frame) -> EvalResult {
     let a = args.first().unwrap();
     let b = args.get(1).unwrap();
@@ -237,6 +240,7 @@ fn int_predicate(arg: &Value, pred: impl FnOnce(&Integer) -> bool) -> EvalResult
 predicate!(is_null, Value::Pair(None));
 predicate!(is_pair, Value::Pair(Some(_)));
 
+#[allow(clippy::unnecessary_wraps, reason = "infallible intrinsic")]
 fn is_list(args: &[Value], _env: &mut Frame) -> EvalResult {
     let arg = args.first().unwrap();
     Ok(Value::Boolean(match arg {

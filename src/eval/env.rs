@@ -71,7 +71,8 @@ impl System {
 pub(crate) struct Namespace<'a>(pub(crate) Frame<'a>);
 
 impl Namespace<'_> {
-    pub(crate) fn name_defined(&self, name: &str) -> bool {
+    #[allow(dead_code)]
+    pub(crate) fn name_defined(&self, _name: &str) -> bool {
         todo!("env name defined")
     }
 
