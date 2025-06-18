@@ -218,6 +218,7 @@ impl TypeName<'_> {
     pub(crate) const BOOL: &'static str = "boolean";
     pub(crate) const NUMBER: &'static str = "number";
     pub(crate) const STRING: &'static str = "string";
+    pub(crate) const SYMBOL: &'static str = "symbol";
 }
 
 impl Display for TypeName<'_> {
@@ -232,7 +233,7 @@ impl Display for TypeName<'_> {
             Value::Pair(Some(p)) => f.write_str(if p.is_list() { "list" } else { "pair" }),
             Value::Procedure(_) => f.write_str("procedure"),
             Value::String(_) => f.write_str(Self::STRING),
-            Value::Symbol(_) => f.write_str("symbol"),
+            Value::Symbol(_) => f.write_str(Self::SYMBOL),
             Value::TokenList(_) => f.write_str("token list"),
             Value::Unspecified => f.write_str("unspecified"),
             Value::Vector(_) => f.write_str("vector"),

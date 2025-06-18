@@ -21,6 +21,29 @@ macro_rules! try_predicate {
     };
 }
 
+macro_rules! seq_equal {
+    ($name:ident, $kind:path, $valname:expr, $eq:expr $(,)?) => {
+        fn $name(args: &[Value], _env: &mut Frame) -> EvalResult {
+            let mut it = args.iter().enumerate();
+            let a = match it.next() {
+                None => return Ok(Value::Boolean(true)),
+                Some((_, $kind(a))) => a,
+                Some((idx, v)) => {
+                    return Err(Condition::arg_error(&idx.to_string(), $valname, v).into());
+                }
+            };
+            let result: Result<_, Exception> = it.try_fold(true, |acc, (idx, val)| {
+                if let $kind(b) = val {
+                    Ok(acc && $eq(a, b))
+                } else {
+                    Err(Condition::arg_error(&idx.to_string(), $valname, val).into())
+                }
+            });
+            Ok(Value::Boolean(result?))
+        }
+    };
+}
+
 use super::FIRST_ARG_LABEL;
 use crate::{
     Exception,
@@ -28,13 +51,14 @@ use crate::{
     number::{Integer, Number, NumericTypeName, Real},
     value::{Condition, TypeName, Value},
 };
+use std::rc::Rc;
 
 const REAL_ARG_TNAME: &str = "real";
 
 pub(super) fn load(scope: &mut Binding) {
     // booleans
     super::bind_intrinsic(scope, "boolean?", 1..1, is_boolean);
-    super::bind_intrinsic(scope, "boolean=?", 0..MAX_ARITY, all_boolean_equal);
+    super::bind_intrinsic(scope, "boolean=?", 0..MAX_ARITY, booleans_equal);
     super::bind_intrinsic(scope, "not", 1..1, not);
 
     // bytevectors
@@ -80,6 +104,7 @@ pub(super) fn load(scope: &mut Binding) {
 
     // symbols
     super::bind_intrinsic(scope, "symbol?", 1..1, is_symbol);
+    super::bind_intrinsic(scope, "symbol=?", 0..MAX_ARITY, symbols_equal);
 
     // vectors
     super::bind_intrinsic(scope, "vector?", 1..1, is_vector);
@@ -91,25 +116,7 @@ pub(super) fn load(scope: &mut Binding) {
 
 predicate!(is_boolean, Value::Boolean(_));
 predicate!(not, Value::Boolean(false));
-
-fn all_boolean_equal(args: &[Value], _env: &mut Frame) -> EvalResult {
-    let mut it = args.iter().enumerate();
-    let first = match it.next() {
-        None => return Ok(Value::Boolean(true)),
-        Some((_, Value::Boolean(b))) => b,
-        Some((idx, v)) => {
-            return Err(Condition::arg_error(&idx.to_string(), TypeName::BOOL, v).into());
-        }
-    };
-    let result: Result<_, Exception> = it.try_fold(true, |acc, (idx, val)| {
-        if let Value::Boolean(b) = val {
-            Ok(acc && b == first)
-        } else {
-            Err(Condition::arg_error(&idx.to_string(), TypeName::BOOL, val).into())
-        }
-    });
-    Ok(Value::Boolean(result?))
-}
+seq_equal!(booleans_equal, Value::Boolean, TypeName::BOOL, bool::eq);
 
 //
 // Bytevectors
@@ -267,6 +274,7 @@ predicate!(is_string, Value::String(_));
 //
 
 predicate!(is_symbol, Value::Symbol(_));
+seq_equal!(symbols_equal, Value::Symbol, TypeName::SYMBOL, Rc::ptr_eq);
 
 //
 // Vectors
@@ -284,7 +292,7 @@ mod tests {
         let args = [];
         let mut env = TestEnv::default();
 
-        let r = all_boolean_equal(&args, &mut env.new_frame());
+        let r = booleans_equal(&args, &mut env.new_frame());
 
         let v = ok_or_fail!(r);
         assert!(matches!(v, Value::Boolean(true)));
@@ -296,7 +304,7 @@ mod tests {
         for case in cases {
             let mut env = TestEnv::default();
 
-            let r = all_boolean_equal(&case, &mut env.new_frame());
+            let r = booleans_equal(&case, &mut env.new_frame());
 
             let v = ok_or_fail!(r);
             assert!(matches!(v, Value::Boolean(true)));
@@ -312,7 +320,7 @@ mod tests {
         ];
         let mut env = TestEnv::default();
 
-        let r = all_boolean_equal(&args, &mut env.new_frame());
+        let r = booleans_equal(&args, &mut env.new_frame());
 
         let v = ok_or_fail!(r);
         assert!(matches!(v, Value::Boolean(true)));
@@ -327,7 +335,7 @@ mod tests {
         ];
         let mut env = TestEnv::default();
 
-        let r = all_boolean_equal(&args, &mut env.new_frame());
+        let r = booleans_equal(&args, &mut env.new_frame());
 
         let v = ok_or_fail!(r);
         assert!(matches!(v, Value::Boolean(true)));
@@ -342,7 +350,7 @@ mod tests {
         ];
         let mut env = TestEnv::default();
 
-        let r = all_boolean_equal(&args, &mut env.new_frame());
+        let r = booleans_equal(&args, &mut env.new_frame());
 
         let v = ok_or_fail!(r);
         assert!(matches!(v, Value::Boolean(false)));
@@ -352,12 +360,12 @@ mod tests {
     fn all_boolean_invalid_param() {
         let args = [
             Value::Boolean(false),
-            Value::String("foo".into()),
+            Value::string("foo"),
             Value::Boolean(false),
         ];
         let mut env = TestEnv::default();
 
-        let r = all_boolean_equal(&args, &mut env.new_frame());
+        let r = booleans_equal(&args, &mut env.new_frame());
 
         let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
         assert_eq!(
@@ -370,18 +378,97 @@ mod tests {
     fn all_boolean_bails_on_first_invalid_param() {
         let args = [
             Value::Boolean(false),
-            Value::String("foo".into()),
+            Value::string("foo"),
             Value::Boolean(false),
             Value::null(),
         ];
         let mut env = TestEnv::default();
 
-        let r = all_boolean_equal(&args, &mut env.new_frame());
+        let r = booleans_equal(&args, &mut env.new_frame());
 
         let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
         assert_eq!(
             err.to_string(),
             "#<env-error \"invalid type for arg `1` - expected: boolean, got: string\" (\"foo\")>"
+        );
+    }
+
+    #[test]
+    fn all_symbols_empty() {
+        let args = [];
+        let mut env = TestEnv::default();
+
+        let r = symbols_equal(&args, &mut env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert!(matches!(v, Value::Boolean(true)));
+    }
+
+    #[test]
+    fn all_symbols_single() {
+        let args = [Value::symbol("a")];
+        let mut env = TestEnv::default();
+
+        let r = symbols_equal(&args, &mut env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert!(matches!(v, Value::Boolean(true)));
+    }
+
+    #[test]
+    fn all_symbols_equal() {
+        let name = "a".into();
+        let args = [
+            Value::symbol(Rc::clone(&name)),
+            Value::symbol(Rc::clone(&name)),
+            Value::symbol(Rc::clone(&name)),
+        ];
+        let mut env = TestEnv::default();
+
+        let r = symbols_equal(&args, &mut env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert!(matches!(v, Value::Boolean(true)));
+    }
+
+    #[test]
+    fn all_symbols_mixed() {
+        let (a, b) = ("a".into(), "b".into());
+        let args = [
+            Value::symbol(Rc::clone(&a)),
+            Value::symbol(Rc::clone(&b)),
+            Value::symbol(Rc::clone(&a)),
+        ];
+        let mut env = TestEnv::default();
+
+        let r = symbols_equal(&args, &mut env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert!(matches!(v, Value::Boolean(false)));
+    }
+
+    #[test]
+    fn all_symbols_uninterned_not_equal() {
+        let args = [Value::symbol("a"), Value::symbol("a"), Value::symbol("a")];
+        let mut env = TestEnv::default();
+
+        let r = symbols_equal(&args, &mut env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert!(matches!(v, Value::Boolean(false)));
+    }
+
+    #[test]
+    fn all_symbols_invalid_param() {
+        let args = [Value::symbol("a"), Value::string("a"), Value::symbol("a")];
+        let mut env = TestEnv::default();
+
+        let r = symbols_equal(&args, &mut env.new_frame());
+
+        let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
+        assert_eq!(
+            err.to_string(),
+            "#<env-error \"invalid type for arg `1` - expected: symbol, got: string\" (\"a\")>"
         );
     }
 
