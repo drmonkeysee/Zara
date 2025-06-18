@@ -937,8 +937,8 @@ mod equivalence {
     #[test]
     fn diff_types_never_the_same() {
         let cases = [
-            (Value::Symbol("foo".into()), Value::String("foo".into())),
-            (Value::Vector([].into()), Value::ByteVector([].into())),
+            (Value::symbol("foo"), Value::string("foo")),
+            (Value::vector([]), Value::ByteVector([].into())),
         ];
         for (a, b) in cases {
             assert!(!a.is(&b));
@@ -948,8 +948,8 @@ mod equivalence {
     #[test]
     fn same_string_ptr_in_string_and_symbol_not_same() {
         let s = "foo".into();
-        let a = Value::String(Rc::clone(&s));
-        let b = Value::Symbol(Rc::clone(&s));
+        let a = Value::string(Rc::clone(&s));
+        let b = Value::symbol(Rc::clone(&s));
 
         assert!(!a.is(&b));
     }
@@ -958,13 +958,13 @@ mod equivalence {
     fn string_pointers_or_symbol_pointers_are_the_same() {
         let s = "foo".into();
 
-        let a = Value::String(Rc::clone(&s));
-        let b = Value::String(Rc::clone(&s));
+        let a = Value::string(Rc::clone(&s));
+        let b = Value::string(Rc::clone(&s));
 
         assert!(a.is(&b));
 
-        let a = Value::Symbol(Rc::clone(&s));
-        let b = Value::Symbol(Rc::clone(&s));
+        let a = Value::symbol(Rc::clone(&s));
+        let b = Value::symbol(Rc::clone(&s));
 
         assert!(a.is(&b));
     }
@@ -973,13 +973,13 @@ mod equivalence {
     fn different_pointers_are_not_the_same() {
         let s = "foo";
 
-        let a = Value::String(s.into());
-        let b = Value::String(s.into());
+        let a = Value::string(s);
+        let b = Value::string(s);
 
         assert!(!a.is(&b));
 
-        let a = Value::Symbol(s.into());
-        let b = Value::Symbol(s.into());
+        let a = Value::symbol(s);
+        let b = Value::symbol(s);
 
         assert!(!a.is(&b));
     }
@@ -1089,8 +1089,8 @@ mod equivalence {
 
     #[test]
     fn equal_strings() {
-        let a = Value::String("foo".into());
-        let b = Value::String("foo".into());
+        let a = Value::string("foo");
+        let b = Value::string("foo");
 
         assert!(!a.is(&b));
         assert!(!a.is_eqv(&b));
@@ -1101,8 +1101,8 @@ mod equivalence {
     // the way to equality check.
     #[test]
     fn symbols_are_not_equal() {
-        let a = Value::Symbol("foo".into());
-        let b = Value::Symbol("foo".into());
+        let a = Value::symbol("foo");
+        let b = Value::symbol("foo");
 
         assert!(!a.is(&b));
         assert!(!a.is_eqv(&b));
@@ -1111,8 +1111,8 @@ mod equivalence {
 
     #[test]
     fn strings_do_not_equal_symbols() {
-        let a = Value::String("foo".into());
-        let b = Value::Symbol("foo".into());
+        let a = Value::string("foo");
+        let b = Value::symbol("foo");
 
         assert!(!a.is(&b));
         assert!(!a.is_eqv(&b));
@@ -1121,22 +1121,16 @@ mod equivalence {
 
     #[test]
     fn equal_vectors() {
-        let a = Value::Vector(
-            [
-                Value::Boolean(true),
-                Value::Character('b'),
-                Value::Number(Number::real(3)),
-            ]
-            .into(),
-        );
-        let b = Value::Vector(
-            [
-                Value::Boolean(true),
-                Value::Character('b'),
-                Value::Number(Number::real(3)),
-            ]
-            .into(),
-        );
+        let a = Value::vector([
+            Value::Boolean(true),
+            Value::Character('b'),
+            Value::Number(Number::real(3)),
+        ]);
+        let b = Value::vector([
+            Value::Boolean(true),
+            Value::Character('b'),
+            Value::Number(Number::real(3)),
+        ]);
 
         assert!(!a.is(&b));
         assert!(!a.is_eqv(&b));
@@ -1145,23 +1139,17 @@ mod equivalence {
 
     #[test]
     fn unequal_vectors() {
-        let a = Value::Vector(
-            [
-                Value::Boolean(true),
-                Value::Character('b'),
-                Value::Number(Number::real(3)),
-            ]
-            .into(),
-        );
-        let b = Value::Vector(
-            [
-                Value::Boolean(true),
-                Value::Character('b'),
-                Value::Number(Number::real(3)),
-                Value::Boolean(false),
-            ]
-            .into(),
-        );
+        let a = Value::vector([
+            Value::Boolean(true),
+            Value::Character('b'),
+            Value::Number(Number::real(3)),
+        ]);
+        let b = Value::vector([
+            Value::Boolean(true),
+            Value::Character('b'),
+            Value::Number(Number::real(3)),
+            Value::Boolean(false),
+        ]);
 
         assert!(!a.is(&b));
         assert!(!a.is_eqv(&b));
@@ -1170,23 +1158,17 @@ mod equivalence {
 
     #[test]
     fn unequal_vectors_with_unequivalent_items() {
-        let a = Value::Vector(
-            [
-                Value::Boolean(true),
-                Value::Character('b'),
-                Value::Number(Number::real(3)),
-            ]
-            .into(),
-        );
-        let b = Value::Vector(
-            [
-                Value::Boolean(true),
-                Value::Character('b'),
-                Value::Number(Number::real(3.0)),
-                Value::Boolean(false),
-            ]
-            .into(),
-        );
+        let a = Value::vector([
+            Value::Boolean(true),
+            Value::Character('b'),
+            Value::Number(Number::real(3)),
+        ]);
+        let b = Value::vector([
+            Value::Boolean(true),
+            Value::Character('b'),
+            Value::Number(Number::real(3.0)),
+            Value::Boolean(false),
+        ]);
 
         assert!(!a.is(&b));
         assert!(!a.is_eqv(&b));
