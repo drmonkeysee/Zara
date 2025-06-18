@@ -216,6 +216,7 @@ pub(crate) struct TypeName<'a>(&'a Value);
 
 impl TypeName<'_> {
     pub(crate) const BOOL: &'static str = "boolean";
+    pub(crate) const CHAR: &'static str = "character";
     pub(crate) const NUMBER: &'static str = "number";
     pub(crate) const STRING: &'static str = "string";
     pub(crate) const SYMBOL: &'static str = "symbol";
@@ -227,7 +228,7 @@ impl Display for TypeName<'_> {
             Value::Ast(_) => f.write_str("abstract syntax tree"),
             Value::Boolean(_) => f.write_str(Self::BOOL),
             Value::ByteVector(_) => f.write_str("bytevector"),
-            Value::Character(_) => f.write_str("character"),
+            Value::Character(_) => f.write_str(Self::CHAR),
             Value::Number(_) => f.write_str(Self::NUMBER),
             Value::Pair(None) => f.write_str("list"),
             Value::Pair(Some(p)) => f.write_str(if p.is_list() { "list" } else { "pair" }),

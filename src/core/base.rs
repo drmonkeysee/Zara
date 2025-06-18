@@ -66,6 +66,7 @@ pub(super) fn load(scope: &mut Binding) {
 
     // characters
     super::bind_intrinsic(scope, "char?", 1..1, is_char);
+    super::bind_intrinsic(scope, "char=?", 0..MAX_ARITY, chars_equal);
 
     // equivalence
     super::bind_intrinsic(scope, "eq?", 2..2, is_eq);
@@ -101,6 +102,7 @@ pub(super) fn load(scope: &mut Binding) {
 
     // strings
     super::bind_intrinsic(scope, "string?", 1..1, is_string);
+    super::bind_intrinsic(scope, "string=?", 0..MAX_ARITY, strings_equal);
 
     // symbols
     super::bind_intrinsic(scope, "symbol?", 1..1, is_symbol);
@@ -129,6 +131,7 @@ predicate!(is_bytevector, Value::ByteVector(_));
 //
 
 predicate!(is_char, Value::Character(_));
+seq_equal!(chars_equal, Value::Character, TypeName::CHAR, char::eq);
 
 //
 // Equivalence
@@ -268,6 +271,7 @@ predicate!(is_procedure, Value::Procedure(_));
 //
 
 predicate!(is_string, Value::String(_));
+seq_equal!(strings_equal, Value::String, TypeName::STRING, Rc::eq);
 
 //
 // Symbols
@@ -469,6 +473,146 @@ mod tests {
         assert_eq!(
             err.to_string(),
             "#<env-error \"invalid type for arg `1` - expected: symbol, got: string\" (\"a\")>"
+        );
+    }
+
+    #[test]
+    fn all_chars_empty() {
+        let args = [];
+        let mut env = TestEnv::default();
+
+        let r = chars_equal(&args, &mut env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert!(matches!(v, Value::Boolean(true)));
+    }
+
+    #[test]
+    fn all_chars_single() {
+        let args = [Value::Character('a')];
+        let mut env = TestEnv::default();
+
+        let r = chars_equal(&args, &mut env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert!(matches!(v, Value::Boolean(true)));
+    }
+
+    #[test]
+    fn all_chars_equal() {
+        let args = [
+            Value::Character('a'),
+            Value::Character('a'),
+            Value::Character('a'),
+        ];
+        let mut env = TestEnv::default();
+
+        let r = chars_equal(&args, &mut env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert!(matches!(v, Value::Boolean(true)));
+    }
+
+    #[test]
+    fn all_chars_mixed() {
+        let args = [
+            Value::Character('a'),
+            Value::Character('b'),
+            Value::Character('a'),
+        ];
+        let mut env = TestEnv::default();
+
+        let r = chars_equal(&args, &mut env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert!(matches!(v, Value::Boolean(false)));
+    }
+
+    #[test]
+    fn all_chars_invalid_param() {
+        let args = [
+            Value::Character('a'),
+            Value::string("a"),
+            Value::Character('a'),
+        ];
+        let mut env = TestEnv::default();
+
+        let r = chars_equal(&args, &mut env.new_frame());
+
+        let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
+        assert_eq!(
+            err.to_string(),
+            "#<env-error \"invalid type for arg `1` - expected: character, got: string\" (\"a\")>"
+        );
+    }
+
+    #[test]
+    fn all_strings_empty() {
+        let args = [];
+        let mut env = TestEnv::default();
+
+        let r = strings_equal(&args, &mut env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert!(matches!(v, Value::Boolean(true)));
+    }
+
+    #[test]
+    fn all_strings_single() {
+        let args = [Value::string("foo")];
+        let mut env = TestEnv::default();
+
+        let r = strings_equal(&args, &mut env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert!(matches!(v, Value::Boolean(true)));
+    }
+
+    #[test]
+    fn all_strings_equal() {
+        let args = [
+            Value::string("foo"),
+            Value::string("foo"),
+            Value::string("foo"),
+        ];
+        let mut env = TestEnv::default();
+
+        let r = strings_equal(&args, &mut env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert!(matches!(v, Value::Boolean(true)));
+    }
+
+    #[test]
+    fn all_strings_mixed() {
+        let args = [
+            Value::string("foo"),
+            Value::string("bar"),
+            Value::string("foo"),
+        ];
+        let mut env = TestEnv::default();
+
+        let r = strings_equal(&args, &mut env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert!(matches!(v, Value::Boolean(false)));
+    }
+
+    #[test]
+    fn all_strings_invalid_param() {
+        let args = [
+            Value::string("foo"),
+            Value::symbol("foo"),
+            Value::string("foo"),
+        ];
+        let mut env = TestEnv::default();
+
+        let r = strings_equal(&args, &mut env.new_frame());
+
+        let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
+        assert_eq!(
+            err.to_string(),
+            "#<env-error \"invalid type for arg `1` - expected: string, got: symbol\" (foo)>"
         );
     }
 
