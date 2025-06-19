@@ -45,6 +45,19 @@ macro_rules! seq_predicate {
     };
 }
 
+macro_rules! vec_length {
+    ($name:ident, $kind:path, $valname:expr $(,)?) => {
+        fn $name(args: &[Value], _env: &mut Frame) -> EvalResult {
+            let arg = args.first().unwrap();
+            if let $kind(v) = arg {
+                Ok(Value::Number(Number::from_usize(v.len())))
+            } else {
+                Err(Condition::arg_error(FIRST_ARG_LABEL, $valname, arg).into())
+            }
+        }
+    };
+}
+
 use super::FIRST_ARG_LABEL;
 use crate::{
     Exception,
@@ -140,15 +153,7 @@ seq_predicate!(booleans_equal, Value::Boolean, TypeName::BOOL, bool::eq);
 //
 
 predicate!(is_bytevector, Value::ByteVector(_));
-
-fn bytevector_length(args: &[Value], _env: &mut Frame) -> EvalResult {
-    let arg = args.first().unwrap();
-    if let Value::ByteVector(bv) = arg {
-        Ok(Value::Number(Number::from_usize(bv.len())))
-    } else {
-        Err(Condition::arg_error(FIRST_ARG_LABEL, TypeName::BYTEVECTOR, arg).into())
-    }
-}
+vec_length!(bytevector_length, Value::ByteVector, TypeName::BYTEVECTOR);
 
 //
 // Characters
@@ -342,15 +347,7 @@ seq_predicate!(strings_lt, Value::String, TypeName::STRING, Rc::lt);
 seq_predicate!(strings_lte, Value::String, TypeName::STRING, Rc::le);
 seq_predicate!(strings_gt, Value::String, TypeName::STRING, Rc::gt);
 seq_predicate!(strings_gte, Value::String, TypeName::STRING, Rc::ge);
-
-fn string_length(args: &[Value], _env: &mut Frame) -> EvalResult {
-    let arg = args.first().unwrap();
-    if let Value::String(s) = arg {
-        Ok(Value::Number(Number::from_usize(s.len())))
-    } else {
-        Err(Condition::arg_error(FIRST_ARG_LABEL, TypeName::STRING, arg).into())
-    }
-}
+vec_length!(string_length, Value::String, TypeName::STRING);
 
 //
 // Symbols
@@ -364,15 +361,7 @@ seq_predicate!(symbols_eq, Value::Symbol, TypeName::SYMBOL, Rc::ptr_eq);
 //
 
 predicate!(is_vector, Value::Vector(_));
-
-fn vector_length(args: &[Value], _env: &mut Frame) -> EvalResult {
-    let arg = args.first().unwrap();
-    if let Value::Vector(v) = arg {
-        Ok(Value::Number(Number::from_usize(v.len())))
-    } else {
-        Err(Condition::arg_error(FIRST_ARG_LABEL, TypeName::VECTOR, arg).into())
-    }
-}
+vec_length!(vector_length, Value::Vector, TypeName::VECTOR);
 
 #[cfg(test)]
 mod tests {
