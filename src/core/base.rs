@@ -110,6 +110,11 @@ pub(super) fn load(scope: &mut Binding) {
     super::bind_intrinsic(scope, "char<=?", 0..MAX_ARITY, chars_lte);
     super::bind_intrinsic(scope, "char>?", 0..MAX_ARITY, chars_gt);
     super::bind_intrinsic(scope, "char>=?", 0..MAX_ARITY, chars_gte);
+    super::bind_intrinsic(scope, "char-alphabetic?", 1..1, is_alphabetic);
+    super::bind_intrinsic(scope, "char-lower-case?", 1..1, is_lowercase);
+    super::bind_intrinsic(scope, "char-numeric?", 1..1, is_numeric);
+    super::bind_intrinsic(scope, "char-upper-case?", 1..1, is_uppercase);
+    super::bind_intrinsic(scope, "char-whitespace?", 1..1, is_whitespace);
 
     // equivalence
     super::bind_intrinsic(scope, "eq?", 2..2, is_eq);
@@ -217,6 +222,36 @@ seq_predicate!(chars_lt, Value::Character, TypeName::CHAR, char::lt);
 seq_predicate!(chars_lte, Value::Character, TypeName::CHAR, char::le);
 seq_predicate!(chars_gt, Value::Character, TypeName::CHAR, char::gt);
 seq_predicate!(chars_gte, Value::Character, TypeName::CHAR, char::ge);
+try_predicate!(
+    is_alphabetic,
+    Value::Character,
+    TypeName::CHAR,
+    |c: &char| c.is_alphabetic()
+);
+try_predicate!(
+    is_lowercase,
+    Value::Character,
+    TypeName::CHAR,
+    |c: &char| c.is_lowercase()
+);
+try_predicate!(
+    is_numeric,
+    Value::Character,
+    TypeName::CHAR,
+    |_c: &char| todo!("is_numeric is too broad, need only Nd")
+);
+try_predicate!(
+    is_uppercase,
+    Value::Character,
+    TypeName::CHAR,
+    |c: &char| c.is_uppercase()
+);
+try_predicate!(
+    is_whitespace,
+    Value::Character,
+    TypeName::CHAR,
+    |c: &char| c.is_whitespace()
+);
 
 //
 // Equivalence
