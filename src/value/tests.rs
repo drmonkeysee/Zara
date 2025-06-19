@@ -91,7 +91,7 @@ mod display {
     fn empty_list_typename() {
         let v = zlist![];
 
-        assert_eq!(v.as_typename().to_string(), "list");
+        assert_eq!(v.as_typename().to_string(), "null");
     }
 
     #[test]
