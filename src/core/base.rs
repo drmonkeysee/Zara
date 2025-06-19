@@ -1,6 +1,6 @@
 // (scheme base)
 macro_rules! predicate {
-    ($name:ident, $pred:pat $(if $guard:expr)? $(,)?) => {
+    ($name:ident, $pred:pat $(if $guard:expr)?) => {
         fn $name(args: &[Value], _env: &mut Frame) -> EvalResult {
             let arg = args.first().unwrap();
             Ok(Value::Boolean(matches!(arg, $pred $(if $guard)?)))
@@ -9,7 +9,7 @@ macro_rules! predicate {
 }
 
 macro_rules! try_predicate {
-    ($name:ident, $kind:path, $valname:expr, $pred:expr $(,)?) => {
+    ($name:ident, $kind:path, $valname:expr, $pred:expr) => {
         fn $name(args: &[Value], _env: &mut Frame) -> EvalResult {
             let arg = args.first().unwrap();
             if let $kind(val) = arg {
@@ -22,7 +22,7 @@ macro_rules! try_predicate {
 }
 
 macro_rules! seq_predicate {
-    ($name:ident, $kind:path, $valname:expr, $pred:expr $(,)?) => {
+    ($name:ident, $kind:path, $valname:expr, $pred:expr) => {
         fn $name(args: &[Value], _env: &mut Frame) -> EvalResult {
             let mut it = args.iter().enumerate();
             let first = match it.next() {
@@ -46,7 +46,7 @@ macro_rules! seq_predicate {
 }
 
 macro_rules! vec_length {
-    ($name:ident, $kind:path, $valname:expr $(,)?) => {
+    ($name:ident, $kind:path, $valname:expr) => {
         fn $name(args: &[Value], _env: &mut Frame) -> EvalResult {
             let arg = args.first().unwrap();
             if let $kind(v) = arg {
@@ -59,22 +59,22 @@ macro_rules! vec_length {
 }
 
 macro_rules! cadr_compose {
-    ($val:expr, a $(,)?) => {
+    ($val:expr, a) => {
         pcar($val)
     };
-    ($val:expr, d $(,)?) => {
+    ($val:expr, d) => {
         pcdr($val)
     };
-    ($val:expr, a $(, $rest:ident)+ $(,)?) => {
+    ($val:expr, a $(, $rest:ident)+) => {
         pcar(&cadr_compose!($val, $($rest),+)?)
     };
-    ($val:expr, d $(, $rest:ident)+ $(,)?) => {
+    ($val:expr, d $(, $rest:ident)+) => {
         pcdr(&cadr_compose!($val, $($rest),+)?)
     };
 }
 
 macro_rules! cadr_func {
-    ($name:ident $(, $compose:ident)+ $(,)?) => {
+    ($name:ident $(, $compose:ident)+) => {
         fn $name(args: &[Value], _env: &mut Frame) -> EvalResult {
             let arg = args.first().unwrap();
             cadr_compose!(&arg, $($compose),+)
