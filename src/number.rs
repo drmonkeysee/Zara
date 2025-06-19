@@ -1,3 +1,45 @@
+macro_rules! try_int_conversion {
+    ($type:ty, $convert:ident, $type_err:ident) => {
+        impl TryFrom<Number> for $type {
+            type Error = NumericError;
+
+            fn try_from(value: Number) -> Result<Self, Self::Error> {
+                <Self as TryFrom<&Number>>::try_from(&value)
+            }
+        }
+
+        impl TryFrom<&Number> for $type {
+            type Error = NumericError;
+
+            fn try_from(value: &Number) -> Result<Self, Self::Error> {
+                match value {
+                    Number::Real(Real::Integer(n)) => n.$convert(),
+                    _ => Err(Self::Error::$type_err(value.as_typename().to_string())),
+                }
+            }
+        }
+    };
+}
+
+macro_rules! sign_from {
+    ($type:ty) => {
+        impl From<$type> for Sign {
+            fn from(value: $type) -> Self {
+                #[allow(
+                    clippy::cast_possible_truncation,
+                    reason = "conversion is never called for invalid value"
+                )]
+                match value.signum() as i32 {
+                    -1 => Self::Negative,
+                    0 => Self::Zero,
+                    1 => Self::Positive,
+                    _ => unreachable!("unexpected value from signum()"),
+                }
+            }
+        }
+    };
+}
+
 #[cfg(test)]
 mod tests;
 
@@ -53,7 +95,7 @@ impl Number {
         Self::Real(value.into())
     }
 
-    // NOTE: From<usize> clashes with existing Integer From<T> impls
+    // NOTE: From<usize> would clash with existing Integer From<i64>
     pub(crate) fn from_usize(val: usize) -> Self {
         Self::real(Integer::from_usize(val))
     }
@@ -136,29 +178,6 @@ impl Display for Number {
             Self::Real(r) => r.fmt(f),
         }
     }
-}
-
-macro_rules! try_int_conversion {
-    ($type:ty, $convert:ident, $type_err:ident) => {
-        impl TryFrom<Number> for $type {
-            type Error = NumericError;
-
-            fn try_from(value: Number) -> Result<Self, Self::Error> {
-                <Self as TryFrom<&Number>>::try_from(&value)
-            }
-        }
-
-        impl TryFrom<&Number> for $type {
-            type Error = NumericError;
-
-            fn try_from(value: &Number) -> Result<Self, Self::Error> {
-                match value {
-                    Number::Real(Real::Integer(n)) => n.$convert(),
-                    _ => Err(Self::Error::$type_err(value.as_typename().to_string())),
-                }
-            }
-        }
-    };
 }
 
 try_int_conversion!(u8, try_to_u8, ByteConversionInvalidType);
@@ -555,25 +574,6 @@ impl Display for Sign {
             Ok(())
         }
     }
-}
-
-macro_rules! sign_from {
-    ($type:ty) => {
-        impl From<$type> for Sign {
-            fn from(value: $type) -> Self {
-                #[allow(
-                    clippy::cast_possible_truncation,
-                    reason = "conversion is never called for invalid value"
-                )]
-                match value.signum() as i32 {
-                    -1 => Self::Negative,
-                    0 => Self::Zero,
-                    1 => Self::Positive,
-                    _ => unreachable!("unexpected value from signum()"),
-                }
-            }
-        }
-    };
 }
 
 sign_from!(i64);

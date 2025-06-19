@@ -1,9 +1,3 @@
-use super::*;
-use crate::{
-    number::{Number, NumericError, Real},
-    testutil::extract_or_fail,
-};
-
 macro_rules! extract_number {
     ($exp:expr) => {{
         let tok = $exp;
@@ -21,6 +15,12 @@ macro_rules! extract_number {
         extract_or_fail!(r, $kind)
     }};
 }
+
+use super::*;
+use crate::{
+    number::{Number, NumericError, Real},
+    testutil::extract_or_fail,
+};
 
 mod integer {
     use super::*;

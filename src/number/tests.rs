@@ -1,12 +1,12 @@
-use super::*;
-use crate::testutil::{err_or_fail, extract_or_fail, ok_or_fail, some_or_fail};
-
 macro_rules! rational_parts {
     ($real:expr) => {{
         let rat = extract_or_fail!($real, Real::Rational);
         *rat.0
     }};
 }
+
+use super::*;
+use crate::testutil::{err_or_fail, extract_or_fail, ok_or_fail, some_or_fail};
 
 mod sign {
     use super::*;
