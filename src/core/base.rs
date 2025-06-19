@@ -58,6 +58,30 @@ macro_rules! vec_length {
     };
 }
 
+macro_rules! cadr_compose {
+    ($val:expr, a $(,)?) => {
+        pcar($val)
+    };
+    ($val:expr, d $(,)?) => {
+        pcdr($val)
+    };
+    ($val:expr, a $(, $rest:ident)+ $(,)?) => {
+        pcar(&cadr_compose!($val, $($rest),+)?)
+    };
+    ($val:expr, d $(, $rest:ident)+ $(,)?) => {
+        pcdr(&cadr_compose!($val, $($rest),+)?)
+    };
+}
+
+macro_rules! cadr_func {
+    ($name:ident $(, $compose:ident)+ $(,)?) => {
+        fn $name(args: &[Value], _env: &mut Frame) -> EvalResult {
+            let arg = args.first().unwrap();
+            cadr_compose!(&arg, $($compose),+)
+        }
+    };
+}
+
 use super::FIRST_ARG_LABEL;
 use crate::{
     Exception,
@@ -114,6 +138,34 @@ pub(super) fn load(scope: &mut Binding) {
     // pairs and lists
     super::bind_intrinsic(scope, "car", 1..1, car);
     super::bind_intrinsic(scope, "cdr", 1..1, cdr);
+    super::bind_intrinsic(scope, "caar", 1..1, caar);
+    super::bind_intrinsic(scope, "cadr", 1..1, cadr);
+    super::bind_intrinsic(scope, "cdar", 1..1, cdar);
+    super::bind_intrinsic(scope, "cddr", 1..1, cddr);
+    super::bind_intrinsic(scope, "caaar", 1..1, caaar);
+    super::bind_intrinsic(scope, "caadr", 1..1, caadr);
+    super::bind_intrinsic(scope, "cadar", 1..1, cadar);
+    super::bind_intrinsic(scope, "caddr", 1..1, caddr);
+    super::bind_intrinsic(scope, "cdaar", 1..1, cdaar);
+    super::bind_intrinsic(scope, "cdadr", 1..1, cdadr);
+    super::bind_intrinsic(scope, "cddar", 1..1, cddar);
+    super::bind_intrinsic(scope, "cdddr", 1..1, cdddr);
+    super::bind_intrinsic(scope, "caaaar", 1..1, caaaar);
+    super::bind_intrinsic(scope, "caaadr", 1..1, caaadr);
+    super::bind_intrinsic(scope, "caadar", 1..1, caadar);
+    super::bind_intrinsic(scope, "caaddr", 1..1, caaddr);
+    super::bind_intrinsic(scope, "cadaar", 1..1, cadaar);
+    super::bind_intrinsic(scope, "cadadr", 1..1, cadadr);
+    super::bind_intrinsic(scope, "caddar", 1..1, caddar);
+    super::bind_intrinsic(scope, "cadddr", 1..1, cadddr);
+    super::bind_intrinsic(scope, "cdaaar", 1..1, cdaaar);
+    super::bind_intrinsic(scope, "cdaadr", 1..1, cdaadr);
+    super::bind_intrinsic(scope, "cdadar", 1..1, cdadar);
+    super::bind_intrinsic(scope, "cdaddr", 1..1, cdaddr);
+    super::bind_intrinsic(scope, "cddaar", 1..1, cddaar);
+    super::bind_intrinsic(scope, "cddadr", 1..1, cddadr);
+    super::bind_intrinsic(scope, "cdddar", 1..1, cdddar);
+    super::bind_intrinsic(scope, "cddddr", 1..1, cddddr);
     super::bind_intrinsic(scope, "length", 1..1, list_length);
     super::bind_intrinsic(scope, "list?", 1..1, is_list);
     super::bind_intrinsic(scope, "null?", 1..1, is_null);
@@ -282,24 +334,36 @@ fn int_predicate(arg: &Value, pred: impl FnOnce(&Integer) -> bool) -> EvalResult
 
 predicate!(is_null, Value::Pair(None));
 predicate!(is_pair, Value::Pair(Some(_)));
-
-fn car(args: &[Value], _env: &mut Frame) -> EvalResult {
-    let arg = args.first().unwrap();
-    if let Value::Pair(Some(p)) = arg {
-        Ok(p.car.clone())
-    } else {
-        Err(Condition::arg_error(FIRST_ARG_LABEL, TypeName::PAIR, arg).into())
-    }
-}
-
-fn cdr(args: &[Value], _env: &mut Frame) -> EvalResult {
-    let arg = args.first().unwrap();
-    if let Value::Pair(Some(p)) = arg {
-        Ok(p.cdr.clone())
-    } else {
-        Err(Condition::arg_error(FIRST_ARG_LABEL, TypeName::PAIR, arg).into())
-    }
-}
+cadr_func!(car, a);
+cadr_func!(cdr, d);
+cadr_func!(caar, a, a);
+cadr_func!(cadr, a, d);
+cadr_func!(cdar, d, a);
+cadr_func!(cddr, d, d);
+cadr_func!(caaar, a, a, a);
+cadr_func!(caadr, a, a, d);
+cadr_func!(cadar, a, d, a);
+cadr_func!(caddr, a, d, d);
+cadr_func!(cdaar, d, a, a);
+cadr_func!(cdadr, d, a, d);
+cadr_func!(cddar, d, d, a);
+cadr_func!(cdddr, d, d, d);
+cadr_func!(caaaar, a, a, a, a);
+cadr_func!(caaadr, a, a, a, d);
+cadr_func!(caadar, a, a, d, a);
+cadr_func!(caaddr, a, a, d, d);
+cadr_func!(cadaar, a, d, a, a);
+cadr_func!(cadadr, a, d, a, d);
+cadr_func!(caddar, a, d, d, a);
+cadr_func!(cadddr, a, d, d, d);
+cadr_func!(cdaaar, d, a, a, a);
+cadr_func!(cdaadr, d, a, a, d);
+cadr_func!(cdadar, d, a, d, a);
+cadr_func!(cdaddr, d, a, d, d);
+cadr_func!(cddaar, d, d, a, a);
+cadr_func!(cddadr, d, d, a, d);
+cadr_func!(cdddar, d, d, d, a);
+cadr_func!(cddddr, d, d, d, d);
 
 fn list_length(args: &[Value], _env: &mut Frame) -> EvalResult {
     let arg = args.first().unwrap();
@@ -329,6 +393,22 @@ fn is_list(args: &[Value], _env: &mut Frame) -> EvalResult {
         Value::Pair(Some(p)) => p.is_list(),
         _ => false,
     }))
+}
+
+fn pcar(arg: &Value) -> EvalResult {
+    if let Value::Pair(Some(p)) = arg {
+        Ok(p.car.clone())
+    } else {
+        Err(Condition::arg_error(FIRST_ARG_LABEL, TypeName::PAIR, arg).into())
+    }
+}
+
+fn pcdr(arg: &Value) -> EvalResult {
+    if let Value::Pair(Some(p)) = arg {
+        Ok(p.cdr.clone())
+    } else {
+        Err(Condition::arg_error(FIRST_ARG_LABEL, TypeName::PAIR, arg).into())
+    }
 }
 
 //
