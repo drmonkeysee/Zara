@@ -64,6 +64,7 @@ pub(super) fn load(scope: &mut Binding) {
 
     // bytevectors
     super::bind_intrinsic(scope, "bytevector?", 1..1, is_bytevector);
+    super::bind_intrinsic(scope, "bytevector-length", 1..1, bytevector_length);
 
     // characters
     super::bind_intrinsic(scope, "char?", 1..1, is_char);
@@ -115,6 +116,7 @@ pub(super) fn load(scope: &mut Binding) {
     super::bind_intrinsic(scope, "string<=?", 0..MAX_ARITY, strings_lte);
     super::bind_intrinsic(scope, "string>?", 0..MAX_ARITY, strings_gt);
     super::bind_intrinsic(scope, "string>=?", 0..MAX_ARITY, strings_gte);
+    super::bind_intrinsic(scope, "string-length", 1..1, string_length);
 
     // symbols
     super::bind_intrinsic(scope, "symbol?", 1..1, is_symbol);
@@ -122,6 +124,7 @@ pub(super) fn load(scope: &mut Binding) {
 
     // vectors
     super::bind_intrinsic(scope, "vector?", 1..1, is_vector);
+    super::bind_intrinsic(scope, "vector-length", 1..1, vector_length);
 }
 
 //
@@ -137,6 +140,15 @@ seq_predicate!(booleans_equal, Value::Boolean, TypeName::BOOL, bool::eq);
 //
 
 predicate!(is_bytevector, Value::ByteVector(_));
+
+fn bytevector_length(args: &[Value], _env: &mut Frame) -> EvalResult {
+    let arg = args.first().unwrap();
+    if let Value::ByteVector(bv) = arg {
+        Ok(Value::Number(Number::from_usize(bv.len())))
+    } else {
+        Err(Condition::arg_error(FIRST_ARG_LABEL, TypeName::BYTEVECTOR, arg).into())
+    }
+}
 
 //
 // Characters
@@ -298,7 +310,7 @@ fn list_length(args: &[Value], _env: &mut Frame) -> EvalResult {
                 )
                 .into())
             },
-            |len| Ok(Value::Number(Number::real(Integer::from_usize(len)))),
+            |len| Ok(Value::Number(Number::from_usize(len))),
         ),
         _ => Err(Condition::arg_error(FIRST_ARG_LABEL, TypeName::LIST, arg).into()),
     }
@@ -331,6 +343,15 @@ seq_predicate!(strings_lte, Value::String, TypeName::STRING, Rc::le);
 seq_predicate!(strings_gt, Value::String, TypeName::STRING, Rc::gt);
 seq_predicate!(strings_gte, Value::String, TypeName::STRING, Rc::ge);
 
+fn string_length(args: &[Value], _env: &mut Frame) -> EvalResult {
+    let arg = args.first().unwrap();
+    if let Value::String(s) = arg {
+        Ok(Value::Number(Number::from_usize(s.len())))
+    } else {
+        Err(Condition::arg_error(FIRST_ARG_LABEL, TypeName::STRING, arg).into())
+    }
+}
+
 //
 // Symbols
 //
@@ -343,6 +364,15 @@ seq_predicate!(symbols_eq, Value::Symbol, TypeName::SYMBOL, Rc::ptr_eq);
 //
 
 predicate!(is_vector, Value::Vector(_));
+
+fn vector_length(args: &[Value], _env: &mut Frame) -> EvalResult {
+    let arg = args.first().unwrap();
+    if let Value::Vector(v) = arg {
+        Ok(Value::Number(Number::from_usize(v.len())))
+    } else {
+        Err(Condition::arg_error(FIRST_ARG_LABEL, TypeName::VECTOR, arg).into())
+    }
+}
 
 #[cfg(test)]
 mod tests {

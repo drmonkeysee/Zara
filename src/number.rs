@@ -53,6 +53,11 @@ impl Number {
         Self::Real(value.into())
     }
 
+    // NOTE: From<usize> clashes with existing Integer From<T> impls
+    pub(crate) fn from_usize(val: usize) -> Self {
+        Self::real(Integer::from_usize(val))
+    }
+
     pub(crate) fn is_inexact(&self) -> bool {
         match self {
             Self::Complex(Complex(z)) => z.0.is_inexact() || z.1.is_inexact(),
@@ -399,15 +404,6 @@ pub(crate) struct Integer {
 }
 
 impl Integer {
-    pub(crate) fn from_usize(val: usize) -> Self {
-        let r = <usize as TryInto<u64>>::try_into(val);
-        if let Ok(u) = r {
-            (Sign::Positive, u).into()
-        } else {
-            todo!("handle multi-precision");
-        }
-    }
-
     fn single(magnitude: u64, mut sign: Sign) -> Self {
         if magnitude == 0 {
             sign = Sign::Zero;
@@ -415,6 +411,15 @@ impl Integer {
         Self {
             precision: Precision::Single(magnitude),
             sign,
+        }
+    }
+
+    fn from_usize(val: usize) -> Self {
+        let r = <usize as TryInto<u64>>::try_into(val);
+        if let Ok(u) = r {
+            (Sign::Positive, u).into()
+        } else {
+            todo!("handle multi-precision");
         }
     }
 

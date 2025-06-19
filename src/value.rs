@@ -224,6 +224,7 @@ pub(crate) struct TypeName<'a>(&'a Value);
 
 impl TypeName<'_> {
     pub(crate) const BOOL: &'static str = "boolean";
+    pub(crate) const BYTEVECTOR: &'static str = "bytevector";
     pub(crate) const CHAR: &'static str = "character";
     pub(crate) const IMPLIST: &'static str = "improper list";
     pub(crate) const LIST: &'static str = "list";
@@ -231,6 +232,7 @@ impl TypeName<'_> {
     pub(crate) const PAIR: &'static str = "pair";
     pub(crate) const STRING: &'static str = "string";
     pub(crate) const SYMBOL: &'static str = "symbol";
+    pub(crate) const VECTOR: &'static str = "vector";
 }
 
 impl Display for TypeName<'_> {
@@ -238,7 +240,7 @@ impl Display for TypeName<'_> {
         match self.0 {
             Value::Ast(_) => f.write_str("abstract syntax tree"),
             Value::Boolean(_) => f.write_str(Self::BOOL),
-            Value::ByteVector(_) => f.write_str("bytevector"),
+            Value::ByteVector(_) => f.write_str(Self::BYTEVECTOR),
             Value::Character(_) => f.write_str(Self::CHAR),
             Value::Number(_) => f.write_str(Self::NUMBER),
             Value::Pair(None) => f.write_str("null"),
@@ -248,7 +250,7 @@ impl Display for TypeName<'_> {
             Value::Symbol(_) => f.write_str(Self::SYMBOL),
             Value::TokenList(_) => f.write_str("token list"),
             Value::Unspecified => f.write_str("unspecified"),
-            Value::Vector(_) => f.write_str("vector"),
+            Value::Vector(_) => f.write_str(Self::VECTOR),
         }
     }
 }
