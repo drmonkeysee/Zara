@@ -98,6 +98,8 @@ pub(super) fn load(scope: &mut Binding) {
     super::bind_intrinsic(scope, "zero?", 1..1, is_zero);
 
     // pairs and lists
+    super::bind_intrinsic(scope, "car", 1..1, car);
+    super::bind_intrinsic(scope, "cdr", 1..1, cdr);
     super::bind_intrinsic(scope, "list?", 1..1, is_list);
     super::bind_intrinsic(scope, "null?", 1..1, is_null);
     super::bind_intrinsic(scope, "pair?", 1..1, is_pair);
@@ -262,6 +264,34 @@ fn int_predicate(arg: &Value, pred: impl FnOnce(&Integer) -> bool) -> EvalResult
 
 predicate!(is_null, Value::Pair(None));
 predicate!(is_pair, Value::Pair(Some(_)));
+
+fn car(args: &[Value], _env: &mut Frame) -> EvalResult {
+    let arg = args.first().unwrap();
+    if let Value::Pair(Some(p)) = arg {
+        Ok(p.car.clone())
+    } else {
+        Err(Condition::arg_error(
+            FIRST_ARG_LABEL,
+            &format!("{} or {}", TypeName::LIST, TypeName::PAIR),
+            arg,
+        )
+        .into())
+    }
+}
+
+fn cdr(args: &[Value], _env: &mut Frame) -> EvalResult {
+    let arg = args.first().unwrap();
+    if let Value::Pair(Some(p)) = arg {
+        Ok(p.cdr.clone())
+    } else {
+        Err(Condition::arg_error(
+            FIRST_ARG_LABEL,
+            &format!("{} or {}", TypeName::LIST, TypeName::PAIR),
+            arg,
+        )
+        .into())
+    }
+}
 
 #[allow(clippy::unnecessary_wraps, reason = "infallible intrinsic")]
 fn is_list(args: &[Value], _env: &mut Frame) -> EvalResult {

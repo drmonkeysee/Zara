@@ -172,8 +172,8 @@ impl Display for Value {
 
 #[derive(Debug, Eq, PartialEq)]
 pub(crate) struct Pair {
-    car: Value,
-    cdr: Value,
+    pub(crate) car: Value,
+    pub(crate) cdr: Value,
 }
 
 impl Pair {
@@ -217,7 +217,9 @@ pub(crate) struct TypeName<'a>(&'a Value);
 impl TypeName<'_> {
     pub(crate) const BOOL: &'static str = "boolean";
     pub(crate) const CHAR: &'static str = "character";
+    pub(crate) const LIST: &'static str = "list";
     pub(crate) const NUMBER: &'static str = "number";
+    pub(crate) const PAIR: &'static str = "pair";
     pub(crate) const STRING: &'static str = "string";
     pub(crate) const SYMBOL: &'static str = "symbol";
 }
@@ -230,8 +232,8 @@ impl Display for TypeName<'_> {
             Value::ByteVector(_) => f.write_str("bytevector"),
             Value::Character(_) => f.write_str(Self::CHAR),
             Value::Number(_) => f.write_str(Self::NUMBER),
-            Value::Pair(None) => f.write_str("list"),
-            Value::Pair(Some(p)) => f.write_str(if p.is_list() { "list" } else { "pair" }),
+            Value::Pair(None) => f.write_str("null"),
+            Value::Pair(Some(p)) => f.write_str(if p.is_list() { Self::LIST } else { Self::PAIR }),
             Value::Procedure(_) => f.write_str("procedure"),
             Value::String(_) => f.write_str(Self::STRING),
             Value::Symbol(_) => f.write_str(Self::SYMBOL),
