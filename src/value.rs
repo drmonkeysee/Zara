@@ -184,6 +184,14 @@ impl Pair {
             false
         }
     }
+
+    pub(crate) fn length(&self) -> Option<usize> {
+        match &self.cdr {
+            Value::Pair(None) => Some(1),
+            Value::Pair(Some(p)) => p.length().map(|len| len + 1),
+            _ => None,
+        }
+    }
 }
 
 impl Display for Pair {
@@ -217,6 +225,7 @@ pub(crate) struct TypeName<'a>(&'a Value);
 impl TypeName<'_> {
     pub(crate) const BOOL: &'static str = "boolean";
     pub(crate) const CHAR: &'static str = "character";
+    pub(crate) const IMPLIST: &'static str = "improper list";
     pub(crate) const LIST: &'static str = "list";
     pub(crate) const NUMBER: &'static str = "number";
     pub(crate) const PAIR: &'static str = "pair";

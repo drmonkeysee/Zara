@@ -100,6 +100,7 @@ pub(super) fn load(scope: &mut Binding) {
     // pairs and lists
     super::bind_intrinsic(scope, "car", 1..1, car);
     super::bind_intrinsic(scope, "cdr", 1..1, cdr);
+    super::bind_intrinsic(scope, "length", 1..1, list_length);
     super::bind_intrinsic(scope, "list?", 1..1, is_list);
     super::bind_intrinsic(scope, "null?", 1..1, is_null);
     super::bind_intrinsic(scope, "pair?", 1..1, is_pair);
@@ -270,12 +271,7 @@ fn car(args: &[Value], _env: &mut Frame) -> EvalResult {
     if let Value::Pair(Some(p)) = arg {
         Ok(p.car.clone())
     } else {
-        Err(Condition::arg_error(
-            FIRST_ARG_LABEL,
-            &format!("{} or {}", TypeName::LIST, TypeName::PAIR),
-            arg,
-        )
-        .into())
+        Err(Condition::arg_error(FIRST_ARG_LABEL, TypeName::PAIR, arg).into())
     }
 }
 
@@ -284,12 +280,27 @@ fn cdr(args: &[Value], _env: &mut Frame) -> EvalResult {
     if let Value::Pair(Some(p)) = arg {
         Ok(p.cdr.clone())
     } else {
-        Err(Condition::arg_error(
-            FIRST_ARG_LABEL,
-            &format!("{} or {}", TypeName::LIST, TypeName::PAIR),
-            arg,
-        )
-        .into())
+        Err(Condition::arg_error(FIRST_ARG_LABEL, TypeName::PAIR, arg).into())
+    }
+}
+
+fn list_length(args: &[Value], _env: &mut Frame) -> EvalResult {
+    let arg = args.first().unwrap();
+    match arg {
+        Value::Pair(None) => Ok(Value::Number(Number::real(0))),
+        Value::Pair(Some(p)) => p.length().map_or_else(
+            || {
+                Err(Condition::arg_type_error(
+                    FIRST_ARG_LABEL,
+                    TypeName::LIST,
+                    TypeName::IMPLIST,
+                    arg,
+                )
+                .into())
+            },
+            |len| Ok(Value::Number(Number::real(Integer::from_usize(len)))),
+        ),
+        _ => Err(Condition::arg_error(FIRST_ARG_LABEL, TypeName::LIST, arg).into()),
     }
 }
 

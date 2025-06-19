@@ -399,6 +399,15 @@ pub(crate) struct Integer {
 }
 
 impl Integer {
+    pub(crate) fn from_usize(val: usize) -> Self {
+        let r = <usize as TryInto<u64>>::try_into(val);
+        if let Ok(u) = r {
+            (Sign::Positive, u).into()
+        } else {
+            todo!("handle multi-precision");
+        }
+    }
+
     fn single(magnitude: u64, mut sign: Sign) -> Self {
         if magnitude == 0 {
             sign = Sign::Zero;

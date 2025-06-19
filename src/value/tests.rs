@@ -629,6 +629,7 @@ bar",
 
 mod pair {
     use super::*;
+    use crate::testutil::some_or_fail;
 
     #[test]
     fn pair_is_not_list() {
@@ -755,6 +756,54 @@ mod pair {
         let v = Value::cons(Value::null(), Value::null());
 
         assert_eq!(v.to_string(), "(())")
+    }
+
+    #[test]
+    fn pair_has_no_length() {
+        // (#t . #f)
+        let p = Pair {
+            car: Value::Boolean(true),
+            cdr: Value::Boolean(false),
+        };
+
+        assert!(p.length().is_none());
+    }
+
+    #[test]
+    fn list_length_one() {
+        // (#t)
+        let p = Pair {
+            car: Value::Boolean(true),
+            cdr: Value::null(),
+        };
+
+        let o = p.length();
+
+        assert_eq!(some_or_fail!(o), 1);
+    }
+
+    #[test]
+    fn list_length() {
+        // (1 2 3)
+        let p = Pair {
+            car: Value::real(1),
+            cdr: Value::cons(Value::real(2), Value::cons(Value::real(3), Value::null())),
+        };
+
+        let o = p.length();
+
+        assert_eq!(some_or_fail!(o), 3);
+    }
+
+    #[test]
+    fn improper_list_has_no_length() {
+        // (1 2 . 3)
+        let p = Pair {
+            car: Value::real(1),
+            cdr: Value::cons(Value::real(2), Value::real(3)),
+        };
+
+        assert!(p.length().is_none());
     }
 }
 

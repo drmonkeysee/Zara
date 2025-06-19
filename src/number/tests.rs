@@ -1094,6 +1094,33 @@ mod integer {
         assert_eq!(extract_or_fail!(n.precision, Precision::Single), 4);
         assert_eq!(n.sign, Sign::Negative);
     }
+
+    #[test]
+    fn from_usize() {
+        let n = Integer::from_usize(5_usize);
+
+        assert_eq!(extract_or_fail!(n.precision, Precision::Single), 5);
+        assert_eq!(n.sign, Sign::Positive);
+    }
+
+    #[test]
+    fn from_usize_min() {
+        let n = Integer::from_usize(usize::MIN);
+
+        assert_eq!(extract_or_fail!(n.precision, Precision::Single), 0);
+        assert_eq!(n.sign, Sign::Zero);
+    }
+
+    #[test]
+    fn from_usize_max() {
+        let n = Integer::from_usize(usize::MAX);
+
+        assert_eq!(
+            extract_or_fail!(n.precision, Precision::Single),
+            18446744073709551615
+        );
+        assert_eq!(n.sign, Sign::Positive);
+    }
 }
 
 mod float {
