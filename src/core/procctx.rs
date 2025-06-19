@@ -51,7 +51,7 @@ fn exit(args: &[Value], _env: &mut Frame) -> EvalResult {
         args.first(),
         ExitCode::SUCCESS,
         ExitCode::FAILURE,
-        |n| (<&Number as TryInto<u8>>::try_into(n)).map_or(ExitCode::FAILURE, ExitCode::from),
+        |n| (u8::try_from(n)).map_or(ExitCode::FAILURE, ExitCode::from),
     )))
 }
 

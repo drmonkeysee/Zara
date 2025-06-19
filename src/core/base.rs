@@ -115,6 +115,7 @@ pub(super) fn load(scope: &mut Binding) {
     super::bind_intrinsic(scope, "char-numeric?", 1..1, is_numeric);
     super::bind_intrinsic(scope, "char-upper-case?", 1..1, is_uppercase);
     super::bind_intrinsic(scope, "char-whitespace?", 1..1, is_whitespace);
+    super::bind_intrinsic(scope, "char->integer", 1..1, char_to_integer);
 
     // equivalence
     super::bind_intrinsic(scope, "eq?", 2..2, is_eq);
@@ -252,6 +253,16 @@ try_predicate!(
     TypeName::CHAR,
     |c: &char| c.is_whitespace()
 );
+
+fn char_to_integer(args: &[Value], _env: &mut Frame) -> EvalResult {
+    let arg = args.first().unwrap();
+    if let Value::Character(c) = arg {
+        let n = <char as Into<u32>>::into(*c);
+        Ok(Value::Number(Number::real(i64::from(n))))
+    } else {
+        Err(Condition::arg_error(FIRST_ARG_LABEL, TypeName::CHAR, arg).into())
+    }
+}
 
 //
 // Equivalence
