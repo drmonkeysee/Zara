@@ -21,25 +21,26 @@ macro_rules! try_predicate {
     };
 }
 
-macro_rules! seq_equal {
-    ($name:ident, $kind:path, $valname:expr, $eq:expr $(,)?) => {
+macro_rules! seq_predicate {
+    ($name:ident, $kind:path, $valname:expr, $pred:expr $(,)?) => {
         fn $name(args: &[Value], _env: &mut Frame) -> EvalResult {
             let mut it = args.iter().enumerate();
-            let a = match it.next() {
+            let first = match it.next() {
                 None => return Ok(Value::Boolean(true)),
                 Some((_, $kind(a))) => a,
                 Some((idx, v)) => {
                     return Err(Condition::arg_error(&idx.to_string(), $valname, v).into());
                 }
             };
-            let result: Result<_, Exception> = it.try_fold(true, |acc, (idx, val)| {
-                if let $kind(b) = val {
-                    Ok(acc && $eq(a, b))
-                } else {
-                    Err(Condition::arg_error(&idx.to_string(), $valname, val).into())
-                }
-            });
-            Ok(Value::Boolean(result?))
+            let result: Result<_, Exception> =
+                it.try_fold((true, first), |(acc, prev), (idx, val)| {
+                    if let $kind(next) = val {
+                        Ok((acc && $pred(prev, next), next))
+                    } else {
+                        Err(Condition::arg_error(&idx.to_string(), $valname, val).into())
+                    }
+                });
+            Ok(Value::Boolean(result?.0))
         }
     };
 }
@@ -66,7 +67,11 @@ pub(super) fn load(scope: &mut Binding) {
 
     // characters
     super::bind_intrinsic(scope, "char?", 1..1, is_char);
-    super::bind_intrinsic(scope, "char=?", 0..MAX_ARITY, chars_equal);
+    super::bind_intrinsic(scope, "char=?", 0..MAX_ARITY, chars_eq);
+    super::bind_intrinsic(scope, "char<?", 0..MAX_ARITY, chars_lt);
+    super::bind_intrinsic(scope, "char<=?", 0..MAX_ARITY, chars_lte);
+    super::bind_intrinsic(scope, "char>?", 0..MAX_ARITY, chars_gt);
+    super::bind_intrinsic(scope, "char>=?", 0..MAX_ARITY, chars_gte);
 
     // equivalence
     super::bind_intrinsic(scope, "eq?", 2..2, is_eq);
@@ -102,11 +107,15 @@ pub(super) fn load(scope: &mut Binding) {
 
     // strings
     super::bind_intrinsic(scope, "string?", 1..1, is_string);
-    super::bind_intrinsic(scope, "string=?", 0..MAX_ARITY, strings_equal);
+    super::bind_intrinsic(scope, "string=?", 0..MAX_ARITY, strings_eq);
+    super::bind_intrinsic(scope, "string<?", 0..MAX_ARITY, strings_lt);
+    super::bind_intrinsic(scope, "string<=?", 0..MAX_ARITY, strings_lte);
+    super::bind_intrinsic(scope, "string>?", 0..MAX_ARITY, strings_gt);
+    super::bind_intrinsic(scope, "string>=?", 0..MAX_ARITY, strings_gte);
 
     // symbols
     super::bind_intrinsic(scope, "symbol?", 1..1, is_symbol);
-    super::bind_intrinsic(scope, "symbol=?", 0..MAX_ARITY, symbols_equal);
+    super::bind_intrinsic(scope, "symbol=?", 0..MAX_ARITY, symbols_eq);
 
     // vectors
     super::bind_intrinsic(scope, "vector?", 1..1, is_vector);
@@ -118,7 +127,7 @@ pub(super) fn load(scope: &mut Binding) {
 
 predicate!(is_boolean, Value::Boolean(_));
 predicate!(not, Value::Boolean(false));
-seq_equal!(booleans_equal, Value::Boolean, TypeName::BOOL, bool::eq);
+seq_predicate!(booleans_equal, Value::Boolean, TypeName::BOOL, bool::eq);
 
 //
 // Bytevectors
@@ -131,7 +140,11 @@ predicate!(is_bytevector, Value::ByteVector(_));
 //
 
 predicate!(is_char, Value::Character(_));
-seq_equal!(chars_equal, Value::Character, TypeName::CHAR, char::eq);
+seq_predicate!(chars_eq, Value::Character, TypeName::CHAR, char::eq);
+seq_predicate!(chars_lt, Value::Character, TypeName::CHAR, char::lt);
+seq_predicate!(chars_lte, Value::Character, TypeName::CHAR, char::le);
+seq_predicate!(chars_gt, Value::Character, TypeName::CHAR, char::gt);
+seq_predicate!(chars_gte, Value::Character, TypeName::CHAR, char::ge);
 
 //
 // Equivalence
@@ -271,14 +284,18 @@ predicate!(is_procedure, Value::Procedure(_));
 //
 
 predicate!(is_string, Value::String(_));
-seq_equal!(strings_equal, Value::String, TypeName::STRING, Rc::eq);
+seq_predicate!(strings_eq, Value::String, TypeName::STRING, Rc::eq);
+seq_predicate!(strings_lt, Value::String, TypeName::STRING, Rc::lt);
+seq_predicate!(strings_lte, Value::String, TypeName::STRING, Rc::le);
+seq_predicate!(strings_gt, Value::String, TypeName::STRING, Rc::gt);
+seq_predicate!(strings_gte, Value::String, TypeName::STRING, Rc::ge);
 
 //
 // Symbols
 //
 
 predicate!(is_symbol, Value::Symbol(_));
-seq_equal!(symbols_equal, Value::Symbol, TypeName::SYMBOL, Rc::ptr_eq);
+seq_predicate!(symbols_eq, Value::Symbol, TypeName::SYMBOL, Rc::ptr_eq);
 
 //
 // Vectors
@@ -402,7 +419,7 @@ mod tests {
         let args = [];
         let mut env = TestEnv::default();
 
-        let r = symbols_equal(&args, &mut env.new_frame());
+        let r = symbols_eq(&args, &mut env.new_frame());
 
         let v = ok_or_fail!(r);
         assert!(matches!(v, Value::Boolean(true)));
@@ -413,7 +430,7 @@ mod tests {
         let args = [Value::symbol("a")];
         let mut env = TestEnv::default();
 
-        let r = symbols_equal(&args, &mut env.new_frame());
+        let r = symbols_eq(&args, &mut env.new_frame());
 
         let v = ok_or_fail!(r);
         assert!(matches!(v, Value::Boolean(true)));
@@ -429,7 +446,7 @@ mod tests {
         ];
         let mut env = TestEnv::default();
 
-        let r = symbols_equal(&args, &mut env.new_frame());
+        let r = symbols_eq(&args, &mut env.new_frame());
 
         let v = ok_or_fail!(r);
         assert!(matches!(v, Value::Boolean(true)));
@@ -445,7 +462,7 @@ mod tests {
         ];
         let mut env = TestEnv::default();
 
-        let r = symbols_equal(&args, &mut env.new_frame());
+        let r = symbols_eq(&args, &mut env.new_frame());
 
         let v = ok_or_fail!(r);
         assert!(matches!(v, Value::Boolean(false)));
@@ -456,7 +473,7 @@ mod tests {
         let args = [Value::symbol("a"), Value::symbol("a"), Value::symbol("a")];
         let mut env = TestEnv::default();
 
-        let r = symbols_equal(&args, &mut env.new_frame());
+        let r = symbols_eq(&args, &mut env.new_frame());
 
         let v = ok_or_fail!(r);
         assert!(matches!(v, Value::Boolean(false)));
@@ -467,7 +484,7 @@ mod tests {
         let args = [Value::symbol("a"), Value::string("a"), Value::symbol("a")];
         let mut env = TestEnv::default();
 
-        let r = symbols_equal(&args, &mut env.new_frame());
+        let r = symbols_eq(&args, &mut env.new_frame());
 
         let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
         assert_eq!(
@@ -481,7 +498,7 @@ mod tests {
         let args = [];
         let mut env = TestEnv::default();
 
-        let r = chars_equal(&args, &mut env.new_frame());
+        let r = chars_eq(&args, &mut env.new_frame());
 
         let v = ok_or_fail!(r);
         assert!(matches!(v, Value::Boolean(true)));
@@ -492,7 +509,7 @@ mod tests {
         let args = [Value::Character('a')];
         let mut env = TestEnv::default();
 
-        let r = chars_equal(&args, &mut env.new_frame());
+        let r = chars_eq(&args, &mut env.new_frame());
 
         let v = ok_or_fail!(r);
         assert!(matches!(v, Value::Boolean(true)));
@@ -507,7 +524,7 @@ mod tests {
         ];
         let mut env = TestEnv::default();
 
-        let r = chars_equal(&args, &mut env.new_frame());
+        let r = chars_eq(&args, &mut env.new_frame());
 
         let v = ok_or_fail!(r);
         assert!(matches!(v, Value::Boolean(true)));
@@ -522,7 +539,7 @@ mod tests {
         ];
         let mut env = TestEnv::default();
 
-        let r = chars_equal(&args, &mut env.new_frame());
+        let r = chars_eq(&args, &mut env.new_frame());
 
         let v = ok_or_fail!(r);
         assert!(matches!(v, Value::Boolean(false)));
@@ -537,7 +554,7 @@ mod tests {
         ];
         let mut env = TestEnv::default();
 
-        let r = chars_equal(&args, &mut env.new_frame());
+        let r = chars_eq(&args, &mut env.new_frame());
 
         let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
         assert_eq!(
@@ -547,11 +564,41 @@ mod tests {
     }
 
     #[test]
+    fn all_chars_lt() {
+        let args = [
+            Value::Character('a'),
+            Value::Character('b'),
+            Value::Character('c'),
+        ];
+        let mut env = TestEnv::default();
+
+        let r = chars_lt(&args, &mut env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert!(matches!(v, Value::Boolean(true)));
+    }
+
+    #[test]
+    fn all_chars_not_lt() {
+        let args = [
+            Value::Character('a'),
+            Value::Character('e'),
+            Value::Character('c'),
+        ];
+        let mut env = TestEnv::default();
+
+        let r = chars_lt(&args, &mut env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert!(matches!(v, Value::Boolean(false)));
+    }
+
+    #[test]
     fn all_strings_empty() {
         let args = [];
         let mut env = TestEnv::default();
 
-        let r = strings_equal(&args, &mut env.new_frame());
+        let r = strings_eq(&args, &mut env.new_frame());
 
         let v = ok_or_fail!(r);
         assert!(matches!(v, Value::Boolean(true)));
@@ -562,7 +609,7 @@ mod tests {
         let args = [Value::string("foo")];
         let mut env = TestEnv::default();
 
-        let r = strings_equal(&args, &mut env.new_frame());
+        let r = strings_eq(&args, &mut env.new_frame());
 
         let v = ok_or_fail!(r);
         assert!(matches!(v, Value::Boolean(true)));
@@ -577,7 +624,7 @@ mod tests {
         ];
         let mut env = TestEnv::default();
 
-        let r = strings_equal(&args, &mut env.new_frame());
+        let r = strings_eq(&args, &mut env.new_frame());
 
         let v = ok_or_fail!(r);
         assert!(matches!(v, Value::Boolean(true)));
@@ -592,7 +639,7 @@ mod tests {
         ];
         let mut env = TestEnv::default();
 
-        let r = strings_equal(&args, &mut env.new_frame());
+        let r = strings_eq(&args, &mut env.new_frame());
 
         let v = ok_or_fail!(r);
         assert!(matches!(v, Value::Boolean(false)));
@@ -607,13 +654,43 @@ mod tests {
         ];
         let mut env = TestEnv::default();
 
-        let r = strings_equal(&args, &mut env.new_frame());
+        let r = strings_eq(&args, &mut env.new_frame());
 
         let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
         assert_eq!(
             err.to_string(),
             "#<env-error \"invalid type for arg `1` - expected: string, got: symbol\" (foo)>"
         );
+    }
+
+    #[test]
+    fn all_strings_lt() {
+        let args = [
+            Value::string("abc"),
+            Value::string("def"),
+            Value::string("ghi"),
+        ];
+        let mut env = TestEnv::default();
+
+        let r = strings_lt(&args, &mut env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert!(matches!(v, Value::Boolean(true)));
+    }
+
+    #[test]
+    fn all_strings_not_lt() {
+        let args = [
+            Value::string("abc"),
+            Value::string("123"),
+            Value::string("ghi"),
+        ];
+        let mut env = TestEnv::default();
+
+        let r = strings_lt(&args, &mut env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert!(matches!(v, Value::Boolean(false)));
     }
 
     #[test]
