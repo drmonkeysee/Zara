@@ -95,7 +95,7 @@ impl Number {
         if mag.is_exact_zero() || rad.is_exact_zero() {
             Self::real(mag)
         } else {
-            let (mag, rad) = (mag.into_float(), rad.into_float());
+            let (mag, rad) = (mag.to_float(), rad.to_float());
             let (rsin, rcos) = rad.sin_cos();
             Self::complex(mag * rcos, mag * rsin)
         }
@@ -270,20 +270,6 @@ impl Real {
         }
     }
 
-    pub(crate) fn is_eqv(&self, other: &Self) -> bool {
-        match (self, other) {
-            (Self::Float(a), Self::Float(b)) if a.is_nan() && b.is_nan() => true,
-            #[allow(
-                clippy::float_cmp,
-                reason = "underlying implementation does not hide epsilon inequality"
-            )]
-            (Self::Float(a), Self::Float(b)) => a == b,
-            (Self::Integer(a), Self::Integer(b)) => a == b,
-            (Self::Rational(a), Self::Rational(b)) => a == b,
-            _ => false,
-        }
-    }
-
     pub(crate) fn as_token_descriptor(&self) -> RealTokenDescriptor {
         RealTokenDescriptor(self)
     }
@@ -303,21 +289,17 @@ impl Real {
         }
     }
 
-    pub(crate) fn into_exact_integer(self) -> Option<Integer> {
-        match self {
-            Self::Float(f) if f.fract() == 0.0 => {
-                if (-FMAX_INT..=FMAX_INT).contains(&f) {
-                    #[allow(
-                        clippy::cast_possible_truncation,
-                        reason = "guarded against truncation"
-                    )]
-                    Some((f as i64).into())
-                } else {
-                    todo!("convert f64 to multi-precision integer somehow")
-                }
-            }
-            Self::Integer(n) => Some(n),
-            _ => None,
+    fn is_eqv(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Self::Float(a), Self::Float(b)) if a.is_nan() && b.is_nan() => true,
+            #[allow(
+                clippy::float_cmp,
+                reason = "underlying implementation does not hide epsilon inequality"
+            )]
+            (Self::Float(a), Self::Float(b)) => a == b,
+            (Self::Integer(a), Self::Integer(b)) => a == b,
+            (Self::Rational(a), Self::Rational(b)) => a == b,
+            _ => false,
         }
     }
 
@@ -357,11 +339,31 @@ impl Real {
         }
     }
 
-    fn into_float(self) -> f64 {
+    // TODO: not yet used outside of unit tests
+    // TODO: if this becomes public rewrite to TryFrom<&Number>
+    fn to_float(&self) -> f64 {
         match self {
-            Self::Float(f) => f,
-            Self::Integer(n) => n.into_float(),
-            Self::Rational(q) => q.into_float(),
+            Self::Float(f) => *f,
+            Self::Integer(n) => n.to_float(),
+            Self::Rational(q) => q.to_float(),
+        }
+    }
+
+    fn into_exact_integer(self) -> Option<Integer> {
+        match self {
+            Self::Float(f) if f.fract() == 0.0 => {
+                if (-FMAX_INT..=FMAX_INT).contains(&f) {
+                    #[allow(
+                        clippy::cast_possible_truncation,
+                        reason = "guarded against truncation"
+                    )]
+                    Some((f as i64).into())
+                } else {
+                    todo!("convert f64 to multi-precision integer somehow")
+                }
+            }
+            Self::Integer(n) => Some(n),
+            _ => None,
         }
     }
 }
@@ -404,14 +406,14 @@ impl Rational {
         self.0.0.is_negative()
     }
 
-    fn into_inexact(self) -> Real {
-        Real::Float(self.into_float())
+    fn to_float(&self) -> f64 {
+        let r = &self.0;
+        let (num, denom) = (r.0.to_float(), r.1.to_float());
+        num / denom
     }
 
-    fn into_float(self) -> f64 {
-        let r = self.0;
-        let (num, denom) = (r.0.into_float(), r.1.into_float());
-        num / denom
+    fn into_inexact(self) -> Real {
+        Real::Float(self.to_float())
     }
 }
 
@@ -476,6 +478,17 @@ impl Integer {
         self.precision.cmp(&other.precision)
     }
 
+    fn to_float(&self) -> f64 {
+        match self.precision {
+            Precision::Single(u) => {
+                #[allow(clippy::cast_precision_loss)]
+                let f = u as f64;
+                if self.sign == Sign::Negative { -f } else { f }
+            }
+            Precision::Multiple(_) => todo!(),
+        }
+    }
+
     fn try_to_u8(&self) -> Result<u8, NumericError> {
         if self.is_negative() {
             return Err(NumericError::ByteConversionInvalidRange);
@@ -532,18 +545,7 @@ impl Integer {
     }
 
     fn into_inexact(self) -> Real {
-        Real::Float(self.into_float())
-    }
-
-    fn into_float(self) -> f64 {
-        match self.precision {
-            Precision::Single(u) => {
-                #[allow(clippy::cast_precision_loss)]
-                let f = u as f64;
-                if self.sign == Sign::Negative { -f } else { f }
-            }
-            Precision::Multiple(_) => todo!(),
-        }
+        Real::Float(self.to_float())
     }
 }
 
@@ -671,11 +673,11 @@ impl<R: Radix> IntSpec<R> {
         self.sign.is_some()
     }
 
-    pub(crate) fn into_exact(self, input: &str) -> IntResult {
+    pub(crate) fn try_into_exact(self, input: &str) -> IntResult {
         parse_signed(&self, input)
     }
 
-    pub(crate) fn into_inexact(self, input: &str) -> RealResult {
+    pub(crate) fn try_into_inexact(self, input: &str) -> RealResult {
         R::parse_inexact(self, input)
     }
 }
@@ -695,7 +697,8 @@ impl FloatSpec {
             let (spec, flt_str) = Self::prep_parse(flt);
             // NOTE: this should never fail since the string input comes from
             // an f64 but if something real weird happens treat it as NaN.
-            spec.into_exact(&flt_str).unwrap_or(Real::Float(f64::NAN))
+            spec.try_into_exact(&flt_str)
+                .unwrap_or(Real::Float(f64::NAN))
         }
     }
 
@@ -737,7 +740,7 @@ impl FloatSpec {
         self.exponent.is_empty() && self.fraction.is_empty() && self.integral.is_empty()
     }
 
-    pub(crate) fn into_exact(self, input: &str) -> RealResult {
+    pub(crate) fn try_into_exact(self, input: &str) -> RealResult {
         let mut buf = String::new();
         let mut num = IntSpec::<Decimal>::default();
         if self.integral.has_sign() {
@@ -760,15 +763,18 @@ impl FloatSpec {
                 magnitude: 0..adjustment.len(),
                 ..Default::default()
             };
-            Real::reduce(num.into_exact(&buf)?, denom.into_exact(&adjustment)?)
+            Real::reduce(
+                num.try_into_exact(&buf)?,
+                denom.try_into_exact(&adjustment)?,
+            )
         } else {
             buf += &adjustment;
             num.magnitude.end = buf.len();
-            Ok(num.into_exact(&buf)?.into())
+            Ok(num.try_into_exact(&buf)?.into())
         }
     }
 
-    pub(crate) fn into_inexact(self, input: &str) -> RealResult {
+    pub(crate) fn try_into_inexact(self, input: &str) -> RealResult {
         let end = if !self.exponent.is_empty() {
             self.exponent.end
         } else if !self.fraction.is_empty() {

@@ -599,7 +599,7 @@ impl ClassifierParser for RealParser<'_> {
     }
 
     fn parse_int(self) -> IntParseResult {
-        Ok(self.classifier.into_int_spec().into_exact(self.input)?)
+        Ok(self.classifier.into_int_spec().try_into_exact(self.input)?)
     }
 }
 
@@ -773,7 +773,7 @@ impl<R: Radix> ClassifierParser for RadixParser<'_, R> {
     }
 
     fn parse_int(self) -> IntParseResult {
-        Ok(self.spec.into_exact(self.input)?)
+        Ok(self.spec.try_into_exact(self.input)?)
     }
 
     fn extract_radix_infnan(self) -> TokenExtractResult {
@@ -863,8 +863,8 @@ impl Float {
 
     fn parse(self, input: &str, exactness: Option<Exactness>) -> ParseResult {
         Ok(match exactness {
-            None | Some(Exactness::Inexact) => self.0.into_inexact(input),
-            Some(Exactness::Exact) => self.0.into_exact(input),
+            None | Some(Exactness::Inexact) => self.0.try_into_inexact(input),
+            Some(Exactness::Exact) => self.0.try_into_exact(input),
         }?)
     }
 }
@@ -911,8 +911,8 @@ impl Scientific {
             Err(self.malformed_exponent())
         } else {
             match exactness {
-                None | Some(Exactness::Inexact) => Ok(self.spec.into_inexact(input)?),
-                Some(Exactness::Exact) => match self.spec.into_exact(input) {
+                None | Some(Exactness::Inexact) => Ok(self.spec.try_into_inexact(input)?),
+                Some(Exactness::Exact) => match self.spec.try_into_exact(input) {
                     Err(
                         err @ (NumericError::ParseExponentOutOfRange
                         | NumericError::ParseExponentFailure),
@@ -969,8 +969,8 @@ fn parse_intspec<R: Radix>(
         Err(TokenErrorKind::NumberExpected)
     } else {
         Ok(match exactness {
-            None | Some(Exactness::Exact) => spec.into_exact(input)?.into(),
-            Some(Exactness::Inexact) => spec.into_inexact(input)?,
+            None | Some(Exactness::Exact) => spec.try_into_exact(input)?.into(),
+            Some(Exactness::Inexact) => spec.try_into_inexact(input)?,
         })
     }
 }

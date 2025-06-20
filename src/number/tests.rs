@@ -703,35 +703,35 @@ mod integer {
     fn single_into_float() {
         let n = Real::from(42);
 
-        assert_eq!(n.into_float(), 42.0);
+        assert_eq!(n.to_float(), 42.0);
     }
 
     #[test]
     fn zero_into_float() {
         let n = Real::from(0);
 
-        assert_eq!(n.into_float(), 0.0);
+        assert_eq!(n.to_float(), 0.0);
     }
 
     #[test]
     fn negative_into_float() {
         let n = Real::from(-42);
 
-        assert_eq!(n.into_float(), -42.0);
+        assert_eq!(n.to_float(), -42.0);
     }
 
     #[test]
     fn imax_into_float() {
         let n = Real::from(i64::MAX);
 
-        assert_eq!(n.into_float(), 9.223372036854776e18);
+        assert_eq!(n.to_float(), 9.223372036854776e18);
     }
 
     #[test]
     fn imin_into_float() {
         let n = Real::from(i64::MIN);
 
-        assert_eq!(n.into_float(), -9.223372036854776e18);
+        assert_eq!(n.to_float(), -9.223372036854776e18);
     }
 
     #[test]
@@ -739,7 +739,7 @@ mod integer {
         let u = Integer::single(u64::MAX, Sign::Positive);
         let n = Real::from(u);
 
-        assert_eq!(n.into_float(), 1.8446744073709552e19);
+        assert_eq!(n.to_float(), 1.8446744073709552e19);
     }
 
     #[test]
@@ -747,7 +747,7 @@ mod integer {
         let u = Integer::single(u64::MAX, Sign::Negative);
         let n = Real::from(u);
 
-        assert_eq!(n.into_float(), -1.8446744073709552e19);
+        assert_eq!(n.to_float(), -1.8446744073709552e19);
     }
 
     #[test]
@@ -1247,7 +1247,7 @@ mod float {
     fn into_float() {
         let n = Real::Float(1.5);
 
-        assert_eq!(n.into_float(), 1.5);
+        assert_eq!(n.to_float(), 1.5);
     }
 
     #[test]
@@ -1357,7 +1357,7 @@ mod float {
         assert!(matches!(r, Real::Rational(_)));
 
         let f = r.into_inexact();
-        assert_eq!(f.into_float(), expected);
+        assert_eq!(f.to_float(), expected);
     }
 
     #[test]
@@ -1886,49 +1886,49 @@ mod rational {
     fn positive_into_float() {
         let r = ok_or_fail!(Real::reduce(4, 5));
 
-        assert_eq!(r.into_float(), 0.8);
+        assert_eq!(r.to_float(), 0.8);
     }
 
     #[test]
     fn negative_numerator_into_float() {
         let r = ok_or_fail!(Real::reduce(-4, 5));
 
-        assert_eq!(r.into_float(), -0.8);
+        assert_eq!(r.to_float(), -0.8);
     }
 
     #[test]
     fn negative_denominator_into_float() {
         let r = ok_or_fail!(Real::reduce(4, -5));
 
-        assert_eq!(r.into_float(), -0.8);
+        assert_eq!(r.to_float(), -0.8);
     }
 
     #[test]
     fn negative_parts_into_float() {
         let r = ok_or_fail!(Real::reduce(-4, -5));
 
-        assert_eq!(r.into_float(), 0.8);
+        assert_eq!(r.to_float(), 0.8);
     }
 
     #[test]
     fn unreduced_zero_into_float() {
         let r = Rational((0.into(), 7.into()).into());
 
-        assert_eq!(r.into_float(), 0.0);
+        assert_eq!(r.to_float(), 0.0);
     }
 
     #[test]
     fn unreduced_div_by_zero_into_float() {
         let r = Rational((7.into(), 0.into()).into());
 
-        assert_eq!(r.into_float(), f64::INFINITY);
+        assert_eq!(r.to_float(), f64::INFINITY);
     }
 
     #[test]
     fn unreduced_negative_div_by_zero_into_float() {
         let r = Rational(((-7).into(), 0.into()).into());
 
-        assert_eq!(r.into_float(), f64::NEG_INFINITY);
+        assert_eq!(r.to_float(), f64::NEG_INFINITY);
     }
 
     #[test]
@@ -2478,11 +2478,11 @@ mod specs {
 
         assert!(espec.is_empty());
 
-        let err = err_or_fail!(espec.into_exact("1234"));
+        let err = err_or_fail!(espec.try_into_exact("1234"));
 
         assert!(matches!(err, NumericError::ParseFailure));
 
-        let err = err_or_fail!(ispec.into_inexact("1234"));
+        let err = err_or_fail!(ispec.try_into_inexact("1234"));
 
         assert!(matches!(err, NumericError::ParseFailure));
     }
@@ -2497,11 +2497,11 @@ mod specs {
 
         assert!(!espec.is_empty());
 
-        let err = err_or_fail!(espec.into_exact(""));
+        let err = err_or_fail!(espec.try_into_exact(""));
 
         assert!(matches!(err, NumericError::ParseFailure));
 
-        let err = err_or_fail!(ispec.into_inexact(""));
+        let err = err_or_fail!(ispec.try_into_inexact(""));
 
         assert!(matches!(err, NumericError::ParseFailure));
     }
@@ -2513,11 +2513,11 @@ mod specs {
 
         assert!(espec.is_empty());
 
-        let err = err_or_fail!(espec.into_exact("1234.456e3"));
+        let err = err_or_fail!(espec.try_into_exact("1234.456e3"));
 
         assert!(matches!(err, NumericError::ParseFailure));
 
-        let err = err_or_fail!(ispec.into_inexact("1234.456e3"));
+        let err = err_or_fail!(ispec.try_into_inexact("1234.456e3"));
 
         assert!(matches!(err, NumericError::ParseFailure));
     }
@@ -2536,11 +2536,11 @@ mod specs {
 
         assert!(!espec.is_empty());
 
-        let err = err_or_fail!(espec.into_exact(""));
+        let err = err_or_fail!(espec.try_into_exact(""));
 
         assert!(matches!(err, NumericError::ParseExponentFailure));
 
-        let err = err_or_fail!(ispec.into_inexact(""));
+        let err = err_or_fail!(ispec.try_into_inexact(""));
 
         assert!(matches!(err, NumericError::ParseFailure));
     }
