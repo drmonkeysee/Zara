@@ -38,19 +38,19 @@ impl Binding {
 pub(crate) struct SymbolTable(HashSet<Rc<str>>);
 
 impl SymbolTable {
-    pub(crate) fn get_refs(&self) -> impl IntoIterator<Item = &Rc<str>> {
-        let mut vec = self.0.iter().collect::<Vec<_>>();
-        vec.sort();
-        vec
-    }
-
-    fn get(&mut self, name: &str) -> Rc<str> {
+    pub(crate) fn get(&mut self, name: &str) -> Rc<str> {
         if let Some(s) = self.0.get(name) {
             Rc::clone(s)
         } else {
             self.0.insert(name.into());
             self.get(name)
         }
+    }
+
+    pub(crate) fn get_refs(&self) -> impl IntoIterator<Item = &Rc<str>> {
+        let mut vec = self.0.iter().collect::<Vec<_>>();
+        vec.sort();
+        vec
     }
 }
 

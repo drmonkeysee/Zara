@@ -194,6 +194,8 @@ pub(super) fn load(scope: &mut Binding) {
     // symbols
     super::bind_intrinsic(scope, "symbol?", 1..1, is_symbol);
     super::bind_intrinsic(scope, "symbol=?", 0..MAX_ARITY, symbols_eq);
+    super::bind_intrinsic(scope, "symbol->string", 1..1, symbol_to_string);
+    super::bind_intrinsic(scope, "string->symbol", 1..1, string_to_symbol);
 
     // vectors
     super::bind_intrinsic(scope, "vector?", 1..1, is_vector);
@@ -519,6 +521,24 @@ seq_predicate!(strings_gte, Value::String, TypeName::STRING, Rc::ge);
 predicate!(is_symbol, Value::Symbol(_));
 seq_predicate!(symbols_eq, Value::Symbol, TypeName::SYMBOL, Rc::ptr_eq);
 
+fn symbol_to_string(args: &[Value], _env: &mut Frame) -> EvalResult {
+    let arg = args.first().unwrap();
+    if let Value::Symbol(s) = arg {
+        Ok(Value::string(Rc::clone(&s)))
+    } else {
+        Err(Condition::arg_error(FIRST_ARG_LABEL, TypeName::SYMBOL, arg).into())
+    }
+}
+
+fn string_to_symbol(args: &[Value], env: &mut Frame) -> EvalResult {
+    let arg = args.first().unwrap();
+    if let Value::String(s) = arg {
+        Ok(Value::symbol(env.sym.get(s)))
+    } else {
+        Err(Condition::arg_error(FIRST_ARG_LABEL, TypeName::STRING, arg).into())
+    }
+}
+
 //
 // Vectors
 //
@@ -704,7 +724,12 @@ mod tests {
 
     #[test]
     fn all_symbols_invalid_param() {
-        let args = [Value::symbol("a"), Value::string("a"), Value::symbol("a")];
+        let name = "a".into();
+        let args = [
+            Value::symbol(Rc::clone(&name)),
+            Value::string(Rc::clone(&name)),
+            Value::symbol(Rc::clone(&name)),
+        ];
         let mut env = TestEnv::default();
 
         let r = symbols_eq(&args, &mut env.new_frame());
