@@ -532,16 +532,6 @@ mod error {
     }
 
     #[test]
-    fn display_byte_invalid_type() {
-        let err = NumericError::ByteConversionInvalidType("foobar".to_owned());
-
-        assert_eq!(
-            err.to_string(),
-            "expected integer literal, got numeric type: foobar"
-        );
-    }
-
-    #[test]
     fn display_byte_out_of_range() {
         let err = NumericError::ByteConversionInvalidRange;
 
@@ -560,11 +550,21 @@ mod error {
 
     #[test]
     fn display_int_out_of_range() {
-        let err = NumericError::IntConversionInvalidRange;
+        let err = NumericError::Int32ConversionInvalidRange;
 
         assert_eq!(
             err.to_string(),
             "integer literal out of range: [-2147483648, 2147483647]"
+        );
+    }
+
+    #[test]
+    fn display_uint_out_of_range() {
+        let err = NumericError::Uint32ConversionInvalidRange;
+
+        assert_eq!(
+            err.to_string(),
+            "integer literal out of range: [0, 4294967295]"
         );
     }
 }
@@ -892,7 +892,7 @@ mod integer {
         let r: Result<i32, _> = n.try_into();
 
         let err = err_or_fail!(r);
-        assert!(matches!(err, NumericError::IntConversionInvalidRange));
+        assert!(matches!(err, NumericError::Int32ConversionInvalidRange));
     }
 
     #[test]
@@ -902,7 +902,7 @@ mod integer {
         let r: Result<i32, _> = n.try_into();
 
         let err = err_or_fail!(r);
-        assert!(matches!(err, NumericError::IntConversionInvalidRange));
+        assert!(matches!(err, NumericError::Int32ConversionInvalidRange));
     }
 
     #[test]
@@ -912,7 +912,7 @@ mod integer {
         let r: Result<i32, _> = n.try_into();
 
         let err = err_or_fail!(r);
-        assert!(matches!(err, NumericError::IntConversionInvalidRange));
+        assert!(matches!(err, NumericError::Int32ConversionInvalidRange));
     }
 
     #[test]
@@ -922,7 +922,7 @@ mod integer {
         let r: Result<i32, _> = n.try_into();
 
         let err = err_or_fail!(r);
-        assert!(matches!(err, NumericError::IntConversionInvalidRange));
+        assert!(matches!(err, NumericError::Int32ConversionInvalidRange));
     }
 
     #[test]
@@ -932,7 +932,7 @@ mod integer {
         let r: Result<i32, _> = n.try_into();
 
         let err = err_or_fail!(r);
-        assert!(matches!(err, NumericError::IntConversionInvalidRange));
+        assert!(matches!(err, NumericError::Int32ConversionInvalidRange));
     }
 
     #[test]
@@ -942,7 +942,7 @@ mod integer {
         let r: Result<i32, _> = n.try_into();
 
         let err = err_or_fail!(r);
-        assert!(matches!(err, NumericError::IntConversionInvalidRange));
+        assert!(matches!(err, NumericError::Int32ConversionInvalidRange));
     }
 
     #[test]
@@ -955,7 +955,110 @@ mod integer {
         let r = i.try_to_i32();
 
         let err = err_or_fail!(r);
-        assert!(matches!(err, NumericError::IntConversionInvalidRange));
+        assert!(matches!(err, NumericError::Int32ConversionInvalidRange));
+    }
+
+    #[test]
+    fn single_into_uint() {
+        let n = Number::real(12);
+
+        let r = n.try_into();
+
+        let u: u32 = ok_or_fail!(r);
+        assert_eq!(u, 12);
+    }
+
+    #[test]
+    fn zero_into_uint() {
+        let n = Number::real(0);
+
+        let r = n.try_into();
+
+        let u: u32 = ok_or_fail!(r);
+        assert_eq!(u, 0);
+    }
+
+    #[test]
+    fn negative_into_uint() {
+        let n = Number::real(-12);
+
+        let r: Result<u32, _> = n.try_into();
+
+        let err = err_or_fail!(r);
+        assert!(matches!(err, NumericError::Uint32ConversionInvalidRange));
+    }
+
+    #[test]
+    fn max_into_uint() {
+        let n = Number::real(4294967295);
+
+        let r = n.try_into();
+
+        let u: u32 = ok_or_fail!(r);
+        assert_eq!(u, 4294967295);
+    }
+
+    #[test]
+    fn one_above_max_into_uint() {
+        let n = Number::real(4294967296);
+
+        let r: Result<u32, _> = n.try_into();
+
+        let err = err_or_fail!(r);
+        assert!(matches!(err, NumericError::Uint32ConversionInvalidRange));
+    }
+
+    #[test]
+    fn max_u64_into_uint() {
+        let n = Number::real((Sign::Positive, 18446744073709551615));
+
+        let r: Result<u32, _> = n.try_into();
+
+        let err = err_or_fail!(r);
+        assert!(matches!(err, NumericError::Uint32ConversionInvalidRange));
+    }
+
+    #[test]
+    fn max_negative_u64_into_uint() {
+        let n = Number::real((Sign::Negative, 18446744073709551615));
+
+        let r: Result<u32, _> = n.try_into();
+
+        let err = err_or_fail!(r);
+        assert!(matches!(err, NumericError::Uint32ConversionInvalidRange));
+    }
+
+    #[test]
+    fn min_i64_into_uint() {
+        let n = Number::real((Sign::Negative, 9223372036854775808));
+
+        let r: Result<u32, _> = n.try_into();
+
+        let err = err_or_fail!(r);
+        assert!(matches!(err, NumericError::Uint32ConversionInvalidRange));
+    }
+
+    #[test]
+    fn negative_max_i64_into_uint() {
+        let n = Number::real((Sign::Negative, 9223372036854775807));
+
+        let r: Result<u32, _> = n.try_into();
+
+        let err = err_or_fail!(r);
+        assert!(matches!(err, NumericError::Uint32ConversionInvalidRange));
+    }
+
+    #[test]
+    fn multiple_into_uint() {
+        let i = Integer {
+            precision: Precision::Multiple([24].into()),
+            sign: Sign::Positive,
+        };
+
+        let r = i.try_to_u32();
+
+        let err = err_or_fail!(r);
+        assert!(matches!(err, NumericError::Uint32ConversionInvalidRange));
     }
 
     #[test]
@@ -1266,7 +1369,7 @@ mod float {
         let err = err_or_fail!(r);
         assert!(matches!(
             err,
-            NumericError::ByteConversionInvalidType(s)
+            NumericError::IntConversionInvalidType(s)
             if s == "floating-point"));
     }
 
@@ -1861,7 +1964,7 @@ mod rational {
         let err = err_or_fail!(r);
         assert!(matches!(
             err,
-            NumericError::ByteConversionInvalidType(s)
+            NumericError::IntConversionInvalidType(s)
             if s == "rational"));
     }
 
@@ -2260,7 +2363,7 @@ mod complex {
         let err = err_or_fail!(r);
         assert!(matches!(
             err,
-            NumericError::ByteConversionInvalidType(s)
+            NumericError::IntConversionInvalidType(s)
             if s == "complex"));
     }
 

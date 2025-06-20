@@ -904,7 +904,7 @@ mod bytevector {
             &errs[1],
             ExpressionError {
                 ctx: ExprCtx { span: TxtSpan { start: 9, end: 12 }, txt: line },
-                kind: ExpressionErrorKind::ByteVectorInvalidNumber(NumericError::ByteConversionInvalidType(s)),
+                kind: ExpressionErrorKind::ByteVectorInvalidNumber(NumericError::IntConversionInvalidType(s)),
             } if s == "floating-point" && Rc::ptr_eq(&txt, &line)
         ));
     }

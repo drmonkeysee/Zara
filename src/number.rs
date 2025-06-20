@@ -1,5 +1,5 @@
 macro_rules! try_int_conversion {
-    ($type:ty, $convert:ident, $type_err:ident) => {
+    ($type:ty, $convert:ident) => {
         impl TryFrom<Number> for $type {
             type Error = NumericError;
 
@@ -14,7 +14,9 @@ macro_rules! try_int_conversion {
             fn try_from(value: &Number) -> Result<Self, Self::Error> {
                 match value {
                     Number::Real(Real::Integer(n)) => n.$convert(),
-                    _ => Err(Self::Error::$type_err(value.as_typename().to_string())),
+                    _ => Err(Self::Error::IntConversionInvalidType(
+                        value.as_typename().to_string(),
+                    )),
                 }
             }
         }
@@ -59,6 +61,18 @@ const FMAX_INT: f64 = 9_007_199_254_740_991.0;
 
 pub(crate) type RealResult = Result<Real, NumericError>;
 pub(crate) type IntResult = Result<Integer, NumericError>;
+
+/*
+ * All predicates, equivalence relationships, and operators assume normalized
+ * numeric values such as:
+ * - sign attached to numerator
+ * - no zero denominator
+ * - rationals reduced to integers
+ * - single-item MPs reduced to single precision
+ * - etc
+ * This way we don't have to worry about whether 4/5 == 8/10, 5/1 is an Integer
+ * or a Rational, or MP([1234]) is equivalent to SP(1234).
+ */
 
 #[derive(Clone, Debug)]
 pub(crate) enum Number {
@@ -180,8 +194,9 @@ impl Display for Number {
     }
 }
 
-try_int_conversion!(u8, try_to_u8, ByteConversionInvalidType);
-try_int_conversion!(i32, try_to_i32, IntConversionInvalidType);
+try_int_conversion!(u8, try_to_u8);
+try_int_conversion!(i32, try_to_i32);
+try_int_conversion!(u32, try_to_u32);
 
 #[derive(Clone, Debug)]
 pub(crate) struct Complex(Box<(Real, Real)>);
@@ -192,14 +207,6 @@ pub(crate) enum Real {
     Integer(Integer),
     Rational(Rational),
 }
-
-/*
- * All predicates and equivalence relationships assume any Rational values
- * are created through Real::reduce and thus normalized, including:
- * sign attached to numerator, no zero denominator, evenly-dividing denominator
- * reduces to an Integer, etc. This way we don't have to worry about whether
- * 4/5 == 8/10 or whether 5/1 should be considered an Integer or a Rational.
- */
 
 impl Real {
     pub(crate) fn reduce(
@@ -482,19 +489,30 @@ impl Integer {
 
     fn try_to_i32(&self) -> Result<i32, NumericError> {
         let Precision::Single(u) = self.precision else {
-            return Err(NumericError::IntConversionInvalidRange);
+            return Err(NumericError::Int32ConversionInvalidRange);
         };
         if self.is_negative() {
             if u <= i32::MIN.unsigned_abs().into() {
                 #[allow(clippy::cast_possible_wrap, reason = "guarded against wrapping")]
                 (-(u as i64)).try_into()
             } else {
-                return Err(NumericError::IntConversionInvalidRange);
+                return Err(NumericError::Int32ConversionInvalidRange);
             }
         } else {
             u.try_into()
         }
-        .map_err(|_| NumericError::IntConversionInvalidRange)
+        .map_err(|_| NumericError::Int32ConversionInvalidRange)
+    }
+
+    fn try_to_u32(&self) -> Result<u32, NumericError> {
+        if self.is_negative() {
+            return Err(NumericError::Uint32ConversionInvalidRange);
+        }
+        let Precision::Single(u) = self.precision else {
+            return Err(NumericError::Uint32ConversionInvalidRange);
+        };
+        u.try_into()
+            .map_err(|_| NumericError::Uint32ConversionInvalidRange)
     }
 
     fn make_positive(&mut self) {
@@ -786,13 +804,13 @@ impl FloatSpec {
 #[derive(Debug)]
 pub(crate) enum NumericError {
     ByteConversionInvalidRange,
-    ByteConversionInvalidType(String),
     DivideByZero,
-    IntConversionInvalidRange,
+    Int32ConversionInvalidRange,
     IntConversionInvalidType(String),
     ParseExponentFailure,
     ParseExponentOutOfRange,
     ParseFailure,
+    Uint32ConversionInvalidRange,
     Unimplemented(String),
 }
 
@@ -802,18 +820,21 @@ impl Display for NumericError {
             Self::ByteConversionInvalidRange => {
                 write_intconversion_range_error(u8::MIN, u8::MAX, f)
             }
-            Self::ByteConversionInvalidType(n) | Self::IntConversionInvalidType(n) => {
-                write!(f, "expected integer literal, got numeric type: {n}")
-            }
             Self::DivideByZero => f.write_str("divide by zero"),
-            Self::IntConversionInvalidRange => {
+            Self::Int32ConversionInvalidRange => {
                 write_intconversion_range_error(i32::MIN, i32::MAX, f)
+            }
+            Self::IntConversionInvalidType(n) => {
+                write!(f, "expected integer literal, got numeric type: {n}")
             }
             Self::ParseExponentOutOfRange => {
                 write!(f, "exponent out of range: [{}, {}]", i32::MIN, i32::MAX)
             }
             Self::ParseExponentFailure => f.write_str("exponent parse failure"),
             Self::ParseFailure => f.write_str("number parse failure"),
+            Self::Uint32ConversionInvalidRange => {
+                write_intconversion_range_error(u32::MIN, u32::MAX, f)
+            }
             Self::Unimplemented(s) => write!(f, "unimplemented number parse: '{s}'"),
         }
     }
