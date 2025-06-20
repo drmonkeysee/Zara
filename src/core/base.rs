@@ -86,7 +86,8 @@ use super::FIRST_ARG_LABEL;
 use crate::{
     Exception,
     eval::{Binding, EvalResult, Frame, MAX_ARITY},
-    number::{Integer, Number, NumericTypeName, Real},
+    number::{Integer, Number, NumericError, NumericTypeName, Real},
+    string::unicode::UnicodeError,
     value::{Condition, TypeName, Value},
 };
 use std::rc::Rc;
@@ -116,6 +117,7 @@ pub(super) fn load(scope: &mut Binding) {
     super::bind_intrinsic(scope, "char-upper-case?", 1..1, is_uppercase);
     super::bind_intrinsic(scope, "char-whitespace?", 1..1, is_whitespace);
     super::bind_intrinsic(scope, "char->integer", 1..1, char_to_integer);
+    super::bind_intrinsic(scope, "integer->char", 1..1, integer_to_char);
 
     // equivalence
     super::bind_intrinsic(scope, "eq?", 2..2, is_eq);
@@ -261,6 +263,41 @@ fn char_to_integer(args: &[Value], _env: &mut Frame) -> EvalResult {
         Ok(Value::Number(Number::real(i64::from(n))))
     } else {
         Err(Condition::arg_error(FIRST_ARG_LABEL, TypeName::CHAR, arg).into())
+    }
+}
+
+fn integer_to_char(args: &[Value], _env: &mut Frame) -> EvalResult {
+    let arg = args.first().unwrap();
+    if let Value::Number(n) = arg {
+        <&Number as TryInto<u32>>::try_into(n).map_or_else(
+            |err| {
+                Err(if let NumericError::Uint32ConversionInvalidRange = err {
+                    Condition::value_error(UnicodeError::CodePointOutOfRange.to_string(), arg)
+                } else {
+                    Condition::arg_type_error(
+                        FIRST_ARG_LABEL,
+                        NumericTypeName::INTEGER,
+                        n.as_typename(),
+                        arg,
+                    )
+                }
+                .into())
+            },
+            |u| {
+                <u32 as TryInto<char>>::try_into(u).map_or_else(
+                    |_| {
+                        Err(Condition::value_error(
+                            UnicodeError::CodePointOutOfRange.to_string(),
+                            arg,
+                        )
+                        .into())
+                    },
+                    |c| Ok(Value::Character(c)),
+                )
+            },
+        )
+    } else {
+        Err(Condition::arg_error(FIRST_ARG_LABEL, NumericTypeName::INTEGER, arg).into())
     }
 }
 

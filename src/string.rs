@@ -1,4 +1,6 @@
 pub(crate) mod identifier;
+pub(crate) mod unicode;
+
 use std::{
     cell::Cell,
     cmp::Ordering,

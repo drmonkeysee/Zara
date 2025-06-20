@@ -10,22 +10,6 @@ pub(crate) struct Condition {
 }
 
 impl Condition {
-    pub(crate) fn bind_error(name: &str) -> Self {
-        Self {
-            kind: ConditionKind::Env,
-            irritants: Value::Unspecified,
-            msg: format!("unbound variable: {name}").into(),
-        }
-    }
-
-    pub(crate) fn proc_error(typename: &str) -> Self {
-        Self {
-            kind: ConditionKind::Env,
-            irritants: Value::Unspecified,
-            msg: format!("expected procedure, got: {typename}").into(),
-        }
-    }
-
     pub(crate) fn arg_error(name: &str, expected_type: &str, arg: &Value) -> Self {
         Self::arg_type_error(name, expected_type, arg.as_typename(), arg)
     }
@@ -63,10 +47,34 @@ impl Condition {
         }
     }
 
+    pub(crate) fn bind_error(name: &str) -> Self {
+        Self {
+            kind: ConditionKind::Env,
+            irritants: Value::Unspecified,
+            msg: format!("unbound variable: {name}").into(),
+        }
+    }
+
+    pub(crate) fn proc_error(typename: &str) -> Self {
+        Self {
+            kind: ConditionKind::Env,
+            irritants: Value::Unspecified,
+            msg: format!("expected procedure, got: {typename}").into(),
+        }
+    }
+
     pub(crate) fn system_error(msg: impl Into<Box<str>>) -> Self {
         Self {
             kind: ConditionKind::System,
             irritants: Value::Unspecified,
+            msg: msg.into(),
+        }
+    }
+
+    pub(crate) fn value_error(msg: impl Into<Box<str>>, val: &Value) -> Self {
+        Self {
+            kind: ConditionKind::Env,
+            irritants: zlist![val.clone()],
             msg: msg.into(),
         }
     }
