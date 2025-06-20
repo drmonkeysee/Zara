@@ -16,6 +16,7 @@ use crate::{
  */
 
 const FIRST_ARG_LABEL: &str = "0";
+const SECOND_ARG_LABEL: &str = "1";
 
 pub(crate) fn load(scope: &mut Binding) {
     base::load(scope);

@@ -55,6 +55,14 @@ impl Condition {
         }
     }
 
+    pub(crate) fn index_error(idx: &Value) -> Self {
+        Self {
+            kind: ConditionKind::Env,
+            irritants: zlist![idx.clone()],
+            msg: "index out of range".into(),
+        }
+    }
+
     pub(crate) fn proc_error(typename: &str) -> Self {
         Self {
             kind: ConditionKind::Env,

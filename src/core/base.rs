@@ -58,6 +58,20 @@ macro_rules! vec_length {
     };
 }
 
+macro_rules! vec_get {
+    ($name:ident, $kind: path, $valname:expr, $get:expr, $map:expr) => {
+        fn $name(args: &[Value], _env: &mut Frame) -> EvalResult {
+            let arg = args.first().unwrap();
+            let k = args.get(1).unwrap();
+            if let $kind(v) = arg {
+                vec_item(v, k, $get, $map)
+            } else {
+                Err(Condition::arg_error(FIRST_ARG_LABEL, $valname, arg).into())
+            }
+        }
+    };
+}
+
 macro_rules! cadr_compose {
     ($val:expr, a) => {
         pcar($val)
@@ -82,7 +96,7 @@ macro_rules! cadr_func {
     };
 }
 
-use super::FIRST_ARG_LABEL;
+use super::{FIRST_ARG_LABEL, SECOND_ARG_LABEL};
 use crate::{
     Exception,
     eval::{Binding, EvalResult, Frame, MAX_ARITY},
@@ -90,7 +104,7 @@ use crate::{
     string::unicode::UnicodeError,
     value::{Condition, TypeName, Value},
 };
-use std::rc::Rc;
+use std::{convert, rc::Rc};
 
 const REAL_ARG_TNAME: &str = "real";
 
@@ -128,10 +142,18 @@ seq_predicate!(booleans_eq, Value::Boolean, TypeName::BOOL, bool::eq);
 fn load_bv(scope: &mut Binding) {
     super::bind_intrinsic(scope, "bytevector?", 1..1, is_bytevector);
     super::bind_intrinsic(scope, "bytevector-length", 1..1, bytevector_length);
+    super::bind_intrinsic(scope, "bytevector-u8-ref", 2..2, bytevector_get);
 }
 
 predicate!(is_bytevector, Value::ByteVector(_));
 vec_length!(bytevector_length, Value::ByteVector, TypeName::BYTEVECTOR);
+vec_get!(
+    bytevector_get,
+    Value::ByteVector,
+    TypeName::BYTEVECTOR,
+    |bv, u| bv.get(u).copied(),
+    |item| Value::Number(Number::real(item as i64))
+);
 
 //
 // Characters
@@ -513,6 +535,7 @@ fn load_string(scope: &mut Binding) {
     super::bind_intrinsic(scope, "string<=?", 0..MAX_ARITY, strings_lte);
     super::bind_intrinsic(scope, "string>?", 0..MAX_ARITY, strings_gt);
     super::bind_intrinsic(scope, "string>=?", 0..MAX_ARITY, strings_gte);
+    super::bind_intrinsic(scope, "string-ref", 2..2, string_get);
 }
 
 predicate!(is_string, Value::String(_));
@@ -522,6 +545,13 @@ seq_predicate!(strings_lt, Value::String, TypeName::STRING, Rc::lt);
 seq_predicate!(strings_lte, Value::String, TypeName::STRING, Rc::le);
 seq_predicate!(strings_gt, Value::String, TypeName::STRING, Rc::gt);
 seq_predicate!(strings_gte, Value::String, TypeName::STRING, Rc::ge);
+vec_get!(
+    string_get,
+    Value::String,
+    TypeName::STRING,
+    |s, u| s.chars().nth(u),
+    Value::Character
+);
 
 //
 // Symbols
@@ -562,10 +592,51 @@ fn string_to_symbol(args: &[Value], env: &mut Frame) -> EvalResult {
 fn load_vec(scope: &mut Binding) {
     super::bind_intrinsic(scope, "vector?", 1..1, is_vector);
     super::bind_intrinsic(scope, "vector-length", 1..1, vector_length);
+    super::bind_intrinsic(scope, "vector-ref", 2..2, vector_get);
 }
 
 predicate!(is_vector, Value::Vector(_));
 vec_length!(vector_length, Value::Vector, TypeName::VECTOR);
+vec_get!(
+    vector_get,
+    Value::Vector,
+    TypeName::VECTOR,
+    |v, u| v.get(u).cloned(),
+    convert::identity
+);
+
+fn vec_item<T, U>(
+    vec: &T,
+    k: &Value,
+    get: impl FnOnce(&T, usize) -> Option<U>,
+    map: impl FnOnce(U) -> Value,
+) -> EvalResult {
+    if let Value::Number(n) = k {
+        <&Number as TryInto<usize>>::try_into(n).map_or_else(
+            |err| {
+                Err(if let NumericError::UsizeConversionInvalidRange = err {
+                    Condition::value_error(NumericError::UsizeConversionInvalidRange.to_string(), k)
+                } else {
+                    Condition::arg_type_error(
+                        SECOND_ARG_LABEL,
+                        NumericTypeName::INTEGER,
+                        n.as_typename(),
+                        k,
+                    )
+                }
+                .into())
+            },
+            |u| {
+                get(vec, u).map_or_else(
+                    || Err(Condition::index_error(k).into()),
+                    |item| Ok(map(item)),
+                )
+            },
+        )
+    } else {
+        Err(Condition::arg_error(SECOND_ARG_LABEL, NumericTypeName::INTEGER, k).into())
+    }
+}
 
 #[cfg(test)]
 mod tests {
