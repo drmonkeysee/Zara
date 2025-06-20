@@ -362,37 +362,35 @@ fn is_even(args: &[Value], _env: &mut Frame) -> EvalResult {
 }
 
 fn real_predicate(arg: &Value, pred: impl FnOnce(&Real) -> bool) -> EvalResult {
-    if let Value::Number(n) = arg {
-        if let Number::Real(r) = n {
-            Ok(Value::Boolean(pred(r)))
-        } else {
-            Err(Condition::arg_type_error(
-                FIRST_ARG_LABEL,
-                REAL_ARG_TNAME,
-                NumericTypeName::COMPLEX,
-                arg,
-            )
-            .into())
-        }
+    let Value::Number(n) = arg else {
+        return invalid_target!(REAL_ARG_TNAME, arg);
+    };
+    if let Number::Real(r) = n {
+        Ok(Value::Boolean(pred(r)))
     } else {
-        invalid_target!(REAL_ARG_TNAME, arg)
+        Err(Condition::arg_type_error(
+            FIRST_ARG_LABEL,
+            REAL_ARG_TNAME,
+            NumericTypeName::COMPLEX,
+            arg,
+        )
+        .into())
     }
 }
 
 fn int_predicate(arg: &Value, pred: impl FnOnce(&Integer) -> bool) -> EvalResult {
-    if let Value::Number(n) = arg {
-        match n.clone().into_exact_integer() {
-            None => Err(Condition::arg_type_error(
-                FIRST_ARG_LABEL,
-                NumericTypeName::INTEGER,
-                n.as_typename(),
-                arg,
-            )
-            .into()),
-            Some(n) => Ok(Value::Boolean(pred(&n))),
-        }
-    } else {
-        invalid_target!(NumericTypeName::INTEGER, arg)
+    let Value::Number(n) = arg else {
+        return invalid_target!(NumericTypeName::INTEGER, arg);
+    };
+    match n.clone().into_exact_integer() {
+        None => Err(Condition::arg_type_error(
+            FIRST_ARG_LABEL,
+            NumericTypeName::INTEGER,
+            n.as_typename(),
+            arg,
+        )
+        .into()),
+        Some(n) => Ok(Value::Boolean(pred(&n))),
     }
 }
 
@@ -614,31 +612,30 @@ fn vec_item<T, U>(
     get: impl FnOnce(&T, usize) -> Option<U>,
     map: impl FnOnce(U) -> Value,
 ) -> EvalResult {
-    if let Value::Number(n) = k {
-        <&Number as TryInto<usize>>::try_into(n).map_or_else(
-            |err| {
-                Err(if let NumericError::UsizeConversionInvalidRange = err {
-                    Condition::value_error(NumericError::UsizeConversionInvalidRange.to_string(), k)
-                } else {
-                    Condition::arg_type_error(
-                        SECOND_ARG_LABEL,
-                        NumericTypeName::INTEGER,
-                        n.as_typename(),
-                        k,
-                    )
-                }
-                .into())
-            },
-            |u| {
-                get(vec, u).map_or_else(
-                    || Err(Condition::index_error(k).into()),
-                    |item| Ok(map(item)),
+    let Value::Number(n) = k else {
+        return Err(Condition::arg_error(SECOND_ARG_LABEL, NumericTypeName::INTEGER, k).into());
+    };
+    <&Number as TryInto<usize>>::try_into(n).map_or_else(
+        |err| {
+            Err(if let NumericError::UsizeConversionInvalidRange = err {
+                Condition::value_error(NumericError::UsizeConversionInvalidRange.to_string(), k)
+            } else {
+                Condition::arg_type_error(
+                    SECOND_ARG_LABEL,
+                    NumericTypeName::INTEGER,
+                    n.as_typename(),
+                    k,
                 )
-            },
-        )
-    } else {
-        Err(Condition::arg_error(SECOND_ARG_LABEL, NumericTypeName::INTEGER, k).into())
-    }
+            }
+            .into())
+        },
+        |u| {
+            get(vec, u).map_or_else(
+                || Err(Condition::index_error(k).into()),
+                |item| Ok(map(item)),
+            )
+        },
+    )
 }
 
 #[cfg(test)]
