@@ -23,6 +23,20 @@ macro_rules! try_int_conversion {
     };
 }
 
+macro_rules! uint_convert {
+    ($name:ident, $type:ty, $err:expr) => {
+        fn $name(&self) -> Result<$type, NumericError> {
+            if self.is_negative() {
+                return Err($err);
+            }
+            let Precision::Single(u) = self.precision else {
+                return Err($err);
+            };
+            u.try_into().map_err(|_| $err)
+        }
+    };
+}
+
 macro_rules! sign_from {
     ($type:ty) => {
         impl From<$type> for Sign {
@@ -197,6 +211,7 @@ impl Display for Number {
 try_int_conversion!(u8, try_to_u8);
 try_int_conversion!(i32, try_to_i32);
 try_int_conversion!(u32, try_to_u32);
+try_int_conversion!(usize, try_to_usize);
 
 #[derive(Clone, Debug)]
 pub(crate) struct Complex(Box<(Real, Real)>);
@@ -489,17 +504,6 @@ impl Integer {
         }
     }
 
-    fn try_to_u8(&self) -> Result<u8, NumericError> {
-        if self.is_negative() {
-            return Err(NumericError::ByteConversionInvalidRange);
-        }
-        let Precision::Single(u) = self.precision else {
-            return Err(NumericError::ByteConversionInvalidRange);
-        };
-        u.try_into()
-            .map_err(|_| NumericError::ByteConversionInvalidRange)
-    }
-
     fn try_to_i32(&self) -> Result<i32, NumericError> {
         let Precision::Single(u) = self.precision else {
             return Err(NumericError::Int32ConversionInvalidRange);
@@ -517,16 +521,13 @@ impl Integer {
         .map_err(|_| NumericError::Int32ConversionInvalidRange)
     }
 
-    fn try_to_u32(&self) -> Result<u32, NumericError> {
-        if self.is_negative() {
-            return Err(NumericError::Uint32ConversionInvalidRange);
-        }
-        let Precision::Single(u) = self.precision else {
-            return Err(NumericError::Uint32ConversionInvalidRange);
-        };
-        u.try_into()
-            .map_err(|_| NumericError::Uint32ConversionInvalidRange)
-    }
+    uint_convert!(try_to_u8, u8, NumericError::ByteConversionInvalidRange);
+    uint_convert!(try_to_u32, u32, NumericError::Uint32ConversionInvalidRange);
+    uint_convert!(
+        try_to_usize,
+        usize,
+        NumericError::UsizeConversionInvalidRange
+    );
 
     fn make_positive(&mut self) {
         if self.sign == Sign::Negative {
@@ -818,6 +819,7 @@ pub(crate) enum NumericError {
     ParseFailure,
     Uint32ConversionInvalidRange,
     Unimplemented(String),
+    UsizeConversionInvalidRange,
 }
 
 impl Display for NumericError {
@@ -842,6 +844,9 @@ impl Display for NumericError {
                 write_intconversion_range_error(u32::MIN, u32::MAX, f)
             }
             Self::Unimplemented(s) => write!(f, "unimplemented number parse: '{s}'"),
+            Self::UsizeConversionInvalidRange => {
+                write_intconversion_range_error(usize::MIN, usize::MAX, f)
+            }
         }
     }
 }
