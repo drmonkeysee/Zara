@@ -95,16 +95,49 @@ use std::rc::Rc;
 const REAL_ARG_TNAME: &str = "real";
 
 pub(super) fn load(scope: &mut Binding) {
-    // booleans
+    load_bool(scope);
+    load_bv(scope);
+    load_char(scope);
+    load_eq(scope);
+    load_num(scope);
+    load_list(scope);
+    load_proc(scope);
+    load_string(scope);
+    load_symbol(scope);
+    load_vec(scope);
+}
+
+//
+// Booleans
+//
+
+fn load_bool(scope: &mut Binding) {
     super::bind_intrinsic(scope, "not", 1..1, not);
     super::bind_intrinsic(scope, "boolean?", 1..1, is_boolean);
     super::bind_intrinsic(scope, "boolean=?", 0..MAX_ARITY, booleans_eq);
+}
 
-    // bytevectors
+predicate!(not, Value::Boolean(false));
+predicate!(is_boolean, Value::Boolean(_));
+seq_predicate!(booleans_eq, Value::Boolean, TypeName::BOOL, bool::eq);
+
+//
+// Bytevectors
+//
+
+fn load_bv(scope: &mut Binding) {
     super::bind_intrinsic(scope, "bytevector?", 1..1, is_bytevector);
     super::bind_intrinsic(scope, "bytevector-length", 1..1, bytevector_length);
+}
 
-    // characters
+predicate!(is_bytevector, Value::ByteVector(_));
+vec_length!(bytevector_length, Value::ByteVector, TypeName::BYTEVECTOR);
+
+//
+// Characters
+//
+
+fn load_char(scope: &mut Binding) {
     super::bind_intrinsic(scope, "char?", 1..1, is_char);
     super::bind_intrinsic(scope, "char=?", 0..MAX_ARITY, chars_eq);
     super::bind_intrinsic(scope, "char<?", 0..MAX_ARITY, chars_lt);
@@ -118,108 +151,7 @@ pub(super) fn load(scope: &mut Binding) {
     super::bind_intrinsic(scope, "char-lower-case?", 1..1, is_lowercase);
     super::bind_intrinsic(scope, "char->integer", 1..1, char_to_integer);
     super::bind_intrinsic(scope, "integer->char", 1..1, integer_to_char);
-
-    // equivalence
-    super::bind_intrinsic(scope, "eqv?", 2..2, is_eqv);
-    super::bind_intrinsic(scope, "eq?", 2..2, is_eq);
-    super::bind_intrinsic(scope, "equal?", 2..2, is_equal);
-
-    // numbers
-    // NOTE: complex and number predicates are identical sets
-    super::bind_intrinsic(scope, "number?", 1..1, is_number);
-    super::bind_intrinsic(scope, "complex?", 1..1, is_number);
-    super::bind_intrinsic(scope, "real?", 1..1, is_real);
-    super::bind_intrinsic(scope, "rational?", 1..1, is_rational);
-    super::bind_intrinsic(scope, "integer?", 1..1, is_integer);
-    super::bind_intrinsic(scope, "exact?", 1..1, is_exact);
-    super::bind_intrinsic(scope, "inexact?", 1..1, is_inexact);
-    super::bind_intrinsic(scope, "exact-integer?", 1..1, is_exact_integer);
-    super::bind_intrinsic(scope, "finite?", 1..1, is_finite);
-    super::bind_intrinsic(scope, "infinite?", 1..1, is_infinite);
-    super::bind_intrinsic(scope, "nan?", 1..1, is_nan);
-    super::bind_intrinsic(scope, "zero?", 1..1, is_zero);
-    super::bind_intrinsic(scope, "positive?", 1..1, is_positive);
-    super::bind_intrinsic(scope, "negative?", 1..1, is_negative);
-    super::bind_intrinsic(scope, "odd?", 1..1, is_odd);
-    super::bind_intrinsic(scope, "even?", 1..1, is_even);
-
-    // pairs and lists
-    super::bind_intrinsic(scope, "pair?", 1..1, is_pair);
-    super::bind_intrinsic(scope, "car", 1..1, car);
-    super::bind_intrinsic(scope, "cdr", 1..1, cdr);
-    super::bind_intrinsic(scope, "caar", 1..1, caar);
-    super::bind_intrinsic(scope, "cadr", 1..1, cadr);
-    super::bind_intrinsic(scope, "cdar", 1..1, cdar);
-    super::bind_intrinsic(scope, "cddr", 1..1, cddr);
-    super::bind_intrinsic(scope, "caaar", 1..1, caaar);
-    super::bind_intrinsic(scope, "caadr", 1..1, caadr);
-    super::bind_intrinsic(scope, "cadar", 1..1, cadar);
-    super::bind_intrinsic(scope, "caddr", 1..1, caddr);
-    super::bind_intrinsic(scope, "cdaar", 1..1, cdaar);
-    super::bind_intrinsic(scope, "cdadr", 1..1, cdadr);
-    super::bind_intrinsic(scope, "cddar", 1..1, cddar);
-    super::bind_intrinsic(scope, "cdddr", 1..1, cdddr);
-    super::bind_intrinsic(scope, "caaaar", 1..1, caaaar);
-    super::bind_intrinsic(scope, "caaadr", 1..1, caaadr);
-    super::bind_intrinsic(scope, "caadar", 1..1, caadar);
-    super::bind_intrinsic(scope, "caaddr", 1..1, caaddr);
-    super::bind_intrinsic(scope, "cadaar", 1..1, cadaar);
-    super::bind_intrinsic(scope, "cadadr", 1..1, cadadr);
-    super::bind_intrinsic(scope, "caddar", 1..1, caddar);
-    super::bind_intrinsic(scope, "cadddr", 1..1, cadddr);
-    super::bind_intrinsic(scope, "cdaaar", 1..1, cdaaar);
-    super::bind_intrinsic(scope, "cdaadr", 1..1, cdaadr);
-    super::bind_intrinsic(scope, "cdadar", 1..1, cdadar);
-    super::bind_intrinsic(scope, "cdaddr", 1..1, cdaddr);
-    super::bind_intrinsic(scope, "cddaar", 1..1, cddaar);
-    super::bind_intrinsic(scope, "cddadr", 1..1, cddadr);
-    super::bind_intrinsic(scope, "cdddar", 1..1, cdddar);
-    super::bind_intrinsic(scope, "cddddr", 1..1, cddddr);
-    super::bind_intrinsic(scope, "null?", 1..1, is_null);
-    super::bind_intrinsic(scope, "list?", 1..1, is_list);
-    super::bind_intrinsic(scope, "length", 1..1, list_length);
-
-    // procedures
-    super::bind_intrinsic(scope, "procedure?", 1..1, is_procedure);
-
-    // strings
-    super::bind_intrinsic(scope, "string?", 1..1, is_string);
-    super::bind_intrinsic(scope, "string-length", 1..1, string_length);
-    super::bind_intrinsic(scope, "string=?", 0..MAX_ARITY, strings_eq);
-    super::bind_intrinsic(scope, "string<?", 0..MAX_ARITY, strings_lt);
-    super::bind_intrinsic(scope, "string<=?", 0..MAX_ARITY, strings_lte);
-    super::bind_intrinsic(scope, "string>?", 0..MAX_ARITY, strings_gt);
-    super::bind_intrinsic(scope, "string>=?", 0..MAX_ARITY, strings_gte);
-
-    // symbols
-    super::bind_intrinsic(scope, "symbol?", 1..1, is_symbol);
-    super::bind_intrinsic(scope, "symbol=?", 0..MAX_ARITY, symbols_eq);
-    super::bind_intrinsic(scope, "symbol->string", 1..1, symbol_to_string);
-    super::bind_intrinsic(scope, "string->symbol", 1..1, string_to_symbol);
-
-    // vectors
-    super::bind_intrinsic(scope, "vector?", 1..1, is_vector);
-    super::bind_intrinsic(scope, "vector-length", 1..1, vector_length);
 }
-
-//
-// Booleans
-//
-
-predicate!(not, Value::Boolean(false));
-predicate!(is_boolean, Value::Boolean(_));
-seq_predicate!(booleans_eq, Value::Boolean, TypeName::BOOL, bool::eq);
-
-//
-// Bytevectors
-//
-
-predicate!(is_bytevector, Value::ByteVector(_));
-vec_length!(bytevector_length, Value::ByteVector, TypeName::BYTEVECTOR);
-
-//
-// Characters
-//
 
 predicate!(is_char, Value::Character(_));
 seq_predicate!(chars_eq, Value::Character, TypeName::CHAR, char::eq);
@@ -307,6 +239,12 @@ fn integer_to_char(args: &[Value], _env: &mut Frame) -> EvalResult {
 // Equivalence
 //
 
+fn load_eq(scope: &mut Binding) {
+    super::bind_intrinsic(scope, "eqv?", 2..2, is_eqv);
+    super::bind_intrinsic(scope, "eq?", 2..2, is_eq);
+    super::bind_intrinsic(scope, "equal?", 2..2, is_equal);
+}
+
 #[allow(clippy::unnecessary_wraps, reason = "infallible intrinsic")]
 fn is_eqv(args: &[Value], _env: &mut Frame) -> EvalResult {
     let a = args.first().unwrap();
@@ -331,6 +269,26 @@ fn is_equal(args: &[Value], _env: &mut Frame) -> EvalResult {
 //
 // Numbers
 //
+
+fn load_num(scope: &mut Binding) {
+    // NOTE: complex and number predicates are identical sets
+    super::bind_intrinsic(scope, "number?", 1..1, is_number);
+    super::bind_intrinsic(scope, "complex?", 1..1, is_number);
+    super::bind_intrinsic(scope, "real?", 1..1, is_real);
+    super::bind_intrinsic(scope, "rational?", 1..1, is_rational);
+    super::bind_intrinsic(scope, "integer?", 1..1, is_integer);
+    super::bind_intrinsic(scope, "exact?", 1..1, is_exact);
+    super::bind_intrinsic(scope, "inexact?", 1..1, is_inexact);
+    super::bind_intrinsic(scope, "exact-integer?", 1..1, is_exact_integer);
+    super::bind_intrinsic(scope, "finite?", 1..1, is_finite);
+    super::bind_intrinsic(scope, "infinite?", 1..1, is_infinite);
+    super::bind_intrinsic(scope, "nan?", 1..1, is_nan);
+    super::bind_intrinsic(scope, "zero?", 1..1, is_zero);
+    super::bind_intrinsic(scope, "positive?", 1..1, is_positive);
+    super::bind_intrinsic(scope, "negative?", 1..1, is_negative);
+    super::bind_intrinsic(scope, "odd?", 1..1, is_odd);
+    super::bind_intrinsic(scope, "even?", 1..1, is_even);
+}
 
 predicate!(is_number, Value::Number(_));
 predicate!(is_real, Value::Number(Number::Real(_)));
@@ -417,6 +375,43 @@ fn int_predicate(arg: &Value, pred: impl FnOnce(&Integer) -> bool) -> EvalResult
 // Pairs and Lists
 //
 
+fn load_list(scope: &mut Binding) {
+    super::bind_intrinsic(scope, "pair?", 1..1, is_pair);
+    super::bind_intrinsic(scope, "car", 1..1, car);
+    super::bind_intrinsic(scope, "cdr", 1..1, cdr);
+    super::bind_intrinsic(scope, "caar", 1..1, caar);
+    super::bind_intrinsic(scope, "cadr", 1..1, cadr);
+    super::bind_intrinsic(scope, "cdar", 1..1, cdar);
+    super::bind_intrinsic(scope, "cddr", 1..1, cddr);
+    super::bind_intrinsic(scope, "caaar", 1..1, caaar);
+    super::bind_intrinsic(scope, "caadr", 1..1, caadr);
+    super::bind_intrinsic(scope, "cadar", 1..1, cadar);
+    super::bind_intrinsic(scope, "caddr", 1..1, caddr);
+    super::bind_intrinsic(scope, "cdaar", 1..1, cdaar);
+    super::bind_intrinsic(scope, "cdadr", 1..1, cdadr);
+    super::bind_intrinsic(scope, "cddar", 1..1, cddar);
+    super::bind_intrinsic(scope, "cdddr", 1..1, cdddr);
+    super::bind_intrinsic(scope, "caaaar", 1..1, caaaar);
+    super::bind_intrinsic(scope, "caaadr", 1..1, caaadr);
+    super::bind_intrinsic(scope, "caadar", 1..1, caadar);
+    super::bind_intrinsic(scope, "caaddr", 1..1, caaddr);
+    super::bind_intrinsic(scope, "cadaar", 1..1, cadaar);
+    super::bind_intrinsic(scope, "cadadr", 1..1, cadadr);
+    super::bind_intrinsic(scope, "caddar", 1..1, caddar);
+    super::bind_intrinsic(scope, "cadddr", 1..1, cadddr);
+    super::bind_intrinsic(scope, "cdaaar", 1..1, cdaaar);
+    super::bind_intrinsic(scope, "cdaadr", 1..1, cdaadr);
+    super::bind_intrinsic(scope, "cdadar", 1..1, cdadar);
+    super::bind_intrinsic(scope, "cdaddr", 1..1, cdaddr);
+    super::bind_intrinsic(scope, "cddaar", 1..1, cddaar);
+    super::bind_intrinsic(scope, "cddadr", 1..1, cddadr);
+    super::bind_intrinsic(scope, "cdddar", 1..1, cdddar);
+    super::bind_intrinsic(scope, "cddddr", 1..1, cddddr);
+    super::bind_intrinsic(scope, "null?", 1..1, is_null);
+    super::bind_intrinsic(scope, "list?", 1..1, is_list);
+    super::bind_intrinsic(scope, "length", 1..1, list_length);
+}
+
 predicate!(is_pair, Value::Pair(Some(_)));
 predicate!(is_null, Value::Pair(None));
 cadr_func!(car, a);
@@ -500,11 +495,25 @@ fn pcdr(arg: &Value) -> EvalResult {
 // Procedures
 //
 
+fn load_proc(scope: &mut Binding) {
+    super::bind_intrinsic(scope, "procedure?", 1..1, is_procedure);
+}
+
 predicate!(is_procedure, Value::Procedure(_));
 
 //
 // Strings
 //
+
+fn load_string(scope: &mut Binding) {
+    super::bind_intrinsic(scope, "string?", 1..1, is_string);
+    super::bind_intrinsic(scope, "string-length", 1..1, string_length);
+    super::bind_intrinsic(scope, "string=?", 0..MAX_ARITY, strings_eq);
+    super::bind_intrinsic(scope, "string<?", 0..MAX_ARITY, strings_lt);
+    super::bind_intrinsic(scope, "string<=?", 0..MAX_ARITY, strings_lte);
+    super::bind_intrinsic(scope, "string>?", 0..MAX_ARITY, strings_gt);
+    super::bind_intrinsic(scope, "string>=?", 0..MAX_ARITY, strings_gte);
+}
 
 predicate!(is_string, Value::String(_));
 vec_length!(string_length, Value::String, TypeName::STRING);
@@ -517,6 +526,13 @@ seq_predicate!(strings_gte, Value::String, TypeName::STRING, Rc::ge);
 //
 // Symbols
 //
+
+fn load_symbol(scope: &mut Binding) {
+    super::bind_intrinsic(scope, "symbol?", 1..1, is_symbol);
+    super::bind_intrinsic(scope, "symbol=?", 0..MAX_ARITY, symbols_eq);
+    super::bind_intrinsic(scope, "symbol->string", 1..1, symbol_to_string);
+    super::bind_intrinsic(scope, "string->symbol", 1..1, string_to_symbol);
+}
 
 predicate!(is_symbol, Value::Symbol(_));
 seq_predicate!(symbols_eq, Value::Symbol, TypeName::SYMBOL, Rc::ptr_eq);
@@ -542,6 +558,11 @@ fn string_to_symbol(args: &[Value], env: &mut Frame) -> EvalResult {
 //
 // Vectors
 //
+
+fn load_vec(scope: &mut Binding) {
+    super::bind_intrinsic(scope, "vector?", 1..1, is_vector);
+    super::bind_intrinsic(scope, "vector-length", 1..1, vector_length);
+}
 
 predicate!(is_vector, Value::Vector(_));
 vec_length!(vector_length, Value::Vector, TypeName::VECTOR);
