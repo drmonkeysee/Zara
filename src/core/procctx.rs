@@ -16,8 +16,8 @@ const PEXIT_FAILURE: i32 = 1;
 
 pub(super) fn load(scope: &mut Binding) {
     super::bind_intrinsic(scope, "command-line", 0..0, command_line);
-    super::bind_intrinsic(scope, "emergency-exit", 0..1, emergency_exit);
     super::bind_intrinsic(scope, "exit", 0..1, exit);
+    super::bind_intrinsic(scope, "emergency-exit", 0..1, emergency_exit);
     super::bind_intrinsic(
         scope,
         "get-environment-variable",
@@ -37,15 +37,6 @@ fn command_line(_args: &[Value], env: &mut Frame) -> EvalResult {
     Ok(env.sys.args.clone())
 }
 
-fn emergency_exit(args: &[Value], _env: &mut Frame) -> EvalResult {
-    process::exit(resolve_exit(
-        args.first(),
-        PEXIT_SUCCESS,
-        PEXIT_FAILURE,
-        |n| n.try_into().unwrap_or(PEXIT_FAILURE),
-    ));
-}
-
 fn exit(args: &[Value], _env: &mut Frame) -> EvalResult {
     Err(Exception::Exit(resolve_exit(
         args.first(),
@@ -53,6 +44,15 @@ fn exit(args: &[Value], _env: &mut Frame) -> EvalResult {
         ExitCode::FAILURE,
         |n| (u8::try_from(n)).map_or(ExitCode::FAILURE, ExitCode::from),
     )))
+}
+
+fn emergency_exit(args: &[Value], _env: &mut Frame) -> EvalResult {
+    process::exit(resolve_exit(
+        args.first(),
+        PEXIT_SUCCESS,
+        PEXIT_FAILURE,
+        |n| n.try_into().unwrap_or(PEXIT_FAILURE),
+    ));
 }
 
 fn get_environment_variable(args: &[Value], _env: &mut Frame) -> EvalResult {

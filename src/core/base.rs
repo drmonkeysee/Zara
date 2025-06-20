@@ -96,9 +96,9 @@ const REAL_ARG_TNAME: &str = "real";
 
 pub(super) fn load(scope: &mut Binding) {
     // booleans
-    super::bind_intrinsic(scope, "boolean?", 1..1, is_boolean);
-    super::bind_intrinsic(scope, "boolean=?", 0..MAX_ARITY, booleans_equal);
     super::bind_intrinsic(scope, "not", 1..1, not);
+    super::bind_intrinsic(scope, "boolean?", 1..1, is_boolean);
+    super::bind_intrinsic(scope, "boolean=?", 0..MAX_ARITY, booleans_eq);
 
     // bytevectors
     super::bind_intrinsic(scope, "bytevector?", 1..1, is_bytevector);
@@ -112,38 +112,39 @@ pub(super) fn load(scope: &mut Binding) {
     super::bind_intrinsic(scope, "char>?", 0..MAX_ARITY, chars_gt);
     super::bind_intrinsic(scope, "char>=?", 0..MAX_ARITY, chars_gte);
     super::bind_intrinsic(scope, "char-alphabetic?", 1..1, is_alphabetic);
-    super::bind_intrinsic(scope, "char-lower-case?", 1..1, is_lowercase);
     super::bind_intrinsic(scope, "char-numeric?", 1..1, is_numeric);
-    super::bind_intrinsic(scope, "char-upper-case?", 1..1, is_uppercase);
     super::bind_intrinsic(scope, "char-whitespace?", 1..1, is_whitespace);
+    super::bind_intrinsic(scope, "char-upper-case?", 1..1, is_uppercase);
+    super::bind_intrinsic(scope, "char-lower-case?", 1..1, is_lowercase);
     super::bind_intrinsic(scope, "char->integer", 1..1, char_to_integer);
     super::bind_intrinsic(scope, "integer->char", 1..1, integer_to_char);
 
     // equivalence
+    super::bind_intrinsic(scope, "eqv?", 2..2, is_eqv);
     super::bind_intrinsic(scope, "eq?", 2..2, is_eq);
     super::bind_intrinsic(scope, "equal?", 2..2, is_equal);
-    super::bind_intrinsic(scope, "eqv?", 2..2, is_eqv);
 
     // numbers
     // NOTE: complex and number predicates are identical sets
+    super::bind_intrinsic(scope, "number?", 1..1, is_number);
     super::bind_intrinsic(scope, "complex?", 1..1, is_number);
-    super::bind_intrinsic(scope, "even?", 1..1, is_even);
+    super::bind_intrinsic(scope, "real?", 1..1, is_real);
+    super::bind_intrinsic(scope, "rational?", 1..1, is_rational);
+    super::bind_intrinsic(scope, "integer?", 1..1, is_integer);
     super::bind_intrinsic(scope, "exact?", 1..1, is_exact);
+    super::bind_intrinsic(scope, "inexact?", 1..1, is_inexact);
     super::bind_intrinsic(scope, "exact-integer?", 1..1, is_exact_integer);
     super::bind_intrinsic(scope, "finite?", 1..1, is_finite);
-    super::bind_intrinsic(scope, "inexact?", 1..1, is_inexact);
     super::bind_intrinsic(scope, "infinite?", 1..1, is_infinite);
-    super::bind_intrinsic(scope, "integer?", 1..1, is_integer);
     super::bind_intrinsic(scope, "nan?", 1..1, is_nan);
-    super::bind_intrinsic(scope, "negative?", 1..1, is_negative);
-    super::bind_intrinsic(scope, "number?", 1..1, is_number);
-    super::bind_intrinsic(scope, "odd?", 1..1, is_odd);
-    super::bind_intrinsic(scope, "positive?", 1..1, is_positive);
-    super::bind_intrinsic(scope, "rational?", 1..1, is_rational);
-    super::bind_intrinsic(scope, "real?", 1..1, is_real);
     super::bind_intrinsic(scope, "zero?", 1..1, is_zero);
+    super::bind_intrinsic(scope, "positive?", 1..1, is_positive);
+    super::bind_intrinsic(scope, "negative?", 1..1, is_negative);
+    super::bind_intrinsic(scope, "odd?", 1..1, is_odd);
+    super::bind_intrinsic(scope, "even?", 1..1, is_even);
 
     // pairs and lists
+    super::bind_intrinsic(scope, "pair?", 1..1, is_pair);
     super::bind_intrinsic(scope, "car", 1..1, car);
     super::bind_intrinsic(scope, "cdr", 1..1, cdr);
     super::bind_intrinsic(scope, "caar", 1..1, caar);
@@ -174,22 +175,21 @@ pub(super) fn load(scope: &mut Binding) {
     super::bind_intrinsic(scope, "cddadr", 1..1, cddadr);
     super::bind_intrinsic(scope, "cdddar", 1..1, cdddar);
     super::bind_intrinsic(scope, "cddddr", 1..1, cddddr);
-    super::bind_intrinsic(scope, "length", 1..1, list_length);
-    super::bind_intrinsic(scope, "list?", 1..1, is_list);
     super::bind_intrinsic(scope, "null?", 1..1, is_null);
-    super::bind_intrinsic(scope, "pair?", 1..1, is_pair);
+    super::bind_intrinsic(scope, "list?", 1..1, is_list);
+    super::bind_intrinsic(scope, "length", 1..1, list_length);
 
     // procedures
     super::bind_intrinsic(scope, "procedure?", 1..1, is_procedure);
 
     // strings
     super::bind_intrinsic(scope, "string?", 1..1, is_string);
+    super::bind_intrinsic(scope, "string-length", 1..1, string_length);
     super::bind_intrinsic(scope, "string=?", 0..MAX_ARITY, strings_eq);
     super::bind_intrinsic(scope, "string<?", 0..MAX_ARITY, strings_lt);
     super::bind_intrinsic(scope, "string<=?", 0..MAX_ARITY, strings_lte);
     super::bind_intrinsic(scope, "string>?", 0..MAX_ARITY, strings_gt);
     super::bind_intrinsic(scope, "string>=?", 0..MAX_ARITY, strings_gte);
-    super::bind_intrinsic(scope, "string-length", 1..1, string_length);
 
     // symbols
     super::bind_intrinsic(scope, "symbol?", 1..1, is_symbol);
@@ -204,9 +204,9 @@ pub(super) fn load(scope: &mut Binding) {
 // Booleans
 //
 
-predicate!(is_boolean, Value::Boolean(_));
 predicate!(not, Value::Boolean(false));
-seq_predicate!(booleans_equal, Value::Boolean, TypeName::BOOL, bool::eq);
+predicate!(is_boolean, Value::Boolean(_));
+seq_predicate!(booleans_eq, Value::Boolean, TypeName::BOOL, bool::eq);
 
 //
 // Bytevectors
@@ -232,16 +232,16 @@ try_predicate!(
     |c: &char| c.is_alphabetic()
 );
 try_predicate!(
-    is_lowercase,
-    Value::Character,
-    TypeName::CHAR,
-    |c: &char| c.is_lowercase()
-);
-try_predicate!(
     is_numeric,
     Value::Character,
     TypeName::CHAR,
     |_c: &char| todo!("is_numeric is too broad, need only Nd")
+);
+try_predicate!(
+    is_whitespace,
+    Value::Character,
+    TypeName::CHAR,
+    |c: &char| c.is_whitespace()
 );
 try_predicate!(
     is_uppercase,
@@ -250,10 +250,10 @@ try_predicate!(
     |c: &char| c.is_uppercase()
 );
 try_predicate!(
-    is_whitespace,
+    is_lowercase,
     Value::Character,
     TypeName::CHAR,
-    |c: &char| c.is_whitespace()
+    |c: &char| c.is_lowercase()
 );
 
 fn char_to_integer(args: &[Value], _env: &mut Frame) -> EvalResult {
@@ -306,6 +306,13 @@ fn integer_to_char(args: &[Value], _env: &mut Frame) -> EvalResult {
 //
 
 #[allow(clippy::unnecessary_wraps, reason = "infallible intrinsic")]
+fn is_eqv(args: &[Value], _env: &mut Frame) -> EvalResult {
+    let a = args.first().unwrap();
+    let b = args.get(1).unwrap();
+    Ok(Value::Boolean(a.is_eqv(b)))
+}
+
+#[allow(clippy::unnecessary_wraps, reason = "infallible intrinsic")]
 fn is_eq(args: &[Value], _env: &mut Frame) -> EvalResult {
     let a = args.first().unwrap();
     let b = args.get(1).unwrap();
@@ -319,19 +326,19 @@ fn is_equal(args: &[Value], _env: &mut Frame) -> EvalResult {
     Ok(Value::Boolean(a == b))
 }
 
-#[allow(clippy::unnecessary_wraps, reason = "infallible intrinsic")]
-fn is_eqv(args: &[Value], _env: &mut Frame) -> EvalResult {
-    let a = args.first().unwrap();
-    let b = args.get(1).unwrap();
-    Ok(Value::Boolean(a.is_eqv(b)))
-}
-
 //
 // Numbers
 //
 
+predicate!(is_number, Value::Number(_));
+predicate!(is_real, Value::Number(Number::Real(_)));
+predicate!(is_rational, Value::Number(Number::Real(r)) if r.is_rational());
+predicate!(is_integer, Value::Number(Number::Real(r)) if r.is_integer());
 try_predicate!(is_exact, Value::Number, TypeName::NUMBER, |n: &Number| {
     !n.is_inexact()
+});
+try_predicate!(is_inexact, Value::Number, TypeName::NUMBER, |n: &Number| {
+    n.is_inexact()
 });
 try_predicate!(
     is_exact_integer,
@@ -342,26 +349,19 @@ try_predicate!(
 try_predicate!(is_finite, Value::Number, TypeName::NUMBER, |n: &Number| {
     !n.is_infinite() && !n.is_nan()
 });
-try_predicate!(is_inexact, Value::Number, TypeName::NUMBER, |n: &Number| {
-    n.is_inexact()
-});
 try_predicate!(
     is_infinite,
     Value::Number,
     TypeName::NUMBER,
     |n: &Number| n.is_infinite()
 );
-predicate!(is_integer, Value::Number(Number::Real(r)) if r.is_integer());
 try_predicate!(is_nan, Value::Number, TypeName::NUMBER, |n: &Number| n
     .is_nan());
-predicate!(is_number, Value::Number(_));
-predicate!(is_rational, Value::Number(Number::Real(r)) if r.is_rational());
-predicate!(is_real, Value::Number(Number::Real(_)));
 try_predicate!(is_zero, Value::Number, TypeName::NUMBER, |n: &Number| n
     .is_zero());
 
-fn is_even(args: &[Value], _env: &mut Frame) -> EvalResult {
-    int_predicate(args.first().unwrap(), Integer::is_even)
+fn is_positive(args: &[Value], _env: &mut Frame) -> EvalResult {
+    real_predicate(args.first().unwrap(), Real::is_positive)
 }
 
 fn is_negative(args: &[Value], _env: &mut Frame) -> EvalResult {
@@ -372,8 +372,8 @@ fn is_odd(args: &[Value], _env: &mut Frame) -> EvalResult {
     int_predicate(args.first().unwrap(), |n| !n.is_even())
 }
 
-fn is_positive(args: &[Value], _env: &mut Frame) -> EvalResult {
-    real_predicate(args.first().unwrap(), Real::is_positive)
+fn is_even(args: &[Value], _env: &mut Frame) -> EvalResult {
+    int_predicate(args.first().unwrap(), Integer::is_even)
 }
 
 fn real_predicate(arg: &Value, pred: impl FnOnce(&Real) -> bool) -> EvalResult {
@@ -415,8 +415,8 @@ fn int_predicate(arg: &Value, pred: impl FnOnce(&Integer) -> bool) -> EvalResult
 // Pairs and Lists
 //
 
-predicate!(is_null, Value::Pair(None));
 predicate!(is_pair, Value::Pair(Some(_)));
+predicate!(is_null, Value::Pair(None));
 cadr_func!(car, a);
 cadr_func!(cdr, d);
 cadr_func!(caar, a, a);
@@ -448,6 +448,16 @@ cadr_func!(cddadr, d, d, a, d);
 cadr_func!(cdddar, d, d, d, a);
 cadr_func!(cddddr, d, d, d, d);
 
+#[allow(clippy::unnecessary_wraps, reason = "infallible intrinsic")]
+fn is_list(args: &[Value], _env: &mut Frame) -> EvalResult {
+    let arg = args.first().unwrap();
+    Ok(Value::Boolean(match arg {
+        Value::Pair(None) => true,
+        Value::Pair(Some(p)) => p.is_list(),
+        _ => false,
+    }))
+}
+
 fn list_length(args: &[Value], _env: &mut Frame) -> EvalResult {
     let arg = args.first().unwrap();
     match arg {
@@ -466,16 +476,6 @@ fn list_length(args: &[Value], _env: &mut Frame) -> EvalResult {
         ),
         _ => Err(Condition::arg_error(FIRST_ARG_LABEL, TypeName::LIST, arg).into()),
     }
-}
-
-#[allow(clippy::unnecessary_wraps, reason = "infallible intrinsic")]
-fn is_list(args: &[Value], _env: &mut Frame) -> EvalResult {
-    let arg = args.first().unwrap();
-    Ok(Value::Boolean(match arg {
-        Value::Pair(None) => true,
-        Value::Pair(Some(p)) => p.is_list(),
-        _ => false,
-    }))
 }
 
 fn pcar(arg: &Value) -> EvalResult {
@@ -505,12 +505,12 @@ predicate!(is_procedure, Value::Procedure(_));
 //
 
 predicate!(is_string, Value::String(_));
+vec_length!(string_length, Value::String, TypeName::STRING);
 seq_predicate!(strings_eq, Value::String, TypeName::STRING, Rc::eq);
 seq_predicate!(strings_lt, Value::String, TypeName::STRING, Rc::lt);
 seq_predicate!(strings_lte, Value::String, TypeName::STRING, Rc::le);
 seq_predicate!(strings_gt, Value::String, TypeName::STRING, Rc::gt);
 seq_predicate!(strings_gte, Value::String, TypeName::STRING, Rc::ge);
-vec_length!(string_length, Value::String, TypeName::STRING);
 
 //
 // Symbols
@@ -536,7 +536,7 @@ mod tests {
         let args = [];
         let mut env = TestEnv::default();
 
-        let r = booleans_equal(&args, &mut env.new_frame());
+        let r = booleans_eq(&args, &mut env.new_frame());
 
         let v = ok_or_fail!(r);
         assert!(matches!(v, Value::Boolean(true)));
@@ -548,7 +548,7 @@ mod tests {
         for case in cases {
             let mut env = TestEnv::default();
 
-            let r = booleans_equal(&case, &mut env.new_frame());
+            let r = booleans_eq(&case, &mut env.new_frame());
 
             let v = ok_or_fail!(r);
             assert!(matches!(v, Value::Boolean(true)));
@@ -564,7 +564,7 @@ mod tests {
         ];
         let mut env = TestEnv::default();
 
-        let r = booleans_equal(&args, &mut env.new_frame());
+        let r = booleans_eq(&args, &mut env.new_frame());
 
         let v = ok_or_fail!(r);
         assert!(matches!(v, Value::Boolean(true)));
@@ -579,7 +579,7 @@ mod tests {
         ];
         let mut env = TestEnv::default();
 
-        let r = booleans_equal(&args, &mut env.new_frame());
+        let r = booleans_eq(&args, &mut env.new_frame());
 
         let v = ok_or_fail!(r);
         assert!(matches!(v, Value::Boolean(true)));
@@ -594,7 +594,7 @@ mod tests {
         ];
         let mut env = TestEnv::default();
 
-        let r = booleans_equal(&args, &mut env.new_frame());
+        let r = booleans_eq(&args, &mut env.new_frame());
 
         let v = ok_or_fail!(r);
         assert!(matches!(v, Value::Boolean(false)));
@@ -609,7 +609,7 @@ mod tests {
         ];
         let mut env = TestEnv::default();
 
-        let r = booleans_equal(&args, &mut env.new_frame());
+        let r = booleans_eq(&args, &mut env.new_frame());
 
         let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
         assert_eq!(
@@ -628,7 +628,7 @@ mod tests {
         ];
         let mut env = TestEnv::default();
 
-        let r = booleans_equal(&args, &mut env.new_frame());
+        let r = booleans_eq(&args, &mut env.new_frame());
 
         let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
         assert_eq!(
