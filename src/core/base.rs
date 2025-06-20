@@ -15,7 +15,7 @@ macro_rules! try_predicate {
             if let $kind(val) = arg {
                 Ok(Value::Boolean($pred(val)))
             } else {
-                Err(Condition::arg_error(FIRST_ARG_LABEL, $valname, arg).into())
+                invalid_target!($valname, arg)
             }
         }
     };
@@ -52,7 +52,7 @@ macro_rules! vec_length {
             if let $kind(v) = arg {
                 Ok(Value::Number(Number::from_usize(v.len())))
             } else {
-                Err(Condition::arg_error(FIRST_ARG_LABEL, $valname, arg).into())
+                invalid_target!($valname, arg)
             }
         }
     };
@@ -66,7 +66,7 @@ macro_rules! vec_get {
             if let $kind(v) = arg {
                 vec_item(v, k, $get, $map)
             } else {
-                Err(Condition::arg_error(FIRST_ARG_LABEL, $valname, arg).into())
+                invalid_target!($valname, arg)
             }
         }
     };
@@ -218,43 +218,46 @@ fn char_to_integer(args: &[Value], _env: &mut Frame) -> EvalResult {
         let n = <char as Into<u32>>::into(*c);
         Ok(Value::Number(Number::real(i64::from(n))))
     } else {
-        Err(Condition::arg_error(FIRST_ARG_LABEL, TypeName::CHAR, arg).into())
+        invalid_target!(TypeName::CHAR, arg)
     }
 }
 
 fn integer_to_char(args: &[Value], _env: &mut Frame) -> EvalResult {
     let arg = args.first().unwrap();
     if let Value::Number(n) = arg {
-        <&Number as TryInto<u32>>::try_into(n).map_or_else(
-            |err| {
-                Err(if let NumericError::Uint32ConversionInvalidRange = err {
-                    Condition::value_error(UnicodeError::CodePointOutOfRange.to_string(), arg)
-                } else {
-                    Condition::arg_type_error(
-                        FIRST_ARG_LABEL,
-                        NumericTypeName::INTEGER,
-                        n.as_typename(),
-                        arg,
-                    )
-                }
-                .into())
-            },
-            |u| {
-                <u32 as TryInto<char>>::try_into(u).map_or_else(
-                    |_| {
-                        Err(Condition::value_error(
-                            UnicodeError::CodePointOutOfRange.to_string(),
-                            arg,
-                        )
-                        .into())
-                    },
-                    |c| Ok(Value::Character(c)),
-                )
-            },
-        )
+        try_num_into_char(n, arg)
     } else {
-        Err(Condition::arg_error(FIRST_ARG_LABEL, NumericTypeName::INTEGER, arg).into())
+        invalid_target!(NumericTypeName::INTEGER, arg)
     }
+}
+
+fn try_num_into_char(n: &Number, arg: &Value) -> EvalResult {
+    <&Number as TryInto<u32>>::try_into(n).map_or_else(
+        |err| {
+            Err(if let NumericError::Uint32ConversionInvalidRange = err {
+                Condition::value_error(UnicodeError::CodePointOutOfRange.to_string(), arg)
+            } else {
+                Condition::arg_type_error(
+                    FIRST_ARG_LABEL,
+                    NumericTypeName::INTEGER,
+                    n.as_typename(),
+                    arg,
+                )
+            }
+            .into())
+        },
+        |u| {
+            <u32 as TryInto<char>>::try_into(u).map_or_else(
+                |_| {
+                    Err(
+                        Condition::value_error(UnicodeError::CodePointOutOfRange.to_string(), arg)
+                            .into(),
+                    )
+                },
+                |c| Ok(Value::Character(c)),
+            )
+        },
+    )
 }
 
 //
@@ -372,7 +375,7 @@ fn real_predicate(arg: &Value, pred: impl FnOnce(&Real) -> bool) -> EvalResult {
             .into())
         }
     } else {
-        Err(Condition::arg_error(FIRST_ARG_LABEL, REAL_ARG_TNAME, arg).into())
+        invalid_target!(REAL_ARG_TNAME, arg)
     }
 }
 
@@ -389,7 +392,7 @@ fn int_predicate(arg: &Value, pred: impl FnOnce(&Integer) -> bool) -> EvalResult
             Some(n) => Ok(Value::Boolean(pred(&n))),
         }
     } else {
-        Err(Condition::arg_error(FIRST_ARG_LABEL, NumericTypeName::INTEGER, arg).into())
+        invalid_target!(NumericTypeName::INTEGER, arg)
     }
 }
 
@@ -493,7 +496,7 @@ fn list_length(args: &[Value], _env: &mut Frame) -> EvalResult {
             },
             |len| Ok(Value::Number(Number::from_usize(len))),
         ),
-        _ => Err(Condition::arg_error(FIRST_ARG_LABEL, TypeName::LIST, arg).into()),
+        _ => invalid_target!(TypeName::LIST, arg),
     }
 }
 
@@ -501,7 +504,7 @@ fn pcar(arg: &Value) -> EvalResult {
     if let Value::Pair(Some(p)) = arg {
         Ok(p.car.clone())
     } else {
-        Err(Condition::arg_error(FIRST_ARG_LABEL, TypeName::PAIR, arg).into())
+        invalid_target!(TypeName::PAIR, arg)
     }
 }
 
@@ -509,7 +512,7 @@ fn pcdr(arg: &Value) -> EvalResult {
     if let Value::Pair(Some(p)) = arg {
         Ok(p.cdr.clone())
     } else {
-        Err(Condition::arg_error(FIRST_ARG_LABEL, TypeName::PAIR, arg).into())
+        invalid_target!(TypeName::PAIR, arg)
     }
 }
 
@@ -572,7 +575,7 @@ fn symbol_to_string(args: &[Value], _env: &mut Frame) -> EvalResult {
     if let Value::Symbol(s) = arg {
         Ok(Value::string(Rc::clone(&s)))
     } else {
-        Err(Condition::arg_error(FIRST_ARG_LABEL, TypeName::SYMBOL, arg).into())
+        invalid_target!(TypeName::SYMBOL, arg)
     }
 }
 
@@ -581,7 +584,7 @@ fn string_to_symbol(args: &[Value], env: &mut Frame) -> EvalResult {
     if let Value::String(s) = arg {
         Ok(Value::symbol(env.sym.get(s)))
     } else {
-        Err(Condition::arg_error(FIRST_ARG_LABEL, TypeName::STRING, arg).into())
+        invalid_target!(TypeName::STRING, arg)
     }
 }
 

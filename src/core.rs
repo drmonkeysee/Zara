@@ -1,3 +1,9 @@
+macro_rules! invalid_target {
+    ($valname:expr, $arg:expr) => {
+        Err(Condition::arg_error(FIRST_ARG_LABEL, $valname, $arg).into())
+    };
+}
+
 mod base;
 mod procctx;
 mod time;

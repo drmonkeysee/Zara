@@ -58,7 +58,7 @@ fn emergency_exit(args: &[Value], _env: &mut Frame) -> EvalResult {
 fn get_environment_variable(args: &[Value], _env: &mut Frame) -> EvalResult {
     let arg = args.first().unwrap();
     let Value::String(s) = arg else {
-        return Err(Condition::arg_error(FIRST_ARG_LABEL, TypeName::STRING, arg).into());
+        return invalid_target!(TypeName::STRING, arg);
     };
     env::var(s.as_ref()).map_or_else(
         |err| match err {
