@@ -71,8 +71,6 @@ use std::{convert, rc::Rc};
 
 const REAL_ARG_TNAME: &str = "real";
 
-type EvalRefResult<'a> = Result<&'a Value, Exception>;
-
 pub(super) fn load(scope: &mut Binding) {
     load_bool(scope);
     load_bv(scope);
@@ -382,33 +380,27 @@ fn list_length(args: &[Value], _env: &mut Frame) -> EvalResult {
 fn list_tail(args: &[Value], _env: &mut Frame) -> EvalResult {
     let lst = args.first().unwrap();
     let k = args.get(1).unwrap();
-    list_tail_at(k, lst).cloned()
+    sub_list(lst, number_to_index(k)?).cloned()
 }
 
 fn list_get(args: &[Value], _env: &mut Frame) -> EvalResult {
     let lst = args.first().unwrap();
     let k = args.get(1).unwrap();
-    if let Value::Pair(Some(p)) = list_tail_at(k, lst)? {
+    let item = sub_list(lst, number_to_index(k)?)?;
+    if let Value::Pair(Some(p)) = item {
         Ok(p.car.clone())
     } else {
-        Err(Condition::index_error(k).into())
+        Err(Condition::arg_error(FIRST_ARG_LABEL, TypeName::PAIR, item).into())
     }
 }
 
-fn list_tail_at<'a>(k: &Value, lst: &'a Value) -> EvalRefResult<'a> {
-    if !matches!(lst, Value::Pair(_)) {
-        return invalid_target!(TypeName::LIST, lst);
-    }
-    sub_list(lst, number_to_index(k)?, k)
-}
-
-fn sub_list<'a>(lst: &'a Value, idx: usize, k: &Value) -> EvalRefResult<'a> {
+fn sub_list<'a>(lst: &'a Value, idx: usize) -> Result<&'a Value, Exception> {
     if idx == 0 {
         Ok(lst)
     } else if let Value::Pair(Some(p)) = lst {
-        sub_list(&p.cdr, idx - 1, k)
+        sub_list(&p.cdr, idx - 1)
     } else {
-        Err(Condition::index_error(k).into())
+        Err(Condition::arg_error(FIRST_ARG_LABEL, TypeName::PAIR, lst).into())
     }
 }
 
