@@ -395,7 +395,7 @@ fn sub_list<'a>(lst: &'a Value, idx: usize) -> Result<&'a Value, Exception> {
     } else if let Value::Pair(Some(p)) = lst {
         sub_list(&p.cdr, idx - 1)
     } else {
-        Err(Condition::arg_error(FIRST_ARG_LABEL, TypeName::PAIR, lst).into())
+        invalid_target!(TypeName::PAIR, lst)
     }
 }
 
