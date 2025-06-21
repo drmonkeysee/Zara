@@ -48,12 +48,12 @@ macro_rules! vec_length {
 macro_rules! vec_get {
     ($name:ident, $kind: path, $valname:expr, $get:expr, $map:expr) => {
         fn $name(args: &[Value], _env: &mut Frame) -> EvalResult {
-            let arg = args.first().unwrap();
+            let vec = args.first().unwrap();
             let k = args.get(1).unwrap();
-            if let $kind(v) = arg {
+            if let $kind(v) = vec {
                 vec_item(v, k, $get, $map)
             } else {
-                invalid_target!($valname, arg)
+                invalid_target!($valname, vec)
             }
         }
     };
@@ -70,6 +70,8 @@ use crate::{
 use std::{convert, rc::Rc};
 
 const REAL_ARG_TNAME: &str = "real";
+
+type EvalRefResult<'a> = Result<&'a Value, Exception>;
 
 pub(super) fn load(scope: &mut Binding) {
     load_bool(scope);
@@ -332,6 +334,8 @@ fn load_list(scope: &mut Binding) {
     super::bind_intrinsic(scope, "list?", 1..1, is_list);
 
     super::bind_intrinsic(scope, "length", 1..1, list_length);
+    super::bind_intrinsic(scope, "list-tail", 2..2, list_tail);
+    super::bind_intrinsic(scope, "list-ref", 2..2, list_get);
 }
 
 predicate!(is_pair, Value::Pair(Some(_)));
@@ -372,6 +376,39 @@ fn list_length(args: &[Value], _env: &mut Frame) -> EvalResult {
             |len| Ok(Value::Number(Number::from_usize(len))),
         ),
         _ => invalid_target!(TypeName::LIST, arg),
+    }
+}
+
+fn list_tail(args: &[Value], _env: &mut Frame) -> EvalResult {
+    let lst = args.first().unwrap();
+    let k = args.get(1).unwrap();
+    list_tail_at(k, lst).cloned()
+}
+
+fn list_get(args: &[Value], _env: &mut Frame) -> EvalResult {
+    let lst = args.first().unwrap();
+    let k = args.get(1).unwrap();
+    if let Value::Pair(Some(p)) = list_tail_at(k, lst)? {
+        Ok(p.car.clone())
+    } else {
+        Err(Condition::index_error(k).into())
+    }
+}
+
+fn list_tail_at<'a>(k: &Value, lst: &'a Value) -> EvalRefResult<'a> {
+    if !matches!(lst, Value::Pair(_)) {
+        return invalid_target!(TypeName::LIST, lst);
+    }
+    sub_list(lst, number_to_index(k)?, k)
+}
+
+fn sub_list<'a>(lst: &'a Value, idx: usize, k: &Value) -> EvalRefResult<'a> {
+    if idx == 0 {
+        Ok(lst)
+    } else if let Value::Pair(Some(p)) = lst {
+        sub_list(&p.cdr, idx - 1, k)
+    } else {
+        Err(Condition::index_error(k).into())
     }
 }
 
@@ -477,30 +514,29 @@ fn vec_item<T, U>(
     get: impl FnOnce(&T, usize) -> Option<U>,
     map: impl FnOnce(U) -> Value,
 ) -> EvalResult {
+    get(vec, number_to_index(k)?).map_or_else(
+        || Err(Condition::index_error(k).into()),
+        |item| Ok(map(item)),
+    )
+}
+
+fn number_to_index(k: &Value) -> Result<usize, Exception> {
     let Value::Number(n) = k else {
         return Err(Condition::arg_error(SECOND_ARG_LABEL, NumericTypeName::INTEGER, k).into());
     };
-    usize::try_from(n).map_or_else(
-        |err| {
-            Err(if let NumericError::UsizeConversionInvalidRange = err {
-                Condition::value_error(NumericError::UsizeConversionInvalidRange.to_string(), k)
-            } else {
-                Condition::arg_type_error(
-                    SECOND_ARG_LABEL,
-                    NumericTypeName::INTEGER,
-                    n.as_typename(),
-                    k,
-                )
-            }
-            .into())
-        },
-        |u| {
-            get(vec, u).map_or_else(
-                || Err(Condition::index_error(k).into()),
-                |item| Ok(map(item)),
+    usize::try_from(n).map_err(|err| {
+        if let NumericError::UsizeConversionInvalidRange = err {
+            Condition::value_error(NumericError::UsizeConversionInvalidRange.to_string(), k)
+        } else {
+            Condition::arg_type_error(
+                SECOND_ARG_LABEL,
+                NumericTypeName::INTEGER,
+                n.as_typename(),
+                k,
             )
-        },
-    )
+        }
+        .into()
+    })
 }
 
 #[cfg(test)]
