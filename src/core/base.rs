@@ -468,6 +468,7 @@ cadr_func!(cddadr, d, d, a, d);
 cadr_func!(cdddar, d, d, d, a);
 cadr_func!(cddddr, d, d, d, d);
 
+// TODO: circular lists => #f
 #[allow(clippy::unnecessary_wraps, reason = "infallible intrinsic")]
 fn is_list(args: &[Value], _env: &mut Frame) -> EvalResult {
     let arg = args.first().unwrap();
@@ -478,6 +479,7 @@ fn is_list(args: &[Value], _env: &mut Frame) -> EvalResult {
     }))
 }
 
+// TODO: circular lists => error
 fn list_length(args: &[Value], _env: &mut Frame) -> EvalResult {
     let arg = args.first().unwrap();
     match arg {
