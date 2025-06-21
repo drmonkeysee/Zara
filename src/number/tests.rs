@@ -1222,7 +1222,7 @@ mod integer {
     fn is_even() {
         let cases = [4, 0, -4];
         for case in cases {
-            let n: Integer = case.into();
+            let n = Integer::from(case);
 
             assert!(n.is_even())
         }
@@ -1232,7 +1232,7 @@ mod integer {
     fn is_odd() {
         let cases = [3, -3];
         for case in cases {
-            let n: Integer = case.into();
+            let n = Integer::from(case);
 
             assert!(!n.is_even())
         }

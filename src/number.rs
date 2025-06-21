@@ -458,7 +458,7 @@ impl Integer {
     }
 
     fn from_usize(val: usize) -> Self {
-        let r = <usize as TryInto<u64>>::try_into(val);
+        let r = u64::try_from(val);
         if let Ok(u) = r {
             (Sign::Positive, u).into()
         } else {

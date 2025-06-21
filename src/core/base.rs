@@ -215,7 +215,7 @@ try_predicate!(
 fn char_to_integer(args: &[Value], _env: &mut Frame) -> EvalResult {
     let arg = args.first().unwrap();
     if let Value::Character(c) = arg {
-        let n = <char as Into<u32>>::into(*c);
+        let n = u32::from(*c);
         Ok(Value::Number(Number::real(i64::from(n))))
     } else {
         invalid_target!(TypeName::CHAR, arg)
@@ -232,7 +232,7 @@ fn integer_to_char(args: &[Value], _env: &mut Frame) -> EvalResult {
 }
 
 fn try_num_into_char(n: &Number, arg: &Value) -> EvalResult {
-    <&Number as TryInto<u32>>::try_into(n).map_or_else(
+    u32::try_from(n).map_or_else(
         |err| {
             Err(if let NumericError::Uint32ConversionInvalidRange = err {
                 Condition::value_error(UnicodeError::CodePointOutOfRange.to_string(), arg)
@@ -247,8 +247,8 @@ fn try_num_into_char(n: &Number, arg: &Value) -> EvalResult {
             .into())
         },
         |u| {
-            <u32 as TryInto<char>>::try_into(u).map_or_else(
-                |_| {
+            char::from_u32(u).map_or_else(
+                || {
                     Err(
                         Condition::value_error(UnicodeError::CodePointOutOfRange.to_string(), arg)
                             .into(),
@@ -615,7 +615,7 @@ fn vec_item<T, U>(
     let Value::Number(n) = k else {
         return Err(Condition::arg_error(SECOND_ARG_LABEL, NumericTypeName::INTEGER, k).into());
     };
-    <&Number as TryInto<usize>>::try_into(n).map_or_else(
+    usize::try_from(n).map_or_else(
         |err| {
             Err(if let NumericError::UsizeConversionInvalidRange = err {
                 Condition::value_error(NumericError::UsizeConversionInvalidRange.to_string(), k)
