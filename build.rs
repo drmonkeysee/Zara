@@ -1,4 +1,5 @@
 use std::{
+    convert,
     io::{self, Result, Write},
     process::{Command, Output},
 };
@@ -26,7 +27,7 @@ fn set_dependencies_env() {
 }
 
 fn set_env_from_output(var: &str, result: Result<Output>) {
-    set_env_from_converted_output(var, result, |val| val);
+    set_env_from_converted_output(var, result, convert::identity);
 }
 
 fn set_env_from_converted_output(
