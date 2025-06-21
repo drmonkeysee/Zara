@@ -386,12 +386,7 @@ fn list_tail(args: &[Value], _env: &mut Frame) -> EvalResult {
 fn list_get(args: &[Value], _env: &mut Frame) -> EvalResult {
     let lst = args.first().unwrap();
     let k = args.get(1).unwrap();
-    let item = sub_list(lst, number_to_index(k)?)?;
-    if let Value::Pair(Some(p)) = item {
-        Ok(p.car.clone())
-    } else {
-        Err(Condition::arg_error(FIRST_ARG_LABEL, TypeName::PAIR, item).into())
-    }
+    pcar(sub_list(lst, number_to_index(k)?)?)
 }
 
 fn sub_list<'a>(lst: &'a Value, idx: usize) -> Result<&'a Value, Exception> {
