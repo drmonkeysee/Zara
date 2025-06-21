@@ -173,6 +173,8 @@ fn load_char(scope: &mut Binding) {
     super::bind_intrinsic(scope, "char-lower-case?", 1..1, is_lowercase);
     super::bind_intrinsic(scope, "char->integer", 1..1, char_to_integer);
     super::bind_intrinsic(scope, "integer->char", 1..1, integer_to_char);
+    super::bind_intrinsic(scope, "char-upcase", 1..1, char_upper);
+    super::bind_intrinsic(scope, "char-downcase", 1..1, char_lower);
 }
 
 predicate!(is_char, Value::Character(_));
@@ -231,6 +233,16 @@ fn integer_to_char(args: &[Value], _env: &mut Frame) -> EvalResult {
     }
 }
 
+fn char_upper(args: &[Value], _env: &mut Frame) -> EvalResult {
+    let arg = args.first().unwrap();
+    char_case(arg, char::to_uppercase)
+}
+
+fn char_lower(args: &[Value], _env: &mut Frame) -> EvalResult {
+    let arg = args.first().unwrap();
+    char_case(arg, char::to_lowercase)
+}
+
 fn try_num_into_char(n: &Number, arg: &Value) -> EvalResult {
     u32::try_from(n).map_or_else(
         |err| {
@@ -258,6 +270,22 @@ fn try_num_into_char(n: &Number, arg: &Value) -> EvalResult {
             )
         },
     )
+}
+
+fn char_case<I: ExactSizeIterator<Item = char>>(
+    arg: &Value,
+    case: impl FnOnce(char) -> I,
+) -> EvalResult {
+    if let Value::Character(c) = arg {
+        let mut it = case(*c);
+        Ok(if it.len() == 1 {
+            Value::Character(it.next().unwrap())
+        } else {
+            arg.clone()
+        })
+    } else {
+        invalid_target!(TypeName::CHAR, arg)
+    }
 }
 
 //
@@ -533,12 +561,14 @@ predicate!(is_procedure, Value::Procedure(_));
 fn load_string(scope: &mut Binding) {
     super::bind_intrinsic(scope, "string?", 1..1, is_string);
     super::bind_intrinsic(scope, "string-length", 1..1, string_length);
+    super::bind_intrinsic(scope, "string-ref", 2..2, string_get);
     super::bind_intrinsic(scope, "string=?", 0..MAX_ARITY, strings_eq);
     super::bind_intrinsic(scope, "string<?", 0..MAX_ARITY, strings_lt);
     super::bind_intrinsic(scope, "string<=?", 0..MAX_ARITY, strings_lte);
     super::bind_intrinsic(scope, "string>?", 0..MAX_ARITY, strings_gt);
     super::bind_intrinsic(scope, "string>=?", 0..MAX_ARITY, strings_gte);
-    super::bind_intrinsic(scope, "string-ref", 2..2, string_get);
+    super::bind_intrinsic(scope, "string-upcase", 1..1, string_upper);
+    super::bind_intrinsic(scope, "string-downcase", 1..1, string_lower);
 }
 
 predicate!(is_string, Value::String(_));
@@ -555,6 +585,25 @@ vec_get!(
     |s, u| s.chars().nth(u),
     Value::Character
 );
+
+fn string_upper(args: &[Value], _env: &mut Frame) -> EvalResult {
+    let arg = args.first().unwrap();
+    string_case(arg, str::to_uppercase)
+}
+
+fn string_lower(args: &[Value], _env: &mut Frame) -> EvalResult {
+    let arg = args.first().unwrap();
+    string_case(arg, str::to_lowercase)
+}
+
+// TODO: this needs to return a mutable string
+fn string_case(arg: &Value, case: impl FnOnce(&str) -> String) -> EvalResult {
+    if let Value::String(s) = arg {
+        Ok(Value::string(case(s)))
+    } else {
+        invalid_target!(TypeName::CHAR, arg)
+    }
+}
 
 //
 // Symbols
