@@ -8,19 +8,6 @@ macro_rules! predicate {
     };
 }
 
-macro_rules! try_predicate {
-    ($name:ident, $kind:path, $valname:expr, $pred:expr) => {
-        fn $name(args: &[Value], _env: &mut Frame) -> EvalResult {
-            let arg = args.first().unwrap();
-            if let $kind(val) = arg {
-                Ok(Value::Boolean($pred(val)))
-            } else {
-                invalid_target!($valname, arg)
-            }
-        }
-    };
-}
-
 macro_rules! seq_predicate {
     ($name:ident, $kind:path, $valname:expr, $pred:expr) => {
         fn $name(args: &[Value], _env: &mut Frame) -> EvalResult {
@@ -72,31 +59,7 @@ macro_rules! vec_get {
     };
 }
 
-macro_rules! cadr_compose {
-    ($val:expr, a) => {
-        pcar($val)
-    };
-    ($val:expr, d) => {
-        pcdr($val)
-    };
-    ($val:expr, a $(, $rest:ident)+) => {
-        pcar(&cadr_compose!($val, $($rest),+)?)
-    };
-    ($val:expr, d $(, $rest:ident)+) => {
-        pcdr(&cadr_compose!($val, $($rest),+)?)
-    };
-}
-
-macro_rules! cadr_func {
-    ($name:ident $(, $compose:ident)+) => {
-        fn $name(args: &[Value], _env: &mut Frame) -> EvalResult {
-            let arg = args.first().unwrap();
-            cadr_compose!(&arg, $($compose),+)
-        }
-    };
-}
-
-use super::{FIRST_ARG_LABEL, SECOND_ARG_LABEL};
+use super::{FIRST_ARG_LABEL, SECOND_ARG_LABEL, pcar, pcdr};
 use crate::{
     Exception,
     eval::{Binding, EvalResult, Frame, MAX_ARITY},
@@ -166,15 +129,8 @@ fn load_char(scope: &mut Binding) {
     super::bind_intrinsic(scope, "char<=?", 0..MAX_ARITY, chars_lte);
     super::bind_intrinsic(scope, "char>?", 0..MAX_ARITY, chars_gt);
     super::bind_intrinsic(scope, "char>=?", 0..MAX_ARITY, chars_gte);
-    super::bind_intrinsic(scope, "char-alphabetic?", 1..1, is_alphabetic);
-    super::bind_intrinsic(scope, "char-numeric?", 1..1, is_numeric);
-    super::bind_intrinsic(scope, "char-whitespace?", 1..1, is_whitespace);
-    super::bind_intrinsic(scope, "char-upper-case?", 1..1, is_uppercase);
-    super::bind_intrinsic(scope, "char-lower-case?", 1..1, is_lowercase);
     super::bind_intrinsic(scope, "char->integer", 1..1, char_to_integer);
     super::bind_intrinsic(scope, "integer->char", 1..1, integer_to_char);
-    super::bind_intrinsic(scope, "char-upcase", 1..1, char_upper);
-    super::bind_intrinsic(scope, "char-downcase", 1..1, char_lower);
 }
 
 predicate!(is_char, Value::Character(_));
@@ -183,36 +139,6 @@ seq_predicate!(chars_lt, Value::Character, TypeName::CHAR, char::lt);
 seq_predicate!(chars_lte, Value::Character, TypeName::CHAR, char::le);
 seq_predicate!(chars_gt, Value::Character, TypeName::CHAR, char::gt);
 seq_predicate!(chars_gte, Value::Character, TypeName::CHAR, char::ge);
-try_predicate!(
-    is_alphabetic,
-    Value::Character,
-    TypeName::CHAR,
-    |c: &char| c.is_alphabetic()
-);
-try_predicate!(
-    is_numeric,
-    Value::Character,
-    TypeName::CHAR,
-    |_c: &char| todo!("is_numeric is too broad, need only Nd")
-);
-try_predicate!(
-    is_whitespace,
-    Value::Character,
-    TypeName::CHAR,
-    |c: &char| c.is_whitespace()
-);
-try_predicate!(
-    is_uppercase,
-    Value::Character,
-    TypeName::CHAR,
-    |c: &char| c.is_uppercase()
-);
-try_predicate!(
-    is_lowercase,
-    Value::Character,
-    TypeName::CHAR,
-    |c: &char| c.is_lowercase()
-);
 
 fn char_to_integer(args: &[Value], _env: &mut Frame) -> EvalResult {
     let arg = args.first().unwrap();
@@ -231,16 +157,6 @@ fn integer_to_char(args: &[Value], _env: &mut Frame) -> EvalResult {
     } else {
         invalid_target!(NumericTypeName::INTEGER, arg)
     }
-}
-
-fn char_upper(args: &[Value], _env: &mut Frame) -> EvalResult {
-    let arg = args.first().unwrap();
-    char_case(arg, char::to_uppercase)
-}
-
-fn char_lower(args: &[Value], _env: &mut Frame) -> EvalResult {
-    let arg = args.first().unwrap();
-    char_case(arg, char::to_lowercase)
 }
 
 fn try_num_into_char(n: &Number, arg: &Value) -> EvalResult {
@@ -270,22 +186,6 @@ fn try_num_into_char(n: &Number, arg: &Value) -> EvalResult {
             )
         },
     )
-}
-
-fn char_case<I: ExactSizeIterator<Item = char>>(
-    arg: &Value,
-    case: impl FnOnce(char) -> I,
-) -> EvalResult {
-    if let Value::Character(c) = arg {
-        let mut it = case(*c);
-        Ok(if it.len() == 1 {
-            Value::Character(it.next().unwrap())
-        } else {
-            arg.clone()
-        })
-    } else {
-        invalid_target!(TypeName::CHAR, arg)
-    }
 }
 
 //
@@ -333,9 +233,6 @@ fn load_num(scope: &mut Binding) {
     super::bind_intrinsic(scope, "exact?", 1..1, is_exact);
     super::bind_intrinsic(scope, "inexact?", 1..1, is_inexact);
     super::bind_intrinsic(scope, "exact-integer?", 1..1, is_exact_integer);
-    super::bind_intrinsic(scope, "finite?", 1..1, is_finite);
-    super::bind_intrinsic(scope, "infinite?", 1..1, is_infinite);
-    super::bind_intrinsic(scope, "nan?", 1..1, is_nan);
     super::bind_intrinsic(scope, "zero?", 1..1, is_zero);
     super::bind_intrinsic(scope, "positive?", 1..1, is_positive);
     super::bind_intrinsic(scope, "negative?", 1..1, is_negative);
@@ -359,17 +256,6 @@ try_predicate!(
     TypeName::NUMBER,
     |n: &Number| matches!(n, Number::Real(Real::Integer(_)))
 );
-try_predicate!(is_finite, Value::Number, TypeName::NUMBER, |n: &Number| {
-    !n.is_infinite() && !n.is_nan()
-});
-try_predicate!(
-    is_infinite,
-    Value::Number,
-    TypeName::NUMBER,
-    |n: &Number| n.is_infinite()
-);
-try_predicate!(is_nan, Value::Number, TypeName::NUMBER, |n: &Number| n
-    .is_nan());
 try_predicate!(is_zero, Value::Number, TypeName::NUMBER, |n: &Number| n
     .is_zero());
 
@@ -434,30 +320,6 @@ fn load_list(scope: &mut Binding) {
     super::bind_intrinsic(scope, "cadr", 1..1, cadr);
     super::bind_intrinsic(scope, "cdar", 1..1, cdar);
     super::bind_intrinsic(scope, "cddr", 1..1, cddr);
-    super::bind_intrinsic(scope, "caaar", 1..1, caaar);
-    super::bind_intrinsic(scope, "caadr", 1..1, caadr);
-    super::bind_intrinsic(scope, "cadar", 1..1, cadar);
-    super::bind_intrinsic(scope, "caddr", 1..1, caddr);
-    super::bind_intrinsic(scope, "cdaar", 1..1, cdaar);
-    super::bind_intrinsic(scope, "cdadr", 1..1, cdadr);
-    super::bind_intrinsic(scope, "cddar", 1..1, cddar);
-    super::bind_intrinsic(scope, "cdddr", 1..1, cdddr);
-    super::bind_intrinsic(scope, "caaaar", 1..1, caaaar);
-    super::bind_intrinsic(scope, "caaadr", 1..1, caaadr);
-    super::bind_intrinsic(scope, "caadar", 1..1, caadar);
-    super::bind_intrinsic(scope, "caaddr", 1..1, caaddr);
-    super::bind_intrinsic(scope, "cadaar", 1..1, cadaar);
-    super::bind_intrinsic(scope, "cadadr", 1..1, cadadr);
-    super::bind_intrinsic(scope, "caddar", 1..1, caddar);
-    super::bind_intrinsic(scope, "cadddr", 1..1, cadddr);
-    super::bind_intrinsic(scope, "cdaaar", 1..1, cdaaar);
-    super::bind_intrinsic(scope, "cdaadr", 1..1, cdaadr);
-    super::bind_intrinsic(scope, "cdadar", 1..1, cdadar);
-    super::bind_intrinsic(scope, "cdaddr", 1..1, cdaddr);
-    super::bind_intrinsic(scope, "cddaar", 1..1, cddaar);
-    super::bind_intrinsic(scope, "cddadr", 1..1, cddadr);
-    super::bind_intrinsic(scope, "cdddar", 1..1, cdddar);
-    super::bind_intrinsic(scope, "cddddr", 1..1, cddddr);
     super::bind_intrinsic(scope, "null?", 1..1, is_null);
     super::bind_intrinsic(scope, "list?", 1..1, is_list);
     super::bind_intrinsic(scope, "length", 1..1, list_length);
@@ -471,30 +333,6 @@ cadr_func!(caar, a, a);
 cadr_func!(cadr, a, d);
 cadr_func!(cdar, d, a);
 cadr_func!(cddr, d, d);
-cadr_func!(caaar, a, a, a);
-cadr_func!(caadr, a, a, d);
-cadr_func!(cadar, a, d, a);
-cadr_func!(caddr, a, d, d);
-cadr_func!(cdaar, d, a, a);
-cadr_func!(cdadr, d, a, d);
-cadr_func!(cddar, d, d, a);
-cadr_func!(cdddr, d, d, d);
-cadr_func!(caaaar, a, a, a, a);
-cadr_func!(caaadr, a, a, a, d);
-cadr_func!(caadar, a, a, d, a);
-cadr_func!(caaddr, a, a, d, d);
-cadr_func!(cadaar, a, d, a, a);
-cadr_func!(cadadr, a, d, a, d);
-cadr_func!(caddar, a, d, d, a);
-cadr_func!(cadddr, a, d, d, d);
-cadr_func!(cdaaar, d, a, a, a);
-cadr_func!(cdaadr, d, a, a, d);
-cadr_func!(cdadar, d, a, d, a);
-cadr_func!(cdaddr, d, a, d, d);
-cadr_func!(cddaar, d, d, a, a);
-cadr_func!(cddadr, d, d, a, d);
-cadr_func!(cdddar, d, d, d, a);
-cadr_func!(cddddr, d, d, d, d);
 
 // TODO: circular lists => #f
 #[allow(clippy::unnecessary_wraps, reason = "infallible intrinsic")]
@@ -528,22 +366,6 @@ fn list_length(args: &[Value], _env: &mut Frame) -> EvalResult {
     }
 }
 
-fn pcar(arg: &Value) -> EvalResult {
-    if let Value::Pair(Some(p)) = arg {
-        Ok(p.car.clone())
-    } else {
-        invalid_target!(TypeName::PAIR, arg)
-    }
-}
-
-fn pcdr(arg: &Value) -> EvalResult {
-    if let Value::Pair(Some(p)) = arg {
-        Ok(p.cdr.clone())
-    } else {
-        invalid_target!(TypeName::PAIR, arg)
-    }
-}
-
 //
 // Procedures
 //
@@ -567,8 +389,6 @@ fn load_string(scope: &mut Binding) {
     super::bind_intrinsic(scope, "string<=?", 0..MAX_ARITY, strings_lte);
     super::bind_intrinsic(scope, "string>?", 0..MAX_ARITY, strings_gt);
     super::bind_intrinsic(scope, "string>=?", 0..MAX_ARITY, strings_gte);
-    super::bind_intrinsic(scope, "string-upcase", 1..1, string_upper);
-    super::bind_intrinsic(scope, "string-downcase", 1..1, string_lower);
 }
 
 predicate!(is_string, Value::String(_));
@@ -585,25 +405,6 @@ vec_get!(
     |s, u| s.chars().nth(u),
     Value::Character
 );
-
-fn string_upper(args: &[Value], _env: &mut Frame) -> EvalResult {
-    let arg = args.first().unwrap();
-    string_case(arg, str::to_uppercase)
-}
-
-fn string_lower(args: &[Value], _env: &mut Frame) -> EvalResult {
-    let arg = args.first().unwrap();
-    string_case(arg, str::to_lowercase)
-}
-
-// TODO: this needs to return a mutable string
-fn string_case(arg: &Value, case: impl FnOnce(&str) -> String) -> EvalResult {
-    if let Value::String(s) = arg {
-        Ok(Value::string(case(s)))
-    } else {
-        invalid_target!(TypeName::CHAR, arg)
-    }
-}
 
 //
 // Symbols
