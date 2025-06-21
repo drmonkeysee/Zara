@@ -16,8 +16,10 @@ const PEXIT_FAILURE: i32 = 1;
 
 pub(super) fn load(scope: &mut Binding) {
     super::bind_intrinsic(scope, "command-line", 0..0, command_line);
+
     super::bind_intrinsic(scope, "exit", 0..1, exit);
     super::bind_intrinsic(scope, "emergency-exit", 0..1, emergency_exit);
+
     super::bind_intrinsic(
         scope,
         "get-environment-variable",

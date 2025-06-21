@@ -11,8 +11,10 @@ pub(super) fn load(scope: &mut Binding) {
     super::bind_intrinsic(scope, "char-whitespace?", 1..1, is_whitespace);
     super::bind_intrinsic(scope, "char-upper-case?", 1..1, is_uppercase);
     super::bind_intrinsic(scope, "char-lower-case?", 1..1, is_lowercase);
+
     super::bind_intrinsic(scope, "char-upcase", 1..1, char_upper);
     super::bind_intrinsic(scope, "char-downcase", 1..1, char_lower);
+
     super::bind_intrinsic(scope, "string-upcase", 1..1, string_upper);
     super::bind_intrinsic(scope, "string-downcase", 1..1, string_lower);
 }

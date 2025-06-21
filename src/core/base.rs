@@ -90,6 +90,7 @@ pub(super) fn load(scope: &mut Binding) {
 
 fn load_bool(scope: &mut Binding) {
     super::bind_intrinsic(scope, "not", 1..1, not);
+
     super::bind_intrinsic(scope, "boolean?", 1..1, is_boolean);
     super::bind_intrinsic(scope, "boolean=?", 0..MAX_ARITY, booleans_eq);
 }
@@ -104,6 +105,7 @@ seq_predicate!(booleans_eq, Value::Boolean, TypeName::BOOL, bool::eq);
 
 fn load_bv(scope: &mut Binding) {
     super::bind_intrinsic(scope, "bytevector?", 1..1, is_bytevector);
+
     super::bind_intrinsic(scope, "bytevector-length", 1..1, bytevector_length);
     super::bind_intrinsic(scope, "bytevector-u8-ref", 2..2, bytevector_get);
 }
@@ -124,11 +126,13 @@ vec_get!(
 
 fn load_char(scope: &mut Binding) {
     super::bind_intrinsic(scope, "char?", 1..1, is_char);
+
     super::bind_intrinsic(scope, "char=?", 0..MAX_ARITY, chars_eq);
     super::bind_intrinsic(scope, "char<?", 0..MAX_ARITY, chars_lt);
     super::bind_intrinsic(scope, "char<=?", 0..MAX_ARITY, chars_lte);
     super::bind_intrinsic(scope, "char>?", 0..MAX_ARITY, chars_gt);
     super::bind_intrinsic(scope, "char>=?", 0..MAX_ARITY, chars_gte);
+
     super::bind_intrinsic(scope, "char->integer", 1..1, char_to_integer);
     super::bind_intrinsic(scope, "integer->char", 1..1, integer_to_char);
 }
@@ -230,9 +234,11 @@ fn load_num(scope: &mut Binding) {
     super::bind_intrinsic(scope, "real?", 1..1, is_real);
     super::bind_intrinsic(scope, "rational?", 1..1, is_rational);
     super::bind_intrinsic(scope, "integer?", 1..1, is_integer);
+
     super::bind_intrinsic(scope, "exact?", 1..1, is_exact);
     super::bind_intrinsic(scope, "inexact?", 1..1, is_inexact);
     super::bind_intrinsic(scope, "exact-integer?", 1..1, is_exact_integer);
+
     super::bind_intrinsic(scope, "zero?", 1..1, is_zero);
     super::bind_intrinsic(scope, "positive?", 1..1, is_positive);
     super::bind_intrinsic(scope, "negative?", 1..1, is_negative);
@@ -314,14 +320,17 @@ fn int_predicate(arg: &Value, pred: impl FnOnce(&Integer) -> bool) -> EvalResult
 
 fn load_list(scope: &mut Binding) {
     super::bind_intrinsic(scope, "pair?", 1..1, is_pair);
+
     super::bind_intrinsic(scope, "car", 1..1, car);
     super::bind_intrinsic(scope, "cdr", 1..1, cdr);
     super::bind_intrinsic(scope, "caar", 1..1, caar);
     super::bind_intrinsic(scope, "cadr", 1..1, cadr);
     super::bind_intrinsic(scope, "cdar", 1..1, cdar);
     super::bind_intrinsic(scope, "cddr", 1..1, cddr);
+
     super::bind_intrinsic(scope, "null?", 1..1, is_null);
     super::bind_intrinsic(scope, "list?", 1..1, is_list);
+
     super::bind_intrinsic(scope, "length", 1..1, list_length);
 }
 
@@ -382,8 +391,10 @@ predicate!(is_procedure, Value::Procedure(_));
 
 fn load_string(scope: &mut Binding) {
     super::bind_intrinsic(scope, "string?", 1..1, is_string);
+
     super::bind_intrinsic(scope, "string-length", 1..1, string_length);
     super::bind_intrinsic(scope, "string-ref", 2..2, string_get);
+
     super::bind_intrinsic(scope, "string=?", 0..MAX_ARITY, strings_eq);
     super::bind_intrinsic(scope, "string<?", 0..MAX_ARITY, strings_lt);
     super::bind_intrinsic(scope, "string<=?", 0..MAX_ARITY, strings_lte);
@@ -413,6 +424,7 @@ vec_get!(
 fn load_symbol(scope: &mut Binding) {
     super::bind_intrinsic(scope, "symbol?", 1..1, is_symbol);
     super::bind_intrinsic(scope, "symbol=?", 0..MAX_ARITY, symbols_eq);
+
     super::bind_intrinsic(scope, "symbol->string", 1..1, symbol_to_string);
     super::bind_intrinsic(scope, "string->symbol", 1..1, string_to_symbol);
 }
@@ -444,6 +456,7 @@ fn string_to_symbol(args: &[Value], env: &mut Frame) -> EvalResult {
 
 fn load_vec(scope: &mut Binding) {
     super::bind_intrinsic(scope, "vector?", 1..1, is_vector);
+
     super::bind_intrinsic(scope, "vector-length", 1..1, vector_length);
     super::bind_intrinsic(scope, "vector-ref", 2..2, vector_get);
 }
