@@ -380,20 +380,27 @@ fn list_length(args: &[Value], _env: &mut Frame) -> EvalResult {
 fn list_tail(args: &[Value], _env: &mut Frame) -> EvalResult {
     let lst = args.first().unwrap();
     let k = args.get(1).unwrap();
-    sub_list(lst, number_to_index(k)?).cloned()
+    sub_list(lst, number_to_index(k)?, k).cloned()
 }
 
 fn list_get(args: &[Value], _env: &mut Frame) -> EvalResult {
     let lst = args.first().unwrap();
     let k = args.get(1).unwrap();
-    pcar(sub_list(lst, number_to_index(k)?)?)
+    let subl = sub_list(lst, number_to_index(k)?, k)?;
+    if let Value::Pair(None) = subl {
+        Err(Condition::index_error(k).into())
+    } else {
+        pcar(subl)
+    }
 }
 
-fn sub_list<'a>(lst: &'a Value, idx: usize) -> Result<&'a Value, Exception> {
+fn sub_list<'a>(lst: &'a Value, idx: usize, k: &Value) -> Result<&'a Value, Exception> {
     if idx == 0 {
         Ok(lst)
     } else if let Value::Pair(Some(p)) = lst {
-        sub_list(&p.cdr, idx - 1)
+        sub_list(&p.cdr, idx - 1, k)
+    } else if let Value::Pair(None) = lst {
+        Err(Condition::index_error(k).into())
     } else {
         invalid_target!(TypeName::PAIR, lst)
     }
@@ -529,7 +536,10 @@ fn number_to_index(k: &Value) -> Result<usize, Exception> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::testutil::{TestEnv, err_or_fail, extract_or_fail, ok_or_fail};
+    use crate::{
+        testutil::{TestEnv, err_or_fail, extract_or_fail, ok_or_fail, some_or_fail},
+        value::zlist,
+    };
 
     #[test]
     fn all_boolean_empty() {
@@ -1026,6 +1036,241 @@ mod tests {
         assert_eq!(
             err.to_string(),
             "#<env-error \"invalid type for arg `0` - expected: integer, got: floating-point\" (3.2)>"
+        );
+    }
+
+    #[test]
+    fn list_tail_normal_list() {
+        let args = [
+            zlist![Value::symbol("a"), Value::symbol("b"), Value::symbol("c")],
+            Value::Number(Number::real(1)),
+        ];
+        let mut env = TestEnv::default();
+
+        let r = list_tail(&args, &mut env.new_frame());
+
+        let v = ok_or_fail!(r);
+        let second_item = some_or_fail!(
+            extract_or_fail!(
+                &some_or_fail!(extract_or_fail!(&args[0], Value::Pair).as_ref()).cdr,
+                Value::Pair
+            )
+            .as_ref()
+        );
+        assert!(Rc::ptr_eq(
+            &some_or_fail!(extract_or_fail!(v, Value::Pair)),
+            second_item
+        ));
+    }
+
+    #[test]
+    fn list_tail_empty_list() {
+        let args = [Value::null(), Value::Number(Number::real(0))];
+        let mut env = TestEnv::default();
+
+        let r = list_tail(&args, &mut env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert!(matches!(v, Value::Pair(None)));
+    }
+
+    #[test]
+    fn list_tail_index_to_empty_list() {
+        let args = [
+            zlist![Value::symbol("a"), Value::symbol("b"), Value::symbol("c")],
+            Value::Number(Number::real(3)),
+        ];
+        let mut env = TestEnv::default();
+
+        let r = list_tail(&args, &mut env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert!(matches!(v, Value::Pair(None)));
+    }
+
+    #[test]
+    fn list_tail_non_list() {
+        let args = [Value::symbol("a"), Value::Number(Number::real(0))];
+        let mut env = TestEnv::default();
+
+        let r = list_tail(&args, &mut env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert!(matches!(v, Value::Symbol(s) if s.as_ref() == "a"));
+    }
+
+    #[test]
+    fn list_tail_end_of_improper_list() {
+        let args = [
+            Value::cons(
+                Value::symbol("a"),
+                Value::cons(Value::symbol("b"), Value::symbol("c")),
+            ),
+            Value::Number(Number::real(2)),
+        ];
+        let mut env = TestEnv::default();
+
+        let r = list_tail(&args, &mut env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert!(matches!(v, Value::Symbol(s) if s.as_ref() == "c"));
+    }
+
+    #[test]
+    fn list_tail_index_out_of_range() {
+        let args = [
+            zlist![Value::symbol("a"), Value::symbol("b"), Value::symbol("c")],
+            Value::Number(Number::real(4)),
+        ];
+        let mut env = TestEnv::default();
+
+        let r = list_tail(&args, &mut env.new_frame());
+
+        let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
+        assert_eq!(err.to_string(), "#<env-error \"index out of range\" (4)>");
+    }
+
+    #[test]
+    fn list_tail_non_list_out_of_range() {
+        let args = [Value::symbol("a"), Value::Number(Number::real(1))];
+        let mut env = TestEnv::default();
+
+        let r = list_tail(&args, &mut env.new_frame());
+
+        let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
+        assert_eq!(
+            err.to_string(),
+            "#<env-error \"invalid type for arg `0` - expected: pair, got: symbol\" (a)>"
+        );
+    }
+
+    #[test]
+    fn list_tail_improper_list_out_of_range() {
+        let args = [
+            Value::cons(
+                Value::symbol("a"),
+                Value::cons(Value::symbol("b"), Value::symbol("c")),
+            ),
+            Value::Number(Number::real(3)),
+        ];
+        let mut env = TestEnv::default();
+
+        let r = list_tail(&args, &mut env.new_frame());
+
+        let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
+        assert_eq!(
+            err.to_string(),
+            "#<env-error \"invalid type for arg `0` - expected: pair, got: symbol\" (c)>"
+        );
+    }
+
+    #[test]
+    fn list_ref_normal_list() {
+        let args = [
+            zlist![Value::symbol("a"), Value::symbol("b"), Value::symbol("c")],
+            Value::Number(Number::real(1)),
+        ];
+        let mut env = TestEnv::default();
+
+        let r = list_get(&args, &mut env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert!(matches!(v, Value::Symbol(s) if s.as_ref() == "b"));
+    }
+
+    #[test]
+    fn list_ref_empty_list() {
+        let args = [Value::null(), Value::Number(Number::real(0))];
+        let mut env = TestEnv::default();
+
+        let r = list_get(&args, &mut env.new_frame());
+
+        let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
+        assert_eq!(err.to_string(), "#<env-error \"index out of range\" (0)>");
+    }
+
+    #[test]
+    fn list_ref_non_list() {
+        let args = [Value::symbol("a"), Value::Number(Number::real(0))];
+        let mut env = TestEnv::default();
+
+        let r = list_get(&args, &mut env.new_frame());
+
+        let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
+        assert_eq!(
+            err.to_string(),
+            "#<env-error \"invalid type for arg `0` - expected: pair, got: symbol\" (a)>"
+        );
+    }
+
+    #[test]
+    fn list_ref_improper_list_item() {
+        let args = [
+            Value::cons(
+                Value::symbol("a"),
+                Value::cons(Value::symbol("b"), Value::symbol("c")),
+            ),
+            Value::Number(Number::real(1)),
+        ];
+        let mut env = TestEnv::default();
+
+        let r = list_get(&args, &mut env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert!(matches!(v, Value::Symbol(s) if s.as_ref() == "b"));
+    }
+
+    #[test]
+    fn list_ref_end_of_improper_list() {
+        let args = [
+            Value::cons(
+                Value::symbol("a"),
+                Value::cons(Value::symbol("b"), Value::symbol("c")),
+            ),
+            Value::Number(Number::real(2)),
+        ];
+        let mut env = TestEnv::default();
+
+        let r = list_get(&args, &mut env.new_frame());
+
+        let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
+        assert_eq!(
+            err.to_string(),
+            "#<env-error \"invalid type for arg `0` - expected: pair, got: symbol\" (c)>"
+        );
+    }
+
+    #[test]
+    fn list_ref_index_out_of_range() {
+        let args = [
+            zlist![Value::symbol("a"), Value::symbol("b"), Value::symbol("c")],
+            Value::Number(Number::real(4)),
+        ];
+        let mut env = TestEnv::default();
+
+        let r = list_get(&args, &mut env.new_frame());
+
+        let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
+        assert_eq!(err.to_string(), "#<env-error \"index out of range\" (4)>");
+    }
+
+    #[test]
+    fn list_ref_improper_list_out_of_range() {
+        let args = [
+            Value::cons(
+                Value::symbol("a"),
+                Value::cons(Value::symbol("b"), Value::symbol("c")),
+            ),
+            Value::Number(Number::real(3)),
+        ];
+        let mut env = TestEnv::default();
+
+        let r = list_get(&args, &mut env.new_frame());
+
+        let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
+        assert_eq!(
+            err.to_string(),
+            "#<env-error \"invalid type for arg `0` - expected: pair, got: symbol\" (c)>"
         );
     }
 }
