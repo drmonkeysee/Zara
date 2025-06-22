@@ -1239,10 +1239,10 @@ mod integer {
     }
 
     #[test]
-    fn positive_into_exact_integer() {
+    fn positive_to_exact_integer() {
         let r = Real::Integer(4.into());
 
-        let o = r.into_exact_integer();
+        let o = r.to_exact_integer();
 
         let n = some_or_fail!(o);
         assert_eq!(extract_or_fail!(n.precision, Precision::Single), 4);
@@ -1250,10 +1250,10 @@ mod integer {
     }
 
     #[test]
-    fn zero_into_exact_integer() {
+    fn zero_to_exact_integer() {
         let r = Real::Integer(0.into());
 
-        let o = r.into_exact_integer();
+        let o = r.to_exact_integer();
 
         let n = some_or_fail!(o);
         assert_eq!(extract_or_fail!(n.precision, Precision::Single), 0);
@@ -1261,10 +1261,10 @@ mod integer {
     }
 
     #[test]
-    fn negative_into_exact_integer() {
+    fn negative_to_exact_integer() {
         let r = Real::Integer((-4).into());
 
-        let o = r.into_exact_integer();
+        let o = r.to_exact_integer();
 
         let n = some_or_fail!(o);
         assert_eq!(extract_or_fail!(n.precision, Precision::Single), 4);
@@ -1680,10 +1680,10 @@ mod float {
     }
 
     #[test]
-    fn zero_frac_into_exact_integer() {
+    fn zero_frac_to_exact_integer() {
         let r = Real::Float(4.0);
 
-        let o = r.into_exact_integer();
+        let o = r.to_exact_integer();
 
         let n = some_or_fail!(o);
         assert_eq!(extract_or_fail!(n.precision, Precision::Single), 4);
@@ -1691,10 +1691,10 @@ mod float {
     }
 
     #[test]
-    fn negative_zero_frac_into_exact_integer() {
+    fn negative_zero_frac_to_exact_integer() {
         let r = Real::Float(-4.0);
 
-        let o = r.into_exact_integer();
+        let o = r.to_exact_integer();
 
         let n = some_or_fail!(o);
         assert_eq!(extract_or_fail!(n.precision, Precision::Single), 4);
@@ -1702,12 +1702,12 @@ mod float {
     }
 
     #[test]
-    fn zeros_into_exact_integer() {
+    fn zeros_to_exact_integer() {
         let cases = [0.0, -0.0];
         for case in cases {
             let r = Real::Float(case);
 
-            let o = r.into_exact_integer();
+            let o = r.to_exact_integer();
 
             let n = some_or_fail!(o);
             assert_eq!(extract_or_fail!(n.precision, Precision::Single), 0);
@@ -1716,10 +1716,10 @@ mod float {
     }
 
     #[test]
-    fn max_continuous_integer_into_exact_integer() {
+    fn max_continuous_integer_to_exact_integer() {
         let r = Real::Float(FMAX_INT);
 
-        let o = r.into_exact_integer();
+        let o = r.to_exact_integer();
 
         let n = some_or_fail!(o);
         assert_eq!(
@@ -1730,10 +1730,10 @@ mod float {
     }
 
     #[test]
-    fn min_continuous_integer_into_exact_integer() {
+    fn min_continuous_integer_to_exact_integer() {
         let r = Real::Float(-FMAX_INT);
 
-        let o = r.into_exact_integer();
+        let o = r.to_exact_integer();
 
         let n = some_or_fail!(o);
         assert_eq!(
@@ -1744,21 +1744,21 @@ mod float {
     }
 
     #[test]
-    fn non_zero_frac_into_exact_integer() {
+    fn non_zero_frac_to_exact_integer() {
         let r = Real::Float(4.2);
 
-        let o = r.into_exact_integer();
+        let o = r.to_exact_integer();
 
         assert!(o.is_none());
     }
 
     #[test]
-    fn inf_nan_into_exact_integer() {
+    fn inf_nan_to_exact_integer() {
         let cases = [f64::INFINITY, f64::NEG_INFINITY, f64::NAN];
         for case in cases {
             let r = Real::Float(case);
 
-            let o = r.into_exact_integer();
+            let o = r.to_exact_integer();
 
             assert!(o.is_none());
         }
@@ -2158,7 +2158,7 @@ mod rational {
     fn into_exact_integer() {
         let rat = ok_or_fail!(Real::reduce(4, 5));
 
-        let o = rat.into_exact_integer();
+        let o = rat.to_exact_integer();
 
         assert!(o.is_none());
     }
@@ -2535,7 +2535,7 @@ mod complex {
     fn into_exact_integer() {
         let n = Number::complex(4, 5);
 
-        let o = n.into_exact_integer();
+        let o = n.to_exact_integer();
 
         assert!(o.is_none());
     }

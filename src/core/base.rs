@@ -283,6 +283,8 @@ fn load_num(scope: &mut Binding) {
     super::bind_intrinsic(scope, "odd?", 1..1, is_odd);
     super::bind_intrinsic(scope, "even?", 1..1, is_even);
 
+    super::bind_intrinsic(scope, "abs", 1..1, to_abs);
+
     super::bind_intrinsic(scope, "inexact", 1..1, into_inexact);
     super::bind_intrinsic(scope, "exact", 1..1, into_exact);
 }
@@ -322,6 +324,21 @@ fn is_even(args: &[Value], _env: &mut Frame) -> EvalResult {
     int_predicate(args.first().unwrap(), Integer::is_even)
 }
 
+fn to_abs(args: &[Value], _env: &mut Frame) -> EvalResult {
+    let arg = args.first().unwrap();
+    let Value::Number(n) = arg else {
+        return invalid_target!(NumericTypeName::REAL, arg);
+    };
+    if let Number::Real(r) = n {
+        Ok(Value::Number(Number::real(r.to_abs())))
+    } else {
+        Err(
+            Condition::arg_type_error(FIRST_ARG_LABEL, NumericTypeName::REAL, n.as_typename(), arg)
+                .into(),
+        )
+    }
+}
+
 fn into_inexact(args: &[Value], _env: &mut Frame) -> EvalResult {
     let arg = args.first().unwrap();
     if let Value::Number(n) = arg {
@@ -358,7 +375,7 @@ fn int_predicate(arg: &Value, pred: impl FnOnce(&Integer) -> bool) -> EvalResult
     let Value::Number(n) = arg else {
         return invalid_target!(NumericTypeName::INTEGER, arg);
     };
-    match n.clone().into_exact_integer() {
+    match n.to_exact_integer() {
         None => Err(Condition::arg_type_error(
             FIRST_ARG_LABEL,
             NumericTypeName::INTEGER,

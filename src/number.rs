@@ -174,6 +174,13 @@ impl Number {
         NumericTypeName(self)
     }
 
+    pub(crate) fn to_exact_integer(&self) -> Option<Integer> {
+        match self {
+            Self::Complex(_) => None,
+            Self::Real(r) => r.to_exact_integer(),
+        }
+    }
+
     pub(crate) fn into_exact(self) -> Self {
         match self {
             Self::Complex(Complex(z)) => Self::complex(z.0.into_exact(), z.1.into_exact()),
@@ -185,13 +192,6 @@ impl Number {
         match self {
             Self::Complex(Complex(z)) => Self::complex(z.0.into_inexact(), z.1.into_inexact()),
             Self::Real(r) => Self::Real(r.into_inexact()),
-        }
-    }
-
-    pub(crate) fn into_exact_integer(self) -> Option<Integer> {
-        match self {
-            Self::Complex(_) => None,
-            Self::Real(r) => r.into_exact_integer(),
         }
     }
 }
@@ -217,19 +217,19 @@ try_int_conversion!(usize, try_to_usize);
 pub(crate) struct Complex(Box<(Real, Real)>);
 
 impl Complex {
-    pub(crate) fn real(&self) -> &Real {
+    pub(crate) fn as_real(&self) -> &Real {
         &self.0.0
     }
 
-    pub(crate) fn imaginary(&self) -> &Real {
+    pub(crate) fn as_imaginary(&self) -> &Real {
         &self.0.1
     }
 
-    pub(crate) fn magnitude(&self) -> Real {
+    pub(crate) fn to_magnitude(&self) -> Real {
         todo!();
     }
 
-    pub(crate) fn angle(&self) -> Real {
+    pub(crate) fn to_angle(&self) -> Real {
         todo!();
     }
 }
@@ -311,6 +311,14 @@ impl Real {
         RealTokenDescriptor(self)
     }
 
+    pub(crate) fn to_abs(&self) -> Self {
+        match self {
+            Self::Float(f) => todo!(),
+            Self::Integer(n) => todo!(),
+            Self::Rational(q) => todo!(),
+        }
+    }
+
     pub(crate) fn into_exact(self) -> Self {
         match self {
             Self::Float(f) => FloatSpec::float_to_exact(f),
@@ -386,7 +394,7 @@ impl Real {
         }
     }
 
-    fn into_exact_integer(self) -> Option<Integer> {
+    fn to_exact_integer(&self) -> Option<Integer> {
         match self {
             Self::Float(f) if f.fract() == 0.0 => {
                 if (-FMAX_INT..=FMAX_INT).contains(&f) {
@@ -394,12 +402,12 @@ impl Real {
                         clippy::cast_possible_truncation,
                         reason = "guarded against truncation"
                     )]
-                    Some((f as i64).into())
+                    Some((*f as i64).into())
                 } else {
                     todo!("convert f64 to multi-precision integer somehow")
                 }
             }
-            Self::Integer(n) => Some(n),
+            Self::Integer(n) => Some(n.clone()),
             _ => None,
         }
     }

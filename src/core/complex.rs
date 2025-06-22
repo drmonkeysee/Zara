@@ -29,22 +29,22 @@ fn make_polar(args: &[Value], _env: &mut Frame) -> EvalResult {
 
 fn get_real(args: &[Value], _env: &mut Frame) -> EvalResult {
     let arg = args.first().unwrap();
-    get_complex_part(arg, |z| z.real().clone(), |r| r.clone())
+    get_complex_part(arg, |z| z.as_real().clone(), |r| r.clone())
 }
 
 fn get_imag(args: &[Value], _env: &mut Frame) -> EvalResult {
     let arg = args.first().unwrap();
-    get_complex_part(arg, |z| z.imaginary().clone(), |_| Real::zero())
+    get_complex_part(arg, |z| z.as_imaginary().clone(), |_| Real::zero())
 }
 
 fn get_mag(args: &[Value], _env: &mut Frame) -> EvalResult {
     let arg = args.first().unwrap();
-    get_complex_part(arg, |z| z.magnitude(), |r| todo!("absolute value of r"))
+    get_complex_part(arg, |z| z.to_magnitude(), |r| r.to_abs())
 }
 
 fn get_angle(args: &[Value], _env: &mut Frame) -> EvalResult {
     let arg = args.first().unwrap();
-    get_complex_part(arg, |z| z.angle(), |_| Real::zero())
+    get_complex_part(arg, |z| z.to_angle(), |_| Real::zero())
 }
 
 fn make_complex(x: &Value, y: &Value, ctor: impl FnOnce(Real, Real) -> Number) -> EvalResult {
