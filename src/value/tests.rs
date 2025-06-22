@@ -53,7 +53,14 @@ mod display {
     }
 
     #[test]
-    fn display_typename() {
+    fn error_typename() {
+        let v = Value::Error(Condition::system_error("foo").into());
+
+        assert_eq!(v.as_typename().to_string(), "error condition");
+    }
+
+    #[test]
+    fn number_typename() {
         let v = Value::real(42);
 
         assert_eq!(v.as_typename().to_string(), "number");

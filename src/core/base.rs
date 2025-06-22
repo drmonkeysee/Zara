@@ -76,6 +76,7 @@ pub(super) fn load(scope: &mut Binding) {
     load_bv(scope);
     load_char(scope);
     load_eq(scope);
+    load_ex(scope);
     load_num(scope);
     load_list(scope);
     load_proc(scope);
@@ -221,6 +222,45 @@ fn is_equal(args: &[Value], _env: &mut Frame) -> EvalResult {
     let a = args.first().unwrap();
     let b = args.get(1).unwrap();
     Ok(Value::Boolean(a == b))
+}
+
+//
+// Exceptions
+//
+
+fn load_ex(scope: &mut Binding) {
+    super::bind_intrinsic(scope, "error-object?", 1..1, is_error);
+
+    super::bind_intrinsic(scope, "error-object-message", 1..1, error_msg);
+    super::bind_intrinsic(scope, "error-object-irritants", 1..1, error_irritants);
+
+    super::bind_intrinsic(scope, "read-error?", 1..1, is_read_error);
+    super::bind_intrinsic(scope, "file-error?", 1..1, is_file_error);
+}
+
+predicate!(is_error, Value::Error(_));
+predicate!(is_read_error, Value::Error(c) if c.is_read_err());
+predicate!(is_file_error, Value::Error(c) if c.is_file_err());
+
+fn error_msg(args: &[Value], _env: &mut Frame) -> EvalResult {
+    let arg = args.first().unwrap();
+    if let Value::Error(c) = arg {
+        Ok(Value::string(c.message()))
+    } else {
+        invalid_target!(TypeName::ERROR, arg)
+    }
+}
+
+fn error_irritants(args: &[Value], _env: &mut Frame) -> EvalResult {
+    let arg = args.first().unwrap();
+    if let Value::Error(c) = arg {
+        Ok(match c.irritants() {
+            None => Value::null(),
+            Some(v) => v.clone(),
+        })
+    } else {
+        invalid_target!(TypeName::ERROR, arg)
+    }
 }
 
 //

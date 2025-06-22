@@ -31,6 +31,7 @@ pub(crate) enum Value {
     Boolean(bool),
     ByteVector(Rc<[u8]>),
     Character(char),
+    Error(Rc<Condition>),
     Number(Number),
     Pair(Option<Rc<Pair>>),
     Procedure(Rc<Procedure>),
@@ -157,6 +158,7 @@ impl Display for Value {
             Self::Boolean(b) => write!(f, "#{}", if *b { 't' } else { 'f' }),
             Self::ByteVector(bv) => write_seq("#u8", bv, f),
             Self::Character(c) => write!(f, "#\\{}", CharDatum::new(*c)),
+            Self::Error(c) => c.fmt(f),
             Self::Number(n) => n.fmt(f),
             Self::Pair(None) => f.write_str("()"),
             Self::Pair(Some(p)) => write!(f, "({p})"),
@@ -226,6 +228,7 @@ impl TypeName<'_> {
     pub(crate) const BOOL: &'static str = "boolean";
     pub(crate) const BYTEVECTOR: &'static str = "bytevector";
     pub(crate) const CHAR: &'static str = "character";
+    pub(crate) const ERROR: &'static str = "error condition";
     pub(crate) const IMPLIST: &'static str = "improper list";
     pub(crate) const LIST: &'static str = "list";
     pub(crate) const NUMBER: &'static str = "number";
@@ -242,6 +245,7 @@ impl Display for TypeName<'_> {
             Value::Boolean(_) => f.write_str(Self::BOOL),
             Value::ByteVector(_) => f.write_str(Self::BYTEVECTOR),
             Value::Character(_) => f.write_str(Self::CHAR),
+            Value::Error(_) => f.write_str(Self::ERROR),
             Value::Number(_) => f.write_str(Self::NUMBER),
             Value::Pair(None) => f.write_str("null"),
             Value::Pair(Some(p)) => f.write_str(if p.is_list() { Self::LIST } else { Self::PAIR }),

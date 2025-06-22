@@ -5,7 +5,7 @@ use std::fmt::{self, Display, Formatter, Write};
 #[derive(Debug)]
 pub(crate) struct Condition {
     kind: ConditionKind,
-    irritants: Value,
+    irritants: Option<Value>,
     msg: Box<str>,
 }
 
@@ -22,7 +22,7 @@ impl Condition {
     ) -> Self {
         Self {
             kind: ConditionKind::Env,
-            irritants: zlist![arg.clone()],
+            irritants: Some(zlist![arg.clone()]),
             msg: format!(
                 "invalid type for arg `{name}` - expected: {expected_type}, got: {actual_type}",
             )
@@ -42,7 +42,7 @@ impl Condition {
         };
         Self {
             kind: ConditionKind::Env,
-            irritants: Value::Unspecified,
+            irritants: None,
             msg: format!("{name} arity mismatch - {expected}, got: {actual}",).into(),
         }
     }
@@ -50,7 +50,7 @@ impl Condition {
     pub(crate) fn bind_error(name: &str) -> Self {
         Self {
             kind: ConditionKind::Env,
-            irritants: Value::Unspecified,
+            irritants: None,
             msg: format!("unbound variable: {name}").into(),
         }
     }
@@ -58,7 +58,7 @@ impl Condition {
     pub(crate) fn index_error(idx: &Value) -> Self {
         Self {
             kind: ConditionKind::Env,
-            irritants: zlist![idx.clone()],
+            irritants: Some(zlist![idx.clone()]),
             msg: "index out of range".into(),
         }
     }
@@ -66,7 +66,7 @@ impl Condition {
     pub(crate) fn proc_error(typename: &str) -> Self {
         Self {
             kind: ConditionKind::Env,
-            irritants: Value::Unspecified,
+            irritants: None,
             msg: format!("expected procedure, got: {typename}").into(),
         }
     }
@@ -74,7 +74,7 @@ impl Condition {
     pub(crate) fn system_error(msg: impl Into<Box<str>>) -> Self {
         Self {
             kind: ConditionKind::System,
-            irritants: Value::Unspecified,
+            irritants: None,
             msg: msg.into(),
         }
     }
@@ -82,9 +82,25 @@ impl Condition {
     pub(crate) fn value_error(msg: impl Into<Box<str>>, val: &Value) -> Self {
         Self {
             kind: ConditionKind::Env,
-            irritants: zlist![val.clone()],
+            irritants: Some(zlist![val.clone()]),
             msg: msg.into(),
         }
+    }
+
+    pub(crate) fn is_file_err(&self) -> bool {
+        matches!(self.kind, ConditionKind::File)
+    }
+
+    pub(crate) fn is_read_err(&self) -> bool {
+        matches!(self.kind, ConditionKind::Read)
+    }
+
+    pub(crate) fn message(&self) -> &str {
+        &self.msg
+    }
+
+    pub(crate) fn irritants(&self) -> Option<&Value> {
+        self.irritants.as_ref()
     }
 }
 
@@ -92,8 +108,8 @@ impl Display for Condition {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "#<{} \"{}\"", self.kind, self.msg)?;
         match &self.irritants {
-            Value::Unspecified => (),
-            v => write!(f, " {v}")?,
+            None => (),
+            Some(v) => write!(f, " {v}")?,
         }
         f.write_char('>')
     }
@@ -132,7 +148,7 @@ mod tests {
         let c = Condition {
             kind: ConditionKind::General,
             msg: "foo".into(),
-            irritants: Value::Unspecified,
+            irritants: None,
         };
 
         assert_eq!(c.to_string(), "#<exception \"foo\">");
@@ -143,7 +159,7 @@ mod tests {
         let c = Condition {
             kind: ConditionKind::General,
             msg: "foo".into(),
-            irritants: zlist![Value::symbol("a"), Value::real(5)],
+            irritants: Some(zlist![Value::symbol("a"), Value::real(5)]),
         };
 
         assert_eq!(c.to_string(), "#<exception \"foo\" (a 5)>");
@@ -154,7 +170,7 @@ mod tests {
         let c = Condition {
             kind: ConditionKind::General,
             msg: "foo".into(),
-            irritants: Value::Boolean(true),
+            irritants: Some(Value::Boolean(true)),
         };
 
         assert_eq!(c.to_string(), "#<exception \"foo\" #t>");
@@ -165,7 +181,7 @@ mod tests {
         let c = Condition {
             kind: ConditionKind::Env,
             msg: "foo".into(),
-            irritants: Value::Unspecified,
+            irritants: None,
         };
 
         assert_eq!(c.to_string(), "#<env-error \"foo\">");
@@ -176,7 +192,7 @@ mod tests {
         let c = Condition {
             kind: ConditionKind::File,
             msg: "foo".into(),
-            irritants: Value::Unspecified,
+            irritants: None,
         };
 
         assert_eq!(c.to_string(), "#<file-error \"foo\">");
@@ -187,7 +203,7 @@ mod tests {
         let c = Condition {
             kind: ConditionKind::Read,
             msg: "foo".into(),
-            irritants: Value::Unspecified,
+            irritants: None,
         };
 
         assert_eq!(c.to_string(), "#<read-error \"foo\">");
@@ -198,7 +214,7 @@ mod tests {
         let c = Condition {
             kind: ConditionKind::System,
             msg: "foo".into(),
-            irritants: Value::Unspecified,
+            irritants: None,
         };
 
         assert_eq!(c.to_string(), "#<sys-error \"foo\">");

@@ -1,7 +1,7 @@
 use crate::{
     core,
     eval::{Binding, EvalResult, Frame},
-    value::Value,
+    value::{Condition, Value},
 };
 use std::rc::Rc;
 
@@ -19,6 +19,10 @@ pub(crate) fn load(scope: &mut Binding) {
     // TODO: test variables
     scope.bind("x", Value::real(5));
     scope.bind("z", Value::Unspecified);
+    scope.bind(
+        "ex",
+        Value::Error(Condition::system_error("test error").into()),
+    );
 }
 
 // TODO: support passing in environment specifier
