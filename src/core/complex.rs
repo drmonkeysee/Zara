@@ -29,12 +29,12 @@ fn make_polar(args: &[Value], _env: &mut Frame) -> EvalResult {
 
 fn get_real(args: &[Value], _env: &mut Frame) -> EvalResult {
     let arg = args.first().unwrap();
-    get_complex_part(arg, |z| z.as_real().clone(), |r| r.clone())
+    get_complex_part(arg, |z| z.real_part().clone(), |r| r.clone())
 }
 
 fn get_imag(args: &[Value], _env: &mut Frame) -> EvalResult {
     let arg = args.first().unwrap();
-    get_complex_part(arg, |z| z.as_imaginary().clone(), |_| Real::zero())
+    get_complex_part(arg, |z| z.imag_part().clone(), |_| Real::zero())
 }
 
 fn get_mag(args: &[Value], _env: &mut Frame) -> EvalResult {

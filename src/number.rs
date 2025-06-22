@@ -217,11 +217,11 @@ try_int_conversion!(usize, try_to_usize);
 pub(crate) struct Complex(Box<(Real, Real)>);
 
 impl Complex {
-    pub(crate) fn as_real(&self) -> &Real {
+    pub(crate) fn real_part(&self) -> &Real {
         &self.0.0
     }
 
-    pub(crate) fn as_imaginary(&self) -> &Real {
+    pub(crate) fn imag_part(&self) -> &Real {
         &self.0.1
     }
 
