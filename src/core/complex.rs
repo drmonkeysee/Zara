@@ -89,3 +89,57 @@ fn get_complex_part(
         invalid_target!(TypeName::NUMBER, arg)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::testutil::{TestEnv, ok_or_fail};
+
+    #[test]
+    fn get_real_complex() {
+        let args = [Value::Number(Number::complex(4, 5))];
+        let mut env = TestEnv::default();
+
+        let v = get_real(&args, &mut env.new_frame());
+
+        let r = ok_or_fail!(v);
+        assert!(matches!(r, Value::Number(Number::Real(Real::Integer(_)))));
+        assert_eq!(r.to_string(), "4");
+    }
+
+    #[test]
+    fn get_imag_complex() {
+        let args = [Value::Number(Number::complex(4, 5))];
+        let mut env = TestEnv::default();
+
+        let v = get_imag(&args, &mut env.new_frame());
+
+        let r = ok_or_fail!(v);
+        assert!(matches!(r, Value::Number(Number::Real(Real::Integer(_)))));
+        assert_eq!(r.to_string(), "5");
+    }
+
+    #[test]
+    fn get_real_real() {
+        let args = [Value::Number(Number::real(8))];
+        let mut env = TestEnv::default();
+
+        let v = get_real(&args, &mut env.new_frame());
+
+        let r = ok_or_fail!(v);
+        assert!(matches!(r, Value::Number(Number::Real(Real::Integer(_)))));
+        assert_eq!(r.to_string(), "8");
+    }
+
+    #[test]
+    fn get_imag_real() {
+        let args = [Value::Number(Number::real(8))];
+        let mut env = TestEnv::default();
+
+        let v = get_imag(&args, &mut env.new_frame());
+
+        let r = ok_or_fail!(v);
+        assert!(matches!(r, Value::Number(Number::Real(Real::Integer(_)))));
+        assert_eq!(r.to_string(), "0");
+    }
+}
