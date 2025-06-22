@@ -284,6 +284,9 @@ fn load_num(scope: &mut Binding) {
     super::bind_intrinsic(scope, "negative?", 1..1, is_negative);
     super::bind_intrinsic(scope, "odd?", 1..1, is_odd);
     super::bind_intrinsic(scope, "even?", 1..1, is_even);
+
+    super::bind_intrinsic(scope, "inexact", 1..1, into_inexact);
+    super::bind_intrinsic(scope, "exact", 1..1, into_exact);
 }
 
 predicate!(is_number, Value::Number(_));
@@ -319,6 +322,24 @@ fn is_odd(args: &[Value], _env: &mut Frame) -> EvalResult {
 
 fn is_even(args: &[Value], _env: &mut Frame) -> EvalResult {
     int_predicate(args.first().unwrap(), Integer::is_even)
+}
+
+fn into_inexact(args: &[Value], _env: &mut Frame) -> EvalResult {
+    let arg = args.first().unwrap();
+    if let Value::Number(n) = arg {
+        Ok(Value::Number(n.clone().into_inexact()))
+    } else {
+        invalid_target!(TypeName::NUMBER, arg)
+    }
+}
+
+fn into_exact(args: &[Value], _env: &mut Frame) -> EvalResult {
+    let arg = args.first().unwrap();
+    if let Value::Number(n) = arg {
+        Ok(Value::Number(n.clone().into_exact()))
+    } else {
+        invalid_target!(TypeName::NUMBER, arg)
+    }
 }
 
 fn real_predicate(arg: &Value, pred: impl FnOnce(&Real) -> bool) -> EvalResult {
