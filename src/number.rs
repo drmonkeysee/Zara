@@ -242,6 +242,10 @@ pub(crate) enum Real {
 }
 
 impl Real {
+    pub(crate) fn zero() -> Self {
+        Self::Integer(0.into())
+    }
+
     pub(crate) fn reduce(
         numerator: impl Into<Integer>,
         denominator: impl Into<Integer>,
@@ -903,7 +907,6 @@ impl Display for RealTokenDescriptor<'_> {
 pub(crate) struct NumericTypeName<'a>(&'a Number);
 
 impl NumericTypeName<'_> {
-    pub(crate) const COMPLEX: &'static str = "complex";
     pub(crate) const INTEGER: &'static str = "integer";
     pub(crate) const REAL: &'static str = "real";
 }
@@ -911,7 +914,7 @@ impl NumericTypeName<'_> {
 impl Display for NumericTypeName<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self.0 {
-            Number::Complex(_) => f.write_str(Self::COMPLEX),
+            Number::Complex(_) => f.write_str("complex"),
             Number::Real(Real::Float(_)) => f.write_str("floating-point"),
             Number::Real(Real::Integer(_)) => f.write_str(Self::INTEGER),
             Number::Real(Real::Rational(_)) => f.write_str("rational"),

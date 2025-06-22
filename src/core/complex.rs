@@ -3,7 +3,7 @@ use super::FIRST_ARG_LABEL;
 use crate::{
     eval::{Binding, EvalResult, Frame},
     number::{Complex, Number, NumericTypeName, Real},
-    value::{Condition, Value},
+    value::{Condition, TypeName, Value},
 };
 
 pub(super) fn load(scope: &mut Binding) {
@@ -29,22 +29,22 @@ fn make_polar(args: &[Value], _env: &mut Frame) -> EvalResult {
 
 fn get_real(args: &[Value], _env: &mut Frame) -> EvalResult {
     let arg = args.first().unwrap();
-    get_complex_part(arg, |z| z.real().clone())
+    get_complex_part(arg, |z| z.real().clone(), |r| r.clone())
 }
 
 fn get_imag(args: &[Value], _env: &mut Frame) -> EvalResult {
     let arg = args.first().unwrap();
-    get_complex_part(arg, |z| z.imaginary().clone())
+    get_complex_part(arg, |z| z.imaginary().clone(), |_| Real::zero())
 }
 
 fn get_mag(args: &[Value], _env: &mut Frame) -> EvalResult {
     let arg = args.first().unwrap();
-    get_complex_part(arg, |z| z.magnitude())
+    get_complex_part(arg, |z| z.magnitude(), |r| todo!("absolute value of r"))
 }
 
 fn get_angle(args: &[Value], _env: &mut Frame) -> EvalResult {
     let arg = args.first().unwrap();
-    get_complex_part(arg, |z| z.angle())
+    get_complex_part(arg, |z| z.angle(), |_| Real::zero())
 }
 
 fn make_complex(x: &Value, y: &Value, ctor: impl FnOnce(Real, Real) -> Number) -> EvalResult {
@@ -75,20 +75,17 @@ fn make_complex(x: &Value, y: &Value, ctor: impl FnOnce(Real, Real) -> Number) -
     Ok(Value::Number(ctor(r.clone(), i.clone())))
 }
 
-fn get_complex_part(arg: &Value, get: impl FnOnce(&Complex) -> Real) -> EvalResult {
+fn get_complex_part(
+    arg: &Value,
+    get: impl FnOnce(&Complex) -> Real,
+    fallback: impl FnOnce(&Real) -> Real,
+) -> EvalResult {
     if let Value::Number(n) = arg {
-        if let Number::Complex(z) = n {
-            Ok(Value::Number(Number::real(get(z))))
-        } else {
-            Err(Condition::arg_type_error(
-                FIRST_ARG_LABEL,
-                NumericTypeName::COMPLEX,
-                n.as_typename(),
-                arg,
-            )
-            .into())
-        }
+        Ok(Value::Number(Number::real(match n {
+            Number::Complex(z) => get(z),
+            Number::Real(r) => fallback(r),
+        })))
     } else {
-        invalid_target!(NumericTypeName::COMPLEX, arg)
+        invalid_target!(TypeName::NUMBER, arg)
     }
 }
