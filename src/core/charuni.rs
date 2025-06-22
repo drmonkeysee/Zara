@@ -86,7 +86,6 @@ fn char_case<I: ExactSizeIterator<Item = char>>(
     }
 }
 
-// TODO: mutability
 fn string_case(arg: &Value, _case: impl FnOnce(&str) -> String) -> EvalResult {
     if let Value::String(_s) = arg {
         todo!("need to return a mutable string")

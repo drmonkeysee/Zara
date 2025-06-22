@@ -1315,4 +1315,57 @@ mod tests {
             "#<env-error \"invalid type for arg `0` - expected: pair, got: symbol\" (c)>"
         );
     }
+
+    #[test]
+    fn int_to_char() {
+        let args = [Value::Number(Number::real(0x41))];
+        let mut env = TestEnv::default();
+
+        let r = integer_to_char(&args, &mut env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert!(matches!(v, Value::Character('A')));
+    }
+
+    #[test]
+    fn int_to_char_invalid_arg() {
+        let args = [Value::symbol("a")];
+        let mut env = TestEnv::default();
+
+        let r = integer_to_char(&args, &mut env.new_frame());
+
+        let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
+        assert_eq!(
+            err.to_string(),
+            "#<env-error \"invalid type for arg `0` - expected: integer, got: symbol\" (a)>"
+        );
+    }
+
+    #[test]
+    fn int_to_char_invalid_range() {
+        let args = [Value::Number(Number::real(-4))];
+        let mut env = TestEnv::default();
+
+        let r = integer_to_char(&args, &mut env.new_frame());
+
+        let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
+        assert_eq!(
+            err.to_string(),
+            "#<env-error \"unicode code point out of ranges [#x0, #xD7FF], [#xE000, #x10FFFF] ([0, 55295], [57344, 1114111])\" (-4)>"
+        );
+    }
+
+    #[test]
+    fn int_to_char_not_a_code_point() {
+        let args = [Value::Number(Number::real(0xdff0))];
+        let mut env = TestEnv::default();
+
+        let r = integer_to_char(&args, &mut env.new_frame());
+
+        let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
+        assert_eq!(
+            err.to_string(),
+            "#<env-error \"unicode code point out of ranges [#x0, #xD7FF], [#xE000, #x10FFFF] ([0, 55295], [57344, 1114111])\" (57328)>"
+        );
+    }
 }
