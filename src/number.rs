@@ -226,11 +226,15 @@ impl Complex {
     }
 
     pub(crate) fn to_magnitude(&self) -> Real {
-        todo!();
+        let x = self.real_part().to_float();
+        let y = self.imag_part().to_float();
+        Real::Float(x.hypot(y))
     }
 
     pub(crate) fn to_angle(&self) -> Real {
-        todo!();
+        let x = self.real_part().to_float();
+        let y = self.imag_part().to_float();
+        Real::Float(y.atan2(x))
     }
 }
 
@@ -384,7 +388,6 @@ impl Real {
         }
     }
 
-    // TODO: not yet used outside of unit tests
     // TODO: if this becomes public rewrite to TryFrom<&Number>
     fn to_float(&self) -> f64 {
         match self {
