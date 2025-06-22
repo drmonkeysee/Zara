@@ -69,8 +69,6 @@ use crate::{
 };
 use std::{convert, rc::Rc};
 
-const REAL_ARG_TNAME: &str = "real";
-
 pub(super) fn load(scope: &mut Binding) {
     load_bool(scope);
     load_bv(scope);
@@ -344,18 +342,15 @@ fn into_exact(args: &[Value], _env: &mut Frame) -> EvalResult {
 
 fn real_predicate(arg: &Value, pred: impl FnOnce(&Real) -> bool) -> EvalResult {
     let Value::Number(n) = arg else {
-        return invalid_target!(REAL_ARG_TNAME, arg);
+        return invalid_target!(NumericTypeName::REAL, arg);
     };
     if let Number::Real(r) = n {
         Ok(Value::Boolean(pred(r)))
     } else {
-        Err(Condition::arg_type_error(
-            FIRST_ARG_LABEL,
-            REAL_ARG_TNAME,
-            NumericTypeName::COMPLEX,
-            arg,
+        Err(
+            Condition::arg_type_error(FIRST_ARG_LABEL, NumericTypeName::REAL, n.as_typename(), arg)
+                .into(),
         )
-        .into())
     }
 }
 

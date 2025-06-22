@@ -216,6 +216,24 @@ try_int_conversion!(usize, try_to_usize);
 #[derive(Clone, Debug)]
 pub(crate) struct Complex(Box<(Real, Real)>);
 
+impl Complex {
+    pub(crate) fn real(&self) -> &Real {
+        &self.0.0
+    }
+
+    pub(crate) fn imaginary(&self) -> &Real {
+        &self.0.1
+    }
+
+    pub(crate) fn magnitude(&self) -> Real {
+        todo!();
+    }
+
+    pub(crate) fn angle(&self) -> Real {
+        todo!();
+    }
+}
+
 #[derive(Clone, Debug)]
 pub(crate) enum Real {
     Float(f64),
@@ -887,6 +905,7 @@ pub(crate) struct NumericTypeName<'a>(&'a Number);
 impl NumericTypeName<'_> {
     pub(crate) const COMPLEX: &'static str = "complex";
     pub(crate) const INTEGER: &'static str = "integer";
+    pub(crate) const REAL: &'static str = "real";
 }
 
 impl Display for NumericTypeName<'_> {
