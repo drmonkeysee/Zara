@@ -1165,6 +1165,48 @@ mod tests {
     }
 
     #[test]
+    fn list_tail_wrong_index_type() {
+        let args = [Value::null(), Value::string("foo")];
+        let mut env = TestEnv::default();
+
+        let r = list_tail(&args, &mut env.new_frame());
+
+        let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
+        assert_eq!(
+            err.to_string(),
+            "#<env-error \"invalid type for arg `1` - expected: integer, got: string\" (\"foo\")>"
+        );
+    }
+
+    #[test]
+    fn list_tail_invalid_index_type() {
+        let args = [Value::null(), Value::Number(Number::real(4.2))];
+        let mut env = TestEnv::default();
+
+        let r = list_tail(&args, &mut env.new_frame());
+
+        let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
+        assert_eq!(
+            err.to_string(),
+            "#<env-error \"invalid type for arg `1` - expected: integer, got: floating-point\" (4.2)>"
+        );
+    }
+
+    #[test]
+    fn list_tail_index_invalid_range() {
+        let args = [Value::null(), Value::Number(Number::real(-4))];
+        let mut env = TestEnv::default();
+
+        let r = list_tail(&args, &mut env.new_frame());
+
+        let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
+        assert_eq!(
+            err.to_string(),
+            "#<env-error \"integer literal out of range: [0, 18446744073709551615]\" (-4)>"
+        );
+    }
+
+    #[test]
     fn list_ref_normal_list() {
         let args = [
             zlist![Value::symbol("a"), Value::symbol("b"), Value::symbol("c")],
