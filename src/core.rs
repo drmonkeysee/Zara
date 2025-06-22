@@ -43,6 +43,7 @@ macro_rules! cadr_func {
 
 mod base;
 mod charuni;
+mod complex;
 mod cxr;
 mod inexact;
 mod procctx;
@@ -67,6 +68,7 @@ const SECOND_ARG_LABEL: &str = "1";
 pub(crate) fn load(scope: &mut Binding) {
     base::load(scope);
     charuni::load(scope);
+    complex::load(scope);
     cxr::load(scope);
     inexact::load(scope);
     procctx::load(scope);
