@@ -313,9 +313,9 @@ impl Real {
 
     pub(crate) fn to_abs(&self) -> Self {
         match self {
-            Self::Float(f) => todo!(),
-            Self::Integer(n) => todo!(),
-            Self::Rational(q) => todo!(),
+            Self::Float(f) => Self::Float(f.abs()),
+            Self::Integer(n) => Self::Integer(n.to_abs()),
+            Self::Rational(q) => Self::Rational(q.to_abs()),
         }
     }
 
@@ -451,6 +451,10 @@ impl Rational {
         self.0.0.is_negative()
     }
 
+    fn to_abs(&self) -> Self {
+        Self((self.0.0.to_abs(), self.0.1.clone()).into())
+    }
+
     fn to_float(&self) -> f64 {
         let r = &self.0;
         let (num, denom) = (r.0.to_float(), r.1.to_float());
@@ -521,6 +525,12 @@ impl Integer {
 
     fn cmp_magnitude(&self, other: &Self) -> Ordering {
         self.precision.cmp(&other.precision)
+    }
+
+    fn to_abs(&self) -> Self {
+        let mut me = self.clone();
+        me.make_positive();
+        me
     }
 
     fn to_float(&self) -> f64 {
