@@ -16,35 +16,35 @@ pub(super) fn load(scope: &mut Binding) {
 }
 
 fn make_rect(args: &[Value], _env: &mut Frame) -> EvalResult {
-    let x = args.first().unwrap();
-    let y = args.get(1).unwrap();
-    make_complex(x, y, Number::complex)
+    make_complex(args.first().unwrap(), args.get(1).unwrap(), Number::complex)
 }
 
 fn make_polar(args: &[Value], _env: &mut Frame) -> EvalResult {
-    let x = args.first().unwrap();
-    let y = args.get(1).unwrap();
-    make_complex(x, y, Number::polar)
+    make_complex(args.first().unwrap(), args.get(1).unwrap(), Number::polar)
 }
 
 fn get_real(args: &[Value], _env: &mut Frame) -> EvalResult {
-    let arg = args.first().unwrap();
-    get_complex_part(arg, |z| z.real_part().clone(), |r| r.clone())
+    get_complex_part(
+        args.first().unwrap(),
+        |z| z.real_part().clone(),
+        |r| r.clone(),
+    )
 }
 
 fn get_imag(args: &[Value], _env: &mut Frame) -> EvalResult {
-    let arg = args.first().unwrap();
-    get_complex_part(arg, |z| z.imag_part().clone(), |_| Real::zero())
+    get_complex_part(
+        args.first().unwrap(),
+        |z| z.imag_part().clone(),
+        |_| Real::zero(),
+    )
 }
 
 fn get_mag(args: &[Value], _env: &mut Frame) -> EvalResult {
-    let arg = args.first().unwrap();
-    get_complex_part(arg, |z| z.to_magnitude(), |r| r.to_abs())
+    get_complex_part(args.first().unwrap(), |z| z.to_magnitude(), |r| r.to_abs())
 }
 
 fn get_angle(args: &[Value], _env: &mut Frame) -> EvalResult {
-    let arg = args.first().unwrap();
-    get_complex_part(arg, |z| z.to_angle(), |_| Real::zero())
+    get_complex_part(args.first().unwrap(), |z| z.to_angle(), |_| Real::zero())
 }
 
 fn make_complex(x: &Value, y: &Value, ctor: impl FnOnce(Real, Real) -> Number) -> EvalResult {

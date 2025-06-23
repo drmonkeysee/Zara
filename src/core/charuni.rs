@@ -51,23 +51,19 @@ try_predicate!(
 );
 
 fn char_upper(args: &[Value], _env: &mut Frame) -> EvalResult {
-    let arg = args.first().unwrap();
-    char_case(arg, char::to_uppercase)
+    char_case(args.first().unwrap(), char::to_uppercase)
 }
 
 fn char_lower(args: &[Value], _env: &mut Frame) -> EvalResult {
-    let arg = args.first().unwrap();
-    char_case(arg, char::to_lowercase)
+    char_case(args.first().unwrap(), char::to_lowercase)
 }
 
 fn string_upper(args: &[Value], _env: &mut Frame) -> EvalResult {
-    let arg = args.first().unwrap();
-    string_case(arg, str::to_uppercase)
+    string_case(args.first().unwrap(), str::to_uppercase)
 }
 
 fn string_lower(args: &[Value], _env: &mut Frame) -> EvalResult {
-    let arg = args.first().unwrap();
-    string_case(arg, str::to_lowercase)
+    string_case(args.first().unwrap(), str::to_lowercase)
 }
 
 fn char_case<I: ExactSizeIterator<Item = char>>(
