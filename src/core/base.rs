@@ -309,11 +309,11 @@ try_predicate!(is_zero, Value::Number, TypeName::NUMBER, |n: &Number| n
     .is_zero());
 
 fn is_positive(args: &[Value], _env: &mut Frame) -> EvalResult {
-    real_predicate(args.first().unwrap(), Real::is_positive)
+    real_op(args.first().unwrap(), |r| Value::Boolean(r.is_positive()))
 }
 
 fn is_negative(args: &[Value], _env: &mut Frame) -> EvalResult {
-    real_predicate(args.first().unwrap(), Real::is_negative)
+    real_op(args.first().unwrap(), |r| Value::Boolean(r.is_negative()))
 }
 
 fn is_odd(args: &[Value], _env: &mut Frame) -> EvalResult {
@@ -325,18 +325,9 @@ fn is_even(args: &[Value], _env: &mut Frame) -> EvalResult {
 }
 
 fn to_abs(args: &[Value], _env: &mut Frame) -> EvalResult {
-    let arg = args.first().unwrap();
-    let Value::Number(n) = arg else {
-        return invalid_target!(NumericTypeName::REAL, arg);
-    };
-    if let Number::Real(r) = n {
-        Ok(Value::Number(Number::real(r.to_abs())))
-    } else {
-        Err(
-            Condition::arg_type_error(FIRST_ARG_LABEL, NumericTypeName::REAL, n.as_typename(), arg)
-                .into(),
-        )
-    }
+    real_op(args.first().unwrap(), |r| {
+        Value::Number(Number::real(r.to_abs()))
+    })
 }
 
 fn into_inexact(args: &[Value], _env: &mut Frame) -> EvalResult {
@@ -357,12 +348,12 @@ fn into_exact(args: &[Value], _env: &mut Frame) -> EvalResult {
     }
 }
 
-fn real_predicate(arg: &Value, pred: impl FnOnce(&Real) -> bool) -> EvalResult {
+fn real_op(arg: &Value, op: impl FnOnce(&Real) -> Value) -> EvalResult {
     let Value::Number(n) = arg else {
         return invalid_target!(NumericTypeName::REAL, arg);
     };
     if let Number::Real(r) = n {
-        Ok(Value::Boolean(pred(r)))
+        Ok(op(r))
     } else {
         Err(
             Condition::arg_type_error(FIRST_ARG_LABEL, NumericTypeName::REAL, n.as_typename(), arg)
