@@ -142,4 +142,52 @@ mod tests {
         assert!(matches!(r, Value::Number(Number::Real(Real::Integer(_)))));
         assert_eq!(r.to_string(), "0");
     }
+
+    #[test]
+    fn get_magnitude_complex() {
+        let args = [Value::Number(Number::complex(4, 5))];
+        let mut env = TestEnv::default();
+
+        let v = get_mag(&args, &mut env.new_frame());
+
+        let r = ok_or_fail!(v);
+        assert!(matches!(r, Value::Number(Number::Real(Real::Float(_)))));
+        assert_eq!(r.to_string(), "6.4031242374328485");
+    }
+
+    #[test]
+    fn get_angle_complex() {
+        let args = [Value::Number(Number::complex(4, 5))];
+        let mut env = TestEnv::default();
+
+        let v = get_angle(&args, &mut env.new_frame());
+
+        let r = ok_or_fail!(v);
+        assert!(matches!(r, Value::Number(Number::Real(Real::Float(_)))));
+        assert_eq!(r.to_string(), "0.8960553845713439");
+    }
+
+    #[test]
+    fn get_mag_real() {
+        let args = [Value::Number(Number::real(8))];
+        let mut env = TestEnv::default();
+
+        let v = get_mag(&args, &mut env.new_frame());
+
+        let r = ok_or_fail!(v);
+        assert!(matches!(r, Value::Number(Number::Real(Real::Integer(_)))));
+        assert_eq!(r.to_string(), "8");
+    }
+
+    #[test]
+    fn get_angle_real() {
+        let args = [Value::Number(Number::real(8))];
+        let mut env = TestEnv::default();
+
+        let v = get_angle(&args, &mut env.new_frame());
+
+        let r = ok_or_fail!(v);
+        assert!(matches!(r, Value::Number(Number::Real(Real::Integer(_)))));
+        assert_eq!(r.to_string(), "0");
+    }
 }
