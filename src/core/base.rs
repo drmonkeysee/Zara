@@ -240,6 +240,7 @@ predicate!(is_error, Value::Error(_));
 predicate!(is_read_error, Value::Error(c) if c.is_read_err());
 predicate!(is_file_error, Value::Error(c) if c.is_file_err());
 
+// TODO: this should be a mutable string
 fn error_msg(args: &[Value], _env: &mut Frame) -> EvalResult {
     let arg = args.first().unwrap();
     if let Value::Error(c) = arg {
@@ -499,11 +500,6 @@ fn load_string(scope: &mut Binding) {
 
 predicate!(is_string, Value::String(_));
 vec_length!(string_length, Value::String, TypeName::STRING);
-seq_predicate!(strings_eq, Value::String, TypeName::STRING, Rc::eq);
-seq_predicate!(strings_lt, Value::String, TypeName::STRING, Rc::lt);
-seq_predicate!(strings_lte, Value::String, TypeName::STRING, Rc::le);
-seq_predicate!(strings_gt, Value::String, TypeName::STRING, Rc::gt);
-seq_predicate!(strings_gte, Value::String, TypeName::STRING, Rc::ge);
 vec_get!(
     string_get,
     Value::String,
@@ -511,6 +507,11 @@ vec_get!(
     |s, u| s.chars().nth(u),
     Value::Character
 );
+seq_predicate!(strings_eq, Value::String, TypeName::STRING, Rc::eq);
+seq_predicate!(strings_lt, Value::String, TypeName::STRING, Rc::lt);
+seq_predicate!(strings_lte, Value::String, TypeName::STRING, Rc::le);
+seq_predicate!(strings_gt, Value::String, TypeName::STRING, Rc::gt);
+seq_predicate!(strings_gte, Value::String, TypeName::STRING, Rc::ge);
 
 //
 // Symbols
