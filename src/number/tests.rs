@@ -1768,7 +1768,7 @@ mod float {
     fn negative_abs() {
         let n = Integer::from(-4);
 
-        let a = n.to_abs();
+        let a = n.into_abs();
 
         assert_eq!(a.sign, Sign::Positive);
     }
@@ -1777,7 +1777,7 @@ mod float {
     fn positive_abs() {
         let n = Integer::from(4);
 
-        let a = n.to_abs();
+        let a = n.into_abs();
 
         assert_eq!(a.sign, Sign::Positive);
     }
@@ -1786,7 +1786,7 @@ mod float {
     fn zero_abs() {
         let n = Integer::from(0);
 
-        let a = n.to_abs();
+        let a = n.into_abs();
 
         assert_eq!(a.sign, Sign::Zero);
     }
@@ -2194,7 +2194,7 @@ mod rational {
     fn negative_abs() {
         let rat = Rational(((-4).into(), 5.into()).into());
 
-        let abs = rat.to_abs();
+        let abs = rat.into_abs();
 
         assert_eq!(abs.0.0.sign, Sign::Positive);
     }
@@ -2203,7 +2203,7 @@ mod rational {
     fn positive_abs() {
         let rat = Rational((4.into(), 5.into()).into());
 
-        let abs = rat.to_abs();
+        let abs = rat.into_abs();
 
         assert_eq!(abs.0.0.sign, Sign::Positive);
     }
@@ -2212,7 +2212,7 @@ mod rational {
     fn zero_abs() {
         let rat = Rational((0.into(), 5.into()).into());
 
-        let abs = rat.to_abs();
+        let abs = rat.into_abs();
 
         assert_eq!(abs.0.0.sign, Sign::Zero);
     }
@@ -2221,7 +2221,7 @@ mod rational {
     fn negative_denom_not_checked_for_abs() {
         let rat = Rational((4.into(), (-5).into()).into());
 
-        let abs = rat.to_abs();
+        let abs = rat.into_abs();
 
         assert_eq!(abs.0.0.sign, Sign::Positive);
         assert_eq!(abs.0.1.sign, Sign::Negative);

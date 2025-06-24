@@ -315,14 +315,6 @@ impl Real {
         RealTokenDescriptor(self)
     }
 
-    pub(crate) fn to_abs(&self) -> Self {
-        match self {
-            Self::Float(f) => Self::Float(f.abs()),
-            Self::Integer(n) => Self::Integer(n.to_abs()),
-            Self::Rational(q) => Self::Rational(q.to_abs()),
-        }
-    }
-
     pub(crate) fn into_exact(self) -> Self {
         match self {
             Self::Float(f) => FloatSpec::float_to_exact(f),
@@ -335,6 +327,30 @@ impl Real {
             Self::Float(_) => self,
             Self::Integer(n) => n.into_inexact(),
             Self::Rational(q) => q.into_inexact(),
+        }
+    }
+
+    pub(crate) fn into_abs(self) -> Self {
+        match self {
+            Self::Float(f) => Self::Float(f.abs()),
+            Self::Integer(n) => Self::Integer(n.into_abs()),
+            Self::Rational(q) => Self::Rational(q.into_abs()),
+        }
+    }
+
+    pub(crate) fn into_numerator(self) -> Self {
+        match self {
+            Self::Float(_) => self.into_exact().into_numerator().into_inexact(),
+            Self::Integer(n) => Self::Integer(n.into_numerator()),
+            Self::Rational(q) => Self::Integer(q.into_numerator()),
+        }
+    }
+
+    pub(crate) fn into_denominator(self) -> Self {
+        match self {
+            Self::Float(_) => self.into_exact().into_denominator().into_inexact(),
+            Self::Integer(n) => Self::Integer(n.into_denominator()),
+            Self::Rational(q) => Self::Integer(q.into_denominator()),
         }
     }
 
@@ -454,10 +470,6 @@ impl Rational {
         self.0.0.is_negative()
     }
 
-    fn to_abs(&self) -> Self {
-        Self((self.0.0.to_abs(), self.0.1.clone()).into())
-    }
-
     fn to_float(&self) -> f64 {
         let r = &self.0;
         let (num, denom) = (r.0.to_float(), r.1.to_float());
@@ -466,6 +478,19 @@ impl Rational {
 
     fn into_inexact(self) -> Real {
         Real::Float(self.to_float())
+    }
+
+    fn into_abs(mut self) -> Self {
+        self.0.0 = self.0.0.into_abs();
+        self
+    }
+
+    fn into_numerator(self) -> Integer {
+        todo!();
+    }
+
+    fn into_denominator(self) -> Integer {
+        todo!();
     }
 }
 
@@ -530,12 +555,6 @@ impl Integer {
         self.precision.cmp(&other.precision)
     }
 
-    fn to_abs(&self) -> Self {
-        let mut me = self.clone();
-        me.make_positive();
-        me
-    }
-
     fn to_float(&self) -> f64 {
         match self.precision {
             Precision::Single(u) => {
@@ -590,6 +609,19 @@ impl Integer {
 
     fn into_inexact(self) -> Real {
         Real::Float(self.to_float())
+    }
+
+    fn into_abs(mut self) -> Self {
+        self.make_positive();
+        self
+    }
+
+    fn into_numerator(self) -> Self {
+        todo!();
+    }
+
+    fn into_denominator(self) -> Self {
+        todo!();
     }
 }
 
@@ -929,6 +961,7 @@ pub(crate) struct NumericTypeName<'a>(&'a Number);
 
 impl NumericTypeName<'_> {
     pub(crate) const INTEGER: &'static str = "integer";
+    pub(crate) const RATIONAL: &'static str = "rational";
     pub(crate) const REAL: &'static str = "real";
 }
 
@@ -938,7 +971,7 @@ impl Display for NumericTypeName<'_> {
             Number::Complex(_) => f.write_str("complex"),
             Number::Real(Real::Float(_)) => f.write_str("floating-point"),
             Number::Real(Real::Integer(_)) => f.write_str(Self::INTEGER),
-            Number::Real(Real::Rational(_)) => f.write_str("rational"),
+            Number::Real(Real::Rational(_)) => f.write_str(Self::RATIONAL),
         }
     }
 }

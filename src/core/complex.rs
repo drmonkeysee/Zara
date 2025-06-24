@@ -40,7 +40,11 @@ fn get_imag(args: &[Value], _env: &mut Frame) -> EvalResult {
 }
 
 fn get_mag(args: &[Value], _env: &mut Frame) -> EvalResult {
-    get_complex_part(args.first().unwrap(), |z| z.to_magnitude(), |r| r.to_abs())
+    get_complex_part(
+        args.first().unwrap(),
+        |z| z.to_magnitude(),
+        |r| r.clone().into_abs(),
+    )
 }
 
 fn get_angle(args: &[Value], _env: &mut Frame) -> EvalResult {

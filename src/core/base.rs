@@ -67,7 +67,7 @@ use crate::{
     string::unicode::UnicodeError,
     value::{Condition, TypeName, Value},
 };
-use std::{convert, rc::Rc};
+use std::{convert, fmt::Display, rc::Rc};
 
 pub(super) fn load(scope: &mut Binding) {
     load_bool(scope);
@@ -284,7 +284,10 @@ fn load_num(scope: &mut Binding) {
     super::bind_intrinsic(scope, "odd?", 1..1, is_odd);
     super::bind_intrinsic(scope, "even?", 1..1, is_even);
 
-    super::bind_intrinsic(scope, "abs", 1..1, to_abs);
+    super::bind_intrinsic(scope, "abs", 1..1, abs);
+
+    super::bind_intrinsic(scope, "numerator", 1..1, get_numerator);
+    super::bind_intrinsic(scope, "denominator", 1..1, get_denominator);
 
     super::bind_intrinsic(scope, "inexact", 1..1, into_inexact);
     super::bind_intrinsic(scope, "exact", 1..1, into_exact);
@@ -310,11 +313,15 @@ try_predicate!(is_zero, Value::Number, TypeName::NUMBER, |n: &Number| n
     .is_zero());
 
 fn is_positive(args: &[Value], _env: &mut Frame) -> EvalResult {
-    real_op(args.first().unwrap(), |r| Value::Boolean(r.is_positive()))
+    real_op(args.first().unwrap(), NumericTypeName::REAL, |r| {
+        Value::Boolean(r.is_positive())
+    })
 }
 
 fn is_negative(args: &[Value], _env: &mut Frame) -> EvalResult {
-    real_op(args.first().unwrap(), |r| Value::Boolean(r.is_negative()))
+    real_op(args.first().unwrap(), NumericTypeName::REAL, |r| {
+        Value::Boolean(r.is_negative())
+    })
 }
 
 fn is_odd(args: &[Value], _env: &mut Frame) -> EvalResult {
@@ -325,9 +332,21 @@ fn is_even(args: &[Value], _env: &mut Frame) -> EvalResult {
     int_predicate(args.first().unwrap(), Integer::is_even)
 }
 
-fn to_abs(args: &[Value], _env: &mut Frame) -> EvalResult {
-    real_op(args.first().unwrap(), |r| {
-        Value::Number(Number::real(r.to_abs()))
+fn abs(args: &[Value], _env: &mut Frame) -> EvalResult {
+    real_op(args.first().unwrap(), NumericTypeName::REAL, |r| {
+        Value::Number(Number::real(r.clone().into_abs()))
+    })
+}
+
+fn get_numerator(args: &[Value], _env: &mut Frame) -> EvalResult {
+    real_op(args.first().unwrap(), NumericTypeName::RATIONAL, |r| {
+        Value::Number(Number::real(r.clone().into_numerator()))
+    })
+}
+
+fn get_denominator(args: &[Value], _env: &mut Frame) -> EvalResult {
+    real_op(args.first().unwrap(), NumericTypeName::RATIONAL, |r| {
+        Value::Number(Number::real(r.clone().into_denominator()))
     })
 }
 
@@ -349,17 +368,18 @@ fn into_exact(args: &[Value], _env: &mut Frame) -> EvalResult {
     }
 }
 
-fn real_op(arg: &Value, op: impl FnOnce(&Real) -> Value) -> EvalResult {
+fn real_op(
+    arg: &Value,
+    expected_type: impl Display,
+    op: impl FnOnce(&Real) -> Value,
+) -> EvalResult {
     let Value::Number(n) = arg else {
         return invalid_target!(NumericTypeName::REAL, arg);
     };
     if let Number::Real(r) = n {
         Ok(op(r))
     } else {
-        Err(
-            Condition::arg_type_error(FIRST_ARG_LABEL, NumericTypeName::REAL, n.as_typename(), arg)
-                .into(),
-        )
+        Err(Condition::arg_type_error(FIRST_ARG_LABEL, expected_type, n.as_typename(), arg).into())
     }
 }
 
