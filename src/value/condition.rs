@@ -115,6 +115,7 @@ impl Display for Condition {
     }
 }
 
+// TODO: should this have more kinds, reflecting the ctors?
 #[derive(Debug)]
 enum ConditionKind {
     Env,
