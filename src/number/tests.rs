@@ -781,9 +781,9 @@ mod integer {
     fn single_into_exact() {
         let n = Real::Integer(Integer::single(42, Sign::Positive));
 
-        let r = n.into_exact();
+        let r = n.try_into_exact();
 
-        let int = extract_or_fail!(r, Real::Integer);
+        let int = extract_or_fail!(ok_or_fail!(r), Real::Integer);
 
         assert_eq!(extract_or_fail!(int.precision, Precision::Single), 42);
         assert_eq!(int.sign, Sign::Positive);
@@ -1344,9 +1344,9 @@ mod float {
     fn into_exact() {
         let n = Real::Float(4.0);
 
-        let n = n.into_exact();
+        let n = n.try_into_exact();
 
-        let int = extract_or_fail!(n, Real::Integer);
+        let int = extract_or_fail!(ok_or_fail!(n), Real::Integer);
         assert_eq!(extract_or_fail!(int.precision, Precision::Single), 4);
         assert_eq!(int.sign, Sign::Positive);
     }
@@ -1355,9 +1355,9 @@ mod float {
     fn into_exact_rational() {
         let n = Real::Float(1.5);
 
-        let n = n.into_exact();
+        let n = n.try_into_exact();
 
-        let (num, den) = rational_parts!(n);
+        let (num, den) = rational_parts!(ok_or_fail!(n));
         assert_eq!(extract_or_fail!(num.precision, Precision::Single), 3);
         assert_eq!(num.sign, Sign::Positive);
         assert_eq!(extract_or_fail!(den.precision, Precision::Single), 2);
@@ -1368,9 +1368,9 @@ mod float {
     fn into_exact_zero() {
         let n = Real::Float(0.0);
 
-        let n = n.into_exact();
+        let n = n.try_into_exact();
 
-        let int = extract_or_fail!(n, Real::Integer);
+        let int = extract_or_fail!(ok_or_fail!(n), Real::Integer);
         assert_eq!(extract_or_fail!(int.precision, Precision::Single), 0);
         assert_eq!(int.sign, Sign::Zero);
     }
@@ -1379,9 +1379,9 @@ mod float {
     fn into_exact_negative_zero() {
         let n = Real::Float(-0.0);
 
-        let n = n.into_exact();
+        let n = n.try_into_exact();
 
-        let int = extract_or_fail!(n, Real::Integer);
+        let int = extract_or_fail!(ok_or_fail!(n), Real::Integer);
         assert_eq!(extract_or_fail!(int.precision, Precision::Single), 0);
         assert_eq!(int.sign, Sign::Zero);
     }
@@ -1390,9 +1390,9 @@ mod float {
     fn into_exact_exponent() {
         let n = Real::Float(4e2);
 
-        let n = n.into_exact();
+        let n = n.try_into_exact();
 
-        let int = extract_or_fail!(n, Real::Integer);
+        let int = extract_or_fail!(ok_or_fail!(n), Real::Integer);
         assert_eq!(extract_or_fail!(int.precision, Precision::Single), 400);
         assert_eq!(int.sign, Sign::Positive);
     }
@@ -1401,9 +1401,9 @@ mod float {
     fn into_exact_fraction_exponent() {
         let n = Real::Float(4.2e3);
 
-        let n = n.into_exact();
+        let n = n.try_into_exact();
 
-        let int = extract_or_fail!(n, Real::Integer);
+        let int = extract_or_fail!(ok_or_fail!(n), Real::Integer);
         assert_eq!(extract_or_fail!(int.precision, Precision::Single), 4200);
         assert_eq!(int.sign, Sign::Positive);
     }
@@ -1412,20 +1412,20 @@ mod float {
     fn into_exact_infinite() {
         let n = Real::Float(f64::INFINITY);
 
-        let n = n.into_exact();
+        let n = n.try_into_exact();
 
-        let flt = extract_or_fail!(n, Real::Float);
-        assert!(flt.is_infinite());
+        let err = err_or_fail!(n);
+        assert!(matches!(err, NumericError::NoExactRepresentation(s) if s.contains("+inf.0")));
     }
 
     #[test]
     fn into_exact_nan() {
         let n = Real::Float(f64::NAN);
 
-        let n = n.into_exact();
+        let n = n.try_into_exact();
 
-        let flt = extract_or_fail!(n, Real::Float);
-        assert!(flt.is_nan());
+        let err = err_or_fail!(n);
+        assert!(matches!(err, NumericError::NoExactRepresentation(s) if s.contains("+nan.0")));
     }
 
     #[test]
@@ -1433,7 +1433,9 @@ mod float {
         let expected = 4.23452e-2;
         let n = Real::Float(expected);
 
-        let r = n.into_exact();
+        let r = n.try_into_exact();
+
+        let r = ok_or_fail!(r);
         assert!(matches!(r, Real::Rational(_)));
 
         let f = r.into_inexact();
@@ -2052,7 +2054,7 @@ mod rational {
     fn positive_into_exact() {
         let n = ok_or_fail!(Real::reduce(4, 5));
 
-        let (num, den) = rational_parts!(n.into_exact());
+        let (num, den) = rational_parts!(ok_or_fail!(n.try_into_exact()));
 
         assert_eq!(extract_or_fail!(num.precision, Precision::Single), 4);
         assert_eq!(num.sign, Sign::Positive);
@@ -2455,9 +2457,9 @@ mod complex {
     fn into_exact() {
         let c = Number::complex(4.0, 3.0);
 
-        let c = c.into_exact();
+        let c = c.try_into_exact();
 
-        let ri = extract_or_fail!(c, Number::Complex);
+        let ri = extract_or_fail!(ok_or_fail!(c), Number::Complex);
         let r = extract_or_fail!(ri.0.0, Real::Integer);
         assert!(!r.is_zero());
         assert_eq!(extract_or_fail!(r.precision, Precision::Single), 4);
@@ -2470,9 +2472,9 @@ mod complex {
     fn into_exact_rational() {
         let c = Number::complex(1.5, 0.8);
 
-        let c = c.into_exact();
+        let c = c.try_into_exact();
 
-        let ri = extract_or_fail!(c, Number::Complex);
+        let ri = extract_or_fail!(ok_or_fail!(c), Number::Complex);
         let (num, den) = rational_parts!(ri.0.0);
         assert_eq!(extract_or_fail!(num.precision, Precision::Single), 3);
         assert_eq!(num.sign, Sign::Positive);

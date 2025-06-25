@@ -126,6 +126,10 @@ impl Number {
         Self::Real(value.into())
     }
 
+    pub(crate) fn nan() -> Self {
+        Self::Real(Real::nan())
+    }
+
     // NOTE: From<usize> would clash with existing Integer From<i64>
     pub(crate) fn from_usize(val: usize) -> Self {
         Self::real(Integer::from_usize(val))
@@ -184,18 +188,20 @@ impl Number {
         }
     }
 
-    pub(crate) fn into_exact(self) -> Self {
-        match self {
-            Self::Complex(Complex(z)) => Self::complex(z.0.into_exact(), z.1.into_exact()),
-            Self::Real(r) => Self::Real(r.into_exact()),
-        }
-    }
-
     pub(crate) fn into_inexact(self) -> Self {
         match self {
             Self::Complex(Complex(z)) => Self::complex(z.0.into_inexact(), z.1.into_inexact()),
             Self::Real(r) => Self::Real(r.into_inexact()),
         }
+    }
+
+    pub(crate) fn try_into_exact(self) -> NumResult {
+        Ok(match self {
+            Self::Complex(Complex(z)) => {
+                Self::complex(z.0.try_into_exact()?, z.1.try_into_exact()?)
+            }
+            Self::Real(r) => Self::Real(r.try_into_exact()?),
+        })
     }
 }
 
@@ -251,6 +257,10 @@ pub(crate) enum Real {
 impl Real {
     pub(crate) fn zero() -> Self {
         Self::Integer(0.into())
+    }
+
+    pub(crate) fn nan() -> Self {
+        Self::Float(f64::NAN)
     }
 
     pub(crate) fn reduce(
@@ -318,13 +328,6 @@ impl Real {
         RealTokenDescriptor(self)
     }
 
-    pub(crate) fn into_exact(self) -> Self {
-        match self {
-            Self::Float(f) => FloatSpec::float_to_exact(f),
-            _ => self,
-        }
-    }
-
     pub(crate) fn into_inexact(self) -> Self {
         match self {
             Self::Float(_) => self,
@@ -341,20 +344,30 @@ impl Real {
         }
     }
 
-    pub(crate) fn into_numerator(self) -> Self {
+    pub(crate) fn try_into_exact(self) -> RealResult {
         match self {
-            Self::Float(_) => self.into_exact().into_numerator().into_inexact(),
-            Self::Integer(n) => Self::Integer(n.into_numerator()),
-            Self::Rational(q) => Self::Integer(q.into_numerator()),
+            Self::Float(f) => FloatSpec::try_float_to_exact(f),
+            _ => Ok(self),
         }
     }
 
-    pub(crate) fn into_denominator(self) -> Self {
-        match self {
-            Self::Float(_) => self.into_exact().into_denominator().into_inexact(),
+    pub(crate) fn try_into_numerator(self) -> RealResult {
+        Ok(match self {
+            Self::Float(_) => self.try_into_exact()?.try_into_numerator()?.into_inexact(),
+            Self::Integer(n) => Self::Integer(n.into_numerator()),
+            Self::Rational(q) => Self::Integer(q.into_numerator()),
+        })
+    }
+
+    pub(crate) fn try_into_denominator(self) -> RealResult {
+        Ok(match self {
+            Self::Float(_) => self
+                .try_into_exact()?
+                .try_into_denominator()?
+                .into_inexact(),
             Self::Integer(n) => Self::Integer(n.into_denominator()),
             Self::Rational(q) => Self::Integer(q.into_denominator()),
-        }
+        })
     }
 
     fn is_eqv(&self, other: &Self) -> bool {
@@ -769,15 +782,14 @@ pub(crate) struct FloatSpec {
 }
 
 impl FloatSpec {
-    fn float_to_exact(flt: f64) -> Real {
-        if flt.is_infinite() || flt.is_nan() {
-            Real::Float(flt)
-        } else {
+    fn try_float_to_exact(flt: f64) -> RealResult {
+        if flt.is_finite() {
             let (spec, flt_str) = Self::prep_parse(flt);
             // NOTE: this should never fail since the string input comes from
-            // an f64 but if something real weird happens treat it as NaN.
+            // an f64 but if something real weird happens return parse error.
             spec.try_into_exact(&flt_str)
-                .unwrap_or(Real::Float(f64::NAN))
+        } else {
+            Err(NumericError::NoExactRepresentation(flt_to_err_repr(flt)))
         }
     }
 

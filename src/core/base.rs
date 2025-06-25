@@ -308,14 +308,14 @@ try_predicate!(is_zero, Value::Number, TypeName::NUMBER, |n: &Number| n
     .is_zero());
 
 fn is_positive(args: &[Value], _env: &mut Frame) -> EvalResult {
-    real_op(args.first().unwrap(), NumericTypeName::REAL, |r| {
-        Value::Boolean(r.is_positive())
+    real_op(args.first().unwrap(), |r| {
+        Ok(Value::Boolean(r.is_positive()))
     })
 }
 
 fn is_negative(args: &[Value], _env: &mut Frame) -> EvalResult {
-    real_op(args.first().unwrap(), NumericTypeName::REAL, |r| {
-        Value::Boolean(r.is_negative())
+    real_op(args.first().unwrap(), |r| {
+        Ok(Value::Boolean(r.is_negative()))
     })
 }
 
@@ -328,20 +328,28 @@ fn is_even(args: &[Value], _env: &mut Frame) -> EvalResult {
 }
 
 fn abs(args: &[Value], _env: &mut Frame) -> EvalResult {
-    real_op(args.first().unwrap(), NumericTypeName::REAL, |r| {
-        Value::Number(Number::real(r.clone().into_abs()))
+    real_op(args.first().unwrap(), |r| {
+        Ok(Value::Number(Number::real(r.clone().into_abs())))
     })
 }
 
 fn get_numerator(args: &[Value], _env: &mut Frame) -> EvalResult {
-    real_op(args.first().unwrap(), NumericTypeName::RATIONAL, |r| {
-        Value::Number(Number::real(r.clone().into_numerator()))
+    let arg = args.first().unwrap();
+    rational_op(arg, |r| {
+        r.clone().try_into_numerator().map_or_else(
+            |err| Err(Condition::value_error(err, arg).into()),
+            |r| Ok(Value::Number(Number::real(r))),
+        )
     })
 }
 
 fn get_denominator(args: &[Value], _env: &mut Frame) -> EvalResult {
-    real_op(args.first().unwrap(), NumericTypeName::RATIONAL, |r| {
-        Value::Number(Number::real(r.clone().into_denominator()))
+    let arg = args.first().unwrap();
+    rational_op(arg, |r| {
+        r.clone().try_into_denominator().map_or_else(
+            |err| Err(Condition::value_error(err, arg).into()),
+            |r| Ok(Value::Number(Number::real(r))),
+        )
     })
 }
 
@@ -357,22 +365,33 @@ fn into_inexact(args: &[Value], _env: &mut Frame) -> EvalResult {
 fn into_exact(args: &[Value], _env: &mut Frame) -> EvalResult {
     let arg = args.first().unwrap();
     if let Value::Number(n) = arg {
-        Ok(Value::Number(n.clone().into_exact()))
+        n.clone().try_into_exact().map_or_else(
+            |err| Err(Condition::value_error(err, arg).into()),
+            |n| Ok(Value::Number(n)),
+        )
     } else {
         invalid_target!(TypeName::NUMBER, arg)
     }
 }
 
-fn real_op(
+fn real_op(arg: &Value, op: impl FnOnce(&Real) -> EvalResult) -> EvalResult {
+    guarded_real_op(arg, NumericTypeName::REAL, op)
+}
+
+fn rational_op(arg: &Value, op: impl FnOnce(&Real) -> EvalResult) -> EvalResult {
+    guarded_real_op(arg, NumericTypeName::RATIONAL, op)
+}
+
+fn guarded_real_op(
     arg: &Value,
     expected_type: impl Display,
-    op: impl FnOnce(&Real) -> Value,
+    op: impl FnOnce(&Real) -> EvalResult,
 ) -> EvalResult {
     let Value::Number(n) = arg else {
         return invalid_target!(NumericTypeName::REAL, arg);
     };
     if let Number::Real(r) = n {
-        Ok(op(r))
+        op(r)
     } else {
         Err(Condition::arg_type_error(FIRST_ARG_LABEL, expected_type, n.as_typename(), arg).into())
     }

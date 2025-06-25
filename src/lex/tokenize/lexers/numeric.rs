@@ -301,7 +301,9 @@ impl<P: ClassifierProps> ConditionProcessor<'_, '_, P> {
                 match self.props.cartesian_scan(self.scanner, start) {
                     Ok(TokenKind::Imaginary(imag)) => {
                         let real = match self.props.get_exactness() {
-                            Some(Exactness::Exact) => real.into_exact(),
+                            // NOTE: this conversion shouldn't ever fail because real has already
+                            // been parsed as a valid float, but if it does, give up and return NaN.
+                            Some(Exactness::Exact) => real.try_into_exact().unwrap_or(Real::nan()),
                             Some(Exactness::Inexact) => real.into_inexact(),
                             None => real,
                         };
@@ -316,7 +318,9 @@ impl<P: ClassifierProps> ConditionProcessor<'_, '_, P> {
                     Ok(TokenKind::Number(Number::Real(rads))) => {
                         let pol = Number::polar(real, rads);
                         Ok(TokenKind::Number(match self.props.get_exactness() {
-                            Some(Exactness::Exact) => pol.into_exact(),
+                            // NOTE: this conversion shouldn't ever fail because pol has already
+                            // been parsed as a valid float-complex, but if it does, give up and return NaN.
+                            Some(Exactness::Exact) => pol.try_into_exact().unwrap_or(Number::nan()),
                             Some(Exactness::Inexact) => pol.into_inexact(),
                             None => pol,
                         }))
