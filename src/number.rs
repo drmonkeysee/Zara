@@ -69,10 +69,13 @@ use std::{
     result::Result,
 };
 
+pub(crate) const INF_STR: &str = "inf.0";
+pub(crate) const NAN_STR: &str = "nan.0";
 // NOTE: 2^53 - 1; maximum safe integer in f64 format
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/MAX_SAFE_INTEGER
 const FMAX_INT: f64 = 9_007_199_254_740_991.0;
 
+pub(crate) type NumResult = Result<Number, NumericError>;
 pub(crate) type RealResult = Result<Real, NumericError>;
 pub(crate) type IntResult = Result<Integer, NumericError>;
 
@@ -889,6 +892,7 @@ pub(crate) enum NumericError {
     DivideByZero,
     Int32ConversionInvalidRange,
     IntConversionInvalidType(String),
+    NoExactRepresentation(String),
     ParseExponentFailure,
     ParseExponentOutOfRange,
     ParseFailure,
@@ -910,6 +914,7 @@ impl Display for NumericError {
             Self::IntConversionInvalidType(n) => {
                 write!(f, "expected integer literal, got numeric type: {n}")
             }
+            Self::NoExactRepresentation(flt) => write!(f, "no exact representation for: {flt}"),
             Self::ParseExponentOutOfRange => {
                 write!(f, "exponent out of range: [{}, {}]", i32::MIN, i32::MAX)
             }
@@ -1010,9 +1015,9 @@ impl Display for FloatDatum<'_> {
         let d = self.0;
         if d.is_infinite() {
             let s = Sign::from(*d);
-            write!(f, "{s:+}inf.0")
+            write!(f, "{s:+}{INF_STR}")
         } else if d.is_nan() {
-            f.write_str("+nan.0")
+            write!(f, "+{NAN_STR}")
         } else {
             fmt::Debug::fmt(d, f)
         }
@@ -1118,4 +1123,17 @@ fn write_intconversion_range_error(
     f: &mut Formatter,
 ) -> fmt::Result {
     write!(f, "integer literal out of range: [{min}, {max}]")
+}
+
+fn flt_to_err_repr(flt: f64) -> String {
+    if flt.is_infinite() {
+        format!(
+            "{}{INF_STR}",
+            if flt.is_sign_positive() { '+' } else { '-' }
+        )
+    } else if flt.is_nan() {
+        format!("+{NAN_STR}")
+    } else {
+        format!("unexpected float error value: {flt}")
+    }
 }

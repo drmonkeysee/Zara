@@ -501,6 +501,13 @@ mod error {
     }
 
     #[test]
+    fn display_no_exact_representation() {
+        let err = NumericError::NoExactRepresentation("+inf.0".to_owned());
+
+        assert_eq!(err.to_string(), "no exact representation for: +inf.0");
+    }
+
+    #[test]
     fn display_exp_out_of_range() {
         let err = NumericError::ParseExponentOutOfRange;
 

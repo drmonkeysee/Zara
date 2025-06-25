@@ -13,7 +13,7 @@ pub(super) use self::{
 use super::{TokenExtractResult, scan::Scanner};
 use crate::{
     lex::{TokenKind, token::TokenErrorKind},
-    number::Sign,
+    number::{INF_STR, NAN_STR, Sign},
 };
 
 pub(super) struct FreeText<'me, 'txt, P> {
@@ -155,8 +155,8 @@ fn numeric_symbol(txt: &str, exactness: Option<Exactness>) -> Option<TokenKind> 
     let end = symbol.len() - usize::from(is_imaginary);
     match symbol.get(..end)? {
         "" => Some(numeric::imaginary(sign, exactness)),
-        "inf.0" => Some(numeric::infinity(sign, is_imaginary)),
-        "nan.0" => Some(numeric::nan(is_imaginary)),
+        INF_STR => Some(numeric::infinity(sign, is_imaginary)),
+        NAN_STR => Some(numeric::nan(is_imaginary)),
         _ => None,
     }
 }
