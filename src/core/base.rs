@@ -248,10 +248,7 @@ fn error_msg(args: &[Value], _env: &mut Frame) -> EvalResult {
 fn error_irritants(args: &[Value], _env: &mut Frame) -> EvalResult {
     let arg = args.first().unwrap();
     if let Value::Error(c) = arg {
-        Ok(match c.irritants() {
-            None => Value::null(),
-            Some(v) => v.clone(),
-        })
+        Ok(c.irritants().map_or(Value::null(), |v| v.clone()))
     } else {
         invalid_target!(TypeName::ERROR, arg)
     }
@@ -401,16 +398,18 @@ fn int_predicate(arg: &Value, pred: impl FnOnce(&Integer) -> bool) -> EvalResult
     let Value::Number(n) = arg else {
         return invalid_target!(NumericTypeName::INTEGER, arg);
     };
-    match n.to_exact_integer() {
-        None => Err(Condition::arg_type_error(
-            FIRST_ARG_LABEL,
-            NumericTypeName::INTEGER,
-            n.as_typename(),
-            arg,
-        )
-        .into()),
-        Some(n) => Ok(Value::Boolean(pred(&n))),
-    }
+    n.to_exact_integer().map_or_else(
+        || {
+            Err(Condition::arg_type_error(
+                FIRST_ARG_LABEL,
+                NumericTypeName::INTEGER,
+                n.as_typename(),
+                arg,
+            )
+            .into())
+        },
+        |n| Ok(Value::Boolean(pred(&n))),
+    )
 }
 
 //
