@@ -79,11 +79,11 @@ impl Condition {
         }
     }
 
-    pub(crate) fn value_error(msg: impl Into<Box<str>>, val: &Value) -> Self {
+    pub(crate) fn value_error(msg: impl Display, val: &Value) -> Self {
         Self {
             kind: ConditionKind::Env,
             irritants: Some(zlist![val.clone()]),
-            msg: msg.into(),
+            msg: msg.to_string().into(),
         }
     }
 

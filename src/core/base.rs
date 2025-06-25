@@ -166,7 +166,7 @@ fn try_num_into_char(n: &Number, arg: &Value) -> EvalResult {
     u32::try_from(n).map_or_else(
         |err| {
             Err(if let NumericError::Uint32ConversionInvalidRange = err {
-                Condition::value_error(UnicodeError::CodePointOutOfRange.to_string(), arg)
+                Condition::value_error(UnicodeError::CodePointOutOfRange, arg)
             } else {
                 Condition::arg_type_error(
                     FIRST_ARG_LABEL,
@@ -179,12 +179,7 @@ fn try_num_into_char(n: &Number, arg: &Value) -> EvalResult {
         },
         |u| {
             char::from_u32(u).map_or_else(
-                || {
-                    Err(
-                        Condition::value_error(UnicodeError::CodePointOutOfRange.to_string(), arg)
-                            .into(),
-                    )
-                },
+                || Err(Condition::value_error(UnicodeError::CodePointOutOfRange, arg).into()),
                 |c| Ok(Value::Character(c)),
             )
         },
@@ -605,7 +600,7 @@ fn number_to_index(k: &Value) -> Result<usize, Exception> {
     };
     usize::try_from(n).map_err(|err| {
         if let NumericError::UsizeConversionInvalidRange = err {
-            Condition::value_error(NumericError::UsizeConversionInvalidRange.to_string(), k)
+            Condition::value_error(NumericError::UsizeConversionInvalidRange, k)
         } else {
             Condition::arg_type_error(
                 SECOND_ARG_LABEL,
