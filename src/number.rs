@@ -432,7 +432,7 @@ impl Real {
     fn to_exact_integer(&self) -> Option<Integer> {
         match self {
             Self::Float(f) if f.fract() == 0.0 => {
-                if (-FMAX_INT..=FMAX_INT).contains(&f) {
+                if (-FMAX_INT..=FMAX_INT).contains(f) {
                     #[allow(
                         clippy::cast_possible_truncation,
                         reason = "guarded against truncation"

@@ -27,7 +27,7 @@ fn get_real(args: &[Value], _env: &mut Frame) -> EvalResult {
     get_complex_part(
         args.first().unwrap(),
         |z| z.real_part().clone(),
-        |r| r.clone(),
+        Real::clone,
     )
 }
 
@@ -40,15 +40,13 @@ fn get_imag(args: &[Value], _env: &mut Frame) -> EvalResult {
 }
 
 fn get_mag(args: &[Value], _env: &mut Frame) -> EvalResult {
-    get_complex_part(
-        args.first().unwrap(),
-        |z| z.to_magnitude(),
-        |r| r.clone().into_abs(),
-    )
+    get_complex_part(args.first().unwrap(), Complex::to_magnitude, |r| {
+        r.clone().into_abs()
+    })
 }
 
 fn get_angle(args: &[Value], _env: &mut Frame) -> EvalResult {
-    get_complex_part(args.first().unwrap(), |z| z.to_angle(), |_| Real::zero())
+    get_complex_part(args.first().unwrap(), Complex::to_angle, |_| Real::zero())
 }
 
 fn make_complex(x: &Value, y: &Value, ctor: impl FnOnce(Real, Real) -> Number) -> EvalResult {

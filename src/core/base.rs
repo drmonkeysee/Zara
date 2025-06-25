@@ -116,7 +116,7 @@ vec_get!(
     Value::ByteVector,
     TypeName::BYTEVECTOR,
     |bv, u| bv.get(u).copied(),
-    |item| Value::Number(Number::real(item as i64))
+    |item| Value::Number(Number::real(i64::from(item)))
 );
 
 //
@@ -248,7 +248,7 @@ fn error_msg(args: &[Value], _env: &mut Frame) -> EvalResult {
 fn error_irritants(args: &[Value], _env: &mut Frame) -> EvalResult {
     let arg = args.first().unwrap();
     if let Value::Error(c) = arg {
-        Ok(c.irritants().map_or(Value::null(), |v| v.clone()))
+        Ok(c.irritants().map_or(Value::null(), Value::clone))
     } else {
         invalid_target!(TypeName::ERROR, arg)
     }
@@ -564,7 +564,7 @@ seq_predicate!(symbols_eq, Value::Symbol, TypeName::SYMBOL, Rc::ptr_eq);
 fn symbol_to_string(args: &[Value], _env: &mut Frame) -> EvalResult {
     let arg = args.first().unwrap();
     if let Value::Symbol(s) = arg {
-        Ok(Value::string(Rc::clone(&s)))
+        Ok(Value::string(Rc::clone(s)))
     } else {
         invalid_target!(TypeName::SYMBOL, arg)
     }
