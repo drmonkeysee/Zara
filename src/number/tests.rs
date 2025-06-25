@@ -1,7 +1,7 @@
 macro_rules! rational_parts {
     ($real:expr) => {{
-        let rat = extract_or_fail!($real, Real::Rational);
-        *rat.0
+        let q = extract_or_fail!($real, Real::Rational);
+        *q.0
     }};
 }
 
@@ -74,16 +74,16 @@ mod token {
 
     #[test]
     fn rational() {
-        let n = Number::Real(ok_or_fail!(Real::reduce(4, 5)));
+        let q = Number::Real(ok_or_fail!(Real::reduce(4, 5)));
 
-        assert_eq!(n.as_token_descriptor().to_string(), "RAT");
+        assert_eq!(q.as_token_descriptor().to_string(), "RAT");
     }
 
     #[test]
     fn complex() {
-        let n = Number::complex(3, 5);
+        let z = Number::complex(3, 5);
 
-        assert_eq!(n.as_token_descriptor().to_string(), "CPX");
+        assert_eq!(z.as_token_descriptor().to_string(), "CPX");
     }
 }
 
@@ -296,176 +296,176 @@ mod display {
 
     #[test]
     fn basic_complex() {
-        let n = Number::complex(4, 5);
+        let z = Number::complex(4, 5);
 
-        assert_eq!(n.to_string(), "4+5i");
+        assert_eq!(z.to_string(), "4+5i");
     }
 
     #[test]
     fn complex_negative_real() {
-        let n = Number::complex(-4, 5);
+        let z = Number::complex(-4, 5);
 
-        assert_eq!(n.to_string(), "-4+5i");
+        assert_eq!(z.to_string(), "-4+5i");
     }
 
     #[test]
     fn complex_negative_imag() {
-        let n = Number::complex(4, -5);
+        let z = Number::complex(4, -5);
 
-        assert_eq!(n.to_string(), "4-5i");
+        assert_eq!(z.to_string(), "4-5i");
     }
 
     #[test]
     fn complex_negative() {
-        let n = Number::complex(-4, -5);
+        let z = Number::complex(-4, -5);
 
-        assert_eq!(n.to_string(), "-4-5i");
+        assert_eq!(z.to_string(), "-4-5i");
     }
 
     #[test]
     fn complex_float() {
-        let n = Number::complex(4.2, 5.3);
+        let z = Number::complex(4.2, 5.3);
 
-        assert_eq!(n.to_string(), "4.2+5.3i");
+        assert_eq!(z.to_string(), "4.2+5.3i");
     }
 
     #[test]
     fn complex_rationals() {
         let r = ok_or_fail!(Real::reduce(3, 5));
         let i = ok_or_fail!(Real::reduce(5, 2));
-        let n = Number::complex(r, i);
+        let z = Number::complex(r, i);
 
-        assert_eq!(n.to_string(), "3/5+5/2i");
+        assert_eq!(z.to_string(), "3/5+5/2i");
     }
 
     #[test]
     fn complex_negative_rat_real() {
         let r = ok_or_fail!(Real::reduce(-3, 5));
         let i = ok_or_fail!(Real::reduce(5, 2));
-        let n = Number::complex(r, i);
+        let z = Number::complex(r, i);
 
-        assert_eq!(n.to_string(), "-3/5+5/2i");
+        assert_eq!(z.to_string(), "-3/5+5/2i");
     }
 
     #[test]
     fn complex_negative_rat_imag() {
         let r = ok_or_fail!(Real::reduce(3, 5));
         let i = ok_or_fail!(Real::reduce(-5, 2));
-        let n = Number::complex(r, i);
+        let z = Number::complex(r, i);
 
-        assert_eq!(n.to_string(), "3/5-5/2i");
+        assert_eq!(z.to_string(), "3/5-5/2i");
     }
 
     #[test]
     fn complex_negative_rat() {
         let r = ok_or_fail!(Real::reduce(-3, 5));
         let i = ok_or_fail!(Real::reduce(-5, 2));
-        let n = Number::complex(r, i);
+        let z = Number::complex(r, i);
 
-        assert_eq!(n.to_string(), "-3/5-5/2i");
+        assert_eq!(z.to_string(), "-3/5-5/2i");
     }
 
     #[test]
     fn complex_real_rat() {
         let r = ok_or_fail!(Real::reduce(3, 5));
-        let n = Number::complex(r, 5);
+        let z = Number::complex(r, 5);
 
-        assert_eq!(n.to_string(), "3/5+5i");
+        assert_eq!(z.to_string(), "3/5+5i");
     }
 
     #[test]
     fn complex_imag_rat() {
         let i = ok_or_fail!(Real::reduce(5, 2));
-        let n = Number::complex(3, i);
+        let z = Number::complex(3, i);
 
-        assert_eq!(n.to_string(), "3+5/2i");
+        assert_eq!(z.to_string(), "3+5/2i");
     }
 
     #[test]
     fn complex_real_float_imag_rat() {
         let i = ok_or_fail!(Real::reduce(5, 2));
-        let n = Number::complex(3.032, i);
+        let z = Number::complex(3.032, i);
 
-        assert_eq!(n.to_string(), "3.032+5/2i");
+        assert_eq!(z.to_string(), "3.032+5/2i");
     }
 
     #[test]
     fn complex_real_rat_imag_float() {
         let r = ok_or_fail!(Real::reduce(3, 5));
-        let n = Number::complex(r, -6.34);
+        let z = Number::complex(r, -6.34);
 
-        assert_eq!(n.to_string(), "3/5-6.34i");
+        assert_eq!(z.to_string(), "3/5-6.34i");
     }
 
     #[test]
     fn complex_zero_real() {
-        let n = Number::complex(0, 5);
+        let z = Number::complex(0, 5);
 
-        assert_eq!(n.to_string(), "+5i");
+        assert_eq!(z.to_string(), "+5i");
     }
 
     #[test]
     fn complex_negative_zero_real() {
-        let n = Number::complex(0, -5);
+        let z = Number::complex(0, -5);
 
-        assert_eq!(n.to_string(), "-5i");
+        assert_eq!(z.to_string(), "-5i");
     }
 
     #[test]
     fn complex_zero_imag() {
-        let n = Number::complex(4, 0);
+        let z = Number::complex(4, 0);
 
-        assert_eq!(n.to_string(), "4");
+        assert_eq!(z.to_string(), "4");
     }
 
     #[test]
     fn complex_unity_imag() {
-        let n = Number::complex(4, 1);
+        let z = Number::complex(4, 1);
 
-        assert_eq!(n.to_string(), "4+i");
+        assert_eq!(z.to_string(), "4+i");
     }
 
     #[test]
     fn complex_zero_real_unity_imag() {
-        let n = Number::complex(0, 1);
+        let z = Number::complex(0, 1);
 
-        assert_eq!(n.to_string(), "+i");
+        assert_eq!(z.to_string(), "+i");
     }
 
     #[test]
     fn complex_zero_real_negative_unity_imag() {
-        let n = Number::complex(0, -1);
+        let z = Number::complex(0, -1);
 
-        assert_eq!(n.to_string(), "-i");
+        assert_eq!(z.to_string(), "-i");
     }
 
     #[test]
     fn complex_zero_real_rat_unity_imag() {
         let i = ok_or_fail!(Real::reduce(5, 5));
-        let n = Number::complex(0, i);
+        let z = Number::complex(0, i);
 
-        assert_eq!(n.to_string(), "+i");
+        assert_eq!(z.to_string(), "+i");
     }
 
     #[test]
     fn complex_inexact_unity_imag() {
-        let n = Number::complex(4, 1.0);
+        let z = Number::complex(4, 1.0);
 
-        assert_eq!(n.to_string(), "4+1.0i");
+        assert_eq!(z.to_string(), "4+1.0i");
     }
 
     #[test]
     fn complex_zero() {
-        let n = Number::complex(0, 0);
+        let z = Number::complex(0, 0);
 
-        assert_eq!(n.to_string(), "0");
+        assert_eq!(z.to_string(), "0");
     }
 
     #[test]
     fn complex_type_name() {
-        let n = Number::complex(1, 2);
+        let z = Number::complex(1, 2);
 
-        assert_eq!(n.as_typename().to_string(), "complex");
+        assert_eq!(z.as_typename().to_string(), "complex");
     }
 
     #[test]
@@ -1840,8 +1840,8 @@ mod rational {
 
     #[test]
     fn positive() {
-        let n = ok_or_fail!(Real::reduce(4, 5));
-        let (num, den) = rational_parts!(n);
+        let q = ok_or_fail!(Real::reduce(4, 5));
+        let (num, den) = rational_parts!(q);
 
         assert_eq!(extract_or_fail!(num.precision, Precision::Single), 4);
         assert_eq!(num.sign, Sign::Positive);
@@ -1851,8 +1851,8 @@ mod rational {
 
     #[test]
     fn negative_numerator() {
-        let n = ok_or_fail!(Real::reduce(-4, 5));
-        let (num, den) = rational_parts!(n);
+        let q = ok_or_fail!(Real::reduce(-4, 5));
+        let (num, den) = rational_parts!(q);
 
         assert_eq!(extract_or_fail!(num.precision, Precision::Single), 4);
         assert_eq!(num.sign, Sign::Negative);
@@ -1862,8 +1862,8 @@ mod rational {
 
     #[test]
     fn negative_denominator() {
-        let n = ok_or_fail!(Real::reduce(4, -5));
-        let (num, den) = rational_parts!(n);
+        let q = ok_or_fail!(Real::reduce(4, -5));
+        let (num, den) = rational_parts!(q);
 
         assert_eq!(extract_or_fail!(num.precision, Precision::Single), 4);
         assert_eq!(num.sign, Sign::Negative);
@@ -1873,8 +1873,8 @@ mod rational {
 
     #[test]
     fn negative_parts() {
-        let n = ok_or_fail!(Real::reduce(-4, -5));
-        let (num, den) = rational_parts!(n);
+        let q = ok_or_fail!(Real::reduce(-4, -5));
+        let (num, den) = rational_parts!(q);
 
         assert_eq!(extract_or_fail!(num.precision, Precision::Single), 4);
         assert_eq!(num.sign, Sign::Positive);
@@ -1884,8 +1884,8 @@ mod rational {
 
     #[test]
     fn improper() {
-        let n = ok_or_fail!(Real::reduce(5, 4));
-        let (num, den) = rational_parts!(n);
+        let q = ok_or_fail!(Real::reduce(5, 4));
+        let (num, den) = rational_parts!(q);
 
         assert_eq!(extract_or_fail!(num.precision, Precision::Single), 5);
         assert_eq!(num.sign, Sign::Positive);
@@ -1895,8 +1895,8 @@ mod rational {
 
     #[test]
     fn gcd() {
-        let n = ok_or_fail!(Real::reduce(4, 10));
-        let (num, den) = rational_parts!(n);
+        let q = ok_or_fail!(Real::reduce(4, 10));
+        let (num, den) = rational_parts!(q);
 
         assert_eq!(extract_or_fail!(num.precision, Precision::Single), 2);
         assert_eq!(num.sign, Sign::Positive);
@@ -1906,8 +1906,8 @@ mod rational {
 
     #[test]
     fn gcd_negative() {
-        let n = ok_or_fail!(Real::reduce(-4, 10));
-        let (num, den) = rational_parts!(n);
+        let q = ok_or_fail!(Real::reduce(-4, 10));
+        let (num, den) = rational_parts!(q);
 
         assert_eq!(extract_or_fail!(num.precision, Precision::Single), 2);
         assert_eq!(num.sign, Sign::Negative);
@@ -1917,8 +1917,8 @@ mod rational {
 
     #[test]
     fn unity() {
-        let n = ok_or_fail!(Real::reduce(1, 1));
-        let int = extract_or_fail!(n, Real::Integer);
+        let q = ok_or_fail!(Real::reduce(1, 1));
+        let int = extract_or_fail!(q, Real::Integer);
 
         assert_eq!(extract_or_fail!(int.precision, Precision::Single), 1);
         assert_eq!(int.sign, Sign::Positive);
@@ -1926,8 +1926,8 @@ mod rational {
 
     #[test]
     fn reduce_to_unity() {
-        let n = ok_or_fail!(Real::reduce(7, 7));
-        let int = extract_or_fail!(n, Real::Integer);
+        let q = ok_or_fail!(Real::reduce(7, 7));
+        let int = extract_or_fail!(q, Real::Integer);
 
         assert_eq!(extract_or_fail!(int.precision, Precision::Single), 1);
         assert_eq!(int.sign, Sign::Positive);
@@ -1935,8 +1935,8 @@ mod rational {
 
     #[test]
     fn reduce_to_negative_unity() {
-        let n = ok_or_fail!(Real::reduce(-7, 7));
-        let int = extract_or_fail!(n, Real::Integer);
+        let q = ok_or_fail!(Real::reduce(-7, 7));
+        let int = extract_or_fail!(q, Real::Integer);
 
         assert_eq!(extract_or_fail!(int.precision, Precision::Single), 1);
         assert_eq!(int.sign, Sign::Negative);
@@ -1944,8 +1944,8 @@ mod rational {
 
     #[test]
     fn reduce_to_integer() {
-        let n = ok_or_fail!(Real::reduce(20, 10));
-        let int = extract_or_fail!(n, Real::Integer);
+        let q = ok_or_fail!(Real::reduce(20, 10));
+        let int = extract_or_fail!(q, Real::Integer);
 
         assert_eq!(extract_or_fail!(int.precision, Precision::Single), 2);
         assert_eq!(int.sign, Sign::Positive);
@@ -1953,8 +1953,8 @@ mod rational {
 
     #[test]
     fn reduce_to_negative_integer() {
-        let n = ok_or_fail!(Real::reduce(-20, 10));
-        let int = extract_or_fail!(n, Real::Integer);
+        let q = ok_or_fail!(Real::reduce(-20, 10));
+        let int = extract_or_fail!(q, Real::Integer);
 
         assert_eq!(extract_or_fail!(int.precision, Precision::Single), 2);
         assert_eq!(int.sign, Sign::Negative);
@@ -1962,8 +1962,8 @@ mod rational {
 
     #[test]
     fn zero_numerator() {
-        let n = ok_or_fail!(Real::reduce(0, 7));
-        let int = extract_or_fail!(n, Real::Integer);
+        let q = ok_or_fail!(Real::reduce(0, 7));
+        let int = extract_or_fail!(q, Real::Integer);
 
         assert_eq!(extract_or_fail!(int.precision, Precision::Single), 0);
         assert_eq!(int.sign, Sign::Zero);
@@ -1971,80 +1971,80 @@ mod rational {
 
     #[test]
     fn unreduced_zero_numerator_is_zero() {
-        let r = Rational((0.into(), 7.into()).into());
+        let q = Rational((0.into(), 7.into()).into());
 
-        assert!(r.is_zero());
+        assert!(q.is_zero());
     }
 
     #[test]
     fn zero_denominator() {
-        let n = Real::reduce(1, 0);
-        let err = err_or_fail!(n);
+        let q = Real::reduce(1, 0);
+        let err = err_or_fail!(q);
 
         assert!(matches!(err, NumericError::DivideByZero));
     }
 
     #[test]
     fn unreduced_zero_denomintor_ignored_for_is_zero() {
-        let r = Rational((7.into(), 0.into()).into());
+        let q = Rational((7.into(), 0.into()).into());
 
-        assert!(!r.is_zero());
+        assert!(!q.is_zero());
     }
 
     #[test]
     fn positive_into_float() {
-        let r = ok_or_fail!(Real::reduce(4, 5));
+        let q = ok_or_fail!(Real::reduce(4, 5));
 
-        assert_eq!(r.to_float(), 0.8);
+        assert_eq!(q.to_float(), 0.8);
     }
 
     #[test]
     fn negative_numerator_into_float() {
-        let r = ok_or_fail!(Real::reduce(-4, 5));
+        let q = ok_or_fail!(Real::reduce(-4, 5));
 
-        assert_eq!(r.to_float(), -0.8);
+        assert_eq!(q.to_float(), -0.8);
     }
 
     #[test]
     fn negative_denominator_into_float() {
-        let r = ok_or_fail!(Real::reduce(4, -5));
+        let q = ok_or_fail!(Real::reduce(4, -5));
 
-        assert_eq!(r.to_float(), -0.8);
+        assert_eq!(q.to_float(), -0.8);
     }
 
     #[test]
     fn negative_parts_into_float() {
-        let r = ok_or_fail!(Real::reduce(-4, -5));
+        let q = ok_or_fail!(Real::reduce(-4, -5));
 
-        assert_eq!(r.to_float(), 0.8);
+        assert_eq!(q.to_float(), 0.8);
     }
 
     #[test]
     fn unreduced_zero_into_float() {
-        let r = Rational((0.into(), 7.into()).into());
+        let q = Rational((0.into(), 7.into()).into());
 
-        assert_eq!(r.to_float(), 0.0);
+        assert_eq!(q.to_float(), 0.0);
     }
 
     #[test]
     fn unreduced_div_by_zero_into_float() {
-        let r = Rational((7.into(), 0.into()).into());
+        let q = Rational((7.into(), 0.into()).into());
 
-        assert_eq!(r.to_float(), f64::INFINITY);
+        assert_eq!(q.to_float(), f64::INFINITY);
     }
 
     #[test]
     fn unreduced_negative_div_by_zero_into_float() {
-        let r = Rational(((-7).into(), 0.into()).into());
+        let q = Rational(((-7).into(), 0.into()).into());
 
-        assert_eq!(r.to_float(), f64::NEG_INFINITY);
+        assert_eq!(q.to_float(), f64::NEG_INFINITY);
     }
 
     #[test]
     fn positive_into_inexact() {
-        let n = ok_or_fail!(Real::reduce(4, 5));
+        let q = ok_or_fail!(Real::reduce(4, 5));
 
-        let r = n.into_inexact();
+        let r = q.into_inexact();
 
         let f = extract_or_fail!(r, Real::Float);
         assert_eq!(f, 0.8);
@@ -2052,9 +2052,9 @@ mod rational {
 
     #[test]
     fn positive_into_exact() {
-        let n = ok_or_fail!(Real::reduce(4, 5));
+        let q = ok_or_fail!(Real::reduce(4, 5));
 
-        let (num, den) = rational_parts!(ok_or_fail!(n.try_into_exact()));
+        let (num, den) = rational_parts!(ok_or_fail!(q.try_into_exact()));
 
         assert_eq!(extract_or_fail!(num.precision, Precision::Single), 4);
         assert_eq!(num.sign, Sign::Positive);
@@ -2064,9 +2064,9 @@ mod rational {
 
     #[test]
     fn rational_into_byte() {
-        let rat = Real::reduce(4, 5);
+        let q = Real::reduce(4, 5);
 
-        let n = Number::real(ok_or_fail!(rat));
+        let n = Number::real(ok_or_fail!(q));
 
         let r: Result<u8, _> = n.try_into();
 
@@ -2079,9 +2079,9 @@ mod rational {
 
     #[test]
     fn rational_into_int() {
-        let rat = Real::reduce(4, 5);
+        let q = Real::reduce(4, 5);
 
-        let n = Number::real(ok_or_fail!(rat));
+        let n = Number::real(ok_or_fail!(q));
 
         let r: Result<i32, _> = n.try_into();
 
@@ -2094,143 +2094,143 @@ mod rational {
 
     #[test]
     fn not_is_integer() {
-        let rat = ok_or_fail!(Real::reduce(4, 5));
+        let q = ok_or_fail!(Real::reduce(4, 5));
 
-        assert!(!rat.is_integer());
+        assert!(!q.is_integer());
     }
 
     #[test]
     fn reduce_is_integer() {
-        let rat = ok_or_fail!(Real::reduce(8, 4));
+        let q = ok_or_fail!(Real::reduce(8, 4));
 
-        assert!(rat.is_integer());
+        assert!(q.is_integer());
     }
 
     #[test]
     fn is_rational() {
-        let rat = ok_or_fail!(Real::reduce(4, 5));
+        let q = ok_or_fail!(Real::reduce(4, 5));
 
-        assert!(rat.is_rational());
+        assert!(q.is_rational());
     }
 
     #[test]
     fn not_is_inexact() {
-        let rat = ok_or_fail!(Real::reduce(4, 5));
+        let q = ok_or_fail!(Real::reduce(4, 5));
 
-        assert!(!rat.is_inexact());
+        assert!(!q.is_inexact());
     }
 
     #[test]
     fn not_is_infinite() {
-        let rat = ok_or_fail!(Real::reduce(4, 5));
+        let q = ok_or_fail!(Real::reduce(4, 5));
 
-        assert!(!rat.is_infinite());
+        assert!(!q.is_infinite());
     }
 
     #[test]
     fn not_is_nan() {
-        let rat = ok_or_fail!(Real::reduce(4, 5));
+        let q = ok_or_fail!(Real::reduce(4, 5));
 
-        assert!(!rat.is_nan());
+        assert!(!q.is_nan());
     }
 
     #[test]
     fn is_positive() {
-        let rat = ok_or_fail!(Real::reduce(4, 5));
+        let q = ok_or_fail!(Real::reduce(4, 5));
 
-        assert!(rat.is_positive());
+        assert!(q.is_positive());
     }
 
     #[test]
     fn zero_is_not_positive() {
-        let rat = ok_or_fail!(Real::reduce(0, 5));
+        let q = ok_or_fail!(Real::reduce(0, 5));
 
-        assert!(!rat.is_positive());
+        assert!(!q.is_positive());
     }
 
     #[test]
     fn negative_is_not_positive() {
-        let rat = ok_or_fail!(Real::reduce(-4, 5));
+        let q = ok_or_fail!(Real::reduce(-4, 5));
 
-        assert!(!rat.is_positive());
+        assert!(!q.is_positive());
     }
 
     #[test]
     fn negative_denom_not_checked_for_is_positive() {
-        let rat = Rational((4.into(), (-5).into()).into());
+        let q = Rational((4.into(), (-5).into()).into());
 
-        assert!(rat.is_positive());
+        assert!(q.is_positive());
     }
 
     #[test]
     fn is_negative() {
-        let rat = ok_or_fail!(Real::reduce(-4, 5));
+        let q = ok_or_fail!(Real::reduce(-4, 5));
 
-        assert!(rat.is_negative());
+        assert!(q.is_negative());
     }
 
     #[test]
     fn zero_is_not_negative() {
-        let rat = ok_or_fail!(Real::reduce(0, 5));
+        let q = ok_or_fail!(Real::reduce(0, 5));
 
-        assert!(!rat.is_negative());
+        assert!(!q.is_negative());
     }
 
     #[test]
     fn positive_is_not_negative() {
-        let rat = ok_or_fail!(Real::reduce(4, 5));
+        let q = ok_or_fail!(Real::reduce(4, 5));
 
-        assert!(!rat.is_negative());
+        assert!(!q.is_negative());
     }
 
     #[test]
     fn negative_denom_not_checked_for_is_negative() {
-        let rat = Rational((4.into(), (-5).into()).into());
+        let q = Rational((4.into(), (-5).into()).into());
 
-        assert!(!rat.is_negative());
+        assert!(!q.is_negative());
     }
 
     #[test]
     fn into_exact_integer() {
-        let rat = ok_or_fail!(Real::reduce(4, 5));
+        let q = ok_or_fail!(Real::reduce(4, 5));
 
-        let o = rat.to_exact_integer();
+        let o = q.to_exact_integer();
 
         assert!(o.is_none());
     }
 
     #[test]
     fn negative_abs() {
-        let rat = Rational(((-4).into(), 5.into()).into());
+        let q = Rational(((-4).into(), 5.into()).into());
 
-        let abs = rat.into_abs();
+        let abs = q.into_abs();
 
         assert_eq!(abs.0.0.sign, Sign::Positive);
     }
 
     #[test]
     fn positive_abs() {
-        let rat = Rational((4.into(), 5.into()).into());
+        let q = Rational((4.into(), 5.into()).into());
 
-        let abs = rat.into_abs();
+        let abs = q.into_abs();
 
         assert_eq!(abs.0.0.sign, Sign::Positive);
     }
 
     #[test]
     fn zero_abs() {
-        let rat = Rational((0.into(), 5.into()).into());
+        let q = Rational((0.into(), 5.into()).into());
 
-        let abs = rat.into_abs();
+        let abs = q.into_abs();
 
         assert_eq!(abs.0.0.sign, Sign::Zero);
     }
 
     #[test]
     fn negative_denom_not_checked_for_abs() {
-        let rat = Rational((4.into(), (-5).into()).into());
+        let q = Rational((4.into(), (-5).into()).into());
 
-        let abs = rat.into_abs();
+        let abs = q.into_abs();
 
         assert_eq!(abs.0.0.sign, Sign::Positive);
         assert_eq!(abs.0.1.sign, Sign::Negative);
@@ -2242,9 +2242,9 @@ mod complex {
 
     #[test]
     fn basic() {
-        let c = Number::complex(4, 3);
+        let z = Number::complex(4, 3);
 
-        let ri = extract_or_fail!(c, Number::Complex);
+        let ri = extract_or_fail!(z, Number::Complex);
         let r = extract_or_fail!(ri.0.0, Real::Integer);
         assert!(!r.is_zero());
         assert_eq!(extract_or_fail!(r.precision, Precision::Single), 4);
@@ -2255,9 +2255,9 @@ mod complex {
 
     #[test]
     fn zero_imaginary_reduces_to_int() {
-        let c = Number::complex(4, 0);
+        let z = Number::complex(4, 0);
 
-        let r = extract_or_fail!(c, Number::Real);
+        let r = extract_or_fail!(z, Number::Real);
         let int = extract_or_fail!(r, Real::Integer);
         assert!(!int.is_zero());
         assert_eq!(extract_or_fail!(int.precision, Precision::Single), 4);
@@ -2265,10 +2265,10 @@ mod complex {
 
     #[test]
     fn zero_real() {
-        let c = Number::complex(0, 3);
+        let z = Number::complex(0, 3);
 
-        assert!(!c.is_zero());
-        let ri = extract_or_fail!(c, Number::Complex);
+        assert!(!z.is_zero());
+        let ri = extract_or_fail!(z, Number::Complex);
         let r = extract_or_fail!(ri.0.0, Real::Integer);
         assert!(r.is_zero());
         assert_eq!(extract_or_fail!(r.precision, Precision::Single), 0);
@@ -2279,10 +2279,10 @@ mod complex {
 
     #[test]
     fn inexact_zero_imaginary_does_not_reduce() {
-        let c = Number::complex(4, 0.0);
+        let z = Number::complex(4, 0.0);
 
-        assert!(!c.is_zero());
-        let ri = extract_or_fail!(c, Number::Complex);
+        assert!(!z.is_zero());
+        let ri = extract_or_fail!(z, Number::Complex);
         let int = extract_or_fail!(ri.0.0, Real::Integer);
         assert!(!int.is_zero());
         assert_eq!(extract_or_fail!(int.precision, Precision::Single), 4);
@@ -2292,10 +2292,10 @@ mod complex {
 
     #[test]
     fn all_inexact_zeros() {
-        let c = Number::complex(0.0, 0.0);
+        let z = Number::complex(0.0, 0.0);
 
-        assert!(c.is_zero());
-        let ri = extract_or_fail!(c, Number::Complex);
+        assert!(z.is_zero());
+        let ri = extract_or_fail!(z, Number::Complex);
         let flt = extract_or_fail!(ri.0.0, Real::Float);
         assert_eq!(0.0, flt);
         let flt = extract_or_fail!(ri.0.1, Real::Float);
@@ -2304,9 +2304,9 @@ mod complex {
 
     #[test]
     fn imaginary_only() {
-        let c = Number::imaginary(3);
+        let z = Number::imaginary(3);
 
-        let ri = extract_or_fail!(c, Number::Complex);
+        let ri = extract_or_fail!(z, Number::Complex);
         let r = extract_or_fail!(ri.0.0, Real::Integer);
         assert!(r.is_zero());
         assert_eq!(extract_or_fail!(r.precision, Precision::Single), 0);
@@ -2317,10 +2317,10 @@ mod complex {
 
     #[test]
     fn inexact_zero_real_does_not_reduce() {
-        let c = Number::complex(0.0, 3);
+        let z = Number::complex(0.0, 3);
 
-        assert!(!c.is_zero());
-        let ri = extract_or_fail!(c, Number::Complex);
+        assert!(!z.is_zero());
+        let ri = extract_or_fail!(z, Number::Complex);
         let flt = extract_or_fail!(ri.0.0, Real::Float);
         assert_eq!(0.0, flt);
         let int = extract_or_fail!(ri.0.1, Real::Integer);
@@ -2330,9 +2330,9 @@ mod complex {
 
     #[test]
     fn polar() {
-        let c = Number::polar(4, 3);
+        let z = Number::polar(4, 3);
 
-        let ri = extract_or_fail!(c, Number::Complex);
+        let ri = extract_or_fail!(z, Number::Complex);
         let r = extract_or_fail!(ri.0.0, Real::Float);
         assert_eq!(r, -3.9599699864017817);
         let i = extract_or_fail!(ri.0.1, Real::Float);
@@ -2341,9 +2341,9 @@ mod complex {
 
     #[test]
     fn polar_floats() {
-        let c = Number::polar(4.0, 3.0);
+        let z = Number::polar(4.0, 3.0);
 
-        let ri = extract_or_fail!(c, Number::Complex);
+        let ri = extract_or_fail!(z, Number::Complex);
         let r = extract_or_fail!(ri.0.0, Real::Float);
         assert_eq!(r, -3.9599699864017817);
         let i = extract_or_fail!(ri.0.1, Real::Float);
@@ -2352,9 +2352,9 @@ mod complex {
 
     #[test]
     fn negative_mag() {
-        let c = Number::polar(-4, 3);
+        let z = Number::polar(-4, 3);
 
-        let ri = extract_or_fail!(c, Number::Complex);
+        let ri = extract_or_fail!(z, Number::Complex);
         let r = extract_or_fail!(ri.0.0, Real::Float);
         assert_eq!(r, 3.9599699864017817);
         let i = extract_or_fail!(ri.0.1, Real::Float);
@@ -2363,9 +2363,9 @@ mod complex {
 
     #[test]
     fn negative_angle() {
-        let c = Number::polar(4, -3);
+        let z = Number::polar(4, -3);
 
-        let ri = extract_or_fail!(c, Number::Complex);
+        let ri = extract_or_fail!(z, Number::Complex);
         let r = extract_or_fail!(ri.0.0, Real::Float);
         assert_eq!(r, -3.9599699864017817);
         let i = extract_or_fail!(ri.0.1, Real::Float);
@@ -2374,9 +2374,9 @@ mod complex {
 
     #[test]
     fn negatives() {
-        let c = Number::polar(-4, -3);
+        let z = Number::polar(-4, -3);
 
-        let ri = extract_or_fail!(c, Number::Complex);
+        let ri = extract_or_fail!(z, Number::Complex);
         let r = extract_or_fail!(ri.0.0, Real::Float);
         assert_eq!(r, 3.9599699864017817);
         let i = extract_or_fail!(ri.0.1, Real::Float);
@@ -2385,9 +2385,9 @@ mod complex {
 
     #[test]
     fn zero_mag() {
-        let c = Number::polar(0, 3);
+        let z = Number::polar(0, 3);
 
-        let r = extract_or_fail!(c, Number::Real);
+        let r = extract_or_fail!(z, Number::Real);
         let int = extract_or_fail!(r, Real::Integer);
         assert!(int.is_zero());
         assert_eq!(extract_or_fail!(int.precision, Precision::Single), 0);
@@ -2395,10 +2395,10 @@ mod complex {
 
     #[test]
     fn zero_mag_float_does_not_reduce() {
-        let c = Number::polar(0.0, 3);
+        let z = Number::polar(0.0, 3);
 
-        assert!(c.is_zero());
-        let ri = extract_or_fail!(c, Number::Complex);
+        assert!(z.is_zero());
+        let ri = extract_or_fail!(z, Number::Complex);
         let flt = extract_or_fail!(ri.0.0, Real::Float);
         assert_eq!(flt, 0.0);
         let flt = extract_or_fail!(ri.0.1, Real::Float);
@@ -2407,9 +2407,9 @@ mod complex {
 
     #[test]
     fn zero_angle() {
-        let c = Number::polar(4, 0);
+        let z = Number::polar(4, 0);
 
-        let r = extract_or_fail!(c, Number::Real);
+        let r = extract_or_fail!(z, Number::Real);
         let int = extract_or_fail!(r, Real::Integer);
         assert!(!int.is_zero());
         assert_eq!(extract_or_fail!(int.precision, Precision::Single), 4);
@@ -2417,10 +2417,10 @@ mod complex {
 
     #[test]
     fn zero_angle_float_does_not_reduce() {
-        let c = Number::polar(4, 0.0);
+        let z = Number::polar(4, 0.0);
 
-        assert!(!c.is_zero());
-        let ri = extract_or_fail!(c, Number::Complex);
+        assert!(!z.is_zero());
+        let ri = extract_or_fail!(z, Number::Complex);
         let flt = extract_or_fail!(ri.0.0, Real::Float);
         assert_eq!(flt, 4.0);
         let flt = extract_or_fail!(ri.0.1, Real::Float);
@@ -2429,10 +2429,10 @@ mod complex {
 
     #[test]
     fn polar_all_inexact_zeros() {
-        let c = Number::polar(0.0, 0.0);
+        let z = Number::polar(0.0, 0.0);
 
-        assert!(c.is_zero());
-        let ri = extract_or_fail!(c, Number::Complex);
+        assert!(z.is_zero());
+        let ri = extract_or_fail!(z, Number::Complex);
         let flt = extract_or_fail!(ri.0.0, Real::Float);
         assert_eq!(0.0, flt);
         let flt = extract_or_fail!(ri.0.1, Real::Float);
@@ -2443,9 +2443,9 @@ mod complex {
     fn zero_angle_rational() {
         let m = ok_or_fail!(Real::reduce(4, 5));
         let rad = ok_or_fail!(Real::reduce(0, 2));
-        let c = Number::polar(m, rad);
+        let z = Number::polar(m, rad);
 
-        let (num, den) = rational_parts!(extract_or_fail!(c, Number::Real));
+        let (num, den) = rational_parts!(extract_or_fail!(z, Number::Real));
 
         assert_eq!(extract_or_fail!(num.precision, Precision::Single), 4);
         assert_eq!(num.sign, Sign::Positive);
@@ -2455,11 +2455,11 @@ mod complex {
 
     #[test]
     fn into_exact() {
-        let c = Number::complex(4.0, 3.0);
+        let z = Number::complex(4.0, 3.0);
 
-        let c = c.try_into_exact();
+        let z = z.try_into_exact();
 
-        let ri = extract_or_fail!(ok_or_fail!(c), Number::Complex);
+        let ri = extract_or_fail!(ok_or_fail!(z), Number::Complex);
         let r = extract_or_fail!(ri.0.0, Real::Integer);
         assert!(!r.is_zero());
         assert_eq!(extract_or_fail!(r.precision, Precision::Single), 4);
@@ -2470,11 +2470,11 @@ mod complex {
 
     #[test]
     fn into_exact_rational() {
-        let c = Number::complex(1.5, 0.8);
+        let z = Number::complex(1.5, 0.8);
 
-        let c = c.try_into_exact();
+        let z = z.try_into_exact();
 
-        let ri = extract_or_fail!(ok_or_fail!(c), Number::Complex);
+        let ri = extract_or_fail!(ok_or_fail!(z), Number::Complex);
         let (num, den) = rational_parts!(ri.0.0);
         assert_eq!(extract_or_fail!(num.precision, Precision::Single), 3);
         assert_eq!(num.sign, Sign::Positive);
@@ -2489,11 +2489,11 @@ mod complex {
 
     #[test]
     fn into_inexact() {
-        let c = Number::complex(4, 3);
+        let z = Number::complex(4, 3);
 
-        let c = c.into_inexact();
+        let z = z.into_inexact();
 
-        let ri = extract_or_fail!(c, Number::Complex);
+        let ri = extract_or_fail!(z, Number::Complex);
         let r = extract_or_fail!(ri.0.0, Real::Float);
         assert_eq!(r, 4.0);
         let i = extract_or_fail!(ri.0.1, Real::Float);
@@ -2502,9 +2502,9 @@ mod complex {
 
     #[test]
     fn complex_into_byte() {
-        let n = Number::complex(4, 5);
+        let z = Number::complex(4, 5);
 
-        let r: Result<u8, _> = n.try_into();
+        let r: Result<u8, _> = z.try_into();
 
         let err = err_or_fail!(r);
         assert!(matches!(
@@ -2515,9 +2515,9 @@ mod complex {
 
     #[test]
     fn complex_into_int() {
-        let n = Number::complex(4, 5);
+        let z = Number::complex(4, 5);
 
-        let r: Result<i32, _> = n.try_into();
+        let r: Result<i32, _> = z.try_into();
 
         let err = err_or_fail!(r);
         assert!(matches!(
@@ -2528,37 +2528,37 @@ mod complex {
 
     #[test]
     fn inexact_parts_is_inexact() {
-        let n = Number::complex(4.3, 5.6);
+        let z = Number::complex(4.3, 5.6);
 
-        assert!(n.is_inexact());
+        assert!(z.is_inexact());
     }
 
     #[test]
     fn inexact_parts_with_zero_frac_is_inexact() {
-        let n = Number::complex(4.0, 5.0);
+        let z = Number::complex(4.0, 5.0);
 
-        assert!(n.is_inexact());
+        assert!(z.is_inexact());
     }
 
     #[test]
     fn not_inexact_parts_with_exact_parts() {
-        let n = Number::complex(4, ok_or_fail!(Real::reduce(4, 5)));
+        let z = Number::complex(4, ok_or_fail!(Real::reduce(4, 5)));
 
-        assert!(!n.is_inexact());
+        assert!(!z.is_inexact());
     }
 
     #[test]
     fn inexact_if_inexact_real() {
-        let n = Number::complex(4.3, 6);
+        let z = Number::complex(4.3, 6);
 
-        assert!(n.is_inexact());
+        assert!(z.is_inexact());
     }
 
     #[test]
     fn inexact_if_inexact_imag() {
-        let n = Number::complex(4, 5.6);
+        let z = Number::complex(4, 5.6);
 
-        assert!(n.is_inexact());
+        assert!(z.is_inexact());
     }
 
     #[test]
@@ -2606,9 +2606,9 @@ mod complex {
 
     #[test]
     fn into_exact_integer() {
-        let n = Number::complex(4, 5);
+        let z = Number::complex(4, 5);
 
-        let o = n.to_exact_integer();
+        let o = z.to_exact_integer();
 
         assert!(o.is_none());
     }
