@@ -98,6 +98,10 @@ pub(crate) enum Number {
 }
 
 impl Number {
+    pub(crate) fn nan() -> Self {
+        Self::Real(Real::nan())
+    }
+
     pub(crate) fn complex(real: impl Into<Real>, imag: impl Into<Real>) -> Self {
         let (real, imag) = (real.into(), imag.into());
         if imag.is_exact_zero() {
@@ -124,10 +128,6 @@ impl Number {
 
     pub(crate) fn real(value: impl Into<Real>) -> Self {
         Self::Real(value.into())
-    }
-
-    pub(crate) fn nan() -> Self {
-        Self::Real(Real::nan())
     }
 
     // NOTE: From<usize> would clash with existing Integer From<i64>

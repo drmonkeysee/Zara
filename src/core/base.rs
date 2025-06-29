@@ -317,11 +317,11 @@ fn is_negative(args: &[Value], _env: &mut Frame) -> EvalResult {
 }
 
 fn is_odd(args: &[Value], _env: &mut Frame) -> EvalResult {
-    int_predicate(args.first().unwrap(), |n| !n.is_even())
+    exact_int_predicate(args.first().unwrap(), |n| !n.is_even())
 }
 
 fn is_even(args: &[Value], _env: &mut Frame) -> EvalResult {
-    int_predicate(args.first().unwrap(), Integer::is_even)
+    exact_int_predicate(args.first().unwrap(), Integer::is_even)
 }
 
 fn abs(args: &[Value], _env: &mut Frame) -> EvalResult {
@@ -394,7 +394,7 @@ fn guarded_real_op(
     }
 }
 
-fn int_predicate(arg: &Value, pred: impl FnOnce(&Integer) -> bool) -> EvalResult {
+fn exact_int_predicate(arg: &Value, pred: impl FnOnce(&Integer) -> bool) -> EvalResult {
     let Value::Number(n) = arg else {
         return invalid_target!(NumericTypeName::INTEGER, arg);
     };
