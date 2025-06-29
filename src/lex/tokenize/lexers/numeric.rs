@@ -631,15 +631,15 @@ impl<R: Radix> Integral<R> {
 
     fn finalize_condition<'txt>(&mut self, brk: BreakCondition<'txt>) -> BreakCondition<'txt> {
         // NOTE: if inf scan only found 'i' then turns out this was imaginary, not infinity
-        if brk.is_default() {
-            if let IntegralMode::Inf(len) = self.mode {
-                if len == 2 {
-                    self.mode = IntegralMode::Int;
-                    return BreakCondition::imaginary();
-                }
-            }
+        if brk.is_default()
+            && let IntegralMode::Inf(len) = self.mode
+            && len == 2
+        {
+            self.mode = IntegralMode::Int;
+            BreakCondition::imaginary()
+        } else {
+            brk
         }
-        brk
     }
 
     fn commit(self, input: &str, exactness: Option<Exactness>) -> (RadixProps<R>, RadixParser<R>) {

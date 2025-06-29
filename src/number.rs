@@ -1041,12 +1041,13 @@ struct ComplexRealDatum<'a>(&'a Real);
 impl Display for ComplexRealDatum<'_> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         let r = self.0;
-        if let Real::Integer(n) = r {
-            if n.is_zero() {
-                return Ok(());
-            }
+        if let Real::Integer(n) = r
+            && n.is_zero()
+        {
+            Ok(())
+        } else {
+            r.fmt(f)
         }
-        r.fmt(f)
     }
 }
 
