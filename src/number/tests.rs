@@ -1311,6 +1311,88 @@ mod integer {
         );
         assert_eq!(n.sign, Sign::Positive);
     }
+
+    #[test]
+    fn negative_abs() {
+        let n = Integer::from(-4);
+
+        let a = n.into_abs();
+
+        assert_eq!(a.sign, Sign::Positive);
+    }
+
+    #[test]
+    fn positive_abs() {
+        let n = Integer::from(4);
+
+        let a = n.into_abs();
+
+        assert_eq!(a.sign, Sign::Positive);
+    }
+
+    #[test]
+    fn zero_abs() {
+        let n = Integer::from(0);
+
+        let a = n.into_abs();
+
+        assert_eq!(a.sign, Sign::Zero);
+    }
+
+    #[test]
+    fn positive_into_numerator() {
+        let r = Real::Integer(4.into());
+
+        let num = ok_or_fail!(r.try_into_numerator());
+
+        let n = extract_or_fail!(num, Real::Integer);
+        assert_eq!(extract_or_fail!(n.precision, Precision::Single), 4);
+        assert_eq!(n.sign, Sign::Positive);
+    }
+
+    #[test]
+    fn negative_into_numerator() {
+        let r = Real::Integer((-4).into());
+
+        let num = ok_or_fail!(r.try_into_numerator());
+
+        let n = extract_or_fail!(num, Real::Integer);
+        assert_eq!(extract_or_fail!(n.precision, Precision::Single), 4);
+        assert_eq!(n.sign, Sign::Negative);
+    }
+
+    #[test]
+    fn positive_into_denominator() {
+        let r = Real::Integer(4.into());
+
+        let denom = ok_or_fail!(r.try_into_denominator());
+
+        let n = extract_or_fail!(denom, Real::Integer);
+        assert_eq!(extract_or_fail!(n.precision, Precision::Single), 1);
+        assert_eq!(n.sign, Sign::Positive);
+    }
+
+    #[test]
+    fn negative_into_denominator() {
+        let r = Real::Integer((-4).into());
+
+        let denom = ok_or_fail!(r.try_into_denominator());
+
+        let n = extract_or_fail!(denom, Real::Integer);
+        assert_eq!(extract_or_fail!(n.precision, Precision::Single), 1);
+        assert_eq!(n.sign, Sign::Positive);
+    }
+
+    #[test]
+    fn zero_into_denominator() {
+        let r = Real::Integer(0.into());
+
+        let denom = ok_or_fail!(r.try_into_denominator());
+
+        let n = extract_or_fail!(denom, Real::Integer);
+        assert_eq!(extract_or_fail!(n.precision, Precision::Single), 1);
+        assert_eq!(n.sign, Sign::Positive);
+    }
 }
 
 mod float {
@@ -1787,30 +1869,99 @@ mod float {
     }
 
     #[test]
-    fn negative_abs() {
-        let n = Integer::from(-4);
+    fn positive_try_into_numerator() {
+        let r = Real::Float(4.0);
 
-        let a = n.into_abs();
+        let num = ok_or_fail!(r.try_into_numerator());
 
-        assert_eq!(a.sign, Sign::Positive);
+        let flt = extract_or_fail!(num, Real::Float);
+        assert_eq!(flt, 4.0);
     }
 
     #[test]
-    fn positive_abs() {
-        let n = Integer::from(4);
+    fn negative_try_into_numerator() {
+        let r = Real::Float(4.0);
 
-        let a = n.into_abs();
+        let num = ok_or_fail!(r.try_into_numerator());
 
-        assert_eq!(a.sign, Sign::Positive);
+        let flt = extract_or_fail!(num, Real::Float);
+        assert_eq!(flt, -4.0);
     }
 
     #[test]
-    fn zero_abs() {
-        let n = Integer::from(0);
+    fn fractional_try_into_numerator() {
+        let r = Real::Float(4.5); // 9/2
 
-        let a = n.into_abs();
+        let num = ok_or_fail!(r.try_into_numerator());
 
-        assert_eq!(a.sign, Sign::Zero);
+        let flt = extract_or_fail!(num, Real::Float);
+        assert_eq!(flt, 9.0);
+    }
+
+    #[test]
+    fn inf_try_into_numerator() {
+        let r = Real::Float(f64::INFINITY);
+
+        let err = err_or_fail!(r.try_into_numerator());
+
+        assert!(matches!(err, NumericError::NoExactRepresentation(s) if s == "+inf.0"));
+    }
+
+    #[test]
+    fn nan_try_into_numerator() {
+        let r = Real::Float(f64::NAN);
+
+        let err = err_or_fail!(r.try_into_numerator());
+
+        assert!(matches!(err, NumericError::NoExactRepresentation(s) if s == "+nan.0"));
+    }
+
+    #[test]
+    fn positive_try_into_denominator() {
+        let r = Real::Float(4.0);
+
+        let denom = ok_or_fail!(r.try_into_denominator());
+
+        let flt = extract_or_fail!(denom, Real::Float);
+        assert_eq!(flt, 1.0);
+    }
+
+    #[test]
+    fn negative_try_into_denominator() {
+        let r = Real::Float(4.0);
+
+        let denom = ok_or_fail!(r.try_into_denominator());
+
+        let flt = extract_or_fail!(denom, Real::Float);
+        assert_eq!(flt, 1.0);
+    }
+
+    #[test]
+    fn fractional_try_into_denominator() {
+        let r = Real::Float(4.5); // 9/2
+
+        let denom = ok_or_fail!(r.try_into_denominator());
+
+        let flt = extract_or_fail!(denom, Real::Float);
+        assert_eq!(flt, 2.0);
+    }
+
+    #[test]
+    fn inf_try_into_denominator() {
+        let r = Real::Float(f64::INFINITY);
+
+        let err = err_or_fail!(r.try_into_denominator());
+
+        assert!(matches!(err, NumericError::NoExactRepresentation(s) if s == "+inf.0"));
+    }
+
+    #[test]
+    fn nan_try_into_denominator() {
+        let r = Real::Float(f64::NAN);
+
+        let err = err_or_fail!(r.try_into_denominator());
+
+        assert!(matches!(err, NumericError::NoExactRepresentation(s) if s == "+nan.0"));
     }
 }
 
@@ -2248,6 +2399,60 @@ mod rational {
 
         assert_eq!(abs.0.0.sign, Sign::Positive);
         assert_eq!(abs.0.1.sign, Sign::Negative);
+    }
+
+    #[test]
+    fn positive_into_numerator() {
+        let q = ok_or_fail!(Real::reduce(4, 5));
+
+        let num = ok_or_fail!(q.try_into_numerator());
+
+        let n = extract_or_fail!(num, Real::Integer);
+        assert_eq!(extract_or_fail!(n.precision, Precision::Single), 4);
+        assert_eq!(n.sign, Sign::Positive);
+    }
+
+    #[test]
+    fn negative_into_numerator() {
+        let q = ok_or_fail!(Real::reduce(-4, 5));
+
+        let num = ok_or_fail!(q.try_into_numerator());
+
+        let n = extract_or_fail!(num, Real::Integer);
+        assert_eq!(extract_or_fail!(n.precision, Precision::Single), 4);
+        assert_eq!(n.sign, Sign::Negative);
+    }
+
+    #[test]
+    fn positive_into_denominator() {
+        let q = ok_or_fail!(Real::reduce(4, 5));
+
+        let denom = ok_or_fail!(q.try_into_denominator());
+
+        let n = extract_or_fail!(denom, Real::Integer);
+        assert_eq!(extract_or_fail!(n.precision, Precision::Single), 5);
+        assert_eq!(n.sign, Sign::Positive);
+    }
+
+    #[test]
+    fn negative_into_denominator() {
+        let q = ok_or_fail!(Real::reduce(-4, 5));
+
+        let denom = ok_or_fail!(q.try_into_denominator());
+
+        let n = extract_or_fail!(denom, Real::Integer);
+        assert_eq!(extract_or_fail!(n.precision, Precision::Single), 5);
+        assert_eq!(n.sign, Sign::Positive);
+    }
+
+    #[test]
+    fn negative_denom_not_checked_for_denominator() {
+        let q = Rational((4.into(), (-5).into()).into());
+
+        let n = q.into_denominator();
+
+        assert_eq!(extract_or_fail!(n.precision, Precision::Single), 5);
+        assert_eq!(n.sign, Sign::Negative);
     }
 }
 
