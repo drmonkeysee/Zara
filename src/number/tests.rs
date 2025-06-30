@@ -6,7 +6,7 @@ macro_rules! rational_parts {
 }
 
 use super::*;
-use crate::testutil::{err_or_fail, extract_or_fail, ok_or_fail, some_or_fail};
+use crate::testutil::{err_or_fail, extract_or_fail, ok_or_fail};
 
 mod sign {
     use super::*;
@@ -505,6 +505,13 @@ mod error {
         let err = NumericError::NoExactRepresentation("+inf.0".to_owned());
 
         assert_eq!(err.to_string(), "no exact representation for: +inf.0");
+    }
+
+    #[test]
+    fn display_not_exact_integer() {
+        let err = NumericError::NotExactInteger("4.5".to_owned());
+
+        assert_eq!(err.to_string(), "expected exact integer, got: 4.5");
     }
 
     #[test]
@@ -1246,34 +1253,34 @@ mod integer {
     }
 
     #[test]
-    fn positive_to_exact_integer() {
+    fn positive_try_into_exact_integer() {
         let r = Real::Integer(4.into());
 
-        let o = r.to_exact_integer();
+        let res = r.try_into_exact_integer();
 
-        let n = some_or_fail!(o);
+        let n = ok_or_fail!(res);
         assert_eq!(extract_or_fail!(n.precision, Precision::Single), 4);
         assert_eq!(n.sign, Sign::Positive);
     }
 
     #[test]
-    fn zero_to_exact_integer() {
+    fn zero_try_into_exact_integer() {
         let r = Real::Integer(0.into());
 
-        let o = r.to_exact_integer();
+        let res = r.try_into_exact_integer();
 
-        let n = some_or_fail!(o);
+        let n = ok_or_fail!(res);
         assert_eq!(extract_or_fail!(n.precision, Precision::Single), 0);
         assert_eq!(n.sign, Sign::Zero);
     }
 
     #[test]
-    fn negative_to_exact_integer() {
+    fn negative_try_into_exact_integer() {
         let r = Real::Integer((-4).into());
 
-        let o = r.to_exact_integer();
+        let res = r.try_into_exact_integer();
 
-        let n = some_or_fail!(o);
+        let n = ok_or_fail!(res);
         assert_eq!(extract_or_fail!(n.precision, Precision::Single), 4);
         assert_eq!(n.sign, Sign::Negative);
     }
@@ -1689,48 +1696,48 @@ mod float {
     }
 
     #[test]
-    fn zero_frac_to_exact_integer() {
+    fn zero_frac_try_into_exact_integer() {
         let r = Real::Float(4.0);
 
-        let o = r.to_exact_integer();
+        let res = r.try_into_exact_integer();
 
-        let n = some_or_fail!(o);
+        let n = ok_or_fail!(res);
         assert_eq!(extract_or_fail!(n.precision, Precision::Single), 4);
         assert_eq!(n.sign, Sign::Positive);
     }
 
     #[test]
-    fn negative_zero_frac_to_exact_integer() {
+    fn negative_zero_frac_try_into_exact_integer() {
         let r = Real::Float(-4.0);
 
-        let o = r.to_exact_integer();
+        let res = r.try_into_exact_integer();
 
-        let n = some_or_fail!(o);
+        let n = ok_or_fail!(res);
         assert_eq!(extract_or_fail!(n.precision, Precision::Single), 4);
         assert_eq!(n.sign, Sign::Negative);
     }
 
     #[test]
-    fn zeros_to_exact_integer() {
+    fn zeros_try_into_exact_integer() {
         let cases = [0.0, -0.0];
         for case in cases {
             let r = Real::Float(case);
 
-            let o = r.to_exact_integer();
+            let res = r.try_into_exact_integer();
 
-            let n = some_or_fail!(o);
+            let n = ok_or_fail!(res);
             assert_eq!(extract_or_fail!(n.precision, Precision::Single), 0);
             assert_eq!(n.sign, Sign::Zero);
         }
     }
 
     #[test]
-    fn max_continuous_integer_to_exact_integer() {
+    fn max_continuous_integer_try_into_exact_integer() {
         let r = Real::Float(FMAX_INT);
 
-        let o = r.to_exact_integer();
+        let res = r.try_into_exact_integer();
 
-        let n = some_or_fail!(o);
+        let n = ok_or_fail!(res);
         assert_eq!(
             extract_or_fail!(n.precision, Precision::Single),
             9007199254740991
@@ -1739,12 +1746,12 @@ mod float {
     }
 
     #[test]
-    fn min_continuous_integer_to_exact_integer() {
+    fn min_continuous_integer_try_into_exact_integer() {
         let r = Real::Float(-FMAX_INT);
 
-        let o = r.to_exact_integer();
+        let res = r.try_into_exact_integer();
 
-        let n = some_or_fail!(o);
+        let n = ok_or_fail!(res);
         assert_eq!(
             extract_or_fail!(n.precision, Precision::Single),
             9007199254740991
@@ -1753,23 +1760,29 @@ mod float {
     }
 
     #[test]
-    fn non_zero_frac_to_exact_integer() {
+    fn non_zero_frac_try_into_exact_integer() {
         let r = Real::Float(4.2);
 
-        let o = r.to_exact_integer();
+        let res = r.try_into_exact_integer();
 
-        assert!(o.is_none());
+        let err = err_or_fail!(res);
+        assert!(matches!(err, NumericError::NotExactInteger(s) if s == "4.2"));
     }
 
     #[test]
-    fn inf_nan_to_exact_integer() {
-        let cases = [f64::INFINITY, f64::NEG_INFINITY, f64::NAN];
-        for case in cases {
+    fn inf_nan_try_into_exact_integer() {
+        let cases = [
+            (f64::INFINITY, "+inf.0"),
+            (f64::NEG_INFINITY, "-inf.0"),
+            (f64::NAN, "+nan.0"),
+        ];
+        for (case, expected) in cases {
             let r = Real::Float(case);
 
-            let o = r.to_exact_integer();
+            let res = r.try_into_exact_integer();
 
-            assert!(o.is_none());
+            let err = err_or_fail!(res);
+            assert!(matches!(err, NumericError::NotExactInteger(s) if s == expected));
         }
     }
 
@@ -2194,9 +2207,10 @@ mod rational {
     fn into_exact_integer() {
         let q = ok_or_fail!(Real::reduce(4, 5));
 
-        let o = q.to_exact_integer();
+        let r = q.try_into_exact_integer();
 
-        assert!(o.is_none());
+        let err = err_or_fail!(r);
+        assert!(matches!(err, NumericError::NotExactInteger(s) if s == "4/5"));
     }
 
     #[test]
@@ -2602,15 +2616,6 @@ mod complex {
 
             assert!(r.is_nan());
         }
-    }
-
-    #[test]
-    fn into_exact_integer() {
-        let z = Number::complex(4, 5);
-
-        let o = z.to_exact_integer();
-
-        assert!(o.is_none());
     }
 }
 

@@ -379,37 +379,28 @@ fn rational_op(arg: &Value, op: impl FnOnce(&Real) -> EvalResult) -> EvalResult 
     guarded_real_op(arg, NumericTypeName::RATIONAL, op)
 }
 
+fn exact_int_predicate(arg: &Value, pred: impl FnOnce(&Integer) -> bool) -> EvalResult {
+    guarded_real_op(arg, NumericTypeName::INTEGER, |r| {
+        r.clone().try_into_exact_integer().map_or_else(
+            |err| Err(Condition::value_error(err, arg).into()),
+            |n| Ok(Value::Boolean(pred(&n))),
+        )
+    })
+}
+
 fn guarded_real_op(
     arg: &Value,
     expected_type: impl Display,
     op: impl FnOnce(&Real) -> EvalResult,
 ) -> EvalResult {
     let Value::Number(n) = arg else {
-        return invalid_target!(NumericTypeName::REAL, arg);
+        return invalid_target!(expected_type, arg);
     };
     if let Number::Real(r) = n {
         op(r)
     } else {
         Err(Condition::arg_type_error(FIRST_ARG_LABEL, expected_type, n.as_typename(), arg).into())
     }
-}
-
-fn exact_int_predicate(arg: &Value, pred: impl FnOnce(&Integer) -> bool) -> EvalResult {
-    let Value::Number(n) = arg else {
-        return invalid_target!(NumericTypeName::INTEGER, arg);
-    };
-    n.to_exact_integer().map_or_else(
-        || {
-            Err(Condition::arg_type_error(
-                FIRST_ARG_LABEL,
-                NumericTypeName::INTEGER,
-                n.as_typename(),
-                arg,
-            )
-            .into())
-        },
-        |n| Ok(Value::Boolean(pred(&n))),
-    )
 }
 
 //
@@ -1071,7 +1062,7 @@ mod tests {
         let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
         assert_eq!(
             err.to_string(),
-            "#<env-error \"invalid type for arg `0` - expected: integer, got: floating-point\" (4.2)>"
+            "#<env-error \"expected exact integer, got: 4.2\" (4.2)>"
         );
 
         let r = is_odd(&args, &mut env.new_frame());
@@ -1079,7 +1070,7 @@ mod tests {
         let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
         assert_eq!(
             err.to_string(),
-            "#<env-error \"invalid type for arg `0` - expected: integer, got: floating-point\" (4.2)>"
+            "#<env-error \"expected exact integer, got: 4.2\" (4.2)>"
         );
     }
 
@@ -1125,7 +1116,7 @@ mod tests {
         let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
         assert_eq!(
             err.to_string(),
-            "#<env-error \"invalid type for arg `0` - expected: integer, got: floating-point\" (3.2)>"
+            "#<env-error \"expected exact integer, got: 3.2\" (3.2)>"
         );
 
         let r = is_odd(&args, &mut env.new_frame());
@@ -1133,7 +1124,7 @@ mod tests {
         let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
         assert_eq!(
             err.to_string(),
-            "#<env-error \"invalid type for arg `0` - expected: integer, got: floating-point\" (3.2)>"
+            "#<env-error \"expected exact integer, got: 3.2\" (3.2)>"
         );
     }
 

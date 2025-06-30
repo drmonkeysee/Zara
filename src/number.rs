@@ -181,13 +181,6 @@ impl Number {
         NumericTypeName(self)
     }
 
-    pub(crate) fn to_exact_integer(&self) -> Option<Integer> {
-        match self {
-            Self::Complex(_) => None,
-            Self::Real(r) => r.to_exact_integer(),
-        }
-    }
-
     pub(crate) fn into_inexact(self) -> Self {
         match self {
             Self::Complex(Complex(z)) => Self::complex(z.0.into_inexact(), z.1.into_inexact()),
@@ -351,6 +344,24 @@ impl Real {
         }
     }
 
+    pub(crate) fn try_into_exact_integer(self) -> IntResult {
+        match self {
+            Self::Float(f) if f.fract() == 0.0 => {
+                if (-FMAX_INT..=FMAX_INT).contains(&f) {
+                    #[allow(
+                        clippy::cast_possible_truncation,
+                        reason = "guarded against truncation"
+                    )]
+                    Ok((f as i64).into())
+                } else {
+                    todo!("convert f64 to multi-precision integer somehow")
+                }
+            }
+            Self::Integer(n) => Ok(n.clone()),
+            _ => Err(NumericError::NotExactInteger(self.to_string())),
+        }
+    }
+
     pub(crate) fn try_into_numerator(self) -> RealResult {
         Ok(match self {
             Self::Float(_) => self.try_into_exact()?.try_into_numerator()?.into_inexact(),
@@ -426,24 +437,6 @@ impl Real {
             Self::Float(f) => *f,
             Self::Integer(n) => n.to_float(),
             Self::Rational(q) => q.to_float(),
-        }
-    }
-
-    fn to_exact_integer(&self) -> Option<Integer> {
-        match self {
-            Self::Float(f) if f.fract() == 0.0 => {
-                if (-FMAX_INT..=FMAX_INT).contains(f) {
-                    #[allow(
-                        clippy::cast_possible_truncation,
-                        reason = "guarded against truncation"
-                    )]
-                    Some((*f as i64).into())
-                } else {
-                    todo!("convert f64 to multi-precision integer somehow")
-                }
-            }
-            Self::Integer(n) => Some(n.clone()),
-            _ => None,
         }
     }
 }
@@ -789,7 +782,9 @@ impl FloatSpec {
             // an f64 but if something real weird happens return parse error.
             spec.try_into_exact(&flt_str)
         } else {
-            Err(NumericError::NoExactRepresentation(flt_to_err_repr(flt)))
+            Err(NumericError::NoExactRepresentation(
+                FloatDatum(&flt).to_string(),
+            ))
         }
     }
 
@@ -905,6 +900,7 @@ pub(crate) enum NumericError {
     Int32ConversionInvalidRange,
     IntConversionInvalidType(String),
     NoExactRepresentation(String),
+    NotExactInteger(String),
     ParseExponentFailure,
     ParseExponentOutOfRange,
     ParseFailure,
@@ -926,7 +922,8 @@ impl Display for NumericError {
             Self::IntConversionInvalidType(n) => {
                 write!(f, "expected integer literal, got numeric type: {n}")
             }
-            Self::NoExactRepresentation(flt) => write!(f, "no exact representation for: {flt}"),
+            Self::NoExactRepresentation(s) => write!(f, "no exact representation for: {s}"),
+            Self::NotExactInteger(s) => write!(f, "expected exact integer, got: {s}"),
             Self::ParseExponentOutOfRange => {
                 write!(f, "exponent out of range: [{}, {}]", i32::MIN, i32::MAX)
             }
@@ -1136,17 +1133,4 @@ fn write_intconversion_range_error(
     f: &mut Formatter,
 ) -> fmt::Result {
     write!(f, "integer literal out of range: [{min}, {max}]")
-}
-
-fn flt_to_err_repr(flt: f64) -> String {
-    if flt.is_infinite() {
-        format!(
-            "{}{INF_STR}",
-            if flt.is_sign_positive() { '+' } else { '-' }
-        )
-    } else if flt.is_nan() {
-        format!("+{NAN_STR}")
-    } else {
-        format!("unexpected float error value: {flt}")
-    }
 }
