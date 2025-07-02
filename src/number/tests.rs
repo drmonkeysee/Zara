@@ -1880,7 +1880,7 @@ mod float {
 
     #[test]
     fn negative_try_into_numerator() {
-        let r = Real::Float(4.0);
+        let r = Real::Float(-4.0);
 
         let num = ok_or_fail!(r.try_into_numerator());
 

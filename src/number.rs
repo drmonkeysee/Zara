@@ -249,11 +249,11 @@ pub(crate) enum Real {
 
 impl Real {
     pub(crate) fn zero() -> Self {
-        Self::Integer(0.into())
+        Integer::zero().into()
     }
 
     pub(crate) fn nan() -> Self {
-        Self::Float(f64::NAN)
+        f64::NAN.into()
     }
 
     pub(crate) fn reduce(
@@ -495,11 +495,11 @@ impl Rational {
     }
 
     fn into_numerator(self) -> Integer {
-        todo!();
+        self.0.0
     }
 
     fn into_denominator(self) -> Integer {
-        todo!();
+        self.0.1
     }
 }
 
@@ -518,6 +518,14 @@ pub(crate) struct Integer {
 }
 
 impl Integer {
+    fn zero() -> Self {
+        0.into()
+    }
+
+    fn one() -> Self {
+        1.into()
+    }
+
     fn single(magnitude: u64, mut sign: Sign) -> Self {
         if magnitude == 0 {
             sign = Sign::Zero;
@@ -626,11 +634,11 @@ impl Integer {
     }
 
     fn into_numerator(self) -> Self {
-        todo!();
+        self
     }
 
     fn into_denominator(self) -> Self {
-        todo!();
+        Self::one()
     }
 }
 
