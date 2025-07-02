@@ -57,7 +57,7 @@ impl ParseNode {
         match self {
             Self::Expr(node) => node.parse(token, txt, ns),
             Self::InvalidParseTree(_) | Self::InvalidTokenStream => ParseFlow::Continue(()),
-            Self::Prg(seq) => parse_sequence(seq, token, txt, ns),
+            Self::Prg(seq) => parse_prg(seq, token, txt, ns),
         }
     }
 
@@ -601,7 +601,7 @@ fn parse_vector(
     }
 }
 
-fn parse_sequence(
+fn parse_prg(
     seq: &mut Vec<Expression>,
     token: Token,
     txt: &Rc<TextLine>,

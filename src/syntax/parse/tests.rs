@@ -1268,121 +1268,6 @@ mod identifier {
     }
 }
 
-mod sequence {
-    use super::*;
-
-    #[test]
-    fn empty() {
-        let mut seq = Vec::new();
-        let token = Token {
-            kind: TokenKind::Boolean(true),
-            span: 0..3,
-        };
-        let txt = make_textline().into();
-        let mut env = TestEnv::default();
-        let mut ns = env.new_namespace();
-
-        let f = parse_sequence(&mut seq, token, &txt, &mut ns);
-
-        assert!(matches!(f, ParseFlow::Continue(())));
-        assert_eq!(seq.len(), 1);
-        assert!(matches!(
-            &seq[0],
-            Expression {
-                ctx: ExprCtx { span: TxtSpan { start: 0, end: 3 }, txt: line },
-                kind: ExpressionKind::Literal(Value::Boolean(true)),
-            } if Rc::ptr_eq(&txt, &line)
-        ));
-    }
-
-    #[test]
-    fn non_empty() {
-        let txt = make_textline().into();
-        let mut seq = vec![
-            ExprCtx {
-                span: 1..4,
-                txt: Rc::clone(&txt),
-            }
-            .into_expr(ExpressionKind::Literal(Value::real(4))),
-            ExprCtx {
-                span: 4..6,
-                txt: Rc::clone(&txt),
-            }
-            .into_expr(ExpressionKind::Literal(Value::real(5))),
-        ];
-        let token = Token {
-            kind: TokenKind::Boolean(true),
-            span: 6..9,
-        };
-        let txt = make_textline().into();
-        let mut env = TestEnv::default();
-        let mut ns = env.new_namespace();
-
-        let f = parse_sequence(&mut seq, token, &txt, &mut ns);
-
-        assert!(matches!(f, ParseFlow::Continue(())));
-        assert_eq!(seq.len(), 3);
-        assert!(matches!(
-            &seq[2],
-            Expression {
-                ctx: ExprCtx { span: TxtSpan { start: 6, end: 9 }, txt: line },
-                kind: ExpressionKind::Literal(Value::Boolean(true)),
-            } if Rc::ptr_eq(&txt, &line)
-        ));
-    }
-
-    #[test]
-    fn start_compound() {
-        let mut seq = Vec::new();
-        let token = Token {
-            kind: TokenKind::ParenLeft,
-            span: 1..2,
-        };
-        let txt = make_textline().into();
-        let mut env = TestEnv::default();
-        let mut ns = env.new_namespace();
-
-        let f = parse_sequence(&mut seq, token, &txt, &mut ns);
-
-        assert!(matches!(
-            f,
-            ParseFlow::Break(ParseBreak::New(
-                ParseNew {
-                    mode: ParseMode::List { form: SyntacticForm::Call, seq },
-                    start: 1
-                }
-            )) if seq.is_empty()
-        ));
-        assert!(seq.is_empty());
-    }
-
-    #[test]
-    fn invalid() {
-        let mut seq = Vec::new();
-        let token = Token {
-            kind: TokenKind::StringEnd("foo".to_owned()),
-            span: 0..3,
-        };
-        let txt = make_textline().into();
-        let mut env = TestEnv::default();
-        let mut ns = env.new_namespace();
-
-        let f = parse_sequence(&mut seq, token, &txt, &mut ns);
-
-        assert!(matches!(
-            f,
-            ParseFlow::Break(ParseBreak::Err {
-                err: ExpressionError {
-                    ctx: ExprCtx { span: TxtSpan { start: 0, end: 3 }, txt: line },
-                    kind: ExpressionErrorKind::SeqInvalid(TokenKind::StringEnd(_)),
-                },
-                flow: ParseErrFlow::Break(ParseErrBreak::InvalidTokenStream),
-            }) if Rc::ptr_eq(&line, &txt)
-        ));
-        assert!(seq.is_empty());
-    }
-}
-
 mod list {
     use super::*;
 
@@ -2673,6 +2558,117 @@ mod quote {
 
 mod program {
     use super::*;
+
+    #[test]
+    fn empty() {
+        let mut seq = Vec::new();
+        let token = Token {
+            kind: TokenKind::Boolean(true),
+            span: 0..3,
+        };
+        let txt = make_textline().into();
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
+
+        let f = parse_prg(&mut seq, token, &txt, &mut ns);
+
+        assert!(matches!(f, ParseFlow::Continue(())));
+        assert_eq!(seq.len(), 1);
+        assert!(matches!(
+            &seq[0],
+            Expression {
+                ctx: ExprCtx { span: TxtSpan { start: 0, end: 3 }, txt: line },
+                kind: ExpressionKind::Literal(Value::Boolean(true)),
+            } if Rc::ptr_eq(&txt, &line)
+        ));
+    }
+
+    #[test]
+    fn non_empty() {
+        let txt = make_textline().into();
+        let mut seq = vec![
+            ExprCtx {
+                span: 1..4,
+                txt: Rc::clone(&txt),
+            }
+            .into_expr(ExpressionKind::Literal(Value::real(4))),
+            ExprCtx {
+                span: 4..6,
+                txt: Rc::clone(&txt),
+            }
+            .into_expr(ExpressionKind::Literal(Value::real(5))),
+        ];
+        let token = Token {
+            kind: TokenKind::Boolean(true),
+            span: 6..9,
+        };
+        let txt = make_textline().into();
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
+
+        let f = parse_prg(&mut seq, token, &txt, &mut ns);
+
+        assert!(matches!(f, ParseFlow::Continue(())));
+        assert_eq!(seq.len(), 3);
+        assert!(matches!(
+            &seq[2],
+            Expression {
+                ctx: ExprCtx { span: TxtSpan { start: 6, end: 9 }, txt: line },
+                kind: ExpressionKind::Literal(Value::Boolean(true)),
+            } if Rc::ptr_eq(&txt, &line)
+        ));
+    }
+
+    #[test]
+    fn start_compound() {
+        let mut seq = Vec::new();
+        let token = Token {
+            kind: TokenKind::ParenLeft,
+            span: 1..2,
+        };
+        let txt = make_textline().into();
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
+
+        let f = parse_prg(&mut seq, token, &txt, &mut ns);
+
+        assert!(matches!(
+            f,
+            ParseFlow::Break(ParseBreak::New(
+                ParseNew {
+                    mode: ParseMode::List { form: SyntacticForm::Call, seq },
+                    start: 1
+                }
+            )) if seq.is_empty()
+        ));
+        assert!(seq.is_empty());
+    }
+
+    #[test]
+    fn invalid() {
+        let mut seq = Vec::new();
+        let token = Token {
+            kind: TokenKind::StringEnd("foo".to_owned()),
+            span: 0..3,
+        };
+        let txt = make_textline().into();
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
+
+        let f = parse_prg(&mut seq, token, &txt, &mut ns);
+
+        assert!(matches!(
+            f,
+            ParseFlow::Break(ParseBreak::Err {
+                err: ExpressionError {
+                    ctx: ExprCtx { span: TxtSpan { start: 0, end: 3 }, txt: line },
+                    kind: ExpressionErrorKind::SeqInvalid(TokenKind::StringEnd(_)),
+                },
+                flow: ParseErrFlow::Break(ParseErrBreak::InvalidTokenStream),
+            }) if Rc::ptr_eq(&line, &txt)
+        ));
+        assert!(seq.is_empty());
+    }
 
     #[test]
     fn node_to_program() {
