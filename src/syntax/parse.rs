@@ -14,8 +14,6 @@ use crate::{
 };
 use std::{ops::ControlFlow, rc::Rc};
 
-const LONGFORM_QUOTE: &str = "quote";
-
 pub(super) type ParseFlow = ControlFlow<ParseBreak>;
 pub(super) type MergeFlow = ControlFlow<()>;
 pub(super) type MergeResult = Result<MergeFlow, ParserError>;
@@ -248,15 +246,20 @@ type ExprConvertResult = Result<Option<Expression>, Vec<ExpressionError>>;
 enum SyntacticForm {
     Call,
     Datum,
+    Define,
     PairClosed,
     PairOpen,
     Quote,
 }
 
 impl SyntacticForm {
+    const DEFINE: &str = "define";
+    const QUOTE: &str = "quote";
+
     fn from_str(s: &str) -> Option<Self> {
         match s {
-            LONGFORM_QUOTE => Some(Self::Quote),
+            Self::DEFINE => Some(Self::Define),
+            Self::QUOTE => Some(Self::Quote),
             _ => None,
         }
     }
@@ -707,7 +710,7 @@ fn into_datum(
             if let ExpressionKind::Literal(val) = expr.kind {
                 Ok(Some(if quoted {
                     ctx.into_expr(ExpressionKind::Literal(zlist![
-                        Value::symbol(ns.get_symbol(LONGFORM_QUOTE)),
+                        Value::symbol(ns.get_symbol(SyntacticForm::QUOTE)),
                         val
                     ]))
                 } else {
@@ -742,6 +745,7 @@ fn into_syntactic_form(
             }
         }
         SyntacticForm::Datum => into_list(seq, ctx, false),
+        SyntacticForm::Define => todo!("define-form->expr"),
         SyntacticForm::PairClosed => into_list(seq, ctx, true),
         SyntacticForm::PairOpen => Err(vec![ctx.into_error(ExpressionErrorKind::PairUnterminated)]),
         SyntacticForm::Quote => {
