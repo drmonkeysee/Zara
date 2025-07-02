@@ -745,10 +745,20 @@ fn into_syntactic_form(
             }
         }
         SyntacticForm::Datum => into_list(seq, ctx, false),
-        SyntacticForm::Define => todo!("define-form->expr"),
+        SyntacticForm::Define => {
+            /*
+             * forms:
+             * [variable, expr] -> define var val, in practice expr can be empty, set var to unspecified
+             * following forms need lambda expr parsing first
+             * [list, body-expr] -> define var:list.car lambda (formals:list.cdr) body
+             * [pair, body-expr] -> define var:pair.car lambda formal:pair.cdr body
+             */
+            todo!("define-form->expr")
+        }
         SyntacticForm::PairClosed => into_list(seq, ctx, true),
         SyntacticForm::PairOpen => Err(vec![ctx.into_error(ExpressionErrorKind::PairUnterminated)]),
         SyntacticForm::Quote => {
+            // TODO: handle as an actual error
             debug_assert!(seq.len() == 2, "invalid syntax for quote");
             Ok(Some(seq.into_iter().next_back().unwrap()))
         }

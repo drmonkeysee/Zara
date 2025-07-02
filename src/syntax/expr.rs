@@ -95,6 +95,7 @@ impl Expression {
     fn eval(self, env: &mut Frame) -> EvalResult {
         match self.kind {
             ExpressionKind::Call { args, proc } => eval_call(*proc, args, env),
+            ExpressionKind::Define { name, value } => todo!("eval define"),
             ExpressionKind::Literal(v) => Ok(v),
             ExpressionKind::Variable(n) => env
                 .scope
@@ -109,6 +110,10 @@ pub(super) enum ExpressionKind {
     Call {
         args: Box<[Expression]>,
         proc: Box<Expression>,
+    },
+    Define {
+        name: Box<str>,
+        value: Box<Expression>,
     },
     Literal(Value),
     Variable(Box<str>),
@@ -231,6 +236,7 @@ impl Display for TypeName<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self.0 {
             ExpressionKind::Call { .. } => f.write_str("procedure call"),
+            ExpressionKind::Define { .. } => f.write_str("variable definition"),
             ExpressionKind::Variable(_) => f.write_str("variable"),
             ExpressionKind::Literal(val) => val.as_typename().fmt(f),
         }

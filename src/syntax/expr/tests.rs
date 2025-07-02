@@ -22,6 +22,23 @@ mod display {
     }
 
     #[test]
+    fn define_typename() {
+        let expr = ExpressionKind::Define {
+            name: "foo".into(),
+            value: Expression::string(
+                "bar",
+                ExprCtx {
+                    span: 0..5,
+                    txt: make_textline().into(),
+                },
+            )
+            .into(),
+        };
+
+        assert_eq!(expr.as_typename().to_string(), "variable definition");
+    }
+
+    #[test]
     fn variable_typename() {
         let expr = ExpressionKind::Variable("foo".into());
 
