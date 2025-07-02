@@ -273,14 +273,14 @@ impl Real {
             d.make_positive();
         }
         if n.is_zero() || d.is_magnitude_one() {
-            return Ok(Self::Integer(n));
+            return Ok(n.into());
         }
         if n.cmp_magnitude(&d) == Ordering::Equal {
-            return Ok(Self::Integer(Integer::single(1, n.sign)));
+            return Ok(Integer::single(1, n.sign).into());
         }
         n.reduce(&mut d);
         if d.is_magnitude_one() {
-            return Ok(Self::Integer(n));
+            return Ok(n.into());
         }
         Ok(Self::Rational(Rational((n, d).into())))
     }
@@ -331,8 +331,8 @@ impl Real {
 
     pub(crate) fn into_abs(self) -> Self {
         match self {
-            Self::Float(f) => Self::Float(f.abs()),
-            Self::Integer(n) => Self::Integer(n.into_abs()),
+            Self::Float(f) => f.abs().into(),
+            Self::Integer(n) => n.into_abs().into(),
             Self::Rational(q) => Self::Rational(q.into_abs()),
         }
     }
@@ -365,8 +365,8 @@ impl Real {
     pub(crate) fn try_into_numerator(self) -> RealResult {
         Ok(match self {
             Self::Float(_) => self.try_into_exact()?.try_into_numerator()?.into_inexact(),
-            Self::Integer(n) => Self::Integer(n.into_numerator()),
-            Self::Rational(q) => Self::Integer(q.into_numerator()),
+            Self::Integer(n) => n.into_numerator().into(),
+            Self::Rational(q) => q.into_numerator().into(),
         })
     }
 
@@ -376,8 +376,8 @@ impl Real {
                 .try_into_exact()?
                 .try_into_denominator()?
                 .into_inexact(),
-            Self::Integer(n) => Self::Integer(n.into_denominator()),
-            Self::Rational(q) => Self::Integer(q.into_denominator()),
+            Self::Integer(n) => n.into_denominator().into(),
+            Self::Rational(q) => q.into_denominator().into(),
         })
     }
 
@@ -486,7 +486,7 @@ impl Rational {
     }
 
     fn into_inexact(self) -> Real {
-        Real::Float(self.to_float())
+        self.to_float().into()
     }
 
     fn into_abs(mut self) -> Self {
