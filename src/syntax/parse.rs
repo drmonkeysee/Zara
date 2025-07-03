@@ -386,8 +386,9 @@ impl SyntacticForm {
                 && let Some(f) = Self::from_str(n)
             {
                 *self = f;
+            } else {
+                seq.push(expr);
             }
-            seq.push(expr);
         }
         ParseFlow::Continue(())
     }
@@ -759,8 +760,8 @@ fn into_syntactic_form(
         SyntacticForm::PairOpen => Err(vec![ctx.into_error(ExpressionErrorKind::PairUnterminated)]),
         SyntacticForm::Quote => {
             // TODO: handle as an actual error
-            debug_assert!(seq.len() == 2, "invalid syntax for quote");
-            Ok(Some(seq.into_iter().next_back().unwrap()))
+            debug_assert!(seq.len() == 1, "invalid syntax for quote");
+            Ok(Some(seq.into_iter().next().unwrap()))
         }
     }
 }

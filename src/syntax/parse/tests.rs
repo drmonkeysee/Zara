@@ -1835,22 +1835,13 @@ mod list {
             },
             mode: ParseMode::List {
                 form: SyntacticForm::Quote,
-                seq: vec![
-                    Expression::variable(
-                        "quote",
-                        ExprCtx {
-                            span: 1..6,
-                            txt: Rc::clone(&txt),
-                        },
-                    ),
-                    Expression::symbol(
-                        "foo",
-                        ExprCtx {
-                            span: 6..9,
-                            txt: Rc::clone(&txt),
-                        },
-                    ),
-                ],
+                seq: vec![Expression::symbol(
+                    "foo",
+                    ExprCtx {
+                        span: 6..9,
+                        txt: Rc::clone(&txt),
+                    },
+                )],
             },
         };
         let mut env = TestEnv::default();
