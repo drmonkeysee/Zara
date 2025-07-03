@@ -25,14 +25,16 @@ mod display {
     fn define_typename() {
         let expr = ExpressionKind::Define {
             name: "foo".into(),
-            value: Expression::string(
-                "bar",
-                ExprCtx {
-                    span: 0..5,
-                    txt: make_textline().into(),
-                },
-            )
-            .into(),
+            value: Some(
+                Expression::string(
+                    "bar",
+                    ExprCtx {
+                        span: 0..5,
+                        txt: make_textline().into(),
+                    },
+                )
+                .into(),
+            ),
         };
 
         assert_eq!(expr.as_typename().to_string(), "variable definition");
@@ -776,6 +778,33 @@ mod error {
         }));
 
         assert_eq!(err.to_string(), "unexpected datum type: procedure call");
+    }
+
+    #[test]
+    fn display_invalid_define() {
+        let txt = make_textline().into();
+        let err = ExprCtx {
+            span: 0..5,
+            txt: Rc::clone(&txt),
+        }
+        .into_error(ExpressionErrorKind::DefineInvalid);
+
+        assert_eq!(
+            err.to_string(),
+            "invalid define syntax, expected: (define <variable> [expression])"
+        );
+    }
+
+    #[test]
+    fn display_disallowed_define() {
+        let txt = make_textline().into();
+        let err = ExprCtx {
+            span: 0..5,
+            txt: Rc::clone(&txt),
+        }
+        .into_error(ExpressionErrorKind::DefineNotAllowed);
+
+        assert_eq!(err.to_string(), "define not allowed in this context");
     }
 
     #[test]

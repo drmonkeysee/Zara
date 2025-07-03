@@ -113,7 +113,7 @@ pub(super) enum ExpressionKind {
     },
     Define {
         name: Box<str>,
-        value: Box<Expression>,
+        value: Option<Box<Expression>>,
     },
     Literal(Value),
     Variable(Box<str>),
@@ -152,6 +152,8 @@ pub(super) enum ExpressionErrorKind {
     CommentBlockUnterminated,
     DatumExpected,
     DatumInvalid(ExpressionKind),
+    DefineInvalid,
+    DefineNotAllowed,
     IdentifierInvalid(TokenKind),
     IdentifierUnterminated,
     ListUnterminated,
@@ -180,6 +182,10 @@ impl Display for ExpressionErrorKind {
             Self::CommentBlockUnterminated => f.write_str("unterminated block comment"),
             Self::DatumExpected => f.write_str("expected datum"),
             Self::DatumInvalid(k) => write!(f, "unexpected datum type: {}", k.as_typename()),
+            Self::DefineInvalid => {
+                f.write_str("invalid define syntax, expected: (define <variable> [expression])")
+            }
+            Self::DefineNotAllowed => f.write_str("define not allowed in this context"),
             Self::IdentifierInvalid(t) => format_unexpected_token("verbatim identifier", t, f),
             Self::IdentifierUnterminated => f.write_str("unterminated verbatim identifier"),
             Self::ListUnterminated => f.write_str("unterminated list expression"),
