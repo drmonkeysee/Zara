@@ -1860,6 +1860,35 @@ mod list {
     }
 
     #[test]
+    fn into_empty_quote_apply() {
+        let txt = make_textline().into();
+        let p = ExprNode {
+            ctx: ExprCtx {
+                span: 0..7,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::List {
+                form: SyntacticForm::Quote,
+                seq: vec![],
+            },
+        };
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
+
+        let r = p.try_into_expr(&mut ns);
+
+        let errs = err_or_fail!(r);
+        assert_eq!(errs.len(), 1);
+        assert!(matches!(
+            &errs[0],
+            ExpressionError {
+                ctx: ExprCtx { span: TxtSpan { start: 0, end: 7 }, txt: line },
+                kind: ExpressionErrorKind::DatumExpected,
+            } if Rc::ptr_eq(&txt, &line)
+        ));
+    }
+
+    #[test]
     fn into_datum_list() {
         let txt = make_textline().into();
         let p = ExprNode {
@@ -2056,6 +2085,176 @@ mod list {
             ExpressionError {
                 ctx: ExprCtx { span: TxtSpan { start: 0, end: 8 }, txt: line },
                 kind: ExpressionErrorKind::PairUnterminated,
+            } if Rc::ptr_eq(&txt, &line)
+        ));
+    }
+
+    #[test]
+    fn into_define_variable() {
+        let txt = make_textline().into();
+        let p = ExprNode {
+            ctx: ExprCtx {
+                span: 0..18,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::List {
+                form: SyntacticForm::Define,
+                seq: vec![
+                    Expression::variable(
+                        "foo",
+                        ExprCtx {
+                            span: 8..11,
+                            txt: Rc::clone(&txt),
+                        },
+                    ),
+                    Expression::string(
+                        "bar",
+                        ExprCtx {
+                            span: 12..17,
+                            txt: Rc::clone(&txt),
+                        },
+                    ),
+                ],
+            },
+        };
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
+
+        let r = p.try_into_expr(&mut ns);
+
+        let expr = some_or_fail!(ok_or_fail!(r));
+        assert!(matches!(
+            expr,
+            Expression {
+                ctx: ExprCtx { span: TxtSpan { start: 0, end: 18 }, txt: line },
+                kind: ExpressionKind::Define { .. },
+            } if Rc::ptr_eq(&txt, &line)
+        ));
+        let ExpressionKind::Define { name, value } = expr.kind else {
+            unreachable!();
+        };
+        assert_eq!(name.as_ref(), "foo");
+        let val_expr = some_or_fail!(value);
+        let val = extract_or_fail!(val_expr.kind, ExpressionKind::Literal);
+        assert_eq!(val.to_string(), "\"bar\"");
+    }
+
+    #[test]
+    fn into_define_variable_no_value() {
+        let txt = make_textline().into();
+        let p = ExprNode {
+            ctx: ExprCtx {
+                span: 0..18,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::List {
+                form: SyntacticForm::Define,
+                seq: vec![Expression::variable(
+                    "foo",
+                    ExprCtx {
+                        span: 8..11,
+                        txt: Rc::clone(&txt),
+                    },
+                )],
+            },
+        };
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
+
+        let r = p.try_into_expr(&mut ns);
+
+        let expr = some_or_fail!(ok_or_fail!(r));
+        assert!(matches!(
+            expr,
+            Expression {
+                ctx: ExprCtx { span: TxtSpan { start: 0, end: 18 }, txt: line },
+                kind: ExpressionKind::Define { .. },
+            } if Rc::ptr_eq(&txt, &line)
+        ));
+        let ExpressionKind::Define { name, value } = expr.kind else {
+            unreachable!();
+        };
+        assert_eq!(name.as_ref(), "foo");
+        assert!(value.is_none());
+    }
+
+    #[test]
+    fn into_define_not_variable_expr() {
+        let txt = make_textline().into();
+        let p = ExprNode {
+            ctx: ExprCtx {
+                span: 0..23,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::List {
+                form: SyntacticForm::Define,
+                seq: vec![
+                    ExprCtx {
+                        span: 8..16,
+                        txt: Rc::clone(&txt),
+                    }
+                    .into_expr(ExpressionKind::Call {
+                        proc: Expression::variable(
+                            "myproc",
+                            ExprCtx {
+                                span: 9..15,
+                                txt: Rc::clone(&txt),
+                            },
+                        )
+                        .into(),
+                        args: [].into(),
+                    }),
+                    Expression::string(
+                        "bar",
+                        ExprCtx {
+                            span: 17..22,
+                            txt: Rc::clone(&txt),
+                        },
+                    ),
+                ],
+            },
+        };
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
+
+        let r = p.try_into_expr(&mut ns);
+
+        let errs = err_or_fail!(r);
+        assert_eq!(errs.len(), 1);
+        assert!(matches!(
+            &errs[0],
+            ExpressionError {
+                ctx: ExprCtx { span: TxtSpan { start: 0, end: 8 }, txt: line },
+                kind: ExpressionErrorKind::DefineInvalid,
+            } if Rc::ptr_eq(&txt, &line)
+        ));
+    }
+
+    #[test]
+    fn into_empty_define() {
+        let txt = make_textline().into();
+        let p = ExprNode {
+            ctx: ExprCtx {
+                span: 0..8,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::List {
+                form: SyntacticForm::Define,
+                seq: vec![],
+            },
+        };
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
+
+        let r = p.try_into_expr(&mut ns);
+
+        let errs = err_or_fail!(r);
+        assert_eq!(errs.len(), 1);
+        assert!(matches!(
+            &errs[0],
+            ExpressionError {
+                ctx: ExprCtx { span: TxtSpan { start: 0, end: 8 }, txt: line },
+                kind: ExpressionErrorKind::DefineInvalid,
             } if Rc::ptr_eq(&txt, &line)
         ));
     }
@@ -3480,6 +3679,69 @@ mod merge {
                     txt: line
                 },
                 kind: ExpressionErrorKind::PairUnterminated,
+            } if Rc::ptr_eq(&txt, &line)
+        ));
+    }
+
+    #[test]
+    fn list_does_not_allow_define_merge() {
+        let txt = make_textline().into();
+        let mut p = ExprNode {
+            ctx: ExprCtx {
+                span: 0..3,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::List {
+                form: SyntacticForm::Call,
+                seq: vec![Expression::variable(
+                    "+",
+                    ExprCtx {
+                        span: 0..3,
+                        txt: Rc::clone(&txt),
+                    },
+                )],
+            },
+        };
+        let other = ExprNode {
+            ctx: ExprCtx {
+                span: 3..15,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::List {
+                form: SyntacticForm::Define,
+                seq: vec![
+                    Expression::variable(
+                        "foo",
+                        ExprCtx {
+                            span: 4..7,
+                            txt: Rc::clone(&txt),
+                        },
+                    ),
+                    Expression::string(
+                        "bar",
+                        ExprCtx {
+                            span: 9..14,
+                            txt: Rc::clone(&txt),
+                        },
+                    ),
+                ],
+            },
+        };
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
+
+        let r = p.merge(other, &mut ns);
+
+        let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
+        assert_eq!(errs.len(), 1);
+        assert!(matches!(
+            &errs[0],
+            ExpressionError {
+                ctx: ExprCtx {
+                    span: TxtSpan { start: 0, end: 3 },
+                    txt: line
+                },
+                kind: ExpressionErrorKind::DefineNotAllowed,
             } if Rc::ptr_eq(&txt, &line)
         ));
     }

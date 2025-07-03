@@ -306,6 +306,9 @@ impl SyntacticForm {
                 }
                 _ => (),
             }
+            if let ExpressionKind::Define { .. } = expr.kind {
+                todo!("forbid define unless this is a body");
+            }
             seq.push(expr);
         }
         Ok(MergeFlow::Continue(()))
