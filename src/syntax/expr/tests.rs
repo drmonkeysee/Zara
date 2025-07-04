@@ -217,7 +217,7 @@ mod eval {
 
             let v = ok_or_fail!(r);
             assert!(matches!(v, Value::Character('a')));
-            assert!(env.binding.lookup("foo_called").is_some());
+            assert!(f.scope.lookup("foo_called").is_some());
         }
 
         #[test]
@@ -306,8 +306,8 @@ mod eval {
 
             let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
             assert_eq!(err.to_string(), "#<sys-error \"oh no\">");
-            assert!(env.binding.lookup("foo_called").is_some());
-            assert!(env.binding.lookup("baz_called").is_none());
+            assert!(f.scope.lookup("foo_called").is_some());
+            assert!(f.scope.lookup("baz_called").is_none());
         }
     }
 
@@ -654,6 +654,87 @@ mod eval {
             let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
             assert_eq!(err.to_string(), "#<env-error \"unbound variable: x\">");
             assert!(f.scope.lookup("foo_called").is_none());
+        }
+
+        #[test]
+        fn define_with_expr() {
+            let txt = make_textline().into();
+            let expr = ExprCtx {
+                span: 0..10,
+                txt: Rc::clone(&txt),
+            }
+            .into_expr(ExpressionKind::Define {
+                name: "foo".into(),
+                value: Some(
+                    Expression::string(
+                        "one",
+                        ExprCtx {
+                            span: 5..8,
+                            txt: Rc::clone(&txt),
+                        },
+                    )
+                    .into(),
+                ),
+            });
+            let mut env = TestEnv::default();
+            let mut f = env.new_frame();
+
+            let r = expr.eval(&mut f);
+
+            let v = ok_or_fail!(r);
+            assert!(matches!(v, Value::Unspecified));
+            assert!(matches!(f.scope.lookup("foo"), Some(Value::String(s)) if s.as_ref() == "one"))
+        }
+
+        #[test]
+        fn define_no_expr() {
+            let txt = make_textline().into();
+            let expr = ExprCtx {
+                span: 0..10,
+                txt: Rc::clone(&txt),
+            }
+            .into_expr(ExpressionKind::Define {
+                name: "foo".into(),
+                value: None,
+            });
+            let mut env = TestEnv::default();
+            let mut f = env.new_frame();
+
+            let r = expr.eval(&mut f);
+
+            let v = ok_or_fail!(r);
+            assert!(matches!(v, Value::Unspecified));
+            assert!(matches!(f.scope.lookup("foo"), Some(Value::Unspecified)))
+        }
+
+        #[test]
+        fn define_eval_failure() {
+            let txt = make_textline().into();
+            let expr = ExprCtx {
+                span: 0..7,
+                txt: Rc::clone(&txt),
+            }
+            .into_expr(ExpressionKind::Define {
+                name: "foo".into(),
+                value: Some(
+                    Expression::variable(
+                        "x",
+                        ExprCtx {
+                            span: 5..6,
+                            txt: Rc::clone(&txt),
+                        },
+                    )
+                    .into(),
+                ),
+            });
+            let mut env = TestEnv::default();
+            let mut f = env.new_frame();
+
+            let r = expr.eval(&mut f);
+
+            let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
+            assert_eq!(err.to_string(), "#<env-error \"unbound variable: x\">");
+            assert!(f.scope.lookup("foo").is_none());
         }
     }
 }
