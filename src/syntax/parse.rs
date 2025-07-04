@@ -763,19 +763,17 @@ fn into_syntactic_form(
              * [list, body-expr] -> define var:list.car lambda (formals:list.cdr) body
              * [pair, body-expr] -> define var:pair.car lambda formal:pair.cdr body
              */
-            if seq.is_empty() || seq.len() > 2 {
-                return Err(vec![ctx.into_error(ExpressionErrorKind::DefineInvalid)]);
+            if (1..3).contains(&seq.len()) {
+                let mut iter = seq.into_iter();
+                let binding = iter.next().unwrap();
+                if let ExpressionKind::Variable(n) = binding.kind {
+                    return Ok(Some(ctx.into_expr(ExpressionKind::Define {
+                        name: n,
+                        expr: iter.next().map(Box::new),
+                    })));
+                }
             }
-            let mut iter = seq.into_iter();
-            let binding = iter.next().unwrap();
-            if let ExpressionKind::Variable(n) = binding.kind {
-                Ok(Some(ctx.into_expr(ExpressionKind::Define {
-                    name: n,
-                    expr: iter.next().map(Box::new),
-                })))
-            } else {
-                Err(vec![ctx.into_error(ExpressionErrorKind::DefineInvalid)])
-            }
+            Err(vec![ctx.into_error(ExpressionErrorKind::DefineInvalid)])
         }
         SyntacticForm::PairClosed => into_list(seq, ctx, true),
         SyntacticForm::PairOpen => Err(vec![ctx.into_error(ExpressionErrorKind::PairUnterminated)]),
@@ -786,7 +784,19 @@ fn into_syntactic_form(
                 Err(vec![ctx.into_error(ExpressionErrorKind::QuoteInvalid)])
             }
         }
-        SyntacticForm::Set => todo!("set!->expr"),
+        SyntacticForm::Set => {
+            if seq.len() == 2 {
+                let mut iter = seq.into_iter();
+                let var = iter.next().unwrap();
+                if let ExpressionKind::Variable(n) = var.kind {
+                    return Ok(Some(ctx.into_expr(ExpressionKind::Set {
+                        var: n,
+                        expr: iter.next().unwrap().into(),
+                    })));
+                }
+            }
+            Err(vec![ctx.into_error(ExpressionErrorKind::SetInvalid)])
+        }
     }
 }
 

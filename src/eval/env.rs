@@ -15,6 +15,10 @@ pub(crate) struct Frame<'a> {
 pub(crate) struct Binding(HashMap<Box<str>, Value>);
 
 impl Binding {
+    pub(crate) fn bound(&self, name: &str) -> bool {
+        self.0.contains_key(name)
+    }
+
     pub(crate) fn lookup(&self, name: &str) -> Option<Value> {
         self.0.get(name).cloned()
     }

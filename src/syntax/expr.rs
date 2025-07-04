@@ -101,7 +101,15 @@ impl Expression {
                 Ok(Value::Unspecified)
             }
             ExpressionKind::Literal(v) => Ok(v),
-            ExpressionKind::Set { var, expr } => todo!("set! eval"),
+            ExpressionKind::Set { var, expr } => {
+                if env.scope.bound(&var) {
+                    let val = expr.eval(env)?;
+                    env.scope.bind(var, val);
+                    Ok(Value::Unspecified)
+                } else {
+                    Err(Exception::signal(Condition::bind_error(&var)))
+                }
+            }
             ExpressionKind::Variable(n) => env
                 .scope
                 .lookup(&n)
