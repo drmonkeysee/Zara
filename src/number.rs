@@ -376,7 +376,7 @@ impl Real {
                 .try_into_exact()?
                 .try_into_denominator()?
                 .into_inexact(),
-            Self::Integer(n) => n.into_denominator().into(),
+            Self::Integer(_) => Integer::one().into(),
             Self::Rational(q) => q.into_denominator().into(),
         })
     }
@@ -635,10 +635,6 @@ impl Integer {
 
     fn into_numerator(self) -> Self {
         self
-    }
-
-    fn into_denominator(self) -> Self {
-        Self::one()
     }
 }
 
