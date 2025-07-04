@@ -3783,7 +3783,7 @@ mod merge {
         let txt = make_textline().into();
         let mut p = ExprNode {
             ctx: ExprCtx {
-                span: 0..3,
+                span: 0..17,
                 txt: Rc::clone(&txt),
             },
             mode: ParseMode::List {
@@ -3833,7 +3833,7 @@ mod merge {
             &errs[0],
             ExpressionError {
                 ctx: ExprCtx {
-                    span: TxtSpan { start: 0, end: 3 },
+                    span: TxtSpan { start: 3, end: 15 },
                     txt: line
                 },
                 kind: ExpressionErrorKind::DefineNotAllowed,

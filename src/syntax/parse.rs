@@ -307,7 +307,10 @@ impl SyntacticForm {
                 _ => (),
             }
             if let ExpressionKind::Define { .. } = expr.kind {
-                todo!("forbid define unless this is a body");
+                // TODO: allow for body or top-level begin
+                return Err(ParserError::Syntax(SyntaxError(vec![
+                    expr.ctx.into_error(ExpressionErrorKind::DefineNotAllowed),
+                ])));
             }
             seq.push(expr);
         }
