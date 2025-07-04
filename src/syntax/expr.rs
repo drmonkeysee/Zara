@@ -184,7 +184,8 @@ impl Display for ExpressionErrorKind {
             Self::DatumExpected => f.write_str("expected datum"),
             Self::DatumInvalid(k) => write!(f, "unexpected datum type: {}", k.as_typename()),
             Self::DefineInvalid => {
-                f.write_str("invalid syntax, expected: (define <variable> [expression])")
+                // TODO: have lambda form mode as well
+                f.write_str("invalid syntax, expected: (define <identifier> [expression])")
             }
             Self::DefineNotAllowed => f.write_str("define not allowed in this context"),
             Self::IdentifierInvalid(t) => format_unexpected_token("verbatim identifier", t, f),

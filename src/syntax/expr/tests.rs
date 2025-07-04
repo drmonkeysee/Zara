@@ -791,7 +791,7 @@ mod error {
 
         assert_eq!(
             err.to_string(),
-            "invalid syntax, expected: (define <variable> [expression])"
+            "invalid syntax, expected: (define <identifier> [expression])"
         );
     }
 

@@ -1883,7 +1883,7 @@ mod list {
             &errs[0],
             ExpressionError {
                 ctx: ExprCtx { span: TxtSpan { start: 0, end: 7 }, txt: line },
-                kind: ExpressionErrorKind::DatumExpected,
+                kind: ExpressionErrorKind::QuoteInvalid,
             } if Rc::ptr_eq(&txt, &line)
         ));
     }
@@ -2268,7 +2268,7 @@ mod list {
         assert!(matches!(
             &errs[0],
             ExpressionError {
-                ctx: ExprCtx { span: TxtSpan { start: 0, end: 8 }, txt: line },
+                ctx: ExprCtx { span: TxtSpan { start: 0, end: 23 }, txt: line },
                 kind: ExpressionErrorKind::DefineInvalid,
             } if Rc::ptr_eq(&txt, &line)
         ));
@@ -2298,6 +2298,57 @@ mod list {
             &errs[0],
             ExpressionError {
                 ctx: ExprCtx { span: TxtSpan { start: 0, end: 8 }, txt: line },
+                kind: ExpressionErrorKind::DefineInvalid,
+            } if Rc::ptr_eq(&txt, &line)
+        ));
+    }
+
+    #[test]
+    fn into_define_too_many_args() {
+        let txt = make_textline().into();
+        let p = ExprNode {
+            ctx: ExprCtx {
+                span: 0..25,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::List {
+                form: SyntacticForm::Define,
+                seq: vec![
+                    Expression::variable(
+                        "foo",
+                        ExprCtx {
+                            span: 8..11,
+                            txt: Rc::clone(&txt),
+                        },
+                    ),
+                    Expression::string(
+                        "bar",
+                        ExprCtx {
+                            span: 12..17,
+                            txt: Rc::clone(&txt),
+                        },
+                    ),
+                    Expression::string(
+                        "baz",
+                        ExprCtx {
+                            span: 18..23,
+                            txt: Rc::clone(&txt),
+                        },
+                    ),
+                ],
+            },
+        };
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
+
+        let r = p.try_into_expr(&mut ns);
+
+        let errs = err_or_fail!(r);
+        assert_eq!(errs.len(), 1);
+        assert!(matches!(
+            &errs[0],
+            ExpressionError {
+                ctx: ExprCtx { span: TxtSpan { start: 0, end: 25 }, txt: line },
                 kind: ExpressionErrorKind::DefineInvalid,
             } if Rc::ptr_eq(&txt, &line)
         ));

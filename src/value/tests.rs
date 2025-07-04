@@ -926,7 +926,6 @@ mod cloning {
     #[test]
     fn clone_with_underlying_move_only() {
         let v = zlist![Value::Unspecified];
-        dbg!(&v);
 
         let c = v.clone();
 

@@ -757,18 +757,27 @@ fn into_syntactic_form(
              * [list, body-expr] -> define var:list.car lambda (formals:list.cdr) body
              * [pair, body-expr] -> define var:pair.car lambda formal:pair.cdr body
              */
-            todo!("define-form->expr")
+            if seq.is_empty() || seq.len() > 2 {
+                return Err(vec![ctx.into_error(ExpressionErrorKind::DefineInvalid)]);
+            }
+            let mut iter = seq.into_iter();
+            let binding = iter.next().unwrap();
+            if let ExpressionKind::Variable(n) = binding.kind {
+                Ok(Some(ctx.into_expr(ExpressionKind::Define {
+                    name: n,
+                    value: iter.next().map(Box::new),
+                })))
+            } else {
+                Err(vec![ctx.into_error(ExpressionErrorKind::DefineInvalid)])
+            }
         }
         SyntacticForm::PairClosed => into_list(seq, ctx, true),
         SyntacticForm::PairOpen => Err(vec![ctx.into_error(ExpressionErrorKind::PairUnterminated)]),
         SyntacticForm::Quote => {
-            if seq.len() > 1 {
-                Err(vec![ctx.into_error(ExpressionErrorKind::QuoteInvalid)])
+            if seq.len() == 1 {
+                Ok(Some(seq.into_iter().next().unwrap()))
             } else {
-                seq.into_iter().next().map_or_else(
-                    || Err(vec![ctx.into_error(ExpressionErrorKind::DatumExpected)]),
-                    |expr| Ok(Some(expr)),
-                )
+                Err(vec![ctx.into_error(ExpressionErrorKind::QuoteInvalid)])
             }
         }
     }
