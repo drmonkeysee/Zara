@@ -41,6 +41,23 @@ mod display {
     }
 
     #[test]
+    fn set_typename() {
+        let expr = ExpressionKind::Set {
+            var: "foo".into(),
+            expr: Expression::string(
+                "bar",
+                ExprCtx {
+                    span: 0..5,
+                    txt: make_textline().into(),
+                },
+            )
+            .into(),
+        };
+
+        assert_eq!(expr.as_typename().to_string(), "variable assignment");
+    }
+
+    #[test]
     fn variable_typename() {
         let expr = ExpressionKind::Variable("foo".into());
 
@@ -736,6 +753,92 @@ mod eval {
             assert_eq!(err.to_string(), "#<env-error \"unbound variable: x\">");
             assert!(f.scope.lookup("foo").is_none());
         }
+
+        #[test]
+        fn set_with_expr() {
+            let txt = make_textline().into();
+            let expr = ExprCtx {
+                span: 0..10,
+                txt: Rc::clone(&txt),
+            }
+            .into_expr(ExpressionKind::Set {
+                var: "foo".into(),
+                expr: Expression::string(
+                    "one",
+                    ExprCtx {
+                        span: 5..8,
+                        txt: Rc::clone(&txt),
+                    },
+                )
+                .into(),
+            });
+            let mut env = TestEnv::default();
+            env.binding.bind("foo", Value::Unspecified);
+            let mut f = env.new_frame();
+
+            let r = expr.eval(&mut f);
+
+            let v = ok_or_fail!(r);
+            assert!(matches!(v, Value::Unspecified));
+            assert!(matches!(f.scope.lookup("foo"), Some(Value::String(s)) if s.as_ref() == "one"))
+        }
+
+        #[test]
+        fn set_eval_failure() {
+            let txt = make_textline().into();
+            let expr = ExprCtx {
+                span: 0..7,
+                txt: Rc::clone(&txt),
+            }
+            .into_expr(ExpressionKind::Set {
+                var: "foo".into(),
+                expr: Expression::variable(
+                    "x",
+                    ExprCtx {
+                        span: 5..6,
+                        txt: Rc::clone(&txt),
+                    },
+                )
+                .into(),
+            });
+            let mut env = TestEnv::default();
+            env.binding.bind("foo", Value::Unspecified);
+            let mut f = env.new_frame();
+
+            let r = expr.eval(&mut f);
+
+            let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
+            assert_eq!(err.to_string(), "#<env-error \"unbound variable: x\">");
+            assert!(matches!(f.scope.lookup("foo"), Some(Value::Unspecified)));
+        }
+
+        #[test]
+        fn set_eval_no_binding() {
+            let txt = make_textline().into();
+            let expr = ExprCtx {
+                span: 0..7,
+                txt: Rc::clone(&txt),
+            }
+            .into_expr(ExpressionKind::Set {
+                var: "foo".into(),
+                expr: Expression::variable(
+                    "x",
+                    ExprCtx {
+                        span: 5..6,
+                        txt: Rc::clone(&txt),
+                    },
+                )
+                .into(),
+            });
+            let mut env = TestEnv::default();
+            let mut f = env.new_frame();
+
+            let r = expr.eval(&mut f);
+
+            let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
+            assert_eq!(err.to_string(), "#<env-error \"unbound variable: foo\">");
+            assert!(f.scope.lookup("foo").is_none());
+        }
     }
 }
 
@@ -993,6 +1096,20 @@ mod error {
         assert_eq!(
             err.to_string(),
             format!("unexpected token in sequence: {}", TokenKind::Comment)
+        );
+    }
+
+    #[test]
+    fn display_set_invalid() {
+        let err = ExprCtx {
+            span: 0..5,
+            txt: make_textline().into(),
+        }
+        .into_error(ExpressionErrorKind::SetInvalid);
+
+        assert_eq!(
+            err.to_string(),
+            "invalid syntax, expected: (set! <variable> <expression>)"
         );
     }
 

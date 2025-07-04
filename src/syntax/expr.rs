@@ -101,6 +101,7 @@ impl Expression {
                 Ok(Value::Unspecified)
             }
             ExpressionKind::Literal(v) => Ok(v),
+            ExpressionKind::Set { var, expr } => todo!("set! eval"),
             ExpressionKind::Variable(n) => env
                 .scope
                 .lookup(&n)
@@ -120,6 +121,10 @@ pub(super) enum ExpressionKind {
         expr: Option<Box<Expression>>,
     },
     Literal(Value),
+    Set {
+        var: Box<str>,
+        expr: Box<Expression>,
+    },
     Variable(Box<str>),
 }
 
@@ -167,6 +172,7 @@ pub(super) enum ExpressionErrorKind {
     ProcedureEmpty,
     QuoteInvalid,
     SeqInvalid(TokenKind),
+    SetInvalid,
     StrInvalid(TokenKind),
     StrUnterminated,
     Unimplemented(TokenKind),
@@ -189,7 +195,7 @@ impl Display for ExpressionErrorKind {
             Self::DatumInvalid(k) => write!(f, "unexpected datum type: {}", k.as_typename()),
             Self::DefineInvalid => {
                 // TODO: have lambda form mode as well
-                f.write_str("invalid syntax, expected: (define <identifier> [expression])")
+                format_invalid_form("(define <identifier> [expression])", f)
             }
             Self::DefineNotAllowed => f.write_str("define not allowed in this context"),
             Self::IdentifierInvalid(t) => format_unexpected_token("verbatim identifier", t, f),
@@ -199,8 +205,9 @@ impl Display for ExpressionErrorKind {
             Self::PairUnexpected => f.write_str("unexpected pair syntax"),
             Self::PairUnterminated => f.write_str("unterminated pair expression"),
             Self::ProcedureEmpty => f.write_str("empty procedure call"),
-            Self::QuoteInvalid => f.write_str("invalid syntax, expected: (quote <datum>)"),
+            Self::QuoteInvalid => format_invalid_form("(quote <datum>)", f),
             Self::SeqInvalid(t) => format_unexpected_token("sequence", t, f),
+            Self::SetInvalid => format_invalid_form("(set! <variable> <expression>)", f),
             Self::StrInvalid(t) => format_unexpected_token("string", t, f),
             Self::StrUnterminated => f.write_str("unterminated string literal"),
             Self::Unimplemented(t) => write!(f, "{t} parsing not yet implemented"),
@@ -250,8 +257,9 @@ impl Display for TypeName<'_> {
         match self.0 {
             ExpressionKind::Call { .. } => f.write_str("procedure call"),
             ExpressionKind::Define { .. } => f.write_str("variable definition"),
-            ExpressionKind::Variable(_) => f.write_str("variable"),
             ExpressionKind::Literal(val) => val.as_typename().fmt(f),
+            ExpressionKind::Set { .. } => f.write_str("variable assignment"),
+            ExpressionKind::Variable(_) => f.write_str("variable"),
         }
     }
 }
@@ -274,4 +282,8 @@ fn eval_call(proc: Expression, args: Box<[Expression]>, env: &mut Frame) -> Eval
 
 fn format_unexpected_token(kind: &str, token: &TokenKind, f: &mut Formatter) -> fmt::Result {
     write!(f, "unexpected token in {kind}: {token}")
+}
+
+fn format_invalid_form(form: &str, f: &mut Formatter) -> fmt::Result {
+    write!(f, "invalid syntax, expected: {form}")
 }

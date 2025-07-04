@@ -2353,6 +2353,193 @@ mod list {
             } if Rc::ptr_eq(&txt, &line)
         ));
     }
+
+    #[test]
+    fn into_set_variable() {
+        let txt = make_textline().into();
+        let p = ExprNode {
+            ctx: ExprCtx {
+                span: 0..18,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::List {
+                form: SyntacticForm::Set,
+                seq: vec![
+                    Expression::variable(
+                        "foo",
+                        ExprCtx {
+                            span: 8..11,
+                            txt: Rc::clone(&txt),
+                        },
+                    ),
+                    Expression::string(
+                        "bar",
+                        ExprCtx {
+                            span: 12..17,
+                            txt: Rc::clone(&txt),
+                        },
+                    ),
+                ],
+            },
+        };
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
+
+        let r = p.try_into_expr(&mut ns);
+
+        let expr = some_or_fail!(ok_or_fail!(r));
+        assert!(matches!(
+            expr,
+            Expression {
+                ctx: ExprCtx { span: TxtSpan { start: 0, end: 18 }, txt: line },
+                kind: ExpressionKind::Set { .. },
+            } if Rc::ptr_eq(&txt, &line)
+        ));
+        let ExpressionKind::Set { var, expr } = expr.kind else {
+            unreachable!();
+        };
+        assert_eq!(var.as_ref(), "foo");
+        let val = extract_or_fail!(expr.kind, ExpressionKind::Literal);
+        assert_eq!(val.to_string(), "\"bar\"");
+    }
+
+    #[test]
+    fn into_set_not_variable_expr() {
+        let txt = make_textline().into();
+        let p = ExprNode {
+            ctx: ExprCtx {
+                span: 0..23,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::List {
+                form: SyntacticForm::Set,
+                seq: vec![
+                    ExprCtx {
+                        span: 8..16,
+                        txt: Rc::clone(&txt),
+                    }
+                    .into_expr(ExpressionKind::Call {
+                        proc: Expression::variable(
+                            "myproc",
+                            ExprCtx {
+                                span: 9..15,
+                                txt: Rc::clone(&txt),
+                            },
+                        )
+                        .into(),
+                        args: [].into(),
+                    }),
+                    Expression::string(
+                        "bar",
+                        ExprCtx {
+                            span: 17..22,
+                            txt: Rc::clone(&txt),
+                        },
+                    ),
+                ],
+            },
+        };
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
+
+        let r = p.try_into_expr(&mut ns);
+
+        let errs = err_or_fail!(r);
+        assert_eq!(errs.len(), 1);
+        assert!(matches!(
+            &errs[0],
+            ExpressionError {
+                ctx: ExprCtx { span: TxtSpan { start: 0, end: 23 }, txt: line },
+                kind: ExpressionErrorKind::SetInvalid,
+            } if Rc::ptr_eq(&txt, &line)
+        ));
+    }
+
+    #[test]
+    fn into_set_too_few_args() {
+        let txt = make_textline().into();
+        let p = ExprNode {
+            ctx: ExprCtx {
+                span: 0..25,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::List {
+                form: SyntacticForm::Set,
+                seq: vec![Expression::variable(
+                    "foo",
+                    ExprCtx {
+                        span: 8..11,
+                        txt: Rc::clone(&txt),
+                    },
+                )],
+            },
+        };
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
+
+        let r = p.try_into_expr(&mut ns);
+
+        let errs = err_or_fail!(r);
+        assert_eq!(errs.len(), 1);
+        assert!(matches!(
+            &errs[0],
+            ExpressionError {
+                ctx: ExprCtx { span: TxtSpan { start: 0, end: 25 }, txt: line },
+                kind: ExpressionErrorKind::SetInvalid,
+            } if Rc::ptr_eq(&txt, &line)
+        ));
+    }
+
+    #[test]
+    fn into_set_too_many_args() {
+        let txt = make_textline().into();
+        let p = ExprNode {
+            ctx: ExprCtx {
+                span: 0..25,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::List {
+                form: SyntacticForm::Set,
+                seq: vec![
+                    Expression::variable(
+                        "foo",
+                        ExprCtx {
+                            span: 8..11,
+                            txt: Rc::clone(&txt),
+                        },
+                    ),
+                    Expression::string(
+                        "bar",
+                        ExprCtx {
+                            span: 12..17,
+                            txt: Rc::clone(&txt),
+                        },
+                    ),
+                    Expression::string(
+                        "baz",
+                        ExprCtx {
+                            span: 18..23,
+                            txt: Rc::clone(&txt),
+                        },
+                    ),
+                ],
+            },
+        };
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
+
+        let r = p.try_into_expr(&mut ns);
+
+        let errs = err_or_fail!(r);
+        assert_eq!(errs.len(), 1);
+        assert!(matches!(
+            &errs[0],
+            ExpressionError {
+                ctx: ExprCtx { span: TxtSpan { start: 0, end: 25 }, txt: line },
+                kind: ExpressionErrorKind::SetInvalid,
+            } if Rc::ptr_eq(&txt, &line)
+        ));
+    }
 }
 
 mod string {

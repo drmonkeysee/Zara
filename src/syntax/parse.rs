@@ -250,16 +250,19 @@ enum SyntacticForm {
     PairClosed,
     PairOpen,
     Quote,
+    Set,
 }
 
 impl SyntacticForm {
     const DEFINE: &str = "define";
     const QUOTE: &str = "quote";
+    const SET: &str = "set!";
 
     fn from_str(s: &str) -> Option<Self> {
         match s {
             Self::DEFINE => Some(Self::Define),
             Self::QUOTE => Some(Self::Quote),
+            Self::SET => Some(Self::Set),
             _ => None,
         }
     }
@@ -783,6 +786,7 @@ fn into_syntactic_form(
                 Err(vec![ctx.into_error(ExpressionErrorKind::QuoteInvalid)])
             }
         }
+        SyntacticForm::Set => todo!("set!->expr"),
     }
 }
 
