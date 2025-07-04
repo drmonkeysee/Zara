@@ -762,9 +762,14 @@ fn into_syntactic_form(
         SyntacticForm::PairClosed => into_list(seq, ctx, true),
         SyntacticForm::PairOpen => Err(vec![ctx.into_error(ExpressionErrorKind::PairUnterminated)]),
         SyntacticForm::Quote => {
-            // TODO: handle as an actual error
-            debug_assert!(seq.len() == 1, "invalid syntax for quote");
-            Ok(Some(seq.into_iter().next().unwrap()))
+            if seq.len() > 1 {
+                Err(vec![ctx.into_error(ExpressionErrorKind::QuoteInvalid)])
+            } else {
+                seq.into_iter().next().map_or_else(
+                    || Err(vec![ctx.into_error(ExpressionErrorKind::DatumExpected)]),
+                    |expr| Ok(Some(expr)),
+                )
+            }
         }
     }
 }

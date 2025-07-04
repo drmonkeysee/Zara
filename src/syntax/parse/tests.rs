@@ -1889,6 +1889,50 @@ mod list {
     }
 
     #[test]
+    fn into_quote_apply_too_many_args() {
+        let txt = make_textline().into();
+        let p = ExprNode {
+            ctx: ExprCtx {
+                span: 0..14,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::List {
+                form: SyntacticForm::Quote,
+                seq: vec![
+                    Expression::symbol(
+                        "foo",
+                        ExprCtx {
+                            span: 6..9,
+                            txt: Rc::clone(&txt),
+                        },
+                    ),
+                    Expression::symbol(
+                        "bar",
+                        ExprCtx {
+                            span: 10..13,
+                            txt: Rc::clone(&txt),
+                        },
+                    ),
+                ],
+            },
+        };
+        let mut env = TestEnv::default();
+        let mut ns = env.new_namespace();
+
+        let r = p.try_into_expr(&mut ns);
+
+        let errs = err_or_fail!(r);
+        assert_eq!(errs.len(), 1);
+        assert!(matches!(
+            &errs[0],
+            ExpressionError {
+                ctx: ExprCtx { span: TxtSpan { start: 0, end: 14 }, txt: line },
+                kind: ExpressionErrorKind::QuoteInvalid,
+            } if Rc::ptr_eq(&txt, &line)
+        ));
+    }
+
+    #[test]
     fn into_datum_list() {
         let txt = make_textline().into();
         let p = ExprNode {

@@ -161,6 +161,7 @@ pub(super) enum ExpressionErrorKind {
     PairUnexpected,
     PairUnterminated,
     ProcedureEmpty,
+    QuoteInvalid,
     SeqInvalid(TokenKind),
     StrInvalid(TokenKind),
     StrUnterminated,
@@ -183,7 +184,7 @@ impl Display for ExpressionErrorKind {
             Self::DatumExpected => f.write_str("expected datum"),
             Self::DatumInvalid(k) => write!(f, "unexpected datum type: {}", k.as_typename()),
             Self::DefineInvalid => {
-                f.write_str("invalid define syntax, expected: (define <variable> [expression])")
+                f.write_str("invalid syntax, expected: (define <variable> [expression])")
             }
             Self::DefineNotAllowed => f.write_str("define not allowed in this context"),
             Self::IdentifierInvalid(t) => format_unexpected_token("verbatim identifier", t, f),
@@ -193,6 +194,7 @@ impl Display for ExpressionErrorKind {
             Self::PairUnexpected => f.write_str("unexpected pair syntax"),
             Self::PairUnterminated => f.write_str("unterminated pair expression"),
             Self::ProcedureEmpty => f.write_str("empty procedure call"),
+            Self::QuoteInvalid => f.write_str("invalid syntax, expected: (quote <datum>)"),
             Self::SeqInvalid(t) => format_unexpected_token("sequence", t, f),
             Self::StrInvalid(t) => format_unexpected_token("string", t, f),
             Self::StrUnterminated => f.write_str("unterminated string literal"),

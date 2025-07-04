@@ -791,7 +791,7 @@ mod error {
 
         assert_eq!(
             err.to_string(),
-            "invalid define syntax, expected: (define <variable> [expression])"
+            "invalid syntax, expected: (define <variable> [expression])"
         );
     }
 
@@ -888,6 +888,17 @@ mod error {
         .into_error(ExpressionErrorKind::ProcedureEmpty);
 
         assert_eq!(err.to_string(), "empty procedure call");
+    }
+
+    #[test]
+    fn display_quote_invalid() {
+        let err = ExprCtx {
+            span: 0..5,
+            txt: make_textline().into(),
+        }
+        .into_error(ExpressionErrorKind::QuoteInvalid);
+
+        assert_eq!(err.to_string(), "invalid syntax, expected: (quote <datum>)");
     }
 
     #[test]
