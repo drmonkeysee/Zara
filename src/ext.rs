@@ -16,9 +16,7 @@ pub(crate) fn load(scope: &mut Binding) {
     core::bind_intrinsic(scope, "zara-bindings", 0..0, bindings);
     core::bind_intrinsic(scope, "zara-symbols", 0..0, symbols);
 
-    // TODO: test variables
-    scope.bind("x", Value::real(5));
-    scope.bind("z", Value::Unspecified);
+    // TODO: test variable
     scope.bind(
         "ex",
         Value::Error(Condition::system_error("test error").into()),

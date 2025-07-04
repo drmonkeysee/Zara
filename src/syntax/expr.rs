@@ -95,7 +95,11 @@ impl Expression {
     fn eval(self, env: &mut Frame) -> EvalResult {
         match self.kind {
             ExpressionKind::Call { args, proc } => eval_call(*proc, args, env),
-            ExpressionKind::Define { name, value } => todo!("eval define"),
+            ExpressionKind::Define { name, expr } => {
+                let val = expr.map_or(Ok(Value::Unspecified), |expr| expr.eval(env))?;
+                env.scope.bind(name, val);
+                Ok(Value::Unspecified)
+            }
             ExpressionKind::Literal(v) => Ok(v),
             ExpressionKind::Variable(n) => env
                 .scope
@@ -113,7 +117,7 @@ pub(super) enum ExpressionKind {
     },
     Define {
         name: Box<str>,
-        value: Option<Box<Expression>>,
+        expr: Option<Box<Expression>>,
     },
     Literal(Value),
     Variable(Box<str>),

@@ -2174,11 +2174,11 @@ mod list {
                 kind: ExpressionKind::Define { .. },
             } if Rc::ptr_eq(&txt, &line)
         ));
-        let ExpressionKind::Define { name, value } = expr.kind else {
+        let ExpressionKind::Define { name, expr } = expr.kind else {
             unreachable!();
         };
         assert_eq!(name.as_ref(), "foo");
-        let val_expr = some_or_fail!(value);
+        let val_expr = some_or_fail!(expr);
         let val = extract_or_fail!(val_expr.kind, ExpressionKind::Literal);
         assert_eq!(val.to_string(), "\"bar\"");
     }
@@ -2215,11 +2215,11 @@ mod list {
                 kind: ExpressionKind::Define { .. },
             } if Rc::ptr_eq(&txt, &line)
         ));
-        let ExpressionKind::Define { name, value } = expr.kind else {
+        let ExpressionKind::Define { name, expr } = expr.kind else {
             unreachable!();
         };
         assert_eq!(name.as_ref(), "foo");
-        assert!(value.is_none());
+        assert!(expr.is_none());
     }
 
     #[test]

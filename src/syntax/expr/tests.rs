@@ -25,7 +25,7 @@ mod display {
     fn define_typename() {
         let expr = ExpressionKind::Define {
             name: "foo".into(),
-            value: Some(
+            expr: Some(
                 Expression::string(
                     "bar",
                     ExprCtx {
@@ -665,7 +665,7 @@ mod eval {
             }
             .into_expr(ExpressionKind::Define {
                 name: "foo".into(),
-                value: Some(
+                expr: Some(
                     Expression::string(
                         "one",
                         ExprCtx {
@@ -695,7 +695,7 @@ mod eval {
             }
             .into_expr(ExpressionKind::Define {
                 name: "foo".into(),
-                value: None,
+                expr: None,
             });
             let mut env = TestEnv::default();
             let mut f = env.new_frame();
@@ -716,7 +716,7 @@ mod eval {
             }
             .into_expr(ExpressionKind::Define {
                 name: "foo".into(),
-                value: Some(
+                expr: Some(
                     Expression::variable(
                         "x",
                         ExprCtx {

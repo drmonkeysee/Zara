@@ -768,7 +768,7 @@ fn into_syntactic_form(
             if let ExpressionKind::Variable(n) = binding.kind {
                 Ok(Some(ctx.into_expr(ExpressionKind::Define {
                     name: n,
-                    value: iter.next().map(Box::new),
+                    expr: iter.next().map(Box::new),
                 })))
             } else {
                 Err(vec![ctx.into_error(ExpressionErrorKind::DefineInvalid)])
