@@ -960,7 +960,7 @@ mod eval {
                     span: 4..6,
                     txt: Rc::clone(&txt),
                 }
-                .into_expr(ExpressionKind::Literal(Value::Boolean(true)))
+                .into_expr(ExpressionKind::Literal(Value::Boolean(false)))
                 .into(),
                 con: Expression::symbol(
                     "a",

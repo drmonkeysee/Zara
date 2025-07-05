@@ -100,7 +100,13 @@ impl Expression {
                 env.scope.bind(name, val);
                 Ok(Value::Unspecified)
             }
-            ExpressionKind::If { test, con, alt } => todo!("if eval"),
+            ExpressionKind::If { test, con, alt } => {
+                if let Value::Boolean(false) = test.eval(env)? {
+                    alt.map_or(Ok(Value::Unspecified), |expr| expr.eval(env))
+                } else {
+                    con.eval(env)
+                }
+            }
             ExpressionKind::Literal(v) => Ok(v),
             ExpressionKind::Set { var, expr } => {
                 if env.scope.bound(&var) {
