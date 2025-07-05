@@ -18,7 +18,7 @@ mod display {
             proc: proc.into(),
         };
 
-        assert_eq!(expr.as_typename().to_string(), "procedure call");
+        assert_eq!(expr.as_typename().to_string(), "call");
     }
 
     #[test]
@@ -37,7 +37,31 @@ mod display {
             ),
         };
 
-        assert_eq!(expr.as_typename().to_string(), "variable definition");
+        assert_eq!(expr.as_typename().to_string(), "definition");
+    }
+
+    #[test]
+    fn if_typename() {
+        let txt = make_textline().into();
+        let expr = ExpressionKind::If {
+            test: ExprCtx {
+                span: 0..4,
+                txt: Rc::clone(&txt),
+            }
+            .into_expr(ExpressionKind::Literal(Value::Boolean(true)))
+            .into(),
+            con: Expression::string(
+                "bar",
+                ExprCtx {
+                    span: 5..8,
+                    txt: Rc::clone(&txt),
+                },
+            )
+            .into(),
+            alt: None,
+        };
+
+        assert_eq!(expr.as_typename().to_string(), "conditional");
     }
 
     #[test]
@@ -54,7 +78,7 @@ mod display {
             .into(),
         };
 
-        assert_eq!(expr.as_typename().to_string(), "variable assignment");
+        assert_eq!(expr.as_typename().to_string(), "assignment");
     }
 
     #[test]

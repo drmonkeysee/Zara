@@ -100,6 +100,7 @@ impl Expression {
                 env.scope.bind(name, val);
                 Ok(Value::Unspecified)
             }
+            ExpressionKind::If { test, con, alt } => todo!("if eval"),
             ExpressionKind::Literal(v) => Ok(v),
             ExpressionKind::Set { var, expr } => {
                 if env.scope.bound(&var) {
@@ -127,6 +128,11 @@ pub(super) enum ExpressionKind {
     Define {
         name: Box<str>,
         expr: Option<Box<Expression>>,
+    },
+    If {
+        test: Box<Expression>,
+        con: Box<Expression>,
+        alt: Option<Box<Expression>>,
     },
     Literal(Value),
     Set {
@@ -263,10 +269,11 @@ struct TypeName<'a>(&'a ExpressionKind);
 impl Display for TypeName<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self.0 {
-            ExpressionKind::Call { .. } => f.write_str("procedure call"),
-            ExpressionKind::Define { .. } => f.write_str("variable definition"),
+            ExpressionKind::Call { .. } => f.write_str("call"),
+            ExpressionKind::Define { .. } => f.write_str("definition"),
+            ExpressionKind::If { .. } => f.write_str("conditional"),
             ExpressionKind::Literal(val) => val.as_typename().fmt(f),
-            ExpressionKind::Set { .. } => f.write_str("variable assignment"),
+            ExpressionKind::Set { .. } => f.write_str("assignment"),
             ExpressionKind::Variable(_) => f.write_str("variable"),
         }
     }
