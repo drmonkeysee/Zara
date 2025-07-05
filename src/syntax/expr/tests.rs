@@ -863,6 +863,156 @@ mod eval {
             assert_eq!(err.to_string(), "#<env-error \"unbound variable: foo\">");
             assert!(f.scope.lookup("foo").is_none());
         }
+
+        #[test]
+        fn if_consequent() {
+            let txt = make_textline().into();
+            let expr = ExprCtx {
+                span: 0..13,
+                txt: Rc::clone(&txt),
+            }
+            .into_expr(ExpressionKind::If {
+                test: ExprCtx {
+                    span: 4..6,
+                    txt: Rc::clone(&txt),
+                }
+                .into_expr(ExpressionKind::Literal(Value::Boolean(true)))
+                .into(),
+                con: Expression::symbol(
+                    "a",
+                    ExprCtx {
+                        span: 7..9,
+                        txt: Rc::clone(&txt),
+                    },
+                )
+                .into(),
+                alt: Some(
+                    Expression::symbol(
+                        "b",
+                        ExprCtx {
+                            span: 10..12,
+                            txt: Rc::clone(&txt),
+                        },
+                    )
+                    .into(),
+                ),
+            });
+            let mut env = TestEnv::default();
+            let mut f = env.new_frame();
+
+            let r = expr.eval(&mut f);
+
+            let v = ok_or_fail!(r);
+            assert_eq!(v.to_string(), "a");
+        }
+
+        #[test]
+        fn if_alternate() {
+            let txt = make_textline().into();
+            let expr = ExprCtx {
+                span: 0..13,
+                txt: Rc::clone(&txt),
+            }
+            .into_expr(ExpressionKind::If {
+                test: ExprCtx {
+                    span: 4..6,
+                    txt: Rc::clone(&txt),
+                }
+                .into_expr(ExpressionKind::Literal(Value::Boolean(false)))
+                .into(),
+                con: Expression::symbol(
+                    "a",
+                    ExprCtx {
+                        span: 7..9,
+                        txt: Rc::clone(&txt),
+                    },
+                )
+                .into(),
+                alt: Some(
+                    Expression::symbol(
+                        "b",
+                        ExprCtx {
+                            span: 10..12,
+                            txt: Rc::clone(&txt),
+                        },
+                    )
+                    .into(),
+                ),
+            });
+            let mut env = TestEnv::default();
+            let mut f = env.new_frame();
+
+            let r = expr.eval(&mut f);
+
+            let v = ok_or_fail!(r);
+            assert_eq!(v.to_string(), "b");
+        }
+
+        #[test]
+        fn if_no_alternate() {
+            let txt = make_textline().into();
+            let expr = ExprCtx {
+                span: 0..10,
+                txt: Rc::clone(&txt),
+            }
+            .into_expr(ExpressionKind::If {
+                test: ExprCtx {
+                    span: 4..6,
+                    txt: Rc::clone(&txt),
+                }
+                .into_expr(ExpressionKind::Literal(Value::Boolean(true)))
+                .into(),
+                con: Expression::symbol(
+                    "a",
+                    ExprCtx {
+                        span: 7..9,
+                        txt: Rc::clone(&txt),
+                    },
+                )
+                .into(),
+                alt: None,
+            });
+            let mut env = TestEnv::default();
+            let mut f = env.new_frame();
+
+            let r = expr.eval(&mut f);
+
+            let v = ok_or_fail!(r);
+            assert!(matches!(v, Value::Unspecified));
+        }
+
+        #[test]
+        fn if_eval_failure() {
+            let txt = make_textline().into();
+            let expr = ExprCtx {
+                span: 0..10,
+                txt: Rc::clone(&txt),
+            }
+            .into_expr(ExpressionKind::If {
+                test: ExprCtx {
+                    span: 4..6,
+                    txt: Rc::clone(&txt),
+                }
+                .into_expr(ExpressionKind::Literal(Value::Boolean(true)))
+                .into(),
+                con: Expression::variable(
+                    "x",
+                    ExprCtx {
+                        span: 7..9,
+                        txt: Rc::clone(&txt),
+                    },
+                )
+                .into(),
+                alt: None,
+            });
+            let mut env = TestEnv::default();
+            let mut f = env.new_frame();
+
+            let r = expr.eval(&mut f);
+
+            let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
+            assert_eq!(err.to_string(), "#<env-error \"unbound variable: x\">");
+        }
     }
 }
 
