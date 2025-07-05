@@ -1,6 +1,6 @@
 use super::{
-    Exactness, HexParse, Identifier, RadixNumber, ScanItem, Scanner, TokenErrorKind,
-    TokenExtractResult, TokenKind,
+    Exactness, HexParse, Identifier, ScanItem, Scanner, TokenErrorKind, TokenExtractResult,
+    TokenKind, numeric::RadixNumber,
 };
 use crate::number::{Binary, Hexadecimal, Octal, Radix};
 

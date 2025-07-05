@@ -1,6 +1,6 @@
 use super::{
-    ComplexKind, Exactness, FreeText, FreeTextPolicy, RealNumber, ScanItem, Scanner,
-    TokenErrorKind, TokenExtractResult, TokenKind,
+    ComplexKind, Exactness, FreeText, FreeTextPolicy, ScanItem, Scanner, TokenErrorKind,
+    TokenExtractResult, TokenKind, numeric::RealNumber,
 };
 use crate::{
     number::{Decimal, Number, Radix},

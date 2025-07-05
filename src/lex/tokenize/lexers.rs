@@ -3,14 +3,16 @@ mod identifier;
 mod numeric;
 mod string;
 
-use self::numeric::{RadixNumber, RealNumber};
 // NOTE: re-export for parent module
 pub(super) use self::{
     hashtag::{BlockComment, Hashtag},
     identifier::{Identifier, PeriodIdentifier, VerbatimIdentifer},
     string::StringLiteral,
 };
-use super::{ScanItem, Scanner, TokenErrorKind, TokenExtractResult, TokenKind};
+use super::{
+    TokenErrorKind, TokenExtractResult, TokenKind,
+    scan::{ScanItem, Scanner},
+};
 use crate::number::{INF_STR, NAN_STR, Sign};
 
 pub(super) struct FreeText<'me, 'txt, P> {
