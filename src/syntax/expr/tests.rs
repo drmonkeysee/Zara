@@ -18,7 +18,7 @@ mod display {
             proc: proc.into(),
         };
 
-        assert_eq!(expr.as_typename().to_string(), "call");
+        assert_eq!(expr.as_typename().to_string(), "procedure call");
     }
 
     #[test]
@@ -1041,6 +1041,21 @@ mod error {
         .into_error(ExpressionErrorKind::IdentifierUnterminated);
 
         assert_eq!(err.to_string(), "unterminated verbatim identifier");
+    }
+
+    #[test]
+    fn display_invalid_if() {
+        let txt = make_textline().into();
+        let err = ExprCtx {
+            span: 0..5,
+            txt: Rc::clone(&txt),
+        }
+        .into_error(ExpressionErrorKind::IfInvalid);
+
+        assert_eq!(
+            err.to_string(),
+            "invalid form, expected: (if <test> <consequent> [alternate])"
+        );
     }
 
     #[test]

@@ -179,6 +179,7 @@ pub(super) enum ExpressionErrorKind {
     DefineNotAllowed,
     IdentifierInvalid(TokenKind),
     IdentifierUnterminated,
+    IfInvalid,
     ListUnterminated,
     PairIncomplete,
     PairUnexpected,
@@ -214,6 +215,7 @@ impl Display for ExpressionErrorKind {
             Self::DefineNotAllowed => f.write_str("define not allowed in this context"),
             Self::IdentifierInvalid(t) => format_unexpected_token("verbatim identifier", t, f),
             Self::IdentifierUnterminated => f.write_str("unterminated verbatim identifier"),
+            Self::IfInvalid => format_invalid_form("(if <test> <consequent> [alternate])", f),
             Self::ListUnterminated => f.write_str("unterminated list expression"),
             Self::PairIncomplete => f.write_str("missing first pair expression"),
             Self::PairUnexpected => f.write_str("unexpected pair syntax"),
@@ -269,7 +271,7 @@ struct TypeName<'a>(&'a ExpressionKind);
 impl Display for TypeName<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self.0 {
-            ExpressionKind::Call { .. } => f.write_str("call"),
+            ExpressionKind::Call { .. } => f.write_str("procedure call"),
             ExpressionKind::Define { .. } => f.write_str("definition"),
             ExpressionKind::If { .. } => f.write_str("conditional"),
             ExpressionKind::Literal(val) => val.as_typename().fmt(f),

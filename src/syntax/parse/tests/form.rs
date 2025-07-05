@@ -1270,6 +1270,214 @@ fn into_set_too_many_args() {
     ));
 }
 
+#[test]
+fn into_if_consequent() {
+    let txt = make_textline().into();
+    let p = ExprNode {
+        ctx: ExprCtx {
+            span: 0..13,
+            txt: Rc::clone(&txt),
+        },
+        mode: ParseMode::List {
+            form: SyntacticForm::If,
+            seq: vec![
+                ExprCtx {
+                    span: 4..6,
+                    txt: Rc::clone(&txt),
+                }
+                .into_expr(ExpressionKind::Literal(Value::Boolean(true))),
+                Expression::string(
+                    "bar",
+                    ExprCtx {
+                        span: 7..12,
+                        txt: Rc::clone(&txt),
+                    },
+                ),
+            ],
+        },
+    };
+    let mut env = TestEnv::default();
+    let mut ns = env.new_namespace();
+
+    let r = p.try_into_expr(&mut ns);
+
+    let expr = some_or_fail!(ok_or_fail!(r));
+    assert!(matches!(
+        expr,
+        Expression {
+            ctx: ExprCtx { span: TxtSpan { start: 0, end: 13 }, txt: line },
+            kind: ExpressionKind::If { .. },
+        } if Rc::ptr_eq(&txt, &line)
+    ));
+    let ExpressionKind::If { test, con, alt } = expr.kind else {
+        unreachable!();
+    };
+    assert_eq!(
+        extract_or_fail!(test.kind, ExpressionKind::Literal).to_string(),
+        "#t"
+    );
+    assert_eq!(
+        extract_or_fail!(con.kind, ExpressionKind::Literal).to_string(),
+        "\"bar\""
+    );
+    assert!(alt.is_none());
+}
+
+#[test]
+fn into_if_consequent_alternate() {
+    let txt = make_textline().into();
+    let p = ExprNode {
+        ctx: ExprCtx {
+            span: 0..17,
+            txt: Rc::clone(&txt),
+        },
+        mode: ParseMode::List {
+            form: SyntacticForm::If,
+            seq: vec![
+                ExprCtx {
+                    span: 4..6,
+                    txt: Rc::clone(&txt),
+                }
+                .into_expr(ExpressionKind::Literal(Value::Boolean(true))),
+                Expression::string(
+                    "bar",
+                    ExprCtx {
+                        span: 7..12,
+                        txt: Rc::clone(&txt),
+                    },
+                ),
+                Expression::symbol(
+                    "foo",
+                    ExprCtx {
+                        span: 13..16,
+                        txt: Rc::clone(&txt),
+                    },
+                ),
+            ],
+        },
+    };
+    let mut env = TestEnv::default();
+    let mut ns = env.new_namespace();
+
+    let r = p.try_into_expr(&mut ns);
+
+    let expr = some_or_fail!(ok_or_fail!(r));
+    assert!(matches!(
+        expr,
+        Expression {
+            ctx: ExprCtx { span: TxtSpan { start: 0, end: 13 }, txt: line },
+            kind: ExpressionKind::If { .. },
+        } if Rc::ptr_eq(&txt, &line)
+    ));
+    let ExpressionKind::If { test, con, alt } = expr.kind else {
+        unreachable!();
+    };
+    assert_eq!(
+        extract_or_fail!(test.kind, ExpressionKind::Literal).to_string(),
+        "#t"
+    );
+    assert_eq!(
+        extract_or_fail!(con.kind, ExpressionKind::Literal).to_string(),
+        "\"bar\""
+    );
+    let alt = some_or_fail!(alt);
+    assert_eq!(
+        extract_or_fail!(alt.kind, ExpressionKind::Literal).to_string(),
+        "foo"
+    );
+}
+
+#[test]
+fn into_if_too_few_args() {
+    let txt = make_textline().into();
+    let p = ExprNode {
+        ctx: ExprCtx {
+            span: 0..7,
+            txt: Rc::clone(&txt),
+        },
+        mode: ParseMode::List {
+            form: SyntacticForm::If,
+            seq: vec![
+                ExprCtx {
+                    span: 4..6,
+                    txt: Rc::clone(&txt),
+                }
+                .into_expr(ExpressionKind::Literal(Value::Boolean(true))),
+            ],
+        },
+    };
+    let mut env = TestEnv::default();
+    let mut ns = env.new_namespace();
+
+    let r = p.try_into_expr(&mut ns);
+
+    let errs = err_or_fail!(r);
+    assert_eq!(errs.len(), 1);
+    assert!(matches!(
+        &errs[0],
+        ExpressionError {
+            ctx: ExprCtx { span: TxtSpan { start: 0, end: 7 }, txt: line },
+            kind: ExpressionErrorKind::IfInvalid,
+        } if Rc::ptr_eq(&txt, &line)
+    ));
+}
+
+#[test]
+fn into_if_too_many_args() {
+    let txt = make_textline().into();
+    let p = ExprNode {
+        ctx: ExprCtx {
+            span: 0..22,
+            txt: Rc::clone(&txt),
+        },
+        mode: ParseMode::List {
+            form: SyntacticForm::If,
+            seq: vec![
+                ExprCtx {
+                    span: 4..6,
+                    txt: Rc::clone(&txt),
+                }
+                .into_expr(ExpressionKind::Literal(Value::Boolean(true))),
+                Expression::string(
+                    "bar",
+                    ExprCtx {
+                        span: 7..12,
+                        txt: Rc::clone(&txt),
+                    },
+                ),
+                Expression::symbol(
+                    "foo",
+                    ExprCtx {
+                        span: 13..16,
+                        txt: Rc::clone(&txt),
+                    },
+                ),
+                Expression::symbol(
+                    "beef",
+                    ExprCtx {
+                        span: 17..21,
+                        txt: Rc::clone(&txt),
+                    },
+                ),
+            ],
+        },
+    };
+    let mut env = TestEnv::default();
+    let mut ns = env.new_namespace();
+
+    let r = p.try_into_expr(&mut ns);
+
+    let errs = err_or_fail!(r);
+    assert_eq!(errs.len(), 1);
+    assert!(matches!(
+        &errs[0],
+        ExpressionError {
+            ctx: ExprCtx { span: TxtSpan { start: 0, end: 22 }, txt: line },
+            kind: ExpressionErrorKind::IfInvalid,
+        } if Rc::ptr_eq(&txt, &line)
+    ));
+}
+
 mod merge {
     use super::*;
 
