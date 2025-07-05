@@ -1,14 +1,9 @@
-use super::{ComplexKind, Exactness, Identifier};
-use crate::{
-    lex::{
-        TokenKind,
-        token::TokenErrorKind,
-        tokenize::{
-            TokenExtractResult,
-            scan::{ScanItem, Scanner},
-        },
-    },
-    number::{Decimal, FloatSpec, IntSpec, Integer, Number, NumericError, Radix, Real, Sign},
+use super::{
+    ComplexKind, Exactness, Identifier, ScanItem, Scanner, TokenErrorKind, TokenExtractResult,
+    TokenKind,
+};
+use crate::number::{
+    Decimal, FloatSpec, IntSpec, Integer, Number, NumericError, Radix, Real, Sign,
 };
 use std::{marker::PhantomData, ops::ControlFlow};
 

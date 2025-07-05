@@ -1,5 +1,4 @@
-use super::{FreeText, FreeTextPolicy};
-use crate::lex::{TokenKind, token::TokenErrorKind, tokenize::scan::Scanner};
+use super::{FreeText, FreeTextPolicy, Scanner, TokenErrorKind, TokenKind};
 
 pub(in crate::lex::tokenize) type StringLiteral<'me, 'txt, M> =
     FreeText<'me, 'txt, StringPolicy<M>>;

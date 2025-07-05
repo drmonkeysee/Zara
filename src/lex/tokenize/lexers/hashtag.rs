@@ -1,15 +1,8 @@
-use super::{Exactness, HexParse, Identifier, RadixNumber};
-use crate::{
-    lex::{
-        TokenKind,
-        token::TokenErrorKind,
-        tokenize::{
-            TokenExtractResult,
-            scan::{ScanItem, Scanner},
-        },
-    },
-    number::{Binary, Hexadecimal, Octal, Radix},
+use super::{
+    Exactness, HexParse, Identifier, RadixNumber, ScanItem, Scanner, TokenErrorKind,
+    TokenExtractResult, TokenKind,
 };
+use crate::number::{Binary, Hexadecimal, Octal, Radix};
 
 const EXACTL: char = 'e';
 const EXACTU: char = EXACTL.to_ascii_uppercase();

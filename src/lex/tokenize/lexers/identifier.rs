@@ -1,13 +1,8 @@
-use super::{ComplexKind, Exactness, FreeText, FreeTextPolicy, RealNumber};
+use super::{
+    ComplexKind, Exactness, FreeText, FreeTextPolicy, RealNumber, ScanItem, Scanner,
+    TokenErrorKind, TokenExtractResult, TokenKind,
+};
 use crate::{
-    lex::{
-        TokenKind,
-        token::TokenErrorKind,
-        tokenize::{
-            TokenExtractResult,
-            scan::{ScanItem, Scanner},
-        },
-    },
     number::{Decimal, Number, Radix},
     string::identifier,
 };

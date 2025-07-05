@@ -10,11 +10,8 @@ pub(super) use self::{
     identifier::{Identifier, PeriodIdentifier, VerbatimIdentifer},
     string::StringLiteral,
 };
-use super::{TokenExtractResult, scan::Scanner};
-use crate::{
-    lex::{TokenKind, token::TokenErrorKind},
-    number::{INF_STR, NAN_STR, Sign},
-};
+use super::{ScanItem, Scanner, TokenErrorKind, TokenExtractResult, TokenKind};
+use crate::number::{INF_STR, NAN_STR, Sign};
 
 pub(super) struct FreeText<'me, 'txt, P> {
     buf: String,
