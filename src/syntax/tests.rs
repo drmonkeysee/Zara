@@ -1317,6 +1317,42 @@ mod parsing {
 
         assert!(et.parsers.is_empty());
     }
+
+    #[test]
+    fn define_can_redefine_itself() {
+        let mut et = ExpressionTree::default();
+        // NOTE: (define define 10)
+        let tokens = [make_tokenline([
+            TokenKind::ParenLeft,
+            TokenKind::Identifier("define".to_owned()),
+            TokenKind::Identifier("define".to_owned()),
+            TokenKind::Number(Number::real(10)),
+            TokenKind::ParenRight,
+        ])];
+        let mut env = TestEnv::default();
+
+        let r = et.parse(tokens.into(), env.new_namespace());
+
+        let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
+        let seq = prg.unwrap();
+        assert_eq!(seq.len(), 1);
+        assert!(matches!(
+            &seq[0],
+            Expression {
+                ctx: ExprCtx { span: TxtSpan { start: 0, end: 5 }, txt },
+                kind: ExpressionKind::Define { .. },
+            } if txt.lineno == 1
+        ));
+        let ExpressionKind::Define { name, expr } = &seq[0].kind else {
+            unreachable!();
+        };
+        assert_eq!(name.as_ref(), "define");
+        let val_expr = some_or_fail!(expr.as_ref());
+        let val = extract_or_fail!(&val_expr.kind, ExpressionKind::Literal);
+        assert_eq!(val.to_string(), "10");
+
+        assert!(et.parsers.is_empty());
+    }
 }
 
 mod continuation {
