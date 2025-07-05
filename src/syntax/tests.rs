@@ -1339,7 +1339,6 @@ mod parsing {
             TokenKind::ParenRight,
         ])];
         let mut env = TestEnv::default();
-        // NOTE: side-effect of evaling expression from define_can_redefine_itself test
         env.binding.bind("define", Value::Number(Number::real(10)));
 
         let r = et.parse(tokens.into(), env.new_namespace());
