@@ -975,7 +975,7 @@ mod error {
 
         assert_eq!(
             err.to_string(),
-            "invalid syntax, expected: (define <identifier> [expression])"
+            "invalid form, expected: (define <identifier> [expression])"
         );
     }
 
@@ -1082,7 +1082,7 @@ mod error {
         }
         .into_error(ExpressionErrorKind::QuoteInvalid);
 
-        assert_eq!(err.to_string(), "invalid syntax, expected: (quote <datum>)");
+        assert_eq!(err.to_string(), "invalid form, expected: (quote <datum>)");
     }
 
     #[test]
@@ -1109,7 +1109,7 @@ mod error {
 
         assert_eq!(
             err.to_string(),
-            "invalid syntax, expected: (set! <variable> <expression>)"
+            "invalid form, expected: (set! <variable> <expression>)"
         );
     }
 

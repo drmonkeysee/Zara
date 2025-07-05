@@ -75,9 +75,8 @@ impl System {
 pub(crate) struct Namespace<'a>(pub(crate) Frame<'a>);
 
 impl Namespace<'_> {
-    #[allow(dead_code)]
-    pub(crate) fn name_defined(&self, _name: &str) -> bool {
-        todo!("env name defined")
+    pub(crate) fn name_defined(&self, name: &str) -> bool {
+        self.0.scope.bound(name)
     }
 
     pub(crate) fn get_symbol(&mut self, symbol: &str) -> Rc<str> {

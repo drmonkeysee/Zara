@@ -378,6 +378,7 @@ impl SyntacticForm {
                     // TODO: check for shadowed keywords here
                     if seq.is_empty()
                         && let ExpressionKind::Variable(n) = &expr.kind
+                        && !ns.name_defined(n)
                         && let Some(f) = Self::from_str(n)
                     {
                         *self = f;

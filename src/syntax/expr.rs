@@ -293,5 +293,5 @@ fn format_unexpected_token(kind: &str, token: &TokenKind, f: &mut Formatter) -> 
 }
 
 fn format_invalid_form(form: &str, f: &mut Formatter) -> fmt::Result {
-    write!(f, "invalid syntax, expected: {form}")
+    write!(f, "invalid form, expected: {form}")
 }
