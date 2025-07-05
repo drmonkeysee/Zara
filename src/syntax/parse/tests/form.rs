@@ -1365,7 +1365,7 @@ fn into_if_consequent_alternate() {
     assert!(matches!(
         expr,
         Expression {
-            ctx: ExprCtx { span: TxtSpan { start: 0, end: 13 }, txt: line },
+            ctx: ExprCtx { span: TxtSpan { start: 0, end: 17 }, txt: line },
             kind: ExpressionKind::If { .. },
         } if Rc::ptr_eq(&txt, &line)
     ));

@@ -25,11 +25,13 @@ pub(super) enum SyntacticForm {
 impl SyntacticForm {
     pub(super) const QUOTE: &str = "quote";
     const DEFINE: &str = "define";
+    const IF: &str = "if";
     const SET: &str = "set!";
 
     fn from_str(s: &str) -> Option<Self> {
         match s {
             Self::DEFINE => Some(Self::Define),
+            Self::IF => Some(Self::If),
             Self::QUOTE => Some(Self::Quote),
             Self::SET => Some(Self::Set),
             _ => None,
@@ -122,7 +124,18 @@ impl SyntacticForm {
                 }
                 Err(vec![ctx.into_error(ExpressionErrorKind::DefineInvalid)])
             }
-            Self::If => todo!("if->expr conversion"),
+            Self::If => {
+                if (2..4).contains(&seq.len()) {
+                    let mut iter = seq.into_iter();
+                    Ok(Some(ctx.into_expr(ExpressionKind::If {
+                        test: iter.next().unwrap().into(),
+                        con: iter.next().unwrap().into(),
+                        alt: iter.next().map(Box::new),
+                    })))
+                } else {
+                    Err(vec![ctx.into_error(ExpressionErrorKind::IfInvalid)])
+                }
+            }
             Self::PairClosed => into_list(seq, ctx, true),
             Self::PairOpen => Err(vec![ctx.into_error(ExpressionErrorKind::PairUnterminated)]),
             Self::Quote => {
@@ -203,7 +216,6 @@ impl SyntacticForm {
         if let Some(expr) = super::parse_expr(token, txt, self.quoted(), ns)? {
             match self {
                 Self::Call => {
-                    // TODO: check for shadowed keywords here
                     if seq.is_empty()
                         && let ExpressionKind::Variable(n) = &expr.kind
                         && !ns.name_defined(n)
