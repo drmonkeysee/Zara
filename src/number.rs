@@ -404,11 +404,7 @@ impl Real {
     }
 
     fn is_exact_zero(&self) -> bool {
-        if let Self::Float(_) = self {
-            false
-        } else {
-            self.is_zero()
-        }
+        !self.is_inexact() && self.is_zero()
     }
 
     fn is_inexact(&self) -> bool {
