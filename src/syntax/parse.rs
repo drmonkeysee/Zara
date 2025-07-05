@@ -172,7 +172,7 @@ impl ExprNode {
             ParseMode::Identifier { name, quoted } => {
                 Ok(Some(identifier_to_expr(name, quoted, self.ctx, ns)))
             }
-            ParseMode::List { form, seq } => into_syntactic_form(form, seq, self.ctx),
+            ParseMode::List { form, seq } => form.try_into_expr(seq, self.ctx),
             ParseMode::Quote { inner, quoted } => into_datum(inner, self.ctx, quoted, ns),
             ParseMode::StringLiteral(s) => Ok(Some(Expression::string(s, self.ctx))),
             ParseMode::Vector(seq) => into_vector(seq, self.ctx),
@@ -400,6 +400,64 @@ impl SyntacticForm {
             }
         }
         ParseFlow::Continue(())
+    }
+
+    fn try_into_expr(self, seq: Vec<Expression>, ctx: ExprCtx) -> ExprConvertResult {
+        match self {
+            Self::Call => {
+                let mut iter = seq.into_iter();
+                match iter.next() {
+                    None => Err(vec![ctx.into_error(ExpressionErrorKind::ProcedureEmpty)]),
+                    Some(proc) => Ok(Some(ctx.into_expr(ExpressionKind::Call {
+                        args: iter.collect(),
+                        proc: proc.into(),
+                    }))),
+                }
+            }
+            Self::Datum => into_list(seq, ctx, false),
+            Self::Define => {
+                /*
+                 * forms:
+                 * [variable, expr] -> define var val, in practice expr can be empty, set var to unspecified
+                 * following forms need lambda expr parsing first
+                 * [list, body-expr] -> define var:list.car lambda (formals:list.cdr) body
+                 * [pair, body-expr] -> define var:pair.car lambda formal:pair.cdr body
+                 */
+                if (1..3).contains(&seq.len()) {
+                    let mut iter = seq.into_iter();
+                    let binding = iter.next().unwrap();
+                    if let ExpressionKind::Variable(n) = binding.kind {
+                        return Ok(Some(ctx.into_expr(ExpressionKind::Define {
+                            name: n,
+                            expr: iter.next().map(Box::new),
+                        })));
+                    }
+                }
+                Err(vec![ctx.into_error(ExpressionErrorKind::DefineInvalid)])
+            }
+            Self::PairClosed => into_list(seq, ctx, true),
+            Self::PairOpen => Err(vec![ctx.into_error(ExpressionErrorKind::PairUnterminated)]),
+            Self::Quote => {
+                if seq.len() == 1 {
+                    Ok(Some(seq.into_iter().next().unwrap()))
+                } else {
+                    Err(vec![ctx.into_error(ExpressionErrorKind::QuoteInvalid)])
+                }
+            }
+            Self::Set => {
+                if seq.len() == 2 {
+                    let mut iter = seq.into_iter();
+                    let var = iter.next().unwrap();
+                    if let ExpressionKind::Variable(n) = var.kind {
+                        return Ok(Some(ctx.into_expr(ExpressionKind::Set {
+                            var: n,
+                            expr: iter.next().unwrap().into(),
+                        })));
+                    }
+                }
+                Err(vec![ctx.into_error(ExpressionErrorKind::SetInvalid)])
+            }
+        }
     }
 }
 
@@ -734,68 +792,6 @@ fn into_datum(
                     expr_ctx.into_error(ExpressionErrorKind::DatumInvalid(expr.kind)),
                 ])
             }
-        }
-    }
-}
-
-fn into_syntactic_form(
-    form: SyntacticForm,
-    seq: Vec<Expression>,
-    ctx: ExprCtx,
-) -> ExprConvertResult {
-    match form {
-        SyntacticForm::Call => {
-            let mut iter = seq.into_iter();
-            match iter.next() {
-                None => Err(vec![ctx.into_error(ExpressionErrorKind::ProcedureEmpty)]),
-                Some(proc) => Ok(Some(ctx.into_expr(ExpressionKind::Call {
-                    args: iter.collect(),
-                    proc: proc.into(),
-                }))),
-            }
-        }
-        SyntacticForm::Datum => into_list(seq, ctx, false),
-        SyntacticForm::Define => {
-            /*
-             * forms:
-             * [variable, expr] -> define var val, in practice expr can be empty, set var to unspecified
-             * following forms need lambda expr parsing first
-             * [list, body-expr] -> define var:list.car lambda (formals:list.cdr) body
-             * [pair, body-expr] -> define var:pair.car lambda formal:pair.cdr body
-             */
-            if (1..3).contains(&seq.len()) {
-                let mut iter = seq.into_iter();
-                let binding = iter.next().unwrap();
-                if let ExpressionKind::Variable(n) = binding.kind {
-                    return Ok(Some(ctx.into_expr(ExpressionKind::Define {
-                        name: n,
-                        expr: iter.next().map(Box::new),
-                    })));
-                }
-            }
-            Err(vec![ctx.into_error(ExpressionErrorKind::DefineInvalid)])
-        }
-        SyntacticForm::PairClosed => into_list(seq, ctx, true),
-        SyntacticForm::PairOpen => Err(vec![ctx.into_error(ExpressionErrorKind::PairUnterminated)]),
-        SyntacticForm::Quote => {
-            if seq.len() == 1 {
-                Ok(Some(seq.into_iter().next().unwrap()))
-            } else {
-                Err(vec![ctx.into_error(ExpressionErrorKind::QuoteInvalid)])
-            }
-        }
-        SyntacticForm::Set => {
-            if seq.len() == 2 {
-                let mut iter = seq.into_iter();
-                let var = iter.next().unwrap();
-                if let ExpressionKind::Variable(n) = var.kind {
-                    return Ok(Some(ctx.into_expr(ExpressionKind::Set {
-                        var: n,
-                        expr: iter.next().unwrap().into(),
-                    })));
-                }
-            }
-            Err(vec![ctx.into_error(ExpressionErrorKind::SetInvalid)])
         }
     }
 }
