@@ -371,10 +371,19 @@ impl SyntacticForm {
         txt: &Rc<TextLine>,
         ns: &mut Namespace,
     ) -> ParseFlow {
-        let quoted = self.quoted();
         let token_span = token.span.clone();
-        if let Some(expr) = parse_expr(token, txt, quoted, ns)? {
+        if let Some(expr) = parse_expr(token, txt, self.quoted(), ns)? {
             match self {
+                Self::Call => {
+                    // TODO: check for shadowed keywords here
+                    if seq.is_empty()
+                        && let ExpressionKind::Variable(n) = &expr.kind
+                        && let Some(f) = Self::from_str(n)
+                    {
+                        *self = f;
+                        return ParseFlow::Continue(());
+                    }
+                }
                 Self::PairClosed => {
                     *self = Self::Datum;
                     return ParseFlow::Break(ParseBreak::recover(
@@ -388,16 +397,7 @@ impl SyntacticForm {
                 Self::PairOpen => *self = Self::PairClosed,
                 _ => (),
             }
-            // TODO: check for shadowed keywords here
-            if !quoted
-                && seq.is_empty()
-                && let ExpressionKind::Variable(n) = &expr.kind
-                && let Some(f) = Self::from_str(n)
-            {
-                *self = f;
-            } else {
-                seq.push(expr);
-            }
+            seq.push(expr);
         }
         ParseFlow::Continue(())
     }
