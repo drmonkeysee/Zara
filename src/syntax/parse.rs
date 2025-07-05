@@ -109,49 +109,16 @@ pub(super) struct ExprNode {
 
 impl ExprNode {
     fn parse(&mut self, token: Token, txt: &Rc<TextLine>, ns: &mut Namespace) -> ParseFlow {
-        match &mut self.mode {
-            ParseMode::ByteVector(seq) | ParseMode::Vector(seq) => {
-                parse_vector(seq, token, txt, ns)
-            }
-            ParseMode::CommentBlock => parse_comment_block(token, txt),
-            ParseMode::CommentDatum(inner) | ParseMode::Quote { inner, .. } => {
-                parse_datum(inner, token, txt, &self.ctx, ns)
-            }
-            ParseMode::Identifier { name, .. } => parse_verbatim_identifier(name, token, txt),
-            ParseMode::List { form, seq } => form.parse_list(seq, token, txt, ns),
-            ParseMode::StringLiteral(buf) => parse_str(buf, token, txt),
-        }
+        self.mode.parse(token, txt, &self.ctx, ns)
     }
 
     fn merge(&mut self, other: Self, ns: &mut Namespace) -> MergeResult {
-        match &mut self.mode {
-            ParseMode::ByteVector(seq) | ParseMode::Vector(seq) => other.merge_into(ns, |expr| {
-                seq.push(expr);
-                MergeFlow::Continue(())
-            }),
-            ParseMode::CommentDatum(inner) | ParseMode::Quote { inner, .. } => {
-                other.merge_into(ns, |expr| {
-                    inner.replace(expr);
-                    MergeFlow::Break(())
-                })
-            }
-            ParseMode::List { form, seq } => form.merge(seq, other, &self.ctx, ns),
-            _ => Err(ParserError::Invalid(InvalidParseError::InvalidExprTarget)),
-        }
+        self.mode.merge(other, &self.ctx, ns)
     }
 
     fn into_continuation_unsupported(self) -> ExpressionError {
-        self.ctx.into_error(match self.mode {
-            ParseMode::ByteVector(_) => ExpressionErrorKind::ByteVectorUnterminated,
-            ParseMode::CommentBlock => ExpressionErrorKind::CommentBlockUnterminated,
-            ParseMode::CommentDatum(_) | ParseMode::Quote { .. } => {
-                ExpressionErrorKind::DatumExpected
-            }
-            ParseMode::Identifier { .. } => ExpressionErrorKind::IdentifierUnterminated,
-            ParseMode::List { .. } => ExpressionErrorKind::ListUnterminated,
-            ParseMode::StringLiteral(_) => ExpressionErrorKind::StrUnterminated,
-            ParseMode::Vector(_) => ExpressionErrorKind::VectorUnterminated,
-        })
+        self.ctx
+            .into_error(self.mode.into_continuation_unsupported())
     }
 
     fn merge_into(
@@ -165,18 +132,7 @@ impl ExprNode {
     }
 
     fn try_into_expr(self, ns: &mut Namespace) -> ExprConvertResult {
-        match self.mode {
-            ParseMode::ByteVector(seq) => into_bytevector(seq, self.ctx),
-            ParseMode::CommentBlock => Ok(None),
-            ParseMode::CommentDatum(inner) => into_comment_datum(inner.as_ref(), self.ctx),
-            ParseMode::Identifier { name, quoted } => {
-                Ok(Some(identifier_to_expr(name, quoted, self.ctx, ns)))
-            }
-            ParseMode::List { form, seq } => form.try_into_expr(seq, self.ctx),
-            ParseMode::Quote { inner, quoted } => into_datum(inner, self.ctx, quoted, ns),
-            ParseMode::StringLiteral(s) => Ok(Some(Expression::string(s, self.ctx))),
-            ParseMode::Vector(seq) => into_vector(seq, self.ctx),
-        }
+        self.mode.try_into_expr(self.ctx, ns)
     }
 }
 
@@ -494,6 +450,67 @@ impl ParseMode {
             s.push('\n');
         }
         Self::StringLiteral(s)
+    }
+
+    fn parse(
+        &mut self,
+        token: Token,
+        txt: &Rc<TextLine>,
+        node_ctx: &ExprCtx,
+        ns: &mut Namespace,
+    ) -> ParseFlow {
+        match self {
+            Self::ByteVector(seq) | Self::Vector(seq) => parse_vector(seq, token, txt, ns),
+            Self::CommentBlock => parse_comment_block(token, txt),
+            Self::CommentDatum(inner) | Self::Quote { inner, .. } => {
+                parse_datum(inner, token, txt, node_ctx, ns)
+            }
+            Self::Identifier { name, .. } => parse_verbatim_identifier(name, token, txt),
+            Self::List { form, seq } => form.parse_list(seq, token, txt, ns),
+            Self::StringLiteral(buf) => parse_str(buf, token, txt),
+        }
+    }
+
+    fn merge(&mut self, other: ExprNode, node_ctx: &ExprCtx, ns: &mut Namespace) -> MergeResult {
+        match self {
+            Self::ByteVector(seq) | Self::Vector(seq) => other.merge_into(ns, |expr| {
+                seq.push(expr);
+                MergeFlow::Continue(())
+            }),
+            Self::CommentDatum(inner) | Self::Quote { inner, .. } => other.merge_into(ns, |expr| {
+                inner.replace(expr);
+                MergeFlow::Break(())
+            }),
+            Self::List { form, seq } => form.merge(seq, other, node_ctx, ns),
+            _ => Err(ParserError::Invalid(InvalidParseError::InvalidExprTarget)),
+        }
+    }
+
+    fn into_continuation_unsupported(self) -> ExpressionErrorKind {
+        match self {
+            Self::ByteVector(_) => ExpressionErrorKind::ByteVectorUnterminated,
+            Self::CommentBlock => ExpressionErrorKind::CommentBlockUnterminated,
+            Self::CommentDatum(_) | Self::Quote { .. } => ExpressionErrorKind::DatumExpected,
+            Self::Identifier { .. } => ExpressionErrorKind::IdentifierUnterminated,
+            Self::List { .. } => ExpressionErrorKind::ListUnterminated,
+            Self::StringLiteral(_) => ExpressionErrorKind::StrUnterminated,
+            Self::Vector(_) => ExpressionErrorKind::VectorUnterminated,
+        }
+    }
+
+    fn try_into_expr(self, node_ctx: ExprCtx, ns: &mut Namespace) -> ExprConvertResult {
+        match self {
+            Self::ByteVector(seq) => into_bytevector(seq, node_ctx),
+            Self::CommentBlock => Ok(None),
+            Self::CommentDatum(inner) => into_comment_datum(inner.as_ref(), node_ctx),
+            Self::Identifier { name, quoted } => {
+                Ok(Some(identifier_to_expr(name, quoted, node_ctx, ns)))
+            }
+            Self::List { form, seq } => form.try_into_expr(seq, node_ctx),
+            Self::Quote { inner, quoted } => into_datum(inner, node_ctx, quoted, ns),
+            Self::StringLiteral(s) => Ok(Some(Expression::string(s, node_ctx))),
+            Self::Vector(seq) => into_vector(seq, node_ctx),
+        }
     }
 }
 
