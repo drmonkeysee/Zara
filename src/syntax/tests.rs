@@ -151,7 +151,6 @@ mod parsing {
                 kind: ExpressionKind::Literal(Value::Character('b')),
             } if txt.lineno == 2
         ));
-
         assert!(et.parsers.is_empty());
     }
 
@@ -273,7 +272,6 @@ mod parsing {
         ));
         let value = extract_or_fail!(&seq[0].kind, ExpressionKind::Literal);
         assert_eq!(value.to_string(), "(quote a)");
-
         assert!(et.parsers.is_empty());
     }
 
@@ -325,7 +323,6 @@ mod parsing {
             value.to_string(),
             "(quasiquote (a (unquote (+ 1 2)) (unquote-splicing (map abs (quote (-1 -2 -3))))))"
         );
-
         assert!(et.parsers.is_empty());
     }
 
@@ -358,7 +355,6 @@ mod parsing {
         ));
         let value = extract_or_fail!(&seq[0].kind, ExpressionKind::Literal);
         assert_eq!(value.to_string(), "(if 5)");
-
         assert!(et.parsers.is_empty());
     }
 
@@ -388,7 +384,6 @@ mod parsing {
         ));
         let value = extract_or_fail!(&seq[0].kind, ExpressionKind::Literal);
         assert_eq!(value.to_string(), "#(if 5)");
-
         assert!(et.parsers.is_empty());
     }
 
@@ -419,7 +414,6 @@ mod parsing {
         ));
         let value = extract_or_fail!(&seq[0].kind, ExpressionKind::Literal);
         assert_eq!(value.to_string(), "(a b c)");
-
         assert!(et.parsers.is_empty());
     }
 
@@ -447,7 +441,6 @@ mod parsing {
         ));
         let value = extract_or_fail!(&seq[0].kind, ExpressionKind::Literal);
         assert_eq!(value.to_string(), "()");
-
         assert!(et.parsers.is_empty());
     }
 
@@ -478,7 +471,6 @@ mod parsing {
         ));
         let value = extract_or_fail!(&seq[0].kind, ExpressionKind::Literal);
         assert_eq!(value.to_string(), "(a . b)");
-
         assert!(et.parsers.is_empty());
     }
 
@@ -510,7 +502,6 @@ mod parsing {
         ));
         let value = extract_or_fail!(&seq[0].kind, ExpressionKind::Literal);
         assert_eq!(value.to_string(), "(a b . c)");
-
         assert!(et.parsers.is_empty());
     }
 
@@ -545,7 +536,6 @@ mod parsing {
         ));
         let value = extract_or_fail!(&seq[0].kind, ExpressionKind::Literal);
         assert_eq!(value.to_string(), "(a b c)");
-
         assert!(et.parsers.is_empty());
     }
 
@@ -586,7 +576,6 @@ mod parsing {
         ));
         let value = extract_or_fail!(&seq[0].kind, ExpressionKind::Literal);
         assert_eq!(value.to_string(), "(a b c)");
-
         assert!(et.parsers.is_empty());
     }
 
@@ -619,7 +608,6 @@ mod parsing {
         ));
         let value = extract_or_fail!(&seq[0].kind, ExpressionKind::Literal);
         assert_eq!(value.to_string(), "((a . b))");
-
         assert!(et.parsers.is_empty());
     }
 
@@ -653,7 +641,6 @@ mod parsing {
         ));
         let value = extract_or_fail!(&seq[0].kind, ExpressionKind::Literal);
         assert_eq!(value.to_string(), "(a . c)");
-
         assert!(et.parsers.is_empty());
     }
 
@@ -690,7 +677,6 @@ mod parsing {
         ));
         let value = extract_or_fail!(&seq[0].kind, ExpressionKind::Literal);
         assert_eq!(value.to_string(), "(a . d)");
-
         assert!(et.parsers.is_empty());
     }
 
@@ -723,7 +709,6 @@ mod parsing {
         ));
         let value = extract_or_fail!(&seq[0].kind, ExpressionKind::Literal);
         assert_eq!(value.to_string(), "(a . b)");
-
         assert!(et.parsers.is_empty());
     }
 
@@ -756,7 +741,6 @@ mod parsing {
         ));
         let value = extract_or_fail!(&seq[0].kind, ExpressionKind::Literal);
         assert_eq!(value.to_string(), "(a . b)");
-
         assert!(et.parsers.is_empty());
     }
 
@@ -1037,7 +1021,6 @@ mod parsing {
                 kind: ExpressionErrorKind::PairUnterminated,
             } if txt.lineno == 1
         ));
-
         assert!(et.parsers.is_empty());
     }
 
@@ -1067,7 +1050,6 @@ mod parsing {
                 kind: ExpressionErrorKind::PairUnterminated,
             } if txt.lineno == 1
         ));
-
         assert!(et.parsers.is_empty());
     }
 
@@ -1097,7 +1079,6 @@ mod parsing {
                 kind: ExpressionErrorKind::PairIncomplete,
             } if txt.lineno == 1
         ));
-
         assert!(et.parsers.is_empty());
     }
 
@@ -1127,7 +1108,6 @@ mod parsing {
                 kind: ExpressionErrorKind::PairUnterminated,
             } if txt.lineno == 1
         ));
-
         assert!(et.parsers.is_empty());
     }
 
@@ -1157,7 +1137,6 @@ mod parsing {
                 kind: ExpressionErrorKind::PairUnterminated,
             } if txt.lineno == 1
         ));
-
         assert!(et.parsers.is_empty());
     }
 
@@ -1197,7 +1176,6 @@ mod parsing {
                 kind: ExpressionErrorKind::PairUnterminated,
             } if txt.lineno == 1
         ));
-
         assert!(et.parsers.is_empty());
     }
 
@@ -1225,7 +1203,6 @@ mod parsing {
                 kind: ExpressionErrorKind::PairUnexpected,
             } if txt.lineno == 1
         ));
-
         assert!(et.parsers.is_empty());
     }
 
@@ -1258,7 +1235,6 @@ mod parsing {
                 kind: ExpressionErrorKind::ProcedureEmpty,
             } if txt.lineno == 1
         ));
-
         assert!(et.parsers.is_empty());
     }
 
@@ -1286,7 +1262,6 @@ mod parsing {
                 kind: ExpressionErrorKind::PairUnexpected,
             } if txt.lineno == 1
         ));
-
         assert!(et.parsers.is_empty());
     }
 
@@ -1314,7 +1289,6 @@ mod parsing {
                 kind: ExpressionErrorKind::PairUnexpected,
             } if txt.lineno == 1
         ));
-
         assert!(et.parsers.is_empty());
     }
 
@@ -1350,7 +1324,61 @@ mod parsing {
         let val_expr = some_or_fail!(expr.as_ref());
         let val = extract_or_fail!(&val_expr.kind, ExpressionKind::Literal);
         assert_eq!(val.to_string(), "10");
+        assert!(et.parsers.is_empty());
+    }
 
+    #[test]
+    fn redefined_special_form_treated_like_procedure_call() {
+        let mut et = ExpressionTree::default();
+        // NOTE: (define x 20) but define has been bound as a variable in current scope
+        let tokens = [make_tokenline([
+            TokenKind::ParenLeft,
+            TokenKind::Identifier("define".to_owned()),
+            TokenKind::Identifier("x".to_owned()),
+            TokenKind::Number(Number::real(20)),
+            TokenKind::ParenRight,
+        ])];
+        let mut env = TestEnv::default();
+        // NOTE: side-effect of evaling expression from define_can_redefine_itself test
+        env.binding.bind("define", Value::Number(Number::real(10)));
+
+        let r = et.parse(tokens.into(), env.new_namespace());
+
+        let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
+        let seq = prg.unwrap();
+        assert_eq!(seq.len(), 1);
+        assert!(matches!(
+            &seq[0],
+            Expression {
+                ctx: ExprCtx { span: TxtSpan { start: 0, end: 5 }, txt },
+                kind: ExpressionKind::Call { .. },
+            } if txt.lineno == 1
+        ));
+        let ExpressionKind::Call { args, proc } = &seq[0].kind else {
+            unreachable!();
+        };
+        assert!(matches!(
+            proc.as_ref(),
+            Expression {
+                ctx: ExprCtx { span: TxtSpan { start: 1, end: 2 }, .. },
+                kind: ExpressionKind::Variable(s),
+            } if s.as_ref() == "define"
+        ));
+        assert_eq!(args.len(), 2);
+        assert!(matches!(
+            &args[0],
+            Expression {
+                ctx: ExprCtx { span: TxtSpan { start: 2, end: 3 }, .. },
+                kind: ExpressionKind::Variable(s),
+            } if s.as_ref() == "x"
+        ));
+        assert!(matches!(
+            &args[1],
+            Expression {
+                ctx: ExprCtx { span: TxtSpan { start: 3, end: 4 }, .. },
+                kind: ExpressionKind::Literal(Value::Number(n)),
+            } if n.to_string() == "20"
+        ));
         assert!(et.parsers.is_empty());
     }
 }
@@ -1395,7 +1423,6 @@ mod continuation {
                 kind: ExpressionErrorKind::StrUnterminated,
             } if txt.lineno == 1
         ));
-
         assert!(et.parsers.is_empty());
     }
 
@@ -1436,7 +1463,6 @@ mod continuation {
                 kind: ExpressionErrorKind::StrUnterminated,
             } if txt.lineno == 1
         ));
-
         assert!(et.parsers.is_empty());
     }
 
