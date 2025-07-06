@@ -1013,6 +1013,48 @@ mod eval {
             let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
             assert_eq!(err.to_string(), "#<env-error \"unbound variable: x\">");
         }
+
+        #[test]
+        fn if_invalid_expr_not_evaluated() {
+            let txt = make_textline().into();
+            let expr = ExprCtx {
+                span: 0..13,
+                txt: Rc::clone(&txt),
+            }
+            .into_expr(ExpressionKind::If {
+                test: ExprCtx {
+                    span: 4..6,
+                    txt: Rc::clone(&txt),
+                }
+                .into_expr(ExpressionKind::Literal(Value::Boolean(false)))
+                .into(),
+                con: Expression::variable(
+                    "x",
+                    ExprCtx {
+                        span: 7..9,
+                        txt: Rc::clone(&txt),
+                    },
+                )
+                .into(),
+                alt: Some(
+                    Expression::symbol(
+                        "b",
+                        ExprCtx {
+                            span: 10..12,
+                            txt: Rc::clone(&txt),
+                        },
+                    )
+                    .into(),
+                ),
+            });
+            let mut env = TestEnv::default();
+            let mut f = env.new_frame();
+
+            let r = expr.eval(&mut f);
+
+            let v = ok_or_fail!(r);
+            assert_eq!(v.to_string(), "b");
+        }
     }
 }
 
