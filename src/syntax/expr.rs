@@ -112,6 +112,7 @@ pub(super) enum ExpressionKind {
         con: Box<Expression>,
         alt: Option<Box<Expression>>,
     },
+    Lambda,
     Literal(Value),
     Set {
         var: Box<str>,
@@ -140,6 +141,7 @@ impl ExpressionKind {
                     con.eval(env)
                 }
             }
+            Self::Lambda => todo!("eval lambda"),
             Self::Literal(v) => Ok(v),
             Self::Set { var, expr } => {
                 if env.scope.bound(&var) {
@@ -284,6 +286,7 @@ impl Display for TypeName<'_> {
             ExpressionKind::Call { .. } => f.write_str("procedure call"),
             ExpressionKind::Define { .. } => f.write_str("definition"),
             ExpressionKind::If { .. } => f.write_str("conditional"),
+            ExpressionKind::Lambda => f.write_str("lambda expression"),
             ExpressionKind::Literal(val) => val.as_typename().fmt(f),
             ExpressionKind::Set { .. } => f.write_str("assignment"),
             ExpressionKind::Variable(_) => f.write_str("variable"),

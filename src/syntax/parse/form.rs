@@ -16,6 +16,7 @@ pub(super) enum SyntacticForm {
     Datum,
     Define,
     If,
+    Lambda,
     PairClosed,
     PairOpen,
     Quote,
@@ -136,6 +137,7 @@ impl SyntacticForm {
                     Err(vec![ctx.into_error(ExpressionErrorKind::IfInvalid)])
                 }
             }
+            Self::Lambda => todo!("lambda form->expr"),
             Self::PairClosed => into_list(seq, ctx, true),
             Self::PairOpen => Err(vec![ctx.into_error(ExpressionErrorKind::PairUnterminated)]),
             Self::Quote => {
