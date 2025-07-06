@@ -27,12 +27,14 @@ impl SyntacticForm {
     pub(super) const QUOTE: &str = "quote";
     const DEFINE: &str = "define";
     const IF: &str = "if";
+    const LAMBDA: &str = "lambda";
     const SET: &str = "set!";
 
     fn from_str(s: &str) -> Option<Self> {
         match s {
             Self::DEFINE => Some(Self::Define),
             Self::IF => Some(Self::If),
+            Self::LAMBDA => Some(Self::Lambda),
             Self::QUOTE => Some(Self::Quote),
             Self::SET => Some(Self::Set),
             _ => None,
