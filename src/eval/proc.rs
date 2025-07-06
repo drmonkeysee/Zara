@@ -14,15 +14,15 @@ pub(crate) type Arity = Range<u8>;
 #[derive(Debug)]
 pub(crate) struct Procedure {
     arity: Arity,
-    body: Body,
+    def: Definition,
     name: Box<str>,
 }
 
 impl Procedure {
-    pub(crate) fn intrinsic(name: impl Into<Box<str>>, arity: Arity, body: IntrinsicFn) -> Self {
+    pub(crate) fn intrinsic(name: impl Into<Box<str>>, arity: Arity, def: IntrinsicFn) -> Self {
         Self {
             arity,
-            body: Body::Intrinsic(body),
+            def: Definition::Intrinsic(def),
             name: name.into(),
         }
     }
@@ -41,7 +41,7 @@ impl Procedure {
     }
 
     pub(crate) fn apply(&self, args: &[Value], env: &mut Frame) -> EvalResult {
-        self.body.apply(args, env)
+        self.def.apply(args, env)
     }
 }
 
@@ -54,7 +54,7 @@ impl Display for Procedure {
 }
 
 #[derive(Debug)]
-enum Body {
+enum Definition {
     Intrinsic(IntrinsicFn),
     // TODO: this likely has to be a 3rd thing: Body to exclude constructs
     // that can only appear at top-level program.
@@ -62,7 +62,7 @@ enum Body {
     Lambda(Program /*, TODO: need parameter names? */),
 }
 
-impl Body {
+impl Definition {
     fn apply(&self, args: &[Value], env: &mut Frame) -> EvalResult {
         match self {
             Self::Intrinsic(func) => func(args, env),
