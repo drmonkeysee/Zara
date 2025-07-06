@@ -41,10 +41,7 @@ impl Procedure {
     }
 
     pub(crate) fn apply(&self, args: &[Value], env: &mut Frame) -> EvalResult {
-        match self.body {
-            Body::Intrinsic(func) => func(args, env),
-            Body::Lambda(_) => todo!("lambda apply"),
-        }
+        self.body.apply(args, env)
     }
 }
 
@@ -63,6 +60,15 @@ enum Body {
     // that can only appear at top-level program.
     #[allow(dead_code, reason = "not yet implemented")]
     Lambda(Program /*, TODO: need parameter names? */),
+}
+
+impl Body {
+    fn apply(&self, args: &[Value], env: &mut Frame) -> EvalResult {
+        match self {
+            Self::Intrinsic(func) => func(args, env),
+            Self::Lambda(_) => todo!("lambda apply"),
+        }
+    }
 }
 
 fn write_arity(arity: &Arity, f: &mut Formatter<'_>) -> fmt::Result {
