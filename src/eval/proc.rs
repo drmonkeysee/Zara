@@ -13,31 +13,28 @@ pub(crate) type Arity = Range<u8>;
 
 #[derive(Debug)]
 pub(crate) struct Procedure {
-    arity: Arity,
     def: Definition,
-    name: Box<str>,
+    name: Option<Box<str>>,
 }
 
 impl Procedure {
     pub(crate) fn intrinsic(name: impl Into<Box<str>>, arity: Arity, def: IntrinsicFn) -> Self {
         Self {
-            arity,
-            def: Definition::Intrinsic(def),
-            name: name.into(),
+            def: Definition::Intrinsic(arity, def),
+            name: Some(name.into()),
         }
     }
 
-    pub(crate) fn name(&self) -> &str {
-        &self.name
+    pub(crate) fn name(&self) -> Option<&str> {
+        self.name.as_deref()
     }
 
     pub(crate) fn arity(&self) -> &Arity {
-        &self.arity
+        &self.def.arity()
     }
 
     pub(crate) fn matches_arity(&self, args_len: usize) -> bool {
-        (self.arity.is_empty() && self.arity.start as usize == args_len)
-            || (self.arity.start as usize <= args_len && args_len <= self.arity.len())
+        self.def.matches_arity(args_len)
     }
 
     pub(crate) fn apply(&self, args: &[Value], env: &mut Frame) -> EvalResult {
@@ -47,26 +44,61 @@ impl Procedure {
 
 impl Display for Procedure {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "#<procedure {}", self.name)?;
-        write_arity(&self.arity, f)?;
+        f.write_str("#<procedure")?;
+        if let Some(n) = &self.name {
+            write!(f, " {n}")?;
+        }
+        self.def.fmt(f)?;
         f.write_char('>')
     }
 }
 
 #[derive(Debug)]
+enum Formal {
+    Parameter(Box<str>),
+    Rest(Box<str>),
+}
+
+#[derive(Debug)]
 enum Definition {
-    Intrinsic(IntrinsicFn),
+    Intrinsic(Arity, IntrinsicFn),
     // TODO: this likely has to be a 3rd thing: Body to exclude constructs
     // that can only appear at top-level program.
     #[allow(dead_code, reason = "not yet implemented")]
-    Lambda(Program /*, TODO: need parameter names? */),
+    Lambda(Box<[Formal]>, Program),
 }
 
 impl Definition {
+    fn arity(&self) -> &Arity {
+        match self {
+            Self::Intrinsic(arity, _) => arity,
+            Self::Lambda(..) => todo!("lambda arity"),
+        }
+    }
+
+    fn matches_arity(&self, args_len: usize) -> bool {
+        match self {
+            Self::Intrinsic(arity, _) => {
+                (arity.is_empty() && arity.start as usize == args_len)
+                    || (arity.start as usize <= args_len && args_len <= arity.len())
+            }
+            Self::Lambda(..) => todo!("lambda matches arity"),
+        }
+    }
+
     fn apply(&self, args: &[Value], env: &mut Frame) -> EvalResult {
         match self {
-            Self::Intrinsic(func) => func(args, env),
-            Self::Lambda(_) => todo!("lambda apply"),
+            Self::Intrinsic(_, func) => func(args, env),
+            Self::Lambda(..) => todo!("lambda apply"),
+        }
+    }
+}
+
+impl Display for Definition {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Intrinsic(arity, _) => write_arity(arity, f),
+            Self::Lambda(..) => todo!("lambda display arity"),
         }
     }
 }

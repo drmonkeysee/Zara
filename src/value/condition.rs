@@ -30,7 +30,7 @@ impl Condition {
         }
     }
 
-    pub(crate) fn arity_error(name: &str, expected: &Arity, actual: usize) -> Self {
+    pub(crate) fn arity_error(name: Option<&str>, expected: &Arity, actual: usize) -> Self {
         let expected = if actual > MAX_ARITY as usize {
             format!("args exceed max arity: {MAX_ARITY}")
         } else {
@@ -43,7 +43,11 @@ impl Condition {
         Self {
             kind: ConditionKind::Env,
             irritants: None,
-            msg: format!("{name} arity mismatch - {expected}, got: {actual}",).into(),
+            msg: format!(
+                "{} arity mismatch - {expected}, got: {actual}",
+                name.unwrap_or("procedure")
+            )
+            .into(),
         }
     }
 
