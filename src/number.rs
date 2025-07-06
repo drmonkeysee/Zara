@@ -637,10 +637,7 @@ impl Integer {
 impl Display for Integer {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         self.sign.fmt(f)?;
-        match self.precision {
-            Precision::Single(u) => write!(f, "{u}"),
-            Precision::Multiple(_) => todo!(),
-        }
+        self.precision.fmt(f)
     }
 }
 
@@ -1013,6 +1010,15 @@ impl Precision {
                 *other = Self::Single(*b / gcd);
             }
             _ => todo!(),
+        }
+    }
+}
+
+impl Display for Precision {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Single(u) => write!(f, "{u}"),
+            Self::Multiple(_) => todo!(),
         }
     }
 }

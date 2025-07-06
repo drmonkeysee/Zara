@@ -93,35 +93,7 @@ impl Expression {
     }
 
     fn eval(self, env: &mut Frame) -> EvalResult {
-        match self.kind {
-            ExpressionKind::Call { args, proc } => eval_call(*proc, args, env),
-            ExpressionKind::Define { name, expr } => {
-                let val = expr.map_or(Ok(Value::Unspecified), |expr| expr.eval(env))?;
-                env.scope.bind(name, val);
-                Ok(Value::Unspecified)
-            }
-            ExpressionKind::If { test, con, alt } => {
-                if let Value::Boolean(false) = test.eval(env)? {
-                    alt.map_or(Ok(Value::Unspecified), |expr| expr.eval(env))
-                } else {
-                    con.eval(env)
-                }
-            }
-            ExpressionKind::Literal(v) => Ok(v),
-            ExpressionKind::Set { var, expr } => {
-                if env.scope.bound(&var) {
-                    let val = expr.eval(env)?;
-                    env.scope.bind(var, val);
-                    Ok(Value::Unspecified)
-                } else {
-                    Err(Exception::signal(Condition::bind_error(&var)))
-                }
-            }
-            ExpressionKind::Variable(n) => env
-                .scope
-                .lookup(&n)
-                .ok_or_else(|| Exception::signal(Condition::bind_error(&n))),
-        }
+        self.kind.eval(env)
     }
 }
 
@@ -151,6 +123,38 @@ pub(super) enum ExpressionKind {
 impl ExpressionKind {
     fn as_typename(&self) -> TypeName {
         TypeName(self)
+    }
+
+    fn eval(self, env: &mut Frame) -> EvalResult {
+        match self {
+            Self::Call { args, proc } => eval_call(*proc, args, env),
+            Self::Define { name, expr } => {
+                let val = expr.map_or(Ok(Value::Unspecified), |expr| expr.eval(env))?;
+                env.scope.bind(name, val);
+                Ok(Value::Unspecified)
+            }
+            Self::If { test, con, alt } => {
+                if let Value::Boolean(false) = test.eval(env)? {
+                    alt.map_or(Ok(Value::Unspecified), |expr| expr.eval(env))
+                } else {
+                    con.eval(env)
+                }
+            }
+            Self::Literal(v) => Ok(v),
+            Self::Set { var, expr } => {
+                if env.scope.bound(&var) {
+                    let val = expr.eval(env)?;
+                    env.scope.bind(var, val);
+                    Ok(Value::Unspecified)
+                } else {
+                    Err(Exception::signal(Condition::bind_error(&var)))
+                }
+            }
+            Self::Variable(n) => env
+                .scope
+                .lookup(&n)
+                .ok_or_else(|| Exception::signal(Condition::bind_error(&n))),
+        }
     }
 }
 
