@@ -1,9 +1,9 @@
 mod env;
-mod form;
+mod proc;
 
 pub(crate) use self::{
     env::{Binding, Frame, Namespace, SymbolTable, System},
-    form::{Arity, IntrinsicFn, MAX_ARITY, Procedure},
+    proc::{Arity, IntrinsicFn, MAX_ARITY, Procedure},
 };
 use crate::{
     core, ext,
