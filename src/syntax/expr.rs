@@ -141,7 +141,7 @@ impl ExpressionKind {
                     con.eval(env)
                 }
             }
-            Self::Lambda => todo!("eval lambda"),
+            Self::Lambda => todo!("eval lambda -> procedure (name comes from define or set!)"),
             Self::Literal(v) => Ok(v),
             Self::Set { var, expr } => {
                 if env.scope.bound(&var) {

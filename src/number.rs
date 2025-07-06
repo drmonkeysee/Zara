@@ -228,14 +228,14 @@ impl Complex {
     }
 
     pub(crate) fn to_magnitude(&self) -> Real {
-        let x = self.real_part().to_float();
-        let y = self.imag_part().to_float();
+        let x = self.0.0.to_float();
+        let y = self.0.1.to_float();
         Real::Float(x.hypot(y))
     }
 
     pub(crate) fn to_angle(&self) -> Real {
-        let x = self.real_part().to_float();
-        let y = self.imag_part().to_float();
+        let x = self.0.0.to_float();
+        let y = self.0.1.to_float();
         Real::Float(y.atan2(x))
     }
 }
@@ -365,7 +365,7 @@ impl Real {
     pub(crate) fn try_into_numerator(self) -> RealResult {
         Ok(match self {
             Self::Float(_) => self.try_into_exact()?.try_into_numerator()?.into_inexact(),
-            Self::Integer(n) => n.into_numerator().into(),
+            Self::Integer(n) => n.into(),
             Self::Rational(q) => q.into_numerator().into(),
         })
     }
@@ -626,10 +626,6 @@ impl Integer {
 
     fn into_abs(mut self) -> Self {
         self.make_positive();
-        self
-    }
-
-    fn into_numerator(self) -> Self {
         self
     }
 }
