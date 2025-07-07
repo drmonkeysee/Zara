@@ -13,6 +13,7 @@ pub(crate) type Arity = Range<u8>;
 
 #[derive(Debug)]
 pub(crate) struct Procedure {
+    arity: Arity,
     def: Definition,
     name: Option<Box<str>>,
 }
@@ -20,7 +21,8 @@ pub(crate) struct Procedure {
 impl Procedure {
     pub(crate) fn intrinsic(name: impl Into<Box<str>>, arity: Arity, def: IntrinsicFn) -> Self {
         Self {
-            def: Definition::Intrinsic(arity, def),
+            arity,
+            def: Definition::Intrinsic(def),
             name: Some(name.into()),
         }
     }
@@ -30,11 +32,12 @@ impl Procedure {
     }
 
     pub(crate) fn arity(&self) -> &Arity {
-        &self.def.arity()
+        &self.arity
     }
 
     pub(crate) fn matches_arity(&self, args_len: usize) -> bool {
-        self.def.matches_arity(args_len)
+        (self.arity.is_empty() && self.arity.start as usize == args_len)
+            || (self.arity.start as usize <= args_len && args_len <= self.arity.len())
     }
 
     pub(crate) fn apply(&self, args: &[Value], env: &mut Frame) -> EvalResult {
@@ -48,7 +51,7 @@ impl Display for Procedure {
         if let Some(n) = &self.name {
             write!(f, " {n}")?;
         }
-        self.def.fmt(f)?;
+        write_arity(&self.arity, f)?;
         f.write_char('>')
     }
 }
@@ -61,7 +64,7 @@ enum Formal {
 
 #[derive(Debug)]
 enum Definition {
-    Intrinsic(Arity, IntrinsicFn),
+    Intrinsic(IntrinsicFn),
     // TODO: this likely has to be a 3rd thing: Body to exclude constructs
     // that can only appear at top-level program.
     #[allow(dead_code, reason = "not yet implemented")]
@@ -69,36 +72,10 @@ enum Definition {
 }
 
 impl Definition {
-    fn arity(&self) -> &Arity {
-        match self {
-            Self::Intrinsic(arity, _) => arity,
-            Self::Lambda(..) => todo!("lambda arity"),
-        }
-    }
-
-    fn matches_arity(&self, args_len: usize) -> bool {
-        match self {
-            Self::Intrinsic(arity, _) => {
-                (arity.is_empty() && arity.start as usize == args_len)
-                    || (arity.start as usize <= args_len && args_len <= arity.len())
-            }
-            Self::Lambda(..) => todo!("lambda matches arity"),
-        }
-    }
-
     fn apply(&self, args: &[Value], env: &mut Frame) -> EvalResult {
         match self {
-            Self::Intrinsic(_, func) => func(args, env),
+            Self::Intrinsic(func) => func(args, env),
             Self::Lambda(..) => todo!("lambda apply"),
-        }
-    }
-}
-
-impl Display for Definition {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Intrinsic(arity, _) => write_arity(arity, f),
-            Self::Lambda(..) => todo!("lambda display arity"),
         }
     }
 }
