@@ -53,6 +53,7 @@ use crate::{
     eval::{Arity, Binding, EvalResult, IntrinsicFn, Procedure},
     value::{Condition, TypeName, Value},
 };
+pub(crate) use invalid_target;
 
 /*
  * R7RS Core Library
@@ -62,7 +63,7 @@ use crate::{
  * so this should always be a safe assumption.
  */
 
-const FIRST_ARG_LABEL: &str = "0";
+pub(crate) const FIRST_ARG_LABEL: &str = "0";
 const SECOND_ARG_LABEL: &str = "1";
 
 pub(crate) fn load(scope: &mut Binding) {
