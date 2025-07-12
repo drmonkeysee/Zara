@@ -78,7 +78,7 @@ pub(crate) fn load(scope: &mut Binding) {
     time::load(scope);
 }
 
-pub(crate) fn bind_intrinsic(scope: &mut Binding, name: &str, arity: Arity, body: IntrinsicFn) {
+fn bind_intrinsic(scope: &mut Binding, name: &str, arity: Arity, body: IntrinsicFn) {
     scope.bind(
         name,
         Value::Procedure(Procedure::intrinsic(name, arity, body).into()),
