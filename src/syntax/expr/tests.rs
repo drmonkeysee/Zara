@@ -65,13 +65,6 @@ mod display {
     }
 
     #[test]
-    fn lambda_typename() {
-        let expr = ExpressionKind::Lambda;
-
-        assert_eq!(expr.as_typename().to_string(), "lambda expression");
-    }
-
-    #[test]
     fn set_typename() {
         let expr = ExpressionKind::Set {
             var: "foo".into(),
