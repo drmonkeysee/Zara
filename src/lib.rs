@@ -1,6 +1,5 @@
 mod core;
 pub mod eval;
-mod ext;
 mod lex;
 mod number;
 pub mod src;

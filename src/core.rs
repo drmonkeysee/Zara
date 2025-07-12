@@ -45,6 +45,7 @@ mod base;
 mod charuni;
 mod complex;
 mod cxr;
+mod ext;
 mod inexact;
 mod procctx;
 mod time;
@@ -53,17 +54,16 @@ use crate::{
     eval::{Arity, Binding, EvalResult, IntrinsicFn, Procedure},
     value::{Condition, TypeName, Value},
 };
-pub(crate) use invalid_target;
 
 /*
- * R7RS Core Library
+ * Zara Core Library including all the standard R7RS libraries
  *
  * All intrinsic functions assume required arguments are present and will use
  * unchecked access to retrieve them; arity is checked by call-expr evaluation
  * so this should always be a safe assumption.
  */
 
-pub(crate) const FIRST_ARG_LABEL: &str = "0";
+const FIRST_ARG_LABEL: &str = "0";
 const SECOND_ARG_LABEL: &str = "1";
 
 pub(crate) fn load(scope: &mut Binding) {
@@ -71,6 +71,8 @@ pub(crate) fn load(scope: &mut Binding) {
     charuni::load(scope);
     complex::load(scope);
     cxr::load(scope);
+    // TODO: add cli arg for excluding this
+    ext::load(scope);
     inexact::load(scope);
     procctx::load(scope);
     time::load(scope);

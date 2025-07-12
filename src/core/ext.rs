@@ -1,6 +1,7 @@
+// (zara ext)
+use super::FIRST_ARG_LABEL;
 use crate::{
     Exception,
-    core::{self, FIRST_ARG_LABEL, invalid_target},
     eval::{Binding, EvalResult, Frame},
     value::{Condition, TypeName, Value},
 };
@@ -13,11 +14,10 @@ use std::rc::Rc;
  * debugging, inspection, and other utilities.
  */
 
-// TODO: add cli arg for excluding this
 pub(crate) fn load(scope: &mut Binding) {
-    core::bind_intrinsic(scope, "all-bindings", 0..0, bindings);
-    core::bind_intrinsic(scope, "all-symbols", 0..0, symbols);
-    core::bind_intrinsic(scope, "apropos", 0..1, apropos);
+    super::bind_intrinsic(scope, "all-bindings", 0..0, bindings);
+    super::bind_intrinsic(scope, "all-symbols", 0..0, symbols);
+    super::bind_intrinsic(scope, "apropos", 0..1, apropos);
 
     // NOTE: convenience vars
     scope.bind("null", Value::null());

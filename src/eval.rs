@@ -6,7 +6,7 @@ pub(crate) use self::{
     proc::{Arity, IntrinsicFn, MAX_ARITY, Procedure},
 };
 use crate::{
-    core, ext,
+    core,
     syntax::Program,
     value::{Condition, Value as ValueImpl},
 };
@@ -34,7 +34,6 @@ impl<T: Evaluator + Default> Environment<T> {
     pub(crate) fn new(args: impl IntoIterator<Item = String>) -> Self {
         let mut global = Binding::default();
         core::load(&mut global);
-        ext::load(&mut global);
         Self {
             driver: PhantomData,
             global,
