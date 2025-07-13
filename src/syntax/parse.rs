@@ -613,10 +613,11 @@ fn into_valid_sequence<T>(
 }
 
 fn identifier_to_expr(name: String, quoted: bool, ctx: ExprCtx, ns: &mut Namespace) -> Expression {
+    let n = ns.get_symbol(&name);
     if quoted {
-        Expression::symbol(ns.get_symbol(&name), ctx)
+        Expression::symbol(n, ctx)
     } else {
-        Expression::variable(name, ctx)
+        Expression::variable(n, ctx)
     }
 }
 

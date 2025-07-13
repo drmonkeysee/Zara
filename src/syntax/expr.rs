@@ -85,7 +85,7 @@ impl Expression {
         }
     }
 
-    pub(super) fn variable(name: impl Into<Box<str>>, ctx: ExprCtx) -> Self {
+    pub(super) fn variable(name: impl Into<Rc<str>>, ctx: ExprCtx) -> Self {
         Self {
             ctx,
             kind: ExpressionKind::Variable(name.into()),
@@ -104,7 +104,7 @@ pub(super) enum ExpressionKind {
         proc: Box<Expression>,
     },
     Define {
-        name: Box<str>,
+        name: Rc<str>,
         expr: Option<Box<Expression>>,
     },
     If {
@@ -114,10 +114,10 @@ pub(super) enum ExpressionKind {
     },
     Literal(Value),
     Set {
-        var: Box<str>,
+        var: Rc<str>,
         expr: Box<Expression>,
     },
-    Variable(Box<str>),
+    Variable(Rc<str>),
 }
 
 impl ExpressionKind {

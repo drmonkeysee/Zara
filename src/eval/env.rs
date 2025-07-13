@@ -12,7 +12,7 @@ pub(crate) struct Frame<'a> {
 }
 
 #[derive(Default)]
-pub(crate) struct Binding(HashMap<Box<str>, Value>);
+pub(crate) struct Binding(HashMap<Rc<str>, Value>);
 
 impl Binding {
     pub(crate) fn bound(&self, name: &str) -> bool {
@@ -33,7 +33,7 @@ impl Binding {
         vec
     }
 
-    pub(crate) fn bind(&mut self, name: impl Into<Box<str>>, val: Value) {
+    pub(crate) fn bind(&mut self, name: impl Into<Rc<str>>, val: Value) {
         self.0.insert(name.into(), val);
     }
 }

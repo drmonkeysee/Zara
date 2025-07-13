@@ -4,6 +4,7 @@ use std::{
     fmt::{self, Display, Formatter, Write},
     iter,
     ops::Range,
+    rc::Rc,
 };
 
 pub(crate) const MAX_ARITY: u8 = u8::MAX;
@@ -15,11 +16,11 @@ pub(crate) type Arity = Range<u8>;
 pub(crate) struct Procedure {
     arity: Arity,
     def: Definition,
-    name: Option<Box<str>>,
+    name: Option<Rc<str>>,
 }
 
 impl Procedure {
-    pub(crate) fn intrinsic(name: impl Into<Box<str>>, arity: Arity, def: IntrinsicFn) -> Self {
+    pub(crate) fn intrinsic(name: impl Into<Rc<str>>, arity: Arity, def: IntrinsicFn) -> Self {
         Self {
             arity,
             def: Definition::Intrinsic(def),
@@ -58,8 +59,8 @@ impl Display for Procedure {
 
 #[derive(Debug)]
 enum Formal {
-    Parameter(Box<str>),
-    Rest(Box<str>),
+    Parameter(Rc<str>),
+    Rest(Rc<str>),
 }
 
 #[derive(Debug)]
