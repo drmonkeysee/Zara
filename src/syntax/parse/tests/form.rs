@@ -865,6 +865,7 @@ fn invalid_into_open_pair() {
 #[test]
 fn into_define_variable() {
     let txt = make_textline().into();
+    // (define foo "bar")
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..18,
@@ -873,7 +874,7 @@ fn into_define_variable() {
         mode: ParseMode::List {
             form: SyntacticForm::Define,
             seq: vec![
-                Expression::variable(
+                Expression::symbol(
                     "foo".into(),
                     ExprCtx {
                         span: 8..11,
@@ -913,8 +914,88 @@ fn into_define_variable() {
 }
 
 #[test]
-fn into_define_variable_no_value() {
+#[ignore = "define lambda not implemented"]
+fn into_define_lambda() {
     let txt = make_textline().into();
+    // (define (foo x y) (+ x y))
+    let p = ExprNode {
+        ctx: ExprCtx {
+            span: 0..26,
+            txt: Rc::clone(&txt),
+        },
+        mode: ParseMode::List {
+            form: SyntacticForm::Define,
+            seq: vec![
+                ExprCtx {
+                    span: 8..17,
+                    txt: Rc::clone(&txt),
+                }
+                .into_expr(ExpressionKind::Literal(zlist![
+                    Value::Symbol("foo".into()),
+                    Value::Symbol("x".into()),
+                    Value::Symbol("y".into())
+                ])),
+                ExprCtx {
+                    span: 9..12,
+                    txt: Rc::clone(&txt),
+                }
+                .into_expr(ExpressionKind::Call {
+                    proc: Expression::variable(
+                        "+".into(),
+                        ExprCtx {
+                            span: 19..20,
+                            txt: Rc::clone(&txt),
+                        },
+                    )
+                    .into(),
+                    args: [
+                        Expression::variable(
+                            "x".into(),
+                            ExprCtx {
+                                span: 21..22,
+                                txt: Rc::clone(&txt),
+                            },
+                        ),
+                        Expression::variable(
+                            "y".into(),
+                            ExprCtx {
+                                span: 23..24,
+                                txt: Rc::clone(&txt),
+                            },
+                        ),
+                    ]
+                    .into(),
+                }),
+            ],
+        },
+    };
+    let mut env = TestEnv::default();
+    let mut ns = env.new_namespace();
+
+    let r = p.try_into_expr(&mut ns);
+
+    let expr = some_or_fail!(ok_or_fail!(r));
+    assert!(matches!(
+        expr,
+        Expression {
+            ctx: ExprCtx { span: TxtSpan { start: 0, end: 26 }, txt: line },
+            kind: ExpressionKind::Define { .. },
+        } if Rc::ptr_eq(&txt, &line)
+    ));
+    let ExpressionKind::Define { name, expr } = expr.kind else {
+        unreachable!();
+    };
+    assert_eq!(name.as_ref(), "foo");
+    let val_expr = some_or_fail!(expr);
+    let val = extract_or_fail!(val_expr.kind, ExpressionKind::Literal);
+    assert_eq!(val.to_string(), "\"bar\"");
+}
+
+#[test]
+#[ignore = "define lambda not implemented"]
+fn into_define_parameterless_lambda() {
+    let txt = make_textline().into();
+    // (define (foo) 123)
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..18,
@@ -922,7 +1003,201 @@ fn into_define_variable_no_value() {
         },
         mode: ParseMode::List {
             form: SyntacticForm::Define,
-            seq: vec![Expression::variable(
+            seq: vec![
+                ExprCtx {
+                    span: 8..13,
+                    txt: Rc::clone(&txt),
+                }
+                .into_expr(ExpressionKind::Literal(zlist![Value::Symbol(
+                    "foo".into()
+                ),])),
+                ExprCtx {
+                    span: 14..17,
+                    txt: Rc::clone(&txt),
+                }
+                .into_expr(ExpressionKind::Literal(Value::Number(Number::real(123)))),
+            ],
+        },
+    };
+    let mut env = TestEnv::default();
+    let mut ns = env.new_namespace();
+
+    let r = p.try_into_expr(&mut ns);
+
+    let expr = some_or_fail!(ok_or_fail!(r));
+    assert!(matches!(
+        expr,
+        Expression {
+            ctx: ExprCtx { span: TxtSpan { start: 0, end: 18 }, txt: line },
+            kind: ExpressionKind::Define { .. },
+        } if Rc::ptr_eq(&txt, &line)
+    ));
+    let ExpressionKind::Define { name, expr } = expr.kind else {
+        unreachable!();
+    };
+    assert_eq!(name.as_ref(), "foo");
+    let val_expr = some_or_fail!(expr);
+    let val = extract_or_fail!(val_expr.kind, ExpressionKind::Literal);
+    assert_eq!(val.to_string(), "\"bar\"");
+}
+
+#[test]
+#[ignore = "define lambda not implemented"]
+fn into_define_variadic_lambda() {
+    let txt = make_textline().into();
+    // (define (foo . x) (cdr x))
+    let p = ExprNode {
+        ctx: ExprCtx {
+            span: 0..26,
+            txt: Rc::clone(&txt),
+        },
+        mode: ParseMode::List {
+            form: SyntacticForm::Define,
+            seq: vec![
+                ExprCtx {
+                    span: 8..17,
+                    txt: Rc::clone(&txt),
+                }
+                .into_expr(ExpressionKind::Literal(Value::cons(
+                    Value::Symbol("foo".into()),
+                    Value::Symbol("x".into()),
+                ))),
+                ExprCtx {
+                    span: 18..25,
+                    txt: Rc::clone(&txt),
+                }
+                .into_expr(ExpressionKind::Call {
+                    proc: Expression::variable(
+                        "cdr".into(),
+                        ExprCtx {
+                            span: 19..22,
+                            txt: Rc::clone(&txt),
+                        },
+                    )
+                    .into(),
+                    args: [Expression::variable(
+                        "x".into(),
+                        ExprCtx {
+                            span: 23..24,
+                            txt: Rc::clone(&txt),
+                        },
+                    )]
+                    .into(),
+                }),
+            ],
+        },
+    };
+    let mut env = TestEnv::default();
+    let mut ns = env.new_namespace();
+
+    let r = p.try_into_expr(&mut ns);
+
+    let expr = some_or_fail!(ok_or_fail!(r));
+    assert!(matches!(
+        expr,
+        Expression {
+            ctx: ExprCtx { span: TxtSpan { start: 0, end: 26 }, txt: line },
+            kind: ExpressionKind::Define { .. },
+        } if Rc::ptr_eq(&txt, &line)
+    ));
+    let ExpressionKind::Define { name, expr } = expr.kind else {
+        unreachable!();
+    };
+    assert_eq!(name.as_ref(), "foo");
+    let val_expr = some_or_fail!(expr);
+    let val = extract_or_fail!(val_expr.kind, ExpressionKind::Literal);
+    assert_eq!(val.to_string(), "\"bar\"");
+}
+
+#[test]
+#[ignore = "define lambda not implemented"]
+fn into_define_rest_lambda() {
+    let txt = make_textline().into();
+    // (define (foo x . y) (display x y))
+    let p = ExprNode {
+        ctx: ExprCtx {
+            span: 0..34,
+            txt: Rc::clone(&txt),
+        },
+        mode: ParseMode::List {
+            form: SyntacticForm::Define,
+            seq: vec![
+                ExprCtx {
+                    span: 8..19,
+                    txt: Rc::clone(&txt),
+                }
+                .into_expr(ExpressionKind::Literal(Value::cons(
+                    Value::Symbol("foo".into()),
+                    Value::cons(Value::Symbol("x".into()), Value::Symbol("y".into())),
+                ))),
+                ExprCtx {
+                    span: 20..33,
+                    txt: Rc::clone(&txt),
+                }
+                .into_expr(ExpressionKind::Call {
+                    proc: Expression::variable(
+                        "display".into(),
+                        ExprCtx {
+                            span: 21..28,
+                            txt: Rc::clone(&txt),
+                        },
+                    )
+                    .into(),
+                    args: [
+                        Expression::variable(
+                            "x".into(),
+                            ExprCtx {
+                                span: 29..30,
+                                txt: Rc::clone(&txt),
+                            },
+                        ),
+                        Expression::variable(
+                            "y".into(),
+                            ExprCtx {
+                                span: 31..32,
+                                txt: Rc::clone(&txt),
+                            },
+                        ),
+                    ]
+                    .into(),
+                }),
+            ],
+        },
+    };
+    let mut env = TestEnv::default();
+    let mut ns = env.new_namespace();
+
+    let r = p.try_into_expr(&mut ns);
+
+    let expr = some_or_fail!(ok_or_fail!(r));
+    assert!(matches!(
+        expr,
+        Expression {
+            ctx: ExprCtx { span: TxtSpan { start: 0, end: 34 }, txt: line },
+            kind: ExpressionKind::Define { .. },
+        } if Rc::ptr_eq(&txt, &line)
+    ));
+    let ExpressionKind::Define { name, expr } = expr.kind else {
+        unreachable!();
+    };
+    assert_eq!(name.as_ref(), "foo");
+    let val_expr = some_or_fail!(expr);
+    let val = extract_or_fail!(val_expr.kind, ExpressionKind::Literal);
+    assert_eq!(val.to_string(), "\"bar\"");
+}
+
+#[test]
+fn into_define_variable_no_value() {
+    let txt = make_textline().into();
+    // (define foo)
+    let p = ExprNode {
+        ctx: ExprCtx {
+            span: 0..12,
+            txt: Rc::clone(&txt),
+        },
+        mode: ParseMode::List {
+            form: SyntacticForm::Define,
+            seq: vec![Expression::symbol(
                 "foo".into(),
                 ExprCtx {
                     span: 8..11,
@@ -952,8 +1227,9 @@ fn into_define_variable_no_value() {
 }
 
 #[test]
-fn into_define_not_variable_expr() {
+fn into_define_not_identifier_expr() {
     let txt = make_textline().into();
+    // (define <unquoted (myproc)> "bar")
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..23,
@@ -1006,6 +1282,7 @@ fn into_define_not_variable_expr() {
 #[test]
 fn into_empty_define() {
     let txt = make_textline().into();
+    // (define)
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..8,
@@ -1035,15 +1312,16 @@ fn into_empty_define() {
 #[test]
 fn into_define_too_many_args() {
     let txt = make_textline().into();
+    // (define foo "bar" "baz")
     let p = ExprNode {
         ctx: ExprCtx {
-            span: 0..25,
+            span: 0..24,
             txt: Rc::clone(&txt),
         },
         mode: ParseMode::List {
             form: SyntacticForm::Define,
             seq: vec![
-                Expression::variable(
+                Expression::symbol(
                     "foo".into(),
                     ExprCtx {
                         span: 8..11,
@@ -1078,6 +1356,81 @@ fn into_define_too_many_args() {
         &errs[0],
         ExpressionError {
             ctx: ExprCtx { span: TxtSpan { start: 0, end: 25 }, txt: line },
+            kind: ExpressionErrorKind::DefineInvalid,
+        } if Rc::ptr_eq(&txt, &line)
+    ));
+}
+
+#[test]
+#[ignore = "define lambda not implemented"]
+fn into_define_lambda_no_body() {
+    let txt = make_textline().into();
+    // (define (foo))
+    let p = ExprNode {
+        ctx: ExprCtx {
+            span: 0..14,
+            txt: Rc::clone(&txt),
+        },
+        mode: ParseMode::List {
+            form: SyntacticForm::Define,
+            seq: vec![
+                ExprCtx {
+                    span: 8..13,
+                    txt: Rc::clone(&txt),
+                }
+                .into_expr(ExpressionKind::Literal(zlist![Value::Symbol("foo".into())])),
+            ],
+        },
+    };
+    let mut env = TestEnv::default();
+    let mut ns = env.new_namespace();
+
+    let r = p.try_into_expr(&mut ns);
+
+    let errs = err_or_fail!(r);
+    assert_eq!(errs.len(), 1);
+    assert!(matches!(
+        &errs[0],
+        ExpressionError {
+            ctx: ExprCtx { span: TxtSpan { start: 0, end: 14 }, txt: line },
+            kind: ExpressionErrorKind::DefineInvalid,
+        } if Rc::ptr_eq(&txt, &line)
+    ));
+}
+
+#[test]
+#[ignore = "define lambda not implemented"]
+fn into_define_lambda_empty_body() {
+    let txt = make_textline().into();
+    // (define (foo) ())
+    let p = ExprNode {
+        ctx: ExprCtx {
+            span: 0..17,
+            txt: Rc::clone(&txt),
+        },
+        mode: ParseMode::List {
+            form: SyntacticForm::Define,
+            seq: vec![
+                ExprCtx {
+                    span: 8..13,
+                    txt: Rc::clone(&txt),
+                }
+                .into_expr(ExpressionKind::Literal(zlist![Value::Symbol("foo".into())])),
+            ],
+            // TODO: what goes here
+        },
+    };
+    let mut env = TestEnv::default();
+    let mut ns = env.new_namespace();
+
+    let r = p.try_into_expr(&mut ns);
+
+    let errs = err_or_fail!(r);
+    assert_eq!(errs.len(), 1);
+    assert!(matches!(
+        &errs[0],
+        ExpressionError {
+            ctx: ExprCtx { span: TxtSpan { start: 0, end: 14 }, txt: line },
             kind: ExpressionErrorKind::DefineInvalid,
         } if Rc::ptr_eq(&txt, &line)
     ));
@@ -1629,7 +1982,7 @@ fn into_lambda_no_arguments() {
 }
 
 #[test]
-fn into_lambda_any_arguments() {
+fn into_lambda_variadic() {
     // (lambda x x)
     let txt = make_textline().into();
     let p = ExprNode {
@@ -1679,7 +2032,7 @@ fn into_lambda_any_arguments() {
 }
 
 #[test]
-fn into_lambda_rest_arguments() {
+fn into_lambda_rest() {
     // (lambda (x y . z) z)
     let txt = make_textline().into();
     let p = ExprNode {
@@ -1729,7 +2082,7 @@ fn into_lambda_rest_arguments() {
 }
 
 #[test]
-fn into_lambda_not_variable_expr() {
+fn into_lambda_not_identifier_expr() {
     // (lambda (1) 'a)
     let txt = make_textline().into();
     let p = ExprNode {
@@ -2152,7 +2505,7 @@ mod merge {
             mode: ParseMode::List {
                 form: SyntacticForm::Define,
                 seq: vec![
-                    Expression::variable(
+                    Expression::symbol(
                         "foo".into(),
                         ExprCtx {
                             span: 4..7,
