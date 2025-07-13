@@ -457,6 +457,7 @@ fn invalid_token() {
 #[test]
 fn into_procedure_call() {
     let txt = make_textline().into();
+    // (+ 4 5)
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..6,
@@ -528,6 +529,7 @@ fn into_procedure_call() {
 #[test]
 fn into_empty_procedure_call() {
     let txt = make_textline().into();
+    // ()
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..8,
@@ -557,6 +559,7 @@ fn into_empty_procedure_call() {
 #[test]
 fn into_quote_apply() {
     let txt = make_textline().into();
+    // (quote foo)
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..10,
@@ -591,6 +594,7 @@ fn into_quote_apply() {
 #[test]
 fn into_empty_quote_apply() {
     let txt = make_textline().into();
+    // (quote)
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..7,
@@ -620,6 +624,7 @@ fn into_empty_quote_apply() {
 #[test]
 fn into_quote_apply_too_many_args() {
     let txt = make_textline().into();
+    // (quote foo bar)
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..14,
@@ -664,6 +669,7 @@ fn into_quote_apply_too_many_args() {
 #[test]
 fn into_datum_list() {
     let txt = make_textline().into();
+    // '(+ 4 5)
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..6,
@@ -712,6 +718,7 @@ fn into_datum_list() {
 #[test]
 fn into_empty_datum_list() {
     let txt = make_textline().into();
+    // '()
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..2,
@@ -742,6 +749,7 @@ fn into_empty_datum_list() {
 #[test]
 fn into_invalid_datum_list() {
     let txt = make_textline().into();
+    // '(<unquoted +> 4 5)
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..8,
@@ -789,6 +797,7 @@ fn into_invalid_datum_list() {
 #[test]
 fn into_pair() {
     let txt = make_textline().into();
+    // '(4 . 5)
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..8,
@@ -830,6 +839,7 @@ fn into_pair() {
 #[test]
 fn invalid_into_open_pair() {
     let txt = make_textline().into();
+    // '(4 . )
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..8,
@@ -1439,6 +1449,7 @@ fn into_define_lambda_empty_body() {
 #[test]
 fn into_set_variable() {
     let txt = make_textline().into();
+    // (set! foo "bar")
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..18,
@@ -1488,6 +1499,7 @@ fn into_set_variable() {
 #[test]
 fn into_set_not_variable_expr() {
     let txt = make_textline().into();
+    // (set! (myproc) "bar")
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..23,
@@ -1540,6 +1552,7 @@ fn into_set_not_variable_expr() {
 #[test]
 fn into_set_too_few_args() {
     let txt = make_textline().into();
+    // (set! foo)
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..25,
@@ -1575,6 +1588,7 @@ fn into_set_too_few_args() {
 #[test]
 fn into_set_too_many_args() {
     let txt = make_textline().into();
+    // (set! foo "bar" "baz")
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..25,
@@ -1626,6 +1640,7 @@ fn into_set_too_many_args() {
 #[test]
 fn into_if_consequent() {
     let txt = make_textline().into();
+    // (if #t "bar")
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..13,
@@ -1679,6 +1694,7 @@ fn into_if_consequent() {
 #[test]
 fn into_if_consequent_alternate() {
     let txt = make_textline().into();
+    // (if #t "bar" "foo")
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..17,
@@ -1743,6 +1759,7 @@ fn into_if_consequent_alternate() {
 #[test]
 fn into_if_too_few_args() {
     let txt = make_textline().into();
+    // (if #t)
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..7,
@@ -1778,6 +1795,7 @@ fn into_if_too_few_args() {
 #[test]
 fn into_if_too_many_args() {
     let txt = make_textline().into();
+    // (if #t "bar" "foo" "beef")
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..22,
