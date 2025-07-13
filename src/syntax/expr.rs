@@ -78,17 +78,17 @@ impl Expression {
         }
     }
 
-    pub(super) fn symbol(name: impl Into<Rc<str>>, ctx: ExprCtx) -> Self {
+    pub(super) fn symbol(name: Rc<str>, ctx: ExprCtx) -> Self {
         Self {
             ctx,
-            kind: ExpressionKind::Literal(Value::Symbol(name.into())),
+            kind: ExpressionKind::Literal(Value::Symbol(name)),
         }
     }
 
-    pub(super) fn variable(name: impl Into<Rc<str>>, ctx: ExprCtx) -> Self {
+    pub(super) fn variable(name: Rc<str>, ctx: ExprCtx) -> Self {
         Self {
             ctx,
-            kind: ExpressionKind::Variable(name.into()),
+            kind: ExpressionKind::Variable(name),
         }
     }
 

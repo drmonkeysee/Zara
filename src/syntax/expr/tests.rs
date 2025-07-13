@@ -7,7 +7,7 @@ mod display {
     #[test]
     fn call_typename() {
         let proc = Expression::variable(
-            "foo",
+            "foo".into(),
             ExprCtx {
                 span: 0..5,
                 txt: make_textline().into(),
@@ -122,7 +122,7 @@ mod eval {
     #[test]
     fn variable() {
         let expr = Expression::variable(
-            "x",
+            "x".into(),
             ExprCtx {
                 span: 0..6,
                 txt: make_textline().into(),
@@ -141,7 +141,7 @@ mod eval {
     #[test]
     fn missing_variable() {
         let expr = Expression::variable(
-            "x",
+            "x".into(),
             ExprCtx {
                 span: 0..6,
                 txt: make_textline().into(),
@@ -210,7 +210,7 @@ mod eval {
                 }
                 .into_expr(ExpressionKind::Call {
                     proc: Expression::variable(
-                        "foo",
+                        "foo".into(),
                         ExprCtx {
                             span: 1..4,
                             txt: Rc::clone(&txt),
@@ -225,7 +225,7 @@ mod eval {
                 }
                 .into_expr(ExpressionKind::Call {
                     proc: Expression::variable(
-                        "baz",
+                        "baz".into(),
                         ExprCtx {
                             span: 7..10,
                             txt: Rc::clone(&txt),
@@ -272,7 +272,7 @@ mod eval {
                 }
                 .into_expr(ExpressionKind::Call {
                     proc: Expression::variable(
-                        "foo",
+                        "foo".into(),
                         ExprCtx {
                             span: 1..4,
                             txt: Rc::clone(&txt),
@@ -287,7 +287,7 @@ mod eval {
                 }
                 .into_expr(ExpressionKind::Call {
                     proc: Expression::variable(
-                        "fail",
+                        "fail".into(),
                         ExprCtx {
                             span: 7..11,
                             txt: Rc::clone(&txt),
@@ -302,7 +302,7 @@ mod eval {
                 }
                 .into_expr(ExpressionKind::Call {
                     proc: Expression::variable(
-                        "baz",
+                        "baz".into(),
                         ExprCtx {
                             span: 14..17,
                             txt: Rc::clone(&txt),
@@ -365,7 +365,7 @@ mod eval {
             }
             .into_expr(ExpressionKind::Call {
                 proc: Expression::variable(
-                    "foo",
+                    "foo".into(),
                     ExprCtx {
                         span: 1..4,
                         txt: Rc::clone(&txt),
@@ -378,8 +378,10 @@ mod eval {
             env.binding.bind(
                 "foo".into(),
                 Value::Procedure(
-                    Procedure::intrinsic("foo".into(), 0..0, |_, _| Ok(Value::Symbol("bar".into())))
-                        .into(),
+                    Procedure::intrinsic("foo".into(), 0..0, |_, _| {
+                        Ok(Value::Symbol("bar".into()))
+                    })
+                    .into(),
                 ),
             );
             let mut f = env.new_frame();
@@ -399,7 +401,7 @@ mod eval {
             }
             .into_expr(ExpressionKind::Call {
                 proc: Expression::variable(
-                    "foo",
+                    "foo".into(),
                     ExprCtx {
                         span: 1..4,
                         txt: Rc::clone(&txt),
@@ -466,7 +468,7 @@ mod eval {
             }
             .into_expr(ExpressionKind::Call {
                 proc: Expression::variable(
-                    "foo",
+                    "foo".into(),
                     ExprCtx {
                         span: 1..4,
                         txt: Rc::clone(&txt),
@@ -493,7 +495,7 @@ mod eval {
             }
             .into_expr(ExpressionKind::Call {
                 proc: Expression::variable(
-                    "foo",
+                    "foo".into(),
                     ExprCtx {
                         span: 1..4,
                         txt: Rc::clone(&txt),
@@ -524,7 +526,7 @@ mod eval {
             }
             .into_expr(ExpressionKind::Call {
                 proc: Expression::variable(
-                    "foo",
+                    "foo".into(),
                     ExprCtx {
                         span: 1..4,
                         txt: Rc::clone(&txt),
@@ -542,8 +544,10 @@ mod eval {
             env.binding.bind(
                 "foo".into(),
                 Value::Procedure(
-                    Procedure::intrinsic("foo".into(), 0..0, |_, _| Ok(Value::Symbol("bar".into())))
-                        .into(),
+                    Procedure::intrinsic("foo".into(), 0..0, |_, _| {
+                        Ok(Value::Symbol("bar".into()))
+                    })
+                    .into(),
                 ),
             );
             let mut f = env.new_frame();
@@ -566,7 +570,7 @@ mod eval {
             }
             .into_expr(ExpressionKind::Call {
                 proc: Expression::variable(
-                    "foo",
+                    "foo".into(),
                     ExprCtx {
                         span: 1..4,
                         txt: Rc::clone(&txt),
@@ -579,8 +583,10 @@ mod eval {
             env.binding.bind(
                 "foo".into(),
                 Value::Procedure(
-                    Procedure::intrinsic("foo".into(), 1..1, |_, _| Ok(Value::Symbol("bar".into())))
-                        .into(),
+                    Procedure::intrinsic("foo".into(), 1..1, |_, _| {
+                        Ok(Value::Symbol("bar".into()))
+                    })
+                    .into(),
                 ),
             );
             let mut f = env.new_frame();
@@ -603,7 +609,7 @@ mod eval {
             }
             .into_expr(ExpressionKind::Call {
                 proc: Expression::variable(
-                    "foo",
+                    "foo".into(),
                     ExprCtx {
                         span: 1..4,
                         txt: Rc::clone(&txt),
@@ -616,8 +622,10 @@ mod eval {
             env.binding.bind(
                 "foo".into(),
                 Value::Procedure(
-                    Procedure::intrinsic("foo".into(), 1..2, |_, _| Ok(Value::Symbol("bar".into())))
-                        .into(),
+                    Procedure::intrinsic("foo".into(), 1..2, |_, _| {
+                        Ok(Value::Symbol("bar".into()))
+                    })
+                    .into(),
                 ),
             );
             let mut f = env.new_frame();
@@ -640,7 +648,7 @@ mod eval {
             }
             .into_expr(ExpressionKind::Call {
                 proc: Expression::variable(
-                    "foo",
+                    "foo".into(),
                     ExprCtx {
                         span: 1..4,
                         txt: Rc::clone(&txt),
@@ -654,7 +662,7 @@ mod eval {
                     }
                     .into_expr(ExpressionKind::Literal(Value::real(5))),
                     Expression::variable(
-                        "x",
+                        "x".into(),
                         ExprCtx {
                             span: 7..8,
                             txt: Rc::clone(&txt),
@@ -662,7 +670,7 @@ mod eval {
                     )
                     .into(),
                     Expression::variable(
-                        "y",
+                        "y".into(),
                         ExprCtx {
                             span: 9..10,
                             txt: Rc::clone(&txt),
@@ -670,7 +678,7 @@ mod eval {
                     )
                     .into(),
                     Expression::variable(
-                        "z",
+                        "z".into(),
                         ExprCtx {
                             span: 11..12,
                             txt: Rc::clone(&txt),
@@ -764,7 +772,7 @@ mod eval {
                 name: "foo".into(),
                 expr: Some(
                     Expression::variable(
-                        "x",
+                        "x".into(),
                         ExprCtx {
                             span: 5..6,
                             txt: Rc::clone(&txt),
@@ -822,7 +830,7 @@ mod eval {
             .into_expr(ExpressionKind::Set {
                 var: "foo".into(),
                 expr: Expression::variable(
-                    "x",
+                    "x".into(),
                     ExprCtx {
                         span: 5..6,
                         txt: Rc::clone(&txt),
@@ -851,7 +859,7 @@ mod eval {
             .into_expr(ExpressionKind::Set {
                 var: "foo".into(),
                 expr: Expression::variable(
-                    "x",
+                    "x".into(),
                     ExprCtx {
                         span: 5..6,
                         txt: Rc::clone(&txt),
@@ -884,7 +892,7 @@ mod eval {
                 .into_expr(ExpressionKind::Literal(Value::Boolean(true)))
                 .into(),
                 con: Expression::symbol(
-                    "a",
+                    "a".into(),
                     ExprCtx {
                         span: 7..9,
                         txt: Rc::clone(&txt),
@@ -893,7 +901,7 @@ mod eval {
                 .into(),
                 alt: Some(
                     Expression::symbol(
-                        "b",
+                        "b".into(),
                         ExprCtx {
                             span: 10..12,
                             txt: Rc::clone(&txt),
@@ -926,7 +934,7 @@ mod eval {
                 .into_expr(ExpressionKind::Literal(Value::Boolean(false)))
                 .into(),
                 con: Expression::symbol(
-                    "a",
+                    "a".into(),
                     ExprCtx {
                         span: 7..9,
                         txt: Rc::clone(&txt),
@@ -935,7 +943,7 @@ mod eval {
                 .into(),
                 alt: Some(
                     Expression::symbol(
-                        "b",
+                        "b".into(),
                         ExprCtx {
                             span: 10..12,
                             txt: Rc::clone(&txt),
@@ -968,7 +976,7 @@ mod eval {
                 .into_expr(ExpressionKind::Literal(Value::Boolean(false)))
                 .into(),
                 con: Expression::symbol(
-                    "a",
+                    "a".into(),
                     ExprCtx {
                         span: 7..9,
                         txt: Rc::clone(&txt),
@@ -1001,7 +1009,7 @@ mod eval {
                 .into_expr(ExpressionKind::Literal(Value::Boolean(true)))
                 .into(),
                 con: Expression::variable(
-                    "x",
+                    "x".into(),
                     ExprCtx {
                         span: 7..9,
                         txt: Rc::clone(&txt),
@@ -1034,7 +1042,7 @@ mod eval {
                 .into_expr(ExpressionKind::Literal(Value::Boolean(false)))
                 .into(),
                 con: Expression::variable(
-                    "x",
+                    "x".into(),
                     ExprCtx {
                         span: 7..9,
                         txt: Rc::clone(&txt),
@@ -1043,7 +1051,7 @@ mod eval {
                 .into(),
                 alt: Some(
                     Expression::symbol(
-                        "b",
+                        "b".into(),
                         ExprCtx {
                             span: 10..12,
                             txt: Rc::clone(&txt),
@@ -1172,7 +1180,7 @@ mod error {
         }
         .into_error(ExpressionErrorKind::DatumInvalid(ExpressionKind::Call {
             proc: Expression::variable(
-                "foo",
+                "foo".into(),
                 ExprCtx {
                     span: 0..1,
                     txt: Rc::clone(&txt),

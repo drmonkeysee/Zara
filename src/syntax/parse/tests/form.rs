@@ -5,7 +5,7 @@ fn end() {
     let txt = make_textline().into();
     let mut seq = vec![
         Expression::variable(
-            "+",
+            "+".into(),
             ExprCtx {
                 span: 0..1,
                 txt: Rc::clone(&txt),
@@ -43,7 +43,7 @@ fn nested_list() {
     let txt = make_textline().into();
     let mut seq = vec![
         Expression::variable(
-            "+",
+            "+".into(),
             ExprCtx {
                 span: 0..1,
                 txt: Rc::clone(&txt),
@@ -104,7 +104,7 @@ fn expression_item() {
     let txt = make_textline().into();
     let mut seq = vec![
         Expression::variable(
-            "+",
+            "+".into(),
             ExprCtx {
                 span: 0..1,
                 txt: Rc::clone(&txt),
@@ -415,7 +415,7 @@ fn invalid_token() {
     let txt = make_textline().into();
     let mut seq = vec![
         Expression::variable(
-            "+",
+            "+".into(),
             ExprCtx {
                 span: 0..1,
                 txt: Rc::clone(&txt),
@@ -466,7 +466,7 @@ fn into_procedure_call() {
             form: SyntacticForm::Call,
             seq: vec![
                 Expression::variable(
-                    "+",
+                    "+".into(),
                     ExprCtx {
                         span: 0..1,
                         txt: Rc::clone(&txt),
@@ -565,7 +565,7 @@ fn into_quote_apply() {
         mode: ParseMode::List {
             form: SyntacticForm::Quote,
             seq: vec![Expression::symbol(
-                "foo",
+                "foo".into(),
                 ExprCtx {
                     span: 6..9,
                     txt: Rc::clone(&txt),
@@ -629,14 +629,14 @@ fn into_quote_apply_too_many_args() {
             form: SyntacticForm::Quote,
             seq: vec![
                 Expression::symbol(
-                    "foo",
+                    "foo".into(),
                     ExprCtx {
                         span: 6..9,
                         txt: Rc::clone(&txt),
                     },
                 ),
                 Expression::symbol(
-                    "bar",
+                    "bar".into(),
                     ExprCtx {
                         span: 10..13,
                         txt: Rc::clone(&txt),
@@ -673,7 +673,7 @@ fn into_datum_list() {
             form: SyntacticForm::Datum,
             seq: vec![
                 Expression::symbol(
-                    "+",
+                    "+".into(),
                     ExprCtx {
                         span: 0..1,
                         txt: Rc::clone(&txt),
@@ -751,7 +751,7 @@ fn into_invalid_datum_list() {
             form: SyntacticForm::Datum,
             seq: vec![
                 Expression::variable(
-                    "+",
+                    "+".into(),
                     ExprCtx {
                         span: 1..2,
                         txt: Rc::clone(&txt),
@@ -874,7 +874,7 @@ fn into_define_variable() {
             form: SyntacticForm::Define,
             seq: vec![
                 Expression::variable(
-                    "foo",
+                    "foo".into(),
                     ExprCtx {
                         span: 8..11,
                         txt: Rc::clone(&txt),
@@ -923,7 +923,7 @@ fn into_define_variable_no_value() {
         mode: ParseMode::List {
             form: SyntacticForm::Define,
             seq: vec![Expression::variable(
-                "foo",
+                "foo".into(),
                 ExprCtx {
                     span: 8..11,
                     txt: Rc::clone(&txt),
@@ -968,7 +968,7 @@ fn into_define_not_variable_expr() {
                 }
                 .into_expr(ExpressionKind::Call {
                     proc: Expression::variable(
-                        "myproc",
+                        "myproc".into(),
                         ExprCtx {
                             span: 9..15,
                             txt: Rc::clone(&txt),
@@ -1044,7 +1044,7 @@ fn into_define_too_many_args() {
             form: SyntacticForm::Define,
             seq: vec![
                 Expression::variable(
-                    "foo",
+                    "foo".into(),
                     ExprCtx {
                         span: 8..11,
                         txt: Rc::clone(&txt),
@@ -1095,7 +1095,7 @@ fn into_set_variable() {
             form: SyntacticForm::Set,
             seq: vec![
                 Expression::variable(
-                    "foo",
+                    "foo".into(),
                     ExprCtx {
                         span: 8..11,
                         txt: Rc::clone(&txt),
@@ -1149,7 +1149,7 @@ fn into_set_not_variable_expr() {
                 }
                 .into_expr(ExpressionKind::Call {
                     proc: Expression::variable(
-                        "myproc",
+                        "myproc".into(),
                         ExprCtx {
                             span: 9..15,
                             txt: Rc::clone(&txt),
@@ -1195,7 +1195,7 @@ fn into_set_too_few_args() {
         mode: ParseMode::List {
             form: SyntacticForm::Set,
             seq: vec![Expression::variable(
-                "foo",
+                "foo".into(),
                 ExprCtx {
                     span: 8..11,
                     txt: Rc::clone(&txt),
@@ -1231,7 +1231,7 @@ fn into_set_too_many_args() {
             form: SyntacticForm::Set,
             seq: vec![
                 Expression::variable(
-                    "foo",
+                    "foo".into(),
                     ExprCtx {
                         span: 8..11,
                         txt: Rc::clone(&txt),
@@ -1347,7 +1347,7 @@ fn into_if_consequent_alternate() {
                     },
                 ),
                 Expression::symbol(
-                    "foo",
+                    "foo".into(),
                     ExprCtx {
                         span: 13..16,
                         txt: Rc::clone(&txt),
@@ -1446,14 +1446,14 @@ fn into_if_too_many_args() {
                     },
                 ),
                 Expression::symbol(
-                    "foo",
+                    "foo".into(),
                     ExprCtx {
                         span: 13..16,
                         txt: Rc::clone(&txt),
                     },
                 ),
                 Expression::symbol(
-                    "beef",
+                    "beef".into(),
                     ExprCtx {
                         span: 17..21,
                         txt: Rc::clone(&txt),
@@ -1491,7 +1491,7 @@ fn into_lambda_fixed_arguments() {
             form: SyntacticForm::Lambda,
             seq: vec![
                 Expression::variable(
-                    "foo",
+                    "foo".into(),
                     ExprCtx {
                         span: 8..11,
                         txt: Rc::clone(&txt),
@@ -1541,7 +1541,7 @@ fn into_lambda_simple_body() {
             form: SyntacticForm::Lambda,
             seq: vec![
                 Expression::variable(
-                    "foo",
+                    "foo".into(),
                     ExprCtx {
                         span: 8..11,
                         txt: Rc::clone(&txt),
@@ -1591,7 +1591,7 @@ fn into_lambda_no_arguments() {
             form: SyntacticForm::Lambda,
             seq: vec![
                 Expression::variable(
-                    "foo",
+                    "foo".into(),
                     ExprCtx {
                         span: 8..11,
                         txt: Rc::clone(&txt),
@@ -1641,7 +1641,7 @@ fn into_lambda_any_arguments() {
             form: SyntacticForm::Lambda,
             seq: vec![
                 Expression::variable(
-                    "foo",
+                    "foo".into(),
                     ExprCtx {
                         span: 8..11,
                         txt: Rc::clone(&txt),
@@ -1691,7 +1691,7 @@ fn into_lambda_rest_arguments() {
             form: SyntacticForm::Lambda,
             seq: vec![
                 Expression::variable(
-                    "foo",
+                    "foo".into(),
                     ExprCtx {
                         span: 8..11,
                         txt: Rc::clone(&txt),
@@ -1746,7 +1746,7 @@ fn into_lambda_not_variable_expr() {
                 }
                 .into_expr(ExpressionKind::Call {
                     proc: Expression::variable(
-                        "myproc",
+                        "myproc".into(),
                         ExprCtx {
                             span: 9..15,
                             txt: Rc::clone(&txt),
@@ -1793,7 +1793,7 @@ fn into_lambda_too_few_args() {
         mode: ParseMode::List {
             form: SyntacticForm::Lambda,
             seq: vec![Expression::variable(
-                "foo",
+                "foo".into(),
                 ExprCtx {
                     span: 8..11,
                     txt: Rc::clone(&txt),
@@ -1830,7 +1830,7 @@ fn into_lambda_too_many_args() {
             form: SyntacticForm::Lambda,
             seq: vec![
                 Expression::variable(
-                    "foo",
+                    "foo".into(),
                     ExprCtx {
                         span: 8..11,
                         txt: Rc::clone(&txt),
@@ -1881,7 +1881,7 @@ fn into_lambda_empty_body() {
         mode: ParseMode::List {
             form: SyntacticForm::Lambda,
             seq: vec![Expression::variable(
-                "foo",
+                "foo".into(),
                 ExprCtx {
                     span: 8..11,
                     txt: Rc::clone(&txt),
@@ -1919,7 +1919,7 @@ mod merge {
             mode: ParseMode::List {
                 form: SyntacticForm::Call,
                 seq: vec![Expression::variable(
-                    "+",
+                    "+".into(),
                     ExprCtx {
                         span: 0..3,
                         txt: Rc::clone(&txt),
@@ -2136,7 +2136,7 @@ mod merge {
             mode: ParseMode::List {
                 form: SyntacticForm::Call,
                 seq: vec![Expression::variable(
-                    "+",
+                    "+".into(),
                     ExprCtx {
                         span: 0..3,
                         txt: Rc::clone(&txt),
@@ -2153,7 +2153,7 @@ mod merge {
                 form: SyntacticForm::Define,
                 seq: vec![
                     Expression::variable(
-                        "foo",
+                        "foo".into(),
                         ExprCtx {
                             span: 4..7,
                             txt: Rc::clone(&txt),

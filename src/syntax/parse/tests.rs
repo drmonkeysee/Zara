@@ -819,7 +819,7 @@ mod bytevector {
             }
             .into_expr(ExpressionKind::Literal(Value::real(24))),
             Expression::symbol(
-                "foo",
+                "foo".into(),
                 ExprCtx {
                     span: 3..6,
                     txt: Rc::clone(&txt),
@@ -864,7 +864,7 @@ mod bytevector {
             }
             .into_expr(ExpressionKind::Literal(Value::real(24))),
             Expression::variable(
-                "foo",
+                "foo".into(),
                 ExprCtx {
                     span: 3..6,
                     txt: Rc::clone(&txt),
@@ -958,7 +958,7 @@ mod vector {
         let txt = make_textline().into();
         let seq = vec![
             Expression::symbol(
-                "a",
+                "a".into(),
                 ExprCtx {
                     span: 0..1,
                     txt: Rc::clone(&txt),
@@ -1043,14 +1043,14 @@ mod vector {
         let txt = make_textline().into();
         let seq = vec![
             Expression::symbol(
-                "a",
+                "a".into(),
                 ExprCtx {
                     span: 0..1,
                     txt: Rc::clone(&txt),
                 },
             ),
             Expression::variable(
-                "foo",
+                "foo".into(),
                 ExprCtx {
                     span: 3..6,
                     txt: Rc::clone(&txt),
@@ -1095,7 +1095,7 @@ mod vector {
             }
             .into_expr(ExpressionKind::Literal(Value::real(24))),
             Expression::variable(
-                "foo",
+                "foo".into(),
                 ExprCtx {
                     span: 3..6,
                     txt: Rc::clone(&txt),
@@ -1112,7 +1112,7 @@ mod vector {
             }
             .into_expr(ExpressionKind::Call {
                 proc: Expression::variable(
-                    "bar",
+                    "bar".into(),
                     ExprCtx {
                         span: 9..12,
                         txt: Rc::clone(&txt),
@@ -1482,7 +1482,7 @@ mod comment {
                 txt: Rc::clone(&txt),
             },
             mode: ParseMode::CommentDatum(Some(Expression::symbol(
-                "foo",
+                "foo".into(),
                 ExprCtx {
                     span: 3..5,
                     txt: Rc::clone(&txt),
@@ -1575,7 +1575,7 @@ mod quote {
             },
             mode: ParseMode::Quote {
                 inner: Some(Expression::symbol(
-                    "foo",
+                    "foo".into(),
                     ExprCtx {
                         span: 2..5,
                         txt: Rc::clone(&txt),
@@ -1657,7 +1657,7 @@ mod quote {
                     }
                     .into_expr(ExpressionKind::Call {
                         proc: Expression::variable(
-                            "foo",
+                            "foo".into(),
                             ExprCtx {
                                 span: 4..7,
                                 txt: Rc::clone(&txt),
@@ -1701,7 +1701,7 @@ mod quote {
             },
             mode: ParseMode::Quote {
                 inner: Some(Expression::variable(
-                    "foo",
+                    "foo".into(),
                     ExprCtx {
                         span: 2..5,
                         txt: Rc::clone(&txt),
@@ -1966,7 +1966,7 @@ mod merge {
                 txt: Rc::clone(&txt),
             },
             mode: ParseMode::ByteVector(vec![Expression::variable(
-                "foo",
+                "foo".into(),
                 ExprCtx {
                     span: 0..3,
                     txt: Rc::clone(&txt),
@@ -2098,7 +2098,7 @@ mod merge {
             mode: ParseMode::List {
                 form: SyntacticForm::Datum,
                 seq: vec![Expression::symbol(
-                    "foo",
+                    "foo".into(),
                     ExprCtx {
                         span: 4..7,
                         txt: Rc::clone(&txt),
@@ -2236,7 +2236,7 @@ mod merge {
             mode: ParseMode::List {
                 form: SyntacticForm::Datum,
                 seq: vec![Expression::symbol(
-                    "foo",
+                    "foo".into(),
                     ExprCtx {
                         span: 4..7,
                         txt: Rc::clone(&txt),
@@ -2588,7 +2588,7 @@ mod nodeutil {
                 form: SyntacticForm::Call,
                 seq: vec![
                     Expression::variable(
-                        "+",
+                        "+".into(),
                         ExprCtx {
                             span: 0..1,
                             txt: Rc::clone(&txt),
