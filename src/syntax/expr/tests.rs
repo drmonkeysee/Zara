@@ -241,7 +241,7 @@ mod eval {
                 Value::Procedure(
                     Procedure::intrinsic("foo".into(), 0..0, |_, f| {
                         f.scope.bind("foo_called".into(), Value::Boolean(true));
-                        Ok(Value::symbol("bar"))
+                        Ok(Value::Symbol("bar".into()))
                     })
                     .into(),
                 ),
@@ -318,7 +318,7 @@ mod eval {
                 Value::Procedure(
                     Procedure::intrinsic("foo".into(), 0..0, |_, f| {
                         f.scope.bind("foo_called".into(), Value::Boolean(true));
-                        Ok(Value::symbol("bar"))
+                        Ok(Value::Symbol("bar".into()))
                     })
                     .into(),
                 ),
@@ -378,7 +378,7 @@ mod eval {
             env.binding.bind(
                 "foo".into(),
                 Value::Procedure(
-                    Procedure::intrinsic("foo".into(), 0..0, |_, _| Ok(Value::symbol("bar")))
+                    Procedure::intrinsic("foo".into(), 0..0, |_, _| Ok(Value::Symbol("bar".into())))
                         .into(),
                 ),
             );
@@ -542,7 +542,7 @@ mod eval {
             env.binding.bind(
                 "foo".into(),
                 Value::Procedure(
-                    Procedure::intrinsic("foo".into(), 0..0, |_, _| Ok(Value::symbol("bar")))
+                    Procedure::intrinsic("foo".into(), 0..0, |_, _| Ok(Value::Symbol("bar".into())))
                         .into(),
                 ),
             );
@@ -579,7 +579,7 @@ mod eval {
             env.binding.bind(
                 "foo".into(),
                 Value::Procedure(
-                    Procedure::intrinsic("foo".into(), 1..1, |_, _| Ok(Value::symbol("bar")))
+                    Procedure::intrinsic("foo".into(), 1..1, |_, _| Ok(Value::Symbol("bar".into())))
                         .into(),
                 ),
             );
@@ -616,7 +616,7 @@ mod eval {
             env.binding.bind(
                 "foo".into(),
                 Value::Procedure(
-                    Procedure::intrinsic("foo".into(), 1..2, |_, _| Ok(Value::symbol("bar")))
+                    Procedure::intrinsic("foo".into(), 1..2, |_, _| Ok(Value::Symbol("bar".into())))
                         .into(),
                 ),
             );
@@ -686,7 +686,7 @@ mod eval {
                 Value::Procedure(
                     Procedure::intrinsic("foo".into(), 4..4, |_, f| {
                         f.scope.bind("foo_called".into(), Value::Boolean(true));
-                        Ok(Value::symbol("bar"))
+                        Ok(Value::Symbol("bar".into()))
                     })
                     .into(),
                 ),

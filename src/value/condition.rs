@@ -164,7 +164,7 @@ mod tests {
         let c = Condition {
             kind: ConditionKind::General,
             msg: "foo".into(),
-            irritants: Some(zlist![Value::symbol("a"), Value::real(5)]),
+            irritants: Some(zlist![Value::Symbol("a".into()), Value::real(5)]),
         };
 
         assert_eq!(c.to_string(), "#<exception \"foo\" (a 5)>");

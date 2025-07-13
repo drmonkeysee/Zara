@@ -578,7 +578,7 @@ fn into_datum(
             if let ExpressionKind::Literal(val) = expr.kind {
                 Ok(Some(if quoted {
                     ctx.into_expr(ExpressionKind::Literal(zlist![
-                        Value::symbol(ns.get_symbol(SyntacticForm::QUOTE)),
+                        Value::Symbol(ns.get_symbol(SyntacticForm::QUOTE)),
                         val
                     ]))
                 } else {

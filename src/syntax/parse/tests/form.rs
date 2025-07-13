@@ -1978,7 +1978,7 @@ mod merge {
                         span: 0..2,
                         txt: Rc::clone(&txt),
                     }
-                    .into_expr(ExpressionKind::Literal(Value::symbol("a"))),
+                    .into_expr(ExpressionKind::Literal(Value::Symbol("a".into()))),
                 ],
             },
         };
@@ -2036,7 +2036,7 @@ mod merge {
                         span: 0..2,
                         txt: Rc::clone(&txt),
                     }
-                    .into_expr(ExpressionKind::Literal(Value::symbol("a"))),
+                    .into_expr(ExpressionKind::Literal(Value::Symbol("a".into()))),
                 ],
             },
         };
@@ -2050,7 +2050,7 @@ mod merge {
                     span: 2..4,
                     txt: Rc::clone(&txt),
                 }
-                .into_expr(ExpressionKind::Literal(Value::symbol("b"))),
+                .into_expr(ExpressionKind::Literal(Value::Symbol("b".into()))),
             )),
         };
         let mut env = TestEnv::default();
@@ -2087,12 +2087,12 @@ mod merge {
                         span: 0..2,
                         txt: Rc::clone(&txt),
                     }
-                    .into_expr(ExpressionKind::Literal(Value::symbol("a"))),
+                    .into_expr(ExpressionKind::Literal(Value::Symbol("a".into()))),
                     ExprCtx {
                         span: 2..3,
                         txt: Rc::clone(&txt),
                     }
-                    .into_expr(ExpressionKind::Literal(Value::symbol("b"))),
+                    .into_expr(ExpressionKind::Literal(Value::Symbol("b".into()))),
                 ],
             },
         };

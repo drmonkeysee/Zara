@@ -90,10 +90,6 @@ impl Value {
         Self::String(s.into())
     }
 
-    pub(crate) fn symbol(s: impl Into<Rc<str>>) -> Self {
-        Self::Symbol(s.into())
-    }
-
     pub(crate) fn vector(items: impl IntoIterator<Item = Self>) -> Self {
         Self::Vector(items.into_iter().collect::<Rc<[_]>>())
     }

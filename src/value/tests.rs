@@ -75,7 +75,7 @@ mod display {
 
     #[test]
     fn symbol_typename() {
-        let v = Value::symbol("foo");
+        let v = Value::Symbol("foo".into());
 
         assert_eq!(v.as_typename().to_string(), "symbol");
     }
@@ -133,7 +133,7 @@ mod display {
     fn vector_display() {
         let v = Value::vector([
             Value::string("foo"),
-            Value::symbol("a"),
+            Value::Symbol("a".into()),
             zlist![Value::Boolean(true), Value::Character('a')],
         ]);
 
@@ -448,35 +448,35 @@ mod symbol {
 
     #[test]
     fn simple() {
-        let v = Value::symbol("foo");
+        let v = Value::Symbol("foo".into());
 
         assert_eq!(v.to_string(), "foo");
     }
 
     #[test]
     fn empty() {
-        let v = Value::symbol("");
+        let v = Value::Symbol("".into());
 
         assert_eq!(v.to_string(), "||");
     }
 
     #[test]
     fn whitespace() {
-        let v = Value::symbol("foo bar");
+        let v = Value::Symbol("foo bar".into());
 
         assert_eq!(v.to_string(), "|foo bar|");
     }
 
     #[test]
     fn only_whitespace() {
-        let v = Value::symbol("   ");
+        let v = Value::Symbol("   ".into());
 
         assert_eq!(v.to_string(), "|   |");
     }
 
     #[test]
     fn alphanumeric() {
-        let v = Value::symbol("abc123!@$^&");
+        let v = Value::Symbol("abc123!@$^&".into());
 
         assert_eq!(v.to_string(), "abc123!@$^&");
     }
@@ -487,7 +487,7 @@ mod symbol {
         for case in cases {
             let s = format!("abc{case}123");
 
-            let v = Value::symbol(s.clone());
+            let v = Value::Symbol(s.clone().into());
 
             let expected = if case == '.' { s } else { format!("|{s}|") };
             assert_eq!(v.to_string(), expected);
@@ -496,7 +496,7 @@ mod symbol {
 
     #[test]
     fn starts_with_number() {
-        let v = Value::symbol("123abc");
+        let v = Value::Symbol("123abc".into());
 
         assert_eq!(v.to_string(), "|123abc|");
     }
@@ -507,7 +507,7 @@ mod symbol {
         for case in cases {
             let s = format!("{case}foo");
 
-            let v = Value::symbol(s.clone());
+            let v = Value::Symbol(s.clone().into());
 
             assert_eq!(v.to_string(), s);
         }
@@ -515,65 +515,66 @@ mod symbol {
 
     #[test]
     fn null() {
-        let v = Value::symbol("\0");
+        let v = Value::Symbol("\0".into());
 
         assert_eq!(v.to_string(), "|\\x0;|");
     }
 
     #[test]
     fn pipe() {
-        let v = Value::symbol("|");
+        let v = Value::Symbol("|".into());
 
         assert_eq!(v.to_string(), "|\\||");
     }
 
     #[test]
     fn one_digit_hex() {
-        let v = Value::symbol("\x0c");
+        let v = Value::Symbol("\x0c".into());
 
         assert_eq!(v.to_string(), "|\\xc;|");
     }
 
     #[test]
     fn hex_uses_lowercase() {
-        let v = Value::symbol("\x0C");
+        let v = Value::Symbol("\x0C".into());
 
         assert_eq!(v.to_string(), "|\\xc;|");
     }
 
     #[test]
     fn two_digit_hex() {
-        let v = Value::symbol("\x1d");
+        let v = Value::Symbol("\x1d".into());
 
         assert_eq!(v.to_string(), "|\\x1d;|");
     }
 
     #[test]
     fn four_digit_hex() {
-        let v = Value::symbol("\u{fff9}");
+        let v = Value::Symbol("\u{fff9}".into());
 
         assert_eq!(v.to_string(), "|\\xfff9;|");
     }
 
     #[test]
     fn special_purpose_plane() {
-        let v = Value::symbol("\u{e0001}");
+        let v = Value::Symbol("\u{e0001}".into());
 
         assert_eq!(v.to_string(), "|\\xe0001;|");
     }
 
     #[test]
     fn private_use_plane() {
-        let v = Value::symbol("\u{100001}");
+        let v = Value::Symbol("\u{100001}".into());
 
         assert_eq!(v.to_string(), "|\\x100001;|");
     }
 
     #[test]
     fn literal_endline() {
-        let v = Value::symbol(
+        let v = Value::Symbol(
             "foo
-bar",
+bar"
+            .into(),
         );
 
         assert_eq!(v.to_string(), "|foo\\nbar|");
@@ -594,7 +595,7 @@ bar",
 
     fn check_escape_sequence(cases: &[(&str, &str)]) {
         for &(inp, exp) in cases {
-            let v = Value::symbol(inp);
+            let v = Value::Symbol(inp.into());
 
             assert_eq!(v.to_string(), format!("|{exp}|"));
         }
@@ -607,28 +608,28 @@ bar",
 
     #[test]
     fn extended() {
-        let v = Value::symbol("λ");
+        let v = Value::Symbol("λ".into());
 
         assert_eq!(v.to_string(), "|λ|");
     }
 
     #[test]
     fn emoji() {
-        let v = Value::symbol("🦀");
+        let v = Value::Symbol("🦀".into());
 
         assert_eq!(v.to_string(), "|🦀|");
     }
 
     #[test]
     fn control_picture() {
-        let v = Value::symbol("\u{2401}");
+        let v = Value::Symbol("\u{2401}".into());
 
         assert_eq!(v.to_string(), "|␁|");
     }
 
     #[test]
     fn replacement() {
-        let v = Value::symbol("\u{fffd}");
+        let v = Value::Symbol("\u{fffd}".into());
 
         assert_eq!(v.to_string(), "|�|");
     }
@@ -833,7 +834,11 @@ mod list {
 
     #[test]
     fn three() {
-        let lst = zlist![Value::real(5), Value::symbol("a"), Value::Boolean(true)];
+        let lst = zlist![
+            Value::real(5),
+            Value::Symbol("a".into()),
+            Value::Boolean(true)
+        ];
 
         assert_eq!(lst.to_string(), "(5 a #t)");
     }
@@ -842,7 +847,7 @@ mod list {
     fn nested() {
         let lst = zlist![
             Value::real(5),
-            zlist![Value::symbol("a"), Value::Boolean(true)],
+            zlist![Value::Symbol("a".into()), Value::Boolean(true)],
         ];
 
         assert_eq!(lst.to_string(), "(5 (a #t))");
@@ -859,7 +864,7 @@ mod list {
     fn ctor_vec() {
         let lst = Value::list(vec![
             Value::real(5),
-            Value::symbol("a"),
+            Value::Symbol("a".into()),
             Value::Boolean(true),
         ]);
 
@@ -868,7 +873,11 @@ mod list {
 
     #[test]
     fn ctor_slice() {
-        let lst = Value::list([Value::real(5), Value::symbol("a"), Value::Boolean(true)]);
+        let lst = Value::list([
+            Value::real(5),
+            Value::Symbol("a".into()),
+            Value::Boolean(true),
+        ]);
 
         assert_eq!(lst.to_string(), "(5 a #t)");
     }
@@ -892,7 +901,7 @@ mod list {
     fn improper_ctor_vec() {
         let lst = Value::improper_list(vec![
             Value::real(5),
-            Value::symbol("a"),
+            Value::Symbol("a".into()),
             Value::Boolean(true),
         ]);
 
@@ -901,7 +910,11 @@ mod list {
 
     #[test]
     fn improper_ctor_slice() {
-        let lst = Value::improper_list([Value::real(5), Value::symbol("a"), Value::Boolean(true)]);
+        let lst = Value::improper_list([
+            Value::real(5),
+            Value::Symbol("a".into()),
+            Value::Boolean(true),
+        ]);
 
         assert_eq!(lst.to_string(), "(5 a . #t)");
     }
@@ -913,7 +926,7 @@ mod cloning {
 
     #[test]
     fn clone_with_underlying_cloneable() {
-        let v = Value::symbol("foo");
+        let v = Value::Symbol("foo".into());
 
         let c = v.clone();
 
@@ -992,7 +1005,7 @@ mod equivalence {
     #[test]
     fn diff_types_never_the_same() {
         let cases = [
-            (Value::symbol("foo"), Value::string("foo")),
+            (Value::Symbol("foo".into()), Value::string("foo")),
             (Value::vector([]), Value::ByteVector([].into())),
         ];
         for (a, b) in cases {
@@ -1004,7 +1017,7 @@ mod equivalence {
     fn same_string_ptr_in_string_and_symbol_not_same() {
         let s = "foo".into();
         let a = Value::string(Rc::clone(&s));
-        let b = Value::symbol(Rc::clone(&s));
+        let b = Value::Symbol(Rc::clone(&s));
 
         assert!(!a.is(&b));
     }
@@ -1018,8 +1031,8 @@ mod equivalence {
 
         assert!(a.is(&b));
 
-        let a = Value::symbol(Rc::clone(&s));
-        let b = Value::symbol(Rc::clone(&s));
+        let a = Value::Symbol(Rc::clone(&s));
+        let b = Value::Symbol(Rc::clone(&s));
 
         assert!(a.is(&b));
     }
@@ -1033,8 +1046,8 @@ mod equivalence {
 
         assert!(!a.is(&b));
 
-        let a = Value::symbol(s);
-        let b = Value::symbol(s);
+        let a = Value::Symbol(s.into());
+        let b = Value::Symbol(s.into());
 
         assert!(!a.is(&b));
     }
@@ -1156,8 +1169,8 @@ mod equivalence {
     // the way to equality check.
     #[test]
     fn symbols_are_not_equal() {
-        let a = Value::symbol("foo");
-        let b = Value::symbol("foo");
+        let a = Value::Symbol("foo".into());
+        let b = Value::Symbol("foo".into());
 
         assert!(!a.is(&b));
         assert!(!a.is_eqv(&b));
@@ -1167,7 +1180,7 @@ mod equivalence {
     #[test]
     fn strings_do_not_equal_symbols() {
         let a = Value::string("foo");
-        let b = Value::symbol("foo");
+        let b = Value::Symbol("foo".into());
 
         assert!(!a.is(&b));
         assert!(!a.is_eqv(&b));

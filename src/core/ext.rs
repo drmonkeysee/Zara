@@ -37,7 +37,7 @@ fn bindings(_args: &[Value], env: &mut Frame) -> EvalResult {
         env.scope
             .get_refs()
             .into_iter()
-            .map(|(k, v)| Value::cons(Value::symbol(env.sym.get(k)), v.clone()))
+            .map(|(k, v)| Value::cons(Value::Symbol(env.sym.get(k)), v.clone()))
             .collect::<Vec<_>>(),
     ))
 }
@@ -48,7 +48,7 @@ fn symbols(_args: &[Value], env: &mut Frame) -> EvalResult {
         env.sym
             .get_refs()
             .into_iter()
-            .map(|s| Value::symbol(Rc::clone(s)))
+            .map(|s| Value::Symbol(Rc::clone(s)))
             .collect::<Vec<_>>(),
     ))
 }
@@ -66,7 +66,7 @@ fn apropos(args: &[Value], env: &mut Frame) -> EvalResult {
         env.scope
             .get_refs()
             .into_iter()
-            .filter_map(|(n, _)| n.contains(pat).then(|| Value::symbol(env.sym.get(n))))
+            .filter_map(|(n, _)| n.contains(pat).then(|| Value::Symbol(env.sym.get(n))))
             .collect::<Vec<_>>(),
     ))
 }

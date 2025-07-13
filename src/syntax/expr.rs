@@ -81,7 +81,7 @@ impl Expression {
     pub(super) fn symbol(name: impl Into<Rc<str>>, ctx: ExprCtx) -> Self {
         Self {
             ctx,
-            kind: ExpressionKind::Literal(Value::symbol(name)),
+            kind: ExpressionKind::Literal(Value::Symbol(name.into())),
         }
     }
 
