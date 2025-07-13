@@ -129,7 +129,7 @@ mod eval {
             },
         );
         let mut env = TestEnv::default();
-        env.binding.bind("x", Value::string("foo"));
+        env.binding.bind("x".into(), Value::string("foo"));
         let mut f = env.new_frame();
 
         let r = expr.eval(&mut f);
@@ -237,19 +237,20 @@ mod eval {
             ]);
             let mut env = TestEnv::default();
             env.binding.bind(
-                "foo",
+                "foo".into(),
                 Value::Procedure(
-                    Procedure::intrinsic("foo", 0..0, |_, f| {
-                        f.scope.bind("foo_called", Value::Boolean(true));
+                    Procedure::intrinsic("foo".into(), 0..0, |_, f| {
+                        f.scope.bind("foo_called".into(), Value::Boolean(true));
                         Ok(Value::symbol("bar"))
                     })
                     .into(),
                 ),
             );
             env.binding.bind(
-                "baz",
+                "baz".into(),
                 Value::Procedure(
-                    Procedure::intrinsic("baz", 0..0, |_, _| Ok(Value::Character('a'))).into(),
+                    Procedure::intrinsic("baz".into(), 0..0, |_, _| Ok(Value::Character('a')))
+                        .into(),
                 ),
             );
             let mut f = env.new_frame();
@@ -313,29 +314,29 @@ mod eval {
             ]);
             let mut env = TestEnv::default();
             env.binding.bind(
-                "foo",
+                "foo".into(),
                 Value::Procedure(
-                    Procedure::intrinsic("foo", 0..0, |_, f| {
-                        f.scope.bind("foo_called", Value::Boolean(true));
+                    Procedure::intrinsic("foo".into(), 0..0, |_, f| {
+                        f.scope.bind("foo_called".into(), Value::Boolean(true));
                         Ok(Value::symbol("bar"))
                     })
                     .into(),
                 ),
             );
             env.binding.bind(
-                "fail",
+                "fail".into(),
                 Value::Procedure(
-                    Procedure::intrinsic("baz", 0..0, |_, _| {
+                    Procedure::intrinsic("baz".into(), 0..0, |_, _| {
                         Err(Condition::system_error("oh no").into())
                     })
                     .into(),
                 ),
             );
             env.binding.bind(
-                "baz",
+                "baz".into(),
                 Value::Procedure(
-                    Procedure::intrinsic("baz", 0..0, |_, f| {
-                        f.scope.bind("baz_called", Value::Boolean(true));
+                    Procedure::intrinsic("baz".into(), 0..0, |_, f| {
+                        f.scope.bind("baz_called".into(), Value::Boolean(true));
                         Ok(Value::Character('a'))
                     })
                     .into(),
@@ -375,9 +376,10 @@ mod eval {
             });
             let mut env = TestEnv::default();
             env.binding.bind(
-                "foo",
+                "foo".into(),
                 Value::Procedure(
-                    Procedure::intrinsic("foo", 0..0, |_, _| Ok(Value::symbol("bar"))).into(),
+                    Procedure::intrinsic("foo".into(), 0..0, |_, _| Ok(Value::symbol("bar")))
+                        .into(),
                 ),
             );
             let mut f = env.new_frame();
@@ -431,9 +433,9 @@ mod eval {
             });
             let mut env = TestEnv::default();
             env.binding.bind(
-                "foo",
+                "foo".into(),
                 Value::Procedure(
-                    Procedure::intrinsic("foo", 3..3, |args, _| {
+                    Procedure::intrinsic("foo".into(), 3..3, |args, _| {
                         let s = args
                             .iter()
                             .map(|v| {
@@ -501,7 +503,7 @@ mod eval {
                 args: [].into(),
             });
             let mut env = TestEnv::default();
-            env.binding.bind("foo", Value::string("foo"));
+            env.binding.bind("foo".into(), Value::string("foo"));
             let mut f = env.new_frame();
 
             let r = expr.eval(&mut f);
@@ -538,9 +540,10 @@ mod eval {
             });
             let mut env = TestEnv::default();
             env.binding.bind(
-                "foo",
+                "foo".into(),
                 Value::Procedure(
-                    Procedure::intrinsic("foo", 0..0, |_, _| Ok(Value::symbol("bar"))).into(),
+                    Procedure::intrinsic("foo".into(), 0..0, |_, _| Ok(Value::symbol("bar")))
+                        .into(),
                 ),
             );
             let mut f = env.new_frame();
@@ -574,9 +577,10 @@ mod eval {
             });
             let mut env = TestEnv::default();
             env.binding.bind(
-                "foo",
+                "foo".into(),
                 Value::Procedure(
-                    Procedure::intrinsic("foo", 1..1, |_, _| Ok(Value::symbol("bar"))).into(),
+                    Procedure::intrinsic("foo".into(), 1..1, |_, _| Ok(Value::symbol("bar")))
+                        .into(),
                 ),
             );
             let mut f = env.new_frame();
@@ -610,9 +614,10 @@ mod eval {
             });
             let mut env = TestEnv::default();
             env.binding.bind(
-                "foo",
+                "foo".into(),
                 Value::Procedure(
-                    Procedure::intrinsic("foo", 1..2, |_, _| Ok(Value::symbol("bar"))).into(),
+                    Procedure::intrinsic("foo".into(), 1..2, |_, _| Ok(Value::symbol("bar")))
+                        .into(),
                 ),
             );
             let mut f = env.new_frame();
@@ -677,16 +682,16 @@ mod eval {
             });
             let mut env = TestEnv::default();
             env.binding.bind(
-                "foo",
+                "foo".into(),
                 Value::Procedure(
-                    Procedure::intrinsic("foo", 4..4, |_, f| {
-                        f.scope.bind("foo_called", Value::Boolean(true));
+                    Procedure::intrinsic("foo".into(), 4..4, |_, f| {
+                        f.scope.bind("foo_called".into(), Value::Boolean(true));
                         Ok(Value::symbol("bar"))
                     })
                     .into(),
                 ),
             );
-            env.binding.bind("y", Value::string("beef"));
+            env.binding.bind("y".into(), Value::string("beef"));
             let mut f = env.new_frame();
 
             let r = expr.eval(&mut f);
@@ -797,7 +802,7 @@ mod eval {
                 .into(),
             });
             let mut env = TestEnv::default();
-            env.binding.bind("foo", Value::Unspecified);
+            env.binding.bind("foo".into(), Value::Unspecified);
             let mut f = env.new_frame();
 
             let r = expr.eval(&mut f);
@@ -826,7 +831,7 @@ mod eval {
                 .into(),
             });
             let mut env = TestEnv::default();
-            env.binding.bind("foo", Value::Unspecified);
+            env.binding.bind("foo".into(), Value::Unspecified);
             let mut f = env.new_frame();
 
             let r = expr.eval(&mut f);

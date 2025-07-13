@@ -33,8 +33,8 @@ impl Binding {
         vec
     }
 
-    pub(crate) fn bind(&mut self, name: impl Into<Rc<str>>, val: Value) {
-        self.0.insert(name.into(), val);
+    pub(crate) fn bind(&mut self, name: Rc<str>, val: Value) {
+        self.0.insert(name, val);
     }
 }
 
@@ -104,7 +104,7 @@ mod tests {
         #[test]
         fn get_refs_single() {
             let mut b = Binding::default();
-            b.bind("foo", Value::Unspecified);
+            b.bind("foo".into(), Value::Unspecified);
 
             let all = b.get_refs();
 
@@ -115,9 +115,9 @@ mod tests {
         #[test]
         fn get_refs_alphabetical() {
             let mut b = Binding::default();
-            b.bind("foo", Value::Unspecified);
-            b.bind("bar", Value::Unspecified);
-            b.bind("baz", Value::Unspecified);
+            b.bind("foo".into(), Value::Unspecified);
+            b.bind("bar".into(), Value::Unspecified);
+            b.bind("baz".into(), Value::Unspecified);
 
             let all = b.get_refs();
 

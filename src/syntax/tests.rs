@@ -1339,7 +1339,8 @@ mod parsing {
             TokenKind::ParenRight,
         ])];
         let mut env = TestEnv::default();
-        env.binding.bind("define", Value::Number(Number::real(10)));
+        env.binding
+            .bind("define".into(), Value::Number(Number::real(10)));
 
         let r = et.parse(tokens.into(), env.new_namespace());
 

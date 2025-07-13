@@ -20,11 +20,11 @@ pub(crate) struct Procedure {
 }
 
 impl Procedure {
-    pub(crate) fn intrinsic(name: impl Into<Rc<str>>, arity: Arity, def: IntrinsicFn) -> Self {
+    pub(crate) fn intrinsic(name: Rc<str>, arity: Arity, def: IntrinsicFn) -> Self {
         Self {
             arity,
             def: Definition::Intrinsic(def),
-            name: Some(name.into()),
+            name: Some(name),
         }
     }
 
@@ -103,112 +103,112 @@ mod tests {
 
     #[test]
     fn intrinsic_zero_arity() {
-        let p = Procedure::intrinsic("foo", 0..0, |_, _| Ok(Value::Unspecified));
+        let p = Procedure::intrinsic("foo".into(), 0..0, |_, _| Ok(Value::Unspecified));
 
         assert_eq!(p.to_string(), "#<procedure foo>");
     }
 
     #[test]
     fn intrinsic_single_arity() {
-        let p = Procedure::intrinsic("foo", 1..1, |_, _| Ok(Value::Unspecified));
+        let p = Procedure::intrinsic("foo".into(), 1..1, |_, _| Ok(Value::Unspecified));
 
         assert_eq!(p.to_string(), "#<procedure foo (_)>");
     }
 
     #[test]
     fn intrinsic_multi_arity() {
-        let p = Procedure::intrinsic("foo", 3..3, |_, _| Ok(Value::Unspecified));
+        let p = Procedure::intrinsic("foo".into(), 3..3, |_, _| Ok(Value::Unspecified));
 
         assert_eq!(p.to_string(), "#<procedure foo (_ _ _)>");
     }
 
     #[test]
     fn intrinsic_optional() {
-        let p = Procedure::intrinsic("foo", 0..1, |_, _| Ok(Value::Unspecified));
+        let p = Procedure::intrinsic("foo".into(), 0..1, |_, _| Ok(Value::Unspecified));
 
         assert_eq!(p.to_string(), "#<procedure foo (?)>");
     }
 
     #[test]
     fn intrinsic_multi_optional() {
-        let p = Procedure::intrinsic("foo", 1..3, |_, _| Ok(Value::Unspecified));
+        let p = Procedure::intrinsic("foo".into(), 1..3, |_, _| Ok(Value::Unspecified));
 
         assert_eq!(p.to_string(), "#<procedure foo (_ ? ?)>");
     }
 
     #[test]
     fn intrinsic_open_arity() {
-        let p = Procedure::intrinsic("foo", 0..255, |_, _| Ok(Value::Unspecified));
+        let p = Procedure::intrinsic("foo".into(), 0..255, |_, _| Ok(Value::Unspecified));
 
         assert_eq!(p.to_string(), "#<procedure foo (…)>");
     }
 
     #[test]
     fn intrinsic_required_params_with_open_arity() {
-        let p = Procedure::intrinsic("foo", 2..255, |_, _| Ok(Value::Unspecified));
+        let p = Procedure::intrinsic("foo".into(), 2..255, |_, _| Ok(Value::Unspecified));
 
         assert_eq!(p.to_string(), "#<procedure foo (_ _ …)>");
     }
 
     #[test]
     fn matches_zero_arity() {
-        let p = Procedure::intrinsic("foo", 0..0, |_, _| Ok(Value::Unspecified));
+        let p = Procedure::intrinsic("foo".into(), 0..0, |_, _| Ok(Value::Unspecified));
 
         assert!(p.matches_arity(0));
     }
 
     #[test]
     fn matches_single_arity() {
-        let p = Procedure::intrinsic("foo", 1..1, |_, _| Ok(Value::Unspecified));
+        let p = Procedure::intrinsic("foo".into(), 1..1, |_, _| Ok(Value::Unspecified));
 
         assert!(p.matches_arity(1));
     }
 
     #[test]
     fn matches_max_arity() {
-        let p = Procedure::intrinsic("foo", 255..255, |_, _| Ok(Value::Unspecified));
+        let p = Procedure::intrinsic("foo".into(), 255..255, |_, _| Ok(Value::Unspecified));
 
         assert!(p.matches_arity(MAX_ARITY as usize));
     }
 
     #[test]
     fn matches_min_variable_arity() {
-        let p = Procedure::intrinsic("foo", 0..3, |_, _| Ok(Value::Unspecified));
+        let p = Procedure::intrinsic("foo".into(), 0..3, |_, _| Ok(Value::Unspecified));
 
         assert!(p.matches_arity(0));
     }
 
     #[test]
     fn matches_max_variable_arity() {
-        let p = Procedure::intrinsic("foo", 0..3, |_, _| Ok(Value::Unspecified));
+        let p = Procedure::intrinsic("foo".into(), 0..3, |_, _| Ok(Value::Unspecified));
 
         assert!(p.matches_arity(3));
     }
 
     #[test]
     fn matches_exceeds_variable_arity() {
-        let p = Procedure::intrinsic("foo", 0..3, |_, _| Ok(Value::Unspecified));
+        let p = Procedure::intrinsic("foo".into(), 0..3, |_, _| Ok(Value::Unspecified));
 
         assert!(!p.matches_arity(4));
     }
 
     #[test]
     fn matches_less_than_min_variable_arity() {
-        let p = Procedure::intrinsic("foo", 2..5, |_, _| Ok(Value::Unspecified));
+        let p = Procedure::intrinsic("foo".into(), 2..5, |_, _| Ok(Value::Unspecified));
 
         assert!(!p.matches_arity(1));
     }
 
     #[test]
     fn exceeds_max_arity() {
-        let p = Procedure::intrinsic("foo", 255..255, |_, _| Ok(Value::Unspecified));
+        let p = Procedure::intrinsic("foo".into(), 255..255, |_, _| Ok(Value::Unspecified));
 
         assert!(!p.matches_arity(256));
     }
 
     #[test]
     fn apply_zero_arity() {
-        let p = Procedure::intrinsic("foo", 0..0, |_, _| Ok(Value::string("bar")));
+        let p = Procedure::intrinsic("foo".into(), 0..0, |_, _| Ok(Value::string("bar")));
         let mut env = TestEnv::default();
         let mut f = env.new_frame();
         let r = p.apply(&[], &mut f);
@@ -219,7 +219,7 @@ mod tests {
 
     #[test]
     fn apply_single_arity() {
-        let p = Procedure::intrinsic("foo", 1..1, |args, _| {
+        let p = Procedure::intrinsic("foo".into(), 1..1, |args, _| {
             let Value::String(s) = &args[0] else {
                 unreachable!()
             };
