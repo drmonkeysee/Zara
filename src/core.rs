@@ -51,9 +51,10 @@ mod procctx;
 mod time;
 
 use crate::{
-    eval::{Arity, Binding, EvalResult, IntrinsicFn, Procedure},
+    eval::{Arity, EvalResult, Frame, IntrinsicFn, Procedure},
     value::{Condition, TypeName, Value},
 };
+use std::rc::Rc;
 
 /*
  * Zara Core Library including all the standard R7RS libraries
@@ -66,22 +67,23 @@ use crate::{
 const FIRST_ARG_LABEL: &str = "0";
 const SECOND_ARG_LABEL: &str = "1";
 
-pub(crate) fn load(scope: &mut Binding) {
-    base::load(scope);
-    charuni::load(scope);
-    complex::load(scope);
-    cxr::load(scope);
+pub(crate) fn load(env: &mut Frame) {
+    base::load(env);
+    charuni::load(env);
+    complex::load(env);
+    cxr::load(env);
     // TODO: add cli arg for excluding this
-    ext::load(scope);
-    inexact::load(scope);
-    procctx::load(scope);
-    time::load(scope);
+    ext::load(env);
+    inexact::load(env);
+    procctx::load(env);
+    time::load(env);
 }
 
-fn bind_intrinsic(scope: &mut Binding, name: &str, arity: Arity, body: IntrinsicFn) {
-    scope.bind(
-        name,
-        Value::Procedure(Procedure::intrinsic(name, arity, body).into()),
+fn bind_intrinsic(env: &mut Frame, name: &str, arity: Arity, body: IntrinsicFn) {
+    let n = env.sym.get(name);
+    env.scope.bind(
+        Rc::clone(&n),
+        Value::Procedure(Procedure::intrinsic(n, arity, body).into()),
     );
 }
 

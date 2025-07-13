@@ -32,14 +32,14 @@ pub(crate) struct Environment<T> {
 
 impl<T: Evaluator + Default> Environment<T> {
     pub(crate) fn new(args: impl IntoIterator<Item = String>) -> Self {
-        let mut global = Binding::default();
-        core::load(&mut global);
-        Self {
+        let mut me = Self {
             driver: PhantomData,
-            global,
+            global: Binding::default(),
             symbols: SymbolTable::default(),
             system: System::new(args),
-        }
+        };
+        core::load(&mut me.make_frame());
+        me
     }
 
     pub(crate) fn evaluate(&mut self, prg: Program) -> Evaluation {

@@ -1,22 +1,22 @@
 // (scheme char)
 use super::FIRST_ARG_LABEL;
 use crate::{
-    eval::{Binding, EvalResult, Frame},
+    eval::{EvalResult, Frame},
     value::{Condition, TypeName, Value},
 };
 
-pub(super) fn load(scope: &mut Binding) {
-    super::bind_intrinsic(scope, "char-alphabetic?", 1..1, is_alphabetic);
-    super::bind_intrinsic(scope, "char-numeric?", 1..1, is_numeric);
-    super::bind_intrinsic(scope, "char-whitespace?", 1..1, is_whitespace);
-    super::bind_intrinsic(scope, "char-upper-case?", 1..1, is_uppercase);
-    super::bind_intrinsic(scope, "char-lower-case?", 1..1, is_lowercase);
+pub(super) fn load(env: &mut Frame) {
+    super::bind_intrinsic(env, "char-alphabetic?", 1..1, is_alphabetic);
+    super::bind_intrinsic(env, "char-numeric?", 1..1, is_numeric);
+    super::bind_intrinsic(env, "char-whitespace?", 1..1, is_whitespace);
+    super::bind_intrinsic(env, "char-upper-case?", 1..1, is_uppercase);
+    super::bind_intrinsic(env, "char-lower-case?", 1..1, is_lowercase);
 
-    super::bind_intrinsic(scope, "char-upcase", 1..1, char_upper);
-    super::bind_intrinsic(scope, "char-downcase", 1..1, char_lower);
+    super::bind_intrinsic(env, "char-upcase", 1..1, char_upper);
+    super::bind_intrinsic(env, "char-downcase", 1..1, char_lower);
 
-    super::bind_intrinsic(scope, "string-upcase", 1..1, string_upper);
-    super::bind_intrinsic(scope, "string-downcase", 1..1, string_lower);
+    super::bind_intrinsic(env, "string-upcase", 1..1, string_upper);
+    super::bind_intrinsic(env, "string-downcase", 1..1, string_lower);
 }
 
 try_predicate!(

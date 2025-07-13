@@ -1,16 +1,16 @@
 // (scheme time)
 use crate::{
     Exception,
-    eval::{Binding, EvalResult, Frame},
+    eval::{EvalResult, Frame},
     number::Sign,
     value::{Condition, Value},
 };
 use std::time::{SystemTime, UNIX_EPOCH};
 
-pub(super) fn load(scope: &mut Binding) {
-    super::bind_intrinsic(scope, "current-second", 0..0, current_second);
-    super::bind_intrinsic(scope, "current-jiffy", 0..0, current_jiffy);
-    super::bind_intrinsic(scope, "jiffies-per-second", 0..0, jiffies_per_second);
+pub(super) fn load(env: &mut Frame) {
+    super::bind_intrinsic(env, "current-second", 0..0, current_second);
+    super::bind_intrinsic(env, "current-jiffy", 0..0, current_jiffy);
+    super::bind_intrinsic(env, "jiffies-per-second", 0..0, jiffies_per_second);
 }
 
 fn current_second(_args: &[Value], _env: &mut Frame) -> EvalResult {

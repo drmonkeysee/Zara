@@ -1,35 +1,35 @@
 // (scheme cxr)
 use super::{pcar, pcdr};
 use crate::{
-    eval::{Binding, EvalResult, Frame},
+    eval::{EvalResult, Frame},
     value::Value,
 };
 
-pub(super) fn load(scope: &mut Binding) {
-    super::bind_intrinsic(scope, "caaar", 1..1, caaar);
-    super::bind_intrinsic(scope, "caadr", 1..1, caadr);
-    super::bind_intrinsic(scope, "cadar", 1..1, cadar);
-    super::bind_intrinsic(scope, "caddr", 1..1, caddr);
-    super::bind_intrinsic(scope, "cdaar", 1..1, cdaar);
-    super::bind_intrinsic(scope, "cdadr", 1..1, cdadr);
-    super::bind_intrinsic(scope, "cddar", 1..1, cddar);
-    super::bind_intrinsic(scope, "cdddr", 1..1, cdddr);
-    super::bind_intrinsic(scope, "caaaar", 1..1, caaaar);
-    super::bind_intrinsic(scope, "caaadr", 1..1, caaadr);
-    super::bind_intrinsic(scope, "caadar", 1..1, caadar);
-    super::bind_intrinsic(scope, "caaddr", 1..1, caaddr);
-    super::bind_intrinsic(scope, "cadaar", 1..1, cadaar);
-    super::bind_intrinsic(scope, "cadadr", 1..1, cadadr);
-    super::bind_intrinsic(scope, "caddar", 1..1, caddar);
-    super::bind_intrinsic(scope, "cadddr", 1..1, cadddr);
-    super::bind_intrinsic(scope, "cdaaar", 1..1, cdaaar);
-    super::bind_intrinsic(scope, "cdaadr", 1..1, cdaadr);
-    super::bind_intrinsic(scope, "cdadar", 1..1, cdadar);
-    super::bind_intrinsic(scope, "cdaddr", 1..1, cdaddr);
-    super::bind_intrinsic(scope, "cddaar", 1..1, cddaar);
-    super::bind_intrinsic(scope, "cddadr", 1..1, cddadr);
-    super::bind_intrinsic(scope, "cdddar", 1..1, cdddar);
-    super::bind_intrinsic(scope, "cddddr", 1..1, cddddr);
+pub(super) fn load(env: &mut Frame) {
+    super::bind_intrinsic(env, "caaar", 1..1, caaar);
+    super::bind_intrinsic(env, "caadr", 1..1, caadr);
+    super::bind_intrinsic(env, "cadar", 1..1, cadar);
+    super::bind_intrinsic(env, "caddr", 1..1, caddr);
+    super::bind_intrinsic(env, "cdaar", 1..1, cdaar);
+    super::bind_intrinsic(env, "cdadr", 1..1, cdadr);
+    super::bind_intrinsic(env, "cddar", 1..1, cddar);
+    super::bind_intrinsic(env, "cdddr", 1..1, cdddr);
+    super::bind_intrinsic(env, "caaaar", 1..1, caaaar);
+    super::bind_intrinsic(env, "caaadr", 1..1, caaadr);
+    super::bind_intrinsic(env, "caadar", 1..1, caadar);
+    super::bind_intrinsic(env, "caaddr", 1..1, caaddr);
+    super::bind_intrinsic(env, "cadaar", 1..1, cadaar);
+    super::bind_intrinsic(env, "cadadr", 1..1, cadadr);
+    super::bind_intrinsic(env, "caddar", 1..1, caddar);
+    super::bind_intrinsic(env, "cadddr", 1..1, cadddr);
+    super::bind_intrinsic(env, "cdaaar", 1..1, cdaaar);
+    super::bind_intrinsic(env, "cdaadr", 1..1, cdaadr);
+    super::bind_intrinsic(env, "cdadar", 1..1, cdadar);
+    super::bind_intrinsic(env, "cdaddr", 1..1, cdaddr);
+    super::bind_intrinsic(env, "cddaar", 1..1, cddaar);
+    super::bind_intrinsic(env, "cddadr", 1..1, cddadr);
+    super::bind_intrinsic(env, "cdddar", 1..1, cdddar);
+    super::bind_intrinsic(env, "cddddr", 1..1, cddddr);
 }
 
 cadr_func!(caaar, a, a, a);

@@ -2,7 +2,7 @@
 use super::FIRST_ARG_LABEL;
 use crate::{
     Exception,
-    eval::{Binding, EvalResult, Frame},
+    eval::{EvalResult, Frame},
     number::Number,
     value::{Condition, TypeName, Value},
 };
@@ -14,20 +14,20 @@ use std::{
 const PEXIT_SUCCESS: i32 = 0;
 const PEXIT_FAILURE: i32 = 1;
 
-pub(super) fn load(scope: &mut Binding) {
-    super::bind_intrinsic(scope, "command-line", 0..0, command_line);
+pub(super) fn load(env: &mut Frame) {
+    super::bind_intrinsic(env, "command-line", 0..0, command_line);
 
-    super::bind_intrinsic(scope, "exit", 0..1, exit);
-    super::bind_intrinsic(scope, "emergency-exit", 0..1, emergency_exit);
+    super::bind_intrinsic(env, "exit", 0..1, exit);
+    super::bind_intrinsic(env, "emergency-exit", 0..1, emergency_exit);
 
     super::bind_intrinsic(
-        scope,
+        env,
         "get-environment-variable",
         1..1,
         get_environment_variable,
     );
     super::bind_intrinsic(
-        scope,
+        env,
         "get-environment-variables",
         0..0,
         get_environment_variables,

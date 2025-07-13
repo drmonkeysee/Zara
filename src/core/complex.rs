@@ -1,18 +1,18 @@
 // (scheme complex)
 use super::FIRST_ARG_LABEL;
 use crate::{
-    eval::{Binding, EvalResult, Frame},
+    eval::{EvalResult, Frame},
     number::{Complex, Number, NumericTypeName, Real},
     value::{Condition, TypeName, Value},
 };
 
-pub(super) fn load(scope: &mut Binding) {
-    super::bind_intrinsic(scope, "make-rectangular", 2..2, make_rect);
-    super::bind_intrinsic(scope, "make-polar", 2..2, make_polar);
-    super::bind_intrinsic(scope, "real-part", 1..1, get_real);
-    super::bind_intrinsic(scope, "imag-part", 1..1, get_imag);
-    super::bind_intrinsic(scope, "magnitude", 1..1, get_mag);
-    super::bind_intrinsic(scope, "angle", 1..1, get_angle);
+pub(super) fn load(env: &mut Frame) {
+    super::bind_intrinsic(env, "make-rectangular", 2..2, make_rect);
+    super::bind_intrinsic(env, "make-polar", 2..2, make_polar);
+    super::bind_intrinsic(env, "real-part", 1..1, get_real);
+    super::bind_intrinsic(env, "imag-part", 1..1, get_imag);
+    super::bind_intrinsic(env, "magnitude", 1..1, get_mag);
+    super::bind_intrinsic(env, "angle", 1..1, get_angle);
 }
 
 fn make_rect(args: &[Value], _env: &mut Frame) -> EvalResult {

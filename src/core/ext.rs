@@ -2,7 +2,7 @@
 use super::FIRST_ARG_LABEL;
 use crate::{
     Exception,
-    eval::{Binding, EvalResult, Frame},
+    eval::{EvalResult, Frame},
     value::{Condition, TypeName, Value},
 };
 use std::rc::Rc;
@@ -14,18 +14,18 @@ use std::rc::Rc;
  * debugging, inspection, and other utilities.
  */
 
-pub(crate) fn load(scope: &mut Binding) {
-    super::bind_intrinsic(scope, "all-bindings", 0..0, bindings);
-    super::bind_intrinsic(scope, "all-symbols", 0..0, symbols);
-    super::bind_intrinsic(scope, "apropos", 0..1, apropos);
+pub(crate) fn load(env: &mut Frame) {
+    super::bind_intrinsic(env, "all-bindings", 0..0, bindings);
+    super::bind_intrinsic(env, "all-symbols", 0..0, symbols);
+    super::bind_intrinsic(env, "apropos", 0..1, apropos);
 
     // NOTE: convenience vars
-    scope.bind("null", Value::null());
-    scope.bind("void", Value::Unspecified);
+    env.scope.bind(env.sym.get("null"), Value::null());
+    env.scope.bind(env.sym.get("void"), Value::Unspecified);
 
     // TODO: test variable
-    scope.bind(
-        "ex",
+    env.scope.bind(
+        env.sym.get("ex"),
         Value::Error(Condition::system_error("test error").into()),
     );
 }
