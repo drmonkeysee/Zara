@@ -1018,9 +1018,7 @@ fn into_define_parameterless_lambda() {
                     span: 8..13,
                     txt: Rc::clone(&txt),
                 }
-                .into_expr(ExpressionKind::Literal(zlist![Value::Symbol(
-                    "foo".into()
-                ),])),
+                .into_expr(ExpressionKind::Literal(zlist![Value::Symbol("foo".into())])),
                 ExprCtx {
                     span: 14..17,
                     txt: Rc::clone(&txt),
@@ -1855,26 +1853,51 @@ fn into_lambda_fixed_arguments() {
     let txt = make_textline().into();
     let p = ExprNode {
         ctx: ExprCtx {
-            span: 0..18,
+            span: 0..22,
             txt: Rc::clone(&txt),
         },
         mode: ParseMode::List {
             form: SyntacticForm::Lambda,
             seq: vec![
-                Expression::variable(
-                    "foo".into(),
-                    ExprCtx {
-                        span: 8..11,
-                        txt: Rc::clone(&txt),
-                    },
-                ),
-                Expression::string(
-                    "bar",
-                    ExprCtx {
-                        span: 12..17,
-                        txt: Rc::clone(&txt),
-                    },
-                ),
+                ExprCtx {
+                    span: 8..13,
+                    txt: Rc::clone(&txt),
+                }
+                .into_expr(ExpressionKind::Literal(zlist![
+                    Value::Symbol("x".into()),
+                    Value::Symbol("y".into())
+                ])),
+                ExprCtx {
+                    span: 14..21,
+                    txt: Rc::clone(&txt),
+                }
+                .into_expr(ExpressionKind::Call {
+                    proc: Expression::variable(
+                        "+".into(),
+                        ExprCtx {
+                            span: 15..16,
+                            txt: Rc::clone(&txt),
+                        },
+                    )
+                    .into(),
+                    args: [
+                        Expression::variable(
+                            "x".into(),
+                            ExprCtx {
+                                span: 17..18,
+                                txt: Rc::clone(&txt),
+                            },
+                        ),
+                        Expression::variable(
+                            "y".into(),
+                            ExprCtx {
+                                span: 19..20,
+                                txt: Rc::clone(&txt),
+                            },
+                        ),
+                    ]
+                    .into(),
+                }),
             ],
         },
     };
@@ -1887,7 +1910,7 @@ fn into_lambda_fixed_arguments() {
     assert!(matches!(
         expr,
         Expression {
-            ctx: ExprCtx { span: TxtSpan { start: 0, end: 18 }, txt: line },
+            ctx: ExprCtx { span: TxtSpan { start: 0, end: 22 }, txt: line },
             kind: ExpressionKind::Set { .. },
         } if Rc::ptr_eq(&txt, &line)
     ));
@@ -1905,23 +1928,21 @@ fn into_lambda_simple_body() {
     let txt = make_textline().into();
     let p = ExprNode {
         ctx: ExprCtx {
-            span: 0..18,
+            span: 0..14,
             txt: Rc::clone(&txt),
         },
         mode: ParseMode::List {
             form: SyntacticForm::Lambda,
             seq: vec![
+                ExprCtx {
+                    span: 8..11,
+                    txt: Rc::clone(&txt),
+                }
+                .into_expr(ExpressionKind::Literal(zlist![Value::Symbol("x".into())])),
                 Expression::variable(
-                    "foo".into(),
+                    "x".into(),
                     ExprCtx {
-                        span: 8..11,
-                        txt: Rc::clone(&txt),
-                    },
-                ),
-                Expression::string(
-                    "bar",
-                    ExprCtx {
-                        span: 12..17,
+                        span: 12..13,
                         txt: Rc::clone(&txt),
                     },
                 ),
@@ -1937,7 +1958,7 @@ fn into_lambda_simple_body() {
     assert!(matches!(
         expr,
         Expression {
-            ctx: ExprCtx { span: TxtSpan { start: 0, end: 18 }, txt: line },
+            ctx: ExprCtx { span: TxtSpan { start: 0, end: 14 }, txt: line },
             kind: ExpressionKind::Set { .. },
         } if Rc::ptr_eq(&txt, &line)
     ));
@@ -1955,23 +1976,21 @@ fn into_lambda_no_arguments() {
     let txt = make_textline().into();
     let p = ExprNode {
         ctx: ExprCtx {
-            span: 0..18,
+            span: 0..14,
             txt: Rc::clone(&txt),
         },
         mode: ParseMode::List {
             form: SyntacticForm::Lambda,
             seq: vec![
-                Expression::variable(
-                    "foo".into(),
+                ExprCtx {
+                    span: 8..10,
+                    txt: Rc::clone(&txt),
+                }
+                .into_expr(ExpressionKind::Literal(zlist![])),
+                Expression::symbol(
+                    "a".into(),
                     ExprCtx {
-                        span: 8..11,
-                        txt: Rc::clone(&txt),
-                    },
-                ),
-                Expression::string(
-                    "bar",
-                    ExprCtx {
-                        span: 12..17,
+                        span: 11..13,
                         txt: Rc::clone(&txt),
                     },
                 ),
@@ -1987,7 +2006,7 @@ fn into_lambda_no_arguments() {
     assert!(matches!(
         expr,
         Expression {
-            ctx: ExprCtx { span: TxtSpan { start: 0, end: 18 }, txt: line },
+            ctx: ExprCtx { span: TxtSpan { start: 0, end: 14 }, txt: line },
             kind: ExpressionKind::Set { .. },
         } if Rc::ptr_eq(&txt, &line)
     ));
@@ -2005,23 +2024,23 @@ fn into_lambda_variadic() {
     let txt = make_textline().into();
     let p = ExprNode {
         ctx: ExprCtx {
-            span: 0..18,
+            span: 0..12,
             txt: Rc::clone(&txt),
         },
         mode: ParseMode::List {
             form: SyntacticForm::Lambda,
             seq: vec![
-                Expression::variable(
-                    "foo".into(),
+                Expression::symbol(
+                    "x".into(),
                     ExprCtx {
-                        span: 8..11,
+                        span: 8..9,
                         txt: Rc::clone(&txt),
                     },
                 ),
-                Expression::string(
-                    "bar",
+                Expression::variable(
+                    "x".into(),
                     ExprCtx {
-                        span: 12..17,
+                        span: 10..11,
                         txt: Rc::clone(&txt),
                     },
                 ),
@@ -2037,7 +2056,7 @@ fn into_lambda_variadic() {
     assert!(matches!(
         expr,
         Expression {
-            ctx: ExprCtx { span: TxtSpan { start: 0, end: 18 }, txt: line },
+            ctx: ExprCtx { span: TxtSpan { start: 0, end: 12 }, txt: line },
             kind: ExpressionKind::Set { .. },
         } if Rc::ptr_eq(&txt, &line)
     ));
@@ -2055,23 +2074,24 @@ fn into_lambda_rest() {
     let txt = make_textline().into();
     let p = ExprNode {
         ctx: ExprCtx {
-            span: 0..18,
+            span: 0..20,
             txt: Rc::clone(&txt),
         },
         mode: ParseMode::List {
             form: SyntacticForm::Lambda,
             seq: vec![
+                ExprCtx {
+                    span: 8..17,
+                    txt: Rc::clone(&txt),
+                }
+                .into_expr(ExpressionKind::Literal(Value::cons(
+                    Value::Symbol("x".into()),
+                    Value::cons(Value::Symbol("y".into()), Value::Symbol("z".into())),
+                ))),
                 Expression::variable(
-                    "foo".into(),
+                    "z".into(),
                     ExprCtx {
-                        span: 8..11,
-                        txt: Rc::clone(&txt),
-                    },
-                ),
-                Expression::string(
-                    "bar",
-                    ExprCtx {
-                        span: 12..17,
+                        span: 18..19,
                         txt: Rc::clone(&txt),
                     },
                 ),
@@ -2087,7 +2107,7 @@ fn into_lambda_rest() {
     assert!(matches!(
         expr,
         Expression {
-            ctx: ExprCtx { span: TxtSpan { start: 0, end: 18 }, txt: line },
+            ctx: ExprCtx { span: TxtSpan { start: 0, end: 20 }, txt: line },
             kind: ExpressionKind::Set { .. },
         } if Rc::ptr_eq(&txt, &line)
     ));
@@ -2105,31 +2125,23 @@ fn into_lambda_not_identifier_expr() {
     let txt = make_textline().into();
     let p = ExprNode {
         ctx: ExprCtx {
-            span: 0..23,
+            span: 0..15,
             txt: Rc::clone(&txt),
         },
         mode: ParseMode::List {
             form: SyntacticForm::Lambda,
             seq: vec![
                 ExprCtx {
-                    span: 8..16,
+                    span: 8..10,
                     txt: Rc::clone(&txt),
                 }
-                .into_expr(ExpressionKind::Call {
-                    proc: Expression::variable(
-                        "myproc".into(),
-                        ExprCtx {
-                            span: 9..15,
-                            txt: Rc::clone(&txt),
-                        },
-                    )
-                    .into(),
-                    args: [].into(),
-                }),
-                Expression::string(
-                    "bar",
+                .into_expr(ExpressionKind::Literal(zlist![Value::Number(
+                    Number::real(1)
+                )])),
+                Expression::symbol(
+                    "a".into(),
                     ExprCtx {
-                        span: 17..22,
+                        span: 12..14,
                         txt: Rc::clone(&txt),
                     },
                 ),
@@ -2146,7 +2158,7 @@ fn into_lambda_not_identifier_expr() {
     assert!(matches!(
         &errs[0],
         ExpressionError {
-            ctx: ExprCtx { span: TxtSpan { start: 0, end: 23 }, txt: line },
+            ctx: ExprCtx { span: TxtSpan { start: 0, end: 15 }, txt: line },
             kind: ExpressionErrorKind::SetInvalid,
         } if Rc::ptr_eq(&txt, &line)
     ));
@@ -2158,15 +2170,15 @@ fn into_lambda_too_few_args() {
     let txt = make_textline().into();
     let p = ExprNode {
         ctx: ExprCtx {
-            span: 0..25,
+            span: 0..10,
             txt: Rc::clone(&txt),
         },
         mode: ParseMode::List {
             form: SyntacticForm::Lambda,
-            seq: vec![Expression::variable(
-                "foo".into(),
+            seq: vec![Expression::symbol(
+                "x".into(),
                 ExprCtx {
-                    span: 8..11,
+                    span: 8..9,
                     txt: Rc::clone(&txt),
                 },
             )],
@@ -2182,7 +2194,7 @@ fn into_lambda_too_few_args() {
     assert!(matches!(
         &errs[0],
         ExpressionError {
-            ctx: ExprCtx { span: TxtSpan { start: 0, end: 25 }, txt: line },
+            ctx: ExprCtx { span: TxtSpan { start: 0, end: 10 }, txt: line },
             kind: ExpressionErrorKind::SetInvalid,
         } if Rc::ptr_eq(&txt, &line)
     ));
@@ -2194,30 +2206,30 @@ fn into_lambda_too_many_args() {
     let txt = make_textline().into();
     let p = ExprNode {
         ctx: ExprCtx {
-            span: 0..25,
+            span: 0..15,
             txt: Rc::clone(&txt),
         },
         mode: ParseMode::List {
             form: SyntacticForm::Lambda,
             seq: vec![
+                Expression::symbol(
+                    "x".into(),
+                    ExprCtx {
+                        span: 8..9,
+                        txt: Rc::clone(&txt),
+                    },
+                ),
                 Expression::variable(
-                    "foo".into(),
+                    "x".into(),
                     ExprCtx {
-                        span: 8..11,
+                        span: 10..11,
                         txt: Rc::clone(&txt),
                     },
                 ),
-                Expression::string(
-                    "bar",
+                Expression::symbol(
+                    "b".into(),
                     ExprCtx {
-                        span: 12..17,
-                        txt: Rc::clone(&txt),
-                    },
-                ),
-                Expression::string(
-                    "baz",
-                    ExprCtx {
-                        span: 18..23,
+                        span: 12..14,
                         txt: Rc::clone(&txt),
                     },
                 ),
@@ -2234,7 +2246,7 @@ fn into_lambda_too_many_args() {
     assert!(matches!(
         &errs[0],
         ExpressionError {
-            ctx: ExprCtx { span: TxtSpan { start: 0, end: 25 }, txt: line },
+            ctx: ExprCtx { span: TxtSpan { start: 0, end: 15 }, txt: line },
             kind: ExpressionErrorKind::SetInvalid,
         } if Rc::ptr_eq(&txt, &line)
     ));
@@ -2246,18 +2258,19 @@ fn into_lambda_empty_body() {
     let txt = make_textline().into();
     let p = ExprNode {
         ctx: ExprCtx {
-            span: 0..25,
+            span: 0..15,
             txt: Rc::clone(&txt),
         },
         mode: ParseMode::List {
             form: SyntacticForm::Lambda,
-            seq: vec![Expression::variable(
-                "foo".into(),
+            seq: vec![
                 ExprCtx {
                     span: 8..11,
                     txt: Rc::clone(&txt),
-                },
-            )],
+                }
+                .into_expr(ExpressionKind::Literal(zlist![Value::Symbol("x".into())])),
+                // TODO: what goes here
+            ],
         },
     };
     let mut env = TestEnv::default();
@@ -2270,7 +2283,7 @@ fn into_lambda_empty_body() {
     assert!(matches!(
         &errs[0],
         ExpressionError {
-            ctx: ExprCtx { span: TxtSpan { start: 0, end: 25 }, txt: line },
+            ctx: ExprCtx { span: TxtSpan { start: 0, end: 15 }, txt: line },
             kind: ExpressionErrorKind::SetInvalid,
         } if Rc::ptr_eq(&txt, &line)
     ));
