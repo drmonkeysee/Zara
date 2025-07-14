@@ -1225,7 +1225,7 @@ fn into_define_variable_no_value() {
     assert!(matches!(
         expr,
         Expression {
-            ctx: ExprCtx { span: TxtSpan { start: 0, end: 18 }, txt: line },
+            ctx: ExprCtx { span: TxtSpan { start: 0, end: 12 }, txt: line },
             kind: ExpressionKind::Define { .. },
         } if Rc::ptr_eq(&txt, &line)
     ));
@@ -1365,7 +1365,7 @@ fn into_define_too_many_args() {
     assert!(matches!(
         &errs[0],
         ExpressionError {
-            ctx: ExprCtx { span: TxtSpan { start: 0, end: 25 }, txt: line },
+            ctx: ExprCtx { span: TxtSpan { start: 0, end: 24 }, txt: line },
             kind: ExpressionErrorKind::DefineInvalid,
         } if Rc::ptr_eq(&txt, &line)
     ));

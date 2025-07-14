@@ -41,11 +41,11 @@ impl SyntacticForm {
         }
     }
 
-    fn quoted(self) -> bool {
+    fn quoted(self, seq_len: usize) -> bool {
         matches!(
             self,
             Self::Datum | Self::PairClosed | Self::PairOpen | Self::Quote
-        )
+        ) || (matches!(self, Self::Define) && seq_len == 0)
     }
 
     pub(super) fn parse_list(
@@ -118,7 +118,7 @@ impl SyntacticForm {
                 if (1..3).contains(&seq.len()) {
                     let mut iter = seq.into_iter();
                     let binding = iter.next().unwrap();
-                    if let ExpressionKind::Variable(n) = binding.kind {
+                    if let ExpressionKind::Literal(Value::Symbol(n)) = binding.kind {
                         return Ok(Some(ctx.into_expr(ExpressionKind::Define {
                             name: n,
                             expr: iter.next().map(Box::new),
@@ -217,7 +217,7 @@ impl SyntacticForm {
         ns: &mut Namespace,
     ) -> ParseFlow {
         let token_span = token.span.clone();
-        if let Some(expr) = super::parse_expr(token, txt, self.quoted(), ns)? {
+        if let Some(expr) = super::parse_expr(token, txt, self.quoted(seq.len()), ns)? {
             match self {
                 Self::Call => {
                     if seq.is_empty()
