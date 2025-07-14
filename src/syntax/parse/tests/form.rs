@@ -2289,6 +2289,77 @@ fn into_lambda_empty_body() {
     ));
 }
 
+#[test]
+fn into_lambda_duplicate_args() {
+    // (lambda (x y x) (+ x y))
+    let txt = make_textline().into();
+    let p = ExprNode {
+        ctx: ExprCtx {
+            span: 0..24,
+            txt: Rc::clone(&txt),
+        },
+        mode: ParseMode::List {
+            form: SyntacticForm::Lambda,
+            seq: vec![
+                ExprCtx {
+                    span: 8..15,
+                    txt: Rc::clone(&txt),
+                }
+                .into_expr(ExpressionKind::Literal(zlist![
+                    Value::Symbol("x".into()),
+                    Value::Symbol("y".into()),
+                    Value::Symbol("x".into()),
+                ])),
+                ExprCtx {
+                    span: 16..23,
+                    txt: Rc::clone(&txt),
+                }
+                .into_expr(ExpressionKind::Call {
+                    proc: Expression::variable(
+                        "+".into(),
+                        ExprCtx {
+                            span: 17..18,
+                            txt: Rc::clone(&txt),
+                        },
+                    )
+                    .into(),
+                    args: [
+                        Expression::variable(
+                            "x".into(),
+                            ExprCtx {
+                                span: 19..20,
+                                txt: Rc::clone(&txt),
+                            },
+                        ),
+                        Expression::variable(
+                            "y".into(),
+                            ExprCtx {
+                                span: 21..22,
+                                txt: Rc::clone(&txt),
+                            },
+                        ),
+                    ]
+                    .into(),
+                }),
+            ],
+        },
+    };
+    let mut env = TestEnv::default();
+    let mut ns = env.new_namespace();
+
+    let r = p.try_into_expr(&mut ns);
+
+    let errs = err_or_fail!(r);
+    assert_eq!(errs.len(), 1);
+    assert!(matches!(
+        &errs[0],
+        ExpressionError {
+            ctx: ExprCtx { span: TxtSpan { start: 0, end: 24 }, txt: line },
+            kind: ExpressionErrorKind::SetInvalid,
+        } if Rc::ptr_eq(&txt, &line)
+    ));
+}
+
 mod merge {
     use super::*;
 
