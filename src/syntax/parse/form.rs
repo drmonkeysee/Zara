@@ -1,9 +1,9 @@
 use super::{
     ExprConvertResult, ExprCtx, ExprNode, Expression, ExpressionErrorKind, ExpressionKind,
-    MergeFlow, MergeResult, ParseBreak, ParseFlow, ParserError, SyntaxError,
+    MergeFlow, MergeResult, ParseBreak, ParseFlow, ParserError, Program, SyntaxError,
 };
 use crate::{
-    eval::Namespace,
+    eval::{Namespace, Procedure},
     lex::{Token, TokenKind},
     txt::TextLine,
     value::Value,
@@ -45,7 +45,7 @@ impl SyntacticForm {
         matches!(
             self,
             Self::Datum | Self::PairClosed | Self::PairOpen | Self::Quote
-        ) || (matches!(self, Self::Define) && seq_len == 0)
+        ) || (matches!(self, Self::Define | Self::Lambda) && seq_len == 0)
     }
 
     pub(super) fn parse_list(
@@ -139,7 +139,24 @@ impl SyntacticForm {
                     Err(vec![ctx.into_error(ExpressionErrorKind::IfInvalid)])
                 }
             }
-            Self::Lambda => todo!("lambda form->expr"),
+            Self::Lambda => {
+                if seq.len() < 2 {
+                    Err(vec![ctx.into_error(ExpressionErrorKind::LambdaInvalid)])
+                } else {
+                    let mut iter = seq.into_iter();
+                    let formals = iter.next().unwrap();
+                    let body = Program::new(iter.collect::<Box<[_]>>());
+                    match formals.kind {
+                        ExpressionKind::Literal(Value::Pair(p)) => todo!("named params [rest]"),
+                        ExpressionKind::Literal(Value::Symbol(n)) => Ok(Some(ctx.into_expr(
+                            ExpressionKind::Literal(Value::Procedure(
+                                Procedure::lambda(&[], Some(n), body, None).into(),
+                            )),
+                        ))),
+                        _ => Err(vec![ctx.into_error(ExpressionErrorKind::LambdaInvalid)]),
+                    }
+                }
+            }
             Self::PairClosed => into_list(seq, ctx, true),
             Self::PairOpen => Err(vec![ctx.into_error(ExpressionErrorKind::PairUnterminated)]),
             Self::Quote => {

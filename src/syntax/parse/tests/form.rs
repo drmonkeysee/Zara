@@ -2252,7 +2252,7 @@ fn into_lambda_too_few_args() {
         &errs[0],
         ExpressionError {
             ctx: ExprCtx { span: TxtSpan { start: 0, end: 10 }, txt: line },
-            kind: ExpressionErrorKind::SetInvalid,
+            kind: ExpressionErrorKind::LambdaInvalid,
         } if Rc::ptr_eq(&txt, &line)
     ));
 }

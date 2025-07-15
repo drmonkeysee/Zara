@@ -28,6 +28,15 @@ impl Procedure {
         }
     }
 
+    pub(crate) fn lambda(
+        named_args: &[Rc<str>],
+        variadic_arg: Option<Rc<str>>,
+        body: Program,
+        name: Option<Rc<str>>,
+    ) -> Self {
+        todo!();
+    }
+
     pub(crate) fn name(&self) -> Option<&str> {
         self.name.as_deref()
     }
