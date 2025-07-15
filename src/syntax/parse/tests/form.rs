@@ -2120,6 +2120,63 @@ fn into_lambda_rest() {
 }
 
 #[test]
+fn into_lambda_multiple_expression_body() {
+    // (lambda x x 'b)
+    let txt = make_textline().into();
+    let p = ExprNode {
+        ctx: ExprCtx {
+            span: 0..15,
+            txt: Rc::clone(&txt),
+        },
+        mode: ParseMode::List {
+            form: SyntacticForm::Lambda,
+            seq: vec![
+                Expression::symbol(
+                    "x".into(),
+                    ExprCtx {
+                        span: 8..9,
+                        txt: Rc::clone(&txt),
+                    },
+                ),
+                Expression::variable(
+                    "x".into(),
+                    ExprCtx {
+                        span: 10..11,
+                        txt: Rc::clone(&txt),
+                    },
+                ),
+                Expression::symbol(
+                    "b".into(),
+                    ExprCtx {
+                        span: 12..14,
+                        txt: Rc::clone(&txt),
+                    },
+                ),
+            ],
+        },
+    };
+    let mut env = TestEnv::default();
+    let mut ns = env.new_namespace();
+
+    let r = p.try_into_expr(&mut ns);
+
+    let expr = some_or_fail!(ok_or_fail!(r));
+    assert!(matches!(
+        expr,
+        Expression {
+            ctx: ExprCtx { span: TxtSpan { start: 0, end: 20 }, txt: line },
+            kind: ExpressionKind::Set { .. },
+        } if Rc::ptr_eq(&txt, &line)
+    ));
+    let ExpressionKind::Set { var, expr } = expr.kind else {
+        unreachable!();
+    };
+    assert_eq!(var.as_ref(), "foo");
+    let val = extract_or_fail!(expr.kind, ExpressionKind::Literal);
+    assert_eq!(val.to_string(), "\"bar\"");
+}
+
+#[test]
 fn into_lambda_not_identifier_expr() {
     // (lambda (1) 'a)
     let txt = make_textline().into();
@@ -2195,58 +2252,6 @@ fn into_lambda_too_few_args() {
         &errs[0],
         ExpressionError {
             ctx: ExprCtx { span: TxtSpan { start: 0, end: 10 }, txt: line },
-            kind: ExpressionErrorKind::SetInvalid,
-        } if Rc::ptr_eq(&txt, &line)
-    ));
-}
-
-#[test]
-fn into_lambda_too_many_args() {
-    // (lambda x x 'b)
-    let txt = make_textline().into();
-    let p = ExprNode {
-        ctx: ExprCtx {
-            span: 0..15,
-            txt: Rc::clone(&txt),
-        },
-        mode: ParseMode::List {
-            form: SyntacticForm::Lambda,
-            seq: vec![
-                Expression::symbol(
-                    "x".into(),
-                    ExprCtx {
-                        span: 8..9,
-                        txt: Rc::clone(&txt),
-                    },
-                ),
-                Expression::variable(
-                    "x".into(),
-                    ExprCtx {
-                        span: 10..11,
-                        txt: Rc::clone(&txt),
-                    },
-                ),
-                Expression::symbol(
-                    "b".into(),
-                    ExprCtx {
-                        span: 12..14,
-                        txt: Rc::clone(&txt),
-                    },
-                ),
-            ],
-        },
-    };
-    let mut env = TestEnv::default();
-    let mut ns = env.new_namespace();
-
-    let r = p.try_into_expr(&mut ns);
-
-    let errs = err_or_fail!(r);
-    assert_eq!(errs.len(), 1);
-    assert!(matches!(
-        &errs[0],
-        ExpressionError {
-            ctx: ExprCtx { span: TxtSpan { start: 0, end: 15 }, txt: line },
             kind: ExpressionErrorKind::SetInvalid,
         } if Rc::ptr_eq(&txt, &line)
     ));
