@@ -2215,8 +2215,8 @@ fn into_lambda_not_identifier_expr() {
     assert!(matches!(
         &errs[0],
         ExpressionError {
-            ctx: ExprCtx { span: TxtSpan { start: 0, end: 15 }, txt: line },
-            kind: ExpressionErrorKind::SetInvalid,
+            ctx: ExprCtx { span: TxtSpan { start: 8, end: 10 }, txt: line },
+            kind: ExpressionErrorKind::LambdaInvalidFormals,
         } if Rc::ptr_eq(&txt, &line)
     ));
 }

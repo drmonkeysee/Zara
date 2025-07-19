@@ -139,24 +139,7 @@ impl SyntacticForm {
                     Err(vec![ctx.into_error(ExpressionErrorKind::IfInvalid)])
                 }
             }
-            Self::Lambda => {
-                if seq.len() < 2 {
-                    Err(vec![ctx.into_error(ExpressionErrorKind::LambdaInvalid)])
-                } else {
-                    let mut iter = seq.into_iter();
-                    let formals = iter.next().unwrap();
-                    let body = Program::new(iter.collect::<Box<[_]>>());
-                    match formals.kind {
-                        ExpressionKind::Literal(Value::Pair(p)) => todo!("named params [rest]"),
-                        ExpressionKind::Literal(Value::Symbol(n)) => Ok(Some(ctx.into_expr(
-                            ExpressionKind::Literal(Value::Procedure(
-                                Procedure::lambda(&[], Some(n), body, None).into(),
-                            )),
-                        ))),
-                        _ => Err(vec![ctx.into_error(ExpressionErrorKind::LambdaInvalid)]),
-                    }
-                }
-            }
+            Self::Lambda => try_into_lambda(seq, ctx),
             Self::PairClosed => into_list(seq, ctx, true),
             Self::PairOpen => Err(vec![ctx.into_error(ExpressionErrorKind::PairUnterminated)]),
             Self::Quote => {
@@ -283,4 +266,43 @@ fn into_list(seq: Vec<Expression>, ctx: ExprCtx, improper: bool) -> ExprConvertR
             })
         },
     )
+}
+
+fn try_into_lambda(seq: Vec<Expression>, ctx: ExprCtx) -> ExprConvertResult {
+    if seq.len() < 2 {
+        return Err(vec![ctx.into_error(ExpressionErrorKind::LambdaInvalid)]);
+    }
+    let mut iter = seq.into_iter();
+    let formals = iter.next().unwrap();
+    let ExpressionKind::Literal(mut params) = formals.kind else {
+        return Err(vec![ctx.into_error(ExpressionErrorKind::LambdaInvalid)]);
+    };
+    let mut args = Vec::new();
+    let mut rest = None;
+    while !matches!(params, Value::Pair(None)) {
+        match params {
+            Value::Pair(Some(p)) => {
+                if let Value::Symbol(n) = &p.car {
+                    args.push(Rc::clone(&n));
+                    params = p.cdr.clone();
+                    continue;
+                }
+            }
+            Value::Symbol(n) => {
+                rest = Some(Rc::clone(&n));
+                break;
+            }
+            _ => (),
+        }
+        return Err(vec![
+            formals
+                .ctx
+                .into_error(ExpressionErrorKind::LambdaInvalidFormals),
+        ]);
+    }
+    Ok(Some(ctx.into_expr(ExpressionKind::Literal(
+        Value::Procedure(
+            Procedure::lambda(&args, rest, Program::new(iter.collect::<Box<[_]>>()), None).into(),
+        ),
+    ))))
 }

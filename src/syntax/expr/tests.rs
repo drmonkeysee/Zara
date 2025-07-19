@@ -1279,6 +1279,18 @@ mod error {
     }
 
     #[test]
+    fn display_invalid_lambda_formals() {
+        let txt = make_textline().into();
+        let err = ExprCtx {
+            span: 0..5,
+            txt: Rc::clone(&txt),
+        }
+        .into_error(ExpressionErrorKind::LambdaInvalidFormals);
+
+        assert_eq!(err.to_string(), "invalid formals syntax");
+    }
+
+    #[test]
     fn display_unterminated_list() {
         let err = ExprCtx {
             span: 0..5,
