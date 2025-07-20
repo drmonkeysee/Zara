@@ -66,7 +66,8 @@ fn apropos(args: &[Value], env: &mut Frame) -> EvalResult {
         env.scope
             .get_refs()
             .into_iter()
-            .filter_map(|(n, _)| n.contains(pat).then(|| Value::Symbol(env.sym.get(n))))
+            .filter(|&(n, _)| n.contains(pat))
+            .map(|(n, _)| Value::Symbol(env.sym.get(n)))
             .collect::<Vec<_>>(),
     ))
 }

@@ -151,7 +151,7 @@ fn numeric_symbol(txt: &str, exactness: Option<Exactness>) -> Option<TokenKind> 
     let txt = txt.get(1..)?;
     let symbol = txt.to_ascii_lowercase();
     let is_imaginary = symbol.ends_with('i');
-    let end = symbol.len() - is_imaginary as usize;
+    let end = symbol.len() - usize::from(is_imaginary);
     match symbol.get(..end)? {
         "" => Some(numeric::imaginary(sign, exactness)),
         INF_STR => Some(numeric::infinity(sign, is_imaginary)),

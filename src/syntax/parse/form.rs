@@ -283,7 +283,7 @@ fn try_into_lambda(seq: Vec<Expression>, ctx: ExprCtx) -> ExprConvertResult {
         match params {
             Value::Pair(Some(p)) => {
                 if let Value::Symbol(n) = &p.car {
-                    args.push(Rc::clone(&n));
+                    args.push(Rc::clone(n));
                     params = p.cdr.clone();
                     continue;
                 }

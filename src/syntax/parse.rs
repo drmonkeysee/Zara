@@ -286,7 +286,7 @@ impl ParseMode {
             Self::CommentBlock => Ok(None),
             Self::CommentDatum(inner) => into_comment_datum(inner.as_ref(), node_ctx),
             Self::Identifier { name, quoted } => {
-                Ok(Some(identifier_to_expr(name, quoted, node_ctx, ns)))
+                Ok(Some(identifier_to_expr(&name, quoted, node_ctx, ns)))
             }
             Self::List { form, seq } => form.try_into_expr(seq, node_ctx),
             Self::Quote { inner, quoted } => into_datum(inner, node_ctx, quoted, ns),
@@ -372,7 +372,7 @@ fn parse_expr(token: Token, txt: &Rc<TextLine>, quoted: bool, ns: &mut Namespace
             .into_expr(ExpressionKind::Literal(Value::Number(Number::imaginary(r)))),
         )),
         TokenKind::Identifier(s) => ExprFlow::Continue(Some(identifier_to_expr(
-            s,
+            &s,
             quoted,
             ExprCtx {
                 span: token.span,
@@ -612,8 +612,8 @@ fn into_valid_sequence<T>(
     }
 }
 
-fn identifier_to_expr(name: String, quoted: bool, ctx: ExprCtx, ns: &mut Namespace) -> Expression {
-    let n = ns.get_symbol(&name);
+fn identifier_to_expr(name: &str, quoted: bool, ctx: ExprCtx, ns: &mut Namespace) -> Expression {
+    let n = ns.get_symbol(name);
     if quoted {
         Expression::symbol(n, ctx)
     } else {

@@ -38,6 +38,10 @@ impl Procedure {
             .into_iter()
             .map(Formal::Named)
             .collect::<Vec<_>>();
+        #[allow(
+            clippy::cast_possible_truncation,
+            reason = "distinct overflow check handled below"
+        )]
         let min = formals.len() as u8;
         let mut max = min;
         if let Some(n) = variadic_arg {
@@ -127,13 +131,12 @@ fn write_formals(args: &[Formal], f: &mut Formatter<'_>) -> fmt::Result {
     let mut buf = args
         .iter()
         .map(|f| match f {
-            Formal::Named(n) => n.as_ref(),
-            Formal::Rest(n) => n.as_ref(),
+            Formal::Named(n) | Formal::Rest(n) => n.as_ref(),
         })
         .collect::<Vec<_>>()
         .join(" ");
     if matches!(args.last(), Some(Formal::Rest(_))) {
-        buf.push_str("…");
+        buf.push('…');
         if args.len() == 1 {
             return f.write_str(&buf);
         }
