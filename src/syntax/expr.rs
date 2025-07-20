@@ -3,7 +3,7 @@ mod tests;
 
 use crate::{
     Exception,
-    eval::{EvalResult, Frame},
+    eval::{EvalResult, Frame, MAX_ARITY},
     lex::TokenKind,
     number::NumericError,
     txt::{LineNumber, TextLine, TxtSpan},
@@ -192,6 +192,7 @@ pub(super) enum ExpressionErrorKind {
     IfInvalid,
     LambdaInvalid,
     LambdaInvalidFormals,
+    LambdaMaxFormals,
     ListUnterminated,
     PairIncomplete,
     PairUnexpected,
@@ -230,6 +231,11 @@ impl Display for ExpressionErrorKind {
             Self::IfInvalid => format_invalid_form("(if <test> <consequent> [alternate])", f),
             Self::LambdaInvalid => format_invalid_form("(lambda <formals> <body>)", f),
             Self::LambdaInvalidFormals => f.write_str("invalid formals syntax"),
+            Self::LambdaMaxFormals => write!(
+                f,
+                "lambda definition exceeds formal arguments limit: {}",
+                usize::from(MAX_ARITY) + 1,
+            ),
             Self::ListUnterminated => f.write_str("unterminated list expression"),
             Self::PairIncomplete => f.write_str("missing first pair expression"),
             Self::PairUnexpected => f.write_str("unexpected pair syntax"),

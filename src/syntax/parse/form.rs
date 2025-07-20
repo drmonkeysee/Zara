@@ -300,9 +300,14 @@ fn try_into_lambda(seq: Vec<Expression>, ctx: ExprCtx) -> ExprConvertResult {
                 .into_error(ExpressionErrorKind::LambdaInvalidFormals),
         ]);
     }
-    Ok(Some(ctx.into_expr(ExpressionKind::Literal(
-        Value::Procedure(
-            Procedure::lambda(&args, rest, Program::new(iter.collect::<Box<[_]>>()), None).into(),
-        ),
-    ))))
+    match Procedure::lambda(args, rest, Program::new(iter.collect::<Box<[_]>>()), None) {
+        None => Err(vec![
+            formals
+                .ctx
+                .into_error(ExpressionErrorKind::LambdaMaxFormals),
+        ]),
+        Some(p) => Ok(Some(
+            ctx.into_expr(ExpressionKind::Literal(Value::Procedure(p.into()))),
+        )),
+    }
 }

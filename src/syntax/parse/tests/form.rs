@@ -2365,6 +2365,100 @@ fn into_lambda_duplicate_args() {
     ));
 }
 
+#[test]
+fn into_lambda_too_many_formals() {
+    // (lambda (257 arguments...) 'a)
+    let txt = make_textline().into();
+    let args = (0..256)
+        .into_iter()
+        .map(|i| Value::Symbol(format!("a{i}").into()))
+        .collect::<Vec<_>>();
+    let p = ExprNode {
+        ctx: ExprCtx {
+            span: 0..10,
+            txt: Rc::clone(&txt),
+        },
+        mode: ParseMode::List {
+            form: SyntacticForm::Lambda,
+            seq: vec![
+                ExprCtx {
+                    span: 8..15,
+                    txt: Rc::clone(&txt),
+                }
+                .into_expr(ExpressionKind::Literal(Value::list(args))),
+                Expression::symbol(
+                    "a".into(),
+                    ExprCtx {
+                        span: 12..14,
+                        txt: Rc::clone(&txt),
+                    },
+                ),
+            ],
+        },
+    };
+    let mut env = TestEnv::default();
+    let mut ns = env.new_namespace();
+
+    let r = p.try_into_expr(&mut ns);
+
+    let errs = err_or_fail!(r);
+    assert_eq!(errs.len(), 1);
+    assert!(matches!(
+        &errs[0],
+        ExpressionError {
+            ctx: ExprCtx { span: TxtSpan { start: 8, end: 15 }, txt: line },
+            kind: ExpressionErrorKind::LambdaMaxFormals,
+        } if Rc::ptr_eq(&txt, &line)
+    ));
+}
+
+#[test]
+fn into_lambda_too_many_formals_with_rest() {
+    // (lambda (256 arguments... . rest) 'a)
+    let txt = make_textline().into();
+    let args = (0..256)
+        .into_iter()
+        .map(|i| Value::Symbol(format!("a{i}").into()))
+        .collect::<Vec<_>>();
+    let p = ExprNode {
+        ctx: ExprCtx {
+            span: 0..10,
+            txt: Rc::clone(&txt),
+        },
+        mode: ParseMode::List {
+            form: SyntacticForm::Lambda,
+            seq: vec![
+                ExprCtx {
+                    span: 8..15,
+                    txt: Rc::clone(&txt),
+                }
+                .into_expr(ExpressionKind::Literal(Value::improper_list(args))),
+                Expression::symbol(
+                    "a".into(),
+                    ExprCtx {
+                        span: 12..14,
+                        txt: Rc::clone(&txt),
+                    },
+                ),
+            ],
+        },
+    };
+    let mut env = TestEnv::default();
+    let mut ns = env.new_namespace();
+
+    let r = p.try_into_expr(&mut ns);
+
+    let errs = err_or_fail!(r);
+    assert_eq!(errs.len(), 1);
+    assert!(matches!(
+        &errs[0],
+        ExpressionError {
+            ctx: ExprCtx { span: TxtSpan { start: 8, end: 15 }, txt: line },
+            kind: ExpressionErrorKind::LambdaMaxFormals,
+        } if Rc::ptr_eq(&txt, &line)
+    ));
+}
+
 mod merge {
     use super::*;
 

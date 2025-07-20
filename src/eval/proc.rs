@@ -29,12 +29,30 @@ impl Procedure {
     }
 
     pub(crate) fn lambda(
-        named_args: &[Rc<str>],
+        named_args: impl IntoIterator<Item = Rc<str>>,
         variadic_arg: Option<Rc<str>>,
         body: Program,
         name: Option<Rc<str>>,
-    ) -> Self {
-        todo!();
+    ) -> Option<Self> {
+        let mut formals = named_args
+            .into_iter()
+            .map(Formal::Named)
+            .collect::<Vec<_>>();
+        let min = formals.len() as u8;
+        let mut max = min;
+        if let Some(n) = variadic_arg {
+            formals.push(Formal::Rest(n));
+            max = MAX_ARITY;
+        }
+        if formals.len() > MAX_ARITY.into() {
+            None
+        } else {
+            Some(Self {
+                arity: min..max,
+                def: Definition::Lambda(formals.into(), body),
+                name,
+            })
+        }
     }
 
     pub(crate) fn name(&self) -> Option<&str> {
@@ -68,16 +86,13 @@ impl Display for Procedure {
 
 #[derive(Debug)]
 enum Formal {
-    Parameter(Rc<str>),
+    Named(Rc<str>),
     Rest(Rc<str>),
 }
 
 #[derive(Debug)]
 enum Definition {
     Intrinsic(IntrinsicFn),
-    // TODO: this likely has to be a 3rd thing: Body to exclude constructs
-    // that can only appear at top-level program.
-    #[allow(dead_code, reason = "not yet implemented")]
     Lambda(Box<[Formal]>, Program),
 }
 
@@ -110,7 +125,7 @@ mod tests {
     use super::*;
     use crate::{
         syntax::{ExpressionTree, Parser, ParserOutput},
-        testutil::{TestEnv, extract_or_fail, ok_or_fail},
+        testutil::{TestEnv, extract_or_fail, ok_or_fail, some_or_fail},
     };
 
     fn empty_program() -> Program {
@@ -173,52 +188,67 @@ mod tests {
 
     #[test]
     fn lambda_zero_arity_no_name() {
-        let p = Procedure::lambda(&[], None, empty_program(), None);
+        let p = some_or_fail!(Procedure::lambda([], None, empty_program(), None));
 
         assert_eq!(p.to_string(), "#<procedure>");
     }
 
     #[test]
     fn lambda_zero_arity() {
-        let p = Procedure::lambda(&[], None, empty_program(), Some("bar".into()));
+        let p = some_or_fail!(Procedure::lambda(
+            [],
+            None,
+            empty_program(),
+            Some("bar".into())
+        ));
 
         assert_eq!(p.to_string(), "#<procedure bar>");
     }
 
     #[test]
     fn lambda_single_arity() {
-        let p = Procedure::lambda(&["x".into()], None, empty_program(), Some("bar".into()));
+        let p = some_or_fail!(Procedure::lambda(
+            ["x".into()],
+            None,
+            empty_program(),
+            Some("bar".into())
+        ));
 
         assert_eq!(p.to_string(), "#<procedure bar (x)>");
     }
 
     #[test]
     fn lambda_multi_arity() {
-        let p = Procedure::lambda(
-            &["x".into(), "y".into(), "z".into()],
+        let p = some_or_fail!(Procedure::lambda(
+            ["x".into(), "y".into(), "z".into()],
             None,
             empty_program(),
             Some("bar".into()),
-        );
+        ));
 
         assert_eq!(p.to_string(), "#<procedure bar (x y z)>");
     }
 
     #[test]
     fn lambda_variadic_arity() {
-        let p = Procedure::lambda(&[], Some("any".into()), empty_program(), Some("bar".into()));
+        let p = some_or_fail!(Procedure::lambda(
+            [],
+            Some("any".into()),
+            empty_program(),
+            Some("bar".into())
+        ));
 
         assert_eq!(p.to_string(), "#<procedure bar any…>");
     }
 
     #[test]
     fn lambda_rest_arity() {
-        let p = Procedure::lambda(
-            &["x".into(), "y".into(), "z".into()],
+        let p = some_or_fail!(Procedure::lambda(
+            ["x".into(), "y".into(), "z".into()],
             Some("rest".into()),
             empty_program(),
             Some("bar".into()),
-        );
+        ));
 
         assert_eq!(p.to_string(), "#<procedure bar (x y z rest…)>");
     }
@@ -281,26 +311,36 @@ mod tests {
 
     #[test]
     fn lambda_matches_zero_arity() {
-        let p = Procedure::lambda(&[], None, empty_program(), Some("bar".into()));
+        let p = some_or_fail!(Procedure::lambda(
+            [],
+            None,
+            empty_program(),
+            Some("bar".into())
+        ));
 
         assert!(p.matches_arity(0));
     }
 
     #[test]
     fn lambda_matches_single_arity() {
-        let p = Procedure::lambda(&["x".into()], None, empty_program(), Some("bar".into()));
+        let p = some_or_fail!(Procedure::lambda(
+            ["x".into()],
+            None,
+            empty_program(),
+            Some("bar".into())
+        ));
 
         assert!(p.matches_arity(1));
     }
 
     #[test]
     fn lambda_matches_multi_arity() {
-        let p = Procedure::lambda(
-            &["x".into(), "y".into(), "z".into()],
+        let p = some_or_fail!(Procedure::lambda(
+            ["x".into(), "y".into(), "z".into()],
             None,
             empty_program(),
             Some("bar".into()),
-        );
+        ));
 
         assert!(p.matches_arity(3));
         assert!(!p.matches_arity(2));
@@ -309,7 +349,12 @@ mod tests {
 
     #[test]
     fn lambda_matches_variadic_arity() {
-        let p = Procedure::lambda(&[], Some("any".into()), empty_program(), Some("bar".into()));
+        let p = some_or_fail!(Procedure::lambda(
+            [],
+            Some("any".into()),
+            empty_program(),
+            Some("bar".into())
+        ));
 
         assert!(p.matches_arity(0));
         assert!(p.matches_arity(MAX_ARITY as usize));
@@ -318,18 +363,69 @@ mod tests {
 
     #[test]
     fn lambda_matches_rest_arity() {
-        let p = Procedure::lambda(
-            &["x".into(), "y".into()],
+        let p = some_or_fail!(Procedure::lambda(
+            ["x".into(), "y".into()],
             Some("any".into()),
             empty_program(),
             Some("bar".into()),
-        );
+        ));
 
         assert!(!p.matches_arity(0));
         assert!(!p.matches_arity(1));
         assert!(p.matches_arity(2));
         assert!(p.matches_arity(MAX_ARITY as usize));
         assert!(!p.matches_arity(256));
+    }
+
+    #[test]
+    fn lambda_max_arity() {
+        let params = iter::repeat_n("x".into(), MAX_ARITY.into());
+
+        let p = some_or_fail!(Procedure::lambda(
+            params,
+            None,
+            empty_program(),
+            Some("bar".into())
+        ));
+
+        assert!(p.matches_arity(MAX_ARITY as usize));
+    }
+
+    #[test]
+    fn lambda_max_arity_with_rest() {
+        let params = iter::repeat_n("x".into(), usize::from(MAX_ARITY) - 1);
+
+        let p = some_or_fail!(Procedure::lambda(
+            params,
+            Some("rest".into()),
+            empty_program(),
+            Some("bar".into())
+        ));
+
+        assert!(p.matches_arity(MAX_ARITY as usize));
+    }
+
+    #[test]
+    fn lambda_too_many_params() {
+        let params = iter::repeat_n("x".into(), usize::from(MAX_ARITY) + 1);
+
+        let p = Procedure::lambda(params, None, empty_program(), Some("bar".into()));
+
+        assert!(p.is_none());
+    }
+
+    #[test]
+    fn lambda_too_many_params_with_rest() {
+        let params = iter::repeat_n("x".into(), MAX_ARITY.into());
+
+        let p = Procedure::lambda(
+            params,
+            Some("rest".into()),
+            empty_program(),
+            Some("bar".into()),
+        );
+
+        assert!(p.is_none());
     }
 
     #[test]
