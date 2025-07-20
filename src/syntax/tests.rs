@@ -1,21 +1,10 @@
 use super::{expr::ExpressionErrorKind, *};
 use crate::{
-    lex::{Token, TokenKind},
-    testutil::{TestEnv, err_or_fail, extract_or_fail, make_textline_no, some_or_fail},
-    txt::LineNumber,
+    lex::TokenKind,
+    testutil::{
+        TestEnv, err_or_fail, extract_or_fail, make_tokenline, make_tokenline_no, some_or_fail,
+    },
 };
-
-fn make_tokenline(kinds: impl IntoIterator<Item = TokenKind>) -> TokenLine {
-    make_tokenline_no(kinds, 1)
-}
-
-fn make_tokenline_no(kinds: impl IntoIterator<Item = TokenKind>, lineno: LineNumber) -> TokenLine {
-    let tokens = kinds.into_iter().enumerate().map(|(i, kind)| Token {
-        kind,
-        span: i..i + 1,
-    });
-    TokenLine(tokens.collect(), make_textline_no(lineno))
-}
 
 mod parsing {
     use super::*;

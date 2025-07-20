@@ -36,6 +36,7 @@ macro_rules! some_or_fail {
 
 use crate::{
     eval::{Binding, Frame, Namespace, SymbolTable, System},
+    lex::{Token, TokenKind, TokenLine},
     txt::{LineNumber, TextContext, TextLine},
 };
 use std::{iter, path::Path};
@@ -55,6 +56,21 @@ pub(crate) fn make_textline_no(lineno: LineNumber) -> TextLine {
         line: "line of source code".to_owned(),
         lineno,
     }
+}
+
+pub(crate) fn make_tokenline(kinds: impl IntoIterator<Item = TokenKind>) -> TokenLine {
+    make_tokenline_no(kinds, 1)
+}
+
+pub(crate) fn make_tokenline_no(
+    kinds: impl IntoIterator<Item = TokenKind>,
+    lineno: LineNumber,
+) -> TokenLine {
+    let tokens = kinds.into_iter().enumerate().map(|(i, kind)| Token {
+        kind,
+        span: i..i + 1,
+    });
+    TokenLine(tokens.collect(), make_textline_no(lineno))
 }
 
 pub(crate) struct TestEnv {

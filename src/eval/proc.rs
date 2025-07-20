@@ -108,7 +108,19 @@ fn write_arity(arity: &Arity, f: &mut Formatter<'_>) -> fmt::Result {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::testutil::{TestEnv, ok_or_fail};
+    use crate::{
+        syntax::{ExpressionTree, Parser, ParserOutput},
+        testutil::{TestEnv, extract_or_fail, ok_or_fail},
+    };
+
+    fn empty_program() -> Program {
+        let mut et = ExpressionTree::default();
+        let mut env = TestEnv::default();
+
+        let r = et.parse([].into(), env.new_namespace());
+
+        extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete)
+    }
 
     #[test]
     fn intrinsic_zero_arity() {
@@ -161,21 +173,21 @@ mod tests {
 
     #[test]
     fn lambda_zero_arity_no_name() {
-        let p = Procedure::lambda(&[], None, Program::empty(), None);
+        let p = Procedure::lambda(&[], None, empty_program(), None);
 
         assert_eq!(p.to_string(), "#<procedure>");
     }
 
     #[test]
     fn lambda_zero_arity() {
-        let p = Procedure::lambda(&[], None, Program::empty(), Some("bar".into()));
+        let p = Procedure::lambda(&[], None, empty_program(), Some("bar".into()));
 
         assert_eq!(p.to_string(), "#<procedure bar>");
     }
 
     #[test]
     fn lambda_single_arity() {
-        let p = Procedure::lambda(&["x".into()], None, Program::empty(), Some("bar".into()));
+        let p = Procedure::lambda(&["x".into()], None, empty_program(), Some("bar".into()));
 
         assert_eq!(p.to_string(), "#<procedure bar (x)>");
     }
@@ -185,7 +197,7 @@ mod tests {
         let p = Procedure::lambda(
             &["x".into(), "y".into(), "z".into()],
             None,
-            Program::empty(),
+            empty_program(),
             Some("bar".into()),
         );
 
@@ -194,12 +206,7 @@ mod tests {
 
     #[test]
     fn lambda_variadic_arity() {
-        let p = Procedure::lambda(
-            &[],
-            Some("any".into()),
-            Program::empty(),
-            Some("bar".into()),
-        );
+        let p = Procedure::lambda(&[], Some("any".into()), empty_program(), Some("bar".into()));
 
         assert_eq!(p.to_string(), "#<procedure bar any…>");
     }
@@ -209,7 +216,7 @@ mod tests {
         let p = Procedure::lambda(
             &["x".into(), "y".into(), "z".into()],
             Some("rest".into()),
-            Program::empty(),
+            empty_program(),
             Some("bar".into()),
         );
 
@@ -274,14 +281,14 @@ mod tests {
 
     #[test]
     fn lambda_matches_zero_arity() {
-        let p = Procedure::lambda(&[], None, Program::empty(), Some("bar".into()));
+        let p = Procedure::lambda(&[], None, empty_program(), Some("bar".into()));
 
         assert!(p.matches_arity(0));
     }
 
     #[test]
     fn lambda_matches_single_arity() {
-        let p = Procedure::lambda(&["x".into()], None, Program::empty(), Some("bar".into()));
+        let p = Procedure::lambda(&["x".into()], None, empty_program(), Some("bar".into()));
 
         assert!(p.matches_arity(1));
     }
@@ -291,7 +298,7 @@ mod tests {
         let p = Procedure::lambda(
             &["x".into(), "y".into(), "z".into()],
             None,
-            Program::empty(),
+            empty_program(),
             Some("bar".into()),
         );
 
@@ -302,12 +309,7 @@ mod tests {
 
     #[test]
     fn lambda_matches_variadic_arity() {
-        let p = Procedure::lambda(
-            &[],
-            Some("any".into()),
-            Program::empty(),
-            Some("bar".into()),
-        );
+        let p = Procedure::lambda(&[], Some("any".into()), empty_program(), Some("bar".into()));
 
         assert!(p.matches_arity(0));
         assert!(p.matches_arity(MAX_ARITY as usize));
@@ -319,7 +321,7 @@ mod tests {
         let p = Procedure::lambda(
             &["x".into(), "y".into()],
             Some("any".into()),
-            Program::empty(),
+            empty_program(),
             Some("bar".into()),
         );
 
