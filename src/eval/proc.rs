@@ -64,12 +64,19 @@ impl Procedure {
     }
 
     pub(crate) fn matches_arity(&self, args_len: usize) -> bool {
-        (self.arity.is_empty() && self.arity.start as usize == args_len)
-            || (self.arity.start as usize <= args_len && args_len <= self.arity.len())
+        self.arity.start as usize <= args_len && args_len <= self.arity.end as usize
     }
 
     pub(crate) fn apply(&self, args: &[Value], env: &mut Frame) -> EvalResult {
         self.def.apply(args, env)
+    }
+
+    fn formals(&self) -> Option<&[Formal]> {
+        if let Definition::Lambda(formals, _) = &self.def {
+            Some(formals)
+        } else {
+            None
+        }
     }
 }
 
@@ -79,7 +86,7 @@ impl Display for Procedure {
         if let Some(n) = &self.name {
             write!(f, " {n}")?;
         }
-        write_arity(&self.arity, f)?;
+        write_arity(&self.arity, self.formals(), f)?;
         f.write_char('>')
     }
 }
@@ -105,19 +112,48 @@ impl Definition {
     }
 }
 
-fn write_arity(arity: &Arity, f: &mut Formatter<'_>) -> fmt::Result {
+fn write_arity(arity: &Arity, formals: Option<&[Formal]>, f: &mut Formatter<'_>) -> fmt::Result {
     if arity.start == 0 && arity.is_empty() {
         Ok(())
+    } else if let Some(args) = formals {
+        write_formals(args, f)
     } else {
-        f.write_str(" (")?;
-        let params = iter::repeat_n("_", arity.start.into()).chain(if arity.end == MAX_ARITY {
-            iter::repeat_n("…", 1)
-        } else {
-            iter::repeat_n("?", arity.len())
-        });
-        f.write_str(&params.collect::<Vec<_>>().join(" "))?;
-        f.write_char(')')
+        write_intrinsics(arity, f)
     }
+}
+
+fn write_formals(args: &[Formal], f: &mut Formatter<'_>) -> fmt::Result {
+    f.write_char(' ')?;
+    let mut buf = args
+        .iter()
+        .map(|f| match f {
+            Formal::Named(n) => n.as_ref(),
+            Formal::Rest(n) => n.as_ref(),
+        })
+        .collect::<Vec<_>>()
+        .join(" ");
+    if matches!(args.last(), Some(Formal::Rest(_))) {
+        buf.push_str("…");
+        if args.len() == 1 {
+            return f.write_str(&buf);
+        }
+    }
+    write!(f, "({buf})")
+}
+
+fn write_intrinsics(arity: &Arity, f: &mut Formatter<'_>) -> fmt::Result {
+    f.write_str(" (")?;
+    f.write_str(
+        &iter::repeat_n("_", arity.start.into())
+            .chain(if arity.end == MAX_ARITY {
+                iter::repeat_n("…", 1)
+            } else {
+                iter::repeat_n("?", arity.len())
+            })
+            .collect::<Vec<_>>()
+            .join(" "),
+    )?;
+    f.write_char(')')
 }
 
 #[cfg(test)]
@@ -170,6 +206,12 @@ mod tests {
         let p = Procedure::intrinsic("foo".into(), 1..3, |_, _| Ok(Value::Unspecified));
 
         assert_eq!(p.to_string(), "#<procedure foo (_ ? ?)>");
+
+        assert!(!p.matches_arity(0));
+        assert!(p.matches_arity(1));
+        assert!(p.matches_arity(2));
+        assert!(p.matches_arity(3));
+        assert!(!p.matches_arity(4));
     }
 
     #[test]
@@ -296,10 +338,15 @@ mod tests {
     }
 
     #[test]
-    fn matches_less_than_min_variable_arity() {
+    fn matches_variable_arity() {
         let p = Procedure::intrinsic("foo".into(), 2..5, |_, _| Ok(Value::Unspecified));
 
         assert!(!p.matches_arity(1));
+        assert!(p.matches_arity(2));
+        assert!(p.matches_arity(3));
+        assert!(p.matches_arity(4));
+        assert!(p.matches_arity(5));
+        assert!(!p.matches_arity(6));
     }
 
     #[test]
@@ -393,7 +440,7 @@ mod tests {
 
     #[test]
     fn lambda_max_arity_with_rest() {
-        let params = iter::repeat_n("x".into(), usize::from(MAX_ARITY) - 1);
+        let params = iter::repeat_n("x".into(), MAX_ARITY as usize - 1);
 
         let p = some_or_fail!(Procedure::lambda(
             params,
@@ -407,7 +454,7 @@ mod tests {
 
     #[test]
     fn lambda_too_many_params() {
-        let params = iter::repeat_n("x".into(), usize::from(MAX_ARITY) + 1);
+        let params = iter::repeat_n("x".into(), MAX_ARITY as usize + 1);
 
         let p = Procedure::lambda(params, None, empty_program(), Some("bar".into()));
 

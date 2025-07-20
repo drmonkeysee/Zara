@@ -234,7 +234,7 @@ impl Display for ExpressionErrorKind {
             Self::LambdaMaxFormals => write!(
                 f,
                 "lambda definition exceeds formal arguments limit: {}",
-                usize::from(MAX_ARITY) + 1,
+                MAX_ARITY as usize + 1,
             ),
             Self::ListUnterminated => f.write_str("unterminated list expression"),
             Self::PairIncomplete => f.write_str("missing first pair expression"),
