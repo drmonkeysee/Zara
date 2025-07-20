@@ -34,6 +34,12 @@ impl Program {
             .unwrap_or(Value::Unspecified))
     }
 
+    // TODO: can this be done via ExpressionTree instead
+    #[cfg(test)]
+    pub(crate) fn empty() -> Self {
+        Self::new([])
+    }
+
     #[cfg(test)]
     pub(super) fn unwrap(self) -> Box<[Expression]> {
         self.0
