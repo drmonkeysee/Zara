@@ -40,7 +40,7 @@ impl Procedure {
             .collect::<Vec<_>>();
         #[allow(
             clippy::cast_possible_truncation,
-            reason = "distinct overflow check handled below"
+            reason = "overflow check handled below"
         )]
         let min = formals.len() as u8;
         let mut max = min;
