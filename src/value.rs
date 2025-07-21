@@ -91,7 +91,7 @@ impl Value {
     }
 
     pub(crate) fn vector(items: impl IntoIterator<Item = Self>) -> Self {
-        Self::Vector(items.into_iter().collect::<Rc<[_]>>())
+        Self::Vector(items.into_iter().collect())
     }
 
     // NOTE: procedure eq? -> is same object

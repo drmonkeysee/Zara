@@ -298,15 +298,19 @@ fn try_into_lambda(seq: Vec<Expression>, ctx: ExprCtx) -> ExprConvertResult {
         return Err(vec![
             formals
                 .ctx
-                .into_error(ExpressionErrorKind::LambdaInvalidFormals),
+                .into_error(ExpressionErrorKind::LambdaInvalidSignature),
         ]);
     }
     match Procedure::lambda(args, rest, Program::new(iter.collect::<Box<[_]>>()), None) {
-        Err(_) => Err(vec![
-            formals
-                .ctx
-                .into_error(ExpressionErrorKind::LambdaMaxFormals),
-        ]),
+        Err(err) => Err(err
+            .into_iter()
+            .map(|e| {
+                formals
+                    .ctx
+                    .clone()
+                    .into_error(ExpressionErrorKind::LambdaInvalidFormal(e))
+            })
+            .collect()),
         Ok(p) => Ok(Some(
             ctx.into_expr(ExpressionKind::Literal(Value::Procedure(p.into()))),
         )),

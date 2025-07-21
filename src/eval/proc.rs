@@ -51,7 +51,7 @@ impl Procedure {
             max = MAX_ARITY;
         }
         if formals.len() > MAX_ARITY.into() {
-            Err(LambdaError(vec![InvalidLambda::MaxFormals]))
+            Err(LambdaError(vec![InvalidFormal::MaxFormals]))
         } else {
             Ok(Self {
                 arity: min..max,
@@ -98,20 +98,46 @@ impl Display for Procedure {
 }
 
 #[derive(Debug)]
-pub(crate) struct LambdaError(Vec<InvalidLambda>);
+pub(crate) struct LambdaError(Vec<InvalidFormal>);
+
+impl IntoIterator for LambdaError {
+    type Item = InvalidFormal;
+
+    type IntoIter = <Vec<Self::Item> as IntoIterator>::IntoIter;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.into_iter()
+    }
+}
 
 impl Display for LambdaError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        todo!()
+        for v in &self.0 {
+            writeln!(f, "{v}")?;
+        }
+        Ok(())
     }
 }
 
 impl Error for LambdaError {}
 
 #[derive(Debug)]
-pub(crate) enum InvalidLambda {
+pub(crate) enum InvalidFormal {
     DuplicateFormal(Rc<str>),
     MaxFormals,
+}
+
+impl Display for InvalidFormal {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::DuplicateFormal(n) => write!(f, "duplicate formal: {n}"),
+            Self::MaxFormals => write!(
+                f,
+                "lambda definition exceeds formal arguments limit: {}",
+                MAX_ARITY as usize + 1
+            ),
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -190,6 +216,23 @@ mod tests {
         let r = et.parse([].into(), env.new_namespace());
 
         extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete)
+    }
+
+    #[test]
+    fn display_max_formals() {
+        let e = InvalidFormal::MaxFormals;
+
+        assert_eq!(
+            e.to_string(),
+            "lambda definition exceeds formal arguments limit: 256"
+        );
+    }
+
+    #[test]
+    fn display_duplicate_formal() {
+        let e = InvalidFormal::DuplicateFormal("x".into());
+
+        assert_eq!(e.to_string(), "duplicate formal: x");
     }
 
     #[test]
@@ -489,7 +532,7 @@ mod tests {
         let err = err_or_fail!(p);
 
         assert_eq!(err.0.len(), 1);
-        assert!(matches!(&err.0[0], InvalidLambda::MaxFormals));
+        assert!(matches!(&err.0[0], InvalidFormal::MaxFormals));
     }
 
     #[test]
@@ -509,7 +552,20 @@ mod tests {
         let err = err_or_fail!(p);
 
         assert_eq!(err.0.len(), 1);
-        assert!(matches!(&err.0[0], InvalidLambda::MaxFormals));
+        assert!(matches!(&err.0[0], InvalidFormal::MaxFormals));
+    }
+
+    #[test]
+    fn lambda_duplicate_params() {
+        let params = ["x".into(), "y".into(), "z".into(), "y".into(), "x".into()];
+
+        let p = Procedure::lambda(params, None, empty_program(), Some("bar".into()));
+
+        let err = err_or_fail!(p);
+
+        assert_eq!(err.0.len(), 2);
+        assert!(matches!(&err.0[0], InvalidFormal::DuplicateFormal(s) if s.as_ref() == "x"));
+        assert!(matches!(&err.0[1], InvalidFormal::DuplicateFormal(s) if s.as_ref() == "y"));
     }
 
     #[test]

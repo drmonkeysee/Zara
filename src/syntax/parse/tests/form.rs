@@ -1,4 +1,5 @@
 use super::*;
+use crate::eval::InvalidFormal;
 
 #[test]
 fn end() {
@@ -2216,7 +2217,7 @@ fn into_lambda_not_identifier_expr() {
         &errs[0],
         ExpressionError {
             ctx: ExprCtx { span: TxtSpan { start: 8, end: 10 }, txt: line },
-            kind: ExpressionErrorKind::LambdaInvalidFormals,
+            kind: ExpressionErrorKind::LambdaInvalidSignature,
         } if Rc::ptr_eq(&txt, &line)
     ));
 }
@@ -2407,7 +2408,7 @@ fn into_lambda_too_many_formals() {
         &errs[0],
         ExpressionError {
             ctx: ExprCtx { span: TxtSpan { start: 8, end: 15 }, txt: line },
-            kind: ExpressionErrorKind::LambdaMaxFormals,
+            kind: ExpressionErrorKind::LambdaInvalidFormal(InvalidFormal::MaxFormals),
         } if Rc::ptr_eq(&txt, &line)
     ));
 }
@@ -2454,7 +2455,7 @@ fn into_lambda_too_many_formals_with_rest() {
         &errs[0],
         ExpressionError {
             ctx: ExprCtx { span: TxtSpan { start: 8, end: 15 }, txt: line },
-            kind: ExpressionErrorKind::LambdaMaxFormals,
+            kind: ExpressionErrorKind::LambdaInvalidFormal(InvalidFormal::MaxFormals),
         } if Rc::ptr_eq(&txt, &line)
     ));
 }

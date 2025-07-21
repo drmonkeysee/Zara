@@ -1279,25 +1279,27 @@ mod error {
     }
 
     #[test]
+    fn display_invalid_lambda_signature() {
+        let txt = make_textline().into();
+        let err = ExprCtx {
+            span: 0..5,
+            txt: Rc::clone(&txt),
+        }
+        .into_error(ExpressionErrorKind::LambdaInvalidSignature);
+
+        assert_eq!(err.to_string(), "invalid formals syntax");
+    }
+
+    #[test]
     fn display_invalid_lambda_formals() {
         let txt = make_textline().into();
         let err = ExprCtx {
             span: 0..5,
             txt: Rc::clone(&txt),
         }
-        .into_error(ExpressionErrorKind::LambdaInvalidFormals);
-
-        assert_eq!(err.to_string(), "invalid formals syntax");
-    }
-
-    #[test]
-    fn display_max_lambda_formals() {
-        let txt = make_textline().into();
-        let err = ExprCtx {
-            span: 0..5,
-            txt: Rc::clone(&txt),
-        }
-        .into_error(ExpressionErrorKind::LambdaMaxFormals);
+        .into_error(ExpressionErrorKind::LambdaInvalidFormal(
+            InvalidFormal::MaxFormals,
+        ));
 
         assert_eq!(
             err.to_string(),
