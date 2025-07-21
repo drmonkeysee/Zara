@@ -145,18 +145,15 @@ fn write_formals(args: &[Formal], f: &mut Formatter<'_>) -> fmt::Result {
 }
 
 fn write_intrinsics(arity: &Arity, f: &mut Formatter<'_>) -> fmt::Result {
-    f.write_str(" (")?;
-    f.write_str(
-        &iter::repeat_n("_", arity.start.into())
-            .chain(if arity.end == MAX_ARITY {
-                iter::repeat_n("…", 1)
-            } else {
-                iter::repeat_n("?", arity.len())
-            })
-            .collect::<Vec<_>>()
-            .join(" "),
-    )?;
-    f.write_char(')')
+    let params = iter::repeat_n("_", arity.start.into())
+        .chain(if arity.end == MAX_ARITY {
+            iter::repeat_n("…", 1)
+        } else {
+            iter::repeat_n("?", arity.len())
+        })
+        .collect::<Vec<_>>()
+        .join(" ");
+    write!(f, "({params})")
 }
 
 #[cfg(test)]
