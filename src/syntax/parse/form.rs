@@ -139,7 +139,7 @@ impl SyntacticForm {
                     Err(vec![ctx.into_error(ExpressionErrorKind::IfInvalid)])
                 }
             }
-            Self::Lambda => try_into_lambda(seq, ctx),
+            Self::Lambda => into_lambda(seq, ctx),
             Self::PairClosed => into_list(seq, ctx, true),
             Self::PairOpen => Err(vec![ctx.into_error(ExpressionErrorKind::PairUnterminated)]),
             Self::Quote => {
@@ -248,6 +248,8 @@ impl SyntacticForm {
     }
 }
 
+type FormalsParseResult = Result<(Vec<Rc<str>>, Option<Rc<str>>), ExpressionErrorKind>;
+
 fn into_list(seq: Vec<Expression>, ctx: ExprCtx, improper: bool) -> ExprConvertResult {
     super::into_valid_sequence(
         seq,
@@ -268,15 +270,21 @@ fn into_list(seq: Vec<Expression>, ctx: ExprCtx, improper: bool) -> ExprConvertR
     )
 }
 
-fn try_into_lambda(seq: Vec<Expression>, ctx: ExprCtx) -> ExprConvertResult {
+fn into_lambda(seq: Vec<Expression>, ctx: ExprCtx) -> ExprConvertResult {
     if seq.len() < 2 {
         return Err(vec![ctx.into_error(ExpressionErrorKind::LambdaInvalid)]);
     }
     let mut iter = seq.into_iter();
     let formals = iter.next().unwrap();
-    let ExpressionKind::Literal(mut params) = formals.kind else {
+    let ExpressionKind::Literal(params) = formals.kind else {
         return Err(vec![ctx.into_error(ExpressionErrorKind::LambdaInvalid)]);
     };
+    let (args, rest) =
+        parse_formals(params).map_err(|err| vec![formals.ctx.clone().into_error(err)])?;
+    into_procedure(args, rest, iter, &formals.ctx, ctx)
+}
+
+fn parse_formals(mut params: Value) -> FormalsParseResult {
     let mut args = Vec::new();
     let mut rest = None;
     loop {
@@ -295,24 +303,39 @@ fn try_into_lambda(seq: Vec<Expression>, ctx: ExprCtx) -> ExprConvertResult {
             }
             _ => (),
         }
-        return Err(vec![
-            formals
-                .ctx
-                .into_error(ExpressionErrorKind::LambdaInvalidSignature),
-        ]);
+        return Err(ExpressionErrorKind::LambdaInvalidSignature);
     }
-    match Procedure::lambda(args, rest, Program::new(iter.collect::<Box<[_]>>()), None) {
-        Err(err) => Err(err
-            .into_iter()
-            .map(|e| {
-                formals
-                    .ctx
-                    .clone()
-                    .into_error(ExpressionErrorKind::LambdaInvalidFormal(e))
-            })
-            .collect()),
-        Ok(p) => Ok(Some(
-            ctx.into_expr(ExpressionKind::Literal(Value::Procedure(p.into()))),
-        )),
-    }
+    Ok((args, rest))
+}
+
+fn into_procedure(
+    args: impl IntoIterator<Item = Rc<str>>,
+    rest: Option<Rc<str>>,
+    body: impl IntoIterator<Item = Expression>,
+    formals_ctx: &ExprCtx,
+    ctx: ExprCtx,
+) -> ExprConvertResult {
+    Procedure::lambda(
+        args,
+        rest,
+        Program::new(body.into_iter().collect::<Box<[_]>>()),
+        None,
+    )
+    .map_or_else(
+        |err| {
+            Err(err
+                .into_iter()
+                .map(|e| {
+                    formals_ctx
+                        .clone()
+                        .into_error(ExpressionErrorKind::LambdaInvalidFormal(e))
+                })
+                .collect())
+        },
+        |p| {
+            Ok(Some(ctx.into_expr(ExpressionKind::Literal(
+                Value::Procedure(p.into()),
+            ))))
+        },
+    )
 }
