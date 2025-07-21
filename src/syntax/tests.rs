@@ -1501,13 +1501,19 @@ mod continuation {
         let r = et.parse(tokens.into(), env.new_namespace());
 
         let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
-        dbg!(&errs);
-        assert_eq!(errs.len(), 1);
+        assert_eq!(errs.len(), 2);
         assert!(matches!(
             &errs[0],
             ExpressionError {
-                ctx: ExprCtx { span: TxtSpan { start: 1, end: 2 }, txt },
-                kind: ExpressionErrorKind::Unimplemented(TokenKind::DirectiveCase(true)),
+                ctx: ExprCtx { span: TxtSpan { start: 5, end: 7 }, txt },
+                kind: ExpressionErrorKind::ProcedureEmpty,
+            } if txt.lineno == 1
+        ));
+        assert!(matches!(
+            &errs[1],
+            ExpressionError {
+                ctx: ExprCtx { span: TxtSpan { start: 0, end: 8 }, txt },
+                kind: ExpressionErrorKind::LambdaInvalid,
             } if txt.lineno == 1
         ));
         assert!(et.parsers.is_empty());
