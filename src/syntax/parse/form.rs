@@ -279,8 +279,9 @@ fn try_into_lambda(seq: Vec<Expression>, ctx: ExprCtx) -> ExprConvertResult {
     };
     let mut args = Vec::new();
     let mut rest = None;
-    while !matches!(params, Value::Pair(None)) {
+    loop {
         match params {
+            Value::Pair(None) => break,
             Value::Pair(Some(p)) => {
                 if let Value::Symbol(n) = &p.car {
                     args.push(Rc::clone(n));

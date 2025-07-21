@@ -153,7 +153,7 @@ fn write_intrinsics(arity: &Arity, f: &mut Formatter<'_>) -> fmt::Result {
         })
         .collect::<Vec<_>>()
         .join(" ");
-    write!(f, "({params})")
+    write!(f, " ({params})")
 }
 
 #[cfg(test)]
