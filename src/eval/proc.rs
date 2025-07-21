@@ -1,6 +1,7 @@
 use super::{EvalResult, Frame};
 use crate::{syntax::Program, value::Value};
 use std::{
+    error::Error,
     fmt::{self, Display, Formatter, Write},
     iter,
     ops::Range,
@@ -11,6 +12,7 @@ pub(crate) const MAX_ARITY: u8 = u8::MAX;
 
 pub(crate) type IntrinsicFn = fn(&[Value], &mut Frame) -> EvalResult;
 pub(crate) type Arity = Range<u8>;
+pub(crate) type LambdaResult = Result<Procedure, LambdaError>;
 
 #[derive(Debug)]
 pub(crate) struct Procedure {
@@ -33,7 +35,7 @@ impl Procedure {
         variadic_arg: Option<Rc<str>>,
         body: Program,
         name: Option<Rc<str>>,
-    ) -> Option<Self> {
+    ) -> LambdaResult {
         let mut formals = named_args
             .into_iter()
             .map(Formal::Named)
@@ -49,9 +51,9 @@ impl Procedure {
             max = MAX_ARITY;
         }
         if formals.len() > MAX_ARITY.into() {
-            None
+            Err(LambdaError(vec![InvalidLambda::MaxFormals]))
         } else {
-            Some(Self {
+            Ok(Self {
                 arity: min..max,
                 def: Definition::Lambda(formals.into(), body),
                 name,
@@ -93,6 +95,23 @@ impl Display for Procedure {
         write_arity(&self.arity, self.formals(), f)?;
         f.write_char('>')
     }
+}
+
+#[derive(Debug)]
+pub(crate) struct LambdaError(Vec<InvalidLambda>);
+
+impl Display for LambdaError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        todo!()
+    }
+}
+
+impl Error for LambdaError {}
+
+#[derive(Debug)]
+pub(crate) enum InvalidLambda {
+    DuplicateFormal(Rc<str>),
+    MaxFormals,
 }
 
 #[derive(Debug)]
@@ -161,7 +180,7 @@ mod tests {
     use super::*;
     use crate::{
         syntax::{ExpressionTree, Parser, ParserOutput},
-        testutil::{TestEnv, extract_or_fail, ok_or_fail, some_or_fail},
+        testutil::{TestEnv, err_or_fail, extract_or_fail, ok_or_fail},
     };
 
     fn empty_program() -> Program {
@@ -230,14 +249,14 @@ mod tests {
 
     #[test]
     fn lambda_zero_arity_no_name() {
-        let p = some_or_fail!(Procedure::lambda([], None, empty_program(), None));
+        let p = ok_or_fail!(Procedure::lambda([], None, empty_program(), None));
 
         assert_eq!(p.to_string(), "#<procedure>");
     }
 
     #[test]
     fn lambda_zero_arity() {
-        let p = some_or_fail!(Procedure::lambda(
+        let p = ok_or_fail!(Procedure::lambda(
             [],
             None,
             empty_program(),
@@ -249,7 +268,7 @@ mod tests {
 
     #[test]
     fn lambda_single_arity() {
-        let p = some_or_fail!(Procedure::lambda(
+        let p = ok_or_fail!(Procedure::lambda(
             ["x".into()],
             None,
             empty_program(),
@@ -261,7 +280,7 @@ mod tests {
 
     #[test]
     fn lambda_multi_arity() {
-        let p = some_or_fail!(Procedure::lambda(
+        let p = ok_or_fail!(Procedure::lambda(
             ["x".into(), "y".into(), "z".into()],
             None,
             empty_program(),
@@ -273,7 +292,7 @@ mod tests {
 
     #[test]
     fn lambda_variadic_arity() {
-        let p = some_or_fail!(Procedure::lambda(
+        let p = ok_or_fail!(Procedure::lambda(
             [],
             Some("any".into()),
             empty_program(),
@@ -285,7 +304,7 @@ mod tests {
 
     #[test]
     fn lambda_rest_arity() {
-        let p = some_or_fail!(Procedure::lambda(
+        let p = ok_or_fail!(Procedure::lambda(
             ["x".into(), "y".into(), "z".into()],
             Some("rest".into()),
             empty_program(),
@@ -358,7 +377,7 @@ mod tests {
 
     #[test]
     fn lambda_matches_zero_arity() {
-        let p = some_or_fail!(Procedure::lambda(
+        let p = ok_or_fail!(Procedure::lambda(
             [],
             None,
             empty_program(),
@@ -370,7 +389,7 @@ mod tests {
 
     #[test]
     fn lambda_matches_single_arity() {
-        let p = some_or_fail!(Procedure::lambda(
+        let p = ok_or_fail!(Procedure::lambda(
             ["x".into()],
             None,
             empty_program(),
@@ -382,7 +401,7 @@ mod tests {
 
     #[test]
     fn lambda_matches_multi_arity() {
-        let p = some_or_fail!(Procedure::lambda(
+        let p = ok_or_fail!(Procedure::lambda(
             ["x".into(), "y".into(), "z".into()],
             None,
             empty_program(),
@@ -396,7 +415,7 @@ mod tests {
 
     #[test]
     fn lambda_matches_variadic_arity() {
-        let p = some_or_fail!(Procedure::lambda(
+        let p = ok_or_fail!(Procedure::lambda(
             [],
             Some("any".into()),
             empty_program(),
@@ -410,7 +429,7 @@ mod tests {
 
     #[test]
     fn lambda_matches_rest_arity() {
-        let p = some_or_fail!(Procedure::lambda(
+        let p = ok_or_fail!(Procedure::lambda(
             ["x".into(), "y".into()],
             Some("any".into()),
             empty_program(),
@@ -426,9 +445,12 @@ mod tests {
 
     #[test]
     fn lambda_max_arity() {
-        let params = iter::repeat_n("x".into(), MAX_ARITY.into());
+        let params = (0..MAX_ARITY)
+            .into_iter()
+            .map(|i| format!("x{i}").into())
+            .collect::<Vec<_>>();
 
-        let p = some_or_fail!(Procedure::lambda(
+        let p = ok_or_fail!(Procedure::lambda(
             params,
             None,
             empty_program(),
@@ -440,9 +462,12 @@ mod tests {
 
     #[test]
     fn lambda_max_arity_with_rest() {
-        let params = iter::repeat_n("x".into(), MAX_ARITY as usize - 1);
+        let params = (0..MAX_ARITY - 1)
+            .into_iter()
+            .map(|i| format!("x{i}").into())
+            .collect::<Vec<_>>();
 
-        let p = some_or_fail!(Procedure::lambda(
+        let p = ok_or_fail!(Procedure::lambda(
             params,
             Some("rest".into()),
             empty_program(),
@@ -454,16 +479,25 @@ mod tests {
 
     #[test]
     fn lambda_too_many_params() {
-        let params = iter::repeat_n("x".into(), MAX_ARITY as usize + 1);
+        let params = (0..MAX_ARITY as usize + 1)
+            .into_iter()
+            .map(|i| format!("x{i}").into())
+            .collect::<Vec<_>>();
 
         let p = Procedure::lambda(params, None, empty_program(), Some("bar".into()));
 
-        assert!(p.is_none());
+        let err = err_or_fail!(p);
+
+        assert_eq!(err.0.len(), 1);
+        assert!(matches!(&err.0[0], InvalidLambda::MaxFormals));
     }
 
     #[test]
     fn lambda_too_many_params_with_rest() {
-        let params = iter::repeat_n("x".into(), MAX_ARITY.into());
+        let params = (0..MAX_ARITY)
+            .into_iter()
+            .map(|i| format!("x{i}").into())
+            .collect::<Vec<_>>();
 
         let p = Procedure::lambda(
             params,
@@ -472,7 +506,10 @@ mod tests {
             Some("bar".into()),
         );
 
-        assert!(p.is_none());
+        let err = err_or_fail!(p);
+
+        assert_eq!(err.0.len(), 1);
+        assert!(matches!(&err.0[0], InvalidLambda::MaxFormals));
     }
 
     #[test]

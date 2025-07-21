@@ -302,12 +302,12 @@ fn try_into_lambda(seq: Vec<Expression>, ctx: ExprCtx) -> ExprConvertResult {
         ]);
     }
     match Procedure::lambda(args, rest, Program::new(iter.collect::<Box<[_]>>()), None) {
-        None => Err(vec![
+        Err(_) => Err(vec![
             formals
                 .ctx
                 .into_error(ExpressionErrorKind::LambdaMaxFormals),
         ]),
-        Some(p) => Ok(Some(
+        Ok(p) => Ok(Some(
             ctx.into_expr(ExpressionKind::Literal(Value::Procedure(p.into()))),
         )),
     }
