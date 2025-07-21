@@ -1481,6 +1481,37 @@ mod continuation {
         ));
         assert!(et.parsers.is_empty());
     }
+
+    #[test]
+    fn lambda_with_empty_body() {
+        // (lambda (x) ())
+        let mut et = ExpressionTree::default();
+        let tokens = [make_tokenline([
+            TokenKind::ParenLeft,
+            TokenKind::Identifier("lambda".to_owned()),
+            TokenKind::ParenLeft,
+            TokenKind::Identifier("x".to_owned()),
+            TokenKind::ParenRight,
+            TokenKind::ParenLeft,
+            TokenKind::ParenRight,
+            TokenKind::ParenRight,
+        ])];
+        let mut env = TestEnv::default();
+
+        let r = et.parse(tokens.into(), env.new_namespace());
+
+        let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
+        dbg!(&errs);
+        assert_eq!(errs.len(), 1);
+        assert!(matches!(
+            &errs[0],
+            ExpressionError {
+                ctx: ExprCtx { span: TxtSpan { start: 1, end: 2 }, txt },
+                kind: ExpressionErrorKind::Unimplemented(TokenKind::DirectiveCase(true)),
+            } if txt.lineno == 1
+        ));
+        assert!(et.parsers.is_empty());
+    }
 }
 
 mod errors {

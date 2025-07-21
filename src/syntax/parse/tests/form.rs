@@ -1912,15 +1912,13 @@ fn into_lambda_fixed_arguments() {
         expr,
         Expression {
             ctx: ExprCtx { span: TxtSpan { start: 0, end: 22 }, txt: line },
-            kind: ExpressionKind::Set { .. },
+            kind: ExpressionKind::Literal(_),
         } if Rc::ptr_eq(&txt, &line)
     ));
-    let ExpressionKind::Set { var, expr } = expr.kind else {
+    let ExpressionKind::Literal(val) = expr.kind else {
         unreachable!();
     };
-    assert_eq!(var.as_ref(), "foo");
-    let val = extract_or_fail!(expr.kind, ExpressionKind::Literal);
-    assert_eq!(val.to_string(), "\"bar\"");
+    assert_eq!(val.to_string(), "#<procedure (x y)>");
 }
 
 #[test]
@@ -1960,15 +1958,13 @@ fn into_lambda_simple_body() {
         expr,
         Expression {
             ctx: ExprCtx { span: TxtSpan { start: 0, end: 14 }, txt: line },
-            kind: ExpressionKind::Set { .. },
+            kind: ExpressionKind::Literal(_),
         } if Rc::ptr_eq(&txt, &line)
     ));
-    let ExpressionKind::Set { var, expr } = expr.kind else {
+    let ExpressionKind::Literal(val) = expr.kind else {
         unreachable!();
     };
-    assert_eq!(var.as_ref(), "foo");
-    let val = extract_or_fail!(expr.kind, ExpressionKind::Literal);
-    assert_eq!(val.to_string(), "\"bar\"");
+    assert_eq!(val.to_string(), "#<procedure (x)>");
 }
 
 #[test]
@@ -2008,15 +2004,13 @@ fn into_lambda_no_arguments() {
         expr,
         Expression {
             ctx: ExprCtx { span: TxtSpan { start: 0, end: 14 }, txt: line },
-            kind: ExpressionKind::Set { .. },
+            kind: ExpressionKind::Literal(_),
         } if Rc::ptr_eq(&txt, &line)
     ));
-    let ExpressionKind::Set { var, expr } = expr.kind else {
+    let ExpressionKind::Literal(val) = expr.kind else {
         unreachable!();
     };
-    assert_eq!(var.as_ref(), "foo");
-    let val = extract_or_fail!(expr.kind, ExpressionKind::Literal);
-    assert_eq!(val.to_string(), "\"bar\"");
+    assert_eq!(val.to_string(), "#<procedure>");
 }
 
 #[test]
@@ -2058,15 +2052,13 @@ fn into_lambda_variadic() {
         expr,
         Expression {
             ctx: ExprCtx { span: TxtSpan { start: 0, end: 12 }, txt: line },
-            kind: ExpressionKind::Set { .. },
+            kind: ExpressionKind::Literal(_),
         } if Rc::ptr_eq(&txt, &line)
     ));
-    let ExpressionKind::Set { var, expr } = expr.kind else {
+    let ExpressionKind::Literal(val) = expr.kind else {
         unreachable!();
     };
-    assert_eq!(var.as_ref(), "foo");
-    let val = extract_or_fail!(expr.kind, ExpressionKind::Literal);
-    assert_eq!(val.to_string(), "\"bar\"");
+    assert_eq!(val.to_string(), "#<procedure x…>");
 }
 
 #[test]
@@ -2109,15 +2101,13 @@ fn into_lambda_rest() {
         expr,
         Expression {
             ctx: ExprCtx { span: TxtSpan { start: 0, end: 20 }, txt: line },
-            kind: ExpressionKind::Set { .. },
+            kind: ExpressionKind::Literal(_),
         } if Rc::ptr_eq(&txt, &line)
     ));
-    let ExpressionKind::Set { var, expr } = expr.kind else {
+    let ExpressionKind::Literal(val) = expr.kind else {
         unreachable!();
     };
-    assert_eq!(var.as_ref(), "foo");
-    let val = extract_or_fail!(expr.kind, ExpressionKind::Literal);
-    assert_eq!(val.to_string(), "\"bar\"");
+    assert_eq!(val.to_string(), "#<procedure (x y z…)>");
 }
 
 #[test]
@@ -2165,16 +2155,14 @@ fn into_lambda_multiple_expression_body() {
     assert!(matches!(
         expr,
         Expression {
-            ctx: ExprCtx { span: TxtSpan { start: 0, end: 20 }, txt: line },
-            kind: ExpressionKind::Set { .. },
+            ctx: ExprCtx { span: TxtSpan { start: 0, end: 15 }, txt: line },
+            kind: ExpressionKind::Literal(_),
         } if Rc::ptr_eq(&txt, &line)
     ));
-    let ExpressionKind::Set { var, expr } = expr.kind else {
+    let ExpressionKind::Literal(val) = expr.kind else {
         unreachable!();
     };
-    assert_eq!(var.as_ref(), "foo");
-    let val = extract_or_fail!(expr.kind, ExpressionKind::Literal);
-    assert_eq!(val.to_string(), "\"bar\"");
+    assert_eq!(val.to_string(), "#<procedure x…>");
 }
 
 #[test]
@@ -2259,43 +2247,6 @@ fn into_lambda_too_few_args() {
 }
 
 #[test]
-fn into_lambda_empty_body() {
-    // (lambda (x) ())
-    let txt = make_textline().into();
-    let p = ExprNode {
-        ctx: ExprCtx {
-            span: 0..15,
-            txt: Rc::clone(&txt),
-        },
-        mode: ParseMode::List {
-            form: SyntacticForm::Lambda,
-            seq: vec![
-                ExprCtx {
-                    span: 8..11,
-                    txt: Rc::clone(&txt),
-                }
-                .into_expr(ExpressionKind::Literal(zlist![Value::Symbol("x".into())])),
-                // TODO: what goes here
-            ],
-        },
-    };
-    let mut env = TestEnv::default();
-    let mut ns = env.new_namespace();
-
-    let r = p.try_into_expr(&mut ns);
-
-    let errs = err_or_fail!(r);
-    assert_eq!(errs.len(), 1);
-    assert!(matches!(
-        &errs[0],
-        ExpressionError {
-            ctx: ExprCtx { span: TxtSpan { start: 0, end: 15 }, txt: line },
-            kind: ExpressionErrorKind::SetInvalid,
-        } if Rc::ptr_eq(&txt, &line)
-    ));
-}
-
-#[test]
 fn into_lambda_duplicate_args() {
     // (lambda (x y x) (+ x y))
     let txt = make_textline().into();
@@ -2360,9 +2311,9 @@ fn into_lambda_duplicate_args() {
     assert!(matches!(
         &errs[0],
         ExpressionError {
-            ctx: ExprCtx { span: TxtSpan { start: 0, end: 24 }, txt: line },
-            kind: ExpressionErrorKind::SetInvalid,
-        } if Rc::ptr_eq(&txt, &line)
+            ctx: ExprCtx { span: TxtSpan { start: 8, end: 15 }, txt: line },
+            kind: ExpressionErrorKind::LambdaInvalidFormal(InvalidFormal::DuplicateFormal(n)),
+        } if Rc::ptr_eq(&txt, &line) && n.as_ref() == "x"
     ));
 }
 

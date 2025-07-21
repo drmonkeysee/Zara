@@ -2,7 +2,6 @@ use super::{EvalResult, Frame};
 use crate::{syntax::Program, value::Value};
 use std::{
     collections::HashSet,
-    error::Error,
     fmt::{self, Display, Formatter, Write},
     iter,
     ops::Range,
@@ -13,7 +12,7 @@ pub(crate) const MAX_ARITY: u8 = u8::MAX;
 
 pub(crate) type IntrinsicFn = fn(&[Value], &mut Frame) -> EvalResult;
 pub(crate) type Arity = Range<u8>;
-pub(crate) type LambdaResult = Result<Procedure, LambdaError>;
+pub(crate) type LambdaResult = Result<Procedure, Vec<InvalidFormal>>;
 
 #[derive(Debug)]
 pub(crate) struct Procedure {
@@ -50,9 +49,7 @@ impl Procedure {
             })
             .partition(Result::is_ok);
         if !duplicates.is_empty() {
-            return Err(LambdaError(
-                duplicates.into_iter().filter_map(Result::err).collect(),
-            ));
+            return Err(duplicates.into_iter().filter_map(Result::err).collect());
         }
         let mut formals = singles.into_iter().flatten().collect::<Vec<_>>();
         #[allow(
@@ -66,7 +63,7 @@ impl Procedure {
             max = MAX_ARITY;
         }
         if formals.len() > MAX_ARITY.into() {
-            Err(LambdaError(vec![InvalidFormal::MaxFormals]))
+            Err(vec![InvalidFormal::MaxFormals])
         } else {
             Ok(Self {
                 arity: min..max,
@@ -111,30 +108,6 @@ impl Display for Procedure {
         f.write_char('>')
     }
 }
-
-#[derive(Debug)]
-pub(crate) struct LambdaError(Vec<InvalidFormal>);
-
-impl IntoIterator for LambdaError {
-    type Item = InvalidFormal;
-
-    type IntoIter = <Vec<Self::Item> as IntoIterator>::IntoIter;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.0.into_iter()
-    }
-}
-
-impl Display for LambdaError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        for v in &self.0 {
-            writeln!(f, "{v}")?;
-        }
-        Ok(())
-    }
-}
-
-impl Error for LambdaError {}
 
 #[derive(Debug)]
 pub(crate) enum InvalidFormal {
@@ -546,8 +519,8 @@ mod tests {
 
         let err = err_or_fail!(p);
 
-        assert_eq!(err.0.len(), 1);
-        assert!(matches!(&err.0[0], InvalidFormal::MaxFormals));
+        assert_eq!(err.len(), 1);
+        assert!(matches!(&err[0], InvalidFormal::MaxFormals));
     }
 
     #[test]
@@ -566,8 +539,8 @@ mod tests {
 
         let err = err_or_fail!(p);
 
-        assert_eq!(err.0.len(), 1);
-        assert!(matches!(&err.0[0], InvalidFormal::MaxFormals));
+        assert_eq!(err.len(), 1);
+        assert!(matches!(&err[0], InvalidFormal::MaxFormals));
     }
 
     #[test]
@@ -578,9 +551,9 @@ mod tests {
 
         let err = err_or_fail!(p);
 
-        assert_eq!(err.0.len(), 2);
-        assert!(matches!(&err.0[0], InvalidFormal::DuplicateFormal(s) if s.as_ref() == "y"));
-        assert!(matches!(&err.0[1], InvalidFormal::DuplicateFormal(s) if s.as_ref() == "x"));
+        assert_eq!(err.len(), 2);
+        assert!(matches!(&err[0], InvalidFormal::DuplicateFormal(s) if s.as_ref() == "y"));
+        assert!(matches!(&err[1], InvalidFormal::DuplicateFormal(s) if s.as_ref() == "x"));
     }
 
     #[test]
