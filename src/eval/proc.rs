@@ -1,6 +1,7 @@
 use super::{EvalResult, Frame};
 use crate::{syntax::Program, value::Value};
 use std::{
+    collections::HashSet,
     error::Error,
     fmt::{self, Display, Formatter, Write},
     iter,
@@ -36,10 +37,24 @@ impl Procedure {
         body: Program,
         name: Option<Rc<str>>,
     ) -> LambdaResult {
-        let mut formals = named_args
+        let mut names = HashSet::new();
+        let (singles, duplicates): (Vec<_>, Vec<_>) = named_args
             .into_iter()
-            .map(Formal::Named)
-            .collect::<Vec<_>>();
+            .map(|n| {
+                if names.contains(&n) {
+                    Err(InvalidFormal::DuplicateFormal(n))
+                } else {
+                    names.insert(Rc::clone(&n));
+                    Ok(Formal::Named(n))
+                }
+            })
+            .partition(Result::is_ok);
+        if !duplicates.is_empty() {
+            return Err(LambdaError(
+                duplicates.into_iter().filter_map(Result::err).collect(),
+            ));
+        }
+        let mut formals = singles.into_iter().flatten().collect::<Vec<_>>();
         #[allow(
             clippy::cast_possible_truncation,
             reason = "overflow check handled below"
@@ -564,8 +579,8 @@ mod tests {
         let err = err_or_fail!(p);
 
         assert_eq!(err.0.len(), 2);
-        assert!(matches!(&err.0[0], InvalidFormal::DuplicateFormal(s) if s.as_ref() == "x"));
-        assert!(matches!(&err.0[1], InvalidFormal::DuplicateFormal(s) if s.as_ref() == "y"));
+        assert!(matches!(&err.0[0], InvalidFormal::DuplicateFormal(s) if s.as_ref() == "y"));
+        assert!(matches!(&err.0[1], InvalidFormal::DuplicateFormal(s) if s.as_ref() == "x"));
     }
 
     #[test]
