@@ -1,5 +1,5 @@
 use super::*;
-use crate::testutil::{TestEnv, make_textline, some_or_fail};
+use crate::testutil::{TestEnv, make_textline};
 
 mod display {
     use super::*;
@@ -1438,37 +1438,6 @@ mod error {
             err.to_string(),
             format!("{} parsing not yet implemented", TokenKind::Comment)
         );
-    }
-
-    #[test]
-    fn byte_invalid_source() {
-        let err = ExprCtx {
-            span: 0..5,
-            txt: make_textline().into(),
-        }
-        .into_error(ExpressionErrorKind::ByteVectorInvalidNumber(
-            NumericError::ByteConversionInvalidRange,
-        ));
-
-        let inner = some_or_fail!(err.source());
-
-        assert!(matches!(
-            inner.downcast_ref::<NumericError>().unwrap(),
-            NumericError::ByteConversionInvalidRange
-        ));
-    }
-
-    #[test]
-    fn other_source() {
-        let err = ExprCtx {
-            span: 0..5,
-            txt: make_textline().into(),
-        }
-        .into_error(ExpressionErrorKind::StrUnterminated);
-
-        let inner = err.source();
-
-        assert!(inner.is_none());
     }
 }
 

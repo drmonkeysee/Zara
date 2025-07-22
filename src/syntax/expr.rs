@@ -10,7 +10,6 @@ use crate::{
     value::{Condition, Value},
 };
 use std::{
-    error::Error,
     fmt::{self, Display, Formatter},
     iter::Peekable,
     rc::Rc,
@@ -163,16 +162,6 @@ pub(super) type ExpressionError = ExpressionType<ExpressionErrorKind>;
 impl Display for ExpressionError {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         self.kind.fmt(f)
-    }
-}
-
-impl Error for ExpressionError {
-    fn source(&self) -> Option<&(dyn Error + 'static)> {
-        if let ExpressionErrorKind::ByteVectorInvalidNumber(inner) = &self.kind {
-            Some(inner)
-        } else {
-            None
-        }
     }
 }
 

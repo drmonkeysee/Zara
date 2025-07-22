@@ -5,10 +5,7 @@ use crate::{
     number::{Number, NumericError, Real},
     txt::TxtSpan,
 };
-use std::{
-    error::Error,
-    fmt::{self, Display, Formatter},
-};
+use std::fmt::{self, Display, Formatter};
 
 #[derive(Debug)]
 pub(crate) struct TokenType<T> {
@@ -139,17 +136,6 @@ pub(super) type TokenError = TokenType<TokenErrorKind>;
 impl Display for TokenError {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         self.kind.fmt(f)
-    }
-}
-
-impl Error for TokenError {
-    fn source(&self) -> Option<&(dyn Error + 'static)> {
-        match &self.kind {
-            TokenErrorKind::NumericError(err) | TokenErrorKind::NumericErrorAt { err, .. } => {
-                Some(err)
-            }
-            _ => None,
-        }
     }
 }
 

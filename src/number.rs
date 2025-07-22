@@ -62,7 +62,6 @@ mod tests;
 use crate::txt::TxtSpan;
 use std::{
     cmp::Ordering,
-    error::Error,
     fmt::{self, Display, Formatter, Write},
     num::{IntErrorKind, ParseFloatError, ParseIntError},
     rc::Rc,
@@ -932,8 +931,6 @@ impl Display for NumericError {
         }
     }
 }
-
-impl Error for NumericError {}
 
 impl From<ParseFloatError> for NumericError {
     fn from(_value: ParseFloatError) -> Self {
