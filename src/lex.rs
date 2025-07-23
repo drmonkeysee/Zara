@@ -48,6 +48,10 @@ impl Lexer {
         })
     }
 
+    pub(crate) fn clear(&mut self) {
+        self.cont = None;
+    }
+
     fn continuation(&mut self, cont: TokenContinuation, lines: Vec<TokenLine>) -> LexerOutput {
         self.cont = Some((lines, cont));
         LexerOutput::Continuation

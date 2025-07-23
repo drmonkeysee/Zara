@@ -1,4 +1,4 @@
-use rustyline::{Config, Editor, Result, history::MemHistory};
+use rustyline::{Config, Editor, Result, error::ReadlineError, history::MemHistory};
 use std::process::ExitCode;
 use zara::{Error, Evaluation, Exception, Interpreter, RunMode, Signal, Value, src::StringSource};
 
@@ -35,9 +35,20 @@ impl Repl {
     }
 
     fn readline(&mut self) -> Result<()> {
-        let line = self.editor.readline(self.prompt)?;
-        self.editor.add_history_entry(&line)?;
-        self.src.set(line);
+        match self.editor.readline(self.prompt) {
+            Err(ReadlineError::Eof) => {
+                self.running = false;
+            }
+            Err(err @ ReadlineError::Interrupted) => {
+                self.reset();
+                eprintln!("{err}");
+            }
+            Err(err) => Err(err)?,
+            Ok(line) => {
+                self.editor.add_history_entry(&line)?;
+                self.src.set(line);
+            }
+        }
         Ok(())
     }
 
@@ -56,27 +67,32 @@ impl Repl {
 
     fn print_signal(&mut self, sig: &Signal) {
         println!("unhandled-exception => {sig}");
-        self.reset();
+        self.ready();
     }
 
     fn print_value(&mut self, v: &Value) {
         if !v.is_unspecified() {
             println!("==> {v}");
         }
-        self.reset();
+        self.ready();
     }
 
     fn print_err(&mut self, err: &Error) {
         eprint!("{}", err.display_message());
-        self.reset();
+        self.ready();
     }
 
     fn continuation(&mut self) {
         self.prompt = CONT;
     }
 
-    fn reset(&mut self) {
+    fn ready(&mut self) {
         self.prompt = INPUT;
+    }
+
+    fn reset(&mut self) {
+        self.runtime.clear();
+        self.ready();
     }
 }
 

@@ -26,6 +26,8 @@ pub(crate) type ParserResult = Result<ParserOutput, ParserError>;
 pub(crate) trait Parser {
     fn parse(&mut self, token_lines: Box<[TokenLine]>, ns: Namespace) -> ParserResult;
     fn unsupported_continuation(&mut self) -> Option<ParserError>;
+
+    fn clear(&mut self) {}
 }
 
 #[derive(Default)]
@@ -40,8 +42,12 @@ impl Parser for ExpressionTree {
 
     fn unsupported_continuation(&mut self) -> Option<ParserError> {
         let parser = self.parsers.pop();
-        self.parsers.clear();
+        self.clear();
         Some(parser?.into_continuation_unsupported()?.into())
+    }
+
+    fn clear(&mut self) {
+        self.parsers.clear();
     }
 }
 

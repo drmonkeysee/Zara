@@ -90,6 +90,11 @@ impl Interpreter {
         )
     }
 
+    pub fn clear(&mut self) {
+        self.lexer.clear();
+        self.runner.clear();
+    }
+
     fn lex(&mut self, src: &mut impl TextSource) -> result::Result<LexerOutput, ExecError> {
         Ok(self.lexer.tokenize(src)?)
     }
@@ -144,6 +149,7 @@ type ExecResult = result::Result<Evaluation, ExecError>;
 trait Executor {
     fn exec(&mut self, token_lines: Box<[TokenLine]>) -> ExecResult;
     fn unsupported_continuation(&mut self) -> Option<ExecError>;
+    fn clear(&mut self);
 }
 
 #[derive(Debug)]
@@ -202,6 +208,10 @@ impl<P: Parser, E: Evaluator + Default> Executor for Engine<P, E> {
 
     fn unsupported_continuation(&mut self) -> Option<ExecError> {
         Some(self.parser.unsupported_continuation()?.into())
+    }
+
+    fn clear(&mut self) {
+        self.parser.clear();
     }
 }
 
