@@ -36,22 +36,7 @@ impl Procedure {
         body: Program,
         name: Option<Rc<str>>,
     ) -> LambdaResult {
-        let mut names = HashSet::new();
-        let (singles, duplicates): (Vec<_>, Vec<_>) = named_args
-            .into_iter()
-            .map(|n| {
-                if names.contains(&n) {
-                    Err(InvalidFormal::DuplicateFormal(n))
-                } else {
-                    names.insert(Rc::clone(&n));
-                    Ok(Formal::Named(n))
-                }
-            })
-            .partition(Result::is_ok);
-        if !duplicates.is_empty() {
-            return Err(duplicates.into_iter().filter_map(Result::err).collect());
-        }
-        let mut formals = singles.into_iter().flatten().collect::<Vec<_>>();
+        let mut formals = into_formals(named_args)?;
         #[allow(
             clippy::cast_possible_truncation,
             reason = "overflow check handled below"
@@ -187,6 +172,28 @@ fn write_intrinsics(arity: &Arity, f: &mut Formatter<'_>) -> fmt::Result {
         .collect::<Vec<_>>()
         .join(" ");
     write!(f, " ({params})")
+}
+
+fn into_formals(
+    named_args: impl IntoIterator<Item = Rc<str>>,
+) -> Result<Vec<Formal>, Vec<InvalidFormal>> {
+    let mut names = HashSet::new();
+    let (singles, duplicates): (Vec<_>, Vec<_>) = named_args
+        .into_iter()
+        .map(|n| {
+            if names.contains(&n) {
+                Err(InvalidFormal::DuplicateFormal(n))
+            } else {
+                names.insert(Rc::clone(&n));
+                Ok(Formal::Named(n))
+            }
+        })
+        .partition(Result::is_ok);
+    if duplicates.is_empty() {
+        Ok(singles.into_iter().flatten().collect::<Vec<_>>())
+    } else {
+        Err(duplicates.into_iter().filter_map(Result::err).collect())
+    }
 }
 
 #[cfg(test)]
