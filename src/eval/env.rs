@@ -25,8 +25,6 @@ impl Binding {
     }
 
     pub(crate) fn sorted_bindings(&self) -> Vec<(Rc<str>, Value)> {
-        // NOTE: this needs to clone because the borrow() Ref guard ends up not
-        // living long enough to return a collection of references.
         let mut vec = self
             .0
             .borrow()
