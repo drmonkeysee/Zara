@@ -4,8 +4,32 @@ pub(crate) mod unicode;
 use std::{
     cell::Cell,
     cmp::Ordering,
+    collections::HashSet,
     fmt::{self, Display, Formatter, Write},
+    rc::Rc,
 };
+
+struct Symbol(Rc<str>);
+
+#[derive(Default)]
+pub(crate) struct SymbolTable(HashSet<Rc<str>>);
+
+impl SymbolTable {
+    pub(crate) fn get(&mut self, name: &str) -> Rc<str> {
+        if let Some(s) = self.0.get(name) {
+            Rc::clone(s)
+        } else {
+            self.0.insert(name.into());
+            self.get(name)
+        }
+    }
+
+    pub(crate) fn sorted_symbols(&self) -> Vec<Rc<str>> {
+        let mut vec = self.0.iter().map(Rc::clone).collect::<Vec<_>>();
+        vec.sort();
+        vec
+    }
+}
 
 pub(crate) enum CharDatum {
     Named(&'static str),
@@ -158,5 +182,63 @@ fn char_to_displayable(ch: char) -> DisplayableChar {
         DisplayableChar::Hex(ch as u32)
     } else {
         DisplayableChar::Char(ch)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn same_symbols() {
+        let mut s = SymbolTable::default();
+
+        let a = s.get("foo");
+        let b = s.get("foo");
+
+        assert!(Rc::ptr_eq(&a, &b));
+    }
+
+    #[test]
+    fn different_symbols() {
+        let mut s = SymbolTable::default();
+
+        let a = s.get("foo");
+        let b = s.get("bar");
+
+        assert!(!Rc::ptr_eq(&a, &b));
+    }
+
+    #[test]
+    fn get_refs_empty() {
+        let s = SymbolTable::default();
+
+        let all = s.sorted_symbols();
+
+        assert!(all.is_empty());
+    }
+
+    #[test]
+    fn get_refs_single() {
+        let mut s = SymbolTable::default();
+        s.get("foo");
+
+        let all = s.sorted_symbols();
+
+        let vec = all.iter().map(Rc::as_ref).collect::<Vec<_>>();
+        assert_eq!(vec, ["foo"]);
+    }
+
+    #[test]
+    fn get_refs_alphabetical() {
+        let mut s = SymbolTable::default();
+        s.get("foo");
+        s.get("bar");
+        s.get("baz");
+
+        let all = s.sorted_symbols();
+
+        let vec = all.iter().map(Rc::as_ref).collect::<Vec<_>>();
+        assert_eq!(vec, ["bar", "baz", "foo"]);
     }
 }

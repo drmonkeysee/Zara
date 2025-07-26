@@ -1,10 +1,5 @@
-use crate::value::Value;
-use std::{
-    cell::RefCell,
-    collections::{HashMap, HashSet},
-    rc::Rc,
-    time::Instant,
-};
+use crate::{string::SymbolTable, value::Value};
+use std::{cell::RefCell, collections::HashMap, rc::Rc, time::Instant};
 
 pub(crate) struct Frame<'a> {
     pub(crate) scope: Rc<Binding>,
@@ -40,26 +35,6 @@ impl Binding {
     }
 }
 
-#[derive(Default)]
-pub(crate) struct SymbolTable(HashSet<Rc<str>>);
-
-impl SymbolTable {
-    pub(crate) fn get(&mut self, name: &str) -> Rc<str> {
-        if let Some(s) = self.0.get(name) {
-            Rc::clone(s)
-        } else {
-            self.0.insert(name.into());
-            self.get(name)
-        }
-    }
-
-    pub(crate) fn sorted_symbols(&self) -> Vec<Rc<str>> {
-        let mut vec = self.0.iter().map(Rc::clone).collect::<Vec<_>>();
-        vec.sort();
-        vec
-    }
-}
-
 pub(crate) struct System {
     pub(crate) args: Value,
     pub(crate) start_time: Instant,
@@ -90,97 +65,36 @@ impl Namespace<'_> {
 mod tests {
     use super::*;
 
-    mod bindings {
-        use super::*;
+    #[test]
+    fn get_refs_empty() {
+        let b = Binding::default();
 
-        #[test]
-        fn get_refs_empty() {
-            let b = Binding::default();
+        let all = b.sorted_bindings();
 
-            let all = b.sorted_bindings();
-
-            assert!(all.is_empty());
-        }
-
-        #[test]
-        fn get_refs_single() {
-            let b = Binding::default();
-            b.bind("foo".into(), Value::Unspecified);
-
-            let all = b.sorted_bindings();
-
-            let keys = all.iter().map(|(k, _)| k.as_ref()).collect::<Vec<_>>();
-            assert_eq!(keys, ["foo"]);
-        }
-
-        #[test]
-        fn get_refs_alphabetical() {
-            let b = Binding::default();
-            b.bind("foo".into(), Value::Unspecified);
-            b.bind("bar".into(), Value::Unspecified);
-            b.bind("baz".into(), Value::Unspecified);
-
-            let all = b.sorted_bindings();
-
-            let keys = all.iter().map(|(k, _)| k.as_ref()).collect::<Vec<_>>();
-            assert_eq!(keys, ["bar", "baz", "foo"]);
-        }
+        assert!(all.is_empty());
     }
 
-    mod symbols {
-        use super::*;
+    #[test]
+    fn get_refs_single() {
+        let b = Binding::default();
+        b.bind("foo".into(), Value::Unspecified);
 
-        #[test]
-        fn same_symbols() {
-            let mut s = SymbolTable::default();
+        let all = b.sorted_bindings();
 
-            let a = s.get("foo");
-            let b = s.get("foo");
+        let keys = all.iter().map(|(k, _)| k.as_ref()).collect::<Vec<_>>();
+        assert_eq!(keys, ["foo"]);
+    }
 
-            assert!(Rc::ptr_eq(&a, &b));
-        }
+    #[test]
+    fn get_refs_alphabetical() {
+        let b = Binding::default();
+        b.bind("foo".into(), Value::Unspecified);
+        b.bind("bar".into(), Value::Unspecified);
+        b.bind("baz".into(), Value::Unspecified);
 
-        #[test]
-        fn different_symbols() {
-            let mut s = SymbolTable::default();
+        let all = b.sorted_bindings();
 
-            let a = s.get("foo");
-            let b = s.get("bar");
-
-            assert!(!Rc::ptr_eq(&a, &b));
-        }
-
-        #[test]
-        fn get_refs_empty() {
-            let s = SymbolTable::default();
-
-            let all = s.sorted_symbols();
-
-            assert!(all.is_empty());
-        }
-
-        #[test]
-        fn get_refs_single() {
-            let mut s = SymbolTable::default();
-            s.get("foo");
-
-            let all = s.sorted_symbols();
-
-            let vec = all.iter().map(Rc::as_ref).collect::<Vec<_>>();
-            assert_eq!(vec, ["foo"]);
-        }
-
-        #[test]
-        fn get_refs_alphabetical() {
-            let mut s = SymbolTable::default();
-            s.get("foo");
-            s.get("bar");
-            s.get("baz");
-
-            let all = s.sorted_symbols();
-
-            let vec = all.iter().map(Rc::as_ref).collect::<Vec<_>>();
-            assert_eq!(vec, ["bar", "baz", "foo"]);
-        }
+        let keys = all.iter().map(|(k, _)| k.as_ref()).collect::<Vec<_>>();
+        assert_eq!(keys, ["bar", "baz", "foo"]);
     }
 }

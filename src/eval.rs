@@ -2,11 +2,12 @@ mod env;
 mod proc;
 
 pub(crate) use self::{
-    env::{Binding, Frame, Namespace, SymbolTable, System},
+    env::{Binding, Frame, Namespace, System},
     proc::{Arity, IntrinsicFn, InvalidFormal, MAX_ARITY, Procedure},
 };
 use crate::{
     core,
+    string::SymbolTable,
     syntax::Program,
     value::{Condition, Value as ValueImpl},
 };

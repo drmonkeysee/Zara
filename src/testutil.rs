@@ -35,8 +35,9 @@ macro_rules! some_or_fail {
 }
 
 use crate::{
-    eval::{Binding, Frame, Namespace, SymbolTable, System},
+    eval::{Binding, Frame, Namespace, System},
     lex::{Token, TokenKind, TokenLine},
+    string::SymbolTable,
     txt::{LineNumber, TextContext, TextLine},
 };
 use std::{iter, path::Path, rc::Rc};
