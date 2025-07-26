@@ -14,6 +14,7 @@ use std::{
     fmt::{self, Display, Formatter},
     marker::PhantomData,
     process::ExitCode,
+    rc::Rc,
 };
 
 pub(crate) type Eval = Environment<EvalDriver>;
@@ -25,7 +26,7 @@ pub(crate) trait Evaluator {
 
 pub(crate) struct Environment<T> {
     driver: PhantomData<T>,
-    global: Binding,
+    global: Rc<Binding>,
     symbols: SymbolTable,
     system: System,
 }
@@ -34,7 +35,7 @@ impl<T: Evaluator + Default> Environment<T> {
     pub(crate) fn new(args: impl IntoIterator<Item = String>) -> Self {
         let mut me = Self {
             driver: PhantomData,
-            global: Binding::default(),
+            global: Binding::default().into(),
             symbols: SymbolTable::default(),
             system: System::new(args),
         };
@@ -53,7 +54,7 @@ impl<T: Evaluator + Default> Environment<T> {
 
     fn make_frame(&mut self) -> Frame {
         Frame {
-            scope: &mut self.global,
+            scope: Rc::clone(&self.global),
             sym: &mut self.symbols,
             sys: &self.system,
         }

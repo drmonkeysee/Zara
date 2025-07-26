@@ -39,7 +39,7 @@ use crate::{
     lex::{Token, TokenKind, TokenLine},
     txt::{LineNumber, TextContext, TextLine},
 };
-use std::{iter, path::Path};
+use std::{iter, path::Path, rc::Rc};
 pub(crate) use {err_or_fail, extract_or_fail, ok_or_fail, some_or_fail};
 
 pub(crate) fn make_textline() -> TextLine {
@@ -74,7 +74,7 @@ pub(crate) fn make_tokenline_no(
 }
 
 pub(crate) struct TestEnv {
-    pub(crate) binding: Binding,
+    pub(crate) binding: Rc<Binding>,
     pub(crate) symbols: SymbolTable,
     pub(crate) system: System,
 }
@@ -82,7 +82,7 @@ pub(crate) struct TestEnv {
 impl TestEnv {
     pub(crate) fn new_frame(&mut self) -> Frame {
         Frame {
-            scope: &mut self.binding,
+            scope: Rc::clone(&self.binding),
             sym: &mut self.symbols,
             sys: &self.system,
         }
@@ -96,7 +96,7 @@ impl TestEnv {
 impl Default for TestEnv {
     fn default() -> Self {
         Self {
-            binding: Binding::default(),
+            binding: Binding::default().into(),
             symbols: SymbolTable::default(),
             system: System::new(iter::empty()),
         }

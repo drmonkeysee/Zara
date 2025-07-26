@@ -7,7 +7,7 @@ use std::{
 };
 
 pub(crate) struct Frame<'a> {
-    pub(crate) scope: &'a mut Binding,
+    pub(crate) scope: Rc<Binding>,
     pub(crate) sym: &'a mut SymbolTable,
     pub(crate) sys: &'a System,
 }
