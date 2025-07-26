@@ -24,7 +24,7 @@ impl Binding {
         self.0.borrow().get(name).cloned()
     }
 
-    pub(crate) fn bindings(&self) -> impl IntoIterator<Item = (Rc<str>, Value)> {
+    pub(crate) fn sorted_bindings(&self) -> Vec<(Rc<str>, Value)> {
         // NOTE: this needs to clone because the borrow() Ref guard ends up not
         // living long enough to return a collection of references.
         let mut vec = self
@@ -55,7 +55,7 @@ impl SymbolTable {
         }
     }
 
-    pub(crate) fn get_refs(&self) -> impl IntoIterator<Item = &Rc<str>> {
+    pub(crate) fn sorted_symbols(&self) -> Vec<&Rc<str>> {
         let mut vec = self.0.iter().collect::<Vec<_>>();
         vec.sort();
         vec
@@ -99,10 +99,9 @@ mod tests {
         fn get_refs_empty() {
             let b = Binding::default();
 
-            let all = b.bindings();
+            let all = b.sorted_bindings();
 
-            let vec = all.into_iter().collect::<Vec<_>>();
-            assert!(vec.is_empty());
+            assert!(all.is_empty());
         }
 
         #[test]
@@ -110,12 +109,9 @@ mod tests {
             let b = Binding::default();
             b.bind("foo".into(), Value::Unspecified);
 
-            let all = b.bindings();
+            let all = b.sorted_bindings();
 
-            let keys = all
-                .into_iter()
-                .map(|(k, _)| k.as_ref().to_owned())
-                .collect::<Vec<_>>();
+            let keys = all.iter().map(|(k, _)| k.as_ref()).collect::<Vec<_>>();
             assert_eq!(keys, ["foo"]);
         }
 
@@ -126,12 +122,9 @@ mod tests {
             b.bind("bar".into(), Value::Unspecified);
             b.bind("baz".into(), Value::Unspecified);
 
-            let all = b.bindings();
+            let all = b.sorted_bindings();
 
-            let keys = all
-                .into_iter()
-                .map(|(k, _)| k.as_ref().to_owned())
-                .collect::<Vec<_>>();
+            let keys = all.iter().map(|(k, _)| k.as_ref()).collect::<Vec<_>>();
             assert_eq!(keys, ["bar", "baz", "foo"]);
         }
     }
@@ -163,10 +156,9 @@ mod tests {
         fn get_refs_empty() {
             let s = SymbolTable::default();
 
-            let all = s.get_refs();
+            let all = s.sorted_symbols();
 
-            let vec = all.into_iter().collect::<Vec<_>>();
-            assert!(vec.is_empty());
+            assert!(all.is_empty());
         }
 
         #[test]
@@ -174,9 +166,9 @@ mod tests {
             let mut s = SymbolTable::default();
             s.get("foo");
 
-            let all = s.get_refs();
+            let all = s.sorted_symbols();
 
-            let vec = all.into_iter().map(|s| Rc::as_ref(s)).collect::<Vec<_>>();
+            let vec = all.into_iter().map(Rc::as_ref).collect::<Vec<_>>();
             assert_eq!(vec, ["foo"]);
         }
 
@@ -187,9 +179,9 @@ mod tests {
             s.get("bar");
             s.get("baz");
 
-            let all = s.get_refs();
+            let all = s.sorted_symbols();
 
-            let vec = all.into_iter().map(|s| Rc::as_ref(s)).collect::<Vec<_>>();
+            let vec = all.into_iter().map(Rc::as_ref).collect::<Vec<_>>();
             assert_eq!(vec, ["bar", "baz", "foo"]);
         }
     }
