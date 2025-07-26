@@ -1,5 +1,6 @@
 use crate::value::Value;
 use std::{
+    cell::RefCell,
     collections::{HashMap, HashSet},
     rc::Rc,
     time::Instant,
@@ -12,29 +13,32 @@ pub(crate) struct Frame<'a> {
 }
 
 #[derive(Default)]
-pub(crate) struct Binding(HashMap<Rc<str>, Value>);
+pub(crate) struct Binding(RefCell<HashMap<Rc<str>, Value>>);
 
 impl Binding {
     pub(crate) fn bound(&self, name: &str) -> bool {
-        self.0.contains_key(name)
+        self.0.borrow().contains_key(name)
     }
 
     pub(crate) fn lookup(&self, name: &str) -> Option<Value> {
-        self.0.get(name).cloned()
+        self.0.borrow().get(name).cloned()
     }
 
-    pub(crate) fn get_refs(&self) -> impl IntoIterator<Item = (&str, &Value)> {
+    pub(crate) fn all_bindings(&self) -> impl IntoIterator<Item = (Rc<str>, Value)> {
+        // NOTE: this needs to clone because the borrow() Ref guard ends up not
+        // living long enough to return a collection of references.
         let mut vec = self
             .0
+            .borrow()
             .iter()
-            .map(|(k, v)| (k.as_ref(), v))
+            .map(|(k, v)| (Rc::clone(k), v.clone()))
             .collect::<Vec<_>>();
-        vec.sort_by_key(|(k, _)| *k);
+        vec.sort_by(|(a, _), (b, _)| a.cmp(b));
         vec
     }
 
-    pub(crate) fn bind(&mut self, name: Rc<str>, val: Value) {
-        self.0.insert(name, val);
+    pub(crate) fn bind(&self, name: Rc<str>, val: Value) {
+        self.0.borrow_mut().insert(name, val);
     }
 }
 
@@ -95,7 +99,7 @@ mod tests {
         fn get_refs_empty() {
             let b = Binding::default();
 
-            let all = b.get_refs();
+            let all = b.all_bindings();
 
             let vec = all.into_iter().collect::<Vec<_>>();
             assert!(vec.is_empty());
@@ -103,25 +107,31 @@ mod tests {
 
         #[test]
         fn get_refs_single() {
-            let mut b = Binding::default();
+            let b = Binding::default();
             b.bind("foo".into(), Value::Unspecified);
 
-            let all = b.get_refs();
+            let all = b.all_bindings();
 
-            let keys = all.into_iter().map(|(k, _)| k).collect::<Vec<_>>();
+            let keys = all
+                .into_iter()
+                .map(|(k, _)| k.as_ref().to_owned())
+                .collect::<Vec<_>>();
             assert_eq!(keys, ["foo"]);
         }
 
         #[test]
         fn get_refs_alphabetical() {
-            let mut b = Binding::default();
+            let b = Binding::default();
             b.bind("foo".into(), Value::Unspecified);
             b.bind("bar".into(), Value::Unspecified);
             b.bind("baz".into(), Value::Unspecified);
 
-            let all = b.get_refs();
+            let all = b.all_bindings();
 
-            let keys = all.into_iter().map(|(k, _)| k).collect::<Vec<_>>();
+            let keys = all
+                .into_iter()
+                .map(|(k, _)| k.as_ref().to_owned())
+                .collect::<Vec<_>>();
             assert_eq!(keys, ["bar", "baz", "foo"]);
         }
     }
