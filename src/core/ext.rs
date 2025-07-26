@@ -48,7 +48,7 @@ fn symbols(_args: &[Value], env: &mut Frame) -> EvalResult {
         env.sym
             .sorted_symbols()
             .into_iter()
-            .map(|s| Value::Symbol(Rc::clone(s)))
+            .map(Value::Symbol)
             .collect::<Vec<_>>(),
     ))
 }

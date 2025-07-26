@@ -55,8 +55,8 @@ impl SymbolTable {
         }
     }
 
-    pub(crate) fn sorted_symbols(&self) -> Vec<&Rc<str>> {
-        let mut vec = self.0.iter().collect::<Vec<_>>();
+    pub(crate) fn sorted_symbols(&self) -> Vec<Rc<str>> {
+        let mut vec = self.0.iter().map(Rc::clone).collect::<Vec<_>>();
         vec.sort();
         vec
     }
@@ -168,7 +168,7 @@ mod tests {
 
             let all = s.sorted_symbols();
 
-            let vec = all.into_iter().map(Rc::as_ref).collect::<Vec<_>>();
+            let vec = all.iter().map(Rc::as_ref).collect::<Vec<_>>();
             assert_eq!(vec, ["foo"]);
         }
 
@@ -181,7 +181,7 @@ mod tests {
 
             let all = s.sorted_symbols();
 
-            let vec = all.into_iter().map(Rc::as_ref).collect::<Vec<_>>();
+            let vec = all.iter().map(Rc::as_ref).collect::<Vec<_>>();
             assert_eq!(vec, ["bar", "baz", "foo"]);
         }
     }
