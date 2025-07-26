@@ -24,7 +24,7 @@ impl Binding {
         self.0.borrow().get(name).cloned()
     }
 
-    pub(crate) fn all_bindings(&self) -> impl IntoIterator<Item = (Rc<str>, Value)> {
+    pub(crate) fn bindings(&self) -> impl IntoIterator<Item = (Rc<str>, Value)> {
         // NOTE: this needs to clone because the borrow() Ref guard ends up not
         // living long enough to return a collection of references.
         let mut vec = self
@@ -99,7 +99,7 @@ mod tests {
         fn get_refs_empty() {
             let b = Binding::default();
 
-            let all = b.all_bindings();
+            let all = b.bindings();
 
             let vec = all.into_iter().collect::<Vec<_>>();
             assert!(vec.is_empty());
@@ -110,7 +110,7 @@ mod tests {
             let b = Binding::default();
             b.bind("foo".into(), Value::Unspecified);
 
-            let all = b.all_bindings();
+            let all = b.bindings();
 
             let keys = all
                 .into_iter()
@@ -126,7 +126,7 @@ mod tests {
             b.bind("bar".into(), Value::Unspecified);
             b.bind("baz".into(), Value::Unspecified);
 
-            let all = b.all_bindings();
+            let all = b.bindings();
 
             let keys = all
                 .into_iter()

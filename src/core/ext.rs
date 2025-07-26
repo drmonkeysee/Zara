@@ -35,7 +35,7 @@ pub(crate) fn load(env: &mut Frame) {
 fn bindings(_args: &[Value], env: &mut Frame) -> EvalResult {
     Ok(Value::list(
         env.scope
-            .all_bindings()
+            .bindings()
             .into_iter()
             .map(|(k, v)| Value::cons(Value::Symbol(env.sym.get(&k)), v.clone()))
             .collect::<Vec<_>>(),
@@ -64,7 +64,7 @@ fn apropos(args: &[Value], env: &mut Frame) -> EvalResult {
     })?;
     Ok(Value::list(
         env.scope
-            .all_bindings()
+            .bindings()
             .into_iter()
             .filter(|(n, _)| n.contains(pat))
             .map(|(n, _)| Value::Symbol(env.sym.get(&n)))
