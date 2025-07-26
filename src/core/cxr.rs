@@ -1,5 +1,5 @@
 // (scheme cxr)
-use super::{pcar, pcdr};
+use super::{first, pcar, pcdr};
 use crate::{
     eval::{EvalResult, Frame},
     value::Value,

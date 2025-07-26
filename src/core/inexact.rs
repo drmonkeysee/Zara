@@ -1,5 +1,5 @@
 // (scheme inexact)
-use super::FIRST_ARG_LABEL;
+use super::{FIRST_ARG_LABEL, first};
 use crate::{
     eval::{EvalResult, Frame},
     number::Number,

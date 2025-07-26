@@ -2,7 +2,7 @@
 macro_rules! predicate {
     ($name:ident, $pred:pat $(if $guard:expr)?) => {
         fn $name(args: &[Value], _env: &mut Frame) -> EvalResult {
-            let arg = args.first().unwrap();
+            let arg = first(args);
             Ok(Value::Boolean(matches!(arg, $pred $(if $guard)?)))
         }
     };
@@ -35,7 +35,7 @@ macro_rules! seq_predicate {
 macro_rules! vec_length {
     ($name:ident, $kind:path, $valname:expr) => {
         fn $name(args: &[Value], _env: &mut Frame) -> EvalResult {
-            let arg = args.first().unwrap();
+            let arg = first(args);
             if let $kind(v) = arg {
                 Ok(Value::Number(Number::from_usize(v.len())))
             } else {
@@ -48,8 +48,8 @@ macro_rules! vec_length {
 macro_rules! vec_get {
     ($name:ident, $kind: path, $valname:expr, $get:expr, $map:expr) => {
         fn $name(args: &[Value], _env: &mut Frame) -> EvalResult {
-            let vec = args.first().unwrap();
-            let k = args.get(1).unwrap();
+            let vec = first(args);
+            let k = super::second(args);
             if let $kind(v) = vec {
                 vec_item(v, k, $get, $map)
             } else {
@@ -59,7 +59,7 @@ macro_rules! vec_get {
     };
 }
 
-use super::{FIRST_ARG_LABEL, SECOND_ARG_LABEL, pcar, pcdr};
+use super::{FIRST_ARG_LABEL, SECOND_ARG_LABEL, first, pcar, pcdr};
 use crate::{
     Exception,
     eval::{EvalResult, Frame, MAX_ARITY},
@@ -144,7 +144,7 @@ seq_predicate!(chars_gt, Value::Character, TypeName::CHAR, char::gt);
 seq_predicate!(chars_gte, Value::Character, TypeName::CHAR, char::ge);
 
 fn char_to_integer(args: &[Value], _env: &mut Frame) -> EvalResult {
-    let arg = args.first().unwrap();
+    let arg = first(args);
     if let Value::Character(c) = arg {
         let n = u32::from(*c);
         Ok(Value::Number(Number::real(i64::from(n))))
@@ -154,7 +154,7 @@ fn char_to_integer(args: &[Value], _env: &mut Frame) -> EvalResult {
 }
 
 fn integer_to_char(args: &[Value], _env: &mut Frame) -> EvalResult {
-    let arg = args.first().unwrap();
+    let arg = first(args);
     if let Value::Number(n) = arg {
         try_num_into_char(n, arg)
     } else {
@@ -198,22 +198,22 @@ fn load_eq(env: &mut Frame) {
 
 #[allow(clippy::unnecessary_wraps, reason = "infallible intrinsic")]
 fn is_eqv(args: &[Value], _env: &mut Frame) -> EvalResult {
-    let a = args.first().unwrap();
-    let b = args.get(1).unwrap();
+    let a = first(args);
+    let b = super::second(args);
     Ok(Value::Boolean(a.is_eqv(b)))
 }
 
 #[allow(clippy::unnecessary_wraps, reason = "infallible intrinsic")]
 fn is_eq(args: &[Value], _env: &mut Frame) -> EvalResult {
-    let a = args.first().unwrap();
-    let b = args.get(1).unwrap();
+    let a = first(args);
+    let b = super::second(args);
     Ok(Value::Boolean(a.is(b)))
 }
 
 #[allow(clippy::unnecessary_wraps, reason = "infallible intrinsic")]
 fn is_equal(args: &[Value], _env: &mut Frame) -> EvalResult {
-    let a = args.first().unwrap();
-    let b = args.get(1).unwrap();
+    let a = first(args);
+    let b = super::second(args);
     Ok(Value::Boolean(a == b))
 }
 
@@ -237,7 +237,7 @@ predicate!(is_file_error, Value::Error(c) if c.is_file_err());
 
 // TODO: this should be a mutable string
 fn error_msg(args: &[Value], _env: &mut Frame) -> EvalResult {
-    let arg = args.first().unwrap();
+    let arg = first(args);
     if let Value::Error(c) = arg {
         Ok(Value::string(c.message()))
     } else {
@@ -246,7 +246,7 @@ fn error_msg(args: &[Value], _env: &mut Frame) -> EvalResult {
 }
 
 fn error_irritants(args: &[Value], _env: &mut Frame) -> EvalResult {
-    let arg = args.first().unwrap();
+    let arg = first(args);
     if let Value::Error(c) = arg {
         Ok(c.irritants().map_or(Value::null(), Value::clone))
     } else {
@@ -305,33 +305,29 @@ try_predicate!(is_zero, Value::Number, TypeName::NUMBER, |n: &Number| n
     .is_zero());
 
 fn is_positive(args: &[Value], _env: &mut Frame) -> EvalResult {
-    real_op(args.first().unwrap(), |r| {
-        Ok(Value::Boolean(r.is_positive()))
-    })
+    real_op(first(args), |r| Ok(Value::Boolean(r.is_positive())))
 }
 
 fn is_negative(args: &[Value], _env: &mut Frame) -> EvalResult {
-    real_op(args.first().unwrap(), |r| {
-        Ok(Value::Boolean(r.is_negative()))
-    })
+    real_op(first(args), |r| Ok(Value::Boolean(r.is_negative())))
 }
 
 fn is_odd(args: &[Value], _env: &mut Frame) -> EvalResult {
-    exact_int_predicate(args.first().unwrap(), |n| !n.is_even())
+    exact_int_predicate(first(args), |n| !n.is_even())
 }
 
 fn is_even(args: &[Value], _env: &mut Frame) -> EvalResult {
-    exact_int_predicate(args.first().unwrap(), Integer::is_even)
+    exact_int_predicate(first(args), Integer::is_even)
 }
 
 fn abs(args: &[Value], _env: &mut Frame) -> EvalResult {
-    real_op(args.first().unwrap(), |r| {
+    real_op(first(args), |r| {
         Ok(Value::Number(Number::real(r.clone().into_abs())))
     })
 }
 
 fn get_numerator(args: &[Value], _env: &mut Frame) -> EvalResult {
-    let arg = args.first().unwrap();
+    let arg = first(args);
     rational_op(arg, |r| {
         r.clone().try_into_numerator().map_or_else(
             |err| Err(Condition::value_error(err, arg).into()),
@@ -341,7 +337,7 @@ fn get_numerator(args: &[Value], _env: &mut Frame) -> EvalResult {
 }
 
 fn get_denominator(args: &[Value], _env: &mut Frame) -> EvalResult {
-    let arg = args.first().unwrap();
+    let arg = first(args);
     rational_op(arg, |r| {
         r.clone().try_into_denominator().map_or_else(
             |err| Err(Condition::value_error(err, arg).into()),
@@ -351,7 +347,7 @@ fn get_denominator(args: &[Value], _env: &mut Frame) -> EvalResult {
 }
 
 fn into_inexact(args: &[Value], _env: &mut Frame) -> EvalResult {
-    let arg = args.first().unwrap();
+    let arg = first(args);
     if let Value::Number(n) = arg {
         Ok(Value::Number(n.clone().into_inexact()))
     } else {
@@ -360,7 +356,7 @@ fn into_inexact(args: &[Value], _env: &mut Frame) -> EvalResult {
 }
 
 fn into_exact(args: &[Value], _env: &mut Frame) -> EvalResult {
-    let arg = args.first().unwrap();
+    let arg = first(args);
     if let Value::Number(n) = arg {
         n.clone().try_into_exact().map_or_else(
             |err| Err(Condition::value_error(err, arg).into()),
@@ -437,7 +433,7 @@ cadr_func!(cddr, d, d);
 // TODO: circular lists => #f
 #[allow(clippy::unnecessary_wraps, reason = "infallible intrinsic")]
 fn is_list(args: &[Value], _env: &mut Frame) -> EvalResult {
-    let arg = args.first().unwrap();
+    let arg = first(args);
     Ok(Value::Boolean(match arg {
         Value::Pair(None) => true,
         Value::Pair(Some(p)) => p.is_list(),
@@ -447,7 +443,7 @@ fn is_list(args: &[Value], _env: &mut Frame) -> EvalResult {
 
 // TODO: circular lists => error
 fn list_length(args: &[Value], _env: &mut Frame) -> EvalResult {
-    let arg = args.first().unwrap();
+    let arg = first(args);
     match arg {
         Value::Pair(None) => Ok(Value::Number(Number::real(0))),
         Value::Pair(Some(p)) => p.length().map_or_else(
@@ -467,14 +463,14 @@ fn list_length(args: &[Value], _env: &mut Frame) -> EvalResult {
 }
 
 fn list_tail(args: &[Value], _env: &mut Frame) -> EvalResult {
-    let lst = args.first().unwrap();
-    let k = args.get(1).unwrap();
+    let lst = first(args);
+    let k = super::second(args);
     sub_list(lst, number_to_index(k)?, k).cloned()
 }
 
 fn list_get(args: &[Value], _env: &mut Frame) -> EvalResult {
-    let lst = args.first().unwrap();
-    let k = args.get(1).unwrap();
+    let lst = first(args);
+    let k = super::second(args);
     let subl = sub_list(lst, number_to_index(k)?, k)?;
     if let Value::Pair(None) = subl {
         Err(Condition::index_error(k).into())
@@ -553,7 +549,7 @@ predicate!(is_symbol, Value::Symbol(_));
 seq_predicate!(symbols_eq, Value::Symbol, TypeName::SYMBOL, Rc::ptr_eq);
 
 fn symbol_to_string(args: &[Value], _env: &mut Frame) -> EvalResult {
-    let arg = args.first().unwrap();
+    let arg = first(args);
     if let Value::Symbol(s) = arg {
         Ok(Value::string(Rc::clone(s)))
     } else {
@@ -562,7 +558,7 @@ fn symbol_to_string(args: &[Value], _env: &mut Frame) -> EvalResult {
 }
 
 fn string_to_symbol(args: &[Value], env: &mut Frame) -> EvalResult {
-    let arg = args.first().unwrap();
+    let arg = first(args);
     if let Value::String(s) = arg {
         Ok(Value::Symbol(env.sym.get(s)))
     } else {

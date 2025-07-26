@@ -16,37 +16,33 @@ pub(super) fn load(env: &mut Frame) {
 }
 
 fn make_rect(args: &[Value], _env: &mut Frame) -> EvalResult {
-    make_complex(args.first().unwrap(), args.get(1).unwrap(), Number::complex)
+    make_complex(super::first(args), super::second(args), Number::complex)
 }
 
 fn make_polar(args: &[Value], _env: &mut Frame) -> EvalResult {
-    make_complex(args.first().unwrap(), args.get(1).unwrap(), Number::polar)
+    make_complex(super::first(args), super::second(args), Number::polar)
 }
 
 fn get_real(args: &[Value], _env: &mut Frame) -> EvalResult {
-    get_complex_part(
-        args.first().unwrap(),
-        |z| z.real_part().clone(),
-        Real::clone,
-    )
+    get_complex_part(super::first(args), |z| z.real_part().clone(), Real::clone)
 }
 
 fn get_imag(args: &[Value], _env: &mut Frame) -> EvalResult {
     get_complex_part(
-        args.first().unwrap(),
+        super::first(args),
         |z| z.imag_part().clone(),
         |_| Real::zero(),
     )
 }
 
 fn get_mag(args: &[Value], _env: &mut Frame) -> EvalResult {
-    get_complex_part(args.first().unwrap(), Complex::to_magnitude, |r| {
+    get_complex_part(super::first(args), Complex::to_magnitude, |r| {
         r.clone().into_abs()
     })
 }
 
 fn get_angle(args: &[Value], _env: &mut Frame) -> EvalResult {
-    get_complex_part(args.first().unwrap(), Complex::to_angle, |_| Real::zero())
+    get_complex_part(super::first(args), Complex::to_angle, |_| Real::zero())
 }
 
 fn make_complex(x: &Value, y: &Value, ctor: impl FnOnce(Real, Real) -> Number) -> EvalResult {

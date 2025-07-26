@@ -1,5 +1,5 @@
 // (scheme char)
-use super::FIRST_ARG_LABEL;
+use super::{FIRST_ARG_LABEL, first};
 use crate::{
     eval::{EvalResult, Frame},
     value::{Condition, TypeName, Value},
@@ -51,19 +51,19 @@ try_predicate!(
 );
 
 fn char_upper(args: &[Value], _env: &mut Frame) -> EvalResult {
-    char_case(args.first().unwrap(), char::to_uppercase)
+    char_case(first(args), char::to_uppercase)
 }
 
 fn char_lower(args: &[Value], _env: &mut Frame) -> EvalResult {
-    char_case(args.first().unwrap(), char::to_lowercase)
+    char_case(first(args), char::to_lowercase)
 }
 
 fn string_upper(args: &[Value], _env: &mut Frame) -> EvalResult {
-    string_case(args.first().unwrap(), str::to_uppercase)
+    string_case(first(args), str::to_uppercase)
 }
 
 fn string_lower(args: &[Value], _env: &mut Frame) -> EvalResult {
-    string_case(args.first().unwrap(), str::to_lowercase)
+    string_case(first(args), str::to_lowercase)
 }
 
 fn char_case<I: ExactSizeIterator<Item = char>>(

@@ -44,7 +44,10 @@ impl Lexer {
     pub(crate) fn unsupported_continuation(&mut self) -> Option<LexerError> {
         self.cont.take().map(|(mut lines, cont)| {
             debug_assert!(!lines.is_empty());
-            lines.pop().unwrap().into_continuation_unsupported(cont)
+            lines
+                .pop()
+                .expect("expected token continuation lines")
+                .into_continuation_unsupported(cont)
         })
     }
 
@@ -147,7 +150,7 @@ impl TokenLine {
         LineFailure::from(TokenErrorLine(
             vec![TokenError {
                 kind: cont.into(),
-                span: tokens.pop().unwrap().span,
+                span: tokens.pop().expect("expected non-empty tokenline").span,
             }],
             txtline,
         ))

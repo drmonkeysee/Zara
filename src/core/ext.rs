@@ -5,7 +5,6 @@ use crate::{
     eval::{EvalResult, Frame},
     value::{Condition, TypeName, Value},
 };
-use std::rc::Rc;
 
 /*
  * Zara Extended Library

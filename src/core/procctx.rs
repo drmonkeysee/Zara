@@ -58,7 +58,7 @@ fn emergency_exit(args: &[Value], _env: &mut Frame) -> EvalResult {
 }
 
 fn get_environment_variable(args: &[Value], _env: &mut Frame) -> EvalResult {
-    let arg = args.first().unwrap();
+    let arg = super::first(args);
     let Value::String(s) = arg else {
         return invalid_target!(TypeName::STRING, arg);
     };

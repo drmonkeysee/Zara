@@ -7,7 +7,7 @@ macro_rules! invalid_target {
 macro_rules! try_predicate {
     ($name:ident, $kind:path, $valname:expr, $pred:expr) => {
         fn $name(args: &[Value], _env: &mut Frame) -> EvalResult {
-            let arg = args.first().unwrap();
+            let arg = first(args);
             if let $kind(val) = arg {
                 Ok(Value::Boolean($pred(val)))
             } else {
@@ -35,8 +35,8 @@ macro_rules! cadr_compose {
 macro_rules! cadr_func {
     ($name:ident $(, $compose:ident)+) => {
         fn $name(args: &[Value], _env: &mut Frame) -> EvalResult {
-            let arg = args.first().unwrap();
-            cadr_compose!(&arg, $($compose),+)
+            let arg = first(args);
+            cadr_compose!(arg, $($compose),+)
         }
     };
 }
@@ -85,6 +85,14 @@ fn bind_intrinsic(env: &mut Frame, name: &str, arity: Arity, body: IntrinsicFn) 
         Rc::clone(&n),
         Value::Procedure(Procedure::intrinsic(n, arity, body).into()),
     );
+}
+
+fn first(args: &[Value]) -> &Value {
+    args.first().expect("first argument arity failure")
+}
+
+fn second(args: &[Value]) -> &Value {
+    args.get(1).expect("second argument arity failure")
 }
 
 fn pcar(arg: &Value) -> EvalResult {
