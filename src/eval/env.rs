@@ -11,24 +11,38 @@ pub(crate) struct Frame<'a> {
 }
 
 #[derive(Debug, Default)]
-pub(crate) struct Binding(RefCell<HashMap<Symbol, Value>>);
+pub(crate) struct Binding {
+    parent: Option<Rc<Binding>>,
+    vars: RefCell<HashMap<Symbol, Value>>,
+}
 
 impl Binding {
+    pub(crate) fn new(parent: impl Into<Rc<Binding>>) -> Self {
+        Self {
+            parent: Some(parent.into()),
+            ..Default::default()
+        }
+    }
+
     pub(crate) fn bound(&self, name: impl AsRef<str>) -> bool {
-        self.0.borrow().contains_key(name.as_ref())
+        self.vars.borrow().contains_key(name.as_ref())
     }
 
     pub(crate) fn lookup(&self, name: impl AsRef<str>) -> Option<Value> {
-        self.0.borrow().get(name.as_ref()).cloned()
+        self.vars
+            .borrow()
+            .get(name.as_ref())
+            .cloned()
+            .or_else(|| self.parent.as_ref()?.lookup(name))
     }
 
     pub(crate) fn bind(&self, name: Symbol, val: Value) {
-        self.0.borrow_mut().insert(name, val);
+        self.vars.borrow_mut().insert(name, val);
     }
 
     pub(crate) fn sorted_bindings(&self) -> Vec<(Symbol, Value)> {
         let mut vec = self
-            .0
+            .vars
             .borrow()
             .iter()
             .map(|(k, v)| (k.clone(), v.clone()))
@@ -71,6 +85,48 @@ impl Namespace<'_> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::testutil::some_or_fail;
+
+    #[test]
+    fn empty_lookup() {
+        let b = Binding::default();
+
+        let v = b.lookup("foo");
+
+        assert!(v.is_none());
+    }
+
+    #[test]
+    fn basic_lookup() {
+        let b = Binding::default();
+        let mut sym = SymbolTable::default();
+        b.bind(sym.get("foo"), Value::Boolean(true));
+
+        let v = b.lookup("foo");
+
+        assert!(matches!(some_or_fail!(v), Value::Boolean(true)));
+    }
+
+    #[test]
+    fn parent_lookup() {
+        let p = Binding::default().into();
+        let b = Binding::new(Rc::clone(&p));
+        let mut sym = SymbolTable::default();
+        b.bind(sym.get("bar"), Value::string("beef"));
+        p.bind(sym.get("foo"), Value::Boolean(true));
+
+        let v = b.lookup("bar");
+
+        assert!(matches!(some_or_fail!(v), Value::String(s) if s.as_ref() == "beef"));
+
+        let v = b.lookup("foo");
+
+        assert!(matches!(some_or_fail!(v), Value::Boolean(true)));
+
+        let v = b.lookup("baz");
+
+        assert!(v.is_none());
+    }
 
     #[test]
     fn get_refs_empty() {
