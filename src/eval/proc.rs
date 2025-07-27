@@ -213,7 +213,7 @@ fn call_lambda(
     // TODO: this doesn't seem quite right, particularly for recursion
     // is env.scope actually irrelevant with lexical scoping?
     let mut call_frame = Frame {
-        scope: Binding::new(Rc::clone(&closure)).into(),
+        scope: Binding::new(Rc::clone(closure)).into(),
         sym: env.sym,
         sys: env.sys,
     };

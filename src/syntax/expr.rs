@@ -146,18 +146,18 @@ impl ExpressionKind {
             }
             Self::Literal(v) => Ok(v.clone()),
             Self::Set { var, expr } => {
-                if env.scope.bound(&var) {
+                if env.scope.bound(var) {
                     let val = expr.eval(env)?;
                     env.scope.bind(var.clone(), val);
                     Ok(Value::Unspecified)
                 } else {
-                    Err(Exception::signal(Condition::bind_error(&var)))
+                    Err(Exception::signal(Condition::bind_error(var)))
                 }
             }
             Self::Variable(n) => env
                 .scope
-                .lookup(&n)
-                .ok_or_else(|| Exception::signal(Condition::bind_error(&n))),
+                .lookup(n)
+                .ok_or_else(|| Exception::signal(Condition::bind_error(n))),
         }
     }
 }
