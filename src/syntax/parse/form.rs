@@ -95,7 +95,12 @@ impl SyntacticForm {
         Ok(MergeFlow::Continue(()))
     }
 
-    pub(super) fn try_into_expr(self, seq: Vec<Expression>, ctx: ExprCtx) -> ExprConvertResult {
+    pub(super) fn try_into_expr(
+        self,
+        seq: Vec<Expression>,
+        ctx: ExprCtx,
+        ns: &mut Namespace,
+    ) -> ExprConvertResult {
         match self {
             Self::Call => {
                 let mut iter = seq.into_iter();
@@ -140,7 +145,7 @@ impl SyntacticForm {
                     Err(vec![ctx.into_error(ExpressionErrorKind::IfInvalid)])
                 }
             }
-            Self::Lambda => into_lambda(seq, ctx),
+            Self::Lambda => into_lambda(seq, ctx, ns),
             Self::PairClosed => into_list(seq, ctx, true),
             Self::PairOpen => Err(vec![ctx.into_error(ExpressionErrorKind::PairUnterminated)]),
             Self::Quote => {
@@ -249,8 +254,6 @@ impl SyntacticForm {
     }
 }
 
-type FormalsParseResult = Result<(Vec<Symbol>, Option<Symbol>), ExpressionErrorKind>;
-
 fn into_list(seq: Vec<Expression>, ctx: ExprCtx, improper: bool) -> ExprConvertResult {
     super::into_valid_sequence(
         seq,
@@ -271,7 +274,7 @@ fn into_list(seq: Vec<Expression>, ctx: ExprCtx, improper: bool) -> ExprConvertR
     )
 }
 
-fn into_lambda(seq: Vec<Expression>, ctx: ExprCtx) -> ExprConvertResult {
+fn into_lambda(seq: Vec<Expression>, ctx: ExprCtx, ns: &mut Namespace) -> ExprConvertResult {
     if seq.len() < 2 {
         return Err(vec![ctx.into_error(ExpressionErrorKind::LambdaInvalid)]);
     }
@@ -282,10 +285,10 @@ fn into_lambda(seq: Vec<Expression>, ctx: ExprCtx) -> ExprConvertResult {
     };
     let (args, rest) =
         parse_formals(params).map_err(|err| vec![formals.ctx.clone().into_error(err)])?;
-    into_procedure(args, rest, iter, &formals.ctx, ctx)
+    into_procedure(args, rest, iter, &formals.ctx, ctx, ns)
 }
 
-fn parse_formals(mut params: Value) -> FormalsParseResult {
+fn parse_formals(mut params: Value) -> Result<(Vec<Symbol>, Option<Symbol>), ExpressionErrorKind> {
     let mut args = Vec::new();
     let mut rest = None;
     loop {
@@ -315,11 +318,13 @@ fn into_procedure(
     body: impl IntoIterator<Item = Expression>,
     formals_ctx: &ExprCtx,
     ctx: ExprCtx,
+    ns: &mut Namespace,
 ) -> ExprConvertResult {
     Procedure::lambda(
         args,
         rest,
         Program::new(body.into_iter().collect::<Box<[_]>>()),
+        ns.get_closure(),
         None,
     )
     .map_or_else(

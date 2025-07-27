@@ -1,10 +1,11 @@
-use super::{EvalResult, Frame};
+use super::{Binding, EvalResult, Frame};
 use crate::{string::Symbol, syntax::Program, value::Value};
 use std::{
     collections::HashSet,
     fmt::{self, Display, Formatter, Write},
     iter,
     ops::Range,
+    rc::Rc,
 };
 
 pub(crate) const MAX_ARITY: u8 = u8::MAX;
@@ -33,6 +34,7 @@ impl Procedure {
         named_args: impl IntoIterator<Item = Symbol>,
         variadic_arg: Option<Symbol>,
         body: Program,
+        closure: impl Into<Rc<Binding>>,
         name: Option<Symbol>,
     ) -> LambdaResult {
         let mut formals = into_formals(named_args)?;
@@ -51,7 +53,11 @@ impl Procedure {
         } else {
             Ok(Self {
                 arity: min..max,
-                def: Definition::Lambda(formals.into(), body),
+                def: Definition::Lambda {
+                    body,
+                    closure: closure.into(),
+                    formals: formals.into(),
+                },
                 name,
             })
         }
@@ -74,7 +80,7 @@ impl Procedure {
     }
 
     fn formals(&self) -> Option<&[Formal]> {
-        if let Definition::Lambda(formals, _) = &self.def {
+        if let Definition::Lambda { formals, .. } = &self.def {
             Some(formals)
         } else {
             None
@@ -121,14 +127,19 @@ enum Formal {
 #[derive(Debug)]
 enum Definition {
     Intrinsic(IntrinsicFn),
-    Lambda(Box<[Formal]>, Program),
+    Lambda {
+        body: Program,
+        // TODO: make this optional for pure functions
+        closure: Rc<Binding>,
+        formals: Box<[Formal]>,
+    },
 }
 
 impl Definition {
     fn apply(&self, args: &[Value], env: &mut Frame) -> EvalResult {
         match self {
             Self::Intrinsic(func) => func(args, env),
-            Self::Lambda(..) => todo!("lambda apply"),
+            Self::Lambda { .. } => todo!("lambda apply"),
         }
     }
 }
@@ -295,7 +306,13 @@ mod tests {
 
     #[test]
     fn lambda_zero_arity_no_name() {
-        let p = ok_or_fail!(Procedure::lambda([], None, empty_program(), None));
+        let p = ok_or_fail!(Procedure::lambda(
+            [],
+            None,
+            empty_program(),
+            Binding::default(),
+            None
+        ));
 
         assert_eq!(p.to_string(), "#<procedure>");
     }
@@ -307,6 +324,7 @@ mod tests {
             [],
             None,
             empty_program(),
+            Binding::default(),
             Some(sym.get("bar"))
         ));
 
@@ -320,6 +338,7 @@ mod tests {
             [sym.get("x")],
             None,
             empty_program(),
+            Binding::default(),
             Some(sym.get("bar"))
         ));
 
@@ -333,6 +352,7 @@ mod tests {
             [sym.get("x"), sym.get("y"), sym.get("z")],
             None,
             empty_program(),
+            Binding::default(),
             Some(sym.get("bar")),
         ));
 
@@ -346,6 +366,7 @@ mod tests {
             [],
             Some(sym.get("any")),
             empty_program(),
+            Binding::default(),
             Some(sym.get("bar"))
         ));
 
@@ -359,6 +380,7 @@ mod tests {
             [sym.get("x"), sym.get("y"), sym.get("z")],
             Some(sym.get("rest")),
             empty_program(),
+            Binding::default(),
             Some(sym.get("bar")),
         ));
 
@@ -441,6 +463,7 @@ mod tests {
             [],
             None,
             empty_program(),
+            Binding::default(),
             Some(sym.get("bar"))
         ));
 
@@ -454,6 +477,7 @@ mod tests {
             [sym.get("x")],
             None,
             empty_program(),
+            Binding::default(),
             Some(sym.get("bar"))
         ));
 
@@ -467,6 +491,7 @@ mod tests {
             [sym.get("x"), sym.get("y"), sym.get("z")],
             None,
             empty_program(),
+            Binding::default(),
             Some(sym.get("bar")),
         ));
 
@@ -482,6 +507,7 @@ mod tests {
             [],
             Some(sym.get("any")),
             empty_program(),
+            Binding::default(),
             Some(sym.get("bar"))
         ));
 
@@ -497,6 +523,7 @@ mod tests {
             [sym.get("x"), sym.get("y")],
             Some(sym.get("any")),
             empty_program(),
+            Binding::default(),
             Some(sym.get("bar")),
         ));
 
@@ -519,6 +546,7 @@ mod tests {
             params,
             None,
             empty_program(),
+            Binding::default(),
             Some(sym.get("bar"))
         ));
 
@@ -537,6 +565,7 @@ mod tests {
             params,
             Some(sym.get("rest")),
             empty_program(),
+            Binding::default(),
             Some(sym.get("bar"))
         ));
 
@@ -551,7 +580,13 @@ mod tests {
             .map(|i| sym.get(format!("x{i}")))
             .collect::<Vec<_>>();
 
-        let p = Procedure::lambda(params, None, empty_program(), Some(sym.get("bar")));
+        let p = Procedure::lambda(
+            params,
+            None,
+            empty_program(),
+            Binding::default(),
+            Some(sym.get("bar")),
+        );
 
         let err = err_or_fail!(p);
 
@@ -571,6 +606,7 @@ mod tests {
             params,
             Some(sym.get("rest")),
             empty_program(),
+            Binding::default(),
             Some(sym.get("bar")),
         );
 
@@ -591,7 +627,13 @@ mod tests {
             sym.get("x"),
         ];
 
-        let p = Procedure::lambda(params, None, empty_program(), Some(sym.get("bar")));
+        let p = Procedure::lambda(
+            params,
+            None,
+            empty_program(),
+            Binding::default(),
+            Some(sym.get("bar")),
+        );
 
         let err = err_or_fail!(p);
 

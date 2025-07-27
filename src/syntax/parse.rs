@@ -288,7 +288,7 @@ impl ParseMode {
             Self::Identifier { name, quoted } => {
                 Ok(Some(identifier_to_expr(&name, quoted, node_ctx, ns)))
             }
-            Self::List { form, seq } => form.try_into_expr(seq, node_ctx),
+            Self::List { form, seq } => form.try_into_expr(seq, node_ctx, ns),
             Self::Quote { inner, quoted } => into_datum(inner, node_ctx, quoted, ns),
             Self::StringLiteral(s) => Ok(Some(Expression::string(s, node_ctx))),
             Self::Vector(seq) => into_vector(seq, node_ctx),

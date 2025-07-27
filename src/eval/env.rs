@@ -10,7 +10,7 @@ pub(crate) struct Frame<'a> {
     pub(crate) sys: &'a System,
 }
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub(crate) struct Binding(RefCell<HashMap<Symbol, Value>>);
 
 impl Binding {
@@ -57,6 +57,10 @@ pub(crate) struct Namespace<'a>(pub(crate) Frame<'a>);
 impl Namespace<'_> {
     pub(crate) fn name_defined(&self, name: impl AsRef<str>) -> bool {
         self.0.scope.bound(name)
+    }
+
+    pub(crate) fn get_closure(&self) -> Rc<Binding> {
+        Rc::clone(&self.0.scope)
     }
 
     pub(crate) fn get_symbol(&mut self, name: impl AsRef<str>) -> Symbol {
