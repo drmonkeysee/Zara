@@ -9,7 +9,20 @@ use std::{
     rc::Rc,
 };
 
+#[derive(Clone, Debug)]
 struct Symbol(Rc<str>);
+
+impl Symbol {
+    fn new(name: impl AsRef<str>) -> Self {
+        Self(name.as_ref().into())
+    }
+}
+
+impl AsRef<str> for Symbol {
+    fn as_ref(&self) -> &str {
+        self.0.as_ref()
+    }
+}
 
 #[derive(Default)]
 pub(crate) struct SymbolTable(HashSet<Rc<str>>);
@@ -188,6 +201,29 @@ fn char_to_displayable(ch: char) -> DisplayableChar {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn symbol_as_ref() {
+        let s = Symbol::new("foo");
+
+        assert_eq!(s.as_ref(), "foo");
+    }
+
+    #[test]
+    fn symbol_clone() {
+        let a = Symbol::new("foo");
+        let b = a.clone();
+
+        assert!(Rc::ptr_eq(&a.0, &b.0));
+    }
+
+    #[test]
+    fn symbol_copy_by_ref() {
+        let a = Symbol::new("foo");
+        let b = Symbol::new(&a);
+
+        assert!(!Rc::ptr_eq(&a.0, &b.0));
+    }
 
     #[test]
     fn same_symbols() {
