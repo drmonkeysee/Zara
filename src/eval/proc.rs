@@ -139,7 +139,32 @@ impl Definition {
     fn apply(&self, args: &[Value], env: &mut Frame) -> EvalResult {
         match self {
             Self::Intrinsic(func) => func(args, env),
-            Self::Lambda { body, .. } => body.eval(env),
+            Self::Lambda {
+                body,
+                closure,
+                formals,
+            } => {
+                // TODO: tail-call optimization does not create a new frame
+                // TODO: this doesn't seem quite right, particularly for recursion
+                // is env.scope actually irrelevant with lexical scoping?
+                let mut call_frame = Frame {
+                    scope: Binding::new(Rc::clone(&closure)).into(),
+                    sym: env.sym,
+                    sys: env.sys,
+                };
+                let args_it = args.iter();
+                formals
+                    .iter()
+                    .zip(args_it.take(formals.len()))
+                    .for_each(|(var, val)| {
+                        if let Formal::Named(param) = var {
+                            call_frame.scope.bind(param.clone(), val.clone());
+                        } else {
+                            todo!("support variadic args");
+                        }
+                    });
+                body.eval(&mut call_frame)
+            }
         }
     }
 }
@@ -211,6 +236,7 @@ mod tests {
     use super::*;
     use crate::{
         lex::TokenKind,
+        number::Number,
         string::SymbolTable,
         syntax::{ExpressionTree, Parser, ParserOutput},
         testutil::{TestEnv, err_or_fail, extract_or_fail, make_tokenline, ok_or_fail},
@@ -699,5 +725,60 @@ mod tests {
 
         let v = ok_or_fail!(r);
         assert!(matches!(v, Value::String(s) if s.as_ref() == "bar"));
+    }
+
+    #[test]
+    fn apply_single_arity_lambda() {
+        let mut sym = SymbolTable::default();
+        let mut env = TestEnv::default();
+        let mut f = env.new_frame();
+        let params = [sym.get("x")];
+        let p = ok_or_fail!(Procedure::lambda(
+            params,
+            None,
+            program([TokenKind::Identifier("x".to_owned())]),
+            Rc::clone(&f.scope),
+            Some(sym.get("bar")),
+        ));
+        let args = [Value::Number(Number::real(5))];
+
+        let r = p.apply(&args, &mut f);
+
+        let v = ok_or_fail!(r);
+        assert!(matches!(v, Value::Number(_)));
+        assert_eq!(v.to_string(), "5");
+        assert!(!env.binding.bound("x"));
+    }
+
+    #[test]
+    fn apply_single_arity_lambda_with_closure() {
+        let mut sym = SymbolTable::default();
+        let mut env = TestEnv::default();
+        let global_func = Procedure::intrinsic(sym.get("stringify"), 1..1, |args, _| {
+            Ok(Value::string(format!("bar {}", args[0])))
+        });
+        env.binding
+            .bind(sym.get("stringify"), Value::Procedure(global_func.into()));
+        let mut f = env.new_frame();
+        let params = [sym.get("x")];
+        let p = ok_or_fail!(Procedure::lambda(
+            params,
+            None,
+            program([
+                TokenKind::ParenLeft,
+                TokenKind::Identifier("stringify".to_owned()),
+                TokenKind::Identifier("x".to_owned()),
+                TokenKind::ParenRight
+            ]),
+            Rc::clone(&f.scope),
+            Some(sym.get("bar")),
+        ));
+        let args = [Value::Number(Number::real(5))];
+
+        let r = p.apply(&args, &mut f);
+
+        let v = ok_or_fail!(r);
+        assert!(matches!(v, Value::String(s) if s.as_ref() == "bar 5"));
+        assert!(!env.binding.bound("x"));
     }
 }
