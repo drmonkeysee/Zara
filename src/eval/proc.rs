@@ -210,18 +210,23 @@ fn into_formals(
 mod tests {
     use super::*;
     use crate::{
+        lex::TokenKind,
         string::SymbolTable,
         syntax::{ExpressionTree, Parser, ParserOutput},
-        testutil::{TestEnv, err_or_fail, extract_or_fail, ok_or_fail},
+        testutil::{TestEnv, err_or_fail, extract_or_fail, make_tokenline, ok_or_fail},
     };
 
-    fn empty_program() -> Program {
+    fn program(tokens: impl IntoIterator<Item = TokenKind>) -> Program {
         let mut et = ExpressionTree::default();
         let mut env = TestEnv::default();
 
-        let r = et.parse([].into(), env.new_namespace());
+        let r = et.parse([make_tokenline(tokens)].into(), env.new_namespace());
 
         extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete)
+    }
+
+    fn empty_program() -> Program {
+        program([])
     }
 
     #[test]
@@ -648,7 +653,9 @@ mod tests {
         let p = Procedure::intrinsic(sym.get("foo"), 0..0, |_, _| Ok(Value::string("bar")));
         let mut env = TestEnv::default();
         let mut f = env.new_frame();
-        let r = p.apply(&[], &mut f);
+        let args = [];
+
+        let r = p.apply(&args, &mut f);
 
         let v = ok_or_fail!(r);
         assert!(matches!(v, Value::String(s) if s.as_ref() == "bar"));
@@ -671,5 +678,26 @@ mod tests {
 
         let v = ok_or_fail!(r);
         assert!(matches!(v, Value::String(s) if s.as_ref() == "bar baz"));
+    }
+
+    #[test]
+    fn apply_zero_arity_lambda() {
+        let mut sym = SymbolTable::default();
+        let mut env = TestEnv::default();
+        let mut f = env.new_frame();
+        let params = [];
+        let p = ok_or_fail!(Procedure::lambda(
+            params,
+            None,
+            program([TokenKind::String("bar".to_owned())]),
+            Rc::clone(&f.scope),
+            Some(sym.get("bar")),
+        ));
+        let args = [];
+
+        let r = p.apply(&args, &mut f);
+
+        let v = ok_or_fail!(r);
+        assert!(matches!(v, Value::String(s) if s.as_ref() == "bar"));
     }
 }
