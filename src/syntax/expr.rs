@@ -24,10 +24,10 @@ impl Program {
         Self(seq.into())
     }
 
-    pub(crate) fn eval(self, env: &mut Frame) -> EvalResult {
+    pub(crate) fn eval(&self, env: &mut Frame) -> EvalResult {
         Ok(self
             .0
-            .into_iter()
+            .iter()
             .map(|expr| expr.eval(env))
             .collect::<Result<Vec<Value>, Exception>>()?
             .pop()
@@ -93,7 +93,7 @@ impl Expression {
         }
     }
 
-    fn eval(self, env: &mut Frame) -> EvalResult {
+    fn eval(&self, env: &mut Frame) -> EvalResult {
         self.kind.eval(env)
     }
 }
@@ -126,26 +126,29 @@ impl ExpressionKind {
         TypeName(self)
     }
 
-    fn eval(self, env: &mut Frame) -> EvalResult {
+    fn eval(&self, env: &mut Frame) -> EvalResult {
         match self {
-            Self::Call { args, proc } => eval_call(*proc, args, env),
+            Self::Call { args, proc } => eval_call(proc, args, env),
             Self::Define { name, expr } => {
-                let val = expr.map_or(Ok(Value::Unspecified), |expr| expr.eval(env))?;
-                env.scope.bind(name, val);
+                let val = expr
+                    .as_ref()
+                    .map_or(Ok(Value::Unspecified), |expr| expr.eval(env))?;
+                env.scope.bind(name.clone(), val);
                 Ok(Value::Unspecified)
             }
             Self::If { test, con, alt } => {
                 if let Value::Boolean(false) = test.eval(env)? {
-                    alt.map_or(Ok(Value::Unspecified), |expr| expr.eval(env))
+                    alt.as_ref()
+                        .map_or(Ok(Value::Unspecified), |expr| expr.eval(env))
                 } else {
                     con.eval(env)
                 }
             }
-            Self::Literal(v) => Ok(v),
+            Self::Literal(v) => Ok(v.clone()),
             Self::Set { var, expr } => {
                 if env.scope.bound(&var) {
                     let val = expr.eval(env)?;
-                    env.scope.bind(var, val);
+                    env.scope.bind(var.clone(), val);
                     Ok(Value::Unspecified)
                 } else {
                     Err(Exception::signal(Condition::bind_error(&var)))
@@ -288,7 +291,7 @@ impl Display for TypeName<'_> {
     }
 }
 
-fn eval_call(proc: Expression, args: Box<[Expression]>, env: &mut Frame) -> EvalResult {
+fn eval_call(proc: &Expression, args: &[Expression], env: &mut Frame) -> EvalResult {
     let proc = proc.eval(env)?;
     let Value::Procedure(p) = proc else {
         return Err(Condition::proc_error(proc.as_typename()).into());
@@ -297,10 +300,9 @@ fn eval_call(proc: Expression, args: Box<[Expression]>, env: &mut Frame) -> Eval
         return Err(Condition::arity_error(p.name(), p.arity(), args.len()).into());
     }
     let args = args
-        .into_iter()
+        .iter()
         .map(|expr| expr.eval(env))
         .collect::<Result<Vec<Value>, Exception>>()?;
-    // TODO: do intrinsic calls need their own call frame?
     p.apply(&args, env)
 }
 

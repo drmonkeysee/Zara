@@ -139,7 +139,7 @@ impl Definition {
     fn apply(&self, args: &[Value], env: &mut Frame) -> EvalResult {
         match self {
             Self::Intrinsic(func) => func(args, env),
-            Self::Lambda { .. } => todo!("lambda apply"),
+            Self::Lambda { body, .. } => body.eval(env),
         }
     }
 }
