@@ -1,4 +1,5 @@
 use super::*;
+use crate::string::SymbolTable;
 
 mod display {
     use super::*;
@@ -75,7 +76,9 @@ mod display {
 
     #[test]
     fn symbol_typename() {
-        let v = Value::Symbol("foo".into());
+        let mut sym = SymbolTable::default();
+
+        let v = Value::Symbol(sym.get("foo"));
 
         assert_eq!(v.as_typename().to_string(), "symbol");
     }
@@ -131,9 +134,10 @@ mod display {
 
     #[test]
     fn vector_display() {
+        let mut sym = SymbolTable::default();
         let v = Value::vector([
             Value::string("foo"),
-            Value::Symbol("a".into()),
+            Value::Symbol(sym.get("a")),
             zlist![Value::Boolean(true), Value::Character('a')],
         ]);
 
@@ -149,8 +153,9 @@ mod display {
 
     #[test]
     fn procedure_typename() {
+        let mut sym = SymbolTable::default();
         let v = Value::Procedure(
-            Procedure::intrinsic("foo".into(), 0..0, |_, _| Ok(Value::Unspecified)).into(),
+            Procedure::intrinsic(sym.get("foo"), 0..0, |_, _| Ok(Value::Unspecified)).into(),
         );
 
         assert_eq!(v.as_typename().to_string(), "procedure");
@@ -158,8 +163,9 @@ mod display {
 
     #[test]
     fn procedure_display() {
+        let mut sym = SymbolTable::default();
         let v = Value::Procedure(
-            Procedure::intrinsic("foo".into(), 0..0, |_, _| Ok(Value::Unspecified)).into(),
+            Procedure::intrinsic(sym.get("foo"), 0..0, |_, _| Ok(Value::Unspecified)).into(),
         );
 
         assert_eq!(v.to_string(), "#<procedure foo>");
@@ -448,46 +454,52 @@ mod symbol {
 
     #[test]
     fn simple() {
-        let v = Value::Symbol("foo".into());
+        let mut sym = SymbolTable::default();
+        let v = Value::Symbol(sym.get("foo"));
 
         assert_eq!(v.to_string(), "foo");
     }
 
     #[test]
     fn empty() {
-        let v = Value::Symbol("".into());
+        let mut sym = SymbolTable::default();
+        let v = Value::Symbol(sym.get(""));
 
         assert_eq!(v.to_string(), "||");
     }
 
     #[test]
     fn whitespace() {
-        let v = Value::Symbol("foo bar".into());
+        let mut sym = SymbolTable::default();
+        let v = Value::Symbol(sym.get("foo bar"));
 
         assert_eq!(v.to_string(), "|foo bar|");
     }
 
     #[test]
     fn only_whitespace() {
-        let v = Value::Symbol("   ".into());
+        let mut sym = SymbolTable::default();
+        let v = Value::Symbol(sym.get("   "));
 
         assert_eq!(v.to_string(), "|   |");
     }
 
     #[test]
     fn alphanumeric() {
-        let v = Value::Symbol("abc123!@$^&".into());
+        let mut sym = SymbolTable::default();
+        let v = Value::Symbol(sym.get("abc123!@$^&"));
 
         assert_eq!(v.to_string(), "abc123!@$^&");
     }
 
     #[test]
     fn special_lex_chars() {
+        let mut sym = SymbolTable::default();
         let cases = ['(', ')', '\'', '`', '#', '"', ';', '.', ','];
         for case in cases {
             let s = format!("abc{case}123");
 
-            let v = Value::Symbol(s.clone().into());
+            let v = Value::Symbol(sym.get(&s));
 
             let expected = if case == '.' { s } else { format!("|{s}|") };
             assert_eq!(v.to_string(), expected);
@@ -496,18 +508,20 @@ mod symbol {
 
     #[test]
     fn starts_with_number() {
-        let v = Value::Symbol("123abc".into());
+        let mut sym = SymbolTable::default();
+        let v = Value::Symbol(sym.get("123abc"));
 
         assert_eq!(v.to_string(), "|123abc|");
     }
 
     #[test]
     fn starts_with_peculiar() {
+        let mut sym = SymbolTable::default();
         let cases = ['+', '-', '.'];
         for case in cases {
             let s = format!("{case}foo");
 
-            let v = Value::Symbol(s.clone().into());
+            let v = Value::Symbol(sym.get(&s));
 
             assert_eq!(v.to_string(), s);
         }
@@ -515,87 +529,99 @@ mod symbol {
 
     #[test]
     fn null() {
-        let v = Value::Symbol("\0".into());
+        let mut sym = SymbolTable::default();
+        let v = Value::Symbol(sym.get("\0"));
 
         assert_eq!(v.to_string(), "|\\x0;|");
     }
 
     #[test]
     fn pipe() {
-        let v = Value::Symbol("|".into());
+        let mut sym = SymbolTable::default();
+        let v = Value::Symbol(sym.get("|"));
 
         assert_eq!(v.to_string(), "|\\||");
     }
 
     #[test]
     fn one_digit_hex() {
-        let v = Value::Symbol("\x0c".into());
+        let mut sym = SymbolTable::default();
+        let v = Value::Symbol(sym.get("\x0c"));
 
         assert_eq!(v.to_string(), "|\\xc;|");
     }
 
     #[test]
     fn hex_uses_lowercase() {
-        let v = Value::Symbol("\x0C".into());
+        let mut sym = SymbolTable::default();
+        let v = Value::Symbol(sym.get("\x0C"));
 
         assert_eq!(v.to_string(), "|\\xc;|");
     }
 
     #[test]
     fn two_digit_hex() {
-        let v = Value::Symbol("\x1d".into());
+        let mut sym = SymbolTable::default();
+        let v = Value::Symbol(sym.get("\x1d"));
 
         assert_eq!(v.to_string(), "|\\x1d;|");
     }
 
     #[test]
     fn four_digit_hex() {
-        let v = Value::Symbol("\u{fff9}".into());
+        let mut sym = SymbolTable::default();
+        let v = Value::Symbol(sym.get("\u{fff9}"));
 
         assert_eq!(v.to_string(), "|\\xfff9;|");
     }
 
     #[test]
     fn special_purpose_plane() {
-        let v = Value::Symbol("\u{e0001}".into());
+        let mut sym = SymbolTable::default();
+        let v = Value::Symbol(sym.get("\u{e0001}"));
 
         assert_eq!(v.to_string(), "|\\xe0001;|");
     }
 
     #[test]
     fn private_use_plane() {
-        let v = Value::Symbol("\u{100001}".into());
+        let mut sym = SymbolTable::default();
+        let v = Value::Symbol(sym.get("\u{100001}"));
 
         assert_eq!(v.to_string(), "|\\x100001;|");
     }
 
     #[test]
     fn literal_endline() {
-        let v = Value::Symbol(
+        let mut sym = SymbolTable::default();
+        let v = Value::Symbol(sym.get(
             "foo
-bar"
-            .into(),
-        );
+bar",
+        ));
 
         assert_eq!(v.to_string(), "|foo\\nbar|");
     }
 
     #[test]
     fn escape_sequences() {
-        check_escape_sequence(&[
-            ("\x07", "\\a"),
-            ("\x08", "\\b"),
-            ("\t", "\\t"),
-            ("\n", "\\n"),
-            ("\r", "\\r"),
-            ("\"", "\""),
-            ("\\", "\\\\"),
-        ]);
+        let mut sym = SymbolTable::default();
+        check_escape_sequence(
+            &mut sym,
+            &[
+                ("\x07", "\\a"),
+                ("\x08", "\\b"),
+                ("\t", "\\t"),
+                ("\n", "\\n"),
+                ("\r", "\\r"),
+                ("\"", "\""),
+                ("\\", "\\\\"),
+            ],
+        );
     }
 
-    fn check_escape_sequence(cases: &[(&str, &str)]) {
+    fn check_escape_sequence(sym: &mut SymbolTable, cases: &[(&str, &str)]) {
         for &(inp, exp) in cases {
-            let v = Value::Symbol(inp.into());
+            let v = Value::Symbol(sym.get(inp));
 
             assert_eq!(v.to_string(), format!("|{exp}|"));
         }
@@ -608,28 +634,32 @@ bar"
 
     #[test]
     fn extended() {
-        let v = Value::Symbol("λ".into());
+        let mut sym = SymbolTable::default();
+        let v = Value::Symbol(sym.get("λ"));
 
         assert_eq!(v.to_string(), "|λ|");
     }
 
     #[test]
     fn emoji() {
-        let v = Value::Symbol("🦀".into());
+        let mut sym = SymbolTable::default();
+        let v = Value::Symbol(sym.get("🦀"));
 
         assert_eq!(v.to_string(), "|🦀|");
     }
 
     #[test]
     fn control_picture() {
-        let v = Value::Symbol("\u{2401}".into());
+        let mut sym = SymbolTable::default();
+        let v = Value::Symbol(sym.get("\u{2401}"));
 
         assert_eq!(v.to_string(), "|␁|");
     }
 
     #[test]
     fn replacement() {
-        let v = Value::Symbol("\u{fffd}".into());
+        let mut sym = SymbolTable::default();
+        let v = Value::Symbol(sym.get("\u{fffd}"));
 
         assert_eq!(v.to_string(), "|�|");
     }
@@ -834,9 +864,10 @@ mod list {
 
     #[test]
     fn three() {
+        let mut sym = SymbolTable::default();
         let lst = zlist![
             Value::real(5),
-            Value::Symbol("a".into()),
+            Value::Symbol(sym.get("a")),
             Value::Boolean(true)
         ];
 
@@ -845,9 +876,10 @@ mod list {
 
     #[test]
     fn nested() {
+        let mut sym = SymbolTable::default();
         let lst = zlist![
             Value::real(5),
-            zlist![Value::Symbol("a".into()), Value::Boolean(true)],
+            zlist![Value::Symbol(sym.get("a")), Value::Boolean(true)],
         ];
 
         assert_eq!(lst.to_string(), "(5 (a #t))");
@@ -862,9 +894,10 @@ mod list {
 
     #[test]
     fn ctor_vec() {
+        let mut sym = SymbolTable::default();
         let lst = Value::list(vec![
             Value::real(5),
-            Value::Symbol("a".into()),
+            Value::Symbol(sym.get("a")),
             Value::Boolean(true),
         ]);
 
@@ -873,9 +906,10 @@ mod list {
 
     #[test]
     fn ctor_slice() {
+        let mut sym = SymbolTable::default();
         let lst = Value::list([
             Value::real(5),
-            Value::Symbol("a".into()),
+            Value::Symbol(sym.get("a")),
             Value::Boolean(true),
         ]);
 
@@ -899,9 +933,10 @@ mod list {
 
     #[test]
     fn improper_ctor_vec() {
+        let mut sym = SymbolTable::default();
         let lst = Value::improper_list(vec![
             Value::real(5),
-            Value::Symbol("a".into()),
+            Value::Symbol(sym.get("a")),
             Value::Boolean(true),
         ]);
 
@@ -910,9 +945,10 @@ mod list {
 
     #[test]
     fn improper_ctor_slice() {
+        let mut sym = SymbolTable::default();
         let lst = Value::improper_list([
             Value::real(5),
-            Value::Symbol("a".into()),
+            Value::Symbol(sym.get("a")),
             Value::Boolean(true),
         ]);
 
@@ -926,14 +962,12 @@ mod cloning {
 
     #[test]
     fn clone_with_underlying_cloneable() {
-        let v = Value::Symbol("foo".into());
+        let mut sym = SymbolTable::default();
+        let v = Value::Symbol(sym.get("foo"));
 
         let c = v.clone();
 
-        assert!(Rc::ptr_eq(
-            &extract_or_fail!(v, Value::Symbol),
-            &extract_or_fail!(c, Value::Symbol)
-        ));
+        assert!(extract_or_fail!(v, Value::Symbol).is(&extract_or_fail!(c, Value::Symbol)));
     }
 
     #[test]
@@ -1004,8 +1038,9 @@ mod equivalence {
 
     #[test]
     fn diff_types_never_the_same() {
+        let mut sym = SymbolTable::default();
         let cases = [
-            (Value::Symbol("foo".into()), Value::string("foo")),
+            (Value::Symbol(sym.get("foo")), Value::string("foo")),
             (Value::vector([]), Value::ByteVector([].into())),
         ];
         for (a, b) in cases {
@@ -1016,8 +1051,9 @@ mod equivalence {
     #[test]
     fn same_string_ptr_in_string_and_symbol_not_same() {
         let s = "foo".into();
+        let mut sym = SymbolTable::default();
         let a = Value::string(Rc::clone(&s));
-        let b = Value::Symbol(Rc::clone(&s));
+        let b = Value::Symbol(sym.get(s));
 
         assert!(!a.is(&b));
     }
@@ -1031,25 +1067,32 @@ mod equivalence {
 
         assert!(a.is(&b));
 
-        let a = Value::Symbol(Rc::clone(&s));
-        let b = Value::Symbol(Rc::clone(&s));
+        let mut sym = SymbolTable::default();
+        let a = Value::Symbol(sym.get(&s));
+        let b = Value::Symbol(sym.get(&s));
 
         assert!(a.is(&b));
     }
 
     #[test]
-    fn different_pointers_are_not_the_same() {
+    fn different_string_pointers_are_not_the_same() {
         let s = "foo";
 
         let a = Value::string(s);
         let b = Value::string(s);
 
         assert!(!a.is(&b));
+    }
 
-        let a = Value::Symbol(s.into());
-        let b = Value::Symbol(s.into());
+    #[test]
+    fn symbols_must_be_interned() {
+        let s = "foo";
+        let mut sym = SymbolTable::default();
 
-        assert!(!a.is(&b));
+        let a = Value::Symbol(sym.get(s));
+        let b = Value::Symbol(sym.get(s));
+
+        assert!(a.is(&b));
     }
 
     #[test]
@@ -1165,22 +1208,11 @@ mod equivalence {
         assert!(a == b);
     }
 
-    // NOTE: symbols are assumed to be interned and won't ever fall through all
-    // the way to equality check.
-    #[test]
-    fn symbols_are_not_equal() {
-        let a = Value::Symbol("foo".into());
-        let b = Value::Symbol("foo".into());
-
-        assert!(!a.is(&b));
-        assert!(!a.is_eqv(&b));
-        assert!(a != b);
-    }
-
     #[test]
     fn strings_do_not_equal_symbols() {
+        let mut sym = SymbolTable::default();
         let a = Value::string("foo");
-        let b = Value::Symbol("foo".into());
+        let b = Value::Symbol(sym.get("foo"));
 
         assert!(!a.is(&b));
         assert!(!a.is_eqv(&b));

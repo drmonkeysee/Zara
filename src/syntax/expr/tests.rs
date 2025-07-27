@@ -1,13 +1,17 @@
 use super::*;
-use crate::testutil::{TestEnv, make_textline};
+use crate::{
+    string::SymbolTable,
+    testutil::{TestEnv, make_textline},
+};
 
 mod display {
     use super::*;
 
     #[test]
     fn call_typename() {
+        let mut sym = SymbolTable::default();
         let proc = Expression::variable(
-            "foo".into(),
+            sym.get("foo"),
             ExprCtx {
                 span: 0..5,
                 txt: make_textline().into(),
@@ -23,8 +27,9 @@ mod display {
 
     #[test]
     fn define_typename() {
+        let mut sym = SymbolTable::default();
         let expr = ExpressionKind::Define {
-            name: "foo".into(),
+            name: sym.get("foo"),
             expr: Some(
                 Expression::string(
                     "bar",
@@ -66,8 +71,9 @@ mod display {
 
     #[test]
     fn set_typename() {
+        let mut sym = SymbolTable::default();
         let expr = ExpressionKind::Set {
-            var: "foo".into(),
+            var: sym.get("foo"),
             expr: Expression::string(
                 "bar",
                 ExprCtx {
@@ -83,7 +89,8 @@ mod display {
 
     #[test]
     fn variable_typename() {
-        let expr = ExpressionKind::Variable("foo".into());
+        let mut sym = SymbolTable::default();
+        let expr = ExpressionKind::Variable(sym.get("foo"));
 
         assert_eq!(expr.as_typename().to_string(), "variable");
     }
@@ -121,15 +128,15 @@ mod eval {
 
     #[test]
     fn variable() {
+        let mut env = TestEnv::default();
         let expr = Expression::variable(
-            "x".into(),
+            env.symbols.get("x"),
             ExprCtx {
                 span: 0..6,
                 txt: make_textline().into(),
             },
         );
-        let mut env = TestEnv::default();
-        env.binding.bind("x".into(), Value::string("foo"));
+        env.binding.bind(env.symbols.get("x"), Value::string("foo"));
         let mut f = env.new_frame();
 
         let r = expr.eval(&mut f);
@@ -140,14 +147,14 @@ mod eval {
 
     #[test]
     fn missing_variable() {
+        let mut env = TestEnv::default();
         let expr = Expression::variable(
-            "x".into(),
+            env.symbols.get("x"),
             ExprCtx {
                 span: 0..6,
                 txt: make_textline().into(),
             },
         );
-        let mut env = TestEnv::default();
         let mut f = env.new_frame();
 
         let r = expr.eval(&mut f);
@@ -203,6 +210,7 @@ mod eval {
         #[test]
         fn multiple_procedures() {
             let txt = make_textline().into();
+            let mut env = TestEnv::default();
             let prg = Program::new([
                 ExprCtx {
                     span: 0..5,
@@ -210,7 +218,7 @@ mod eval {
                 }
                 .into_expr(ExpressionKind::Call {
                     proc: Expression::variable(
-                        "foo".into(),
+                        env.symbols.get("foo"),
                         ExprCtx {
                             span: 1..4,
                             txt: Rc::clone(&txt),
@@ -225,7 +233,7 @@ mod eval {
                 }
                 .into_expr(ExpressionKind::Call {
                     proc: Expression::variable(
-                        "baz".into(),
+                        env.symbols.get("baz"),
                         ExprCtx {
                             span: 7..10,
                             txt: Rc::clone(&txt),
@@ -235,22 +243,24 @@ mod eval {
                     args: [].into(),
                 }),
             ]);
-            let mut env = TestEnv::default();
             env.binding.bind(
-                "foo".into(),
+                env.symbols.get("foo"),
                 Value::Procedure(
-                    Procedure::intrinsic("foo".into(), 0..0, |_, f| {
-                        f.scope.bind("foo_called".into(), Value::Boolean(true));
-                        Ok(Value::Symbol("bar".into()))
+                    Procedure::intrinsic(env.symbols.get("foo"), 0..0, |_, f| {
+                        let mut sym = SymbolTable::default();
+                        f.scope.bind(sym.get("foo_called"), Value::Boolean(true));
+                        Ok(Value::Symbol(sym.get("bar")))
                     })
                     .into(),
                 ),
             );
             env.binding.bind(
-                "baz".into(),
+                env.symbols.get("baz"),
                 Value::Procedure(
-                    Procedure::intrinsic("baz".into(), 0..0, |_, _| Ok(Value::Character('a')))
-                        .into(),
+                    Procedure::intrinsic(env.symbols.get("baz"), 0..0, |_, _| {
+                        Ok(Value::Character('a'))
+                    })
+                    .into(),
                 ),
             );
             let mut f = env.new_frame();
@@ -265,6 +275,7 @@ mod eval {
         #[test]
         fn exception_interrupts_execution() {
             let txt = make_textline().into();
+            let mut env = TestEnv::default();
             let prg = Program::new([
                 ExprCtx {
                     span: 0..18,
@@ -272,7 +283,7 @@ mod eval {
                 }
                 .into_expr(ExpressionKind::Call {
                     proc: Expression::variable(
-                        "foo".into(),
+                        env.symbols.get("foo"),
                         ExprCtx {
                             span: 1..4,
                             txt: Rc::clone(&txt),
@@ -287,7 +298,7 @@ mod eval {
                 }
                 .into_expr(ExpressionKind::Call {
                     proc: Expression::variable(
-                        "fail".into(),
+                        env.symbols.get("fail"),
                         ExprCtx {
                             span: 7..11,
                             txt: Rc::clone(&txt),
@@ -302,7 +313,7 @@ mod eval {
                 }
                 .into_expr(ExpressionKind::Call {
                     proc: Expression::variable(
-                        "baz".into(),
+                        env.symbols.get("baz"),
                         ExprCtx {
                             span: 14..17,
                             txt: Rc::clone(&txt),
@@ -312,31 +323,32 @@ mod eval {
                     args: [].into(),
                 }),
             ]);
-            let mut env = TestEnv::default();
             env.binding.bind(
-                "foo".into(),
+                env.symbols.get("foo"),
                 Value::Procedure(
-                    Procedure::intrinsic("foo".into(), 0..0, |_, f| {
-                        f.scope.bind("foo_called".into(), Value::Boolean(true));
-                        Ok(Value::Symbol("bar".into()))
+                    Procedure::intrinsic(env.symbols.get("foo"), 0..0, |_, f| {
+                        let mut sym = SymbolTable::default();
+                        f.scope.bind(sym.get("foo_called"), Value::Boolean(true));
+                        Ok(Value::Symbol(sym.get("bar")))
                     })
                     .into(),
                 ),
             );
             env.binding.bind(
-                "fail".into(),
+                env.symbols.get("fail"),
                 Value::Procedure(
-                    Procedure::intrinsic("baz".into(), 0..0, |_, _| {
+                    Procedure::intrinsic(env.symbols.get("baz"), 0..0, |_, _| {
                         Err(Condition::system_error("oh no").into())
                     })
                     .into(),
                 ),
             );
             env.binding.bind(
-                "baz".into(),
+                env.symbols.get("baz"),
                 Value::Procedure(
-                    Procedure::intrinsic("baz".into(), 0..0, |_, f| {
-                        f.scope.bind("baz_called".into(), Value::Boolean(true));
+                    Procedure::intrinsic(env.symbols.get("baz"), 0..0, |_, f| {
+                        let mut sym = SymbolTable::default();
+                        f.scope.bind(sym.get("baz_called"), Value::Boolean(true));
                         Ok(Value::Character('a'))
                     })
                     .into(),
@@ -359,13 +371,14 @@ mod eval {
         #[test]
         fn call_no_args() {
             let txt = make_textline().into();
+            let mut env = TestEnv::default();
             let expr = ExprCtx {
                 span: 0..5,
                 txt: Rc::clone(&txt),
             }
             .into_expr(ExpressionKind::Call {
                 proc: Expression::variable(
-                    "foo".into(),
+                    env.symbols.get("foo"),
                     ExprCtx {
                         span: 1..4,
                         txt: Rc::clone(&txt),
@@ -374,12 +387,11 @@ mod eval {
                 .into(),
                 args: [].into(),
             });
-            let mut env = TestEnv::default();
             env.binding.bind(
-                "foo".into(),
+                env.symbols.get("foo"),
                 Value::Procedure(
-                    Procedure::intrinsic("foo".into(), 0..0, |_, _| {
-                        Ok(Value::Symbol("bar".into()))
+                    Procedure::intrinsic(env.symbols.get("foo"), 0..0, |_, _| {
+                        Ok(Value::String("bar".into()))
                     })
                     .into(),
                 ),
@@ -389,19 +401,20 @@ mod eval {
             let r = expr.eval(&mut f);
 
             let v = ok_or_fail!(r);
-            assert!(matches!(v, Value::Symbol(s) if s.as_ref() == "bar"));
+            assert!(matches!(v, Value::String(s) if s.as_ref() == "bar"));
         }
 
         #[test]
         fn call_with_args() {
             let txt = make_textline().into();
+            let mut env = TestEnv::default();
             let expr = ExprCtx {
                 span: 0..18,
                 txt: Rc::clone(&txt),
             }
             .into_expr(ExpressionKind::Call {
                 proc: Expression::variable(
-                    "foo".into(),
+                    env.symbols.get("foo"),
                     ExprCtx {
                         span: 1..4,
                         txt: Rc::clone(&txt),
@@ -433,11 +446,10 @@ mod eval {
                 ]
                 .into(),
             });
-            let mut env = TestEnv::default();
             env.binding.bind(
-                "foo".into(),
+                env.symbols.get("foo"),
                 Value::Procedure(
-                    Procedure::intrinsic("foo".into(), 3..3, |args, _| {
+                    Procedure::intrinsic(env.symbols.get("foo"), 3..3, |args, _| {
                         let s = args
                             .iter()
                             .map(|v| {
@@ -462,13 +474,14 @@ mod eval {
         #[test]
         fn call_unbound_procedure() {
             let txt = make_textline().into();
+            let mut env = TestEnv::default();
             let expr = ExprCtx {
                 span: 0..5,
                 txt: Rc::clone(&txt),
             }
             .into_expr(ExpressionKind::Call {
                 proc: Expression::variable(
-                    "foo".into(),
+                    env.symbols.get("foo"),
                     ExprCtx {
                         span: 1..4,
                         txt: Rc::clone(&txt),
@@ -477,7 +490,6 @@ mod eval {
                 .into(),
                 args: [].into(),
             });
-            let mut env = TestEnv::default();
             let mut f = env.new_frame();
 
             let r = expr.eval(&mut f);
@@ -489,13 +501,14 @@ mod eval {
         #[test]
         fn call_not_a_procedure() {
             let txt = make_textline().into();
+            let mut env = TestEnv::default();
             let expr = ExprCtx {
                 span: 0..5,
                 txt: Rc::clone(&txt),
             }
             .into_expr(ExpressionKind::Call {
                 proc: Expression::variable(
-                    "foo".into(),
+                    env.symbols.get("foo"),
                     ExprCtx {
                         span: 1..4,
                         txt: Rc::clone(&txt),
@@ -504,8 +517,8 @@ mod eval {
                 .into(),
                 args: [].into(),
             });
-            let mut env = TestEnv::default();
-            env.binding.bind("foo".into(), Value::string("foo"));
+            env.binding
+                .bind(env.symbols.get("foo"), Value::string("foo"));
             let mut f = env.new_frame();
 
             let r = expr.eval(&mut f);
@@ -520,13 +533,14 @@ mod eval {
         #[test]
         fn call_too_many_args() {
             let txt = make_textline().into();
+            let mut env = TestEnv::default();
             let expr = ExprCtx {
                 span: 0..7,
                 txt: Rc::clone(&txt),
             }
             .into_expr(ExpressionKind::Call {
                 proc: Expression::variable(
-                    "foo".into(),
+                    env.symbols.get("foo"),
                     ExprCtx {
                         span: 1..4,
                         txt: Rc::clone(&txt),
@@ -540,12 +554,11 @@ mod eval {
                 .into_expr(ExpressionKind::Literal(Value::real(5)))]
                 .into(),
             });
-            let mut env = TestEnv::default();
             env.binding.bind(
-                "foo".into(),
+                env.symbols.get("foo"),
                 Value::Procedure(
-                    Procedure::intrinsic("foo".into(), 0..0, |_, _| {
-                        Ok(Value::Symbol("bar".into()))
+                    Procedure::intrinsic(env.symbols.get("foo"), 0..0, |_, _| {
+                        Ok(Value::String("bar".into()))
                     })
                     .into(),
                 ),
@@ -564,13 +577,14 @@ mod eval {
         #[test]
         fn call_too_few_args() {
             let txt = make_textline().into();
+            let mut env = TestEnv::default();
             let expr = ExprCtx {
                 span: 0..7,
                 txt: Rc::clone(&txt),
             }
             .into_expr(ExpressionKind::Call {
                 proc: Expression::variable(
-                    "foo".into(),
+                    env.symbols.get("foo"),
                     ExprCtx {
                         span: 1..4,
                         txt: Rc::clone(&txt),
@@ -579,12 +593,11 @@ mod eval {
                 .into(),
                 args: [].into(),
             });
-            let mut env = TestEnv::default();
             env.binding.bind(
-                "foo".into(),
+                env.symbols.get("foo"),
                 Value::Procedure(
-                    Procedure::intrinsic("foo".into(), 1..1, |_, _| {
-                        Ok(Value::Symbol("bar".into()))
+                    Procedure::intrinsic(env.symbols.get("foo"), 1..1, |_, _| {
+                        Ok(Value::String("bar".into()))
                     })
                     .into(),
                 ),
@@ -603,13 +616,14 @@ mod eval {
         #[test]
         fn call_too_few_args_variable_arity() {
             let txt = make_textline().into();
+            let mut env = TestEnv::default();
             let expr = ExprCtx {
                 span: 0..7,
                 txt: Rc::clone(&txt),
             }
             .into_expr(ExpressionKind::Call {
                 proc: Expression::variable(
-                    "foo".into(),
+                    env.symbols.get("foo"),
                     ExprCtx {
                         span: 1..4,
                         txt: Rc::clone(&txt),
@@ -618,12 +632,11 @@ mod eval {
                 .into(),
                 args: [].into(),
             });
-            let mut env = TestEnv::default();
             env.binding.bind(
-                "foo".into(),
+                env.symbols.get("foo"),
                 Value::Procedure(
-                    Procedure::intrinsic("foo".into(), 1..2, |_, _| {
-                        Ok(Value::Symbol("bar".into()))
+                    Procedure::intrinsic(env.symbols.get("foo"), 1..2, |_, _| {
+                        Ok(Value::String("bar".into()))
                     })
                     .into(),
                 ),
@@ -642,13 +655,14 @@ mod eval {
         #[test]
         fn call_args_eval_failure() {
             let txt = make_textline().into();
+            let mut env = TestEnv::default();
             let expr = ExprCtx {
                 span: 0..13,
                 txt: Rc::clone(&txt),
             }
             .into_expr(ExpressionKind::Call {
                 proc: Expression::variable(
-                    "foo".into(),
+                    env.symbols.get("foo"),
                     ExprCtx {
                         span: 1..4,
                         txt: Rc::clone(&txt),
@@ -662,7 +676,7 @@ mod eval {
                     }
                     .into_expr(ExpressionKind::Literal(Value::real(5))),
                     Expression::variable(
-                        "x".into(),
+                        env.symbols.get("x"),
                         ExprCtx {
                             span: 7..8,
                             txt: Rc::clone(&txt),
@@ -670,7 +684,7 @@ mod eval {
                     )
                     .into(),
                     Expression::variable(
-                        "y".into(),
+                        env.symbols.get("y"),
                         ExprCtx {
                             span: 9..10,
                             txt: Rc::clone(&txt),
@@ -678,7 +692,7 @@ mod eval {
                     )
                     .into(),
                     Expression::variable(
-                        "z".into(),
+                        env.symbols.get("z"),
                         ExprCtx {
                             span: 11..12,
                             txt: Rc::clone(&txt),
@@ -688,18 +702,19 @@ mod eval {
                 ]
                 .into(),
             });
-            let mut env = TestEnv::default();
             env.binding.bind(
-                "foo".into(),
+                env.symbols.get("foo"),
                 Value::Procedure(
-                    Procedure::intrinsic("foo".into(), 4..4, |_, f| {
-                        f.scope.bind("foo_called".into(), Value::Boolean(true));
-                        Ok(Value::Symbol("bar".into()))
+                    Procedure::intrinsic(env.symbols.get("foo"), 4..4, |_, f| {
+                        let mut sym = SymbolTable::default();
+                        f.scope.bind(sym.get("foo_called"), Value::Boolean(true));
+                        Ok(Value::Symbol(sym.get("bar")))
                     })
                     .into(),
                 ),
             );
-            env.binding.bind("y".into(), Value::string("beef"));
+            env.binding
+                .bind(env.symbols.get("y"), Value::string("beef"));
             let mut f = env.new_frame();
 
             let r = expr.eval(&mut f);
@@ -713,12 +728,13 @@ mod eval {
         #[test]
         fn define_with_expr() {
             let txt = make_textline().into();
+            let mut env = TestEnv::default();
             let expr = ExprCtx {
                 span: 0..10,
                 txt: Rc::clone(&txt),
             }
             .into_expr(ExpressionKind::Define {
-                name: "foo".into(),
+                name: env.symbols.get("foo"),
                 expr: Some(
                     Expression::string(
                         "one",
@@ -730,7 +746,6 @@ mod eval {
                     .into(),
                 ),
             });
-            let mut env = TestEnv::default();
             let mut f = env.new_frame();
 
             let r = expr.eval(&mut f);
@@ -743,15 +758,15 @@ mod eval {
         #[test]
         fn define_no_expr() {
             let txt = make_textline().into();
+            let mut env = TestEnv::default();
             let expr = ExprCtx {
                 span: 0..10,
                 txt: Rc::clone(&txt),
             }
             .into_expr(ExpressionKind::Define {
-                name: "foo".into(),
+                name: env.symbols.get("foo"),
                 expr: None,
             });
-            let mut env = TestEnv::default();
             let mut f = env.new_frame();
 
             let r = expr.eval(&mut f);
@@ -764,15 +779,16 @@ mod eval {
         #[test]
         fn define_eval_failure() {
             let txt = make_textline().into();
+            let mut env = TestEnv::default();
             let expr = ExprCtx {
                 span: 0..7,
                 txt: Rc::clone(&txt),
             }
             .into_expr(ExpressionKind::Define {
-                name: "foo".into(),
+                name: env.symbols.get("foo"),
                 expr: Some(
                     Expression::variable(
-                        "x".into(),
+                        env.symbols.get("x"),
                         ExprCtx {
                             span: 5..6,
                             txt: Rc::clone(&txt),
@@ -781,7 +797,6 @@ mod eval {
                     .into(),
                 ),
             });
-            let mut env = TestEnv::default();
             let mut f = env.new_frame();
 
             let r = expr.eval(&mut f);
@@ -794,12 +809,13 @@ mod eval {
         #[test]
         fn set_with_expr() {
             let txt = make_textline().into();
+            let mut env = TestEnv::default();
             let expr = ExprCtx {
                 span: 0..10,
                 txt: Rc::clone(&txt),
             }
             .into_expr(ExpressionKind::Set {
-                var: "foo".into(),
+                var: env.symbols.get("foo"),
                 expr: Expression::string(
                     "one",
                     ExprCtx {
@@ -809,8 +825,7 @@ mod eval {
                 )
                 .into(),
             });
-            let mut env = TestEnv::default();
-            env.binding.bind("foo".into(), Value::Unspecified);
+            env.binding.bind(env.symbols.get("foo"), Value::Unspecified);
             let mut f = env.new_frame();
 
             let r = expr.eval(&mut f);
@@ -823,14 +838,15 @@ mod eval {
         #[test]
         fn set_eval_failure() {
             let txt = make_textline().into();
+            let mut env = TestEnv::default();
             let expr = ExprCtx {
                 span: 0..7,
                 txt: Rc::clone(&txt),
             }
             .into_expr(ExpressionKind::Set {
-                var: "foo".into(),
+                var: env.symbols.get("foo"),
                 expr: Expression::variable(
-                    "x".into(),
+                    env.symbols.get("x"),
                     ExprCtx {
                         span: 5..6,
                         txt: Rc::clone(&txt),
@@ -838,8 +854,7 @@ mod eval {
                 )
                 .into(),
             });
-            let mut env = TestEnv::default();
-            env.binding.bind("foo".into(), Value::Unspecified);
+            env.binding.bind(env.symbols.get("foo"), Value::Unspecified);
             let mut f = env.new_frame();
 
             let r = expr.eval(&mut f);
@@ -852,14 +867,15 @@ mod eval {
         #[test]
         fn set_eval_no_binding() {
             let txt = make_textline().into();
+            let mut env = TestEnv::default();
             let expr = ExprCtx {
                 span: 0..7,
                 txt: Rc::clone(&txt),
             }
             .into_expr(ExpressionKind::Set {
-                var: "foo".into(),
+                var: env.symbols.get("foo"),
                 expr: Expression::variable(
-                    "x".into(),
+                    env.symbols.get("x"),
                     ExprCtx {
                         span: 5..6,
                         txt: Rc::clone(&txt),
@@ -867,7 +883,6 @@ mod eval {
                 )
                 .into(),
             });
-            let mut env = TestEnv::default();
             let mut f = env.new_frame();
 
             let r = expr.eval(&mut f);
@@ -880,6 +895,7 @@ mod eval {
         #[test]
         fn if_consequent() {
             let txt = make_textline().into();
+            let mut env = TestEnv::default();
             let expr = ExprCtx {
                 span: 0..13,
                 txt: Rc::clone(&txt),
@@ -892,7 +908,7 @@ mod eval {
                 .into_expr(ExpressionKind::Literal(Value::Boolean(true)))
                 .into(),
                 con: Expression::symbol(
-                    "a".into(),
+                    env.symbols.get("a"),
                     ExprCtx {
                         span: 7..9,
                         txt: Rc::clone(&txt),
@@ -901,7 +917,7 @@ mod eval {
                 .into(),
                 alt: Some(
                     Expression::symbol(
-                        "b".into(),
+                        env.symbols.get("b"),
                         ExprCtx {
                             span: 10..12,
                             txt: Rc::clone(&txt),
@@ -910,7 +926,6 @@ mod eval {
                     .into(),
                 ),
             });
-            let mut env = TestEnv::default();
             let mut f = env.new_frame();
 
             let r = expr.eval(&mut f);
@@ -922,6 +937,7 @@ mod eval {
         #[test]
         fn if_alternate() {
             let txt = make_textline().into();
+            let mut env = TestEnv::default();
             let expr = ExprCtx {
                 span: 0..13,
                 txt: Rc::clone(&txt),
@@ -934,7 +950,7 @@ mod eval {
                 .into_expr(ExpressionKind::Literal(Value::Boolean(false)))
                 .into(),
                 con: Expression::symbol(
-                    "a".into(),
+                    env.symbols.get("a"),
                     ExprCtx {
                         span: 7..9,
                         txt: Rc::clone(&txt),
@@ -943,7 +959,7 @@ mod eval {
                 .into(),
                 alt: Some(
                     Expression::symbol(
-                        "b".into(),
+                        env.symbols.get("b"),
                         ExprCtx {
                             span: 10..12,
                             txt: Rc::clone(&txt),
@@ -952,7 +968,6 @@ mod eval {
                     .into(),
                 ),
             });
-            let mut env = TestEnv::default();
             let mut f = env.new_frame();
 
             let r = expr.eval(&mut f);
@@ -964,6 +979,7 @@ mod eval {
         #[test]
         fn if_no_alternate() {
             let txt = make_textline().into();
+            let mut env = TestEnv::default();
             let expr = ExprCtx {
                 span: 0..10,
                 txt: Rc::clone(&txt),
@@ -976,7 +992,7 @@ mod eval {
                 .into_expr(ExpressionKind::Literal(Value::Boolean(false)))
                 .into(),
                 con: Expression::symbol(
-                    "a".into(),
+                    env.symbols.get("a"),
                     ExprCtx {
                         span: 7..9,
                         txt: Rc::clone(&txt),
@@ -985,7 +1001,6 @@ mod eval {
                 .into(),
                 alt: None,
             });
-            let mut env = TestEnv::default();
             let mut f = env.new_frame();
 
             let r = expr.eval(&mut f);
@@ -997,6 +1012,7 @@ mod eval {
         #[test]
         fn if_eval_failure() {
             let txt = make_textline().into();
+            let mut env = TestEnv::default();
             let expr = ExprCtx {
                 span: 0..10,
                 txt: Rc::clone(&txt),
@@ -1009,7 +1025,7 @@ mod eval {
                 .into_expr(ExpressionKind::Literal(Value::Boolean(true)))
                 .into(),
                 con: Expression::variable(
-                    "x".into(),
+                    env.symbols.get("x"),
                     ExprCtx {
                         span: 7..9,
                         txt: Rc::clone(&txt),
@@ -1018,7 +1034,6 @@ mod eval {
                 .into(),
                 alt: None,
             });
-            let mut env = TestEnv::default();
             let mut f = env.new_frame();
 
             let r = expr.eval(&mut f);
@@ -1030,6 +1045,7 @@ mod eval {
         #[test]
         fn if_invalid_expr_not_evaluated() {
             let txt = make_textline().into();
+            let mut env = TestEnv::default();
             let expr = ExprCtx {
                 span: 0..13,
                 txt: Rc::clone(&txt),
@@ -1042,7 +1058,7 @@ mod eval {
                 .into_expr(ExpressionKind::Literal(Value::Boolean(false)))
                 .into(),
                 con: Expression::variable(
-                    "x".into(),
+                    env.symbols.get("x"),
                     ExprCtx {
                         span: 7..9,
                         txt: Rc::clone(&txt),
@@ -1051,7 +1067,7 @@ mod eval {
                 .into(),
                 alt: Some(
                     Expression::symbol(
-                        "b".into(),
+                        env.symbols.get("b"),
                         ExprCtx {
                             span: 10..12,
                             txt: Rc::clone(&txt),
@@ -1060,7 +1076,6 @@ mod eval {
                     .into(),
                 ),
             });
-            let mut env = TestEnv::default();
             let mut f = env.new_frame();
 
             let r = expr.eval(&mut f);
@@ -1076,12 +1091,13 @@ mod error {
 
     #[test]
     fn display_invalid_bytevector_item() {
+        let mut sym = SymbolTable::default();
         let err = ExprCtx {
             span: 0..5,
             txt: make_textline().into(),
         }
         .into_error(ExpressionErrorKind::ByteVectorInvalidItem(
-            ExpressionKind::Variable("foobar".into()),
+            ExpressionKind::Variable(sym.get("foobar")),
         ));
 
         assert_eq!(err.to_string(), "expected byte literal, got: variable");
@@ -1138,12 +1154,13 @@ mod error {
 
     #[test]
     fn display_invalid_vector_item() {
+        let mut sym = SymbolTable::default();
         let err = ExprCtx {
             span: 0..5,
             txt: make_textline().into(),
         }
         .into_error(ExpressionErrorKind::VectorInvalidItem(
-            ExpressionKind::Variable("foobar".into()),
+            ExpressionKind::Variable(sym.get("foobar")),
         ));
 
         assert_eq!(err.to_string(), "unexpected vector item type: variable");
@@ -1174,13 +1191,14 @@ mod error {
     #[test]
     fn display_invalid_datum() {
         let txt = make_textline().into();
+        let mut sym = SymbolTable::default();
         let err = ExprCtx {
             span: 0..5,
             txt: Rc::clone(&txt),
         }
         .into_error(ExpressionErrorKind::DatumInvalid(ExpressionKind::Call {
             proc: Expression::variable(
-                "foo".into(),
+                sym.get("foo"),
                 ExprCtx {
                     span: 0..1,
                     txt: Rc::clone(&txt),

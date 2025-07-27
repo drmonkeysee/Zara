@@ -745,8 +745,8 @@ mod tests {
 
     #[test]
     fn all_symbols_single() {
-        let args = [Value::Symbol("a".into())];
         let mut env = TestEnv::default();
+        let args = [Value::Symbol(env.symbols.get("a"))];
 
         let r = symbols_eq(&args, &mut env.new_frame());
 
@@ -756,13 +756,13 @@ mod tests {
 
     #[test]
     fn all_symbols_equal() {
-        let name = "a".into();
-        let args = [
-            Value::Symbol(Rc::clone(&name)),
-            Value::Symbol(Rc::clone(&name)),
-            Value::Symbol(Rc::clone(&name)),
-        ];
         let mut env = TestEnv::default();
+        let name = env.symbols.get("a");
+        let args = [
+            Value::Symbol(name.clone()),
+            Value::Symbol(name.clone()),
+            Value::Symbol(name.clone()),
+        ];
 
         let r = symbols_eq(&args, &mut env.new_frame());
 
@@ -772,13 +772,13 @@ mod tests {
 
     #[test]
     fn all_symbols_mixed() {
-        let (a, b) = ("a".into(), "b".into());
-        let args = [
-            Value::Symbol(Rc::clone(&a)),
-            Value::Symbol(Rc::clone(&b)),
-            Value::Symbol(Rc::clone(&a)),
-        ];
         let mut env = TestEnv::default();
+        let (a, b) = (env.symbols.get("a"), env.symbols.get("b"));
+        let args = [
+            Value::Symbol(a.clone()),
+            Value::Symbol(b.clone()),
+            Value::Symbol(a.clone()),
+        ];
 
         let r = symbols_eq(&args, &mut env.new_frame());
 
@@ -787,29 +787,29 @@ mod tests {
     }
 
     #[test]
-    fn all_symbols_uninterned_not_equal() {
-        let args = [
-            Value::Symbol("a".into()),
-            Value::Symbol("a".into()),
-            Value::Symbol("a".into()),
-        ];
+    fn all_symbols_interned_even_if_from_distinct_pointers() {
         let mut env = TestEnv::default();
+        let args = [
+            Value::Symbol(env.symbols.get(Rc::new("a").as_ref())),
+            Value::Symbol(env.symbols.get(Rc::new("a").as_ref())),
+            Value::Symbol(env.symbols.get(Rc::new("a").as_ref())),
+        ];
 
         let r = symbols_eq(&args, &mut env.new_frame());
 
         let v = ok_or_fail!(r);
-        assert!(matches!(v, Value::Boolean(false)));
+        assert!(matches!(v, Value::Boolean(true)));
     }
 
     #[test]
     fn all_symbols_invalid_param() {
-        let name = "a".into();
-        let args = [
-            Value::Symbol(Rc::clone(&name)),
-            Value::string(Rc::clone(&name)),
-            Value::Symbol(Rc::clone(&name)),
-        ];
         let mut env = TestEnv::default();
+        let name = env.symbols.get("a");
+        let args = [
+            Value::Symbol(name.clone()),
+            Value::string(name.as_rc()),
+            Value::Symbol(name.clone()),
+        ];
 
         let r = symbols_eq(&args, &mut env.new_frame());
 
@@ -974,12 +974,12 @@ mod tests {
 
     #[test]
     fn all_strings_invalid_param() {
+        let mut env = TestEnv::default();
         let args = [
             Value::string("foo"),
-            Value::Symbol("foo".into()),
+            Value::Symbol(env.symbols.get("foo")),
             Value::string("foo"),
         ];
-        let mut env = TestEnv::default();
 
         let r = strings_eq(&args, &mut env.new_frame());
 
@@ -1130,15 +1130,15 @@ mod tests {
 
     #[test]
     fn list_tail_normal_list() {
+        let mut env = TestEnv::default();
         let args = [
             zlist![
-                Value::Symbol("a".into()),
-                Value::Symbol("b".into()),
-                Value::Symbol("c".into())
+                Value::Symbol(env.symbols.get("a")),
+                Value::Symbol(env.symbols.get("b")),
+                Value::Symbol(env.symbols.get("c"))
             ],
             Value::Number(Number::real(1)),
         ];
-        let mut env = TestEnv::default();
 
         let r = list_tail(&args, &mut env.new_frame());
 
@@ -1169,15 +1169,15 @@ mod tests {
 
     #[test]
     fn list_tail_index_to_empty_list() {
+        let mut env = TestEnv::default();
         let args = [
             zlist![
-                Value::Symbol("a".into()),
-                Value::Symbol("b".into()),
-                Value::Symbol("c".into())
+                Value::Symbol(env.symbols.get("a")),
+                Value::Symbol(env.symbols.get("b")),
+                Value::Symbol(env.symbols.get("c"))
             ],
             Value::Number(Number::real(3)),
         ];
-        let mut env = TestEnv::default();
 
         let r = list_tail(&args, &mut env.new_frame());
 
@@ -1187,8 +1187,11 @@ mod tests {
 
     #[test]
     fn list_tail_non_list() {
-        let args = [Value::Symbol("a".into()), Value::Number(Number::real(0))];
         let mut env = TestEnv::default();
+        let args = [
+            Value::Symbol(env.symbols.get("a")),
+            Value::Number(Number::real(0)),
+        ];
 
         let r = list_tail(&args, &mut env.new_frame());
 
@@ -1198,14 +1201,17 @@ mod tests {
 
     #[test]
     fn list_tail_end_of_improper_list() {
+        let mut env = TestEnv::default();
         let args = [
             Value::cons(
-                Value::Symbol("a".into()),
-                Value::cons(Value::Symbol("b".into()), Value::Symbol("c".into())),
+                Value::Symbol(env.symbols.get("a")),
+                Value::cons(
+                    Value::Symbol(env.symbols.get("b")),
+                    Value::Symbol(env.symbols.get("c")),
+                ),
             ),
             Value::Number(Number::real(2)),
         ];
-        let mut env = TestEnv::default();
 
         let r = list_tail(&args, &mut env.new_frame());
 
@@ -1215,15 +1221,15 @@ mod tests {
 
     #[test]
     fn list_tail_index_out_of_range() {
+        let mut env = TestEnv::default();
         let args = [
             zlist![
-                Value::Symbol("a".into()),
-                Value::Symbol("b".into()),
-                Value::Symbol("c".into())
+                Value::Symbol(env.symbols.get("a")),
+                Value::Symbol(env.symbols.get("b")),
+                Value::Symbol(env.symbols.get("c"))
             ],
             Value::Number(Number::real(4)),
         ];
-        let mut env = TestEnv::default();
 
         let r = list_tail(&args, &mut env.new_frame());
 
@@ -1233,8 +1239,11 @@ mod tests {
 
     #[test]
     fn list_tail_non_list_out_of_range() {
-        let args = [Value::Symbol("a".into()), Value::Number(Number::real(1))];
         let mut env = TestEnv::default();
+        let args = [
+            Value::Symbol(env.symbols.get("a")),
+            Value::Number(Number::real(1)),
+        ];
 
         let r = list_tail(&args, &mut env.new_frame());
 
@@ -1247,14 +1256,17 @@ mod tests {
 
     #[test]
     fn list_tail_improper_list_out_of_range() {
+        let mut env = TestEnv::default();
         let args = [
             Value::cons(
-                Value::Symbol("a".into()),
-                Value::cons(Value::Symbol("b".into()), Value::Symbol("c".into())),
+                Value::Symbol(env.symbols.get("a")),
+                Value::cons(
+                    Value::Symbol(env.symbols.get("b")),
+                    Value::Symbol(env.symbols.get("c")),
+                ),
             ),
             Value::Number(Number::real(3)),
         ];
-        let mut env = TestEnv::default();
 
         let r = list_tail(&args, &mut env.new_frame());
 
@@ -1309,15 +1321,15 @@ mod tests {
 
     #[test]
     fn list_ref_normal_list() {
+        let mut env = TestEnv::default();
         let args = [
             zlist![
-                Value::Symbol("a".into()),
-                Value::Symbol("b".into()),
-                Value::Symbol("c".into())
+                Value::Symbol(env.symbols.get("a")),
+                Value::Symbol(env.symbols.get("b")),
+                Value::Symbol(env.symbols.get("c"))
             ],
             Value::Number(Number::real(1)),
         ];
-        let mut env = TestEnv::default();
 
         let r = list_get(&args, &mut env.new_frame());
 
@@ -1338,8 +1350,11 @@ mod tests {
 
     #[test]
     fn list_ref_non_list() {
-        let args = [Value::Symbol("a".into()), Value::Number(Number::real(0))];
         let mut env = TestEnv::default();
+        let args = [
+            Value::Symbol(env.symbols.get("a")),
+            Value::Number(Number::real(0)),
+        ];
 
         let r = list_get(&args, &mut env.new_frame());
 
@@ -1352,14 +1367,17 @@ mod tests {
 
     #[test]
     fn list_ref_improper_list_item() {
+        let mut env = TestEnv::default();
         let args = [
             Value::cons(
-                Value::Symbol("a".into()),
-                Value::cons(Value::Symbol("b".into()), Value::Symbol("c".into())),
+                Value::Symbol(env.symbols.get("a")),
+                Value::cons(
+                    Value::Symbol(env.symbols.get("b")),
+                    Value::Symbol(env.symbols.get("c")),
+                ),
             ),
             Value::Number(Number::real(1)),
         ];
-        let mut env = TestEnv::default();
 
         let r = list_get(&args, &mut env.new_frame());
 
@@ -1369,14 +1387,17 @@ mod tests {
 
     #[test]
     fn list_ref_end_of_improper_list() {
+        let mut env = TestEnv::default();
         let args = [
             Value::cons(
-                Value::Symbol("a".into()),
-                Value::cons(Value::Symbol("b".into()), Value::Symbol("c".into())),
+                Value::Symbol(env.symbols.get("a")),
+                Value::cons(
+                    Value::Symbol(env.symbols.get("b")),
+                    Value::Symbol(env.symbols.get("c")),
+                ),
             ),
             Value::Number(Number::real(2)),
         ];
-        let mut env = TestEnv::default();
 
         let r = list_get(&args, &mut env.new_frame());
 
@@ -1389,15 +1410,15 @@ mod tests {
 
     #[test]
     fn list_ref_index_out_of_range() {
+        let mut env = TestEnv::default();
         let args = [
             zlist![
-                Value::Symbol("a".into()),
-                Value::Symbol("b".into()),
-                Value::Symbol("c".into())
+                Value::Symbol(env.symbols.get("a")),
+                Value::Symbol(env.symbols.get("b")),
+                Value::Symbol(env.symbols.get("c"))
             ],
             Value::Number(Number::real(4)),
         ];
-        let mut env = TestEnv::default();
 
         let r = list_get(&args, &mut env.new_frame());
 
@@ -1407,14 +1428,17 @@ mod tests {
 
     #[test]
     fn list_ref_improper_list_out_of_range() {
+        let mut env = TestEnv::default();
         let args = [
             Value::cons(
-                Value::Symbol("a".into()),
-                Value::cons(Value::Symbol("b".into()), Value::Symbol("c".into())),
+                Value::Symbol(env.symbols.get("a")),
+                Value::cons(
+                    Value::Symbol(env.symbols.get("b")),
+                    Value::Symbol(env.symbols.get("c")),
+                ),
             ),
             Value::Number(Number::real(3)),
         ];
-        let mut env = TestEnv::default();
 
         let r = list_get(&args, &mut env.new_frame());
 
@@ -1438,8 +1462,8 @@ mod tests {
 
     #[test]
     fn int_to_char_invalid_arg() {
-        let args = [Value::Symbol("a".into())];
         let mut env = TestEnv::default();
+        let args = [Value::Symbol(env.symbols.get("a"))];
 
         let r = integer_to_char(&args, &mut env.new_frame());
 

@@ -812,6 +812,7 @@ mod bytevector {
     #[test]
     fn invalid_item() {
         let txt = make_textline().into();
+        let mut env = TestEnv::default();
         let seq = vec![
             ExprCtx {
                 span: 0..3,
@@ -819,7 +820,7 @@ mod bytevector {
             }
             .into_expr(ExpressionKind::Literal(Value::real(24))),
             Expression::symbol(
-                "foo".into(),
+                env.symbols.get("foo"),
                 ExprCtx {
                     span: 3..6,
                     txt: Rc::clone(&txt),
@@ -838,7 +839,6 @@ mod bytevector {
             },
             mode: ParseMode::ByteVector(seq),
         };
-        let mut env = TestEnv::default();
         let mut ns = env.new_namespace();
 
         let r = node.try_into_expr(&mut ns);
@@ -856,6 +856,7 @@ mod bytevector {
 
     #[test]
     fn invalid_items() {
+        let mut env = TestEnv::default();
         let txt = make_textline().into();
         let seq = vec![
             ExprCtx {
@@ -864,7 +865,7 @@ mod bytevector {
             }
             .into_expr(ExpressionKind::Literal(Value::real(24))),
             Expression::variable(
-                "foo".into(),
+                env.symbols.get("foo"),
                 ExprCtx {
                     span: 3..6,
                     txt: Rc::clone(&txt),
@@ -888,7 +889,6 @@ mod bytevector {
             },
             mode: ParseMode::ByteVector(seq),
         };
-        let mut env = TestEnv::default();
         let mut ns = env.new_namespace();
 
         let r = node.try_into_expr(&mut ns);
@@ -956,9 +956,10 @@ mod vector {
     #[test]
     fn multiple_items() {
         let txt = make_textline().into();
+        let mut env = TestEnv::default();
         let seq = vec![
             Expression::symbol(
-                "a".into(),
+                env.symbols.get("a"),
                 ExprCtx {
                     span: 0..1,
                     txt: Rc::clone(&txt),
@@ -982,7 +983,6 @@ mod vector {
             },
             mode: ParseMode::Vector(seq),
         };
-        let mut env = TestEnv::default();
         let mut ns = env.new_namespace();
 
         let r = node.try_into_expr(&mut ns);
@@ -1041,16 +1041,17 @@ mod vector {
     #[test]
     fn invalid_item() {
         let txt = make_textline().into();
+        let mut env = TestEnv::default();
         let seq = vec![
             Expression::symbol(
-                "a".into(),
+                env.symbols.get("a"),
                 ExprCtx {
                     span: 0..1,
                     txt: Rc::clone(&txt),
                 },
             ),
             Expression::variable(
-                "foo".into(),
+                env.symbols.get("foo"),
                 ExprCtx {
                     span: 3..6,
                     txt: Rc::clone(&txt),
@@ -1069,7 +1070,6 @@ mod vector {
             },
             mode: ParseMode::Vector(seq),
         };
-        let mut env = TestEnv::default();
         let mut ns = env.new_namespace();
 
         let r = node.try_into_expr(&mut ns);
@@ -1088,6 +1088,7 @@ mod vector {
     #[test]
     fn invalid_items() {
         let txt = make_textline().into();
+        let mut env = TestEnv::default();
         let seq = vec![
             ExprCtx {
                 span: 0..3,
@@ -1095,7 +1096,7 @@ mod vector {
             }
             .into_expr(ExpressionKind::Literal(Value::real(24))),
             Expression::variable(
-                "foo".into(),
+                env.symbols.get("foo"),
                 ExprCtx {
                     span: 3..6,
                     txt: Rc::clone(&txt),
@@ -1112,7 +1113,7 @@ mod vector {
             }
             .into_expr(ExpressionKind::Call {
                 proc: Expression::variable(
-                    "bar".into(),
+                    env.symbols.get("bar"),
                     ExprCtx {
                         span: 9..12,
                         txt: Rc::clone(&txt),
@@ -1129,7 +1130,6 @@ mod vector {
             },
             mode: ParseMode::Vector(seq),
         };
-        let mut env = TestEnv::default();
         let mut ns = env.new_namespace();
 
         let r = node.try_into_expr(&mut ns);
@@ -1476,20 +1476,20 @@ mod comment {
     #[test]
     fn datum_into_expr() {
         let txt = make_textline().into();
+        let mut env = TestEnv::default();
         let p = ExprNode {
             ctx: ExprCtx {
                 span: 0..2,
                 txt: Rc::clone(&txt),
             },
             mode: ParseMode::CommentDatum(Some(Expression::symbol(
-                "foo".into(),
+                env.symbols.get("foo"),
                 ExprCtx {
                     span: 3..5,
                     txt: Rc::clone(&txt),
                 },
             ))),
         };
-        let mut env = TestEnv::default();
         let mut ns = env.new_namespace();
 
         let r = p.try_into_expr(&mut ns);
@@ -1568,6 +1568,7 @@ mod quote {
     #[test]
     fn symbol_into_expr() {
         let txt = make_textline().into();
+        let mut env = TestEnv::default();
         let p = ExprNode {
             ctx: ExprCtx {
                 span: 0..1,
@@ -1575,7 +1576,7 @@ mod quote {
             },
             mode: ParseMode::Quote {
                 inner: Some(Expression::symbol(
-                    "foo".into(),
+                    env.symbols.get("foo"),
                     ExprCtx {
                         span: 2..5,
                         txt: Rc::clone(&txt),
@@ -1584,7 +1585,6 @@ mod quote {
                 quoted: false,
             },
         };
-        let mut env = TestEnv::default();
         let mut ns = env.new_namespace();
 
         let r = p.try_into_expr(&mut ns);
@@ -1644,6 +1644,7 @@ mod quote {
     #[test]
     fn invalid_into_expr() {
         let txt = make_textline().into();
+        let mut env = TestEnv::default();
         let p = ExprNode {
             ctx: ExprCtx {
                 span: 0..2,
@@ -1657,7 +1658,7 @@ mod quote {
                     }
                     .into_expr(ExpressionKind::Call {
                         proc: Expression::variable(
-                            "foo".into(),
+                            env.symbols.get("foo"),
                             ExprCtx {
                                 span: 4..7,
                                 txt: Rc::clone(&txt),
@@ -1675,7 +1676,6 @@ mod quote {
                 quoted: false,
             },
         };
-        let mut env = TestEnv::default();
         let mut ns = env.new_namespace();
 
         let r = p.try_into_expr(&mut ns);
@@ -1694,6 +1694,7 @@ mod quote {
     #[test]
     fn variable_into_expr() {
         let txt = make_textline().into();
+        let mut env = TestEnv::default();
         let p = ExprNode {
             ctx: ExprCtx {
                 span: 0..1,
@@ -1701,7 +1702,7 @@ mod quote {
             },
             mode: ParseMode::Quote {
                 inner: Some(Expression::variable(
-                    "foo".into(),
+                    env.symbols.get("foo"),
                     ExprCtx {
                         span: 2..5,
                         txt: Rc::clone(&txt),
@@ -1710,7 +1711,6 @@ mod quote {
                 quoted: false,
             },
         };
-        let mut env = TestEnv::default();
         let mut ns = env.new_namespace();
 
         let r = p.try_into_expr(&mut ns);
@@ -1959,6 +1959,7 @@ mod merge {
     #[test]
     fn prg_merge_fail() {
         let txt = make_textline().into();
+        let mut env = TestEnv::default();
         let mut p = ParseNode::prg();
         let other = ExprNode {
             ctx: ExprCtx {
@@ -1966,14 +1967,13 @@ mod merge {
                 txt: Rc::clone(&txt),
             },
             mode: ParseMode::ByteVector(vec![Expression::variable(
-                "foo".into(),
+                env.symbols.get("foo"),
                 ExprCtx {
                     span: 0..3,
                     txt: Rc::clone(&txt),
                 },
             )]),
         };
-        let mut env = TestEnv::default();
         let mut ns = env.new_namespace();
 
         let r = p.merge(other, &mut ns);
@@ -2083,6 +2083,7 @@ mod merge {
     #[test]
     fn comment_datum_compound_merge() {
         let txt = make_textline().into();
+        let mut env = TestEnv::default();
         let mut p = ExprNode {
             ctx: ExprCtx {
                 span: 0..3,
@@ -2098,7 +2099,7 @@ mod merge {
             mode: ParseMode::List {
                 form: SyntacticForm::Datum,
                 seq: vec![Expression::symbol(
-                    "foo".into(),
+                    env.symbols.get("foo"),
                     ExprCtx {
                         span: 4..7,
                         txt: Rc::clone(&txt),
@@ -2106,7 +2107,6 @@ mod merge {
                 )],
             },
         };
-        let mut env = TestEnv::default();
         let mut ns = env.new_namespace();
 
         let r = p.merge(other, &mut ns);
@@ -2218,6 +2218,7 @@ mod merge {
     #[test]
     fn quote_compound_merge() {
         let txt = make_textline().into();
+        let mut env = TestEnv::default();
         let mut p = ExprNode {
             ctx: ExprCtx {
                 span: 0..3,
@@ -2236,7 +2237,7 @@ mod merge {
             mode: ParseMode::List {
                 form: SyntacticForm::Datum,
                 seq: vec![Expression::symbol(
-                    "foo".into(),
+                    env.symbols.get("foo"),
                     ExprCtx {
                         span: 4..7,
                         txt: Rc::clone(&txt),
@@ -2244,7 +2245,6 @@ mod merge {
                 )],
             },
         };
-        let mut env = TestEnv::default();
         let mut ns = env.new_namespace();
 
         let r = p.merge(other, &mut ns);
@@ -2583,12 +2583,13 @@ mod nodeutil {
     #[test]
     fn list_continuation() {
         let txt = make_textline().into();
+        let mut env = TestEnv::default();
         let p = ParseNode::new(
             ParseMode::List {
                 form: SyntacticForm::Call,
                 seq: vec![
                     Expression::variable(
-                        "+".into(),
+                        env.symbols.get("+"),
                         ExprCtx {
                             span: 0..1,
                             txt: Rc::clone(&txt),

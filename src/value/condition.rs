@@ -147,6 +147,7 @@ impl Display for ConditionKind {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::string::SymbolTable;
 
     #[test]
     fn display_empty_condition() {
@@ -161,10 +162,11 @@ mod tests {
 
     #[test]
     fn display_list_irritants() {
+        let mut sym = SymbolTable::default();
         let c = Condition {
             kind: ConditionKind::General,
             msg: "foo".into(),
-            irritants: Some(zlist![Value::Symbol("a".into()), Value::real(5)]),
+            irritants: Some(zlist![Value::Symbol(sym.get("a")), Value::real(5)]),
         };
 
         assert_eq!(c.to_string(), "#<exception \"foo\" (a 5)>");

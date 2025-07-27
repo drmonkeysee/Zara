@@ -4,9 +4,10 @@ use crate::eval::InvalidFormal;
 #[test]
 fn end() {
     let txt = make_textline().into();
+    let mut env = TestEnv::default();
     let mut seq = vec![
         Expression::variable(
-            "+".into(),
+            env.symbols.get("+"),
             ExprCtx {
                 span: 0..1,
                 txt: Rc::clone(&txt),
@@ -27,7 +28,6 @@ fn end() {
         kind: TokenKind::ParenRight,
         span: 6..7,
     };
-    let mut env = TestEnv::default();
     let mut ns = env.new_namespace();
 
     let f = SyntacticForm::Call.parse_list(&mut seq, token, &txt, &mut ns);
@@ -42,9 +42,10 @@ fn end() {
 #[test]
 fn nested_list() {
     let txt = make_textline().into();
+    let mut env = TestEnv::default();
     let mut seq = vec![
         Expression::variable(
-            "+".into(),
+            env.symbols.get("+"),
             ExprCtx {
                 span: 0..1,
                 txt: Rc::clone(&txt),
@@ -65,7 +66,6 @@ fn nested_list() {
         kind: TokenKind::ParenLeft,
         span: 6..7,
     };
-    let mut env = TestEnv::default();
     let mut ns = env.new_namespace();
 
     let f = SyntacticForm::Call.parse_list(&mut seq, token, &txt, &mut ns);
@@ -103,9 +103,10 @@ fn empty() {
 #[test]
 fn expression_item() {
     let txt = make_textline().into();
+    let mut env = TestEnv::default();
     let mut seq = vec![
         Expression::variable(
-            "+".into(),
+            env.symbols.get("+"),
             ExprCtx {
                 span: 0..1,
                 txt: Rc::clone(&txt),
@@ -126,7 +127,6 @@ fn expression_item() {
         kind: TokenKind::Number(Number::real(10)),
         span: 6..7,
     };
-    let mut env = TestEnv::default();
     let mut ns = env.new_namespace();
 
     let f = SyntacticForm::Call.parse_list(&mut seq, token, &txt, &mut ns);
@@ -414,9 +414,10 @@ fn double_dotted_closed_pair() {
 #[test]
 fn invalid_token() {
     let txt = make_textline().into();
+    let mut env = TestEnv::default();
     let mut seq = vec![
         Expression::variable(
-            "+".into(),
+            env.symbols.get("+"),
             ExprCtx {
                 span: 0..1,
                 txt: Rc::clone(&txt),
@@ -437,7 +438,6 @@ fn invalid_token() {
         kind: TokenKind::StringDiscard,
         span: 6..7,
     };
-    let mut env = TestEnv::default();
     let mut ns = env.new_namespace();
 
     let f = SyntacticForm::Call.parse_list(&mut seq, token, &txt, &mut ns);
@@ -457,8 +457,9 @@ fn invalid_token() {
 
 #[test]
 fn into_procedure_call() {
-    let txt = make_textline().into();
     // (+ 4 5)
+    let txt = make_textline().into();
+    let mut env = TestEnv::default();
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..6,
@@ -468,7 +469,7 @@ fn into_procedure_call() {
             form: SyntacticForm::Call,
             seq: vec![
                 Expression::variable(
-                    "+".into(),
+                    env.symbols.get("+"),
                     ExprCtx {
                         span: 0..1,
                         txt: Rc::clone(&txt),
@@ -487,7 +488,6 @@ fn into_procedure_call() {
             ],
         },
     };
-    let mut env = TestEnv::default();
     let mut ns = env.new_namespace();
 
     let r = p.try_into_expr(&mut ns);
@@ -529,8 +529,8 @@ fn into_procedure_call() {
 
 #[test]
 fn into_empty_procedure_call() {
-    let txt = make_textline().into();
     // ()
+    let txt = make_textline().into();
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..8,
@@ -559,8 +559,9 @@ fn into_empty_procedure_call() {
 
 #[test]
 fn into_quote_apply() {
-    let txt = make_textline().into();
     // (quote foo)
+    let txt = make_textline().into();
+    let mut env = TestEnv::default();
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..10,
@@ -569,7 +570,7 @@ fn into_quote_apply() {
         mode: ParseMode::List {
             form: SyntacticForm::Quote,
             seq: vec![Expression::symbol(
-                "foo".into(),
+                env.symbols.get("foo"),
                 ExprCtx {
                     span: 6..9,
                     txt: Rc::clone(&txt),
@@ -577,7 +578,6 @@ fn into_quote_apply() {
             )],
         },
     };
-    let mut env = TestEnv::default();
     let mut ns = env.new_namespace();
 
     let r = p.try_into_expr(&mut ns);
@@ -594,8 +594,8 @@ fn into_quote_apply() {
 
 #[test]
 fn into_empty_quote_apply() {
-    let txt = make_textline().into();
     // (quote)
+    let txt = make_textline().into();
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..7,
@@ -624,8 +624,9 @@ fn into_empty_quote_apply() {
 
 #[test]
 fn into_quote_apply_too_many_args() {
-    let txt = make_textline().into();
     // (quote foo bar)
+    let txt = make_textline().into();
+    let mut env = TestEnv::default();
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..14,
@@ -635,14 +636,14 @@ fn into_quote_apply_too_many_args() {
             form: SyntacticForm::Quote,
             seq: vec![
                 Expression::symbol(
-                    "foo".into(),
+                    env.symbols.get("foo"),
                     ExprCtx {
                         span: 6..9,
                         txt: Rc::clone(&txt),
                     },
                 ),
                 Expression::symbol(
-                    "bar".into(),
+                    env.symbols.get("bar"),
                     ExprCtx {
                         span: 10..13,
                         txt: Rc::clone(&txt),
@@ -651,7 +652,6 @@ fn into_quote_apply_too_many_args() {
             ],
         },
     };
-    let mut env = TestEnv::default();
     let mut ns = env.new_namespace();
 
     let r = p.try_into_expr(&mut ns);
@@ -669,8 +669,9 @@ fn into_quote_apply_too_many_args() {
 
 #[test]
 fn into_datum_list() {
-    let txt = make_textline().into();
     // '(+ 4 5)
+    let txt = make_textline().into();
+    let mut env = TestEnv::default();
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..6,
@@ -680,7 +681,7 @@ fn into_datum_list() {
             form: SyntacticForm::Datum,
             seq: vec![
                 Expression::symbol(
-                    "+".into(),
+                    env.symbols.get("+"),
                     ExprCtx {
                         span: 0..1,
                         txt: Rc::clone(&txt),
@@ -699,7 +700,6 @@ fn into_datum_list() {
             ],
         },
     };
-    let mut env = TestEnv::default();
     let mut ns = env.new_namespace();
 
     let r = p.try_into_expr(&mut ns);
@@ -718,8 +718,8 @@ fn into_datum_list() {
 
 #[test]
 fn into_empty_datum_list() {
-    let txt = make_textline().into();
     // '()
+    let txt = make_textline().into();
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..2,
@@ -749,8 +749,9 @@ fn into_empty_datum_list() {
 
 #[test]
 fn into_invalid_datum_list() {
-    let txt = make_textline().into();
     // '(<unquoted +> 4 5)
+    let txt = make_textline().into();
+    let mut env = TestEnv::default();
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..8,
@@ -760,7 +761,7 @@ fn into_invalid_datum_list() {
             form: SyntacticForm::Datum,
             seq: vec![
                 Expression::variable(
-                    "+".into(),
+                    env.symbols.get("+"),
                     ExprCtx {
                         span: 1..2,
                         txt: Rc::clone(&txt),
@@ -779,7 +780,6 @@ fn into_invalid_datum_list() {
             ],
         },
     };
-    let mut env = TestEnv::default();
     let mut ns = env.new_namespace();
 
     let r = p.try_into_expr(&mut ns);
@@ -797,8 +797,8 @@ fn into_invalid_datum_list() {
 
 #[test]
 fn into_pair() {
-    let txt = make_textline().into();
     // '(4 . 5)
+    let txt = make_textline().into();
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..8,
@@ -839,8 +839,8 @@ fn into_pair() {
 
 #[test]
 fn invalid_into_open_pair() {
-    let txt = make_textline().into();
     // '(4 . )
+    let txt = make_textline().into();
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..8,
@@ -875,8 +875,9 @@ fn invalid_into_open_pair() {
 
 #[test]
 fn into_define_variable() {
-    let txt = make_textline().into();
     // (define foo "bar")
+    let txt = make_textline().into();
+    let mut env = TestEnv::default();
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..18,
@@ -886,7 +887,7 @@ fn into_define_variable() {
             form: SyntacticForm::Define,
             seq: vec![
                 Expression::symbol(
-                    "foo".into(),
+                    env.symbols.get("foo"),
                     ExprCtx {
                         span: 8..11,
                         txt: Rc::clone(&txt),
@@ -902,7 +903,6 @@ fn into_define_variable() {
             ],
         },
     };
-    let mut env = TestEnv::default();
     let mut ns = env.new_namespace();
 
     let r = p.try_into_expr(&mut ns);
@@ -927,8 +927,9 @@ fn into_define_variable() {
 #[test]
 #[ignore = "define lambda not implemented"]
 fn into_define_lambda() {
-    let txt = make_textline().into();
     // (define (foo x y) (+ x y))
+    let txt = make_textline().into();
+    let mut env = TestEnv::default();
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..26,
@@ -942,9 +943,9 @@ fn into_define_lambda() {
                     txt: Rc::clone(&txt),
                 }
                 .into_expr(ExpressionKind::Literal(zlist![
-                    Value::Symbol("foo".into()),
-                    Value::Symbol("x".into()),
-                    Value::Symbol("y".into())
+                    Value::Symbol(env.symbols.get("foo")),
+                    Value::Symbol(env.symbols.get("x")),
+                    Value::Symbol(env.symbols.get("y"))
                 ])),
                 ExprCtx {
                     span: 9..12,
@@ -952,7 +953,7 @@ fn into_define_lambda() {
                 }
                 .into_expr(ExpressionKind::Call {
                     proc: Expression::variable(
-                        "+".into(),
+                        env.symbols.get("+"),
                         ExprCtx {
                             span: 19..20,
                             txt: Rc::clone(&txt),
@@ -961,14 +962,14 @@ fn into_define_lambda() {
                     .into(),
                     args: [
                         Expression::variable(
-                            "x".into(),
+                            env.symbols.get("x"),
                             ExprCtx {
                                 span: 21..22,
                                 txt: Rc::clone(&txt),
                             },
                         ),
                         Expression::variable(
-                            "y".into(),
+                            env.symbols.get("y"),
                             ExprCtx {
                                 span: 23..24,
                                 txt: Rc::clone(&txt),
@@ -980,7 +981,6 @@ fn into_define_lambda() {
             ],
         },
     };
-    let mut env = TestEnv::default();
     let mut ns = env.new_namespace();
 
     let r = p.try_into_expr(&mut ns);
@@ -1005,8 +1005,9 @@ fn into_define_lambda() {
 #[test]
 #[ignore = "define lambda not implemented"]
 fn into_define_parameterless_lambda() {
-    let txt = make_textline().into();
     // (define (foo) 123)
+    let txt = make_textline().into();
+    let mut env = TestEnv::default();
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..18,
@@ -1019,7 +1020,9 @@ fn into_define_parameterless_lambda() {
                     span: 8..13,
                     txt: Rc::clone(&txt),
                 }
-                .into_expr(ExpressionKind::Literal(zlist![Value::Symbol("foo".into())])),
+                .into_expr(ExpressionKind::Literal(zlist![Value::Symbol(
+                    env.symbols.get("foo")
+                )])),
                 ExprCtx {
                     span: 14..17,
                     txt: Rc::clone(&txt),
@@ -1028,7 +1031,6 @@ fn into_define_parameterless_lambda() {
             ],
         },
     };
-    let mut env = TestEnv::default();
     let mut ns = env.new_namespace();
 
     let r = p.try_into_expr(&mut ns);
@@ -1053,8 +1055,9 @@ fn into_define_parameterless_lambda() {
 #[test]
 #[ignore = "define lambda not implemented"]
 fn into_define_variadic_lambda() {
-    let txt = make_textline().into();
     // (define (foo . x) (cdr x))
+    let txt = make_textline().into();
+    let mut env = TestEnv::default();
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..26,
@@ -1068,8 +1071,8 @@ fn into_define_variadic_lambda() {
                     txt: Rc::clone(&txt),
                 }
                 .into_expr(ExpressionKind::Literal(Value::cons(
-                    Value::Symbol("foo".into()),
-                    Value::Symbol("x".into()),
+                    Value::Symbol(env.symbols.get("foo")),
+                    Value::Symbol(env.symbols.get("x")),
                 ))),
                 ExprCtx {
                     span: 18..25,
@@ -1077,7 +1080,7 @@ fn into_define_variadic_lambda() {
                 }
                 .into_expr(ExpressionKind::Call {
                     proc: Expression::variable(
-                        "cdr".into(),
+                        env.symbols.get("cdr"),
                         ExprCtx {
                             span: 19..22,
                             txt: Rc::clone(&txt),
@@ -1085,7 +1088,7 @@ fn into_define_variadic_lambda() {
                     )
                     .into(),
                     args: [Expression::variable(
-                        "x".into(),
+                        env.symbols.get("x"),
                         ExprCtx {
                             span: 23..24,
                             txt: Rc::clone(&txt),
@@ -1096,7 +1099,6 @@ fn into_define_variadic_lambda() {
             ],
         },
     };
-    let mut env = TestEnv::default();
     let mut ns = env.new_namespace();
 
     let r = p.try_into_expr(&mut ns);
@@ -1121,8 +1123,9 @@ fn into_define_variadic_lambda() {
 #[test]
 #[ignore = "define lambda not implemented"]
 fn into_define_rest_lambda() {
-    let txt = make_textline().into();
     // (define (foo x . y) (display x y))
+    let txt = make_textline().into();
+    let mut env = TestEnv::default();
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..34,
@@ -1136,8 +1139,11 @@ fn into_define_rest_lambda() {
                     txt: Rc::clone(&txt),
                 }
                 .into_expr(ExpressionKind::Literal(Value::cons(
-                    Value::Symbol("foo".into()),
-                    Value::cons(Value::Symbol("x".into()), Value::Symbol("y".into())),
+                    Value::Symbol(env.symbols.get("foo")),
+                    Value::cons(
+                        Value::Symbol(env.symbols.get("x")),
+                        Value::Symbol(env.symbols.get("y")),
+                    ),
                 ))),
                 ExprCtx {
                     span: 20..33,
@@ -1145,7 +1151,7 @@ fn into_define_rest_lambda() {
                 }
                 .into_expr(ExpressionKind::Call {
                     proc: Expression::variable(
-                        "display".into(),
+                        env.symbols.get("display"),
                         ExprCtx {
                             span: 21..28,
                             txt: Rc::clone(&txt),
@@ -1154,14 +1160,14 @@ fn into_define_rest_lambda() {
                     .into(),
                     args: [
                         Expression::variable(
-                            "x".into(),
+                            env.symbols.get("x"),
                             ExprCtx {
                                 span: 29..30,
                                 txt: Rc::clone(&txt),
                             },
                         ),
                         Expression::variable(
-                            "y".into(),
+                            env.symbols.get("y"),
                             ExprCtx {
                                 span: 31..32,
                                 txt: Rc::clone(&txt),
@@ -1173,7 +1179,6 @@ fn into_define_rest_lambda() {
             ],
         },
     };
-    let mut env = TestEnv::default();
     let mut ns = env.new_namespace();
 
     let r = p.try_into_expr(&mut ns);
@@ -1197,8 +1202,9 @@ fn into_define_rest_lambda() {
 
 #[test]
 fn into_define_variable_no_value() {
-    let txt = make_textline().into();
     // (define foo)
+    let txt = make_textline().into();
+    let mut env = TestEnv::default();
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..12,
@@ -1207,7 +1213,7 @@ fn into_define_variable_no_value() {
         mode: ParseMode::List {
             form: SyntacticForm::Define,
             seq: vec![Expression::symbol(
-                "foo".into(),
+                env.symbols.get("foo"),
                 ExprCtx {
                     span: 8..11,
                     txt: Rc::clone(&txt),
@@ -1215,7 +1221,6 @@ fn into_define_variable_no_value() {
             )],
         },
     };
-    let mut env = TestEnv::default();
     let mut ns = env.new_namespace();
 
     let r = p.try_into_expr(&mut ns);
@@ -1237,8 +1242,9 @@ fn into_define_variable_no_value() {
 
 #[test]
 fn into_define_not_identifier_expr() {
-    let txt = make_textline().into();
     // (define <unquoted (myproc)> "bar")
+    let txt = make_textline().into();
+    let mut env = TestEnv::default();
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..23,
@@ -1253,7 +1259,7 @@ fn into_define_not_identifier_expr() {
                 }
                 .into_expr(ExpressionKind::Call {
                     proc: Expression::variable(
-                        "myproc".into(),
+                        env.symbols.get("myproc"),
                         ExprCtx {
                             span: 9..15,
                             txt: Rc::clone(&txt),
@@ -1272,7 +1278,6 @@ fn into_define_not_identifier_expr() {
             ],
         },
     };
-    let mut env = TestEnv::default();
     let mut ns = env.new_namespace();
 
     let r = p.try_into_expr(&mut ns);
@@ -1290,8 +1295,8 @@ fn into_define_not_identifier_expr() {
 
 #[test]
 fn into_empty_define() {
-    let txt = make_textline().into();
     // (define)
+    let txt = make_textline().into();
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..8,
@@ -1320,8 +1325,9 @@ fn into_empty_define() {
 
 #[test]
 fn into_define_too_many_args() {
-    let txt = make_textline().into();
     // (define foo "bar" "baz")
+    let txt = make_textline().into();
+    let mut env = TestEnv::default();
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..24,
@@ -1331,7 +1337,7 @@ fn into_define_too_many_args() {
             form: SyntacticForm::Define,
             seq: vec![
                 Expression::symbol(
-                    "foo".into(),
+                    env.symbols.get("foo"),
                     ExprCtx {
                         span: 8..11,
                         txt: Rc::clone(&txt),
@@ -1354,7 +1360,6 @@ fn into_define_too_many_args() {
             ],
         },
     };
-    let mut env = TestEnv::default();
     let mut ns = env.new_namespace();
 
     let r = p.try_into_expr(&mut ns);
@@ -1373,8 +1378,9 @@ fn into_define_too_many_args() {
 #[test]
 #[ignore = "define lambda not implemented"]
 fn into_define_lambda_no_body() {
-    let txt = make_textline().into();
     // (define (foo))
+    let txt = make_textline().into();
+    let mut env = TestEnv::default();
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..14,
@@ -1387,11 +1393,12 @@ fn into_define_lambda_no_body() {
                     span: 8..13,
                     txt: Rc::clone(&txt),
                 }
-                .into_expr(ExpressionKind::Literal(zlist![Value::Symbol("foo".into())])),
+                .into_expr(ExpressionKind::Literal(zlist![Value::Symbol(
+                    env.symbols.get("foo")
+                )])),
             ],
         },
     };
-    let mut env = TestEnv::default();
     let mut ns = env.new_namespace();
 
     let r = p.try_into_expr(&mut ns);
@@ -1410,8 +1417,9 @@ fn into_define_lambda_no_body() {
 #[test]
 #[ignore = "define lambda not implemented"]
 fn into_define_lambda_empty_body() {
-    let txt = make_textline().into();
     // (define (foo) ())
+    let txt = make_textline().into();
+    let mut env = TestEnv::default();
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..17,
@@ -1424,12 +1432,13 @@ fn into_define_lambda_empty_body() {
                     span: 8..13,
                     txt: Rc::clone(&txt),
                 }
-                .into_expr(ExpressionKind::Literal(zlist![Value::Symbol("foo".into())])),
+                .into_expr(ExpressionKind::Literal(zlist![Value::Symbol(
+                    env.symbols.get("foo")
+                )])),
             ],
             // TODO: what goes here
         },
     };
-    let mut env = TestEnv::default();
     let mut ns = env.new_namespace();
 
     let r = p.try_into_expr(&mut ns);
@@ -1447,8 +1456,9 @@ fn into_define_lambda_empty_body() {
 
 #[test]
 fn into_set_variable() {
-    let txt = make_textline().into();
     // (set! foo "bar")
+    let txt = make_textline().into();
+    let mut env = TestEnv::default();
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..18,
@@ -1458,7 +1468,7 @@ fn into_set_variable() {
             form: SyntacticForm::Set,
             seq: vec![
                 Expression::variable(
-                    "foo".into(),
+                    env.symbols.get("foo"),
                     ExprCtx {
                         span: 8..11,
                         txt: Rc::clone(&txt),
@@ -1474,7 +1484,6 @@ fn into_set_variable() {
             ],
         },
     };
-    let mut env = TestEnv::default();
     let mut ns = env.new_namespace();
 
     let r = p.try_into_expr(&mut ns);
@@ -1497,8 +1506,9 @@ fn into_set_variable() {
 
 #[test]
 fn into_set_not_variable_expr() {
-    let txt = make_textline().into();
     // (set! (myproc) "bar")
+    let txt = make_textline().into();
+    let mut env = TestEnv::default();
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..23,
@@ -1513,7 +1523,7 @@ fn into_set_not_variable_expr() {
                 }
                 .into_expr(ExpressionKind::Call {
                     proc: Expression::variable(
-                        "myproc".into(),
+                        env.symbols.get("myproc"),
                         ExprCtx {
                             span: 9..15,
                             txt: Rc::clone(&txt),
@@ -1532,7 +1542,6 @@ fn into_set_not_variable_expr() {
             ],
         },
     };
-    let mut env = TestEnv::default();
     let mut ns = env.new_namespace();
 
     let r = p.try_into_expr(&mut ns);
@@ -1550,8 +1559,9 @@ fn into_set_not_variable_expr() {
 
 #[test]
 fn into_set_too_few_args() {
-    let txt = make_textline().into();
     // (set! foo)
+    let txt = make_textline().into();
+    let mut env = TestEnv::default();
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..25,
@@ -1560,7 +1570,7 @@ fn into_set_too_few_args() {
         mode: ParseMode::List {
             form: SyntacticForm::Set,
             seq: vec![Expression::variable(
-                "foo".into(),
+                env.symbols.get("foo"),
                 ExprCtx {
                     span: 8..11,
                     txt: Rc::clone(&txt),
@@ -1568,7 +1578,6 @@ fn into_set_too_few_args() {
             )],
         },
     };
-    let mut env = TestEnv::default();
     let mut ns = env.new_namespace();
 
     let r = p.try_into_expr(&mut ns);
@@ -1586,8 +1595,9 @@ fn into_set_too_few_args() {
 
 #[test]
 fn into_set_too_many_args() {
-    let txt = make_textline().into();
     // (set! foo "bar" "baz")
+    let txt = make_textline().into();
+    let mut env = TestEnv::default();
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..25,
@@ -1597,7 +1607,7 @@ fn into_set_too_many_args() {
             form: SyntacticForm::Set,
             seq: vec![
                 Expression::variable(
-                    "foo".into(),
+                    env.symbols.get("foo"),
                     ExprCtx {
                         span: 8..11,
                         txt: Rc::clone(&txt),
@@ -1620,7 +1630,6 @@ fn into_set_too_many_args() {
             ],
         },
     };
-    let mut env = TestEnv::default();
     let mut ns = env.new_namespace();
 
     let r = p.try_into_expr(&mut ns);
@@ -1638,8 +1647,8 @@ fn into_set_too_many_args() {
 
 #[test]
 fn into_if_consequent() {
-    let txt = make_textline().into();
     // (if #t "bar")
+    let txt = make_textline().into();
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..13,
@@ -1692,8 +1701,9 @@ fn into_if_consequent() {
 
 #[test]
 fn into_if_consequent_alternate() {
-    let txt = make_textline().into();
     // (if #t "bar" "foo")
+    let txt = make_textline().into();
+    let mut env = TestEnv::default();
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..17,
@@ -1715,7 +1725,7 @@ fn into_if_consequent_alternate() {
                     },
                 ),
                 Expression::symbol(
-                    "foo".into(),
+                    env.symbols.get("foo"),
                     ExprCtx {
                         span: 13..16,
                         txt: Rc::clone(&txt),
@@ -1724,7 +1734,6 @@ fn into_if_consequent_alternate() {
             ],
         },
     };
-    let mut env = TestEnv::default();
     let mut ns = env.new_namespace();
 
     let r = p.try_into_expr(&mut ns);
@@ -1757,8 +1766,8 @@ fn into_if_consequent_alternate() {
 
 #[test]
 fn into_if_too_few_args() {
-    let txt = make_textline().into();
     // (if #t)
+    let txt = make_textline().into();
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..7,
@@ -1793,8 +1802,9 @@ fn into_if_too_few_args() {
 
 #[test]
 fn into_if_too_many_args() {
-    let txt = make_textline().into();
     // (if #t "bar" "foo" "beef")
+    let txt = make_textline().into();
+    let mut env = TestEnv::default();
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..22,
@@ -1816,14 +1826,14 @@ fn into_if_too_many_args() {
                     },
                 ),
                 Expression::symbol(
-                    "foo".into(),
+                    env.symbols.get("foo"),
                     ExprCtx {
                         span: 13..16,
                         txt: Rc::clone(&txt),
                     },
                 ),
                 Expression::symbol(
-                    "beef".into(),
+                    env.symbols.get("beef"),
                     ExprCtx {
                         span: 17..21,
                         txt: Rc::clone(&txt),
@@ -1832,7 +1842,6 @@ fn into_if_too_many_args() {
             ],
         },
     };
-    let mut env = TestEnv::default();
     let mut ns = env.new_namespace();
 
     let r = p.try_into_expr(&mut ns);
@@ -1852,6 +1861,7 @@ fn into_if_too_many_args() {
 fn into_lambda_fixed_arguments() {
     // (lambda (x y) (+ x y))
     let txt = make_textline().into();
+    let mut env = TestEnv::default();
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..22,
@@ -1865,8 +1875,8 @@ fn into_lambda_fixed_arguments() {
                     txt: Rc::clone(&txt),
                 }
                 .into_expr(ExpressionKind::Literal(zlist![
-                    Value::Symbol("x".into()),
-                    Value::Symbol("y".into())
+                    Value::Symbol(env.symbols.get("x")),
+                    Value::Symbol(env.symbols.get("y"))
                 ])),
                 ExprCtx {
                     span: 14..21,
@@ -1874,7 +1884,7 @@ fn into_lambda_fixed_arguments() {
                 }
                 .into_expr(ExpressionKind::Call {
                     proc: Expression::variable(
-                        "+".into(),
+                        env.symbols.get("+"),
                         ExprCtx {
                             span: 15..16,
                             txt: Rc::clone(&txt),
@@ -1883,14 +1893,14 @@ fn into_lambda_fixed_arguments() {
                     .into(),
                     args: [
                         Expression::variable(
-                            "x".into(),
+                            env.symbols.get("x"),
                             ExprCtx {
                                 span: 17..18,
                                 txt: Rc::clone(&txt),
                             },
                         ),
                         Expression::variable(
-                            "y".into(),
+                            env.symbols.get("y"),
                             ExprCtx {
                                 span: 19..20,
                                 txt: Rc::clone(&txt),
@@ -1902,7 +1912,6 @@ fn into_lambda_fixed_arguments() {
             ],
         },
     };
-    let mut env = TestEnv::default();
     let mut ns = env.new_namespace();
 
     let r = p.try_into_expr(&mut ns);
@@ -1925,6 +1934,7 @@ fn into_lambda_fixed_arguments() {
 fn into_lambda_simple_body() {
     // (lambda (x) x)
     let txt = make_textline().into();
+    let mut env = TestEnv::default();
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..14,
@@ -1937,9 +1947,11 @@ fn into_lambda_simple_body() {
                     span: 8..11,
                     txt: Rc::clone(&txt),
                 }
-                .into_expr(ExpressionKind::Literal(zlist![Value::Symbol("x".into())])),
+                .into_expr(ExpressionKind::Literal(zlist![Value::Symbol(
+                    env.symbols.get("x")
+                )])),
                 Expression::variable(
-                    "x".into(),
+                    env.symbols.get("x"),
                     ExprCtx {
                         span: 12..13,
                         txt: Rc::clone(&txt),
@@ -1948,7 +1960,6 @@ fn into_lambda_simple_body() {
             ],
         },
     };
-    let mut env = TestEnv::default();
     let mut ns = env.new_namespace();
 
     let r = p.try_into_expr(&mut ns);
@@ -1971,6 +1982,7 @@ fn into_lambda_simple_body() {
 fn into_lambda_no_arguments() {
     // (lambda () 'a)
     let txt = make_textline().into();
+    let mut env = TestEnv::default();
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..14,
@@ -1985,7 +1997,7 @@ fn into_lambda_no_arguments() {
                 }
                 .into_expr(ExpressionKind::Literal(zlist![])),
                 Expression::symbol(
-                    "a".into(),
+                    env.symbols.get("a"),
                     ExprCtx {
                         span: 11..13,
                         txt: Rc::clone(&txt),
@@ -1994,7 +2006,6 @@ fn into_lambda_no_arguments() {
             ],
         },
     };
-    let mut env = TestEnv::default();
     let mut ns = env.new_namespace();
 
     let r = p.try_into_expr(&mut ns);
@@ -2017,6 +2028,7 @@ fn into_lambda_no_arguments() {
 fn into_lambda_variadic() {
     // (lambda x x)
     let txt = make_textline().into();
+    let mut env = TestEnv::default();
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..12,
@@ -2026,14 +2038,14 @@ fn into_lambda_variadic() {
             form: SyntacticForm::Lambda,
             seq: vec![
                 Expression::symbol(
-                    "x".into(),
+                    env.symbols.get("x"),
                     ExprCtx {
                         span: 8..9,
                         txt: Rc::clone(&txt),
                     },
                 ),
                 Expression::variable(
-                    "x".into(),
+                    env.symbols.get("x"),
                     ExprCtx {
                         span: 10..11,
                         txt: Rc::clone(&txt),
@@ -2042,7 +2054,6 @@ fn into_lambda_variadic() {
             ],
         },
     };
-    let mut env = TestEnv::default();
     let mut ns = env.new_namespace();
 
     let r = p.try_into_expr(&mut ns);
@@ -2065,6 +2076,7 @@ fn into_lambda_variadic() {
 fn into_lambda_rest() {
     // (lambda (x y . z) z)
     let txt = make_textline().into();
+    let mut env = TestEnv::default();
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..20,
@@ -2078,11 +2090,14 @@ fn into_lambda_rest() {
                     txt: Rc::clone(&txt),
                 }
                 .into_expr(ExpressionKind::Literal(Value::cons(
-                    Value::Symbol("x".into()),
-                    Value::cons(Value::Symbol("y".into()), Value::Symbol("z".into())),
+                    Value::Symbol(env.symbols.get("x")),
+                    Value::cons(
+                        Value::Symbol(env.symbols.get("y")),
+                        Value::Symbol(env.symbols.get("z")),
+                    ),
                 ))),
                 Expression::variable(
-                    "z".into(),
+                    env.symbols.get("z"),
                     ExprCtx {
                         span: 18..19,
                         txt: Rc::clone(&txt),
@@ -2091,7 +2106,6 @@ fn into_lambda_rest() {
             ],
         },
     };
-    let mut env = TestEnv::default();
     let mut ns = env.new_namespace();
 
     let r = p.try_into_expr(&mut ns);
@@ -2114,6 +2128,7 @@ fn into_lambda_rest() {
 fn into_lambda_multiple_expression_body() {
     // (lambda x x 'b)
     let txt = make_textline().into();
+    let mut env = TestEnv::default();
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..15,
@@ -2123,21 +2138,21 @@ fn into_lambda_multiple_expression_body() {
             form: SyntacticForm::Lambda,
             seq: vec![
                 Expression::symbol(
-                    "x".into(),
+                    env.symbols.get("x"),
                     ExprCtx {
                         span: 8..9,
                         txt: Rc::clone(&txt),
                     },
                 ),
                 Expression::variable(
-                    "x".into(),
+                    env.symbols.get("x"),
                     ExprCtx {
                         span: 10..11,
                         txt: Rc::clone(&txt),
                     },
                 ),
                 Expression::symbol(
-                    "b".into(),
+                    env.symbols.get("b"),
                     ExprCtx {
                         span: 12..14,
                         txt: Rc::clone(&txt),
@@ -2146,7 +2161,6 @@ fn into_lambda_multiple_expression_body() {
             ],
         },
     };
-    let mut env = TestEnv::default();
     let mut ns = env.new_namespace();
 
     let r = p.try_into_expr(&mut ns);
@@ -2169,6 +2183,7 @@ fn into_lambda_multiple_expression_body() {
 fn into_lambda_not_identifier_expr() {
     // (lambda (1) 'a)
     let txt = make_textline().into();
+    let mut env = TestEnv::default();
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..15,
@@ -2185,7 +2200,7 @@ fn into_lambda_not_identifier_expr() {
                     Number::real(1)
                 )])),
                 Expression::symbol(
-                    "a".into(),
+                    env.symbols.get("a"),
                     ExprCtx {
                         span: 12..14,
                         txt: Rc::clone(&txt),
@@ -2194,7 +2209,6 @@ fn into_lambda_not_identifier_expr() {
             ],
         },
     };
-    let mut env = TestEnv::default();
     let mut ns = env.new_namespace();
 
     let r = p.try_into_expr(&mut ns);
@@ -2214,6 +2228,7 @@ fn into_lambda_not_identifier_expr() {
 fn into_lambda_too_few_args() {
     // (lambda x)
     let txt = make_textline().into();
+    let mut env = TestEnv::default();
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..10,
@@ -2222,7 +2237,7 @@ fn into_lambda_too_few_args() {
         mode: ParseMode::List {
             form: SyntacticForm::Lambda,
             seq: vec![Expression::symbol(
-                "x".into(),
+                env.symbols.get("x"),
                 ExprCtx {
                     span: 8..9,
                     txt: Rc::clone(&txt),
@@ -2230,7 +2245,6 @@ fn into_lambda_too_few_args() {
             )],
         },
     };
-    let mut env = TestEnv::default();
     let mut ns = env.new_namespace();
 
     let r = p.try_into_expr(&mut ns);
@@ -2250,6 +2264,7 @@ fn into_lambda_too_few_args() {
 fn into_lambda_duplicate_args() {
     // (lambda (x y x) (+ x y))
     let txt = make_textline().into();
+    let mut env = TestEnv::default();
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..24,
@@ -2263,9 +2278,9 @@ fn into_lambda_duplicate_args() {
                     txt: Rc::clone(&txt),
                 }
                 .into_expr(ExpressionKind::Literal(zlist![
-                    Value::Symbol("x".into()),
-                    Value::Symbol("y".into()),
-                    Value::Symbol("x".into()),
+                    Value::Symbol(env.symbols.get("x")),
+                    Value::Symbol(env.symbols.get("y")),
+                    Value::Symbol(env.symbols.get("x")),
                 ])),
                 ExprCtx {
                     span: 16..23,
@@ -2273,7 +2288,7 @@ fn into_lambda_duplicate_args() {
                 }
                 .into_expr(ExpressionKind::Call {
                     proc: Expression::variable(
-                        "+".into(),
+                        env.symbols.get("+"),
                         ExprCtx {
                             span: 17..18,
                             txt: Rc::clone(&txt),
@@ -2282,14 +2297,14 @@ fn into_lambda_duplicate_args() {
                     .into(),
                     args: [
                         Expression::variable(
-                            "x".into(),
+                            env.symbols.get("x"),
                             ExprCtx {
                                 span: 19..20,
                                 txt: Rc::clone(&txt),
                             },
                         ),
                         Expression::variable(
-                            "y".into(),
+                            env.symbols.get("y"),
                             ExprCtx {
                                 span: 21..22,
                                 txt: Rc::clone(&txt),
@@ -2301,7 +2316,6 @@ fn into_lambda_duplicate_args() {
             ],
         },
     };
-    let mut env = TestEnv::default();
     let mut ns = env.new_namespace();
 
     let r = p.try_into_expr(&mut ns);
@@ -2321,9 +2335,10 @@ fn into_lambda_duplicate_args() {
 fn into_lambda_too_many_formals() {
     // (lambda (257 arguments...) 'a)
     let txt = make_textline().into();
+    let mut env = TestEnv::default();
     let args = (0..256)
         .into_iter()
-        .map(|i| Value::Symbol(format!("a{i}").into()))
+        .map(|i| Value::Symbol(env.symbols.get(format!("a{i}"))))
         .collect::<Vec<_>>();
     let p = ExprNode {
         ctx: ExprCtx {
@@ -2339,7 +2354,7 @@ fn into_lambda_too_many_formals() {
                 }
                 .into_expr(ExpressionKind::Literal(Value::list(args))),
                 Expression::symbol(
-                    "a".into(),
+                    env.symbols.get("a"),
                     ExprCtx {
                         span: 12..14,
                         txt: Rc::clone(&txt),
@@ -2348,7 +2363,6 @@ fn into_lambda_too_many_formals() {
             ],
         },
     };
-    let mut env = TestEnv::default();
     let mut ns = env.new_namespace();
 
     let r = p.try_into_expr(&mut ns);
@@ -2368,9 +2382,10 @@ fn into_lambda_too_many_formals() {
 fn into_lambda_too_many_formals_with_rest() {
     // (lambda (256 arguments... . rest) 'a)
     let txt = make_textline().into();
+    let mut env = TestEnv::default();
     let args = (0..256)
         .into_iter()
-        .map(|i| Value::Symbol(format!("a{i}").into()))
+        .map(|i| Value::Symbol(env.symbols.get(format!("a{i}"))))
         .collect::<Vec<_>>();
     let p = ExprNode {
         ctx: ExprCtx {
@@ -2386,7 +2401,7 @@ fn into_lambda_too_many_formals_with_rest() {
                 }
                 .into_expr(ExpressionKind::Literal(Value::improper_list(args))),
                 Expression::symbol(
-                    "a".into(),
+                    env.symbols.get("a"),
                     ExprCtx {
                         span: 12..14,
                         txt: Rc::clone(&txt),
@@ -2395,7 +2410,6 @@ fn into_lambda_too_many_formals_with_rest() {
             ],
         },
     };
-    let mut env = TestEnv::default();
     let mut ns = env.new_namespace();
 
     let r = p.try_into_expr(&mut ns);
@@ -2417,6 +2431,7 @@ mod merge {
     #[test]
     fn list_merge() {
         let txt = make_textline().into();
+        let mut env = TestEnv::default();
         let mut p = ExprNode {
             ctx: ExprCtx {
                 span: 0..3,
@@ -2425,7 +2440,7 @@ mod merge {
             mode: ParseMode::List {
                 form: SyntacticForm::Call,
                 seq: vec![Expression::variable(
-                    "+".into(),
+                    env.symbols.get("+"),
                     ExprCtx {
                         span: 0..3,
                         txt: Rc::clone(&txt),
@@ -2440,7 +2455,6 @@ mod merge {
             },
             mode: ParseMode::StringLiteral("foo".to_owned()),
         };
-        let mut env = TestEnv::default();
         let mut ns = env.new_namespace();
 
         let r = p.merge(other, &mut ns);
@@ -2472,6 +2486,7 @@ mod merge {
     #[test]
     fn pair_merge() {
         let txt = make_textline().into();
+        let mut env = TestEnv::default();
         let mut p = ExprNode {
             ctx: ExprCtx {
                 span: 0..3,
@@ -2484,7 +2499,7 @@ mod merge {
                         span: 0..2,
                         txt: Rc::clone(&txt),
                     }
-                    .into_expr(ExpressionKind::Literal(Value::Symbol("a".into()))),
+                    .into_expr(ExpressionKind::Literal(Value::Symbol(env.symbols.get("a")))),
                 ],
             },
         };
@@ -2498,7 +2513,6 @@ mod merge {
                 quoted: true,
             },
         };
-        let mut env = TestEnv::default();
         let mut ns = env.new_namespace();
 
         let r = p.merge(other, &mut ns);
@@ -2530,6 +2544,7 @@ mod merge {
     #[test]
     fn pair_merge_does_nothing_if_no_expr() {
         let txt = make_textline().into();
+        let mut env = TestEnv::default();
         let mut p = ExprNode {
             ctx: ExprCtx {
                 span: 0..3,
@@ -2542,7 +2557,7 @@ mod merge {
                         span: 0..2,
                         txt: Rc::clone(&txt),
                     }
-                    .into_expr(ExpressionKind::Literal(Value::Symbol("a".into()))),
+                    .into_expr(ExpressionKind::Literal(Value::Symbol(env.symbols.get("a")))),
                 ],
             },
         };
@@ -2556,10 +2571,9 @@ mod merge {
                     span: 2..4,
                     txt: Rc::clone(&txt),
                 }
-                .into_expr(ExpressionKind::Literal(Value::Symbol("b".into()))),
+                .into_expr(ExpressionKind::Literal(Value::Symbol(env.symbols.get("b")))),
             )),
         };
-        let mut env = TestEnv::default();
         let mut ns = env.new_namespace();
 
         let r = p.merge(other, &mut ns);
@@ -2581,6 +2595,7 @@ mod merge {
     #[test]
     fn pair_invalid_merge() {
         let txt = make_textline().into();
+        let mut env = TestEnv::default();
         let mut p = ExprNode {
             ctx: ExprCtx {
                 span: 0..3,
@@ -2593,12 +2608,12 @@ mod merge {
                         span: 0..2,
                         txt: Rc::clone(&txt),
                     }
-                    .into_expr(ExpressionKind::Literal(Value::Symbol("a".into()))),
+                    .into_expr(ExpressionKind::Literal(Value::Symbol(env.symbols.get("a")))),
                     ExprCtx {
                         span: 2..3,
                         txt: Rc::clone(&txt),
                     }
-                    .into_expr(ExpressionKind::Literal(Value::Symbol("b".into()))),
+                    .into_expr(ExpressionKind::Literal(Value::Symbol(env.symbols.get("b")))),
                 ],
             },
         };
@@ -2612,7 +2627,6 @@ mod merge {
                 quoted: true,
             },
         };
-        let mut env = TestEnv::default();
         let mut ns = env.new_namespace();
 
         let r = p.merge(other, &mut ns);
@@ -2634,6 +2648,7 @@ mod merge {
     #[test]
     fn list_does_not_allow_define_merge() {
         let txt = make_textline().into();
+        let mut env = TestEnv::default();
         let mut p = ExprNode {
             ctx: ExprCtx {
                 span: 0..17,
@@ -2642,7 +2657,7 @@ mod merge {
             mode: ParseMode::List {
                 form: SyntacticForm::Call,
                 seq: vec![Expression::variable(
-                    "+".into(),
+                    env.symbols.get("+"),
                     ExprCtx {
                         span: 0..3,
                         txt: Rc::clone(&txt),
@@ -2659,7 +2674,7 @@ mod merge {
                 form: SyntacticForm::Define,
                 seq: vec![
                     Expression::symbol(
-                        "foo".into(),
+                        env.symbols.get("foo"),
                         ExprCtx {
                             span: 4..7,
                             txt: Rc::clone(&txt),
@@ -2675,7 +2690,6 @@ mod merge {
                 ],
             },
         };
-        let mut env = TestEnv::default();
         let mut ns = env.new_namespace();
 
         let r = p.merge(other, &mut ns);
