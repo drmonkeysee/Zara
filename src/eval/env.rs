@@ -22,6 +22,10 @@ impl Binding {
         self.0.borrow().get(name.as_ref()).cloned()
     }
 
+    pub(crate) fn bind(&self, name: Symbol, val: Value) {
+        self.0.borrow_mut().insert(name, val);
+    }
+
     pub(crate) fn sorted_bindings(&self) -> Vec<(Symbol, Value)> {
         let mut vec = self
             .0
@@ -31,10 +35,6 @@ impl Binding {
             .collect::<Vec<_>>();
         vec.sort_by(|(a, _), (b, _)| a.cmp(b));
         vec
-    }
-
-    pub(crate) fn bind(&self, name: Symbol, val: Value) {
-        self.0.borrow_mut().insert(name, val);
     }
 }
 

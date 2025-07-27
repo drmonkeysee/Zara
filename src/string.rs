@@ -118,7 +118,7 @@ impl Display for StrDatum<'_> {
     }
 }
 
-pub(crate) struct SymbolDatum<'a>(pub(crate) &'a Symbol);
+pub(crate) struct SymbolDatum<'a>(pub(crate) &'a str);
 
 impl Display for SymbolDatum<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
@@ -138,12 +138,12 @@ enum DisplayableChar {
 }
 
 struct SymbolConverter<'a> {
-    name: &'a Symbol,
+    name: &'a str,
     verbatim: Cell<bool>,
 }
 
 impl<'a> SymbolConverter<'a> {
-    fn new(name: &'a Symbol) -> Self {
+    fn new(name: &'a str) -> Self {
         Self {
             name,
             verbatim: false.into(),
