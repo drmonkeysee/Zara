@@ -19,7 +19,7 @@ mod parsing {
         let r = et.parse(tokens, env.new_namespace());
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
-        let seq = prg.unwrap();
+        let seq = prg.iter().collect::<Vec<_>>();
         assert!(seq.is_empty());
         assert!(et.parsers.is_empty());
     }
@@ -33,7 +33,7 @@ mod parsing {
         let r = et.parse(tokens.into(), env.new_namespace());
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
-        let seq = prg.unwrap();
+        let seq = prg.iter().collect::<Vec<_>>();
         assert_eq!(seq.len(), 1);
         assert!(matches!(
             &seq[0],
@@ -58,7 +58,7 @@ mod parsing {
         let r = et.parse(tokens.into(), env.new_namespace());
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
-        let seq = prg.unwrap();
+        let seq = prg.iter().collect::<Vec<_>>();
         assert_eq!(seq.len(), 3);
         assert!(matches!(
             &seq[0],
@@ -103,7 +103,7 @@ mod parsing {
         let r = et.parse(tokens.into(), env.new_namespace());
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
-        let seq = prg.unwrap();
+        let seq = prg.iter().collect::<Vec<_>>();
         assert_eq!(seq.len(), 5);
         assert!(matches!(
             &seq[0],
@@ -162,7 +162,7 @@ mod parsing {
         let r = et.parse(tokens.into(), env.new_namespace());
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
-        let seq = prg.unwrap();
+        let seq = prg.iter().collect::<Vec<_>>();
         assert_eq!(seq.len(), 1);
         assert!(matches!(
             &seq[0],
@@ -195,7 +195,7 @@ mod parsing {
         let r = et.parse(tokens.into(), env.new_namespace());
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
-        let seq = prg.unwrap();
+        let seq = prg.iter().collect::<Vec<_>>();
         assert_eq!(seq.len(), 1);
         let expr = &seq[0];
         assert!(matches!(
@@ -250,7 +250,7 @@ mod parsing {
         let r = et.parse(tokens.into(), env.new_namespace());
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
-        let seq = prg.unwrap();
+        let seq = prg.iter().collect::<Vec<_>>();
         assert_eq!(seq.len(), 1);
         assert!(matches!(
             &seq[0],
@@ -299,7 +299,7 @@ mod parsing {
         let r = et.parse(tokens.into(), env.new_namespace());
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
-        let seq = prg.unwrap();
+        let seq = prg.iter().collect::<Vec<_>>();
         assert!(matches!(
             &seq[0],
             Expression {
@@ -333,7 +333,7 @@ mod parsing {
         let r = et.parse(tokens.into(), env.new_namespace());
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
-        let seq = prg.unwrap();
+        let seq = prg.iter().collect::<Vec<_>>();
         assert_eq!(seq.len(), 1);
         assert!(matches!(
             &seq[0],
@@ -362,7 +362,7 @@ mod parsing {
         let r = et.parse(tokens.into(), env.new_namespace());
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
-        let seq = prg.unwrap();
+        let seq = prg.iter().collect::<Vec<_>>();
         assert_eq!(seq.len(), 1);
         assert!(matches!(
             &seq[0],
@@ -392,7 +392,7 @@ mod parsing {
         let r = et.parse(tokens.into(), env.new_namespace());
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
-        let seq = prg.unwrap();
+        let seq = prg.iter().collect::<Vec<_>>();
         assert_eq!(seq.len(), 1);
         assert!(matches!(
             &seq[0],
@@ -419,7 +419,7 @@ mod parsing {
         let r = et.parse(tokens.into(), env.new_namespace());
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
-        let seq = prg.unwrap();
+        let seq = prg.iter().collect::<Vec<_>>();
         assert_eq!(seq.len(), 1);
         assert!(matches!(
             &seq[0],
@@ -449,7 +449,7 @@ mod parsing {
         let r = et.parse(tokens.into(), env.new_namespace());
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
-        let seq = prg.unwrap();
+        let seq = prg.iter().collect::<Vec<_>>();
         assert_eq!(seq.len(), 1);
         assert!(matches!(
             &seq[0],
@@ -480,7 +480,7 @@ mod parsing {
         let r = et.parse(tokens.into(), env.new_namespace());
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
-        let seq = prg.unwrap();
+        let seq = prg.iter().collect::<Vec<_>>();
         assert_eq!(seq.len(), 1);
         assert!(matches!(
             &seq[0],
@@ -514,7 +514,7 @@ mod parsing {
         let r = et.parse(tokens.into(), env.new_namespace());
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
-        let seq = prg.unwrap();
+        let seq = prg.iter().collect::<Vec<_>>();
         assert_eq!(seq.len(), 1);
         assert!(matches!(
             &seq[0],
@@ -554,7 +554,7 @@ mod parsing {
         let r = et.parse(tokens.into(), env.new_namespace());
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
-        let seq = prg.unwrap();
+        let seq = prg.iter().collect::<Vec<_>>();
         assert_eq!(seq.len(), 1);
         assert!(matches!(
             &seq[0],
@@ -586,7 +586,7 @@ mod parsing {
         let r = et.parse(tokens.into(), env.new_namespace());
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
-        let seq = prg.unwrap();
+        let seq = prg.iter().collect::<Vec<_>>();
         assert_eq!(seq.len(), 1);
         assert!(matches!(
             &seq[0],
@@ -619,7 +619,7 @@ mod parsing {
         let r = et.parse(tokens.into(), env.new_namespace());
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
-        let seq = prg.unwrap();
+        let seq = prg.iter().collect::<Vec<_>>();
         assert_eq!(seq.len(), 1);
         assert!(matches!(
             &seq[0],
@@ -655,7 +655,7 @@ mod parsing {
         let r = et.parse(tokens.into(), env.new_namespace());
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
-        let seq = prg.unwrap();
+        let seq = prg.iter().collect::<Vec<_>>();
         assert_eq!(seq.len(), 1);
         assert!(matches!(
             &seq[0],
@@ -687,7 +687,7 @@ mod parsing {
         let r = et.parse(tokens.into(), env.new_namespace());
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
-        let seq = prg.unwrap();
+        let seq = prg.iter().collect::<Vec<_>>();
         assert_eq!(seq.len(), 1);
         assert!(matches!(
             &seq[0],
@@ -719,7 +719,7 @@ mod parsing {
         let r = et.parse(tokens.into(), env.new_namespace());
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
-        let seq = prg.unwrap();
+        let seq = prg.iter().collect::<Vec<_>>();
         assert_eq!(seq.len(), 1);
         assert!(matches!(
             &seq[0],
@@ -1297,7 +1297,7 @@ mod parsing {
         let r = et.parse(tokens.into(), env.new_namespace());
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
-        let seq = prg.unwrap();
+        let seq = prg.iter().collect::<Vec<_>>();
         assert_eq!(seq.len(), 1);
         assert!(matches!(
             &seq[0],
@@ -1334,7 +1334,7 @@ mod parsing {
         let r = et.parse(tokens.into(), env.new_namespace());
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
-        let seq = prg.unwrap();
+        let seq = prg.iter().collect::<Vec<_>>();
         assert_eq!(seq.len(), 1);
         assert!(matches!(
             &seq[0],

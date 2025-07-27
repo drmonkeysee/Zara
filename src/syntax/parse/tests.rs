@@ -1884,7 +1884,7 @@ mod program {
         let r = p.try_into();
 
         let prg: Sequence = ok_or_fail!(r);
-        let seq = prg.unwrap();
+        let seq = prg.iter().collect::<Vec<_>>();
         assert_eq!(seq.len(), 1);
         assert!(matches!(
             &seq[0],

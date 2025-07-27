@@ -26,7 +26,6 @@ impl Sequence {
 
     pub(crate) fn eval(&self, env: &mut Frame) -> EvalResult {
         Ok(self
-            .0
             .iter()
             .map(|expr| expr.eval(env))
             .collect::<Result<Vec<Value>, Exception>>()?
@@ -34,10 +33,8 @@ impl Sequence {
             .unwrap_or(Value::Unspecified))
     }
 
-    // TODO: can this be intoiter instead
-    #[cfg(test)]
-    pub(super) fn unwrap(self) -> Box<[Expression]> {
-        self.0
+    pub(super) fn iter(&self) -> impl Iterator<Item = &Expression> {
+        self.0.iter()
     }
 }
 
