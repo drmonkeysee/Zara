@@ -143,28 +143,7 @@ impl Definition {
                 body,
                 closure,
                 formals,
-            } => {
-                // TODO: tail-call optimization does not create a new frame
-                // TODO: this doesn't seem quite right, particularly for recursion
-                // is env.scope actually irrelevant with lexical scoping?
-                let mut call_frame = Frame {
-                    scope: Binding::new(Rc::clone(&closure)).into(),
-                    sym: env.sym,
-                    sys: env.sys,
-                };
-                let args_it = args.iter();
-                formals
-                    .iter()
-                    .zip(args_it.take(formals.len()))
-                    .for_each(|(var, val)| {
-                        if let Formal::Named(param) = var {
-                            call_frame.scope.bind(param.clone(), val.clone());
-                        } else {
-                            todo!("support variadic args");
-                        }
-                    });
-                body.eval(&mut call_frame)
-            }
+            } => call_lambda(args, env, body, closure, formals),
         }
     }
 }
@@ -229,6 +208,35 @@ fn into_formals(
     } else {
         Err(duplicates.into_iter().filter_map(Result::err).collect())
     }
+}
+
+fn call_lambda(
+    args: &[Value],
+    env: &mut Frame,
+    body: &Program,
+    closure: &Rc<Binding>,
+    formals: &[Formal],
+) -> EvalResult {
+    // TODO: tail-call optimization does not create a new frame
+    // TODO: this doesn't seem quite right, particularly for recursion
+    // is env.scope actually irrelevant with lexical scoping?
+    let mut call_frame = Frame {
+        scope: Binding::new(Rc::clone(&closure)).into(),
+        sym: env.sym,
+        sys: env.sys,
+    };
+    let args_it = args.iter();
+    formals
+        .iter()
+        .zip(args_it.take(formals.len()))
+        .for_each(|(var, val)| {
+            if let Formal::Named(param) = var {
+                call_frame.scope.bind(param.clone(), val.clone());
+            } else {
+                todo!("support variadic args");
+            }
+        });
+    body.eval(&mut call_frame)
 }
 
 #[cfg(test)]
