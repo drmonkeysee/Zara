@@ -2,19 +2,29 @@ pub(crate) mod identifier;
 pub(crate) mod unicode;
 
 use std::{
+    borrow::Borrow,
     cell::Cell,
     cmp::Ordering,
     collections::HashSet,
     fmt::{self, Display, Formatter, Write},
+    ops::Deref,
     rc::Rc,
 };
 
-#[derive(Clone, Debug)]
-struct Symbol(Rc<str>);
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+pub(crate) struct Symbol(Rc<str>);
 
 impl Symbol {
     fn new(name: impl AsRef<str>) -> Self {
         Self(name.as_ref().into())
+    }
+
+    pub(crate) fn is(&self, other: &Self) -> bool {
+        Rc::ptr_eq(&self.0, &other.0)
+    }
+
+    pub(crate) fn as_rc(&self) -> Rc<str> {
+        Rc::clone(&self.0)
     }
 }
 
@@ -24,21 +34,42 @@ impl AsRef<str> for Symbol {
     }
 }
 
+impl Borrow<str> for Symbol {
+    fn borrow(&self) -> &str {
+        self.0.borrow()
+    }
+}
+
+impl Deref for Symbol {
+    type Target = str;
+
+    fn deref(&self) -> &Self::Target {
+        self.0.deref()
+    }
+}
+
+impl Display for Symbol {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
 #[derive(Default)]
-pub(crate) struct SymbolTable(HashSet<Rc<str>>);
+pub(crate) struct SymbolTable(HashSet<Symbol>);
 
 impl SymbolTable {
-    pub(crate) fn get(&mut self, name: &str) -> Rc<str> {
+    pub(crate) fn get(&mut self, name: impl AsRef<str>) -> Symbol {
+        let name = name.as_ref();
         if let Some(s) = self.0.get(name) {
-            Rc::clone(s)
+            s.clone()
         } else {
-            self.0.insert(name.into());
+            self.0.insert(Symbol::new(name));
             self.get(name)
         }
     }
 
-    pub(crate) fn sorted_symbols(&self) -> Vec<Rc<str>> {
-        let mut vec = self.0.iter().map(Rc::clone).collect::<Vec<_>>();
+    pub(crate) fn sorted_symbols(&self) -> Vec<Symbol> {
+        let mut vec = self.0.iter().map(Symbol::clone).collect::<Vec<_>>();
         vec.sort();
         vec
     }
@@ -87,7 +118,7 @@ impl Display for StrDatum<'_> {
     }
 }
 
-pub(crate) struct SymbolDatum<'a>(pub(crate) &'a str);
+pub(crate) struct SymbolDatum<'a>(pub(crate) &'a Symbol);
 
 impl Display for SymbolDatum<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
@@ -107,12 +138,12 @@ enum DisplayableChar {
 }
 
 struct SymbolConverter<'a> {
-    name: &'a str,
+    name: &'a Symbol,
     verbatim: Cell<bool>,
 }
 
 impl<'a> SymbolConverter<'a> {
-    fn new(name: &'a str) -> Self {
+    fn new(name: &'a Symbol) -> Self {
         Self {
             name,
             verbatim: false.into(),
@@ -202,6 +233,10 @@ fn char_to_displayable(ch: char) -> DisplayableChar {
 mod tests {
     use super::*;
 
+    fn accept_deref(_s: &str) {
+        /* do nothing, test fails by not compiling */
+    }
+
     #[test]
     fn symbol_as_ref() {
         let s = Symbol::new("foo");
@@ -210,11 +245,19 @@ mod tests {
     }
 
     #[test]
+    fn symbol_deref() {
+        let s = Symbol::new("foo");
+
+        accept_deref(&s);
+    }
+
+    #[test]
     fn symbol_clone() {
         let a = Symbol::new("foo");
         let b = a.clone();
 
         assert!(Rc::ptr_eq(&a.0, &b.0));
+        assert!(a.is(&b));
     }
 
     #[test]
@@ -223,6 +266,22 @@ mod tests {
         let b = Symbol::new(&a);
 
         assert!(!Rc::ptr_eq(&a.0, &b.0));
+        assert!(!a.is(&b));
+    }
+
+    #[test]
+    fn symbol_as_rc() {
+        let a = Symbol::new("foo");
+        let b = a.as_rc();
+
+        assert!(Rc::ptr_eq(&a.0, &b));
+    }
+
+    #[test]
+    fn symbol_display() {
+        let s = Symbol::new("foo");
+
+        assert_eq!(s.to_string(), "foo");
     }
 
     #[test]
@@ -232,7 +291,7 @@ mod tests {
         let a = s.get("foo");
         let b = s.get("foo");
 
-        assert!(Rc::ptr_eq(&a, &b));
+        assert!(a.is(&b));
     }
 
     #[test]
@@ -242,7 +301,7 @@ mod tests {
         let a = s.get("foo");
         let b = s.get("bar");
 
-        assert!(!Rc::ptr_eq(&a, &b));
+        assert!(!a.is(&b));
     }
 
     #[test]
@@ -261,7 +320,7 @@ mod tests {
 
         let all = s.sorted_symbols();
 
-        let vec = all.iter().map(Rc::as_ref).collect::<Vec<_>>();
+        let vec = all.iter().map(Symbol::as_ref).collect::<Vec<_>>();
         assert_eq!(vec, ["foo"]);
     }
 
@@ -274,7 +333,7 @@ mod tests {
 
         let all = s.sorted_symbols();
 
-        let vec = all.iter().map(Rc::as_ref).collect::<Vec<_>>();
+        let vec = all.iter().map(Symbol::as_ref).collect::<Vec<_>>();
         assert_eq!(vec, ["bar", "baz", "foo"]);
     }
 }

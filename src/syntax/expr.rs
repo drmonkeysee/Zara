@@ -6,6 +6,7 @@ use crate::{
     eval::{EvalResult, Frame, InvalidFormal},
     lex::TokenKind,
     number::NumericError,
+    string::Symbol,
     txt::{LineNumber, TextLine, TxtSpan},
     value::{Condition, Value},
 };
@@ -78,14 +79,14 @@ impl Expression {
         }
     }
 
-    pub(super) fn symbol(name: Rc<str>, ctx: ExprCtx) -> Self {
+    pub(super) fn symbol(name: Symbol, ctx: ExprCtx) -> Self {
         Self {
             ctx,
             kind: ExpressionKind::Literal(Value::Symbol(name)),
         }
     }
 
-    pub(super) fn variable(name: Rc<str>, ctx: ExprCtx) -> Self {
+    pub(super) fn variable(name: Symbol, ctx: ExprCtx) -> Self {
         Self {
             ctx,
             kind: ExpressionKind::Variable(name),
@@ -104,7 +105,7 @@ pub(super) enum ExpressionKind {
         proc: Box<Expression>,
     },
     Define {
-        name: Rc<str>,
+        name: Symbol,
         expr: Option<Box<Expression>>,
     },
     If {
@@ -114,10 +115,10 @@ pub(super) enum ExpressionKind {
     },
     Literal(Value),
     Set {
-        var: Rc<str>,
+        var: Symbol,
         expr: Box<Expression>,
     },
-    Variable(Rc<str>),
+    Variable(Symbol),
 }
 
 impl ExpressionKind {

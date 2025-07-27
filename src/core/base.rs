@@ -64,7 +64,7 @@ use crate::{
     Exception,
     eval::{EvalResult, Frame, MAX_ARITY},
     number::{Integer, Number, NumericError, NumericTypeName, Real},
-    string::unicode::UnicodeError,
+    string::{Symbol, unicode::UnicodeError},
     value::{Condition, TypeName, Value},
 };
 use std::{convert, fmt::Display, rc::Rc};
@@ -546,12 +546,12 @@ fn load_symbol(env: &mut Frame) {
 }
 
 predicate!(is_symbol, Value::Symbol(_));
-seq_predicate!(symbols_eq, Value::Symbol, TypeName::SYMBOL, Rc::ptr_eq);
+seq_predicate!(symbols_eq, Value::Symbol, TypeName::SYMBOL, Symbol::is);
 
 fn symbol_to_string(args: &[Value], _env: &mut Frame) -> EvalResult {
     let arg = first(args);
     if let Value::Symbol(s) = arg {
-        Ok(Value::string(Rc::clone(s)))
+        Ok(Value::string(s.as_rc()))
     } else {
         invalid_target!(TypeName::SYMBOL, arg)
     }

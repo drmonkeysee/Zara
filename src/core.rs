@@ -54,7 +54,6 @@ use crate::{
     eval::{Arity, EvalResult, Frame, IntrinsicFn, Procedure},
     value::{Condition, TypeName, Value},
 };
-use std::rc::Rc;
 
 /*
  * Zara Core Library including all the standard R7RS libraries
@@ -80,10 +79,10 @@ pub(crate) fn load(env: &mut Frame) {
 }
 
 fn bind_intrinsic(env: &mut Frame, name: &str, arity: Arity, body: IntrinsicFn) {
-    let n = env.sym.get(name);
+    let name = env.sym.get(name);
     env.scope.bind(
-        Rc::clone(&n),
-        Value::Procedure(Procedure::intrinsic(n, arity, body).into()),
+        name.clone(),
+        Value::Procedure(Procedure::intrinsic(name, arity, body).into()),
     );
 }
 

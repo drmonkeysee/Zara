@@ -36,7 +36,7 @@ fn bindings(_args: &[Value], env: &mut Frame) -> EvalResult {
         env.scope
             .sorted_bindings()
             .into_iter()
-            .map(|(k, v)| Value::cons(Value::Symbol(env.sym.get(&k)), v))
+            .map(|(k, v)| Value::cons(Value::Symbol(k), v))
             .collect::<Vec<_>>(),
     ))
 }
@@ -66,7 +66,7 @@ fn apropos(args: &[Value], env: &mut Frame) -> EvalResult {
             .sorted_bindings()
             .into_iter()
             .filter(|(n, _)| n.contains(pat))
-            .map(|(n, _)| Value::Symbol(env.sym.get(&n)))
+            .map(|(n, _)| Value::Symbol(n))
             .collect::<Vec<_>>(),
     ))
 }

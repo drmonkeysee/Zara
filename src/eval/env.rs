@@ -1,4 +1,7 @@
-use crate::{string::SymbolTable, value::Value};
+use crate::{
+    string::{Symbol, SymbolTable},
+    value::Value,
+};
 use std::{cell::RefCell, collections::HashMap, rc::Rc, time::Instant};
 
 pub(crate) struct Frame<'a> {
@@ -8,29 +11,29 @@ pub(crate) struct Frame<'a> {
 }
 
 #[derive(Default)]
-pub(crate) struct Binding(RefCell<HashMap<Rc<str>, Value>>);
+pub(crate) struct Binding(RefCell<HashMap<Symbol, Value>>);
 
 impl Binding {
-    pub(crate) fn bound(&self, name: &str) -> bool {
-        self.0.borrow().contains_key(name)
+    pub(crate) fn bound(&self, name: impl AsRef<str>) -> bool {
+        self.0.borrow().contains_key(name.as_ref())
     }
 
-    pub(crate) fn lookup(&self, name: &str) -> Option<Value> {
-        self.0.borrow().get(name).cloned()
+    pub(crate) fn lookup(&self, name: impl AsRef<str>) -> Option<Value> {
+        self.0.borrow().get(name.as_ref()).cloned()
     }
 
-    pub(crate) fn sorted_bindings(&self) -> Vec<(Rc<str>, Value)> {
+    pub(crate) fn sorted_bindings(&self) -> Vec<(Symbol, Value)> {
         let mut vec = self
             .0
             .borrow()
             .iter()
-            .map(|(k, v)| (Rc::clone(k), v.clone()))
+            .map(|(k, v)| (k.clone(), v.clone()))
             .collect::<Vec<_>>();
         vec.sort_by(|(a, _), (b, _)| a.cmp(b));
         vec
     }
 
-    pub(crate) fn bind(&self, name: Rc<str>, val: Value) {
+    pub(crate) fn bind(&self, name: Symbol, val: Value) {
         self.0.borrow_mut().insert(name, val);
     }
 }
@@ -52,12 +55,12 @@ impl System {
 pub(crate) struct Namespace<'a>(pub(crate) Frame<'a>);
 
 impl Namespace<'_> {
-    pub(crate) fn name_defined(&self, name: &str) -> bool {
+    pub(crate) fn name_defined(&self, name: impl AsRef<str>) -> bool {
         self.0.scope.bound(name)
     }
 
-    pub(crate) fn get_symbol(&mut self, symbol: &str) -> Rc<str> {
-        self.0.sym.get(symbol)
+    pub(crate) fn get_symbol(&mut self, name: impl AsRef<str>) -> Symbol {
+        self.0.sym.get(name)
     }
 }
 
@@ -77,7 +80,8 @@ mod tests {
     #[test]
     fn get_refs_single() {
         let b = Binding::default();
-        b.bind("foo".into(), Value::Unspecified);
+        let mut sym = SymbolTable::default();
+        b.bind(sym.get("foo"), Value::Unspecified);
 
         let all = b.sorted_bindings();
 
@@ -88,9 +92,10 @@ mod tests {
     #[test]
     fn get_refs_alphabetical() {
         let b = Binding::default();
-        b.bind("foo".into(), Value::Unspecified);
-        b.bind("bar".into(), Value::Unspecified);
-        b.bind("baz".into(), Value::Unspecified);
+        let mut sym = SymbolTable::default();
+        b.bind(sym.get("foo"), Value::Unspecified);
+        b.bind(sym.get("bar"), Value::Unspecified);
+        b.bind(sym.get("baz"), Value::Unspecified);
 
         let all = b.sorted_bindings();
 

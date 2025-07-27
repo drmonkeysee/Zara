@@ -16,7 +16,7 @@ use crate::{
     eval::Procedure,
     lex::{DisplayTokenLines, TokenLine, TokenLinesMessage},
     number::{Number, Real},
-    string::{CharDatum, StrDatum, SymbolDatum},
+    string::{CharDatum, StrDatum, Symbol, SymbolDatum},
     syntax::Program,
 };
 use std::{
@@ -36,7 +36,7 @@ pub(crate) enum Value {
     Pair(Option<Rc<Pair>>),
     Procedure(Rc<Procedure>),
     String(Rc<str>),
-    Symbol(Rc<str>),
+    Symbol(Symbol),
     TokenList(Rc<[TokenLine]>),
     Unspecified,
     Vector(Rc<[Value]>),
@@ -103,9 +103,8 @@ impl Value {
             (Self::Pair(None), Self::Pair(None)) | (Self::Unspecified, Self::Unspecified) => true,
             (Self::Pair(Some(a)), Self::Pair(Some(b))) => Rc::ptr_eq(a, b),
             (Self::Procedure(a), Self::Procedure(b)) => Rc::ptr_eq(a, b),
-            (Self::String(a), Self::String(b)) | (Self::Symbol(a), Self::Symbol(b)) => {
-                Rc::ptr_eq(a, b)
-            }
+            (Self::String(a), Self::String(b)) => Rc::ptr_eq(a, b),
+            (Self::Symbol(a), Self::Symbol(b)) => a.is(b),
             (Self::TokenList(a), Self::TokenList(b)) => Rc::ptr_eq(a, b),
             (Self::Vector(a), Self::Vector(b)) => Rc::ptr_eq(a, b),
             _ => false,

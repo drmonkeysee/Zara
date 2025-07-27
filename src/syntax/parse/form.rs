@@ -5,6 +5,7 @@ use super::{
 use crate::{
     eval::{Namespace, Procedure},
     lex::{Token, TokenKind},
+    string::Symbol,
     txt::TextLine,
     value::Value,
 };
@@ -248,7 +249,7 @@ impl SyntacticForm {
     }
 }
 
-type FormalsParseResult = Result<(Vec<Rc<str>>, Option<Rc<str>>), ExpressionErrorKind>;
+type FormalsParseResult = Result<(Vec<Symbol>, Option<Symbol>), ExpressionErrorKind>;
 
 fn into_list(seq: Vec<Expression>, ctx: ExprCtx, improper: bool) -> ExprConvertResult {
     super::into_valid_sequence(
@@ -292,13 +293,13 @@ fn parse_formals(mut params: Value) -> FormalsParseResult {
             Value::Pair(None) => break,
             Value::Pair(Some(p)) => {
                 if let Value::Symbol(n) = &p.car {
-                    args.push(Rc::clone(n));
+                    args.push(n.clone());
                     params = p.cdr.clone();
                     continue;
                 }
             }
             Value::Symbol(n) => {
-                rest = Some(Rc::clone(&n));
+                rest = Some(n.clone());
                 break;
             }
             _ => (),
@@ -309,8 +310,8 @@ fn parse_formals(mut params: Value) -> FormalsParseResult {
 }
 
 fn into_procedure(
-    args: impl IntoIterator<Item = Rc<str>>,
-    rest: Option<Rc<str>>,
+    args: impl IntoIterator<Item = Symbol>,
+    rest: Option<Symbol>,
     body: impl IntoIterator<Item = Expression>,
     formals_ctx: &ExprCtx,
     ctx: ExprCtx,

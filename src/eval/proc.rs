@@ -1,11 +1,10 @@
 use super::{EvalResult, Frame};
-use crate::{syntax::Program, value::Value};
+use crate::{string::Symbol, syntax::Program, value::Value};
 use std::{
     collections::HashSet,
     fmt::{self, Display, Formatter, Write},
     iter,
     ops::Range,
-    rc::Rc,
 };
 
 pub(crate) const MAX_ARITY: u8 = u8::MAX;
@@ -18,11 +17,11 @@ pub(crate) type LambdaResult = Result<Procedure, Vec<InvalidFormal>>;
 pub(crate) struct Procedure {
     arity: Arity,
     def: Definition,
-    name: Option<Rc<str>>,
+    name: Option<Symbol>,
 }
 
 impl Procedure {
-    pub(crate) fn intrinsic(name: Rc<str>, arity: Arity, def: IntrinsicFn) -> Self {
+    pub(crate) fn intrinsic(name: Symbol, arity: Arity, def: IntrinsicFn) -> Self {
         Self {
             arity,
             def: Definition::Intrinsic(def),
@@ -31,10 +30,10 @@ impl Procedure {
     }
 
     pub(crate) fn lambda(
-        named_args: impl IntoIterator<Item = Rc<str>>,
-        variadic_arg: Option<Rc<str>>,
+        named_args: impl IntoIterator<Item = Symbol>,
+        variadic_arg: Option<Symbol>,
         body: Program,
-        name: Option<Rc<str>>,
+        name: Option<Symbol>,
     ) -> LambdaResult {
         let mut formals = into_formals(named_args)?;
         #[allow(
@@ -96,7 +95,7 @@ impl Display for Procedure {
 
 #[derive(Debug)]
 pub(crate) enum InvalidFormal {
-    DuplicateFormal(Rc<str>),
+    DuplicateFormal(Symbol),
     MaxFormals,
 }
 
@@ -115,8 +114,8 @@ impl Display for InvalidFormal {
 
 #[derive(Debug)]
 enum Formal {
-    Named(Rc<str>),
-    Rest(Rc<str>),
+    Named(Symbol),
+    Rest(Symbol),
 }
 
 #[derive(Debug)]
@@ -175,7 +174,7 @@ fn write_intrinsics(arity: &Arity, f: &mut Formatter<'_>) -> fmt::Result {
 }
 
 fn into_formals(
-    named_args: impl IntoIterator<Item = Rc<str>>,
+    named_args: impl IntoIterator<Item = Symbol>,
 ) -> Result<Vec<Formal>, Vec<InvalidFormal>> {
     let mut names = HashSet::new();
     let (singles, duplicates): (Vec<_>, Vec<_>) = named_args
@@ -184,7 +183,7 @@ fn into_formals(
             if names.contains(&n) {
                 Err(InvalidFormal::DuplicateFormal(n))
             } else {
-                names.insert(Rc::clone(&n));
+                names.insert(n.clone());
                 Ok(Formal::Named(n))
             }
         })
