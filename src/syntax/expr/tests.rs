@@ -168,7 +168,7 @@ mod eval {
 
         #[test]
         fn empty() {
-            let prg = Program::new([]);
+            let prg = Sequence::new([]);
             let mut env = TestEnv::default();
             let mut f = env.new_frame();
 
@@ -181,7 +181,7 @@ mod eval {
         #[test]
         fn simple() {
             let txt = make_textline().into();
-            let prg = Program::new([
+            let prg = Sequence::new([
                 ExprCtx {
                     span: 0..6,
                     txt: Rc::clone(&txt),
@@ -211,7 +211,7 @@ mod eval {
         fn multiple_procedures() {
             let txt = make_textline().into();
             let mut env = TestEnv::default();
-            let prg = Program::new([
+            let prg = Sequence::new([
                 ExprCtx {
                     span: 0..5,
                     txt: Rc::clone(&txt),
@@ -276,7 +276,7 @@ mod eval {
         fn exception_interrupts_execution() {
             let txt = make_textline().into();
             let mut env = TestEnv::default();
-            let prg = Program::new([
+            let prg = Sequence::new([
                 ExprCtx {
                     span: 0..18,
                     txt: Rc::clone(&txt),

@@ -3,7 +3,7 @@ mod parse;
 #[cfg(test)]
 mod tests;
 
-pub(crate) use self::expr::Program;
+pub(crate) use self::expr::Sequence;
 use self::{
     expr::{ExprCtx, ExprEnd, Expression, ExpressionError, ExpressionKind, PeekableExt},
     parse::{MergeFlow, ParseBreak, ParseErrBreak, ParseErrFlow, ParseFlow, ParseNode},
@@ -55,7 +55,7 @@ pub(crate) struct TokenList;
 
 impl Parser for TokenList {
     fn parse(&mut self, token_lines: Box<[TokenLine]>, _ns: Namespace) -> ParserResult {
-        Ok(ParserOutput::Complete(Program::new(
+        Ok(ParserOutput::Complete(Sequence::new(
             tokens_expr(token_lines).into_iter().collect::<Box<[_]>>(),
         )))
     }
@@ -67,7 +67,7 @@ impl Parser for TokenList {
 
 #[derive(Debug)]
 pub(crate) enum ParserOutput {
-    Complete(Program),
+    Complete(Sequence),
     Continuation,
 }
 

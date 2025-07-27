@@ -4,7 +4,7 @@ mod tests;
 
 use self::form::SyntacticForm;
 use super::{
-    InvalidParseError, ParserError, Program, SyntaxError,
+    InvalidParseError, ParserError, Sequence, SyntaxError,
     expr::{ExprCtx, ExprEnd, Expression, ExpressionError, ExpressionErrorKind, ExpressionKind},
 };
 use crate::{
@@ -92,13 +92,13 @@ impl ParseNode {
     }
 }
 
-impl TryFrom<ParseNode> for Program {
+impl TryFrom<ParseNode> for Sequence {
     type Error = InvalidParseError;
 
     fn try_from(value: ParseNode) -> Result<Self, <Self as TryFrom<ParseNode>>::Error> {
         match value {
             ParseNode::InvalidParseTree(err) => Err(err),
-            ParseNode::Prg(seq) => Ok(Program::new(seq)),
+            ParseNode::Prg(seq) => Ok(Sequence::new(seq)),
             _ => Err(InvalidParseError::EndOfParse),
         }
     }

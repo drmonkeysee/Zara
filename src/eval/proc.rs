@@ -1,5 +1,5 @@
 use super::{Binding, EvalResult, Frame};
-use crate::{string::Symbol, syntax::Program, value::Value};
+use crate::{string::Symbol, syntax::Sequence, value::Value};
 use std::{
     collections::HashSet,
     fmt::{self, Display, Formatter, Write},
@@ -33,7 +33,7 @@ impl Procedure {
     pub(crate) fn lambda(
         named_args: impl IntoIterator<Item = Symbol>,
         variadic_arg: Option<Symbol>,
-        body: Program,
+        body: Sequence,
         closure: impl Into<Rc<Binding>>,
         name: Option<Symbol>,
     ) -> LambdaResult {
@@ -120,7 +120,7 @@ impl Display for InvalidFormal {
 enum Definition {
     Intrinsic(IntrinsicFn),
     Lambda {
-        body: Program,
+        body: Sequence,
         // TODO: make this optional for pure functions
         closure: Rc<Binding>,
         formals: Box<[Symbol]>,
@@ -204,7 +204,7 @@ fn into_formals(
 fn call_lambda(
     args: &[Value],
     env: &mut Frame,
-    body: &Program,
+    body: &Sequence,
     closure: &Rc<Binding>,
     formals: &[Symbol],
     variadic: Option<&Symbol>,
@@ -241,7 +241,7 @@ mod tests {
         testutil::{TestEnv, err_or_fail, extract_or_fail, make_tokenline, ok_or_fail},
     };
 
-    fn program(tokens: impl IntoIterator<Item = TokenKind>) -> Program {
+    fn body(tokens: impl IntoIterator<Item = TokenKind>) -> Sequence {
         let mut et = ExpressionTree::default();
         let mut env = TestEnv::default();
 
@@ -250,8 +250,8 @@ mod tests {
         extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete)
     }
 
-    fn empty_program() -> Program {
-        program([])
+    fn empty_body() -> Sequence {
+        body([])
     }
 
     #[test]
@@ -339,7 +339,7 @@ mod tests {
         let p = ok_or_fail!(Procedure::lambda(
             [],
             None,
-            empty_program(),
+            empty_body(),
             Binding::default(),
             None
         ));
@@ -353,7 +353,7 @@ mod tests {
         let p = ok_or_fail!(Procedure::lambda(
             [],
             None,
-            empty_program(),
+            empty_body(),
             Binding::default(),
             Some(sym.get("bar"))
         ));
@@ -367,7 +367,7 @@ mod tests {
         let p = ok_or_fail!(Procedure::lambda(
             [sym.get("x")],
             None,
-            empty_program(),
+            empty_body(),
             Binding::default(),
             Some(sym.get("bar"))
         ));
@@ -381,7 +381,7 @@ mod tests {
         let p = ok_or_fail!(Procedure::lambda(
             [sym.get("x"), sym.get("y"), sym.get("z")],
             None,
-            empty_program(),
+            empty_body(),
             Binding::default(),
             Some(sym.get("bar")),
         ));
@@ -395,7 +395,7 @@ mod tests {
         let p = ok_or_fail!(Procedure::lambda(
             [],
             Some(sym.get("any")),
-            empty_program(),
+            empty_body(),
             Binding::default(),
             Some(sym.get("bar"))
         ));
@@ -409,7 +409,7 @@ mod tests {
         let p = ok_or_fail!(Procedure::lambda(
             [sym.get("x"), sym.get("y"), sym.get("z")],
             Some(sym.get("rest")),
-            empty_program(),
+            empty_body(),
             Binding::default(),
             Some(sym.get("bar")),
         ));
@@ -492,7 +492,7 @@ mod tests {
         let p = ok_or_fail!(Procedure::lambda(
             [],
             None,
-            empty_program(),
+            empty_body(),
             Binding::default(),
             Some(sym.get("bar"))
         ));
@@ -506,7 +506,7 @@ mod tests {
         let p = ok_or_fail!(Procedure::lambda(
             [sym.get("x")],
             None,
-            empty_program(),
+            empty_body(),
             Binding::default(),
             Some(sym.get("bar"))
         ));
@@ -520,7 +520,7 @@ mod tests {
         let p = ok_or_fail!(Procedure::lambda(
             [sym.get("x"), sym.get("y"), sym.get("z")],
             None,
-            empty_program(),
+            empty_body(),
             Binding::default(),
             Some(sym.get("bar")),
         ));
@@ -536,7 +536,7 @@ mod tests {
         let p = ok_or_fail!(Procedure::lambda(
             [],
             Some(sym.get("any")),
-            empty_program(),
+            empty_body(),
             Binding::default(),
             Some(sym.get("bar"))
         ));
@@ -552,7 +552,7 @@ mod tests {
         let p = ok_or_fail!(Procedure::lambda(
             [sym.get("x"), sym.get("y")],
             Some(sym.get("any")),
-            empty_program(),
+            empty_body(),
             Binding::default(),
             Some(sym.get("bar")),
         ));
@@ -575,7 +575,7 @@ mod tests {
         let p = ok_or_fail!(Procedure::lambda(
             params,
             None,
-            empty_program(),
+            empty_body(),
             Binding::default(),
             Some(sym.get("bar"))
         ));
@@ -594,7 +594,7 @@ mod tests {
         let p = ok_or_fail!(Procedure::lambda(
             params,
             Some(sym.get("rest")),
-            empty_program(),
+            empty_body(),
             Binding::default(),
             Some(sym.get("bar"))
         ));
@@ -613,7 +613,7 @@ mod tests {
         let p = Procedure::lambda(
             params,
             None,
-            empty_program(),
+            empty_body(),
             Binding::default(),
             Some(sym.get("bar")),
         );
@@ -635,7 +635,7 @@ mod tests {
         let p = Procedure::lambda(
             params,
             Some(sym.get("rest")),
-            empty_program(),
+            empty_body(),
             Binding::default(),
             Some(sym.get("bar")),
         );
@@ -660,7 +660,7 @@ mod tests {
         let p = Procedure::lambda(
             params,
             None,
-            empty_program(),
+            empty_body(),
             Binding::default(),
             Some(sym.get("bar")),
         );
@@ -714,7 +714,7 @@ mod tests {
         let p = ok_or_fail!(Procedure::lambda(
             params,
             None,
-            program([TokenKind::String("bar".to_owned())]),
+            body([TokenKind::String("bar".to_owned())]),
             Rc::clone(&f.scope),
             Some(sym.get("bar")),
         ));
@@ -735,7 +735,7 @@ mod tests {
         let p = ok_or_fail!(Procedure::lambda(
             params,
             None,
-            program([TokenKind::Identifier("x".to_owned())]),
+            body([TokenKind::Identifier("x".to_owned())]),
             Rc::clone(&f.scope),
             Some(sym.get("bar")),
         ));
@@ -763,7 +763,7 @@ mod tests {
         let p = ok_or_fail!(Procedure::lambda(
             params,
             None,
-            program([
+            body([
                 TokenKind::ParenLeft,
                 TokenKind::Identifier("stringify".to_owned()),
                 TokenKind::Identifier("x".to_owned()),

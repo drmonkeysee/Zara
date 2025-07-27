@@ -17,9 +17,9 @@ use std::{
 };
 
 #[derive(Debug)]
-pub(crate) struct Program(Box<[Expression]>);
+pub(crate) struct Sequence(Box<[Expression]>);
 
-impl Program {
+impl Sequence {
     pub(super) fn new(seq: impl Into<Box<[Expression]>>) -> Self {
         Self(seq.into())
     }

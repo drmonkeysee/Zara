@@ -17,7 +17,7 @@ use crate::{
     lex::{DisplayTokenLines, TokenLine, TokenLinesMessage},
     number::{Number, Real},
     string::{CharDatum, StrDatum, Symbol},
-    syntax::Program,
+    syntax::Sequence,
 };
 use std::{
     fmt::{self, Display, Formatter},
@@ -27,7 +27,7 @@ pub(crate) use zlist;
 
 #[derive(Clone, Debug)]
 pub(crate) enum Value {
-    Ast(Rc<Program>),
+    Ast(Rc<Sequence>),
     Boolean(bool),
     ByteVector(Rc<[u8]>),
     Character(char),

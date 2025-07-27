@@ -8,7 +8,7 @@ pub(crate) use self::{
 use crate::{
     core,
     string::SymbolTable,
-    syntax::Program,
+    syntax::Sequence,
     value::{Condition, Value as ValueImpl},
 };
 use std::{
@@ -22,7 +22,7 @@ pub(crate) type Eval = Environment<EvalDriver>;
 pub(crate) type Ast = Environment<AstDriver>;
 
 pub(crate) trait Evaluator {
-    fn eval(&self, prg: Program, frame: &mut Frame) -> Evaluation;
+    fn eval(&self, prg: Sequence, frame: &mut Frame) -> Evaluation;
 }
 
 pub(crate) struct Environment<T> {
@@ -44,7 +44,7 @@ impl<T: Evaluator + Default> Environment<T> {
         me
     }
 
-    pub(crate) fn evaluate(&mut self, prg: Program) -> Evaluation {
+    pub(crate) fn evaluate(&mut self, prg: Sequence) -> Evaluation {
         let mut frame = self.make_frame();
         T::default().eval(prg, &mut frame)
     }
@@ -66,7 +66,7 @@ impl<T: Evaluator + Default> Environment<T> {
 pub(crate) struct EvalDriver;
 
 impl Evaluator for EvalDriver {
-    fn eval(&self, prg: Program, frame: &mut Frame) -> Evaluation {
+    fn eval(&self, prg: Sequence, frame: &mut Frame) -> Evaluation {
         Evaluation::result(prg.eval(frame))
     }
 }
@@ -75,7 +75,7 @@ impl Evaluator for EvalDriver {
 pub(crate) struct AstDriver;
 
 impl Evaluator for AstDriver {
-    fn eval(&self, prg: Program, _frame: &mut Frame) -> Evaluation {
+    fn eval(&self, prg: Sequence, _frame: &mut Frame) -> Evaluation {
         Evaluation::result(Ok(ValueImpl::Ast(prg.into())))
     }
 }

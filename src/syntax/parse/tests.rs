@@ -1883,7 +1883,7 @@ mod program {
 
         let r = p.try_into();
 
-        let prg: Program = ok_or_fail!(r);
+        let prg: Sequence = ok_or_fail!(r);
         let seq = prg.unwrap();
         assert_eq!(seq.len(), 1);
         assert!(matches!(
@@ -1899,7 +1899,7 @@ mod program {
     fn parse_failure_node_to_program_error() {
         let p = ParseNode::InvalidParseTree(InvalidParseError::InvalidExprSource);
 
-        let r: Result<Program, InvalidParseError> = p.try_into();
+        let r: Result<Sequence, InvalidParseError> = p.try_into();
 
         let err = err_or_fail!(r);
         assert!(matches!(err, InvalidParseError::InvalidExprSource));
@@ -1909,7 +1909,7 @@ mod program {
     fn invalid_node_to_program_error() {
         let p = ParseNode::new(ParseMode::CommentBlock, 0, make_textline());
 
-        let r: Result<Program, InvalidParseError> = p.try_into();
+        let r: Result<Sequence, InvalidParseError> = p.try_into();
 
         let err = err_or_fail!(r);
         assert!(matches!(err, InvalidParseError::EndOfParse));

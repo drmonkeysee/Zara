@@ -1,6 +1,6 @@
 use super::{
     ExprConvertResult, ExprCtx, ExprNode, Expression, ExpressionErrorKind, ExpressionKind,
-    MergeFlow, MergeResult, ParseBreak, ParseFlow, ParserError, Program, SyntaxError,
+    MergeFlow, MergeResult, ParseBreak, ParseFlow, ParserError, Sequence, SyntaxError,
 };
 use crate::{
     eval::{Namespace, Procedure},
@@ -323,7 +323,7 @@ fn into_procedure(
     Procedure::lambda(
         args,
         rest,
-        Program::new(body.into_iter().collect::<Box<[_]>>()),
+        Sequence::new(body.into_iter().collect::<Box<[_]>>()),
         ns.get_closure(),
         None,
     )
