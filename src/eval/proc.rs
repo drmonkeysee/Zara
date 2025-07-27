@@ -86,7 +86,7 @@ impl Display for Procedure {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         f.write_str("#<procedure")?;
         if let Some(n) = &self.name {
-            write!(f, " {n}")?;
+            write!(f, " {}", n.as_datum())?;
         }
         write_arity(&self.arity, self.formals(), f)?;
         f.write_char('>')
@@ -102,7 +102,7 @@ pub(crate) enum InvalidFormal {
 impl Display for InvalidFormal {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            Self::DuplicateFormal(n) => write!(f, "duplicate formal: {n}"),
+            Self::DuplicateFormal(n) => write!(f, "duplicate formal: {}", n.as_datum()),
             Self::MaxFormals => write!(
                 f,
                 "lambda definition exceeds formal arguments limit: {}",

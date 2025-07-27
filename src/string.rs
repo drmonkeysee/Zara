@@ -26,6 +26,10 @@ impl Symbol {
     pub(crate) fn as_rc(&self) -> Rc<str> {
         Rc::clone(&self.0)
     }
+
+    pub(crate) fn as_datum(&self) -> SymbolDatum {
+        SymbolDatum(self)
+    }
 }
 
 impl AsRef<str> for Symbol {
@@ -45,12 +49,6 @@ impl Deref for Symbol {
 
     fn deref(&self) -> &Self::Target {
         self.0.deref()
-    }
-}
-
-impl Display for Symbol {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        self.0.fmt(f)
     }
 }
 
@@ -281,7 +279,7 @@ mod tests {
     fn symbol_display() {
         let s = Symbol::new("foo");
 
-        assert_eq!(s.to_string(), "foo");
+        assert_eq!(s.as_datum().to_string(), "foo");
     }
 
     #[test]

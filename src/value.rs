@@ -16,7 +16,7 @@ use crate::{
     eval::Procedure,
     lex::{DisplayTokenLines, TokenLine, TokenLinesMessage},
     number::{Number, Real},
-    string::{CharDatum, StrDatum, Symbol, SymbolDatum},
+    string::{CharDatum, StrDatum, Symbol},
     syntax::Program,
 };
 use std::{
@@ -159,7 +159,7 @@ impl Display for Value {
             Self::Pair(Some(p)) => write!(f, "({p})"),
             Self::Procedure(p) => p.fmt(f),
             Self::String(s) => StrDatum(s).fmt(f),
-            Self::Symbol(s) => SymbolDatum(s).fmt(f),
+            Self::Symbol(s) => s.as_datum().fmt(f),
             Self::TokenList(lines) => DisplayTokenLines(lines).fmt(f),
             Self::Unspecified => f.write_str("#<unspecified>"),
             Self::Vector(v) => write_seq("#", v, f),
