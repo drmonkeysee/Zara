@@ -48,7 +48,7 @@ impl Deref for Symbol {
     type Target = str;
 
     fn deref(&self) -> &Self::Target {
-        self.0.deref()
+        &self.0
     }
 }
 
