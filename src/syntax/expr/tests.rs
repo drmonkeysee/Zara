@@ -367,6 +367,7 @@ mod eval {
 
     mod forms {
         use super::*;
+        use crate::eval::Binding;
 
         #[test]
         fn call_no_args() {
@@ -833,6 +834,46 @@ mod eval {
             let v = ok_or_fail!(r);
             assert!(matches!(v, Value::Unspecified));
             assert!(matches!(f.scope.lookup("foo"), Some(Value::String(s)) if s.as_ref() == "one"))
+        }
+
+        #[test]
+        fn set_with_expr_in_parent_scope() {
+            let txt = make_textline().into();
+            let mut env = TestEnv::default();
+            let expr = ExprCtx {
+                span: 0..10,
+                txt: Rc::clone(&txt),
+            }
+            .into_expr(ExpressionKind::Set {
+                var: env.symbols.get("foo"),
+                expr: Expression::string(
+                    "one",
+                    ExprCtx {
+                        span: 5..8,
+                        txt: Rc::clone(&txt),
+                    },
+                )
+                .into(),
+            });
+            env.binding.bind(env.symbols.get("foo"), Value::Unspecified);
+            let child_binding = Binding::new(Rc::clone(&env.binding)).into();
+            let mut f = Frame {
+                scope: Rc::clone(&child_binding),
+                sym: &mut env.symbols,
+                sys: &env.system,
+            };
+
+            let r = expr.eval(&mut f);
+
+            let v = ok_or_fail!(r);
+            assert!(matches!(v, Value::Unspecified));
+            assert!(
+                matches!(child_binding.lookup("foo"), Some(Value::String(s)) if s.as_ref() == "one")
+            );
+            assert!(
+                matches!(env.binding.lookup("foo"), Some(Value::String(s)) if s.as_ref() == "one")
+            );
+            assert!(child_binding.sorted_bindings().is_empty());
         }
 
         #[test]

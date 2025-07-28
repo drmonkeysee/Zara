@@ -12,12 +12,12 @@ pub(crate) struct Frame<'a> {
 
 #[derive(Debug, Default)]
 pub(crate) struct Binding {
-    parent: Option<Rc<Binding>>,
+    parent: Option<Rc<Self>>,
     vars: RefCell<HashMap<Symbol, Value>>,
 }
 
 impl Binding {
-    pub(crate) fn new(parent: impl Into<Rc<Binding>>) -> Self {
+    pub(crate) fn new(parent: impl Into<Rc<Self>>) -> Self {
         Self {
             parent: Some(parent.into()),
             ..Default::default()
@@ -25,7 +25,13 @@ impl Binding {
     }
 
     pub(crate) fn bound(&self, name: impl AsRef<str>) -> bool {
-        self.vars.borrow().contains_key(name.as_ref())
+        self.local_bound(&name) || self.parent.as_ref().is_some_and(|p| p.bound(name))
+    }
+
+    pub(crate) fn binding(&self, name: impl AsRef<str>) -> Option<&Self> {
+        self.local_bound(&name)
+            .then_some(self)
+            .or_else(|| self.parent.as_ref()?.binding(name))
     }
 
     pub(crate) fn lookup(&self, name: impl AsRef<str>) -> Option<Value> {
@@ -49,6 +55,10 @@ impl Binding {
             .collect::<Vec<_>>();
         vec.sort_by(|(a, _), (b, _)| a.cmp(b));
         vec
+    }
+
+    fn local_bound(&self, name: impl AsRef<str>) -> bool {
+        self.vars.borrow().contains_key(name.as_ref())
     }
 }
 
@@ -86,6 +96,7 @@ impl Namespace<'_> {
 mod tests {
     use super::*;
     use crate::testutil::some_or_fail;
+    use std::ptr;
 
     #[test]
     fn empty_lookup() {
@@ -94,6 +105,7 @@ mod tests {
         let v = b.lookup("foo");
 
         assert!(v.is_none());
+        assert!(!b.bound("foo"));
     }
 
     #[test]
@@ -105,6 +117,7 @@ mod tests {
         let v = b.lookup("foo");
 
         assert!(matches!(some_or_fail!(v), Value::Boolean(true)));
+        assert!(b.bound("foo"));
     }
 
     #[test]
@@ -118,14 +131,49 @@ mod tests {
         let v = b.lookup("bar");
 
         assert!(matches!(some_or_fail!(v), Value::String(s) if s.as_ref() == "beef"));
+        assert!(b.bound("bar"));
 
         let v = b.lookup("foo");
 
         assert!(matches!(some_or_fail!(v), Value::Boolean(true)));
+        assert!(b.bound("foo"));
 
         let v = b.lookup("baz");
 
         assert!(v.is_none());
+        assert!(!b.bound("baz"));
+    }
+
+    #[test]
+    fn empty_binding() {
+        let b = Binding::default();
+
+        let n = b.binding("foo");
+
+        assert!(n.is_none());
+    }
+
+    #[test]
+    fn basic_binding() {
+        let b = Binding::default();
+        let mut sym = SymbolTable::default();
+        b.bind(sym.get("foo"), Value::Boolean(true));
+
+        let n = b.binding("foo");
+
+        assert!(ptr::eq(some_or_fail!(n), &b));
+    }
+
+    #[test]
+    fn parent_binding() {
+        let p = Binding::default().into();
+        let b = Binding::new(Rc::clone(&p));
+        let mut sym = SymbolTable::default();
+        p.bind(sym.get("foo"), Value::Boolean(true));
+
+        let n = b.binding("foo");
+
+        assert!(ptr::eq(some_or_fail!(n), p.as_ref()));
     }
 
     #[test]

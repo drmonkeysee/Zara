@@ -145,7 +145,12 @@ impl ExpressionKind {
             Self::Set { var, expr } => {
                 if env.scope.bound(var) {
                     let val = expr.eval(env)?;
-                    env.scope.bind(var.clone(), val);
+                    // TODO: can expr ever have side-effects causing
+                    // .bound() and .binding() to resolve to different scopes?
+                    env.scope
+                        .binding(var)
+                        .expect("scope chain failure")
+                        .bind(var.clone(), val);
                     Ok(Value::Unspecified)
                 } else {
                     Err(Exception::signal(Condition::bind_error(var)))
