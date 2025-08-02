@@ -2583,7 +2583,7 @@ mod nodeutil {
     #[test]
     fn list_continuation() {
         let txt = make_textline().into();
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
         let p = ParseNode::new(
             ParseMode::List {
                 form: SyntacticForm::Call,

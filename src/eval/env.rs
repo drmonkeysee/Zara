@@ -6,7 +6,7 @@ use std::{cell::RefCell, collections::HashMap, rc::Rc, time::Instant};
 
 pub(crate) struct Frame<'a> {
     pub(crate) scope: Rc<Binding>,
-    pub(crate) sym: &'a mut SymbolTable,
+    pub(crate) sym: &'a SymbolTable,
     pub(crate) sys: &'a System,
 }
 
@@ -111,7 +111,7 @@ mod tests {
     #[test]
     fn basic_lookup() {
         let b = Binding::default();
-        let mut sym = SymbolTable::default();
+        let sym = SymbolTable::default();
         b.bind(sym.get("foo"), Value::Boolean(true));
 
         let v = b.lookup("foo");
@@ -124,7 +124,7 @@ mod tests {
     fn parent_lookup() {
         let p = Binding::default().into();
         let b = Binding::new(Rc::clone(&p));
-        let mut sym = SymbolTable::default();
+        let sym = SymbolTable::default();
         b.bind(sym.get("bar"), Value::string("beef"));
         p.bind(sym.get("foo"), Value::Boolean(true));
 
@@ -156,7 +156,7 @@ mod tests {
     #[test]
     fn basic_binding() {
         let b = Binding::default();
-        let mut sym = SymbolTable::default();
+        let sym = SymbolTable::default();
         b.bind(sym.get("foo"), Value::Boolean(true));
 
         let n = b.binding("foo");
@@ -168,7 +168,7 @@ mod tests {
     fn parent_binding() {
         let p = Binding::default().into();
         let b = Binding::new(Rc::clone(&p));
-        let mut sym = SymbolTable::default();
+        let sym = SymbolTable::default();
         p.bind(sym.get("foo"), Value::Boolean(true));
 
         let n = b.binding("foo");
@@ -188,7 +188,7 @@ mod tests {
     #[test]
     fn get_refs_single() {
         let b = Binding::default();
-        let mut sym = SymbolTable::default();
+        let sym = SymbolTable::default();
         b.bind(sym.get("foo"), Value::Unspecified);
 
         let all = b.sorted_bindings();
@@ -200,7 +200,7 @@ mod tests {
     #[test]
     fn get_refs_alphabetical() {
         let b = Binding::default();
-        let mut sym = SymbolTable::default();
+        let sym = SymbolTable::default();
         b.bind(sym.get("foo"), Value::Unspecified);
         b.bind(sym.get("bar"), Value::Unspecified);
         b.bind(sym.get("baz"), Value::Unspecified);

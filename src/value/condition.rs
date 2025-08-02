@@ -162,7 +162,7 @@ mod tests {
 
     #[test]
     fn display_list_irritants() {
-        let mut sym = SymbolTable::default();
+        let sym = SymbolTable::default();
         let c = Condition {
             kind: ConditionKind::General,
             msg: "foo".into(),

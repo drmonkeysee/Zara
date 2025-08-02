@@ -84,7 +84,7 @@ impl TestEnv {
     pub(crate) fn new_frame(&mut self) -> Frame {
         Frame {
             scope: Rc::clone(&self.binding),
-            sym: &mut self.symbols,
+            sym: &self.symbols,
             sys: &self.system,
         }
     }

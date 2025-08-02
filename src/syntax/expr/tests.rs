@@ -9,7 +9,7 @@ mod display {
 
     #[test]
     fn call_typename() {
-        let mut sym = SymbolTable::default();
+        let sym = SymbolTable::default();
         let proc = Expression::variable(
             sym.get("foo"),
             ExprCtx {
@@ -27,7 +27,7 @@ mod display {
 
     #[test]
     fn define_typename() {
-        let mut sym = SymbolTable::default();
+        let sym = SymbolTable::default();
         let expr = ExpressionKind::Define {
             name: sym.get("foo"),
             expr: Some(
@@ -71,7 +71,7 @@ mod display {
 
     #[test]
     fn set_typename() {
-        let mut sym = SymbolTable::default();
+        let sym = SymbolTable::default();
         let expr = ExpressionKind::Set {
             var: sym.get("foo"),
             expr: Expression::string(
@@ -89,7 +89,7 @@ mod display {
 
     #[test]
     fn variable_typename() {
-        let mut sym = SymbolTable::default();
+        let sym = SymbolTable::default();
         let expr = ExpressionKind::Variable(sym.get("foo"));
 
         assert_eq!(expr.as_typename().to_string(), "variable");
@@ -247,7 +247,7 @@ mod eval {
                 env.symbols.get("foo"),
                 Value::Procedure(
                     Procedure::intrinsic(env.symbols.get("foo"), 0..0, |_, f| {
-                        let mut sym = SymbolTable::default();
+                        let sym = SymbolTable::default();
                         f.scope.bind(sym.get("foo_called"), Value::Boolean(true));
                         Ok(Value::Symbol(sym.get("bar")))
                     })
@@ -327,7 +327,7 @@ mod eval {
                 env.symbols.get("foo"),
                 Value::Procedure(
                     Procedure::intrinsic(env.symbols.get("foo"), 0..0, |_, f| {
-                        let mut sym = SymbolTable::default();
+                        let sym = SymbolTable::default();
                         f.scope.bind(sym.get("foo_called"), Value::Boolean(true));
                         Ok(Value::Symbol(sym.get("bar")))
                     })
@@ -347,7 +347,7 @@ mod eval {
                 env.symbols.get("baz"),
                 Value::Procedure(
                     Procedure::intrinsic(env.symbols.get("baz"), 0..0, |_, f| {
-                        let mut sym = SymbolTable::default();
+                        let sym = SymbolTable::default();
                         f.scope.bind(sym.get("baz_called"), Value::Boolean(true));
                         Ok(Value::Character('a'))
                     })
@@ -707,7 +707,7 @@ mod eval {
                 env.symbols.get("foo"),
                 Value::Procedure(
                     Procedure::intrinsic(env.symbols.get("foo"), 4..4, |_, f| {
-                        let mut sym = SymbolTable::default();
+                        let sym = SymbolTable::default();
                         f.scope.bind(sym.get("foo_called"), Value::Boolean(true));
                         Ok(Value::Symbol(sym.get("bar")))
                     })
@@ -1132,7 +1132,7 @@ mod error {
 
     #[test]
     fn display_invalid_bytevector_item() {
-        let mut sym = SymbolTable::default();
+        let sym = SymbolTable::default();
         let err = ExprCtx {
             span: 0..5,
             txt: make_textline().into(),
@@ -1195,7 +1195,7 @@ mod error {
 
     #[test]
     fn display_invalid_vector_item() {
-        let mut sym = SymbolTable::default();
+        let sym = SymbolTable::default();
         let err = ExprCtx {
             span: 0..5,
             txt: make_textline().into(),
@@ -1232,7 +1232,7 @@ mod error {
     #[test]
     fn display_invalid_datum() {
         let txt = make_textline().into();
-        let mut sym = SymbolTable::default();
+        let sym = SymbolTable::default();
         let err = ExprCtx {
             span: 0..5,
             txt: Rc::clone(&txt),

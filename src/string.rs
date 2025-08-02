@@ -3,7 +3,7 @@ pub(crate) mod unicode;
 
 use std::{
     borrow::Borrow,
-    cell::Cell,
+    cell::{Cell, RefCell},
     cmp::Ordering,
     collections::HashSet,
     fmt::{self, Display, Formatter, Write},
@@ -53,21 +53,26 @@ impl Deref for Symbol {
 }
 
 #[derive(Default)]
-pub(crate) struct SymbolTable(HashSet<Symbol>);
+pub(crate) struct SymbolTable(RefCell<HashSet<Symbol>>);
 
 impl SymbolTable {
-    pub(crate) fn get(&mut self, name: impl AsRef<str>) -> Symbol {
+    pub(crate) fn get(&self, name: impl AsRef<str>) -> Symbol {
         let name = name.as_ref();
-        if let Some(s) = self.0.get(name) {
+        if let Some(s) = self.0.borrow().get(name) {
             s.clone()
         } else {
-            self.0.insert(Symbol::new(name));
+            self.0.borrow_mut().insert(Symbol::new(name));
             self.get(name)
         }
     }
 
     pub(crate) fn sorted_symbols(&self) -> Vec<Symbol> {
-        let mut vec = self.0.iter().map(Symbol::clone).collect::<Vec<_>>();
+        let mut vec = self
+            .0
+            .borrow()
+            .iter()
+            .map(Symbol::clone)
+            .collect::<Vec<_>>();
         vec.sort();
         vec
     }
@@ -284,7 +289,7 @@ mod tests {
 
     #[test]
     fn same_symbols() {
-        let mut s = SymbolTable::default();
+        let s = SymbolTable::default();
 
         let a = s.get("foo");
         let b = s.get("foo");
@@ -294,7 +299,7 @@ mod tests {
 
     #[test]
     fn different_symbols() {
-        let mut s = SymbolTable::default();
+        let s = SymbolTable::default();
 
         let a = s.get("foo");
         let b = s.get("bar");
@@ -313,7 +318,7 @@ mod tests {
 
     #[test]
     fn get_refs_single() {
-        let mut s = SymbolTable::default();
+        let s = SymbolTable::default();
         s.get("foo");
 
         let all = s.sorted_symbols();
@@ -324,7 +329,7 @@ mod tests {
 
     #[test]
     fn get_refs_alphabetical() {
-        let mut s = SymbolTable::default();
+        let s = SymbolTable::default();
         s.get("foo");
         s.get("bar");
         s.get("baz");

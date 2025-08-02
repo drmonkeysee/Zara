@@ -56,7 +56,7 @@ impl<T: Evaluator + Default> Environment<T> {
     fn make_frame(&mut self) -> Frame {
         Frame {
             scope: Rc::clone(&self.global),
-            sym: &mut self.symbols,
+            sym: &self.symbols,
             sys: &self.system,
         }
     }

@@ -266,7 +266,7 @@ mod tests {
 
     #[test]
     fn display_duplicate_formal() {
-        let mut sym = SymbolTable::default();
+        let sym = SymbolTable::default();
         let e = InvalidFormal::DuplicateFormal(sym.get("x"));
 
         assert_eq!(e.to_string(), "duplicate formal: x");
@@ -274,7 +274,7 @@ mod tests {
 
     #[test]
     fn intrinsic_zero_arity() {
-        let mut sym = SymbolTable::default();
+        let sym = SymbolTable::default();
         let p = Procedure::intrinsic(sym.get("foo"), 0..0, |_, _| Ok(Value::Unspecified));
 
         assert_eq!(p.to_string(), "#<procedure foo>");
@@ -282,7 +282,7 @@ mod tests {
 
     #[test]
     fn intrinsic_single_arity() {
-        let mut sym = SymbolTable::default();
+        let sym = SymbolTable::default();
         let p = Procedure::intrinsic(sym.get("foo"), 1..1, |_, _| Ok(Value::Unspecified));
 
         assert_eq!(p.to_string(), "#<procedure foo (_)>");
@@ -290,7 +290,7 @@ mod tests {
 
     #[test]
     fn intrinsic_multi_arity() {
-        let mut sym = SymbolTable::default();
+        let sym = SymbolTable::default();
         let p = Procedure::intrinsic(sym.get("foo"), 3..3, |_, _| Ok(Value::Unspecified));
 
         assert_eq!(p.to_string(), "#<procedure foo (_ _ _)>");
@@ -298,7 +298,7 @@ mod tests {
 
     #[test]
     fn intrinsic_optional() {
-        let mut sym = SymbolTable::default();
+        let sym = SymbolTable::default();
         let p = Procedure::intrinsic(sym.get("foo"), 0..1, |_, _| Ok(Value::Unspecified));
 
         assert_eq!(p.to_string(), "#<procedure foo (?)>");
@@ -306,7 +306,7 @@ mod tests {
 
     #[test]
     fn intrinsic_multi_optional() {
-        let mut sym = SymbolTable::default();
+        let sym = SymbolTable::default();
         let p = Procedure::intrinsic(sym.get("foo"), 1..3, |_, _| Ok(Value::Unspecified));
 
         assert_eq!(p.to_string(), "#<procedure foo (_ ? ?)>");
@@ -320,7 +320,7 @@ mod tests {
 
     #[test]
     fn intrinsic_open_arity() {
-        let mut sym = SymbolTable::default();
+        let sym = SymbolTable::default();
         let p = Procedure::intrinsic(sym.get("foo"), 0..255, |_, _| Ok(Value::Unspecified));
 
         assert_eq!(p.to_string(), "#<procedure foo (…)>");
@@ -328,7 +328,7 @@ mod tests {
 
     #[test]
     fn intrinsic_required_params_with_open_arity() {
-        let mut sym = SymbolTable::default();
+        let sym = SymbolTable::default();
         let p = Procedure::intrinsic(sym.get("foo"), 2..255, |_, _| Ok(Value::Unspecified));
 
         assert_eq!(p.to_string(), "#<procedure foo (_ _ …)>");
@@ -349,7 +349,7 @@ mod tests {
 
     #[test]
     fn lambda_zero_arity() {
-        let mut sym = SymbolTable::default();
+        let sym = SymbolTable::default();
         let p = ok_or_fail!(Procedure::lambda(
             [],
             None,
@@ -363,7 +363,7 @@ mod tests {
 
     #[test]
     fn lambda_single_arity() {
-        let mut sym = SymbolTable::default();
+        let sym = SymbolTable::default();
         let p = ok_or_fail!(Procedure::lambda(
             [sym.get("x")],
             None,
@@ -377,7 +377,7 @@ mod tests {
 
     #[test]
     fn lambda_multi_arity() {
-        let mut sym = SymbolTable::default();
+        let sym = SymbolTable::default();
         let p = ok_or_fail!(Procedure::lambda(
             [sym.get("x"), sym.get("y"), sym.get("z")],
             None,
@@ -391,7 +391,7 @@ mod tests {
 
     #[test]
     fn lambda_variadic_arity() {
-        let mut sym = SymbolTable::default();
+        let sym = SymbolTable::default();
         let p = ok_or_fail!(Procedure::lambda(
             [],
             Some(sym.get("any")),
@@ -405,7 +405,7 @@ mod tests {
 
     #[test]
     fn lambda_rest_arity() {
-        let mut sym = SymbolTable::default();
+        let sym = SymbolTable::default();
         let p = ok_or_fail!(Procedure::lambda(
             [sym.get("x"), sym.get("y"), sym.get("z")],
             Some(sym.get("rest")),
@@ -419,7 +419,7 @@ mod tests {
 
     #[test]
     fn matches_zero_arity() {
-        let mut sym = SymbolTable::default();
+        let sym = SymbolTable::default();
         let p = Procedure::intrinsic(sym.get("foo"), 0..0, |_, _| Ok(Value::Unspecified));
 
         assert!(p.matches_arity(0));
@@ -427,7 +427,7 @@ mod tests {
 
     #[test]
     fn matches_single_arity() {
-        let mut sym = SymbolTable::default();
+        let sym = SymbolTable::default();
         let p = Procedure::intrinsic(sym.get("foo"), 1..1, |_, _| Ok(Value::Unspecified));
 
         assert!(p.matches_arity(1));
@@ -435,7 +435,7 @@ mod tests {
 
     #[test]
     fn matches_max_arity() {
-        let mut sym = SymbolTable::default();
+        let sym = SymbolTable::default();
         let p = Procedure::intrinsic(sym.get("foo"), 255..255, |_, _| Ok(Value::Unspecified));
 
         assert!(p.matches_arity(MAX_ARITY as usize));
@@ -443,7 +443,7 @@ mod tests {
 
     #[test]
     fn matches_min_variable_arity() {
-        let mut sym = SymbolTable::default();
+        let sym = SymbolTable::default();
         let p = Procedure::intrinsic(sym.get("foo"), 0..3, |_, _| Ok(Value::Unspecified));
 
         assert!(p.matches_arity(0));
@@ -451,7 +451,7 @@ mod tests {
 
     #[test]
     fn matches_max_variable_arity() {
-        let mut sym = SymbolTable::default();
+        let sym = SymbolTable::default();
         let p = Procedure::intrinsic(sym.get("foo"), 0..3, |_, _| Ok(Value::Unspecified));
 
         assert!(p.matches_arity(3));
@@ -459,7 +459,7 @@ mod tests {
 
     #[test]
     fn matches_exceeds_variable_arity() {
-        let mut sym = SymbolTable::default();
+        let sym = SymbolTable::default();
         let p = Procedure::intrinsic(sym.get("foo"), 0..3, |_, _| Ok(Value::Unspecified));
 
         assert!(!p.matches_arity(4));
@@ -467,7 +467,7 @@ mod tests {
 
     #[test]
     fn matches_variable_arity() {
-        let mut sym = SymbolTable::default();
+        let sym = SymbolTable::default();
         let p = Procedure::intrinsic(sym.get("foo"), 2..5, |_, _| Ok(Value::Unspecified));
 
         assert!(!p.matches_arity(1));
@@ -480,7 +480,7 @@ mod tests {
 
     #[test]
     fn exceeds_max_arity() {
-        let mut sym = SymbolTable::default();
+        let sym = SymbolTable::default();
         let p = Procedure::intrinsic(sym.get("foo"), 255..255, |_, _| Ok(Value::Unspecified));
 
         assert!(!p.matches_arity(256));
@@ -488,7 +488,7 @@ mod tests {
 
     #[test]
     fn lambda_matches_zero_arity() {
-        let mut sym = SymbolTable::default();
+        let sym = SymbolTable::default();
         let p = ok_or_fail!(Procedure::lambda(
             [],
             None,
@@ -502,7 +502,7 @@ mod tests {
 
     #[test]
     fn lambda_matches_single_arity() {
-        let mut sym = SymbolTable::default();
+        let sym = SymbolTable::default();
         let p = ok_or_fail!(Procedure::lambda(
             [sym.get("x")],
             None,
@@ -516,7 +516,7 @@ mod tests {
 
     #[test]
     fn lambda_matches_multi_arity() {
-        let mut sym = SymbolTable::default();
+        let sym = SymbolTable::default();
         let p = ok_or_fail!(Procedure::lambda(
             [sym.get("x"), sym.get("y"), sym.get("z")],
             None,
@@ -532,7 +532,7 @@ mod tests {
 
     #[test]
     fn lambda_matches_variadic_arity() {
-        let mut sym = SymbolTable::default();
+        let sym = SymbolTable::default();
         let p = ok_or_fail!(Procedure::lambda(
             [],
             Some(sym.get("any")),
@@ -548,7 +548,7 @@ mod tests {
 
     #[test]
     fn lambda_matches_rest_arity() {
-        let mut sym = SymbolTable::default();
+        let sym = SymbolTable::default();
         let p = ok_or_fail!(Procedure::lambda(
             [sym.get("x"), sym.get("y")],
             Some(sym.get("any")),
@@ -566,7 +566,7 @@ mod tests {
 
     #[test]
     fn lambda_max_arity() {
-        let mut sym = SymbolTable::default();
+        let sym = SymbolTable::default();
         let params = (0..MAX_ARITY)
             .into_iter()
             .map(|i| sym.get(format!("x{i}")))
@@ -585,7 +585,7 @@ mod tests {
 
     #[test]
     fn lambda_max_arity_with_rest() {
-        let mut sym = SymbolTable::default();
+        let sym = SymbolTable::default();
         let params = (0..MAX_ARITY - 1)
             .into_iter()
             .map(|i| sym.get(format!("x{i}")))
@@ -604,7 +604,7 @@ mod tests {
 
     #[test]
     fn lambda_too_many_params() {
-        let mut sym = SymbolTable::default();
+        let sym = SymbolTable::default();
         let params = (0..MAX_ARITY as usize + 1)
             .into_iter()
             .map(|i| sym.get(format!("x{i}")))
@@ -626,7 +626,7 @@ mod tests {
 
     #[test]
     fn lambda_too_many_params_with_rest() {
-        let mut sym = SymbolTable::default();
+        let sym = SymbolTable::default();
         let params = (0..MAX_ARITY)
             .into_iter()
             .map(|i| sym.get(format!("x{i}")))
@@ -648,7 +648,7 @@ mod tests {
 
     #[test]
     fn lambda_duplicate_params() {
-        let mut sym = SymbolTable::default();
+        let sym = SymbolTable::default();
         let params = [
             sym.get("x"),
             sym.get("y"),
@@ -674,7 +674,7 @@ mod tests {
 
     #[test]
     fn apply_zero_arity() {
-        let mut sym = SymbolTable::default();
+        let sym = SymbolTable::default();
         let p = Procedure::intrinsic(sym.get("foo"), 0..0, |_, _| Ok(Value::string("bar")));
         let mut env = TestEnv::default();
         let mut f = env.new_frame();
@@ -688,7 +688,7 @@ mod tests {
 
     #[test]
     fn apply_single_arity() {
-        let mut sym = SymbolTable::default();
+        let sym = SymbolTable::default();
         let p = Procedure::intrinsic(sym.get("foo"), 1..1, |args, _| {
             let Value::String(s) = &args[0] else {
                 unreachable!()
@@ -707,7 +707,7 @@ mod tests {
 
     #[test]
     fn apply_zero_arity_lambda() {
-        let mut sym = SymbolTable::default();
+        let sym = SymbolTable::default();
         let mut env = TestEnv::default();
         let mut f = env.new_frame();
         let params = [];
@@ -728,7 +728,7 @@ mod tests {
 
     #[test]
     fn apply_single_arity_lambda() {
-        let mut sym = SymbolTable::default();
+        let sym = SymbolTable::default();
         let mut env = TestEnv::default();
         let mut f = env.new_frame();
         let params = [sym.get("x")];
@@ -751,7 +751,7 @@ mod tests {
 
     #[test]
     fn apply_single_arity_lambda_with_closure() {
-        let mut sym = SymbolTable::default();
+        let sym = SymbolTable::default();
         let mut env = TestEnv::default();
         let global_func = Procedure::intrinsic(sym.get("stringify"), 1..1, |args, _| {
             Ok(Value::string(format!("bar {}", args[0])))
