@@ -143,14 +143,9 @@ impl ExpressionKind {
             }
             Self::Literal(v) => Ok(v.clone()),
             Self::Set { var, expr } => {
-                if env.scope.bound(var) {
+                if let Some(b) = env.scope.binding(var) {
                     let val = expr.eval(env)?;
-                    // TODO: can expr ever have side-effects causing
-                    // .bound() and .binding() to resolve to different scopes?
-                    env.scope
-                        .binding(var)
-                        .expect("scope chain failure")
-                        .bind(var.clone(), val);
+                    b.bind(var.clone(), val);
                     Ok(Value::Unspecified)
                 } else {
                     Err(Exception::signal(Condition::bind_error(var)))
