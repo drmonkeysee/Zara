@@ -93,6 +93,7 @@ impl Namespace<'_> {
         self.0.scope.bound(name)
     }
 
+    #[deprecated = "this is wrong; closure is determined at eval not parse"]
     pub(crate) fn get_closure(&self) -> Rc<Binding> {
         Rc::clone(&self.0.scope)
     }
