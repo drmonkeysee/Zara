@@ -4,7 +4,7 @@ use crate::eval::InvalidFormal;
 #[test]
 fn end() {
     let txt = make_textline().into();
-    let mut env = TestEnv::default();
+    let env = TestEnv::default();
     let mut seq = vec![
         Expression::variable(
             env.symbols.get("+"),
@@ -28,9 +28,9 @@ fn end() {
         kind: TokenKind::ParenRight,
         span: 6..7,
     };
-    let mut ns = env.new_namespace();
+    let ns = env.new_namespace();
 
-    let f = SyntacticForm::Call.parse_list(&mut seq, token, &txt, &mut ns);
+    let f = SyntacticForm::Call.parse_list(&mut seq, token, &txt, &ns);
 
     assert!(matches!(
         f,
@@ -42,7 +42,7 @@ fn end() {
 #[test]
 fn nested_list() {
     let txt = make_textline().into();
-    let mut env = TestEnv::default();
+    let env = TestEnv::default();
     let mut seq = vec![
         Expression::variable(
             env.symbols.get("+"),
@@ -66,9 +66,9 @@ fn nested_list() {
         kind: TokenKind::ParenLeft,
         span: 6..7,
     };
-    let mut ns = env.new_namespace();
+    let ns = env.new_namespace();
 
-    let f = SyntacticForm::Call.parse_list(&mut seq, token, &txt, &mut ns);
+    let f = SyntacticForm::Call.parse_list(&mut seq, token, &txt, &ns);
 
     assert!(matches!(
         f,
@@ -88,10 +88,10 @@ fn empty() {
         span: 4..5,
     };
     let txt = make_textline().into();
-    let mut env = TestEnv::default();
-    let mut ns = env.new_namespace();
+    let env = TestEnv::default();
+    let ns = env.new_namespace();
 
-    let f = SyntacticForm::Call.parse_list(&mut seq, token, &txt, &mut ns);
+    let f = SyntacticForm::Call.parse_list(&mut seq, token, &txt, &ns);
 
     assert!(matches!(
         f,
@@ -103,7 +103,7 @@ fn empty() {
 #[test]
 fn expression_item() {
     let txt = make_textline().into();
-    let mut env = TestEnv::default();
+    let env = TestEnv::default();
     let mut seq = vec![
         Expression::variable(
             env.symbols.get("+"),
@@ -127,9 +127,9 @@ fn expression_item() {
         kind: TokenKind::Number(Number::real(10)),
         span: 6..7,
     };
-    let mut ns = env.new_namespace();
+    let ns = env.new_namespace();
 
-    let f = SyntacticForm::Call.parse_list(&mut seq, token, &txt, &mut ns);
+    let f = SyntacticForm::Call.parse_list(&mut seq, token, &txt, &ns);
 
     assert!(matches!(f, ParseFlow::Continue(())));
     assert_eq!(seq.len(), 4);
@@ -156,11 +156,11 @@ fn start_dotted_pair() {
         kind: TokenKind::PairJoiner,
         span: 5..6,
     };
-    let mut env = TestEnv::default();
-    let mut ns = env.new_namespace();
+    let env = TestEnv::default();
+    let ns = env.new_namespace();
     let mut frm = SyntacticForm::Datum;
 
-    let f = frm.parse_list(&mut seq, token, &txt, &mut ns);
+    let f = frm.parse_list(&mut seq, token, &txt, &ns);
 
     assert!(matches!(frm, SyntacticForm::PairOpen));
     assert!(matches!(f, ParseFlow::Continue(())));
@@ -175,11 +175,11 @@ fn start_dotted_pair_missing_first_element() {
         kind: TokenKind::PairJoiner,
         span: 1..2,
     };
-    let mut env = TestEnv::default();
-    let mut ns = env.new_namespace();
+    let env = TestEnv::default();
+    let ns = env.new_namespace();
     let mut frm = SyntacticForm::Datum;
 
-    let f = frm.parse_list(&mut seq, token, &txt, &mut ns);
+    let f = frm.parse_list(&mut seq, token, &txt, &ns);
 
     assert!(matches!(frm, SyntacticForm::Datum));
     assert!(matches!(
@@ -209,10 +209,10 @@ fn dotted_pair_in_non_datum() {
         kind: TokenKind::PairJoiner,
         span: 5..6,
     };
-    let mut env = TestEnv::default();
-    let mut ns = env.new_namespace();
+    let env = TestEnv::default();
+    let ns = env.new_namespace();
 
-    let f = SyntacticForm::Call.parse_list(&mut seq, token, &txt, &mut ns);
+    let f = SyntacticForm::Call.parse_list(&mut seq, token, &txt, &ns);
 
     assert!(matches!(
         f,
@@ -241,11 +241,11 @@ fn close_dotted_pair() {
         kind: TokenKind::Identifier("foo".to_owned()),
         span: 5..8,
     };
-    let mut env = TestEnv::default();
-    let mut ns = env.new_namespace();
+    let env = TestEnv::default();
+    let ns = env.new_namespace();
     let mut frm = SyntacticForm::PairOpen;
 
-    let f = frm.parse_list(&mut seq, token, &txt, &mut ns);
+    let f = frm.parse_list(&mut seq, token, &txt, &ns);
 
     assert!(matches!(frm, SyntacticForm::PairClosed));
     assert!(matches!(f, ParseFlow::Continue(())));
@@ -273,11 +273,11 @@ fn open_dotted_pair_does_nothing_if_no_expr() {
         kind: TokenKind::Comment,
         span: 5..8,
     };
-    let mut env = TestEnv::default();
-    let mut ns = env.new_namespace();
+    let env = TestEnv::default();
+    let ns = env.new_namespace();
     let mut frm = SyntacticForm::PairOpen;
 
-    let f = frm.parse_list(&mut seq, token, &txt, &mut ns);
+    let f = frm.parse_list(&mut seq, token, &txt, &ns);
 
     assert!(matches!(frm, SyntacticForm::PairOpen));
     assert!(matches!(f, ParseFlow::Continue(())));
@@ -298,11 +298,11 @@ fn closed_dotted_pair_does_nothing_if_no_expr() {
         kind: TokenKind::Comment,
         span: 5..8,
     };
-    let mut env = TestEnv::default();
-    let mut ns = env.new_namespace();
+    let env = TestEnv::default();
+    let ns = env.new_namespace();
     let mut frm = SyntacticForm::PairClosed;
 
-    let f = frm.parse_list(&mut seq, token, &txt, &mut ns);
+    let f = frm.parse_list(&mut seq, token, &txt, &ns);
 
     assert!(matches!(frm, SyntacticForm::PairClosed));
     assert!(matches!(f, ParseFlow::Continue(())));
@@ -323,11 +323,11 @@ fn open_dotted_pair_hits_end_of_list() {
         kind: TokenKind::ParenRight,
         span: 5..6,
     };
-    let mut env = TestEnv::default();
-    let mut ns = env.new_namespace();
+    let env = TestEnv::default();
+    let ns = env.new_namespace();
     let mut frm = SyntacticForm::PairOpen;
 
-    let f = frm.parse_list(&mut seq, token, &txt, &mut ns);
+    let f = frm.parse_list(&mut seq, token, &txt, &ns);
 
     assert!(matches!(frm, SyntacticForm::PairOpen));
     assert!(matches!(
@@ -357,11 +357,11 @@ fn double_dotted_open_pair() {
         kind: TokenKind::PairJoiner,
         span: 5..6,
     };
-    let mut env = TestEnv::default();
-    let mut ns = env.new_namespace();
+    let env = TestEnv::default();
+    let ns = env.new_namespace();
     let mut frm = SyntacticForm::PairOpen;
 
-    let f = frm.parse_list(&mut seq, token, &txt, &mut ns);
+    let f = frm.parse_list(&mut seq, token, &txt, &ns);
 
     assert!(matches!(frm, SyntacticForm::Datum));
     assert!(matches!(
@@ -391,11 +391,11 @@ fn double_dotted_closed_pair() {
         kind: TokenKind::PairJoiner,
         span: 5..6,
     };
-    let mut env = TestEnv::default();
-    let mut ns = env.new_namespace();
+    let env = TestEnv::default();
+    let ns = env.new_namespace();
     let mut frm = SyntacticForm::PairClosed;
 
-    let f = frm.parse_list(&mut seq, token, &txt, &mut ns);
+    let f = frm.parse_list(&mut seq, token, &txt, &ns);
 
     assert!(matches!(frm, SyntacticForm::Datum));
     assert!(matches!(
@@ -414,7 +414,7 @@ fn double_dotted_closed_pair() {
 #[test]
 fn invalid_token() {
     let txt = make_textline().into();
-    let mut env = TestEnv::default();
+    let env = TestEnv::default();
     let mut seq = vec![
         Expression::variable(
             env.symbols.get("+"),
@@ -438,9 +438,9 @@ fn invalid_token() {
         kind: TokenKind::StringDiscard,
         span: 6..7,
     };
-    let mut ns = env.new_namespace();
+    let ns = env.new_namespace();
 
-    let f = SyntacticForm::Call.parse_list(&mut seq, token, &txt, &mut ns);
+    let f = SyntacticForm::Call.parse_list(&mut seq, token, &txt, &ns);
 
     assert!(matches!(
         f,
@@ -459,7 +459,7 @@ fn invalid_token() {
 fn into_procedure_call() {
     // (+ 4 5)
     let txt = make_textline().into();
-    let mut env = TestEnv::default();
+    let env = TestEnv::default();
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..6,
@@ -488,9 +488,9 @@ fn into_procedure_call() {
             ],
         },
     };
-    let mut ns = env.new_namespace();
+    let ns = env.new_namespace();
 
-    let r = p.try_into_expr(&mut ns);
+    let r = p.try_into_expr(&ns);
 
     let expr = some_or_fail!(ok_or_fail!(r));
     assert!(matches!(
@@ -541,10 +541,10 @@ fn into_empty_procedure_call() {
             seq: vec![],
         },
     };
-    let mut env = TestEnv::default();
-    let mut ns = env.new_namespace();
+    let env = TestEnv::default();
+    let ns = env.new_namespace();
 
-    let r = p.try_into_expr(&mut ns);
+    let r = p.try_into_expr(&ns);
 
     let errs = err_or_fail!(r);
     assert_eq!(errs.len(), 1);
@@ -561,7 +561,7 @@ fn into_empty_procedure_call() {
 fn into_quote_apply() {
     // (quote foo)
     let txt = make_textline().into();
-    let mut env = TestEnv::default();
+    let env = TestEnv::default();
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..10,
@@ -578,9 +578,9 @@ fn into_quote_apply() {
             )],
         },
     };
-    let mut ns = env.new_namespace();
+    let ns = env.new_namespace();
 
-    let r = p.try_into_expr(&mut ns);
+    let r = p.try_into_expr(&ns);
 
     let expr = some_or_fail!(ok_or_fail!(r));
     assert!(matches!(
@@ -606,10 +606,10 @@ fn into_empty_quote_apply() {
             seq: vec![],
         },
     };
-    let mut env = TestEnv::default();
-    let mut ns = env.new_namespace();
+    let env = TestEnv::default();
+    let ns = env.new_namespace();
 
-    let r = p.try_into_expr(&mut ns);
+    let r = p.try_into_expr(&ns);
 
     let errs = err_or_fail!(r);
     assert_eq!(errs.len(), 1);
@@ -626,7 +626,7 @@ fn into_empty_quote_apply() {
 fn into_quote_apply_too_many_args() {
     // (quote foo bar)
     let txt = make_textline().into();
-    let mut env = TestEnv::default();
+    let env = TestEnv::default();
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..14,
@@ -652,9 +652,9 @@ fn into_quote_apply_too_many_args() {
             ],
         },
     };
-    let mut ns = env.new_namespace();
+    let ns = env.new_namespace();
 
-    let r = p.try_into_expr(&mut ns);
+    let r = p.try_into_expr(&ns);
 
     let errs = err_or_fail!(r);
     assert_eq!(errs.len(), 1);
@@ -671,7 +671,7 @@ fn into_quote_apply_too_many_args() {
 fn into_datum_list() {
     // '(+ 4 5)
     let txt = make_textline().into();
-    let mut env = TestEnv::default();
+    let env = TestEnv::default();
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..6,
@@ -700,9 +700,9 @@ fn into_datum_list() {
             ],
         },
     };
-    let mut ns = env.new_namespace();
+    let ns = env.new_namespace();
 
-    let r = p.try_into_expr(&mut ns);
+    let r = p.try_into_expr(&ns);
 
     let expr = some_or_fail!(ok_or_fail!(r));
     assert!(matches!(
@@ -730,10 +730,10 @@ fn into_empty_datum_list() {
             seq: Vec::new(),
         },
     };
-    let mut env = TestEnv::default();
-    let mut ns = env.new_namespace();
+    let env = TestEnv::default();
+    let ns = env.new_namespace();
 
-    let r = p.try_into_expr(&mut ns);
+    let r = p.try_into_expr(&ns);
 
     let expr = some_or_fail!(ok_or_fail!(r));
     assert!(matches!(
@@ -751,7 +751,7 @@ fn into_empty_datum_list() {
 fn into_invalid_datum_list() {
     // '(<unquoted +> 4 5)
     let txt = make_textline().into();
-    let mut env = TestEnv::default();
+    let env = TestEnv::default();
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..8,
@@ -780,9 +780,9 @@ fn into_invalid_datum_list() {
             ],
         },
     };
-    let mut ns = env.new_namespace();
+    let ns = env.new_namespace();
 
-    let r = p.try_into_expr(&mut ns);
+    let r = p.try_into_expr(&ns);
 
     let errs = err_or_fail!(r);
     assert_eq!(errs.len(), 1);
@@ -820,10 +820,10 @@ fn into_pair() {
             ],
         },
     };
-    let mut env = TestEnv::default();
-    let mut ns = env.new_namespace();
+    let env = TestEnv::default();
+    let ns = env.new_namespace();
 
-    let r = p.try_into_expr(&mut ns);
+    let r = p.try_into_expr(&ns);
 
     let expr = some_or_fail!(ok_or_fail!(r));
     assert!(matches!(
@@ -857,10 +857,10 @@ fn invalid_into_open_pair() {
             ],
         },
     };
-    let mut env = TestEnv::default();
-    let mut ns = env.new_namespace();
+    let env = TestEnv::default();
+    let ns = env.new_namespace();
 
-    let r = p.try_into_expr(&mut ns);
+    let r = p.try_into_expr(&ns);
 
     let errs = err_or_fail!(r);
     assert_eq!(errs.len(), 1);
@@ -877,7 +877,7 @@ fn invalid_into_open_pair() {
 fn into_define_variable() {
     // (define foo "bar")
     let txt = make_textline().into();
-    let mut env = TestEnv::default();
+    let env = TestEnv::default();
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..18,
@@ -903,9 +903,9 @@ fn into_define_variable() {
             ],
         },
     };
-    let mut ns = env.new_namespace();
+    let ns = env.new_namespace();
 
-    let r = p.try_into_expr(&mut ns);
+    let r = p.try_into_expr(&ns);
 
     let expr = some_or_fail!(ok_or_fail!(r));
     assert!(matches!(
@@ -929,7 +929,7 @@ fn into_define_variable() {
 fn into_define_lambda() {
     // (define (foo x y) (+ x y))
     let txt = make_textline().into();
-    let mut env = TestEnv::default();
+    let env = TestEnv::default();
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..26,
@@ -981,9 +981,9 @@ fn into_define_lambda() {
             ],
         },
     };
-    let mut ns = env.new_namespace();
+    let ns = env.new_namespace();
 
-    let r = p.try_into_expr(&mut ns);
+    let r = p.try_into_expr(&ns);
 
     let expr = some_or_fail!(ok_or_fail!(r));
     assert!(matches!(
@@ -1007,7 +1007,7 @@ fn into_define_lambda() {
 fn into_define_parameterless_lambda() {
     // (define (foo) 123)
     let txt = make_textline().into();
-    let mut env = TestEnv::default();
+    let env = TestEnv::default();
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..18,
@@ -1031,9 +1031,9 @@ fn into_define_parameterless_lambda() {
             ],
         },
     };
-    let mut ns = env.new_namespace();
+    let ns = env.new_namespace();
 
-    let r = p.try_into_expr(&mut ns);
+    let r = p.try_into_expr(&ns);
 
     let expr = some_or_fail!(ok_or_fail!(r));
     assert!(matches!(
@@ -1057,7 +1057,7 @@ fn into_define_parameterless_lambda() {
 fn into_define_variadic_lambda() {
     // (define (foo . x) (cdr x))
     let txt = make_textline().into();
-    let mut env = TestEnv::default();
+    let env = TestEnv::default();
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..26,
@@ -1099,9 +1099,9 @@ fn into_define_variadic_lambda() {
             ],
         },
     };
-    let mut ns = env.new_namespace();
+    let ns = env.new_namespace();
 
-    let r = p.try_into_expr(&mut ns);
+    let r = p.try_into_expr(&ns);
 
     let expr = some_or_fail!(ok_or_fail!(r));
     assert!(matches!(
@@ -1125,7 +1125,7 @@ fn into_define_variadic_lambda() {
 fn into_define_rest_lambda() {
     // (define (foo x . y) (display x y))
     let txt = make_textline().into();
-    let mut env = TestEnv::default();
+    let env = TestEnv::default();
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..34,
@@ -1179,9 +1179,9 @@ fn into_define_rest_lambda() {
             ],
         },
     };
-    let mut ns = env.new_namespace();
+    let ns = env.new_namespace();
 
-    let r = p.try_into_expr(&mut ns);
+    let r = p.try_into_expr(&ns);
 
     let expr = some_or_fail!(ok_or_fail!(r));
     assert!(matches!(
@@ -1204,7 +1204,7 @@ fn into_define_rest_lambda() {
 fn into_define_variable_no_value() {
     // (define foo)
     let txt = make_textline().into();
-    let mut env = TestEnv::default();
+    let env = TestEnv::default();
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..12,
@@ -1221,9 +1221,9 @@ fn into_define_variable_no_value() {
             )],
         },
     };
-    let mut ns = env.new_namespace();
+    let ns = env.new_namespace();
 
-    let r = p.try_into_expr(&mut ns);
+    let r = p.try_into_expr(&ns);
 
     let expr = some_or_fail!(ok_or_fail!(r));
     assert!(matches!(
@@ -1244,7 +1244,7 @@ fn into_define_variable_no_value() {
 fn into_define_not_identifier_expr() {
     // (define <unquoted (myproc)> "bar")
     let txt = make_textline().into();
-    let mut env = TestEnv::default();
+    let env = TestEnv::default();
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..23,
@@ -1278,9 +1278,9 @@ fn into_define_not_identifier_expr() {
             ],
         },
     };
-    let mut ns = env.new_namespace();
+    let ns = env.new_namespace();
 
-    let r = p.try_into_expr(&mut ns);
+    let r = p.try_into_expr(&ns);
 
     let errs = err_or_fail!(r);
     assert_eq!(errs.len(), 1);
@@ -1307,10 +1307,10 @@ fn into_empty_define() {
             seq: vec![],
         },
     };
-    let mut env = TestEnv::default();
-    let mut ns = env.new_namespace();
+    let env = TestEnv::default();
+    let ns = env.new_namespace();
 
-    let r = p.try_into_expr(&mut ns);
+    let r = p.try_into_expr(&ns);
 
     let errs = err_or_fail!(r);
     assert_eq!(errs.len(), 1);
@@ -1327,7 +1327,7 @@ fn into_empty_define() {
 fn into_define_too_many_args() {
     // (define foo "bar" "baz")
     let txt = make_textline().into();
-    let mut env = TestEnv::default();
+    let env = TestEnv::default();
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..24,
@@ -1360,9 +1360,9 @@ fn into_define_too_many_args() {
             ],
         },
     };
-    let mut ns = env.new_namespace();
+    let ns = env.new_namespace();
 
-    let r = p.try_into_expr(&mut ns);
+    let r = p.try_into_expr(&ns);
 
     let errs = err_or_fail!(r);
     assert_eq!(errs.len(), 1);
@@ -1380,7 +1380,7 @@ fn into_define_too_many_args() {
 fn into_define_lambda_no_body() {
     // (define (foo))
     let txt = make_textline().into();
-    let mut env = TestEnv::default();
+    let env = TestEnv::default();
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..14,
@@ -1399,9 +1399,9 @@ fn into_define_lambda_no_body() {
             ],
         },
     };
-    let mut ns = env.new_namespace();
+    let ns = env.new_namespace();
 
-    let r = p.try_into_expr(&mut ns);
+    let r = p.try_into_expr(&ns);
 
     let errs = err_or_fail!(r);
     assert_eq!(errs.len(), 1);
@@ -1419,7 +1419,7 @@ fn into_define_lambda_no_body() {
 fn into_define_lambda_empty_body() {
     // (define (foo) ())
     let txt = make_textline().into();
-    let mut env = TestEnv::default();
+    let env = TestEnv::default();
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..17,
@@ -1439,9 +1439,9 @@ fn into_define_lambda_empty_body() {
             // TODO: what goes here
         },
     };
-    let mut ns = env.new_namespace();
+    let ns = env.new_namespace();
 
-    let r = p.try_into_expr(&mut ns);
+    let r = p.try_into_expr(&ns);
 
     let errs = err_or_fail!(r);
     assert_eq!(errs.len(), 1);
@@ -1458,7 +1458,7 @@ fn into_define_lambda_empty_body() {
 fn into_set_variable() {
     // (set! foo "bar")
     let txt = make_textline().into();
-    let mut env = TestEnv::default();
+    let env = TestEnv::default();
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..18,
@@ -1484,9 +1484,9 @@ fn into_set_variable() {
             ],
         },
     };
-    let mut ns = env.new_namespace();
+    let ns = env.new_namespace();
 
-    let r = p.try_into_expr(&mut ns);
+    let r = p.try_into_expr(&ns);
 
     let expr = some_or_fail!(ok_or_fail!(r));
     assert!(matches!(
@@ -1508,7 +1508,7 @@ fn into_set_variable() {
 fn into_set_not_variable_expr() {
     // (set! (myproc) "bar")
     let txt = make_textline().into();
-    let mut env = TestEnv::default();
+    let env = TestEnv::default();
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..23,
@@ -1542,9 +1542,9 @@ fn into_set_not_variable_expr() {
             ],
         },
     };
-    let mut ns = env.new_namespace();
+    let ns = env.new_namespace();
 
-    let r = p.try_into_expr(&mut ns);
+    let r = p.try_into_expr(&ns);
 
     let errs = err_or_fail!(r);
     assert_eq!(errs.len(), 1);
@@ -1561,7 +1561,7 @@ fn into_set_not_variable_expr() {
 fn into_set_too_few_args() {
     // (set! foo)
     let txt = make_textline().into();
-    let mut env = TestEnv::default();
+    let env = TestEnv::default();
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..25,
@@ -1578,9 +1578,9 @@ fn into_set_too_few_args() {
             )],
         },
     };
-    let mut ns = env.new_namespace();
+    let ns = env.new_namespace();
 
-    let r = p.try_into_expr(&mut ns);
+    let r = p.try_into_expr(&ns);
 
     let errs = err_or_fail!(r);
     assert_eq!(errs.len(), 1);
@@ -1597,7 +1597,7 @@ fn into_set_too_few_args() {
 fn into_set_too_many_args() {
     // (set! foo "bar" "baz")
     let txt = make_textline().into();
-    let mut env = TestEnv::default();
+    let env = TestEnv::default();
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..25,
@@ -1630,9 +1630,9 @@ fn into_set_too_many_args() {
             ],
         },
     };
-    let mut ns = env.new_namespace();
+    let ns = env.new_namespace();
 
-    let r = p.try_into_expr(&mut ns);
+    let r = p.try_into_expr(&ns);
 
     let errs = err_or_fail!(r);
     assert_eq!(errs.len(), 1);
@@ -1672,10 +1672,10 @@ fn into_if_consequent() {
             ],
         },
     };
-    let mut env = TestEnv::default();
-    let mut ns = env.new_namespace();
+    let env = TestEnv::default();
+    let ns = env.new_namespace();
 
-    let r = p.try_into_expr(&mut ns);
+    let r = p.try_into_expr(&ns);
 
     let expr = some_or_fail!(ok_or_fail!(r));
     assert!(matches!(
@@ -1703,7 +1703,7 @@ fn into_if_consequent() {
 fn into_if_consequent_alternate() {
     // (if #t "bar" "foo")
     let txt = make_textline().into();
-    let mut env = TestEnv::default();
+    let env = TestEnv::default();
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..17,
@@ -1734,9 +1734,9 @@ fn into_if_consequent_alternate() {
             ],
         },
     };
-    let mut ns = env.new_namespace();
+    let ns = env.new_namespace();
 
-    let r = p.try_into_expr(&mut ns);
+    let r = p.try_into_expr(&ns);
 
     let expr = some_or_fail!(ok_or_fail!(r));
     assert!(matches!(
@@ -1784,10 +1784,10 @@ fn into_if_too_few_args() {
             ],
         },
     };
-    let mut env = TestEnv::default();
-    let mut ns = env.new_namespace();
+    let env = TestEnv::default();
+    let ns = env.new_namespace();
 
-    let r = p.try_into_expr(&mut ns);
+    let r = p.try_into_expr(&ns);
 
     let errs = err_or_fail!(r);
     assert_eq!(errs.len(), 1);
@@ -1804,7 +1804,7 @@ fn into_if_too_few_args() {
 fn into_if_too_many_args() {
     // (if #t "bar" "foo" "beef")
     let txt = make_textline().into();
-    let mut env = TestEnv::default();
+    let env = TestEnv::default();
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..22,
@@ -1842,9 +1842,9 @@ fn into_if_too_many_args() {
             ],
         },
     };
-    let mut ns = env.new_namespace();
+    let ns = env.new_namespace();
 
-    let r = p.try_into_expr(&mut ns);
+    let r = p.try_into_expr(&ns);
 
     let errs = err_or_fail!(r);
     assert_eq!(errs.len(), 1);
@@ -1861,7 +1861,7 @@ fn into_if_too_many_args() {
 fn into_lambda_fixed_arguments() {
     // (lambda (x y) (+ x y))
     let txt = make_textline().into();
-    let mut env = TestEnv::default();
+    let env = TestEnv::default();
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..22,
@@ -1912,9 +1912,9 @@ fn into_lambda_fixed_arguments() {
             ],
         },
     };
-    let mut ns = env.new_namespace();
+    let ns = env.new_namespace();
 
-    let r = p.try_into_expr(&mut ns);
+    let r = p.try_into_expr(&ns);
 
     let expr = some_or_fail!(ok_or_fail!(r));
     assert!(matches!(
@@ -1934,7 +1934,7 @@ fn into_lambda_fixed_arguments() {
 fn into_lambda_simple_body() {
     // (lambda (x) x)
     let txt = make_textline().into();
-    let mut env = TestEnv::default();
+    let env = TestEnv::default();
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..14,
@@ -1960,9 +1960,9 @@ fn into_lambda_simple_body() {
             ],
         },
     };
-    let mut ns = env.new_namespace();
+    let ns = env.new_namespace();
 
-    let r = p.try_into_expr(&mut ns);
+    let r = p.try_into_expr(&ns);
 
     let expr = some_or_fail!(ok_or_fail!(r));
     assert!(matches!(
@@ -1982,7 +1982,7 @@ fn into_lambda_simple_body() {
 fn into_lambda_no_arguments() {
     // (lambda () 'a)
     let txt = make_textline().into();
-    let mut env = TestEnv::default();
+    let env = TestEnv::default();
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..14,
@@ -2006,9 +2006,9 @@ fn into_lambda_no_arguments() {
             ],
         },
     };
-    let mut ns = env.new_namespace();
+    let ns = env.new_namespace();
 
-    let r = p.try_into_expr(&mut ns);
+    let r = p.try_into_expr(&ns);
 
     let expr = some_or_fail!(ok_or_fail!(r));
     assert!(matches!(
@@ -2028,7 +2028,7 @@ fn into_lambda_no_arguments() {
 fn into_lambda_variadic() {
     // (lambda x x)
     let txt = make_textline().into();
-    let mut env = TestEnv::default();
+    let env = TestEnv::default();
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..12,
@@ -2054,9 +2054,9 @@ fn into_lambda_variadic() {
             ],
         },
     };
-    let mut ns = env.new_namespace();
+    let ns = env.new_namespace();
 
-    let r = p.try_into_expr(&mut ns);
+    let r = p.try_into_expr(&ns);
 
     let expr = some_or_fail!(ok_or_fail!(r));
     assert!(matches!(
@@ -2076,7 +2076,7 @@ fn into_lambda_variadic() {
 fn into_lambda_rest() {
     // (lambda (x y . z) z)
     let txt = make_textline().into();
-    let mut env = TestEnv::default();
+    let env = TestEnv::default();
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..20,
@@ -2106,9 +2106,9 @@ fn into_lambda_rest() {
             ],
         },
     };
-    let mut ns = env.new_namespace();
+    let ns = env.new_namespace();
 
-    let r = p.try_into_expr(&mut ns);
+    let r = p.try_into_expr(&ns);
 
     let expr = some_or_fail!(ok_or_fail!(r));
     assert!(matches!(
@@ -2128,7 +2128,7 @@ fn into_lambda_rest() {
 fn into_lambda_multiple_expression_body() {
     // (lambda x x 'b)
     let txt = make_textline().into();
-    let mut env = TestEnv::default();
+    let env = TestEnv::default();
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..15,
@@ -2161,9 +2161,9 @@ fn into_lambda_multiple_expression_body() {
             ],
         },
     };
-    let mut ns = env.new_namespace();
+    let ns = env.new_namespace();
 
-    let r = p.try_into_expr(&mut ns);
+    let r = p.try_into_expr(&ns);
 
     let expr = some_or_fail!(ok_or_fail!(r));
     assert!(matches!(
@@ -2183,7 +2183,7 @@ fn into_lambda_multiple_expression_body() {
 fn into_lambda_not_identifier_expr() {
     // (lambda (1) 'a)
     let txt = make_textline().into();
-    let mut env = TestEnv::default();
+    let env = TestEnv::default();
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..15,
@@ -2209,9 +2209,9 @@ fn into_lambda_not_identifier_expr() {
             ],
         },
     };
-    let mut ns = env.new_namespace();
+    let ns = env.new_namespace();
 
-    let r = p.try_into_expr(&mut ns);
+    let r = p.try_into_expr(&ns);
 
     let errs = err_or_fail!(r);
     assert_eq!(errs.len(), 1);
@@ -2228,7 +2228,7 @@ fn into_lambda_not_identifier_expr() {
 fn into_lambda_too_few_args() {
     // (lambda x)
     let txt = make_textline().into();
-    let mut env = TestEnv::default();
+    let env = TestEnv::default();
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..10,
@@ -2245,9 +2245,9 @@ fn into_lambda_too_few_args() {
             )],
         },
     };
-    let mut ns = env.new_namespace();
+    let ns = env.new_namespace();
 
-    let r = p.try_into_expr(&mut ns);
+    let r = p.try_into_expr(&ns);
 
     let errs = err_or_fail!(r);
     assert_eq!(errs.len(), 1);
@@ -2264,7 +2264,7 @@ fn into_lambda_too_few_args() {
 fn into_lambda_duplicate_args() {
     // (lambda (x y x) (+ x y))
     let txt = make_textline().into();
-    let mut env = TestEnv::default();
+    let env = TestEnv::default();
     let p = ExprNode {
         ctx: ExprCtx {
             span: 0..24,
@@ -2316,9 +2316,9 @@ fn into_lambda_duplicate_args() {
             ],
         },
     };
-    let mut ns = env.new_namespace();
+    let ns = env.new_namespace();
 
-    let r = p.try_into_expr(&mut ns);
+    let r = p.try_into_expr(&ns);
 
     let errs = err_or_fail!(r);
     assert_eq!(errs.len(), 1);
@@ -2335,7 +2335,7 @@ fn into_lambda_duplicate_args() {
 fn into_lambda_too_many_formals() {
     // (lambda (257 arguments...) 'a)
     let txt = make_textline().into();
-    let mut env = TestEnv::default();
+    let env = TestEnv::default();
     let args = (0..256)
         .into_iter()
         .map(|i| Value::Symbol(env.symbols.get(format!("a{i}"))))
@@ -2363,9 +2363,9 @@ fn into_lambda_too_many_formals() {
             ],
         },
     };
-    let mut ns = env.new_namespace();
+    let ns = env.new_namespace();
 
-    let r = p.try_into_expr(&mut ns);
+    let r = p.try_into_expr(&ns);
 
     let errs = err_or_fail!(r);
     assert_eq!(errs.len(), 1);
@@ -2382,7 +2382,7 @@ fn into_lambda_too_many_formals() {
 fn into_lambda_too_many_formals_with_rest() {
     // (lambda (256 arguments... . rest) 'a)
     let txt = make_textline().into();
-    let mut env = TestEnv::default();
+    let env = TestEnv::default();
     let args = (0..256)
         .into_iter()
         .map(|i| Value::Symbol(env.symbols.get(format!("a{i}"))))
@@ -2410,9 +2410,9 @@ fn into_lambda_too_many_formals_with_rest() {
             ],
         },
     };
-    let mut ns = env.new_namespace();
+    let ns = env.new_namespace();
 
-    let r = p.try_into_expr(&mut ns);
+    let r = p.try_into_expr(&ns);
 
     let errs = err_or_fail!(r);
     assert_eq!(errs.len(), 1);
@@ -2431,7 +2431,7 @@ mod merge {
     #[test]
     fn list_merge() {
         let txt = make_textline().into();
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
         let mut p = ExprNode {
             ctx: ExprCtx {
                 span: 0..3,
@@ -2455,9 +2455,9 @@ mod merge {
             },
             mode: ParseMode::StringLiteral("foo".to_owned()),
         };
-        let mut ns = env.new_namespace();
+        let ns = env.new_namespace();
 
-        let r = p.merge(other, &mut ns);
+        let r = p.merge(other, &ns);
 
         assert!(matches!(r, Ok(MergeFlow::Continue(()))));
         assert!(matches!(
@@ -2486,7 +2486,7 @@ mod merge {
     #[test]
     fn pair_merge() {
         let txt = make_textline().into();
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
         let mut p = ExprNode {
             ctx: ExprCtx {
                 span: 0..3,
@@ -2513,9 +2513,9 @@ mod merge {
                 quoted: true,
             },
         };
-        let mut ns = env.new_namespace();
+        let ns = env.new_namespace();
 
-        let r = p.merge(other, &mut ns);
+        let r = p.merge(other, &ns);
 
         assert!(matches!(r, Ok(MergeFlow::Continue(()))));
         assert!(matches!(
@@ -2544,7 +2544,7 @@ mod merge {
     #[test]
     fn pair_merge_does_nothing_if_no_expr() {
         let txt = make_textline().into();
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
         let mut p = ExprNode {
             ctx: ExprCtx {
                 span: 0..3,
@@ -2574,9 +2574,9 @@ mod merge {
                 .into_expr(ExpressionKind::Literal(Value::Symbol(env.symbols.get("b")))),
             )),
         };
-        let mut ns = env.new_namespace();
+        let ns = env.new_namespace();
 
-        let r = p.merge(other, &mut ns);
+        let r = p.merge(other, &ns);
 
         assert!(matches!(r, Ok(MergeFlow::Continue(()))));
         assert!(matches!(
@@ -2595,7 +2595,7 @@ mod merge {
     #[test]
     fn pair_invalid_merge() {
         let txt = make_textline().into();
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
         let mut p = ExprNode {
             ctx: ExprCtx {
                 span: 0..3,
@@ -2627,9 +2627,9 @@ mod merge {
                 quoted: true,
             },
         };
-        let mut ns = env.new_namespace();
+        let ns = env.new_namespace();
 
-        let r = p.merge(other, &mut ns);
+        let r = p.merge(other, &ns);
 
         let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
         assert_eq!(errs.len(), 1);
@@ -2648,7 +2648,7 @@ mod merge {
     #[test]
     fn list_does_not_allow_define_merge() {
         let txt = make_textline().into();
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
         let mut p = ExprNode {
             ctx: ExprCtx {
                 span: 0..17,
@@ -2690,9 +2690,9 @@ mod merge {
                 ],
             },
         };
-        let mut ns = env.new_namespace();
+        let ns = env.new_namespace();
 
-        let r = p.merge(other, &mut ns);
+        let r = p.merge(other, &ns);
 
         let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
         assert_eq!(errs.len(), 1);

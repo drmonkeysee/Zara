@@ -81,7 +81,7 @@ pub(crate) struct TestEnv {
 }
 
 impl TestEnv {
-    pub(crate) fn new_frame(&mut self) -> Frame {
+    pub(crate) fn new_frame(&self) -> Frame {
         Frame {
             scope: Rc::clone(&self.binding),
             sym: &self.symbols,
@@ -89,7 +89,7 @@ impl TestEnv {
         }
     }
 
-    pub(crate) fn new_namespace(&mut self) -> Namespace {
+    pub(crate) fn new_namespace(&self) -> Namespace {
         Namespace(self.new_frame())
     }
 }

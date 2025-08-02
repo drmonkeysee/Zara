@@ -17,10 +17,10 @@ mod expr {
             span: 0..3,
         };
         let txt = make_textline().into();
-        let mut env = TestEnv::default();
-        let mut ns = env.new_namespace();
+        let env = TestEnv::default();
+        let ns = env.new_namespace();
 
-        let f = parse_expr(token, &txt, false, &mut ns);
+        let f = parse_expr(token, &txt, false, &ns);
 
         assert!(matches!(
             f,
@@ -39,10 +39,10 @@ mod expr {
             span: 0..3,
         };
         let txt = make_textline().into();
-        let mut env = TestEnv::default();
-        let mut ns = env.new_namespace();
+        let env = TestEnv::default();
+        let ns = env.new_namespace();
 
-        let f = parse_expr(token, &txt, false, &mut ns);
+        let f = parse_expr(token, &txt, false, &ns);
 
         assert!(matches!(
             f,
@@ -61,10 +61,10 @@ mod expr {
             span: 0..3,
         };
         let txt = make_textline().into();
-        let mut env = TestEnv::default();
-        let mut ns = env.new_namespace();
+        let env = TestEnv::default();
+        let ns = env.new_namespace();
 
-        let f = parse_expr(token, &txt, false, &mut ns);
+        let f = parse_expr(token, &txt, false, &ns);
 
         assert!(matches!(
             f,
@@ -83,10 +83,10 @@ mod expr {
             span: 0..3,
         };
         let txt = make_textline().into();
-        let mut env = TestEnv::default();
-        let mut ns = env.new_namespace();
+        let env = TestEnv::default();
+        let ns = env.new_namespace();
 
-        let f = parse_expr(token, &txt, false, &mut ns);
+        let f = parse_expr(token, &txt, false, &ns);
 
         assert!(matches!(
             f,
@@ -105,10 +105,10 @@ mod expr {
             span: 0..3,
         };
         let txt = make_textline().into();
-        let mut env = TestEnv::default();
-        let mut ns = env.new_namespace();
+        let env = TestEnv::default();
+        let ns = env.new_namespace();
 
-        let f = parse_expr(token, &txt, false, &mut ns);
+        let f = parse_expr(token, &txt, false, &ns);
 
         assert!(matches!(
             f,
@@ -130,10 +130,10 @@ mod expr {
             span: 3..8,
         };
         let txt = make_textline().into();
-        let mut env = TestEnv::default();
-        let mut ns = env.new_namespace();
+        let env = TestEnv::default();
+        let ns = env.new_namespace();
 
-        let f = parse_expr(token, &txt, false, &mut ns);
+        let f = parse_expr(token, &txt, false, &ns);
 
         assert!(matches!(
             f,
@@ -156,10 +156,10 @@ mod expr {
             span: 3..8,
         };
         let txt = make_textline().into();
-        let mut env = TestEnv::default();
-        let mut ns = env.new_namespace();
+        let env = TestEnv::default();
+        let ns = env.new_namespace();
 
-        let f = parse_expr(token, &txt, false, &mut ns);
+        let f = parse_expr(token, &txt, false, &ns);
 
         assert!(matches!(
             f,
@@ -179,10 +179,10 @@ mod expr {
             span: 0..3,
         };
         let txt = make_textline().into();
-        let mut env = TestEnv::default();
-        let mut ns = env.new_namespace();
+        let env = TestEnv::default();
+        let ns = env.new_namespace();
 
-        let f = parse_expr(token, &txt, false, &mut ns);
+        let f = parse_expr(token, &txt, false, &ns);
 
         assert!(matches!(
             f,
@@ -203,10 +203,10 @@ mod expr {
             span: 2..3,
         };
         let txt = make_textline().into();
-        let mut env = TestEnv::default();
-        let mut ns = env.new_namespace();
+        let env = TestEnv::default();
+        let ns = env.new_namespace();
 
-        let f = parse_expr(token, &txt, false, &mut ns);
+        let f = parse_expr(token, &txt, false, &ns);
 
         assert!(matches!(
             f,
@@ -227,10 +227,10 @@ mod expr {
             span: 0..3,
         };
         let txt = make_textline().into();
-        let mut env = TestEnv::default();
-        let mut ns = env.new_namespace();
+        let env = TestEnv::default();
+        let ns = env.new_namespace();
 
-        let f = parse_expr(token, &txt, false, &mut ns);
+        let f = parse_expr(token, &txt, false, &ns);
 
         assert!(matches!(f, ExprFlow::Continue(None)));
     }
@@ -242,10 +242,10 @@ mod expr {
             span: 3..6,
         };
         let txt = make_textline().into();
-        let mut env = TestEnv::default();
-        let mut ns = env.new_namespace();
+        let env = TestEnv::default();
+        let ns = env.new_namespace();
 
-        let f = parse_expr(token, &txt, false, &mut ns);
+        let f = parse_expr(token, &txt, false, &ns);
 
         assert!(matches!(
             f,
@@ -263,10 +263,10 @@ mod expr {
             span: 3..6,
         };
         let txt = make_textline().into();
-        let mut env = TestEnv::default();
-        let mut ns = env.new_namespace();
+        let env = TestEnv::default();
+        let ns = env.new_namespace();
 
-        let f = parse_expr(token, &txt, false, &mut ns);
+        let f = parse_expr(token, &txt, false, &ns);
 
         assert!(matches!(
             f,
@@ -284,10 +284,10 @@ mod expr {
             span: 0..6,
         };
         let txt = make_textline().into();
-        let mut env = TestEnv::default();
-        let mut ns = env.new_namespace();
+        let env = TestEnv::default();
+        let ns = env.new_namespace();
 
-        let f = parse_expr(token, &txt, false, &mut ns);
+        let f = parse_expr(token, &txt, false, &ns);
 
         assert!(matches!(
             f,
@@ -306,10 +306,10 @@ mod expr {
             span: 0..0,
         };
         let txt = make_textline().into();
-        let mut env = TestEnv::default();
-        let mut ns = env.new_namespace();
+        let env = TestEnv::default();
+        let ns = env.new_namespace();
 
-        let f = parse_expr(token, &txt, false, &mut ns);
+        let f = parse_expr(token, &txt, false, &ns);
 
         assert!(matches!(
             f,
@@ -328,10 +328,10 @@ mod expr {
             span: 0..6,
         };
         let txt = make_textline().into();
-        let mut env = TestEnv::default();
-        let mut ns = env.new_namespace();
+        let env = TestEnv::default();
+        let ns = env.new_namespace();
 
-        let f = parse_expr(token, &txt, true, &mut ns);
+        let f = parse_expr(token, &txt, true, &ns);
 
         assert!(matches!(
             f,
@@ -350,10 +350,10 @@ mod expr {
             span: 0..0,
         };
         let txt = make_textline().into();
-        let mut env = TestEnv::default();
-        let mut ns = env.new_namespace();
+        let env = TestEnv::default();
+        let ns = env.new_namespace();
 
-        let f = parse_expr(token, &txt, true, &mut ns);
+        let f = parse_expr(token, &txt, true, &ns);
 
         assert!(matches!(
             f,
@@ -372,10 +372,10 @@ mod expr {
             span: 3..8,
         };
         let txt = make_textline().into();
-        let mut env = TestEnv::default();
-        let mut ns = env.new_namespace();
+        let env = TestEnv::default();
+        let ns = env.new_namespace();
 
-        let f = parse_expr(token, &txt, false, &mut ns);
+        let f = parse_expr(token, &txt, false, &ns);
 
         assert!(matches!(
             f,
@@ -395,10 +395,10 @@ mod expr {
             span: 3..8,
         };
         let txt = make_textline().into();
-        let mut env = TestEnv::default();
-        let mut ns = env.new_namespace();
+        let env = TestEnv::default();
+        let ns = env.new_namespace();
 
-        let f = parse_expr(token, &txt, true, &mut ns);
+        let f = parse_expr(token, &txt, true, &ns);
 
         assert!(matches!(
             f,
@@ -418,10 +418,10 @@ mod expr {
             span: 1..2,
         };
         let txt = make_textline().into();
-        let mut env = TestEnv::default();
-        let mut ns = env.new_namespace();
+        let env = TestEnv::default();
+        let ns = env.new_namespace();
 
-        let f = parse_expr(token, &txt, false, &mut ns);
+        let f = parse_expr(token, &txt, false, &ns);
 
         assert!(matches!(
             f,
@@ -441,10 +441,10 @@ mod expr {
             span: 1..2,
         };
         let txt = make_textline().into();
-        let mut env = TestEnv::default();
-        let mut ns = env.new_namespace();
+        let env = TestEnv::default();
+        let ns = env.new_namespace();
 
-        let f = parse_expr(token, &txt, true, &mut ns);
+        let f = parse_expr(token, &txt, true, &ns);
 
         assert!(matches!(
             f,
@@ -464,10 +464,10 @@ mod expr {
             span: 1..2,
         };
         let txt = make_textline().into();
-        let mut env = TestEnv::default();
-        let mut ns = env.new_namespace();
+        let env = TestEnv::default();
+        let ns = env.new_namespace();
 
-        let f = parse_expr(token, &txt, false, &mut ns);
+        let f = parse_expr(token, &txt, false, &ns);
 
         assert!(matches!(
             f,
@@ -485,10 +485,10 @@ mod expr {
             span: 1..2,
         };
         let txt = make_textline().into();
-        let mut env = TestEnv::default();
-        let mut ns = env.new_namespace();
+        let env = TestEnv::default();
+        let ns = env.new_namespace();
 
-        let f = parse_expr(token, &txt, false, &mut ns);
+        let f = parse_expr(token, &txt, false, &ns);
 
         assert!(matches!(
             f,
@@ -509,10 +509,10 @@ mod expr {
             span: 1..2,
         };
         let txt = make_textline().into();
-        let mut env = TestEnv::default();
-        let mut ns = env.new_namespace();
+        let env = TestEnv::default();
+        let ns = env.new_namespace();
 
-        let f = parse_expr(token, &txt, true, &mut ns);
+        let f = parse_expr(token, &txt, true, &ns);
 
         assert!(matches!(
             f,
@@ -533,10 +533,10 @@ mod expr {
             span: 1..2,
         };
         let txt = make_textline().into();
-        let mut env = TestEnv::default();
-        let mut ns = env.new_namespace();
+        let env = TestEnv::default();
+        let ns = env.new_namespace();
 
-        let f = parse_expr(token, &txt, false, &mut ns);
+        let f = parse_expr(token, &txt, false, &ns);
 
         assert!(matches!(
             f,
@@ -563,10 +563,10 @@ mod datum {
             span: 0..1,
             txt: Rc::clone(&txt),
         };
-        let mut env = TestEnv::default();
-        let mut ns = env.new_namespace();
+        let env = TestEnv::default();
+        let ns = env.new_namespace();
 
-        let f = parse_datum(&mut inner, token, &txt, &ctx, &mut ns);
+        let f = parse_datum(&mut inner, token, &txt, &ctx, &ns);
 
         assert!(matches!(
             f,
@@ -594,10 +594,10 @@ mod datum {
             span: 0..1,
             txt: Rc::clone(&txt),
         };
-        let mut env = TestEnv::default();
-        let mut ns = env.new_namespace();
+        let env = TestEnv::default();
+        let ns = env.new_namespace();
 
-        let f = parse_datum(&mut inner, token, &txt, &ctx, &mut ns);
+        let f = parse_datum(&mut inner, token, &txt, &ctx, &ns);
 
         assert!(matches!(
             f,
@@ -621,10 +621,10 @@ mod datum {
             span: 0..1,
             txt: Rc::clone(&txt),
         };
-        let mut env = TestEnv::default();
-        let mut ns = env.new_namespace();
+        let env = TestEnv::default();
+        let ns = env.new_namespace();
 
-        let f = parse_datum(&mut inner, token, &txt, &ctx, &mut ns);
+        let f = parse_datum(&mut inner, token, &txt, &ctx, &ns);
 
         assert!(matches!(f, ParseFlow::Continue(())));
         assert!(inner.is_none());
@@ -642,10 +642,10 @@ mod datum {
             span: 0..1,
             txt: Rc::clone(&txt),
         };
-        let mut env = TestEnv::default();
-        let mut ns = env.new_namespace();
+        let env = TestEnv::default();
+        let ns = env.new_namespace();
 
-        let f = parse_datum(&mut inner, token, &txt, &ctx, &mut ns);
+        let f = parse_datum(&mut inner, token, &txt, &ctx, &ns);
 
         assert!(matches!(
             f,
@@ -672,10 +672,10 @@ mod datum {
             span: 0..1,
             txt: Rc::clone(&txt),
         };
-        let mut env = TestEnv::default();
-        let mut ns = env.new_namespace();
+        let env = TestEnv::default();
+        let ns = env.new_namespace();
 
-        let f = parse_datum(&mut inner, token, &txt, &ctx, &mut ns);
+        let f = parse_datum(&mut inner, token, &txt, &ctx, &ns);
 
         assert!(matches!(
             f,
@@ -712,10 +712,10 @@ mod bytevector {
             },
             mode: ParseMode::ByteVector(seq),
         };
-        let mut env = TestEnv::default();
-        let mut ns = env.new_namespace();
+        let env = TestEnv::default();
+        let ns = env.new_namespace();
 
-        let r = node.try_into_expr(&mut ns);
+        let r = node.try_into_expr(&ns);
 
         let expr = some_or_fail!(ok_or_fail!(r));
         assert!(matches!(
@@ -759,10 +759,10 @@ mod bytevector {
             },
             mode: ParseMode::ByteVector(seq),
         };
-        let mut env = TestEnv::default();
-        let mut ns = env.new_namespace();
+        let env = TestEnv::default();
+        let ns = env.new_namespace();
 
-        let r = node.try_into_expr(&mut ns);
+        let r = node.try_into_expr(&ns);
 
         let expr = some_or_fail!(ok_or_fail!(r));
         assert!(matches!(
@@ -789,10 +789,10 @@ mod bytevector {
             },
             mode: ParseMode::ByteVector(Vec::new()),
         };
-        let mut env = TestEnv::default();
-        let mut ns = env.new_namespace();
+        let env = TestEnv::default();
+        let ns = env.new_namespace();
 
-        let r = node.try_into_expr(&mut ns);
+        let r = node.try_into_expr(&ns);
 
         let expr = some_or_fail!(ok_or_fail!(r));
         assert!(matches!(
@@ -812,7 +812,7 @@ mod bytevector {
     #[test]
     fn invalid_item() {
         let txt = make_textline().into();
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
         let seq = vec![
             ExprCtx {
                 span: 0..3,
@@ -839,9 +839,9 @@ mod bytevector {
             },
             mode: ParseMode::ByteVector(seq),
         };
-        let mut ns = env.new_namespace();
+        let ns = env.new_namespace();
 
-        let r = node.try_into_expr(&mut ns);
+        let r = node.try_into_expr(&ns);
 
         let errs = err_or_fail!(r);
         assert_eq!(errs.len(), 1);
@@ -856,7 +856,7 @@ mod bytevector {
 
     #[test]
     fn invalid_items() {
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
         let txt = make_textline().into();
         let seq = vec![
             ExprCtx {
@@ -889,9 +889,9 @@ mod bytevector {
             },
             mode: ParseMode::ByteVector(seq),
         };
-        let mut ns = env.new_namespace();
+        let ns = env.new_namespace();
 
-        let r = node.try_into_expr(&mut ns);
+        let r = node.try_into_expr(&ns);
 
         let errs = err_or_fail!(r);
         assert_eq!(errs.len(), 2);
@@ -932,10 +932,10 @@ mod vector {
             },
             mode: ParseMode::Vector(seq),
         };
-        let mut env = TestEnv::default();
-        let mut ns = env.new_namespace();
+        let env = TestEnv::default();
+        let ns = env.new_namespace();
 
-        let r = node.try_into_expr(&mut ns);
+        let r = node.try_into_expr(&ns);
 
         let expr = some_or_fail!(ok_or_fail!(r));
         assert!(matches!(
@@ -956,7 +956,7 @@ mod vector {
     #[test]
     fn multiple_items() {
         let txt = make_textline().into();
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
         let seq = vec![
             Expression::symbol(
                 env.symbols.get("a"),
@@ -983,9 +983,9 @@ mod vector {
             },
             mode: ParseMode::Vector(seq),
         };
-        let mut ns = env.new_namespace();
+        let ns = env.new_namespace();
 
-        let r = node.try_into_expr(&mut ns);
+        let r = node.try_into_expr(&ns);
 
         let expr = some_or_fail!(ok_or_fail!(r));
         assert!(matches!(
@@ -1018,10 +1018,10 @@ mod vector {
             },
             mode: ParseMode::Vector(Vec::new()),
         };
-        let mut env = TestEnv::default();
-        let mut ns = env.new_namespace();
+        let env = TestEnv::default();
+        let ns = env.new_namespace();
 
-        let r = node.try_into_expr(&mut ns);
+        let r = node.try_into_expr(&ns);
 
         let expr = some_or_fail!(ok_or_fail!(r));
         assert!(matches!(
@@ -1041,7 +1041,7 @@ mod vector {
     #[test]
     fn invalid_item() {
         let txt = make_textline().into();
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
         let seq = vec![
             Expression::symbol(
                 env.symbols.get("a"),
@@ -1070,9 +1070,9 @@ mod vector {
             },
             mode: ParseMode::Vector(seq),
         };
-        let mut ns = env.new_namespace();
+        let ns = env.new_namespace();
 
-        let r = node.try_into_expr(&mut ns);
+        let r = node.try_into_expr(&ns);
 
         let errs = err_or_fail!(r);
         assert_eq!(errs.len(), 1);
@@ -1088,7 +1088,7 @@ mod vector {
     #[test]
     fn invalid_items() {
         let txt = make_textline().into();
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
         let seq = vec![
             ExprCtx {
                 span: 0..3,
@@ -1130,9 +1130,9 @@ mod vector {
             },
             mode: ParseMode::Vector(seq),
         };
-        let mut ns = env.new_namespace();
+        let ns = env.new_namespace();
 
-        let r = node.try_into_expr(&mut ns);
+        let r = node.try_into_expr(&ns);
 
         let errs = err_or_fail!(r);
         assert_eq!(errs.len(), 2);
@@ -1226,10 +1226,10 @@ mod identifier {
                 quoted: false,
             },
         };
-        let mut env = TestEnv::default();
-        let mut ns = env.new_namespace();
+        let env = TestEnv::default();
+        let ns = env.new_namespace();
 
-        let r = p.try_into_expr(&mut ns);
+        let r = p.try_into_expr(&ns);
 
         let expr = some_or_fail!(ok_or_fail!(r));
         assert!(matches!(
@@ -1254,10 +1254,10 @@ mod identifier {
                 quoted: true,
             },
         };
-        let mut env = TestEnv::default();
-        let mut ns = env.new_namespace();
+        let env = TestEnv::default();
+        let ns = env.new_namespace();
 
-        let r = p.try_into_expr(&mut ns);
+        let r = p.try_into_expr(&ns);
 
         let expr = some_or_fail!(ok_or_fail!(r));
         assert!(matches!(
@@ -1361,10 +1361,10 @@ mod string {
             },
             mode: ParseMode::StringLiteral("foo".to_owned()),
         };
-        let mut env = TestEnv::default();
-        let mut ns = env.new_namespace();
+        let env = TestEnv::default();
+        let ns = env.new_namespace();
 
-        let r = p.try_into_expr(&mut ns);
+        let r = p.try_into_expr(&ns);
 
         let expr = some_or_fail!(ok_or_fail!(r));
         assert!(matches!(
@@ -1464,10 +1464,10 @@ mod comment {
             },
             mode: ParseMode::CommentBlock,
         };
-        let mut env = TestEnv::default();
-        let mut ns = env.new_namespace();
+        let env = TestEnv::default();
+        let ns = env.new_namespace();
 
-        let r = p.try_into_expr(&mut ns);
+        let r = p.try_into_expr(&ns);
 
         let o = ok_or_fail!(r);
         assert!(o.is_none());
@@ -1476,7 +1476,7 @@ mod comment {
     #[test]
     fn datum_into_expr() {
         let txt = make_textline().into();
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
         let p = ExprNode {
             ctx: ExprCtx {
                 span: 0..2,
@@ -1490,9 +1490,9 @@ mod comment {
                 },
             ))),
         };
-        let mut ns = env.new_namespace();
+        let ns = env.new_namespace();
 
-        let r = p.try_into_expr(&mut ns);
+        let r = p.try_into_expr(&ns);
 
         let o = ok_or_fail!(r);
         assert!(o.is_none());
@@ -1508,10 +1508,10 @@ mod comment {
             },
             mode: ParseMode::CommentDatum(None),
         };
-        let mut env = TestEnv::default();
-        let mut ns = env.new_namespace();
+        let env = TestEnv::default();
+        let ns = env.new_namespace();
 
-        let r = p.try_into_expr(&mut ns);
+        let r = p.try_into_expr(&ns);
 
         let errs = err_or_fail!(r);
         assert_eq!(errs.len(), 1);
@@ -1547,10 +1547,10 @@ mod quote {
                 quoted: false,
             },
         };
-        let mut env = TestEnv::default();
-        let mut ns = env.new_namespace();
+        let env = TestEnv::default();
+        let ns = env.new_namespace();
 
-        let r = p.try_into_expr(&mut ns);
+        let r = p.try_into_expr(&ns);
 
         let expr = some_or_fail!(ok_or_fail!(r));
         assert!(matches!(
@@ -1568,7 +1568,7 @@ mod quote {
     #[test]
     fn symbol_into_expr() {
         let txt = make_textline().into();
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
         let p = ExprNode {
             ctx: ExprCtx {
                 span: 0..1,
@@ -1585,9 +1585,9 @@ mod quote {
                 quoted: false,
             },
         };
-        let mut ns = env.new_namespace();
+        let ns = env.new_namespace();
 
-        let r = p.try_into_expr(&mut ns);
+        let r = p.try_into_expr(&ns);
 
         let expr = some_or_fail!(ok_or_fail!(r));
         assert!(matches!(
@@ -1621,10 +1621,10 @@ mod quote {
                 quoted: true,
             },
         };
-        let mut env = TestEnv::default();
-        let mut ns = env.new_namespace();
+        let env = TestEnv::default();
+        let ns = env.new_namespace();
 
-        let r = p.try_into_expr(&mut ns);
+        let r = p.try_into_expr(&ns);
 
         let expr = some_or_fail!(ok_or_fail!(r));
         assert!(matches!(
@@ -1644,7 +1644,7 @@ mod quote {
     #[test]
     fn invalid_into_expr() {
         let txt = make_textline().into();
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
         let p = ExprNode {
             ctx: ExprCtx {
                 span: 0..2,
@@ -1676,9 +1676,9 @@ mod quote {
                 quoted: false,
             },
         };
-        let mut ns = env.new_namespace();
+        let ns = env.new_namespace();
 
-        let r = p.try_into_expr(&mut ns);
+        let r = p.try_into_expr(&ns);
 
         let errs = err_or_fail!(r);
         assert_eq!(errs.len(), 1);
@@ -1694,7 +1694,7 @@ mod quote {
     #[test]
     fn variable_into_expr() {
         let txt = make_textline().into();
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
         let p = ExprNode {
             ctx: ExprCtx {
                 span: 0..1,
@@ -1711,9 +1711,9 @@ mod quote {
                 quoted: false,
             },
         };
-        let mut ns = env.new_namespace();
+        let ns = env.new_namespace();
 
-        let r = p.try_into_expr(&mut ns);
+        let r = p.try_into_expr(&ns);
 
         let errs = err_or_fail!(r);
         assert_eq!(errs.len(), 1);
@@ -1739,10 +1739,10 @@ mod quote {
                 quoted: false,
             },
         };
-        let mut env = TestEnv::default();
-        let mut ns = env.new_namespace();
+        let env = TestEnv::default();
+        let ns = env.new_namespace();
 
-        let r = p.try_into_expr(&mut ns);
+        let r = p.try_into_expr(&ns);
 
         let errs = err_or_fail!(r);
         assert_eq!(errs.len(), 1);
@@ -1767,10 +1767,10 @@ mod program {
             span: 0..3,
         };
         let txt = make_textline().into();
-        let mut env = TestEnv::default();
-        let mut ns = env.new_namespace();
+        let env = TestEnv::default();
+        let ns = env.new_namespace();
 
-        let f = parse_prg(&mut seq, token, &txt, &mut ns);
+        let f = parse_prg(&mut seq, token, &txt, &ns);
 
         assert!(matches!(f, ParseFlow::Continue(())));
         assert_eq!(seq.len(), 1);
@@ -1803,10 +1803,10 @@ mod program {
             span: 6..9,
         };
         let txt = make_textline().into();
-        let mut env = TestEnv::default();
-        let mut ns = env.new_namespace();
+        let env = TestEnv::default();
+        let ns = env.new_namespace();
 
-        let f = parse_prg(&mut seq, token, &txt, &mut ns);
+        let f = parse_prg(&mut seq, token, &txt, &ns);
 
         assert!(matches!(f, ParseFlow::Continue(())));
         assert_eq!(seq.len(), 3);
@@ -1827,10 +1827,10 @@ mod program {
             span: 1..2,
         };
         let txt = make_textline().into();
-        let mut env = TestEnv::default();
-        let mut ns = env.new_namespace();
+        let env = TestEnv::default();
+        let ns = env.new_namespace();
 
-        let f = parse_prg(&mut seq, token, &txt, &mut ns);
+        let f = parse_prg(&mut seq, token, &txt, &ns);
 
         assert!(matches!(
             f,
@@ -1852,10 +1852,10 @@ mod program {
             span: 0..3,
         };
         let txt = make_textline().into();
-        let mut env = TestEnv::default();
-        let mut ns = env.new_namespace();
+        let env = TestEnv::default();
+        let ns = env.new_namespace();
 
-        let f = parse_prg(&mut seq, token, &txt, &mut ns);
+        let f = parse_prg(&mut seq, token, &txt, &ns);
 
         assert!(matches!(
             f,
@@ -1939,10 +1939,10 @@ mod merge {
                 quoted: false,
             },
         };
-        let mut env = TestEnv::default();
-        let mut ns = env.new_namespace();
+        let env = TestEnv::default();
+        let ns = env.new_namespace();
 
-        let r = p.merge(other, &mut ns);
+        let r = p.merge(other, &ns);
 
         assert!(matches!(r, Ok(MergeFlow::Continue(()))));
         let seq = extract_or_fail!(p, ParseNode::Prg);
@@ -1959,7 +1959,7 @@ mod merge {
     #[test]
     fn prg_merge_fail() {
         let txt = make_textline().into();
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
         let mut p = ParseNode::prg();
         let other = ExprNode {
             ctx: ExprCtx {
@@ -1974,9 +1974,9 @@ mod merge {
                 },
             )]),
         };
-        let mut ns = env.new_namespace();
+        let ns = env.new_namespace();
 
-        let r = p.merge(other, &mut ns);
+        let r = p.merge(other, &ns);
 
         let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
         assert_eq!(errs.len(), 1);
@@ -2002,10 +2002,10 @@ mod merge {
                 quoted: false,
             },
         };
-        let mut env = TestEnv::default();
-        let mut ns = env.new_namespace();
+        let env = TestEnv::default();
+        let ns = env.new_namespace();
 
-        let r = p.merge(other, &mut ns);
+        let r = p.merge(other, &ns);
 
         assert!(r.is_ok());
     }
@@ -2030,10 +2030,10 @@ mod merge {
                 quoted: false,
             },
         };
-        let mut env = TestEnv::default();
-        let mut ns = env.new_namespace();
+        let env = TestEnv::default();
+        let ns = env.new_namespace();
 
-        let r = p.merge(other, &mut ns);
+        let r = p.merge(other, &ns);
 
         assert!(matches!(
             r,
@@ -2061,10 +2061,10 @@ mod merge {
                 quoted: true,
             },
         };
-        let mut env = TestEnv::default();
-        let mut ns = env.new_namespace();
+        let env = TestEnv::default();
+        let ns = env.new_namespace();
 
-        let r = p.merge(other, &mut ns);
+        let r = p.merge(other, &ns);
 
         assert!(matches!(r, Ok(MergeFlow::Break(()))));
         let inner = some_or_fail!(extract_or_fail!(p.mode, ParseMode::CommentDatum));
@@ -2083,7 +2083,7 @@ mod merge {
     #[test]
     fn comment_datum_compound_merge() {
         let txt = make_textline().into();
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
         let mut p = ExprNode {
             ctx: ExprCtx {
                 span: 0..3,
@@ -2107,9 +2107,9 @@ mod merge {
                 )],
             },
         };
-        let mut ns = env.new_namespace();
+        let ns = env.new_namespace();
 
-        let r = p.merge(other, &mut ns);
+        let r = p.merge(other, &ns);
 
         assert!(matches!(r, Ok(MergeFlow::Break(()))));
         let inner = some_or_fail!(extract_or_fail!(p.mode, ParseMode::CommentDatum));
@@ -2147,10 +2147,10 @@ mod merge {
                 seq: Vec::new(),
             },
         };
-        let mut env = TestEnv::default();
-        let mut ns = env.new_namespace();
+        let env = TestEnv::default();
+        let ns = env.new_namespace();
 
-        let r = p.merge(other, &mut ns);
+        let r = p.merge(other, &ns);
 
         assert!(matches!(r, Ok(MergeFlow::Break(()))));
         let inner = some_or_fail!(extract_or_fail!(p.mode, ParseMode::CommentDatum));
@@ -2191,10 +2191,10 @@ mod merge {
                 quoted: true,
             },
         };
-        let mut env = TestEnv::default();
-        let mut ns = env.new_namespace();
+        let env = TestEnv::default();
+        let ns = env.new_namespace();
 
-        let r = p.merge(other, &mut ns);
+        let r = p.merge(other, &ns);
 
         assert!(matches!(r, Ok(MergeFlow::Break(()))));
         let ParseMode::Quote {
@@ -2218,7 +2218,7 @@ mod merge {
     #[test]
     fn quote_compound_merge() {
         let txt = make_textline().into();
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
         let mut p = ExprNode {
             ctx: ExprCtx {
                 span: 0..3,
@@ -2245,9 +2245,9 @@ mod merge {
                 )],
             },
         };
-        let mut ns = env.new_namespace();
+        let ns = env.new_namespace();
 
-        let r = p.merge(other, &mut ns);
+        let r = p.merge(other, &ns);
 
         assert!(matches!(r, Ok(MergeFlow::Break(()))));
         let ParseMode::Quote {
@@ -2293,10 +2293,10 @@ mod merge {
                 seq: Vec::new(),
             },
         };
-        let mut env = TestEnv::default();
-        let mut ns = env.new_namespace();
+        let env = TestEnv::default();
+        let ns = env.new_namespace();
 
-        let r = p.merge(other, &mut ns);
+        let r = p.merge(other, &ns);
 
         assert!(matches!(r, Ok(MergeFlow::Break(()))));
         let ParseMode::Quote {
@@ -2342,10 +2342,10 @@ mod merge {
                 quoted: false,
             },
         };
-        let mut env = TestEnv::default();
-        let mut ns = env.new_namespace();
+        let env = TestEnv::default();
+        let ns = env.new_namespace();
 
-        let r = p.merge(other, &mut ns);
+        let r = p.merge(other, &ns);
 
         assert!(matches!(
             r,
@@ -2373,10 +2373,10 @@ mod merge {
                 quoted: false,
             },
         };
-        let mut env = TestEnv::default();
-        let mut ns = env.new_namespace();
+        let env = TestEnv::default();
+        let ns = env.new_namespace();
 
-        let r = p.merge(other, &mut ns);
+        let r = p.merge(other, &ns);
 
         assert!(matches!(
             r,
@@ -2410,10 +2410,10 @@ mod merge {
                 quoted: true,
             },
         };
-        let mut env = TestEnv::default();
-        let mut ns = env.new_namespace();
+        let env = TestEnv::default();
+        let ns = env.new_namespace();
 
-        let r = p.merge(other, &mut ns);
+        let r = p.merge(other, &ns);
 
         assert!(matches!(r, Ok(MergeFlow::Continue(()))));
         let seq = extract_or_fail!(p.mode, ParseMode::ByteVector);
@@ -2456,10 +2456,10 @@ mod merge {
                 quoted: true,
             },
         };
-        let mut env = TestEnv::default();
-        let mut ns = env.new_namespace();
+        let env = TestEnv::default();
+        let ns = env.new_namespace();
 
-        let r = p.merge(other, &mut ns);
+        let r = p.merge(other, &ns);
 
         assert!(matches!(r, Ok(MergeFlow::Continue(()))));
         let seq = extract_or_fail!(p.mode, ParseMode::Vector);
@@ -2741,10 +2741,10 @@ mod nodeutil {
             span: 0..6,
         };
         let txt = make_textline().into();
-        let mut env = TestEnv::default();
-        let mut ns = env.new_namespace();
+        let env = TestEnv::default();
+        let ns = env.new_namespace();
 
-        let r = p.parse(token, &txt, &mut ns);
+        let r = p.parse(token, &txt, &ns);
 
         assert!(r.is_continue());
     }

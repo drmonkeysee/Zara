@@ -14,7 +14,7 @@ mod parsing {
     fn no_tokens() {
         let mut et = ExpressionTree::default();
         let tokens = [].into();
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
         let r = et.parse(tokens, env.new_namespace());
 
@@ -28,7 +28,7 @@ mod parsing {
     fn single_literal_sequence() {
         let mut et = ExpressionTree::default();
         let tokens = [make_tokenline([TokenKind::Boolean(true)])];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
         let r = et.parse(tokens.into(), env.new_namespace());
 
@@ -53,7 +53,7 @@ mod parsing {
             TokenKind::Character('a'),
             TokenKind::String("foo".into()),
         ])];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
         let r = et.parse(tokens.into(), env.new_namespace());
 
@@ -98,7 +98,7 @@ mod parsing {
             ),
             make_tokenline_no([TokenKind::Boolean(false), TokenKind::Character('b')], 2),
         ];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
         let r = et.parse(tokens.into(), env.new_namespace());
 
@@ -157,7 +157,7 @@ mod parsing {
             TokenKind::Number(Number::real(13)),
             TokenKind::ParenRight,
         ])];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
         let r = et.parse(tokens.into(), env.new_namespace());
 
@@ -190,7 +190,7 @@ mod parsing {
             TokenKind::Number(Number::real(3)),
             TokenKind::ParenRight,
         ])];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
         let r = et.parse(tokens.into(), env.new_namespace());
 
@@ -245,7 +245,7 @@ mod parsing {
             TokenKind::Quote,
             TokenKind::Identifier("a".to_owned()),
         ])];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
         let r = et.parse(tokens.into(), env.new_namespace());
 
@@ -294,7 +294,7 @@ mod parsing {
             TokenKind::ParenRight,
             TokenKind::ParenRight,
         ])];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
         let r = et.parse(tokens.into(), env.new_namespace());
 
@@ -328,7 +328,7 @@ mod parsing {
             TokenKind::ParenRight,
             TokenKind::ParenRight,
         ])];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
         let r = et.parse(tokens.into(), env.new_namespace());
 
@@ -357,7 +357,7 @@ mod parsing {
             TokenKind::Number(Number::real(5)),
             TokenKind::ParenRight,
         ])];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
         let r = et.parse(tokens.into(), env.new_namespace());
 
@@ -387,7 +387,7 @@ mod parsing {
             TokenKind::Identifier("c".to_owned()),
             TokenKind::ParenRight,
         ])];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
         let r = et.parse(tokens.into(), env.new_namespace());
 
@@ -414,7 +414,7 @@ mod parsing {
             TokenKind::ParenLeft,
             TokenKind::ParenRight,
         ])];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
         let r = et.parse(tokens.into(), env.new_namespace());
 
@@ -444,7 +444,7 @@ mod parsing {
             TokenKind::Identifier("b".to_owned()),
             TokenKind::ParenRight,
         ])];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
         let r = et.parse(tokens.into(), env.new_namespace());
 
@@ -475,7 +475,7 @@ mod parsing {
             TokenKind::Identifier("c".to_owned()),
             TokenKind::ParenRight,
         ])];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
         let r = et.parse(tokens.into(), env.new_namespace());
 
@@ -509,7 +509,7 @@ mod parsing {
             TokenKind::ParenRight,
             TokenKind::ParenRight,
         ])];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
         let r = et.parse(tokens.into(), env.new_namespace());
 
@@ -549,7 +549,7 @@ mod parsing {
             TokenKind::ParenRight,
             TokenKind::ParenRight,
         ])];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
         let r = et.parse(tokens.into(), env.new_namespace());
 
@@ -581,7 +581,7 @@ mod parsing {
             TokenKind::ParenRight,
             TokenKind::ParenRight,
         ])];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
         let r = et.parse(tokens.into(), env.new_namespace());
 
@@ -614,7 +614,7 @@ mod parsing {
             TokenKind::Identifier("c".to_owned()),
             TokenKind::ParenRight,
         ])];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
         let r = et.parse(tokens.into(), env.new_namespace());
 
@@ -650,7 +650,7 @@ mod parsing {
             TokenKind::Identifier("d".to_owned()),
             TokenKind::ParenRight,
         ])];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
         let r = et.parse(tokens.into(), env.new_namespace());
 
@@ -682,7 +682,7 @@ mod parsing {
             TokenKind::Identifier("b".to_owned()),
             TokenKind::ParenRight,
         ])];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
         let r = et.parse(tokens.into(), env.new_namespace());
 
@@ -714,7 +714,7 @@ mod parsing {
             TokenKind::Comment,
             TokenKind::ParenRight,
         ])];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
         let r = et.parse(tokens.into(), env.new_namespace());
 
@@ -743,7 +743,7 @@ mod parsing {
             TokenKind::DirectiveCase(false),
             TokenKind::String("foo".into()),
         ])];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
         let r = et.parse(tokens.into(), env.new_namespace());
 
@@ -789,7 +789,7 @@ mod parsing {
                 2,
             ),
         ];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
         let r = et.parse(tokens.into(), env.new_namespace());
 
@@ -851,7 +851,7 @@ mod parsing {
                 3,
             ),
         ];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
         let r = et.parse(tokens.into(), env.new_namespace());
 
@@ -897,7 +897,7 @@ mod parsing {
             ],
             1,
         )];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
         let r = et.parse(tokens.into(), env.new_namespace());
 
@@ -920,7 +920,7 @@ mod parsing {
             TokenKind::Boolean(true),
             TokenKind::ParenRight,
         ])];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
         let r = et.parse(tokens.into(), env.new_namespace());
 
@@ -948,7 +948,7 @@ mod parsing {
     fn failed_node_into_unexpected_end_of_parse_discards_rest_of_input() {
         let mut et = ExpressionTree::default();
         let tokens = [make_tokenline_no([TokenKind::CommentDatum], 1)];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
         let r = et.parse(tokens.into(), env.new_namespace());
 
@@ -967,7 +967,7 @@ mod parsing {
             ],
             2,
         )];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
         let r = et.parse(tokens.into(), env.new_namespace());
 
@@ -997,7 +997,7 @@ mod parsing {
             TokenKind::Identifier("c".to_owned()),
             TokenKind::ParenRight,
         ])];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
         let r = et.parse(tokens.into(), env.new_namespace());
 
@@ -1026,7 +1026,7 @@ mod parsing {
             TokenKind::Identifier("c".to_owned()),
             TokenKind::ParenRight,
         ])];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
         let r = et.parse(tokens.into(), env.new_namespace());
 
@@ -1055,7 +1055,7 @@ mod parsing {
             TokenKind::Identifier("c".to_owned()),
             TokenKind::ParenRight,
         ])];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
         let r = et.parse(tokens.into(), env.new_namespace());
 
@@ -1084,7 +1084,7 @@ mod parsing {
             TokenKind::Identifier("b".to_owned()),
             TokenKind::ParenRight,
         ])];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
         let r = et.parse(tokens.into(), env.new_namespace());
 
@@ -1113,7 +1113,7 @@ mod parsing {
             TokenKind::Identifier("b".to_owned()),
             TokenKind::ParenRight,
         ])];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
         let r = et.parse(tokens.into(), env.new_namespace());
 
@@ -1145,7 +1145,7 @@ mod parsing {
             TokenKind::ParenRight,
             TokenKind::ParenRight,
         ])];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
         let r = et.parse(tokens.into(), env.new_namespace());
 
@@ -1179,7 +1179,7 @@ mod parsing {
             TokenKind::Identifier("b".to_owned()),
             TokenKind::ParenRight,
         ])];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
         let r = et.parse(tokens.into(), env.new_namespace());
 
@@ -1204,7 +1204,7 @@ mod parsing {
             TokenKind::PairJoiner,
             TokenKind::ParenRight,
         ])];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
         let r = et.parse(tokens.into(), env.new_namespace());
 
@@ -1238,7 +1238,7 @@ mod parsing {
             TokenKind::Number(Number::real(13)),
             TokenKind::ParenRight,
         ])];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
         let r = et.parse(tokens.into(), env.new_namespace());
 
@@ -1265,7 +1265,7 @@ mod parsing {
             TokenKind::Identifier("b".to_owned()),
             TokenKind::ParenRight,
         ])];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
         let r = et.parse(tokens.into(), env.new_namespace());
 
@@ -1292,7 +1292,7 @@ mod parsing {
             TokenKind::Number(Number::real(10)),
             TokenKind::ParenRight,
         ])];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
         let r = et.parse(tokens.into(), env.new_namespace());
 
@@ -1327,7 +1327,7 @@ mod parsing {
             TokenKind::Number(Number::real(20)),
             TokenKind::ParenRight,
         ])];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
         env.binding
             .bind(env.symbols.get("define"), Value::Number(Number::real(10)));
 
@@ -1394,7 +1394,7 @@ mod continuation {
                 line_cont: false,
             },
         ])];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
         let r = et.parse(tokens.into(), env.new_namespace());
 
@@ -1434,7 +1434,7 @@ mod continuation {
                 2,
             ),
         ];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
         let r = et.parse(tokens.into(), env.new_namespace());
 
@@ -1466,7 +1466,7 @@ mod continuation {
                 line_cont: false,
             },
         ])];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
         let r = et.parse(tokens.into(), env.new_namespace());
 
@@ -1496,7 +1496,7 @@ mod continuation {
             TokenKind::ParenRight,
             TokenKind::ParenRight,
         ])];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
         let r = et.parse(tokens.into(), env.new_namespace());
 

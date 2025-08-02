@@ -5,7 +5,7 @@ use crate::{
     value::Value,
 };
 
-pub(super) fn load(env: &mut Frame) {
+pub(super) fn load(env: &Frame) {
     super::bind_intrinsic(env, "caaar", 1..1, caaar);
     super::bind_intrinsic(env, "caadr", 1..1, caadr);
     super::bind_intrinsic(env, "cadar", 1..1, cadar);

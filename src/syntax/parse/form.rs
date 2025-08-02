@@ -54,7 +54,7 @@ impl SyntacticForm {
         seq: &mut Vec<Expression>,
         token: Token,
         txt: &Rc<TextLine>,
-        ns: &mut Namespace,
+        ns: &Namespace,
     ) -> ParseFlow {
         match token.kind {
             TokenKind::PairJoiner => self.dotted_pair(seq, token, txt),
@@ -68,7 +68,7 @@ impl SyntacticForm {
         seq: &mut Vec<Expression>,
         other: ExprNode,
         node_ctx: &ExprCtx,
-        ns: &mut Namespace,
+        ns: &Namespace,
     ) -> MergeResult {
         if let Some(expr) = other.try_into_expr(ns)? {
             match self {
@@ -99,7 +99,7 @@ impl SyntacticForm {
         self,
         seq: Vec<Expression>,
         ctx: ExprCtx,
-        ns: &mut Namespace,
+        ns: &Namespace,
     ) -> ExprConvertResult {
         match self {
             Self::Call => {
@@ -220,7 +220,7 @@ impl SyntacticForm {
         seq: &mut Vec<Expression>,
         token: Token,
         txt: &Rc<TextLine>,
-        ns: &mut Namespace,
+        ns: &Namespace,
     ) -> ParseFlow {
         let token_span = token.span.clone();
         if let Some(expr) = super::parse_expr(token, txt, self.quoted(seq.len()), ns)? {
@@ -274,7 +274,7 @@ fn into_list(seq: Vec<Expression>, ctx: ExprCtx, improper: bool) -> ExprConvertR
     )
 }
 
-fn into_lambda(seq: Vec<Expression>, ctx: ExprCtx, ns: &mut Namespace) -> ExprConvertResult {
+fn into_lambda(seq: Vec<Expression>, ctx: ExprCtx, ns: &Namespace) -> ExprConvertResult {
     if seq.len() < 2 {
         return Err(vec![ctx.into_error(ExpressionErrorKind::LambdaInvalid)]);
     }
@@ -318,7 +318,7 @@ fn into_procedure(
     body: impl IntoIterator<Item = Expression>,
     formals_ctx: &ExprCtx,
     ctx: ExprCtx,
-    ns: &mut Namespace,
+    ns: &Namespace,
 ) -> ExprConvertResult {
     Procedure::lambda(
         args,

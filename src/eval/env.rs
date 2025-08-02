@@ -87,7 +87,7 @@ impl Namespace<'_> {
         Rc::clone(&self.0.scope)
     }
 
-    pub(crate) fn get_symbol(&mut self, name: impl AsRef<str>) -> Symbol {
+    pub(crate) fn get_symbol(&self, name: impl AsRef<str>) -> Symbol {
         self.0.sym.get(name)
     }
 }

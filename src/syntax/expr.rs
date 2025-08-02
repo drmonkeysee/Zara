@@ -24,7 +24,7 @@ impl Sequence {
         Self(seq.into())
     }
 
-    pub(crate) fn eval(&self, env: &mut Frame) -> EvalResult {
+    pub(crate) fn eval(&self, env: &Frame) -> EvalResult {
         Ok(self
             .iter()
             .map(|expr| expr.eval(env))
@@ -90,7 +90,7 @@ impl Expression {
         }
     }
 
-    fn eval(&self, env: &mut Frame) -> EvalResult {
+    fn eval(&self, env: &Frame) -> EvalResult {
         self.kind.eval(env)
     }
 }
@@ -123,7 +123,7 @@ impl ExpressionKind {
         TypeName(self)
     }
 
-    fn eval(&self, env: &mut Frame) -> EvalResult {
+    fn eval(&self, env: &Frame) -> EvalResult {
         match self {
             Self::Call { args, proc } => eval_call(proc, args, env),
             Self::Define { name, expr } => {
@@ -293,7 +293,7 @@ impl Display for TypeName<'_> {
     }
 }
 
-fn eval_call(proc: &Expression, args: &[Expression], env: &mut Frame) -> EvalResult {
+fn eval_call(proc: &Expression, args: &[Expression], env: &Frame) -> EvalResult {
     let proc = proc.eval(env)?;
     let Value::Procedure(p) = proc else {
         return Err(Condition::proc_error(proc.as_typename()).into());

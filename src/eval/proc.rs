@@ -10,7 +10,7 @@ use std::{
 
 pub(crate) const MAX_ARITY: u8 = u8::MAX;
 
-pub(crate) type IntrinsicFn = fn(&[Value], &mut Frame) -> EvalResult;
+pub(crate) type IntrinsicFn = fn(&[Value], &Frame) -> EvalResult;
 pub(crate) type Arity = Range<u8>;
 pub(crate) type LambdaResult = Result<Procedure, Vec<InvalidFormal>>;
 
@@ -73,7 +73,7 @@ impl Procedure {
         self.arity.start as usize <= args_len && args_len <= self.arity.end as usize
     }
 
-    pub(crate) fn apply(&self, args: &[Value], env: &mut Frame) -> EvalResult {
+    pub(crate) fn apply(&self, args: &[Value], env: &Frame) -> EvalResult {
         self.def.apply(args, env)
     }
 
@@ -129,7 +129,7 @@ enum Definition {
 }
 
 impl Definition {
-    fn apply(&self, args: &[Value], env: &mut Frame) -> EvalResult {
+    fn apply(&self, args: &[Value], env: &Frame) -> EvalResult {
         match self {
             Self::Intrinsic(func) => func(args, env),
             Self::Lambda {
@@ -203,7 +203,7 @@ fn into_formals(
 
 fn call_lambda(
     args: &[Value],
-    env: &mut Frame,
+    env: &Frame,
     body: &Sequence,
     closure: &Rc<Binding>,
     formals: &[Symbol],
@@ -212,7 +212,7 @@ fn call_lambda(
     // TODO: tail-call optimization does not create a new frame
     // TODO: this doesn't seem quite right, particularly for recursion
     // is env.scope actually irrelevant with lexical scoping?
-    let mut call_frame = Frame {
+    let call_frame = Frame {
         scope: Binding::new(Rc::clone(closure)).into(),
         sym: env.sym,
         sys: env.sys,
@@ -227,7 +227,7 @@ fn call_lambda(
     if variadic.is_some() {
         todo!("support variadic args");
     }
-    body.eval(&mut call_frame)
+    body.eval(&call_frame)
 }
 
 #[cfg(test)]
@@ -243,7 +243,7 @@ mod tests {
 
     fn body(tokens: impl IntoIterator<Item = TokenKind>) -> Sequence {
         let mut et = ExpressionTree::default();
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
         let r = et.parse([make_tokenline(tokens)].into(), env.new_namespace());
 
@@ -676,11 +676,11 @@ mod tests {
     fn apply_zero_arity() {
         let sym = SymbolTable::default();
         let p = Procedure::intrinsic(sym.get("foo"), 0..0, |_, _| Ok(Value::string("bar")));
-        let mut env = TestEnv::default();
-        let mut f = env.new_frame();
+        let env = TestEnv::default();
+        let f = env.new_frame();
         let args = [];
 
-        let r = p.apply(&args, &mut f);
+        let r = p.apply(&args, &f);
 
         let v = ok_or_fail!(r);
         assert!(matches!(v, Value::String(s) if s.as_ref() == "bar"));
@@ -695,11 +695,11 @@ mod tests {
             };
             Ok(Value::string(format!("bar {s}")))
         });
-        let mut env = TestEnv::default();
-        let mut f = env.new_frame();
+        let env = TestEnv::default();
+        let f = env.new_frame();
         let args = [Value::string("baz")];
 
-        let r = p.apply(&args, &mut f);
+        let r = p.apply(&args, &f);
 
         let v = ok_or_fail!(r);
         assert!(matches!(v, Value::String(s) if s.as_ref() == "bar baz"));
@@ -708,8 +708,8 @@ mod tests {
     #[test]
     fn apply_zero_arity_lambda() {
         let sym = SymbolTable::default();
-        let mut env = TestEnv::default();
-        let mut f = env.new_frame();
+        let env = TestEnv::default();
+        let f = env.new_frame();
         let params = [];
         let p = ok_or_fail!(Procedure::lambda(
             params,
@@ -720,7 +720,7 @@ mod tests {
         ));
         let args = [];
 
-        let r = p.apply(&args, &mut f);
+        let r = p.apply(&args, &f);
 
         let v = ok_or_fail!(r);
         assert!(matches!(v, Value::String(s) if s.as_ref() == "bar"));
@@ -729,8 +729,8 @@ mod tests {
     #[test]
     fn apply_single_arity_lambda() {
         let sym = SymbolTable::default();
-        let mut env = TestEnv::default();
-        let mut f = env.new_frame();
+        let env = TestEnv::default();
+        let f = env.new_frame();
         let params = [sym.get("x")];
         let p = ok_or_fail!(Procedure::lambda(
             params,
@@ -741,7 +741,7 @@ mod tests {
         ));
         let args = [Value::Number(Number::real(5))];
 
-        let r = p.apply(&args, &mut f);
+        let r = p.apply(&args, &f);
 
         let v = ok_or_fail!(r);
         assert!(matches!(v, Value::Number(_)));
@@ -752,13 +752,13 @@ mod tests {
     #[test]
     fn apply_single_arity_lambda_with_closure() {
         let sym = SymbolTable::default();
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
         let global_func = Procedure::intrinsic(sym.get("stringify"), 1..1, |args, _| {
             Ok(Value::string(format!("bar {}", args[0])))
         });
         env.binding
             .bind(sym.get("stringify"), Value::Procedure(global_func.into()));
-        let mut f = env.new_frame();
+        let f = env.new_frame();
         let params = [sym.get("x")];
         let p = ok_or_fail!(Procedure::lambda(
             params,
@@ -774,7 +774,7 @@ mod tests {
         ));
         let args = [Value::Number(Number::real(5))];
 
-        let r = p.apply(&args, &mut f);
+        let r = p.apply(&args, &f);
 
         let v = ok_or_fail!(r);
         assert!(matches!(v, Value::String(s) if s.as_ref() == "bar 5"));

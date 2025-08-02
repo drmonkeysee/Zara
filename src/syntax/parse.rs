@@ -48,12 +48,7 @@ impl ParseNode {
         matches!(self, Self::InvalidParseTree(_) | Self::InvalidTokenStream)
     }
 
-    pub(super) fn parse(
-        &mut self,
-        token: Token,
-        txt: &Rc<TextLine>,
-        ns: &mut Namespace,
-    ) -> ParseFlow {
+    pub(super) fn parse(&mut self, token: Token, txt: &Rc<TextLine>, ns: &Namespace) -> ParseFlow {
         match self {
             Self::Expr(node) => node.parse(token, txt, ns),
             Self::InvalidParseTree(_) | Self::InvalidTokenStream => ParseFlow::Continue(()),
@@ -61,7 +56,7 @@ impl ParseNode {
         }
     }
 
-    pub(super) fn merge(&mut self, other: ExprNode, ns: &mut Namespace) -> MergeResult {
+    pub(super) fn merge(&mut self, other: ExprNode, ns: &Namespace) -> MergeResult {
         match self {
             Self::Expr(node) => node.merge(other, ns),
             Self::InvalidParseTree(_) | Self::InvalidTokenStream => Ok(MergeFlow::Continue(())),
@@ -110,11 +105,11 @@ pub(super) struct ExprNode {
 }
 
 impl ExprNode {
-    fn parse(&mut self, token: Token, txt: &Rc<TextLine>, ns: &mut Namespace) -> ParseFlow {
+    fn parse(&mut self, token: Token, txt: &Rc<TextLine>, ns: &Namespace) -> ParseFlow {
         self.mode.parse(token, txt, &self.ctx, ns)
     }
 
-    fn merge(&mut self, other: Self, ns: &mut Namespace) -> MergeResult {
+    fn merge(&mut self, other: Self, ns: &Namespace) -> MergeResult {
         self.mode.merge(other, &self.ctx, ns)
     }
 
@@ -123,17 +118,13 @@ impl ExprNode {
             .into_error(self.mode.into_continuation_unsupported())
     }
 
-    fn merge_into(
-        self,
-        ns: &mut Namespace,
-        slot: impl FnOnce(Expression) -> MergeFlow,
-    ) -> MergeResult {
+    fn merge_into(self, ns: &Namespace, slot: impl FnOnce(Expression) -> MergeFlow) -> MergeResult {
         Ok(self
             .try_into_expr(ns)?
             .map_or(MergeFlow::Continue(()), slot))
     }
 
-    fn try_into_expr(self, ns: &mut Namespace) -> ExprConvertResult {
+    fn try_into_expr(self, ns: &Namespace) -> ExprConvertResult {
         self.mode.try_into_expr(self.ctx, ns)
     }
 }
@@ -239,7 +230,7 @@ impl ParseMode {
         token: Token,
         txt: &Rc<TextLine>,
         node_ctx: &ExprCtx,
-        ns: &mut Namespace,
+        ns: &Namespace,
     ) -> ParseFlow {
         match self {
             Self::ByteVector(seq) | Self::Vector(seq) => parse_vector(seq, token, txt, ns),
@@ -253,7 +244,7 @@ impl ParseMode {
         }
     }
 
-    fn merge(&mut self, other: ExprNode, node_ctx: &ExprCtx, ns: &mut Namespace) -> MergeResult {
+    fn merge(&mut self, other: ExprNode, node_ctx: &ExprCtx, ns: &Namespace) -> MergeResult {
         match self {
             Self::ByteVector(seq) | Self::Vector(seq) => other.merge_into(ns, |expr| {
                 seq.push(expr);
@@ -280,7 +271,7 @@ impl ParseMode {
         }
     }
 
-    fn try_into_expr(self, node_ctx: ExprCtx, ns: &mut Namespace) -> ExprConvertResult {
+    fn try_into_expr(self, node_ctx: ExprCtx, ns: &Namespace) -> ExprConvertResult {
         match self {
             Self::ByteVector(seq) => into_bytevector(seq, node_ctx),
             Self::CommentBlock => Ok(None),
@@ -317,7 +308,7 @@ fn parse_datum(
     token: Token,
     txt: &Rc<TextLine>,
     node_ctx: &ExprCtx,
-    ns: &mut Namespace,
+    ns: &Namespace,
 ) -> ParseFlow {
     if let TokenKind::ParenRight = token.kind {
         let ctx = extend_node_to_token(token.span.end, txt, node_ctx);
@@ -336,7 +327,7 @@ fn parse_datum(
     }
 }
 
-fn parse_expr(token: Token, txt: &Rc<TextLine>, quoted: bool, ns: &mut Namespace) -> ExprFlow {
+fn parse_expr(token: Token, txt: &Rc<TextLine>, quoted: bool, ns: &Namespace) -> ExprFlow {
     match token.kind {
         TokenKind::Boolean(b) => ExprFlow::Continue(Some(
             ExprCtx {
@@ -460,7 +451,7 @@ fn parse_vector(
     seq: &mut Vec<Expression>,
     token: Token,
     txt: &Rc<TextLine>,
-    ns: &mut Namespace,
+    ns: &Namespace,
 ) -> ParseFlow {
     if let TokenKind::ParenRight = token.kind {
         ParseFlow::Break(ParseBreak::complete(txt.lineno, token.span.end))
@@ -476,7 +467,7 @@ fn parse_prg(
     seq: &mut Vec<Expression>,
     token: Token,
     txt: &Rc<TextLine>,
-    ns: &mut Namespace,
+    ns: &Namespace,
 ) -> ParseFlow {
     if let Some(expr) = parse_expr(token, txt, false, ns)? {
         seq.push(expr);
@@ -570,7 +561,7 @@ fn into_datum(
     inner: Option<Expression>,
     ctx: ExprCtx,
     quoted: bool,
-    ns: &mut Namespace,
+    ns: &Namespace,
 ) -> ExprConvertResult {
     match inner {
         None => Err(vec![ctx.into_error(ExpressionErrorKind::DatumExpected)]),
@@ -612,7 +603,7 @@ fn into_valid_sequence<T>(
     }
 }
 
-fn identifier_to_expr(name: &str, quoted: bool, ctx: ExprCtx, ns: &mut Namespace) -> Expression {
+fn identifier_to_expr(name: &str, quoted: bool, ctx: ExprCtx, ns: &Namespace) -> Expression {
     let n = ns.get_symbol(name);
     if quoted {
         Expression::symbol(n, ctx)

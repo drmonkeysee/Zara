@@ -176,11 +176,11 @@ impl<'a> ParseDriver<'a> {
         }
     }
 
-    fn parse(mut self, token_lines: Box<[TokenLine]>, mut ns: Namespace) -> ParserResult {
+    fn parse(mut self, token_lines: Box<[TokenLine]>, ns: Namespace) -> ParserResult {
         let parser = token_lines
             .into_iter()
             .fold(self.parsers.pop().unwrap_or(ParseNode::prg()), |p, ln| {
-                self.parse_line(p, ln, &mut ns)
+                self.parse_line(p, ln, &ns)
             });
 
         if self.errs.is_empty() {
@@ -196,12 +196,7 @@ impl<'a> ParseDriver<'a> {
         }
     }
 
-    fn parse_line(
-        &mut self,
-        mut parser: ParseNode,
-        line: TokenLine,
-        ns: &mut Namespace,
-    ) -> ParseNode {
+    fn parse_line(&mut self, mut parser: ParseNode, line: TokenLine, ns: &Namespace) -> ParseNode {
         let TokenLine(tokens, txt) = line;
         let txt = txt.into();
         let mut errs = Vec::new();
@@ -242,7 +237,7 @@ impl<'a> ParseDriver<'a> {
         parser: ParseNode,
         end: ExprEnd,
         errs: &mut Vec<ExpressionError>,
-        ns: &mut Namespace,
+        ns: &Namespace,
     ) -> ParseNode {
         let err = match self.parsers.pop() {
             None => InvalidParseError::MissingExprTarget,

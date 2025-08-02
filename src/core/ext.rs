@@ -13,7 +13,7 @@ use crate::{
  * debugging, inspection, and other utilities.
  */
 
-pub(crate) fn load(env: &mut Frame) {
+pub(crate) fn load(env: &Frame) {
     super::bind_intrinsic(env, "all-bindings", 0..0, bindings);
     super::bind_intrinsic(env, "all-symbols", 0..0, symbols);
     super::bind_intrinsic(env, "apropos", 0..1, apropos);
@@ -31,7 +31,7 @@ pub(crate) fn load(env: &mut Frame) {
 
 // TODO: support passing in environment specifier
 #[allow(clippy::unnecessary_wraps, reason = "infallible intrinsic")]
-fn bindings(_args: &[Value], env: &mut Frame) -> EvalResult {
+fn bindings(_args: &[Value], env: &Frame) -> EvalResult {
     Ok(Value::list(
         env.scope
             .sorted_bindings()
@@ -42,7 +42,7 @@ fn bindings(_args: &[Value], env: &mut Frame) -> EvalResult {
 }
 
 #[allow(clippy::unnecessary_wraps, reason = "infallible intrinsic")]
-fn symbols(_args: &[Value], env: &mut Frame) -> EvalResult {
+fn symbols(_args: &[Value], env: &Frame) -> EvalResult {
     Ok(Value::list(
         env.sym
             .sorted_symbols()
@@ -53,7 +53,7 @@ fn symbols(_args: &[Value], env: &mut Frame) -> EvalResult {
 }
 
 // TODO: support passing in environment specifier
-fn apropos(args: &[Value], env: &mut Frame) -> EvalResult {
+fn apropos(args: &[Value], env: &Frame) -> EvalResult {
     let pat = args.first().map_or(Ok::<_, Exception>(""), |v| {
         if let Value::String(s) = v {
             Ok(s)

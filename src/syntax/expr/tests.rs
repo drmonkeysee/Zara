@@ -117,10 +117,10 @@ mod eval {
             txt: make_textline().into(),
         }
         .into_expr(ExpressionKind::Literal(Value::Boolean(true)));
-        let mut env = TestEnv::default();
-        let mut f = env.new_frame();
+        let env = TestEnv::default();
+        let f = env.new_frame();
 
-        let r = expr.eval(&mut f);
+        let r = expr.eval(&f);
 
         let v = ok_or_fail!(r);
         assert!(matches!(v, Value::Boolean(true)));
@@ -128,7 +128,7 @@ mod eval {
 
     #[test]
     fn variable() {
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
         let expr = Expression::variable(
             env.symbols.get("x"),
             ExprCtx {
@@ -137,9 +137,9 @@ mod eval {
             },
         );
         env.binding.bind(env.symbols.get("x"), Value::string("foo"));
-        let mut f = env.new_frame();
+        let f = env.new_frame();
 
-        let r = expr.eval(&mut f);
+        let r = expr.eval(&f);
 
         let v = ok_or_fail!(r);
         assert!(matches!(v, Value::String(s) if s.as_ref() == "foo"));
@@ -147,7 +147,7 @@ mod eval {
 
     #[test]
     fn missing_variable() {
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
         let expr = Expression::variable(
             env.symbols.get("x"),
             ExprCtx {
@@ -155,9 +155,9 @@ mod eval {
                 txt: make_textline().into(),
             },
         );
-        let mut f = env.new_frame();
+        let f = env.new_frame();
 
-        let r = expr.eval(&mut f);
+        let r = expr.eval(&f);
 
         let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
         assert_eq!(err.to_string(), "#<env-error \"unbound variable: x\">");
@@ -169,10 +169,10 @@ mod eval {
         #[test]
         fn empty() {
             let prg = Sequence::new([]);
-            let mut env = TestEnv::default();
-            let mut f = env.new_frame();
+            let env = TestEnv::default();
+            let f = env.new_frame();
 
-            let r = prg.eval(&mut f);
+            let r = prg.eval(&f);
 
             let v = ok_or_fail!(r);
             assert!(matches!(v, Value::Unspecified));
@@ -198,10 +198,10 @@ mod eval {
                 }
                 .into_expr(ExpressionKind::Literal(Value::Character('b'))),
             ]);
-            let mut env = TestEnv::default();
-            let mut f = env.new_frame();
+            let env = TestEnv::default();
+            let f = env.new_frame();
 
-            let r = prg.eval(&mut f);
+            let r = prg.eval(&f);
 
             let v = ok_or_fail!(r);
             assert!(matches!(v, Value::Character('b')));
@@ -210,7 +210,7 @@ mod eval {
         #[test]
         fn multiple_procedures() {
             let txt = make_textline().into();
-            let mut env = TestEnv::default();
+            let env = TestEnv::default();
             let prg = Sequence::new([
                 ExprCtx {
                     span: 0..5,
@@ -263,9 +263,9 @@ mod eval {
                     .into(),
                 ),
             );
-            let mut f = env.new_frame();
+            let f = env.new_frame();
 
-            let r = prg.eval(&mut f);
+            let r = prg.eval(&f);
 
             let v = ok_or_fail!(r);
             assert!(matches!(v, Value::Character('a')));
@@ -275,7 +275,7 @@ mod eval {
         #[test]
         fn exception_interrupts_execution() {
             let txt = make_textline().into();
-            let mut env = TestEnv::default();
+            let env = TestEnv::default();
             let prg = Sequence::new([
                 ExprCtx {
                     span: 0..18,
@@ -354,9 +354,9 @@ mod eval {
                     .into(),
                 ),
             );
-            let mut f = env.new_frame();
+            let f = env.new_frame();
 
-            let r = prg.eval(&mut f);
+            let r = prg.eval(&f);
 
             let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
             assert_eq!(err.to_string(), "#<sys-error \"oh no\">");
@@ -372,7 +372,7 @@ mod eval {
         #[test]
         fn call_no_args() {
             let txt = make_textline().into();
-            let mut env = TestEnv::default();
+            let env = TestEnv::default();
             let expr = ExprCtx {
                 span: 0..5,
                 txt: Rc::clone(&txt),
@@ -397,9 +397,9 @@ mod eval {
                     .into(),
                 ),
             );
-            let mut f = env.new_frame();
+            let f = env.new_frame();
 
-            let r = expr.eval(&mut f);
+            let r = expr.eval(&f);
 
             let v = ok_or_fail!(r);
             assert!(matches!(v, Value::String(s) if s.as_ref() == "bar"));
@@ -408,7 +408,7 @@ mod eval {
         #[test]
         fn call_with_args() {
             let txt = make_textline().into();
-            let mut env = TestEnv::default();
+            let env = TestEnv::default();
             let expr = ExprCtx {
                 span: 0..18,
                 txt: Rc::clone(&txt),
@@ -464,9 +464,9 @@ mod eval {
                     .into(),
                 ),
             );
-            let mut f = env.new_frame();
+            let f = env.new_frame();
 
-            let r = expr.eval(&mut f);
+            let r = expr.eval(&f);
 
             let v = ok_or_fail!(r);
             assert!(matches!(v, Value::String(s) if s.as_ref() == "one, two, three"));
@@ -475,7 +475,7 @@ mod eval {
         #[test]
         fn call_unbound_procedure() {
             let txt = make_textline().into();
-            let mut env = TestEnv::default();
+            let env = TestEnv::default();
             let expr = ExprCtx {
                 span: 0..5,
                 txt: Rc::clone(&txt),
@@ -491,9 +491,9 @@ mod eval {
                 .into(),
                 args: [].into(),
             });
-            let mut f = env.new_frame();
+            let f = env.new_frame();
 
-            let r = expr.eval(&mut f);
+            let r = expr.eval(&f);
 
             let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
             assert_eq!(err.to_string(), "#<env-error \"unbound variable: foo\">");
@@ -502,7 +502,7 @@ mod eval {
         #[test]
         fn call_not_a_procedure() {
             let txt = make_textline().into();
-            let mut env = TestEnv::default();
+            let env = TestEnv::default();
             let expr = ExprCtx {
                 span: 0..5,
                 txt: Rc::clone(&txt),
@@ -520,9 +520,9 @@ mod eval {
             });
             env.binding
                 .bind(env.symbols.get("foo"), Value::string("foo"));
-            let mut f = env.new_frame();
+            let f = env.new_frame();
 
-            let r = expr.eval(&mut f);
+            let r = expr.eval(&f);
 
             let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
             assert_eq!(
@@ -534,7 +534,7 @@ mod eval {
         #[test]
         fn call_too_many_args() {
             let txt = make_textline().into();
-            let mut env = TestEnv::default();
+            let env = TestEnv::default();
             let expr = ExprCtx {
                 span: 0..7,
                 txt: Rc::clone(&txt),
@@ -564,9 +564,9 @@ mod eval {
                     .into(),
                 ),
             );
-            let mut f = env.new_frame();
+            let f = env.new_frame();
 
-            let r = expr.eval(&mut f);
+            let r = expr.eval(&f);
 
             let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
             assert_eq!(
@@ -578,7 +578,7 @@ mod eval {
         #[test]
         fn call_too_few_args() {
             let txt = make_textline().into();
-            let mut env = TestEnv::default();
+            let env = TestEnv::default();
             let expr = ExprCtx {
                 span: 0..7,
                 txt: Rc::clone(&txt),
@@ -603,9 +603,9 @@ mod eval {
                     .into(),
                 ),
             );
-            let mut f = env.new_frame();
+            let f = env.new_frame();
 
-            let r = expr.eval(&mut f);
+            let r = expr.eval(&f);
 
             let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
             assert_eq!(
@@ -617,7 +617,7 @@ mod eval {
         #[test]
         fn call_too_few_args_variable_arity() {
             let txt = make_textline().into();
-            let mut env = TestEnv::default();
+            let env = TestEnv::default();
             let expr = ExprCtx {
                 span: 0..7,
                 txt: Rc::clone(&txt),
@@ -642,9 +642,9 @@ mod eval {
                     .into(),
                 ),
             );
-            let mut f = env.new_frame();
+            let f = env.new_frame();
 
-            let r = expr.eval(&mut f);
+            let r = expr.eval(&f);
 
             let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
             assert_eq!(
@@ -656,7 +656,7 @@ mod eval {
         #[test]
         fn call_args_eval_failure() {
             let txt = make_textline().into();
-            let mut env = TestEnv::default();
+            let env = TestEnv::default();
             let expr = ExprCtx {
                 span: 0..13,
                 txt: Rc::clone(&txt),
@@ -716,9 +716,9 @@ mod eval {
             );
             env.binding
                 .bind(env.symbols.get("y"), Value::string("beef"));
-            let mut f = env.new_frame();
+            let f = env.new_frame();
 
-            let r = expr.eval(&mut f);
+            let r = expr.eval(&f);
 
             // NOTE: missing variable "z" is not hit
             let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
@@ -729,7 +729,7 @@ mod eval {
         #[test]
         fn define_with_expr() {
             let txt = make_textline().into();
-            let mut env = TestEnv::default();
+            let env = TestEnv::default();
             let expr = ExprCtx {
                 span: 0..10,
                 txt: Rc::clone(&txt),
@@ -747,9 +747,9 @@ mod eval {
                     .into(),
                 ),
             });
-            let mut f = env.new_frame();
+            let f = env.new_frame();
 
-            let r = expr.eval(&mut f);
+            let r = expr.eval(&f);
 
             let v = ok_or_fail!(r);
             assert!(matches!(v, Value::Unspecified));
@@ -759,7 +759,7 @@ mod eval {
         #[test]
         fn define_no_expr() {
             let txt = make_textline().into();
-            let mut env = TestEnv::default();
+            let env = TestEnv::default();
             let expr = ExprCtx {
                 span: 0..10,
                 txt: Rc::clone(&txt),
@@ -768,9 +768,9 @@ mod eval {
                 name: env.symbols.get("foo"),
                 expr: None,
             });
-            let mut f = env.new_frame();
+            let f = env.new_frame();
 
-            let r = expr.eval(&mut f);
+            let r = expr.eval(&f);
 
             let v = ok_or_fail!(r);
             assert!(matches!(v, Value::Unspecified));
@@ -780,7 +780,7 @@ mod eval {
         #[test]
         fn define_eval_failure() {
             let txt = make_textline().into();
-            let mut env = TestEnv::default();
+            let env = TestEnv::default();
             let expr = ExprCtx {
                 span: 0..7,
                 txt: Rc::clone(&txt),
@@ -798,9 +798,9 @@ mod eval {
                     .into(),
                 ),
             });
-            let mut f = env.new_frame();
+            let f = env.new_frame();
 
-            let r = expr.eval(&mut f);
+            let r = expr.eval(&f);
 
             let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
             assert_eq!(err.to_string(), "#<env-error \"unbound variable: x\">");
@@ -810,7 +810,7 @@ mod eval {
         #[test]
         fn set_with_expr() {
             let txt = make_textline().into();
-            let mut env = TestEnv::default();
+            let env = TestEnv::default();
             let expr = ExprCtx {
                 span: 0..10,
                 txt: Rc::clone(&txt),
@@ -827,9 +827,9 @@ mod eval {
                 .into(),
             });
             env.binding.bind(env.symbols.get("foo"), Value::Unspecified);
-            let mut f = env.new_frame();
+            let f = env.new_frame();
 
-            let r = expr.eval(&mut f);
+            let r = expr.eval(&f);
 
             let v = ok_or_fail!(r);
             assert!(matches!(v, Value::Unspecified));
@@ -839,7 +839,7 @@ mod eval {
         #[test]
         fn set_with_expr_in_parent_scope() {
             let txt = make_textline().into();
-            let mut env = TestEnv::default();
+            let env = TestEnv::default();
             let expr = ExprCtx {
                 span: 0..10,
                 txt: Rc::clone(&txt),
@@ -857,13 +857,13 @@ mod eval {
             });
             env.binding.bind(env.symbols.get("foo"), Value::Unspecified);
             let child_binding = Binding::new(Rc::clone(&env.binding)).into();
-            let mut f = Frame {
+            let f = Frame {
                 scope: Rc::clone(&child_binding),
-                sym: &mut env.symbols,
+                sym: &env.symbols,
                 sys: &env.system,
             };
 
-            let r = expr.eval(&mut f);
+            let r = expr.eval(&f);
 
             let v = ok_or_fail!(r);
             assert!(matches!(v, Value::Unspecified));
@@ -879,7 +879,7 @@ mod eval {
         #[test]
         fn set_eval_failure() {
             let txt = make_textline().into();
-            let mut env = TestEnv::default();
+            let env = TestEnv::default();
             let expr = ExprCtx {
                 span: 0..7,
                 txt: Rc::clone(&txt),
@@ -896,9 +896,9 @@ mod eval {
                 .into(),
             });
             env.binding.bind(env.symbols.get("foo"), Value::Unspecified);
-            let mut f = env.new_frame();
+            let f = env.new_frame();
 
-            let r = expr.eval(&mut f);
+            let r = expr.eval(&f);
 
             let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
             assert_eq!(err.to_string(), "#<env-error \"unbound variable: x\">");
@@ -908,7 +908,7 @@ mod eval {
         #[test]
         fn set_eval_no_binding() {
             let txt = make_textline().into();
-            let mut env = TestEnv::default();
+            let env = TestEnv::default();
             let expr = ExprCtx {
                 span: 0..7,
                 txt: Rc::clone(&txt),
@@ -924,9 +924,9 @@ mod eval {
                 )
                 .into(),
             });
-            let mut f = env.new_frame();
+            let f = env.new_frame();
 
-            let r = expr.eval(&mut f);
+            let r = expr.eval(&f);
 
             let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
             assert_eq!(err.to_string(), "#<env-error \"unbound variable: foo\">");
@@ -936,7 +936,7 @@ mod eval {
         #[test]
         fn if_consequent() {
             let txt = make_textline().into();
-            let mut env = TestEnv::default();
+            let env = TestEnv::default();
             let expr = ExprCtx {
                 span: 0..13,
                 txt: Rc::clone(&txt),
@@ -967,9 +967,9 @@ mod eval {
                     .into(),
                 ),
             });
-            let mut f = env.new_frame();
+            let f = env.new_frame();
 
-            let r = expr.eval(&mut f);
+            let r = expr.eval(&f);
 
             let v = ok_or_fail!(r);
             assert_eq!(v.to_string(), "a");
@@ -978,7 +978,7 @@ mod eval {
         #[test]
         fn if_alternate() {
             let txt = make_textline().into();
-            let mut env = TestEnv::default();
+            let env = TestEnv::default();
             let expr = ExprCtx {
                 span: 0..13,
                 txt: Rc::clone(&txt),
@@ -1009,9 +1009,9 @@ mod eval {
                     .into(),
                 ),
             });
-            let mut f = env.new_frame();
+            let f = env.new_frame();
 
-            let r = expr.eval(&mut f);
+            let r = expr.eval(&f);
 
             let v = ok_or_fail!(r);
             assert_eq!(v.to_string(), "b");
@@ -1020,7 +1020,7 @@ mod eval {
         #[test]
         fn if_no_alternate() {
             let txt = make_textline().into();
-            let mut env = TestEnv::default();
+            let env = TestEnv::default();
             let expr = ExprCtx {
                 span: 0..10,
                 txt: Rc::clone(&txt),
@@ -1042,9 +1042,9 @@ mod eval {
                 .into(),
                 alt: None,
             });
-            let mut f = env.new_frame();
+            let f = env.new_frame();
 
-            let r = expr.eval(&mut f);
+            let r = expr.eval(&f);
 
             let v = ok_or_fail!(r);
             assert!(matches!(v, Value::Unspecified));
@@ -1053,7 +1053,7 @@ mod eval {
         #[test]
         fn if_eval_failure() {
             let txt = make_textline().into();
-            let mut env = TestEnv::default();
+            let env = TestEnv::default();
             let expr = ExprCtx {
                 span: 0..10,
                 txt: Rc::clone(&txt),
@@ -1075,9 +1075,9 @@ mod eval {
                 .into(),
                 alt: None,
             });
-            let mut f = env.new_frame();
+            let f = env.new_frame();
 
-            let r = expr.eval(&mut f);
+            let r = expr.eval(&f);
 
             let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
             assert_eq!(err.to_string(), "#<env-error \"unbound variable: x\">");
@@ -1086,7 +1086,7 @@ mod eval {
         #[test]
         fn if_invalid_expr_not_evaluated() {
             let txt = make_textline().into();
-            let mut env = TestEnv::default();
+            let env = TestEnv::default();
             let expr = ExprCtx {
                 span: 0..13,
                 txt: Rc::clone(&txt),
@@ -1117,9 +1117,9 @@ mod eval {
                     .into(),
                 ),
             });
-            let mut f = env.new_frame();
+            let f = env.new_frame();
 
-            let r = expr.eval(&mut f);
+            let r = expr.eval(&f);
 
             let v = ok_or_fail!(r);
             assert_eq!(v.to_string(), "b");

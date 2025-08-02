@@ -1,7 +1,7 @@
 // (scheme base)
 macro_rules! predicate {
     ($name:ident, $pred:pat $(if $guard:expr)?) => {
-        fn $name(args: &[Value], _env: &mut Frame) -> EvalResult {
+        fn $name(args: &[Value], _env: &Frame) -> EvalResult {
             let arg = first(args);
             Ok(Value::Boolean(matches!(arg, $pred $(if $guard)?)))
         }
@@ -10,7 +10,7 @@ macro_rules! predicate {
 
 macro_rules! seq_predicate {
     ($name:ident, $kind:path, $valname:expr, $pred:expr) => {
-        fn $name(args: &[Value], _env: &mut Frame) -> EvalResult {
+        fn $name(args: &[Value], _env: &Frame) -> EvalResult {
             let mut it = args.iter().enumerate();
             let first = match it.next() {
                 None => return Ok(Value::Boolean(true)),
@@ -34,7 +34,7 @@ macro_rules! seq_predicate {
 
 macro_rules! vec_length {
     ($name:ident, $kind:path, $valname:expr) => {
-        fn $name(args: &[Value], _env: &mut Frame) -> EvalResult {
+        fn $name(args: &[Value], _env: &Frame) -> EvalResult {
             let arg = first(args);
             if let $kind(v) = arg {
                 Ok(Value::Number(Number::from_usize(v.len())))
@@ -47,7 +47,7 @@ macro_rules! vec_length {
 
 macro_rules! vec_get {
     ($name:ident, $kind: path, $valname:expr, $get:expr, $map:expr) => {
-        fn $name(args: &[Value], _env: &mut Frame) -> EvalResult {
+        fn $name(args: &[Value], _env: &Frame) -> EvalResult {
             let vec = first(args);
             let k = super::second(args);
             if let $kind(v) = vec {
@@ -69,7 +69,7 @@ use crate::{
 };
 use std::{convert, fmt::Display, rc::Rc};
 
-pub(super) fn load(env: &mut Frame) {
+pub(super) fn load(env: &Frame) {
     load_bool(env);
     load_bv(env);
     load_char(env);
@@ -87,7 +87,7 @@ pub(super) fn load(env: &mut Frame) {
 // Booleans
 //
 
-fn load_bool(env: &mut Frame) {
+fn load_bool(env: &Frame) {
     super::bind_intrinsic(env, "not", 1..1, not);
 
     super::bind_intrinsic(env, "boolean?", 1..1, is_boolean);
@@ -102,7 +102,7 @@ seq_predicate!(booleans_eq, Value::Boolean, TypeName::BOOL, bool::eq);
 // Bytevectors
 //
 
-fn load_bv(env: &mut Frame) {
+fn load_bv(env: &Frame) {
     super::bind_intrinsic(env, "bytevector?", 1..1, is_bytevector);
 
     super::bind_intrinsic(env, "bytevector-length", 1..1, bytevector_length);
@@ -123,7 +123,7 @@ vec_get!(
 // Characters
 //
 
-fn load_char(env: &mut Frame) {
+fn load_char(env: &Frame) {
     super::bind_intrinsic(env, "char?", 1..1, is_char);
 
     super::bind_intrinsic(env, "char=?", 0..MAX_ARITY, chars_eq);
@@ -143,7 +143,7 @@ seq_predicate!(chars_lte, Value::Character, TypeName::CHAR, char::le);
 seq_predicate!(chars_gt, Value::Character, TypeName::CHAR, char::gt);
 seq_predicate!(chars_gte, Value::Character, TypeName::CHAR, char::ge);
 
-fn char_to_integer(args: &[Value], _env: &mut Frame) -> EvalResult {
+fn char_to_integer(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = first(args);
     if let Value::Character(c) = arg {
         let n = u32::from(*c);
@@ -153,7 +153,7 @@ fn char_to_integer(args: &[Value], _env: &mut Frame) -> EvalResult {
     }
 }
 
-fn integer_to_char(args: &[Value], _env: &mut Frame) -> EvalResult {
+fn integer_to_char(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = first(args);
     if let Value::Number(n) = arg {
         try_num_into_char(n, arg)
@@ -190,28 +190,28 @@ fn try_num_into_char(n: &Number, arg: &Value) -> EvalResult {
 // Equivalence
 //
 
-fn load_eq(env: &mut Frame) {
+fn load_eq(env: &Frame) {
     super::bind_intrinsic(env, "eqv?", 2..2, is_eqv);
     super::bind_intrinsic(env, "eq?", 2..2, is_eq);
     super::bind_intrinsic(env, "equal?", 2..2, is_equal);
 }
 
 #[allow(clippy::unnecessary_wraps, reason = "infallible intrinsic")]
-fn is_eqv(args: &[Value], _env: &mut Frame) -> EvalResult {
+fn is_eqv(args: &[Value], _env: &Frame) -> EvalResult {
     let a = first(args);
     let b = super::second(args);
     Ok(Value::Boolean(a.is_eqv(b)))
 }
 
 #[allow(clippy::unnecessary_wraps, reason = "infallible intrinsic")]
-fn is_eq(args: &[Value], _env: &mut Frame) -> EvalResult {
+fn is_eq(args: &[Value], _env: &Frame) -> EvalResult {
     let a = first(args);
     let b = super::second(args);
     Ok(Value::Boolean(a.is(b)))
 }
 
 #[allow(clippy::unnecessary_wraps, reason = "infallible intrinsic")]
-fn is_equal(args: &[Value], _env: &mut Frame) -> EvalResult {
+fn is_equal(args: &[Value], _env: &Frame) -> EvalResult {
     let a = first(args);
     let b = super::second(args);
     Ok(Value::Boolean(a == b))
@@ -221,7 +221,7 @@ fn is_equal(args: &[Value], _env: &mut Frame) -> EvalResult {
 // Exceptions
 //
 
-fn load_ex(env: &mut Frame) {
+fn load_ex(env: &Frame) {
     super::bind_intrinsic(env, "error-object?", 1..1, is_error);
 
     super::bind_intrinsic(env, "error-object-message", 1..1, error_msg);
@@ -236,7 +236,7 @@ predicate!(is_read_error, Value::Error(c) if c.is_read_err());
 predicate!(is_file_error, Value::Error(c) if c.is_file_err());
 
 // TODO: this should be a mutable string
-fn error_msg(args: &[Value], _env: &mut Frame) -> EvalResult {
+fn error_msg(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = first(args);
     if let Value::Error(c) = arg {
         Ok(Value::string(c.message()))
@@ -245,7 +245,7 @@ fn error_msg(args: &[Value], _env: &mut Frame) -> EvalResult {
     }
 }
 
-fn error_irritants(args: &[Value], _env: &mut Frame) -> EvalResult {
+fn error_irritants(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = first(args);
     if let Value::Error(c) = arg {
         Ok(c.irritants().map_or(Value::null(), Value::clone))
@@ -258,7 +258,7 @@ fn error_irritants(args: &[Value], _env: &mut Frame) -> EvalResult {
 // Numbers
 //
 
-fn load_num(env: &mut Frame) {
+fn load_num(env: &Frame) {
     // NOTE: complex and number predicates are identical sets
     super::bind_intrinsic(env, "number?", 1..1, is_number);
     super::bind_intrinsic(env, "complex?", 1..1, is_number);
@@ -304,29 +304,29 @@ try_predicate!(
 try_predicate!(is_zero, Value::Number, TypeName::NUMBER, |n: &Number| n
     .is_zero());
 
-fn is_positive(args: &[Value], _env: &mut Frame) -> EvalResult {
+fn is_positive(args: &[Value], _env: &Frame) -> EvalResult {
     real_op(first(args), |r| Ok(Value::Boolean(r.is_positive())))
 }
 
-fn is_negative(args: &[Value], _env: &mut Frame) -> EvalResult {
+fn is_negative(args: &[Value], _env: &Frame) -> EvalResult {
     real_op(first(args), |r| Ok(Value::Boolean(r.is_negative())))
 }
 
-fn is_odd(args: &[Value], _env: &mut Frame) -> EvalResult {
+fn is_odd(args: &[Value], _env: &Frame) -> EvalResult {
     exact_int_predicate(first(args), |n| !n.is_even())
 }
 
-fn is_even(args: &[Value], _env: &mut Frame) -> EvalResult {
+fn is_even(args: &[Value], _env: &Frame) -> EvalResult {
     exact_int_predicate(first(args), Integer::is_even)
 }
 
-fn abs(args: &[Value], _env: &mut Frame) -> EvalResult {
+fn abs(args: &[Value], _env: &Frame) -> EvalResult {
     real_op(first(args), |r| {
         Ok(Value::Number(Number::real(r.clone().into_abs())))
     })
 }
 
-fn get_numerator(args: &[Value], _env: &mut Frame) -> EvalResult {
+fn get_numerator(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = first(args);
     rational_op(arg, |r| {
         r.clone().try_into_numerator().map_or_else(
@@ -336,7 +336,7 @@ fn get_numerator(args: &[Value], _env: &mut Frame) -> EvalResult {
     })
 }
 
-fn get_denominator(args: &[Value], _env: &mut Frame) -> EvalResult {
+fn get_denominator(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = first(args);
     rational_op(arg, |r| {
         r.clone().try_into_denominator().map_or_else(
@@ -346,7 +346,7 @@ fn get_denominator(args: &[Value], _env: &mut Frame) -> EvalResult {
     })
 }
 
-fn into_inexact(args: &[Value], _env: &mut Frame) -> EvalResult {
+fn into_inexact(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = first(args);
     if let Value::Number(n) = arg {
         Ok(Value::Number(n.clone().into_inexact()))
@@ -355,7 +355,7 @@ fn into_inexact(args: &[Value], _env: &mut Frame) -> EvalResult {
     }
 }
 
-fn into_exact(args: &[Value], _env: &mut Frame) -> EvalResult {
+fn into_exact(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = first(args);
     if let Value::Number(n) = arg {
         n.clone().try_into_exact().map_or_else(
@@ -403,7 +403,7 @@ fn guarded_real_op(
 // Pairs and Lists
 //
 
-fn load_list(env: &mut Frame) {
+fn load_list(env: &Frame) {
     super::bind_intrinsic(env, "pair?", 1..1, is_pair);
 
     super::bind_intrinsic(env, "car", 1..1, car);
@@ -432,7 +432,7 @@ cadr_func!(cddr, d, d);
 
 // TODO: circular lists => #f
 #[allow(clippy::unnecessary_wraps, reason = "infallible intrinsic")]
-fn is_list(args: &[Value], _env: &mut Frame) -> EvalResult {
+fn is_list(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = first(args);
     Ok(Value::Boolean(match arg {
         Value::Pair(None) => true,
@@ -442,7 +442,7 @@ fn is_list(args: &[Value], _env: &mut Frame) -> EvalResult {
 }
 
 // TODO: circular lists => error
-fn list_length(args: &[Value], _env: &mut Frame) -> EvalResult {
+fn list_length(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = first(args);
     match arg {
         Value::Pair(None) => Ok(Value::Number(Number::real(0))),
@@ -462,13 +462,13 @@ fn list_length(args: &[Value], _env: &mut Frame) -> EvalResult {
     }
 }
 
-fn list_tail(args: &[Value], _env: &mut Frame) -> EvalResult {
+fn list_tail(args: &[Value], _env: &Frame) -> EvalResult {
     let lst = first(args);
     let k = super::second(args);
     sub_list(lst, number_to_index(k)?, k).cloned()
 }
 
-fn list_get(args: &[Value], _env: &mut Frame) -> EvalResult {
+fn list_get(args: &[Value], _env: &Frame) -> EvalResult {
     let lst = first(args);
     let k = super::second(args);
     let subl = sub_list(lst, number_to_index(k)?, k)?;
@@ -495,7 +495,7 @@ fn sub_list<'a>(lst: &'a Value, idx: usize, k: &Value) -> Result<&'a Value, Exce
 // Procedures
 //
 
-fn load_proc(env: &mut Frame) {
+fn load_proc(env: &Frame) {
     super::bind_intrinsic(env, "procedure?", 1..1, is_procedure);
 }
 
@@ -505,7 +505,7 @@ predicate!(is_procedure, Value::Procedure(_));
 // Strings
 //
 
-fn load_string(env: &mut Frame) {
+fn load_string(env: &Frame) {
     super::bind_intrinsic(env, "string?", 1..1, is_string);
 
     super::bind_intrinsic(env, "string-length", 1..1, string_length);
@@ -537,7 +537,7 @@ seq_predicate!(strings_gte, Value::String, TypeName::STRING, Rc::ge);
 // Symbols
 //
 
-fn load_symbol(env: &mut Frame) {
+fn load_symbol(env: &Frame) {
     super::bind_intrinsic(env, "symbol?", 1..1, is_symbol);
     super::bind_intrinsic(env, "symbol=?", 0..MAX_ARITY, symbols_eq);
 
@@ -548,7 +548,7 @@ fn load_symbol(env: &mut Frame) {
 predicate!(is_symbol, Value::Symbol(_));
 seq_predicate!(symbols_eq, Value::Symbol, TypeName::SYMBOL, Symbol::is);
 
-fn symbol_to_string(args: &[Value], _env: &mut Frame) -> EvalResult {
+fn symbol_to_string(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = first(args);
     if let Value::Symbol(s) = arg {
         Ok(Value::string(s.as_rc()))
@@ -557,7 +557,7 @@ fn symbol_to_string(args: &[Value], _env: &mut Frame) -> EvalResult {
     }
 }
 
-fn string_to_symbol(args: &[Value], env: &mut Frame) -> EvalResult {
+fn string_to_symbol(args: &[Value], env: &Frame) -> EvalResult {
     let arg = first(args);
     if let Value::String(s) = arg {
         Ok(Value::Symbol(env.sym.get(s)))
@@ -570,7 +570,7 @@ fn string_to_symbol(args: &[Value], env: &mut Frame) -> EvalResult {
 // Vectors
 //
 
-fn load_vec(env: &mut Frame) {
+fn load_vec(env: &Frame) {
     super::bind_intrinsic(env, "vector?", 1..1, is_vector);
 
     super::bind_intrinsic(env, "vector-length", 1..1, vector_length);
@@ -629,9 +629,9 @@ mod tests {
     #[test]
     fn all_boolean_empty() {
         let args = [];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
-        let r = booleans_eq(&args, &mut env.new_frame());
+        let r = booleans_eq(&args, &env.new_frame());
 
         let v = ok_or_fail!(r);
         assert!(matches!(v, Value::Boolean(true)));
@@ -641,9 +641,9 @@ mod tests {
     fn all_boolean_single() {
         let cases = [[Value::Boolean(true)], [Value::Boolean(false)]];
         for case in cases {
-            let mut env = TestEnv::default();
+            let env = TestEnv::default();
 
-            let r = booleans_eq(&case, &mut env.new_frame());
+            let r = booleans_eq(&case, &env.new_frame());
 
             let v = ok_or_fail!(r);
             assert!(matches!(v, Value::Boolean(true)));
@@ -657,9 +657,9 @@ mod tests {
             Value::Boolean(true),
             Value::Boolean(true),
         ];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
-        let r = booleans_eq(&args, &mut env.new_frame());
+        let r = booleans_eq(&args, &env.new_frame());
 
         let v = ok_or_fail!(r);
         assert!(matches!(v, Value::Boolean(true)));
@@ -672,9 +672,9 @@ mod tests {
             Value::Boolean(false),
             Value::Boolean(false),
         ];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
-        let r = booleans_eq(&args, &mut env.new_frame());
+        let r = booleans_eq(&args, &env.new_frame());
 
         let v = ok_or_fail!(r);
         assert!(matches!(v, Value::Boolean(true)));
@@ -687,9 +687,9 @@ mod tests {
             Value::Boolean(true),
             Value::Boolean(false),
         ];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
-        let r = booleans_eq(&args, &mut env.new_frame());
+        let r = booleans_eq(&args, &env.new_frame());
 
         let v = ok_or_fail!(r);
         assert!(matches!(v, Value::Boolean(false)));
@@ -702,9 +702,9 @@ mod tests {
             Value::string("foo"),
             Value::Boolean(false),
         ];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
-        let r = booleans_eq(&args, &mut env.new_frame());
+        let r = booleans_eq(&args, &env.new_frame());
 
         let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
         assert_eq!(
@@ -721,9 +721,9 @@ mod tests {
             Value::Boolean(false),
             Value::null(),
         ];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
-        let r = booleans_eq(&args, &mut env.new_frame());
+        let r = booleans_eq(&args, &env.new_frame());
 
         let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
         assert_eq!(
@@ -735,9 +735,9 @@ mod tests {
     #[test]
     fn all_symbols_empty() {
         let args = [];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
-        let r = symbols_eq(&args, &mut env.new_frame());
+        let r = symbols_eq(&args, &env.new_frame());
 
         let v = ok_or_fail!(r);
         assert!(matches!(v, Value::Boolean(true)));
@@ -745,10 +745,10 @@ mod tests {
 
     #[test]
     fn all_symbols_single() {
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
         let args = [Value::Symbol(env.symbols.get("a"))];
 
-        let r = symbols_eq(&args, &mut env.new_frame());
+        let r = symbols_eq(&args, &env.new_frame());
 
         let v = ok_or_fail!(r);
         assert!(matches!(v, Value::Boolean(true)));
@@ -756,7 +756,7 @@ mod tests {
 
     #[test]
     fn all_symbols_equal() {
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
         let name = env.symbols.get("a");
         let args = [
             Value::Symbol(name.clone()),
@@ -764,7 +764,7 @@ mod tests {
             Value::Symbol(name.clone()),
         ];
 
-        let r = symbols_eq(&args, &mut env.new_frame());
+        let r = symbols_eq(&args, &env.new_frame());
 
         let v = ok_or_fail!(r);
         assert!(matches!(v, Value::Boolean(true)));
@@ -772,7 +772,7 @@ mod tests {
 
     #[test]
     fn all_symbols_mixed() {
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
         let (a, b) = (env.symbols.get("a"), env.symbols.get("b"));
         let args = [
             Value::Symbol(a.clone()),
@@ -780,7 +780,7 @@ mod tests {
             Value::Symbol(a.clone()),
         ];
 
-        let r = symbols_eq(&args, &mut env.new_frame());
+        let r = symbols_eq(&args, &env.new_frame());
 
         let v = ok_or_fail!(r);
         assert!(matches!(v, Value::Boolean(false)));
@@ -788,14 +788,14 @@ mod tests {
 
     #[test]
     fn all_symbols_interned_even_if_from_distinct_pointers() {
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
         let args = [
             Value::Symbol(env.symbols.get(Rc::new("a").as_ref())),
             Value::Symbol(env.symbols.get(Rc::new("a").as_ref())),
             Value::Symbol(env.symbols.get(Rc::new("a").as_ref())),
         ];
 
-        let r = symbols_eq(&args, &mut env.new_frame());
+        let r = symbols_eq(&args, &env.new_frame());
 
         let v = ok_or_fail!(r);
         assert!(matches!(v, Value::Boolean(true)));
@@ -803,7 +803,7 @@ mod tests {
 
     #[test]
     fn all_symbols_invalid_param() {
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
         let name = env.symbols.get("a");
         let args = [
             Value::Symbol(name.clone()),
@@ -811,7 +811,7 @@ mod tests {
             Value::Symbol(name.clone()),
         ];
 
-        let r = symbols_eq(&args, &mut env.new_frame());
+        let r = symbols_eq(&args, &env.new_frame());
 
         let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
         assert_eq!(
@@ -823,9 +823,9 @@ mod tests {
     #[test]
     fn all_chars_empty() {
         let args = [];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
-        let r = chars_eq(&args, &mut env.new_frame());
+        let r = chars_eq(&args, &env.new_frame());
 
         let v = ok_or_fail!(r);
         assert!(matches!(v, Value::Boolean(true)));
@@ -834,9 +834,9 @@ mod tests {
     #[test]
     fn all_chars_single() {
         let args = [Value::Character('a')];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
-        let r = chars_eq(&args, &mut env.new_frame());
+        let r = chars_eq(&args, &env.new_frame());
 
         let v = ok_or_fail!(r);
         assert!(matches!(v, Value::Boolean(true)));
@@ -849,9 +849,9 @@ mod tests {
             Value::Character('a'),
             Value::Character('a'),
         ];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
-        let r = chars_eq(&args, &mut env.new_frame());
+        let r = chars_eq(&args, &env.new_frame());
 
         let v = ok_or_fail!(r);
         assert!(matches!(v, Value::Boolean(true)));
@@ -864,9 +864,9 @@ mod tests {
             Value::Character('b'),
             Value::Character('a'),
         ];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
-        let r = chars_eq(&args, &mut env.new_frame());
+        let r = chars_eq(&args, &env.new_frame());
 
         let v = ok_or_fail!(r);
         assert!(matches!(v, Value::Boolean(false)));
@@ -879,9 +879,9 @@ mod tests {
             Value::string("a"),
             Value::Character('a'),
         ];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
-        let r = chars_eq(&args, &mut env.new_frame());
+        let r = chars_eq(&args, &env.new_frame());
 
         let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
         assert_eq!(
@@ -897,9 +897,9 @@ mod tests {
             Value::Character('b'),
             Value::Character('c'),
         ];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
-        let r = chars_lt(&args, &mut env.new_frame());
+        let r = chars_lt(&args, &env.new_frame());
 
         let v = ok_or_fail!(r);
         assert!(matches!(v, Value::Boolean(true)));
@@ -912,9 +912,9 @@ mod tests {
             Value::Character('e'),
             Value::Character('c'),
         ];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
-        let r = chars_lt(&args, &mut env.new_frame());
+        let r = chars_lt(&args, &env.new_frame());
 
         let v = ok_or_fail!(r);
         assert!(matches!(v, Value::Boolean(false)));
@@ -923,9 +923,9 @@ mod tests {
     #[test]
     fn all_strings_empty() {
         let args = [];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
-        let r = strings_eq(&args, &mut env.new_frame());
+        let r = strings_eq(&args, &env.new_frame());
 
         let v = ok_or_fail!(r);
         assert!(matches!(v, Value::Boolean(true)));
@@ -934,9 +934,9 @@ mod tests {
     #[test]
     fn all_strings_single() {
         let args = [Value::string("foo")];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
-        let r = strings_eq(&args, &mut env.new_frame());
+        let r = strings_eq(&args, &env.new_frame());
 
         let v = ok_or_fail!(r);
         assert!(matches!(v, Value::Boolean(true)));
@@ -949,9 +949,9 @@ mod tests {
             Value::string("foo"),
             Value::string("foo"),
         ];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
-        let r = strings_eq(&args, &mut env.new_frame());
+        let r = strings_eq(&args, &env.new_frame());
 
         let v = ok_or_fail!(r);
         assert!(matches!(v, Value::Boolean(true)));
@@ -964,9 +964,9 @@ mod tests {
             Value::string("bar"),
             Value::string("foo"),
         ];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
-        let r = strings_eq(&args, &mut env.new_frame());
+        let r = strings_eq(&args, &env.new_frame());
 
         let v = ok_or_fail!(r);
         assert!(matches!(v, Value::Boolean(false)));
@@ -974,14 +974,14 @@ mod tests {
 
     #[test]
     fn all_strings_invalid_param() {
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
         let args = [
             Value::string("foo"),
             Value::Symbol(env.symbols.get("foo")),
             Value::string("foo"),
         ];
 
-        let r = strings_eq(&args, &mut env.new_frame());
+        let r = strings_eq(&args, &env.new_frame());
 
         let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
         assert_eq!(
@@ -997,9 +997,9 @@ mod tests {
             Value::string("def"),
             Value::string("ghi"),
         ];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
-        let r = strings_lt(&args, &mut env.new_frame());
+        let r = strings_lt(&args, &env.new_frame());
 
         let v = ok_or_fail!(r);
         assert!(matches!(v, Value::Boolean(true)));
@@ -1012,9 +1012,9 @@ mod tests {
             Value::string("123"),
             Value::string("ghi"),
         ];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
-        let r = strings_lt(&args, &mut env.new_frame());
+        let r = strings_lt(&args, &env.new_frame());
 
         let v = ok_or_fail!(r);
         assert!(matches!(v, Value::Boolean(false)));
@@ -1023,14 +1023,14 @@ mod tests {
     #[test]
     fn is_even_integer() {
         let args = [Value::Number(Number::real(4))];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
-        let r = is_even(&args, &mut env.new_frame());
+        let r = is_even(&args, &env.new_frame());
 
         let v = ok_or_fail!(r);
         assert!(matches!(v, Value::Boolean(true)));
 
-        let r = is_odd(&args, &mut env.new_frame());
+        let r = is_odd(&args, &env.new_frame());
 
         let v = ok_or_fail!(r);
         assert!(matches!(v, Value::Boolean(false)));
@@ -1039,14 +1039,14 @@ mod tests {
     #[test]
     fn is_even_float_with_no_frac() {
         let args = [Value::Number(Number::real(4.0))];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
-        let r = is_even(&args, &mut env.new_frame());
+        let r = is_even(&args, &env.new_frame());
 
         let v = ok_or_fail!(r);
         assert!(matches!(v, Value::Boolean(true)));
 
-        let r = is_odd(&args, &mut env.new_frame());
+        let r = is_odd(&args, &env.new_frame());
 
         let v = ok_or_fail!(r);
         assert!(matches!(v, Value::Boolean(false)));
@@ -1055,9 +1055,9 @@ mod tests {
     #[test]
     fn is_even_float_with_frac() {
         let args = [Value::Number(Number::real(4.2))];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
-        let r = is_even(&args, &mut env.new_frame());
+        let r = is_even(&args, &env.new_frame());
 
         let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
         assert_eq!(
@@ -1065,7 +1065,7 @@ mod tests {
             "#<env-error \"expected exact integer, got: 4.2\" (4.2)>"
         );
 
-        let r = is_odd(&args, &mut env.new_frame());
+        let r = is_odd(&args, &env.new_frame());
 
         let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
         assert_eq!(
@@ -1077,14 +1077,14 @@ mod tests {
     #[test]
     fn is_odd_integer() {
         let args = [Value::Number(Number::real(3))];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
-        let r = is_even(&args, &mut env.new_frame());
+        let r = is_even(&args, &env.new_frame());
 
         let v = ok_or_fail!(r);
         assert!(matches!(v, Value::Boolean(false)));
 
-        let r = is_odd(&args, &mut env.new_frame());
+        let r = is_odd(&args, &env.new_frame());
 
         let v = ok_or_fail!(r);
         assert!(matches!(v, Value::Boolean(true)));
@@ -1093,14 +1093,14 @@ mod tests {
     #[test]
     fn is_odd_float_with_no_frac() {
         let args = [Value::Number(Number::real(3.0))];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
-        let r = is_even(&args, &mut env.new_frame());
+        let r = is_even(&args, &env.new_frame());
 
         let v = ok_or_fail!(r);
         assert!(matches!(v, Value::Boolean(false)));
 
-        let r = is_odd(&args, &mut env.new_frame());
+        let r = is_odd(&args, &env.new_frame());
 
         let v = ok_or_fail!(r);
         assert!(matches!(v, Value::Boolean(true)));
@@ -1109,9 +1109,9 @@ mod tests {
     #[test]
     fn is_odd_float_with_frac() {
         let args = [Value::Number(Number::real(3.2))];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
-        let r = is_even(&args, &mut env.new_frame());
+        let r = is_even(&args, &env.new_frame());
 
         let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
         assert_eq!(
@@ -1119,7 +1119,7 @@ mod tests {
             "#<env-error \"expected exact integer, got: 3.2\" (3.2)>"
         );
 
-        let r = is_odd(&args, &mut env.new_frame());
+        let r = is_odd(&args, &env.new_frame());
 
         let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
         assert_eq!(
@@ -1130,7 +1130,7 @@ mod tests {
 
     #[test]
     fn list_tail_normal_list() {
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
         let args = [
             zlist![
                 Value::Symbol(env.symbols.get("a")),
@@ -1140,7 +1140,7 @@ mod tests {
             Value::Number(Number::real(1)),
         ];
 
-        let r = list_tail(&args, &mut env.new_frame());
+        let r = list_tail(&args, &env.new_frame());
 
         let v = ok_or_fail!(r);
         let second_item = some_or_fail!(
@@ -1159,9 +1159,9 @@ mod tests {
     #[test]
     fn list_tail_empty_list() {
         let args = [Value::null(), Value::Number(Number::real(0))];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
-        let r = list_tail(&args, &mut env.new_frame());
+        let r = list_tail(&args, &env.new_frame());
 
         let v = ok_or_fail!(r);
         assert!(matches!(v, Value::Pair(None)));
@@ -1169,7 +1169,7 @@ mod tests {
 
     #[test]
     fn list_tail_index_to_empty_list() {
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
         let args = [
             zlist![
                 Value::Symbol(env.symbols.get("a")),
@@ -1179,7 +1179,7 @@ mod tests {
             Value::Number(Number::real(3)),
         ];
 
-        let r = list_tail(&args, &mut env.new_frame());
+        let r = list_tail(&args, &env.new_frame());
 
         let v = ok_or_fail!(r);
         assert!(matches!(v, Value::Pair(None)));
@@ -1187,13 +1187,13 @@ mod tests {
 
     #[test]
     fn list_tail_non_list() {
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
         let args = [
             Value::Symbol(env.symbols.get("a")),
             Value::Number(Number::real(0)),
         ];
 
-        let r = list_tail(&args, &mut env.new_frame());
+        let r = list_tail(&args, &env.new_frame());
 
         let v = ok_or_fail!(r);
         assert!(matches!(v, Value::Symbol(s) if s.as_ref() == "a"));
@@ -1201,7 +1201,7 @@ mod tests {
 
     #[test]
     fn list_tail_end_of_improper_list() {
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
         let args = [
             Value::cons(
                 Value::Symbol(env.symbols.get("a")),
@@ -1213,7 +1213,7 @@ mod tests {
             Value::Number(Number::real(2)),
         ];
 
-        let r = list_tail(&args, &mut env.new_frame());
+        let r = list_tail(&args, &env.new_frame());
 
         let v = ok_or_fail!(r);
         assert!(matches!(v, Value::Symbol(s) if s.as_ref() == "c"));
@@ -1221,7 +1221,7 @@ mod tests {
 
     #[test]
     fn list_tail_index_out_of_range() {
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
         let args = [
             zlist![
                 Value::Symbol(env.symbols.get("a")),
@@ -1231,7 +1231,7 @@ mod tests {
             Value::Number(Number::real(4)),
         ];
 
-        let r = list_tail(&args, &mut env.new_frame());
+        let r = list_tail(&args, &env.new_frame());
 
         let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
         assert_eq!(err.to_string(), "#<env-error \"index out of range\" (4)>");
@@ -1239,13 +1239,13 @@ mod tests {
 
     #[test]
     fn list_tail_non_list_out_of_range() {
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
         let args = [
             Value::Symbol(env.symbols.get("a")),
             Value::Number(Number::real(1)),
         ];
 
-        let r = list_tail(&args, &mut env.new_frame());
+        let r = list_tail(&args, &env.new_frame());
 
         let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
         assert_eq!(
@@ -1256,7 +1256,7 @@ mod tests {
 
     #[test]
     fn list_tail_improper_list_out_of_range() {
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
         let args = [
             Value::cons(
                 Value::Symbol(env.symbols.get("a")),
@@ -1268,7 +1268,7 @@ mod tests {
             Value::Number(Number::real(3)),
         ];
 
-        let r = list_tail(&args, &mut env.new_frame());
+        let r = list_tail(&args, &env.new_frame());
 
         let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
         assert_eq!(
@@ -1280,9 +1280,9 @@ mod tests {
     #[test]
     fn list_tail_wrong_index_type() {
         let args = [Value::null(), Value::string("foo")];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
-        let r = list_tail(&args, &mut env.new_frame());
+        let r = list_tail(&args, &env.new_frame());
 
         let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
         assert_eq!(
@@ -1294,9 +1294,9 @@ mod tests {
     #[test]
     fn list_tail_invalid_index_type() {
         let args = [Value::null(), Value::Number(Number::real(4.2))];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
-        let r = list_tail(&args, &mut env.new_frame());
+        let r = list_tail(&args, &env.new_frame());
 
         let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
         assert_eq!(
@@ -1308,9 +1308,9 @@ mod tests {
     #[test]
     fn list_tail_index_invalid_range() {
         let args = [Value::null(), Value::Number(Number::real(-4))];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
-        let r = list_tail(&args, &mut env.new_frame());
+        let r = list_tail(&args, &env.new_frame());
 
         let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
         assert_eq!(
@@ -1321,7 +1321,7 @@ mod tests {
 
     #[test]
     fn list_ref_normal_list() {
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
         let args = [
             zlist![
                 Value::Symbol(env.symbols.get("a")),
@@ -1331,7 +1331,7 @@ mod tests {
             Value::Number(Number::real(1)),
         ];
 
-        let r = list_get(&args, &mut env.new_frame());
+        let r = list_get(&args, &env.new_frame());
 
         let v = ok_or_fail!(r);
         assert!(matches!(v, Value::Symbol(s) if s.as_ref() == "b"));
@@ -1340,9 +1340,9 @@ mod tests {
     #[test]
     fn list_ref_empty_list() {
         let args = [Value::null(), Value::Number(Number::real(0))];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
-        let r = list_get(&args, &mut env.new_frame());
+        let r = list_get(&args, &env.new_frame());
 
         let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
         assert_eq!(err.to_string(), "#<env-error \"index out of range\" (0)>");
@@ -1350,13 +1350,13 @@ mod tests {
 
     #[test]
     fn list_ref_non_list() {
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
         let args = [
             Value::Symbol(env.symbols.get("a")),
             Value::Number(Number::real(0)),
         ];
 
-        let r = list_get(&args, &mut env.new_frame());
+        let r = list_get(&args, &env.new_frame());
 
         let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
         assert_eq!(
@@ -1367,7 +1367,7 @@ mod tests {
 
     #[test]
     fn list_ref_improper_list_item() {
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
         let args = [
             Value::cons(
                 Value::Symbol(env.symbols.get("a")),
@@ -1379,7 +1379,7 @@ mod tests {
             Value::Number(Number::real(1)),
         ];
 
-        let r = list_get(&args, &mut env.new_frame());
+        let r = list_get(&args, &env.new_frame());
 
         let v = ok_or_fail!(r);
         assert!(matches!(v, Value::Symbol(s) if s.as_ref() == "b"));
@@ -1387,7 +1387,7 @@ mod tests {
 
     #[test]
     fn list_ref_end_of_improper_list() {
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
         let args = [
             Value::cons(
                 Value::Symbol(env.symbols.get("a")),
@@ -1399,7 +1399,7 @@ mod tests {
             Value::Number(Number::real(2)),
         ];
 
-        let r = list_get(&args, &mut env.new_frame());
+        let r = list_get(&args, &env.new_frame());
 
         let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
         assert_eq!(
@@ -1410,7 +1410,7 @@ mod tests {
 
     #[test]
     fn list_ref_index_out_of_range() {
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
         let args = [
             zlist![
                 Value::Symbol(env.symbols.get("a")),
@@ -1420,7 +1420,7 @@ mod tests {
             Value::Number(Number::real(4)),
         ];
 
-        let r = list_get(&args, &mut env.new_frame());
+        let r = list_get(&args, &env.new_frame());
 
         let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
         assert_eq!(err.to_string(), "#<env-error \"index out of range\" (4)>");
@@ -1428,7 +1428,7 @@ mod tests {
 
     #[test]
     fn list_ref_improper_list_out_of_range() {
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
         let args = [
             Value::cons(
                 Value::Symbol(env.symbols.get("a")),
@@ -1440,7 +1440,7 @@ mod tests {
             Value::Number(Number::real(3)),
         ];
 
-        let r = list_get(&args, &mut env.new_frame());
+        let r = list_get(&args, &env.new_frame());
 
         let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
         assert_eq!(
@@ -1452,9 +1452,9 @@ mod tests {
     #[test]
     fn int_to_char() {
         let args = [Value::Number(Number::real(0x41))];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
-        let r = integer_to_char(&args, &mut env.new_frame());
+        let r = integer_to_char(&args, &env.new_frame());
 
         let v = ok_or_fail!(r);
         assert!(matches!(v, Value::Character('A')));
@@ -1462,10 +1462,10 @@ mod tests {
 
     #[test]
     fn int_to_char_invalid_arg() {
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
         let args = [Value::Symbol(env.symbols.get("a"))];
 
-        let r = integer_to_char(&args, &mut env.new_frame());
+        let r = integer_to_char(&args, &env.new_frame());
 
         let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
         assert_eq!(
@@ -1477,9 +1477,9 @@ mod tests {
     #[test]
     fn int_to_char_invalid_range() {
         let args = [Value::Number(Number::real(-4))];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
-        let r = integer_to_char(&args, &mut env.new_frame());
+        let r = integer_to_char(&args, &env.new_frame());
 
         let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
         assert_eq!(
@@ -1491,9 +1491,9 @@ mod tests {
     #[test]
     fn int_to_char_not_a_code_point() {
         let args = [Value::Number(Number::real(0xdff0))];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
-        let r = integer_to_char(&args, &mut env.new_frame());
+        let r = integer_to_char(&args, &env.new_frame());
 
         let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
         assert_eq!(

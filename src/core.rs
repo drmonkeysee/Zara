@@ -6,7 +6,7 @@ macro_rules! invalid_target {
 
 macro_rules! try_predicate {
     ($name:ident, $kind:path, $valname:expr, $pred:expr) => {
-        fn $name(args: &[Value], _env: &mut Frame) -> EvalResult {
+        fn $name(args: &[Value], _env: &Frame) -> EvalResult {
             let arg = first(args);
             if let $kind(val) = arg {
                 Ok(Value::Boolean($pred(val)))
@@ -34,7 +34,7 @@ macro_rules! cadr_compose {
 
 macro_rules! cadr_func {
     ($name:ident $(, $compose:ident)+) => {
-        fn $name(args: &[Value], _env: &mut Frame) -> EvalResult {
+        fn $name(args: &[Value], _env: &Frame) -> EvalResult {
             let arg = first(args);
             cadr_compose!(arg, $($compose),+)
         }
@@ -66,7 +66,7 @@ use crate::{
 const FIRST_ARG_LABEL: &str = "0";
 const SECOND_ARG_LABEL: &str = "1";
 
-pub(crate) fn load(env: &mut Frame) {
+pub(crate) fn load(env: &Frame) {
     base::load(env);
     charuni::load(env);
     complex::load(env);
@@ -78,7 +78,7 @@ pub(crate) fn load(env: &mut Frame) {
     time::load(env);
 }
 
-fn bind_intrinsic(env: &mut Frame, name: &str, arity: Arity, body: IntrinsicFn) {
+fn bind_intrinsic(env: &Frame, name: &str, arity: Arity, body: IntrinsicFn) {
     let name = env.sym.get(name);
     env.scope.bind(
         name.clone(),

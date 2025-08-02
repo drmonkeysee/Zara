@@ -14,7 +14,7 @@ use std::{
 const PEXIT_SUCCESS: i32 = 0;
 const PEXIT_FAILURE: i32 = 1;
 
-pub(super) fn load(env: &mut Frame) {
+pub(super) fn load(env: &Frame) {
     super::bind_intrinsic(env, "command-line", 0..0, command_line);
 
     super::bind_intrinsic(env, "exit", 0..1, exit);
@@ -35,11 +35,11 @@ pub(super) fn load(env: &mut Frame) {
 }
 
 #[allow(clippy::unnecessary_wraps, reason = "infallible intrinsic")]
-fn command_line(_args: &[Value], env: &mut Frame) -> EvalResult {
+fn command_line(_args: &[Value], env: &Frame) -> EvalResult {
     Ok(env.sys.args.clone())
 }
 
-fn exit(args: &[Value], _env: &mut Frame) -> EvalResult {
+fn exit(args: &[Value], _env: &Frame) -> EvalResult {
     Err(Exception::Exit(resolve_exit(
         args.first(),
         ExitCode::SUCCESS,
@@ -48,7 +48,7 @@ fn exit(args: &[Value], _env: &mut Frame) -> EvalResult {
     )))
 }
 
-fn emergency_exit(args: &[Value], _env: &mut Frame) -> EvalResult {
+fn emergency_exit(args: &[Value], _env: &Frame) -> EvalResult {
     process::exit(resolve_exit(
         args.first(),
         PEXIT_SUCCESS,
@@ -57,7 +57,7 @@ fn emergency_exit(args: &[Value], _env: &mut Frame) -> EvalResult {
     ));
 }
 
-fn get_environment_variable(args: &[Value], _env: &mut Frame) -> EvalResult {
+fn get_environment_variable(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = super::first(args);
     let Value::String(s) = arg else {
         return invalid_target!(TypeName::STRING, arg);
@@ -74,7 +74,7 @@ fn get_environment_variable(args: &[Value], _env: &mut Frame) -> EvalResult {
 }
 
 #[allow(clippy::unnecessary_wraps, reason = "infallible intrinsic")]
-fn get_environment_variables(_args: &[Value], _env: &mut Frame) -> EvalResult {
+fn get_environment_variables(_args: &[Value], _env: &Frame) -> EvalResult {
     Ok(Value::list(
         env::vars()
             .map(|(n, v)| Value::cons(Value::string(n), Value::string(v)))

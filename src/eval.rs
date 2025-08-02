@@ -22,7 +22,7 @@ pub(crate) type Eval = Environment<EvalDriver>;
 pub(crate) type Ast = Environment<AstDriver>;
 
 pub(crate) trait Evaluator {
-    fn eval(&self, prg: Sequence, frame: &mut Frame) -> Evaluation;
+    fn eval(&self, prg: Sequence, frame: &Frame) -> Evaluation;
 }
 
 pub(crate) struct Environment<T> {
@@ -34,26 +34,26 @@ pub(crate) struct Environment<T> {
 
 impl<T: Evaluator + Default> Environment<T> {
     pub(crate) fn new(args: impl IntoIterator<Item = String>) -> Self {
-        let mut me = Self {
+        let me = Self {
             driver: PhantomData,
             global: Binding::default().into(),
             symbols: SymbolTable::default(),
             system: System::new(args),
         };
-        core::load(&mut me.make_frame());
+        core::load(&me.make_frame());
         me
     }
 
-    pub(crate) fn evaluate(&mut self, prg: Sequence) -> Evaluation {
-        let mut frame = self.make_frame();
-        T::default().eval(prg, &mut frame)
+    pub(crate) fn evaluate(&self, prg: Sequence) -> Evaluation {
+        let frame = self.make_frame();
+        T::default().eval(prg, &frame)
     }
 
-    pub(crate) fn make_namespace(&mut self) -> Namespace {
+    pub(crate) fn make_namespace(&self) -> Namespace {
         Namespace(self.make_frame())
     }
 
-    fn make_frame(&mut self) -> Frame {
+    fn make_frame(&self) -> Frame {
         Frame {
             scope: Rc::clone(&self.global),
             sym: &self.symbols,
@@ -66,7 +66,7 @@ impl<T: Evaluator + Default> Environment<T> {
 pub(crate) struct EvalDriver;
 
 impl Evaluator for EvalDriver {
-    fn eval(&self, prg: Sequence, frame: &mut Frame) -> Evaluation {
+    fn eval(&self, prg: Sequence, frame: &Frame) -> Evaluation {
         Evaluation::result(prg.eval(frame))
     }
 }
@@ -75,7 +75,7 @@ impl Evaluator for EvalDriver {
 pub(crate) struct AstDriver;
 
 impl Evaluator for AstDriver {
-    fn eval(&self, prg: Sequence, _frame: &mut Frame) -> Evaluation {
+    fn eval(&self, prg: Sequence, _frame: &Frame) -> Evaluation {
         Evaluation::result(Ok(ValueImpl::Ast(prg.into())))
     }
 }

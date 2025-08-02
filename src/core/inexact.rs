@@ -6,7 +6,7 @@ use crate::{
     value::{Condition, TypeName, Value},
 };
 
-pub(super) fn load(env: &mut Frame) {
+pub(super) fn load(env: &Frame) {
     super::bind_intrinsic(env, "finite?", 1..1, is_finite);
     super::bind_intrinsic(env, "infinite?", 1..1, is_infinite);
     super::bind_intrinsic(env, "nan?", 1..1, is_nan);

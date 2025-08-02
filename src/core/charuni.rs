@@ -5,7 +5,7 @@ use crate::{
     value::{Condition, TypeName, Value},
 };
 
-pub(super) fn load(env: &mut Frame) {
+pub(super) fn load(env: &Frame) {
     super::bind_intrinsic(env, "char-alphabetic?", 1..1, is_alphabetic);
     super::bind_intrinsic(env, "char-numeric?", 1..1, is_numeric);
     super::bind_intrinsic(env, "char-whitespace?", 1..1, is_whitespace);
@@ -50,19 +50,19 @@ try_predicate!(
     |c: &char| c.is_lowercase()
 );
 
-fn char_upper(args: &[Value], _env: &mut Frame) -> EvalResult {
+fn char_upper(args: &[Value], _env: &Frame) -> EvalResult {
     char_case(first(args), char::to_uppercase)
 }
 
-fn char_lower(args: &[Value], _env: &mut Frame) -> EvalResult {
+fn char_lower(args: &[Value], _env: &Frame) -> EvalResult {
     char_case(first(args), char::to_lowercase)
 }
 
-fn string_upper(args: &[Value], _env: &mut Frame) -> EvalResult {
+fn string_upper(args: &[Value], _env: &Frame) -> EvalResult {
     string_case(first(args), str::to_uppercase)
 }
 
-fn string_lower(args: &[Value], _env: &mut Frame) -> EvalResult {
+fn string_lower(args: &[Value], _env: &Frame) -> EvalResult {
     string_case(first(args), str::to_lowercase)
 }
 

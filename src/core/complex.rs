@@ -6,7 +6,7 @@ use crate::{
     value::{Condition, TypeName, Value},
 };
 
-pub(super) fn load(env: &mut Frame) {
+pub(super) fn load(env: &Frame) {
     super::bind_intrinsic(env, "make-rectangular", 2..2, make_rect);
     super::bind_intrinsic(env, "make-polar", 2..2, make_polar);
     super::bind_intrinsic(env, "real-part", 1..1, get_real);
@@ -15,19 +15,19 @@ pub(super) fn load(env: &mut Frame) {
     super::bind_intrinsic(env, "angle", 1..1, get_angle);
 }
 
-fn make_rect(args: &[Value], _env: &mut Frame) -> EvalResult {
+fn make_rect(args: &[Value], _env: &Frame) -> EvalResult {
     make_complex(super::first(args), super::second(args), Number::complex)
 }
 
-fn make_polar(args: &[Value], _env: &mut Frame) -> EvalResult {
+fn make_polar(args: &[Value], _env: &Frame) -> EvalResult {
     make_complex(super::first(args), super::second(args), Number::polar)
 }
 
-fn get_real(args: &[Value], _env: &mut Frame) -> EvalResult {
+fn get_real(args: &[Value], _env: &Frame) -> EvalResult {
     get_complex_part(super::first(args), |z| z.real_part().clone(), Real::clone)
 }
 
-fn get_imag(args: &[Value], _env: &mut Frame) -> EvalResult {
+fn get_imag(args: &[Value], _env: &Frame) -> EvalResult {
     get_complex_part(
         super::first(args),
         |z| z.imag_part().clone(),
@@ -35,13 +35,13 @@ fn get_imag(args: &[Value], _env: &mut Frame) -> EvalResult {
     )
 }
 
-fn get_mag(args: &[Value], _env: &mut Frame) -> EvalResult {
+fn get_mag(args: &[Value], _env: &Frame) -> EvalResult {
     get_complex_part(super::first(args), Complex::to_magnitude, |r| {
         r.clone().into_abs()
     })
 }
 
-fn get_angle(args: &[Value], _env: &mut Frame) -> EvalResult {
+fn get_angle(args: &[Value], _env: &Frame) -> EvalResult {
     get_complex_part(super::first(args), Complex::to_angle, |_| Real::zero())
 }
 
@@ -96,9 +96,9 @@ mod tests {
     #[test]
     fn get_real_complex() {
         let args = [Value::Number(Number::complex(4, 5))];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
-        let v = get_real(&args, &mut env.new_frame());
+        let v = get_real(&args, &env.new_frame());
 
         let r = ok_or_fail!(v);
         assert!(matches!(r, Value::Number(Number::Real(Real::Integer(_)))));
@@ -108,9 +108,9 @@ mod tests {
     #[test]
     fn get_imag_complex() {
         let args = [Value::Number(Number::complex(4, 5))];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
-        let v = get_imag(&args, &mut env.new_frame());
+        let v = get_imag(&args, &env.new_frame());
 
         let r = ok_or_fail!(v);
         assert!(matches!(r, Value::Number(Number::Real(Real::Integer(_)))));
@@ -120,9 +120,9 @@ mod tests {
     #[test]
     fn get_real_real() {
         let args = [Value::Number(Number::real(8))];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
-        let v = get_real(&args, &mut env.new_frame());
+        let v = get_real(&args, &env.new_frame());
 
         let r = ok_or_fail!(v);
         assert!(matches!(r, Value::Number(Number::Real(Real::Integer(_)))));
@@ -132,9 +132,9 @@ mod tests {
     #[test]
     fn get_imag_real() {
         let args = [Value::Number(Number::real(8))];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
-        let v = get_imag(&args, &mut env.new_frame());
+        let v = get_imag(&args, &env.new_frame());
 
         let r = ok_or_fail!(v);
         assert!(matches!(r, Value::Number(Number::Real(Real::Integer(_)))));
@@ -144,9 +144,9 @@ mod tests {
     #[test]
     fn get_magnitude_complex() {
         let args = [Value::Number(Number::complex(4, 5))];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
-        let v = get_mag(&args, &mut env.new_frame());
+        let v = get_mag(&args, &env.new_frame());
 
         let r = ok_or_fail!(v);
         assert!(matches!(r, Value::Number(Number::Real(Real::Float(_)))));
@@ -156,9 +156,9 @@ mod tests {
     #[test]
     fn get_angle_complex() {
         let args = [Value::Number(Number::complex(4, 5))];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
-        let v = get_angle(&args, &mut env.new_frame());
+        let v = get_angle(&args, &env.new_frame());
 
         let r = ok_or_fail!(v);
         assert!(matches!(r, Value::Number(Number::Real(Real::Float(_)))));
@@ -168,9 +168,9 @@ mod tests {
     #[test]
     fn get_mag_real() {
         let args = [Value::Number(Number::real(8))];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
-        let v = get_mag(&args, &mut env.new_frame());
+        let v = get_mag(&args, &env.new_frame());
 
         let r = ok_or_fail!(v);
         assert!(matches!(r, Value::Number(Number::Real(Real::Integer(_)))));
@@ -180,9 +180,9 @@ mod tests {
     #[test]
     fn get_angle_real() {
         let args = [Value::Number(Number::real(8))];
-        let mut env = TestEnv::default();
+        let env = TestEnv::default();
 
-        let v = get_angle(&args, &mut env.new_frame());
+        let v = get_angle(&args, &env.new_frame());
 
         let r = ok_or_fail!(v);
         assert!(matches!(r, Value::Number(Number::Real(Real::Integer(_)))));
