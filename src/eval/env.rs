@@ -10,6 +10,16 @@ pub(crate) struct Frame<'a> {
     pub(crate) sys: &'a System,
 }
 
+impl Frame<'_> {
+    pub(crate) fn new_child(&self, parent: impl Into<Rc<Binding>>) -> Self {
+        Frame {
+            scope: Binding::new(parent).into(),
+            sym: self.sym,
+            sys: self.sys,
+        }
+    }
+}
+
 #[derive(Debug, Default)]
 pub(crate) struct Binding {
     parent: Option<Rc<Self>>,

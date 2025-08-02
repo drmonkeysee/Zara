@@ -212,11 +212,7 @@ fn call_lambda(
     // TODO: tail-call optimization does not create a new frame
     // TODO: this doesn't seem quite right, particularly for recursion
     // is env.scope actually irrelevant with lexical scoping?
-    let call_frame = Frame {
-        scope: Binding::new(Rc::clone(closure)).into(),
-        sym: env.sym,
-        sys: env.sys,
-    };
+    let call_frame = env.new_child(Rc::clone(closure));
     let args_it = args.iter();
     formals
         .iter()

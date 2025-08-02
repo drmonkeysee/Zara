@@ -45,8 +45,7 @@ impl<T: Evaluator + Default> Environment<T> {
     }
 
     pub(crate) fn evaluate(&self, prg: Sequence) -> Evaluation {
-        let frame = self.make_frame();
-        T::default().eval(prg, &frame)
+        T::default().eval(prg, &self.make_frame())
     }
 
     pub(crate) fn make_namespace(&self) -> Namespace {

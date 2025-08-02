@@ -367,7 +367,6 @@ mod eval {
 
     mod forms {
         use super::*;
-        use crate::eval::Binding;
 
         #[test]
         fn call_no_args() {
@@ -856,24 +855,20 @@ mod eval {
                 .into(),
             });
             env.binding.bind(env.symbols.get("foo"), Value::Unspecified);
-            let child_binding = Binding::new(Rc::clone(&env.binding)).into();
-            let f = Frame {
-                scope: Rc::clone(&child_binding),
-                sym: &env.symbols,
-                sys: &env.system,
-            };
+            let f = env.new_frame();
+            let call_f = f.new_child(Rc::clone(&env.binding));
 
-            let r = expr.eval(&f);
+            let r = expr.eval(&call_f);
 
             let v = ok_or_fail!(r);
             assert!(matches!(v, Value::Unspecified));
             assert!(
-                matches!(child_binding.lookup("foo"), Some(Value::String(s)) if s.as_ref() == "one")
+                matches!(call_f.scope.lookup("foo"), Some(Value::String(s)) if s.as_ref() == "one")
             );
             assert!(
                 matches!(env.binding.lookup("foo"), Some(Value::String(s)) if s.as_ref() == "one")
             );
-            assert!(child_binding.sorted_bindings().is_empty());
+            assert!(call_f.scope.sorted_bindings().is_empty());
         }
 
         #[test]
