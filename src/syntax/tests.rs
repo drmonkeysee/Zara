@@ -1518,6 +1518,65 @@ mod continuation {
         ));
         assert!(et.parsers.is_empty());
     }
+
+    #[test]
+    fn nested_lambda_with_syntax_error() {
+        // ((lambda () (lambda () (if))))
+        let mut et = ExpressionTree::default();
+        let tokens = [make_tokenline([
+            TokenKind::ParenLeft,
+            TokenKind::ParenLeft,
+            TokenKind::Identifier("lambda".to_owned()),
+            TokenKind::ParenLeft,
+            TokenKind::ParenRight,
+            TokenKind::ParenLeft,
+            TokenKind::Identifier("lambda".to_owned()),
+            TokenKind::ParenLeft,
+            TokenKind::ParenRight,
+            TokenKind::ParenLeft,
+            TokenKind::Identifier("if".to_owned()),
+            TokenKind::ParenRight,
+            TokenKind::ParenRight,
+            TokenKind::ParenRight,
+            TokenKind::ParenRight,
+        ])];
+        let env = TestEnv::default();
+
+        let r = et.parse(tokens.into(), env.new_namespace());
+        // TODO: the if shouldn't cascade into outer syntax errors of the lambdas
+        dbg!(&r);
+        let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
+        assert_eq!(errs.len(), 4);
+        assert!(matches!(
+            &errs[0],
+            ExpressionError {
+                ctx: ExprCtx { span: TxtSpan { start: 9, end: 12 }, txt },
+                kind: ExpressionErrorKind::IfInvalid,
+            } if txt.lineno == 1
+        ));
+        assert!(matches!(
+            &errs[1],
+            ExpressionError {
+                ctx: ExprCtx { span: TxtSpan { start: 5, end: 13 }, txt },
+                kind: ExpressionErrorKind::LambdaInvalid,
+            } if txt.lineno == 1
+        ));
+        assert!(matches!(
+            &errs[2],
+            ExpressionError {
+                ctx: ExprCtx { span: TxtSpan { start: 1, end: 14 }, txt },
+                kind: ExpressionErrorKind::LambdaInvalid,
+            } if txt.lineno == 1
+        ));
+        assert!(matches!(
+            &errs[3],
+            ExpressionError {
+                ctx: ExprCtx { span: TxtSpan { start: 0, end: 15 }, txt },
+                kind: ExpressionErrorKind::ProcedureEmpty,
+            } if txt.lineno == 1
+        ));
+        assert!(et.parsers.is_empty());
+    }
 }
 
 mod errors {
