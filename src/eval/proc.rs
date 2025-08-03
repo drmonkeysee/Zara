@@ -687,7 +687,7 @@ mod tests {
         let sym = SymbolTable::default();
         let p = Procedure::intrinsic(sym.get("foo"), 1..1, |args, _| {
             let Value::String(s) = &args[0] else {
-                unreachable!()
+                unreachable!();
             };
             Ok(Value::string(format!("bar {s}")))
         });

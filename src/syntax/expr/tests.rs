@@ -453,7 +453,9 @@ mod eval {
                         let s = args
                             .iter()
                             .map(|v| {
-                                let Value::String(s) = v else { unreachable!() };
+                                let Value::String(s) = v else {
+                                    unreachable!();
+                                };
                                 s.clone()
                             })
                             .collect::<Vec<_>>()

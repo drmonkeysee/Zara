@@ -19,11 +19,10 @@ impl TestRunner {
 
         assert!(r.is_ok());
         let ev = r.unwrap();
-        assert!(matches!(ev, Evaluation::Val(_)));
         if let Evaluation::Val(v) = ev {
-            return v;
+            v
         } else {
-            unreachable!("{:?}", ev);
+            panic!("{ev:?}");
         }
     }
 }
@@ -65,4 +64,41 @@ fn overwrite_self() {
 
     let v = t.run_for_val(concat!("(x)", "x"));
     assert_eq!(v.to_string(), "20");
+}
+
+#[test]
+fn parameter_closure() {
+    let mut t = TestRunner::new();
+
+    let v = t.run_for_val(concat!(
+        "(define capture-five ((lambda (x) (lambda () x)) 5))",
+        "capture-five"
+    ));
+    assert_eq!(v.to_string(), "#<procedure>");
+
+    let v = t.run_for_val("(capture-five)");
+    assert_eq!(v.to_string(), "5");
+}
+
+#[test]
+fn closure_per_eval() {
+    let mut t = TestRunner::new();
+
+    t.run_for_val(concat!(
+        "(define capture (lambda (x) (lambda () (set! x (+ x 1)) x)))",
+        "(define one (capture 1))",
+        "(define ten (capture 10))"
+    ));
+
+    let v = t.run_for_val(concat!("(one)", "(one)"));
+    assert_eq!(v.to_string(), "3");
+
+    let v = t.run_for_val(concat!("(ten)", "(ten)"));
+    assert_eq!(v.to_string(), "12");
+
+    let v = t.run_for_val("(one)");
+    assert_eq!(v.to_string(), "4");
+
+    let v = t.run_for_val("(ten)");
+    assert_eq!(v.to_string(), "13");
 }
