@@ -1,0 +1,548 @@
+use super::*;
+use crate::{
+    lex::TokenKind,
+    number::Number,
+    string::SymbolTable,
+    syntax::{ExpressionTree, Parser, ParserOutput},
+    testutil::{TestEnv, err_or_fail, extract_or_fail, make_tokenline, ok_or_fail},
+};
+
+fn body(tokens: impl IntoIterator<Item = TokenKind>) -> Sequence {
+    let mut et = ExpressionTree::default();
+    let env = TestEnv::default();
+
+    let r = et.parse([make_tokenline(tokens)].into(), env.new_namespace());
+
+    extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete)
+}
+
+fn empty_body() -> Sequence {
+    body([])
+}
+
+#[test]
+fn display_max_formals() {
+    let e = InvalidFormal::MaxFormals;
+
+    assert_eq!(
+        e.to_string(),
+        "lambda definition exceeds formal arguments limit: 256"
+    );
+}
+
+#[test]
+fn display_duplicate_formal() {
+    let sym = SymbolTable::default();
+    let e = InvalidFormal::DuplicateFormal(sym.get("x"));
+
+    assert_eq!(e.to_string(), "duplicate formal: x");
+}
+
+#[test]
+fn intrinsic_zero_arity() {
+    let sym = SymbolTable::default();
+    let p = Procedure::intrinsic(sym.get("foo"), 0..0, |_, _| Ok(Value::Unspecified));
+
+    assert_eq!(p.to_string(), "#<procedure foo>");
+}
+
+#[test]
+fn intrinsic_single_arity() {
+    let sym = SymbolTable::default();
+    let p = Procedure::intrinsic(sym.get("foo"), 1..1, |_, _| Ok(Value::Unspecified));
+
+    assert_eq!(p.to_string(), "#<procedure foo (_)>");
+}
+
+#[test]
+fn intrinsic_multi_arity() {
+    let sym = SymbolTable::default();
+    let p = Procedure::intrinsic(sym.get("foo"), 3..3, |_, _| Ok(Value::Unspecified));
+
+    assert_eq!(p.to_string(), "#<procedure foo (_ _ _)>");
+}
+
+#[test]
+fn intrinsic_optional() {
+    let sym = SymbolTable::default();
+    let p = Procedure::intrinsic(sym.get("foo"), 0..1, |_, _| Ok(Value::Unspecified));
+
+    assert_eq!(p.to_string(), "#<procedure foo (?)>");
+}
+
+#[test]
+fn intrinsic_multi_optional() {
+    let sym = SymbolTable::default();
+    let p = Procedure::intrinsic(sym.get("foo"), 1..3, |_, _| Ok(Value::Unspecified));
+
+    assert_eq!(p.to_string(), "#<procedure foo (_ ? ?)>");
+
+    assert!(!p.matches_arity(0));
+    assert!(p.matches_arity(1));
+    assert!(p.matches_arity(2));
+    assert!(p.matches_arity(3));
+    assert!(!p.matches_arity(4));
+}
+
+#[test]
+fn intrinsic_open_arity() {
+    let sym = SymbolTable::default();
+    let p = Procedure::intrinsic(sym.get("foo"), 0..255, |_, _| Ok(Value::Unspecified));
+
+    assert_eq!(p.to_string(), "#<procedure foo (…)>");
+}
+
+#[test]
+fn intrinsic_required_params_with_open_arity() {
+    let sym = SymbolTable::default();
+    let p = Procedure::intrinsic(sym.get("foo"), 2..255, |_, _| Ok(Value::Unspecified));
+
+    assert_eq!(p.to_string(), "#<procedure foo (_ _ …)>");
+}
+
+#[test]
+fn lambda_zero_arity_no_name() {
+    let p = ok_or_fail!(Procedure::lambda(
+        [],
+        None,
+        empty_body(),
+        Binding::default(),
+        None
+    ));
+
+    assert_eq!(p.to_string(), "#<procedure>");
+}
+
+#[test]
+fn lambda_zero_arity() {
+    let sym = SymbolTable::default();
+    let p = ok_or_fail!(Procedure::lambda(
+        [],
+        None,
+        empty_body(),
+        Binding::default(),
+        Some(sym.get("bar"))
+    ));
+
+    assert_eq!(p.to_string(), "#<procedure bar>");
+}
+
+#[test]
+fn lambda_single_arity() {
+    let sym = SymbolTable::default();
+    let p = ok_or_fail!(Procedure::lambda(
+        [sym.get("x")],
+        None,
+        empty_body(),
+        Binding::default(),
+        Some(sym.get("bar"))
+    ));
+
+    assert_eq!(p.to_string(), "#<procedure bar (x)>");
+}
+
+#[test]
+fn lambda_multi_arity() {
+    let sym = SymbolTable::default();
+    let p = ok_or_fail!(Procedure::lambda(
+        [sym.get("x"), sym.get("y"), sym.get("z")],
+        None,
+        empty_body(),
+        Binding::default(),
+        Some(sym.get("bar")),
+    ));
+
+    assert_eq!(p.to_string(), "#<procedure bar (x y z)>");
+}
+
+#[test]
+fn lambda_variadic_arity() {
+    let sym = SymbolTable::default();
+    let p = ok_or_fail!(Procedure::lambda(
+        [],
+        Some(sym.get("any")),
+        empty_body(),
+        Binding::default(),
+        Some(sym.get("bar"))
+    ));
+
+    assert_eq!(p.to_string(), "#<procedure bar any…>");
+}
+
+#[test]
+fn lambda_rest_arity() {
+    let sym = SymbolTable::default();
+    let p = ok_or_fail!(Procedure::lambda(
+        [sym.get("x"), sym.get("y"), sym.get("z")],
+        Some(sym.get("rest")),
+        empty_body(),
+        Binding::default(),
+        Some(sym.get("bar")),
+    ));
+
+    assert_eq!(p.to_string(), "#<procedure bar (x y z rest…)>");
+}
+
+#[test]
+fn matches_zero_arity() {
+    let sym = SymbolTable::default();
+    let p = Procedure::intrinsic(sym.get("foo"), 0..0, |_, _| Ok(Value::Unspecified));
+
+    assert!(p.matches_arity(0));
+}
+
+#[test]
+fn matches_single_arity() {
+    let sym = SymbolTable::default();
+    let p = Procedure::intrinsic(sym.get("foo"), 1..1, |_, _| Ok(Value::Unspecified));
+
+    assert!(p.matches_arity(1));
+}
+
+#[test]
+fn matches_max_arity() {
+    let sym = SymbolTable::default();
+    let p = Procedure::intrinsic(sym.get("foo"), 255..255, |_, _| Ok(Value::Unspecified));
+
+    assert!(p.matches_arity(MAX_ARITY as usize));
+}
+
+#[test]
+fn matches_min_variable_arity() {
+    let sym = SymbolTable::default();
+    let p = Procedure::intrinsic(sym.get("foo"), 0..3, |_, _| Ok(Value::Unspecified));
+
+    assert!(p.matches_arity(0));
+}
+
+#[test]
+fn matches_max_variable_arity() {
+    let sym = SymbolTable::default();
+    let p = Procedure::intrinsic(sym.get("foo"), 0..3, |_, _| Ok(Value::Unspecified));
+
+    assert!(p.matches_arity(3));
+}
+
+#[test]
+fn matches_exceeds_variable_arity() {
+    let sym = SymbolTable::default();
+    let p = Procedure::intrinsic(sym.get("foo"), 0..3, |_, _| Ok(Value::Unspecified));
+
+    assert!(!p.matches_arity(4));
+}
+
+#[test]
+fn matches_variable_arity() {
+    let sym = SymbolTable::default();
+    let p = Procedure::intrinsic(sym.get("foo"), 2..5, |_, _| Ok(Value::Unspecified));
+
+    assert!(!p.matches_arity(1));
+    assert!(p.matches_arity(2));
+    assert!(p.matches_arity(3));
+    assert!(p.matches_arity(4));
+    assert!(p.matches_arity(5));
+    assert!(!p.matches_arity(6));
+}
+
+#[test]
+fn exceeds_max_arity() {
+    let sym = SymbolTable::default();
+    let p = Procedure::intrinsic(sym.get("foo"), 255..255, |_, _| Ok(Value::Unspecified));
+
+    assert!(!p.matches_arity(256));
+}
+
+#[test]
+fn lambda_matches_zero_arity() {
+    let sym = SymbolTable::default();
+    let p = ok_or_fail!(Procedure::lambda(
+        [],
+        None,
+        empty_body(),
+        Binding::default(),
+        Some(sym.get("bar"))
+    ));
+
+    assert!(p.matches_arity(0));
+}
+
+#[test]
+fn lambda_matches_single_arity() {
+    let sym = SymbolTable::default();
+    let p = ok_or_fail!(Procedure::lambda(
+        [sym.get("x")],
+        None,
+        empty_body(),
+        Binding::default(),
+        Some(sym.get("bar"))
+    ));
+
+    assert!(p.matches_arity(1));
+}
+
+#[test]
+fn lambda_matches_multi_arity() {
+    let sym = SymbolTable::default();
+    let p = ok_or_fail!(Procedure::lambda(
+        [sym.get("x"), sym.get("y"), sym.get("z")],
+        None,
+        empty_body(),
+        Binding::default(),
+        Some(sym.get("bar")),
+    ));
+
+    assert!(p.matches_arity(3));
+    assert!(!p.matches_arity(2));
+    assert!(!p.matches_arity(4));
+}
+
+#[test]
+fn lambda_matches_variadic_arity() {
+    let sym = SymbolTable::default();
+    let p = ok_or_fail!(Procedure::lambda(
+        [],
+        Some(sym.get("any")),
+        empty_body(),
+        Binding::default(),
+        Some(sym.get("bar"))
+    ));
+
+    assert!(p.matches_arity(0));
+    assert!(p.matches_arity(MAX_ARITY as usize));
+    assert!(!p.matches_arity(256));
+}
+
+#[test]
+fn lambda_matches_rest_arity() {
+    let sym = SymbolTable::default();
+    let p = ok_or_fail!(Procedure::lambda(
+        [sym.get("x"), sym.get("y")],
+        Some(sym.get("any")),
+        empty_body(),
+        Binding::default(),
+        Some(sym.get("bar")),
+    ));
+
+    assert!(!p.matches_arity(0));
+    assert!(!p.matches_arity(1));
+    assert!(p.matches_arity(2));
+    assert!(p.matches_arity(MAX_ARITY as usize));
+    assert!(!p.matches_arity(256));
+}
+
+#[test]
+fn lambda_max_arity() {
+    let sym = SymbolTable::default();
+    let params = (0..MAX_ARITY)
+        .into_iter()
+        .map(|i| sym.get(format!("x{i}")))
+        .collect::<Vec<_>>();
+
+    let p = ok_or_fail!(Procedure::lambda(
+        params,
+        None,
+        empty_body(),
+        Binding::default(),
+        Some(sym.get("bar"))
+    ));
+
+    assert!(p.matches_arity(MAX_ARITY as usize));
+}
+
+#[test]
+fn lambda_max_arity_with_rest() {
+    let sym = SymbolTable::default();
+    let params = (0..MAX_ARITY - 1)
+        .into_iter()
+        .map(|i| sym.get(format!("x{i}")))
+        .collect::<Vec<_>>();
+
+    let p = ok_or_fail!(Procedure::lambda(
+        params,
+        Some(sym.get("rest")),
+        empty_body(),
+        Binding::default(),
+        Some(sym.get("bar"))
+    ));
+
+    assert!(p.matches_arity(MAX_ARITY as usize));
+}
+
+#[test]
+fn lambda_too_many_params() {
+    let sym = SymbolTable::default();
+    let params = (0..MAX_ARITY as usize + 1)
+        .into_iter()
+        .map(|i| sym.get(format!("x{i}")))
+        .collect::<Vec<_>>();
+
+    let p = Procedure::lambda(
+        params,
+        None,
+        empty_body(),
+        Binding::default(),
+        Some(sym.get("bar")),
+    );
+
+    let err = err_or_fail!(p);
+
+    assert_eq!(err.len(), 1);
+    assert!(matches!(&err[0], InvalidFormal::MaxFormals));
+}
+
+#[test]
+fn lambda_too_many_params_with_rest() {
+    let sym = SymbolTable::default();
+    let params = (0..MAX_ARITY)
+        .into_iter()
+        .map(|i| sym.get(format!("x{i}")))
+        .collect::<Vec<_>>();
+
+    let p = Procedure::lambda(
+        params,
+        Some(sym.get("rest")),
+        empty_body(),
+        Binding::default(),
+        Some(sym.get("bar")),
+    );
+
+    let err = err_or_fail!(p);
+
+    assert_eq!(err.len(), 1);
+    assert!(matches!(&err[0], InvalidFormal::MaxFormals));
+}
+
+#[test]
+fn lambda_duplicate_params() {
+    let sym = SymbolTable::default();
+    let params = [
+        sym.get("x"),
+        sym.get("y"),
+        sym.get("z"),
+        sym.get("y"),
+        sym.get("x"),
+    ];
+
+    let p = Procedure::lambda(
+        params,
+        None,
+        empty_body(),
+        Binding::default(),
+        Some(sym.get("bar")),
+    );
+
+    let err = err_or_fail!(p);
+
+    assert_eq!(err.len(), 2);
+    assert!(matches!(&err[0], InvalidFormal::DuplicateFormal(s) if s.as_ref() == "y"));
+    assert!(matches!(&err[1], InvalidFormal::DuplicateFormal(s) if s.as_ref() == "x"));
+}
+
+#[test]
+fn apply_zero_arity() {
+    let sym = SymbolTable::default();
+    let p = Procedure::intrinsic(sym.get("foo"), 0..0, |_, _| Ok(Value::string("bar")));
+    let env = TestEnv::default();
+    let f = env.new_frame();
+    let args = [];
+
+    let r = p.apply(&args, &f);
+
+    let v = ok_or_fail!(r);
+    assert!(matches!(v, Value::String(s) if s.as_ref() == "bar"));
+}
+
+#[test]
+fn apply_single_arity() {
+    let sym = SymbolTable::default();
+    let p = Procedure::intrinsic(sym.get("foo"), 1..1, |args, _| {
+        let Value::String(s) = &args[0] else {
+            unreachable!();
+        };
+        Ok(Value::string(format!("bar {s}")))
+    });
+    let env = TestEnv::default();
+    let f = env.new_frame();
+    let args = [Value::string("baz")];
+
+    let r = p.apply(&args, &f);
+
+    let v = ok_or_fail!(r);
+    assert!(matches!(v, Value::String(s) if s.as_ref() == "bar baz"));
+}
+
+#[test]
+fn apply_zero_arity_lambda() {
+    let sym = SymbolTable::default();
+    let env = TestEnv::default();
+    let f = env.new_frame();
+    let params = [];
+    let p = ok_or_fail!(Procedure::lambda(
+        params,
+        None,
+        body([TokenKind::String("bar".to_owned())]),
+        Rc::clone(&f.scope),
+        Some(sym.get("bar")),
+    ));
+    let args = [];
+
+    let r = p.apply(&args, &f);
+
+    let v = ok_or_fail!(r);
+    assert!(matches!(v, Value::String(s) if s.as_ref() == "bar"));
+}
+
+#[test]
+fn apply_single_arity_lambda() {
+    let sym = SymbolTable::default();
+    let env = TestEnv::default();
+    let f = env.new_frame();
+    let params = [sym.get("x")];
+    let p = ok_or_fail!(Procedure::lambda(
+        params,
+        None,
+        body([TokenKind::Identifier("x".to_owned())]),
+        Rc::clone(&f.scope),
+        Some(sym.get("bar")),
+    ));
+    let args = [Value::Number(Number::real(5))];
+
+    let r = p.apply(&args, &f);
+
+    let v = ok_or_fail!(r);
+    assert!(matches!(v, Value::Number(_)));
+    assert_eq!(v.to_string(), "5");
+    assert!(!env.binding.bound("x"));
+}
+
+#[test]
+fn apply_single_arity_lambda_with_closure() {
+    let sym = SymbolTable::default();
+    let env = TestEnv::default();
+    let global_func = Procedure::intrinsic(sym.get("stringify"), 1..1, |args, _| {
+        Ok(Value::string(format!("bar {}", args[0])))
+    });
+    env.binding
+        .bind(sym.get("stringify"), Value::Procedure(global_func.into()));
+    let f = env.new_frame();
+    let params = [sym.get("x")];
+    let p = ok_or_fail!(Procedure::lambda(
+        params,
+        None,
+        body([
+            TokenKind::ParenLeft,
+            TokenKind::Identifier("stringify".to_owned()),
+            TokenKind::Identifier("x".to_owned()),
+            TokenKind::ParenRight
+        ]),
+        Rc::clone(&f.scope),
+        Some(sym.get("bar")),
+    ));
+    let args = [Value::Number(Number::real(5))];
+
+    let r = p.apply(&args, &f);
+
+    let v = ok_or_fail!(r);
+    assert!(matches!(v, Value::String(s) if s.as_ref() == "bar 5"));
+    assert!(!env.binding.bound("x"));
+}
