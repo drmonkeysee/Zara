@@ -3,7 +3,7 @@ mod proc;
 
 pub(crate) use self::{
     env::{Binding, Frame, Namespace, System},
-    proc::{Arity, IntrinsicFn, InvalidFormal, MAX_ARITY, Procedure},
+    proc::{Arity, Intrinsic, IntrinsicFn, InvalidFormal, MAX_ARITY, Operator, Procedure},
 };
 use crate::{
     core,

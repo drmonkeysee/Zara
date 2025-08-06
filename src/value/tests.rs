@@ -1,5 +1,5 @@
 use super::*;
-use crate::string::SymbolTable;
+use crate::{eval::Binding, string::SymbolTable, testutil::empty_procedure_body};
 
 mod display {
     use super::*;
@@ -152,10 +152,41 @@ mod display {
     }
 
     #[test]
-    fn procedure_typename() {
+    fn intrinsic_typename() {
         let sym = SymbolTable::default();
+        let v = Value::Intrinsic(
+            Intrinsic {
+                arity: 0..0,
+                def: |_, _| Ok(Value::Unspecified),
+                name: sym.get("foo"),
+            }
+            .into(),
+        );
+
+        assert_eq!(v.as_typename().to_string(), "intrinsic");
+    }
+
+    #[test]
+    fn intrinsic_display() {
+        let sym = SymbolTable::default();
+        let v = Value::Intrinsic(
+            Intrinsic {
+                arity: 0..0,
+                def: |_, _| Ok(Value::Unspecified),
+                name: sym.get("foo"),
+            }
+            .into(),
+        );
+
+        assert_eq!(v.to_string(), "#<intrinsic foo>");
+    }
+
+    #[test]
+    fn procedure_typename() {
         let v = Value::Procedure(
-            Procedure::intrinsic(sym.get("foo"), 0..0, |_, _| Ok(Value::Unspecified)).into(),
+            Procedure::lambda([], None, empty_procedure_body(), Binding::default(), None)
+                .unwrap()
+                .into(),
         );
 
         assert_eq!(v.as_typename().to_string(), "procedure");
@@ -165,7 +196,15 @@ mod display {
     fn procedure_display() {
         let sym = SymbolTable::default();
         let v = Value::Procedure(
-            Procedure::intrinsic(sym.get("foo"), 0..0, |_, _| Ok(Value::Unspecified)).into(),
+            Procedure::lambda(
+                [],
+                None,
+                empty_procedure_body(),
+                Binding::default(),
+                Some(sym.get("foo")),
+            )
+            .unwrap()
+            .into(),
         );
 
         assert_eq!(v.to_string(), "#<procedure foo>");

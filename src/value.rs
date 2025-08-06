@@ -13,7 +13,7 @@ mod tests;
 
 pub(crate) use self::condition::Condition;
 use crate::{
-    eval::Procedure,
+    eval::{Intrinsic, Procedure},
     lex::{DisplayTokenLines, TokenLine, TokenLinesMessage},
     number::{Number, Real},
     string::{CharDatum, StrDatum, Symbol},
@@ -32,6 +32,7 @@ pub(crate) enum Value {
     ByteVector(Rc<[u8]>),
     Character(char),
     Error(Rc<Condition>),
+    Intrinsic(Rc<Intrinsic>),
     Number(Number),
     Pair(Option<Rc<Pair>>),
     Procedure(Rc<Procedure>),
@@ -100,6 +101,7 @@ impl Value {
             (Self::Ast(a), Self::Ast(b)) => Rc::ptr_eq(a, b),
             (Self::Boolean(a), Self::Boolean(b)) => a == b,
             (Self::ByteVector(a), Self::ByteVector(b)) => Rc::ptr_eq(a, b),
+            (Self::Intrinsic(a), Self::Intrinsic(b)) => Rc::ptr_eq(a, b),
             (Self::Pair(None), Self::Pair(None)) | (Self::Unspecified, Self::Unspecified) => true,
             (Self::Pair(Some(a)), Self::Pair(Some(b))) => Rc::ptr_eq(a, b),
             (Self::Procedure(a), Self::Procedure(b)) => Rc::ptr_eq(a, b),
@@ -154,6 +156,7 @@ impl Display for Value {
             Self::ByteVector(bv) => write_seq("#u8", bv, f),
             Self::Character(c) => write!(f, "#\\{}", CharDatum::new(*c)),
             Self::Error(c) => c.fmt(f),
+            Self::Intrinsic(func) => func.fmt(f),
             Self::Number(n) => n.fmt(f),
             Self::Pair(None) => f.write_str("()"),
             Self::Pair(Some(p)) => write!(f, "({p})"),
@@ -241,6 +244,7 @@ impl Display for TypeName<'_> {
             Value::ByteVector(_) => f.write_str(Self::BYTEVECTOR),
             Value::Character(_) => f.write_str(Self::CHAR),
             Value::Error(_) => f.write_str(Self::ERROR),
+            Value::Intrinsic(_) => f.write_str("intrinsic"),
             Value::Number(_) => f.write_str(Self::NUMBER),
             Value::Pair(None) => f.write_str("null"),
             Value::Pair(Some(p)) => f.write_str(if p.is_list() { Self::LIST } else { Self::PAIR }),

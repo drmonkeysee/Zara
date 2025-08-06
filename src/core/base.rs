@@ -499,7 +499,7 @@ fn load_proc(env: &Frame) {
     super::bind_intrinsic(env, "procedure?", 1..1, is_procedure);
 }
 
-predicate!(is_procedure, Value::Procedure(_));
+predicate!(is_procedure, Value::Intrinsic(_) | Value::Procedure(_));
 
 //
 // Strings

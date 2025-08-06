@@ -38,6 +38,7 @@ use crate::{
     eval::{Binding, Frame, Namespace, System},
     lex::{Token, TokenKind, TokenLine},
     string::SymbolTable,
+    syntax::{ExpressionTree, Parser, ParserOutput, Sequence},
     txt::{LineNumber, TextContext, TextLine},
 };
 use std::{iter, path::Path, rc::Rc};
@@ -102,4 +103,17 @@ impl Default for TestEnv {
             system: System::new(iter::empty()),
         }
     }
+}
+
+pub(crate) fn procedure_body(tokens: impl IntoIterator<Item = TokenKind>) -> Sequence {
+    let mut et = ExpressionTree::default();
+    let env = TestEnv::default();
+
+    let r = et.parse([make_tokenline(tokens)].into(), env.new_namespace());
+
+    extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete)
+}
+
+pub(crate) fn empty_procedure_body() -> Sequence {
+    procedure_body([])
 }

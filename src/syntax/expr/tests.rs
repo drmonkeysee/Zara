@@ -106,7 +106,7 @@ mod display {
 mod eval {
     use super::*;
     use crate::{
-        eval::Procedure,
+        eval::Intrinsic,
         testutil::{err_or_fail, extract_or_fail, ok_or_fail},
     };
 
@@ -245,21 +245,27 @@ mod eval {
             ]);
             env.binding.bind(
                 env.symbols.get("foo"),
-                Value::Procedure(
-                    Procedure::intrinsic(env.symbols.get("foo"), 0..0, |_, f| {
-                        let sym = SymbolTable::default();
-                        f.scope.bind(sym.get("foo_called"), Value::Boolean(true));
-                        Ok(Value::Symbol(sym.get("bar")))
-                    })
+                Value::Intrinsic(
+                    Intrinsic {
+                        arity: 0..0,
+                        def: |_, f| {
+                            let sym = SymbolTable::default();
+                            f.scope.bind(sym.get("foo_called"), Value::Boolean(true));
+                            Ok(Value::Symbol(sym.get("bar")))
+                        },
+                        name: env.symbols.get("foo"),
+                    }
                     .into(),
                 ),
             );
             env.binding.bind(
                 env.symbols.get("baz"),
-                Value::Procedure(
-                    Procedure::intrinsic(env.symbols.get("baz"), 0..0, |_, _| {
-                        Ok(Value::Character('a'))
-                    })
+                Value::Intrinsic(
+                    Intrinsic {
+                        arity: 0..0,
+                        def: |_, _| Ok(Value::Character('a')),
+                        name: env.symbols.get("baz"),
+                    }
                     .into(),
                 ),
             );
@@ -325,32 +331,42 @@ mod eval {
             ]);
             env.binding.bind(
                 env.symbols.get("foo"),
-                Value::Procedure(
-                    Procedure::intrinsic(env.symbols.get("foo"), 0..0, |_, f| {
-                        let sym = SymbolTable::default();
-                        f.scope.bind(sym.get("foo_called"), Value::Boolean(true));
-                        Ok(Value::Symbol(sym.get("bar")))
-                    })
+                Value::Intrinsic(
+                    Intrinsic {
+                        arity: 0..0,
+                        def: |_, f| {
+                            let sym = SymbolTable::default();
+                            f.scope.bind(sym.get("foo_called"), Value::Boolean(true));
+                            Ok(Value::Symbol(sym.get("bar")))
+                        },
+                        name: env.symbols.get("foo"),
+                    }
                     .into(),
                 ),
             );
             env.binding.bind(
                 env.symbols.get("fail"),
-                Value::Procedure(
-                    Procedure::intrinsic(env.symbols.get("baz"), 0..0, |_, _| {
-                        Err(Condition::system_error("oh no").into())
-                    })
+                Value::Intrinsic(
+                    Intrinsic {
+                        arity: 0..0,
+                        def: |_, _| Err(Condition::system_error("oh no").into()),
+                        name: env.symbols.get("baz"),
+                    }
                     .into(),
                 ),
             );
             env.binding.bind(
                 env.symbols.get("baz"),
-                Value::Procedure(
-                    Procedure::intrinsic(env.symbols.get("baz"), 0..0, |_, f| {
-                        let sym = SymbolTable::default();
-                        f.scope.bind(sym.get("baz_called"), Value::Boolean(true));
-                        Ok(Value::Character('a'))
-                    })
+                Value::Intrinsic(
+                    Intrinsic {
+                        arity: 0..0,
+                        def: |_, f| {
+                            let sym = SymbolTable::default();
+                            f.scope.bind(sym.get("baz_called"), Value::Boolean(true));
+                            Ok(Value::Character('a'))
+                        },
+                        name: env.symbols.get("baz"),
+                    }
                     .into(),
                 ),
             );
@@ -389,10 +405,12 @@ mod eval {
             });
             env.binding.bind(
                 env.symbols.get("foo"),
-                Value::Procedure(
-                    Procedure::intrinsic(env.symbols.get("foo"), 0..0, |_, _| {
-                        Ok(Value::String("bar".into()))
-                    })
+                Value::Intrinsic(
+                    Intrinsic {
+                        arity: 0..0,
+                        def: |_, _| Ok(Value::String("bar".into())),
+                        name: env.symbols.get("foo"),
+                    }
                     .into(),
                 ),
             );
@@ -448,20 +466,24 @@ mod eval {
             });
             env.binding.bind(
                 env.symbols.get("foo"),
-                Value::Procedure(
-                    Procedure::intrinsic(env.symbols.get("foo"), 3..3, |args, _| {
-                        let s = args
-                            .iter()
-                            .map(|v| {
-                                let Value::String(s) = v else {
-                                    unreachable!();
-                                };
-                                s.clone()
-                            })
-                            .collect::<Vec<_>>()
-                            .join(", ");
-                        Ok(Value::string(s))
-                    })
+                Value::Intrinsic(
+                    Intrinsic {
+                        arity: 3..3,
+                        def: |args, _| {
+                            let s = args
+                                .iter()
+                                .map(|v| {
+                                    let Value::String(s) = v else {
+                                        unreachable!();
+                                    };
+                                    s.clone()
+                                })
+                                .collect::<Vec<_>>()
+                                .join(", ");
+                            Ok(Value::string(s))
+                        },
+                        name: env.symbols.get("foo"),
+                    }
                     .into(),
                 ),
             );
@@ -558,10 +580,12 @@ mod eval {
             });
             env.binding.bind(
                 env.symbols.get("foo"),
-                Value::Procedure(
-                    Procedure::intrinsic(env.symbols.get("foo"), 0..0, |_, _| {
-                        Ok(Value::String("bar".into()))
-                    })
+                Value::Intrinsic(
+                    Intrinsic {
+                        arity: 0..0,
+                        def: |_, _| Ok(Value::String("bar".into())),
+                        name: env.symbols.get("foo"),
+                    }
                     .into(),
                 ),
             );
@@ -597,10 +621,12 @@ mod eval {
             });
             env.binding.bind(
                 env.symbols.get("foo"),
-                Value::Procedure(
-                    Procedure::intrinsic(env.symbols.get("foo"), 1..1, |_, _| {
-                        Ok(Value::String("bar".into()))
-                    })
+                Value::Intrinsic(
+                    Intrinsic {
+                        arity: 1..1,
+                        def: |_, _| Ok(Value::String("bar".into())),
+                        name: env.symbols.get("foo"),
+                    }
                     .into(),
                 ),
             );
@@ -636,10 +662,12 @@ mod eval {
             });
             env.binding.bind(
                 env.symbols.get("foo"),
-                Value::Procedure(
-                    Procedure::intrinsic(env.symbols.get("foo"), 1..2, |_, _| {
-                        Ok(Value::String("bar".into()))
-                    })
+                Value::Intrinsic(
+                    Intrinsic {
+                        arity: 1..2,
+                        def: |_, _| Ok(Value::String("bar".into())),
+                        name: env.symbols.get("foo"),
+                    }
                     .into(),
                 ),
             );
@@ -706,12 +734,16 @@ mod eval {
             });
             env.binding.bind(
                 env.symbols.get("foo"),
-                Value::Procedure(
-                    Procedure::intrinsic(env.symbols.get("foo"), 4..4, |_, f| {
-                        let sym = SymbolTable::default();
-                        f.scope.bind(sym.get("foo_called"), Value::Boolean(true));
-                        Ok(Value::Symbol(sym.get("bar")))
-                    })
+                Value::Intrinsic(
+                    Intrinsic {
+                        arity: 4..4,
+                        def: |_, f| {
+                            let sym = SymbolTable::default();
+                            f.scope.bind(sym.get("foo_called"), Value::Boolean(true));
+                            Ok(Value::Symbol(sym.get("bar")))
+                        },
+                        name: env.symbols.get("foo"),
+                    }
                     .into(),
                 ),
             );

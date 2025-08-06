@@ -3,7 +3,7 @@ mod tests;
 
 use crate::{
     Exception,
-    eval::{EvalResult, Frame, InvalidFormal},
+    eval::{EvalResult, Frame, InvalidFormal, Operator},
     lex::TokenKind,
     number::NumericError,
     string::Symbol,
@@ -288,19 +288,24 @@ impl Display for TypeName<'_> {
     }
 }
 
-fn eval_call(proc: &Expression, args: &[Expression], env: &Frame) -> EvalResult {
-    let proc = proc.eval(env)?;
-    let Value::Procedure(p) = proc else {
-        return Err(Condition::proc_error(proc.as_typename()).into());
-    };
-    if !p.matches_arity(args.len()) {
-        return Err(Condition::arity_error(p.name(), p.arity(), args.len()).into());
+fn eval_call(expr: &Expression, args: &[Expression], env: &Frame) -> EvalResult {
+    let v = expr.eval(env)?;
+    match v {
+        Value::Intrinsic(func) => apply_op(func.as_ref(), args, env),
+        Value::Procedure(proc) => apply_op(proc.as_ref(), args, env),
+        _ => Err(Condition::proc_error(v.as_typename()).into()),
+    }
+}
+
+fn apply_op(op: &impl Operator, args: &[Expression], env: &Frame) -> EvalResult {
+    if !op.matches_arity(args.len()) {
+        return Err(Condition::arity_error(op.name(), op.arity(), args.len()).into());
     }
     let args = args
         .iter()
         .map(|expr| expr.eval(env))
         .collect::<Result<Vec<Value>, Exception>>()?;
-    p.apply(&args, env)
+    op.apply(&args, env)
 }
 
 fn format_unexpected_token(kind: &str, token: &TokenKind, f: &mut Formatter) -> fmt::Result {

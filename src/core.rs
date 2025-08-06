@@ -51,7 +51,7 @@ mod procctx;
 mod time;
 
 use crate::{
-    eval::{Arity, EvalResult, Frame, IntrinsicFn, Procedure},
+    eval::{Arity, EvalResult, Frame, Intrinsic, IntrinsicFn},
     value::{Condition, TypeName, Value},
 };
 
@@ -78,11 +78,11 @@ pub(crate) fn load(env: &Frame) {
     time::load(env);
 }
 
-fn bind_intrinsic(env: &Frame, name: &str, arity: Arity, body: IntrinsicFn) {
+fn bind_intrinsic(env: &Frame, name: &str, arity: Arity, def: IntrinsicFn) {
     let name = env.sym.get(name);
     env.scope.bind(
         name.clone(),
-        Value::Procedure(Procedure::intrinsic(name, arity, body).into()),
+        Value::Intrinsic(Intrinsic { arity, def, name }.into()),
     );
 }
 

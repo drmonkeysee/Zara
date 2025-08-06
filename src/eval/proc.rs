@@ -17,6 +17,45 @@ pub(crate) type IntrinsicFn = fn(&[Value], &Frame) -> EvalResult;
 pub(crate) type Arity = Range<u8>;
 pub(crate) type LambdaResult = Result<Procedure, Vec<InvalidFormal>>;
 
+pub(crate) trait Operator {
+    fn name(&self) -> Option<&str>;
+    fn arity(&self) -> &Arity;
+    fn apply(&self, args: &[Value], env: &Frame) -> EvalResult;
+
+    fn matches_arity(&self, args_len: usize) -> bool {
+        self.arity().start as usize <= args_len && args_len <= self.arity().end as usize
+    }
+}
+
+#[derive(Debug)]
+pub(crate) struct Intrinsic {
+    pub(crate) arity: Arity,
+    pub(crate) def: IntrinsicFn,
+    pub(crate) name: Symbol,
+}
+
+impl Operator for Intrinsic {
+    fn name(&self) -> Option<&str> {
+        Some(&self.name)
+    }
+
+    fn arity(&self) -> &Arity {
+        &self.arity
+    }
+
+    fn apply(&self, args: &[Value], env: &Frame) -> EvalResult {
+        (self.def)(args, env)
+    }
+}
+
+impl Display for Intrinsic {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "#<intrinsic {}", self.name.as_datum())?;
+        write_intrinsics(&self.arity, f)?;
+        f.write_char('>')
+    }
+}
+
 #[derive(Debug)]
 pub(crate) struct Procedure {
     arity: Arity,
@@ -25,14 +64,6 @@ pub(crate) struct Procedure {
 }
 
 impl Procedure {
-    pub(crate) fn intrinsic(name: Symbol, arity: Arity, def: IntrinsicFn) -> Self {
-        Self {
-            arity,
-            def: Definition::Intrinsic(def),
-            name: Some(name),
-        }
-    }
-
     pub(crate) fn lambda(
         named_args: impl IntoIterator<Item = Symbol>,
         variadic_arg: Option<Symbol>,
@@ -64,28 +95,26 @@ impl Procedure {
         }
     }
 
-    pub(crate) fn name(&self) -> Option<&str> {
-        self.name.as_deref()
-    }
-
-    pub(crate) fn arity(&self) -> &Arity {
-        &self.arity
-    }
-
-    pub(crate) fn matches_arity(&self, args_len: usize) -> bool {
-        self.arity.start as usize <= args_len && args_len <= self.arity.end as usize
-    }
-
-    pub(crate) fn apply(&self, args: &[Value], env: &Frame) -> EvalResult {
-        self.def.apply(args, env)
-    }
-
     fn write_arity(&self, f: &mut Formatter<'_>) -> fmt::Result {
         if self.arity.start == 0 && self.arity.is_empty() {
             Ok(())
         } else {
             self.def.write_arity(&self.arity, f)
         }
+    }
+}
+
+impl Operator for Procedure {
+    fn name(&self) -> Option<&str> {
+        self.name.as_deref()
+    }
+
+    fn arity(&self) -> &Arity {
+        &self.arity
+    }
+
+    fn apply(&self, args: &[Value], env: &Frame) -> EvalResult {
+        self.def.apply(args, env)
     }
 }
 
@@ -171,15 +200,19 @@ fn write_formals(args: &[Symbol], variadic: Option<&Symbol>, f: &mut Formatter<'
 }
 
 fn write_intrinsics(arity: &Arity, f: &mut Formatter<'_>) -> fmt::Result {
-    let params = iter::repeat_n("_", arity.start.into())
-        .chain(if arity.end == MAX_ARITY {
-            iter::repeat_n("…", 1)
-        } else {
-            iter::repeat_n("?", arity.len())
-        })
-        .collect::<Vec<_>>()
-        .join(" ");
-    write!(f, " ({params})")
+    if arity.start == 0 && arity.is_empty() {
+        Ok(())
+    } else {
+        let params = iter::repeat_n("_", arity.start.into())
+            .chain(if arity.end == MAX_ARITY {
+                iter::repeat_n("…", 1)
+            } else {
+                iter::repeat_n("?", arity.len())
+            })
+            .collect::<Vec<_>>()
+            .join(" ");
+        write!(f, " ({params})")
+    }
 }
 
 fn into_formals(
