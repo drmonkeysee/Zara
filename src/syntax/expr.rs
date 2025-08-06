@@ -298,14 +298,15 @@ fn eval_call(expr: &Expression, args: &[Expression], env: &Frame) -> EvalResult 
 }
 
 fn apply_op(op: &impl Operator, args: &[Expression], env: &Frame) -> EvalResult {
-    if !op.matches_arity(args.len()) {
-        return Err(Condition::arity_error(op.name(), op.arity(), args.len()).into());
+    if op.matches_arity(args.len()) {
+        let args = args
+            .iter()
+            .map(|expr| expr.eval(env))
+            .collect::<Result<Vec<Value>, Exception>>()?;
+        op.apply(&args, env)
+    } else {
+        Err(Condition::arity_error(op.name(), op.arity(), args.len()).into())
     }
-    let args = args
-        .iter()
-        .map(|expr| expr.eval(env))
-        .collect::<Result<Vec<Value>, Exception>>()?;
-    op.apply(&args, env)
 }
 
 fn format_unexpected_token(kind: &str, token: &TokenKind, f: &mut Formatter) -> fmt::Result {
