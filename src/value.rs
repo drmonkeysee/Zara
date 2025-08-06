@@ -156,7 +156,7 @@ impl Display for Value {
             Self::ByteVector(bv) => write_seq("#u8", bv, f),
             Self::Character(c) => write!(f, "#\\{}", CharDatum::new(*c)),
             Self::Error(c) => c.fmt(f),
-            Self::Intrinsic(func) => func.fmt(f),
+            Self::Intrinsic(p) => p.fmt(f),
             Self::Number(n) => n.fmt(f),
             Self::Pair(None) => f.write_str("()"),
             Self::Pair(Some(p)) => write!(f, "({p})"),

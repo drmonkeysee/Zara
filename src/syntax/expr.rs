@@ -291,7 +291,7 @@ impl Display for TypeName<'_> {
 fn eval_call(expr: &Expression, args: &[Expression], env: &Frame) -> EvalResult {
     let v = expr.eval(env)?;
     match v {
-        Value::Intrinsic(func) => apply_op(func.as_ref(), args, env),
+        Value::Intrinsic(proc) => apply_op(proc.as_ref(), args, env),
         Value::Procedure(proc) => apply_op(proc.as_ref(), args, env),
         _ => Err(Condition::proc_error(v.as_typename()).into()),
     }
