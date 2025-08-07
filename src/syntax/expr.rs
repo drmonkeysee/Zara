@@ -3,7 +3,7 @@ mod tests;
 
 use crate::{
     Exception,
-    eval::{EvalResult, Frame, InvalidFormal, Operator},
+    eval::{EvalResult, Frame, InvalidFormal, Lambda, Operator},
     lex::TokenKind,
     number::NumericError,
     string::Symbol,
@@ -69,6 +69,13 @@ pub(super) struct ExprEnd {
 pub(super) type Expression = ExpressionType<ExpressionKind>;
 
 impl Expression {
+    fn lambda(value: impl Into<Rc<Lambda>>, ctx: ExprCtx) -> Self {
+        Self {
+            ctx,
+            kind: ExpressionKind::Lambda(value.into()),
+        }
+    }
+
     pub(super) fn string(value: impl Into<Rc<str>>, ctx: ExprCtx) -> Self {
         Self {
             ctx,
@@ -110,6 +117,7 @@ pub(super) enum ExpressionKind {
         con: Box<Expression>,
         alt: Option<Box<Expression>>,
     },
+    Lambda(Rc<Lambda>),
     Literal(Value),
     Set {
         var: Symbol,
@@ -141,6 +149,7 @@ impl ExpressionKind {
                     con.eval(env)
                 }
             }
+            Self::Lambda(lm) => todo!("lambda->procedure"),
             Self::Literal(v) => Ok(v.clone()),
             Self::Set { var, expr } => {
                 if let Some(b) = env.scope.binding(var) {
@@ -281,6 +290,7 @@ impl Display for TypeName<'_> {
             ExpressionKind::Call { .. } => f.write_str("procedure call"),
             ExpressionKind::Define { .. } => f.write_str("definition"),
             ExpressionKind::If { .. } => f.write_str("conditional"),
+            ExpressionKind::Lambda(_) => f.write_str("lambda"),
             ExpressionKind::Literal(val) => val.as_typename().fmt(f),
             ExpressionKind::Set { .. } => f.write_str("assignment"),
             ExpressionKind::Variable(_) => f.write_str("variable"),

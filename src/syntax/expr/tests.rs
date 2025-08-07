@@ -1,11 +1,12 @@
 use super::*;
 use crate::{
     string::SymbolTable,
-    testutil::{TestEnv, make_textline},
+    testutil::{TestEnv, make_textline, ok_or_fail},
 };
 
 mod display {
     use super::*;
+    use crate::testutil::empty_procedure_body;
 
     #[test]
     fn call_typename() {
@@ -70,6 +71,15 @@ mod display {
     }
 
     #[test]
+    fn lambda_typename() {
+        let expr = ExpressionKind::Lambda(
+            ok_or_fail!(Lambda::new([], None, empty_procedure_body())).into(),
+        );
+
+        assert_eq!(expr.as_typename().to_string(), "lambda");
+    }
+
+    #[test]
     fn set_typename() {
         let sym = SymbolTable::default();
         let expr = ExpressionKind::Set {
@@ -107,7 +117,7 @@ mod eval {
     use super::*;
     use crate::{
         eval::Intrinsic,
-        testutil::{err_or_fail, extract_or_fail, ok_or_fail},
+        testutil::{err_or_fail, extract_or_fail},
     };
 
     #[test]

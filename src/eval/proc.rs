@@ -16,7 +16,7 @@ pub(crate) const MAX_ARITY: u8 = u8::MAX;
 pub(crate) type IntrinsicFn = fn(&[Value], &Frame) -> EvalResult;
 pub(crate) type Arity = Range<u8>;
 pub(crate) type LambdaResult = Result<Procedure, Vec<InvalidFormal>>;
-type LambdaResult2 = Result<Lambda, Vec<InvalidFormal>>;
+pub(crate) type LambdaResult2 = Result<Lambda, Vec<InvalidFormal>>;
 
 pub(crate) trait Operator {
     fn name(&self) -> Option<&str>;
@@ -179,7 +179,7 @@ impl Display for Procedure2 {
 }
 
 #[derive(Debug)]
-struct Lambda {
+pub(crate) struct Lambda {
     arity: Arity,
     body: Sequence,
     formals: Box<[Symbol]>,
@@ -187,7 +187,7 @@ struct Lambda {
 }
 
 impl Lambda {
-    fn new(
+    pub(crate) fn new(
         named: impl IntoIterator<Item = Symbol>,
         variadic: Option<Symbol>,
         body: Sequence,
