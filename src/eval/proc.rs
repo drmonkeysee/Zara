@@ -178,6 +178,7 @@ impl Display for Procedure2 {
     }
 }
 
+#[derive(Debug)]
 struct Lambda {
     arity: Arity,
     body: Sequence,
