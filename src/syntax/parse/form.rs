@@ -3,7 +3,7 @@ use super::{
     MergeFlow, MergeResult, ParseBreak, ParseFlow, ParserError, Sequence, SyntaxError,
 };
 use crate::{
-    eval::{Lambda, Namespace, Procedure},
+    eval::{Lambda, Namespace},
     lex::{Token, TokenKind},
     string::Symbol,
     txt::TextLine,
