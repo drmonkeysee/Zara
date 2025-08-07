@@ -15,7 +15,6 @@ pub(crate) const MAX_ARITY: u8 = u8::MAX;
 
 pub(crate) type IntrinsicFn = fn(&[Value], &Frame) -> EvalResult;
 pub(crate) type Arity = Range<u8>;
-//pub(crate) type LambdaResult = Result<Procedure, Vec<InvalidFormal>>;
 pub(crate) type LambdaResult = Result<Lambda, Vec<InvalidFormal>>;
 
 pub(crate) trait Operator {
@@ -56,81 +55,6 @@ impl Display for Intrinsic {
         f.write_char('>')
     }
 }
-
-/*
-#[derive(Debug)]
-pub(crate) struct Procedure {
-    arity: Arity,
-    def: Definition,
-    name: Option<Symbol>,
-}
-
-impl Procedure {
-    pub(crate) fn lambda(
-        named_args: impl IntoIterator<Item = Symbol>,
-        variadic_arg: Option<Symbol>,
-        body: Sequence,
-        closure: impl Into<Rc<Binding>>,
-        name: Option<Symbol>,
-    ) -> LambdaResult {
-        let formals = into_formals(named_args)?;
-        let min = formals.len();
-        let (max, param_count) = if variadic_arg.is_some() {
-            (MAX_ARITY as usize, min + 1)
-        } else {
-            (min, min)
-        };
-        if param_count > MAX_ARITY.into() {
-            Err(vec![InvalidFormal::MaxFormals])
-        } else {
-            Ok(Self {
-                #[allow(clippy::cast_possible_truncation, reason = "truncation guarded above")]
-                arity: min as u8..max as u8,
-                def: Definition::Lambda {
-                    body,
-                    closure: closure.into(),
-                    formals: formals.into(),
-                    variadic: variadic_arg,
-                },
-                name,
-            })
-        }
-    }
-
-    fn write_arity(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        if self.arity.start == 0 && self.arity.is_empty() {
-            Ok(())
-        } else {
-            self.def.write_arity(&self.arity, f)
-        }
-    }
-}
-
-impl Operator for Procedure {
-    fn name(&self) -> Option<&str> {
-        self.name.as_deref()
-    }
-
-    fn arity(&self) -> &Arity {
-        &self.arity
-    }
-
-    fn apply(&self, args: &[Value], env: &Frame) -> EvalResult {
-        self.def.apply(args, env)
-    }
-}
-
-impl Display for Procedure {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        f.write_str("#<procedure")?;
-        if let Some(n) = &self.name {
-            write!(f, " {}", n.as_datum())?;
-        }
-        self.write_arity(f)?;
-        f.write_char('>')
-    }
-}
-*/
 
 #[derive(Debug)]
 pub(crate) struct Procedure {
@@ -258,39 +182,8 @@ impl Display for InvalidFormal {
     }
 }
 
-#[derive(Debug)]
-enum Definition {
-    Intrinsic(IntrinsicFn),
-    Lambda {
-        body: Sequence,
-        // TODO: make this optional for pure functions
-        closure: Rc<Binding>,
-        formals: Box<[Symbol]>,
-        variadic: Option<Symbol>,
-    },
-}
-
-impl Definition {
-    fn apply(&self, args: &[Value], env: &Frame) -> EvalResult {
-        match self {
-            Self::Intrinsic(func) => func(args, env),
-            Self::Lambda {
-                body,
-                closure,
-                formals,
-                variadic,
-            } => call_lambda(args, env, body, closure, formals, variadic.as_ref()),
-        }
-    }
-
-    fn write_arity(&self, arity: &Arity, f: &mut Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Intrinsic(_) => write_intrinsics(arity, f),
-            Self::Lambda {
-                formals, variadic, ..
-            } => write_formals(formals, variadic.as_ref(), f),
-        }
-    }
+fn no_params(arity: &Arity) -> bool {
+    arity.start == 0 && arity.is_empty()
 }
 
 fn write_formals(
@@ -349,33 +242,4 @@ fn into_formals(
     } else {
         Err(duplicates.into_iter().filter_map(Result::err).collect())
     }
-}
-
-fn call_lambda(
-    args: &[Value],
-    env: &Frame,
-    body: &Sequence,
-    closure: &Rc<Binding>,
-    formals: &[Symbol],
-    variadic: Option<&Symbol>,
-) -> EvalResult {
-    // TODO: tail-call optimization does not create a new frame
-    // TODO: this doesn't seem quite right, particularly for recursion
-    // is env.scope actually irrelevant with lexical scoping?
-    let call_frame = env.new_child(Rc::clone(closure));
-    let args_it = args.iter();
-    formals
-        .iter()
-        .zip(args_it.take(formals.len()))
-        .for_each(|(var, val)| {
-            call_frame.scope.bind(var.clone(), val.clone());
-        });
-    if variadic.is_some() {
-        todo!("support variadic args");
-    }
-    body.eval(&call_frame)
-}
-
-fn no_params(arity: &Arity) -> bool {
-    arity.start == 0 && arity.is_empty()
 }

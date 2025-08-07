@@ -85,6 +85,29 @@ fn closure_per_eval() {
     let mut t = TestRunner::new();
 
     t.run_for_val(concat!(
+        "(define capture (lambda (x) (lambda () x)))",
+        "(define one (capture 1))",
+        "(define ten (capture 10))"
+    ));
+
+    let v = t.run_for_val("(one)");
+    assert_eq!(v.to_string(), "1");
+
+    let v = t.run_for_val("(ten)");
+    assert_eq!(v.to_string(), "10");
+
+    let v = t.run_for_val("(one)");
+    assert_eq!(v.to_string(), "1");
+
+    let v = t.run_for_val("(ten)");
+    assert_eq!(v.to_string(), "10");
+}
+
+#[test]
+fn closure_writes_per_eval() {
+    let mut t = TestRunner::new();
+
+    t.run_for_val(concat!(
         "(define capture (lambda (x) (lambda () (set! x (+ x 1)) x)))",
         "(define one (capture 1))",
         "(define ten (capture 10))"
