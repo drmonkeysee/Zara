@@ -281,7 +281,7 @@ impl Definition {
 }
 
 fn write_lambda(lambda: &Lambda, f: &mut Formatter<'_>) -> fmt::Result {
-    if lambda.arity.start == 0 && lambda.arity.is_empty() {
+    if no_params(&lambda.arity) {
         Ok(())
     } else {
         write_formals(&lambda.formals, lambda.variadic.as_ref(), f)
@@ -309,7 +309,7 @@ fn write_formals(
 }
 
 fn write_intrinsics(arity: &Arity, f: &mut Formatter<'_>) -> fmt::Result {
-    if arity.start == 0 && arity.is_empty() {
+    if no_params(arity) {
         Ok(())
     } else {
         let params = iter::repeat_n("_", arity.start.into())
@@ -369,4 +369,8 @@ fn call_lambda(
         todo!("support variadic args");
     }
     body.eval(&call_frame)
+}
+
+fn no_params(arity: &Arity) -> bool {
+    arity.start == 0 && arity.is_empty()
 }
