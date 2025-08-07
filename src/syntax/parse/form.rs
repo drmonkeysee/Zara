@@ -3,7 +3,7 @@ use super::{
     MergeFlow, MergeResult, ParseBreak, ParseFlow, ParserError, Sequence, SyntaxError,
 };
 use crate::{
-    eval::{Namespace, Procedure},
+    eval::{Lambda, Namespace, Procedure},
     lex::{Token, TokenKind},
     string::Symbol,
     txt::TextLine,
@@ -95,12 +95,7 @@ impl SyntacticForm {
         Ok(MergeFlow::Continue(()))
     }
 
-    pub(super) fn try_into_expr(
-        self,
-        seq: Vec<Expression>,
-        ctx: ExprCtx,
-        ns: &Namespace,
-    ) -> ExprConvertResult {
+    pub(super) fn try_into_expr(self, seq: Vec<Expression>, ctx: ExprCtx) -> ExprConvertResult {
         match self {
             Self::Call => {
                 let mut iter = seq.into_iter();
@@ -145,7 +140,7 @@ impl SyntacticForm {
                     Err(vec![ctx.into_error(ExpressionErrorKind::IfInvalid)])
                 }
             }
-            Self::Lambda => into_lambda(seq, ctx, ns),
+            Self::Lambda => into_lambda(seq, ctx),
             Self::PairClosed => into_list(seq, ctx, true),
             Self::PairOpen => Err(vec![ctx.into_error(ExpressionErrorKind::PairUnterminated)]),
             Self::Quote => {
@@ -274,7 +269,7 @@ fn into_list(seq: Vec<Expression>, ctx: ExprCtx, improper: bool) -> ExprConvertR
     )
 }
 
-fn into_lambda(seq: Vec<Expression>, ctx: ExprCtx, ns: &Namespace) -> ExprConvertResult {
+fn into_lambda(seq: Vec<Expression>, ctx: ExprCtx) -> ExprConvertResult {
     if seq.len() < 2 {
         return Err(vec![ctx.into_error(ExpressionErrorKind::LambdaInvalid)]);
     }
@@ -285,7 +280,7 @@ fn into_lambda(seq: Vec<Expression>, ctx: ExprCtx, ns: &Namespace) -> ExprConver
     };
     let (args, rest) =
         parse_formals(params).map_err(|err| vec![formals.ctx.clone().into_error(err)])?;
-    into_procedure(args, rest, iter, &formals.ctx, ctx, ns)
+    make_lambda(args, rest, iter, &formals.ctx, ctx)
 }
 
 fn parse_formals(mut params: Value) -> Result<(Vec<Symbol>, Option<Symbol>), ExpressionErrorKind> {
@@ -312,20 +307,17 @@ fn parse_formals(mut params: Value) -> Result<(Vec<Symbol>, Option<Symbol>), Exp
     Ok((args, rest))
 }
 
-fn into_procedure(
+fn make_lambda(
     args: impl IntoIterator<Item = Symbol>,
     rest: Option<Symbol>,
     body: impl IntoIterator<Item = Expression>,
     formals_ctx: &ExprCtx,
     ctx: ExprCtx,
-    ns: &Namespace,
 ) -> ExprConvertResult {
-    Procedure::lambda(
+    Lambda::new(
         args,
         rest,
         Sequence::new(body.into_iter().collect::<Box<[_]>>()),
-        ns.get_closure(),
-        None,
     )
     .map_or_else(
         |err| {
@@ -338,10 +330,6 @@ fn into_procedure(
                 })
                 .collect())
         },
-        |p| {
-            Ok(Some(ctx.into_expr(ExpressionKind::Literal(
-                Value::Procedure(p.into()),
-            ))))
-        },
+        |lm| Ok(Some(Expression::lambda(lm, ctx))),
     )
 }

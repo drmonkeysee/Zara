@@ -69,7 +69,7 @@ pub(super) struct ExprEnd {
 pub(super) type Expression = ExpressionType<ExpressionKind>;
 
 impl Expression {
-    fn lambda(value: impl Into<Rc<Lambda>>, ctx: ExprCtx) -> Self {
+    pub(super) fn lambda(value: impl Into<Rc<Lambda>>, ctx: ExprCtx) -> Self {
         Self {
             ctx,
             kind: ExpressionKind::Lambda(value.into()),

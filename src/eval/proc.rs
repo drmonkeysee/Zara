@@ -173,8 +173,7 @@ impl Display for Procedure2 {
         if let Some(n) = &self.name {
             write!(f, " {}", n.as_datum())?;
         }
-        write_lambda(&self.def, f)?;
-        f.write_char('>')
+        write!(f, "{}>", self.def)
     }
 }
 
@@ -224,6 +223,16 @@ impl Lambda {
             todo!("support variadic args");
         }
         self.body.eval(&env)
+    }
+}
+
+impl Display for Lambda {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        if no_params(&self.arity) {
+            Ok(())
+        } else {
+            write_formals(&self.formals, self.variadic.as_ref(), f)
+        }
     }
 }
 
@@ -278,14 +287,6 @@ impl Definition {
                 formals, variadic, ..
             } => write_formals(formals, variadic.as_ref(), f),
         }
-    }
-}
-
-fn write_lambda(lambda: &Lambda, f: &mut Formatter<'_>) -> fmt::Result {
-    if no_params(&lambda.arity) {
-        Ok(())
-    } else {
-        write_formals(&lambda.formals, lambda.variadic.as_ref(), f)
     }
 }
 
