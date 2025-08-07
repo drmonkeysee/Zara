@@ -93,11 +93,6 @@ impl Namespace<'_> {
         self.0.scope.bound(name)
     }
 
-    #[deprecated = "this is wrong; closure is determined at eval not parse"]
-    pub(crate) fn get_closure(&self) -> Rc<Binding> {
-        Rc::clone(&self.0.scope)
-    }
-
     pub(crate) fn get_symbol(&self, name: impl AsRef<str>) -> Symbol {
         self.0.sym.get(name)
     }
