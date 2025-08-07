@@ -16,7 +16,7 @@ mod parsing {
         let tokens = [].into();
         let env = TestEnv::default();
 
-        let r = et.parse(tokens, env.new_namespace());
+        let r = et.parse(tokens, &env.new_namespace());
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
         let seq = prg.iter().collect::<Vec<_>>();
@@ -30,7 +30,7 @@ mod parsing {
         let tokens = [make_tokenline([TokenKind::Boolean(true)])];
         let env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), env.new_namespace());
+        let r = et.parse(tokens.into(), &env.new_namespace());
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
         let seq = prg.iter().collect::<Vec<_>>();
@@ -55,7 +55,7 @@ mod parsing {
         ])];
         let env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), env.new_namespace());
+        let r = et.parse(tokens.into(), &env.new_namespace());
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
         let seq = prg.iter().collect::<Vec<_>>();
@@ -100,7 +100,7 @@ mod parsing {
         ];
         let env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), env.new_namespace());
+        let r = et.parse(tokens.into(), &env.new_namespace());
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
         let seq = prg.iter().collect::<Vec<_>>();
@@ -159,7 +159,7 @@ mod parsing {
         ])];
         let env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), env.new_namespace());
+        let r = et.parse(tokens.into(), &env.new_namespace());
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
         let seq = prg.iter().collect::<Vec<_>>();
@@ -192,7 +192,7 @@ mod parsing {
         ])];
         let env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), env.new_namespace());
+        let r = et.parse(tokens.into(), &env.new_namespace());
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
         let seq = prg.iter().collect::<Vec<_>>();
@@ -247,7 +247,7 @@ mod parsing {
         ])];
         let env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), env.new_namespace());
+        let r = et.parse(tokens.into(), &env.new_namespace());
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
         let seq = prg.iter().collect::<Vec<_>>();
@@ -296,7 +296,7 @@ mod parsing {
         ])];
         let env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), env.new_namespace());
+        let r = et.parse(tokens.into(), &env.new_namespace());
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
         let seq = prg.iter().collect::<Vec<_>>();
@@ -330,7 +330,7 @@ mod parsing {
         ])];
         let env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), env.new_namespace());
+        let r = et.parse(tokens.into(), &env.new_namespace());
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
         let seq = prg.iter().collect::<Vec<_>>();
@@ -359,7 +359,7 @@ mod parsing {
         ])];
         let env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), env.new_namespace());
+        let r = et.parse(tokens.into(), &env.new_namespace());
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
         let seq = prg.iter().collect::<Vec<_>>();
@@ -389,7 +389,7 @@ mod parsing {
         ])];
         let env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), env.new_namespace());
+        let r = et.parse(tokens.into(), &env.new_namespace());
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
         let seq = prg.iter().collect::<Vec<_>>();
@@ -416,7 +416,7 @@ mod parsing {
         ])];
         let env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), env.new_namespace());
+        let r = et.parse(tokens.into(), &env.new_namespace());
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
         let seq = prg.iter().collect::<Vec<_>>();
@@ -446,7 +446,7 @@ mod parsing {
         ])];
         let env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), env.new_namespace());
+        let r = et.parse(tokens.into(), &env.new_namespace());
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
         let seq = prg.iter().collect::<Vec<_>>();
@@ -477,7 +477,7 @@ mod parsing {
         ])];
         let env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), env.new_namespace());
+        let r = et.parse(tokens.into(), &env.new_namespace());
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
         let seq = prg.iter().collect::<Vec<_>>();
@@ -511,7 +511,7 @@ mod parsing {
         ])];
         let env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), env.new_namespace());
+        let r = et.parse(tokens.into(), &env.new_namespace());
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
         let seq = prg.iter().collect::<Vec<_>>();
@@ -551,7 +551,7 @@ mod parsing {
         ])];
         let env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), env.new_namespace());
+        let r = et.parse(tokens.into(), &env.new_namespace());
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
         let seq = prg.iter().collect::<Vec<_>>();
@@ -583,7 +583,7 @@ mod parsing {
         ])];
         let env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), env.new_namespace());
+        let r = et.parse(tokens.into(), &env.new_namespace());
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
         let seq = prg.iter().collect::<Vec<_>>();
@@ -616,7 +616,7 @@ mod parsing {
         ])];
         let env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), env.new_namespace());
+        let r = et.parse(tokens.into(), &env.new_namespace());
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
         let seq = prg.iter().collect::<Vec<_>>();
@@ -652,7 +652,7 @@ mod parsing {
         ])];
         let env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), env.new_namespace());
+        let r = et.parse(tokens.into(), &env.new_namespace());
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
         let seq = prg.iter().collect::<Vec<_>>();
@@ -684,7 +684,7 @@ mod parsing {
         ])];
         let env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), env.new_namespace());
+        let r = et.parse(tokens.into(), &env.new_namespace());
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
         let seq = prg.iter().collect::<Vec<_>>();
@@ -716,7 +716,7 @@ mod parsing {
         ])];
         let env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), env.new_namespace());
+        let r = et.parse(tokens.into(), &env.new_namespace());
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
         let seq = prg.iter().collect::<Vec<_>>();
@@ -745,7 +745,7 @@ mod parsing {
         ])];
         let env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), env.new_namespace());
+        let r = et.parse(tokens.into(), &env.new_namespace());
 
         let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
         assert_eq!(errs.len(), 2);
@@ -791,7 +791,7 @@ mod parsing {
         ];
         let env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), env.new_namespace());
+        let r = et.parse(tokens.into(), &env.new_namespace());
 
         let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
         assert_eq!(errs.len(), 3);
@@ -853,7 +853,7 @@ mod parsing {
         ];
         let env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), env.new_namespace());
+        let r = et.parse(tokens.into(), &env.new_namespace());
 
         let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
         assert_eq!(errs.len(), 3);
@@ -899,7 +899,7 @@ mod parsing {
         )];
         let env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), env.new_namespace());
+        let r = et.parse(tokens.into(), &env.new_namespace());
 
         let err = extract_or_fail!(err_or_fail!(r), ParserError::Invalid);
         assert!(matches!(err, InvalidParseError::InvalidExprSource));
@@ -922,7 +922,7 @@ mod parsing {
         ])];
         let env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), env.new_namespace());
+        let r = et.parse(tokens.into(), &env.new_namespace());
 
         let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
         assert_eq!(errs.len(), 2);
@@ -950,7 +950,7 @@ mod parsing {
         let tokens = [make_tokenline_no([TokenKind::CommentDatum], 1)];
         let env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), env.new_namespace());
+        let r = et.parse(tokens.into(), &env.new_namespace());
 
         assert!(matches!(r, Ok(ParserOutput::Continuation)));
         assert_eq!(et.parsers.len(), 2);
@@ -969,7 +969,7 @@ mod parsing {
         )];
         let env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), env.new_namespace());
+        let r = et.parse(tokens.into(), &env.new_namespace());
 
         let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
         assert_eq!(errs.len(), 1);
@@ -999,7 +999,7 @@ mod parsing {
         ])];
         let env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), env.new_namespace());
+        let r = et.parse(tokens.into(), &env.new_namespace());
 
         let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
         assert_eq!(errs.len(), 1);
@@ -1028,7 +1028,7 @@ mod parsing {
         ])];
         let env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), env.new_namespace());
+        let r = et.parse(tokens.into(), &env.new_namespace());
 
         let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
         assert_eq!(errs.len(), 1);
@@ -1057,7 +1057,7 @@ mod parsing {
         ])];
         let env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), env.new_namespace());
+        let r = et.parse(tokens.into(), &env.new_namespace());
 
         let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
         assert_eq!(errs.len(), 1);
@@ -1086,7 +1086,7 @@ mod parsing {
         ])];
         let env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), env.new_namespace());
+        let r = et.parse(tokens.into(), &env.new_namespace());
 
         let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
         assert_eq!(errs.len(), 1);
@@ -1115,7 +1115,7 @@ mod parsing {
         ])];
         let env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), env.new_namespace());
+        let r = et.parse(tokens.into(), &env.new_namespace());
 
         let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
         assert_eq!(errs.len(), 1);
@@ -1147,7 +1147,7 @@ mod parsing {
         ])];
         let env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), env.new_namespace());
+        let r = et.parse(tokens.into(), &env.new_namespace());
 
         let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
         assert_eq!(errs.len(), 2);
@@ -1181,7 +1181,7 @@ mod parsing {
         ])];
         let env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), env.new_namespace());
+        let r = et.parse(tokens.into(), &env.new_namespace());
 
         let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
         assert_eq!(errs.len(), 1);
@@ -1206,7 +1206,7 @@ mod parsing {
         ])];
         let env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), env.new_namespace());
+        let r = et.parse(tokens.into(), &env.new_namespace());
 
         let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
         assert_eq!(errs.len(), 2);
@@ -1240,7 +1240,7 @@ mod parsing {
         ])];
         let env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), env.new_namespace());
+        let r = et.parse(tokens.into(), &env.new_namespace());
 
         let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
         assert_eq!(errs.len(), 1);
@@ -1267,7 +1267,7 @@ mod parsing {
         ])];
         let env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), env.new_namespace());
+        let r = et.parse(tokens.into(), &env.new_namespace());
 
         let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
         assert_eq!(errs.len(), 1);
@@ -1294,7 +1294,7 @@ mod parsing {
         ])];
         let env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), env.new_namespace());
+        let r = et.parse(tokens.into(), &env.new_namespace());
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
         let seq = prg.iter().collect::<Vec<_>>();
@@ -1331,7 +1331,7 @@ mod parsing {
         env.binding
             .bind(env.symbols.get("define"), Value::Number(Number::real(10)));
 
-        let r = et.parse(tokens.into(), env.new_namespace());
+        let r = et.parse(tokens.into(), &env.new_namespace());
 
         let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
         let seq = prg.iter().collect::<Vec<_>>();
@@ -1396,7 +1396,7 @@ mod continuation {
         ])];
         let env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), env.new_namespace());
+        let r = et.parse(tokens.into(), &env.new_namespace());
 
         assert!(matches!(r, Ok(ParserOutput::Continuation)));
         assert_eq!(et.parsers.len(), 2);
@@ -1436,7 +1436,7 @@ mod continuation {
         ];
         let env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), env.new_namespace());
+        let r = et.parse(tokens.into(), &env.new_namespace());
 
         assert!(matches!(r, Ok(ParserOutput::Continuation)));
         assert_eq!(et.parsers.len(), 2);
@@ -1468,7 +1468,7 @@ mod continuation {
         ])];
         let env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), env.new_namespace());
+        let r = et.parse(tokens.into(), &env.new_namespace());
 
         let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
         assert_eq!(errs.len(), 1);
@@ -1498,7 +1498,7 @@ mod continuation {
         ])];
         let env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), env.new_namespace());
+        let r = et.parse(tokens.into(), &env.new_namespace());
 
         let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
         assert_eq!(errs.len(), 2);
@@ -1542,7 +1542,7 @@ mod continuation {
         ])];
         let env = TestEnv::default();
 
-        let r = et.parse(tokens.into(), env.new_namespace());
+        let r = et.parse(tokens.into(), &env.new_namespace());
         // TODO: the if shouldn't cascade into outer syntax errors of the lambdas
         dbg!(&r);
         let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;

@@ -109,7 +109,7 @@ pub(crate) fn procedure_body(tokens: impl IntoIterator<Item = TokenKind>) -> Seq
     let mut et = ExpressionTree::default();
     let env = TestEnv::default();
 
-    let r = et.parse([make_tokenline(tokens)].into(), env.new_namespace());
+    let r = et.parse([make_tokenline(tokens)].into(), &env.new_namespace());
 
     extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete)
 }

@@ -198,7 +198,7 @@ impl<P: Parser, E: Evaluator + Default> Executor for Engine<P, E> {
         Ok(
             match self
                 .parser
-                .parse(token_lines, self.evaluator.make_namespace())?
+                .parse(token_lines, &self.evaluator.make_namespace())?
             {
                 ParserOutput::Complete(prg) => self.evaluator.evaluate(prg),
                 ParserOutput::Continuation => Evaluation::Continuation,

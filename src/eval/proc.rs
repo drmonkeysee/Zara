@@ -149,7 +149,7 @@ impl Lambda {
         if self.variadic.is_some() {
             todo!("support variadic args");
         }
-        self.body.eval(&env)
+        self.body.eval(env)
     }
 }
 

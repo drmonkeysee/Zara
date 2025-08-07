@@ -24,7 +24,7 @@ use std::{
 pub(crate) type ParserResult = Result<ParserOutput, ParserError>;
 
 pub(crate) trait Parser {
-    fn parse(&mut self, token_lines: Box<[TokenLine]>, ns: Namespace) -> ParserResult;
+    fn parse(&mut self, token_lines: Box<[TokenLine]>, ns: &Namespace) -> ParserResult;
     fn unsupported_continuation(&mut self) -> Option<ParserError>;
 
     fn clear(&mut self) {}
@@ -36,7 +36,7 @@ pub(crate) struct ExpressionTree {
 }
 
 impl Parser for ExpressionTree {
-    fn parse(&mut self, token_lines: Box<[TokenLine]>, ns: Namespace) -> ParserResult {
+    fn parse(&mut self, token_lines: Box<[TokenLine]>, ns: &Namespace) -> ParserResult {
         ParseDriver::new(&mut self.parsers).parse(token_lines, ns)
     }
 
@@ -54,7 +54,7 @@ impl Parser for ExpressionTree {
 pub(crate) struct TokenList;
 
 impl Parser for TokenList {
-    fn parse(&mut self, token_lines: Box<[TokenLine]>, _ns: Namespace) -> ParserResult {
+    fn parse(&mut self, token_lines: Box<[TokenLine]>, _ns: &Namespace) -> ParserResult {
         Ok(ParserOutput::Complete(Sequence::new(
             tokens_expr(token_lines).into_iter().collect::<Box<[_]>>(),
         )))
@@ -176,11 +176,11 @@ impl<'a> ParseDriver<'a> {
         }
     }
 
-    fn parse(mut self, token_lines: Box<[TokenLine]>, ns: Namespace) -> ParserResult {
+    fn parse(mut self, token_lines: Box<[TokenLine]>, ns: &Namespace) -> ParserResult {
         let parser = token_lines
             .into_iter()
             .fold(self.parsers.pop().unwrap_or(ParseNode::prg()), |p, ln| {
-                self.parse_line(p, ln, &ns)
+                self.parse_line(p, ln, ns)
             });
 
         if self.errs.is_empty() {
