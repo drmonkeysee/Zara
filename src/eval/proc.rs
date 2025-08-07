@@ -15,8 +15,8 @@ pub(crate) const MAX_ARITY: u8 = u8::MAX;
 
 pub(crate) type IntrinsicFn = fn(&[Value], &Frame) -> EvalResult;
 pub(crate) type Arity = Range<u8>;
-pub(crate) type LambdaResult = Result<Procedure, Vec<InvalidFormal>>;
-pub(crate) type LambdaResult2 = Result<Lambda, Vec<InvalidFormal>>;
+//pub(crate) type LambdaResult = Result<Procedure, Vec<InvalidFormal>>;
+pub(crate) type LambdaResult = Result<Lambda, Vec<InvalidFormal>>;
 
 pub(crate) trait Operator {
     fn name(&self) -> Option<&str>;
@@ -57,6 +57,7 @@ impl Display for Intrinsic {
     }
 }
 
+/*
 #[derive(Debug)]
 pub(crate) struct Procedure {
     arity: Arity,
@@ -129,16 +130,18 @@ impl Display for Procedure {
         f.write_char('>')
     }
 }
+*/
 
-struct Procedure2 {
+#[derive(Debug)]
+pub(crate) struct Procedure {
     // TODO: make this optional for pure functions
     closure: Rc<Binding>,
     def: Rc<Lambda>,
     name: Option<Symbol>,
 }
 
-impl Procedure2 {
-    fn new(
+impl Procedure {
+    pub(crate) fn new(
         closure: impl Into<Rc<Binding>>,
         def: impl Into<Rc<Lambda>>,
         name: Option<Symbol>,
@@ -151,7 +154,7 @@ impl Procedure2 {
     }
 }
 
-impl Operator for Procedure2 {
+impl Operator for Procedure {
     fn name(&self) -> Option<&str> {
         self.name.as_deref()
     }
@@ -167,7 +170,7 @@ impl Operator for Procedure2 {
     }
 }
 
-impl Display for Procedure2 {
+impl Display for Procedure {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         f.write_str("#<procedure")?;
         if let Some(n) = &self.name {
@@ -190,7 +193,7 @@ impl Lambda {
         named: impl IntoIterator<Item = Symbol>,
         variadic: Option<Symbol>,
         body: Sequence,
-    ) -> LambdaResult2 {
+    ) -> LambdaResult {
         let formals = into_formals(named)?;
         let min = formals.len();
         let (max, param_count) = if variadic.is_some() {

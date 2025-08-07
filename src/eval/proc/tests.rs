@@ -117,7 +117,7 @@ fn intrinsic_required_params_with_open_arity() {
 #[test]
 fn lambda_zero_arity_no_name() {
     let lm = ok_or_fail!(Lambda::new([], None, empty_procedure_body()));
-    let p = Procedure2::new(Binding::default(), lm, None);
+    let p = Procedure::new(Binding::default(), lm, None);
 
     assert_eq!(p.to_string(), "#<procedure>");
 }
@@ -126,7 +126,7 @@ fn lambda_zero_arity_no_name() {
 fn lambda_zero_arity() {
     let sym = SymbolTable::default();
     let lm = ok_or_fail!(Lambda::new([], None, empty_procedure_body()));
-    let p = Procedure2::new(Binding::default(), lm, Some(sym.get("bar")));
+    let p = Procedure::new(Binding::default(), lm, Some(sym.get("bar")));
 
     assert_eq!(p.to_string(), "#<procedure bar>");
 }
@@ -135,7 +135,7 @@ fn lambda_zero_arity() {
 fn lambda_single_arity() {
     let sym = SymbolTable::default();
     let lm = ok_or_fail!(Lambda::new([sym.get("x")], None, empty_procedure_body()));
-    let p = Procedure2::new(Binding::default(), lm, Some(sym.get("bar")));
+    let p = Procedure::new(Binding::default(), lm, Some(sym.get("bar")));
 
     assert_eq!(p.to_string(), "#<procedure bar (x)>");
 }
@@ -148,7 +148,7 @@ fn lambda_multi_arity() {
         None,
         empty_procedure_body()
     ));
-    let p = Procedure2::new(Binding::default(), lm, Some(sym.get("bar")));
+    let p = Procedure::new(Binding::default(), lm, Some(sym.get("bar")));
 
     assert_eq!(p.to_string(), "#<procedure bar (x y z)>");
 }
@@ -161,7 +161,7 @@ fn lambda_variadic_arity() {
         Some(sym.get("any")),
         empty_procedure_body()
     ));
-    let p = Procedure2::new(Binding::default(), lm, Some(sym.get("bar")));
+    let p = Procedure::new(Binding::default(), lm, Some(sym.get("bar")));
 
     assert_eq!(p.to_string(), "#<procedure bar any…>");
 }
@@ -174,7 +174,7 @@ fn lambda_rest_arity() {
         Some(sym.get("rest")),
         empty_procedure_body()
     ));
-    let p = Procedure2::new(Binding::default(), lm, Some(sym.get("bar")));
+    let p = Procedure::new(Binding::default(), lm, Some(sym.get("bar")));
 
     assert_eq!(p.to_string(), "#<procedure bar (x y z rest…)>");
 }
@@ -284,7 +284,7 @@ fn exceeds_max_arity() {
 fn lambda_matches_zero_arity() {
     let sym = SymbolTable::default();
     let lm = ok_or_fail!(Lambda::new([], None, empty_procedure_body()));
-    let p = Procedure2::new(Binding::default(), lm, Some(sym.get("bar")));
+    let p = Procedure::new(Binding::default(), lm, Some(sym.get("bar")));
 
     assert!(p.matches_arity(0));
 }
@@ -293,7 +293,7 @@ fn lambda_matches_zero_arity() {
 fn lambda_matches_single_arity() {
     let sym = SymbolTable::default();
     let lm = ok_or_fail!(Lambda::new([sym.get("x")], None, empty_procedure_body()));
-    let p = Procedure2::new(Binding::default(), lm, Some(sym.get("bar")));
+    let p = Procedure::new(Binding::default(), lm, Some(sym.get("bar")));
 
     assert!(p.matches_arity(1));
 }
@@ -306,7 +306,7 @@ fn lambda_matches_multi_arity() {
         None,
         empty_procedure_body()
     ));
-    let p = Procedure2::new(Binding::default(), lm, Some(sym.get("bar")));
+    let p = Procedure::new(Binding::default(), lm, Some(sym.get("bar")));
 
     assert!(p.matches_arity(3));
     assert!(!p.matches_arity(2));
@@ -321,7 +321,7 @@ fn lambda_matches_variadic_arity() {
         Some(sym.get("any")),
         empty_procedure_body()
     ));
-    let p = Procedure2::new(Binding::default(), lm, Some(sym.get("bar")));
+    let p = Procedure::new(Binding::default(), lm, Some(sym.get("bar")));
 
     assert!(p.matches_arity(0));
     assert!(p.matches_arity(MAX_ARITY as usize));
@@ -336,7 +336,7 @@ fn lambda_matches_rest_arity() {
         Some(sym.get("any")),
         empty_procedure_body()
     ));
-    let p = Procedure2::new(Binding::default(), lm, Some(sym.get("bar")));
+    let p = Procedure::new(Binding::default(), lm, Some(sym.get("bar")));
 
     assert!(!p.matches_arity(0));
     assert!(!p.matches_arity(1));
@@ -354,7 +354,7 @@ fn lambda_max_arity() {
         .collect::<Vec<_>>();
 
     let lm = ok_or_fail!(Lambda::new(params, None, empty_procedure_body()));
-    let p = Procedure2::new(Binding::default(), lm, Some(sym.get("bar")));
+    let p = Procedure::new(Binding::default(), lm, Some(sym.get("bar")));
 
     assert!(p.matches_arity(MAX_ARITY as usize));
 }
@@ -372,7 +372,7 @@ fn lambda_max_arity_with_rest() {
         Some(sym.get("rest")),
         empty_procedure_body()
     ));
-    let p = Procedure2::new(Binding::default(), lm, Some(sym.get("bar")));
+    let p = Procedure::new(Binding::default(), lm, Some(sym.get("bar")));
 
     assert!(p.matches_arity(MAX_ARITY as usize));
 }
@@ -481,7 +481,7 @@ fn apply_zero_arity_lambda() {
         None,
         procedure_body([TokenKind::String("bar".to_owned())]),
     ));
-    let p = Procedure2::new(Rc::clone(&f.scope), lm, Some(sym.get("bar")));
+    let p = Procedure::new(Rc::clone(&f.scope), lm, Some(sym.get("bar")));
     let args = [];
 
     let r = p.apply(&args, &f);
@@ -501,7 +501,7 @@ fn apply_single_arity_lambda() {
         None,
         procedure_body([TokenKind::Identifier("x".to_owned())]),
     ));
-    let p = Procedure2::new(Rc::clone(&f.scope), lm, Some(sym.get("bar")));
+    let p = Procedure::new(Rc::clone(&f.scope), lm, Some(sym.get("bar")));
     let args = [Value::Number(Number::real(5))];
 
     let r = p.apply(&args, &f);
@@ -535,7 +535,7 @@ fn apply_single_arity_lambda_with_closure() {
             TokenKind::ParenRight
         ]),
     ));
-    let p = Procedure2::new(Rc::clone(&f.scope), lm, Some(sym.get("bar")));
+    let p = Procedure::new(Rc::clone(&f.scope), lm, Some(sym.get("bar")));
     let args = [Value::Number(Number::real(5))];
 
     let r = p.apply(&args, &f);

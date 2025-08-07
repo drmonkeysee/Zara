@@ -393,6 +393,7 @@ mod eval {
 
     mod forms {
         use super::*;
+        use crate::testutil::procedure_body;
 
         #[test]
         fn call_no_args() {
@@ -1162,6 +1163,39 @@ mod eval {
 
             let v = ok_or_fail!(r);
             assert_eq!(v.to_string(), "b");
+        }
+
+        #[test]
+        fn lambda_to_proc() {
+            let txt = make_textline().into();
+            let env = TestEnv::default();
+            let lm = ok_or_fail!(Lambda::new(
+                [],
+                None,
+                procedure_body([TokenKind::Identifier("foo".to_owned())])
+            ))
+            .into();
+            let expr = Expression::lambda(
+                Rc::clone(&lm),
+                ExprCtx {
+                    span: 0..10,
+                    txt: Rc::clone(&txt),
+                },
+            );
+            env.binding
+                .bind(env.symbols.get("foo"), Value::string("myval"));
+            let f = env.new_frame();
+
+            let r = expr.eval(&f);
+
+            let v = ok_or_fail!(r);
+            assert!(matches!(v, Value::Procedure(_)));
+            let Value::Procedure(proc) = v else {
+                unreachable!();
+            };
+            let new_env = TestEnv::default();
+            let v = ok_or_fail!(proc.apply(&[], &new_env.new_frame()));
+            assert!(matches!(v, Value::String(s) if s.as_ref() == "myval"));
         }
     }
 }

@@ -3,7 +3,7 @@ mod tests;
 
 use crate::{
     Exception,
-    eval::{EvalResult, Frame, InvalidFormal, Lambda, Operator},
+    eval::{EvalResult, Frame, InvalidFormal, Lambda, Operator, Procedure},
     lex::TokenKind,
     number::NumericError,
     string::Symbol,
@@ -149,7 +149,11 @@ impl ExpressionKind {
                     con.eval(env)
                 }
             }
-            Self::Lambda(lm) => todo!("lambda->procedure"),
+            Self::Lambda(lm) => Ok(Value::procedure(Procedure::new(
+                Rc::clone(&env.scope),
+                Rc::clone(lm),
+                None,
+            ))),
             Self::Literal(v) => Ok(v.clone()),
             Self::Set { var, expr } => {
                 if let Some(b) = env.scope.binding(var) {

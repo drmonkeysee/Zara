@@ -1,8 +1,13 @@
 use super::*;
-use crate::{eval::Binding, string::SymbolTable, testutil::empty_procedure_body};
+use crate::{
+    eval::Binding,
+    string::SymbolTable,
+    testutil::{empty_procedure_body, ok_or_fail},
+};
 
 mod display {
     use super::*;
+    use crate::eval::Lambda;
 
     #[test]
     fn bytevector_display() {
@@ -183,11 +188,8 @@ mod display {
 
     #[test]
     fn procedure_typename() {
-        let v = Value::Procedure(
-            Procedure::lambda([], None, empty_procedure_body(), Binding::default(), None)
-                .unwrap()
-                .into(),
-        );
+        let lm = ok_or_fail!(Lambda::new([], None, empty_procedure_body()));
+        let v = Value::procedure(Procedure::new(Binding::default(), lm, None));
 
         assert_eq!(v.as_typename().to_string(), "procedure");
     }
@@ -195,17 +197,8 @@ mod display {
     #[test]
     fn procedure_display() {
         let sym = SymbolTable::default();
-        let v = Value::Procedure(
-            Procedure::lambda(
-                [],
-                None,
-                empty_procedure_body(),
-                Binding::default(),
-                Some(sym.get("foo")),
-            )
-            .unwrap()
-            .into(),
-        );
+        let lm = ok_or_fail!(Lambda::new([], None, empty_procedure_body()));
+        let v = Value::procedure(Procedure::new(Binding::default(), lm, Some(sym.get("foo"))));
 
         assert_eq!(v.to_string(), "#<procedure foo>");
     }
@@ -322,7 +315,6 @@ mod character {
 
 mod number {
     use super::*;
-    use crate::testutil::ok_or_fail;
 
     #[test]
     fn display_int() {

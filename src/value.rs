@@ -83,6 +83,10 @@ impl Value {
             .unwrap_or_else(Self::null)
     }
 
+    pub(crate) fn procedure(p: impl Into<Rc<Procedure>>) -> Self {
+        Self::Procedure(p.into())
+    }
+
     pub(crate) fn real(r: impl Into<Real>) -> Self {
         Self::Number(Number::real(r))
     }
