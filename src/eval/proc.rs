@@ -16,6 +16,7 @@ pub(crate) const MAX_ARITY: u8 = u8::MAX;
 pub(crate) type IntrinsicFn = fn(&[Value], &Frame) -> EvalResult;
 pub(crate) type Arity = Range<u8>;
 pub(crate) type LambdaResult = Result<Procedure, Vec<InvalidFormal>>;
+type LambdaResult2 = Result<Lambda, Vec<InvalidFormal>>;
 
 pub(crate) trait Operator {
     fn name(&self) -> Option<&str>;
@@ -129,6 +130,102 @@ impl Display for Procedure {
     }
 }
 
+struct Procedure2 {
+    // TODO: make this optional for pure functions
+    closure: Rc<Binding>,
+    def: Rc<Lambda>,
+    name: Option<Symbol>,
+}
+
+impl Procedure2 {
+    fn new(
+        closure: impl Into<Rc<Binding>>,
+        def: impl Into<Rc<Lambda>>,
+        name: Option<Symbol>,
+    ) -> Self {
+        Self {
+            closure: closure.into(),
+            def: def.into(),
+            name,
+        }
+    }
+}
+
+impl Operator for Procedure2 {
+    fn name(&self) -> Option<&str> {
+        self.name.as_deref()
+    }
+
+    fn arity(&self) -> &Arity {
+        &self.def.arity
+    }
+
+    fn apply(&self, args: &[Value], env: &Frame) -> EvalResult {
+        // TODO: tail-call optimization does not create a new frame
+        let call_frame = env.new_child(Rc::clone(&self.closure));
+        self.def.apply(args, &call_frame)
+    }
+}
+
+impl Display for Procedure2 {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        f.write_str("#<procedure")?;
+        if let Some(n) = &self.name {
+            write!(f, " {}", n.as_datum())?;
+        }
+        write_lambda(&self.def, f)?;
+        f.write_char('>')
+    }
+}
+
+struct Lambda {
+    arity: Arity,
+    body: Sequence,
+    formals: Box<[Symbol]>,
+    variadic: Option<Symbol>,
+}
+
+impl Lambda {
+    fn new(
+        named: impl IntoIterator<Item = Symbol>,
+        variadic: Option<Symbol>,
+        body: Sequence,
+    ) -> LambdaResult2 {
+        let formals = into_formals(named)?;
+        let min = formals.len();
+        let (max, param_count) = if variadic.is_some() {
+            (MAX_ARITY as usize, min + 1)
+        } else {
+            (min, min)
+        };
+        if param_count > MAX_ARITY.into() {
+            Err(vec![InvalidFormal::MaxFormals])
+        } else {
+            Ok(Self {
+                #[allow(clippy::cast_possible_truncation, reason = "truncation guarded above")]
+                arity: min as u8..max as u8,
+                body,
+                formals: formals.into(),
+                variadic,
+            })
+        }
+    }
+
+    fn apply(&self, args: &[Value], env: &Frame) -> EvalResult {
+        let args_it = args.iter();
+        self.formals
+            .iter()
+            .zip(args_it.take(self.formals.len()))
+            .for_each(|(var, val)| {
+                env.scope.bind(var.clone(), val.clone());
+            });
+        if self.variadic.is_some() {
+            todo!("support variadic args");
+        }
+        self.body.eval(&env)
+    }
+}
+
 #[derive(Debug)]
 pub(crate) enum InvalidFormal {
     DuplicateFormal(Symbol),
@@ -183,16 +280,28 @@ impl Definition {
     }
 }
 
-fn write_formals(args: &[Symbol], variadic: Option<&Symbol>, f: &mut Formatter<'_>) -> fmt::Result {
+fn write_lambda(lambda: &Lambda, f: &mut Formatter<'_>) -> fmt::Result {
+    if lambda.arity.start == 0 && lambda.arity.is_empty() {
+        Ok(())
+    } else {
+        write_formals(&lambda.formals, lambda.variadic.as_ref(), f)
+    }
+}
+
+fn write_formals(
+    formals: &[Symbol],
+    variadic: Option<&Symbol>,
+    f: &mut Formatter<'_>,
+) -> fmt::Result {
     f.write_char(' ')?;
-    let mut buf = args.join(" ");
+    let mut buf = formals.join(" ");
     if let Some(v) = variadic {
         if !buf.is_empty() {
             buf.push(' ');
         }
         buf.push_str(v);
         buf.push('…');
-        if args.is_empty() {
+        if formals.is_empty() {
             return f.write_str(&buf);
         }
     }
