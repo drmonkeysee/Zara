@@ -1,12 +1,11 @@
 use super::*;
 use crate::{
     string::SymbolTable,
-    testutil::{TestEnv, make_textline, ok_or_fail},
+    testutil::{TestEnv, empty_procedure_body, make_textline, ok_or_fail},
 };
 
 mod display {
     use super::*;
-    use crate::testutil::empty_procedure_body;
 
     #[test]
     fn call_typename() {
@@ -393,7 +392,7 @@ mod eval {
 
     mod forms {
         use super::*;
-        use crate::testutil::procedure_body;
+        use crate::testutil::{procedure_body, some_or_fail};
 
         #[test]
         fn call_no_args() {
@@ -801,6 +800,38 @@ mod eval {
         }
 
         #[test]
+        fn define_names_procedure() {
+            let txt = make_textline().into();
+            let env = TestEnv::default();
+            let expr = ExprCtx {
+                span: 0..10,
+                txt: Rc::clone(&txt),
+            }
+            .into_expr(ExpressionKind::Define {
+                name: env.symbols.get("foo"),
+                expr: Some(
+                    Expression::lambda(
+                        ok_or_fail!(Lambda::new([], None, empty_procedure_body())),
+                        ExprCtx {
+                            span: 5..8,
+                            txt: Rc::clone(&txt),
+                        },
+                    )
+                    .into(),
+                ),
+            });
+            let f = env.new_frame();
+
+            let r = expr.eval(&f);
+
+            let v = ok_or_fail!(r);
+            assert!(matches!(v, Value::Unspecified));
+            assert!(
+                matches!(f.scope.lookup("foo"), Some(Value::Procedure(p)) if some_or_fail!(p.name()) == "foo")
+            );
+        }
+
+        #[test]
         fn define_no_expr() {
             let txt = make_textline().into();
             let env = TestEnv::default();
@@ -818,7 +849,7 @@ mod eval {
 
             let v = ok_or_fail!(r);
             assert!(matches!(v, Value::Unspecified));
-            assert!(matches!(f.scope.lookup("foo"), Some(Value::Unspecified)))
+            assert!(matches!(f.scope.lookup("foo"), Some(Value::Unspecified)));
         }
 
         #[test]
@@ -877,7 +908,38 @@ mod eval {
 
             let v = ok_or_fail!(r);
             assert!(matches!(v, Value::Unspecified));
-            assert!(matches!(f.scope.lookup("foo"), Some(Value::String(s)) if s.as_ref() == "one"))
+            assert!(matches!(f.scope.lookup("foo"), Some(Value::String(s)) if s.as_ref() == "one"));
+        }
+
+        #[test]
+        fn set_names_procedure() {
+            let txt = make_textline().into();
+            let env = TestEnv::default();
+            let expr = ExprCtx {
+                span: 0..10,
+                txt: Rc::clone(&txt),
+            }
+            .into_expr(ExpressionKind::Set {
+                var: env.symbols.get("foo"),
+                expr: Expression::lambda(
+                    ok_or_fail!(Lambda::new([], None, empty_procedure_body())),
+                    ExprCtx {
+                        span: 5..8,
+                        txt: Rc::clone(&txt),
+                    },
+                )
+                .into(),
+            });
+            env.binding.bind(env.symbols.get("foo"), Value::Unspecified);
+            let f = env.new_frame();
+
+            let r = expr.eval(&f);
+
+            let v = ok_or_fail!(r);
+            assert!(matches!(v, Value::Unspecified));
+            assert!(
+                matches!(f.scope.lookup("foo"), Some(Value::Procedure(p)) if some_or_fail!(p.name()) == "foo")
+            );
         }
 
         #[test]
