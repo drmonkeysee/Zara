@@ -150,8 +150,8 @@ impl ExpressionKind {
                 }
             }
             Self::Lambda(lm) => Ok(Value::procedure(Procedure::new(
-                Rc::clone(&env.scope),
                 Rc::clone(lm),
+                Rc::clone(&env.scope),
                 None,
             ))),
             Self::Literal(v) => Ok(v.clone()),

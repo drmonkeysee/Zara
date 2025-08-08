@@ -66,8 +66,8 @@ pub(crate) struct Procedure {
 
 impl Procedure {
     pub(crate) fn new(
-        closure: impl Into<Rc<Binding>>,
         def: impl Into<Rc<Lambda>>,
+        closure: impl Into<Rc<Binding>>,
         name: Option<Symbol>,
     ) -> Self {
         Self {

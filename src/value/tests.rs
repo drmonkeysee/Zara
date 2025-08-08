@@ -189,7 +189,7 @@ mod display {
     #[test]
     fn procedure_typename() {
         let lm = ok_or_fail!(Lambda::new([], None, empty_procedure_body()));
-        let v = Value::procedure(Procedure::new(Binding::default(), lm, None));
+        let v = Value::procedure(Procedure::new(lm, Binding::default(), None));
 
         assert_eq!(v.as_typename().to_string(), "procedure");
     }
@@ -198,7 +198,7 @@ mod display {
     fn procedure_display() {
         let sym = SymbolTable::default();
         let lm = ok_or_fail!(Lambda::new([], None, empty_procedure_body()));
-        let v = Value::procedure(Procedure::new(Binding::default(), lm, Some(sym.get("foo"))));
+        let v = Value::procedure(Procedure::new(lm, Binding::default(), Some(sym.get("foo"))));
 
         assert_eq!(v.to_string(), "#<procedure foo>");
     }
