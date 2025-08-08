@@ -925,7 +925,6 @@ fn into_define_variable() {
 }
 
 #[test]
-#[ignore = "define lambda not implemented"]
 fn into_define_lambda() {
     // (define (foo x y) (+ x y))
     let txt = make_textline().into();
@@ -1003,7 +1002,6 @@ fn into_define_lambda() {
 }
 
 #[test]
-#[ignore = "define lambda not implemented"]
 fn into_define_parameterless_lambda() {
     // (define (foo) 123)
     let txt = make_textline().into();
@@ -1053,7 +1051,6 @@ fn into_define_parameterless_lambda() {
 }
 
 #[test]
-#[ignore = "define lambda not implemented"]
 fn into_define_variadic_lambda() {
     // (define (foo . x) (cdr x))
     let txt = make_textline().into();
@@ -1121,7 +1118,6 @@ fn into_define_variadic_lambda() {
 }
 
 #[test]
-#[ignore = "define lambda not implemented"]
 fn into_define_rest_lambda() {
     // (define (foo x . y) (display x y))
     let txt = make_textline().into();
@@ -1376,7 +1372,6 @@ fn into_define_too_many_args() {
 }
 
 #[test]
-#[ignore = "define lambda not implemented"]
 fn into_define_lambda_no_body() {
     // (define (foo))
     let txt = make_textline().into();
@@ -1415,7 +1410,6 @@ fn into_define_lambda_no_body() {
 }
 
 #[test]
-#[ignore = "define lambda not implemented"]
 fn into_define_lambda_empty_body() {
     // (define (foo) ())
     let txt = make_textline().into();
@@ -1436,7 +1430,6 @@ fn into_define_lambda_empty_body() {
                     env.symbols.get("foo")
                 )])),
             ],
-            // TODO: what goes here
         },
     };
     let ns = env.new_namespace();
@@ -1448,10 +1441,11 @@ fn into_define_lambda_empty_body() {
     assert!(matches!(
         &errs[0],
         ExpressionError {
-            ctx: ExprCtx { span: TxtSpan { start: 0, end: 14 }, txt: line },
+            ctx: ExprCtx { span: TxtSpan { start: 0, end: 17 }, txt: line },
             kind: ExpressionErrorKind::DefineInvalid,
         } if Rc::ptr_eq(&txt, &line)
     ));
+    todo!("this test is incomplete, it may need to be a syntax test");
 }
 
 #[test]
