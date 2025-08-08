@@ -22,7 +22,7 @@ pub(crate) type Eval = Environment<EvalDriver>;
 pub(crate) type Ast = Environment<AstDriver>;
 
 pub(crate) trait Evaluator {
-    fn eval(&self, prg: Sequence, frame: &Frame) -> Evaluation;
+    fn eval(&self, prg: Sequence, frame: Frame) -> Evaluation;
 }
 
 pub(crate) struct Environment<T> {
@@ -45,7 +45,7 @@ impl<T: Evaluator + Default> Environment<T> {
     }
 
     pub(crate) fn evaluate(&self, prg: Sequence) -> Evaluation {
-        T::default().eval(prg, &self.make_frame())
+        T::default().eval(prg, self.make_frame())
     }
 
     pub(crate) fn make_namespace(&self) -> Namespace {
@@ -65,8 +65,8 @@ impl<T: Evaluator + Default> Environment<T> {
 pub(crate) struct EvalDriver;
 
 impl Evaluator for EvalDriver {
-    fn eval(&self, prg: Sequence, frame: &Frame) -> Evaluation {
-        Evaluation::result(prg.eval(frame))
+    fn eval(&self, prg: Sequence, frame: Frame) -> Evaluation {
+        Evaluation::result(prg.eval(&frame))
     }
 }
 
@@ -74,7 +74,7 @@ impl Evaluator for EvalDriver {
 pub(crate) struct AstDriver;
 
 impl Evaluator for AstDriver {
-    fn eval(&self, prg: Sequence, _frame: &Frame) -> Evaluation {
+    fn eval(&self, prg: Sequence, _frame: Frame) -> Evaluation {
         Evaluation::result(Ok(ValueImpl::Ast(prg.into())))
     }
 }
