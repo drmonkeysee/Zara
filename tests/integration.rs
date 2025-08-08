@@ -17,7 +17,7 @@ impl TestRunner {
         self.input.set(src);
         let r = self.zara.run(&mut self.input);
 
-        assert!(r.is_ok());
+        assert!(r.is_ok(), "r is err: {r:?}");
         let ev = r.unwrap();
         if let Evaluation::Val(v) = ev {
             v
@@ -124,4 +124,23 @@ fn closure_writes_per_eval() {
 
     let v = t.run_for_val("(ten)");
     assert_eq!(v.to_string(), "13");
+}
+
+#[test]
+fn call_frame_write_does_not_affect_closure() {
+    let mut t = TestRunner::new();
+
+    t.run_for_val(concat!(
+        "(define x 10)",
+        "(define foo (lambda () (define x 20) x))"
+    ));
+
+    let v = t.run_for_val("x");
+    assert_eq!(v.to_string(), "10");
+
+    let v = t.run_for_val("(foo)");
+    assert_eq!(v.to_string(), "20");
+
+    let v = t.run_for_val("x");
+    assert_eq!(v.to_string(), "10");
 }
