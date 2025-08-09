@@ -947,7 +947,7 @@ fn into_define_lambda() {
                     Value::Symbol(env.symbols.get("y"))
                 ])),
                 ExprCtx {
-                    span: 9..12,
+                    span: 18..25,
                     txt: Rc::clone(&txt),
                 }
                 .into_expr(ExpressionKind::Call {
@@ -977,6 +977,112 @@ fn into_define_lambda() {
                     ]
                     .into(),
                 }),
+            ],
+        },
+    };
+    let ns = env.new_namespace();
+
+    let r = p.try_into_expr(&ns);
+
+    let expr = some_or_fail!(ok_or_fail!(r));
+    assert!(matches!(
+        expr,
+        Expression {
+            ctx: ExprCtx { span: TxtSpan { start: 0, end: 26 }, txt: line },
+            kind: ExpressionKind::Define { .. },
+        } if Rc::ptr_eq(&txt, &line)
+    ));
+    let ExpressionKind::Define { name, expr } = expr.kind else {
+        unreachable!();
+    };
+    assert_eq!(name.as_ref(), "foo");
+    let val_expr = some_or_fail!(expr);
+    let val = extract_or_fail!(val_expr.kind, ExpressionKind::Literal);
+    assert_eq!(val.to_string(), "\"bar\"");
+}
+
+#[test]
+fn into_define_lambda_multi_expression_body() {
+    // (define (foo x y) (+ x y) (display "foo") 'a)
+    let txt = make_textline().into();
+    let env = TestEnv::default();
+    let p = ExprNode {
+        ctx: ExprCtx {
+            span: 0..45,
+            txt: Rc::clone(&txt),
+        },
+        mode: ParseMode::List {
+            form: SyntacticForm::Define,
+            seq: vec![
+                ExprCtx {
+                    span: 8..17,
+                    txt: Rc::clone(&txt),
+                }
+                .into_expr(ExpressionKind::Literal(zlist![
+                    Value::Symbol(env.symbols.get("foo")),
+                    Value::Symbol(env.symbols.get("x")),
+                    Value::Symbol(env.symbols.get("y"))
+                ])),
+                ExprCtx {
+                    span: 18..25,
+                    txt: Rc::clone(&txt),
+                }
+                .into_expr(ExpressionKind::Call {
+                    proc: Expression::variable(
+                        env.symbols.get("+"),
+                        ExprCtx {
+                            span: 19..20,
+                            txt: Rc::clone(&txt),
+                        },
+                    )
+                    .into(),
+                    args: [
+                        Expression::variable(
+                            env.symbols.get("x"),
+                            ExprCtx {
+                                span: 21..22,
+                                txt: Rc::clone(&txt),
+                            },
+                        ),
+                        Expression::variable(
+                            env.symbols.get("y"),
+                            ExprCtx {
+                                span: 23..24,
+                                txt: Rc::clone(&txt),
+                            },
+                        ),
+                    ]
+                    .into(),
+                }),
+                ExprCtx {
+                    span: 26..41,
+                    txt: Rc::clone(&txt),
+                }
+                .into_expr(ExpressionKind::Call {
+                    proc: Expression::variable(
+                        env.symbols.get("display"),
+                        ExprCtx {
+                            span: 27..34,
+                            txt: Rc::clone(&txt),
+                        },
+                    )
+                    .into(),
+                    args: [Expression::string(
+                        "foo",
+                        ExprCtx {
+                            span: 35..40,
+                            txt: Rc::clone(&txt),
+                        },
+                    )]
+                    .into(),
+                }),
+                Expression::symbol(
+                    env.symbols.get("a"),
+                    ExprCtx {
+                        span: 42..44,
+                        txt: Rc::clone(&txt),
+                    },
+                ),
             ],
         },
     };
