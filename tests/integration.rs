@@ -1,4 +1,4 @@
-use zara::{Evaluation, Interpreter, RunMode, Value, src::StringSource};
+use zara::{Error, Evaluation, Interpreter, Result, RunMode, Value, src::StringSource};
 
 struct TestRunner {
     input: StringSource,
@@ -14,16 +14,34 @@ impl TestRunner {
     }
 
     fn run_for_val(&mut self, src: impl Into<String>) -> Value {
-        self.input.set(src);
-        let r = self.zara.run(&mut self.input);
-
-        assert!(r.is_ok(), "r is err: {r:?}");
-        let ev = r.unwrap();
+        let ev = self.run_eval(src);
         if let Evaluation::Val(v) = ev {
             v
         } else {
             panic!("{ev:?}");
         }
+    }
+
+    fn run_for_cont(&mut self, src: impl Into<String>) {
+        let ev = self.run_eval(src);
+        assert!(matches!(ev, Evaluation::Continuation));
+    }
+
+    fn run_for_err(&mut self, src: impl Into<String>) -> Error {
+        let r = self.run(src);
+        assert!(r.is_err(), "r is ok: {r:?}");
+        r.unwrap_err()
+    }
+
+    fn run_eval(&mut self, src: impl Into<String>) -> Evaluation {
+        let r = self.run(src);
+        assert!(r.is_ok(), "r is err: {r:?}");
+        r.unwrap()
+    }
+
+    fn run(&mut self, src: impl Into<String>) -> Result {
+        self.input.set(src);
+        self.zara.run(&mut self.input)
     }
 }
 
@@ -165,4 +183,17 @@ fn all_input_is_parsed_before_evaled() {
 
     let v = t.run_for_val("(quote 5)");
     assert_eq!(v.to_string(), "10");
+}
+
+#[test]
+fn syntax_error_on_continuation() {
+    let mut t = TestRunner::new();
+
+    t.run_for_cont("(if (< x y)");
+    let err = t.run_for_err(")");
+
+    assert_eq!(
+        err.display_message().to_string(),
+        "Syntax Error\n<integration>:1\n\t(if (< x y)\n\t^^^^^^^^^^^\n1: invalid form, expected: (if <test> <consequent> [alternate])\n"
+    );
 }
