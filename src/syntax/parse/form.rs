@@ -9,7 +9,7 @@ use crate::{
     txt::TextLine,
     value::Value,
 };
-use std::rc::Rc;
+use std::{iter, rc::Rc};
 
 #[derive(Clone, Copy, Debug)]
 pub(super) enum SyntacticForm {
@@ -98,43 +98,47 @@ impl SyntacticForm {
     pub(super) fn try_into_expr(self, seq: Vec<Expression>, ctx: ExprCtx) -> ExprConvertResult {
         match self {
             Self::Call => {
-                let mut iter = seq.into_iter();
-                match iter.next() {
+                let mut it = seq.into_iter();
+                match it.next() {
                     None => Err(vec![ctx.into_error(ExpressionErrorKind::ProcedureEmpty)]),
                     Some(proc) => Ok(Some(ctx.into_expr(ExpressionKind::Call {
-                        args: iter.collect(),
+                        args: it.collect(),
                         proc: proc.into(),
                     }))),
                 }
             }
             Self::Datum => into_list(seq, ctx, false),
             Self::Define => {
-                /*
-                 * forms:
-                 * [variable, expr] -> define var val, in practice expr can be empty, set var to unspecified
-                 * following forms need lambda expr parsing first
-                 * [list, body-expr] -> define var:list.car lambda (formals:list.cdr) body
-                 * [pair, body-expr] -> define var:pair.car lambda formal:pair.cdr body
-                 */
-                if (1..3).contains(&seq.len()) {
-                    let mut iter = seq.into_iter();
-                    let binding = iter.next().unwrap();
-                    if let ExpressionKind::Literal(Value::Symbol(n)) = binding.kind {
-                        return Ok(Some(ctx.into_expr(ExpressionKind::Define {
-                            name: n,
-                            expr: iter.next().map(Box::new),
-                        })));
+                if !seq.is_empty() {
+                    let len = seq.len();
+                    let mut it = seq.into_iter();
+                    let binding = it.next().unwrap();
+                    match binding.kind {
+                        ExpressionKind::Literal(Value::Symbol(n)) => {
+                            if len < 3 {
+                                return Ok(Some(ctx.into_expr(ExpressionKind::Define {
+                                    name: n,
+                                    expr: it.next().map(Box::new),
+                                })));
+                            }
+                        }
+                        ExpressionKind::Literal(Value::Pair(Some(p))) => {
+                            if let Value::Symbol(name) = &p.car {
+                                return into_define_lambda(name.clone(), p.cdr.clone(), it, ctx);
+                            }
+                        }
+                        _ => (),
                     }
                 }
                 Err(vec![ctx.into_error(ExpressionErrorKind::DefineInvalid)])
             }
             Self::If => {
                 if (2..4).contains(&seq.len()) {
-                    let mut iter = seq.into_iter();
+                    let mut it = seq.into_iter();
                     Ok(Some(ctx.into_expr(ExpressionKind::If {
-                        test: iter.next().unwrap().into(),
-                        con: iter.next().unwrap().into(),
-                        alt: iter.next().map(Box::new),
+                        test: it.next().unwrap().into(),
+                        con: it.next().unwrap().into(),
+                        alt: it.next().map(Box::new),
                     })))
                 } else {
                     Err(vec![ctx.into_error(ExpressionErrorKind::IfInvalid)])
@@ -152,12 +156,12 @@ impl SyntacticForm {
             }
             Self::Set => {
                 if seq.len() == 2 {
-                    let mut iter = seq.into_iter();
-                    let var = iter.next().unwrap();
+                    let mut it = seq.into_iter();
+                    let var = it.next().unwrap();
                     if let ExpressionKind::Variable(n) = var.kind {
                         return Ok(Some(ctx.into_expr(ExpressionKind::Set {
                             var: n,
-                            expr: iter.next().unwrap().into(),
+                            expr: it.next().unwrap().into(),
                         })));
                     }
                 }
@@ -269,18 +273,33 @@ fn into_list(seq: Vec<Expression>, ctx: ExprCtx, improper: bool) -> ExprConvertR
     )
 }
 
+fn into_define_lambda(
+    name: Symbol,
+    params: Value,
+    body: impl IntoIterator<Item = Expression>,
+    ctx: ExprCtx,
+) -> ExprConvertResult {
+    let formals = ctx.clone().into_expr(ExpressionKind::Literal(params));
+    let seq = iter::once(formals).chain(body).collect::<Vec<_>>();
+    let lm = into_lambda(seq, ctx.clone())?;
+    Ok(Some(ctx.into_expr(ExpressionKind::Define {
+        name,
+        expr: lm.map(Box::new),
+    })))
+}
+
 fn into_lambda(seq: Vec<Expression>, ctx: ExprCtx) -> ExprConvertResult {
     if seq.len() < 2 {
         return Err(vec![ctx.into_error(ExpressionErrorKind::LambdaInvalid)]);
     }
-    let mut iter = seq.into_iter();
-    let formals = iter.next().unwrap();
+    let mut it = seq.into_iter();
+    let formals = it.next().unwrap();
     let ExpressionKind::Literal(params) = formals.kind else {
         return Err(vec![ctx.into_error(ExpressionErrorKind::LambdaInvalid)]);
     };
     let (args, rest) =
         parse_formals(params).map_err(|err| vec![formals.ctx.clone().into_error(err)])?;
-    make_lambda(args, rest, iter, &formals.ctx, ctx)
+    make_lambda(args, rest, it, &formals.ctx, ctx)
 }
 
 fn parse_formals(mut params: Value) -> Result<(Vec<Symbol>, Option<Symbol>), ExpressionErrorKind> {
