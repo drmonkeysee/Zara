@@ -996,9 +996,9 @@ fn into_define_lambda() {
         unreachable!();
     };
     assert_eq!(name.as_ref(), "foo");
-    let val_expr = some_or_fail!(expr);
-    let val = extract_or_fail!(val_expr.kind, ExpressionKind::Literal);
-    assert_eq!(val.to_string(), "\"bar\"");
+    let lm_expr = some_or_fail!(expr);
+    let lm = extract_or_fail!(lm_expr.kind, ExpressionKind::Lambda);
+    assert_eq!(lm.to_string(), " (x y)");
 }
 
 #[test]
@@ -1094,7 +1094,7 @@ fn into_define_lambda_multi_expression_body() {
     assert!(matches!(
         expr,
         Expression {
-            ctx: ExprCtx { span: TxtSpan { start: 0, end: 26 }, txt: line },
+            ctx: ExprCtx { span: TxtSpan { start: 0, end: 45 }, txt: line },
             kind: ExpressionKind::Define { .. },
         } if Rc::ptr_eq(&txt, &line)
     ));
@@ -1102,9 +1102,9 @@ fn into_define_lambda_multi_expression_body() {
         unreachable!();
     };
     assert_eq!(name.as_ref(), "foo");
-    let val_expr = some_or_fail!(expr);
-    let val = extract_or_fail!(val_expr.kind, ExpressionKind::Literal);
-    assert_eq!(val.to_string(), "\"bar\"");
+    let lm_expr = some_or_fail!(expr);
+    let lm = extract_or_fail!(lm_expr.kind, ExpressionKind::Lambda);
+    assert_eq!(lm.to_string(), " (x y)");
 }
 
 #[test]
@@ -1151,9 +1151,9 @@ fn into_define_parameterless_lambda() {
         unreachable!();
     };
     assert_eq!(name.as_ref(), "foo");
-    let val_expr = some_or_fail!(expr);
-    let val = extract_or_fail!(val_expr.kind, ExpressionKind::Literal);
-    assert_eq!(val.to_string(), "\"bar\"");
+    let lm_expr = some_or_fail!(expr);
+    let lm = extract_or_fail!(lm_expr.kind, ExpressionKind::Lambda);
+    assert_eq!(lm.to_string(), "");
 }
 
 #[test]
@@ -1218,9 +1218,9 @@ fn into_define_variadic_lambda() {
         unreachable!();
     };
     assert_eq!(name.as_ref(), "foo");
-    let val_expr = some_or_fail!(expr);
-    let val = extract_or_fail!(val_expr.kind, ExpressionKind::Literal);
-    assert_eq!(val.to_string(), "\"bar\"");
+    let lm_expr = some_or_fail!(expr);
+    let lm = extract_or_fail!(lm_expr.kind, ExpressionKind::Lambda);
+    assert_eq!(lm.to_string(), " x…");
 }
 
 #[test]
@@ -1297,9 +1297,9 @@ fn into_define_rest_lambda() {
         unreachable!();
     };
     assert_eq!(name.as_ref(), "foo");
-    let val_expr = some_or_fail!(expr);
-    let val = extract_or_fail!(val_expr.kind, ExpressionKind::Literal);
-    assert_eq!(val.to_string(), "\"bar\"");
+    let lm_expr = some_or_fail!(expr);
+    let lm = extract_or_fail!(lm_expr.kind, ExpressionKind::Lambda);
+    assert_eq!(lm.to_string(), " (x y…)");
 }
 
 #[test]
@@ -1555,7 +1555,7 @@ fn into_define_lambda_invalid_name() {
     assert!(matches!(
         &errs[0],
         ExpressionError {
-            ctx: ExprCtx { span: TxtSpan { start: 0, end: 14 }, txt: line },
+            ctx: ExprCtx { span: TxtSpan { start: 0, end: 20 }, txt: line },
             kind: ExpressionErrorKind::DefineInvalid,
         } if Rc::ptr_eq(&txt, &line)
     ));
@@ -1601,8 +1601,8 @@ fn into_define_lambda_invalid_formals() {
     assert!(matches!(
         &errs[0],
         ExpressionError {
-            ctx: ExprCtx { span: TxtSpan { start: 0, end: 14 }, txt: line },
-            kind: ExpressionErrorKind::DefineInvalid,
+            ctx: ExprCtx { span: TxtSpan { start: 8, end: 17 }, txt: line },
+            kind: ExpressionErrorKind::LambdaInvalidSignature,
         } if Rc::ptr_eq(&txt, &line)
     ));
 }
@@ -1644,7 +1644,7 @@ fn into_define_lambda_empty_formals() {
     assert!(matches!(
         &errs[0],
         ExpressionError {
-            ctx: ExprCtx { span: TxtSpan { start: 0, end: 17 }, txt: line },
+            ctx: ExprCtx { span: TxtSpan { start: 0, end: 14 }, txt: line },
             kind: ExpressionErrorKind::DefineInvalid,
         } if Rc::ptr_eq(&txt, &line)
     ));
@@ -2159,9 +2159,7 @@ fn into_lambda_fixed_arguments() {
             kind: ExpressionKind::Lambda(_),
         } if Rc::ptr_eq(&txt, &line)
     ));
-    let ExpressionKind::Lambda(lm) = expr.kind else {
-        unreachable!();
-    };
+    let lm = extract_or_fail!(expr.kind, ExpressionKind::Lambda);
     assert_eq!(lm.to_string(), " (x y)");
 }
 
@@ -2207,9 +2205,7 @@ fn into_lambda_simple_body() {
             kind: ExpressionKind::Lambda(_),
         } if Rc::ptr_eq(&txt, &line)
     ));
-    let ExpressionKind::Lambda(lm) = expr.kind else {
-        unreachable!();
-    };
+    let lm = extract_or_fail!(expr.kind, ExpressionKind::Lambda);
     assert_eq!(lm.to_string(), " (x)");
 }
 
@@ -2253,9 +2249,7 @@ fn into_lambda_no_arguments() {
             kind: ExpressionKind::Lambda(_),
         } if Rc::ptr_eq(&txt, &line)
     ));
-    let ExpressionKind::Lambda(lm) = expr.kind else {
-        unreachable!();
-    };
+    let lm = extract_or_fail!(expr.kind, ExpressionKind::Lambda);
     assert_eq!(lm.to_string(), "");
 }
 
@@ -2301,9 +2295,7 @@ fn into_lambda_variadic() {
             kind: ExpressionKind::Lambda(_),
         } if Rc::ptr_eq(&txt, &line)
     ));
-    let ExpressionKind::Lambda(lm) = expr.kind else {
-        unreachable!();
-    };
+    let lm = extract_or_fail!(expr.kind, ExpressionKind::Lambda);
     assert_eq!(lm.to_string(), " x…");
 }
 
@@ -2353,9 +2345,7 @@ fn into_lambda_rest() {
             kind: ExpressionKind::Lambda(_),
         } if Rc::ptr_eq(&txt, &line)
     ));
-    let ExpressionKind::Lambda(lm) = expr.kind else {
-        unreachable!();
-    };
+    let lm = extract_or_fail!(expr.kind, ExpressionKind::Lambda);
     assert_eq!(lm.to_string(), " (x y z…)");
 }
 
@@ -2408,9 +2398,7 @@ fn into_lambda_multiple_expression_body() {
             kind: ExpressionKind::Lambda(_),
         } if Rc::ptr_eq(&txt, &line)
     ));
-    let ExpressionKind::Lambda(lm) = expr.kind else {
-        unreachable!();
-    };
+    let lm = extract_or_fail!(expr.kind, ExpressionKind::Lambda);
     assert_eq!(lm.to_string(), " x…");
 }
 
