@@ -186,6 +186,20 @@ fn all_input_is_parsed_before_evaled() {
 }
 
 #[test]
+fn lexical_error_on_continuation() {
+    let mut t = TestRunner::new();
+
+    t.run_for_cont("\"foo");
+    t.run_for_cont("bar");
+    let err = t.run_for_err("baz\" #\\sdf");
+
+    assert_eq!(
+        err.display_message().to_string(),
+        "Lexical Error\n<integration>:3\n\tbaz\" #\\sdf\n\t     ^^^^^\n6: expected character literal\n"
+    );
+}
+
+#[test]
 fn syntax_error_on_continuation() {
     let mut t = TestRunner::new();
 
