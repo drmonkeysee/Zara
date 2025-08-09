@@ -190,6 +190,7 @@ pub(super) enum ExpressionErrorKind {
     DatumExpected,
     DatumInvalid(ExpressionKind),
     DefineInvalid,
+    DefineLambdaInvalid,
     DefineNotAllowed,
     IdentifierInvalid(TokenKind),
     IdentifierUnterminated,
@@ -225,9 +226,9 @@ impl Display for ExpressionErrorKind {
             Self::CommentBlockUnterminated => f.write_str("unterminated block comment"),
             Self::DatumExpected => f.write_str("expected datum"),
             Self::DatumInvalid(k) => write!(f, "unexpected datum type: {}", k.as_typename()),
-            Self::DefineInvalid => {
-                // TODO: have lambda form mode as well
-                format_invalid_form("(define <identifier> [expression])", f)
+            Self::DefineInvalid => format_invalid_form("(define <identifier> [expression])", f),
+            Self::DefineLambdaInvalid => {
+                format_invalid_form("(define (<identifier> [formals]) <body>)", f)
             }
             Self::DefineNotAllowed => f.write_str("define not allowed in this context"),
             Self::IdentifierInvalid(t) => format_unexpected_token("verbatim identifier", t, f),

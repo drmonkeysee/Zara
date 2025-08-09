@@ -123,7 +123,9 @@ impl SyntacticForm {
                             }
                         }
                         ExpressionKind::Literal(Value::Pair(Some(p))) => {
-                            if let Value::Symbol(name) = &p.car {
+                            return if len > 1
+                                && let Value::Symbol(name) = &p.car
+                            {
                                 let formals = binding
                                     .ctx
                                     .clone()
@@ -132,11 +134,15 @@ impl SyntacticForm {
                                     iter::once(formals).chain(it).collect::<Vec<_>>(),
                                     ctx.clone(),
                                 )?;
-                                return Ok(Some(ctx.into_expr(ExpressionKind::Define {
+                                Ok(Some(ctx.into_expr(ExpressionKind::Define {
                                     name: name.clone(),
                                     expr: lm.map(Box::new),
-                                })));
-                            }
+                                })))
+                            } else {
+                                Err(vec![
+                                    ctx.into_error(ExpressionErrorKind::DefineLambdaInvalid),
+                                ])
+                            };
                         }
                         _ => (),
                     }

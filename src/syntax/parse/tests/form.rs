@@ -1510,7 +1510,7 @@ fn into_define_lambda_no_body() {
         &errs[0],
         ExpressionError {
             ctx: ExprCtx { span: TxtSpan { start: 0, end: 14 }, txt: line },
-            kind: ExpressionErrorKind::DefineInvalid,
+            kind: ExpressionErrorKind::DefineLambdaInvalid,
         } if Rc::ptr_eq(&txt, &line)
     ));
 }
@@ -1556,7 +1556,7 @@ fn into_define_lambda_invalid_name() {
         &errs[0],
         ExpressionError {
             ctx: ExprCtx { span: TxtSpan { start: 0, end: 20 }, txt: line },
-            kind: ExpressionErrorKind::DefineInvalid,
+            kind: ExpressionErrorKind::DefineLambdaInvalid,
         } if Rc::ptr_eq(&txt, &line)
     ));
 }
@@ -1648,45 +1648,6 @@ fn into_define_lambda_empty_formals() {
             kind: ExpressionErrorKind::DefineInvalid,
         } if Rc::ptr_eq(&txt, &line)
     ));
-}
-
-#[test]
-fn into_define_lambda_empty_body() {
-    // (define (foo) ())
-    let txt = make_textline().into();
-    let env = TestEnv::default();
-    let p = ExprNode {
-        ctx: ExprCtx {
-            span: 0..17,
-            txt: Rc::clone(&txt),
-        },
-        mode: ParseMode::List {
-            form: SyntacticForm::Define,
-            seq: vec![
-                ExprCtx {
-                    span: 8..13,
-                    txt: Rc::clone(&txt),
-                }
-                .into_expr(ExpressionKind::Literal(zlist![Value::Symbol(
-                    env.symbols.get("foo")
-                )])),
-            ],
-        },
-    };
-    let ns = env.new_namespace();
-
-    let r = p.try_into_expr(&ns);
-
-    let errs = err_or_fail!(r);
-    assert_eq!(errs.len(), 1);
-    assert!(matches!(
-        &errs[0],
-        ExpressionError {
-            ctx: ExprCtx { span: TxtSpan { start: 0, end: 17 }, txt: line },
-            kind: ExpressionErrorKind::DefineInvalid,
-        } if Rc::ptr_eq(&txt, &line)
-    ));
-    todo!("this test is incomplete, it may need to be a syntax test");
 }
 
 #[test]

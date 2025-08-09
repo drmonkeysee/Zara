@@ -1393,17 +1393,150 @@ mod parsing {
         assert!(matches!(
             &seq[0],
             Expression {
-                ctx: ExprCtx { span: TxtSpan { start: 0, end: 5 }, txt },
+                ctx: ExprCtx { span: TxtSpan { start: 0, end: 6 }, txt },
                 kind: ExpressionKind::Define { .. },
             } if txt.lineno == 1
         ));
         let ExpressionKind::Define { name, expr } = &seq[0].kind else {
             unreachable!();
         };
-        assert_eq!(name.as_ref(), "define");
-        let val_expr = some_or_fail!(expr.as_ref());
-        let val = extract_or_fail!(&val_expr.kind, ExpressionKind::Literal);
-        assert_eq!(val.to_string(), "10");
+        assert_eq!(name.as_ref(), "quote");
+        let lm_expr = some_or_fail!(expr.as_ref());
+        let lm = extract_or_fail!(&lm_expr.kind, ExpressionKind::Lambda);
+        assert_eq!(lm.to_string(), " (a)");
+        assert!(et.parsers.is_empty());
+    }
+
+    #[test]
+    fn lambda_with_empty_body() {
+        // (lambda (x) ())
+        let mut et = ExpressionTree::default();
+        let tokens = [make_tokenline([
+            TokenKind::ParenLeft,
+            TokenKind::Identifier("lambda".to_owned()),
+            TokenKind::ParenLeft,
+            TokenKind::Identifier("x".to_owned()),
+            TokenKind::ParenRight,
+            TokenKind::ParenLeft,
+            TokenKind::ParenRight,
+            TokenKind::ParenRight,
+        ])];
+        let env = TestEnv::default();
+
+        let r = et.parse(tokens.into(), env.new_namespace());
+
+        let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
+        assert_eq!(errs.len(), 2);
+        assert!(matches!(
+            &errs[0],
+            ExpressionError {
+                ctx: ExprCtx { span: TxtSpan { start: 5, end: 7 }, txt },
+                kind: ExpressionErrorKind::ProcedureEmpty,
+            } if txt.lineno == 1
+        ));
+        assert!(matches!(
+            &errs[1],
+            ExpressionError {
+                ctx: ExprCtx { span: TxtSpan { start: 0, end: 8 }, txt },
+                kind: ExpressionErrorKind::LambdaInvalid,
+            } if txt.lineno == 1
+        ));
+        assert!(et.parsers.is_empty());
+    }
+
+    #[test]
+    fn nested_lambda_with_syntax_error() {
+        // ((lambda () (lambda () (if))))
+        let mut et = ExpressionTree::default();
+        let tokens = [make_tokenline([
+            TokenKind::ParenLeft,
+            TokenKind::ParenLeft,
+            TokenKind::Identifier("lambda".to_owned()),
+            TokenKind::ParenLeft,
+            TokenKind::ParenRight,
+            TokenKind::ParenLeft,
+            TokenKind::Identifier("lambda".to_owned()),
+            TokenKind::ParenLeft,
+            TokenKind::ParenRight,
+            TokenKind::ParenLeft,
+            TokenKind::Identifier("if".to_owned()),
+            TokenKind::ParenRight,
+            TokenKind::ParenRight,
+            TokenKind::ParenRight,
+            TokenKind::ParenRight,
+        ])];
+        let env = TestEnv::default();
+
+        let r = et.parse(tokens.into(), env.new_namespace());
+        dbg!(&r);
+        let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
+        assert_eq!(errs.len(), 4);
+        assert!(matches!(
+            &errs[0],
+            ExpressionError {
+                ctx: ExprCtx { span: TxtSpan { start: 9, end: 12 }, txt },
+                kind: ExpressionErrorKind::IfInvalid,
+            } if txt.lineno == 1
+        ));
+        assert!(matches!(
+            &errs[1],
+            ExpressionError {
+                ctx: ExprCtx { span: TxtSpan { start: 5, end: 13 }, txt },
+                kind: ExpressionErrorKind::LambdaInvalid,
+            } if txt.lineno == 1
+        ));
+        assert!(matches!(
+            &errs[2],
+            ExpressionError {
+                ctx: ExprCtx { span: TxtSpan { start: 1, end: 14 }, txt },
+                kind: ExpressionErrorKind::LambdaInvalid,
+            } if txt.lineno == 1
+        ));
+        assert!(matches!(
+            &errs[3],
+            ExpressionError {
+                ctx: ExprCtx { span: TxtSpan { start: 0, end: 15 }, txt },
+                kind: ExpressionErrorKind::ProcedureEmpty,
+            } if txt.lineno == 1
+        ));
+        assert!(et.parsers.is_empty());
+        todo!("the if shouldn't cascade into outer syntax errors of the lambdas");
+    }
+
+    #[test]
+    fn define_lambda_with_empty_body() {
+        // (define (foo) ())
+        let mut et = ExpressionTree::default();
+        let tokens = [make_tokenline([
+            TokenKind::ParenLeft,
+            TokenKind::Identifier("define".to_owned()),
+            TokenKind::ParenLeft,
+            TokenKind::Identifier("foo".to_owned()),
+            TokenKind::ParenRight,
+            TokenKind::ParenLeft,
+            TokenKind::ParenRight,
+            TokenKind::ParenRight,
+        ])];
+        let env = TestEnv::default();
+
+        let r = et.parse(tokens.into(), env.new_namespace());
+
+        let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
+        assert_eq!(errs.len(), 2);
+        assert!(matches!(
+            &errs[0],
+            ExpressionError {
+                ctx: ExprCtx { span: TxtSpan { start: 5, end: 7 }, txt },
+                kind: ExpressionErrorKind::ProcedureEmpty,
+            } if txt.lineno == 1
+        ));
+        assert!(matches!(
+            &errs[1],
+            ExpressionError {
+                ctx: ExprCtx { span: TxtSpan { start: 0, end: 8 }, txt },
+                kind: ExpressionErrorKind::DefineLambdaInvalid,
+            } if txt.lineno == 1
+        ));
         assert!(et.parsers.is_empty());
     }
 }
@@ -1513,102 +1646,6 @@ mod continuation {
             ExpressionError {
                 ctx: ExprCtx { span: TxtSpan { start: 1, end: 2 }, txt },
                 kind: ExpressionErrorKind::Unimplemented(TokenKind::DirectiveCase(true)),
-            } if txt.lineno == 1
-        ));
-        assert!(et.parsers.is_empty());
-    }
-
-    #[test]
-    fn lambda_with_empty_body() {
-        // (lambda (x) ())
-        let mut et = ExpressionTree::default();
-        let tokens = [make_tokenline([
-            TokenKind::ParenLeft,
-            TokenKind::Identifier("lambda".to_owned()),
-            TokenKind::ParenLeft,
-            TokenKind::Identifier("x".to_owned()),
-            TokenKind::ParenRight,
-            TokenKind::ParenLeft,
-            TokenKind::ParenRight,
-            TokenKind::ParenRight,
-        ])];
-        let env = TestEnv::default();
-
-        let r = et.parse(tokens.into(), env.new_namespace());
-
-        let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
-        assert_eq!(errs.len(), 2);
-        assert!(matches!(
-            &errs[0],
-            ExpressionError {
-                ctx: ExprCtx { span: TxtSpan { start: 5, end: 7 }, txt },
-                kind: ExpressionErrorKind::ProcedureEmpty,
-            } if txt.lineno == 1
-        ));
-        assert!(matches!(
-            &errs[1],
-            ExpressionError {
-                ctx: ExprCtx { span: TxtSpan { start: 0, end: 8 }, txt },
-                kind: ExpressionErrorKind::LambdaInvalid,
-            } if txt.lineno == 1
-        ));
-        assert!(et.parsers.is_empty());
-    }
-
-    #[test]
-    fn nested_lambda_with_syntax_error() {
-        // ((lambda () (lambda () (if))))
-        let mut et = ExpressionTree::default();
-        let tokens = [make_tokenline([
-            TokenKind::ParenLeft,
-            TokenKind::ParenLeft,
-            TokenKind::Identifier("lambda".to_owned()),
-            TokenKind::ParenLeft,
-            TokenKind::ParenRight,
-            TokenKind::ParenLeft,
-            TokenKind::Identifier("lambda".to_owned()),
-            TokenKind::ParenLeft,
-            TokenKind::ParenRight,
-            TokenKind::ParenLeft,
-            TokenKind::Identifier("if".to_owned()),
-            TokenKind::ParenRight,
-            TokenKind::ParenRight,
-            TokenKind::ParenRight,
-            TokenKind::ParenRight,
-        ])];
-        let env = TestEnv::default();
-
-        let r = et.parse(tokens.into(), env.new_namespace());
-        // TODO: the if shouldn't cascade into outer syntax errors of the lambdas
-        dbg!(&r);
-        let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
-        assert_eq!(errs.len(), 4);
-        assert!(matches!(
-            &errs[0],
-            ExpressionError {
-                ctx: ExprCtx { span: TxtSpan { start: 9, end: 12 }, txt },
-                kind: ExpressionErrorKind::IfInvalid,
-            } if txt.lineno == 1
-        ));
-        assert!(matches!(
-            &errs[1],
-            ExpressionError {
-                ctx: ExprCtx { span: TxtSpan { start: 5, end: 13 }, txt },
-                kind: ExpressionErrorKind::LambdaInvalid,
-            } if txt.lineno == 1
-        ));
-        assert!(matches!(
-            &errs[2],
-            ExpressionError {
-                ctx: ExprCtx { span: TxtSpan { start: 1, end: 14 }, txt },
-                kind: ExpressionErrorKind::LambdaInvalid,
-            } if txt.lineno == 1
-        ));
-        assert!(matches!(
-            &errs[3],
-            ExpressionError {
-                ctx: ExprCtx { span: TxtSpan { start: 0, end: 15 }, txt },
-                kind: ExpressionErrorKind::ProcedureEmpty,
             } if txt.lineno == 1
         ));
         assert!(et.parsers.is_empty());
