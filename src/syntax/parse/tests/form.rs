@@ -1516,6 +1516,141 @@ fn into_define_lambda_no_body() {
 }
 
 #[test]
+fn into_define_lambda_invalid_name() {
+    // (define ("foo" x) x)
+    let txt = make_textline().into();
+    let env = TestEnv::default();
+    let p = ExprNode {
+        ctx: ExprCtx {
+            span: 0..20,
+            txt: Rc::clone(&txt),
+        },
+        mode: ParseMode::List {
+            form: SyntacticForm::Define,
+            seq: vec![
+                ExprCtx {
+                    span: 8..17,
+                    txt: Rc::clone(&txt),
+                }
+                .into_expr(ExpressionKind::Literal(zlist![
+                    Value::string("foo"),
+                    Value::Symbol(env.symbols.get("x")),
+                ])),
+                Expression::variable(
+                    env.symbols.get("x"),
+                    ExprCtx {
+                        span: 18..19,
+                        txt: Rc::clone(&txt),
+                    },
+                ),
+            ],
+        },
+    };
+    let ns = env.new_namespace();
+
+    let r = p.try_into_expr(&ns);
+
+    let errs = err_or_fail!(r);
+    assert_eq!(errs.len(), 1);
+    assert!(matches!(
+        &errs[0],
+        ExpressionError {
+            ctx: ExprCtx { span: TxtSpan { start: 0, end: 14 }, txt: line },
+            kind: ExpressionErrorKind::DefineInvalid,
+        } if Rc::ptr_eq(&txt, &line)
+    ));
+}
+
+#[test]
+fn into_define_lambda_invalid_formals() {
+    // (define (foo "x") 'a)
+    let txt = make_textline().into();
+    let env = TestEnv::default();
+    let p = ExprNode {
+        ctx: ExprCtx {
+            span: 0..21,
+            txt: Rc::clone(&txt),
+        },
+        mode: ParseMode::List {
+            form: SyntacticForm::Define,
+            seq: vec![
+                ExprCtx {
+                    span: 8..17,
+                    txt: Rc::clone(&txt),
+                }
+                .into_expr(ExpressionKind::Literal(zlist![
+                    Value::Symbol(env.symbols.get("foo")),
+                    Value::string("x"),
+                ])),
+                Expression::variable(
+                    env.symbols.get("a"),
+                    ExprCtx {
+                        span: 18..20,
+                        txt: Rc::clone(&txt),
+                    },
+                ),
+            ],
+        },
+    };
+    let ns = env.new_namespace();
+
+    let r = p.try_into_expr(&ns);
+
+    let errs = err_or_fail!(r);
+    assert_eq!(errs.len(), 1);
+    assert!(matches!(
+        &errs[0],
+        ExpressionError {
+            ctx: ExprCtx { span: TxtSpan { start: 0, end: 14 }, txt: line },
+            kind: ExpressionErrorKind::DefineInvalid,
+        } if Rc::ptr_eq(&txt, &line)
+    ));
+}
+
+#[test]
+fn into_define_lambda_empty_formals() {
+    // (define () 'a)
+    let txt = make_textline().into();
+    let env = TestEnv::default();
+    let p = ExprNode {
+        ctx: ExprCtx {
+            span: 0..14,
+            txt: Rc::clone(&txt),
+        },
+        mode: ParseMode::List {
+            form: SyntacticForm::Define,
+            seq: vec![
+                ExprCtx {
+                    span: 8..10,
+                    txt: Rc::clone(&txt),
+                }
+                .into_expr(ExpressionKind::Literal(zlist![])),
+                Expression::variable(
+                    env.symbols.get("a"),
+                    ExprCtx {
+                        span: 11..13,
+                        txt: Rc::clone(&txt),
+                    },
+                ),
+            ],
+        },
+    };
+    let ns = env.new_namespace();
+
+    let r = p.try_into_expr(&ns);
+
+    let errs = err_or_fail!(r);
+    assert_eq!(errs.len(), 1);
+    assert!(matches!(
+        &errs[0],
+        ExpressionError {
+            ctx: ExprCtx { span: TxtSpan { start: 0, end: 17 }, txt: line },
+            kind: ExpressionErrorKind::DefineInvalid,
+        } if Rc::ptr_eq(&txt, &line)
+    ));
+}
+
+#[test]
 fn into_define_lambda_empty_body() {
     // (define (foo) ())
     let txt = make_textline().into();
