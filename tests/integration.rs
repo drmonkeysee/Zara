@@ -144,3 +144,31 @@ fn call_frame_write_does_not_affect_closure() {
     let v = t.run_for_val("x");
     assert_eq!(v.to_string(), "10");
 }
+
+#[test]
+fn redefine_quote_affects_shorthand_syntax() {
+    let mut t = TestRunner::new();
+
+    t.run_for_val("(define 'a 10)");
+    let v = t.run_for_val("(quote 1)");
+    assert_eq!(v.to_string(), "10");
+
+    let v = t.run_for_val("(quote 5)");
+    assert_eq!(v.to_string(), "10");
+
+    let v = t.run_for_val("'3");
+    assert_eq!(v.to_string(), "10");
+}
+
+#[test]
+fn all_input_is_parsed_before_evaled() {
+    let mut t = TestRunner::new();
+
+    // TODO: whole sequence is parsed before evaled so quote is not replaced
+    // until the next complete sequence; should it work this way?
+    let v = t.run_for_val(concat!("(define 'a 10)", "(quote 1)"));
+    assert_eq!(v.to_string(), "1");
+
+    let v = t.run_for_val("(quote 5)");
+    assert_eq!(v.to_string(), "10");
+}
