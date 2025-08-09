@@ -124,7 +124,18 @@ impl SyntacticForm {
                         }
                         ExpressionKind::Literal(Value::Pair(Some(p))) => {
                             if let Value::Symbol(name) = &p.car {
-                                return into_define_lambda(name.clone(), p.cdr.clone(), it, ctx);
+                                let formals = binding
+                                    .ctx
+                                    .clone()
+                                    .into_expr(ExpressionKind::Literal(p.cdr.clone()));
+                                let lm = into_lambda(
+                                    iter::once(formals).chain(it).collect::<Vec<_>>(),
+                                    ctx.clone(),
+                                )?;
+                                return Ok(Some(ctx.into_expr(ExpressionKind::Define {
+                                    name: name.clone(),
+                                    expr: lm.map(Box::new),
+                                })));
                             }
                         }
                         _ => (),
@@ -271,21 +282,6 @@ fn into_list(seq: Vec<Expression>, ctx: ExprCtx, improper: bool) -> ExprConvertR
             })
         },
     )
-}
-
-fn into_define_lambda(
-    name: Symbol,
-    params: Value,
-    body: impl IntoIterator<Item = Expression>,
-    ctx: ExprCtx,
-) -> ExprConvertResult {
-    let formals = ctx.clone().into_expr(ExpressionKind::Literal(params));
-    let seq = iter::once(formals).chain(body).collect::<Vec<_>>();
-    let lm = into_lambda(seq, ctx.clone())?;
-    Ok(Some(ctx.into_expr(ExpressionKind::Define {
-        name,
-        expr: lm.map(Box::new),
-    })))
 }
 
 fn into_lambda(seq: Vec<Expression>, ctx: ExprCtx) -> ExprConvertResult {
