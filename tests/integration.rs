@@ -40,10 +40,7 @@ fn basic_intrinsic() {
 fn global_scope() {
     let mut t = TestRunner::new();
 
-    t.run_for_val(concat!(
-        "(define x 1)",
-        "(define five (lambda () (set! x 5)))"
-    ));
+    t.run_for_val(concat!("(define x 1)", "(define (five) (set! x 5))"));
 
     let v = t.run_for_val("x");
     assert_eq!(v.to_string(), "1");
@@ -85,7 +82,7 @@ fn closure_per_eval() {
     let mut t = TestRunner::new();
 
     t.run_for_val(concat!(
-        "(define capture (lambda (x) (lambda () x)))",
+        "(define (capture x) (lambda () x))",
         "(define one (capture 1))",
         "(define ten (capture 10))"
     ));
@@ -108,7 +105,7 @@ fn closure_writes_per_eval() {
     let mut t = TestRunner::new();
 
     t.run_for_val(concat!(
-        "(define capture (lambda (x) (lambda () (set! x (+ x 1)) x)))",
+        "(define (capture x) (lambda () (set! x (+ x 1)) x))",
         "(define one (capture 1))",
         "(define ten (capture 10))"
     ));
@@ -130,10 +127,7 @@ fn closure_writes_per_eval() {
 fn call_frame_write_does_not_affect_closure() {
     let mut t = TestRunner::new();
 
-    t.run_for_val(concat!(
-        "(define x 10)",
-        "(define foo (lambda () (define x 20) x))"
-    ));
+    t.run_for_val(concat!("(define x 10)", "(define (foo) (define x 20) x)"));
 
     let v = t.run_for_val("x");
     assert_eq!(v.to_string(), "10");
