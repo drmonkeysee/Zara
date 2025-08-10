@@ -307,11 +307,13 @@ impl Display for TypeName<'_> {
 
 fn ensure_proc_name(val: &mut Value, name: &Symbol) {
     if let Value::Procedure(p) = val {
-        // NOTE: this should be safe because the procedure was *just* created
-        // via eval, but have a debug_assert to see if it ever fails.
-        let p_ref = Rc::get_mut(p);
-        debug_assert!(p_ref.is_some());
-        p_ref.into_iter().for_each(|p| p.set_name(name.clone()));
+        // NOTE: this should be safe because the procedure was *just* eval'ed,
+        // but have a debug_assert to see if it ever fails:
+        // either the proc is already named (so get_mut failing is fine) OR get_mut succeeds.
+        debug_assert!(p.name().is_some() || Rc::get_mut(p).is_some());
+        Rc::get_mut(p)
+            .into_iter()
+            .for_each(|p| p.set_name(name.clone()));
     }
 }
 
