@@ -1,6 +1,7 @@
 use zara::{Error, Evaluation, Interpreter, Result, RunMode, Value, src::StringSource};
 
 struct TestRunner {
+    cont: bool,
     input: StringSource,
     zara: Interpreter,
 }
@@ -8,6 +9,7 @@ struct TestRunner {
 impl TestRunner {
     fn new() -> Self {
         Self {
+            cont: false,
             input: StringSource::empty("<integration>"),
             zara: Interpreter::new(RunMode::Evaluate, []),
         }
@@ -24,6 +26,7 @@ impl TestRunner {
 
     fn run_for_cont(&mut self, src: impl Into<String>) {
         let ev = self.run_eval(src);
+        self.cont = true;
         assert!(matches!(ev, Evaluation::Continuation));
     }
 
@@ -40,7 +43,12 @@ impl TestRunner {
     }
 
     fn run(&mut self, src: impl Into<String>) -> Result {
-        self.input.set(src);
+        if self.cont {
+            self.input.cont(src);
+        } else {
+            self.input.set(src);
+        }
+        self.cont = false;
         self.zara.run(&mut self.input)
     }
 }
@@ -185,6 +193,7 @@ fn all_input_is_parsed_before_evaled() {
     assert_eq!(v.to_string(), "10");
 }
 
+// NOTE: these two tests were bugs with StringSource rather than the Interpreter
 #[test]
 fn lexical_error_on_continuation() {
     let mut t = TestRunner::new();

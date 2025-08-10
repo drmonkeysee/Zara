@@ -46,7 +46,7 @@ impl Repl {
             Err(err) => Err(err)?,
             Ok(line) => {
                 self.editor.add_history_entry(&line)?;
-                self.src.set(line);
+                self.update(line);
             }
         }
         Ok(())
@@ -93,6 +93,14 @@ impl Repl {
     fn reset(&mut self) {
         self.runtime.clear();
         self.ready();
+    }
+
+    fn update(&mut self, line: String) {
+        if self.prompt == CONT {
+            self.src.cont(line);
+        } else {
+            self.src.set(line);
+        }
     }
 }
 

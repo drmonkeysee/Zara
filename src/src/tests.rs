@@ -50,6 +50,7 @@ mod stringsrc {
         let line = target.next();
 
         assert!(line.is_none());
+        assert_eq!(target.lineno(), 0);
     }
 
     #[test]
@@ -71,6 +72,7 @@ mod stringsrc {
         let line = target.next();
 
         assert!(line.is_none());
+        assert_eq!(target.lineno(), 1);
     }
 
     #[test]
@@ -92,6 +94,7 @@ mod stringsrc {
         let line = target.next();
 
         assert!(line.is_none());
+        assert_eq!(target.lineno(), 1);
     }
 
     #[test]
@@ -113,6 +116,7 @@ mod stringsrc {
         let line = target.next();
 
         assert!(line.is_none());
+        assert_eq!(target.lineno(), 1);
     }
 
     #[test]
@@ -156,6 +160,7 @@ mod stringsrc {
         let line = target.next();
 
         assert!(line.is_none());
+        assert_eq!(target.lineno(), 3);
     }
 
     #[test]
@@ -199,6 +204,7 @@ mod stringsrc {
         let line = target.next();
 
         assert!(line.is_none());
+        assert_eq!(target.lineno(), 3);
     }
 
     #[test]
@@ -242,6 +248,7 @@ mod stringsrc {
         let line = target.next();
 
         assert!(line.is_none());
+        assert_eq!(target.lineno(), 3);
     }
 
     // NOTE: preserve blank lines to keep lineno accurate
@@ -319,6 +326,7 @@ mod stringsrc {
         let line = target.next();
 
         assert!(line.is_none());
+        assert_eq!(target.lineno(), 6);
     }
 
     #[test]
@@ -364,6 +372,92 @@ mod stringsrc {
         let line = target.next();
 
         assert!(line.is_none());
+        assert_eq!(target.lineno(), 1);
+    }
+
+    #[test]
+    fn continue_lines() {
+        let src = "line1\nline2\nline3\n";
+        let mut target = StringSource::new(src, "test");
+
+        let line = some_or_fail!(target.next());
+
+        assert!(matches!(
+            line,
+            Ok(TextLine {
+                ctx,
+                line,
+                lineno: 1,
+            }) if Rc::ptr_eq(&ctx, &target.ctx) && line == "line1"
+        ));
+
+        let line = some_or_fail!(target.next());
+
+        assert!(matches!(
+            line,
+            Ok(TextLine {
+                ctx,
+                line,
+                lineno: 2,
+            }) if Rc::ptr_eq(&ctx, &target.ctx) && line == "line2"
+        ));
+
+        let line = some_or_fail!(target.next());
+
+        assert!(matches!(
+            line,
+            Ok(TextLine {
+                ctx,
+                line,
+                lineno: 3,
+            }) if Rc::ptr_eq(&ctx, &target.ctx) && line == "line3"
+        ));
+
+        let line = target.next();
+
+        assert!(line.is_none());
+
+        target.cont("an additional line");
+
+        let line = some_or_fail!(target.next());
+
+        assert!(matches!(
+            line,
+            Ok(TextLine {
+                ctx,
+                line,
+                lineno: 4,
+            }) if Rc::ptr_eq(&ctx, &target.ctx) && line == "an additional line"
+        ));
+
+        let line = target.next();
+
+        assert!(line.is_none());
+        assert_eq!(target.lineno(), 4);
+    }
+
+    #[test]
+    fn continue_with_empty() {
+        let src = "line of source code";
+        let mut target = StringSource::empty("test");
+
+        target.cont(src);
+
+        let line = some_or_fail!(target.next());
+
+        assert!(matches!(
+            line,
+            Ok(TextLine {
+                ctx,
+                line,
+                lineno: 1,
+            }) if Rc::ptr_eq(&ctx, &target.ctx) && line == "line of source code"
+        ));
+
+        let line = target.next();
+
+        assert!(line.is_none());
+        assert_eq!(target.lineno(), 1);
     }
 
     #[test]
@@ -398,6 +492,7 @@ mod stringsrc {
         let line = target.next();
 
         assert!(line.is_none());
+        assert_eq!(target.lineno(), 0);
     }
 }
 

@@ -31,7 +31,11 @@ impl StringSource {
     }
 
     pub fn set(&mut self, src: impl Into<String>) {
-        self.lineno = 0;
+        self.clear();
+        self.cont(src);
+    }
+
+    pub fn cont(&mut self, src: impl Into<String>) {
         self.lines = Some(
             src.into()
                 .lines()
@@ -42,6 +46,7 @@ impl StringSource {
     }
 
     pub fn clear(&mut self) {
+        self.lineno = 0;
         self.lines = None;
     }
 }
@@ -50,12 +55,14 @@ impl Iterator for StringSource {
     type Item = TextResult;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.lineno += 1;
-        Some(Ok(TextLine {
+        let lineno = self.lineno() + 1;
+        let line = Some(Ok(TextLine {
             ctx: self.context(),
             line: self.lines.as_mut()?.next()?,
-            lineno: self.lineno(),
-        }))
+            lineno,
+        }));
+        self.lineno = lineno;
+        line
     }
 }
 
