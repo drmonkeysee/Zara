@@ -3,7 +3,9 @@ use crate::{
     lex::TokenKind,
     number::Number,
     string::SymbolTable,
-    testutil::{TestEnv, empty_procedure_body, err_or_fail, ok_or_fail, procedure_body},
+    testutil::{
+        TestEnv, empty_procedure_body, err_or_fail, ok_or_fail, procedure_body, some_or_fail,
+    },
 };
 
 #[test]
@@ -543,4 +545,26 @@ fn apply_single_arity_lambda_with_closure() {
     let v = ok_or_fail!(r);
     assert!(matches!(v, Value::String(s) if s.as_ref() == "bar 5"));
     assert!(!env.binding.bound("x"));
+}
+
+#[test]
+fn lambda_set_name() {
+    let sym = SymbolTable::default();
+    let lm = ok_or_fail!(Lambda::new([], None, empty_procedure_body()));
+    let mut p = Procedure::new(lm, Binding::default(), None);
+
+    p.set_name(sym.get("bar"));
+
+    assert_eq!(some_or_fail!(p.name()), "bar");
+}
+
+#[test]
+fn lambda_does_not_set_name_if_already_named() {
+    let sym = SymbolTable::default();
+    let lm = ok_or_fail!(Lambda::new([], None, empty_procedure_body()));
+    let mut p = Procedure::new(lm, Binding::default(), Some(sym.get("foo")));
+
+    p.set_name(sym.get("bar"));
+
+    assert_eq!(some_or_fail!(p.name()), "foo");
 }

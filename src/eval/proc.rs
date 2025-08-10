@@ -76,6 +76,10 @@ impl Procedure {
             name,
         }
     }
+
+    pub(crate) fn set_name(&mut self, name: Symbol) {
+        self.name.get_or_insert(name);
+    }
 }
 
 impl Operator for Procedure {
