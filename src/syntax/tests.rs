@@ -145,8 +145,8 @@ mod parsing {
 
     #[test]
     fn datum_comments_stack() {
+        // #u8(10 #; #; 11 12 13) -> #u8(10 13)
         let mut et = ExpressionTree::default();
-        // NOTE: #u8(10 #; #; 11 12 13) -> #u8(10 13)
         let tokens = [make_tokenline([
             TokenKind::ByteVector,
             TokenKind::Number(Number::real(10)),
@@ -176,8 +176,8 @@ mod parsing {
 
     #[test]
     fn datum_comment_allows_otherwise_invalid_syntax() {
+        // (+ #; (if 5) 2 3) -> (+ 2 3)
         let mut et = ExpressionTree::default();
-        // NOTE: (+ #; (if 5) 2 3) -> (+ 2 3)
         let tokens = [make_tokenline([
             TokenKind::ParenLeft,
             TokenKind::Identifier("+".to_owned()),
@@ -238,8 +238,8 @@ mod parsing {
 
     #[test]
     fn quoting_quote() {
+        // ''a -> (quote a)
         let mut et = ExpressionTree::default();
-        // NOTE: ''a -> (quote a)
         let tokens = [make_tokenline([
             TokenKind::Quote,
             TokenKind::Quote,
@@ -267,9 +267,9 @@ mod parsing {
     #[test]
     #[ignore = "quasiquote quoting shortforms not implemented yet"]
     fn quoting_all_the_shortforms() {
-        let mut et = ExpressionTree::default();
-        // NOTE: '`(a ,(+ 1 2) ,@(map abs '(-1 -2 -3)))
+        // '`(a ,(+ 1 2) ,@(map abs '(-1 -2 -3)))
         //  -> (quasiquote (a (unquote (+ 1 2)) (unquote-splicing (map abs (quote (-1 -2 -3))))))
+        let mut et = ExpressionTree::default();
         let tokens = [make_tokenline([
             TokenKind::Quote,
             TokenKind::Quasiquote,
@@ -317,8 +317,8 @@ mod parsing {
 
     #[test]
     fn longform_quote_with_otherwise_invalid_syntax() {
+        // (quote (if 5)) -> (if 5)
         let mut et = ExpressionTree::default();
-        // NOTE: (quote (if 5)) -> (if 5)
         let tokens = [make_tokenline([
             TokenKind::ParenLeft,
             TokenKind::Identifier("quote".to_owned()),
@@ -349,8 +349,8 @@ mod parsing {
 
     #[test]
     fn vector_with_otherwise_invalid_syntax() {
+        // #(if 5) -> #(if 5)
         let mut et = ExpressionTree::default();
-        // NOTE: #(if 5) -> #(if 5)
         let tokens = [make_tokenline([
             TokenKind::Vector,
             TokenKind::Identifier("if".to_owned()),
@@ -496,8 +496,8 @@ mod parsing {
 
     #[test]
     fn pair_with_list_cdr() {
+        // '(a . (b c)) -> (a b c)
         let mut et = ExpressionTree::default();
-        // NOTE: '(a . (b c)) -> (a b c)
         let tokens = [make_tokenline([
             TokenKind::Quote,
             TokenKind::ParenLeft,
@@ -530,8 +530,8 @@ mod parsing {
 
     #[test]
     fn pair_notation_list() {
+        // '(a . (b . (c . ()))) -> (a b c)
         let mut et = ExpressionTree::default();
-        // NOTE: '(a . (b . (c . ()))) -> (a b c)
         let tokens = [make_tokenline([
             TokenKind::Quote,
             TokenKind::ParenLeft,
@@ -602,8 +602,8 @@ mod parsing {
 
     #[test]
     fn pair_ignores_datum_comment() {
+        // '(a . #; b c) -> (a . c)
         let mut et = ExpressionTree::default();
-        // NOTE: '(a . #; b c) -> (a . c)
         let tokens = [make_tokenline([
             TokenKind::Quote,
             TokenKind::ParenLeft,
@@ -635,8 +635,8 @@ mod parsing {
 
     #[test]
     fn pair_ignores_compound_datum_comment() {
+        // '(a . #; (b c) d) -> (a . d)
         let mut et = ExpressionTree::default();
-        // NOTE: '(a . #; (b c) d) -> (a . d)
         let tokens = [make_tokenline([
             TokenKind::Quote,
             TokenKind::ParenLeft,
@@ -671,8 +671,8 @@ mod parsing {
 
     #[test]
     fn pair_ignores_comment_block() {
+        // '(a . #| foo |# b) -> (a . b)
         let mut et = ExpressionTree::default();
-        // NOTE: '(a . #| foo |# b) -> (a . b)
         let tokens = [make_tokenline([
             TokenKind::Quote,
             TokenKind::ParenLeft,
@@ -703,8 +703,8 @@ mod parsing {
 
     #[test]
     fn pair_ignores_trailing_comment_block() {
+        // '(a . b #| foo |# ) -> (a . b)
         let mut et = ExpressionTree::default();
-        // NOTE: '(a . b #| foo |# ) -> (a . b)
         let tokens = [make_tokenline([
             TokenKind::Quote,
             TokenKind::ParenLeft,
@@ -908,8 +908,8 @@ mod parsing {
 
     #[test]
     fn unterminated_comment_datum_causes_other_errors() {
+        // (foo #u8(10 #;) #t) -> unterminated datum comment, invalid bytevector item
         let mut et = ExpressionTree::default();
-        // NOTE: (foo #u8(10 #;) #t) -> unterminated datum comment, invalid bytevector item
         let tokens = [make_tokenline([
             TokenKind::ParenLeft,
             TokenKind::Identifier("foo".to_owned()),
@@ -985,8 +985,8 @@ mod parsing {
 
     #[test]
     fn too_many_pair_elements() {
+        // '(a . b . c) -> err
         let mut et = ExpressionTree::default();
-        // NOTE: '(a . b . c) -> err
         let tokens = [make_tokenline([
             TokenKind::Quote,
             TokenKind::ParenLeft,
@@ -1015,8 +1015,8 @@ mod parsing {
 
     #[test]
     fn invalid_pair_trailing_datum() {
+        // '(a . b  c) -> err
         let mut et = ExpressionTree::default();
-        // NOTE: '(a . b  c) -> err
         let tokens = [make_tokenline([
             TokenKind::Quote,
             TokenKind::ParenLeft,
@@ -1044,8 +1044,8 @@ mod parsing {
 
     #[test]
     fn not_enough_pair_elements() {
+        // '( . b . c) -> err
         let mut et = ExpressionTree::default();
-        // NOTE: '( . b . c) -> err
         let tokens = [make_tokenline([
             TokenKind::Quote,
             TokenKind::ParenLeft,
@@ -1073,8 +1073,8 @@ mod parsing {
 
     #[test]
     fn double_dotted_pair() {
+        // '(a . . b) -> err
         let mut et = ExpressionTree::default();
-        // NOTE: '(a . . b) -> err
         let tokens = [make_tokenline([
             TokenKind::Quote,
             TokenKind::ParenLeft,
@@ -1102,8 +1102,8 @@ mod parsing {
 
     #[test]
     fn pair_comment_datum_leaves_pair_open() {
+        // '(a . #; b) -> err
         let mut et = ExpressionTree::default();
-        // NOTE: '(a . #; b) -> err
         let tokens = [make_tokenline([
             TokenKind::Quote,
             TokenKind::ParenLeft,
@@ -1131,8 +1131,8 @@ mod parsing {
 
     #[test]
     fn invalid_syntax_pair_member() {
+        // '(a . #u8(1 b 2)) -> err
         let mut et = ExpressionTree::default();
-        // NOTE: '(a . #u8(1 b 2)) -> err
         let tokens = [make_tokenline([
             TokenKind::Quote,
             TokenKind::ParenLeft,
@@ -1170,8 +1170,8 @@ mod parsing {
 
     #[test]
     fn unquoted_pair() {
+        // (a . b) -> err (no quote)
         let mut et = ExpressionTree::default();
-        // NOTE: (a . b) -> err (no quote)
         let tokens = [make_tokenline([
             TokenKind::ParenLeft,
             TokenKind::Identifier("a".to_owned()),
@@ -1197,8 +1197,8 @@ mod parsing {
 
     #[test]
     fn unquoted_empty_pair() {
+        // ( . ) -> err
         let mut et = ExpressionTree::default();
-        // NOTE: ( . ) -> err
         let tokens = [make_tokenline([
             TokenKind::ParenLeft,
             TokenKind::PairJoiner,
@@ -1229,8 +1229,8 @@ mod parsing {
 
     #[test]
     fn bytevector_with_pair_joiner() {
+        // #(a . b) -> err (pair not allowed)
         let mut et = ExpressionTree::default();
-        // NOTE: #(a . b) -> err (pair not allowed)
         let tokens = [make_tokenline([
             TokenKind::ByteVector,
             TokenKind::Number(Number::real(11)),
@@ -1256,8 +1256,8 @@ mod parsing {
 
     #[test]
     fn vector_with_pair_joiner() {
+        // #(a . b) -> err (pair not allowed)
         let mut et = ExpressionTree::default();
-        // NOTE: #(a . b) -> err (pair not allowed)
         let tokens = [make_tokenline([
             TokenKind::Vector,
             TokenKind::Identifier("a".to_owned()),
@@ -1283,8 +1283,8 @@ mod parsing {
 
     #[test]
     fn define_can_redefine_itself() {
+        // (define define 10)
         let mut et = ExpressionTree::default();
-        // NOTE: (define define 10)
         let tokens = [make_tokenline([
             TokenKind::ParenLeft,
             TokenKind::Identifier("define".to_owned()),
@@ -1318,8 +1318,8 @@ mod parsing {
 
     #[test]
     fn redefined_special_form_treated_like_procedure_call() {
+        // (define x 20) but define has been bound as a variable in current scope
         let mut et = ExpressionTree::default();
-        // NOTE: (define x 20) but define has been bound as a variable in current scope
         let tokens = [make_tokenline([
             TokenKind::ParenLeft,
             TokenKind::Identifier("define".to_owned()),
@@ -1373,8 +1373,8 @@ mod parsing {
 
     #[test]
     fn define_can_redefine_quote_as_procedure() {
+        // (define 'a 10)
         let mut et = ExpressionTree::default();
-        // NOTE: (define 'a 10)
         let tokens = [make_tokenline([
             TokenKind::ParenLeft,
             TokenKind::Identifier("define".to_owned()),

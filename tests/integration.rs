@@ -176,6 +176,7 @@ fn redefine_quote_affects_shorthand_syntax() {
     let v = t.run_for_val("(quote 5)");
     assert_eq!(v.to_string(), "10");
 
+    // TODO: ' as a macro to fix this? '<expr> -> (quote <expr>)
     let v = t.run_for_val("'3");
     assert_eq!(v.to_string(), "10");
 }
