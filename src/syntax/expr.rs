@@ -135,9 +135,10 @@ impl ExpressionKind {
         match self {
             Self::Call { args, proc } => eval_call(proc, args, env),
             Self::Define { name, expr } => {
-                let val = expr
+                let mut val = expr
                     .as_ref()
                     .map_or(Ok(Value::Unspecified), |expr| expr.eval(env))?;
+                ensure_proc_name(&mut val, name);
                 env.scope.bind(name.clone(), val);
                 Ok(Value::Unspecified)
             }
@@ -157,7 +158,8 @@ impl ExpressionKind {
             Self::Literal(v) => Ok(v.clone()),
             Self::Set { var, expr } => {
                 if let Some(b) = env.scope.binding(var) {
-                    let val = expr.eval(env)?;
+                    let mut val = expr.eval(env)?;
+                    ensure_proc_name(&mut val, var);
                     b.bind(var.clone(), val);
                     Ok(Value::Unspecified)
                 } else {
@@ -300,6 +302,14 @@ impl Display for TypeName<'_> {
             ExpressionKind::Set { .. } => f.write_str("assignment"),
             ExpressionKind::Variable(_) => f.write_str("variable"),
         }
+    }
+}
+
+fn ensure_proc_name(val: &mut Value, name: &Symbol) {
+    if let Value::Procedure(p) = val {
+        Rc::get_mut(p)
+            .iter_mut()
+            .for_each(|p| p.set_name(name.clone()));
     }
 }
 

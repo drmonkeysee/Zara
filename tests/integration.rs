@@ -83,7 +83,7 @@ fn overwrite_self() {
     assert_eq!(v.to_string(), "10");
 
     let v = t.run_for_val(concat!("(set! x (lambda () (set! x 20) x))", "x"));
-    assert_eq!(v.to_string(), "#<procedure>");
+    assert_eq!(v.to_string(), "#<procedure x>");
 
     let v = t.run_for_val(concat!("(x)", "x"));
     assert_eq!(v.to_string(), "20");
@@ -97,7 +97,7 @@ fn parameter_closure() {
         "(define capture-five ((lambda (x) (lambda () x)) 5))",
         "capture-five"
     ));
-    assert_eq!(v.to_string(), "#<procedure>");
+    assert_eq!(v.to_string(), "#<procedure capture-five>");
 
     let v = t.run_for_val("(capture-five)");
     assert_eq!(v.to_string(), "5");
@@ -190,6 +190,52 @@ fn all_input_is_parsed_before_evaled() {
     assert_eq!(v.to_string(), "1");
 
     let v = t.run_for_val("(quote 5)");
+    assert_eq!(v.to_string(), "10");
+}
+
+#[test]
+fn procedure_retains_name() {
+    let mut t = TestRunner::new();
+
+    let v = t.run_for_val(concat!("(define (foo x) x)", "foo"));
+    assert_eq!(v.to_string(), "#<procedure foo (x)>");
+
+    let v = t.run_for_val(concat!("(define bar foo)", "bar"));
+    assert_eq!(v.to_string(), "#<procedure foo (x)>");
+
+    let v = t.run_for_val(concat!("(define baz 10)", "baz"));
+    assert_eq!(v.to_string(), "10");
+
+    let v = t.run_for_val(concat!("(set! baz foo)", "baz"));
+    assert_eq!(v.to_string(), "#<procedure foo (x)>");
+}
+
+#[test]
+fn nested_procedure_gets_name() {
+    let mut t = TestRunner::new();
+
+    let v = t.run_for_val(concat!(
+        "(define foo ((lambda (x) (lambda () x)) 5))",
+        "foo"
+    ));
+    assert_eq!(v.to_string(), "#<procedure foo>");
+    let v = t.run_for_val("(foo)");
+    assert_eq!(v.to_string(), "5");
+
+    t.run_for_val(concat!(
+        "(define (capture x) (lambda () x))",
+        "(define one (capture 1))",
+        "(define ten (capture 10))"
+    ));
+
+    let v = t.run_for_val("one");
+    assert_eq!(v.to_string(), "#<procedure one>");
+    let v = t.run_for_val("(one)");
+    assert_eq!(v.to_string(), "1");
+
+    let v = t.run_for_val("ten");
+    assert_eq!(v.to_string(), "#<procedure ten>");
+    let v = t.run_for_val("(ten)");
     assert_eq!(v.to_string(), "10");
 }
 
