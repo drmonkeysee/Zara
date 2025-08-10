@@ -265,7 +265,7 @@ impl<P: ClassifierProps> ConditionProcessor<'_, '_, P> {
         let mut real = Real::reduce(numerator, denominator)?;
         match cond {
             SubCondition::Complete => {
-                if let Some(Exactness::Inexact) = self.props.get_exactness() {
+                if let Some(Exactness::Inexact) = self.props.exactness() {
                     real = real.into_inexact();
                 }
                 Ok(real_to_token(real, false))
@@ -273,7 +273,7 @@ impl<P: ClassifierProps> ConditionProcessor<'_, '_, P> {
             SubCondition::Complex { kind, start } => self.scan_imaginary(real, kind, start),
             SubCondition::Imaginary => {
                 if self.props.has_sign() {
-                    if let Some(Exactness::Inexact) = self.props.get_exactness() {
+                    if let Some(Exactness::Inexact) = self.props.exactness() {
                         real = real.into_inexact();
                     }
                     Ok(real_to_token(real, true))
@@ -295,7 +295,7 @@ impl<P: ClassifierProps> ConditionProcessor<'_, '_, P> {
                 debug_assert!(matches!(start.1, '+' | '-'));
                 match self.props.cartesian_scan(self.scanner, start) {
                     Ok(TokenKind::Imaginary(imag)) => {
-                        let real = match self.props.get_exactness() {
+                        let real = match self.props.exactness() {
                             // NOTE: this conversion shouldn't ever fail because real has already
                             // been parsed as a valid float, but if it does, give up and return NaN.
                             Some(Exactness::Exact) => real.try_into_exact().unwrap_or(Real::nan()),
@@ -312,7 +312,7 @@ impl<P: ClassifierProps> ConditionProcessor<'_, '_, P> {
                 match self.props.polar_scan(self.scanner) {
                     Ok(TokenKind::Number(Number::Real(rads))) => {
                         let pol = Number::polar(real, rads);
-                        Ok(TokenKind::Number(match self.props.get_exactness() {
+                        Ok(TokenKind::Number(match self.props.exactness() {
                             // NOTE: this conversion shouldn't ever fail because pol has already
                             // been parsed as a valid float-complex, but if it does, give up and return NaN.
                             Some(Exactness::Exact) => pol.try_into_exact().unwrap_or(Number::nan()),
@@ -335,12 +335,12 @@ impl<P: ClassifierProps> ConditionProcessor<'_, '_, P> {
             return parser.extract_radix_infnan();
         }
         if is_imaginary && self.props.is_empty() {
-            if let Some(sign) = self.props.get_sign() {
-                return Ok(imaginary(sign, self.props.get_exactness()));
+            if let Some(sign) = self.props.sign() {
+                return Ok(imaginary(sign, self.props.exactness()));
             }
         }
         parser
-            .parse(self.props.get_exactness())
+            .parse(self.props.exactness())
             .map(|r| real_to_token(r, is_imaginary))
     }
 }
@@ -462,8 +462,8 @@ impl<'txt> From<BreakCondition<'txt>> for SubCondition<'txt> {
 trait ClassifierProps {
     type Radix: Radix + Default;
 
-    fn get_sign(&self) -> Option<Sign>;
-    fn get_exactness(&self) -> Option<Exactness>;
+    fn sign(&self) -> Option<Sign>;
+    fn exactness(&self) -> Option<Exactness>;
     fn is_empty(&self) -> bool;
     fn cartesian_scan(&self, scanner: &mut Scanner, start: ScanItem) -> TokenExtractResult;
     fn polar_scan(&self, scanner: &mut Scanner) -> TokenExtractResult;
@@ -473,7 +473,7 @@ trait ClassifierProps {
     }
 
     fn has_sign(&self) -> bool {
-        self.get_sign().is_some()
+        self.sign().is_some()
     }
 }
 
@@ -562,11 +562,11 @@ struct RealProps {
 impl ClassifierProps for RealProps {
     type Radix = Decimal;
 
-    fn get_sign(&self) -> Option<Sign> {
+    fn sign(&self) -> Option<Sign> {
         self.sign
     }
 
-    fn get_exactness(&self) -> Option<Exactness> {
+    fn exactness(&self) -> Option<Exactness> {
         self.exactness
     }
 
@@ -575,7 +575,7 @@ impl ClassifierProps for RealProps {
     }
 
     fn cartesian_scan(&self, scanner: &mut Scanner, start: ScanItem) -> TokenExtractResult {
-        Identifier::with_exactness(scanner, start, self.get_exactness()).scan()
+        Identifier::with_exactness(scanner, start, self.exactness()).scan()
     }
 
     fn polar_scan(&self, scanner: &mut Scanner) -> TokenExtractResult {
@@ -741,11 +741,11 @@ struct RadixProps<R> {
 impl<R: Radix + Default> ClassifierProps for RadixProps<R> {
     type Radix = R;
 
-    fn get_sign(&self) -> Option<Sign> {
+    fn sign(&self) -> Option<Sign> {
         self.props.sign
     }
 
-    fn get_exactness(&self) -> Option<Exactness> {
+    fn exactness(&self) -> Option<Exactness> {
         self.props.exactness
     }
 
@@ -754,7 +754,7 @@ impl<R: Radix + Default> ClassifierProps for RadixProps<R> {
     }
 
     fn cartesian_scan(&self, scanner: &mut Scanner, start: ScanItem) -> TokenExtractResult {
-        RadixNumber::<R>::with_sign(scanner, start, self.get_exactness()).scan()
+        RadixNumber::<R>::with_sign(scanner, start, self.exactness()).scan()
     }
 
     fn polar_scan(&self, scanner: &mut Scanner) -> TokenExtractResult {
