@@ -7,7 +7,7 @@ use crate::{
     lex::{Token, TokenKind},
     string::Symbol,
     txt::TextLine,
-    value::Value,
+    value::{Pair, Value},
 };
 use std::{iter, rc::Rc};
 
@@ -123,26 +123,7 @@ impl SyntacticForm {
                             }
                         }
                         ExpressionKind::Literal(Value::Pair(Some(p))) => {
-                            return if len > 1
-                                && let Value::Symbol(name) = &p.car
-                            {
-                                let formals = binding
-                                    .ctx
-                                    .clone()
-                                    .into_expr(ExpressionKind::Literal(p.cdr.clone()));
-                                let lm = into_lambda(
-                                    iter::once(formals).chain(it).collect::<Vec<_>>(),
-                                    ctx.clone(),
-                                )?;
-                                Ok(Some(ctx.into_expr(ExpressionKind::Define {
-                                    name: name.clone(),
-                                    expr: lm.map(Box::new),
-                                })))
-                            } else {
-                                Err(vec![
-                                    ctx.into_error(ExpressionErrorKind::DefineLambdaInvalid),
-                                ])
-                            };
+                            return into_define_lambda(len, p, binding.ctx, it, ctx);
                         }
                         _ => (),
                     }
@@ -288,6 +269,32 @@ fn into_list(seq: Vec<Expression>, ctx: ExprCtx, improper: bool) -> ExprConvertR
             })
         },
     )
+}
+
+fn into_define_lambda(
+    seq_len: usize,
+    binding_expr: Rc<Pair>,
+    binding_ctx: ExprCtx,
+    body: impl IntoIterator<Item = Expression>,
+    ctx: ExprCtx,
+) -> ExprConvertResult {
+    if seq_len > 1
+        && let Value::Symbol(name) = &binding_expr.car
+    {
+        let formals = binding_ctx.into_expr(ExpressionKind::Literal(binding_expr.cdr.clone()));
+        let lm = into_lambda(
+            iter::once(formals).chain(body).collect::<Vec<_>>(),
+            ctx.clone(),
+        )?;
+        Ok(Some(ctx.into_expr(ExpressionKind::Define {
+            name: name.clone(),
+            expr: lm.map(Box::new),
+        })))
+    } else {
+        Err(vec![
+            ctx.into_error(ExpressionErrorKind::DefineLambdaInvalid),
+        ])
+    }
 }
 
 fn into_lambda(seq: Vec<Expression>, ctx: ExprCtx) -> ExprConvertResult {
