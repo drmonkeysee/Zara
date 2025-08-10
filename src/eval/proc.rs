@@ -51,7 +51,7 @@ impl Operator for Intrinsic {
 impl Display for Intrinsic {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "#<intrinsic {}", self.name.as_datum())?;
-        write_intrinsics(&self.arity, f)?;
+        write_intrinsics(self.arity(), f)?;
         f.write_char('>')
     }
 }
