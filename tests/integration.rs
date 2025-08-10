@@ -186,6 +186,7 @@ fn all_input_is_parsed_before_evaled() {
 
     // TODO: whole sequence is parsed before evaled so quote is not replaced
     // until the next complete sequence; should it work this way?
+    // this may have an impact on macros defined and used within the same module.
     let v = t.run_for_val(concat!("(define 'a 10)", "(quote 1)"));
     assert_eq!(v.to_string(), "1");
 
