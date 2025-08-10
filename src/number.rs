@@ -704,9 +704,7 @@ impl Radix for Octal {
     const NAME: &'static str = "octal";
 
     fn is_digit(&self, ch: char) -> bool {
-        // TODO: nightly-only experimental API.
-        // (is_ascii_octdigit https://github.com/rust-lang/rust/issues/101288)
-        matches!(ch, '0'..='7')
+        ch.is_digit(8)
     }
 }
 
