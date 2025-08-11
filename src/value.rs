@@ -113,6 +113,7 @@ impl Value {
             (Self::Boolean(a), Self::Boolean(b)) => a == b,
             (Self::ByteVector(a), Self::ByteVector(b)) => Rc::ptr_eq(a, b),
             (Self::ByteVectorMut(a), Self::ByteVectorMut(b)) => Rc::ptr_eq(a, b),
+            (Self::Error(a), Self::Error(b)) => Rc::ptr_eq(a, b),
             (Self::Intrinsic(a), Self::Intrinsic(b)) => Rc::ptr_eq(a, b),
             (Self::Pair(None), Self::Pair(None)) | (Self::Unspecified, Self::Unspecified) => true,
             (Self::Pair(Some(a)), Self::Pair(Some(b))) => Rc::ptr_eq(a, b),
