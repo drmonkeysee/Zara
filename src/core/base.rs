@@ -1639,6 +1639,42 @@ mod tests {
     }
 
     #[test]
+    fn bytevector_mutable_predicate() {
+        let args = [Value::bytevector_mut([1, 2, 3])];
+        let env = TestEnv::default();
+
+        let r = is_bytevector(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert!(matches!(v, Value::Boolean(true)));
+    }
+
+    #[test]
+    fn bytevector_mutable_length() {
+        let args = [Value::bytevector_mut([8, 9, 10])];
+        let env = TestEnv::default();
+
+        let r = bytevector_length(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_eq!(v.to_string(), "3");
+    }
+
+    #[test]
+    fn bytevector_mutable_get_idx() {
+        let args = [
+            Value::bytevector_mut([1, 2, 3]),
+            Value::Number(Number::real(1)),
+        ];
+        let env = TestEnv::default();
+
+        let r = bytevector_get(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_eq!(v.to_string(), "2");
+    }
+
+    #[test]
     fn bytevector_set_val() {
         let args = [
             Value::bytevector_mut([1, 2, 3]),
