@@ -59,7 +59,7 @@ macro_rules! vec_get {
     };
 }
 
-use super::{FIRST_ARG_LABEL, SECOND_ARG_LABEL, first, pcar, pcdr};
+use super::{FIRST_ARG_LABEL, SECOND_ARG_LABEL, THIRD_ARG_LABEL, first, pcar, pcdr, second, third};
 use crate::{
     Exception,
     eval::{EvalResult, Frame, MAX_ARITY},
@@ -107,6 +107,7 @@ fn load_bv(env: &Frame) {
 
     super::bind_intrinsic(env, "bytevector-length", 1..1, bytevector_length);
     super::bind_intrinsic(env, "bytevector-u8-ref", 2..2, bytevector_get);
+    super::bind_intrinsic(env, "bytevector-u8-set!", 3..3, bytevector_set);
 }
 
 predicate!(is_bytevector, Value::ByteVector(_));
@@ -118,6 +119,24 @@ vec_get!(
     |bv, u| bv.get(u).copied(),
     |item| Value::Number(Number::real(i64::from(item)))
 );
+
+fn bytevector_set(args: &[Value], _env: &Frame) -> EvalResult {
+    let arg = first(args);
+    let k = second(args);
+    let byte = third(args);
+    if let Value::ByteVector(bv) = arg {
+        let idx = number_to_index(k)?;
+        if idx < bv.len() {
+            let b = number_to_byte(byte)?;
+            todo!("need mutability here");
+            Ok(Value::Unspecified)
+        } else {
+            Err(Condition::value_error(NumericError::IndexOutOfBounds(bv.len()), k).into())
+        }
+    } else {
+        invalid_target!(TypeName::BYTEVECTOR, arg)
+    }
+}
 
 //
 // Characters
@@ -609,6 +628,25 @@ fn number_to_index(k: &Value) -> Result<usize, Exception> {
         } else {
             Condition::arg_type_error(
                 SECOND_ARG_LABEL,
+                NumericTypeName::INTEGER,
+                n.as_typename(),
+                k,
+            )
+        }
+        .into()
+    })
+}
+
+fn number_to_byte(k: &Value) -> Result<u8, Exception> {
+    let Value::Number(n) = k else {
+        return Err(Condition::arg_error(THIRD_ARG_LABEL, NumericTypeName::INTEGER, k).into());
+    };
+    u8::try_from(n).map_err(|err| {
+        if let NumericError::ByteConversionInvalidRange = err {
+            Condition::value_error(NumericError::ByteConversionInvalidRange, k)
+        } else {
+            Condition::arg_type_error(
+                THIRD_ARG_LABEL,
                 NumericTypeName::INTEGER,
                 n.as_typename(),
                 k,

@@ -65,6 +65,7 @@ use crate::{
 
 const FIRST_ARG_LABEL: &str = "0";
 const SECOND_ARG_LABEL: &str = "1";
+const THIRD_ARG_LABEL: &str = "2";
 
 pub(crate) fn load(env: &Frame) {
     base::load(env);
@@ -92,6 +93,10 @@ fn first(args: &[Value]) -> &Value {
 
 fn second(args: &[Value]) -> &Value {
     args.get(1).expect("second argument arity failure")
+}
+
+fn third(args: &[Value]) -> &Value {
+    args.get(2).expect("third argument arity failure")
 }
 
 fn pcar(arg: &Value) -> EvalResult {

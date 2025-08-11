@@ -887,6 +887,7 @@ impl FloatSpec {
 pub(crate) enum NumericError {
     ByteConversionInvalidRange,
     DivideByZero,
+    IndexOutOfBounds(usize),
     Int32ConversionInvalidRange,
     IntConversionInvalidType(String),
     NoExactRepresentation(String),
@@ -906,6 +907,7 @@ impl Display for NumericError {
                 write_intconversion_range_error(u8::MIN, u8::MAX, f)
             }
             Self::DivideByZero => f.write_str("divide by zero"),
+            Self::IndexOutOfBounds(sz) => write!(f, "index out of bounds: {sz}"),
             Self::Int32ConversionInvalidRange => {
                 write_intconversion_range_error(i32::MIN, i32::MAX, f)
             }
