@@ -77,7 +77,7 @@ macro_rules! vec_get {
     };
 }
 
-use super::{FIRST_ARG_LABEL, SECOND_ARG_LABEL, THIRD_ARG_LABEL, first, pcar, pcdr, second, third};
+use super::{FIRST_ARG_LABEL, SECOND_ARG_LABEL, THIRD_ARG_LABEL, first, pcar, pcdr};
 use crate::{
     Exception,
     eval::{EvalResult, Frame, MAX_ARITY},
@@ -140,8 +140,8 @@ vec_get!(
 
 fn bytevector_set(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = first(args);
-    let k = second(args);
-    let byte = third(args);
+    let k = super::second(args);
+    let byte = super::third(args);
     if let Value::ByteVector(bv) = arg {
         let idx = number_to_index(k)?;
         if idx < bv.len() {
@@ -149,7 +149,7 @@ fn bytevector_set(args: &[Value], _env: &Frame) -> EvalResult {
             todo!("need mutability here");
             Ok(Value::Unspecified)
         } else {
-            Err(Condition::value_error(NumericError::IndexOutOfBounds(bv.len()), k).into())
+            Err(Condition::index_error(k).into())
         }
     } else {
         invalid_target!(TypeName::BYTEVECTOR, arg)

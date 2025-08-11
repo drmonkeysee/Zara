@@ -591,13 +591,6 @@ mod error {
             "integer literal out of range: [0, 18446744073709551615]"
         );
     }
-
-    #[test]
-    fn display_idx_out_of_bounds() {
-        let err = NumericError::IndexOutOfBounds(10);
-
-        assert_eq!(err.to_string(), "index out of bounds: 10");
-    }
 }
 
 mod integer {
