@@ -32,6 +32,24 @@ macro_rules! seq_predicate {
     };
 }
 
+macro_rules! num_convert {
+    ($name:ident, $type:ty, $err:path, $lbl:expr) => {
+        fn $name(arg: &Value) -> Result<$type, Exception> {
+            let Value::Number(n) = arg else {
+                return Err(Condition::arg_error($lbl, NumericTypeName::INTEGER, arg).into());
+            };
+            <$type>::try_from(n).map_err(|err| {
+                if let $err = err {
+                    Condition::value_error($err, arg)
+                } else {
+                    Condition::arg_type_error($lbl, NumericTypeName::INTEGER, n.as_typename(), arg)
+                }
+                .into()
+            })
+        }
+    };
+}
+
 macro_rules! vec_length {
     ($name:ident, $kind:path, $valname:expr) => {
         fn $name(args: &[Value], _env: &Frame) -> EvalResult {
@@ -181,30 +199,6 @@ fn integer_to_char(args: &[Value], _env: &Frame) -> EvalResult {
     }
 }
 
-fn try_num_into_char(n: &Number, arg: &Value) -> EvalResult {
-    u32::try_from(n).map_or_else(
-        |err| {
-            Err(if let NumericError::Uint32ConversionInvalidRange = err {
-                Condition::value_error(UnicodeError::CodePointOutOfRange, arg)
-            } else {
-                Condition::arg_type_error(
-                    FIRST_ARG_LABEL,
-                    NumericTypeName::INTEGER,
-                    n.as_typename(),
-                    arg,
-                )
-            }
-            .into())
-        },
-        |u| {
-            char::from_u32(u).map_or_else(
-                || Err(Condition::value_error(UnicodeError::CodePointOutOfRange, arg).into()),
-                |c| Ok(Value::Character(c)),
-            )
-        },
-    )
-}
-
 //
 // Equivalence
 //
@@ -254,11 +248,11 @@ predicate!(is_error, Value::Error(_));
 predicate!(is_read_error, Value::Error(c) if c.is_read_err());
 predicate!(is_file_error, Value::Error(c) if c.is_file_err());
 
-// TODO: this should be a mutable string
 fn error_msg(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = first(args);
     if let Value::Error(c) = arg {
-        Ok(Value::string(c.message()))
+        todo!("need mutable strings")
+        //Ok(Value::string(c.message()))
     } else {
         invalid_target!(TypeName::ERROR, arg)
     }
@@ -386,38 +380,6 @@ fn into_exact(args: &[Value], _env: &Frame) -> EvalResult {
     }
 }
 
-fn real_op(arg: &Value, op: impl FnOnce(&Real) -> EvalResult) -> EvalResult {
-    guarded_real_op(arg, NumericTypeName::REAL, op)
-}
-
-fn rational_op(arg: &Value, op: impl FnOnce(&Real) -> EvalResult) -> EvalResult {
-    guarded_real_op(arg, NumericTypeName::RATIONAL, op)
-}
-
-fn exact_int_predicate(arg: &Value, pred: impl FnOnce(&Integer) -> bool) -> EvalResult {
-    guarded_real_op(arg, NumericTypeName::INTEGER, |r| {
-        r.clone().try_into_exact_integer().map_or_else(
-            |err| Err(Condition::value_error(err, arg).into()),
-            |n| Ok(Value::Boolean(pred(&n))),
-        )
-    })
-}
-
-fn guarded_real_op(
-    arg: &Value,
-    expected_type: impl Display,
-    op: impl FnOnce(&Real) -> EvalResult,
-) -> EvalResult {
-    let Value::Number(n) = arg else {
-        return invalid_target!(expected_type, arg);
-    };
-    if let Number::Real(r) = n {
-        op(r)
-    } else {
-        Err(Condition::arg_type_error(FIRST_ARG_LABEL, expected_type, n.as_typename(), arg).into())
-    }
-}
-
 //
 // Pairs and Lists
 //
@@ -495,18 +457,6 @@ fn list_get(args: &[Value], _env: &Frame) -> EvalResult {
         Err(Condition::index_error(k).into())
     } else {
         pcar(subl)
-    }
-}
-
-fn sub_list<'a>(lst: &'a Value, idx: usize, k: &Value) -> Result<&'a Value, Exception> {
-    if idx == 0 {
-        Ok(lst)
-    } else if let Value::Pair(Some(p)) = lst {
-        sub_list(&p.cdr, idx - 1, k)
-    } else if let Value::Pair(None) = lst {
-        Err(Condition::index_error(k).into())
-    } else {
-        invalid_target!(TypeName::PAIR, lst)
     }
 }
 
@@ -606,6 +556,78 @@ vec_get!(
     convert::identity
 );
 
+//
+// Helpers
+//
+
+fn try_num_into_char(n: &Number, arg: &Value) -> EvalResult {
+    u32::try_from(n).map_or_else(
+        |err| {
+            Err(if let NumericError::Uint32ConversionInvalidRange = err {
+                Condition::value_error(UnicodeError::CodePointOutOfRange, arg)
+            } else {
+                Condition::arg_type_error(
+                    FIRST_ARG_LABEL,
+                    NumericTypeName::INTEGER,
+                    n.as_typename(),
+                    arg,
+                )
+            }
+            .into())
+        },
+        |u| {
+            char::from_u32(u).map_or_else(
+                || Err(Condition::value_error(UnicodeError::CodePointOutOfRange, arg).into()),
+                |c| Ok(Value::Character(c)),
+            )
+        },
+    )
+}
+
+fn real_op(arg: &Value, op: impl FnOnce(&Real) -> EvalResult) -> EvalResult {
+    guarded_real_op(arg, NumericTypeName::REAL, op)
+}
+
+fn rational_op(arg: &Value, op: impl FnOnce(&Real) -> EvalResult) -> EvalResult {
+    guarded_real_op(arg, NumericTypeName::RATIONAL, op)
+}
+
+fn exact_int_predicate(arg: &Value, pred: impl FnOnce(&Integer) -> bool) -> EvalResult {
+    guarded_real_op(arg, NumericTypeName::INTEGER, |r| {
+        r.clone().try_into_exact_integer().map_or_else(
+            |err| Err(Condition::value_error(err, arg).into()),
+            |n| Ok(Value::Boolean(pred(&n))),
+        )
+    })
+}
+
+fn guarded_real_op(
+    arg: &Value,
+    expected_type: impl Display,
+    op: impl FnOnce(&Real) -> EvalResult,
+) -> EvalResult {
+    let Value::Number(n) = arg else {
+        return invalid_target!(expected_type, arg);
+    };
+    if let Number::Real(r) = n {
+        op(r)
+    } else {
+        Err(Condition::arg_type_error(FIRST_ARG_LABEL, expected_type, n.as_typename(), arg).into())
+    }
+}
+
+fn sub_list<'a>(lst: &'a Value, idx: usize, k: &Value) -> Result<&'a Value, Exception> {
+    if idx == 0 {
+        Ok(lst)
+    } else if let Value::Pair(Some(p)) = lst {
+        sub_list(&p.cdr, idx - 1, k)
+    } else if let Value::Pair(None) = lst {
+        Err(Condition::index_error(k).into())
+    } else {
+        invalid_target!(TypeName::PAIR, lst)
+    }
+}
+
 fn vec_item<T, U>(
     vec: &T,
     k: &Value,
@@ -618,43 +640,18 @@ fn vec_item<T, U>(
     )
 }
 
-fn number_to_index(k: &Value) -> Result<usize, Exception> {
-    let Value::Number(n) = k else {
-        return Err(Condition::arg_error(SECOND_ARG_LABEL, NumericTypeName::INTEGER, k).into());
-    };
-    usize::try_from(n).map_err(|err| {
-        if let NumericError::UsizeConversionInvalidRange = err {
-            Condition::value_error(NumericError::UsizeConversionInvalidRange, k)
-        } else {
-            Condition::arg_type_error(
-                SECOND_ARG_LABEL,
-                NumericTypeName::INTEGER,
-                n.as_typename(),
-                k,
-            )
-        }
-        .into()
-    })
-}
-
-fn number_to_byte(k: &Value) -> Result<u8, Exception> {
-    let Value::Number(n) = k else {
-        return Err(Condition::arg_error(THIRD_ARG_LABEL, NumericTypeName::INTEGER, k).into());
-    };
-    u8::try_from(n).map_err(|err| {
-        if let NumericError::ByteConversionInvalidRange = err {
-            Condition::value_error(NumericError::ByteConversionInvalidRange, k)
-        } else {
-            Condition::arg_type_error(
-                THIRD_ARG_LABEL,
-                NumericTypeName::INTEGER,
-                n.as_typename(),
-                k,
-            )
-        }
-        .into()
-    })
-}
+num_convert!(
+    number_to_index,
+    usize,
+    NumericError::UsizeConversionInvalidRange,
+    SECOND_ARG_LABEL
+);
+num_convert!(
+    number_to_byte,
+    u8,
+    NumericError::ByteConversionInvalidRange,
+    THIRD_ARG_LABEL
+);
 
 #[cfg(test)]
 mod tests {
