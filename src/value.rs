@@ -102,7 +102,7 @@ impl Value {
         Self::Vector(items.into_iter().collect())
     }
 
-    fn bytevector_mut(bytes: impl IntoIterator<Item = u8>) -> Self {
+    pub(crate) fn bytevector_mut(bytes: impl IntoIterator<Item = u8>) -> Self {
         Self::ByteVectorMut(RefCell::new(bytes.into_iter().collect()).into())
     }
 

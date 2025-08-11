@@ -142,17 +142,19 @@ fn bytevector_set(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = first(args);
     let k = super::second(args);
     let byte = super::third(args);
-    if let Value::ByteVector(bv) = arg {
-        let idx = number_to_index(k)?;
-        if idx < bv.len() {
-            let b = number_to_byte(byte)?;
-            todo!("need mutability here");
-            Ok(Value::Unspecified)
-        } else {
-            Err(Condition::index_error(k).into())
+    match arg {
+        Value::ByteVectorMut(bv) => {
+            let idx = number_to_index(k)?;
+            if idx < bv.borrow().len() {
+                let b = number_to_byte(byte)?;
+                bv.borrow_mut()[idx] = b;
+                Ok(Value::Unspecified)
+            } else {
+                Err(Condition::index_error(k).into())
+            }
         }
-    } else {
-        invalid_target!(TypeName::BYTEVECTOR, arg)
+        Value::ByteVector(_) => todo!("immutable value exception"),
+        _ => invalid_target!(TypeName::BYTEVECTOR, arg),
     }
 }
 
@@ -1639,7 +1641,7 @@ mod tests {
     #[test]
     fn bytevector_set_val() {
         let args = [
-            Value::ByteVector([1, 2, 3].into()),
+            Value::bytevector_mut([1, 2, 3]),
             Value::Number(Number::real(1)),
             Value::Number(Number::real(25)),
         ];
@@ -1655,7 +1657,7 @@ mod tests {
     #[test]
     fn bytevector_set_val_out_of_range() {
         let args = [
-            Value::ByteVector([1, 2, 3].into()),
+            Value::bytevector_mut([1, 2, 3]),
             Value::Number(Number::real(1)),
             Value::Number(Number::real(400)),
         ];
@@ -1673,7 +1675,7 @@ mod tests {
     #[test]
     fn bytevector_set_val_invalid() {
         let args = [
-            Value::ByteVector([1, 2, 3].into()),
+            Value::bytevector_mut([1, 2, 3]),
             Value::Number(Number::real(1)),
             Value::string("a byte"),
         ];
@@ -1685,6 +1687,24 @@ mod tests {
         assert_eq!(
             err.to_string(),
             "#<env-error \"invalid type for arg `2` - expected: integer, got: string\" (\"a byte\")>"
+        );
+    }
+
+    #[test]
+    fn bytevector_set_val_immutable() {
+        let args = [
+            Value::ByteVector([1, 2, 3].into()),
+            Value::Number(Number::real(1)),
+            Value::Number(Number::real(25)),
+        ];
+        let env = TestEnv::default();
+
+        let r = bytevector_set(&args, &env.new_frame());
+
+        let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
+        assert_eq!(
+            err.to_string(),
+            "#<env-error \"invalid type for arg `0` - expected: integer, got: string\" (\"a byte\")>"
         );
     }
 }
