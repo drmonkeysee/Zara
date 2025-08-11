@@ -251,8 +251,8 @@ predicate!(is_file_error, Value::Error(c) if c.is_file_err());
 fn error_msg(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = first(args);
     if let Value::Error(c) = arg {
-        todo!("need mutable strings")
-        //Ok(Value::string(c.message()))
+        todo!("need mutable strings");
+        Ok(Value::string(c.message()))
     } else {
         invalid_target!(TypeName::ERROR, arg)
     }
