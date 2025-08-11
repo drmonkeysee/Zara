@@ -153,7 +153,7 @@ fn bytevector_set(args: &[Value], _env: &Frame) -> EvalResult {
                 Err(Condition::index_error(k).into())
             }
         }
-        Value::ByteVector(_) => todo!("immutable value exception"),
+        Value::ByteVector(_) => Err(Condition::literal_mut_error(arg).into()),
         _ => invalid_target!(TypeName::BYTEVECTOR, arg),
     }
 }
@@ -1704,7 +1704,7 @@ mod tests {
         let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
         assert_eq!(
             err.to_string(),
-            "#<env-error \"invalid type for arg `0` - expected: integer, got: string\" (\"a byte\")>"
+            "#<env-error \"cannot modify literal value\" (#u8(1 2 3))>"
         );
     }
 }
