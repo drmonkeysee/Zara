@@ -50,7 +50,6 @@ pub(crate) enum Value {
      * StringMut(Rc<RefCell<str>>)
      * PairMut(Option<Rc<RefCell<Pair>>>) ?? is refcell needed here? or is mut just swapping out the pair value
      * VectorMut(Rc<RefCell<[Value]>>)
-     * ByteVectorMut(Rc<RefCell<[u8]>>)
      */
 }
 
