@@ -24,8 +24,22 @@ mod display {
     }
 
     #[test]
+    fn bytevectormut_display() {
+        let v = Value::bytevector_mut([3, 2, 1]);
+
+        assert_eq!(v.to_string(), "#u8(3 2 1)");
+    }
+
+    #[test]
     fn bytevector_typename() {
         let v = Value::ByteVector([].into());
+
+        assert_eq!(v.as_typename().to_string(), "bytevector");
+    }
+
+    #[test]
+    fn bytevectormut_typename() {
+        let v = Value::bytevector_mut([]);
 
         assert_eq!(v.as_typename().to_string(), "bytevector");
     }

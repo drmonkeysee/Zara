@@ -11,6 +11,8 @@ mod condition;
 #[cfg(test)]
 mod tests;
 
+const BV_PREFIX: &str = "#u8";
+
 pub(crate) use self::condition::Condition;
 use crate::{
     eval::{Intrinsic, Procedure},
@@ -20,6 +22,7 @@ use crate::{
     syntax::Sequence,
 };
 use std::{
+    cell::RefCell,
     fmt::{self, Display, Formatter},
     rc::Rc,
 };
@@ -30,6 +33,7 @@ pub(crate) enum Value {
     Ast(Rc<Sequence>),
     Boolean(bool),
     ByteVector(Rc<[u8]>),
+    ByteVectorMut(Rc<RefCell<Vec<u8>>>),
     Character(char),
     Error(Rc<Condition>),
     Intrinsic(Rc<Intrinsic>),
@@ -40,7 +44,7 @@ pub(crate) enum Value {
     Symbol(Symbol),
     TokenList(Rc<[TokenLine]>),
     Unspecified,
-    Vector(Rc<[Value]>),
+    Vector(Rc<[Self]>),
     /*
      * TODO: Mutable Values
      * StringMut(Rc<RefCell<str>>)
@@ -56,7 +60,7 @@ impl Value {
     }
 
     #[allow(clippy::similar_names, reason = "lisp terms-of-art")]
-    pub(crate) fn cons(car: Value, cdr: Value) -> Self {
+    pub(crate) fn cons(car: Self, cdr: Self) -> Self {
         Self::Pair(Some(Pair { car, cdr }.into()))
     }
 
@@ -97,6 +101,10 @@ impl Value {
 
     pub(crate) fn vector(items: impl IntoIterator<Item = Self>) -> Self {
         Self::Vector(items.into_iter().collect())
+    }
+
+    fn bytevector_mut(bytes: impl IntoIterator<Item = u8>) -> Self {
+        Self::ByteVectorMut(RefCell::new(bytes.into_iter().collect()).into())
     }
 
     // NOTE: procedure eq? -> is same object
@@ -157,7 +165,8 @@ impl Display for Value {
         match self {
             Self::Ast(prg) => write!(f, "{{{prg:?}}}"),
             Self::Boolean(b) => write!(f, "#{}", if *b { 't' } else { 'f' }),
-            Self::ByteVector(bv) => write_seq("#u8", bv, f),
+            Self::ByteVector(bv) => write_seq(BV_PREFIX, bv, f),
+            Self::ByteVectorMut(bv) => write_seq(BV_PREFIX, &bv.borrow(), f),
             Self::Character(c) => write!(f, "#\\{}", CharDatum::new(*c)),
             Self::Error(c) => c.fmt(f),
             Self::Intrinsic(p) => p.fmt(f),
@@ -245,7 +254,7 @@ impl Display for TypeName<'_> {
         match self.0 {
             Value::Ast(_) => f.write_str("abstract syntax tree"),
             Value::Boolean(_) => f.write_str(Self::BOOL),
-            Value::ByteVector(_) => f.write_str(Self::BYTEVECTOR),
+            Value::ByteVector(_) | Value::ByteVectorMut(_) => f.write_str(Self::BYTEVECTOR),
             Value::Character(_) => f.write_str(Self::CHAR),
             Value::Error(_) => f.write_str(Self::ERROR),
             Value::Intrinsic(_) => f.write_str("intrinsic"),
