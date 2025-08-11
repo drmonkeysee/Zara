@@ -1536,4 +1536,82 @@ mod tests {
             "#<env-error \"unicode code point out of ranges [#x0, #xD7FF], [#xE000, #x10FFFF] ([0, 55295], [57344, 1114111])\" (57328)>"
         );
     }
+
+    #[test]
+    fn vector_get_idx() {
+        let args = [
+            Value::vector([
+                Value::Character('A'),
+                Value::Character('B'),
+                Value::Character('C'),
+            ]),
+            Value::Number(Number::real(1)),
+        ];
+        let env = TestEnv::default();
+
+        let r = vector_get(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert!(matches!(v, Value::Character('B')));
+    }
+
+    #[test]
+    fn vector_get_idx_out_of_bounds() {
+        let args = [
+            Value::vector([
+                Value::Character('A'),
+                Value::Character('B'),
+                Value::Character('C'),
+            ]),
+            Value::Number(Number::real(4)),
+        ];
+        let env = TestEnv::default();
+
+        let r = vector_get(&args, &env.new_frame());
+
+        let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
+        assert_eq!(err.to_string(), "#<env-error \"index out of range\" (4)>");
+    }
+
+    #[test]
+    fn vector_get_idx_malformed() {
+        let args = [
+            Value::vector([
+                Value::Character('A'),
+                Value::Character('B'),
+                Value::Character('C'),
+            ]),
+            Value::Number(Number::real(4.2)),
+        ];
+        let env = TestEnv::default();
+
+        let r = vector_get(&args, &env.new_frame());
+
+        let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
+        assert_eq!(
+            err.to_string(),
+            "#<env-error \"invalid type for arg `1` - expected: integer, got: floating-point\" (4.2)>"
+        );
+    }
+
+    #[test]
+    fn vector_get_idx_invalid() {
+        let args = [
+            Value::vector([
+                Value::Character('A'),
+                Value::Character('B'),
+                Value::Character('C'),
+            ]),
+            Value::string("idx"),
+        ];
+        let env = TestEnv::default();
+
+        let r = vector_get(&args, &env.new_frame());
+
+        let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
+        assert_eq!(
+            err.to_string(),
+            "#<env-error \"invalid type for arg `1` - expected: integer, got: string\" (\"idx\")>"
+        );
+    }
 }
