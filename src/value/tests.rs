@@ -1187,6 +1187,40 @@ mod equivalence {
     }
 
     #[test]
+    fn equal_mutable_bytevectors() {
+        let a = Value::bytevector_mut([1, 2, 3]);
+        let b = Value::bytevector_mut([1, 2, 3]);
+
+        assert!(!a.is(&b));
+        assert!(!a.is_eqv(&b));
+        assert!(a == b);
+    }
+
+    #[test]
+    fn unequal_mutable_bytevectors() {
+        let a = Value::bytevector_mut([1, 2, 3]);
+        let b = Value::bytevector_mut([1, 2, 3, 4]);
+
+        assert!(!a.is(&b));
+        assert!(!a.is_eqv(&b));
+        assert!(a != b);
+    }
+
+    #[test]
+    fn equal_mixed_bytevectors() {
+        let a = Value::ByteVector([1, 2, 3].into());
+        let b = Value::bytevector_mut([1, 2, 3]);
+
+        assert!(!a.is(&b));
+        assert!(!a.is_eqv(&b));
+        assert!(a == b);
+
+        assert!(!b.is(&a));
+        assert!(!b.is_eqv(&a));
+        assert!(b == a);
+    }
+
+    #[test]
     fn equal_pairs() {
         let a = Value::cons(Value::Number(Number::real(4)), Value::Character('a'));
         let b = Value::cons(Value::Number(Number::real(4)), Value::Character('a'));

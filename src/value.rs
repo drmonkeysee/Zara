@@ -112,6 +112,7 @@ impl Value {
             (Self::Ast(a), Self::Ast(b)) => Rc::ptr_eq(a, b),
             (Self::Boolean(a), Self::Boolean(b)) => a == b,
             (Self::ByteVector(a), Self::ByteVector(b)) => Rc::ptr_eq(a, b),
+            (Self::ByteVectorMut(a), Self::ByteVectorMut(b)) => Rc::ptr_eq(a, b),
             (Self::Intrinsic(a), Self::Intrinsic(b)) => Rc::ptr_eq(a, b),
             (Self::Pair(None), Self::Pair(None)) | (Self::Unspecified, Self::Unspecified) => true,
             (Self::Pair(Some(a)), Self::Pair(Some(b))) => Rc::ptr_eq(a, b),
@@ -149,6 +150,9 @@ impl PartialEq for Value {
         self.is_eqv(other)
             || match (self, other) {
                 (Self::ByteVector(a), Self::ByteVector(b)) => a == b,
+                (Self::ByteVectorMut(a), Self::ByteVectorMut(b)) => a == b,
+                (Self::ByteVector(a), Self::ByteVectorMut(b))
+                | (Self::ByteVectorMut(b), Self::ByteVector(a)) => a.as_ref() == *b.borrow(),
                 (Self::Pair(Some(a)), Self::Pair(Some(b))) => a == b,
                 (Self::String(a), Self::String(b)) => a == b,
                 (Self::Vector(a), Self::Vector(b)) => a == b,
