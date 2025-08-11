@@ -20,14 +20,12 @@ impl Condition {
         actual_type: impl Display,
         arg: &Value,
     ) -> Self {
-        Self {
-            kind: ConditionKind::Env,
-            irritants: Some(zlist![arg.clone()]),
-            msg: format!(
+        Self::value_error(
+            format!(
                 "invalid type for arg `{name}` - expected: {expected_type}, got: {actual_type}",
-            )
-            .into(),
-        }
+            ),
+            arg,
+        )
     }
 
     pub(crate) fn arity_error(name: Option<&str>, expected: &Arity, actual: usize) -> Self {
@@ -40,39 +38,26 @@ impl Condition {
                 expected.start
             )
         };
-        Self {
-            kind: ConditionKind::Env,
-            irritants: None,
-            msg: format!(
-                "{} arity mismatch - {expected}, got: {actual}",
-                name.unwrap_or("procedure")
-            )
-            .into(),
-        }
+        Self::env_error(format!(
+            "{} arity mismatch - {expected}, got: {actual}",
+            name.unwrap_or("procedure")
+        ))
     }
 
     pub(crate) fn bind_error(name: &str) -> Self {
-        Self {
-            kind: ConditionKind::Env,
-            irritants: None,
-            msg: format!("unbound variable: {name}").into(),
-        }
+        Self::env_error(format!("unbound variable: {name}"))
     }
 
     pub(crate) fn index_error(idx: &Value) -> Self {
-        Self {
-            kind: ConditionKind::Env,
-            irritants: Some(zlist![idx.clone()]),
-            msg: "index out of range".into(),
-        }
+        Self::value_error("index out of range", idx)
+    }
+
+    pub(crate) fn literal_mut_error(val: &Value) -> Self {
+        Self::value_error("cannot modify literal value", val)
     }
 
     pub(crate) fn proc_error(typename: impl Display) -> Self {
-        Self {
-            kind: ConditionKind::Env,
-            irritants: None,
-            msg: format!("expected procedure, got: {typename}").into(),
-        }
+        Self::env_error(format!("expected procedure, got: {typename}"))
     }
 
     pub(crate) fn system_error(msg: impl Into<Box<str>>) -> Self {
@@ -105,6 +90,14 @@ impl Condition {
 
     pub(crate) fn irritants(&self) -> Option<&Value> {
         self.irritants.as_ref()
+    }
+
+    fn env_error(msg: impl Display) -> Self {
+        Self {
+            kind: ConditionKind::Env,
+            irritants: None,
+            msg: msg.to_string().into(),
+        }
     }
 }
 
