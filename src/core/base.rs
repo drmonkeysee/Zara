@@ -492,7 +492,7 @@ fn load_string(env: &Frame) {
     super::bind_intrinsic(env, "string>=?", 0..MAX_ARITY, strings_gte);
 }
 
-predicate!(is_string, Value::String(_));
+predicate!(is_string, Value::String(_) | Value::StringMut(_));
 vec_length!(string_length, Value::String, TypeName::STRING);
 vec_get!(
     string_get,
@@ -551,7 +551,7 @@ fn load_vec(env: &Frame) {
     super::bind_intrinsic(env, "vector-ref", 2..2, vector_get);
 }
 
-predicate!(is_vector, Value::Vector(_));
+predicate!(is_vector, Value::Vector(_) | Value::VectorMut(_));
 vec_length!(vector_length, Value::Vector, TypeName::VECTOR);
 vec_get!(
     vector_get,
@@ -1061,6 +1061,17 @@ mod tests {
     }
 
     #[test]
+    fn string_mutable_predicate() {
+        let args = [Value::string_mut("abc")];
+        let env = TestEnv::default();
+
+        let r = is_string(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert!(matches!(v, Value::Boolean(true)));
+    }
+
+    #[test]
     fn is_even_integer() {
         let args = [Value::Number(Number::real(4))];
         let env = TestEnv::default();
@@ -1540,6 +1551,57 @@ mod tests {
             err.to_string(),
             "#<env-error \"unicode code point out of ranges [#x0, #xD7FF], [#xE000, #x10FFFF] ([0, 55295], [57344, 1114111])\" (57328)>"
         );
+    }
+
+    #[test]
+    fn vector_mutable_predicate() {
+        let args = [Value::vector_mut([
+            Value::Character('A'),
+            Value::Character('B'),
+            Value::Character('C'),
+        ])];
+        let env = TestEnv::default();
+
+        let r = is_vector(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert!(matches!(v, Value::Boolean(true)));
+    }
+
+    #[test]
+    fn vector_mutable_length() {
+        let args = [
+            Value::vector_mut([
+                Value::Character('A'),
+                Value::Character('B'),
+                Value::Character('C'),
+            ]),
+            Value::Number(Number::real(1)),
+        ];
+        let env = TestEnv::default();
+
+        let r = vector_length(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_eq!(v.to_string(), "3");
+    }
+
+    #[test]
+    fn vector_mutable_get_idx() {
+        let args = [
+            Value::vector_mut([
+                Value::Character('A'),
+                Value::Character('B'),
+                Value::Character('C'),
+            ]),
+            Value::Number(Number::real(1)),
+        ];
+        let env = TestEnv::default();
+
+        let r = vector_get(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert!(matches!(v, Value::Character('B')));
     }
 
     #[test]
