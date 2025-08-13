@@ -11,8 +11,6 @@ mod condition;
 #[cfg(test)]
 mod tests;
 
-const BV_PREFIX: &str = "#u8";
-
 pub(crate) use self::condition::Condition;
 use crate::{
     eval::{Intrinsic, Procedure},
@@ -41,15 +39,15 @@ pub(crate) enum Value {
     Pair(Option<Rc<Pair>>),
     Procedure(Rc<Procedure>),
     String(Rc<str>),
+    StringMut(Rc<RefCell<String>>),
     Symbol(Symbol),
     TokenList(Rc<[TokenLine]>),
     Unspecified,
     Vector(Rc<[Self]>),
+    VectorMut(Rc<RefCell<Vec<Self>>>),
     /*
      * TODO: Mutable Values
-     * StringMut(Rc<RefCell<str>>)
      * PairMut(Option<Rc<RefCell<Pair>>>) ?? is refcell needed here? or is mut just swapping out the pair value
-     * VectorMut(Rc<RefCell<[Value]>>)
      */
 }
 
@@ -98,8 +96,16 @@ impl Value {
         Self::String(s.into())
     }
 
+    pub(crate) fn string_mut(s: impl Into<String>) -> Self {
+        Self::StringMut(RefCell::new(s.into()).into())
+    }
+
     pub(crate) fn vector(items: impl IntoIterator<Item = Self>) -> Self {
         Self::Vector(items.into_iter().collect())
+    }
+
+    pub(crate) fn vector_mut(items: impl IntoIterator<Item = Self>) -> Self {
+        Self::VectorMut(RefCell::new(items.into_iter().collect()).into())
     }
 
     pub(crate) fn bytevector_mut(bytes: impl IntoIterator<Item = u8>) -> Self {
@@ -169,8 +175,8 @@ impl Display for Value {
         match self {
             Self::Ast(prg) => write!(f, "{{{prg:?}}}"),
             Self::Boolean(b) => write!(f, "#{}", if *b { 't' } else { 'f' }),
-            Self::ByteVector(bv) => write_seq(BV_PREFIX, bv, f),
-            Self::ByteVectorMut(bv) => write_seq(BV_PREFIX, &bv.borrow(), f),
+            Self::ByteVector(bv) => write_seq("#u8", bv, f),
+            Self::ByteVectorMut(bv) => write_seq("#u8", &bv.borrow(), f),
             Self::Character(c) => write!(f, "#\\{}", CharDatum::new(*c)),
             Self::Error(c) => c.fmt(f),
             Self::Intrinsic(p) => p.fmt(f),
@@ -179,10 +185,12 @@ impl Display for Value {
             Self::Pair(Some(p)) => write!(f, "({p})"),
             Self::Procedure(p) => p.fmt(f),
             Self::String(s) => StrDatum(s).fmt(f),
+            Self::StringMut(s) => StrDatum(&s.borrow()).fmt(f),
             Self::Symbol(s) => s.as_datum().fmt(f),
             Self::TokenList(lines) => DisplayTokenLines(lines).fmt(f),
             Self::Unspecified => f.write_str("#<unspecified>"),
             Self::Vector(v) => write_seq("#", v, f),
+            Self::VectorMut(v) => write_seq("#", &v.borrow(), f),
         }
     }
 }
@@ -266,11 +274,11 @@ impl Display for TypeName<'_> {
             Value::Pair(None) => f.write_str("null"),
             Value::Pair(Some(p)) => f.write_str(if p.is_list() { Self::LIST } else { Self::PAIR }),
             Value::Procedure(_) => f.write_str("procedure"),
-            Value::String(_) => f.write_str(Self::STRING),
+            Value::String(_) | Value::StringMut(_) => f.write_str(Self::STRING),
             Value::Symbol(_) => f.write_str(Self::SYMBOL),
             Value::TokenList(_) => f.write_str("token list"),
             Value::Unspecified => f.write_str("unspecified"),
-            Value::Vector(_) => f.write_str(Self::VECTOR),
+            Value::Vector(_) | Value::VectorMut(_) => f.write_str(Self::VECTOR),
         }
     }
 }

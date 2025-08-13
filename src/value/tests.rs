@@ -94,6 +94,13 @@ mod display {
     }
 
     #[test]
+    fn stringmut_typename() {
+        let v = Value::string_mut("foo");
+
+        assert_eq!(v.as_typename().to_string(), "string");
+    }
+
+    #[test]
     fn symbol_typename() {
         let sym = SymbolTable::default();
 
@@ -168,6 +175,25 @@ mod display {
         let v = Value::vector([]);
 
         assert_eq!(v.to_string(), "#()");
+    }
+
+    #[test]
+    fn vectormut_typename() {
+        let v = Value::vector_mut([]);
+
+        assert_eq!(v.as_typename().to_string(), "vector");
+    }
+
+    #[test]
+    fn vectormut_display() {
+        let sym = SymbolTable::default();
+        let v = Value::vector_mut([
+            Value::string("foo"),
+            Value::Symbol(sym.get("a")),
+            zlist![Value::Boolean(true), Value::Character('a')],
+        ]);
+
+        assert_eq!(v.to_string(), "#(\"foo\" a (#t #\\a))");
     }
 
     #[test]
@@ -482,6 +508,13 @@ bar",
             ("\"", "\\\""),
             ("\\", "\\\\"),
         ]);
+    }
+
+    #[test]
+    fn display_string_mut() {
+        let v = Value::string_mut("abc123!@#");
+
+        assert_eq!(v.to_string(), "\"abc123!@#\"");
     }
 
     fn check_escape_sequence(cases: &[(&str, &str)]) {
