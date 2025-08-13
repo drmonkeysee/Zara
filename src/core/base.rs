@@ -128,7 +128,10 @@ fn load_bv(env: &Frame) {
     super::bind_intrinsic(env, "bytevector-u8-set!", 3..3, bytevector_set);
 }
 
-predicate!(is_bytevector, Value::ByteVector(_));
+predicate!(
+    is_bytevector,
+    Value::ByteVector(_) | Value::ByteVectorMut(_)
+);
 vec_length!(bytevector_length, Value::ByteVector, TypeName::BYTEVECTOR);
 vec_get!(
     bytevector_get,
