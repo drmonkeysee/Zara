@@ -1321,9 +1321,44 @@ mod equivalence {
     }
 
     #[test]
+    fn equal_mut_strings() {
+        let a = Value::string_mut("foo");
+        let b = Value::string_mut("foo");
+
+        assert!(!a.is(&b));
+        assert!(!a.is_eqv(&b));
+        assert!(a == b);
+    }
+
+    #[test]
+    fn equal_mixed_strings() {
+        let a = Value::string("foo");
+        let b = Value::string_mut("foo");
+
+        assert!(!a.is(&b));
+        assert!(!a.is_eqv(&b));
+        assert!(a == b);
+
+        assert!(!b.is(&a));
+        assert!(!b.is_eqv(&a));
+        assert!(b == a);
+    }
+
+    #[test]
     fn strings_do_not_equal_symbols() {
         let sym = SymbolTable::default();
         let a = Value::string("foo");
+        let b = Value::Symbol(sym.get("foo"));
+
+        assert!(!a.is(&b));
+        assert!(!a.is_eqv(&b));
+        assert!(a != b);
+    }
+
+    #[test]
+    fn strings_mut_do_not_equal_symbols() {
+        let sym = SymbolTable::default();
+        let a = Value::string_mut("foo");
         let b = Value::Symbol(sym.get("foo"));
 
         assert!(!a.is(&b));
@@ -1347,6 +1382,46 @@ mod equivalence {
         assert!(!a.is(&b));
         assert!(!a.is_eqv(&b));
         assert!(a == b);
+    }
+
+    #[test]
+    fn equal_mut_vectors() {
+        let a = Value::vector_mut([
+            Value::Boolean(true),
+            Value::Character('b'),
+            Value::Number(Number::real(3)),
+        ]);
+        let b = Value::vector_mut([
+            Value::Boolean(true),
+            Value::Character('b'),
+            Value::Number(Number::real(3)),
+        ]);
+
+        assert!(!a.is(&b));
+        assert!(!a.is_eqv(&b));
+        assert!(a == b);
+    }
+
+    #[test]
+    fn equal_mixed_vectors() {
+        let a = Value::vector([
+            Value::Boolean(true),
+            Value::Character('b'),
+            Value::Number(Number::real(3)),
+        ]);
+        let b = Value::vector_mut([
+            Value::Boolean(true),
+            Value::Character('b'),
+            Value::Number(Number::real(3)),
+        ]);
+
+        assert!(!a.is(&b));
+        assert!(!a.is_eqv(&b));
+        assert!(a == b);
+
+        assert!(!b.is(&a));
+        assert!(!b.is_eqv(&a));
+        assert!(b == a);
     }
 
     #[test]
@@ -1376,6 +1451,44 @@ mod equivalence {
             Value::Number(Number::real(3)),
         ]);
         let b = Value::vector([
+            Value::Boolean(true),
+            Value::Character('b'),
+            Value::Number(Number::real(3.0)),
+            Value::Boolean(false),
+        ]);
+
+        assert!(!a.is(&b));
+        assert!(!a.is_eqv(&b));
+        assert!(a != b);
+    }
+
+    #[test]
+    fn unequal_mut_vectors() {
+        let a = Value::vector_mut([
+            Value::Boolean(true),
+            Value::Character('b'),
+            Value::Number(Number::real(3)),
+        ]);
+        let b = Value::vector_mut([
+            Value::Boolean(true),
+            Value::Character('b'),
+            Value::Number(Number::real(3)),
+            Value::Boolean(false),
+        ]);
+
+        assert!(!a.is(&b));
+        assert!(!a.is_eqv(&b));
+        assert!(a != b);
+    }
+
+    #[test]
+    fn unequal_mut_vectors_with_unequivalent_items() {
+        let a = Value::vector_mut([
+            Value::Boolean(true),
+            Value::Character('b'),
+            Value::Number(Number::real(3)),
+        ]);
+        let b = Value::vector_mut([
             Value::Boolean(true),
             Value::Character('b'),
             Value::Number(Number::real(3.0)),

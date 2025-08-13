@@ -125,9 +125,11 @@ impl Value {
             (Self::Pair(Some(a)), Self::Pair(Some(b))) => Rc::ptr_eq(a, b),
             (Self::Procedure(a), Self::Procedure(b)) => Rc::ptr_eq(a, b),
             (Self::String(a), Self::String(b)) => Rc::ptr_eq(a, b),
+            (Self::StringMut(a), Self::StringMut(b)) => Rc::ptr_eq(a, b),
             (Self::Symbol(a), Self::Symbol(b)) => a.is(b),
             (Self::TokenList(a), Self::TokenList(b)) => Rc::ptr_eq(a, b),
             (Self::Vector(a), Self::Vector(b)) => Rc::ptr_eq(a, b),
+            (Self::VectorMut(a), Self::VectorMut(b)) => Rc::ptr_eq(a, b),
             _ => false,
         }
     }
@@ -162,7 +164,15 @@ impl PartialEq for Value {
                 | (Self::ByteVectorMut(b), Self::ByteVector(a)) => a.as_ref() == *b.borrow(),
                 (Self::Pair(Some(a)), Self::Pair(Some(b))) => a == b,
                 (Self::String(a), Self::String(b)) => a == b,
+                (Self::StringMut(a), Self::StringMut(b)) => a == b,
+                (Self::String(a), Self::StringMut(b)) | (Self::StringMut(b), Self::String(a)) => {
+                    a.as_ref() == *b.borrow()
+                }
                 (Self::Vector(a), Self::Vector(b)) => a == b,
+                (Self::VectorMut(a), Self::VectorMut(b)) => a == b,
+                (Self::Vector(a), Self::VectorMut(b)) | (Self::VectorMut(b), Self::Vector(a)) => {
+                    a.as_ref() == *b.borrow()
+                }
                 _ => false,
             }
     }
