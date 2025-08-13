@@ -998,6 +998,21 @@ mod tests {
     }
 
     #[test]
+    fn all_strings_equal_with_mutable() {
+        let args = [
+            Value::string("foo"),
+            Value::string_mut("foo"),
+            Value::string("foo"),
+        ];
+        let env = TestEnv::default();
+
+        let r = strings_eq(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert!(matches!(v, Value::Boolean(true)));
+    }
+
+    #[test]
     fn all_strings_mixed() {
         let args = [
             Value::string("foo"),
@@ -1035,6 +1050,21 @@ mod tests {
         let args = [
             Value::string("abc"),
             Value::string("def"),
+            Value::string("ghi"),
+        ];
+        let env = TestEnv::default();
+
+        let r = strings_lt(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert!(matches!(v, Value::Boolean(true)));
+    }
+
+    #[test]
+    fn all_strings_lt_with_mutable() {
+        let args = [
+            Value::string("abc"),
+            Value::string_mut("def"),
             Value::string("ghi"),
         ];
         let env = TestEnv::default();
