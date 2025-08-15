@@ -820,7 +820,7 @@ impl FloatSpec {
         let mut buf = String::new();
         let mut num = IntSpec::<Decimal>::default();
         if self.integral.has_sign() {
-            buf += input.get(0..1).unwrap_or_default();
+            buf += input.get(..1).unwrap_or_default();
             num.sign = self.integral.sign;
             num.magnitude = 1..1;
         }

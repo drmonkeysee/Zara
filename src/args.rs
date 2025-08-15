@@ -222,7 +222,7 @@ pub(crate) fn version() {
 
 fn app_title() -> String {
     let mut title = env!("CARGO_PKG_NAME").to_owned();
-    if let Some(t) = title.get_mut(0..1) {
+    if let Some(t) = title.get_mut(..1) {
         t.make_ascii_uppercase();
     }
     title
