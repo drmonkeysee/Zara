@@ -86,7 +86,7 @@ impl<'me, 'txt> Identifier<'me, 'txt> {
             match self
                 .peculiar_state
                 .as_ref()
-                .expect("unexpected peculiar decimal state")
+                .expect("expected valid peculiar decimal state")
             {
                 PeculiarState::DefiniteIdentifier => self.standard(),
                 // CASE: .<digit>
