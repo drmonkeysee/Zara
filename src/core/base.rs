@@ -77,6 +77,30 @@ macro_rules! vec_get {
     };
 }
 
+macro_rules! vec_set {
+    ($name:ident, $mutkind:path, $kind: path, $valname:expr, $valconv:expr, $setval:expr) => {
+        fn $name(args: &[Value], _env: &Frame) -> EvalResult {
+            let arg = first(args);
+            let k = super::second(args);
+            let val = super::third(args);
+            match arg {
+                $mutkind(v) => {
+                    let idx = valnum_to_index(k)?;
+                    if idx < v.borrow().len() {
+                        let item = $valconv(val)?;
+                        $setval(v.borrow_mut(), idx, item);
+                        Ok(Value::Unspecified)
+                    } else {
+                        Err(Condition::index_error(k).into())
+                    }
+                }
+                $kind(_) => Err(Condition::literal_mut_error(arg).into()),
+                _ => invalid_target!($valname, arg),
+            }
+        }
+    };
+}
+
 #[cfg(test)]
 mod tests;
 
@@ -88,7 +112,7 @@ use crate::{
     string::{Symbol, unicode::UnicodeError},
     value::{Condition, TypeName, Value},
 };
-use std::{convert, fmt::Display, rc::Rc};
+use std::{cell::RefMut, convert, fmt::Display, rc::Rc};
 
 pub(super) fn load(env: &Frame) {
     load_bool(env);
@@ -143,26 +167,14 @@ vec_get!(
     |bv, u| bv.get(u).copied(),
     |item| Value::Number(Number::real(i64::from(item)))
 );
-
-fn bytevector_set(args: &[Value], _env: &Frame) -> EvalResult {
-    let arg = first(args);
-    let k = super::second(args);
-    let byte = super::third(args);
-    match arg {
-        Value::ByteVectorMut(bv) => {
-            let idx = number_to_index(k)?;
-            if idx < bv.borrow().len() {
-                let b = number_to_byte(byte)?;
-                bv.borrow_mut()[idx] = b;
-                Ok(Value::Unspecified)
-            } else {
-                Err(Condition::index_error(k).into())
-            }
-        }
-        Value::ByteVector(_) => Err(Condition::literal_mut_error(arg).into()),
-        _ => invalid_target!(TypeName::BYTEVECTOR, arg),
-    }
-}
+vec_set!(
+    bytevector_set,
+    Value::ByteVectorMut,
+    Value::ByteVector,
+    TypeName::BYTEVECTOR,
+    valnum_to_byte,
+    |mut v: RefMut<'_, Vec<_>>, idx, item| v[idx] = item
+);
 
 //
 // Characters
@@ -454,13 +466,13 @@ fn list_length(args: &[Value], _env: &Frame) -> EvalResult {
 fn list_tail(args: &[Value], _env: &Frame) -> EvalResult {
     let lst = first(args);
     let k = super::second(args);
-    sub_list(lst, number_to_index(k)?, k).cloned()
+    sub_list(lst, valnum_to_index(k)?, k).cloned()
 }
 
 fn list_get(args: &[Value], _env: &Frame) -> EvalResult {
     let lst = first(args);
     let k = super::second(args);
-    let subl = sub_list(lst, number_to_index(k)?, k)?;
+    let subl = sub_list(lst, valnum_to_index(k)?, k)?;
     if let Value::Pair(None) = subl {
         Err(Condition::index_error(k).into())
     } else {
@@ -487,6 +499,7 @@ fn load_string(env: &Frame) {
 
     super::bind_intrinsic(env, "string-length", 1..1, string_length);
     super::bind_intrinsic(env, "string-ref", 2..2, string_get);
+    super::bind_intrinsic(env, "string-set!", 3..3, string_set);
 
     super::bind_intrinsic(env, "string=?", 0..MAX_ARITY, strings_eq);
     super::bind_intrinsic(env, "string<?", 0..MAX_ARITY, strings_lt);
@@ -503,6 +516,14 @@ vec_get!(
     TypeName::STRING,
     |s, u| s.chars().nth(u),
     Value::Character
+);
+vec_set!(
+    string_set,
+    Value::StringMut,
+    Value::String,
+    TypeName::STRING,
+    val_to_char,
+    replace_str_char
 );
 seq_predicate!(strings_eq, Value::String, TypeName::STRING, Rc::eq);
 seq_predicate!(strings_lt, Value::String, TypeName::STRING, Rc::lt);
@@ -552,6 +573,7 @@ fn load_vec(env: &Frame) {
 
     super::bind_intrinsic(env, "vector-length", 1..1, vector_length);
     super::bind_intrinsic(env, "vector-ref", 2..2, vector_get);
+    super::bind_intrinsic(env, "vector-set!", 3..3, vector_set);
 }
 
 predicate!(is_vector, Value::Vector(_) | Value::VectorMut(_));
@@ -563,10 +585,31 @@ vec_get!(
     |v, u| v.get(u).cloned(),
     convert::identity
 );
+vec_set!(
+    vector_set,
+    Value::VectorMut,
+    Value::Vector,
+    TypeName::VECTOR,
+    |val: &Value| Ok::<_, Exception>(val.clone()),
+    |mut v: RefMut<'_, Vec<_>>, idx, item| v[idx] = item
+);
 
 //
 // Helpers
 //
+
+num_convert!(
+    valnum_to_index,
+    usize,
+    NumericError::UsizeConversionInvalidRange,
+    SECOND_ARG_LABEL
+);
+num_convert!(
+    valnum_to_byte,
+    u8,
+    NumericError::ByteConversionInvalidRange,
+    THIRD_ARG_LABEL
+);
 
 fn try_num_into_char(n: &Number, arg: &Value) -> EvalResult {
     u32::try_from(n).map_or_else(
@@ -624,6 +667,21 @@ fn guarded_real_op(
     }
 }
 
+fn val_to_char(arg: &Value) -> Result<char, Exception> {
+    if let Value::Character(c) = arg {
+        Ok(*c)
+    } else {
+        Err(Condition::arg_error(THIRD_ARG_LABEL, TypeName::CHAR, arg).into())
+    }
+}
+
+fn replace_str_char(mut s: RefMut<'_, String>, idx: usize, ch: char) {
+    let mut chars = s.chars().collect::<Vec<_>>();
+    let c = chars.get_mut(idx).expect("expected valid index");
+    *c = ch;
+    s.replace_range(.., &chars.into_iter().collect::<String>());
+}
+
 fn sub_list<'a>(lst: &'a Value, idx: usize, k: &Value) -> Result<&'a Value, Exception> {
     if idx == 0 {
         Ok(lst)
@@ -642,21 +700,8 @@ fn vec_item<T, U>(
     get: impl FnOnce(&T, usize) -> Option<U>,
     map: impl FnOnce(U) -> Value,
 ) -> EvalResult {
-    get(vec, number_to_index(k)?).map_or_else(
+    get(vec, valnum_to_index(k)?).map_or_else(
         || Err(Condition::index_error(k).into()),
         |item| Ok(map(item)),
     )
 }
-
-num_convert!(
-    number_to_index,
-    usize,
-    NumericError::UsizeConversionInvalidRange,
-    SECOND_ARG_LABEL
-);
-num_convert!(
-    number_to_byte,
-    u8,
-    NumericError::ByteConversionInvalidRange,
-    THIRD_ARG_LABEL
-);

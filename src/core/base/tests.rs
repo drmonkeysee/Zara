@@ -474,7 +474,7 @@ fn string_set_val() {
 
     let v = ok_or_fail!(r);
     assert!(matches!(v, Value::Unspecified));
-    assert_eq!(args[0].to_string(), "aXc");
+    assert_eq!(args[0].to_string(), "\"aXc\"");
 }
 
 #[test]
@@ -1112,7 +1112,7 @@ fn vector_get_idx_invalid() {
 #[test]
 fn vector_set_val() {
     let args = [
-        Value::vector([
+        Value::vector_mut([
             Value::Character('A'),
             Value::Character('B'),
             Value::Character('C'),
@@ -1126,7 +1126,7 @@ fn vector_set_val() {
 
     let v = ok_or_fail!(r);
     assert!(matches!(v, Value::Unspecified));
-    assert_eq!(args[0].to_string(), "#(A 25 C)");
+    assert_eq!(args[0].to_string(), "#(#\\A 25 #\\C)");
 }
 
 #[test]
