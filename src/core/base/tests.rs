@@ -440,6 +440,44 @@ fn string_mutable_predicate() {
 }
 
 #[test]
+fn string_mutable_length() {
+    let args = [Value::string_mut("abc")];
+    let env = TestEnv::default();
+
+    let r = string_length(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert_eq!(v.to_string(), "3");
+}
+
+#[test]
+fn string_mutable_get_ref() {
+    let args = [Value::string_mut("abc"), Value::Number(Number::real(1))];
+    let env = TestEnv::default();
+
+    let r = string_get(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert!(matches!(v, Value::Character('b')));
+}
+
+#[test]
+fn string_set_val() {
+    let args = [
+        Value::string_mut("abc"),
+        Value::Number(Number::real(1)),
+        Value::Character('X'),
+    ];
+    let env = TestEnv::default();
+
+    let r = string_set(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert!(matches!(v, Value::Unspecified));
+    assert_eq!(args[0].to_string(), "aXc");
+}
+
+#[test]
 fn is_even_integer() {
     let args = [Value::Number(Number::real(4))];
     let env = TestEnv::default();
@@ -955,7 +993,7 @@ fn vector_mutable_length() {
 }
 
 #[test]
-fn vector_mutable_get_idx() {
+fn vector_mutable_get_ref() {
     let args = [
         Value::vector_mut([
             Value::Character('A'),
@@ -973,7 +1011,7 @@ fn vector_mutable_get_idx() {
 }
 
 #[test]
-fn vector_get_idx() {
+fn vector_get_ref() {
     let args = [
         Value::vector([
             Value::Character('A'),
@@ -1072,6 +1110,26 @@ fn vector_get_idx_invalid() {
 }
 
 #[test]
+fn vector_set_val() {
+    let args = [
+        Value::vector([
+            Value::Character('A'),
+            Value::Character('B'),
+            Value::Character('C'),
+        ]),
+        Value::Number(Number::real(1)),
+        Value::Number(Number::real(25)),
+    ];
+    let env = TestEnv::default();
+
+    let r = vector_set(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert!(matches!(v, Value::Unspecified));
+    assert_eq!(args[0].to_string(), "#(A 25 C)");
+}
+
+#[test]
 fn bytevector_mutable_predicate() {
     let args = [Value::bytevector_mut([1, 2, 3])];
     let env = TestEnv::default();
@@ -1094,7 +1152,7 @@ fn bytevector_mutable_length() {
 }
 
 #[test]
-fn bytevector_mutable_get_idx() {
+fn bytevector_mutable_get_ref() {
     let args = [
         Value::bytevector_mut([1, 2, 3]),
         Value::Number(Number::real(1)),
