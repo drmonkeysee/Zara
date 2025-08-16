@@ -83,6 +83,6 @@ fn char_case<I: ExactSizeIterator<Item = char>>(
 }
 
 fn string_case(arg: &Value, case: impl FnOnce(&str) -> String) -> EvalResult {
-    let s = arg.as_str().ok_or(invalid_target(TypeName::STRING, arg))?;
+    let s = arg.as_rstr().ok_or(invalid_target(TypeName::STRING, arg))?;
     Ok(Value::string_mut(case(s.as_ref())))
 }

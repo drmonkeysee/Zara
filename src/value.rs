@@ -152,7 +152,7 @@ impl Value {
         TypeName(self)
     }
 
-    pub(crate) fn as_str(&self) -> Option<StrRef> {
+    pub(crate) fn as_rstr(&self) -> Option<StrRef> {
         match self {
             Value::String(s) => Some(StrRef::Con(s)),
             Value::StringMut(s) => Some(StrRef::Mut(s.borrow())),

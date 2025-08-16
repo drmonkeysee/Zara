@@ -586,7 +586,7 @@ fn symbol_to_string(args: &[Value], _env: &Frame) -> EvalResult {
 
 fn string_to_symbol(args: &[Value], env: &Frame) -> EvalResult {
     let arg = first(args);
-    arg.as_str()
+    arg.as_rstr()
         .map_or(Err(invalid_target(TypeName::STRING, arg)), |s| {
             Ok(Value::Symbol(env.sym.get(s)))
         })
@@ -721,7 +721,7 @@ fn strs_predicate(args: &[Value], pred: impl Fn(&str, &str) -> bool) -> EvalResu
         .iter()
         .enumerate()
         .try_fold::<(bool, Option<&Value>), _, _>((true, None), |(acc, prev), (idx, val)| {
-            let b = val.as_str().ok_or_else(|| {
+            let b = val.as_rstr().ok_or_else(|| {
                 Exception::from(Condition::arg_error(
                     &idx.to_string(),
                     TypeName::STRING,
@@ -730,7 +730,7 @@ fn strs_predicate(args: &[Value], pred: impl Fn(&str, &str) -> bool) -> EvalResu
             })?;
             let a = match prev {
                 None => return Ok((acc, Some(val))),
-                Some(v) => v.as_str().expect("unexpected value type from prev"),
+                Some(v) => v.as_rstr().expect("unexpected value type from prev"),
             };
             Ok((acc && pred(a.as_ref(), b.as_ref()), Some(val)))
         });

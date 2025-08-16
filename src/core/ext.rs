@@ -57,7 +57,8 @@ fn apropos(args: &[Value], env: &Frame) -> EvalResult {
     let pat = args
         .first()
         .map_or(Ok::<_, Exception>(StrRef::default()), |v| {
-            v.as_str().ok_or(super::invalid_target(TypeName::STRING, v))
+            v.as_rstr()
+                .ok_or(super::invalid_target(TypeName::STRING, v))
         })?;
     Ok(Value::list(
         env.scope
