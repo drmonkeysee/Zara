@@ -722,22 +722,18 @@ fn strs_predicate(args: &[Value], pred: impl Fn(&str, &str) -> bool) -> EvalResu
         .iter()
         .enumerate()
         .try_fold::<(bool, Option<&Value>), _, _>((true, None), |(acc, prev), (idx, val)| {
-            let b = match val {
-                Value::String(s) => s.as_ref(),
-                Value::StringMut(s) => &s.borrow(),
-                _ => {
-                    return Err(
-                        Condition::arg_error(&idx.to_string(), TypeName::STRING, val).into(),
-                    );
-                }
-            };
+            let b = val.as_str().ok_or_else(|| {
+                Exception::from(Condition::arg_error(
+                    &idx.to_string(),
+                    TypeName::STRING,
+                    val,
+                ))
+            })?;
             let a = match prev {
                 None => return Ok((acc, Some(val))),
-                Some(Value::String(s)) => s.as_ref(),
-                Some(Value::StringMut(s)) => &s.borrow(),
-                _ => unreachable!("unexpected value from prev"),
+                Some(v) => v.as_str().expect("unexpected value type from prev"),
             };
-            Ok((acc && pred(a, b), Some(val)))
+            Ok((acc && pred(a.as_ref(), b.as_ref()), Some(val)))
         });
     Ok(Value::Boolean(result?.0))
 }
