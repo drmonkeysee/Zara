@@ -51,27 +51,28 @@ macro_rules! num_convert {
 }
 
 macro_rules! vec_length {
-    ($name:ident, $kind:path, $valname:expr) => {
+    ($name:ident, $kind:path, $mutkind:path, $valname:expr) => {
         fn $name(args: &[Value], _env: &Frame) -> EvalResult {
             let arg = first(args);
-            if let $kind(v) = arg {
-                Ok(Value::Number(Number::from_usize(v.len())))
-            } else {
-                invalid_target!($valname, arg)
-            }
+            let len = match arg {
+                $kind(v) => v.len(),
+                $mutkind(v) => v.borrow().len(),
+                _ => return invalid_target!($valname, arg),
+            };
+            Ok(Value::Number(Number::from_usize(len)))
         }
     };
 }
 
 macro_rules! vec_get {
-    ($name:ident, $kind: path, $valname:expr, $get:expr, $map:expr) => {
+    ($name:ident, $kind: path, $mutkind:path, $valname:expr, $get:expr, $map:expr) => {
         fn $name(args: &[Value], _env: &Frame) -> EvalResult {
             let vec = first(args);
             let k = super::second(args);
-            if let $kind(v) = vec {
-                vec_item(v, k, $get, $map)
-            } else {
-                invalid_target!($valname, vec)
+            match vec {
+                $kind(v) => vec_item(v, k, $get, $map),
+                $mutkind(v) => vec_item(&v.borrow(), k, $get, $map),
+                _ => invalid_target!($valname, vec),
             }
         }
     };
@@ -159,10 +160,16 @@ predicate!(
     is_bytevector,
     Value::ByteVector(_) | Value::ByteVectorMut(_)
 );
-vec_length!(bytevector_length, Value::ByteVector, TypeName::BYTEVECTOR);
+vec_length!(
+    bytevector_length,
+    Value::ByteVector,
+    Value::ByteVectorMut,
+    TypeName::BYTEVECTOR
+);
 vec_get!(
     bytevector_get,
     Value::ByteVector,
+    Value::ByteVectorMut,
     TypeName::BYTEVECTOR,
     |bv, u| bv.get(u).copied(),
     |item| Value::Number(Number::real(i64::from(item)))
@@ -508,10 +515,16 @@ fn load_string(env: &Frame) {
 }
 
 predicate!(is_string, Value::String(_) | Value::StringMut(_));
-vec_length!(string_length, Value::String, TypeName::STRING);
+vec_length!(
+    string_length,
+    Value::String,
+    Value::StringMut,
+    TypeName::STRING
+);
 vec_get!(
     string_get,
     Value::String,
+    Value::StringMut,
     TypeName::STRING,
     |s, u| s.chars().nth(u),
     Value::Character
@@ -576,10 +589,16 @@ fn load_vec(env: &Frame) {
 }
 
 predicate!(is_vector, Value::Vector(_) | Value::VectorMut(_));
-vec_length!(vector_length, Value::Vector, TypeName::VECTOR);
+vec_length!(
+    vector_length,
+    Value::Vector,
+    Value::VectorMut,
+    TypeName::VECTOR
+);
 vec_get!(
     vector_get,
     Value::Vector,
+    Value::VectorMut,
     TypeName::VECTOR,
     |v, u| v.get(u).cloned(),
     convert::identity
