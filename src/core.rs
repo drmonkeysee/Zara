@@ -5,7 +5,7 @@ macro_rules! try_predicate {
             if let $kind(val) = arg {
                 Ok(Value::Boolean($pred(val)))
             } else {
-                invalid_target($valname, arg)
+                Err(invalid_target($valname, arg))
             }
         }
     };
@@ -99,7 +99,7 @@ fn pcar(arg: &Value) -> EvalResult {
     if let Value::Pair(Some(p)) = arg {
         Ok(p.car.clone())
     } else {
-        invalid_target(TypeName::PAIR, arg)
+        Err(invalid_target(TypeName::PAIR, arg))
     }
 }
 
@@ -107,14 +107,10 @@ fn pcdr(arg: &Value) -> EvalResult {
     if let Value::Pair(Some(p)) = arg {
         Ok(p.cdr.clone())
     } else {
-        invalid_target(TypeName::PAIR, arg)
+        Err(invalid_target(TypeName::PAIR, arg))
     }
 }
 
-fn invalid_target_ex(name: impl Display, arg: &Value) -> Exception {
+fn invalid_target(name: impl Display, arg: &Value) -> Exception {
     Condition::arg_error(FIRST_ARG_LABEL, name, arg).into()
-}
-
-fn invalid_target(name: impl Display, arg: &Value) -> EvalResult {
-    Err(invalid_target_ex(name, arg))
 }

@@ -60,7 +60,7 @@ fn get_environment_variable(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = super::first(args);
     let s = arg
         .as_str()
-        .ok_or(super::invalid_target_ex(TypeName::STRING, arg))?;
+        .ok_or(super::invalid_target(TypeName::STRING, arg))?;
     env::var(s.as_ref()).map_or_else(
         |err| match err {
             VarError::NotPresent => Ok(Value::Boolean(false)),
