@@ -152,10 +152,26 @@ impl Value {
         TypeName(self)
     }
 
-    pub(crate) fn as_rstr(&self) -> Option<StrRef> {
+    pub(crate) fn as_refstr(&self) -> Option<StrRef> {
         match self {
             Value::String(s) => Some(StrRef::Con(s)),
             Value::StringMut(s) => Some(StrRef::Mut(s.borrow())),
+            _ => None,
+        }
+    }
+
+    pub(crate) fn as_refvec(&self) -> Option<VecRef> {
+        match self {
+            Value::Vector(v) => Some(VecRef::Con(v)),
+            Value::VectorMut(v) => Some(VecRef::Mut(v.borrow())),
+            _ => None,
+        }
+    }
+
+    pub(crate) fn as_refbv(&self) -> Option<BvRef> {
+        match self {
+            Value::ByteVector(bv) => Some(BvRef::Con(bv)),
+            Value::ByteVectorMut(bv) => Some(BvRef::Mut(bv.borrow())),
             _ => None,
         }
     }
@@ -213,11 +229,25 @@ impl Display for Value {
     }
 }
 
+pub(crate) type BvRef<'a> = ValRef<'a, [u8], Vec<u8>>;
 pub(crate) type StrRef<'a> = ValRef<'a, str, String>;
+pub(crate) type VecRef<'a> = ValRef<'a, [Value], Vec<Value>>;
+
+impl Default for BvRef<'_> {
+    fn default() -> Self {
+        Self::Con(&[])
+    }
+}
 
 impl Default for StrRef<'_> {
     fn default() -> Self {
         Self::Con("")
+    }
+}
+
+impl Default for VecRef<'_> {
+    fn default() -> Self {
+        Self::Con(&[])
     }
 }
 

@@ -59,7 +59,7 @@ fn emergency_exit(args: &[Value], _env: &Frame) -> EvalResult {
 fn get_environment_variable(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = super::first(args);
     let s = arg
-        .as_rstr()
+        .as_refstr()
         .ok_or(super::invalid_target(TypeName::STRING, arg))?;
     env::var(s.as_ref()).map_or_else(
         |err| match err {
