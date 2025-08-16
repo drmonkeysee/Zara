@@ -113,7 +113,7 @@ use crate::{
     string::{Symbol, unicode::UnicodeError},
     value::{Condition, TypeName, Value},
 };
-use std::{cell::RefMut, convert, fmt::Display, rc::Rc};
+use std::{cell::RefMut, convert, fmt::Display};
 
 pub(super) fn load(env: &Frame) {
     load_bool(env);
@@ -537,11 +537,26 @@ vec_set!(
     val_to_char,
     replace_str_char
 );
-seq_predicate!(strings_eq, Value::String, TypeName::STRING, Rc::eq);
-seq_predicate!(strings_lt, Value::String, TypeName::STRING, Rc::lt);
-seq_predicate!(strings_lte, Value::String, TypeName::STRING, Rc::le);
-seq_predicate!(strings_gt, Value::String, TypeName::STRING, Rc::gt);
-seq_predicate!(strings_gte, Value::String, TypeName::STRING, Rc::ge);
+
+fn strings_eq(args: &[Value], _env: &Frame) -> EvalResult {
+    strs_predicate(args, str::eq)
+}
+
+fn strings_lt(args: &[Value], _env: &Frame) -> EvalResult {
+    strs_predicate(args, str::lt)
+}
+
+fn strings_lte(args: &[Value], _env: &Frame) -> EvalResult {
+    strs_predicate(args, str::le)
+}
+
+fn strings_gt(args: &[Value], _env: &Frame) -> EvalResult {
+    strs_predicate(args, str::gt)
+}
+
+fn strings_gte(args: &[Value], _env: &Frame) -> EvalResult {
+    strs_predicate(args, str::ge)
+}
 
 //
 // Symbols
@@ -698,6 +713,31 @@ fn replace_str_char(mut s: RefMut<'_, String>, idx: usize, ch: char) {
     let c = chars.get_mut(idx).expect("expected valid index");
     *c = ch;
     s.replace_range(.., &chars.into_iter().collect::<String>());
+}
+
+fn strs_predicate(args: &[Value], pred: impl Fn(&str, &str) -> bool) -> EvalResult {
+    let result: Result<_, Exception> = args
+        .iter()
+        .enumerate()
+        .try_fold::<(bool, Option<&Value>), _, _>((true, None), |(acc, prev), (idx, val)| {
+            let b = match val {
+                Value::String(s) => s.as_ref(),
+                Value::StringMut(s) => &s.borrow(),
+                _ => {
+                    return Err(
+                        Condition::arg_error(&idx.to_string(), TypeName::STRING, val).into(),
+                    );
+                }
+            };
+            let a = match prev {
+                None => return Ok((acc, Some(val))),
+                Some(Value::String(s)) => s.as_ref(),
+                Some(Value::StringMut(s)) => &s.borrow(),
+                _ => unreachable!("unexpected value from prev"),
+            };
+            Ok((acc && pred(a, b), Some(val)))
+        });
+    Ok(Value::Boolean(result?.0))
 }
 
 fn sub_list<'a>(lst: &'a Value, idx: usize, k: &Value) -> Result<&'a Value, Exception> {
