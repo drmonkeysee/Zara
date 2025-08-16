@@ -3,6 +3,7 @@ use crate::{
     testutil::{TestEnv, err_or_fail, extract_or_fail, ok_or_fail, some_or_fail},
     value::zlist,
 };
+use std::rc::Rc;
 
 #[test]
 fn all_boolean_empty() {
