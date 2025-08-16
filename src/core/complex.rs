@@ -47,7 +47,7 @@ fn get_angle(args: &[Value], _env: &Frame) -> EvalResult {
 
 fn make_complex(x: &Value, y: &Value, ctor: impl FnOnce(Real, Real) -> Number) -> EvalResult {
     let Value::Number(real) = x else {
-        return invalid_target!(NumericTypeName::REAL, x);
+        return super::invalid_target(NumericTypeName::REAL, x);
     };
     let Number::Real(r) = real else {
         return Err(Condition::arg_type_error(
@@ -59,7 +59,7 @@ fn make_complex(x: &Value, y: &Value, ctor: impl FnOnce(Real, Real) -> Number) -
         .into());
     };
     let Value::Number(imag) = y else {
-        return invalid_target!(NumericTypeName::REAL, y);
+        return super::invalid_target(NumericTypeName::REAL, y);
     };
     let Number::Real(i) = imag else {
         return Err(Condition::arg_type_error(
@@ -84,7 +84,7 @@ fn get_complex_part(
             Number::Real(r) => fallback(r),
         })))
     } else {
-        invalid_target!(TypeName::NUMBER, arg)
+        super::invalid_target(TypeName::NUMBER, arg)
     }
 }
 

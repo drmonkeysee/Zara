@@ -1,8 +1,8 @@
 // (scheme char)
-use super::{FIRST_ARG_LABEL, first};
+use super::{first, invalid_target};
 use crate::{
     eval::{EvalResult, Frame},
-    value::{Condition, TypeName, Value},
+    value::{TypeName, Value},
 };
 
 pub(super) fn load(env: &Frame) {
@@ -78,7 +78,7 @@ fn char_case<I: ExactSizeIterator<Item = char>>(
             arg.clone()
         })
     } else {
-        invalid_target!(TypeName::CHAR, arg)
+        invalid_target(TypeName::CHAR, arg)
     }
 }
 
@@ -86,7 +86,7 @@ fn string_case(arg: &Value, case: impl FnOnce(&str) -> String) -> EvalResult {
     let s = match arg {
         Value::String(s) => s.as_ref(),
         Value::StringMut(s) => &s.borrow(),
-        _ => return invalid_target!(TypeName::STRING, arg),
+        _ => return invalid_target(TypeName::STRING, arg),
     };
     Ok(Value::string_mut(case(s)))
 }

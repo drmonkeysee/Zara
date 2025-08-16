@@ -1,5 +1,4 @@
 // (zara ext)
-use super::FIRST_ARG_LABEL;
 use crate::{
     Exception,
     eval::{EvalResult, Frame},
@@ -58,7 +57,8 @@ fn apropos(args: &[Value], env: &Frame) -> EvalResult {
     let pat = args
         .first()
         .map_or(Ok::<_, Exception>(StrRef::default()), |v| {
-            v.as_str().ok_or(invalid_target_ex!(TypeName::STRING, v))
+            v.as_str()
+                .ok_or(super::invalid_target_ex(TypeName::STRING, v))
         })?;
     Ok(Value::list(
         env.scope

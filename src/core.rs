@@ -1,15 +1,3 @@
-macro_rules! invalid_target_ex {
-    ($valname:expr, $arg:expr) => {
-        Condition::arg_error(FIRST_ARG_LABEL, $valname, $arg).into()
-    };
-}
-
-macro_rules! invalid_target {
-    ($valname:expr, $arg:expr) => {
-        Err(invalid_target_ex!($valname, $arg))
-    };
-}
-
 macro_rules! try_predicate {
     ($name:ident, $kind:path, $valname:expr, $pred:expr) => {
         fn $name(args: &[Value], _env: &Frame) -> EvalResult {
@@ -17,7 +5,7 @@ macro_rules! try_predicate {
             if let $kind(val) = arg {
                 Ok(Value::Boolean($pred(val)))
             } else {
-                invalid_target!($valname, arg)
+                invalid_target($valname, arg)
             }
         }
     };
@@ -57,9 +45,11 @@ mod procctx;
 mod time;
 
 use crate::{
+    Exception,
     eval::{Arity, EvalResult, Frame, Intrinsic, IntrinsicFn},
     value::{Condition, TypeName, Value},
 };
+use std::fmt::Display;
 
 /*
  * Zara Core Library including all the standard R7RS libraries
@@ -109,7 +99,7 @@ fn pcar(arg: &Value) -> EvalResult {
     if let Value::Pair(Some(p)) = arg {
         Ok(p.car.clone())
     } else {
-        invalid_target!(TypeName::PAIR, arg)
+        invalid_target(TypeName::PAIR, arg)
     }
 }
 
@@ -117,6 +107,14 @@ fn pcdr(arg: &Value) -> EvalResult {
     if let Value::Pair(Some(p)) = arg {
         Ok(p.cdr.clone())
     } else {
-        invalid_target!(TypeName::PAIR, arg)
+        invalid_target(TypeName::PAIR, arg)
     }
+}
+
+fn invalid_target_ex(name: impl Display, arg: &Value) -> Exception {
+    Condition::arg_error(FIRST_ARG_LABEL, name, arg).into()
+}
+
+fn invalid_target(name: impl Display, arg: &Value) -> EvalResult {
+    Err(invalid_target_ex(name, arg))
 }

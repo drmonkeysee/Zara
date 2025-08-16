@@ -57,7 +57,7 @@ macro_rules! vec_length {
             let len = match arg {
                 $kind(v) => v.len(),
                 $mutkind(v) => v.borrow().len(),
-                _ => return invalid_target!($valname, arg),
+                _ => return invalid_target($valname, arg),
             };
             Ok(Value::Number(Number::from_usize(len)))
         }
@@ -72,7 +72,7 @@ macro_rules! vec_get {
             match vec {
                 $kind(v) => vec_item(v, k, $get, $map),
                 $mutkind(v) => vec_item(&v.borrow(), k, $get, $map),
-                _ => invalid_target!($valname, vec),
+                _ => invalid_target($valname, vec),
             }
         }
     };
@@ -96,7 +96,7 @@ macro_rules! vec_set {
                     }
                 }
                 $kind(_) => Err(Condition::literal_mut_error(arg).into()),
-                _ => invalid_target!($valname, arg),
+                _ => invalid_target($valname, arg),
             }
         }
     };
@@ -105,7 +105,9 @@ macro_rules! vec_set {
 #[cfg(test)]
 mod tests;
 
-use super::{FIRST_ARG_LABEL, SECOND_ARG_LABEL, THIRD_ARG_LABEL, first, pcar, pcdr};
+use super::{
+    FIRST_ARG_LABEL, SECOND_ARG_LABEL, THIRD_ARG_LABEL, first, invalid_target, pcar, pcdr,
+};
 use crate::{
     Exception,
     eval::{EvalResult, Frame, MAX_ARITY},
@@ -213,7 +215,7 @@ fn char_to_integer(args: &[Value], _env: &Frame) -> EvalResult {
         let n = u32::from(*c);
         Ok(Value::Number(Number::real(i64::from(n))))
     } else {
-        invalid_target!(TypeName::CHAR, arg)
+        invalid_target(TypeName::CHAR, arg)
     }
 }
 
@@ -222,7 +224,7 @@ fn integer_to_char(args: &[Value], _env: &Frame) -> EvalResult {
     if let Value::Number(n) = arg {
         try_num_into_char(n, arg)
     } else {
-        invalid_target!(NumericTypeName::INTEGER, arg)
+        invalid_target(NumericTypeName::INTEGER, arg)
     }
 }
 
@@ -280,7 +282,7 @@ fn error_msg(args: &[Value], _env: &Frame) -> EvalResult {
     if let Value::Error(c) = arg {
         Ok(Value::string_mut(c.message()))
     } else {
-        invalid_target!(TypeName::ERROR, arg)
+        invalid_target(TypeName::ERROR, arg)
     }
 }
 
@@ -289,7 +291,7 @@ fn error_irritants(args: &[Value], _env: &Frame) -> EvalResult {
     if let Value::Error(c) = arg {
         Ok(c.irritants().map_or(Value::null(), Value::clone))
     } else {
-        invalid_target!(TypeName::ERROR, arg)
+        invalid_target(TypeName::ERROR, arg)
     }
 }
 
@@ -390,7 +392,7 @@ fn into_inexact(args: &[Value], _env: &Frame) -> EvalResult {
     if let Value::Number(n) = arg {
         Ok(Value::Number(n.clone().into_inexact()))
     } else {
-        invalid_target!(TypeName::NUMBER, arg)
+        invalid_target(TypeName::NUMBER, arg)
     }
 }
 
@@ -402,7 +404,7 @@ fn into_exact(args: &[Value], _env: &Frame) -> EvalResult {
             |n| Ok(Value::Number(n)),
         )
     } else {
-        invalid_target!(TypeName::NUMBER, arg)
+        invalid_target(TypeName::NUMBER, arg)
     }
 }
 
@@ -465,7 +467,7 @@ fn list_length(args: &[Value], _env: &Frame) -> EvalResult {
             },
             |len| Ok(Value::Number(Number::from_usize(len))),
         ),
-        _ => invalid_target!(TypeName::LIST, arg),
+        _ => invalid_target(TypeName::LIST, arg),
     }
 }
 
@@ -578,7 +580,7 @@ fn symbol_to_string(args: &[Value], _env: &Frame) -> EvalResult {
     if let Value::Symbol(s) = arg {
         Ok(Value::string(s.as_rc()))
     } else {
-        invalid_target!(TypeName::SYMBOL, arg)
+        invalid_target(TypeName::SYMBOL, arg)
     }
 }
 
@@ -587,7 +589,7 @@ fn string_to_symbol(args: &[Value], env: &Frame) -> EvalResult {
     if let Value::String(s) = arg {
         Ok(Value::Symbol(env.sym.get(s)))
     } else {
-        invalid_target!(TypeName::STRING, arg)
+        invalid_target(TypeName::STRING, arg)
     }
 }
 
@@ -691,7 +693,7 @@ fn guarded_real_op(
     op: impl FnOnce(&Real) -> EvalResult,
 ) -> EvalResult {
     let Value::Number(n) = arg else {
-        return invalid_target!(expected_type, arg);
+        return invalid_target(expected_type, arg);
     };
     if let Number::Real(r) = n {
         op(r)
@@ -748,7 +750,7 @@ fn sub_list<'a>(lst: &'a Value, idx: usize, k: &Value) -> Result<&'a Value, Exce
     } else if let Value::Pair(None) = lst {
         Err(Condition::index_error(k).into())
     } else {
-        invalid_target!(TypeName::PAIR, lst)
+        Err(super::invalid_target_ex(TypeName::PAIR, lst))
     }
 }
 

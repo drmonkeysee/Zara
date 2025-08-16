@@ -1,9 +1,9 @@
 // (scheme inexact)
-use super::{FIRST_ARG_LABEL, first};
+use super::{first, invalid_target};
 use crate::{
     eval::{EvalResult, Frame},
     number::Number,
-    value::{Condition, TypeName, Value},
+    value::{TypeName, Value},
 };
 
 pub(super) fn load(env: &Frame) {
