@@ -1,6 +1,12 @@
+macro_rules! invalid_target_ex {
+    ($valname:expr, $arg:expr) => {
+        Condition::arg_error(FIRST_ARG_LABEL, $valname, $arg).into()
+    };
+}
+
 macro_rules! invalid_target {
     ($valname:expr, $arg:expr) => {
-        Err(Condition::arg_error(FIRST_ARG_LABEL, $valname, $arg).into())
+        Err(invalid_target_ex!($valname, $arg))
     };
 }
 

@@ -20,7 +20,7 @@ use crate::{
     syntax::Sequence,
 };
 use std::{
-    cell::RefCell,
+    cell::{Ref, RefCell},
     fmt::{self, Display, Formatter},
     rc::Rc,
 };
@@ -151,6 +151,14 @@ impl Value {
     pub(crate) fn as_typename(&self) -> TypeName {
         TypeName(self)
     }
+
+    pub(crate) fn as_str(&self) -> Option<StrRef> {
+        match self {
+            Value::String(s) => Some(StrRef::Str(s)),
+            Value::StringMut(s) => Some(StrRef::StrMut(s.borrow())),
+            _ => None,
+        }
+    }
 }
 
 // NOTE: procedure equal? -> value equality
@@ -201,6 +209,26 @@ impl Display for Value {
             Self::Unspecified => f.write_str("#<unspecified>"),
             Self::Vector(v) => write_seq("#", v, f),
             Self::VectorMut(v) => write_seq("#", &v.borrow(), f),
+        }
+    }
+}
+
+pub(crate) enum StrRef<'a> {
+    Str(&'a str),
+    StrMut(Ref<'a, String>),
+}
+
+impl Default for StrRef<'_> {
+    fn default() -> Self {
+        Self::Str("")
+    }
+}
+
+impl AsRef<str> for StrRef<'_> {
+    fn as_ref(&self) -> &str {
+        match self {
+            Self::Str(s) => s,
+            Self::StrMut(s) => s,
         }
     }
 }

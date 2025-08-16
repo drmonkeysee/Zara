@@ -127,7 +127,7 @@ impl Exception {
 
 impl From<Condition> for Exception {
     fn from(value: Condition) -> Self {
-        Exception::signal(value)
+        Self::signal(value)
     }
 }
 

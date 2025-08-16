@@ -3,7 +3,7 @@ use super::FIRST_ARG_LABEL;
 use crate::{
     Exception,
     eval::{EvalResult, Frame},
-    value::{Condition, TypeName, Value},
+    value::{Condition, StrRef, TypeName, Value},
 };
 
 /*
@@ -54,18 +54,17 @@ fn symbols(_args: &[Value], env: &Frame) -> EvalResult {
 
 // TODO: support passing in environment specifier
 fn apropos(args: &[Value], env: &Frame) -> EvalResult {
-    let pat = args.first().map_or(Ok::<_, Exception>(""), |v| {
-        if let Value::String(s) = v {
-            Ok(s)
-        } else {
-            invalid_target!(TypeName::STRING, v)
-        }
-    })?;
+    // TODO: map_or_default https://github.com/rust-lang/rust/issues/138099
+    let pat = args
+        .first()
+        .map_or(Ok::<_, Exception>(StrRef::default()), |v| {
+            v.as_str().ok_or(invalid_target_ex!(TypeName::STRING, v))
+        })?;
     Ok(Value::list(
         env.scope
             .sorted_bindings()
             .into_iter()
-            .filter(|(n, _)| n.contains(pat))
+            .filter(|(n, _)| n.contains(pat.as_ref()))
             .map(|(n, _)| Value::Symbol(n))
             .collect::<Vec<_>>(),
     ))
