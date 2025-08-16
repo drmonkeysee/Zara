@@ -82,10 +82,11 @@ fn char_case<I: ExactSizeIterator<Item = char>>(
     }
 }
 
-fn string_case(arg: &Value, _case: impl FnOnce(&str) -> String) -> EvalResult {
-    if let Value::String(_s) = arg {
-        todo!("need to return a mutable string");
-    } else {
-        invalid_target!(TypeName::STRING, arg)
-    }
+fn string_case(arg: &Value, case: impl FnOnce(&str) -> String) -> EvalResult {
+    let s = match arg {
+        Value::String(s) => s.as_ref(),
+        Value::StringMut(s) => &s.borrow(),
+        _ => return invalid_target!(TypeName::STRING, arg),
+    };
+    Ok(Value::string_mut(case(s)))
 }
