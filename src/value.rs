@@ -154,8 +154,8 @@ impl Value {
 
     pub(crate) fn as_str(&self) -> Option<StrRef> {
         match self {
-            Value::String(s) => Some(StrRef::Str(s)),
-            Value::StringMut(s) => Some(StrRef::StrMut(s.borrow())),
+            Value::String(s) => Some(StrRef::Con(s)),
+            Value::StringMut(s) => Some(StrRef::Mut(s.borrow())),
             _ => None,
         }
     }
@@ -213,22 +213,24 @@ impl Display for Value {
     }
 }
 
-pub(crate) enum StrRef<'a> {
-    Str(&'a str),
-    StrMut(Ref<'a, String>),
-}
+pub(crate) type StrRef<'a> = ValRef<'a, str, String>;
 
 impl Default for StrRef<'_> {
     fn default() -> Self {
-        Self::Str("")
+        Self::Con("")
     }
 }
 
-impl AsRef<str> for StrRef<'_> {
-    fn as_ref(&self) -> &str {
+pub(crate) enum ValRef<'a, T: ?Sized, M> {
+    Con(&'a T),
+    Mut(Ref<'a, M>),
+}
+
+impl<'a, T: ?Sized, M: AsRef<T>> AsRef<T> for ValRef<'a, T, M> {
+    fn as_ref(&self) -> &T {
         match self {
-            Self::Str(s) => s,
-            Self::StrMut(s) => s,
+            Self::Con(t) => t,
+            Self::Mut(r) => r.as_ref(),
         }
     }
 }
