@@ -586,11 +586,10 @@ fn symbol_to_string(args: &[Value], _env: &Frame) -> EvalResult {
 
 fn string_to_symbol(args: &[Value], env: &Frame) -> EvalResult {
     let arg = first(args);
-    if let Value::String(s) = arg {
-        Ok(Value::Symbol(env.sym.get(s)))
-    } else {
-        invalid_target(TypeName::STRING, arg)
-    }
+    arg.as_str()
+        .map_or(invalid_target(TypeName::STRING, arg), |s| {
+            Ok(Value::Symbol(env.sym.get(s)))
+        })
 }
 
 //
