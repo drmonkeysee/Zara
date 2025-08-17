@@ -108,7 +108,7 @@ use crate::{
     string::{Symbol, unicode::UnicodeError},
     value::{Condition, TypeName, Value},
 };
-use std::{cell::RefMut, convert, fmt::Display};
+use std::{cell::RefMut, convert, fmt::Display, iter};
 
 pub(super) fn load(env: &Frame) {
     load_bool(env);
@@ -146,6 +146,9 @@ seq_predicate!(booleans_eq, Value::Boolean, TypeName::BOOL, bool::eq);
 fn load_bv(env: &Frame) {
     super::bind_intrinsic(env, "bytevector?", 1..1, is_bytevector);
 
+    super::bind_intrinsic(env, "make-bytevector", 1..2, make_bytevector);
+    super::bind_intrinsic(env, "bytevector", 0..MAX_ARITY, bytevector);
+
     super::bind_intrinsic(env, "bytevector-length", 1..1, bytevector_length);
     super::bind_intrinsic(env, "bytevector-u8-ref", 2..2, bytevector_get);
     super::bind_intrinsic(env, "bytevector-u8-set!", 3..3, bytevector_set);
@@ -171,6 +174,23 @@ vec_set!(
     valnum_to_byte,
     |mut v: RefMut<'_, Vec<_>>, idx, item| v[idx] = item
 );
+
+fn make_bytevector(args: &[Value], _env: &Frame) -> EvalResult {
+    let k = first(args);
+    let byte = args.get(1).map_or(Ok(0), valnum_to_byte)?;
+    Ok(Value::bytevector_mut(iter::repeat_n(
+        byte,
+        valnum_to_index(k)?,
+    )))
+}
+
+fn bytevector(args: &[Value], _env: &Frame) -> EvalResult {
+    let v = args
+        .iter()
+        .map(valnum_to_byte)
+        .collect::<Result<Vec<u8>, Exception>>()?;
+    Ok(Value::bytevector_mut(v))
+}
 
 //
 // Characters
