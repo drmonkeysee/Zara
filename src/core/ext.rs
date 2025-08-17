@@ -16,6 +16,7 @@ pub(crate) fn load(env: &Frame) {
     super::bind_intrinsic(env, "all-bindings", 0..0, bindings);
     super::bind_intrinsic(env, "all-symbols", 0..0, symbols);
     super::bind_intrinsic(env, "apropos", 0..1, apropos);
+    super::bind_intrinsic(env, "mutable?", 1..1, is_mutable);
 
     // NOTE: convenience vars
     env.scope.bind(env.sym.get("null"), Value::null());
@@ -69,4 +70,12 @@ fn apropos(args: &[Value], env: &Frame) -> EvalResult {
             .map(|(n, _)| Value::Symbol(n))
             .collect::<Vec<_>>(),
     ))
+}
+
+fn is_mutable(args: &[Value], _env: &Frame) -> EvalResult {
+    let arg = super::first(args);
+    Ok(Value::Boolean(matches!(
+        arg,
+        Value::ByteVectorMut(_) | Value::StringMut(_) | Value::VectorMut(_)
+    )))
 }
