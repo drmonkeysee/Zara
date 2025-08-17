@@ -89,10 +89,10 @@ macro_rules! coll_length {
 macro_rules! coll_get {
     ($name:ident, $asref:expr, $get:expr, $map:expr, $valname:expr) => {
         fn $name(args: &[Value], _env: &Frame) -> EvalResult {
-            let coll = first(args);
+            let c = first(args);
             let k = super::second(args);
-            let c = $asref(coll).ok_or_else(|| invalid_target($valname, coll))?;
-            coll_item(c.as_ref(), k, $get, $map)
+            let coll = $asref(c).ok_or_else(|| invalid_target($valname, c))?;
+            coll_item(coll.as_ref(), k, $get, $map)
         }
     };
 }
@@ -178,6 +178,8 @@ fn load_bv(env: &Frame) {
     super::bind_intrinsic(env, "bytevector-length", 1..1, bytevector_length);
     super::bind_intrinsic(env, "bytevector-u8-ref", 2..2, bytevector_get);
     super::bind_intrinsic(env, "bytevector-u8-set!", 3..3, bytevector_set);
+
+    super::bind_intrinsic(env, "bytevector-copy", 1..3, bytevector_copy);
 }
 
 predicate!(
@@ -211,6 +213,33 @@ coll_set!(
     |v| val_to_byte(v, THIRD_ARG_LABEL),
     |mut v: RefMut<'_, Vec<_>>, idx, item| v[idx] = item
 );
+
+fn bytevector_copy(args: &[Value], _env: &Frame) -> EvalResult {
+    let c = first(args);
+    let coll = c
+        .as_refbv()
+        .ok_or_else(|| invalid_target(TypeName::BYTEVECTOR, c))?;
+    let clen = coll.as_ref().len();
+    let s = args.get(1);
+    let start = s.map_or(Ok(usize::MIN), |v| val_to_index(v, SECOND_ARG_LABEL))?;
+    let e = args.get(2);
+    let end = e.map_or(Ok(clen), |v| val_to_index(v, THIRD_ARG_LABEL))?;
+
+    if clen < end {
+        return Err(Condition::index_error(e.unwrap()).into());
+    }
+    if end < start {
+        return Err(if let Some(earg) = e {
+            Condition::bi_value_error("start greater than end", s.unwrap(), earg).into()
+        } else {
+            Condition::index_error(s.unwrap()).into()
+        });
+    }
+
+    Ok(Value::bytevector_mut(
+        coll.as_ref().iter().cloned().skip(start).take(end - start),
+    ))
+}
 
 //
 // Characters

@@ -1235,3 +1235,105 @@ fn bytevector_set_val_immutable() {
         "#<env-error \"cannot modify literal value\" (#u8(1 2 3))>"
     );
 }
+
+#[test]
+fn bytevector_copy_all() {
+    let args = [Value::ByteVector([1, 2, 3, 4].into())];
+    let env = TestEnv::default();
+
+    let r = bytevector_copy(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert_eq!(v.to_string(), "#u8(1 2 3 4)");
+}
+
+#[test]
+fn bytevector_copy_start() {
+    let args = [
+        Value::ByteVector([1, 2, 3, 4].into()),
+        Value::Number(Number::real(1)),
+    ];
+    let env = TestEnv::default();
+
+    let r = bytevector_copy(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert_eq!(v.to_string(), "#u8(2 3 4)");
+}
+
+#[test]
+fn bytevector_copy_start_end() {
+    let args = [
+        Value::ByteVector([1, 2, 3, 4].into()),
+        Value::Number(Number::real(1)),
+        Value::Number(Number::real(3)),
+    ];
+    let env = TestEnv::default();
+
+    let r = bytevector_copy(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert_eq!(v.to_string(), "#u8(2 3)");
+}
+
+#[test]
+fn bytevector_copy_nothing() {
+    let args = [
+        Value::ByteVector([1, 2, 3, 4].into()),
+        Value::Number(Number::real(1)),
+        Value::Number(Number::real(1)),
+    ];
+    let env = TestEnv::default();
+
+    let r = bytevector_copy(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert_eq!(v.to_string(), "#u8()");
+}
+
+#[test]
+fn bytevector_copy_start_gt_end() {
+    let args = [
+        Value::ByteVector([1, 2, 3, 4].into()),
+        Value::Number(Number::real(3)),
+        Value::Number(Number::real(1)),
+    ];
+    let env = TestEnv::default();
+
+    let r = bytevector_copy(&args, &env.new_frame());
+
+    let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
+    assert_eq!(
+        err.to_string(),
+        "#<env-error \"start greater than end\" (3 1)>"
+    );
+}
+
+#[test]
+fn bytevector_copy_end_too_large() {
+    let args = [
+        Value::ByteVector([1, 2, 3, 4].into()),
+        Value::Number(Number::real(3)),
+        Value::Number(Number::real(5)),
+    ];
+    let env = TestEnv::default();
+
+    let r = bytevector_copy(&args, &env.new_frame());
+
+    let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
+    assert_eq!(err.to_string(), "#<env-error \"index out of range\" (5)>");
+}
+
+#[test]
+fn bytevector_copy_start_too_large() {
+    let args = [
+        Value::ByteVector([1, 2, 3, 4].into()),
+        Value::Number(Number::real(6)),
+    ];
+    let env = TestEnv::default();
+
+    let r = bytevector_copy(&args, &env.new_frame());
+
+    let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
+    assert_eq!(err.to_string(), "#<env-error \"index out of range\" (6)>");
+}

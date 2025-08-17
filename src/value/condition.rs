@@ -76,6 +76,14 @@ impl Condition {
         }
     }
 
+    pub(crate) fn bi_value_error(msg: impl Display, a: &Value, b: &Value) -> Self {
+        Self {
+            kind: ConditionKind::Env,
+            irritants: Some(zlist![a.clone(), b.clone()]),
+            msg: msg.to_string().into(),
+        }
+    }
+
     pub(crate) fn is_file_err(&self) -> bool {
         matches!(self.kind, ConditionKind::File)
     }
