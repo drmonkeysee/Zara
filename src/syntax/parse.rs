@@ -93,7 +93,7 @@ impl TryFrom<ParseNode> for Sequence {
     fn try_from(value: ParseNode) -> Result<Self, <Self as TryFrom<ParseNode>>::Error> {
         match value {
             ParseNode::InvalidParseTree(err) => Err(err),
-            ParseNode::Prg(seq) => Ok(Sequence::new(seq)),
+            ParseNode::Prg(seq) => Ok(Self::new(seq)),
             _ => Err(InvalidParseError::EndOfParse),
         }
     }

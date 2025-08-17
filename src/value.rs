@@ -154,24 +154,24 @@ impl Value {
 
     pub(crate) fn as_refstr(&self) -> Option<StrRef> {
         match self {
-            Value::String(s) => Some(StrRef::Con(s)),
-            Value::StringMut(s) => Some(StrRef::Mut(s.borrow())),
+            Self::String(s) => Some(StrRef::Con(s)),
+            Self::StringMut(s) => Some(StrRef::Mut(s.borrow())),
             _ => None,
         }
     }
 
     pub(crate) fn as_refvec(&self) -> Option<VecRef> {
         match self {
-            Value::Vector(v) => Some(VecRef::Con(v)),
-            Value::VectorMut(v) => Some(VecRef::Mut(v.borrow())),
+            Self::Vector(v) => Some(VecRef::Con(v)),
+            Self::VectorMut(v) => Some(VecRef::Mut(v.borrow())),
             _ => None,
         }
     }
 
     pub(crate) fn as_refbv(&self) -> Option<BvRef> {
         match self {
-            Value::ByteVector(bv) => Some(BvRef::Con(bv)),
-            Value::ByteVectorMut(bv) => Some(BvRef::Mut(bv.borrow())),
+            Self::ByteVector(bv) => Some(BvRef::Con(bv)),
+            Self::ByteVectorMut(bv) => Some(BvRef::Mut(bv.borrow())),
             _ => None,
         }
     }

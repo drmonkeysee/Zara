@@ -12,7 +12,7 @@ pub(crate) struct Frame<'a> {
 
 impl Frame<'_> {
     pub(crate) fn new_child(&self, parent: impl Into<Rc<Binding>>) -> Self {
-        Frame {
+        Self {
             scope: Binding::new(parent).into(),
             sym: self.sym,
             sys: self.sys,
