@@ -116,6 +116,31 @@ macro_rules! coll_set {
     };
 }
 
+macro_rules! coll_copy {
+    ($name:ident, $asvref:expr, $copy:expr, $valname:expr) => {
+        fn $name(args: &[Value], _env: &Frame) -> EvalResult {
+            let arg = first(args);
+            let coll = $asvref(arg).ok_or_else(|| invalid_target($valname, arg))?;
+            let clen = coll.as_ref().len();
+            let start = args.get(1);
+            let sidx = start.map_or(Ok(usize::MIN), |v| val_to_index(v, SECOND_ARG_LABEL))?;
+            let end = args.get(2);
+            let eidx = end.map_or(Ok(clen), |v| val_to_index(v, THIRD_ARG_LABEL))?;
+            if clen < eidx {
+                return Err(Condition::index_error(end.unwrap()).into());
+            }
+            if eidx < sidx {
+                return Err(if let Some(v) = end {
+                    Condition::bi_value_error("start greater than end", start.unwrap(), v).into()
+                } else {
+                    Condition::index_error(start.unwrap()).into()
+                });
+            }
+            Ok($copy(coll.as_ref(), sidx, eidx - sidx))
+        }
+    };
+}
+
 #[cfg(test)]
 mod tests;
 
@@ -208,33 +233,14 @@ coll_set!(
     |v| val_to_byte(v, THIRD_ARG_LABEL),
     |mut v: RefMut<'_, Vec<_>>, idx, item| v[idx] = item
 );
-
-fn bytevector_copy(args: &[Value], _env: &Frame) -> EvalResult {
-    let arg = first(args);
-    let coll = arg
-        .as_refbv()
-        .ok_or_else(|| invalid_target(TypeName::BYTEVECTOR, arg))?;
-    let clen = coll.as_ref().len();
-    let start = args.get(1);
-    let sidx = start.map_or(Ok(usize::MIN), |v| val_to_index(v, SECOND_ARG_LABEL))?;
-    let end = args.get(2);
-    let eidx = end.map_or(Ok(clen), |v| val_to_index(v, THIRD_ARG_LABEL))?;
-
-    if clen < eidx {
-        return Err(Condition::index_error(end.unwrap()).into());
-    }
-    if eidx < sidx {
-        return Err(if let Some(v) = end {
-            Condition::bi_value_error("start greater than end", start.unwrap(), v).into()
-        } else {
-            Condition::index_error(start.unwrap()).into()
-        });
-    }
-
-    Ok(Value::bytevector_mut(
-        coll.as_ref().iter().cloned().skip(sidx).take(eidx - sidx),
-    ))
-}
+coll_copy!(
+    bytevector_copy,
+    Value::as_refbv,
+    |bytes: &[u8], start, count| Value::bytevector_mut(
+        bytes.iter().copied().skip(start).take(count)
+    ),
+    TypeName::BYTEVECTOR
+);
 
 //
 // Characters
@@ -565,6 +571,8 @@ fn load_string(env: &Frame) {
     super::bind_intrinsic(env, "string<=?", 0..MAX_ARITY, strings_lte);
     super::bind_intrinsic(env, "string>?", 0..MAX_ARITY, strings_gt);
     super::bind_intrinsic(env, "string>=?", 0..MAX_ARITY, strings_gte);
+
+    super::bind_intrinsic(env, "string-copy", 1..3, string_copy);
 }
 
 predicate!(is_string, Value::String(_) | Value::StringMut(_));
@@ -594,6 +602,12 @@ coll_set!(
     TypeName::STRING,
     |v| val_to_char(v, THIRD_ARG_LABEL),
     replace_str_char
+);
+coll_copy!(
+    string_copy,
+    Value::as_refstr,
+    |s: &str, start, count| Value::string_mut_chars(s.chars().skip(start).take(count)),
+    TypeName::STRING
 );
 
 fn strings_eq(args: &[Value], _env: &Frame) -> EvalResult {
@@ -661,6 +675,8 @@ fn load_vec(env: &Frame) {
     super::bind_intrinsic(env, "vector-length", 1..1, vector_length);
     super::bind_intrinsic(env, "vector-ref", 2..2, vector_get);
     super::bind_intrinsic(env, "vector-set!", 3..3, vector_set);
+
+    super::bind_intrinsic(env, "vector-copy", 1..3, vector_copy);
 }
 
 predicate!(is_vector, Value::Vector(_) | Value::VectorMut(_));
@@ -690,6 +706,12 @@ coll_set!(
     TypeName::VECTOR,
     |val: &Value| Ok::<_, Exception>(val.clone()),
     |mut v: RefMut<'_, Vec<_>>, idx, item| v[idx] = item
+);
+coll_copy!(
+    vector_copy,
+    Value::as_refvec,
+    |vals: &[Value], start, count| Value::vector_mut(vals.iter().cloned().skip(start).take(count)),
+    TypeName::VECTOR
 );
 
 //
