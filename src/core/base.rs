@@ -51,14 +51,27 @@ macro_rules! num_convert {
 }
 
 macro_rules! vec_new {
-    ($name:ident, $map:expr, $ctor:expr, $coll:ty) => {
+    ($name:ident, $map:expr, $ctor:expr) => {
         fn $name(args: &[Value], _env: &Frame) -> EvalResult {
             let v = args
                 .iter()
                 .enumerate()
                 .map($map)
-                .collect::<Result<$coll, _>>()?;
+                .collect::<Result<Vec<_>, _>>()?;
             Ok($ctor(v))
+        }
+    };
+}
+
+macro_rules! vec_fill {
+    ($name:ident, $map:expr, $def:expr, $ctor:expr) => {
+        fn $name(args: &[Value], _env: &Frame) -> EvalResult {
+            let k = first(args);
+            let val = args.get(1).map_or(Ok($def), $map)?;
+            Ok($ctor(iter::repeat_n(
+                val,
+                val_to_index(k, FIRST_ARG_LABEL)?,
+            )))
         }
     };
 }
@@ -171,11 +184,16 @@ predicate!(
     is_bytevector,
     Value::ByteVector(_) | Value::ByteVectorMut(_)
 );
+vec_fill!(
+    make_bytevector,
+    |v| val_to_byte(v, SECOND_ARG_LABEL),
+    u8::MIN,
+    Value::bytevector_mut
+);
 vec_new!(
     bytevector,
     |(idx, v)| val_to_byte(v, idx),
-    Value::bytevector_mut,
-    Vec<_>
+    Value::bytevector_mut
 );
 vec_length!(bytevector_length, Value::as_refbv, TypeName::BYTEVECTOR);
 vec_get!(
@@ -193,17 +211,6 @@ vec_set!(
     |v| val_to_byte(v, THIRD_ARG_LABEL),
     |mut v: RefMut<'_, Vec<_>>, idx, item| v[idx] = item
 );
-
-fn make_bytevector(args: &[Value], _env: &Frame) -> EvalResult {
-    let k = first(args);
-    let byte = args
-        .get(1)
-        .map_or(Ok(0), |v| val_to_byte(v, SECOND_ARG_LABEL))?;
-    Ok(Value::bytevector_mut(iter::repeat_n(
-        byte,
-        val_to_index(k, FIRST_ARG_LABEL)?,
-    )))
-}
 
 //
 // Characters
@@ -525,6 +532,7 @@ predicate!(is_procedure, Value::Intrinsic(_) | Value::Procedure(_));
 fn load_string(env: &Frame) {
     super::bind_intrinsic(env, "string?", 1..1, is_string);
 
+    super::bind_intrinsic(env, "make-string", 1..2, make_string);
     super::bind_intrinsic(env, "string", 0..MAX_ARITY, string);
 
     super::bind_intrinsic(env, "string-length", 1..1, string_length);
@@ -539,11 +547,16 @@ fn load_string(env: &Frame) {
 }
 
 predicate!(is_string, Value::String(_) | Value::StringMut(_));
+vec_fill!(
+    make_string,
+    |v| val_to_char(v, SECOND_ARG_LABEL),
+    char::MIN,
+    Value::string_mut_chars
+);
 vec_new!(
     string,
     |(idx, v)| val_to_char(v, idx),
-    Value::string_mut,
-    String
+    Value::string_mut_chars
 );
 vec_length!(string_length, Value::as_refstr, TypeName::STRING);
 vec_get!(
@@ -621,6 +634,7 @@ fn string_to_symbol(args: &[Value], env: &Frame) -> EvalResult {
 fn load_vec(env: &Frame) {
     super::bind_intrinsic(env, "vector?", 1..1, is_vector);
 
+    super::bind_intrinsic(env, "make-vector", 1..2, make_vector);
     super::bind_intrinsic(env, "vector", 0..MAX_ARITY, vector);
 
     super::bind_intrinsic(env, "vector-length", 1..1, vector_length);
@@ -629,11 +643,16 @@ fn load_vec(env: &Frame) {
 }
 
 predicate!(is_vector, Value::Vector(_) | Value::VectorMut(_));
+vec_fill!(
+    make_vector,
+    |v| Ok::<_, Exception>(v.clone()),
+    Value::Unspecified,
+    Value::vector_mut
+);
 vec_new!(
     vector,
     |(_, v)| Ok::<_, Exception>(v.clone()),
-    Value::vector_mut,
-    Vec<_>
+    Value::vector_mut
 );
 vec_length!(vector_length, Value::as_refvec, TypeName::VECTOR);
 vec_get!(
