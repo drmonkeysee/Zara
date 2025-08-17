@@ -45,7 +45,7 @@ impl Args {
 
     pub(crate) fn decompose(self) -> (Input, RunMode, Vec<String>) {
         let runargs = [if let Input::File(p) = &self.input {
-            p.to_str().unwrap_or_else(|| self.me.as_str()).to_owned()
+            p.to_str().unwrap_or(self.me.as_str()).to_owned()
         } else {
             self.me.clone()
         }]

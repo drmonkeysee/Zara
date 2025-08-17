@@ -72,6 +72,7 @@ fn apropos(args: &[Value], env: &Frame) -> EvalResult {
     ))
 }
 
+#[allow(clippy::unnecessary_wraps, reason = "infallible intrinsic")]
 fn is_mutable(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = super::first(args);
     Ok(Value::Boolean(matches!(

@@ -123,7 +123,7 @@ impl SyntacticForm {
                             }
                         }
                         ExpressionKind::Literal(Value::Pair(Some(p))) => {
-                            return lambda_transform(len, p, binding.ctx, it, ctx);
+                            return lambda_transform(len, &p, binding.ctx, it, ctx);
                         }
                         _ => (),
                     }
@@ -273,7 +273,7 @@ fn into_list(seq: Vec<Expression>, ctx: ExprCtx, improper: bool) -> ExprConvertR
 
 fn lambda_transform(
     seq_len: usize,
-    binding_expr: Rc<Pair>,
+    binding_expr: &Rc<Pair>,
     binding_ctx: ExprCtx,
     body: impl IntoIterator<Item = Expression>,
     ctx: ExprCtx,

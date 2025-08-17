@@ -178,7 +178,7 @@ impl<'a> ParseDriver<'a> {
 
     fn parse(mut self, token_lines: Box<[TokenLine]>, ns: &Namespace) -> ParserResult {
         let parser = token_lines.into_iter().fold(
-            self.parsers.pop().unwrap_or_else(|| ParseNode::prg()),
+            self.parsers.pop().unwrap_or_else(ParseNode::prg),
             |p, ln| self.parse_line(p, ln, ns),
         );
 

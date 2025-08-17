@@ -248,7 +248,7 @@ pub(crate) enum ValRef<'a, T: ?Sized, M> {
     Mut(Ref<'a, M>),
 }
 
-impl<'a, T: ?Sized, M: AsRef<T>> AsRef<T> for ValRef<'a, T, M> {
+impl<T: ?Sized, M: AsRef<T>> AsRef<T> for ValRef<'_, T, M> {
     fn as_ref(&self) -> &T {
         match self {
             Self::Con(t) => t,
