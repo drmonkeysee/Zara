@@ -54,12 +54,13 @@ fn symbols(_args: &[Value], env: &Frame) -> EvalResult {
 // TODO: support passing in environment specifier
 fn apropos(args: &[Value], env: &Frame) -> EvalResult {
     // TODO: map_or_default https://github.com/rust-lang/rust/issues/138099
-    let pat = args
-        .first()
-        .map_or(Ok::<_, Exception>(StrRef::default()), |v| {
+    let pat = args.first().map_or_else(
+        || Ok::<_, Exception>(StrRef::default()),
+        |v| {
             v.as_refstr()
-                .ok_or(super::invalid_target(TypeName::STRING, v))
-        })?;
+                .ok_or_else(|| super::invalid_target(TypeName::STRING, v))
+        },
+    )?;
     Ok(Value::list(
         env.scope
             .sorted_bindings()

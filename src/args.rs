@@ -35,7 +35,9 @@ impl Args {
     pub(crate) fn parse(args: impl IntoIterator<Item = String>) -> Self {
         let mut args = args.into_iter();
         let this = Self {
-            me: args.next().unwrap_or(env!("CARGO_PKG_NAME").to_owned()),
+            me: args
+                .next()
+                .unwrap_or_else(|| env!("CARGO_PKG_NAME").to_owned()),
             ..Default::default()
         };
         args.fold(this, Self::match_arg)
@@ -43,7 +45,7 @@ impl Args {
 
     pub(crate) fn decompose(self) -> (Input, RunMode, Vec<String>) {
         let runargs = [if let Input::File(p) = &self.input {
-            p.to_str().unwrap_or(self.me.as_str()).to_owned()
+            p.to_str().unwrap_or_else(|| self.me.as_str()).to_owned()
         } else {
             self.me.clone()
         }]

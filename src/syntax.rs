@@ -177,11 +177,10 @@ impl<'a> ParseDriver<'a> {
     }
 
     fn parse(mut self, token_lines: Box<[TokenLine]>, ns: &Namespace) -> ParserResult {
-        let parser = token_lines
-            .into_iter()
-            .fold(self.parsers.pop().unwrap_or(ParseNode::prg()), |p, ln| {
-                self.parse_line(p, ln, ns)
-            });
+        let parser = token_lines.into_iter().fold(
+            self.parsers.pop().unwrap_or_else(|| ParseNode::prg()),
+            |p, ln| self.parse_line(p, ln, ns),
+        );
 
         if self.errs.is_empty() {
             Ok(if self.parsers.is_empty() {

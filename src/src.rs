@@ -153,15 +153,19 @@ impl FileSource {
         let name = path
             .as_ref()
             .file_stem()
-            .ok_or(Error::new(
-                ErrorKind::InvalidInput,
-                "unable to extract file name from path",
-            ))?
+            .ok_or_else(|| {
+                Error::new(
+                    ErrorKind::InvalidInput,
+                    "unable to extract file name from path",
+                )
+            })?
             .to_str()
-            .ok_or(Error::new(
-                ErrorKind::InvalidInput,
-                "unable to convert file name to string",
-            ))?
+            .ok_or_else(|| {
+                Error::new(
+                    ErrorKind::InvalidInput,
+                    "unable to convert file name to string",
+                )
+            })?
             .to_owned();
         let p = Some(path.as_ref().to_path_buf());
         let f = File::open(path)?;

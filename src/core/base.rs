@@ -54,7 +54,7 @@ macro_rules! vec_length {
     ($name:ident, $asref:expr, $valname:expr) => {
         fn $name(args: &[Value], _env: &Frame) -> EvalResult {
             let arg = first(args);
-            let v = $asref(arg).ok_or(invalid_target($valname, arg))?;
+            let v = $asref(arg).ok_or_else(|| invalid_target($valname, arg))?;
             Ok(Value::Number(Number::from_usize(v.as_ref().len())))
         }
     };
@@ -65,7 +65,7 @@ macro_rules! vec_get {
         fn $name(args: &[Value], _env: &Frame) -> EvalResult {
             let vec = first(args);
             let k = super::second(args);
-            let v = $asref(vec).ok_or(invalid_target($valname, vec))?;
+            let v = $asref(vec).ok_or_else(|| invalid_target($valname, vec))?;
             vec_item(v.as_ref(), k, $get, $map)
         }
     };
@@ -567,10 +567,10 @@ fn symbol_to_string(args: &[Value], _env: &Frame) -> EvalResult {
 
 fn string_to_symbol(args: &[Value], env: &Frame) -> EvalResult {
     let arg = first(args);
-    arg.as_refstr()
-        .map_or(Err(invalid_target(TypeName::STRING, arg)), |s| {
-            Ok(Value::Symbol(env.sym.get(s)))
-        })
+    arg.as_refstr().map_or_else(
+        || Err(invalid_target(TypeName::STRING, arg)),
+        |s| Ok(Value::Symbol(env.sym.get(s))),
+    )
 }
 
 //
