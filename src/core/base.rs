@@ -2,8 +2,7 @@
 macro_rules! predicate {
     ($name:ident, $pred:pat $(if $guard:expr)?) => {
         fn $name(args: &[Value], _env: &Frame) -> EvalResult {
-            let arg = first(args);
-            Ok(Value::Boolean(matches!(arg, $pred $(if $guard)?)))
+            Ok(Value::Boolean(matches!(first(args), $pred $(if $guard)?)))
         }
     };
 }
@@ -53,12 +52,12 @@ macro_rules! num_convert {
 macro_rules! coll_new {
     ($name:ident, $map:expr, $ctor:expr) => {
         fn $name(args: &[Value], _env: &Frame) -> EvalResult {
-            let c = args
-                .iter()
-                .enumerate()
-                .map($map)
-                .collect::<Result<Vec<_>, _>>()?;
-            Ok($ctor(c))
+            Ok($ctor(
+                args.iter()
+                    .enumerate()
+                    .map($map)
+                    .collect::<Result<Vec<_>, _>>()?,
+            ))
         }
     };
 }
@@ -66,33 +65,30 @@ macro_rules! coll_new {
 macro_rules! coll_fill {
     ($name:ident, $map:expr, $def:expr, $ctor:expr) => {
         fn $name(args: &[Value], _env: &Frame) -> EvalResult {
-            let k = first(args);
-            let val = args.get(1).map_or(Ok($def), $map)?;
             Ok($ctor(iter::repeat_n(
-                val,
-                val_to_index(k, FIRST_ARG_LABEL)?,
+                args.get(1).map_or(Ok($def), $map)?,
+                val_to_index(first(args), FIRST_ARG_LABEL)?,
             )))
         }
     };
 }
 
 macro_rules! coll_length {
-    ($name:ident, $asref:expr, $valname:expr) => {
+    ($name:ident, $asvref:expr, $valname:expr) => {
         fn $name(args: &[Value], _env: &Frame) -> EvalResult {
             let arg = first(args);
-            let c = $asref(arg).ok_or_else(|| invalid_target($valname, arg))?;
+            let c = $asvref(arg).ok_or_else(|| invalid_target($valname, arg))?;
             Ok(Value::Number(Number::from_usize(c.as_ref().len())))
         }
     };
 }
 
 macro_rules! coll_get {
-    ($name:ident, $asref:expr, $get:expr, $map:expr, $valname:expr) => {
+    ($name:ident, $asvref:expr, $get:expr, $map:expr, $valname:expr) => {
         fn $name(args: &[Value], _env: &Frame) -> EvalResult {
-            let c = first(args);
-            let k = super::second(args);
-            let coll = $asref(c).ok_or_else(|| invalid_target($valname, c))?;
-            coll_item(coll.as_ref(), k, $get, $map)
+            let arg = first(args);
+            let coll = $asvref(arg).ok_or_else(|| invalid_target($valname, arg))?;
+            coll_item(coll.as_ref(), super::second(args), $get, $map)
         }
     };
 }
@@ -102,12 +98,11 @@ macro_rules! coll_set {
         fn $name(args: &[Value], _env: &Frame) -> EvalResult {
             let arg = first(args);
             let k = super::second(args);
-            let val = super::third(args);
             match arg {
                 $mutkind(c) => {
                     let idx = val_to_index(k, SECOND_ARG_LABEL)?;
                     if idx < c.borrow().len() {
-                        let item = $valconv(val)?;
+                        let item = $valconv(super::third(args))?;
                         $setval(c.borrow_mut(), idx, item);
                         Ok(Value::Unspecified)
                     } else {
@@ -215,29 +210,29 @@ coll_set!(
 );
 
 fn bytevector_copy(args: &[Value], _env: &Frame) -> EvalResult {
-    let c = first(args);
-    let coll = c
+    let arg = first(args);
+    let coll = arg
         .as_refbv()
-        .ok_or_else(|| invalid_target(TypeName::BYTEVECTOR, c))?;
+        .ok_or_else(|| invalid_target(TypeName::BYTEVECTOR, arg))?;
     let clen = coll.as_ref().len();
-    let s = args.get(1);
-    let start = s.map_or(Ok(usize::MIN), |v| val_to_index(v, SECOND_ARG_LABEL))?;
-    let e = args.get(2);
-    let end = e.map_or(Ok(clen), |v| val_to_index(v, THIRD_ARG_LABEL))?;
+    let start = args.get(1);
+    let sidx = start.map_or(Ok(usize::MIN), |v| val_to_index(v, SECOND_ARG_LABEL))?;
+    let end = args.get(2);
+    let eidx = end.map_or(Ok(clen), |v| val_to_index(v, THIRD_ARG_LABEL))?;
 
-    if clen < end {
-        return Err(Condition::index_error(e.unwrap()).into());
+    if clen < eidx {
+        return Err(Condition::index_error(end.unwrap()).into());
     }
-    if end < start {
-        return Err(if let Some(earg) = e {
-            Condition::bi_value_error("start greater than end", s.unwrap(), earg).into()
+    if eidx < sidx {
+        return Err(if let Some(v) = end {
+            Condition::bi_value_error("start greater than end", start.unwrap(), v).into()
         } else {
-            Condition::index_error(s.unwrap()).into()
+            Condition::index_error(start.unwrap()).into()
         });
     }
 
     Ok(Value::bytevector_mut(
-        coll.as_ref().iter().cloned().skip(start).take(end - start),
+        coll.as_ref().iter().cloned().skip(sidx).take(eidx - sidx),
     ))
 }
 
@@ -498,8 +493,7 @@ cadr_func!(cddr, d, d);
 // TODO: circular lists => #f
 #[allow(clippy::unnecessary_wraps, reason = "infallible intrinsic")]
 fn is_list(args: &[Value], _env: &Frame) -> EvalResult {
-    let arg = first(args);
-    Ok(Value::Boolean(match arg {
+    Ok(Value::Boolean(match first(args) {
         Value::Pair(None) => true,
         Value::Pair(Some(p)) => p.is_list(),
         _ => false,
@@ -528,15 +522,13 @@ fn list_length(args: &[Value], _env: &Frame) -> EvalResult {
 }
 
 fn list_tail(args: &[Value], _env: &Frame) -> EvalResult {
-    let lst = first(args);
     let k = super::second(args);
-    sub_list(lst, val_to_index(k, SECOND_ARG_LABEL)?, k).cloned()
+    sub_list(first(args), val_to_index(k, SECOND_ARG_LABEL)?, k).cloned()
 }
 
 fn list_get(args: &[Value], _env: &Frame) -> EvalResult {
-    let lst = first(args);
     let k = super::second(args);
-    let subl = sub_list(lst, val_to_index(k, SECOND_ARG_LABEL)?, k)?;
+    let subl = sub_list(first(args), val_to_index(k, SECOND_ARG_LABEL)?, k)?;
     if let Value::Pair(None) = subl {
         Err(Condition::index_error(k).into())
     } else {
