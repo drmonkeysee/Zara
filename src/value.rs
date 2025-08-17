@@ -233,21 +233,9 @@ pub(crate) type BvRef<'a> = ValRef<'a, [u8], Vec<u8>>;
 pub(crate) type StrRef<'a> = ValRef<'a, str, String>;
 pub(crate) type VecRef<'a> = ValRef<'a, [Value], Vec<Value>>;
 
-impl Default for BvRef<'_> {
-    fn default() -> Self {
-        Self::Con(&[])
-    }
-}
-
 impl Default for StrRef<'_> {
     fn default() -> Self {
         Self::Con("")
-    }
-}
-
-impl Default for VecRef<'_> {
-    fn default() -> Self {
-        Self::Con(&[])
     }
 }
 
