@@ -16,7 +16,7 @@ macro_rules! seq_predicate {
                 None => return Ok(Value::Boolean(true)),
                 Some((_, $kind(a))) => a,
                 Some((idx, v)) => {
-                    return Err(Condition::arg_error(&idx.to_string(), $valname, v).into());
+                    return Err(Condition::arg_error(idx, $valname, v).into());
                 }
             };
             let result: Result<_, Exception> =
@@ -24,7 +24,7 @@ macro_rules! seq_predicate {
                     if let $kind(next) = val {
                         Ok((acc && $pred(prev, next), next))
                     } else {
-                        Err(Condition::arg_error(&idx.to_string(), $valname, val).into())
+                        Err(Condition::arg_error(idx, $valname, val).into())
                     }
                 });
             Ok(Value::Boolean(result?.0))
@@ -33,19 +33,32 @@ macro_rules! seq_predicate {
 }
 
 macro_rules! num_convert {
-    ($name:ident, $type:ty, $err:path, $lbl:expr) => {
-        fn $name(arg: &Value) -> Result<$type, Exception> {
+    ($name:ident, $type:ty, $err:path) => {
+        fn $name(arg: &Value, lbl: impl Display) -> Result<$type, Exception> {
             let Value::Number(n) = arg else {
-                return Err(Condition::arg_error($lbl, NumericTypeName::INTEGER, arg).into());
+                return Err(Condition::arg_error(lbl, NumericTypeName::INTEGER, arg).into());
             };
             <$type>::try_from(n).map_err(|err| {
                 if let $err = err {
                     Condition::value_error($err, arg)
                 } else {
-                    Condition::arg_type_error($lbl, NumericTypeName::INTEGER, n.as_typename(), arg)
+                    Condition::arg_type_error(lbl, NumericTypeName::INTEGER, n.as_typename(), arg)
                 }
                 .into()
             })
+        }
+    };
+}
+
+macro_rules! vec_new {
+    ($name:ident, $map:expr, $ctor:expr) => {
+        fn $name(args: &[Value], _env: &Frame) -> EvalResult {
+            let v = args
+                .iter()
+                .enumerate()
+                .map($map)
+                .collect::<Result<Vec<_>, _>>()?;
+            Ok($ctor(v))
         }
     };
 }
@@ -79,7 +92,7 @@ macro_rules! vec_set {
             let val = super::third(args);
             match arg {
                 $mutkind(v) => {
-                    let idx = valnum_to_index(k)?;
+                    let idx = valnum_to_index(k, SECOND_ARG_LABEL)?;
                     if idx < v.borrow().len() {
                         let item = $valconv(val)?;
                         $setval(v.borrow_mut(), idx, item);
@@ -158,6 +171,11 @@ predicate!(
     is_bytevector,
     Value::ByteVector(_) | Value::ByteVectorMut(_)
 );
+vec_new!(
+    bytevector,
+    |(idx, v)| valnum_to_byte(v, idx),
+    Value::bytevector_mut
+);
 vec_length!(bytevector_length, Value::as_refbv, TypeName::BYTEVECTOR);
 vec_get!(
     bytevector_get,
@@ -171,25 +189,19 @@ vec_set!(
     Value::ByteVectorMut,
     Value::ByteVector,
     TypeName::BYTEVECTOR,
-    valnum_to_byte,
+    |v| valnum_to_byte(v, THIRD_ARG_LABEL),
     |mut v: RefMut<'_, Vec<_>>, idx, item| v[idx] = item
 );
 
 fn make_bytevector(args: &[Value], _env: &Frame) -> EvalResult {
     let k = first(args);
-    let byte = args.get(1).map_or(Ok(0), valnum_to_byte)?;
+    let byte = args
+        .get(1)
+        .map_or(Ok(0), |v| valnum_to_byte(v, SECOND_ARG_LABEL))?;
     Ok(Value::bytevector_mut(iter::repeat_n(
         byte,
-        valnum_to_index(k)?,
+        valnum_to_index(k, FIRST_ARG_LABEL)?,
     )))
-}
-
-fn bytevector(args: &[Value], _env: &Frame) -> EvalResult {
-    let v = args
-        .iter()
-        .map(valnum_to_byte)
-        .collect::<Result<Vec<u8>, Exception>>()?;
-    Ok(Value::bytevector_mut(v))
 }
 
 //
@@ -481,13 +493,13 @@ fn list_length(args: &[Value], _env: &Frame) -> EvalResult {
 fn list_tail(args: &[Value], _env: &Frame) -> EvalResult {
     let lst = first(args);
     let k = super::second(args);
-    sub_list(lst, valnum_to_index(k)?, k).cloned()
+    sub_list(lst, valnum_to_index(k, SECOND_ARG_LABEL)?, k).cloned()
 }
 
 fn list_get(args: &[Value], _env: &Frame) -> EvalResult {
     let lst = first(args);
     let k = super::second(args);
-    let subl = sub_list(lst, valnum_to_index(k)?, k)?;
+    let subl = sub_list(lst, valnum_to_index(k, SECOND_ARG_LABEL)?, k)?;
     if let Value::Pair(None) = subl {
         Err(Condition::index_error(k).into())
     } else {
@@ -630,15 +642,9 @@ vec_set!(
 num_convert!(
     valnum_to_index,
     usize,
-    NumericError::UsizeConversionInvalidRange,
-    SECOND_ARG_LABEL
+    NumericError::UsizeConversionInvalidRange
 );
-num_convert!(
-    valnum_to_byte,
-    u8,
-    NumericError::ByteConversionInvalidRange,
-    THIRD_ARG_LABEL
-);
+num_convert!(valnum_to_byte, u8, NumericError::ByteConversionInvalidRange);
 
 fn try_num_into_char(n: &Number, arg: &Value) -> EvalResult {
     u32::try_from(n).map_or_else(
@@ -716,13 +722,9 @@ fn strs_predicate(args: &[Value], pred: impl Fn(&str, &str) -> bool) -> EvalResu
         .iter()
         .enumerate()
         .try_fold::<(bool, Option<&Value>), _, _>((true, None), |(acc, prev), (idx, val)| {
-            let b = val.as_refstr().ok_or_else(|| {
-                Exception::from(Condition::arg_error(
-                    &idx.to_string(),
-                    TypeName::STRING,
-                    val,
-                ))
-            })?;
+            let b = val
+                .as_refstr()
+                .ok_or_else(|| Exception::from(Condition::arg_error(idx, TypeName::STRING, val)))?;
             let a = match prev {
                 None => return Ok((acc, Some(val))),
                 Some(v) => v.as_refstr().expect("unexpected value type from prev"),
@@ -750,7 +752,7 @@ fn vec_item<T, U>(
     get: impl FnOnce(T, usize) -> Option<U>,
     map: impl FnOnce(U) -> Value,
 ) -> EvalResult {
-    get(vec, valnum_to_index(k)?).map_or_else(
+    get(vec, valnum_to_index(k, SECOND_ARG_LABEL)?).map_or_else(
         || Err(Condition::index_error(k).into()),
         |item| Ok(map(item)),
     )

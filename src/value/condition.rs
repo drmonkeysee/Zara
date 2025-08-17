@@ -10,12 +10,12 @@ pub(crate) struct Condition {
 }
 
 impl Condition {
-    pub(crate) fn arg_error(name: &str, expected_type: impl Display, arg: &Value) -> Self {
+    pub(crate) fn arg_error(name: impl Display, expected_type: impl Display, arg: &Value) -> Self {
         Self::arg_type_error(name, expected_type, arg.as_typename(), arg)
     }
 
     pub(crate) fn arg_type_error(
-        name: &str,
+        name: impl Display,
         expected_type: impl Display,
         actual_type: impl Display,
         arg: &Value,
