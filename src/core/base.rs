@@ -580,12 +580,12 @@ coll_fill!(
     make_string,
     |v| val_to_char(v, SECOND_ARG_LABEL),
     char::MIN,
-    Value::string_mut_chars
+    Value::strmut_from_chars
 );
 coll_new!(
     string,
     |(idx, v)| val_to_char(v, idx),
-    Value::string_mut_chars
+    Value::strmut_from_chars
 );
 coll_length!(string_length, Value::as_refstr, TypeName::STRING);
 coll_get!(
@@ -606,7 +606,7 @@ coll_set!(
 coll_copy!(
     string_copy,
     Value::as_refstr,
-    |s: &str, start, count| Value::string_mut_chars(s.chars().skip(start).take(count)),
+    |s: &str, start, count| Value::strmut_from_chars(s.chars().skip(start).take(count)),
     TypeName::STRING
 );
 

@@ -100,7 +100,7 @@ impl Value {
         Self::StringMut(RefCell::new(s.into()).into())
     }
 
-    pub(crate) fn string_mut_chars(c: impl IntoIterator<Item = char>) -> Self {
+    pub(crate) fn strmut_from_chars(c: impl IntoIterator<Item = char>) -> Self {
         Self::StringMut(RefCell::new(c.into_iter().collect()).into())
     }
 
