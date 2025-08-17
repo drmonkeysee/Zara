@@ -92,7 +92,7 @@ macro_rules! vec_set {
             let val = super::third(args);
             match arg {
                 $mutkind(v) => {
-                    let idx = valnum_to_index(k, SECOND_ARG_LABEL)?;
+                    let idx = val_to_index(k, SECOND_ARG_LABEL)?;
                     if idx < v.borrow().len() {
                         let item = $valconv(val)?;
                         $setval(v.borrow_mut(), idx, item);
@@ -173,7 +173,7 @@ predicate!(
 );
 vec_new!(
     bytevector,
-    |(idx, v)| valnum_to_byte(v, idx),
+    |(idx, v)| val_to_byte(v, idx),
     Value::bytevector_mut,
     Vec<_>
 );
@@ -190,7 +190,7 @@ vec_set!(
     Value::ByteVectorMut,
     Value::ByteVector,
     TypeName::BYTEVECTOR,
-    |v| valnum_to_byte(v, THIRD_ARG_LABEL),
+    |v| val_to_byte(v, THIRD_ARG_LABEL),
     |mut v: RefMut<'_, Vec<_>>, idx, item| v[idx] = item
 );
 
@@ -198,10 +198,10 @@ fn make_bytevector(args: &[Value], _env: &Frame) -> EvalResult {
     let k = first(args);
     let byte = args
         .get(1)
-        .map_or(Ok(0), |v| valnum_to_byte(v, SECOND_ARG_LABEL))?;
+        .map_or(Ok(0), |v| val_to_byte(v, SECOND_ARG_LABEL))?;
     Ok(Value::bytevector_mut(iter::repeat_n(
         byte,
-        valnum_to_index(k, FIRST_ARG_LABEL)?,
+        val_to_index(k, FIRST_ARG_LABEL)?,
     )))
 }
 
@@ -494,13 +494,13 @@ fn list_length(args: &[Value], _env: &Frame) -> EvalResult {
 fn list_tail(args: &[Value], _env: &Frame) -> EvalResult {
     let lst = first(args);
     let k = super::second(args);
-    sub_list(lst, valnum_to_index(k, SECOND_ARG_LABEL)?, k).cloned()
+    sub_list(lst, val_to_index(k, SECOND_ARG_LABEL)?, k).cloned()
 }
 
 fn list_get(args: &[Value], _env: &Frame) -> EvalResult {
     let lst = first(args);
     let k = super::second(args);
-    let subl = sub_list(lst, valnum_to_index(k, SECOND_ARG_LABEL)?, k)?;
+    let subl = sub_list(lst, val_to_index(k, SECOND_ARG_LABEL)?, k)?;
     if let Value::Pair(None) = subl {
         Err(Condition::index_error(k).into())
     } else {
@@ -657,11 +657,11 @@ vec_set!(
 //
 
 num_convert!(
-    valnum_to_index,
+    val_to_index,
     usize,
     NumericError::UsizeConversionInvalidRange
 );
-num_convert!(valnum_to_byte, u8, NumericError::ByteConversionInvalidRange);
+num_convert!(val_to_byte, u8, NumericError::ByteConversionInvalidRange);
 
 fn try_num_into_char(n: &Number, arg: &Value) -> EvalResult {
     u32::try_from(n).map_or_else(
@@ -769,7 +769,7 @@ fn vec_item<T, U>(
     get: impl FnOnce(T, usize) -> Option<U>,
     map: impl FnOnce(U) -> Value,
 ) -> EvalResult {
-    get(vec, valnum_to_index(k, SECOND_ARG_LABEL)?).map_or_else(
+    get(vec, val_to_index(k, SECOND_ARG_LABEL)?).map_or_else(
         || Err(Condition::index_error(k).into()),
         |item| Ok(map(item)),
     )
