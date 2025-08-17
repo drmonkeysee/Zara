@@ -51,29 +51,22 @@ macro_rules! num_convert {
 }
 
 macro_rules! vec_length {
-    ($name:ident, $kind:path, $mutkind:path, $valname:expr) => {
+    ($name:ident, $asref:expr, $valname:expr) => {
         fn $name(args: &[Value], _env: &Frame) -> EvalResult {
             let arg = first(args);
-            let len = match arg {
-                $kind(v) => v.len(),
-                $mutkind(v) => v.borrow().len(),
-                _ => return Err(invalid_target($valname, arg)),
-            };
-            Ok(Value::Number(Number::from_usize(len)))
+            let v = $asref(arg).ok_or(invalid_target($valname, arg))?;
+            Ok(Value::Number(Number::from_usize(v.as_ref().len())))
         }
     };
 }
 
 macro_rules! vec_get {
-    ($name:ident, $kind: path, $mutkind:path, $valname:expr, $get:expr, $map:expr) => {
+    ($name:ident, $asref:expr, $get:expr, $map:expr, $valname:expr) => {
         fn $name(args: &[Value], _env: &Frame) -> EvalResult {
             let vec = first(args);
             let k = super::second(args);
-            match vec {
-                $kind(v) => vec_item(v, k, $get, $map),
-                $mutkind(v) => vec_item(&v.borrow(), k, $get, $map),
-                _ => Err(invalid_target($valname, vec)),
-            }
+            let v = $asref(vec).ok_or(invalid_target($valname, vec))?;
+            vec_item(v.as_ref(), k, $get, $map)
         }
     };
 }
@@ -162,19 +155,13 @@ predicate!(
     is_bytevector,
     Value::ByteVector(_) | Value::ByteVectorMut(_)
 );
-vec_length!(
-    bytevector_length,
-    Value::ByteVector,
-    Value::ByteVectorMut,
-    TypeName::BYTEVECTOR
-);
+vec_length!(bytevector_length, Value::as_refbv, TypeName::BYTEVECTOR);
 vec_get!(
     bytevector_get,
-    Value::ByteVector,
-    Value::ByteVectorMut,
-    TypeName::BYTEVECTOR,
+    Value::as_refbv,
     |bv, u| bv.get(u).copied(),
-    |item| Value::Number(Number::real(i64::from(item)))
+    |item| Value::Number(Number::real(i64::from(item))),
+    TypeName::BYTEVECTOR
 );
 vec_set!(
     bytevector_set,
@@ -517,19 +504,13 @@ fn load_string(env: &Frame) {
 }
 
 predicate!(is_string, Value::String(_) | Value::StringMut(_));
-vec_length!(
-    string_length,
-    Value::String,
-    Value::StringMut,
-    TypeName::STRING
-);
+vec_length!(string_length, Value::as_refstr, TypeName::STRING);
 vec_get!(
     string_get,
-    Value::String,
-    Value::StringMut,
-    TypeName::STRING,
+    Value::as_refstr,
     |s, u| s.chars().nth(u),
-    Value::Character
+    Value::Character,
+    TypeName::STRING
 );
 vec_set!(
     string_set,
@@ -605,19 +586,13 @@ fn load_vec(env: &Frame) {
 }
 
 predicate!(is_vector, Value::Vector(_) | Value::VectorMut(_));
-vec_length!(
-    vector_length,
-    Value::Vector,
-    Value::VectorMut,
-    TypeName::VECTOR
-);
+vec_length!(vector_length, Value::as_refvec, TypeName::VECTOR);
 vec_get!(
     vector_get,
-    Value::Vector,
-    Value::VectorMut,
-    TypeName::VECTOR,
+    Value::as_refvec,
     |v, u| v.get(u).cloned(),
-    convert::identity
+    convert::identity,
+    TypeName::VECTOR
 );
 vec_set!(
     vector_set,
@@ -750,9 +725,9 @@ fn sub_list<'a>(lst: &'a Value, idx: usize, k: &Value) -> Result<&'a Value, Exce
 }
 
 fn vec_item<T, U>(
-    vec: &T,
+    vec: T,
     k: &Value,
-    get: impl FnOnce(&T, usize) -> Option<U>,
+    get: impl FnOnce(T, usize) -> Option<U>,
     map: impl FnOnce(U) -> Value,
 ) -> EvalResult {
     get(vec, valnum_to_index(k)?).map_or_else(
