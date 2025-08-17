@@ -50,20 +50,20 @@ macro_rules! num_convert {
     };
 }
 
-macro_rules! vec_new {
+macro_rules! coll_new {
     ($name:ident, $map:expr, $ctor:expr) => {
         fn $name(args: &[Value], _env: &Frame) -> EvalResult {
-            let v = args
+            let c = args
                 .iter()
                 .enumerate()
                 .map($map)
                 .collect::<Result<Vec<_>, _>>()?;
-            Ok($ctor(v))
+            Ok($ctor(c))
         }
     };
 }
 
-macro_rules! vec_fill {
+macro_rules! coll_fill {
     ($name:ident, $map:expr, $def:expr, $ctor:expr) => {
         fn $name(args: &[Value], _env: &Frame) -> EvalResult {
             let k = first(args);
@@ -76,39 +76,39 @@ macro_rules! vec_fill {
     };
 }
 
-macro_rules! vec_length {
+macro_rules! coll_length {
     ($name:ident, $asref:expr, $valname:expr) => {
         fn $name(args: &[Value], _env: &Frame) -> EvalResult {
             let arg = first(args);
-            let v = $asref(arg).ok_or_else(|| invalid_target($valname, arg))?;
-            Ok(Value::Number(Number::from_usize(v.as_ref().len())))
+            let c = $asref(arg).ok_or_else(|| invalid_target($valname, arg))?;
+            Ok(Value::Number(Number::from_usize(c.as_ref().len())))
         }
     };
 }
 
-macro_rules! vec_get {
+macro_rules! coll_get {
     ($name:ident, $asref:expr, $get:expr, $map:expr, $valname:expr) => {
         fn $name(args: &[Value], _env: &Frame) -> EvalResult {
-            let vec = first(args);
+            let coll = first(args);
             let k = super::second(args);
-            let v = $asref(vec).ok_or_else(|| invalid_target($valname, vec))?;
-            vec_item(v.as_ref(), k, $get, $map)
+            let c = $asref(coll).ok_or_else(|| invalid_target($valname, coll))?;
+            coll_item(c.as_ref(), k, $get, $map)
         }
     };
 }
 
-macro_rules! vec_set {
+macro_rules! coll_set {
     ($name:ident, $mutkind:path, $kind: path, $valname:expr, $valconv:expr, $setval:expr) => {
         fn $name(args: &[Value], _env: &Frame) -> EvalResult {
             let arg = first(args);
             let k = super::second(args);
             let val = super::third(args);
             match arg {
-                $mutkind(v) => {
+                $mutkind(c) => {
                     let idx = val_to_index(k, SECOND_ARG_LABEL)?;
-                    if idx < v.borrow().len() {
+                    if idx < c.borrow().len() {
                         let item = $valconv(val)?;
-                        $setval(v.borrow_mut(), idx, item);
+                        $setval(c.borrow_mut(), idx, item);
                         Ok(Value::Unspecified)
                     } else {
                         Err(Condition::index_error(k).into())
@@ -184,26 +184,26 @@ predicate!(
     is_bytevector,
     Value::ByteVector(_) | Value::ByteVectorMut(_)
 );
-vec_fill!(
+coll_fill!(
     make_bytevector,
     |v| val_to_byte(v, SECOND_ARG_LABEL),
     u8::MIN,
     Value::bytevector_mut
 );
-vec_new!(
+coll_new!(
     bytevector,
     |(idx, v)| val_to_byte(v, idx),
     Value::bytevector_mut
 );
-vec_length!(bytevector_length, Value::as_refbv, TypeName::BYTEVECTOR);
-vec_get!(
+coll_length!(bytevector_length, Value::as_refbv, TypeName::BYTEVECTOR);
+coll_get!(
     bytevector_get,
     Value::as_refbv,
     |bv, u| bv.get(u).copied(),
     |item| Value::Number(Number::real(i64::from(item))),
     TypeName::BYTEVECTOR
 );
-vec_set!(
+coll_set!(
     bytevector_set,
     Value::ByteVectorMut,
     Value::ByteVector,
@@ -547,26 +547,26 @@ fn load_string(env: &Frame) {
 }
 
 predicate!(is_string, Value::String(_) | Value::StringMut(_));
-vec_fill!(
+coll_fill!(
     make_string,
     |v| val_to_char(v, SECOND_ARG_LABEL),
     char::MIN,
     Value::string_mut_chars
 );
-vec_new!(
+coll_new!(
     string,
     |(idx, v)| val_to_char(v, idx),
     Value::string_mut_chars
 );
-vec_length!(string_length, Value::as_refstr, TypeName::STRING);
-vec_get!(
+coll_length!(string_length, Value::as_refstr, TypeName::STRING);
+coll_get!(
     string_get,
     Value::as_refstr,
     |s, u| s.chars().nth(u),
     Value::Character,
     TypeName::STRING
 );
-vec_set!(
+coll_set!(
     string_set,
     Value::StringMut,
     Value::String,
@@ -643,26 +643,26 @@ fn load_vec(env: &Frame) {
 }
 
 predicate!(is_vector, Value::Vector(_) | Value::VectorMut(_));
-vec_fill!(
+coll_fill!(
     make_vector,
     |v| Ok::<_, Exception>(v.clone()),
     Value::Unspecified,
     Value::vector_mut
 );
-vec_new!(
+coll_new!(
     vector,
     |(_, v)| Ok::<_, Exception>(v.clone()),
     Value::vector_mut
 );
-vec_length!(vector_length, Value::as_refvec, TypeName::VECTOR);
-vec_get!(
+coll_length!(vector_length, Value::as_refvec, TypeName::VECTOR);
+coll_get!(
     vector_get,
     Value::as_refvec,
     |v, u| v.get(u).cloned(),
     convert::identity,
     TypeName::VECTOR
 );
-vec_set!(
+coll_set!(
     vector_set,
     Value::VectorMut,
     Value::Vector,
@@ -782,13 +782,13 @@ fn sub_list<'a>(lst: &'a Value, idx: usize, k: &Value) -> Result<&'a Value, Exce
     }
 }
 
-fn vec_item<T, U>(
-    vec: T,
+fn coll_item<T, U>(
+    coll: T,
     k: &Value,
     get: impl FnOnce(T, usize) -> Option<U>,
     map: impl FnOnce(U) -> Value,
 ) -> EvalResult {
-    get(vec, val_to_index(k, SECOND_ARG_LABEL)?).map_or_else(
+    get(coll, val_to_index(k, SECOND_ARG_LABEL)?).map_or_else(
         || Err(Condition::index_error(k).into()),
         |item| Ok(map(item)),
     )
