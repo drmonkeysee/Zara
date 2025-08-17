@@ -51,13 +51,13 @@ macro_rules! num_convert {
 }
 
 macro_rules! vec_new {
-    ($name:ident, $map:expr, $ctor:expr) => {
+    ($name:ident, $map:expr, $ctor:expr, $coll:ty) => {
         fn $name(args: &[Value], _env: &Frame) -> EvalResult {
             let v = args
                 .iter()
                 .enumerate()
                 .map($map)
-                .collect::<Result<Vec<_>, _>>()?;
+                .collect::<Result<$coll, _>>()?;
             Ok($ctor(v))
         }
     };
@@ -174,7 +174,8 @@ predicate!(
 vec_new!(
     bytevector,
     |(idx, v)| valnum_to_byte(v, idx),
-    Value::bytevector_mut
+    Value::bytevector_mut,
+    Vec<_>
 );
 vec_length!(bytevector_length, Value::as_refbv, TypeName::BYTEVECTOR);
 vec_get!(
@@ -524,6 +525,8 @@ predicate!(is_procedure, Value::Intrinsic(_) | Value::Procedure(_));
 fn load_string(env: &Frame) {
     super::bind_intrinsic(env, "string?", 1..1, is_string);
 
+    super::bind_intrinsic(env, "string", 0..MAX_ARITY, string);
+
     super::bind_intrinsic(env, "string-length", 1..1, string_length);
     super::bind_intrinsic(env, "string-ref", 2..2, string_get);
     super::bind_intrinsic(env, "string-set!", 3..3, string_set);
@@ -536,6 +539,12 @@ fn load_string(env: &Frame) {
 }
 
 predicate!(is_string, Value::String(_) | Value::StringMut(_));
+vec_new!(
+    string,
+    |(idx, v)| val_to_char(v, idx),
+    Value::string_mut,
+    String
+);
 vec_length!(string_length, Value::as_refstr, TypeName::STRING);
 vec_get!(
     string_get,
@@ -549,7 +558,7 @@ vec_set!(
     Value::StringMut,
     Value::String,
     TypeName::STRING,
-    val_to_char,
+    |v| val_to_char(v, THIRD_ARG_LABEL),
     replace_str_char
 );
 
@@ -612,12 +621,20 @@ fn string_to_symbol(args: &[Value], env: &Frame) -> EvalResult {
 fn load_vec(env: &Frame) {
     super::bind_intrinsic(env, "vector?", 1..1, is_vector);
 
+    super::bind_intrinsic(env, "vector", 0..MAX_ARITY, vector);
+
     super::bind_intrinsic(env, "vector-length", 1..1, vector_length);
     super::bind_intrinsic(env, "vector-ref", 2..2, vector_get);
     super::bind_intrinsic(env, "vector-set!", 3..3, vector_set);
 }
 
 predicate!(is_vector, Value::Vector(_) | Value::VectorMut(_));
+vec_new!(
+    vector,
+    |(_, v)| Ok::<_, Exception>(v.clone()),
+    Value::vector_mut,
+    Vec<_>
+);
 vec_length!(vector_length, Value::as_refvec, TypeName::VECTOR);
 vec_get!(
     vector_get,
@@ -702,11 +719,11 @@ fn guarded_real_op(
     }
 }
 
-fn val_to_char(arg: &Value) -> Result<char, Exception> {
+fn val_to_char(arg: &Value, lbl: impl Display) -> Result<char, Exception> {
     if let Value::Character(c) = arg {
         Ok(*c)
     } else {
-        Err(Condition::arg_error(THIRD_ARG_LABEL, TypeName::CHAR, arg).into())
+        Err(Condition::arg_error(lbl, TypeName::CHAR, arg).into())
     }
 }
 
