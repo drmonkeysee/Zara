@@ -231,7 +231,7 @@ coll_copy!(
 coll_append!(
     bytevector_append,
     Value::as_refbv,
-    |bvs: &[BvRef]| Value::bytevector_mut(bvs.iter().map(BvRef::as_ref).flatten().copied()),
+    |bvs: &[BvRef]| Value::bytevector_mut(bvs.iter().flat_map(BvRef::as_ref).copied()),
     TypeName::BYTEVECTOR
 );
 
@@ -608,7 +608,7 @@ coll_copy!(
 coll_append!(
     string_append,
     Value::as_refstr,
-    |strs: &[StrRef]| Value::strmut_from_chars(strs.iter().map(|s| s.as_ref().chars()).flatten()),
+    |strs: &[StrRef]| Value::strmut_from_chars(strs.iter().flat_map(|s| s.as_ref().chars())),
     TypeName::STRING
 );
 
@@ -719,13 +719,13 @@ coll_set!(
 coll_copy!(
     vector_copy,
     Value::as_refvec,
-    |vals: &[Value], start, count| Value::vector_mut(vals.iter().cloned().skip(start).take(count)),
+    |vals: &[Value], start, count| Value::vector_mut(vals.iter().skip(start).take(count).cloned()),
     TypeName::VECTOR
 );
 coll_append!(
     vector_append,
     Value::as_refvec,
-    |vecs: &[VecRef]| Value::vector_mut(vecs.iter().map(VecRef::as_ref).flatten().cloned()),
+    |vecs: &[VecRef]| Value::vector_mut(vecs.iter().flat_map(VecRef::as_ref).cloned()),
     TypeName::VECTOR
 );
 
