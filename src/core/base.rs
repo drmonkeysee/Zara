@@ -49,30 +49,6 @@ macro_rules! num_convert {
     };
 }
 
-macro_rules! coll_new {
-    ($name:ident, $map:expr, $ctor:expr) => {
-        fn $name(args: &[Value], _env: &Frame) -> EvalResult {
-            Ok($ctor(
-                args.iter()
-                    .enumerate()
-                    .map($map)
-                    .collect::<Result<Vec<_>, _>>()?,
-            ))
-        }
-    };
-}
-
-macro_rules! coll_fill {
-    ($name:ident, $map:expr, $def:expr, $ctor:expr) => {
-        fn $name(args: &[Value], _env: &Frame) -> EvalResult {
-            Ok($ctor(iter::repeat_n(
-                args.get(1).map_or(Ok($def), $map)?,
-                val_to_index(first(args), FIRST_ARG_LABEL)?,
-            )))
-        }
-    };
-}
-
 macro_rules! coll_length {
     ($name:ident, $asvref:expr, $valname:expr) => {
         fn $name(args: &[Value], _env: &Frame) -> EvalResult {
@@ -94,7 +70,7 @@ macro_rules! coll_get {
 }
 
 macro_rules! coll_set {
-    ($name:ident, $mutkind:path, $kind: path, $valname:expr, $valconv:expr, $setval:expr) => {
+    ($name:ident, $mutkind:path, $kind:path, $valname:expr, $valconv:expr, $setval:expr) => {
         fn $name(args: &[Value], _env: &Frame) -> EvalResult {
             let arg = first(args);
             let k = super::second(args);
@@ -170,7 +146,12 @@ use crate::{
     string::{Symbol, unicode::UnicodeError},
     value::{BvRef, Condition, StrRef, TypeName, Value, VecRef},
 };
-use std::{cell::RefMut, convert, fmt::Display, iter};
+use std::{
+    cell::RefMut,
+    convert,
+    fmt::Display,
+    iter::{self, RepeatN},
+};
 
 pub(super) fn load(env: &Frame) {
     load_bool(env);
@@ -223,17 +204,6 @@ predicate!(
     is_bytevector,
     Value::ByteVector(_) | Value::ByteVectorMut(_)
 );
-coll_fill!(
-    make_bytevector,
-    |v| val_to_byte(v, SECOND_ARG_LABEL),
-    u8::MIN,
-    Value::bytevector_mut
-);
-coll_new!(
-    bytevector,
-    |(idx, v)| val_to_byte(v, idx),
-    Value::bytevector_mut
-);
 coll_length!(bytevector_length, Value::as_refbv, TypeName::BYTEVECTOR);
 coll_get!(
     bytevector_get,
@@ -264,6 +234,19 @@ coll_append!(
     |bvs: &[BvRef]| Value::bytevector_mut(bvs.iter().map(BvRef::as_ref).flatten().copied()),
     TypeName::BYTEVECTOR
 );
+
+fn make_bytevector(args: &[Value], _env: &Frame) -> EvalResult {
+    coll_fill(
+        args,
+        u8::MIN,
+        |v| val_to_byte(v, SECOND_ARG_LABEL),
+        Value::bytevector_mut,
+    )
+}
+
+fn bytevector(args: &[Value], _env: &Frame) -> EvalResult {
+    coll_new(args, |(idx, v)| val_to_byte(v, idx), Value::bytevector_mut)
+}
 
 //
 // Characters
@@ -600,17 +583,6 @@ fn load_string(env: &Frame) {
 }
 
 predicate!(is_string, Value::String(_) | Value::StringMut(_));
-coll_fill!(
-    make_string,
-    |v| val_to_char(v, SECOND_ARG_LABEL),
-    char::MIN,
-    Value::strmut_from_chars
-);
-coll_new!(
-    string,
-    |(idx, v)| val_to_char(v, idx),
-    Value::strmut_from_chars
-);
 coll_length!(string_length, Value::as_refstr, TypeName::STRING);
 coll_get!(
     string_get,
@@ -639,6 +611,23 @@ coll_append!(
     |strs: &[StrRef]| Value::strmut_from_chars(strs.iter().map(|s| s.as_ref().chars()).flatten()),
     TypeName::STRING
 );
+
+fn make_string(args: &[Value], _env: &Frame) -> EvalResult {
+    coll_fill(
+        args,
+        char::MIN,
+        |v| val_to_char(v, SECOND_ARG_LABEL),
+        Value::strmut_from_chars,
+    )
+}
+
+fn string(args: &[Value], _env: &Frame) -> EvalResult {
+    coll_new(
+        args,
+        |(idx, v)| val_to_char(v, idx),
+        Value::strmut_from_chars,
+    )
+}
 
 fn strings_eq(args: &[Value], _env: &Frame) -> EvalResult {
     strs_predicate(args, str::eq)
@@ -711,17 +700,6 @@ fn load_vec(env: &Frame) {
 }
 
 predicate!(is_vector, Value::Vector(_) | Value::VectorMut(_));
-coll_fill!(
-    make_vector,
-    |v| Ok::<_, Exception>(v.clone()),
-    Value::Unspecified,
-    Value::vector_mut
-);
-coll_new!(
-    vector,
-    |(_, v)| Ok::<_, Exception>(v.clone()),
-    Value::vector_mut
-);
 coll_length!(vector_length, Value::as_refvec, TypeName::VECTOR);
 coll_get!(
     vector_get,
@@ -750,6 +728,19 @@ coll_append!(
     |vecs: &[VecRef]| Value::vector_mut(vecs.iter().map(VecRef::as_ref).flatten().cloned()),
     TypeName::VECTOR
 );
+
+fn make_vector(args: &[Value], _env: &Frame) -> EvalResult {
+    coll_fill(
+        args,
+        Value::Unspecified,
+        |v| Ok(v.clone()),
+        Value::vector_mut,
+    )
+}
+
+fn vector(args: &[Value], _env: &Frame) -> EvalResult {
+    coll_new(args, |(_, v)| Ok(v.clone()), Value::vector_mut)
+}
 
 //
 // Helpers
@@ -860,6 +851,31 @@ fn sub_list<'a>(lst: &'a Value, idx: usize, k: &Value) -> Result<&'a Value, Exce
     } else {
         Err(invalid_target(TypeName::PAIR, lst))
     }
+}
+
+fn coll_new<T>(
+    args: &[Value],
+    map: impl FnMut((usize, &Value)) -> Result<T, Exception>,
+    ctor: impl FnOnce(Vec<T>) -> Value,
+) -> EvalResult {
+    Ok(ctor(
+        args.iter()
+            .enumerate()
+            .map(map)
+            .collect::<Result<Vec<_>, _>>()?,
+    ))
+}
+
+fn coll_fill<T: Clone>(
+    args: &[Value],
+    default: T,
+    map: impl FnOnce(&Value) -> Result<T, Exception>,
+    ctor: impl FnOnce(RepeatN<T>) -> Value,
+) -> EvalResult {
+    Ok(ctor(iter::repeat_n(
+        args.get(1).map_or(Ok(default), map)?,
+        val_to_index(first(args), FIRST_ARG_LABEL)?,
+    )))
 }
 
 fn coll_item<T, U>(
