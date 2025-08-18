@@ -141,6 +141,22 @@ macro_rules! coll_copy {
     };
 }
 
+macro_rules! coll_append {
+    ($name:ident, $asvref:expr, $copy:expr, $valname:expr) => {
+        fn $name(args: &[Value], _env: &Frame) -> EvalResult {
+            let coll_refs = args
+                .iter()
+                .enumerate()
+                .map(|(idx, v)| {
+                    $asvref(v)
+                        .ok_or_else(|| Exception::from(Condition::arg_error(idx, $valname, v)))
+                })
+                .collect::<Result<Vec<_>, _>>()?;
+            Ok($copy(&coll_refs))
+        }
+    };
+}
+
 #[cfg(test)]
 mod tests;
 
@@ -152,7 +168,7 @@ use crate::{
     eval::{EvalResult, Frame, MAX_ARITY},
     number::{Integer, Number, NumericError, NumericTypeName, Real},
     string::{Symbol, unicode::UnicodeError},
-    value::{Condition, TypeName, Value},
+    value::{BvRef, Condition, StrRef, TypeName, Value, VecRef},
 };
 use std::{cell::RefMut, convert, fmt::Display, iter};
 
@@ -242,24 +258,12 @@ coll_copy!(
     ),
     TypeName::BYTEVECTOR
 );
-
-fn bytevector_append(args: &[Value], _env: &Frame) -> EvalResult {
-    let coll_refs = args
-        .iter()
-        .enumerate()
-        .map(|(idx, v)| {
-            v.as_refbv()
-                .ok_or_else(|| Exception::from(Condition::arg_error(idx, TypeName::BYTEVECTOR, v)))
-        })
-        .collect::<Result<Vec<_>, _>>()?;
-    Ok(Value::bytevector_mut(
-        coll_refs
-            .iter()
-            .map(crate::value::BvRef::as_ref)
-            .flatten()
-            .copied(),
-    ))
-}
+coll_append!(
+    bytevector_append,
+    Value::as_refbv,
+    |bvs: &[BvRef]| Value::bytevector_mut(bvs.iter().map(BvRef::as_ref).flatten().copied()),
+    TypeName::BYTEVECTOR
+);
 
 //
 // Characters
@@ -592,6 +596,7 @@ fn load_string(env: &Frame) {
     super::bind_intrinsic(env, "string>=?", 0..MAX_ARITY, strings_gte);
 
     super::bind_intrinsic(env, "string-copy", 1..3, string_copy);
+    super::bind_intrinsic(env, "string-append", 0..MAX_ARITY, string_append);
 }
 
 predicate!(is_string, Value::String(_) | Value::StringMut(_));
@@ -626,6 +631,12 @@ coll_copy!(
     string_copy,
     Value::as_refstr,
     |s: &str, start, count| Value::strmut_from_chars(s.chars().skip(start).take(count)),
+    TypeName::STRING
+);
+coll_append!(
+    string_append,
+    Value::as_refstr,
+    |strs: &[StrRef]| Value::strmut_from_chars(strs.iter().map(|s| s.as_ref().chars()).flatten()),
     TypeName::STRING
 );
 
@@ -696,6 +707,7 @@ fn load_vec(env: &Frame) {
     super::bind_intrinsic(env, "vector-set!", 3..3, vector_set);
 
     super::bind_intrinsic(env, "vector-copy", 1..3, vector_copy);
+    super::bind_intrinsic(env, "vector-append", 0..MAX_ARITY, vector_append);
 }
 
 predicate!(is_vector, Value::Vector(_) | Value::VectorMut(_));
@@ -730,6 +742,12 @@ coll_copy!(
     vector_copy,
     Value::as_refvec,
     |vals: &[Value], start, count| Value::vector_mut(vals.iter().cloned().skip(start).take(count)),
+    TypeName::VECTOR
+);
+coll_append!(
+    vector_append,
+    Value::as_refvec,
+    |vecs: &[VecRef]| Value::vector_mut(vecs.iter().map(VecRef::as_ref).flatten().cloned()),
     TypeName::VECTOR
 );
 
