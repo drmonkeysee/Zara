@@ -200,6 +200,7 @@ fn load_bv(env: &Frame) {
     super::bind_intrinsic(env, "bytevector-u8-set!", 3..3, bytevector_set);
 
     super::bind_intrinsic(env, "bytevector-copy", 1..3, bytevector_copy);
+    super::bind_intrinsic(env, "bytevector-append", 0..MAX_ARITY, bytevector_append);
 }
 
 predicate!(
@@ -241,6 +242,24 @@ coll_copy!(
     ),
     TypeName::BYTEVECTOR
 );
+
+fn bytevector_append(args: &[Value], _env: &Frame) -> EvalResult {
+    let coll_refs = args
+        .iter()
+        .enumerate()
+        .map(|(idx, v)| {
+            v.as_refbv()
+                .ok_or_else(|| Exception::from(Condition::arg_error(idx, TypeName::BYTEVECTOR, v)))
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    Ok(Value::bytevector_mut(
+        coll_refs
+            .iter()
+            .map(crate::value::BvRef::as_ref)
+            .flatten()
+            .copied(),
+    ))
+}
 
 //
 // Characters
