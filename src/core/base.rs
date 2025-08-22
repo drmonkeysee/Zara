@@ -49,16 +49,6 @@ macro_rules! num_convert {
     };
 }
 
-macro_rules! coll_length {
-    ($name:ident, $asvref:expr, $valname:expr) => {
-        fn $name(args: &[Value], _env: &Frame) -> EvalResult {
-            let arg = first(args);
-            let c = $asvref(arg).ok_or_else(|| invalid_target($valname, arg))?;
-            Ok(Value::Number(Number::from_usize(c.as_ref().len())))
-        }
-    };
-}
-
 macro_rules! coll_set {
     ($name:ident, $mutkind:path, $kind:path, $valname:expr, $valconv:expr, $setval:expr) => {
         fn $name(args: &[Value], _env: &Frame) -> EvalResult {
@@ -118,7 +108,7 @@ use crate::{
     eval::{EvalResult, Frame, MAX_ARITY},
     number::{Integer, Number, NumericError, NumericTypeName, Real},
     string::{Symbol, unicode::UnicodeError},
-    value::{BvRef, CollRef, Condition, StrRef, TypeName, Value, VecRef},
+    value::{BvRef, CollRef, CollSized, Condition, StrRef, TypeName, Value, VecRef},
 };
 use std::{
     cell::RefMut,
@@ -178,7 +168,6 @@ predicate!(
     is_bytevector,
     Value::ByteVector(_) | Value::ByteVectorMut(_)
 );
-coll_length!(bytevector_length, Value::as_refbv, TypeName::BYTEVECTOR);
 coll_set!(
     bytevector_set,
     Value::ByteVectorMut,
@@ -207,6 +196,10 @@ fn make_bytevector(args: &[Value], _env: &Frame) -> EvalResult {
 
 fn bytevector(args: &[Value], _env: &Frame) -> EvalResult {
     coll_new(args, |(idx, v)| val_to_byte(v, idx), Value::bytevector_mut)
+}
+
+fn bytevector_length(args: &[Value], _env: &Frame) -> EvalResult {
+    coll_length(first(args), TypeName::BYTEVECTOR, Value::as_refbv)
 }
 
 fn bytevector_get(args: &[Value], _env: &Frame) -> EvalResult {
@@ -565,7 +558,6 @@ fn load_string(env: &Frame) {
 }
 
 predicate!(is_string, Value::String(_) | Value::StringMut(_));
-coll_length!(string_length, Value::as_refstr, TypeName::STRING);
 coll_set!(
     string_set,
     Value::StringMut,
@@ -596,6 +588,10 @@ fn string(args: &[Value], _env: &Frame) -> EvalResult {
         |(idx, v)| val_to_char(v, idx),
         Value::strmut_from_chars,
     )
+}
+
+fn string_length(args: &[Value], _env: &Frame) -> EvalResult {
+    coll_length(first(args), TypeName::STRING, Value::as_refstr)
 }
 
 fn string_get(args: &[Value], _env: &Frame) -> EvalResult {
@@ -689,7 +685,6 @@ fn load_vec(env: &Frame) {
 }
 
 predicate!(is_vector, Value::Vector(_) | Value::VectorMut(_));
-coll_length!(vector_length, Value::as_refvec, TypeName::VECTOR);
 coll_set!(
     vector_set,
     Value::VectorMut,
@@ -716,6 +711,10 @@ fn make_vector(args: &[Value], _env: &Frame) -> EvalResult {
 
 fn vector(args: &[Value], _env: &Frame) -> EvalResult {
     coll_new(args, |(_, v)| Ok(v.clone()), Value::vector_mut)
+}
+
+fn vector_length(args: &[Value], _env: &Frame) -> EvalResult {
+    coll_length(first(args), TypeName::VECTOR, Value::as_refvec)
 }
 
 fn vector_get(args: &[Value], _env: &Frame) -> EvalResult {
@@ -872,6 +871,18 @@ fn coll_fill<T: Clone>(
         args.get(1).map_or(Ok(default), map)?,
         val_to_index(first(args), FIRST_ARG_LABEL)?,
     )))
+}
+
+fn coll_length<'a, T: ?Sized + 'a, M: AsRef<T> + 'a>(
+    arg: &'a Value,
+    expected_type: impl Display,
+    vref: impl FnOnce(&'a Value) -> Option<CollRef<'a, T, M>>,
+) -> EvalResult
+where
+    CollRef<'a, T, M>: CollSized,
+{
+    let c = vref(arg).ok_or_else(|| invalid_target(expected_type, arg))?;
+    Ok(Value::Number(Number::from_usize(c.len())))
 }
 
 fn coll_get<T: ?Sized, M: AsRef<T>, U>(

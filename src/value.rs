@@ -237,9 +237,23 @@ pub(crate) type BvRef<'a> = CollRef<'a, [u8], Vec<u8>>;
 pub(crate) type StrRef<'a> = CollRef<'a, str, String>;
 pub(crate) type VecRef<'a> = CollRef<'a, [Value], Vec<Value>>;
 
+pub(crate) trait CollSized {
+    fn len(&self) -> usize;
+}
+
 impl Default for StrRef<'_> {
     fn default() -> Self {
         Self::Con("")
+    }
+}
+
+impl CollSized for StrRef<'_> {
+    fn len(&self) -> usize {
+        let s = match self {
+            Self::Con(s) => *s,
+            Self::Mut(s) => s.as_ref(),
+        };
+        s.chars().count()
     }
 }
 
@@ -254,6 +268,16 @@ impl<T: ?Sized, M: AsRef<T>> AsRef<T> for CollRef<'_, T, M> {
             Self::Con(t) => t,
             Self::Mut(r) => r.as_ref(),
         }
+    }
+}
+
+impl<T, M: AsRef<[T]>> CollSized for CollRef<'_, [T], M> {
+    fn len(&self) -> usize {
+        let c = match self {
+            Self::Con(c) => *c,
+            Self::Mut(c) => c.as_ref(),
+        };
+        c.len()
     }
 }
 
