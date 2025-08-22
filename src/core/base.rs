@@ -212,21 +212,8 @@ fn bytevector_to_str(args: &[Value], _env: &Frame) -> EvalResult {
         .as_refbv()
         .ok_or_else(|| invalid_target(TypeName::BYTEVECTOR, arg))?;
     let clen = bv.len();
-    let start = args.get(1);
-    let sidx = start.map_or(Ok(usize::MIN), |v| val_to_index(v, SECOND_ARG_LABEL))?;
-    let end = args.get(2);
-    let eidx = end.map_or(Ok(clen), |v| val_to_index(v, THIRD_ARG_LABEL))?;
-    if clen < eidx {
-        return Err(Condition::index_error(end.unwrap()).into());
-    }
-    if eidx < sidx {
-        return Err(if let Some(v) = end {
-            Condition::bi_value_error("start greater than end", start.unwrap(), v).into()
-        } else {
-            Condition::index_error(start.unwrap()).into()
-        });
-    }
-    let bytes = bv.as_ref().iter().skip(sidx).take(eidx - sidx).copied();
+    let (start, count) = coll_span(args.get(1), args.get(2), clen)?;
+    let bytes = bv.as_ref().iter().skip(start).take(count).copied();
     String::from_utf8(bytes.collect::<Vec<_>>()).map_or_else(
         |e| {
             let err = e.utf8_error();
@@ -249,29 +236,15 @@ fn bytevector_from_str(args: &[Value], _env: &Frame) -> EvalResult {
     let s = arg
         .as_refstr()
         .ok_or_else(|| invalid_target(TypeName::STRING, arg))?;
-    let clen = s.len();
-    let start = args.get(1);
-    let sidx = start.map_or(Ok(usize::MIN), |v| val_to_index(v, SECOND_ARG_LABEL))?;
-    let end = args.get(2);
-    let eidx = end.map_or(Ok(clen), |v| val_to_index(v, THIRD_ARG_LABEL))?;
-    if clen < eidx {
-        return Err(Condition::index_error(end.unwrap()).into());
-    }
-    if eidx < sidx {
-        return Err(if let Some(v) = end {
-            Condition::bi_value_error("start greater than end", start.unwrap(), v).into()
-        } else {
-            Condition::index_error(start.unwrap()).into()
-        });
-    }
+    let (start, count) = coll_span(args.get(1), args.get(2), s.len())?;
     // TODO: experimental
     // https://doc.rust-lang.org/std/primitive.char.html#associatedconstant.MAX_LEN_UTF8
     let mut buf = [0u8; 4];
     Ok(Value::bytevector_mut(
         s.as_ref()
             .chars()
-            .skip(sidx)
-            .take(eidx - sidx)
+            .skip(start)
+            .take(count)
             .flat_map(|ch| ch.encode_utf8(&mut buf).as_bytes().to_vec())
             .collect::<Vec<_>>(),
     ))
@@ -979,20 +952,8 @@ where
     CollRef<'a, T, M>: CollSized,
 {
     let coll = collref(arg).ok_or_else(|| invalid_target(expected_type, arg))?;
-    let clen = coll.len();
-    let sidx = start.map_or(Ok(usize::MIN), |v| val_to_index(v, SECOND_ARG_LABEL))?;
-    let eidx = end.map_or(Ok(clen), |v| val_to_index(v, THIRD_ARG_LABEL))?;
-    if clen < eidx {
-        return Err(Condition::index_error(end.unwrap()).into());
-    }
-    if eidx < sidx {
-        return Err(if let Some(v) = end {
-            Condition::bi_value_error("start greater than end", start.unwrap(), v).into()
-        } else {
-            Condition::index_error(start.unwrap()).into()
-        });
-    }
-    Ok(copy(coll.as_ref(), sidx, eidx - sidx))
+    let (start, count) = coll_span(start, end, coll.len())?;
+    Ok(copy(coll.as_ref(), start, count))
 }
 
 fn coll_append<T: ?Sized, M: AsRef<T>>(
@@ -1010,4 +971,24 @@ fn coll_append<T: ?Sized, M: AsRef<T>>(
         })
         .collect::<Result<Vec<_>, _>>()?;
     Ok(copy(&coll_refs))
+}
+
+fn coll_span(
+    start: Option<&Value>,
+    end: Option<&Value>,
+    clen: usize,
+) -> Result<(usize, usize), Exception> {
+    let sidx = start.map_or(Ok(usize::MIN), |v| val_to_index(v, SECOND_ARG_LABEL))?;
+    let eidx = end.map_or(Ok(clen), |v| val_to_index(v, THIRD_ARG_LABEL))?;
+    if clen < eidx {
+        Err(Condition::index_error(end.unwrap()).into())
+    } else if eidx < sidx {
+        Err(if let Some(v) = end {
+            Condition::bi_value_error("start greater than end", start.unwrap(), v).into()
+        } else {
+            Condition::index_error(start.unwrap()).into()
+        })
+    } else {
+        Ok((sidx, eidx - sidx))
+    }
 }
