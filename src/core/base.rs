@@ -559,8 +559,9 @@ fn load_string(env: &Frame) {
     super::bind_intrinsic(env, "string>?", 0..MAX_ARITY, strings_gt);
     super::bind_intrinsic(env, "string>=?", 0..MAX_ARITY, strings_gte);
 
-    super::bind_intrinsic(env, "string-copy", 1..3, string_copy);
+    super::bind_intrinsic(env, "substring", 3..3, string_copy);
     super::bind_intrinsic(env, "string-append", 0..MAX_ARITY, string_append);
+    super::bind_intrinsic(env, "string-copy", 1..3, string_copy);
 }
 
 predicate!(is_string, Value::String(_) | Value::StringMut(_));
