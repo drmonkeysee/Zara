@@ -479,6 +479,57 @@ fn string_set_val() {
 }
 
 #[test]
+fn string_set_val_unicode() {
+    let args = [
+        Value::string_mut("a🦀c"),
+        Value::Number(Number::real(1)),
+        Value::Character('X'),
+    ];
+    let env = TestEnv::default();
+
+    let r = string_set(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert!(matches!(v, Value::Unspecified));
+    assert_eq!(args[0].to_string(), "\"aXc\"");
+}
+
+#[test]
+fn string_set_val_after_unicode() {
+    let args = [
+        Value::string_mut("a🦀c"),
+        Value::Number(Number::real(2)),
+        Value::Character('X'),
+    ];
+    let env = TestEnv::default();
+
+    let r = string_set(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert!(matches!(v, Value::Unspecified));
+    assert_eq!(args[0].to_string(), "\"a🦀X\"");
+}
+
+#[test]
+fn string_set_val_after_unicode_counting_bytes() {
+    let args = [
+        Value::string_mut("a🦀c"),
+        Value::Number(Number::real(5)),
+        Value::Character('X'),
+    ];
+    let env = TestEnv::default();
+
+    let r = string_set(&args, &env.new_frame());
+
+    // NOTE: verify this generates a scheme condition rather than a rust panic
+    let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
+    assert_eq!(
+        err.to_string(),
+        "#<env-error \"expected exact integer, got: 4.2\" (4.2)>"
+    );
+}
+
+#[test]
 fn is_even_integer() {
     let args = [Value::Number(Number::real(4))];
     let env = TestEnv::default();
