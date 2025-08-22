@@ -430,6 +430,28 @@ fn all_strings_not_lt() {
 }
 
 #[test]
+fn string_len() {
+    let args = [Value::string_mut("abc")];
+    let env = TestEnv::default();
+
+    let r = string_length(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert_eq!(v.to_string(), "3");
+}
+
+#[test]
+fn string_len_unicode() {
+    let args = [Value::string_mut("a🦀c")];
+    let env = TestEnv::default();
+
+    let r = string_length(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert_eq!(v.to_string(), "3");
+}
+
+#[test]
 fn string_mutable_predicate() {
     let args = [Value::string_mut("abc")];
     let env = TestEnv::default();
