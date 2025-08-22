@@ -84,6 +84,14 @@ impl Condition {
         }
     }
 
+    pub(crate) fn tri_value_error(msg: impl Display, a: &Value, b: &Value, c: &Value) -> Self {
+        Self {
+            kind: ConditionKind::Env,
+            irritants: Some(zlist![a.clone(), b.clone(), c.clone()]),
+            msg: msg.to_string().into(),
+        }
+    }
+
     pub(crate) fn is_file_err(&self) -> bool {
         matches!(self.kind, ConditionKind::File)
     }

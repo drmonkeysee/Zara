@@ -139,6 +139,7 @@ fn load_bv(env: &Frame) {
     super::bind_intrinsic(env, "bytevector-copy", 1..3, bytevector_copy);
     super::bind_intrinsic(env, "bytevector-append", 0..MAX_ARITY, bytevector_append);
 
+    super::bind_intrinsic(env, "utf8->string", 1..3, bytevector_to_str);
     super::bind_intrinsic(env, "string->utf8", 1..3, bytevector_from_str);
 }
 
@@ -205,8 +206,75 @@ fn bytevector_append(args: &[Value], _env: &Frame) -> EvalResult {
     )
 }
 
+fn bytevector_to_str(args: &[Value], _env: &Frame) -> EvalResult {
+    let arg = first(args);
+    let bv = arg
+        .as_refbv()
+        .ok_or_else(|| invalid_target(TypeName::BYTEVECTOR, arg))?;
+    let clen = bv.len();
+    let start = args.get(1);
+    let sidx = start.map_or(Ok(usize::MIN), |v| val_to_index(v, SECOND_ARG_LABEL))?;
+    let end = args.get(2);
+    let eidx = end.map_or(Ok(clen), |v| val_to_index(v, THIRD_ARG_LABEL))?;
+    if clen < eidx {
+        return Err(Condition::index_error(end.unwrap()).into());
+    }
+    if eidx < sidx {
+        return Err(if let Some(v) = end {
+            Condition::bi_value_error("start greater than end", start.unwrap(), v).into()
+        } else {
+            Condition::index_error(start.unwrap()).into()
+        });
+    }
+    let bytes = bv.as_ref().iter().skip(sidx).take(eidx - sidx).copied();
+    String::from_utf8(bytes.collect::<Vec<_>>()).map_or_else(
+        |e| {
+            let err = e.utf8_error();
+            let start = err.valid_up_to();
+            let count = err.error_len().unwrap_or(clen - start);
+            Err(Condition::tri_value_error(
+                "invalid UTF-8 byte sequence",
+                &Value::bytevector_mut(bv.as_ref().iter().skip(start).take(count).copied()),
+                &Value::Number(Number::from_usize(start)),
+                &Value::Number(Number::from_usize(count + start)),
+            )
+            .into())
+        },
+        |s| Ok(Value::string_mut(s)),
+    )
+}
+
 fn bytevector_from_str(args: &[Value], _env: &Frame) -> EvalResult {
-    todo!();
+    let arg = first(args);
+    let s = arg
+        .as_refstr()
+        .ok_or_else(|| invalid_target(TypeName::STRING, arg))?;
+    let clen = s.len();
+    let start = args.get(1);
+    let sidx = start.map_or(Ok(usize::MIN), |v| val_to_index(v, SECOND_ARG_LABEL))?;
+    let end = args.get(2);
+    let eidx = end.map_or(Ok(clen), |v| val_to_index(v, THIRD_ARG_LABEL))?;
+    if clen < eidx {
+        return Err(Condition::index_error(end.unwrap()).into());
+    }
+    if eidx < sidx {
+        return Err(if let Some(v) = end {
+            Condition::bi_value_error("start greater than end", start.unwrap(), v).into()
+        } else {
+            Condition::index_error(start.unwrap()).into()
+        });
+    }
+    // TODO: experimental
+    // https://doc.rust-lang.org/std/primitive.char.html#associatedconstant.MAX_LEN_UTF8
+    let mut buf = [0u8; 4];
+    Ok(Value::bytevector_mut(
+        s.as_ref()
+            .chars()
+            .skip(sidx)
+            .take(eidx - sidx)
+            .flat_map(|ch| ch.encode_utf8(&mut buf).as_bytes().to_vec())
+            .collect::<Vec<_>>(),
+    ))
 }
 
 //
