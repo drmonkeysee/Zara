@@ -118,7 +118,7 @@ use crate::{
     eval::{EvalResult, Frame, MAX_ARITY},
     number::{Integer, Number, NumericError, NumericTypeName, Real},
     string::{Symbol, unicode::UnicodeError},
-    value::{BvRef, Condition, StrRef, TypeName, ValRef, Value, VecRef},
+    value::{BvRef, CollRef, Condition, StrRef, TypeName, Value, VecRef},
 };
 use std::{
     cell::RefMut,
@@ -877,7 +877,7 @@ fn coll_fill<T: Clone>(
 fn coll_get<T: ?Sized, M: AsRef<T>, U>(
     arg: &Value,
     k: &Value,
-    vref: impl FnOnce(&Value) -> Option<ValRef<'_, T, M>>,
+    vref: impl FnOnce(&Value) -> Option<CollRef<'_, T, M>>,
     expected_type: impl Display,
     get: impl FnOnce(&T, usize) -> Option<U>,
     map: impl FnOnce(U) -> Value,
@@ -891,9 +891,9 @@ fn coll_get<T: ?Sized, M: AsRef<T>, U>(
 
 fn coll_append<T: ?Sized, M: AsRef<T>>(
     args: &[Value],
-    vref: impl Fn(&Value) -> Option<ValRef<'_, T, M>>,
+    vref: impl Fn(&Value) -> Option<CollRef<'_, T, M>>,
     expected_type: impl Display + Clone,
-    copy: impl FnOnce(&[ValRef<'_, T, M>]) -> Value,
+    copy: impl FnOnce(&[CollRef<'_, T, M>]) -> Value,
 ) -> EvalResult {
     let coll_refs = args
         .iter()

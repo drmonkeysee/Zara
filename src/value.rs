@@ -233,9 +233,9 @@ impl Display for Value {
     }
 }
 
-pub(crate) type BvRef<'a> = ValRef<'a, [u8], Vec<u8>>;
-pub(crate) type StrRef<'a> = ValRef<'a, str, String>;
-pub(crate) type VecRef<'a> = ValRef<'a, [Value], Vec<Value>>;
+pub(crate) type BvRef<'a> = CollRef<'a, [u8], Vec<u8>>;
+pub(crate) type StrRef<'a> = CollRef<'a, str, String>;
+pub(crate) type VecRef<'a> = CollRef<'a, [Value], Vec<Value>>;
 
 impl Default for StrRef<'_> {
     fn default() -> Self {
@@ -243,12 +243,12 @@ impl Default for StrRef<'_> {
     }
 }
 
-pub(crate) enum ValRef<'a, T: ?Sized, M> {
+pub(crate) enum CollRef<'a, T: ?Sized, M> {
     Con(&'a T),
     Mut(Ref<'a, M>),
 }
 
-impl<T: ?Sized, M: AsRef<T>> AsRef<T> for ValRef<'_, T, M> {
+impl<T: ?Sized, M: AsRef<T>> AsRef<T> for CollRef<'_, T, M> {
     fn as_ref(&self) -> &T {
         match self {
             Self::Con(t) => t,
