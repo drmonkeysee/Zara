@@ -50,11 +50,11 @@ macro_rules! num_convert {
 }
 
 macro_rules! coll_set {
-    ($name:ident, $mutkind:path, $valname:expr, $asvref:expr, $valconv:expr, $setval:expr) => {
+    ($name:ident, $mutkind:path, $valname:expr, $ascoll:expr, $valconv:expr, $setval:expr) => {
         fn $name(args: &[Value], _env: &Frame) -> EvalResult {
             let arg = first(args);
             let k = super::second(args);
-            let clen = $asvref(arg)
+            let clen = $ascoll(arg)
                 .ok_or_else(|| invalid_target($valname, arg))?
                 .len();
             if let $mutkind(c) = arg {
@@ -869,24 +869,24 @@ fn coll_fill<T: Clone>(
 fn coll_length<'a, T: ?Sized + 'a, M: AsRef<T> + 'a>(
     arg: &'a Value,
     expected_type: impl Display,
-    vref: impl FnOnce(&'a Value) -> Option<CollRef<'a, T, M>>,
+    collref: impl FnOnce(&'a Value) -> Option<CollRef<'a, T, M>>,
 ) -> EvalResult
 where
     CollRef<'a, T, M>: CollSized,
 {
-    let c = vref(arg).ok_or_else(|| invalid_target(expected_type, arg))?;
+    let c = collref(arg).ok_or_else(|| invalid_target(expected_type, arg))?;
     Ok(Value::Number(Number::from_usize(c.len())))
 }
 
 fn coll_get<T: ?Sized, M: AsRef<T>, U>(
     arg: &Value,
     k: &Value,
-    vref: impl FnOnce(&Value) -> Option<CollRef<'_, T, M>>,
+    collref: impl FnOnce(&Value) -> Option<CollRef<'_, T, M>>,
     expected_type: impl Display,
     get: impl FnOnce(&T, usize) -> Option<U>,
     map: impl FnOnce(U) -> Value,
 ) -> EvalResult {
-    let c = vref(arg).ok_or_else(|| invalid_target(expected_type, arg))?;
+    let c = collref(arg).ok_or_else(|| invalid_target(expected_type, arg))?;
     get(c.as_ref(), val_to_index(k, SECOND_ARG_LABEL)?).map_or_else(
         || Err(Condition::index_error(k).into()),
         |item| Ok(map(item)),
@@ -898,13 +898,13 @@ fn coll_copy<'a, T: ?Sized + 'a, M: AsRef<T> + 'a>(
     start: Option<&'a Value>,
     end: Option<&'a Value>,
     expected_type: impl Display,
-    vref: impl FnOnce(&'a Value) -> Option<CollRef<'a, T, M>>,
+    collref: impl FnOnce(&'a Value) -> Option<CollRef<'a, T, M>>,
     copy: impl FnOnce(&T, usize, usize) -> Value,
 ) -> EvalResult
 where
     CollRef<'a, T, M>: CollSized,
 {
-    let coll = vref(arg).ok_or_else(|| invalid_target(expected_type, arg))?;
+    let coll = collref(arg).ok_or_else(|| invalid_target(expected_type, arg))?;
     let clen = coll.len();
     let sidx = start.map_or(Ok(usize::MIN), |v| val_to_index(v, SECOND_ARG_LABEL))?;
     let eidx = end.map_or(Ok(clen), |v| val_to_index(v, THIRD_ARG_LABEL))?;
@@ -923,7 +923,7 @@ where
 
 fn coll_append<T: ?Sized, M: AsRef<T>>(
     args: &[Value],
-    vref: impl Fn(&Value) -> Option<CollRef<'_, T, M>>,
+    collref: impl Fn(&Value) -> Option<CollRef<'_, T, M>>,
     expected_type: impl Display + Clone,
     copy: impl FnOnce(&[CollRef<'_, T, M>]) -> Value,
 ) -> EvalResult {
@@ -931,7 +931,7 @@ fn coll_append<T: ?Sized, M: AsRef<T>>(
         .iter()
         .enumerate()
         .map(|(idx, v)| {
-            vref(v)
+            collref(v)
                 .ok_or_else(|| Exception::from(Condition::arg_error(idx, expected_type.clone(), v)))
         })
         .collect::<Result<Vec<_>, _>>()?;
