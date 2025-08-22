@@ -999,7 +999,7 @@ fn int_to_char() {
     let args = [Value::Number(Number::real(0x41))];
     let env = TestEnv::default();
 
-    let r = integer_to_char(&args, &env.new_frame());
+    let r = char_from_integer(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
     assert!(matches!(v, Value::Character('A')));
@@ -1010,7 +1010,7 @@ fn int_to_char_invalid_arg() {
     let env = TestEnv::default();
     let args = [Value::Symbol(env.symbols.get("a"))];
 
-    let r = integer_to_char(&args, &env.new_frame());
+    let r = char_from_integer(&args, &env.new_frame());
 
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
     assert_eq!(
@@ -1024,7 +1024,7 @@ fn int_to_char_invalid_range() {
     let args = [Value::Number(Number::real(-4))];
     let env = TestEnv::default();
 
-    let r = integer_to_char(&args, &env.new_frame());
+    let r = char_from_integer(&args, &env.new_frame());
 
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
     assert_eq!(
@@ -1038,7 +1038,7 @@ fn int_to_char_not_a_code_point() {
     let args = [Value::Number(Number::real(0xdff0))];
     let env = TestEnv::default();
 
-    let r = integer_to_char(&args, &env.new_frame());
+    let r = char_from_integer(&args, &env.new_frame());
 
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
     assert_eq!(

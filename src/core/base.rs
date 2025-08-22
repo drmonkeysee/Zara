@@ -138,6 +138,8 @@ fn load_bv(env: &Frame) {
 
     super::bind_intrinsic(env, "bytevector-copy", 1..3, bytevector_copy);
     super::bind_intrinsic(env, "bytevector-append", 0..MAX_ARITY, bytevector_append);
+
+    super::bind_intrinsic(env, "string->utf8", 1..3, bytevector_from_str);
 }
 
 predicate!(
@@ -203,6 +205,10 @@ fn bytevector_append(args: &[Value], _env: &Frame) -> EvalResult {
     )
 }
 
+fn bytevector_from_str(args: &[Value], _env: &Frame) -> EvalResult {
+    todo!();
+}
+
 //
 // Characters
 //
@@ -217,7 +223,7 @@ fn load_char(env: &Frame) {
     super::bind_intrinsic(env, "char>=?", 0..MAX_ARITY, chars_gte);
 
     super::bind_intrinsic(env, "char->integer", 1..1, char_to_integer);
-    super::bind_intrinsic(env, "integer->char", 1..1, integer_to_char);
+    super::bind_intrinsic(env, "integer->char", 1..1, char_from_integer);
 }
 
 predicate!(is_char, Value::Character(_));
@@ -237,7 +243,7 @@ fn char_to_integer(args: &[Value], _env: &Frame) -> EvalResult {
     }
 }
 
-fn integer_to_char(args: &[Value], _env: &Frame) -> EvalResult {
+fn char_from_integer(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = first(args);
     if let Value::Number(n) = arg {
         try_num_into_char(n, arg)
@@ -629,7 +635,7 @@ fn load_symbol(env: &Frame) {
     super::bind_intrinsic(env, "symbol=?", 0..MAX_ARITY, symbols_eq);
 
     super::bind_intrinsic(env, "symbol->string", 1..1, symbol_to_string);
-    super::bind_intrinsic(env, "string->symbol", 1..1, string_to_symbol);
+    super::bind_intrinsic(env, "string->symbol", 1..1, symbol_from_string);
 }
 
 predicate!(is_symbol, Value::Symbol(_));
@@ -644,7 +650,7 @@ fn symbol_to_string(args: &[Value], _env: &Frame) -> EvalResult {
     }
 }
 
-fn string_to_symbol(args: &[Value], env: &Frame) -> EvalResult {
+fn symbol_from_string(args: &[Value], env: &Frame) -> EvalResult {
     let arg = first(args);
     arg.as_refstr().map_or_else(
         || Err(invalid_target(TypeName::STRING, arg)),
