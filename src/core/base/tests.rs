@@ -533,7 +533,7 @@ fn string_set_val_after_unicode() {
 }
 
 #[test]
-fn string_set_val_after_unicode_counting_bytes() {
+fn string_set_val_unicode_out_of_range() {
     let args = [
         Value::string_mut("a🦀c"),
         Value::Number(Number::real(5)),
@@ -543,12 +543,26 @@ fn string_set_val_after_unicode_counting_bytes() {
 
     let r = string_set(&args, &env.new_frame());
 
-    // NOTE: verify this generates a scheme condition rather than a rust panic
+    // NOTE: verify this generates a scheme condition signal rather than a rust panic
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
-    assert_eq!(
-        err.to_string(),
-        "#<env-error \"expected exact integer, got: 4.2\" (4.2)>"
-    );
+    assert_eq!(err.to_string(), "#<env-error \"index out of range\" (5)>");
+}
+
+#[test]
+fn string_copy_unicode_out_of_range() {
+    let args = [
+        Value::string("a🦀c"),
+        Value::Number(Number::real(0)),
+        Value::Number(Number::real(5)),
+    ];
+    let env = TestEnv::default();
+
+    let r = string_copy(&args, &env.new_frame());
+
+    // NOTE: verify this generates a scheme condition signal rather than
+    // running off the end of an iterator.
+    let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
+    assert_eq!(err.to_string(), "#<env-error \"index out of range\" (5)>");
 }
 
 #[test]

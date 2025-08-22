@@ -50,49 +50,25 @@ macro_rules! num_convert {
 }
 
 macro_rules! coll_set {
-    ($name:ident, $mutkind:path, $kind:path, $valname:expr, $valconv:expr, $setval:expr) => {
+    ($name:ident, $mutkind:path, $valname:expr, $asvref:expr, $valconv:expr, $setval:expr) => {
         fn $name(args: &[Value], _env: &Frame) -> EvalResult {
             let arg = first(args);
             let k = super::second(args);
-            match arg {
-                $mutkind(c) => {
-                    let idx = val_to_index(k, SECOND_ARG_LABEL)?;
-                    if idx < c.borrow().len() {
-                        let item = $valconv(super::third(args))?;
-                        $setval(c.borrow_mut(), idx, item);
-                        Ok(Value::Unspecified)
-                    } else {
-                        Err(Condition::index_error(k).into())
-                    }
-                }
-                $kind(_) => Err(Condition::literal_mut_error(arg).into()),
-                _ => Err(invalid_target($valname, arg)),
-            }
-        }
-    };
-}
-
-macro_rules! coll_copy {
-    ($name:ident, $asvref:expr, $copy:expr, $valname:expr) => {
-        fn $name(args: &[Value], _env: &Frame) -> EvalResult {
-            let arg = first(args);
-            let coll = $asvref(arg).ok_or_else(|| invalid_target($valname, arg))?;
-            let clen = coll.as_ref().len();
-            let start = args.get(1);
-            let sidx = start.map_or(Ok(usize::MIN), |v| val_to_index(v, SECOND_ARG_LABEL))?;
-            let end = args.get(2);
-            let eidx = end.map_or(Ok(clen), |v| val_to_index(v, THIRD_ARG_LABEL))?;
-            if clen < eidx {
-                return Err(Condition::index_error(end.unwrap()).into());
-            }
-            if eidx < sidx {
-                return Err(if let Some(v) = end {
-                    Condition::bi_value_error("start greater than end", start.unwrap(), v).into()
+            let clen = $asvref(arg)
+                .ok_or_else(|| invalid_target($valname, arg))?
+                .len();
+            if let $mutkind(c) = arg {
+                let idx = val_to_index(k, SECOND_ARG_LABEL)?;
+                if idx < clen {
+                    let item = $valconv(super::third(args))?;
+                    $setval(c.borrow_mut(), idx, item);
+                    Ok(Value::Unspecified)
                 } else {
-                    Condition::index_error(start.unwrap()).into()
-                });
+                    Err(Condition::index_error(k).into())
+                }
+            } else {
+                Err(Condition::literal_mut_error(arg).into())
             }
-            Ok($copy(coll.as_ref(), sidx, eidx - sidx))
         }
     };
 }
@@ -171,18 +147,10 @@ predicate!(
 coll_set!(
     bytevector_set,
     Value::ByteVectorMut,
-    Value::ByteVector,
     TypeName::BYTEVECTOR,
+    Value::as_refbv,
     |v| val_to_byte(v, THIRD_ARG_LABEL),
     |mut v: RefMut<'_, Vec<_>>, idx, item| v[idx] = item
-);
-coll_copy!(
-    bytevector_copy,
-    Value::as_refbv,
-    |bytes: &[u8], start, count| Value::bytevector_mut(
-        bytes.iter().copied().skip(start).take(count)
-    ),
-    TypeName::BYTEVECTOR
 );
 
 fn make_bytevector(args: &[Value], _env: &Frame) -> EvalResult {
@@ -210,6 +178,19 @@ fn bytevector_get(args: &[Value], _env: &Frame) -> EvalResult {
         TypeName::BYTEVECTOR,
         |bv, u| bv.get(u).copied(),
         |item| Value::Number(Number::real(i64::from(item))),
+    )
+}
+
+fn bytevector_copy(args: &[Value], _env: &Frame) -> EvalResult {
+    coll_copy(
+        first(args),
+        args.get(1),
+        args.get(2),
+        TypeName::BYTEVECTOR,
+        Value::as_refbv,
+        |bytes: &[u8], start, count| {
+            Value::bytevector_mut(bytes.iter().copied().skip(start).take(count))
+        },
     )
 }
 
@@ -561,16 +542,10 @@ predicate!(is_string, Value::String(_) | Value::StringMut(_));
 coll_set!(
     string_set,
     Value::StringMut,
-    Value::String,
     TypeName::STRING,
+    Value::as_refstr,
     |v| val_to_char(v, THIRD_ARG_LABEL),
     replace_str_char
-);
-coll_copy!(
-    string_copy,
-    Value::as_refstr,
-    |s: &str, start, count| Value::strmut_from_chars(s.chars().skip(start).take(count)),
-    TypeName::STRING
 );
 
 fn make_string(args: &[Value], _env: &Frame) -> EvalResult {
@@ -623,6 +598,17 @@ fn strings_gt(args: &[Value], _env: &Frame) -> EvalResult {
 
 fn strings_gte(args: &[Value], _env: &Frame) -> EvalResult {
     strs_predicate(args, str::ge)
+}
+
+fn string_copy(args: &[Value], _env: &Frame) -> EvalResult {
+    coll_copy(
+        first(args),
+        args.get(1),
+        args.get(2),
+        TypeName::STRING,
+        Value::as_refstr,
+        |s: &str, start, count| Value::strmut_from_chars(s.chars().skip(start).take(count)),
+    )
 }
 
 fn string_append(args: &[Value], _env: &Frame) -> EvalResult {
@@ -688,16 +674,10 @@ predicate!(is_vector, Value::Vector(_) | Value::VectorMut(_));
 coll_set!(
     vector_set,
     Value::VectorMut,
-    Value::Vector,
     TypeName::VECTOR,
+    Value::as_refvec,
     |val: &Value| Ok::<_, Exception>(val.clone()),
     |mut v: RefMut<'_, Vec<_>>, idx, item| v[idx] = item
-);
-coll_copy!(
-    vector_copy,
-    Value::as_refvec,
-    |vals: &[Value], start, count| Value::vector_mut(vals.iter().skip(start).take(count).cloned()),
-    TypeName::VECTOR
 );
 
 fn make_vector(args: &[Value], _env: &Frame) -> EvalResult {
@@ -725,6 +705,19 @@ fn vector_get(args: &[Value], _env: &Frame) -> EvalResult {
         TypeName::VECTOR,
         |v, u| v.get(u).cloned(),
         convert::identity,
+    )
+}
+
+fn vector_copy(args: &[Value], _env: &Frame) -> EvalResult {
+    coll_copy(
+        first(args),
+        args.get(1),
+        args.get(2),
+        TypeName::VECTOR,
+        Value::as_refvec,
+        |vals: &[Value], start, count| {
+            Value::vector_mut(vals.iter().skip(start).take(count).cloned())
+        },
     )
 }
 
@@ -898,6 +891,34 @@ fn coll_get<T: ?Sized, M: AsRef<T>, U>(
         || Err(Condition::index_error(k).into()),
         |item| Ok(map(item)),
     )
+}
+
+fn coll_copy<'a, T: ?Sized + 'a, M: AsRef<T> + 'a>(
+    arg: &'a Value,
+    start: Option<&'a Value>,
+    end: Option<&'a Value>,
+    expected_type: impl Display,
+    vref: impl FnOnce(&'a Value) -> Option<CollRef<'a, T, M>>,
+    copy: impl FnOnce(&T, usize, usize) -> Value,
+) -> EvalResult
+where
+    CollRef<'a, T, M>: CollSized,
+{
+    let coll = vref(arg).ok_or_else(|| invalid_target(expected_type, arg))?;
+    let clen = coll.len();
+    let sidx = start.map_or(Ok(usize::MIN), |v| val_to_index(v, SECOND_ARG_LABEL))?;
+    let eidx = end.map_or(Ok(clen), |v| val_to_index(v, THIRD_ARG_LABEL))?;
+    if clen < eidx {
+        return Err(Condition::index_error(end.unwrap()).into());
+    }
+    if eidx < sidx {
+        return Err(if let Some(v) = end {
+            Condition::bi_value_error("start greater than end", start.unwrap(), v).into()
+        } else {
+            Condition::index_error(start.unwrap()).into()
+        });
+    }
+    Ok(copy(coll.as_ref(), sidx, eidx - sidx))
 }
 
 fn coll_append<T: ?Sized, M: AsRef<T>>(
