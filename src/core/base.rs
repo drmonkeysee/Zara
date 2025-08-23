@@ -137,6 +137,7 @@ fn load_bv(env: &Frame) {
     super::bind_intrinsic(env, "bytevector-u8-set!", 3..3, bytevector_set);
 
     super::bind_intrinsic(env, "bytevector-copy", 1..3, bytevector_copy);
+    super::bind_intrinsic(env, "bytevector-copy!", 3..5, bytevector_copy_inline);
     super::bind_intrinsic(env, "bytevector-append", 0..MAX_ARITY, bytevector_append);
 
     super::bind_intrinsic(env, "utf8->string", 1..3, bytevector_to_str);
@@ -195,6 +196,40 @@ fn bytevector_copy(args: &[Value], _env: &Frame) -> EvalResult {
             Value::bytevector_mut(bytes.iter().copied().skip(start).take(count))
         },
     )
+}
+
+fn bytevector_copy_inline(args: &[Value], _env: &Frame) -> EvalResult {
+    let to = first(args);
+    let target = to
+        .as_refbv()
+        .ok_or_else(|| invalid_target(FIRST_ARG_LABEL, to))?;
+    let tolen = target.len();
+    let at = super::second(args);
+    let atidx = val_to_index(&at, SECOND_ARG_LABEL)?;
+    if tolen < atidx {
+        return Err(Condition::value_error("target index out of range", &at).into());
+    }
+    let from = super::third(args);
+    let source = from
+        .as_refbv()
+        .ok_or_else(|| invalid_target(THIRD_ARG_LABEL, from))?;
+    let (start, count) = coll_span(args.get(3), args.get(4), source.len())?;
+    let at_range = tolen - atidx;
+    if at_range < count {
+        return Err(Condition::bi_value_error(
+            "source span too large for target range",
+            &Value::Number(Number::from_usize(at_range)),
+            &Value::Number(Number::from_usize(count)),
+        )
+        .into());
+    }
+    let span = source.as_ref().iter().skip(start).take(count);
+    if let Value::ByteVectorMut(bv) = to {
+        bv.borrow_mut()[atidx..count].copy_from_slice(&span.copied().collect::<Vec<_>>());
+        Ok(Value::Unspecified)
+    } else {
+        Err(Condition::literal_mut_error(to).into())
+    }
 }
 
 fn bytevector_append(args: &[Value], _env: &Frame) -> EvalResult {

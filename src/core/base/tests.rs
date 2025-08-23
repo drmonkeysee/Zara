@@ -1528,3 +1528,184 @@ fn bytes_to_unicode_invalid_sequence_excluded() {
     let v = ok_or_fail!(r);
     assert_eq!(v.to_string(), "\"cb\"");
 }
+
+#[test]
+fn bytevector_copy_into_equal() {
+    let args = [
+        Value::bytevector_mut([1, 2, 3, 4, 5]),
+        Value::Number(Number::real(0)),
+        Value::ByteVector([6, 7, 8, 9, 10].into()),
+    ];
+    let env = TestEnv::default();
+
+    let r = bytevector_copy_inline(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert_eq!(v, Value::Unspecified);
+    assert_eq!(args[0].to_string(), "#u8(4 5 6 7 8)");
+    assert!(!args[0].is(&args[1]));
+}
+
+#[test]
+fn bytevector_copy_into_larger() {
+    let args = [
+        Value::bytevector_mut([1, 2, 3, 4, 5]),
+        Value::Number(Number::real(1)),
+        Value::ByteVector([6, 7, 8].into()),
+    ];
+    let env = TestEnv::default();
+
+    let r = bytevector_copy_inline(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert_eq!(v, Value::Unspecified);
+    assert_eq!(args[0].to_string(), "#u8(1 6 7 8 5)");
+}
+
+#[test]
+fn bytevector_copy_into_smaller() {
+    let args = [
+        Value::bytevector_mut([1, 2, 3]),
+        Value::Number(Number::real(1)),
+        Value::ByteVector([6, 7, 8, 9, 10].into()),
+        Value::Number(Number::real(3)),
+        Value::Number(Number::real(5)),
+    ];
+    let env = TestEnv::default();
+
+    let r = bytevector_copy_inline(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert_eq!(v, Value::Unspecified);
+    assert_eq!(args[0].to_string(), "#u8(1 9 10)");
+}
+
+#[test]
+fn bytevector_copy_invalid_at() {
+    let args = [
+        Value::bytevector_mut([1, 2, 3, 4, 5]),
+        Value::Number(Number::real(10)),
+        Value::ByteVector([6, 7, 8, 9, 10].into()),
+    ];
+    let env = TestEnv::default();
+
+    let r = bytevector_copy_inline(&args, &env.new_frame());
+
+    let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
+    assert_eq!(
+        err.to_string(),
+        "#<env-error \"target index out of range\" (10)>"
+    );
+}
+
+#[test]
+fn bytevector_copy_immutable_target() {
+    let args = [
+        Value::ByteVector([1, 2, 3, 4, 5].into()),
+        Value::Number(Number::real(0)),
+        Value::ByteVector([6, 7, 8, 9, 10].into()),
+    ];
+    let env = TestEnv::default();
+
+    let r = bytevector_copy_inline(&args, &env.new_frame());
+
+    let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
+    assert_eq!(
+        err.to_string(),
+        "#<env-error \"cannot modify literal value\" (#u8(1 2 3 4 5))>"
+    );
+}
+
+#[test]
+fn bytevector_copy_too_much_into_smaller() {
+    let args = [
+        Value::bytevector_mut([1, 2, 3]),
+        Value::Number(Number::real(1)),
+        Value::ByteVector([6, 7, 8, 9, 10].into()),
+        Value::Number(Number::real(1)),
+        Value::Number(Number::real(5)),
+    ];
+    let env = TestEnv::default();
+
+    let r = bytevector_copy_inline(&args, &env.new_frame());
+
+    let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
+    assert_eq!(
+        err.to_string(),
+        "#<env-error \"source span too large for target range\" (2 4)>"
+    );
+}
+
+#[test]
+fn bytevector_copy_into_self() {
+    let bv = Value::bytevector_mut([1, 2, 3, 4, 5]);
+    let args = [bv.clone(), Value::Number(Number::real(0)), bv];
+    let env = TestEnv::default();
+
+    let r = bytevector_copy_inline(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert_eq!(v, Value::Unspecified);
+    assert_eq!(args[0].to_string(), "#u8(1 2 3 4 5)");
+    assert!(args[0].is(&args[1]));
+}
+
+#[test]
+fn bytevector_copy_into_discrete_self() {
+    let bv = Value::bytevector_mut([1, 2, 3, 4, 5]);
+    let args = [
+        bv.clone(),
+        Value::Number(Number::real(0)),
+        bv,
+        Value::Number(Number::real(2)),
+        Value::Number(Number::real(4)),
+    ];
+    let env = TestEnv::default();
+
+    let r = bytevector_copy_inline(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert_eq!(v, Value::Unspecified);
+    assert_eq!(args[0].to_string(), "#u8(3 4 3 4 5)");
+    assert!(args[0].is(&args[1]));
+}
+
+#[test]
+fn bytevector_copy_into_tail_overlap() {
+    let bv = Value::bytevector_mut([1, 2, 3, 4, 5]);
+    let args = [
+        bv.clone(),
+        Value::Number(Number::real(1)),
+        bv,
+        Value::Number(Number::real(2)),
+        Value::Number(Number::real(5)),
+    ];
+    let env = TestEnv::default();
+
+    let r = bytevector_copy_inline(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert_eq!(v, Value::Unspecified);
+    assert_eq!(args[0].to_string(), "#u8(1 3 4 5 5)");
+    assert!(args[0].is(&args[1]));
+}
+
+#[test]
+fn bytevector_copy_into_head_overlap() {
+    let bv = Value::bytevector_mut([1, 2, 3, 4, 5]);
+    let args = [
+        bv.clone(),
+        Value::Number(Number::real(2)),
+        bv,
+        Value::Number(Number::real(0)),
+        Value::Number(Number::real(3)),
+    ];
+    let env = TestEnv::default();
+
+    let r = bytevector_copy_inline(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert_eq!(v, Value::Unspecified);
+    assert_eq!(args[0].to_string(), "#u8(1 2 1 2 3)");
+    assert!(args[0].is(&args[1]));
+}
