@@ -1496,7 +1496,7 @@ fn bytes_to_unicode_invalid_sequence() {
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
     assert_eq!(
         err.to_string(),
-        "#<env-error \"invalid UTF-8 byte sequence\" (#u8(159) 2 3)>"
+        "#<env-error \"invalid UTF-8 byte sequence\" (#u8(159) (2 . 3))>"
     );
 }
 
@@ -1510,7 +1510,7 @@ fn bytes_to_unicode_truncated_sequence() {
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
     assert_eq!(
         err.to_string(),
-        "#<env-error \"invalid UTF-8 byte sequence\" (#u8(240 159 166) 2 5)>"
+        "#<env-error \"invalid UTF-8 byte sequence\" (#u8(240 159 166) (2 . 5))>"
     );
 }
 
@@ -1542,7 +1542,7 @@ fn bytevector_copy_into_equal() {
 
     let v = ok_or_fail!(r);
     assert_eq!(v, Value::Unspecified);
-    assert_eq!(args[0].to_string(), "#u8(4 5 6 7 8)");
+    assert_eq!(args[0].to_string(), "#u8(6 7 8 9 10)");
     assert!(!args[0].is(&args[1]));
 }
 
@@ -1632,7 +1632,7 @@ fn bytevector_copy_too_much_into_smaller() {
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
     assert_eq!(
         err.to_string(),
-        "#<env-error \"source span too large for target range\" (2 4)>"
+        "#<env-error \"source span too large for target range\" ((1 . 5) (1 . 3))>"
     );
 }
 

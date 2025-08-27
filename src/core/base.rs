@@ -91,6 +91,7 @@ use std::{
     convert,
     fmt::Display,
     iter::{self, RepeatN},
+    ops::Range,
 };
 
 pub(super) fn load(env: &Frame) {
@@ -192,18 +193,16 @@ fn bytevector_copy(args: &[Value], _env: &Frame) -> EvalResult {
         args.get(2),
         TypeName::BYTEVECTOR,
         Value::as_refbv,
-        |bytes: &[u8], start, count| {
-            Value::bytevector_mut(bytes.iter().copied().skip(start).take(count))
-        },
+        |bytes: &[u8], span| Value::bytevector_mut(bytes[span].into_iter().copied()),
     )
 }
 
 fn bytevector_copy_inline(args: &[Value], _env: &Frame) -> EvalResult {
     let to = first(args);
-    let target = to
+    let tolen = to
         .as_refbv()
-        .ok_or_else(|| invalid_target(FIRST_ARG_LABEL, to))?;
-    let tolen = target.len();
+        .ok_or_else(|| invalid_target(FIRST_ARG_LABEL, to))?
+        .len();
     let at = super::second(args);
     let atidx = val_to_index(&at, SECOND_ARG_LABEL)?;
     if tolen < atidx {
@@ -213,19 +212,23 @@ fn bytevector_copy_inline(args: &[Value], _env: &Frame) -> EvalResult {
     let source = from
         .as_refbv()
         .ok_or_else(|| invalid_target(THIRD_ARG_LABEL, from))?;
-    let (start, count) = coll_span(args.get(3), args.get(4), source.len())?;
-    let at_range = tolen - atidx;
-    if at_range < count {
+    let span = coll_span(args.get(3), args.get(4), source.len())?;
+    if tolen - atidx < span.len() {
         return Err(Condition::bi_value_error(
             "source span too large for target range",
-            &Value::Number(Number::from_usize(at_range)),
-            &Value::Number(Number::from_usize(count)),
+            &Value::cons(
+                Value::Number(Number::from_usize(span.start)),
+                Value::Number(Number::from_usize(span.end)),
+            ),
+            &Value::cons(
+                Value::Number(Number::from_usize(atidx)),
+                Value::Number(Number::from_usize(tolen)),
+            ),
         )
         .into());
     }
-    let span = source.as_ref().iter().skip(start).take(count);
     if let Value::ByteVectorMut(bv) = to {
-        bv.borrow_mut()[atidx..count].copy_from_slice(&span.copied().collect::<Vec<_>>());
+        bv.borrow_mut()[atidx..(atidx + span.len())].copy_from_slice(&source.as_ref()[span]);
         Ok(Value::Unspecified)
     } else {
         Err(Condition::literal_mut_error(to).into())
@@ -247,18 +250,19 @@ fn bytevector_to_str(args: &[Value], _env: &Frame) -> EvalResult {
         .as_refbv()
         .ok_or_else(|| invalid_target(TypeName::BYTEVECTOR, arg))?;
     let clen = bv.len();
-    let (start, count) = coll_span(args.get(1), args.get(2), clen)?;
-    let bytes = bv.as_ref().iter().skip(start).take(count).copied();
-    String::from_utf8(bytes.collect::<Vec<_>>()).map_or_else(
+    let span = coll_span(args.get(1), args.get(2), clen)?;
+    String::from_utf8(bv.as_ref()[span].to_vec()).map_or_else(
         |e| {
             let err = e.utf8_error();
             let start = err.valid_up_to();
-            let count = err.error_len().unwrap_or(clen - start);
-            Err(Condition::tri_value_error(
+            let end = err.error_len().map_or(clen, |len| start + len);
+            Err(Condition::bi_value_error(
                 "invalid UTF-8 byte sequence",
-                &Value::bytevector_mut(bv.as_ref().iter().skip(start).take(count).copied()),
-                &Value::Number(Number::from_usize(start)),
-                &Value::Number(Number::from_usize(count + start)),
+                &Value::bytevector_mut(bv.as_ref()[start..end].into_iter().copied()),
+                &Value::cons(
+                    Value::Number(Number::from_usize(start)),
+                    Value::Number(Number::from_usize(end)),
+                ),
             )
             .into())
         },
@@ -271,17 +275,16 @@ fn bytevector_from_str(args: &[Value], _env: &Frame) -> EvalResult {
     let s = arg
         .as_refstr()
         .ok_or_else(|| invalid_target(TypeName::STRING, arg))?;
-    let (start, count) = coll_span(args.get(1), args.get(2), s.len())?;
+    let span = coll_span(args.get(1), args.get(2), s.len())?;
     // TODO: experimental
     // https://doc.rust-lang.org/std/primitive.char.html#associatedconstant.MAX_LEN_UTF8
     let mut buf = [0u8; 4];
     Ok(Value::bytevector_mut(
         s.as_ref()
             .chars()
-            .skip(start)
-            .take(count)
-            .flat_map(|ch| ch.encode_utf8(&mut buf).as_bytes().to_vec())
-            .collect::<Vec<_>>(),
+            .skip(span.start)
+            .take(span.len())
+            .flat_map(|ch| ch.encode_utf8(&mut buf).as_bytes().to_vec()),
     ))
 }
 
@@ -689,7 +692,7 @@ fn string_copy(args: &[Value], _env: &Frame) -> EvalResult {
         args.get(2),
         TypeName::STRING,
         Value::as_refstr,
-        |s: &str, start, count| Value::strmut_from_chars(s.chars().skip(start).take(count)),
+        |s: &str, span| Value::strmut_from_chars(s.chars().skip(span.start).take(span.len())),
     )
 }
 
@@ -797,9 +800,7 @@ fn vector_copy(args: &[Value], _env: &Frame) -> EvalResult {
         args.get(2),
         TypeName::VECTOR,
         Value::as_refvec,
-        |vals: &[Value], start, count| {
-            Value::vector_mut(vals.iter().skip(start).take(count).cloned())
-        },
+        |vals: &[Value], span| Value::vector_mut(vals[span].into_iter().cloned()),
     )
 }
 
@@ -981,14 +982,13 @@ fn coll_copy<'a, T: ?Sized + 'a, M: AsRef<T> + 'a>(
     end: Option<&'a Value>,
     expected_type: impl Display,
     collref: impl FnOnce(&'a Value) -> Option<CollRef<'a, T, M>>,
-    copy: impl FnOnce(&T, usize, usize) -> Value,
+    copy: impl FnOnce(&T, Range<usize>) -> Value,
 ) -> EvalResult
 where
     CollRef<'a, T, M>: CollSized,
 {
     let coll = collref(arg).ok_or_else(|| invalid_target(expected_type, arg))?;
-    let (start, count) = coll_span(start, end, coll.len())?;
-    Ok(copy(coll.as_ref(), start, count))
+    Ok(copy(coll.as_ref(), coll_span(start, end, coll.len())?))
 }
 
 fn coll_append<T: ?Sized, M: AsRef<T>>(
@@ -1012,7 +1012,7 @@ fn coll_span(
     start: Option<&Value>,
     end: Option<&Value>,
     clen: usize,
-) -> Result<(usize, usize), Exception> {
+) -> Result<Range<usize>, Exception> {
     let sidx = start.map_or(Ok(usize::MIN), |v| val_to_index(v, SECOND_ARG_LABEL))?;
     let eidx = end.map_or(Ok(clen), |v| val_to_index(v, THIRD_ARG_LABEL))?;
     if clen < eidx {
@@ -1024,6 +1024,6 @@ fn coll_span(
             Condition::index_error(start.unwrap()).into()
         })
     } else {
-        Ok((sidx, eidx - sidx))
+        Ok(sidx..eidx)
     }
 }
