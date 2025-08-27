@@ -1599,6 +1599,42 @@ fn bytevector_copy_invalid_at() {
 }
 
 #[test]
+fn bytevector_copy_at_length_ok_if_span_is_empty() {
+    let args = [
+        Value::bytevector_mut([1, 2, 3, 4, 5]),
+        Value::Number(Number::real(5)),
+        Value::ByteVector([6, 7, 8, 9, 10].into()),
+        Value::Number(Number::real(0)),
+        Value::Number(Number::real(0)),
+    ];
+    let env = TestEnv::default();
+
+    let r = bytevector_copy_inline(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert_eq!(v, Value::Unspecified);
+    assert_eq!(args[0].to_string(), "#u8(1 2 3 4 5)");
+}
+
+#[test]
+fn bytevector_copy_at_length_err_if_span_is_not_empty() {
+    let args = [
+        Value::bytevector_mut([1, 2, 3, 4, 5]),
+        Value::Number(Number::real(5)),
+        Value::ByteVector([6, 7, 8, 9, 10].into()),
+    ];
+    let env = TestEnv::default();
+
+    let r = bytevector_copy_inline(&args, &env.new_frame());
+
+    let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
+    assert_eq!(
+        err.to_string(),
+        "#<env-error \"source span too large for target range\" ((0 . 5) (5 . 5))>"
+    );
+}
+
+#[test]
 fn bytevector_copy_immutable_target() {
     let args = [
         Value::ByteVector([1, 2, 3, 4, 5].into()),
