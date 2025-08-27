@@ -1683,7 +1683,7 @@ fn bytevector_copy_into_self() {
     let v = ok_or_fail!(r);
     assert_eq!(v, Value::Unspecified);
     assert_eq!(args[0].to_string(), "#u8(1 2 3 4 5)");
-    assert!(args[0].is(&args[1]));
+    assert!(args[0].is(&args[2]));
 }
 
 #[test]
@@ -1703,7 +1703,7 @@ fn bytevector_copy_into_discrete_self() {
     let v = ok_or_fail!(r);
     assert_eq!(v, Value::Unspecified);
     assert_eq!(args[0].to_string(), "#u8(3 4 3 4 5)");
-    assert!(args[0].is(&args[1]));
+    assert!(args[0].is(&args[2]));
 }
 
 #[test]
@@ -1723,7 +1723,7 @@ fn bytevector_copy_into_tail_overlap() {
     let v = ok_or_fail!(r);
     assert_eq!(v, Value::Unspecified);
     assert_eq!(args[0].to_string(), "#u8(1 3 4 5 5)");
-    assert!(args[0].is(&args[1]));
+    assert!(args[0].is(&args[2]));
 }
 
 #[test]
@@ -1743,5 +1743,5 @@ fn bytevector_copy_into_head_overlap() {
     let v = ok_or_fail!(r);
     assert_eq!(v, Value::Unspecified);
     assert_eq!(args[0].to_string(), "#u8(1 2 1 2 3)");
-    assert!(args[0].is(&args[1]));
+    assert!(args[0].is(&args[2]));
 }

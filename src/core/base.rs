@@ -91,6 +91,7 @@ use std::{
     convert,
     fmt::Display,
     iter::{self, RepeatN},
+    mem,
     ops::Range,
 };
 
@@ -228,7 +229,12 @@ fn bytevector_copy_inline(args: &[Value], _env: &Frame) -> EvalResult {
         .into());
     }
     if let Value::ByteVectorMut(bv) = to {
-        bv.borrow_mut()[atidx..(atidx + span.len())].copy_from_slice(&source.as_ref()[span]);
+        if to.is(&from) {
+            mem::drop(source);
+            bv.borrow_mut().copy_within(span, atidx);
+        } else {
+            bv.borrow_mut()[atidx..(atidx + span.len())].copy_from_slice(&source.as_ref()[span]);
+        }
         Ok(Value::Unspecified)
     } else {
         Err(Condition::literal_mut_error(to).into())
