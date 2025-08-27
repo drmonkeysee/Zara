@@ -1745,3 +1745,73 @@ fn bytevector_copy_into_head_overlap() {
     assert_eq!(args[0].to_string(), "#u8(1 2 1 2 3)");
     assert!(args[0].is(&args[2]));
 }
+
+#[test]
+fn string_copy_into_equal() {
+    let args = [
+        Value::string_mut("foobar"),
+        Value::Number(Number::real(0)),
+        Value::string("beefee"),
+    ];
+    let env = TestEnv::default();
+
+    let r = string_copy_inline(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert_eq!(v, Value::Unspecified);
+    assert_eq!(args[0].to_string(), "\"beefee\"");
+    assert!(!args[0].is(&args[1]));
+}
+
+#[test]
+fn string_copy_into_larger() {
+    let args = [
+        Value::string_mut("foobar"),
+        Value::Number(Number::real(1)),
+        Value::string("bee"),
+    ];
+    let env = TestEnv::default();
+
+    let r = string_copy_inline(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert_eq!(v, Value::Unspecified);
+    assert_eq!(args[0].to_string(), "\"fbeear\"");
+}
+
+#[test]
+fn string_copy_into_smaller() {
+    let args = [
+        Value::string_mut("foobar"),
+        Value::Number(Number::real(1)),
+        Value::string("beefee"),
+        Value::Number(Number::real(3)),
+        Value::Number(Number::real(5)),
+    ];
+    let env = TestEnv::default();
+
+    let r = string_copy_inline(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert_eq!(v, Value::Unspecified);
+    assert_eq!(args[0].to_string(), "\"ffebar\"");
+}
+
+#[test]
+fn string_copy_into_unicode() {
+    let args = [
+        Value::string_mut("foo🦀bar"),
+        Value::Number(Number::real(4)),
+        Value::string("bee🐝fee"),
+        Value::Number(Number::real(3)),
+        Value::Number(Number::real(4)),
+    ];
+    let env = TestEnv::default();
+
+    let r = string_copy_inline(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert_eq!(v, Value::Unspecified);
+    assert_eq!(args[0].to_string(), "\"foo🦀🐝ar\"");
+    assert!(!args[0].is(&args[1]));
+}

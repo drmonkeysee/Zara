@@ -202,7 +202,7 @@ fn bytevector_copy_inline(args: &[Value], _env: &Frame) -> EvalResult {
     let to = first(args);
     let tolen = to
         .as_refbv()
-        .ok_or_else(|| invalid_target(FIRST_ARG_LABEL, to))?
+        .ok_or_else(|| invalid_target(TypeName::BYTEVECTOR, to))?
         .len();
     let at = super::second(args);
     let atidx = val_to_index(&at, SECOND_ARG_LABEL)?;
@@ -210,9 +210,13 @@ fn bytevector_copy_inline(args: &[Value], _env: &Frame) -> EvalResult {
         return Err(Condition::value_error("target index out of range", &at).into());
     }
     let from = super::third(args);
-    let source = from
-        .as_refbv()
-        .ok_or_else(|| invalid_target(THIRD_ARG_LABEL, from))?;
+    let source = from.as_refbv().ok_or_else(|| {
+        Exception::from(Condition::arg_error(
+            THIRD_ARG_LABEL,
+            TypeName::BYTEVECTOR,
+            from,
+        ))
+    })?;
     let span = coll_span(args.get(3), args.get(4), source.len())?;
     if tolen - atidx < span.len() {
         return Err(Condition::bi_value_error(
@@ -228,12 +232,13 @@ fn bytevector_copy_inline(args: &[Value], _env: &Frame) -> EvalResult {
         )
         .into());
     }
-    if let Value::ByteVectorMut(bv) = to {
+    if let Value::ByteVectorMut(target) = to {
         if to.is(&from) {
             mem::drop(source);
-            bv.borrow_mut().copy_within(span, atidx);
+            target.borrow_mut().copy_within(span, atidx);
         } else {
-            bv.borrow_mut()[atidx..(atidx + span.len())].copy_from_slice(&source.as_ref()[span]);
+            target.borrow_mut()[atidx..(atidx + span.len())]
+                .copy_from_slice(&source.as_ref()[span]);
         }
         Ok(Value::Unspecified)
     } else {
@@ -627,6 +632,7 @@ fn load_string(env: &Frame) {
     super::bind_intrinsic(env, "substring", 3..3, string_copy);
     super::bind_intrinsic(env, "string-append", 0..MAX_ARITY, string_append);
     super::bind_intrinsic(env, "string-copy", 1..3, string_copy);
+    super::bind_intrinsic(env, "string-copy!", 3..5, string_copy_inline);
 }
 
 predicate!(is_string, Value::String(_) | Value::StringMut(_));
@@ -700,6 +706,62 @@ fn string_copy(args: &[Value], _env: &Frame) -> EvalResult {
         Value::as_refstr,
         |s: &str, span| Value::strmut_from_chars(s.chars().skip(span.start).take(span.len())),
     )
+}
+
+fn string_copy_inline(args: &[Value], _env: &Frame) -> EvalResult {
+    let to = first(args);
+    let tolen = to
+        .as_refstr()
+        .ok_or_else(|| invalid_target(TypeName::STRING, to))?
+        .len();
+    let at = super::second(args);
+    let atidx = val_to_index(&at, SECOND_ARG_LABEL)?;
+    if tolen < atidx {
+        return Err(Condition::value_error("target index out of range", &at).into());
+    }
+    let from = super::third(args);
+    let source = from.as_refstr().ok_or_else(|| {
+        Exception::from(Condition::arg_error(
+            THIRD_ARG_LABEL,
+            TypeName::STRING,
+            from,
+        ))
+    })?;
+    let span = coll_span(args.get(3), args.get(4), source.len())?;
+    if tolen - atidx < span.len() {
+        return Err(Condition::bi_value_error(
+            "source span too large for target range",
+            &Value::cons(
+                Value::Number(Number::from_usize(span.start)),
+                Value::Number(Number::from_usize(span.end)),
+            ),
+            &Value::cons(
+                Value::Number(Number::from_usize(atidx)),
+                Value::Number(Number::from_usize(tolen)),
+            ),
+        )
+        .into());
+    }
+    if let Value::StringMut(target) = to {
+        if to.is(&from) {
+            mem::drop(source);
+            //target.borrow_mut().copy_within(span, atidx);
+            todo!();
+        } else {
+            let bytes = source
+                .as_ref()
+                .chars()
+                .skip(span.start)
+                .take(span.len())
+                .collect::<String>();
+            target
+                .borrow_mut()
+                .replace_range(atidx..(atidx + bytes.len()), &bytes)
+        }
+        Ok(Value::Unspecified)
+    } else {
+        Err(Condition::literal_mut_error(to).into())
+    }
 }
 
 fn string_append(args: &[Value], _env: &Frame) -> EvalResult {
