@@ -827,12 +827,26 @@ fn vector_copy_inline(args: &[Value], _env: &Frame) -> EvalResult {
         Value::as_refvec,
         Value::as_mutrefvec,
         |to, from, mut target, atidx, span| {
+            let range = atidx..(atidx + span.len());
             if to.is(&from) {
-                //target.copy_within(span, atidx);
-                todo!();
+                dbg!(&span);
+                dbg!(&range);
+                if range.end <= span.start {
+                    let adjusted_span = (span.start - range.end)..(span.end - range.end);
+                    dbg!(&adjusted_span);
+                    let (t, s) = target.split_at_mut(range.end);
+                    t[range].clone_from_slice(&s[adjusted_span]);
+                } else if span.end <= range.start {
+                    let adjusted_range = (range.start - span.end)..(range.end - span.end);
+                    dbg!(&adjusted_range);
+                    let (s, t) = target.split_at_mut(span.end);
+                    t[adjusted_range].clone_from_slice(&s[span]);
+                } else {
+                    todo!();
+                }
             } else {
                 let src = from.as_refvec().expect("expected vector argument");
-                target[atidx..(atidx + span.len())].clone_from_slice(&src.as_ref()[span]);
+                target[range].clone_from_slice(&src.as_ref()[span]);
             }
         },
     )

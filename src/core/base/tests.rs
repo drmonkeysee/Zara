@@ -2088,6 +2088,84 @@ fn vector_copy_part_into_self() {
 }
 
 #[test]
+fn vector_copy_no_overlap_part_into_self() {
+    let v = Value::vector_mut([
+        Value::Number(Number::real(1)),
+        Value::Number(Number::real(2)),
+        Value::string("foo"),
+        Value::Boolean(false),
+        Value::Character('a'),
+    ]);
+    let args = [
+        v.clone(),
+        Value::Number(Number::real(0)),
+        v,
+        Value::Number(Number::real(3)),
+        Value::Number(Number::real(5)),
+    ];
+    let env = TestEnv::default();
+
+    let r = vector_copy_inline(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert_eq!(v, Value::Unspecified);
+    assert_eq!(args[0].to_string(), "#(#f #\\a \"foo\" #f #\\a)");
+    assert!(args[0].is(&args[2]));
+}
+
+#[test]
+fn vector_copy_lower_part_into_self() {
+    let v = Value::vector_mut([
+        Value::Number(Number::real(1)),
+        Value::Number(Number::real(2)),
+        Value::string("foo"),
+        Value::Boolean(false),
+        Value::Character('a'),
+    ]);
+    let args = [
+        v.clone(),
+        Value::Number(Number::real(2)),
+        v,
+        Value::Number(Number::real(0)),
+        Value::Number(Number::real(2)),
+    ];
+    let env = TestEnv::default();
+
+    let r = vector_copy_inline(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert_eq!(v, Value::Unspecified);
+    assert_eq!(args[0].to_string(), "#(1 2 1 2 #\\a)");
+    assert!(args[0].is(&args[2]));
+}
+
+#[test]
+fn vector_copy_no_overlap_lower_part_into_self() {
+    let v = Value::vector_mut([
+        Value::Number(Number::real(1)),
+        Value::Number(Number::real(2)),
+        Value::string("foo"),
+        Value::Boolean(false),
+        Value::Character('a'),
+    ]);
+    let args = [
+        v.clone(),
+        Value::Number(Number::real(3)),
+        v,
+        Value::Number(Number::real(0)),
+        Value::Number(Number::real(2)),
+    ];
+    let env = TestEnv::default();
+
+    let r = vector_copy_inline(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert_eq!(v, Value::Unspecified);
+    assert_eq!(args[0].to_string(), "#(1 2 \"foo\" 1 2)");
+    assert!(args[0].is(&args[2]));
+}
+
+#[test]
 fn vector_copy_into_tail_overlap() {
     let v = Value::vector_mut([
         Value::Number(Number::real(1)),
