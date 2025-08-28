@@ -743,21 +743,15 @@ fn string_copy_inline(args: &[Value], _env: &Frame) -> EvalResult {
         .into());
     }
     if let Value::StringMut(target) = to {
-        if to.is(&from) {
-            mem::drop(source);
-            //target.borrow_mut().copy_within(span, atidx);
-            todo!();
-        } else {
-            let bytes = source
-                .as_ref()
-                .chars()
-                .skip(span.start)
-                .take(span.len())
-                .collect::<String>();
-            target
-                .borrow_mut()
-                .replace_range(atidx..(atidx + bytes.len()), &bytes)
-        }
+        let updated = {
+            let replace = source.as_ref().chars().skip(span.start).take(span.len());
+            let trg = target.borrow();
+            let start = trg.chars().take(atidx);
+            let rest = trg.chars().skip(atidx + span.len());
+            start.chain(replace).chain(rest).collect::<String>()
+        };
+        mem::drop(source);
+        target.borrow_mut().replace_range(.., &updated);
         Ok(Value::Unspecified)
     } else {
         Err(Condition::literal_mut_error(to).into())

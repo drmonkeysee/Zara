@@ -1543,7 +1543,7 @@ fn bytevector_copy_into_equal() {
     let v = ok_or_fail!(r);
     assert_eq!(v, Value::Unspecified);
     assert_eq!(args[0].to_string(), "#u8(6 7 8 9 10)");
-    assert!(!args[0].is(&args[1]));
+    assert!(!args[0].is(&args[2]));
 }
 
 #[test]
@@ -1760,7 +1760,7 @@ fn string_copy_into_equal() {
     let v = ok_or_fail!(r);
     assert_eq!(v, Value::Unspecified);
     assert_eq!(args[0].to_string(), "\"beefee\"");
-    assert!(!args[0].is(&args[1]));
+    assert!(!args[0].is(&args[2]));
 }
 
 #[test]
@@ -1798,6 +1798,41 @@ fn string_copy_into_smaller() {
 }
 
 #[test]
+fn string_copy_from_unicode_into_ascii() {
+    let args = [
+        Value::string_mut("abc"),
+        Value::Number(Number::real(1)),
+        Value::string("123🐝"),
+        Value::Number(Number::real(3)),
+        Value::Number(Number::real(4)),
+    ];
+    let env = TestEnv::default();
+
+    let r = string_copy_inline(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert_eq!(v, Value::Unspecified);
+    assert_eq!(args[0].to_string(), "\"a🐝c\"");
+}
+
+#[test]
+fn string_copy_inline_ranges_are_accurate() {
+    let args = [
+        Value::string_mut("🦀"),
+        Value::Number(Number::real(0)),
+        Value::string("crab"),
+    ];
+    let env = TestEnv::default();
+
+    let r = string_copy_inline(&args, &env.new_frame());
+    let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
+    assert_eq!(
+        err.to_string(),
+        "#<env-error \"source span too large for target range\" ((0 . 4) (0 . 1))>"
+    );
+}
+
+#[test]
 fn string_copy_into_unicode() {
     let args = [
         Value::string_mut("foo🦀bar"),
@@ -1813,5 +1848,78 @@ fn string_copy_into_unicode() {
     let v = ok_or_fail!(r);
     assert_eq!(v, Value::Unspecified);
     assert_eq!(args[0].to_string(), "\"foo🦀🐝ar\"");
-    assert!(!args[0].is(&args[1]));
+}
+
+#[test]
+fn string_copy_into_self() {
+    let s = Value::string_mut("foobar");
+    let args = [s.clone(), Value::Number(Number::real(0)), s];
+    let env = TestEnv::default();
+
+    let r = string_copy_inline(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert_eq!(v, Value::Unspecified);
+    assert_eq!(args[0].to_string(), "\"foobar\"");
+    assert!(args[0].is(&args[2]));
+}
+
+#[test]
+fn string_copy_part_into_self() {
+    let s = Value::string_mut("foobar");
+    let args = [
+        s.clone(),
+        Value::Number(Number::real(0)),
+        s,
+        Value::Number(Number::real(2)),
+        Value::Number(Number::real(4)),
+    ];
+    let env = TestEnv::default();
+
+    let r = string_copy_inline(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert_eq!(v, Value::Unspecified);
+    assert_eq!(args[0].to_string(), "\"obobar\"");
+    assert!(args[0].is(&args[2]));
+}
+
+#[test]
+fn string_copy_tail_overlap_into_self() {
+    let s = Value::string_mut("foobar");
+    let args = [
+        s.clone(),
+        Value::Number(Number::real(1)),
+        s,
+        Value::Number(Number::real(2)),
+        Value::Number(Number::real(5)),
+    ];
+    let env = TestEnv::default();
+
+    let r = string_copy_inline(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert_eq!(v, Value::Unspecified);
+    assert_eq!(args[0].to_string(), "\"fobaar\"");
+    assert!(args[0].is(&args[2]));
+}
+
+#[test]
+fn string_copy_head_overlap_into_self() {
+    let s = Value::string_mut("foobar");
+    let args = [
+        s.clone(),
+        Value::Number(Number::real(2)),
+        s,
+        Value::Number(Number::real(0)),
+        Value::Number(Number::real(3)),
+    ];
+    let env = TestEnv::default();
+
+    let r = string_copy_inline(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert_eq!(v, Value::Unspecified);
+    assert_eq!(args[0].to_string(), "\"fofoor\"");
+    assert!(args[0].is(&args[2]));
 }
