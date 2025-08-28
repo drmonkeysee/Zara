@@ -913,7 +913,7 @@ fn strs_predicate(args: &[Value], pred: impl Fn(&str, &str) -> bool) -> EvalResu
                 .ok_or_else(|| Exception::from(Condition::arg_error(idx, TypeName::STRING, val)))?;
             let a = match prev {
                 None => return Ok((acc, Some(val))),
-                Some(v) => v.as_refstr().expect("unexpected value type from prev"),
+                Some(v) => v.as_refstr().expect("expected string from prev"),
             };
             Ok((acc && pred(a.as_ref(), b.as_ref()), Some(val)))
         });
