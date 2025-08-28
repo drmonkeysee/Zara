@@ -20,7 +20,7 @@ use crate::{
     syntax::Sequence,
 };
 use std::{
-    cell::{Ref, RefCell},
+    cell::{Ref, RefCell, RefMut},
     fmt::{self, Display, Formatter},
     rc::Rc,
 };
@@ -164,6 +164,14 @@ impl Value {
         }
     }
 
+    pub(crate) fn as_mutrefstr(&self) -> Option<RefMut<'_, String>> {
+        if let Self::StringMut(s) = self {
+            Some(s.borrow_mut())
+        } else {
+            None
+        }
+    }
+
     pub(crate) fn as_refvec(&self) -> Option<VecRef> {
         match self {
             Self::Vector(v) => Some(VecRef::Con(v)),
@@ -172,11 +180,27 @@ impl Value {
         }
     }
 
+    pub(crate) fn as_mutrefvec(&self) -> Option<RefMut<'_, Vec<Self>>> {
+        if let Self::VectorMut(v) = self {
+            Some(v.borrow_mut())
+        } else {
+            None
+        }
+    }
+
     pub(crate) fn as_refbv(&self) -> Option<BvRef> {
         match self {
             Self::ByteVector(bv) => Some(BvRef::Con(bv)),
             Self::ByteVectorMut(bv) => Some(BvRef::Mut(bv.borrow())),
             _ => None,
+        }
+    }
+
+    pub(crate) fn as_mutrefbv(&self) -> Option<RefMut<'_, Vec<u8>>> {
+        if let Self::ByteVectorMut(bv) = self {
+            Some(bv.borrow_mut())
+        } else {
+            None
         }
     }
 }

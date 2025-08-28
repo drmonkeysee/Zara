@@ -49,30 +49,6 @@ macro_rules! num_convert {
     };
 }
 
-macro_rules! coll_set {
-    ($name:ident, $mutkind:path, $valname:expr, $ascoll:expr, $valconv:expr, $setval:expr) => {
-        fn $name(args: &[Value], _env: &Frame) -> EvalResult {
-            let arg = first(args);
-            let k = super::second(args);
-            let clen = $ascoll(arg)
-                .ok_or_else(|| invalid_target($valname, arg))?
-                .len();
-            if let $mutkind(c) = arg {
-                let idx = val_to_index(k, SECOND_ARG_LABEL)?;
-                if idx < clen {
-                    let item = $valconv(super::third(args))?;
-                    $setval(c.borrow_mut(), idx, item);
-                    Ok(Value::Unspecified)
-                } else {
-                    Err(Condition::index_error(k).into())
-                }
-            } else {
-                Err(Condition::literal_mut_error(arg).into())
-            }
-        }
-    };
-}
-
 #[cfg(test)]
 mod tests;
 
@@ -150,14 +126,6 @@ predicate!(
     is_bytevector,
     Value::ByteVector(_) | Value::ByteVectorMut(_)
 );
-coll_set!(
-    bytevector_set,
-    Value::ByteVectorMut,
-    TypeName::BYTEVECTOR,
-    Value::as_refbv,
-    |v| val_to_byte(v, THIRD_ARG_LABEL),
-    |mut v: RefMut<'_, Vec<_>>, idx, item| v[idx] = item
-);
 
 fn make_bytevector(args: &[Value], _env: &Frame) -> EvalResult {
     coll_fill(
@@ -184,6 +152,19 @@ fn bytevector_get(args: &[Value], _env: &Frame) -> EvalResult {
         TypeName::BYTEVECTOR,
         |bv, u| bv.get(u).copied(),
         |item| Value::Number(Number::real(i64::from(item))),
+    )
+}
+
+fn bytevector_set(args: &[Value], _env: &Frame) -> EvalResult {
+    coll_set(
+        first(args),
+        super::second(args),
+        super::third(args),
+        TypeName::VECTOR,
+        Value::as_refbv,
+        Value::as_mutrefbv,
+        |v| val_to_byte(v, THIRD_ARG_LABEL),
+        |mut v, idx, item| v[idx] = item,
     )
 }
 
@@ -636,14 +617,6 @@ fn load_string(env: &Frame) {
 }
 
 predicate!(is_string, Value::String(_) | Value::StringMut(_));
-coll_set!(
-    string_set,
-    Value::StringMut,
-    TypeName::STRING,
-    Value::as_refstr,
-    |v| val_to_char(v, THIRD_ARG_LABEL),
-    replace_str_char
-);
 
 fn make_string(args: &[Value], _env: &Frame) -> EvalResult {
     coll_fill(
@@ -674,6 +647,19 @@ fn string_get(args: &[Value], _env: &Frame) -> EvalResult {
         TypeName::STRING,
         |s, u| s.chars().nth(u),
         Value::Character,
+    )
+}
+
+fn string_set(args: &[Value], _env: &Frame) -> EvalResult {
+    coll_set(
+        first(args),
+        super::second(args),
+        super::third(args),
+        TypeName::VECTOR,
+        Value::as_refstr,
+        Value::as_mutrefstr,
+        |v| val_to_char(v, THIRD_ARG_LABEL),
+        replace_str_char,
     )
 }
 
@@ -818,14 +804,6 @@ fn load_vec(env: &Frame) {
 }
 
 predicate!(is_vector, Value::Vector(_) | Value::VectorMut(_));
-coll_set!(
-    vector_set,
-    Value::VectorMut,
-    TypeName::VECTOR,
-    Value::as_refvec,
-    |val: &Value| Ok::<_, Exception>(val.clone()),
-    |mut v: RefMut<'_, Vec<_>>, idx, item| v[idx] = item
-);
 
 fn make_vector(args: &[Value], _env: &Frame) -> EvalResult {
     coll_fill(
@@ -852,6 +830,19 @@ fn vector_get(args: &[Value], _env: &Frame) -> EvalResult {
         TypeName::VECTOR,
         |v, u| v.get(u).cloned(),
         convert::identity,
+    )
+}
+
+fn vector_set(args: &[Value], _env: &Frame) -> EvalResult {
+    coll_set(
+        first(args),
+        super::second(args),
+        super::third(args),
+        TypeName::VECTOR,
+        Value::as_refvec,
+        Value::as_mutrefvec,
+        |v| Ok(v.clone()),
+        |mut v, idx, item| v[idx] = item,
     )
 }
 
@@ -1035,6 +1026,37 @@ fn coll_get<T: ?Sized, M: AsRef<T>, U>(
     get(c.as_ref(), val_to_index(k, SECOND_ARG_LABEL)?).map_or_else(
         || Err(Condition::index_error(k).into()),
         |item| Ok(map(item)),
+    )
+}
+
+fn coll_set<'a, T: ?Sized + 'a, M: AsRef<T> + 'a, U>(
+    arg: &'a Value,
+    k: &'a Value,
+    val: &'a Value,
+    expected_type: impl Display,
+    collref: impl Fn(&'a Value) -> Option<CollRef<'a, T, M>>,
+    mutcollref: impl Fn(&'a Value) -> Option<RefMut<'a, M>>,
+    toitem: impl FnOnce(&'a Value) -> Result<U, Exception>,
+    set: impl FnOnce(RefMut<'a, M>, usize, U),
+) -> EvalResult
+where
+    CollRef<'a, T, M>: CollSized,
+{
+    let clen = collref(arg)
+        .ok_or_else(|| invalid_target(expected_type, arg))?
+        .len();
+    mutcollref(arg).map_or_else(
+        || Err(Condition::literal_mut_error(arg).into()),
+        |c| {
+            let idx = val_to_index(k, SECOND_ARG_LABEL)?;
+            if idx < clen {
+                let item = toitem(val)?;
+                set(c, idx, item);
+                Ok(Value::Unspecified)
+            } else {
+                Err(Condition::index_error(k).into())
+            }
+        },
     )
 }
 
