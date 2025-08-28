@@ -784,16 +784,11 @@ fn load_vec(env: &Frame) {
 predicate!(is_vector, Value::Vector(_) | Value::VectorMut(_));
 
 fn make_vector(args: &[Value], _env: &Frame) -> EvalResult {
-    coll_make(
-        args,
-        Value::Unspecified,
-        |v| Ok(v.clone()),
-        Value::vector_mut,
-    )
+    coll_make(args, Value::Unspecified, val_identity, Value::vector_mut)
 }
 
 fn vector(args: &[Value], _env: &Frame) -> EvalResult {
-    coll_new(args, |(_, v)| Ok(v.clone()), Value::vector_mut)
+    coll_new(args, |(_, v)| val_identity(v), Value::vector_mut)
 }
 
 fn vector_length(args: &[Value], _env: &Frame) -> EvalResult {
@@ -819,7 +814,7 @@ fn vector_set(args: &[Value], _env: &Frame) -> EvalResult {
         TypeName::VECTOR,
         Value::as_refvec,
         Value::as_mutrefvec,
-        |v| Ok(v.clone()),
+        val_identity,
         |mut v, idx, item| v[idx] = item,
     )
 }
@@ -879,7 +874,7 @@ fn vector_fill(args: &[Value], _env: &Frame) -> EvalResult {
         TypeName::VECTOR,
         Value::as_refvec,
         Value::as_mutrefvec,
-        |v| Ok(v.clone()),
+        val_identity,
         |mut target, fill, span| {
             for i in span {
                 target[i] = fill.clone();
@@ -1020,6 +1015,10 @@ fn reflexive_vector_copy(ranges: impl IntoIterator<Item = (usize, usize)>, v: &m
     }
 }
 
+fn val_identity(v: &Value) -> EvalResult {
+    Ok(v.clone())
+}
+
 fn coll_new<T>(
     args: &[Value],
     map: impl FnMut((usize, &Value)) -> Result<T, Exception>,
@@ -1062,11 +1061,11 @@ fn coll_get<T: ?Sized, M: AsRef<T>, U>(
     k: &Value,
     collref: impl FnOnce(&Value) -> Option<CollRef<'_, T, M>>,
     expected_type: impl Display,
-    get: impl FnOnce(&T, usize) -> Option<U>,
+    op: impl FnOnce(&T, usize) -> Option<U>,
     map: impl FnOnce(U) -> Value,
 ) -> EvalResult {
     let c = collref(arg).ok_or_else(|| invalid_target(expected_type, arg))?;
-    get(c.as_ref(), try_val_to_index(k, SECOND_ARG_LABEL)?).map_or_else(
+    op(c.as_ref(), try_val_to_index(k, SECOND_ARG_LABEL)?).map_or_else(
         || Err(Condition::index_error(k).into()),
         |item| Ok(map(item)),
     )
@@ -1080,7 +1079,7 @@ fn coll_set<'a, T: ?Sized + 'a, M: AsRef<T> + 'a, U>(
     collref: impl FnOnce(&Value) -> Option<CollRef<'_, T, M>>,
     mutcollref: impl FnOnce(&Value) -> Option<RefMut<'_, M>>,
     try_item: impl FnOnce(&Value) -> Result<U, Exception>,
-    set: impl FnOnce(RefMut<'_, M>, usize, U),
+    op: impl FnOnce(RefMut<'_, M>, usize, U),
 ) -> EvalResult
 where
     CollRef<'a, T, M>: CollSized,
@@ -1094,7 +1093,7 @@ where
             let idx = try_val_to_index(k, SECOND_ARG_LABEL)?;
             if idx < clen {
                 let item = try_item(val)?;
-                set(c, idx, item);
+                op(c, idx, item);
                 Ok(Value::Unspecified)
             } else {
                 Err(Condition::index_error(k).into())
@@ -1109,13 +1108,13 @@ fn coll_copy<'a, T: ?Sized + 'a, M: AsRef<T> + 'a>(
     end: Option<&Value>,
     expected_type: impl Display,
     collref: impl FnOnce(&Value) -> Option<CollRef<'_, T, M>>,
-    copy: impl FnOnce(&T, Range<usize>) -> Value,
+    op: impl FnOnce(&T, Range<usize>) -> Value,
 ) -> EvalResult
 where
     CollRef<'a, T, M>: CollSized,
 {
     let coll = collref(arg).ok_or_else(|| invalid_target(expected_type, arg))?;
-    Ok(copy(coll.as_ref(), try_coll_span(start, end, coll.len())?))
+    Ok(op(coll.as_ref(), try_coll_span(start, end, coll.len())?))
 }
 
 fn coll_copy_inline<'a, T: ?Sized + 'a, M: AsRef<T> + 'a>(
@@ -1127,7 +1126,7 @@ fn coll_copy_inline<'a, T: ?Sized + 'a, M: AsRef<T> + 'a>(
     expected_type: impl Display + Clone,
     collref: impl Fn(&Value) -> Option<CollRef<'_, T, M>>,
     mutcollref: impl FnOnce(&Value) -> Option<RefMut<'_, M>>,
-    copy: impl FnOnce(&Value, &Value, RefMut<'_, M>, usize, Range<usize>),
+    op: impl FnOnce(&Value, &Value, RefMut<'_, M>, usize, Range<usize>),
 ) -> EvalResult
 where
     CollRef<'a, T, M>: CollSized,
@@ -1164,7 +1163,7 @@ where
     mutcollref(to).map_or_else(
         || Err(Condition::literal_mut_error(to).into()),
         |target| {
-            copy(to, from, target, atidx, span);
+            op(to, from, target, atidx, span);
             Ok(Value::Unspecified)
         },
     )
@@ -1174,7 +1173,7 @@ fn coll_append<T: ?Sized, M: AsRef<T>>(
     args: &[Value],
     collref: impl Fn(&Value) -> Option<CollRef<'_, T, M>>,
     expected_type: impl Display + Clone,
-    copy: impl FnOnce(&[CollRef<'_, T, M>]) -> Value,
+    op: impl FnOnce(&[CollRef<'_, T, M>]) -> Value,
 ) -> EvalResult {
     let coll_refs = args
         .iter()
@@ -1184,7 +1183,7 @@ fn coll_append<T: ?Sized, M: AsRef<T>>(
                 .ok_or_else(|| Exception::from(Condition::arg_error(idx, expected_type.clone(), v)))
         })
         .collect::<Result<Vec<_>, _>>()?;
-    Ok(copy(&coll_refs))
+    Ok(op(&coll_refs))
 }
 
 fn coll_fill<'a, T: ?Sized + 'a, M: AsRef<T> + 'a, U>(
