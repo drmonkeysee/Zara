@@ -829,20 +829,10 @@ fn vector_copy_inline(args: &[Value], _env: &Frame) -> EvalResult {
         |to, from, mut target, atidx, span| {
             let range = atidx..(atidx + span.len());
             if to.is(&from) {
-                dbg!(&span);
-                dbg!(&range);
-                if range.end <= span.start {
-                    let adjusted_span = (span.start - range.end)..(span.end - range.end);
-                    dbg!(&adjusted_span);
-                    let (t, s) = target.split_at_mut(range.end);
-                    t[range].clone_from_slice(&s[adjusted_span]);
-                } else if span.end <= range.start {
-                    let adjusted_range = (range.start - span.end)..(range.end - span.end);
-                    dbg!(&adjusted_range);
-                    let (s, t) = target.split_at_mut(span.end);
-                    t[adjusted_range].clone_from_slice(&s[span]);
+                if range.start <= span.start {
+                    reflexive_vector_copy(range.into_iter().zip(span), &mut target);
                 } else {
-                    todo!();
+                    reflexive_vector_copy(range.into_iter().zip(span).rev(), &mut target);
                 }
             } else {
                 let src = from.as_refvec().expect("expected vector argument");
@@ -976,6 +966,12 @@ fn try_sub_list<'a>(lst: &'a Value, idx: usize, k: &Value) -> Result<&'a Value, 
     }
 }
 
+fn reflexive_vector_copy(ranges: impl IntoIterator<Item = (usize, usize)>, v: &mut [Value]) {
+    for (t, s) in ranges {
+        v[t] = v[s].clone();
+    }
+}
+
 fn coll_new<T>(
     args: &[Value],
     map: impl FnMut((usize, &Value)) -> Result<T, Exception>,
@@ -1099,6 +1095,9 @@ where
         Exception::from(Condition::arg_error(THIRD_ARG_LABEL, expected_type, from))
     })?;
     let span = try_coll_span(start, end, source.len())?;
+    if span.is_empty() {
+        return Ok(Value::Unspecified);
+    }
     if tolen - atidx < span.len() {
         return Err(Condition::bi_value_error(
             "source span too large for target range",

@@ -2187,7 +2187,7 @@ fn vector_copy_into_tail_overlap() {
 
     let v = ok_or_fail!(r);
     assert_eq!(v, Value::Unspecified);
-    assert_eq!(args[0].to_string(), "#(\"foo\" #f #\\a #f #\\a)");
+    assert_eq!(args[0].to_string(), "#(1 \"foo\" #f #\\a #\\a)");
     assert!(args[0].is(&args[2]));
 }
 
