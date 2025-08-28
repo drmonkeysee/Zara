@@ -1581,6 +1581,40 @@ fn bytevector_copy_into_smaller() {
 }
 
 #[test]
+fn bytevector_copy_from_empty() {
+    let args = [
+        Value::bytevector_mut([1, 2, 3]),
+        Value::Number(Number::real(1)),
+        Value::ByteVector([].into()),
+    ];
+    let env = TestEnv::default();
+
+    let r = bytevector_copy_inline(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert_eq!(v, Value::Unspecified);
+    assert_eq!(args[0].to_string(), "#u8(1 2 3)");
+}
+
+#[test]
+fn bytevector_copy_to_empty() {
+    let args = [
+        Value::bytevector_mut([]),
+        Value::Number(Number::real(0)),
+        Value::ByteVector([6, 7, 8, 9, 10].into()),
+        Value::Number(Number::real(3)),
+        Value::Number(Number::real(3)),
+    ];
+    let env = TestEnv::default();
+
+    let r = bytevector_copy_inline(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert_eq!(v, Value::Unspecified);
+    assert_eq!(args[0].to_string(), "#u8()");
+}
+
+#[test]
 fn bytevector_copy_invalid_at() {
     let args = [
         Value::bytevector_mut([1, 2, 3, 4, 5]),
@@ -1922,4 +1956,87 @@ fn string_copy_head_overlap_into_self() {
     assert_eq!(v, Value::Unspecified);
     assert_eq!(args[0].to_string(), "\"fofoor\"");
     assert!(args[0].is(&args[2]));
+}
+
+#[test]
+fn vector_copy_into_equal() {
+    let args = [
+        Value::vector_mut([
+            Value::Number(Number::real(1)),
+            Value::Number(Number::real(2)),
+            Value::string("foo"),
+            Value::Boolean(false),
+            Value::Character('a'),
+        ]),
+        Value::Number(Number::real(0)),
+        Value::vector([
+            Value::Number(Number::real(3)),
+            Value::Number(Number::real(4)),
+            Value::string("bar"),
+            Value::Boolean(true),
+            Value::Character('z'),
+        ]),
+    ];
+    let env = TestEnv::default();
+
+    let r = vector_copy_inline(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert_eq!(v, Value::Unspecified);
+    assert_eq!(args[0].to_string(), "#(3 4 \"bar\" #t #\\z)");
+    assert!(!args[0].is(&args[2]));
+}
+
+#[test]
+fn vector_copy_into_larger() {
+    let args = [
+        Value::vector_mut([
+            Value::Number(Number::real(1)),
+            Value::Number(Number::real(2)),
+            Value::string("foo"),
+            Value::Boolean(false),
+            Value::Character('a'),
+        ]),
+        Value::Number(Number::real(1)),
+        Value::vector([
+            Value::Number(Number::real(3)),
+            Value::Number(Number::real(4)),
+            Value::string("bar"),
+        ]),
+    ];
+    let env = TestEnv::default();
+
+    let r = vector_copy_inline(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert_eq!(v, Value::Unspecified);
+    assert_eq!(args[0].to_string(), "#(1 3 4 \"bar\" #\\a)");
+}
+
+#[test]
+fn vector_copy_into_smaller() {
+    let args = [
+        Value::vector_mut([
+            Value::Number(Number::real(1)),
+            Value::Number(Number::real(2)),
+            Value::string("foo"),
+        ]),
+        Value::Number(Number::real(1)),
+        Value::vector([
+            Value::Number(Number::real(3)),
+            Value::Number(Number::real(4)),
+            Value::string("bar"),
+            Value::Boolean(true),
+            Value::Character('z'),
+        ]),
+        Value::Number(Number::real(3)),
+        Value::Number(Number::real(5)),
+    ];
+    let env = TestEnv::default();
+
+    let r = vector_copy_inline(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert_eq!(v, Value::Unspecified);
+    assert_eq!(args[0].to_string(), "#(1 #t #\\z)");
 }

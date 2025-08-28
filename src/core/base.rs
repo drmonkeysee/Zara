@@ -758,6 +758,7 @@ fn load_vec(env: &Frame) {
     super::bind_intrinsic(env, "vector-set!", 3..3, vector_set);
 
     super::bind_intrinsic(env, "vector-copy", 1..3, vector_copy);
+    super::bind_intrinsic(env, "vector-copy!", 3..5, vector_copy_inline);
     super::bind_intrinsic(env, "vector-append", 0..MAX_ARITY, vector_append);
 }
 
@@ -812,6 +813,28 @@ fn vector_copy(args: &[Value], _env: &Frame) -> EvalResult {
         TypeName::VECTOR,
         Value::as_refvec,
         |vals: &[Value], span| Value::vector_mut(vals[span].into_iter().cloned()),
+    )
+}
+
+fn vector_copy_inline(args: &[Value], _env: &Frame) -> EvalResult {
+    coll_copy_inline(
+        first(args),
+        super::second(args),
+        super::third(args),
+        args.get(3),
+        args.get(4),
+        TypeName::VECTOR,
+        Value::as_refvec,
+        Value::as_mutrefvec,
+        |to, from, mut target, atidx, span| {
+            if to.is(&from) {
+                //target.copy_within(span, atidx);
+                todo!();
+            } else {
+                let src = from.as_refvec().expect("expected vector argument");
+                target[atidx..(atidx + span.len())].clone_from_slice(&src.as_ref()[span]);
+            }
+        },
     )
 }
 
