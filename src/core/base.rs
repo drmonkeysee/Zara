@@ -179,7 +179,7 @@ fn bytevector_copy(args: &[Value], _env: &Frame) -> EvalResult {
         args.get(2),
         TypeName::BYTEVECTOR,
         Value::as_refbv,
-        |bytes: &[u8], span| Value::bytevector_mut(bytes[span].into_iter().copied()),
+        |bytes: &[u8], span| Value::bytevector_mut(bytes[span].iter().copied()),
     )
 }
 
@@ -194,7 +194,7 @@ fn bytevector_copy_inline(args: &[Value], _env: &Frame) -> EvalResult {
         Value::as_refbv,
         Value::as_mutrefbv,
         |to, from, mut target, atidx, span| {
-            if to.is(&from) {
+            if to.is(from) {
                 target.copy_within(span, atidx);
             } else {
                 let src = from.as_refbv().expect("expected bytevector argument");
@@ -227,7 +227,7 @@ fn bytevector_to_str(args: &[Value], _env: &Frame) -> EvalResult {
             let end = err.error_len().map_or(clen, |len| start + len);
             Err(Condition::bi_value_error(
                 "invalid UTF-8 byte sequence",
-                &Value::bytevector_mut(bv.as_ref()[start..end].into_iter().copied()),
+                &Value::bytevector_mut(bv.as_ref()[start..end].iter().copied()),
                 &Value::cons(
                     Value::Number(Number::from_usize(start)),
                     Value::Number(Number::from_usize(end)),
@@ -697,7 +697,7 @@ fn string_copy_inline(args: &[Value], _env: &Frame) -> EvalResult {
         Value::as_refstr,
         Value::as_mutrefstr,
         |to, from, mut target, atidx, span| {
-            let updated = if to.is(&from) {
+            let updated = if to.is(from) {
                 build_str_copy(&target, &target, atidx, span)
             } else {
                 build_str_copy(
@@ -826,7 +826,7 @@ fn vector_copy(args: &[Value], _env: &Frame) -> EvalResult {
         args.get(2),
         TypeName::VECTOR,
         Value::as_refvec,
-        |vals: &[Value], span| Value::vector_mut(vals[span].into_iter().cloned()),
+        |vals: &[Value], span| Value::vector_mut(vals[span].iter().cloned()),
     )
 }
 
@@ -842,7 +842,7 @@ fn vector_copy_inline(args: &[Value], _env: &Frame) -> EvalResult {
         Value::as_mutrefvec,
         |to, from, mut target, atidx, span| {
             let range = atidx..(atidx + span.len());
-            if to.is(&from) {
+            if to.is(from) {
                 if range.start <= span.start {
                     reflexive_vector_copy(range.into_iter().zip(span), &mut target);
                 } else {
@@ -1015,6 +1015,7 @@ fn reflexive_vector_copy(ranges: impl IntoIterator<Item = (usize, usize)>, v: &m
     }
 }
 
+#[allow(clippy::unnecessary_wraps, reason = "infallible interface")]
 fn val_identity(v: &Value) -> EvalResult {
     Ok(v.clone())
 }
@@ -1134,9 +1135,9 @@ where
     let tolen = collref(to)
         .ok_or_else(|| invalid_target(expected_type.clone(), to))?
         .len();
-    let atidx = try_val_to_index(&at, SECOND_ARG_LABEL)?;
+    let atidx = try_val_to_index(at, SECOND_ARG_LABEL)?;
     if tolen < atidx {
-        return Err(Condition::value_error("target index out of range", &at).into());
+        return Err(Condition::value_error("target index out of range", at).into());
     }
     let source = collref(from).ok_or_else(|| {
         Exception::from(Condition::arg_error(THIRD_ARG_LABEL, expected_type, from))
