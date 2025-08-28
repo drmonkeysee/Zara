@@ -981,7 +981,7 @@ fn coll_fill<T: Clone>(
 fn coll_length<'a, T: ?Sized + 'a, M: AsRef<T> + 'a>(
     arg: &'a Value,
     expected_type: impl Display,
-    collref: impl FnOnce(&'a Value) -> Option<CollRef<'a, T, M>>,
+    collref: impl FnOnce(&Value) -> Option<CollRef<'_, T, M>>,
 ) -> EvalResult
 where
     CollRef<'a, T, M>: CollSized,
@@ -1010,10 +1010,10 @@ fn coll_set<'a, T: ?Sized + 'a, M: AsRef<T> + 'a, U>(
     k: &Value,
     val: &Value,
     expected_type: impl Display,
-    collref: impl Fn(&'a Value) -> Option<CollRef<'a, T, M>>,
-    mutcollref: impl Fn(&'a Value) -> Option<RefMut<'a, M>>,
+    collref: impl FnOnce(&Value) -> Option<CollRef<'_, T, M>>,
+    mutcollref: impl FnOnce(&Value) -> Option<RefMut<'_, M>>,
     try_item: impl FnOnce(&Value) -> Result<U, Exception>,
-    set: impl FnOnce(RefMut<'a, M>, usize, U),
+    set: impl FnOnce(RefMut<'_, M>, usize, U),
 ) -> EvalResult
 where
     CollRef<'a, T, M>: CollSized,
@@ -1041,7 +1041,7 @@ fn coll_copy<'a, T: ?Sized + 'a, M: AsRef<T> + 'a>(
     start: Option<&Value>,
     end: Option<&Value>,
     expected_type: impl Display,
-    collref: impl FnOnce(&'a Value) -> Option<CollRef<'a, T, M>>,
+    collref: impl FnOnce(&Value) -> Option<CollRef<'_, T, M>>,
     copy: impl FnOnce(&T, Range<usize>) -> Value,
 ) -> EvalResult
 where
@@ -1058,9 +1058,9 @@ fn coll_copy_inline<'a, T: ?Sized + 'a, M: AsRef<T> + 'a>(
     start: Option<&Value>,
     end: Option<&Value>,
     expected_type: impl Display + Clone,
-    collref: impl Fn(&'a Value) -> Option<CollRef<'a, T, M>>,
-    mutcollref: impl Fn(&'a Value) -> Option<RefMut<'a, M>>,
-    copy: impl FnOnce(&'a Value, &'a Value, RefMut<'a, M>, usize, Range<usize>),
+    collref: impl Fn(&Value) -> Option<CollRef<'_, T, M>>,
+    mutcollref: impl FnOnce(&Value) -> Option<RefMut<'_, M>>,
+    copy: impl FnOnce(&Value, &Value, RefMut<'_, M>, usize, Range<usize>),
 ) -> EvalResult
 where
     CollRef<'a, T, M>: CollSized,
