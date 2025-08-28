@@ -128,7 +128,7 @@ predicate!(
 );
 
 fn make_bytevector(args: &[Value], _env: &Frame) -> EvalResult {
-    coll_fill(
+    coll_make(
         args,
         u8::MIN,
         |v| try_val_to_byte(v, SECOND_ARG_LABEL),
@@ -591,12 +591,13 @@ fn load_string(env: &Frame) {
     super::bind_intrinsic(env, "string-append", 0..MAX_ARITY, string_append);
     super::bind_intrinsic(env, "string-copy", 1..3, string_copy);
     super::bind_intrinsic(env, "string-copy!", 3..5, string_copy_inline);
+    super::bind_intrinsic(env, "string-fill!", 2..4, string_fill);
 }
 
 predicate!(is_string, Value::String(_) | Value::StringMut(_));
 
 fn make_string(args: &[Value], _env: &Frame) -> EvalResult {
-    coll_fill(
+    coll_make(
         args,
         char::MIN,
         |v| try_val_to_char(v, SECOND_ARG_LABEL),
@@ -665,6 +666,15 @@ fn strings_gte(args: &[Value], _env: &Frame) -> EvalResult {
     strs_predicate(args, str::ge)
 }
 
+fn string_append(args: &[Value], _env: &Frame) -> EvalResult {
+    coll_append(
+        args,
+        Value::as_refstr,
+        TypeName::STRING,
+        |strs: &[StrRef]| Value::strmut_from_chars(strs.iter().flat_map(|s| s.as_ref().chars())),
+    )
+}
+
 fn string_copy(args: &[Value], _env: &Frame) -> EvalResult {
     coll_copy(
         first(args),
@@ -688,9 +698,9 @@ fn string_copy_inline(args: &[Value], _env: &Frame) -> EvalResult {
         Value::as_mutrefstr,
         |to, from, mut target, atidx, span| {
             let updated = if to.is(&from) {
-                build_str_update(&target, &target, atidx, span)
+                build_str_copy(&target, &target, atidx, span)
             } else {
-                build_str_update(
+                build_str_copy(
                     from.as_refstr().expect("expected string argument").as_ref(),
                     &target,
                     atidx,
@@ -702,12 +712,20 @@ fn string_copy_inline(args: &[Value], _env: &Frame) -> EvalResult {
     )
 }
 
-fn string_append(args: &[Value], _env: &Frame) -> EvalResult {
-    coll_append(
-        args,
-        Value::as_refstr,
+fn string_fill(args: &[Value], _env: &Frame) -> EvalResult {
+    coll_fill(
+        first(args),
+        super::second(args),
+        args.get(2),
+        args.get(3),
         TypeName::STRING,
-        |strs: &[StrRef]| Value::strmut_from_chars(strs.iter().flat_map(|s| s.as_ref().chars())),
+        Value::as_refstr,
+        Value::as_mutrefstr,
+        |v| try_val_to_char(v, SECOND_ARG_LABEL),
+        |mut target, fill, span| {
+            let updated = build_str_fill(iter::repeat_n(fill, span.len()), &target, span);
+            target.replace_range(.., &updated);
+        },
     )
 }
 
@@ -760,12 +778,13 @@ fn load_vec(env: &Frame) {
     super::bind_intrinsic(env, "vector-copy", 1..3, vector_copy);
     super::bind_intrinsic(env, "vector-copy!", 3..5, vector_copy_inline);
     super::bind_intrinsic(env, "vector-append", 0..MAX_ARITY, vector_append);
+    super::bind_intrinsic(env, "vector-fill!", 2..4, vector_fill);
 }
 
 predicate!(is_vector, Value::Vector(_) | Value::VectorMut(_));
 
 fn make_vector(args: &[Value], _env: &Frame) -> EvalResult {
-    coll_fill(
+    coll_make(
         args,
         Value::Unspecified,
         |v| Ok(v.clone()),
@@ -848,6 +867,24 @@ fn vector_append(args: &[Value], _env: &Frame) -> EvalResult {
         Value::as_refvec,
         TypeName::VECTOR,
         |vecs: &[VecRef]| Value::vector_mut(vecs.iter().flat_map(VecRef::as_ref).cloned()),
+    )
+}
+
+fn vector_fill(args: &[Value], _env: &Frame) -> EvalResult {
+    coll_fill(
+        first(args),
+        super::second(args),
+        args.get(2),
+        args.get(3),
+        TypeName::VECTOR,
+        Value::as_refvec,
+        Value::as_mutrefvec,
+        |v| Ok(v.clone()),
+        |mut target, fill, span| {
+            for i in span {
+                target[i] = fill.clone();
+            }
+        },
     )
 }
 
@@ -947,10 +984,21 @@ fn strs_predicate(args: &[Value], pred: impl Fn(&str, &str) -> bool) -> EvalResu
     Ok(Value::Boolean(result?.0))
 }
 
-fn build_str_update(from: &str, target: &str, at: usize, span: Range<usize>) -> String {
-    let replace = from.chars().skip(span.start).take(span.len());
-    let start = target.chars().take(at);
-    let rest = target.chars().skip(at + span.len());
+fn build_str_copy(from: &str, target: &str, at: usize, span: Range<usize>) -> String {
+    build_str_fill(
+        from.chars().skip(span.start).take(span.len()),
+        target,
+        at..(at + span.len()),
+    )
+}
+
+fn build_str_fill(
+    replace: impl IntoIterator<Item = char>,
+    target: &str,
+    skip: Range<usize>,
+) -> String {
+    let start = target.chars().take(skip.start);
+    let rest = target.chars().skip(skip.end);
     start.chain(replace).chain(rest).collect::<String>()
 }
 
@@ -985,7 +1033,7 @@ fn coll_new<T>(
     ))
 }
 
-fn coll_fill<T: Clone>(
+fn coll_make<T: Clone>(
     args: &[Value],
     default: T,
     map: impl FnOnce(&Value) -> Result<T, Exception>,
@@ -1137,6 +1185,37 @@ fn coll_append<T: ?Sized, M: AsRef<T>>(
         })
         .collect::<Result<Vec<_>, _>>()?;
     Ok(copy(&coll_refs))
+}
+
+fn coll_fill<'a, T: ?Sized + 'a, M: AsRef<T> + 'a, U>(
+    arg: &'a Value,
+    fill: &Value,
+    start: Option<&Value>,
+    end: Option<&Value>,
+    expected_type: impl Display,
+    collref: impl FnOnce(&Value) -> Option<CollRef<'_, T, M>>,
+    mutcollref: impl FnOnce(&Value) -> Option<RefMut<'_, M>>,
+    try_item: impl FnOnce(&Value) -> Result<U, Exception>,
+    op: impl FnOnce(RefMut<'_, M>, U, Range<usize>),
+) -> EvalResult
+where
+    CollRef<'a, T, M>: CollSized,
+{
+    let clen = collref(arg)
+        .ok_or_else(|| invalid_target(expected_type, arg))?
+        .len();
+    let fill = try_item(fill)?;
+    let span = try_coll_span(start, end, clen)?;
+    if span.is_empty() {
+        return Ok(Value::Unspecified);
+    }
+    mutcollref(arg).map_or_else(
+        || Err(Condition::literal_mut_error(arg).into()),
+        |target| {
+            op(target, fill, span);
+            Ok(Value::Unspecified)
+        },
+    )
 }
 
 fn try_coll_span(

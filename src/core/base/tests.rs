@@ -2234,3 +2234,65 @@ fn vector_copy_into_head_overlap() {
     assert_eq!(args[0].to_string(), "#(1 2 1 2 \"foo\")");
     assert!(args[0].is(&args[2]));
 }
+
+#[test]
+fn string_fill_all() {
+    let args = [Value::string_mut("foobar"), Value::Character('x')];
+    let env = TestEnv::default();
+
+    let r = string_fill(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert_eq!(v, Value::Unspecified);
+    assert_eq!(args[0].to_string(), "\"xxxxxx\"");
+}
+
+#[test]
+fn string_fill_to_end() {
+    let args = [
+        Value::string_mut("foobar"),
+        Value::Character('x'),
+        Value::Number(Number::real(2)),
+    ];
+    let env = TestEnv::default();
+
+    let r = string_fill(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert_eq!(v, Value::Unspecified);
+    assert_eq!(args[0].to_string(), "\"foxxxx\"");
+}
+
+#[test]
+fn string_fill_partial() {
+    let args = [
+        Value::string_mut("foobar"),
+        Value::Character('x'),
+        Value::Number(Number::real(2)),
+        Value::Number(Number::real(5)),
+    ];
+    let env = TestEnv::default();
+
+    let r = string_fill(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert_eq!(v, Value::Unspecified);
+    assert_eq!(args[0].to_string(), "\"foxxxr\"");
+}
+
+#[test]
+fn string_fill_none() {
+    let args = [
+        Value::string_mut("foobar"),
+        Value::Character('x'),
+        Value::Number(Number::real(0)),
+        Value::Number(Number::real(0)),
+    ];
+    let env = TestEnv::default();
+
+    let r = string_fill(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert_eq!(v, Value::Unspecified);
+    assert_eq!(args[0].to_string(), "\"foobar\"");
+}
