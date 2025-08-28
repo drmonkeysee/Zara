@@ -184,51 +184,24 @@ fn bytevector_copy(args: &[Value], _env: &Frame) -> EvalResult {
 }
 
 fn bytevector_copy_inline(args: &[Value], _env: &Frame) -> EvalResult {
-    let to = first(args);
-    let tolen = to
-        .as_refbv()
-        .ok_or_else(|| invalid_target(TypeName::BYTEVECTOR, to))?
-        .len();
-    let at = super::second(args);
-    let atidx = try_val_to_index(&at, SECOND_ARG_LABEL)?;
-    if tolen < atidx {
-        return Err(Condition::value_error("target index out of range", &at).into());
-    }
-    let from = super::third(args);
-    let source = from.as_refbv().ok_or_else(|| {
-        Exception::from(Condition::arg_error(
-            THIRD_ARG_LABEL,
-            TypeName::BYTEVECTOR,
-            from,
-        ))
-    })?;
-    let span = try_coll_span(args.get(3), args.get(4), source.len())?;
-    if tolen - atidx < span.len() {
-        return Err(Condition::bi_value_error(
-            "source span too large for target range",
-            &Value::cons(
-                Value::Number(Number::from_usize(span.start)),
-                Value::Number(Number::from_usize(span.end)),
-            ),
-            &Value::cons(
-                Value::Number(Number::from_usize(atidx)),
-                Value::Number(Number::from_usize(tolen)),
-            ),
-        )
-        .into());
-    }
-    if let Value::ByteVectorMut(target) = to {
-        if to.is(&from) {
-            mem::drop(source);
-            target.borrow_mut().copy_within(span, atidx);
-        } else {
-            target.borrow_mut()[atidx..(atidx + span.len())]
-                .copy_from_slice(&source.as_ref()[span]);
-        }
-        Ok(Value::Unspecified)
-    } else {
-        Err(Condition::literal_mut_error(to).into())
-    }
+    coll_copy_inline(
+        first(args),
+        super::second(args),
+        super::third(args),
+        args.get(3),
+        args.get(4),
+        TypeName::BYTEVECTOR,
+        Value::as_refbv,
+        Value::as_mutrefbv,
+        |to, from, mut target, atidx, span| {
+            if to.is(&from) {
+                target.copy_within(span, atidx);
+            } else {
+                let src = from.as_refbv().expect("expected bytevector argument");
+                target[atidx..(atidx + span.len())].copy_from_slice(&src.as_ref()[span]);
+            }
+        },
+    )
 }
 
 fn bytevector_append(args: &[Value], _env: &Frame) -> EvalResult {
@@ -704,53 +677,29 @@ fn string_copy(args: &[Value], _env: &Frame) -> EvalResult {
 }
 
 fn string_copy_inline(args: &[Value], _env: &Frame) -> EvalResult {
-    let to = first(args);
-    let tolen = to
-        .as_refstr()
-        .ok_or_else(|| invalid_target(TypeName::STRING, to))?
-        .len();
-    let at = super::second(args);
-    let atidx = try_val_to_index(&at, SECOND_ARG_LABEL)?;
-    if tolen < atidx {
-        return Err(Condition::value_error("target index out of range", &at).into());
-    }
-    let from = super::third(args);
-    let source = from.as_refstr().ok_or_else(|| {
-        Exception::from(Condition::arg_error(
-            THIRD_ARG_LABEL,
-            TypeName::STRING,
-            from,
-        ))
-    })?;
-    let span = try_coll_span(args.get(3), args.get(4), source.len())?;
-    if tolen - atidx < span.len() {
-        return Err(Condition::bi_value_error(
-            "source span too large for target range",
-            &Value::cons(
-                Value::Number(Number::from_usize(span.start)),
-                Value::Number(Number::from_usize(span.end)),
-            ),
-            &Value::cons(
-                Value::Number(Number::from_usize(atidx)),
-                Value::Number(Number::from_usize(tolen)),
-            ),
-        )
-        .into());
-    }
-    if let Value::StringMut(target) = to {
-        let updated = {
-            let replace = source.as_ref().chars().skip(span.start).take(span.len());
-            let trg = target.borrow();
-            let start = trg.chars().take(atidx);
-            let rest = trg.chars().skip(atidx + span.len());
-            start.chain(replace).chain(rest).collect::<String>()
-        };
-        mem::drop(source);
-        target.borrow_mut().replace_range(.., &updated);
-        Ok(Value::Unspecified)
-    } else {
-        Err(Condition::literal_mut_error(to).into())
-    }
+    coll_copy_inline(
+        first(args),
+        super::second(args),
+        super::third(args),
+        args.get(3),
+        args.get(4),
+        TypeName::STRING,
+        Value::as_refstr,
+        Value::as_mutrefstr,
+        |to, from, mut target, atidx, span| {
+            let updated = build_str_update(
+                if to.is(&from) {
+                    InlineStrSrc::Str(&target)
+                } else {
+                    InlineStrSrc::Ref(from.as_refstr().expect("expected string argument"))
+                },
+                &target,
+                atidx,
+                span,
+            );
+            target.replace_range(.., &updated);
+        },
+    )
 }
 
 fn string_append(args: &[Value], _env: &Frame) -> EvalResult {
@@ -971,6 +920,27 @@ fn strs_predicate(args: &[Value], pred: impl Fn(&str, &str) -> bool) -> EvalResu
     Ok(Value::Boolean(result?.0))
 }
 
+enum InlineStrSrc<'a> {
+    Ref(StrRef<'a>),
+    Str(&'a str),
+}
+
+impl AsRef<str> for InlineStrSrc<'_> {
+    fn as_ref(&self) -> &str {
+        match self {
+            Self::Ref(r) => r.as_ref(),
+            Self::Str(s) => s,
+        }
+    }
+}
+
+fn build_str_update(from: InlineStrSrc, target: &str, at: usize, span: Range<usize>) -> String {
+    let replace = from.as_ref().chars().skip(span.start).take(span.len());
+    let start = target.chars().take(at);
+    let rest = target.chars().skip(at + span.len());
+    start.chain(replace).chain(rest).collect::<String>()
+}
+
 fn try_sub_list<'a>(lst: &'a Value, idx: usize, k: &Value) -> Result<&'a Value, Exception> {
     if idx == 0 {
         Ok(lst)
@@ -1037,12 +1007,12 @@ fn coll_get<T: ?Sized, M: AsRef<T>, U>(
 
 fn coll_set<'a, T: ?Sized + 'a, M: AsRef<T> + 'a, U>(
     arg: &'a Value,
-    k: &'a Value,
-    val: &'a Value,
+    k: &Value,
+    val: &Value,
     expected_type: impl Display,
     collref: impl Fn(&'a Value) -> Option<CollRef<'a, T, M>>,
     mutcollref: impl Fn(&'a Value) -> Option<RefMut<'a, M>>,
-    try_item: impl FnOnce(&'a Value) -> Result<U, Exception>,
+    try_item: impl FnOnce(&Value) -> Result<U, Exception>,
     set: impl FnOnce(RefMut<'a, M>, usize, U),
 ) -> EvalResult
 where
@@ -1068,8 +1038,8 @@ where
 
 fn coll_copy<'a, T: ?Sized + 'a, M: AsRef<T> + 'a>(
     arg: &'a Value,
-    start: Option<&'a Value>,
-    end: Option<&'a Value>,
+    start: Option<&Value>,
+    end: Option<&Value>,
     expected_type: impl Display,
     collref: impl FnOnce(&'a Value) -> Option<CollRef<'a, T, M>>,
     copy: impl FnOnce(&T, Range<usize>) -> Value,
@@ -1079,6 +1049,55 @@ where
 {
     let coll = collref(arg).ok_or_else(|| invalid_target(expected_type, arg))?;
     Ok(copy(coll.as_ref(), try_coll_span(start, end, coll.len())?))
+}
+
+fn coll_copy_inline<'a, T: ?Sized + 'a, M: AsRef<T> + 'a>(
+    to: &'a Value,
+    at: &Value,
+    from: &'a Value,
+    start: Option<&Value>,
+    end: Option<&Value>,
+    expected_type: impl Display + Clone,
+    collref: impl Fn(&'a Value) -> Option<CollRef<'a, T, M>>,
+    mutcollref: impl Fn(&'a Value) -> Option<RefMut<'a, M>>,
+    copy: impl FnOnce(&'a Value, &'a Value, RefMut<'a, M>, usize, Range<usize>),
+) -> EvalResult
+where
+    CollRef<'a, T, M>: CollSized,
+{
+    let tolen = collref(to)
+        .ok_or_else(|| invalid_target(expected_type.clone(), to))?
+        .len();
+    let atidx = try_val_to_index(&at, SECOND_ARG_LABEL)?;
+    if tolen < atidx {
+        return Err(Condition::value_error("target index out of range", &at).into());
+    }
+    let source = collref(from).ok_or_else(|| {
+        Exception::from(Condition::arg_error(THIRD_ARG_LABEL, expected_type, from))
+    })?;
+    let span = try_coll_span(start, end, source.len())?;
+    if tolen - atidx < span.len() {
+        return Err(Condition::bi_value_error(
+            "source span too large for target range",
+            &Value::cons(
+                Value::Number(Number::from_usize(span.start)),
+                Value::Number(Number::from_usize(span.end)),
+            ),
+            &Value::cons(
+                Value::Number(Number::from_usize(atidx)),
+                Value::Number(Number::from_usize(tolen)),
+            ),
+        )
+        .into());
+    }
+    mem::drop(source);
+    mutcollref(to).map_or_else(
+        || Err(Condition::literal_mut_error(to).into()),
+        |target| {
+            copy(to, from, target, atidx, span);
+            Ok(Value::Unspecified)
+        },
+    )
 }
 
 fn coll_append<T: ?Sized, M: AsRef<T>>(
