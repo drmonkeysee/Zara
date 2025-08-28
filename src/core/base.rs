@@ -687,16 +687,16 @@ fn string_copy_inline(args: &[Value], _env: &Frame) -> EvalResult {
         Value::as_refstr,
         Value::as_mutrefstr,
         |to, from, mut target, atidx, span| {
-            let updated = build_str_update(
-                if to.is(&from) {
-                    InlineStrSrc::Str(&target)
-                } else {
-                    InlineStrSrc::Ref(from.as_refstr().expect("expected string argument"))
-                },
-                &target,
-                atidx,
-                span,
-            );
+            let updated = if to.is(&from) {
+                build_str_update(&target, &target, atidx, span)
+            } else {
+                build_str_update(
+                    from.as_refstr().expect("expected string argument").as_ref(),
+                    &target,
+                    atidx,
+                    span,
+                )
+            };
             target.replace_range(.., &updated);
         },
     )
@@ -943,22 +943,8 @@ fn strs_predicate(args: &[Value], pred: impl Fn(&str, &str) -> bool) -> EvalResu
     Ok(Value::Boolean(result?.0))
 }
 
-enum InlineStrSrc<'a> {
-    Ref(StrRef<'a>),
-    Str(&'a str),
-}
-
-impl AsRef<str> for InlineStrSrc<'_> {
-    fn as_ref(&self) -> &str {
-        match self {
-            Self::Ref(r) => r.as_ref(),
-            Self::Str(s) => s,
-        }
-    }
-}
-
-fn build_str_update(from: InlineStrSrc, target: &str, at: usize, span: Range<usize>) -> String {
-    let replace = from.as_ref().chars().skip(span.start).take(span.len());
+fn build_str_update(from: &str, target: &str, at: usize, span: Range<usize>) -> String {
+    let replace = from.chars().skip(span.start).take(span.len());
     let start = target.chars().take(at);
     let rest = target.chars().skip(at + span.len());
     start.chain(replace).chain(rest).collect::<String>()
