@@ -663,7 +663,12 @@ fn string_set(args: &[Value], _env: &Frame) -> EvalResult {
         Value::as_refstr,
         Value::as_mutrefstr,
         |v| try_val_to_char(v, THIRD_ARG_LABEL),
-        replace_str_char,
+        |mut s, idx, ch| {
+            let mut chars = s.chars().collect::<Vec<_>>();
+            let c = chars.get_mut(idx).expect("expected valid index");
+            *c = ch;
+            s.replace_range(.., &chars.into_iter().collect::<String>());
+        },
     )
 }
 
@@ -947,13 +952,6 @@ fn try_val_to_char(arg: &Value, lbl: impl Display) -> Result<char, Exception> {
     } else {
         Err(Condition::arg_error(lbl, TypeName::CHAR, arg).into())
     }
-}
-
-fn replace_str_char(mut s: RefMut<'_, String>, idx: usize, ch: char) {
-    let mut chars = s.chars().collect::<Vec<_>>();
-    let c = chars.get_mut(idx).expect("expected valid index");
-    *c = ch;
-    s.replace_range(.., &chars.into_iter().collect::<String>());
 }
 
 fn strs_predicate(args: &[Value], pred: impl Fn(&str, &str) -> bool) -> EvalResult {
