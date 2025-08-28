@@ -1651,6 +1651,24 @@ fn bytevector_copy_at_length_ok_if_span_is_empty() {
 }
 
 #[test]
+fn bytevector_copy_accepts_immutable_if_span_is_empty() {
+    let args = [
+        Value::ByteVector([1, 2, 3, 4, 5].into()),
+        Value::Number(Number::real(2)),
+        Value::ByteVector([6, 7, 8, 9, 10].into()),
+        Value::Number(Number::real(0)),
+        Value::Number(Number::real(0)),
+    ];
+    let env = TestEnv::default();
+
+    let r = bytevector_copy_inline(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert_eq!(v, Value::Unspecified);
+    assert_eq!(args[0].to_string(), "#u8(1 2 3 4 5)");
+}
+
+#[test]
 fn bytevector_copy_at_length_err_if_span_is_not_empty() {
     let args = [
         Value::bytevector_mut([1, 2, 3, 4, 5]),
