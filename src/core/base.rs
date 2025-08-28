@@ -131,13 +131,17 @@ fn make_bytevector(args: &[Value], _env: &Frame) -> EvalResult {
     coll_fill(
         args,
         u8::MIN,
-        |v| val_to_byte(v, SECOND_ARG_LABEL),
+        |v| try_val_to_byte(v, SECOND_ARG_LABEL),
         Value::bytevector_mut,
     )
 }
 
 fn bytevector(args: &[Value], _env: &Frame) -> EvalResult {
-    coll_new(args, |(idx, v)| val_to_byte(v, idx), Value::bytevector_mut)
+    coll_new(
+        args,
+        |(idx, v)| try_val_to_byte(v, idx),
+        Value::bytevector_mut,
+    )
 }
 
 fn bytevector_length(args: &[Value], _env: &Frame) -> EvalResult {
@@ -163,7 +167,7 @@ fn bytevector_set(args: &[Value], _env: &Frame) -> EvalResult {
         TypeName::VECTOR,
         Value::as_refbv,
         Value::as_mutrefbv,
-        |v| val_to_byte(v, THIRD_ARG_LABEL),
+        |v| try_val_to_byte(v, THIRD_ARG_LABEL),
         |mut v, idx, item| v[idx] = item,
     )
 }
@@ -186,7 +190,7 @@ fn bytevector_copy_inline(args: &[Value], _env: &Frame) -> EvalResult {
         .ok_or_else(|| invalid_target(TypeName::BYTEVECTOR, to))?
         .len();
     let at = super::second(args);
-    let atidx = val_to_index(&at, SECOND_ARG_LABEL)?;
+    let atidx = try_val_to_index(&at, SECOND_ARG_LABEL)?;
     if tolen < atidx {
         return Err(Condition::value_error("target index out of range", &at).into());
     }
@@ -198,7 +202,7 @@ fn bytevector_copy_inline(args: &[Value], _env: &Frame) -> EvalResult {
             from,
         ))
     })?;
-    let span = coll_span(args.get(3), args.get(4), source.len())?;
+    let span = try_coll_span(args.get(3), args.get(4), source.len())?;
     if tolen - atidx < span.len() {
         return Err(Condition::bi_value_error(
             "source span too large for target range",
@@ -242,7 +246,7 @@ fn bytevector_to_str(args: &[Value], _env: &Frame) -> EvalResult {
         .as_refbv()
         .ok_or_else(|| invalid_target(TypeName::BYTEVECTOR, arg))?;
     let clen = bv.len();
-    let span = coll_span(args.get(1), args.get(2), clen)?;
+    let span = try_coll_span(args.get(1), args.get(2), clen)?;
     String::from_utf8(bv.as_ref()[span].to_vec()).map_or_else(
         |e| {
             let err = e.utf8_error();
@@ -267,7 +271,7 @@ fn bytevector_from_str(args: &[Value], _env: &Frame) -> EvalResult {
     let s = arg
         .as_refstr()
         .ok_or_else(|| invalid_target(TypeName::STRING, arg))?;
-    let span = coll_span(args.get(1), args.get(2), s.len())?;
+    let span = try_coll_span(args.get(1), args.get(2), s.len())?;
     // TODO: experimental
     // https://doc.rust-lang.org/std/primitive.char.html#associatedconstant.MAX_LEN_UTF8
     let mut buf = [0u8; 4];
@@ -567,12 +571,12 @@ fn list_length(args: &[Value], _env: &Frame) -> EvalResult {
 
 fn list_tail(args: &[Value], _env: &Frame) -> EvalResult {
     let k = super::second(args);
-    sub_list(first(args), val_to_index(k, SECOND_ARG_LABEL)?, k).cloned()
+    try_sub_list(first(args), try_val_to_index(k, SECOND_ARG_LABEL)?, k).cloned()
 }
 
 fn list_get(args: &[Value], _env: &Frame) -> EvalResult {
     let k = super::second(args);
-    let subl = sub_list(first(args), val_to_index(k, SECOND_ARG_LABEL)?, k)?;
+    let subl = try_sub_list(first(args), try_val_to_index(k, SECOND_ARG_LABEL)?, k)?;
     if let Value::Pair(None) = subl {
         Err(Condition::index_error(k).into())
     } else {
@@ -622,7 +626,7 @@ fn make_string(args: &[Value], _env: &Frame) -> EvalResult {
     coll_fill(
         args,
         char::MIN,
-        |v| val_to_char(v, SECOND_ARG_LABEL),
+        |v| try_val_to_char(v, SECOND_ARG_LABEL),
         Value::strmut_from_chars,
     )
 }
@@ -630,7 +634,7 @@ fn make_string(args: &[Value], _env: &Frame) -> EvalResult {
 fn string(args: &[Value], _env: &Frame) -> EvalResult {
     coll_new(
         args,
-        |(idx, v)| val_to_char(v, idx),
+        |(idx, v)| try_val_to_char(v, idx),
         Value::strmut_from_chars,
     )
 }
@@ -658,7 +662,7 @@ fn string_set(args: &[Value], _env: &Frame) -> EvalResult {
         TypeName::VECTOR,
         Value::as_refstr,
         Value::as_mutrefstr,
-        |v| val_to_char(v, THIRD_ARG_LABEL),
+        |v| try_val_to_char(v, THIRD_ARG_LABEL),
         replace_str_char,
     )
 }
@@ -701,7 +705,7 @@ fn string_copy_inline(args: &[Value], _env: &Frame) -> EvalResult {
         .ok_or_else(|| invalid_target(TypeName::STRING, to))?
         .len();
     let at = super::second(args);
-    let atidx = val_to_index(&at, SECOND_ARG_LABEL)?;
+    let atidx = try_val_to_index(&at, SECOND_ARG_LABEL)?;
     if tolen < atidx {
         return Err(Condition::value_error("target index out of range", &at).into());
     }
@@ -713,7 +717,7 @@ fn string_copy_inline(args: &[Value], _env: &Frame) -> EvalResult {
             from,
         ))
     })?;
-    let span = coll_span(args.get(3), args.get(4), source.len())?;
+    let span = try_coll_span(args.get(3), args.get(4), source.len())?;
     if tolen - atidx < span.len() {
         return Err(Condition::bi_value_error(
             "source span too large for target range",
@@ -871,11 +875,15 @@ fn vector_append(args: &[Value], _env: &Frame) -> EvalResult {
 //
 
 num_convert!(
-    val_to_index,
+    try_val_to_index,
     usize,
     NumericError::UsizeConversionInvalidRange
 );
-num_convert!(val_to_byte, u8, NumericError::ByteConversionInvalidRange);
+num_convert!(
+    try_val_to_byte,
+    u8,
+    NumericError::ByteConversionInvalidRange
+);
 
 fn try_num_into_char(n: &Number, arg: &Value) -> EvalResult {
     u32::try_from(n).map_or_else(
@@ -933,7 +941,7 @@ fn guarded_real_op(
     }
 }
 
-fn val_to_char(arg: &Value, lbl: impl Display) -> Result<char, Exception> {
+fn try_val_to_char(arg: &Value, lbl: impl Display) -> Result<char, Exception> {
     if let Value::Character(c) = arg {
         Ok(*c)
     } else {
@@ -965,11 +973,11 @@ fn strs_predicate(args: &[Value], pred: impl Fn(&str, &str) -> bool) -> EvalResu
     Ok(Value::Boolean(result?.0))
 }
 
-fn sub_list<'a>(lst: &'a Value, idx: usize, k: &Value) -> Result<&'a Value, Exception> {
+fn try_sub_list<'a>(lst: &'a Value, idx: usize, k: &Value) -> Result<&'a Value, Exception> {
     if idx == 0 {
         Ok(lst)
     } else if let Value::Pair(Some(p)) = lst {
-        sub_list(&p.cdr, idx - 1, k)
+        try_sub_list(&p.cdr, idx - 1, k)
     } else if let Value::Pair(None) = lst {
         Err(Condition::index_error(k).into())
     } else {
@@ -998,7 +1006,7 @@ fn coll_fill<T: Clone>(
 ) -> EvalResult {
     Ok(ctor(iter::repeat_n(
         args.get(1).map_or(Ok(default), map)?,
-        val_to_index(first(args), FIRST_ARG_LABEL)?,
+        try_val_to_index(first(args), FIRST_ARG_LABEL)?,
     )))
 }
 
@@ -1023,7 +1031,7 @@ fn coll_get<T: ?Sized, M: AsRef<T>, U>(
     map: impl FnOnce(U) -> Value,
 ) -> EvalResult {
     let c = collref(arg).ok_or_else(|| invalid_target(expected_type, arg))?;
-    get(c.as_ref(), val_to_index(k, SECOND_ARG_LABEL)?).map_or_else(
+    get(c.as_ref(), try_val_to_index(k, SECOND_ARG_LABEL)?).map_or_else(
         || Err(Condition::index_error(k).into()),
         |item| Ok(map(item)),
     )
@@ -1036,7 +1044,7 @@ fn coll_set<'a, T: ?Sized + 'a, M: AsRef<T> + 'a, U>(
     expected_type: impl Display,
     collref: impl Fn(&'a Value) -> Option<CollRef<'a, T, M>>,
     mutcollref: impl Fn(&'a Value) -> Option<RefMut<'a, M>>,
-    toitem: impl FnOnce(&'a Value) -> Result<U, Exception>,
+    try_item: impl FnOnce(&'a Value) -> Result<U, Exception>,
     set: impl FnOnce(RefMut<'a, M>, usize, U),
 ) -> EvalResult
 where
@@ -1048,9 +1056,9 @@ where
     mutcollref(arg).map_or_else(
         || Err(Condition::literal_mut_error(arg).into()),
         |c| {
-            let idx = val_to_index(k, SECOND_ARG_LABEL)?;
+            let idx = try_val_to_index(k, SECOND_ARG_LABEL)?;
             if idx < clen {
-                let item = toitem(val)?;
+                let item = try_item(val)?;
                 set(c, idx, item);
                 Ok(Value::Unspecified)
             } else {
@@ -1072,7 +1080,7 @@ where
     CollRef<'a, T, M>: CollSized,
 {
     let coll = collref(arg).ok_or_else(|| invalid_target(expected_type, arg))?;
-    Ok(copy(coll.as_ref(), coll_span(start, end, coll.len())?))
+    Ok(copy(coll.as_ref(), try_coll_span(start, end, coll.len())?))
 }
 
 fn coll_append<T: ?Sized, M: AsRef<T>>(
@@ -1092,13 +1100,13 @@ fn coll_append<T: ?Sized, M: AsRef<T>>(
     Ok(copy(&coll_refs))
 }
 
-fn coll_span(
+fn try_coll_span(
     start: Option<&Value>,
     end: Option<&Value>,
     clen: usize,
 ) -> Result<Range<usize>, Exception> {
-    let sidx = start.map_or(Ok(usize::MIN), |v| val_to_index(v, SECOND_ARG_LABEL))?;
-    let eidx = end.map_or(Ok(clen), |v| val_to_index(v, THIRD_ARG_LABEL))?;
+    let sidx = start.map_or(Ok(usize::MIN), |v| try_val_to_index(v, SECOND_ARG_LABEL))?;
+    let eidx = end.map_or(Ok(clen), |v| try_val_to_index(v, THIRD_ARG_LABEL))?;
     if clen < eidx {
         Err(Condition::index_error(end.unwrap()).into())
     } else if eidx < sidx {
