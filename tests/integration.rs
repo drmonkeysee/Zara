@@ -127,27 +127,26 @@ fn closure_per_eval() {
 }
 
 #[test]
-#[ignore = "addition not yet implemented"]
 fn closure_writes_per_eval() {
     let mut t = TestRunner::new();
 
     t.run_for_val(concat!(
-        "(define (capture x) (lambda () (set! x (+ x 1)) x))",
-        "(define one (capture 1))",
-        "(define ten (capture 10))"
+        "(define (capture s) (lambda () (set! s (string-append s s)) s))",
+        "(define a (capture \"a\"))",
+        "(define xy (capture \"xy\"))"
     ));
 
-    let v = t.run_for_val(concat!("(one)", "(one)"));
-    assert_eq!(v.to_string(), "3");
+    let v = t.run_for_val(concat!("(a)", "(a)"));
+    assert_eq!(v.to_string(), "\"aaaa\"");
 
-    let v = t.run_for_val(concat!("(ten)", "(ten)"));
-    assert_eq!(v.to_string(), "12");
+    let v = t.run_for_val(concat!("(xy)", "(xy)"));
+    assert_eq!(v.to_string(), "\"xyxyxyxy\"");
 
-    let v = t.run_for_val("(one)");
-    assert_eq!(v.to_string(), "4");
+    let v = t.run_for_val("(a)");
+    assert_eq!(v.to_string(), "\"aaaaaaaa\"");
 
-    let v = t.run_for_val("(ten)");
-    assert_eq!(v.to_string(), "13");
+    let v = t.run_for_val("(xy)");
+    assert_eq!(v.to_string(), "\"xyxyxyxyxyxyxyxy\"");
 }
 
 #[test]
