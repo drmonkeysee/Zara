@@ -13,4 +13,4 @@ panic = "abort"
 strip = true
 
 [dependencies]
-rustyline = "16.0.0"
+rustyline = "17.0.1"
