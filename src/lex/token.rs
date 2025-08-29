@@ -153,6 +153,8 @@ pub(super) enum TokenErrorKind {
     DirectiveExpected,
     DirectiveInvalid,
     ExactnessExpected { at: usize },
+    HashInvalid,
+    HashUnterminated,
     IdentifierEscapeInvalid { at: usize, ch: char },
     IdentifierExpectedHex { at: usize },
     IdentifierInvalid(char),
@@ -178,8 +180,6 @@ pub(super) enum TokenErrorKind {
     StringInvalidHex { at: usize },
     StringUnterminated,
     StringUnterminatedHex { at: usize },
-    HashInvalid,
-    HashUnterminated,
 }
 
 impl TokenErrorKind {
