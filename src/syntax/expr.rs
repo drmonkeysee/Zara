@@ -4,7 +4,7 @@ mod tests;
 use crate::{
     Exception,
     eval::{EvalResult, Frame, InvalidFormal, Lambda, Operator, Procedure},
-    lex::TokenKind,
+    lex::{TokenKind, UNTERMINATED_BLOCK_COMMENT, UNTERMINATED_IDENTIFIER, UNTERMINATED_STRING},
     number::NumericError,
     string::Symbol,
     txt::{LineNumber, TextLine, TxtSpan},
@@ -219,8 +219,7 @@ impl Display for ExpressionErrorKind {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
             Self::BlockCommentInvalid(t) => format_unexpected_token("comment block", t, f),
-            // TODO: can i share tokenerrorkind display here
-            Self::BlockCommentUnterminated => f.write_str("unterminated block comment"),
+            Self::BlockCommentUnterminated => f.write_str(UNTERMINATED_BLOCK_COMMENT),
             Self::ByteVectorInvalidItem(k) => {
                 write!(f, "expected byte literal, got: {}", k.as_typename())
             }
@@ -234,7 +233,7 @@ impl Display for ExpressionErrorKind {
             }
             Self::DefineNotAllowed => f.write_str("define not allowed in this context"),
             Self::IdentifierInvalid(t) => format_unexpected_token("verbatim identifier", t, f),
-            Self::IdentifierUnterminated => f.write_str("unterminated verbatim identifier"),
+            Self::IdentifierUnterminated => f.write_str(UNTERMINATED_IDENTIFIER),
             Self::IfInvalid => format_invalid_form("(if <test> <consequent> [alternate])", f),
             Self::LambdaInvalid => format_invalid_form("(lambda <formals> <body>)", f),
             Self::LambdaInvalidFormal(err) => err.fmt(f),
@@ -248,7 +247,7 @@ impl Display for ExpressionErrorKind {
             Self::SeqInvalid(t) => format_unexpected_token("sequence", t, f),
             Self::SetInvalid => format_invalid_form("(set! <variable> <expression>)", f),
             Self::StrInvalid(t) => format_unexpected_token("string", t, f),
-            Self::StrUnterminated => f.write_str("unterminated string literal"),
+            Self::StrUnterminated => f.write_str(UNTERMINATED_STRING),
             Self::Unimplemented(t) => write!(f, "{t} parsing not yet implemented"),
             Self::VectorInvalidItem(k) => {
                 write!(f, "unexpected vector item type: {}", k.as_typename())

@@ -3,7 +3,9 @@ mod tests;
 mod token;
 mod tokenize;
 
-pub(crate) use self::token::{Token, TokenKind};
+pub(crate) use self::token::{
+    Token, TokenKind, UNTERMINATED_BLOCK_COMMENT, UNTERMINATED_IDENTIFIER, UNTERMINATED_STRING,
+};
 use self::{
     token::{TokenContinuation, TokenError},
     tokenize::TokenStream,

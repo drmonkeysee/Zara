@@ -7,6 +7,10 @@ use crate::{
 };
 use std::fmt::{self, Display, Formatter};
 
+pub(crate) const UNTERMINATED_BLOCK_COMMENT: &str = "unterminated block comment";
+pub(crate) const UNTERMINATED_IDENTIFIER: &str = "unterminated verbatim identifier";
+pub(crate) const UNTERMINATED_STRING: &str = "unterminated string literal";
+
 #[derive(Debug)]
 pub(crate) struct TokenType<T> {
     pub(crate) kind: T,
@@ -221,7 +225,7 @@ impl TokenErrorKind {
 impl Display for TokenErrorKind {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
-            Self::BlockCommentUnterminated => f.write_str("unterminated block comment"),
+            Self::BlockCommentUnterminated => f.write_str(UNTERMINATED_BLOCK_COMMENT),
             Self::BooleanExpected(b) => write!(f, "expected boolean literal: {b}"),
             Self::ByteVectorExpected => f.write_str("expected bytevector literal: #u8(…)"),
             Self::CharacterExpected => f.write_str("expected character literal"),
@@ -252,7 +256,7 @@ impl Display for TokenErrorKind {
             Self::IdentifierUnterminatedHex { .. } | Self::StringUnterminatedHex { .. } => {
                 f.write_str("unterminated hex-escape")
             }
-            Self::IdentifierUnterminated => f.write_str("unterminated verbatim identifier"),
+            Self::IdentifierUnterminated => f.write_str(UNTERMINATED_IDENTIFIER),
             Self::ImaginaryInvalid => f.write_str("invalid imaginary literal"),
             Self::ImaginaryMissingSign => f.write_str("missing explicit sign on imaginary number"),
             Self::LabelInvalid => f.write_str("invalid datum label: only digits [0, 9] allowed"),
@@ -272,7 +276,7 @@ impl Display for TokenErrorKind {
             Self::PolarInvalid => f.write_str("invalid polar literal"),
             Self::RadixExpected { .. } => f.write_str("expected radix prefix, one of: #b #o #d #x"),
             Self::RationalInvalid => f.write_str("invalid rational literal"),
-            Self::StringUnterminated => f.write_str("unterminated string literal"),
+            Self::StringUnterminated => f.write_str(UNTERMINATED_STRING),
         }
     }
 }
