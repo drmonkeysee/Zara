@@ -193,8 +193,8 @@ type ExprConvertResult = Result<Option<Expression>, Vec<ExpressionError>>;
 
 #[derive(Debug)]
 enum ParseMode {
+    BlockComment,
     ByteVector(Vec<Expression>),
-    CommentBlock,
     CommentDatum(Option<Expression>),
     Identifier {
         name: String,
@@ -233,8 +233,8 @@ impl ParseMode {
         ns: &Namespace,
     ) -> ParseFlow {
         match self {
+            Self::BlockComment => parse_comment_block(token, txt),
             Self::ByteVector(seq) | Self::Vector(seq) => parse_vector(seq, token, txt, ns),
-            Self::CommentBlock => parse_comment_block(token, txt),
             Self::CommentDatum(inner) | Self::Quote { inner, .. } => {
                 parse_datum(inner, token, txt, node_ctx, ns)
             }
@@ -261,8 +261,8 @@ impl ParseMode {
 
     fn into_continuation_unsupported(self) -> ExpressionErrorKind {
         match self {
+            Self::BlockComment => ExpressionErrorKind::BlockCommentUnterminated,
             Self::ByteVector(_) => ExpressionErrorKind::ByteVectorUnterminated,
-            Self::CommentBlock => ExpressionErrorKind::CommentBlockUnterminated,
             Self::CommentDatum(_) | Self::Quote { .. } => ExpressionErrorKind::DatumExpected,
             Self::Identifier { .. } => ExpressionErrorKind::IdentifierUnterminated,
             Self::List { .. } => ExpressionErrorKind::ListUnterminated,
@@ -273,8 +273,8 @@ impl ParseMode {
 
     fn try_into_expr(self, node_ctx: ExprCtx, ns: &Namespace) -> ExprConvertResult {
         match self {
+            Self::BlockComment => Ok(None),
             Self::ByteVector(seq) => into_bytevector(seq, node_ctx),
-            Self::CommentBlock => Ok(None),
             Self::CommentDatum(inner) => into_comment_datum(inner.as_ref(), node_ctx),
             Self::Identifier { name, quoted } => {
                 Ok(Some(identifier_to_expr(&name, quoted, node_ctx, ns)))
@@ -289,16 +289,16 @@ impl ParseMode {
 
 fn parse_comment_block(token: Token, txt: &Rc<TextLine>) -> ParseFlow {
     match token.kind {
-        TokenKind::CommentBlockFragment { .. } => ParseFlow::Continue(()),
-        TokenKind::CommentBlockEnd => {
+        TokenKind::BlockCommentEnd => {
             ParseFlow::Break(ParseBreak::complete(txt.lineno, token.span.end))
         }
+        TokenKind::BlockCommentFragment { .. } => ParseFlow::Continue(()),
         _ => ParseFlow::Break(ParseBreak::token_failure(
             ExprCtx {
                 span: token.span,
                 txt: Rc::clone(txt),
             }
-            .into_error(ExpressionErrorKind::CommentBlockInvalid(token.kind)),
+            .into_error(ExpressionErrorKind::BlockCommentInvalid(token.kind)),
         )),
     }
 }
@@ -329,6 +329,9 @@ fn parse_datum(
 
 fn parse_expr(token: Token, txt: &Rc<TextLine>, quoted: bool, ns: &Namespace) -> ExprFlow {
     match token.kind {
+        TokenKind::BlockCommentBegin { .. } => {
+            ExprFlow::Break(ParseBreak::new(ParseMode::BlockComment, token.span.start))
+        }
         TokenKind::Boolean(b) => ExprFlow::Continue(Some(
             ExprCtx {
                 span: token.span,
@@ -348,9 +351,6 @@ fn parse_expr(token: Token, txt: &Rc<TextLine>, quoted: bool, ns: &Namespace) ->
             .into_expr(ExpressionKind::Literal(Value::Character(c))),
         )),
         TokenKind::Comment => ExprFlow::Continue(None),
-        TokenKind::CommentBlockBegin { .. } => {
-            ExprFlow::Break(ParseBreak::new(ParseMode::CommentBlock, token.span.start))
-        }
         TokenKind::CommentDatum => ExprFlow::Break(ParseBreak::new(
             ParseMode::CommentDatum(None),
             token.span.start,
@@ -423,8 +423,8 @@ fn parse_expr(token: Token, txt: &Rc<TextLine>, quoted: bool, ns: &Namespace) ->
             token.span.start,
         )),
         // TODO: this should reduce to _ => once Unimplemented is removed
-        TokenKind::CommentBlockFragment { .. }
-        | TokenKind::CommentBlockEnd
+        TokenKind::BlockCommentEnd
+        | TokenKind::BlockCommentFragment { .. }
         | TokenKind::IdentifierDiscard
         | TokenKind::IdentifierEnd(_)
         | TokenKind::IdentifierFragment(_)

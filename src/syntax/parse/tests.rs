@@ -238,7 +238,7 @@ mod expr {
     #[test]
     fn comment_begin() {
         let token = Token {
-            kind: TokenKind::CommentBlockBegin { depth: 0 },
+            kind: TokenKind::BlockCommentBegin { depth: 0 },
             span: 3..6,
         };
         let txt = make_textline().into();
@@ -250,7 +250,7 @@ mod expr {
         assert!(matches!(
             f,
             ExprFlow::Break(ParseBreak::New(ParseNew {
-                mode: ParseMode::CommentBlock,
+                mode: ParseMode::BlockComment,
                 start: 3
             }))
         ));
@@ -1383,7 +1383,7 @@ mod comment {
     #[test]
     fn block_end() {
         let token = Token {
-            kind: TokenKind::CommentBlockEnd,
+            kind: TokenKind::BlockCommentEnd,
             span: 0..4,
         };
         let txt = make_textline().into();
@@ -1399,7 +1399,7 @@ mod comment {
     #[test]
     fn block_fragment() {
         let token = Token {
-            kind: TokenKind::CommentBlockFragment { depth: 0 },
+            kind: TokenKind::BlockCommentFragment { depth: 0 },
             span: 0..4,
         };
         let txt = make_textline().into();
@@ -1412,7 +1412,7 @@ mod comment {
     #[test]
     fn unexpected_new_block() {
         let token = Token {
-            kind: TokenKind::CommentBlockBegin { depth: 1 },
+            kind: TokenKind::BlockCommentBegin { depth: 1 },
             span: 0..4,
         };
         let txt = make_textline().into();
@@ -1424,8 +1424,8 @@ mod comment {
             ParseFlow::Break(ParseBreak::Err {
                 err: ExpressionError {
                     ctx: ExprCtx { span: TxtSpan { start: 0, end: 4 }, txt: line },
-                    kind: ExpressionErrorKind::CommentBlockInvalid(
-                        TokenKind::CommentBlockBegin { .. }
+                    kind: ExpressionErrorKind::BlockCommentInvalid(
+                        TokenKind::BlockCommentBegin { .. }
                     ),
                 },
                 flow: ParseErrFlow::Break(ParseErrBreak::InvalidTokenStream),
@@ -1448,7 +1448,7 @@ mod comment {
             ParseFlow::Break(ParseBreak::Err {
                 err: ExpressionError {
                     ctx: ExprCtx { span: TxtSpan { start: 0, end: 1 }, txt: line },
-                    kind: ExpressionErrorKind::CommentBlockInvalid(TokenKind::ParenLeft),
+                    kind: ExpressionErrorKind::BlockCommentInvalid(TokenKind::ParenLeft),
                 },
                 flow: ParseErrFlow::Break(ParseErrBreak::InvalidTokenStream),
             }) if Rc::ptr_eq(&line, &txt)
@@ -1462,7 +1462,7 @@ mod comment {
                 span: 0..3,
                 txt: make_textline().into(),
             },
-            mode: ParseMode::CommentBlock,
+            mode: ParseMode::BlockComment,
         };
         let env = TestEnv::default();
         let ns = env.new_namespace();
@@ -1907,7 +1907,7 @@ mod program {
 
     #[test]
     fn invalid_node_to_program_error() {
-        let p = ParseNode::new(ParseMode::CommentBlock, 0, make_textline());
+        let p = ParseNode::new(ParseMode::BlockComment, 0, make_textline());
 
         let r: Result<Sequence, InvalidParseError> = p.try_into();
 
@@ -2018,7 +2018,7 @@ mod merge {
                 span: 0..3,
                 txt: Rc::clone(&txt),
             },
-            mode: ParseMode::CommentBlock,
+            mode: ParseMode::BlockComment,
         };
         let other = ExprNode {
             ctx: ExprCtx {
@@ -2527,7 +2527,7 @@ mod nodeutil {
 
     #[test]
     fn comment_block_continuation() {
-        let p = ParseNode::new(ParseMode::CommentBlock, 3, make_textline());
+        let p = ParseNode::new(ParseMode::BlockComment, 3, make_textline());
 
         let o = p.into_continuation_unsupported();
 
@@ -2536,7 +2536,7 @@ mod nodeutil {
             &err,
             ExpressionError {
                 ctx: ExprCtx { span: TxtSpan { start: 3, end: 19 }, txt },
-                kind: ExpressionErrorKind::CommentBlockUnterminated,
+                kind: ExpressionErrorKind::BlockCommentUnterminated,
             } if txt.lineno == 1
         ));
     }

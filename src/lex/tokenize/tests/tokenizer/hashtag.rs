@@ -936,7 +936,7 @@ mod comments {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::CommentBlockBegin { depth: 0 },
+                kind: TokenKind::BlockCommentBegin { depth: 0 },
                 span: TxtSpan { start: 0, end: 28 },
             }
         ));
@@ -958,7 +958,7 @@ mod comments {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::CommentBlockBegin { depth: 0 },
+                kind: TokenKind::BlockCommentBegin { depth: 0 },
                 span: TxtSpan { start: 0, end: 24 },
             }
         ));
@@ -980,7 +980,7 @@ mod comments {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::CommentBlockBegin { depth: 0 },
+                kind: TokenKind::BlockCommentBegin { depth: 0 },
                 span: TxtSpan { start: 0, end: 24 },
             }
         ));
@@ -1002,7 +1002,7 @@ mod comments {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::CommentBlockBegin { depth: 0 },
+                kind: TokenKind::BlockCommentBegin { depth: 0 },
                 span: TxtSpan { start: 0, end: 33 },
             }
         ));
@@ -1024,7 +1024,7 @@ mod comments {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::CommentBlockBegin { depth: 1 },
+                kind: TokenKind::BlockCommentBegin { depth: 1 },
                 span: TxtSpan { start: 0, end: 21 },
             }
         ));
@@ -1046,7 +1046,7 @@ mod comments {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::CommentBlockBegin { depth: 2 },
+                kind: TokenKind::BlockCommentBegin { depth: 2 },
                 span: TxtSpan { start: 0, end: 30 },
             }
         ));
@@ -1068,7 +1068,7 @@ mod comments {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::CommentBlockFragment { depth: 0 },
+                kind: TokenKind::BlockCommentFragment { depth: 0 },
                 span: TxtSpan { start: 0, end: 17 },
             }
         ));
@@ -1090,7 +1090,7 @@ mod comments {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::CommentBlockFragment { depth: 0 },
+                kind: TokenKind::BlockCommentFragment { depth: 0 },
                 span: TxtSpan { start: 0, end: 20 },
             }
         ));
@@ -1112,7 +1112,7 @@ mod comments {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::CommentBlockFragment { depth: 0 },
+                kind: TokenKind::BlockCommentFragment { depth: 0 },
                 span: TxtSpan { start: 0, end: 36 },
             }
         ));
@@ -1134,7 +1134,7 @@ mod comments {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::CommentBlockFragment { depth: 1 },
+                kind: TokenKind::BlockCommentFragment { depth: 1 },
                 span: TxtSpan { start: 0, end: 30 },
             }
         ));
@@ -1156,7 +1156,7 @@ mod comments {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::CommentBlockFragment { depth: 3 },
+                kind: TokenKind::BlockCommentFragment { depth: 3 },
                 span: TxtSpan { start: 0, end: 30 },
             }
         ));
@@ -1178,7 +1178,7 @@ mod comments {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::CommentBlockEnd,
+                kind: TokenKind::BlockCommentEnd,
                 span: TxtSpan { start: 0, end: 14 },
             }
         ));
@@ -1200,7 +1200,7 @@ mod comments {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::CommentBlockEnd,
+                kind: TokenKind::BlockCommentEnd,
                 span: TxtSpan { start: 0, end: 16 },
             }
         ));
@@ -1222,7 +1222,7 @@ mod comments {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::CommentBlockEnd,
+                kind: TokenKind::BlockCommentEnd,
                 span: TxtSpan { start: 0, end: 14 },
             }
         ));
@@ -1244,7 +1244,7 @@ mod comments {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::CommentBlockEnd,
+                kind: TokenKind::BlockCommentEnd,
                 span: TxtSpan { start: 0, end: 27 },
             }
         ));
@@ -1266,7 +1266,7 @@ mod comments {
         assert!(matches!(
             tok,
             Token {
-                kind: TokenKind::CommentBlockEnd,
+                kind: TokenKind::BlockCommentEnd,
                 span: TxtSpan { start: 0, end: 25 },
             }
         ));

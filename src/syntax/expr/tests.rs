@@ -1309,7 +1309,7 @@ mod error {
             span: 0..5,
             txt: make_textline().into(),
         }
-        .into_error(ExpressionErrorKind::CommentBlockInvalid(TokenKind::Comment));
+        .into_error(ExpressionErrorKind::BlockCommentInvalid(TokenKind::Comment));
 
         assert_eq!(
             err.to_string(),
@@ -1323,7 +1323,7 @@ mod error {
             span: 0..5,
             txt: make_textline().into(),
         }
-        .into_error(ExpressionErrorKind::CommentBlockUnterminated);
+        .into_error(ExpressionErrorKind::BlockCommentUnterminated);
 
         assert_eq!(err.to_string(), "unterminated block comment");
     }
@@ -1689,7 +1689,7 @@ mod groupby {
                 span: 7..10,
                 txt: Rc::clone(&txt),
             }
-            .into_error(ExpressionErrorKind::CommentBlockUnterminated),
+            .into_error(ExpressionErrorKind::BlockCommentUnterminated),
         ];
 
         let groups = errs.iter().peekable().groupby_txt().collect::<Vec<_>>();
@@ -1722,7 +1722,7 @@ mod groupby {
                 span: 0..3,
                 txt: Rc::clone(&txt2),
             }
-            .into_error(ExpressionErrorKind::CommentBlockUnterminated),
+            .into_error(ExpressionErrorKind::BlockCommentUnterminated),
         ];
 
         let groups = errs.iter().peekable().groupby_txt().collect::<Vec<_>>();
@@ -1755,7 +1755,7 @@ mod groupby {
                 span: 0..3,
                 txt: Rc::clone(&txt2),
             }
-            .into_error(ExpressionErrorKind::CommentBlockUnterminated),
+            .into_error(ExpressionErrorKind::BlockCommentUnterminated),
             ExprCtx {
                 span: 5..7,
                 txt: Rc::clone(&txt1),

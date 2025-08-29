@@ -345,7 +345,7 @@ mod lexer {
                     span: TxtSpan { start: 0, end: 2 }
                 },
                 TokenType {
-                    kind: TokenKind::CommentBlockBegin { depth: 0 },
+                    kind: TokenKind::BlockCommentBegin { depth: 0 },
                     span: TxtSpan { start: 3, end: 16 }
                 }
             ]
@@ -404,7 +404,7 @@ mod lexer {
         assert!(matches!(
             line.0[..],
             [TokenType {
-                kind: TokenKind::CommentBlockBegin { depth: 0 },
+                kind: TokenKind::BlockCommentBegin { depth: 0 },
                 span: TxtSpan { start: 0, end: 14 }
             }]
         ));
@@ -420,7 +420,7 @@ mod lexer {
         assert!(matches!(
             line.0[..],
             [TokenType {
-                kind: TokenKind::CommentBlockEnd,
+                kind: TokenKind::BlockCommentEnd,
                 span: TxtSpan { start: 0, end: 10 }
             }]
         ));
@@ -449,7 +449,7 @@ mod lexer {
         assert!(matches!(
             line.0[..],
             [TokenType {
-                kind: TokenKind::CommentBlockBegin { depth: 0 },
+                kind: TokenKind::BlockCommentBegin { depth: 0 },
                 span: TxtSpan { start: 0, end: 8 }
             }]
         ));
@@ -465,7 +465,7 @@ mod lexer {
         assert!(matches!(
             line.0[..],
             [TokenType {
-                kind: TokenKind::CommentBlockFragment { depth: 0 },
+                kind: TokenKind::BlockCommentFragment { depth: 0 },
                 span: TxtSpan { start: 0, end: 4 }
             }]
         ));
@@ -481,7 +481,7 @@ mod lexer {
         assert!(matches!(
             line.0[..],
             [TokenType {
-                kind: TokenKind::CommentBlockEnd,
+                kind: TokenKind::BlockCommentEnd,
                 span: TxtSpan { start: 0, end: 10 }
             }]
         ));

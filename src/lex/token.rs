@@ -23,17 +23,17 @@ impl Display for Token {
 
 #[derive(Debug)]
 pub(crate) enum TokenKind {
+    BlockCommentBegin {
+        depth: usize,
+    },
+    BlockCommentEnd,
+    BlockCommentFragment {
+        depth: usize,
+    },
     Boolean(bool),
     ByteVector,
     Character(char),
     Comment,
-    CommentBlockBegin {
-        depth: usize,
-    },
-    CommentBlockEnd,
-    CommentBlockFragment {
-        depth: usize,
-    },
     CommentDatum,
     DirectiveCase(bool),
     Identifier(String),
@@ -71,7 +71,7 @@ pub(crate) enum TokenKind {
 impl TokenKind {
     pub(super) fn to_continuation(&self) -> Option<TokenContinuation> {
         match self {
-            Self::CommentBlockBegin { depth } | Self::CommentBlockFragment { depth } => {
+            Self::BlockCommentBegin { depth } | Self::BlockCommentFragment { depth } => {
                 Some(TokenContinuation::BlockComment { depth: *depth })
             }
             Self::IdentifierBegin(_) | Self::IdentifierFragment(_) => {
@@ -92,13 +92,13 @@ impl TokenKind {
 impl Display for TokenKind {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
+            Self::BlockCommentBegin { depth } => write!(f, "COMMENTBEGIN<{depth:?}>"),
+            Self::BlockCommentEnd => f.write_str("COMMENTEND"),
+            Self::BlockCommentFragment { depth } => write!(f, "COMMENTFRAGMENT<{depth:?}>"),
             Self::Boolean(_) => f.write_str("BOOL"),
             Self::ByteVector => f.write_str("BYTEVECTOR"),
             Self::Character(_) => f.write_str("CHAR"),
             Self::Comment => f.write_str("COMMENT"),
-            Self::CommentBlockBegin { depth } => write!(f, "COMMENTBEGIN<{depth:?}>"),
-            Self::CommentBlockEnd => f.write_str("COMMENTEND"),
-            Self::CommentBlockFragment { depth } => write!(f, "COMMENTFRAGMENT<{depth:?}>"),
             Self::CommentDatum => f.write_str("DATUMCOMMENT"),
             Self::DirectiveCase(fold) => write!(f, "FOLDCASE<{fold:?}>"),
             Self::Identifier(_) => f.write_str("IDENTIFIER"),

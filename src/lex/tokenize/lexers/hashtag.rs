@@ -222,11 +222,11 @@ pub(in crate::lex::tokenize) struct ContinueComment;
 
 impl BlockCommentPolicy for ContinueComment {
     fn terminated(&self) -> TokenKind {
-        TokenKind::CommentBlockEnd
+        TokenKind::BlockCommentEnd
     }
 
     fn unterminated(&self, depth: usize) -> TokenKind {
-        TokenKind::CommentBlockFragment { depth }
+        TokenKind::BlockCommentFragment { depth }
     }
 }
 
@@ -238,7 +238,7 @@ impl BlockCommentPolicy for StartComment {
     }
 
     fn unterminated(&self, depth: usize) -> TokenKind {
-        TokenKind::CommentBlockBegin { depth }
+        TokenKind::BlockCommentBegin { depth }
     }
 }
 

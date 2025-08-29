@@ -184,11 +184,11 @@ impl Display for ExpressionError {
 
 #[derive(Debug)]
 pub(super) enum ExpressionErrorKind {
+    BlockCommentInvalid(TokenKind),
+    BlockCommentUnterminated,
     ByteVectorInvalidItem(ExpressionKind),
     ByteVectorInvalidNumber(NumericError),
     ByteVectorUnterminated,
-    CommentBlockInvalid(TokenKind),
-    CommentBlockUnterminated,
     DatumExpected,
     DatumInvalid(ExpressionKind),
     DefineInvalid,
@@ -218,14 +218,14 @@ pub(super) enum ExpressionErrorKind {
 impl Display for ExpressionErrorKind {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
+            Self::BlockCommentInvalid(t) => format_unexpected_token("comment block", t, f),
+            // TODO: can i share tokenerrorkind display here
+            Self::BlockCommentUnterminated => f.write_str("unterminated block comment"),
             Self::ByteVectorInvalidItem(k) => {
                 write!(f, "expected byte literal, got: {}", k.as_typename())
             }
             Self::ByteVectorInvalidNumber(err) => err.fmt(f),
             Self::ByteVectorUnterminated => f.write_str("unterminated bytevector"),
-            Self::CommentBlockInvalid(t) => format_unexpected_token("comment block", t, f),
-            // TODO: can i share tokenerrorkind display here
-            Self::CommentBlockUnterminated => f.write_str("unterminated block comment"),
             Self::DatumExpected => f.write_str("expected datum"),
             Self::DatumInvalid(k) => write!(f, "unexpected datum type: {}", k.as_typename()),
             Self::DefineInvalid => format_invalid_form("(define <identifier> [expression])", f),

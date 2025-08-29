@@ -339,7 +339,7 @@ fn block_comment_fragment_uses_whole_line() {
     assert!(matches!(
         r[..],
         [Ok(Token {
-            kind: TokenKind::CommentBlockFragment { depth: 2 },
+            kind: TokenKind::BlockCommentFragment { depth: 2 },
             span: TxtSpan { start: 0, end: 17 }
         })]
     ));
@@ -358,7 +358,7 @@ fn block_comment_end_continues_tokenizing() {
         r[..],
         [
             Ok(Token {
-                kind: TokenKind::CommentBlockEnd,
+                kind: TokenKind::BlockCommentEnd,
                 span: TxtSpan { start: 0, end: 14 }
             }),
             Ok(Token {

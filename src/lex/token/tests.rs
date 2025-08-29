@@ -27,7 +27,7 @@ mod token {
     #[test]
     fn display_comment_blockbegin() {
         let token = Token {
-            kind: TokenKind::CommentBlockBegin { depth: 1 },
+            kind: TokenKind::BlockCommentBegin { depth: 1 },
             span: 0..10,
         };
 
@@ -37,7 +37,7 @@ mod token {
     #[test]
     fn display_comment_blockfragment() {
         let token = Token {
-            kind: TokenKind::CommentBlockFragment { depth: 1 },
+            kind: TokenKind::BlockCommentFragment { depth: 1 },
             span: 0..10,
         };
 
@@ -47,7 +47,7 @@ mod token {
     #[test]
     fn display_comment_blockend() {
         let token = Token {
-            kind: TokenKind::CommentBlockEnd,
+            kind: TokenKind::BlockCommentEnd,
             span: 0..10,
         };
 
@@ -386,7 +386,7 @@ mod token {
 
     #[test]
     fn block_comment_open_continuation() {
-        let kind = TokenKind::CommentBlockBegin { depth: 2 };
+        let kind = TokenKind::BlockCommentBegin { depth: 2 };
 
         assert!(matches!(
             kind.to_continuation(),
@@ -396,7 +396,7 @@ mod token {
 
     #[test]
     fn block_comment_fragment_continuation() {
-        let kind = TokenKind::CommentBlockFragment { depth: 2 };
+        let kind = TokenKind::BlockCommentFragment { depth: 2 };
 
         assert!(matches!(
             kind.to_continuation(),
