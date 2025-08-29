@@ -1240,7 +1240,11 @@ fn try_coll_span(span: Range<Option<&Value>>, clen: usize) -> Result<Range<usize
         Err(Condition::index_error(end.unwrap()).into())
     } else if eidx < sidx {
         Err(if let Some(v) = end {
-            Condition::bi_value_error("start greater than end", start.unwrap(), v).into()
+            Condition::value_error(
+                "start greater than end",
+                &Value::cons(start.unwrap().clone(), v.clone()),
+            )
+            .into()
         } else {
             Condition::index_error(start.unwrap()).into()
         })

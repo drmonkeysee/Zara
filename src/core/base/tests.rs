@@ -1429,7 +1429,7 @@ fn bytevector_copy_start_gt_end() {
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
     assert_eq!(
         err.to_string(),
-        "#<env-error \"start greater than end\" (3 1)>"
+        "#<env-error \"start greater than end\" ((3 . 1))>"
     );
 }
 
