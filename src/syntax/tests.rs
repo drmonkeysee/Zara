@@ -670,7 +670,7 @@ mod parsing {
     }
 
     #[test]
-    fn pair_ignores_comment_block() {
+    fn pair_ignores_block_comment() {
         // '(a . #| foo |# b) -> (a . b)
         let mut et = ExpressionTree::default();
         let tokens = [make_tokenline([
@@ -702,7 +702,7 @@ mod parsing {
     }
 
     #[test]
-    fn pair_ignores_trailing_comment_block() {
+    fn pair_ignores_trailing_block_comment() {
         // '(a . b #| foo |# ) -> (a . b)
         let mut et = ExpressionTree::default();
         let tokens = [make_tokenline([

@@ -1388,7 +1388,7 @@ mod comment {
         };
         let txt = make_textline().into();
 
-        let f = parse_comment_block(token, &txt);
+        let f = parse_block_comment(token, &txt);
 
         assert!(matches!(
             f,
@@ -1404,7 +1404,7 @@ mod comment {
         };
         let txt = make_textline().into();
 
-        let f = parse_comment_block(token, &txt);
+        let f = parse_block_comment(token, &txt);
 
         assert!(matches!(f, ParseFlow::Continue(())));
     }
@@ -1417,7 +1417,7 @@ mod comment {
         };
         let txt = make_textline().into();
 
-        let f = parse_comment_block(token, &txt);
+        let f = parse_block_comment(token, &txt);
 
         assert!(matches!(
             f,
@@ -1441,7 +1441,7 @@ mod comment {
         };
         let txt = make_textline().into();
 
-        let f = parse_comment_block(token, &txt);
+        let f = parse_block_comment(token, &txt);
 
         assert!(matches!(
             f,
@@ -2011,7 +2011,7 @@ mod merge {
     }
 
     #[test]
-    fn commentblock_merge() {
+    fn blockcomment_merge() {
         let txt = make_textline().into();
         let mut p = ExprNode {
             ctx: ExprCtx {
@@ -2526,7 +2526,7 @@ mod nodeutil {
     }
 
     #[test]
-    fn comment_block_continuation() {
+    fn block_comment_continuation() {
         let p = ParseNode::new(ParseMode::BlockComment, 3, make_textline());
 
         let o = p.into_continuation_unsupported();

@@ -25,7 +25,7 @@ mod token {
     }
 
     #[test]
-    fn display_comment_blockbegin() {
+    fn display_block_commentbegin() {
         let token = Token {
             kind: TokenKind::BlockCommentBegin { depth: 1 },
             span: 0..10,
@@ -35,7 +35,7 @@ mod token {
     }
 
     #[test]
-    fn display_comment_blockfragment() {
+    fn display_block_commentfragment() {
         let token = Token {
             kind: TokenKind::BlockCommentFragment { depth: 1 },
             span: 0..10,
@@ -45,7 +45,7 @@ mod token {
     }
 
     #[test]
-    fn display_comment_blockend() {
+    fn display_block_commentend() {
         let token = Token {
             kind: TokenKind::BlockCommentEnd,
             span: 0..10,

@@ -233,7 +233,7 @@ impl ParseMode {
         ns: &Namespace,
     ) -> ParseFlow {
         match self {
-            Self::BlockComment => parse_comment_block(token, txt),
+            Self::BlockComment => parse_block_comment(token, txt),
             Self::ByteVector(seq) | Self::Vector(seq) => parse_vector(seq, token, txt, ns),
             Self::CommentDatum(inner) | Self::Quote { inner, .. } => {
                 parse_datum(inner, token, txt, node_ctx, ns)
@@ -287,7 +287,7 @@ impl ParseMode {
     }
 }
 
-fn parse_comment_block(token: Token, txt: &Rc<TextLine>) -> ParseFlow {
+fn parse_block_comment(token: Token, txt: &Rc<TextLine>) -> ParseFlow {
     match token.kind {
         TokenKind::BlockCommentEnd => {
             ParseFlow::Break(ParseBreak::complete(txt.lineno, token.span.end))
