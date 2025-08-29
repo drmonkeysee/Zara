@@ -765,6 +765,9 @@ fn load_vec(env: &Frame) {
     super::bind_intrinsic(env, "vector-ref", 2..2, vector_get);
     super::bind_intrinsic(env, "vector-set!", 3..3, vector_set);
 
+    super::bind_intrinsic(env, "vector->string", 1..3, vector_to_str);
+    super::bind_intrinsic(env, "string->vector", 1..3, vector_from_str);
+
     super::bind_intrinsic(env, "vector-copy", 1..3, vector_copy);
     super::bind_intrinsic(env, "vector-copy!", 3..5, vector_copy_inline);
     super::bind_intrinsic(env, "vector-append", 0..MAX_ARITY, vector_append);
@@ -806,6 +809,30 @@ fn vector_set(args: &[Value], _env: &Frame) -> EvalResult {
         val_identity,
         |mut v, idx, item| v[idx] = item,
     )
+}
+
+fn vector_to_str(args: &[Value], env: &Frame) -> EvalResult {
+    let arg = first(args);
+    let v = arg
+        .as_refvec()
+        .ok_or_else(|| invalid_target(TypeName::VECTOR, arg))?;
+    let span = try_coll_span(args.get(1)..args.get(2), v.len())?;
+    string(&v.as_ref()[span], env)
+}
+
+fn vector_from_str(args: &[Value], _env: &Frame) -> EvalResult {
+    let arg = first(args);
+    let s = arg
+        .as_refstr()
+        .ok_or_else(|| invalid_target(TypeName::STRING, arg))?;
+    let span = try_coll_span(args.get(1)..args.get(2), s.len())?;
+    Ok(Value::vector_mut(
+        s.as_ref()
+            .chars()
+            .skip(span.start)
+            .take(span.len())
+            .map(Value::Character),
+    ))
 }
 
 fn vector_copy(args: &[Value], _env: &Frame) -> EvalResult {

@@ -111,6 +111,6 @@ fn pcdr(arg: &Value) -> EvalResult {
     }
 }
 
-fn invalid_target(name: impl Display, arg: &Value) -> Exception {
-    Condition::arg_error(FIRST_ARG_LABEL, name, arg).into()
+fn invalid_target(expected_type: impl Display, arg: &Value) -> Exception {
+    Condition::arg_error(FIRST_ARG_LABEL, expected_type, arg).into()
 }
