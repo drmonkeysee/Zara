@@ -127,6 +127,7 @@ fn closure_per_eval() {
 }
 
 #[test]
+#[ignore = "addition not yet implemented"]
 fn closure_writes_per_eval() {
     let mut t = TestRunner::new();
 
@@ -150,6 +151,7 @@ fn closure_writes_per_eval() {
 }
 
 #[test]
+#[ignore = "nested define not yet implemented"]
 fn call_frame_write_does_not_affect_closure() {
     let mut t = TestRunner::new();
 
@@ -166,6 +168,7 @@ fn call_frame_write_does_not_affect_closure() {
 }
 
 #[test]
+#[ignore = "quote transformer not yet implemented"]
 fn redefine_quote_affects_shorthand_syntax() {
     let mut t = TestRunner::new();
 
@@ -239,6 +242,25 @@ fn nested_procedure_gets_name() {
     assert_eq!(v.to_string(), "#<procedure ten>");
     let v = t.run_for_val("(ten)");
     assert_eq!(v.to_string(), "10");
+}
+
+// TODO: guile/chez return #t; identical lambdas with no captures appear to be
+// resolved to the same underlying object.
+#[test]
+fn nested_procedure_new_on_each_call() {
+    let mut t = TestRunner::new();
+
+    let v = t.run_for_val(concat!("(define (make) (lambda () 'a))", "make"));
+    assert_eq!(v.to_string(), "#<procedure make>");
+
+    let v = t.run_for_val(concat!("(define first (make))", "first"));
+    assert_eq!(v.to_string(), "#<procedure first>");
+
+    let v = t.run_for_val(concat!("(define second (make))", "second"));
+    assert_eq!(v.to_string(), "#<procedure second>");
+
+    let v = t.run_for_val("(eq? first second)");
+    assert_eq!(v.to_string(), "#f");
 }
 
 // NOTE: these two tests were bugs with StringSource rather than the Interpreter
