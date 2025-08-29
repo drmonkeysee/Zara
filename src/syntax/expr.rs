@@ -127,7 +127,7 @@ pub(super) enum ExpressionKind {
 }
 
 impl ExpressionKind {
-    fn as_typename(&self) -> TypeName {
+    fn as_typename(&self) -> TypeName<'_> {
         TypeName(self)
     }
 

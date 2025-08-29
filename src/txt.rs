@@ -38,7 +38,7 @@ pub struct TextLine {
 
 impl TextLine {
     #[must_use]
-    pub fn display_header(&self) -> TextLineHeader {
+    pub fn display_header(&self) -> TextLineHeader<'_> {
         TextLineHeader(self)
     }
 }
@@ -83,7 +83,7 @@ impl TextError {
     }
 
     #[must_use]
-    pub fn display_header(&self) -> TextErrorHeader {
+    pub fn display_header(&self) -> TextErrorHeader<'_> {
         TextErrorHeader(self)
     }
 }

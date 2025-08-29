@@ -148,15 +148,15 @@ impl Value {
             }
     }
 
-    pub(crate) fn display_message(&self) -> ValueMessage {
+    pub(crate) fn display_message(&self) -> ValueMessage<'_> {
         ValueMessage(self)
     }
 
-    pub(crate) fn as_typename(&self) -> TypeName {
+    pub(crate) fn as_typename(&self) -> TypeName<'_> {
         TypeName(self)
     }
 
-    pub(crate) fn as_refstr(&self) -> Option<StrRef> {
+    pub(crate) fn as_refstr(&self) -> Option<StrRef<'_>> {
         match self {
             Self::String(s) => Some(StrRef::Con(s)),
             Self::StringMut(s) => Some(StrRef::Mut(s.borrow())),
@@ -172,7 +172,7 @@ impl Value {
         }
     }
 
-    pub(crate) fn as_refvec(&self) -> Option<VecRef> {
+    pub(crate) fn as_refvec(&self) -> Option<VecRef<'_>> {
         match self {
             Self::Vector(v) => Some(VecRef::Con(v)),
             Self::VectorMut(v) => Some(VecRef::Mut(v.borrow())),
@@ -188,7 +188,7 @@ impl Value {
         }
     }
 
-    pub(crate) fn as_refbv(&self) -> Option<BvRef> {
+    pub(crate) fn as_refbv(&self) -> Option<BvRef<'_>> {
         match self {
             Self::ByteVector(bv) => Some(BvRef::Con(bv)),
             Self::ByteVectorMut(bv) => Some(BvRef::Mut(bv.borrow())),

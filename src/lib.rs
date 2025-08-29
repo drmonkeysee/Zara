@@ -109,7 +109,7 @@ pub struct Error(ExecError);
 
 impl Error {
     #[must_use]
-    pub fn display_message(&self) -> ErrorMessage {
+    pub fn display_message(&self) -> ErrorMessage<'_> {
         ErrorMessage(&self.0)
     }
 }

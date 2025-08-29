@@ -172,11 +172,11 @@ impl Number {
         }
     }
 
-    pub(crate) fn as_token_descriptor(&self) -> TokenDescriptor {
+    pub(crate) fn as_token_descriptor(&self) -> TokenDescriptor<'_> {
         TokenDescriptor(self)
     }
 
-    pub(crate) fn as_typename(&self) -> NumericTypeName {
+    pub(crate) fn as_typename(&self) -> NumericTypeName<'_> {
         NumericTypeName(self)
     }
 
@@ -316,7 +316,7 @@ impl Real {
         }
     }
 
-    pub(crate) fn as_token_descriptor(&self) -> RealTokenDescriptor {
+    pub(crate) fn as_token_descriptor(&self) -> RealTokenDescriptor<'_> {
         RealTokenDescriptor(self)
     }
 

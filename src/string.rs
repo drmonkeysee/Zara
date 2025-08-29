@@ -27,7 +27,7 @@ impl Symbol {
         Rc::clone(&self.0)
     }
 
-    pub(crate) fn as_datum(&self) -> SymbolDatum {
+    pub(crate) fn as_datum(&self) -> SymbolDatum<'_> {
         SymbolDatum(self)
     }
 }

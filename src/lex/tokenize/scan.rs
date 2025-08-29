@@ -19,15 +19,15 @@ impl<'txt> Scanner<'txt> {
         }
     }
 
-    pub(super) fn next_token(&mut self) -> Option<ScanItem> {
+    pub(super) fn next_token(&mut self) -> Option<ScanItem<'_>> {
         self.chars.find(not_whitespace)
     }
 
-    pub(super) fn next_if_not_delimiter(&mut self) -> Option<ScanItem> {
+    pub(super) fn next_if_not_delimiter(&mut self) -> Option<ScanItem<'_>> {
         self.chars.next_if(not_delimiter)
     }
 
-    pub(super) fn next_if_not_token_boundary(&mut self) -> Option<ScanItem> {
+    pub(super) fn next_if_not_token_boundary(&mut self) -> Option<ScanItem<'_>> {
         self.chars.next_if(not_token_boundary)
     }
 
@@ -47,7 +47,7 @@ impl<'txt> Scanner<'txt> {
         self.next_if_not_token_boundary().map(into_char)
     }
 
-    pub(super) fn find_any_char(&mut self, chars: &[char]) -> Option<ScanItem> {
+    pub(super) fn find_any_char(&mut self, chars: &[char]) -> Option<ScanItem<'_>> {
         self.chars.find(|(_, ch)| chars.contains(ch))
     }
 
@@ -115,11 +115,11 @@ impl<'txt> Iterator for Scanner<'txt> {
 type ScanChars<'txt> = Peekable<CharIndices<'txt>>;
 
 trait PeekableExt<P> {
-    fn next_until(&mut self, predicate: P) -> Option<&ScanItem>;
+    fn next_until(&mut self, predicate: P) -> Option<&ScanItem<'_>>;
 }
 
 impl<P: Fn(&ScanItem) -> bool> PeekableExt<P> for ScanChars<'_> {
-    fn next_until(&mut self, predicate: P) -> Option<&ScanItem> {
+    fn next_until(&mut self, predicate: P) -> Option<&ScanItem<'_>> {
         while self.next_if(|item| !predicate(item)).is_some() { /* consume iterator */ }
         self.peek()
     }

@@ -48,11 +48,11 @@ impl<T: Evaluator + Default> Environment<T> {
         T::default().eval(prg, self.make_frame())
     }
 
-    pub(crate) fn make_namespace(&self) -> Namespace {
+    pub(crate) fn make_namespace(&self) -> Namespace<'_> {
         Namespace(self.make_frame())
     }
 
-    fn make_frame(&self) -> Frame {
+    fn make_frame(&self) -> Frame<'_> {
         Frame {
             scope: Rc::clone(&self.global),
             sym: &self.symbols,
@@ -92,7 +92,7 @@ impl Evaluation {
     }
 
     #[must_use]
-    pub fn display_message(&self) -> EvaluationMessage {
+    pub fn display_message(&self) -> EvaluationMessage<'_> {
         EvaluationMessage(self)
     }
 }
@@ -124,7 +124,7 @@ impl Exception {
         Self::Signal(Signal(cond))
     }
 
-    fn display_message(&self) -> ExceptionMessage {
+    fn display_message(&self) -> ExceptionMessage<'_> {
         ExceptionMessage(self)
     }
 }

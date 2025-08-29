@@ -504,7 +504,7 @@ impl RealClassifier {
         }
     }
 
-    fn commit(self, input: &str, exactness: Option<Exactness>) -> (RealProps, RealParser) {
+    fn commit(self, input: &str, exactness: Option<Exactness>) -> (RealProps, RealParser<'_>) {
         (
             RealProps {
                 empty: self.is_empty(),
@@ -646,7 +646,11 @@ impl<R: Radix> Integral<R> {
         }
     }
 
-    fn commit(self, input: &str, exactness: Option<Exactness>) -> (RadixProps<R>, RadixParser<R>) {
+    fn commit(
+        self,
+        input: &str,
+        exactness: Option<Exactness>,
+    ) -> (RadixProps<R>, RadixParser<'_, R>) {
         let infnan_len = self.mode.len();
         (
             RadixProps {
