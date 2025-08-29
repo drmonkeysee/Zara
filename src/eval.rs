@@ -123,6 +123,10 @@ impl Exception {
     pub(crate) fn signal(cond: Condition) -> Self {
         Self::Signal(Signal(cond))
     }
+
+    fn display_message(&self) -> ExceptionMessage {
+        ExceptionMessage(self)
+    }
 }
 
 impl From<Condition> for Exception {
@@ -145,11 +149,22 @@ pub struct EvaluationMessage<'a>(&'a Evaluation);
 impl Display for EvaluationMessage<'_> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self.0 {
-            Evaluation::Continuation => f.write_str("fatal error: unexpected continuation"),
-            Evaluation::Ex(_) => todo!("exception cli message"),
+            Evaluation::Continuation => f.write_str("fatal error: unexpected continuation\n"),
+            Evaluation::Ex(ex) => ex.display_message().fmt(f),
             Evaluation::Val(v) => v.0.display_message().fmt(f),
         }
     }
 }
 
 pub(crate) type EvalResult = Result<ValueImpl, Exception>;
+
+struct ExceptionMessage<'a>(&'a Exception);
+
+impl Display for ExceptionMessage<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self.0 {
+            Exception::Exit(code) => writeln!(f, "exit: {code:?}"),
+            Exception::Signal(sig) => writeln!(f, "{sig}\ntodo: display callstack"),
+        }
+    }
+}
