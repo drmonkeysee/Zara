@@ -165,8 +165,7 @@ fn bytevector_set(args: &[Value], _env: &Frame) -> EvalResult {
         super::second(args),
         super::third(args),
         TypeName::VECTOR,
-        Value::as_refbv,
-        Value::as_mutrefbv,
+        (Value::as_refbv, Value::as_mutrefbv),
         |v| try_val_to_byte(v, THIRD_ARG_LABEL),
         |mut v, idx, item| v[idx] = item,
     )
@@ -175,8 +174,7 @@ fn bytevector_set(args: &[Value], _env: &Frame) -> EvalResult {
 fn bytevector_copy(args: &[Value], _env: &Frame) -> EvalResult {
     coll_copy(
         first(args),
-        args.get(1),
-        args.get(2),
+        args.get(1)..args.get(2),
         TypeName::BYTEVECTOR,
         Value::as_refbv,
         |bytes: &[u8], span| Value::bytevector_mut(bytes[span].iter().copied()),
@@ -188,11 +186,9 @@ fn bytevector_copy_inline(args: &[Value], _env: &Frame) -> EvalResult {
         first(args),
         super::second(args),
         super::third(args),
-        args.get(3),
-        args.get(4),
+        args.get(3)..args.get(4),
         TypeName::BYTEVECTOR,
-        Value::as_refbv,
-        Value::as_mutrefbv,
+        (Value::as_refbv, Value::as_mutrefbv),
         |to, from, mut target, atidx, span| {
             if to.is(from) {
                 target.copy_within(span, atidx);
@@ -219,7 +215,7 @@ fn bytevector_to_str(args: &[Value], _env: &Frame) -> EvalResult {
         .as_refbv()
         .ok_or_else(|| invalid_target(TypeName::BYTEVECTOR, arg))?;
     let clen = bv.len();
-    let span = try_coll_span(args.get(1), args.get(2), clen)?;
+    let span = try_coll_span(args.get(1)..args.get(2), clen)?;
     String::from_utf8(bv.as_ref()[span].to_vec()).map_or_else(
         |e| {
             let err = e.utf8_error();
@@ -244,7 +240,7 @@ fn bytevector_from_str(args: &[Value], _env: &Frame) -> EvalResult {
     let s = arg
         .as_refstr()
         .ok_or_else(|| invalid_target(TypeName::STRING, arg))?;
-    let span = try_coll_span(args.get(1), args.get(2), s.len())?;
+    let span = try_coll_span(args.get(1)..args.get(2), s.len())?;
     // TODO: experimental
     // https://doc.rust-lang.org/std/primitive.char.html#associatedconstant.MAX_LEN_UTF8
     let mut buf = [0u8; 4];
@@ -634,8 +630,7 @@ fn string_set(args: &[Value], _env: &Frame) -> EvalResult {
         super::second(args),
         super::third(args),
         TypeName::VECTOR,
-        Value::as_refstr,
-        Value::as_mutrefstr,
+        (Value::as_refstr, Value::as_mutrefstr),
         |v| try_val_to_char(v, THIRD_ARG_LABEL),
         |mut s, idx, ch| {
             let mut chars = s.chars().collect::<Vec<_>>();
@@ -678,8 +673,7 @@ fn string_append(args: &[Value], _env: &Frame) -> EvalResult {
 fn string_copy(args: &[Value], _env: &Frame) -> EvalResult {
     coll_copy(
         first(args),
-        args.get(1),
-        args.get(2),
+        args.get(1)..args.get(2),
         TypeName::STRING,
         Value::as_refstr,
         |s: &str, span| Value::strmut_from_chars(s.chars().skip(span.start).take(span.len())),
@@ -691,11 +685,9 @@ fn string_copy_inline(args: &[Value], _env: &Frame) -> EvalResult {
         first(args),
         super::second(args),
         super::third(args),
-        args.get(3),
-        args.get(4),
+        args.get(3)..args.get(4),
         TypeName::STRING,
-        Value::as_refstr,
-        Value::as_mutrefstr,
+        (Value::as_refstr, Value::as_mutrefstr),
         |to, from, mut target, atidx, span| {
             let updated = if to.is(from) {
                 build_str_copy(&target, &target, atidx, span)
@@ -716,11 +708,9 @@ fn string_fill(args: &[Value], _env: &Frame) -> EvalResult {
     coll_fill(
         first(args),
         super::second(args),
-        args.get(2),
-        args.get(3),
+        args.get(2)..args.get(3),
         TypeName::STRING,
-        Value::as_refstr,
-        Value::as_mutrefstr,
+        (Value::as_refstr, Value::as_mutrefstr),
         |v| try_val_to_char(v, SECOND_ARG_LABEL),
         |mut target, fill, span| {
             let updated = build_str_fill(iter::repeat_n(fill, span.len()), &target, span);
@@ -812,8 +802,7 @@ fn vector_set(args: &[Value], _env: &Frame) -> EvalResult {
         super::second(args),
         super::third(args),
         TypeName::VECTOR,
-        Value::as_refvec,
-        Value::as_mutrefvec,
+        (Value::as_refvec, Value::as_mutrefvec),
         val_identity,
         |mut v, idx, item| v[idx] = item,
     )
@@ -822,8 +811,7 @@ fn vector_set(args: &[Value], _env: &Frame) -> EvalResult {
 fn vector_copy(args: &[Value], _env: &Frame) -> EvalResult {
     coll_copy(
         first(args),
-        args.get(1),
-        args.get(2),
+        args.get(1)..args.get(2),
         TypeName::VECTOR,
         Value::as_refvec,
         |vals: &[Value], span| Value::vector_mut(vals[span].iter().cloned()),
@@ -835,11 +823,9 @@ fn vector_copy_inline(args: &[Value], _env: &Frame) -> EvalResult {
         first(args),
         super::second(args),
         super::third(args),
-        args.get(3),
-        args.get(4),
+        args.get(3)..args.get(4),
         TypeName::VECTOR,
-        Value::as_refvec,
-        Value::as_mutrefvec,
+        (Value::as_refvec, Value::as_mutrefvec),
         |to, from, mut target, atidx, span| {
             let range = atidx..(atidx + span.len());
             if to.is(from) {
@@ -869,11 +855,9 @@ fn vector_fill(args: &[Value], _env: &Frame) -> EvalResult {
     coll_fill(
         first(args),
         super::second(args),
-        args.get(2),
-        args.get(3),
+        args.get(2)..args.get(3),
         TypeName::VECTOR,
-        Value::as_refvec,
-        Value::as_mutrefvec,
+        (Value::as_refvec, Value::as_mutrefvec),
         val_identity,
         |mut target, fill, span| {
             for i in span {
@@ -1077,18 +1061,20 @@ fn coll_set<'a, T: ?Sized + 'a, M: AsRef<T> + 'a, U>(
     k: &Value,
     val: &Value,
     expected_type: impl Display,
-    collref: impl FnOnce(&Value) -> Option<CollRef<'_, T, M>>,
-    mutcollref: impl FnOnce(&Value) -> Option<RefMut<'_, M>>,
+    collcnv: (
+        impl FnOnce(&Value) -> Option<CollRef<'_, T, M>>,
+        impl FnOnce(&Value) -> Option<RefMut<'_, M>>,
+    ),
     try_item: impl FnOnce(&Value) -> Result<U, Exception>,
     op: impl FnOnce(RefMut<'_, M>, usize, U),
 ) -> EvalResult
 where
     CollRef<'a, T, M>: CollSized,
 {
-    let clen = collref(arg)
+    let clen = collcnv.0(arg)
         .ok_or_else(|| invalid_target(expected_type, arg))?
         .len();
-    mutcollref(arg).map_or_else(
+    collcnv.1(arg).map_or_else(
         || Err(Condition::literal_mut_error(arg).into()),
         |c| {
             let idx = try_val_to_index(k, SECOND_ARG_LABEL)?;
@@ -1105,8 +1091,7 @@ where
 
 fn coll_copy<'a, T: ?Sized + 'a, M: AsRef<T> + 'a>(
     arg: &'a Value,
-    start: Option<&Value>,
-    end: Option<&Value>,
+    span: Range<Option<&Value>>,
     expected_type: impl Display,
     collref: impl FnOnce(&Value) -> Option<CollRef<'_, T, M>>,
     op: impl FnOnce(&T, Range<usize>) -> Value,
@@ -1115,34 +1100,35 @@ where
     CollRef<'a, T, M>: CollSized,
 {
     let coll = collref(arg).ok_or_else(|| invalid_target(expected_type, arg))?;
-    Ok(op(coll.as_ref(), try_coll_span(start, end, coll.len())?))
+    Ok(op(coll.as_ref(), try_coll_span(span, coll.len())?))
 }
 
 fn coll_copy_inline<'a, T: ?Sized + 'a, M: AsRef<T> + 'a>(
     to: &'a Value,
     at: &Value,
     from: &'a Value,
-    start: Option<&Value>,
-    end: Option<&Value>,
+    span: Range<Option<&Value>>,
     expected_type: impl Display + Clone,
-    collref: impl Fn(&Value) -> Option<CollRef<'_, T, M>>,
-    mutcollref: impl FnOnce(&Value) -> Option<RefMut<'_, M>>,
+    collcnv: (
+        impl Fn(&Value) -> Option<CollRef<'_, T, M>>,
+        impl FnOnce(&Value) -> Option<RefMut<'_, M>>,
+    ),
     op: impl FnOnce(&Value, &Value, RefMut<'_, M>, usize, Range<usize>),
 ) -> EvalResult
 where
     CollRef<'a, T, M>: CollSized,
 {
-    let tolen = collref(to)
+    let tolen = collcnv.0(to)
         .ok_or_else(|| invalid_target(expected_type.clone(), to))?
         .len();
     let atidx = try_val_to_index(at, SECOND_ARG_LABEL)?;
     if tolen < atidx {
         return Err(Condition::value_error("target index out of range", at).into());
     }
-    let source = collref(from).ok_or_else(|| {
+    let source = collcnv.0(from).ok_or_else(|| {
         Exception::from(Condition::arg_error(THIRD_ARG_LABEL, expected_type, from))
     })?;
-    let span = try_coll_span(start, end, source.len())?;
+    let span = try_coll_span(span, source.len())?;
     if span.is_empty() {
         return Ok(Value::Unspecified);
     }
@@ -1161,7 +1147,7 @@ where
         .into());
     }
     mem::drop(source);
-    mutcollref(to).map_or_else(
+    collcnv.1(to).map_or_else(
         || Err(Condition::literal_mut_error(to).into()),
         |target| {
             op(to, from, target, atidx, span);
@@ -1190,26 +1176,27 @@ fn coll_append<T: ?Sized, M: AsRef<T>>(
 fn coll_fill<'a, T: ?Sized + 'a, M: AsRef<T> + 'a, U>(
     arg: &'a Value,
     fill: &Value,
-    start: Option<&Value>,
-    end: Option<&Value>,
+    span: Range<Option<&Value>>,
     expected_type: impl Display,
-    collref: impl FnOnce(&Value) -> Option<CollRef<'_, T, M>>,
-    mutcollref: impl FnOnce(&Value) -> Option<RefMut<'_, M>>,
+    collcnv: (
+        impl FnOnce(&Value) -> Option<CollRef<'_, T, M>>,
+        impl FnOnce(&Value) -> Option<RefMut<'_, M>>,
+    ),
     try_item: impl FnOnce(&Value) -> Result<U, Exception>,
     op: impl FnOnce(RefMut<'_, M>, U, Range<usize>),
 ) -> EvalResult
 where
     CollRef<'a, T, M>: CollSized,
 {
-    let clen = collref(arg)
+    let clen = collcnv.0(arg)
         .ok_or_else(|| invalid_target(expected_type, arg))?
         .len();
     let fill = try_item(fill)?;
-    let span = try_coll_span(start, end, clen)?;
+    let span = try_coll_span(span, clen)?;
     if span.is_empty() {
         return Ok(Value::Unspecified);
     }
-    mutcollref(arg).map_or_else(
+    collcnv.1(arg).map_or_else(
         || Err(Condition::literal_mut_error(arg).into()),
         |target| {
             op(target, fill, span);
@@ -1218,11 +1205,8 @@ where
     )
 }
 
-fn try_coll_span(
-    start: Option<&Value>,
-    end: Option<&Value>,
-    clen: usize,
-) -> Result<Range<usize>, Exception> {
+fn try_coll_span(span: Range<Option<&Value>>, clen: usize) -> Result<Range<usize>, Exception> {
+    let (start, end) = (span.start, span.end);
     let sidx = start.map_or(Ok(usize::MIN), |v| try_val_to_index(v, SECOND_ARG_LABEL))?;
     let eidx = end.map_or(Ok(clen), |v| try_val_to_index(v, THIRD_ARG_LABEL))?;
     if clen < eidx {
