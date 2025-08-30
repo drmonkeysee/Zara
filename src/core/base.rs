@@ -60,7 +60,7 @@ use crate::{
     eval::{EvalResult, Frame, MAX_ARITY},
     number::{Integer, Number, NumericError, NumericTypeName, Real},
     string::{Symbol, unicode::UnicodeError},
-    value::{BvRef, CollRef, CollSized, Condition, Pair, StrRef, TypeName, Value, VecRef},
+    value::{BvRef, CollRef, CollSized, Condition, PairSized, StrRef, TypeName, Value, VecRef},
 };
 use std::{
     cell::RefMut,
@@ -510,37 +510,51 @@ cadr_func!(cddr, d, d);
 // TODO: circular lists => #f
 #[allow(clippy::unnecessary_wraps, reason = "infallible intrinsic")]
 fn is_list(args: &[Value], _env: &Frame) -> EvalResult {
-    Ok(Value::Boolean(match first(args) {
-        Value::Null => true,
-        Value::Pair(p) => p.is_list(),
-        Value::PairMut(p) => p.borrow().is_list(),
-        _ => false,
+    let arg = first(args);
+    Ok(Value::Boolean(if let Value::Null = arg {
+        true
+    } else if let Some(p) = arg.as_refpair() {
+        p.as_ref().is_list()
+    } else {
+        false
     }))
 }
 
 // TODO: circular lists => error
 fn list_length(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = first(args);
-    match arg {
-        Value::Null => Ok(Value::Number(Number::real(0))),
-        Value::Pair(p) => pair_length(p, arg),
-        Value::PairMut(p) => pair_length(&p.borrow(), arg),
-        _ => Err(invalid_target(TypeName::LIST, arg)),
+    if let Value::Null = arg {
+        Ok(Value::Number(Number::real(0)))
+    } else if let Some(p) = arg.as_refpair() {
+        p.len().map_or_else(
+            || {
+                Err(Condition::arg_type_error(
+                    FIRST_ARG_LABEL,
+                    TypeName::LIST,
+                    TypeName::IMPLIST,
+                    arg,
+                )
+                .into())
+            },
+            |len| Ok(Value::Number(Number::from_usize(len))),
+        )
+    } else {
+        Err(invalid_target(TypeName::LIST, arg))
     }
 }
 
 fn list_tail(args: &[Value], _env: &Frame) -> EvalResult {
     let k = super::second(args);
-    try_sub_list(first(args), try_val_to_index(k, SECOND_ARG_LABEL)?, k).cloned()
+    sub_list(first(args), try_val_to_index(k, SECOND_ARG_LABEL)?, k)
 }
 
 fn list_get(args: &[Value], _env: &Frame) -> EvalResult {
     let k = super::second(args);
-    let subl = try_sub_list(first(args), try_val_to_index(k, SECOND_ARG_LABEL)?, k)?;
+    let subl = sub_list(first(args), try_val_to_index(k, SECOND_ARG_LABEL)?, k)?;
     if let Value::Null = subl {
         Err(Condition::index_error(k).into())
     } else {
-        pcar(subl)
+        pcar(&subl)
     }
 }
 
@@ -956,23 +970,11 @@ fn guarded_real_op(
     }
 }
 
-fn pair_length(p: &Pair, arg: &Value) -> EvalResult {
-    p.len().map_or_else(
-        || {
-            Err(
-                Condition::arg_type_error(FIRST_ARG_LABEL, TypeName::LIST, TypeName::IMPLIST, arg)
-                    .into(),
-            )
-        },
-        |len| Ok(Value::Number(Number::from_usize(len))),
-    )
-}
-
-fn try_sub_list<'a>(lst: &'a Value, idx: usize, k: &Value) -> Result<&'a Value, Exception> {
+fn sub_list(lst: &Value, idx: usize, k: &Value) -> EvalResult {
     if idx == 0 {
-        Ok(lst)
-    } else if let Value::Pair(p) = lst {
-        try_sub_list(&p.cdr, idx - 1, k)
+        Ok(lst.clone())
+    } else if let Some(p) = lst.as_refpair() {
+        sub_list(&p.as_ref().cdr, idx - 1, k)
     } else if let Value::Null = lst {
         Err(Condition::index_error(k).into())
     } else {

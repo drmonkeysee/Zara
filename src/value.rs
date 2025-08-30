@@ -165,6 +165,14 @@ impl Value {
         TypeName(self)
     }
 
+    pub(crate) fn as_refpair(&self) -> Option<PairRef<'_>> {
+        match self {
+            Self::Pair(s) => Some(PairRef::Imm(s)),
+            Self::PairMut(s) => Some(PairRef::Mut(s.borrow())),
+            _ => None,
+        }
+    }
+
     pub(crate) fn as_refstr(&self) -> Option<StrRef<'_>> {
         match self {
             Self::String(s) => Some(StrRef::Imm(s)),
@@ -272,6 +280,7 @@ impl Display for Value {
 }
 
 pub(crate) type BvRef<'a> = CollRef<'a, [u8], Vec<u8>>;
+pub(crate) type PairRef<'a> = CollRef<'a, Pair, Pair>;
 pub(crate) type StrRef<'a> = CollRef<'a, str, String>;
 pub(crate) type VecRef<'a> = CollRef<'a, [Value], Vec<Value>>;
 
@@ -279,20 +288,8 @@ pub(crate) trait CollSized {
     fn len(&self) -> usize;
 }
 
-impl Default for StrRef<'_> {
-    fn default() -> Self {
-        Self::Imm("")
-    }
-}
-
-impl CollSized for StrRef<'_> {
-    fn len(&self) -> usize {
-        let s = match self {
-            Self::Imm(s) => *s,
-            Self::Mut(s) => s.as_ref(),
-        };
-        s.chars().count()
-    }
+pub(crate) trait PairSized {
+    fn len(&self) -> Option<usize>;
 }
 
 pub(crate) enum CollRef<'a, T: ?Sized, M> {
@@ -316,6 +313,32 @@ impl<T, M: AsRef<[T]>> CollSized for CollRef<'_, [T], M> {
             Self::Mut(c) => c.as_ref(),
         };
         c.len()
+    }
+}
+
+impl PairSized for PairRef<'_> {
+    fn len(&self) -> Option<usize> {
+        let p = match self {
+            Self::Imm(p) => p,
+            Self::Mut(p) => p.as_ref(),
+        };
+        p.len()
+    }
+}
+
+impl Default for StrRef<'_> {
+    fn default() -> Self {
+        Self::Imm("")
+    }
+}
+
+impl CollSized for StrRef<'_> {
+    fn len(&self) -> usize {
+        let s = match self {
+            Self::Imm(s) => *s,
+            Self::Mut(s) => s.as_ref(),
+        };
+        s.chars().count()
     }
 }
 
@@ -362,6 +385,12 @@ impl Display for Pair {
             Value::PairMut(p) => write!(f, " {}", p.borrow()),
             _ => write!(f, " . {}", self.cdr),
         }
+    }
+}
+
+impl AsRef<Self> for Pair {
+    fn as_ref(&self) -> &Self {
+        &self
     }
 }
 
