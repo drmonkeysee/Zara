@@ -308,21 +308,21 @@ impl<T: ?Sized, M: AsRef<T>> AsRef<T> for CollRef<'_, T, M> {
 
 impl<T, M: AsRef<[T]>> CollSized for CollRef<'_, [T], M> {
     fn len(&self) -> usize {
-        let c = match self {
+        match self {
             Self::Imm(c) => *c,
             Self::Mut(c) => c.as_ref(),
-        };
-        c.len()
+        }
+        .len()
     }
 }
 
 impl PairSized for PairRef<'_> {
     fn len(&self) -> Option<usize> {
-        let p = match self {
+        match self {
             Self::Imm(p) => p,
             Self::Mut(p) => p.as_ref(),
-        };
-        p.len()
+        }
+        .len()
     }
 }
 
@@ -334,11 +334,12 @@ impl Default for StrRef<'_> {
 
 impl CollSized for StrRef<'_> {
     fn len(&self) -> usize {
-        let s = match self {
+        match self {
             Self::Imm(s) => *s,
             Self::Mut(s) => s.as_ref(),
-        };
-        s.chars().count()
+        }
+        .chars()
+        .count()
     }
 }
 
