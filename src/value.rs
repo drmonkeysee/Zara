@@ -167,7 +167,7 @@ impl Value {
 
     pub(crate) fn as_refstr(&self) -> Option<StrRef<'_>> {
         match self {
-            Self::String(s) => Some(StrRef::Con(s)),
+            Self::String(s) => Some(StrRef::Imm(s)),
             Self::StringMut(s) => Some(StrRef::Mut(s.borrow())),
             _ => None,
         }
@@ -183,7 +183,7 @@ impl Value {
 
     pub(crate) fn as_refvec(&self) -> Option<VecRef<'_>> {
         match self {
-            Self::Vector(v) => Some(VecRef::Con(v)),
+            Self::Vector(v) => Some(VecRef::Imm(v)),
             Self::VectorMut(v) => Some(VecRef::Mut(v.borrow())),
             _ => None,
         }
@@ -199,7 +199,7 @@ impl Value {
 
     pub(crate) fn as_refbv(&self) -> Option<BvRef<'_>> {
         match self {
-            Self::ByteVector(bv) => Some(BvRef::Con(bv)),
+            Self::ByteVector(bv) => Some(BvRef::Imm(bv)),
             Self::ByteVectorMut(bv) => Some(BvRef::Mut(bv.borrow())),
             _ => None,
         }
@@ -281,14 +281,14 @@ pub(crate) trait CollSized {
 
 impl Default for StrRef<'_> {
     fn default() -> Self {
-        Self::Con("")
+        Self::Imm("")
     }
 }
 
 impl CollSized for StrRef<'_> {
     fn len(&self) -> usize {
         let s = match self {
-            Self::Con(s) => *s,
+            Self::Imm(s) => *s,
             Self::Mut(s) => s.as_ref(),
         };
         s.chars().count()
@@ -296,14 +296,14 @@ impl CollSized for StrRef<'_> {
 }
 
 pub(crate) enum CollRef<'a, T: ?Sized, M> {
-    Con(&'a T),
+    Imm(&'a T),
     Mut(Ref<'a, M>),
 }
 
 impl<T: ?Sized, M: AsRef<T>> AsRef<T> for CollRef<'_, T, M> {
     fn as_ref(&self) -> &T {
         match self {
-            Self::Con(t) => t,
+            Self::Imm(t) => t,
             Self::Mut(r) => r.as_ref(),
         }
     }
@@ -312,7 +312,7 @@ impl<T: ?Sized, M: AsRef<T>> AsRef<T> for CollRef<'_, T, M> {
 impl<T, M: AsRef<[T]>> CollSized for CollRef<'_, [T], M> {
     fn len(&self) -> usize {
         let c = match self {
-            Self::Con(c) => *c,
+            Self::Imm(c) => *c,
             Self::Mut(c) => c.as_ref(),
         };
         c.len()
