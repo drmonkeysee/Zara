@@ -96,16 +96,16 @@ fn third(args: &[Value]) -> &Value {
 }
 
 fn pcar(arg: &Value) -> EvalResult {
-    if let Value::Pair(p) = arg {
-        Ok(p.car.clone())
+    if let Some(p) = arg.as_refpair() {
+        Ok(p.as_ref().car.clone())
     } else {
         Err(invalid_target(TypeName::PAIR, arg))
     }
 }
 
 fn pcdr(arg: &Value) -> EvalResult {
-    if let Value::Pair(p) = arg {
-        Ok(p.cdr.clone())
+    if let Some(p) = arg.as_refpair() {
+        Ok(p.as_ref().cdr.clone())
     } else {
         Err(invalid_target(TypeName::PAIR, arg))
     }
