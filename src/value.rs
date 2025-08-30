@@ -330,6 +330,7 @@ impl Pair {
         match &self.cdr {
             Value::Null => true,
             Value::Pair(p) => p.is_list(),
+            Value::PairMut(p) => p.borrow().is_list(),
             _ => false,
         }
     }
@@ -338,6 +339,7 @@ impl Pair {
         match &self.cdr {
             Value::Null => Some(1),
             Value::Pair(p) => p.len().map(|len| len + 1),
+            Value::PairMut(p) => p.borrow().len().map(|len| len + 1),
             _ => None,
         }
     }
@@ -357,6 +359,7 @@ impl Display for Pair {
         match &self.cdr {
             Value::Null => Ok(()),
             Value::Pair(p) => write!(f, " {p}"),
+            Value::PairMut(p) => write!(f, " {}", p.borrow()),
             _ => write!(f, " . {}", self.cdr),
         }
     }
