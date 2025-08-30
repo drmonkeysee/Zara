@@ -1,7 +1,7 @@
 use super::*;
 use crate::{
     testutil::{TestEnv, err_or_fail, extract_or_fail, ok_or_fail},
-    value::zlist,
+    value::{zlist, zlist_mut},
 };
 use std::rc::Rc;
 
@@ -708,6 +708,35 @@ fn is_odd_float_with_frac() {
         err.to_string(),
         "#<env-error \"expected exact integer, got: 3.2\" (3.2)>"
     );
+}
+
+#[test]
+fn pair_mut_predicate() {
+    let env = TestEnv::default();
+    let args = [Value::cons_mut(
+        Value::Symbol(env.symbols.get("a")),
+        Value::Symbol(env.symbols.get("b")),
+    )];
+
+    let r = is_pair(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert!(matches!(v, Value::Boolean(true)));
+}
+
+#[test]
+fn list_mut_predicate() {
+    let env = TestEnv::default();
+    let args = [zlist_mut![
+        Value::Symbol(env.symbols.get("a")),
+        Value::Symbol(env.symbols.get("b")),
+        Value::Symbol(env.symbols.get("c"))
+    ]];
+
+    let r = is_list(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert!(matches!(v, Value::Boolean(true)));
 }
 
 #[test]

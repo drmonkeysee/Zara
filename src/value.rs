@@ -33,7 +33,7 @@ use std::{
     fmt::{self, Display, Formatter},
     rc::Rc,
 };
-pub(crate) use zlist;
+pub(crate) use {zlist, zlist_mut};
 
 #[derive(Clone, Debug)]
 pub(crate) enum Value {

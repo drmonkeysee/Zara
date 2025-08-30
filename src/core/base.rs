@@ -498,7 +498,7 @@ fn load_list(env: &Frame) {
     super::bind_intrinsic(env, "list-ref", 2..2, list_get);
 }
 
-predicate!(is_pair, Value::Pair(_));
+predicate!(is_pair, Value::Pair(_) | Value::PairMut(_));
 predicate!(is_null, Value::Null);
 cadr_func!(car, a);
 cadr_func!(cdr, d);
