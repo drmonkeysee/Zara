@@ -60,7 +60,7 @@ use crate::{
     eval::{EvalResult, Frame, MAX_ARITY},
     number::{Integer, Number, NumericError, NumericTypeName, Real},
     string::{Symbol, unicode::UnicodeError},
-    value::{BvRef, CollRef, CollSized, Condition, StrRef, TypeName, Value, VecRef},
+    value::{BvRef, CollRef, CollSized, Condition, Pair, StrRef, TypeName, Value, VecRef},
 };
 use std::{
     cell::RefMut,
@@ -513,6 +513,7 @@ fn is_list(args: &[Value], _env: &Frame) -> EvalResult {
     Ok(Value::Boolean(match first(args) {
         Value::Null => true,
         Value::Pair(p) => p.is_list(),
+        Value::PairMut(p) => p.borrow().is_list(),
         _ => false,
     }))
 }
@@ -522,18 +523,8 @@ fn list_length(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = first(args);
     match arg {
         Value::Null => Ok(Value::Number(Number::real(0))),
-        Value::Pair(p) => p.len().map_or_else(
-            || {
-                Err(Condition::arg_type_error(
-                    FIRST_ARG_LABEL,
-                    TypeName::LIST,
-                    TypeName::IMPLIST,
-                    arg,
-                )
-                .into())
-            },
-            |len| Ok(Value::Number(Number::from_usize(len))),
-        ),
+        Value::Pair(p) => pair_length(p, arg),
+        Value::PairMut(p) => pair_length(&p.borrow(), arg),
         _ => Err(invalid_target(TypeName::LIST, arg)),
     }
 }
@@ -963,6 +954,18 @@ fn guarded_real_op(
     } else {
         Err(Condition::arg_type_error(FIRST_ARG_LABEL, expected_type, n.as_typename(), arg).into())
     }
+}
+
+fn pair_length(p: &Pair, arg: &Value) -> EvalResult {
+    p.len().map_or_else(
+        || {
+            Err(
+                Condition::arg_type_error(FIRST_ARG_LABEL, TypeName::LIST, TypeName::IMPLIST, arg)
+                    .into(),
+            )
+        },
+        |len| Ok(Value::Number(Number::from_usize(len))),
+    )
 }
 
 fn try_sub_list<'a>(lst: &'a Value, idx: usize, k: &Value) -> Result<&'a Value, Exception> {
