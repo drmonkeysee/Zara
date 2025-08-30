@@ -795,11 +795,33 @@ mod pair {
     }
 
     #[test]
+    fn mutable_nested_is_list() {
+        // (1 2 3)
+        let p = Pair {
+            car: Value::real(1),
+            cdr: Value::cons_mut(Value::real(2), Value::cons_mut(Value::real(3), Value::Null)),
+        };
+
+        assert!(p.is_list());
+    }
+
+    #[test]
     fn improper_list_is_not_list() {
         // (1 2 . 3)
         let p = Pair {
             car: Value::real(1),
             cdr: Value::cons(Value::real(2), Value::real(3)),
+        };
+
+        assert!(!p.is_list());
+    }
+
+    #[test]
+    fn mutable_improper_list_is_not_list() {
+        // (1 2 . 3)
+        let p = Pair {
+            car: Value::real(1),
+            cdr: Value::cons_mut(Value::real(2), Value::real(3)),
         };
 
         assert!(!p.is_list());
@@ -926,11 +948,35 @@ mod pair {
     }
 
     #[test]
+    fn mutable_list_length() {
+        // (1 2 3)
+        let p = Pair {
+            car: Value::real(1),
+            cdr: Value::cons_mut(Value::real(2), Value::cons_mut(Value::real(3), Value::Null)),
+        };
+
+        let o = p.len();
+
+        assert_eq!(some_or_fail!(o), 3);
+    }
+
+    #[test]
     fn improper_list_has_no_length() {
         // (1 2 . 3)
         let p = Pair {
             car: Value::real(1),
             cdr: Value::cons(Value::real(2), Value::real(3)),
+        };
+
+        assert!(p.len().is_none());
+    }
+
+    #[test]
+    fn improper_mutable_list_has_no_length() {
+        // (1 2 . 3)
+        let p = Pair {
+            car: Value::real(1),
+            cdr: Value::cons_mut(Value::real(2), Value::real(3)),
         };
 
         assert!(p.len().is_none());

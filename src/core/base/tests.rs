@@ -762,6 +762,28 @@ fn list_tail_normal_list() {
 }
 
 #[test]
+fn list_tail_mutable_list() {
+    let env = TestEnv::default();
+    let args = [
+        zlist_mut![
+            Value::Symbol(env.symbols.get("a")),
+            Value::Symbol(env.symbols.get("b")),
+            Value::Symbol(env.symbols.get("c"))
+        ],
+        Value::Number(Number::real(1)),
+    ];
+
+    let r = list_tail(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    let second_item = extract_or_fail!(
+        &extract_or_fail!(&args[0], Value::Pair).as_ref().cdr,
+        Value::Pair
+    );
+    assert!(Rc::ptr_eq(&extract_or_fail!(v, Value::Pair), second_item));
+}
+
+#[test]
 fn list_tail_empty_list() {
     let args = [Value::Null, Value::Number(Number::real(0))];
     let env = TestEnv::default();
@@ -811,6 +833,26 @@ fn list_tail_end_of_improper_list() {
         Value::cons(
             Value::Symbol(env.symbols.get("a")),
             Value::cons(
+                Value::Symbol(env.symbols.get("b")),
+                Value::Symbol(env.symbols.get("c")),
+            ),
+        ),
+        Value::Number(Number::real(2)),
+    ];
+
+    let r = list_tail(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert!(matches!(v, Value::Symbol(s) if s.as_ref() == "c"));
+}
+
+#[test]
+fn list_tail_end_of_mutable_improper_list() {
+    let env = TestEnv::default();
+    let args = [
+        Value::cons_mut(
+            Value::Symbol(env.symbols.get("a")),
+            Value::cons_mut(
                 Value::Symbol(env.symbols.get("b")),
                 Value::Symbol(env.symbols.get("c")),
             ),
@@ -943,6 +985,24 @@ fn list_ref_normal_list() {
 }
 
 #[test]
+fn list_ref_normal_mutable_list() {
+    let env = TestEnv::default();
+    let args = [
+        zlist_mut![
+            Value::Symbol(env.symbols.get("a")),
+            Value::Symbol(env.symbols.get("b")),
+            Value::Symbol(env.symbols.get("c"))
+        ],
+        Value::Number(Number::real(1)),
+    ];
+
+    let r = list_get(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert!(matches!(v, Value::Symbol(s) if s.as_ref() == "b"));
+}
+
+#[test]
 fn list_ref_empty_list() {
     let args = [Value::Null, Value::Number(Number::real(0))];
     let env = TestEnv::default();
@@ -977,6 +1037,26 @@ fn list_ref_improper_list_item() {
         Value::cons(
             Value::Symbol(env.symbols.get("a")),
             Value::cons(
+                Value::Symbol(env.symbols.get("b")),
+                Value::Symbol(env.symbols.get("c")),
+            ),
+        ),
+        Value::Number(Number::real(1)),
+    ];
+
+    let r = list_get(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert!(matches!(v, Value::Symbol(s) if s.as_ref() == "b"));
+}
+
+#[test]
+fn list_ref_mutable_improper_list_item() {
+    let env = TestEnv::default();
+    let args = [
+        Value::cons_mut(
+            Value::Symbol(env.symbols.get("a")),
+            Value::cons_mut(
                 Value::Symbol(env.symbols.get("b")),
                 Value::Symbol(env.symbols.get("c")),
             ),
