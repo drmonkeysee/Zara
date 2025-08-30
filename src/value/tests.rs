@@ -124,6 +124,20 @@ mod display {
     }
 
     #[test]
+    fn pairmut_typename() {
+        let v = Value::cons_mut(Value::Boolean(true), Value::Character('a'));
+
+        assert_eq!(v.as_typename().to_string(), "pair");
+    }
+
+    #[test]
+    fn listmut_typename() {
+        let v = zlist_mut![Value::Boolean(true), Value::Character('a')];
+
+        assert_eq!(v.as_typename().to_string(), "list");
+    }
+
+    #[test]
     fn empty_list_typename() {
         let v = zlist![];
 
@@ -934,6 +948,13 @@ mod list {
     }
 
     #[test]
+    fn empty_mutable() {
+        let lst = zlist_mut![];
+
+        assert_eq!(lst.to_string(), "()");
+    }
+
+    #[test]
     fn one() {
         let lst = zlist![Value::real(5)];
 
@@ -944,6 +965,18 @@ mod list {
     fn three() {
         let sym = SymbolTable::default();
         let lst = zlist![
+            Value::real(5),
+            Value::Symbol(sym.get("a")),
+            Value::Boolean(true)
+        ];
+
+        assert_eq!(lst.to_string(), "(5 a #t)");
+    }
+
+    #[test]
+    fn mutable() {
+        let sym = SymbolTable::default();
+        let lst = zlist_mut![
             Value::real(5),
             Value::Symbol(sym.get("a")),
             Value::Boolean(true)

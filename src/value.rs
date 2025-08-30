@@ -7,6 +7,15 @@ macro_rules! zlist {
     };
 }
 
+macro_rules! zlist_mut {
+    () => {
+        Value::null()
+    };
+    ($exp:expr $(, $exps:expr)* $(,)?) => {
+        Value::cons_mut($exp, zlist_mut![$($exps),*])
+    };
+}
+
 mod condition;
 #[cfg(test)]
 mod tests;
@@ -37,6 +46,7 @@ pub(crate) enum Value {
     Intrinsic(Rc<Intrinsic>),
     Number(Number),
     Pair(Option<Rc<Pair>>),
+    PairMut(Rc<RefCell<Pair>>),
     Procedure(Rc<Procedure>),
     String(Rc<str>),
     StringMut(Rc<RefCell<String>>),
@@ -45,10 +55,6 @@ pub(crate) enum Value {
     Unspecified,
     Vector(Rc<[Self]>),
     VectorMut(Rc<RefCell<Vec<Self>>>),
-    /*
-     * TODO: Mutable Values
-     * PairMut(Option<Rc<RefCell<Pair>>>) ?? is refcell needed here? or is mut just swapping out the pair value
-     */
 }
 
 impl Value {
@@ -59,6 +65,11 @@ impl Value {
     #[allow(clippy::similar_names, reason = "lisp terms-of-art")]
     pub(crate) fn cons(car: Self, cdr: Self) -> Self {
         Self::Pair(Some(Pair { car, cdr }.into()))
+    }
+
+    #[allow(clippy::similar_names, reason = "lisp terms-of-art")]
+    pub(crate) fn cons_mut(car: Self, cdr: Self) -> Self {
+        Self::PairMut(RefCell::new(Pair { car, cdr }).into())
     }
 
     pub(crate) fn list<I>(items: I) -> Self
@@ -245,6 +256,7 @@ impl Display for Value {
             Self::Number(n) => n.fmt(f),
             Self::Pair(None) => f.write_str("()"),
             Self::Pair(Some(p)) => write!(f, "({p})"),
+            Self::PairMut(p) => write!(f, "({})", p.borrow()),
             Self::Procedure(p) => p.fmt(f),
             Self::String(s) => StrDatum(s).fmt(f),
             Self::StringMut(s) => StrDatum(&s.borrow()).fmt(f),
@@ -327,6 +339,14 @@ impl Pair {
             _ => None,
         }
     }
+
+    fn typename(&self) -> &str {
+        if self.is_list() {
+            TypeName::LIST
+        } else {
+            TypeName::PAIR
+        }
+    }
 }
 
 impl Display for Pair {
@@ -382,7 +402,8 @@ impl Display for TypeName<'_> {
             Value::Intrinsic(_) => f.write_str("intrinsic"),
             Value::Number(_) => f.write_str(Self::NUMBER),
             Value::Pair(None) => f.write_str("null"),
-            Value::Pair(Some(p)) => f.write_str(if p.is_list() { Self::LIST } else { Self::PAIR }),
+            Value::Pair(Some(p)) => f.write_str(p.typename()),
+            Value::PairMut(p) => f.write_str(p.borrow().typename()),
             Value::Procedure(_) => f.write_str("procedure"),
             Value::String(_) | Value::StringMut(_) => f.write_str(Self::STRING),
             Value::Symbol(_) => f.write_str(Self::SYMBOL),
