@@ -357,7 +357,7 @@ fn error_msg(args: &[Value], _env: &Frame) -> EvalResult {
 fn error_irritants(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = first(args);
     if let Value::Error(c) = arg {
-        Ok(c.irritants().map_or(Value::null(), Value::clone))
+        Ok(c.irritants().map_or(Value::Null, Value::clone))
     } else {
         Err(invalid_target(TypeName::ERROR, arg))
     }

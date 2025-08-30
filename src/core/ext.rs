@@ -19,7 +19,7 @@ pub(crate) fn load(env: &Frame) {
     super::bind_intrinsic(env, "mutable?", 1..1, is_mutable);
 
     // NOTE: convenience vars
-    env.scope.bind(env.sym.get("null"), Value::null());
+    env.scope.bind(env.sym.get("null"), Value::Null);
     env.scope.bind(env.sym.get("void"), Value::Unspecified);
 
     // TODO: test variable

@@ -969,7 +969,7 @@ mod vector {
                 span: 3..6,
                 txt: Rc::clone(&txt),
             }
-            .into_expr(ExpressionKind::Literal(Value::null())),
+            .into_expr(ExpressionKind::Literal(Value::Null)),
             ExprCtx {
                 span: 6..9,
                 txt: Rc::clone(&txt),

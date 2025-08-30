@@ -777,7 +777,7 @@ mod pair {
         // (#t)
         let p = Pair {
             car: Value::Boolean(true),
-            cdr: Value::null(),
+            cdr: Value::Null,
         };
 
         assert!(p.is_list());
@@ -788,7 +788,7 @@ mod pair {
         // (1 2 3)
         let p = Pair {
             car: Value::real(1),
-            cdr: Value::cons(Value::real(2), Value::cons(Value::real(3), Value::null())),
+            cdr: Value::cons(Value::real(2), Value::cons(Value::real(3), Value::Null)),
         };
 
         assert!(p.is_list());
@@ -810,7 +810,7 @@ mod pair {
         // ((1 . 2) 3)
         let p = Pair {
             car: Value::cons(Value::real(1), Value::real(2)),
-            cdr: Value::cons(Value::real(3), Value::null()),
+            cdr: Value::cons(Value::real(3), Value::Null),
         };
 
         assert!(p.is_list());
@@ -820,8 +820,8 @@ mod pair {
     fn list_containing_empty_list_is_list() {
         // (())
         let p = Pair {
-            car: Value::null(),
-            cdr: Value::null(),
+            car: Value::Null,
+            cdr: Value::Null,
         };
 
         assert!(p.is_list());
@@ -836,7 +836,7 @@ mod pair {
 
     #[test]
     fn empty_cdr_display() {
-        let v = Value::cons(Value::Boolean(true), Value::null());
+        let v = Value::cons(Value::Boolean(true), Value::Null);
 
         assert_eq!(v.to_string(), "(#t)")
     }
@@ -845,7 +845,7 @@ mod pair {
     fn list_display() {
         let v = Value::cons(
             Value::real(1),
-            Value::cons(Value::real(2), Value::cons(Value::real(3), Value::null())),
+            Value::cons(Value::real(2), Value::cons(Value::real(3), Value::Null)),
         );
 
         assert_eq!(v.to_string(), "(1 2 3)")
@@ -862,7 +862,7 @@ mod pair {
     fn list_containing_pair_display() {
         let v = Value::cons(
             Value::cons(Value::real(1), Value::real(2)),
-            Value::cons(Value::real(3), Value::null()),
+            Value::cons(Value::real(3), Value::Null),
         );
 
         assert_eq!(v.to_string(), "((1 . 2) 3)")
@@ -873,8 +873,8 @@ mod pair {
         let v = Value::cons(
             Value::real(1),
             Value::cons(
-                Value::cons(Value::real(2), Value::cons(Value::real(3), Value::null())),
-                Value::null(),
+                Value::cons(Value::real(2), Value::cons(Value::real(3), Value::Null)),
+                Value::Null,
             ),
         );
 
@@ -883,7 +883,7 @@ mod pair {
 
     #[test]
     fn list_containing_empty_list_display() {
-        let v = Value::cons(Value::null(), Value::null());
+        let v = Value::cons(Value::Null, Value::Null);
 
         assert_eq!(v.to_string(), "(())")
     }
@@ -904,7 +904,7 @@ mod pair {
         // (#t)
         let p = Pair {
             car: Value::Boolean(true),
-            cdr: Value::null(),
+            cdr: Value::Null,
         };
 
         let o = p.len();
@@ -917,7 +917,7 @@ mod pair {
         // (1 2 3)
         let p = Pair {
             car: Value::real(1),
-            cdr: Value::cons(Value::real(2), Value::cons(Value::real(3), Value::null())),
+            cdr: Value::cons(Value::real(2), Value::cons(Value::real(3), Value::Null)),
         };
 
         let o = p.len();
@@ -1112,7 +1112,7 @@ mod equivalence {
     #[test]
     fn always_the_same() {
         let cases = [
-            (Value::null(), Value::null()),
+            (Value::Null, Value::Null),
             (Value::Unspecified, Value::Unspecified),
         ];
         for (a, b) in cases {

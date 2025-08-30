@@ -1,6 +1,6 @@
 macro_rules! zlist {
     () => {
-        Value::null()
+        Value::Null
     };
     ($exp:expr $(, $exps:expr)* $(,)?) => {
         Value::cons($exp, zlist![$($exps),*])
@@ -9,7 +9,7 @@ macro_rules! zlist {
 
 macro_rules! zlist_mut {
     () => {
-        Value::null()
+        Value::Null
     };
     ($exp:expr $(, $exps:expr)* $(,)?) => {
         Value::cons_mut($exp, zlist_mut![$($exps),*])
@@ -44,6 +44,7 @@ pub(crate) enum Value {
     Character(char),
     Error(Rc<Condition>),
     Intrinsic(Rc<Intrinsic>),
+    Null,
     Number(Number),
     Pair(Option<Rc<Pair>>),
     PairMut(Rc<RefCell<Pair>>),
@@ -58,10 +59,6 @@ pub(crate) enum Value {
 }
 
 impl Value {
-    pub(crate) fn null() -> Self {
-        Self::Pair(None)
-    }
-
     #[allow(clippy::similar_names, reason = "lisp terms-of-art")]
     pub(crate) fn cons(car: Self, cdr: Self) -> Self {
         Self::Pair(Some(Pair { car, cdr }.into()))
@@ -92,7 +89,7 @@ impl Value {
             .into_iter()
             .rev()
             .reduce(|head, item| Self::cons(item, head))
-            .unwrap_or_else(Self::null)
+            .unwrap_or(Self::Null)
     }
 
     pub(crate) fn procedure(p: impl Into<Rc<Procedure>>) -> Self {
@@ -136,7 +133,9 @@ impl Value {
             (Self::ByteVectorMut(a), Self::ByteVectorMut(b)) => Rc::ptr_eq(a, b),
             (Self::Error(a), Self::Error(b)) => Rc::ptr_eq(a, b),
             (Self::Intrinsic(a), Self::Intrinsic(b)) => Rc::ptr_eq(a, b),
-            (Self::Pair(None), Self::Pair(None)) | (Self::Unspecified, Self::Unspecified) => true,
+            (Self::Null, Self::Null)
+            | (Self::Pair(None), Self::Pair(None))
+            | (Self::Unspecified, Self::Unspecified) => true,
             (Self::Pair(Some(a)), Self::Pair(Some(b))) => Rc::ptr_eq(a, b),
             (Self::PairMut(a), Self::PairMut(b)) => Rc::ptr_eq(a, b),
             (Self::Procedure(a), Self::Procedure(b)) => Rc::ptr_eq(a, b),
@@ -257,8 +256,8 @@ impl Display for Value {
             Self::Character(c) => write!(f, "#\\{}", CharDatum::new(*c)),
             Self::Error(c) => c.fmt(f),
             Self::Intrinsic(p) => p.fmt(f),
+            Self::Null | Self::Pair(None) => f.write_str("()"),
             Self::Number(n) => n.fmt(f),
-            Self::Pair(None) => f.write_str("()"),
             Self::Pair(Some(p)) => write!(f, "({p})"),
             Self::PairMut(p) => write!(f, "({})", p.borrow()),
             Self::Procedure(p) => p.fmt(f),
@@ -404,8 +403,8 @@ impl Display for TypeName<'_> {
             Value::Character(_) => f.write_str(Self::CHAR),
             Value::Error(_) => f.write_str(Self::ERROR),
             Value::Intrinsic(_) => f.write_str("intrinsic"),
+            Value::Null | Value::Pair(None) => f.write_str("null"),
             Value::Number(_) => f.write_str(Self::NUMBER),
-            Value::Pair(None) => f.write_str("null"),
             Value::Pair(Some(p)) => f.write_str(p.typename()),
             Value::PairMut(p) => f.write_str(p.borrow().typename()),
             Value::Procedure(_) => f.write_str("procedure"),
