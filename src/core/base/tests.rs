@@ -725,6 +725,24 @@ fn pair_mut_predicate() {
 }
 
 #[test]
+fn set_circular_list() {
+    let env = TestEnv::default();
+    let pair = Value::cons_mut(
+        Value::Symbol(env.symbols.get("a")),
+        Value::Symbol(env.symbols.get("b")),
+    );
+    let args = [pair.clone(), pair.clone()];
+
+    let r = set_cdr(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert!(matches!(v, Value::Unspecified));
+    let lst = extract_or_fail!(&pair, Value::PairMut);
+    let cdr = &lst.borrow().cdr;
+    assert!(pair.is(cdr));
+}
+
+#[test]
 fn list_mut_predicate() {
     let env = TestEnv::default();
     let args = [zlist_mut![

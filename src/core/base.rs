@@ -60,7 +60,9 @@ use crate::{
     eval::{EvalResult, Frame, MAX_ARITY},
     number::{Integer, Number, NumericError, NumericTypeName, Real},
     string::{Symbol, unicode::UnicodeError},
-    value::{BvRef, CollRef, CollSized, Condition, PairSized, StrRef, TypeName, Value, VecRef},
+    value::{
+        BvRef, CollRef, CollSized, Condition, Pair, PairSized, StrRef, TypeName, Value, VecRef,
+    },
 };
 use std::{
     cell::RefMut,
@@ -483,8 +485,12 @@ fn into_exact(args: &[Value], _env: &Frame) -> EvalResult {
 fn load_list(env: &Frame) {
     super::bind_intrinsic(env, "pair?", 1..1, is_pair);
 
+    super::bind_intrinsic(env, "cons", 2..2, cons);
     super::bind_intrinsic(env, "car", 1..1, car);
     super::bind_intrinsic(env, "cdr", 1..1, cdr);
+    super::bind_intrinsic(env, "set-car!", 2..2, set_car);
+    super::bind_intrinsic(env, "set-cdr!", 2..2, set_cdr);
+
     super::bind_intrinsic(env, "caar", 1..1, caar);
     super::bind_intrinsic(env, "cadr", 1..1, cadr);
     super::bind_intrinsic(env, "cdar", 1..1, cdar);
@@ -506,6 +512,25 @@ cadr_func!(caar, a, a);
 cadr_func!(cadr, a, d);
 cadr_func!(cdar, d, a);
 cadr_func!(cddr, d, d);
+
+fn cons(args: &[Value], _env: &Frame) -> EvalResult {
+    Ok(Value::cons_mut(
+        first(args).clone(),
+        super::second(args).clone(),
+    ))
+}
+
+fn set_car(args: &[Value], _env: &Frame) -> EvalResult {
+    pair_set(first(args), super::second(args), |mut p, v| {
+        p.car = v.clone()
+    })
+}
+
+fn set_cdr(args: &[Value], _env: &Frame) -> EvalResult {
+    pair_set(first(args), super::second(args), |mut p, v| {
+        p.cdr = v.clone()
+    })
+}
 
 // TODO: circular lists => #f
 #[allow(clippy::unnecessary_wraps, reason = "infallible intrinsic")]
@@ -967,6 +992,17 @@ fn guarded_real_op(
         op(r)
     } else {
         Err(Condition::arg_type_error(FIRST_ARG_LABEL, expected_type, n.as_typename(), arg).into())
+    }
+}
+
+fn pair_set(arg: &Value, val: &Value, set: impl FnOnce(RefMut<'_, Pair>, &Value)) -> EvalResult {
+    match arg {
+        Value::PairMut(p) => {
+            set(p.borrow_mut(), val);
+            Ok(Value::Unspecified)
+        }
+        Value::Pair(_) => Err(Condition::literal_mut_error(arg).into()),
+        _ => Err(invalid_target(TypeName::PAIR, arg)),
     }
 }
 
