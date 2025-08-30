@@ -46,7 +46,7 @@ pub(crate) enum Value {
     Intrinsic(Rc<Intrinsic>),
     Null,
     Number(Number),
-    Pair(Option<Rc<Pair>>),
+    Pair(Rc<Pair>),
     PairMut(Rc<RefCell<Pair>>),
     Procedure(Rc<Procedure>),
     String(Rc<str>),
@@ -61,7 +61,7 @@ pub(crate) enum Value {
 impl Value {
     #[allow(clippy::similar_names, reason = "lisp terms-of-art")]
     pub(crate) fn cons(car: Self, cdr: Self) -> Self {
-        Self::Pair(Some(Pair { car, cdr }.into()))
+        Self::Pair(Pair { car, cdr }.into())
     }
 
     #[allow(clippy::similar_names, reason = "lisp terms-of-art")]
@@ -133,10 +133,8 @@ impl Value {
             (Self::ByteVectorMut(a), Self::ByteVectorMut(b)) => Rc::ptr_eq(a, b),
             (Self::Error(a), Self::Error(b)) => Rc::ptr_eq(a, b),
             (Self::Intrinsic(a), Self::Intrinsic(b)) => Rc::ptr_eq(a, b),
-            (Self::Null, Self::Null)
-            | (Self::Pair(None), Self::Pair(None))
-            | (Self::Unspecified, Self::Unspecified) => true,
-            (Self::Pair(Some(a)), Self::Pair(Some(b))) => Rc::ptr_eq(a, b),
+            (Self::Null, Self::Null) | (Self::Unspecified, Self::Unspecified) => true,
+            (Self::Pair(a), Self::Pair(b)) => Rc::ptr_eq(a, b),
             (Self::PairMut(a), Self::PairMut(b)) => Rc::ptr_eq(a, b),
             (Self::Procedure(a), Self::Procedure(b)) => Rc::ptr_eq(a, b),
             (Self::String(a), Self::String(b)) => Rc::ptr_eq(a, b),
@@ -225,10 +223,11 @@ impl PartialEq for Value {
                 (Self::ByteVectorMut(a), Self::ByteVectorMut(b)) => a == b,
                 (Self::ByteVector(a), Self::ByteVectorMut(b))
                 | (Self::ByteVectorMut(b), Self::ByteVector(a)) => a.as_ref() == *b.borrow(),
-                (Self::Pair(Some(a)), Self::Pair(Some(b))) => a == b,
+                (Self::Pair(a), Self::Pair(b)) => a == b,
                 (Self::PairMut(a), Self::PairMut(b)) => a == b,
-                (Self::Pair(Some(a)), Self::PairMut(b))
-                | (Self::PairMut(b), Self::Pair(Some(a))) => *a.as_ref() == *b.borrow(),
+                (Self::Pair(a), Self::PairMut(b)) | (Self::PairMut(b), Self::Pair(a)) => {
+                    *a.as_ref() == *b.borrow()
+                }
                 (Self::String(a), Self::String(b)) => a == b,
                 (Self::StringMut(a), Self::StringMut(b)) => a == b,
                 (Self::String(a), Self::StringMut(b)) | (Self::StringMut(b), Self::String(a)) => {
@@ -256,9 +255,9 @@ impl Display for Value {
             Self::Character(c) => write!(f, "#\\{}", CharDatum::new(*c)),
             Self::Error(c) => c.fmt(f),
             Self::Intrinsic(p) => p.fmt(f),
-            Self::Null | Self::Pair(None) => f.write_str("()"),
+            Self::Null => f.write_str("()"),
             Self::Number(n) => n.fmt(f),
-            Self::Pair(Some(p)) => write!(f, "({p})"),
+            Self::Pair(p) => write!(f, "({p})"),
             Self::PairMut(p) => write!(f, "({})", p.borrow()),
             Self::Procedure(p) => p.fmt(f),
             Self::String(s) => StrDatum(s).fmt(f),
@@ -328,17 +327,17 @@ pub(crate) struct Pair {
 
 impl Pair {
     pub(crate) fn is_list(&self) -> bool {
-        if let Value::Pair(p) = &self.cdr {
-            p.as_ref().is_none_or(|r| r.is_list())
-        } else {
-            false
+        match &self.cdr {
+            Value::Null => true,
+            Value::Pair(p) => p.is_list(),
+            _ => false,
         }
     }
 
     pub(crate) fn len(&self) -> Option<usize> {
         match &self.cdr {
-            Value::Pair(None) => Some(1),
-            Value::Pair(Some(p)) => p.len().map(|len| len + 1),
+            Value::Null => Some(1),
+            Value::Pair(p) => p.len().map(|len| len + 1),
             _ => None,
         }
     }
@@ -355,13 +354,10 @@ impl Pair {
 impl Display for Pair {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         self.car.fmt(f)?;
-        if let Value::Pair(p) = &self.cdr {
-            if let Some(p) = p {
-                write!(f, " {p}")?;
-            }
-            Ok(())
-        } else {
-            write!(f, " . {}", self.cdr)
+        match &self.cdr {
+            Value::Null => Ok(()),
+            Value::Pair(p) => write!(f, " {p}"),
+            _ => write!(f, " . {}", self.cdr),
         }
     }
 }
@@ -403,9 +399,9 @@ impl Display for TypeName<'_> {
             Value::Character(_) => f.write_str(Self::CHAR),
             Value::Error(_) => f.write_str(Self::ERROR),
             Value::Intrinsic(_) => f.write_str("intrinsic"),
-            Value::Null | Value::Pair(None) => f.write_str("null"),
+            Value::Null => f.write_str("null"),
             Value::Number(_) => f.write_str(Self::NUMBER),
-            Value::Pair(Some(p)) => f.write_str(p.typename()),
+            Value::Pair(p) => f.write_str(p.typename()),
             Value::PairMut(p) => f.write_str(p.borrow().typename()),
             Value::Procedure(_) => f.write_str("procedure"),
             Value::String(_) | Value::StringMut(_) => f.write_str(Self::STRING),

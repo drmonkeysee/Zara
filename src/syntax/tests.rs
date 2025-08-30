@@ -256,7 +256,7 @@ mod parsing {
             &seq[0],
             Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 1, end: 3 }, txt },
-                kind: ExpressionKind::Literal(Value::Pair(Some(_))),
+                kind: ExpressionKind::Literal(Value::Pair(_)),
             } if txt.lineno == 1
         ));
         let value = extract_or_fail!(&seq[0].kind, ExpressionKind::Literal);
@@ -304,7 +304,7 @@ mod parsing {
             &seq[0],
             Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 1, end: 3 }, txt },
-                kind: ExpressionKind::Literal(Value::Pair(Some(_))),
+                kind: ExpressionKind::Literal(Value::Pair(_)),
             } if txt.lineno == 1
         ));
         let value = extract_or_fail!(&seq[0].kind, ExpressionKind::Literal);
@@ -339,7 +339,7 @@ mod parsing {
             &seq[0],
             Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 2, end: 6 }, txt },
-                kind: ExpressionKind::Literal(Value::Pair(Some(_))),
+                kind: ExpressionKind::Literal(Value::Pair(_)),
             } if txt.lineno == 1
         ));
         let value = extract_or_fail!(&seq[0].kind, ExpressionKind::Literal);
@@ -398,7 +398,7 @@ mod parsing {
             &seq[0],
             Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 1, end: 6 }, txt },
-                kind: ExpressionKind::Literal(Value::Pair(Some(_))),
+                kind: ExpressionKind::Literal(Value::Pair(_)),
             } if txt.lineno == 1
         ));
         let value = extract_or_fail!(&seq[0].kind, ExpressionKind::Literal);
@@ -425,7 +425,7 @@ mod parsing {
             &seq[0],
             Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 1, end: 3 }, txt },
-                kind: ExpressionKind::Literal(Value::Pair(None)),
+                kind: ExpressionKind::Literal(Value::Null),
             } if txt.lineno == 1
         ));
         let value = extract_or_fail!(&seq[0].kind, ExpressionKind::Literal);
@@ -455,7 +455,7 @@ mod parsing {
             &seq[0],
             Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 1, end: 6 }, txt },
-                kind: ExpressionKind::Literal(Value::Pair(Some(_))),
+                kind: ExpressionKind::Literal(Value::Pair(_)),
             } if txt.lineno == 1
         ));
         let value = extract_or_fail!(&seq[0].kind, ExpressionKind::Literal);
@@ -486,7 +486,7 @@ mod parsing {
             &seq[0],
             Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 1, end: 7 }, txt },
-                kind: ExpressionKind::Literal(Value::Pair(Some(_))),
+                kind: ExpressionKind::Literal(Value::Pair(_)),
             } if txt.lineno == 1
         ));
         let value = extract_or_fail!(&seq[0].kind, ExpressionKind::Literal);
@@ -520,7 +520,7 @@ mod parsing {
             &seq[0],
             Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 1, end: 9 }, txt },
-                kind: ExpressionKind::Literal(Value::Pair(Some(_))),
+                kind: ExpressionKind::Literal(Value::Pair(_)),
             } if txt.lineno == 1
         ));
         let value = extract_or_fail!(&seq[0].kind, ExpressionKind::Literal);
@@ -560,7 +560,7 @@ mod parsing {
             &seq[0],
             Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 1, end: 15 }, txt },
-                kind: ExpressionKind::Literal(Value::Pair(Some(_))),
+                kind: ExpressionKind::Literal(Value::Pair(_)),
             } if txt.lineno == 1
         ));
         let value = extract_or_fail!(&seq[0].kind, ExpressionKind::Literal);
@@ -592,7 +592,7 @@ mod parsing {
             &seq[0],
             Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 1, end: 8 }, txt },
-                kind: ExpressionKind::Literal(Value::Pair(Some(_))),
+                kind: ExpressionKind::Literal(Value::Pair(_)),
             } if txt.lineno == 1
         ));
         let value = extract_or_fail!(&seq[0].kind, ExpressionKind::Literal);
@@ -625,7 +625,7 @@ mod parsing {
             &seq[0],
             Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 1, end: 8 }, txt },
-                kind: ExpressionKind::Literal(Value::Pair(Some(_))),
+                kind: ExpressionKind::Literal(Value::Pair(_)),
             } if txt.lineno == 1
         ));
         let value = extract_or_fail!(&seq[0].kind, ExpressionKind::Literal);
@@ -661,7 +661,7 @@ mod parsing {
             &seq[0],
             Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 1, end: 11 }, txt },
-                kind: ExpressionKind::Literal(Value::Pair(Some(_))),
+                kind: ExpressionKind::Literal(Value::Pair(_)),
             } if txt.lineno == 1
         ));
         let value = extract_or_fail!(&seq[0].kind, ExpressionKind::Literal);
@@ -693,7 +693,7 @@ mod parsing {
             &seq[0],
             Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 1, end: 7 }, txt },
-                kind: ExpressionKind::Literal(Value::Pair(Some(_))),
+                kind: ExpressionKind::Literal(Value::Pair(_)),
             } if txt.lineno == 1
         ));
         let value = extract_or_fail!(&seq[0].kind, ExpressionKind::Literal);
@@ -725,7 +725,7 @@ mod parsing {
             &seq[0],
             Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 1, end: 7 }, txt },
-                kind: ExpressionKind::Literal(Value::Pair(Some(_))),
+                kind: ExpressionKind::Literal(Value::Pair(_)),
             } if txt.lineno == 1
         ));
         let value = extract_or_fail!(&seq[0].kind, ExpressionKind::Literal);

@@ -122,7 +122,7 @@ impl SyntacticForm {
                                 })));
                             }
                         }
-                        ExpressionKind::Literal(Value::Pair(Some(p))) => {
+                        ExpressionKind::Literal(Value::Pair(p)) => {
                             return lambda_transform(len, &p, binding.ctx, it, ctx);
                         }
                         _ => (),
@@ -316,8 +316,8 @@ fn parse_formals(mut params: Value) -> Result<(Vec<Symbol>, Option<Symbol>), Exp
     let mut rest = None;
     loop {
         match params {
-            Value::Pair(None) => break,
-            Value::Pair(Some(p)) => {
+            Value::Null => break,
+            Value::Pair(p) => {
                 if let Value::Symbol(n) = &p.car {
                     args.push(n.clone());
                     params = p.cdr.clone();

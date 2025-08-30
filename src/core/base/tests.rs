@@ -1,6 +1,6 @@
 use super::*;
 use crate::{
-    testutil::{TestEnv, err_or_fail, extract_or_fail, ok_or_fail, some_or_fail},
+    testutil::{TestEnv, err_or_fail, extract_or_fail, ok_or_fail},
     value::zlist,
 };
 use std::rc::Rc;
@@ -725,17 +725,11 @@ fn list_tail_normal_list() {
     let r = list_tail(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    let second_item = some_or_fail!(
-        extract_or_fail!(
-            &some_or_fail!(extract_or_fail!(&args[0], Value::Pair).as_ref()).cdr,
-            Value::Pair
-        )
-        .as_ref()
+    let second_item = extract_or_fail!(
+        &extract_or_fail!(&args[0], Value::Pair).as_ref().cdr,
+        Value::Pair
     );
-    assert!(Rc::ptr_eq(
-        &some_or_fail!(extract_or_fail!(v, Value::Pair)),
-        second_item
-    ));
+    assert!(Rc::ptr_eq(&extract_or_fail!(v, Value::Pair), second_item));
 }
 
 #[test]
@@ -746,7 +740,7 @@ fn list_tail_empty_list() {
     let r = list_tail(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::Pair(None)));
+    assert!(matches!(v, Value::Null));
 }
 
 #[test]
@@ -764,7 +758,7 @@ fn list_tail_index_to_empty_list() {
     let r = list_tail(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::Pair(None)));
+    assert!(matches!(v, Value::Null));
 }
 
 #[test]

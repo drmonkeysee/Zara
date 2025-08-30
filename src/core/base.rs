@@ -498,8 +498,8 @@ fn load_list(env: &Frame) {
     super::bind_intrinsic(env, "list-ref", 2..2, list_get);
 }
 
-predicate!(is_pair, Value::Pair(Some(_)));
-predicate!(is_null, Value::Pair(None));
+predicate!(is_pair, Value::Pair(_));
+predicate!(is_null, Value::Null);
 cadr_func!(car, a);
 cadr_func!(cdr, d);
 cadr_func!(caar, a, a);
@@ -511,8 +511,8 @@ cadr_func!(cddr, d, d);
 #[allow(clippy::unnecessary_wraps, reason = "infallible intrinsic")]
 fn is_list(args: &[Value], _env: &Frame) -> EvalResult {
     Ok(Value::Boolean(match first(args) {
-        Value::Pair(None) => true,
-        Value::Pair(Some(p)) => p.is_list(),
+        Value::Null => true,
+        Value::Pair(p) => p.is_list(),
         _ => false,
     }))
 }
@@ -521,8 +521,8 @@ fn is_list(args: &[Value], _env: &Frame) -> EvalResult {
 fn list_length(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = first(args);
     match arg {
-        Value::Pair(None) => Ok(Value::Number(Number::real(0))),
-        Value::Pair(Some(p)) => p.len().map_or_else(
+        Value::Null => Ok(Value::Number(Number::real(0))),
+        Value::Pair(p) => p.len().map_or_else(
             || {
                 Err(Condition::arg_type_error(
                     FIRST_ARG_LABEL,
@@ -546,7 +546,7 @@ fn list_tail(args: &[Value], _env: &Frame) -> EvalResult {
 fn list_get(args: &[Value], _env: &Frame) -> EvalResult {
     let k = super::second(args);
     let subl = try_sub_list(first(args), try_val_to_index(k, SECOND_ARG_LABEL)?, k)?;
-    if let Value::Pair(None) = subl {
+    if let Value::Null = subl {
         Err(Condition::index_error(k).into())
     } else {
         pcar(subl)
@@ -1011,9 +1011,9 @@ fn build_str_fill(
 fn try_sub_list<'a>(lst: &'a Value, idx: usize, k: &Value) -> Result<&'a Value, Exception> {
     if idx == 0 {
         Ok(lst)
-    } else if let Value::Pair(Some(p)) = lst {
+    } else if let Value::Pair(p) = lst {
         try_sub_list(&p.cdr, idx - 1, k)
-    } else if let Value::Pair(None) = lst {
+    } else if let Value::Null = lst {
         Err(Condition::index_error(k).into())
     } else {
         Err(invalid_target(TypeName::PAIR, lst))

@@ -1088,8 +1088,8 @@ mod cloning {
         let c = v.clone();
 
         assert!(Rc::ptr_eq(
-            &extract_or_fail!(extract_or_fail!(v, Value::Pair), Some),
-            &extract_or_fail!(extract_or_fail!(c, Value::Pair), Some)
+            &extract_or_fail!(v, Value::Pair),
+            &extract_or_fail!(c, Value::Pair),
         ));
     }
 

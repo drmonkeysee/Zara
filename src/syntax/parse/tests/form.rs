@@ -709,7 +709,7 @@ fn into_datum_list() {
         expr,
         Expression {
             ctx: ExprCtx { span: TxtSpan { start: 0, end: 6 }, txt: line },
-            kind: ExpressionKind::Literal(Value::Pair(Some(_))),
+            kind: ExpressionKind::Literal(Value::Pair(_)),
         } if Rc::ptr_eq(&txt, &line)
     ));
     let value = extract_or_fail!(expr.kind, ExpressionKind::Literal);
@@ -740,7 +740,7 @@ fn into_empty_datum_list() {
         expr,
         Expression {
             ctx: ExprCtx { span: TxtSpan { start: 0, end: 2 }, txt: line },
-            kind: ExpressionKind::Literal(Value::Pair(None)),
+            kind: ExpressionKind::Literal(Value::Null),
         } if Rc::ptr_eq(&txt, &line)
     ));
     let value = extract_or_fail!(expr.kind, ExpressionKind::Literal);
@@ -830,7 +830,7 @@ fn into_pair() {
         expr,
         Expression {
             ctx: ExprCtx { span: TxtSpan { start: 0, end: 8 }, txt: line },
-            kind: ExpressionKind::Literal(Value::Pair(Some(_))),
+            kind: ExpressionKind::Literal(Value::Pair(_)),
         } if Rc::ptr_eq(&txt, &line)
     ));
     let value = extract_or_fail!(expr.kind, ExpressionKind::Literal);

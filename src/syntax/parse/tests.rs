@@ -1001,7 +1001,7 @@ mod vector {
         );
         assert_eq!(v.len(), 3);
         assert!(matches!(&v[0], Value::Symbol(s) if s.as_ref() == "a"));
-        assert!(matches!(&v[1], Value::Pair(None)));
+        assert!(matches!(&v[1], Value::Null));
         assert!(matches!(
             &v[2],
             Value::Number(n) if n.to_string() == "26"
@@ -1634,7 +1634,7 @@ mod quote {
                     span: TxtSpan { start: 1, end: 2 },
                     txt: line,
                 },
-                kind: ExpressionKind::Literal(Value::Pair(Some(_))),
+                kind: ExpressionKind::Literal(Value::Pair(_)),
             } if Rc::ptr_eq(&txt, &line)
         ));
         let value = extract_or_fail!(expr.kind, ExpressionKind::Literal);
@@ -2120,7 +2120,7 @@ mod merge {
                     span: TxtSpan { start: 3, end: 8 },
                     txt: line
                 },
-                kind: ExpressionKind::Literal(Value::Pair(Some(_))),
+                kind: ExpressionKind::Literal(Value::Pair(_)),
             } if Rc::ptr_eq(&txt, &line)
         ));
         let value = extract_or_fail!(inner.kind, ExpressionKind::Literal);
@@ -2161,7 +2161,7 @@ mod merge {
                     span: TxtSpan { start: 3, end: 5 },
                     txt: line
                 },
-                kind: ExpressionKind::Literal(Value::Pair(None)),
+                kind: ExpressionKind::Literal(Value::Null),
             } if Rc::ptr_eq(&txt, &line)
         ));
         let value = extract_or_fail!(inner.kind, ExpressionKind::Literal);
@@ -2263,7 +2263,7 @@ mod merge {
                     span: TxtSpan { start: 3, end: 8 },
                     txt: line
                 },
-                kind: ExpressionKind::Literal(Value::Pair(Some(_))),
+                kind: ExpressionKind::Literal(Value::Pair(_)),
             } if Rc::ptr_eq(&txt, &line)
         ));
         let value = extract_or_fail!(inner.kind, ExpressionKind::Literal);
@@ -2312,7 +2312,7 @@ mod merge {
                     span: TxtSpan { start: 3, end: 5 },
                     txt: line
                 },
-                kind: ExpressionKind::Literal(Value::Pair(None)),
+                kind: ExpressionKind::Literal(Value::Null),
             } if Rc::ptr_eq(&txt, &line)
         ));
         let value = extract_or_fail!(inner.kind, ExpressionKind::Literal);

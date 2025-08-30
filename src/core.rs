@@ -96,7 +96,7 @@ fn third(args: &[Value]) -> &Value {
 }
 
 fn pcar(arg: &Value) -> EvalResult {
-    if let Value::Pair(Some(p)) = arg {
+    if let Value::Pair(p) = arg {
         Ok(p.car.clone())
     } else {
         Err(invalid_target(TypeName::PAIR, arg))
@@ -104,7 +104,7 @@ fn pcar(arg: &Value) -> EvalResult {
 }
 
 fn pcdr(arg: &Value) -> EvalResult {
-    if let Value::Pair(Some(p)) = arg {
+    if let Value::Pair(p) = arg {
         Ok(p.cdr.clone())
     } else {
         Err(invalid_target(TypeName::PAIR, arg))
