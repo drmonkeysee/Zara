@@ -1297,6 +1297,16 @@ mod equivalence {
     }
 
     #[test]
+    fn equal_mutable_pairs() {
+        let a = Value::cons_mut(Value::Number(Number::real(4)), Value::Character('a'));
+        let b = Value::cons_mut(Value::Number(Number::real(4)), Value::Character('a'));
+
+        assert!(!a.is(&b));
+        assert!(!a.is_eqv(&b));
+        assert!(a == b);
+    }
+
+    #[test]
     fn non_equal_pairs_if_elements_not_equivalent() {
         let a = Value::cons(Value::Number(Number::real(4)), Value::Character('a'));
         let b = Value::cons(Value::Number(Number::real(4.0)), Value::Character('a'));
@@ -1325,6 +1335,42 @@ mod equivalence {
     }
 
     #[test]
+    fn equal_mutable_lists() {
+        let a = zlist_mut![
+            Value::Boolean(true),
+            Value::Character('b'),
+            Value::Number(Number::real(3))
+        ];
+        let b = zlist_mut![
+            Value::Boolean(true),
+            Value::Character('b'),
+            Value::Number(Number::real(3))
+        ];
+
+        assert!(!a.is(&b));
+        assert!(!a.is_eqv(&b));
+        assert!(a == b);
+    }
+
+    #[test]
+    fn equal_mixed_lists() {
+        let a = zlist![
+            Value::Boolean(true),
+            Value::Character('b'),
+            Value::Number(Number::real(3))
+        ];
+        let b = zlist_mut![
+            Value::Boolean(true),
+            Value::Character('b'),
+            Value::Number(Number::real(3))
+        ];
+
+        assert!(!a.is(&b));
+        assert!(!a.is_eqv(&b));
+        assert!(a == b);
+    }
+
+    #[test]
     fn unequal_lists_if_one_is_longer() {
         let a = zlist![
             Value::Boolean(true),
@@ -1332,6 +1378,25 @@ mod equivalence {
             Value::Number(Number::real(3))
         ];
         let b = zlist![
+            Value::Boolean(true),
+            Value::Character('b'),
+            Value::Number(Number::real(3)),
+            Value::Boolean(false),
+        ];
+
+        assert!(!a.is(&b));
+        assert!(!a.is_eqv(&b));
+        assert!(a != b);
+    }
+
+    #[test]
+    fn unequal_mut_lists_if_one_is_longer() {
+        let a = zlist_mut![
+            Value::Boolean(true),
+            Value::Character('b'),
+            Value::Number(Number::real(3))
+        ];
+        let b = zlist_mut![
             Value::Boolean(true),
             Value::Character('b'),
             Value::Number(Number::real(3)),

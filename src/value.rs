@@ -138,6 +138,7 @@ impl Value {
             (Self::Intrinsic(a), Self::Intrinsic(b)) => Rc::ptr_eq(a, b),
             (Self::Pair(None), Self::Pair(None)) | (Self::Unspecified, Self::Unspecified) => true,
             (Self::Pair(Some(a)), Self::Pair(Some(b))) => Rc::ptr_eq(a, b),
+            (Self::PairMut(a), Self::PairMut(b)) => Rc::ptr_eq(a, b),
             (Self::Procedure(a), Self::Procedure(b)) => Rc::ptr_eq(a, b),
             (Self::String(a), Self::String(b)) => Rc::ptr_eq(a, b),
             (Self::StringMut(a), Self::StringMut(b)) => Rc::ptr_eq(a, b),
@@ -226,6 +227,9 @@ impl PartialEq for Value {
                 (Self::ByteVector(a), Self::ByteVectorMut(b))
                 | (Self::ByteVectorMut(b), Self::ByteVector(a)) => a.as_ref() == *b.borrow(),
                 (Self::Pair(Some(a)), Self::Pair(Some(b))) => a == b,
+                (Self::PairMut(a), Self::PairMut(b)) => a == b,
+                (Self::Pair(Some(a)), Self::PairMut(b))
+                | (Self::PairMut(b), Self::Pair(Some(a))) => *a.as_ref() == *b.borrow(),
                 (Self::String(a), Self::String(b)) => a == b,
                 (Self::StringMut(a), Self::StringMut(b)) => a == b,
                 (Self::String(a), Self::StringMut(b)) | (Self::StringMut(b), Self::String(a)) => {
