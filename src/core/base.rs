@@ -348,7 +348,7 @@ predicate!(is_file_error, Value::Error(c) if c.is_file_err());
 fn error_msg(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = first(args);
     if let Value::Error(c) = arg {
-        Ok(Value::string_mut(c.message()))
+        Ok(Value::string(c.message()))
     } else {
         Err(invalid_target(TypeName::ERROR, arg))
     }
