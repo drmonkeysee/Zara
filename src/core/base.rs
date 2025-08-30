@@ -965,6 +965,18 @@ fn guarded_real_op(
     }
 }
 
+fn try_sub_list<'a>(lst: &'a Value, idx: usize, k: &Value) -> Result<&'a Value, Exception> {
+    if idx == 0 {
+        Ok(lst)
+    } else if let Value::Pair(p) = lst {
+        try_sub_list(&p.cdr, idx - 1, k)
+    } else if let Value::Null = lst {
+        Err(Condition::index_error(k).into())
+    } else {
+        Err(invalid_target(TypeName::PAIR, lst))
+    }
+}
+
 fn try_val_to_char(arg: &Value, lbl: impl Display) -> Result<char, Exception> {
     if let Value::Character(c) = arg {
         Ok(*c)
@@ -1006,18 +1018,6 @@ fn build_str_fill(
     let start = target.chars().take(skip.start);
     let rest = target.chars().skip(skip.end);
     start.chain(replace).chain(rest).collect::<String>()
-}
-
-fn try_sub_list<'a>(lst: &'a Value, idx: usize, k: &Value) -> Result<&'a Value, Exception> {
-    if idx == 0 {
-        Ok(lst)
-    } else if let Value::Pair(p) = lst {
-        try_sub_list(&p.cdr, idx - 1, k)
-    } else if let Value::Null = lst {
-        Err(Condition::index_error(k).into())
-    } else {
-        Err(invalid_target(TypeName::PAIR, lst))
-    }
 }
 
 fn reflexive_vector_copy(ranges: impl IntoIterator<Item = (usize, usize)>, v: &mut [Value]) {
