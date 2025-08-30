@@ -776,11 +776,15 @@ fn list_tail_mutable_list() {
     let r = list_tail(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    let second_item = extract_or_fail!(
-        &extract_or_fail!(&args[0], Value::Pair).as_ref().cdr,
-        Value::Pair
-    );
-    assert!(Rc::ptr_eq(&extract_or_fail!(v, Value::Pair), second_item));
+    let vcdr = &extract_or_fail!(&args[0], Value::PairMut)
+        .as_ref()
+        .borrow()
+        .cdr;
+    let second_item = extract_or_fail!(vcdr, Value::PairMut);
+    assert!(Rc::ptr_eq(
+        &extract_or_fail!(v, Value::PairMut),
+        second_item
+    ));
 }
 
 #[test]
