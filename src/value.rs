@@ -320,10 +320,10 @@ impl Pair {
         }
     }
 
-    pub(crate) fn length(&self) -> Option<usize> {
+    pub(crate) fn len(&self) -> Option<usize> {
         match &self.cdr {
             Value::Pair(None) => Some(1),
-            Value::Pair(Some(p)) => p.length().map(|len| len + 1),
+            Value::Pair(Some(p)) => p.len().map(|len| len + 1),
             _ => None,
         }
     }

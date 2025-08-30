@@ -522,7 +522,7 @@ fn list_length(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = first(args);
     match arg {
         Value::Pair(None) => Ok(Value::Number(Number::real(0))),
-        Value::Pair(Some(p)) => p.length().map_or_else(
+        Value::Pair(Some(p)) => p.len().map_or_else(
             || {
                 Err(Condition::arg_type_error(
                     FIRST_ARG_LABEL,

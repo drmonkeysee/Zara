@@ -882,7 +882,7 @@ mod pair {
             cdr: Value::Boolean(false),
         };
 
-        assert!(p.length().is_none());
+        assert!(p.len().is_none());
     }
 
     #[test]
@@ -893,7 +893,7 @@ mod pair {
             cdr: Value::null(),
         };
 
-        let o = p.length();
+        let o = p.len();
 
         assert_eq!(some_or_fail!(o), 1);
     }
@@ -906,7 +906,7 @@ mod pair {
             cdr: Value::cons(Value::real(2), Value::cons(Value::real(3), Value::null())),
         };
 
-        let o = p.length();
+        let o = p.len();
 
         assert_eq!(some_or_fail!(o), 3);
     }
@@ -919,7 +919,7 @@ mod pair {
             cdr: Value::cons(Value::real(2), Value::real(3)),
         };
 
-        assert!(p.length().is_none());
+        assert!(p.len().is_none());
     }
 }
 
