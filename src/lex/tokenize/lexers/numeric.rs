@@ -334,10 +334,11 @@ impl<P: ClassifierProps> ConditionProcessor<'_, '_, P> {
         if self.props.radix_infnan() {
             return parser.extract_radix_infnan();
         }
-        if is_imaginary && self.props.is_empty() {
-            if let Some(sign) = self.props.sign() {
-                return Ok(imaginary(sign, self.props.exactness()));
-            }
+        if is_imaginary
+            && self.props.is_empty()
+            && let Some(sign) = self.props.sign()
+        {
+            return Ok(imaginary(sign, self.props.exactness()));
         }
         parser
             .parse(self.props.exactness())
