@@ -2583,7 +2583,7 @@ fn into_lambda_too_many_formals_with_rest() {
                     span: 8..15,
                     txt: Rc::clone(&txt),
                 }
-                .into_expr(ExpressionKind::Literal(Value::improper_list(args))),
+                .into_expr(ExpressionKind::Literal(Value::list_cons(args))),
                 Expression::symbol(
                     env.symbols.get("a"),
                     ExprCtx {

@@ -1075,14 +1075,14 @@ mod list {
 
     #[test]
     fn improper_ctor_empty() {
-        let lst = Value::improper_list(vec![]);
+        let lst = Value::list_cons(vec![]);
 
         assert_eq!(lst.to_string(), "()");
     }
 
     #[test]
     fn improper_ctor_single() {
-        let lst = Value::improper_list(vec![Value::real(5)]);
+        let lst = Value::list_cons(vec![Value::real(5)]);
 
         assert!(matches!(lst, Value::Number(_)));
         assert_eq!(lst.to_string(), "5");
@@ -1091,7 +1091,7 @@ mod list {
     #[test]
     fn improper_ctor_vec() {
         let sym = SymbolTable::default();
-        let lst = Value::improper_list(vec![
+        let lst = Value::list_cons(vec![
             Value::real(5),
             Value::Symbol(sym.get("a")),
             Value::Boolean(true),
@@ -1103,7 +1103,7 @@ mod list {
     #[test]
     fn improper_ctor_slice() {
         let sym = SymbolTable::default();
-        let lst = Value::improper_list([
+        let lst = Value::list_cons([
             Value::real(5),
             Value::Symbol(sym.get("a")),
             Value::Boolean(true),

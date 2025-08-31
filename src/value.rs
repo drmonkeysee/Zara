@@ -85,16 +85,20 @@ impl Value {
         Self::make_list(items, Self::cons_mut)
     }
 
-    pub(crate) fn improper_list<I>(items: I) -> Self
+    pub(crate) fn list_cons<I>(items: I) -> Self
     where
         I: IntoIterator<Item = Self>,
         <I as IntoIterator>::IntoIter: DoubleEndedIterator,
     {
-        items
-            .into_iter()
-            .rev()
-            .reduce(|head, item| Self::cons(item, head))
-            .unwrap_or(Self::Null)
+        Self::make_improper_list(items, Self::cons)
+    }
+
+    pub(crate) fn list_cons_mut<I>(items: I) -> Self
+    where
+        I: IntoIterator<Item = Self>,
+        <I as IntoIterator>::IntoIter: DoubleEndedIterator,
+    {
+        Self::make_improper_list(items, Self::cons_mut)
     }
 
     pub(crate) fn procedure(p: impl Into<Rc<Procedure>>) -> Self {
@@ -138,6 +142,18 @@ impl Value {
             .into_iter()
             .rev()
             .fold(Self::Null, |head, item| ctor(item, head))
+    }
+
+    fn make_improper_list<I>(items: I, ctor: impl Fn(Self, Self) -> Self) -> Self
+    where
+        I: IntoIterator<Item = Self>,
+        <I as IntoIterator>::IntoIter: DoubleEndedIterator,
+    {
+        items
+            .into_iter()
+            .rev()
+            .reduce(|head, item| ctor(item, head))
+            .unwrap_or(Self::Null)
     }
 
     // NOTE: procedure eq? -> is same object

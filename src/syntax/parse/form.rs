@@ -263,7 +263,7 @@ fn into_list(seq: Vec<Expression>, ctx: ExprCtx, improper: bool) -> ExprConvertR
         },
         |vals| {
             ExpressionKind::Literal(if improper {
-                Value::improper_list(vals)
+                Value::list_cons(vals)
             } else {
                 Value::list(vals)
             })
