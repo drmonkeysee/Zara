@@ -74,10 +74,15 @@ impl Value {
         I: IntoIterator<Item = Self>,
         <I as IntoIterator>::IntoIter: DoubleEndedIterator,
     {
-        items
-            .into_iter()
-            .rev()
-            .fold(zlist![], |head, item| Self::cons(item, head))
+        Self::make_list(items, Self::cons)
+    }
+
+    pub(crate) fn list_mut<I>(items: I) -> Self
+    where
+        I: IntoIterator<Item = Self>,
+        <I as IntoIterator>::IntoIter: DoubleEndedIterator,
+    {
+        Self::make_list(items, Self::cons_mut)
     }
 
     pub(crate) fn improper_list<I>(items: I) -> Self
@@ -122,6 +127,17 @@ impl Value {
 
     pub(crate) fn bytevector_mut(bytes: impl IntoIterator<Item = u8>) -> Self {
         Self::ByteVectorMut(RefCell::new(bytes.into_iter().collect()).into())
+    }
+
+    fn make_list<I>(items: I, ctor: impl Fn(Self, Self) -> Self) -> Self
+    where
+        I: IntoIterator<Item = Self>,
+        <I as IntoIterator>::IntoIter: DoubleEndedIterator,
+    {
+        items
+            .into_iter()
+            .rev()
+            .fold(Self::Null, |head, item| ctor(item, head))
     }
 
     // NOTE: procedure eq? -> is same object

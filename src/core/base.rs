@@ -109,7 +109,7 @@ seq_predicate!(booleans_eq, Value::Boolean, TypeName::BOOL, bool::eq);
 fn load_bv(env: &Frame) {
     super::bind_intrinsic(env, "bytevector?", 1..1, is_bytevector);
 
-    super::bind_intrinsic(env, "make-bytevector", 1..2, make_bytevector);
+    super::bind_intrinsic(env, "make-bytevector", 1..2, bytevector_make);
     super::bind_intrinsic(env, "bytevector", 0..MAX_ARITY, bytevector);
 
     super::bind_intrinsic(env, "bytevector-length", 1..1, bytevector_length);
@@ -129,7 +129,7 @@ predicate!(
     Value::ByteVector(_) | Value::ByteVectorMut(_)
 );
 
-fn make_bytevector(args: &[Value], _env: &Frame) -> EvalResult {
+fn bytevector_make(args: &[Value], _env: &Frame) -> EvalResult {
     coll_make(
         args,
         u8::MIN,
@@ -499,6 +499,9 @@ fn load_list(env: &Frame) {
     super::bind_intrinsic(env, "null?", 1..1, is_null);
     super::bind_intrinsic(env, "list?", 1..1, is_list);
 
+    super::bind_intrinsic(env, "make-list", 1..2, list_make);
+    super::bind_intrinsic(env, "list", 0..MAX_ARITY, list);
+
     super::bind_intrinsic(env, "length", 1..1, list_length);
     super::bind_intrinsic(env, "list-tail", 2..2, list_tail);
     super::bind_intrinsic(env, "list-ref", 2..2, list_get);
@@ -543,6 +546,14 @@ fn is_list(args: &[Value], _env: &Frame) -> EvalResult {
     } else {
         false
     }))
+}
+
+fn list_make(args: &[Value], _env: &Frame) -> EvalResult {
+    coll_make(args, Value::Unspecified, val_identity, Value::list_mut)
+}
+
+fn list(args: &[Value], _env: &Frame) -> EvalResult {
+    coll_new(args, |(_, v)| val_identity(v), Value::list_mut)
 }
 
 // TODO: circular lists => error
@@ -600,7 +611,7 @@ predicate!(is_procedure, Value::Intrinsic(_) | Value::Procedure(_));
 fn load_string(env: &Frame) {
     super::bind_intrinsic(env, "string?", 1..1, is_string);
 
-    super::bind_intrinsic(env, "make-string", 1..2, make_string);
+    super::bind_intrinsic(env, "make-string", 1..2, string_make);
     super::bind_intrinsic(env, "string", 0..MAX_ARITY, string);
 
     super::bind_intrinsic(env, "string-length", 1..1, string_length);
@@ -622,7 +633,7 @@ fn load_string(env: &Frame) {
 
 predicate!(is_string, Value::String(_) | Value::StringMut(_));
 
-fn make_string(args: &[Value], _env: &Frame) -> EvalResult {
+fn string_make(args: &[Value], _env: &Frame) -> EvalResult {
     coll_make(
         args,
         char::MIN,
@@ -788,7 +799,7 @@ fn symbol_from_string(args: &[Value], env: &Frame) -> EvalResult {
 fn load_vec(env: &Frame) {
     super::bind_intrinsic(env, "vector?", 1..1, is_vector);
 
-    super::bind_intrinsic(env, "make-vector", 1..2, make_vector);
+    super::bind_intrinsic(env, "make-vector", 1..2, vector_make);
     super::bind_intrinsic(env, "vector", 0..MAX_ARITY, vector);
 
     super::bind_intrinsic(env, "vector-length", 1..1, vector_length);
@@ -806,7 +817,7 @@ fn load_vec(env: &Frame) {
 
 predicate!(is_vector, Value::Vector(_) | Value::VectorMut(_));
 
-fn make_vector(args: &[Value], _env: &Frame) -> EvalResult {
+fn vector_make(args: &[Value], _env: &Frame) -> EvalResult {
     coll_make(args, Value::Unspecified, val_identity, Value::vector_mut)
 }
 
