@@ -570,7 +570,7 @@ fn string_to_bytes() {
     let args = [Value::string("abc")];
     let env = TestEnv::default();
 
-    let r = bytevector_from_str(&args, &env.new_frame());
+    let r = bytevector_from_string(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
     assert_eq!(v.to_string(), "#u8(97 98 99)");
@@ -581,7 +581,7 @@ fn unicode_to_bytes() {
     let args = [Value::string("a🦀c")];
     let env = TestEnv::default();
 
-    let r = bytevector_from_str(&args, &env.new_frame());
+    let r = bytevector_from_string(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
     assert_eq!(v.to_string(), "#u8(97 240 159 166 128 99)");
@@ -596,7 +596,7 @@ fn unicode_to_bytes_fenceposts() {
     ];
     let env = TestEnv::default();
 
-    let r = bytevector_from_str(&args, &env.new_frame());
+    let r = bytevector_from_string(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
     assert_eq!(v.to_string(), "#u8(240 159 166 128)");
@@ -1980,7 +1980,7 @@ fn bytes_to_str() {
     let args = [Value::ByteVector([0x63, 0x62, 0x61].into())];
     let env = TestEnv::default();
 
-    let r = bytevector_to_str(&args, &env.new_frame());
+    let r = bytevector_to_string(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
     assert_eq!(v.to_string(), "\"cba\"");
@@ -1993,7 +1993,7 @@ fn bytes_to_unicode() {
     )];
     let env = TestEnv::default();
 
-    let r = bytevector_to_str(&args, &env.new_frame());
+    let r = bytevector_to_string(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
     assert_eq!(v.to_string(), "\"cb🦀\"");
@@ -2004,7 +2004,7 @@ fn bytes_to_unicode_invalid_sequence() {
     let args = [Value::ByteVector([0x63, 0x62, 0x9f, 0xa6, 0x80].into())];
     let env = TestEnv::default();
 
-    let r = bytevector_to_str(&args, &env.new_frame());
+    let r = bytevector_to_string(&args, &env.new_frame());
 
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
     assert_eq!(
@@ -2018,7 +2018,7 @@ fn bytes_to_unicode_truncated_sequence() {
     let args = [Value::ByteVector([0x63, 0x62, 0xf0, 0x9f, 0xa6].into())];
     let env = TestEnv::default();
 
-    let r = bytevector_to_str(&args, &env.new_frame());
+    let r = bytevector_to_string(&args, &env.new_frame());
 
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
     assert_eq!(
@@ -2036,7 +2036,7 @@ fn bytes_to_unicode_invalid_sequence_excluded() {
     ];
     let env = TestEnv::default();
 
-    let r = bytevector_to_str(&args, &env.new_frame());
+    let r = bytevector_to_string(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
     assert_eq!(v.to_string(), "\"cb\"");

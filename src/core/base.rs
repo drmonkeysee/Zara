@@ -120,8 +120,8 @@ fn load_bv(env: &Frame) {
     super::bind_intrinsic(env, "bytevector-copy!", 3..5, bytevector_copy_inline);
     super::bind_intrinsic(env, "bytevector-append", 0..MAX_ARITY, bytevector_append);
 
-    super::bind_intrinsic(env, "utf8->string", 1..3, bytevector_to_str);
-    super::bind_intrinsic(env, "string->utf8", 1..3, bytevector_from_str);
+    super::bind_intrinsic(env, "utf8->string", 1..3, bytevector_to_string);
+    super::bind_intrinsic(env, "string->utf8", 1..3, bytevector_from_string);
 }
 
 predicate!(
@@ -211,7 +211,7 @@ fn bytevector_append(args: &[Value], _env: &Frame) -> EvalResult {
     )
 }
 
-fn bytevector_to_str(args: &[Value], _env: &Frame) -> EvalResult {
+fn bytevector_to_string(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = first(args);
     let bv = arg
         .as_refbv()
@@ -237,7 +237,7 @@ fn bytevector_to_str(args: &[Value], _env: &Frame) -> EvalResult {
     )
 }
 
-fn bytevector_from_str(args: &[Value], _env: &Frame) -> EvalResult {
+fn bytevector_from_string(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = first(args);
     let s = arg
         .as_refstr()
@@ -639,27 +639,27 @@ fn list_set(args: &[Value], env: &Frame) -> EvalResult {
     }
 }
 
-fn member_eq(args: &[Value], _env: &Frame) -> EvalResult {
+fn member_eq(_args: &[Value], _env: &Frame) -> EvalResult {
     todo!();
 }
 
-fn member_eqv(args: &[Value], _env: &Frame) -> EvalResult {
+fn member_eqv(_args: &[Value], _env: &Frame) -> EvalResult {
     todo!();
 }
 
-fn member_equal(args: &[Value], _env: &Frame) -> EvalResult {
+fn member_equal(_args: &[Value], _env: &Frame) -> EvalResult {
     todo!();
 }
 
-fn assoc_eq(args: &[Value], _env: &Frame) -> EvalResult {
+fn assoc_eq(_args: &[Value], _env: &Frame) -> EvalResult {
     todo!();
 }
 
-fn assoc_eqv(args: &[Value], _env: &Frame) -> EvalResult {
+fn assoc_eqv(_args: &[Value], _env: &Frame) -> EvalResult {
     todo!();
 }
 
-fn assoc_equal(args: &[Value], _env: &Frame) -> EvalResult {
+fn assoc_equal(_args: &[Value], _env: &Frame) -> EvalResult {
     todo!();
 }
 
@@ -707,6 +707,10 @@ fn load_string(env: &Frame) {
 
     super::bind_intrinsic(env, "substring", 3..3, string_copy);
     super::bind_intrinsic(env, "string-append", 0..MAX_ARITY, string_append);
+
+    super::bind_intrinsic(env, "string->list", 1..3, string_to_list);
+    super::bind_intrinsic(env, "list->string", 1..1, string_from_list);
+
     super::bind_intrinsic(env, "string-copy", 1..3, string_copy);
     super::bind_intrinsic(env, "string-copy!", 3..5, string_copy_inline);
     super::bind_intrinsic(env, "string-fill!", 2..4, string_fill);
@@ -790,6 +794,14 @@ fn string_append(args: &[Value], _env: &Frame) -> EvalResult {
         TypeName::STRING,
         |strs: &[StrRef]| Value::strmut_from_chars(strs.iter().flat_map(|s| s.as_ref().chars())),
     )
+}
+
+fn string_to_list(args: &[Value], _env: &Frame) -> EvalResult {
+    todo!();
+}
+
+fn string_from_list(args: &[Value], _env: &Frame) -> EvalResult {
+    todo!();
 }
 
 fn string_copy(args: &[Value], _env: &Frame) -> EvalResult {
@@ -887,8 +899,8 @@ fn load_vec(env: &Frame) {
     super::bind_intrinsic(env, "vector-ref", 2..2, vector_get);
     super::bind_intrinsic(env, "vector-set!", 3..3, vector_set);
 
-    super::bind_intrinsic(env, "vector->string", 1..3, vector_to_str);
-    super::bind_intrinsic(env, "string->vector", 1..3, vector_from_str);
+    super::bind_intrinsic(env, "vector->string", 1..3, vector_to_string);
+    super::bind_intrinsic(env, "string->vector", 1..3, vector_from_string);
 
     super::bind_intrinsic(env, "vector-copy", 1..3, vector_copy);
     super::bind_intrinsic(env, "vector-copy!", 3..5, vector_copy_inline);
@@ -933,7 +945,7 @@ fn vector_set(args: &[Value], _env: &Frame) -> EvalResult {
     )
 }
 
-fn vector_to_str(args: &[Value], env: &Frame) -> EvalResult {
+fn vector_to_string(args: &[Value], env: &Frame) -> EvalResult {
     let arg = first(args);
     let v = arg
         .as_refvec()
@@ -942,7 +954,7 @@ fn vector_to_str(args: &[Value], env: &Frame) -> EvalResult {
     string(&v.as_ref()[span], env)
 }
 
-fn vector_from_str(args: &[Value], _env: &Frame) -> EvalResult {
+fn vector_from_string(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = first(args);
     let s = arg
         .as_refstr()
