@@ -665,7 +665,14 @@ fn assoc_equal(args: &[Value], _env: &Frame) -> EvalResult {
 
 // TODO: circular lists => error
 fn list_copy(args: &[Value], _env: &Frame) -> EvalResult {
-    todo!();
+    let arg = first(args);
+    let mut acc = Vec::new();
+    list_cons_acc(arg, &mut acc);
+    Ok(if acc.is_empty() {
+        arg.clone()
+    } else {
+        Value::list_cons_mut(acc)
+    })
 }
 
 //
@@ -1106,6 +1113,20 @@ fn try_list_acc(curr: &Value, acc: &mut Vec<Value>) -> Result<(), Exception> {
     } else {
         Err(Condition::arg_error(acc.len(), TypeName::LIST, curr).into())
     }
+}
+
+fn list_cons_acc(curr: &Value, acc: &mut Vec<Value>) {
+    if let Some(p) = curr.as_refpair() {
+        let pair = p.as_ref();
+        if pair.cdr.as_refpair().is_some() {
+            acc.push(pair.car.clone());
+            return list_cons_acc(&pair.cdr, acc);
+        }
+    } else if acc.is_empty() && !matches!(curr, Value::Null) {
+        // NOTE: curr was not a cons cell so don't accumulate anything
+        return;
+    }
+    acc.push(curr.clone());
 }
 
 fn sub_list(lst: &Value, idx: usize, k: &Value) -> EvalResult {

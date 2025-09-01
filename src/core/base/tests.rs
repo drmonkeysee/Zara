@@ -1410,7 +1410,7 @@ fn list_set_value() {
 }
 
 #[test]
-fn list_set_value_improper_list() {
+fn list_set_value_replace_pair() {
     let env = TestEnv::default();
     let lst = zlist_mut![
         Value::Symbol(env.symbols.get("a")),
@@ -1434,6 +1434,32 @@ fn list_set_value_improper_list() {
 }
 
 #[test]
+fn list_set_value_improper_list() {
+    let env = TestEnv::default();
+    let lst = Value::cons_mut(
+        Value::Symbol(env.symbols.get("a")),
+        Value::cons_mut(
+            Value::Symbol(env.symbols.get("b")),
+            Value::cons_mut(
+                Value::Symbol(env.symbols.get("c")),
+                Value::Symbol(env.symbols.get("d")),
+            ),
+        ),
+    );
+    let args = [
+        lst.clone(),
+        Value::Number(Number::real(2)),
+        Value::Symbol(env.symbols.get("z")),
+    ];
+
+    let r = list_set(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert!(matches!(v, Value::Unspecified));
+    assert_eq!(lst.to_string(), "(a b z . d)");
+}
+
+#[test]
 fn list_set_out_of_range() {
     let env = TestEnv::default();
     let args = [
@@ -1450,6 +1476,72 @@ fn list_set_out_of_range() {
 
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
     assert_eq!(err.to_string(), "#<env-error \"index out of range\" (3)>");
+}
+
+#[test]
+fn list_copy_null() {
+    let env = TestEnv::default();
+    let lst = zlist![];
+    let args = [lst.clone()];
+
+    let r = list_copy(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert!(v.is(&lst));
+}
+
+#[test]
+fn list_copy_non_list() {
+    let env = TestEnv::default();
+    let lst = Value::Symbol(env.symbols.get("a"));
+    let args = [lst.clone()];
+
+    let r = list_copy(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert!(v.is(&lst));
+}
+
+#[test]
+fn list_copy_list() {
+    let env = TestEnv::default();
+    let lst = zlist![
+        Value::Symbol(env.symbols.get("a")),
+        Value::Symbol(env.symbols.get("b")),
+        Value::Symbol(env.symbols.get("c"))
+    ];
+    let args = [lst.clone()];
+
+    let r = list_copy(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert!(!v.is(&lst));
+    assert!(matches!(v, Value::PairMut(_)));
+    assert_eq!(v.to_string(), "(a b c)");
+}
+
+#[test]
+fn list_copy_improper_list() {
+    let env = TestEnv::default();
+    let cons = Value::cons(
+        Value::Symbol(env.symbols.get("c")),
+        Value::Symbol(env.symbols.get("d")),
+    );
+    let lst = Value::cons(
+        Value::Symbol(env.symbols.get("a")),
+        Value::cons(Value::Symbol(env.symbols.get("b")), cons.clone()),
+    );
+    let args = [lst.clone()];
+
+    let r = list_copy(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert!(!v.is(&lst));
+    assert!(matches!(v, Value::PairMut(_)));
+    assert_eq!(v.to_string(), "(a b c . d)");
+    let vcdr = &extract_or_fail!(&v, Value::PairMut).as_ref().borrow().cdr;
+    let last = &extract_or_fail!(vcdr, Value::PairMut).as_ref().borrow().cdr;
+    assert!(last.is(&cons));
 }
 
 #[test]
