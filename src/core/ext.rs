@@ -76,6 +76,6 @@ fn apropos(args: &[Value], env: &Frame) -> EvalResult {
 fn is_mutable(args: &[Value], _env: &Frame) -> EvalResult {
     Ok(Value::Boolean(matches!(
         super::first(args),
-        Value::ByteVectorMut(_) | Value::StringMut(_) | Value::VectorMut(_)
+        Value::ByteVectorMut(_) | Value::PairMut(_) | Value::StringMut(_) | Value::VectorMut(_)
     )))
 }
