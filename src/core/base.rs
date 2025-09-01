@@ -503,6 +503,8 @@ fn load_list(env: &Frame) {
     super::bind_intrinsic(env, "list", 0..MAX_ARITY, list);
 
     super::bind_intrinsic(env, "length", 1..1, list_length);
+    super::bind_intrinsic(env, "append", 0..MAX_ARITY, list_append);
+    super::bind_intrinsic(env, "reverse", 1..1, list_reverse);
     super::bind_intrinsic(env, "list-tail", 2..2, list_tail);
     super::bind_intrinsic(env, "list-ref", 2..2, list_get);
 }
@@ -577,6 +579,26 @@ fn list_length(args: &[Value], _env: &Frame) -> EvalResult {
     } else {
         Err(invalid_target(TypeName::LIST, arg))
     }
+}
+
+fn list_append(args: &[Value], _env: &Frame) -> EvalResult {
+    let mut acc = Vec::new();
+    for arg in args.iter().take(args.len().max(1) - 1) {
+        try_list_acc(&arg, &mut acc)?;
+    }
+    let last = args.last().cloned().unwrap_or(Value::Null);
+    Ok(if acc.is_empty() {
+        last
+    } else {
+        acc.push(last);
+        Value::list_cons_mut(acc)
+    })
+}
+
+fn list_reverse(args: &[Value], _env: &Frame) -> EvalResult {
+    Ok(Value::list_mut(
+        try_list_to_vec(first(args))?.into_iter().rev(),
+    ))
 }
 
 fn list_tail(args: &[Value], _env: &Frame) -> EvalResult {
@@ -1014,6 +1036,23 @@ fn pair_set(arg: &Value, val: &Value, set: impl FnOnce(RefMut<'_, Pair>, &Value)
         }
         Value::Pair(_) => Err(Condition::literal_mut_error(arg).into()),
         _ => Err(invalid_target(TypeName::PAIR, arg)),
+    }
+}
+
+fn try_list_to_vec(val: &Value) -> Result<Vec<Value>, Exception> {
+    let mut acc = Vec::new();
+    try_list_acc(val, &mut acc)?;
+    Ok(acc)
+}
+
+fn try_list_acc(curr: &Value, acc: &mut Vec<Value>) -> Result<(), Exception> {
+    if let Value::Null = curr {
+        Ok(())
+    } else if let Some(p) = curr.as_refpair() {
+        acc.push(p.as_ref().car.clone());
+        try_list_acc(&p.as_ref().cdr, acc)
+    } else {
+        Err(Condition::arg_error(acc.len(), TypeName::LIST, curr).into())
     }
 }
 

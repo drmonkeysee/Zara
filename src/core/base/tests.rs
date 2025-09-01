@@ -758,6 +758,238 @@ fn list_mut_predicate() {
 }
 
 #[test]
+fn list_append_no_args() {
+    let env = TestEnv::default();
+    let args = [];
+
+    let r = list_append(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert!(matches!(v, Value::Null));
+}
+
+#[test]
+fn list_append_empty() {
+    let env = TestEnv::default();
+    let args = [zlist![]];
+
+    let r = list_append(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert!(matches!(v, Value::Null));
+}
+
+#[test]
+fn list_append_all_empties() {
+    let env = TestEnv::default();
+    let args = [zlist![], zlist![], zlist![]];
+
+    let r = list_append(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert!(matches!(v, Value::Null));
+}
+
+#[test]
+fn list_append_single() {
+    let env = TestEnv::default();
+    let args = [Value::Symbol(env.symbols.get("a"))];
+
+    let r = list_append(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert!(matches!(v, Value::Symbol(s) if s.as_ref() == "a"));
+}
+
+#[test]
+fn list_append_empties_with_single() {
+    let env = TestEnv::default();
+    let args = [zlist![], zlist![], Value::Symbol(env.symbols.get("a"))];
+
+    let r = list_append(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert!(matches!(v, Value::Symbol(s) if s.as_ref() == "a"));
+}
+
+#[test]
+fn list_append_single_list() {
+    let env = TestEnv::default();
+    let arg = zlist![
+        Value::Symbol(env.symbols.get("a")),
+        Value::Symbol(env.symbols.get("b")),
+        Value::Symbol(env.symbols.get("c")),
+    ];
+    let args = [arg.clone()];
+
+    let r = list_append(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert!(v.is(&arg));
+}
+
+#[test]
+fn list_append_multiple_lists() {
+    let env = TestEnv::default();
+    let last = zlist![
+        Value::Symbol(env.symbols.get("x")),
+        Value::Symbol(env.symbols.get("y")),
+        Value::Symbol(env.symbols.get("z")),
+    ];
+    let args = [
+        zlist![
+            Value::Symbol(env.symbols.get("a")),
+            Value::Symbol(env.symbols.get("b")),
+            Value::Symbol(env.symbols.get("c")),
+        ],
+        zlist![
+            Value::Number(Number::real(1)),
+            Value::Number(Number::real(2)),
+            Value::Number(Number::real(3)),
+        ],
+        last.clone(),
+    ];
+
+    let r = list_append(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert!(matches!(v, Value::PairMut(_)));
+    assert_eq!(v.to_string(), "(a b c 1 2 3 x y z)");
+    let sub = ok_or_fail!(sub_list(&v, 6, &Value::Number(Number::from_usize(6))));
+    assert!(sub.is(&last));
+}
+
+#[test]
+fn list_append_improper_lists() {
+    let env = TestEnv::default();
+    let last = Value::Symbol(env.symbols.get("x"));
+    let args = [
+        zlist![
+            Value::Symbol(env.symbols.get("a")),
+            Value::Symbol(env.symbols.get("b")),
+            Value::Symbol(env.symbols.get("c")),
+        ],
+        zlist![
+            Value::Number(Number::real(1)),
+            Value::Number(Number::real(2)),
+            Value::Number(Number::real(3)),
+        ],
+        last.clone(),
+    ];
+
+    let r = list_append(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert!(matches!(v, Value::PairMut(_)));
+    assert_eq!(v.to_string(), "(a b c 1 2 3 . x)");
+    let sub = ok_or_fail!(sub_list(&v, 6, &Value::Number(Number::from_usize(6))));
+    assert!(sub.is(&last));
+}
+
+#[test]
+fn list_append_invalid_arg() {
+    let env = TestEnv::default();
+    let last = zlist![
+        Value::Symbol(env.symbols.get("x")),
+        Value::Symbol(env.symbols.get("y")),
+        Value::Symbol(env.symbols.get("z")),
+    ];
+    let args = [
+        zlist![
+            Value::Symbol(env.symbols.get("a")),
+            Value::Symbol(env.symbols.get("b")),
+            Value::Symbol(env.symbols.get("c")),
+        ],
+        Value::Number(Number::real(1)),
+        last.clone(),
+    ];
+
+    let r = list_append(&args, &env.new_frame());
+
+    let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
+    assert_eq!(
+        err.to_string(),
+        "#<env-error \"invalid type for arg `3` - expected: list, got: number\" (1)>"
+    );
+}
+
+#[test]
+fn list_reverse_empty() {
+    let env = TestEnv::default();
+    let args = [zlist![]];
+
+    let r = list_reverse(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert!(matches!(v, Value::Null));
+}
+
+#[test]
+fn list_reverse_single_item() {
+    let env = TestEnv::default();
+    let args = [zlist![Value::Symbol(env.symbols.get("a"))]];
+
+    let r = list_reverse(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert!(matches!(v, Value::PairMut(_)));
+    assert_eq!(v.to_string(), "(a)");
+}
+
+#[test]
+fn list_reverse_items() {
+    let env = TestEnv::default();
+    let args = [zlist![
+        Value::Symbol(env.symbols.get("a")),
+        Value::Symbol(env.symbols.get("b")),
+        Value::Symbol(env.symbols.get("c")),
+    ]];
+
+    let r = list_reverse(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert!(matches!(v, Value::PairMut(_)));
+    assert_eq!(v.to_string(), "(c b a)");
+}
+
+#[test]
+fn list_reverse_pair() {
+    let env = TestEnv::default();
+    let args = [Value::cons(
+        Value::Symbol(env.symbols.get("a")),
+        Value::Symbol(env.symbols.get("b")),
+    )];
+
+    let r = list_reverse(&args, &env.new_frame());
+
+    let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
+    assert_eq!(
+        err.to_string(),
+        "#<env-error \"invalid type for arg `1` - expected: list, got: symbol\" (b)>"
+    );
+}
+
+#[test]
+fn list_reverse_improper_list() {
+    let env = TestEnv::default();
+    let args = [Value::cons(
+        Value::Symbol(env.symbols.get("a")),
+        Value::cons(
+            Value::Symbol(env.symbols.get("b")),
+            Value::Symbol(env.symbols.get("c")),
+        ),
+    )];
+
+    let r = list_reverse(&args, &env.new_frame());
+
+    let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
+    assert_eq!(
+        err.to_string(),
+        "#<env-error \"invalid type for arg `2` - expected: list, got: symbol\" (c)>"
+    );
+}
+
+#[test]
 fn list_tail_normal_list() {
     let env = TestEnv::default();
     let args = [
