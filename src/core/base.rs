@@ -505,8 +505,19 @@ fn load_list(env: &Frame) {
     super::bind_intrinsic(env, "length", 1..1, list_length);
     super::bind_intrinsic(env, "append", 0..MAX_ARITY, list_append);
     super::bind_intrinsic(env, "reverse", 1..1, list_reverse);
+
     super::bind_intrinsic(env, "list-tail", 2..2, list_tail);
     super::bind_intrinsic(env, "list-ref", 2..2, list_get);
+    super::bind_intrinsic(env, "list-set!", 3..3, list_set);
+
+    super::bind_intrinsic(env, "memq", 2..2, member_eq);
+    super::bind_intrinsic(env, "memv", 2..2, member_eqv);
+    super::bind_intrinsic(env, "member", 2..3, member_equal);
+    super::bind_intrinsic(env, "assq", 2..2, assoc_eq);
+    super::bind_intrinsic(env, "assv", 2..2, assoc_eqv);
+    super::bind_intrinsic(env, "assoc", 2..3, assoc_equal);
+
+    super::bind_intrinsic(env, "list-copy", 1..1, list_copy);
 }
 
 predicate!(is_pair, Value::Pair(_) | Value::PairMut(_));
@@ -581,6 +592,7 @@ fn list_length(args: &[Value], _env: &Frame) -> EvalResult {
     }
 }
 
+// TODO: circular lists => error?
 fn list_append(args: &[Value], _env: &Frame) -> EvalResult {
     let mut acc = Vec::new();
     for arg in args.iter().take(args.len().max(1) - 1) {
@@ -595,25 +607,65 @@ fn list_append(args: &[Value], _env: &Frame) -> EvalResult {
     })
 }
 
+// TODO: circular lists => error
 fn list_reverse(args: &[Value], _env: &Frame) -> EvalResult {
     Ok(Value::list_mut(
         try_list_to_vec(first(args))?.into_iter().rev(),
     ))
 }
 
+// TODO: circular list tests for all functions below
+
 fn list_tail(args: &[Value], _env: &Frame) -> EvalResult {
     let k = super::second(args);
     sub_list(first(args), try_val_to_index(k, SECOND_ARG_LABEL)?, k)
 }
 
-fn list_get(args: &[Value], _env: &Frame) -> EvalResult {
-    let k = super::second(args);
-    let subl = sub_list(first(args), try_val_to_index(k, SECOND_ARG_LABEL)?, k)?;
+fn list_get(args: &[Value], env: &Frame) -> EvalResult {
+    let subl = list_tail(args, env)?;
     if let Value::Null = subl {
-        Err(Condition::index_error(k).into())
+        Err(Condition::index_error(super::second(args)).into())
     } else {
         pcar(&subl)
     }
+}
+
+fn list_set(args: &[Value], env: &Frame) -> EvalResult {
+    let p = list_tail(args, env)?;
+    if let Value::Null = p {
+        Err(Condition::index_error(super::second(args)).into())
+    } else {
+        pair_set(&p, super::third(args), |mut p, v| p.car = v.clone())
+    }
+}
+
+fn member_eq(args: &[Value], _env: &Frame) -> EvalResult {
+    todo!();
+}
+
+fn member_eqv(args: &[Value], _env: &Frame) -> EvalResult {
+    todo!();
+}
+
+fn member_equal(args: &[Value], _env: &Frame) -> EvalResult {
+    todo!();
+}
+
+fn assoc_eq(args: &[Value], _env: &Frame) -> EvalResult {
+    todo!();
+}
+
+fn assoc_eqv(args: &[Value], _env: &Frame) -> EvalResult {
+    todo!();
+}
+
+fn assoc_equal(args: &[Value], _env: &Frame) -> EvalResult {
+    todo!();
+}
+
+// TODO: circular lists => error
+fn list_copy(args: &[Value], _env: &Frame) -> EvalResult {
+    todo!();
 }
 
 //
@@ -1030,11 +1082,11 @@ fn guarded_real_op(
 
 fn pair_set(arg: &Value, val: &Value, set: impl FnOnce(RefMut<'_, Pair>, &Value)) -> EvalResult {
     match arg {
+        Value::Pair(_) => Err(Condition::literal_mut_error(arg).into()),
         Value::PairMut(p) => {
             set(p.borrow_mut(), val);
             Ok(Value::Unspecified)
         }
-        Value::Pair(_) => Err(Condition::literal_mut_error(arg).into()),
         _ => Err(invalid_target(TypeName::PAIR, arg)),
     }
 }

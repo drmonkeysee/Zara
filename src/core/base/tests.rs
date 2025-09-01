@@ -1389,6 +1389,70 @@ fn list_ref_improper_list_out_of_range() {
 }
 
 #[test]
+fn list_set_value() {
+    let env = TestEnv::default();
+    let lst = zlist_mut![
+        Value::Symbol(env.symbols.get("a")),
+        Value::Symbol(env.symbols.get("b")),
+        Value::Symbol(env.symbols.get("c"))
+    ];
+    let args = [
+        lst.clone(),
+        Value::Number(Number::real(1)),
+        Value::Symbol(env.symbols.get("z")),
+    ];
+
+    let r = list_set(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert!(matches!(v, Value::Unspecified));
+    assert_eq!(lst.to_string(), "(a z c)");
+}
+
+#[test]
+fn list_set_value_improper_list() {
+    let env = TestEnv::default();
+    let lst = zlist_mut![
+        Value::Symbol(env.symbols.get("a")),
+        Value::Symbol(env.symbols.get("b")),
+        Value::cons(
+            Value::Symbol(env.symbols.get("c")),
+            Value::Symbol(env.symbols.get("d"))
+        ),
+    ];
+    let args = [
+        lst.clone(),
+        Value::Number(Number::real(2)),
+        Value::Symbol(env.symbols.get("z")),
+    ];
+
+    let r = list_set(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert!(matches!(v, Value::Unspecified));
+    assert_eq!(lst.to_string(), "(a b z)");
+}
+
+#[test]
+fn list_set_out_of_range() {
+    let env = TestEnv::default();
+    let args = [
+        zlist_mut![
+            Value::Symbol(env.symbols.get("a")),
+            Value::Symbol(env.symbols.get("b")),
+            Value::Symbol(env.symbols.get("c"))
+        ],
+        Value::Number(Number::real(3)),
+        Value::Symbol(env.symbols.get("z")),
+    ];
+
+    let r = list_get(&args, &env.new_frame());
+
+    let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
+    assert_eq!(err.to_string(), "#<env-error \"index out of range\" (3)>");
+}
+
+#[test]
 fn int_to_char() {
     let args = [Value::Number(Number::real(0x41))];
     let env = TestEnv::default();
