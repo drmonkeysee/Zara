@@ -1039,7 +1039,7 @@ fn list_tail_mutable_list() {
 
 #[test]
 fn list_tail_empty_list() {
-    let args = [Value::Null, Value::Number(Number::real(0))];
+    let args = [zlist![], Value::Number(Number::real(0))];
     let env = TestEnv::default();
 
     let r = list_tail(&args, &env.new_frame());
@@ -1180,7 +1180,7 @@ fn list_tail_improper_list_out_of_range() {
 
 #[test]
 fn list_tail_wrong_index_type() {
-    let args = [Value::Null, Value::string("foo")];
+    let args = [zlist![], Value::string("foo")];
     let env = TestEnv::default();
 
     let r = list_tail(&args, &env.new_frame());
@@ -1194,7 +1194,7 @@ fn list_tail_wrong_index_type() {
 
 #[test]
 fn list_tail_invalid_index_type() {
-    let args = [Value::Null, Value::Number(Number::real(4.2))];
+    let args = [zlist![], Value::Number(Number::real(4.2))];
     let env = TestEnv::default();
 
     let r = list_tail(&args, &env.new_frame());
@@ -1208,7 +1208,7 @@ fn list_tail_invalid_index_type() {
 
 #[test]
 fn list_tail_index_invalid_range() {
-    let args = [Value::Null, Value::Number(Number::real(-4))];
+    let args = [zlist![], Value::Number(Number::real(-4))];
     let env = TestEnv::default();
 
     let r = list_tail(&args, &env.new_frame());
@@ -1258,7 +1258,7 @@ fn list_ref_normal_mutable_list() {
 
 #[test]
 fn list_ref_empty_list() {
-    let args = [Value::Null, Value::Number(Number::real(0))];
+    let args = [zlist![], Value::Number(Number::real(0))];
     let env = TestEnv::default();
 
     let r = list_get(&args, &env.new_frame());
