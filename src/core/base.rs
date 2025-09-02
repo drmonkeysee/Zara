@@ -68,9 +68,10 @@ use std::{
     cell::RefMut,
     convert,
     fmt::Display,
-    iter::{self, RepeatN},
+    iter::{self, Map, RepeatN, Skip, Take},
     mem,
     ops::Range,
+    str::Chars,
 };
 
 pub(super) fn load(env: &Frame) {
@@ -797,11 +798,13 @@ fn string_append(args: &[Value], _env: &Frame) -> EvalResult {
 }
 
 fn string_to_list(args: &[Value], _env: &Frame) -> EvalResult {
-    todo!();
+    str_to_coll(first(args), args.get(1)..args.get(2), |chars| {
+        Value::list_mut(chars.collect::<Vec<_>>())
+    })
 }
 
-fn string_from_list(args: &[Value], _env: &Frame) -> EvalResult {
-    todo!();
+fn string_from_list(args: &[Value], env: &Frame) -> EvalResult {
+    string(&try_list_to_vec(first(args))?, env)
 }
 
 fn string_copy(args: &[Value], _env: &Frame) -> EvalResult {
@@ -955,18 +958,10 @@ fn vector_to_string(args: &[Value], env: &Frame) -> EvalResult {
 }
 
 fn vector_from_string(args: &[Value], _env: &Frame) -> EvalResult {
-    let arg = first(args);
-    let s = arg
-        .as_refstr()
-        .ok_or_else(|| invalid_target(TypeName::STRING, arg))?;
-    let span = try_coll_span(args.get(1)..args.get(2), s.len())?;
-    Ok(Value::vector_mut(
-        s.as_ref()
-            .chars()
-            .skip(span.start)
-            .take(span.len())
-            .map(Value::Character),
-    ))
+    str_to_coll(first(args), args.get(1)..args.get(2), |chars| {
+        // NOTE: need closure as Value::vector_mut does not implement generic lifetimes
+        Value::vector_mut(chars)
+    })
 }
 
 fn vector_copy(args: &[Value], _env: &Frame) -> EvalResult {
@@ -1194,6 +1189,24 @@ fn build_str_fill(
     let start = target.chars().take(skip.start);
     let rest = target.chars().skip(skip.end);
     start.chain(replace).chain(rest).collect::<String>()
+}
+
+fn str_to_coll(
+    arg: &Value,
+    span: Range<Option<&Value>>,
+    ctor: impl FnOnce(Map<Take<Skip<Chars<'_>>>, fn(char) -> Value>) -> Value,
+) -> EvalResult {
+    let s = arg
+        .as_refstr()
+        .ok_or_else(|| invalid_target(TypeName::STRING, arg))?;
+    let span = try_coll_span(span, s.len())?;
+    Ok(ctor(
+        s.as_ref()
+            .chars()
+            .skip(span.start)
+            .take(span.len())
+            .map(Value::Character),
+    ))
 }
 
 fn reflexive_vector_copy(ranges: impl IntoIterator<Item = (usize, usize)>, v: &mut [Value]) {
