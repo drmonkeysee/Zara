@@ -57,7 +57,7 @@ use super::{
 };
 use crate::{
     Exception,
-    eval::{EvalResult, Frame, MAX_ARITY},
+    eval::{EvalResult, Frame, IntrinsicFn, MAX_ARITY},
     number::{Integer, Number, NumericError, NumericTypeName, Real},
     string::{Symbol, unicode::UnicodeError},
     value::{
@@ -256,8 +256,8 @@ fn load_char(env: &Frame) {
 
     super::bind_intrinsic(env, "char=?", 0..MAX_ARITY, chars_eq);
     super::bind_intrinsic(env, "char<?", 0..MAX_ARITY, chars_lt);
-    super::bind_intrinsic(env, "char<=?", 0..MAX_ARITY, chars_lte);
     super::bind_intrinsic(env, "char>?", 0..MAX_ARITY, chars_gt);
+    super::bind_intrinsic(env, "char<=?", 0..MAX_ARITY, chars_lte);
     super::bind_intrinsic(env, "char>=?", 0..MAX_ARITY, chars_gte);
 
     super::bind_intrinsic(env, "char->integer", 1..1, char_to_integer);
@@ -267,8 +267,8 @@ fn load_char(env: &Frame) {
 predicate!(is_char, Value::Character(_));
 seq_predicate!(chars_eq, Value::Character, TypeName::CHAR, char::eq);
 seq_predicate!(chars_lt, Value::Character, TypeName::CHAR, char::lt);
-seq_predicate!(chars_lte, Value::Character, TypeName::CHAR, char::le);
 seq_predicate!(chars_gt, Value::Character, TypeName::CHAR, char::gt);
+seq_predicate!(chars_lte, Value::Character, TypeName::CHAR, char::le);
 seq_predicate!(chars_gte, Value::Character, TypeName::CHAR, char::ge);
 
 fn char_to_integer(args: &[Value], _env: &Frame) -> EvalResult {
@@ -693,8 +693,8 @@ fn load_string(env: &Frame) {
 
     super::bind_intrinsic(env, "string=?", 0..MAX_ARITY, strings_eq);
     super::bind_intrinsic(env, "string<?", 0..MAX_ARITY, strings_lt);
-    super::bind_intrinsic(env, "string<=?", 0..MAX_ARITY, strings_lte);
     super::bind_intrinsic(env, "string>?", 0..MAX_ARITY, strings_gt);
+    super::bind_intrinsic(env, "string<=?", 0..MAX_ARITY, strings_lte);
     super::bind_intrinsic(env, "string>=?", 0..MAX_ARITY, strings_gte);
 
     super::bind_intrinsic(env, "substring", 3..3, string_copy);
@@ -767,12 +767,12 @@ fn strings_lt(args: &[Value], _env: &Frame) -> EvalResult {
     strs_predicate(args, str::lt)
 }
 
-fn strings_lte(args: &[Value], _env: &Frame) -> EvalResult {
-    strs_predicate(args, str::le)
-}
-
 fn strings_gt(args: &[Value], _env: &Frame) -> EvalResult {
     strs_predicate(args, str::gt)
+}
+
+fn strings_lte(args: &[Value], _env: &Frame) -> EvalResult {
+    strs_predicate(args, str::le)
 }
 
 fn strings_gte(args: &[Value], _env: &Frame) -> EvalResult {
@@ -893,6 +893,8 @@ fn load_vec(env: &Frame) {
     super::bind_intrinsic(env, "vector-ref", 2..2, vector_get);
     super::bind_intrinsic(env, "vector-set!", 3..3, vector_set);
 
+    super::bind_intrinsic(env, "vector->list", 1..3, vector_to_list);
+    super::bind_intrinsic(env, "list->vector", 1..1, vector_from_list);
     super::bind_intrinsic(env, "vector->string", 1..3, vector_to_string);
     super::bind_intrinsic(env, "string->vector", 1..3, vector_from_string);
 
@@ -939,13 +941,16 @@ fn vector_set(args: &[Value], _env: &Frame) -> EvalResult {
     )
 }
 
+fn vector_to_list(args: &[Value], env: &Frame) -> EvalResult {
+    vec_to_coll(first(args), args.get(1)..args.get(2), env, list)
+}
+
+fn vector_from_list(args: &[Value], env: &Frame) -> EvalResult {
+    vector(&try_list_to_vec(first(args))?, env)
+}
+
 fn vector_to_string(args: &[Value], env: &Frame) -> EvalResult {
-    let arg = first(args);
-    let v = arg
-        .as_refvec()
-        .ok_or_else(|| invalid_target(TypeName::VECTOR, arg))?;
-    let span = try_coll_span(args.get(1)..args.get(2), v.len())?;
-    string(&v.as_ref()[span], env)
+    vec_to_coll(first(args), args.get(1)..args.get(2), env, string)
 }
 
 fn vector_from_string(args: &[Value], _env: &Frame) -> EvalResult {
@@ -1191,6 +1196,19 @@ fn str_to_coll(
         .ok_or_else(|| invalid_target(TypeName::STRING, arg))?;
     let span = try_coll_span(span, s.len())?;
     Ok(ctor(s.as_ref().chars().skip(span.start).take(span.len())))
+}
+
+fn vec_to_coll(
+    arg: &Value,
+    span: Range<Option<&Value>>,
+    env: &Frame,
+    ctor: IntrinsicFn,
+) -> EvalResult {
+    let v = arg
+        .as_refvec()
+        .ok_or_else(|| invalid_target(TypeName::VECTOR, arg))?;
+    let span = try_coll_span(span, v.len())?;
+    ctor(&v.as_ref()[span], env)
 }
 
 fn reflexive_vector_copy(ranges: impl IntoIterator<Item = (usize, usize)>, v: &mut [Value]) {
