@@ -2,7 +2,7 @@ use super::*;
 use crate::{
     eval::Binding,
     string::SymbolTable,
-    testutil::{empty_procedure_body, ok_or_fail},
+    testutil::{empty_procedure_body, ok_or_fail, zlist_mut},
 };
 
 mod display {

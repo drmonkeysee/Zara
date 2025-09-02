@@ -1,7 +1,7 @@
 use super::*;
 use crate::{
-    testutil::{TestEnv, err_or_fail, extract_or_fail, ok_or_fail},
-    value::{zlist, zlist_mut},
+    testutil::{TestEnv, err_or_fail, extract_or_fail, ok_or_fail, zlist_mut},
+    value::zlist,
 };
 use std::rc::Rc;
 

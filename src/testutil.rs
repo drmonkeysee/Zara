@@ -34,6 +34,15 @@ macro_rules! some_or_fail {
     }};
 }
 
+macro_rules! zlist_mut {
+    () => {
+        Value::Null
+    };
+    ($exp:expr $(, $exps:expr)* $(,)?) => {
+        Value::cons_mut($exp, zlist_mut![$($exps),*])
+    };
+}
+
 use crate::{
     eval::{Binding, Frame, Namespace, System},
     lex::{Token, TokenKind, TokenLine},
@@ -42,7 +51,7 @@ use crate::{
     txt::{LineNumber, TextContext, TextLine},
 };
 use std::{iter, path::Path, rc::Rc};
-pub(crate) use {err_or_fail, extract_or_fail, ok_or_fail, some_or_fail};
+pub(crate) use {err_or_fail, extract_or_fail, ok_or_fail, some_or_fail, zlist_mut};
 
 pub(crate) fn make_textline() -> TextLine {
     make_textline_no(1)

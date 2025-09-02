@@ -7,15 +7,6 @@ macro_rules! zlist {
     };
 }
 
-macro_rules! zlist_mut {
-    () => {
-        Value::Null
-    };
-    ($exp:expr $(, $exps:expr)* $(,)?) => {
-        Value::cons_mut($exp, zlist_mut![$($exps),*])
-    };
-}
-
 mod condition;
 #[cfg(test)]
 mod tests;
@@ -33,7 +24,7 @@ use std::{
     fmt::{self, Display, Formatter},
     rc::Rc,
 };
-pub(crate) use {zlist, zlist_mut};
+pub(crate) use zlist;
 
 #[derive(Clone, Debug)]
 pub(crate) enum Value {
