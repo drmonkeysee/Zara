@@ -143,15 +143,12 @@ impl Lambda {
     }
 
     fn apply(&self, args: &[Value], env: &Frame) -> EvalResult {
-        let args_it = args.iter();
-        self.formals
-            .iter()
-            .zip(args_it.take(self.formals.len()))
-            .for_each(|(var, val)| {
-                env.scope.bind(var.clone(), val.clone());
-            });
-        if self.variadic.is_some() {
-            todo!("support variadic args");
+        let (f, v) = args.split_at(self.formals.len());
+        self.formals.iter().zip(f).for_each(|(var, val)| {
+            env.scope.bind(var.clone(), val.clone());
+        });
+        if let Some(s) = &self.variadic {
+            env.scope.bind(s.clone(), Value::list_mut(v.to_vec()));
         }
         self.body.eval(env)
     }

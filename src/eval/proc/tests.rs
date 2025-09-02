@@ -497,9 +497,8 @@ fn apply_single_arity_lambda() {
     let sym = SymbolTable::default();
     let env = TestEnv::default();
     let f = env.new_frame();
-    let params = [sym.get("x")];
     let lm = ok_or_fail!(Lambda::new(
-        params,
+        [sym.get("x")],
         None,
         procedure_body([TokenKind::Identifier("x".to_owned())]),
     ));
@@ -526,9 +525,8 @@ fn apply_single_arity_lambda_with_closure() {
     env.binding
         .bind(sym.get("stringify"), Value::Intrinsic(global_func.into()));
     let f = env.new_frame();
-    let params = [sym.get("x")];
     let lm = ok_or_fail!(Lambda::new(
-        params,
+        [sym.get("x")],
         None,
         procedure_body([
             TokenKind::ParenLeft,
@@ -545,6 +543,89 @@ fn apply_single_arity_lambda_with_closure() {
     let v = ok_or_fail!(r);
     assert!(matches!(v, Value::String(s) if s.as_ref() == "bar 5"));
     assert!(!env.binding.bound("x"));
+}
+
+#[test]
+fn apply_variadic_lambda_with_closure() {
+    let sym = SymbolTable::default();
+    let env = TestEnv::default();
+    let global_func = Intrinsic {
+        arity: 1..1,
+        def: |args, _| Ok(Value::string(format!("bar {}", args[0]))),
+        name: sym.get("stringify"),
+    };
+    env.binding
+        .bind(sym.get("stringify"), Value::Intrinsic(global_func.into()));
+    let f = env.new_frame();
+    let lm = ok_or_fail!(Lambda::new(
+        [],
+        Some(sym.get("x")),
+        procedure_body([
+            TokenKind::ParenLeft,
+            TokenKind::Identifier("stringify".to_owned()),
+            TokenKind::Identifier("x".to_owned()),
+            TokenKind::ParenRight
+        ]),
+    ));
+    let p = Procedure::new(lm, Rc::clone(&f.scope), Some(sym.get("bar")));
+    let args = [
+        Value::Number(Number::real(1)),
+        Value::Number(Number::real(2)),
+        Value::Number(Number::real(3)),
+    ];
+
+    let r = p.apply(&args, &f);
+
+    let v = ok_or_fail!(r);
+    assert!(matches!(v, Value::String(s) if s.as_ref() == "bar (1 2 3)"));
+    assert!(!env.binding.bound("x"));
+}
+
+#[test]
+fn apply_rest_lambda_with_closure() {
+    let sym = SymbolTable::default();
+    let env = TestEnv::default();
+    let global_func = Intrinsic {
+        arity: 3..3,
+        def: |args, _| {
+            Ok(Value::string(format!(
+                "bar {}, {}, {}",
+                args[0], args[1], args[2]
+            )))
+        },
+        name: sym.get("stringify"),
+    };
+    env.binding
+        .bind(sym.get("stringify"), Value::Intrinsic(global_func.into()));
+    let f = env.new_frame();
+    let lm = ok_or_fail!(Lambda::new(
+        [sym.get("x"), sym.get("y")],
+        Some(sym.get("z")),
+        procedure_body([
+            TokenKind::ParenLeft,
+            TokenKind::Identifier("stringify".to_owned()),
+            TokenKind::Identifier("x".to_owned()),
+            TokenKind::Identifier("y".to_owned()),
+            TokenKind::Identifier("z".to_owned()),
+            TokenKind::ParenRight
+        ]),
+    ));
+    let p = Procedure::new(lm, Rc::clone(&f.scope), Some(sym.get("bar")));
+    let args = [
+        Value::Number(Number::real(1)),
+        Value::Number(Number::real(2)),
+        Value::Number(Number::real(3)),
+        Value::Number(Number::real(4)),
+        Value::Number(Number::real(5)),
+    ];
+
+    let r = p.apply(&args, &f);
+
+    let v = ok_or_fail!(r);
+    assert!(matches!(v, Value::String(s) if s.as_ref() == "bar 1, 2, (3 4 5)"));
+    assert!(!env.binding.bound("x"));
+    assert!(!env.binding.bound("y"));
+    assert!(!env.binding.bound("z"));
 }
 
 #[test]
