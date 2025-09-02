@@ -1125,7 +1125,7 @@ fn list_cons_acc(curr: &Value, acc: &mut Vec<Value>) {
             return list_cons_acc(&pair.cdr, acc);
         }
     } else if acc.is_empty() && !matches!(curr, Value::Null) {
-        // NOTE: curr was not a cons cell so don't accumulate anything
+        // NOTE: curr was not a pair so don't accumulate anything
         return;
     }
     acc.push(curr.clone());
