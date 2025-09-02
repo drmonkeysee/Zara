@@ -68,7 +68,7 @@ use std::{
     cell::RefMut,
     convert,
     fmt::Display,
-    iter::{self, Map, RepeatN, Skip, Take},
+    iter::{self, RepeatN, Skip, Take},
     mem,
     ops::Range,
     str::Chars,
@@ -239,21 +239,12 @@ fn bytevector_to_string(args: &[Value], _env: &Frame) -> EvalResult {
 }
 
 fn bytevector_from_string(args: &[Value], _env: &Frame) -> EvalResult {
-    let arg = first(args);
-    let s = arg
-        .as_refstr()
-        .ok_or_else(|| invalid_target(TypeName::STRING, arg))?;
-    let span = try_coll_span(args.get(1)..args.get(2), s.len())?;
-    // TODO: experimental
-    // https://doc.rust-lang.org/std/primitive.char.html#associatedconstant.MAX_LEN_UTF8
-    let mut buf = [0u8; 4];
-    Ok(Value::bytevector_mut(
-        s.as_ref()
-            .chars()
-            .skip(span.start)
-            .take(span.len())
-            .flat_map(|ch| ch.encode_utf8(&mut buf).as_bytes().to_vec()),
-    ))
+    str_to_coll(first(args), args.get(1)..args.get(2), |chars| {
+        // TODO: experimental
+        // https://doc.rust-lang.org/std/primitive.char.html#associatedconstant.MAX_LEN_UTF8
+        let mut buf = [0u8; 4];
+        Value::bytevector_mut(chars.flat_map(|ch| ch.encode_utf8(&mut buf).as_bytes().to_vec()))
+    })
 }
 
 //
@@ -799,7 +790,7 @@ fn string_append(args: &[Value], _env: &Frame) -> EvalResult {
 
 fn string_to_list(args: &[Value], _env: &Frame) -> EvalResult {
     str_to_coll(first(args), args.get(1)..args.get(2), |chars| {
-        Value::list_mut(chars.collect::<Vec<_>>())
+        Value::list_mut(chars.map(Value::Character).collect::<Vec<_>>())
     })
 }
 
@@ -959,8 +950,7 @@ fn vector_to_string(args: &[Value], env: &Frame) -> EvalResult {
 
 fn vector_from_string(args: &[Value], _env: &Frame) -> EvalResult {
     str_to_coll(first(args), args.get(1)..args.get(2), |chars| {
-        // NOTE: need closure as Value::vector_mut does not implement generic lifetimes
-        Value::vector_mut(chars)
+        Value::vector_mut(chars.map(Value::Character))
     })
 }
 
@@ -1194,19 +1184,13 @@ fn build_str_fill(
 fn str_to_coll(
     arg: &Value,
     span: Range<Option<&Value>>,
-    ctor: impl FnOnce(Map<Take<Skip<Chars<'_>>>, fn(char) -> Value>) -> Value,
+    ctor: impl FnOnce(Take<Skip<Chars<'_>>>) -> Value,
 ) -> EvalResult {
     let s = arg
         .as_refstr()
         .ok_or_else(|| invalid_target(TypeName::STRING, arg))?;
     let span = try_coll_span(span, s.len())?;
-    Ok(ctor(
-        s.as_ref()
-            .chars()
-            .skip(span.start)
-            .take(span.len())
-            .map(Value::Character),
-    ))
+    Ok(ctor(s.as_ref().chars().skip(span.start).take(span.len())))
 }
 
 fn reflexive_vector_copy(ranges: impl IntoIterator<Item = (usize, usize)>, v: &mut [Value]) {
