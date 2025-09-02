@@ -310,7 +310,7 @@ fn ensure_proc_name(val: &mut Value, name: &Symbol) {
         // but have a debug_assert to see if it ever fails:
         // either the proc is already named (so get_mut failing is fine) OR get_mut succeeds.
         debug_assert!(p.name().is_some() || Rc::get_mut(p).is_some());
-        for p in Rc::get_mut(p).into_iter() {
+        if let Some(p) = Rc::get_mut(p) {
             p.set_name(name.clone());
         }
     }

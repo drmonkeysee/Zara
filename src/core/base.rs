@@ -521,6 +521,7 @@ cadr_func!(cadr, a, d);
 cadr_func!(cdar, d, a);
 cadr_func!(cddr, d, d);
 
+#[allow(clippy::unnecessary_wraps, reason = "infallible intrinsic")]
 fn cons(args: &[Value], _env: &Frame) -> EvalResult {
     Ok(Value::cons_mut(
         first(args).clone(),
@@ -530,13 +531,13 @@ fn cons(args: &[Value], _env: &Frame) -> EvalResult {
 
 fn set_car(args: &[Value], _env: &Frame) -> EvalResult {
     pair_set(first(args), super::second(args), |mut p, v| {
-        p.car = v.clone()
+        p.car = v.clone();
     })
 }
 
 fn set_cdr(args: &[Value], _env: &Frame) -> EvalResult {
     pair_set(first(args), super::second(args), |mut p, v| {
-        p.cdr = v.clone()
+        p.cdr = v.clone();
     })
 }
 
@@ -588,7 +589,7 @@ fn list_length(args: &[Value], _env: &Frame) -> EvalResult {
 fn list_append(args: &[Value], _env: &Frame) -> EvalResult {
     let mut acc = Vec::new();
     for arg in args.iter().take(args.len().max(1) - 1) {
-        try_list_acc(&arg, &mut acc)?;
+        try_list_acc(arg, &mut acc)?;
     }
     let last = args.last().cloned().unwrap_or(Value::Null);
     Ok(if acc.is_empty() {

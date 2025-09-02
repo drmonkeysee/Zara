@@ -414,7 +414,7 @@ impl Display for Pair {
 
 impl AsRef<Self> for Pair {
     fn as_ref(&self) -> &Self {
-        &self
+        self
     }
 }
 
