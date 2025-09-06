@@ -1182,13 +1182,11 @@ fn list_tail_circular_list() {
 fn list_tail_circular_list_many_loops() {
     let env = TestEnv::default();
     let (lst, loop_head, _) = make_circular_list(&env);
-
     // NOTE: reach the head of the cycle, then loop a million times;
     // if implemented recursively this will stack overflow.
-    let r = list_tail(
-        &[lst.clone(), Value::Number(Number::real(100002))],
-        &env.new_frame(),
-    );
+    let args = [lst.clone(), Value::Number(Number::real(100002))];
+
+    let r = list_tail(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
     assert!(loop_head.is(&v));
@@ -1561,6 +1559,25 @@ fn list_set_value_improper_list() {
     let v = ok_or_fail!(r);
     assert!(matches!(v, Value::Unspecified));
     assert_eq!(lst.to_string(), "(a b z . d)");
+}
+
+#[test]
+fn list_set_circular_list() {
+    let env = TestEnv::default();
+    let (lst, list_head, _) = make_circular_list(&env);
+    let args = [
+        lst,
+        Value::Number(Number::real(10)),
+        Value::Symbol(env.symbols.get("z")),
+    ];
+
+    let r = list_set(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert!(matches!(v, Value::Unspecified));
+    assert!(
+        matches!(&some_or_fail!(list_head.as_refpair()).as_ref().car, Value::Symbol(s) if s.as_ref() == "z")
+    );
 }
 
 #[test]
