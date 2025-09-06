@@ -607,8 +607,6 @@ fn list_reverse(args: &[Value], _env: &Frame) -> EvalResult {
     ))
 }
 
-// TODO: circular list tests for all functions below
-
 fn list_tail(args: &[Value], _env: &Frame) -> EvalResult {
     let k = super::second(args);
     sub_list(first(args), try_val_to_index(k, SECOND_ARG_LABEL)?, k)
