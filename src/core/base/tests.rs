@@ -778,6 +778,39 @@ fn list_mut_predicate() {
 }
 
 #[test]
+fn list_circular_predicate() {
+    let env = TestEnv::default();
+    let (lst, loop_head, loop_tail) = make_circular_list(&env);
+    let args = [lst.clone()];
+
+    let r = is_list(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert!(matches!(v, Value::Boolean(false)));
+
+    let args = [lst.clone()];
+
+    let r = is_pair(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert!(matches!(v, Value::Boolean(true)));
+
+    let args = [loop_head.clone()];
+
+    let r = is_pair(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert!(matches!(v, Value::Boolean(true)));
+
+    let args = [loop_tail.clone()];
+
+    let r = is_pair(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert!(matches!(v, Value::Boolean(true)));
+}
+
+#[test]
 fn list_append_no_args() {
     let env = TestEnv::default();
     let args = [];
