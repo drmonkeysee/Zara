@@ -1,9 +1,29 @@
 use super::*;
 use crate::{
-    testutil::{TestEnv, err_or_fail, extract_or_fail, ok_or_fail, zlist_mut},
+    testutil::{TestEnv, err_or_fail, extract_or_fail, ok_or_fail, some_or_fail, zlist_mut},
     value::zlist,
 };
 use std::rc::Rc;
+
+fn make_circular_list(env: &TestEnv) -> (Value, Value, Value) {
+    // (a b . #0=(c d e f . #0#))
+    let lst = zlist_mut![
+        Value::Symbol(env.symbols.get("a")),
+        Value::Symbol(env.symbols.get("b")),
+        Value::Symbol(env.symbols.get("c")),
+        Value::Symbol(env.symbols.get("d")),
+        Value::Symbol(env.symbols.get("e")),
+        Value::Symbol(env.symbols.get("f")),
+    ];
+    let loop_cdr = ok_or_fail!(pcdr(&ok_or_fail!(pcdr(&lst))));
+    let loop_cons = ok_or_fail!(pcdr(&ok_or_fail!(pcdr(&ok_or_fail!(pcdr(&loop_cdr))))));
+    ok_or_fail!(set_cdr(
+        &[loop_cons.clone(), loop_cdr.clone()],
+        &env.new_frame()
+    ));
+    assert!(loop_cdr.is(&some_or_fail!(loop_cons.as_refpair()).as_ref().cdr));
+    (lst.clone(), loop_cdr.clone(), loop_cons.clone())
+}
 
 #[test]
 fn all_boolean_empty() {
@@ -1121,6 +1141,60 @@ fn list_tail_end_of_mutable_improper_list() {
 }
 
 #[test]
+fn list_tail_circular_list() {
+    let env = TestEnv::default();
+    let (lst, loop_head, loop_tail) = make_circular_list(&env);
+
+    let r = list_tail(
+        &[lst.clone(), Value::Number(Number::real(6))],
+        &env.new_frame(),
+    );
+
+    let v = ok_or_fail!(r);
+    assert!(loop_head.is(&v));
+
+    let r = list_tail(
+        &[lst.clone(), Value::Number(Number::real(10))],
+        &env.new_frame(),
+    );
+
+    let v = ok_or_fail!(r);
+    assert!(loop_head.is(&v));
+
+    let r = list_tail(
+        &[lst.clone(), Value::Number(Number::real(11))],
+        &env.new_frame(),
+    );
+
+    let v = ok_or_fail!(r);
+    assert!(!loop_head.is(&v));
+
+    let r = list_tail(
+        &[lst.clone(), Value::Number(Number::real(13))],
+        &env.new_frame(),
+    );
+
+    let v = ok_or_fail!(r);
+    assert!(loop_tail.is(&v));
+}
+
+#[test]
+fn list_tail_circular_list_many_loops() {
+    let env = TestEnv::default();
+    let (lst, loop_head, _) = make_circular_list(&env);
+
+    // NOTE: reach the head of the cycle, then loop a million times;
+    // if implemented recursively this will stack overflow.
+    let r = list_tail(
+        &[lst.clone(), Value::Number(Number::real(100002))],
+        &env.new_frame(),
+    );
+
+    let v = ok_or_fail!(r);
+    assert!(loop_head.is(&v));
+}
+
+#[test]
 fn list_tail_index_out_of_range() {
     let env = TestEnv::default();
     let args = [
@@ -1265,6 +1339,36 @@ fn list_ref_empty_list() {
 
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
     assert_eq!(err.to_string(), "#<env-error \"index out of range\" (0)>");
+}
+
+#[test]
+fn list_ref_circular_list() {
+    let env = TestEnv::default();
+    let (lst, _, _) = make_circular_list(&env);
+
+    let r = list_get(
+        &[lst.clone(), Value::Number(Number::real(10))],
+        &env.new_frame(),
+    );
+
+    let v = ok_or_fail!(r);
+    assert!(matches!(v, Value::Symbol(s) if s.as_ref() == "c"));
+
+    let r = list_get(
+        &[lst.clone(), Value::Number(Number::real(11))],
+        &env.new_frame(),
+    );
+
+    let v = ok_or_fail!(r);
+    assert!(matches!(v, Value::Symbol(s) if s.as_ref() == "d"));
+
+    let r = list_get(
+        &[lst.clone(), Value::Number(Number::real(13))],
+        &env.new_frame(),
+    );
+
+    let v = ok_or_fail!(r);
+    assert!(matches!(v, Value::Symbol(s) if s.as_ref() == "f"));
 }
 
 #[test]
