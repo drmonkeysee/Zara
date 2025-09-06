@@ -609,7 +609,11 @@ fn list_reverse(args: &[Value], _env: &Frame) -> EvalResult {
 
 fn list_tail(args: &[Value], _env: &Frame) -> EvalResult {
     let k = super::second(args);
-    sub_list(first(args), try_val_to_index(k, SECOND_ARG_LABEL)?, k)
+    sub_list(
+        first(args).clone(),
+        try_val_to_index(k, SECOND_ARG_LABEL)?,
+        k,
+    )
 }
 
 fn list_get(args: &[Value], env: &Frame) -> EvalResult {
@@ -1130,16 +1134,18 @@ fn list_cons_acc(curr: &Value, acc: &mut Vec<Value>) {
     acc.push(curr.clone());
 }
 
-fn sub_list(lst: &Value, idx: usize, k: &Value) -> EvalResult {
-    if idx == 0 {
-        Ok(lst.clone())
-    } else if let Some(p) = lst.as_refpair() {
-        sub_list(&p.as_ref().cdr, idx - 1, k)
-    } else if let Value::Null = lst {
-        Err(Condition::index_error(k).into())
-    } else {
-        Err(invalid_target(TypeName::PAIR, lst))
+fn sub_list(mut lst: Value, mut idx: usize, k: &Value) -> EvalResult {
+    while idx > 0 {
+        lst = if let Some(p) = lst.as_refpair() {
+            idx -= 1;
+            p.as_ref().cdr.clone()
+        } else if let Value::Null = lst {
+            return Err(Condition::index_error(k).into());
+        } else {
+            return Err(invalid_target(TypeName::PAIR, &lst));
+        };
     }
+    Ok(lst)
 }
 
 fn try_val_to_char(arg: &Value, lbl: impl Display) -> Result<char, Exception> {
