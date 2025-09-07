@@ -851,6 +851,9 @@ mod pair {
 
     // TODO: this stack overflows somewhere in the creation of the list
     // is it Rc::drop doing it?
+    // testing in repl:
+    // (define x (make-list 100000 'a)) -> works
+    // (define x (make-list 1000000 'a)) -> stack overflow
     #[test]
     fn extremely_long_list() {
         // (1 1 1 1 1 ... )
@@ -882,6 +885,7 @@ mod pair {
         let p = extract_or_fail!(v, Value::Pair);
 
         assert!(p.is_list());
+        assert_eq!(p.len(), 1000000);
         */
     }
 
@@ -1013,6 +1017,131 @@ mod pair {
         let p = Pair {
             car: Value::real(1),
             cdr: Value::cons_mut(Value::real(2), Value::real(3)),
+        };
+
+        assert!(p.len().is_none());
+    }
+
+    #[test]
+    fn circular_list_display() {
+        // #0=(1 2 3 . #0#)
+        let end = RefCell::new(Pair {
+            car: Value::real(3),
+            cdr: Value::Null,
+        })
+        .into();
+        let p = Pair {
+            car: Value::real(1),
+            cdr: Value::cons(Value::real(2), Value::PairMut(Rc::clone(&end))),
+        }
+        .into();
+        end.borrow_mut().cdr = Value::Pair(Rc::clone(&p));
+
+        let v = Value::Pair(Rc::clone(&p));
+
+        assert_eq!(v.to_string(), "#0=(1 2 3 . #0#)");
+    }
+
+    #[test]
+    fn circular_list_is_not_list() {
+        // #0=(1 2 3 . #0#)
+        let end = RefCell::new(Pair {
+            car: Value::real(3),
+            cdr: Value::Null,
+        })
+        .into();
+        let p = Pair {
+            car: Value::real(1),
+            cdr: Value::cons(Value::real(2), Value::PairMut(Rc::clone(&end))),
+        }
+        .into();
+        end.borrow_mut().cdr = Value::Pair(Rc::clone(&p));
+
+        assert!(!p.is_list());
+    }
+
+    #[test]
+    fn circular_list_has_no_length() {
+        // #0=(1 2 3 . #0#)
+        let end = RefCell::new(Pair {
+            car: Value::real(3),
+            cdr: Value::Null,
+        })
+        .into();
+        let p = Pair {
+            car: Value::real(1),
+            cdr: Value::cons(Value::real(2), Value::PairMut(Rc::clone(&end))),
+        }
+        .into();
+        end.borrow_mut().cdr = Value::Pair(Rc::clone(&p));
+
+        assert!(p.len().is_none());
+    }
+
+    #[test]
+    fn partly_circular_list_display() {
+        // (1 2 . #0=(3 4 5 . #0#))
+        let end = RefCell::new(Pair {
+            car: Value::real(5),
+            cdr: Value::Null,
+        })
+        .into();
+        let start = Pair {
+            car: Value::real(3),
+            cdr: Value::cons(Value::real(4), Value::PairMut(Rc::clone(&end))),
+        }
+        .into();
+        end.borrow_mut().cdr = Value::Pair(Rc::clone(&start));
+        let p = Pair {
+            car: Value::real(1),
+            cdr: Value::cons(Value::real(2), Value::Pair(Rc::clone(&start))),
+        }
+        .into();
+
+        let v = Value::Pair(Rc::clone(&p));
+
+        assert_eq!(v.to_string(), "(1 2 . #0=(3 4 5 . #0#))");
+    }
+
+    #[test]
+    fn partly_circular_list_is_not_list() {
+        // (1 2 . #0=(3 4 5 . #0#))
+        let end = RefCell::new(Pair {
+            car: Value::real(5),
+            cdr: Value::Null,
+        })
+        .into();
+        let start = Pair {
+            car: Value::real(3),
+            cdr: Value::cons(Value::real(4), Value::PairMut(Rc::clone(&end))),
+        }
+        .into();
+        end.borrow_mut().cdr = Value::Pair(Rc::clone(&start));
+        let p = Pair {
+            car: Value::real(1),
+            cdr: Value::cons(Value::real(2), Value::Pair(Rc::clone(&start))),
+        };
+
+        assert!(!p.is_list());
+    }
+
+    #[test]
+    fn partly_circular_list_has_no_length() {
+        // (1 2 . #0=(3 4 5 . #0#))
+        let end = RefCell::new(Pair {
+            car: Value::real(5),
+            cdr: Value::Null,
+        })
+        .into();
+        let start = Pair {
+            car: Value::real(3),
+            cdr: Value::cons(Value::real(4), Value::PairMut(Rc::clone(&end))),
+        }
+        .into();
+        end.borrow_mut().cdr = Value::Pair(Rc::clone(&start));
+        let p = Pair {
+            car: Value::real(1),
+            cdr: Value::cons(Value::real(2), Value::Pair(Rc::clone(&start))),
         };
 
         assert!(p.len().is_none());
