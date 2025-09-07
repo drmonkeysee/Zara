@@ -770,7 +770,6 @@ fn list_mut_predicate() {
 }
 
 #[test]
-#[ignore = "stack overflow"]
 fn list_circular_predicate() {
     let env = TestEnv::default();
     let (lst, loop_head, loop_tail) = make_circular_list(&env);
@@ -804,7 +803,7 @@ fn list_circular_predicate() {
 }
 
 #[test]
-#[ignore = "stack overflow"]
+#[ignore = "stack overflow on display of err irritants"]
 fn list_circular_length() {
     let env = TestEnv::default();
     let (lst, _, _) = make_circular_list(&env);

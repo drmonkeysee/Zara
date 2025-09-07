@@ -21,7 +21,9 @@ use crate::{
 };
 use std::{
     cell::{Ref, RefCell, RefMut},
+    collections::HashSet,
     fmt::{self, Display, Formatter},
+    ptr,
     rc::Rc,
 };
 pub(crate) use zlist;
@@ -372,12 +374,22 @@ pub(crate) struct Pair {
     pub(crate) cdr: Value,
 }
 
+// TODO: can these iterative functions be generalized
+// can it be done using floyd's algorithm rather than hashset
 impl Pair {
     pub(crate) fn is_list(&self) -> bool {
         let mut cdr = self.cdr.clone();
+        let mut seen = HashSet::new();
         loop {
             cdr = if let Some(p) = cdr.as_refpair() {
-                p.as_ref().cdr.clone()
+                let pref = p.as_ref();
+                let pp = ptr::from_ref(pref);
+                if seen.contains(&pp) {
+                    return false;
+                } else {
+                    seen.insert(pp);
+                    pref.cdr.clone()
+                }
             } else if let Value::Null = cdr {
                 return true;
             } else {
@@ -388,11 +400,19 @@ impl Pair {
 
     pub(crate) fn len(&self) -> Option<usize> {
         let mut cdr = self.cdr.clone();
+        let mut seen = HashSet::new();
         let mut idx = 1;
         loop {
             cdr = if let Some(p) = cdr.as_refpair() {
-                idx += 1;
-                p.as_ref().cdr.clone()
+                let pref = p.as_ref();
+                let pp = ptr::from_ref(pref);
+                if seen.contains(&pp) {
+                    return None;
+                } else {
+                    seen.insert(pp);
+                    idx += 1;
+                    pref.cdr.clone()
+                }
             } else if let Value::Null = cdr {
                 return Some(idx);
             } else {

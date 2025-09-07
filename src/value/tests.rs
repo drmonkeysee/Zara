@@ -1045,7 +1045,6 @@ mod pair {
     }
 
     #[test]
-    #[ignore = "stack overflow"]
     fn circular_list_is_not_list() {
         // #0=(1 2 3 . #0#)
         let end = RefCell::new(Pair {
@@ -1064,7 +1063,6 @@ mod pair {
     }
 
     #[test]
-    #[ignore = "stack overflow"]
     fn circular_list_has_no_length() {
         // #0=(1 2 3 . #0#)
         let end = RefCell::new(Pair {
@@ -1109,7 +1107,6 @@ mod pair {
     }
 
     #[test]
-    #[ignore = "stack overflow"]
     fn partly_circular_list_is_not_list() {
         // (1 2 . #0=(3 4 5 . #0#))
         let end = RefCell::new(Pair {
@@ -1132,7 +1129,6 @@ mod pair {
     }
 
     #[test]
-    #[ignore = "stack overflow"]
     fn partly_circular_list_has_no_length() {
         // (1 2 . #0=(3 4 5 . #0#))
         let end = RefCell::new(Pair {
