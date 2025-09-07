@@ -560,7 +560,6 @@ fn list(args: &[Value], _env: &Frame) -> EvalResult {
     coll_new(args, |(_, v)| val_identity(v), Value::list_mut)
 }
 
-// TODO: circular lists => error
 fn list_length(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = first(args);
     if let Value::Null = arg {

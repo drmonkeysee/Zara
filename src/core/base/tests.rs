@@ -804,6 +804,22 @@ fn list_circular_predicate() {
 }
 
 #[test]
+#[ignore = "stack overflow"]
+fn list_circular_length() {
+    let env = TestEnv::default();
+    let (lst, _, _) = make_circular_list(&env);
+    let args = [lst.clone()];
+
+    let r = list_length(&args, &env.new_frame());
+
+    let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
+    assert_eq!(
+        err.to_string(),
+        "#<env-error \"invalid type for arg `0` - expected: list, got: improper list\" ((a . b))>"
+    );
+}
+
+#[test]
 fn list_append_no_args() {
     let env = TestEnv::default();
     let args = [];
