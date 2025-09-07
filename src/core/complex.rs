@@ -79,10 +79,10 @@ fn get_complex_part(
     fallback: impl FnOnce(&Real) -> Real,
 ) -> EvalResult {
     if let Value::Number(n) = arg {
-        Ok(Value::Number(Number::real(match n {
+        Ok(Value::real(match n {
             Number::Complex(z) => get(z),
             Number::Real(r) => fallback(r),
-        })))
+        }))
     } else {
         Err(super::invalid_target(TypeName::NUMBER, arg))
     }
@@ -119,7 +119,7 @@ mod tests {
 
     #[test]
     fn get_real_real() {
-        let args = [Value::Number(Number::real(8))];
+        let args = [Value::real(8)];
         let env = TestEnv::default();
 
         let v = get_real(&args, &env.new_frame());
@@ -131,7 +131,7 @@ mod tests {
 
     #[test]
     fn get_imag_real() {
-        let args = [Value::Number(Number::real(8))];
+        let args = [Value::real(8)];
         let env = TestEnv::default();
 
         let v = get_imag(&args, &env.new_frame());
@@ -167,7 +167,7 @@ mod tests {
 
     #[test]
     fn get_mag_real() {
-        let args = [Value::Number(Number::real(8))];
+        let args = [Value::real(8)];
         let env = TestEnv::default();
 
         let v = get_mag(&args, &env.new_frame());
@@ -179,7 +179,7 @@ mod tests {
 
     #[test]
     fn get_angle_real() {
-        let args = [Value::Number(Number::real(8))];
+        let args = [Value::real(8)];
         let env = TestEnv::default();
 
         let v = get_angle(&args, &env.new_frame());

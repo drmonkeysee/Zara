@@ -495,7 +495,7 @@ fn string_mutable_length() {
 
 #[test]
 fn string_mutable_get_ref() {
-    let args = [Value::string_mut("abc"), Value::Number(Number::real(1))];
+    let args = [Value::string_mut("abc"), Value::real(1)];
     let env = TestEnv::default();
 
     let r = string_get(&args, &env.new_frame());
@@ -508,7 +508,7 @@ fn string_mutable_get_ref() {
 fn string_set_val() {
     let args = [
         Value::string_mut("abc"),
-        Value::Number(Number::real(1)),
+        Value::real(1),
         Value::Character('X'),
     ];
     let env = TestEnv::default();
@@ -524,7 +524,7 @@ fn string_set_val() {
 fn string_set_val_unicode() {
     let args = [
         Value::string_mut("a🦀c"),
-        Value::Number(Number::real(1)),
+        Value::real(1),
         Value::Character('X'),
     ];
     let env = TestEnv::default();
@@ -540,7 +540,7 @@ fn string_set_val_unicode() {
 fn string_set_val_after_unicode() {
     let args = [
         Value::string_mut("a🦀c"),
-        Value::Number(Number::real(2)),
+        Value::real(2),
         Value::Character('X'),
     ];
     let env = TestEnv::default();
@@ -556,7 +556,7 @@ fn string_set_val_after_unicode() {
 fn string_set_val_unicode_out_of_range() {
     let args = [
         Value::string_mut("a🦀c"),
-        Value::Number(Number::real(5)),
+        Value::real(5),
         Value::Character('X'),
     ];
     let env = TestEnv::default();
@@ -570,11 +570,7 @@ fn string_set_val_unicode_out_of_range() {
 
 #[test]
 fn string_copy_unicode_out_of_range() {
-    let args = [
-        Value::string("a🦀c"),
-        Value::Number(Number::real(0)),
-        Value::Number(Number::real(5)),
-    ];
+    let args = [Value::string("a🦀c"), Value::real(0), Value::real(5)];
     let env = TestEnv::default();
 
     let r = string_copy(&args, &env.new_frame());
@@ -609,11 +605,7 @@ fn unicode_to_bytes() {
 
 #[test]
 fn unicode_to_bytes_fenceposts() {
-    let args = [
-        Value::string("a🦀c"),
-        Value::Number(Number::real(1)),
-        Value::Number(Number::real(2)),
-    ];
+    let args = [Value::string("a🦀c"), Value::real(1), Value::real(2)];
     let env = TestEnv::default();
 
     let r = bytevector_from_string(&args, &env.new_frame());
@@ -624,7 +616,7 @@ fn unicode_to_bytes_fenceposts() {
 
 #[test]
 fn is_even_integer() {
-    let args = [Value::Number(Number::real(4))];
+    let args = [Value::real(4)];
     let env = TestEnv::default();
 
     let r = is_even(&args, &env.new_frame());
@@ -640,7 +632,7 @@ fn is_even_integer() {
 
 #[test]
 fn is_even_float_with_no_frac() {
-    let args = [Value::Number(Number::real(4.0))];
+    let args = [Value::real(4.0)];
     let env = TestEnv::default();
 
     let r = is_even(&args, &env.new_frame());
@@ -656,7 +648,7 @@ fn is_even_float_with_no_frac() {
 
 #[test]
 fn is_even_float_with_frac() {
-    let args = [Value::Number(Number::real(4.2))];
+    let args = [Value::real(4.2)];
     let env = TestEnv::default();
 
     let r = is_even(&args, &env.new_frame());
@@ -678,7 +670,7 @@ fn is_even_float_with_frac() {
 
 #[test]
 fn is_odd_integer() {
-    let args = [Value::Number(Number::real(3))];
+    let args = [Value::real(3)];
     let env = TestEnv::default();
 
     let r = is_even(&args, &env.new_frame());
@@ -694,7 +686,7 @@ fn is_odd_integer() {
 
 #[test]
 fn is_odd_float_with_no_frac() {
-    let args = [Value::Number(Number::real(3.0))];
+    let args = [Value::real(3.0)];
     let env = TestEnv::default();
 
     let r = is_even(&args, &env.new_frame());
@@ -710,7 +702,7 @@ fn is_odd_float_with_no_frac() {
 
 #[test]
 fn is_odd_float_with_frac() {
-    let args = [Value::Number(Number::real(3.2))];
+    let args = [Value::real(3.2)];
     let env = TestEnv::default();
 
     let r = is_even(&args, &env.new_frame());
@@ -895,11 +887,7 @@ fn list_append_multiple_lists() {
             Value::Symbol(env.symbols.get("b")),
             Value::Symbol(env.symbols.get("c")),
         ],
-        zlist![
-            Value::Number(Number::real(1)),
-            Value::Number(Number::real(2)),
-            Value::Number(Number::real(3)),
-        ],
+        zlist![Value::real(1), Value::real(2), Value::real(3),],
         last.clone(),
     ];
 
@@ -922,11 +910,7 @@ fn list_append_improper_lists() {
             Value::Symbol(env.symbols.get("b")),
             Value::Symbol(env.symbols.get("c")),
         ],
-        zlist![
-            Value::Number(Number::real(1)),
-            Value::Number(Number::real(2)),
-            Value::Number(Number::real(3)),
-        ],
+        zlist![Value::real(1), Value::real(2), Value::real(3),],
         last.clone(),
     ];
 
@@ -953,7 +937,7 @@ fn list_append_invalid_arg() {
             Value::Symbol(env.symbols.get("b")),
             Value::Symbol(env.symbols.get("c")),
         ],
-        Value::Number(Number::real(1)),
+        Value::real(1),
         last.clone(),
     ];
 
@@ -1051,7 +1035,7 @@ fn list_tail_normal_list() {
             Value::Symbol(env.symbols.get("b")),
             Value::Symbol(env.symbols.get("c"))
         ],
-        Value::Number(Number::real(1)),
+        Value::real(1),
     ];
 
     let r = list_tail(&args, &env.new_frame());
@@ -1073,7 +1057,7 @@ fn list_tail_mutable_list() {
             Value::Symbol(env.symbols.get("b")),
             Value::Symbol(env.symbols.get("c"))
         ],
-        Value::Number(Number::real(1)),
+        Value::real(1),
     ];
 
     let r = list_tail(&args, &env.new_frame());
@@ -1092,7 +1076,7 @@ fn list_tail_mutable_list() {
 
 #[test]
 fn list_tail_empty_list() {
-    let args = [zlist![], Value::Number(Number::real(0))];
+    let args = [zlist![], Value::real(0)];
     let env = TestEnv::default();
 
     let r = list_tail(&args, &env.new_frame());
@@ -1110,7 +1094,7 @@ fn list_tail_index_to_empty_list() {
             Value::Symbol(env.symbols.get("b")),
             Value::Symbol(env.symbols.get("c"))
         ],
-        Value::Number(Number::real(3)),
+        Value::real(3),
     ];
 
     let r = list_tail(&args, &env.new_frame());
@@ -1122,10 +1106,7 @@ fn list_tail_index_to_empty_list() {
 #[test]
 fn list_tail_non_list() {
     let env = TestEnv::default();
-    let args = [
-        Value::Symbol(env.symbols.get("a")),
-        Value::Number(Number::real(0)),
-    ];
+    let args = [Value::Symbol(env.symbols.get("a")), Value::real(0)];
 
     let r = list_tail(&args, &env.new_frame());
 
@@ -1144,7 +1125,7 @@ fn list_tail_end_of_improper_list() {
                 Value::Symbol(env.symbols.get("c")),
             ),
         ),
-        Value::Number(Number::real(2)),
+        Value::real(2),
     ];
 
     let r = list_tail(&args, &env.new_frame());
@@ -1164,7 +1145,7 @@ fn list_tail_end_of_mutable_improper_list() {
                 Value::Symbol(env.symbols.get("c")),
             ),
         ),
-        Value::Number(Number::real(2)),
+        Value::real(2),
     ];
 
     let r = list_tail(&args, &env.new_frame());
@@ -1178,34 +1159,22 @@ fn list_tail_circular_list() {
     let env = TestEnv::default();
     let (lst, loop_head, loop_tail) = make_circular_list(&env);
 
-    let r = list_tail(
-        &[lst.clone(), Value::Number(Number::real(6))],
-        &env.new_frame(),
-    );
+    let r = list_tail(&[lst.clone(), Value::real(6)], &env.new_frame());
 
     let v = ok_or_fail!(r);
     assert!(loop_head.is(&v));
 
-    let r = list_tail(
-        &[lst.clone(), Value::Number(Number::real(10))],
-        &env.new_frame(),
-    );
+    let r = list_tail(&[lst.clone(), Value::real(10)], &env.new_frame());
 
     let v = ok_or_fail!(r);
     assert!(loop_head.is(&v));
 
-    let r = list_tail(
-        &[lst.clone(), Value::Number(Number::real(11))],
-        &env.new_frame(),
-    );
+    let r = list_tail(&[lst.clone(), Value::real(11)], &env.new_frame());
 
     let v = ok_or_fail!(r);
     assert!(!loop_head.is(&v));
 
-    let r = list_tail(
-        &[lst.clone(), Value::Number(Number::real(13))],
-        &env.new_frame(),
-    );
+    let r = list_tail(&[lst.clone(), Value::real(13)], &env.new_frame());
 
     let v = ok_or_fail!(r);
     assert!(loop_tail.is(&v));
@@ -1217,7 +1186,7 @@ fn list_tail_circular_list_many_loops() {
     let (lst, loop_head, _) = make_circular_list(&env);
     // NOTE: reach the head of the cycle, then loop a million times;
     // if implemented recursively this will stack overflow.
-    let args = [lst.clone(), Value::Number(Number::real(100002))];
+    let args = [lst.clone(), Value::real(100002)];
 
     let r = list_tail(&args, &env.new_frame());
 
@@ -1234,7 +1203,7 @@ fn list_tail_index_out_of_range() {
             Value::Symbol(env.symbols.get("b")),
             Value::Symbol(env.symbols.get("c"))
         ],
-        Value::Number(Number::real(4)),
+        Value::real(4),
     ];
 
     let r = list_tail(&args, &env.new_frame());
@@ -1246,10 +1215,7 @@ fn list_tail_index_out_of_range() {
 #[test]
 fn list_tail_non_list_out_of_range() {
     let env = TestEnv::default();
-    let args = [
-        Value::Symbol(env.symbols.get("a")),
-        Value::Number(Number::real(1)),
-    ];
+    let args = [Value::Symbol(env.symbols.get("a")), Value::real(1)];
 
     let r = list_tail(&args, &env.new_frame());
 
@@ -1271,7 +1237,7 @@ fn list_tail_improper_list_out_of_range() {
                 Value::Symbol(env.symbols.get("c")),
             ),
         ),
-        Value::Number(Number::real(3)),
+        Value::real(3),
     ];
 
     let r = list_tail(&args, &env.new_frame());
@@ -1299,7 +1265,7 @@ fn list_tail_wrong_index_type() {
 
 #[test]
 fn list_tail_invalid_index_type() {
-    let args = [zlist![], Value::Number(Number::real(4.2))];
+    let args = [zlist![], Value::real(4.2)];
     let env = TestEnv::default();
 
     let r = list_tail(&args, &env.new_frame());
@@ -1313,7 +1279,7 @@ fn list_tail_invalid_index_type() {
 
 #[test]
 fn list_tail_index_invalid_range() {
-    let args = [zlist![], Value::Number(Number::real(-4))];
+    let args = [zlist![], Value::real(-4)];
     let env = TestEnv::default();
 
     let r = list_tail(&args, &env.new_frame());
@@ -1334,7 +1300,7 @@ fn list_ref_normal_list() {
             Value::Symbol(env.symbols.get("b")),
             Value::Symbol(env.symbols.get("c"))
         ],
-        Value::Number(Number::real(1)),
+        Value::real(1),
     ];
 
     let r = list_get(&args, &env.new_frame());
@@ -1352,7 +1318,7 @@ fn list_ref_normal_mutable_list() {
             Value::Symbol(env.symbols.get("b")),
             Value::Symbol(env.symbols.get("c"))
         ],
-        Value::Number(Number::real(1)),
+        Value::real(1),
     ];
 
     let r = list_get(&args, &env.new_frame());
@@ -1363,7 +1329,7 @@ fn list_ref_normal_mutable_list() {
 
 #[test]
 fn list_ref_empty_list() {
-    let args = [zlist![], Value::Number(Number::real(0))];
+    let args = [zlist![], Value::real(0)];
     let env = TestEnv::default();
 
     let r = list_get(&args, &env.new_frame());
@@ -1377,26 +1343,17 @@ fn list_ref_circular_list() {
     let env = TestEnv::default();
     let (lst, _, _) = make_circular_list(&env);
 
-    let r = list_get(
-        &[lst.clone(), Value::Number(Number::real(10))],
-        &env.new_frame(),
-    );
+    let r = list_get(&[lst.clone(), Value::real(10)], &env.new_frame());
 
     let v = ok_or_fail!(r);
     assert!(matches!(v, Value::Symbol(s) if s.as_ref() == "c"));
 
-    let r = list_get(
-        &[lst.clone(), Value::Number(Number::real(11))],
-        &env.new_frame(),
-    );
+    let r = list_get(&[lst.clone(), Value::real(11)], &env.new_frame());
 
     let v = ok_or_fail!(r);
     assert!(matches!(v, Value::Symbol(s) if s.as_ref() == "d"));
 
-    let r = list_get(
-        &[lst.clone(), Value::Number(Number::real(13))],
-        &env.new_frame(),
-    );
+    let r = list_get(&[lst.clone(), Value::real(13)], &env.new_frame());
 
     let v = ok_or_fail!(r);
     assert!(matches!(v, Value::Symbol(s) if s.as_ref() == "f"));
@@ -1405,10 +1362,7 @@ fn list_ref_circular_list() {
 #[test]
 fn list_ref_non_list() {
     let env = TestEnv::default();
-    let args = [
-        Value::Symbol(env.symbols.get("a")),
-        Value::Number(Number::real(0)),
-    ];
+    let args = [Value::Symbol(env.symbols.get("a")), Value::real(0)];
 
     let r = list_get(&args, &env.new_frame());
 
@@ -1430,7 +1384,7 @@ fn list_ref_improper_list_item() {
                 Value::Symbol(env.symbols.get("c")),
             ),
         ),
-        Value::Number(Number::real(1)),
+        Value::real(1),
     ];
 
     let r = list_get(&args, &env.new_frame());
@@ -1450,7 +1404,7 @@ fn list_ref_mutable_improper_list_item() {
                 Value::Symbol(env.symbols.get("c")),
             ),
         ),
-        Value::Number(Number::real(1)),
+        Value::real(1),
     ];
 
     let r = list_get(&args, &env.new_frame());
@@ -1470,7 +1424,7 @@ fn list_ref_end_of_improper_list() {
                 Value::Symbol(env.symbols.get("c")),
             ),
         ),
-        Value::Number(Number::real(2)),
+        Value::real(2),
     ];
 
     let r = list_get(&args, &env.new_frame());
@@ -1491,7 +1445,7 @@ fn list_ref_index_out_of_range() {
             Value::Symbol(env.symbols.get("b")),
             Value::Symbol(env.symbols.get("c"))
         ],
-        Value::Number(Number::real(4)),
+        Value::real(4),
     ];
 
     let r = list_get(&args, &env.new_frame());
@@ -1511,7 +1465,7 @@ fn list_ref_improper_list_out_of_range() {
                 Value::Symbol(env.symbols.get("c")),
             ),
         ),
-        Value::Number(Number::real(3)),
+        Value::real(3),
     ];
 
     let r = list_get(&args, &env.new_frame());
@@ -1533,7 +1487,7 @@ fn list_set_value() {
     ];
     let args = [
         lst.clone(),
-        Value::Number(Number::real(1)),
+        Value::real(1),
         Value::Symbol(env.symbols.get("z")),
     ];
 
@@ -1557,7 +1511,7 @@ fn list_set_value_replace_pair() {
     ];
     let args = [
         lst.clone(),
-        Value::Number(Number::real(2)),
+        Value::real(2),
         Value::Symbol(env.symbols.get("z")),
     ];
 
@@ -1583,7 +1537,7 @@ fn list_set_value_improper_list() {
     );
     let args = [
         lst.clone(),
-        Value::Number(Number::real(2)),
+        Value::real(2),
         Value::Symbol(env.symbols.get("z")),
     ];
 
@@ -1598,11 +1552,7 @@ fn list_set_value_improper_list() {
 fn list_set_circular_list() {
     let env = TestEnv::default();
     let (lst, list_head, _) = make_circular_list(&env);
-    let args = [
-        lst,
-        Value::Number(Number::real(10)),
-        Value::Symbol(env.symbols.get("z")),
-    ];
+    let args = [lst, Value::real(10), Value::Symbol(env.symbols.get("z"))];
 
     let r = list_set(&args, &env.new_frame());
 
@@ -1622,7 +1572,7 @@ fn list_set_out_of_range() {
             Value::Symbol(env.symbols.get("b")),
             Value::Symbol(env.symbols.get("c"))
         ],
-        Value::Number(Number::real(3)),
+        Value::real(3),
         Value::Symbol(env.symbols.get("z")),
     ];
 
@@ -1700,7 +1650,7 @@ fn list_copy_improper_list() {
 
 #[test]
 fn int_to_char() {
-    let args = [Value::Number(Number::real(0x41))];
+    let args = [Value::real(0x41)];
     let env = TestEnv::default();
 
     let r = char_from_integer(&args, &env.new_frame());
@@ -1725,7 +1675,7 @@ fn int_to_char_invalid_arg() {
 
 #[test]
 fn int_to_char_invalid_range() {
-    let args = [Value::Number(Number::real(-4))];
+    let args = [Value::real(-4)];
     let env = TestEnv::default();
 
     let r = char_from_integer(&args, &env.new_frame());
@@ -1739,7 +1689,7 @@ fn int_to_char_invalid_range() {
 
 #[test]
 fn int_to_char_not_a_code_point() {
-    let args = [Value::Number(Number::real(0xdff0))];
+    let args = [Value::real(0xdff0)];
     let env = TestEnv::default();
 
     let r = char_from_integer(&args, &env.new_frame());
@@ -1774,7 +1724,7 @@ fn vector_mutable_length() {
             Value::Character('B'),
             Value::Character('C'),
         ]),
-        Value::Number(Number::real(1)),
+        Value::real(1),
     ];
     let env = TestEnv::default();
 
@@ -1792,7 +1742,7 @@ fn vector_mutable_get_ref() {
             Value::Character('B'),
             Value::Character('C'),
         ]),
-        Value::Number(Number::real(1)),
+        Value::real(1),
     ];
     let env = TestEnv::default();
 
@@ -1810,7 +1760,7 @@ fn vector_get_ref() {
             Value::Character('B'),
             Value::Character('C'),
         ]),
-        Value::Number(Number::real(1)),
+        Value::real(1),
     ];
     let env = TestEnv::default();
 
@@ -1828,7 +1778,7 @@ fn vector_get_idx_out_of_bounds() {
             Value::Character('B'),
             Value::Character('C'),
         ]),
-        Value::Number(Number::real(4)),
+        Value::real(4),
     ];
     let env = TestEnv::default();
 
@@ -1846,7 +1796,7 @@ fn vector_get_idx_out_of_range() {
             Value::Character('B'),
             Value::Character('C'),
         ]),
-        Value::Number(Number::real(-2)),
+        Value::real(-2),
     ];
     let env = TestEnv::default();
 
@@ -1867,7 +1817,7 @@ fn vector_get_idx_malformed() {
             Value::Character('B'),
             Value::Character('C'),
         ]),
-        Value::Number(Number::real(4.2)),
+        Value::real(4.2),
     ];
     let env = TestEnv::default();
 
@@ -1909,8 +1859,8 @@ fn vector_set_val() {
             Value::Character('B'),
             Value::Character('C'),
         ]),
-        Value::Number(Number::real(1)),
-        Value::Number(Number::real(25)),
+        Value::real(1),
+        Value::real(25),
     ];
     let env = TestEnv::default();
 
@@ -1945,10 +1895,7 @@ fn bytevector_mutable_length() {
 
 #[test]
 fn bytevector_mutable_get_ref() {
-    let args = [
-        Value::bytevector_mut([1, 2, 3]),
-        Value::Number(Number::real(1)),
-    ];
+    let args = [Value::bytevector_mut([1, 2, 3]), Value::real(1)];
     let env = TestEnv::default();
 
     let r = bytevector_get(&args, &env.new_frame());
@@ -1961,8 +1908,8 @@ fn bytevector_mutable_get_ref() {
 fn bytevector_set_val() {
     let args = [
         Value::bytevector_mut([1, 2, 3]),
-        Value::Number(Number::real(1)),
-        Value::Number(Number::real(25)),
+        Value::real(1),
+        Value::real(25),
     ];
     let env = TestEnv::default();
 
@@ -1977,8 +1924,8 @@ fn bytevector_set_val() {
 fn bytevector_set_val_out_of_range() {
     let args = [
         Value::bytevector_mut([1, 2, 3]),
-        Value::Number(Number::real(1)),
-        Value::Number(Number::real(400)),
+        Value::real(1),
+        Value::real(400),
     ];
     let env = TestEnv::default();
 
@@ -1995,7 +1942,7 @@ fn bytevector_set_val_out_of_range() {
 fn bytevector_set_val_invalid() {
     let args = [
         Value::bytevector_mut([1, 2, 3]),
-        Value::Number(Number::real(1)),
+        Value::real(1),
         Value::string("a byte"),
     ];
     let env = TestEnv::default();
@@ -2013,8 +1960,8 @@ fn bytevector_set_val_invalid() {
 fn bytevector_set_val_immutable() {
     let args = [
         Value::ByteVector([1, 2, 3].into()),
-        Value::Number(Number::real(1)),
-        Value::Number(Number::real(25)),
+        Value::real(1),
+        Value::real(25),
     ];
     let env = TestEnv::default();
 
@@ -2040,10 +1987,7 @@ fn bytevector_copy_all() {
 
 #[test]
 fn bytevector_copy_start() {
-    let args = [
-        Value::ByteVector([1, 2, 3, 4].into()),
-        Value::Number(Number::real(1)),
-    ];
+    let args = [Value::ByteVector([1, 2, 3, 4].into()), Value::real(1)];
     let env = TestEnv::default();
 
     let r = bytevector_copy(&args, &env.new_frame());
@@ -2056,8 +2000,8 @@ fn bytevector_copy_start() {
 fn bytevector_copy_start_end() {
     let args = [
         Value::ByteVector([1, 2, 3, 4].into()),
-        Value::Number(Number::real(1)),
-        Value::Number(Number::real(3)),
+        Value::real(1),
+        Value::real(3),
     ];
     let env = TestEnv::default();
 
@@ -2071,8 +2015,8 @@ fn bytevector_copy_start_end() {
 fn bytevector_copy_nothing() {
     let args = [
         Value::ByteVector([1, 2, 3, 4].into()),
-        Value::Number(Number::real(1)),
-        Value::Number(Number::real(1)),
+        Value::real(1),
+        Value::real(1),
     ];
     let env = TestEnv::default();
 
@@ -2086,8 +2030,8 @@ fn bytevector_copy_nothing() {
 fn bytevector_copy_start_gt_end() {
     let args = [
         Value::ByteVector([1, 2, 3, 4].into()),
-        Value::Number(Number::real(3)),
-        Value::Number(Number::real(1)),
+        Value::real(3),
+        Value::real(1),
     ];
     let env = TestEnv::default();
 
@@ -2104,8 +2048,8 @@ fn bytevector_copy_start_gt_end() {
 fn bytevector_copy_end_too_large() {
     let args = [
         Value::ByteVector([1, 2, 3, 4].into()),
-        Value::Number(Number::real(3)),
-        Value::Number(Number::real(5)),
+        Value::real(3),
+        Value::real(5),
     ];
     let env = TestEnv::default();
 
@@ -2117,10 +2061,7 @@ fn bytevector_copy_end_too_large() {
 
 #[test]
 fn bytevector_copy_start_too_large() {
-    let args = [
-        Value::ByteVector([1, 2, 3, 4].into()),
-        Value::Number(Number::real(6)),
-    ];
+    let args = [Value::ByteVector([1, 2, 3, 4].into()), Value::real(6)];
     let env = TestEnv::default();
 
     let r = bytevector_copy(&args, &env.new_frame());
@@ -2185,8 +2126,8 @@ fn bytes_to_unicode_truncated_sequence() {
 fn bytes_to_unicode_invalid_sequence_excluded() {
     let args = [
         Value::ByteVector([0x63, 0x62, 0x9f, 0xa6, 0x80].into()),
-        Value::Number(Number::real(0)),
-        Value::Number(Number::real(2)),
+        Value::real(0),
+        Value::real(2),
     ];
     let env = TestEnv::default();
 
@@ -2200,7 +2141,7 @@ fn bytes_to_unicode_invalid_sequence_excluded() {
 fn bytevector_copy_into_equal() {
     let args = [
         Value::bytevector_mut([1, 2, 3, 4, 5]),
-        Value::Number(Number::real(0)),
+        Value::real(0),
         Value::ByteVector([6, 7, 8, 9, 10].into()),
     ];
     let env = TestEnv::default();
@@ -2217,7 +2158,7 @@ fn bytevector_copy_into_equal() {
 fn bytevector_copy_into_larger() {
     let args = [
         Value::bytevector_mut([1, 2, 3, 4, 5]),
-        Value::Number(Number::real(1)),
+        Value::real(1),
         Value::ByteVector([6, 7, 8].into()),
     ];
     let env = TestEnv::default();
@@ -2233,10 +2174,10 @@ fn bytevector_copy_into_larger() {
 fn bytevector_copy_into_smaller() {
     let args = [
         Value::bytevector_mut([1, 2, 3]),
-        Value::Number(Number::real(1)),
+        Value::real(1),
         Value::ByteVector([6, 7, 8, 9, 10].into()),
-        Value::Number(Number::real(3)),
-        Value::Number(Number::real(5)),
+        Value::real(3),
+        Value::real(5),
     ];
     let env = TestEnv::default();
 
@@ -2251,7 +2192,7 @@ fn bytevector_copy_into_smaller() {
 fn bytevector_copy_from_empty() {
     let args = [
         Value::bytevector_mut([1, 2, 3]),
-        Value::Number(Number::real(1)),
+        Value::real(1),
         Value::ByteVector([].into()),
     ];
     let env = TestEnv::default();
@@ -2267,10 +2208,10 @@ fn bytevector_copy_from_empty() {
 fn bytevector_copy_to_empty() {
     let args = [
         Value::bytevector_mut([]),
-        Value::Number(Number::real(0)),
+        Value::real(0),
         Value::ByteVector([6, 7, 8, 9, 10].into()),
-        Value::Number(Number::real(3)),
-        Value::Number(Number::real(3)),
+        Value::real(3),
+        Value::real(3),
     ];
     let env = TestEnv::default();
 
@@ -2285,7 +2226,7 @@ fn bytevector_copy_to_empty() {
 fn bytevector_copy_invalid_at() {
     let args = [
         Value::bytevector_mut([1, 2, 3, 4, 5]),
-        Value::Number(Number::real(10)),
+        Value::real(10),
         Value::ByteVector([6, 7, 8, 9, 10].into()),
     ];
     let env = TestEnv::default();
@@ -2303,10 +2244,10 @@ fn bytevector_copy_invalid_at() {
 fn bytevector_copy_at_length_ok_if_span_is_empty() {
     let args = [
         Value::bytevector_mut([1, 2, 3, 4, 5]),
-        Value::Number(Number::real(5)),
+        Value::real(5),
         Value::ByteVector([6, 7, 8, 9, 10].into()),
-        Value::Number(Number::real(0)),
-        Value::Number(Number::real(0)),
+        Value::real(0),
+        Value::real(0),
     ];
     let env = TestEnv::default();
 
@@ -2321,10 +2262,10 @@ fn bytevector_copy_at_length_ok_if_span_is_empty() {
 fn bytevector_copy_accepts_immutable_if_span_is_empty() {
     let args = [
         Value::ByteVector([1, 2, 3, 4, 5].into()),
-        Value::Number(Number::real(2)),
+        Value::real(2),
         Value::ByteVector([6, 7, 8, 9, 10].into()),
-        Value::Number(Number::real(0)),
-        Value::Number(Number::real(0)),
+        Value::real(0),
+        Value::real(0),
     ];
     let env = TestEnv::default();
 
@@ -2339,7 +2280,7 @@ fn bytevector_copy_accepts_immutable_if_span_is_empty() {
 fn bytevector_copy_at_length_err_if_span_is_not_empty() {
     let args = [
         Value::bytevector_mut([1, 2, 3, 4, 5]),
-        Value::Number(Number::real(5)),
+        Value::real(5),
         Value::ByteVector([6, 7, 8, 9, 10].into()),
     ];
     let env = TestEnv::default();
@@ -2357,7 +2298,7 @@ fn bytevector_copy_at_length_err_if_span_is_not_empty() {
 fn bytevector_copy_immutable_target() {
     let args = [
         Value::ByteVector([1, 2, 3, 4, 5].into()),
-        Value::Number(Number::real(0)),
+        Value::real(0),
         Value::ByteVector([6, 7, 8, 9, 10].into()),
     ];
     let env = TestEnv::default();
@@ -2375,10 +2316,10 @@ fn bytevector_copy_immutable_target() {
 fn bytevector_copy_too_much_into_smaller() {
     let args = [
         Value::bytevector_mut([1, 2, 3]),
-        Value::Number(Number::real(1)),
+        Value::real(1),
         Value::ByteVector([6, 7, 8, 9, 10].into()),
-        Value::Number(Number::real(1)),
-        Value::Number(Number::real(5)),
+        Value::real(1),
+        Value::real(5),
     ];
     let env = TestEnv::default();
 
@@ -2394,7 +2335,7 @@ fn bytevector_copy_too_much_into_smaller() {
 #[test]
 fn bytevector_copy_into_self() {
     let bv = Value::bytevector_mut([1, 2, 3, 4, 5]);
-    let args = [bv.clone(), Value::Number(Number::real(0)), bv];
+    let args = [bv.clone(), Value::real(0), bv];
     let env = TestEnv::default();
 
     let r = bytevector_copy_inline(&args, &env.new_frame());
@@ -2410,10 +2351,10 @@ fn bytevector_copy_part_into_self() {
     let bv = Value::bytevector_mut([1, 2, 3, 4, 5]);
     let args = [
         bv.clone(),
-        Value::Number(Number::real(0)),
+        Value::real(0),
         bv,
-        Value::Number(Number::real(2)),
-        Value::Number(Number::real(4)),
+        Value::real(2),
+        Value::real(4),
     ];
     let env = TestEnv::default();
 
@@ -2430,10 +2371,10 @@ fn bytevector_copy_into_tail_overlap() {
     let bv = Value::bytevector_mut([1, 2, 3, 4, 5]);
     let args = [
         bv.clone(),
-        Value::Number(Number::real(1)),
+        Value::real(1),
         bv,
-        Value::Number(Number::real(2)),
-        Value::Number(Number::real(5)),
+        Value::real(2),
+        Value::real(5),
     ];
     let env = TestEnv::default();
 
@@ -2450,10 +2391,10 @@ fn bytevector_copy_into_head_overlap() {
     let bv = Value::bytevector_mut([1, 2, 3, 4, 5]);
     let args = [
         bv.clone(),
-        Value::Number(Number::real(2)),
+        Value::real(2),
         bv,
-        Value::Number(Number::real(0)),
-        Value::Number(Number::real(3)),
+        Value::real(0),
+        Value::real(3),
     ];
     let env = TestEnv::default();
 
@@ -2469,7 +2410,7 @@ fn bytevector_copy_into_head_overlap() {
 fn string_copy_into_equal() {
     let args = [
         Value::string_mut("foobar"),
-        Value::Number(Number::real(0)),
+        Value::real(0),
         Value::string("beefee"),
     ];
     let env = TestEnv::default();
@@ -2486,7 +2427,7 @@ fn string_copy_into_equal() {
 fn string_copy_into_larger() {
     let args = [
         Value::string_mut("foobar"),
-        Value::Number(Number::real(1)),
+        Value::real(1),
         Value::string("bee"),
     ];
     let env = TestEnv::default();
@@ -2502,10 +2443,10 @@ fn string_copy_into_larger() {
 fn string_copy_into_smaller() {
     let args = [
         Value::string_mut("foobar"),
-        Value::Number(Number::real(1)),
+        Value::real(1),
         Value::string("beefee"),
-        Value::Number(Number::real(3)),
-        Value::Number(Number::real(5)),
+        Value::real(3),
+        Value::real(5),
     ];
     let env = TestEnv::default();
 
@@ -2520,10 +2461,10 @@ fn string_copy_into_smaller() {
 fn string_copy_from_unicode_into_ascii() {
     let args = [
         Value::string_mut("abc"),
-        Value::Number(Number::real(1)),
+        Value::real(1),
         Value::string("123🐝"),
-        Value::Number(Number::real(3)),
-        Value::Number(Number::real(4)),
+        Value::real(3),
+        Value::real(4),
     ];
     let env = TestEnv::default();
 
@@ -2538,7 +2479,7 @@ fn string_copy_from_unicode_into_ascii() {
 fn string_copy_inline_ranges_are_accurate() {
     let args = [
         Value::string_mut("🦀"),
-        Value::Number(Number::real(0)),
+        Value::real(0),
         Value::string("crab"),
     ];
     let env = TestEnv::default();
@@ -2555,10 +2496,10 @@ fn string_copy_inline_ranges_are_accurate() {
 fn string_copy_into_unicode() {
     let args = [
         Value::string_mut("foo🦀bar"),
-        Value::Number(Number::real(4)),
+        Value::real(4),
         Value::string("bee🐝fee"),
-        Value::Number(Number::real(3)),
-        Value::Number(Number::real(4)),
+        Value::real(3),
+        Value::real(4),
     ];
     let env = TestEnv::default();
 
@@ -2572,7 +2513,7 @@ fn string_copy_into_unicode() {
 #[test]
 fn string_copy_into_self() {
     let s = Value::string_mut("foobar");
-    let args = [s.clone(), Value::Number(Number::real(0)), s];
+    let args = [s.clone(), Value::real(0), s];
     let env = TestEnv::default();
 
     let r = string_copy_inline(&args, &env.new_frame());
@@ -2586,13 +2527,7 @@ fn string_copy_into_self() {
 #[test]
 fn string_copy_part_into_self() {
     let s = Value::string_mut("foobar");
-    let args = [
-        s.clone(),
-        Value::Number(Number::real(0)),
-        s,
-        Value::Number(Number::real(2)),
-        Value::Number(Number::real(4)),
-    ];
+    let args = [s.clone(), Value::real(0), s, Value::real(2), Value::real(4)];
     let env = TestEnv::default();
 
     let r = string_copy_inline(&args, &env.new_frame());
@@ -2606,13 +2541,7 @@ fn string_copy_part_into_self() {
 #[test]
 fn string_copy_tail_overlap_into_self() {
     let s = Value::string_mut("foobar");
-    let args = [
-        s.clone(),
-        Value::Number(Number::real(1)),
-        s,
-        Value::Number(Number::real(2)),
-        Value::Number(Number::real(5)),
-    ];
+    let args = [s.clone(), Value::real(1), s, Value::real(2), Value::real(5)];
     let env = TestEnv::default();
 
     let r = string_copy_inline(&args, &env.new_frame());
@@ -2626,13 +2555,7 @@ fn string_copy_tail_overlap_into_self() {
 #[test]
 fn string_copy_head_overlap_into_self() {
     let s = Value::string_mut("foobar");
-    let args = [
-        s.clone(),
-        Value::Number(Number::real(2)),
-        s,
-        Value::Number(Number::real(0)),
-        Value::Number(Number::real(3)),
-    ];
+    let args = [s.clone(), Value::real(2), s, Value::real(0), Value::real(3)];
     let env = TestEnv::default();
 
     let r = string_copy_inline(&args, &env.new_frame());
@@ -2647,16 +2570,16 @@ fn string_copy_head_overlap_into_self() {
 fn vector_copy_into_equal() {
     let args = [
         Value::vector_mut([
-            Value::Number(Number::real(1)),
-            Value::Number(Number::real(2)),
+            Value::real(1),
+            Value::real(2),
             Value::string("foo"),
             Value::Boolean(false),
             Value::Character('a'),
         ]),
-        Value::Number(Number::real(0)),
+        Value::real(0),
         Value::vector([
-            Value::Number(Number::real(3)),
-            Value::Number(Number::real(4)),
+            Value::real(3),
+            Value::real(4),
             Value::string("bar"),
             Value::Boolean(true),
             Value::Character('z'),
@@ -2676,18 +2599,14 @@ fn vector_copy_into_equal() {
 fn vector_copy_into_larger() {
     let args = [
         Value::vector_mut([
-            Value::Number(Number::real(1)),
-            Value::Number(Number::real(2)),
+            Value::real(1),
+            Value::real(2),
             Value::string("foo"),
             Value::Boolean(false),
             Value::Character('a'),
         ]),
-        Value::Number(Number::real(1)),
-        Value::vector([
-            Value::Number(Number::real(3)),
-            Value::Number(Number::real(4)),
-            Value::string("bar"),
-        ]),
+        Value::real(1),
+        Value::vector([Value::real(3), Value::real(4), Value::string("bar")]),
     ];
     let env = TestEnv::default();
 
@@ -2701,21 +2620,17 @@ fn vector_copy_into_larger() {
 #[test]
 fn vector_copy_into_smaller() {
     let args = [
-        Value::vector_mut([
-            Value::Number(Number::real(1)),
-            Value::Number(Number::real(2)),
-            Value::string("foo"),
-        ]),
-        Value::Number(Number::real(1)),
+        Value::vector_mut([Value::real(1), Value::real(2), Value::string("foo")]),
+        Value::real(1),
         Value::vector([
-            Value::Number(Number::real(3)),
-            Value::Number(Number::real(4)),
+            Value::real(3),
+            Value::real(4),
             Value::string("bar"),
             Value::Boolean(true),
             Value::Character('z'),
         ]),
-        Value::Number(Number::real(3)),
-        Value::Number(Number::real(5)),
+        Value::real(3),
+        Value::real(5),
     ];
     let env = TestEnv::default();
 
@@ -2729,13 +2644,13 @@ fn vector_copy_into_smaller() {
 #[test]
 fn vector_copy_into_self() {
     let v = Value::vector_mut([
-        Value::Number(Number::real(1)),
-        Value::Number(Number::real(2)),
+        Value::real(1),
+        Value::real(2),
         Value::string("foo"),
         Value::Boolean(false),
         Value::Character('a'),
     ]);
-    let args = [v.clone(), Value::Number(Number::real(0)), v];
+    let args = [v.clone(), Value::real(0), v];
     let env = TestEnv::default();
 
     let r = vector_copy_inline(&args, &env.new_frame());
@@ -2749,19 +2664,13 @@ fn vector_copy_into_self() {
 #[test]
 fn vector_copy_part_into_self() {
     let v = Value::vector_mut([
-        Value::Number(Number::real(1)),
-        Value::Number(Number::real(2)),
+        Value::real(1),
+        Value::real(2),
         Value::string("foo"),
         Value::Boolean(false),
         Value::Character('a'),
     ]);
-    let args = [
-        v.clone(),
-        Value::Number(Number::real(0)),
-        v,
-        Value::Number(Number::real(2)),
-        Value::Number(Number::real(4)),
-    ];
+    let args = [v.clone(), Value::real(0), v, Value::real(2), Value::real(4)];
     let env = TestEnv::default();
 
     let r = vector_copy_inline(&args, &env.new_frame());
@@ -2775,19 +2684,13 @@ fn vector_copy_part_into_self() {
 #[test]
 fn vector_copy_no_overlap_part_into_self() {
     let v = Value::vector_mut([
-        Value::Number(Number::real(1)),
-        Value::Number(Number::real(2)),
+        Value::real(1),
+        Value::real(2),
         Value::string("foo"),
         Value::Boolean(false),
         Value::Character('a'),
     ]);
-    let args = [
-        v.clone(),
-        Value::Number(Number::real(0)),
-        v,
-        Value::Number(Number::real(3)),
-        Value::Number(Number::real(5)),
-    ];
+    let args = [v.clone(), Value::real(0), v, Value::real(3), Value::real(5)];
     let env = TestEnv::default();
 
     let r = vector_copy_inline(&args, &env.new_frame());
@@ -2801,19 +2704,13 @@ fn vector_copy_no_overlap_part_into_self() {
 #[test]
 fn vector_copy_lower_part_into_self() {
     let v = Value::vector_mut([
-        Value::Number(Number::real(1)),
-        Value::Number(Number::real(2)),
+        Value::real(1),
+        Value::real(2),
         Value::string("foo"),
         Value::Boolean(false),
         Value::Character('a'),
     ]);
-    let args = [
-        v.clone(),
-        Value::Number(Number::real(2)),
-        v,
-        Value::Number(Number::real(0)),
-        Value::Number(Number::real(2)),
-    ];
+    let args = [v.clone(), Value::real(2), v, Value::real(0), Value::real(2)];
     let env = TestEnv::default();
 
     let r = vector_copy_inline(&args, &env.new_frame());
@@ -2827,19 +2724,13 @@ fn vector_copy_lower_part_into_self() {
 #[test]
 fn vector_copy_no_overlap_lower_part_into_self() {
     let v = Value::vector_mut([
-        Value::Number(Number::real(1)),
-        Value::Number(Number::real(2)),
+        Value::real(1),
+        Value::real(2),
         Value::string("foo"),
         Value::Boolean(false),
         Value::Character('a'),
     ]);
-    let args = [
-        v.clone(),
-        Value::Number(Number::real(3)),
-        v,
-        Value::Number(Number::real(0)),
-        Value::Number(Number::real(2)),
-    ];
+    let args = [v.clone(), Value::real(3), v, Value::real(0), Value::real(2)];
     let env = TestEnv::default();
 
     let r = vector_copy_inline(&args, &env.new_frame());
@@ -2853,19 +2744,13 @@ fn vector_copy_no_overlap_lower_part_into_self() {
 #[test]
 fn vector_copy_into_tail_overlap() {
     let v = Value::vector_mut([
-        Value::Number(Number::real(1)),
-        Value::Number(Number::real(2)),
+        Value::real(1),
+        Value::real(2),
         Value::string("foo"),
         Value::Boolean(false),
         Value::Character('a'),
     ]);
-    let args = [
-        v.clone(),
-        Value::Number(Number::real(1)),
-        v,
-        Value::Number(Number::real(2)),
-        Value::Number(Number::real(5)),
-    ];
+    let args = [v.clone(), Value::real(1), v, Value::real(2), Value::real(5)];
     let env = TestEnv::default();
 
     let r = vector_copy_inline(&args, &env.new_frame());
@@ -2879,19 +2764,13 @@ fn vector_copy_into_tail_overlap() {
 #[test]
 fn vector_copy_into_head_overlap() {
     let v = Value::vector_mut([
-        Value::Number(Number::real(1)),
-        Value::Number(Number::real(2)),
+        Value::real(1),
+        Value::real(2),
         Value::string("foo"),
         Value::Boolean(false),
         Value::Character('a'),
     ]);
-    let args = [
-        v.clone(),
-        Value::Number(Number::real(2)),
-        v,
-        Value::Number(Number::real(0)),
-        Value::Number(Number::real(3)),
-    ];
+    let args = [v.clone(), Value::real(2), v, Value::real(0), Value::real(3)];
     let env = TestEnv::default();
 
     let r = vector_copy_inline(&args, &env.new_frame());
@@ -2919,7 +2798,7 @@ fn string_fill_to_end() {
     let args = [
         Value::string_mut("foobar"),
         Value::Character('x'),
-        Value::Number(Number::real(2)),
+        Value::real(2),
     ];
     let env = TestEnv::default();
 
@@ -2935,8 +2814,8 @@ fn string_fill_partial() {
     let args = [
         Value::string_mut("foobar"),
         Value::Character('x'),
-        Value::Number(Number::real(2)),
-        Value::Number(Number::real(5)),
+        Value::real(2),
+        Value::real(5),
     ];
     let env = TestEnv::default();
 
@@ -2952,8 +2831,8 @@ fn string_fill_none() {
     let args = [
         Value::string_mut("foobar"),
         Value::Character('x'),
-        Value::Number(Number::real(0)),
-        Value::Number(Number::real(0)),
+        Value::real(0),
+        Value::real(0),
     ];
     let env = TestEnv::default();
 

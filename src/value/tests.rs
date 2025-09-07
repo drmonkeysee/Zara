@@ -858,7 +858,7 @@ mod pair {
     fn extremely_long_list() {
         // (1 1 1 1 1 ... )
         let mut vec = Vec::new();
-        vec.extend(std::iter::repeat_n(Value::Number(Number::real(1)), 10));
+        vec.extend(std::iter::repeat_n(Value::real(1), 10));
         let mut v = Value::Null;
         let mut i = 0;
         eprintln!("index: {:p}", &i);
@@ -881,7 +881,7 @@ mod pair {
         assert!(false);
 
         /*
-        let v = Value::list(std::iter::repeat_n(Value::Number(Number::real(1)), 1000000));
+        let v = Value::list(std::iter::repeat_n(Value::real(1), 1000000));
         let p = extract_or_fail!(v, Value::Pair);
 
         assert!(p.is_list());
@@ -1335,10 +1335,7 @@ mod equivalence {
     fn never_the_same() {
         let cases = [
             (Value::Character('a'), Value::Character('a')),
-            (
-                Value::Number(Number::real(4)),
-                Value::Number(Number::real(4)),
-            ),
+            (Value::real(4), Value::real(4)),
         ];
         for (a, b) in cases {
             assert!(!a.is(&b));
@@ -1419,10 +1416,7 @@ mod equivalence {
 
     #[test]
     fn identity_is_the_same() {
-        let lst = zlist![
-            Value::Number(Number::real(4)),
-            Value::Number(Number::real(5))
-        ];
+        let lst = zlist![Value::real(4), Value::real(5)];
 
         assert!(lst.is(&lst));
     }
@@ -1499,8 +1493,8 @@ mod equivalence {
 
     #[test]
     fn equal_pairs() {
-        let a = Value::cons(Value::Number(Number::real(4)), Value::Character('a'));
-        let b = Value::cons(Value::Number(Number::real(4)), Value::Character('a'));
+        let a = Value::cons(Value::real(4), Value::Character('a'));
+        let b = Value::cons(Value::real(4), Value::Character('a'));
 
         assert!(!a.is(&b));
         assert!(!a.is_eqv(&b));
@@ -1509,8 +1503,8 @@ mod equivalence {
 
     #[test]
     fn equal_mutable_pairs() {
-        let a = Value::cons_mut(Value::Number(Number::real(4)), Value::Character('a'));
-        let b = Value::cons_mut(Value::Number(Number::real(4)), Value::Character('a'));
+        let a = Value::cons_mut(Value::real(4), Value::Character('a'));
+        let b = Value::cons_mut(Value::real(4), Value::Character('a'));
 
         assert!(!a.is(&b));
         assert!(!a.is_eqv(&b));
@@ -1519,8 +1513,8 @@ mod equivalence {
 
     #[test]
     fn non_equal_pairs_if_elements_not_equivalent() {
-        let a = Value::cons(Value::Number(Number::real(4)), Value::Character('a'));
-        let b = Value::cons(Value::Number(Number::real(4.0)), Value::Character('a'));
+        let a = Value::cons(Value::real(4), Value::Character('a'));
+        let b = Value::cons(Value::real(4.0), Value::Character('a'));
 
         assert!(!a.is(&b));
         assert!(!a.is_eqv(&b));
@@ -1529,16 +1523,8 @@ mod equivalence {
 
     #[test]
     fn equal_lists() {
-        let a = zlist![
-            Value::Boolean(true),
-            Value::Character('b'),
-            Value::Number(Number::real(3))
-        ];
-        let b = zlist![
-            Value::Boolean(true),
-            Value::Character('b'),
-            Value::Number(Number::real(3))
-        ];
+        let a = zlist![Value::Boolean(true), Value::Character('b'), Value::real(3)];
+        let b = zlist![Value::Boolean(true), Value::Character('b'), Value::real(3)];
 
         assert!(!a.is(&b));
         assert!(!a.is_eqv(&b));
@@ -1547,16 +1533,8 @@ mod equivalence {
 
     #[test]
     fn equal_mutable_lists() {
-        let a = zlist_mut![
-            Value::Boolean(true),
-            Value::Character('b'),
-            Value::Number(Number::real(3))
-        ];
-        let b = zlist_mut![
-            Value::Boolean(true),
-            Value::Character('b'),
-            Value::Number(Number::real(3))
-        ];
+        let a = zlist_mut![Value::Boolean(true), Value::Character('b'), Value::real(3)];
+        let b = zlist_mut![Value::Boolean(true), Value::Character('b'), Value::real(3)];
 
         assert!(!a.is(&b));
         assert!(!a.is_eqv(&b));
@@ -1565,16 +1543,8 @@ mod equivalence {
 
     #[test]
     fn equal_mixed_lists() {
-        let a = zlist![
-            Value::Boolean(true),
-            Value::Character('b'),
-            Value::Number(Number::real(3))
-        ];
-        let b = zlist_mut![
-            Value::Boolean(true),
-            Value::Character('b'),
-            Value::Number(Number::real(3))
-        ];
+        let a = zlist![Value::Boolean(true), Value::Character('b'), Value::real(3)];
+        let b = zlist_mut![Value::Boolean(true), Value::Character('b'), Value::real(3)];
 
         assert!(!a.is(&b));
         assert!(!a.is_eqv(&b));
@@ -1583,15 +1553,11 @@ mod equivalence {
 
     #[test]
     fn unequal_lists_if_one_is_longer() {
-        let a = zlist![
-            Value::Boolean(true),
-            Value::Character('b'),
-            Value::Number(Number::real(3))
-        ];
+        let a = zlist![Value::Boolean(true), Value::Character('b'), Value::real(3)];
         let b = zlist![
             Value::Boolean(true),
             Value::Character('b'),
-            Value::Number(Number::real(3)),
+            Value::real(3),
             Value::Boolean(false),
         ];
 
@@ -1602,15 +1568,11 @@ mod equivalence {
 
     #[test]
     fn unequal_mut_lists_if_one_is_longer() {
-        let a = zlist_mut![
-            Value::Boolean(true),
-            Value::Character('b'),
-            Value::Number(Number::real(3))
-        ];
+        let a = zlist_mut![Value::Boolean(true), Value::Character('b'), Value::real(3)];
         let b = zlist_mut![
             Value::Boolean(true),
             Value::Character('b'),
-            Value::Number(Number::real(3)),
+            Value::real(3),
             Value::Boolean(false),
         ];
 
@@ -1677,16 +1639,8 @@ mod equivalence {
 
     #[test]
     fn equal_vectors() {
-        let a = Value::vector([
-            Value::Boolean(true),
-            Value::Character('b'),
-            Value::Number(Number::real(3)),
-        ]);
-        let b = Value::vector([
-            Value::Boolean(true),
-            Value::Character('b'),
-            Value::Number(Number::real(3)),
-        ]);
+        let a = Value::vector([Value::Boolean(true), Value::Character('b'), Value::real(3)]);
+        let b = Value::vector([Value::Boolean(true), Value::Character('b'), Value::real(3)]);
 
         assert!(!a.is(&b));
         assert!(!a.is_eqv(&b));
@@ -1695,16 +1649,8 @@ mod equivalence {
 
     #[test]
     fn equal_mut_vectors() {
-        let a = Value::vector_mut([
-            Value::Boolean(true),
-            Value::Character('b'),
-            Value::Number(Number::real(3)),
-        ]);
-        let b = Value::vector_mut([
-            Value::Boolean(true),
-            Value::Character('b'),
-            Value::Number(Number::real(3)),
-        ]);
+        let a = Value::vector_mut([Value::Boolean(true), Value::Character('b'), Value::real(3)]);
+        let b = Value::vector_mut([Value::Boolean(true), Value::Character('b'), Value::real(3)]);
 
         assert!(!a.is(&b));
         assert!(!a.is_eqv(&b));
@@ -1713,16 +1659,8 @@ mod equivalence {
 
     #[test]
     fn equal_mixed_vectors() {
-        let a = Value::vector([
-            Value::Boolean(true),
-            Value::Character('b'),
-            Value::Number(Number::real(3)),
-        ]);
-        let b = Value::vector_mut([
-            Value::Boolean(true),
-            Value::Character('b'),
-            Value::Number(Number::real(3)),
-        ]);
+        let a = Value::vector([Value::Boolean(true), Value::Character('b'), Value::real(3)]);
+        let b = Value::vector_mut([Value::Boolean(true), Value::Character('b'), Value::real(3)]);
 
         assert!(!a.is(&b));
         assert!(!a.is_eqv(&b));
@@ -1735,15 +1673,11 @@ mod equivalence {
 
     #[test]
     fn unequal_vectors() {
-        let a = Value::vector([
-            Value::Boolean(true),
-            Value::Character('b'),
-            Value::Number(Number::real(3)),
-        ]);
+        let a = Value::vector([Value::Boolean(true), Value::Character('b'), Value::real(3)]);
         let b = Value::vector([
             Value::Boolean(true),
             Value::Character('b'),
-            Value::Number(Number::real(3)),
+            Value::real(3),
             Value::Boolean(false),
         ]);
 
@@ -1754,15 +1688,11 @@ mod equivalence {
 
     #[test]
     fn unequal_vectors_with_unequivalent_items() {
-        let a = Value::vector([
-            Value::Boolean(true),
-            Value::Character('b'),
-            Value::Number(Number::real(3)),
-        ]);
+        let a = Value::vector([Value::Boolean(true), Value::Character('b'), Value::real(3)]);
         let b = Value::vector([
             Value::Boolean(true),
             Value::Character('b'),
-            Value::Number(Number::real(3.0)),
+            Value::real(3.0),
             Value::Boolean(false),
         ]);
 
@@ -1773,15 +1703,11 @@ mod equivalence {
 
     #[test]
     fn unequal_mut_vectors() {
-        let a = Value::vector_mut([
-            Value::Boolean(true),
-            Value::Character('b'),
-            Value::Number(Number::real(3)),
-        ]);
+        let a = Value::vector_mut([Value::Boolean(true), Value::Character('b'), Value::real(3)]);
         let b = Value::vector_mut([
             Value::Boolean(true),
             Value::Character('b'),
-            Value::Number(Number::real(3)),
+            Value::real(3),
             Value::Boolean(false),
         ]);
 
@@ -1792,15 +1718,11 @@ mod equivalence {
 
     #[test]
     fn unequal_mut_vectors_with_unequivalent_items() {
-        let a = Value::vector_mut([
-            Value::Boolean(true),
-            Value::Character('b'),
-            Value::Number(Number::real(3)),
-        ]);
+        let a = Value::vector_mut([Value::Boolean(true), Value::Character('b'), Value::real(3)]);
         let b = Value::vector_mut([
             Value::Boolean(true),
             Value::Character('b'),
-            Value::Number(Number::real(3.0)),
+            Value::real(3.0),
             Value::Boolean(false),
         ]);
 

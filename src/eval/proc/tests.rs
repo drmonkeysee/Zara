@@ -1,7 +1,6 @@
 use super::*;
 use crate::{
     lex::TokenKind,
-    number::Number,
     string::SymbolTable,
     testutil::{
         TestEnv, empty_procedure_body, err_or_fail, ok_or_fail, procedure_body, some_or_fail,
@@ -503,7 +502,7 @@ fn apply_single_arity_lambda() {
         procedure_body([TokenKind::Identifier("x".to_owned())]),
     ));
     let p = Procedure::new(lm, Rc::clone(&f.scope), Some(sym.get("bar")));
-    let args = [Value::Number(Number::real(5))];
+    let args = [Value::real(5)];
 
     let r = p.apply(&args, &f);
 
@@ -536,7 +535,7 @@ fn apply_single_arity_lambda_with_closure() {
         ]),
     ));
     let p = Procedure::new(lm, Rc::clone(&f.scope), Some(sym.get("bar")));
-    let args = [Value::Number(Number::real(5))];
+    let args = [Value::real(5)];
 
     let r = p.apply(&args, &f);
 
@@ -568,11 +567,7 @@ fn apply_variadic_lambda_with_closure() {
         ]),
     ));
     let p = Procedure::new(lm, Rc::clone(&f.scope), Some(sym.get("bar")));
-    let args = [
-        Value::Number(Number::real(1)),
-        Value::Number(Number::real(2)),
-        Value::Number(Number::real(3)),
-    ];
+    let args = [Value::real(1), Value::real(2), Value::real(3)];
 
     let r = p.apply(&args, &f);
 
@@ -612,11 +607,11 @@ fn apply_rest_lambda_with_closure() {
     ));
     let p = Procedure::new(lm, Rc::clone(&f.scope), Some(sym.get("bar")));
     let args = [
-        Value::Number(Number::real(1)),
-        Value::Number(Number::real(2)),
-        Value::Number(Number::real(3)),
-        Value::Number(Number::real(4)),
-        Value::Number(Number::real(5)),
+        Value::real(1),
+        Value::real(2),
+        Value::real(3),
+        Value::real(4),
+        Value::real(5),
     ];
 
     let r = p.apply(&args, &f);

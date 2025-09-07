@@ -1131,7 +1131,7 @@ fn into_define_parameterless_lambda() {
                     span: 14..17,
                     txt: Rc::clone(&txt),
                 }
-                .into_expr(ExpressionKind::Literal(Value::Number(Number::real(123)))),
+                .into_expr(ExpressionKind::Literal(Value::real(123))),
             ],
         },
     };

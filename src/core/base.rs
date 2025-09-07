@@ -158,7 +158,7 @@ fn bytevector_get(args: &[Value], _env: &Frame) -> EvalResult {
         Value::as_refbv,
         TypeName::BYTEVECTOR,
         |bv, u| bv.get(u).copied(),
-        |item| Value::Number(Number::real(i64::from(item))),
+        |item| Value::real(i64::from(item)),
     )
 }
 
@@ -275,7 +275,7 @@ fn char_to_integer(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = first(args);
     if let Value::Character(c) = arg {
         let n = u32::from(*c);
-        Ok(Value::Number(Number::real(i64::from(n))))
+        Ok(Value::real(i64::from(n)))
     } else {
         Err(invalid_target(TypeName::CHAR, arg))
     }
@@ -424,9 +424,7 @@ fn is_even(args: &[Value], _env: &Frame) -> EvalResult {
 }
 
 fn abs(args: &[Value], _env: &Frame) -> EvalResult {
-    real_op(first(args), |r| {
-        Ok(Value::Number(Number::real(r.clone().into_abs())))
-    })
+    real_op(first(args), |r| Ok(Value::real(r.clone().into_abs())))
 }
 
 fn get_numerator(args: &[Value], _env: &Frame) -> EvalResult {
@@ -434,7 +432,7 @@ fn get_numerator(args: &[Value], _env: &Frame) -> EvalResult {
     rational_op(arg, |r| {
         r.clone().try_into_numerator().map_or_else(
             |err| Err(Condition::value_error(err, arg).into()),
-            |r| Ok(Value::Number(Number::real(r))),
+            |r| Ok(Value::real(r)),
         )
     })
 }
@@ -444,7 +442,7 @@ fn get_denominator(args: &[Value], _env: &Frame) -> EvalResult {
     rational_op(arg, |r| {
         r.clone().try_into_denominator().map_or_else(
             |err| Err(Condition::value_error(err, arg).into()),
-            |r| Ok(Value::Number(Number::real(r))),
+            |r| Ok(Value::real(r)),
         )
     })
 }
@@ -566,7 +564,7 @@ fn list(args: &[Value], _env: &Frame) -> EvalResult {
 fn list_length(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = first(args);
     if let Value::Null = arg {
-        Ok(Value::Number(Number::real(0)))
+        Ok(Value::real(0))
     } else if let Some(p) = arg.as_refpair() {
         p.len().map_or_else(
             || {
