@@ -374,20 +374,30 @@ pub(crate) struct Pair {
 
 impl Pair {
     pub(crate) fn is_list(&self) -> bool {
-        match &self.cdr {
-            Value::Null => true,
-            Value::Pair(p) => p.is_list(),
-            Value::PairMut(p) => p.borrow().is_list(),
-            _ => false,
+        let mut cdr = self.cdr.clone();
+        loop {
+            cdr = if let Some(p) = cdr.as_refpair() {
+                p.as_ref().cdr.clone()
+            } else if let Value::Null = cdr {
+                return true;
+            } else {
+                return false;
+            };
         }
     }
 
     pub(crate) fn len(&self) -> Option<usize> {
-        match &self.cdr {
-            Value::Null => Some(1),
-            Value::Pair(p) => p.len().map(|len| len + 1),
-            Value::PairMut(p) => p.borrow().len().map(|len| len + 1),
-            _ => None,
+        let mut cdr = self.cdr.clone();
+        let mut idx = 1;
+        loop {
+            cdr = if let Some(p) = cdr.as_refpair() {
+                idx += 1;
+                p.as_ref().cdr.clone()
+            } else if let Value::Null = cdr {
+                return Some(idx);
+            } else {
+                return None;
+            };
         }
     }
 
