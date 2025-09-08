@@ -380,6 +380,7 @@ impl Pair {
     pub(crate) fn is_list(&self) -> bool {
         let mut cdr = self.cdr.clone();
         let mut seen = HashSet::new();
+        seen.insert(ptr::from_ref(self));
         loop {
             cdr = if let Some(p) = cdr.as_refpair() {
                 let pref = p.as_ref();
@@ -399,9 +400,10 @@ impl Pair {
     }
 
     pub(crate) fn len(&self) -> Option<usize> {
+        let mut idx = 1;
         let mut cdr = self.cdr.clone();
         let mut seen = HashSet::new();
-        let mut idx = 1;
+        seen.insert(ptr::from_ref(self));
         loop {
             cdr = if let Some(p) = cdr.as_refpair() {
                 let pref = p.as_ref();
@@ -433,11 +435,25 @@ impl Pair {
 impl Display for Pair {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         self.car.fmt(f)?;
-        match &self.cdr {
-            Value::Null => Ok(()),
-            Value::Pair(p) => write!(f, " {p}"),
-            Value::PairMut(p) => write!(f, " {}", p.borrow()),
-            _ => write!(f, " . {}", self.cdr),
+        let mut cdr = self.cdr.clone();
+        let mut seen = HashSet::new();
+        seen.insert(ptr::from_ref(self));
+        loop {
+            cdr = if let Some(p) = cdr.as_refpair() {
+                let pref = p.as_ref();
+                let pp = ptr::from_ref(pref);
+                if seen.contains(&pp) {
+                    return write!(f, " . dup…");
+                } else {
+                    seen.insert(pp);
+                    write!(f, " {}", pref.car)?;
+                    pref.cdr.clone()
+                }
+            } else if let Value::Null = cdr {
+                return Ok(());
+            } else {
+                return write!(f, " . {cdr}");
+            };
         }
     }
 }

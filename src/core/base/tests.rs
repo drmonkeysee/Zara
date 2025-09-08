@@ -803,7 +803,6 @@ fn list_circular_predicate() {
 }
 
 #[test]
-#[ignore = "stack overflow on display of err irritants"]
 fn list_circular_length() {
     let env = TestEnv::default();
     let (lst, _, _) = make_circular_list(&env);
