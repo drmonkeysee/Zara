@@ -377,19 +377,19 @@ pub(crate) struct Pair {
 
 impl Pair {
     pub(crate) fn is_list(&self) -> bool {
-        self.iter().all(|v| match v {
+        self.iter().all(|w| match w {
             PairFlow::Continue(_) | PairFlow::Break(PairStop::End(Value::Null)) => true,
             PairFlow::Break(_) => false,
         })
     }
 
     pub(crate) fn len(&self) -> Option<usize> {
-        let len = self.iter().fold(0, |acc, v| match v {
+        let len = self.iter().fold(usize::MIN, |acc, w| match w {
             PairFlow::Continue(_) => acc + 1,
             PairFlow::Break(PairStop::End(Value::Null)) => acc,
-            PairFlow::Break(_) => 0,
+            PairFlow::Break(_) => usize::MIN,
         });
-        if len > 0 { Some(len) } else { None }
+        if len > usize::MIN { Some(len) } else { None }
     }
 
     fn iter(&self) -> PairIterator {
@@ -412,12 +412,12 @@ impl Display for Pair {
         if let Some(PairFlow::Continue(car)) = it.next() {
             car.fmt(f)?;
         }
-        for v in it {
-            match v {
-                PairFlow::Continue(v) => write!(f, " {v}")?,
+        for w in it {
+            match w {
+                PairFlow::Continue(car) => write!(f, " {car}")?,
                 PairFlow::Break(PairStop::Cycle(_)) => f.write_str(" . dup…")?,
                 PairFlow::Break(PairStop::End(Value::Null)) => (),
-                PairFlow::Break(PairStop::End(v)) => write!(f, " . {v}")?,
+                PairFlow::Break(PairStop::End(cdr)) => write!(f, " . {cdr}")?,
             }
         }
         Ok(())

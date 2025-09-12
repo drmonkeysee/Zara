@@ -311,7 +311,12 @@ pub(super) enum TokenContinuation {
 }
 
 fn format_char_range_error(msg: &str, f: &mut Formatter) -> fmt::Result {
-    write!(f, "{msg}: [{:#x}, {:#x}]", 0, char::MAX as u32)
+    write!(
+        f,
+        "{msg}: [{:#x}, {:#x}]",
+        char::MIN as u32,
+        char::MAX as u32
+    )
 }
 
 fn line_cont_token(line_cont: bool) -> &'static str {
