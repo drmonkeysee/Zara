@@ -1147,6 +1147,180 @@ mod pair {
 
         assert!(p.len().is_none());
     }
+
+    mod iterator {
+        use super::*;
+
+        #[test]
+        fn single_element() {
+            // (1)
+            let p = Pair {
+                car: Value::real(1),
+                cdr: Value::Null,
+            };
+            let it = p.iter();
+
+            let items = it.collect::<Vec<_>>();
+
+            assert_eq!(items.len(), 2);
+            assert!(
+                matches!(&items[0], PairFlow::Continue(Value::Number(n)) if n.to_string() == "1")
+            );
+            assert!(matches!(
+                items[1],
+                PairFlow::Break(PairStop::End(Value::Null))
+            ));
+        }
+
+        #[test]
+        fn cons_cell() {
+            // (1 . 2)
+            let p = Pair {
+                car: Value::real(1),
+                cdr: Value::real(2),
+            };
+            let it = p.iter();
+
+            let items = it.collect::<Vec<_>>();
+
+            assert_eq!(items.len(), 2);
+            assert!(
+                matches!(&items[0], PairFlow::Continue(Value::Number(n)) if n.to_string() == "1")
+            );
+            assert!(matches!(
+                &items[1],
+                PairFlow::Break(PairStop::End(Value::Number(n))) if n.to_string() == "2"
+            ));
+        }
+
+        #[test]
+        fn proper_list() {
+            // (1 2 3)
+            let p = Pair {
+                car: Value::real(1),
+                cdr: Value::cons(Value::real(2), Value::cons(Value::real(3), Value::Null)),
+            };
+            let it = p.iter();
+
+            let items = it.collect::<Vec<_>>();
+
+            assert_eq!(items.len(), 4);
+            assert!(
+                matches!(&items[0], PairFlow::Continue(Value::Number(n)) if n.to_string() == "1")
+            );
+            assert!(
+                matches!(&items[1], PairFlow::Continue(Value::Number(n)) if n.to_string() == "2")
+            );
+            assert!(
+                matches!(&items[2], PairFlow::Continue(Value::Number(n)) if n.to_string() == "3")
+            );
+            assert!(matches!(
+                items[3],
+                PairFlow::Break(PairStop::End(Value::Null))
+            ));
+        }
+
+        #[test]
+        fn improper_list() {
+            // (1 2 3 . 4)
+            let p = Pair {
+                car: Value::real(1),
+                cdr: Value::cons(Value::real(2), Value::cons(Value::real(3), Value::real(4))),
+            };
+            let it = p.iter();
+
+            let items = it.collect::<Vec<_>>();
+
+            assert_eq!(items.len(), 4);
+            assert!(
+                matches!(&items[0], PairFlow::Continue(Value::Number(n)) if n.to_string() == "1")
+            );
+            assert!(
+                matches!(&items[1], PairFlow::Continue(Value::Number(n)) if n.to_string() == "2")
+            );
+            assert!(
+                matches!(&items[2], PairFlow::Continue(Value::Number(n)) if n.to_string() == "3")
+            );
+            assert!(matches!(
+                &items[3],
+                PairFlow::Break(PairStop::End(Value::Number(n))) if n.to_string() == "4"
+            ));
+        }
+
+        #[test]
+        fn circular_list() {
+            // #0=("foo" 2 3 . #0#)
+            let end = RefCell::new(Pair {
+                car: Value::real(3),
+                cdr: Value::Null,
+            })
+            .into();
+            let p = Pair {
+                car: Value::string("foo"),
+                cdr: Value::cons(Value::real(2), Value::PairMut(Rc::clone(&end))),
+            }
+            .into();
+            end.borrow_mut().cdr = Value::Pair(Rc::clone(&p));
+            let it = p.iter();
+
+            let items = it.collect::<Vec<_>>();
+
+            assert_eq!(items.len(), 4);
+            assert!(
+                matches!(&items[0], PairFlow::Continue(Value::String(s)) if s.as_ref() == "foo")
+            );
+            assert!(
+                matches!(&items[1], PairFlow::Continue(Value::Number(n)) if n.to_string() == "2")
+            );
+            assert!(
+                matches!(&items[2], PairFlow::Continue(Value::Number(n)) if n.to_string() == "3")
+            );
+            assert!(matches!(&items[3], PairFlow::Break(PairStop::Cycle(c)) if c.car.is(&p.car)));
+        }
+
+        #[test]
+        fn partly_circular_list() {
+            // (1 2 . #0=("foo" 4 5 . #0#))
+            let end = RefCell::new(Pair {
+                car: Value::real(5),
+                cdr: Value::Null,
+            })
+            .into();
+            let start = Pair {
+                car: Value::string("foo"),
+                cdr: Value::cons(Value::real(4), Value::PairMut(Rc::clone(&end))),
+            }
+            .into();
+            end.borrow_mut().cdr = Value::Pair(Rc::clone(&start));
+            let p = Pair {
+                car: Value::real(1),
+                cdr: Value::cons(Value::real(2), Value::Pair(Rc::clone(&start))),
+            };
+            let it = p.iter();
+
+            let items = it.collect::<Vec<_>>();
+
+            assert_eq!(items.len(), 6);
+            assert!(
+                matches!(&items[0], PairFlow::Continue(Value::Number(n)) if n.to_string() == "1")
+            );
+            assert!(
+                matches!(&items[1], PairFlow::Continue(Value::Number(n)) if n.to_string() == "2")
+            );
+            assert!(
+                matches!(&items[2], PairFlow::Continue(Value::String(s)) if s.as_ref() == "foo")
+            );
+            assert!(
+                matches!(&items[3], PairFlow::Continue(Value::Number(n)) if n.to_string() == "4")
+            );
+            assert!(
+                matches!(&items[4], PairFlow::Continue(Value::Number(n)) if n.to_string() == "5")
+            );
+            assert!(
+                matches!(&items[5], PairFlow::Break(PairStop::Cycle(c)) if c.car.is(&start.car))
+            );
+        }
+    }
 }
 
 mod list {

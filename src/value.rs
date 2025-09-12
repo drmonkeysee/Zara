@@ -23,6 +23,7 @@ use std::{
     cell::{Ref, RefCell, RefMut},
     collections::HashSet,
     fmt::{self, Display, Formatter},
+    ops::ControlFlow,
     ptr,
     rc::Rc,
 };
@@ -368,7 +369,7 @@ impl CollSized for StrRef<'_> {
     }
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub(crate) struct Pair {
     pub(crate) car: Value,
     pub(crate) cdr: Value,
@@ -423,6 +424,10 @@ impl Pair {
         }
     }
 
+    fn iter(&self) -> PairIterator {
+        PairIterator::new(self)
+    }
+
     fn typename(&self) -> &str {
         if self.is_list() {
             TypeName::LIST
@@ -461,6 +466,58 @@ impl Display for Pair {
 impl AsRef<Self> for Pair {
     fn as_ref(&self) -> &Self {
         self
+    }
+}
+
+type PairFlow = ControlFlow<PairStop, Value>;
+
+#[derive(Debug)]
+enum PairStop {
+    Cycle(Pair),
+    End(Value),
+}
+
+struct PairIterator {
+    head: Option<Pair>,
+    tail: Option<PairStop>,
+    visited: HashSet<*const Pair>,
+}
+
+impl PairIterator {
+    fn new(head: &Pair) -> Self {
+        let mut visited = HashSet::new();
+        visited.insert(ptr::from_ref(head));
+        Self {
+            head: Some(head.clone()),
+            tail: None,
+            visited,
+        }
+    }
+}
+
+impl Iterator for PairIterator {
+    type Item = PairFlow;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if let Some(curr) = self.head.take() {
+            if let Some(p) = curr.cdr.as_refpair() {
+                let pref = p.as_ref();
+                let pp = ptr::from_ref(pref);
+                if self.visited.contains(&pp) {
+                    self.tail = Some(PairStop::Cycle(pref.clone()));
+                } else {
+                    self.visited.insert(pp);
+                    let _ = self.head.insert(pref.clone());
+                }
+            } else {
+                self.tail = Some(PairStop::End(curr.cdr));
+            }
+            Some(Self::Item::Continue(curr.car))
+        } else if let Some(end) = self.tail.take() {
+            Some(Self::Item::Break(end))
+        } else {
+            None
+        }
     }
 }
 
