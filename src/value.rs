@@ -375,53 +375,21 @@ pub(crate) struct Pair {
     pub(crate) cdr: Value,
 }
 
-// TODO: can these iterative functions be generalized
-// can it be done using floyd's algorithm rather than hashset
 impl Pair {
     pub(crate) fn is_list(&self) -> bool {
-        let mut cdr = self.cdr.clone();
-        let mut seen = HashSet::new();
-        seen.insert(ptr::from_ref(self));
-        loop {
-            cdr = if let Some(p) = cdr.as_refpair() {
-                let pref = p.as_ref();
-                let pp = ptr::from_ref(pref);
-                if seen.contains(&pp) {
-                    return false;
-                } else {
-                    seen.insert(pp);
-                    pref.cdr.clone()
-                }
-            } else if let Value::Null = cdr {
-                return true;
-            } else {
-                return false;
-            };
-        }
+        self.iter().all(|v| match v {
+            PairFlow::Continue(_) | PairFlow::Break(PairStop::End(Value::Null)) => true,
+            PairFlow::Break(_) => false,
+        })
     }
 
     pub(crate) fn len(&self) -> Option<usize> {
-        let mut idx = 1;
-        let mut cdr = self.cdr.clone();
-        let mut seen = HashSet::new();
-        seen.insert(ptr::from_ref(self));
-        loop {
-            cdr = if let Some(p) = cdr.as_refpair() {
-                let pref = p.as_ref();
-                let pp = ptr::from_ref(pref);
-                if seen.contains(&pp) {
-                    return None;
-                } else {
-                    seen.insert(pp);
-                    idx += 1;
-                    pref.cdr.clone()
-                }
-            } else if let Value::Null = cdr {
-                return Some(idx);
-            } else {
-                return None;
-            };
-        }
+        let len = self.iter().fold(0, |acc, v| match v {
+            PairFlow::Continue(_) => acc + 1,
+            PairFlow::Break(PairStop::End(Value::Null)) => acc,
+            PairFlow::Break(_) => 0,
+        });
+        if len > 0 { Some(len) } else { None }
     }
 
     fn iter(&self) -> PairIterator {
@@ -439,85 +407,26 @@ impl Pair {
 
 impl Display for Pair {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        self.car.fmt(f)?;
-        let mut cdr = self.cdr.clone();
-        let mut seen = HashSet::new();
-        seen.insert(ptr::from_ref(self));
-        loop {
-            cdr = if let Some(p) = cdr.as_refpair() {
-                let pref = p.as_ref();
-                let pp = ptr::from_ref(pref);
-                if seen.contains(&pp) {
-                    return write!(f, " . dup…");
-                } else {
-                    seen.insert(pp);
-                    write!(f, " {}", pref.car)?;
-                    pref.cdr.clone()
-                }
-            } else if let Value::Null = cdr {
-                return Ok(());
-            } else {
-                return write!(f, " . {cdr}");
-            };
+        // TODO: can i get rid of this first step
+        let mut it = self.iter();
+        if let Some(PairFlow::Continue(car)) = it.next() {
+            car.fmt(f)?;
         }
+        for v in it {
+            match v {
+                PairFlow::Continue(v) => write!(f, " {v}")?,
+                PairFlow::Break(PairStop::Cycle(_)) => f.write_str(" . dup…")?,
+                PairFlow::Break(PairStop::End(Value::Null)) => (),
+                PairFlow::Break(PairStop::End(v)) => write!(f, " . {v}")?,
+            }
+        }
+        Ok(())
     }
 }
 
 impl AsRef<Self> for Pair {
     fn as_ref(&self) -> &Self {
         self
-    }
-}
-
-type PairFlow = ControlFlow<PairStop, Value>;
-
-#[derive(Debug)]
-enum PairStop {
-    Cycle(Pair),
-    End(Value),
-}
-
-struct PairIterator {
-    head: Option<Pair>,
-    tail: Option<PairStop>,
-    visited: HashSet<*const Pair>,
-}
-
-impl PairIterator {
-    fn new(head: &Pair) -> Self {
-        let mut visited = HashSet::new();
-        visited.insert(ptr::from_ref(head));
-        Self {
-            head: Some(head.clone()),
-            tail: None,
-            visited,
-        }
-    }
-}
-
-impl Iterator for PairIterator {
-    type Item = PairFlow;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if let Some(curr) = self.head.take() {
-            if let Some(p) = curr.cdr.as_refpair() {
-                let pref = p.as_ref();
-                let pp = ptr::from_ref(pref);
-                if self.visited.contains(&pp) {
-                    self.tail = Some(PairStop::Cycle(pref.clone()));
-                } else {
-                    self.visited.insert(pp);
-                    let _ = self.head.insert(pref.clone());
-                }
-            } else {
-                self.tail = Some(PairStop::End(curr.cdr));
-            }
-            Some(Self::Item::Continue(curr.car))
-        } else if let Some(end) = self.tail.take() {
-            Some(Self::Item::Break(end))
-        } else {
-            None
-        }
     }
 }
 
@@ -568,6 +477,57 @@ impl Display for TypeName<'_> {
             Value::TokenList(_) => f.write_str("token list"),
             Value::Unspecified => f.write_str("unspecified"),
             Value::Vector(_) | Value::VectorMut(_) => f.write_str(Self::VECTOR),
+        }
+    }
+}
+
+type PairFlow = ControlFlow<PairStop, Value>;
+
+enum PairStop {
+    Cycle(Pair),
+    End(Value),
+}
+
+struct PairIterator {
+    head: Option<Pair>,
+    tail: Option<PairStop>,
+    visited: HashSet<*const Pair>,
+}
+
+impl PairIterator {
+    fn new(head: &Pair) -> Self {
+        let mut visited = HashSet::new();
+        visited.insert(ptr::from_ref(head));
+        Self {
+            head: Some(head.clone()),
+            tail: None,
+            visited,
+        }
+    }
+}
+
+impl Iterator for PairIterator {
+    type Item = PairFlow;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if let Some(curr) = self.head.take() {
+            if let Some(p) = curr.cdr.as_refpair() {
+                let pref = p.as_ref();
+                let pp = ptr::from_ref(pref);
+                if self.visited.contains(&pp) {
+                    self.tail = Some(PairStop::Cycle(pref.clone()));
+                } else {
+                    self.visited.insert(pp);
+                    let _ = self.head.insert(pref.clone());
+                }
+            } else {
+                self.tail = Some(PairStop::End(curr.cdr));
+            }
+            Some(Self::Item::Continue(curr.car))
+        } else if let Some(end) = self.tail.take() {
+            Some(Self::Item::Break(end))
+        } else {
+            None
         }
     }
 }
