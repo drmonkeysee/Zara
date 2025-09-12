@@ -389,7 +389,7 @@ impl Pair {
             PairFlow::Break(PairStop::End(Value::Null)) => acc,
             PairFlow::Break(_) => usize::MIN,
         });
-        if len > usize::MIN { Some(len) } else { None }
+        if len == usize::MIN { None } else { Some(len) }
     }
 
     fn iter(&self) -> PairIterator {
