@@ -606,11 +606,10 @@ fn list_reverse(args: &[Value], _env: &Frame) -> EvalResult {
 
 fn list_tail(args: &[Value], _env: &Frame) -> EvalResult {
     let k = super::second(args);
-    sub_list(
-        first(args).clone(),
-        try_val_to_index(k, SECOND_ARG_LABEL)?,
-        k,
-    )
+    first(args)
+        .sublist(try_val_to_index(k, SECOND_ARG_LABEL)?)
+        .ok_or_else(|| Exception::from(Condition::index_error(k)))?
+        .map_err(|e| invalid_target(TypeName::PAIR, &e))
 }
 
 fn list_get(args: &[Value], env: &Frame) -> EvalResult {
@@ -1129,20 +1128,6 @@ fn list_cons_acc(curr: &Value, acc: &mut Vec<Value>) {
         return;
     }
     acc.push(curr.clone());
-}
-
-fn sub_list(mut lst: Value, mut idx: usize, k: &Value) -> EvalResult {
-    while idx > 0 {
-        lst = if let Some(p) = lst.as_refpair() {
-            idx -= 1;
-            p.as_ref().cdr.clone()
-        } else if let Value::Null = lst {
-            return Err(Condition::index_error(k).into());
-        } else {
-            return Err(invalid_target(TypeName::PAIR, &lst));
-        };
-    }
-    Ok(lst)
 }
 
 fn try_val_to_char(arg: &Value, lbl: impl Display) -> Result<char, Exception> {

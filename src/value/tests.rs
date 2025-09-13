@@ -2,7 +2,7 @@ use super::*;
 use crate::{
     eval::Binding,
     string::SymbolTable,
-    testutil::{empty_procedure_body, ok_or_fail, zlist_mut},
+    testutil::{empty_procedure_body, extract_or_fail, ok_or_fail, some_or_fail, zlist_mut},
 };
 
 mod display {
@@ -759,7 +759,6 @@ bar",
 
 mod pair {
     use super::*;
-    use crate::testutil::{extract_or_fail, some_or_fail};
 
     #[test]
     fn pair_is_not_list() {
@@ -1453,7 +1452,6 @@ mod list {
 
 mod cloning {
     use super::*;
-    use crate::testutil::extract_or_fail;
 
     #[test]
     fn clone_with_underlying_cloneable() {
@@ -1902,5 +1900,252 @@ mod equivalence {
         assert!(!a.is(&b));
         assert!(!a.is_eqv(&b));
         assert!(a != b);
+    }
+}
+
+mod iterator {
+    use super::*;
+    use crate::testutil::err_or_fail;
+
+    #[test]
+    fn single_value() {
+        let v = Value::real(5);
+        let it = v.iter();
+
+        let vec = it.collect::<Vec<_>>();
+
+        assert_eq!(vec.len(), 1);
+        assert!(matches!(&vec[0], Value::Number(n) if n.to_string() == "5"));
+    }
+
+    #[test]
+    fn pair() {
+        let v = Value::cons(Value::real(5), Value::real(10));
+        let it = v.iter();
+
+        let vec = it.collect::<Vec<_>>();
+
+        assert_eq!(vec.len(), 2);
+        assert!(matches!(&vec[0], Value::Pair(p) if p.to_string() == "5 . 10"));
+        assert!(matches!(&vec[1], Value::Number(n) if n.to_string() == "10"));
+    }
+
+    #[test]
+    fn list() {
+        let v = zlist![Value::real(5), Value::real(10)];
+        let it = v.iter();
+
+        let vec = it.collect::<Vec<_>>();
+
+        assert_eq!(vec.len(), 3);
+        assert!(matches!(&vec[0], Value::Pair(p) if p.to_string() == "5 10"));
+        assert!(matches!(&vec[1], Value::Pair(p) if p.to_string() == "10"));
+        assert!(matches!(&vec[2], Value::Null));
+    }
+
+    #[test]
+    fn sublist() {
+        let v = zlist![
+            Value::real(5),
+            Value::real(10),
+            Value::real(15),
+            Value::real(20)
+        ];
+        let it = v.iter();
+
+        let sublist = it.skip(2).next();
+
+        let lst = some_or_fail!(sublist);
+        assert_eq!(lst.to_string(), "(15 20)");
+    }
+
+    #[test]
+    fn full_sublist() {
+        let v = zlist![
+            Value::real(5),
+            Value::real(10),
+            Value::real(15),
+            Value::real(20)
+        ];
+        let it = v.iter();
+
+        let sublist = it.skip(0).next();
+
+        let lst = some_or_fail!(sublist);
+        assert_eq!(lst.to_string(), "(5 10 15 20)");
+    }
+
+    #[test]
+    fn sublist_end() {
+        let v = zlist![
+            Value::real(5),
+            Value::real(10),
+            Value::real(15),
+            Value::real(20)
+        ];
+        let it = v.iter();
+
+        let sublist = it.skip(4).next();
+
+        let lst = some_or_fail!(sublist);
+        assert_eq!(lst.to_string(), "()");
+    }
+
+    #[test]
+    fn sublist_past_end() {
+        let v = zlist![
+            Value::real(5),
+            Value::real(10),
+            Value::real(15),
+            Value::real(20)
+        ];
+        let it = v.iter();
+
+        let sublist = it.skip(5).next();
+
+        assert!(sublist.is_none());
+    }
+
+    #[test]
+    fn improper_sublist_end() {
+        let v = Value::cons(
+            Value::real(5),
+            Value::cons(
+                Value::real(10),
+                Value::cons(Value::real(15), Value::real(20)),
+            ),
+        );
+        let it = v.iter();
+
+        let sublist = it.skip(3).next();
+
+        let lst = some_or_fail!(sublist);
+        assert_eq!(lst.to_string(), "20");
+    }
+
+    #[test]
+    fn improper_sublist_past_end() {
+        let v = Value::cons(
+            Value::real(5),
+            Value::cons(
+                Value::real(10),
+                Value::cons(Value::real(15), Value::real(20)),
+            ),
+        );
+        let it = v.iter();
+
+        let sublist = it.skip(4).next();
+
+        assert!(sublist.is_none());
+    }
+
+    #[test]
+    fn circular_sublist() {
+        // #0=(1 2 3 . #0#)
+        let end = RefCell::new(Pair {
+            car: Value::real(3),
+            cdr: Value::Null,
+        })
+        .into();
+        let p = Pair {
+            car: Value::real(1),
+            cdr: Value::cons(Value::real(2), Value::PairMut(Rc::clone(&end))),
+        }
+        .into();
+        end.borrow_mut().cdr = Value::Pair(Rc::clone(&p));
+        let v = Value::Pair(p);
+        let it = v.iter();
+
+        let sublist = it.skip(7).next();
+
+        let p = extract_or_fail!(some_or_fail!(sublist), Value::Pair);
+        assert_eq!(p.car.to_string(), "2");
+    }
+
+    #[test]
+    fn sublist_wrapper() {
+        let v = zlist![Value::real(1), Value::real(2), Value::real(3)];
+
+        let r = v.sublist(0);
+
+        let subl = ok_or_fail!(some_or_fail!(r));
+        assert!(subl.is(&v));
+    }
+
+    #[test]
+    fn sublist_wrapper_single_value() {
+        let v = Value::string("foo");
+
+        let r = v.sublist(0);
+
+        let subl = ok_or_fail!(some_or_fail!(r));
+        assert!(subl.is(&v));
+    }
+
+    #[test]
+    fn sublist_wrapper_end_of_list() {
+        let v = zlist![Value::real(1), Value::real(2), Value::real(3)];
+
+        let r = v.sublist(3);
+
+        let subl = ok_or_fail!(some_or_fail!(r));
+        assert!(matches!(subl, Value::Null));
+    }
+
+    #[test]
+    fn sublist_wrapper_past_end_of_list() {
+        let v = zlist![Value::real(1), Value::real(2), Value::real(3)];
+
+        let r = v.sublist(4);
+
+        assert!(r.is_none());
+    }
+
+    #[test]
+    fn sublist_wrapper_improper_end() {
+        let v = Value::cons(
+            Value::real(1),
+            Value::cons(Value::real(2), Value::cons(Value::real(3), Value::real(4))),
+        );
+
+        let r = v.sublist(3);
+
+        let subl = ok_or_fail!(some_or_fail!(r));
+        assert!(matches!(subl, Value::Number(n) if n.to_string() == "4"));
+    }
+
+    #[test]
+    fn sublist_wrapper_improper_past_end() {
+        let v = Value::cons(
+            Value::real(1),
+            Value::cons(Value::real(2), Value::cons(Value::real(3), Value::real(4))),
+        );
+
+        let r = v.sublist(4);
+
+        let subl = err_or_fail!(some_or_fail!(r));
+        assert!(matches!(subl, Value::Number(n) if n.to_string() == "4"));
+    }
+
+    #[test]
+    fn sublist_wrapper_circular() {
+        // #0=(1 2 3 . #0#)
+        let end = RefCell::new(Pair {
+            car: Value::real(3),
+            cdr: Value::Null,
+        })
+        .into();
+        let p = Pair {
+            car: Value::real(1),
+            cdr: Value::cons(Value::real(2), Value::PairMut(Rc::clone(&end))),
+        }
+        .into();
+        end.borrow_mut().cdr = Value::Pair(Rc::clone(&p));
+        let v = Value::Pair(p);
+
+        let r = v.sublist(7);
+
+        let p = extract_or_fail!(ok_or_fail!(some_or_fail!(r)), Value::Pair);
+        assert_eq!(p.car.to_string(), "2");
     }
 }

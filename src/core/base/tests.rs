@@ -911,7 +911,7 @@ fn list_append_multiple_lists() {
     let v = ok_or_fail!(r);
     assert!(matches!(v, Value::PairMut(_)));
     assert_eq!(v.to_string(), "(a b c 1 2 3 x y z)");
-    let sub = ok_or_fail!(sub_list(v, 6, &Value::Number(Number::from_usize(6))));
+    let sub = ok_or_fail!(some_or_fail!(v.sublist(6)));
     assert!(sub.is(&last));
 }
 
@@ -934,7 +934,7 @@ fn list_append_improper_lists() {
     let v = ok_or_fail!(r);
     assert!(matches!(v, Value::PairMut(_)));
     assert_eq!(v.to_string(), "(a b c 1 2 3 . x)");
-    let sub = ok_or_fail!(sub_list(v, 6, &Value::Number(Number::from_usize(6))));
+    let sub = ok_or_fail!(some_or_fail!(v.sublist(6)));
     assert!(sub.is(&last));
 }
 

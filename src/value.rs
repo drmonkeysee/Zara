@@ -246,6 +246,22 @@ impl Value {
             None
         }
     }
+
+    pub(crate) fn sublist(&self, k: usize) -> Option<Result<Value, Value>> {
+        for (i, v) in self.iter().enumerate() {
+            if i == k {
+                return Some(Ok(v));
+            }
+            if !matches!(v, Value::Null | Value::Pair(_) | Value::PairMut(_)) {
+                return Some(Err(v));
+            }
+        }
+        None
+    }
+
+    fn iter(&self) -> CdrIterator {
+        CdrIterator::new(self)
+    }
 }
 
 // NOTE: procedure equal? -> value equality
@@ -529,6 +545,30 @@ impl Iterator for CarIterator {
         } else {
             None
         }
+    }
+}
+
+struct CdrIterator {
+    head: Option<Value>,
+}
+
+impl CdrIterator {
+    fn new(head: &Value) -> Self {
+        Self {
+            head: Some(head.clone()),
+        }
+    }
+}
+
+impl Iterator for CdrIterator {
+    type Item = Value;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let curr = self.head.take()?;
+        if let Some(p) = curr.as_refpair() {
+            let _ = self.head.insert(p.as_ref().cdr.clone());
+        }
+        Some(curr)
     }
 }
 
