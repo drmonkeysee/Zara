@@ -378,22 +378,22 @@ pub(crate) struct Pair {
 impl Pair {
     pub(crate) fn is_list(&self) -> bool {
         self.iter().all(|w| match w {
-            PairFlow::Continue(_) | PairFlow::Break(PairStop::End(Value::Null)) => true,
-            PairFlow::Break(_) => false,
+            CarFlow::Continue(_) | CarFlow::Break(CarStop::End(Value::Null)) => true,
+            CarFlow::Break(_) => false,
         })
     }
 
     pub(crate) fn len(&self) -> Option<usize> {
         let len = self.iter().fold(usize::MIN, |acc, w| match w {
-            PairFlow::Continue(_) => acc + 1,
-            PairFlow::Break(PairStop::End(Value::Null)) => acc,
-            PairFlow::Break(_) => usize::MIN,
+            CarFlow::Continue(_) => acc + 1,
+            CarFlow::Break(CarStop::End(Value::Null)) => acc,
+            CarFlow::Break(_) => usize::MIN,
         });
         if len == usize::MIN { None } else { Some(len) }
     }
 
-    fn iter(&self) -> PairIterator {
-        PairIterator::new(self)
+    fn iter(&self) -> CarIterator {
+        CarIterator::new(self)
     }
 
     fn typename(&self) -> &str {
@@ -409,15 +409,15 @@ impl Display for Pair {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         // TODO: can i get rid of this first step
         let mut it = self.iter();
-        if let Some(PairFlow::Continue(car)) = it.next() {
+        if let Some(CarFlow::Continue(car)) = it.next() {
             car.fmt(f)?;
         }
         for w in it {
             match w {
-                PairFlow::Continue(car) => write!(f, " {car}")?,
-                PairFlow::Break(PairStop::Cycle(_)) => f.write_str(" . dup…")?,
-                PairFlow::Break(PairStop::End(Value::Null)) => (),
-                PairFlow::Break(PairStop::End(cdr)) => write!(f, " . {cdr}")?,
+                CarFlow::Continue(car) => write!(f, " {car}")?,
+                CarFlow::Break(CarStop::Cycle(_)) => f.write_str(" . dup…")?,
+                CarFlow::Break(CarStop::End(Value::Null)) => (),
+                CarFlow::Break(CarStop::End(cdr)) => write!(f, " . {cdr}")?,
             }
         }
         Ok(())
@@ -481,20 +481,20 @@ impl Display for TypeName<'_> {
     }
 }
 
-type PairFlow = ControlFlow<PairStop, Value>;
+type CarFlow = ControlFlow<CarStop, Value>;
 
-enum PairStop {
+enum CarStop {
     Cycle(Pair),
     End(Value),
 }
 
-struct PairIterator {
+struct CarIterator {
     head: Option<Pair>,
-    tail: Option<PairStop>,
+    tail: Option<CarStop>,
     visited: HashSet<*const Pair>,
 }
 
-impl PairIterator {
+impl CarIterator {
     fn new(head: &Pair) -> Self {
         let mut visited = HashSet::new();
         visited.insert(ptr::from_ref(head));
@@ -506,8 +506,8 @@ impl PairIterator {
     }
 }
 
-impl Iterator for PairIterator {
-    type Item = PairFlow;
+impl Iterator for CarIterator {
+    type Item = CarFlow;
 
     fn next(&mut self) -> Option<Self::Item> {
         if let Some(curr) = self.head.take() {
@@ -515,13 +515,13 @@ impl Iterator for PairIterator {
                 let pref = p.as_ref();
                 let pp = ptr::from_ref(pref);
                 if self.visited.contains(&pp) {
-                    self.tail = Some(PairStop::Cycle(pref.clone()));
+                    self.tail = Some(CarStop::Cycle(pref.clone()));
                 } else {
                     self.visited.insert(pp);
                     let _ = self.head.insert(pref.clone());
                 }
             } else {
-                self.tail = Some(PairStop::End(curr.cdr));
+                self.tail = Some(CarStop::End(curr.cdr));
             }
             Some(Self::Item::Continue(curr.car))
         } else if let Some(end) = self.tail.take() {

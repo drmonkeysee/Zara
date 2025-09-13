@@ -1164,11 +1164,11 @@ mod pair {
 
             assert_eq!(items.len(), 2);
             assert!(
-                matches!(&items[0], PairFlow::Continue(Value::Number(n)) if n.to_string() == "1")
+                matches!(&items[0], CarFlow::Continue(Value::Number(n)) if n.to_string() == "1")
             );
             assert!(matches!(
                 items[1],
-                PairFlow::Break(PairStop::End(Value::Null))
+                CarFlow::Break(CarStop::End(Value::Null))
             ));
         }
 
@@ -1185,11 +1185,11 @@ mod pair {
 
             assert_eq!(items.len(), 2);
             assert!(
-                matches!(&items[0], PairFlow::Continue(Value::Number(n)) if n.to_string() == "1")
+                matches!(&items[0], CarFlow::Continue(Value::Number(n)) if n.to_string() == "1")
             );
             assert!(matches!(
                 &items[1],
-                PairFlow::Break(PairStop::End(Value::Number(n))) if n.to_string() == "2"
+                CarFlow::Break(CarStop::End(Value::Number(n))) if n.to_string() == "2"
             ));
         }
 
@@ -1206,17 +1206,17 @@ mod pair {
 
             assert_eq!(items.len(), 4);
             assert!(
-                matches!(&items[0], PairFlow::Continue(Value::Number(n)) if n.to_string() == "1")
+                matches!(&items[0], CarFlow::Continue(Value::Number(n)) if n.to_string() == "1")
             );
             assert!(
-                matches!(&items[1], PairFlow::Continue(Value::Number(n)) if n.to_string() == "2")
+                matches!(&items[1], CarFlow::Continue(Value::Number(n)) if n.to_string() == "2")
             );
             assert!(
-                matches!(&items[2], PairFlow::Continue(Value::Number(n)) if n.to_string() == "3")
+                matches!(&items[2], CarFlow::Continue(Value::Number(n)) if n.to_string() == "3")
             );
             assert!(matches!(
                 items[3],
-                PairFlow::Break(PairStop::End(Value::Null))
+                CarFlow::Break(CarStop::End(Value::Null))
             ));
         }
 
@@ -1233,17 +1233,17 @@ mod pair {
 
             assert_eq!(items.len(), 4);
             assert!(
-                matches!(&items[0], PairFlow::Continue(Value::Number(n)) if n.to_string() == "1")
+                matches!(&items[0], CarFlow::Continue(Value::Number(n)) if n.to_string() == "1")
             );
             assert!(
-                matches!(&items[1], PairFlow::Continue(Value::Number(n)) if n.to_string() == "2")
+                matches!(&items[1], CarFlow::Continue(Value::Number(n)) if n.to_string() == "2")
             );
             assert!(
-                matches!(&items[2], PairFlow::Continue(Value::Number(n)) if n.to_string() == "3")
+                matches!(&items[2], CarFlow::Continue(Value::Number(n)) if n.to_string() == "3")
             );
             assert!(matches!(
                 &items[3],
-                PairFlow::Break(PairStop::End(Value::Number(n))) if n.to_string() == "4"
+                CarFlow::Break(CarStop::End(Value::Number(n))) if n.to_string() == "4"
             ));
         }
 
@@ -1267,15 +1267,15 @@ mod pair {
 
             assert_eq!(items.len(), 4);
             assert!(
-                matches!(&items[0], PairFlow::Continue(Value::String(s)) if s.as_ref() == "foo")
+                matches!(&items[0], CarFlow::Continue(Value::String(s)) if s.as_ref() == "foo")
             );
             assert!(
-                matches!(&items[1], PairFlow::Continue(Value::Number(n)) if n.to_string() == "2")
+                matches!(&items[1], CarFlow::Continue(Value::Number(n)) if n.to_string() == "2")
             );
             assert!(
-                matches!(&items[2], PairFlow::Continue(Value::Number(n)) if n.to_string() == "3")
+                matches!(&items[2], CarFlow::Continue(Value::Number(n)) if n.to_string() == "3")
             );
-            assert!(matches!(&items[3], PairFlow::Break(PairStop::Cycle(c)) if c.car.is(&p.car)));
+            assert!(matches!(&items[3], CarFlow::Break(CarStop::Cycle(c)) if c.car.is(&p.car)));
         }
 
         #[test]
@@ -1302,23 +1302,21 @@ mod pair {
 
             assert_eq!(items.len(), 6);
             assert!(
-                matches!(&items[0], PairFlow::Continue(Value::Number(n)) if n.to_string() == "1")
+                matches!(&items[0], CarFlow::Continue(Value::Number(n)) if n.to_string() == "1")
             );
             assert!(
-                matches!(&items[1], PairFlow::Continue(Value::Number(n)) if n.to_string() == "2")
+                matches!(&items[1], CarFlow::Continue(Value::Number(n)) if n.to_string() == "2")
             );
             assert!(
-                matches!(&items[2], PairFlow::Continue(Value::String(s)) if s.as_ref() == "foo")
+                matches!(&items[2], CarFlow::Continue(Value::String(s)) if s.as_ref() == "foo")
             );
             assert!(
-                matches!(&items[3], PairFlow::Continue(Value::Number(n)) if n.to_string() == "4")
+                matches!(&items[3], CarFlow::Continue(Value::Number(n)) if n.to_string() == "4")
             );
             assert!(
-                matches!(&items[4], PairFlow::Continue(Value::Number(n)) if n.to_string() == "5")
+                matches!(&items[4], CarFlow::Continue(Value::Number(n)) if n.to_string() == "5")
             );
-            assert!(
-                matches!(&items[5], PairFlow::Break(PairStop::Cycle(c)) if c.car.is(&start.car))
-            );
+            assert!(matches!(&items[5], CarFlow::Break(CarStop::Cycle(c)) if c.car.is(&start.car)));
         }
     }
 }
