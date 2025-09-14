@@ -247,12 +247,12 @@ impl Value {
         }
     }
 
-    pub(crate) fn sublist(&self, k: usize) -> Option<Result<Value, Value>> {
+    pub(crate) fn sublist(&self, k: usize) -> Option<Result<Self, Self>> {
         for (i, v) in self.iter().enumerate() {
             if i == k {
                 return Some(Ok(v));
             }
-            if !matches!(v, Value::Null | Value::Pair(_) | Value::PairMut(_)) {
+            if !matches!(v, Self::Null | Self::Pair(_) | Self::PairMut(_)) {
                 return Some(Err(v));
             }
         }
