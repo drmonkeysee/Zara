@@ -247,11 +247,7 @@ impl Value {
         }
     }
 
-    pub(crate) fn sublist(&self, k: usize) -> Option<Result<Self, Self>> {
-        unreachable!("delete this");
-    }
-
-    fn iter(&self) -> ValueIterator {
+    pub(crate) fn iter(&self) -> ValueIterator {
         ValueIterator::new(self)
     }
 }
@@ -310,6 +306,63 @@ impl Display for Value {
             Self::Vector(v) => write_seq("#", v, f),
             Self::VectorMut(v) => write_seq("#", &v.borrow(), f),
         }
+    }
+}
+
+pub(crate) enum ValItem {
+    Cycle(Value),
+    Element(Value),
+}
+
+impl ValItem {
+    pub(crate) fn into_value(self) -> Value {
+        match self {
+            Self::Cycle(v) => v,
+            Self::Element(v) => v,
+        }
+    }
+}
+
+pub(crate) struct ValueIterator {
+    head: Option<Value>,
+    visited: HashSet<*const Pair>,
+}
+
+impl ValueIterator {
+    fn new(head: &Value) -> Self {
+        Self {
+            head: Some(head.clone()),
+            visited: HashSet::new(),
+        }
+    }
+
+    fn visited(&mut self, p: &Pair) -> bool {
+        let pp = ptr::from_ref(p.as_ref());
+        if self.visited.contains(&pp) {
+            true
+        } else {
+            self.visited.insert(pp);
+            false
+        }
+    }
+}
+
+impl Iterator for ValueIterator {
+    type Item = ValItem;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let curr = self.head.take()?;
+        let mut visited = false;
+        if let Some(p) = curr.as_refpair() {
+            let pref = p.as_ref();
+            visited = self.visited(pref);
+            let _ = self.head.insert(pref.cdr.clone());
+        }
+        Some(if visited {
+            Self::Item::Cycle(curr)
+        } else {
+            Self::Item::Element(curr)
+        })
     }
 }
 
@@ -493,54 +546,6 @@ impl Display for TypeName<'_> {
             Value::Unspecified => f.write_str("unspecified"),
             Value::Vector(_) | Value::VectorMut(_) => f.write_str(Self::VECTOR),
         }
-    }
-}
-
-enum ValItem {
-    Cycle(Value),
-    Element(Value),
-}
-
-struct ValueIterator {
-    head: Option<Value>,
-    visited: HashSet<*const Pair>,
-}
-
-impl ValueIterator {
-    fn new(head: &Value) -> Self {
-        Self {
-            head: Some(head.clone()),
-            visited: HashSet::new(),
-        }
-    }
-
-    fn visited(&mut self, p: &Pair) -> bool {
-        let pp = ptr::from_ref(p.as_ref());
-        if self.visited.contains(&pp) {
-            true
-        } else {
-            self.visited.insert(pp);
-            false
-        }
-    }
-}
-
-impl Iterator for ValueIterator {
-    type Item = ValItem;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let curr = self.head.take()?;
-        let mut visited = false;
-        if let Some(p) = curr.as_refpair() {
-            let pref = p.as_ref();
-            visited = self.visited(pref);
-            let _ = self.head.insert(pref.cdr.clone());
-        }
-        Some(if visited {
-            Self::Item::Cycle(curr)
-        } else {
-            Self::Item::Element(curr)
-        })
     }
 }
 

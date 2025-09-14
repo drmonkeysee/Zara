@@ -604,25 +604,23 @@ fn list_reverse(args: &[Value], _env: &Frame) -> EvalResult {
 }
 
 fn list_tail(args: &[Value], _env: &Frame) -> EvalResult {
-    todo!();
-    /*
     let k = super::second(args);
+    let ith = try_val_to_index(k, SECOND_ARG_LABEL)?;
     first(args)
-        .sublist(try_val_to_index(k, SECOND_ARG_LABEL)?)
+        .iter()
+        .enumerate()
+        .find_map(|(i, item)| {
+            let v = item.into_value();
+            if i == ith {
+                Some(Ok(v))
+            } else if !matches!(v, Value::Null | Value::Pair(_) | Value::PairMut(_)) {
+                Some(Err(v))
+            } else {
+                None
+            }
+        })
         .ok_or_else(|| Exception::from(Condition::index_error(k)))?
         .map_err(|e| invalid_target(TypeName::PAIR, &e))
-    */
-    /*
-    for (i, v) in self.iter().enumerate() {
-        if i == k {
-            return Some(Ok(v));
-        }
-        if !matches!(v, Self::Null | Self::Pair(_) | Self::PairMut(_)) {
-            return Some(Err(v));
-        }
-    }
-    None
-    */
 }
 
 fn list_get(args: &[Value], env: &Frame) -> EvalResult {
