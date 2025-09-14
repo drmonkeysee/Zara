@@ -377,7 +377,7 @@ impl CollSized for StrRef<'_> {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq)]
 pub(crate) struct Pair {
     pub(crate) car: Value,
     pub(crate) cdr: Value,
