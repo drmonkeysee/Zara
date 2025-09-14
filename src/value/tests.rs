@@ -1146,178 +1146,6 @@ mod pair {
 
         assert!(p.len().is_none());
     }
-
-    mod iterator {
-        use super::*;
-
-        #[test]
-        fn single_element() {
-            // (1)
-            let p = Pair {
-                car: Value::real(1),
-                cdr: Value::Null,
-            };
-            let it = p.iter();
-
-            let items = it.collect::<Vec<_>>();
-
-            assert_eq!(items.len(), 2);
-            assert!(
-                matches!(&items[0], CarFlow::Continue(Value::Number(n)) if n.to_string() == "1")
-            );
-            assert!(matches!(
-                items[1],
-                CarFlow::Break(CarStop::End(Value::Null))
-            ));
-        }
-
-        #[test]
-        fn cons_cell() {
-            // (1 . 2)
-            let p = Pair {
-                car: Value::real(1),
-                cdr: Value::real(2),
-            };
-            let it = p.iter();
-
-            let items = it.collect::<Vec<_>>();
-
-            assert_eq!(items.len(), 2);
-            assert!(
-                matches!(&items[0], CarFlow::Continue(Value::Number(n)) if n.to_string() == "1")
-            );
-            assert!(matches!(
-                &items[1],
-                CarFlow::Break(CarStop::End(Value::Number(n))) if n.to_string() == "2"
-            ));
-        }
-
-        #[test]
-        fn proper_list() {
-            // (1 2 3)
-            let p = Pair {
-                car: Value::real(1),
-                cdr: Value::cons(Value::real(2), Value::cons(Value::real(3), Value::Null)),
-            };
-            let it = p.iter();
-
-            let items = it.collect::<Vec<_>>();
-
-            assert_eq!(items.len(), 4);
-            assert!(
-                matches!(&items[0], CarFlow::Continue(Value::Number(n)) if n.to_string() == "1")
-            );
-            assert!(
-                matches!(&items[1], CarFlow::Continue(Value::Number(n)) if n.to_string() == "2")
-            );
-            assert!(
-                matches!(&items[2], CarFlow::Continue(Value::Number(n)) if n.to_string() == "3")
-            );
-            assert!(matches!(
-                items[3],
-                CarFlow::Break(CarStop::End(Value::Null))
-            ));
-        }
-
-        #[test]
-        fn improper_list() {
-            // (1 2 3 . 4)
-            let p = Pair {
-                car: Value::real(1),
-                cdr: Value::cons(Value::real(2), Value::cons(Value::real(3), Value::real(4))),
-            };
-            let it = p.iter();
-
-            let items = it.collect::<Vec<_>>();
-
-            assert_eq!(items.len(), 4);
-            assert!(
-                matches!(&items[0], CarFlow::Continue(Value::Number(n)) if n.to_string() == "1")
-            );
-            assert!(
-                matches!(&items[1], CarFlow::Continue(Value::Number(n)) if n.to_string() == "2")
-            );
-            assert!(
-                matches!(&items[2], CarFlow::Continue(Value::Number(n)) if n.to_string() == "3")
-            );
-            assert!(matches!(
-                &items[3],
-                CarFlow::Break(CarStop::End(Value::Number(n))) if n.to_string() == "4"
-            ));
-        }
-
-        #[test]
-        fn circular_list() {
-            // #0=("foo" 2 3 . #0#)
-            let end = RefCell::new(Pair {
-                car: Value::real(3),
-                cdr: Value::Null,
-            })
-            .into();
-            let p = Pair {
-                car: Value::string("foo"),
-                cdr: Value::cons(Value::real(2), Value::PairMut(Rc::clone(&end))),
-            }
-            .into();
-            end.borrow_mut().cdr = Value::Pair(Rc::clone(&p));
-            let it = p.iter();
-
-            let items = it.collect::<Vec<_>>();
-
-            assert_eq!(items.len(), 4);
-            assert!(
-                matches!(&items[0], CarFlow::Continue(Value::String(s)) if s.as_ref() == "foo")
-            );
-            assert!(
-                matches!(&items[1], CarFlow::Continue(Value::Number(n)) if n.to_string() == "2")
-            );
-            assert!(
-                matches!(&items[2], CarFlow::Continue(Value::Number(n)) if n.to_string() == "3")
-            );
-            assert!(matches!(&items[3], CarFlow::Break(CarStop::Cycle(c)) if c.car.is(&p.car)));
-        }
-
-        #[test]
-        fn partly_circular_list() {
-            // (1 2 . #0=("foo" 4 5 . #0#))
-            let end = RefCell::new(Pair {
-                car: Value::real(5),
-                cdr: Value::Null,
-            })
-            .into();
-            let start = Pair {
-                car: Value::string("foo"),
-                cdr: Value::cons(Value::real(4), Value::PairMut(Rc::clone(&end))),
-            }
-            .into();
-            end.borrow_mut().cdr = Value::Pair(Rc::clone(&start));
-            let p = Pair {
-                car: Value::real(1),
-                cdr: Value::cons(Value::real(2), Value::Pair(Rc::clone(&start))),
-            };
-            let it = p.iter();
-
-            let items = it.collect::<Vec<_>>();
-
-            assert_eq!(items.len(), 6);
-            assert!(
-                matches!(&items[0], CarFlow::Continue(Value::Number(n)) if n.to_string() == "1")
-            );
-            assert!(
-                matches!(&items[1], CarFlow::Continue(Value::Number(n)) if n.to_string() == "2")
-            );
-            assert!(
-                matches!(&items[2], CarFlow::Continue(Value::String(s)) if s.as_ref() == "foo")
-            );
-            assert!(
-                matches!(&items[3], CarFlow::Continue(Value::Number(n)) if n.to_string() == "4")
-            );
-            assert!(
-                matches!(&items[4], CarFlow::Continue(Value::Number(n)) if n.to_string() == "5")
-            );
-            assert!(matches!(&items[5], CarFlow::Break(CarStop::Cycle(c)) if c.car.is(&start.car)));
-        }
-    }
 }
 
 mod list {
@@ -1905,7 +1733,6 @@ mod equivalence {
 
 mod iterator {
     use super::*;
-    use crate::testutil::err_or_fail;
 
     #[test]
     fn single_value() {
@@ -1916,10 +1743,9 @@ mod iterator {
 
         assert_eq!(vec.len(), 1);
         assert!(matches!(
-            &vec[0].0,
-            Value::Number(n) if n.to_string() == "5"
+            &vec[0],
+            ValItem::Element(Value::Number(n)) if n.to_string() == "5"
         ));
-        assert!(!&vec[0].1);
     }
 
     #[test]
@@ -1930,10 +1756,8 @@ mod iterator {
         let vec = it.collect::<Vec<_>>();
 
         assert_eq!(vec.len(), 2);
-        assert!(matches!(&vec[0].0, Value::Pair(p) if p.to_string() == "5 . 10"));
-        assert!(!&vec[0].1);
-        assert!(matches!(&vec[1].0, Value::Number(n) if n.to_string() == "10"));
-        assert!(!&vec[1].1);
+        assert!(matches!(&vec[0], ValItem::Element(Value::Pair(p)) if p.to_string() == "5 . 10"));
+        assert!(matches!(&vec[1], ValItem::Element(Value::Number(n)) if n.to_string() == "10"));
     }
 
     #[test]
@@ -1944,12 +1768,9 @@ mod iterator {
         let vec = it.collect::<Vec<_>>();
 
         assert_eq!(vec.len(), 3);
-        assert!(matches!(&vec[0].0, Value::Pair(p) if p.to_string() == "5 10"));
-        assert!(!&vec[0].1);
-        assert!(matches!(&vec[1].0, Value::Pair(p) if p.to_string() == "10"));
-        assert!(!&vec[1].1);
-        assert!(matches!(&vec[2].0, Value::Null));
-        assert!(!&vec[2].1);
+        assert!(matches!(&vec[0], ValItem::Element(Value::Pair(p)) if p.to_string() == "5 10"));
+        assert!(matches!(&vec[1], ValItem::Element(Value::Pair(p)) if p.to_string() == "10"));
+        assert!(matches!(&vec[2], ValItem::Element(Value::Null)));
     }
 
     #[test]
@@ -1971,18 +1792,16 @@ mod iterator {
 
         let sublist = it.next();
 
-        let (lst, vs) = some_or_fail!(sublist);
+        let lst = extract_or_fail!(some_or_fail!(sublist), ValItem::Element);
         let p = extract_or_fail!(lst.clone(), Value::Pair);
         assert_eq!(p.car.to_string(), "1");
-        assert!(!vs);
 
         it.next();
         it.next();
         let sublist = it.next();
 
-        let (cyc, vs) = some_or_fail!(sublist);
+        let cyc = extract_or_fail!(some_or_fail!(sublist), ValItem::Cycle);
         assert!(cyc.is(&lst));
-        assert!(vs);
     }
 
     #[test]
@@ -1997,9 +1816,8 @@ mod iterator {
 
         let sublist = it.skip(2).next();
 
-        let (lst, vs) = some_or_fail!(sublist);
+        let lst = extract_or_fail!(some_or_fail!(sublist), ValItem::Element);
         assert_eq!(lst.to_string(), "(15 20)");
-        assert!(!vs);
     }
 
     #[test]
@@ -2014,9 +1832,8 @@ mod iterator {
 
         let sublist = it.skip(0).next();
 
-        let (lst, vs) = some_or_fail!(sublist);
+        let lst = extract_or_fail!(some_or_fail!(sublist), ValItem::Element);
         assert_eq!(lst.to_string(), "(5 10 15 20)");
-        assert!(!vs);
     }
 
     #[test]
@@ -2031,9 +1848,8 @@ mod iterator {
 
         let sublist = it.skip(4).next();
 
-        let (lst, vs) = some_or_fail!(sublist);
+        let lst = extract_or_fail!(some_or_fail!(sublist), ValItem::Element);
         assert_eq!(lst.to_string(), "()");
-        assert!(!vs);
     }
 
     #[test]
@@ -2064,9 +1880,8 @@ mod iterator {
 
         let sublist = it.skip(3).next();
 
-        let (lst, vs) = some_or_fail!(sublist);
+        let lst = extract_or_fail!(some_or_fail!(sublist), ValItem::Element);
         assert_eq!(lst.to_string(), "20");
-        assert!(!vs);
     }
 
     #[test]
@@ -2104,96 +1919,8 @@ mod iterator {
 
         let sublist = it.skip(7).next();
 
-        let (lst, vs) = some_or_fail!(sublist);
+        let lst = extract_or_fail!(some_or_fail!(sublist), ValItem::Cycle);
         let p = extract_or_fail!(lst, Value::Pair);
-        assert_eq!(p.car.to_string(), "2");
-        assert!(vs);
-    }
-
-    #[test]
-    fn sublist_wrapper() {
-        let v = zlist![Value::real(1), Value::real(2), Value::real(3)];
-
-        let r = v.sublist(0);
-
-        let subl = ok_or_fail!(some_or_fail!(r));
-        assert!(subl.is(&v));
-    }
-
-    #[test]
-    fn sublist_wrapper_single_value() {
-        let v = Value::string("foo");
-
-        let r = v.sublist(0);
-
-        let subl = ok_or_fail!(some_or_fail!(r));
-        assert!(subl.is(&v));
-    }
-
-    #[test]
-    fn sublist_wrapper_end_of_list() {
-        let v = zlist![Value::real(1), Value::real(2), Value::real(3)];
-
-        let r = v.sublist(3);
-
-        let subl = ok_or_fail!(some_or_fail!(r));
-        assert!(matches!(subl, Value::Null));
-    }
-
-    #[test]
-    fn sublist_wrapper_past_end_of_list() {
-        let v = zlist![Value::real(1), Value::real(2), Value::real(3)];
-
-        let r = v.sublist(4);
-
-        assert!(r.is_none());
-    }
-
-    #[test]
-    fn sublist_wrapper_improper_end() {
-        let v = Value::cons(
-            Value::real(1),
-            Value::cons(Value::real(2), Value::cons(Value::real(3), Value::real(4))),
-        );
-
-        let r = v.sublist(3);
-
-        let subl = ok_or_fail!(some_or_fail!(r));
-        assert!(matches!(subl, Value::Number(n) if n.to_string() == "4"));
-    }
-
-    #[test]
-    fn sublist_wrapper_improper_past_end() {
-        let v = Value::cons(
-            Value::real(1),
-            Value::cons(Value::real(2), Value::cons(Value::real(3), Value::real(4))),
-        );
-
-        let r = v.sublist(4);
-
-        let subl = err_or_fail!(some_or_fail!(r));
-        assert!(matches!(subl, Value::Number(n) if n.to_string() == "4"));
-    }
-
-    #[test]
-    fn sublist_wrapper_circular() {
-        // #0=(1 2 3 . #0#)
-        let end = RefCell::new(Pair {
-            car: Value::real(3),
-            cdr: Value::Null,
-        })
-        .into();
-        let p = Pair {
-            car: Value::real(1),
-            cdr: Value::cons(Value::real(2), Value::PairMut(Rc::clone(&end))),
-        }
-        .into();
-        end.borrow_mut().cdr = Value::Pair(Rc::clone(&p));
-        let v = Value::Pair(p);
-
-        let r = v.sublist(7);
-
-        let p = extract_or_fail!(ok_or_fail!(some_or_fail!(r)), Value::Pair);
         assert_eq!(p.car.to_string(), "2");
     }
 }

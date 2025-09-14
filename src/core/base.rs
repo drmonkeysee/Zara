@@ -18,15 +18,14 @@ macro_rules! seq_predicate {
                     return Err(Condition::arg_error(idx, $valname, v).into());
                 }
             };
-            let result: Result<_, Exception> =
-                it.try_fold((true, first), |(acc, prev), (idx, val)| {
-                    if let $kind(next) = val {
-                        Ok((acc && $pred(prev, next), next))
-                    } else {
-                        Err(Condition::arg_error(idx, $valname, val).into())
-                    }
-                });
-            Ok(Value::Boolean(result?.0))
+            it.try_fold((true, first), |(acc, prev), (idx, val)| {
+                if let $kind(next) = val {
+                    Ok((acc && $pred(prev, next), next))
+                } else {
+                    Err(Condition::arg_error(idx, $valname, val).into())
+                }
+            })
+            .map(|(b, _)| Value::Boolean(b))
         }
     };
 }
@@ -605,11 +604,25 @@ fn list_reverse(args: &[Value], _env: &Frame) -> EvalResult {
 }
 
 fn list_tail(args: &[Value], _env: &Frame) -> EvalResult {
+    todo!();
+    /*
     let k = super::second(args);
     first(args)
         .sublist(try_val_to_index(k, SECOND_ARG_LABEL)?)
         .ok_or_else(|| Exception::from(Condition::index_error(k)))?
         .map_err(|e| invalid_target(TypeName::PAIR, &e))
+    */
+    /*
+    for (i, v) in self.iter().enumerate() {
+        if i == k {
+            return Some(Ok(v));
+        }
+        if !matches!(v, Self::Null | Self::Pair(_) | Self::PairMut(_)) {
+            return Some(Err(v));
+        }
+    }
+    None
+    */
 }
 
 fn list_get(args: &[Value], env: &Frame) -> EvalResult {
@@ -1139,10 +1152,9 @@ fn try_val_to_char(arg: &Value, lbl: impl Display) -> Result<char, Exception> {
 }
 
 fn strs_predicate(args: &[Value], pred: impl Fn(&str, &str) -> bool) -> EvalResult {
-    let result: Result<_, Exception> = args
-        .iter()
+    args.iter()
         .enumerate()
-        .try_fold::<(bool, Option<&Value>), _, _>((true, None), |(acc, prev), (idx, val)| {
+        .try_fold((true, None), |(acc, prev), (idx, val)| {
             let b = val
                 .as_refstr()
                 .ok_or_else(|| Exception::from(Condition::arg_error(idx, TypeName::STRING, val)))?;
@@ -1151,8 +1163,8 @@ fn strs_predicate(args: &[Value], pred: impl Fn(&str, &str) -> bool) -> EvalResu
                 Some(v) => v.as_refstr().expect("expected string from prev"),
             };
             Ok((acc && pred(a.as_ref(), b.as_ref()), Some(val)))
-        });
-    Ok(Value::Boolean(result?.0))
+        })
+        .map(|(b, _)| Value::Boolean(b))
 }
 
 fn build_str_copy(from: &str, target: &str, at: usize, span: Range<usize>) -> String {

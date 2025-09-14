@@ -248,18 +248,7 @@ impl Value {
     }
 
     pub(crate) fn sublist(&self, k: usize) -> Option<Result<Self, Self>> {
-        todo!();
-        /*
-        for (i, v) in self.iter().enumerate() {
-            if i == k {
-                return Some(Ok(v));
-            }
-            if !matches!(v, Self::Null | Self::Pair(_) | Self::PairMut(_)) {
-                return Some(Err(v));
-            }
-        }
-        None
-        */
+        unreachable!("delete this");
     }
 
     fn iter(&self) -> ValueIterator {
@@ -396,23 +385,25 @@ pub(crate) struct Pair {
 
 impl Pair {
     pub(crate) fn is_list(&self) -> bool {
-        self.iter().all(|w| match w {
-            CarFlow::Continue(_) | CarFlow::Break(CarStop::End(Value::Null)) => true,
-            CarFlow::Break(_) => false,
+        self.cdr.iter().all(|item| {
+            matches!(
+                item,
+                ValItem::Element(Value::Null | Value::Pair(_) | Value::PairMut(_))
+            )
         })
     }
 
     pub(crate) fn len(&self) -> Option<usize> {
-        let len = self.iter().fold(usize::MIN, |acc, w| match w {
-            CarFlow::Continue(_) => acc + 1,
-            CarFlow::Break(CarStop::End(Value::Null)) => acc,
-            CarFlow::Break(_) => usize::MIN,
-        });
-        if len == usize::MIN { None } else { Some(len) }
-    }
-
-    fn iter(&self) -> CarIterator {
-        CarIterator::new(self)
+        self.cdr
+            .iter()
+            .try_fold(1usize, |acc, item| match item {
+                ValItem::Element(Value::Null) => ControlFlow::Continue(acc),
+                ValItem::Element(Value::Pair(_) | Value::PairMut(_)) => {
+                    ControlFlow::Continue(acc + 1)
+                }
+                _ => ControlFlow::Break(()),
+            })
+            .continue_value()
     }
 
     fn typename(&self) -> &str {
@@ -426,17 +417,22 @@ impl Pair {
 
 impl Display for Pair {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        // TODO: can i get rid of this first step
-        let mut it = self.iter();
-        if let Some(CarFlow::Continue(car)) = it.next() {
-            car.fmt(f)?;
-        }
-        for w in it {
-            match w {
-                CarFlow::Continue(car) => write!(f, " {car}")?,
-                CarFlow::Break(CarStop::Cycle(_)) => f.write_str(" . dup…")?,
-                CarFlow::Break(CarStop::End(Value::Null)) => (),
-                CarFlow::Break(CarStop::End(cdr)) => write!(f, " . {cdr}")?,
+        self.car.fmt(f)?;
+        for item in self.cdr.iter() {
+            match item {
+                ValItem::Cycle(_) => {
+                    f.write_str(" . dup…")?;
+                    break;
+                }
+                ValItem::Element(v) => {
+                    if let Some(p) = v.as_refpair() {
+                        write!(f, " {}", p.as_ref().car)?;
+                    } else if let Value::Null = v {
+                        ();
+                    } else {
+                        write!(f, " . {v}")?;
+                    }
+                }
             }
         }
         Ok(())
@@ -500,79 +496,9 @@ impl Display for TypeName<'_> {
     }
 }
 
-type CarFlow = ControlFlow<CarStop, Value>;
-
-enum CarStop {
-    Cycle(Pair),
-    End(Value),
-}
-
-struct CarIterator {
-    head: Option<Pair>,
-    tail: Option<CarStop>,
-    visited: HashSet<*const Pair>,
-}
-
-impl CarIterator {
-    fn new(head: &Pair) -> Self {
-        let mut visited = HashSet::new();
-        visited.insert(ptr::from_ref(head));
-        Self {
-            head: Some(head.clone()),
-            tail: None,
-            visited,
-        }
-    }
-}
-
-impl Iterator for CarIterator {
-    type Item = CarFlow;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if let Some(curr) = self.head.take() {
-            if let Some(p) = curr.cdr.as_refpair() {
-                let pref = p.as_ref();
-                let pp = ptr::from_ref(pref);
-                if self.visited.contains(&pp) {
-                    self.tail = Some(CarStop::Cycle(pref.clone()));
-                } else {
-                    self.visited.insert(pp);
-                    let _ = self.head.insert(pref.clone());
-                }
-            } else {
-                self.tail = Some(CarStop::End(curr.cdr));
-            }
-            Some(Self::Item::Continue(curr.car))
-        } else if let Some(end) = self.tail.take() {
-            Some(Self::Item::Break(end))
-        } else {
-            None
-        }
-    }
-}
-
-struct CdrIterator {
-    head: Option<Value>,
-}
-
-impl CdrIterator {
-    fn new(head: &Value) -> Self {
-        Self {
-            head: Some(head.clone()),
-        }
-    }
-}
-
-impl Iterator for CdrIterator {
-    type Item = Value;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let curr = self.head.take()?;
-        if let Some(p) = curr.as_refpair() {
-            let _ = self.head.insert(p.as_ref().cdr.clone());
-        }
-        Some(curr)
-    }
+enum ValItem {
+    Cycle(Value),
+    Element(Value),
 }
 
 struct ValueIterator {
@@ -600,7 +526,7 @@ impl ValueIterator {
 }
 
 impl Iterator for ValueIterator {
-    type Item = (Value, bool);
+    type Item = ValItem;
 
     fn next(&mut self) -> Option<Self::Item> {
         let curr = self.head.take()?;
@@ -610,7 +536,11 @@ impl Iterator for ValueIterator {
             visited = self.visited(pref);
             let _ = self.head.insert(pref.cdr.clone());
         }
-        Some((curr, visited))
+        Some(if visited {
+            Self::Item::Cycle(curr)
+        } else {
+            Self::Item::Element(curr)
+        })
     }
 }
 
