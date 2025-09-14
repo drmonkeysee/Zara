@@ -1915,7 +1915,11 @@ mod iterator {
         let vec = it.collect::<Vec<_>>();
 
         assert_eq!(vec.len(), 1);
-        assert!(matches!(&vec[0], Value::Number(n) if n.to_string() == "5"));
+        assert!(matches!(
+            &vec[0].0,
+            Value::Number(n) if n.to_string() == "5"
+        ));
+        assert!(!&vec[0].1);
     }
 
     #[test]
@@ -1926,8 +1930,10 @@ mod iterator {
         let vec = it.collect::<Vec<_>>();
 
         assert_eq!(vec.len(), 2);
-        assert!(matches!(&vec[0], Value::Pair(p) if p.to_string() == "5 . 10"));
-        assert!(matches!(&vec[1], Value::Number(n) if n.to_string() == "10"));
+        assert!(matches!(&vec[0].0, Value::Pair(p) if p.to_string() == "5 . 10"));
+        assert!(!&vec[0].1);
+        assert!(matches!(&vec[1].0, Value::Number(n) if n.to_string() == "10"));
+        assert!(!&vec[1].1);
     }
 
     #[test]
@@ -1938,9 +1944,45 @@ mod iterator {
         let vec = it.collect::<Vec<_>>();
 
         assert_eq!(vec.len(), 3);
-        assert!(matches!(&vec[0], Value::Pair(p) if p.to_string() == "5 10"));
-        assert!(matches!(&vec[1], Value::Pair(p) if p.to_string() == "10"));
-        assert!(matches!(&vec[2], Value::Null));
+        assert!(matches!(&vec[0].0, Value::Pair(p) if p.to_string() == "5 10"));
+        assert!(!&vec[0].1);
+        assert!(matches!(&vec[1].0, Value::Pair(p) if p.to_string() == "10"));
+        assert!(!&vec[1].1);
+        assert!(matches!(&vec[2].0, Value::Null));
+        assert!(!&vec[2].1);
+    }
+
+    #[test]
+    fn circular_list() {
+        // #0=(1 2 3 . #0#)
+        let end = RefCell::new(Pair {
+            car: Value::real(3),
+            cdr: Value::Null,
+        })
+        .into();
+        let p = Pair {
+            car: Value::real(1),
+            cdr: Value::cons(Value::real(2), Value::PairMut(Rc::clone(&end))),
+        }
+        .into();
+        end.borrow_mut().cdr = Value::Pair(Rc::clone(&p));
+        let v = Value::Pair(p);
+        let mut it = v.iter();
+
+        let sublist = it.next();
+
+        let (lst, vs) = some_or_fail!(sublist);
+        let p = extract_or_fail!(lst.clone(), Value::Pair);
+        assert_eq!(p.car.to_string(), "1");
+        assert!(!vs);
+
+        it.next();
+        it.next();
+        let sublist = it.next();
+
+        let (cyc, vs) = some_or_fail!(sublist);
+        assert!(cyc.is(&lst));
+        assert!(vs);
     }
 
     #[test]
@@ -1955,8 +1997,9 @@ mod iterator {
 
         let sublist = it.skip(2).next();
 
-        let lst = some_or_fail!(sublist);
+        let (lst, vs) = some_or_fail!(sublist);
         assert_eq!(lst.to_string(), "(15 20)");
+        assert!(!vs);
     }
 
     #[test]
@@ -1971,8 +2014,9 @@ mod iterator {
 
         let sublist = it.skip(0).next();
 
-        let lst = some_or_fail!(sublist);
+        let (lst, vs) = some_or_fail!(sublist);
         assert_eq!(lst.to_string(), "(5 10 15 20)");
+        assert!(!vs);
     }
 
     #[test]
@@ -1987,8 +2031,9 @@ mod iterator {
 
         let sublist = it.skip(4).next();
 
-        let lst = some_or_fail!(sublist);
+        let (lst, vs) = some_or_fail!(sublist);
         assert_eq!(lst.to_string(), "()");
+        assert!(!vs);
     }
 
     #[test]
@@ -2019,8 +2064,9 @@ mod iterator {
 
         let sublist = it.skip(3).next();
 
-        let lst = some_or_fail!(sublist);
+        let (lst, vs) = some_or_fail!(sublist);
         assert_eq!(lst.to_string(), "20");
+        assert!(!vs);
     }
 
     #[test]
@@ -2058,8 +2104,10 @@ mod iterator {
 
         let sublist = it.skip(7).next();
 
-        let p = extract_or_fail!(some_or_fail!(sublist), Value::Pair);
+        let (lst, vs) = some_or_fail!(sublist);
+        let p = extract_or_fail!(lst, Value::Pair);
         assert_eq!(p.car.to_string(), "2");
+        assert!(vs);
     }
 
     #[test]

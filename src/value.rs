@@ -248,6 +248,8 @@ impl Value {
     }
 
     pub(crate) fn sublist(&self, k: usize) -> Option<Result<Self, Self>> {
+        todo!();
+        /*
         for (i, v) in self.iter().enumerate() {
             if i == k {
                 return Some(Ok(v));
@@ -257,10 +259,11 @@ impl Value {
             }
         }
         None
+        */
     }
 
-    fn iter(&self) -> CdrIterator {
-        CdrIterator::new(self)
+    fn iter(&self) -> ValueIterator {
+        ValueIterator::new(self)
     }
 }
 
@@ -569,6 +572,45 @@ impl Iterator for CdrIterator {
             let _ = self.head.insert(p.as_ref().cdr.clone());
         }
         Some(curr)
+    }
+}
+
+struct ValueIterator {
+    head: Option<Value>,
+    visited: HashSet<*const Pair>,
+}
+
+impl ValueIterator {
+    fn new(head: &Value) -> Self {
+        Self {
+            head: Some(head.clone()),
+            visited: HashSet::new(),
+        }
+    }
+
+    fn visited(&mut self, p: &Pair) -> bool {
+        let pp = ptr::from_ref(p.as_ref());
+        if self.visited.contains(&pp) {
+            true
+        } else {
+            self.visited.insert(pp);
+            false
+        }
+    }
+}
+
+impl Iterator for ValueIterator {
+    type Item = (Value, bool);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let curr = self.head.take()?;
+        let mut visited = false;
+        if let Some(p) = curr.as_refpair() {
+            let pref = p.as_ref();
+            visited = self.visited(pref);
+            let _ = self.head.insert(pref.cdr.clone());
+        }
+        Some((curr, visited))
     }
 }
 
