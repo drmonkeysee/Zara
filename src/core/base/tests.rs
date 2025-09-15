@@ -813,7 +813,7 @@ fn list_circular_length() {
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
     assert_eq!(
         err.to_string(),
-        "#<env-error \"invalid type for arg `0` - expected: list, got: improper list\" ((a . b))>"
+        "#<env-error \"circular list encountered\" ((a b . #0=(c d e f . #0#)))>"
     );
 }
 
@@ -1044,6 +1044,21 @@ fn list_reverse_improper_list() {
     assert_eq!(
         err.to_string(),
         "#<env-error \"invalid type for arg `2` - expected: list, got: symbol\" (c)>"
+    );
+}
+
+#[test]
+fn list_reverse_circular_list() {
+    let env = TestEnv::default();
+    let (lst, _, _) = make_circular_list(&env);
+    let args = [lst.clone()];
+
+    let r = list_reverse(&args, &env.new_frame());
+
+    let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
+    assert_eq!(
+        err.to_string(),
+        "#<env-error \"circular list encountered\" ((a b . #0=(c d e f . #0#)))>"
     );
 }
 

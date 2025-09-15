@@ -60,7 +60,8 @@ use crate::{
     number::{Integer, Number, NumericError, NumericTypeName, Real},
     string::{Symbol, unicode::UnicodeError},
     value::{
-        BvRef, CollRef, CollSized, Condition, Pair, PairSized, StrRef, TypeName, Value, VecRef,
+        BvRef, CollRef, CollSized, Condition, Pair, PairSized, StrRef, TypeName, ValItem, Value,
+        VecRef,
     },
 };
 use std::{
@@ -595,11 +596,22 @@ fn list_append(args: &[Value], _env: &Frame) -> EvalResult {
     })
 }
 
-// TODO: circular lists => error
 fn list_reverse(args: &[Value], _env: &Frame) -> EvalResult {
-    Ok(Value::list_mut(
-        try_list_to_vec(first(args))?.into_iter().rev(),
-    ))
+    let arg = first(args);
+    arg.iter()
+        .enumerate()
+        .try_fold(Value::Null, |head, (i, item)| match item {
+            ValItem::Cycle(_) => Err(Condition::circular_list(&arg).into()),
+            ValItem::Element(v) => {
+                if let Value::Null = v {
+                    Ok(head)
+                } else if let Some(p) = v.as_refpair() {
+                    Ok(Value::cons_mut(p.as_ref().car.clone(), head))
+                } else {
+                    Err(Condition::arg_error(i, TypeName::LIST, &v).into())
+                }
+            }
+        })
 }
 
 fn list_tail(args: &[Value], _env: &Frame) -> EvalResult {

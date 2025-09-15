@@ -48,6 +48,10 @@ impl Condition {
         Self::env_error(format!("unbound variable: {name}"))
     }
 
+    pub(crate) fn circular_list(val: &Value) -> Self {
+        Self::value_error("circular list encountered", val)
+    }
+
     pub(crate) fn index_error(idx: &Value) -> Self {
         Self::value_error("index out of range", idx)
     }
