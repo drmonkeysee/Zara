@@ -759,6 +759,7 @@ bar",
 
 mod pair {
     use super::*;
+    use crate::testutil::err_or_fail;
 
     #[test]
     fn pair_is_not_list() {
@@ -958,7 +959,7 @@ mod pair {
             cdr: Value::Boolean(false),
         };
 
-        assert!(p.len().is_none());
+        assert!(matches!(err_or_fail!(p.len()), InvalidList::Improper));
     }
 
     #[test]
@@ -969,9 +970,9 @@ mod pair {
             cdr: Value::Null,
         };
 
-        let o = p.len();
+        let r = p.len();
 
-        assert_eq!(some_or_fail!(o), 1);
+        assert_eq!(ok_or_fail!(r), 1);
     }
 
     #[test]
@@ -982,9 +983,9 @@ mod pair {
             cdr: Value::cons(Value::real(2), Value::cons(Value::real(3), Value::Null)),
         };
 
-        let o = p.len();
+        let r = p.len();
 
-        assert_eq!(some_or_fail!(o), 3);
+        assert_eq!(ok_or_fail!(r), 3);
     }
 
     #[test]
@@ -995,9 +996,9 @@ mod pair {
             cdr: Value::cons_mut(Value::real(2), Value::cons_mut(Value::real(3), Value::Null)),
         };
 
-        let o = p.len();
+        let r = p.len();
 
-        assert_eq!(some_or_fail!(o), 3);
+        assert_eq!(ok_or_fail!(r), 3);
     }
 
     #[test]
@@ -1008,7 +1009,7 @@ mod pair {
             cdr: Value::cons(Value::real(2), Value::real(3)),
         };
 
-        assert!(p.len().is_none());
+        assert!(matches!(err_or_fail!(p.len()), InvalidList::Improper));
     }
 
     #[test]
@@ -1019,7 +1020,7 @@ mod pair {
             cdr: Value::cons_mut(Value::real(2), Value::real(3)),
         };
 
-        assert!(p.len().is_none());
+        assert!(matches!(err_or_fail!(p.len()), InvalidList::Improper));
     }
 
     #[test]
@@ -1075,7 +1076,7 @@ mod pair {
         .into();
         end.borrow_mut().cdr = Value::Pair(Rc::clone(&p));
 
-        assert!(p.len().is_none());
+        assert!(matches!(err_or_fail!(p.len()), InvalidList::Cycle));
     }
 
     #[test]
@@ -1144,7 +1145,7 @@ mod pair {
             cdr: Value::cons(Value::real(2), Value::Pair(Rc::clone(&start))),
         };
 
-        assert!(p.len().is_none());
+        assert!(matches!(err_or_fail!(p.len()), InvalidList::Improper));
     }
 }
 

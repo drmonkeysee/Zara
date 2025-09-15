@@ -23,7 +23,6 @@ use std::{
     cell::{Ref, RefCell, RefMut},
     collections::HashSet,
     fmt::{self, Display, Formatter},
-    ops::ControlFlow,
     ptr,
     rc::Rc,
 };
@@ -370,13 +369,14 @@ pub(crate) type BvRef<'a> = CollRef<'a, [u8], Vec<u8>>;
 pub(crate) type PairRef<'a> = CollRef<'a, Pair, Pair>;
 pub(crate) type StrRef<'a> = CollRef<'a, str, String>;
 pub(crate) type VecRef<'a> = CollRef<'a, [Value], Vec<Value>>;
+pub(crate) type PairLenResult = Result<usize, InvalidList>;
 
 pub(crate) trait CollSized {
     fn len(&self) -> usize;
 }
 
 pub(crate) trait PairSized {
-    fn len(&self) -> Option<usize>;
+    fn len(&self) -> PairLenResult;
 }
 
 pub(crate) enum CollRef<'a, T: ?Sized, M> {
@@ -404,7 +404,7 @@ impl<T, M: AsRef<[T]>> CollSized for CollRef<'_, [T], M> {
 }
 
 impl PairSized for PairRef<'_> {
-    fn len(&self) -> Option<usize> {
+    fn len(&self) -> PairLenResult {
         match self {
             Self::Imm(p) => p,
             Self::Mut(p) => p.as_ref(),
@@ -430,6 +430,12 @@ impl CollSized for StrRef<'_> {
     }
 }
 
+#[derive(Debug)]
+pub(crate) enum InvalidList {
+    Cycle,
+    Improper,
+}
+
 #[derive(Debug, Eq, PartialEq)]
 pub(crate) struct Pair {
     pub(crate) car: Value,
@@ -446,17 +452,13 @@ impl Pair {
         })
     }
 
-    pub(crate) fn len(&self) -> Option<usize> {
-        self.cdr
-            .iter()
-            .try_fold(1usize, |acc, item| match item {
-                ValItem::Element(Value::Null) => ControlFlow::Continue(acc),
-                ValItem::Element(Value::Pair(_) | Value::PairMut(_)) => {
-                    ControlFlow::Continue(acc + 1)
-                }
-                _ => ControlFlow::Break(()),
-            })
-            .continue_value()
+    pub(crate) fn len(&self) -> PairLenResult {
+        self.cdr.iter().try_fold(1usize, |acc, item| match item {
+            ValItem::Cycle(_) => Err(InvalidList::Cycle),
+            ValItem::Element(Value::Null) => Ok(acc),
+            ValItem::Element(Value::Pair(_) | Value::PairMut(_)) => Ok(acc + 1),
+            ValItem::Element(_) => Err(InvalidList::Improper),
+        })
     }
 
     fn typename(&self) -> &str {

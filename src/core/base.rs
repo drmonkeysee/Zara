@@ -60,8 +60,8 @@ use crate::{
     number::{Integer, Number, NumericError, NumericTypeName, Real},
     string::{Symbol, unicode::UnicodeError},
     value::{
-        BvRef, CollRef, CollSized, Condition, Pair, PairSized, StrRef, TypeName, ValItem, Value,
-        VecRef,
+        BvRef, CollRef, CollSized, Condition, InvalidList, Pair, PairSized, StrRef, TypeName,
+        ValItem, Value, VecRef,
     },
 };
 use std::{
@@ -565,13 +565,16 @@ fn list_length(args: &[Value], _env: &Frame) -> EvalResult {
         Ok(Value::real(0))
     } else if let Some(p) = arg.as_refpair() {
         p.len().map_or_else(
-            || {
-                Err(Condition::arg_type_error(
-                    FIRST_ARG_LABEL,
-                    TypeName::LIST,
-                    TypeName::IMPLIST,
-                    arg,
-                )
+            |err| {
+                Err(match err {
+                    InvalidList::Cycle => Condition::circular_list(arg),
+                    InvalidList::Improper => Condition::arg_type_error(
+                        FIRST_ARG_LABEL,
+                        TypeName::LIST,
+                        TypeName::IMPLIST,
+                        arg,
+                    ),
+                }
                 .into())
             },
             |len| Ok(Value::Number(Number::from_usize(len))),
@@ -601,7 +604,7 @@ fn list_reverse(args: &[Value], _env: &Frame) -> EvalResult {
     arg.iter()
         .enumerate()
         .try_fold(Value::Null, |head, (i, item)| match item {
-            ValItem::Cycle(_) => Err(Condition::circular_list(&arg).into()),
+            ValItem::Cycle(_) => Err(Condition::circular_list(arg).into()),
             ValItem::Element(v) => {
                 if let Value::Null = v {
                     Ok(head)
