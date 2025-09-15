@@ -972,7 +972,6 @@ fn list_append_invalid_arg() {
 }
 
 #[test]
-#[ignore]
 fn list_append_circular_arg() {
     let env = TestEnv::default();
     let last = zlist![

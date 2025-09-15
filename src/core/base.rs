@@ -584,7 +584,6 @@ fn list_length(args: &[Value], _env: &Frame) -> EvalResult {
     }
 }
 
-// TODO: circular lists => error?
 fn list_append(args: &[Value], _env: &Frame) -> EvalResult {
     let mut acc = Vec::new();
     for arg in args.iter().take(args.len().max(1) - 1) {
@@ -1150,15 +1149,26 @@ fn try_list_to_vec(val: &Value) -> Result<Vec<Value>, Exception> {
     Ok(acc)
 }
 
-fn try_list_acc(curr: &Value, acc: &mut Vec<Value>) -> Result<(), Exception> {
-    if let Value::Null = curr {
-        Ok(())
-    } else if let Some(p) = curr.as_refpair() {
-        acc.push(p.as_ref().car.clone());
-        try_list_acc(&p.as_ref().cdr, acc)
-    } else {
-        Err(Condition::arg_error(acc.len(), TypeName::LIST, curr).into())
-    }
+fn try_list_acc(val: &Value, acc: &mut Vec<Value>) -> Result<(), Exception> {
+    val.iter()
+        .try_fold(acc, |acc, item| match item {
+            ValItem::Cycle(v) => Err(Exception::from(Condition::circular_list(&v))),
+            ValItem::Element(v) => {
+                if let Value::Null = v {
+                    Ok(acc)
+                } else if let Some(p) = v.as_refpair() {
+                    acc.push(p.as_ref().car.clone());
+                    Ok(acc)
+                } else {
+                    Err(Exception::from(Condition::arg_error(
+                        acc.len(),
+                        TypeName::LIST,
+                        &v,
+                    )))
+                }
+            }
+        })
+        .map(|_| ())
 }
 
 fn try_val_to_char(arg: &Value, lbl: impl Display) -> Result<char, Exception> {
