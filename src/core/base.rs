@@ -538,7 +538,6 @@ fn set_cdr(args: &[Value], _env: &Frame) -> EvalResult {
     })
 }
 
-// TODO: circular lists => #f
 #[allow(clippy::unnecessary_wraps, reason = "infallible intrinsic")]
 fn is_list(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = first(args);
