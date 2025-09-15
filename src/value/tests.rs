@@ -1145,7 +1145,7 @@ mod pair {
             cdr: Value::cons(Value::real(2), Value::Pair(Rc::clone(&start))),
         };
 
-        assert!(matches!(err_or_fail!(p.len()), InvalidList::Improper));
+        assert!(matches!(err_or_fail!(p.len()), InvalidList::Cycle));
     }
 }
 

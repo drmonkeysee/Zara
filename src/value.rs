@@ -316,8 +316,7 @@ pub(crate) enum ValItem {
 impl ValItem {
     pub(crate) fn into_value(self) -> Value {
         match self {
-            Self::Cycle(v) => v,
-            Self::Element(v) => v,
+            Self::Cycle(v) | Self::Element(v) => v,
         }
     }
 }
@@ -336,7 +335,7 @@ impl ValueIterator {
     }
 
     fn visited(&mut self, p: &Pair) -> bool {
-        let pp = ptr::from_ref(p.as_ref());
+        let pp = ptr::from_ref(p);
         if self.visited.contains(&pp) {
             true
         } else {
@@ -482,9 +481,7 @@ impl Display for Pair {
                 ValItem::Element(v) => {
                     if let Some(p) = v.as_refpair() {
                         write!(f, " {}", p.as_ref().car)?;
-                    } else if let Value::Null = v {
-                        ();
-                    } else {
+                    } else if !matches!(v, Value::Null) {
                         write!(f, " . {v}")?;
                     }
                 }
