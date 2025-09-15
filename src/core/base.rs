@@ -679,16 +679,36 @@ fn assoc_equal(_args: &[Value], _env: &Frame) -> EvalResult {
     todo!();
 }
 
-// TODO: circular lists => error
 fn list_copy(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = first(args);
-    let mut acc = Vec::new();
-    list_cons_acc(arg, &mut acc);
-    Ok(if acc.is_empty() {
-        arg.clone()
+    if arg.as_refpair().is_some() {
+        // TODO: experimental
+        // https://doc.rust-lang.org/std/iter/trait.Iterator.html#method.try_collect
+        Ok(Value::list_cons_mut(
+            arg.iter()
+                .try_fold(Vec::new(), |mut acc, item| match item {
+                    ValItem::Cycle(_) => Err((acc, InvalidList::Cycle)),
+                    ValItem::Element(v) => {
+                        if let Some(p) = v.as_refpair()
+                            && let pref = p.as_ref()
+                            && pref.cdr.as_refpair().is_some()
+                        {
+                            acc.push(pref.car.clone());
+                            Ok(acc)
+                        } else {
+                            acc.push(v.clone());
+                            Err((acc, InvalidList::Improper))
+                        }
+                    }
+                })
+                .or_else(|(acc, err)| match err {
+                    InvalidList::Cycle => Err(Exception::from(Condition::circular_list(arg))),
+                    InvalidList::Improper => Ok(acc),
+                })?,
+        ))
     } else {
-        Value::list_cons_mut(acc)
-    })
+        Ok(arg.clone())
+    }
 }
 
 //
@@ -1139,20 +1159,6 @@ fn try_list_acc(curr: &Value, acc: &mut Vec<Value>) -> Result<(), Exception> {
     } else {
         Err(Condition::arg_error(acc.len(), TypeName::LIST, curr).into())
     }
-}
-
-fn list_cons_acc(curr: &Value, acc: &mut Vec<Value>) {
-    if let Some(p) = curr.as_refpair() {
-        let pair = p.as_ref();
-        if pair.cdr.as_refpair().is_some() {
-            acc.push(pair.car.clone());
-            return list_cons_acc(&pair.cdr, acc);
-        }
-    } else if acc.is_empty() && !matches!(curr, Value::Null) {
-        // NOTE: curr was not a pair so don't accumulate anything
-        return;
-    }
-    acc.push(curr.clone());
 }
 
 fn try_val_to_char(arg: &Value, lbl: impl Display) -> Result<char, Exception> {

@@ -972,6 +972,34 @@ fn list_append_invalid_arg() {
 }
 
 #[test]
+#[ignore]
+fn list_append_circular_arg() {
+    let env = TestEnv::default();
+    let last = zlist![
+        Value::Symbol(env.symbols.get("x")),
+        Value::Symbol(env.symbols.get("y")),
+        Value::Symbol(env.symbols.get("z")),
+    ];
+    let args = [
+        zlist![
+            Value::Symbol(env.symbols.get("a")),
+            Value::Symbol(env.symbols.get("b")),
+            Value::Symbol(env.symbols.get("c")),
+        ],
+        make_circular_list(&env).0,
+        last.clone(),
+    ];
+
+    let r = list_append(&args, &env.new_frame());
+
+    let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
+    assert_eq!(
+        err.to_string(),
+        "#<env-error \"circular list encountered\" ((a b . #0=(c d e f . #0#)))>"
+    );
+}
+
+#[test]
 fn list_reverse_empty() {
     let env = TestEnv::default();
     let args = [zlist![]];
@@ -1682,6 +1710,21 @@ fn list_copy_improper_list() {
     let vcdr = &extract_or_fail!(&v, Value::PairMut).as_ref().borrow().cdr;
     let last = &extract_or_fail!(vcdr, Value::PairMut).as_ref().borrow().cdr;
     assert!(last.is(&cons));
+}
+
+#[test]
+fn list_copy_circular_list() {
+    let env = TestEnv::default();
+    let (lst, _, _) = make_circular_list(&env);
+    let args = [lst.clone()];
+
+    let r = list_copy(&args, &env.new_frame());
+
+    let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
+    assert_eq!(
+        err.to_string(),
+        "#<env-error \"circular list encountered\" ((a b . #0=(c d e f . #0#)))>"
+    );
 }
 
 #[test]
