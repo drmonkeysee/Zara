@@ -22,7 +22,7 @@ use crate::{
 use std::{
     cell::{Ref, RefCell, RefMut},
     collections::HashSet,
-    fmt::{self, Display, Formatter},
+    fmt::{self, Display, Formatter, Write},
     ptr,
     rc::Rc,
 };
@@ -294,8 +294,8 @@ impl Display for Value {
             Self::Intrinsic(p) => p.fmt(f),
             Self::Null => f.write_str("()"),
             Self::Number(n) => n.fmt(f),
-            Self::Pair(p) => write!(f, "({p})"),
-            Self::PairMut(p) => write!(f, "({})", p.borrow()),
+            Self::Pair(p) => p.fmt(f),
+            Self::PairMut(p) => p.borrow().fmt(f),
             Self::Procedure(p) => p.fmt(f),
             Self::String(s) => StrDatum(s).fmt(f),
             Self::StringMut(s) => StrDatum(&s.borrow()).fmt(f),
@@ -471,7 +471,7 @@ impl Pair {
 
 impl Display for Pair {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        self.car.fmt(f)?;
+        write!(f, "({}", self.car)?;
         for item in self.cdr.iter() {
             match item {
                 ValItem::Cycle(_) => {
@@ -487,7 +487,7 @@ impl Display for Pair {
                 }
             }
         }
-        Ok(())
+        f.write_char(')')
     }
 }
 
