@@ -294,8 +294,7 @@ impl Display for Value {
             Self::Intrinsic(p) => p.fmt(f),
             Self::Null => f.write_str("()"),
             Self::Number(n) => n.fmt(f),
-            Self::Pair(p) => p.fmt(f),
-            Self::PairMut(p) => p.borrow().fmt(f),
+            Self::Pair(_) | Self::PairMut(_) => PairDatum(self).fmt(f),
             Self::Procedure(p) => p.fmt(f),
             Self::String(s) => StrDatum(s).fmt(f),
             Self::StringMut(s) => StrDatum(&s.borrow()).fmt(f),
@@ -469,28 +468,6 @@ impl Pair {
     }
 }
 
-impl Display for Pair {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "({}", self.car)?;
-        for item in self.cdr.iter() {
-            match item {
-                ValItem::Cycle(_) => {
-                    f.write_str(" . dup…")?;
-                    break;
-                }
-                ValItem::Element(v) => {
-                    if let Some(p) = v.as_refpair() {
-                        write!(f, " {}", p.as_ref().car)?;
-                    } else if !matches!(v, Value::Null) {
-                        write!(f, " . {v}")?;
-                    }
-                }
-            }
-        }
-        f.write_char(')')
-    }
-}
-
 impl AsRef<Self> for Pair {
     fn as_ref(&self) -> &Self {
         self
@@ -545,6 +522,37 @@ impl Display for TypeName<'_> {
             Value::Unspecified => f.write_str("unspecified"),
             Value::Vector(_) | Value::VectorMut(_) => f.write_str(Self::VECTOR),
         }
+    }
+}
+
+struct PairDatum<'a>(&'a Value);
+
+impl Display for PairDatum<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        let mut it = self.0.iter();
+        if let Some(ValItem::Element(v)) = it.next()
+            && let Some(p) = v.as_refpair()
+        {
+            write!(f, "({}", p.as_ref().car)?;
+        } else {
+            unreachable!("expected pair value iterator");
+        }
+        for item in it {
+            match item {
+                ValItem::Cycle(_) => {
+                    f.write_str(" . dup…")?;
+                    break;
+                }
+                ValItem::Element(v) => {
+                    if let Some(p) = v.as_refpair() {
+                        write!(f, " {}", p.as_ref().car)?;
+                    } else if !matches!(v, Value::Null) {
+                        write!(f, " . {v}")?;
+                    }
+                }
+            }
+        }
+        f.write_char(')')
     }
 }
 

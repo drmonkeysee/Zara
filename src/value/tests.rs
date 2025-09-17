@@ -1757,7 +1757,9 @@ mod iterator {
         let vec = it.collect::<Vec<_>>();
 
         assert_eq!(vec.len(), 2);
-        assert!(matches!(&vec[0], ValItem::Element(Value::Pair(p)) if p.to_string() == "(5 . 10)"));
+        assert!(
+            matches!(&vec[0], ValItem::Element(v @ Value::Pair(_)) if PairDatum(v).to_string() == "(5 . 10)")
+        );
         assert!(matches!(&vec[1], ValItem::Element(Value::Number(n)) if n.to_string() == "10"));
     }
 
@@ -1769,8 +1771,12 @@ mod iterator {
         let vec = it.collect::<Vec<_>>();
 
         assert_eq!(vec.len(), 3);
-        assert!(matches!(&vec[0], ValItem::Element(Value::Pair(p)) if p.to_string() == "(5 10)"));
-        assert!(matches!(&vec[1], ValItem::Element(Value::Pair(p)) if p.to_string() == "(10)"));
+        assert!(
+            matches!(&vec[0], ValItem::Element(v @ Value::Pair(_)) if PairDatum(v).to_string() == "(5 10)")
+        );
+        assert!(
+            matches!(&vec[1], ValItem::Element(v @ Value::Pair(_)) if PairDatum(v).to_string() == "(10)")
+        );
         assert!(matches!(&vec[2], ValItem::Element(Value::Null)));
     }
 
