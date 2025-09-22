@@ -530,36 +530,29 @@ struct PairDatum<'a>(&'a Value);
 impl Display for PairDatum<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let mut it = self.0.iter();
-        let mut buf = String::new();
         if let Some(ValItem::Element(v)) = it.next()
             && let Some(p) = v.as_refpair()
         {
-            write!(buf, "({}", p.as_ref().car)?;
+            write!(f, "({}", p.as_ref().car)?;
         } else {
             unreachable!("expected pair value iterator");
         }
         for item in it {
             match item {
-                ValItem::Cycle(c) => {
-                    if c.is(self.0) {
-                        buf.insert_str(0, "#0=");
-                        buf.push_str(" . #0#");
-                        break;
-                    } else {
-                        todo!("record cycle, assign label, and start over");
-                    }
+                ValItem::Cycle(_) => {
+                    f.write_str(" . dup…")?;
+                    break;
                 }
                 ValItem::Element(v) => {
                     if let Some(p) = v.as_refpair() {
-                        write!(buf, " {}", p.as_ref().car)?;
+                        write!(f, " {}", p.as_ref().car)?;
                     } else if !matches!(v, Value::Null) {
-                        write!(buf, " . {v}")?;
+                        write!(f, " . {v}")?;
                     }
                 }
             }
         }
-        buf.push(')');
-        f.write_str(&buf)
+        f.write_char(')')
     }
 }
 
