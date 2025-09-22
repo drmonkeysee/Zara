@@ -246,8 +246,8 @@ impl Value {
         }
     }
 
-    pub(crate) fn iter(&self) -> ValueIterator {
-        ValueIterator::new(self)
+    pub(crate) fn iter_list(&self) -> ListIterator {
+        ListIterator::new(self)
     }
 }
 
@@ -320,12 +320,12 @@ impl ValItem {
     }
 }
 
-pub(crate) struct ValueIterator {
+pub(crate) struct ListIterator {
     head: Option<Value>,
     visited: HashSet<*const Pair>,
 }
 
-impl ValueIterator {
+impl ListIterator {
     fn new(head: &Value) -> Self {
         Self {
             head: Some(head.clone()),
@@ -344,7 +344,7 @@ impl ValueIterator {
     }
 }
 
-impl Iterator for ValueIterator {
+impl Iterator for ListIterator {
     type Item = ValItem;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -442,7 +442,7 @@ pub(crate) struct Pair {
 
 impl Pair {
     pub(crate) fn is_list(&self) -> bool {
-        self.cdr.iter().all(|item| {
+        self.cdr.iter_list().all(|item| {
             matches!(
                 item,
                 ValItem::Element(Value::Null | Value::Pair(_) | Value::PairMut(_))
@@ -451,12 +451,14 @@ impl Pair {
     }
 
     pub(crate) fn len(&self) -> PairLenResult {
-        self.cdr.iter().try_fold(1usize, |acc, item| match item {
-            ValItem::Cycle(_) => Err(InvalidList::Cycle),
-            ValItem::Element(Value::Null) => Ok(acc),
-            ValItem::Element(Value::Pair(_) | Value::PairMut(_)) => Ok(acc + 1),
-            ValItem::Element(_) => Err(InvalidList::Improper),
-        })
+        self.cdr
+            .iter_list()
+            .try_fold(1usize, |acc, item| match item {
+                ValItem::Cycle(_) => Err(InvalidList::Cycle),
+                ValItem::Element(Value::Null) => Ok(acc),
+                ValItem::Element(Value::Pair(_) | Value::PairMut(_)) => Ok(acc + 1),
+                ValItem::Element(_) => Err(InvalidList::Improper),
+            })
     }
 
     fn typename(&self) -> &str {
@@ -529,7 +531,7 @@ struct PairDatum<'a>(&'a Value);
 
 impl Display for PairDatum<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        let mut it = self.0.iter();
+        let mut it = self.0.iter_list();
         if let Some(ValItem::Element(v)) = it.next()
             && let Some(p) = v.as_refpair()
         {
