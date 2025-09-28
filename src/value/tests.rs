@@ -212,7 +212,8 @@ mod display {
 
     #[test]
     #[ignore = "TODO: circular vectors; stack overflow"]
-    fn vector_contains_self_display() {
+    fn cyclic_vector_self_display() {
+        // #0=#(1 2 #0#)
         let vec = Rc::new(RefCell::new(vec![Value::real(1), Value::real(2)]));
         let v = Value::VectorMut(Rc::clone(&vec));
         vec.borrow_mut().push(v.clone());
@@ -222,7 +223,8 @@ mod display {
 
     #[test]
     #[ignore = "TODO: circular vectors; stack overflow"]
-    fn vector_contains_self_vector_display() {
+    fn partly_cyclic_vector_display() {
+        // #(1 2 #0=#(3 4 #0#))
         let vec = Rc::new(RefCell::new(vec![Value::real(3), Value::real(4)]));
         let v = Value::vector([
             Value::real(1),
@@ -236,7 +238,8 @@ mod display {
 
     #[test]
     #[ignore = "TODO: circular vectors; stack overflow"]
-    fn vector_multiple_self_references_display() {
+    fn multiple_cyclic_vector_display() {
+        // #0=#(1 2 #0# 3 #0#)
         let vec = Rc::new(RefCell::new(vec![Value::real(1), Value::real(2)]));
         let v = Value::VectorMut(Rc::clone(&vec));
         vec.borrow_mut().push(v.clone());
@@ -1965,5 +1968,249 @@ mod iterator {
         let lst = extract_or_fail!(some_or_fail!(sublist), ValItem::Cycle);
         let p = extract_or_fail!(lst, Value::Pair);
         assert_eq!(p.car.to_string(), "2");
+    }
+}
+
+mod cycles {
+    use super::*;
+
+    #[test]
+    fn simple_value() {
+        // 5
+        let v = Value::real(5);
+        let mut c = Cycles::default();
+
+        c.scan(&v);
+
+        assert!(c.0.is_empty());
+    }
+
+    #[test]
+    fn normal_list() {
+        // (1 2 3)
+        let v = zlist![Value::real(1), Value::real(2), Value::real(3)];
+        let mut c = Cycles::default();
+
+        c.scan(&v);
+
+        assert!(c.0.is_empty());
+    }
+
+    #[test]
+    fn circular_list() {
+        // #0=(1 2 3 . #0#)
+        let end = RefCell::new(Pair {
+            car: Value::real(3),
+            cdr: Value::Null,
+        })
+        .into();
+        let p = Pair {
+            car: Value::real(1),
+            cdr: Value::cons(Value::real(2), Value::PairMut(Rc::clone(&end))),
+        }
+        .into();
+        end.borrow_mut().cdr = Value::Pair(Rc::clone(&p));
+        let v = Value::Pair(Rc::clone(&p));
+        let mut c = Cycles::default();
+
+        c.scan(&v);
+
+        assert_eq!(c.0.len(), 1);
+        assert_eq!(c.0[&(ptr::from_ref(p.as_ref()) as usize)], false);
+    }
+
+    #[test]
+    fn partly_circular_list() {
+        // (1 2 . #0=(3 4 5 . #0#))
+        let end = RefCell::new(Pair {
+            car: Value::real(5),
+            cdr: Value::Null,
+        })
+        .into();
+        let start = Pair {
+            car: Value::real(3),
+            cdr: Value::cons(Value::real(4), Value::PairMut(Rc::clone(&end))),
+        }
+        .into();
+        end.borrow_mut().cdr = Value::Pair(Rc::clone(&start));
+        let p = Pair {
+            car: Value::real(1),
+            cdr: Value::cons(Value::real(2), Value::Pair(Rc::clone(&start))),
+        }
+        .into();
+        let v = Value::Pair(Rc::clone(&p));
+        let mut c = Cycles::default();
+
+        c.scan(&v);
+
+        assert_eq!(c.0.len(), 1);
+        assert_eq!(c.0[&(ptr::from_ref(start.as_ref()) as usize)], false);
+    }
+
+    #[test]
+    fn nested_circular_list() {
+        // #0=(#1=(9 8 . #1#) 2 3 . #0#)
+        let nested_end = RefCell::new(Pair {
+            car: Value::real(8),
+            cdr: Value::Null,
+        })
+        .into();
+        let nested_head = Pair {
+            car: Value::real(9),
+            cdr: Value::PairMut(Rc::clone(&nested_end)),
+        }
+        .into();
+        nested_end.borrow_mut().cdr = Value::Pair(Rc::clone(&nested_head));
+        let end = RefCell::new(Pair {
+            car: Value::real(3),
+            cdr: Value::Null,
+        })
+        .into();
+        let p = Pair {
+            car: Value::Pair(Rc::clone(&nested_head)),
+            cdr: Value::cons(Value::real(2), Value::PairMut(Rc::clone(&end))),
+        }
+        .into();
+        end.borrow_mut().cdr = Value::Pair(Rc::clone(&p));
+        let v = Value::Pair(Rc::clone(&p));
+        let mut c = Cycles::default();
+
+        c.scan(&v);
+
+        assert_eq!(c.0.len(), 2);
+    }
+
+    #[test]
+    fn simple_vector() {
+        // #(1 2 3)
+        let v = Value::vector([Value::real(1), Value::real(2), Value::real(3)]);
+        let mut c = Cycles::default();
+
+        c.scan(&v);
+
+        assert!(c.0.is_empty());
+    }
+
+    #[test]
+    fn cyclic_vector() {
+        // #0=#(1 2 #0#)
+        let vec = Rc::new(RefCell::new(vec![Value::real(1), Value::real(2)]));
+        let v = Value::VectorMut(Rc::clone(&vec));
+        vec.borrow_mut().push(v.clone());
+        let mut c = Cycles::default();
+
+        c.scan(&v);
+
+        assert_eq!(c.0.len(), 1);
+        assert_eq!(c.0[&(ptr::from_ref(vec.as_ref()) as usize)], false);
+    }
+
+    #[test]
+    fn partly_cyclic_vector() {
+        // #(1 2 #0=#(3 4 #0#))
+        let vec = Rc::new(RefCell::new(vec![Value::real(3), Value::real(4)]));
+        let v = Value::vector([
+            Value::real(1),
+            Value::real(2),
+            Value::VectorMut(Rc::clone(&vec)),
+        ]);
+        vec.borrow_mut().push(v.clone());
+        let mut c = Cycles::default();
+
+        c.scan(&v);
+
+        assert_eq!(c.0.len(), 1);
+        assert_eq!(c.0[&(ptr::from_ref(vec.as_ref()) as usize)], false);
+    }
+
+    #[test]
+    fn multiple_cyclic_vector() {
+        // #0=#(1 2 #0# 3 #0#)
+        let vec = Rc::new(RefCell::new(vec![Value::real(1), Value::real(2)]));
+        let v = Value::VectorMut(Rc::clone(&vec));
+        vec.borrow_mut().push(v.clone());
+        vec.borrow_mut().push(Value::real(3));
+        vec.borrow_mut().push(v.clone());
+
+        let mut c = Cycles::default();
+
+        c.scan(&v);
+
+        assert_eq!(c.0.len(), 1);
+    }
+
+    #[test]
+    fn nested_cyclic_vector() {
+        // #0=#(1 2 #1=#(9 8 #1#) 3 #0#)
+        let nested_vec = Rc::new(RefCell::new(vec![Value::real(9), Value::real(8)]));
+        let nested_v = Value::VectorMut(Rc::clone(&nested_vec));
+        nested_vec.borrow_mut().push(nested_v.clone());
+        let vec = Rc::new(RefCell::new(vec![
+            Value::real(1),
+            Value::real(2),
+            nested_v.clone(),
+            Value::real(3),
+        ]));
+        let v = Value::VectorMut(Rc::clone(&vec));
+        vec.borrow_mut().push(v.clone());
+        let mut c = Cycles::default();
+
+        c.scan(&v);
+
+        assert_eq!(c.0.len(), 2);
+    }
+
+    #[test]
+    fn cicular_list_with_cyclic_vector() {
+        // #0=(#1=#(9 8 . #1#) 2 3 . #0#)
+        let nested_vec = Rc::new(RefCell::new(vec![Value::real(9), Value::real(8)]));
+        let nested_v = Value::VectorMut(Rc::clone(&nested_vec));
+        nested_vec.borrow_mut().push(nested_v.clone());
+        let end = RefCell::new(Pair {
+            car: Value::real(3),
+            cdr: Value::Null,
+        })
+        .into();
+        let p = Pair {
+            car: nested_v.clone(),
+            cdr: Value::cons(Value::real(2), Value::PairMut(Rc::clone(&end))),
+        }
+        .into();
+        end.borrow_mut().cdr = Value::Pair(Rc::clone(&p));
+        let v = Value::Pair(Rc::clone(&p));
+        let mut c = Cycles::default();
+
+        c.scan(&v);
+
+        assert_eq!(c.0.len(), 2);
+    }
+
+    #[test]
+    fn cyclic_vector_with_circular_list() {
+        // #0=#(1 2 #1=(9 8 . #1#) 3 #0#)
+        let nested_end = RefCell::new(Pair {
+            car: Value::real(8),
+            cdr: Value::Null,
+        })
+        .into();
+        let nested_head = Pair {
+            car: Value::real(9),
+            cdr: Value::PairMut(Rc::clone(&nested_end)),
+        }
+        .into();
+        nested_end.borrow_mut().cdr = Value::Pair(Rc::clone(&nested_head));
+        let vec = Rc::new(RefCell::new(vec![
+            Value::real(1),
+            Value::real(2),
+            Value::Pair(Rc::clone(&nested_head)),
+            Value::real(3),
+        ]));
+        let v = Value::VectorMut(Rc::clone(&vec));
+        vec.borrow_mut().push(v.clone());
+        let mut c = Cycles::default();
+
+        c.scan(&v);
+
+        assert_eq!(c.0.len(), 2);
     }
 }

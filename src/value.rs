@@ -21,7 +21,7 @@ use crate::{
 };
 use std::{
     cell::{Ref, RefCell, RefMut},
-    collections::HashSet,
+    collections::{HashMap, HashSet},
     fmt::{self, Display, Formatter, Write},
     ptr,
     rc::Rc,
@@ -555,6 +555,40 @@ impl Display for PairDatum<'_> {
             }
         }
         f.write_char(')')
+    }
+}
+
+#[derive(Default)]
+struct Cycles(HashMap<usize, bool>);
+
+impl Cycles {
+    fn scan(&mut self, v: &Value) {
+        if v.as_refpair().is_some() {
+            for n in v.iter_list() {
+                match n {
+                    ValItem::Cycle(v) => {
+                        let Some(p) = v.as_refpair() else {
+                            unreachable!("expected pair in list cycle");
+                        };
+                        let cycle_id = ptr::from_ref(p.as_ref()) as usize;
+                        if !self.0.contains_key(&cycle_id) {
+                            self.0.insert(cycle_id, false);
+                        }
+                        break;
+                    }
+                    ValItem::Element(mut v) => {
+                        v = if let Some(p) = v.as_refpair() {
+                            p.as_ref().car.clone()
+                        } else {
+                            v
+                        };
+                        self.scan(&v);
+                    }
+                }
+            }
+        } else if let Some(vec) = v.as_refvec() {
+            todo!("handle vector cycles");
+        }
     }
 }
 
