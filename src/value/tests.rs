@@ -212,7 +212,7 @@ mod display {
 
     #[test]
     #[ignore = "TODO: circular vectors; stack overflow"]
-    fn vector_circular_display() {
+    fn vector_contains_self_display() {
         let vec = Rc::new(RefCell::new(vec![Value::real(1), Value::real(2)]));
         let v = Value::VectorMut(Rc::clone(&vec));
         vec.borrow_mut().push(v.clone());
@@ -222,7 +222,7 @@ mod display {
 
     #[test]
     #[ignore = "TODO: circular vectors; stack overflow"]
-    fn vector_contains_circular_vector_display() {
+    fn vector_contains_self_vector_display() {
         let vec = Rc::new(RefCell::new(vec![Value::real(3), Value::real(4)]));
         let v = Value::vector([
             Value::real(1),
@@ -232,6 +232,18 @@ mod display {
         vec.borrow_mut().push(v.clone());
 
         assert_eq!(v.to_string(), "#(1 2 #0=#(3 4 #0#))");
+    }
+
+    #[test]
+    #[ignore = "TODO: circular vectors; stack overflow"]
+    fn vector_multiple_self_references_display() {
+        let vec = Rc::new(RefCell::new(vec![Value::real(1), Value::real(2)]));
+        let v = Value::VectorMut(Rc::clone(&vec));
+        vec.borrow_mut().push(v.clone());
+        vec.borrow_mut().push(Value::real(3));
+        vec.borrow_mut().push(v.clone());
+
+        assert_eq!(v.to_string(), "#0=#(1 2 #0# 3 #0#)");
     }
 
     #[test]
