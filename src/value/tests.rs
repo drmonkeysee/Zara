@@ -2102,7 +2102,7 @@ mod cycles {
         c.scan(&v);
 
         assert_eq!(c.0.len(), 1);
-        assert_eq!(c.0[&(ptr::from_ref(vec.as_ref()) as usize)], false);
+        assert_eq!(c.0[&(vec.borrow().as_ptr() as usize)], false);
     }
 
     #[test]
@@ -2120,7 +2120,7 @@ mod cycles {
         c.scan(&v);
 
         assert_eq!(c.0.len(), 1);
-        assert_eq!(c.0[&(ptr::from_ref(vec.as_ref()) as usize)], false);
+        assert_eq!(c.0[&(vec.borrow().as_ptr() as usize)], false);
     }
 
     #[test]

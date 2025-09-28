@@ -25,6 +25,7 @@ use std::{
     fmt::{self, Display, Formatter, Write},
     ptr,
     rc::Rc,
+    slice::Iter,
 };
 pub(crate) use zlist;
 
@@ -558,14 +559,43 @@ impl Display for PairDatum<'_> {
     }
 }
 
+struct VecIterator<'a> {
+    head: &'a [Value],
+    it: Iter<'a, Value>,
+}
+
+impl<'a> VecIterator<'a> {
+    fn new(head: &'a [Value]) -> Self {
+        Self {
+            head,
+            it: head.iter(),
+        }
+    }
+}
+
+impl Iterator for VecIterator<'_> {
+    type Item = ValItem;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let v = self.it.next()?;
+        if let Some(vec) = v.as_refvec()
+            && ptr::eq(vec.as_ref(), self.head)
+        {
+            Some(ValItem::Cycle(v.clone()))
+        } else {
+            Some(ValItem::Element(v.clone()))
+        }
+    }
+}
+
 #[derive(Default)]
 struct Cycles(HashMap<usize, bool>);
 
 impl Cycles {
     fn scan(&mut self, v: &Value) {
         if v.as_refpair().is_some() {
-            for n in v.iter_list() {
-                match n {
+            for item in v.iter_list() {
+                match item {
                     ValItem::Cycle(v) => {
                         let Some(p) = v.as_refpair() else {
                             unreachable!("expected pair in list cycle");
@@ -587,7 +617,20 @@ impl Cycles {
                 }
             }
         } else if let Some(vec) = v.as_refvec() {
-            todo!("handle vector cycles");
+            let vref = vec.as_ref();
+            for item in VecIterator::new(vref) {
+                match item {
+                    ValItem::Cycle(_) => {
+                        // NOTE: a cycle in a vector must refer back to the original vector
+                        let cycle_id = vref.as_ptr() as usize;
+                        if !self.0.contains_key(&cycle_id) {
+                            self.0.insert(cycle_id, false);
+                        }
+                        break;
+                    }
+                    ValItem::Element(v) => self.scan(&v),
+                }
+            }
         }
     }
 }
