@@ -632,27 +632,24 @@ impl Cycles {
 
     fn scan_vec(&mut self, v: &[Value]) {
         let vref_id = v.as_ptr().cast();
-        // NOTE: keep track of all vector references because a vector cycle
-        // may be a nested vector referencing an outer vector and without
-        // "remembering" outer vectors we never see the cycle via VecIterator
-        // (because the cycle does not exist in any particular vector instance).
         match self.0.get_mut(&vref_id) {
             None => {
+                // NOTE: keep track of all vector references because a vector cycle
+                // may be a nested vector referencing an outer vector and without
+                // "remembering" outer vectors we never see the cycle via VecIterator
+                // (because the cycle does not exist in any particular vector instance).
                 self.0.insert(vref_id, false);
-            }
-            Some(cyc) => {
-                *cyc = true;
-                return;
-            }
-        }
-        for item in VecIterator::new(v) {
-            match item {
-                ValItem::Cycle(cyid, _) => {
-                    self.0.insert(cyid, true);
-                    break;
+                for item in VecIterator::new(v) {
+                    match item {
+                        ValItem::Cycle(cyid, _) => {
+                            self.0.insert(cyid, true);
+                            break;
+                        }
+                        ValItem::Element(v) => self.scan(&v),
+                    }
                 }
-                ValItem::Element(v) => self.scan(&v),
             }
+            Some(cyc) => *cyc = true,
         }
     }
 }
