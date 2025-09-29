@@ -308,22 +308,25 @@ impl Display for Value {
     }
 }
 
+// NOTE: cycles are identified via their untyped pointer address
+pub(crate) type CycleId = *const ();
+
 pub(crate) enum ValItem {
-    Cycle(Value),
+    Cycle(CycleId, Value),
     Element(Value),
 }
 
 impl ValItem {
     pub(crate) fn into_value(self) -> Value {
         match self {
-            Self::Cycle(v) | Self::Element(v) => v,
+            Self::Cycle(_, v) | Self::Element(v) => v,
         }
     }
 }
 
 pub(crate) struct ListIterator {
     head: Option<Value>,
-    visited: HashSet<*const Pair>,
+    visited: HashSet<CycleId>,
 }
 
 impl ListIterator {
@@ -334,13 +337,13 @@ impl ListIterator {
         }
     }
 
-    fn visited(&mut self, p: &Pair) -> bool {
-        let pp = ptr::from_ref(p);
-        if self.visited.contains(&pp) {
-            true
+    fn visited(&mut self, p: &Pair) -> Option<CycleId> {
+        let cyid = ptr::from_ref(p).cast();
+        if self.visited.contains(&cyid) {
+            Some(cyid)
         } else {
-            self.visited.insert(pp);
-            false
+            self.visited.insert(cyid);
+            None
         }
     }
 }
@@ -350,16 +353,15 @@ impl Iterator for ListIterator {
 
     fn next(&mut self) -> Option<Self::Item> {
         let curr = self.head.take()?;
-        let mut visited = false;
+        let mut cyid = None;
         if let Some(p) = curr.as_refpair() {
             let pref = p.as_ref();
-            visited = self.visited(pref);
+            cyid = self.visited(pref);
             let _ = self.head.insert(pref.cdr.clone());
         }
-        Some(if visited {
-            Self::Item::Cycle(curr)
-        } else {
-            Self::Item::Element(curr)
+        Some(match cyid {
+            None => Self::Item::Element(curr),
+            Some(cyid) => Self::Item::Cycle(cyid, curr),
         })
     }
 }
@@ -455,7 +457,7 @@ impl Pair {
         self.cdr
             .iter_list()
             .try_fold(1usize, |acc, item| match item {
-                ValItem::Cycle(_) => Err(InvalidList::Cycle),
+                ValItem::Cycle(..) => Err(InvalidList::Cycle),
                 ValItem::Element(Value::Null) => Ok(acc),
                 ValItem::Element(Value::Pair(_) | Value::PairMut(_)) => Ok(acc + 1),
                 ValItem::Element(_) => Err(InvalidList::Improper),
@@ -542,7 +544,7 @@ impl Display for PairDatum<'_> {
         }
         for item in it {
             match item {
-                ValItem::Cycle(_) => {
+                ValItem::Cycle(..) => {
                     f.write_str(" . dup…")?;
                     break;
                 }
@@ -581,7 +583,7 @@ impl Iterator for VecIterator<'_> {
         if let Some(vec) = v.as_refvec()
             && ptr::eq(vec.as_ref(), self.head)
         {
-            Some(ValItem::Cycle(v.clone()))
+            Some(ValItem::Cycle(self.head.as_ptr().cast(), v.clone()))
         } else {
             Some(ValItem::Element(v.clone()))
         }
@@ -589,47 +591,67 @@ impl Iterator for VecIterator<'_> {
 }
 
 #[derive(Default)]
-struct Cycles(HashMap<usize, bool>);
+struct Cycles(HashMap<CycleId, bool>);
 
 impl Cycles {
     fn scan(&mut self, v: &Value) {
         if v.as_refpair().is_some() {
-            for item in v.iter_list() {
-                match item {
-                    ValItem::Cycle(v) => {
-                        let Some(p) = v.as_refpair() else {
-                            unreachable!("expected pair in list cycle");
-                        };
-                        let cycle_id = ptr::from_ref(p.as_ref()) as usize;
-                        if !self.0.contains_key(&cycle_id) {
-                            self.0.insert(cycle_id, false);
-                        }
-                        break;
+            self.scan_pair(v);
+        } else if let Some(vec) = v.as_refvec() {
+            self.scan_vec(vec.as_ref());
+        }
+    }
+
+    fn all_cycles(self) -> HashSet<CycleId> {
+        self.0
+            .into_iter()
+            .filter_map(|(k, v)| v.then_some(k))
+            .collect()
+    }
+
+    fn scan_pair(&mut self, v: &Value) {
+        for item in v.iter_list() {
+            match item {
+                ValItem::Cycle(cyid, _) => {
+                    if !self.0.contains_key(&cyid) {
+                        self.0.insert(cyid, true);
                     }
-                    ValItem::Element(mut v) => {
-                        v = if let Some(p) = v.as_refpair() {
-                            p.as_ref().car.clone()
-                        } else {
-                            v
-                        };
-                        self.scan(&v);
-                    }
+                    break;
+                }
+                ValItem::Element(mut v) => {
+                    v = if let Some(p) = v.as_refpair() {
+                        p.as_ref().car.clone()
+                    } else {
+                        v
+                    };
+                    self.scan(&v);
                 }
             }
-        } else if let Some(vec) = v.as_refvec() {
-            let vref = vec.as_ref();
-            for item in VecIterator::new(vref) {
-                match item {
-                    ValItem::Cycle(_) => {
-                        // NOTE: a cycle in a vector must refer back to the original vector
-                        let cycle_id = vref.as_ptr() as usize;
-                        if !self.0.contains_key(&cycle_id) {
-                            self.0.insert(cycle_id, false);
-                        }
-                        break;
-                    }
-                    ValItem::Element(v) => self.scan(&v),
+        }
+    }
+
+    fn scan_vec(&mut self, v: &[Value]) {
+        let vref_id = v.as_ptr().cast();
+        // NOTE: keep track of all vector references because a vector cycle
+        // may be a nested vector referencing an outer vector and without
+        // "remembering" outer vectors we never see the cycle via VecIterator
+        // (because the cycle does not exist in any particular vector instance).
+        match self.0.get_mut(&vref_id) {
+            None => {
+                self.0.insert(vref_id, false);
+            }
+            Some(cyc) => {
+                *cyc = true;
+                return;
+            }
+        }
+        for item in VecIterator::new(v) {
+            match item {
+                ValItem::Cycle(cyid, _) => {
+                    self.0.insert(cyid, true);
+                    break;
                 }
+                ValItem::Element(v) => self.scan(&v),
             }
         }
     }

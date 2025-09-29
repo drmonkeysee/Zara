@@ -603,7 +603,7 @@ fn list_reverse(args: &[Value], _env: &Frame) -> EvalResult {
     arg.iter_list()
         .enumerate()
         .try_fold(Value::Null, |head, (i, item)| match item {
-            ValItem::Cycle(_) => Err(Condition::circular_list(arg).into()),
+            ValItem::Cycle(..) => Err(Condition::circular_list(arg).into()),
             ValItem::Element(v) => {
                 if let Value::Null = v {
                     Ok(head)
@@ -686,7 +686,7 @@ fn list_copy(args: &[Value], _env: &Frame) -> EvalResult {
         Ok(Value::list_cons_mut(
             arg.iter_list()
                 .try_fold(Vec::new(), |mut acc, item| match item {
-                    ValItem::Cycle(_) => Err((acc, InvalidList::Cycle)),
+                    ValItem::Cycle(..) => Err((acc, InvalidList::Cycle)),
                     ValItem::Element(v) => {
                         if let Some(p) = v.as_refpair()
                             && let pref = p.as_ref()
@@ -1152,7 +1152,7 @@ fn try_list_to_vec(val: &Value) -> Result<Vec<Value>, Exception> {
 fn try_list_acc(val: &Value, acc: &mut Vec<Value>) -> Result<(), Exception> {
     val.iter_list()
         .try_fold(acc, |acc, item| match item {
-            ValItem::Cycle(v) => Err(Exception::from(Condition::circular_list(&v))),
+            ValItem::Cycle(_, v) => Err(Exception::from(Condition::circular_list(&v))),
             ValItem::Element(v) => {
                 if let Value::Null = v {
                     Ok(acc)

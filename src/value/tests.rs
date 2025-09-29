@@ -226,12 +226,9 @@ mod display {
     fn partly_cyclic_vector_display() {
         // #(1 2 #0=#(3 4 #0#))
         let vec = Rc::new(RefCell::new(vec![Value::real(3), Value::real(4)]));
-        let v = Value::vector([
-            Value::real(1),
-            Value::real(2),
-            Value::VectorMut(Rc::clone(&vec)),
-        ]);
-        vec.borrow_mut().push(v.clone());
+        let head = Value::VectorMut(Rc::clone(&vec));
+        vec.borrow_mut().push(head.clone());
+        let v = Value::vector([Value::real(1), Value::real(2), head.clone()]);
 
         assert_eq!(v.to_string(), "#(1 2 #0=#(3 4 #0#))");
     }
@@ -1846,7 +1843,9 @@ mod iterator {
         it.next();
         let sublist = it.next();
 
-        let cyc = extract_or_fail!(some_or_fail!(sublist), ValItem::Cycle);
+        let ValItem::Cycle(_, cyc) = some_or_fail!(sublist) else {
+            unreachable!();
+        };
         assert!(cyc.is(&lst));
     }
 
@@ -1965,7 +1964,9 @@ mod iterator {
 
         let sublist = it.skip(7).next();
 
-        let lst = extract_or_fail!(some_or_fail!(sublist), ValItem::Cycle);
+        let ValItem::Cycle(_, lst) = some_or_fail!(sublist) else {
+            unreachable!();
+        };
         let p = extract_or_fail!(lst, Value::Pair);
         assert_eq!(p.car.to_string(), "2");
     }
@@ -1982,7 +1983,7 @@ mod cycles {
 
         c.scan(&v);
 
-        assert!(c.0.is_empty());
+        assert!(c.all_cycles().is_empty());
     }
 
     #[test]
@@ -1993,7 +1994,7 @@ mod cycles {
 
         c.scan(&v);
 
-        assert!(c.0.is_empty());
+        assert!(c.all_cycles().is_empty());
     }
 
     #[test]
@@ -2015,8 +2016,7 @@ mod cycles {
 
         c.scan(&v);
 
-        assert_eq!(c.0.len(), 1);
-        assert_eq!(c.0[&(ptr::from_ref(p.as_ref()) as usize)], false);
+        assert_eq!(c.all_cycles().len(), 1);
     }
 
     #[test]
@@ -2043,8 +2043,7 @@ mod cycles {
 
         c.scan(&v);
 
-        assert_eq!(c.0.len(), 1);
-        assert_eq!(c.0[&(ptr::from_ref(start.as_ref()) as usize)], false);
+        assert_eq!(c.all_cycles().len(), 1);
     }
 
     #[test]
@@ -2077,7 +2076,7 @@ mod cycles {
 
         c.scan(&v);
 
-        assert_eq!(c.0.len(), 2);
+        assert_eq!(c.all_cycles().len(), 2);
     }
 
     #[test]
@@ -2088,7 +2087,7 @@ mod cycles {
 
         c.scan(&v);
 
-        assert!(c.0.is_empty());
+        assert!(c.all_cycles().is_empty());
     }
 
     #[test]
@@ -2101,26 +2100,21 @@ mod cycles {
 
         c.scan(&v);
 
-        assert_eq!(c.0.len(), 1);
-        assert_eq!(c.0[&(vec.borrow().as_ptr() as usize)], false);
+        assert_eq!(c.all_cycles().len(), 1);
     }
 
     #[test]
     fn partly_cyclic_vector() {
         // #(1 2 #0=#(3 4 #0#))
         let vec = Rc::new(RefCell::new(vec![Value::real(3), Value::real(4)]));
-        let v = Value::vector([
-            Value::real(1),
-            Value::real(2),
-            Value::VectorMut(Rc::clone(&vec)),
-        ]);
-        vec.borrow_mut().push(v.clone());
+        let head = Value::VectorMut(Rc::clone(&vec));
+        vec.borrow_mut().push(head.clone());
+        let v = Value::vector([Value::real(1), Value::real(2), head.clone()]);
         let mut c = Cycles::default();
 
         c.scan(&v);
 
-        assert_eq!(c.0.len(), 1);
-        assert_eq!(c.0[&(vec.borrow().as_ptr() as usize)], false);
+        assert_eq!(c.all_cycles().len(), 1);
     }
 
     #[test]
@@ -2136,7 +2130,7 @@ mod cycles {
 
         c.scan(&v);
 
-        assert_eq!(c.0.len(), 1);
+        assert_eq!(c.all_cycles().len(), 1);
     }
 
     #[test]
@@ -2157,11 +2151,30 @@ mod cycles {
 
         c.scan(&v);
 
-        assert_eq!(c.0.len(), 2);
+        assert_eq!(c.all_cycles().len(), 2);
     }
 
     #[test]
-    fn cicular_list_with_cyclic_vector() {
+    fn self_nested_cyclic_vector() {
+        // #0=#(1 2 #(3 4 #0#))
+        let nested_vec = Rc::new(RefCell::new(vec![Value::real(3), Value::real(4)]));
+        let nested_v = Value::VectorMut(Rc::clone(&nested_vec));
+        let vec = Rc::new(RefCell::new(vec![
+            Value::real(1),
+            Value::real(2),
+            nested_v.clone(),
+        ]));
+        let v = Value::VectorMut(Rc::clone(&vec));
+        nested_vec.borrow_mut().push(v.clone());
+        let mut c = Cycles::default();
+
+        c.scan(&v);
+
+        assert_eq!(c.all_cycles().len(), 1);
+    }
+
+    #[test]
+    fn circular_list_with_cyclic_vector() {
         // #0=(#1=#(9 8 . #1#) 2 3 . #0#)
         let nested_vec = Rc::new(RefCell::new(vec![Value::real(9), Value::real(8)]));
         let nested_v = Value::VectorMut(Rc::clone(&nested_vec));
@@ -2182,7 +2195,7 @@ mod cycles {
 
         c.scan(&v);
 
-        assert_eq!(c.0.len(), 2);
+        assert_eq!(c.all_cycles().len(), 2);
     }
 
     #[test]
@@ -2211,6 +2224,6 @@ mod cycles {
 
         c.scan(&v);
 
-        assert_eq!(c.0.len(), 2);
+        assert_eq!(c.all_cycles().len(), 2);
     }
 }
