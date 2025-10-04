@@ -12,7 +12,7 @@ mod display;
 #[cfg(test)]
 mod tests;
 
-use self::display::CycleId;
+use self::display::NodeId;
 pub(crate) use self::{
     condition::Condition,
     display::{Cycle, Datum, TypeName, ValueMessage},
@@ -305,7 +305,7 @@ impl ValItem {
 
 pub(crate) struct ValueIterator {
     head: Option<Value>,
-    visited: HashSet<CycleId>,
+    visited: HashSet<NodeId>,
 }
 
 impl ValueIterator {
@@ -316,7 +316,7 @@ impl ValueIterator {
         }
     }
 
-    fn visited(&mut self, p: &Pair) -> Option<CycleId> {
+    fn visited(&mut self, p: &Pair) -> Option<NodeId> {
         let cyid = ptr::from_ref(p).cast();
         if self.visited.contains(&cyid) {
             Some(cyid)
