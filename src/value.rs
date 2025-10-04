@@ -8,24 +8,27 @@ macro_rules! zlist {
 }
 
 mod condition;
+mod display;
 #[cfg(test)]
 mod tests;
 
-pub(crate) use self::condition::Condition;
+pub(crate) use self::{
+    condition::Condition,
+    display::{Datum, TypeName, ValueMessage},
+};
 use crate::{
     eval::{Intrinsic, Procedure},
-    lex::{DisplayTokenLines, TokenLine, TokenLinesMessage},
+    lex::TokenLine,
     number::{Number, Real},
-    string::{CharDatum, StrDatum, Symbol},
+    string::Symbol,
     syntax::Sequence,
 };
 use std::{
     cell::{Ref, RefCell, RefMut},
-    collections::{HashMap, HashSet},
-    fmt::{self, Display, Formatter, Write},
+    collections::HashSet,
+    fmt::{self, Display, Formatter},
     ptr,
     rc::Rc,
-    slice::Iter,
 };
 pub(crate) use zlist;
 
@@ -187,6 +190,10 @@ impl Value {
         ValueMessage(self)
     }
 
+    pub(crate) fn as_datum(&self) -> Datum<'_> {
+        Datum(self)
+    }
+
     pub(crate) fn as_typename(&self) -> TypeName<'_> {
         TypeName(self)
     }
@@ -283,28 +290,10 @@ impl PartialEq for Value {
 
 impl Eq for Value {}
 
+// TODO: remove this
 impl Display for Value {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        match self {
-            Self::Ast(prg) => write!(f, "{{{prg:?}}}"),
-            Self::Boolean(b) => write!(f, "#{}", if *b { 't' } else { 'f' }),
-            Self::ByteVector(bv) => write_seq("#u8", bv, f),
-            Self::ByteVectorMut(bv) => write_seq("#u8", &bv.borrow(), f),
-            Self::Character(c) => write!(f, "#\\{}", CharDatum::new(*c)),
-            Self::Error(c) => c.fmt(f),
-            Self::Intrinsic(p) => p.fmt(f),
-            Self::Null => f.write_str("()"),
-            Self::Number(n) => n.fmt(f),
-            Self::Pair(_) | Self::PairMut(_) => PairDatum(self).fmt(f),
-            Self::Procedure(p) => p.fmt(f),
-            Self::String(s) => StrDatum(s).fmt(f),
-            Self::StringMut(s) => StrDatum(&s.borrow()).fmt(f),
-            Self::Symbol(s) => s.as_datum().fmt(f),
-            Self::TokenList(lines) => DisplayTokenLines(lines).fmt(f),
-            Self::Unspecified => f.write_str("#<unspecified>"),
-            Self::Vector(v) => write_seq("#", v, f),
-            Self::VectorMut(v) => write_seq("#", &v.borrow(), f),
-        }
+        self.as_datum().fmt(f)
     }
 }
 
@@ -477,194 +466,4 @@ impl AsRef<Self> for Pair {
     fn as_ref(&self) -> &Self {
         self
     }
-}
-
-pub(crate) struct ValueMessage<'a>(&'a Value);
-
-impl Display for ValueMessage<'_> {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        match self.0 {
-            Value::Ast(prg) => writeln!(f, "{prg:#?}"),
-            Value::TokenList(lines) => TokenLinesMessage(lines).fmt(f),
-            _ => Ok(()),
-        }
-    }
-}
-
-pub(crate) struct TypeName<'a>(&'a Value);
-
-impl TypeName<'_> {
-    pub(crate) const BOOL: &'static str = "boolean";
-    pub(crate) const BYTEVECTOR: &'static str = "bytevector";
-    pub(crate) const CHAR: &'static str = "character";
-    pub(crate) const ERROR: &'static str = "error condition";
-    pub(crate) const IMPLIST: &'static str = "improper list";
-    pub(crate) const LIST: &'static str = "list";
-    pub(crate) const NUMBER: &'static str = "number";
-    pub(crate) const PAIR: &'static str = "pair";
-    pub(crate) const STRING: &'static str = "string";
-    pub(crate) const SYMBOL: &'static str = "symbol";
-    pub(crate) const VECTOR: &'static str = "vector";
-}
-
-impl Display for TypeName<'_> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        match self.0 {
-            Value::Ast(_) => f.write_str("abstract syntax tree"),
-            Value::Boolean(_) => f.write_str(Self::BOOL),
-            Value::ByteVector(_) | Value::ByteVectorMut(_) => f.write_str(Self::BYTEVECTOR),
-            Value::Character(_) => f.write_str(Self::CHAR),
-            Value::Error(_) => f.write_str(Self::ERROR),
-            Value::Intrinsic(_) => f.write_str("intrinsic"),
-            Value::Null => f.write_str("null"),
-            Value::Number(_) => f.write_str(Self::NUMBER),
-            Value::Pair(p) => f.write_str(p.typename()),
-            Value::PairMut(p) => f.write_str(p.borrow().typename()),
-            Value::Procedure(_) => f.write_str("procedure"),
-            Value::String(_) | Value::StringMut(_) => f.write_str(Self::STRING),
-            Value::Symbol(_) => f.write_str(Self::SYMBOL),
-            Value::TokenList(_) => f.write_str("token list"),
-            Value::Unspecified => f.write_str("unspecified"),
-            Value::Vector(_) | Value::VectorMut(_) => f.write_str(Self::VECTOR),
-        }
-    }
-}
-
-struct PairDatum<'a>(&'a Value);
-
-impl Display for PairDatum<'_> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        let mut it = self.0.iter_list();
-        if let Some(ValItem::Element(v)) = it.next()
-            && let Some(p) = v.as_refpair()
-        {
-            write!(f, "({}", p.as_ref().car)?;
-        } else {
-            unreachable!("expected pair value iterator");
-        }
-        for item in it {
-            match item {
-                ValItem::Cycle(..) => {
-                    f.write_str(" . dup…")?;
-                    break;
-                }
-                ValItem::Element(v) => {
-                    if let Some(p) = v.as_refpair() {
-                        write!(f, " {}", p.as_ref().car)?;
-                    } else if !matches!(v, Value::Null) {
-                        write!(f, " . {v}")?;
-                    }
-                }
-            }
-        }
-        f.write_char(')')
-    }
-}
-
-struct VecIterator<'a> {
-    head: &'a [Value],
-    it: Iter<'a, Value>,
-}
-
-impl<'a> VecIterator<'a> {
-    fn new(head: &'a [Value]) -> Self {
-        Self {
-            head,
-            it: head.iter(),
-        }
-    }
-}
-
-impl Iterator for VecIterator<'_> {
-    type Item = ValItem;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let v = self.it.next()?;
-        if let Some(vec) = v.as_refvec()
-            && ptr::eq(vec.as_ref(), self.head)
-        {
-            Some(ValItem::Cycle(self.head.as_ptr().cast(), v.clone()))
-        } else {
-            Some(ValItem::Element(v.clone()))
-        }
-    }
-}
-
-#[derive(Default)]
-struct Cycles(HashMap<CycleId, bool>);
-
-impl Cycles {
-    fn scan(&mut self, v: &Value) {
-        if v.as_refpair().is_some() {
-            self.scan_pair(v);
-        } else if let Some(vec) = v.as_refvec() {
-            self.scan_vec(vec.as_ref());
-        }
-    }
-
-    fn all_cycles(self) -> HashSet<CycleId> {
-        self.0
-            .into_iter()
-            .filter_map(|(k, v)| v.then_some(k))
-            .collect()
-    }
-
-    fn scan_pair(&mut self, v: &Value) {
-        for item in v.iter_list() {
-            match item {
-                ValItem::Cycle(cyid, _) => {
-                    if !self.0.contains_key(&cyid) {
-                        self.0.insert(cyid, true);
-                    }
-                    break;
-                }
-                ValItem::Element(mut v) => {
-                    v = if let Some(p) = v.as_refpair() {
-                        p.as_ref().car.clone()
-                    } else {
-                        v
-                    };
-                    self.scan(&v);
-                }
-            }
-        }
-    }
-
-    fn scan_vec(&mut self, v: &[Value]) {
-        let vref_id = v.as_ptr().cast();
-        match self.0.get_mut(&vref_id) {
-            None => {
-                // NOTE: keep track of all vector references because a vector cycle
-                // may be a nested vector referencing an outer vector and without
-                // "remembering" outer vectors we never see the cycle via VecIterator
-                // (because the cycle does not exist in any particular vector instance).
-                self.0.insert(vref_id, false);
-                for item in VecIterator::new(v) {
-                    match item {
-                        ValItem::Cycle(cyid, _) => {
-                            self.0.insert(cyid, true);
-                            break;
-                        }
-                        ValItem::Element(v) => self.scan(&v),
-                    }
-                }
-            }
-            Some(cyc) => *cyc = true,
-        }
-    }
-}
-
-fn write_seq<'a, T: 'a + Display>(
-    prefix: &str,
-    seq: &'a [T],
-    f: &mut Formatter<'_>,
-) -> fmt::Result {
-    write!(
-        f,
-        "{prefix}({})",
-        seq.iter()
-            .map(ToString::to_string)
-            .collect::<Vec<_>>()
-            .join(" ")
-    )
 }
