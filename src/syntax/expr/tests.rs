@@ -1074,7 +1074,7 @@ mod eval {
             let r = expr.eval(&f);
 
             let v = ok_or_fail!(r);
-            assert_eq!(v.to_string(), "a");
+            assert_eq!(v.as_datum().to_string(), "a");
         }
 
         #[test]
@@ -1116,7 +1116,7 @@ mod eval {
             let r = expr.eval(&f);
 
             let v = ok_or_fail!(r);
-            assert_eq!(v.to_string(), "b");
+            assert_eq!(v.as_datum().to_string(), "b");
         }
 
         #[test]
@@ -1224,7 +1224,7 @@ mod eval {
             let r = expr.eval(&f);
 
             let v = ok_or_fail!(r);
-            assert_eq!(v.to_string(), "b");
+            assert_eq!(v.as_datum().to_string(), "b");
         }
 
         #[test]

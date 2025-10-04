@@ -17,8 +17,8 @@ impl Display for Datum<'_> {
         match self.0 {
             Value::Ast(prg) => write!(f, "{{{prg:?}}}"),
             Value::Boolean(b) => write!(f, "#{}", if *b { 't' } else { 'f' }),
-            Value::ByteVector(bv) => write_seq("#u8", bv, f),
-            Value::ByteVectorMut(bv) => write_seq("#u8", &bv.borrow(), f),
+            Value::ByteVector(bv) => write_seq("#u8", bv.iter(), f),
+            Value::ByteVectorMut(bv) => write_seq("#u8", bv.borrow().iter(), f),
             Value::Character(c) => write!(f, "#\\{}", CharDatum::new(*c)),
             Value::Error(c) => c.fmt(f),
             Value::Intrinsic(p) => p.fmt(f),
@@ -31,8 +31,8 @@ impl Display for Datum<'_> {
             Value::Symbol(s) => s.as_datum().fmt(f),
             Value::TokenList(lines) => DisplayTokenLines(lines).fmt(f),
             Value::Unspecified => f.write_str("#<unspecified>"),
-            Value::Vector(v) => write_seq("#", v, f),
-            Value::VectorMut(v) => write_seq("#", &v.borrow(), f),
+            Value::Vector(v) => write_seq("#", v.iter().map(Value::as_datum), f),
+            Value::VectorMut(v) => write_seq("#", v.borrow().iter().map(Value::as_datum), f),
         }
     }
 }
@@ -90,13 +90,14 @@ impl Display for TypeName<'_> {
 
 struct PairDatum<'a>(&'a Value);
 
+// TODO: the .as_datum() calls need to be dependent on top-level display
 impl Display for PairDatum<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let mut it = self.0.iter_list();
         if let Some(ValItem::Element(v)) = it.next()
             && let Some(p) = v.as_refpair()
         {
-            write!(f, "({}", p.as_ref().car)?;
+            write!(f, "({}", p.as_ref().car.as_datum())?;
         } else {
             unreachable!("expected pair value iterator");
         }
@@ -108,9 +109,9 @@ impl Display for PairDatum<'_> {
                 }
                 ValItem::Element(v) => {
                     if let Some(p) = v.as_refpair() {
-                        write!(f, " {}", p.as_ref().car)?;
+                        write!(f, " {}", p.as_ref().car.as_datum())?;
                     } else if !matches!(v, Value::Null) {
-                        write!(f, " . {v}")?;
+                        write!(f, " . {}", v.as_datum())?;
                     }
                 }
             }
@@ -212,18 +213,15 @@ impl Cycles {
     }
 }
 
-fn write_seq<'a, T: 'a + Display>(
+fn write_seq<T: Display>(
     prefix: &str,
-    seq: &'a [T],
+    seq: impl Iterator<Item = T>,
     f: &mut Formatter<'_>,
 ) -> fmt::Result {
     write!(
         f,
         "{prefix}({})",
-        seq.iter()
-            .map(ToString::to_string)
-            .collect::<Vec<_>>()
-            .join(" ")
+        seq.map(|v| v.to_string()).collect::<Vec<_>>().join(" ")
     )
 }
 

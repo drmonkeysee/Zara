@@ -713,7 +713,7 @@ fn into_datum_list() {
         } if Rc::ptr_eq(&txt, &line)
     ));
     let value = extract_or_fail!(expr.kind, ExpressionKind::Literal);
-    assert_eq!(value.to_string(), "(+ 4 5)");
+    assert_eq!(value.as_datum().to_string(), "(+ 4 5)");
 }
 
 #[test]
@@ -744,7 +744,7 @@ fn into_empty_datum_list() {
         } if Rc::ptr_eq(&txt, &line)
     ));
     let value = extract_or_fail!(expr.kind, ExpressionKind::Literal);
-    assert_eq!(value.to_string(), "()");
+    assert_eq!(value.as_datum().to_string(), "()");
 }
 
 #[test]
@@ -834,7 +834,7 @@ fn into_pair() {
         } if Rc::ptr_eq(&txt, &line)
     ));
     let value = extract_or_fail!(expr.kind, ExpressionKind::Literal);
-    assert_eq!(value.to_string(), "(4 . 5)");
+    assert_eq!(value.as_datum().to_string(), "(4 . 5)");
 }
 
 #[test]
@@ -921,7 +921,7 @@ fn into_define_variable() {
     assert_eq!(name.as_ref(), "foo");
     let val_expr = some_or_fail!(expr);
     let val = extract_or_fail!(val_expr.kind, ExpressionKind::Literal);
-    assert_eq!(val.to_string(), "\"bar\"");
+    assert_eq!(val.as_datum().to_string(), "\"bar\"");
 }
 
 #[test]
@@ -1697,7 +1697,7 @@ fn into_set_variable() {
     };
     assert_eq!(var.as_ref(), "foo");
     let val = extract_or_fail!(expr.kind, ExpressionKind::Literal);
-    assert_eq!(val.to_string(), "\"bar\"");
+    assert_eq!(val.as_datum().to_string(), "\"bar\"");
 }
 
 #[test]
@@ -1885,11 +1885,15 @@ fn into_if_consequent() {
         unreachable!();
     };
     assert_eq!(
-        extract_or_fail!(test.kind, ExpressionKind::Literal).to_string(),
+        extract_or_fail!(test.kind, ExpressionKind::Literal)
+            .as_datum()
+            .to_string(),
         "#t"
     );
     assert_eq!(
-        extract_or_fail!(con.kind, ExpressionKind::Literal).to_string(),
+        extract_or_fail!(con.kind, ExpressionKind::Literal)
+            .as_datum()
+            .to_string(),
         "\"bar\""
     );
     assert!(alt.is_none());
@@ -1946,16 +1950,22 @@ fn into_if_consequent_alternate() {
         unreachable!();
     };
     assert_eq!(
-        extract_or_fail!(test.kind, ExpressionKind::Literal).to_string(),
+        extract_or_fail!(test.kind, ExpressionKind::Literal)
+            .as_datum()
+            .to_string(),
         "#t"
     );
     assert_eq!(
-        extract_or_fail!(con.kind, ExpressionKind::Literal).to_string(),
+        extract_or_fail!(con.kind, ExpressionKind::Literal)
+            .as_datum()
+            .to_string(),
         "\"bar\""
     );
     let alt = some_or_fail!(alt);
     assert_eq!(
-        extract_or_fail!(alt.kind, ExpressionKind::Literal).to_string(),
+        extract_or_fail!(alt.kind, ExpressionKind::Literal)
+            .as_datum()
+            .to_string(),
         "foo"
     );
 }

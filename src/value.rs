@@ -26,7 +26,6 @@ use crate::{
 use std::{
     cell::{Ref, RefCell, RefMut},
     collections::HashSet,
-    fmt::{self, Display, Formatter},
     ptr,
     rc::Rc,
 };
@@ -289,13 +288,6 @@ impl PartialEq for Value {
 }
 
 impl Eq for Value {}
-
-// TODO: remove this
-impl Display for Value {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        self.as_datum().fmt(f)
-    }
-}
 
 // NOTE: cycles are identified via their untyped pointer address
 pub(crate) type CycleId = *const ();

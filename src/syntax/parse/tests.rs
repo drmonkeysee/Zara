@@ -1638,7 +1638,7 @@ mod quote {
             } if Rc::ptr_eq(&txt, &line)
         ));
         let value = extract_or_fail!(expr.kind, ExpressionKind::Literal);
-        assert_eq!(value.to_string(), "(quote #t)");
+        assert_eq!(value.as_datum().to_string(), "(quote #t)");
     }
 
     #[test]
@@ -2124,7 +2124,7 @@ mod merge {
             } if Rc::ptr_eq(&txt, &line)
         ));
         let value = extract_or_fail!(inner.kind, ExpressionKind::Literal);
-        assert_eq!(value.to_string(), "(foo)");
+        assert_eq!(value.as_datum().to_string(), "(foo)");
     }
 
     #[test]
@@ -2165,7 +2165,7 @@ mod merge {
             } if Rc::ptr_eq(&txt, &line)
         ));
         let value = extract_or_fail!(inner.kind, ExpressionKind::Literal);
-        assert_eq!(value.to_string(), "()");
+        assert_eq!(value.as_datum().to_string(), "()");
     }
 
     #[test]
@@ -2267,7 +2267,7 @@ mod merge {
             } if Rc::ptr_eq(&txt, &line)
         ));
         let value = extract_or_fail!(inner.kind, ExpressionKind::Literal);
-        assert_eq!(value.to_string(), "(foo)");
+        assert_eq!(value.as_datum().to_string(), "(foo)");
     }
 
     #[test]
@@ -2316,7 +2316,7 @@ mod merge {
             } if Rc::ptr_eq(&txt, &line)
         ));
         let value = extract_or_fail!(inner.kind, ExpressionKind::Literal);
-        assert_eq!(value.to_string(), "()");
+        assert_eq!(value.as_datum().to_string(), "()");
     }
 
     #[test]

@@ -102,7 +102,7 @@ mod tests {
 
         let r = ok_or_fail!(v);
         assert!(matches!(r, Value::Number(Number::Real(Real::Integer(_)))));
-        assert_eq!(r.to_string(), "4");
+        assert_eq!(r.as_datum().to_string(), "4");
     }
 
     #[test]
@@ -114,7 +114,7 @@ mod tests {
 
         let r = ok_or_fail!(v);
         assert!(matches!(r, Value::Number(Number::Real(Real::Integer(_)))));
-        assert_eq!(r.to_string(), "5");
+        assert_eq!(r.as_datum().to_string(), "5");
     }
 
     #[test]
@@ -126,7 +126,7 @@ mod tests {
 
         let r = ok_or_fail!(v);
         assert!(matches!(r, Value::Number(Number::Real(Real::Integer(_)))));
-        assert_eq!(r.to_string(), "8");
+        assert_eq!(r.as_datum().to_string(), "8");
     }
 
     #[test]
@@ -138,7 +138,7 @@ mod tests {
 
         let r = ok_or_fail!(v);
         assert!(matches!(r, Value::Number(Number::Real(Real::Integer(_)))));
-        assert_eq!(r.to_string(), "0");
+        assert_eq!(r.as_datum().to_string(), "0");
     }
 
     #[test]
@@ -150,7 +150,7 @@ mod tests {
 
         let r = ok_or_fail!(v);
         assert!(matches!(r, Value::Number(Number::Real(Real::Float(_)))));
-        assert_eq!(r.to_string(), "6.4031242374328485");
+        assert_eq!(r.as_datum().to_string(), "6.4031242374328485");
     }
 
     #[test]
@@ -162,7 +162,7 @@ mod tests {
 
         let r = ok_or_fail!(v);
         assert!(matches!(r, Value::Number(Number::Real(Real::Float(_)))));
-        assert_eq!(r.to_string(), "0.8960553845713439");
+        assert_eq!(r.as_datum().to_string(), "0.8960553845713439");
     }
 
     #[test]
@@ -174,7 +174,7 @@ mod tests {
 
         let r = ok_or_fail!(v);
         assert!(matches!(r, Value::Number(Number::Real(Real::Integer(_)))));
-        assert_eq!(r.to_string(), "8");
+        assert_eq!(r.as_datum().to_string(), "8");
     }
 
     #[test]
@@ -186,6 +186,6 @@ mod tests {
 
         let r = ok_or_fail!(v);
         assert!(matches!(r, Value::Number(Number::Real(Real::Integer(_)))));
-        assert_eq!(r.to_string(), "0");
+        assert_eq!(r.as_datum().to_string(), "0");
     }
 }

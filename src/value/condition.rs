@@ -118,7 +118,7 @@ impl Display for Condition {
         write!(f, "#<{} \"{}\"", self.kind, self.msg)?;
         match &self.irritants {
             None => (),
-            Some(v) => write!(f, " {v}")?,
+            Some(v) => write!(f, " {}", v.as_datum())?,
         }
         f.write_char('>')
     }

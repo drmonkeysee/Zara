@@ -457,7 +457,7 @@ fn string_len() {
     let r = string_length(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert_eq!(v.to_string(), "3");
+    assert_eq!(v.as_datum().to_string(), "3");
 }
 
 #[test]
@@ -468,7 +468,7 @@ fn string_len_unicode() {
     let r = string_length(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert_eq!(v.to_string(), "3");
+    assert_eq!(v.as_datum().to_string(), "3");
 }
 
 #[test]
@@ -490,7 +490,7 @@ fn string_mutable_length() {
     let r = string_length(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert_eq!(v.to_string(), "3");
+    assert_eq!(v.as_datum().to_string(), "3");
 }
 
 #[test]
@@ -517,7 +517,7 @@ fn string_set_val() {
 
     let v = ok_or_fail!(r);
     assert!(matches!(v, Value::Unspecified));
-    assert_eq!(args[0].to_string(), "\"aXc\"");
+    assert_eq!(args[0].as_datum().to_string(), "\"aXc\"");
 }
 
 #[test]
@@ -533,7 +533,7 @@ fn string_set_val_unicode() {
 
     let v = ok_or_fail!(r);
     assert!(matches!(v, Value::Unspecified));
-    assert_eq!(args[0].to_string(), "\"aXc\"");
+    assert_eq!(args[0].as_datum().to_string(), "\"aXc\"");
 }
 
 #[test]
@@ -549,7 +549,7 @@ fn string_set_val_after_unicode() {
 
     let v = ok_or_fail!(r);
     assert!(matches!(v, Value::Unspecified));
-    assert_eq!(args[0].to_string(), "\"a🦀X\"");
+    assert_eq!(args[0].as_datum().to_string(), "\"a🦀X\"");
 }
 
 #[test]
@@ -589,7 +589,7 @@ fn string_to_bytes() {
     let r = bytevector_from_string(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert_eq!(v.to_string(), "#u8(97 98 99)");
+    assert_eq!(v.as_datum().to_string(), "#u8(97 98 99)");
 }
 
 #[test]
@@ -600,7 +600,7 @@ fn unicode_to_bytes() {
     let r = bytevector_from_string(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert_eq!(v.to_string(), "#u8(97 240 159 166 128 99)");
+    assert_eq!(v.as_datum().to_string(), "#u8(97 240 159 166 128 99)");
 }
 
 #[test]
@@ -611,7 +611,7 @@ fn unicode_to_bytes_fenceposts() {
     let r = bytevector_from_string(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert_eq!(v.to_string(), "#u8(240 159 166 128)");
+    assert_eq!(v.as_datum().to_string(), "#u8(240 159 166 128)");
 }
 
 #[test]
@@ -910,7 +910,7 @@ fn list_append_multiple_lists() {
 
     let v = ok_or_fail!(r);
     assert!(matches!(v, Value::PairMut(_)));
-    assert_eq!(v.to_string(), "(a b c 1 2 3 x y z)");
+    assert_eq!(v.as_datum().to_string(), "(a b c 1 2 3 x y z)");
     let sub = ok_or_fail!(list_tail(
         &[v, Value::Number(Number::from_usize(6))],
         &env.new_frame()
@@ -936,7 +936,7 @@ fn list_append_improper_lists() {
 
     let v = ok_or_fail!(r);
     assert!(matches!(v, Value::PairMut(_)));
-    assert_eq!(v.to_string(), "(a b c 1 2 3 . x)");
+    assert_eq!(v.as_datum().to_string(), "(a b c 1 2 3 . x)");
     let sub = ok_or_fail!(list_tail(
         &[v, Value::Number(Number::from_usize(6))],
         &env.new_frame()
@@ -1018,7 +1018,7 @@ fn list_reverse_single_item() {
 
     let v = ok_or_fail!(r);
     assert!(matches!(v, Value::PairMut(_)));
-    assert_eq!(v.to_string(), "(a)");
+    assert_eq!(v.as_datum().to_string(), "(a)");
 }
 
 #[test]
@@ -1034,7 +1034,7 @@ fn list_reverse_items() {
 
     let v = ok_or_fail!(r);
     assert!(matches!(v, Value::PairMut(_)));
-    assert_eq!(v.to_string(), "(c b a)");
+    assert_eq!(v.as_datum().to_string(), "(c b a)");
 }
 
 #[test]
@@ -1558,7 +1558,7 @@ fn list_set_value() {
 
     let v = ok_or_fail!(r);
     assert!(matches!(v, Value::Unspecified));
-    assert_eq!(lst.to_string(), "(a z c)");
+    assert_eq!(lst.as_datum().to_string(), "(a z c)");
 }
 
 #[test]
@@ -1582,7 +1582,7 @@ fn list_set_value_replace_pair() {
 
     let v = ok_or_fail!(r);
     assert!(matches!(v, Value::Unspecified));
-    assert_eq!(lst.to_string(), "(a b z)");
+    assert_eq!(lst.as_datum().to_string(), "(a b z)");
 }
 
 #[test]
@@ -1608,7 +1608,7 @@ fn list_set_value_improper_list() {
 
     let v = ok_or_fail!(r);
     assert!(matches!(v, Value::Unspecified));
-    assert_eq!(lst.to_string(), "(a b z . d)");
+    assert_eq!(lst.as_datum().to_string(), "(a b z . d)");
 }
 
 #[test]
@@ -1684,7 +1684,7 @@ fn list_copy_list() {
     let v = ok_or_fail!(r);
     assert!(!v.is(&lst));
     assert!(matches!(v, Value::PairMut(_)));
-    assert_eq!(v.to_string(), "(a b c)");
+    assert_eq!(v.as_datum().to_string(), "(a b c)");
 }
 
 #[test]
@@ -1705,7 +1705,7 @@ fn list_copy_improper_list() {
     let v = ok_or_fail!(r);
     assert!(!v.is(&lst));
     assert!(matches!(v, Value::PairMut(_)));
-    assert_eq!(v.to_string(), "(a b c . d)");
+    assert_eq!(v.as_datum().to_string(), "(a b c . d)");
     let vcdr = &extract_or_fail!(&v, Value::PairMut).as_ref().borrow().cdr;
     let last = &extract_or_fail!(vcdr, Value::PairMut).as_ref().borrow().cdr;
     assert!(last.is(&cons));
@@ -1809,7 +1809,7 @@ fn vector_mutable_length() {
     let r = vector_length(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert_eq!(v.to_string(), "3");
+    assert_eq!(v.as_datum().to_string(), "3");
 }
 
 #[test]
@@ -1946,7 +1946,7 @@ fn vector_set_val() {
 
     let v = ok_or_fail!(r);
     assert!(matches!(v, Value::Unspecified));
-    assert_eq!(args[0].to_string(), "#(#\\A 25 #\\C)");
+    assert_eq!(args[0].as_datum().to_string(), "#(#\\A 25 #\\C)");
 }
 
 #[test]
@@ -1968,7 +1968,7 @@ fn bytevector_mutable_length() {
     let r = bytevector_length(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert_eq!(v.to_string(), "3");
+    assert_eq!(v.as_datum().to_string(), "3");
 }
 
 #[test]
@@ -1979,7 +1979,7 @@ fn bytevector_mutable_get_ref() {
     let r = bytevector_get(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert_eq!(v.to_string(), "2");
+    assert_eq!(v.as_datum().to_string(), "2");
 }
 
 #[test]
@@ -1995,7 +1995,7 @@ fn bytevector_set_val() {
 
     let v = ok_or_fail!(r);
     assert!(matches!(v, Value::Unspecified));
-    assert_eq!(args[0].to_string(), "#u8(1 25 3)");
+    assert_eq!(args[0].as_datum().to_string(), "#u8(1 25 3)");
 }
 
 #[test]
@@ -2060,7 +2060,7 @@ fn bytevector_copy_all() {
     let r = bytevector_copy(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert_eq!(v.to_string(), "#u8(1 2 3 4)");
+    assert_eq!(v.as_datum().to_string(), "#u8(1 2 3 4)");
 }
 
 #[test]
@@ -2071,7 +2071,7 @@ fn bytevector_copy_start() {
     let r = bytevector_copy(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert_eq!(v.to_string(), "#u8(2 3 4)");
+    assert_eq!(v.as_datum().to_string(), "#u8(2 3 4)");
 }
 
 #[test]
@@ -2086,7 +2086,7 @@ fn bytevector_copy_start_end() {
     let r = bytevector_copy(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert_eq!(v.to_string(), "#u8(2 3)");
+    assert_eq!(v.as_datum().to_string(), "#u8(2 3)");
 }
 
 #[test]
@@ -2101,7 +2101,7 @@ fn bytevector_copy_nothing() {
     let r = bytevector_copy(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert_eq!(v.to_string(), "#u8()");
+    assert_eq!(v.as_datum().to_string(), "#u8()");
 }
 
 #[test]
@@ -2156,7 +2156,7 @@ fn bytes_to_str() {
     let r = bytevector_to_string(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert_eq!(v.to_string(), "\"cba\"");
+    assert_eq!(v.as_datum().to_string(), "\"cba\"");
 }
 
 #[test]
@@ -2169,7 +2169,7 @@ fn bytes_to_unicode() {
     let r = bytevector_to_string(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert_eq!(v.to_string(), "\"cb🦀\"");
+    assert_eq!(v.as_datum().to_string(), "\"cb🦀\"");
 }
 
 #[test]
@@ -2212,7 +2212,7 @@ fn bytes_to_unicode_invalid_sequence_excluded() {
     let r = bytevector_to_string(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert_eq!(v.to_string(), "\"cb\"");
+    assert_eq!(v.as_datum().to_string(), "\"cb\"");
 }
 
 #[test]
@@ -2228,7 +2228,7 @@ fn bytevector_copy_into_equal() {
 
     let v = ok_or_fail!(r);
     assert_eq!(v, Value::Unspecified);
-    assert_eq!(args[0].to_string(), "#u8(6 7 8 9 10)");
+    assert_eq!(args[0].as_datum().to_string(), "#u8(6 7 8 9 10)");
     assert!(!args[0].is(&args[2]));
 }
 
@@ -2245,7 +2245,7 @@ fn bytevector_copy_into_larger() {
 
     let v = ok_or_fail!(r);
     assert_eq!(v, Value::Unspecified);
-    assert_eq!(args[0].to_string(), "#u8(1 6 7 8 5)");
+    assert_eq!(args[0].as_datum().to_string(), "#u8(1 6 7 8 5)");
 }
 
 #[test]
@@ -2263,7 +2263,7 @@ fn bytevector_copy_into_smaller() {
 
     let v = ok_or_fail!(r);
     assert_eq!(v, Value::Unspecified);
-    assert_eq!(args[0].to_string(), "#u8(1 9 10)");
+    assert_eq!(args[0].as_datum().to_string(), "#u8(1 9 10)");
 }
 
 #[test]
@@ -2279,7 +2279,7 @@ fn bytevector_copy_from_empty() {
 
     let v = ok_or_fail!(r);
     assert_eq!(v, Value::Unspecified);
-    assert_eq!(args[0].to_string(), "#u8(1 2 3)");
+    assert_eq!(args[0].as_datum().to_string(), "#u8(1 2 3)");
 }
 
 #[test]
@@ -2297,7 +2297,7 @@ fn bytevector_copy_to_empty() {
 
     let v = ok_or_fail!(r);
     assert_eq!(v, Value::Unspecified);
-    assert_eq!(args[0].to_string(), "#u8()");
+    assert_eq!(args[0].as_datum().to_string(), "#u8()");
 }
 
 #[test]
@@ -2333,7 +2333,7 @@ fn bytevector_copy_at_length_ok_if_span_is_empty() {
 
     let v = ok_or_fail!(r);
     assert_eq!(v, Value::Unspecified);
-    assert_eq!(args[0].to_string(), "#u8(1 2 3 4 5)");
+    assert_eq!(args[0].as_datum().to_string(), "#u8(1 2 3 4 5)");
 }
 
 #[test]
@@ -2351,7 +2351,7 @@ fn bytevector_copy_accepts_immutable_if_span_is_empty() {
 
     let v = ok_or_fail!(r);
     assert_eq!(v, Value::Unspecified);
-    assert_eq!(args[0].to_string(), "#u8(1 2 3 4 5)");
+    assert_eq!(args[0].as_datum().to_string(), "#u8(1 2 3 4 5)");
 }
 
 #[test]
@@ -2420,7 +2420,7 @@ fn bytevector_copy_into_self() {
 
     let v = ok_or_fail!(r);
     assert_eq!(v, Value::Unspecified);
-    assert_eq!(args[0].to_string(), "#u8(1 2 3 4 5)");
+    assert_eq!(args[0].as_datum().to_string(), "#u8(1 2 3 4 5)");
     assert!(args[0].is(&args[2]));
 }
 
@@ -2440,7 +2440,7 @@ fn bytevector_copy_part_into_self() {
 
     let v = ok_or_fail!(r);
     assert_eq!(v, Value::Unspecified);
-    assert_eq!(args[0].to_string(), "#u8(3 4 3 4 5)");
+    assert_eq!(args[0].as_datum().to_string(), "#u8(3 4 3 4 5)");
     assert!(args[0].is(&args[2]));
 }
 
@@ -2460,7 +2460,7 @@ fn bytevector_copy_into_tail_overlap() {
 
     let v = ok_or_fail!(r);
     assert_eq!(v, Value::Unspecified);
-    assert_eq!(args[0].to_string(), "#u8(1 3 4 5 5)");
+    assert_eq!(args[0].as_datum().to_string(), "#u8(1 3 4 5 5)");
     assert!(args[0].is(&args[2]));
 }
 
@@ -2480,7 +2480,7 @@ fn bytevector_copy_into_head_overlap() {
 
     let v = ok_or_fail!(r);
     assert_eq!(v, Value::Unspecified);
-    assert_eq!(args[0].to_string(), "#u8(1 2 1 2 3)");
+    assert_eq!(args[0].as_datum().to_string(), "#u8(1 2 1 2 3)");
     assert!(args[0].is(&args[2]));
 }
 
@@ -2497,7 +2497,7 @@ fn string_copy_into_equal() {
 
     let v = ok_or_fail!(r);
     assert_eq!(v, Value::Unspecified);
-    assert_eq!(args[0].to_string(), "\"beefee\"");
+    assert_eq!(args[0].as_datum().to_string(), "\"beefee\"");
     assert!(!args[0].is(&args[2]));
 }
 
@@ -2514,7 +2514,7 @@ fn string_copy_into_larger() {
 
     let v = ok_or_fail!(r);
     assert_eq!(v, Value::Unspecified);
-    assert_eq!(args[0].to_string(), "\"fbeear\"");
+    assert_eq!(args[0].as_datum().to_string(), "\"fbeear\"");
 }
 
 #[test]
@@ -2532,7 +2532,7 @@ fn string_copy_into_smaller() {
 
     let v = ok_or_fail!(r);
     assert_eq!(v, Value::Unspecified);
-    assert_eq!(args[0].to_string(), "\"ffebar\"");
+    assert_eq!(args[0].as_datum().to_string(), "\"ffebar\"");
 }
 
 #[test]
@@ -2550,7 +2550,7 @@ fn string_copy_from_unicode_into_ascii() {
 
     let v = ok_or_fail!(r);
     assert_eq!(v, Value::Unspecified);
-    assert_eq!(args[0].to_string(), "\"a🐝c\"");
+    assert_eq!(args[0].as_datum().to_string(), "\"a🐝c\"");
 }
 
 #[test]
@@ -2585,7 +2585,7 @@ fn string_copy_into_unicode() {
 
     let v = ok_or_fail!(r);
     assert_eq!(v, Value::Unspecified);
-    assert_eq!(args[0].to_string(), "\"foo🦀🐝ar\"");
+    assert_eq!(args[0].as_datum().to_string(), "\"foo🦀🐝ar\"");
 }
 
 #[test]
@@ -2598,7 +2598,7 @@ fn string_copy_into_self() {
 
     let v = ok_or_fail!(r);
     assert_eq!(v, Value::Unspecified);
-    assert_eq!(args[0].to_string(), "\"foobar\"");
+    assert_eq!(args[0].as_datum().to_string(), "\"foobar\"");
     assert!(args[0].is(&args[2]));
 }
 
@@ -2612,7 +2612,7 @@ fn string_copy_part_into_self() {
 
     let v = ok_or_fail!(r);
     assert_eq!(v, Value::Unspecified);
-    assert_eq!(args[0].to_string(), "\"obobar\"");
+    assert_eq!(args[0].as_datum().to_string(), "\"obobar\"");
     assert!(args[0].is(&args[2]));
 }
 
@@ -2626,7 +2626,7 @@ fn string_copy_tail_overlap_into_self() {
 
     let v = ok_or_fail!(r);
     assert_eq!(v, Value::Unspecified);
-    assert_eq!(args[0].to_string(), "\"fobaar\"");
+    assert_eq!(args[0].as_datum().to_string(), "\"fobaar\"");
     assert!(args[0].is(&args[2]));
 }
 
@@ -2640,7 +2640,7 @@ fn string_copy_head_overlap_into_self() {
 
     let v = ok_or_fail!(r);
     assert_eq!(v, Value::Unspecified);
-    assert_eq!(args[0].to_string(), "\"fofoor\"");
+    assert_eq!(args[0].as_datum().to_string(), "\"fofoor\"");
     assert!(args[0].is(&args[2]));
 }
 
@@ -2669,7 +2669,7 @@ fn vector_copy_into_equal() {
 
     let v = ok_or_fail!(r);
     assert_eq!(v, Value::Unspecified);
-    assert_eq!(args[0].to_string(), "#(3 4 \"bar\" #t #\\z)");
+    assert_eq!(args[0].as_datum().to_string(), "#(3 4 \"bar\" #t #\\z)");
     assert!(!args[0].is(&args[2]));
 }
 
@@ -2692,7 +2692,7 @@ fn vector_copy_into_larger() {
 
     let v = ok_or_fail!(r);
     assert_eq!(v, Value::Unspecified);
-    assert_eq!(args[0].to_string(), "#(1 3 4 \"bar\" #\\a)");
+    assert_eq!(args[0].as_datum().to_string(), "#(1 3 4 \"bar\" #\\a)");
 }
 
 #[test]
@@ -2716,7 +2716,7 @@ fn vector_copy_into_smaller() {
 
     let v = ok_or_fail!(r);
     assert_eq!(v, Value::Unspecified);
-    assert_eq!(args[0].to_string(), "#(1 #t #\\z)");
+    assert_eq!(args[0].as_datum().to_string(), "#(1 #t #\\z)");
 }
 
 #[test]
@@ -2735,7 +2735,7 @@ fn vector_copy_into_self() {
 
     let v = ok_or_fail!(r);
     assert_eq!(v, Value::Unspecified);
-    assert_eq!(args[0].to_string(), "#(1 2 \"foo\" #f #\\a)");
+    assert_eq!(args[0].as_datum().to_string(), "#(1 2 \"foo\" #f #\\a)");
     assert!(args[0].is(&args[2]));
 }
 
@@ -2755,7 +2755,10 @@ fn vector_copy_part_into_self() {
 
     let v = ok_or_fail!(r);
     assert_eq!(v, Value::Unspecified);
-    assert_eq!(args[0].to_string(), "#(\"foo\" #f \"foo\" #f #\\a)");
+    assert_eq!(
+        args[0].as_datum().to_string(),
+        "#(\"foo\" #f \"foo\" #f #\\a)"
+    );
     assert!(args[0].is(&args[2]));
 }
 
@@ -2775,7 +2778,7 @@ fn vector_copy_no_overlap_part_into_self() {
 
     let v = ok_or_fail!(r);
     assert_eq!(v, Value::Unspecified);
-    assert_eq!(args[0].to_string(), "#(#f #\\a \"foo\" #f #\\a)");
+    assert_eq!(args[0].as_datum().to_string(), "#(#f #\\a \"foo\" #f #\\a)");
     assert!(args[0].is(&args[2]));
 }
 
@@ -2795,7 +2798,7 @@ fn vector_copy_lower_part_into_self() {
 
     let v = ok_or_fail!(r);
     assert_eq!(v, Value::Unspecified);
-    assert_eq!(args[0].to_string(), "#(1 2 1 2 #\\a)");
+    assert_eq!(args[0].as_datum().to_string(), "#(1 2 1 2 #\\a)");
     assert!(args[0].is(&args[2]));
 }
 
@@ -2815,7 +2818,7 @@ fn vector_copy_no_overlap_lower_part_into_self() {
 
     let v = ok_or_fail!(r);
     assert_eq!(v, Value::Unspecified);
-    assert_eq!(args[0].to_string(), "#(1 2 \"foo\" 1 2)");
+    assert_eq!(args[0].as_datum().to_string(), "#(1 2 \"foo\" 1 2)");
     assert!(args[0].is(&args[2]));
 }
 
@@ -2835,7 +2838,7 @@ fn vector_copy_into_tail_overlap() {
 
     let v = ok_or_fail!(r);
     assert_eq!(v, Value::Unspecified);
-    assert_eq!(args[0].to_string(), "#(1 \"foo\" #f #\\a #\\a)");
+    assert_eq!(args[0].as_datum().to_string(), "#(1 \"foo\" #f #\\a #\\a)");
     assert!(args[0].is(&args[2]));
 }
 
@@ -2855,7 +2858,7 @@ fn vector_copy_into_head_overlap() {
 
     let v = ok_or_fail!(r);
     assert_eq!(v, Value::Unspecified);
-    assert_eq!(args[0].to_string(), "#(1 2 1 2 \"foo\")");
+    assert_eq!(args[0].as_datum().to_string(), "#(1 2 1 2 \"foo\")");
     assert!(args[0].is(&args[2]));
 }
 
@@ -2868,7 +2871,7 @@ fn string_fill_all() {
 
     let v = ok_or_fail!(r);
     assert_eq!(v, Value::Unspecified);
-    assert_eq!(args[0].to_string(), "\"xxxxxx\"");
+    assert_eq!(args[0].as_datum().to_string(), "\"xxxxxx\"");
 }
 
 #[test]
@@ -2884,7 +2887,7 @@ fn string_fill_to_end() {
 
     let v = ok_or_fail!(r);
     assert_eq!(v, Value::Unspecified);
-    assert_eq!(args[0].to_string(), "\"foxxxx\"");
+    assert_eq!(args[0].as_datum().to_string(), "\"foxxxx\"");
 }
 
 #[test]
@@ -2901,7 +2904,7 @@ fn string_fill_partial() {
 
     let v = ok_or_fail!(r);
     assert_eq!(v, Value::Unspecified);
-    assert_eq!(args[0].to_string(), "\"foxxxr\"");
+    assert_eq!(args[0].as_datum().to_string(), "\"foxxxr\"");
 }
 
 #[test]
@@ -2918,5 +2921,5 @@ fn string_fill_none() {
 
     let v = ok_or_fail!(r);
     assert_eq!(v, Value::Unspecified);
-    assert_eq!(args[0].to_string(), "\"foobar\"");
+    assert_eq!(args[0].as_datum().to_string(), "\"foobar\"");
 }

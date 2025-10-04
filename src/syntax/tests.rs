@@ -260,7 +260,7 @@ mod parsing {
             } if txt.lineno == 1
         ));
         let value = extract_or_fail!(&seq[0].kind, ExpressionKind::Literal);
-        assert_eq!(value.to_string(), "(quote a)");
+        assert_eq!(value.as_datum().to_string(), "(quote a)");
         assert!(et.parsers.is_empty());
     }
 
@@ -309,7 +309,7 @@ mod parsing {
         ));
         let value = extract_or_fail!(&seq[0].kind, ExpressionKind::Literal);
         assert_eq!(
-            value.to_string(),
+            value.as_datum().to_string(),
             "(quasiquote (a (unquote (+ 1 2)) (unquote-splicing (map abs (quote (-1 -2 -3))))))"
         );
         assert!(et.parsers.is_empty());
@@ -343,7 +343,7 @@ mod parsing {
             } if txt.lineno == 1
         ));
         let value = extract_or_fail!(&seq[0].kind, ExpressionKind::Literal);
-        assert_eq!(value.to_string(), "(if 5)");
+        assert_eq!(value.as_datum().to_string(), "(if 5)");
         assert!(et.parsers.is_empty());
     }
 
@@ -372,7 +372,7 @@ mod parsing {
             } if txt.lineno == 1
         ));
         let value = extract_or_fail!(&seq[0].kind, ExpressionKind::Literal);
-        assert_eq!(value.to_string(), "#(if 5)");
+        assert_eq!(value.as_datum().to_string(), "#(if 5)");
         assert!(et.parsers.is_empty());
     }
 
@@ -402,7 +402,7 @@ mod parsing {
             } if txt.lineno == 1
         ));
         let value = extract_or_fail!(&seq[0].kind, ExpressionKind::Literal);
-        assert_eq!(value.to_string(), "(a b c)");
+        assert_eq!(value.as_datum().to_string(), "(a b c)");
         assert!(et.parsers.is_empty());
     }
 
@@ -429,7 +429,7 @@ mod parsing {
             } if txt.lineno == 1
         ));
         let value = extract_or_fail!(&seq[0].kind, ExpressionKind::Literal);
-        assert_eq!(value.to_string(), "()");
+        assert_eq!(value.as_datum().to_string(), "()");
         assert!(et.parsers.is_empty());
     }
 
@@ -459,7 +459,7 @@ mod parsing {
             } if txt.lineno == 1
         ));
         let value = extract_or_fail!(&seq[0].kind, ExpressionKind::Literal);
-        assert_eq!(value.to_string(), "(a . b)");
+        assert_eq!(value.as_datum().to_string(), "(a . b)");
         assert!(et.parsers.is_empty());
     }
 
@@ -490,7 +490,7 @@ mod parsing {
             } if txt.lineno == 1
         ));
         let value = extract_or_fail!(&seq[0].kind, ExpressionKind::Literal);
-        assert_eq!(value.to_string(), "(a b . c)");
+        assert_eq!(value.as_datum().to_string(), "(a b . c)");
         assert!(et.parsers.is_empty());
     }
 
@@ -524,7 +524,7 @@ mod parsing {
             } if txt.lineno == 1
         ));
         let value = extract_or_fail!(&seq[0].kind, ExpressionKind::Literal);
-        assert_eq!(value.to_string(), "(a b c)");
+        assert_eq!(value.as_datum().to_string(), "(a b c)");
         assert!(et.parsers.is_empty());
     }
 
@@ -564,7 +564,7 @@ mod parsing {
             } if txt.lineno == 1
         ));
         let value = extract_or_fail!(&seq[0].kind, ExpressionKind::Literal);
-        assert_eq!(value.to_string(), "(a b c)");
+        assert_eq!(value.as_datum().to_string(), "(a b c)");
         assert!(et.parsers.is_empty());
     }
 
@@ -596,7 +596,7 @@ mod parsing {
             } if txt.lineno == 1
         ));
         let value = extract_or_fail!(&seq[0].kind, ExpressionKind::Literal);
-        assert_eq!(value.to_string(), "((a . b))");
+        assert_eq!(value.as_datum().to_string(), "((a . b))");
         assert!(et.parsers.is_empty());
     }
 
@@ -629,7 +629,7 @@ mod parsing {
             } if txt.lineno == 1
         ));
         let value = extract_or_fail!(&seq[0].kind, ExpressionKind::Literal);
-        assert_eq!(value.to_string(), "(a . c)");
+        assert_eq!(value.as_datum().to_string(), "(a . c)");
         assert!(et.parsers.is_empty());
     }
 
@@ -665,7 +665,7 @@ mod parsing {
             } if txt.lineno == 1
         ));
         let value = extract_or_fail!(&seq[0].kind, ExpressionKind::Literal);
-        assert_eq!(value.to_string(), "(a . d)");
+        assert_eq!(value.as_datum().to_string(), "(a . d)");
         assert!(et.parsers.is_empty());
     }
 
@@ -697,7 +697,7 @@ mod parsing {
             } if txt.lineno == 1
         ));
         let value = extract_or_fail!(&seq[0].kind, ExpressionKind::Literal);
-        assert_eq!(value.to_string(), "(a . b)");
+        assert_eq!(value.as_datum().to_string(), "(a . b)");
         assert!(et.parsers.is_empty());
     }
 
@@ -729,7 +729,7 @@ mod parsing {
             } if txt.lineno == 1
         ));
         let value = extract_or_fail!(&seq[0].kind, ExpressionKind::Literal);
-        assert_eq!(value.to_string(), "(a . b)");
+        assert_eq!(value.as_datum().to_string(), "(a . b)");
         assert!(et.parsers.is_empty());
     }
 
@@ -1312,7 +1312,7 @@ mod parsing {
         assert_eq!(name.as_ref(), "define");
         let val_expr = some_or_fail!(expr.as_ref());
         let val = extract_or_fail!(&val_expr.kind, ExpressionKind::Literal);
-        assert_eq!(val.to_string(), "10");
+        assert_eq!(val.as_datum().to_string(), "10");
         assert!(et.parsers.is_empty());
     }
 

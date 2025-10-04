@@ -508,7 +508,7 @@ fn apply_single_arity_lambda() {
 
     let v = ok_or_fail!(r);
     assert!(matches!(v, Value::Number(_)));
-    assert_eq!(v.to_string(), "5");
+    assert_eq!(v.as_datum().to_string(), "5");
     assert!(!env.binding.bound("x"));
 }
 
@@ -518,7 +518,7 @@ fn apply_single_arity_lambda_with_closure() {
     let env = TestEnv::default();
     let global_func = Intrinsic {
         arity: 1..1,
-        def: |args, _| Ok(Value::string(format!("bar {}", args[0]))),
+        def: |args, _| Ok(Value::string(format!("bar {}", args[0].as_datum()))),
         name: sym.get("stringify"),
     };
     env.binding
@@ -550,7 +550,7 @@ fn apply_variadic_lambda_with_closure() {
     let env = TestEnv::default();
     let global_func = Intrinsic {
         arity: 1..1,
-        def: |args, _| Ok(Value::string(format!("bar {}", args[0]))),
+        def: |args, _| Ok(Value::string(format!("bar {}", args[0].as_datum()))),
         name: sym.get("stringify"),
     };
     env.binding
@@ -585,7 +585,9 @@ fn apply_rest_lambda_with_closure() {
         def: |args, _| {
             Ok(Value::string(format!(
                 "bar {}, {}, {}",
-                args[0], args[1], args[2]
+                args[0].as_datum(),
+                args[1].as_datum(),
+                args[2].as_datum()
             )))
         },
         name: sym.get("stringify"),

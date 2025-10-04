@@ -13,21 +13,21 @@ mod display {
     fn bytevector_display() {
         let v = Value::ByteVector([1, 2, 3].into());
 
-        assert_eq!(v.to_string(), "#u8(1 2 3)");
+        assert_eq!(v.as_datum().to_string(), "#u8(1 2 3)");
     }
 
     #[test]
     fn empty_bytevector_display() {
         let v = Value::ByteVector([].into());
 
-        assert_eq!(v.to_string(), "#u8()");
+        assert_eq!(v.as_datum().to_string(), "#u8()");
     }
 
     #[test]
     fn bytevectormut_display() {
         let v = Value::bytevector_mut([3, 2, 1]);
 
-        assert_eq!(v.to_string(), "#u8(3 2 1)");
+        assert_eq!(v.as_datum().to_string(), "#u8(3 2 1)");
     }
 
     #[test]
@@ -48,14 +48,14 @@ mod display {
     fn boolean_true() {
         let v = Value::Boolean(true);
 
-        assert_eq!(v.to_string(), "#t");
+        assert_eq!(v.as_datum().to_string(), "#t");
     }
 
     #[test]
     fn boolean_false() {
         let v = Value::Boolean(false);
 
-        assert_eq!(v.to_string(), "#f");
+        assert_eq!(v.as_datum().to_string(), "#f");
     }
 
     #[test]
@@ -148,7 +148,7 @@ mod display {
     fn empty_list_display() {
         let v = zlist![];
 
-        assert_eq!(v.to_string(), "()")
+        assert_eq!(v.as_datum().to_string(), "()")
     }
 
     #[test]
@@ -162,7 +162,7 @@ mod display {
     fn unspecified_display() {
         let v = Value::Unspecified;
 
-        assert_eq!(v.to_string(), "#<unspecified>");
+        assert_eq!(v.as_datum().to_string(), "#<unspecified>");
     }
 
     #[test]
@@ -181,14 +181,14 @@ mod display {
             zlist![Value::Boolean(true), Value::Character('a')],
         ]);
 
-        assert_eq!(v.to_string(), "#(\"foo\" a (#t #\\a))");
+        assert_eq!(v.as_datum().to_string(), "#(\"foo\" a (#t #\\a))");
     }
 
     #[test]
     fn empty_vector_display() {
         let v = Value::vector([]);
 
-        assert_eq!(v.to_string(), "#()");
+        assert_eq!(v.as_datum().to_string(), "#()");
     }
 
     #[test]
@@ -207,7 +207,7 @@ mod display {
             zlist![Value::Boolean(true), Value::Character('a')],
         ]);
 
-        assert_eq!(v.to_string(), "#(\"foo\" a (#t #\\a))");
+        assert_eq!(v.as_datum().to_string(), "#(\"foo\" a (#t #\\a))");
     }
 
     #[test]
@@ -218,7 +218,7 @@ mod display {
         let v = Value::VectorMut(Rc::clone(&vec));
         vec.borrow_mut().push(v.clone());
 
-        assert_eq!(v.to_string(), "#0=#(1 2 #0#)");
+        assert_eq!(v.as_datum().to_string(), "#0=#(1 2 #0#)");
     }
 
     #[test]
@@ -230,7 +230,7 @@ mod display {
         vec.borrow_mut().push(head.clone());
         let v = Value::vector([Value::real(1), Value::real(2), head.clone()]);
 
-        assert_eq!(v.to_string(), "#(1 2 #0=#(3 4 #0#))");
+        assert_eq!(v.as_datum().to_string(), "#(1 2 #0=#(3 4 #0#))");
     }
 
     #[test]
@@ -243,7 +243,7 @@ mod display {
         vec.borrow_mut().push(Value::real(3));
         vec.borrow_mut().push(v.clone());
 
-        assert_eq!(v.to_string(), "#0=#(1 2 #0# 3 #0#)");
+        assert_eq!(v.as_datum().to_string(), "#0=#(1 2 #0# 3 #0#)");
     }
 
     #[test]
@@ -273,7 +273,7 @@ mod display {
             .into(),
         );
 
-        assert_eq!(v.to_string(), "#<intrinsic foo>");
+        assert_eq!(v.as_datum().to_string(), "#<intrinsic foo>");
     }
 
     #[test]
@@ -290,7 +290,7 @@ mod display {
         let lm = ok_or_fail!(Lambda::new([], None, empty_procedure_body()));
         let v = Value::procedure(Procedure::new(lm, Binding::default(), Some(sym.get("foo"))));
 
-        assert_eq!(v.to_string(), "#<procedure foo>");
+        assert_eq!(v.as_datum().to_string(), "#<procedure foo>");
     }
 }
 
@@ -301,77 +301,77 @@ mod character {
     fn display_ascii() {
         let v = Value::Character('a');
 
-        assert_eq!(v.to_string(), "#\\a");
+        assert_eq!(v.as_datum().to_string(), "#\\a");
     }
 
     #[test]
     fn display_extended_char() {
         let v = Value::Character('λ');
 
-        assert_eq!(v.to_string(), "#\\λ");
+        assert_eq!(v.as_datum().to_string(), "#\\λ");
     }
 
     #[test]
     fn display_emoji() {
         let v = Value::Character('🦀');
 
-        assert_eq!(v.to_string(), "#\\🦀");
+        assert_eq!(v.as_datum().to_string(), "#\\🦀");
     }
 
     #[test]
     fn display_control_picture() {
         let v = Value::Character('\u{2401}');
 
-        assert_eq!(v.to_string(), "#\\␁");
+        assert_eq!(v.as_datum().to_string(), "#\\␁");
     }
 
     #[test]
     fn display_replacement_char() {
         let v = Value::Character('\u{fffd}');
 
-        assert_eq!(v.to_string(), "#\\�");
+        assert_eq!(v.as_datum().to_string(), "#\\�");
     }
 
     #[test]
     fn display_one_digit_hex() {
         let v = Value::Character('\x0c');
 
-        assert_eq!(v.to_string(), "#\\xc");
+        assert_eq!(v.as_datum().to_string(), "#\\xc");
     }
 
     #[test]
     fn display_hex_uses_lowercase() {
         let v = Value::Character('\x0C');
 
-        assert_eq!(v.to_string(), "#\\xc");
+        assert_eq!(v.as_datum().to_string(), "#\\xc");
     }
 
     #[test]
     fn display_two_digit_hex() {
         let v = Value::Character('\x1d');
 
-        assert_eq!(v.to_string(), "#\\x1d");
+        assert_eq!(v.as_datum().to_string(), "#\\x1d");
     }
 
     #[test]
     fn display_four_digit_hex() {
         let v = Value::Character('\u{fff9}');
 
-        assert_eq!(v.to_string(), "#\\xfff9");
+        assert_eq!(v.as_datum().to_string(), "#\\xfff9");
     }
 
     #[test]
     fn display_special_purpose_plane() {
         let v = Value::Character('\u{e0001}');
 
-        assert_eq!(v.to_string(), "#\\xe0001");
+        assert_eq!(v.as_datum().to_string(), "#\\xe0001");
     }
 
     #[test]
     fn display_private_use_plane() {
         let v = Value::Character('\u{100001}');
 
-        assert_eq!(v.to_string(), "#\\x100001");
+        assert_eq!(v.as_datum().to_string(), "#\\x100001");
     }
 
     #[test]
@@ -398,7 +398,7 @@ mod character {
         for &(inp, exp) in cases {
             let v = Value::Character(inp);
 
-            assert_eq!(v.to_string(), format!("#\\{exp}"));
+            assert_eq!(v.as_datum().to_string(), format!("#\\{exp}"));
         }
     }
 }
@@ -410,14 +410,14 @@ mod number {
     fn display_int() {
         let v = Value::real(23);
 
-        assert_eq!(v.to_string(), "23");
+        assert_eq!(v.as_datum().to_string(), "23");
     }
 
     #[test]
     fn display_float() {
         let v = Value::real(234.23);
 
-        assert_eq!(v.to_string(), "234.23");
+        assert_eq!(v.as_datum().to_string(), "234.23");
     }
 
     #[test]
@@ -425,14 +425,14 @@ mod number {
         let r = ok_or_fail!(Real::reduce(3, 4));
         let v = Value::real(r);
 
-        assert_eq!(v.to_string(), "3/4");
+        assert_eq!(v.as_datum().to_string(), "3/4");
     }
 
     #[test]
     fn display_complex() {
         let v = Value::Number(Number::complex(4, 5));
 
-        assert_eq!(v.to_string(), "4+5i");
+        assert_eq!(v.as_datum().to_string(), "4+5i");
     }
 }
 
@@ -443,98 +443,98 @@ mod string {
     fn display_empty() {
         let v = Value::string("");
 
-        assert_eq!(v.to_string(), "\"\"");
+        assert_eq!(v.as_datum().to_string(), "\"\"");
     }
 
     #[test]
     fn display_alphanumeric() {
         let v = Value::string("abc123!@#");
 
-        assert_eq!(v.to_string(), "\"abc123!@#\"");
+        assert_eq!(v.as_datum().to_string(), "\"abc123!@#\"");
     }
 
     #[test]
     fn display_extended() {
         let v = Value::string("λ");
 
-        assert_eq!(v.to_string(), "\"λ\"");
+        assert_eq!(v.as_datum().to_string(), "\"λ\"");
     }
 
     #[test]
     fn display_emoji() {
         let v = Value::string("🦀");
 
-        assert_eq!(v.to_string(), "\"🦀\"");
+        assert_eq!(v.as_datum().to_string(), "\"🦀\"");
     }
 
     #[test]
     fn display_control_picture() {
         let v = Value::string("\u{2401}");
 
-        assert_eq!(v.to_string(), "\"␁\"");
+        assert_eq!(v.as_datum().to_string(), "\"␁\"");
     }
 
     #[test]
     fn display_replacement() {
         let v = Value::string("\u{fffd}");
 
-        assert_eq!(v.to_string(), "\"�\"");
+        assert_eq!(v.as_datum().to_string(), "\"�\"");
     }
 
     #[test]
     fn display_null() {
         let v = Value::string("\0");
 
-        assert_eq!(v.to_string(), "\"\\x0;\"");
+        assert_eq!(v.as_datum().to_string(), "\"\\x0;\"");
     }
 
     #[test]
     fn display_pipe() {
         let v = Value::string("|");
 
-        assert_eq!(v.to_string(), "\"|\"");
+        assert_eq!(v.as_datum().to_string(), "\"|\"");
     }
 
     #[test]
     fn display_one_digit_hex() {
         let v = Value::string("\x0c");
 
-        assert_eq!(v.to_string(), "\"\\xc;\"");
+        assert_eq!(v.as_datum().to_string(), "\"\\xc;\"");
     }
 
     #[test]
     fn display_hex_uses_lowercase() {
         let v = Value::string("\x0C");
 
-        assert_eq!(v.to_string(), "\"\\xc;\"");
+        assert_eq!(v.as_datum().to_string(), "\"\\xc;\"");
     }
 
     #[test]
     fn display_two_digit_hex() {
         let v = Value::string("\x1d");
 
-        assert_eq!(v.to_string(), "\"\\x1d;\"");
+        assert_eq!(v.as_datum().to_string(), "\"\\x1d;\"");
     }
 
     #[test]
     fn display_four_digit_hex() {
         let v = Value::string("\u{fff9}");
 
-        assert_eq!(v.to_string(), "\"\\xfff9;\"");
+        assert_eq!(v.as_datum().to_string(), "\"\\xfff9;\"");
     }
 
     #[test]
     fn display_special_purpose_plane() {
         let v = Value::string("\u{e0001}");
 
-        assert_eq!(v.to_string(), "\"\\xe0001;\"");
+        assert_eq!(v.as_datum().to_string(), "\"\\xe0001;\"");
     }
 
     #[test]
     fn display_private_use_plane() {
         let v = Value::string("\u{100001}");
 
-        assert_eq!(v.to_string(), "\"\\x100001;\"");
+        assert_eq!(v.as_datum().to_string(), "\"\\x100001;\"");
     }
 
     #[test]
@@ -544,7 +544,7 @@ mod string {
 bar",
         );
 
-        assert_eq!(v.to_string(), "\"foo\\nbar\"");
+        assert_eq!(v.as_datum().to_string(), "\"foo\\nbar\"");
     }
 
     #[test]
@@ -564,14 +564,14 @@ bar",
     fn display_string_mut() {
         let v = Value::string_mut("abc123!@#");
 
-        assert_eq!(v.to_string(), "\"abc123!@#\"");
+        assert_eq!(v.as_datum().to_string(), "\"abc123!@#\"");
     }
 
     fn check_escape_sequence(cases: &[(&str, &str)]) {
         for &(inp, exp) in cases {
             let v = Value::string(inp);
 
-            assert_eq!(v.to_string(), format!("\"{exp}\""));
+            assert_eq!(v.as_datum().to_string(), format!("\"{exp}\""));
         }
     }
 }
@@ -585,7 +585,7 @@ mod symbol {
         let sym = SymbolTable::default();
         let v = Value::Symbol(sym.get("foo"));
 
-        assert_eq!(v.to_string(), "foo");
+        assert_eq!(v.as_datum().to_string(), "foo");
     }
 
     #[test]
@@ -593,7 +593,7 @@ mod symbol {
         let sym = SymbolTable::default();
         let v = Value::Symbol(sym.get(""));
 
-        assert_eq!(v.to_string(), "||");
+        assert_eq!(v.as_datum().to_string(), "||");
     }
 
     #[test]
@@ -601,7 +601,7 @@ mod symbol {
         let sym = SymbolTable::default();
         let v = Value::Symbol(sym.get("foo bar"));
 
-        assert_eq!(v.to_string(), "|foo bar|");
+        assert_eq!(v.as_datum().to_string(), "|foo bar|");
     }
 
     #[test]
@@ -609,7 +609,7 @@ mod symbol {
         let sym = SymbolTable::default();
         let v = Value::Symbol(sym.get("   "));
 
-        assert_eq!(v.to_string(), "|   |");
+        assert_eq!(v.as_datum().to_string(), "|   |");
     }
 
     #[test]
@@ -617,7 +617,7 @@ mod symbol {
         let sym = SymbolTable::default();
         let v = Value::Symbol(sym.get("abc123!@$^&"));
 
-        assert_eq!(v.to_string(), "abc123!@$^&");
+        assert_eq!(v.as_datum().to_string(), "abc123!@$^&");
     }
 
     #[test]
@@ -630,7 +630,7 @@ mod symbol {
             let v = Value::Symbol(sym.get(&s));
 
             let expected = if case == '.' { s } else { format!("|{s}|") };
-            assert_eq!(v.to_string(), expected);
+            assert_eq!(v.as_datum().to_string(), expected);
         }
     }
 
@@ -639,7 +639,7 @@ mod symbol {
         let sym = SymbolTable::default();
         let v = Value::Symbol(sym.get("123abc"));
 
-        assert_eq!(v.to_string(), "|123abc|");
+        assert_eq!(v.as_datum().to_string(), "|123abc|");
     }
 
     #[test]
@@ -651,7 +651,7 @@ mod symbol {
 
             let v = Value::Symbol(sym.get(&s));
 
-            assert_eq!(v.to_string(), s);
+            assert_eq!(v.as_datum().to_string(), s);
         }
     }
 
@@ -660,7 +660,7 @@ mod symbol {
         let sym = SymbolTable::default();
         let v = Value::Symbol(sym.get("\0"));
 
-        assert_eq!(v.to_string(), "|\\x0;|");
+        assert_eq!(v.as_datum().to_string(), "|\\x0;|");
     }
 
     #[test]
@@ -668,7 +668,7 @@ mod symbol {
         let sym = SymbolTable::default();
         let v = Value::Symbol(sym.get("|"));
 
-        assert_eq!(v.to_string(), "|\\||");
+        assert_eq!(v.as_datum().to_string(), "|\\||");
     }
 
     #[test]
@@ -676,7 +676,7 @@ mod symbol {
         let sym = SymbolTable::default();
         let v = Value::Symbol(sym.get("\x0c"));
 
-        assert_eq!(v.to_string(), "|\\xc;|");
+        assert_eq!(v.as_datum().to_string(), "|\\xc;|");
     }
 
     #[test]
@@ -684,7 +684,7 @@ mod symbol {
         let sym = SymbolTable::default();
         let v = Value::Symbol(sym.get("\x0C"));
 
-        assert_eq!(v.to_string(), "|\\xc;|");
+        assert_eq!(v.as_datum().to_string(), "|\\xc;|");
     }
 
     #[test]
@@ -692,7 +692,7 @@ mod symbol {
         let sym = SymbolTable::default();
         let v = Value::Symbol(sym.get("\x1d"));
 
-        assert_eq!(v.to_string(), "|\\x1d;|");
+        assert_eq!(v.as_datum().to_string(), "|\\x1d;|");
     }
 
     #[test]
@@ -700,7 +700,7 @@ mod symbol {
         let sym = SymbolTable::default();
         let v = Value::Symbol(sym.get("\u{fff9}"));
 
-        assert_eq!(v.to_string(), "|\\xfff9;|");
+        assert_eq!(v.as_datum().to_string(), "|\\xfff9;|");
     }
 
     #[test]
@@ -708,7 +708,7 @@ mod symbol {
         let sym = SymbolTable::default();
         let v = Value::Symbol(sym.get("\u{e0001}"));
 
-        assert_eq!(v.to_string(), "|\\xe0001;|");
+        assert_eq!(v.as_datum().to_string(), "|\\xe0001;|");
     }
 
     #[test]
@@ -716,7 +716,7 @@ mod symbol {
         let sym = SymbolTable::default();
         let v = Value::Symbol(sym.get("\u{100001}"));
 
-        assert_eq!(v.to_string(), "|\\x100001;|");
+        assert_eq!(v.as_datum().to_string(), "|\\x100001;|");
     }
 
     #[test]
@@ -727,7 +727,7 @@ mod symbol {
 bar",
         ));
 
-        assert_eq!(v.to_string(), "|foo\\nbar|");
+        assert_eq!(v.as_datum().to_string(), "|foo\\nbar|");
     }
 
     #[test]
@@ -751,7 +751,7 @@ bar",
         for &(inp, exp) in cases {
             let v = Value::Symbol(sym.get(inp));
 
-            assert_eq!(v.to_string(), format!("|{exp}|"));
+            assert_eq!(v.as_datum().to_string(), format!("|{exp}|"));
         }
     }
 
@@ -765,7 +765,7 @@ bar",
         let sym = SymbolTable::default();
         let v = Value::Symbol(sym.get("λ"));
 
-        assert_eq!(v.to_string(), "|λ|");
+        assert_eq!(v.as_datum().to_string(), "|λ|");
     }
 
     #[test]
@@ -773,7 +773,7 @@ bar",
         let sym = SymbolTable::default();
         let v = Value::Symbol(sym.get("🦀"));
 
-        assert_eq!(v.to_string(), "|🦀|");
+        assert_eq!(v.as_datum().to_string(), "|🦀|");
     }
 
     #[test]
@@ -781,7 +781,7 @@ bar",
         let sym = SymbolTable::default();
         let v = Value::Symbol(sym.get("\u{2401}"));
 
-        assert_eq!(v.to_string(), "|␁|");
+        assert_eq!(v.as_datum().to_string(), "|␁|");
     }
 
     #[test]
@@ -789,7 +789,7 @@ bar",
         let sym = SymbolTable::default();
         let v = Value::Symbol(sym.get("\u{fffd}"));
 
-        assert_eq!(v.to_string(), "|�|");
+        assert_eq!(v.as_datum().to_string(), "|�|");
     }
 }
 
@@ -930,14 +930,14 @@ mod pair {
     fn pair_display() {
         let v = Value::cons(Value::Boolean(true), Value::Boolean(false));
 
-        assert_eq!(v.to_string(), "(#t . #f)")
+        assert_eq!(v.as_datum().to_string(), "(#t . #f)")
     }
 
     #[test]
     fn empty_cdr_display() {
         let v = Value::cons(Value::Boolean(true), Value::Null);
 
-        assert_eq!(v.to_string(), "(#t)")
+        assert_eq!(v.as_datum().to_string(), "(#t)")
     }
 
     #[test]
@@ -947,14 +947,14 @@ mod pair {
             Value::cons(Value::real(2), Value::cons(Value::real(3), Value::Null)),
         );
 
-        assert_eq!(v.to_string(), "(1 2 3)")
+        assert_eq!(v.as_datum().to_string(), "(1 2 3)")
     }
 
     #[test]
     fn improper_list_display() {
         let v = Value::cons(Value::real(1), Value::cons(Value::real(2), Value::real(3)));
 
-        assert_eq!(v.to_string(), "(1 2 . 3)")
+        assert_eq!(v.as_datum().to_string(), "(1 2 . 3)")
     }
 
     #[test]
@@ -964,7 +964,7 @@ mod pair {
             Value::cons(Value::real(3), Value::Null),
         );
 
-        assert_eq!(v.to_string(), "((1 . 2) 3)")
+        assert_eq!(v.as_datum().to_string(), "((1 . 2) 3)")
     }
 
     #[test]
@@ -977,14 +977,14 @@ mod pair {
             ),
         );
 
-        assert_eq!(v.to_string(), "(1 (2 3))")
+        assert_eq!(v.as_datum().to_string(), "(1 (2 3))")
     }
 
     #[test]
     fn list_containing_empty_list_display() {
         let v = Value::cons(Value::Null, Value::Null);
 
-        assert_eq!(v.to_string(), "(())")
+        assert_eq!(v.as_datum().to_string(), "(())")
     }
 
     #[test]
@@ -1076,7 +1076,7 @@ mod pair {
 
         let v = Value::Pair(Rc::clone(&p));
 
-        assert_eq!(v.to_string(), "#0=(1 2 3 . #0#)");
+        assert_eq!(v.as_datum().to_string(), "#0=(1 2 3 . #0#)");
     }
 
     #[test]
@@ -1137,7 +1137,7 @@ mod pair {
 
         let v = Value::Pair(Rc::clone(&p));
 
-        assert_eq!(v.to_string(), "(1 2 . #0=(3 4 5 . #0#))");
+        assert_eq!(v.as_datum().to_string(), "(1 2 . #0=(3 4 5 . #0#))");
     }
 
     #[test]
@@ -1192,21 +1192,21 @@ mod list {
     fn empty() {
         let lst = zlist![];
 
-        assert_eq!(lst.to_string(), "()");
+        assert_eq!(lst.as_datum().to_string(), "()");
     }
 
     #[test]
     fn empty_mutable() {
         let lst = zlist_mut![];
 
-        assert_eq!(lst.to_string(), "()");
+        assert_eq!(lst.as_datum().to_string(), "()");
     }
 
     #[test]
     fn one() {
         let lst = zlist![Value::real(5)];
 
-        assert_eq!(lst.to_string(), "(5)");
+        assert_eq!(lst.as_datum().to_string(), "(5)");
     }
 
     #[test]
@@ -1218,7 +1218,7 @@ mod list {
             Value::Boolean(true)
         ];
 
-        assert_eq!(lst.to_string(), "(5 a #t)");
+        assert_eq!(lst.as_datum().to_string(), "(5 a #t)");
     }
 
     #[test]
@@ -1230,7 +1230,7 @@ mod list {
             Value::Boolean(true)
         ];
 
-        assert_eq!(lst.to_string(), "(5 a #t)");
+        assert_eq!(lst.as_datum().to_string(), "(5 a #t)");
     }
 
     #[test]
@@ -1241,14 +1241,14 @@ mod list {
             zlist![Value::Symbol(sym.get("a")), Value::Boolean(true)],
         ];
 
-        assert_eq!(lst.to_string(), "(5 (a #t))");
+        assert_eq!(lst.as_datum().to_string(), "(5 (a #t))");
     }
 
     #[test]
     fn ctor_empty() {
         let lst = Value::list(vec![]);
 
-        assert_eq!(lst.to_string(), "()");
+        assert_eq!(lst.as_datum().to_string(), "()");
     }
 
     #[test]
@@ -1260,7 +1260,7 @@ mod list {
             Value::Boolean(true),
         ]);
 
-        assert_eq!(lst.to_string(), "(5 a #t)");
+        assert_eq!(lst.as_datum().to_string(), "(5 a #t)");
     }
 
     #[test]
@@ -1272,14 +1272,14 @@ mod list {
             Value::Boolean(true),
         ]);
 
-        assert_eq!(lst.to_string(), "(5 a #t)");
+        assert_eq!(lst.as_datum().to_string(), "(5 a #t)");
     }
 
     #[test]
     fn improper_ctor_empty() {
         let lst = Value::list_cons(vec![]);
 
-        assert_eq!(lst.to_string(), "()");
+        assert_eq!(lst.as_datum().to_string(), "()");
     }
 
     #[test]
@@ -1287,7 +1287,7 @@ mod list {
         let lst = Value::list_cons(vec![Value::real(5)]);
 
         assert!(matches!(lst, Value::Number(_)));
-        assert_eq!(lst.to_string(), "5");
+        assert_eq!(lst.as_datum().to_string(), "5");
     }
 
     #[test]
@@ -1299,7 +1299,7 @@ mod list {
             Value::Boolean(true),
         ]);
 
-        assert_eq!(lst.to_string(), "(5 a . #t)");
+        assert_eq!(lst.as_datum().to_string(), "(5 a . #t)");
     }
 
     #[test]
@@ -1311,7 +1311,7 @@ mod list {
             Value::Boolean(true),
         ]);
 
-        assert_eq!(lst.to_string(), "(5 a . #t)");
+        assert_eq!(lst.as_datum().to_string(), "(5 a . #t)");
     }
 }
 
@@ -1794,7 +1794,7 @@ mod iterator {
 
         assert_eq!(vec.len(), 2);
         assert!(
-            matches!(&vec[0], ValItem::Element(v @ Value::Pair(_)) if v.to_string() == "(5 . 10)")
+            matches!(&vec[0], ValItem::Element(v @ Value::Pair(_)) if v.as_datum().to_string() == "(5 . 10)")
         );
         assert!(matches!(&vec[1], ValItem::Element(Value::Number(n)) if n.to_string() == "10"));
     }
@@ -1808,9 +1808,11 @@ mod iterator {
 
         assert_eq!(vec.len(), 3);
         assert!(
-            matches!(&vec[0], ValItem::Element(v @ Value::Pair(_)) if v.to_string() == "(5 10)")
+            matches!(&vec[0], ValItem::Element(v @ Value::Pair(_)) if v.as_datum().to_string() == "(5 10)")
         );
-        assert!(matches!(&vec[1], ValItem::Element(v @ Value::Pair(_)) if v.to_string() == "(10)"));
+        assert!(
+            matches!(&vec[1], ValItem::Element(v @ Value::Pair(_)) if v.as_datum().to_string() == "(10)")
+        );
         assert!(matches!(&vec[2], ValItem::Element(Value::Null)));
     }
 
@@ -1835,7 +1837,7 @@ mod iterator {
 
         let lst = extract_or_fail!(some_or_fail!(sublist), ValItem::Element);
         let p = extract_or_fail!(lst.clone(), Value::Pair);
-        assert_eq!(p.car.to_string(), "1");
+        assert_eq!(p.car.as_datum().to_string(), "1");
 
         it.next();
         it.next();
@@ -1860,7 +1862,7 @@ mod iterator {
         let sublist = it.skip(2).next();
 
         let lst = extract_or_fail!(some_or_fail!(sublist), ValItem::Element);
-        assert_eq!(lst.to_string(), "(15 20)");
+        assert_eq!(lst.as_datum().to_string(), "(15 20)");
     }
 
     #[test]
@@ -1876,7 +1878,7 @@ mod iterator {
         let sublist = it.skip(0).next();
 
         let lst = extract_or_fail!(some_or_fail!(sublist), ValItem::Element);
-        assert_eq!(lst.to_string(), "(5 10 15 20)");
+        assert_eq!(lst.as_datum().to_string(), "(5 10 15 20)");
     }
 
     #[test]
@@ -1892,7 +1894,7 @@ mod iterator {
         let sublist = it.skip(4).next();
 
         let lst = extract_or_fail!(some_or_fail!(sublist), ValItem::Element);
-        assert_eq!(lst.to_string(), "()");
+        assert_eq!(lst.as_datum().to_string(), "()");
     }
 
     #[test]
@@ -1924,7 +1926,7 @@ mod iterator {
         let sublist = it.skip(3).next();
 
         let lst = extract_or_fail!(some_or_fail!(sublist), ValItem::Element);
-        assert_eq!(lst.to_string(), "20");
+        assert_eq!(lst.as_datum().to_string(), "20");
     }
 
     #[test]
@@ -1966,6 +1968,6 @@ mod iterator {
             unreachable!();
         };
         let p = extract_or_fail!(lst, Value::Pair);
-        assert_eq!(p.car.to_string(), "2");
+        assert_eq!(p.car.as_datum().to_string(), "2");
     }
 }

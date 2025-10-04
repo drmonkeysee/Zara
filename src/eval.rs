@@ -107,9 +107,10 @@ impl Value {
     }
 }
 
+// TODO: will need multiple ways to display pub Value
 impl Display for Value {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        self.0.fmt(f)
+        self.0.as_datum().fmt(f)
     }
 }
 
