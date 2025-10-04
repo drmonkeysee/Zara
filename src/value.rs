@@ -12,9 +12,10 @@ mod display;
 #[cfg(test)]
 mod tests;
 
+use self::display::CycleId;
 pub(crate) use self::{
     condition::Condition,
-    display::{Datum, TypeName, ValueMessage},
+    display::{Cycle, Datum, TypeName, ValueMessage},
 };
 use crate::{
     eval::{Intrinsic, Procedure},
@@ -289,18 +290,15 @@ impl PartialEq for Value {
 
 impl Eq for Value {}
 
-// NOTE: cycles are identified via their untyped pointer address
-pub(crate) type CycleId = *const ();
-
 pub(crate) enum ValItem {
-    Cycle(CycleId, Value),
+    Cycle(Cycle),
     Element(Value),
 }
 
 impl ValItem {
     pub(crate) fn into_value(self) -> Value {
         match self {
-            Self::Cycle(_, v) | Self::Element(v) => v,
+            Self::Cycle(Cycle(_, v)) | Self::Element(v) => v,
         }
     }
 }
@@ -342,7 +340,7 @@ impl Iterator for ListIterator {
         }
         Some(match cyid {
             None => Self::Item::Element(curr),
-            Some(cyid) => Self::Item::Cycle(cyid, curr),
+            Some(id) => Self::Item::Cycle(Cycle(id, curr)),
         })
     }
 }
@@ -438,7 +436,7 @@ impl Pair {
         self.cdr
             .iter_list()
             .try_fold(1usize, |acc, item| match item {
-                ValItem::Cycle(..) => Err(InvalidList::Cycle),
+                ValItem::Cycle(_) => Err(InvalidList::Cycle),
                 ValItem::Element(Value::Null) => Ok(acc),
                 ValItem::Element(Value::Pair(_) | Value::PairMut(_)) => Ok(acc + 1),
                 ValItem::Element(_) => Err(InvalidList::Improper),

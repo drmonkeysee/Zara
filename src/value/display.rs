@@ -1,4 +1,4 @@
-use super::{CycleId, ValItem, Value};
+use super::{ValItem, Value};
 use crate::{
     lex::{DisplayTokenLines, TokenLinesMessage},
     string::{CharDatum, StrDatum},
@@ -9,6 +9,14 @@ use std::{
     ptr,
     slice::Iter,
 };
+
+pub(crate) struct Cycle(pub(super) CycleId, pub(super) Value);
+
+impl Cycle {
+    pub(crate) fn value(&self) -> &Value {
+        &self.1
+    }
+}
 
 pub(crate) struct Datum<'a>(pub(super) &'a Value);
 
@@ -88,6 +96,9 @@ impl Display for TypeName<'_> {
     }
 }
 
+// NOTE: cycles are identified via their untyped pointer address
+pub(super) type CycleId = *const ();
+
 struct PairDatum<'a>(&'a Value);
 
 // TODO: the .as_datum() calls need to be dependent on top-level display
@@ -103,7 +114,7 @@ impl Display for PairDatum<'_> {
         }
         for item in it {
             match item {
-                ValItem::Cycle(..) => {
+                ValItem::Cycle(_) => {
                     f.write_str(" . dup…")?;
                     break;
                 }
@@ -142,7 +153,7 @@ impl Iterator for VecIterator<'_> {
         if let Some(vec) = v.as_refvec()
             && ptr::eq(vec.as_ref(), self.head)
         {
-            Some(ValItem::Cycle(self.head.as_ptr().cast(), v.clone()))
+            Some(ValItem::Cycle(Cycle(self.head.as_ptr().cast(), v.clone())))
         } else {
             Some(ValItem::Element(v.clone()))
         }
@@ -171,9 +182,9 @@ impl Cycles {
     fn scan_pair(&mut self, v: &Value) {
         for item in v.iter_list() {
             match item {
-                ValItem::Cycle(cyid, _) => {
-                    if !self.0.contains_key(&cyid) {
-                        self.0.insert(cyid, true);
+                ValItem::Cycle(Cycle(id, _)) => {
+                    if !self.0.contains_key(&id) {
+                        self.0.insert(id, true);
                     }
                     break;
                 }
@@ -200,8 +211,8 @@ impl Cycles {
                 self.0.insert(vref_id, false);
                 for item in VecIterator::new(v) {
                     match item {
-                        ValItem::Cycle(cyid, _) => {
-                            self.0.insert(cyid, true);
+                        ValItem::Cycle(Cycle(id, _)) => {
+                            self.0.insert(id, true);
                             break;
                         }
                         ValItem::Element(v) => self.scan(&v),

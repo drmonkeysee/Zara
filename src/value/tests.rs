@@ -1843,7 +1843,7 @@ mod iterator {
         it.next();
         let sublist = it.next();
 
-        let ValItem::Cycle(_, cyc) = some_or_fail!(sublist) else {
+        let ValItem::Cycle(Cycle(_, cyc)) = some_or_fail!(sublist) else {
             unreachable!();
         };
         assert!(cyc.is(&lst));
@@ -1964,7 +1964,7 @@ mod iterator {
 
         let sublist = it.skip(7).next();
 
-        let ValItem::Cycle(_, lst) = some_or_fail!(sublist) else {
+        let ValItem::Cycle(Cycle(_, lst)) = some_or_fail!(sublist) else {
             unreachable!();
         };
         let p = extract_or_fail!(lst, Value::Pair);
