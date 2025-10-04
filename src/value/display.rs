@@ -104,7 +104,7 @@ struct PairDatum<'a>(&'a Value);
 // TODO: the .as_datum() calls need to be dependent on top-level display
 impl Display for PairDatum<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        let mut it = self.0.iter_list();
+        let mut it = self.0.iter();
         if let Some(ValItem::Element(v)) = it.next()
             && let Some(p) = v.as_refpair()
         {
@@ -180,7 +180,7 @@ impl Cycles {
     }
 
     fn scan_pair(&mut self, v: &Value) {
-        for item in v.iter_list() {
+        for item in v.iter() {
             match item {
                 ValItem::Cycle(Cycle(id, _)) => {
                     if !self.0.contains_key(&id) {

@@ -1774,7 +1774,7 @@ mod iterator {
     #[test]
     fn single_value() {
         let v = Value::real(5);
-        let it = v.iter_list();
+        let it = v.iter();
 
         let vec = it.collect::<Vec<_>>();
 
@@ -1788,7 +1788,7 @@ mod iterator {
     #[test]
     fn pair() {
         let v = Value::cons(Value::real(5), Value::real(10));
-        let it = v.iter_list();
+        let it = v.iter();
 
         let vec = it.collect::<Vec<_>>();
 
@@ -1802,7 +1802,7 @@ mod iterator {
     #[test]
     fn list() {
         let v = zlist![Value::real(5), Value::real(10)];
-        let it = v.iter_list();
+        let it = v.iter();
 
         let vec = it.collect::<Vec<_>>();
 
@@ -1831,7 +1831,7 @@ mod iterator {
         .into();
         end.borrow_mut().cdr = Value::Pair(Rc::clone(&p));
         let v = Value::Pair(p);
-        let mut it = v.iter_list();
+        let mut it = v.iter();
 
         let sublist = it.next();
 
@@ -1857,7 +1857,7 @@ mod iterator {
             Value::real(15),
             Value::real(20)
         ];
-        let it = v.iter_list();
+        let it = v.iter();
 
         let sublist = it.skip(2).next();
 
@@ -1873,7 +1873,7 @@ mod iterator {
             Value::real(15),
             Value::real(20)
         ];
-        let it = v.iter_list();
+        let it = v.iter();
 
         let sublist = it.skip(0).next();
 
@@ -1889,7 +1889,7 @@ mod iterator {
             Value::real(15),
             Value::real(20)
         ];
-        let it = v.iter_list();
+        let it = v.iter();
 
         let sublist = it.skip(4).next();
 
@@ -1905,7 +1905,7 @@ mod iterator {
             Value::real(15),
             Value::real(20)
         ];
-        let it = v.iter_list();
+        let it = v.iter();
 
         let sublist = it.skip(5).next();
 
@@ -1921,7 +1921,7 @@ mod iterator {
                 Value::cons(Value::real(15), Value::real(20)),
             ),
         );
-        let it = v.iter_list();
+        let it = v.iter();
 
         let sublist = it.skip(3).next();
 
@@ -1938,7 +1938,7 @@ mod iterator {
                 Value::cons(Value::real(15), Value::real(20)),
             ),
         );
-        let it = v.iter_list();
+        let it = v.iter();
 
         let sublist = it.skip(4).next();
 
@@ -1960,7 +1960,7 @@ mod iterator {
         .into();
         end.borrow_mut().cdr = Value::Pair(Rc::clone(&p));
         let v = Value::Pair(p);
-        let it = v.iter_list();
+        let it = v.iter();
 
         let sublist = it.skip(7).next();
 

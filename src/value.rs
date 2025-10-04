@@ -254,8 +254,8 @@ impl Value {
         }
     }
 
-    pub(crate) fn iter_list(&self) -> ListIterator {
-        ListIterator::new(self)
+    pub(crate) fn iter(&self) -> ValueIterator {
+        ValueIterator::new(self)
     }
 }
 
@@ -303,12 +303,12 @@ impl ValItem {
     }
 }
 
-pub(crate) struct ListIterator {
+pub(crate) struct ValueIterator {
     head: Option<Value>,
     visited: HashSet<CycleId>,
 }
 
-impl ListIterator {
+impl ValueIterator {
     fn new(head: &Value) -> Self {
         Self {
             head: Some(head.clone()),
@@ -327,7 +327,7 @@ impl ListIterator {
     }
 }
 
-impl Iterator for ListIterator {
+impl Iterator for ValueIterator {
     type Item = ValItem;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -424,7 +424,7 @@ pub(crate) struct Pair {
 
 impl Pair {
     pub(crate) fn is_list(&self) -> bool {
-        self.cdr.iter_list().all(|item| {
+        self.cdr.iter().all(|item| {
             matches!(
                 item,
                 ValItem::Element(Value::Null | Value::Pair(_) | Value::PairMut(_))
@@ -433,14 +433,12 @@ impl Pair {
     }
 
     pub(crate) fn len(&self) -> PairLenResult {
-        self.cdr
-            .iter_list()
-            .try_fold(1usize, |acc, item| match item {
-                ValItem::Cycle(_) => Err(InvalidList::Cycle),
-                ValItem::Element(Value::Null) => Ok(acc),
-                ValItem::Element(Value::Pair(_) | Value::PairMut(_)) => Ok(acc + 1),
-                ValItem::Element(_) => Err(InvalidList::Improper),
-            })
+        self.cdr.iter().try_fold(1usize, |acc, item| match item {
+            ValItem::Cycle(_) => Err(InvalidList::Cycle),
+            ValItem::Element(Value::Null) => Ok(acc),
+            ValItem::Element(Value::Pair(_) | Value::PairMut(_)) => Ok(acc + 1),
+            ValItem::Element(_) => Err(InvalidList::Improper),
+        })
     }
 
     fn typename(&self) -> &str {

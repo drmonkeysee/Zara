@@ -600,7 +600,7 @@ fn list_append(args: &[Value], _env: &Frame) -> EvalResult {
 
 fn list_reverse(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = first(args);
-    arg.iter_list()
+    arg.iter()
         .enumerate()
         .try_fold(Value::Null, |head, (i, item)| match item {
             ValItem::Cycle(_) => Err(Condition::circular_list(arg).into()),
@@ -620,7 +620,7 @@ fn list_tail(args: &[Value], _env: &Frame) -> EvalResult {
     let k = super::second(args);
     let ith = try_val_to_index(k, SECOND_ARG_LABEL)?;
     first(args)
-        .iter_list()
+        .iter()
         .enumerate()
         .find_map(|(i, item)| {
             let v = item.into_value();
@@ -684,7 +684,7 @@ fn list_copy(args: &[Value], _env: &Frame) -> EvalResult {
         // TODO: experimental
         // https://doc.rust-lang.org/std/iter/trait.Iterator.html#method.try_collect
         Ok(Value::list_cons_mut(
-            arg.iter_list()
+            arg.iter()
                 .try_fold(Vec::new(), |mut acc, item| match item {
                     ValItem::Cycle(_) => Err((acc, InvalidList::Cycle)),
                     ValItem::Element(v) => {
@@ -1150,7 +1150,7 @@ fn try_list_to_vec(val: &Value) -> Result<Vec<Value>, Exception> {
 }
 
 fn try_list_acc(val: &Value, acc: &mut Vec<Value>) -> Result<(), Exception> {
-    val.iter_list()
+    val.iter()
         .try_fold(acc, |acc, item| match item {
             ValItem::Cycle(c) => Err(Exception::from(Condition::circular_list(c.value()))),
             ValItem::Element(v) => {
