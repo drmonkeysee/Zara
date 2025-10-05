@@ -303,6 +303,20 @@ impl ValItem {
     }
 }
 
+struct SimpleIterator(Option<Value>);
+
+impl Iterator for SimpleIterator {
+    type Item = Value;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let curr = self.0.take()?;
+        if let Some(p) = curr.as_refpair() {
+            let _ = self.0.insert(p.as_ref().cdr.clone());
+        }
+        Some(curr)
+    }
+}
+
 pub(crate) struct ValueIterator {
     head: Option<Value>,
     visited: HashSet<NodeId>,

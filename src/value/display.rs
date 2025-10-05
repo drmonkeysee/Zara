@@ -1,4 +1,4 @@
-use super::{ValItem, Value};
+use super::{SimpleIterator, ValItem, Value};
 use crate::{
     lex::{DisplayTokenLines, TokenLinesMessage},
     string::{CharDatum, StrDatum},
@@ -231,48 +231,35 @@ impl Traversal {
     }
 
     fn visit_pair(&mut self, v: &Value) {
-        // TODO: can i rewrite this without redundant iter
-        for item in v.iter() {
-            match item {
-                ValItem::Cycle(Cycle(id, _)) => {
-                    self.add(id, true);
+        for v in SimpleIterator(Some(v.clone())) {
+            let child = if let Some(p) = v.as_refpair() {
+                let pref = p.as_ref();
+                if !self.add(ptr::from_ref(pref).cast()) {
                     break;
                 }
-                ValItem::Element(mut v) => {
-                    v = if let Some(p) = v.as_refpair() {
-                        let pref = p.as_ref();
-                        self.add(ptr::from_ref(pref).cast(), false);
-                        pref.car.clone()
-                    } else {
-                        v
-                    };
-                    self.visit(&v);
-                }
+                pref.car.clone()
+            } else {
+                v
+            };
+            self.visit(&child);
+        }
+    }
+
+    fn visit_vec(&mut self, vec: &[Value]) {
+        if self.add(vec.as_ptr().cast()) {
+            for item in vec.iter() {
+                self.visit(item);
             }
         }
     }
 
-    fn visit_vec(&mut self, v: &[Value]) {
-        if self.add(v.as_ptr().cast(), false) {
-            for item in VecIterator::new(v) {
-                match item {
-                    ValItem::Cycle(Cycle(id, _)) => {
-                        self.add(id, true);
-                        break;
-                    }
-                    ValItem::Element(v) => self.visit(&v),
-                }
-            }
-        }
-    }
-
-    fn add(&mut self, id: NodeId, cycle: bool) -> bool {
+    fn add(&mut self, id: NodeId) -> bool {
         let added = match self.visits.get_mut(&id) {
             None => {
                 self.visits.insert(
                     id,
                     Visit {
-                        cycle,
+                        cycle: false,
                         label: self.label,
                     },
                 );
@@ -283,7 +270,7 @@ impl Traversal {
                 false
             }
         };
-        if self.label_all || cycle || !added {
+        if self.label_all || !added {
             self.label += 1;
         }
         added
