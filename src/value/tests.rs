@@ -1768,7 +1768,6 @@ mod equivalence {
     }
 }
 
-/*
 mod iterator {
     use super::*;
 
@@ -1782,7 +1781,7 @@ mod iterator {
         assert_eq!(vec.len(), 1);
         assert!(matches!(
             &vec[0],
-            ValItem::Element(Value::Number(n)) if n.to_string() == "5"
+            Value::Number(n) if n.to_string() == "5"
         ));
     }
 
@@ -1794,10 +1793,8 @@ mod iterator {
         let vec = it.collect::<Vec<_>>();
 
         assert_eq!(vec.len(), 2);
-        assert!(
-            matches!(&vec[0], ValItem::Element(v @ Value::Pair(_)) if v.as_datum().to_string() == "(5 . 10)")
-        );
-        assert!(matches!(&vec[1], ValItem::Element(Value::Number(n)) if n.to_string() == "10"));
+        assert!(matches!(&vec[0], v @ Value::Pair(_) if v.as_datum().to_string() == "(5 . 10)"));
+        assert!(matches!(&vec[1], Value::Number(n) if n.to_string() == "10"));
     }
 
     #[test]
@@ -1808,13 +1805,9 @@ mod iterator {
         let vec = it.collect::<Vec<_>>();
 
         assert_eq!(vec.len(), 3);
-        assert!(
-            matches!(&vec[0], ValItem::Element(v @ Value::Pair(_)) if v.as_datum().to_string() == "(5 10)")
-        );
-        assert!(
-            matches!(&vec[1], ValItem::Element(v @ Value::Pair(_)) if v.as_datum().to_string() == "(10)")
-        );
-        assert!(matches!(&vec[2], ValItem::Element(Value::Null)));
+        assert!(matches!(&vec[0], v @ Value::Pair(_) if v.as_datum().to_string() == "(5 10)"));
+        assert!(matches!(&vec[1], v @ Value::Pair(_) if v.as_datum().to_string() == "(10)"));
+        assert!(matches!(&vec[2], Value::Null));
     }
 
     #[test]
@@ -1836,7 +1829,7 @@ mod iterator {
 
         let sublist = it.next();
 
-        let lst = extract_or_fail!(some_or_fail!(sublist), ValItem::Element);
+        let lst = some_or_fail!(sublist);
         let p = extract_or_fail!(lst.clone(), Value::Pair);
         assert_eq!(p.car.as_datum().to_string(), "1");
 
@@ -1844,9 +1837,7 @@ mod iterator {
         it.next();
         let sublist = it.next();
 
-        let ValItem::Cycle(Cycle(_, cyc)) = some_or_fail!(sublist) else {
-            unreachable!();
-        };
+        let cyc = some_or_fail!(sublist);
         assert!(cyc.is(&lst));
     }
 
@@ -1862,7 +1853,7 @@ mod iterator {
 
         let sublist = it.skip(2).next();
 
-        let lst = extract_or_fail!(some_or_fail!(sublist), ValItem::Element);
+        let lst = some_or_fail!(sublist);
         assert_eq!(lst.as_datum().to_string(), "(15 20)");
     }
 
@@ -1878,7 +1869,7 @@ mod iterator {
 
         let sublist = it.skip(0).next();
 
-        let lst = extract_or_fail!(some_or_fail!(sublist), ValItem::Element);
+        let lst = some_or_fail!(sublist);
         assert_eq!(lst.as_datum().to_string(), "(5 10 15 20)");
     }
 
@@ -1894,7 +1885,7 @@ mod iterator {
 
         let sublist = it.skip(4).next();
 
-        let lst = extract_or_fail!(some_or_fail!(sublist), ValItem::Element);
+        let lst = some_or_fail!(sublist);
         assert_eq!(lst.as_datum().to_string(), "()");
     }
 
@@ -1926,7 +1917,7 @@ mod iterator {
 
         let sublist = it.skip(3).next();
 
-        let lst = extract_or_fail!(some_or_fail!(sublist), ValItem::Element);
+        let lst = some_or_fail!(sublist);
         assert_eq!(lst.as_datum().to_string(), "20");
     }
 
@@ -1965,14 +1956,11 @@ mod iterator {
 
         let sublist = it.skip(7).next();
 
-        let ValItem::Cycle(Cycle(_, lst)) = some_or_fail!(sublist) else {
-            unreachable!();
-        };
+        let lst = some_or_fail!(sublist);
         let p = extract_or_fail!(lst, Value::Pair);
         assert_eq!(p.car.as_datum().to_string(), "2");
     }
 }
-*/
 
 mod traverse {
     use super::*;
