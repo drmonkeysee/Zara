@@ -161,9 +161,9 @@ impl Iterator for VecIterator<'_> {
 }
 
 #[derive(Default)]
-struct Visits(HashMap<NodeId, bool>);
+struct Traversal(HashMap<NodeId, bool>);
 
-impl Visits {
+impl Traversal {
     fn visit(&mut self, v: &Value) {
         if v.as_refpair().is_some() {
             self.visit_pair(v);
@@ -236,7 +236,7 @@ fn write_seq<T: Display>(
 mod tests {
     use super::*;
 
-    mod visits {
+    mod traversal {
         use super::*;
         use crate::value::Pair;
         use std::{cell::RefCell, rc::Rc};
@@ -245,7 +245,7 @@ mod tests {
         fn simple_value() {
             // 5
             let v = Value::real(5);
-            let mut c = Visits::default();
+            let mut c = Traversal::default();
 
             c.visit(&v);
 
@@ -256,7 +256,7 @@ mod tests {
         fn normal_list() {
             // (1 2 3)
             let v = zlist![Value::real(1), Value::real(2), Value::real(3)];
-            let mut c = Visits::default();
+            let mut c = Traversal::default();
 
             c.visit(&v);
 
@@ -278,7 +278,7 @@ mod tests {
             .into();
             end.borrow_mut().cdr = Value::Pair(Rc::clone(&p));
             let v = Value::Pair(Rc::clone(&p));
-            let mut c = Visits::default();
+            let mut c = Traversal::default();
 
             c.visit(&v);
 
@@ -305,7 +305,7 @@ mod tests {
             }
             .into();
             let v = Value::Pair(Rc::clone(&p));
-            let mut c = Visits::default();
+            let mut c = Traversal::default();
 
             c.visit(&v);
 
@@ -338,7 +338,7 @@ mod tests {
             .into();
             end.borrow_mut().cdr = Value::Pair(Rc::clone(&p));
             let v = Value::Pair(Rc::clone(&p));
-            let mut c = Visits::default();
+            let mut c = Traversal::default();
 
             c.visit(&v);
 
@@ -349,7 +349,7 @@ mod tests {
         fn simple_vector() {
             // #(1 2 3)
             let v = Value::vector([Value::real(1), Value::real(2), Value::real(3)]);
-            let mut c = Visits::default();
+            let mut c = Traversal::default();
 
             c.visit(&v);
 
@@ -362,7 +362,7 @@ mod tests {
             let vec = Rc::new(RefCell::new(vec![Value::real(1), Value::real(2)]));
             let v = Value::VectorMut(Rc::clone(&vec));
             vec.borrow_mut().push(v.clone());
-            let mut c = Visits::default();
+            let mut c = Traversal::default();
 
             c.visit(&v);
 
@@ -376,7 +376,7 @@ mod tests {
             let head = Value::VectorMut(Rc::clone(&vec));
             vec.borrow_mut().push(head.clone());
             let v = Value::vector([Value::real(1), Value::real(2), head.clone()]);
-            let mut c = Visits::default();
+            let mut c = Traversal::default();
 
             c.visit(&v);
 
@@ -392,7 +392,7 @@ mod tests {
             vec.borrow_mut().push(Value::real(3));
             vec.borrow_mut().push(v.clone());
 
-            let mut c = Visits::default();
+            let mut c = Traversal::default();
 
             c.visit(&v);
 
@@ -413,7 +413,7 @@ mod tests {
             ]));
             let v = Value::VectorMut(Rc::clone(&vec));
             vec.borrow_mut().push(v.clone());
-            let mut c = Visits::default();
+            let mut c = Traversal::default();
 
             c.visit(&v);
 
@@ -432,7 +432,7 @@ mod tests {
             ]));
             let v = Value::VectorMut(Rc::clone(&vec));
             nested_vec.borrow_mut().push(v.clone());
-            let mut c = Visits::default();
+            let mut c = Traversal::default();
 
             c.visit(&v);
 
@@ -457,7 +457,7 @@ mod tests {
             .into();
             end.borrow_mut().cdr = Value::Pair(Rc::clone(&p));
             let v = Value::Pair(Rc::clone(&p));
-            let mut c = Visits::default();
+            let mut c = Traversal::default();
 
             c.visit(&v);
 
@@ -486,7 +486,7 @@ mod tests {
             ]));
             let v = Value::VectorMut(Rc::clone(&vec));
             vec.borrow_mut().push(v.clone());
-            let mut c = Visits::default();
+            let mut c = Traversal::default();
 
             c.visit(&v);
 
