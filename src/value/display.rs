@@ -183,14 +183,14 @@ impl Visits {
         for item in v.iter() {
             match item {
                 ValItem::Cycle(Cycle(id, _)) => {
-                    if !self.0.contains_key(&id) {
-                        self.0.insert(id, true);
-                    }
+                    self.0.insert(id, true);
                     break;
                 }
                 ValItem::Element(mut v) => {
                     v = if let Some(p) = v.as_refpair() {
-                        p.as_ref().car.clone()
+                        let pref = p.as_ref();
+                        self.0.insert(ptr::from_ref(pref).cast(), false);
+                        pref.car.clone()
                     } else {
                         v
                     };
@@ -204,10 +204,6 @@ impl Visits {
         let vref_id = v.as_ptr().cast();
         match self.0.get_mut(&vref_id) {
             None => {
-                // NOTE: keep track of all vector references because a vector cycle
-                // may be a nested vector referencing an outer vector and without
-                // "remembering" outer vectors we never see the cycle via VecIterator
-                // (because the cycle does not exist in any particular vector instance).
                 self.0.insert(vref_id, false);
                 for item in VecIterator::new(v) {
                     match item {
