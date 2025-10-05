@@ -25,7 +25,7 @@ use crate::{
 };
 use std::{
     cell::{Ref, RefCell, RefMut},
-    collections::{HashMap, HashSet},
+    collections::HashMap,
     ptr,
     rc::Rc,
 };
@@ -520,13 +520,6 @@ impl Traverse {
             self.label += 1;
         }
         added
-    }
-
-    fn all_cycles(self) -> HashSet<NodeId> {
-        self.visits
-            .into_iter()
-            .filter_map(|(k, v)| v.cycle.then_some(k))
-            .collect()
     }
 }
 

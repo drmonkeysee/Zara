@@ -1226,6 +1226,70 @@ mod pair {
 
         assert_eq!(cons.as_datum().to_string(), "#0=(#0# . #0#)");
     }
+
+    #[test]
+    fn same_cycle_reference_display() {
+        let end = RefCell::new(Pair {
+            car: Value::real(3),
+            cdr: Value::Null,
+        })
+        .into();
+        let p = Pair {
+            car: Value::real(1),
+            cdr: Value::cons(Value::real(2), Value::PairMut(Rc::clone(&end))),
+        }
+        .into();
+        end.borrow_mut().cdr = Value::Pair(Rc::clone(&p));
+        let cyc = Value::Pair(p);
+
+        let lst = zlist![Value::real(10), Value::real(11), cyc.clone(), cyc];
+
+        assert_eq!(lst.as_datum().to_string(), "(10 11 #0=(1 2 3 . #0#) #0#)");
+    }
+
+    #[test]
+    fn multiple_same_cycle_reference_display() {
+        let end = RefCell::new(Pair {
+            car: Value::real(3),
+            cdr: Value::Null,
+        })
+        .into();
+        let p = Pair {
+            car: Value::real(1),
+            cdr: Value::cons(Value::real(2), Value::PairMut(Rc::clone(&end))),
+        }
+        .into();
+        end.borrow_mut().cdr = Value::Pair(Rc::clone(&p));
+        let cyc1 = Value::Pair(p);
+
+        let end = RefCell::new(Pair {
+            car: Value::real(6),
+            cdr: Value::Null,
+        })
+        .into();
+        let p = Pair {
+            car: Value::real(4),
+            cdr: Value::cons(Value::real(5), Value::PairMut(Rc::clone(&end))),
+        }
+        .into();
+        end.borrow_mut().cdr = Value::Pair(Rc::clone(&p));
+        let cyc2 = Value::Pair(p);
+
+        let lst = zlist![
+            Value::real(10),
+            Value::real(11),
+            cyc1.clone(),
+            cyc1,
+            cyc2.clone(),
+            Value::real(12),
+            cyc2,
+        ];
+
+        assert_eq!(
+            lst.as_datum().to_string(),
+            "(10 11 #0=(1 2 3 . #0#) #0# #1=(4 5 6 . #1#) 13 #1#)"
+        );
+    }
 }
 
 mod list_ctor {
@@ -2008,6 +2072,15 @@ mod iterator {
 mod traverse {
     use super::*;
 
+    fn cycle_count(graph: &Traverse) -> usize {
+        graph.visits.values().fold(usize::MIN, |mut acc, vs| {
+            if vs.cycle {
+                acc += 1
+            };
+            acc
+        })
+    }
+
     #[test]
     fn simple_value() {
         // 5
@@ -2015,7 +2088,7 @@ mod traverse {
 
         let graph = Traverse::value(&v);
 
-        assert!(graph.all_cycles().is_empty());
+        assert!(graph.visits.is_empty());
     }
 
     #[test]
@@ -2025,7 +2098,7 @@ mod traverse {
 
         let graph = Traverse::value(&v);
 
-        assert!(graph.all_cycles().is_empty());
+        assert_eq!(cycle_count(&graph), 0);
     }
 
     #[test]
@@ -2046,7 +2119,7 @@ mod traverse {
 
         let graph = Traverse::value(&v);
 
-        assert_eq!(graph.all_cycles().len(), 1);
+        assert_eq!(cycle_count(&graph), 1);
     }
 
     #[test]
@@ -2072,7 +2145,7 @@ mod traverse {
 
         let graph = Traverse::value(&v);
 
-        assert_eq!(graph.all_cycles().len(), 1);
+        assert_eq!(cycle_count(&graph), 1);
     }
 
     #[test]
@@ -2104,7 +2177,9 @@ mod traverse {
 
         let graph = Traverse::value(&v);
 
-        assert_eq!(graph.all_cycles().len(), 2);
+        assert_eq!(cycle_count(&graph), 2);
+        assert_eq!(some_or_fail!(graph.get(p.node_id())).label, 0);
+        assert_eq!(some_or_fail!(graph.get(nested_head.node_id())).label, 1);
     }
 
     #[test]
@@ -2114,7 +2189,7 @@ mod traverse {
 
         let graph = Traverse::value(&v);
 
-        assert!(graph.all_cycles().is_empty());
+        assert_eq!(cycle_count(&graph), 0);
     }
 
     #[test]
@@ -2126,7 +2201,7 @@ mod traverse {
 
         let graph = Traverse::value(&v);
 
-        assert_eq!(graph.all_cycles().len(), 1);
+        assert_eq!(cycle_count(&graph), 1);
     }
 
     #[test]
@@ -2139,7 +2214,7 @@ mod traverse {
 
         let graph = Traverse::value(&v);
 
-        assert_eq!(graph.all_cycles().len(), 1);
+        assert_eq!(cycle_count(&graph), 1);
     }
 
     #[test]
@@ -2153,7 +2228,7 @@ mod traverse {
 
         let graph = Traverse::value(&v);
 
-        assert_eq!(graph.all_cycles().len(), 1);
+        assert_eq!(cycle_count(&graph), 1);
     }
 
     #[test]
@@ -2173,7 +2248,15 @@ mod traverse {
 
         let graph = Traverse::value(&v);
 
-        assert_eq!(graph.all_cycles().len(), 2);
+        assert_eq!(cycle_count(&graph), 2);
+        assert_eq!(
+            some_or_fail!(graph.get(vec.borrow().as_ptr().cast())).label,
+            0
+        );
+        assert_eq!(
+            some_or_fail!(graph.get(nested_vec.borrow().as_ptr().cast())).label,
+            1
+        );
     }
 
     #[test]
@@ -2191,7 +2274,7 @@ mod traverse {
 
         let graph = Traverse::value(&v);
 
-        assert_eq!(graph.all_cycles().len(), 1);
+        assert_eq!(cycle_count(&graph), 1);
     }
 
     #[test]
@@ -2215,7 +2298,13 @@ mod traverse {
 
         let graph = Traverse::value(&v);
 
-        assert_eq!(graph.all_cycles().len(), 2);
+        assert_eq!(cycle_count(&graph), 2);
+        assert_eq!(cycle_count(&graph), 2);
+        assert_eq!(some_or_fail!(graph.get(p.node_id())).label, 0);
+        assert_eq!(
+            some_or_fail!(graph.get(nested_vec.borrow().as_ptr().cast())).label,
+            1
+        );
     }
 
     #[test]
@@ -2243,6 +2332,12 @@ mod traverse {
 
         let graph = Traverse::value(&v);
 
-        assert_eq!(graph.all_cycles().len(), 2);
+        assert_eq!(cycle_count(&graph), 2);
+        assert_eq!(cycle_count(&graph), 2);
+        assert_eq!(
+            some_or_fail!(graph.get(vec.borrow().as_ptr().cast())).label,
+            0
+        );
+        assert_eq!(some_or_fail!(graph.get(nested_head.node_id())).label, 1);
     }
 }
