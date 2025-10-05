@@ -204,6 +204,7 @@ impl Traversal {
     }
 
     fn visit_pair(&mut self, v: &Value) {
+        // TODO: can i rewrite this without redundant iter
         for item in v.iter() {
             match item {
                 ValItem::Cycle(Cycle(id, _)) => {
