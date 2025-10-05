@@ -293,7 +293,7 @@ impl Display for SyntaxErrorLineMessage<'_> {
             .filter_map(|err| (!err.ctx.span.is_empty()).then_some(&err.ctx.span))
             .partition_overlap()
         {
-            let mut cursor = 0;
+            let mut cursor = usize::MIN;
             f.write_char('\t')?;
             for span in group {
                 write!(

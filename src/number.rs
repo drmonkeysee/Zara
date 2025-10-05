@@ -1085,7 +1085,7 @@ impl RadixPrivate for Decimal {
 
 // NOTE: https://en.wikipedia.org/wiki/Euclidean_algorithm
 fn gcd_euclidean(mut a: u64, mut b: u64) -> u64 {
-    while b > 0 {
+    while b != 0 {
         let t = b;
         b = a % b;
         a = t;

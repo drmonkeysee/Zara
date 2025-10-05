@@ -291,7 +291,7 @@ impl Display for TokenErrorLineMessage<'_> {
             return Ok(());
         }
 
-        let mut cursor = 0;
+        let mut cursor = usize::MIN;
         f.write_char('\t')?;
         for span in errs
             .iter()

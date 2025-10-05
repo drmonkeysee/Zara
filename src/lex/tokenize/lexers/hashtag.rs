@@ -206,7 +206,7 @@ impl<'me, 'txt> BlockComment<'me, 'txt, ContinueComment> {
 impl<'me, 'txt> BlockComment<'me, 'txt, StartComment> {
     fn new(scanner: &'me mut Scanner<'txt>) -> Self {
         Self {
-            depth: 0,
+            depth: usize::MIN,
             policy: StartComment,
             scanner,
         }
