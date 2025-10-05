@@ -1183,9 +1183,52 @@ mod pair {
 
         assert!(matches!(err_or_fail!(p.len()), InvalidList::Cycle));
     }
+
+    #[test]
+    fn cyclic_cdr_display() {
+        let p = RefCell::new(Pair {
+            car: Value::real(1),
+            cdr: Value::real(2),
+        })
+        .into();
+        let cons = Value::PairMut(Rc::clone(&p));
+        p.borrow_mut().cdr = cons.clone();
+
+        assert_eq!(cons.as_datum().to_string(), "#0=(1 . #0#)");
+    }
+
+    #[test]
+    #[ignore = "stack overflow"]
+    fn cyclic_car_display() {
+        let p = RefCell::new(Pair {
+            car: Value::real(1),
+            cdr: Value::real(2),
+        })
+        .into();
+        let cons = Value::PairMut(Rc::clone(&p));
+        p.borrow_mut().car = cons.clone();
+
+        assert_eq!(cons.as_datum().to_string(), "#0=(#0# . 2)");
+    }
+
+    #[test]
+    #[ignore = "stack overflow"]
+    fn cyclic_cons_display() {
+        let p = RefCell::new(Pair {
+            car: Value::real(1),
+            cdr: Value::real(2),
+        })
+        .into();
+        let cons = Value::PairMut(Rc::clone(&p));
+        let mut pmut = p.borrow_mut();
+        pmut.car = cons.clone();
+        pmut.cdr = cons.clone();
+
+        assert_eq!(cons.as_datum().to_string(), "#0=(#0# . #0#)");
+    }
 }
 
-mod list {
+mod list_ctor {
     use super::*;
 
     #[test]
