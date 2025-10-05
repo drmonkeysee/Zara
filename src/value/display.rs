@@ -164,11 +164,11 @@ impl Iterator for VecIterator<'_> {
 struct Visits(HashMap<NodeId, bool>);
 
 impl Visits {
-    fn scan(&mut self, v: &Value) {
+    fn visit(&mut self, v: &Value) {
         if v.as_refpair().is_some() {
-            self.scan_pair(v);
+            self.visit_pair(v);
         } else if let Some(vec) = v.as_refvec() {
-            self.scan_vec(vec.as_ref());
+            self.visit_vec(vec.as_ref());
         }
     }
 
@@ -179,7 +179,7 @@ impl Visits {
             .collect()
     }
 
-    fn scan_pair(&mut self, v: &Value) {
+    fn visit_pair(&mut self, v: &Value) {
         for item in v.iter() {
             match item {
                 ValItem::Cycle(Cycle(id, _)) => {
@@ -194,13 +194,13 @@ impl Visits {
                     } else {
                         v
                     };
-                    self.scan(&v);
+                    self.visit(&v);
                 }
             }
         }
     }
 
-    fn scan_vec(&mut self, v: &[Value]) {
+    fn visit_vec(&mut self, v: &[Value]) {
         let vref_id = v.as_ptr().cast();
         match self.0.get_mut(&vref_id) {
             None => {
@@ -211,7 +211,7 @@ impl Visits {
                             self.0.insert(id, true);
                             break;
                         }
-                        ValItem::Element(v) => self.scan(&v),
+                        ValItem::Element(v) => self.visit(&v),
                     }
                 }
             }
@@ -247,7 +247,7 @@ mod tests {
             let v = Value::real(5);
             let mut c = Visits::default();
 
-            c.scan(&v);
+            c.visit(&v);
 
             assert!(c.all_cycles().is_empty());
         }
@@ -258,7 +258,7 @@ mod tests {
             let v = zlist![Value::real(1), Value::real(2), Value::real(3)];
             let mut c = Visits::default();
 
-            c.scan(&v);
+            c.visit(&v);
 
             assert!(c.all_cycles().is_empty());
         }
@@ -280,7 +280,7 @@ mod tests {
             let v = Value::Pair(Rc::clone(&p));
             let mut c = Visits::default();
 
-            c.scan(&v);
+            c.visit(&v);
 
             assert_eq!(c.all_cycles().len(), 1);
         }
@@ -307,7 +307,7 @@ mod tests {
             let v = Value::Pair(Rc::clone(&p));
             let mut c = Visits::default();
 
-            c.scan(&v);
+            c.visit(&v);
 
             assert_eq!(c.all_cycles().len(), 1);
         }
@@ -340,7 +340,7 @@ mod tests {
             let v = Value::Pair(Rc::clone(&p));
             let mut c = Visits::default();
 
-            c.scan(&v);
+            c.visit(&v);
 
             assert_eq!(c.all_cycles().len(), 2);
         }
@@ -351,7 +351,7 @@ mod tests {
             let v = Value::vector([Value::real(1), Value::real(2), Value::real(3)]);
             let mut c = Visits::default();
 
-            c.scan(&v);
+            c.visit(&v);
 
             assert!(c.all_cycles().is_empty());
         }
@@ -364,7 +364,7 @@ mod tests {
             vec.borrow_mut().push(v.clone());
             let mut c = Visits::default();
 
-            c.scan(&v);
+            c.visit(&v);
 
             assert_eq!(c.all_cycles().len(), 1);
         }
@@ -378,7 +378,7 @@ mod tests {
             let v = Value::vector([Value::real(1), Value::real(2), head.clone()]);
             let mut c = Visits::default();
 
-            c.scan(&v);
+            c.visit(&v);
 
             assert_eq!(c.all_cycles().len(), 1);
         }
@@ -394,7 +394,7 @@ mod tests {
 
             let mut c = Visits::default();
 
-            c.scan(&v);
+            c.visit(&v);
 
             assert_eq!(c.all_cycles().len(), 1);
         }
@@ -415,7 +415,7 @@ mod tests {
             vec.borrow_mut().push(v.clone());
             let mut c = Visits::default();
 
-            c.scan(&v);
+            c.visit(&v);
 
             assert_eq!(c.all_cycles().len(), 2);
         }
@@ -434,7 +434,7 @@ mod tests {
             nested_vec.borrow_mut().push(v.clone());
             let mut c = Visits::default();
 
-            c.scan(&v);
+            c.visit(&v);
 
             assert_eq!(c.all_cycles().len(), 1);
         }
@@ -459,7 +459,7 @@ mod tests {
             let v = Value::Pair(Rc::clone(&p));
             let mut c = Visits::default();
 
-            c.scan(&v);
+            c.visit(&v);
 
             assert_eq!(c.all_cycles().len(), 2);
         }
@@ -488,7 +488,7 @@ mod tests {
             vec.borrow_mut().push(v.clone());
             let mut c = Visits::default();
 
-            c.scan(&v);
+            c.visit(&v);
 
             assert_eq!(c.all_cycles().len(), 2);
         }
