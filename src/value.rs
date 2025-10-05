@@ -12,10 +12,9 @@ mod display;
 #[cfg(test)]
 mod tests;
 
-use self::display::NodeId;
 pub(crate) use self::{
     condition::Condition,
-    display::{Cycle, Datum, TypeName, ValueMessage},
+    display::{Datum, TypeName, ValueMessage},
 };
 use crate::{
     eval::{Intrinsic, Procedure},
@@ -26,7 +25,7 @@ use crate::{
 };
 use std::{
     cell::{Ref, RefCell, RefMut},
-    collections::HashSet,
+    collections::{HashMap, HashSet},
     ptr,
     rc::Rc,
 };
@@ -290,22 +289,15 @@ impl PartialEq for Value {
 
 impl Eq for Value {}
 
-pub(crate) enum ValItem {
-    Cycle(Cycle),
-    Element(Value),
-}
+pub(crate) struct ValueIterator(Option<Value>);
 
-impl ValItem {
-    pub(crate) fn into_value(self) -> Value {
-        match self {
-            Self::Cycle(Cycle(_, v)) | Self::Element(v) => v,
-        }
+impl ValueIterator {
+    fn new(v: &Value) -> Self {
+        Self(Some(v.clone()))
     }
 }
 
-struct SimpleIterator(Option<Value>);
-
-impl Iterator for SimpleIterator {
+impl Iterator for ValueIterator {
     type Item = Value;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -314,48 +306,6 @@ impl Iterator for SimpleIterator {
             let _ = self.0.insert(p.as_ref().cdr.clone());
         }
         Some(curr)
-    }
-}
-
-pub(crate) struct ValueIterator {
-    head: Option<Value>,
-    visited: HashSet<NodeId>,
-}
-
-impl ValueIterator {
-    fn new(head: &Value) -> Self {
-        Self {
-            head: Some(head.clone()),
-            visited: HashSet::new(),
-        }
-    }
-
-    fn visited(&mut self, p: &Pair) -> Option<NodeId> {
-        let cyid = ptr::from_ref(p).cast();
-        if self.visited.contains(&cyid) {
-            Some(cyid)
-        } else {
-            self.visited.insert(cyid);
-            None
-        }
-    }
-}
-
-impl Iterator for ValueIterator {
-    type Item = ValItem;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let curr = self.head.take()?;
-        let mut cyid = None;
-        if let Some(p) = curr.as_refpair() {
-            let pref = p.as_ref();
-            cyid = self.visited(pref);
-            let _ = self.head.insert(pref.cdr.clone());
-        }
-        Some(match cyid {
-            None => Self::Item::Element(curr),
-            Some(id) => Self::Item::Cycle(Cycle(id, curr)),
-        })
     }
 }
 
@@ -438,21 +388,29 @@ pub(crate) struct Pair {
 
 impl Pair {
     pub(crate) fn is_list(&self) -> bool {
-        self.cdr.iter().all(|item| {
-            matches!(
-                item,
-                ValItem::Element(Value::Null | Value::Pair(_) | Value::PairMut(_))
-            )
-        })
+        let graph = Traverse::pair(self);
+        !graph.has_cycles()
+            && self
+                .cdr
+                .iter()
+                .all(|item| matches!(item, Value::Null | Value::Pair(_) | Value::PairMut(_)))
     }
 
     pub(crate) fn len(&self) -> PairLenResult {
-        self.cdr.iter().try_fold(1usize, |acc, item| match item {
-            ValItem::Cycle(_) => Err(InvalidList::Cycle),
-            ValItem::Element(Value::Null) => Ok(acc),
-            ValItem::Element(Value::Pair(_) | Value::PairMut(_)) => Ok(acc + 1),
-            ValItem::Element(_) => Err(InvalidList::Improper),
-        })
+        let graph = Traverse::pair(self);
+        if graph.has_cycles() {
+            Err(InvalidList::Cycle)
+        } else {
+            self.cdr.iter().try_fold(1usize, |acc, item| match item {
+                Value::Null => Ok(acc),
+                Value::Pair(_) | Value::PairMut(_) => Ok(acc + 1),
+                _ => Err(InvalidList::Improper),
+            })
+        }
+    }
+
+    fn node_id(&self) -> NodeId {
+        ptr::from_ref(self).cast()
     }
 
     fn typename(&self) -> &str {
@@ -468,4 +426,110 @@ impl AsRef<Self> for Pair {
     fn as_ref(&self) -> &Self {
         self
     }
+}
+
+pub(crate) struct Traverse {
+    label: usize,
+    label_all: bool,
+    visits: HashMap<NodeId, Visit>,
+}
+
+impl Traverse {
+    pub(crate) fn value(v: &Value) -> Self {
+        let mut me = Self::create(false);
+        me.visit(v);
+        me
+    }
+
+    fn pair(p: &Pair) -> Self {
+        let mut me = Self::create(false);
+        me.add(p.node_id());
+        me.visit(&p.cdr);
+        me
+    }
+
+    fn create(label_all: bool) -> Self {
+        Self {
+            label: usize::MIN,
+            label_all,
+            visits: HashMap::default(),
+        }
+    }
+
+    pub(crate) fn has_cycles(&self) -> bool {
+        self.visits.values().any(|vs| vs.cycle)
+    }
+
+    fn get(&self, id: NodeId) -> Option<&Visit> {
+        self.visits.get(&id)
+    }
+
+    fn visit(&mut self, v: &Value) {
+        if v.as_refpair().is_some() {
+            self.visit_pair(v);
+        } else if let Some(vec) = v.as_refvec() {
+            self.visit_vec(vec.as_ref());
+        }
+    }
+
+    fn visit_pair(&mut self, v: &Value) {
+        for v in ValueIterator(Some(v.clone())) {
+            let child = if let Some(p) = v.as_refpair() {
+                let pref = p.as_ref();
+                if !self.add(pref.node_id()) {
+                    break;
+                }
+                pref.car.clone()
+            } else {
+                v
+            };
+            self.visit(&child);
+        }
+    }
+
+    fn visit_vec(&mut self, vec: &[Value]) {
+        if self.add(vec.as_ptr().cast()) {
+            for item in vec.iter() {
+                self.visit(item);
+            }
+        }
+    }
+
+    fn add(&mut self, id: NodeId) -> bool {
+        let added = match self.visits.get_mut(&id) {
+            None => {
+                self.visits.insert(
+                    id,
+                    Visit {
+                        cycle: false,
+                        label: self.label,
+                    },
+                );
+                true
+            }
+            Some(vs) => {
+                vs.cycle = true;
+                false
+            }
+        };
+        if self.label_all || !added {
+            self.label += 1;
+        }
+        added
+    }
+
+    fn all_cycles(self) -> HashSet<NodeId> {
+        self.visits
+            .into_iter()
+            .filter_map(|(k, v)| v.cycle.then_some(k))
+            .collect()
+    }
+}
+
+// NOTE: pairs and vectors are identified via their untyped pointer address
+type NodeId = *const ();
+
+struct Visit {
+    cycle: bool,
+    label: usize,
 }

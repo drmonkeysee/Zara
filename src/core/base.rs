@@ -60,8 +60,8 @@ use crate::{
     number::{Integer, Number, NumericError, NumericTypeName, Real},
     string::{Symbol, unicode::UnicodeError},
     value::{
-        BvRef, CollRef, CollSized, Condition, InvalidList, Pair, PairSized, StrRef, TypeName,
-        ValItem, Value, VecRef,
+        BvRef, CollRef, CollSized, Condition, InvalidList, Pair, PairSized, StrRef, Traverse,
+        TypeName, Value, VecRef,
     },
 };
 use std::{
@@ -600,20 +600,22 @@ fn list_append(args: &[Value], _env: &Frame) -> EvalResult {
 
 fn list_reverse(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = first(args);
-    arg.iter()
-        .enumerate()
-        .try_fold(Value::Null, |head, (i, item)| match item {
-            ValItem::Cycle(_) => Err(Condition::circular_list(arg).into()),
-            ValItem::Element(v) => {
-                if let Value::Null = v {
+    let graph = Traverse::value(arg);
+    if graph.has_cycles() {
+        Err(Condition::circular_list(arg).into())
+    } else {
+        arg.iter()
+            .enumerate()
+            .try_fold(Value::Null, |head, (i, item)| {
+                if let Value::Null = item {
                     Ok(head)
-                } else if let Some(p) = v.as_refpair() {
+                } else if let Some(p) = item.as_refpair() {
                     Ok(Value::cons_mut(p.as_ref().car.clone(), head))
                 } else {
-                    Err(Condition::arg_error(i, TypeName::LIST, &v).into())
+                    Err(Condition::arg_error(i, TypeName::LIST, &item).into())
                 }
-            }
-        })
+            })
+    }
 }
 
 fn list_tail(args: &[Value], _env: &Frame) -> EvalResult {
@@ -623,11 +625,10 @@ fn list_tail(args: &[Value], _env: &Frame) -> EvalResult {
         .iter()
         .enumerate()
         .find_map(|(i, item)| {
-            let v = item.into_value();
             if i == ith {
-                Some(Ok(v))
-            } else if !matches!(v, Value::Null | Value::Pair(_) | Value::PairMut(_)) {
-                Some(Err(v))
+                Some(Ok(item))
+            } else if !matches!(item, Value::Null | Value::Pair(_) | Value::PairMut(_)) {
+                Some(Err(item))
             } else {
                 None
             }
@@ -681,30 +682,29 @@ fn assoc_equal(_args: &[Value], _env: &Frame) -> EvalResult {
 fn list_copy(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = first(args);
     if arg.as_refpair().is_some() {
-        // TODO: experimental
-        // https://doc.rust-lang.org/std/iter/trait.Iterator.html#method.try_collect
-        Ok(Value::list_cons_mut(
-            arg.iter()
-                .try_fold(Vec::new(), |mut acc, item| match item {
-                    ValItem::Cycle(_) => Err((acc, InvalidList::Cycle)),
-                    ValItem::Element(v) => {
-                        if let Some(p) = v.as_refpair()
+        let graph = Traverse::value(arg);
+        if graph.has_cycles() {
+            Err(Condition::circular_list(arg).into())
+        } else {
+            // TODO: experimental
+            // https://doc.rust-lang.org/std/iter/trait.Iterator.html#method.try_collect
+            Ok(Value::list_cons_mut(
+                arg.iter()
+                    .try_fold(Vec::new(), |mut acc, item| {
+                        if let Some(p) = item.as_refpair()
                             && let pref = p.as_ref()
                             && pref.cdr.as_refpair().is_some()
                         {
                             acc.push(pref.car.clone());
                             Ok(acc)
                         } else {
-                            acc.push(v.clone());
+                            acc.push(item.clone());
                             Err((acc, InvalidList::Improper))
                         }
-                    }
-                })
-                .or_else(|(acc, err)| match err {
-                    InvalidList::Cycle => Err(Exception::from(Condition::circular_list(arg))),
-                    InvalidList::Improper => Ok(acc),
-                })?,
-        ))
+                    })
+                    .or_else(|(acc, _)| Ok::<_, Exception>(acc))?,
+            ))
+        }
     } else {
         Ok(arg.clone())
     }
@@ -1150,25 +1150,27 @@ fn try_list_to_vec(val: &Value) -> Result<Vec<Value>, Exception> {
 }
 
 fn try_list_acc(val: &Value, acc: &mut Vec<Value>) -> Result<(), Exception> {
-    val.iter()
-        .try_fold(acc, |acc, item| match item {
-            ValItem::Cycle(c) => Err(Exception::from(Condition::circular_list(c.value()))),
-            ValItem::Element(v) => {
-                if let Value::Null = v {
+    let graph = Traverse::value(val);
+    if graph.has_cycles() {
+        Err(Condition::circular_list(val).into())
+    } else {
+        val.iter()
+            .try_fold(acc, |acc, item| {
+                if let Value::Null = item {
                     Ok(acc)
-                } else if let Some(p) = v.as_refpair() {
+                } else if let Some(p) = item.as_refpair() {
                     acc.push(p.as_ref().car.clone());
                     Ok(acc)
                 } else {
                     Err(Exception::from(Condition::arg_error(
                         acc.len(),
                         TypeName::LIST,
-                        &v,
+                        &item,
                     )))
                 }
-            }
-        })
-        .map(|_| ())
+            })
+            .map(|_| ())
+    }
 }
 
 fn try_val_to_char(arg: &Value, lbl: impl Display) -> Result<char, Exception> {

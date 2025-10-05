@@ -1,22 +1,9 @@
-use super::{SimpleIterator, ValItem, Value};
+use super::{Pair, Traverse, Value};
 use crate::{
     lex::{DisplayTokenLines, TokenLinesMessage},
     string::{CharDatum, StrDatum},
 };
-use std::{
-    collections::{HashMap, HashSet},
-    fmt::{self, Display, Formatter, Write},
-    ptr,
-    slice::Iter,
-};
-
-pub(crate) struct Cycle(pub(super) NodeId, pub(super) Value);
-
-impl Cycle {
-    pub(crate) fn value(&self) -> &Value {
-        &self.1
-    }
-}
+use std::fmt::{self, Display, Formatter, Write};
 
 pub(crate) struct Datum<'a>(pub(super) &'a Value);
 
@@ -32,7 +19,8 @@ impl Display for Datum<'_> {
             Value::Intrinsic(p) => p.fmt(f),
             Value::Null => f.write_str("()"),
             Value::Number(n) => n.fmt(f),
-            Value::Pair(_) | Value::PairMut(_) => PairDatum(self.0).fmt(f),
+            Value::Pair(p) => PairDatum(p).fmt(f),
+            Value::PairMut(p) => PairDatum(&p.borrow()).fmt(f),
             Value::Procedure(p) => p.fmt(f),
             Value::String(s) => StrDatum(s).fmt(f),
             Value::StringMut(s) => StrDatum(&s.borrow()).fmt(f),
@@ -96,32 +84,41 @@ impl Display for TypeName<'_> {
     }
 }
 
-// NOTE: pairs and vectors are identified via their untyped pointer address
-pub(super) type NodeId = *const ();
-
-struct PairDatum<'a>(&'a Value);
+struct PairDatum<'a>(&'a Pair);
 
 // TODO: the .as_datum() calls need to be dependent on top-level display
 impl Display for PairDatum<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        let mut graph = Traversal::new();
-        graph.visit(self.0);
+        let graph = Traverse::pair(self.0);
+        let head_id = self.0.node_id();
 
-        let mut it = self.0.iter();
-        if let Some(ValItem::Element(v)) = it.next()
-            && let Some(p) = v.as_refpair()
+        if let Some(vs) = graph.get(head_id)
+            && vs.cycle
         {
-            let pref = p.as_ref();
-            if let Some(vs) = graph.get(ptr::from_ref(pref).cast())
-                && vs.cycle
-            {
-                write!(f, "#{}=", vs.label)?;
-            }
-            write!(f, "({}", pref.car.as_datum())?;
-        } else {
-            unreachable!("expected pair value iterator");
+            write!(f, "#{}=", vs.label)?;
         }
-        for item in it {
+        write!(f, "({}", self.0.car.as_datum())?;
+
+        for item in self.0.cdr.iter() {
+            if let Some(p) = item.as_refpair() {
+                let pref = p.as_ref();
+                let id = pref.node_id();
+                if let Some(vs) = graph.get(id)
+                    && vs.cycle
+                {
+                    if id == head_id {
+                        write!(f, " . #{}#", vs.label)?;
+                    } else {
+                        write!(f, " . {}", item.as_datum())?;
+                    }
+                    break;
+                } else {
+                    write!(f, " {}", pref.car.as_datum())?;
+                }
+            } else if !matches!(item, Value::Null) {
+                write!(f, " . {}", item.as_datum())?;
+            }
+            /*
             match item {
                 ValItem::Cycle(Cycle(id, _)) => {
                     if let Some(vs) = graph.get(id)
@@ -149,131 +146,9 @@ impl Display for PairDatum<'_> {
                     }
                 }
             }
+            */
         }
         f.write_char(')')
-    }
-}
-
-struct VecIterator<'a> {
-    head: &'a [Value],
-    it: Iter<'a, Value>,
-}
-
-impl<'a> VecIterator<'a> {
-    fn new(head: &'a [Value]) -> Self {
-        Self {
-            head,
-            it: head.iter(),
-        }
-    }
-}
-
-impl Iterator for VecIterator<'_> {
-    type Item = ValItem;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let v = self.it.next()?;
-        if let Some(vec) = v.as_refvec()
-            && ptr::eq(vec.as_ref(), self.head)
-        {
-            Some(ValItem::Cycle(Cycle(self.head.as_ptr().cast(), v.clone())))
-        } else {
-            Some(ValItem::Element(v.clone()))
-        }
-    }
-}
-
-struct Visit {
-    cycle: bool,
-    label: usize,
-}
-
-struct Traversal {
-    label: usize,
-    label_all: bool,
-    visits: HashMap<NodeId, Visit>,
-}
-
-impl Traversal {
-    fn new() -> Self {
-        Self::create(false)
-    }
-
-    fn explicit() -> Self {
-        Self::create(true)
-    }
-
-    fn create(label_all: bool) -> Self {
-        Self {
-            label: usize::MIN,
-            label_all,
-            visits: HashMap::default(),
-        }
-    }
-
-    fn get(&self, id: NodeId) -> Option<&Visit> {
-        self.visits.get(&id)
-    }
-
-    fn visit(&mut self, v: &Value) {
-        if v.as_refpair().is_some() {
-            self.visit_pair(v);
-        } else if let Some(vec) = v.as_refvec() {
-            self.visit_vec(vec.as_ref());
-        }
-    }
-
-    fn all_cycles(self) -> HashSet<NodeId> {
-        self.visits
-            .into_iter()
-            .filter_map(|(k, v)| v.cycle.then_some(k))
-            .collect()
-    }
-
-    fn visit_pair(&mut self, v: &Value) {
-        for v in SimpleIterator(Some(v.clone())) {
-            let child = if let Some(p) = v.as_refpair() {
-                let pref = p.as_ref();
-                if !self.add(ptr::from_ref(pref).cast()) {
-                    break;
-                }
-                pref.car.clone()
-            } else {
-                v
-            };
-            self.visit(&child);
-        }
-    }
-
-    fn visit_vec(&mut self, vec: &[Value]) {
-        if self.add(vec.as_ptr().cast()) {
-            for item in vec.iter() {
-                self.visit(item);
-            }
-        }
-    }
-
-    fn add(&mut self, id: NodeId) -> bool {
-        let added = match self.visits.get_mut(&id) {
-            None => {
-                self.visits.insert(
-                    id,
-                    Visit {
-                        cycle: false,
-                        label: self.label,
-                    },
-                );
-                true
-            }
-            Some(vs) => {
-                vs.cycle = true;
-                false
-            }
-        };
-        if self.label_all || !added {
-            self.label += 1;
-        }
-        added
     }
 }
 
@@ -287,267 +162,4 @@ fn write_seq<T: Display>(
         "{prefix}({})",
         seq.map(|v| v.to_string()).collect::<Vec<_>>().join(" ")
     )
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    mod traversal {
-        use super::*;
-        use crate::value::Pair;
-        use std::{cell::RefCell, rc::Rc};
-
-        #[test]
-        fn simple_value() {
-            // 5
-            let v = Value::real(5);
-            let mut c = Traversal::new();
-
-            c.visit(&v);
-
-            assert!(c.all_cycles().is_empty());
-        }
-
-        #[test]
-        fn normal_list() {
-            // (1 2 3)
-            let v = zlist![Value::real(1), Value::real(2), Value::real(3)];
-            let mut c = Traversal::new();
-
-            c.visit(&v);
-
-            assert!(c.all_cycles().is_empty());
-        }
-
-        #[test]
-        fn circular_list() {
-            // #0=(1 2 3 . #0#)
-            let end = RefCell::new(Pair {
-                car: Value::real(3),
-                cdr: Value::Null,
-            })
-            .into();
-            let p = Pair {
-                car: Value::real(1),
-                cdr: Value::cons(Value::real(2), Value::PairMut(Rc::clone(&end))),
-            }
-            .into();
-            end.borrow_mut().cdr = Value::Pair(Rc::clone(&p));
-            let v = Value::Pair(Rc::clone(&p));
-            let mut c = Traversal::new();
-
-            c.visit(&v);
-
-            assert_eq!(c.all_cycles().len(), 1);
-        }
-
-        #[test]
-        fn partly_circular_list() {
-            // (1 2 . #0=(3 4 5 . #0#))
-            let end = RefCell::new(Pair {
-                car: Value::real(5),
-                cdr: Value::Null,
-            })
-            .into();
-            let start = Pair {
-                car: Value::real(3),
-                cdr: Value::cons(Value::real(4), Value::PairMut(Rc::clone(&end))),
-            }
-            .into();
-            end.borrow_mut().cdr = Value::Pair(Rc::clone(&start));
-            let p = Pair {
-                car: Value::real(1),
-                cdr: Value::cons(Value::real(2), Value::Pair(Rc::clone(&start))),
-            }
-            .into();
-            let v = Value::Pair(Rc::clone(&p));
-            let mut c = Traversal::new();
-
-            c.visit(&v);
-
-            assert_eq!(c.all_cycles().len(), 1);
-        }
-
-        #[test]
-        fn nested_circular_list() {
-            // #0=(#1=(9 8 . #1#) 2 3 . #0#)
-            let nested_end = RefCell::new(Pair {
-                car: Value::real(8),
-                cdr: Value::Null,
-            })
-            .into();
-            let nested_head = Pair {
-                car: Value::real(9),
-                cdr: Value::PairMut(Rc::clone(&nested_end)),
-            }
-            .into();
-            nested_end.borrow_mut().cdr = Value::Pair(Rc::clone(&nested_head));
-            let end = RefCell::new(Pair {
-                car: Value::real(3),
-                cdr: Value::Null,
-            })
-            .into();
-            let p = Pair {
-                car: Value::Pair(Rc::clone(&nested_head)),
-                cdr: Value::cons(Value::real(2), Value::PairMut(Rc::clone(&end))),
-            }
-            .into();
-            end.borrow_mut().cdr = Value::Pair(Rc::clone(&p));
-            let v = Value::Pair(Rc::clone(&p));
-            let mut c = Traversal::new();
-
-            c.visit(&v);
-
-            assert_eq!(c.all_cycles().len(), 2);
-        }
-
-        #[test]
-        fn simple_vector() {
-            // #(1 2 3)
-            let v = Value::vector([Value::real(1), Value::real(2), Value::real(3)]);
-            let mut c = Traversal::new();
-
-            c.visit(&v);
-
-            assert!(c.all_cycles().is_empty());
-        }
-
-        #[test]
-        fn cyclic_vector() {
-            // #0=#(1 2 #0#)
-            let vec = Rc::new(RefCell::new(vec![Value::real(1), Value::real(2)]));
-            let v = Value::VectorMut(Rc::clone(&vec));
-            vec.borrow_mut().push(v.clone());
-            let mut c = Traversal::new();
-
-            c.visit(&v);
-
-            assert_eq!(c.all_cycles().len(), 1);
-        }
-
-        #[test]
-        fn partly_cyclic_vector() {
-            // #(1 2 #0=#(3 4 #0#))
-            let vec = Rc::new(RefCell::new(vec![Value::real(3), Value::real(4)]));
-            let head = Value::VectorMut(Rc::clone(&vec));
-            vec.borrow_mut().push(head.clone());
-            let v = Value::vector([Value::real(1), Value::real(2), head.clone()]);
-            let mut c = Traversal::new();
-
-            c.visit(&v);
-
-            assert_eq!(c.all_cycles().len(), 1);
-        }
-
-        #[test]
-        fn multiple_cyclic_vector() {
-            // #0=#(1 2 #0# 3 #0#)
-            let vec = Rc::new(RefCell::new(vec![Value::real(1), Value::real(2)]));
-            let v = Value::VectorMut(Rc::clone(&vec));
-            vec.borrow_mut().push(v.clone());
-            vec.borrow_mut().push(Value::real(3));
-            vec.borrow_mut().push(v.clone());
-
-            let mut c = Traversal::new();
-
-            c.visit(&v);
-
-            assert_eq!(c.all_cycles().len(), 1);
-        }
-
-        #[test]
-        fn nested_cyclic_vector() {
-            // #0=#(1 2 #1=#(9 8 #1#) 3 #0#)
-            let nested_vec = Rc::new(RefCell::new(vec![Value::real(9), Value::real(8)]));
-            let nested_v = Value::VectorMut(Rc::clone(&nested_vec));
-            nested_vec.borrow_mut().push(nested_v.clone());
-            let vec = Rc::new(RefCell::new(vec![
-                Value::real(1),
-                Value::real(2),
-                nested_v.clone(),
-                Value::real(3),
-            ]));
-            let v = Value::VectorMut(Rc::clone(&vec));
-            vec.borrow_mut().push(v.clone());
-            let mut c = Traversal::new();
-
-            c.visit(&v);
-
-            assert_eq!(c.all_cycles().len(), 2);
-        }
-
-        #[test]
-        fn self_nested_cyclic_vector() {
-            // #0=#(1 2 #(3 4 #0#))
-            let nested_vec = Rc::new(RefCell::new(vec![Value::real(3), Value::real(4)]));
-            let nested_v = Value::VectorMut(Rc::clone(&nested_vec));
-            let vec = Rc::new(RefCell::new(vec![
-                Value::real(1),
-                Value::real(2),
-                nested_v.clone(),
-            ]));
-            let v = Value::VectorMut(Rc::clone(&vec));
-            nested_vec.borrow_mut().push(v.clone());
-            let mut c = Traversal::new();
-
-            c.visit(&v);
-
-            assert_eq!(c.all_cycles().len(), 1);
-        }
-
-        #[test]
-        fn circular_list_with_cyclic_vector() {
-            // #0=(#1=#(9 8 . #1#) 2 3 . #0#)
-            let nested_vec = Rc::new(RefCell::new(vec![Value::real(9), Value::real(8)]));
-            let nested_v = Value::VectorMut(Rc::clone(&nested_vec));
-            nested_vec.borrow_mut().push(nested_v.clone());
-            let end = RefCell::new(Pair {
-                car: Value::real(3),
-                cdr: Value::Null,
-            })
-            .into();
-            let p = Pair {
-                car: nested_v.clone(),
-                cdr: Value::cons(Value::real(2), Value::PairMut(Rc::clone(&end))),
-            }
-            .into();
-            end.borrow_mut().cdr = Value::Pair(Rc::clone(&p));
-            let v = Value::Pair(Rc::clone(&p));
-            let mut c = Traversal::new();
-
-            c.visit(&v);
-
-            assert_eq!(c.all_cycles().len(), 2);
-        }
-
-        #[test]
-        fn cyclic_vector_with_circular_list() {
-            // #0=#(1 2 #1=(9 8 . #1#) 3 #0#)
-            let nested_end = RefCell::new(Pair {
-                car: Value::real(8),
-                cdr: Value::Null,
-            })
-            .into();
-            let nested_head = Pair {
-                car: Value::real(9),
-                cdr: Value::PairMut(Rc::clone(&nested_end)),
-            }
-            .into();
-            nested_end.borrow_mut().cdr = Value::Pair(Rc::clone(&nested_head));
-            let vec = Rc::new(RefCell::new(vec![
-                Value::real(1),
-                Value::real(2),
-                Value::Pair(Rc::clone(&nested_head)),
-                Value::real(3),
-            ]));
-            let v = Value::VectorMut(Rc::clone(&vec));
-            vec.borrow_mut().push(v.clone());
-            let mut c = Traversal::new();
-
-            c.visit(&v);
-
-            assert_eq!(c.all_cycles().len(), 2);
-        }
-    }
 }
