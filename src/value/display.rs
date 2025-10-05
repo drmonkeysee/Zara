@@ -104,23 +104,46 @@ struct PairDatum<'a>(&'a Value);
 // TODO: the .as_datum() calls need to be dependent on top-level display
 impl Display for PairDatum<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        let mut graph = Traversal::new();
+        graph.visit(self.0);
+
         let mut it = self.0.iter();
         if let Some(ValItem::Element(v)) = it.next()
             && let Some(p) = v.as_refpair()
         {
-            write!(f, "({}", p.as_ref().car.as_datum())?;
+            let pref = p.as_ref();
+            if let Some(vs) = graph.get(ptr::from_ref(pref).cast())
+                && vs.cycle
+            {
+                write!(f, "#{}=", vs.label)?;
+            }
+            write!(f, "({}", pref.car.as_datum())?;
         } else {
             unreachable!("expected pair value iterator");
         }
         for item in it {
             match item {
-                ValItem::Cycle(_) => {
-                    f.write_str(" . dup…")?;
-                    break;
+                ValItem::Cycle(Cycle(id, _)) => {
+                    if let Some(vs) = graph.get(id)
+                        && vs.cycle
+                    {
+                        write!(f, " . #{}#", vs.label)?;
+                        break;
+                    } else {
+                        unreachable!("unvisited cycle reached");
+                    }
                 }
                 ValItem::Element(v) => {
                     if let Some(p) = v.as_refpair() {
-                        write!(f, " {}", p.as_ref().car.as_datum())?;
+                        let pref = p.as_ref();
+                        if let Some(vs) = graph.get(ptr::from_ref(pref).cast())
+                            && vs.cycle
+                        {
+                            write!(f, " . {}", v.as_datum())?;
+                            break;
+                        } else {
+                            write!(f, " {}", pref.car.as_datum())?;
+                        }
                     } else if !matches!(v, Value::Null) {
                         write!(f, " . {}", v.as_datum())?;
                     }
@@ -186,6 +209,10 @@ impl Traversal {
             label_all,
             visits: HashMap::default(),
         }
+    }
+
+    fn get(&self, id: NodeId) -> Option<&Visit> {
+        self.visits.get(&id)
     }
 
     fn visit(&mut self, v: &Value) {
