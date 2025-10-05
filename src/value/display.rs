@@ -118,35 +118,6 @@ impl Display for PairDatum<'_> {
             } else if !matches!(item, Value::Null) {
                 write!(f, " . {}", item.as_datum())?;
             }
-            /*
-            match item {
-                ValItem::Cycle(Cycle(id, _)) => {
-                    if let Some(vs) = graph.get(id)
-                        && vs.cycle
-                    {
-                        write!(f, " . #{}#", vs.label)?;
-                        break;
-                    } else {
-                        unreachable!("unvisited cycle reached");
-                    }
-                }
-                ValItem::Element(v) => {
-                    if let Some(p) = v.as_refpair() {
-                        let pref = p.as_ref();
-                        if let Some(vs) = graph.get(ptr::from_ref(pref).cast())
-                            && vs.cycle
-                        {
-                            write!(f, " . {}", v.as_datum())?;
-                            break;
-                        } else {
-                            write!(f, " {}", pref.car.as_datum())?;
-                        }
-                    } else if !matches!(v, Value::Null) {
-                        write!(f, " . {}", v.as_datum())?;
-                    }
-                }
-            }
-            */
         }
         f.write_char(')')
     }

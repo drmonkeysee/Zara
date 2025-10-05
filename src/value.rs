@@ -185,6 +185,14 @@ impl Value {
             }
     }
 
+    pub(crate) fn is_pair(&self) -> bool {
+        matches!(self, Value::Pair(_) | Value::PairMut(_))
+    }
+
+    pub(crate) fn is_list_element(&self) -> bool {
+        self.is_pair() | matches!(self, Value::Null)
+    }
+
     pub(crate) fn display_message(&self) -> ValueMessage<'_> {
         ValueMessage(self)
     }
@@ -389,11 +397,7 @@ pub(crate) struct Pair {
 impl Pair {
     pub(crate) fn is_list(&self) -> bool {
         let graph = Traverse::pair(self);
-        !graph.has_cycles()
-            && self
-                .cdr
-                .iter()
-                .all(|item| matches!(item, Value::Null | Value::Pair(_) | Value::PairMut(_)))
+        !graph.has_cycles() && self.cdr.iter().all(|item| item.is_list_element())
     }
 
     pub(crate) fn len(&self) -> PairLenResult {
@@ -465,7 +469,7 @@ impl Traverse {
     }
 
     fn visit(&mut self, v: &Value) {
-        if v.as_refpair().is_some() {
+        if v.is_pair() {
             self.visit_pair(v);
         } else if let Some(vec) = v.as_refvec() {
             self.visit_vec(vec.as_ref());

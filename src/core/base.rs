@@ -510,7 +510,6 @@ fn load_list(env: &Frame) {
     super::bind_intrinsic(env, "list-copy", 1..1, list_copy);
 }
 
-predicate!(is_pair, Value::Pair(_) | Value::PairMut(_));
 predicate!(is_null, Value::Null);
 cadr_func!(car, a);
 cadr_func!(cdr, d);
@@ -518,6 +517,10 @@ cadr_func!(caar, a, a);
 cadr_func!(cadr, a, d);
 cadr_func!(cdar, d, a);
 cadr_func!(cddr, d, d);
+
+fn is_pair(args: &[Value], _env: &Frame) -> EvalResult {
+    Ok(Value::Boolean(first(args).is_pair()))
+}
 
 #[allow(clippy::unnecessary_wraps, reason = "infallible intrinsic")]
 fn cons(args: &[Value], _env: &Frame) -> EvalResult {
@@ -627,7 +630,7 @@ fn list_tail(args: &[Value], _env: &Frame) -> EvalResult {
         .find_map(|(i, item)| {
             if i == ith {
                 Some(Ok(item))
-            } else if !matches!(item, Value::Null | Value::Pair(_) | Value::PairMut(_)) {
+            } else if !item.is_list_element() {
                 Some(Err(item))
             } else {
                 None
@@ -681,7 +684,7 @@ fn assoc_equal(_args: &[Value], _env: &Frame) -> EvalResult {
 
 fn list_copy(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = first(args);
-    if arg.as_refpair().is_some() {
+    if arg.is_pair() {
         let graph = Traverse::value(arg);
         if graph.has_cycles() {
             Err(Condition::circular_list(arg).into())
@@ -693,7 +696,7 @@ fn list_copy(args: &[Value], _env: &Frame) -> EvalResult {
                     .try_fold(Vec::new(), |mut acc, item| {
                         if let Some(p) = item.as_refpair()
                             && let pref = p.as_ref()
-                            && pref.cdr.as_refpair().is_some()
+                            && pref.cdr.is_pair()
                         {
                             acc.push(pref.car.clone());
                             Ok(acc)
