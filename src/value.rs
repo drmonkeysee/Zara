@@ -432,31 +432,34 @@ impl AsRef<Self> for Pair {
     }
 }
 
+#[derive(Debug)]
 pub(crate) struct Traverse {
+    cycles_only: bool,
     label: usize,
-    label_all: bool,
+    nodes: Vec<NodeId>,
     visits: HashMap<NodeId, Visit>,
 }
 
 impl Traverse {
     pub(crate) fn value(v: &Value) -> Self {
-        let mut me = Self::create(false);
-        me.visit(v);
+        let mut me = Self::create(true);
+        me.traverse(v);
         me
     }
 
     fn pair(p: &Pair) -> Self {
-        let mut me = Self::create(false);
+        let mut me = Self::create(true);
         me.add(p.node_id());
-        me.visit(&p.cdr);
+        me.traverse(&p.cdr);
         me
     }
 
-    fn create(label_all: bool) -> Self {
+    fn create(cycles_only: bool) -> Self {
         Self {
+            cycles_only,
             label: usize::MIN,
-            label_all,
-            visits: HashMap::default(),
+            nodes: Vec::new(),
+            visits: HashMap::new(),
         }
     }
 
@@ -466,6 +469,11 @@ impl Traverse {
 
     fn get(&self, id: NodeId) -> Option<&Visit> {
         self.visits.get(&id)
+    }
+
+    fn traverse(&mut self, start: &Value) {
+        self.visit(start);
+        self.label_visits();
     }
 
     fn visit(&mut self, v: &Value) {
@@ -500,32 +508,35 @@ impl Traverse {
     }
 
     fn add(&mut self, id: NodeId) -> bool {
-        let added = match self.visits.get_mut(&id) {
+        match self.visits.get_mut(&id) {
             None => {
-                self.visits.insert(
-                    id,
-                    Visit {
-                        cycle: false,
-                        label: self.label,
-                    },
-                );
+                self.visits.insert(id, Visit::default());
+                self.nodes.push(id);
                 true
             }
             Some(vs) => {
                 vs.cycle = true;
                 false
             }
-        };
-        if self.label_all || !added {
-            self.label += 1;
         }
-        added
+    }
+
+    fn label_visits(&mut self) {
+        for n in self.nodes.iter() {
+            if let Some(vs) = self.visits.get_mut(n)
+                && (!self.cycles_only || vs.cycle)
+            {
+                vs.label = self.label;
+                self.label += 1;
+            }
+        }
     }
 }
 
 // NOTE: pairs and vectors are identified via their untyped pointer address
 type NodeId = *const ();
 
+#[derive(Debug, Default)]
 struct Visit {
     cycle: bool,
     label: usize,
