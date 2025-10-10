@@ -190,7 +190,7 @@ impl Value {
     }
 
     pub(crate) fn is_list_element(&self) -> bool {
-        self.is_pair() | matches!(self, Value::Null)
+        self.is_pair() || matches!(self, Value::Null)
     }
 
     pub(crate) fn display_message(&self) -> ValueMessage<'_> {
