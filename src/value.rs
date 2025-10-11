@@ -450,6 +450,7 @@ impl Traverse {
     fn pair(p: &Pair) -> Self {
         let mut me = Self::create(true);
         me.add(p.node_id());
+        me.visit(&p.car);
         me.traverse(&p.cdr);
         me
     }
@@ -486,7 +487,7 @@ impl Traverse {
 
     fn visit_pair(&mut self, v: &Value) {
         for v in ValueIterator(Some(v.clone())) {
-            let child = if let Some(p) = v.as_refpair() {
+            let nested = if let Some(p) = v.as_refpair() {
                 let pref = p.as_ref();
                 if !self.add(pref.node_id()) {
                     break;
@@ -495,7 +496,7 @@ impl Traverse {
             } else {
                 v
             };
-            self.visit(&child);
+            self.visit(&nested);
         }
     }
 
@@ -539,5 +540,6 @@ type NodeId = *const ();
 #[derive(Debug, Default)]
 struct Visit {
     cycle: bool,
+    displayed: bool,
     label: usize,
 }

@@ -2183,6 +2183,39 @@ mod traverse {
     }
 
     #[test]
+    fn nested_circular_pair() {
+        // #0=(#1=(9 8 . #1#) 2 3 . #0#)
+        let nested_end = RefCell::new(Pair {
+            car: Value::real(8),
+            cdr: Value::Null,
+        })
+        .into();
+        let nested_head = Pair {
+            car: Value::real(9),
+            cdr: Value::PairMut(Rc::clone(&nested_end)),
+        }
+        .into();
+        nested_end.borrow_mut().cdr = Value::Pair(Rc::clone(&nested_head));
+        let end = RefCell::new(Pair {
+            car: Value::real(3),
+            cdr: Value::Null,
+        })
+        .into();
+        let p = Pair {
+            car: Value::Pair(Rc::clone(&nested_head)),
+            cdr: Value::cons(Value::real(2), Value::PairMut(Rc::clone(&end))),
+        }
+        .into();
+        end.borrow_mut().cdr = Value::Pair(Rc::clone(&p));
+
+        let graph = Traverse::pair(&p);
+
+        assert_eq!(cycle_count(&graph), 2);
+        assert_eq!(some_or_fail!(graph.get(p.node_id())).label, 0);
+        assert_eq!(some_or_fail!(graph.get(nested_head.node_id())).label, 1);
+    }
+
+    #[test]
     fn simple_vector() {
         // #(1 2 3)
         let v = Value::vector([Value::real(1), Value::real(2), Value::real(3)]);

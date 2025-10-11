@@ -19,8 +19,8 @@ impl Display for Datum<'_> {
             Value::Intrinsic(p) => p.fmt(f),
             Value::Null => f.write_str("()"),
             Value::Number(n) => n.fmt(f),
-            Value::Pair(p) => PairDatum(p).fmt(f),
-            Value::PairMut(p) => PairDatum(&p.borrow()).fmt(f),
+            Value::Pair(p) => PairDatum::new(p).fmt(f),
+            Value::PairMut(p) => PairDatum::new(&p.borrow()).fmt(f),
             Value::Procedure(p) => p.fmt(f),
             Value::String(s) => StrDatum(s).fmt(f),
             Value::StringMut(s) => StrDatum(&s.borrow()).fmt(f),
@@ -84,26 +84,62 @@ impl Display for TypeName<'_> {
     }
 }
 
-struct PairDatum<'a>(&'a Pair);
+enum TraverseCell<'a> {
+    Owned(Traverse),
+    Ref(&'a Traverse),
+}
+
+impl AsRef<Traverse> for TraverseCell<'_> {
+    fn as_ref(&self) -> &Traverse {
+        match self {
+            Self::Owned(t) => t,
+            Self::Ref(t) => t,
+        }
+    }
+}
+
+struct PairDatum<'a> {
+    graph: TraverseCell<'a>,
+    head: &'a Pair,
+}
+
+impl<'a> PairDatum<'a> {
+    fn new(head: &'a Pair) -> Self {
+        Self {
+            graph: TraverseCell::Owned(Traverse::pair(head)),
+            head,
+        }
+    }
+
+    fn nested(head: &'a Pair, graph: &'a Traverse) -> Self {
+        Self {
+            graph: TraverseCell::Ref(graph),
+            head,
+        }
+    }
+}
 
 // TODO: the .as_datum() calls need to be dependent on top-level display
 impl Display for PairDatum<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        let graph = Traverse::pair(self.0);
-        let head_id = self.0.node_id();
+        let head_id = self.head.node_id();
 
-        if let Some(vs) = graph.get(head_id)
+        if let Some(vs) = self.graph.as_ref().get(head_id)
             && vs.cycle
         {
             write!(f, "#{}=", vs.label)?;
         }
-        write!(f, "({}", self.0.car.as_datum())?;
+        if let Some(p) = self.head.car.as_refpair() {
+            write!(f, "({}", PairDatum::nested(p.as_ref(), self.graph.as_ref()))?;
+        } else {
+            write!(f, "({}", self.head.car.as_datum())?;
+        }
 
-        for item in self.0.cdr.iter() {
+        for item in self.head.cdr.iter() {
             if let Some(p) = item.as_refpair() {
                 let pref = p.as_ref();
                 let id = pref.node_id();
-                if let Some(vs) = graph.get(id)
+                if let Some(vs) = self.graph.as_ref().get(id)
                     && vs.cycle
                 {
                     if id == head_id {
@@ -113,7 +149,11 @@ impl Display for PairDatum<'_> {
                     }
                     break;
                 } else {
-                    write!(f, " {}", pref.car.as_datum())?;
+                    if let Some(p) = pref.car.as_refpair() {
+                        write!(f, " {}", PairDatum::nested(p.as_ref(), self.graph.as_ref()))?;
+                    } else {
+                        write!(f, " {}", pref.car.as_datum())?;
+                    }
                 }
             } else if !matches!(item, Value::Null) {
                 write!(f, " . {}", item.as_datum())?;
