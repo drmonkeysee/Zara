@@ -112,10 +112,10 @@ impl<'a> PairDatum<'a> {
             if let Some(p) = item.as_refpair() {
                 let pref = p.as_ref();
                 if self.graph.get(pref.node_id()).is_some() {
-                    write!(f, " . {}", PairDatum::nested(pref, self.graph.as_ref()))?;
+                    write!(f, " . {}", PairDatum::nested(pref, &self.graph))?;
                     break;
                 }
-                write_car(' ', pref, self.graph.as_ref(), f)?;
+                write_car(' ', pref, &self.graph, f)?;
             } else if !matches!(item, Value::Null) {
                 write!(f, " . {}", item.as_datum())?;
             }
@@ -127,14 +127,14 @@ impl<'a> PairDatum<'a> {
 // TODO: the .as_datum() calls need to be dependent on top-level display
 impl Display for PairDatum<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        if let Some(vs) = self.graph.as_ref().get(self.head.node_id()) {
+        if let Some(vs) = self.graph.get(self.head.node_id()) {
             if vs.marked() {
                 return write!(f, "#{}#", vs.label);
             }
             write!(f, "#{}=", vs.label)?;
             vs.mark();
         }
-        write_car('(', self.head, self.graph.as_ref(), f)?;
+        write_car('(', self.head, &self.graph, f)?;
         self.write_tail(f)
     }
 }
