@@ -84,6 +84,7 @@ impl Display for TypeName<'_> {
     }
 }
 
+// TODO: replace this with COW
 enum TraverseCell<'a> {
     Owned(Traverse),
     Ref(&'a Traverse),
@@ -117,33 +118,13 @@ impl<'a> PairDatum<'a> {
             head,
         }
     }
-}
 
-// TODO: the .as_datum() calls need to be dependent on top-level display
-impl Display for PairDatum<'_> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        let head_id = self.head.node_id();
-
-        if let Some(vs) = self.graph.as_ref().get(head_id) {
-            if vs.marked() {
-                return write!(f, "#{}#", vs.label);
-            } else {
-                write!(f, "#{}=", vs.label)?;
-                vs.mark();
-            }
-        }
-        write_car('(', self.head, self.graph.as_ref(), f)?;
-
+    fn write_tail(&self, f: &mut Formatter<'_>) -> fmt::Result {
         for item in self.head.cdr.iter() {
             if let Some(p) = item.as_refpair() {
                 let pref = p.as_ref();
-                let id = pref.node_id();
-                if let Some(vs) = self.graph.as_ref().get(id) {
-                    if id == head_id {
-                        write!(f, " . #{}#", vs.label)?;
-                    } else {
-                        write!(f, " . {}", item.as_datum())?;
-                    }
+                if self.graph.as_ref().get(pref.node_id()).is_some() {
+                    write!(f, " . {}", PairDatum::nested(pref, self.graph.as_ref()))?;
                     break;
                 } else {
                     write_car(' ', pref, self.graph.as_ref(), f)?;
@@ -153,6 +134,22 @@ impl Display for PairDatum<'_> {
             }
         }
         f.write_char(')')
+    }
+}
+
+// TODO: the .as_datum() calls need to be dependent on top-level display
+impl Display for PairDatum<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        if let Some(vs) = self.graph.as_ref().get(self.head.node_id()) {
+            if vs.marked() {
+                return write!(f, "#{}#", vs.label);
+            } else {
+                write!(f, "#{}=", vs.label)?;
+                vs.mark();
+            }
+        }
+        write_car('(', self.head, self.graph.as_ref(), f)?;
+        self.write_tail(f)
     }
 }
 
