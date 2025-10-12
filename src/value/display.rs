@@ -30,8 +30,8 @@ impl Display for Datum<'_> {
             Value::Symbol(s) => s.as_datum().fmt(f),
             Value::TokenList(lines) => DisplayTokenLines(lines).fmt(f),
             Value::Unspecified => f.write_str("#<unspecified>"),
-            Value::Vector(v) => write_seq("#", v.iter().map(Value::as_datum), f),
-            Value::VectorMut(v) => write_seq("#", v.borrow().iter().map(Value::as_datum), f),
+            Value::Vector(v) => VecDatum::new(v).fmt(f),
+            Value::VectorMut(v) => VecDatum::new(&v.borrow()).fmt(f),
         }
     }
 }
@@ -116,6 +116,8 @@ impl<'a> PairDatum<'a> {
                     break;
                 }
                 write_car(' ', pref, &self.graph, f)?;
+            } else if let Some(v) = item.as_refvec() {
+                write!(f, " . {}", VecDatum::nested(v.as_ref(), &self.graph))?;
             } else if !matches!(item, Value::Null) {
                 write!(f, " . {}", item.as_datum())?;
             }
@@ -158,11 +160,34 @@ impl<'a> VecDatum<'a> {
             vec,
         }
     }
+
+    fn items_as_string(&self) -> String {
+        self.vec
+            .iter()
+            .map(|item| {
+                if let Some(p) = item.as_refpair() {
+                    PairDatum::nested(p.as_ref(), &self.graph).to_string()
+                } else if let Some(v) = item.as_refvec() {
+                    VecDatum::nested(v.as_ref(), &self.graph).to_string()
+                } else {
+                    item.as_datum().to_string()
+                }
+            })
+            .collect::<Vec<_>>()
+            .join(" ")
+    }
 }
 
 impl Display for VecDatum<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        todo!()
+        if let Some(vs) = self.graph.get(self.vec.as_ptr().cast()) {
+            if vs.marked() {
+                return write!(f, "#{}#", vs.label);
+            }
+            write!(f, "#{}=", vs.label)?;
+            vs.mark();
+        }
+        write!(f, "#({})", &self.items_as_string())
     }
 }
 
@@ -181,6 +206,8 @@ fn write_seq<T: Display>(
 fn write_car(prefix: char, pair: &Pair, graph: &Traverse, f: &mut Formatter<'_>) -> fmt::Result {
     if let Some(p) = pair.car.as_refpair() {
         write!(f, "{prefix}{}", PairDatum::nested(p.as_ref(), graph))
+    } else if let Some(v) = pair.car.as_refvec() {
+        write!(f, "{prefix}{}", VecDatum::nested(v.as_ref(), graph))
     } else {
         write!(f, "{prefix}{}", pair.car.as_datum())
     }

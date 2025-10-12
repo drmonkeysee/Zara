@@ -211,7 +211,6 @@ mod display {
     }
 
     #[test]
-    #[ignore = "TODO: circular vectors; stack overflow"]
     fn cyclic_vector_self_display() {
         // #0=#(1 2 #0#)
         let vec = Rc::new(RefCell::new(vec![Value::real(1), Value::real(2)]));
@@ -222,7 +221,6 @@ mod display {
     }
 
     #[test]
-    #[ignore = "TODO: circular vectors; stack overflow"]
     fn partly_cyclic_vector_display() {
         // #(1 2 #0=#(3 4 #0#))
         let vec = Rc::new(RefCell::new(vec![Value::real(3), Value::real(4)]));
@@ -234,7 +232,6 @@ mod display {
     }
 
     #[test]
-    #[ignore = "TODO: circular vectors; stack overflow"]
     fn multiple_cyclic_vector_display() {
         // #0=#(1 2 #0# 3 #0#)
         let vec = Rc::new(RefCell::new(vec![Value::real(1), Value::real(2)]));
@@ -2340,7 +2337,7 @@ mod traverse {
 
     #[test]
     fn circular_list_with_cyclic_vector() {
-        // #0=(#1=#(9 8 . #1#) 2 3 . #0#)
+        // #0=(#1=#(9 8 #1#) 2 3 . #0#)
         let nested_vec = Rc::new(RefCell::new(vec![Value::real(9), Value::real(8)]));
         let nested_v = Value::VectorMut(Rc::clone(&nested_vec));
         nested_vec.borrow_mut().push(nested_v.clone());
@@ -2360,13 +2357,38 @@ mod traverse {
         let graph = Traverse::value(&v);
 
         assert_eq!(cycle_count(&graph), 2);
-        assert_eq!(cycle_count(&graph), 2);
         assert_eq!(some_or_fail!(graph.get(p.node_id())).label, 0);
         assert_eq!(
             some_or_fail!(graph.get(nested_vec.borrow().as_ptr().cast())).label,
             1
         );
-        assert_eq!(v.as_datum().to_string(), "#0=(#1=#(9 8 . #1#) 2 3 . #0#)");
+        assert_eq!(v.as_datum().to_string(), "#0=(#1=#(9 8 #1#) 2 3 . #0#)");
+    }
+
+    #[test]
+    fn list_ending_with_cyclic_vector() {
+        // (#0=#(9 8 #1#) 2 3 . #0#)
+        let nested_vec = Rc::new(RefCell::new(vec![Value::real(9), Value::real(8)]));
+        let nested_v = Value::VectorMut(Rc::clone(&nested_vec));
+        nested_vec.borrow_mut().push(nested_v.clone());
+        let p = Pair {
+            car: nested_v.clone(),
+            cdr: Value::cons(
+                Value::real(2),
+                Value::cons(Value::real(3), nested_v.clone()),
+            ),
+        }
+        .into();
+        let v = Value::Pair(Rc::clone(&p));
+
+        let graph = Traverse::value(&v);
+
+        assert_eq!(cycle_count(&graph), 1);
+        assert_eq!(
+            some_or_fail!(graph.get(nested_vec.borrow().as_ptr().cast())).label,
+            0
+        );
+        assert_eq!(v.as_datum().to_string(), "(#0=#(9 8 #0#) 2 3 . #0#)");
     }
 
     #[test]
@@ -2394,7 +2416,6 @@ mod traverse {
 
         let graph = Traverse::value(&v);
 
-        assert_eq!(cycle_count(&graph), 2);
         assert_eq!(cycle_count(&graph), 2);
         assert_eq!(
             some_or_fail!(graph.get(vec.borrow().as_ptr().cast())).label,
