@@ -161,7 +161,7 @@ impl<'a> VecDatum<'a> {
         }
     }
 
-    fn items_as_string(&self) -> String {
+    fn join_items(&self) -> String {
         self.vec
             .iter()
             .map(|item| {
@@ -187,7 +187,7 @@ impl Display for VecDatum<'_> {
             write!(f, "#{}=", vs.label)?;
             vs.mark();
         }
-        write!(f, "#({})", &self.items_as_string())
+        write!(f, "#({})", &self.join_items())
     }
 }
 
