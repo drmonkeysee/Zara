@@ -124,10 +124,13 @@ impl Display for PairDatum<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let head_id = self.head.node_id();
 
-        if let Some(vs) = self.graph.as_ref().get(head_id)
-            && vs.cycle
-        {
-            write!(f, "#{}=", vs.label)?;
+        if let Some(vs) = self.graph.as_ref().get(head_id) {
+            if vs.marked() {
+                return write!(f, "#{}#", vs.label);
+            } else {
+                write!(f, "#{}=", vs.label)?;
+                vs.mark();
+            }
         }
         write_car('(', self.head, self.graph.as_ref(), f)?;
 
@@ -135,9 +138,7 @@ impl Display for PairDatum<'_> {
             if let Some(p) = item.as_refpair() {
                 let pref = p.as_ref();
                 let id = pref.node_id();
-                if let Some(vs) = self.graph.as_ref().get(id)
-                    && vs.cycle
-                {
+                if let Some(vs) = self.graph.as_ref().get(id) {
                     if id == head_id {
                         write!(f, " . #{}#", vs.label)?;
                     } else {

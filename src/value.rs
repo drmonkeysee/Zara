@@ -24,7 +24,7 @@ use crate::{
     syntax::Sequence,
 };
 use std::{
-    cell::{Ref, RefCell, RefMut},
+    cell::{Cell, Ref, RefCell, RefMut},
     collections::HashMap,
     ptr,
     rc::Rc,
@@ -469,7 +469,9 @@ impl Traverse {
     }
 
     fn get(&self, id: NodeId) -> Option<&Visit> {
-        self.visits.get(&id)
+        self.visits
+            .get(&id)
+            .filter(|vs| !self.cycles_only || vs.cycle)
     }
 
     fn traverse(&mut self, start: &Value) {
@@ -540,6 +542,16 @@ type NodeId = *const ();
 #[derive(Debug, Default)]
 struct Visit {
     cycle: bool,
-    displayed: bool,
+    flag: Cell<bool>,
     label: usize,
+}
+
+impl Visit {
+    fn marked(&self) -> bool {
+        self.flag.get()
+    }
+
+    fn mark(&self) {
+        self.flag.set(true);
+    }
 }

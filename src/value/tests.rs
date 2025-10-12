@@ -1287,7 +1287,7 @@ mod pair {
 
         assert_eq!(
             lst.as_datum().to_string(),
-            "(10 11 #0=(1 2 3 . #0#) #0# #1=(4 5 6 . #1#) 13 #1#)"
+            "(10 11 #0=(1 2 3 . #0#) #0# #1=(4 5 6 . #1#) 12 #1#)"
         );
     }
 }
@@ -2372,5 +2372,33 @@ mod traverse {
             0
         );
         assert_eq!(some_or_fail!(graph.get(nested_head.node_id())).label, 1);
+    }
+
+    #[test]
+    fn get_does_not_return_non_cycles() {
+        // (1 2 . #0=(3 4 5 . #0#))
+        let end = RefCell::new(Pair {
+            car: Value::real(5),
+            cdr: Value::Null,
+        })
+        .into();
+        let start = Pair {
+            car: Value::real(3),
+            cdr: Value::cons(Value::real(4), Value::PairMut(Rc::clone(&end))),
+        }
+        .into();
+        end.borrow_mut().cdr = Value::Pair(Rc::clone(&start));
+        let p = Pair {
+            car: Value::real(1),
+            cdr: Value::cons(Value::real(2), Value::Pair(Rc::clone(&start))),
+        }
+        .into();
+        let v = Value::Pair(Rc::clone(&p));
+
+        let graph = Traverse::value(&v);
+
+        assert_eq!(cycle_count(&graph), 1);
+        assert!(graph.get(start.node_id()).is_some());
+        assert!(graph.get(p.node_id()).is_none());
     }
 }
