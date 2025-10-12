@@ -2293,6 +2293,34 @@ mod traverse {
     }
 
     #[test]
+    fn nested_cyclic_vec() {
+        // #0=#(1 2 #1=#(9 8 #1#) 3 #0#)
+        let nested_vec = Rc::new(RefCell::new(vec![Value::real(9), Value::real(8)]));
+        let nested_v = Value::VectorMut(Rc::clone(&nested_vec));
+        nested_vec.borrow_mut().push(nested_v.clone());
+        let vec = Rc::new(RefCell::new(vec![
+            Value::real(1),
+            Value::real(2),
+            nested_v.clone(),
+            Value::real(3),
+        ]));
+        let v = Value::VectorMut(Rc::clone(&vec));
+        vec.borrow_mut().push(v.clone());
+
+        let graph = Traverse::vec(&vec.borrow());
+
+        assert_eq!(cycle_count(&graph), 2);
+        assert_eq!(
+            some_or_fail!(graph.get(vec.borrow().as_ptr().cast())).label,
+            0
+        );
+        assert_eq!(
+            some_or_fail!(graph.get(nested_vec.borrow().as_ptr().cast())).label,
+            1
+        );
+    }
+
+    #[test]
     fn self_nested_cyclic_vector() {
         // #0=#(1 2 #(3 4 #0#))
         let nested_vec = Rc::new(RefCell::new(vec![Value::real(3), Value::real(4)]));
@@ -2338,6 +2366,7 @@ mod traverse {
             some_or_fail!(graph.get(nested_vec.borrow().as_ptr().cast())).label,
             1
         );
+        assert_eq!(v.as_datum().to_string(), "#0=(#1=#(9 8 . #1#) 2 3 . #0#)");
     }
 
     #[test]
@@ -2372,6 +2401,7 @@ mod traverse {
             0
         );
         assert_eq!(some_or_fail!(graph.get(nested_head.node_id())).label, 1);
+        assert_eq!(v.as_datum().to_string(), "#0=#(1 2 #1=(9 8 . #1#) 3 #0#)");
     }
 
     #[test]

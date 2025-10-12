@@ -455,6 +455,13 @@ impl Traverse {
         me
     }
 
+    fn vec(vec: &[Value]) -> Self {
+        let mut me = Self::create(true);
+        me.visit_vec(vec);
+        me.label_visits();
+        me
+    }
+
     fn create(cycles_only: bool) -> Self {
         Self {
             cycles_only,

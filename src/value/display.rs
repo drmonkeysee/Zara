@@ -139,6 +139,33 @@ impl Display for PairDatum<'_> {
     }
 }
 
+struct VecDatum<'a> {
+    graph: Cow<'a, Traverse>,
+    vec: &'a [Value],
+}
+
+impl<'a> VecDatum<'a> {
+    fn new(vec: &'a [Value]) -> Self {
+        Self {
+            graph: Cow::Owned(Traverse::vec(vec)),
+            vec,
+        }
+    }
+
+    fn nested(vec: &'a [Value], graph: &'a Traverse) -> Self {
+        Self {
+            graph: Cow::Borrowed(graph),
+            vec,
+        }
+    }
+}
+
+impl Display for VecDatum<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        todo!()
+    }
+}
+
 fn write_seq<T: Display>(
     prefix: &str,
     seq: impl Iterator<Item = T>,
