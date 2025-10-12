@@ -1198,7 +1198,6 @@ mod pair {
     }
 
     #[test]
-    #[ignore = "stack overflow"]
     fn cyclic_car_display() {
         let p = RefCell::new(Pair {
             car: Value::real(1),
@@ -1212,7 +1211,6 @@ mod pair {
     }
 
     #[test]
-    #[ignore = "stack overflow"]
     fn cyclic_cons_display() {
         let p = RefCell::new(Pair {
             car: Value::real(1),
@@ -1220,9 +1218,11 @@ mod pair {
         })
         .into();
         let cons = Value::PairMut(Rc::clone(&p));
-        let mut pmut = p.borrow_mut();
-        pmut.car = cons.clone();
-        pmut.cdr = cons.clone();
+        {
+            let mut pmut = p.borrow_mut();
+            pmut.car = cons.clone();
+            pmut.cdr = cons.clone();
+        }
 
         assert_eq!(cons.as_datum().to_string(), "#0=(#0# . #0#)");
     }
