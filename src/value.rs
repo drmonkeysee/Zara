@@ -432,7 +432,7 @@ impl AsRef<Self> for Pair {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub(crate) struct Traverse {
     cycles_only: bool,
     label: usize,
@@ -539,7 +539,7 @@ impl Traverse {
 // NOTE: pairs and vectors are identified via their untyped pointer address
 type NodeId = *const ();
 
-#[derive(Debug, Default)]
+#[derive(Clone, Debug, Default)]
 struct Visit {
     cycle: bool,
     flag: Cell<bool>,

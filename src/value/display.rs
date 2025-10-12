@@ -3,7 +3,10 @@ use crate::{
     lex::{DisplayTokenLines, TokenLinesMessage},
     string::{CharDatum, StrDatum},
 };
-use std::fmt::{self, Display, Formatter, Write};
+use std::{
+    borrow::Cow,
+    fmt::{self, Display, Formatter, Write},
+};
 
 pub(crate) struct Datum<'a>(pub(super) &'a Value);
 
@@ -84,37 +87,22 @@ impl Display for TypeName<'_> {
     }
 }
 
-// TODO: replace this with COW
-enum TraverseCell<'a> {
-    Owned(Traverse),
-    Ref(&'a Traverse),
-}
-
-impl AsRef<Traverse> for TraverseCell<'_> {
-    fn as_ref(&self) -> &Traverse {
-        match self {
-            Self::Owned(t) => t,
-            Self::Ref(t) => t,
-        }
-    }
-}
-
 struct PairDatum<'a> {
-    graph: TraverseCell<'a>,
+    graph: Cow<'a, Traverse>,
     head: &'a Pair,
 }
 
 impl<'a> PairDatum<'a> {
     fn new(head: &'a Pair) -> Self {
         Self {
-            graph: TraverseCell::Owned(Traverse::pair(head)),
+            graph: Cow::Owned(Traverse::pair(head)),
             head,
         }
     }
 
     fn nested(head: &'a Pair, graph: &'a Traverse) -> Self {
         Self {
-            graph: TraverseCell::Ref(graph),
+            graph: Cow::Borrowed(graph),
             head,
         }
     }
@@ -123,7 +111,7 @@ impl<'a> PairDatum<'a> {
         for item in self.head.cdr.iter() {
             if let Some(p) = item.as_refpair() {
                 let pref = p.as_ref();
-                if self.graph.as_ref().get(pref.node_id()).is_some() {
+                if self.graph.get(pref.node_id()).is_some() {
                     write!(f, " . {}", PairDatum::nested(pref, self.graph.as_ref()))?;
                     break;
                 } else {
