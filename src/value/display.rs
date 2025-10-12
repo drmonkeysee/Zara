@@ -129,11 +129,7 @@ impl Display for PairDatum<'_> {
         {
             write!(f, "#{}=", vs.label)?;
         }
-        if let Some(p) = self.head.car.as_refpair() {
-            write!(f, "({}", PairDatum::nested(p.as_ref(), self.graph.as_ref()))?;
-        } else {
-            write!(f, "({}", self.head.car.as_datum())?;
-        }
+        write_car('(', self.head, self.graph.as_ref(), f)?;
 
         for item in self.head.cdr.iter() {
             if let Some(p) = item.as_refpair() {
@@ -149,11 +145,7 @@ impl Display for PairDatum<'_> {
                     }
                     break;
                 } else {
-                    if let Some(p) = pref.car.as_refpair() {
-                        write!(f, " {}", PairDatum::nested(p.as_ref(), self.graph.as_ref()))?;
-                    } else {
-                        write!(f, " {}", pref.car.as_datum())?;
-                    }
+                    write_car(' ', pref, self.graph.as_ref(), f)?;
                 }
             } else if !matches!(item, Value::Null) {
                 write!(f, " . {}", item.as_datum())?;
@@ -173,4 +165,12 @@ fn write_seq<T: Display>(
         "{prefix}({})",
         seq.map(|v| v.to_string()).collect::<Vec<_>>().join(" ")
     )
+}
+
+fn write_car(prefix: char, pair: &Pair, graph: &Traverse, f: &mut Formatter<'_>) -> fmt::Result {
+    if let Some(p) = pair.car.as_refpair() {
+        write!(f, "{prefix}{}", PairDatum::nested(p.as_ref(), graph))
+    } else {
+        write!(f, "{prefix}{}", pair.car.as_datum())
+    }
 }
