@@ -518,6 +518,7 @@ cadr_func!(cadr, a, d);
 cadr_func!(cdar, d, a);
 cadr_func!(cddr, d, d);
 
+#[allow(clippy::unnecessary_wraps, reason = "infallible intrinsic")]
 fn is_pair(args: &[Value], _env: &Frame) -> EvalResult {
     Ok(Value::Boolean(first(args).is_pair()))
 }

@@ -114,9 +114,8 @@ impl<'a> PairDatum<'a> {
                 if self.graph.get(pref.node_id()).is_some() {
                     write!(f, " . {}", PairDatum::nested(pref, self.graph.as_ref()))?;
                     break;
-                } else {
-                    write_car(' ', pref, self.graph.as_ref(), f)?;
                 }
+                write_car(' ', pref, self.graph.as_ref(), f)?;
             } else if !matches!(item, Value::Null) {
                 write!(f, " . {}", item.as_datum())?;
             }
@@ -131,10 +130,9 @@ impl Display for PairDatum<'_> {
         if let Some(vs) = self.graph.as_ref().get(self.head.node_id()) {
             if vs.marked() {
                 return write!(f, "#{}#", vs.label);
-            } else {
-                write!(f, "#{}=", vs.label)?;
-                vs.mark();
             }
+            write!(f, "#{}=", vs.label)?;
+            vs.mark();
         }
         write_car('(', self.head, self.graph.as_ref(), f)?;
         self.write_tail(f)

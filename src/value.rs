@@ -504,7 +504,7 @@ impl Traverse {
 
     fn visit_vec(&mut self, vec: &[Value]) {
         if self.add(vec.as_ptr().cast()) {
-            for item in vec.iter() {
+            for item in vec {
                 self.visit(item);
             }
         }
@@ -525,7 +525,7 @@ impl Traverse {
     }
 
     fn label_visits(&mut self) {
-        for n in self.nodes.iter() {
+        for n in &self.nodes {
             if let Some(vs) = self.visits.get_mut(n)
                 && (!self.cycles_only || vs.cycle)
             {
