@@ -882,47 +882,6 @@ mod pair {
         assert!(p.is_list());
     }
 
-    // TODO: this stack overflows somewhere in the creation of the list
-    // is it Rc::drop doing it?
-    // testing in repl:
-    // (define x (make-list 100000 'a)) -> works
-    // (define x (make-list 1000000 'a)) -> stack overflow
-    #[test]
-    #[ignore = "wip"]
-    fn extremely_long_list() {
-        // (1 1 1 1 1 ... )
-        let mut vec = Vec::new();
-        vec.extend(std::iter::repeat_n(Value::real(1), 10));
-        let mut v = Value::Null;
-        let mut i = 0;
-        eprintln!("index: {:p}", &i);
-        for item in vec.into_iter().rev() {
-            eprintln!("item {:p}", &item);
-            v = Value::cons(item, v);
-            let p = extract_or_fail!(&v, Value::Pair);
-            eprintln!(
-                "{i}: {:p}, {:p}, {:p}, {:p}",
-                &v,
-                Rc::as_ptr(p),
-                &p.car,
-                &p.cdr
-            );
-            if let Some(cd) = &p.cdr.as_refpair() {
-                eprintln!("v.cdr.cdr {:p}", cd.as_ref());
-            }
-            i += 1;
-        }
-        assert!(false);
-
-        /*
-        let v = Value::list(std::iter::repeat_n(Value::real(1), 1000000));
-        let p = extract_or_fail!(v, Value::Pair);
-
-        assert!(p.is_list());
-        assert_eq!(p.len(), 1000000);
-        */
-    }
-
     #[test]
     fn pair_display() {
         let v = Value::cons(Value::Boolean(true), Value::Boolean(false));

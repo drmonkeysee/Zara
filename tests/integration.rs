@@ -311,3 +311,36 @@ fn several_layers_of_circular_lists() {
         "#0=(x y #1=(a b #2=(1 2 3 . #2#) #2# #3=(4 5 6 . #3#) z . #1#) z . #0#)"
     );
 }
+
+#[test]
+fn very_large_vector() {
+    let mut t = TestRunner::new();
+
+    t.run_for_val("(define v (make-vector 1000000 'a))");
+
+    let v = t.run_for_val("(vector-length v)");
+    assert_eq!(v.to_string(), "1000000");
+
+    let v = t.run_for_val(concat!(
+        "(vector-set! v 999999 'b)",
+        "(vector-ref v 999999)"
+    ));
+    assert_eq!(v.to_string(), "b");
+}
+
+#[test]
+#[ignore = "stack overflow on list drop"]
+fn very_large_list() {
+    let mut t = TestRunner::new();
+
+    t.run_for_val("(define l (make-list 1000000 'a))");
+
+    let v = t.run_for_val("(length l)");
+    assert_eq!(v.to_string(), "1000000");
+
+    let v = t.run_for_val(concat!(
+        "(set-car! (list-tail l 999999) 'b)",
+        "(list-tail l 999995)"
+    ));
+    assert_eq!(v.to_string(), "(a a a a b)");
+}
