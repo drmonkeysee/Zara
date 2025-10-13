@@ -87,6 +87,23 @@ impl Display for TypeName<'_> {
     }
 }
 
+struct NestedDatum<'a> {
+    graph: &'a Traverse,
+    val: &'a Value,
+}
+
+impl Display for NestedDatum<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        if let Some(p) = self.val.as_refpair() {
+            PairDatum::nested(p.as_ref(), self.graph).fmt(f)
+        } else if let Some(vec) = self.val.as_refvec() {
+            VecDatum::nested(vec.as_ref(), self.graph).fmt(f)
+        } else {
+            self.val.as_datum().fmt(f)
+        }
+    }
+}
+
 struct PairDatum<'a> {
     graph: Cow<'a, Traverse>,
     head: &'a Pair,
@@ -115,7 +132,14 @@ impl<'a> PairDatum<'a> {
                     write!(f, " . {}", PairDatum::nested(pref, &self.graph))?;
                     break;
                 }
-                write_car(' ', pref, &self.graph, f)?;
+                write!(
+                    f,
+                    " {}",
+                    NestedDatum {
+                        graph: &self.graph,
+                        val: &pref.car
+                    }
+                )?;
             } else if let Some(v) = item.as_refvec() {
                 write!(f, " . {}", VecDatum::nested(v.as_ref(), &self.graph))?;
             } else if !matches!(item, Value::Null) {
@@ -136,7 +160,14 @@ impl Display for PairDatum<'_> {
             write!(f, "#{}=", vs.label)?;
             vs.mark();
         }
-        write_car('(', self.head, &self.graph, f)?;
+        write!(
+            f,
+            "({}",
+            NestedDatum {
+                graph: &self.graph,
+                val: &self.head.car
+            }
+        )?;
         self.write_tail(f)
     }
 }
@@ -165,13 +196,11 @@ impl<'a> VecDatum<'a> {
         self.vec
             .iter()
             .map(|item| {
-                if let Some(p) = item.as_refpair() {
-                    PairDatum::nested(p.as_ref(), &self.graph).to_string()
-                } else if let Some(v) = item.as_refvec() {
-                    VecDatum::nested(v.as_ref(), &self.graph).to_string()
-                } else {
-                    item.as_datum().to_string()
+                NestedDatum {
+                    graph: &self.graph,
+                    val: item,
                 }
+                .to_string()
             })
             .collect::<Vec<_>>()
             .join(" ")
@@ -201,14 +230,4 @@ fn write_seq<T: Display>(
         "{prefix}({})",
         seq.map(|v| v.to_string()).collect::<Vec<_>>().join(" ")
     )
-}
-
-fn write_car(prefix: char, pair: &Pair, graph: &Traverse, f: &mut Formatter<'_>) -> fmt::Result {
-    if let Some(p) = pair.car.as_refpair() {
-        write!(f, "{prefix}{}", PairDatum::nested(p.as_ref(), graph))
-    } else if let Some(v) = pair.car.as_refvec() {
-        write!(f, "{prefix}{}", VecDatum::nested(v.as_ref(), graph))
-    } else {
-        write!(f, "{prefix}{}", pair.car.as_datum())
-    }
 }
