@@ -104,28 +104,33 @@ impl Display for NestedDatum<'_> {
     }
 }
 
-struct PairDatum<'a> {
+struct GraphDatum<'a, T: ?Sized> {
     graph: Cow<'a, Traverse>,
-    head: &'a Pair,
+    val: &'a T,
 }
+
+impl<'a, T: ?Sized> GraphDatum<'a, T> {
+    fn nested(val: &'a T, graph: &'a Traverse) -> Self {
+        Self {
+            graph: Cow::Borrowed(graph),
+            val,
+        }
+    }
+}
+
+type PairDatum<'a> = GraphDatum<'a, Pair>;
+type VecDatum<'a> = GraphDatum<'a, [Value]>;
 
 impl<'a> PairDatum<'a> {
     fn new(head: &'a Pair) -> Self {
         Self {
             graph: Cow::Owned(Traverse::pair(head)),
-            head,
-        }
-    }
-
-    fn nested(head: &'a Pair, graph: &'a Traverse) -> Self {
-        Self {
-            graph: Cow::Borrowed(graph),
-            head,
+            val: head,
         }
     }
 
     fn write_tail(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        for item in self.head.cdr.iter() {
+        for item in self.val.cdr.iter() {
             if let Some(p) = item.as_refpair() {
                 let pref = p.as_ref();
                 if self.graph.get(pref.node_id()).is_some() {
@@ -150,10 +155,9 @@ impl<'a> PairDatum<'a> {
     }
 }
 
-// TODO: the .as_datum() calls need to be dependent on top-level display
 impl Display for PairDatum<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        if let Some(vs) = self.graph.get(self.head.node_id()) {
+        if let Some(vs) = self.graph.get(self.val.node_id()) {
             if vs.marked() {
                 return write!(f, "#{}#", vs.label);
             }
@@ -165,35 +169,23 @@ impl Display for PairDatum<'_> {
             "({}",
             NestedDatum {
                 graph: &self.graph,
-                val: &self.head.car
+                val: &self.val.car
             }
         )?;
         self.write_tail(f)
     }
 }
 
-struct VecDatum<'a> {
-    graph: Cow<'a, Traverse>,
-    vec: &'a [Value],
-}
-
 impl<'a> VecDatum<'a> {
     fn new(vec: &'a [Value]) -> Self {
         Self {
             graph: Cow::Owned(Traverse::vec(vec)),
-            vec,
-        }
-    }
-
-    fn nested(vec: &'a [Value], graph: &'a Traverse) -> Self {
-        Self {
-            graph: Cow::Borrowed(graph),
-            vec,
+            val: vec,
         }
     }
 
     fn join_items(&self) -> String {
-        self.vec
+        self.val
             .iter()
             .map(|item| {
                 NestedDatum {
@@ -209,7 +201,7 @@ impl<'a> VecDatum<'a> {
 
 impl Display for VecDatum<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        if let Some(vs) = self.graph.get(self.vec.as_ptr().cast()) {
+        if let Some(vs) = self.graph.get(self.val.as_ptr().cast()) {
             if vs.marked() {
                 return write!(f, "#{}#", vs.label);
             }
