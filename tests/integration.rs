@@ -289,3 +289,25 @@ fn syntax_error_on_continuation() {
         "Syntax Error\n<integration>:1\n\t(if (< x y)\n\t^^^^^^^^^^^\n1: invalid form, expected: (if <test> <consequent> [alternate])\n"
     );
 }
+
+#[test]
+fn several_layers_of_circular_lists() {
+    let mut t = TestRunner::new();
+
+    let v = t.run_for_val(concat!(
+        "(define c (list 1 2 3))",
+        "(set-cdr! (cddr c) c)",
+        "(define d (list 4 5 6))",
+        "(set-cdr! (cddr d) d)",
+        "(define foo (list 'a 'b c c d 'z))",
+        "(set-cdr! (cdr (cddddr foo)) foo)",
+        "(define bar (list 'x 'y foo 'z))",
+        "(set-cdr! (cdddr bar) bar)",
+        "bar",
+    ));
+
+    assert_eq!(
+        v.to_string(),
+        "#0=(x y #1=(a b #2=(1 2 3 . #2#) #2# #3=(4 5 6 . #3#) z . #1#) z . #0#)"
+    );
+}
