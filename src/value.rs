@@ -475,6 +475,10 @@ impl Traverse {
         self.visits.values().any(|vs| vs.cycle)
     }
 
+    fn contains(&self, id: NodeId) -> bool {
+        self.get(id).is_some()
+    }
+
     fn get(&self, id: NodeId) -> Option<&Visit> {
         self.visits
             .get(&id)

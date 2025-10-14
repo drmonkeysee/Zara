@@ -133,7 +133,7 @@ impl<'a> PairDatum<'a> {
         for item in self.val.cdr.iter() {
             if let Some(p) = item.as_refpair() {
                 let pref = p.as_ref();
-                if self.graph.get(pref.node_id()).is_some() {
+                if self.graph.contains(pref.node_id()) {
                     write!(f, " . {}", PairDatum::nested(pref, &self.graph))?;
                     break;
                 }

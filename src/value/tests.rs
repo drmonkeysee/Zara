@@ -2408,7 +2408,7 @@ mod traverse {
         let graph = Traverse::value(&v);
 
         assert_eq!(cycle_count(&graph), 1);
-        assert!(graph.get(start.node_id()).is_some());
-        assert!(graph.get(p.node_id()).is_none());
+        assert!(graph.contains(start.node_id()));
+        assert!(!graph.contains(p.node_id()));
     }
 }
