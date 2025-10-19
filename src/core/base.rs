@@ -48,16 +48,18 @@ macro_rules! num_convert {
     };
 }
 
+mod num;
 #[cfg(test)]
 mod tests;
 
 use super::{
-    FIRST_ARG_LABEL, SECOND_ARG_LABEL, THIRD_ARG_LABEL, first, invalid_target, pcar, pcdr,
+    FIRST_ARG_LABEL, SECOND_ARG_LABEL, THIRD_ARG_LABEL, bind_intrinsic, first, invalid_target,
+    pcar, pcdr,
 };
 use crate::{
     Exception,
     eval::{EvalResult, Frame, IntrinsicFn, MAX_ARITY},
-    number::{Integer, Number, NumericError, NumericTypeName, Real},
+    number::{Number, NumericError, NumericTypeName},
     string::{Symbol, unicode::UnicodeError},
     value::{
         BvRef, CollRef, CollSized, Condition, InvalidList, Pair, PairSized, StrRef, Traverse,
@@ -80,7 +82,7 @@ pub(super) fn load(env: &Frame) {
     load_char(env);
     load_eq(env);
     load_ex(env);
-    load_num(env);
+    num::load(env);
     load_list(env);
     load_proc(env);
     load_string(env);
@@ -93,10 +95,10 @@ pub(super) fn load(env: &Frame) {
 //
 
 fn load_bool(env: &Frame) {
-    super::bind_intrinsic(env, "not", 1..1, not);
+    bind_intrinsic(env, "not", 1..1, not);
 
-    super::bind_intrinsic(env, "boolean?", 1..1, is_boolean);
-    super::bind_intrinsic(env, "boolean=?", 0..MAX_ARITY, booleans_eq);
+    bind_intrinsic(env, "boolean?", 1..1, is_boolean);
+    bind_intrinsic(env, "boolean=?", 0..MAX_ARITY, booleans_eq);
 }
 
 predicate!(not, Value::Boolean(false));
@@ -108,21 +110,21 @@ seq_predicate!(booleans_eq, Value::Boolean, TypeName::BOOL, bool::eq);
 //
 
 fn load_bv(env: &Frame) {
-    super::bind_intrinsic(env, "bytevector?", 1..1, is_bytevector);
+    bind_intrinsic(env, "bytevector?", 1..1, is_bytevector);
 
-    super::bind_intrinsic(env, "make-bytevector", 1..2, bytevector_make);
-    super::bind_intrinsic(env, "bytevector", 0..MAX_ARITY, bytevector);
+    bind_intrinsic(env, "make-bytevector", 1..2, bytevector_make);
+    bind_intrinsic(env, "bytevector", 0..MAX_ARITY, bytevector);
 
-    super::bind_intrinsic(env, "bytevector-length", 1..1, bytevector_length);
-    super::bind_intrinsic(env, "bytevector-u8-ref", 2..2, bytevector_get);
-    super::bind_intrinsic(env, "bytevector-u8-set!", 3..3, bytevector_set);
+    bind_intrinsic(env, "bytevector-length", 1..1, bytevector_length);
+    bind_intrinsic(env, "bytevector-u8-ref", 2..2, bytevector_get);
+    bind_intrinsic(env, "bytevector-u8-set!", 3..3, bytevector_set);
 
-    super::bind_intrinsic(env, "bytevector-copy", 1..3, bytevector_copy);
-    super::bind_intrinsic(env, "bytevector-copy!", 3..5, bytevector_copy_inline);
-    super::bind_intrinsic(env, "bytevector-append", 0..MAX_ARITY, bytevector_append);
+    bind_intrinsic(env, "bytevector-copy", 1..3, bytevector_copy);
+    bind_intrinsic(env, "bytevector-copy!", 3..5, bytevector_copy_inline);
+    bind_intrinsic(env, "bytevector-append", 0..MAX_ARITY, bytevector_append);
 
-    super::bind_intrinsic(env, "utf8->string", 1..3, bytevector_to_string);
-    super::bind_intrinsic(env, "string->utf8", 1..3, bytevector_from_string);
+    bind_intrinsic(env, "utf8->string", 1..3, bytevector_to_string);
+    bind_intrinsic(env, "string->utf8", 1..3, bytevector_from_string);
 }
 
 predicate!(
@@ -252,16 +254,16 @@ fn bytevector_from_string(args: &[Value], _env: &Frame) -> EvalResult {
 //
 
 fn load_char(env: &Frame) {
-    super::bind_intrinsic(env, "char?", 1..1, is_char);
+    bind_intrinsic(env, "char?", 1..1, is_char);
 
-    super::bind_intrinsic(env, "char=?", 0..MAX_ARITY, chars_eq);
-    super::bind_intrinsic(env, "char<?", 0..MAX_ARITY, chars_lt);
-    super::bind_intrinsic(env, "char>?", 0..MAX_ARITY, chars_gt);
-    super::bind_intrinsic(env, "char<=?", 0..MAX_ARITY, chars_lte);
-    super::bind_intrinsic(env, "char>=?", 0..MAX_ARITY, chars_gte);
+    bind_intrinsic(env, "char=?", 0..MAX_ARITY, chars_eq);
+    bind_intrinsic(env, "char<?", 0..MAX_ARITY, chars_lt);
+    bind_intrinsic(env, "char>?", 0..MAX_ARITY, chars_gt);
+    bind_intrinsic(env, "char<=?", 0..MAX_ARITY, chars_lte);
+    bind_intrinsic(env, "char>=?", 0..MAX_ARITY, chars_gte);
 
-    super::bind_intrinsic(env, "char->integer", 1..1, char_to_integer);
-    super::bind_intrinsic(env, "integer->char", 1..1, char_from_integer);
+    bind_intrinsic(env, "char->integer", 1..1, char_to_integer);
+    bind_intrinsic(env, "integer->char", 1..1, char_from_integer);
 }
 
 predicate!(is_char, Value::Character(_));
@@ -295,9 +297,9 @@ fn char_from_integer(args: &[Value], _env: &Frame) -> EvalResult {
 //
 
 fn load_eq(env: &Frame) {
-    super::bind_intrinsic(env, "eqv?", 2..2, is_eqv);
-    super::bind_intrinsic(env, "eq?", 2..2, is_eq);
-    super::bind_intrinsic(env, "equal?", 2..2, is_equal);
+    bind_intrinsic(env, "eqv?", 2..2, is_eqv);
+    bind_intrinsic(env, "eq?", 2..2, is_eq);
+    bind_intrinsic(env, "equal?", 2..2, is_equal);
 }
 
 #[allow(clippy::unnecessary_wraps, reason = "infallible intrinsic")]
@@ -326,13 +328,13 @@ fn is_equal(args: &[Value], _env: &Frame) -> EvalResult {
 //
 
 fn load_ex(env: &Frame) {
-    super::bind_intrinsic(env, "error-object?", 1..1, is_error);
+    bind_intrinsic(env, "error-object?", 1..1, is_error);
 
-    super::bind_intrinsic(env, "error-object-message", 1..1, error_msg);
-    super::bind_intrinsic(env, "error-object-irritants", 1..1, error_irritants);
+    bind_intrinsic(env, "error-object-message", 1..1, error_msg);
+    bind_intrinsic(env, "error-object-irritants", 1..1, error_irritants);
 
-    super::bind_intrinsic(env, "read-error?", 1..1, is_read_error);
-    super::bind_intrinsic(env, "file-error?", 1..1, is_file_error);
+    bind_intrinsic(env, "read-error?", 1..1, is_read_error);
+    bind_intrinsic(env, "file-error?", 1..1, is_file_error);
 }
 
 predicate!(is_error, Value::Error(_));
@@ -358,156 +360,45 @@ fn error_irritants(args: &[Value], _env: &Frame) -> EvalResult {
 }
 
 //
-// Numbers
-//
-
-fn load_num(env: &Frame) {
-    // NOTE: complex and number predicates are identical sets
-    super::bind_intrinsic(env, "number?", 1..1, is_number);
-    super::bind_intrinsic(env, "complex?", 1..1, is_number);
-    super::bind_intrinsic(env, "real?", 1..1, is_real);
-    super::bind_intrinsic(env, "rational?", 1..1, is_rational);
-    super::bind_intrinsic(env, "integer?", 1..1, is_integer);
-
-    super::bind_intrinsic(env, "exact?", 1..1, is_exact);
-    super::bind_intrinsic(env, "inexact?", 1..1, is_inexact);
-    super::bind_intrinsic(env, "exact-integer?", 1..1, is_exact_integer);
-
-    super::bind_intrinsic(env, "zero?", 1..1, is_zero);
-    super::bind_intrinsic(env, "positive?", 1..1, is_positive);
-    super::bind_intrinsic(env, "negative?", 1..1, is_negative);
-    super::bind_intrinsic(env, "odd?", 1..1, is_odd);
-    super::bind_intrinsic(env, "even?", 1..1, is_even);
-
-    super::bind_intrinsic(env, "abs", 1..1, abs);
-
-    super::bind_intrinsic(env, "numerator", 1..1, get_numerator);
-    super::bind_intrinsic(env, "denominator", 1..1, get_denominator);
-
-    super::bind_intrinsic(env, "inexact", 1..1, into_inexact);
-    super::bind_intrinsic(env, "exact", 1..1, into_exact);
-}
-
-predicate!(is_number, Value::Number(_));
-predicate!(is_real, Value::Number(Number::Real(_)));
-predicate!(is_rational, Value::Number(Number::Real(r)) if r.is_rational());
-predicate!(is_integer, Value::Number(Number::Real(r)) if r.is_integer());
-try_predicate!(is_exact, Value::Number, TypeName::NUMBER, |n: &Number| {
-    !n.is_inexact()
-});
-try_predicate!(is_inexact, Value::Number, TypeName::NUMBER, |n: &Number| {
-    n.is_inexact()
-});
-try_predicate!(
-    is_exact_integer,
-    Value::Number,
-    TypeName::NUMBER,
-    |n: &Number| matches!(n, Number::Real(Real::Integer(_)))
-);
-try_predicate!(is_zero, Value::Number, TypeName::NUMBER, |n: &Number| n
-    .is_zero());
-
-fn is_positive(args: &[Value], _env: &Frame) -> EvalResult {
-    real_op(first(args), |r| Ok(Value::Boolean(r.is_positive())))
-}
-
-fn is_negative(args: &[Value], _env: &Frame) -> EvalResult {
-    real_op(first(args), |r| Ok(Value::Boolean(r.is_negative())))
-}
-
-fn is_odd(args: &[Value], _env: &Frame) -> EvalResult {
-    exact_int_predicate(first(args), |n| !n.is_even())
-}
-
-fn is_even(args: &[Value], _env: &Frame) -> EvalResult {
-    exact_int_predicate(first(args), Integer::is_even)
-}
-
-fn abs(args: &[Value], _env: &Frame) -> EvalResult {
-    real_op(first(args), |r| Ok(Value::real(r.clone().into_abs())))
-}
-
-fn get_numerator(args: &[Value], _env: &Frame) -> EvalResult {
-    let arg = first(args);
-    rational_op(arg, |r| {
-        r.clone().try_into_numerator().map_or_else(
-            |err| Err(Condition::value_error(err, arg).into()),
-            |r| Ok(Value::real(r)),
-        )
-    })
-}
-
-fn get_denominator(args: &[Value], _env: &Frame) -> EvalResult {
-    let arg = first(args);
-    rational_op(arg, |r| {
-        r.clone().try_into_denominator().map_or_else(
-            |err| Err(Condition::value_error(err, arg).into()),
-            |r| Ok(Value::real(r)),
-        )
-    })
-}
-
-fn into_inexact(args: &[Value], _env: &Frame) -> EvalResult {
-    let arg = first(args);
-    if let Value::Number(n) = arg {
-        Ok(Value::Number(n.clone().into_inexact()))
-    } else {
-        Err(invalid_target(TypeName::NUMBER, arg))
-    }
-}
-
-fn into_exact(args: &[Value], _env: &Frame) -> EvalResult {
-    let arg = first(args);
-    if let Value::Number(n) = arg {
-        n.clone().try_into_exact().map_or_else(
-            |err| Err(Condition::value_error(err, arg).into()),
-            |n| Ok(Value::Number(n)),
-        )
-    } else {
-        Err(invalid_target(TypeName::NUMBER, arg))
-    }
-}
-
-//
 // Pairs and Lists
 //
 
 fn load_list(env: &Frame) {
-    super::bind_intrinsic(env, "pair?", 1..1, is_pair);
+    bind_intrinsic(env, "pair?", 1..1, is_pair);
 
-    super::bind_intrinsic(env, "cons", 2..2, cons);
-    super::bind_intrinsic(env, "car", 1..1, car);
-    super::bind_intrinsic(env, "cdr", 1..1, cdr);
-    super::bind_intrinsic(env, "set-car!", 2..2, set_car);
-    super::bind_intrinsic(env, "set-cdr!", 2..2, set_cdr);
+    bind_intrinsic(env, "cons", 2..2, cons);
+    bind_intrinsic(env, "car", 1..1, car);
+    bind_intrinsic(env, "cdr", 1..1, cdr);
+    bind_intrinsic(env, "set-car!", 2..2, set_car);
+    bind_intrinsic(env, "set-cdr!", 2..2, set_cdr);
 
-    super::bind_intrinsic(env, "caar", 1..1, caar);
-    super::bind_intrinsic(env, "cadr", 1..1, cadr);
-    super::bind_intrinsic(env, "cdar", 1..1, cdar);
-    super::bind_intrinsic(env, "cddr", 1..1, cddr);
+    bind_intrinsic(env, "caar", 1..1, caar);
+    bind_intrinsic(env, "cadr", 1..1, cadr);
+    bind_intrinsic(env, "cdar", 1..1, cdar);
+    bind_intrinsic(env, "cddr", 1..1, cddr);
 
-    super::bind_intrinsic(env, "null?", 1..1, is_null);
-    super::bind_intrinsic(env, "list?", 1..1, is_list);
+    bind_intrinsic(env, "null?", 1..1, is_null);
+    bind_intrinsic(env, "list?", 1..1, is_list);
 
-    super::bind_intrinsic(env, "make-list", 1..2, list_make);
-    super::bind_intrinsic(env, "list", 0..MAX_ARITY, list);
+    bind_intrinsic(env, "make-list", 1..2, list_make);
+    bind_intrinsic(env, "list", 0..MAX_ARITY, list);
 
-    super::bind_intrinsic(env, "length", 1..1, list_length);
-    super::bind_intrinsic(env, "append", 0..MAX_ARITY, list_append);
-    super::bind_intrinsic(env, "reverse", 1..1, list_reverse);
+    bind_intrinsic(env, "length", 1..1, list_length);
+    bind_intrinsic(env, "append", 0..MAX_ARITY, list_append);
+    bind_intrinsic(env, "reverse", 1..1, list_reverse);
 
-    super::bind_intrinsic(env, "list-tail", 2..2, list_tail);
-    super::bind_intrinsic(env, "list-ref", 2..2, list_get);
-    super::bind_intrinsic(env, "list-set!", 3..3, list_set);
+    bind_intrinsic(env, "list-tail", 2..2, list_tail);
+    bind_intrinsic(env, "list-ref", 2..2, list_get);
+    bind_intrinsic(env, "list-set!", 3..3, list_set);
 
-    super::bind_intrinsic(env, "memq", 2..2, member_eq);
-    super::bind_intrinsic(env, "memv", 2..2, member_eqv);
-    super::bind_intrinsic(env, "member", 2..3, member_equal);
-    super::bind_intrinsic(env, "assq", 2..2, assoc_eq);
-    super::bind_intrinsic(env, "assv", 2..2, assoc_eqv);
-    super::bind_intrinsic(env, "assoc", 2..3, assoc_equal);
+    bind_intrinsic(env, "memq", 2..2, member_eq);
+    bind_intrinsic(env, "memv", 2..2, member_eqv);
+    bind_intrinsic(env, "member", 2..3, member_equal);
+    bind_intrinsic(env, "assq", 2..2, assoc_eq);
+    bind_intrinsic(env, "assv", 2..2, assoc_eqv);
+    bind_intrinsic(env, "assoc", 2..3, assoc_equal);
 
-    super::bind_intrinsic(env, "list-copy", 1..1, list_copy);
+    bind_intrinsic(env, "list-copy", 1..1, list_copy);
 }
 
 predicate!(is_null, Value::Null);
@@ -719,7 +610,7 @@ fn list_copy(args: &[Value], _env: &Frame) -> EvalResult {
 //
 
 fn load_proc(env: &Frame) {
-    super::bind_intrinsic(env, "procedure?", 1..1, is_procedure);
+    bind_intrinsic(env, "procedure?", 1..1, is_procedure);
 }
 
 predicate!(is_procedure, Value::Intrinsic(_) | Value::Procedure(_));
@@ -729,30 +620,30 @@ predicate!(is_procedure, Value::Intrinsic(_) | Value::Procedure(_));
 //
 
 fn load_string(env: &Frame) {
-    super::bind_intrinsic(env, "string?", 1..1, is_string);
+    bind_intrinsic(env, "string?", 1..1, is_string);
 
-    super::bind_intrinsic(env, "make-string", 1..2, string_make);
-    super::bind_intrinsic(env, "string", 0..MAX_ARITY, string);
+    bind_intrinsic(env, "make-string", 1..2, string_make);
+    bind_intrinsic(env, "string", 0..MAX_ARITY, string);
 
-    super::bind_intrinsic(env, "string-length", 1..1, string_length);
-    super::bind_intrinsic(env, "string-ref", 2..2, string_get);
-    super::bind_intrinsic(env, "string-set!", 3..3, string_set);
+    bind_intrinsic(env, "string-length", 1..1, string_length);
+    bind_intrinsic(env, "string-ref", 2..2, string_get);
+    bind_intrinsic(env, "string-set!", 3..3, string_set);
 
-    super::bind_intrinsic(env, "string=?", 0..MAX_ARITY, strings_eq);
-    super::bind_intrinsic(env, "string<?", 0..MAX_ARITY, strings_lt);
-    super::bind_intrinsic(env, "string>?", 0..MAX_ARITY, strings_gt);
-    super::bind_intrinsic(env, "string<=?", 0..MAX_ARITY, strings_lte);
-    super::bind_intrinsic(env, "string>=?", 0..MAX_ARITY, strings_gte);
+    bind_intrinsic(env, "string=?", 0..MAX_ARITY, strings_eq);
+    bind_intrinsic(env, "string<?", 0..MAX_ARITY, strings_lt);
+    bind_intrinsic(env, "string>?", 0..MAX_ARITY, strings_gt);
+    bind_intrinsic(env, "string<=?", 0..MAX_ARITY, strings_lte);
+    bind_intrinsic(env, "string>=?", 0..MAX_ARITY, strings_gte);
 
-    super::bind_intrinsic(env, "substring", 3..3, string_copy);
-    super::bind_intrinsic(env, "string-append", 0..MAX_ARITY, string_append);
+    bind_intrinsic(env, "substring", 3..3, string_copy);
+    bind_intrinsic(env, "string-append", 0..MAX_ARITY, string_append);
 
-    super::bind_intrinsic(env, "string->list", 1..3, string_to_list);
-    super::bind_intrinsic(env, "list->string", 1..1, string_from_list);
+    bind_intrinsic(env, "string->list", 1..3, string_to_list);
+    bind_intrinsic(env, "list->string", 1..1, string_from_list);
 
-    super::bind_intrinsic(env, "string-copy", 1..3, string_copy);
-    super::bind_intrinsic(env, "string-copy!", 3..5, string_copy_inline);
-    super::bind_intrinsic(env, "string-fill!", 2..4, string_fill);
+    bind_intrinsic(env, "string-copy", 1..3, string_copy);
+    bind_intrinsic(env, "string-copy!", 3..5, string_copy_inline);
+    bind_intrinsic(env, "string-fill!", 2..4, string_fill);
 }
 
 predicate!(is_string, Value::String(_) | Value::StringMut(_));
@@ -899,11 +790,11 @@ fn string_fill(args: &[Value], _env: &Frame) -> EvalResult {
 //
 
 fn load_symbol(env: &Frame) {
-    super::bind_intrinsic(env, "symbol?", 1..1, is_symbol);
-    super::bind_intrinsic(env, "symbol=?", 0..MAX_ARITY, symbols_eq);
+    bind_intrinsic(env, "symbol?", 1..1, is_symbol);
+    bind_intrinsic(env, "symbol=?", 0..MAX_ARITY, symbols_eq);
 
-    super::bind_intrinsic(env, "symbol->string", 1..1, symbol_to_string);
-    super::bind_intrinsic(env, "string->symbol", 1..1, symbol_from_string);
+    bind_intrinsic(env, "symbol->string", 1..1, symbol_to_string);
+    bind_intrinsic(env, "string->symbol", 1..1, symbol_from_string);
 }
 
 predicate!(is_symbol, Value::Symbol(_));
@@ -931,24 +822,24 @@ fn symbol_from_string(args: &[Value], env: &Frame) -> EvalResult {
 //
 
 fn load_vec(env: &Frame) {
-    super::bind_intrinsic(env, "vector?", 1..1, is_vector);
+    bind_intrinsic(env, "vector?", 1..1, is_vector);
 
-    super::bind_intrinsic(env, "make-vector", 1..2, vector_make);
-    super::bind_intrinsic(env, "vector", 0..MAX_ARITY, vector);
+    bind_intrinsic(env, "make-vector", 1..2, vector_make);
+    bind_intrinsic(env, "vector", 0..MAX_ARITY, vector);
 
-    super::bind_intrinsic(env, "vector-length", 1..1, vector_length);
-    super::bind_intrinsic(env, "vector-ref", 2..2, vector_get);
-    super::bind_intrinsic(env, "vector-set!", 3..3, vector_set);
+    bind_intrinsic(env, "vector-length", 1..1, vector_length);
+    bind_intrinsic(env, "vector-ref", 2..2, vector_get);
+    bind_intrinsic(env, "vector-set!", 3..3, vector_set);
 
-    super::bind_intrinsic(env, "vector->list", 1..3, vector_to_list);
-    super::bind_intrinsic(env, "list->vector", 1..1, vector_from_list);
-    super::bind_intrinsic(env, "vector->string", 1..3, vector_to_string);
-    super::bind_intrinsic(env, "string->vector", 1..3, vector_from_string);
+    bind_intrinsic(env, "vector->list", 1..3, vector_to_list);
+    bind_intrinsic(env, "list->vector", 1..1, vector_from_list);
+    bind_intrinsic(env, "vector->string", 1..3, vector_to_string);
+    bind_intrinsic(env, "string->vector", 1..3, vector_from_string);
 
-    super::bind_intrinsic(env, "vector-copy", 1..3, vector_copy);
-    super::bind_intrinsic(env, "vector-copy!", 3..5, vector_copy_inline);
-    super::bind_intrinsic(env, "vector-append", 0..MAX_ARITY, vector_append);
-    super::bind_intrinsic(env, "vector-fill!", 2..4, vector_fill);
+    bind_intrinsic(env, "vector-copy", 1..3, vector_copy);
+    bind_intrinsic(env, "vector-copy!", 3..5, vector_copy_inline);
+    bind_intrinsic(env, "vector-append", 0..MAX_ARITY, vector_append);
+    bind_intrinsic(env, "vector-fill!", 2..4, vector_fill);
 }
 
 predicate!(is_vector, Value::Vector(_) | Value::VectorMut(_));
@@ -1102,38 +993,6 @@ fn try_num_into_char(n: &Number, arg: &Value) -> EvalResult {
             )
         },
     )
-}
-
-fn real_op(arg: &Value, op: impl FnOnce(&Real) -> EvalResult) -> EvalResult {
-    guarded_real_op(arg, NumericTypeName::REAL, op)
-}
-
-fn rational_op(arg: &Value, op: impl FnOnce(&Real) -> EvalResult) -> EvalResult {
-    guarded_real_op(arg, NumericTypeName::RATIONAL, op)
-}
-
-fn exact_int_predicate(arg: &Value, pred: impl FnOnce(&Integer) -> bool) -> EvalResult {
-    guarded_real_op(arg, NumericTypeName::INTEGER, |r| {
-        r.clone().try_into_exact_integer().map_or_else(
-            |err| Err(Condition::value_error(err, arg).into()),
-            |n| Ok(Value::Boolean(pred(&n))),
-        )
-    })
-}
-
-fn guarded_real_op(
-    arg: &Value,
-    expected_type: impl Display,
-    op: impl FnOnce(&Real) -> EvalResult,
-) -> EvalResult {
-    let Value::Number(n) = arg else {
-        return Err(invalid_target(expected_type, arg));
-    };
-    if let Number::Real(r) = n {
-        op(r)
-    } else {
-        Err(Condition::arg_type_error(FIRST_ARG_LABEL, expected_type, n.as_typename(), arg).into())
-    }
 }
 
 fn pair_set(arg: &Value, val: &Value, set: impl FnOnce(RefMut<'_, Pair>, &Value)) -> EvalResult {
