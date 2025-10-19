@@ -188,6 +188,12 @@ fn error_irritants(args: &[Value], _env: &Frame) -> EvalResult {
 //
 
 fn load_io(env: &Frame) {
+    bind_intrinsic(env, "input-port?", 1..1, is_input_port);
+    bind_intrinsic(env, "output-port?", 1..1, is_output_port);
+    bind_intrinsic(env, "textual-port?", 1..1, is_textual_port);
+    bind_intrinsic(env, "binary-port?", 1..1, is_binary_port);
+    bind_intrinsic(env, "port?", 1..1, is_port);
+
     bind_intrinsic(env, "current-input-port", 0..0, current_stdin);
     bind_intrinsic(env, "current-output-port", 0..0, current_stdout);
     bind_intrinsic(env, "current-error-port", 0..0, current_stderr);
@@ -196,6 +202,11 @@ fn load_io(env: &Frame) {
     bind_intrinsic(env, "eof-object", 0..0, eof);
 }
 
+predicate!(is_input_port, Value::Port(p) if p.is_input());
+predicate!(is_output_port, Value::Port(p) if p.is_output());
+predicate!(is_textual_port, Value::Port(p) if p.is_textual());
+predicate!(is_binary_port, Value::Port(p) if p.is_binary());
+predicate!(is_port, Value::Port(_));
 predicate!(is_eof, Value::Eof);
 
 fn current_stdin(_args: &[Value], _env: &Frame) -> EvalResult {

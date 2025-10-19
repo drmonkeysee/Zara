@@ -8,20 +8,20 @@ pub(crate) enum Port {
 }
 
 impl Port {
-    fn is_input(&self) -> bool {
-        todo!();
+    pub(crate) fn is_input(&self) -> bool {
+        matches!(self, Self::Stdin)
     }
 
-    fn is_output(&self) -> bool {
-        todo!();
+    pub(crate) fn is_output(&self) -> bool {
+        matches!(self, Self::Stderr | Self::Stdout)
     }
 
-    fn is_textual(&self) -> bool {
-        todo!();
+    pub(crate) fn is_textual(&self) -> bool {
+        true
     }
 
-    fn is_binary(&self) -> bool {
-        todo!();
+    pub(crate) fn is_binary(&self) -> bool {
+        false
     }
 
     fn is_open(&self) -> bool {
