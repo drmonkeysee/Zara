@@ -12,7 +12,7 @@ pub(super) fn load(env: &Frame) {
     super::bind_intrinsic(env, "nan?", 1..1, is_nan);
 
     super::bind_intrinsic(env, "exp", 1..1, exponential);
-    super::bind_intrinsic(env, "log", 1..2, natural_log);
+    super::bind_intrinsic(env, "log", 1..2, logarithm);
 
     super::bind_intrinsic(env, "sin", 1..1, sine);
     super::bind_intrinsic(env, "cos", 1..1, cosine);
@@ -41,7 +41,7 @@ fn exponential(_args: &[Value], _env: &Frame) -> EvalResult {
     todo!();
 }
 
-fn natural_log(_args: &[Value], _env: &Frame) -> EvalResult {
+fn logarithm(_args: &[Value], _env: &Frame) -> EvalResult {
     todo!();
 }
 
