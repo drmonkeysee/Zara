@@ -51,6 +51,7 @@ pub(super) fn load(env: &Frame) {
     load_char(env);
     load_eq(env);
     load_ex(env);
+    load_io(env);
     load_proc(env);
     load_symbol(env);
     collections::load(env);
@@ -180,6 +181,21 @@ fn error_irritants(args: &[Value], _env: &Frame) -> EvalResult {
     } else {
         Err(invalid_target(TypeName::ERROR, arg))
     }
+}
+
+//
+// Input/Output
+//
+
+fn load_io(env: &Frame) {
+    bind_intrinsic(env, "eof-object?", 1..1, is_eof);
+    bind_intrinsic(env, "eof-object", 0..0, eof);
+}
+
+predicate!(is_eof, Value::Eof);
+
+fn eof(_args: &[Value], _env: &Frame) -> EvalResult {
+    Ok(Value::Eof)
 }
 
 //
