@@ -73,6 +73,20 @@ mod display {
     }
 
     #[test]
+    fn eof_typename() {
+        let v = Value::Eof;
+
+        assert_eq!(v.as_typename().to_string(), "end-of-file");
+    }
+
+    #[test]
+    fn eof_display() {
+        let v = Value::Eof;
+
+        assert_eq!(v.as_datum().to_string(), "#<eof>");
+    }
+
+    #[test]
     fn error_typename() {
         let v = Value::Error(Condition::system_error("foo").into());
 
@@ -1422,6 +1436,7 @@ mod equivalence {
     #[test]
     fn always_the_same() {
         let cases = [
+            (Value::Eof, Value::Eof),
             (Value::Null, Value::Null),
             (Value::Unspecified, Value::Unspecified),
         ];

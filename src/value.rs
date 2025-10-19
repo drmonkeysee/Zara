@@ -38,6 +38,7 @@ pub(crate) enum Value {
     ByteVector(Rc<[u8]>),
     ByteVectorMut(Rc<RefCell<Vec<u8>>>),
     Character(char),
+    Eof,
     Error(Rc<Condition>),
     Intrinsic(Rc<Intrinsic>),
     Null,
@@ -161,7 +162,9 @@ impl Value {
             (Self::ByteVectorMut(a), Self::ByteVectorMut(b)) => Rc::ptr_eq(a, b),
             (Self::Error(a), Self::Error(b)) => Rc::ptr_eq(a, b),
             (Self::Intrinsic(a), Self::Intrinsic(b)) => Rc::ptr_eq(a, b),
-            (Self::Null, Self::Null) | (Self::Unspecified, Self::Unspecified) => true,
+            (Self::Eof, Self::Eof)
+            | (Self::Null, Self::Null)
+            | (Self::Unspecified, Self::Unspecified) => true,
             (Self::Pair(a), Self::Pair(b)) => Rc::ptr_eq(a, b),
             (Self::PairMut(a), Self::PairMut(b)) => Rc::ptr_eq(a, b),
             (Self::Procedure(a), Self::Procedure(b)) => Rc::ptr_eq(a, b),
