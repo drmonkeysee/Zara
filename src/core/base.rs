@@ -194,6 +194,7 @@ fn load_io(env: &Frame) {
 
 predicate!(is_eof, Value::Eof);
 
+#[allow(clippy::unnecessary_wraps, reason = "infallible intrinsic")]
 fn eof(_args: &[Value], _env: &Frame) -> EvalResult {
     Ok(Value::Eof)
 }
