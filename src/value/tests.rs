@@ -303,6 +303,20 @@ mod display {
 
         assert_eq!(v.as_datum().to_string(), "#<procedure foo>");
     }
+
+    #[test]
+    fn port_typename() {
+        let v = Value::Port(Port::Stdout);
+
+        assert_eq!(v.as_typename().to_string(), "port");
+    }
+
+    #[test]
+    fn port_display() {
+        let v = Value::Port(Port::Stdout);
+
+        assert_eq!(v.as_datum().to_string(), "#<port stdout>");
+    }
 }
 
 mod character {
@@ -1693,6 +1707,22 @@ mod equivalence {
         assert!(!a.is(&b));
         assert!(!a.is_eqv(&b));
         assert!(a != b);
+    }
+
+    #[test]
+    fn equivalent_ports() {
+        let a = Value::Port(Port::Stdin);
+        let b = Value::Port(Port::Stdin);
+
+        assert!(a.is(&b));
+    }
+
+    #[test]
+    fn unequivalent_ports() {
+        let a = Value::Port(Port::Stderr);
+        let b = Value::Port(Port::Stdout);
+
+        assert!(!a.is(&b));
     }
 
     #[test]

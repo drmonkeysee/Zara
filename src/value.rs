@@ -9,9 +9,11 @@ macro_rules! zlist {
 
 mod condition;
 mod display;
+mod port;
 #[cfg(test)]
 mod tests;
 
+use self::port::Port;
 pub(crate) use self::{
     condition::Condition,
     display::{Datum, TypeName, ValueMessage},
@@ -45,6 +47,7 @@ pub(crate) enum Value {
     Number(Number),
     Pair(Rc<Pair>),
     PairMut(Rc<RefCell<Pair>>),
+    Port(Port),
     Procedure(Rc<Procedure>),
     String(Rc<str>),
     StringMut(Rc<RefCell<String>>),
@@ -167,6 +170,7 @@ impl Value {
             | (Self::Unspecified, Self::Unspecified) => true,
             (Self::Pair(a), Self::Pair(b)) => Rc::ptr_eq(a, b),
             (Self::PairMut(a), Self::PairMut(b)) => Rc::ptr_eq(a, b),
+            (Self::Port(a), Self::Port(b)) => a == b,
             (Self::Procedure(a), Self::Procedure(b)) => Rc::ptr_eq(a, b),
             (Self::String(a), Self::String(b)) => Rc::ptr_eq(a, b),
             (Self::StringMut(a), Self::StringMut(b)) => Rc::ptr_eq(a, b),
