@@ -101,6 +101,18 @@ impl Value {
         Self::make_improper_list(items, Self::cons_mut)
     }
 
+    pub(crate) fn stdin() -> Self {
+        Self::Port(Port::Stdin)
+    }
+
+    pub(crate) fn stdout() -> Self {
+        Self::Port(Port::Stdout)
+    }
+
+    pub(crate) fn stderr() -> Self {
+        Self::Port(Port::Stderr)
+    }
+
     pub(crate) fn procedure(p: impl Into<Rc<Procedure>>) -> Self {
         Self::Procedure(p.into())
     }

@@ -188,11 +188,27 @@ fn error_irritants(args: &[Value], _env: &Frame) -> EvalResult {
 //
 
 fn load_io(env: &Frame) {
+    bind_intrinsic(env, "current-input-port", 0..0, current_stdin);
+    bind_intrinsic(env, "current-output-port", 0..0, current_stdout);
+    bind_intrinsic(env, "current-error-port", 0..0, current_stderr);
+
     bind_intrinsic(env, "eof-object?", 1..1, is_eof);
     bind_intrinsic(env, "eof-object", 0..0, eof);
 }
 
 predicate!(is_eof, Value::Eof);
+
+fn current_stdin(_args: &[Value], _env: &Frame) -> EvalResult {
+    Ok(Value::stdin())
+}
+
+fn current_stdout(_args: &[Value], _env: &Frame) -> EvalResult {
+    Ok(Value::stdout())
+}
+
+fn current_stderr(_args: &[Value], _env: &Frame) -> EvalResult {
+    Ok(Value::stderr())
+}
 
 #[allow(clippy::unnecessary_wraps, reason = "infallible intrinsic")]
 fn eof(_args: &[Value], _env: &Frame) -> EvalResult {
