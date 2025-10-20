@@ -13,10 +13,10 @@ mod port;
 #[cfg(test)]
 mod tests;
 
-use self::port::Port;
 pub(crate) use self::{
     condition::Condition,
     display::{Datum, TypeName, ValueMessage},
+    port::{Port, PortProp},
 };
 use crate::{
     eval::{Intrinsic, Procedure},

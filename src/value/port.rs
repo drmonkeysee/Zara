@@ -24,8 +24,12 @@ impl Port {
         false
     }
 
-    fn is_open(&self) -> bool {
-        todo!();
+    pub(crate) fn has_prop(&self, prop: &PortProp) -> bool {
+        prop.matches(self)
+    }
+
+    pub(crate) fn is_open(&self) -> bool {
+        true
     }
 }
 
@@ -36,6 +40,36 @@ impl Display for Port {
             Self::Stdin => f.write_str("stdin"),
             Self::Stdout => f.write_str("stdout"),
         }
+    }
+}
+
+pub(crate) enum PortProp {
+    Binary,
+    Input,
+    Output,
+    Textual,
+}
+
+impl PortProp {
+    fn matches(&self, p: &Port) -> bool {
+        match self {
+            Self::Binary => p.is_binary(),
+            Self::Input => p.is_input(),
+            Self::Output => p.is_output(),
+            Self::Textual => p.is_textual(),
+        }
+    }
+}
+
+impl Display for PortProp {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Binary => f.write_str("binary"),
+            Self::Input => f.write_str("input"),
+            Self::Output => f.write_str("output"),
+            Self::Textual => f.write_str("textual"),
+        }?;
+        f.write_str(" port")
     }
 }
 

@@ -43,8 +43,9 @@ use crate::{
     eval::{EvalResult, Frame, MAX_ARITY},
     number::{Number, NumericError, NumericTypeName},
     string::{Symbol, unicode::UnicodeError},
-    value::{Condition, TypeName, Value},
+    value::{Condition, Port, PortProp, TypeName, Value},
 };
+use std::fmt::Display;
 
 pub(super) fn load(env: &Frame) {
     load_bool(env);
@@ -194,6 +195,9 @@ fn load_io(env: &Frame) {
     bind_intrinsic(env, "binary-port?", 1..1, is_binary_port);
     bind_intrinsic(env, "port?", 1..1, is_port);
 
+    bind_intrinsic(env, "input-port-open?", 1..1, is_open_input);
+    bind_intrinsic(env, "output-port-open?", 1..1, is_open_output);
+
     bind_intrinsic(env, "current-input-port", 0..0, current_stdin);
     bind_intrinsic(env, "current-output-port", 0..0, current_stdout);
     bind_intrinsic(env, "current-error-port", 0..0, current_stderr);
@@ -208,6 +212,14 @@ predicate!(is_textual_port, Value::Port(p) if p.is_textual());
 predicate!(is_binary_port, Value::Port(p) if p.is_binary());
 predicate!(is_port, Value::Port(_));
 predicate!(is_eof, Value::Eof);
+
+fn is_open_input(args: &[Value], _env: &Frame) -> EvalResult {
+    guarded_port_op(first(args), PortProp::Input, PortProp::Output, is_port_open)
+}
+
+fn is_open_output(args: &[Value], _env: &Frame) -> EvalResult {
+    guarded_port_op(first(args), PortProp::Output, PortProp::Input, is_port_open)
+}
 
 fn current_stdin(_args: &[Value], _env: &Frame) -> EvalResult {
     Ok(Value::stdin())
@@ -294,4 +306,24 @@ fn try_num_into_char(n: &Number, arg: &Value) -> EvalResult {
             )
         },
     )
+}
+
+fn is_port_open(p: &Port) -> EvalResult {
+    Ok(Value::Boolean(p.is_open()))
+}
+
+fn guarded_port_op(
+    arg: &Value,
+    expected_prop: PortProp,
+    invalid_prop: impl Display,
+    op: impl FnOnce(&Port) -> EvalResult,
+) -> EvalResult {
+    let Value::Port(p) = arg else {
+        return Err(invalid_target(expected_prop, arg));
+    };
+    if p.has_prop(&expected_prop) {
+        op(p)
+    } else {
+        Err(Condition::arg_type_error(FIRST_ARG_LABEL, expected_prop, invalid_prop, arg).into())
+    }
 }
