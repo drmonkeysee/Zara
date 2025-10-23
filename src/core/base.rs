@@ -206,24 +206,26 @@ fn load_io(env: &Frame) {
     bind_intrinsic(env, "eof-object", 0..0, eof);
 }
 
-predicate!(
-    is_input_port,
-    Value::Unspecified /*Value::Port(p) if p.is_input()*/
-);
-predicate!(
-    is_output_port,
-    Value::Unspecified /*Value::Port(p) if p.is_output()*/
-);
-predicate!(
-    is_textual_port,
-    Value::Unspecified /*Value::Port(p) if p.is_textual()*/
-);
-predicate!(
-    is_binary_port,
-    Value::Unspecified /*Value::Port(p) if p.is_binary()*/
-);
-predicate!(is_port, Value::PortRead(_) | Value::PortWrite(_));
+predicate!(is_input_port, Value::PortInput(_));
+predicate!(is_output_port, Value::PortOutput(_));
+predicate!(is_port, Value::PortInput(_) | Value::PortOutput(_));
 predicate!(is_eof, Value::Eof);
+
+fn is_textual_port(args: &[Value], _env: &Frame) -> EvalResult {
+    Ok(Value::Boolean(match first(args) {
+        Value::PortInput(p) => p.is_textual(),
+        Value::PortOutput(p) => p.is_textual(),
+        _ => false,
+    }))
+}
+
+fn is_binary_port(args: &[Value], _env: &Frame) -> EvalResult {
+    Ok(Value::Boolean(match first(args) {
+        Value::PortInput(p) => p.is_binary(),
+        Value::PortOutput(p) => p.is_binary(),
+        _ => false,
+    }))
+}
 
 fn is_open_input(args: &[Value], _env: &Frame) -> EvalResult {
     todo!();

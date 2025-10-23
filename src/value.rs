@@ -47,8 +47,8 @@ pub(crate) enum Value {
     Number(Number),
     Pair(Rc<Pair>),
     PairMut(Rc<RefCell<Pair>>),
-    PortRead(Rc<ReadPort>),
-    PortWrite(Rc<WritePort>),
+    PortInput(Rc<ReadPort>),
+    PortOutput(Rc<WritePort>),
     Procedure(Rc<Procedure>),
     String(Rc<str>),
     StringMut(Rc<RefCell<String>>),
@@ -100,6 +100,18 @@ impl Value {
         <I as IntoIterator>::IntoIter: DoubleEndedIterator,
     {
         Self::make_improper_list(items, Self::cons_mut)
+    }
+
+    pub(crate) fn port_stdin() -> Self {
+        Self::PortInput(ReadPort::stdin().into())
+    }
+
+    pub(crate) fn port_stdout() -> Self {
+        Self::PortOutput(WritePort::stdout().into())
+    }
+
+    pub(crate) fn port_stderr() -> Self {
+        Self::PortOutput(WritePort::stderr().into())
     }
 
     pub(crate) fn procedure(p: impl Into<Rc<Procedure>>) -> Self {
@@ -171,8 +183,8 @@ impl Value {
             | (Self::Unspecified, Self::Unspecified) => true,
             (Self::Pair(a), Self::Pair(b)) => Rc::ptr_eq(a, b),
             (Self::PairMut(a), Self::PairMut(b)) => Rc::ptr_eq(a, b),
-            (Self::PortRead(a), Self::PortRead(b)) => Rc::ptr_eq(a, b),
-            (Self::PortWrite(a), Self::PortWrite(b)) => Rc::ptr_eq(a, b),
+            (Self::PortInput(a), Self::PortInput(b)) => Rc::ptr_eq(a, b),
+            (Self::PortOutput(a), Self::PortOutput(b)) => Rc::ptr_eq(a, b),
             (Self::Procedure(a), Self::Procedure(b)) => Rc::ptr_eq(a, b),
             (Self::String(a), Self::String(b)) => Rc::ptr_eq(a, b),
             (Self::StringMut(a), Self::StringMut(b)) => Rc::ptr_eq(a, b),

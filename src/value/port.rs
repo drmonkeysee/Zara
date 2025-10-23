@@ -12,8 +12,22 @@ pub(crate) struct Port<T> {
     stream: T,
 }
 
+impl<T: PortStream> Port<T> {
+    pub(crate) fn is_textual(&self) -> bool {
+        matches!(self.mode, PortMode::Textual)
+    }
+
+    pub(crate) fn is_binary(&self) -> bool {
+        matches!(self.mode, PortMode::Binary)
+    }
+
+    fn is_open(&self) -> bool {
+        self.stream.is_open()
+    }
+}
+
 impl ReadPort {
-    fn stdin() -> Self {
+    pub(super) fn stdin() -> Self {
         Self::text_new(InputSource::Stdin)
     }
 
@@ -29,12 +43,12 @@ impl ReadPort {
 }
 
 impl WritePort {
-    fn stderr() -> Self {
-        Self::text_new(OutputSource::Stderr)
+    pub(super) fn stdout() -> Self {
+        Self::text_new(OutputSource::Stdout)
     }
 
-    fn stdout() -> Self {
-        Self::text_new(OutputSource::Stdout)
+    pub(super) fn stderr() -> Self {
+        Self::text_new(OutputSource::Stderr)
     }
 
     fn text_new(source: OutputSource) -> Self {
@@ -48,9 +62,19 @@ impl WritePort {
     }
 }
 
+pub(crate) trait PortStream {
+    fn is_open(&self) -> bool;
+}
+
 pub(crate) struct ReadStream {
     buf: Option<Box<BufReader<dyn Read>>>,
     source: InputSource,
+}
+
+impl PortStream for ReadStream {
+    fn is_open(&self) -> bool {
+        return self.buf.is_some();
+    }
 }
 
 impl Debug for ReadStream {
@@ -65,6 +89,12 @@ impl Debug for ReadStream {
 pub(crate) struct WriteStream {
     buf: Option<Box<BufWriter<dyn Write>>>,
     source: OutputSource,
+}
+
+impl PortStream for WriteStream {
+    fn is_open(&self) -> bool {
+        return self.buf.is_some();
+    }
 }
 
 impl Debug for WriteStream {
