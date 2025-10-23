@@ -75,6 +75,9 @@ impl Binding {
 pub(crate) struct System {
     pub(crate) args: Value,
     pub(crate) start_time: Instant,
+    pub(crate) stderr: Value,
+    pub(crate) stdin: Value,
+    pub(crate) stdout: Value,
 }
 
 impl System {
@@ -82,6 +85,9 @@ impl System {
         Self {
             args: Value::list(args.into_iter().map(Value::string).collect::<Vec<_>>()),
             start_time: Instant::now(),
+            stderr: Value::port_stderr(),
+            stdin: Value::port_stdin(),
+            stdout: Value::port_stdout(),
         }
     }
 }

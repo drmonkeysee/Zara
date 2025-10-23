@@ -234,16 +234,16 @@ fn is_open_output(args: &[Value], _env: &Frame) -> EvalResult {
     todo!();
 }
 
-fn current_stdin(_args: &[Value], _env: &Frame) -> EvalResult {
-    todo!();
+fn current_stdin(_args: &[Value], env: &Frame) -> EvalResult {
+    Ok(env.sys.stdin.clone())
 }
 
-fn current_stdout(_args: &[Value], _env: &Frame) -> EvalResult {
-    todo!();
+fn current_stdout(_args: &[Value], env: &Frame) -> EvalResult {
+    Ok(env.sys.stdout.clone())
 }
 
-fn current_stderr(_args: &[Value], _env: &Frame) -> EvalResult {
-    todo!();
+fn current_stderr(_args: &[Value], env: &Frame) -> EvalResult {
+    Ok(env.sys.stderr.clone())
 }
 
 #[allow(clippy::unnecessary_wraps, reason = "infallible intrinsic")]
