@@ -45,7 +45,6 @@ use crate::{
     string::{Symbol, unicode::UnicodeError},
     value::{Condition, TypeName, Value},
 };
-use std::fmt::Display;
 
 pub(super) fn load(env: &Frame) {
     load_bool(env);

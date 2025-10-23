@@ -1,5 +1,5 @@
 use std::{
-    fmt::{self, Debug, Formatter},
+    fmt::{self, Debug, Display, Formatter},
     io::{self, BufReader, BufWriter, Read, Write},
 };
 
@@ -26,12 +26,18 @@ impl<T: PortStream> Port<T> {
     }
 }
 
+impl<T: Display> Display for Port<T> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        self.stream.fmt(f)
+    }
+}
+
 impl ReadPort {
     pub(super) fn stdin() -> Self {
-        Self::text_new(InputSource::Stdin)
+        Self::text_new(ReadSource::Stdin)
     }
 
-    fn text_new(source: InputSource) -> Self {
+    fn text_new(source: ReadSource) -> Self {
         Self {
             mode: PortMode::Textual,
             stream: ReadStream {
@@ -44,14 +50,14 @@ impl ReadPort {
 
 impl WritePort {
     pub(super) fn stdout() -> Self {
-        Self::text_new(OutputSource::Stdout)
+        Self::text_new(WriteSource::Stdout)
     }
 
     pub(super) fn stderr() -> Self {
-        Self::text_new(OutputSource::Stderr)
+        Self::text_new(WriteSource::Stderr)
     }
 
-    fn text_new(source: OutputSource) -> Self {
+    fn text_new(source: WriteSource) -> Self {
         Self {
             mode: PortMode::Textual,
             stream: WriteStream {
@@ -68,7 +74,7 @@ pub(crate) trait PortStream {
 
 pub(crate) struct ReadStream {
     buf: Option<Box<BufReader<dyn Read>>>,
-    source: InputSource,
+    source: ReadSource,
 }
 
 impl PortStream for ReadStream {
@@ -86,9 +92,15 @@ impl Debug for ReadStream {
     }
 }
 
+impl Display for ReadStream {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        Display::fmt(&self.source, f)
+    }
+}
+
 pub(crate) struct WriteStream {
     buf: Option<Box<BufWriter<dyn Write>>>,
-    source: OutputSource,
+    source: WriteSource,
 }
 
 impl PortStream for WriteStream {
@@ -106,6 +118,12 @@ impl Debug for WriteStream {
     }
 }
 
+impl Display for WriteStream {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        Display::fmt(&self.source, f)
+    }
+}
+
 #[derive(Debug)]
 enum PortMode {
     Binary,
@@ -113,11 +131,11 @@ enum PortMode {
 }
 
 #[derive(Debug)]
-enum InputSource {
+enum ReadSource {
     Stdin,
 }
 
-impl InputSource {
+impl ReadSource {
     fn create_stream(&self) -> Box<BufReader<dyn Read>> {
         match self {
             Self::Stdin => read_buffer_with(io::stdin()),
@@ -125,17 +143,34 @@ impl InputSource {
     }
 }
 
+impl Display for ReadSource {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Stdin => f.write_str("stdin"),
+        }
+    }
+}
+
 #[derive(Debug)]
-enum OutputSource {
+enum WriteSource {
     Stderr,
     Stdout,
 }
 
-impl OutputSource {
+impl WriteSource {
     fn create_stream(&self) -> Box<BufWriter<dyn Write>> {
         match self {
             Self::Stderr => write_buffer_with(io::stderr()),
             Self::Stdout => write_buffer_with(io::stdout()),
+        }
+    }
+}
+
+impl Display for WriteSource {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Stderr => f.write_str("stderr"),
+            Self::Stdout => f.write_str("stdout"),
         }
     }
 }
@@ -146,4 +181,30 @@ fn read_buffer_with(r: impl Read + 'static) -> Box<BufReader<dyn Read>> {
 
 fn write_buffer_with(w: impl Write + 'static) -> Box<BufWriter<dyn Write>> {
     Box::new(BufWriter::new(w))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn stderr_display() {
+        let p = WriteSource::Stderr;
+
+        assert_eq!(p.to_string(), "stderr");
+    }
+
+    #[test]
+    fn stdin_display() {
+        let p = ReadSource::Stdin;
+
+        assert_eq!(p.to_string(), "stdin");
+    }
+
+    #[test]
+    fn stdout_display() {
+        let p = WriteSource::Stdout;
+
+        assert_eq!(p.to_string(), "stdout");
+    }
 }
