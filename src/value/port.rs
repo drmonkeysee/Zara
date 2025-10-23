@@ -1,100 +1,119 @@
-use std::fmt::{self, Display, Formatter};
+use std::{
+    fmt::{self, Debug, Formatter},
+    io::{self, BufReader, BufWriter, Read, Write},
+};
 
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub(crate) enum Port {
-    Stderr,
-    Stdin,
-    Stdout,
+pub(crate) type ReadPort = Port<ReadStream>;
+pub(crate) type WritePort = Port<WriteStream>;
+
+#[derive(Debug)]
+pub(crate) struct Port<T> {
+    mode: PortMode,
+    stream: T,
 }
 
-impl Port {
-    pub(crate) fn is_input(&self) -> bool {
-        matches!(self, Self::Stdin)
+impl ReadPort {
+    fn stdin() -> Self {
+        Self::text_new(InputSource::Stdin)
     }
 
-    pub(crate) fn is_output(&self) -> bool {
-        matches!(self, Self::Stderr | Self::Stdout)
-    }
-
-    pub(crate) fn is_textual(&self) -> bool {
-        true
-    }
-
-    pub(crate) fn is_binary(&self) -> bool {
-        false
-    }
-
-    pub(crate) fn has_prop(&self, prop: &PortProp) -> bool {
-        prop.matches(self)
-    }
-
-    pub(crate) fn is_open(&self) -> bool {
-        true
-    }
-}
-
-impl Display for Port {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Stderr => f.write_str("stderr"),
-            Self::Stdin => f.write_str("stdin"),
-            Self::Stdout => f.write_str("stdout"),
+    fn text_new(source: InputSource) -> Self {
+        Self {
+            mode: PortMode::Textual,
+            stream: ReadStream {
+                buf: Some(source.create_stream()),
+                source,
+            },
         }
     }
 }
 
-pub(crate) enum PortProp {
+impl WritePort {
+    fn stderr() -> Self {
+        Self::text_new(OutputSource::Stderr)
+    }
+
+    fn stdout() -> Self {
+        Self::text_new(OutputSource::Stdout)
+    }
+
+    fn text_new(source: OutputSource) -> Self {
+        Self {
+            mode: PortMode::Textual,
+            stream: WriteStream {
+                buf: Some(source.create_stream()),
+                source,
+            },
+        }
+    }
+}
+
+pub(crate) struct ReadStream {
+    buf: Option<Box<BufReader<dyn Read>>>,
+    source: InputSource,
+}
+
+impl Debug for ReadStream {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        f.debug_struct("ReadStream")
+            .field("buf", &"...")
+            .field("source", &self.source)
+            .finish()
+    }
+}
+
+pub(crate) struct WriteStream {
+    buf: Option<Box<BufWriter<dyn Write>>>,
+    source: OutputSource,
+}
+
+impl Debug for WriteStream {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        f.debug_struct("WriteStream")
+            .field("buf", &"...")
+            .field("source", &self.source)
+            .finish()
+    }
+}
+
+#[derive(Debug)]
+enum PortMode {
     Binary,
-    Input,
-    Output,
     Textual,
 }
 
-impl PortProp {
-    fn matches(&self, p: &Port) -> bool {
+#[derive(Debug)]
+enum InputSource {
+    Stdin,
+}
+
+impl InputSource {
+    fn create_stream(&self) -> Box<BufReader<dyn Read>> {
         match self {
-            Self::Binary => p.is_binary(),
-            Self::Input => p.is_input(),
-            Self::Output => p.is_output(),
-            Self::Textual => p.is_textual(),
+            Self::Stdin => read_buffer_with(io::stdin()),
         }
     }
 }
 
-impl Display for PortProp {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+#[derive(Debug)]
+enum OutputSource {
+    Stderr,
+    Stdout,
+}
+
+impl OutputSource {
+    fn create_stream(&self) -> Box<BufWriter<dyn Write>> {
         match self {
-            Self::Binary => f.write_str("binary"),
-            Self::Input => f.write_str("input"),
-            Self::Output => f.write_str("output"),
-            Self::Textual => f.write_str("textual"),
-        }?;
-        f.write_str(" port")
+            Self::Stderr => write_buffer_with(io::stderr()),
+            Self::Stdout => write_buffer_with(io::stdout()),
+        }
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+fn read_buffer_with(r: impl Read + 'static) -> Box<BufReader<dyn Read>> {
+    Box::new(BufReader::new(r))
+}
 
-    #[test]
-    fn stderr_display() {
-        let p = Port::Stderr;
-
-        assert_eq!(p.to_string(), "stderr");
-    }
-
-    #[test]
-    fn stdin_display() {
-        let p = Port::Stdin;
-
-        assert_eq!(p.to_string(), "stdin");
-    }
-
-    #[test]
-    fn stdout_display() {
-        let p = Port::Stdout;
-
-        assert_eq!(p.to_string(), "stdout");
-    }
+fn write_buffer_with(w: impl Write + 'static) -> Box<BufWriter<dyn Write>> {
+    Box::new(BufWriter::new(w))
 }

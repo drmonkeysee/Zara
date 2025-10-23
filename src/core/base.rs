@@ -43,7 +43,7 @@ use crate::{
     eval::{EvalResult, Frame, MAX_ARITY},
     number::{Number, NumericError, NumericTypeName},
     string::{Symbol, unicode::UnicodeError},
-    value::{Condition, Port, PortProp, TypeName, Value},
+    value::{Condition, TypeName, Value},
 };
 use std::fmt::Display;
 
@@ -206,31 +206,43 @@ fn load_io(env: &Frame) {
     bind_intrinsic(env, "eof-object", 0..0, eof);
 }
 
-predicate!(is_input_port, Value::Port(p) if p.is_input());
-predicate!(is_output_port, Value::Port(p) if p.is_output());
-predicate!(is_textual_port, Value::Port(p) if p.is_textual());
-predicate!(is_binary_port, Value::Port(p) if p.is_binary());
-predicate!(is_port, Value::Port(_));
+predicate!(
+    is_input_port,
+    Value::Unspecified /*Value::Port(p) if p.is_input()*/
+);
+predicate!(
+    is_output_port,
+    Value::Unspecified /*Value::Port(p) if p.is_output()*/
+);
+predicate!(
+    is_textual_port,
+    Value::Unspecified /*Value::Port(p) if p.is_textual()*/
+);
+predicate!(
+    is_binary_port,
+    Value::Unspecified /*Value::Port(p) if p.is_binary()*/
+);
+predicate!(is_port, Value::PortRead(_) | Value::PortWrite(_));
 predicate!(is_eof, Value::Eof);
 
 fn is_open_input(args: &[Value], _env: &Frame) -> EvalResult {
-    guarded_port_op(first(args), PortProp::Input, PortProp::Output, is_port_open)
+    todo!();
 }
 
 fn is_open_output(args: &[Value], _env: &Frame) -> EvalResult {
-    guarded_port_op(first(args), PortProp::Output, PortProp::Input, is_port_open)
+    todo!();
 }
 
 fn current_stdin(_args: &[Value], _env: &Frame) -> EvalResult {
-    Ok(Value::stdin())
+    todo!();
 }
 
 fn current_stdout(_args: &[Value], _env: &Frame) -> EvalResult {
-    Ok(Value::stdout())
+    todo!();
 }
 
 fn current_stderr(_args: &[Value], _env: &Frame) -> EvalResult {
-    Ok(Value::stderr())
+    todo!();
 }
 
 #[allow(clippy::unnecessary_wraps, reason = "infallible intrinsic")]
@@ -308,10 +320,8 @@ fn try_num_into_char(n: &Number, arg: &Value) -> EvalResult {
     )
 }
 
-fn is_port_open(p: &Port) -> EvalResult {
-    Ok(Value::Boolean(p.is_open()))
-}
-
+// TODO
+/*
 fn guarded_port_op(
     arg: &Value,
     expected_prop: PortProp,
@@ -327,3 +337,4 @@ fn guarded_port_op(
         Err(Condition::arg_type_error(FIRST_ARG_LABEL, expected_prop, invalid_prop, arg).into())
     }
 }
+*/
