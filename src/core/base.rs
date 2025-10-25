@@ -36,14 +36,15 @@ mod num;
 mod tests;
 
 use super::{
-    FIRST_ARG_LABEL, GuardResult, SECOND_ARG_LABEL, THIRD_ARG_LABEL, bind_intrinsic, first,
-    invalid_target, pcar, pcdr, second, third,
+    FIRST_ARG_LABEL, SECOND_ARG_LABEL, THIRD_ARG_LABEL, bind_intrinsic, first, invalid_target,
+    pcar, pcdr, second, third,
 };
 use crate::{
+    Exception,
     eval::{EvalResult, Frame, MAX_ARITY},
     number::{Number, NumericError, NumericTypeName},
     string::{Symbol, unicode::UnicodeError},
-    value::{Condition, PortSpec, TypeName, Value},
+    value::{Condition, InputPortRef, OutputPortRef, PortSpec, TypeName, Value},
 };
 
 pub(super) fn load(env: &Frame) {
@@ -213,6 +214,8 @@ fn load_io(env: &Frame) {
 
     bind_intrinsic(env, "eof-object?", 1..1, is_eof);
     bind_intrinsic(env, "eof-object", 0..0, eof);
+
+    bind_intrinsic(env, "write-char", 1..2, write_char);
 }
 
 predicate!(is_input_port, Value::PortInput(_));
@@ -241,19 +244,13 @@ fn is_binary_port(args: &[Value], _env: &Frame) -> EvalResult {
 
 fn is_open_input(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = first(args);
-    guard_port_value(arg, PortSpec::Input)?;
-    let Value::PortInput(p) = arg else {
-        unreachable!("unexpected non-port value");
-    };
+    let p = guard_input_port(arg, PortSpec::Input)?;
     Ok(Value::Boolean(p.borrow().is_open()))
 }
 
 fn is_open_output(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = first(args);
-    guard_port_value(arg, PortSpec::Output)?;
-    let Value::PortOutput(p) = arg else {
-        unreachable!("unexpected non-port value");
-    };
+    let p = guard_output_port(arg, PortSpec::Output)?;
     Ok(Value::Boolean(p.borrow().is_open()))
 }
 
@@ -296,20 +293,14 @@ fn close_port(args: &[Value], env: &Frame) -> EvalResult {
 
 fn close_input_port(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = first(args);
-    guard_port_value(arg, PortSpec::Input)?;
-    let Value::PortInput(p) = arg else {
-        unreachable!("unexpected non-port value");
-    };
+    let p = guard_input_port(arg, PortSpec::Input)?;
     p.borrow_mut().close();
     Ok(Value::Unspecified)
 }
 
 fn close_output_port(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = first(args);
-    guard_port_value(arg, PortSpec::Output)?;
-    let Value::PortOutput(p) = arg else {
-        unreachable!("unexpected non-port value");
-    };
+    let p = guard_output_port(arg, PortSpec::Output)?;
     p.borrow_mut().close();
     Ok(Value::Unspecified)
 }
@@ -317,6 +308,16 @@ fn close_output_port(args: &[Value], _env: &Frame) -> EvalResult {
 #[allow(clippy::unnecessary_wraps, reason = "infallible intrinsic")]
 fn eof(_args: &[Value], _env: &Frame) -> EvalResult {
     Ok(Value::Eof)
+}
+
+fn write_char(args: &[Value], env: &Frame) -> EvalResult {
+    let arg = first(args);
+    let Value::Character(c) = arg else {
+        return Err(invalid_target(TypeName::CHAR, arg));
+    };
+    let port = args.get(1).unwrap_or_else(|| &env.sys.stdout);
+    let p = guard_output_port(port, PortSpec::TextualOutput)?;
+    todo!();
 }
 
 //
@@ -389,12 +390,36 @@ fn try_num_into_char(n: &Number, arg: &Value) -> EvalResult {
     )
 }
 
-fn guard_port_value(arg: &Value, expected: PortSpec) -> GuardResult {
+fn guard_input_port(arg: &Value, expected: PortSpec) -> Result<&InputPortRef, Exception> {
+    guard_port_value(arg, expected, |v| {
+        if let Value::PortInput(p) = v {
+            p
+        } else {
+            unreachable!("unexpected non-input-port value")
+        }
+    })
+}
+
+fn guard_output_port(arg: &Value, expected: PortSpec) -> Result<&OutputPortRef, Exception> {
+    guard_port_value(arg, expected, |v| {
+        if let Value::PortOutput(p) = v {
+            p
+        } else {
+            unreachable!("unexpected non-output-port value")
+        }
+    })
+}
+
+fn guard_port_value<T>(
+    arg: &Value,
+    expected: PortSpec,
+    unwrap: impl FnOnce(&Value) -> &T,
+) -> Result<&T, Exception> {
     match expected.check(arg) {
         Err(None) => Err(invalid_target(TypeName::PORT, arg)),
         Err(Some(spec)) => {
             Err(Condition::arg_type_error(FIRST_ARG_LABEL, expected, spec, arg).into())
         }
-        Ok(u) => Ok(u),
+        Ok(_) => Ok(unwrap(arg)),
     }
 }

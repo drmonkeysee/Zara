@@ -34,6 +34,9 @@ use std::{
 };
 pub(crate) use zlist;
 
+pub(crate) type InputPortRef = Rc<RefCell<ReadPort>>;
+pub(crate) type OutputPortRef = Rc<RefCell<WritePort>>;
+
 #[derive(Clone, Debug)]
 pub(crate) enum Value {
     Ast(Rc<Sequence>),
@@ -48,8 +51,8 @@ pub(crate) enum Value {
     Number(Number),
     Pair(Rc<Pair>),
     PairMut(Rc<RefCell<Pair>>),
-    PortInput(Rc<RefCell<ReadPort>>),
-    PortOutput(Rc<RefCell<WritePort>>),
+    PortInput(InputPortRef),
+    PortOutput(OutputPortRef),
     Procedure(Rc<Procedure>),
     String(Rc<str>),
     StringMut(Rc<RefCell<String>>),
