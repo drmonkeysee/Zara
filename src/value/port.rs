@@ -51,22 +51,30 @@ pub(crate) enum PortSpec {
 impl PortSpec {
     pub(crate) fn check(&self, val: &Value) -> Result<(), Option<Self>> {
         match val {
-            Value::PortInput(p) if p.borrow().is_binary() => match self {
-                Self::BinaryInput | Self::Input => Ok(()),
-                _ => Err(Some(p.borrow().spec())),
-            },
-            Value::PortInput(p) if p.borrow().is_textual() => match self {
-                Self::Input | Self::TextualInput => Ok(()),
-                _ => Err(Some(p.borrow().spec())),
-            },
-            Value::PortOutput(p) if p.borrow().is_binary() => match self {
-                Self::BinaryOutput | Self::Output => Ok(()),
-                _ => Err(Some(p.borrow().spec())),
-            },
-            Value::PortOutput(p) if p.borrow().is_textual() => match self {
-                Self::Output | Self::TextualOutput => Ok(()),
-                _ => Err(Some(p.borrow().spec())),
-            },
+            Value::PortInput(p) => {
+                if match self {
+                    Self::BinaryInput => p.borrow().is_binary(),
+                    Self::Input => true,
+                    Self::TextualInput => p.borrow().is_textual(),
+                    _ => false,
+                } {
+                    Ok(())
+                } else {
+                    Err(Some(p.borrow().spec()))
+                }
+            }
+            Value::PortOutput(p) => {
+                if match self {
+                    Self::BinaryOutput => p.borrow().is_binary(),
+                    Self::Output => true,
+                    Self::TextualOutput => p.borrow().is_textual(),
+                    _ => false,
+                } {
+                    Ok(())
+                } else {
+                    Err(Some(p.borrow().spec()))
+                }
+            }
             _ => Err(None),
         }
     }
@@ -213,8 +221,9 @@ impl WriteStream {
         match &mut self.buf {
             None => todo!("closed port error"),
             Some(w) => {
+                // TODO: figure out result and handle error
                 write!(w, "{ch}");
-                todo!("handle result");
+                Ok(())
             }
         }
     }
