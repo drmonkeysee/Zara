@@ -215,6 +215,7 @@ fn load_io(env: &Frame) {
     bind_intrinsic(env, "eof-object?", 1..1, is_eof);
     bind_intrinsic(env, "eof-object", 0..0, eof);
 
+    bind_intrinsic(env, "newline", 0..1, newline);
     bind_intrinsic(env, "write-char", 1..2, write_char);
 }
 
@@ -310,15 +311,16 @@ fn eof(_args: &[Value], _env: &Frame) -> EvalResult {
     Ok(Value::Eof)
 }
 
+fn newline(args: &[Value], env: &Frame) -> EvalResult {
+    put_char('\n', args.get(0), env)
+}
+
 fn write_char(args: &[Value], env: &Frame) -> EvalResult {
     let arg = first(args);
     let Value::Character(ch) = arg else {
         return Err(invalid_target(TypeName::CHAR, arg));
     };
-    let port = args.get(1).unwrap_or_else(|| &env.sys.stdout);
-    let p = guard_output_port(port, PortSpec::TextualOutput)?;
-    p.borrow_mut().put_char(*ch);
-    Ok(Value::Unspecified)
+    put_char(*ch, args.get(1), env)
 }
 
 //
@@ -423,4 +425,12 @@ fn guard_port_value<T>(
         }
         Ok(_) => Ok(unwrap(arg)),
     }
+}
+
+fn put_char(ch: char, arg: Option<&Value>, env: &Frame) -> EvalResult {
+    // TODO: port fallback must be dynamic
+    let port = arg.unwrap_or_else(|| &env.sys.stdout);
+    let p = guard_output_port(port, PortSpec::TextualOutput)?;
+    p.borrow_mut().put_char(ch);
+    Ok(Value::Unspecified)
 }
