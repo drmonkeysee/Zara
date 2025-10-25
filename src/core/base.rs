@@ -312,11 +312,12 @@ fn eof(_args: &[Value], _env: &Frame) -> EvalResult {
 
 fn write_char(args: &[Value], env: &Frame) -> EvalResult {
     let arg = first(args);
-    let Value::Character(c) = arg else {
+    let Value::Character(ch) = arg else {
         return Err(invalid_target(TypeName::CHAR, arg));
     };
     let port = args.get(1).unwrap_or_else(|| &env.sys.stdout);
     let p = guard_output_port(port, PortSpec::TextualOutput)?;
+    p.borrow_mut().put_char(*ch);
     todo!();
 }
 

@@ -153,6 +153,11 @@ impl WritePort {
         }
     }
 
+    pub(crate) fn put_char(&mut self, ch: char) -> Result<(), ()> {
+        // TODO: return error if mode = binary?
+        self.stream.put_char(ch)
+    }
+
     fn spec(&self) -> PortSpec {
         match self.mode {
             PortMode::Any => PortSpec::Output,
@@ -200,6 +205,19 @@ impl Display for ReadStream {
 pub(crate) struct WriteStream {
     buf: Option<Box<BufWriter<dyn Write>>>,
     source: WriteSource,
+}
+
+impl WriteStream {
+    // TODO: figure out return value
+    fn put_char(&mut self, ch: char) -> Result<(), ()> {
+        match &mut self.buf {
+            None => todo!("closed port error"),
+            Some(w) => {
+                write!(w, "{ch}");
+                todo!("handle result");
+            }
+        }
+    }
 }
 
 impl PortStream for WriteStream {
