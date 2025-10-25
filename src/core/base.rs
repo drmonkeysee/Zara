@@ -318,7 +318,7 @@ fn write_char(args: &[Value], env: &Frame) -> EvalResult {
     let port = args.get(1).unwrap_or_else(|| &env.sys.stdout);
     let p = guard_output_port(port, PortSpec::TextualOutput)?;
     p.borrow_mut().put_char(*ch);
-    todo!();
+    Ok(Value::Unspecified)
 }
 
 //
