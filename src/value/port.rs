@@ -1,7 +1,9 @@
 use super::Value;
 use std::{
     fmt::{self, Debug, Display, Formatter},
+    fs::File,
     io::{self, BufReader, BufWriter, Read, Write},
+    path::PathBuf,
 };
 
 pub(crate) type ReadPort = Port<ReadStream>;
@@ -15,11 +17,11 @@ pub(crate) struct Port<T> {
 
 impl<T: PortStream> Port<T> {
     pub(crate) fn is_textual(&self) -> bool {
-        matches!(self.mode, PortMode::Textual)
+        matches!(self.mode, PortMode::Any | PortMode::Textual)
     }
 
     pub(crate) fn is_binary(&self) -> bool {
-        matches!(self.mode, PortMode::Binary)
+        matches!(self.mode, PortMode::Any | PortMode::Binary)
     }
 
     pub(crate) fn is_open(&self) -> bool {
@@ -85,13 +87,25 @@ impl Display for PortSpec {
 }
 
 impl ReadPort {
-    pub(super) fn stdin() -> Self {
-        Self::text_new(ReadSource::Stdin)
+    pub(super) fn file(path: impl Into<PathBuf>) -> Self {
+        Self::any_new(ReadSource::File(path.into()))
     }
 
-    fn text_new(source: ReadSource) -> Self {
+    pub(super) fn stdin() -> Self {
+        Self::txt_new(ReadSource::Stdin)
+    }
+
+    fn any_new(source: ReadSource) -> Self {
+        Self::new(source, PortMode::Any)
+    }
+
+    fn txt_new(source: ReadSource) -> Self {
+        Self::new(source, PortMode::Textual)
+    }
+
+    fn new(source: ReadSource, mode: PortMode) -> Self {
         Self {
-            mode: PortMode::Textual,
+            mode,
             stream: ReadStream {
                 buf: Some(source.create_stream()),
                 source,
@@ -101,6 +115,7 @@ impl ReadPort {
 
     fn spec(&self) -> PortSpec {
         match self.mode {
+            PortMode::Any => PortSpec::Input,
             PortMode::Binary => PortSpec::BinaryInput,
             PortMode::Textual => PortSpec::TextualInput,
         }
@@ -108,17 +123,29 @@ impl ReadPort {
 }
 
 impl WritePort {
+    pub(super) fn file(path: impl Into<PathBuf>) -> Self {
+        Self::any_new(WriteSource::File(path.into()))
+    }
+
     pub(super) fn stdout() -> Self {
-        Self::text_new(WriteSource::Stdout)
+        Self::txt_new(WriteSource::Stdout)
     }
 
     pub(super) fn stderr() -> Self {
-        Self::text_new(WriteSource::Stderr)
+        Self::txt_new(WriteSource::Stderr)
     }
 
-    fn text_new(source: WriteSource) -> Self {
+    fn any_new(source: WriteSource) -> Self {
+        Self::new(source, PortMode::Any)
+    }
+
+    fn txt_new(source: WriteSource) -> Self {
+        Self::new(source, PortMode::Textual)
+    }
+
+    fn new(source: WriteSource, mode: PortMode) -> Self {
         Self {
-            mode: PortMode::Textual,
+            mode,
             stream: WriteStream {
                 buf: Some(source.create_stream()),
                 source,
@@ -128,6 +155,7 @@ impl WritePort {
 
     fn spec(&self) -> PortSpec {
         match self.mode {
+            PortMode::Any => PortSpec::Output,
             PortMode::Binary => PortSpec::BinaryOutput,
             PortMode::Textual => PortSpec::TextualOutput,
         }
@@ -201,18 +229,21 @@ impl Display for WriteStream {
 
 #[derive(Debug)]
 enum PortMode {
+    Any,
     Binary,
     Textual,
 }
 
 #[derive(Debug)]
 enum ReadSource {
+    File(PathBuf),
     Stdin,
 }
 
 impl ReadSource {
     fn create_stream(&self) -> Box<BufReader<dyn Read>> {
         match self {
+            Self::File(p) => read_buffer_with(File::open(p).unwrap()),
             Self::Stdin => read_buffer_with(io::stdin()),
         }
     }
@@ -221,6 +252,8 @@ impl ReadSource {
 impl Display for ReadSource {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
+            // TODO: file errors
+            Self::File(p) => write_file_source(p.display(), 'r', f),
             Self::Stdin => f.write_str("stdin"),
         }
     }
@@ -228,6 +261,7 @@ impl Display for ReadSource {
 
 #[derive(Debug)]
 enum WriteSource {
+    File(PathBuf),
     Stderr,
     Stdout,
 }
@@ -235,6 +269,8 @@ enum WriteSource {
 impl WriteSource {
     fn create_stream(&self) -> Box<BufWriter<dyn Write>> {
         match self {
+            // TODO: file errors
+            Self::File(p) => write_buffer_with(File::create(p).unwrap()),
             Self::Stderr => write_buffer_with(io::stderr()),
             Self::Stdout => write_buffer_with(io::stdout()),
         }
@@ -244,6 +280,7 @@ impl WriteSource {
 impl Display for WriteSource {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
+            Self::File(p) => write_file_source(p.display(), 'w', f),
             Self::Stderr => f.write_str("stderr"),
             Self::Stdout => f.write_str("stdout"),
         }
@@ -264,4 +301,8 @@ fn write_port_datum(src: impl Display, open: bool, f: &mut Formatter<'_>) -> fmt
         f.write_str(" (closed)")?;
     }
     Ok(())
+}
+
+fn write_file_source(path: impl Display, mode: char, f: &mut Formatter<'_>) -> fmt::Result {
+    write!(f, "file:{mode}:{path}")
 }

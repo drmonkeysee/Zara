@@ -28,6 +28,7 @@ use crate::{
 use std::{
     cell::{Cell, Ref, RefCell, RefMut},
     collections::HashMap,
+    path::PathBuf,
     ptr,
     rc::Rc,
 };
@@ -100,6 +101,14 @@ impl Value {
         <I as IntoIterator>::IntoIter: DoubleEndedIterator,
     {
         Self::make_improper_list(items, Self::cons_mut)
+    }
+
+    pub(crate) fn port_file_input(path: impl Into<PathBuf>) -> Self {
+        Self::PortInput(RefCell::new(ReadPort::file(path)).into())
+    }
+
+    pub(crate) fn port_file_output(path: impl Into<PathBuf>) -> Self {
+        Self::PortOutput(RefCell::new(WritePort::file(path)).into())
     }
 
     pub(crate) fn port_stdin() -> Self {

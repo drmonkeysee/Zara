@@ -201,6 +201,12 @@ fn load_io(env: &Frame) {
     bind_intrinsic(env, "current-output-port", 0..0, current_stdout);
     bind_intrinsic(env, "current-error-port", 0..0, current_stderr);
 
+    bind_intrinsic(env, "open-input-file", 1..1, input_file);
+    bind_intrinsic(env, "open-binary-input-file", 1..1, input_file);
+    // TODO: add extension for append vs write?
+    bind_intrinsic(env, "open-output-file", 1..1, output_file);
+    bind_intrinsic(env, "open-binary-output-file", 1..1, output_file);
+
     bind_intrinsic(env, "close-port", 1..1, close_port);
     bind_intrinsic(env, "close-input-port", 1..1, close_input_port);
     bind_intrinsic(env, "close-output-port", 1..1, close_output_port);
@@ -261,6 +267,22 @@ fn current_stdout(_args: &[Value], env: &Frame) -> EvalResult {
 
 fn current_stderr(_args: &[Value], env: &Frame) -> EvalResult {
     Ok(env.sys.stderr.clone())
+}
+
+fn input_file(args: &[Value], _env: &Frame) -> EvalResult {
+    let arg = first(args);
+    arg.as_refstr().map_or_else(
+        || Err(invalid_target(TypeName::STRING, arg)),
+        |path| Ok(Value::port_file_input(path.as_ref())),
+    )
+}
+
+fn output_file(args: &[Value], _env: &Frame) -> EvalResult {
+    let arg = first(args);
+    arg.as_refstr().map_or_else(
+        || Err(invalid_target(TypeName::STRING, arg)),
+        |path| Ok(Value::port_file_output(path.as_ref())),
+    )
 }
 
 fn close_port(args: &[Value], env: &Frame) -> EvalResult {
