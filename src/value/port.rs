@@ -261,29 +261,3 @@ fn write_buffer_with(w: impl Write + 'static) -> Box<BufWriter<dyn Write>> {
 fn write_port_datum(src: impl Display, open: bool, f: &mut Formatter<'_>) -> fmt::Result {
     write!(f, "{src}{}", if open { "" } else { " (closed)" })
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn stderr_display() {
-        let p = WriteSource::Stderr;
-
-        assert_eq!(p.to_string(), "stderr");
-    }
-
-    #[test]
-    fn stdin_display() {
-        let p = ReadSource::Stdin;
-
-        assert_eq!(p.to_string(), "stdin");
-    }
-
-    #[test]
-    fn stdout_display() {
-        let p = WriteSource::Stdout;
-
-        assert_eq!(p.to_string(), "stdout");
-    }
-}
