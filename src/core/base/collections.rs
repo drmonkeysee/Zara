@@ -25,8 +25,8 @@ use crate::{
     eval::{EvalResult, Frame, IntrinsicFn, MAX_ARITY},
     number::{Number, NumericError, NumericTypeName},
     value::{
-        BvRef, CollRef, CollSized, Condition, InvalidList, Pair, PairSized, StrRef, Traverse,
-        TypeName, Value, VecRef,
+        BvRef, CollRef, CollSized, Condition, InvalidList, Pair, PairSized, PortSpec, StrRef,
+        Traverse, TypeName, Value, VecRef,
     },
 };
 use std::{
@@ -465,6 +465,12 @@ fn load_string(env: &Frame) {
     super::bind_intrinsic(env, "string-copy", 1..3, string_copy);
     super::bind_intrinsic(env, "string-copy!", 3..5, string_copy_inline);
     super::bind_intrinsic(env, "string-fill!", 2..4, string_fill);
+
+    //
+    // Input/Output
+    //
+
+    super::bind_intrinsic(env, "write-string", 1..4, write_string);
 }
 
 predicate!(is_string, Value::String(_) | Value::StringMut(_));
@@ -604,6 +610,30 @@ fn string_fill(args: &[Value], _env: &Frame) -> EvalResult {
             target.replace_range(.., &updated);
         },
     )
+}
+
+fn write_string(args: &[Value], env: &Frame) -> EvalResult {
+    let arg = first(args);
+    let s = arg
+        .as_refstr()
+        .ok_or_else(|| super::invalid_target(TypeName::STRING, arg))?;
+    // TODO: port fallback must be dynamic
+    let port = args.get(1).unwrap_or(&env.sys.stdout);
+    let p = super::guard_output_port(port, PortSpec::TextualOutput)?;
+    // TODO: can i skip empty ranges for other string operations?
+    let (start, end) = (args.get(2), args.get(3));
+    let s = if let (None, None) = (start, end) {
+        s.as_ref()
+    } else {
+        let span = try_coll_span(start..end, s.len())?;
+        &s.as_ref()
+            .chars()
+            .skip(span.start)
+            .take(span.len())
+            .collect::<String>()
+    };
+    p.borrow_mut().put_string(&s);
+    Ok(Value::Unspecified)
 }
 
 //

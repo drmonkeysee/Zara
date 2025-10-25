@@ -429,7 +429,7 @@ fn guard_port_value<T>(
 
 fn put_char(ch: char, arg: Option<&Value>, env: &Frame) -> EvalResult {
     // TODO: port fallback must be dynamic
-    let port = arg.unwrap_or_else(|| &env.sys.stdout);
+    let port = arg.unwrap_or(&env.sys.stdout);
     let p = guard_output_port(port, PortSpec::TextualOutput)?;
     p.borrow_mut().put_char(ch);
     Ok(Value::Unspecified)

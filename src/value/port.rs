@@ -111,6 +111,11 @@ impl WritePort {
         self.stream.put_char(ch)
     }
 
+    pub(crate) fn put_string(&mut self, s: &str) -> Result<(), ()> {
+        // TODO: return error if mode = binary?
+        self.stream.put_string(s)
+    }
+
     fn spec(&self) -> PortSpec {
         match self.mode {
             PortMode::Any => PortSpec::Output,
@@ -168,6 +173,18 @@ impl WriteStream {
             Some(w) => {
                 // TODO: figure out result and handle error
                 write!(w, "{ch}");
+                Ok(())
+            }
+        }
+    }
+
+    // TODO: figure out return value
+    fn put_string(&mut self, s: &str) -> Result<(), ()> {
+        match &mut self.buf {
+            None => todo!("closed port error"),
+            Some(w) => {
+                // TODO: figure out result and handle error
+                write!(w, "{s}");
                 Ok(())
             }
         }
