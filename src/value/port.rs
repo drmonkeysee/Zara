@@ -259,5 +259,9 @@ fn write_buffer_with(w: impl Write + 'static) -> Box<BufWriter<dyn Write>> {
 }
 
 fn write_port_datum(src: impl Display, open: bool, f: &mut Formatter<'_>) -> fmt::Result {
-    write!(f, "{src}{}", if open { "" } else { " (closed)" })
+    write!(f, "{src}")?;
+    if !open {
+        f.write_str(" (closed)")?;
+    }
+    Ok(())
 }
