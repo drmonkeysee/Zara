@@ -19,7 +19,7 @@ macro_rules! num_convert {
 #[cfg(test)]
 mod tests;
 
-use super::{FIRST_ARG_LABEL, SECOND_ARG_LABEL, THIRD_ARG_LABEL, first, pcar, pcdr};
+use super::{FIRST_ARG_LABEL, GuardResult, SECOND_ARG_LABEL, THIRD_ARG_LABEL, first, pcar, pcdr};
 use crate::{
     Exception,
     eval::{EvalResult, Frame, IntrinsicFn, MAX_ARITY},
@@ -777,7 +777,7 @@ fn try_list_to_vec(val: &Value) -> Result<Vec<Value>, Exception> {
     Ok(acc)
 }
 
-fn try_list_acc(val: &Value, acc: &mut Vec<Value>) -> Result<(), Exception> {
+fn try_list_acc(val: &Value, acc: &mut Vec<Value>) -> GuardResult {
     let graph = Traverse::value(val);
     if graph.has_cycles() {
         Err(Condition::circular_list(val).into())

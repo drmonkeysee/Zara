@@ -36,14 +36,14 @@ mod num;
 mod tests;
 
 use super::{
-    FIRST_ARG_LABEL, SECOND_ARG_LABEL, THIRD_ARG_LABEL, bind_intrinsic, first, invalid_target,
-    pcar, pcdr, second, third,
+    FIRST_ARG_LABEL, GuardResult, SECOND_ARG_LABEL, THIRD_ARG_LABEL, bind_intrinsic, first,
+    invalid_target, pcar, pcdr, second, third,
 };
 use crate::{
     eval::{EvalResult, Frame, MAX_ARITY},
     number::{Number, NumericError, NumericTypeName},
     string::{Symbol, unicode::UnicodeError},
-    value::{Condition, TypeName, Value},
+    value::{Condition, PortSpec, TypeName, Value},
 };
 
 pub(super) fn load(env: &Frame) {
@@ -207,8 +207,11 @@ fn load_io(env: &Frame) {
 
 predicate!(is_input_port, Value::PortInput(_));
 predicate!(is_output_port, Value::PortOutput(_));
-predicate!(is_port, Value::PortInput(_) | Value::PortOutput(_));
 predicate!(is_eof, Value::Eof);
+
+fn is_port(args: &[Value], _env: &Frame) -> EvalResult {
+    Ok(Value::Boolean(first(args).is_port()))
+}
 
 fn is_textual_port(args: &[Value], _env: &Frame) -> EvalResult {
     Ok(Value::Boolean(match first(args) {
@@ -227,11 +230,21 @@ fn is_binary_port(args: &[Value], _env: &Frame) -> EvalResult {
 }
 
 fn is_open_input(args: &[Value], _env: &Frame) -> EvalResult {
-    todo!();
+    let arg = first(args);
+    guard_port_value(arg, PortSpec::Input)?;
+    let Value::PortInput(p) = arg else {
+        unreachable!("unexpected non-port value");
+    };
+    Ok(Value::Boolean(p.is_open()))
 }
 
 fn is_open_output(args: &[Value], _env: &Frame) -> EvalResult {
-    todo!();
+    let arg = first(args);
+    guard_port_value(arg, PortSpec::Output)?;
+    let Value::PortOutput(p) = arg else {
+        unreachable!("unexpected non-port value");
+    };
+    Ok(Value::Boolean(p.is_open()))
 }
 
 fn current_stdin(_args: &[Value], env: &Frame) -> EvalResult {
@@ -321,21 +334,12 @@ fn try_num_into_char(n: &Number, arg: &Value) -> EvalResult {
     )
 }
 
-// TODO
-/*
-fn guarded_port_op(
-    arg: &Value,
-    expected_prop: PortProp,
-    invalid_prop: impl Display,
-    op: impl FnOnce(&Port) -> EvalResult,
-) -> EvalResult {
-    let Value::Port(p) = arg else {
-        return Err(invalid_target(expected_prop, arg));
-    };
-    if p.has_prop(&expected_prop) {
-        op(p)
-    } else {
-        Err(Condition::arg_type_error(FIRST_ARG_LABEL, expected_prop, invalid_prop, arg).into())
+fn guard_port_value(arg: &Value, expected: PortSpec) -> GuardResult {
+    match expected.check(arg) {
+        Err(None) => Err(invalid_target(TypeName::PORT, arg)),
+        Err(Some(spec)) => {
+            Err(Condition::arg_type_error(FIRST_ARG_LABEL, expected, spec, arg).into())
+        }
+        Ok(u) => Ok(u),
     }
 }
-*/

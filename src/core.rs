@@ -63,6 +63,8 @@ const FIRST_ARG_LABEL: &str = "0";
 const SECOND_ARG_LABEL: &str = "1";
 const THIRD_ARG_LABEL: &str = "2";
 
+type GuardResult = Result<(), Exception>;
+
 pub(crate) fn load(env: &Frame) {
     base::load(env);
     charuni::load(env);

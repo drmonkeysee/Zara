@@ -62,6 +62,7 @@ impl TypeName<'_> {
     pub(crate) const LIST: &'static str = "list";
     pub(crate) const NUMBER: &'static str = "number";
     pub(crate) const PAIR: &'static str = "pair";
+    pub(crate) const PORT: &'static str = "port";
     pub(crate) const STRING: &'static str = "string";
     pub(crate) const SYMBOL: &'static str = "symbol";
     pub(crate) const VECTOR: &'static str = "vector";
@@ -81,7 +82,7 @@ impl Display for TypeName<'_> {
             Value::Number(_) => f.write_str(Self::NUMBER),
             Value::Pair(p) => f.write_str(p.typename()),
             Value::PairMut(p) => f.write_str(p.borrow().typename()),
-            Value::PortInput(_) | Value::PortOutput(_) => f.write_str("port"),
+            Value::PortInput(_) | Value::PortOutput(_) => f.write_str(Self::PORT),
             Value::Procedure(_) => f.write_str("procedure"),
             Value::String(_) | Value::StringMut(_) => f.write_str(Self::STRING),
             Value::Symbol(_) => f.write_str(Self::SYMBOL),

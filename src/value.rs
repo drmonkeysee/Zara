@@ -16,7 +16,7 @@ mod tests;
 pub(crate) use self::{
     condition::Condition,
     display::{Datum, TypeName, ValueMessage},
-    port::{ReadPort, WritePort},
+    port::{PortSpec, ReadPort, WritePort},
 };
 use crate::{
     eval::{Intrinsic, Procedure},
@@ -212,6 +212,10 @@ impl Value {
 
     pub(crate) fn is_list_element(&self) -> bool {
         self.is_pair() || matches!(self, Value::Null)
+    }
+
+    pub(crate) fn is_port(&self) -> bool {
+        matches!(self, Value::PortInput(_) | Value::PortOutput(_))
     }
 
     pub(crate) fn display_message(&self) -> ValueMessage<'_> {

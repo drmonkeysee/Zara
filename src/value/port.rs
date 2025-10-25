@@ -1,3 +1,4 @@
+use super::Value;
 use std::{
     fmt::{self, Debug, Display, Formatter},
     io::{self, BufReader, BufWriter, Read, Write},
@@ -21,7 +22,7 @@ impl<T: PortStream> Port<T> {
         matches!(self.mode, PortMode::Binary)
     }
 
-    fn is_open(&self) -> bool {
+    pub(crate) fn is_open(&self) -> bool {
         self.stream.is_open()
     }
 }
@@ -29,6 +30,53 @@ impl<T: PortStream> Port<T> {
 impl<T: Display> Display for Port<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         self.stream.fmt(f)
+    }
+}
+
+pub(crate) enum PortSpec {
+    BinaryInput,
+    BinaryOutput,
+    Input,
+    Output,
+    TextualInput,
+    TextualOutput,
+}
+
+impl PortSpec {
+    pub(crate) fn check(&self, val: &Value) -> Result<(), Option<Self>> {
+        match val {
+            Value::PortInput(p) if p.is_binary() => match self {
+                Self::BinaryInput | Self::Input => Ok(()),
+                _ => Err(Some(p.spec())),
+            },
+            Value::PortInput(p) if p.is_textual() => match self {
+                Self::Input | Self::TextualInput => Ok(()),
+                _ => Err(Some(p.spec())),
+            },
+            Value::PortOutput(p) if p.is_binary() => match self {
+                Self::BinaryOutput | Self::Output => Ok(()),
+                _ => Err(Some(p.spec())),
+            },
+            Value::PortOutput(p) if p.is_textual() => match self {
+                Self::Output | Self::TextualOutput => Ok(()),
+                _ => Err(Some(p.spec())),
+            },
+            _ => Err(None),
+        }
+    }
+}
+
+impl Display for PortSpec {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::BinaryInput => f.write_str("binary input"),
+            Self::BinaryOutput => f.write_str("binary output"),
+            Self::Input => f.write_str("input"),
+            Self::Output => f.write_str("output"),
+            Self::TextualInput => f.write_str("textual input"),
+            Self::TextualOutput => f.write_str("textual output"),
+        }?;
+        f.write_str(" port")
     }
 }
 
@@ -44,6 +92,13 @@ impl ReadPort {
                 buf: Some(source.create_stream()),
                 source,
             },
+        }
+    }
+
+    fn spec(&self) -> PortSpec {
+        match self.mode {
+            PortMode::Binary => PortSpec::BinaryInput,
+            PortMode::Textual => PortSpec::TextualInput,
         }
     }
 }
@@ -64,6 +119,13 @@ impl WritePort {
                 buf: Some(source.create_stream()),
                 source,
             },
+        }
+    }
+
+    fn spec(&self) -> PortSpec {
+        match self.mode {
+            PortMode::Binary => PortSpec::BinaryOutput,
+            PortMode::Textual => PortSpec::TextualOutput,
         }
     }
 }
