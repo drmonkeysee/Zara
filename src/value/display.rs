@@ -25,8 +25,8 @@ impl Display for Datum<'_> {
             Value::Number(n) => n.fmt(f),
             Value::Pair(p) => PairDatum::new(p).fmt(f),
             Value::PairMut(p) => PairDatum::new(&p.borrow()).fmt(f),
-            Value::PortInput(p) => write!(f, "#<port {p}>"),
-            Value::PortOutput(p) => write!(f, "#<port {p}>"),
+            Value::PortInput(p) => write_port(p.borrow(), f),
+            Value::PortOutput(p) => write_port(p.borrow(), f),
             Value::Procedure(p) => p.fmt(f),
             Value::String(s) => StrDatum(s).fmt(f),
             Value::StringMut(s) => StrDatum(&s.borrow()).fmt(f),
@@ -228,4 +228,8 @@ fn write_seq<T: Display>(
         "{prefix}({})",
         seq.map(|v| v.to_string()).collect::<Vec<_>>().join(" ")
     )
+}
+
+fn write_port(p: impl Display, f: &mut Formatter<'_>) -> fmt::Result {
+    write!(f, "#<port {p}>")
 }

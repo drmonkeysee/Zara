@@ -47,8 +47,8 @@ pub(crate) enum Value {
     Number(Number),
     Pair(Rc<Pair>),
     PairMut(Rc<RefCell<Pair>>),
-    PortInput(Rc<ReadPort>),
-    PortOutput(Rc<WritePort>),
+    PortInput(Rc<RefCell<ReadPort>>),
+    PortOutput(Rc<RefCell<WritePort>>),
     Procedure(Rc<Procedure>),
     String(Rc<str>),
     StringMut(Rc<RefCell<String>>),
@@ -103,15 +103,15 @@ impl Value {
     }
 
     pub(crate) fn port_stdin() -> Self {
-        Self::PortInput(ReadPort::stdin().into())
+        Self::PortInput(RefCell::new(ReadPort::stdin()).into())
     }
 
     pub(crate) fn port_stdout() -> Self {
-        Self::PortOutput(WritePort::stdout().into())
+        Self::PortOutput(RefCell::new(WritePort::stdout()).into())
     }
 
     pub(crate) fn port_stderr() -> Self {
-        Self::PortOutput(WritePort::stderr().into())
+        Self::PortOutput(RefCell::new(WritePort::stderr()).into())
     }
 
     pub(crate) fn procedure(p: impl Into<Rc<Procedure>>) -> Self {

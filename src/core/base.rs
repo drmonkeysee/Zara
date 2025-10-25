@@ -201,6 +201,10 @@ fn load_io(env: &Frame) {
     bind_intrinsic(env, "current-output-port", 0..0, current_stdout);
     bind_intrinsic(env, "current-error-port", 0..0, current_stderr);
 
+    bind_intrinsic(env, "close-port", 1..1, close_port);
+    bind_intrinsic(env, "close-input-port", 1..1, close_input_port);
+    bind_intrinsic(env, "close-output-port", 1..1, close_output_port);
+
     bind_intrinsic(env, "eof-object?", 1..1, is_eof);
     bind_intrinsic(env, "eof-object", 0..0, eof);
 }
@@ -215,16 +219,16 @@ fn is_port(args: &[Value], _env: &Frame) -> EvalResult {
 
 fn is_textual_port(args: &[Value], _env: &Frame) -> EvalResult {
     Ok(Value::Boolean(match first(args) {
-        Value::PortInput(p) => p.is_textual(),
-        Value::PortOutput(p) => p.is_textual(),
+        Value::PortInput(p) => p.borrow().is_textual(),
+        Value::PortOutput(p) => p.borrow().is_textual(),
         _ => false,
     }))
 }
 
 fn is_binary_port(args: &[Value], _env: &Frame) -> EvalResult {
     Ok(Value::Boolean(match first(args) {
-        Value::PortInput(p) => p.is_binary(),
-        Value::PortOutput(p) => p.is_binary(),
+        Value::PortInput(p) => p.borrow().is_binary(),
+        Value::PortOutput(p) => p.borrow().is_binary(),
         _ => false,
     }))
 }
@@ -235,7 +239,7 @@ fn is_open_input(args: &[Value], _env: &Frame) -> EvalResult {
     let Value::PortInput(p) = arg else {
         unreachable!("unexpected non-port value");
     };
-    Ok(Value::Boolean(p.is_open()))
+    Ok(Value::Boolean(p.borrow().is_open()))
 }
 
 fn is_open_output(args: &[Value], _env: &Frame) -> EvalResult {
@@ -244,7 +248,7 @@ fn is_open_output(args: &[Value], _env: &Frame) -> EvalResult {
     let Value::PortOutput(p) = arg else {
         unreachable!("unexpected non-port value");
     };
-    Ok(Value::Boolean(p.is_open()))
+    Ok(Value::Boolean(p.borrow().is_open()))
 }
 
 fn current_stdin(_args: &[Value], env: &Frame) -> EvalResult {
@@ -257,6 +261,35 @@ fn current_stdout(_args: &[Value], env: &Frame) -> EvalResult {
 
 fn current_stderr(_args: &[Value], env: &Frame) -> EvalResult {
     Ok(env.sys.stderr.clone())
+}
+
+fn close_port(args: &[Value], env: &Frame) -> EvalResult {
+    let arg = first(args);
+    match arg {
+        Value::PortInput(_) => close_input_port(args, env),
+        Value::PortOutput(_) => close_output_port(args, env),
+        _ => Err(invalid_target(TypeName::PORT, arg)),
+    }
+}
+
+fn close_input_port(args: &[Value], _env: &Frame) -> EvalResult {
+    let arg = first(args);
+    guard_port_value(arg, PortSpec::Input)?;
+    let Value::PortInput(p) = arg else {
+        unreachable!("unexpected non-port value");
+    };
+    p.borrow_mut().close();
+    Ok(Value::Unspecified)
+}
+
+fn close_output_port(args: &[Value], _env: &Frame) -> EvalResult {
+    let arg = first(args);
+    guard_port_value(arg, PortSpec::Output)?;
+    let Value::PortOutput(p) = arg else {
+        unreachable!("unexpected non-port value");
+    };
+    p.borrow_mut().close();
+    Ok(Value::Unspecified)
 }
 
 #[allow(clippy::unnecessary_wraps, reason = "infallible intrinsic")]

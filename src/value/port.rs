@@ -25,6 +25,10 @@ impl<T: PortStream> Port<T> {
     pub(crate) fn is_open(&self) -> bool {
         self.stream.is_open()
     }
+
+    pub(crate) fn close(&mut self) {
+        self.stream.close();
+    }
 }
 
 impl<T: Display> Display for Port<T> {
@@ -45,21 +49,21 @@ pub(crate) enum PortSpec {
 impl PortSpec {
     pub(crate) fn check(&self, val: &Value) -> Result<(), Option<Self>> {
         match val {
-            Value::PortInput(p) if p.is_binary() => match self {
+            Value::PortInput(p) if p.borrow().is_binary() => match self {
                 Self::BinaryInput | Self::Input => Ok(()),
-                _ => Err(Some(p.spec())),
+                _ => Err(Some(p.borrow().spec())),
             },
-            Value::PortInput(p) if p.is_textual() => match self {
+            Value::PortInput(p) if p.borrow().is_textual() => match self {
                 Self::Input | Self::TextualInput => Ok(()),
-                _ => Err(Some(p.spec())),
+                _ => Err(Some(p.borrow().spec())),
             },
-            Value::PortOutput(p) if p.is_binary() => match self {
+            Value::PortOutput(p) if p.borrow().is_binary() => match self {
                 Self::BinaryOutput | Self::Output => Ok(()),
-                _ => Err(Some(p.spec())),
+                _ => Err(Some(p.borrow().spec())),
             },
-            Value::PortOutput(p) if p.is_textual() => match self {
+            Value::PortOutput(p) if p.borrow().is_textual() => match self {
                 Self::Output | Self::TextualOutput => Ok(()),
-                _ => Err(Some(p.spec())),
+                _ => Err(Some(p.borrow().spec())),
             },
             _ => Err(None),
         }
@@ -132,6 +136,7 @@ impl WritePort {
 
 pub(crate) trait PortStream {
     fn is_open(&self) -> bool;
+    fn close(&mut self);
 }
 
 pub(crate) struct ReadStream {
@@ -142,6 +147,10 @@ pub(crate) struct ReadStream {
 impl PortStream for ReadStream {
     fn is_open(&self) -> bool {
         return self.buf.is_some();
+    }
+
+    fn close(&mut self) {
+        self.buf.take();
     }
 }
 
@@ -156,7 +165,7 @@ impl Debug for ReadStream {
 
 impl Display for ReadStream {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        Display::fmt(&self.source, f)
+        write_port_datum(&self.source, self.is_open(), f)
     }
 }
 
@@ -168,6 +177,10 @@ pub(crate) struct WriteStream {
 impl PortStream for WriteStream {
     fn is_open(&self) -> bool {
         return self.buf.is_some();
+    }
+
+    fn close(&mut self) {
+        self.buf.take();
     }
 }
 
@@ -182,7 +195,7 @@ impl Debug for WriteStream {
 
 impl Display for WriteStream {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        Display::fmt(&self.source, f)
+        write_port_datum(&self.source, self.is_open(), f)
     }
 }
 
@@ -243,6 +256,10 @@ fn read_buffer_with(r: impl Read + 'static) -> Box<BufReader<dyn Read>> {
 
 fn write_buffer_with(w: impl Write + 'static) -> Box<BufWriter<dyn Write>> {
     Box::new(BufWriter::new(w))
+}
+
+fn write_port_datum(src: impl Display, open: bool, f: &mut Formatter<'_>) -> fmt::Result {
+    write!(f, "{src}{}", if open { "" } else { " (closed)" })
 }
 
 #[cfg(test)]
