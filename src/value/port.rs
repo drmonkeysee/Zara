@@ -39,61 +39,6 @@ impl<T: Display> Display for Port<T> {
     }
 }
 
-pub(crate) enum PortSpec {
-    BinaryInput,
-    BinaryOutput,
-    Input,
-    Output,
-    TextualInput,
-    TextualOutput,
-}
-
-impl PortSpec {
-    pub(crate) fn check(&self, val: &Value) -> Result<(), Option<Self>> {
-        match val {
-            Value::PortInput(p) => {
-                if match self {
-                    Self::BinaryInput => p.borrow().is_binary(),
-                    Self::Input => true,
-                    Self::TextualInput => p.borrow().is_textual(),
-                    _ => false,
-                } {
-                    Ok(())
-                } else {
-                    Err(Some(p.borrow().spec()))
-                }
-            }
-            Value::PortOutput(p) => {
-                if match self {
-                    Self::BinaryOutput => p.borrow().is_binary(),
-                    Self::Output => true,
-                    Self::TextualOutput => p.borrow().is_textual(),
-                    _ => false,
-                } {
-                    Ok(())
-                } else {
-                    Err(Some(p.borrow().spec()))
-                }
-            }
-            _ => Err(None),
-        }
-    }
-}
-
-impl Display for PortSpec {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::BinaryInput => f.write_str("binary input"),
-            Self::BinaryOutput => f.write_str("binary output"),
-            Self::Input => f.write_str("input"),
-            Self::Output => f.write_str("output"),
-            Self::TextualInput => f.write_str("textual input"),
-            Self::TextualOutput => f.write_str("textual output"),
-        }?;
-        f.write_str(" port")
-    }
-}
-
 impl ReadPort {
     pub(super) fn file(path: impl Into<PathBuf>) -> Self {
         Self::any_new(ReadSource::File(path.into()))
@@ -251,6 +196,61 @@ impl Debug for WriteStream {
 impl Display for WriteStream {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write_port_datum(&self.source, self.is_open(), f)
+    }
+}
+
+pub(crate) enum PortSpec {
+    BinaryInput,
+    BinaryOutput,
+    Input,
+    Output,
+    TextualInput,
+    TextualOutput,
+}
+
+impl PortSpec {
+    pub(crate) fn check(&self, val: &Value) -> Result<(), Option<Self>> {
+        match val {
+            Value::PortInput(p) => {
+                if match self {
+                    Self::BinaryInput => p.borrow().is_binary(),
+                    Self::Input => true,
+                    Self::TextualInput => p.borrow().is_textual(),
+                    _ => false,
+                } {
+                    Ok(())
+                } else {
+                    Err(Some(p.borrow().spec()))
+                }
+            }
+            Value::PortOutput(p) => {
+                if match self {
+                    Self::BinaryOutput => p.borrow().is_binary(),
+                    Self::Output => true,
+                    Self::TextualOutput => p.borrow().is_textual(),
+                    _ => false,
+                } {
+                    Ok(())
+                } else {
+                    Err(Some(p.borrow().spec()))
+                }
+            }
+            _ => Err(None),
+        }
+    }
+}
+
+impl Display for PortSpec {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::BinaryInput => f.write_str("binary input"),
+            Self::BinaryOutput => f.write_str("binary output"),
+            Self::Input => f.write_str("input"),
+            Self::Output => f.write_str("output"),
+            Self::TextualInput => f.write_str("textual input"),
+            Self::TextualOutput => f.write_str("textual output"),
+        }?;
+        f.write_str(" port")
     }
 }
 
