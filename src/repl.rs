@@ -1,4 +1,4 @@
-use rustyline::{Config, Editor, Result, error::ReadlineError, history::MemHistory};
+use rustyline::{Config, Editor, error::ReadlineError, history::MemHistory};
 use std::process::ExitCode;
 use zara::{Error, Evaluation, Exception, Interpreter, RunMode, Signal, Value, src::StringSource};
 
@@ -15,7 +15,10 @@ pub(crate) struct Repl {
 }
 
 impl Repl {
-    pub(crate) fn new(mode: RunMode, args: impl IntoIterator<Item = String>) -> Result<Self> {
+    pub(crate) fn new(
+        mode: RunMode,
+        args: impl IntoIterator<Item = String>,
+    ) -> rustyline::Result<Self> {
         Ok(Self {
             editor: create_editor()?,
             exit: ExitCode::SUCCESS,
@@ -26,7 +29,7 @@ impl Repl {
         })
     }
 
-    pub(crate) fn run(&mut self) -> Result<ExitCode> {
+    pub(crate) fn run(&mut self) -> rustyline::Result<ExitCode> {
         while self.running {
             self.readline()?;
             self.runline();
@@ -34,7 +37,7 @@ impl Repl {
         Ok(self.exit)
     }
 
-    fn readline(&mut self) -> Result<()> {
+    fn readline(&mut self) -> rustyline::Result<()> {
         match self.editor.readline(self.prompt) {
             Err(ReadlineError::Eof) => {
                 self.running = false;
@@ -106,6 +109,6 @@ impl Repl {
 
 type ZaraEditor = Editor<(), MemHistory>;
 
-fn create_editor() -> Result<ZaraEditor> {
+fn create_editor() -> rustyline::Result<ZaraEditor> {
     ZaraEditor::with_history(Config::default(), MemHistory::default())
 }

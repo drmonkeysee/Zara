@@ -512,7 +512,7 @@ mod linesrc {
             self.is_tty
         }
 
-        fn read_line(&mut self, buf: &mut String) -> Result<usize> {
+        fn read_line(&mut self, buf: &mut String) -> io::Result<usize> {
             if self.return_err {
                 Err(io::Error::new(io::ErrorKind::Other, "oh no!"))
             } else {

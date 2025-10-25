@@ -1,4 +1,4 @@
-use zara::{Error, Evaluation, Interpreter, Result, RunMode, Value, src::StringSource};
+use zara::{Error, Evaluation, Interpreter, RunMode, Value, src::StringSource};
 
 struct TestRunner {
     cont: bool,
@@ -42,7 +42,7 @@ impl TestRunner {
         r.unwrap()
     }
 
-    fn run(&mut self, src: impl Into<String>) -> Result {
+    fn run(&mut self, src: impl Into<String>) -> zara::Result {
         if self.cont {
             self.input.cont(src);
         } else {
