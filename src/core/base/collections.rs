@@ -67,6 +67,10 @@ fn load_bv(env: &Frame) {
     super::bind_intrinsic(env, "utf8->string", 1..3, bytevector_to_string);
     super::bind_intrinsic(env, "string->utf8", 1..3, bytevector_from_string);
 
+    //
+    // Input/Output
+    //
+
     super::bind_intrinsic(env, "write-u8", 1..2, write_byte);
     super::bind_intrinsic(env, "write-bytevector", 1..4, write_bytes);
 }
