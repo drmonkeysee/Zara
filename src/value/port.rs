@@ -106,6 +106,11 @@ impl WritePort {
         }
     }
 
+    pub(crate) fn put_bytes(&mut self, bytes: &[u8]) -> Result<(), ()> {
+        // TODO: return error if mode = textual?
+        self.stream.put_bytes(bytes)
+    }
+
     pub(crate) fn put_char(&mut self, ch: char) -> Result<(), ()> {
         // TODO: return error if mode = binary?
         self.stream.put_char(ch)
@@ -114,6 +119,10 @@ impl WritePort {
     pub(crate) fn put_string(&mut self, s: &str) -> Result<(), ()> {
         // TODO: return error if mode = binary?
         self.stream.put_string(s)
+    }
+
+    pub(crate) fn flush(&mut self) -> Result<(), ()> {
+        self.stream.flush()
     }
 
     fn spec(&self) -> PortSpec {
@@ -166,6 +175,17 @@ pub(crate) struct WriteStream {
 }
 
 impl WriteStream {
+    fn put_bytes(&mut self, bytes: &[u8]) -> Result<(), ()> {
+        match &mut self.buf {
+            None => todo!("closed port error"),
+            Some(w) => {
+                // TODO: figure out result and handle error
+                w.write(bytes);
+                Ok(())
+            }
+        }
+    }
+
     // TODO: figure out return value
     fn put_char(&mut self, ch: char) -> Result<(), ()> {
         match &mut self.buf {
@@ -185,6 +205,17 @@ impl WriteStream {
             Some(w) => {
                 // TODO: figure out result and handle error
                 write!(w, "{s}");
+                Ok(())
+            }
+        }
+    }
+
+    fn flush(&mut self) -> Result<(), ()> {
+        match &mut self.buf {
+            None => todo!("closed port error"),
+            Some(w) => {
+                // TODO: figure out result and handle error
+                w.flush();
                 Ok(())
             }
         }

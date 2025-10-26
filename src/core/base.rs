@@ -217,6 +217,8 @@ fn load_io(env: &Frame) {
 
     bind_intrinsic(env, "newline", 0..1, newline);
     bind_intrinsic(env, "write-char", 1..2, write_char);
+
+    bind_intrinsic(env, "flush-port", 0..1, flush_port);
 }
 
 predicate!(is_input_port, Value::PortInput(_));
@@ -321,6 +323,12 @@ fn write_char(args: &[Value], env: &Frame) -> EvalResult {
         return Err(invalid_target(TypeName::CHAR, arg));
     };
     put_char(*ch, args.get(1), env)
+}
+
+fn flush_port(args: &[Value], env: &Frame) -> EvalResult {
+    let p = guard_output_port(args.get(0).unwrap_or(&env.sys.stdout), PortSpec::Output)?;
+    p.borrow_mut().flush();
+    Ok(Value::Unspecified)
 }
 
 //

@@ -66,6 +66,9 @@ fn load_bv(env: &Frame) {
 
     super::bind_intrinsic(env, "utf8->string", 1..3, bytevector_to_string);
     super::bind_intrinsic(env, "string->utf8", 1..3, bytevector_from_string);
+
+    super::bind_intrinsic(env, "write-u8", 1..2, write_byte);
+    super::bind_intrinsic(env, "write-bytevector", 1..4, write_bytes);
 }
 
 predicate!(
@@ -188,6 +191,20 @@ fn bytevector_from_string(args: &[Value], _env: &Frame) -> EvalResult {
         let mut buf = [0u8; 4];
         Value::bytevector_mut(chars.flat_map(|ch| ch.encode_utf8(&mut buf).as_bytes().to_vec()))
     })
+}
+
+fn write_byte(args: &[Value], env: &Frame) -> EvalResult {
+    let byte = try_val_to_byte(first(args), FIRST_ARG_LABEL)?;
+    put_bytes(&[byte], args.get(1), env)
+}
+
+fn write_bytes(args: &[Value], env: &Frame) -> EvalResult {
+    let arg = first(args);
+    let bv = arg
+        .as_refbv()
+        .ok_or_else(|| super::invalid_target(TypeName::BYTEVECTOR, arg))?;
+    let span = try_coll_span(args.get(2)..args.get(3), bv.len())?;
+    put_bytes(&bv.as_ref()[span], args.get(1), env)
 }
 
 //
@@ -789,6 +806,13 @@ num_convert!(
     u8,
     NumericError::ByteConversionInvalidRange
 );
+
+fn put_bytes(bytes: &[u8], arg: Option<&Value>, env: &Frame) -> EvalResult {
+    let port = arg.unwrap_or(&env.sys.stdout);
+    let p = super::guard_output_port(port, PortSpec::BinaryOutput)?;
+    p.borrow_mut().put_bytes(bytes);
+    Ok(Value::Unspecified)
+}
 
 fn pair_set(arg: &Value, val: &Value, set: impl FnOnce(RefMut<'_, Pair>, &Value)) -> EvalResult {
     match arg {
