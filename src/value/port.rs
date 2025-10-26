@@ -131,7 +131,7 @@ pub(crate) trait PortStream {
 }
 
 pub(crate) struct ReadStream {
-    buf: Option<Box<BufReader<dyn Read>>>,
+    buf: Option<Box<dyn Read>>,
     source: ReadSource,
 }
 
@@ -161,7 +161,7 @@ impl Display for ReadStream {
 }
 
 pub(crate) struct WriteStream {
-    buf: Option<Box<BufWriter<dyn Write>>>,
+    buf: Option<Box<dyn Write>>,
     source: WriteSource,
 }
 
@@ -285,10 +285,10 @@ enum ReadSource {
 }
 
 impl ReadSource {
-    fn create_stream(&self) -> Box<BufReader<dyn Read>> {
+    fn create_stream(&self) -> Box<dyn Read> {
         match self {
-            Self::File(p) => read_buffer_with(File::open(p).unwrap()),
-            Self::Stdin => read_buffer_with(io::stdin()),
+            Self::File(p) => Box::new(BufReader::new(File::open(p).unwrap())),
+            Self::Stdin => Box::new(io::stdin()),
         }
     }
 }
@@ -311,12 +311,12 @@ enum WriteSource {
 }
 
 impl WriteSource {
-    fn create_stream(&self) -> Box<BufWriter<dyn Write>> {
+    fn create_stream(&self) -> Box<dyn Write> {
         match self {
             // TODO: file errors
-            Self::File(p) => write_buffer_with(File::create(p).unwrap()),
-            Self::Stderr => write_buffer_with(io::stderr()),
-            Self::Stdout => write_buffer_with(io::stdout()),
+            Self::File(p) => Box::new(BufWriter::new(File::create(p).unwrap())),
+            Self::Stderr => Box::new(io::stderr()),
+            Self::Stdout => Box::new(io::stdout()),
         }
     }
 }
@@ -329,14 +329,6 @@ impl Display for WriteSource {
             Self::Stdout => f.write_str("stdout"),
         }
     }
-}
-
-fn read_buffer_with(r: impl Read + 'static) -> Box<BufReader<dyn Read>> {
-    Box::new(BufReader::new(r))
-}
-
-fn write_buffer_with(w: impl Write + 'static) -> Box<BufWriter<dyn Write>> {
-    Box::new(BufWriter::new(w))
 }
 
 fn write_port_datum(src: impl Display, open: bool, f: &mut Formatter<'_>) -> fmt::Result {
