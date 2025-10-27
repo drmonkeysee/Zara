@@ -157,7 +157,7 @@ pub(crate) struct ReadStream {
 
 impl PortStream for ReadStream {
     fn is_open(&self) -> bool {
-        return self.buf.is_some();
+        self.buf.is_some()
     }
 
     fn close(&mut self) {
@@ -188,7 +188,7 @@ pub(crate) struct WriteStream {
 impl WriteStream {
     fn put_bytes(&mut self, bytes: &[u8]) -> PortResult {
         self.io_op(|w| {
-            w.write(bytes)?;
+            w.write_all(bytes)?;
             Ok(())
         })
     }
@@ -215,7 +215,7 @@ impl WriteStream {
 
 impl PortStream for WriteStream {
     fn is_open(&self) -> bool {
-        return self.buf.is_some();
+        self.buf.is_some()
     }
 
     fn close(&mut self) {

@@ -633,6 +633,7 @@ fn string_fill(args: &[Value], _env: &Frame) -> EvalResult {
     )
 }
 
+#[allow(clippy::similar_names, reason = "env/end have clear intent")]
 fn write_string(args: &[Value], env: &Frame) -> EvalResult {
     let arg = first(args);
     let s = arg
@@ -653,9 +654,9 @@ fn write_string(args: &[Value], env: &Frame) -> EvalResult {
             .take(span.len())
             .collect::<String>()
     };
-    p.borrow_mut().put_string(&s).map_or_else(
-        |err| Err(Condition::io_error(err, env.sym).into()),
-        |_| Ok(Value::Unspecified),
+    p.borrow_mut().put_string(s).map_or_else(
+        |err| Err(Condition::io_error(&err, env.sym).into()),
+        |()| Ok(Value::Unspecified),
     )
 }
 
@@ -817,8 +818,8 @@ fn put_bytes(bytes: &[u8], arg: Option<&Value>, env: &Frame) -> EvalResult {
     let port = arg.unwrap_or(&env.sys.stdout);
     let p = super::guard_output_port(port, PortSpec::BinaryOutput)?;
     p.borrow_mut().put_bytes(bytes).map_or_else(
-        |err| Err(Condition::io_error(err, env.sym).into()),
-        |_| Ok(Value::Unspecified),
+        |err| Err(Condition::io_error(&err, env.sym).into()),
+        |()| Ok(Value::Unspecified),
     )
 }
 

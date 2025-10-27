@@ -91,7 +91,7 @@ impl Condition {
         }
     }
 
-    pub(crate) fn file_error(err: PortError, sym: &SymbolTable, arg: &Value) -> Self {
+    pub(crate) fn file_error(err: &PortError, sym: &SymbolTable, arg: &Value) -> Self {
         Self {
             kind: ConditionKind::File,
             irritants: Some(zlist![err.to_symbol(sym), arg.clone()]),
@@ -99,7 +99,7 @@ impl Condition {
         }
     }
 
-    pub(crate) fn io_error(err: PortError, sym: &SymbolTable) -> Self {
+    pub(crate) fn io_error(err: &PortError, sym: &SymbolTable) -> Self {
         Self {
             kind: ConditionKind::Io,
             irritants: Some(zlist![err.to_symbol(sym)]),

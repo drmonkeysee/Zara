@@ -225,10 +225,12 @@ predicate!(is_input_port, Value::PortInput(_));
 predicate!(is_output_port, Value::PortOutput(_));
 predicate!(is_eof, Value::Eof);
 
+#[allow(clippy::unnecessary_wraps, reason = "infallible intrinsic")]
 fn is_port(args: &[Value], _env: &Frame) -> EvalResult {
     Ok(Value::Boolean(first(args).is_port()))
 }
 
+#[allow(clippy::unnecessary_wraps, reason = "infallible intrinsic")]
 fn is_textual_port(args: &[Value], _env: &Frame) -> EvalResult {
     Ok(Value::Boolean(match first(args) {
         Value::PortInput(p) => p.borrow().is_textual(),
@@ -237,6 +239,7 @@ fn is_textual_port(args: &[Value], _env: &Frame) -> EvalResult {
     }))
 }
 
+#[allow(clippy::unnecessary_wraps, reason = "infallible intrinsic")]
 fn is_binary_port(args: &[Value], _env: &Frame) -> EvalResult {
     Ok(Value::Boolean(match first(args) {
         Value::PortInput(p) => p.borrow().is_binary(),
@@ -257,14 +260,17 @@ fn is_open_output(args: &[Value], _env: &Frame) -> EvalResult {
     Ok(Value::Boolean(p.borrow().is_open()))
 }
 
+#[allow(clippy::unnecessary_wraps, reason = "infallible intrinsic")]
 fn current_stdin(_args: &[Value], env: &Frame) -> EvalResult {
     Ok(env.sys.stdin.clone())
 }
 
+#[allow(clippy::unnecessary_wraps, reason = "infallible intrinsic")]
 fn current_stdout(_args: &[Value], env: &Frame) -> EvalResult {
     Ok(env.sys.stdout.clone())
 }
 
+#[allow(clippy::unnecessary_wraps, reason = "infallible intrinsic")]
 fn current_stderr(_args: &[Value], env: &Frame) -> EvalResult {
     Ok(env.sys.stderr.clone())
 }
@@ -275,7 +281,7 @@ fn input_file(args: &[Value], env: &Frame) -> EvalResult {
         || Err(invalid_target(TypeName::STRING, arg)),
         |path| {
             Value::port_file_input(path.as_ref())
-                .map_err(|err| Condition::file_error(err, env.sym, arg).into())
+                .map_err(|err| Condition::file_error(&err, env.sym, arg).into())
         },
     )
 }
@@ -286,7 +292,7 @@ fn output_file(args: &[Value], env: &Frame) -> EvalResult {
         || Err(invalid_target(TypeName::STRING, arg)),
         |path| {
             Value::port_file_output(path.as_ref())
-                .map_err(|err| Condition::file_error(err, env.sym, arg).into())
+                .map_err(|err| Condition::file_error(&err, env.sym, arg).into())
         },
     )
 }
@@ -320,7 +326,7 @@ fn eof(_args: &[Value], _env: &Frame) -> EvalResult {
 }
 
 fn newline(args: &[Value], env: &Frame) -> EvalResult {
-    put_char('\n', args.get(0), env)
+    put_char('\n', args.first(), env)
 }
 
 fn write_char(args: &[Value], env: &Frame) -> EvalResult {
@@ -332,10 +338,10 @@ fn write_char(args: &[Value], env: &Frame) -> EvalResult {
 }
 
 fn flush_port(args: &[Value], env: &Frame) -> EvalResult {
-    let p = guard_output_port(args.get(0).unwrap_or(&env.sys.stdout), PortSpec::Output)?;
+    let p = guard_output_port(args.first().unwrap_or(&env.sys.stdout), PortSpec::Output)?;
     p.borrow_mut().flush().map_or_else(
-        |err| Err(Condition::io_error(err, env.sym).into()),
-        |_| Ok(Value::Unspecified),
+        |err| Err(Condition::io_error(&err, env.sym).into()),
+        |()| Ok(Value::Unspecified),
     )
 }
 
@@ -439,7 +445,7 @@ fn guard_port_value<T>(
         Err(Some(spec)) => {
             Err(Condition::arg_type_error(FIRST_ARG_LABEL, expected, spec, arg).into())
         }
-        Ok(_) => Ok(unwrap(arg)),
+        Ok(()) => Ok(unwrap(arg)),
     }
 }
 
@@ -448,7 +454,7 @@ fn put_char(ch: char, arg: Option<&Value>, env: &Frame) -> EvalResult {
     let port = arg.unwrap_or(&env.sys.stdout);
     let p = guard_output_port(port, PortSpec::TextualOutput)?;
     p.borrow_mut().put_char(ch).map_or_else(
-        |err| Err(Condition::io_error(err, env.sym).into()),
-        |_| Ok(Value::Unspecified),
+        |err| Err(Condition::io_error(&err, env.sym).into()),
+        |()| Ok(Value::Unspecified),
     )
 }
