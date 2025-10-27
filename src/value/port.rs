@@ -1,13 +1,15 @@
 use super::Value;
+use crate::string::SymbolTable;
 use std::{
     fmt::{self, Debug, Display, Formatter},
     fs::File,
-    io::{self, BufReader, BufWriter, Read, Write},
+    io::{self, BufReader, BufWriter, Error, ErrorKind, Read, Write},
     path::PathBuf,
 };
 
 pub(crate) type ReadPort = Port<ReadStream>;
 pub(crate) type WritePort = Port<WriteStream>;
+pub(crate) type PortResult<T = ()> = Result<T, PortError>;
 
 #[derive(Debug)]
 pub(crate) struct Port<T> {
@@ -40,30 +42,30 @@ impl<T: Display> Display for Port<T> {
 }
 
 impl ReadPort {
-    pub(super) fn file(path: impl Into<PathBuf>) -> Self {
+    pub(super) fn file(path: impl Into<PathBuf>) -> PortResult<Self> {
         Self::any_new(ReadSource::File(path.into()))
     }
 
     pub(super) fn stdin() -> Self {
-        Self::txt_new(ReadSource::Stdin)
+        Self::txt_new(ReadSource::Stdin).expect("unexpected stdin init error")
     }
 
-    fn any_new(source: ReadSource) -> Self {
+    fn any_new(source: ReadSource) -> PortResult<Self> {
         Self::new(source, PortMode::Any)
     }
 
-    fn txt_new(source: ReadSource) -> Self {
+    fn txt_new(source: ReadSource) -> PortResult<Self> {
         Self::new(source, PortMode::Textual)
     }
 
-    fn new(source: ReadSource, mode: PortMode) -> Self {
-        Self {
+    fn new(source: ReadSource, mode: PortMode) -> PortResult<Self> {
+        Ok(Self {
             mode,
             stream: ReadStream {
-                buf: Some(source.create_stream()),
+                buf: Some(source.create_stream()?),
                 source,
             },
-        }
+        })
     }
 
     fn spec(&self) -> PortSpec {
@@ -76,52 +78,61 @@ impl ReadPort {
 }
 
 impl WritePort {
-    pub(super) fn file(path: impl Into<PathBuf>) -> Self {
+    pub(super) fn file(path: impl Into<PathBuf>) -> PortResult<Self> {
         Self::any_new(WriteSource::File(path.into()))
     }
 
     pub(super) fn stdout() -> Self {
-        Self::txt_new(WriteSource::Stdout)
+        Self::txt_new(WriteSource::Stdout).expect("unexpected stdout init failure")
     }
 
     pub(super) fn stderr() -> Self {
-        Self::txt_new(WriteSource::Stderr)
+        Self::txt_new(WriteSource::Stderr).expect("unexpected stderr init failure")
     }
 
-    fn any_new(source: WriteSource) -> Self {
+    fn any_new(source: WriteSource) -> PortResult<Self> {
         Self::new(source, PortMode::Any)
     }
 
-    fn txt_new(source: WriteSource) -> Self {
+    fn txt_new(source: WriteSource) -> PortResult<Self> {
         Self::new(source, PortMode::Textual)
     }
 
-    fn new(source: WriteSource, mode: PortMode) -> Self {
-        Self {
+    fn new(source: WriteSource, mode: PortMode) -> PortResult<Self> {
+        Ok(Self {
             mode,
             stream: WriteStream {
-                buf: Some(source.create_stream()),
+                buf: Some(source.create_stream()?),
                 source,
             },
+        })
+    }
+
+    pub(crate) fn put_bytes(&mut self, bytes: &[u8]) -> PortResult {
+        if self.is_binary() {
+            self.stream.put_bytes(bytes)
+        } else {
+            Err(PortError::ModeMismatch(PortMode::Binary))
         }
     }
 
-    pub(crate) fn put_bytes(&mut self, bytes: &[u8]) -> Result<(), ()> {
-        // TODO: return error if mode = textual?
-        self.stream.put_bytes(bytes)
+    pub(crate) fn put_char(&mut self, ch: char) -> PortResult {
+        if self.is_textual() {
+            self.stream.put_char(ch)
+        } else {
+            Err(PortError::ModeMismatch(PortMode::Textual))
+        }
     }
 
-    pub(crate) fn put_char(&mut self, ch: char) -> Result<(), ()> {
-        // TODO: return error if mode = binary?
-        self.stream.put_char(ch)
+    pub(crate) fn put_string(&mut self, s: &str) -> PortResult {
+        if self.is_textual() {
+            self.stream.put_string(s)
+        } else {
+            Err(PortError::ModeMismatch(PortMode::Textual))
+        }
     }
 
-    pub(crate) fn put_string(&mut self, s: &str) -> Result<(), ()> {
-        // TODO: return error if mode = binary?
-        self.stream.put_string(s)
-    }
-
-    pub(crate) fn flush(&mut self) -> Result<(), ()> {
+    pub(crate) fn flush(&mut self) -> PortResult {
         self.stream.flush()
     }
 
@@ -175,49 +186,29 @@ pub(crate) struct WriteStream {
 }
 
 impl WriteStream {
-    fn put_bytes(&mut self, bytes: &[u8]) -> Result<(), ()> {
-        match &mut self.buf {
-            None => todo!("closed port error"),
-            Some(w) => {
-                // TODO: figure out result and handle error
-                w.write(bytes);
-                Ok(())
-            }
-        }
+    fn put_bytes(&mut self, bytes: &[u8]) -> PortResult {
+        self.io_op(|w| {
+            w.write(bytes)?;
+            Ok(())
+        })
     }
 
-    // TODO: figure out return value
-    fn put_char(&mut self, ch: char) -> Result<(), ()> {
-        match &mut self.buf {
-            None => todo!("closed port error"),
-            Some(w) => {
-                // TODO: figure out result and handle error
-                write!(w, "{ch}");
-                Ok(())
-            }
-        }
+    fn put_char(&mut self, ch: char) -> PortResult {
+        self.io_op(|w| write!(w, "{ch}"))
     }
 
-    // TODO: figure out return value
-    fn put_string(&mut self, s: &str) -> Result<(), ()> {
-        match &mut self.buf {
-            None => todo!("closed port error"),
-            Some(w) => {
-                // TODO: figure out result and handle error
-                write!(w, "{s}");
-                Ok(())
-            }
-        }
+    fn put_string(&mut self, s: &str) -> PortResult {
+        self.io_op(|w| write!(w, "{s}"))
     }
 
-    fn flush(&mut self) -> Result<(), ()> {
+    fn flush(&mut self) -> PortResult {
+        self.io_op(Write::flush)
+    }
+
+    fn io_op(&mut self, op: impl FnOnce(&mut Box<dyn Write>) -> io::Result<()>) -> PortResult {
         match &mut self.buf {
-            None => todo!("closed port error"),
-            Some(w) => {
-                // TODO: figure out result and handle error
-                w.flush();
-                Ok(())
-            }
+            None => Err(PortError::Closed),
+            Some(w) => Ok(op(w)?),
         }
     }
 }
@@ -303,10 +294,83 @@ impl Display for PortSpec {
 }
 
 #[derive(Debug)]
-enum PortMode {
+pub(crate) enum PortError {
+    Closed,
+    Io(ErrorKind),
+    ModeMismatch(PortMode),
+}
+
+impl PortError {
+    pub(super) fn to_symbol(&self, sym: &SymbolTable) -> Value {
+        Value::Symbol(match self {
+            Self::Closed => sym.get("closed-port"),
+            Self::Io(k) => match k {
+                ErrorKind::AlreadyExists => sym.get("already-exists"),
+                ErrorKind::BrokenPipe => sym.get("broken-pipe"),
+                ErrorKind::ConnectionAborted => sym.get("connection-aborted"),
+                ErrorKind::ConnectionRefused => sym.get("connection-refused"),
+                ErrorKind::ConnectionReset => sym.get("connection-reset"),
+                ErrorKind::DirectoryNotEmpty => sym.get("directory-not-empty"),
+                ErrorKind::FileTooLarge => sym.get("file-too-large"),
+                ErrorKind::Interrupted => sym.get("operation-interrupted"),
+                ErrorKind::InvalidData => sym.get("invalid-data"),
+                ErrorKind::InvalidFilename => sym.get("invalid-filename"),
+                ErrorKind::IsADirectory => sym.get("is-directory"),
+                ErrorKind::NotADirectory => sym.get("not-directory"),
+                ErrorKind::NotFound => sym.get("not-found"),
+                ErrorKind::PermissionDenied => sym.get("permission-denied"),
+                ErrorKind::ReadOnlyFilesystem => sym.get("read-only-filesystem"),
+                ErrorKind::StorageFull => sym.get("storage-full"),
+                ErrorKind::TimedOut => sym.get("timeout"),
+                ErrorKind::UnexpectedEof => sym.get("unexpected-eof"),
+                _ => sym.get("nonspecific-error"),
+            },
+            Self::ModeMismatch(_) => sym.get("mismatched-port-mode"),
+        })
+    }
+}
+
+impl Display for PortError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Closed => f.write_str("attempted operation on closed port"),
+            Self::Io(k) => write!(f, "{k}"),
+            Self::ModeMismatch(m) => write!(f, "attemped {} operation on {m} port", m.inverse()),
+        }
+    }
+}
+
+impl From<Error> for PortError {
+    fn from(value: Error) -> Self {
+        Self::Io(value.kind())
+    }
+}
+
+#[derive(Debug)]
+pub(crate) enum PortMode {
     Any,
     Binary,
     Textual,
+}
+
+impl PortMode {
+    fn inverse(&self) -> Self {
+        match self {
+            Self::Any => Self::Any,
+            Self::Binary => Self::Textual,
+            Self::Textual => Self::Binary,
+        }
+    }
+}
+
+impl Display for PortMode {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Any => f.write_str("any"),
+            Self::Binary => f.write_str("binary"),
+            Self::Textual => f.write_str("textual"),
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -316,11 +380,11 @@ enum ReadSource {
 }
 
 impl ReadSource {
-    fn create_stream(&self) -> Box<dyn Read> {
-        match self {
-            Self::File(p) => Box::new(BufReader::new(File::open(p).unwrap())),
+    fn create_stream(&self) -> PortResult<Box<dyn Read>> {
+        Ok(match self {
+            Self::File(p) => Box::new(BufReader::new(File::open(p)?)),
             Self::Stdin => Box::new(io::stdin()),
-        }
+        })
     }
 }
 
@@ -342,13 +406,13 @@ enum WriteSource {
 }
 
 impl WriteSource {
-    fn create_stream(&self) -> Box<dyn Write> {
-        match self {
+    fn create_stream(&self) -> PortResult<Box<dyn Write>> {
+        Ok(match self {
             // TODO: file errors
-            Self::File(p) => Box::new(BufWriter::new(File::create(p).unwrap())),
+            Self::File(p) => Box::new(BufWriter::new(File::create(p)?)),
             Self::Stderr => Box::new(io::stderr()),
             Self::Stdout => Box::new(io::stdout()),
-        }
+        })
     }
 }
 

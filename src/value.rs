@@ -13,6 +13,7 @@ mod port;
 #[cfg(test)]
 mod tests;
 
+use self::port::PortResult;
 pub(crate) use self::{
     condition::Condition,
     display::{Datum, TypeName, ValueMessage},
@@ -106,12 +107,14 @@ impl Value {
         Self::make_improper_list(items, Self::cons_mut)
     }
 
-    pub(crate) fn port_file_input(path: impl Into<PathBuf>) -> Self {
-        Self::PortInput(RefCell::new(ReadPort::file(path)).into())
+    pub(crate) fn port_file_input(path: impl Into<PathBuf>) -> PortResult<Self> {
+        Ok(Self::PortInput(RefCell::new(ReadPort::file(path)?).into()))
     }
 
-    pub(crate) fn port_file_output(path: impl Into<PathBuf>) -> Self {
-        Self::PortOutput(RefCell::new(WritePort::file(path)).into())
+    pub(crate) fn port_file_output(path: impl Into<PathBuf>) -> PortResult<Self> {
+        Ok(Self::PortOutput(
+            RefCell::new(WritePort::file(path)?).into(),
+        ))
     }
 
     pub(crate) fn port_stdin() -> Self {

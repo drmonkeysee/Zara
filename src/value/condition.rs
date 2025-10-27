@@ -1,5 +1,8 @@
-use super::Value;
-use crate::eval::{Arity, MAX_ARITY};
+use super::{Value, port::PortError};
+use crate::{
+    eval::{Arity, MAX_ARITY},
+    string::SymbolTable,
+};
 use std::fmt::{self, Display, Formatter, Write};
 
 #[derive(Debug)]
@@ -88,6 +91,22 @@ impl Condition {
         }
     }
 
+    pub(crate) fn file_error(err: PortError, sym: &SymbolTable, arg: &Value) -> Self {
+        Self {
+            kind: ConditionKind::File,
+            irritants: Some(zlist![err.to_symbol(sym), arg.clone()]),
+            msg: err.to_string().into(),
+        }
+    }
+
+    pub(crate) fn io_error(err: PortError, sym: &SymbolTable) -> Self {
+        Self {
+            kind: ConditionKind::Io,
+            irritants: Some(zlist![err.to_symbol(sym)]),
+            msg: err.to_string().into(),
+        }
+    }
+
     pub(crate) fn is_file_err(&self) -> bool {
         matches!(self.kind, ConditionKind::File)
     }
@@ -132,6 +151,7 @@ enum ConditionKind {
     File,
     #[allow(dead_code, reason = "not yet implemented")]
     General,
+    Io,
     #[allow(dead_code, reason = "not yet implemented")]
     Read,
     System,
@@ -143,6 +163,7 @@ impl Display for ConditionKind {
             Self::Env => f.write_str("env-error"),
             Self::File => f.write_str("file-error"),
             Self::General => f.write_str("exception"),
+            Self::Io => f.write_str("io-error"),
             Self::Read => f.write_str("read-error"),
             Self::System => f.write_str("sys-error"),
         }
@@ -152,7 +173,6 @@ impl Display for ConditionKind {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::string::SymbolTable;
 
     #[test]
     fn display_empty_condition() {
@@ -208,6 +228,17 @@ mod tests {
         };
 
         assert_eq!(c.to_string(), "#<file-error \"foo\">");
+    }
+
+    #[test]
+    fn display_io_condition() {
+        let c = Condition {
+            kind: ConditionKind::Io,
+            msg: "foo".into(),
+            irritants: None,
+        };
+
+        assert_eq!(c.to_string(), "#<io-error \"foo\">");
     }
 
     #[test]

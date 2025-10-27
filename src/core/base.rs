@@ -269,19 +269,25 @@ fn current_stderr(_args: &[Value], env: &Frame) -> EvalResult {
     Ok(env.sys.stderr.clone())
 }
 
-fn input_file(args: &[Value], _env: &Frame) -> EvalResult {
+fn input_file(args: &[Value], env: &Frame) -> EvalResult {
     let arg = first(args);
     arg.as_refstr().map_or_else(
         || Err(invalid_target(TypeName::STRING, arg)),
-        |path| Ok(Value::port_file_input(path.as_ref())),
+        |path| {
+            Value::port_file_input(path.as_ref())
+                .map_err(|err| Condition::file_error(err, env.sym, arg).into())
+        },
     )
 }
 
-fn output_file(args: &[Value], _env: &Frame) -> EvalResult {
+fn output_file(args: &[Value], env: &Frame) -> EvalResult {
     let arg = first(args);
     arg.as_refstr().map_or_else(
         || Err(invalid_target(TypeName::STRING, arg)),
-        |path| Ok(Value::port_file_output(path.as_ref())),
+        |path| {
+            Value::port_file_output(path.as_ref())
+                .map_err(|err| Condition::file_error(err, env.sym, arg).into())
+        },
     )
 }
 
@@ -327,8 +333,10 @@ fn write_char(args: &[Value], env: &Frame) -> EvalResult {
 
 fn flush_port(args: &[Value], env: &Frame) -> EvalResult {
     let p = guard_output_port(args.get(0).unwrap_or(&env.sys.stdout), PortSpec::Output)?;
-    p.borrow_mut().flush();
-    Ok(Value::Unspecified)
+    p.borrow_mut().flush().map_or_else(
+        |err| Err(Condition::io_error(err, env.sym).into()),
+        |_| Ok(Value::Unspecified),
+    )
 }
 
 //
@@ -439,6 +447,8 @@ fn put_char(ch: char, arg: Option<&Value>, env: &Frame) -> EvalResult {
     // TODO: port fallback must be dynamic
     let port = arg.unwrap_or(&env.sys.stdout);
     let p = guard_output_port(port, PortSpec::TextualOutput)?;
-    p.borrow_mut().put_char(ch);
-    Ok(Value::Unspecified)
+    p.borrow_mut().put_char(ch).map_or_else(
+        |err| Err(Condition::io_error(err, env.sym).into()),
+        |_| Ok(Value::Unspecified),
+    )
 }
