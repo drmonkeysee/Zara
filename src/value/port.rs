@@ -391,7 +391,6 @@ impl ReadSource {
 impl Display for ReadSource {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            // TODO: file errors
             Self::File(p) => write_file_source(p.display(), 'r', f),
             Self::Stdin => f.write_str("stdin"),
         }
@@ -408,7 +407,6 @@ enum WriteSource {
 impl WriteSource {
     fn create_stream(&self) -> PortResult<Box<dyn Write>> {
         Ok(match self {
-            // TODO: file errors
             Self::File(p) => Box::new(BufWriter::new(File::create(p)?)),
             Self::Stderr => Box::new(io::stderr()),
             Self::Stdout => Box::new(io::stdout()),

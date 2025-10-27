@@ -12,13 +12,14 @@ use crate::{
  * debugging, inspection, and other utilities.
  */
 
-pub(crate) fn load(env: &Frame) {
+pub(super) fn load(env: &Frame) {
     super::bind_intrinsic(env, "all-bindings", 0..0, bindings);
     super::bind_intrinsic(env, "all-symbols", 0..0, symbols);
     super::bind_intrinsic(env, "apropos", 0..1, apropos);
     super::bind_intrinsic(env, "mutable?", 1..1, is_mutable);
 
-    /* TODO ADD
+    // TODO ADD
+    /*
     io-error?
     <other>-error?
     make-directory

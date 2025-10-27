@@ -11,6 +11,7 @@ pub(crate) struct Frame<'a> {
 }
 
 impl Frame<'_> {
+    // TODO: this is only crate due to tests
     pub(crate) fn new_child(&self, parent: impl Into<Rc<Binding>>) -> Self {
         Self {
             scope: Binding::new(parent).into(),
@@ -27,15 +28,11 @@ pub(crate) struct Binding {
 }
 
 impl Binding {
-    pub(crate) fn new(parent: impl Into<Rc<Self>>) -> Self {
+    fn new(parent: impl Into<Rc<Self>>) -> Self {
         Self {
             parent: Some(parent.into()),
             ..Default::default()
         }
-    }
-
-    pub(crate) fn bound(&self, name: impl AsRef<str>) -> bool {
-        self.local_bound(&name) || self.parent.as_ref().is_some_and(|p| p.bound(name))
     }
 
     pub(crate) fn binding(&self, name: impl AsRef<str>) -> Option<&Self> {
@@ -67,6 +64,11 @@ impl Binding {
         vec
     }
 
+    // TODO: this is only super cuz of tests
+    pub(super) fn bound(&self, name: impl AsRef<str>) -> bool {
+        self.local_bound(&name) || self.parent.as_ref().is_some_and(|p| p.bound(name))
+    }
+
     fn local_bound(&self, name: impl AsRef<str>) -> bool {
         self.vars.borrow().contains_key(name.as_ref())
     }
@@ -81,6 +83,7 @@ pub(crate) struct System {
 }
 
 impl System {
+    // TODO: this is only crate cuz of testutil
     pub(crate) fn new(args: impl IntoIterator<Item = String>) -> Self {
         Self {
             args: Value::list(args.into_iter().map(Value::string).collect::<Vec<_>>()),
