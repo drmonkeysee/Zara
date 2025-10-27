@@ -18,6 +18,17 @@ pub(crate) fn load(env: &Frame) {
     super::bind_intrinsic(env, "apropos", 0..1, apropos);
     super::bind_intrinsic(env, "mutable?", 1..1, is_mutable);
 
+    /* TODO ADD
+    io-error?
+    <other>-error?
+    make-directory
+    delete-directory
+    read-directory (?)
+    network ports
+    is-directory?
+    is-file?
+    */
+
     // NOTE: convenience vars
     env.scope.bind(env.sym.get("null"), Value::Null);
     env.scope.bind(env.sym.get("void"), Value::Unspecified);
