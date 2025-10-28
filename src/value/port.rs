@@ -112,7 +112,7 @@ impl WritePort {
         if self.is_binary() {
             self.stream.put_bytes(bytes)
         } else {
-            Err(PortError::ModeMismatch(PortMode::Binary))
+            Err(PortError::ExpectedMode(PortMode::Binary))
         }
     }
 
@@ -120,7 +120,7 @@ impl WritePort {
         if self.is_textual() {
             self.stream.put_char(ch)
         } else {
-            Err(PortError::ModeMismatch(PortMode::Textual))
+            Err(PortError::ExpectedMode(PortMode::Textual))
         }
     }
 
@@ -128,7 +128,7 @@ impl WritePort {
         if self.is_textual() {
             self.stream.put_string(s)
         } else {
-            Err(PortError::ModeMismatch(PortMode::Textual))
+            Err(PortError::ExpectedMode(PortMode::Textual))
         }
     }
 
@@ -296,14 +296,15 @@ impl Display for PortSpec {
 #[derive(Debug)]
 pub(crate) enum PortError {
     Closed,
+    ExpectedMode(PortMode),
     Io(ErrorKind),
-    ModeMismatch(PortMode),
 }
 
 impl PortError {
     pub(super) fn to_symbol(&self, sym: &SymbolTable) -> Value {
         Value::Symbol(match self {
             Self::Closed => sym.get("closed-port"),
+            Self::ExpectedMode(_) => sym.get("mismatched-port-mode"),
             Self::Io(k) => match k {
                 ErrorKind::AlreadyExists => sym.get("already-exists"),
                 ErrorKind::BrokenPipe => sym.get("broken-pipe"),
@@ -325,7 +326,6 @@ impl PortError {
                 ErrorKind::UnexpectedEof => sym.get("unexpected-eof"),
                 _ => sym.get("nonspecific-error"),
             },
-            Self::ModeMismatch(_) => sym.get("mismatched-port-mode"),
         })
     }
 }
@@ -334,8 +334,8 @@ impl Display for PortError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
             Self::Closed => f.write_str("attempted operation on closed port"),
+            Self::ExpectedMode(m) => write!(f, "attemped {} operation on {m} port", m.inverse()),
             Self::Io(k) => write!(f, "{k}"),
-            Self::ModeMismatch(m) => write!(f, "attemped {} operation on {m} port", m.inverse()),
         }
     }
 }
