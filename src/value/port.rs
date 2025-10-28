@@ -60,10 +60,7 @@ impl<T: Debug, U: ?Sized> Debug for Port<T, U> {
     }
 }
 
-impl<T, U: ?Sized> Display for Port<T, U>
-where
-    T: Display + StreamSource<U>,
-{
+impl<T: Display, U: ?Sized> Display for Port<T, U> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write_port_datum(&self.source, self.is_open(), f)
     }
