@@ -147,7 +147,6 @@ impl Display for Condition {
 #[derive(Debug)]
 enum ConditionKind {
     Env,
-    #[allow(dead_code, reason = "not yet implemented")]
     File,
     #[allow(dead_code, reason = "not yet implemented")]
     General,
