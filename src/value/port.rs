@@ -7,17 +7,17 @@ use std::{
     path::PathBuf,
 };
 
-pub(crate) type ReadPort = Port<ReadStream>;
-pub(crate) type WritePort = Port<WriteStream>;
+pub(crate) type ReadPort = Port<ReadSource, dyn Read>;
+pub(crate) type WritePort = Port<WriteSource, dyn Write>;
 pub(crate) type PortResult<T = ()> = Result<T, PortError>;
 
-#[derive(Debug)]
-pub(crate) struct Port<T> {
+pub(crate) struct Port<T, U: ?Sized> {
     mode: PortMode,
-    stream: T,
+    source: T,
+    stream: Option<Box<U>>,
 }
 
-impl<T: PortStream> Port<T> {
+impl<T, U: ?Sized> Port<T, U> {
     pub(crate) fn is_textual(&self) -> bool {
         matches!(self.mode, PortMode::Any | PortMode::Textual)
     }
@@ -27,17 +27,45 @@ impl<T: PortStream> Port<T> {
     }
 
     pub(crate) fn is_open(&self) -> bool {
-        self.stream.is_open()
+        self.stream.is_some()
     }
 
     pub(crate) fn close(&mut self) {
-        self.stream.close();
+        self.stream.take();
     }
 }
 
-impl<T: Display> Display for Port<T> {
+#[allow(private_bounds)]
+impl<T, U: ?Sized> Port<T, U>
+where
+    T: StreamSource<U>,
+{
+    fn new(source: T, mode: PortMode) -> PortResult<Self> {
+        let stream = source.create_stream()?;
+        Ok(Self {
+            mode,
+            source,
+            stream: Some(stream),
+        })
+    }
+}
+
+impl<T: Debug, U: ?Sized> Debug for Port<T, U> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        self.stream.fmt(f)
+        f.debug_struct("Port")
+            .field("mode", &self.mode)
+            .field("source", &self.source)
+            .field("stream", &"...")
+            .finish()
+    }
+}
+
+impl<T, U: ?Sized> Display for Port<T, U>
+where
+    T: Display + StreamSource<U>,
+{
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write_port_datum(&self.source, self.is_open(), f)
     }
 }
 
@@ -56,16 +84,6 @@ impl ReadPort {
 
     fn txt_new(source: ReadSource) -> PortResult<Self> {
         Self::new(source, PortMode::Textual)
-    }
-
-    fn new(source: ReadSource, mode: PortMode) -> PortResult<Self> {
-        Ok(Self {
-            mode,
-            stream: ReadStream {
-                buf: Some(source.create_stream()?),
-                source,
-            },
-        })
     }
 
     fn spec(&self) -> PortSpec {
@@ -98,19 +116,12 @@ impl WritePort {
         Self::new(source, PortMode::Textual)
     }
 
-    fn new(source: WriteSource, mode: PortMode) -> PortResult<Self> {
-        Ok(Self {
-            mode,
-            stream: WriteStream {
-                buf: Some(source.create_stream()?),
-                source,
-            },
-        })
-    }
-
     pub(crate) fn put_bytes(&mut self, bytes: &[u8]) -> PortResult {
         if self.is_binary() {
-            self.stream.put_bytes(bytes)
+            self.io_op(|w| {
+                w.write_all(bytes)?;
+                Ok(())
+            })
         } else {
             Err(PortError::ExpectedMode(PortMode::Binary))
         }
@@ -118,7 +129,7 @@ impl WritePort {
 
     pub(crate) fn put_char(&mut self, ch: char) -> PortResult {
         if self.is_textual() {
-            self.stream.put_char(ch)
+            self.io_op(|w| write!(w, "{ch}"))
         } else {
             Err(PortError::ExpectedMode(PortMode::Textual))
         }
@@ -126,14 +137,14 @@ impl WritePort {
 
     pub(crate) fn put_string(&mut self, s: &str) -> PortResult {
         if self.is_textual() {
-            self.stream.put_string(s)
+            self.io_op(|w| write!(w, "{s}"))
         } else {
             Err(PortError::ExpectedMode(PortMode::Textual))
         }
     }
 
     pub(crate) fn flush(&mut self) -> PortResult {
-        self.stream.flush()
+        self.io_op(Write::flush)
     }
 
     fn spec(&self) -> PortSpec {
@@ -143,98 +154,44 @@ impl WritePort {
             PortMode::Textual => PortSpec::TextualOutput,
         }
     }
-}
-
-pub(crate) trait PortStream {
-    fn is_open(&self) -> bool;
-    fn close(&mut self);
-}
-
-pub(crate) struct ReadStream {
-    buf: Option<Box<dyn Read>>,
-    source: ReadSource,
-}
-
-impl PortStream for ReadStream {
-    fn is_open(&self) -> bool {
-        self.buf.is_some()
-    }
-
-    fn close(&mut self) {
-        self.buf.take();
-    }
-}
-
-impl Debug for ReadStream {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        f.debug_struct("ReadStream")
-            .field("buf", &"...")
-            .field("source", &self.source)
-            .finish()
-    }
-}
-
-impl Display for ReadStream {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write_port_datum(&self.source, self.is_open(), f)
-    }
-}
-
-pub(crate) struct WriteStream {
-    buf: Option<Box<dyn Write>>,
-    source: WriteSource,
-}
-
-impl WriteStream {
-    fn put_bytes(&mut self, bytes: &[u8]) -> PortResult {
-        self.io_op(|w| {
-            w.write_all(bytes)?;
-            Ok(())
-        })
-    }
-
-    fn put_char(&mut self, ch: char) -> PortResult {
-        self.io_op(|w| write!(w, "{ch}"))
-    }
-
-    fn put_string(&mut self, s: &str) -> PortResult {
-        self.io_op(|w| write!(w, "{s}"))
-    }
-
-    fn flush(&mut self) -> PortResult {
-        self.io_op(Write::flush)
-    }
 
     fn io_op(&mut self, op: impl FnOnce(&mut Box<dyn Write>) -> io::Result<()>) -> PortResult {
-        match &mut self.buf {
+        match &mut self.stream {
             None => Err(PortError::Closed),
             Some(w) => Ok(op(w)?),
         }
     }
 }
 
-impl PortStream for WriteStream {
-    fn is_open(&self) -> bool {
-        self.buf.is_some()
-    }
+#[derive(Debug)]
+pub(crate) enum ReadSource {
+    File(PathBuf),
+    Stdin,
+}
 
-    fn close(&mut self) {
-        self.buf.take();
+impl Display for ReadSource {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::File(p) => write_file_source(p.display(), 'r', f),
+            Self::Stdin => f.write_str("stdin"),
+        }
     }
 }
 
-impl Debug for WriteStream {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        f.debug_struct("WriteStream")
-            .field("buf", &"...")
-            .field("source", &self.source)
-            .finish()
-    }
+#[derive(Debug)]
+pub(crate) enum WriteSource {
+    File(PathBuf),
+    Stderr,
+    Stdout,
 }
 
-impl Display for WriteStream {
+impl Display for WriteSource {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write_port_datum(&self.source, self.is_open(), f)
+        match self {
+            Self::File(p) => write_file_source(p.display(), 'w', f),
+            Self::Stderr => f.write_str("stderr"),
+            Self::Stdout => f.write_str("stdout"),
+        }
     }
 }
 
@@ -373,13 +330,11 @@ impl Display for PortMode {
     }
 }
 
-#[derive(Debug)]
-enum ReadSource {
-    File(PathBuf),
-    Stdin,
+trait StreamSource<T: ?Sized> {
+    fn create_stream(&self) -> PortResult<Box<T>>;
 }
 
-impl ReadSource {
+impl StreamSource<dyn Read> for ReadSource {
     fn create_stream(&self) -> PortResult<Box<dyn Read>> {
         Ok(match self {
             Self::File(p) => Box::new(BufReader::new(File::open(p)?)),
@@ -388,39 +343,13 @@ impl ReadSource {
     }
 }
 
-impl Display for ReadSource {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::File(p) => write_file_source(p.display(), 'r', f),
-            Self::Stdin => f.write_str("stdin"),
-        }
-    }
-}
-
-#[derive(Debug)]
-enum WriteSource {
-    File(PathBuf),
-    Stderr,
-    Stdout,
-}
-
-impl WriteSource {
+impl StreamSource<dyn Write> for WriteSource {
     fn create_stream(&self) -> PortResult<Box<dyn Write>> {
         Ok(match self {
             Self::File(p) => Box::new(BufWriter::new(File::create(p)?)),
             Self::Stderr => Box::new(io::stderr()),
             Self::Stdout => Box::new(io::stdout()),
         })
-    }
-}
-
-impl Display for WriteSource {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::File(p) => write_file_source(p.display(), 'w', f),
-            Self::Stderr => f.write_str("stderr"),
-            Self::Stdout => f.write_str("stdout"),
-        }
     }
 }
 
