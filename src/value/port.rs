@@ -1,4 +1,4 @@
-use super::Value;
+use super::{TypeName, Value};
 use crate::string::SymbolTable;
 use std::{
     fmt::{self, Debug, Display, Formatter},
@@ -93,6 +93,10 @@ impl ReadPort {
 }
 
 impl WritePort {
+    pub(super) fn bytevector() -> Self {
+        Self::bin_new(WriteSource::ByteVector).expect("unexpected bytevector init failure")
+    }
+
     pub(super) fn file(path: impl Into<PathBuf>) -> PortResult<Self> {
         Self::any_new(WriteSource::File(path.into()))
     }
@@ -109,8 +113,27 @@ impl WritePort {
         Self::new(source, PortMode::Any)
     }
 
+    fn bin_new(source: WriteSource) -> PortResult<Self> {
+        Self::new(source, PortMode::Binary)
+    }
+
     fn txt_new(source: WriteSource) -> PortResult<Self> {
         Self::new(source, PortMode::Textual)
+    }
+
+    pub(crate) fn get_bytevector(&self) -> PortResult<Value> {
+        if let WriteSource::ByteVector = self.source {
+            match &self.stream {
+                None => Err(PortError::Closed),
+                Some(_) => {
+                    todo!(
+                        "it does not seem to be possible to downcast from dyn Write to Vec<u8> through dyn Any"
+                    )
+                }
+            }
+        } else {
+            Err(PortError::InvalidSource)
+        }
     }
 
     pub(crate) fn put_bytes(&mut self, bytes: &[u8]) -> PortResult {
@@ -177,6 +200,7 @@ impl Display for ReadSource {
 
 #[derive(Debug)]
 pub(crate) enum WriteSource {
+    ByteVector,
     File(PathBuf),
     Stderr,
     Stdout,
@@ -185,6 +209,7 @@ pub(crate) enum WriteSource {
 impl Display for WriteSource {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
+            Self::ByteVector => f.write_str(TypeName::BYTEVECTOR),
             Self::File(p) => write_file_source(p.display(), 'w', f),
             Self::Stderr => f.write_str("stderr"),
             Self::Stdout => f.write_str("stdout"),
@@ -251,6 +276,7 @@ impl Display for PortSpec {
 pub(crate) enum PortError {
     Closed,
     ExpectedMode(PortMode),
+    InvalidSource,
     Io(ErrorKind),
 }
 
@@ -280,6 +306,7 @@ impl PortError {
                 ErrorKind::UnexpectedEof => sym.get("unexpected-eof"),
                 _ => sym.get("nonspecific-error"),
             },
+            Self::InvalidSource => sym.get("invalid-port-source"),
         })
     }
 }
@@ -290,6 +317,7 @@ impl Display for PortError {
             Self::Closed => f.write_str("attempted operation on closed port"),
             Self::ExpectedMode(m) => write!(f, "attemped {} operation on {m} port", m.inverse()),
             Self::Io(k) => write!(f, "{k}"),
+            Self::InvalidSource => f.write_str("invalid port for requested data type"),
         }
     }
 }
@@ -343,6 +371,7 @@ impl StreamSource<dyn Read> for ReadSource {
 impl StreamSource<dyn Write> for WriteSource {
     fn create_stream(&self) -> PortResult<Box<dyn Write>> {
         Ok(match self {
+            Self::ByteVector => Box::new(Vec::<u8>::new()),
             Self::File(p) => Box::new(BufWriter::new(File::create(p)?)),
             Self::Stderr => Box::new(io::stderr()),
             Self::Stdout => Box::new(io::stdout()),

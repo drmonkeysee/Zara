@@ -71,6 +71,9 @@ fn load_bv(env: &Frame) {
     // Input/Output
     //
 
+    super::bind_intrinsic(env, "open-output-bytevector", 0..0, output_bytevector);
+    super::bind_intrinsic(env, "get-output-bytevector", 1..1, get_bytevector_output);
+
     super::bind_intrinsic(env, "write-u8", 1..2, write_byte);
     super::bind_intrinsic(env, "write-bytevector", 1..4, write_bytes);
 }
@@ -195,6 +198,18 @@ fn bytevector_from_string(args: &[Value], _env: &Frame) -> EvalResult {
         let mut buf = [0u8; 4];
         Value::bytevector_mut(chars.flat_map(|ch| ch.encode_utf8(&mut buf).as_bytes().to_vec()))
     })
+}
+
+fn output_bytevector(_args: &[Value], _env: &Frame) -> EvalResult {
+    Ok(Value::port_bytevector_output())
+}
+
+fn get_bytevector_output(args: &[Value], env: &Frame) -> EvalResult {
+    let arg = first(args);
+    let p = super::guard_output_port(arg, PortSpec::BinaryOutput)?;
+    p.borrow()
+        .get_bytevector()
+        .map_err(|err| Condition::io_error_for_val(&err, env.sym, arg).into())
 }
 
 fn write_byte(args: &[Value], env: &Frame) -> EvalResult {

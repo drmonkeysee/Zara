@@ -75,6 +75,14 @@ impl Condition {
         }
     }
 
+    pub(crate) fn io_error_for_val(err: &PortError, sym: &SymbolTable, val: &Value) -> Self {
+        Self {
+            kind: ConditionKind::Io,
+            irritants: Some(zlist![err.to_symbol(sym), val.clone()]),
+            msg: err.to_string().into(),
+        }
+    }
+
     pub(crate) fn literal_mut_error(val: &Value) -> Self {
         Self::value_error("cannot modify literal value", val)
     }
