@@ -55,8 +55,24 @@ impl Condition {
         Self::value_error("circular list encountered", val)
     }
 
+    pub(crate) fn file_error(err: &PortError, sym: &SymbolTable, arg: &Value) -> Self {
+        Self {
+            kind: ConditionKind::File,
+            irritants: Some(zlist![err.to_symbol(sym), arg.clone()]),
+            msg: err.to_string().into(),
+        }
+    }
+
     pub(crate) fn index_error(idx: &Value) -> Self {
         Self::value_error("index out of range", idx)
+    }
+
+    pub(crate) fn io_error(err: &PortError, sym: &SymbolTable) -> Self {
+        Self {
+            kind: ConditionKind::Io,
+            irritants: Some(zlist![err.to_symbol(sym)]),
+            msg: err.to_string().into(),
+        }
     }
 
     pub(crate) fn literal_mut_error(val: &Value) -> Self {
@@ -88,22 +104,6 @@ impl Condition {
             kind: ConditionKind::Env,
             irritants: Some(zlist![a.clone(), b.clone()]),
             msg: msg.to_string().into(),
-        }
-    }
-
-    pub(crate) fn file_error(err: &PortError, sym: &SymbolTable, arg: &Value) -> Self {
-        Self {
-            kind: ConditionKind::File,
-            irritants: Some(zlist![err.to_symbol(sym), arg.clone()]),
-            msg: err.to_string().into(),
-        }
-    }
-
-    pub(crate) fn io_error(err: &PortError, sym: &SymbolTable) -> Self {
-        Self {
-            kind: ConditionKind::Io,
-            irritants: Some(zlist![err.to_symbol(sym)]),
-            msg: err.to_string().into(),
         }
     }
 
@@ -167,12 +167,12 @@ enum ConditionKind {
 impl Display for ConditionKind {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Env => f.write_str("env-error"),
+            Self::Env => f.write_str("environment-error"),
             Self::File => f.write_str("file-error"),
             Self::General => f.write_str("exception"),
             Self::Io => f.write_str("io-error"),
             Self::Read => f.write_str("read-error"),
-            Self::System => f.write_str("sys-error"),
+            Self::System => f.write_str("system-error"),
         }
     }
 }
@@ -223,7 +223,7 @@ mod tests {
             irritants: None,
         };
 
-        assert_eq!(c.to_string(), "#<env-error \"foo\">");
+        assert_eq!(c.to_string(), "#<environment-error \"foo\">");
     }
 
     #[test]
@@ -267,6 +267,6 @@ mod tests {
             irritants: None,
         };
 
-        assert_eq!(c.to_string(), "#<sys-error \"foo\">");
+        assert_eq!(c.to_string(), "#<system-error \"foo\">");
     }
 }
