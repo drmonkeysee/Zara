@@ -1,12 +1,4 @@
 // (scheme base)
-macro_rules! predicate {
-    ($name:ident, $pred:pat $(if $guard:expr)?) => {
-        fn $name(args: &[Value], _env: &Frame) -> EvalResult {
-            Ok(Value::Boolean(matches!(first(args), $pred $(if $guard)?)))
-        }
-    };
-}
-
 macro_rules! seq_predicate {
     ($name:ident, $kind:path, $valname:expr, $pred:expr) => {
         fn $name(args: &[Value], _env: &Frame) -> EvalResult {

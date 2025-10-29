@@ -111,8 +111,16 @@ impl Condition {
         matches!(self.kind, ConditionKind::File)
     }
 
+    pub(crate) fn is_io_err(&self) -> bool {
+        matches!(self.kind, ConditionKind::Io)
+    }
+
     pub(crate) fn is_read_err(&self) -> bool {
         matches!(self.kind, ConditionKind::Read)
+    }
+
+    pub(crate) fn is_sys_err(&self) -> bool {
+        matches!(self.kind, ConditionKind::System)
     }
 
     pub(crate) fn message(&self) -> &str {

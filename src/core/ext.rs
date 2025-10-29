@@ -1,4 +1,5 @@
 // (zara ext)
+use super::first;
 use crate::{
     Exception,
     eval::{EvalResult, Frame},
@@ -30,6 +31,9 @@ pub(super) fn load(env: &Frame) {
     is-file?
     */
 
+    super::bind_intrinsic(env, "io-error?", 1..1, is_io_error);
+    super::bind_intrinsic(env, "system-error?", 1..1, is_system_error);
+
     // NOTE: convenience vars
     env.scope.bind(env.sym.get("null"), Value::Null);
     env.scope.bind(env.sym.get("void"), Value::Unspecified);
@@ -40,6 +44,9 @@ pub(super) fn load(env: &Frame) {
         Value::Error(Condition::system_error("test error").into()),
     );
 }
+
+predicate!(is_io_error, Value::Error(c) if c.is_io_err());
+predicate!(is_system_error, Value::Error(c) if c.is_sys_err());
 
 // TODO: support passing in environment specifier
 #[allow(clippy::unnecessary_wraps, reason = "infallible intrinsic")]
