@@ -223,6 +223,16 @@ enum ReadPort2 {
 }
 
 impl ReadPort2 {
+    fn file(path: impl Into<PathBuf>) -> PortResult<Self> {
+        let p = path.into();
+        let f = File::open(&p)?;
+        Ok(Self::File(p, Some(BufReader::new(f))))
+    }
+
+    fn stdin() -> Self {
+        Self::In(Some(io::stdin()))
+    }
+
     fn is_binary(&self) -> bool {
         match self {
             Self::File(..) => true,
@@ -282,6 +292,24 @@ enum WritePort2 {
 }
 
 impl WritePort2 {
+    fn bytevector() -> Self {
+        Self::ByteVector(Some(Vec::new()))
+    }
+
+    fn file(path: impl Into<PathBuf>) -> PortResult<Self> {
+        let p = path.into();
+        let f = File::create(&p)?;
+        Ok(Self::File(p, Some(BufWriter::new(f))))
+    }
+
+    fn stdout() -> Self {
+        Self::Out(Some(io::stdout()))
+    }
+
+    fn stderr() -> Self {
+        Self::Err(Some(io::stderr()))
+    }
+
     fn is_binary(&self) -> bool {
         match self {
             Self::ByteVector(_) | Self::File(..) => true,
