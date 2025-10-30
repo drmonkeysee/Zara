@@ -256,8 +256,8 @@ impl ReadPort2 {
 
     fn get_reader(&mut self) -> PortResult<&mut dyn Read> {
         match self {
-            Self::File(_, o) => o.as_mut().map(|w| w as &mut dyn Read),
-            Self::In(o) => o.as_mut().map(|w| w as &mut dyn Read),
+            Self::File(_, o) => o.as_mut().map(to_dynr),
+            Self::In(o) => o.as_mut().map(to_dynr),
         }
         .ok_or(PortError::Closed)
     }
@@ -361,10 +361,10 @@ impl WritePort2 {
 
     fn get_writer(&mut self) -> PortResult<&mut dyn Write> {
         match self {
-            Self::ByteVector(o) => o.as_mut().map(|w| w as &mut dyn Write),
-            Self::Err(o) => o.as_mut().map(|w| w as &mut dyn Write),
-            Self::File(_, o) => o.as_mut().map(|w| w as &mut dyn Write),
-            Self::Out(o) => o.as_mut().map(|w| w as &mut dyn Write),
+            Self::ByteVector(o) => o.as_mut().map(to_dynw),
+            Self::Err(o) => o.as_mut().map(to_dynw),
+            Self::File(_, o) => o.as_mut().map(to_dynw),
+            Self::Out(o) => o.as_mut().map(to_dynw),
         }
         .ok_or(PortError::Closed)
     }
@@ -547,6 +547,14 @@ impl StreamSource<dyn Write> for WriteSource {
             Self::Stdout => Box::new(io::stdout()),
         })
     }
+}
+
+fn to_dynr(r: &mut impl Read) -> &mut dyn Read {
+    r as &mut dyn Read
+}
+
+fn to_dynw(w: &mut impl Write) -> &mut dyn Write {
+    w as &mut dyn Write
 }
 
 fn write_port_datum(src: impl Display, open: bool, f: &mut Formatter<'_>) -> fmt::Result {
