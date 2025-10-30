@@ -3,7 +3,7 @@ use crate::string::SymbolTable;
 use std::{
     fmt::{self, Debug, Display, Formatter},
     fs::File,
-    io::{self, BufReader, BufWriter, Error, ErrorKind, Read, Write},
+    io::{self, BufReader, BufWriter, Error, ErrorKind, Read, Stderr, Stdout, Write},
     path::PathBuf,
 };
 
@@ -213,6 +213,119 @@ impl Display for WriteSource {
             Self::File(p) => write_file_source(p.display(), 'w', f),
             Self::Stderr => f.write_str("stderr"),
             Self::Stdout => f.write_str("stdout"),
+        }
+    }
+}
+
+enum WritePort2 {
+    ByteVector(Option<Vec<u8>>),
+    Err(Option<Stderr>),
+    File(Option<BufWriter<File>>),
+    Out(Option<Stdout>),
+}
+
+impl WritePort2 {
+    fn is_binary(&self) -> bool {
+        match self {
+            Self::ByteVector(_) | Self::File(_) => true,
+            Self::Err(_) | Self::Out(_) => false,
+        }
+    }
+
+    fn is_textual(&self) -> bool {
+        match self {
+            Self::ByteVector(_) => false,
+            Self::Err(_) | Self::File(_) | Self::Out(_) => true,
+        }
+    }
+
+    fn is_open(&self) -> bool {
+        match self {
+            Self::ByteVector(o) => o.is_some(),
+            Self::Err(o) => o.is_some(),
+            Self::File(o) => o.is_some(),
+            Self::Out(o) => o.is_some(),
+        }
+    }
+
+    fn spec(&self) -> PortSpec {
+        match self {
+            Self::ByteVector(_) => PortSpec::BinaryOutput,
+            Self::File(_) => PortSpec::Output,
+            Self::Err(_) | Self::Out(_) => PortSpec::TextualOutput,
+        }
+    }
+
+    fn get_bytevector(&self) -> PortResult<Value> {
+        if let Self::ByteVector(w) = self {
+            match w {
+                None => Err(PortError::Closed),
+                Some(v) => Ok(Value::bytevector_mut(v.iter().copied())),
+            }
+        } else {
+            Err(PortError::InvalidSource)
+        }
+    }
+
+    fn put_bytes(&mut self, bytes: &[u8]) -> PortResult {
+        if self.is_binary() {
+            self.io_op(|w| {
+                w.write_all(bytes)?;
+                Ok(())
+            })
+        } else {
+            Err(PortError::ExpectedMode(PortMode::Binary))
+        }
+    }
+
+    fn put_char(&mut self, ch: char) -> PortResult {
+        if self.is_textual() {
+            self.io_op(|w| write!(w, "{ch}"))
+        } else {
+            Err(PortError::ExpectedMode(PortMode::Textual))
+        }
+    }
+
+    fn put_string(&mut self, s: &str) -> PortResult {
+        if self.is_textual() {
+            self.io_op(|w| write!(w, "{s}"))
+        } else {
+            Err(PortError::ExpectedMode(PortMode::Textual))
+        }
+    }
+
+    fn flush(&mut self) -> PortResult {
+        self.io_op(|w| w.flush())
+    }
+
+    fn io_op(&mut self, op: impl FnOnce(&mut dyn Write) -> io::Result<()>) -> PortResult {
+        Ok(op(self.get_writer()?)?)
+    }
+
+    fn get_writer(&mut self) -> PortResult<&mut dyn Write> {
+        match self {
+            Self::ByteVector(o) => o.as_mut().map(|w| w as &mut dyn Write),
+            Self::Err(o) => o.as_mut().map(|w| w as &mut dyn Write),
+            Self::File(o) => o.as_mut().map(|w| w as &mut dyn Write),
+            Self::Out(o) => o.as_mut().map(|w| w as &mut dyn Write),
+        }
+        .ok_or(PortError::Closed)
+    }
+
+    fn close(&mut self) {
+        match self {
+            Self::ByteVector(o) => {
+                o.take();
+            }
+            Self::Err(o) => {
+                o.take();
+            }
+            Self::File(o) => {
+                o.take();
+            }
+            Self::Out(o) => {
+                o.take();
+            }
         }
     }
 }
