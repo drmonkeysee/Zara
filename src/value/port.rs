@@ -3,7 +3,7 @@ use crate::string::SymbolTable;
 use std::{
     fmt::{self, Debug, Display, Formatter},
     fs::File,
-    io::{self, BufReader, BufWriter, Error, ErrorKind, Read, Stderr, Stdout, Write},
+    io::{self, BufReader, BufWriter, Error, ErrorKind, Read, Stderr, Stdin, Stdout, Write},
     path::PathBuf,
 };
 
@@ -217,17 +217,74 @@ impl Display for WriteSource {
     }
 }
 
+enum ReadPort2 {
+    File(PathBuf, Option<BufReader<File>>),
+    In(Option<Stdin>),
+}
+
+impl ReadPort2 {
+    fn is_binary(&self) -> bool {
+        match self {
+            Self::File(..) => true,
+            Self::In(_) => false,
+        }
+    }
+
+    fn is_textual(&self) -> bool {
+        match self {
+            Self::File(..) | Self::In(_) => true,
+        }
+    }
+
+    fn is_open(&self) -> bool {
+        match self {
+            Self::File(_, o) => o.is_some(),
+            Self::In(o) => o.is_some(),
+        }
+    }
+
+    fn spec(&self) -> PortSpec {
+        match self {
+            Self::File(..) => PortSpec::Input,
+            Self::In(_) => PortSpec::TextualInput,
+        }
+    }
+
+    fn io_op(&mut self, op: impl FnOnce(&mut dyn Read) -> io::Result<()>) -> PortResult {
+        Ok(op(self.get_reader()?)?)
+    }
+
+    fn get_reader(&mut self) -> PortResult<&mut dyn Read> {
+        match self {
+            Self::File(_, o) => o.as_mut().map(|w| w as &mut dyn Read),
+            Self::In(o) => o.as_mut().map(|w| w as &mut dyn Read),
+        }
+        .ok_or(PortError::Closed)
+    }
+
+    fn close(&mut self) {
+        match self {
+            Self::File(_, o) => {
+                o.take();
+            }
+            Self::In(o) => {
+                o.take();
+            }
+        }
+    }
+}
+
 enum WritePort2 {
     ByteVector(Option<Vec<u8>>),
     Err(Option<Stderr>),
-    File(Option<BufWriter<File>>),
+    File(PathBuf, Option<BufWriter<File>>),
     Out(Option<Stdout>),
 }
 
 impl WritePort2 {
     fn is_binary(&self) -> bool {
         match self {
-            Self::ByteVector(_) | Self::File(_) => true,
+            Self::ByteVector(_) | Self::File(..) => true,
             Self::Err(_) | Self::Out(_) => false,
         }
     }
@@ -235,7 +292,7 @@ impl WritePort2 {
     fn is_textual(&self) -> bool {
         match self {
             Self::ByteVector(_) => false,
-            Self::Err(_) | Self::File(_) | Self::Out(_) => true,
+            Self::Err(_) | Self::File(..) | Self::Out(_) => true,
         }
     }
 
@@ -243,7 +300,7 @@ impl WritePort2 {
         match self {
             Self::ByteVector(o) => o.is_some(),
             Self::Err(o) => o.is_some(),
-            Self::File(o) => o.is_some(),
+            Self::File(_, o) => o.is_some(),
             Self::Out(o) => o.is_some(),
         }
     }
@@ -251,7 +308,7 @@ impl WritePort2 {
     fn spec(&self) -> PortSpec {
         match self {
             Self::ByteVector(_) => PortSpec::BinaryOutput,
-            Self::File(_) => PortSpec::Output,
+            Self::File(..) => PortSpec::Output,
             Self::Err(_) | Self::Out(_) => PortSpec::TextualOutput,
         }
     }
@@ -306,7 +363,7 @@ impl WritePort2 {
         match self {
             Self::ByteVector(o) => o.as_mut().map(|w| w as &mut dyn Write),
             Self::Err(o) => o.as_mut().map(|w| w as &mut dyn Write),
-            Self::File(o) => o.as_mut().map(|w| w as &mut dyn Write),
+            Self::File(_, o) => o.as_mut().map(|w| w as &mut dyn Write),
             Self::Out(o) => o.as_mut().map(|w| w as &mut dyn Write),
         }
         .ok_or(PortError::Closed)
@@ -320,7 +377,7 @@ impl WritePort2 {
             Self::Err(o) => {
                 o.take();
             }
-            Self::File(o) => {
+            Self::File(_, o) => {
                 o.take();
             }
             Self::Out(o) => {
