@@ -169,7 +169,10 @@ mod eval {
         let r = expr.eval(&f);
 
         let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
-        assert_eq!(err.to_string(), "#<env-error \"unbound variable: x\">");
+        assert_eq!(
+            err.to_string(),
+            "#<environment-error \"unbound variable: x\">"
+        );
     }
 
     mod program {
@@ -384,7 +387,7 @@ mod eval {
             let r = prg.eval(&f);
 
             let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
-            assert_eq!(err.to_string(), "#<sys-error \"oh no\">");
+            assert_eq!(err.to_string(), "#<system-error \"oh no\">");
             assert!(f.scope.lookup("foo_called").is_some());
             assert!(f.scope.lookup("baz_called").is_none());
         }
@@ -529,7 +532,10 @@ mod eval {
             let r = expr.eval(&f);
 
             let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
-            assert_eq!(err.to_string(), "#<env-error \"unbound variable: foo\">");
+            assert_eq!(
+                err.to_string(),
+                "#<environment-error \"unbound variable: foo\">"
+            );
         }
 
         #[test]
@@ -560,7 +566,7 @@ mod eval {
             let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
             assert_eq!(
                 err.to_string(),
-                "#<env-error \"expected procedure, got: string\">"
+                "#<environment-error \"expected procedure, got: string\">"
             );
         }
 
@@ -606,7 +612,7 @@ mod eval {
             let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
             assert_eq!(
                 err.to_string(),
-                "#<env-error \"foo arity mismatch - expected: 0, got: 1\">"
+                "#<environment-error \"foo arity mismatch - expected: 0, got: 1\">"
             );
         }
 
@@ -647,7 +653,7 @@ mod eval {
             let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
             assert_eq!(
                 err.to_string(),
-                "#<env-error \"foo arity mismatch - expected: 1, got: 0\">"
+                "#<environment-error \"foo arity mismatch - expected: 1, got: 0\">"
             );
         }
 
@@ -688,7 +694,7 @@ mod eval {
             let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
             assert_eq!(
                 err.to_string(),
-                "#<env-error \"foo arity mismatch - expected at least: 1, got: 0\">"
+                "#<environment-error \"foo arity mismatch - expected at least: 1, got: 0\">"
             );
         }
 
@@ -765,7 +771,10 @@ mod eval {
 
             // NOTE: missing variable "z" is not hit
             let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
-            assert_eq!(err.to_string(), "#<env-error \"unbound variable: x\">");
+            assert_eq!(
+                err.to_string(),
+                "#<environment-error \"unbound variable: x\">"
+            );
             assert!(f.scope.lookup("foo_called").is_none());
         }
 
@@ -878,7 +887,10 @@ mod eval {
             let r = expr.eval(&f);
 
             let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
-            assert_eq!(err.to_string(), "#<env-error \"unbound variable: x\">");
+            assert_eq!(
+                err.to_string(),
+                "#<environment-error \"unbound variable: x\">"
+            );
             assert!(f.scope.lookup("foo").is_none());
         }
 
@@ -1003,7 +1015,10 @@ mod eval {
             let r = expr.eval(&f);
 
             let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
-            assert_eq!(err.to_string(), "#<env-error \"unbound variable: x\">");
+            assert_eq!(
+                err.to_string(),
+                "#<environment-error \"unbound variable: x\">"
+            );
             assert!(matches!(f.scope.lookup("foo"), Some(Value::Unspecified)));
         }
 
@@ -1031,7 +1046,10 @@ mod eval {
             let r = expr.eval(&f);
 
             let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
-            assert_eq!(err.to_string(), "#<env-error \"unbound variable: foo\">");
+            assert_eq!(
+                err.to_string(),
+                "#<environment-error \"unbound variable: foo\">"
+            );
             assert!(f.scope.lookup("foo").is_none());
         }
 
@@ -1182,7 +1200,10 @@ mod eval {
             let r = expr.eval(&f);
 
             let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
-            assert_eq!(err.to_string(), "#<env-error \"unbound variable: x\">");
+            assert_eq!(
+                err.to_string(),
+                "#<environment-error \"unbound variable: x\">"
+            );
         }
 
         #[test]
