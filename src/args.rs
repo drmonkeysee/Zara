@@ -61,14 +61,6 @@ impl Args {
         (self.input, self.mode, runargs)
     }
 
-    fn match_arg(self, arg: String) -> Self {
-        if self.has_run_target() {
-            self.match_target_arg(arg)
-        } else {
-            self.match_command_arg(arg)
-        }
-    }
-
     fn has_run_target(&self) -> bool {
         !matches!(self.input, Input::Repl) || self.runargs.is_some()
     }
@@ -79,6 +71,28 @@ impl Args {
 
     fn expecting_file_path(&self) -> bool {
         matches!(self.input, Input::Repl) && self.runargs.is_none()
+    }
+
+    fn push_runarg(&mut self, arg: String) {
+        match self.runargs.as_mut() {
+            None => {
+                self.init_runargs();
+                self.push_runarg(arg);
+            }
+            Some(ra) => ra.push(arg),
+        }
+    }
+
+    fn init_runargs(&mut self) {
+        self.runargs = Some(Vec::new());
+    }
+
+    fn match_arg(self, arg: String) -> Self {
+        if self.has_run_target() {
+            self.match_target_arg(arg)
+        } else {
+            self.match_command_arg(arg)
+        }
     }
 
     fn match_target_arg(mut self, arg: String) -> Self {
@@ -111,20 +125,6 @@ impl Args {
             _ => (),
         }
         self
-    }
-
-    fn push_runarg(&mut self, arg: String) {
-        match self.runargs.as_mut() {
-            None => {
-                self.init_runargs();
-                self.push_runarg(arg);
-            }
-            Some(ra) => ra.push(arg),
-        }
-    }
-
-    fn init_runargs(&mut self) {
-        self.runargs = Some(Vec::new());
     }
 }
 

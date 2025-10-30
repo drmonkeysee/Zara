@@ -42,13 +42,6 @@ impl SyntacticForm {
         }
     }
 
-    fn quoted(self, seq_len: usize) -> bool {
-        matches!(
-            self,
-            Self::Datum | Self::PairClosed | Self::PairOpen | Self::Quote
-        ) || (matches!(self, Self::Define | Self::Lambda) && seq_len == 0)
-    }
-
     pub(super) fn parse_list(
         &mut self,
         seq: &mut Vec<Expression>,
@@ -248,6 +241,13 @@ impl SyntacticForm {
             seq.push(expr);
         }
         ParseFlow::Continue(())
+    }
+
+    fn quoted(self, seq_len: usize) -> bool {
+        matches!(
+            self,
+            Self::Datum | Self::PairClosed | Self::PairOpen | Self::Quote
+        ) || (matches!(self, Self::Define | Self::Lambda) && seq_len == 0)
     }
 }
 

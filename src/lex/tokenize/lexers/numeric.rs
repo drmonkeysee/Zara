@@ -497,6 +497,24 @@ enum RealClassifier {
 }
 
 impl RealClassifier {
+    fn get_sign(&self) -> Option<Sign> {
+        match self {
+            Self::Flt(Float(f)) => f.integral.sign,
+            Self::Int(RealInt(i)) => i.sign,
+            Self::Sci(Scientific { spec, .. }) => spec.integral.sign,
+        }
+    }
+
+    // NOTE: real classifier always classifies at least one digit
+    fn is_empty(&self) -> bool {
+        debug_assert!(match self {
+            Self::Flt(Float(f)) => !f.is_empty(),
+            Self::Int(RealInt(i)) => !i.is_empty(),
+            Self::Sci(Scientific { spec, .. }) => !spec.is_empty(),
+        });
+        false
+    }
+
     fn classify<'txt>(&mut self, item: ScanItem<'txt>) -> RealControl<'txt> {
         match self {
             Self::Flt(f) => f.classify(item),
@@ -525,24 +543,6 @@ impl RealClassifier {
             Self::Int(RealInt(i)) => i,
             Self::Sci(Scientific { spec, .. }) => spec.integral,
         }
-    }
-
-    fn get_sign(&self) -> Option<Sign> {
-        match self {
-            Self::Flt(Float(f)) => f.integral.sign,
-            Self::Int(RealInt(i)) => i.sign,
-            Self::Sci(Scientific { spec, .. }) => spec.integral.sign,
-        }
-    }
-
-    // NOTE: real classifier always classifies at least one digit
-    fn is_empty(&self) -> bool {
-        debug_assert!(match self {
-            Self::Flt(Float(f)) => !f.is_empty(),
-            Self::Int(RealInt(i)) => !i.is_empty(),
-            Self::Sci(Scientific { spec, .. }) => !spec.is_empty(),
-        });
-        false
     }
 
     fn parse(self, input: &str, exactness: Option<Exactness>) -> ParseResult {
@@ -627,6 +627,14 @@ struct Integral<R> {
 }
 
 impl<R: Radix> Integral<R> {
+    fn has_sign(&self) -> bool {
+        self.spec.has_sign()
+    }
+
+    fn is_empty(&self) -> bool {
+        self.spec.is_empty()
+    }
+
     fn classify<'txt>(&mut self, item: ScanItem<'txt>) -> RadixControl<'txt> {
         match &mut self.mode {
             IntegralMode::Inf(end) | IntegralMode::Nan(end) => classify_radix_infnan(item, end),
@@ -645,38 +653,6 @@ impl<R: Radix> Integral<R> {
         } else {
             brk
         }
-    }
-
-    fn commit(
-        self,
-        input: &str,
-        exactness: Option<Exactness>,
-    ) -> (RadixProps<R>, RadixParser<'_, R>) {
-        let infnan_len = self.mode.len();
-        (
-            RadixProps {
-                infnan: infnan_len.is_some(),
-                props: RealProps {
-                    empty: self.spec.is_empty(),
-                    exactness,
-                    sign: self.spec.sign,
-                },
-                radix: PhantomData,
-            },
-            RadixParser {
-                infnan_len,
-                input,
-                spec: self.spec,
-            },
-        )
-    }
-
-    fn has_sign(&self) -> bool {
-        self.spec.has_sign()
-    }
-
-    fn is_empty(&self) -> bool {
-        self.spec.is_empty()
     }
 
     fn classify_int<'txt>(&mut self, item: ScanItem<'txt>) -> RadixControl<'txt> {
@@ -734,6 +710,30 @@ impl<R: Radix> Integral<R> {
                 TokenErrorKind::NumberInvalid
             })),
         }
+    }
+
+    fn commit(
+        self,
+        input: &str,
+        exactness: Option<Exactness>,
+    ) -> (RadixProps<R>, RadixParser<'_, R>) {
+        let infnan_len = self.mode.len();
+        (
+            RadixProps {
+                infnan: infnan_len.is_some(),
+                props: RealProps {
+                    empty: self.spec.is_empty(),
+                    exactness,
+                    sign: self.spec.sign,
+                },
+                radix: PhantomData,
+            },
+            RadixParser {
+                infnan_len,
+                input,
+                spec: self.spec,
+            },
+        )
     }
 }
 
@@ -887,6 +887,18 @@ struct Scientific {
 }
 
 impl Scientific {
+    fn no_e_value(&self) -> bool {
+        self.spec.exponent.is_empty()
+            || (self.spec.exponent.len() == 1 && self.exponent_sign.is_some())
+    }
+
+    fn malformed_exponent(&self) -> TokenErrorKind {
+        TokenErrorKind::NumericErrorAt {
+            at: self.e_at,
+            err: NumericError::ParseExponentFailure,
+        }
+    }
+
     fn classify<'txt>(&mut self, item: ScanItem<'txt>) -> RealControl<'txt> {
         let ch = item.1;
         match ch {
@@ -930,18 +942,6 @@ impl Scientific {
                     r => Ok(r?),
                 },
             }
-        }
-    }
-
-    fn no_e_value(&self) -> bool {
-        self.spec.exponent.is_empty()
-            || (self.spec.exponent.len() == 1 && self.exponent_sign.is_some())
-    }
-
-    fn malformed_exponent(&self) -> TokenErrorKind {
-        TokenErrorKind::NumericErrorAt {
-            at: self.e_at,
-            err: NumericError::ParseExponentFailure,
         }
     }
 }
