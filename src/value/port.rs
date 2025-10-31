@@ -7,129 +7,141 @@ use std::{
     path::PathBuf,
 };
 
-pub(crate) type ReadPort = Port<ReadSource, dyn Read>;
-pub(crate) type WritePort = Port<WriteSource, dyn Write>;
 pub(crate) type PortResult<T = ()> = Result<T, PortError>;
 
-pub(crate) struct Port<T, U: ?Sized> {
-    mode: PortMode,
-    source: T,
-    stream: Option<Box<U>>,
-}
-
-impl<T, U: ?Sized> Port<T, U> {
-    pub(crate) fn is_textual(&self) -> bool {
-        matches!(self.mode, PortMode::Any | PortMode::Textual)
-    }
-
-    pub(crate) fn is_binary(&self) -> bool {
-        matches!(self.mode, PortMode::Any | PortMode::Binary)
-    }
-
-    pub(crate) fn is_open(&self) -> bool {
-        self.stream.is_some()
-    }
-
-    pub(crate) fn close(&mut self) {
-        self.stream.take();
-    }
-}
-
-#[allow(private_bounds)]
-impl<T, U: ?Sized> Port<T, U>
-where
-    T: StreamSource<U>,
-{
-    fn new(source: T, mode: PortMode) -> PortResult<Self> {
-        let stream = source.create_stream()?;
-        Ok(Self {
-            mode,
-            source,
-            stream: Some(stream),
-        })
-    }
-}
-
-impl<T: Debug, U: ?Sized> Debug for Port<T, U> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Port")
-            .field("mode", &self.mode)
-            .field("source", &self.source)
-            .field("stream", &"...")
-            .finish()
-    }
-}
-
-impl<T: Display, U: ?Sized> Display for Port<T, U> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write_port_datum(&self.source, self.is_open(), f)
-    }
+#[derive(Debug)]
+pub(crate) enum ReadPort {
+    File(PathBuf, Option<BufReader<File>>),
+    In(Option<Stdin>),
 }
 
 impl ReadPort {
     pub(super) fn file(path: impl Into<PathBuf>) -> PortResult<Self> {
-        Self::any_new(ReadSource::File(path.into()))
+        let p = path.into();
+        let f = File::open(&p)?;
+        Ok(Self::File(p, Some(BufReader::new(f))))
     }
 
     pub(super) fn stdin() -> Self {
-        Self::txt_new(ReadSource::Stdin).expect("unexpected stdin init error")
+        Self::In(Some(io::stdin()))
     }
 
-    fn any_new(source: ReadSource) -> PortResult<Self> {
-        Self::new(source, PortMode::Any)
+    pub(crate) fn is_binary(&self) -> bool {
+        match self {
+            Self::File(..) => true,
+            Self::In(_) => false,
+        }
     }
 
-    fn txt_new(source: ReadSource) -> PortResult<Self> {
-        Self::new(source, PortMode::Textual)
+    pub(crate) fn is_textual(&self) -> bool {
+        match self {
+            Self::File(..) | Self::In(_) => true,
+        }
+    }
+
+    pub(crate) fn is_open(&self) -> bool {
+        match self {
+            Self::File(_, o) => o.is_some(),
+            Self::In(o) => o.is_some(),
+        }
+    }
+
+    pub(crate) fn close(&mut self) {
+        match self {
+            Self::File(_, o) => {
+                o.take();
+            }
+            Self::In(o) => {
+                o.take();
+            }
+        }
     }
 
     fn spec(&self) -> PortSpec {
-        match self.mode {
-            PortMode::Any => PortSpec::Input,
-            PortMode::Binary => PortSpec::BinaryInput,
-            PortMode::Textual => PortSpec::TextualInput,
+        match self {
+            Self::File(..) => PortSpec::Input,
+            Self::In(_) => PortSpec::TextualInput,
         }
     }
+
+    fn io_op(&mut self, op: impl FnOnce(&mut dyn Read) -> io::Result<()>) -> PortResult {
+        Ok(op(self.get_reader()?)?)
+    }
+
+    fn get_reader(&mut self) -> PortResult<&mut dyn Read> {
+        match self {
+            Self::File(_, o) => o.as_mut().map(as_dynr),
+            Self::In(o) => o.as_mut().map(as_dynr),
+        }
+        .ok_or(PortError::Closed)
+    }
+}
+
+impl Display for ReadPort {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::File(p, _) => write_file_source(p.display(), 'r', f),
+            Self::In(_) => f.write_str("stdin"),
+        }?;
+        write_port_status(self.is_open(), f)
+    }
+}
+
+#[derive(Debug)]
+pub(crate) enum WritePort {
+    ByteVector(Option<Vec<u8>>),
+    Err(Option<Stderr>),
+    File(PathBuf, Option<BufWriter<File>>),
+    Out(Option<Stdout>),
 }
 
 impl WritePort {
     pub(super) fn bytevector() -> Self {
-        Self::bin_new(WriteSource::ByteVector).expect("unexpected bytevector init failure")
+        Self::ByteVector(Some(Vec::new()))
     }
 
     pub(super) fn file(path: impl Into<PathBuf>) -> PortResult<Self> {
-        Self::any_new(WriteSource::File(path.into()))
+        let p = path.into();
+        let f = File::create(&p)?;
+        Ok(Self::File(p, Some(BufWriter::new(f))))
     }
 
     pub(super) fn stdout() -> Self {
-        Self::txt_new(WriteSource::Stdout).expect("unexpected stdout init failure")
+        Self::Out(Some(io::stdout()))
     }
 
     pub(super) fn stderr() -> Self {
-        Self::txt_new(WriteSource::Stderr).expect("unexpected stderr init failure")
+        Self::Err(Some(io::stderr()))
     }
 
-    fn any_new(source: WriteSource) -> PortResult<Self> {
-        Self::new(source, PortMode::Any)
+    pub(crate) fn is_binary(&self) -> bool {
+        match self {
+            Self::ByteVector(_) | Self::File(..) => true,
+            Self::Err(_) | Self::Out(_) => false,
+        }
     }
 
-    fn bin_new(source: WriteSource) -> PortResult<Self> {
-        Self::new(source, PortMode::Binary)
+    pub(crate) fn is_textual(&self) -> bool {
+        match self {
+            Self::ByteVector(_) => false,
+            Self::Err(_) | Self::File(..) | Self::Out(_) => true,
+        }
     }
 
-    fn txt_new(source: WriteSource) -> PortResult<Self> {
-        Self::new(source, PortMode::Textual)
+    pub(crate) fn is_open(&self) -> bool {
+        match self {
+            Self::ByteVector(o) => o.is_some(),
+            Self::Err(o) => o.is_some(),
+            Self::File(_, o) => o.is_some(),
+            Self::Out(o) => o.is_some(),
+        }
     }
 
     pub(crate) fn get_bytevector(&self) -> PortResult<Value> {
-        if let WriteSource::ByteVector = self.source {
-            match &self.stream {
+        if let Self::ByteVector(w) = self {
+            match w {
                 None => Err(PortError::Closed),
-                Some(_) => {
-                    todo!(
-                        "it does not seem to be possible to downcast from dyn Write to Vec<u8> through dyn Any"
-                    )
-                }
+                Some(v) => Ok(Value::bytevector_mut(v.iter().copied())),
             }
         } else {
             Err(PortError::InvalidSource)
@@ -164,172 +176,23 @@ impl WritePort {
     }
 
     pub(crate) fn flush(&mut self) -> PortResult {
-        self.io_op(Write::flush)
+        self.io_op(|w| w.flush())
     }
 
-    fn spec(&self) -> PortSpec {
-        match self.mode {
-            PortMode::Any => PortSpec::Output,
-            PortMode::Binary => PortSpec::BinaryOutput,
-            PortMode::Textual => PortSpec::TextualOutput,
-        }
-    }
-
-    fn io_op(&mut self, op: impl FnOnce(&mut Box<dyn Write>) -> io::Result<()>) -> PortResult {
-        match &mut self.stream {
-            None => Err(PortError::Closed),
-            Some(w) => Ok(op(w)?),
-        }
-    }
-}
-
-#[derive(Debug)]
-pub(crate) enum ReadSource {
-    File(PathBuf),
-    Stdin,
-}
-
-impl Display for ReadSource {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+    pub(crate) fn close(&mut self) {
         match self {
-            Self::File(p) => write_file_source(p.display(), 'r', f),
-            Self::Stdin => f.write_str("stdin"),
-        }
-    }
-}
-
-#[derive(Debug)]
-pub(crate) enum WriteSource {
-    ByteVector,
-    File(PathBuf),
-    Stderr,
-    Stdout,
-}
-
-impl Display for WriteSource {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::ByteVector => f.write_str(TypeName::BYTEVECTOR),
-            Self::File(p) => write_file_source(p.display(), 'w', f),
-            Self::Stderr => f.write_str("stderr"),
-            Self::Stdout => f.write_str("stdout"),
-        }
-    }
-}
-
-enum ReadPort2 {
-    File(PathBuf, Option<BufReader<File>>),
-    In(Option<Stdin>),
-}
-
-impl ReadPort2 {
-    fn file(path: impl Into<PathBuf>) -> PortResult<Self> {
-        let p = path.into();
-        let f = File::open(&p)?;
-        Ok(Self::File(p, Some(BufReader::new(f))))
-    }
-
-    fn stdin() -> Self {
-        Self::In(Some(io::stdin()))
-    }
-
-    fn is_binary(&self) -> bool {
-        match self {
-            Self::File(..) => true,
-            Self::In(_) => false,
-        }
-    }
-
-    fn is_textual(&self) -> bool {
-        match self {
-            Self::File(..) | Self::In(_) => true,
-        }
-    }
-
-    fn is_open(&self) -> bool {
-        match self {
-            Self::File(_, o) => o.is_some(),
-            Self::In(o) => o.is_some(),
-        }
-    }
-
-    fn spec(&self) -> PortSpec {
-        match self {
-            Self::File(..) => PortSpec::Input,
-            Self::In(_) => PortSpec::TextualInput,
-        }
-    }
-
-    fn io_op(&mut self, op: impl FnOnce(&mut dyn Read) -> io::Result<()>) -> PortResult {
-        Ok(op(self.get_reader()?)?)
-    }
-
-    fn get_reader(&mut self) -> PortResult<&mut dyn Read> {
-        match self {
-            Self::File(_, o) => o.as_mut().map(as_dynr),
-            Self::In(o) => o.as_mut().map(as_dynr),
-        }
-        .ok_or(PortError::Closed)
-    }
-
-    fn close(&mut self) {
-        match self {
+            Self::ByteVector(o) => {
+                o.take();
+            }
+            Self::Err(o) => {
+                o.take();
+            }
             Self::File(_, o) => {
                 o.take();
             }
-            Self::In(o) => {
+            Self::Out(o) => {
                 o.take();
             }
-        }
-    }
-}
-
-enum WritePort2 {
-    ByteVector(Option<Vec<u8>>),
-    Err(Option<Stderr>),
-    File(PathBuf, Option<BufWriter<File>>),
-    Out(Option<Stdout>),
-}
-
-impl WritePort2 {
-    fn bytevector() -> Self {
-        Self::ByteVector(Some(Vec::new()))
-    }
-
-    fn file(path: impl Into<PathBuf>) -> PortResult<Self> {
-        let p = path.into();
-        let f = File::create(&p)?;
-        Ok(Self::File(p, Some(BufWriter::new(f))))
-    }
-
-    fn stdout() -> Self {
-        Self::Out(Some(io::stdout()))
-    }
-
-    fn stderr() -> Self {
-        Self::Err(Some(io::stderr()))
-    }
-
-    fn is_binary(&self) -> bool {
-        match self {
-            Self::ByteVector(_) | Self::File(..) => true,
-            Self::Err(_) | Self::Out(_) => false,
-        }
-    }
-
-    fn is_textual(&self) -> bool {
-        match self {
-            Self::ByteVector(_) => false,
-            Self::Err(_) | Self::File(..) | Self::Out(_) => true,
-        }
-    }
-
-    fn is_open(&self) -> bool {
-        match self {
-            Self::ByteVector(o) => o.is_some(),
-            Self::Err(o) => o.is_some(),
-            Self::File(_, o) => o.is_some(),
-            Self::Out(o) => o.is_some(),
         }
     }
 
@@ -339,48 +202,6 @@ impl WritePort2 {
             Self::File(..) => PortSpec::Output,
             Self::Err(_) | Self::Out(_) => PortSpec::TextualOutput,
         }
-    }
-
-    fn get_bytevector(&self) -> PortResult<Value> {
-        if let Self::ByteVector(w) = self {
-            match w {
-                None => Err(PortError::Closed),
-                Some(v) => Ok(Value::bytevector_mut(v.iter().copied())),
-            }
-        } else {
-            Err(PortError::InvalidSource)
-        }
-    }
-
-    fn put_bytes(&mut self, bytes: &[u8]) -> PortResult {
-        if self.is_binary() {
-            self.io_op(|w| {
-                w.write_all(bytes)?;
-                Ok(())
-            })
-        } else {
-            Err(PortError::ExpectedMode(PortMode::Binary))
-        }
-    }
-
-    fn put_char(&mut self, ch: char) -> PortResult {
-        if self.is_textual() {
-            self.io_op(|w| write!(w, "{ch}"))
-        } else {
-            Err(PortError::ExpectedMode(PortMode::Textual))
-        }
-    }
-
-    fn put_string(&mut self, s: &str) -> PortResult {
-        if self.is_textual() {
-            self.io_op(|w| write!(w, "{s}"))
-        } else {
-            Err(PortError::ExpectedMode(PortMode::Textual))
-        }
-    }
-
-    fn flush(&mut self) -> PortResult {
-        self.io_op(|w| w.flush())
     }
 
     fn io_op(&mut self, op: impl FnOnce(&mut dyn Write) -> io::Result<()>) -> PortResult {
@@ -396,22 +217,17 @@ impl WritePort2 {
         }
         .ok_or(PortError::Closed)
     }
+}
 
-    fn close(&mut self) {
+impl Display for WritePort {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            Self::ByteVector(o) => {
-                o.take();
-            }
-            Self::Err(o) => {
-                o.take();
-            }
-            Self::File(_, o) => {
-                o.take();
-            }
-            Self::Out(o) => {
-                o.take();
-            }
-        }
+            Self::ByteVector(_) => f.write_str(TypeName::BYTEVECTOR),
+            Self::Err(_) => f.write_str("stderr"),
+            Self::File(p, _) => write_file_source(p.display(), 'w', f),
+            Self::Out(_) => f.write_str("stdout"),
+        }?;
+        write_port_status(self.is_open(), f)
     }
 }
 
@@ -553,30 +369,6 @@ impl Display for PortMode {
     }
 }
 
-trait StreamSource<T: ?Sized> {
-    fn create_stream(&self) -> PortResult<Box<T>>;
-}
-
-impl StreamSource<dyn Read> for ReadSource {
-    fn create_stream(&self) -> PortResult<Box<dyn Read>> {
-        Ok(match self {
-            Self::File(p) => Box::new(BufReader::new(File::open(p)?)),
-            Self::Stdin => Box::new(io::stdin()),
-        })
-    }
-}
-
-impl StreamSource<dyn Write> for WriteSource {
-    fn create_stream(&self) -> PortResult<Box<dyn Write>> {
-        Ok(match self {
-            Self::ByteVector => Box::new(Vec::<u8>::new()),
-            Self::File(p) => Box::new(BufWriter::new(File::create(p)?)),
-            Self::Stderr => Box::new(io::stderr()),
-            Self::Stdout => Box::new(io::stdout()),
-        })
-    }
-}
-
 fn as_dynr(r: &mut impl Read) -> &mut dyn Read {
     r as &mut dyn Read
 }
@@ -585,8 +377,7 @@ fn as_dynw(w: &mut impl Write) -> &mut dyn Write {
     w as &mut dyn Write
 }
 
-fn write_port_datum(src: impl Display, open: bool, f: &mut Formatter<'_>) -> fmt::Result {
-    write!(f, "{src}")?;
+fn write_port_status(open: bool, f: &mut Formatter<'_>) -> fmt::Result {
     if !open {
         f.write_str(" (closed)")?;
     }
