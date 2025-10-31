@@ -377,13 +377,14 @@ fn as_dynw(w: &mut impl Write) -> &mut dyn Write {
     w as &mut dyn Write
 }
 
-fn write_port_status(open: bool, f: &mut Formatter<'_>) -> fmt::Result {
-    if !open {
-        f.write_str(" (closed)")?;
-    }
-    Ok(())
-}
-
 fn write_file_source(path: impl Display, mode: char, f: &mut Formatter<'_>) -> fmt::Result {
     write!(f, "file:{mode}:{path}")
+}
+
+fn write_port_status(open: bool, f: &mut Formatter<'_>) -> fmt::Result {
+    if open {
+        Ok(())
+    } else {
+        f.write_str(" (closed)")
+    }
 }
