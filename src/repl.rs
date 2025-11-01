@@ -24,7 +24,7 @@ impl Repl {
             exit: ExitCode::SUCCESS,
             prompt: INPUT,
             running: true,
-            runtime: Interpreter::new(mode, args),
+            runtime: Interpreter::new(mode, true, args),
             src: StringSource::empty("<repl>"),
         })
     }

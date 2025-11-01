@@ -109,7 +109,7 @@ impl Default for TestEnv {
         Self {
             binding: Binding::default().into(),
             symbols: SymbolTable::default(),
-            system: System::new(iter::empty()),
+            system: System::new(false, iter::empty()),
         }
     }
 }

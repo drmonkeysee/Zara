@@ -67,10 +67,10 @@ pub struct Interpreter {
 
 impl Interpreter {
     #[must_use]
-    pub fn new(mode: RunMode, args: impl IntoIterator<Item = String>) -> Self {
+    pub fn new(mode: RunMode, interactive: bool, args: impl IntoIterator<Item = String>) -> Self {
         Self {
             lexer: Lexer::default(),
-            runner: resolve_executor(mode, args),
+            runner: resolve_executor(mode, interactive, args),
         }
     }
 
@@ -215,22 +215,26 @@ impl<P: Parser, E: Evaluator + Default> Executor for Engine<P, E> {
     }
 }
 
-fn resolve_executor(mode: RunMode, args: impl IntoIterator<Item = String>) -> Box<dyn Executor> {
+fn resolve_executor(
+    mode: RunMode,
+    interactive: bool,
+    args: impl IntoIterator<Item = String>,
+) -> Box<dyn Executor> {
     match mode {
         RunMode::Evaluate => Box::new(Engine {
-            evaluator: Eval::new(args),
+            evaluator: Eval::new(interactive, args),
             parser: ExpressionTree::default(),
         }),
         RunMode::SyntaxTree => Box::new(Engine {
-            evaluator: Ast::new(args),
+            evaluator: Ast::new(interactive, args),
             parser: ExpressionTree::default(),
         }),
         RunMode::Tokenize => Box::new(Engine {
-            evaluator: Eval::new(args),
+            evaluator: Eval::new(interactive, args),
             parser: TokenList,
         }),
         RunMode::TokenTree => Box::new(Engine {
-            evaluator: Ast::new(args),
+            evaluator: Ast::new(interactive, args),
             parser: TokenList,
         }),
     }

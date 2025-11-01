@@ -11,7 +11,7 @@ pub(crate) type PortResult<T = ()> = Result<T, PortError>;
 
 #[derive(Debug)]
 pub(crate) enum ReadPort {
-    File(PathBuf, Option<BufReader<File>>),
+    File(Option<BufReader<File>>, PathBuf),
     In(Option<Stdin>),
 }
 
@@ -19,7 +19,7 @@ impl ReadPort {
     pub(super) fn file(path: impl Into<PathBuf>) -> PortResult<Self> {
         let p = path.into();
         let f = File::open(&p)?;
-        Ok(Self::File(p, Some(BufReader::new(f))))
+        Ok(Self::File(Some(BufReader::new(f)), p))
     }
 
     pub(super) fn stdin() -> Self {
@@ -41,14 +41,14 @@ impl ReadPort {
 
     pub(crate) fn is_open(&self) -> bool {
         match self {
-            Self::File(_, o) => o.is_some(),
+            Self::File(o, _) => o.is_some(),
             Self::In(o) => o.is_some(),
         }
     }
 
     pub(crate) fn close(&mut self) {
         match self {
-            Self::File(_, o) => {
+            Self::File(o, _) => {
                 o.take();
             }
             Self::In(o) => {
@@ -70,7 +70,7 @@ impl ReadPort {
 
     fn get_reader(&mut self) -> PortResult<&mut dyn Read> {
         match self {
-            Self::File(_, o) => o.as_mut().map(as_dynr),
+            Self::File(o, _) => o.as_mut().map(as_dynr),
             Self::In(o) => o.as_mut().map(as_dynr),
         }
         .ok_or(PortError::Closed)
@@ -80,7 +80,7 @@ impl ReadPort {
 impl Display for ReadPort {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            Self::File(p, _) => write_file_source(p.display(), 'r', f),
+            Self::File(_, p) => write_file_source(p.display(), 'r', f),
             Self::In(_) => f.write_str("stdin"),
         }?;
         write_port_status(self.is_open(), f)
@@ -90,9 +90,9 @@ impl Display for ReadPort {
 #[derive(Debug)]
 pub(crate) enum WritePort {
     ByteVector(Option<Vec<u8>>),
-    Err(Option<Stderr>),
-    File(PathBuf, Option<BufWriter<File>>),
-    Out(Option<Stdout>),
+    Err(Option<Stderr>, bool),
+    File(Option<BufWriter<File>>, PathBuf),
+    Out(Option<Stdout>, bool),
 }
 
 impl WritePort {
@@ -103,37 +103,37 @@ impl WritePort {
     pub(super) fn file(path: impl Into<PathBuf>) -> PortResult<Self> {
         let p = path.into();
         let f = File::create(&p)?;
-        Ok(Self::File(p, Some(BufWriter::new(f))))
+        Ok(Self::File(Some(BufWriter::new(f)), p))
     }
 
-    pub(super) fn stdout() -> Self {
-        Self::Out(Some(io::stdout()))
+    pub(super) fn stdout(interactive: bool) -> Self {
+        Self::Out(Some(io::stdout()), interactive)
     }
 
-    pub(super) fn stderr() -> Self {
-        Self::Err(Some(io::stderr()))
+    pub(super) fn stderr(interactive: bool) -> Self {
+        Self::Err(Some(io::stderr()), interactive)
     }
 
     pub(crate) fn is_binary(&self) -> bool {
         match self {
             Self::ByteVector(_) | Self::File(..) => true,
-            Self::Err(_) | Self::Out(_) => false,
+            Self::Err(..) | Self::Out(..) => false,
         }
     }
 
     pub(crate) fn is_textual(&self) -> bool {
         match self {
             Self::ByteVector(_) => false,
-            Self::Err(_) | Self::File(..) | Self::Out(_) => true,
+            Self::Err(..) | Self::File(..) | Self::Out(..) => true,
         }
     }
 
     pub(crate) fn is_open(&self) -> bool {
         match self {
             Self::ByteVector(o) => o.is_some(),
-            Self::Err(o) => o.is_some(),
-            Self::File(_, o) => o.is_some(),
-            Self::Out(o) => o.is_some(),
+            Self::Err(o, _) => o.is_some(),
+            Self::File(o, _) => o.is_some(),
+            Self::Out(o, _) => o.is_some(),
         }
     }
 
@@ -161,7 +161,8 @@ impl WritePort {
 
     pub(crate) fn put_char(&mut self, ch: char) -> PortResult {
         if self.is_textual() {
-            self.io_op(|w| write!(w, "{ch}"))
+            self.io_op(|w| write!(w, "{ch}"))?;
+            self.repl_newline(ch != '\n')
         } else {
             Err(PortError::ExpectedMode(PortMode::Textual))
         }
@@ -169,7 +170,8 @@ impl WritePort {
 
     pub(crate) fn put_string(&mut self, s: &str) -> PortResult {
         if self.is_textual() {
-            self.io_op(|w| write!(w, "{s}"))
+            self.io_op(|w| write!(w, "{s}"))?;
+            self.repl_newline(!s.ends_with('\n'))
         } else {
             Err(PortError::ExpectedMode(PortMode::Textual))
         }
@@ -184,13 +186,13 @@ impl WritePort {
             Self::ByteVector(o) => {
                 o.take();
             }
-            Self::Err(o) => {
+            Self::Err(o, _) => {
                 o.take();
             }
-            Self::File(_, o) => {
+            Self::File(o, _) => {
                 o.take();
             }
-            Self::Out(o) => {
+            Self::Out(o, _) => {
                 o.take();
             }
         }
@@ -200,7 +202,7 @@ impl WritePort {
         match self {
             Self::ByteVector(_) => PortSpec::BinaryOutput,
             Self::File(..) => PortSpec::Output,
-            Self::Err(_) | Self::Out(_) => PortSpec::TextualOutput,
+            Self::Err(..) | Self::Out(..) => PortSpec::TextualOutput,
         }
     }
 
@@ -211,11 +213,23 @@ impl WritePort {
     fn get_writer(&mut self) -> PortResult<&mut dyn Write> {
         match self {
             Self::ByteVector(o) => o.as_mut().map(as_dynw),
-            Self::Err(o) => o.as_mut().map(as_dynw),
-            Self::File(_, o) => o.as_mut().map(as_dynw),
-            Self::Out(o) => o.as_mut().map(as_dynw),
+            Self::Err(o, _) => o.as_mut().map(as_dynw),
+            Self::File(o, _) => o.as_mut().map(as_dynw),
+            Self::Out(o, _) => o.as_mut().map(as_dynw),
         }
         .ok_or(PortError::Closed)
+    }
+
+    // NOTE: rustyline always resets cursor position so without adding a synthetic
+    // newline the prompt will overwrite any one-line text output in the REPL.
+    fn repl_newline(&mut self, missing_newline: bool) -> PortResult {
+        if let Self::Err(_, true) | Self::Out(_, true) = self
+            && missing_newline
+        {
+            self.put_char('\n')
+        } else {
+            Ok(())
+        }
     }
 }
 
@@ -223,9 +237,9 @@ impl Display for WritePort {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
             Self::ByteVector(_) => f.write_str(TypeName::BYTEVECTOR),
-            Self::Err(_) => f.write_str("stderr"),
-            Self::File(p, _) => write_file_source(p.display(), 'w', f),
-            Self::Out(_) => f.write_str("stdout"),
+            Self::Err(..) => f.write_str("stderr"),
+            Self::File(_, p) => write_file_source(p.display(), 'w', f),
+            Self::Out(..) => f.write_str("stdout"),
         }?;
         write_port_status(self.is_open(), f)
     }

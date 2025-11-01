@@ -84,13 +84,13 @@ pub(crate) struct System {
 
 impl System {
     // TODO: this is only crate cuz of testutil
-    pub(crate) fn new(args: impl IntoIterator<Item = String>) -> Self {
+    pub(crate) fn new(interactive: bool, args: impl IntoIterator<Item = String>) -> Self {
         Self {
             args: Value::list(args.into_iter().map(Value::string).collect::<Vec<_>>()),
             start_time: Instant::now(),
-            stderr: Value::port_stderr(),
+            stderr: Value::port_stderr(interactive),
             stdin: Value::port_stdin(),
-            stdout: Value::port_stdout(),
+            stdout: Value::port_stdout(interactive),
         }
     }
 }

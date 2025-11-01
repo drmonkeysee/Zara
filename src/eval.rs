@@ -33,12 +33,12 @@ pub(crate) struct Environment<T> {
 }
 
 impl<T: Evaluator + Default> Environment<T> {
-    pub(crate) fn new(args: impl IntoIterator<Item = String>) -> Self {
+    pub(crate) fn new(interactive: bool, args: impl IntoIterator<Item = String>) -> Self {
         let me = Self {
             driver: PhantomData,
             global: Binding::default().into(),
             symbols: SymbolTable::default(),
-            system: System::new(args),
+            system: System::new(interactive, args),
         };
         core::load(&me.make_frame());
         me

@@ -124,12 +124,12 @@ impl Value {
         Self::PortInput(RefCell::new(ReadPort::stdin()).into())
     }
 
-    pub(crate) fn port_stdout() -> Self {
-        Self::PortOutput(RefCell::new(WritePort::stdout()).into())
+    pub(crate) fn port_stdout(interactive: bool) -> Self {
+        Self::PortOutput(RefCell::new(WritePort::stdout(interactive)).into())
     }
 
-    pub(crate) fn port_stderr() -> Self {
-        Self::PortOutput(RefCell::new(WritePort::stderr()).into())
+    pub(crate) fn port_stderr(interactive: bool) -> Self {
+        Self::PortOutput(RefCell::new(WritePort::stderr(interactive)).into())
     }
 
     pub(crate) fn procedure(p: impl Into<Rc<Procedure>>) -> Self {

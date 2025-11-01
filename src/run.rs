@@ -40,7 +40,7 @@ fn run(
     src: &mut impl TextSource,
     args: impl IntoIterator<Item = String>,
 ) -> cli::Result {
-    let mut runtime = Interpreter::new(mode, args);
+    let mut runtime = Interpreter::new(mode, false, args);
     let mut result = runtime.run(src);
     if let Ok(Evaluation::Ex(Exception::Exit(code))) = result {
         return Ok(code);

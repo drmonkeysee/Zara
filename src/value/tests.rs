@@ -306,14 +306,14 @@ mod display {
 
     #[test]
     fn port_typename() {
-        let v = Value::port_stdout();
+        let v = Value::port_stdout(false);
 
         assert_eq!(v.as_typename().to_string(), "port");
     }
 
     #[test]
     fn port_display() {
-        let v = Value::port_stdout();
+        let v = Value::port_stdout(false);
 
         assert_eq!(v.as_datum().to_string(), "#<port stdout>");
     }
