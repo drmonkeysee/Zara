@@ -210,7 +210,7 @@ fn load_io(env: &Frame) {
     bind_intrinsic(env, "newline", 0..1, newline);
     bind_intrinsic(env, "write-char", 1..2, write_char);
 
-    bind_intrinsic(env, "flush-port", 0..1, flush_port);
+    bind_intrinsic(env, "flush-output-port", 0..1, flush_port);
 }
 
 predicate!(is_input_port, Value::PortInput(_));
