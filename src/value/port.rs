@@ -620,4 +620,29 @@ mod tests {
         let e = err_or_fail!(r);
         assert!(matches!(e, PortError::Closed));
     }
+
+    #[test]
+    fn bv_byte_ready() {
+        let bytes: Vec<u8> = vec![1];
+        let mut p = ReadPort::bytevector(bytes.iter().copied());
+
+        assert!(ok_or_fail!(p.has_bytes()));
+
+        let r = p.read_byte();
+        let b = some_or_fail!(ok_or_fail!(r));
+
+        assert_eq!(b, 1);
+        assert!(ok_or_fail!(p.has_bytes()));
+
+        let r = p.read_byte();
+        let b = ok_or_fail!(r);
+
+        assert!(b.is_none());
+
+        p.close();
+        let r = p.has_bytes();
+
+        let e = err_or_fail!(r);
+        assert!(matches!(e, PortError::Closed));
+    }
 }
