@@ -167,7 +167,7 @@ impl WritePort {
 
     pub(crate) fn put_bytes(&mut self, bytes: &[u8]) -> PortResult {
         if self.is_binary() {
-            self.io_op(|w| w.write_all(bytes), |_| Err(fmt::Error))
+            self.get_writer()?.put_bytes(bytes)
         } else {
             Err(PortError::ExpectedMode(PortMode::Binary))
         }
@@ -175,7 +175,7 @@ impl WritePort {
 
     pub(crate) fn put_char(&mut self, ch: char) -> PortResult {
         if self.is_textual() {
-            self.io_op(|w| write!(w, "{ch}"), |w| write!(w, "{ch}"))?;
+            self.get_writer()?.put_char(ch)?;
             self.repl_newline(ch != '\n')
         } else {
             Err(PortError::ExpectedMode(PortMode::Textual))
@@ -184,7 +184,7 @@ impl WritePort {
 
     pub(crate) fn put_string(&mut self, s: &str) -> PortResult {
         if self.is_textual() {
-            self.io_op(|w| write!(w, "{s}"), |w| write!(w, "{s}"))?;
+            self.get_writer()?.put_string(s)?;
             self.repl_newline(!s.ends_with('\n'))
         } else {
             Err(PortError::ExpectedMode(PortMode::Textual))
@@ -192,7 +192,7 @@ impl WritePort {
     }
 
     pub(crate) fn flush(&mut self) -> PortResult {
-        self.io_op(|w| w.flush(), |_| Ok(()))
+        self.get_writer()?.flush()
     }
 
     pub(crate) fn close(&mut self) {
@@ -221,18 +221,6 @@ impl WritePort {
             Self::File(..) => PortSpec::Output,
             Self::Err(..) | Self::Out(..) | Self::String(_) => PortSpec::TextualOutput,
         }
-    }
-
-    fn io_op(
-        &mut self,
-        io_op: impl FnOnce(&mut dyn io::Write) -> io::Result<()>,
-        fmt_op: impl FnOnce(&mut dyn fmt::Write) -> Result<(), fmt::Error>,
-    ) -> PortResult {
-        match self.get_writer()? {
-            WriteRef::Fmt(w) => fmt_op(w)?,
-            WriteRef::Io(w) => io_op(w)?,
-        }
-        Ok(())
     }
 
     fn get_writer(&mut self) -> PortResult<WriteRef<'_>> {
@@ -431,6 +419,34 @@ impl<'a> WriteRef<'a> {
 
     fn io(w: &'a mut impl io::Write) -> Self {
         Self::Io(w as &mut dyn io::Write)
+    }
+
+    fn put_bytes(&mut self, bytes: &[u8]) -> PortResult {
+        self.op(|w| w.write_all(bytes), |_| Err(fmt::Error))
+    }
+
+    fn put_char(&mut self, ch: char) -> PortResult {
+        self.op(|w| write!(w, "{ch}"), |w| write!(w, "{ch}"))
+    }
+
+    fn put_string(&mut self, s: &str) -> PortResult {
+        self.op(|w| write!(w, "{s}"), |w| write!(w, "{s}"))
+    }
+
+    fn flush(&mut self) -> PortResult {
+        self.op(|w| w.flush(), |_| Ok(()))
+    }
+
+    fn op(
+        &mut self,
+        io_op: impl FnOnce(&mut dyn io::Write) -> io::Result<()>,
+        fmt_op: impl FnOnce(&mut dyn fmt::Write) -> Result<(), fmt::Error>,
+    ) -> PortResult {
+        match self {
+            Self::Fmt(w) => fmt_op(w)?,
+            Self::Io(w) => io_op(w)?,
+        }
+        Ok(())
     }
 }
 
