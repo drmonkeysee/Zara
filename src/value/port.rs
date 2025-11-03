@@ -228,10 +228,11 @@ impl WritePort {
         io_op: impl FnOnce(&mut dyn io::Write) -> io::Result<()>,
         fmt_op: impl FnOnce(&mut dyn fmt::Write) -> Result<(), fmt::Error>,
     ) -> PortResult {
-        Ok(match self.get_writer()? {
+        match self.get_writer()? {
             WriteRef::Fmt(w) => fmt_op(w)?,
             WriteRef::Io(w) => io_op(w)?,
-        })
+        }
+        Ok(())
     }
 
     fn get_writer(&mut self) -> PortResult<WriteRef<'_>> {

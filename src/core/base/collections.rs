@@ -200,6 +200,7 @@ fn bytevector_from_string(args: &[Value], _env: &Frame) -> EvalResult {
     })
 }
 
+#[allow(clippy::unnecessary_wraps, reason = "infallible interface")]
 fn output_bytevector(_args: &[Value], _env: &Frame) -> EvalResult {
     Ok(Value::port_bytevector_output())
 }
@@ -651,6 +652,7 @@ fn string_fill(args: &[Value], _env: &Frame) -> EvalResult {
     )
 }
 
+#[allow(clippy::unnecessary_wraps, reason = "infallible interface")]
 fn output_string(_args: &[Value], _env: &Frame) -> EvalResult {
     Ok(Value::port_string_output())
 }
