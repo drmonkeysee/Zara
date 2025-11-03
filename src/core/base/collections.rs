@@ -506,6 +506,9 @@ fn load_string(env: &Frame) {
     // Input/Output
     //
 
+    super::bind_intrinsic(env, "open-output-string", 0..0, output_string);
+    super::bind_intrinsic(env, "get-output-string", 1..1, get_string_output);
+
     super::bind_intrinsic(env, "write-string", 1..4, write_string);
 }
 
@@ -646,6 +649,18 @@ fn string_fill(args: &[Value], _env: &Frame) -> EvalResult {
             target.replace_range(.., &updated);
         },
     )
+}
+
+fn output_string(_args: &[Value], _env: &Frame) -> EvalResult {
+    Ok(Value::port_string_output())
+}
+
+fn get_string_output(args: &[Value], env: &Frame) -> EvalResult {
+    let arg = first(args);
+    let p = super::guard_output_port(arg, PortSpec::TextualOutput)?;
+    p.borrow()
+        .get_string()
+        .map_err(|err| Condition::io_error(&err, env.sym, arg).into())
 }
 
 #[allow(clippy::similar_names, reason = "env/end have clear intent")]

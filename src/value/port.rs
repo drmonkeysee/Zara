@@ -3,7 +3,7 @@ use crate::string::SymbolTable;
 use std::{
     fmt::{self, Debug, Display, Formatter},
     fs::File,
-    io::{self, BufReader, BufWriter, Error, ErrorKind, Read, Stderr, Stdin, Stdout, Write},
+    io::{self, BufReader, BufWriter, ErrorKind, Read, Stderr, Stdin, Stdout},
     path::PathBuf,
 };
 
@@ -93,6 +93,7 @@ pub(crate) enum WritePort {
     Err(Option<Stderr>, bool),
     File(Option<BufWriter<File>>, PathBuf),
     Out(Option<Stdout>, bool),
+    String(Option<String>),
 }
 
 impl WritePort {
@@ -114,17 +115,21 @@ impl WritePort {
         Self::Err(Some(io::stderr()), interactive)
     }
 
+    pub(super) fn string() -> Self {
+        Self::String(Some(String::new()))
+    }
+
     pub(crate) fn is_binary(&self) -> bool {
         match self {
             Self::ByteVector(_) | Self::File(..) => true,
-            Self::Err(..) | Self::Out(..) => false,
+            Self::Err(..) | Self::Out(..) | Self::String(_) => false,
         }
     }
 
     pub(crate) fn is_textual(&self) -> bool {
         match self {
             Self::ByteVector(_) => false,
-            Self::Err(..) | Self::File(..) | Self::Out(..) => true,
+            Self::Err(..) | Self::File(..) | Self::Out(..) | Self::String(_) => true,
         }
     }
 
@@ -134,6 +139,7 @@ impl WritePort {
             Self::Err(o, _) => o.is_some(),
             Self::File(o, _) => o.is_some(),
             Self::Out(o, _) => o.is_some(),
+            Self::String(o) => o.is_some(),
         }
     }
 
@@ -148,12 +154,20 @@ impl WritePort {
         }
     }
 
+    pub(crate) fn get_string(&self) -> PortResult<Value> {
+        if let Self::String(w) = self {
+            match w {
+                None => Err(PortError::Closed),
+                Some(s) => Ok(Value::string_mut(s)),
+            }
+        } else {
+            Err(PortError::InvalidSource)
+        }
+    }
+
     pub(crate) fn put_bytes(&mut self, bytes: &[u8]) -> PortResult {
         if self.is_binary() {
-            self.io_op(|w| {
-                w.write_all(bytes)?;
-                Ok(())
-            })
+            self.io_op(|w| w.write_all(bytes), |_| Err(fmt::Error))
         } else {
             Err(PortError::ExpectedMode(PortMode::Binary))
         }
@@ -161,7 +175,7 @@ impl WritePort {
 
     pub(crate) fn put_char(&mut self, ch: char) -> PortResult {
         if self.is_textual() {
-            self.io_op(|w| write!(w, "{ch}"))?;
+            self.io_op(|w| write!(w, "{ch}"), |w| write!(w, "{ch}"))?;
             self.repl_newline(ch != '\n')
         } else {
             Err(PortError::ExpectedMode(PortMode::Textual))
@@ -170,7 +184,7 @@ impl WritePort {
 
     pub(crate) fn put_string(&mut self, s: &str) -> PortResult {
         if self.is_textual() {
-            self.io_op(|w| write!(w, "{s}"))?;
+            self.io_op(|w| write!(w, "{s}"), |w| write!(w, "{s}"))?;
             self.repl_newline(!s.ends_with('\n'))
         } else {
             Err(PortError::ExpectedMode(PortMode::Textual))
@@ -178,7 +192,7 @@ impl WritePort {
     }
 
     pub(crate) fn flush(&mut self) -> PortResult {
-        self.io_op(|w| w.flush())
+        self.io_op(|w| w.flush(), |_| Ok(()))
     }
 
     pub(crate) fn close(&mut self) {
@@ -195,6 +209,9 @@ impl WritePort {
             Self::Out(o, _) => {
                 o.take();
             }
+            Self::String(o) => {
+                o.take();
+            }
         }
     }
 
@@ -202,20 +219,28 @@ impl WritePort {
         match self {
             Self::ByteVector(_) => PortSpec::BinaryOutput,
             Self::File(..) => PortSpec::Output,
-            Self::Err(..) | Self::Out(..) => PortSpec::TextualOutput,
+            Self::Err(..) | Self::Out(..) | Self::String(_) => PortSpec::TextualOutput,
         }
     }
 
-    fn io_op(&mut self, op: impl FnOnce(&mut dyn Write) -> io::Result<()>) -> PortResult {
-        Ok(op(self.get_writer()?)?)
+    fn io_op(
+        &mut self,
+        io_op: impl FnOnce(&mut dyn io::Write) -> io::Result<()>,
+        fmt_op: impl FnOnce(&mut dyn fmt::Write) -> Result<(), fmt::Error>,
+    ) -> PortResult {
+        Ok(match self.get_writer()? {
+            WriteRef::Fmt(w) => fmt_op(w)?,
+            WriteRef::Io(w) => io_op(w)?,
+        })
     }
 
-    fn get_writer(&mut self) -> PortResult<&mut dyn Write> {
+    fn get_writer(&mut self) -> PortResult<WriteRef<'_>> {
         match self {
-            Self::ByteVector(o) => o.as_mut().map(as_dynw),
-            Self::Err(o, _) => o.as_mut().map(as_dynw),
-            Self::File(o, _) => o.as_mut().map(as_dynw),
-            Self::Out(o, _) => o.as_mut().map(as_dynw),
+            Self::ByteVector(o) => o.as_mut().map(WriteRef::io),
+            Self::Err(o, _) => o.as_mut().map(WriteRef::io),
+            Self::File(o, _) => o.as_mut().map(WriteRef::io),
+            Self::Out(o, _) => o.as_mut().map(WriteRef::io),
+            Self::String(o) => o.as_mut().map(WriteRef::fmt),
         }
         .ok_or(PortError::Closed)
     }
@@ -240,6 +265,7 @@ impl Display for WritePort {
             Self::Err(..) => f.write_str("stderr"),
             Self::File(_, p) => write_file_source(p.display(), 'w', f),
             Self::Out(..) => f.write_str("stdout"),
+            Self::String(_) => f.write_str(TypeName::STRING),
         }?;
         write_port_status(self.is_open(), f)
     }
@@ -304,6 +330,7 @@ impl Display for PortSpec {
 pub(crate) enum PortError {
     Closed,
     ExpectedMode(PortMode),
+    Fmt,
     InvalidSource,
     Io(ErrorKind),
 }
@@ -313,6 +340,7 @@ impl PortError {
         Value::Symbol(match self {
             Self::Closed => sym.get("closed-port"),
             Self::ExpectedMode(_) => sym.get("mismatched-port-mode"),
+            Self::Fmt => sym.get("string-error"),
             Self::Io(k) => match k {
                 ErrorKind::AlreadyExists => sym.get("already-exists"),
                 ErrorKind::BrokenPipe => sym.get("broken-pipe"),
@@ -344,14 +372,21 @@ impl Display for PortError {
         match self {
             Self::Closed => f.write_str("attempted operation on closed port"),
             Self::ExpectedMode(m) => write!(f, "attemped {} operation on {m} port", m.inverse()),
+            Self::Fmt => f.write_str("unexpected format error"),
             Self::Io(k) => write!(f, "{k}"),
             Self::InvalidSource => f.write_str("invalid port for requested data type"),
         }
     }
 }
 
-impl From<Error> for PortError {
-    fn from(value: Error) -> Self {
+impl From<fmt::Error> for PortError {
+    fn from(_value: fmt::Error) -> Self {
+        Self::Fmt
+    }
+}
+
+impl From<io::Error> for PortError {
+    fn from(value: io::Error) -> Self {
         Self::Io(value.kind())
     }
 }
@@ -383,12 +418,23 @@ impl Display for PortMode {
     }
 }
 
-fn as_dynr(r: &mut impl Read) -> &mut dyn Read {
-    r as &mut dyn Read
+enum WriteRef<'a> {
+    Fmt(&'a mut dyn fmt::Write),
+    Io(&'a mut dyn io::Write),
 }
 
-fn as_dynw(w: &mut impl Write) -> &mut dyn Write {
-    w as &mut dyn Write
+impl<'a> WriteRef<'a> {
+    fn fmt(w: &'a mut impl fmt::Write) -> Self {
+        Self::Fmt(w as &mut dyn fmt::Write)
+    }
+
+    fn io(w: &'a mut impl io::Write) -> Self {
+        Self::Io(w as &mut dyn io::Write)
+    }
+}
+
+fn as_dynr(r: &mut impl Read) -> &mut dyn Read {
+    r as &mut dyn Read
 }
 
 fn write_file_source(path: impl Display, mode: char, f: &mut Formatter<'_>) -> fmt::Result {

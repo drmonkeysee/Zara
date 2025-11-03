@@ -120,6 +120,10 @@ impl Value {
         ))
     }
 
+    pub(crate) fn port_string_output() -> Self {
+        Self::PortOutput(RefCell::new(WritePort::string()).into())
+    }
+
     pub(crate) fn port_stdin() -> Self {
         Self::PortInput(RefCell::new(ReadPort::stdin()).into())
     }
