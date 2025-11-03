@@ -569,8 +569,7 @@ mod tests {
 
     #[test]
     fn bv_empty_read_byte() {
-        let bytes = Vec::<u8>::new();
-        let mut p = ReadPort::bytevector(bytes.iter().copied());
+        let mut p = ReadPort::bytevector(Vec::new());
 
         let r = p.read_byte();
 
@@ -580,8 +579,7 @@ mod tests {
 
     #[test]
     fn bv_read_byte() {
-        let bytes: Vec<u8> = vec![1, 2, 3];
-        let mut p = ReadPort::bytevector(bytes.iter().copied());
+        let mut p = ReadPort::bytevector(vec![1, 2, 3]);
 
         let r = p.read_byte();
 
@@ -606,8 +604,7 @@ mod tests {
 
     #[test]
     fn bv_read_byte_when_closed() {
-        let bytes: Vec<u8> = vec![1, 2, 3];
-        let mut p = ReadPort::bytevector(bytes.iter().copied());
+        let mut p = ReadPort::bytevector(vec![1, 2, 3]);
 
         let r = p.read_byte();
 
@@ -623,8 +620,7 @@ mod tests {
 
     #[test]
     fn bv_byte_ready() {
-        let bytes: Vec<u8> = vec![1];
-        let mut p = ReadPort::bytevector(bytes.iter().copied());
+        let mut p = ReadPort::bytevector(vec![1]);
 
         assert!(ok_or_fail!(p.has_bytes()));
 
