@@ -11,7 +11,7 @@ impl TestRunner {
         Self {
             cont: false,
             input: StringSource::empty("<integration>"),
-            zara: Interpreter::new(RunMode::Evaluate, []),
+            zara: Interpreter::new(RunMode::Evaluate, false, []),
         }
     }
 
