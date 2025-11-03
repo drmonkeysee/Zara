@@ -330,9 +330,10 @@ fn write_char(args: &[Value], env: &Frame) -> EvalResult {
 }
 
 fn flush_port(args: &[Value], env: &Frame) -> EvalResult {
-    let p = guard_output_port(args.first().unwrap_or(&env.sys.stdout), PortSpec::Output)?;
+    let arg = args.first().unwrap_or(&env.sys.stdout);
+    let p = guard_output_port(arg, PortSpec::Output)?;
     p.borrow_mut().flush().map_or_else(
-        |err| Err(Condition::io_error(&err, env.sym).into()),
+        |err| Err(Condition::io_error(&err, env.sym, arg).into()),
         |()| Ok(Value::Unspecified),
     )
 }
@@ -446,7 +447,7 @@ fn put_char(ch: char, arg: Option<&Value>, env: &Frame) -> EvalResult {
     let port = arg.unwrap_or(&env.sys.stdout);
     let p = guard_output_port(port, PortSpec::TextualOutput)?;
     p.borrow_mut().put_char(ch).map_or_else(
-        |err| Err(Condition::io_error(&err, env.sym).into()),
+        |err| Err(Condition::io_error(&err, env.sym, port).into()),
         |()| Ok(Value::Unspecified),
     )
 }

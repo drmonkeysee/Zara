@@ -67,15 +67,7 @@ impl Condition {
         Self::value_error("index out of range", idx)
     }
 
-    pub(crate) fn io_error(err: &PortError, sym: &SymbolTable) -> Self {
-        Self {
-            kind: ConditionKind::Io,
-            irritants: Some(zlist![err.to_symbol(sym)]),
-            msg: err.to_string().into(),
-        }
-    }
-
-    pub(crate) fn io_error_for_val(err: &PortError, sym: &SymbolTable, val: &Value) -> Self {
+    pub(crate) fn io_error(err: &PortError, sym: &SymbolTable, val: &Value) -> Self {
         Self {
             kind: ConditionKind::Io,
             irritants: Some(zlist![err.to_symbol(sym), val.clone()]),
