@@ -71,8 +71,11 @@ fn load_bv(env: &Frame) {
     // Input/Output
     //
 
+    super::bind_intrinsic(env, "open-input-bytevector", 1..1, input_bytevector);
     super::bind_intrinsic(env, "open-output-bytevector", 0..0, output_bytevector);
     super::bind_intrinsic(env, "get-output-bytevector", 1..1, get_bytevector_output);
+
+    super::bind_intrinsic(env, "read-u8", 0..1, read_byte);
 
     super::bind_intrinsic(env, "write-u8", 1..2, write_byte);
     super::bind_intrinsic(env, "write-bytevector", 1..4, write_bytes);
@@ -200,6 +203,14 @@ fn bytevector_from_string(args: &[Value], _env: &Frame) -> EvalResult {
     })
 }
 
+fn input_bytevector(args: &[Value], _env: &Frame) -> EvalResult {
+    let arg = first(args);
+    let bv = arg
+        .as_refbv()
+        .ok_or_else(|| super::invalid_target(TypeName::BYTEVECTOR, arg))?;
+    Ok(Value::port_bytevector_input(bv.as_ref().iter().copied()))
+}
+
 #[allow(clippy::unnecessary_wraps, reason = "infallible interface")]
 fn output_bytevector(_args: &[Value], _env: &Frame) -> EvalResult {
     Ok(Value::port_bytevector_output())
@@ -211,6 +222,15 @@ fn get_bytevector_output(args: &[Value], env: &Frame) -> EvalResult {
     p.borrow()
         .get_bytevector()
         .map_err(|err| Condition::io_error(&err, env.sym, arg).into())
+}
+
+fn read_byte(args: &[Value], env: &Frame) -> EvalResult {
+    let port = args.first().unwrap_or(&env.sys.stdin);
+    let p = super::guard_input_port(port, PortSpec::BinaryInput)?;
+    p.borrow_mut().get_byte().map_or_else(
+        |err| Err(Condition::io_error(&err, env.sym, port).into()),
+        |b| Ok(b.map_or(Value::Eof, |b| Value::real(i64::from(b)))),
+    )
 }
 
 fn write_byte(args: &[Value], env: &Frame) -> EvalResult {

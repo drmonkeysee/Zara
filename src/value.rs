@@ -106,6 +106,10 @@ impl Value {
         Self::make_improper_list(items, Self::cons_mut)
     }
 
+    pub(crate) fn port_bytevector_input(bytes: impl IntoIterator<Item = u8>) -> Self {
+        Self::PortInput(RefCell::new(ReadPort::bytevector(bytes)).into())
+    }
+
     pub(crate) fn port_bytevector_output() -> Self {
         Self::PortOutput(RefCell::new(WritePort::bytevector()).into())
     }

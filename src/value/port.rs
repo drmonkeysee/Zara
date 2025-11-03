@@ -11,11 +11,16 @@ pub(crate) type PortResult<T = ()> = Result<T, PortError>;
 
 #[derive(Debug)]
 pub(crate) enum ReadPort {
+    ByteVector(BvReader),
     File(Option<BufReader<File>>, PathBuf),
     In(Option<Stdin>),
 }
 
 impl ReadPort {
+    pub(super) fn bytevector(bytes: impl IntoIterator<Item = u8>) -> Self {
+        Self::ByteVector(BvReader::new(bytes))
+    }
+
     pub(super) fn file(path: impl Into<PathBuf>) -> PortResult<Self> {
         let p = path.into();
         let f = File::open(&p)?;
@@ -28,19 +33,21 @@ impl ReadPort {
 
     pub(crate) fn is_binary(&self) -> bool {
         match self {
-            Self::File(..) => true,
+            Self::ByteVector(_) | Self::File(..) => true,
             Self::In(_) => false,
         }
     }
 
     pub(crate) fn is_textual(&self) -> bool {
         match self {
+            Self::ByteVector(_) => false,
             Self::File(..) | Self::In(_) => true,
         }
     }
 
     pub(crate) fn is_open(&self) -> bool {
         match self {
+            Self::ByteVector(r) => r.is_open(),
             Self::File(o, _) => o.is_some(),
             Self::In(o) => o.is_some(),
         }
@@ -48,6 +55,7 @@ impl ReadPort {
 
     pub(crate) fn close(&mut self) {
         match self {
+            Self::ByteVector(r) => r.close(),
             Self::File(o, _) => {
                 o.take();
             }
@@ -57,33 +65,86 @@ impl ReadPort {
         }
     }
 
+    pub(crate) fn get_byte(&mut self) -> PortResult<Option<u8>> {
+        if self.is_binary() {
+            if let Self::ByteVector(r) = self {
+                r.get_byte()
+            } else {
+                todo!();
+            }
+        } else {
+            Err(PortError::ExpectedMode(PortMode::Binary))
+        }
+    }
+
     fn spec(&self) -> PortSpec {
         match self {
+            Self::ByteVector(_) => PortSpec::BinaryInput,
             Self::File(..) => PortSpec::Input,
             Self::In(_) => PortSpec::TextualInput,
         }
     }
 
-    fn io_op(&mut self, op: impl FnOnce(&mut dyn Read) -> io::Result<()>) -> PortResult {
-        Ok(op(self.get_reader()?)?)
-    }
-
+    /*
     fn get_reader(&mut self) -> PortResult<&mut dyn Read> {
         match self {
+            Self::ByteVector(o, _) => o.as_mut().map(as_dynr),
             Self::File(o, _) => o.as_mut().map(as_dynr),
             Self::In(o) => o.as_mut().map(as_dynr),
         }
         .ok_or(PortError::Closed)
     }
+
+    fn io_op(&mut self, op: impl FnOnce(&mut dyn Read) -> io::Result<()>) -> PortResult {
+        Ok(op(self.get_reader()?)?)
+    }
+    */
 }
 
 impl Display for ReadPort {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
+            Self::ByteVector(_) => f.write_str(TypeName::BYTEVECTOR),
             Self::File(_, p) => write_file_source(p.display(), 'r', f),
             Self::In(_) => f.write_str("stdin"),
         }?;
         write_port_status(self.is_open(), f)
+    }
+}
+
+#[derive(Debug)]
+pub(crate) struct BvReader {
+    buf: Option<Box<[u8]>>,
+    cur: usize,
+}
+
+impl BvReader {
+    fn new(bytes: impl IntoIterator<Item = u8>) -> Self {
+        Self {
+            buf: Some(bytes.into_iter().collect()),
+            cur: usize::MIN,
+        }
+    }
+
+    fn is_open(&self) -> bool {
+        self.buf.is_some()
+    }
+
+    fn get_byte(&mut self) -> PortResult<Option<u8>> {
+        match &mut self.buf {
+            None => Err(PortError::Closed),
+            Some(buf) => {
+                let b = buf.get(self.cur);
+                if b.is_some() {
+                    self.cur += 1;
+                }
+                Ok(b.copied())
+            }
+        }
+    }
+
+    fn close(&mut self) {
+        self.buf.take();
     }
 }
 
@@ -463,5 +524,65 @@ fn write_port_status(open: bool, f: &mut Formatter<'_>) -> fmt::Result {
         Ok(())
     } else {
         f.write_str(" (closed)")
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::testutil::{err_or_fail, ok_or_fail, some_or_fail};
+
+    #[test]
+    fn bv_empty_get_byte() {
+        let bytes = Vec::<u8>::new();
+        let mut p = ReadPort::bytevector(bytes.iter().copied());
+
+        let r = p.get_byte();
+
+        let b = ok_or_fail!(r);
+        assert!(b.is_none());
+    }
+
+    #[test]
+    fn bv_get_byte() {
+        let bytes: Vec<u8> = vec![1, 2, 3];
+        let mut p = ReadPort::bytevector(bytes.iter().copied());
+
+        let r = p.get_byte();
+
+        let b = some_or_fail!(ok_or_fail!(r));
+        assert_eq!(b, 1);
+
+        let r = p.get_byte();
+
+        let b = some_or_fail!(ok_or_fail!(r));
+        assert_eq!(b, 2);
+
+        let r = p.get_byte();
+
+        let b = some_or_fail!(ok_or_fail!(r));
+        assert_eq!(b, 3);
+
+        let r = p.get_byte();
+
+        let b = ok_or_fail!(r);
+        assert!(b.is_none());
+    }
+
+    #[test]
+    fn bv_get_byte_when_closed() {
+        let bytes: Vec<u8> = vec![1, 2, 3];
+        let mut p = ReadPort::bytevector(bytes.iter().copied());
+
+        let r = p.get_byte();
+
+        let b = some_or_fail!(ok_or_fail!(r));
+        assert_eq!(b, 1);
+
+        p.close();
+        let r = p.get_byte();
+
+        let e = err_or_fail!(r);
+        assert!(matches!(e, PortError::Closed));
     }
 }
