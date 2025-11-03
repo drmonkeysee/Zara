@@ -76,6 +76,8 @@ fn load_bv(env: &Frame) {
     super::bind_intrinsic(env, "get-output-bytevector", 1..1, get_bytevector_output);
 
     super::bind_intrinsic(env, "read-u8", 0..1, read_byte);
+    super::bind_intrinsic(env, "peek-u8", 0..1, peek_byte);
+    super::bind_intrinsic(env, "u8-ready?", 0..1, has_bytes);
 
     super::bind_intrinsic(env, "write-u8", 1..2, write_byte);
     super::bind_intrinsic(env, "write-bytevector", 1..4, write_bytes);
@@ -227,9 +229,27 @@ fn get_bytevector_output(args: &[Value], env: &Frame) -> EvalResult {
 fn read_byte(args: &[Value], env: &Frame) -> EvalResult {
     let port = args.first().unwrap_or(&env.sys.stdin);
     let p = super::guard_input_port(port, PortSpec::BinaryInput)?;
-    p.borrow_mut().get_byte().map_or_else(
+    p.borrow_mut().read_byte().map_or_else(
         |err| Err(Condition::io_error(&err, env.sym, port).into()),
         |b| Ok(b.map_or(Value::Eof, |b| Value::real(i64::from(b)))),
+    )
+}
+
+fn peek_byte(args: &[Value], env: &Frame) -> EvalResult {
+    let port = args.first().unwrap_or(&env.sys.stdin);
+    let p = super::guard_input_port(port, PortSpec::BinaryInput)?;
+    p.borrow_mut().peek_byte().map_or_else(
+        |err| Err(Condition::io_error(&err, env.sym, port).into()),
+        |b| Ok(b.map_or(Value::Eof, |b| Value::real(i64::from(b)))),
+    )
+}
+
+fn has_bytes(args: &[Value], env: &Frame) -> EvalResult {
+    let port = args.first().unwrap_or(&env.sys.stdin);
+    let p = super::guard_input_port(port, PortSpec::BinaryInput)?;
+    p.borrow_mut().has_bytes().map_or_else(
+        |err| Err(Condition::io_error(&err, env.sym, port).into()),
+        |b| Ok(Value::Boolean(b)),
     )
 }
 

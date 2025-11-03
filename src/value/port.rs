@@ -65,10 +65,39 @@ impl ReadPort {
         }
     }
 
-    pub(crate) fn get_byte(&mut self) -> PortResult<Option<u8>> {
+    pub(crate) fn read_byte(&mut self) -> PortResult<Option<u8>> {
         if self.is_binary() {
             if let Self::ByteVector(r) = self {
-                r.get_byte()
+                r.read()
+            } else {
+                todo!();
+            }
+        } else {
+            Err(PortError::ExpectedMode(PortMode::Binary))
+        }
+    }
+
+    pub(crate) fn peek_byte(&mut self) -> PortResult<Option<u8>> {
+        if self.is_binary() {
+            if let Self::ByteVector(r) = self {
+                r.peek()
+            } else {
+                todo!();
+            }
+        } else {
+            Err(PortError::ExpectedMode(PortMode::Binary))
+        }
+    }
+
+    pub(crate) fn has_bytes(&mut self) -> PortResult<bool> {
+        if self.is_binary() {
+            if let Self::ByteVector(r) = self {
+                // TODO: experimental ok_or https://doc.rust-lang.org/std/primitive.bool.html#method.ok_or
+                if r.is_open() {
+                    Ok(true)
+                } else {
+                    Err(PortError::Closed)
+                }
             } else {
                 todo!();
             }
@@ -130,21 +159,29 @@ impl BvReader {
         self.buf.is_some()
     }
 
-    fn get_byte(&mut self) -> PortResult<Option<u8>> {
+    fn read(&mut self) -> PortResult<Option<u8>> {
+        self.get_byte(true)
+    }
+
+    fn peek(&mut self) -> PortResult<Option<u8>> {
+        self.get_byte(false)
+    }
+
+    fn close(&mut self) {
+        self.buf.take();
+    }
+
+    fn get_byte(&mut self, advance: bool) -> PortResult<Option<u8>> {
         match &mut self.buf {
             None => Err(PortError::Closed),
             Some(buf) => {
                 let b = buf.get(self.cur);
-                if b.is_some() {
+                if advance && b.is_some() {
                     self.cur += 1;
                 }
                 Ok(b.copied())
             }
         }
-    }
-
-    fn close(&mut self) {
-        self.buf.take();
     }
 }
 
@@ -298,9 +335,7 @@ impl WritePort {
     // NOTE: rustyline always resets cursor position so without adding a synthetic
     // newline the prompt will overwrite any one-line text output in the REPL.
     fn repl_newline(&mut self, missing_newline: bool) -> PortResult {
-        if let Self::Err(_, true) | Self::Out(_, true) = self
-            && missing_newline
-        {
+        if missing_newline && let Self::Err(_, true) | Self::Out(_, true) = self {
             self.put_char('\n')
         } else {
             Ok(())
@@ -533,54 +568,54 @@ mod tests {
     use crate::testutil::{err_or_fail, ok_or_fail, some_or_fail};
 
     #[test]
-    fn bv_empty_get_byte() {
+    fn bv_empty_read_byte() {
         let bytes = Vec::<u8>::new();
         let mut p = ReadPort::bytevector(bytes.iter().copied());
 
-        let r = p.get_byte();
+        let r = p.read_byte();
 
         let b = ok_or_fail!(r);
         assert!(b.is_none());
     }
 
     #[test]
-    fn bv_get_byte() {
+    fn bv_read_byte() {
         let bytes: Vec<u8> = vec![1, 2, 3];
         let mut p = ReadPort::bytevector(bytes.iter().copied());
 
-        let r = p.get_byte();
+        let r = p.read_byte();
 
         let b = some_or_fail!(ok_or_fail!(r));
         assert_eq!(b, 1);
 
-        let r = p.get_byte();
+        let r = p.read_byte();
 
         let b = some_or_fail!(ok_or_fail!(r));
         assert_eq!(b, 2);
 
-        let r = p.get_byte();
+        let r = p.read_byte();
 
         let b = some_or_fail!(ok_or_fail!(r));
         assert_eq!(b, 3);
 
-        let r = p.get_byte();
+        let r = p.read_byte();
 
         let b = ok_or_fail!(r);
         assert!(b.is_none());
     }
 
     #[test]
-    fn bv_get_byte_when_closed() {
+    fn bv_read_byte_when_closed() {
         let bytes: Vec<u8> = vec![1, 2, 3];
         let mut p = ReadPort::bytevector(bytes.iter().copied());
 
-        let r = p.get_byte();
+        let r = p.read_byte();
 
         let b = some_or_fail!(ok_or_fail!(r));
         assert_eq!(b, 1);
 
         p.close();
-        let r = p.get_byte();
+        let r = p.read_byte();
 
         let e = err_or_fail!(r);
         assert!(matches!(e, PortError::Closed));
