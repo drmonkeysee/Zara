@@ -1,6 +1,7 @@
 use super::{TypeName, Value};
 use crate::string::SymbolTable;
 use std::{
+    cmp,
     fmt::{self, Debug, Display, Formatter},
     fs::File,
     io::{self, BufReader, BufWriter, ErrorKind, Read, Stderr, Stdin, Stdout},
@@ -106,6 +107,18 @@ impl ReadPort {
         }
     }
 
+    pub(crate) fn read_bytes(&mut self, k: usize) -> PortResult<Option<&[u8]>> {
+        if self.is_binary() {
+            if let Self::ByteVector(r) = self {
+                r.read_count(k)
+            } else {
+                todo!();
+            }
+        } else {
+            Err(PortError::ExpectedMode(PortMode::Binary))
+        }
+    }
+
     fn spec(&self) -> PortSpec {
         match self {
             Self::ByteVector(_) => PortSpec::BinaryInput,
@@ -163,6 +176,10 @@ impl BvReader {
         self.get_byte(true)
     }
 
+    fn read_count(&mut self, k: usize) -> PortResult<Option<&[u8]>> {
+        self.get_bytes(k, true)
+    }
+
     fn peek(&mut self) -> PortResult<Option<u8>> {
         self.get_byte(false)
     }
@@ -172,14 +189,22 @@ impl BvReader {
     }
 
     fn get_byte(&mut self, advance: bool) -> PortResult<Option<u8>> {
+        let bytes = self.get_bytes(1, advance)?;
+        Ok(bytes.and_then(|b| b.first().copied()))
+    }
+
+    fn get_bytes(&mut self, k: usize, advance: bool) -> PortResult<Option<&[u8]>> {
         match &mut self.buf {
             None => Err(PortError::Closed),
             Some(buf) => {
-                let b = buf.get(self.cur);
-                if advance && b.is_some() {
-                    self.cur += 1;
+                let Some(max) = buf.len().checked_sub(self.cur) else {
+                    return Ok(None);
+                };
+                let slice = buf.get(self.cur..(self.cur + cmp::min(k, max)));
+                if advance && slice.is_some() {
+                    self.cur += k;
                 }
-                Ok(b.copied())
+                Ok(slice)
             }
         }
     }
@@ -640,5 +665,85 @@ mod tests {
 
         let e = err_or_fail!(r);
         assert!(matches!(e, PortError::Closed));
+    }
+
+    #[test]
+    fn bv_empty_read_bytes() {
+        let mut p = ReadPort::bytevector(Vec::new());
+
+        let r = p.read_bytes(3);
+
+        let b = some_or_fail!(ok_or_fail!(r));
+        assert_eq!(b, []);
+    }
+
+    #[test]
+    fn bv_read_all_bytes() {
+        let mut p = ReadPort::bytevector(vec![1, 2, 3]);
+
+        let r = p.read_bytes(3);
+
+        let b = some_or_fail!(ok_or_fail!(r));
+        assert_eq!(b, [1, 2, 3]);
+    }
+
+    #[test]
+    fn bv_read_some_bytes_from_start() {
+        let mut p = ReadPort::bytevector(vec![1, 2, 3, 4, 5]);
+
+        let r = p.read_bytes(3);
+
+        let b = some_or_fail!(ok_or_fail!(r));
+        assert_eq!(b, [1, 2, 3]);
+    }
+
+    #[test]
+    fn bv_read_bytes_subset() {
+        let mut p = ReadPort::bytevector(vec![1, 2, 3, 4, 5]);
+
+        let _ = p.read_byte();
+
+        let r = p.read_bytes(3);
+
+        let b = some_or_fail!(ok_or_fail!(r));
+        assert_eq!(b, [2, 3, 4]);
+    }
+
+    #[test]
+    fn bv_read_too_many_bytes() {
+        let mut p = ReadPort::bytevector(vec![1, 2, 3]);
+
+        let r = p.read_bytes(5);
+
+        let b = some_or_fail!(ok_or_fail!(r));
+        assert_eq!(b, [1, 2, 3]);
+    }
+
+    #[test]
+    fn bv_read_too_many_bytes_subset() {
+        let mut p = ReadPort::bytevector(vec![1, 2, 3, 4, 5]);
+
+        let _ = p.read_byte();
+        let _ = p.read_byte();
+
+        let r = p.read_bytes(5);
+
+        let b = some_or_fail!(ok_or_fail!(r));
+        assert_eq!(b, [3, 4, 5]);
+    }
+
+    #[test]
+    fn bv_read_bytes_out_of_bytes() {
+        let mut p = ReadPort::bytevector(vec![1, 2, 3]);
+
+        let r = p.read_bytes(5);
+
+        let b = some_or_fail!(ok_or_fail!(r));
+        assert_eq!(b, [1, 2, 3]);
+
+        let r = p.read_bytes(5);
+
+        let b = ok_or_fail!(r);
+        assert!(b.is_none());
     }
 }

@@ -78,6 +78,8 @@ fn load_bv(env: &Frame) {
     super::bind_intrinsic(env, "read-u8", 0..1, read_byte);
     super::bind_intrinsic(env, "peek-u8", 0..1, peek_byte);
     super::bind_intrinsic(env, "u8-ready?", 0..1, has_bytes);
+    super::bind_intrinsic(env, "read-bytevector", 1..2, read_bytes);
+    super::bind_intrinsic(env, "read-bytevector!", 1..4, read_bytes_inline);
 
     super::bind_intrinsic(env, "write-u8", 1..2, write_byte);
     super::bind_intrinsic(env, "write-bytevector", 1..4, write_bytes);
@@ -250,6 +252,42 @@ fn has_bytes(args: &[Value], env: &Frame) -> EvalResult {
     p.borrow_mut().has_bytes().map_or_else(
         |err| Err(Condition::io_error(&err, env.sym, port).into()),
         |b| Ok(Value::Boolean(b)),
+    )
+}
+
+fn read_bytes(args: &[Value], env: &Frame) -> EvalResult {
+    let k = try_val_to_index(first(args), FIRST_ARG_LABEL)?;
+    let port = args.get(1).unwrap_or(&env.sys.stdin);
+    let p = super::guard_input_port(port, PortSpec::BinaryInput)?;
+    p.borrow_mut().read_bytes(k).map_or_else(
+        |err| Err(Condition::io_error(&err, env.sym, port).into()),
+        |b| Ok(b.map_or(Value::Eof, |b| Value::bytevector_mut(b.iter().copied()))),
+    )
+}
+
+fn read_bytes_inline(args: &[Value], env: &Frame) -> EvalResult {
+    let arg = first(args);
+    let bv_len = arg
+        .as_refbv()
+        .ok_or_else(|| super::invalid_target(TypeName::BYTEVECTOR, arg))?
+        .len();
+    let port = args.get(1).unwrap_or(&env.sys.stdin);
+    let p = super::guard_input_port(port, PortSpec::BinaryInput)?;
+    let span = try_coll_span(args.get(2)..args.get(3), bv_len)?;
+    if span.is_empty() {
+        return Ok(Value::real(0));
+    }
+    let mut bv = arg
+        .as_mutrefbv()
+        .ok_or_else(|| Exception::from(Condition::literal_mut_error(arg)))?;
+    p.borrow_mut().read_bytes(span.len()).map_or_else(
+        |err| Err(Condition::io_error(&err, env.sym, port).into()),
+        |b| {
+            b.map_or(Ok(Value::Eof), |b| {
+                bv[span.start..(span.start + b.len())].copy_from_slice(b);
+                Ok(Value::Number(Number::from_usize(b.len())))
+            })
+        },
     )
 }
 
