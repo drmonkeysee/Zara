@@ -4,7 +4,7 @@ use std::{
     cmp,
     fmt::{self, Debug, Display, Formatter},
     fs::File,
-    io::{self, BufReader, BufWriter, ErrorKind, Read, Stderr, Stdin, Stdout},
+    io::{self, BufReader, BufWriter, ErrorKind, Stderr, Stdin, Stdout},
     path::PathBuf,
 };
 
@@ -66,7 +66,7 @@ impl ReadPort {
         }
     }
 
-    pub(crate) fn read_byte(&mut self) -> PortResult<Option<u8>> {
+    pub(crate) fn read_byte(&mut self) -> PortByte {
         if self.is_binary() {
             if let Self::ByteVector(r) = self {
                 r.read()
@@ -78,7 +78,7 @@ impl ReadPort {
         }
     }
 
-    pub(crate) fn peek_byte(&mut self) -> PortResult<Option<u8>> {
+    pub(crate) fn peek_byte(&mut self) -> PortByte {
         if self.is_binary() {
             if let Self::ByteVector(r) = self {
                 r.peek()
@@ -107,7 +107,7 @@ impl ReadPort {
         }
     }
 
-    pub(crate) fn read_bytes(&mut self, k: usize) -> PortResult<Option<&[u8]>> {
+    pub(crate) fn read_bytes(&mut self, k: usize) -> PortBytes<'_> {
         if self.is_binary() {
             if let Self::ByteVector(r) = self {
                 r.read_count(k)
@@ -126,21 +126,6 @@ impl ReadPort {
             Self::In(_) => PortSpec::TextualInput,
         }
     }
-
-    /*
-    fn get_reader(&mut self) -> PortResult<&mut dyn Read> {
-        match self {
-            Self::ByteVector(o, _) => o.as_mut().map(as_dynr),
-            Self::File(o, _) => o.as_mut().map(as_dynr),
-            Self::In(o) => o.as_mut().map(as_dynr),
-        }
-        .ok_or(PortError::Closed)
-    }
-
-    fn io_op(&mut self, op: impl FnOnce(&mut dyn Read) -> io::Result<()>) -> PortResult {
-        Ok(op(self.get_reader()?)?)
-    }
-    */
 }
 
 impl Display for ReadPort {
@@ -172,15 +157,15 @@ impl BvReader {
         self.buf.is_some()
     }
 
-    fn read(&mut self) -> PortResult<Option<u8>> {
+    fn read(&mut self) -> PortByte {
         self.get_byte(true)
     }
 
-    fn read_count(&mut self, k: usize) -> PortResult<Option<&[u8]>> {
+    fn read_count(&mut self, k: usize) -> PortBytes<'_> {
         self.get_bytes(k, true)
     }
 
-    fn peek(&mut self) -> PortResult<Option<u8>> {
+    fn peek(&mut self) -> PortByte {
         self.get_byte(false)
     }
 
@@ -188,12 +173,12 @@ impl BvReader {
         self.buf.take();
     }
 
-    fn get_byte(&mut self, advance: bool) -> PortResult<Option<u8>> {
+    fn get_byte(&mut self, advance: bool) -> PortByte {
         let bytes = self.get_bytes(1, advance)?;
         Ok(bytes.and_then(|b| b.first().copied()))
     }
 
-    fn get_bytes(&mut self, k: usize, advance: bool) -> PortResult<Option<&[u8]>> {
+    fn get_bytes(&mut self, k: usize, advance: bool) -> PortBytes<'_> {
         match &mut self.buf {
             None => Err(PortError::Closed),
             Some(buf) => Ok(
@@ -269,7 +254,7 @@ impl WritePort {
         }
     }
 
-    pub(crate) fn get_bytevector(&self) -> PortResult<Value> {
+    pub(crate) fn get_bytevector(&self) -> PortValue {
         if let Self::ByteVector(w) = self {
             match w {
                 None => Err(PortError::Closed),
@@ -280,7 +265,7 @@ impl WritePort {
         }
     }
 
-    pub(crate) fn get_string(&self) -> PortResult<Value> {
+    pub(crate) fn get_string(&self) -> PortValue {
         if let Self::String(w) = self {
             match w {
                 None => Err(PortError::Closed),
@@ -531,6 +516,10 @@ impl Display for PortMode {
     }
 }
 
+type PortValue = PortResult<Value>;
+type PortByte = PortResult<Option<u8>>;
+type PortBytes<'a> = PortResult<Option<&'a [u8]>>;
+
 enum WriteRef<'a> {
     Fmt(&'a mut dyn fmt::Write),
     Io(&'a mut dyn io::Write),
@@ -572,10 +561,6 @@ impl<'a> WriteRef<'a> {
         }
         Ok(())
     }
-}
-
-fn as_dynr(r: &mut impl Read) -> &mut dyn Read {
-    r as &mut dyn Read
 }
 
 fn write_file_source(path: impl Display, mode: char, f: &mut Formatter<'_>) -> fmt::Result {
