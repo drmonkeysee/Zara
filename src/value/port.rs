@@ -196,16 +196,19 @@ impl BvReader {
     fn get_bytes(&mut self, k: usize, advance: bool) -> PortResult<Option<&[u8]>> {
         match &mut self.buf {
             None => Err(PortError::Closed),
-            Some(buf) => {
-                let Some(max) = buf.len().checked_sub(self.cur) else {
-                    return Ok(None);
-                };
-                let slice = buf.get(self.cur..(self.cur + cmp::min(k, max)));
-                if advance && slice.is_some() {
-                    self.cur += k;
-                }
-                Ok(slice)
-            }
+            Some(buf) => Ok(
+                if let Some(max) = buf.len().checked_sub(self.cur)
+                    && max > 0
+                {
+                    let slice = buf.get(self.cur..(self.cur + cmp::min(k, max)));
+                    if advance && slice.is_some() {
+                        self.cur += k;
+                    }
+                    slice
+                } else {
+                    None
+                },
+            ),
         }
     }
 }
@@ -604,7 +607,7 @@ mod tests {
 
     #[test]
     fn bv_read_byte() {
-        let mut p = ReadPort::bytevector(vec![1, 2, 3]);
+        let mut p = ReadPort::bytevector([1, 2, 3]);
 
         let r = p.read_byte();
 
@@ -629,7 +632,7 @@ mod tests {
 
     #[test]
     fn bv_read_byte_when_closed() {
-        let mut p = ReadPort::bytevector(vec![1, 2, 3]);
+        let mut p = ReadPort::bytevector([1, 2, 3]);
 
         let r = p.read_byte();
 
@@ -645,7 +648,7 @@ mod tests {
 
     #[test]
     fn bv_byte_ready() {
-        let mut p = ReadPort::bytevector(vec![1]);
+        let mut p = ReadPort::bytevector([1]);
 
         assert!(ok_or_fail!(p.has_bytes()));
 
@@ -679,7 +682,7 @@ mod tests {
 
     #[test]
     fn bv_read_all_bytes() {
-        let mut p = ReadPort::bytevector(vec![1, 2, 3]);
+        let mut p = ReadPort::bytevector([1, 2, 3]);
 
         let r = p.read_bytes(3);
 
@@ -689,7 +692,7 @@ mod tests {
 
     #[test]
     fn bv_read_some_bytes_from_start() {
-        let mut p = ReadPort::bytevector(vec![1, 2, 3, 4, 5]);
+        let mut p = ReadPort::bytevector([1, 2, 3, 4, 5]);
 
         let r = p.read_bytes(3);
 
@@ -699,7 +702,7 @@ mod tests {
 
     #[test]
     fn bv_read_bytes_subset() {
-        let mut p = ReadPort::bytevector(vec![1, 2, 3, 4, 5]);
+        let mut p = ReadPort::bytevector([1, 2, 3, 4, 5]);
 
         let _ = p.read_byte();
 
@@ -711,7 +714,7 @@ mod tests {
 
     #[test]
     fn bv_read_too_many_bytes() {
-        let mut p = ReadPort::bytevector(vec![1, 2, 3]);
+        let mut p = ReadPort::bytevector([1, 2, 3]);
 
         let r = p.read_bytes(5);
 
@@ -721,7 +724,7 @@ mod tests {
 
     #[test]
     fn bv_read_too_many_bytes_subset() {
-        let mut p = ReadPort::bytevector(vec![1, 2, 3, 4, 5]);
+        let mut p = ReadPort::bytevector([1, 2, 3, 4, 5]);
 
         let _ = p.read_byte();
         let _ = p.read_byte();
@@ -734,7 +737,7 @@ mod tests {
 
     #[test]
     fn bv_read_bytes_out_of_bytes() {
-        let mut p = ReadPort::bytevector(vec![1, 2, 3]);
+        let mut p = ReadPort::bytevector([1, 2, 3]);
 
         let r = p.read_bytes(5);
 

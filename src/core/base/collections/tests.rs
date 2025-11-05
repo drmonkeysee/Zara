@@ -271,7 +271,10 @@ fn string_set_val_unicode_out_of_range() {
 
     // NOTE: verify this generates a scheme condition signal rather than a rust panic
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
-    assert_eq!(err.to_string(), "#<environment-error \"index out of range\" (5)>");
+    assert_eq!(
+        err.to_string(),
+        "#<environment-error \"index out of range\" (5)>"
+    );
 }
 
 #[test]
@@ -284,7 +287,10 @@ fn string_copy_unicode_out_of_range() {
     // NOTE: verify this generates a scheme condition signal rather than
     // running off the end of an iterator.
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
-    assert_eq!(err.to_string(), "#<environment-error \"index out of range\" (5)>");
+    assert_eq!(
+        err.to_string(),
+        "#<environment-error \"index out of range\" (5)>"
+    );
 }
 
 #[test]
@@ -870,7 +876,10 @@ fn list_tail_index_out_of_range() {
     let r = list_tail(&args, &env.new_frame());
 
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
-    assert_eq!(err.to_string(), "#<environment-error \"index out of range\" (4)>");
+    assert_eq!(
+        err.to_string(),
+        "#<environment-error \"index out of range\" (4)>"
+    );
 }
 
 #[test]
@@ -996,7 +1005,10 @@ fn list_ref_empty_list() {
     let r = list_get(&args, &env.new_frame());
 
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
-    assert_eq!(err.to_string(), "#<environment-error \"index out of range\" (0)>");
+    assert_eq!(
+        err.to_string(),
+        "#<environment-error \"index out of range\" (0)>"
+    );
 }
 
 #[test]
@@ -1112,7 +1124,10 @@ fn list_ref_index_out_of_range() {
     let r = list_get(&args, &env.new_frame());
 
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
-    assert_eq!(err.to_string(), "#<environment-error \"index out of range\" (4)>");
+    assert_eq!(
+        err.to_string(),
+        "#<environment-error \"index out of range\" (4)>"
+    );
 }
 
 #[test]
@@ -1240,7 +1255,10 @@ fn list_set_out_of_range() {
     let r = list_get(&args, &env.new_frame());
 
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
-    assert_eq!(err.to_string(), "#<environment-error \"index out of range\" (3)>");
+    assert_eq!(
+        err.to_string(),
+        "#<environment-error \"index out of range\" (3)>"
+    );
 }
 
 #[test]
@@ -1408,7 +1426,10 @@ fn vector_get_idx_out_of_bounds() {
     let r = vector_get(&args, &env.new_frame());
 
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
-    assert_eq!(err.to_string(), "#<environment-error \"index out of range\" (4)>");
+    assert_eq!(
+        err.to_string(),
+        "#<environment-error \"index out of range\" (4)>"
+    );
 }
 
 #[test]
@@ -1679,7 +1700,10 @@ fn bytevector_copy_end_too_large() {
     let r = bytevector_copy(&args, &env.new_frame());
 
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
-    assert_eq!(err.to_string(), "#<environment-error \"index out of range\" (5)>");
+    assert_eq!(
+        err.to_string(),
+        "#<environment-error \"index out of range\" (5)>"
+    );
 }
 
 #[test]
@@ -1690,7 +1714,10 @@ fn bytevector_copy_start_too_large() {
     let r = bytevector_copy(&args, &env.new_frame());
 
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
-    assert_eq!(err.to_string(), "#<environment-error \"index out of range\" (6)>");
+    assert_eq!(
+        err.to_string(),
+        "#<environment-error \"index out of range\" (6)>"
+    );
 }
 
 #[test]
@@ -2027,6 +2054,187 @@ fn bytevector_copy_into_head_overlap() {
     assert_eq!(v, Value::Unspecified);
     assert_eq!(args[0].as_datum().to_string(), "#u8(1 2 1 2 3)");
     assert!(args[0].is(&args[2]));
+}
+
+#[test]
+fn read_bytes_all() {
+    let port = Value::port_bytevector_input([1, 2, 3]);
+    let args = [Value::real(3), port];
+    let env = TestEnv::default();
+
+    let r = read_bytes(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert_eq!(v.as_datum().to_string(), "#u8(1 2 3)");
+}
+
+#[test]
+fn read_bytes_some() {
+    let port = Value::port_bytevector_input([1, 2, 3, 4, 5]);
+    let args = [Value::real(3), port];
+    let env = TestEnv::default();
+
+    let r = read_bytes(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert_eq!(v.as_datum().to_string(), "#u8(1 2 3)");
+}
+
+#[test]
+fn read_bytes_from_cursor_point() {
+    let port = Value::port_bytevector_input([1, 2, 3, 4, 5]);
+    let args = [Value::real(3), port.clone()];
+    let env = TestEnv::default();
+
+    let r = read_byte(&[port], &env.new_frame());
+    ok_or_fail!(r);
+
+    let r = read_bytes(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert_eq!(v.as_datum().to_string(), "#u8(2 3 4)");
+}
+
+#[test]
+fn read_bytes_too_many_bytes() {
+    let port = Value::port_bytevector_input([1, 2, 3]);
+    let args = [Value::real(5), port];
+    let env = TestEnv::default();
+
+    let r = read_bytes(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert_eq!(v.as_datum().to_string(), "#u8(1 2 3)");
+}
+
+#[test]
+fn read_bytes_no_bytes() {
+    let port = Value::port_bytevector_input([1, 2, 3]);
+    let args = [Value::real(0), port];
+    let env = TestEnv::default();
+
+    let r = read_bytes(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert_eq!(v.as_datum().to_string(), "#u8()");
+}
+
+#[test]
+fn read_bytes_eof() {
+    let port = Value::port_bytevector_input([1, 2, 3]);
+    let args = [Value::real(3), port];
+    let env = TestEnv::default();
+
+    let r = read_bytes(&args, &env.new_frame());
+    ok_or_fail!(r);
+
+    let r = read_bytes(&args, &env.new_frame());
+    let v = ok_or_fail!(r);
+    assert_eq!(v.as_datum().to_string(), "#<eof>");
+}
+
+#[test]
+fn read_bytes_inline_all_bytes() {
+    let buf = Value::bytevector_mut([0, 0, 0, 0, 0]);
+    let port = Value::port_bytevector_input([1, 2, 3, 4, 5]);
+    let args = [buf.clone(), port];
+    let env = TestEnv::default();
+
+    let r = read_bytes_inline(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert_eq!(v.as_datum().to_string(), "5");
+    assert_eq!(buf.as_datum().to_string(), "#u8(1 2 3 4 5)");
+}
+
+#[test]
+fn read_bytes_inline_no_bytes() {
+    let buf = Value::bytevector_mut([0, 0, 0, 0, 0]);
+    let port = Value::port_bytevector_input([1, 2, 3, 4, 5]);
+    let args = [buf.clone(), port, Value::real(2), Value::real(2)];
+    let env = TestEnv::default();
+
+    let r = read_bytes_inline(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert_eq!(v.as_datum().to_string(), "0");
+    assert_eq!(buf.as_datum().to_string(), "#u8(0 0 0 0 0)");
+}
+
+#[test]
+fn read_bytes_inline_start_end() {
+    let buf = Value::bytevector_mut([0, 0, 0, 0, 0]);
+    let port = Value::port_bytevector_input([1, 2, 3, 4, 5]);
+    let args = [buf.clone(), port, Value::real(1), Value::real(4)];
+    let env = TestEnv::default();
+
+    let r = read_bytes_inline(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert_eq!(v.as_datum().to_string(), "3");
+    assert_eq!(buf.as_datum().to_string(), "#u8(0 1 2 3 0)");
+}
+
+#[test]
+fn read_bytes_inline_smaller_buffer() {
+    let buf = Value::bytevector_mut([0, 0, 0]);
+    let port = Value::port_bytevector_input([1, 2, 3, 4, 5]);
+    let args = [buf.clone(), port];
+    let env = TestEnv::default();
+
+    let r = read_bytes_inline(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert_eq!(v.as_datum().to_string(), "3");
+    assert_eq!(buf.as_datum().to_string(), "#u8(1 2 3)");
+}
+
+#[test]
+fn read_bytes_inline_larger_buffer() {
+    let buf = Value::bytevector_mut([0, 0, 0, 0, 0, 0, 0]);
+    let port = Value::port_bytevector_input([1, 2, 3, 4, 5]);
+    let args = [buf.clone(), port];
+    let env = TestEnv::default();
+
+    let r = read_bytes_inline(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert_eq!(v.as_datum().to_string(), "5");
+    assert_eq!(buf.as_datum().to_string(), "#u8(1 2 3 4 5 0 0)");
+}
+
+#[test]
+fn read_bytes_inline_at_cursor() {
+    let buf = Value::bytevector_mut([0, 0, 0, 0, 0]);
+    let port = Value::port_bytevector_input([1, 2, 3, 4, 5]);
+    let args = [buf.clone(), port.clone()];
+    let env = TestEnv::default();
+
+    let r = read_byte(&[port], &env.new_frame());
+    ok_or_fail!(r);
+
+    let r = read_bytes_inline(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert_eq!(v.as_datum().to_string(), "4");
+    assert_eq!(buf.as_datum().to_string(), "#u8(2 3 4 5 0)");
+}
+
+#[test]
+fn read_bytes_inline_eof() {
+    let buf = Value::bytevector_mut([0, 0, 0, 0, 0]);
+    let port = Value::port_bytevector_input([1, 2, 3, 4, 5]);
+    let args = [buf.clone(), port.clone()];
+    let env = TestEnv::default();
+
+    let r = read_bytes(&[Value::real(5), port], &env.new_frame());
+    ok_or_fail!(r);
+
+    let r = read_bytes_inline(&args, &env.new_frame());
+
+    let v = ok_or_fail!(r);
+    assert_eq!(v.as_datum().to_string(), "#<eof>");
+    assert_eq!(buf.as_datum().to_string(), "#u8(0 0 0 0 0)");
 }
 
 #[test]
