@@ -13,7 +13,7 @@ pub(crate) type PortResult<T = ()> = Result<T, PortError>;
 #[derive(Debug)]
 pub(crate) enum ReadPort {
     ByteVector(BvReader),
-    File(Option<BufReader<File>>, PathBuf),
+    File(FileReader),
     In(Option<Stdin>),
 }
 
@@ -23,9 +23,7 @@ impl ReadPort {
     }
 
     pub(super) fn file(path: impl Into<PathBuf>) -> PortResult<Self> {
-        let p = path.into();
-        let f = File::open(&p)?;
-        Ok(Self::File(Some(BufReader::new(f)), p))
+        Ok(Self::File(FileReader::new(path)?))
     }
 
     pub(super) fn stdin() -> Self {
@@ -34,7 +32,7 @@ impl ReadPort {
 
     pub(crate) fn is_binary(&self) -> bool {
         match self {
-            Self::ByteVector(_) | Self::File(..) => true,
+            Self::ByteVector(_) | Self::File(_) => true,
             Self::In(_) => false,
         }
     }
@@ -42,28 +40,16 @@ impl ReadPort {
     pub(crate) fn is_textual(&self) -> bool {
         match self {
             Self::ByteVector(_) => false,
-            Self::File(..) | Self::In(_) => true,
+            Self::File(_) | Self::In(_) => true,
         }
     }
 
     pub(crate) fn is_open(&self) -> bool {
-        match self {
-            Self::ByteVector(r) => r.is_open(),
-            Self::File(o, _) => o.is_some(),
-            Self::In(o) => o.is_some(),
-        }
+        self.get_reader().is_open()
     }
 
     pub(crate) fn close(&mut self) {
-        match self {
-            Self::ByteVector(r) => r.close(),
-            Self::File(o, _) => {
-                o.take();
-            }
-            Self::In(o) => {
-                o.take();
-            }
-        }
+        self.get_reader_mut().close();
     }
 
     pub(crate) fn read_byte(&mut self) -> PortByte {
@@ -126,18 +112,39 @@ impl ReadPort {
             Self::In(_) => PortSpec::TextualInput,
         }
     }
+
+    fn get_reader(&self) -> &dyn Reader {
+        match self {
+            Self::ByteVector(r) => r as &dyn Reader,
+            Self::File(r) => r as &dyn Reader,
+            Self::In(_) => todo!(),
+        }
+    }
+
+    fn get_reader_mut(&mut self) -> &mut dyn Reader {
+        match self {
+            Self::ByteVector(r) => r as &mut dyn Reader,
+            Self::File(r) => r as &mut dyn Reader,
+            Self::In(_) => todo!(),
+        }
+    }
 }
 
 impl Display for ReadPort {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
             Self::ByteVector(_) => f.write_str(TypeName::BYTEVECTOR),
-            Self::File(_, p) => write_file_source(p.display(), 'r', f),
+            Self::File(r) => write_file_source(r.path.display(), 'r', f),
             Self::In(_) => f.write_str("stdin"),
         }?;
         write_port_status(self.is_open(), f)
     }
 }
+
+/*
+ * Unlike io::Write, the io::Read (and buffered) traits don't map neatly to
+ * Scheme's input functions, so we roll our own implementations for each port type.
+ */
 
 #[derive(Debug)]
 pub(crate) struct BvReader {
@@ -153,10 +160,6 @@ impl BvReader {
         }
     }
 
-    fn is_open(&self) -> bool {
-        self.buf.is_some()
-    }
-
     fn read(&mut self) -> PortByte {
         self.get_byte(true)
     }
@@ -167,10 +170,6 @@ impl BvReader {
 
     fn peek(&mut self) -> PortByte {
         self.get_byte(false)
-    }
-
-    fn close(&mut self) {
-        self.buf.take();
     }
 
     fn get_byte(&mut self, advance: bool) -> PortByte {
@@ -195,6 +194,23 @@ impl BvReader {
                 },
             ),
         }
+    }
+}
+
+#[derive(Debug)]
+pub(crate) struct FileReader {
+    file: Option<BufReader<File>>,
+    path: PathBuf,
+}
+
+impl FileReader {
+    fn new(path: impl Into<PathBuf>) -> PortResult<Self> {
+        let path = path.into();
+        let f = File::open(&path)?;
+        Ok(Self {
+            file: Some(BufReader::new(f)),
+            path,
+        })
     }
 }
 
@@ -519,6 +535,31 @@ impl Display for PortMode {
 type PortValue = PortResult<Value>;
 type PortByte = PortResult<Option<u8>>;
 type PortBytes<'a> = PortResult<Option<&'a [u8]>>;
+
+trait Reader {
+    fn is_open(&self) -> bool;
+    fn close(&mut self);
+}
+
+impl Reader for BvReader {
+    fn is_open(&self) -> bool {
+        self.buf.is_some()
+    }
+
+    fn close(&mut self) {
+        self.buf.take();
+    }
+}
+
+impl Reader for FileReader {
+    fn is_open(&self) -> bool {
+        self.file.is_some()
+    }
+
+    fn close(&mut self) {
+        self.file.take();
+    }
+}
 
 enum WriteRef<'a> {
     Fmt(&'a mut dyn fmt::Write),
