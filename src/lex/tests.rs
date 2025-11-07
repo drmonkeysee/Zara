@@ -100,7 +100,7 @@ mod lexer {
                 ctx,
                 line,
                 lineno: 1,
-            } if Rc::ptr_eq(&ctx, &src.ctx) && line == "#t"
+            } if Rc::ptr_eq(ctx, &src.ctx) && line == "#t"
         ));
         assert!(target.cont.is_none());
     }
@@ -139,7 +139,7 @@ mod lexer {
                 ctx,
                 line,
                 lineno: 1,
-            } if Rc::ptr_eq(&ctx, &src.ctx) && line == "#t #f #\\a"
+            } if Rc::ptr_eq(ctx, &src.ctx) && line == "#t #f #\\a"
         ));
         assert!(target.cont.is_none());
     }
@@ -168,7 +168,7 @@ mod lexer {
                 ctx,
                 line,
                 lineno: 1,
-            } if Rc::ptr_eq(&ctx, &src.ctx) && line == "#t"
+            } if Rc::ptr_eq(ctx, &src.ctx) && line == "#t"
         ));
         let line = &lines[1];
         assert!(matches!(
@@ -190,7 +190,7 @@ mod lexer {
                 ctx,
                 line,
                 lineno: 2,
-            } if Rc::ptr_eq(&ctx, &src.ctx) && line == "  #f #\\a"
+            } if Rc::ptr_eq(ctx, &src.ctx) && line == "  #f #\\a"
         ));
         assert!(target.cont.is_none());
         let line = &lines[2];
@@ -213,7 +213,7 @@ mod lexer {
                 ctx,
                 line,
                 lineno: 3,
-            } if Rc::ptr_eq(&ctx, &src.ctx) && line == "#f #f"
+            } if Rc::ptr_eq(ctx, &src.ctx) && line == "#f #f"
         ));
         assert!(target.cont.is_none());
     }
@@ -248,7 +248,7 @@ mod lexer {
                 ctx,
                 line,
                 lineno: 2,
-            } if Rc::ptr_eq(&ctx, &src.ctx) && line == " #z #f #z #\\a"
+            } if Rc::ptr_eq(ctx, &src.ctx) && line == " #z #f #z #\\a"
         ));
         let TokenErrorLine(errs, line) = extract_or_fail!(&err_lines[1], LineFailure::Tokenize);
         assert!(matches!(
@@ -264,7 +264,7 @@ mod lexer {
                 ctx,
                 line,
                 lineno: 3,
-            } if Rc::ptr_eq(&ctx, &src.ctx) && line == "#f #z #f"
+            } if Rc::ptr_eq(ctx, &src.ctx) && line == "#f #z #f"
         ));
         assert!(target.cont.is_none());
     }
@@ -316,7 +316,7 @@ mod lexer {
                 ctx,
                 line,
                 lineno: 2,
-            } if Rc::ptr_eq(&ctx, &src.ctx) && line == " #z #f #z #\\a"
+            } if Rc::ptr_eq(ctx, &src.ctx) && line == " #z #f #z #\\a"
         ));
         let inner = extract_or_fail!(&err_lines[1], LineFailure::Read);
         assert_eq!(inner.context() as *const _, Rc::as_ptr(&src.ctx));
@@ -356,7 +356,7 @@ mod lexer {
                 ctx,
                 line,
                 lineno: 1,
-            } if Rc::ptr_eq(&ctx, &src.ctx) && line == "#t #|trailing..."
+            } if Rc::ptr_eq(ctx, &src.ctx) && line == "#t #|trailing..."
         ));
         assert!(matches!(cont, TokenContinuation::BlockComment { depth: 0 }));
     }
@@ -414,7 +414,7 @@ mod lexer {
                 ctx,
                 line,
                 lineno: 1,
-            } if Rc::ptr_eq(&ctx, &src.ctx) && line == "#| double line"
+            } if Rc::ptr_eq(ctx, &src.ctx) && line == "#| double line"
         ));
         let line = &lines[1];
         assert!(matches!(
@@ -430,7 +430,7 @@ mod lexer {
                 ctx,
                 line,
                 lineno: 2,
-            } if Rc::ptr_eq(&ctx, &src.ctx) && line == "comment |#"
+            } if Rc::ptr_eq(ctx, &src.ctx) && line == "comment |#"
         ));
         assert!(target.cont.is_none());
     }
@@ -459,7 +459,7 @@ mod lexer {
                 ctx,
                 line,
                 lineno: 1,
-            } if Rc::ptr_eq(&ctx, &src.ctx) && line == "#| multi"
+            } if Rc::ptr_eq(ctx, &src.ctx) && line == "#| multi"
         ));
         let line = &lines[1];
         assert!(matches!(
@@ -475,7 +475,7 @@ mod lexer {
                 ctx,
                 line,
                 lineno: 2,
-            } if Rc::ptr_eq(&ctx, &src.ctx) && line == "line"
+            } if Rc::ptr_eq(ctx, &src.ctx) && line == "line"
         ));
         let line = &lines[2];
         assert!(matches!(
@@ -491,7 +491,7 @@ mod lexer {
                 ctx,
                 line,
                 lineno: 3,
-            } if Rc::ptr_eq(&ctx, &src.ctx) && line == "comment |#"
+            } if Rc::ptr_eq(ctx, &src.ctx) && line == "comment |#"
         ));
         assert!(target.cont.is_none());
     }
@@ -520,7 +520,7 @@ mod lexer {
                 ctx,
                 line,
                 lineno: 1,
-            } if Rc::ptr_eq(&ctx, &src.ctx) && line == "#t #z #| double line"
+            } if Rc::ptr_eq(ctx, &src.ctx) && line == "#t #z #| double line"
         ));
         let TokenErrorLine(errs, line) = extract_or_fail!(&err_lines[1], LineFailure::Tokenize);
         assert!(matches!(
@@ -536,7 +536,7 @@ mod lexer {
                 ctx,
                 line,
                 lineno: 2,
-            } if Rc::ptr_eq(&ctx, &src.ctx) && line == "#z comment |# #z"
+            } if Rc::ptr_eq(ctx, &src.ctx) && line == "#z comment |# #z"
         ));
         assert!(target.cont.is_none());
     }
@@ -565,7 +565,7 @@ mod lexer {
                 ctx,
                 line,
                 lineno: 1,
-            } if Rc::ptr_eq(&ctx, &src.ctx) && line == "#t #z #| double line"
+            } if Rc::ptr_eq(ctx, &src.ctx) && line == "#t #z #| double line"
         ));
         assert!(target.cont.is_none());
     }
@@ -595,7 +595,7 @@ mod lexer {
                 ctx,
                 line,
                 lineno: 1,
-            } if Rc::ptr_eq(&ctx, &src.ctx) && line == "\" double line"
+            } if Rc::ptr_eq(ctx, &src.ctx) && line == "\" double line"
         ));
         let line = &lines[1];
         assert!(matches!(
@@ -611,7 +611,7 @@ mod lexer {
                 ctx,
                 line,
                 lineno: 2,
-            } if Rc::ptr_eq(&ctx, &src.ctx) && line == "string \""
+            } if Rc::ptr_eq(ctx, &src.ctx) && line == "string \""
         ));
         assert!(target.cont.is_none());
     }
@@ -641,7 +641,7 @@ mod lexer {
                 ctx,
                 line,
                 lineno: 1,
-            } if Rc::ptr_eq(&ctx, &src.ctx) && line == "\" multi"
+            } if Rc::ptr_eq(ctx, &src.ctx) && line == "\" multi"
         ));
         let line = &lines[1];
         assert!(matches!(
@@ -657,7 +657,7 @@ mod lexer {
                 ctx,
                 line,
                 lineno: 2,
-            } if Rc::ptr_eq(&ctx, &src.ctx) && line == "line"
+            } if Rc::ptr_eq(ctx, &src.ctx) && line == "line"
         ));
         let line = &lines[2];
         assert!(matches!(
@@ -673,7 +673,7 @@ mod lexer {
                 ctx,
                 line,
                 lineno: 3,
-            } if Rc::ptr_eq(&ctx, &src.ctx) && line == "string \""
+            } if Rc::ptr_eq(ctx, &src.ctx) && line == "string \""
         ));
         assert!(target.cont.is_none());
     }
@@ -702,7 +702,7 @@ mod lexer {
                 ctx,
                 line,
                 lineno: 1,
-            } if Rc::ptr_eq(&ctx, &src.ctx) && line == "\" double \\xZZ; line"
+            } if Rc::ptr_eq(ctx, &src.ctx) && line == "\" double \\xZZ; line"
         ));
         assert!(target.cont.is_none());
     }
@@ -731,7 +731,7 @@ mod lexer {
                 ctx,
                 line,
                 lineno: 1,
-            } if Rc::ptr_eq(&ctx, &src.ctx) && line == "\" double \\xZZ; line"
+            } if Rc::ptr_eq(ctx, &src.ctx) && line == "\" double \\xZZ; line"
         ));
         let TokenErrorLine(errs, line) = extract_or_fail!(&err_lines[1], LineFailure::Tokenize);
         assert!(matches!(
@@ -747,7 +747,7 @@ mod lexer {
                 ctx,
                 line,
                 lineno: 2,
-            } if Rc::ptr_eq(&ctx, &src.ctx) && line == "#z string\" #z"
+            } if Rc::ptr_eq(ctx, &src.ctx) && line == "#z string\" #z"
         ));
         assert!(target.cont.is_none());
     }
@@ -776,7 +776,7 @@ mod lexer {
                 ctx,
                 line,
                 lineno: 1,
-            } if Rc::ptr_eq(&ctx, &src.ctx) && line == "\" double \\xZZ; line \\"
+            } if Rc::ptr_eq(ctx, &src.ctx) && line == "\" double \\xZZ; line \\"
         ));
         assert!(target.cont.is_none());
     }
@@ -812,7 +812,7 @@ mod lexer {
                 ctx,
                 line,
                 lineno: 1,
-            } if Rc::ptr_eq(&ctx, &src.ctx) && line == "\"single \\x42 line string\" #t #z\"double"
+            } if Rc::ptr_eq(ctx, &src.ctx) && line == "\"single \\x42 line string\" #t #z\"double"
         ));
         assert!(target.cont.is_none());
     }
@@ -841,7 +841,7 @@ mod lexer {
                 ctx,
                 line,
                 lineno: 1,
-            } if Rc::ptr_eq(&ctx, &src.ctx) && line == "#t #z \" double line"
+            } if Rc::ptr_eq(ctx, &src.ctx) && line == "#t #z \" double line"
         ));
         assert!(target.cont.is_none());
     }
@@ -871,7 +871,7 @@ mod lexer {
                 ctx,
                 line,
                 lineno: 1,
-            } if Rc::ptr_eq(&ctx, &src.ctx) && line == "| double line"
+            } if Rc::ptr_eq(ctx, &src.ctx) && line == "| double line"
         ));
         let line = &lines[1];
         assert!(matches!(
@@ -887,7 +887,7 @@ mod lexer {
                 ctx,
                 line,
                 lineno: 2,
-            } if Rc::ptr_eq(&ctx, &src.ctx) && line == "verbatim |"
+            } if Rc::ptr_eq(ctx, &src.ctx) && line == "verbatim |"
         ));
         assert!(target.cont.is_none());
     }
@@ -917,7 +917,7 @@ mod lexer {
                 ctx,
                 line,
                 lineno: 1,
-            } if Rc::ptr_eq(&ctx, &src.ctx) && line == "| multi"
+            } if Rc::ptr_eq(ctx, &src.ctx) && line == "| multi"
         ));
         let line = &lines[1];
         assert!(matches!(
@@ -933,7 +933,7 @@ mod lexer {
                 ctx,
                 line,
                 lineno: 2,
-            } if Rc::ptr_eq(&ctx, &src.ctx) && line == "line"
+            } if Rc::ptr_eq(ctx, &src.ctx) && line == "line"
         ));
         let line = &lines[2];
         assert!(matches!(
@@ -949,7 +949,7 @@ mod lexer {
                 ctx,
                 line,
                 lineno: 3,
-            } if Rc::ptr_eq(&ctx, &src.ctx) && line == "verbatim |"
+            } if Rc::ptr_eq(ctx, &src.ctx) && line == "verbatim |"
         ));
         assert!(target.cont.is_none());
     }
@@ -978,7 +978,7 @@ mod lexer {
                 ctx,
                 line,
                 lineno: 1,
-            } if Rc::ptr_eq(&ctx, &src.ctx) && line == "| double \\xZZ; line"
+            } if Rc::ptr_eq(ctx, &src.ctx) && line == "| double \\xZZ; line"
         ));
         assert!(target.cont.is_none());
     }
@@ -1007,7 +1007,7 @@ mod lexer {
                 ctx,
                 line,
                 lineno: 1,
-            } if Rc::ptr_eq(&ctx, &src.ctx) && line == "| double \\xZZ; line"
+            } if Rc::ptr_eq(ctx, &src.ctx) && line == "| double \\xZZ; line"
         ));
         let TokenErrorLine(errs, line) = extract_or_fail!(&err_lines[1], LineFailure::Tokenize);
         assert!(matches!(
@@ -1023,7 +1023,7 @@ mod lexer {
                 ctx,
                 line,
                 lineno: 2,
-            } if Rc::ptr_eq(&ctx, &src.ctx) && line == "#z verbatim| #z"
+            } if Rc::ptr_eq(ctx, &src.ctx) && line == "#z verbatim| #z"
         ));
         assert!(target.cont.is_none());
     }
@@ -1059,7 +1059,7 @@ mod lexer {
                 ctx,
                 line,
                 lineno: 1,
-            } if Rc::ptr_eq(&ctx, &src.ctx) && line == "|single \\x42 line verbatim| #t #z|double"
+            } if Rc::ptr_eq(ctx, &src.ctx) && line == "|single \\x42 line verbatim| #t #z|double"
         ));
         assert!(target.cont.is_none());
     }
@@ -1088,7 +1088,7 @@ mod lexer {
                 ctx,
                 line,
                 lineno: 1,
-            } if Rc::ptr_eq(&ctx, &src.ctx) && line == "#t #z | double line"
+            } if Rc::ptr_eq(ctx, &src.ctx) && line == "#t #z | double line"
         ));
         assert!(target.cont.is_none());
     }
@@ -1121,7 +1121,7 @@ mod lexer {
                 ctx,
                 line,
                 lineno: 1,
-            } if Rc::ptr_eq(&ctx, &src.ctx) && line == "#t #|trailing..."
+            } if Rc::ptr_eq(ctx, &src.ctx) && line == "#t #|trailing..."
         ));
         assert!(target.cont.is_none());
     }

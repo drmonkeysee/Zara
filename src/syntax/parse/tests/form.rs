@@ -138,7 +138,7 @@ fn expression_item() {
         Expression {
             ctx: ExprCtx { span: TxtSpan { start: 6, end: 7 }, txt: line },
             kind: ExpressionKind::Literal(Value::Number(n)),
-        } if n.to_string() == "10" && Rc::ptr_eq(&txt, &line)
+        } if n.to_string() == "10" && Rc::ptr_eq(&txt, line)
     ));
 }
 
@@ -255,7 +255,7 @@ fn close_dotted_pair() {
         Expression {
             ctx: ExprCtx { span: TxtSpan { start: 5, end: 8 }, txt: line },
             kind: ExpressionKind::Literal(Value::Symbol(s)),
-        } if s.as_ref() == "foo" && Rc::ptr_eq(&txt, &line)
+        } if s.as_ref() == "foo" && Rc::ptr_eq(&txt, line)
     ));
 }
 
@@ -508,7 +508,7 @@ fn into_procedure_call() {
         Expression {
             ctx: ExprCtx { span: TxtSpan { start: 0, end: 1 }, txt: line },
             kind: ExpressionKind::Variable(s),
-        } if s.as_ref() == "+" && Rc::ptr_eq(&txt, &line)
+        } if s.as_ref() == "+" && Rc::ptr_eq(&txt, line)
     ));
     assert_eq!(args.len(), 2);
     assert!(matches!(
@@ -516,14 +516,14 @@ fn into_procedure_call() {
         Expression {
             ctx: ExprCtx { span: TxtSpan { start: 1, end: 4 }, txt: line },
             kind: ExpressionKind::Literal(Value::Number(n)),
-        } if n.to_string() == "4" && Rc::ptr_eq(&txt, &line)
+        } if n.to_string() == "4" && Rc::ptr_eq(&txt, line)
     ));
     assert!(matches!(
         &args[1],
         Expression {
             ctx: ExprCtx { span: TxtSpan { start: 4, end: 6 }, txt: line },
             kind: ExpressionKind::Literal(Value::Number(n)),
-        } if n.to_string() == "5" && Rc::ptr_eq(&txt, &line)
+        } if n.to_string() == "5" && Rc::ptr_eq(&txt, line)
     ));
 }
 
@@ -553,7 +553,7 @@ fn into_empty_procedure_call() {
         ExpressionError {
             ctx: ExprCtx { span: TxtSpan { start: 0, end: 8 }, txt: line },
             kind: ExpressionErrorKind::ProcedureEmpty,
-        } if Rc::ptr_eq(&txt, &line)
+        } if Rc::ptr_eq(&txt, line)
     ));
 }
 
@@ -618,7 +618,7 @@ fn into_empty_quote_apply() {
         ExpressionError {
             ctx: ExprCtx { span: TxtSpan { start: 0, end: 7 }, txt: line },
             kind: ExpressionErrorKind::QuoteInvalid,
-        } if Rc::ptr_eq(&txt, &line)
+        } if Rc::ptr_eq(&txt, line)
     ));
 }
 
@@ -663,7 +663,7 @@ fn into_quote_apply_too_many_args() {
         ExpressionError {
             ctx: ExprCtx { span: TxtSpan { start: 0, end: 14 }, txt: line },
             kind: ExpressionErrorKind::QuoteInvalid,
-        } if Rc::ptr_eq(&txt, &line)
+        } if Rc::ptr_eq(&txt, line)
     ));
 }
 
@@ -791,7 +791,7 @@ fn into_invalid_datum_list() {
         ExpressionError {
             ctx: ExprCtx { span: TxtSpan { start: 1, end: 2 }, txt: line },
             kind: ExpressionErrorKind::DatumInvalid(ExpressionKind::Variable(s)),
-        } if Rc::ptr_eq(&txt, &line) && s.as_ref() == "+"
+        } if Rc::ptr_eq(&txt, line) && s.as_ref() == "+"
     ));
 }
 
@@ -869,7 +869,7 @@ fn invalid_into_open_pair() {
         ExpressionError {
             ctx: ExprCtx { span: TxtSpan { start: 0, end: 8 }, txt: line },
             kind: ExpressionErrorKind::PairUnterminated,
-        } if Rc::ptr_eq(&txt, &line)
+        } if Rc::ptr_eq(&txt, line)
     ));
 }
 
@@ -1391,7 +1391,7 @@ fn into_define_not_identifier_expr() {
         ExpressionError {
             ctx: ExprCtx { span: TxtSpan { start: 0, end: 23 }, txt: line },
             kind: ExpressionErrorKind::DefineInvalid,
-        } if Rc::ptr_eq(&txt, &line)
+        } if Rc::ptr_eq(&txt, line)
     ));
 }
 
@@ -1421,7 +1421,7 @@ fn into_empty_define() {
         ExpressionError {
             ctx: ExprCtx { span: TxtSpan { start: 0, end: 8 }, txt: line },
             kind: ExpressionErrorKind::DefineInvalid,
-        } if Rc::ptr_eq(&txt, &line)
+        } if Rc::ptr_eq(&txt, line)
     ));
 }
 
@@ -1473,7 +1473,7 @@ fn into_define_too_many_args() {
         ExpressionError {
             ctx: ExprCtx { span: TxtSpan { start: 0, end: 24 }, txt: line },
             kind: ExpressionErrorKind::DefineInvalid,
-        } if Rc::ptr_eq(&txt, &line)
+        } if Rc::ptr_eq(&txt, line)
     ));
 }
 
@@ -1511,7 +1511,7 @@ fn into_define_lambda_no_body() {
         ExpressionError {
             ctx: ExprCtx { span: TxtSpan { start: 0, end: 14 }, txt: line },
             kind: ExpressionErrorKind::DefineLambdaInvalid,
-        } if Rc::ptr_eq(&txt, &line)
+        } if Rc::ptr_eq(&txt, line)
     ));
 }
 
@@ -1557,7 +1557,7 @@ fn into_define_lambda_invalid_name() {
         ExpressionError {
             ctx: ExprCtx { span: TxtSpan { start: 0, end: 20 }, txt: line },
             kind: ExpressionErrorKind::DefineLambdaInvalid,
-        } if Rc::ptr_eq(&txt, &line)
+        } if Rc::ptr_eq(&txt, line)
     ));
 }
 
@@ -1603,7 +1603,7 @@ fn into_define_lambda_invalid_formals() {
         ExpressionError {
             ctx: ExprCtx { span: TxtSpan { start: 8, end: 17 }, txt: line },
             kind: ExpressionErrorKind::LambdaInvalidSignature,
-        } if Rc::ptr_eq(&txt, &line)
+        } if Rc::ptr_eq(&txt, line)
     ));
 }
 
@@ -1646,7 +1646,7 @@ fn into_define_lambda_empty_formals() {
         ExpressionError {
             ctx: ExprCtx { span: TxtSpan { start: 0, end: 14 }, txt: line },
             kind: ExpressionErrorKind::DefineInvalid,
-        } if Rc::ptr_eq(&txt, &line)
+        } if Rc::ptr_eq(&txt, line)
     ));
 }
 
@@ -1749,7 +1749,7 @@ fn into_set_not_variable_expr() {
         ExpressionError {
             ctx: ExprCtx { span: TxtSpan { start: 0, end: 23 }, txt: line },
             kind: ExpressionErrorKind::SetInvalid,
-        } if Rc::ptr_eq(&txt, &line)
+        } if Rc::ptr_eq(&txt, line)
     ));
 }
 
@@ -1785,7 +1785,7 @@ fn into_set_too_few_args() {
         ExpressionError {
             ctx: ExprCtx { span: TxtSpan { start: 0, end: 25 }, txt: line },
             kind: ExpressionErrorKind::SetInvalid,
-        } if Rc::ptr_eq(&txt, &line)
+        } if Rc::ptr_eq(&txt, line)
     ));
 }
 
@@ -1837,7 +1837,7 @@ fn into_set_too_many_args() {
         ExpressionError {
             ctx: ExprCtx { span: TxtSpan { start: 0, end: 25 }, txt: line },
             kind: ExpressionErrorKind::SetInvalid,
-        } if Rc::ptr_eq(&txt, &line)
+        } if Rc::ptr_eq(&txt, line)
     ));
 }
 
@@ -2002,7 +2002,7 @@ fn into_if_too_few_args() {
         ExpressionError {
             ctx: ExprCtx { span: TxtSpan { start: 0, end: 7 }, txt: line },
             kind: ExpressionErrorKind::IfInvalid,
-        } if Rc::ptr_eq(&txt, &line)
+        } if Rc::ptr_eq(&txt, line)
     ));
 }
 
@@ -2059,7 +2059,7 @@ fn into_if_too_many_args() {
         ExpressionError {
             ctx: ExprCtx { span: TxtSpan { start: 0, end: 22 }, txt: line },
             kind: ExpressionErrorKind::IfInvalid,
-        } if Rc::ptr_eq(&txt, &line)
+        } if Rc::ptr_eq(&txt, line)
     ));
 }
 
@@ -2414,7 +2414,7 @@ fn into_lambda_not_identifier_expr() {
         ExpressionError {
             ctx: ExprCtx { span: TxtSpan { start: 8, end: 10 }, txt: line },
             kind: ExpressionErrorKind::LambdaInvalidSignature,
-        } if Rc::ptr_eq(&txt, &line)
+        } if Rc::ptr_eq(&txt, line)
     ));
 }
 
@@ -2450,7 +2450,7 @@ fn into_lambda_too_few_args() {
         ExpressionError {
             ctx: ExprCtx { span: TxtSpan { start: 0, end: 10 }, txt: line },
             kind: ExpressionErrorKind::LambdaInvalid,
-        } if Rc::ptr_eq(&txt, &line)
+        } if Rc::ptr_eq(&txt, line)
     ));
 }
 
@@ -2521,7 +2521,7 @@ fn into_lambda_duplicate_args() {
         ExpressionError {
             ctx: ExprCtx { span: TxtSpan { start: 8, end: 15 }, txt: line },
             kind: ExpressionErrorKind::LambdaInvalidFormal(InvalidFormal::DuplicateFormal(n)),
-        } if Rc::ptr_eq(&txt, &line) && n.as_ref() == "x"
+        } if Rc::ptr_eq(&txt, line) && n.as_ref() == "x"
     ));
 }
 
@@ -2531,7 +2531,6 @@ fn into_lambda_too_many_formals() {
     let txt = make_textline().into();
     let env = TestEnv::default();
     let args = (0..256)
-        .into_iter()
         .map(|i| Value::Symbol(env.symbols.get(format!("a{i}"))))
         .collect::<Vec<_>>();
     let p = ExprNode {
@@ -2568,7 +2567,7 @@ fn into_lambda_too_many_formals() {
         ExpressionError {
             ctx: ExprCtx { span: TxtSpan { start: 8, end: 15 }, txt: line },
             kind: ExpressionErrorKind::LambdaInvalidFormal(InvalidFormal::MaxFormals),
-        } if Rc::ptr_eq(&txt, &line)
+        } if Rc::ptr_eq(&txt, line)
     ));
 }
 
@@ -2578,7 +2577,6 @@ fn into_lambda_too_many_formals_with_rest() {
     let txt = make_textline().into();
     let env = TestEnv::default();
     let args = (0..256)
-        .into_iter()
         .map(|i| Value::Symbol(env.symbols.get(format!("a{i}"))))
         .collect::<Vec<_>>();
     let p = ExprNode {
@@ -2615,7 +2613,7 @@ fn into_lambda_too_many_formals_with_rest() {
         ExpressionError {
             ctx: ExprCtx { span: TxtSpan { start: 8, end: 15 }, txt: line },
             kind: ExpressionErrorKind::LambdaInvalidFormal(InvalidFormal::MaxFormals),
-        } if Rc::ptr_eq(&txt, &line)
+        } if Rc::ptr_eq(&txt, line)
     ));
 }
 
@@ -2673,7 +2671,7 @@ mod merge {
                     txt: line
                 },
                 kind: ExpressionKind::Literal(Value::String(s)),
-            } if s.as_ref() == "foo" && Rc::ptr_eq(&txt, &line)
+            } if s.as_ref() == "foo" && Rc::ptr_eq(&txt, line)
         ));
     }
 
@@ -2731,7 +2729,7 @@ mod merge {
                     txt: line
                 },
                 kind: ExpressionKind::Literal(Value::Symbol(s)),
-            } if s.as_ref() == "foo" && Rc::ptr_eq(&txt, &line)
+            } if s.as_ref() == "foo" && Rc::ptr_eq(&txt, line)
         ));
     }
 
@@ -2835,7 +2833,7 @@ mod merge {
                     txt: line
                 },
                 kind: ExpressionErrorKind::PairUnterminated,
-            } if Rc::ptr_eq(&txt, &line)
+            } if Rc::ptr_eq(&txt, line)
         ));
     }
 
@@ -2898,7 +2896,7 @@ mod merge {
                     txt: line
                 },
                 kind: ExpressionErrorKind::DefineNotAllowed,
-            } if Rc::ptr_eq(&txt, &line)
+            } if Rc::ptr_eq(&txt, line)
         ));
     }
 }

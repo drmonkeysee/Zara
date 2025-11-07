@@ -298,7 +298,7 @@ mod stringsrc {
                 ctx,
                 line,
                 lineno: 4,
-            }) if Rc::ptr_eq(&ctx, &target.ctx) && line == ""
+            }) if Rc::ptr_eq(&ctx, &target.ctx) && line.is_empty()
         ));
 
         let line = some_or_fail!(target.next());
@@ -514,7 +514,7 @@ mod linesrc {
 
         fn read_line(&mut self, buf: &mut String) -> io::Result<usize> {
             if self.return_err {
-                Err(io::Error::new(io::ErrorKind::Other, "oh no!"))
+                Err(io::Error::other("oh no!"))
             } else {
                 self.lines.pop().map_or(Ok(0), |line| {
                     buf.push_str(line);

@@ -306,7 +306,7 @@ mod integer {
     fn radix_uppercase() {
         let cases = ["#B101010", "#O52", "#D42", "#X2a"];
         for case in cases {
-            let mut s = Scanner::new(&case);
+            let mut s = Scanner::new(case);
             let start = some_or_fail!(s.next_token());
             let t = Tokenizer {
                 scanner: &mut s,
@@ -508,7 +508,7 @@ mod integer {
 
     #[test]
     fn inexact_umax() {
-        let input = format!("#i{}", u64::MAX.to_string());
+        let input = format!("#i{}", u64::MAX);
         let mut s = Scanner::new(&input);
         let start = some_or_fail!(s.next_token());
         let t = Tokenizer {

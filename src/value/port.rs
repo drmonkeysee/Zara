@@ -702,8 +702,8 @@ mod tests {
 
         let r = p.read_bytes(3);
 
-        let b = some_or_fail!(ok_or_fail!(r));
-        assert_eq!(b, []);
+        let b = ok_or_fail!(r);
+        assert!(b.is_none());
     }
 
     #[test]

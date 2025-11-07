@@ -18,7 +18,7 @@ fn empty() {
         Token {
             kind: TokenKind::String(txt),
             span: TxtSpan { start: 0, end: 2 },
-        } if txt == ""
+        } if txt.is_empty()
     ));
 }
 
@@ -616,7 +616,7 @@ fn fragment_from_string_continuation_all_whitespace() {
         Token {
             kind: TokenKind::StringFragment { s, line_cont: false },
             span: TxtSpan { start: 0, end: 6 },
-        } if s == ""
+        } if s.is_empty()
     ));
 }
 
@@ -770,6 +770,6 @@ fn end_from_string_continuation_all_whitespace() {
         Token {
             kind: TokenKind::StringEnd(txt),
             span: TxtSpan { start: 0, end: 7 },
-        } if txt == ""
+        } if txt.is_empty()
     ));
 }

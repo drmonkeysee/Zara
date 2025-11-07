@@ -350,7 +350,6 @@ fn lambda_matches_rest_arity() {
 fn lambda_max_arity() {
     let sym = SymbolTable::default();
     let params = (0..MAX_ARITY)
-        .into_iter()
         .map(|i| sym.get(format!("x{i}")))
         .collect::<Vec<_>>();
 
@@ -364,7 +363,6 @@ fn lambda_max_arity() {
 fn lambda_max_arity_with_rest() {
     let sym = SymbolTable::default();
     let params = (0..MAX_ARITY - 1)
-        .into_iter()
         .map(|i| sym.get(format!("x{i}")))
         .collect::<Vec<_>>();
 
@@ -382,7 +380,6 @@ fn lambda_max_arity_with_rest() {
 fn lambda_too_many_params() {
     let sym = SymbolTable::default();
     let params = (0..MAX_ARITY as usize + 1)
-        .into_iter()
         .map(|i| sym.get(format!("x{i}")))
         .collect::<Vec<_>>();
 
@@ -398,7 +395,6 @@ fn lambda_too_many_params() {
 fn lambda_too_many_params_with_rest() {
     let sym = SymbolTable::default();
     let params = (0..MAX_ARITY)
-        .into_iter()
         .map(|i| sym.get(format!("x{i}")))
         .collect::<Vec<_>>();
 

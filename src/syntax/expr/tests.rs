@@ -727,24 +727,21 @@ mod eval {
                             span: 7..8,
                             txt: Rc::clone(&txt),
                         },
-                    )
-                    .into(),
+                    ),
                     Expression::variable(
                         env.symbols.get("y"),
                         ExprCtx {
                             span: 9..10,
                             txt: Rc::clone(&txt),
                         },
-                    )
-                    .into(),
+                    ),
                     Expression::variable(
                         env.symbols.get("z"),
                         ExprCtx {
                             span: 11..12,
                             txt: Rc::clone(&txt),
                         },
-                    )
-                    .into(),
+                    ),
                 ]
                 .into(),
             });

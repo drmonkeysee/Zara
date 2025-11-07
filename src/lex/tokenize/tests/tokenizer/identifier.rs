@@ -490,7 +490,7 @@ mod verbatim {
             Token {
                 kind: TokenKind::Identifier(txt),
                 span: TxtSpan { start: 0, end: 2 },
-            } if txt == ""
+            } if txt.is_empty()
         ));
     }
 

@@ -1941,9 +1941,9 @@ mod iterator {
             Value::real(15),
             Value::real(20)
         ];
-        let it = v.iter();
+        let mut it = v.iter();
 
-        let sublist = it.skip(2).next();
+        let sublist = it.nth(2);
 
         let lst = some_or_fail!(sublist);
         assert_eq!(lst.as_datum().to_string(), "(15 20)");
@@ -1957,9 +1957,9 @@ mod iterator {
             Value::real(15),
             Value::real(20)
         ];
-        let it = v.iter();
+        let mut it = v.iter();
 
-        let sublist = it.skip(0).next();
+        let sublist = it.next();
 
         let lst = some_or_fail!(sublist);
         assert_eq!(lst.as_datum().to_string(), "(5 10 15 20)");
@@ -1973,9 +1973,9 @@ mod iterator {
             Value::real(15),
             Value::real(20)
         ];
-        let it = v.iter();
+        let mut it = v.iter();
 
-        let sublist = it.skip(4).next();
+        let sublist = it.nth(4);
 
         let lst = some_or_fail!(sublist);
         assert_eq!(lst.as_datum().to_string(), "()");
@@ -1989,9 +1989,9 @@ mod iterator {
             Value::real(15),
             Value::real(20)
         ];
-        let it = v.iter();
+        let mut it = v.iter();
 
-        let sublist = it.skip(5).next();
+        let sublist = it.nth(5);
 
         assert!(sublist.is_none());
     }
@@ -2005,9 +2005,9 @@ mod iterator {
                 Value::cons(Value::real(15), Value::real(20)),
             ),
         );
-        let it = v.iter();
+        let mut it = v.iter();
 
-        let sublist = it.skip(3).next();
+        let sublist = it.nth(3);
 
         let lst = some_or_fail!(sublist);
         assert_eq!(lst.as_datum().to_string(), "20");
@@ -2022,9 +2022,9 @@ mod iterator {
                 Value::cons(Value::real(15), Value::real(20)),
             ),
         );
-        let it = v.iter();
+        let mut it = v.iter();
 
-        let sublist = it.skip(4).next();
+        let sublist = it.nth(4);
 
         assert!(sublist.is_none());
     }
@@ -2044,9 +2044,9 @@ mod iterator {
         .into();
         end.borrow_mut().cdr = Value::Pair(Rc::clone(&p));
         let v = Value::Pair(p);
-        let it = v.iter();
+        let mut it = v.iter();
 
-        let sublist = it.skip(7).next();
+        let sublist = it.nth(7);
 
         let lst = some_or_fail!(sublist);
         let p = extract_or_fail!(lst, Value::Pair);
