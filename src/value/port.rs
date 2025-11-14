@@ -4,11 +4,14 @@ use std::{
     cmp,
     fmt::{self, Debug, Display, Formatter},
     fs::File,
-    io::{self, BufReader, BufWriter, ErrorKind, Stderr, Stdin, Stdout},
+    io::{self, BufRead, BufReader, BufWriter, ErrorKind, Stderr, Stdin, Stdout},
     path::PathBuf,
 };
 
 pub(crate) type PortResult<T = ()> = Result<T, PortError>;
+pub(crate) type PortValue = PortResult<Value>;
+pub(crate) type PortByte = PortResult<Option<u8>>;
+pub(crate) type PortBytes<'a> = PortResult<Option<&'a [u8]>>;
 
 #[derive(Debug)]
 pub(crate) enum ReadPort {
@@ -53,14 +56,10 @@ impl ReadPort {
     }
 
     pub(crate) fn read_byte(&mut self) -> PortByte {
-        if self.is_binary() {
-            if let Self::ByteVector(r) = self {
-                r.read()
-            } else {
-                todo!();
-            }
-        } else {
-            Err(PortError::ExpectedMode(PortMode::Binary))
+        match self {
+            Self::ByteVector(r) => r.read(),
+            Self::File(r) => r.read_byte(),
+            _ => Err(PortError::ExpectedMode(PortMode::Binary)),
         }
     }
 
@@ -211,6 +210,68 @@ impl FileReader {
             file: Some(BufReader::new(f)),
             path,
         })
+    }
+
+    fn read_byte(&mut self) -> PortByte {
+        match &mut self.file {
+            None => Err(PortError::Closed),
+            Some(r) => {
+                let mut buf = r.buffer();
+                dbg!(&buf);
+                if buf.is_empty() {
+                    let fill = r.fill_buf()?;
+                    dbg!(fill);
+                    buf = r.buffer();
+                }
+                let byte = buf.first().copied();
+                r.consume(1);
+                Ok(byte)
+            }
+        }
+    }
+
+    fn peek_byte(&mut self) -> PortByte {
+        match &mut self.file {
+            None => Err(PortError::Closed),
+            Some(r) => {
+                let mut buf = r.buffer();
+                dbg!(&buf);
+                if buf.is_empty() {
+                    let fill = r.fill_buf()?;
+                    dbg!(fill);
+                    buf = r.buffer();
+                }
+                let byte = buf.first().copied();
+                Ok(byte)
+            }
+        }
+    }
+
+    fn read_bytes(&mut self, mut k: usize) -> PortBytes<'_> {
+        match &mut self.file {
+            None => Err(PortError::Closed),
+            Some(r) => {
+                let mut bytes = Vec::new();
+                let buf = r.buffer();
+                let max = cmp::min(k, buf.len());
+                if let Some(slice) = buf.get(..max) {
+                    bytes.extend_from_slice(slice);
+                }
+                r.consume(max);
+                if max < k {
+                    k -= max;
+                    r.fill_buf()?;
+                    let buf = r.buffer();
+                    let max = cmp::min(k, buf.len());
+                    if let Some(slice) = buf.get(..max) {
+                        bytes.extend_from_slice(slice);
+                    }
+                    r.consume(max);
+                }
+                Ok(bytes);
+                todo!();
+            }
+        }
     }
 }
 
@@ -531,10 +592,6 @@ impl Display for PortMode {
         }
     }
 }
-
-type PortValue = PortResult<Value>;
-type PortByte = PortResult<Option<u8>>;
-type PortBytes<'a> = PortResult<Option<&'a [u8]>>;
 
 trait Reader {
     fn is_open(&self) -> bool;
