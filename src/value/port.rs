@@ -763,7 +763,7 @@ mod tests {
         let r = p.read_bytes(3);
 
         let b = some_or_fail!(ok_or_fail!(r));
-        assert_eq!(b, [1, 2, 3]);
+        assert_eq!(*b, [1, 2, 3]);
     }
 
     #[test]
@@ -773,7 +773,7 @@ mod tests {
         let r = p.read_bytes(3);
 
         let b = some_or_fail!(ok_or_fail!(r));
-        assert_eq!(b, [1, 2, 3]);
+        assert_eq!(*b, [1, 2, 3]);
     }
 
     #[test]
@@ -785,7 +785,7 @@ mod tests {
         let r = p.read_bytes(3);
 
         let b = some_or_fail!(ok_or_fail!(r));
-        assert_eq!(b, [2, 3, 4]);
+        assert_eq!(*b, [2, 3, 4]);
     }
 
     #[test]
@@ -795,7 +795,7 @@ mod tests {
         let r = p.read_bytes(5);
 
         let b = some_or_fail!(ok_or_fail!(r));
-        assert_eq!(b, [1, 2, 3]);
+        assert_eq!(*b, [1, 2, 3]);
     }
 
     #[test]
@@ -808,7 +808,7 @@ mod tests {
         let r = p.read_bytes(5);
 
         let b = some_or_fail!(ok_or_fail!(r));
-        assert_eq!(b, [3, 4, 5]);
+        assert_eq!(*b, [3, 4, 5]);
     }
 
     #[test]
@@ -818,7 +818,7 @@ mod tests {
         let r = p.read_bytes(5);
 
         let b = some_or_fail!(ok_or_fail!(r));
-        assert_eq!(b, [1, 2, 3]);
+        assert_eq!(*b, [1, 2, 3]);
 
         let r = p.read_bytes(5);
 
