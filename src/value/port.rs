@@ -1,6 +1,7 @@
 use super::{TypeName, Value};
 use crate::string::SymbolTable;
 use std::{
+    borrow::Cow,
     cmp,
     fmt::{self, Debug, Display, Formatter},
     fs::File,
@@ -9,9 +10,10 @@ use std::{
 };
 
 pub(crate) type PortResult<T = ()> = Result<T, PortError>;
+pub(crate) type PortBool = PortResult<bool>;
 pub(crate) type PortValue = PortResult<Value>;
 pub(crate) type PortByte = PortResult<Option<u8>>;
-pub(crate) type PortBytes<'a> = PortResult<Option<&'a [u8]>>;
+pub(crate) type PortBytes<'a> = PortResult<Option<Cow<'a, [u8]>>>;
 
 #[derive(Debug)]
 pub(crate) enum ReadPort {
@@ -64,43 +66,33 @@ impl ReadPort {
     }
 
     pub(crate) fn peek_byte(&mut self) -> PortByte {
-        if self.is_binary() {
-            if let Self::ByteVector(r) = self {
-                r.peek()
-            } else {
-                todo!();
-            }
-        } else {
-            Err(PortError::ExpectedMode(PortMode::Binary))
+        match self {
+            Self::ByteVector(r) => r.peek(),
+            Self::File(r) => r.peek_byte(),
+            _ => Err(PortError::ExpectedMode(PortMode::Binary)),
         }
     }
 
-    pub(crate) fn has_bytes(&mut self) -> PortResult<bool> {
-        if self.is_binary() {
-            if let Self::ByteVector(r) = self {
+    pub(crate) fn has_bytes(&mut self) -> PortBool {
+        match self {
+            Self::ByteVector(r) => {
                 // TODO: experimental ok_or https://doc.rust-lang.org/std/primitive.bool.html#method.ok_or
                 if r.is_open() {
                     Ok(true)
                 } else {
                     Err(PortError::Closed)
                 }
-            } else {
-                todo!();
             }
-        } else {
-            Err(PortError::ExpectedMode(PortMode::Binary))
+            Self::File(r) => r.has_bytes(),
+            _ => Err(PortError::ExpectedMode(PortMode::Binary)),
         }
     }
 
     pub(crate) fn read_bytes(&mut self, k: usize) -> PortBytes<'_> {
-        if self.is_binary() {
-            if let Self::ByteVector(r) = self {
-                r.read_count(k)
-            } else {
-                todo!();
-            }
-        } else {
-            Err(PortError::ExpectedMode(PortMode::Binary))
+        match self {
+            Self::ByteVector(r) => r.read_count(k),
+            Self::File(r) => r.read_bytes(k),
+            _ => Err(PortError::ExpectedMode(PortMode::Binary)),
         }
     }
 
@@ -183,11 +175,15 @@ impl BvReader {
                 if let Some(max) = buf.len().checked_sub(self.cur)
                     && max > 0
                 {
-                    let slice = buf.get(self.cur..(self.cur + cmp::min(k, max)));
-                    if advance && slice.is_some() {
-                        self.cur += k;
+                    match buf.get(self.cur..(self.cur + cmp::min(k, max))) {
+                        None => None,
+                        Some(slice) => {
+                            if advance {
+                                self.cur += k;
+                            }
+                            Some(slice.into())
+                        }
                     }
-                    slice
                 } else {
                     None
                 },
@@ -213,63 +209,60 @@ impl FileReader {
     }
 
     fn read_byte(&mut self) -> PortByte {
-        match &mut self.file {
-            None => Err(PortError::Closed),
-            Some(r) => {
-                let mut buf = r.buffer();
-                dbg!(&buf);
-                if buf.is_empty() {
-                    let fill = r.fill_buf()?;
-                    dbg!(fill);
-                    buf = r.buffer();
-                }
-                let byte = buf.first().copied();
-                r.consume(1);
-                Ok(byte)
-            }
-        }
+        let bytes = self.get_bytes(1, true)?;
+        Ok(bytes.and_then(|b| b.first().copied()))
     }
 
     fn peek_byte(&mut self) -> PortByte {
-        match &mut self.file {
+        let bytes = self.get_bytes(1, false)?;
+        Ok(bytes.and_then(|b| b.first().copied()))
+    }
+
+    fn has_bytes(&self) -> PortBool {
+        match &self.file {
             None => Err(PortError::Closed),
-            Some(r) => {
-                let mut buf = r.buffer();
-                dbg!(&buf);
-                if buf.is_empty() {
-                    let fill = r.fill_buf()?;
-                    dbg!(fill);
-                    buf = r.buffer();
-                }
-                let byte = buf.first().copied();
-                Ok(byte)
-            }
+            Some(r) => Ok(!r.buffer().is_empty()),
         }
     }
 
-    fn read_bytes(&mut self, mut k: usize) -> PortBytes<'_> {
+    fn read_bytes(&mut self, k: usize) -> PortBytes<'_> {
+        self.get_bytes(k, true)
+    }
+
+    fn get_bytes(&mut self, mut k: usize, advance: bool) -> PortBytes<'_> {
         match &mut self.file {
             None => Err(PortError::Closed),
             Some(r) => {
                 let mut bytes = Vec::new();
-                let buf = r.buffer();
-                let max = cmp::min(k, buf.len());
-                if let Some(slice) = buf.get(..max) {
-                    bytes.extend_from_slice(slice);
+                if k == 0 {
+                    return Ok(Some(bytes.into()));
                 }
-                r.consume(max);
-                if max < k {
-                    k -= max;
-                    r.fill_buf()?;
+                while k > 0 {
+                    if r.buffer().is_empty() {
+                        let fill = r.fill_buf()?;
+                        if fill.is_empty() {
+                            break;
+                        }
+                    }
                     let buf = r.buffer();
                     let max = cmp::min(k, buf.len());
-                    if let Some(slice) = buf.get(..max) {
-                        bytes.extend_from_slice(slice);
+                    if max > 0 {
+                        if let Some(slice) = buf.get(..max) {
+                            bytes.extend_from_slice(slice);
+                        }
+                        if advance {
+                            r.consume(max);
+                        }
+                        if max <= k {
+                            k -= max;
+                        }
                     }
-                    r.consume(max);
                 }
-                Ok(bytes);
-                todo!();
+                Ok(if bytes.is_empty() {
+                    None
+                } else {
+                    Some(bytes.into())
+                })
             }
         }
     }

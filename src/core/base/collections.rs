@@ -284,7 +284,7 @@ fn read_bytes_inline(args: &[Value], env: &Frame) -> EvalResult {
         |err| Err(Condition::io_error(&err, env.sym, port).into()),
         |b| {
             b.map_or(Ok(Value::Eof), |b| {
-                bv[span.start..(span.start + b.len())].copy_from_slice(b);
+                bv[span.start..(span.start + b.len())].copy_from_slice(&b);
                 Ok(Value::Number(Number::from_usize(b.len())))
             })
         },
