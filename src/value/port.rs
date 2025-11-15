@@ -12,6 +12,7 @@ use std::{
 pub(crate) type PortResult<T = ()> = Result<T, PortError>;
 pub(crate) type PortBool = PortResult<bool>;
 pub(crate) type PortValue = PortResult<Value>;
+pub(crate) type PortChar = PortResult<Option<char>>;
 pub(crate) type PortByte = PortResult<Option<u8>>;
 pub(crate) type PortBytes<'a> = PortResult<Option<Cow<'a, [u8]>>>;
 
@@ -55,6 +56,27 @@ impl ReadPort {
 
     pub(crate) fn close(&mut self) {
         self.get_reader_mut().close();
+    }
+
+    pub(crate) fn read_char(&mut self) -> PortChar {
+        match self {
+            Self::File(r) => r.read_char(),
+            _ => todo!(),
+        }
+    }
+
+    pub(crate) fn peek_char(&mut self) -> PortChar {
+        match self {
+            Self::File(r) => r.peek_char(),
+            _ => todo!(),
+        }
+    }
+
+    pub(crate) fn has_chars(&mut self) -> PortBool {
+        match self {
+            Self::File(r) => r.has_chars(),
+            _ => todo!(),
+        }
     }
 
     pub(crate) fn read_byte(&mut self) -> PortByte {
@@ -227,6 +249,35 @@ impl FileReader {
 
     fn read_bytes(&mut self, k: usize) -> PortBytes<'_> {
         self.get_bytes(k, true)
+    }
+
+    fn read_char(&mut self) -> PortChar {
+        /*
+         * peek byte
+         * get len for utf-8 encoding
+         * read k bytes
+         * convert to char
+         */
+        todo!();
+    }
+
+    fn peek_char(&mut self) -> PortChar {
+        /*
+         * peek byte
+         * get len for utf-8 encoding
+         * peek k bytes
+         * convert to char
+         */
+        todo!();
+    }
+
+    fn has_chars(&self) -> PortBool {
+        /*
+         * peek byte
+         * get len for utf-8 encoding
+         * buf.len() >= len
+         */
+        todo!();
     }
 
     fn get_bytes(&mut self, mut k: usize, advance: bool) -> PortBytes<'_> {

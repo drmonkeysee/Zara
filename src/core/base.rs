@@ -204,6 +204,11 @@ fn load_io(env: &Frame) {
     bind_intrinsic(env, "close-input-port", 1..1, close_input_port);
     bind_intrinsic(env, "close-output-port", 1..1, close_output_port);
 
+    bind_intrinsic(env, "read-char", 0..1, read_char);
+    bind_intrinsic(env, "peek-char", 0..1, peek_char);
+    bind_intrinsic(env, "read-line", 0..1, read_line);
+    bind_intrinsic(env, "char-ready?", 0..1, has_chars);
+
     bind_intrinsic(env, "eof-object?", 1..1, is_eof);
     bind_intrinsic(env, "eof-object", 0..0, eof);
 
@@ -314,6 +319,37 @@ fn close_output_port(args: &[Value], _env: &Frame) -> EvalResult {
     let p = guard_output_port(arg, PortSpec::Output)?;
     p.borrow_mut().close();
     Ok(Value::Unspecified)
+}
+
+fn read_char(args: &[Value], env: &Frame) -> EvalResult {
+    let port = args.first().unwrap_or(&env.sys.stdin);
+    let p = guard_input_port(port, PortSpec::TextualInput)?;
+    p.borrow_mut().read_char().map_or_else(
+        |err| Err(Condition::io_error(&err, env.sym, port).into()),
+        |ch| Ok(ch.map_or(Value::Eof, |ch| Value::Character(ch))),
+    )
+}
+
+fn peek_char(args: &[Value], env: &Frame) -> EvalResult {
+    let port = args.first().unwrap_or(&env.sys.stdin);
+    let p = guard_input_port(port, PortSpec::TextualInput)?;
+    p.borrow_mut().peek_char().map_or_else(
+        |err| Err(Condition::io_error(&err, env.sym, port).into()),
+        |ch| Ok(ch.map_or(Value::Eof, |ch| Value::Character(ch))),
+    )
+}
+
+fn read_line(_args: &[Value], _env: &Frame) -> EvalResult {
+    todo!();
+}
+
+fn has_chars(args: &[Value], env: &Frame) -> EvalResult {
+    let port = args.first().unwrap_or(&env.sys.stdin);
+    let p = guard_input_port(port, PortSpec::TextualInput)?;
+    p.borrow_mut().has_chars().map_or_else(
+        |err| Err(Condition::io_error(&err, env.sym, port).into()),
+        |b| Ok(Value::Boolean(b)),
+    )
 }
 
 #[allow(clippy::unnecessary_wraps, reason = "infallible intrinsic")]
