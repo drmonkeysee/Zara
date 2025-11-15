@@ -207,6 +207,10 @@ fn load_io(env: &Frame) {
     bind_intrinsic(env, "eof-object?", 1..1, is_eof);
     bind_intrinsic(env, "eof-object", 0..0, eof);
 
+    bind_intrinsic(env, "read-u8", 0..1, read_byte);
+    bind_intrinsic(env, "peek-u8", 0..1, peek_byte);
+    bind_intrinsic(env, "u8-ready?", 0..1, has_bytes);
+
     bind_intrinsic(env, "newline", 0..1, newline);
     bind_intrinsic(env, "write-char", 1..2, write_char);
 
@@ -315,6 +319,33 @@ fn close_output_port(args: &[Value], _env: &Frame) -> EvalResult {
 #[allow(clippy::unnecessary_wraps, reason = "infallible intrinsic")]
 fn eof(_args: &[Value], _env: &Frame) -> EvalResult {
     Ok(Value::Eof)
+}
+
+fn read_byte(args: &[Value], env: &Frame) -> EvalResult {
+    let port = args.first().unwrap_or(&env.sys.stdin);
+    let p = guard_input_port(port, PortSpec::BinaryInput)?;
+    p.borrow_mut().read_byte().map_or_else(
+        |err| Err(Condition::io_error(&err, env.sym, port).into()),
+        |b| Ok(b.map_or(Value::Eof, |b| Value::real(i64::from(b)))),
+    )
+}
+
+fn peek_byte(args: &[Value], env: &Frame) -> EvalResult {
+    let port = args.first().unwrap_or(&env.sys.stdin);
+    let p = guard_input_port(port, PortSpec::BinaryInput)?;
+    p.borrow_mut().peek_byte().map_or_else(
+        |err| Err(Condition::io_error(&err, env.sym, port).into()),
+        |b| Ok(b.map_or(Value::Eof, |b| Value::real(i64::from(b)))),
+    )
+}
+
+fn has_bytes(args: &[Value], env: &Frame) -> EvalResult {
+    let port = args.first().unwrap_or(&env.sys.stdin);
+    let p = guard_input_port(port, PortSpec::BinaryInput)?;
+    p.borrow_mut().has_bytes().map_or_else(
+        |err| Err(Condition::io_error(&err, env.sym, port).into()),
+        |b| Ok(Value::Boolean(b)),
+    )
 }
 
 fn newline(args: &[Value], env: &Frame) -> EvalResult {

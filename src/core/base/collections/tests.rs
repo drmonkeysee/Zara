@@ -1,5 +1,6 @@
 use super::*;
 use crate::{
+    core::base::read_byte,
     testutil::{TestEnv, err_or_fail, extract_or_fail, ok_or_fail, some_or_fail, zlist_mut},
     value::zlist,
 };
