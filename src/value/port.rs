@@ -171,23 +171,23 @@ impl BvReader {
     fn get_bytes(&mut self, k: usize, advance: bool) -> PortBytes<'_> {
         match &mut self.buf {
             None => Err(PortError::Closed),
-            Some(buf) => Ok(
-                if let Some(max) = buf.len().checked_sub(self.cur)
-                    && max > 0
-                {
-                    match buf.get(self.cur..(self.cur + cmp::min(k, max))) {
-                        None => None,
-                        Some(slice) => {
-                            if advance {
-                                self.cur += k;
-                            }
-                            Some(slice.into())
+            Some(buf) => Ok(if k == 0 {
+                Some(Vec::new().into())
+            } else if let Some(max) = buf.len().checked_sub(self.cur)
+                && max > 0
+            {
+                match buf.get(self.cur..(self.cur + cmp::min(k, max))) {
+                    None => None,
+                    Some(slice) => {
+                        if advance {
+                            self.cur += k;
                         }
+                        Some(slice.into())
                     }
-                } else {
-                    None
-                },
-            ),
+                }
+            } else {
+                None
+            }),
         }
     }
 }
@@ -767,6 +767,16 @@ mod tests {
     }
 
     #[test]
+    fn bv_read_no_bytes() {
+        let mut p = ReadPort::bytevector([1, 2, 3]);
+
+        let r = p.read_bytes(0);
+
+        let b = some_or_fail!(ok_or_fail!(r));
+        assert_eq!(*b, []);
+    }
+
+    #[test]
     fn bv_read_some_bytes_from_start() {
         let mut p = ReadPort::bytevector([1, 2, 3, 4, 5]);
 
@@ -824,5 +834,20 @@ mod tests {
 
         let b = ok_or_fail!(r);
         assert!(b.is_none());
+    }
+
+    #[test]
+    fn bv_read_no_bytes_after_eof() {
+        let mut p = ReadPort::bytevector([1, 2, 3]);
+
+        let r = p.read_bytes(5);
+
+        let b = some_or_fail!(ok_or_fail!(r));
+        assert_eq!(*b, [1, 2, 3]);
+
+        let r = p.read_bytes(0);
+
+        let b = some_or_fail!(ok_or_fail!(r));
+        assert_eq!(*b, []);
     }
 }
