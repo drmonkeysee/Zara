@@ -36,11 +36,10 @@ impl Display for UnicodeError {
 }
 
 pub(crate) fn utf8_char_len(byte: u8) -> Option<usize> {
-    match byte >> 4 {
-        0b1111u8 => Some(MAX_UTF8_BYTES),
-        0b1110u8 => Some(3),
-        0b1100u8 | 0b1101u8 => Some(2),
-        0b0u8..0b1000u8 => Some(1),
+    const MAX_UTF8_COUNT: u32 = MAX_UTF8_BYTES as u32;
+    match byte.leading_ones() {
+        c @ 2..=MAX_UTF8_COUNT => Some(c.try_into().expect("expected count within u8 range")),
+        0 => Some(1),
         _ => None,
     }
 }
@@ -48,17 +47,7 @@ pub(crate) fn utf8_char_len(byte: u8) -> Option<usize> {
 pub(crate) fn char_from_utf8(seq: &[u8]) -> Result<char, UnicodeError> {
     let ch = match seq.len() {
         0 => return Err(UnicodeError::ByteSequenceEmpty),
-        1 => {
-            let byte = seq[0];
-            if byte < 0x80 {
-                char::from_u32(byte.into())
-            } else {
-                None
-            }
-        }
-        2 => todo!(),
-        3 => todo!(),
-        MAX_UTF8_BYTES => todo!(),
+        1..=MAX_UTF8_BYTES => str::from_utf8(seq).ok().and_then(|s| s.chars().next()),
         len => return Err(UnicodeError::ByteSequenceTooLong(len)),
     };
     ch.ok_or_else(|| {
@@ -225,5 +214,43 @@ mod tests {
         assert!(
             matches!(err_or_fail!(r), UnicodeError::ByteSequenceInvalid(sq) if sq == [0xb7, 0x0, 0x0, 0x0])
         );
+    }
+
+    #[test]
+    fn char_from_utf8_double_byte() {
+        let seq = [0xc3, 0xa9];
+
+        let r = char_from_utf8(&seq);
+
+        assert_eq!(ok_or_fail!(r), 'é');
+    }
+
+    #[test]
+    fn char_from_utf8_truncated_double_byte() {
+        let seq = [0xc3];
+
+        let r = char_from_utf8(&seq);
+
+        assert!(
+            matches!(err_or_fail!(r), UnicodeError::ByteSequenceInvalid(sq) if sq == [0xc3, 0x0, 0x0, 0x0])
+        );
+    }
+
+    #[test]
+    fn char_from_utf8_triple_byte() {
+        let seq = [0xe2, 0x88, 0xab];
+
+        let r = char_from_utf8(&seq);
+
+        assert_eq!(ok_or_fail!(r), '∫');
+    }
+
+    #[test]
+    fn char_from_utf8_quadruple_byte() {
+        let seq = [0xf0, 0x9f, 0xa6, 0x80];
+
+        let r = char_from_utf8(&seq);
+
+        assert_eq!(ok_or_fail!(r), '🦀');
     }
 }
