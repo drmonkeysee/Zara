@@ -339,8 +339,15 @@ fn peek_char(args: &[Value], env: &Frame) -> EvalResult {
     )
 }
 
-fn read_line(_args: &[Value], _env: &Frame) -> EvalResult {
-    todo!();
+// NOTE: this does not strictly conform to the R7RS standard as it does
+// not consider carriage return (\r) to be a line-delimiter (similar to Chez Scheme).
+fn read_line(args: &[Value], env: &Frame) -> EvalResult {
+    let port = args.first().unwrap_or(&env.sys.stdin);
+    let p = guard_input_port(port, PortSpec::TextualInput)?;
+    p.borrow_mut().read_line().map_or_else(
+        |err| Err(Condition::io_error(&err, env.sym, port).into()),
+        |s| Ok(s.map_or(Value::Eof, Value::string_mut)),
+    )
 }
 
 fn has_chars(args: &[Value], env: &Frame) -> EvalResult {

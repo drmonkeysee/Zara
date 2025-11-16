@@ -16,6 +16,7 @@ pub(crate) type PortResult<T = ()> = Result<T, PortError>;
 pub(crate) type PortBool = PortResult<bool>;
 pub(crate) type PortValue = PortResult<Value>;
 pub(crate) type PortChar = PortResult<Option<char>>;
+pub(crate) type PortString = PortResult<Option<String>>;
 pub(crate) type PortByte = PortResult<Option<u8>>;
 pub(crate) type PortBytes<'a> = PortResult<Option<Cow<'a, [u8]>>>;
 
@@ -71,6 +72,13 @@ impl ReadPort {
     pub(crate) fn peek_char(&mut self) -> PortChar {
         match self {
             Self::File(r) => r.peek_char(),
+            _ => todo!(),
+        }
+    }
+
+    pub(crate) fn read_line(&mut self) -> PortString {
+        match self {
+            Self::File(r) => r.read_line(),
             _ => todo!(),
         }
     }
@@ -262,6 +270,24 @@ impl FileReader {
 
     fn peek_char(&mut self) -> PortChar {
         self.get_char(false)
+    }
+
+    fn read_line(&mut self) -> PortString {
+        match &mut self.file {
+            None => Err(PortError::Closed),
+            Some(r) => {
+                let mut buf = String::new();
+                let c = r.read_line(&mut buf)?;
+                Ok(if c == 0 {
+                    None
+                } else {
+                    if buf.ends_with('\n') {
+                        buf.pop();
+                    }
+                    Some(buf)
+                })
+            }
+        }
     }
 
     fn get_bytes(&mut self, k: usize, advance: bool) -> PortBytes<'_> {
