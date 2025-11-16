@@ -9,8 +9,10 @@ const MAX: char = char::MAX;
 // TODO: experimental https://doc.rust-lang.org/std/primitive.char.html#associatedconstant.MAX_LEN_UTF8
 const MAX_UTF8_BYTES: usize = 4;
 
+#[derive(Debug)]
 pub(crate) enum UnicodeError {
     ByteSequenceEmpty,
+    ByteSequenceInvalid([u8; MAX_UTF8_BYTES]),
     ByteSequenceTooLong(usize),
     CodePointOutOfRange,
 }
@@ -18,10 +20,11 @@ pub(crate) enum UnicodeError {
 impl Display for UnicodeError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            Self::ByteSequenceEmpty => f.write_str("empty byte sequence"),
+            Self::ByteSequenceEmpty => f.write_str("empty utf-8 sequence"),
+            Self::ByteSequenceInvalid(seq) => write_invalid_seq(seq, f),
             Self::ByteSequenceTooLong(len) => write!(
                 f,
-                "byte sequence length out of range: [1, {MAX_UTF8_BYTES}], {len}"
+                "utf-8 sequence length out of range: [1, {MAX_UTF8_BYTES}], {len}"
             ),
             Self::CodePointOutOfRange => write!(
                 f,
@@ -43,17 +46,82 @@ pub(crate) fn utf8_char_len(byte: u8) -> Option<usize> {
 }
 
 pub(crate) fn char_from_utf8(seq: &[u8]) -> Result<char, UnicodeError> {
-    match seq.len() {
-        0 => Err(UnicodeError::ByteSequenceEmpty),
-        1..=MAX_UTF8_BYTES => todo!(),
-        len => Err(UnicodeError::ByteSequenceTooLong(len)),
-    }
+    let ch = match seq.len() {
+        0 => return Err(UnicodeError::ByteSequenceEmpty),
+        1 => {
+            let byte = seq[0];
+            if byte < 0x80 {
+                char::from_u32(byte.into())
+            } else {
+                None
+            }
+        }
+        2 => todo!(),
+        3 => todo!(),
+        MAX_UTF8_BYTES => todo!(),
+        len => return Err(UnicodeError::ByteSequenceTooLong(len)),
+    };
+    ch.ok_or_else(|| {
+        let mut err = [0; MAX_UTF8_BYTES];
+        err[0..seq.len()].copy_from_slice(seq);
+        UnicodeError::ByteSequenceInvalid(err)
+    })
+}
+
+fn write_invalid_seq(seq: &[u8], f: &mut Formatter<'_>) -> fmt::Result {
+    write!(
+        f,
+        "invalid utf-8 sequence: [{}]",
+        seq.into_iter()
+            .rev()
+            .skip_while(|b| **b == 0x0)
+            .collect::<Vec<_>>()
+            .into_iter()
+            .rev()
+            .map(|b| format!("{b:#x}"))
+            .collect::<Vec<_>>()
+            .join(", ")
+    )
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::testutil::{err_or_fail, some_or_fail};
+    use crate::testutil::{err_or_fail, ok_or_fail, some_or_fail};
+
+    #[test]
+    fn display_invalid_seq() {
+        let err = UnicodeError::ByteSequenceInvalid([0x11, 0x22, 0xaa, 0xbb]);
+
+        assert_eq!(
+            err.to_string(),
+            "invalid utf-8 sequence: [0x11, 0x22, 0xaa, 0xbb]"
+        )
+    }
+
+    #[test]
+    fn display_invalid_seq_with_trailing_zeros() {
+        let err = UnicodeError::ByteSequenceInvalid([0x11, 0x22, 0x0, 0x0]);
+
+        assert_eq!(err.to_string(), "invalid utf-8 sequence: [0x11, 0x22]")
+    }
+
+    #[test]
+    fn display_invalid_seq_with_internal_zeros() {
+        let err = UnicodeError::ByteSequenceInvalid([0x11, 0x0, 0x0, 0xbb]);
+
+        assert_eq!(
+            err.to_string(),
+            "invalid utf-8 sequence: [0x11, 0x0, 0x0, 0xbb]"
+        )
+    }
+
+    #[test]
+    fn display_invalid_seq_with_mix_of_zeros() {
+        let err = UnicodeError::ByteSequenceInvalid([0x0, 0x22, 0xaa, 0x0]);
+
+        assert_eq!(err.to_string(), "invalid utf-8 sequence: [0x0, 0x22, 0xaa]")
+    }
 
     #[test]
     fn char_len_for_zero() {
@@ -137,5 +205,25 @@ mod tests {
             err_or_fail!(r),
             UnicodeError::ByteSequenceTooLong(5)
         ));
+    }
+
+    #[test]
+    fn char_from_utf8_single_byte() {
+        let seq = [0x4d];
+
+        let r = char_from_utf8(&seq);
+
+        assert_eq!(ok_or_fail!(r), 'M');
+    }
+
+    #[test]
+    fn char_from_utf8_invalid_single_byte() {
+        let seq = [0b1011_0111];
+
+        let r = char_from_utf8(&seq);
+
+        assert!(
+            matches!(err_or_fail!(r), UnicodeError::ByteSequenceInvalid(sq) if sq == [0xb7, 0x0, 0x0, 0x0])
+        );
     }
 }
