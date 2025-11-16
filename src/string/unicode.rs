@@ -15,6 +15,7 @@ pub(crate) enum UnicodeError {
     ByteSequenceInvalid([u8; MAX_UTF8_BYTES]),
     ByteSequenceTooLong(usize),
     CodePointOutOfRange,
+    PrefixInvalid(u8),
 }
 
 impl Display for UnicodeError {
@@ -31,16 +32,17 @@ impl Display for UnicodeError {
                 "unicode code point out of ranges [#x{0:X}, #x{1:X}], [#x{2:X}, #x{3:X}] ([{0}, {1}], [{2}, {3}])",
                 MIN as u32, LOW_MAX as u32, HI_MIN as u32, MAX as u32
             ),
+            Self::PrefixInvalid(p) => write!(f, "invalid utf-8 prefix: {p}"),
         }
     }
 }
 
-pub(crate) fn utf8_char_len(byte: u8) -> Option<usize> {
+pub(crate) fn utf8_char_len(prefix: u8) -> Result<usize, UnicodeError> {
     const MAX_UTF8_COUNT: u32 = MAX_UTF8_BYTES as u32;
-    match byte.leading_ones() {
-        c @ 2..=MAX_UTF8_COUNT => Some(c.try_into().expect("expected count within u8 range")),
-        0 => Some(1),
-        _ => None,
+    match prefix.leading_ones() {
+        c @ 2..=MAX_UTF8_COUNT => Ok(c.try_into().expect("expected count within u8 range")),
+        0 => Ok(1),
+        _ => Err(UnicodeError::PrefixInvalid(prefix)),
     }
 }
 
@@ -76,7 +78,7 @@ fn write_invalid_seq(seq: &[u8], f: &mut Formatter<'_>) -> fmt::Result {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::testutil::{err_or_fail, ok_or_fail, some_or_fail};
+    use crate::testutil::{err_or_fail, ok_or_fail};
 
     #[test]
     fn display_invalid_seq() {
@@ -118,7 +120,7 @@ mod tests {
 
         let len = utf8_char_len(ch);
 
-        assert_eq!(some_or_fail!(len), 1);
+        assert_eq!(ok_or_fail!(len), 1);
     }
 
     #[test]
@@ -127,7 +129,7 @@ mod tests {
 
         let len = utf8_char_len(ch);
 
-        assert_eq!(some_or_fail!(len), 1);
+        assert_eq!(ok_or_fail!(len), 1);
     }
 
     #[test]
@@ -136,7 +138,10 @@ mod tests {
 
         let len = utf8_char_len(ch);
 
-        assert!(len.is_none());
+        assert!(matches!(
+            err_or_fail!(len),
+            UnicodeError::PrefixInvalid(0x80)
+        ));
     }
 
     #[test]
@@ -145,7 +150,7 @@ mod tests {
 
         let len = utf8_char_len(ch);
 
-        assert_eq!(some_or_fail!(len), 2);
+        assert_eq!(ok_or_fail!(len), 2);
     }
 
     #[test]
@@ -154,7 +159,7 @@ mod tests {
 
         let len = utf8_char_len(ch);
 
-        assert_eq!(some_or_fail!(len), 2);
+        assert_eq!(ok_or_fail!(len), 2);
     }
 
     #[test]
@@ -163,7 +168,7 @@ mod tests {
 
         let len = utf8_char_len(ch);
 
-        assert_eq!(some_or_fail!(len), 3);
+        assert_eq!(ok_or_fail!(len), 3);
     }
 
     #[test]
@@ -172,7 +177,7 @@ mod tests {
 
         let len = utf8_char_len(ch);
 
-        assert_eq!(some_or_fail!(len), 4);
+        assert_eq!(ok_or_fail!(len), 4);
     }
 
     #[test]
