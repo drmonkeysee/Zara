@@ -326,7 +326,7 @@ fn read_char(args: &[Value], env: &Frame) -> EvalResult {
     let p = guard_input_port(port, PortSpec::TextualInput)?;
     p.borrow_mut().read_char().map_or_else(
         |err| Err(Condition::io_error(&err, env.sym, port).into()),
-        |ch| Ok(ch.map_or(Value::Eof, |ch| Value::Character(ch))),
+        |ch| Ok(ch.map_or(Value::Eof, Value::Character)),
     )
 }
 
@@ -335,7 +335,7 @@ fn peek_char(args: &[Value], env: &Frame) -> EvalResult {
     let p = guard_input_port(port, PortSpec::TextualInput)?;
     p.borrow_mut().peek_char().map_or_else(
         |err| Err(Condition::io_error(&err, env.sym, port).into()),
-        |ch| Ok(ch.map_or(Value::Eof, |ch| Value::Character(ch))),
+        |ch| Ok(ch.map_or(Value::Eof, Value::Character)),
     )
 }
 
