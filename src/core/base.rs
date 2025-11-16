@@ -36,7 +36,9 @@ use crate::{
     eval::{EvalResult, Frame, MAX_ARITY},
     number::{Number, NumericError, NumericTypeName},
     string::{Symbol, unicode::UnicodeError},
-    value::{Condition, InputPortRef, OutputPortRef, PortSpec, TypeName, Value},
+    value::{
+        Condition, InputPortRef, OutputPortRef, PortResult, PortSpec, ReadPort, TypeName, Value,
+    },
 };
 
 pub(super) fn load(env: &Frame) {
@@ -207,14 +209,14 @@ fn load_io(env: &Frame) {
     bind_intrinsic(env, "read-char", 0..1, read_char);
     bind_intrinsic(env, "peek-char", 0..1, peek_char);
     bind_intrinsic(env, "read-line", 0..1, read_line);
-    bind_intrinsic(env, "char-ready?", 0..1, has_chars);
+    bind_intrinsic(env, "char-ready?", 0..1, char_ready);
 
     bind_intrinsic(env, "eof-object?", 1..1, is_eof);
     bind_intrinsic(env, "eof-object", 0..0, eof);
 
     bind_intrinsic(env, "read-u8", 0..1, read_byte);
     bind_intrinsic(env, "peek-u8", 0..1, peek_byte);
-    bind_intrinsic(env, "u8-ready?", 0..1, has_bytes);
+    bind_intrinsic(env, "u8-ready?", 0..1, byte_ready);
 
     bind_intrinsic(env, "newline", 0..1, newline);
     bind_intrinsic(env, "write-char", 1..2, write_char);
@@ -322,39 +324,43 @@ fn close_output_port(args: &[Value], _env: &Frame) -> EvalResult {
 }
 
 fn read_char(args: &[Value], env: &Frame) -> EvalResult {
-    let port = args.first().unwrap_or(&env.sys.stdin);
-    let p = guard_input_port(port, PortSpec::TextualInput)?;
-    p.borrow_mut().read_char().map_or_else(
-        |err| Err(Condition::io_error(&err, env.sym, port).into()),
+    read_op(
+        args.first(),
+        env,
+        PortSpec::TextualInput,
+        ReadPort::read_char,
         |ch| Ok(ch.map_or(Value::Eof, Value::Character)),
     )
 }
 
 fn peek_char(args: &[Value], env: &Frame) -> EvalResult {
-    let port = args.first().unwrap_or(&env.sys.stdin);
-    let p = guard_input_port(port, PortSpec::TextualInput)?;
-    p.borrow_mut().peek_char().map_or_else(
-        |err| Err(Condition::io_error(&err, env.sym, port).into()),
+    read_op(
+        args.first(),
+        env,
+        PortSpec::TextualInput,
+        ReadPort::peek_char,
         |ch| Ok(ch.map_or(Value::Eof, Value::Character)),
     )
 }
 
 // NOTE: this does not strictly conform to the R7RS standard as it does
-// not consider carriage return (\r) to be a line-delimiter (similar to Chez Scheme).
+// not consider carriage return (\r) to be a line-delimiter (same as Chez Scheme).
 fn read_line(args: &[Value], env: &Frame) -> EvalResult {
-    let port = args.first().unwrap_or(&env.sys.stdin);
-    let p = guard_input_port(port, PortSpec::TextualInput)?;
-    p.borrow_mut().read_line().map_or_else(
-        |err| Err(Condition::io_error(&err, env.sym, port).into()),
+    read_op(
+        args.first(),
+        env,
+        PortSpec::TextualInput,
+        ReadPort::read_line,
         |s| Ok(s.map_or(Value::Eof, Value::string_mut)),
     )
 }
 
-fn has_chars(args: &[Value], env: &Frame) -> EvalResult {
-    let port = args.first().unwrap_or(&env.sys.stdin);
-    let p = guard_input_port(port, PortSpec::TextualInput)?;
-    p.borrow_mut().has_chars().map_or_else(
-        |err| Err(Condition::io_error(&err, env.sym, port).into()),
+fn char_ready(args: &[Value], env: &Frame) -> EvalResult {
+    read_op(
+        args.first(),
+        env,
+        PortSpec::TextualInput,
+        ReadPort::char_ready,
         |b| Ok(Value::Boolean(b)),
     )
 }
@@ -365,28 +371,31 @@ fn eof(_args: &[Value], _env: &Frame) -> EvalResult {
 }
 
 fn read_byte(args: &[Value], env: &Frame) -> EvalResult {
-    let port = args.first().unwrap_or(&env.sys.stdin);
-    let p = guard_input_port(port, PortSpec::BinaryInput)?;
-    p.borrow_mut().read_byte().map_or_else(
-        |err| Err(Condition::io_error(&err, env.sym, port).into()),
+    read_op(
+        args.first(),
+        env,
+        PortSpec::BinaryInput,
+        ReadPort::read_byte,
         |b| Ok(b.map_or(Value::Eof, |b| Value::real(i64::from(b)))),
     )
 }
 
 fn peek_byte(args: &[Value], env: &Frame) -> EvalResult {
-    let port = args.first().unwrap_or(&env.sys.stdin);
-    let p = guard_input_port(port, PortSpec::BinaryInput)?;
-    p.borrow_mut().peek_byte().map_or_else(
-        |err| Err(Condition::io_error(&err, env.sym, port).into()),
+    read_op(
+        args.first(),
+        env,
+        PortSpec::BinaryInput,
+        ReadPort::peek_byte,
         |b| Ok(b.map_or(Value::Eof, |b| Value::real(i64::from(b)))),
     )
 }
 
-fn has_bytes(args: &[Value], env: &Frame) -> EvalResult {
-    let port = args.first().unwrap_or(&env.sys.stdin);
-    let p = guard_input_port(port, PortSpec::BinaryInput)?;
-    p.borrow_mut().has_bytes().map_or_else(
-        |err| Err(Condition::io_error(&err, env.sym, port).into()),
+fn byte_ready(args: &[Value], env: &Frame) -> EvalResult {
+    read_op(
+        args.first(),
+        env,
+        PortSpec::BinaryInput,
+        ReadPort::byte_ready,
         |b| Ok(Value::Boolean(b)),
     )
 }
@@ -514,6 +523,21 @@ fn guard_port_value<T>(
         }
         Ok(()) => Ok(unwrap(arg)),
     }
+}
+
+fn read_op<T>(
+    arg: Option<&Value>,
+    env: &Frame,
+    spec: PortSpec,
+    op: impl FnOnce(&mut ReadPort) -> PortResult<T>,
+    map: impl FnOnce(T) -> EvalResult,
+) -> EvalResult {
+    let port = arg.unwrap_or(&env.sys.stdin);
+    let p = guard_input_port(port, spec)?;
+    op(&mut p.borrow_mut()).map_or_else(
+        |err| Err(Condition::io_error(&err, env.sym, port).into()),
+        map,
+    )
 }
 
 fn put_char(ch: char, arg: Option<&Value>, env: &Frame) -> EvalResult {
