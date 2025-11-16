@@ -1,5 +1,8 @@
 use super::{TypeName, Value};
-use crate::string::SymbolTable;
+use crate::string::{
+    SymbolTable,
+    unicode::{self, UnicodeError},
+};
 use std::{
     borrow::Cow,
     cmp,
@@ -74,7 +77,7 @@ impl ReadPort {
 
     pub(crate) fn has_chars(&mut self) -> PortBool {
         match self {
-            Self::File(r) => r.has_chars(),
+            Self::File(r) => r.read_ready(),
             _ => todo!(),
         }
     }
@@ -95,7 +98,7 @@ impl ReadPort {
         }
     }
 
-    pub(crate) fn has_bytes(&mut self) -> PortBool {
+    pub(crate) fn has_bytes(&self) -> PortBool {
         match self {
             Self::ByteVector(r) => {
                 // TODO: experimental ok_or https://doc.rust-lang.org/std/primitive.bool.html#method.ok_or
@@ -105,7 +108,7 @@ impl ReadPort {
                     Err(PortError::Closed)
                 }
             }
-            Self::File(r) => r.has_bytes(),
+            Self::File(r) => r.read_ready(),
             _ => Err(PortError::ExpectedMode(PortMode::Binary)),
         }
     }
@@ -216,6 +219,7 @@ impl BvReader {
 
 #[derive(Debug)]
 pub(crate) struct FileReader {
+    eof: bool,
     file: Option<BufReader<File>>,
     path: PathBuf,
 }
@@ -225,6 +229,7 @@ impl FileReader {
         let path = path.into();
         let f = File::open(&path)?;
         Ok(Self {
+            eof: false,
             file: Some(BufReader::new(f)),
             path,
         })
@@ -240,10 +245,10 @@ impl FileReader {
         Ok(bytes.and_then(|b| b.first().copied()))
     }
 
-    fn has_bytes(&self) -> PortBool {
+    fn read_ready(&self) -> PortBool {
         match &self.file {
             None => Err(PortError::Closed),
-            Some(r) => Ok(!r.buffer().is_empty()),
+            Some(r) => Ok(self.eof || !r.buffer().is_empty()),
         }
     }
 
@@ -252,70 +257,68 @@ impl FileReader {
     }
 
     fn read_char(&mut self) -> PortChar {
-        /*
-         * peek byte
-         * get len for utf-8 encoding
-         * read k bytes
-         * convert to char
-         */
-        todo!();
+        self.get_char(true)
     }
 
     fn peek_char(&mut self) -> PortChar {
-        /*
-         * peek byte
-         * get len for utf-8 encoding
-         * peek k bytes
-         * convert to char
-         */
-        todo!();
+        self.get_char(false)
     }
 
-    fn has_chars(&self) -> PortBool {
-        /*
-         * peek byte
-         * get len for utf-8 encoding
-         * buf.len() >= len
-         */
-        todo!();
-    }
-
-    fn get_bytes(&mut self, mut k: usize, advance: bool) -> PortBytes<'_> {
-        match &mut self.file {
+    fn get_bytes(&mut self, k: usize, advance: bool) -> PortBytes<'_> {
+        match &self.file {
             None => Err(PortError::Closed),
-            Some(r) => {
-                let mut bytes = Vec::new();
+            Some(_) => {
                 if k == 0 {
-                    return Ok(Some(bytes.into()));
-                }
-                while k > 0 {
-                    if r.buffer().is_empty() {
-                        let fill = r.fill_buf()?;
-                        if fill.is_empty() {
-                            break;
-                        }
-                    }
-                    let buf = r.buffer();
-                    let max = cmp::min(k, buf.len());
-                    if max > 0 {
-                        if let Some(slice) = buf.get(..max) {
-                            bytes.extend_from_slice(slice);
-                        }
-                        if advance {
-                            r.consume(max);
-                        }
-                        if max <= k {
-                            k -= max;
-                        }
-                    }
-                }
-                Ok(if bytes.is_empty() {
-                    None
+                    Ok(Some(Vec::new().into()))
+                } else if self.eof {
+                    Ok(None)
                 } else {
-                    Some(bytes.into())
-                })
+                    self.read_buffer(k, advance)
+                }
             }
         }
+    }
+
+    fn get_char(&mut self, advance: bool) -> PortChar {
+        Ok(match self.peek_byte()? {
+            None => None,
+            Some(prefix) => match self.get_bytes(unicode::utf8_char_len(prefix)?, advance)? {
+                None => None,
+                Some(seq) => Some(unicode::char_from_utf8(&seq)?),
+            },
+        })
+    }
+
+    fn read_buffer(&mut self, mut k: usize, advance: bool) -> PortBytes<'_> {
+        let mut bytes = Vec::new();
+        let r = self.file.as_mut().expect("expected active file handle");
+        while k > 0 {
+            if r.buffer().is_empty() {
+                let fill = r.fill_buf()?;
+                if fill.is_empty() {
+                    self.eof = true;
+                    break;
+                }
+            }
+            let buf = r.buffer();
+            let max = cmp::min(k, buf.len());
+            if max > 0 {
+                if let Some(slice) = buf.get(..max) {
+                    bytes.extend_from_slice(slice);
+                }
+                if advance {
+                    r.consume(max);
+                }
+                if max <= k {
+                    k -= max;
+                }
+            }
+        }
+        Ok(if bytes.is_empty() {
+            None
+        } else {
+            Some(bytes.into())
+        })
     }
 }
 
@@ -552,6 +555,7 @@ pub(crate) enum PortError {
     Fmt,
     InvalidSource,
     Io(ErrorKind),
+    Unicode(UnicodeError),
 }
 
 impl PortError {
@@ -560,6 +564,7 @@ impl PortError {
             Self::Closed => sym.get("closed-port"),
             Self::ExpectedMode(_) => sym.get("mismatched-port-mode"),
             Self::Fmt => sym.get("string-error"),
+            Self::InvalidSource => sym.get("invalid-port-source"),
             Self::Io(k) => match k {
                 ErrorKind::AlreadyExists => sym.get("already-exists"),
                 ErrorKind::BrokenPipe => sym.get("broken-pipe"),
@@ -581,7 +586,7 @@ impl PortError {
                 ErrorKind::UnexpectedEof => sym.get("unexpected-eof"),
                 _ => sym.get("nonspecific-error"),
             },
-            Self::InvalidSource => sym.get("invalid-port-source"),
+            Self::Unicode(_) => sym.get("unicode-error"),
         })
     }
 }
@@ -592,8 +597,9 @@ impl Display for PortError {
             Self::Closed => f.write_str("attempted operation on closed port"),
             Self::ExpectedMode(m) => write!(f, "attemped {} operation on {m} port", m.inverse()),
             Self::Fmt => f.write_str("unexpected format error"),
-            Self::Io(k) => write!(f, "{k}"),
             Self::InvalidSource => f.write_str("invalid port for requested data type"),
+            Self::Io(k) => write!(f, "{k}"),
+            Self::Unicode(u) => write!(f, "{u}"),
         }
     }
 }
@@ -607,6 +613,12 @@ impl From<fmt::Error> for PortError {
 impl From<io::Error> for PortError {
     fn from(value: io::Error) -> Self {
         Self::Io(value.kind())
+    }
+}
+
+impl From<UnicodeError> for PortError {
+    fn from(value: UnicodeError) -> Self {
+        Self::Unicode(value)
     }
 }
 
