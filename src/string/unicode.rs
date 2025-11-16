@@ -6,14 +6,23 @@ const MIN: char = char::MIN;
 const LOW_MAX: char = '\u{d7ff}';
 const HI_MIN: char = '\u{e000}';
 const MAX: char = char::MAX;
+// TODO: experimental https://doc.rust-lang.org/std/primitive.char.html#associatedconstant.MAX_LEN_UTF8
+const MAX_UTF8_BYTES: usize = 4;
 
 pub(crate) enum UnicodeError {
+    ByteSequenceEmpty,
+    ByteSequenceTooLong(usize),
     CodePointOutOfRange,
 }
 
 impl Display for UnicodeError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
+            Self::ByteSequenceEmpty => f.write_str("empty byte sequence"),
+            Self::ByteSequenceTooLong(len) => write!(
+                f,
+                "byte sequence length out of range: [1, {MAX_UTF8_BYTES}], {len}"
+            ),
             Self::CodePointOutOfRange => write!(
                 f,
                 "unicode code point out of ranges [#x{0:X}, #x{1:X}], [#x{2:X}, #x{3:X}] ([{0}, {1}], [{2}, {3}])",
@@ -25,7 +34,7 @@ impl Display for UnicodeError {
 
 pub(crate) fn utf8_char_len(byte: u8) -> Option<usize> {
     match byte >> 4 {
-        0b1111u8 => Some(4),
+        0b1111u8 => Some(MAX_UTF8_BYTES),
         0b1110u8 => Some(3),
         0b1100u8 | 0b1101u8 => Some(2),
         0b0u8..0b1000u8 => Some(1),
@@ -33,14 +42,18 @@ pub(crate) fn utf8_char_len(byte: u8) -> Option<usize> {
     }
 }
 
-pub(crate) fn char_from_utf8(bytes: &[u8]) -> Result<char, UnicodeError> {
-    todo!();
+pub(crate) fn char_from_utf8(seq: &[u8]) -> Result<char, UnicodeError> {
+    match seq.len() {
+        0 => Err(UnicodeError::ByteSequenceEmpty),
+        1..=MAX_UTF8_BYTES => todo!(),
+        len => Err(UnicodeError::ByteSequenceTooLong(len)),
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::testutil::some_or_fail;
+    use crate::testutil::{err_or_fail, some_or_fail};
 
     #[test]
     fn char_len_for_zero() {
@@ -103,5 +116,26 @@ mod tests {
         let len = utf8_char_len(ch);
 
         assert_eq!(some_or_fail!(len), 4);
+    }
+
+    #[test]
+    fn char_from_utf8_empty() {
+        let seq = [];
+
+        let r = char_from_utf8(&seq);
+
+        assert!(matches!(err_or_fail!(r), UnicodeError::ByteSequenceEmpty));
+    }
+
+    #[test]
+    fn char_from_utf8_too_long() {
+        let seq = [1, 2, 3, 4, 5];
+
+        let r = char_from_utf8(&seq);
+
+        assert!(matches!(
+            err_or_fail!(r),
+            UnicodeError::ByteSequenceTooLong(5)
+        ));
     }
 }
