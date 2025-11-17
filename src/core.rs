@@ -48,6 +48,7 @@ mod charuni;
 mod complex;
 mod cxr;
 mod ext;
+mod file;
 mod inexact;
 mod procctx;
 mod time;
@@ -78,6 +79,7 @@ pub(crate) fn load(env: &Frame) {
     cxr::load(env);
     // TODO: add cli arg for excluding this
     ext::load(env);
+    file::load(env);
     inexact::load(env);
     procctx::load(env);
     time::load(env);
