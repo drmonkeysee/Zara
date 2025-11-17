@@ -64,36 +64,41 @@ impl ReadPort {
 
     pub(crate) fn read_char(&mut self) -> PortChar {
         match self {
+            Self::ByteVector(_) => Err(PortError::ExpectedMode(PortMode::Textual)),
             Self::File(r) => r.read_char(),
-            _ => todo!(),
+            Self::In(_) => todo!(),
         }
     }
 
     pub(crate) fn peek_char(&mut self) -> PortChar {
         match self {
+            Self::ByteVector(_) => Err(PortError::ExpectedMode(PortMode::Textual)),
             Self::File(r) => r.peek_char(),
-            _ => todo!(),
+            Self::In(_) => todo!(),
         }
     }
 
     pub(crate) fn read_line(&mut self) -> PortString {
         match self {
+            Self::ByteVector(_) => Err(PortError::ExpectedMode(PortMode::Textual)),
             Self::File(r) => r.read_line(),
-            _ => todo!(),
+            Self::In(_) => todo!(),
         }
     }
 
     pub(crate) fn char_ready(&mut self) -> PortBool {
         match self {
+            Self::ByteVector(_) => Err(PortError::ExpectedMode(PortMode::Textual)),
             Self::File(r) => r.read_ready(),
-            _ => todo!(),
+            Self::In(_) => todo!(),
         }
     }
 
     pub(crate) fn read_chars(&mut self, k: usize) -> PortString {
         match self {
+            Self::ByteVector(_) => Err(PortError::ExpectedMode(PortMode::Textual)),
             Self::File(r) => r.read_chars(k),
-            _ => todo!(),
+            Self::In(_) => todo!(),
         }
     }
 
@@ -101,7 +106,7 @@ impl ReadPort {
         match self {
             Self::ByteVector(r) => r.read(),
             Self::File(r) => r.read_byte(),
-            _ => Err(PortError::ExpectedMode(PortMode::Binary)),
+            Self::In(_) => Err(PortError::ExpectedMode(PortMode::Binary)),
         }
     }
 
@@ -109,7 +114,7 @@ impl ReadPort {
         match self {
             Self::ByteVector(r) => r.peek(),
             Self::File(r) => r.peek_byte(),
-            _ => Err(PortError::ExpectedMode(PortMode::Binary)),
+            Self::In(_) => Err(PortError::ExpectedMode(PortMode::Binary)),
         }
     }
 
@@ -124,7 +129,7 @@ impl ReadPort {
                 }
             }
             Self::File(r) => r.read_ready(),
-            _ => Err(PortError::ExpectedMode(PortMode::Binary)),
+            Self::In(_) => Err(PortError::ExpectedMode(PortMode::Binary)),
         }
     }
 
@@ -132,7 +137,7 @@ impl ReadPort {
         match self {
             Self::ByteVector(r) => r.read_count(k),
             Self::File(r) => r.read_bytes(k),
-            _ => Err(PortError::ExpectedMode(PortMode::Binary)),
+            Self::In(_) => Err(PortError::ExpectedMode(PortMode::Binary)),
         }
     }
 

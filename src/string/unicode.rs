@@ -38,7 +38,9 @@ impl Display for UnicodeError {
 }
 
 pub(crate) fn utf8_char_len(prefix: u8) -> Result<usize, UnicodeError> {
+    #[allow(clippy::cast_possible_truncation)]
     const MAX_UTF8_COUNT: u32 = MAX_UTF8_BYTES as u32;
+
     match prefix.leading_ones() {
         c @ 2..=MAX_UTF8_COUNT => Ok(c.try_into().expect("expected count within u8 range")),
         0 => Ok(1),
@@ -63,7 +65,7 @@ fn write_invalid_seq(seq: &[u8], f: &mut Formatter<'_>) -> fmt::Result {
     write!(
         f,
         "invalid utf-8 sequence: [{}]",
-        seq.into_iter()
+        seq.iter()
             .rev()
             .skip_while(|b| **b == 0x0)
             .collect::<Vec<_>>()

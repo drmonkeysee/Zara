@@ -59,7 +59,7 @@ fn delete_file(args: &[Value], env: &Frame) -> EvalResult {
         |path| {
             fs::remove_file(path.as_ref()).map_or_else(
                 |err| Err(Condition::file_error(&(err.into()), env.sym, arg).into()),
-                |_| Ok(Value::Unspecified),
+                |()| Ok(Value::Unspecified),
             )
         },
     )
