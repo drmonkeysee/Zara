@@ -9,6 +9,7 @@ use std::{
     fmt::{self, Debug, Display, Formatter},
     fs::File,
     io::{self, BufRead, BufReader, BufWriter, ErrorKind, Stderr, Stdin, Stdout},
+    iter,
     path::PathBuf,
 };
 
@@ -86,6 +87,13 @@ impl ReadPort {
     pub(crate) fn char_ready(&mut self) -> PortBool {
         match self {
             Self::File(r) => r.read_ready(),
+            _ => todo!(),
+        }
+    }
+
+    pub(crate) fn read_chars(&mut self, k: usize) -> PortString {
+        match self {
+            Self::File(r) => r.read_chars(k),
             _ => todo!(),
         }
     }
@@ -270,6 +278,21 @@ impl FileReader {
 
     fn peek_char(&mut self) -> PortChar {
         self.get_char(false)
+    }
+
+    fn read_chars(&mut self, k: usize) -> PortString {
+        if k == 0 {
+            Ok(Some(String::new()))
+        } else if self.eof {
+            Ok(None)
+        } else {
+            let buf = iter::from_fn(|| self.read_char().transpose())
+                .take(k)
+                .collect::<PortResult<Vec<_>>>()?
+                .into_iter()
+                .collect::<String>();
+            Ok(if buf.is_empty() { None } else { Some(buf) })
+        }
     }
 
     fn read_line(&mut self) -> PortString {

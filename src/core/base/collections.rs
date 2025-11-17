@@ -558,6 +558,8 @@ fn load_string(env: &Frame) {
     super::bind_intrinsic(env, "open-output-string", 0..0, output_string);
     super::bind_intrinsic(env, "get-output-string", 1..1, get_string_output);
 
+    super::bind_intrinsic(env, "read-string", 1..2, read_string);
+
     super::bind_intrinsic(env, "write-string", 1..4, write_string);
 }
 
@@ -711,6 +713,16 @@ fn get_string_output(args: &[Value], env: &Frame) -> EvalResult {
     p.borrow()
         .get_string()
         .map_err(|err| Condition::io_error(&err, env.sym, arg).into())
+}
+
+fn read_string(args: &[Value], env: &Frame) -> EvalResult {
+    let k = try_val_to_index(first(args), FIRST_ARG_LABEL)?;
+    let port = args.get(1).unwrap_or(&env.sys.stdin);
+    let p = super::guard_input_port(port, PortSpec::BinaryInput)?;
+    p.borrow_mut().read_chars(k).map_or_else(
+        |err| Err(Condition::io_error(&err, env.sym, port).into()),
+        |s| Ok(s.map_or(Value::Eof, Value::string_mut)),
+    )
 }
 
 #[allow(clippy::similar_names, reason = "env/end have clear intent")]
