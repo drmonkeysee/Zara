@@ -4,7 +4,6 @@ use crate::string::{
     unicode::{self, UnicodeError},
 };
 use std::{
-    borrow::Cow,
     cmp,
     fmt::{self, Debug, Display, Formatter},
     fs::File,
@@ -19,7 +18,7 @@ pub(crate) type PortValue = PortResult<Value>;
 pub(crate) type PortChar = PortResult<Option<char>>;
 pub(crate) type PortString = PortResult<Option<String>>;
 pub(crate) type PortByte = PortResult<Option<u8>>;
-pub(crate) type PortBytes<'a> = PortResult<Option<Cow<'a, [u8]>>>;
+pub(crate) type PortBytes = PortResult<Option<Vec<u8>>>;
 
 #[derive(Debug)]
 pub(crate) enum ReadPort {
@@ -129,7 +128,7 @@ impl ReadPort {
         }
     }
 
-    pub(crate) fn read_bytes(&mut self, k: usize) -> PortBytes<'_> {
+    pub(crate) fn read_bytes(&mut self, k: usize) -> PortBytes {
         match self {
             Self::ByteVector(r) => r.read_count(k),
             Self::File(r) => r.read_bytes(k),
@@ -196,7 +195,7 @@ impl BvReader {
         self.get_byte(true)
     }
 
-    fn read_count(&mut self, k: usize) -> PortBytes<'_> {
+    fn read_count(&mut self, k: usize) -> PortBytes {
         self.get_bytes(k, true)
     }
 
@@ -209,11 +208,11 @@ impl BvReader {
         Ok(bytes.and_then(|b| b.first().copied()))
     }
 
-    fn get_bytes(&mut self, k: usize, advance: bool) -> PortBytes<'_> {
+    fn get_bytes(&mut self, k: usize, advance: bool) -> PortBytes {
         match &mut self.buf {
             None => Err(PortError::Closed),
             Some(buf) => Ok(if k == 0 {
-                Some(Vec::new().into())
+                Some(Vec::new())
             } else if let Some(max) = buf.len().checked_sub(self.cur)
                 && max > 0
             {
@@ -223,7 +222,7 @@ impl BvReader {
                         if advance {
                             self.cur += k;
                         }
-                        Some(slice.into())
+                        Some(slice.to_vec())
                     }
                 }
             } else {
@@ -268,7 +267,7 @@ impl FileReader {
         }
     }
 
-    fn read_bytes(&mut self, k: usize) -> PortBytes<'_> {
+    fn read_bytes(&mut self, k: usize) -> PortBytes {
         self.get_bytes(k, true)
     }
 
@@ -313,12 +312,12 @@ impl FileReader {
         }
     }
 
-    fn get_bytes(&mut self, k: usize, advance: bool) -> PortBytes<'_> {
+    fn get_bytes(&mut self, k: usize, advance: bool) -> PortBytes {
         match &self.file {
             None => Err(PortError::Closed),
             Some(_) => {
                 if k == 0 {
-                    Ok(Some(Vec::new().into()))
+                    Ok(Some(Vec::new()))
                 } else if self.eof {
                     Ok(None)
                 } else {
@@ -338,7 +337,7 @@ impl FileReader {
         })
     }
 
-    fn read_buffer(&mut self, mut k: usize, advance: bool) -> PortBytes<'_> {
+    fn read_buffer(&mut self, mut k: usize, advance: bool) -> PortBytes {
         let mut bytes = Vec::new();
         let r = self.file.as_mut().expect("expected active file handle");
         while k > 0 {
@@ -363,11 +362,7 @@ impl FileReader {
                 }
             }
         }
-        Ok(if bytes.is_empty() {
-            None
-        } else {
-            Some(bytes.into())
-        })
+        Ok(if bytes.is_empty() { None } else { Some(bytes) })
     }
 }
 

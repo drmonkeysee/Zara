@@ -25,8 +25,8 @@ use crate::{
     eval::{EvalResult, Frame, IntrinsicFn, MAX_ARITY},
     number::{Number, NumericError, NumericTypeName},
     value::{
-        BvRef, CollRef, CollSized, Condition, InvalidList, Pair, PairSized, PortSpec, StrRef,
-        Traverse, TypeName, Value, VecRef,
+        BvRef, CollRef, CollSized, Condition, InvalidList, Pair, PairSized, PortResult, PortSpec,
+        ReadPort, StrRef, Traverse, TypeName, Value, VecRef,
     },
 };
 use std::{
@@ -226,12 +226,13 @@ fn get_bytevector_output(args: &[Value], env: &Frame) -> EvalResult {
 }
 
 fn read_bytes(args: &[Value], env: &Frame) -> EvalResult {
-    let k = try_val_to_index(first(args), FIRST_ARG_LABEL)?;
-    let port = args.get(1).unwrap_or(&env.sys.stdin);
-    let p = super::guard_input_port(port, PortSpec::BinaryInput)?;
-    p.borrow_mut().read_bytes(k).map_or_else(
-        |err| Err(Condition::io_error(&err, env.sym, port).into()),
-        |b| Ok(b.map_or(Value::Eof, |b| Value::bytevector_mut(b.iter().copied()))),
+    read_n(
+        first(args),
+        args.get(1),
+        env,
+        PortSpec::BinaryInput,
+        ReadPort::read_bytes,
+        |b| Ok(b.map_or(Value::Eof, Value::bytevector_mut)),
     )
 }
 
@@ -716,11 +717,12 @@ fn get_string_output(args: &[Value], env: &Frame) -> EvalResult {
 }
 
 fn read_string(args: &[Value], env: &Frame) -> EvalResult {
-    let k = try_val_to_index(first(args), FIRST_ARG_LABEL)?;
-    let port = args.get(1).unwrap_or(&env.sys.stdin);
-    let p = super::guard_input_port(port, PortSpec::BinaryInput)?;
-    p.borrow_mut().read_chars(k).map_or_else(
-        |err| Err(Condition::io_error(&err, env.sym, port).into()),
+    read_n(
+        first(args),
+        args.get(1),
+        env,
+        PortSpec::TextualInput,
+        ReadPort::read_chars,
         |s| Ok(s.map_or(Value::Eof, Value::string_mut)),
     )
 }
@@ -1254,4 +1256,21 @@ fn try_coll_span(span: Range<Option<&Value>>, clen: usize) -> Result<Range<usize
     } else {
         Ok(sidx..eidx)
     }
+}
+
+fn read_n<T>(
+    first: &Value,
+    second: Option<&Value>,
+    env: &Frame,
+    spec: PortSpec,
+    op: impl FnOnce(&mut ReadPort, usize) -> PortResult<T>,
+    map: impl FnOnce(T) -> EvalResult,
+) -> EvalResult {
+    let k = try_val_to_index(first, FIRST_ARG_LABEL)?;
+    let port = second.unwrap_or(&env.sys.stdin);
+    let p = super::guard_input_port(port, spec)?;
+    op(&mut p.borrow_mut(), k).map_or_else(
+        |err| Err(Condition::io_error(&err, env.sym, port).into()),
+        map,
+    )
 }
