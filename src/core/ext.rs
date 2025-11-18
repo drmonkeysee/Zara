@@ -1,5 +1,7 @@
 // (zara ext)
-use super::first;
+mod file;
+
+use super::{SECOND_ARG_LABEL, bind_intrinsic, first, invalid_target};
 use crate::{
     Exception,
     eval::{EvalResult, Frame},
@@ -14,25 +16,19 @@ use crate::{
  */
 
 pub(super) fn load(env: &Frame) {
-    super::bind_intrinsic(env, "all-bindings", 0..0, bindings);
-    super::bind_intrinsic(env, "all-symbols", 0..0, symbols);
-    super::bind_intrinsic(env, "apropos", 0..1, apropos);
-    super::bind_intrinsic(env, "mutable?", 1..1, is_mutable);
+    bind_intrinsic(env, "all-bindings", 0..0, bindings);
+    bind_intrinsic(env, "all-symbols", 0..0, symbols);
+    bind_intrinsic(env, "apropos", 0..1, apropos);
+    bind_intrinsic(env, "mutable?", 1..1, is_mutable);
 
     // TODO ADD
     /*
-    io-error?
     <other>-error?
-    make-directory
-    delete-directory
-    read-directory (?)
     network ports
-    is-directory?
-    is-file?
     */
 
-    super::bind_intrinsic(env, "io-error?", 1..1, is_io_error);
-    super::bind_intrinsic(env, "system-error?", 1..1, is_system_error);
+    bind_intrinsic(env, "io-error?", 1..1, is_io_error);
+    bind_intrinsic(env, "system-error?", 1..1, is_system_error);
 
     // NOTE: convenience vars
     env.scope.bind(env.sym.get("null"), Value::Null);
@@ -43,6 +39,8 @@ pub(super) fn load(env: &Frame) {
         env.sym.get("ex"),
         Value::Error(Condition::system_error("test error").into()),
     );
+
+    file::load(env);
 }
 
 predicate!(is_io_error, Value::Error(c) if c.is_io_err());
@@ -78,7 +76,7 @@ fn apropos(args: &[Value], env: &Frame) -> EvalResult {
         || Ok::<_, Exception>(StrRef::default()),
         |v| {
             v.as_refstr()
-                .ok_or_else(|| super::invalid_target(TypeName::STRING, v))
+                .ok_or_else(|| invalid_target(TypeName::STRING, v))
         },
     )?;
     Ok(Value::list(
@@ -94,7 +92,7 @@ fn apropos(args: &[Value], env: &Frame) -> EvalResult {
 #[allow(clippy::unnecessary_wraps, reason = "infallible intrinsic")]
 fn is_mutable(args: &[Value], _env: &Frame) -> EvalResult {
     Ok(Value::Boolean(matches!(
-        super::first(args),
+        first(args),
         Value::ByteVectorMut(_) | Value::PairMut(_) | Value::StringMut(_) | Value::VectorMut(_)
     )))
 }
