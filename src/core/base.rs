@@ -296,7 +296,7 @@ fn close_output_port(args: &[Value], _env: &Frame) -> EvalResult {
 }
 
 fn read_char(args: &[Value], env: &Frame) -> EvalResult {
-    read_op(
+    read_op_mut(
         args.first(),
         env,
         PortSpec::TextualInput,
@@ -306,7 +306,7 @@ fn read_char(args: &[Value], env: &Frame) -> EvalResult {
 }
 
 fn peek_char(args: &[Value], env: &Frame) -> EvalResult {
-    read_op(
+    read_op_mut(
         args.first(),
         env,
         PortSpec::TextualInput,
@@ -318,7 +318,7 @@ fn peek_char(args: &[Value], env: &Frame) -> EvalResult {
 // NOTE: this does not strictly conform to the R7RS standard as it does
 // not consider carriage return (\r) to be a line-delimiter (same as Chez Scheme).
 fn read_line(args: &[Value], env: &Frame) -> EvalResult {
-    read_op(
+    read_op_mut(
         args.first(),
         env,
         PortSpec::TextualInput,
@@ -343,7 +343,7 @@ fn eof(_args: &[Value], _env: &Frame) -> EvalResult {
 }
 
 fn read_byte(args: &[Value], env: &Frame) -> EvalResult {
-    read_op(
+    read_op_mut(
         args.first(),
         env,
         PortSpec::BinaryInput,
@@ -353,7 +353,7 @@ fn read_byte(args: &[Value], env: &Frame) -> EvalResult {
 }
 
 fn peek_byte(args: &[Value], env: &Frame) -> EvalResult {
-    read_op(
+    read_op_mut(
         args.first(),
         env,
         PortSpec::BinaryInput,
@@ -498,6 +498,21 @@ fn guard_port_value<T>(
 }
 
 fn read_op<T>(
+    arg: Option<&Value>,
+    env: &Frame,
+    spec: PortSpec,
+    op: impl FnOnce(&ReadPort) -> PortResult<T>,
+    map: impl FnOnce(T) -> EvalResult,
+) -> EvalResult {
+    let port = arg.unwrap_or(&env.sys.stdin);
+    let p = guard_input_port(port, spec)?;
+    op(&p.borrow()).map_or_else(
+        |err| Err(Condition::io_error(&err, env.sym, port).into()),
+        map,
+    )
+}
+
+fn read_op_mut<T>(
     arg: Option<&Value>,
     env: &Frame,
     spec: PortSpec,

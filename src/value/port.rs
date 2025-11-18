@@ -86,7 +86,7 @@ impl ReadPort {
         }
     }
 
-    pub(crate) fn char_ready(&mut self) -> PortBool {
+    pub(crate) fn char_ready(&self) -> PortBool {
         match self {
             Self::ByteVector(_) => Err(PortError::ExpectedMode(PortMode::Textual)),
             Self::File(r) => r.read_ready(),
@@ -118,7 +118,7 @@ impl ReadPort {
         }
     }
 
-    pub(crate) fn byte_ready(&mut self) -> PortBool {
+    pub(crate) fn byte_ready(&self) -> PortBool {
         match self {
             Self::ByteVector(r) => {
                 // TODO: experimental ok_or https://doc.rust-lang.org/std/primitive.bool.html#method.ok_or
