@@ -28,7 +28,7 @@ impl Sequence {
         Ok(self
             .iter()
             .map(|expr| expr.eval(env))
-            .collect::<Result<Vec<Value>, Exception>>()?
+            .collect::<Result<Vec<_>, _>>()?
             .pop()
             .unwrap_or(Value::Unspecified))
     }
@@ -330,7 +330,7 @@ fn apply_op(op: &impl Operator, args: &[Expression], env: &Frame) -> EvalResult 
         let args = args
             .iter()
             .map(|expr| expr.eval(env))
-            .collect::<Result<Vec<Value>, Exception>>()?;
+            .collect::<Result<Vec<_>, _>>()?;
         op.apply(&args, env)
     } else {
         Err(Condition::arity_error(op.name(), op.arity(), args.len()).into())

@@ -16,7 +16,7 @@ mod tests;
 pub(crate) use self::{
     condition::Condition,
     display::TypeName,
-    port::{PortResult, PortSpec, ReadPort},
+    port::{FileMode, PortResult, PortSpec, ReadPort},
 };
 use self::{
     display::{Datum, ValueMessage},
@@ -122,9 +122,12 @@ impl Value {
         Ok(Self::PortInput(RefCell::new(ReadPort::file(path)?).into()))
     }
 
-    pub(crate) fn port_file_output(path: impl Into<PathBuf>) -> PortResult<Self> {
+    pub(crate) fn port_file_output(
+        path: impl Into<PathBuf>,
+        mode: FileMode,
+    ) -> PortResult<Self> {
         Ok(Self::PortOutput(
-            RefCell::new(WritePort::file(path)?).into(),
+            RefCell::new(WritePort::file(path, mode)?).into(),
         ))
     }
 

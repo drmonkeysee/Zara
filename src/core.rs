@@ -139,7 +139,7 @@ fn fs_op<T>(
         || Err(invalid_target(TypeName::STRING, arg)),
         |path| {
             op(path.as_ref()).map_or_else(
-                |err| Err(Condition::file_error(&(err.into()), env.sym, arg).into()),
+                |err| Err(Condition::io_error(&(err.into()), env.sym, arg).into()),
                 ret,
             )
         },

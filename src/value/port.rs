@@ -6,10 +6,10 @@ use crate::string::{
 use std::{
     cmp,
     fmt::{self, Debug, Display, Formatter},
-    fs::File,
+    fs::{File, OpenOptions},
     io::{self, BufRead, BufReader, BufWriter, ErrorKind, Stderr, Stdin, Stdout},
     iter,
-    path::PathBuf,
+    path::{Path, PathBuf},
 };
 
 pub(crate) type PortResult<T = ()> = Result<T, PortError>;
@@ -385,10 +385,9 @@ impl WritePort {
         Self::ByteVector(Some(Vec::new()))
     }
 
-    pub(super) fn file(path: impl Into<PathBuf>) -> PortResult<Self> {
+    pub(super) fn file(path: impl Into<PathBuf>, mode: FileMode) -> PortResult<Self> {
         let p = path.into();
-        let f = File::create(&p)?;
-        Ok(Self::File(Some(BufWriter::new(f)), p))
+        Ok(Self::File(Some(BufWriter::new(mode.open(&p)?)), p))
     }
 
     pub(super) fn stdout(interactive: bool) -> Self {
@@ -697,6 +696,20 @@ impl Display for PortMode {
             Self::Any => f.write_str("any"),
             Self::Binary => f.write_str("binary"),
             Self::Textual => f.write_str("textual"),
+        }
+    }
+}
+
+pub(crate) enum FileMode {
+    Append,
+    Truncate,
+}
+
+impl FileMode {
+    fn open(&self, p: impl AsRef<Path>) -> io::Result<File> {
+        match self {
+            Self::Append => OpenOptions::new().append(true).open(p),
+            Self::Truncate => File::create(p),
         }
     }
 }
