@@ -13,8 +13,8 @@ pub(super) fn load(env: &Frame) {
 
     super::bind_intrinsic(env, "canonical-path", 1..1, canon_path);
 
-    super::bind_intrinsic(env, "is-file?", 1..1, is_file);
-    super::bind_intrinsic(env, "is-directory?", 1..1, is_dir);
+    super::bind_intrinsic(env, "file?", 1..1, is_file);
+    super::bind_intrinsic(env, "directory?", 1..1, is_dir);
 
     super::bind_intrinsic(env, "copy-file", 2..2, copy);
     super::bind_intrinsic(env, "rename-file", 2..2, rename);
