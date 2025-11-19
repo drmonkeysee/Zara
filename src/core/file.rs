@@ -40,27 +40,14 @@ fn output_file(args: &[Value], env: &Frame) -> EvalResult {
 }
 
 fn path_exists(args: &[Value], env: &Frame) -> EvalResult {
-    let arg = super::first(args);
-    arg.as_refstr().map_or_else(
-        || Err(super::invalid_target(TypeName::STRING, arg)),
-        |path| {
-            fs::exists(path.as_ref()).map_or_else(
-                |err| Err(Condition::file_error(&(err.into()), env.sym, arg).into()),
-                |b| Ok(Value::Boolean(b)),
-            )
-        },
+    super::fs_op(
+        super::first(args),
+        env,
+        |p| fs::exists(p),
+        |b| Ok(Value::Boolean(b)),
     )
 }
 
 fn delete_file(args: &[Value], env: &Frame) -> EvalResult {
-    let arg = super::first(args);
-    arg.as_refstr().map_or_else(
-        || Err(super::invalid_target(TypeName::STRING, arg)),
-        |path| {
-            fs::remove_file(path.as_ref()).map_or_else(
-                |err| Err(Condition::file_error(&(err.into()), env.sym, arg).into()),
-                |()| Ok(Value::Unspecified),
-            )
-        },
-    )
+    super::fs_cmd(super::first(args), env, |p| fs::remove_file(p))
 }

@@ -1,7 +1,7 @@
 // (zara ext)
 mod file;
 
-use super::{SECOND_ARG_LABEL, bind_intrinsic, first, invalid_target};
+use super::{bind_intrinsic, first, fs_cmd, invalid_target};
 use crate::{
     Exception,
     eval::{EvalResult, Frame},

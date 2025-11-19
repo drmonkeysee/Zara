@@ -58,7 +58,7 @@ use crate::{
     eval::{Arity, EvalResult, Frame, Intrinsic, IntrinsicFn},
     value::{Condition, TypeName, Value},
 };
-use std::fmt::Display;
+use std::{fmt::Display, io};
 
 /*
  * Zara Core Library including all the standard R7RS libraries
@@ -123,4 +123,25 @@ fn pcdr(arg: &Value) -> EvalResult {
 
 fn invalid_target(expected_type: impl Display, arg: &Value) -> Exception {
     Condition::arg_error(FIRST_ARG_LABEL, expected_type, arg).into()
+}
+
+fn fs_cmd(arg: &Value, env: &Frame, op: impl FnOnce(&str) -> io::Result<()>) -> EvalResult {
+    fs_op(arg, env, op, |()| Ok(Value::Unspecified))
+}
+
+fn fs_op<T>(
+    arg: &Value,
+    env: &Frame,
+    op: impl FnOnce(&str) -> io::Result<T>,
+    ret: impl FnOnce(T) -> EvalResult,
+) -> EvalResult {
+    arg.as_refstr().map_or_else(
+        || Err(invalid_target(TypeName::STRING, arg)),
+        |path| {
+            op(path.as_ref()).map_or_else(
+                |err| Err(Condition::file_error(&(err.into()), env.sym, arg).into()),
+                ret,
+            )
+        },
+    )
 }
