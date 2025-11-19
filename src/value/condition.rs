@@ -79,6 +79,15 @@ impl Condition {
         Self::value_error("cannot modify literal value", val)
     }
 
+    pub(crate) fn path_error(sym: &SymbolTable) -> Self {
+        let err = PortError::InvalidPath;
+        Self {
+            kind: ConditionKind::Io,
+            irritants: Some(zlist![err.to_symbol(sym)]),
+            msg: err.to_string().into(),
+        }
+    }
+
     pub(crate) fn proc_error(typename: impl Display) -> Self {
         Self::env_error(format!("expected procedure, got: {typename}"))
     }

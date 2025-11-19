@@ -602,6 +602,7 @@ pub(crate) enum PortError {
     Closed,
     ExpectedMode(PortMode),
     Fmt,
+    InvalidPath,
     InvalidSource,
     Io(ErrorKind),
     Unicode(UnicodeError),
@@ -613,6 +614,7 @@ impl PortError {
             Self::Closed => sym.get("closed-port"),
             Self::ExpectedMode(_) => sym.get("mismatched-port-mode"),
             Self::Fmt => sym.get("string-error"),
+            Self::InvalidPath => sym.get("invalid-path-representation"),
             Self::InvalidSource => sym.get("invalid-port-source"),
             Self::Io(k) => match k {
                 ErrorKind::AlreadyExists => sym.get("already-exists"),
@@ -646,6 +648,7 @@ impl Display for PortError {
             Self::Closed => f.write_str("attempted operation on closed port"),
             Self::ExpectedMode(m) => write!(f, "attemped {} operation on {m} port", m.inverse()),
             Self::Fmt => f.write_str("unexpected format error"),
+            Self::InvalidPath => f.write_str("file path has no valid unicode representation"),
             Self::InvalidSource => f.write_str("invalid port for requested data type"),
             Self::Io(k) => write!(f, "{k}"),
             Self::Unicode(u) => write!(f, "{u}"),
