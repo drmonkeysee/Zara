@@ -1,20 +1,23 @@
+use super::SECOND_ARG_LABEL;
 use crate::{
     eval::{EvalResult, Frame},
-    value::{Condition, Value},
+    value::{Condition, TypeName, Value},
 };
 use std::fs;
 
 pub(super) fn load(env: &Frame) {
     // TODO ADD
     /*
-    is-directory?
-    is-file?
-    copy-file
-    rename-file
     metadata?
     */
 
     super::bind_intrinsic(env, "canonical-path", 1..1, canon_path);
+
+    super::bind_intrinsic(env, "is-file?", 1..1, is_file);
+    super::bind_intrinsic(env, "is-directory?", 1..1, is_dir);
+
+    super::bind_intrinsic(env, "copy-file", 2..2, copy);
+    super::bind_intrinsic(env, "rename-file", 2..2, rename);
 
     super::bind_intrinsic(env, "make-directory", 1..1, mk_dir);
     super::bind_intrinsic(env, "make-directories", 1..1, mk_dirs);
@@ -34,6 +37,45 @@ fn canon_path(args: &[Value], env: &Frame) -> EvalResult {
                 |s| Ok(Value::string_mut(s)),
             )
         },
+    )
+}
+
+fn is_file(args: &[Value], env: &Frame) -> EvalResult {
+    super::fs_op(
+        super::first(args),
+        env,
+        |p| fs::metadata(p),
+        |m| Ok(Value::Boolean(m.is_file())),
+    )
+}
+
+fn is_dir(args: &[Value], env: &Frame) -> EvalResult {
+    super::fs_op(
+        super::first(args),
+        env,
+        |p| fs::metadata(p),
+        |m| Ok(Value::Boolean(m.is_dir())),
+    )
+}
+
+fn copy(args: &[Value], env: &Frame) -> EvalResult {
+    let arg = super::second(args);
+    arg.as_refstr().map_or_else(
+        || Err(Condition::arg_error(SECOND_ARG_LABEL, TypeName::STRING, arg).into()),
+        |target| {
+            super::fs_cmd(super::first(args), env, |p| {
+                fs::copy(p, target.as_ref())?;
+                Ok(())
+            })
+        },
+    )
+}
+
+fn rename(args: &[Value], env: &Frame) -> EvalResult {
+    let arg = super::second(args);
+    arg.as_refstr().map_or_else(
+        || Err(Condition::arg_error(SECOND_ARG_LABEL, TypeName::STRING, arg).into()),
+        |target| super::fs_cmd(super::first(args), env, |p| fs::rename(p, target.as_ref())),
     )
 }
 
