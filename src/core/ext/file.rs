@@ -111,7 +111,7 @@ fn read_dir(args: &[Value], env: &Frame) -> EvalResult {
         arg,
         env,
         |p| fs::read_dir(p),
-        |dir| dir_to_list(dir, env, arg),
+        |dir| dir_into_list(dir, env, arg),
     )
 }
 
@@ -123,7 +123,7 @@ fn rm_dirs(args: &[Value], env: &Frame) -> EvalResult {
     super::fs_cmd(super::first(args), env, |p| fs::remove_dir_all(p))
 }
 
-fn dir_to_list(dir: ReadDir, env: &Frame, arg: &Value) -> EvalResult {
+fn dir_into_list(dir: ReadDir, env: &Frame, arg: &Value) -> EvalResult {
     Ok(Value::list_mut(
         dir.collect::<Result<Vec<_>, _>>()
             .map_err(|err| Exception::from(Condition::io_error(&(err.into()), env.sym, arg)))?
