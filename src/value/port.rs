@@ -25,6 +25,7 @@ pub(crate) enum ReadPort {
     ByteVector(BvReader),
     File(FileReader),
     In(Option<Stdin>),
+    String(StringReader),
 }
 
 impl ReadPort {
@@ -43,14 +44,14 @@ impl ReadPort {
     pub(crate) fn is_binary(&self) -> bool {
         match self {
             Self::ByteVector(_) | Self::File(_) => true,
-            Self::In(_) => false,
+            Self::In(_) | Self::String(_) => false,
         }
     }
 
     pub(crate) fn is_textual(&self) -> bool {
         match self {
             Self::ByteVector(_) => false,
-            Self::File(_) | Self::In(_) => true,
+            Self::File(_) | Self::In(_) | Self::String(_) => true,
         }
     }
 
@@ -66,7 +67,7 @@ impl ReadPort {
         match self {
             Self::ByteVector(_) => Err(PortError::ExpectedMode(PortMode::Textual)),
             Self::File(r) => r.read_char(),
-            Self::In(_) => todo!(),
+            Self::In(_) | Self::String(_) => todo!(),
         }
     }
 
@@ -74,7 +75,7 @@ impl ReadPort {
         match self {
             Self::ByteVector(_) => Err(PortError::ExpectedMode(PortMode::Textual)),
             Self::File(r) => r.peek_char(),
-            Self::In(_) => todo!(),
+            Self::In(_) | Self::String(_) => todo!(),
         }
     }
 
@@ -82,7 +83,7 @@ impl ReadPort {
         match self {
             Self::ByteVector(_) => Err(PortError::ExpectedMode(PortMode::Textual)),
             Self::File(r) => r.read_line(),
-            Self::In(_) => todo!(),
+            Self::In(_) | Self::String(_) => todo!(),
         }
     }
 
@@ -90,7 +91,7 @@ impl ReadPort {
         match self {
             Self::ByteVector(_) => Err(PortError::ExpectedMode(PortMode::Textual)),
             Self::File(r) => r.read_ready(),
-            Self::In(_) => todo!(),
+            Self::In(_) | Self::String(_) => todo!(),
         }
     }
 
@@ -98,7 +99,7 @@ impl ReadPort {
         match self {
             Self::ByteVector(_) => Err(PortError::ExpectedMode(PortMode::Textual)),
             Self::File(r) => r.read_chars(k),
-            Self::In(_) => todo!(),
+            Self::In(_) | Self::String(_) => todo!(),
         }
     }
 
@@ -106,7 +107,7 @@ impl ReadPort {
         match self {
             Self::ByteVector(r) => r.read(),
             Self::File(r) => r.read_byte(),
-            Self::In(_) => Err(PortError::ExpectedMode(PortMode::Binary)),
+            Self::In(_) | Self::String(_) => Err(PortError::ExpectedMode(PortMode::Binary)),
         }
     }
 
@@ -114,7 +115,7 @@ impl ReadPort {
         match self {
             Self::ByteVector(r) => r.peek(),
             Self::File(r) => r.peek_byte(),
-            Self::In(_) => Err(PortError::ExpectedMode(PortMode::Binary)),
+            Self::In(_) | Self::String(_) => Err(PortError::ExpectedMode(PortMode::Binary)),
         }
     }
 
@@ -129,7 +130,7 @@ impl ReadPort {
                 }
             }
             Self::File(r) => r.read_ready(),
-            Self::In(_) => Err(PortError::ExpectedMode(PortMode::Binary)),
+            Self::In(_) | Self::String(_) => Err(PortError::ExpectedMode(PortMode::Binary)),
         }
     }
 
@@ -137,7 +138,7 @@ impl ReadPort {
         match self {
             Self::ByteVector(r) => r.read_count(k),
             Self::File(r) => r.read_bytes(k),
-            Self::In(_) => Err(PortError::ExpectedMode(PortMode::Binary)),
+            Self::In(_) | Self::String(_) => Err(PortError::ExpectedMode(PortMode::Binary)),
         }
     }
 
@@ -145,7 +146,7 @@ impl ReadPort {
         match self {
             Self::ByteVector(_) => PortSpec::BinaryInput,
             Self::File(..) => PortSpec::Input,
-            Self::In(_) => PortSpec::TextualInput,
+            Self::In(_) | Self::String(_) => PortSpec::TextualInput,
         }
     }
 
@@ -154,6 +155,7 @@ impl ReadPort {
             Self::ByteVector(r) => r as &dyn Reader,
             Self::File(r) => r as &dyn Reader,
             Self::In(_) => todo!(),
+            Self::String(r) => r as &dyn Reader,
         }
     }
 
@@ -162,6 +164,7 @@ impl ReadPort {
             Self::ByteVector(r) => r as &mut dyn Reader,
             Self::File(r) => r as &mut dyn Reader,
             Self::In(_) => todo!(),
+            Self::String(r) => r as &mut dyn Reader,
         }
     }
 }
@@ -172,6 +175,7 @@ impl Display for ReadPort {
             Self::ByteVector(_) => f.write_str(TypeName::BYTEVECTOR),
             Self::File(r) => write_file_source(r.path.display(), 'r', f),
             Self::In(_) => f.write_str("stdin"),
+            Self::String(_) => f.write_str(TypeName::STRING),
         }?;
         write_port_status(self.is_open(), f)
     }
@@ -368,6 +372,20 @@ impl FileReader {
             }
         }
         Ok(if bytes.is_empty() { None } else { Some(bytes) })
+    }
+}
+
+// TODO: https://doc.rust-lang.org/std/string/struct.String.html#method.into_chars
+#[derive(Debug)]
+pub(crate) struct StringReader(BvReader);
+
+impl Reader for StringReader {
+    fn is_open(&self) -> bool {
+        self.0.is_open()
+    }
+
+    fn close(&mut self) {
+        self.0.close();
     }
 }
 
