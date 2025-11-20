@@ -4,7 +4,7 @@ use crate::{
     eval::{EvalResult, Frame},
     value::{Condition, FileMode, TypeName, Value},
 };
-use std::fs::{self, ReadDir};
+use std::fs;
 
 pub(super) fn load(env: &Frame) {
     // TODO ADD
@@ -111,7 +111,22 @@ fn read_dir(args: &[Value], env: &Frame) -> EvalResult {
         arg,
         env,
         |p| fs::read_dir(p),
-        |dir| dir_into_list(dir, env, arg),
+        |dir| {
+            Ok(Value::list_mut(
+                dir.collect::<Result<Vec<_>, _>>()
+                    .map_err(|err| {
+                        Exception::from(Condition::io_error(&(err.into()), env.sym, arg))
+                    })?
+                    .into_iter()
+                    .map(|d| {
+                        d.file_name().into_string().map_or_else(
+                            |_| Err(Exception::from(Condition::path_error(env.sym))),
+                            |s| Ok(Value::string_mut(s)),
+                        )
+                    })
+                    .collect::<Result<Vec<_>, _>>()?,
+            ))
+        },
     )
 }
 
@@ -121,19 +136,4 @@ fn rm_dir(args: &[Value], env: &Frame) -> EvalResult {
 
 fn rm_dirs(args: &[Value], env: &Frame) -> EvalResult {
     super::fs_cmd(super::first(args), env, |p| fs::remove_dir_all(p))
-}
-
-fn dir_into_list(dir: ReadDir, env: &Frame, arg: &Value) -> EvalResult {
-    Ok(Value::list_mut(
-        dir.collect::<Result<Vec<_>, _>>()
-            .map_err(|err| Exception::from(Condition::io_error(&(err.into()), env.sym, arg)))?
-            .into_iter()
-            .map(|d| {
-                d.file_name().into_string().map_or_else(
-                    |_| Err(Exception::from(Condition::path_error(env.sym))),
-                    |s| Ok(Value::string_mut(s)),
-                )
-            })
-            .collect::<Result<Vec<_>, _>>()?,
-    ))
 }
