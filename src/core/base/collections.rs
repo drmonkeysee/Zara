@@ -556,6 +556,7 @@ fn load_string(env: &Frame) {
     // Input/Output
     //
 
+    super::bind_intrinsic(env, "open-input-string", 1..1, input_string);
     super::bind_intrinsic(env, "open-output-string", 0..0, output_string);
     super::bind_intrinsic(env, "get-output-string", 1..1, get_string_output);
 
@@ -701,6 +702,14 @@ fn string_fill(args: &[Value], _env: &Frame) -> EvalResult {
             target.replace_range(.., &updated);
         },
     )
+}
+
+fn input_string(args: &[Value], _env: &Frame) -> EvalResult {
+    let arg = first(args);
+    let s = arg
+        .as_refstr()
+        .ok_or_else(|| super::invalid_target(TypeName::STRING, arg))?;
+    Ok(Value::port_string_input(s.as_ref()))
 }
 
 #[allow(clippy::unnecessary_wraps, reason = "infallible interface")]

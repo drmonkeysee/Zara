@@ -122,13 +122,14 @@ impl Value {
         Ok(Self::PortInput(RefCell::new(ReadPort::file(path)?).into()))
     }
 
-    pub(crate) fn port_file_output(
-        path: impl Into<PathBuf>,
-        mode: FileMode,
-    ) -> PortResult<Self> {
+    pub(crate) fn port_file_output(path: impl Into<PathBuf>, mode: FileMode) -> PortResult<Self> {
         Ok(Self::PortOutput(
             RefCell::new(WritePort::file(path, mode)?).into(),
         ))
+    }
+
+    pub(crate) fn port_string_input(s: impl Into<String>) -> Self {
+        Self::PortInput(RefCell::new(ReadPort::string(s)).into())
     }
 
     pub(crate) fn port_string_output() -> Self {

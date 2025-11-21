@@ -41,6 +41,10 @@ impl ReadPort {
         Self::In(Some(io::stdin()))
     }
 
+    pub(super) fn string(s: impl Into<String>) -> Self {
+        Self::String(StringReader::new(s))
+    }
+
     pub(crate) fn is_binary(&self) -> bool {
         match self {
             Self::ByteVector(_) | Self::File(_) => true,
@@ -380,6 +384,28 @@ impl FileReader {
 // TODO: https://doc.rust-lang.org/std/string/struct.String.html#method.into_chars
 #[derive(Debug)]
 pub(crate) struct StringReader(BvReader);
+
+impl StringReader {
+    fn new(s: impl Into<String>) -> Self {
+        Self(BvReader::new(s.into().into_bytes()))
+    }
+
+    fn read(&mut self) -> PortByte {
+        todo!();
+    }
+
+    fn read_count(&mut self, k: usize) -> PortBytes {
+        todo!();
+    }
+
+    fn peek(&mut self) -> PortByte {
+        todo!();
+    }
+
+    fn ready(&self) -> PortBool {
+        todo!();
+    }
+}
 
 impl Reader for StringReader {
     fn is_open(&self) -> bool {
