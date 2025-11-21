@@ -121,14 +121,7 @@ impl ReadPort {
 
     pub(crate) fn byte_ready(&self) -> PortBool {
         match self {
-            Self::ByteVector(r) => {
-                // TODO: experimental ok_or https://doc.rust-lang.org/std/primitive.bool.html#method.ok_or
-                if r.is_open() {
-                    Ok(true)
-                } else {
-                    Err(PortError::Closed)
-                }
-            }
+            Self::ByteVector(r) => r.ready(),
             Self::File(r) => r.read_ready(),
             Self::In(_) | Self::String(_) => Err(PortError::ExpectedMode(PortMode::Binary)),
         }
@@ -210,6 +203,15 @@ impl BvReader {
 
     fn peek(&mut self) -> PortByte {
         self.get_byte(false)
+    }
+
+    fn ready(&self) -> PortBool {
+        // TODO: experimental ok_or https://doc.rust-lang.org/std/primitive.bool.html#method.ok_or
+        if self.is_open() {
+            Ok(true)
+        } else {
+            Err(PortError::Closed)
+        }
     }
 
     fn get_byte(&mut self, advance: bool) -> PortByte {
