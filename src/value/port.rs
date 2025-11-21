@@ -305,12 +305,9 @@ impl FileReader {
         } else if self.eof {
             Ok(None)
         } else {
-            let buf = iter::from_fn(|| self.read_char().transpose())
-                .take(k)
-                .collect::<PortResult<Vec<_>>>()?
-                .into_iter()
-                .collect::<String>();
-            Ok(if buf.is_empty() { None } else { Some(buf) })
+            extract_string(iter::from_fn(|| self.read_char().transpose()), |it| {
+                it.take(k)
+            })
         }
     }
 
@@ -348,13 +345,7 @@ impl FileReader {
     }
 
     fn get_char(&mut self, advance: bool) -> PortChar {
-        Ok(match self.peek_byte()? {
-            None => None,
-            Some(prefix) => match self.get_bytes(unicode::utf8_char_len(prefix)?, advance)? {
-                None => None,
-                Some(seq) => Some(unicode::char_from_utf8(&seq)?),
-            },
-        })
+        extract_char(self, Self::peek_byte, Self::get_bytes, advance)
     }
 
     fn read_buffer(&mut self, mut k: usize, advance: bool) -> PortBytes {
@@ -403,12 +394,7 @@ impl StringReader {
         if k == 0 {
             Ok(Some(String::new()))
         } else {
-            let buf = iter::from_fn(|| self.read().transpose())
-                .take(k)
-                .collect::<PortResult<Vec<_>>>()?
-                .into_iter()
-                .collect::<String>();
-            Ok(if buf.is_empty() { None } else { Some(buf) })
+            extract_string(self.char_stream(), |it| it.take(k))
         }
     }
 
@@ -421,22 +407,17 @@ impl StringReader {
     }
 
     fn read_line(&mut self) -> PortString {
-        let buf = iter::from_fn(|| self.read().transpose())
-            .take_while(|item| item.as_ref().map_or(true, |ch| *ch != '\n'))
-            .collect::<PortResult<Vec<_>>>()?
-            .into_iter()
-            .collect::<String>();
-        Ok(if buf.is_empty() { None } else { Some(buf) })
+        extract_string(self.char_stream(), |it| {
+            it.take_while(|item| item.as_ref().map_or(true, |ch| *ch != '\n'))
+        })
     }
 
     fn get_char(&mut self, advance: bool) -> PortChar {
-        Ok(match self.0.peek()? {
-            None => None,
-            Some(prefix) => match self.0.get_bytes(unicode::utf8_char_len(prefix)?, advance)? {
-                None => None,
-                Some(seq) => Some(unicode::char_from_utf8(&seq)?),
-            },
-        })
+        extract_char(&mut self.0, BvReader::peek, BvReader::get_bytes, advance)
+    }
+
+    fn char_stream(&mut self) -> impl Iterator<Item = PortExtractChar> {
+        iter::from_fn(|| self.read().transpose())
     }
 }
 
@@ -783,6 +764,8 @@ impl FileMode {
     }
 }
 
+type PortExtractChar = PortResult<char>;
+
 trait Reader {
     fn is_open(&self) -> bool;
     fn close(&mut self);
@@ -859,6 +842,32 @@ impl<'a> WriteRef<'a> {
         }
         Ok(())
     }
+}
+
+fn extract_char<P>(
+    port: &mut P,
+    peek: impl FnOnce(&mut P) -> PortByte,
+    bytes: impl FnOnce(&mut P, usize, bool) -> PortBytes,
+    advance: bool,
+) -> PortChar {
+    Ok(match peek(port)? {
+        None => None,
+        Some(prefix) => match bytes(port, unicode::utf8_char_len(prefix)?, advance)? {
+            None => None,
+            Some(seq) => Some(unicode::char_from_utf8(&seq)?),
+        },
+    })
+}
+
+fn extract_string<S: Iterator<Item = PortExtractChar>, R: Iterator<Item = PortExtractChar>>(
+    stream: S,
+    extract: impl FnOnce(S) -> R,
+) -> PortString {
+    let buf = extract(stream)
+        .collect::<PortResult<Vec<_>>>()?
+        .into_iter()
+        .collect::<String>();
+    Ok(if buf.is_empty() { None } else { Some(buf) })
 }
 
 fn write_file_source(path: impl Display, mode: char, f: &mut Formatter<'_>) -> fmt::Result {
