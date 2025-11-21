@@ -440,16 +440,6 @@ impl StringReader {
     }
 }
 
-impl Reader for StringReader {
-    fn is_open(&self) -> bool {
-        self.0.is_open()
-    }
-
-    fn close(&mut self) {
-        self.0.close();
-    }
-}
-
 #[derive(Debug)]
 pub(crate) enum WritePort {
     ByteVector(Option<Vec<u8>>),
@@ -815,6 +805,16 @@ impl Reader for FileReader {
 
     fn close(&mut self) {
         self.file.take();
+    }
+}
+
+impl Reader for StringReader {
+    fn is_open(&self) -> bool {
+        self.0.is_open()
+    }
+
+    fn close(&mut self) {
+        self.0.close();
     }
 }
 
