@@ -71,7 +71,8 @@ impl ReadPort {
         match self {
             Self::ByteVector(_) => Err(PortError::ExpectedMode(PortMode::Textual)),
             Self::File(r) => r.read_char(),
-            Self::In(_) | Self::String(_) => todo!(),
+            Self::In(_) => todo!(),
+            Self::String(r) => r.read(),
         }
     }
 
@@ -79,7 +80,8 @@ impl ReadPort {
         match self {
             Self::ByteVector(_) => Err(PortError::ExpectedMode(PortMode::Textual)),
             Self::File(r) => r.peek_char(),
-            Self::In(_) | Self::String(_) => todo!(),
+            Self::In(_) => todo!(),
+            Self::String(r) => r.peek(),
         }
     }
 
@@ -87,7 +89,8 @@ impl ReadPort {
         match self {
             Self::ByteVector(_) => Err(PortError::ExpectedMode(PortMode::Textual)),
             Self::File(r) => r.read_line(),
-            Self::In(_) | Self::String(_) => todo!(),
+            Self::In(_) => todo!(),
+            Self::String(r) => r.read_line(),
         }
     }
 
@@ -95,7 +98,8 @@ impl ReadPort {
         match self {
             Self::ByteVector(_) => Err(PortError::ExpectedMode(PortMode::Textual)),
             Self::File(r) => r.read_ready(),
-            Self::In(_) | Self::String(_) => todo!(),
+            Self::In(_) => todo!(),
+            Self::String(r) => r.ready(),
         }
     }
 
@@ -103,7 +107,8 @@ impl ReadPort {
         match self {
             Self::ByteVector(_) => Err(PortError::ExpectedMode(PortMode::Textual)),
             Self::File(r) => r.read_chars(k),
-            Self::In(_) | Self::String(_) => todo!(),
+            Self::In(_) => todo!(),
+            Self::String(r) => r.read_count(k),
         }
     }
 
@@ -390,20 +395,48 @@ impl StringReader {
         Self(BvReader::new(s.into().into_bytes()))
     }
 
-    fn read(&mut self) -> PortByte {
-        todo!();
+    fn read(&mut self) -> PortChar {
+        self.get_char(true)
     }
 
-    fn read_count(&mut self, k: usize) -> PortBytes {
-        todo!();
+    fn read_count(&mut self, k: usize) -> PortString {
+        if k == 0 {
+            Ok(Some(String::new()))
+        } else {
+            let buf = iter::from_fn(|| self.read().transpose())
+                .take(k)
+                .collect::<PortResult<Vec<_>>>()?
+                .into_iter()
+                .collect::<String>();
+            Ok(if buf.is_empty() { None } else { Some(buf) })
+        }
     }
 
-    fn peek(&mut self) -> PortByte {
-        todo!();
+    fn peek(&mut self) -> PortChar {
+        self.get_char(false)
     }
 
     fn ready(&self) -> PortBool {
-        todo!();
+        self.0.ready()
+    }
+
+    fn read_line(&mut self) -> PortString {
+        let buf = iter::from_fn(|| self.read().transpose())
+            .take_while(|item| item.as_ref().map_or(true, |ch| *ch != '\n'))
+            .collect::<PortResult<Vec<_>>>()?
+            .into_iter()
+            .collect::<String>();
+        Ok(if buf.is_empty() { None } else { Some(buf) })
+    }
+
+    fn get_char(&mut self, advance: bool) -> PortChar {
+        Ok(match self.0.peek()? {
+            None => None,
+            Some(prefix) => match self.0.get_bytes(unicode::utf8_char_len(prefix)?, advance)? {
+                None => None,
+                Some(seq) => Some(unicode::char_from_utf8(&seq)?),
+            },
+        })
     }
 }
 
