@@ -750,13 +750,14 @@ impl Display for PortMode {
     }
 }
 
+#[derive(Clone, Copy)]
 pub(crate) enum FileMode {
     Append,
     Truncate,
 }
 
 impl FileMode {
-    fn open(&self, p: impl AsRef<Path>) -> io::Result<File> {
+    fn open(self, p: impl AsRef<Path>) -> io::Result<File> {
         match self {
             Self::Append => OpenOptions::new().append(true).open(p),
             Self::Truncate => File::create(p),
