@@ -844,15 +844,15 @@ impl<'a> WriteRef<'a> {
     }
 }
 
-fn extract_char<P>(
-    port: &mut P,
-    peek: impl FnOnce(&mut P) -> PortByte,
-    bytes: impl FnOnce(&mut P, usize, bool) -> PortBytes,
+fn extract_char<T>(
+    reader: &mut T,
+    peek: impl FnOnce(&mut T) -> PortByte,
+    bytes: impl FnOnce(&mut T, usize, bool) -> PortBytes,
     advance: bool,
 ) -> PortChar {
-    Ok(match peek(port)? {
+    Ok(match peek(reader)? {
         None => None,
-        Some(prefix) => match bytes(port, unicode::utf8_char_len(prefix)?, advance)? {
+        Some(prefix) => match bytes(reader, unicode::utf8_char_len(prefix)?, advance)? {
             None => None,
             Some(seq) => Some(unicode::char_from_utf8(&seq)?),
         },
