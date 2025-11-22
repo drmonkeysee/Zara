@@ -1,3 +1,17 @@
+macro_rules! read_buffered_line {
+    ($r: expr) => {{
+        let mut buf = String::new();
+        Ok(if $r.read_line(&mut buf)? > 0 {
+            if buf.ends_with('\n') {
+                buf.pop();
+            }
+            Some(buf)
+        } else {
+            None
+        })
+    }};
+}
+
 use super::{TypeName, Value};
 use crate::string::{
     SymbolTable,
@@ -24,7 +38,7 @@ pub(crate) type PortBytes = PortResult<Option<Vec<u8>>>;
 pub(crate) enum ReadPort {
     ByteVector(BvReader),
     File(FileReader),
-    In(Option<Stdin>),
+    In(StdinReader),
     String(StringReader),
 }
 
@@ -38,7 +52,7 @@ impl ReadPort {
     }
 
     pub(super) fn stdin() -> Self {
-        Self::In(Some(io::stdin()))
+        Self::In(StdinReader::new())
     }
 
     pub(super) fn string(s: impl Into<String>) -> Self {
@@ -71,7 +85,7 @@ impl ReadPort {
         match self {
             Self::ByteVector(_) => Err(PortError::ExpectedMode(PortMode::Textual)),
             Self::File(r) => r.read_char(),
-            Self::In(_) => todo!(),
+            Self::In(r) => r.read(),
             Self::String(r) => r.read(),
         }
     }
@@ -80,7 +94,7 @@ impl ReadPort {
         match self {
             Self::ByteVector(_) => Err(PortError::ExpectedMode(PortMode::Textual)),
             Self::File(r) => r.peek_char(),
-            Self::In(_) => todo!(),
+            Self::In(r) => r.peek(),
             Self::String(r) => r.peek(),
         }
     }
@@ -89,7 +103,7 @@ impl ReadPort {
         match self {
             Self::ByteVector(_) => Err(PortError::ExpectedMode(PortMode::Textual)),
             Self::File(r) => r.read_line(),
-            Self::In(_) => todo!(),
+            Self::In(r) => r.read_line(),
             Self::String(r) => r.read_line(),
         }
     }
@@ -98,7 +112,7 @@ impl ReadPort {
         match self {
             Self::ByteVector(_) => Err(PortError::ExpectedMode(PortMode::Textual)),
             Self::File(r) => r.read_ready(),
-            Self::In(_) => todo!(),
+            Self::In(r) => r.ready(),
             Self::String(r) => r.ready(),
         }
     }
@@ -107,7 +121,7 @@ impl ReadPort {
         match self {
             Self::ByteVector(_) => Err(PortError::ExpectedMode(PortMode::Textual)),
             Self::File(r) => r.read_chars(k),
-            Self::In(_) => todo!(),
+            Self::In(r) => r.read_count(k),
             Self::String(r) => r.read_count(k),
         }
     }
@@ -156,7 +170,7 @@ impl ReadPort {
         match self {
             Self::ByteVector(r) => r as &dyn Reader,
             Self::File(r) => r as &dyn Reader,
-            Self::In(_) => todo!(),
+            Self::In(r) => r as &dyn Reader,
             Self::String(r) => r as &dyn Reader,
         }
     }
@@ -165,7 +179,7 @@ impl ReadPort {
         match self {
             Self::ByteVector(r) => r as &mut dyn Reader,
             Self::File(r) => r as &mut dyn Reader,
-            Self::In(_) => todo!(),
+            Self::In(r) => r as &mut dyn Reader,
             Self::String(r) => r as &mut dyn Reader,
         }
     }
@@ -314,18 +328,7 @@ impl FileReader {
     fn read_line(&mut self) -> PortString {
         match &mut self.file {
             None => Err(PortError::Closed),
-            Some(r) => {
-                let mut buf = String::new();
-                let c = r.read_line(&mut buf)?;
-                Ok(if c == 0 {
-                    None
-                } else {
-                    if buf.ends_with('\n') {
-                        buf.pop();
-                    }
-                    Some(buf)
-                })
-            }
+            Some(r) => read_buffered_line!(r),
         }
     }
 
@@ -374,6 +377,45 @@ impl FileReader {
             }
         }
         Ok(if bytes.is_empty() { None } else { Some(bytes) })
+    }
+}
+
+#[derive(Debug)]
+pub(crate) struct StdinReader(Option<Stdin>);
+
+impl StdinReader {
+    fn new() -> Self {
+        Self(Some(io::stdin()))
+    }
+
+    fn read(&mut self) -> PortChar {
+        match &mut self.0 {
+            None => Err(PortError::Closed),
+            Some(_) => todo!(),
+        }
+    }
+
+    fn read_count(&mut self, k: usize) -> PortString {
+        if k == 0 {
+            Ok(Some(String::new()))
+        } else {
+            todo!();
+        }
+    }
+
+    fn peek(&mut self) -> PortChar {
+        todo!();
+    }
+
+    fn ready(&self) -> PortBool {
+        todo!();
+    }
+
+    fn read_line(&mut self) -> PortString {
+        match &mut self.0 {
+            None => Err(PortError::Closed),
+            Some(r) => read_buffered_line!(r),
+        }
     }
 }
 
@@ -789,6 +831,16 @@ impl Reader for FileReader {
 
     fn close(&mut self) {
         self.file.take();
+    }
+}
+
+impl Reader for StdinReader {
+    fn is_open(&self) -> bool {
+        self.0.is_some()
+    }
+
+    fn close(&mut self) {
+        self.0.take();
     }
 }
 
