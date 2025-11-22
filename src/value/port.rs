@@ -888,183 +888,441 @@ mod tests {
     use super::*;
     use crate::testutil::{err_or_fail, ok_or_fail, some_or_fail};
 
-    #[test]
-    fn bv_empty_read_byte() {
-        let mut p = ReadPort::bytevector(Vec::new());
+    mod bytes {
+        use super::*;
 
-        let r = p.read_byte();
+        #[test]
+        fn bv_empty_read_byte() {
+            let mut p = ReadPort::bytevector(Vec::new());
 
-        let b = ok_or_fail!(r);
-        assert!(b.is_none());
+            let r = p.read_byte();
+
+            let b = ok_or_fail!(r);
+            assert!(b.is_none());
+        }
+
+        #[test]
+        fn bv_read_byte() {
+            let mut p = ReadPort::bytevector([1, 2, 3]);
+
+            let r = p.read_byte();
+
+            let b = some_or_fail!(ok_or_fail!(r));
+            assert_eq!(b, 1);
+
+            let r = p.read_byte();
+
+            let b = some_or_fail!(ok_or_fail!(r));
+            assert_eq!(b, 2);
+
+            let r = p.read_byte();
+
+            let b = some_or_fail!(ok_or_fail!(r));
+            assert_eq!(b, 3);
+
+            let r = p.read_byte();
+
+            let b = ok_or_fail!(r);
+            assert!(b.is_none());
+        }
+
+        #[test]
+        fn bv_read_byte_when_closed() {
+            let mut p = ReadPort::bytevector([1, 2, 3]);
+
+            let r = p.read_byte();
+
+            let b = some_or_fail!(ok_or_fail!(r));
+            assert_eq!(b, 1);
+
+            p.close();
+            let r = p.read_byte();
+
+            let e = err_or_fail!(r);
+            assert!(matches!(e, PortError::Closed));
+        }
+
+        #[test]
+        fn bv_byte_ready() {
+            let mut p = ReadPort::bytevector([1]);
+
+            assert!(ok_or_fail!(p.byte_ready()));
+
+            let r = p.read_byte();
+            let b = some_or_fail!(ok_or_fail!(r));
+
+            assert_eq!(b, 1);
+            assert!(ok_or_fail!(p.byte_ready()));
+
+            let r = p.read_byte();
+            let b = ok_or_fail!(r);
+
+            assert!(b.is_none());
+
+            p.close();
+            let r = p.byte_ready();
+
+            let e = err_or_fail!(r);
+            assert!(matches!(e, PortError::Closed));
+        }
+
+        #[test]
+        fn bv_empty_read_bytes() {
+            let mut p = ReadPort::bytevector(Vec::new());
+
+            let r = p.read_bytes(3);
+
+            let b = ok_or_fail!(r);
+            assert!(b.is_none());
+        }
+
+        #[test]
+        fn bv_read_all_bytes() {
+            let mut p = ReadPort::bytevector([1, 2, 3]);
+
+            let r = p.read_bytes(3);
+
+            let b = some_or_fail!(ok_or_fail!(r));
+            assert_eq!(*b, [1, 2, 3]);
+        }
+
+        #[test]
+        fn bv_read_no_bytes() {
+            let mut p = ReadPort::bytevector([1, 2, 3]);
+
+            let r = p.read_bytes(0);
+
+            let b = some_or_fail!(ok_or_fail!(r));
+            assert_eq!(*b, []);
+        }
+
+        #[test]
+        fn bv_read_some_bytes_from_start() {
+            let mut p = ReadPort::bytevector([1, 2, 3, 4, 5]);
+
+            let r = p.read_bytes(3);
+
+            let b = some_or_fail!(ok_or_fail!(r));
+            assert_eq!(*b, [1, 2, 3]);
+        }
+
+        #[test]
+        fn bv_read_bytes_subset() {
+            let mut p = ReadPort::bytevector([1, 2, 3, 4, 5]);
+
+            let _ = p.read_byte();
+
+            let r = p.read_bytes(3);
+
+            let b = some_or_fail!(ok_or_fail!(r));
+            assert_eq!(*b, [2, 3, 4]);
+        }
+
+        #[test]
+        fn bv_read_too_many_bytes() {
+            let mut p = ReadPort::bytevector([1, 2, 3]);
+
+            let r = p.read_bytes(5);
+
+            let b = some_or_fail!(ok_or_fail!(r));
+            assert_eq!(*b, [1, 2, 3]);
+        }
+
+        #[test]
+        fn bv_read_too_many_bytes_subset() {
+            let mut p = ReadPort::bytevector([1, 2, 3, 4, 5]);
+
+            let _ = p.read_byte();
+            let _ = p.read_byte();
+
+            let r = p.read_bytes(5);
+
+            let b = some_or_fail!(ok_or_fail!(r));
+            assert_eq!(*b, [3, 4, 5]);
+        }
+
+        #[test]
+        fn bv_read_bytes_out_of_bytes() {
+            let mut p = ReadPort::bytevector([1, 2, 3]);
+
+            let r = p.read_bytes(5);
+
+            let b = some_or_fail!(ok_or_fail!(r));
+            assert_eq!(*b, [1, 2, 3]);
+
+            let r = p.read_bytes(5);
+
+            let b = ok_or_fail!(r);
+            assert!(b.is_none());
+        }
+
+        #[test]
+        fn bv_read_no_bytes_after_eof() {
+            let mut p = ReadPort::bytevector([1, 2, 3]);
+
+            let r = p.read_bytes(5);
+
+            let b = some_or_fail!(ok_or_fail!(r));
+            assert_eq!(*b, [1, 2, 3]);
+
+            let r = p.read_bytes(0);
+
+            let b = some_or_fail!(ok_or_fail!(r));
+            assert_eq!(*b, []);
+        }
     }
 
-    #[test]
-    fn bv_read_byte() {
-        let mut p = ReadPort::bytevector([1, 2, 3]);
+    mod text {
+        use super::*;
 
-        let r = p.read_byte();
+        #[test]
+        fn str_empty_read_char() {
+            let mut p = ReadPort::string("");
 
-        let b = some_or_fail!(ok_or_fail!(r));
-        assert_eq!(b, 1);
+            let r = p.read_char();
 
-        let r = p.read_byte();
+            let c = ok_or_fail!(r);
+            assert!(c.is_none());
+        }
 
-        let b = some_or_fail!(ok_or_fail!(r));
-        assert_eq!(b, 2);
+        #[test]
+        fn str_read_char() {
+            let mut p = ReadPort::string("abc");
 
-        let r = p.read_byte();
+            let r = p.read_char();
 
-        let b = some_or_fail!(ok_or_fail!(r));
-        assert_eq!(b, 3);
+            let c = some_or_fail!(ok_or_fail!(r));
+            assert_eq!(c, 'a');
 
-        let r = p.read_byte();
+            let r = p.read_char();
 
-        let b = ok_or_fail!(r);
-        assert!(b.is_none());
-    }
+            let c = some_or_fail!(ok_or_fail!(r));
+            assert_eq!(c, 'b');
 
-    #[test]
-    fn bv_read_byte_when_closed() {
-        let mut p = ReadPort::bytevector([1, 2, 3]);
+            let r = p.read_char();
 
-        let r = p.read_byte();
+            let c = some_or_fail!(ok_or_fail!(r));
+            assert_eq!(c, 'c');
 
-        let b = some_or_fail!(ok_or_fail!(r));
-        assert_eq!(b, 1);
+            let r = p.read_char();
 
-        p.close();
-        let r = p.read_byte();
+            let c = ok_or_fail!(r);
+            assert!(c.is_none());
+        }
 
-        let e = err_or_fail!(r);
-        assert!(matches!(e, PortError::Closed));
-    }
+        #[test]
+        fn str_read_char_when_closed() {
+            let mut p = ReadPort::string("abc");
 
-    #[test]
-    fn bv_byte_ready() {
-        let mut p = ReadPort::bytevector([1]);
+            let r = p.read_char();
 
-        assert!(ok_or_fail!(p.byte_ready()));
+            let c = some_or_fail!(ok_or_fail!(r));
+            assert_eq!(c, 'a');
 
-        let r = p.read_byte();
-        let b = some_or_fail!(ok_or_fail!(r));
+            p.close();
+            let r = p.read_char();
 
-        assert_eq!(b, 1);
-        assert!(ok_or_fail!(p.byte_ready()));
+            let e = err_or_fail!(r);
+            assert!(matches!(e, PortError::Closed));
+        }
 
-        let r = p.read_byte();
-        let b = ok_or_fail!(r);
+        #[test]
+        fn str_char_ready() {
+            let mut p = ReadPort::string("a");
 
-        assert!(b.is_none());
+            assert!(ok_or_fail!(p.char_ready()));
 
-        p.close();
-        let r = p.byte_ready();
+            let r = p.read_char();
+            let c = some_or_fail!(ok_or_fail!(r));
 
-        let e = err_or_fail!(r);
-        assert!(matches!(e, PortError::Closed));
-    }
+            assert_eq!(c, 'a');
+            assert!(ok_or_fail!(p.char_ready()));
 
-    #[test]
-    fn bv_empty_read_bytes() {
-        let mut p = ReadPort::bytevector(Vec::new());
+            let r = p.read_char();
+            let c = ok_or_fail!(r);
 
-        let r = p.read_bytes(3);
+            assert!(c.is_none());
 
-        let b = ok_or_fail!(r);
-        assert!(b.is_none());
-    }
+            p.close();
+            let r = p.char_ready();
 
-    #[test]
-    fn bv_read_all_bytes() {
-        let mut p = ReadPort::bytevector([1, 2, 3]);
+            let e = err_or_fail!(r);
+            assert!(matches!(e, PortError::Closed));
+        }
 
-        let r = p.read_bytes(3);
+        #[test]
+        fn str_empty_read_chars() {
+            let mut p = ReadPort::string("");
 
-        let b = some_or_fail!(ok_or_fail!(r));
-        assert_eq!(*b, [1, 2, 3]);
-    }
+            let r = p.read_chars(3);
 
-    #[test]
-    fn bv_read_no_bytes() {
-        let mut p = ReadPort::bytevector([1, 2, 3]);
+            let s = ok_or_fail!(r);
+            assert!(s.is_none());
+        }
 
-        let r = p.read_bytes(0);
+        #[test]
+        fn str_read_all_chars() {
+            let mut p = ReadPort::string("abc");
 
-        let b = some_or_fail!(ok_or_fail!(r));
-        assert_eq!(*b, []);
-    }
+            let r = p.read_chars(3);
 
-    #[test]
-    fn bv_read_some_bytes_from_start() {
-        let mut p = ReadPort::bytevector([1, 2, 3, 4, 5]);
+            let s = some_or_fail!(ok_or_fail!(r));
+            assert_eq!(s, "abc");
+        }
 
-        let r = p.read_bytes(3);
+        #[test]
+        fn str_read_no_chars() {
+            let mut p = ReadPort::string("abc");
 
-        let b = some_or_fail!(ok_or_fail!(r));
-        assert_eq!(*b, [1, 2, 3]);
-    }
+            let r = p.read_chars(0);
 
-    #[test]
-    fn bv_read_bytes_subset() {
-        let mut p = ReadPort::bytevector([1, 2, 3, 4, 5]);
+            let s = some_or_fail!(ok_or_fail!(r));
+            assert_eq!(s, "");
+        }
 
-        let _ = p.read_byte();
+        #[test]
+        fn str_read_some_chars_from_start() {
+            let mut p = ReadPort::string("abcde");
 
-        let r = p.read_bytes(3);
+            let r = p.read_chars(3);
 
-        let b = some_or_fail!(ok_or_fail!(r));
-        assert_eq!(*b, [2, 3, 4]);
-    }
+            let s = some_or_fail!(ok_or_fail!(r));
+            assert_eq!(s, "abc");
+        }
 
-    #[test]
-    fn bv_read_too_many_bytes() {
-        let mut p = ReadPort::bytevector([1, 2, 3]);
+        #[test]
+        fn str_read_chars_subset() {
+            let mut p = ReadPort::string("abcde");
 
-        let r = p.read_bytes(5);
+            let _ = p.read_char();
 
-        let b = some_or_fail!(ok_or_fail!(r));
-        assert_eq!(*b, [1, 2, 3]);
-    }
+            let r = p.read_chars(3);
 
-    #[test]
-    fn bv_read_too_many_bytes_subset() {
-        let mut p = ReadPort::bytevector([1, 2, 3, 4, 5]);
+            let s = some_or_fail!(ok_or_fail!(r));
+            assert_eq!(s, "bcd");
+        }
 
-        let _ = p.read_byte();
-        let _ = p.read_byte();
+        #[test]
+        fn str_read_too_many_chars() {
+            let mut p = ReadPort::string("abc");
 
-        let r = p.read_bytes(5);
+            let r = p.read_chars(5);
 
-        let b = some_or_fail!(ok_or_fail!(r));
-        assert_eq!(*b, [3, 4, 5]);
-    }
+            let s = some_or_fail!(ok_or_fail!(r));
+            assert_eq!(s, "abc");
+        }
 
-    #[test]
-    fn bv_read_bytes_out_of_bytes() {
-        let mut p = ReadPort::bytevector([1, 2, 3]);
+        #[test]
+        fn str_read_too_many_chars_subset() {
+            let mut p = ReadPort::string("abcde");
 
-        let r = p.read_bytes(5);
+            let _ = p.read_char();
+            let _ = p.read_char();
 
-        let b = some_or_fail!(ok_or_fail!(r));
-        assert_eq!(*b, [1, 2, 3]);
+            let r = p.read_chars(5);
 
-        let r = p.read_bytes(5);
+            let s = some_or_fail!(ok_or_fail!(r));
+            assert_eq!(s, "cde");
+        }
 
-        let b = ok_or_fail!(r);
-        assert!(b.is_none());
-    }
+        #[test]
+        fn str_read_chars_out_of_chars() {
+            let mut p = ReadPort::string("abc");
 
-    #[test]
-    fn bv_read_no_bytes_after_eof() {
-        let mut p = ReadPort::bytevector([1, 2, 3]);
+            let r = p.read_chars(5);
 
-        let r = p.read_bytes(5);
+            let s = some_or_fail!(ok_or_fail!(r));
+            assert_eq!(s, "abc");
 
-        let b = some_or_fail!(ok_or_fail!(r));
-        assert_eq!(*b, [1, 2, 3]);
+            let r = p.read_chars(5);
 
-        let r = p.read_bytes(0);
+            let s = ok_or_fail!(r);
+            assert!(s.is_none());
+        }
 
-        let b = some_or_fail!(ok_or_fail!(r));
-        assert_eq!(*b, []);
+        #[test]
+        fn str_read_no_chars_after_eof() {
+            let mut p = ReadPort::string("abc");
+
+            let r = p.read_chars(5);
+
+            let s = some_or_fail!(ok_or_fail!(r));
+            assert_eq!(s, "abc");
+
+            let r = p.read_chars(0);
+
+            let s = some_or_fail!(ok_or_fail!(r));
+            assert_eq!(s, "");
+        }
+
+        #[test]
+        fn str_readline_empty() {
+            let mut p = ReadPort::string("");
+
+            let r = p.read_line();
+
+            let s = ok_or_fail!(r);
+            assert!(s.is_none());
+        }
+
+        #[test]
+        fn str_readline_single_line() {
+            let mut p = ReadPort::string("foobar");
+
+            let r = p.read_line();
+
+            let s = some_or_fail!(ok_or_fail!(r));
+            assert_eq!(s, "foobar");
+        }
+
+        #[test]
+        fn str_readline_multi_lines() {
+            let mut p = ReadPort::string("foo\nbar\nbaz");
+
+            let r = p.read_line();
+
+            let s = some_or_fail!(ok_or_fail!(r));
+            assert_eq!(s, "foo");
+
+            let r = p.read_line();
+
+            let s = some_or_fail!(ok_or_fail!(r));
+            assert_eq!(s, "bar");
+
+            let r = p.read_line();
+
+            let s = some_or_fail!(ok_or_fail!(r));
+            assert_eq!(s, "baz");
+
+            let r = p.read_line();
+
+            let s = ok_or_fail!(r);
+            assert!(s.is_none());
+        }
+
+        #[test]
+        fn str_readline_multi_lines_ends_with_newline() {
+            let mut p = ReadPort::string("foo\nbar\nbaz\n");
+
+            let r = p.read_line();
+
+            let s = some_or_fail!(ok_or_fail!(r));
+            assert_eq!(s, "foo");
+
+            let r = p.read_line();
+
+            let s = some_or_fail!(ok_or_fail!(r));
+            assert_eq!(s, "bar");
+
+            let r = p.read_line();
+
+            let s = some_or_fail!(ok_or_fail!(r));
+            assert_eq!(s, "baz");
+
+            let r = p.read_line();
+
+            let s = ok_or_fail!(r);
+            assert!(s.is_none());
+        }
     }
 }
