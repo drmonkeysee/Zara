@@ -1,17 +1,3 @@
-macro_rules! read_buffered_line {
-    ($r: expr) => {{
-        let mut buf = String::new();
-        Ok(if $r.read_line(&mut buf)? > 0 {
-            if buf.ends_with('\n') {
-                buf.pop();
-            }
-            Some(buf)
-        } else {
-            None
-        })
-    }};
-}
-
 use super::{TypeName, Value};
 use crate::string::{
     SymbolTable,
@@ -328,7 +314,17 @@ impl FileReader {
     fn read_line(&mut self) -> PortString {
         match &mut self.file {
             None => Err(PortError::Closed),
-            Some(r) => read_buffered_line!(r),
+            Some(r) => {
+                let mut buf = String::new();
+                Ok(if r.read_line(&mut buf)? > 0 {
+                    if buf.ends_with('\n') {
+                        buf.pop();
+                    }
+                    Some(buf)
+                } else {
+                    None
+                })
+            }
         }
     }
 
@@ -381,17 +377,30 @@ impl FileReader {
 }
 
 #[derive(Debug)]
-pub(crate) struct StdinReader(Option<Stdin>);
+pub(crate) struct StdinReader {
+    rbuf: String,
+    stream: Option<Stdin>,
+}
 
 impl StdinReader {
     fn new() -> Self {
-        Self(Some(io::stdin()))
+        Self {
+            rbuf: String::new(),
+            stream: Some(io::stdin()),
+        }
     }
 
     fn read(&mut self) -> PortChar {
-        match &mut self.0 {
+        match &mut self.stream {
             None => Err(PortError::Closed),
-            Some(_) => todo!(),
+            Some(r) => {
+                if self.rbuf.is_empty() {
+                    let mut b = String::new();
+                    r.read_line(&mut b)?;
+                    self.rbuf.push_str(&(b.chars().rev().collect::<String>()));
+                }
+                Ok(self.rbuf.pop())
+            }
         }
     }
 
@@ -399,22 +408,49 @@ impl StdinReader {
         if k == 0 {
             Ok(Some(String::new()))
         } else {
-            todo!();
+            extract_string(iter::from_fn(|| self.read().transpose()), |it| it.take(k))
         }
     }
 
     fn peek(&mut self) -> PortChar {
-        todo!();
+        let r = self.read();
+        if let Ok(Some(c)) = r {
+            self.rbuf.push(c);
+        }
+        r
     }
 
     fn ready(&self) -> PortBool {
-        todo!();
+        match &self.stream {
+            None => Err(PortError::Closed),
+            Some(_) => Ok(!self.rbuf.is_empty()),
+        }
     }
 
     fn read_line(&mut self) -> PortString {
-        match &mut self.0 {
+        match &mut self.stream {
             None => Err(PortError::Closed),
-            Some(r) => read_buffered_line!(r),
+            Some(r) => {
+                // NOTE: utf-8 encoding should ensure that any 0xa is a valid '\n'
+                Ok(match self.rbuf.bytes().position(|b| b == 0xa) {
+                    None => {
+                        let mut buf = self.rbuf.split_off(0).chars().rev().collect::<String>();
+                        r.read_line(&mut buf)?;
+                        if buf.is_empty() {
+                            None
+                        } else {
+                            if buf.ends_with('\n') {
+                                buf.pop();
+                            }
+                            Some(buf)
+                        }
+                    }
+                    Some(at) => {
+                        let bufnl = self.rbuf.split_off(at);
+                        Some(bufnl[1..].chars().rev().collect::<String>())
+                    }
+                })
+            }
         }
     }
 }
@@ -836,11 +872,11 @@ impl Reader for FileReader {
 
 impl Reader for StdinReader {
     fn is_open(&self) -> bool {
-        self.0.is_some()
+        self.stream.is_some()
     }
 
     fn close(&mut self) {
-        self.0.take();
+        self.stream.take();
     }
 }
 
