@@ -383,6 +383,8 @@ pub(crate) struct StdinReader {
 }
 
 impl StdinReader {
+    const BUFFER_CAPACITY: usize = 1 << 13; // 8KB
+
     fn new() -> Self {
         Self {
             rbuf: String::new(),
@@ -398,6 +400,7 @@ impl StdinReader {
                     let mut b = String::new();
                     r.read_line(&mut b)?;
                     self.rbuf.push_str(&(b.chars().rev().collect::<String>()));
+                    self.trim_buffer();
                 }
                 Ok(self.rbuf.pop())
             }
@@ -432,7 +435,7 @@ impl StdinReader {
             None => Err(PortError::Closed),
             Some(r) => {
                 // NOTE: utf-8 encoding should ensure that any 0xa is a valid '\n'
-                Ok(match self.rbuf.bytes().position(|b| b == 0xa) {
+                let r = Ok(match self.rbuf.bytes().position(|b| b == 0xa) {
                     None => {
                         let mut buf = self.rbuf.split_off(0).chars().rev().collect::<String>();
                         r.read_line(&mut buf)?;
@@ -449,8 +452,16 @@ impl StdinReader {
                         let bufnl = self.rbuf.split_off(at);
                         Some(bufnl[1..].chars().rev().collect::<String>())
                     }
-                })
+                });
+                self.trim_buffer();
+                r
             }
+        }
+    }
+
+    fn trim_buffer(&mut self) {
+        if self.rbuf.capacity() > Self::BUFFER_CAPACITY && self.rbuf.len() < self.rbuf.capacity() {
+            self.rbuf.shrink_to_fit();
         }
     }
 }
