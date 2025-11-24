@@ -16,7 +16,7 @@ mod tests;
 pub(crate) use self::{
     condition::Condition,
     display::TypeName,
-    port::{FileMode, PortResult, PortSpec, ReadPort},
+    port::{FileMode, PortResult, PortSeek, PortSpec, ReadPort},
 };
 use self::{
     display::{Datum, ValueMessage},

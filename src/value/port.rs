@@ -14,7 +14,7 @@ use std::{
 
 pub(crate) type PortResult<T = ()> = Result<T, PortError>;
 pub(crate) type PortBool = PortResult<bool>;
-pub(crate) type PortPosition = PortResult<u64>;
+pub(crate) type PortPosition = PortResult<usize>;
 pub(crate) type PortValue = PortResult<Value>;
 pub(crate) type PortChar = PortResult<Option<char>>;
 pub(crate) type PortString = PortResult<Option<String>>;
@@ -790,6 +790,7 @@ impl PortError {
                 ErrorKind::Interrupted => sym.get("operation-interrupted"),
                 ErrorKind::InvalidData => sym.get("invalid-data"),
                 ErrorKind::InvalidFilename => sym.get("invalid-filename"),
+                ErrorKind::InvalidInput => sym.get("invalid-input"),
                 ErrorKind::IsADirectory => sym.get("is-directory"),
                 ErrorKind::NotADirectory => sym.get("not-directory"),
                 ErrorKind::NotFound => sym.get("not-found"),
@@ -863,6 +864,12 @@ impl Display for PortMode {
             Self::Textual => f.write_str("textual"),
         }
     }
+}
+
+pub(crate) enum PortSeek {
+    Start(isize),
+    Current(isize),
+    End(isize),
 }
 
 #[derive(Clone, Copy)]
