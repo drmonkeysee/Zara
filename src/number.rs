@@ -23,6 +23,27 @@ macro_rules! try_int_conversion {
     };
 }
 
+macro_rules! int_convert {
+    ($name:ident, $type: ty, $err:expr, $conv:expr) => {
+        fn $name(&self) -> Result<$type, NumericError> {
+            let Precision::Single(u) = self.precision else {
+                return Err($err);
+            };
+            if self.is_negative() {
+                if u <= <$type>::MIN.unsigned_abs().into() {
+                    #[allow(clippy::cast_possible_wrap, reason = "guarded against wrapping")]
+                    $conv(u)
+                } else {
+                    return Err($err);
+                }
+            } else {
+                u.try_into()
+            }
+            .map_err(|_| $err)
+        }
+    };
+}
+
 macro_rules! uint_convert {
     ($name:ident, $type:ty, $err:expr) => {
         fn $name(&self) -> Result<$type, NumericError> {
@@ -129,9 +150,15 @@ impl Number {
         Self::Real(value.into())
     }
 
-    // NOTE: From<usize> would clash with existing Integer From<i64>
+    /*
+     * Explicit conversions that would clash with Integer From<i64>.
+     */
     pub(crate) fn from_usize(val: usize) -> Self {
         Self::real(Integer::from_usize(val))
+    }
+
+    pub(crate) fn from_u64(val: u64) -> Self {
+        Self::real((Sign::Positive, val))
     }
 
     pub(crate) fn is_inexact(&self) -> bool {
@@ -212,6 +239,7 @@ impl Display for Number {
 try_int_conversion!(u8, try_to_u8);
 try_int_conversion!(i32, try_to_i32);
 try_int_conversion!(u32, try_to_u32);
+try_int_conversion!(i64, try_to_i64);
 try_int_conversion!(usize, try_to_usize);
 
 #[derive(Clone, Debug)]
@@ -578,23 +606,24 @@ impl Integer {
         }
     }
 
-    fn try_to_i32(&self) -> Result<i32, NumericError> {
-        let Precision::Single(u) = self.precision else {
-            return Err(NumericError::Int32ConversionInvalidRange);
-        };
-        if self.is_negative() {
-            if u <= i32::MIN.unsigned_abs().into() {
-                #[allow(clippy::cast_possible_wrap, reason = "guarded against wrapping")]
-                (-(u as i64)).try_into()
+    int_convert!(
+        try_to_i32,
+        i32,
+        NumericError::Int32ConversionInvalidRange,
+        |u| (-(u as i64)).try_into()
+    );
+    int_convert!(
+        try_to_i64,
+        i64,
+        NumericError::Int64ConversionInvalidRange,
+        |u| {
+            Ok(if u == i64::MIN.unsigned_abs() {
+                i64::MIN
             } else {
-                return Err(NumericError::Int32ConversionInvalidRange);
-            }
-        } else {
-            u.try_into()
+                -(u as i64)
+            })
         }
-        .map_err(|_| NumericError::Int32ConversionInvalidRange)
-    }
-
+    );
     uint_convert!(try_to_u8, u8, NumericError::ByteConversionInvalidRange);
     uint_convert!(try_to_u32, u32, NumericError::Uint32ConversionInvalidRange);
     uint_convert!(
@@ -888,6 +917,7 @@ pub(crate) enum NumericError {
     ByteConversionInvalidRange,
     DivideByZero,
     Int32ConversionInvalidRange,
+    Int64ConversionInvalidRange,
     IntConversionInvalidType(String),
     NoExactRepresentation(String),
     NotExactInteger(String),
@@ -908,6 +938,9 @@ impl Display for NumericError {
             Self::DivideByZero => f.write_str("divide by zero"),
             Self::Int32ConversionInvalidRange => {
                 write_intconversion_range_error(i32::MIN, i32::MAX, f)
+            }
+            Self::Int64ConversionInvalidRange => {
+                write_intconversion_range_error(i64::MIN, i64::MAX, f)
             }
             Self::IntConversionInvalidType(n) => {
                 write!(f, "expected integer literal, got numeric type: {n}")

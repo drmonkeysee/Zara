@@ -2,7 +2,7 @@
 use crate::{
     Exception,
     eval::{EvalResult, Frame},
-    number::Sign,
+    number::Number,
     value::{Condition, Value},
 };
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -28,7 +28,7 @@ fn current_jiffy(_args: &[Value], env: &Frame) -> EvalResult {
         .as_micros()
         .try_into()
         .map_err(|_| Exception::signal(Condition::system_error("jiffy clock overflow")))?;
-    Ok(Value::real((Sign::Positive, jiffies)))
+    Ok(Value::Number(Number::from_u64(jiffies)))
 }
 
 #[allow(clippy::unnecessary_wraps, reason = "infallible intrinsic")]

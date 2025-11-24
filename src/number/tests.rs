@@ -951,7 +951,7 @@ mod integer {
 
     #[test]
     fn min_i64_into_int() {
-        let n = Number::real((Sign::Negative, 9223372036854775808));
+        let n = Number::real(-9223372036854775808);
 
         let r: Result<i32, _> = n.try_into();
 
@@ -961,7 +961,7 @@ mod integer {
 
     #[test]
     fn negative_max_i64_into_int() {
-        let n = Number::real((Sign::Negative, 9223372036854775807));
+        let n = Number::real(-9223372036854775807);
 
         let r: Result<i32, _> = n.try_into();
 
@@ -980,6 +980,111 @@ mod integer {
 
         let err = err_or_fail!(r);
         assert!(matches!(err, NumericError::Int32ConversionInvalidRange));
+    }
+
+    #[test]
+    fn single_into_int64() {
+        let n = Number::real(12);
+
+        let r = n.try_into();
+
+        let i: i64 = ok_or_fail!(r);
+        assert_eq!(i, 12);
+    }
+
+    #[test]
+    fn zero_into_int64() {
+        let n = Number::real(0);
+
+        let r = n.try_into();
+
+        let i: i64 = ok_or_fail!(r);
+        assert_eq!(i, 0);
+    }
+
+    #[test]
+    fn negative_into_int64() {
+        let n = Number::real(-12);
+
+        let r = n.try_into();
+
+        let i: i64 = ok_or_fail!(r);
+        assert_eq!(i, -12);
+    }
+
+    #[test]
+    fn min_into_int64() {
+        let n = Number::real(-9223372036854775808);
+        dbg!(&n);
+
+        let r = n.try_into();
+        dbg!(&r);
+
+        let i: i64 = ok_or_fail!(r);
+        assert_eq!(i, -9223372036854775808);
+    }
+
+    #[test]
+    fn max_into_int64() {
+        let n = Number::real(9223372036854775807);
+
+        let r = n.try_into();
+
+        let i: i64 = ok_or_fail!(r);
+        assert_eq!(i, 9223372036854775807);
+    }
+
+    #[test]
+    fn one_above_max_into_int64() {
+        let n = Number::real((Sign::Positive, 9223372036854775808));
+
+        let r: Result<i64, _> = n.try_into();
+
+        let err = err_or_fail!(r);
+        assert!(matches!(err, NumericError::Int64ConversionInvalidRange));
+    }
+
+    #[test]
+    fn one_below_min_into_int64() {
+        let n = Number::real((Sign::Negative, 9223372036854775809));
+
+        let r: Result<i64, _> = n.try_into();
+
+        let err = err_or_fail!(r);
+        assert!(matches!(err, NumericError::Int64ConversionInvalidRange));
+    }
+
+    #[test]
+    fn max_u64_into_int64() {
+        let n = Number::real((Sign::Positive, 18446744073709551615));
+
+        let r: Result<i64, _> = n.try_into();
+
+        let err = err_or_fail!(r);
+        assert!(matches!(err, NumericError::Int64ConversionInvalidRange));
+    }
+
+    #[test]
+    fn max_negative_u64_into_int64() {
+        let n = Number::real((Sign::Negative, 18446744073709551615));
+
+        let r: Result<i64, _> = n.try_into();
+
+        let err = err_or_fail!(r);
+        assert!(matches!(err, NumericError::Int64ConversionInvalidRange));
+    }
+
+    #[test]
+    fn multiple_into_int64() {
+        let i = Integer {
+            precision: Precision::Multiple([24].into()),
+            sign: Sign::Positive,
+        };
+
+        let r = i.try_to_i64();
+
+        let err = err_or_fail!(r);
+        assert!(matches!(err, NumericError::Int64ConversionInvalidRange));
     }
 
     #[test]
@@ -1305,6 +1410,36 @@ mod integer {
     fn from_usize_max() {
         let n = Integer::from_usize(usize::MAX);
 
+        assert_eq!(
+            extract_or_fail!(n.precision, Precision::Single),
+            18446744073709551615
+        );
+        assert_eq!(n.sign, Sign::Positive);
+    }
+
+    #[test]
+    fn from_u64() {
+        let x = Number::from_u64(5_u64);
+
+        let n = extract_or_fail!(extract_or_fail!(x, Number::Real), Real::Integer);
+        assert_eq!(extract_or_fail!(n.precision, Precision::Single), 5);
+        assert_eq!(n.sign, Sign::Positive);
+    }
+
+    #[test]
+    fn from_u64_min() {
+        let x = Number::from_u64(u64::MIN);
+
+        let n = extract_or_fail!(extract_or_fail!(x, Number::Real), Real::Integer);
+        assert_eq!(extract_or_fail!(n.precision, Precision::Single), 0);
+        assert_eq!(n.sign, Sign::Zero);
+    }
+
+    #[test]
+    fn from_u64_max() {
+        let x = Number::from_u64(u64::MAX);
+
+        let n = extract_or_fail!(extract_or_fail!(x, Number::Real), Real::Integer);
         assert_eq!(
             extract_or_fail!(n.precision, Precision::Single),
             18446744073709551615
