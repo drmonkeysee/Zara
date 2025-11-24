@@ -69,11 +69,21 @@ impl ReadPort {
     }
 
     pub(crate) fn tell(&self) -> PortPosition {
-        todo!();
+        match self {
+            Self::ByteVector(r) => r.tell(),
+            Self::File(r) => r.tell(),
+            Self::In(_) => Err(PortError::Io(ErrorKind::NotSeekable)),
+            Self::String(r) => r.tell(),
+        }
     }
 
-    pub(crate) fn seek(&mut self, pos: SeekFrom) -> PortPosition {
-        todo!();
+    pub(crate) fn seek(&mut self, pos: PortSeek) -> PortPosition {
+        match self {
+            Self::ByteVector(r) => r.seek(pos),
+            Self::File(r) => r.seek(pos),
+            Self::In(_) => Err(PortError::Io(ErrorKind::NotSeekable)),
+            Self::String(r) => r.seek(pos),
+        }
     }
 
     pub(crate) fn close(&mut self) {
@@ -236,6 +246,29 @@ impl BvReader {
         }
     }
 
+    fn tell(&self) -> PortPosition {
+        if self.is_open() {
+            Ok(self.cur)
+        } else {
+            Err(PortError::Closed)
+        }
+    }
+
+    fn seek(&mut self, pos: PortSeek) -> PortPosition {
+        match &self.buf {
+            None => Err(PortError::Closed),
+            Some(b) => {
+                self.cur = match pos {
+                    PortSeek::Start(p) => usize::MIN.checked_add_signed(p),
+                    PortSeek::Current(p) => self.cur.checked_add_signed(p),
+                    PortSeek::End(p) => b.len().checked_add_signed(p),
+                }
+                .ok_or_else(|| PortError::Io(ErrorKind::InvalidInput))?;
+                self.tell()
+            }
+        }
+    }
+
     fn get_byte(&mut self, advance: bool) -> PortByte {
         let bytes = self.get_bytes(1, advance)?;
         Ok(bytes.and_then(|b| b.first().copied()))
@@ -298,6 +331,14 @@ impl FileReader {
             None => Err(PortError::Closed),
             Some(r) => Ok(self.eof || !r.buffer().is_empty()),
         }
+    }
+
+    fn tell(&self) -> PortPosition {
+        todo!();
+    }
+
+    fn seek(&mut self, pos: PortSeek) -> PortPosition {
+        todo!();
     }
 
     fn read_bytes(&mut self, k: usize) -> PortBytes {
@@ -508,6 +549,14 @@ impl StringReader {
         self.0.ready()
     }
 
+    fn tell(&self) -> PortPosition {
+        todo!();
+    }
+
+    fn seek(&mut self, pos: PortSeek) -> PortPosition {
+        todo!();
+    }
+
     fn read_line(&mut self) -> PortString {
         extract_string(self.char_stream(), |it| {
             it.take_while(|item| item.as_ref().map_or(true, |ch| *ch != '\n'))
@@ -608,7 +657,7 @@ impl WritePort {
         todo!();
     }
 
-    pub(crate) fn seek(&mut self, pos: SeekFrom) -> PortPosition {
+    pub(crate) fn seek(&mut self, pos: PortSeek) -> PortPosition {
         todo!();
     }
 

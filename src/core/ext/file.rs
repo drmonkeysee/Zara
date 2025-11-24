@@ -2,7 +2,7 @@ macro_rules! port_pos {
     ($port: expr, $sym: expr, $arg: expr) => {
         $port.borrow().tell().map_or_else(
             |err| Err(Condition::io_error(&err, $sym, $arg).into()),
-            |pos| Ok(Value::Number(Number::from_u64(pos))),
+            |pos| Ok(Value::Number(Number::from_usize(pos))),
         )
     };
 }
@@ -11,7 +11,7 @@ macro_rules! port_pos_set {
     ($port: expr, $pos:expr, $sym: expr, $arg: expr) => {
         $port.borrow_mut().seek($pos).map_or_else(
             |err| Err(Condition::io_error(&err, $sym, $arg).into()),
-            |pos| Ok(Value::Number(Number::from_u64(pos))),
+            |pos| Ok(Value::Number(Number::from_usize(pos))),
         )
     };
 }
@@ -22,9 +22,9 @@ use crate::{
     eval::{EvalResult, Frame},
     number::{Number, NumericError, NumericTypeName},
     string::{Symbol, SymbolTable},
-    value::{Condition, FileMode, TypeName, Value, zlist},
+    value::{Condition, FileMode, PortSeek, TypeName, Value, zlist},
 };
-use std::{fmt::Display, fs, io::SeekFrom};
+use std::{fmt::Display, fs};
 
 const SEEK_BEG: &'static str = "start";
 const SEEK_CUR: &'static str = "current";
@@ -144,7 +144,8 @@ fn port_tell(args: &[Value], env: &Frame) -> EvalResult {
 
 fn port_seek(args: &[Value], env: &Frame) -> EvalResult {
     let arg = super::first(args);
-    let pos = try_val_to_port_pos(super::second(args), SECOND_ARG_LABEL)?;
+    let parg = super::second(args);
+    let pos = try_val_to_port_pos(parg, SECOND_ARG_LABEL)?;
     let whence = args.get(2).map_or_else(
         || Ok(env.sym.get(SEEK_BEG)),
         |val| {
@@ -159,7 +160,7 @@ fn port_seek(args: &[Value], env: &Frame) -> EvalResult {
             }
         },
     )?;
-    let seek_pos = make_seek_pos(pos, whence, env.sym)?;
+    let seek_pos = make_seek_pos(pos, whence, env.sym, parg)?;
     match arg {
         Value::PortInput(p) => port_pos_set!(p, seek_pos, env.sym, arg),
         Value::PortOutput(p) => port_pos_set!(p, seek_pos, env.sym, arg),
@@ -214,11 +215,19 @@ num_convert!(
     NumericError::Int64ConversionInvalidRange
 );
 
-fn make_seek_pos(pos: i64, whence: Symbol, sym: &SymbolTable) -> Result<SeekFrom, Exception> {
+fn make_seek_pos(
+    pos: i64,
+    whence: Symbol,
+    sym: &SymbolTable,
+    arg: &Value,
+) -> Result<PortSeek, Exception> {
+    let psz = pos
+        .try_into()
+        .map_err(|_| Condition::value_error(NumericError::IsizeConversionInvalidRange, arg))?;
     match whence.as_ref() {
-        SEEK_BEG => Ok(SeekFrom::Start(pos.unsigned_abs())),
-        SEEK_CUR => Ok(SeekFrom::Current(pos)),
-        SEEK_END => Ok(SeekFrom::End(pos)),
+        SEEK_BEG => Ok(PortSeek::Start(psz)),
+        SEEK_CUR => Ok(PortSeek::Current(psz)),
+        SEEK_END => Ok(PortSeek::End(psz)),
         _ => Err(Condition::bi_value_error(
             "invalid seek-position choice",
             &Value::Symbol(whence),
