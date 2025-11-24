@@ -334,7 +334,7 @@ fn int_to_char_invalid_range() {
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
     assert_eq!(
         err.to_string(),
-        "#<environment-error \"unicode code point out of ranges [#x0, #xD7FF], [#xE000, #x10FFFF] ([0, 55295], [57344, 1114111])\" (-4)>"
+        "#<environment-error \"unicode code point out of ranges [#x0, #xd7ff], [#xe000, #x10ffff] ([0, 55295], [57344, 1114111])\" (-4)>"
     );
 }
 
@@ -348,6 +348,6 @@ fn int_to_char_not_a_code_point() {
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
     assert_eq!(
         err.to_string(),
-        "#<environment-error \"unicode code point out of ranges [#x0, #xD7FF], [#xE000, #x10FFFF] ([0, 55295], [57344, 1114111])\" (57328)>"
+        "#<environment-error \"unicode code point out of ranges [#x0, #xd7ff], [#xe000, #x10ffff] ([0, 55295], [57344, 1114111])\" (57328)>"
     );
 }

@@ -29,10 +29,10 @@ impl Display for UnicodeError {
             ),
             Self::CodePointOutOfRange => write!(
                 f,
-                "unicode code point out of ranges [#x{0:X}, #x{1:X}], [#x{2:X}, #x{3:X}] ([{0}, {1}], [{2}, {3}])",
+                "unicode code point out of ranges [#x{0:x}, #x{1:x}], [#x{2:x}, #x{3:x}] ([{0}, {1}], [{2}, {3}])",
                 MIN as u32, LOW_MAX as u32, HI_MIN as u32, MAX as u32
             ),
-            Self::PrefixInvalid(p) => write!(f, "invalid utf-8 prefix: {p}"),
+            Self::PrefixInvalid(p) => write!(f, "invalid utf-8 prefix: #x{p:x}"),
         }
     }
 }
@@ -71,7 +71,7 @@ fn write_invalid_seq(seq: &[u8], f: &mut Formatter<'_>) -> fmt::Result {
             .collect::<Vec<_>>()
             .into_iter()
             .rev()
-            .map(|b| format!("{b:#x}"))
+            .map(|b| format!("#x{b:x}"))
             .collect::<Vec<_>>()
             .join(", ")
     )
@@ -88,7 +88,7 @@ mod tests {
 
         assert_eq!(
             err.to_string(),
-            "invalid utf-8 sequence: [0x11, 0x22, 0xaa, 0xbb]"
+            "invalid utf-8 sequence: [#x11, #x22, #xaa, #xbb]"
         )
     }
 
@@ -96,7 +96,7 @@ mod tests {
     fn display_invalid_seq_with_trailing_zeros() {
         let err = UnicodeError::ByteSequenceInvalid([0x11, 0x22, 0x0, 0x0]);
 
-        assert_eq!(err.to_string(), "invalid utf-8 sequence: [0x11, 0x22]")
+        assert_eq!(err.to_string(), "invalid utf-8 sequence: [#x11, #x22]")
     }
 
     #[test]
@@ -105,7 +105,7 @@ mod tests {
 
         assert_eq!(
             err.to_string(),
-            "invalid utf-8 sequence: [0x11, 0x0, 0x0, 0xbb]"
+            "invalid utf-8 sequence: [#x11, #x0, #x0, #xbb]"
         )
     }
 
@@ -113,7 +113,7 @@ mod tests {
     fn display_invalid_seq_with_mix_of_zeros() {
         let err = UnicodeError::ByteSequenceInvalid([0x0, 0x22, 0xaa, 0x0]);
 
-        assert_eq!(err.to_string(), "invalid utf-8 sequence: [0x0, 0x22, 0xaa]")
+        assert_eq!(err.to_string(), "invalid utf-8 sequence: [#x0, #x22, #xaa]")
     }
 
     #[test]

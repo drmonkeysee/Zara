@@ -503,7 +503,7 @@ mod tokenerror {
 
         assert_eq!(
             err.to_string(),
-            "character hex-sequence out of valid range: [0x0, 0x10ffff]"
+            "character hex-sequence out of valid range: [#x0, #x10ffff]"
         );
     }
 
@@ -579,7 +579,7 @@ mod tokenerror {
 
             assert_eq!(
                 err.to_string(),
-                "hex-escape out of valid range: [0x0, 0x10ffff]"
+                "hex-escape out of valid range: [#x0, #x10ffff]"
             );
         }
     }

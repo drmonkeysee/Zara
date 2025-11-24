@@ -550,11 +550,11 @@ impl StringReader {
     }
 
     fn tell(&self) -> PortPosition {
-        todo!();
+        self.0.tell()
     }
 
     fn seek(&mut self, pos: PortSeek) -> PortPosition {
-        todo!();
+        self.0.seek(pos)
     }
 
     fn read_line(&mut self) -> PortString {
