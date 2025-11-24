@@ -21,6 +21,7 @@ use crate::{
     Exception,
     eval::{EvalResult, Frame},
     number::{Number, NumericError, NumericTypeName},
+    string::{Symbol, SymbolTable},
     value::{Condition, FileMode, TypeName, Value, zlist},
 };
 use std::{fmt::Display, fs, io::SeekFrom};
@@ -158,20 +159,7 @@ fn port_seek(args: &[Value], env: &Frame) -> EvalResult {
             }
         },
     )?;
-    let seek_pos = match whence.as_ref() {
-        SEEK_BEG => Ok(SeekFrom::Start(pos.unsigned_abs())),
-        SEEK_CUR => Ok(SeekFrom::Current(pos)),
-        SEEK_END => Ok(SeekFrom::End(pos)),
-        _ => Err(Exception::from(Condition::bi_value_error(
-            "invalid seek-position choice",
-            &Value::Symbol(whence),
-            &zlist![
-                Value::Symbol(env.sym.get(SEEK_BEG)),
-                Value::Symbol(env.sym.get(SEEK_CUR)),
-                Value::Symbol(env.sym.get(SEEK_END)),
-            ],
-        ))),
-    }?;
+    let seek_pos = make_seek_pos(pos, whence, env.sym)?;
     match arg {
         Value::PortInput(p) => port_pos_set!(p, seek_pos, env.sym, arg),
         Value::PortOutput(p) => port_pos_set!(p, seek_pos, env.sym, arg),
@@ -225,3 +213,21 @@ num_convert!(
     i64,
     NumericError::Int64ConversionInvalidRange
 );
+
+fn make_seek_pos(pos: i64, whence: Symbol, sym: &SymbolTable) -> Result<SeekFrom, Exception> {
+    match whence.as_ref() {
+        SEEK_BEG => Ok(SeekFrom::Start(pos.unsigned_abs())),
+        SEEK_CUR => Ok(SeekFrom::Current(pos)),
+        SEEK_END => Ok(SeekFrom::End(pos)),
+        _ => Err(Condition::bi_value_error(
+            "invalid seek-position choice",
+            &Value::Symbol(whence),
+            &zlist![
+                Value::Symbol(sym.get(SEEK_BEG)),
+                Value::Symbol(sym.get(SEEK_CUR)),
+                Value::Symbol(sym.get(SEEK_END)),
+            ],
+        )
+        .into()),
+    }
+}
