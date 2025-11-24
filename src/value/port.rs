@@ -7,13 +7,14 @@ use std::{
     cmp,
     fmt::{self, Debug, Display, Formatter},
     fs::{File, OpenOptions},
-    io::{self, BufRead, BufReader, BufWriter, ErrorKind, Stderr, Stdin, Stdout},
+    io::{self, BufRead, BufReader, BufWriter, ErrorKind, SeekFrom, Stderr, Stdin, Stdout},
     iter,
     path::{Path, PathBuf},
 };
 
 pub(crate) type PortResult<T = ()> = Result<T, PortError>;
 pub(crate) type PortBool = PortResult<bool>;
+pub(crate) type PortPosition = PortResult<u64>;
 pub(crate) type PortValue = PortResult<Value>;
 pub(crate) type PortChar = PortResult<Option<char>>;
 pub(crate) type PortString = PortResult<Option<String>>;
@@ -61,6 +62,18 @@ impl ReadPort {
 
     pub(crate) fn is_open(&self) -> bool {
         self.get_reader().is_open()
+    }
+
+    pub(crate) fn is_seekable(&self) -> bool {
+        matches!(self, Self::ByteVector(_) | Self::File(_) | Self::String(_))
+    }
+
+    pub(crate) fn tell(&self) -> PortPosition {
+        todo!();
+    }
+
+    pub(crate) fn seek(&mut self, pos: SeekFrom) -> PortPosition {
+        todo!();
     }
 
     pub(crate) fn close(&mut self) {
@@ -565,6 +578,10 @@ impl WritePort {
         }
     }
 
+    pub(crate) fn is_seekable(&self) -> bool {
+        matches!(self, Self::ByteVector(_) | Self::File(..) | Self::String(_))
+    }
+
     pub(crate) fn get_bytevector(&self) -> PortValue {
         if let Self::ByteVector(w) = self {
             match w {
@@ -585,6 +602,14 @@ impl WritePort {
         } else {
             Err(PortError::InvalidSource)
         }
+    }
+
+    pub(crate) fn tell(&self) -> PortPosition {
+        todo!();
+    }
+
+    pub(crate) fn seek(&mut self, pos: SeekFrom) -> PortPosition {
+        todo!();
     }
 
     pub(crate) fn put_bytes(&mut self, bytes: &[u8]) -> PortResult {
@@ -768,6 +793,7 @@ impl PortError {
                 ErrorKind::IsADirectory => sym.get("is-directory"),
                 ErrorKind::NotADirectory => sym.get("not-directory"),
                 ErrorKind::NotFound => sym.get("not-found"),
+                ErrorKind::NotSeekable => sym.get("not-seekable"),
                 ErrorKind::PermissionDenied => sym.get("permission-denied"),
                 ErrorKind::ReadOnlyFilesystem => sym.get("read-only-filesystem"),
                 ErrorKind::StorageFull => sym.get("storage-full"),

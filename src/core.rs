@@ -43,6 +43,24 @@ macro_rules! cadr_func {
     };
 }
 
+macro_rules! num_convert {
+    ($name:ident, $type:ty, $err:path) => {
+        fn $name(arg: &Value, lbl: impl Display) -> Result<$type, Exception> {
+            let Value::Number(n) = arg else {
+                return Err(Condition::arg_error(lbl, NumericTypeName::INTEGER, arg).into());
+            };
+            <$type>::try_from(n).map_err(|err| {
+                if let $err = err {
+                    Condition::value_error($err, arg)
+                } else {
+                    Condition::arg_type_error(lbl, NumericTypeName::INTEGER, n.as_typename(), arg)
+                }
+                .into()
+            })
+        }
+    };
+}
+
 mod base;
 mod charuni;
 mod complex;

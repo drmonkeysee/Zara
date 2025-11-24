@@ -1,10 +1,33 @@
-use super::SECOND_ARG_LABEL;
+macro_rules! port_pos {
+    ($port: expr, $sym: expr, $arg: expr) => {
+        $port.borrow().tell().map_or_else(
+            |err| Err(Condition::io_error(&err, $sym, $arg).into()),
+            |pos| Ok(Value::Number(Number::from_u64(pos))),
+        )
+    };
+}
+
+macro_rules! port_pos_set {
+    ($port: expr, $pos:expr, $sym: expr, $arg: expr) => {
+        $port.borrow_mut().seek($pos).map_or_else(
+            |err| Err(Condition::io_error(&err, $sym, $arg).into()),
+            |pos| Ok(Value::Number(Number::from_u64(pos))),
+        )
+    };
+}
+
+use super::{SECOND_ARG_LABEL, THIRD_ARG_LABEL};
 use crate::{
     Exception,
     eval::{EvalResult, Frame},
-    value::{Condition, FileMode, TypeName, Value},
+    number::{Number, NumericError, NumericTypeName},
+    value::{Condition, FileMode, TypeName, Value, zlist},
 };
-use std::fs;
+use std::{fmt::Display, fs, io::SeekFrom};
+
+const SEEK_BEG: &'static str = "start";
+const SEEK_CUR: &'static str = "current";
+const SEEK_END: &'static str = "end";
 
 pub(super) fn load(env: &Frame) {
     // TODO ADD
@@ -23,6 +46,10 @@ pub(super) fn load(env: &Frame) {
 
     super::bind_intrinsic(env, "append-output-file", 1..1, append_output_file);
     super::bind_intrinsic(env, "append-binary-output-file", 1..1, append_output_file);
+
+    super::bind_intrinsic(env, "seekable-port?", 1..1, is_seekable);
+    super::bind_intrinsic(env, "port-position", 1..1, port_tell);
+    super::bind_intrinsic(env, "set-port-position!", 2..3, port_seek);
 
     super::bind_intrinsic(env, "make-directory", 1..1, mk_dir);
     super::bind_intrinsic(env, "make-directories", 1..1, mk_dirs);
@@ -97,6 +124,61 @@ fn append_output_file(args: &[Value], env: &Frame) -> EvalResult {
     )
 }
 
+fn is_seekable(args: &[Value], _env: &Frame) -> EvalResult {
+    Ok(Value::Boolean(match super::first(args) {
+        Value::PortInput(p) => p.borrow().is_seekable(),
+        Value::PortOutput(p) => p.borrow().is_seekable(),
+        _ => false,
+    }))
+}
+
+fn port_tell(args: &[Value], env: &Frame) -> EvalResult {
+    let arg = super::first(args);
+    match arg {
+        Value::PortInput(p) => port_pos!(p, env.sym, arg),
+        Value::PortOutput(p) => port_pos!(p, env.sym, arg),
+        _ => Err(super::invalid_target(TypeName::PORT, arg)),
+    }
+}
+
+fn port_seek(args: &[Value], env: &Frame) -> EvalResult {
+    let arg = super::first(args);
+    let pos = try_val_to_port_pos(super::second(args), SECOND_ARG_LABEL)?;
+    let whence = args.get(2).map_or_else(
+        || Ok(env.sym.get(SEEK_BEG)),
+        |val| {
+            if let Value::Symbol(s) = val {
+                Ok(s.clone())
+            } else {
+                Err(Exception::from(Condition::arg_error(
+                    THIRD_ARG_LABEL,
+                    TypeName::SYMBOL,
+                    val,
+                )))
+            }
+        },
+    )?;
+    let seek_pos = match whence.as_ref() {
+        SEEK_BEG => Ok(SeekFrom::Start(pos.unsigned_abs())),
+        SEEK_CUR => Ok(SeekFrom::Current(pos)),
+        SEEK_END => Ok(SeekFrom::End(pos)),
+        _ => Err(Exception::from(Condition::bi_value_error(
+            "invalid seek-position choice",
+            &Value::Symbol(whence),
+            &zlist![
+                Value::Symbol(env.sym.get(SEEK_BEG)),
+                Value::Symbol(env.sym.get(SEEK_CUR)),
+                Value::Symbol(env.sym.get(SEEK_END)),
+            ],
+        ))),
+    }?;
+    match arg {
+        Value::PortInput(p) => port_pos_set!(p, seek_pos, env.sym, arg),
+        Value::PortOutput(p) => port_pos_set!(p, seek_pos, env.sym, arg),
+        _ => Err(super::invalid_target(TypeName::PORT, arg)),
+    }
+}
+
 fn mk_dir(args: &[Value], env: &Frame) -> EvalResult {
     super::fs_cmd(super::first(args), env, |p| fs::create_dir(p))
 }
@@ -137,3 +219,9 @@ fn rm_dir(args: &[Value], env: &Frame) -> EvalResult {
 fn rm_dirs(args: &[Value], env: &Frame) -> EvalResult {
     super::fs_cmd(super::first(args), env, |p| fs::remove_dir_all(p))
 }
+
+num_convert!(
+    try_val_to_port_pos,
+    i64,
+    NumericError::Int64ConversionInvalidRange
+);
