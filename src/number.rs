@@ -919,6 +919,7 @@ pub(crate) enum NumericError {
     Int32ConversionInvalidRange,
     Int64ConversionInvalidRange,
     IntConversionInvalidType(String),
+    IsizeConversionInvalidRange,
     NoExactRepresentation(String),
     NotExactInteger(String),
     ParseExponentFailure,
@@ -944,6 +945,9 @@ impl Display for NumericError {
             }
             Self::IntConversionInvalidType(n) => {
                 write!(f, "expected integer literal, got numeric type: {n}")
+            }
+            Self::IsizeConversionInvalidRange => {
+                write_intconversion_range_error(isize::MIN, isize::MAX, f)
             }
             Self::NoExactRepresentation(s) => write!(f, "no exact representation for: {s}"),
             Self::NotExactInteger(s) => write!(f, "expected exact integer, got: {s}"),
