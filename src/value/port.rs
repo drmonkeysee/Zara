@@ -646,14 +646,6 @@ impl WritePort {
         }
     }
 
-    pub(crate) fn tell(&mut self) -> PortPosition {
-        todo!();
-    }
-
-    pub(crate) fn seek(&mut self, pos: PortSeek) -> PortPosition {
-        todo!();
-    }
-
     pub(crate) fn put_bytes(&mut self, bytes: &[u8]) -> PortResult {
         if self.is_binary() {
             self.get_writer()?.put_bytes(bytes)
@@ -682,6 +674,20 @@ impl WritePort {
 
     pub(crate) fn flush(&mut self) -> PortResult {
         self.get_writer()?.flush()
+    }
+
+    pub(crate) fn tell(&mut self) -> PortPosition {
+        self.get_seekable()?
+            .stream_position()?
+            .try_into()
+            .map_err(|_| PortError::Io(ErrorKind::InvalidData))
+    }
+
+    pub(crate) fn seek(&mut self, pos: PortSeek) -> PortPosition {
+        self.get_seekable()?
+            .seek(pos.try_into()?)?
+            .try_into()
+            .map_err(|_| PortError::Io(ErrorKind::InvalidData))
     }
 
     pub(crate) fn close(&mut self) {
@@ -721,6 +727,15 @@ impl WritePort {
             Self::String(o) => o.as_mut().map(WriteRef::fmt),
         }
         .ok_or(PortError::Closed)
+    }
+
+    fn get_seekable(&mut self) -> PortResult<&mut dyn Seek> {
+        match self {
+            Self::ByteVector(_) => todo!(),
+            Self::File(o, _) => o.as_mut().map(|f| Ok(f as &mut dyn Seek)),
+            _ => Some(Err(PortError::Io(ErrorKind::NotSeekable))),
+        }
+        .unwrap_or(Err(PortError::Closed))
     }
 
     // NOTE: rustyline always resets cursor position so without adding a synthetic
