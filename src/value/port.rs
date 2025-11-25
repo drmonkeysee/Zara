@@ -719,7 +719,7 @@ impl WritePort {
 
     fn get_seekable(&mut self) -> PortResult<&mut dyn Seek> {
         match self {
-            Self::ByteVector(_) => todo!(),
+            Self::ByteVector(o) => o.as_mut().map(|f| Ok(f as &mut dyn Seek)),
             Self::File(o, _) => o.as_mut().map(|f| Ok(f as &mut dyn Seek)),
             _ => Some(Err(PortError::Io(ErrorKind::NotSeekable))),
         }
@@ -802,7 +802,16 @@ impl io::Write for BvWriter {
 
 impl Seek for BvWriter {
     fn seek(&mut self, pos: SeekFrom) -> io::Result<u64> {
-        todo!()
+        let curr = u64::try_from(self.cur).map_err(|_| ErrorKind::InvalidData)?;
+        let end = u64::try_from(self.bytes.len()).map_err(|_| ErrorKind::InvalidData)?;
+        let new = match pos {
+            SeekFrom::Start(p) => Some(p),
+            SeekFrom::Current(p) => curr.checked_add_signed(p),
+            SeekFrom::End(p) => end.checked_add_signed(p),
+        }
+        .ok_or(ErrorKind::InvalidInput)?;
+        self.cur = new.try_into().map_err(|_| ErrorKind::InvalidInput)?;
+        Ok(new)
     }
 }
 
