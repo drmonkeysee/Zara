@@ -1099,7 +1099,7 @@ mod tests {
     use super::*;
     use crate::testutil::{err_or_fail, ok_or_fail, some_or_fail};
 
-    mod bytes {
+    mod binary {
         use super::*;
 
         #[test]
@@ -1281,9 +1281,93 @@ mod tests {
             let b = some_or_fail!(ok_or_fail!(r));
             assert_eq!(*b, []);
         }
+
+        #[test]
+        fn bv_input_start_position() {
+            let mut p = ReadPort::bytevector([1, 2, 3, 4, 5]);
+
+            let r = p.tell();
+
+            let pos = ok_or_fail!(r);
+            assert_eq!(pos, 0);
+        }
+
+        #[test]
+        fn bv_input_position_moves_on_read() {
+            let mut p = ReadPort::bytevector([1, 2, 3, 4, 5]);
+
+            let _ = p.read_byte();
+            let _ = p.read_byte();
+
+            let r = p.tell();
+
+            let pos = ok_or_fail!(r);
+            assert_eq!(pos, 2);
+        }
+
+        #[test]
+        fn bv_input_seek_from_start() {
+            let mut p = ReadPort::bytevector([1, 2, 3, 4, 5]);
+
+            let r = p.seek(PortSeek::Start(2));
+
+            let pos = ok_or_fail!(r);
+            assert_eq!(pos, 2);
+        }
+
+        #[test]
+        fn bv_input_seek_from_current() {
+            let mut p = ReadPort::bytevector([1, 2, 3, 4, 5]);
+
+            let _ = p.read_byte();
+            let _ = p.read_byte();
+
+            let r = p.seek(PortSeek::Current(1));
+
+            let pos = ok_or_fail!(r);
+            assert_eq!(pos, 3);
+        }
+
+        #[test]
+        fn bv_input_seek_from_end() {
+            let mut p = ReadPort::bytevector([1, 2, 3, 4, 5]);
+
+            let _ = p.read_byte();
+            let _ = p.read_byte();
+
+            let r = p.seek(PortSeek::End(-1));
+
+            let pos = ok_or_fail!(r);
+            assert_eq!(pos, 4);
+        }
+
+        #[test]
+        fn bv_input_seek_past_end() {
+            let mut p = ReadPort::bytevector([1, 2, 3, 4, 5]);
+
+            let _ = p.read_byte();
+            let _ = p.read_byte();
+
+            let r = p.seek(PortSeek::End(1));
+
+            let pos = ok_or_fail!(r);
+            assert_eq!(pos, 6);
+            let b = ok_or_fail!(p.read_byte());
+            assert!(b.is_none());
+        }
+
+        #[test]
+        fn bv_input_seek_negative() {
+            let mut p = ReadPort::bytevector([1, 2, 3, 4, 5]);
+
+            let r = p.seek(PortSeek::Start(-1));
+
+            let err = err_or_fail!(r);
+            assert!(matches!(err, PortError::Io(ErrorKind::InvalidInput)));
+        }
     }
 
-    mod text {
+    mod textual {
         use super::*;
 
         #[test]
@@ -1534,6 +1618,117 @@ mod tests {
 
             let s = ok_or_fail!(r);
             assert!(s.is_none());
+        }
+
+        #[test]
+        fn str_input_start_position() {
+            let mut p = ReadPort::string("abcde");
+
+            let r = p.tell();
+
+            let pos = ok_or_fail!(r);
+            assert_eq!(pos, 0);
+        }
+
+        #[test]
+        fn str_input_position_moves_on_read() {
+            let mut p = ReadPort::string("abcde");
+
+            let _ = p.read_char();
+            let _ = p.read_char();
+
+            let r = p.tell();
+
+            let pos = ok_or_fail!(r);
+            assert_eq!(pos, 2);
+        }
+
+        #[test]
+        fn str_input_position_denotes_byte_position() {
+            let mut p = ReadPort::string("cr🦀b cake");
+
+            let _ = p.read_chars(4);
+
+            let r = p.tell();
+
+            let pos = ok_or_fail!(r);
+            assert_eq!(pos, 7);
+        }
+
+        #[test]
+        fn str_input_seek_from_start() {
+            let mut p = ReadPort::string("abcde");
+
+            let r = p.seek(PortSeek::Start(2));
+
+            let pos = ok_or_fail!(r);
+            assert_eq!(pos, 2);
+        }
+
+        #[test]
+        fn str_input_seek_from_current() {
+            let mut p = ReadPort::string("abcde");
+
+            let _ = p.read_char();
+            let _ = p.read_char();
+
+            let r = p.seek(PortSeek::Current(1));
+
+            let pos = ok_or_fail!(r);
+            assert_eq!(pos, 3);
+        }
+
+        #[test]
+        fn str_input_seek_from_end() {
+            let mut p = ReadPort::string("abcde");
+
+            let _ = p.read_char();
+            let _ = p.read_char();
+
+            let r = p.seek(PortSeek::End(-1));
+
+            let pos = ok_or_fail!(r);
+            assert_eq!(pos, 4);
+        }
+
+        #[test]
+        fn str_input_seek_past_end() {
+            let mut p = ReadPort::string("abcde");
+
+            let _ = p.read_char();
+            let _ = p.read_char();
+
+            let r = p.seek(PortSeek::End(1));
+
+            let pos = ok_or_fail!(r);
+            assert_eq!(pos, 6);
+            let b = ok_or_fail!(p.read_char());
+            assert!(b.is_none());
+        }
+
+        #[test]
+        fn str_input_seek_negative() {
+            let mut p = ReadPort::string("abcde");
+
+            let r = p.seek(PortSeek::Start(-1));
+
+            let err = err_or_fail!(r);
+            assert!(matches!(err, PortError::Io(ErrorKind::InvalidInput)));
+        }
+
+        #[test]
+        fn str_input_seek_to_partial_utf8_sequence() {
+            let mut p = ReadPort::string("cr🦀b cake");
+
+            let r = p.seek(PortSeek::Start(3));
+
+            let pos = ok_or_fail!(r);
+            assert_eq!(pos, 3);
+            let err = err_or_fail!(p.read_char());
+            assert!(matches!(
+                err,
+                PortError::Unicode(UnicodeError::PrefixInvalid(0x9f))
+            ));
         }
     }
 }
