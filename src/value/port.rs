@@ -1422,6 +1422,110 @@ mod tests {
             let err = err_or_fail!(r);
             assert!(matches!(err, PortError::Io(ErrorKind::InvalidInput)));
         }
+
+        #[test]
+        fn bv_output_write_nothing() {
+            let mut p = WritePort::bytevector();
+
+            let r = p.put_bytes(&[]);
+
+            assert!(r.is_ok());
+            assert_eq!(ok_or_fail!(p.tell()), 0);
+            let bv = ok_or_fail!(p.get_bytevector());
+            assert_eq!(bv.as_datum().to_string(), "#u8()");
+        }
+
+        #[test]
+        fn bv_output_write_bytes() {
+            let mut p = WritePort::bytevector();
+
+            let r = p.put_bytes(&[1, 2, 3]);
+
+            assert!(r.is_ok());
+            assert_eq!(ok_or_fail!(p.tell()), 3);
+            let bv = ok_or_fail!(p.get_bytevector());
+            assert_eq!(bv.as_datum().to_string(), "#u8(1 2 3)");
+        }
+
+        #[test]
+        fn bv_output_write_inner_slice() {
+            let mut p = WritePort::bytevector();
+
+            let r = p.put_bytes(&[1, 2, 3, 4, 5]);
+
+            assert!(r.is_ok());
+
+            let r = p.seek(PortSeek::Start(1));
+
+            assert_eq!(ok_or_fail!(r), 1);
+
+            let r = p.put_bytes(&[9, 8, 7]);
+
+            assert!(r.is_ok());
+            assert_eq!(ok_or_fail!(p.tell()), 4);
+            let bv = ok_or_fail!(p.get_bytevector());
+            assert_eq!(bv.as_datum().to_string(), "#u8(1 9 8 7 5)");
+        }
+
+        #[test]
+        fn bv_output_write_inner_slice_to_end() {
+            let mut p = WritePort::bytevector();
+
+            let r = p.put_bytes(&[1, 2, 3, 4, 5]);
+
+            assert!(r.is_ok());
+
+            let r = p.seek(PortSeek::Start(1));
+
+            assert_eq!(ok_or_fail!(r), 1);
+
+            let r = p.put_bytes(&[9, 8, 7, 6]);
+
+            assert!(r.is_ok());
+            assert_eq!(ok_or_fail!(p.tell()), 5);
+            let bv = ok_or_fail!(p.get_bytevector());
+            assert_eq!(bv.as_datum().to_string(), "#u8(1 9 8 7 6)");
+        }
+
+        #[test]
+        fn bv_output_write_spillover_slice() {
+            let mut p = WritePort::bytevector();
+
+            let r = p.put_bytes(&[1, 2, 3, 4, 5]);
+
+            assert!(r.is_ok());
+
+            let r = p.seek(PortSeek::End(-2));
+
+            assert_eq!(ok_or_fail!(r), 3);
+
+            let r = p.put_bytes(&[9, 8, 7, 6]);
+
+            assert!(r.is_ok());
+            assert_eq!(ok_or_fail!(p.tell()), 7);
+            let bv = ok_or_fail!(p.get_bytevector());
+            assert_eq!(bv.as_datum().to_string(), "#u8(1 2 3 9 8 7 6)");
+        }
+
+        #[test]
+        fn bv_output_write_past_end() {
+            let mut p = WritePort::bytevector();
+
+            let r = p.put_bytes(&[1, 2, 3, 4, 5]);
+
+            assert!(r.is_ok());
+
+            let r = p.seek(PortSeek::End(3));
+
+            assert_eq!(ok_or_fail!(r), 8);
+
+            let r = p.put_bytes(&[10]);
+
+            assert!(r.is_ok());
+            assert_eq!(ok_or_fail!(p.tell()), 9);
+            let bv = ok_or_fail!(p.get_bytevector());
+            assert_eq!(bv.as_datum().to_string(), "#u8(1 2 3 4 5 0 0 0 10)");
+        }
     }
 
     mod textual {
