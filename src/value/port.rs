@@ -47,17 +47,11 @@ impl ReadPort {
     }
 
     pub(crate) fn is_binary(&self) -> bool {
-        match self {
-            Self::ByteVector(_) | Self::File(_) => true,
-            Self::In(_) | Self::String(_) => false,
-        }
+        matches!(self, Self::ByteVector(_) | Self::File(_))
     }
 
     pub(crate) fn is_textual(&self) -> bool {
-        match self {
-            Self::ByteVector(_) => false,
-            Self::File(_) | Self::In(_) | Self::String(_) => true,
-        }
+        matches!(self, Self::File(_) | Self::In(_) | Self::String(_))
     }
 
     pub(crate) fn is_open(&self) -> bool {
@@ -65,7 +59,7 @@ impl ReadPort {
     }
 
     pub(crate) fn is_seekable(&self) -> bool {
-        matches!(self, Self::ByteVector(_) | Self::File(_) | Self::String(_))
+        self.is_binary()
     }
 
     pub(crate) fn char_ready(&self) -> PortBool {
@@ -89,8 +83,7 @@ impl ReadPort {
         match self {
             Self::ByteVector(r) => r.tell(),
             Self::File(r) => r.tell(),
-            Self::In(_) => Err(PortError::Io(ErrorKind::NotSeekable)),
-            Self::String(r) => r.tell(),
+            Self::In(_) | Self::String(_) => Err(PortError::Io(ErrorKind::NotSeekable)),
         }
     }
 
@@ -98,8 +91,7 @@ impl ReadPort {
         match self {
             Self::ByteVector(r) => r.seek(pos),
             Self::File(r) => r.seek(pos),
-            Self::In(_) => Err(PortError::Io(ErrorKind::NotSeekable)),
-            Self::String(r) => r.seek(pos),
+            Self::In(_) | Self::String(_) => Err(PortError::Io(ErrorKind::NotSeekable)),
         }
     }
 
@@ -561,14 +553,6 @@ impl StringReader {
         self.get_char(false)
     }
 
-    fn tell(&mut self) -> PortPosition {
-        self.0.tell()
-    }
-
-    fn seek(&mut self, pos: PortSeek) -> PortPosition {
-        self.0.seek(pos)
-    }
-
     fn read_line(&mut self) -> PortString {
         extract_string(self.char_stream(), |it| {
             it.take_while(|item| item.as_ref().map_or(true, |ch| *ch != '\n'))
@@ -616,17 +600,14 @@ impl WritePort {
     }
 
     pub(crate) fn is_binary(&self) -> bool {
-        match self {
-            Self::ByteVector(_) | Self::File(..) => true,
-            Self::Err(..) | Self::Out(..) | Self::String(_) => false,
-        }
+        matches!(self, Self::ByteVector(_) | Self::File(..))
     }
 
     pub(crate) fn is_textual(&self) -> bool {
-        match self {
-            Self::ByteVector(_) => false,
-            Self::Err(..) | Self::File(..) | Self::Out(..) | Self::String(_) => true,
-        }
+        matches!(
+            self,
+            Self::Err(..) | Self::File(..) | Self::Out(..) | Self::String(_)
+        )
     }
 
     pub(crate) fn is_open(&self) -> bool {
@@ -640,7 +621,7 @@ impl WritePort {
     }
 
     pub(crate) fn is_seekable(&self) -> bool {
-        matches!(self, Self::ByteVector(_) | Self::File(..) | Self::String(_))
+        self.is_binary()
     }
 
     pub(crate) fn get_bytevector(&self) -> PortValue {
@@ -1621,117 +1602,6 @@ mod tests {
 
             let s = ok_or_fail!(r);
             assert!(s.is_none());
-        }
-
-        #[test]
-        fn str_input_start_position() {
-            let mut p = ReadPort::string("abcde");
-
-            let r = p.tell();
-
-            let pos = ok_or_fail!(r);
-            assert_eq!(pos, 0);
-        }
-
-        #[test]
-        fn str_input_position_moves_on_read() {
-            let mut p = ReadPort::string("abcde");
-
-            let _ = p.read_char();
-            let _ = p.read_char();
-
-            let r = p.tell();
-
-            let pos = ok_or_fail!(r);
-            assert_eq!(pos, 2);
-        }
-
-        #[test]
-        fn str_input_position_denotes_byte_position() {
-            let mut p = ReadPort::string("cr🦀b cake");
-
-            let _ = p.read_chars(4);
-
-            let r = p.tell();
-
-            let pos = ok_or_fail!(r);
-            assert_eq!(pos, 7);
-        }
-
-        #[test]
-        fn str_input_seek_from_start() {
-            let mut p = ReadPort::string("abcde");
-
-            let r = p.seek(PortSeek::Start(2));
-
-            let pos = ok_or_fail!(r);
-            assert_eq!(pos, 2);
-        }
-
-        #[test]
-        fn str_input_seek_from_current() {
-            let mut p = ReadPort::string("abcde");
-
-            let _ = p.read_char();
-            let _ = p.read_char();
-
-            let r = p.seek(PortSeek::Current(1));
-
-            let pos = ok_or_fail!(r);
-            assert_eq!(pos, 3);
-        }
-
-        #[test]
-        fn str_input_seek_from_end() {
-            let mut p = ReadPort::string("abcde");
-
-            let _ = p.read_char();
-            let _ = p.read_char();
-
-            let r = p.seek(PortSeek::End(-1));
-
-            let pos = ok_or_fail!(r);
-            assert_eq!(pos, 4);
-        }
-
-        #[test]
-        fn str_input_seek_past_end() {
-            let mut p = ReadPort::string("abcde");
-
-            let _ = p.read_char();
-            let _ = p.read_char();
-
-            let r = p.seek(PortSeek::End(1));
-
-            let pos = ok_or_fail!(r);
-            assert_eq!(pos, 6);
-            let b = ok_or_fail!(p.read_char());
-            assert!(b.is_none());
-        }
-
-        #[test]
-        fn str_input_seek_negative() {
-            let mut p = ReadPort::string("abcde");
-
-            let r = p.seek(PortSeek::Start(-1));
-
-            let err = err_or_fail!(r);
-            assert!(matches!(err, PortError::Io(ErrorKind::InvalidInput)));
-        }
-
-        #[test]
-        fn str_input_seek_to_partial_utf8_sequence() {
-            let mut p = ReadPort::string("cr🦀b cake");
-
-            let r = p.seek(PortSeek::Start(3));
-
-            let pos = ok_or_fail!(r);
-            assert_eq!(pos, 3);
-            let err = err_or_fail!(p.read_char());
-            assert!(matches!(
-                err,
-                PortError::Unicode(UnicodeError::PrefixInvalid(0x9f))
-            ));
         }
     }
 }
