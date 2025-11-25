@@ -564,7 +564,7 @@ impl StringReader {
 
 #[derive(Debug)]
 pub(crate) enum WritePort {
-    ByteVector(Option<Vec<u8>>),
+    ByteVector(Option<BvWriter>),
     Err(Option<Stderr>, bool),
     File(Option<BufWriter<File>>, PathBuf),
     Out(Option<Stdout>, bool),
@@ -573,7 +573,7 @@ pub(crate) enum WritePort {
 
 impl WritePort {
     pub(super) fn bytevector() -> Self {
-        Self::ByteVector(Some(Vec::new()))
+        Self::ByteVector(Some(BvWriter::new()))
     }
 
     pub(super) fn file(path: impl Into<PathBuf>, mode: FileMode) -> PortResult<Self> {
@@ -622,7 +622,7 @@ impl WritePort {
         if let Self::ByteVector(w) = self {
             match w {
                 None => Err(PortError::Closed),
-                Some(v) => Ok(Value::bytevector_mut(v.iter().copied())),
+                Some(v) => Ok(v.to_bv()),
             }
         } else {
             Err(PortError::InvalidSource)
@@ -747,6 +747,62 @@ impl Display for WritePort {
             Self::String(_) => f.write_str(TypeName::STRING),
         }?;
         write_port_status(self.is_open(), f)
+    }
+}
+
+#[derive(Debug)]
+pub(crate) struct BvWriter {
+    bytes: Vec<u8>,
+    cur: usize,
+}
+
+impl BvWriter {
+    fn new() -> Self {
+        Self {
+            bytes: Vec::new(),
+            cur: usize::MIN,
+        }
+    }
+
+    fn to_bv(&self) -> Value {
+        Value::bytevector_mut(self.bytes.iter().copied())
+    }
+}
+
+impl io::Write for BvWriter {
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        let r = if self.cur < self.bytes.len() {
+            let mut slice = &mut self.bytes[self.cur..];
+            let r = slice.write(buf);
+            if let Ok(n) = r
+                && n < buf.len()
+            {
+                self.bytes.write(&buf[n..])
+            } else {
+                r
+            }
+        } else {
+            if self.cur > self.bytes.len() {
+                let mut gap =
+                    iter::repeat_n(0x0u8, self.cur - self.bytes.len()).collect::<Vec<_>>();
+                self.bytes.append(&mut gap);
+            }
+            self.bytes.write(buf)
+        };
+        if r.is_ok() {
+            self.cur += buf.len();
+        }
+        r
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        self.bytes.flush()
+    }
+}
+
+impl Seek for BvWriter {
+    fn seek(&mut self, pos: SeekFrom) -> io::Result<u64> {
+        todo!()
     }
 }
 
