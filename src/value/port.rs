@@ -773,14 +773,7 @@ impl io::Write for BvWriter {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         let r = if self.cur < self.bytes.len() {
             let mut slice = &mut self.bytes[self.cur..];
-            let r = slice.write(buf);
-            if let Ok(n) = r
-                && n < buf.len()
-            {
-                self.bytes.write(&buf[n..])
-            } else {
-                r
-            }
+            slice.write(buf)
         } else {
             if self.cur > self.bytes.len() {
                 let mut gap =
@@ -789,8 +782,8 @@ impl io::Write for BvWriter {
             }
             self.bytes.write(buf)
         };
-        if r.is_ok() {
-            self.cur += buf.len();
+        if let Ok(n) = r {
+            self.cur += n;
         }
         r
     }
