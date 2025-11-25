@@ -1,15 +1,6 @@
 macro_rules! port_pos {
-    ($port: expr, $sym: expr, $arg: expr) => {
-        $port.borrow().tell().map_or_else(
-            |err| Err(Condition::io_error(&err, $sym, $arg).into()),
-            |pos| Ok(Value::Number(Number::from_usize(pos))),
-        )
-    };
-}
-
-macro_rules! port_pos_set {
-    ($port: expr, $pos:expr, $sym: expr, $arg: expr) => {
-        $port.borrow_mut().seek($pos).map_or_else(
+    ($port: expr, $op: expr, $sym: expr, $arg: expr) => {
+        $op(&mut $port.borrow_mut()).map_or_else(
             |err| Err(Condition::io_error(&err, $sym, $arg).into()),
             |pos| Ok(Value::Number(Number::from_usize(pos))),
         )
@@ -22,7 +13,7 @@ use crate::{
     eval::{EvalResult, Frame},
     number::{Number, NumericError, NumericTypeName},
     string::{Symbol, SymbolTable},
-    value::{Condition, FileMode, PortSeek, TypeName, Value, zlist},
+    value::{Condition, FileMode, PortSeek, ReadPort, TypeName, Value, WritePort, zlist},
 };
 use std::{fmt::Display, fs};
 
@@ -136,8 +127,8 @@ fn is_seekable(args: &[Value], _env: &Frame) -> EvalResult {
 fn port_tell(args: &[Value], env: &Frame) -> EvalResult {
     let arg = super::first(args);
     match arg {
-        Value::PortInput(p) => port_pos!(p, env.sym, arg),
-        Value::PortOutput(p) => port_pos!(p, env.sym, arg),
+        Value::PortInput(p) => port_pos!(p, ReadPort::tell, env.sym, arg),
+        Value::PortOutput(p) => port_pos!(p, WritePort::tell, env.sym, arg),
         _ => Err(super::invalid_target(TypeName::PORT, arg)),
     }
 }
@@ -162,8 +153,8 @@ fn port_seek(args: &[Value], env: &Frame) -> EvalResult {
     )?;
     let seek_pos = make_seek_pos(pos, whence, env.sym, parg)?;
     match arg {
-        Value::PortInput(p) => port_pos_set!(p, seek_pos, env.sym, arg),
-        Value::PortOutput(p) => port_pos_set!(p, seek_pos, env.sym, arg),
+        Value::PortInput(p) => port_pos!(p, |p: &mut ReadPort| p.seek(seek_pos), env.sym, arg),
+        Value::PortOutput(p) => port_pos!(p, |p: &mut WritePort| p.seek(seek_pos), env.sym, arg),
         _ => Err(super::invalid_target(TypeName::PORT, arg)),
     }
 }

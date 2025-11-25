@@ -7,7 +7,7 @@ use std::{
     cmp,
     fmt::{self, Debug, Display, Formatter},
     fs::{File, OpenOptions},
-    io::{self, BufRead, BufReader, BufWriter, ErrorKind, SeekFrom, Stderr, Stdin, Stdout},
+    io::{self, BufRead, BufReader, BufWriter, ErrorKind, Seek, SeekFrom, Stderr, Stdin, Stdout},
     iter,
     path::{Path, PathBuf},
 };
@@ -68,7 +68,7 @@ impl ReadPort {
         matches!(self, Self::ByteVector(_) | Self::File(_) | Self::String(_))
     }
 
-    pub(crate) fn tell(&self) -> PortPosition {
+    pub(crate) fn tell(&mut self) -> PortPosition {
         match self {
             Self::ByteVector(r) => r.tell(),
             Self::File(r) => r.tell(),
@@ -246,7 +246,7 @@ impl BvReader {
         }
     }
 
-    fn tell(&self) -> PortPosition {
+    fn tell(&mut self) -> PortPosition {
         if self.is_open() {
             Ok(self.cur)
         } else {
@@ -329,16 +329,26 @@ impl FileReader {
     fn read_ready(&self) -> PortBool {
         match &self.file {
             None => Err(PortError::Closed),
-            Some(r) => Ok(self.eof || !r.buffer().is_empty()),
+            Some(f) => Ok(self.eof || !f.buffer().is_empty()),
         }
     }
 
-    fn tell(&self) -> PortPosition {
-        todo!();
+    fn tell(&mut self) -> PortPosition {
+        match &mut self.file {
+            None => Err(PortError::Closed),
+            Some(f) => usize::try_from(f.stream_position()?)
+                .map_err(|_| PortError::Io(ErrorKind::InvalidData)),
+        }
     }
 
     fn seek(&mut self, pos: PortSeek) -> PortPosition {
-        todo!();
+        match &mut self.file {
+            None => Err(PortError::Closed),
+            Some(f) => f
+                .seek(pos.try_into()?)?
+                .try_into()
+                .map_err(|_| PortError::Io(ErrorKind::InvalidData)),
+        }
     }
 
     fn read_bytes(&mut self, k: usize) -> PortBytes {
@@ -368,9 +378,9 @@ impl FileReader {
     fn read_line(&mut self) -> PortString {
         match &mut self.file {
             None => Err(PortError::Closed),
-            Some(r) => {
+            Some(f) => {
                 let mut buf = String::new();
-                Ok(if r.read_line(&mut buf)? > 0 {
+                Ok(if f.read_line(&mut buf)? > 0 {
                     if buf.ends_with('\n') {
                         buf.pop();
                     }
@@ -403,23 +413,23 @@ impl FileReader {
 
     fn read_buffer(&mut self, mut k: usize, advance: bool) -> PortBytes {
         let mut bytes = Vec::new();
-        let r = self.file.as_mut().expect("expected active file handle");
+        let f = self.file.as_mut().expect("expected active file handle");
         while k > 0 {
-            if r.buffer().is_empty() {
-                let fill = r.fill_buf()?;
+            if f.buffer().is_empty() {
+                let fill = f.fill_buf()?;
                 if fill.is_empty() {
                     self.eof = true;
                     break;
                 }
             }
-            let buf = r.buffer();
+            let buf = f.buffer();
             let max = cmp::min(k, buf.len());
             if max > 0 {
                 if let Some(slice) = buf.get(..max) {
                     bytes.extend_from_slice(slice);
                 }
                 if advance {
-                    r.consume(max);
+                    f.consume(max);
                 }
                 if max <= k {
                     k -= max;
@@ -549,7 +559,7 @@ impl StringReader {
         self.0.ready()
     }
 
-    fn tell(&self) -> PortPosition {
+    fn tell(&mut self) -> PortPosition {
         self.0.tell()
     }
 
@@ -653,7 +663,7 @@ impl WritePort {
         }
     }
 
-    pub(crate) fn tell(&self) -> PortPosition {
+    pub(crate) fn tell(&mut self) -> PortPosition {
         todo!();
     }
 
@@ -919,6 +929,27 @@ pub(crate) enum PortSeek {
     Start(isize),
     Current(isize),
     End(isize),
+}
+
+impl TryFrom<PortSeek> for SeekFrom {
+    type Error = PortError;
+
+    fn try_from(value: PortSeek) -> Result<Self, Self::Error> {
+        Ok(match value {
+            PortSeek::Start(p) => Self::Start(
+                p.try_into()
+                    .map_err(|_| PortError::Io(ErrorKind::InvalidInput))?,
+            ),
+            PortSeek::Current(p) => Self::Current(
+                p.try_into()
+                    .map_err(|_| PortError::Io(ErrorKind::InvalidInput))?,
+            ),
+            PortSeek::End(p) => Self::End(
+                p.try_into()
+                    .map_err(|_| PortError::Io(ErrorKind::InvalidInput))?,
+            ),
+        })
+    }
 }
 
 #[derive(Clone, Copy)]
