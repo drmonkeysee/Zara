@@ -68,6 +68,23 @@ impl ReadPort {
         matches!(self, Self::ByteVector(_) | Self::File(_) | Self::String(_))
     }
 
+    pub(crate) fn char_ready(&self) -> PortBool {
+        match self {
+            Self::ByteVector(_) => Err(PortError::ExpectedMode(PortMode::Textual)),
+            Self::File(r) => r.read_ready(),
+            Self::In(r) => r.ready(),
+            Self::String(r) => r.ready(),
+        }
+    }
+
+    pub(crate) fn byte_ready(&self) -> PortBool {
+        match self {
+            Self::ByteVector(r) => r.ready(),
+            Self::File(r) => r.read_ready(),
+            Self::In(_) | Self::String(_) => Err(PortError::ExpectedMode(PortMode::Binary)),
+        }
+    }
+
     pub(crate) fn tell(&mut self) -> PortPosition {
         match self {
             Self::ByteVector(r) => r.tell(),
@@ -117,15 +134,6 @@ impl ReadPort {
         }
     }
 
-    pub(crate) fn char_ready(&self) -> PortBool {
-        match self {
-            Self::ByteVector(_) => Err(PortError::ExpectedMode(PortMode::Textual)),
-            Self::File(r) => r.read_ready(),
-            Self::In(r) => r.ready(),
-            Self::String(r) => r.ready(),
-        }
-    }
-
     pub(crate) fn read_chars(&mut self, k: usize) -> PortString {
         match self {
             Self::ByteVector(_) => Err(PortError::ExpectedMode(PortMode::Textual)),
@@ -147,14 +155,6 @@ impl ReadPort {
         match self {
             Self::ByteVector(r) => r.peek(),
             Self::File(r) => r.peek_byte(),
-            Self::In(_) | Self::String(_) => Err(PortError::ExpectedMode(PortMode::Binary)),
-        }
-    }
-
-    pub(crate) fn byte_ready(&self) -> PortBool {
-        match self {
-            Self::ByteVector(r) => r.ready(),
-            Self::File(r) => r.read_ready(),
             Self::In(_) | Self::String(_) => Err(PortError::ExpectedMode(PortMode::Binary)),
         }
     }
@@ -225,6 +225,15 @@ impl BvReader {
         }
     }
 
+    fn ready(&self) -> PortBool {
+        // TODO: experimental ok_or https://doc.rust-lang.org/std/primitive.bool.html#method.ok_or
+        if self.is_open() {
+            Ok(true)
+        } else {
+            Err(PortError::Closed)
+        }
+    }
+
     fn read(&mut self) -> PortByte {
         self.get_byte(true)
     }
@@ -235,15 +244,6 @@ impl BvReader {
 
     fn peek(&mut self) -> PortByte {
         self.get_byte(false)
-    }
-
-    fn ready(&self) -> PortBool {
-        // TODO: experimental ok_or https://doc.rust-lang.org/std/primitive.bool.html#method.ok_or
-        if self.is_open() {
-            Ok(true)
-        } else {
-            Err(PortError::Closed)
-        }
     }
 
     fn tell(&mut self) -> PortPosition {
@@ -263,7 +263,7 @@ impl BvReader {
                     PortSeek::Current(p) => self.cur.checked_add_signed(p),
                     PortSeek::End(p) => b.len().checked_add_signed(p),
                 }
-                .ok_or_else(|| PortError::Io(ErrorKind::InvalidInput))?;
+                .ok_or_else(|| ErrorKind::InvalidInput)?;
                 self.tell()
             }
         }
@@ -316,6 +316,13 @@ impl FileReader {
         })
     }
 
+    fn read_ready(&self) -> PortBool {
+        match &self.file {
+            None => Err(PortError::Closed),
+            Some(f) => Ok(self.eof || !f.buffer().is_empty()),
+        }
+    }
+
     fn read_byte(&mut self) -> PortByte {
         let bytes = self.get_bytes(1, true)?;
         Ok(bytes.and_then(|b| b.first().copied()))
@@ -324,13 +331,6 @@ impl FileReader {
     fn peek_byte(&mut self) -> PortByte {
         let bytes = self.get_bytes(1, false)?;
         Ok(bytes.and_then(|b| b.first().copied()))
-    }
-
-    fn read_ready(&self) -> PortBool {
-        match &self.file {
-            None => Err(PortError::Closed),
-            Some(f) => Ok(self.eof || !f.buffer().is_empty()),
-        }
     }
 
     fn tell(&mut self) -> PortPosition {
@@ -456,6 +456,13 @@ impl StdinReader {
         }
     }
 
+    fn ready(&self) -> PortBool {
+        match &self.stream {
+            None => Err(PortError::Closed),
+            Some(_) => Ok(!self.rbuf.is_empty()),
+        }
+    }
+
     fn read(&mut self) -> PortChar {
         match &mut self.stream {
             None => Err(PortError::Closed),
@@ -485,13 +492,6 @@ impl StdinReader {
             self.rbuf.push(c);
         }
         r
-    }
-
-    fn ready(&self) -> PortBool {
-        match &self.stream {
-            None => Err(PortError::Closed),
-            Some(_) => Ok(!self.rbuf.is_empty()),
-        }
     }
 
     fn read_line(&mut self) -> PortString {
@@ -539,6 +539,10 @@ impl StringReader {
         Self(BvReader::new(s.into().into_bytes()))
     }
 
+    fn ready(&self) -> PortBool {
+        self.0.ready()
+    }
+
     fn read(&mut self) -> PortChar {
         self.get_char(true)
     }
@@ -553,10 +557,6 @@ impl StringReader {
 
     fn peek(&mut self) -> PortChar {
         self.get_char(false)
-    }
-
-    fn ready(&self) -> PortBool {
-        self.0.ready()
     }
 
     fn tell(&mut self) -> PortPosition {
@@ -886,9 +886,15 @@ impl From<fmt::Error> for PortError {
     }
 }
 
+impl From<ErrorKind> for PortError {
+    fn from(value: ErrorKind) -> Self {
+        Self::Io(value)
+    }
+}
+
 impl From<io::Error> for PortError {
     fn from(value: io::Error) -> Self {
-        Self::Io(value.kind())
+        value.kind().into()
     }
 }
 
@@ -936,18 +942,11 @@ impl TryFrom<PortSeek> for SeekFrom {
 
     fn try_from(value: PortSeek) -> Result<Self, Self::Error> {
         Ok(match value {
-            PortSeek::Start(p) => Self::Start(
-                p.try_into()
-                    .map_err(|_| PortError::Io(ErrorKind::InvalidInput))?,
-            ),
-            PortSeek::Current(p) => Self::Current(
-                p.try_into()
-                    .map_err(|_| PortError::Io(ErrorKind::InvalidInput))?,
-            ),
-            PortSeek::End(p) => Self::End(
-                p.try_into()
-                    .map_err(|_| PortError::Io(ErrorKind::InvalidInput))?,
-            ),
+            PortSeek::Start(p) => Self::Start(p.try_into().map_err(|_| ErrorKind::InvalidInput)?),
+            PortSeek::Current(p) => {
+                Self::Current(p.try_into().map_err(|_| ErrorKind::InvalidInput)?)
+            }
+            PortSeek::End(p) => Self::End(p.try_into().map_err(|_| ErrorKind::InvalidInput)?),
         })
     }
 }
