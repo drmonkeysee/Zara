@@ -263,7 +263,7 @@ impl BvReader {
                     PortSeek::Current(p) => self.cur.checked_add_signed(p),
                     PortSeek::End(p) => b.len().checked_add_signed(p),
                 }
-                .ok_or_else(|| ErrorKind::InvalidInput)?;
+                .ok_or(ErrorKind::InvalidInput)?;
                 self.tell()
             }
         }
@@ -933,6 +933,7 @@ impl Display for PortMode {
     }
 }
 
+#[derive(Clone, Copy)]
 pub(crate) enum PortSeek {
     Start(isize),
     Current(isize),

@@ -17,9 +17,9 @@ use crate::{
 };
 use std::{fmt::Display, fs};
 
-const SEEK_BEG: &'static str = "start";
-const SEEK_CUR: &'static str = "current";
-const SEEK_END: &'static str = "end";
+const SEEK_BEG: &str = "start";
+const SEEK_CUR: &str = "current";
+const SEEK_END: &str = "end";
 
 pub(super) fn load(env: &Frame) {
     // TODO ADD
@@ -116,6 +116,7 @@ fn append_output_file(args: &[Value], env: &Frame) -> EvalResult {
     )
 }
 
+#[allow(clippy::unnecessary_wraps, reason = "infallible intrinsic")]
 fn is_seekable(args: &[Value], _env: &Frame) -> EvalResult {
     Ok(Value::Boolean(match super::first(args) {
         Value::PortInput(p) => p.borrow().is_seekable(),
