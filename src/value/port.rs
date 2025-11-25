@@ -328,20 +328,14 @@ impl FileReader {
     fn tell(&mut self) -> PortPosition {
         match &mut self.file {
             None => Err(PortError::Closed),
-            Some(f) => f
-                .stream_position()?
-                .try_into()
-                .map_err(|_| PortError::Io(ErrorKind::InvalidData)),
+            Some(f) => seekable_position(f),
         }
     }
 
     fn seek(&mut self, pos: PortSeek) -> PortPosition {
         match &mut self.file {
             None => Err(PortError::Closed),
-            Some(f) => f
-                .seek(pos.try_into()?)?
-                .try_into()
-                .map_err(|_| PortError::Io(ErrorKind::InvalidData)),
+            Some(f) => set_seekable_position(f, pos),
         }
     }
 
@@ -677,17 +671,11 @@ impl WritePort {
     }
 
     pub(crate) fn tell(&mut self) -> PortPosition {
-        self.get_seekable()?
-            .stream_position()?
-            .try_into()
-            .map_err(|_| PortError::Io(ErrorKind::InvalidData))
+        seekable_position(self.get_seekable()?)
     }
 
     pub(crate) fn seek(&mut self, pos: PortSeek) -> PortPosition {
-        self.get_seekable()?
-            .seek(pos.try_into()?)?
-            .try_into()
-            .map_err(|_| PortError::Io(ErrorKind::InvalidData))
+        set_seekable_position(self.get_seekable()?, pos)
     }
 
     pub(crate) fn close(&mut self) {
@@ -1091,6 +1079,18 @@ fn write_port_status(open: bool, f: &mut Formatter<'_>) -> fmt::Result {
     } else {
         f.write_str(" (closed)")
     }
+}
+
+fn seekable_position(sk: &mut (impl Seek + ?Sized)) -> PortPosition {
+    sk.stream_position()?
+        .try_into()
+        .map_err(|_| PortError::Io(ErrorKind::InvalidData))
+}
+
+fn set_seekable_position(sk: &mut (impl Seek + ?Sized), pos: PortSeek) -> PortPosition {
+    sk.seek(pos.try_into()?)?
+        .try_into()
+        .map_err(|_| PortError::Io(ErrorKind::InvalidData))
 }
 
 #[cfg(test)]
