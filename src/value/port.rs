@@ -336,7 +336,9 @@ impl FileReader {
     fn tell(&mut self) -> PortPosition {
         match &mut self.file {
             None => Err(PortError::Closed),
-            Some(f) => usize::try_from(f.stream_position()?)
+            Some(f) => f
+                .stream_position()?
+                .try_into()
                 .map_err(|_| PortError::Io(ErrorKind::InvalidData)),
         }
     }
