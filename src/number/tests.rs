@@ -1015,10 +1015,8 @@ mod integer {
     #[test]
     fn min_into_int64() {
         let n = Number::real(-9223372036854775808);
-        dbg!(&n);
 
         let r = n.try_into();
-        dbg!(&r);
 
         let i: i64 = ok_or_fail!(r);
         assert_eq!(i, -9223372036854775808);
