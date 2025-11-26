@@ -1,6 +1,6 @@
 [package]
 name = "zara"
-version = "0.4.5"
+version = "0.5.0"
 edition = "2024"
 authors = ["Brandon Stansbury <brandonrstansbury@gmail.com"]
 description = "An R7RS-small Scheme Interpreter"
