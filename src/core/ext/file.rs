@@ -25,7 +25,6 @@ pub(super) fn load(env: &Frame) {
     // TODO ADD
     /*
     metadata?
-    seek port
     */
 
     super::bind_intrinsic(env, "canonical-path", 1..1, canon_path);

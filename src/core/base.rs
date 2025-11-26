@@ -203,11 +203,11 @@ fn load_io(env: &Frame) {
     bind_intrinsic(env, "read-char", 0..1, read_char);
     bind_intrinsic(env, "peek-char", 0..1, peek_char);
     bind_intrinsic(env, "read-line", 0..1, read_line);
-    bind_intrinsic(env, "char-ready?", 0..1, char_ready);
 
     bind_intrinsic(env, "eof-object?", 1..1, is_eof);
     bind_intrinsic(env, "eof-object", 0..0, eof);
 
+    bind_intrinsic(env, "char-ready?", 0..1, char_ready);
     bind_intrinsic(env, "read-u8", 0..1, read_byte);
     bind_intrinsic(env, "peek-u8", 0..1, peek_byte);
     bind_intrinsic(env, "u8-ready?", 0..1, byte_ready);

@@ -733,6 +733,7 @@ impl Radix for Octal {
     const NAME: &'static str = "octal";
 
     fn is_digit(&self, ch: char) -> bool {
+        // TODO: experimental https://doc.rust-lang.org/std/primitive.char.html#method.is_ascii_octdigit
         ch.is_digit(8)
     }
 }
