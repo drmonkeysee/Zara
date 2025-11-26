@@ -102,7 +102,7 @@ impl Condition {
 
     pub(crate) fn value_error(msg: impl Display, val: &Value) -> Self {
         Self {
-            kind: ConditionKind::Env,
+            kind: ConditionKind::Value,
             irritants: Some(zlist![val.clone()]),
             msg: msg.to_string().into(),
         }
@@ -110,7 +110,7 @@ impl Condition {
 
     pub(crate) fn bi_value_error(msg: impl Display, a: &Value, b: &Value) -> Self {
         Self {
-            kind: ConditionKind::Env,
+            kind: ConditionKind::Value,
             irritants: Some(zlist![a.clone(), b.clone()]),
             msg: msg.to_string().into(),
         }
@@ -130,6 +130,10 @@ impl Condition {
 
     pub(crate) fn is_sys_err(&self) -> bool {
         matches!(self.kind, ConditionKind::System)
+    }
+
+    pub(crate) fn is_val_err(&self) -> bool {
+        matches!(self.kind, ConditionKind::Value)
     }
 
     pub(crate) fn message(&self) -> &str {
@@ -160,7 +164,6 @@ impl Display for Condition {
     }
 }
 
-// TODO: should this have more kinds, reflecting the ctors?
 #[derive(Debug)]
 enum ConditionKind {
     Env,
@@ -171,6 +174,7 @@ enum ConditionKind {
     #[allow(dead_code, reason = "not yet implemented")]
     Read,
     System,
+    Value,
 }
 
 impl Display for ConditionKind {
@@ -182,6 +186,7 @@ impl Display for ConditionKind {
             Self::Io => f.write_str("io-error"),
             Self::Read => f.write_str("read-error"),
             Self::System => f.write_str("system-error"),
+            Self::Value => f.write_str("value-error"),
         }
     }
 }
@@ -277,5 +282,16 @@ mod tests {
         };
 
         assert_eq!(c.to_string(), "#<system-error \"foo\">");
+    }
+
+    #[test]
+    fn display_value_condition() {
+        let c = Condition {
+            kind: ConditionKind::Value,
+            msg: "foo".into(),
+            irritants: None,
+        };
+
+        assert_eq!(c.to_string(), "#<value-error \"foo\">");
     }
 }

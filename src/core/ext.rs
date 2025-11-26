@@ -31,6 +31,7 @@ pub(super) fn load(env: &Frame) {
 
     bind_intrinsic(env, "io-error?", 1..1, is_io_error);
     bind_intrinsic(env, "system-error?", 1..1, is_system_error);
+    bind_intrinsic(env, "value-error?", 1..1, is_value_error);
 
     // NOTE: convenience vars
     env.scope.bind(env.sym.get("null"), Value::Null);
@@ -47,6 +48,7 @@ pub(super) fn load(env: &Frame) {
 
 predicate!(is_io_error, Value::Error(c) if c.is_io_err());
 predicate!(is_system_error, Value::Error(c) if c.is_sys_err());
+predicate!(is_value_error, Value::Error(c) if c.is_val_err());
 
 // TODO: support passing in environment specifier
 #[allow(clippy::unnecessary_wraps, reason = "infallible intrinsic")]
