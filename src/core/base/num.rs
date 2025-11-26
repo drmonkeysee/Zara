@@ -199,7 +199,7 @@ mod tests {
         let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
         assert_eq!(
             err.to_string(),
-            "#<environment-error \"expected exact integer, got: 4.2\" (4.2)>"
+            "#<value-error \"expected exact integer, got: 4.2\" (4.2)>"
         );
 
         let r = is_odd(&args, &env.new_frame());
@@ -207,7 +207,7 @@ mod tests {
         let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
         assert_eq!(
             err.to_string(),
-            "#<environment-error \"expected exact integer, got: 4.2\" (4.2)>"
+            "#<value-error \"expected exact integer, got: 4.2\" (4.2)>"
         );
     }
 
@@ -253,7 +253,7 @@ mod tests {
         let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
         assert_eq!(
             err.to_string(),
-            "#<environment-error \"expected exact integer, got: 3.2\" (3.2)>"
+            "#<value-error \"expected exact integer, got: 3.2\" (3.2)>"
         );
 
         let r = is_odd(&args, &env.new_frame());
@@ -261,7 +261,7 @@ mod tests {
         let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
         assert_eq!(
             err.to_string(),
-            "#<environment-error \"expected exact integer, got: 3.2\" (3.2)>"
+            "#<value-error \"expected exact integer, got: 3.2\" (3.2)>"
         );
     }
 }

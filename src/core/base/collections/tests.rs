@@ -107,7 +107,7 @@ fn all_strings_invalid_param() {
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
     assert_eq!(
         err.to_string(),
-        "#<environment-error \"invalid type for arg `1` - expected: string, got: symbol\" (foo)>"
+        "#<value-error \"invalid type for arg `1` - expected: string, got: symbol\" (foo)>"
     );
 }
 
@@ -272,10 +272,7 @@ fn string_set_val_unicode_out_of_range() {
 
     // NOTE: verify this generates a scheme condition signal rather than a rust panic
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
-    assert_eq!(
-        err.to_string(),
-        "#<environment-error \"index out of range\" (5)>"
-    );
+    assert_eq!(err.to_string(), "#<value-error \"index out of range\" (5)>");
 }
 
 #[test]
@@ -288,10 +285,7 @@ fn string_copy_unicode_out_of_range() {
     // NOTE: verify this generates a scheme condition signal rather than
     // running off the end of an iterator.
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
-    assert_eq!(
-        err.to_string(),
-        "#<environment-error \"index out of range\" (5)>"
-    );
+    assert_eq!(err.to_string(), "#<value-error \"index out of range\" (5)>");
 }
 
 #[test]
@@ -418,7 +412,7 @@ fn list_circular_length() {
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
     assert_eq!(
         err.to_string(),
-        "#<environment-error \"circular list encountered\" ((a b . #0=(c d e f . #0#)))>"
+        "#<value-error \"circular list encountered\" ((a b . #0=(c d e f . #0#)))>"
     );
 }
 
@@ -572,7 +566,7 @@ fn list_append_invalid_arg() {
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
     assert_eq!(
         err.to_string(),
-        "#<environment-error \"invalid type for arg `3` - expected: list, got: number\" (1)>"
+        "#<value-error \"invalid type for arg `3` - expected: list, got: number\" (1)>"
     );
 }
 
@@ -599,7 +593,7 @@ fn list_append_circular_arg() {
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
     assert_eq!(
         err.to_string(),
-        "#<environment-error \"circular list encountered\" ((a b . #0=(c d e f . #0#)))>"
+        "#<value-error \"circular list encountered\" ((a b . #0=(c d e f . #0#)))>"
     );
 }
 
@@ -655,7 +649,7 @@ fn list_reverse_pair() {
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
     assert_eq!(
         err.to_string(),
-        "#<environment-error \"invalid type for arg `1` - expected: list, got: symbol\" (b)>"
+        "#<value-error \"invalid type for arg `1` - expected: list, got: symbol\" (b)>"
     );
 }
 
@@ -675,7 +669,7 @@ fn list_reverse_improper_list() {
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
     assert_eq!(
         err.to_string(),
-        "#<environment-error \"invalid type for arg `2` - expected: list, got: symbol\" (c)>"
+        "#<value-error \"invalid type for arg `2` - expected: list, got: symbol\" (c)>"
     );
 }
 
@@ -690,7 +684,7 @@ fn list_reverse_circular_list() {
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
     assert_eq!(
         err.to_string(),
-        "#<environment-error \"circular list encountered\" ((a b . #0=(c d e f . #0#)))>"
+        "#<value-error \"circular list encountered\" ((a b . #0=(c d e f . #0#)))>"
     );
 }
 
@@ -877,10 +871,7 @@ fn list_tail_index_out_of_range() {
     let r = list_tail(&args, &env.new_frame());
 
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
-    assert_eq!(
-        err.to_string(),
-        "#<environment-error \"index out of range\" (4)>"
-    );
+    assert_eq!(err.to_string(), "#<value-error \"index out of range\" (4)>");
 }
 
 #[test]
@@ -893,7 +884,7 @@ fn list_tail_non_list_out_of_range() {
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
     assert_eq!(
         err.to_string(),
-        "#<environment-error \"invalid type for arg `0` - expected: pair, got: symbol\" (a)>"
+        "#<value-error \"invalid type for arg `0` - expected: pair, got: symbol\" (a)>"
     );
 }
 
@@ -916,7 +907,7 @@ fn list_tail_improper_list_out_of_range() {
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
     assert_eq!(
         err.to_string(),
-        "#<environment-error \"invalid type for arg `0` - expected: pair, got: symbol\" (c)>"
+        "#<value-error \"invalid type for arg `0` - expected: pair, got: symbol\" (c)>"
     );
 }
 
@@ -930,7 +921,7 @@ fn list_tail_wrong_index_type() {
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
     assert_eq!(
         err.to_string(),
-        "#<environment-error \"invalid type for arg `1` - expected: integer, got: string\" (\"foo\")>"
+        "#<value-error \"invalid type for arg `1` - expected: integer, got: string\" (\"foo\")>"
     );
 }
 
@@ -944,7 +935,7 @@ fn list_tail_invalid_index_type() {
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
     assert_eq!(
         err.to_string(),
-        "#<environment-error \"invalid type for arg `1` - expected: integer, got: floating-point\" (4.2)>"
+        "#<value-error \"invalid type for arg `1` - expected: integer, got: floating-point\" (4.2)>"
     );
 }
 
@@ -958,7 +949,7 @@ fn list_tail_index_invalid_range() {
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
     assert_eq!(
         err.to_string(),
-        "#<environment-error \"integer literal out of range: [0, 18446744073709551615]\" (-4)>"
+        "#<value-error \"integer literal out of range: [0, 18446744073709551615]\" (-4)>"
     );
 }
 
@@ -1006,10 +997,7 @@ fn list_ref_empty_list() {
     let r = list_get(&args, &env.new_frame());
 
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
-    assert_eq!(
-        err.to_string(),
-        "#<environment-error \"index out of range\" (0)>"
-    );
+    assert_eq!(err.to_string(), "#<value-error \"index out of range\" (0)>");
 }
 
 #[test]
@@ -1043,7 +1031,7 @@ fn list_ref_non_list() {
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
     assert_eq!(
         err.to_string(),
-        "#<environment-error \"invalid type for arg `0` - expected: pair, got: symbol\" (a)>"
+        "#<value-error \"invalid type for arg `0` - expected: pair, got: symbol\" (a)>"
     );
 }
 
@@ -1106,7 +1094,7 @@ fn list_ref_end_of_improper_list() {
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
     assert_eq!(
         err.to_string(),
-        "#<environment-error \"invalid type for arg `0` - expected: pair, got: symbol\" (c)>"
+        "#<value-error \"invalid type for arg `0` - expected: pair, got: symbol\" (c)>"
     );
 }
 
@@ -1125,10 +1113,7 @@ fn list_ref_index_out_of_range() {
     let r = list_get(&args, &env.new_frame());
 
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
-    assert_eq!(
-        err.to_string(),
-        "#<environment-error \"index out of range\" (4)>"
-    );
+    assert_eq!(err.to_string(), "#<value-error \"index out of range\" (4)>");
 }
 
 #[test]
@@ -1150,7 +1135,7 @@ fn list_ref_improper_list_out_of_range() {
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
     assert_eq!(
         err.to_string(),
-        "#<environment-error \"invalid type for arg `0` - expected: pair, got: symbol\" (c)>"
+        "#<value-error \"invalid type for arg `0` - expected: pair, got: symbol\" (c)>"
     );
 }
 
@@ -1256,10 +1241,7 @@ fn list_set_out_of_range() {
     let r = list_get(&args, &env.new_frame());
 
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
-    assert_eq!(
-        err.to_string(),
-        "#<environment-error \"index out of range\" (3)>"
-    );
+    assert_eq!(err.to_string(), "#<value-error \"index out of range\" (3)>");
 }
 
 #[test]
@@ -1339,7 +1321,7 @@ fn list_copy_circular_list() {
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
     assert_eq!(
         err.to_string(),
-        "#<environment-error \"circular list encountered\" ((a b . #0=(c d e f . #0#)))>"
+        "#<value-error \"circular list encountered\" ((a b . #0=(c d e f . #0#)))>"
     );
 }
 
@@ -1427,10 +1409,7 @@ fn vector_get_idx_out_of_bounds() {
     let r = vector_get(&args, &env.new_frame());
 
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
-    assert_eq!(
-        err.to_string(),
-        "#<environment-error \"index out of range\" (4)>"
-    );
+    assert_eq!(err.to_string(), "#<value-error \"index out of range\" (4)>");
 }
 
 #[test]
@@ -1450,7 +1429,7 @@ fn vector_get_idx_out_of_range() {
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
     assert_eq!(
         err.to_string(),
-        "#<environment-error \"integer literal out of range: [0, 18446744073709551615]\" (-2)>"
+        "#<value-error \"integer literal out of range: [0, 18446744073709551615]\" (-2)>"
     );
 }
 
@@ -1471,7 +1450,7 @@ fn vector_get_idx_malformed() {
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
     assert_eq!(
         err.to_string(),
-        "#<environment-error \"invalid type for arg `1` - expected: integer, got: floating-point\" (4.2)>"
+        "#<value-error \"invalid type for arg `1` - expected: integer, got: floating-point\" (4.2)>"
     );
 }
 
@@ -1492,7 +1471,7 @@ fn vector_get_idx_invalid() {
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
     assert_eq!(
         err.to_string(),
-        "#<environment-error \"invalid type for arg `1` - expected: integer, got: string\" (\"an idx\")>"
+        "#<value-error \"invalid type for arg `1` - expected: integer, got: string\" (\"an idx\")>"
     );
 }
 
@@ -1579,7 +1558,7 @@ fn bytevector_set_val_out_of_range() {
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
     assert_eq!(
         err.to_string(),
-        "#<environment-error \"integer literal out of range: [0, 255]\" (400)>"
+        "#<value-error \"integer literal out of range: [0, 255]\" (400)>"
     );
 }
 
@@ -1597,7 +1576,7 @@ fn bytevector_set_val_invalid() {
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
     assert_eq!(
         err.to_string(),
-        "#<environment-error \"invalid type for arg `2` - expected: integer, got: string\" (\"a byte\")>"
+        "#<value-error \"invalid type for arg `2` - expected: integer, got: string\" (\"a byte\")>"
     );
 }
 
@@ -1615,7 +1594,7 @@ fn bytevector_set_val_immutable() {
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
     assert_eq!(
         err.to_string(),
-        "#<environment-error \"cannot modify literal value\" (#u8(1 2 3))>"
+        "#<value-error \"cannot modify literal value\" (#u8(1 2 3))>"
     );
 }
 
@@ -1685,7 +1664,7 @@ fn bytevector_copy_start_gt_end() {
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
     assert_eq!(
         err.to_string(),
-        "#<environment-error \"start greater than end\" ((3 . 1))>"
+        "#<value-error \"start greater than end\" ((3 . 1))>"
     );
 }
 
@@ -1701,10 +1680,7 @@ fn bytevector_copy_end_too_large() {
     let r = bytevector_copy(&args, &env.new_frame());
 
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
-    assert_eq!(
-        err.to_string(),
-        "#<environment-error \"index out of range\" (5)>"
-    );
+    assert_eq!(err.to_string(), "#<value-error \"index out of range\" (5)>");
 }
 
 #[test]
@@ -1715,10 +1691,7 @@ fn bytevector_copy_start_too_large() {
     let r = bytevector_copy(&args, &env.new_frame());
 
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
-    assert_eq!(
-        err.to_string(),
-        "#<environment-error \"index out of range\" (6)>"
-    );
+    assert_eq!(err.to_string(), "#<value-error \"index out of range\" (6)>");
 }
 
 #[test]
@@ -1755,7 +1728,7 @@ fn bytes_to_unicode_invalid_sequence() {
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
     assert_eq!(
         err.to_string(),
-        "#<environment-error \"invalid UTF-8 byte sequence\" (#u8(159) (2 . 3))>"
+        "#<value-error \"invalid UTF-8 byte sequence\" (#u8(159) (2 . 3))>"
     );
 }
 
@@ -1769,7 +1742,7 @@ fn bytes_to_unicode_truncated_sequence() {
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
     assert_eq!(
         err.to_string(),
-        "#<environment-error \"invalid UTF-8 byte sequence\" (#u8(240 159 166) (2 . 5))>"
+        "#<value-error \"invalid UTF-8 byte sequence\" (#u8(240 159 166) (2 . 5))>"
     );
 }
 
@@ -1887,7 +1860,7 @@ fn bytevector_copy_invalid_at() {
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
     assert_eq!(
         err.to_string(),
-        "#<environment-error \"target index out of range\" (10)>"
+        "#<value-error \"target index out of range\" (10)>"
     );
 }
 
@@ -1941,7 +1914,7 @@ fn bytevector_copy_at_length_err_if_span_is_not_empty() {
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
     assert_eq!(
         err.to_string(),
-        "#<environment-error \"source span too large for target range\" ((0 . 5) (5 . 5))>"
+        "#<value-error \"source span too large for target range\" ((0 . 5) (5 . 5))>"
     );
 }
 
@@ -1959,7 +1932,7 @@ fn bytevector_copy_immutable_target() {
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
     assert_eq!(
         err.to_string(),
-        "#<environment-error \"cannot modify literal value\" (#u8(1 2 3 4 5))>"
+        "#<value-error \"cannot modify literal value\" (#u8(1 2 3 4 5))>"
     );
 }
 
@@ -1979,7 +1952,7 @@ fn bytevector_copy_too_much_into_smaller() {
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
     assert_eq!(
         err.to_string(),
-        "#<environment-error \"source span too large for target range\" ((1 . 5) (1 . 3))>"
+        "#<value-error \"source span too large for target range\" ((1 . 5) (1 . 3))>"
     );
 }
 
@@ -2320,7 +2293,7 @@ fn string_copy_inline_ranges_are_accurate() {
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
     assert_eq!(
         err.to_string(),
-        "#<environment-error \"source span too large for target range\" ((0 . 4) (0 . 1))>"
+        "#<value-error \"source span too large for target range\" ((0 . 4) (0 . 1))>"
     );
 }
 

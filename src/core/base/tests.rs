@@ -88,7 +88,7 @@ fn all_boolean_invalid_param() {
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
     assert_eq!(
         err.to_string(),
-        "#<environment-error \"invalid type for arg `1` - expected: boolean, got: string\" (\"foo\")>"
+        "#<value-error \"invalid type for arg `1` - expected: boolean, got: string\" (\"foo\")>"
     );
 }
 
@@ -107,7 +107,7 @@ fn all_boolean_bails_on_first_invalid_param() {
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
     assert_eq!(
         err.to_string(),
-        "#<environment-error \"invalid type for arg `1` - expected: boolean, got: string\" (\"foo\")>"
+        "#<value-error \"invalid type for arg `1` - expected: boolean, got: string\" (\"foo\")>"
     );
 }
 
@@ -195,7 +195,7 @@ fn all_symbols_invalid_param() {
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
     assert_eq!(
         err.to_string(),
-        "#<environment-error \"invalid type for arg `1` - expected: symbol, got: string\" (\"a\")>"
+        "#<value-error \"invalid type for arg `1` - expected: symbol, got: string\" (\"a\")>"
     );
 }
 
@@ -265,7 +265,7 @@ fn all_chars_invalid_param() {
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
     assert_eq!(
         err.to_string(),
-        "#<environment-error \"invalid type for arg `1` - expected: character, got: string\" (\"a\")>"
+        "#<value-error \"invalid type for arg `1` - expected: character, got: string\" (\"a\")>"
     );
 }
 
@@ -320,7 +320,7 @@ fn int_to_char_invalid_arg() {
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
     assert_eq!(
         err.to_string(),
-        "#<environment-error \"invalid type for arg `0` - expected: integer, got: symbol\" (a)>"
+        "#<value-error \"invalid type for arg `0` - expected: integer, got: symbol\" (a)>"
     );
 }
 
@@ -334,7 +334,7 @@ fn int_to_char_invalid_range() {
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
     assert_eq!(
         err.to_string(),
-        "#<environment-error \"unicode code point out of ranges [#x0, #xd7ff], [#xe000, #x10ffff] ([0, 55295], [57344, 1114111])\" (-4)>"
+        "#<value-error \"unicode code point out of ranges [#x0, #xd7ff], [#xe000, #x10ffff] ([0, 55295], [57344, 1114111])\" (-4)>"
     );
 }
 
@@ -348,6 +348,6 @@ fn int_to_char_not_a_code_point() {
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
     assert_eq!(
         err.to_string(),
-        "#<environment-error \"unicode code point out of ranges [#x0, #xd7ff], [#xe000, #x10ffff] ([0, 55295], [57344, 1114111])\" (57328)>"
+        "#<value-error \"unicode code point out of ranges [#x0, #xd7ff], [#xe000, #x10ffff] ([0, 55295], [57344, 1114111])\" (57328)>"
     );
 }
