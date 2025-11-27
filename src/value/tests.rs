@@ -2502,4 +2502,87 @@ mod traverse {
         assert!(graph.contains(start.node_id()));
         assert!(!graph.contains(p.node_id()));
     }
+
+    #[test]
+    fn list_contains_duplicate_list() {
+        // (1 2 (9 8) 3 (9 8) 4)
+        let inner = zlist![Value::real(9), Value::real(8)];
+        let val = zlist![
+            Value::real(1),
+            Value::real(2),
+            inner.clone(),
+            Value::real(3),
+            inner,
+            Value::real(4),
+        ];
+
+        let graph = Traverse::value(&val);
+
+        assert_eq!(cycle_count(&graph), 0);
+        assert_eq!(val.as_datum().to_string(), "(1 2 (9 8) 3 (9 8) 4)");
+        assert_eq!(val.as_shared_datum().to_string(), "(1 2 #0=(9 8) 3 #0# 4)");
+    }
+
+    #[test]
+    fn vector_contains_duplicate_vector() {
+        // #(1 2 #(9 8) 3 #(9 8) 4)
+        let inner = Value::vector([Value::real(9), Value::real(8)]);
+        let val = Value::vector([
+            Value::real(1),
+            Value::real(2),
+            inner.clone(),
+            Value::real(3),
+            inner,
+            Value::real(4),
+        ]);
+
+        let graph = Traverse::value(&val);
+
+        assert_eq!(cycle_count(&graph), 0);
+        assert_eq!(val.as_datum().to_string(), "#(1 2 #(9 8) 3 #(9 8) 4)");
+        assert_eq!(
+            val.as_shared_datum().to_string(),
+            "#(1 2 #0=#(9 8) 3 #0# 4)"
+        );
+    }
+
+    #[test]
+    fn list_contains_duplicate_vector() {
+        // (1 2 #(9 8) 3 #(9 8) 4)
+        let inner = Value::vector([Value::real(9), Value::real(8)]);
+        let val = zlist![
+            Value::real(1),
+            Value::real(2),
+            inner.clone(),
+            Value::real(3),
+            inner,
+            Value::real(4),
+        ];
+
+        let graph = Traverse::value(&val);
+
+        assert_eq!(cycle_count(&graph), 0);
+        assert_eq!(val.as_datum().to_string(), "(1 2 #(9 8) 3 #(9 8) 4)");
+        assert_eq!(val.as_shared_datum().to_string(), "(1 2 #0=#(9 8) 3 #0# 4)");
+    }
+
+    #[test]
+    fn vector_contains_duplicate_list() {
+        // #(1 2 (9 8) 3 (9 8) 4)
+        let inner = zlist![Value::real(9), Value::real(8)];
+        let val = Value::vector([
+            Value::real(1),
+            Value::real(2),
+            inner.clone(),
+            Value::real(3),
+            inner,
+            Value::real(4),
+        ]);
+
+        let graph = Traverse::value(&val);
+
+        assert_eq!(cycle_count(&graph), 0);
+        assert_eq!(val.as_datum().to_string(), "#(1 2 (9 8) 3 (9 8) 4)");
+        assert_eq!(val.as_shared_datum().to_string(), "#(1 2 #0=(9 8) 3 #0# 4)");
+    }
 }
