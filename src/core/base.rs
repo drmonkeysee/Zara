@@ -40,6 +40,7 @@ use crate::{
         Condition, InputPortRef, OutputPortRef, PortResult, PortSpec, ReadPort, TypeName, Value,
     },
 };
+use std::fmt::Display;
 
 pub(super) fn load(env: &Frame) {
     load_bool(env);
@@ -213,6 +214,9 @@ fn load_io(env: &Frame) {
     bind_intrinsic(env, "u8-ready?", 0..1, byte_ready);
 
     bind_intrinsic(env, "write", 1..2, write_datum);
+    bind_intrinsic(env, "write-shared", 1..2, write_shared);
+    bind_intrinsic(env, "write-simple", 1..2, write_simple);
+    bind_intrinsic(env, "display", 1..2, write_display);
     bind_intrinsic(env, "newline", 0..1, newline);
     bind_intrinsic(env, "write-char", 1..2, write_char);
 
@@ -374,14 +378,19 @@ fn byte_ready(args: &[Value], env: &Frame) -> EvalResult {
 }
 
 fn write_datum(args: &[Value], env: &Frame) -> EvalResult {
-    let port = args.get(1).unwrap_or(&env.sys.stdout);
-    let p = guard_output_port(port, PortSpec::TextualOutput)?;
-    p.borrow_mut()
-        .put_string(&first(args).as_datum().to_string())
-        .map_or_else(
-            |err| Err(Condition::io_error(&err, env.sym, port).into()),
-            |()| Ok(Value::Unspecified),
-        )
+    write_object(first(args), args.get(1), env, Value::as_datum)
+}
+
+fn write_shared(args: &[Value], env: &Frame) -> EvalResult {
+    write_object(first(args), args.get(1), env, Value::as_shared_datum)
+}
+
+fn write_simple(args: &[Value], env: &Frame) -> EvalResult {
+    write_object(first(args), args.get(1), env, Value::as_simple_datum)
+}
+
+fn write_display(args: &[Value], env: &Frame) -> EvalResult {
+    write_object(first(args), args.get(1), env, Value::as_display)
 }
 
 fn newline(args: &[Value], env: &Frame) -> EvalResult {
@@ -547,4 +556,20 @@ fn put_char(ch: char, arg: Option<&Value>, env: &Frame) -> EvalResult {
         |err| Err(Condition::io_error(&err, env.sym, port).into()),
         |()| Ok(Value::Unspecified),
     )
+}
+
+fn write_object<'a, T: Display + 'a>(
+    obj: &'a Value,
+    port: Option<&Value>,
+    env: &Frame,
+    disp: impl FnOnce(&'a Value) -> T,
+) -> EvalResult {
+    let port = port.unwrap_or(&env.sys.stdout);
+    let p = guard_output_port(port, PortSpec::TextualOutput)?;
+    p.borrow_mut()
+        .put_string(&disp(obj).to_string())
+        .map_or_else(
+            |err| Err(Condition::io_error(&err, env.sym, port).into()),
+            |()| Ok(Value::Unspecified),
+        )
 }

@@ -8,9 +8,9 @@ use std::{
     fmt::{self, Display, Formatter, Write},
 };
 
-pub(crate) struct Datum<'a>(pub(super) &'a Value);
+pub(crate) struct SimpleDatum<'a>(pub(super) &'a Value);
 
-impl Display for Datum<'_> {
+impl Display for SimpleDatum<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self.0 {
             Value::Ast(prg) => write!(f, "{{{prg:?}}}"),
@@ -33,9 +33,39 @@ impl Display for Datum<'_> {
             Value::Symbol(s) => s.as_datum().fmt(f),
             Value::TokenList(lines) => DisplayTokenLines(lines).fmt(f),
             Value::Unspecified => f.write_str("#<unspecified>"),
+            Value::Vector(v) => write_seq("#", v.iter().map(Value::as_simple_datum), f),
+            Value::VectorMut(v) => write_seq("#", v.borrow().iter().map(Value::as_simple_datum), f),
+        }
+    }
+}
+
+pub(crate) struct Datum<'a>(pub(super) &'a Value);
+
+impl Display for Datum<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self.0 {
+            Value::Pair(p) => PairDatum::new(p).fmt(f),
+            Value::PairMut(p) => PairDatum::new(&p.borrow()).fmt(f),
             Value::Vector(v) => VecDatum::new(v).fmt(f),
             Value::VectorMut(v) => VecDatum::new(&v.borrow()).fmt(f),
+            _ => SimpleDatum(self.0).fmt(f),
         }
+    }
+}
+
+pub(crate) struct SharedDatum<'a>(pub(super) &'a Value);
+
+impl Display for SharedDatum<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        todo!()
+    }
+}
+
+pub(crate) struct DisplayDatum<'a>(pub(super) &'a Value);
+
+impl Display for DisplayDatum<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        todo!()
     }
 }
 
@@ -90,6 +120,14 @@ impl Display for TypeName<'_> {
             Value::Unspecified => f.write_str("unspecified"),
             Value::Vector(_) | Value::VectorMut(_) => f.write_str(Self::VECTOR),
         }
+    }
+}
+
+struct SimplePairDatum<'a>(&'a Pair);
+
+impl Display for SimplePairDatum<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        todo!()
     }
 }
 

@@ -13,7 +13,7 @@ mod port;
 #[cfg(test)]
 mod tests;
 
-use self::display::{Datum, ValueMessage};
+use self::display::{Datum, DisplayDatum, SharedDatum, SimpleDatum, ValueMessage};
 pub(crate) use self::{
     condition::Condition,
     display::TypeName,
@@ -253,8 +253,20 @@ impl Value {
         ValueMessage(self)
     }
 
+    pub(crate) fn as_simple_datum(&self) -> SimpleDatum<'_> {
+        SimpleDatum(self)
+    }
+
     pub(crate) fn as_datum(&self) -> Datum<'_> {
         Datum(self)
+    }
+
+    pub(crate) fn as_shared_datum(&self) -> SharedDatum<'_> {
+        SharedDatum(self)
+    }
+
+    pub(crate) fn as_display(&self) -> DisplayDatum<'_> {
+        DisplayDatum(self)
     }
 
     pub(crate) fn as_typename(&self) -> TypeName<'_> {
