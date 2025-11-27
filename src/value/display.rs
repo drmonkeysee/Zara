@@ -5,6 +5,7 @@ use crate::{
 };
 use std::{
     borrow::Cow,
+    cell::Cell,
     fmt::{self, Display, Formatter, Write},
 };
 
@@ -23,8 +24,8 @@ impl Display for SimpleDatum<'_> {
             Value::Intrinsic(p) => p.fmt(f),
             Value::Null => f.write_str("()"),
             Value::Number(n) => n.fmt(f),
-            Value::Pair(p) => PairDatum::new(p).fmt(f),
-            Value::PairMut(p) => PairDatum::new(&p.borrow()).fmt(f),
+            Value::Pair(p) => SimplePairDatum::new(p).fmt(f),
+            Value::PairMut(p) => SimplePairDatum::new(&p.borrow()).fmt(f),
             Value::PortInput(p) => write_port(p.borrow(), f),
             Value::PortOutput(p) => write_port(p.borrow(), f),
             Value::Procedure(p) => p.fmt(f),
@@ -123,11 +124,37 @@ impl Display for TypeName<'_> {
     }
 }
 
-struct SimplePairDatum<'a>(&'a Pair);
+struct SimplePairDatum<'a>(&'a Pair, Cell<u32>);
+
+impl<'a> SimplePairDatum<'a> {
+    const MAX_PRINT: u32 = 1_000_000;
+
+    fn new(p: &'a Pair) -> Self {
+        Self(p, Cell::new(u32::MIN))
+    }
+}
 
 impl Display for SimplePairDatum<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        todo!()
+        write!(f, "({}", self.0.car.as_simple_datum())?;
+        for val in self.0.cdr.iter() {
+            if let Some(p) = val.as_refpair() {
+                write!(f, " {}", p.as_ref().car.as_simple_datum())?;
+            } else if !matches!(val, Value::Null) {
+                write!(f, " . {}", val.as_simple_datum())?;
+            }
+            // NOTE: a circular vector rapidly causes a stack overflow but a
+            // circular list enters a tight loop that ignores signals and
+            // doesn't exhaust resources quickly enough to crash; add a trapdoor
+            // to avoid accidentally freezing Zara.
+            let c = self.1.get();
+            if c > Self::MAX_PRINT {
+                f.write_str(" [circular list likely; terminating]…")?;
+                break;
+            }
+            self.1.set(c + 1);
+        }
+        f.write_char(')')
     }
 }
 
