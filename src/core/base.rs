@@ -212,6 +212,7 @@ fn load_io(env: &Frame) {
     bind_intrinsic(env, "peek-u8", 0..1, peek_byte);
     bind_intrinsic(env, "u8-ready?", 0..1, byte_ready);
 
+    bind_intrinsic(env, "write", 1..2, write_datum);
     bind_intrinsic(env, "newline", 0..1, newline);
     bind_intrinsic(env, "write-char", 1..2, write_char);
 
@@ -370,6 +371,17 @@ fn byte_ready(args: &[Value], env: &Frame) -> EvalResult {
         ReadPort::byte_ready,
         |b| Ok(Value::Boolean(b)),
     )
+}
+
+fn write_datum(args: &[Value], env: &Frame) -> EvalResult {
+    let port = args.get(1).unwrap_or(&env.sys.stdout);
+    let p = guard_output_port(port, PortSpec::TextualOutput)?;
+    p.borrow_mut()
+        .put_string(&first(args).as_datum().to_string())
+        .map_or_else(
+            |err| Err(Condition::io_error(&err, env.sym, port).into()),
+            |()| Ok(Value::Unspecified),
+        )
 }
 
 fn newline(args: &[Value], env: &Frame) -> EvalResult {
