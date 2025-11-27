@@ -233,7 +233,7 @@ mod display {
     #[test]
     fn cyclic_vector_self_display() {
         // #0=#(1 2 #0#)
-        let vec = Rc::new(RefCell::new(vec![Value::real(1), Value::real(2)]));
+        let vec = RefCell::new(vec![Value::real(1), Value::real(2)]).into();
         let v = Value::VectorMut(Rc::clone(&vec));
         vec.borrow_mut().push(v.clone());
 
@@ -244,7 +244,7 @@ mod display {
     #[test]
     fn partly_cyclic_vector_display() {
         // #(1 2 #0=#(3 4 #0#))
-        let vec = Rc::new(RefCell::new(vec![Value::real(3), Value::real(4)]));
+        let vec = RefCell::new(vec![Value::real(3), Value::real(4)]).into();
         let head = Value::VectorMut(Rc::clone(&vec));
         vec.borrow_mut().push(head.clone());
         let v = Value::vector([Value::real(1), Value::real(2), head.clone()]);
@@ -256,7 +256,7 @@ mod display {
     #[test]
     fn multiple_cyclic_vector_display() {
         // #0=#(1 2 #0# 3 #0#)
-        let vec = Rc::new(RefCell::new(vec![Value::real(1), Value::real(2)]));
+        let vec = RefCell::new(vec![Value::real(1), Value::real(2)]).into();
         let v = Value::VectorMut(Rc::clone(&vec));
         vec.borrow_mut().push(v.clone());
         vec.borrow_mut().push(Value::real(3));
@@ -2362,7 +2362,7 @@ mod traverse {
     #[test]
     fn cyclic_vector() {
         // #0=#(1 2 #0#)
-        let vec = Rc::new(RefCell::new(vec![Value::real(1), Value::real(2)]));
+        let vec = RefCell::new(vec![Value::real(1), Value::real(2)]).into();
         let v = Value::VectorMut(Rc::clone(&vec));
         vec.borrow_mut().push(v.clone());
 
@@ -2374,7 +2374,7 @@ mod traverse {
     #[test]
     fn partly_cyclic_vector() {
         // #(1 2 #0=#(3 4 #0#))
-        let vec = Rc::new(RefCell::new(vec![Value::real(3), Value::real(4)]));
+        let vec = RefCell::new(vec![Value::real(3), Value::real(4)]).into();
         let head = Value::VectorMut(Rc::clone(&vec));
         vec.borrow_mut().push(head.clone());
         let v = Value::vector([Value::real(1), Value::real(2), head.clone()]);
@@ -2387,7 +2387,7 @@ mod traverse {
     #[test]
     fn multiple_cyclic_vector() {
         // #0=#(1 2 #0# 3 #0#)
-        let vec = Rc::new(RefCell::new(vec![Value::real(1), Value::real(2)]));
+        let vec = RefCell::new(vec![Value::real(1), Value::real(2)]).into();
         let v = Value::VectorMut(Rc::clone(&vec));
         vec.borrow_mut().push(v.clone());
         vec.borrow_mut().push(Value::real(3));
@@ -2401,15 +2401,16 @@ mod traverse {
     #[test]
     fn nested_cyclic_vector() {
         // #0=#(1 2 #1=#(9 8 #1#) 3 #0#)
-        let nested_vec = Rc::new(RefCell::new(vec![Value::real(9), Value::real(8)]));
+        let nested_vec = RefCell::new(vec![Value::real(9), Value::real(8)]).into();
         let nested_v = Value::VectorMut(Rc::clone(&nested_vec));
         nested_vec.borrow_mut().push(nested_v.clone());
-        let vec = Rc::new(RefCell::new(vec![
+        let vec = RefCell::new(vec![
             Value::real(1),
             Value::real(2),
             nested_v.clone(),
             Value::real(3),
-        ]));
+        ])
+        .into();
         let v = Value::VectorMut(Rc::clone(&vec));
         vec.borrow_mut().push(v.clone());
 
@@ -2429,15 +2430,16 @@ mod traverse {
     #[test]
     fn nested_cyclic_vec() {
         // #0=#(1 2 #1=#(9 8 #1#) 3 #0#)
-        let nested_vec = Rc::new(RefCell::new(vec![Value::real(9), Value::real(8)]));
+        let nested_vec = RefCell::new(vec![Value::real(9), Value::real(8)]).into();
         let nested_v = Value::VectorMut(Rc::clone(&nested_vec));
         nested_vec.borrow_mut().push(nested_v.clone());
-        let vec = Rc::new(RefCell::new(vec![
+        let vec = RefCell::new(vec![
             Value::real(1),
             Value::real(2),
             nested_v.clone(),
             Value::real(3),
-        ]));
+        ])
+        .into();
         let v = Value::VectorMut(Rc::clone(&vec));
         vec.borrow_mut().push(v.clone());
 
@@ -2457,13 +2459,9 @@ mod traverse {
     #[test]
     fn self_nested_cyclic_vector() {
         // #0=#(1 2 #(3 4 #0#))
-        let nested_vec = Rc::new(RefCell::new(vec![Value::real(3), Value::real(4)]));
+        let nested_vec = RefCell::new(vec![Value::real(3), Value::real(4)]).into();
         let nested_v = Value::VectorMut(Rc::clone(&nested_vec));
-        let vec = Rc::new(RefCell::new(vec![
-            Value::real(1),
-            Value::real(2),
-            nested_v.clone(),
-        ]));
+        let vec = RefCell::new(vec![Value::real(1), Value::real(2), nested_v.clone()]).into();
         let v = Value::VectorMut(Rc::clone(&vec));
         nested_vec.borrow_mut().push(v.clone());
 
@@ -2473,9 +2471,33 @@ mod traverse {
     }
 
     #[test]
+    fn mutually_nested_vectors() {
+        // #0=#(1 #(9 #0# 7) 3)
+        // #0=#(9 #(1 #0# 3) 7)
+        let a_vec = RefCell::new(vec![Value::real(1), Value::Unspecified, Value::real(3)]).into();
+        let b = Value::vector_mut(vec![
+            Value::real(9),
+            Value::VectorMut(Rc::clone(&a_vec)),
+            Value::real(7),
+        ]);
+        a_vec.borrow_mut()[1] = b.clone();
+        let a = Value::VectorMut(a_vec);
+
+        let a_graph = Traverse::value(&a);
+        let b_graph = Traverse::value(&b);
+
+        assert_eq!(cycle_count(&a_graph), 1);
+        assert_eq!(cycle_count(&b_graph), 1);
+        assert_eq!(a.as_datum().to_string(), "#0=#(1 #(9 #0# 7) 3)");
+        assert_eq!(a.as_shared_datum().to_string(), a.as_datum().to_string());
+        assert_eq!(b.as_datum().to_string(), "#0=#(9 #(1 #0# 3) 7)");
+        assert_eq!(b.as_shared_datum().to_string(), b.as_datum().to_string());
+    }
+
+    #[test]
     fn circular_list_with_cyclic_vector() {
         // #0=(#1=#(9 8 #1#) 2 3 . #0#)
-        let nested_vec = Rc::new(RefCell::new(vec![Value::real(9), Value::real(8)]));
+        let nested_vec = RefCell::new(vec![Value::real(9), Value::real(8)]).into();
         let nested_v = Value::VectorMut(Rc::clone(&nested_vec));
         nested_vec.borrow_mut().push(nested_v.clone());
         let end = RefCell::new(Pair {
@@ -2506,7 +2528,7 @@ mod traverse {
     #[test]
     fn list_ending_with_cyclic_vector() {
         // (#0=#(9 8 #1#) 2 3 . #0#)
-        let nested_vec = Rc::new(RefCell::new(vec![Value::real(9), Value::real(8)]));
+        let nested_vec = RefCell::new(vec![Value::real(9), Value::real(8)]).into();
         let nested_v = Value::VectorMut(Rc::clone(&nested_vec));
         nested_vec.borrow_mut().push(nested_v.clone());
         let p = Pair {
@@ -2544,12 +2566,13 @@ mod traverse {
         }
         .into();
         nested_end.borrow_mut().cdr = Value::Pair(Rc::clone(&nested_head));
-        let vec = Rc::new(RefCell::new(vec![
+        let vec = RefCell::new(vec![
             Value::real(1),
             Value::real(2),
             Value::Pair(Rc::clone(&nested_head)),
             Value::real(3),
-        ]));
+        ])
+        .into();
         let v = Value::VectorMut(Rc::clone(&vec));
         vec.borrow_mut().push(v.clone());
 
