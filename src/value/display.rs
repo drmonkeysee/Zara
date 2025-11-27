@@ -58,7 +58,13 @@ pub(crate) struct SharedDatum<'a>(pub(super) &'a Value);
 
 impl Display for SharedDatum<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        todo!()
+        match self.0 {
+            Value::Pair(p) => PairDatum::shared(p).fmt(f),
+            Value::PairMut(p) => PairDatum::shared(&p.borrow()).fmt(f),
+            Value::Vector(v) => VecDatum::shared(v).fmt(f),
+            Value::VectorMut(v) => VecDatum::shared(&v.borrow()).fmt(f),
+            _ => SimpleDatum(self.0).fmt(f),
+        }
     }
 }
 
@@ -200,6 +206,13 @@ impl<'a> PairDatum<'a> {
         }
     }
 
+    fn shared(head: &'a Pair) -> Self {
+        Self {
+            graph: Cow::Owned(Traverse::shared_pair(head)),
+            val: head,
+        }
+    }
+
     fn write_tail(&self, f: &mut Formatter<'_>) -> fmt::Result {
         for item in self.val.cdr.iter() {
             if let Some(p) = item.as_refpair() {
@@ -251,6 +264,13 @@ impl<'a> VecDatum<'a> {
     fn new(vec: &'a [Value]) -> Self {
         Self {
             graph: Cow::Owned(Traverse::vec(vec)),
+            val: vec,
+        }
+    }
+
+    fn shared(vec: &'a [Value]) -> Self {
+        Self {
+            graph: Cow::Owned(Traverse::shared_vec(vec)),
             val: vec,
         }
     }

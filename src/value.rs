@@ -502,39 +502,55 @@ impl AsRef<Self> for Pair {
 
 #[derive(Clone, Debug)]
 pub(crate) struct Traverse {
-    cycles_only: bool,
     label: usize,
     nodes: Vec<NodeId>,
+    shared: bool,
     visits: HashMap<NodeId, Visit>,
 }
 
 impl Traverse {
     pub(crate) fn value(v: &Value) -> Self {
-        let mut me = Self::create(true);
+        let mut me = Self::create(false);
         me.traverse(v);
         me
     }
 
     fn pair(p: &Pair) -> Self {
-        let mut me = Self::create(true);
+        Self::create_pair(p, false)
+    }
+
+    fn shared_pair(p: &Pair) -> Self {
+        Self::create_pair(p, true)
+    }
+
+    fn vec(vec: &[Value]) -> Self {
+        Self::create_vec(vec, false)
+    }
+
+    fn shared_vec(vec: &[Value]) -> Self {
+        Self::create_vec(vec, true)
+    }
+
+    fn create_pair(p: &Pair, shared: bool) -> Self {
+        let mut me = Self::create(shared);
         me.add(p.node_id());
         me.visit(&p.car);
         me.traverse(&p.cdr);
         me
     }
 
-    fn vec(vec: &[Value]) -> Self {
-        let mut me = Self::create(true);
+    fn create_vec(vec: &[Value], shared: bool) -> Self {
+        let mut me = Self::create(shared);
         me.visit_vec(vec);
         me.label_visits();
         me
     }
 
-    fn create(cycles_only: bool) -> Self {
+    fn create(shared: bool) -> Self {
         Self {
-            cycles_only,
             label: usize::MIN,
             nodes: Vec::new(),
+            shared,
             visits: HashMap::new(),
         }
     }
@@ -548,9 +564,7 @@ impl Traverse {
     }
 
     fn get(&self, id: NodeId) -> Option<&Visit> {
-        self.visits
-            .get(&id)
-            .filter(|vs| !self.cycles_only || vs.cycle)
+        self.visits.get(&id).filter(|vs| self.shared || vs.cycle)
     }
 
     fn traverse(&mut self, start: &Value) {
@@ -606,7 +620,7 @@ impl Traverse {
     fn label_visits(&mut self) {
         for n in &self.nodes {
             if let Some(vs) = self.visits.get_mut(n)
-                && (!self.cycles_only || vs.cycle)
+                && (self.shared || vs.cycle)
             {
                 vs.label = self.label;
                 self.label += 1;
