@@ -197,6 +197,7 @@ mod display {
 
         assert_eq!(v.as_datum().to_string(), "#(\"foo\" a (#t #\\a))");
         assert_eq!(v.as_simple_datum().to_string(), v.as_datum().to_string());
+        assert_eq!(v.as_shared_datum().to_string(), v.as_datum().to_string());
     }
 
     #[test]
@@ -205,6 +206,7 @@ mod display {
 
         assert_eq!(v.as_datum().to_string(), "#()");
         assert_eq!(v.as_simple_datum().to_string(), v.as_datum().to_string());
+        assert_eq!(v.as_shared_datum().to_string(), v.as_datum().to_string());
     }
 
     #[test]
@@ -225,6 +227,7 @@ mod display {
 
         assert_eq!(v.as_datum().to_string(), "#(\"foo\" a (#t #\\a))");
         assert_eq!(v.as_simple_datum().to_string(), v.as_datum().to_string());
+        assert_eq!(v.as_shared_datum().to_string(), v.as_datum().to_string());
     }
 
     #[test]
@@ -235,6 +238,7 @@ mod display {
         vec.borrow_mut().push(v.clone());
 
         assert_eq!(v.as_datum().to_string(), "#0=#(1 2 #0#)");
+        assert_eq!(v.as_shared_datum().to_string(), v.as_datum().to_string());
     }
 
     #[test]
@@ -246,6 +250,7 @@ mod display {
         let v = Value::vector([Value::real(1), Value::real(2), head.clone()]);
 
         assert_eq!(v.as_datum().to_string(), "#(1 2 #0=#(3 4 #0#))");
+        assert_eq!(v.as_shared_datum().to_string(), v.as_datum().to_string());
     }
 
     #[test]
@@ -258,6 +263,7 @@ mod display {
         vec.borrow_mut().push(v.clone());
 
         assert_eq!(v.as_datum().to_string(), "#0=#(1 2 #0# 3 #0#)");
+        assert_eq!(v.as_shared_datum().to_string(), v.as_datum().to_string());
     }
 
     #[test]
@@ -919,6 +925,7 @@ mod pair {
 
         assert_eq!(v.as_datum().to_string(), "(#t . #f)");
         assert_eq!(v.as_simple_datum().to_string(), v.as_datum().to_string());
+        assert_eq!(v.as_shared_datum().to_string(), v.as_datum().to_string());
     }
 
     #[test]
@@ -927,6 +934,7 @@ mod pair {
 
         assert_eq!(v.as_datum().to_string(), "(#t)");
         assert_eq!(v.as_simple_datum().to_string(), v.as_datum().to_string());
+        assert_eq!(v.as_shared_datum().to_string(), v.as_datum().to_string());
     }
 
     #[test]
@@ -938,6 +946,7 @@ mod pair {
 
         assert_eq!(v.as_datum().to_string(), "(1 2 3)");
         assert_eq!(v.as_simple_datum().to_string(), v.as_datum().to_string());
+        assert_eq!(v.as_shared_datum().to_string(), v.as_datum().to_string());
     }
 
     #[test]
@@ -946,6 +955,7 @@ mod pair {
 
         assert_eq!(v.as_datum().to_string(), "(1 2 . 3)");
         assert_eq!(v.as_simple_datum().to_string(), v.as_datum().to_string());
+        assert_eq!(v.as_shared_datum().to_string(), v.as_datum().to_string());
     }
 
     #[test]
@@ -957,6 +967,7 @@ mod pair {
 
         assert_eq!(v.as_datum().to_string(), "((1 . 2) 3)");
         assert_eq!(v.as_simple_datum().to_string(), v.as_datum().to_string());
+        assert_eq!(v.as_shared_datum().to_string(), v.as_datum().to_string());
     }
 
     #[test]
@@ -971,6 +982,7 @@ mod pair {
 
         assert_eq!(v.as_datum().to_string(), "(1 (2 3))");
         assert_eq!(v.as_simple_datum().to_string(), v.as_datum().to_string());
+        assert_eq!(v.as_shared_datum().to_string(), v.as_datum().to_string());
     }
 
     #[test]
@@ -979,6 +991,7 @@ mod pair {
 
         assert_eq!(v.as_datum().to_string(), "(())");
         assert_eq!(v.as_simple_datum().to_string(), v.as_datum().to_string());
+        assert_eq!(v.as_shared_datum().to_string(), v.as_datum().to_string());
     }
 
     #[test]
@@ -1071,6 +1084,7 @@ mod pair {
         let v = Value::Pair(Rc::clone(&p));
 
         assert_eq!(v.as_datum().to_string(), "#0=(1 2 3 . #0#)");
+        assert_eq!(v.as_shared_datum().to_string(), v.as_datum().to_string());
     }
 
     #[test]
@@ -1132,6 +1146,7 @@ mod pair {
         let v = Value::Pair(Rc::clone(&p));
 
         assert_eq!(v.as_datum().to_string(), "(1 2 . #0=(3 4 5 . #0#))");
+        assert_eq!(v.as_shared_datum().to_string(), v.as_datum().to_string());
     }
 
     #[test]
@@ -1189,6 +1204,10 @@ mod pair {
         p.borrow_mut().cdr = cons.clone();
 
         assert_eq!(cons.as_datum().to_string(), "#0=(1 . #0#)");
+        assert_eq!(
+            cons.as_shared_datum().to_string(),
+            cons.as_datum().to_string()
+        );
     }
 
     #[test]
@@ -1202,6 +1221,10 @@ mod pair {
         p.borrow_mut().car = cons.clone();
 
         assert_eq!(cons.as_datum().to_string(), "#0=(#0# . 2)");
+        assert_eq!(
+            cons.as_shared_datum().to_string(),
+            cons.as_datum().to_string()
+        );
     }
 
     #[test]
@@ -1219,6 +1242,10 @@ mod pair {
         }
 
         assert_eq!(cons.as_datum().to_string(), "#0=(#0# . #0#)");
+        assert_eq!(
+            cons.as_shared_datum().to_string(),
+            cons.as_datum().to_string()
+        );
     }
 
     #[test]
@@ -1239,6 +1266,10 @@ mod pair {
         let lst = zlist![Value::real(10), Value::real(11), cyc.clone(), cyc];
 
         assert_eq!(lst.as_datum().to_string(), "(10 11 #0=(1 2 3 . #0#) #0#)");
+        assert_eq!(
+            lst.as_shared_datum().to_string(),
+            lst.as_datum().to_string()
+        );
     }
 
     #[test]
@@ -1283,6 +1314,10 @@ mod pair {
             lst.as_datum().to_string(),
             "(10 11 #0=(1 2 3 . #0#) #0# #1=(4 5 6 . #1#) 12 #1#)"
         );
+        assert_eq!(
+            lst.as_shared_datum().to_string(),
+            lst.as_datum().to_string()
+        );
     }
 }
 
@@ -1298,6 +1333,10 @@ mod list_ctor {
             lst.as_simple_datum().to_string(),
             lst.as_datum().to_string()
         );
+        assert_eq!(
+            lst.as_shared_datum().to_string(),
+            lst.as_datum().to_string()
+        );
     }
 
     #[test]
@@ -1309,6 +1348,10 @@ mod list_ctor {
             lst.as_simple_datum().to_string(),
             lst.as_datum().to_string()
         );
+        assert_eq!(
+            lst.as_shared_datum().to_string(),
+            lst.as_datum().to_string()
+        );
     }
 
     #[test]
@@ -1318,6 +1361,10 @@ mod list_ctor {
         assert_eq!(lst.as_datum().to_string(), "(5)");
         assert_eq!(
             lst.as_simple_datum().to_string(),
+            lst.as_datum().to_string()
+        );
+        assert_eq!(
+            lst.as_shared_datum().to_string(),
             lst.as_datum().to_string()
         );
     }
@@ -1336,6 +1383,10 @@ mod list_ctor {
             lst.as_simple_datum().to_string(),
             lst.as_datum().to_string()
         );
+        assert_eq!(
+            lst.as_shared_datum().to_string(),
+            lst.as_datum().to_string()
+        );
     }
 
     #[test]
@@ -1350,6 +1401,10 @@ mod list_ctor {
         assert_eq!(lst.as_datum().to_string(), "(5 a #t)");
         assert_eq!(
             lst.as_simple_datum().to_string(),
+            lst.as_datum().to_string()
+        );
+        assert_eq!(
+            lst.as_shared_datum().to_string(),
             lst.as_datum().to_string()
         );
     }
@@ -1367,6 +1422,10 @@ mod list_ctor {
             lst.as_simple_datum().to_string(),
             lst.as_datum().to_string()
         );
+        assert_eq!(
+            lst.as_shared_datum().to_string(),
+            lst.as_datum().to_string()
+        );
     }
 
     #[test]
@@ -1376,6 +1435,10 @@ mod list_ctor {
         assert_eq!(lst.as_datum().to_string(), "()");
         assert_eq!(
             lst.as_simple_datum().to_string(),
+            lst.as_datum().to_string()
+        );
+        assert_eq!(
+            lst.as_shared_datum().to_string(),
             lst.as_datum().to_string()
         );
     }
@@ -1394,6 +1457,10 @@ mod list_ctor {
             lst.as_simple_datum().to_string(),
             lst.as_datum().to_string()
         );
+        assert_eq!(
+            lst.as_shared_datum().to_string(),
+            lst.as_datum().to_string()
+        );
     }
 
     #[test]
@@ -1410,6 +1477,10 @@ mod list_ctor {
             lst.as_simple_datum().to_string(),
             lst.as_datum().to_string()
         );
+        assert_eq!(
+            lst.as_shared_datum().to_string(),
+            lst.as_datum().to_string()
+        );
     }
 
     #[test]
@@ -1419,6 +1490,10 @@ mod list_ctor {
         assert_eq!(lst.as_datum().to_string(), "()");
         assert_eq!(
             lst.as_simple_datum().to_string(),
+            lst.as_datum().to_string()
+        );
+        assert_eq!(
+            lst.as_shared_datum().to_string(),
             lst.as_datum().to_string()
         );
     }
@@ -1431,6 +1506,10 @@ mod list_ctor {
         assert_eq!(lst.as_datum().to_string(), "5");
         assert_eq!(
             lst.as_simple_datum().to_string(),
+            lst.as_datum().to_string()
+        );
+        assert_eq!(
+            lst.as_shared_datum().to_string(),
             lst.as_datum().to_string()
         );
     }
@@ -1449,6 +1528,10 @@ mod list_ctor {
             lst.as_simple_datum().to_string(),
             lst.as_datum().to_string()
         );
+        assert_eq!(
+            lst.as_shared_datum().to_string(),
+            lst.as_datum().to_string()
+        );
     }
 
     #[test]
@@ -1463,6 +1546,10 @@ mod list_ctor {
         assert_eq!(lst.as_datum().to_string(), "(5 a . #t)");
         assert_eq!(
             lst.as_simple_datum().to_string(),
+            lst.as_datum().to_string()
+        );
+        assert_eq!(
+            lst.as_shared_datum().to_string(),
             lst.as_datum().to_string()
         );
     }
@@ -2413,6 +2500,7 @@ mod traverse {
             1
         );
         assert_eq!(v.as_datum().to_string(), "#0=(#1=#(9 8 #1#) 2 3 . #0#)");
+        assert_eq!(v.as_shared_datum().to_string(), v.as_datum().to_string());
     }
 
     #[test]
@@ -2439,6 +2527,7 @@ mod traverse {
             0
         );
         assert_eq!(v.as_datum().to_string(), "(#0=#(9 8 #0#) 2 3 . #0#)");
+        assert_eq!(v.as_shared_datum().to_string(), v.as_datum().to_string());
     }
 
     #[test]
@@ -2473,6 +2562,7 @@ mod traverse {
         );
         assert_eq!(some_or_fail!(graph.get(nested_head.node_id())).label, 1);
         assert_eq!(v.as_datum().to_string(), "#0=#(1 2 #1=(9 8 . #1#) 3 #0#)");
+        assert_eq!(v.as_shared_datum().to_string(), v.as_datum().to_string());
     }
 
     #[test]
@@ -2520,6 +2610,10 @@ mod traverse {
 
         assert_eq!(cycle_count(&graph), 0);
         assert_eq!(val.as_datum().to_string(), "(1 2 (9 8) 3 (9 8) 4)");
+        assert_eq!(
+            val.as_simple_datum().to_string(),
+            val.as_datum().to_string()
+        );
         assert_eq!(val.as_shared_datum().to_string(), "(1 2 #0=(9 8) 3 #0# 4)");
     }
 
@@ -2540,6 +2634,10 @@ mod traverse {
 
         assert_eq!(cycle_count(&graph), 0);
         assert_eq!(val.as_datum().to_string(), "#(1 2 #(9 8) 3 #(9 8) 4)");
+        assert_eq!(
+            val.as_simple_datum().to_string(),
+            val.as_datum().to_string()
+        );
         assert_eq!(
             val.as_shared_datum().to_string(),
             "#(1 2 #0=#(9 8) 3 #0# 4)"
@@ -2563,6 +2661,10 @@ mod traverse {
 
         assert_eq!(cycle_count(&graph), 0);
         assert_eq!(val.as_datum().to_string(), "(1 2 #(9 8) 3 #(9 8) 4)");
+        assert_eq!(
+            val.as_simple_datum().to_string(),
+            val.as_datum().to_string()
+        );
         assert_eq!(val.as_shared_datum().to_string(), "(1 2 #0=#(9 8) 3 #0# 4)");
     }
 
@@ -2583,6 +2685,10 @@ mod traverse {
 
         assert_eq!(cycle_count(&graph), 0);
         assert_eq!(val.as_datum().to_string(), "#(1 2 (9 8) 3 (9 8) 4)");
+        assert_eq!(
+            val.as_simple_datum().to_string(),
+            val.as_datum().to_string()
+        );
         assert_eq!(val.as_shared_datum().to_string(), "#(1 2 #0=(9 8) 3 #0# 4)");
     }
 }
