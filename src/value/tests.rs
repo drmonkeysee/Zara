@@ -196,6 +196,7 @@ mod display {
         ]);
 
         assert_eq!(v.as_datum().to_string(), "#(\"foo\" a (#t #\\a))");
+        assert_eq!(v.as_simple_datum().to_string(), v.as_datum().to_string());
     }
 
     #[test]
@@ -203,6 +204,7 @@ mod display {
         let v = Value::vector([]);
 
         assert_eq!(v.as_datum().to_string(), "#()");
+        assert_eq!(v.as_simple_datum().to_string(), v.as_datum().to_string());
     }
 
     #[test]
@@ -222,6 +224,7 @@ mod display {
         ]);
 
         assert_eq!(v.as_datum().to_string(), "#(\"foo\" a (#t #\\a))");
+        assert_eq!(v.as_simple_datum().to_string(), v.as_datum().to_string());
     }
 
     #[test]
@@ -914,14 +917,16 @@ mod pair {
     fn pair_display() {
         let v = Value::cons(Value::Boolean(true), Value::Boolean(false));
 
-        assert_eq!(v.as_datum().to_string(), "(#t . #f)")
+        assert_eq!(v.as_datum().to_string(), "(#t . #f)");
+        assert_eq!(v.as_simple_datum().to_string(), v.as_datum().to_string());
     }
 
     #[test]
     fn empty_cdr_display() {
         let v = Value::cons(Value::Boolean(true), Value::Null);
 
-        assert_eq!(v.as_datum().to_string(), "(#t)")
+        assert_eq!(v.as_datum().to_string(), "(#t)");
+        assert_eq!(v.as_simple_datum().to_string(), v.as_datum().to_string());
     }
 
     #[test]
@@ -931,14 +936,16 @@ mod pair {
             Value::cons(Value::real(2), Value::cons(Value::real(3), Value::Null)),
         );
 
-        assert_eq!(v.as_datum().to_string(), "(1 2 3)")
+        assert_eq!(v.as_datum().to_string(), "(1 2 3)");
+        assert_eq!(v.as_simple_datum().to_string(), v.as_datum().to_string());
     }
 
     #[test]
     fn improper_list_display() {
         let v = Value::cons(Value::real(1), Value::cons(Value::real(2), Value::real(3)));
 
-        assert_eq!(v.as_datum().to_string(), "(1 2 . 3)")
+        assert_eq!(v.as_datum().to_string(), "(1 2 . 3)");
+        assert_eq!(v.as_simple_datum().to_string(), v.as_datum().to_string());
     }
 
     #[test]
@@ -948,7 +955,8 @@ mod pair {
             Value::cons(Value::real(3), Value::Null),
         );
 
-        assert_eq!(v.as_datum().to_string(), "((1 . 2) 3)")
+        assert_eq!(v.as_datum().to_string(), "((1 . 2) 3)");
+        assert_eq!(v.as_simple_datum().to_string(), v.as_datum().to_string());
     }
 
     #[test]
@@ -961,14 +969,16 @@ mod pair {
             ),
         );
 
-        assert_eq!(v.as_datum().to_string(), "(1 (2 3))")
+        assert_eq!(v.as_datum().to_string(), "(1 (2 3))");
+        assert_eq!(v.as_simple_datum().to_string(), v.as_datum().to_string());
     }
 
     #[test]
     fn list_containing_empty_list_display() {
         let v = Value::cons(Value::Null, Value::Null);
 
-        assert_eq!(v.as_datum().to_string(), "(())")
+        assert_eq!(v.as_datum().to_string(), "(())");
+        assert_eq!(v.as_simple_datum().to_string(), v.as_datum().to_string());
     }
 
     #[test]
@@ -1284,6 +1294,10 @@ mod list_ctor {
         let lst = zlist![];
 
         assert_eq!(lst.as_datum().to_string(), "()");
+        assert_eq!(
+            lst.as_simple_datum().to_string(),
+            lst.as_datum().to_string()
+        );
     }
 
     #[test]
@@ -1291,6 +1305,10 @@ mod list_ctor {
         let lst = zlist_mut![];
 
         assert_eq!(lst.as_datum().to_string(), "()");
+        assert_eq!(
+            lst.as_simple_datum().to_string(),
+            lst.as_datum().to_string()
+        );
     }
 
     #[test]
@@ -1298,6 +1316,10 @@ mod list_ctor {
         let lst = zlist![Value::real(5)];
 
         assert_eq!(lst.as_datum().to_string(), "(5)");
+        assert_eq!(
+            lst.as_simple_datum().to_string(),
+            lst.as_datum().to_string()
+        );
     }
 
     #[test]
@@ -1310,6 +1332,10 @@ mod list_ctor {
         ];
 
         assert_eq!(lst.as_datum().to_string(), "(5 a #t)");
+        assert_eq!(
+            lst.as_simple_datum().to_string(),
+            lst.as_datum().to_string()
+        );
     }
 
     #[test]
@@ -1322,6 +1348,10 @@ mod list_ctor {
         ];
 
         assert_eq!(lst.as_datum().to_string(), "(5 a #t)");
+        assert_eq!(
+            lst.as_simple_datum().to_string(),
+            lst.as_datum().to_string()
+        );
     }
 
     #[test]
@@ -1333,6 +1363,10 @@ mod list_ctor {
         ];
 
         assert_eq!(lst.as_datum().to_string(), "(5 (a #t))");
+        assert_eq!(
+            lst.as_simple_datum().to_string(),
+            lst.as_datum().to_string()
+        );
     }
 
     #[test]
@@ -1340,6 +1374,10 @@ mod list_ctor {
         let lst = Value::list(vec![]);
 
         assert_eq!(lst.as_datum().to_string(), "()");
+        assert_eq!(
+            lst.as_simple_datum().to_string(),
+            lst.as_datum().to_string()
+        );
     }
 
     #[test]
@@ -1352,6 +1390,10 @@ mod list_ctor {
         ]);
 
         assert_eq!(lst.as_datum().to_string(), "(5 a #t)");
+        assert_eq!(
+            lst.as_simple_datum().to_string(),
+            lst.as_datum().to_string()
+        );
     }
 
     #[test]
@@ -1364,6 +1406,10 @@ mod list_ctor {
         ]);
 
         assert_eq!(lst.as_datum().to_string(), "(5 a #t)");
+        assert_eq!(
+            lst.as_simple_datum().to_string(),
+            lst.as_datum().to_string()
+        );
     }
 
     #[test]
@@ -1371,6 +1417,10 @@ mod list_ctor {
         let lst = Value::list_cons(vec![]);
 
         assert_eq!(lst.as_datum().to_string(), "()");
+        assert_eq!(
+            lst.as_simple_datum().to_string(),
+            lst.as_datum().to_string()
+        );
     }
 
     #[test]
@@ -1379,6 +1429,10 @@ mod list_ctor {
 
         assert!(matches!(lst, Value::Number(_)));
         assert_eq!(lst.as_datum().to_string(), "5");
+        assert_eq!(
+            lst.as_simple_datum().to_string(),
+            lst.as_datum().to_string()
+        );
     }
 
     #[test]
@@ -1391,6 +1445,10 @@ mod list_ctor {
         ]);
 
         assert_eq!(lst.as_datum().to_string(), "(5 a . #t)");
+        assert_eq!(
+            lst.as_simple_datum().to_string(),
+            lst.as_datum().to_string()
+        );
     }
 
     #[test]
@@ -1403,6 +1461,10 @@ mod list_ctor {
         ]);
 
         assert_eq!(lst.as_datum().to_string(), "(5 a . #t)");
+        assert_eq!(
+            lst.as_simple_datum().to_string(),
+            lst.as_datum().to_string()
+        );
     }
 }
 
