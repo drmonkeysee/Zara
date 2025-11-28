@@ -621,7 +621,7 @@ impl Traverse {
             }
             Some(vs) => {
                 vs.shared = true;
-                if !vs.cycle && self.active.contains(&id) {
+                if !vs.cycle && self.active.contains(id) {
                     vs.cycle = true;
                 }
                 false
@@ -673,7 +673,7 @@ struct ActiveVisits {
 
 // TODO: could scope be modeled as a Drop type?
 impl ActiveVisits {
-    fn contains(&self, id: &NodeId) -> bool {
+    fn contains(&self, id: NodeId) -> bool {
         self.scopes.iter().any(|s| s.contains(&id))
     }
 
@@ -684,7 +684,7 @@ impl ActiveVisits {
     fn add(&mut self, id: NodeId) {
         self.scopes
             .last_mut()
-            .expect("invalid ActiveVisits state")
+            .expect("active visit scopes should not be empty")
             .insert(id);
     }
 
