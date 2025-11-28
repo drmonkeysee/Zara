@@ -28,7 +28,7 @@ use crate::{
 };
 use std::{
     cell::{Cell, Ref, RefCell, RefMut},
-    collections::HashMap,
+    collections::{HashMap, HashSet},
     path::PathBuf,
     ptr,
     rc::Rc,
@@ -502,6 +502,7 @@ impl AsRef<Self> for Pair {
 
 #[derive(Clone, Debug)]
 pub(crate) struct Traverse {
+    active: ActiveVisits,
     label: usize,
     nodes: Vec<NodeId>,
     shared: bool,
@@ -533,9 +534,11 @@ impl Traverse {
 
     fn create_pair(p: &Pair, shared: bool) -> Self {
         let mut me = Self::create(shared);
+        me.active.start();
         me.add(p.node_id());
         me.visit(&p.car);
         me.traverse(&p.cdr);
+        me.active.end();
         me
     }
 
@@ -548,6 +551,7 @@ impl Traverse {
 
     fn create(shared: bool) -> Self {
         Self {
+            active: ActiveVisits::default(),
             label: usize::MIN,
             nodes: Vec::new(),
             shared,
@@ -564,7 +568,7 @@ impl Traverse {
     }
 
     fn get(&self, id: NodeId) -> Option<&Visit> {
-        self.visits.get(&id).filter(|vs| self.shared || vs.cycle)
+        self.visits.get(&id).filter(|vs| vs.revisited(self.shared))
     }
 
     fn traverse(&mut self, start: &Value) {
@@ -581,6 +585,7 @@ impl Traverse {
     }
 
     fn visit_pair(&mut self, v: &Value) {
+        self.active.start();
         for v in ValueIterator(Some(v.clone())) {
             let nested = if let Some(p) = v.as_refpair() {
                 let pref = p.as_ref();
@@ -593,14 +598,17 @@ impl Traverse {
             };
             self.visit(&nested);
         }
+        self.active.end();
     }
 
     fn visit_vec(&mut self, vec: &[Value]) {
+        self.active.start();
         if self.add(vec.as_ptr().cast()) {
             for item in vec {
                 self.visit(item);
             }
         }
+        self.active.end();
     }
 
     fn add(&mut self, id: NodeId) -> bool {
@@ -608,10 +616,14 @@ impl Traverse {
             None => {
                 self.visits.insert(id, Visit::default());
                 self.nodes.push(id);
+                self.active.add(id);
                 true
             }
             Some(vs) => {
-                vs.cycle = true;
+                vs.shared = true;
+                if !vs.cycle && self.active.contains(&id) {
+                    vs.cycle = true;
+                }
                 false
             }
         }
@@ -620,7 +632,7 @@ impl Traverse {
     fn label_visits(&mut self) {
         for n in &self.nodes {
             if let Some(vs) = self.visits.get_mut(n)
-                && (self.shared || vs.cycle)
+                && vs.revisited(self.shared)
             {
                 vs.label = self.label;
                 self.label += 1;
@@ -637,6 +649,7 @@ struct Visit {
     cycle: bool,
     flag: Cell<bool>,
     label: usize,
+    shared: bool,
 }
 
 impl Visit {
@@ -646,5 +659,36 @@ impl Visit {
 
     fn mark(&self) {
         self.flag.set(true);
+    }
+
+    fn revisited(&self, shared: bool) -> bool {
+        (shared && self.shared) || self.cycle
+    }
+}
+
+#[derive(Clone, Debug, Default)]
+struct ActiveVisits {
+    scopes: Vec<HashSet<NodeId>>,
+}
+
+// TODO: could scope be modeled as a Drop type?
+impl ActiveVisits {
+    fn contains(&self, id: &NodeId) -> bool {
+        self.scopes.iter().any(|s| s.contains(&id))
+    }
+
+    fn start(&mut self) {
+        self.scopes.push(HashSet::new());
+    }
+
+    fn add(&mut self, id: NodeId) {
+        self.scopes
+            .last_mut()
+            .expect("invalid ActiveVisits state")
+            .insert(id);
+    }
+
+    fn end(&mut self) {
+        self.scopes.pop();
     }
 }
