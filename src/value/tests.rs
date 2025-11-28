@@ -2350,6 +2350,33 @@ mod traverse {
     }
 
     #[test]
+    fn contained_circular_list() {
+        // a ==> #0=(1 2 3 9 #0# 7)
+        // b ==> #0=(9 (1 2 3 . #0#) 7)
+        let a_end = RefCell::new(Pair {
+            car: Value::real(3),
+            cdr: Value::Null,
+        })
+        .into();
+        let a = Value::cons(
+            Value::real(1),
+            Value::cons(Value::real(2), Value::PairMut(Rc::clone(&a_end))),
+        );
+        let b = zlist![Value::real(9), a.clone(), Value::real(7)];
+        a_end.borrow_mut().cdr = b.clone();
+
+        let a_graph = Traverse::value(&a);
+        let b_graph = Traverse::value(&b);
+
+        assert_eq!(cycle_count(&a_graph), 1);
+        assert_eq!(cycle_count(&b_graph), 1);
+        assert_eq!(a.as_datum().to_string(), "#0=(1 2 3 9 #0# 7)");
+        assert_eq!(a.as_shared_datum().to_string(), a.as_datum().to_string());
+        assert_eq!(b.as_datum().to_string(), "#0=(9 (1 2 3 . #0#) 7)");
+        assert_eq!(b.as_shared_datum().to_string(), b.as_datum().to_string());
+    }
+
+    #[test]
     fn simple_vector() {
         // #(1 2 3)
         let v = Value::vector([Value::real(1), Value::real(2), Value::real(3)]);
