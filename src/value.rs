@@ -241,6 +241,14 @@ impl Value {
         matches!(self, Value::Pair(_) | Value::PairMut(_))
     }
 
+    pub(crate) fn is_circular_pair(&self) -> bool {
+        if let Some(p) = self.as_refpair() {
+            p.as_ref().is_circular()
+        } else {
+            false
+        }
+    }
+
     pub(crate) fn is_list_element(&self) -> bool {
         self.is_pair() || matches!(self, Value::Null)
     }
@@ -464,13 +472,11 @@ pub(crate) struct Pair {
 
 impl Pair {
     pub(crate) fn is_list(&self) -> bool {
-        let graph = Traverse::pair(self);
-        !graph.has_cycles() && self.cdr.iter().all(|item| item.is_list_element())
+        !self.is_circular() && self.cdr.iter().all(|item| item.is_list_element())
     }
 
     pub(crate) fn len(&self) -> PairLenResult {
-        let graph = Traverse::pair(self);
-        if graph.has_cycles() {
+        if self.is_circular() {
             Err(InvalidList::Cycle)
         } else {
             self.cdr.iter().try_fold(1usize, |acc, item| match item {
@@ -479,6 +485,21 @@ impl Pair {
                 _ => Err(InvalidList::Improper),
             })
         }
+    }
+
+    fn is_circular(&self) -> bool {
+        let mut visited = HashSet::new();
+        visited.insert(self.node_id());
+        for v in self.cdr.iter() {
+            if let Some(p) = v.as_refpair() {
+                let id = p.as_ref().node_id();
+                if visited.contains(&id) {
+                    return true;
+                }
+                visited.insert(id);
+            }
+        }
+        false
     }
 
     fn node_id(&self) -> NodeId {
@@ -500,8 +521,11 @@ impl AsRef<Self> for Pair {
     }
 }
 
+// NOTE: pairs and vectors are identified via their untyped pointer address
+type NodeId = *const ();
+
 #[derive(Clone, Debug)]
-pub(crate) struct Traverse {
+struct Traverse {
     active: ActiveVisits,
     label: usize,
     nodes: Vec<NodeId>,
@@ -510,12 +534,6 @@ pub(crate) struct Traverse {
 }
 
 impl Traverse {
-    pub(crate) fn value(v: &Value) -> Self {
-        let mut me = Self::create(false);
-        me.traverse(v);
-        me
-    }
-
     fn pair(p: &Pair) -> Self {
         Self::create_pair(p, false)
     }
@@ -557,10 +575,6 @@ impl Traverse {
             shared,
             visits: HashMap::new(),
         }
-    }
-
-    pub(crate) fn has_cycles(&self) -> bool {
-        self.visits.values().any(|vs| vs.cycle)
     }
 
     fn contains(&self, id: NodeId) -> bool {
@@ -640,9 +654,6 @@ impl Traverse {
         }
     }
 }
-
-// NOTE: pairs and vectors are identified via their untyped pointer address
-type NodeId = *const ();
 
 #[derive(Clone, Debug, Default)]
 struct Visit {

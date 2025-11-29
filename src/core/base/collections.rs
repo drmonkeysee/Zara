@@ -8,7 +8,7 @@ use crate::{
     number::{Number, NumericError, NumericTypeName},
     value::{
         BvRef, CollRef, CollSized, Condition, InvalidList, Pair, PairSized, PortResult, PortSpec,
-        ReadPort, StrRef, Traverse, TypeName, Value, VecRef,
+        ReadPort, StrRef, TypeName, Value, VecRef,
     },
 };
 use std::{
@@ -396,8 +396,7 @@ fn list_append(args: &[Value], _env: &Frame) -> EvalResult {
 
 fn list_reverse(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = first(args);
-    let graph = Traverse::value(arg);
-    if graph.has_cycles() {
+    if arg.is_circular_pair() {
         Err(Condition::circular_list(arg).into())
     } else {
         arg.iter()
@@ -478,8 +477,7 @@ fn assoc_equal(_args: &[Value], _env: &Frame) -> EvalResult {
 fn list_copy(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = first(args);
     if arg.is_pair() {
-        let graph = Traverse::value(arg);
-        if graph.has_cycles() {
+        if arg.is_circular_pair() {
             Err(Condition::circular_list(arg).into())
         } else {
             // TODO: experimental
@@ -934,8 +932,7 @@ fn try_list_to_vec(val: &Value) -> Result<Vec<Value>, Exception> {
 }
 
 fn try_list_acc(val: &Value, acc: &mut Vec<Value>) -> Result<(), Exception> {
-    let graph = Traverse::value(val);
-    if graph.has_cycles() {
+    if val.is_circular_pair() {
         Err(Condition::circular_list(val).into())
     } else {
         val.iter()
