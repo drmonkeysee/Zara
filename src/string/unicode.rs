@@ -42,7 +42,9 @@ pub(crate) fn utf8_char_len(prefix: u8) -> Result<usize, UnicodeError> {
     const MAX_UTF8_COUNT: u32 = MAX_UTF8_BYTES as u32;
 
     match prefix.leading_ones() {
-        c @ 2..=MAX_UTF8_COUNT => Ok(c.try_into().expect("expected count within u8 range")),
+        c @ 2..=MAX_UTF8_COUNT => Ok(c
+            .try_into()
+            .expect("utf-8 sequence length should be within usize range")),
         0 => Ok(1),
         _ => Err(UnicodeError::PrefixInvalid(prefix)),
     }

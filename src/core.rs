@@ -112,15 +112,18 @@ fn bind_intrinsic(env: &Frame, name: &str, arity: Arity, def: IntrinsicFn) {
 }
 
 fn first(args: &[Value]) -> &Value {
-    args.first().expect("first argument arity failure")
+    args.first()
+        .expect("procedure apply should ensure at least 1-arity")
 }
 
 fn second(args: &[Value]) -> &Value {
-    args.get(1).expect("second argument arity failure")
+    args.get(1)
+        .expect("procedure apply should ensure at least 2-arity")
 }
 
 fn third(args: &[Value]) -> &Value {
-    args.get(2).expect("third argument arity failure")
+    args.get(2)
+        .expect("procedure apply should ensure at least 3-arity")
 }
 
 fn pcar(arg: &Value) -> EvalResult {

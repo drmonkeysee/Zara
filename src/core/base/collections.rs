@@ -135,7 +135,9 @@ fn bytevector_copy_inline(args: &[Value], _env: &Frame) -> EvalResult {
             if to.is(from) {
                 target.copy_within(span, atidx);
             } else {
-                let src = from.as_refbv().expect("expected bytevector argument");
+                let src = from
+                    .as_refbv()
+                    .expect("caller should ensure value is a bytevector");
                 target[atidx..(atidx + span.len())].copy_from_slice(&src.as_ref()[span]);
             }
         },
@@ -591,7 +593,9 @@ fn string_set(args: &[Value], _env: &Frame) -> EvalResult {
         |v| try_val_to_char(v, THIRD_ARG_LABEL),
         |mut s, idx, ch| {
             let mut chars = s.chars().collect::<Vec<_>>();
-            let c = chars.get_mut(idx).expect("expected valid index");
+            let c = chars
+                .get_mut(idx)
+                .expect("caller should ensure index is valid");
             *c = ch;
             s.replace_range(.., &chars.into_iter().collect::<String>());
         },
@@ -660,7 +664,9 @@ fn string_copy_inline(args: &[Value], _env: &Frame) -> EvalResult {
                 build_str_copy(&target, &target, atidx, span)
             } else {
                 build_str_copy(
-                    from.as_refstr().expect("expected string argument").as_ref(),
+                    from.as_refstr()
+                        .expect("caller should ensure value is a string")
+                        .as_ref(),
                     &target,
                     atidx,
                     span,
@@ -852,7 +858,9 @@ fn vector_copy_inline(args: &[Value], _env: &Frame) -> EvalResult {
                     reflexive_vector_copy(range.into_iter().zip(span).rev(), &mut target);
                 }
             } else {
-                let src = from.as_refvec().expect("expected vector argument");
+                let src = from
+                    .as_refvec()
+                    .expect("caller should ensure value is a vector");
                 target[range].clone_from_slice(&src.as_ref()[span]);
             }
         },
@@ -966,7 +974,9 @@ fn strs_predicate(args: &[Value], pred: impl Fn(&str, &str) -> bool) -> EvalResu
                 .ok_or_else(|| Exception::from(Condition::arg_error(idx, TypeName::STRING, val)))?;
             let a = match prev {
                 None => return Ok((acc, Some(val))),
-                Some(v) => v.as_refstr().expect("expected string from prev"),
+                Some(v) => v
+                    .as_refstr()
+                    .expect("previous iteration should ensure value is a string"),
             };
             Ok((acc && pred(a.as_ref(), b.as_ref()), Some(val)))
         })

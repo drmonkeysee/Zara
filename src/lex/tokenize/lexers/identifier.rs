@@ -83,11 +83,9 @@ impl<'me, 'txt> Identifier<'me, 'txt> {
 
         if Decimal.is_digit(ch) {
             debug_assert!(self.peculiar_state.is_some());
-            match self
-                .peculiar_state
-                .as_ref()
-                .expect("expected valid peculiar decimal state")
-            {
+            match self.peculiar_state.as_ref().expect(
+                "decimal-or-identifier check should only be reachable via peculiar identifier state",
+            ) {
                 PeculiarState::DefiniteIdentifier => self.standard(),
                 // CASE: .<digit>
                 PeculiarState::MaybeFloat => {

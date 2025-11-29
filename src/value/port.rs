@@ -401,7 +401,10 @@ impl FileReader {
 
     fn read_buffer(&mut self, mut k: usize, advance: bool) -> PortBytes {
         let mut bytes = Vec::new();
-        let f = self.file.as_mut().expect("expected active file handle");
+        let f = self
+            .file
+            .as_mut()
+            .expect("open port should have active file handle");
         while k > 0 {
             if f.buffer().is_empty() {
                 let fill = f.fill_buf()?;

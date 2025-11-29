@@ -48,7 +48,7 @@ impl Lexer {
             debug_assert!(!lines.is_empty());
             lines
                 .pop()
-                .expect("expected token continuation lines")
+                .expect("continuation should have non-empty token lines")
                 .into_continuation_unsupported(cont)
         })
     }
@@ -152,7 +152,10 @@ impl TokenLine {
         LineFailure::from(TokenErrorLine(
             vec![TokenError {
                 kind: cont.into(),
-                span: tokens.pop().expect("expected non-empty tokenline").span,
+                span: tokens
+                    .pop()
+                    .expect("continuation should have non-empty tokens")
+                    .span,
             }],
             txtline,
         ))
