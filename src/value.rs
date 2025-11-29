@@ -13,7 +13,7 @@ mod port;
 #[cfg(test)]
 mod tests;
 
-use self::display::{Datum, DisplayDatum, SharedDatum, SimpleDatum, ValueMessage};
+use self::display::{Datum, DisplayDatum, NodeId, SharedDatum, SimpleDatum, ValueMessage};
 pub(crate) use self::{
     condition::Condition,
     display::TypeName,
@@ -27,8 +27,8 @@ use crate::{
     syntax::Sequence,
 };
 use std::{
-    cell::{Cell, Ref, RefCell, RefMut},
-    collections::{HashMap, HashSet},
+    cell::{Ref, RefCell, RefMut},
+    collections::HashSet,
     path::PathBuf,
     ptr,
     rc::Rc,
@@ -518,188 +518,5 @@ impl Pair {
 impl AsRef<Self> for Pair {
     fn as_ref(&self) -> &Self {
         self
-    }
-}
-
-// NOTE: pairs and vectors are identified via their untyped pointer address
-type NodeId = *const ();
-
-#[derive(Clone, Debug)]
-struct Traverse {
-    active: ActiveVisits,
-    label: usize,
-    nodes: Vec<NodeId>,
-    shared: bool,
-    visits: HashMap<NodeId, Visit>,
-}
-
-impl Traverse {
-    fn pair(p: &Pair) -> Self {
-        Self::create_pair(p, false)
-    }
-
-    fn shared_pair(p: &Pair) -> Self {
-        Self::create_pair(p, true)
-    }
-
-    fn vec(vec: &[Value]) -> Self {
-        Self::create_vec(vec, false)
-    }
-
-    fn shared_vec(vec: &[Value]) -> Self {
-        Self::create_vec(vec, true)
-    }
-
-    fn create_pair(p: &Pair, shared: bool) -> Self {
-        let mut me = Self::create(shared);
-        me.active.start();
-        me.add(p.node_id());
-        me.visit(&p.car);
-        me.traverse(&p.cdr);
-        me.active.end();
-        me
-    }
-
-    fn create_vec(vec: &[Value], shared: bool) -> Self {
-        let mut me = Self::create(shared);
-        me.visit_vec(vec);
-        me.label_visits();
-        me
-    }
-
-    fn create(shared: bool) -> Self {
-        Self {
-            active: ActiveVisits::default(),
-            label: usize::MIN,
-            nodes: Vec::new(),
-            shared,
-            visits: HashMap::new(),
-        }
-    }
-
-    fn contains(&self, id: NodeId) -> bool {
-        self.get(id).is_some()
-    }
-
-    fn get(&self, id: NodeId) -> Option<&Visit> {
-        self.visits.get(&id).filter(|vs| vs.revisited(self.shared))
-    }
-
-    fn traverse(&mut self, start: &Value) {
-        self.visit(start);
-        self.label_visits();
-    }
-
-    fn visit(&mut self, v: &Value) {
-        if v.is_pair() {
-            self.visit_pair(v);
-        } else if let Some(vec) = v.as_refvec() {
-            self.visit_vec(vec.as_ref());
-        }
-    }
-
-    fn visit_pair(&mut self, v: &Value) {
-        self.active.start();
-        for v in ValueIterator(Some(v.clone())) {
-            let nested = if let Some(p) = v.as_refpair() {
-                let pref = p.as_ref();
-                if !self.add(pref.node_id()) {
-                    break;
-                }
-                pref.car.clone()
-            } else {
-                v
-            };
-            self.visit(&nested);
-        }
-        self.active.end();
-    }
-
-    fn visit_vec(&mut self, vec: &[Value]) {
-        self.active.start();
-        if self.add(vec.as_ptr().cast()) {
-            for item in vec {
-                self.visit(item);
-            }
-        }
-        self.active.end();
-    }
-
-    fn add(&mut self, id: NodeId) -> bool {
-        match self.visits.get_mut(&id) {
-            None => {
-                self.visits.insert(id, Visit::default());
-                self.nodes.push(id);
-                self.active.add(id);
-                true
-            }
-            Some(vs) => {
-                vs.shared = true;
-                if !vs.cycle && self.active.contains(id) {
-                    vs.cycle = true;
-                }
-                false
-            }
-        }
-    }
-
-    fn label_visits(&mut self) {
-        for n in &self.nodes {
-            if let Some(vs) = self.visits.get_mut(n)
-                && vs.revisited(self.shared)
-            {
-                vs.label = self.label;
-                self.label += 1;
-            }
-        }
-    }
-}
-
-#[derive(Clone, Debug, Default)]
-struct Visit {
-    cycle: bool,
-    flag: Cell<bool>,
-    label: usize,
-    shared: bool,
-}
-
-impl Visit {
-    fn marked(&self) -> bool {
-        self.flag.get()
-    }
-
-    fn mark(&self) {
-        self.flag.set(true);
-    }
-
-    fn revisited(&self, shared: bool) -> bool {
-        (shared && self.shared) || self.cycle
-    }
-}
-
-#[derive(Clone, Debug, Default)]
-struct ActiveVisits {
-    scopes: Vec<HashSet<NodeId>>,
-}
-
-// TODO: could scope be modeled as a Drop type?
-impl ActiveVisits {
-    fn contains(&self, id: NodeId) -> bool {
-        self.scopes.iter().any(|s| s.contains(&id))
-    }
-
-    fn start(&mut self) {
-        self.scopes.push(HashSet::new());
-    }
-
-    fn add(&mut self, id: NodeId) {
-        self.scopes
-            .last_mut()
-            .expect("active visit scopes should not be empty")
-            .insert(id);
-    }
-
-    fn end(&mut self) {
-        self.scopes.pop();
     }
 }
