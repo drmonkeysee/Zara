@@ -1224,6 +1224,7 @@ mod pair {
 
     #[test]
     fn cyclic_cdr_display() {
+        // #0=(1 . #0#)
         let p = RefCell::new(Pair {
             car: Value::real(1),
             cdr: Value::real(2),
@@ -1241,6 +1242,7 @@ mod pair {
 
     #[test]
     fn cyclic_car_display() {
+        // #0=(#0# . 2)
         let p = RefCell::new(Pair {
             car: Value::real(1),
             cdr: Value::real(2),
@@ -1258,6 +1260,7 @@ mod pair {
 
     #[test]
     fn cyclic_cons_display() {
+        // #0=(#0# . #0#)
         let p = RefCell::new(Pair {
             car: Value::real(1),
             cdr: Value::real(2),
@@ -1279,6 +1282,7 @@ mod pair {
 
     #[test]
     fn same_cycle_reference_display() {
+        // (10 11 #0=(1 2 3 . #0#) #0#)
         let end = RefCell::new(Pair {
             car: Value::real(3),
             cdr: Value::Null,
@@ -1303,6 +1307,7 @@ mod pair {
 
     #[test]
     fn multiple_same_cycle_reference_display() {
+        // (10 11 #0=(1 2 3 . #0#) #0# #1=(4 5 6 . #1#) 12 #1#)
         let end = RefCell::new(Pair {
             car: Value::real(3),
             cdr: Value::Null,

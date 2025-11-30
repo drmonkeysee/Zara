@@ -505,7 +505,7 @@ fn write_port(p: impl Display, f: &mut Formatter<'_>) -> fmt::Result {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::testutil::some_or_fail;
+    use crate::testutil::{ok_or_fail, some_or_fail};
     use std::{cell::RefCell, rc::Rc};
 
     fn cycle_count(graph: &Traverse) -> usize {
@@ -889,9 +889,14 @@ mod tests {
         assert_eq!(v.as_datum().to_string(), "#0=#(1 (9 8 #0#) 3)");
         assert_eq!(v.as_shared_datum().to_string(), v.as_datum().to_string());
 
-        let graph = Traverse::pair(lst.as_refpair().unwrap().as_ref());
+        let lstref = lst.as_refpair().unwrap();
+        let p = lstref.as_ref();
+        let graph = Traverse::pair(p);
+        let len = p.len();
 
         assert_eq!(cycle_count(&graph), 1);
+        assert_eq!(ok_or_fail!(len), 3);
+        assert!(p.is_list());
         assert_eq!(lst.as_datum().to_string(), "#0=(9 8 #(1 #0# 3))");
         assert_eq!(
             lst.as_shared_datum().to_string(),
