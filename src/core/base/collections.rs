@@ -396,21 +396,19 @@ fn list_append(args: &[Value], _env: &Frame) -> EvalResult {
 
 fn list_reverse(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = first(args);
-    if arg.is_circular_pair() {
-        Err(Condition::circular_list(arg).into())
-    } else {
-        arg.iter()
-            .enumerate()
-            .try_fold(Value::Null, |head, (i, item)| {
-                if let Value::Null = item {
-                    Ok(head)
-                } else if let Some(p) = item.as_refpair() {
-                    Ok(Value::cons_mut(p.as_ref().car.clone(), head))
-                } else {
-                    Err(Condition::arg_error(i, TypeName::LIST, &item).into())
-                }
-            })
-    }
+    arg.viter()
+        .enumerate()
+        .try_fold(Value::Null, |head, (i, (item, cycle))| {
+            if cycle {
+                Err(Condition::circular_list(arg).into())
+            } else if let Value::Null = item {
+                Ok(head)
+            } else if let Some(p) = item.as_refpair() {
+                Ok(Value::cons_mut(p.as_ref().car.clone(), head))
+            } else {
+                Err(Condition::arg_error(i, TypeName::LIST, &item).into())
+            }
+        })
 }
 
 fn list_tail(args: &[Value], _env: &Frame) -> EvalResult {
@@ -932,26 +930,20 @@ fn try_list_to_vec(val: &Value) -> Result<Vec<Value>, Exception> {
 }
 
 fn try_list_acc(val: &Value, acc: &mut Vec<Value>) -> Result<(), Exception> {
-    if val.is_circular_pair() {
-        Err(Condition::circular_list(val).into())
-    } else {
-        val.iter()
-            .try_fold(acc, |acc, item| {
-                if let Value::Null = item {
-                    Ok(acc)
-                } else if let Some(p) = item.as_refpair() {
-                    acc.push(p.as_ref().car.clone());
-                    Ok(acc)
-                } else {
-                    Err(Exception::from(Condition::arg_error(
-                        acc.len(),
-                        TypeName::LIST,
-                        &item,
-                    )))
-                }
-            })
-            .map(|_| ())
-    }
+    val.viter()
+        .try_fold(acc, |acc, (item, cycle)| {
+            if cycle {
+                Err(Condition::circular_list(val).into())
+            } else if let Value::Null = item {
+                Ok(acc)
+            } else if let Some(p) = item.as_refpair() {
+                acc.push(p.as_ref().car.clone());
+                Ok(acc)
+            } else {
+                Err(Condition::arg_error(acc.len(), TypeName::LIST, &item).into())
+            }
+        })
+        .map(|_| ())
 }
 
 fn try_val_to_char(arg: &Value, lbl: impl Display) -> Result<char, Exception> {
