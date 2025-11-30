@@ -875,6 +875,31 @@ mod tests {
     }
 
     #[test]
+    fn mutually_containing_list_and_vector() {
+        // #0=#(1 (9 8 #0#) 3)
+        // #0=(9 8 #(1 #0# 3))
+        let vec = RefCell::new(vec![Value::real(1), Value::Unspecified, Value::real(3)]).into();
+        let v = Value::VectorMut(Rc::clone(&vec));
+        let lst = zlist![Value::real(9), Value::real(8), v.clone()];
+        vec.borrow_mut()[1] = lst.clone();
+
+        let graph = Traverse::vec(v.as_refvec().unwrap().as_ref());
+
+        assert_eq!(cycle_count(&graph), 1);
+        assert_eq!(v.as_datum().to_string(), "#0=#(1 (9 8 #0#) 3)");
+        assert_eq!(v.as_shared_datum().to_string(), v.as_datum().to_string());
+
+        let graph = Traverse::pair(lst.as_refpair().unwrap().as_ref());
+
+        assert_eq!(cycle_count(&graph), 1);
+        assert_eq!(lst.as_datum().to_string(), "#0=(9 8 #(1 #0# 3))");
+        assert_eq!(
+            lst.as_shared_datum().to_string(),
+            lst.as_datum().to_string()
+        );
+    }
+
+    #[test]
     fn get_does_not_return_non_cycles() {
         // (1 2 . #0=(3 4 5 . #0#))
         let end = RefCell::new(Pair {
