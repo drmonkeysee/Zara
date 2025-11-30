@@ -1,4 +1,4 @@
-use super::{Pair, SimpleIterator, Value};
+use super::{Pair, Value};
 use crate::{
     lex::{DisplayTokenLines, TokenLinesMessage},
     string::{CharDatum, StrDatum},
@@ -383,7 +383,7 @@ impl Traverse {
 
     fn visit_pair(&mut self, pair_val: &Value) {
         self.active.start();
-        for v in SimpleIterator::new(pair_val) {
+        for v in pair_val.iter() {
             let nested = if let Some(p) = v.as_refpair() {
                 let pref = p.as_ref();
                 if !self.add(pref.node_id()) {

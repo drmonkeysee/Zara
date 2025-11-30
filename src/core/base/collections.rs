@@ -396,7 +396,7 @@ fn list_append(args: &[Value], _env: &Frame) -> EvalResult {
 
 fn list_reverse(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = first(args);
-    arg.viter()
+    arg.cycle_iter()
         .enumerate()
         .try_fold(Value::Null, |head, (i, (item, cycle))| {
             if cycle {
@@ -930,7 +930,7 @@ fn try_list_to_vec(val: &Value) -> Result<Vec<Value>, Exception> {
 }
 
 fn try_list_acc(val: &Value, acc: &mut Vec<Value>) -> Result<(), Exception> {
-    val.viter()
+    val.cycle_iter()
         .try_fold(acc, |acc, (item, cycle)| {
             if cycle {
                 Err(Condition::circular_list(val).into())

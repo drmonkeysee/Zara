@@ -341,8 +341,8 @@ impl Value {
         SimpleIterator::new(self)
     }
 
-    pub(crate) fn viter(&self) -> VisitedIterator {
-        VisitedIterator::new(self)
+    pub(crate) fn cycle_iter(&self) -> CyclicIterator {
+        CyclicIterator::new(self)
     }
 }
 
@@ -378,7 +378,7 @@ impl PartialEq for Value {
 impl Eq for Value {}
 
 pub(crate) type SimpleIterator = ValueIterator<NextValue>;
-pub(crate) type VisitedIterator = ValueIterator<VisitedNextValue>;
+pub(crate) type CyclicIterator = ValueIterator<CyclicNextValue>;
 
 pub(crate) struct ValueIterator<T> {
     item: Option<Value>,
@@ -403,11 +403,11 @@ impl<T: IterNext> Iterator for ValueIterator<T> {
     }
 }
 
-impl VisitedIterator {
+impl CyclicIterator {
     fn with_head(id: NodeId, v: &Value) -> Self {
         Self {
             item: Some(v.clone()),
-            next: VisitedNextValue::with_head(id),
+            next: CyclicNextValue::with_head(id),
         }
     }
 }
@@ -433,9 +433,9 @@ impl IterNext for NextValue {
 }
 
 #[derive(Default)]
-pub(crate) struct VisitedNextValue(HashSet<NodeId>);
+pub(crate) struct CyclicNextValue(HashSet<NodeId>);
 
-impl VisitedNextValue {
+impl CyclicNextValue {
     fn with_head(id: NodeId) -> Self {
         let mut me = Self::default();
         me.0.insert(id);
@@ -443,7 +443,7 @@ impl VisitedNextValue {
     }
 }
 
-impl IterNext for VisitedNextValue {
+impl IterNext for CyclicNextValue {
     type Next = (Value, bool);
 
     fn value(&mut self, curr: Value, next: &mut Option<Value>) -> Self::Next {
@@ -541,12 +541,12 @@ pub(crate) struct Pair {
 
 impl Pair {
     pub(crate) fn is_list(&self) -> bool {
-        VisitedIterator::with_head(self.node_id(), &self.cdr)
+        CyclicIterator::with_head(self.node_id(), &self.cdr)
             .all(|(item, cycle)| !cycle && item.is_list_element())
     }
 
     pub(crate) fn len(&self) -> PairLenResult {
-        VisitedIterator::with_head(self.node_id(), &self.cdr).try_fold(
+        CyclicIterator::with_head(self.node_id(), &self.cdr).try_fold(
             1usize,
             |acc, (item, cycle)| {
                 if cycle {
