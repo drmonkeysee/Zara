@@ -564,8 +564,7 @@ mod tests {
         let p = Pair {
             car: Value::real(1),
             cdr: Value::cons(Value::real(2), Value::Pair(Rc::clone(&start))),
-        }
-        .into();
+        };
 
         let graph = Traverse::pair(&p);
 
@@ -892,8 +891,7 @@ mod tests {
         let p = Pair {
             car: Value::real(1),
             cdr: Value::cons(Value::real(2), Value::Pair(Rc::clone(&start))),
-        }
-        .into();
+        };
 
         let graph = Traverse::pair(&p);
 
