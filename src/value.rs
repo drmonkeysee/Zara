@@ -344,6 +344,10 @@ impl Value {
     pub(crate) fn cycle_iter(&self) -> CyclicIterator {
         CyclicIterator::new(self)
     }
+
+    fn cycle_iter_with_head(&self, head: NodeId) -> CyclicIterator {
+        CyclicIterator::with_head(head, self)
+    }
 }
 
 // NOTE: procedure equal? -> value equality
@@ -541,14 +545,15 @@ pub(crate) struct Pair {
 
 impl Pair {
     pub(crate) fn is_list(&self) -> bool {
-        CyclicIterator::with_head(self.node_id(), &self.cdr)
+        self.cdr
+            .cycle_iter_with_head(self.node_id())
             .all(|(item, cycle)| !cycle && item.is_list_element())
     }
 
     pub(crate) fn len(&self) -> PairLenResult {
-        CyclicIterator::with_head(self.node_id(), &self.cdr).try_fold(
-            1usize,
-            |acc, (item, cycle)| {
+        self.cdr
+            .cycle_iter_with_head(self.node_id())
+            .try_fold(1usize, |acc, (item, cycle)| {
                 if cycle {
                     Err(InvalidList::Cycle)
                 } else {
@@ -558,8 +563,7 @@ impl Pair {
                         _ => Err(InvalidList::Improper),
                     }
                 }
-            },
-        )
+            })
     }
 
     fn is_circular(&self) -> bool {
