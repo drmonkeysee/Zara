@@ -475,28 +475,29 @@ fn assoc_equal(_args: &[Value], _env: &Frame) -> EvalResult {
 fn list_copy(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = first(args);
     if arg.is_pair() {
-        if arg.is_circular_pair() {
-            Err(Condition::circular_list(arg).into())
-        } else {
-            // TODO: experimental
-            // https://doc.rust-lang.org/std/iter/trait.Iterator.html#method.try_collect
-            Ok(Value::list_cons_mut(
-                arg.iter()
-                    .try_fold(Vec::new(), |mut acc, item| {
-                        if let Some(p) = item.as_refpair()
-                            && let pref = p.as_ref()
-                            && pref.cdr.is_pair()
-                        {
-                            acc.push(pref.car.clone());
-                            Ok(acc)
-                        } else {
-                            acc.push(item.clone());
-                            Err((acc, InvalidList::Improper))
-                        }
-                    })
-                    .or_else(|(acc, _)| Ok::<_, Exception>(acc))?,
-            ))
-        }
+        // TODO: experimental
+        // https://doc.rust-lang.org/std/iter/trait.Iterator.html#method.try_collect
+        Ok(Value::list_cons_mut(
+            arg.cycle_iter()
+                .try_fold(Vec::new(), |mut acc, (item, cycle)| {
+                    if cycle {
+                        Err((acc, InvalidList::Cycle))
+                    } else if let Some(p) = item.as_refpair()
+                        && let pref = p.as_ref()
+                        && pref.cdr.is_pair()
+                    {
+                        acc.push(pref.car.clone());
+                        Ok(acc)
+                    } else {
+                        acc.push(item.clone());
+                        Err((acc, InvalidList::Improper))
+                    }
+                })
+                .or_else(|(acc, err)| match err {
+                    InvalidList::Cycle => Err(Exception::from(Condition::circular_list(arg))),
+                    InvalidList::Improper => Ok(acc),
+                })?,
+        ))
     } else {
         Ok(arg.clone())
     }

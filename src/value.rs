@@ -241,14 +241,6 @@ impl Value {
         matches!(self, Value::Pair(_) | Value::PairMut(_))
     }
 
-    pub(crate) fn is_circular_pair(&self) -> bool {
-        if let Some(p) = self.as_refpair() {
-            p.as_ref().is_circular()
-        } else {
-            false
-        }
-    }
-
     pub(crate) fn is_list_element(&self) -> bool {
         self.is_pair() || matches!(self, Value::Null)
     }
@@ -564,21 +556,6 @@ impl Pair {
                     }
                 }
             })
-    }
-
-    fn is_circular(&self) -> bool {
-        let mut visited = HashSet::new();
-        visited.insert(self.node_id());
-        for v in self.cdr.iter() {
-            if let Some(p) = v.as_refpair() {
-                let id = p.as_ref().node_id();
-                if visited.contains(&id) {
-                    return true;
-                }
-                visited.insert(id);
-            }
-        }
-        false
     }
 
     fn node_id(&self) -> NodeId {
