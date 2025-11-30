@@ -376,6 +376,12 @@ impl Eq for Value {}
 pub(crate) type SimpleIterator = ValueIterator<NextValue>;
 pub(crate) type CyclicIterator = ValueIterator<CyclicNextValue>;
 
+pub(crate) trait IterNext {
+    type Next;
+
+    fn value(&mut self, curr: Value, next: &mut Option<Value>) -> Self::Next;
+}
+
 pub(crate) struct ValueIterator<T> {
     item: Option<Value>,
     next: T,
@@ -406,12 +412,6 @@ impl CyclicIterator {
             next: CyclicNextValue::with_head(id),
         }
     }
-}
-
-pub(crate) trait IterNext {
-    type Next;
-
-    fn value(&mut self, curr: Value, next: &mut Option<Value>) -> Self::Next;
 }
 
 #[derive(Default)]
