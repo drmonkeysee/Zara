@@ -337,8 +337,12 @@ impl Value {
         }
     }
 
-    pub(crate) fn iter(&self) -> ValueIterator {
-        ValueIterator::new(self)
+    pub(crate) fn iter(&self) -> SimpleIterator {
+        SimpleIterator::new(self)
+    }
+
+    pub(crate) fn viter(&self) -> VisitedIterator {
+        VisitedIterator::new(self)
     }
 }
 
@@ -373,23 +377,71 @@ impl PartialEq for Value {
 
 impl Eq for Value {}
 
-pub(crate) struct ValueIterator(Option<Value>);
+pub(crate) type SimpleIterator = ValueIterator<NextValue>;
+pub(crate) type VisitedIterator = ValueIterator<VisitedNextValue>;
 
-impl ValueIterator {
+pub(crate) struct ValueIterator<T> {
+    item: Option<Value>,
+    next: T,
+}
+
+impl<T: Default> ValueIterator<T> {
     fn new(v: &Value) -> Self {
-        Self(Some(v.clone()))
+        Self {
+            item: Some(v.clone()),
+            next: T::default(),
+        }
     }
 }
 
-impl Iterator for ValueIterator {
-    type Item = Value;
+impl<T: IterNext> Iterator for ValueIterator<T> {
+    type Item = T::Next;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let curr = self.0.take()?;
+        let curr = self.item.take()?;
+        Some(self.next.value(curr, &mut self.item))
+    }
+}
+
+pub(crate) trait IterNext {
+    type Next;
+
+    fn value(&mut self, curr: Value, next: &mut Option<Value>) -> Self::Next;
+}
+
+#[derive(Default)]
+pub(crate) struct NextValue;
+
+impl IterNext for NextValue {
+    type Next = Value;
+
+    fn value(&mut self, curr: Value, next: &mut Option<Value>) -> Self::Next {
         if let Some(p) = curr.as_refpair() {
-            let _ = self.0.insert(p.as_ref().cdr.clone());
+            let _ = next.insert(p.as_ref().cdr.clone());
         }
-        Some(curr)
+        curr
+    }
+}
+
+#[derive(Default)]
+pub(crate) struct VisitedNextValue(HashSet<NodeId>);
+
+impl IterNext for VisitedNextValue {
+    type Next = (Value, bool);
+
+    fn value(&mut self, curr: Value, next: &mut Option<Value>) -> Self::Next {
+        let mut seen = false;
+        if let Some(p) = curr.as_refpair() {
+            let pref = p.as_ref();
+            let pid = pref.node_id();
+            if self.0.contains(&pid) {
+                seen = true;
+            } else {
+                self.0.insert(pid);
+            }
+            let _ = next.insert(p.as_ref().cdr.clone());
+        }
+        (curr, seen)
     }
 }
 
