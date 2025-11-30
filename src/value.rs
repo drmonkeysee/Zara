@@ -403,6 +403,15 @@ impl<T: IterNext> Iterator for ValueIterator<T> {
     }
 }
 
+impl VisitedIterator {
+    fn with_head(id: NodeId, v: &Value) -> Self {
+        Self {
+            item: Some(v.clone()),
+            next: VisitedNextValue::with_head(id),
+        }
+    }
+}
+
 pub(crate) trait IterNext {
     type Next;
 
@@ -425,6 +434,14 @@ impl IterNext for NextValue {
 
 #[derive(Default)]
 pub(crate) struct VisitedNextValue(HashSet<NodeId>);
+
+impl VisitedNextValue {
+    fn with_head(id: NodeId) -> Self {
+        let mut me = Self::default();
+        me.0.insert(id);
+        me
+    }
+}
 
 impl IterNext for VisitedNextValue {
     type Next = (Value, bool);
@@ -524,19 +541,25 @@ pub(crate) struct Pair {
 
 impl Pair {
     pub(crate) fn is_list(&self) -> bool {
-        !self.is_circular() && self.cdr.iter().all(|item| item.is_list_element())
+        VisitedIterator::with_head(self.node_id(), &self.cdr)
+            .all(|(item, cycle)| !cycle && item.is_list_element())
     }
 
     pub(crate) fn len(&self) -> PairLenResult {
-        if self.is_circular() {
-            Err(InvalidList::Cycle)
-        } else {
-            self.cdr.iter().try_fold(1usize, |acc, item| match item {
-                Value::Null => Ok(acc),
-                Value::Pair(_) | Value::PairMut(_) => Ok(acc + 1),
-                _ => Err(InvalidList::Improper),
-            })
-        }
+        VisitedIterator::with_head(self.node_id(), &self.cdr).try_fold(
+            1usize,
+            |acc, (item, cycle)| {
+                if cycle {
+                    Err(InvalidList::Cycle)
+                } else {
+                    match item {
+                        Value::Null => Ok(acc),
+                        Value::Pair(_) | Value::PairMut(_) => Ok(acc + 1),
+                        _ => Err(InvalidList::Improper),
+                    }
+                }
+            },
+        )
     }
 
     fn is_circular(&self) -> bool {
