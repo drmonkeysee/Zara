@@ -452,7 +452,7 @@ impl IterNext for CyclicNextValue {
             } else {
                 self.0.insert(pid);
             }
-            let _ = next.insert(p.as_ref().cdr.clone());
+            let _ = next.insert(pref.cdr.clone());
         }
         (curr, seen)
     }
