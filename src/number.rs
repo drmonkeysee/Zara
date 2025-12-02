@@ -1046,6 +1046,7 @@ impl Precision {
 impl Display for Precision {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
+            // NOTE: avoid direct Display impl for u64 to control expression of sign
             Self::Single(u) => write!(f, "{u}"),
             Self::Multiple(_) => todo!(),
         }

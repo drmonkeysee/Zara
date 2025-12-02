@@ -5,7 +5,7 @@ use crate::string::{
 };
 use std::{
     cmp,
-    fmt::{self, Debug, Display, Formatter},
+    fmt::{self, Display, Formatter},
     fs::{File, OpenOptions},
     io::{self, BufRead, BufReader, BufWriter, ErrorKind, Seek, SeekFrom, Stderr, Stdin, Stdout},
     iter,
@@ -921,8 +921,8 @@ impl Display for PortError {
             Self::Fmt => f.write_str("unexpected format error"),
             Self::InvalidPath => f.write_str("file path has no valid unicode representation"),
             Self::InvalidSource => f.write_str("invalid port for requested data type"),
-            Self::Io(k) => write!(f, "{k}"),
-            Self::Unicode(u) => write!(f, "{u}"),
+            Self::Io(k) => k.fmt(f),
+            Self::Unicode(u) => u.fmt(f),
         }
     }
 }
