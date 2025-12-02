@@ -157,9 +157,12 @@ impl Display for SimplePairDatum<'_> {
             // circular list enters a tight loop that ignores signals and
             // doesn't exhaust resources quickly enough to crash; add a trapdoor
             // to avoid accidentally freezing Zara.
+            // TODO: should this use cycle_iter and just bail?
             let c = self.1.get();
             if c > Self::MAX_PRINT {
-                f.write_str(" [circular list likely; terminating]…")?;
+                f.write_str(
+                    " [write-simple warning: list-extent reached due to possible cycle; use write to print the full list]…",
+                )?;
                 break;
             }
             self.1.set(c + 1);

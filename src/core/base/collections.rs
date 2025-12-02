@@ -553,7 +553,7 @@ fn string_make(args: &[Value], _env: &Frame) -> EvalResult {
         args,
         char::MIN,
         |v| try_val_to_char(v, SECOND_ARG_LABEL),
-        Value::strmut_from_chars,
+        Value::string_mut_from_chars,
     )
 }
 
@@ -561,7 +561,7 @@ fn string(args: &[Value], _env: &Frame) -> EvalResult {
     coll_new(
         args,
         |(idx, v)| try_val_to_char(v, idx),
-        Value::strmut_from_chars,
+        Value::string_mut_from_chars,
     )
 }
 
@@ -624,7 +624,9 @@ fn string_append(args: &[Value], _env: &Frame) -> EvalResult {
         args,
         Value::as_refstr,
         TypeName::STRING,
-        |strs: &[StrRef]| Value::strmut_from_chars(strs.iter().flat_map(|s| s.as_ref().chars())),
+        |strs: &[StrRef]| {
+            Value::string_mut_from_chars(strs.iter().flat_map(|s| s.as_ref().chars()))
+        },
     )
 }
 
@@ -644,7 +646,7 @@ fn string_copy(args: &[Value], _env: &Frame) -> EvalResult {
         args.get(1)..args.get(2),
         TypeName::STRING,
         Value::as_refstr,
-        |s: &str, span| Value::strmut_from_chars(s.chars().skip(span.start).take(span.len())),
+        |s: &str, span| Value::string_mut_from_chars(s.chars().skip(span.start).take(span.len())),
     )
 }
 
