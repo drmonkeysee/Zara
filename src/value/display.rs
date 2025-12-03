@@ -25,8 +25,8 @@ impl Display for SimpleDatum<'_> {
             Value::Intrinsic(p) => p.fmt(f),
             Value::Null => f.write_str("()"),
             Value::Number(n) => n.fmt(f),
-            Value::Pair(p) => SimplePairDatum::new(p).fmt(f),
-            Value::PairMut(p) => SimplePairDatum::new(&p.borrow()).fmt(f),
+            Value::Pair(p) => SimplePairDatum(p).fmt(f),
+            Value::PairMut(p) => SimplePairDatum(&p.borrow()).fmt(f),
             Value::PortInput(p) => write_port(p.borrow(), f),
             Value::PortOutput(p) => write_port(p.borrow(), f),
             Value::Procedure(p) => p.fmt(f),
@@ -134,15 +134,7 @@ impl Display for TypeName<'_> {
 // NOTE: pairs and vectors are identified via their untyped pointer address
 pub(super) type NodeId = *const ();
 
-struct SimplePairDatum<'a>(&'a Pair, Cell<u32>);
-
-impl<'a> SimplePairDatum<'a> {
-    const MAX_PRINT: u32 = 1_000_000;
-
-    fn new(p: &'a Pair) -> Self {
-        Self(p, Cell::new(u32::MIN))
-    }
-}
+struct SimplePairDatum<'a>(&'a Pair);
 
 impl Display for SimplePairDatum<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
@@ -153,19 +145,8 @@ impl Display for SimplePairDatum<'_> {
             } else if !matches!(val, Value::Null) {
                 write!(f, " . {}", val.as_simple_datum())?;
             }
-            // NOTE: a circular vector rapidly causes a stack overflow but a
-            // circular list enters a tight loop that ignores signals and
-            // doesn't exhaust resources quickly enough to crash; add a trapdoor
-            // to avoid accidentally freezing Zara.
-            // TODO: should this use cycle_iter and just bail?
-            let c = self.1.get();
-            if c > Self::MAX_PRINT {
-                f.write_str(
-                    " [write-simple warning: list-extent reached due to possible cycle; use write to print the full list]…",
-                )?;
-                break;
-            }
-            self.1.set(c + 1);
+            // TODO: currently SIGINT is ignored when stuck in this loop though SIGSTOP and SIGTERM aren't;
+            // can we fix this?
         }
         f.write_char(')')
     }
