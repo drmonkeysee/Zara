@@ -73,7 +73,17 @@ pub(crate) struct DisplayDatum<'a>(pub(super) &'a Value);
 
 impl Display for DisplayDatum<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        todo!()
+        match self.0 {
+            Value::Character(c) => c.fmt(f),
+            Value::Pair(p) => todo!(),
+            Value::PairMut(p) => todo!(),
+            Value::String(s) => s.fmt(f),
+            Value::StringMut(s) => s.borrow().fmt(f),
+            Value::Symbol(s) => s.fmt(f),
+            Value::Vector(v) => todo!(),
+            Value::VectorMut(v) => todo!(),
+            _ => SimpleDatum(self.0).fmt(f),
+        }
     }
 }
 

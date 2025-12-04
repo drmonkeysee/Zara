@@ -382,7 +382,7 @@ mod character {
         let v = Value::Character('\x0c');
 
         assert_eq!(v.as_datum().to_string(), "#\\xc");
-        assert_eq!(v.as_display_datum().to_string(), "??");
+        assert_eq!(v.as_display_datum().to_string(), "\u{c}");
     }
 
     #[test]
@@ -390,7 +390,7 @@ mod character {
         let v = Value::Character('\x0C');
 
         assert_eq!(v.as_datum().to_string(), "#\\xc");
-        assert_eq!(v.as_display_datum().to_string(), "??");
+        assert_eq!(v.as_display_datum().to_string(), "\u{c}");
     }
 
     #[test]
@@ -398,7 +398,7 @@ mod character {
         let v = Value::Character('\x1d');
 
         assert_eq!(v.as_datum().to_string(), "#\\x1d");
-        assert_eq!(v.as_display_datum().to_string(), "??");
+        assert_eq!(v.as_display_datum().to_string(), "\u{1d}");
     }
 
     #[test]
@@ -406,7 +406,7 @@ mod character {
         let v = Value::Character('\u{fff9}');
 
         assert_eq!(v.as_datum().to_string(), "#\\xfff9");
-        assert_eq!(v.as_display_datum().to_string(), "??");
+        assert_eq!(v.as_display_datum().to_string(), "\u{fff9}");
     }
 
     #[test]
@@ -414,7 +414,7 @@ mod character {
         let v = Value::Character('\u{e0001}');
 
         assert_eq!(v.as_datum().to_string(), "#\\xe0001");
-        assert_eq!(v.as_display_datum().to_string(), "??");
+        assert_eq!(v.as_display_datum().to_string(), "\u{e0001}");
     }
 
     #[test]
@@ -422,16 +422,16 @@ mod character {
         let v = Value::Character('\u{100001}');
 
         assert_eq!(v.as_datum().to_string(), "#\\x100001");
-        assert_eq!(v.as_display_datum().to_string(), "??");
+        assert_eq!(v.as_display_datum().to_string(), "\u{100001}");
     }
 
     #[test]
     fn display_character_name() {
         check_character_list(&[
-            ('\x07', "alarm", "???"),
-            ('\x08', "backspace", "???"),
-            ('\x7f', "delete", "???"),
-            ('\x1b', "escape", "???"),
+            ('\x07', "alarm", "\u{7}"),
+            ('\x08', "backspace", "\u{8}"),
+            ('\x7f', "delete", "\u{7f}"),
+            ('\x1b', "escape", "\u{1b}"),
             ('\n', "newline", "\n"),
             ('\0', "null", "\0"),
             ('\r', "return", "\r"),
@@ -549,7 +549,7 @@ mod string {
         let v = Value::string("\0");
 
         assert_eq!(v.as_datum().to_string(), "\"\\x0;\"");
-        assert_eq!(v.as_display_datum().to_string(), "???");
+        assert_eq!(v.as_display_datum().to_string(), "\0");
     }
 
     #[test]
@@ -565,7 +565,7 @@ mod string {
         let v = Value::string("\x0c");
 
         assert_eq!(v.as_datum().to_string(), "\"\\xc;\"");
-        assert_eq!(v.as_display_datum().to_string(), "???");
+        assert_eq!(v.as_display_datum().to_string(), "\u{c}");
     }
 
     #[test]
@@ -573,7 +573,7 @@ mod string {
         let v = Value::string("\x0C");
 
         assert_eq!(v.as_datum().to_string(), "\"\\xc;\"");
-        assert_eq!(v.as_display_datum().to_string(), "???");
+        assert_eq!(v.as_display_datum().to_string(), "\u{c}");
     }
 
     #[test]
@@ -581,7 +581,7 @@ mod string {
         let v = Value::string("\x1d");
 
         assert_eq!(v.as_datum().to_string(), "\"\\x1d;\"");
-        assert_eq!(v.as_display_datum().to_string(), "???");
+        assert_eq!(v.as_display_datum().to_string(), "\u{1d}");
     }
 
     #[test]
@@ -589,7 +589,7 @@ mod string {
         let v = Value::string("\u{fff9}");
 
         assert_eq!(v.as_datum().to_string(), "\"\\xfff9;\"");
-        assert_eq!(v.as_display_datum().to_string(), "???");
+        assert_eq!(v.as_display_datum().to_string(), "\u{fff9}");
     }
 
     #[test]
@@ -597,7 +597,7 @@ mod string {
         let v = Value::string("\u{e0001}");
 
         assert_eq!(v.as_datum().to_string(), "\"\\xe0001;\"");
-        assert_eq!(v.as_display_datum().to_string(), "???");
+        assert_eq!(v.as_display_datum().to_string(), "\u{e0001}");
     }
 
     #[test]
@@ -605,7 +605,7 @@ mod string {
         let v = Value::string("\u{100001}");
 
         assert_eq!(v.as_datum().to_string(), "\"\\x100001;\"");
-        assert_eq!(v.as_display_datum().to_string(), "???");
+        assert_eq!(v.as_display_datum().to_string(), "\u{100001}");
     }
 
     #[test]
@@ -622,13 +622,13 @@ bar",
     #[test]
     fn display_escape_sequences() {
         check_escape_sequence(&[
-            ("\x07", "\\a"),
-            ("\x08", "\\b"),
-            ("\t", "\\t"),
-            ("\n", "\\n"),
-            ("\r", "\\r"),
-            ("\"", "\\\""),
-            ("\\", "\\\\"),
+            ("\x07", "\\a", "\u{7}"),
+            ("\x08", "\\b", "\u{8}"),
+            ("\t", "\\t", "\t"),
+            ("\n", "\\n", "\n"),
+            ("\r", "\\r", "\r"),
+            ("\"", "\\\"", "\""),
+            ("\\", "\\\\", "\\"),
         ]);
     }
 
@@ -639,12 +639,12 @@ bar",
         assert_eq!(v.as_datum().to_string(), "\"abc123!@#\"");
     }
 
-    fn check_escape_sequence(cases: &[(&str, &str)]) {
-        for &(inp, exp) in cases {
+    fn check_escape_sequence(cases: &[(&str, &str, &str)]) {
+        for &(inp, exp, dexp) in cases {
             let v = Value::string(inp);
 
             assert_eq!(v.as_datum().to_string(), format!("\"{exp}\""));
-            assert_eq!(v.as_display_datum().to_string(), exp);
+            assert_eq!(v.as_display_datum().to_string(), dexp);
         }
     }
 }
@@ -746,7 +746,7 @@ mod symbol {
         let v = Value::Symbol(sym.get("\0"));
 
         assert_eq!(v.as_datum().to_string(), "|\\x0;|");
-        assert_eq!(v.as_display_datum().to_string(), "???");
+        assert_eq!(v.as_display_datum().to_string(), "\0");
     }
 
     #[test]
@@ -764,7 +764,7 @@ mod symbol {
         let v = Value::Symbol(sym.get("\x0c"));
 
         assert_eq!(v.as_datum().to_string(), "|\\xc;|");
-        assert_eq!(v.as_display_datum().to_string(), "???");
+        assert_eq!(v.as_display_datum().to_string(), "\u{c}");
     }
 
     #[test]
@@ -773,7 +773,7 @@ mod symbol {
         let v = Value::Symbol(sym.get("\x0C"));
 
         assert_eq!(v.as_datum().to_string(), "|\\xc;|");
-        assert_eq!(v.as_display_datum().to_string(), "???");
+        assert_eq!(v.as_display_datum().to_string(), "\u{c}");
     }
 
     #[test]
@@ -782,7 +782,7 @@ mod symbol {
         let v = Value::Symbol(sym.get("\x1d"));
 
         assert_eq!(v.as_datum().to_string(), "|\\x1d;|");
-        assert_eq!(v.as_display_datum().to_string(), "???");
+        assert_eq!(v.as_display_datum().to_string(), "\u{1d}");
     }
 
     #[test]
@@ -791,7 +791,7 @@ mod symbol {
         let v = Value::Symbol(sym.get("\u{fff9}"));
 
         assert_eq!(v.as_datum().to_string(), "|\\xfff9;|");
-        assert_eq!(v.as_display_datum().to_string(), "???");
+        assert_eq!(v.as_display_datum().to_string(), "\u{fff9}");
     }
 
     #[test]
@@ -800,7 +800,7 @@ mod symbol {
         let v = Value::Symbol(sym.get("\u{e0001}"));
 
         assert_eq!(v.as_datum().to_string(), "|\\xe0001;|");
-        assert_eq!(v.as_display_datum().to_string(), "???");
+        assert_eq!(v.as_display_datum().to_string(), "\u{e0001}");
     }
 
     #[test]
@@ -809,7 +809,7 @@ mod symbol {
         let v = Value::Symbol(sym.get("\u{100001}"));
 
         assert_eq!(v.as_datum().to_string(), "|\\x100001;|");
-        assert_eq!(v.as_display_datum().to_string(), "???");
+        assert_eq!(v.as_display_datum().to_string(), "\u{100001}");
     }
 
     #[test]
@@ -830,23 +830,23 @@ bar",
         check_escape_sequence(
             &sym,
             &[
-                ("\x07", "\\a"),
-                ("\x08", "\\b"),
-                ("\t", "\\t"),
-                ("\n", "\\n"),
-                ("\r", "\\r"),
-                ("\"", "\""),
-                ("\\", "\\\\"),
+                ("\x07", "\\a", "\u{7}"),
+                ("\x08", "\\b", "\u{8}"),
+                ("\t", "\\t", "\t"),
+                ("\n", "\\n", "\n"),
+                ("\r", "\\r", "\r"),
+                ("\"", "\"", "\""),
+                ("\\", "\\\\", "\\"),
             ],
         );
     }
 
-    fn check_escape_sequence(sym: &SymbolTable, cases: &[(&str, &str)]) {
-        for &(inp, exp) in cases {
+    fn check_escape_sequence(sym: &SymbolTable, cases: &[(&str, &str, &str)]) {
+        for &(inp, exp, dexp) in cases {
             let v = Value::Symbol(sym.get(inp));
 
             assert_eq!(v.as_datum().to_string(), format!("|{exp}|"));
-            assert_eq!(v.as_display_datum().to_string(), exp);
+            assert_eq!(v.as_display_datum().to_string(), dexp);
         }
     }
 
