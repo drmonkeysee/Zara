@@ -198,6 +198,7 @@ mod display {
         assert_eq!(v.as_datum().to_string(), "#(\"foo\" a (#t #\\a))");
         assert_eq!(v.as_simple_datum().to_string(), v.as_datum().to_string());
         assert_eq!(v.as_shared_datum().to_string(), v.as_datum().to_string());
+        assert_eq!(v.as_display_datum().to_string(), v.as_datum().to_string());
     }
 
     #[test]
@@ -207,6 +208,7 @@ mod display {
         assert_eq!(v.as_datum().to_string(), "#()");
         assert_eq!(v.as_simple_datum().to_string(), v.as_datum().to_string());
         assert_eq!(v.as_shared_datum().to_string(), v.as_datum().to_string());
+        assert_eq!(v.as_display_datum().to_string(), v.as_datum().to_string());
     }
 
     #[test]
@@ -228,6 +230,7 @@ mod display {
         assert_eq!(v.as_datum().to_string(), "#(\"foo\" a (#t #\\a))");
         assert_eq!(v.as_simple_datum().to_string(), v.as_datum().to_string());
         assert_eq!(v.as_shared_datum().to_string(), v.as_datum().to_string());
+        assert_eq!(v.as_display_datum().to_string(), v.as_datum().to_string());
     }
 
     #[test]
@@ -239,6 +242,7 @@ mod display {
 
         assert_eq!(v.as_datum().to_string(), "#0=#(1 2 #0#)");
         assert_eq!(v.as_shared_datum().to_string(), v.as_datum().to_string());
+        assert_eq!(v.as_display_datum().to_string(), "#(1 2 #(…))");
     }
 
     #[test]
@@ -251,6 +255,7 @@ mod display {
 
         assert_eq!(v.as_datum().to_string(), "#(1 2 #0=#(3 4 #0#))");
         assert_eq!(v.as_shared_datum().to_string(), v.as_datum().to_string());
+        assert_eq!(v.as_display_datum().to_string(), "#(1 2 #(3 4 #(…)))");
     }
 
     #[test]
@@ -264,6 +269,7 @@ mod display {
 
         assert_eq!(v.as_datum().to_string(), "#0=#(1 2 #0# 3 #0#)");
         assert_eq!(v.as_shared_datum().to_string(), v.as_datum().to_string());
+        assert_eq!(v.as_display_datum().to_string(), "#(1 2 #(…) 3 #(…))");
     }
 
     #[test]
@@ -336,6 +342,7 @@ mod character {
         let v = Value::Character('a');
 
         assert_eq!(v.as_datum().to_string(), "#\\a");
+        assert_eq!(v.as_display_datum().to_string(), "a");
     }
 
     #[test]
@@ -343,6 +350,7 @@ mod character {
         let v = Value::Character('λ');
 
         assert_eq!(v.as_datum().to_string(), "#\\λ");
+        assert_eq!(v.as_display_datum().to_string(), "λ");
     }
 
     #[test]
@@ -350,6 +358,7 @@ mod character {
         let v = Value::Character('🦀');
 
         assert_eq!(v.as_datum().to_string(), "#\\🦀");
+        assert_eq!(v.as_display_datum().to_string(), "🦀");
     }
 
     #[test]
@@ -357,6 +366,7 @@ mod character {
         let v = Value::Character('\u{2401}');
 
         assert_eq!(v.as_datum().to_string(), "#\\␁");
+        assert_eq!(v.as_display_datum().to_string(), "␁");
     }
 
     #[test]
@@ -364,6 +374,7 @@ mod character {
         let v = Value::Character('\u{fffd}');
 
         assert_eq!(v.as_datum().to_string(), "#\\�");
+        assert_eq!(v.as_display_datum().to_string(), "�");
     }
 
     #[test]
@@ -371,6 +382,7 @@ mod character {
         let v = Value::Character('\x0c');
 
         assert_eq!(v.as_datum().to_string(), "#\\xc");
+        assert_eq!(v.as_display_datum().to_string(), "??");
     }
 
     #[test]
@@ -378,6 +390,7 @@ mod character {
         let v = Value::Character('\x0C');
 
         assert_eq!(v.as_datum().to_string(), "#\\xc");
+        assert_eq!(v.as_display_datum().to_string(), "??");
     }
 
     #[test]
@@ -385,6 +398,7 @@ mod character {
         let v = Value::Character('\x1d');
 
         assert_eq!(v.as_datum().to_string(), "#\\x1d");
+        assert_eq!(v.as_display_datum().to_string(), "??");
     }
 
     #[test]
@@ -392,6 +406,7 @@ mod character {
         let v = Value::Character('\u{fff9}');
 
         assert_eq!(v.as_datum().to_string(), "#\\xfff9");
+        assert_eq!(v.as_display_datum().to_string(), "??");
     }
 
     #[test]
@@ -399,6 +414,7 @@ mod character {
         let v = Value::Character('\u{e0001}');
 
         assert_eq!(v.as_datum().to_string(), "#\\xe0001");
+        assert_eq!(v.as_display_datum().to_string(), "??");
     }
 
     #[test]
@@ -406,33 +422,40 @@ mod character {
         let v = Value::Character('\u{100001}');
 
         assert_eq!(v.as_datum().to_string(), "#\\x100001");
+        assert_eq!(v.as_display_datum().to_string(), "??");
     }
 
     #[test]
     fn display_character_name() {
         check_character_list(&[
-            ('\x07', "alarm"),
-            ('\x08', "backspace"),
-            ('\x7f', "delete"),
-            ('\x1b', "escape"),
-            ('\n', "newline"),
-            ('\0', "null"),
-            ('\r', "return"),
-            (' ', "space"),
-            ('\t', "tab"),
+            ('\x07', "alarm", "???"),
+            ('\x08', "backspace", "???"),
+            ('\x7f', "delete", "???"),
+            ('\x1b', "escape", "???"),
+            ('\n', "newline", "\n"),
+            ('\0', "null", "\0"),
+            ('\r', "return", "\r"),
+            (' ', "space", " "),
+            ('\t', "tab", "\t"),
         ]);
     }
 
     #[test]
     fn display_string_escape_characters() {
-        check_character_list(&[('"', "\""), ('\'', "'"), ('\\', "\\"), ('\n', "newline")]);
+        check_character_list(&[
+            ('"', "\"", "\""),
+            ('\'', "'", "'"),
+            ('\\', "\\", "\\"),
+            ('\n', "newline", "\n"),
+        ]);
     }
 
-    fn check_character_list(cases: &[(char, &str)]) {
-        for &(inp, exp) in cases {
+    fn check_character_list(cases: &[(char, &str, &str)]) {
+        for &(inp, exp, dexp) in cases {
             let v = Value::Character(inp);
 
             assert_eq!(v.as_datum().to_string(), format!("#\\{exp}"));
+            assert_eq!(v.as_display_datum().to_string(), dexp);
         }
     }
 }
@@ -478,6 +501,7 @@ mod string {
         let v = Value::string("");
 
         assert_eq!(v.as_datum().to_string(), "\"\"");
+        assert_eq!(v.as_display_datum().to_string(), "");
     }
 
     #[test]
@@ -485,6 +509,7 @@ mod string {
         let v = Value::string("abc123!@#");
 
         assert_eq!(v.as_datum().to_string(), "\"abc123!@#\"");
+        assert_eq!(v.as_display_datum().to_string(), "abc123!@#");
     }
 
     #[test]
@@ -492,6 +517,7 @@ mod string {
         let v = Value::string("λ");
 
         assert_eq!(v.as_datum().to_string(), "\"λ\"");
+        assert_eq!(v.as_display_datum().to_string(), "λ");
     }
 
     #[test]
@@ -499,6 +525,7 @@ mod string {
         let v = Value::string("🦀");
 
         assert_eq!(v.as_datum().to_string(), "\"🦀\"");
+        assert_eq!(v.as_display_datum().to_string(), "🦀");
     }
 
     #[test]
@@ -506,6 +533,7 @@ mod string {
         let v = Value::string("\u{2401}");
 
         assert_eq!(v.as_datum().to_string(), "\"␁\"");
+        assert_eq!(v.as_display_datum().to_string(), "␁");
     }
 
     #[test]
@@ -513,6 +541,7 @@ mod string {
         let v = Value::string("\u{fffd}");
 
         assert_eq!(v.as_datum().to_string(), "\"�\"");
+        assert_eq!(v.as_display_datum().to_string(), "�");
     }
 
     #[test]
@@ -520,6 +549,7 @@ mod string {
         let v = Value::string("\0");
 
         assert_eq!(v.as_datum().to_string(), "\"\\x0;\"");
+        assert_eq!(v.as_display_datum().to_string(), "???");
     }
 
     #[test]
@@ -527,6 +557,7 @@ mod string {
         let v = Value::string("|");
 
         assert_eq!(v.as_datum().to_string(), "\"|\"");
+        assert_eq!(v.as_display_datum().to_string(), "|");
     }
 
     #[test]
@@ -534,6 +565,7 @@ mod string {
         let v = Value::string("\x0c");
 
         assert_eq!(v.as_datum().to_string(), "\"\\xc;\"");
+        assert_eq!(v.as_display_datum().to_string(), "???");
     }
 
     #[test]
@@ -541,6 +573,7 @@ mod string {
         let v = Value::string("\x0C");
 
         assert_eq!(v.as_datum().to_string(), "\"\\xc;\"");
+        assert_eq!(v.as_display_datum().to_string(), "???");
     }
 
     #[test]
@@ -548,6 +581,7 @@ mod string {
         let v = Value::string("\x1d");
 
         assert_eq!(v.as_datum().to_string(), "\"\\x1d;\"");
+        assert_eq!(v.as_display_datum().to_string(), "???");
     }
 
     #[test]
@@ -555,6 +589,7 @@ mod string {
         let v = Value::string("\u{fff9}");
 
         assert_eq!(v.as_datum().to_string(), "\"\\xfff9;\"");
+        assert_eq!(v.as_display_datum().to_string(), "???");
     }
 
     #[test]
@@ -562,6 +597,7 @@ mod string {
         let v = Value::string("\u{e0001}");
 
         assert_eq!(v.as_datum().to_string(), "\"\\xe0001;\"");
+        assert_eq!(v.as_display_datum().to_string(), "???");
     }
 
     #[test]
@@ -569,6 +605,7 @@ mod string {
         let v = Value::string("\u{100001}");
 
         assert_eq!(v.as_datum().to_string(), "\"\\x100001;\"");
+        assert_eq!(v.as_display_datum().to_string(), "???");
     }
 
     #[test]
@@ -579,6 +616,7 @@ bar",
         );
 
         assert_eq!(v.as_datum().to_string(), "\"foo\\nbar\"");
+        assert_eq!(v.as_display_datum().to_string(), "foo\nbar");
     }
 
     #[test]
@@ -606,6 +644,7 @@ bar",
             let v = Value::string(inp);
 
             assert_eq!(v.as_datum().to_string(), format!("\"{exp}\""));
+            assert_eq!(v.as_display_datum().to_string(), exp);
         }
     }
 }
@@ -620,6 +659,7 @@ mod symbol {
         let v = Value::Symbol(sym.get("foo"));
 
         assert_eq!(v.as_datum().to_string(), "foo");
+        assert_eq!(v.as_display_datum().to_string(), "foo");
     }
 
     #[test]
@@ -628,6 +668,7 @@ mod symbol {
         let v = Value::Symbol(sym.get(""));
 
         assert_eq!(v.as_datum().to_string(), "||");
+        assert_eq!(v.as_display_datum().to_string(), "");
     }
 
     #[test]
@@ -636,6 +677,7 @@ mod symbol {
         let v = Value::Symbol(sym.get("foo bar"));
 
         assert_eq!(v.as_datum().to_string(), "|foo bar|");
+        assert_eq!(v.as_display_datum().to_string(), "foo bar");
     }
 
     #[test]
@@ -644,6 +686,7 @@ mod symbol {
         let v = Value::Symbol(sym.get("   "));
 
         assert_eq!(v.as_datum().to_string(), "|   |");
+        assert_eq!(v.as_display_datum().to_string(), "   ");
     }
 
     #[test]
@@ -652,6 +695,7 @@ mod symbol {
         let v = Value::Symbol(sym.get("abc123!@$^&"));
 
         assert_eq!(v.as_datum().to_string(), "abc123!@$^&");
+        assert_eq!(v.as_display_datum().to_string(), "abc123!@$^&");
     }
 
     #[test]
@@ -663,8 +707,13 @@ mod symbol {
 
             let v = Value::Symbol(sym.get(&s));
 
-            let expected = if case == '.' { s } else { format!("|{s}|") };
+            let expected = if case == '.' {
+                s.clone()
+            } else {
+                format!("|{s}|")
+            };
             assert_eq!(v.as_datum().to_string(), expected);
+            assert_eq!(v.as_display_datum().to_string(), s);
         }
     }
 
@@ -674,6 +723,7 @@ mod symbol {
         let v = Value::Symbol(sym.get("123abc"));
 
         assert_eq!(v.as_datum().to_string(), "|123abc|");
+        assert_eq!(v.as_display_datum().to_string(), "123abc");
     }
 
     #[test]
@@ -686,6 +736,7 @@ mod symbol {
             let v = Value::Symbol(sym.get(&s));
 
             assert_eq!(v.as_datum().to_string(), s);
+            assert_eq!(v.as_display_datum().to_string(), s);
         }
     }
 
@@ -695,6 +746,7 @@ mod symbol {
         let v = Value::Symbol(sym.get("\0"));
 
         assert_eq!(v.as_datum().to_string(), "|\\x0;|");
+        assert_eq!(v.as_display_datum().to_string(), "???");
     }
 
     #[test]
@@ -703,6 +755,7 @@ mod symbol {
         let v = Value::Symbol(sym.get("|"));
 
         assert_eq!(v.as_datum().to_string(), "|\\||");
+        assert_eq!(v.as_display_datum().to_string(), "|");
     }
 
     #[test]
@@ -711,6 +764,7 @@ mod symbol {
         let v = Value::Symbol(sym.get("\x0c"));
 
         assert_eq!(v.as_datum().to_string(), "|\\xc;|");
+        assert_eq!(v.as_display_datum().to_string(), "???");
     }
 
     #[test]
@@ -719,6 +773,7 @@ mod symbol {
         let v = Value::Symbol(sym.get("\x0C"));
 
         assert_eq!(v.as_datum().to_string(), "|\\xc;|");
+        assert_eq!(v.as_display_datum().to_string(), "???");
     }
 
     #[test]
@@ -727,6 +782,7 @@ mod symbol {
         let v = Value::Symbol(sym.get("\x1d"));
 
         assert_eq!(v.as_datum().to_string(), "|\\x1d;|");
+        assert_eq!(v.as_display_datum().to_string(), "???");
     }
 
     #[test]
@@ -735,6 +791,7 @@ mod symbol {
         let v = Value::Symbol(sym.get("\u{fff9}"));
 
         assert_eq!(v.as_datum().to_string(), "|\\xfff9;|");
+        assert_eq!(v.as_display_datum().to_string(), "???");
     }
 
     #[test]
@@ -743,6 +800,7 @@ mod symbol {
         let v = Value::Symbol(sym.get("\u{e0001}"));
 
         assert_eq!(v.as_datum().to_string(), "|\\xe0001;|");
+        assert_eq!(v.as_display_datum().to_string(), "???");
     }
 
     #[test]
@@ -751,6 +809,7 @@ mod symbol {
         let v = Value::Symbol(sym.get("\u{100001}"));
 
         assert_eq!(v.as_datum().to_string(), "|\\x100001;|");
+        assert_eq!(v.as_display_datum().to_string(), "???");
     }
 
     #[test]
@@ -762,6 +821,7 @@ bar",
         ));
 
         assert_eq!(v.as_datum().to_string(), "|foo\\nbar|");
+        assert_eq!(v.as_display_datum().to_string(), "foo\nbar");
     }
 
     #[test]
@@ -786,6 +846,7 @@ bar",
             let v = Value::Symbol(sym.get(inp));
 
             assert_eq!(v.as_datum().to_string(), format!("|{exp}|"));
+            assert_eq!(v.as_display_datum().to_string(), exp);
         }
     }
 
@@ -800,6 +861,7 @@ bar",
         let v = Value::Symbol(sym.get("λ"));
 
         assert_eq!(v.as_datum().to_string(), "|λ|");
+        assert_eq!(v.as_display_datum().to_string(), "λ");
     }
 
     #[test]
@@ -808,6 +870,7 @@ bar",
         let v = Value::Symbol(sym.get("🦀"));
 
         assert_eq!(v.as_datum().to_string(), "|🦀|");
+        assert_eq!(v.as_display_datum().to_string(), "🦀");
     }
 
     #[test]
@@ -816,6 +879,7 @@ bar",
         let v = Value::Symbol(sym.get("\u{2401}"));
 
         assert_eq!(v.as_datum().to_string(), "|␁|");
+        assert_eq!(v.as_display_datum().to_string(), "␁");
     }
 
     #[test]
@@ -824,6 +888,7 @@ bar",
         let v = Value::Symbol(sym.get("\u{fffd}"));
 
         assert_eq!(v.as_datum().to_string(), "|�|");
+        assert_eq!(v.as_display_datum().to_string(), "�");
     }
 }
 
@@ -926,6 +991,7 @@ mod pair {
         assert_eq!(v.as_datum().to_string(), "(#t . #f)");
         assert_eq!(v.as_simple_datum().to_string(), v.as_datum().to_string());
         assert_eq!(v.as_shared_datum().to_string(), v.as_datum().to_string());
+        assert_eq!(v.as_display_datum().to_string(), v.as_datum().to_string());
     }
 
     #[test]
@@ -935,6 +1001,7 @@ mod pair {
         assert_eq!(v.as_datum().to_string(), "(#t)");
         assert_eq!(v.as_simple_datum().to_string(), v.as_datum().to_string());
         assert_eq!(v.as_shared_datum().to_string(), v.as_datum().to_string());
+        assert_eq!(v.as_display_datum().to_string(), v.as_datum().to_string());
     }
 
     #[test]
@@ -947,6 +1014,7 @@ mod pair {
         assert_eq!(v.as_datum().to_string(), "(1 2 3)");
         assert_eq!(v.as_simple_datum().to_string(), v.as_datum().to_string());
         assert_eq!(v.as_shared_datum().to_string(), v.as_datum().to_string());
+        assert_eq!(v.as_display_datum().to_string(), v.as_datum().to_string());
     }
 
     #[test]
@@ -956,6 +1024,7 @@ mod pair {
         assert_eq!(v.as_datum().to_string(), "(1 2 . 3)");
         assert_eq!(v.as_simple_datum().to_string(), v.as_datum().to_string());
         assert_eq!(v.as_shared_datum().to_string(), v.as_datum().to_string());
+        assert_eq!(v.as_display_datum().to_string(), v.as_datum().to_string());
     }
 
     #[test]
@@ -968,6 +1037,7 @@ mod pair {
         assert_eq!(v.as_datum().to_string(), "((1 . 2) 3)");
         assert_eq!(v.as_simple_datum().to_string(), v.as_datum().to_string());
         assert_eq!(v.as_shared_datum().to_string(), v.as_datum().to_string());
+        assert_eq!(v.as_display_datum().to_string(), v.as_datum().to_string());
     }
 
     #[test]
@@ -983,6 +1053,7 @@ mod pair {
         assert_eq!(v.as_datum().to_string(), "(1 (2 3))");
         assert_eq!(v.as_simple_datum().to_string(), v.as_datum().to_string());
         assert_eq!(v.as_shared_datum().to_string(), v.as_datum().to_string());
+        assert_eq!(v.as_display_datum().to_string(), v.as_datum().to_string());
     }
 
     #[test]
@@ -992,6 +1063,7 @@ mod pair {
         assert_eq!(v.as_datum().to_string(), "(())");
         assert_eq!(v.as_simple_datum().to_string(), v.as_datum().to_string());
         assert_eq!(v.as_shared_datum().to_string(), v.as_datum().to_string());
+        assert_eq!(v.as_display_datum().to_string(), v.as_datum().to_string());
     }
 
     #[test]
@@ -1085,6 +1157,7 @@ mod pair {
 
         assert_eq!(v.as_datum().to_string(), "#0=(1 2 3 . #0#)");
         assert_eq!(v.as_shared_datum().to_string(), v.as_datum().to_string());
+        assert_eq!(v.as_display_datum().to_string(), "(1 2 3 . …)");
     }
 
     #[test]
@@ -1150,6 +1223,7 @@ mod pair {
         assert!(p.is_list());
         assert_eq!(v.as_datum().to_string(), "(9 8 #0=(1 2 3 . #0#))");
         assert_eq!(v.as_shared_datum().to_string(), v.as_datum().to_string());
+        assert_eq!(v.as_display_datum().to_string(), "(9 8 (1 2 3 . …))");
     }
 
     #[test]
@@ -1176,6 +1250,7 @@ mod pair {
 
         assert_eq!(v.as_datum().to_string(), "(1 2 . #0=(3 4 5 . #0#))");
         assert_eq!(v.as_shared_datum().to_string(), v.as_datum().to_string());
+        assert_eq!(v.as_display_datum().to_string(), "(1 2 (3 4 5 . …))");
     }
 
     #[test]
@@ -1238,6 +1313,7 @@ mod pair {
             cons.as_shared_datum().to_string(),
             cons.as_datum().to_string()
         );
+        assert_eq!(cons.as_display_datum().to_string(), "(1 . …)");
     }
 
     #[test]
@@ -1256,6 +1332,7 @@ mod pair {
             cons.as_shared_datum().to_string(),
             cons.as_datum().to_string()
         );
+        assert_eq!(cons.as_display_datum().to_string(), "(… . 2)");
     }
 
     #[test]
@@ -1278,6 +1355,7 @@ mod pair {
             cons.as_shared_datum().to_string(),
             cons.as_datum().to_string()
         );
+        assert_eq!(cons.as_display_datum().to_string(), "(… . …)");
     }
 
     #[test]
@@ -1302,6 +1380,10 @@ mod pair {
         assert_eq!(
             lst.as_shared_datum().to_string(),
             lst.as_datum().to_string()
+        );
+        assert_eq!(
+            lst.as_display_datum().to_string(),
+            "(10 11 (1 2 3 . …) (1 2 3 . …))"
         );
     }
 
@@ -1352,6 +1434,10 @@ mod pair {
             lst.as_shared_datum().to_string(),
             lst.as_datum().to_string()
         );
+        assert_eq!(
+            lst.as_display_datum().to_string(),
+            "(10 11 (1 2 3 . …) (1 2 3 . …) (4 5 6 . …) 12 (4 5 6 . …))"
+        );
     }
 }
 
@@ -1371,6 +1457,10 @@ mod list_ctor {
             lst.as_shared_datum().to_string(),
             lst.as_datum().to_string()
         );
+        assert_eq!(
+            lst.as_display_datum().to_string(),
+            lst.as_datum().to_string()
+        );
     }
 
     #[test]
@@ -1386,6 +1476,10 @@ mod list_ctor {
             lst.as_shared_datum().to_string(),
             lst.as_datum().to_string()
         );
+        assert_eq!(
+            lst.as_display_datum().to_string(),
+            lst.as_datum().to_string()
+        );
     }
 
     #[test]
@@ -1399,6 +1493,10 @@ mod list_ctor {
         );
         assert_eq!(
             lst.as_shared_datum().to_string(),
+            lst.as_datum().to_string()
+        );
+        assert_eq!(
+            lst.as_display_datum().to_string(),
             lst.as_datum().to_string()
         );
     }
@@ -1421,6 +1519,10 @@ mod list_ctor {
             lst.as_shared_datum().to_string(),
             lst.as_datum().to_string()
         );
+        assert_eq!(
+            lst.as_display_datum().to_string(),
+            lst.as_datum().to_string()
+        );
     }
 
     #[test]
@@ -1439,6 +1541,10 @@ mod list_ctor {
         );
         assert_eq!(
             lst.as_shared_datum().to_string(),
+            lst.as_datum().to_string()
+        );
+        assert_eq!(
+            lst.as_display_datum().to_string(),
             lst.as_datum().to_string()
         );
     }
@@ -1460,6 +1566,10 @@ mod list_ctor {
             lst.as_shared_datum().to_string(),
             lst.as_datum().to_string()
         );
+        assert_eq!(
+            lst.as_display_datum().to_string(),
+            lst.as_datum().to_string()
+        );
     }
 
     #[test]
@@ -1473,6 +1583,10 @@ mod list_ctor {
         );
         assert_eq!(
             lst.as_shared_datum().to_string(),
+            lst.as_datum().to_string()
+        );
+        assert_eq!(
+            lst.as_display_datum().to_string(),
             lst.as_datum().to_string()
         );
     }
@@ -1495,6 +1609,10 @@ mod list_ctor {
             lst.as_shared_datum().to_string(),
             lst.as_datum().to_string()
         );
+        assert_eq!(
+            lst.as_display_datum().to_string(),
+            lst.as_datum().to_string()
+        );
     }
 
     #[test]
@@ -1515,6 +1633,10 @@ mod list_ctor {
             lst.as_shared_datum().to_string(),
             lst.as_datum().to_string()
         );
+        assert_eq!(
+            lst.as_display_datum().to_string(),
+            lst.as_datum().to_string()
+        );
     }
 
     #[test]
@@ -1528,6 +1650,10 @@ mod list_ctor {
         );
         assert_eq!(
             lst.as_shared_datum().to_string(),
+            lst.as_datum().to_string()
+        );
+        assert_eq!(
+            lst.as_display_datum().to_string(),
             lst.as_datum().to_string()
         );
     }
@@ -1544,6 +1670,10 @@ mod list_ctor {
         );
         assert_eq!(
             lst.as_shared_datum().to_string(),
+            lst.as_datum().to_string()
+        );
+        assert_eq!(
+            lst.as_display_datum().to_string(),
             lst.as_datum().to_string()
         );
     }
@@ -1566,6 +1696,10 @@ mod list_ctor {
             lst.as_shared_datum().to_string(),
             lst.as_datum().to_string()
         );
+        assert_eq!(
+            lst.as_display_datum().to_string(),
+            lst.as_datum().to_string()
+        );
     }
 
     #[test]
@@ -1584,6 +1718,10 @@ mod list_ctor {
         );
         assert_eq!(
             lst.as_shared_datum().to_string(),
+            lst.as_datum().to_string()
+        );
+        assert_eq!(
+            lst.as_display_datum().to_string(),
             lst.as_datum().to_string()
         );
     }

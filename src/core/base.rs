@@ -390,7 +390,7 @@ fn write_simple(args: &[Value], env: &Frame) -> EvalResult {
 }
 
 fn write_display(args: &[Value], env: &Frame) -> EvalResult {
-    write_object(first(args), args.get(1), env, Value::as_display)
+    write_object(first(args), args.get(1), env, Value::as_display_datum)
 }
 
 fn newline(args: &[Value], env: &Frame) -> EvalResult {

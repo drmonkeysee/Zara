@@ -644,8 +644,10 @@ mod tests {
         assert_eq!(cycle_count(&b_graph), 1);
         assert_eq!(a.as_datum().to_string(), "#0=(1 2 3 9 #0# 7)");
         assert_eq!(a.as_shared_datum().to_string(), a.as_datum().to_string());
+        assert_eq!(a.as_display_datum().to_string(), "(1 2 3 9 (1 2 3 . …) 7)");
         assert_eq!(b.as_datum().to_string(), "#0=(9 (1 2 3 . #0#) 7)");
         assert_eq!(b.as_shared_datum().to_string(), b.as_datum().to_string());
+        assert_eq!(b.as_display_datum().to_string(), "(9 (1 2 3 . …) 7)");
     }
 
     #[test]
@@ -760,8 +762,10 @@ mod tests {
         assert_eq!(cycle_count(&b_graph), 1);
         assert_eq!(a.as_datum().to_string(), "#0=#(1 #(9 #0# 7) 3)");
         assert_eq!(a.as_shared_datum().to_string(), a.as_datum().to_string());
+        assert_eq!(a.as_display_datum().to_string(), "#(1 #(9 #(…) 7) 3)");
         assert_eq!(b.as_datum().to_string(), "#0=#(9 #(1 #0# 3) 7)");
         assert_eq!(b.as_shared_datum().to_string(), b.as_datum().to_string());
+        assert_eq!(b.as_display_datum().to_string(), "#(9 #(1 #(…) 3) 7)");
     }
 
     #[test]
@@ -793,6 +797,7 @@ mod tests {
         );
         assert_eq!(v.as_datum().to_string(), "#0=(#1=#(9 8 #1#) 2 3 . #0#)");
         assert_eq!(v.as_shared_datum().to_string(), v.as_datum().to_string());
+        assert_eq!(v.as_display_datum().to_string(), "(#(9 8 #(…)) 2 3 . …)");
     }
 
     #[test]
@@ -820,6 +825,7 @@ mod tests {
         );
         assert_eq!(v.as_datum().to_string(), "(#0=#(9 8 #0#) 2 3 . #0#)");
         assert_eq!(v.as_shared_datum().to_string(), v.as_datum().to_string());
+        assert_eq!(v.as_display_datum().to_string(), "(#(9 8 #(…)) 2 3 . #(…))");
     }
 
     #[test]
@@ -856,6 +862,7 @@ mod tests {
         assert_eq!(some_or_fail!(graph.get(nested_head.node_id())).label, 1);
         assert_eq!(v.as_datum().to_string(), "#0=#(1 2 #1=(9 8 . #1#) 3 #0#)");
         assert_eq!(v.as_shared_datum().to_string(), v.as_datum().to_string());
+        assert_eq!(v.as_display_datum().to_string(), "#(1 2 (9 8 . …) 3 #(…))");
     }
 
     #[test]
@@ -872,6 +879,7 @@ mod tests {
         assert_eq!(cycle_count(&graph), 1);
         assert_eq!(v.as_datum().to_string(), "#0=#(1 (9 8 #0#) 3)");
         assert_eq!(v.as_shared_datum().to_string(), v.as_datum().to_string());
+        assert_eq!(v.as_display_datum().to_string(), "#(1 (9 8 #(…)) 3)");
 
         let lstref = lst.as_refpair().unwrap();
         let p = lstref.as_ref();
@@ -886,6 +894,7 @@ mod tests {
             lst.as_shared_datum().to_string(),
             lst.as_datum().to_string()
         );
+        assert_eq!(v.as_display_datum().to_string(), "(9 8 #(1 (9 8 #(…)) 3))");
     }
 
     #[test]
@@ -936,6 +945,10 @@ mod tests {
             val.as_datum().to_string()
         );
         assert_eq!(val.as_shared_datum().to_string(), "(1 2 #0=(9 8) 3 #0# 4)");
+        assert_eq!(
+            val.as_display_datum().to_string(),
+            val.as_datum().to_string()
+        );
     }
 
     #[test]
@@ -963,6 +976,10 @@ mod tests {
             val.as_shared_datum().to_string(),
             "#(1 2 #0=#(9 8) 3 #0# 4)"
         );
+        assert_eq!(
+            val.as_display_datum().to_string(),
+            val.as_datum().to_string()
+        );
     }
 
     #[test]
@@ -987,6 +1004,10 @@ mod tests {
             val.as_datum().to_string()
         );
         assert_eq!(val.as_shared_datum().to_string(), "(1 2 #0=#(9 8) 3 #0# 4)");
+        assert_eq!(
+            val.as_display_datum().to_string(),
+            val.as_datum().to_string()
+        );
     }
 
     #[test]
@@ -1011,5 +1032,9 @@ mod tests {
             val.as_datum().to_string()
         );
         assert_eq!(val.as_shared_datum().to_string(), "#(1 2 #0=(9 8) 3 #0# 4)");
+        assert_eq!(
+            val.as_display_datum().to_string(),
+            val.as_datum().to_string()
+        );
     }
 }

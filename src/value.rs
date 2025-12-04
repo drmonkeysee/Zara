@@ -265,7 +265,7 @@ impl Value {
         SharedDatum(self)
     }
 
-    pub(crate) fn as_display(&self) -> DisplayDatum<'_> {
+    pub(crate) fn as_display_datum(&self) -> DisplayDatum<'_> {
         DisplayDatum(self)
     }
 
