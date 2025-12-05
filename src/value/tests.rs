@@ -1250,7 +1250,7 @@ mod pair {
 
         assert_eq!(v.as_datum().to_string(), "(1 2 . #0=(3 4 5 . #0#))");
         assert_eq!(v.as_shared_datum().to_string(), v.as_datum().to_string());
-        assert_eq!(v.as_display_datum().to_string(), "(1 2 (3 4 5 . …))");
+        assert_eq!(v.as_display_datum().to_string(), "(1 2 . (3 4 5 . …))");
     }
 
     #[test]
@@ -1383,7 +1383,7 @@ mod pair {
         );
         assert_eq!(
             lst.as_display_datum().to_string(),
-            "(10 11 (1 2 3 . …) (1 2 3 . …))"
+            "(10 11 (1 2 3 . …) (…))"
         );
     }
 
@@ -1436,7 +1436,7 @@ mod pair {
         );
         assert_eq!(
             lst.as_display_datum().to_string(),
-            "(10 11 (1 2 3 . …) (1 2 3 . …) (4 5 6 . …) 12 (4 5 6 . …))"
+            "(10 11 (1 2 3 . …) (…) (4 5 6 . …) 12 (…))"
         );
     }
 }

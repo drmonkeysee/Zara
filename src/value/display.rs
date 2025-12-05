@@ -75,13 +75,13 @@ impl Display for DisplayDatum<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self.0 {
             Value::Character(c) => c.fmt(f),
-            Value::Pair(p) => todo!(),
-            Value::PairMut(p) => todo!(),
+            Value::Pair(p) => PairDatum::display(p).fmt(f),
+            Value::PairMut(p) => PairDatum::display(&p.borrow()).fmt(f),
             Value::String(s) => s.fmt(f),
             Value::StringMut(s) => s.borrow().fmt(f),
             Value::Symbol(s) => s.fmt(f),
-            Value::Vector(v) => todo!(),
-            Value::VectorMut(v) => todo!(),
+            Value::Vector(v) => VecDatum::display(v).fmt(f),
+            Value::VectorMut(v) => VecDatum::display(&v.borrow()).fmt(f),
             _ => SimpleDatum(self.0).fmt(f),
         }
     }
@@ -162,17 +162,63 @@ impl Display for SimplePairDatum<'_> {
     }
 }
 
+#[derive(Clone, Copy)]
+enum LabelMode {
+    Datum,
+    Display,
+    DisplayItem,
+}
+
+impl LabelMode {
+    fn for_item(self) -> Self {
+        match self {
+            Self::Datum => self,
+            Self::Display | Self::DisplayItem => Self::DisplayItem,
+        }
+    }
+
+    fn for_tail(self) -> Self {
+        match self {
+            Self::Datum => self,
+            Self::Display | Self::DisplayItem => Self::Display,
+        }
+    }
+
+    fn write_label(self, label: usize, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Datum => write!(f, "#{label}="),
+            Self::Display | Self::DisplayItem => Ok(()),
+        }
+    }
+
+    fn write_list(self, label: usize, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Datum => write!(f, "#{label}#"),
+            Self::Display => f.write_str("…"),
+            Self::DisplayItem => f.write_str("(…)"),
+        }
+    }
+
+    fn write_vec(self, label: usize, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Datum => write!(f, "#{label}#"),
+            Self::Display | Self::DisplayItem => f.write_str("#(…)"),
+        }
+    }
+}
+
 struct NestedDatum<'a> {
     graph: &'a Traverse,
+    mode: LabelMode,
     val: &'a Value,
 }
 
 impl Display for NestedDatum<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         if let Some(p) = self.val.as_refpair() {
-            PairDatum::nested(p.as_ref(), self.graph).fmt(f)
+            PairDatum::nested(p.as_ref(), self.graph, self.mode).fmt(f)
         } else if let Some(vec) = self.val.as_refvec() {
-            VecDatum::nested(vec.as_ref(), self.graph).fmt(f)
+            VecDatum::nested(vec.as_ref(), self.graph, self.mode).fmt(f)
         } else {
             self.val.as_datum().fmt(f)
         }
@@ -181,13 +227,23 @@ impl Display for NestedDatum<'_> {
 
 struct GraphDatum<'a, T: ?Sized> {
     graph: Cow<'a, Traverse>,
+    mode: LabelMode,
     val: &'a T,
 }
 
 impl<'a, T: ?Sized> GraphDatum<'a, T> {
-    fn nested(val: &'a T, graph: &'a Traverse) -> Self {
+    fn nested(val: &'a T, graph: &'a Traverse, mode: LabelMode) -> Self {
         Self {
             graph: Cow::Borrowed(graph),
+            mode,
+            val,
+        }
+    }
+
+    fn owned(val: &'a T, graph: Traverse, mode: LabelMode) -> Self {
+        Self {
+            graph: Cow::Owned(graph),
+            mode,
             val,
         }
     }
@@ -198,17 +254,15 @@ type VecDatum<'a> = GraphDatum<'a, [Value]>;
 
 impl<'a> PairDatum<'a> {
     fn new(head: &'a Pair) -> Self {
-        Self {
-            graph: Cow::Owned(Traverse::pair(head)),
-            val: head,
-        }
+        Self::owned(head, Traverse::pair(head), LabelMode::Datum)
     }
 
     fn shared(head: &'a Pair) -> Self {
-        Self {
-            graph: Cow::Owned(Traverse::shared_pair(head)),
-            val: head,
-        }
+        Self::owned(head, Traverse::shared_pair(head), LabelMode::Datum)
+    }
+
+    fn display(head: &'a Pair) -> Self {
+        Self::owned(head, Traverse::pair(head), LabelMode::Display)
     }
 
     fn write_tail(&self, f: &mut Formatter<'_>) -> fmt::Result {
@@ -216,7 +270,11 @@ impl<'a> PairDatum<'a> {
             if let Some(p) = item.as_refpair() {
                 let pref = p.as_ref();
                 if self.graph.contains(pref.node_id()) {
-                    write!(f, " . {}", PairDatum::nested(pref, &self.graph))?;
+                    write!(
+                        f,
+                        " . {}",
+                        PairDatum::nested(pref, &self.graph, self.mode.for_tail())
+                    )?;
                     break;
                 }
                 write!(
@@ -224,11 +282,16 @@ impl<'a> PairDatum<'a> {
                     " {}",
                     NestedDatum {
                         graph: &self.graph,
-                        val: &pref.car
+                        mode: self.mode.for_item(),
+                        val: &pref.car,
                     }
                 )?;
             } else if let Some(v) = item.as_refvec() {
-                write!(f, " . {}", VecDatum::nested(v.as_ref(), &self.graph))?;
+                write!(
+                    f,
+                    " . {}",
+                    VecDatum::nested(v.as_ref(), &self.graph, self.mode)
+                )?;
             } else if !matches!(item, Value::Null) {
                 write!(f, " . {}", item.as_datum())?;
             }
@@ -241,9 +304,9 @@ impl Display for PairDatum<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         if let Some(vs) = self.graph.get(self.val.node_id()) {
             if vs.marked() {
-                return write!(f, "#{}#", vs.label);
+                return self.mode.write_list(vs.label, f);
             }
-            write!(f, "#{}=", vs.label)?;
+            self.mode.write_label(vs.label, f)?;
             vs.mark();
         }
         write!(
@@ -251,7 +314,8 @@ impl Display for PairDatum<'_> {
             "({}",
             NestedDatum {
                 graph: &self.graph,
-                val: &self.val.car
+                mode: self.mode,
+                val: &self.val.car,
             }
         )?;
         self.write_tail(f)
@@ -260,17 +324,15 @@ impl Display for PairDatum<'_> {
 
 impl<'a> VecDatum<'a> {
     fn new(vec: &'a [Value]) -> Self {
-        Self {
-            graph: Cow::Owned(Traverse::vec(vec)),
-            val: vec,
-        }
+        Self::owned(vec, Traverse::vec(vec), LabelMode::Datum)
     }
 
     fn shared(vec: &'a [Value]) -> Self {
-        Self {
-            graph: Cow::Owned(Traverse::shared_vec(vec)),
-            val: vec,
-        }
+        Self::owned(vec, Traverse::shared_vec(vec), LabelMode::Datum)
+    }
+
+    fn display(vec: &'a [Value]) -> Self {
+        Self::owned(vec, Traverse::vec(vec), LabelMode::Display)
     }
 
     fn join_items(&self) -> String {
@@ -279,6 +341,7 @@ impl<'a> VecDatum<'a> {
             .map(|item| {
                 NestedDatum {
                     graph: &self.graph,
+                    mode: self.mode,
                     val: item,
                 }
                 .to_string()
@@ -292,9 +355,9 @@ impl Display for VecDatum<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         if let Some(vs) = self.graph.get(self.val.as_ptr().cast()) {
             if vs.marked() {
-                return write!(f, "#{}#", vs.label);
+                return self.mode.write_vec(vs.label, f);
             }
-            write!(f, "#{}=", vs.label)?;
+            self.mode.write_label(vs.label, f)?;
             vs.mark();
         }
         write!(f, "#({})", &self.join_items())
@@ -654,7 +717,7 @@ mod tests {
         assert_eq!(cycle_count(&b_graph), 1);
         assert_eq!(a.as_datum().to_string(), "#0=(1 2 3 9 #0# 7)");
         assert_eq!(a.as_shared_datum().to_string(), a.as_datum().to_string());
-        assert_eq!(a.as_display_datum().to_string(), "(1 2 3 9 (1 2 3 . …) 7)");
+        assert_eq!(a.as_display_datum().to_string(), "(1 2 3 9 (…) 7)");
         assert_eq!(b.as_datum().to_string(), "#0=(9 (1 2 3 . #0#) 7)");
         assert_eq!(b.as_shared_datum().to_string(), b.as_datum().to_string());
         assert_eq!(b.as_display_datum().to_string(), "(9 (1 2 3 . …) 7)");
@@ -904,7 +967,7 @@ mod tests {
             lst.as_shared_datum().to_string(),
             lst.as_datum().to_string()
         );
-        assert_eq!(v.as_display_datum().to_string(), "(9 8 #(1 (9 8 #(…)) 3))");
+        assert_eq!(lst.as_display_datum().to_string(), "(9 8 #(1 (…) 3))");
     }
 
     #[test]
