@@ -220,7 +220,7 @@ impl Display for NestedDatum<'_> {
         } else if let Some(vec) = self.val.as_refvec() {
             VecDatum::nested(vec.as_ref(), self.graph, self.mode).fmt(f)
         } else {
-            self.val.as_datum().fmt(f)
+            self.val.as_simple_datum().fmt(f)
         }
     }
 }
@@ -293,7 +293,7 @@ impl<'a> PairDatum<'a> {
                     VecDatum::nested(v.as_ref(), &self.graph, self.mode)
                 )?;
             } else if !matches!(item, Value::Null) {
-                write!(f, " . {}", item.as_datum())?;
+                write!(f, " . {}", item.as_simple_datum())?;
             }
         }
         f.write_char(')')
