@@ -201,6 +201,7 @@ fn load_io(env: &Frame) {
     bind_intrinsic(env, "close-input-port", 1..1, close_input_port);
     bind_intrinsic(env, "close-output-port", 1..1, close_output_port);
 
+    bind_intrinsic(env, "read", 0..1, read_datum);
     bind_intrinsic(env, "read-char", 0..1, read_char);
     bind_intrinsic(env, "peek-char", 0..1, peek_char);
     bind_intrinsic(env, "read-line", 0..1, read_line);
@@ -298,6 +299,16 @@ fn close_output_port(args: &[Value], _env: &Frame) -> EvalResult {
     let p = guard_output_port(arg, PortSpec::Output)?;
     p.borrow_mut().close();
     Ok(Value::Unspecified)
+}
+
+fn read_datum(args: &[Value], env: &Frame) -> EvalResult {
+    read_op_mut(
+        args.first(),
+        env,
+        PortSpec::TextualInput,
+        ReadPort::read_datum,
+        |val| Ok(val.unwrap_or(Value::Eof)),
+    )
 }
 
 fn read_char(args: &[Value], env: &Frame) -> EvalResult {

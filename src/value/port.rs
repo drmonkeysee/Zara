@@ -135,6 +135,15 @@ impl ReadPort {
         }
     }
 
+    pub(crate) fn read_datum(&mut self) -> PortResult<Option<Value>> {
+        match self {
+            Self::ByteVector(_) => Err(PortError::ExpectedMode(PortMode::Textual)),
+            Self::File(r) => todo!(),
+            Self::In(r) => todo!(),
+            Self::String(r) => todo!(),
+        }
+    }
+
     pub(crate) fn read_byte(&mut self) -> PortByte {
         match self {
             Self::ByteVector(r) => r.read(),
