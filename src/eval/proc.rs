@@ -93,7 +93,7 @@ impl Operator for Procedure {
 
     fn apply(&self, args: &[Value], env: &Frame) -> EvalResult {
         // TODO: tail-call optimization does not create a new frame
-        let call_frame = env.new_child(Rc::clone(&self.closure));
+        let call_frame = env.new_scope(Rc::clone(&self.closure));
         self.def.apply(args, &call_frame)
     }
 }

@@ -11,8 +11,11 @@ pub(crate) struct Frame<'a> {
 }
 
 impl Frame<'_> {
-    // TODO: this is only crate due to tests (though may be needed in core.rs for apply-style functionality)
-    pub(crate) fn new_child(&self, parent: impl Into<Rc<Binding>>) -> Self {
+    pub(crate) fn new_child(&self) -> Self {
+        self.new_scope(Rc::clone(&self.scope))
+    }
+
+    pub(super) fn new_scope(&self, parent: impl Into<Rc<Binding>>) -> Self {
         Self {
             scope: Binding::new(parent).into(),
             sym: self.sym,

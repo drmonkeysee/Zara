@@ -972,7 +972,7 @@ mod eval {
             });
             env.binding.bind(env.symbols.get("foo"), Value::Unspecified);
             let f = env.new_frame();
-            let call_f = f.new_child(Rc::clone(&env.binding));
+            let call_f = f.new_child();
 
             let r = expr.eval(&call_f);
 
