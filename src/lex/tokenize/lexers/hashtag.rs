@@ -2,7 +2,10 @@ use super::{
     Exactness, HexParse, Identifier, ScanItem, Scanner, TokenErrorKind, TokenExtractResult,
     TokenKind, numeric::RadixNumber,
 };
-use crate::number::{Binary, Hexadecimal, Octal, Radix};
+use crate::{
+    number::{Binary, Hexadecimal, Octal, Radix},
+    string,
+};
 
 const EXACTL: char = 'e';
 const EXACTU: char = EXACTL.to_ascii_uppercase();
@@ -68,7 +71,7 @@ impl Hashtag<'_, '_> {
         self.scanner
             .char()
             .map_or(Ok(TokenKind::Character('\n')), |ch| {
-                if ch.is_ascii_whitespace() {
+                if string::is_whitespace(ch) {
                     Ok(TokenKind::Character(ch))
                 } else {
                     let rest = self.scanner.rest_of_token();

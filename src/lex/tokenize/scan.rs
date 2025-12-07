@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests;
 
-use crate::txt::TxtSpan;
+use crate::{string, txt::TxtSpan};
 use std::{iter::Peekable, str::CharIndices};
 
 pub(super) type ScanItem<'txt> = <CharIndices<'txt> as Iterator>::Item;
@@ -142,11 +142,11 @@ fn eq_char(ch: char) -> impl FnOnce(&ScanItem) -> bool {
 }
 
 fn delimiter(&(_, ch): &ScanItem) -> bool {
-    is_delimiter(ch)
+    string::is_delimiter(ch)
 }
 
 fn word_boundary(&(_, ch): &ScanItem) -> bool {
-    ch == '\\' || is_delimiter(ch)
+    ch == '\\' || string::is_delimiter(ch)
 }
 
 fn not_delimiter(item: &ScanItem) -> bool {
@@ -154,21 +154,9 @@ fn not_delimiter(item: &ScanItem) -> bool {
 }
 
 fn not_token_boundary(&(_, ch): &ScanItem) -> bool {
-    !is_token_boundary(ch)
+    !string::is_token_boundary(ch)
 }
 
 fn not_whitespace(&(_, ch): &ScanItem) -> bool {
-    !ch.is_ascii_whitespace()
-}
-
-fn is_delimiter(ch: char) -> bool {
-    ch == '(' || is_token_boundary(ch)
-}
-
-fn is_token_boundary(ch: char) -> bool {
-    match ch {
-        '"' | '#' | '\'' | ')' | ',' | ';' | '`' | '|' => true,
-        _ if ch.is_ascii_whitespace() => true,
-        _ => false,
-    }
+    !string::is_whitespace(ch)
 }

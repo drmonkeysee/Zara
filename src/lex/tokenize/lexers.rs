@@ -13,7 +13,10 @@ use super::{
     TokenErrorKind, TokenExtractResult, TokenKind,
     scan::{ScanItem, Scanner},
 };
-use crate::number::{INF_STR, NAN_STR, Sign};
+use crate::{
+    number::{INF_STR, NAN_STR, Sign},
+    string as strlib,
+};
 
 pub(super) struct FreeText<'me, 'txt, P> {
     buf: String,
@@ -53,7 +56,7 @@ impl<'me, 'txt, P: FreeTextPolicy> FreeText<'me, 'txt, P> {
             Some('t') => self.buf.push('\t'),
             Some('x' | 'X') => self.hex(start)?,
             Some(ch @ ('"' | '\\' | '|')) => self.buf.push(ch),
-            Some(ch) if ch.is_ascii_whitespace() => {
+            Some(ch) if strlib::is_whitespace(ch) => {
                 // NOTE: \<whitespace> may be a line-continuation, but we
                 // won't know until we're done lexing this string.
                 self.possible_line_cont_idx = Some(self.buf.len());

@@ -1,49 +1,5 @@
 use super::*;
 
-#[test]
-fn delimiter_chars() {
-    let chars = [
-        '"', '(', ')', ';', '|', '\'', '`', ',', '#', ' ', '\t', '\r', '\n',
-    ];
-
-    for ch in chars {
-        assert!(
-            is_delimiter(ch),
-            "Expected {} to be a delimiter",
-            ch.escape_default()
-        );
-    }
-}
-
-#[test]
-fn non_delimiter_chars() {
-    let chars = ['.', ':', 'a', '@', '+', '-', '\\', '/', '1'];
-
-    for ch in chars {
-        assert!(!is_delimiter(ch), "Expected {ch} to not be a delimiter");
-    }
-}
-
-#[test]
-fn token_boundary_chars() {
-    let chars = [
-        '"', ')', ';', '|', '\'', '`', ',', '#', ' ', '\t', '\r', '\n',
-    ];
-
-    for ch in chars {
-        assert!(
-            is_token_boundary(ch),
-            "Expected {} to be a token boundary",
-            ch.escape_default()
-        );
-    }
-}
-
-#[test]
-fn is_token_boundary_does_not_include_lparen() {
-    assert!(!is_token_boundary('('));
-}
-
 mod scanner {
     use super::*;
     use crate::testutil::some_or_fail;
