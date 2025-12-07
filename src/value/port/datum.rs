@@ -138,3 +138,75 @@ fn consume_char(r: &mut dyn CharReader, buf: &mut String) -> PortResult {
     buf.push(r.read_char()?.expect("just-peeked char should be readable"));
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{testutil::TestEnv, value::port::StringReader};
+
+    #[test]
+    fn empty_string() {
+        let env = TestEnv::default();
+        let f = env.new_frame();
+        let mut s = StringReader::new("");
+
+        let r = parse(&mut s, &f);
+
+        assert!(matches!(r, Ok(None)));
+    }
+
+    #[test]
+    fn all_whitespace() {
+        let env = TestEnv::default();
+        let f = env.new_frame();
+        let mut s = StringReader::new("  \t \n \r\n  ");
+
+        let r = parse(&mut s, &f);
+
+        assert!(matches!(r, Ok(None)));
+    }
+
+    #[test]
+    fn comment() {
+        let env = TestEnv::default();
+        let f = env.new_frame();
+        let mut s = StringReader::new(";this is a comment");
+
+        let r = parse(&mut s, &f);
+
+        assert!(matches!(r, Ok(None)));
+    }
+
+    #[test]
+    fn block_comment() {
+        let env = TestEnv::default();
+        let f = env.new_frame();
+        let mut s = StringReader::new("#| this is a block\ncomment with\nmultiple lines |#");
+
+        let r = parse(&mut s, &f);
+
+        assert!(matches!(r, Ok(None)));
+    }
+
+    #[test]
+    fn unterminated_block_comment() {
+        let env = TestEnv::default();
+        let f = env.new_frame();
+        let mut s = StringReader::new("#| this is a block\ncomment oops");
+
+        let r = parse(&mut s, &f);
+
+        assert!(matches!(r, Ok(None)));
+    }
+
+    #[test]
+    fn almost_terminated_block_comment() {
+        let env = TestEnv::default();
+        let f = env.new_frame();
+        let mut s = StringReader::new("#| this is a block\ncomment oops |");
+
+        let r = parse(&mut s, &f);
+
+        assert!(matches!(r, Ok(None)));
+    }
+}
