@@ -306,7 +306,7 @@ fn read_datum(args: &[Value], env: &Frame) -> EvalResult {
         args.first(),
         env,
         PortSpec::TextualInput,
-        ReadPort::read_datum,
+        |p| p.read_datum(env),
         |val| Ok(val.unwrap_or(Value::Eof)),
     )
 }

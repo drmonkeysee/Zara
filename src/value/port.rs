@@ -1,7 +1,12 @@
 use super::{TypeName, Value};
-use crate::string::{
-    SymbolTable,
-    unicode::{self, UnicodeError},
+use crate::{
+    eval::Frame,
+    lex::Lexer,
+    string::{
+        SymbolTable,
+        unicode::{self, UnicodeError},
+    },
+    syntax::ExpressionTree,
 };
 use std::{
     cmp,
@@ -18,6 +23,7 @@ pub(crate) type PortPosition = PortResult<usize>;
 pub(crate) type PortValue = PortResult<Value>;
 pub(crate) type PortChar = PortResult<Option<char>>;
 pub(crate) type PortString = PortResult<Option<String>>;
+pub(crate) type PortDatum = PortResult<Option<Value>>;
 pub(crate) type PortByte = PortResult<Option<u8>>;
 pub(crate) type PortBytes = PortResult<Option<Vec<u8>>>;
 
@@ -100,21 +106,11 @@ impl ReadPort {
     }
 
     pub(crate) fn read_char(&mut self) -> PortChar {
-        match self {
-            Self::ByteVector(_) => Err(PortError::ExpectedMode(PortMode::Textual)),
-            Self::File(r) => r.read_char(),
-            Self::In(r) => r.read(),
-            Self::String(r) => r.read(),
-        }
+        self.get_char_reader_mut()?.read_char()
     }
 
     pub(crate) fn peek_char(&mut self) -> PortChar {
-        match self {
-            Self::ByteVector(_) => Err(PortError::ExpectedMode(PortMode::Textual)),
-            Self::File(r) => r.peek_char(),
-            Self::In(r) => r.peek(),
-            Self::String(r) => r.peek(),
-        }
+        self.get_char_reader_mut()?.peek_char()
     }
 
     pub(crate) fn read_line(&mut self) -> PortString {
@@ -135,13 +131,9 @@ impl ReadPort {
         }
     }
 
-    pub(crate) fn read_datum(&mut self) -> PortResult<Option<Value>> {
-        match self {
-            Self::ByteVector(_) => Err(PortError::ExpectedMode(PortMode::Textual)),
-            Self::File(r) => todo!(),
-            Self::In(r) => todo!(),
-            Self::String(r) => todo!(),
-        }
+    pub(crate) fn read_datum(&mut self, env: &Frame) -> PortDatum {
+        let mut r = DatumReader::default();
+        r.parse(self, env)
     }
 
     pub(crate) fn read_byte(&mut self) -> PortByte {
@@ -191,6 +183,15 @@ impl ReadPort {
             Self::File(r) => r as &mut dyn Reader,
             Self::In(r) => r as &mut dyn Reader,
             Self::String(r) => r as &mut dyn Reader,
+        }
+    }
+
+    fn get_char_reader_mut(&mut self) -> PortResult<&mut dyn CharReader> {
+        match self {
+            Self::ByteVector(_) => Err(PortError::ExpectedMode(PortMode::Textual)),
+            Self::File(r) => Ok(r as &mut dyn CharReader),
+            Self::In(r) => Ok(r as &mut dyn CharReader),
+            Self::String(r) => Ok(r as &mut dyn CharReader),
         }
     }
 }
@@ -352,14 +353,6 @@ impl FileReader {
         self.get_bytes(k, true)
     }
 
-    fn read_char(&mut self) -> PortChar {
-        self.get_char(true)
-    }
-
-    fn peek_char(&mut self) -> PortChar {
-        self.get_char(false)
-    }
-
     fn read_chars(&mut self, k: usize) -> PortString {
         if k == 0 {
             Ok(Some(String::new()))
@@ -463,35 +456,14 @@ impl StdinReader {
         }
     }
 
-    fn read(&mut self) -> PortChar {
-        match &mut self.stream {
-            None => Err(PortError::Closed),
-            Some(r) => {
-                if self.rbuf.is_empty() {
-                    let mut b = String::new();
-                    r.read_line(&mut b)?;
-                    self.rbuf.push_str(&(b.chars().rev().collect::<String>()));
-                    self.trim_buffer();
-                }
-                Ok(self.rbuf.pop())
-            }
-        }
-    }
-
     fn read_count(&mut self, k: usize) -> PortString {
         if k == 0 {
             Ok(Some(String::new()))
         } else {
-            extract_string(iter::from_fn(|| self.read().transpose()), |it| it.take(k))
+            extract_string(iter::from_fn(|| self.read_char().transpose()), |it| {
+                it.take(k)
+            })
         }
-    }
-
-    fn peek(&mut self) -> PortChar {
-        let r = self.read();
-        if let Ok(Some(c)) = r {
-            self.rbuf.push(c);
-        }
-        r
     }
 
     fn read_line(&mut self) -> PortString {
@@ -543,20 +515,12 @@ impl StringReader {
         self.0.ready()
     }
 
-    fn read(&mut self) -> PortChar {
-        self.get_char(true)
-    }
-
     fn read_count(&mut self, k: usize) -> PortString {
         if k == 0 {
             Ok(Some(String::new()))
         } else {
             extract_string(self.char_stream(), |it| it.take(k))
         }
-    }
-
-    fn peek(&mut self) -> PortChar {
-        self.get_char(false)
     }
 
     fn read_line(&mut self) -> PortString {
@@ -570,7 +534,7 @@ impl StringReader {
     }
 
     fn char_stream(&mut self) -> impl Iterator<Item = PortExtractChar> {
-        iter::from_fn(|| self.read().transpose())
+        iter::from_fn(|| self.read_char().transpose())
     }
 }
 
@@ -1067,6 +1031,92 @@ impl Reader for StringReader {
 
     fn close(&mut self) {
         self.0.close();
+    }
+}
+
+trait CharReader {
+    fn read_char(&mut self) -> PortChar;
+    fn peek_char(&mut self) -> PortChar;
+}
+
+impl CharReader for FileReader {
+    fn read_char(&mut self) -> PortChar {
+        self.get_char(true)
+    }
+
+    fn peek_char(&mut self) -> PortChar {
+        self.get_char(false)
+    }
+}
+
+impl CharReader for StdinReader {
+    fn read_char(&mut self) -> PortChar {
+        match &mut self.stream {
+            None => Err(PortError::Closed),
+            Some(r) => {
+                if self.rbuf.is_empty() {
+                    let mut b = String::new();
+                    r.read_line(&mut b)?;
+                    self.rbuf.push_str(&(b.chars().rev().collect::<String>()));
+                    self.trim_buffer();
+                }
+                Ok(self.rbuf.pop())
+            }
+        }
+    }
+
+    fn peek_char(&mut self) -> PortChar {
+        let r = self.read_char();
+        if let Ok(Some(c)) = r {
+            self.rbuf.push(c);
+        }
+        r
+    }
+}
+
+impl CharReader for StringReader {
+    fn read_char(&mut self) -> PortChar {
+        self.get_char(true)
+    }
+
+    fn peek_char(&mut self) -> PortChar {
+        self.get_char(false)
+    }
+}
+
+#[derive(Default)]
+struct DatumReader {
+    lex: Lexer,
+    parse: ExpressionTree,
+}
+
+impl DatumReader {
+    fn parse(&mut self, port: &mut ReadPort, env: &Frame) -> PortDatum {
+        let r = port.get_char_reader_mut()?;
+        let mut buf = String::new();
+        loop {
+            /*
+             * peek ch
+             * if none -> determine error state (incomplete or EOF)
+             * if some
+             *  skip leading whitespace
+             *  read chars until delimiter
+             *  lex buffer
+             *      if continuation
+             *          get next char and relex
+             *          if still continuation read to next delimiter
+             *  if lexed
+             *      parse
+             *          if continuation act as above with lex
+             *  if parsed empty result
+             *      keep going
+             *  else return datum
+             *
+             *  notes:
+             *      - can always read chars until token start
+             */
+        }
+        todo!();
     }
 }
 
