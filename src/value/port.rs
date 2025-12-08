@@ -131,8 +131,8 @@ impl ReadPort {
         }
     }
 
-    pub(crate) fn read_datum(&mut self, env: &Frame) -> PortDatum {
-        datum::parse(self.get_char_reader_mut()?, env)
+    pub(crate) fn read_datum(&mut self, env: &Frame, src: impl Into<String>) -> PortDatum {
+        datum::parse(self.get_char_reader_mut()?, env, src)
     }
 
     pub(crate) fn read_byte(&mut self) -> PortByte {

@@ -302,11 +302,19 @@ fn close_output_port(args: &[Value], _env: &Frame) -> EvalResult {
 }
 
 fn read_datum(args: &[Value], env: &Frame) -> EvalResult {
+    let arg = args.first();
     read_op_mut(
-        args.first(),
+        arg,
         env,
         PortSpec::TextualInput,
-        |p| p.read_datum(env),
+        |p| {
+            p.read_datum(
+                env,
+                arg.expect("read op should only be invoked on valid port")
+                    .as_simple_datum()
+                    .to_string(),
+            )
+        },
         |val| Ok(val.unwrap_or(Value::Eof)),
     )
 }

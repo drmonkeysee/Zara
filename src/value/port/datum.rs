@@ -1,28 +1,38 @@
-use super::{CharReader, PortDatum, PortResult};
+use super::{CharReader, PortBool, PortDatum, PortResult};
 use crate::{
     eval::{Frame, Namespace},
     lex::{Lexer, LexerOutput},
+    src::StringSource,
     string,
     syntax::{ExpressionTree, Parser, ParserOutput},
 };
 
-pub(super) fn parse(r: &mut dyn CharReader, env: &Frame) -> PortDatum {
+pub(super) fn parse(r: &mut dyn CharReader, env: &Frame, src: impl Into<String>) -> PortDatum {
     let mut buf = String::new();
     let Some(end) = start_scan(r, &mut buf)? else {
         return Ok(None);
     };
-    end.scan(r, &mut buf)?;
-    /*
-    let lex = Lexer::default();
-    let expr = ExpressionTree::default();
-    match lex.tokenize(src)? {
-        LexerOutput::Complete(tokens) => match expr.parse(tokens, Namespace(env.new_child()))? {
-            ParserOutput::Complete(datum) => todo!(),
-            ParserOutput::Continuation => todo!(),
-        },
-        LexerOutput::Continuation => todo!(),
+    let mut lexer = Lexer::default();
+    let mut parser = ExpressionTree::default();
+    let mut src = StringSource::empty(src);
+    loop {
+        end.scan(r, &mut buf)?;
+        src.set(buf.split_off(0));
+        match lexer.tokenize(&mut src).unwrap() {
+            LexerOutput::Complete(t) => {
+                match parser.parse(t, Namespace(env.new_child())).unwrap() {
+                    ParserOutput::Complete(_) => todo!(),
+                    ParserOutput::Continuation => todo!(),
+                }
+            }
+            LexerOutput::Continuation => {
+                buf.clear();
+                if !end.consume_delimiter(r, &mut buf)? {
+                    todo!("continuation-to-read-error")
+                }
+            }
+        }
     }
-    */
     todo!();
 }
 
@@ -48,6 +58,19 @@ impl ScanEnd {
             Self::Paren => read_to(r, ')', buf),
             Self::Pipe => read_to(r, '|', buf),
         }
+    }
+
+    fn consume_delimiter(&self, r: &mut dyn CharReader, buf: &mut String) -> PortBool {
+        Ok(if let Self::Character = self {
+            if let Some(ch) = r.read_char()? {
+                buf.push(ch);
+                true
+            } else {
+                false
+            }
+        } else {
+            true
+        })
     }
 }
 
@@ -150,7 +173,7 @@ mod tests {
         let f = env.new_frame();
         let mut s = StringReader::new("");
 
-        let r = parse(&mut s, &f);
+        let r = parse(&mut s, &f, "test-port");
 
         assert!(matches!(r, Ok(None)));
     }
@@ -161,7 +184,7 @@ mod tests {
         let f = env.new_frame();
         let mut s = StringReader::new("  \t \n \r\n  ");
 
-        let r = parse(&mut s, &f);
+        let r = parse(&mut s, &f, "test-port");
 
         assert!(matches!(r, Ok(None)));
     }
@@ -172,7 +195,7 @@ mod tests {
         let f = env.new_frame();
         let mut s = StringReader::new(";this is a comment");
 
-        let r = parse(&mut s, &f);
+        let r = parse(&mut s, &f, "test-port");
 
         assert!(matches!(r, Ok(None)));
     }
@@ -183,7 +206,7 @@ mod tests {
         let f = env.new_frame();
         let mut s = StringReader::new("#| this is a block\ncomment with\nmultiple lines |#");
 
-        let r = parse(&mut s, &f);
+        let r = parse(&mut s, &f, "test-port");
 
         assert!(matches!(r, Ok(None)));
     }
@@ -194,7 +217,7 @@ mod tests {
         let f = env.new_frame();
         let mut s = StringReader::new("#| this is a block\ncomment oops");
 
-        let r = parse(&mut s, &f);
+        let r = parse(&mut s, &f, "test-port");
 
         assert!(matches!(r, Ok(None)));
     }
@@ -205,7 +228,7 @@ mod tests {
         let f = env.new_frame();
         let mut s = StringReader::new("#| this is a block\ncomment oops |");
 
-        let r = parse(&mut s, &f);
+        let r = parse(&mut s, &f, "test-port");
 
         assert!(matches!(r, Ok(None)));
     }
