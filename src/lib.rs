@@ -12,7 +12,7 @@ mod value;
 
 pub use self::eval::{Evaluation, Exception, Signal, Value};
 use self::{
-    eval::{Ast, Environment, Eval, Evaluator},
+    eval::{Ast, Environment, Eval, Evaluator, Namespace},
     lex::{Lexer, LexerError, LexerOutput, TokenLine},
     syntax::{ExpressionTree, Parser, ParserError, ParserOutput, TokenList},
     txt::TextSource,
@@ -150,6 +150,42 @@ trait Executor {
     fn exec(&mut self, token_lines: Box<[TokenLine]>) -> ExecResult;
     fn unsupported_continuation(&mut self) -> Option<ReadError>;
     fn clear(&mut self);
+}
+
+struct Reader<P> {
+    lexer: Lexer,
+    parser: P,
+}
+
+impl<P: Parser> Reader<P> {
+    pub fn read(
+        &mut self,
+        src: &mut impl TextSource,
+        ns: Namespace,
+    ) -> result::Result<ParserOutput, ReadError> {
+        let token_lines = match self.lexer.tokenize(src)? {
+            LexerOutput::Complete(lines) => lines,
+            LexerOutput::Continuation => return Ok(ParserOutput::Continuation),
+        };
+        Ok(self.parser.parse(token_lines, ns)?)
+    }
+
+    pub fn unsupported_continuation(&mut self) -> Option<ReadError> {
+        self.lex_unsupported().or_else(|| self.parse_unsupported())
+    }
+
+    pub fn clear(&mut self) {
+        self.lexer.clear();
+        self.parser.clear();
+    }
+
+    fn lex_unsupported(&mut self) -> Option<ReadError> {
+        Some(self.lexer.unsupported_continuation()?.into())
+    }
+
+    fn parse_unsupported(&mut self) -> Option<ReadError> {
+        Some(self.parser.unsupported_continuation()?.into())
+    }
 }
 
 #[derive(Debug)]
