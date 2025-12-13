@@ -95,17 +95,17 @@ impl Interpreter {
         self.runner.clear();
     }
 
-    fn lex(&mut self, src: &mut impl TextSource) -> result::Result<LexerOutput, ExecError> {
+    fn lex(&mut self, src: &mut impl TextSource) -> result::Result<LexerOutput, ReadError> {
         Ok(self.lexer.tokenize(src)?)
     }
 
-    fn lex_unsupported(&mut self) -> Option<ExecError> {
+    fn lex_unsupported(&mut self) -> Option<ReadError> {
         Some(self.lexer.unsupported_continuation()?.into())
     }
 }
 
 #[derive(Debug)]
-pub struct Error(ExecError);
+pub struct Error(ReadError);
 
 impl Error {
     #[must_use]
@@ -126,39 +126,39 @@ impl error::Error for Error {
     }
 }
 
-impl From<ExecError> for Error {
-    fn from(value: ExecError) -> Self {
+impl From<ReadError> for Error {
+    fn from(value: ReadError) -> Self {
         Self(value)
     }
 }
 
-pub struct ErrorMessage<'a>(&'a ExecError);
+pub struct ErrorMessage<'a>(&'a ReadError);
 
 impl Display for ErrorMessage<'_> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         let err = self.0;
         match err {
-            ExecError::Lex(lex_err) => lex_err.display_message().fmt(f),
-            ExecError::Parse(parse_err) => parse_err.display_message().fmt(f),
+            ReadError::Lex(lex_err) => lex_err.display_message().fmt(f),
+            ReadError::Parse(parse_err) => parse_err.display_message().fmt(f),
         }
     }
 }
 
-type ExecResult = result::Result<Evaluation, ExecError>;
+type ExecResult = result::Result<Evaluation, ReadError>;
 
 trait Executor {
     fn exec(&mut self, token_lines: Box<[TokenLine]>) -> ExecResult;
-    fn unsupported_continuation(&mut self) -> Option<ExecError>;
+    fn unsupported_continuation(&mut self) -> Option<ReadError>;
     fn clear(&mut self);
 }
 
 #[derive(Debug)]
-enum ExecError {
+enum ReadError {
     Lex(LexerError),
     Parse(ParserError),
 }
 
-impl Display for ExecError {
+impl Display for ReadError {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
             Self::Lex(lx) => lx.fmt(f),
@@ -167,7 +167,7 @@ impl Display for ExecError {
     }
 }
 
-impl error::Error for ExecError {
+impl error::Error for ReadError {
     fn source(&self) -> Option<&(dyn error::Error + 'static)> {
         Some(match self {
             Self::Lex(lx) => lx,
@@ -176,13 +176,13 @@ impl error::Error for ExecError {
     }
 }
 
-impl From<LexerError> for ExecError {
+impl From<LexerError> for ReadError {
     fn from(value: LexerError) -> Self {
         Self::Lex(value)
     }
 }
 
-impl From<ParserError> for ExecError {
+impl From<ParserError> for ReadError {
     fn from(value: ParserError) -> Self {
         Self::Parse(value)
     }
@@ -206,7 +206,7 @@ impl<P: Parser, E: Evaluator + Default> Executor for Engine<P, E> {
         )
     }
 
-    fn unsupported_continuation(&mut self) -> Option<ExecError> {
+    fn unsupported_continuation(&mut self) -> Option<ReadError> {
         Some(self.parser.unsupported_continuation()?.into())
     }
 
