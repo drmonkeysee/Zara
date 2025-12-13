@@ -1871,7 +1871,7 @@ mod program {
     }
 
     #[test]
-    fn node_to_program() {
+    fn node_to_sequence() {
         let txt = make_textline().into();
         let p = ParseNode::Prg(vec![
             ExprCtx {
@@ -1896,7 +1896,7 @@ mod program {
     }
 
     #[test]
-    fn parse_failure_node_to_program_error() {
+    fn parse_failure_node_to_sequence_error() {
         let p = ParseNode::InvalidParseTree(InvalidParseError::InvalidExprSource);
 
         let r: Result<Sequence, InvalidParseError> = p.try_into();
@@ -1906,13 +1906,153 @@ mod program {
     }
 
     #[test]
-    fn invalid_node_to_program_error() {
+    fn invalid_node_to_sequence_error() {
         let p = ParseNode::new(ParseMode::BlockComment, 0, make_textline());
 
         let r: Result<Sequence, InvalidParseError> = p.try_into();
 
         let err = err_or_fail!(r);
         assert!(matches!(err, InvalidParseError::EndOfParse));
+    }
+}
+
+mod data {
+    use super::*;
+
+    #[test]
+    fn empty() {
+        let mut seq = Vec::new();
+        let token = Token {
+            kind: TokenKind::Boolean(true),
+            span: 0..3,
+        };
+        let txt = make_textline().into();
+        let env = TestEnv::default();
+        let ns = env.new_namespace();
+
+        let f = parse_data(&mut seq, token, &txt, &ns);
+
+        assert!(matches!(f, ParseFlow::Continue(())));
+        assert_eq!(seq.len(), 1);
+        assert!(matches!(
+            &seq[0],
+            Expression {
+                ctx: ExprCtx { span: TxtSpan { start: 0, end: 3 }, txt: line },
+                kind: ExpressionKind::Literal(Value::Boolean(true)),
+            } if Rc::ptr_eq(&txt, line)
+        ));
+    }
+
+    #[test]
+    fn non_empty() {
+        let txt = make_textline().into();
+        let mut seq = vec![
+            ExprCtx {
+                span: 1..4,
+                txt: Rc::clone(&txt),
+            }
+            .into_expr(ExpressionKind::Literal(Value::real(4))),
+            ExprCtx {
+                span: 4..6,
+                txt: Rc::clone(&txt),
+            }
+            .into_expr(ExpressionKind::Literal(Value::real(5))),
+        ];
+        let token = Token {
+            kind: TokenKind::Boolean(true),
+            span: 6..9,
+        };
+        let txt = make_textline().into();
+        let env = TestEnv::default();
+        let ns = env.new_namespace();
+
+        let f = parse_data(&mut seq, token, &txt, &ns);
+
+        assert!(matches!(f, ParseFlow::Continue(())));
+        assert_eq!(seq.len(), 3);
+        assert!(matches!(
+            &seq[2],
+            Expression {
+                ctx: ExprCtx { span: TxtSpan { start: 6, end: 9 }, txt: line },
+                kind: ExpressionKind::Literal(Value::Boolean(true)),
+            } if Rc::ptr_eq(&txt, line)
+        ));
+    }
+
+    #[test]
+    fn start_compound() {
+        let mut seq = Vec::new();
+        let token = Token {
+            kind: TokenKind::ParenLeft,
+            span: 1..2,
+        };
+        let txt = make_textline().into();
+        let env = TestEnv::default();
+        let ns = env.new_namespace();
+
+        let f = parse_data(&mut seq, token, &txt, &ns);
+
+        assert!(matches!(
+            f,
+            ParseFlow::Break(ParseBreak::New(
+                ParseNew {
+                    mode: ParseMode::List { form: SyntacticForm::Datum, seq },
+                    start: 1
+                }
+            )) if seq.is_empty()
+        ));
+        assert!(seq.is_empty());
+    }
+
+    #[test]
+    fn invalid() {
+        let mut seq = Vec::new();
+        let token = Token {
+            kind: TokenKind::StringEnd("foo".to_owned()),
+            span: 0..3,
+        };
+        let txt = make_textline().into();
+        let env = TestEnv::default();
+        let ns = env.new_namespace();
+
+        let f = parse_data(&mut seq, token, &txt, &ns);
+
+        assert!(matches!(
+            f,
+            ParseFlow::Break(ParseBreak::Err {
+                err: ExpressionError {
+                    ctx: ExprCtx { span: TxtSpan { start: 0, end: 3 }, txt: line },
+                    kind: ExpressionErrorKind::SeqInvalid(TokenKind::StringEnd(_)),
+                },
+                flow: ParseErrFlow::Break(ParseErrBreak::InvalidTokenStream),
+            }) if Rc::ptr_eq(&line, &txt)
+        ));
+        assert!(seq.is_empty());
+    }
+
+    #[test]
+    fn node_to_sequence() {
+        let txt = make_textline().into();
+        let p = ParseNode::Data(vec![
+            ExprCtx {
+                span: 0..3,
+                txt: Rc::clone(&txt),
+            }
+            .into_expr(ExpressionKind::Literal(Value::real(24))),
+        ]);
+
+        let r = p.try_into();
+
+        let prg: Sequence = ok_or_fail!(r);
+        let seq = prg.iter().collect::<Vec<_>>();
+        assert_eq!(seq.len(), 1);
+        assert!(matches!(
+            &seq[0],
+            Expression {
+                ctx: ExprCtx { span: TxtSpan { start: 0, end: 3 }, txt: line },
+                kind: ExpressionKind::Literal(Value::Number(n)),
+            } if n.to_string() == "24" && Rc::ptr_eq(&txt, line)
+        ));
     }
 }
 
@@ -1961,6 +2101,76 @@ mod merge {
         let txt = make_textline().into();
         let env = TestEnv::default();
         let mut p = ParseNode::prg();
+        let other = ExprNode {
+            ctx: ExprCtx {
+                span: 0..3,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::ByteVector(vec![Expression::variable(
+                env.symbols.get("foo"),
+                ExprCtx {
+                    span: 0..3,
+                    txt: Rc::clone(&txt),
+                },
+            )]),
+        };
+        let ns = env.new_namespace();
+
+        let r = p.merge(other, &ns);
+
+        let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
+        assert_eq!(errs.len(), 1);
+        assert!(matches!(
+            &errs[0],
+            ExpressionError {
+                ctx: ExprCtx { span: TxtSpan { start: 0, end: 3 }, txt: line },
+                kind: ExpressionErrorKind::ByteVectorInvalidItem(ExpressionKind::Variable(s)),
+            } if s.as_ref() == "foo" && Rc::ptr_eq(&txt, line)
+        ));
+    }
+
+    #[test]
+    fn data_merge() {
+        let txt = make_textline().into();
+        let mut p = ParseNode::Data(vec![
+            ExprCtx {
+                span: 0..1,
+                txt: Rc::clone(&txt),
+            }
+            .into_expr(ExpressionKind::Literal(Value::Boolean(true))),
+        ]);
+        let other = ExprNode {
+            ctx: ExprCtx {
+                span: 0..3,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::Identifier {
+                name: "foo".to_owned(),
+                quoted: false,
+            },
+        };
+        let env = TestEnv::default();
+        let ns = env.new_namespace();
+
+        let r = p.merge(other, &ns);
+
+        assert!(matches!(r, Ok(MergeFlow::Continue(()))));
+        let seq = extract_or_fail!(p, ParseNode::Data);
+        assert_eq!(seq.len(), 2);
+        assert!(matches!(
+            &seq[1],
+            Expression {
+                ctx: ExprCtx { span: TxtSpan { start: 0, end: 3 }, txt: line },
+                kind: ExpressionKind::Variable(s),
+            } if s.as_ref() == "foo" && Rc::ptr_eq(&txt, line)
+        ));
+    }
+
+    #[test]
+    fn data_merge_fail() {
+        let txt = make_textline().into();
+        let env = TestEnv::default();
+        let mut p = ParseNode::data();
         let other = ExprNode {
             ctx: ExprCtx {
                 span: 0..3,

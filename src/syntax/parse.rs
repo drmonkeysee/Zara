@@ -22,6 +22,7 @@ pub(super) type MergeResult = Result<MergeFlow, ParserError>;
 pub(super) type ParseErrFlow = ControlFlow<ParseErrBreak>;
 
 pub(super) enum ParseNode {
+    Data(Vec<Expression>),
     Expr(ExprNode),
     InvalidParseTree(InvalidParseError),
     InvalidTokenStream,
@@ -31,6 +32,10 @@ pub(super) enum ParseNode {
 impl ParseNode {
     pub(super) fn prg() -> Self {
         Self::Prg(Vec::new())
+    }
+
+    fn data() -> Self {
+        Self::Data(Vec::new())
     }
 
     fn new(mode: ParseMode, start: usize, txt: impl Into<Rc<TextLine>>) -> Self {
@@ -50,6 +55,7 @@ impl ParseNode {
 
     pub(super) fn parse(&mut self, token: Token, txt: &Rc<TextLine>, ns: &Namespace) -> ParseFlow {
         match self {
+            Self::Data(seq) => parse_data(seq, token, txt, ns),
             Self::Expr(node) => node.parse(token, txt, ns),
             Self::InvalidParseTree(_) | Self::InvalidTokenStream => ParseFlow::Continue(()),
             Self::Prg(seq) => parse_prg(seq, token, txt, ns),
@@ -58,12 +64,12 @@ impl ParseNode {
 
     pub(super) fn merge(&mut self, other: ExprNode, ns: &Namespace) -> MergeResult {
         match self {
-            Self::Expr(node) => node.merge(other, ns),
-            Self::InvalidParseTree(_) | Self::InvalidTokenStream => Ok(MergeFlow::Continue(())),
-            Self::Prg(seq) => other.merge_into(ns, |expr| {
+            Self::Data(seq) | Self::Prg(seq) => other.merge_into(ns, |expr| {
                 seq.push(expr);
                 MergeFlow::Continue(())
             }),
+            Self::Expr(node) => node.merge(other, ns),
+            Self::InvalidParseTree(_) | Self::InvalidTokenStream => Ok(MergeFlow::Continue(())),
         }
     }
 
@@ -92,8 +98,8 @@ impl TryFrom<ParseNode> for Sequence {
 
     fn try_from(value: ParseNode) -> Result<Self, <Self as TryFrom<ParseNode>>::Error> {
         match value {
+            ParseNode::Data(seq) | ParseNode::Prg(seq) => Ok(Self::new(seq)),
             ParseNode::InvalidParseTree(err) => Err(err),
-            ParseNode::Prg(seq) => Ok(Self::new(seq)),
             _ => Err(InvalidParseError::EndOfParse),
         }
     }
@@ -469,7 +475,26 @@ fn parse_prg(
     txt: &Rc<TextLine>,
     ns: &Namespace,
 ) -> ParseFlow {
-    if let Some(expr) = parse_expr(token, txt, false, ns)? {
+    parse_seq(seq, token, txt, false, ns)
+}
+
+fn parse_data(
+    seq: &mut Vec<Expression>,
+    token: Token,
+    txt: &Rc<TextLine>,
+    ns: &Namespace,
+) -> ParseFlow {
+    parse_seq(seq, token, txt, true, ns)
+}
+
+fn parse_seq(
+    seq: &mut Vec<Expression>,
+    token: Token,
+    txt: &Rc<TextLine>,
+    quoted: bool,
+    ns: &Namespace,
+) -> ParseFlow {
+    if let Some(expr) = parse_expr(token, txt, quoted, ns)? {
         seq.push(expr);
     }
     ParseFlow::Continue(())
