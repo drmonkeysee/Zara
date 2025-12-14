@@ -34,7 +34,7 @@ impl ParseNode {
         Self::Prg(Vec::new())
     }
 
-    fn data() -> Self {
+    pub(super) fn data() -> Self {
         Self::Data(Vec::new())
     }
 

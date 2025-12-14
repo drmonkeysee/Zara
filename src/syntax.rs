@@ -18,10 +18,13 @@ use std::{
     error::Error,
     fmt::{self, Display, Formatter, Write},
     iter::FilterMap,
+    marker::PhantomData,
     rc::Rc,
 };
 
 pub(crate) type ParserResult = Result<ParserOutput, ParserError>;
+pub(crate) type ExpressionTree = ExprParser<PrgBasis>;
+pub(crate) type DataTree = ExprParser<DataBasis>;
 
 pub(crate) trait Parser {
     fn parse(&mut self, token_lines: Box<[TokenLine]>, ns: Namespace) -> ParserResult;
@@ -31,13 +34,14 @@ pub(crate) trait Parser {
 }
 
 #[derive(Default)]
-pub(crate) struct ExpressionTree {
+pub(crate) struct ExprParser<B> {
+    basis: PhantomData<B>,
     parsers: Vec<ParseNode>,
 }
 
-impl Parser for ExpressionTree {
+impl<B: ParseBasis> Parser for ExprParser<B> {
     fn parse(&mut self, token_lines: Box<[TokenLine]>, ns: Namespace) -> ParserResult {
-        ParseDriver::new(&mut self.parsers).parse(token_lines, &ns)
+        ParseDriver::new(&mut self.parsers).parse(token_lines, &ns, B::start)
     }
 
     fn unsupported_continuation(&mut self) -> Option<ParserError> {
@@ -64,6 +68,12 @@ impl Parser for TokenList {
         None
     }
 }
+
+#[derive(Default)]
+pub(crate) struct PrgBasis;
+
+#[derive(Default)]
+pub(crate) struct DataBasis;
 
 #[derive(Debug)]
 pub(crate) enum ParserOutput {
@@ -163,6 +173,22 @@ impl Display for ParserErrorMessage<'_> {
     }
 }
 
+trait ParseBasis {
+    fn start() -> ParseNode;
+}
+
+impl ParseBasis for PrgBasis {
+    fn start() -> ParseNode {
+        ParseNode::prg()
+    }
+}
+
+impl ParseBasis for DataBasis {
+    fn start() -> ParseNode {
+        ParseNode::data()
+    }
+}
+
 struct ParseDriver<'a> {
     errs: Vec<ExpressionError>,
     parsers: &'a mut Vec<ParseNode>,
@@ -176,11 +202,17 @@ impl<'a> ParseDriver<'a> {
         }
     }
 
-    fn parse(mut self, token_lines: Box<[TokenLine]>, ns: &Namespace) -> ParserResult {
-        let parser = token_lines.into_iter().fold(
-            self.parsers.pop().unwrap_or_else(ParseNode::prg),
-            |p, ln| self.parse_line(p, ln, ns),
-        );
+    fn parse(
+        mut self,
+        token_lines: Box<[TokenLine]>,
+        ns: &Namespace,
+        basis: impl FnOnce() -> ParseNode,
+    ) -> ParserResult {
+        let parser = token_lines
+            .into_iter()
+            .fold(self.parsers.pop().unwrap_or_else(basis), |p, ln| {
+                self.parse_line(p, ln, ns)
+            });
 
         if self.errs.is_empty() {
             Ok(if self.parsers.is_empty() {

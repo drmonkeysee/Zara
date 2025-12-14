@@ -1,23 +1,17 @@
 use super::{CharReader, PortBool, PortDatum, PortResult};
-use crate::{
-    eval::{Frame, Namespace},
-    lex::{Lexer, LexerOutput},
-    src::StringSource,
-    string,
-    syntax::{ExpressionTree, Parser, ParserOutput},
-};
+use crate::{DataReader, eval::Frame, src::StringSource, string};
 
 pub(super) fn parse(r: &mut dyn CharReader, env: &Frame, src: impl Into<String>) -> PortDatum {
     let mut buf = String::new();
     let Some(end) = start_scan(r, &mut buf)? else {
         return Ok(None);
     };
-    let mut lexer = Lexer::default();
-    let mut parser = ExpressionTree::default();
+    let mut reader = DataReader::default();
     let mut src = StringSource::empty(src);
     loop {
         end.scan(r, &mut buf)?;
         src.set(buf.split_off(0));
+        /*
         match lexer.tokenize(&mut src).unwrap() {
             LexerOutput::Complete(t) => {
                 match parser.parse(t, Namespace(env.new_child())).unwrap() {
@@ -32,6 +26,7 @@ pub(super) fn parse(r: &mut dyn CharReader, env: &Frame, src: impl Into<String>)
                 }
             }
         }
+        */
     }
     todo!();
 }

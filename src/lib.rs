@@ -14,7 +14,7 @@ pub use self::eval::{Evaluation, Exception, Signal, Value};
 use self::{
     eval::{Ast, Environment, Eval, Evaluator, Namespace},
     lex::{Lexer, LexerError, LexerOutput, TokenLine},
-    syntax::{ExpressionTree, Parser, ParserError, ParserOutput, TokenList},
+    syntax::{DataTree, ExpressionTree, Parser, ParserError, ParserOutput, TokenList},
     txt::TextSource,
 };
 use std::{
@@ -145,6 +145,7 @@ impl Display for ErrorMessage<'_> {
 }
 
 type ExecResult = result::Result<Evaluation, ReadError>;
+type DataReader = Reader<DataTree>;
 
 trait Executor {
     fn exec(&mut self, token_lines: Box<[TokenLine]>) -> ExecResult;
@@ -152,13 +153,14 @@ trait Executor {
     fn clear(&mut self);
 }
 
+#[derive(Default)]
 struct Reader<P> {
     lexer: Lexer,
     parser: P,
 }
 
 impl<P: Parser> Reader<P> {
-    pub fn read(
+    fn read(
         &mut self,
         src: &mut impl TextSource,
         ns: Namespace,
@@ -170,11 +172,11 @@ impl<P: Parser> Reader<P> {
         Ok(self.parser.parse(token_lines, ns)?)
     }
 
-    pub fn unsupported_continuation(&mut self) -> Option<ReadError> {
+    fn unsupported_continuation(&mut self) -> Option<ReadError> {
         self.lex_unsupported().or_else(|| self.parse_unsupported())
     }
 
-    pub fn clear(&mut self) {
+    fn clear(&mut self) {
         self.lexer.clear();
         self.parser.clear();
     }
