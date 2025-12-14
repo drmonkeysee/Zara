@@ -2,6 +2,7 @@ mod datum;
 
 use super::{TypeName, Value};
 use crate::{
+    ReadError,
     eval::Frame,
     string::{
         SymbolTable,
@@ -10,7 +11,7 @@ use crate::{
 };
 use std::{
     cmp,
-    fmt::{self, Display, Formatter},
+    fmt::{self, Display, Formatter, Write},
     fs::{File, OpenOptions},
     io::{self, BufRead, BufReader, BufWriter, ErrorKind, Seek, SeekFrom, Stderr, Stdin, Stdout},
     iter,
@@ -131,8 +132,13 @@ impl ReadPort {
         }
     }
 
-    pub(crate) fn read_datum(&mut self, env: &Frame, src: impl Into<String>) -> PortDatum {
-        datum::parse(self.get_char_reader_mut()?, env, src)
+    pub(crate) fn read_datum(&mut self, env: &Frame) -> PortDatum {
+        if self.is_open() {
+            let label = self.to_string();
+            datum::parse(self.get_char_reader_mut()?, env, label)
+        } else {
+            Err(PortError::Closed)
+        }
     }
 
     pub(crate) fn read_byte(&mut self) -> PortByte {
@@ -197,13 +203,15 @@ impl ReadPort {
 
 impl Display for ReadPort {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write_port_start(f)?;
         match self {
             Self::ByteVector(_) => f.write_str(TypeName::BYTEVECTOR),
             Self::File(r) => write_file_source(r.path.display(), 'r', f),
             Self::In(_) => f.write_str("stdin"),
             Self::String(_) => f.write_str(TypeName::STRING),
         }?;
-        write_port_status(self.is_open(), f)
+        write_port_status(self.is_open(), f)?;
+        write_port_end(f)
     }
 }
 
@@ -714,6 +722,7 @@ impl WritePort {
 
 impl Display for WritePort {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write_port_start(f)?;
         match self {
             Self::ByteVector(_) => f.write_str(TypeName::BYTEVECTOR),
             Self::Err(..) => f.write_str("stderr"),
@@ -721,7 +730,8 @@ impl Display for WritePort {
             Self::Out(..) => f.write_str("stdout"),
             Self::String(_) => f.write_str(TypeName::STRING),
         }?;
-        write_port_status(self.is_open(), f)
+        write_port_status(self.is_open(), f)?;
+        write_port_end(f)
     }
 }
 
@@ -846,6 +856,7 @@ pub(crate) enum PortError {
     InvalidPath,
     InvalidSource,
     Io(ErrorKind),
+    Read(ReadError),
     Unicode(UnicodeError),
 }
 
@@ -880,6 +891,7 @@ impl PortError {
                 ErrorKind::UnexpectedEof => sym.get("unexpected-eof"),
                 _ => sym.get("nonspecific-error"),
             },
+            Self::Read(_) => sym.get("read-error"),
             Self::Unicode(_) => sym.get("unicode-error"),
         })
     }
@@ -894,6 +906,7 @@ impl Display for PortError {
             Self::InvalidPath => f.write_str("file path has no valid unicode representation"),
             Self::InvalidSource => f.write_str("invalid port for requested data type"),
             Self::Io(k) => k.fmt(f),
+            Self::Read(err) => err.fmt(f),
             Self::Unicode(u) => u.fmt(f),
         }
     }
@@ -914,6 +927,12 @@ impl From<ErrorKind> for PortError {
 impl From<io::Error> for PortError {
     fn from(value: io::Error) -> Self {
         value.kind().into()
+    }
+}
+
+impl From<ReadError> for PortError {
+    fn from(value: ReadError) -> Self {
+        Self::Read(value)
     }
 }
 
@@ -1162,6 +1181,14 @@ fn write_port_status(open: bool, f: &mut Formatter<'_>) -> fmt::Result {
     } else {
         f.write_str(" (closed)")
     }
+}
+
+fn write_port_start(f: &mut Formatter<'_>) -> fmt::Result {
+    f.write_str("#<port ")
+}
+
+fn write_port_end(f: &mut Formatter<'_>) -> fmt::Result {
+    f.write_char('>')
 }
 
 fn seekable_position(sk: &mut (impl Seek + ?Sized)) -> PortPosition {

@@ -7,20 +7,19 @@ use crate::{
     syntax::ParserOutput,
 };
 
-pub(super) fn parse(r: &mut dyn CharReader, env: &Frame, src: impl Into<String>) -> PortDatum {
+pub(super) fn parse(r: &mut dyn CharReader, env: &Frame, label: impl Into<String>) -> PortDatum {
     let mut buf = String::new();
     let Some(end) = start_scan(r, &mut buf)? else {
         return Ok(None);
     };
     let mut reader = DataReader::default();
-    let mut src = StringSource::empty(src);
+    let mut src = StringSource::empty(label);
     loop {
         end.scan(r, &mut buf)?;
         src.set(buf.split_off(0));
-        match reader.read(&mut src, Namespace(env.new_child())) {
-            Err(_) => todo!("convert error to condition exception"),
-            Ok(ParserOutput::Complete(_)) => todo!("try evaluating sequence"),
-            Ok(ParserOutput::Continuation) => todo!("try reading more from port"),
+        match reader.read(&mut src, Namespace(env.new_child()))? {
+            ParserOutput::Complete(_) => todo!("try evaluating sequence"),
+            ParserOutput::Continuation => todo!("try reading more from port"),
         }
     }
     todo!();

@@ -307,14 +307,7 @@ fn read_datum(args: &[Value], env: &Frame) -> EvalResult {
         arg,
         env,
         PortSpec::TextualInput,
-        |p| {
-            p.read_datum(
-                env,
-                arg.expect("read op should only be invoked on valid port")
-                    .as_simple_datum()
-                    .to_string(),
-            )
-        },
+        |p| p.read_datum(env),
         |val| Ok(val.unwrap_or(Value::Eof)),
     )
 }

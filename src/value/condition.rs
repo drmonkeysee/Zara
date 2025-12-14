@@ -68,10 +68,19 @@ impl Condition {
     }
 
     pub(crate) fn io_error(err: &PortError, sym: &SymbolTable, val: &Value) -> Self {
-        Self {
-            kind: ConditionKind::Io,
-            irritants: Some(zlist![err.to_symbol(sym), val.clone()]),
-            msg: err.to_string().into(),
+        if let PortError::Read(err) = err {
+            // TODO: get more extensive output
+            Self {
+                kind: ConditionKind::Read,
+                irritants: None,
+                msg: err.to_string().into(),
+            }
+        } else {
+            Self {
+                kind: ConditionKind::Io,
+                irritants: Some(zlist![err.to_symbol(sym), val.clone()]),
+                msg: err.to_string().into(),
+            }
         }
     }
 
@@ -171,7 +180,6 @@ enum ConditionKind {
     #[allow(dead_code, reason = "not yet implemented")]
     General,
     Io,
-    #[allow(dead_code, reason = "not yet implemented")]
     Read,
     System,
     Value,
