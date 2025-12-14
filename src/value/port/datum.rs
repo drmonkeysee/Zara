@@ -1,5 +1,11 @@
 use super::{CharReader, PortBool, PortDatum, PortResult};
-use crate::{DataReader, eval::Frame, src::StringSource, string};
+use crate::{
+    DataReader,
+    eval::{Frame, Namespace},
+    src::StringSource,
+    string,
+    syntax::ParserOutput,
+};
 
 pub(super) fn parse(r: &mut dyn CharReader, env: &Frame, src: impl Into<String>) -> PortDatum {
     let mut buf = String::new();
@@ -11,22 +17,11 @@ pub(super) fn parse(r: &mut dyn CharReader, env: &Frame, src: impl Into<String>)
     loop {
         end.scan(r, &mut buf)?;
         src.set(buf.split_off(0));
-        /*
-        match lexer.tokenize(&mut src).unwrap() {
-            LexerOutput::Complete(t) => {
-                match parser.parse(t, Namespace(env.new_child())).unwrap() {
-                    ParserOutput::Complete(_) => todo!(),
-                    ParserOutput::Continuation => todo!(),
-                }
-            }
-            LexerOutput::Continuation => {
-                buf.clear();
-                if !end.consume_delimiter(r, &mut buf)? {
-                    todo!("continuation-to-read-error")
-                }
-            }
+        match reader.read(&mut src, Namespace(env.new_child())) {
+            Err(_) => todo!("convert error to condition exception"),
+            Ok(ParserOutput::Complete(_)) => todo!("try evaluating sequence"),
+            Ok(ParserOutput::Continuation) => todo!("try reading more from port"),
         }
-        */
     }
     todo!();
 }
