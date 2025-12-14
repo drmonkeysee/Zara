@@ -1538,6 +1538,65 @@ mod parsing {
         ));
         assert!(et.parsers.is_empty());
     }
+
+    #[test]
+    fn data_tree_treats_expression_as_datum() {
+        let mut dt = DataTree::default();
+        let tokens = [make_tokenline([
+            TokenKind::ParenLeft,
+            TokenKind::Identifier("a".to_owned()),
+            TokenKind::Identifier("b".to_owned()),
+            TokenKind::Identifier("c".to_owned()),
+            TokenKind::ParenRight,
+        ])];
+        let env = TestEnv::default();
+
+        let r = dt.parse(tokens.into(), env.new_namespace());
+
+        let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
+        let seq = prg.iter().collect::<Vec<_>>();
+        assert_eq!(seq.len(), 1);
+        assert!(matches!(
+            &seq[0],
+            Expression {
+                ctx: ExprCtx { span: TxtSpan { start: 0, end: 5 }, txt },
+                kind: ExpressionKind::Literal(Value::Pair(_)),
+            } if txt.lineno == 1
+        ));
+        let value = extract_or_fail!(&seq[0].kind, ExpressionKind::Literal);
+        assert_eq!(value.as_datum().to_string(), "(a b c)");
+        assert!(dt.parsers.is_empty());
+    }
+
+    #[test]
+    fn data_tree_quotes_the_quote() {
+        let mut dt = DataTree::default();
+        let tokens = [make_tokenline([
+            TokenKind::Quote,
+            TokenKind::ParenLeft,
+            TokenKind::Identifier("a".to_owned()),
+            TokenKind::Identifier("b".to_owned()),
+            TokenKind::Identifier("c".to_owned()),
+            TokenKind::ParenRight,
+        ])];
+        let env = TestEnv::default();
+
+        let r = dt.parse(tokens.into(), env.new_namespace());
+
+        let prg = extract_or_fail!(ok_or_fail!(r), ParserOutput::Complete);
+        let seq = prg.iter().collect::<Vec<_>>();
+        assert_eq!(seq.len(), 1);
+        assert!(matches!(
+            &seq[0],
+            Expression {
+                ctx: ExprCtx { span: TxtSpan { start: 0, end: 6 }, txt },
+                kind: ExpressionKind::Literal(Value::Pair(_)),
+            } if txt.lineno == 1
+        ));
+        let value = extract_or_fail!(&seq[0].kind, ExpressionKind::Literal);
+        assert_eq!(value.as_datum().to_string(), "(quote (a b c))");
+        assert!(dt.parsers.is_empty());
+    }
 }
 
 mod continuation {
