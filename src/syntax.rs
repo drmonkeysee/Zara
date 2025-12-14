@@ -41,7 +41,7 @@ pub(crate) struct ExprParser<B> {
 
 impl<B: ParseBasis> Parser for ExprParser<B> {
     fn parse(&mut self, token_lines: Box<[TokenLine]>, ns: Namespace) -> ParserResult {
-        ParseDriver::new(&mut self.parsers).parse(token_lines, &ns, B::start)
+        ParseDriver::new(&mut self.parsers).parse::<B>(token_lines, &ns)
     }
 
     fn unsupported_continuation(&mut self) -> Option<ParserError> {
@@ -202,15 +202,14 @@ impl<'a> ParseDriver<'a> {
         }
     }
 
-    fn parse(
+    fn parse<B: ParseBasis>(
         mut self,
         token_lines: Box<[TokenLine]>,
         ns: &Namespace,
-        basis: impl FnOnce() -> ParseNode,
     ) -> ParserResult {
         let parser = token_lines
             .into_iter()
-            .fold(self.parsers.pop().unwrap_or_else(basis), |p, ln| {
+            .fold(self.parsers.pop().unwrap_or_else(B::start), |p, ln| {
                 self.parse_line(p, ln, ns)
             });
 
