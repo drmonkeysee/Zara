@@ -110,7 +110,7 @@ pub struct Error(ReadError);
 impl Error {
     #[must_use]
     pub fn display_message(&self) -> ErrorMessage<'_> {
-        ErrorMessage(&self.0)
+        self.0.display_message()
     }
 }
 
@@ -194,6 +194,12 @@ impl<P: Parser> Reader<P> {
 enum ReadError {
     Lex(LexerError),
     Parse(ParserError),
+}
+
+impl ReadError {
+    fn display_message(&self) -> ErrorMessage<'_> {
+        ErrorMessage(self)
+    }
 }
 
 impl Display for ReadError {

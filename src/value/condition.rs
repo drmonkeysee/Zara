@@ -69,10 +69,12 @@ impl Condition {
 
     pub(crate) fn io_error(err: &PortError, sym: &SymbolTable, val: &Value) -> Self {
         if let PortError::Read(err) = err {
-            // TODO: get more extensive output
             Self {
                 kind: ConditionKind::Read,
-                irritants: None,
+                irritants: Some(zlist![
+                    Value::string(err.display_message().to_string()),
+                    val.clone()
+                ]),
                 msg: err.to_string().into(),
             }
         } else {
