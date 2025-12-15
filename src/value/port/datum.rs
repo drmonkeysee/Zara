@@ -12,8 +12,8 @@ pub(super) fn parse(r: &mut dyn CharReader, env: &Frame, label: impl Into<String
     let Some(end) = start_scan(r, &mut buf)? else {
         return Ok(None);
     };
-    let mut reader = DataReader::default();
     let mut src = StringSource::empty(label);
+    let mut reader = DataReader::default();
     loop {
         end.scan(r, &mut buf)?;
         src.set(buf.split_off(0));
@@ -154,7 +154,10 @@ fn consume_char(r: &mut dyn CharReader, buf: &mut String) -> PortResult {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{testutil::TestEnv, value::port::StringReader};
+    use crate::{
+        testutil::{TestEnv, err_or_fail, extract_or_fail},
+        value::port::{PortError, StringReader},
+    };
 
     #[test]
     fn empty_string() {
@@ -220,5 +223,31 @@ mod tests {
         let r = parse(&mut s, &f, "test-port");
 
         assert!(matches!(r, Ok(None)));
+    }
+
+    #[test]
+    fn lexical_error() {
+        let env = TestEnv::default();
+        let f = env.new_frame();
+        let mut s = StringReader::new("#z");
+
+        let r = parse(&mut s, &f, "test-port");
+
+        let err = err_or_fail!(r);
+        let read_err = extract_or_fail!(err, PortError::Read);
+        assert_eq!(read_err.to_string(), "fatal error: tokenization failure");
+    }
+
+    #[test]
+    fn syntax_error() {
+        let env = TestEnv::default();
+        let f = env.new_frame();
+        let mut s = StringReader::new("(a . )");
+
+        let r = parse(&mut s, &f, "test-port");
+
+        let err = err_or_fail!(r);
+        let read_err = extract_or_fail!(err, PortError::Read);
+        assert_eq!(read_err.to_string(), "fatal error: invalid syntax");
     }
 }
