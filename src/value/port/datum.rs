@@ -1,4 +1,4 @@
-use super::{CharReader, PortBool, PortDatum, PortResult};
+use super::{CharReader, PortBool, PortDatum, PortResult, Value};
 use crate::{
     DataReader,
     eval::{Frame, Namespace},
@@ -18,15 +18,23 @@ pub(super) fn parse(r: &mut dyn CharReader, env: &Frame, label: impl Into<String
         end.scan(r, &mut buf)?;
         src.set(buf.split_off(0));
         match reader.read(&mut src, Namespace(env.new_child()))? {
-            ParserOutput::Complete(_) => todo!("try evaluating sequence"),
-            ParserOutput::Continuation => todo!("try reading more from port"),
+            ParserOutput::Complete(seq) => {
+                let v = seq
+                    .eval(env)
+                    .expect("read-datum evaluation should always result in a valid value");
+                if let Value::Unspecified = v {
+                    todo!("no value found, keep going");
+                } else {
+                    return Ok(Some(v));
+                }
+            }
+            ParserOutput::Continuation => todo!("incomplete datum found, keep going"),
         }
     }
-    todo!();
 }
 
 enum ScanEnd {
-    Character,
+    Delimiter,
     DoubleQuote,
     Paren,
     Pipe,
@@ -35,9 +43,11 @@ enum ScanEnd {
 impl ScanEnd {
     fn scan(&self, r: &mut dyn CharReader, buf: &mut String) -> PortResult {
         match self {
-            Self::Character => {
+            Self::Delimiter => {
                 while let Some(ch) = r.peek_char()? {
-                    if !string::is_delimiter(ch) {
+                    if string::is_delimiter(ch) {
+                        break;
+                    } else {
                         consume_char(r, buf)?;
                     }
                 }
@@ -50,7 +60,7 @@ impl ScanEnd {
     }
 
     fn consume_delimiter(&self, r: &mut dyn CharReader, buf: &mut String) -> PortBool {
-        Ok(if let Self::Character = self {
+        Ok(if let Self::Delimiter = self {
             if let Some(ch) = r.read_char()? {
                 buf.push(ch);
                 true
@@ -78,7 +88,7 @@ fn start_scan(r: &mut dyn CharReader, buf: &mut String) -> PortResult<Option<Sca
             ';' => read_to(r, '\n', buf)?,
             '|' => return Ok(Some(ScanEnd::Pipe)),
             _ if string::is_whitespace(ch) => (),
-            _ => return Ok(Some(ScanEnd::Character)),
+            _ => return Ok(Some(ScanEnd::Delimiter)),
         }
     }
     Ok(None)
@@ -110,7 +120,7 @@ fn classify_hash(r: &mut dyn CharReader, buf: &mut String) -> PortResult<Option<
                         return Ok(Some(ScanEnd::Paren));
                     }
                 }
-                return Ok(Some(ScanEnd::Character));
+                return Ok(Some(ScanEnd::Delimiter));
             }
             '|' => {
                 consume_char(r, buf)?;
@@ -131,7 +141,7 @@ fn classify_hash(r: &mut dyn CharReader, buf: &mut String) -> PortResult<Option<
             _ => (),
         }
     } else {
-        return Ok(Some(ScanEnd::Character));
+        return Ok(Some(ScanEnd::Delimiter));
     }
     Ok(None)
 }
@@ -155,7 +165,7 @@ fn consume_char(r: &mut dyn CharReader, buf: &mut String) -> PortResult {
 mod tests {
     use super::*;
     use crate::{
-        testutil::{TestEnv, err_or_fail, extract_or_fail},
+        testutil::{TestEnv, err_or_fail, extract_or_fail, ok_or_fail, some_or_fail},
         value::port::{PortError, StringReader},
     };
 
@@ -249,5 +259,259 @@ mod tests {
         let err = err_or_fail!(r);
         let read_err = extract_or_fail!(err, PortError::Read);
         assert_eq!(read_err.to_string(), "fatal error: invalid syntax");
+    }
+
+    #[test]
+    fn boolean() {
+        let env = TestEnv::default();
+        let f = env.new_frame();
+        let mut s = StringReader::new("#f");
+
+        let r = parse(&mut s, &f, "test-port");
+
+        let v = some_or_fail!(ok_or_fail!(r));
+        assert!(matches!(v, Value::Boolean(false)));
+
+        let r = parse(&mut s, &f, "test-port");
+
+        assert!(matches!(r, Ok(None)));
+    }
+
+    #[test]
+    fn character() {
+        let env = TestEnv::default();
+        let f = env.new_frame();
+        let mut s = StringReader::new("#\\a");
+
+        let r = parse(&mut s, &f, "test-port");
+
+        let v = some_or_fail!(ok_or_fail!(r));
+        assert!(matches!(v, Value::Character('a')));
+
+        let r = parse(&mut s, &f, "test-port");
+
+        assert!(matches!(r, Ok(None)));
+    }
+
+    #[test]
+    fn list() {
+        let env = TestEnv::default();
+        let f = env.new_frame();
+        let mut s = StringReader::new("(a 2 \"three\")");
+
+        let r = parse(&mut s, &f, "test-port");
+
+        let v = some_or_fail!(ok_or_fail!(r));
+        assert!(matches!(v, Value::Pair(_)));
+        assert_eq!(v.as_datum().to_string(), "(a 2 \"three\")");
+
+        let r = parse(&mut s, &f, "test-port");
+
+        assert!(matches!(r, Ok(None)));
+    }
+
+    #[test]
+    fn null() {
+        let env = TestEnv::default();
+        let f = env.new_frame();
+        let mut s = StringReader::new("()");
+
+        let r = parse(&mut s, &f, "test-port");
+
+        let v = some_or_fail!(ok_or_fail!(r));
+        assert!(matches!(v, Value::Null));
+
+        let r = parse(&mut s, &f, "test-port");
+
+        assert!(matches!(r, Ok(None)));
+    }
+
+    #[test]
+    fn number() {
+        let env = TestEnv::default();
+        let f = env.new_frame();
+        let mut s = StringReader::new("12");
+
+        let r = parse(&mut s, &f, "test-port");
+
+        let v = some_or_fail!(ok_or_fail!(r));
+        assert!(matches!(v, Value::Number(r) if r.to_string() == "12"));
+
+        let r = parse(&mut s, &f, "test-port");
+
+        assert!(matches!(r, Ok(None)));
+    }
+
+    #[test]
+    fn simple_string() {
+        let env = TestEnv::default();
+        let f = env.new_frame();
+        let mut s = StringReader::new("\"foo bar\"");
+
+        let r = parse(&mut s, &f, "test-port");
+
+        let v = some_or_fail!(ok_or_fail!(r));
+        assert!(matches!(v, Value::String(s) if s.as_ref() == "foo bar"));
+
+        let r = parse(&mut s, &f, "test-port");
+
+        assert!(matches!(r, Ok(None)));
+    }
+
+    #[test]
+    fn symbol() {
+        let env = TestEnv::default();
+        let f = env.new_frame();
+        let mut s = StringReader::new("foo");
+
+        let r = parse(&mut s, &f, "test-port");
+
+        let v = some_or_fail!(ok_or_fail!(r));
+        assert!(matches!(v, Value::Symbol(s) if s.as_ref() == "foo"));
+
+        let r = parse(&mut s, &f, "test-port");
+
+        assert!(matches!(r, Ok(None)));
+    }
+
+    #[test]
+    fn verbose_symbol() {
+        let env = TestEnv::default();
+        let f = env.new_frame();
+        let mut s = StringReader::new("|foo bar baz|");
+
+        let r = parse(&mut s, &f, "test-port");
+
+        let v = some_or_fail!(ok_or_fail!(r));
+        assert!(matches!(v, Value::Symbol(s) if s.as_ref() == "foo bar baz"));
+
+        let r = parse(&mut s, &f, "test-port");
+
+        assert!(matches!(r, Ok(None)));
+    }
+
+    #[test]
+    fn bytevector() {
+        let env = TestEnv::default();
+        let f = env.new_frame();
+        let mut s = StringReader::new("#u8(1 2 3)");
+
+        let r = parse(&mut s, &f, "test-port");
+
+        let v = some_or_fail!(ok_or_fail!(r));
+        assert!(matches!(v, Value::ByteVector(_)));
+        assert_eq!(v.as_datum().to_string(), "#u8(1 2 3)");
+
+        let r = parse(&mut s, &f, "test-port");
+
+        assert!(matches!(r, Ok(None)));
+    }
+
+    #[test]
+    fn vector() {
+        let env = TestEnv::default();
+        let f = env.new_frame();
+        let mut s = StringReader::new("#(a 2 \"three\")");
+
+        let r = parse(&mut s, &f, "test-port");
+
+        let v = some_or_fail!(ok_or_fail!(r));
+        assert!(matches!(v, Value::Vector(_)));
+        assert_eq!(v.as_datum().to_string(), "#(a 2 \"three\")");
+
+        let r = parse(&mut s, &f, "test-port");
+
+        assert!(matches!(r, Ok(None)));
+    }
+
+    #[test]
+    fn simple_value_ignore_leading_trailing_whitespace() {
+        let env = TestEnv::default();
+        let f = env.new_frame();
+        let mut s = StringReader::new("\t 12  \n");
+
+        let r = parse(&mut s, &f, "test-port");
+
+        let v = some_or_fail!(ok_or_fail!(r));
+        assert!(matches!(v, Value::Number(r) if r.to_string() == "12"));
+
+        let r = parse(&mut s, &f, "test-port");
+
+        assert!(matches!(r, Ok(None)));
+    }
+
+    #[test]
+    fn simple_value_stops_at_space() {
+        let env = TestEnv::default();
+        let f = env.new_frame();
+        let mut s = StringReader::new("12 #t");
+
+        let r = parse(&mut s, &f, "test-port");
+
+        let v = some_or_fail!(ok_or_fail!(r));
+        assert!(matches!(v, Value::Number(r) if r.to_string() == "12"));
+
+        let r = parse(&mut s, &f, "test-port");
+
+        let v = some_or_fail!(ok_or_fail!(r));
+        assert!(matches!(v, Value::Boolean(true)));
+
+        let r = parse(&mut s, &f, "test-port");
+
+        assert!(matches!(r, Ok(None)));
+    }
+
+    #[test]
+    fn simple_value_stops_at_delimiter() {
+        let env = TestEnv::default();
+        let f = env.new_frame();
+        let mut s = StringReader::new("12#t");
+
+        let r = parse(&mut s, &f, "test-port");
+
+        let v = some_or_fail!(ok_or_fail!(r));
+        assert!(matches!(v, Value::Number(r) if r.to_string() == "12"));
+
+        let r = parse(&mut s, &f, "test-port");
+
+        let v = some_or_fail!(ok_or_fail!(r));
+        assert!(matches!(v, Value::Boolean(true)));
+
+        let r = parse(&mut s, &f, "test-port");
+
+        assert!(matches!(r, Ok(None)));
+    }
+
+    #[test]
+    fn datum_comment_is_ignored() {
+        let env = TestEnv::default();
+        let f = env.new_frame();
+        let mut s = StringReader::new("#;12 #t");
+
+        let r = parse(&mut s, &f, "test-port");
+
+        let v = some_or_fail!(ok_or_fail!(r));
+        assert!(matches!(v, Value::Boolean(true)));
+
+        let r = parse(&mut s, &f, "test-port");
+
+        assert!(matches!(r, Ok(None)));
+    }
+
+    #[test]
+    fn datum_item_is_ignored() {
+        let env = TestEnv::default();
+        let f = env.new_frame();
+        let mut s = StringReader::new("(a #;b c)");
+
+        let r = parse(&mut s, &f, "test-port");
+
+        let v = some_or_fail!(ok_or_fail!(r));
+        assert!(matches!(v, Value::Pair(_)));
+        assert_eq!(v.as_datum().to_string(), "(a c)");
+
+        let r = parse(&mut s, &f, "test-port");
+
+        assert!(matches!(r, Ok(None)));
     }
 }

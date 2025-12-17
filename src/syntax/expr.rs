@@ -33,6 +33,7 @@ impl Sequence {
             .unwrap_or(Value::Unspecified))
     }
 
+    // TODO: this is only super cuz of tests
     pub(super) fn iter(&self) -> impl Iterator<Item = &Expression> {
         self.0.iter()
     }
