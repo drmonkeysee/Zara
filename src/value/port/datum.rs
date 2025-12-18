@@ -12,7 +12,7 @@ use crate::{
 
 pub(super) fn parse(r: &mut dyn CharReader, env: &Frame, label: impl Into<String>) -> PortDatum {
     let mut buf = String::new();
-    let Some(end) = start_scan(r, &mut buf)? else {
+    let Some(mut end) = start_scan(r, &mut buf)? else {
         return Ok(None);
     };
     let mut src = StringSource::empty(label);
@@ -26,12 +26,24 @@ pub(super) fn parse(r: &mut dyn CharReader, env: &Frame, label: impl Into<String
                     .eval(env)
                     .expect("read-datum evaluation should always result in a valid value");
                 if let Value::Unspecified = v {
-                    todo!("no value found, keep going");
+                    if let Some(next) = end.next(r, &mut buf)? {
+                        end = next;
+                    } else {
+                        return Ok(None);
+                    }
                 } else {
                     return Ok(Some(v));
                 }
             }
-            ParserOutput::Continuation => todo!("incomplete datum found, keep going"),
+            ParserOutput::Continuation => {
+                if let Some(next) = end.next(r, &mut buf)? {
+                    end = next;
+                } else if let Some(err) = reader.unsupported_continuation() {
+                    return Err(err.into());
+                } else {
+                    return Ok(None);
+                }
+            }
         }
     }
 }
@@ -62,17 +74,12 @@ impl ScanEnd {
         }
     }
 
-    fn consume_delimiter(&self, r: &mut dyn CharReader, buf: &mut String) -> PortBool {
-        Ok(if let Self::Delimiter = self {
-            if let Some(ch) = r.read_char()? {
-                buf.push(ch);
-                true
-            } else {
-                false
-            }
+    fn next(self, r: &mut dyn CharReader, buf: &mut String) -> PortResult<Option<ScanEnd>> {
+        if let Self::Delimiter = self {
+            start_scan(r, buf)
         } else {
-            true
-        })
+            Ok(Some(self))
+        }
     }
 }
 
@@ -129,12 +136,11 @@ fn classify_hash(r: &mut dyn CharReader, buf: &mut String) -> PortResult<Option<
                 consume_char(r, buf)?;
                 loop {
                     read_to(r, '|', buf)?;
-                    match r.peek_char()? {
+                    match r.read_char()? {
                         None => break,
                         Some(ch) => {
+                            buf.push(ch);
                             if ch == '#' {
-                                // NOTE: block comment
-                                consume_char(r, buf)?;
                                 break;
                             }
                         }

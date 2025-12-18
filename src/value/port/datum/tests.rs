@@ -382,7 +382,6 @@ fn complex() {
     let r = parse(&mut s, &f, "test-port");
 
     let v = some_or_fail!(ok_or_fail!(r));
-    dbg!(&v);
     assert!(matches!(
         v,
         Value::Number(n) if n.to_string() == "16.81030364216735+27.22891278509179i"
@@ -776,6 +775,5 @@ fn directive() {
     let mut s = StringReader::new("#!fold-case");
 
     let r = parse(&mut s, &f, "test-port");
-    dbg!(&r);
     assert!(matches!(r, Ok(None)));
 }
