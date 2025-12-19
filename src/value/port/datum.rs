@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests;
 
-use super::{CharReader, PortDatum, PortResult, Value};
+use super::{CharReader, PortBool, PortDatum, PortResult, PortString, Value};
 use crate::{
     DataReader,
     eval::{Frame, Namespace},
@@ -11,15 +11,13 @@ use crate::{
 };
 
 pub(super) fn parse(r: &mut dyn CharReader, env: &Frame, label: impl Into<String>) -> PortDatum {
-    let mut buf = String::new();
     let mut src = StringSource::empty(label);
     let mut reader = DataReader::default();
     loop {
-        let Some(end) = start_scan(r, &mut buf)? else {
+        let Some(buf) = datum_scan(r)? else {
             return Ok(None);
         };
-        end.scan(r, &mut buf)?;
-        src.set(buf.split_off(0));
+        src.set(buf);
         match reader.read(&mut src, Namespace(env.new_child()))? {
             ParserOutput::Complete(seq) => {
                 let v = seq
@@ -39,49 +37,43 @@ pub(super) fn parse(r: &mut dyn CharReader, env: &Frame, label: impl Into<String
     }
 }
 
-enum ScanEnd {
-    Delimiter,
-    Escapable(char),
-    Paren(usize),
-}
-
-impl ScanEnd {
-    fn scan(&self, r: &mut dyn CharReader, buf: &mut String) -> PortResult {
-        match self {
-            Self::Delimiter => scan_delimiter(r, buf),
-            Self::Escapable(ch) => scan_escapable_delimiter(*ch, r, buf),
-            Self::Paren(c) => scan_parens(*c, r, buf),
-        }
-    }
-}
-
-fn start_scan(r: &mut dyn CharReader, buf: &mut String) -> PortResult<Option<ScanEnd>> {
+fn datum_scan(r: &mut dyn CharReader) -> PortString {
+    let mut buf = String::new();
     while let Some(ch) = r.read_char()? {
         buf.push(ch);
         match ch {
-            '"' | '|' => return Ok(Some(ScanEnd::Escapable(ch))),
+            '"' | '|' => {
+                scan_escapable_delimiter(ch, r, &mut buf)?;
+                return Ok(Some(buf));
+            }
             '#' => {
-                let r = classify_hash(r, buf)?;
-                if r.is_some() {
-                    return Ok(r);
+                if classify_hash(r, &mut buf)? {
+                    return Ok(Some(buf));
                 }
             }
-            '(' => return Ok(Some(ScanEnd::Paren(1))),
-            ';' => scan_line(r, buf)?,
+            '(' => {
+                scan_parens(1, r, &mut buf)?;
+                return Ok(Some(buf));
+            }
+            ';' => scan_line(r, &mut buf)?,
             _ if string::is_whitespace(ch) => (),
-            _ => return Ok(Some(ScanEnd::Delimiter)),
+            _ => {
+                scan_delimiter(r, &mut buf)?;
+                return Ok(Some(buf));
+            }
         }
     }
     Ok(None)
 }
 
-fn classify_hash(r: &mut dyn CharReader, buf: &mut String) -> PortResult<Option<ScanEnd>> {
+fn classify_hash(r: &mut dyn CharReader, buf: &mut String) -> PortBool {
     if let Some(ch) = r.peek_char()? {
         match ch {
             '(' => {
                 // NOTE: vector
                 consume_char(r, buf)?;
-                return Ok(Some(ScanEnd::Paren(1)));
+                scan_parens(1, r, buf)?;
+                return Ok(true);
             }
             ';' => {
                 // NOTE: datum comment, keep going
@@ -98,10 +90,12 @@ fn classify_hash(r: &mut dyn CharReader, buf: &mut String) -> PortResult<Option<
                     {
                         // NOTE: bytevector
                         consume_char(r, buf)?;
-                        return Ok(Some(ScanEnd::Paren(1)));
+                        scan_parens(1, r, buf)?;
+                        return Ok(true);
                     }
                 }
-                return Ok(Some(ScanEnd::Delimiter));
+                scan_delimiter(r, buf)?;
+                return Ok(true);
             }
             '|' => {
                 consume_char(r, buf)?;
@@ -110,9 +104,10 @@ fn classify_hash(r: &mut dyn CharReader, buf: &mut String) -> PortResult<Option<
             _ => (),
         }
     } else {
-        return Ok(Some(ScanEnd::Delimiter));
+        scan_delimiter(r, buf)?;
+        return Ok(true);
     }
-    Ok(None)
+    Ok(false)
 }
 
 fn scan_line(r: &mut dyn CharReader, buf: &mut String) -> PortResult {
