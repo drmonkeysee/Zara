@@ -67,7 +67,7 @@ fn start_scan(r: &mut dyn CharReader, buf: &mut String) -> PortResult<Option<Sca
                 }
             }
             '(' => return Ok(Some(ScanEnd::Paren(1))),
-            ';' => read_to(r, '\n', buf)?,
+            ';' => scan_line(r, buf)?,
             _ if string::is_whitespace(ch) => (),
             _ => return Ok(Some(ScanEnd::Delimiter)),
         }
@@ -105,18 +105,7 @@ fn classify_hash(r: &mut dyn CharReader, buf: &mut String) -> PortResult<Option<
             }
             '|' => {
                 consume_char(r, buf)?;
-                loop {
-                    read_to(r, '|', buf)?;
-                    match r.read_char()? {
-                        None => break,
-                        Some(ch) => {
-                            buf.push(ch);
-                            if ch == '#' {
-                                break;
-                            }
-                        }
-                    }
-                }
+                scan_block_comment(1, r, buf)?;
             }
             _ => (),
         }
@@ -126,10 +115,10 @@ fn classify_hash(r: &mut dyn CharReader, buf: &mut String) -> PortResult<Option<
     Ok(None)
 }
 
-fn read_to(r: &mut dyn CharReader, sentinel: char, buf: &mut String) -> PortResult {
+fn scan_line(r: &mut dyn CharReader, buf: &mut String) -> PortResult {
     while let Some(ch) = r.read_char()? {
         buf.push(ch);
-        if ch == sentinel {
+        if ch == '\n' {
             break;
         }
     }
@@ -175,13 +164,43 @@ fn scan_parens(mut c: usize, r: &mut dyn CharReader, buf: &mut String) -> PortRe
         buf.push(ch);
         match ch {
             '(' => c += 1,
-            ')' => {
-                c -= 1;
-                if c == 0 {
-                    break;
-                }
-            }
+            ')' => c -= 1,
             _ => (),
+        }
+        if c == 0 {
+            break;
+        }
+    }
+    Ok(())
+}
+
+enum BlockDelimiter {
+    None,
+    Hash,
+    Pipe,
+}
+
+fn scan_block_comment(mut c: usize, r: &mut dyn CharReader, buf: &mut String) -> PortResult {
+    let mut d = BlockDelimiter::None;
+    while let Some(ch) = r.read_char()? {
+        buf.push(ch);
+        match ch {
+            '#' => {
+                if let BlockDelimiter::Pipe = d {
+                    c -= 1;
+                }
+                d = BlockDelimiter::Hash;
+            }
+            '|' => {
+                if let BlockDelimiter::Hash = d {
+                    c += 1;
+                }
+                d = BlockDelimiter::Pipe;
+            }
+            _ => d = BlockDelimiter::None,
+        }
+        if c == 0 {
+            break;
         }
     }
     Ok(())

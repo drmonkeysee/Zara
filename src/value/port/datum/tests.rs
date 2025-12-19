@@ -50,7 +50,6 @@ fn block_comment() {
 }
 
 #[test]
-#[ignore = "fix this"]
 fn nested_block_comment() {
     let env = TestEnv::default();
     let f = env.new_frame();
