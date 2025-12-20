@@ -113,9 +113,8 @@ fn scan_delimiter(r: &mut dyn CharReader, buf: &mut String) -> ScanResult {
     while let Some(ch) = r.peek_char()? {
         if string::is_delimiter(ch) {
             break;
-        } else {
-            consume_char(r, buf)?;
         }
+        consume_char(r, buf)?;
     }
     Ok(ScanFlow::Break(()))
 }
