@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests;
 
-use super::{CharReader, PortBool, PortDatum, PortResult, PortString, Value};
+use super::{CharReader, PortDatum, PortResult, PortString, Value};
 use crate::{
     DataReader,
     eval::{Frame, Namespace},
@@ -9,6 +9,7 @@ use crate::{
     string,
     syntax::ParserOutput,
 };
+use std::ops::ControlFlow;
 
 pub(super) fn parse(r: &mut dyn CharReader, env: &Frame, label: impl Into<String>) -> PortDatum {
     let mut src = StringSource::empty(label);
@@ -37,43 +38,34 @@ pub(super) fn parse(r: &mut dyn CharReader, env: &Frame, label: impl Into<String
     }
 }
 
+type ScanFlow = ControlFlow<()>;
+type ScanResult = PortResult<ScanFlow>;
+
 fn datum_scan(r: &mut dyn CharReader) -> PortString {
     let mut buf = String::new();
     while let Some(ch) = r.read_char()? {
         buf.push(ch);
-        match ch {
-            '"' | '|' => {
-                scan_escapable_delimiter(ch, r, &mut buf)?;
-                return Ok(Some(buf));
-            }
-            '#' => {
-                if classify_hash(r, &mut buf)? {
-                    return Ok(Some(buf));
-                }
-            }
-            '(' => {
-                scan_parens(1, r, &mut buf)?;
-                return Ok(Some(buf));
-            }
+        if let ScanFlow::Break(()) = match ch {
+            '"' | '|' => scan_escapable_delimiter(ch, r, &mut buf)?,
+            '#' => classify_hash(r, &mut buf)?,
+            '(' => scan_parens(1, r, &mut buf)?,
             ';' => scan_line(r, &mut buf)?,
-            _ if string::is_whitespace(ch) => (),
-            _ => {
-                scan_delimiter(r, &mut buf)?;
-                return Ok(Some(buf));
-            }
+            _ if string::is_whitespace(ch) => ScanFlow::Continue(()),
+            _ => scan_delimiter(r, &mut buf)?,
+        } {
+            return Ok(Some(buf));
         }
     }
     Ok(None)
 }
 
-fn classify_hash(r: &mut dyn CharReader, buf: &mut String) -> PortBool {
+fn classify_hash(r: &mut dyn CharReader, buf: &mut String) -> ScanResult {
     if let Some(ch) = r.peek_char()? {
         match ch {
             '(' => {
                 // NOTE: vector
                 consume_char(r, buf)?;
-                scan_parens(1, r, buf)?;
-                return Ok(true);
+                return scan_parens(1, r, buf);
             }
             ';' => {
                 // NOTE: datum comment, keep going
@@ -90,37 +82,34 @@ fn classify_hash(r: &mut dyn CharReader, buf: &mut String) -> PortBool {
                     {
                         // NOTE: bytevector
                         consume_char(r, buf)?;
-                        scan_parens(1, r, buf)?;
-                        return Ok(true);
+                        return scan_parens(1, r, buf);
                     }
                 }
-                scan_delimiter(r, buf)?;
-                return Ok(true);
+                return scan_delimiter(r, buf);
             }
             '|' => {
                 consume_char(r, buf)?;
                 scan_block_comment(1, r, buf)?;
             }
-            _ => (),
+            _ => return scan_delimiter(r, buf),
         }
     } else {
-        scan_delimiter(r, buf)?;
-        return Ok(true);
+        return Ok(ScanFlow::Break(()));
     }
-    Ok(false)
+    Ok(ScanFlow::Continue(()))
 }
 
-fn scan_line(r: &mut dyn CharReader, buf: &mut String) -> PortResult {
+fn scan_line(r: &mut dyn CharReader, buf: &mut String) -> ScanResult {
     while let Some(ch) = r.read_char()? {
         buf.push(ch);
         if ch == '\n' {
             break;
         }
     }
-    Ok(())
+    Ok(ScanFlow::Break(()))
 }
 
-fn scan_delimiter(r: &mut dyn CharReader, buf: &mut String) -> PortResult {
+fn scan_delimiter(r: &mut dyn CharReader, buf: &mut String) -> ScanResult {
     while let Some(ch) = r.peek_char()? {
         if string::is_delimiter(ch) {
             break;
@@ -128,14 +117,14 @@ fn scan_delimiter(r: &mut dyn CharReader, buf: &mut String) -> PortResult {
             consume_char(r, buf)?;
         }
     }
-    Ok(())
+    Ok(ScanFlow::Break(()))
 }
 
 fn scan_escapable_delimiter(
     delimiter: char,
     r: &mut dyn CharReader,
     buf: &mut String,
-) -> PortResult {
+) -> ScanResult {
     let mut esc = false;
     while let Some(ch) = r.read_char()? {
         buf.push(ch);
@@ -151,10 +140,10 @@ fn scan_escapable_delimiter(
             _ => esc = false,
         }
     }
-    Ok(())
+    Ok(ScanFlow::Break(()))
 }
 
-fn scan_parens(mut c: usize, r: &mut dyn CharReader, buf: &mut String) -> PortResult {
+fn scan_parens(mut c: usize, r: &mut dyn CharReader, buf: &mut String) -> ScanResult {
     while let Some(ch) = r.read_char()? {
         buf.push(ch);
         match ch {
@@ -166,7 +155,7 @@ fn scan_parens(mut c: usize, r: &mut dyn CharReader, buf: &mut String) -> PortRe
             break;
         }
     }
-    Ok(())
+    Ok(ScanFlow::Break(()))
 }
 
 enum BlockDelimiter {

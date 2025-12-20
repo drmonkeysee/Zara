@@ -864,6 +864,25 @@ fn just_datum_comment_is_eof() {
 }
 
 #[test]
+fn hash_with_newline() {
+    let env = TestEnv::default();
+    let f = env.new_frame();
+    let mut s = StringReader::new("#\n");
+
+    let r = parse(&mut s, &f, "test-port");
+
+    let err = err_or_fail!(r);
+    let read_err = extract_or_fail!(err, PortError::Read);
+    assert_eq!(read_err.to_string(), "fatal error: tokenization failure");
+    assert!(
+        read_err
+            .display_message()
+            .to_string()
+            .contains("unterminated #-literal")
+    );
+}
+
+#[test]
 #[ignore = "directive parsing not implemented yet"]
 fn directive() {
     let env = TestEnv::default();
