@@ -127,11 +127,15 @@ impl Condition {
         }
     }
 
+    pub(crate) fn is_io_err(&self) -> bool {
+        self.is_base_io_err() || self.is_file_err() || self.is_read_err()
+    }
+
     pub(crate) fn is_file_err(&self) -> bool {
         matches!(self.kind, ConditionKind::File)
     }
 
-    pub(crate) fn is_io_err(&self) -> bool {
+    pub(crate) fn is_base_io_err(&self) -> bool {
         matches!(self.kind, ConditionKind::Io)
     }
 
