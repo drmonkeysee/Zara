@@ -623,6 +623,38 @@ impl WritePort {
         }
     }
 
+    pub(crate) fn tell(&mut self) -> PortPosition {
+        seekable_position(self.get_seekable()?)
+    }
+
+    pub(crate) fn seek(&mut self, pos: PortSeek) -> PortPosition {
+        set_seekable_position(self.get_seekable()?, pos)
+    }
+
+    pub(crate) fn flush(&mut self) -> PortResult {
+        self.get_writer()?.flush()
+    }
+
+    pub(crate) fn close(&mut self) {
+        match self {
+            Self::ByteVector(o) => {
+                o.take();
+            }
+            Self::Err(o, _) => {
+                o.take();
+            }
+            Self::File(o, _) => {
+                o.take();
+            }
+            Self::Out(o, _) => {
+                o.take();
+            }
+            Self::String(o) => {
+                o.take();
+            }
+        }
+    }
+
     pub(crate) fn put_bytes(&mut self, bytes: &[u8]) -> PortResult {
         if self.is_binary() {
             self.get_writer()?.put_bytes(bytes)
@@ -646,38 +678,6 @@ impl WritePort {
             self.repl_newline(!s.ends_with('\n'))
         } else {
             Err(PortError::ExpectedMode(PortMode::Textual))
-        }
-    }
-
-    pub(crate) fn flush(&mut self) -> PortResult {
-        self.get_writer()?.flush()
-    }
-
-    pub(crate) fn tell(&mut self) -> PortPosition {
-        seekable_position(self.get_seekable()?)
-    }
-
-    pub(crate) fn seek(&mut self, pos: PortSeek) -> PortPosition {
-        set_seekable_position(self.get_seekable()?, pos)
-    }
-
-    pub(crate) fn close(&mut self) {
-        match self {
-            Self::ByteVector(o) => {
-                o.take();
-            }
-            Self::Err(o, _) => {
-                o.take();
-            }
-            Self::File(o, _) => {
-                o.take();
-            }
-            Self::Out(o, _) => {
-                o.take();
-            }
-            Self::String(o) => {
-                o.take();
-            }
         }
     }
 
