@@ -176,11 +176,6 @@ impl<P: Parser> Reader<P> {
         self.lex_unsupported().or_else(|| self.parse_unsupported())
     }
 
-    fn clear(&mut self) {
-        self.lexer.clear();
-        self.parser.clear();
-    }
-
     fn lex_unsupported(&mut self) -> Option<ReadError> {
         Some(self.lexer.unsupported_continuation()?.into())
     }
