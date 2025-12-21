@@ -1881,6 +1881,7 @@ mod partition {
 
     #[test]
     fn one_span() {
+        #[allow(clippy::single_range_in_vec_init)]
         let spans = [0..5];
         let p = PartitionByOverlap::new(spans.iter());
 

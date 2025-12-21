@@ -545,6 +545,7 @@ mod scanner {
     fn lexeme_backwards_range() {
         let s = Scanner::new("abcdxyz");
 
+        #[allow(clippy::reversed_empty_ranges)]
         let r = s.lexeme(5..2);
 
         assert_eq!(r, "");

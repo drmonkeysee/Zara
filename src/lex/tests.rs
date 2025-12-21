@@ -1198,6 +1198,7 @@ mod result {
         let line = TokenLine(
             vec![Token {
                 kind: TokenKind::ParenLeft,
+                #[allow(clippy::reversed_empty_ranges)]
                 span: 8..4,
             }],
             make_textline(),
@@ -1360,6 +1361,7 @@ mod error {
         let err = LexerError(vec![LineFailure::Tokenize(TokenErrorLine(
             vec![TokenError {
                 kind: TokenErrorKind::NumericError(NumericError::Unimplemented("myerr".to_owned())),
+                #[allow(clippy::reversed_empty_ranges)]
                 span: 5..2,
             }],
             make_textline(),
