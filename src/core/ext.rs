@@ -29,7 +29,7 @@ pub(super) fn load(env: &Frame) {
     network ports
     */
 
-    bind_intrinsic(env, "base-io-error?", 1..1, is_base_io_error);
+    bind_intrinsic(env, "io-base-error?", 1..1, is_io_base_error);
     bind_intrinsic(env, "io-error?", 1..1, is_io_error);
     bind_intrinsic(env, "system-error?", 1..1, is_system_error);
     bind_intrinsic(env, "value-error?", 1..1, is_value_error);
@@ -47,7 +47,7 @@ pub(super) fn load(env: &Frame) {
     file::load(env);
 }
 
-predicate!(is_base_io_error, Value::Error(c) if c.is_base_io_err());
+predicate!(is_io_base_error, Value::Error(c) if c.is_io_base_err());
 predicate!(is_io_error, Value::Error(c) if c.is_io_err());
 predicate!(is_system_error, Value::Error(c) if c.is_sys_err());
 predicate!(is_value_error, Value::Error(c) if c.is_val_err());
