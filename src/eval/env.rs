@@ -67,7 +67,7 @@ impl Binding {
         vec
     }
 
-    // TODO: this is only super cuz of tests
+    // TODO: access level cuz of tests
     pub(super) fn bound(&self, name: impl AsRef<str>) -> bool {
         self.local_bound(&name) || self.parent.as_ref().is_some_and(|p| p.bound(name))
     }
@@ -86,7 +86,7 @@ pub(crate) struct System {
 }
 
 impl System {
-    // TODO: this is only crate cuz of testutil
+    // TODO: access level cuz of tests
     pub(crate) fn new(interactive: bool, args: impl IntoIterator<Item = String>) -> Self {
         Self {
             args: Value::list(args.into_iter().map(Value::string).collect::<Vec<_>>()),
