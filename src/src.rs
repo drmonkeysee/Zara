@@ -76,7 +76,7 @@ impl TextSource for StringSource {
     }
 }
 
-// NOTE: adapter type to bridge types like BufReader<T> and Stdin which
+// Adapter type to bridge types like BufReader<T> and Stdin which
 // *almost* implement the same interface but not quite.
 pub trait LineInputAdapter {
     fn is_tty(&self) -> bool;
@@ -111,7 +111,7 @@ impl<T: LineInputAdapter> Iterator for LineInputSource<T> {
                 if n == 0 || (n == 1 && self.adapter.is_tty()) {
                     None
                 } else {
-                    // NOTE: read_line guarantees a trailing \n, safe to pop
+                    // read_line guarantees a trailing \n, safe to pop
                     buf.pop();
                     Some(Ok(TextLine {
                         ctx: self.context(),

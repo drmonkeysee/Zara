@@ -3,7 +3,7 @@ mod identifier;
 mod numeric;
 mod string;
 
-// NOTE: re-export for parent module
+// re-export for parent module
 pub(super) use self::{
     hashtag::{BlockComment, Hashtag},
     identifier::{Identifier, PeriodIdentifier, VerbatimIdentifer},
@@ -57,14 +57,14 @@ impl<'me, 'txt, P: FreeTextPolicy> FreeText<'me, 'txt, P> {
             Some('x' | 'X') => self.hex(start)?,
             Some(ch @ ('"' | '\\' | '|')) => self.buf.push(ch),
             Some(ch) if strlib::is_whitespace(ch) => {
-                // NOTE: \<whitespace> may be a line-continuation, but we
+                // \<whitespace> may be a line-continuation, but we
                 // won't know until we're done lexing this string.
                 self.possible_line_cont_idx = Some(self.buf.len());
                 self.buf.push(ch);
             }
             Some(ch) => return Err(self.policy.escape_invalid(start, ch)),
             None => {
-                // NOTE: \EOL is a line continuation, mark end of buffer
+                // \EOL is a line continuation, mark end of buffer
                 self.possible_line_cont_idx = Some(self.buf.len());
             }
         }
@@ -131,7 +131,7 @@ enum HexParse {
 }
 
 fn parse_char_hex(txt: &str) -> HexParse {
-    // NOTE: don't allow leading sign, which u32::from_str_radix accepts
+    // don't allow leading sign, which u32::from_str_radix accepts
     if txt.starts_with('+') {
         HexParse::Unexpected
     } else {

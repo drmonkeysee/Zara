@@ -105,7 +105,7 @@ impl StringPolicyMode for DiscardString {
 
 trait StringPolicyMode {
     fn prelude(&self, _scanner: &mut Scanner) {
-        // NOTE: do nothing by default
+        // do nothing by default
     }
 
     fn terminated(&self, buf: String) -> TokenKind {

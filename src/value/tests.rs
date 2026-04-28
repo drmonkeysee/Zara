@@ -649,7 +649,7 @@ bar",
     }
 }
 
-// NOTE: most of these tests adapted from string module above
+// most of these tests adapted from string module above
 mod symbol {
     use super::*;
 

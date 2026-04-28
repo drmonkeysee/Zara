@@ -141,7 +141,7 @@ impl Display for TypeName<'_> {
     }
 }
 
-// NOTE: pairs and vectors are identified via their untyped pointer address
+// pairs and vectors are identified via their untyped pointer address
 pub(super) type NodeId = *const ();
 
 struct SimplePairDatum<'a>(&'a Pair);

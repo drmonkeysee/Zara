@@ -63,12 +63,12 @@ fn classify_hash(r: &mut dyn CharReader, buf: &mut String) -> ScanResult {
     if let Some(ch) = r.peek_char()? {
         match ch {
             '(' => {
-                // NOTE: vector
+                // vector
                 consume_char(r, buf)?;
                 return scan_parens(1, r, buf);
             }
             ';' => {
-                // NOTE: datum comment, keep going
+                // datum comment, keep going
                 consume_char(r, buf)?;
             }
             'u' => {
@@ -80,7 +80,7 @@ fn classify_hash(r: &mut dyn CharReader, buf: &mut String) -> ScanResult {
                     if let Some(ch) = r.peek_char()?
                         && ch == '('
                     {
-                        // NOTE: bytevector
+                        // bytevector
                         consume_char(r, buf)?;
                         return scan_parens(1, r, buf);
                     }

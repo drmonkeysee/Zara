@@ -14,7 +14,7 @@ fn main() -> Exit {
     execute(args).into()
 }
 
-// NOTE: newtype to have more control over exit output rather than the
+// Newtype to have more control over exit output rather than the
 // annoying default behavior of Result printing the Debug representation.
 struct Exit(cli::Result);
 

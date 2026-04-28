@@ -255,7 +255,7 @@ mod display {
     fn negative_nan() {
         let n = Number::real(-f64::NAN);
 
-        // NOTE: sign is ignored for NAN
+        // sign is ignored for NAN
         assert_eq!(n.to_string(), "+nan.0");
     }
 

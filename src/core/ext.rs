@@ -34,7 +34,7 @@ pub(super) fn load(env: &Frame) {
     bind_intrinsic(env, "system-error?", 1..1, is_system_error);
     bind_intrinsic(env, "value-error?", 1..1, is_value_error);
 
-    // NOTE: convenience vars
+    // convenience vars
     env.scope.bind(env.sym.get("null"), Value::Null);
     env.scope.bind(env.sym.get("void"), Value::Unspecified);
 

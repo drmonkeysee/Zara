@@ -179,7 +179,7 @@ impl Display for SymbolConverter<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let mut chars = self.name.chars();
         match chars.next() {
-            None => self.verbatim.set(true), // NOTE: empty string
+            None => self.verbatim.set(true), // empty string
             Some(ch) => {
                 if !identifier::is_initial(ch) && !identifier::is_peculiar_initial(ch) {
                     self.verbatim.set(true);
@@ -199,7 +199,7 @@ impl Display for SymbolConverter<'_> {
 
 fn write_str_char(ch: char, f: &mut Formatter) -> fmt::Result {
     match ch {
-        // NOTE: Rust displays NUL directly, fooling DisplayableChar,
+        // Rust displays NUL directly, fooling DisplayableChar,
         // so handle as a special case here.
         '\x00' => f.write_str("\\x0;"),
         '\x07' => f.write_str("\\a"),
@@ -229,16 +229,16 @@ fn write_unnamed_char(ch: char, f: &mut Formatter) -> fmt::Result {
 
 fn write_symbol_char(ch: char, f: &mut Formatter<'_>) -> fmt::Result {
     match ch {
-        // NOTE: verbatim delimiter
+        // verbatim delimiter
         '|' => f.write_str("\\|"),
-        // NOTE: unlike for string, " is not a delimiter and should not be escaped
+        // unlike for string, " is not a delimiter and should not be escaped
         '"' => f.write_char(ch),
         _ => write_str_char(ch, f),
     }
 }
 
 fn char_to_displayable(ch: char) -> DisplayableChar {
-    // NOTE: this is a little weird but there's no Unicode classification
+    // This is a little weird but there's no Unicode classification
     // exposed in Rust's stdlib to tell if a character has a dedicated glyph or
     // not, so check indirectly by seeing if the debug output starts with `\u`;
     // if so, we display the hex representation instead of the char literal.

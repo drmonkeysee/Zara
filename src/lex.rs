@@ -344,7 +344,7 @@ impl LexerDriver {
     fn tokenize_line(&mut self, text: TextLine) -> Result<TokenLine, LineFailure> {
         let (tokens, errs): (Vec<_>, Vec<_>) =
             TokenStream::new(&text.line, self.cont.take()).partition(Result::is_ok);
-        // NOTE: even with errors the last token in this line may be a continuation
+        // even with errors the last token in this line may be a continuation
         self.cont = tokens
             .last()
             .and_then(|r| r.as_ref().ok().and_then(|t| t.kind.to_continuation()));

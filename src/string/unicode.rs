@@ -1,6 +1,6 @@
 use std::fmt::{self, Display, Formatter};
 
-// NOTE: set of Unicode code points are in the
+// Set of Unicode code points are in the
 // ranges 0x0 to 0xD7FF and 0xE000 to 0x10FFFF, inclusive.
 const MIN: char = char::MIN;
 const LOW_MAX: char = '\u{d7ff}';

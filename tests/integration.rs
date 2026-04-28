@@ -262,7 +262,7 @@ fn nested_procedure_new_on_each_call() {
     assert_eq!(v.to_string(), "#f");
 }
 
-// NOTE: these two tests were bugs with StringSource rather than the Interpreter
+// these two tests were bugs with StringSource rather than the Interpreter
 #[test]
 fn lexical_error_on_continuation() {
     let mut t = TestRunner::new();

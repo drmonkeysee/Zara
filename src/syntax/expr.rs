@@ -265,7 +265,7 @@ pub(super) struct GroupBy<I> {
 impl<'a, I: Iterator<Item = &'a ExpressionError>> Iterator for GroupBy<Peekable<I>> {
     type Item = (&'a TextLine, Vec<&'a ExpressionError>);
 
-    // NOTE: this assumes grouped items are contiguous in the original sequence
+    // this assumes grouped items are contiguous in the original sequence
     fn next(&mut self) -> Option<Self::Item> {
         let start = self.peek.next()?;
         let key = &start.ctx.txt;
@@ -307,7 +307,7 @@ impl Display for TypeName<'_> {
 
 fn ensure_proc_name(val: &mut Value, name: &Symbol) {
     if let Value::Procedure(p) = val {
-        // NOTE: this should be safe because the procedure was *just* eval'ed,
+        // This should be safe because the procedure was *just* eval'ed,
         // but have a debug_assert to see if it ever fails:
         // either the proc is already named (so get_mut failing is fine) OR get_mut succeeds.
         debug_assert!(p.name().is_some() || Rc::get_mut(p).is_some());

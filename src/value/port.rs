@@ -477,7 +477,7 @@ impl StdinReader {
         match &mut self.stream {
             None => Err(PortError::Closed),
             Some(r) => {
-                // NOTE: utf-8 encoding should ensure that any 0xa is a valid '\n'
+                // utf-8 encoding should ensure that any 0xa is a valid '\n'
                 let r = Ok(match self.rbuf.bytes().position(|b| b == 0xa) {
                     None => {
                         let mut buf = self.rbuf.split_off(0).chars().rev().collect::<String>();
@@ -709,7 +709,7 @@ impl WritePort {
         .unwrap_or(Err(PortError::Closed))
     }
 
-    // NOTE: rustyline always resets cursor position so without adding a synthetic
+    // Rustyline always resets cursor position so without adding a synthetic
     // newline the prompt will overwrite any one-line text output in the REPL.
     fn repl_newline(&mut self, missing_newline: bool) -> PortResult {
         if missing_newline && let Self::Err(_, true) | Self::Out(_, true) = self {

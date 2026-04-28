@@ -321,7 +321,7 @@ fn char_name(ch: char, rest: &str) -> TokenExtractResult {
     }
 }
 
-// NOTE: state functionality is covered by Tokenizer and Continuation tests
+// state functionality is covered by Tokenizer and Continuation tests
 #[cfg(test)]
 mod tests {
     use super::*;

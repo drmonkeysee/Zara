@@ -332,7 +332,7 @@ fn peek_char(args: &[Value], env: &Frame) -> EvalResult {
     )
 }
 
-// NOTE: this does not strictly conform to the R7RS standard as it does
+// This does not strictly conform to the R7RS standard as it does
 // not consider carriage return (\r) to be a line-delimiter (same as Chez Scheme).
 fn read_line(args: &[Value], env: &Frame) -> EvalResult {
     read_op_mut(

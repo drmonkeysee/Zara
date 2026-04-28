@@ -14,7 +14,7 @@ pub(super) struct RealNumber<'me, 'txt> {
     start: usize,
 }
 
-// NOTE: this lexer is only invoked after one confirmed digit has been scanned
+// this lexer is only invoked after one confirmed digit has been scanned
 impl<'me, 'txt> RealNumber<'me, 'txt> {
     pub(super) fn new(
         scanner: &'me mut Scanner<'txt>,
@@ -235,7 +235,7 @@ impl<P: ClassifierProps> ConditionProcessor<'_, '_, P> {
                         })
                     }
                 } else {
-                    // NOTE: delay application of exactness until final
+                    // Delay application of exactness until final
                     // composition of complex number; specifically Polar
                     // will round-trip inputs through float representation,
                     // undoing any exactness applied to real part.
@@ -245,7 +245,7 @@ impl<P: ClassifierProps> ConditionProcessor<'_, '_, P> {
             }
             BreakCondition::Sub(SubCondition::Imaginary) => {
                 if let Some(item) = self.scanner.next_if_not_delimiter() {
-                    // NOTE: maybe malformed "in"finity? otherwise assume malformed imaginary
+                    // maybe malformed "in"finity? otherwise assume malformed imaginary
                     Err(if item.1.is_ascii_alphabetic() {
                         TokenErrorKind::NumberInvalid
                     } else {
@@ -296,7 +296,7 @@ impl<P: ClassifierProps> ConditionProcessor<'_, '_, P> {
                 match self.props.cartesian_scan(self.scanner, start) {
                     Ok(TokenKind::Imaginary(imag)) => {
                         let real = match self.props.exactness() {
-                            // NOTE: this conversion shouldn't ever fail because real has already
+                            // This conversion shouldn't ever fail because real has already
                             // been parsed as a valid float, but if it does, give up and return NaN.
                             Some(Exactness::Exact) => real.try_into_exact().unwrap_or(Real::nan()),
                             Some(Exactness::Inexact) => real.into_inexact(),
@@ -313,7 +313,7 @@ impl<P: ClassifierProps> ConditionProcessor<'_, '_, P> {
                     Ok(TokenKind::Number(Number::Real(rads))) => {
                         let pol = Number::polar(real, rads);
                         Ok(TokenKind::Number(match self.props.exactness() {
-                            // NOTE: this conversion shouldn't ever fail because pol has already
+                            // This conversion shouldn't ever fail because pol has already
                             // been parsed as a valid float-complex, but if it does, give up and return NaN.
                             Some(Exactness::Exact) => pol.try_into_exact().unwrap_or(Number::nan()),
                             Some(Exactness::Inexact) => pol.into_inexact(),
@@ -453,7 +453,7 @@ enum SubCondition<'txt> {
 impl<'txt> From<BreakCondition<'txt>> for SubCondition<'txt> {
     fn from(value: BreakCondition<'txt>) -> Self {
         match value {
-            // NOTE: Denominator ensures this case never happens
+            // Denominator ensures this case never happens
             BreakCondition::Fraction => unreachable!("unexpected break-to-sub conversion case"),
             BreakCondition::Sub(s) => s,
         }
@@ -505,7 +505,7 @@ impl RealClassifier {
         }
     }
 
-    // NOTE: real classifier always classifies at least one digit
+    // real classifier always classifies at least one digit
     fn is_empty(&self) -> bool {
         debug_assert!(match self {
             Self::Flt(Float(f)) => !f.is_empty(),
@@ -643,7 +643,7 @@ impl<R: Radix> Integral<R> {
     }
 
     fn finalize_condition<'txt>(&mut self, brk: BreakCondition<'txt>) -> BreakCondition<'txt> {
-        // NOTE: if inf scan only found 'i' then turns out this was imaginary, not infinity
+        // if inf scan only found 'i' then turns out this was imaginary, not infinity
         if brk.is_default()
             && let IntegralMode::Inf(len) = self.mode
             && len == 2
@@ -679,7 +679,7 @@ impl<R: Radix> Integral<R> {
             '@' => RadixControl::Break(Ok(BreakCondition::polar(item))),
             'i' | 'I' => {
                 if self.is_empty() && self.has_sign() {
-                    // NOTE: length includes sign
+                    // length includes sign
                     self.mode = IntegralMode::Inf(2);
                     RadixControl::Continue(())
                 } else {
@@ -688,7 +688,7 @@ impl<R: Radix> Integral<R> {
             }
             'n' | 'N' => {
                 if self.is_empty() && self.has_sign() {
-                    // NOTE: length includes sign
+                    // length includes sign
                     self.mode = IntegralMode::Nan(2);
                     RadixControl::Continue(())
                 } else {
@@ -699,7 +699,7 @@ impl<R: Radix> Integral<R> {
                 self.spec.magnitude.end += 1;
                 RadixControl::Continue(())
             }
-            // NOTE: e|E hexadecimal is_digit is true, so check exponent after digit
+            // e|E hexadecimal is_digit is true, so check exponent after digit
             'e' | 'E' => RadixControl::Break(Err(TokenErrorKind::NumberInvalidExponent {
                 at: idx,
                 radix: R::NAME,

@@ -200,7 +200,7 @@ impl Value {
             .unwrap_or(Self::Null)
     }
 
-    // NOTE: procedure eq? -> is same object
+    // procedure eq? -> is same object
     pub(crate) fn is(&self, other: &Self) -> bool {
         match (self, other) {
             (Self::Ast(a), Self::Ast(b)) => Rc::ptr_eq(a, b),
@@ -227,7 +227,7 @@ impl Value {
         }
     }
 
-    // NOTE: procedure eqv? -> is equivalent object
+    // procedure eqv? -> is equivalent object
     pub(crate) fn is_eqv(&self, other: &Self) -> bool {
         self.is(other)
             || match (self, other) {
@@ -342,7 +342,7 @@ impl Value {
     }
 }
 
-// NOTE: procedure equal? -> value equality
+// procedure equal? -> value equality
 impl PartialEq for Value {
     fn eq(&self, other: &Self) -> bool {
         self.is_eqv(other)

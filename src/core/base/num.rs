@@ -7,7 +7,7 @@ use crate::{
 use std::fmt::Display;
 
 pub(super) fn load(env: &Frame) {
-    // NOTE: complex and number predicates are identical sets
+    // complex and number predicates are identical sets
     super::bind_intrinsic(env, "number?", 1..1, is_number);
     super::bind_intrinsic(env, "complex?", 1..1, is_number);
     super::bind_intrinsic(env, "real?", 1..1, is_real);

@@ -91,7 +91,7 @@ use std::{
 
 pub(crate) const INF_STR: &str = "inf.0";
 pub(crate) const NAN_STR: &str = "nan.0";
-// NOTE: 2^53 - 1; maximum safe integer in f64 format
+// 2^53 - 1; maximum safe integer in f64 format
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/MAX_SAFE_INTEGER
 const FMAX_INT: f64 = 9_007_199_254_740_991.0;
 
@@ -681,7 +681,7 @@ impl From<(Sign, u64)> for Integer {
     }
 }
 
-// NOTE: enum expression of the signum function
+// enum expression of the signum function
 #[derive(Clone, Copy, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
 pub(crate) enum Sign {
     Negative = -1,
@@ -798,7 +798,7 @@ impl FloatSpec {
     fn try_float_to_exact(flt: f64) -> RealResult {
         if flt.is_finite() {
             let (spec, flt_str) = Self::prep_parse(flt);
-            // NOTE: this should never fail since the string input comes from
+            // This should never fail since the string input comes from
             // an f64 but if something real weird happens return parse error.
             spec.try_into_exact(&flt_str)
         } else {
@@ -1046,7 +1046,7 @@ impl Precision {
 impl Display for Precision {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            // NOTE: avoid direct Display impl for u64 to control expression of sign
+            // avoid direct Display impl for u64 to control expression of sign
             Self::Single(u) => write!(f, "{u}"),
             Self::Multiple(_) => todo!(),
         }
@@ -1103,7 +1103,7 @@ impl Display for ComplexImagDatum<'_> {
 
 trait RadixPrivate {
     fn parse_inexact<R: Radix>(spec: IntSpec<R>, input: &str) -> RealResult {
-        // NOTE: always parse exact magnitude first to account for radix
+        // always parse exact magnitude first to account for radix
         Ok(parse_signed(&spec, input)?.into_inexact())
     }
 }
@@ -1122,7 +1122,7 @@ impl RadixPrivate for Decimal {
     }
 }
 
-// NOTE: https://en.wikipedia.org/wiki/Euclidean_algorithm
+// https://en.wikipedia.org/wiki/Euclidean_algorithm
 fn gcd_euclidean(mut a: u64, mut b: u64) -> u64 {
     while b != 0 {
         let t = b;

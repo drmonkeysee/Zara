@@ -74,7 +74,7 @@ impl<'me, 'txt> Identifier<'me, 'txt> {
 
     fn continue_peculiar(&mut self, next_ch: Option<char>) -> TokenExtractResult {
         let Some(ch) = next_ch else {
-            // NOTE: a single '.' is invalid but Tokenizer handles '.'
+            // A single '.' is invalid but Tokenizer handles '.'
             // before attempting Identifier so this case never happens.
             let txt = self.get_lexeme();
             debug_assert!(txt != ".");
@@ -157,7 +157,7 @@ impl<'me, 'txt> Identifier<'me, 'txt> {
     }
 
     fn classify_peculiar(&mut self, ch: char) {
-        // NOTE: only 3 cases: + | - | .
+        // only 3 cases: + | - | .
         self.peculiar_state = Some(match ch {
             '+' | '-' => match self.peculiar_state {
                 None => PeculiarState::MaybeSignedNumber,
@@ -222,7 +222,7 @@ impl<M: IdentifierPolicyMode> FreeTextPolicy for IdentifierPolicy<M> {
     const TERMINATOR: char = '|';
 
     fn prelude(&self, _scanner: &mut Scanner) {
-        // NOTE: do nothing for verbatim identifiers
+        // do nothing for verbatim identifiers
     }
 
     fn escape_invalid(&self, start: usize, ch: char) -> TokenErrorKind {

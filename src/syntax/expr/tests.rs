@@ -766,7 +766,7 @@ mod eval {
 
             let r = expr.eval(&f);
 
-            // NOTE: missing variable "z" is not hit
+            // missing variable "z" is not hit
             let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
             assert_eq!(
                 err.to_string(),

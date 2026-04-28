@@ -33,6 +33,6 @@ fn current_jiffy(_args: &[Value], env: &Frame) -> EvalResult {
 
 #[allow(clippy::unnecessary_wraps, reason = "infallible intrinsic")]
 fn jiffies_per_second(_args: &[Value], _env: &Frame) -> EvalResult {
-    // NOTE: jiffy = microsecond (µs)
+    // jiffy = microsecond (µs)
     Ok(Value::real(1_000_000))
 }

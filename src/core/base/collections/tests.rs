@@ -270,7 +270,7 @@ fn string_set_val_unicode_out_of_range() {
 
     let r = string_set(&args, &env.new_frame());
 
-    // NOTE: verify this generates a scheme condition signal rather than a rust panic
+    // verify this generates a scheme condition signal rather than a rust panic
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
     assert_eq!(err.to_string(), "#<value-error \"index out of range\" (5)>");
 }
@@ -282,7 +282,7 @@ fn string_copy_unicode_out_of_range() {
 
     let r = string_copy(&args, &env.new_frame());
 
-    // NOTE: verify this generates a scheme condition signal rather than
+    // Verify this generates a scheme condition signal rather than
     // running off the end of an iterator.
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
     assert_eq!(err.to_string(), "#<value-error \"index out of range\" (5)>");
@@ -846,7 +846,7 @@ fn list_tail_circular_list() {
 fn list_tail_circular_list_many_loops() {
     let env = TestEnv::default();
     let (lst, loop_head, _) = make_circular_list(&env);
-    // NOTE: reach the head of the cycle, then loop a million times;
+    // Reach the head of the cycle, then loop a million times;
     // if implemented recursively this will stack overflow.
     let args = [lst.clone(), Value::real(100002)];
 

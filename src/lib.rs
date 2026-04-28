@@ -349,7 +349,7 @@ mod tests {
             let d = DisplayTest::StrFmt;
             let e = DisplayTest::Nest(Nested(8));
 
-            // NOTE: you would expect all of these to right-align to 15 chars
+            // You would expect all of these to right-align to 15 chars
             // but only two of them do.
             eprintln!("A: {a:>15}"); // no-align
             eprintln!("B: {b:>15}"); // align

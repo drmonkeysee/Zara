@@ -251,7 +251,7 @@ mod stringsrc {
         assert_eq!(target.lineno(), 3);
     }
 
-    // NOTE: preserve blank lines to keep lineno accurate
+    // preserve blank lines to keep lineno accurate
     #[test]
     fn iterate_includes_blank_lines() {
         let src = "line1\n   \nline3\n\nline5\n\t\n";
