@@ -360,7 +360,7 @@ impl Display for VecDatum<'_> {
             self.mode.write_label(vs.label, f)?;
             vs.mark();
         }
-        write!(f, "#({})", &self.join_items())
+        write!(f, "#({})", self.join_items())
     }
 }
 
