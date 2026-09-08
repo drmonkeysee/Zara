@@ -1754,6 +1754,172 @@ mod quote {
             } if txt.lineno == 1
         ));
     }
+
+    #[test]
+    fn shadowed_quoted_into_expr() {
+        let txt = make_textline().into();
+        let env = TestEnv::default();
+        env.binding
+            .bind(env.symbols.get(SyntacticForm::QUOTE), Value::Unspecified);
+        let p = ExprNode {
+            ctx: ExprCtx {
+                span: 0..1,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::Quote {
+                inner: Some(
+                    ExprCtx {
+                        span: 2..4,
+                        txt: Rc::clone(&txt),
+                    }
+                    .into_expr(ExpressionKind::Literal(Value::Boolean(true))),
+                ),
+                quoted: true,
+            },
+        };
+        let ns = env.new_namespace();
+
+        let r = p.try_into_expr(&ns);
+
+        let expr = some_or_fail!(ok_or_fail!(r));
+        assert!(matches!(
+            expr,
+            Expression {
+                ctx: ExprCtx {
+                    span: TxtSpan { start: 0, end: 1 },
+                    txt: line,
+                },
+                kind: ExpressionKind::Literal(Value::Pair(_)),
+            } if Rc::ptr_eq(&txt, &line)
+        ));
+        let value = extract_or_fail!(expr.kind, ExpressionKind::Literal);
+        // Shadowing `quote` must not affect datum construction inside an
+        // already-quoted context; the inner value is still preserved, same
+        // as the unshadowed case (see quoted_literal_into_expr).
+        assert_eq!(value.as_datum().to_string(), "(quote #t)");
+    }
+
+    #[test]
+    fn shadowed_call_into_expr() {
+        let txt = make_textline().into();
+        let env = TestEnv::default();
+        env.binding
+            .bind(env.symbols.get(SyntacticForm::QUOTE), Value::Unspecified);
+        let p = ExprNode {
+            ctx: ExprCtx {
+                span: 0..1,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::Quote {
+                inner: Some(
+                    ExprCtx {
+                        span: 2..4,
+                        txt: Rc::clone(&txt),
+                    }
+                    .into_expr(ExpressionKind::Literal(Value::Boolean(true))),
+                ),
+                quoted: false,
+            },
+        };
+        let ns = env.new_namespace();
+
+        let r = p.try_into_expr(&ns);
+
+        let expr = some_or_fail!(ok_or_fail!(r));
+        assert!(matches!(
+            expr,
+            Expression {
+                ctx: ExprCtx {
+                    span: TxtSpan { start: 0, end: 1 },
+                    txt: line,
+                },
+                kind: ExpressionKind::Call { .. },
+            } if Rc::ptr_eq(&txt, &line)
+        ));
+        let ExpressionKind::Call { proc, args } = expr.kind else {
+            unreachable!();
+        };
+        assert!(matches!(
+            *proc,
+            Expression {
+                kind: ExpressionKind::Variable(s),
+                ..
+            } if s.as_ref() == SyntacticForm::QUOTE
+        ));
+        assert_eq!(args.len(), 1);
+        assert!(matches!(
+            &args[0],
+            Expression {
+                kind: ExpressionKind::Literal(Value::Boolean(true)),
+                ..
+            }
+        ));
+    }
+
+    #[test]
+    fn shadowed_call_missing_into_expr() {
+        let txt = make_textline().into();
+        let env = TestEnv::default();
+        env.binding
+            .bind(env.symbols.get(SyntacticForm::QUOTE), Value::Unspecified);
+        let p = ExprNode {
+            ctx: ExprCtx {
+                span: 0..1,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::Quote {
+                inner: None,
+                quoted: false,
+            },
+        };
+        let ns = env.new_namespace();
+
+        let r = p.try_into_expr(&ns);
+
+        // NOTE: unlike the unshadowed case (see missing_into_expr), a missing
+        // datum is not an error here: it becomes a zero-arg call to whatever
+        // `quote` is currently bound to.
+        let expr = some_or_fail!(ok_or_fail!(r));
+        let ExpressionKind::Call { args, .. } = expr.kind else {
+            unreachable!();
+        };
+        assert!(args.is_empty());
+    }
+
+    #[test]
+    fn shadowed_quoted_missing_into_expr() {
+        let txt = make_textline().into();
+        let env = TestEnv::default();
+        env.binding
+            .bind(env.symbols.get(SyntacticForm::QUOTE), Value::Unspecified);
+        let p = ExprNode {
+            ctx: ExprCtx {
+                span: 0..2,
+                txt: Rc::clone(&txt),
+            },
+            mode: ParseMode::Quote {
+                inner: None,
+                quoted: true,
+            },
+        };
+        let ns = env.new_namespace();
+
+        let r = p.try_into_expr(&ns);
+
+        // A missing datum inside an already-quoted context is a syntax error
+        // regardless of shadowing, same as the unshadowed case (see
+        // missing_into_expr): shadowing only changes how an unquoted `'x`
+        // resolves, not whether `'` requires a following datum.
+        let errs = err_or_fail!(r);
+        assert_eq!(errs.len(), 1);
+        assert!(matches!(
+            &errs[0],
+            ExpressionError {
+                ctx: ExprCtx { span: TxtSpan { start: 0, end: 2 }, txt },
+                kind: ExpressionErrorKind::DatumExpected,
+            } if txt.lineno == 1
+        ));
+    }
 }
 
 mod program {
