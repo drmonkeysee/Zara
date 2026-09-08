@@ -12,9 +12,9 @@ use crate::{
     lex::{Token, TokenKind},
     number::Number,
     txt::{LineNumber, TextLine},
-    value::{Value, zlist},
+    value::Value,
 };
-use std::{ops::ControlFlow, rc::Rc};
+use std::{iter, ops::ControlFlow, rc::Rc};
 
 pub(super) type ParseFlow = ControlFlow<ParseBreak>;
 pub(super) type MergeFlow = ControlFlow<()>;
@@ -286,7 +286,7 @@ impl ParseMode {
                 Ok(Some(identifier_to_expr(&name, quoted, node_ctx, ns)))
             }
             Self::List { form, seq } => form.try_into_expr(seq, node_ctx),
-            Self::Quote { inner, quoted } => into_datum(inner, node_ctx, quoted, ns),
+            Self::Quote { inner, quoted } => transform_quote(inner, node_ctx, quoted, ns),
             Self::StringLiteral(s) => Ok(Some(Expression::string(s, node_ctx))),
             Self::Vector(seq) => into_vector(seq, node_ctx),
         }
@@ -582,6 +582,23 @@ fn into_comment_datum(inner: Option<&Expression>, ctx: ExprCtx) -> ExprConvertRe
     )
 }
 
+fn transform_quote(
+    inner: Option<Expression>,
+    ctx: ExprCtx,
+    quoted: bool,
+    ns: &Namespace,
+) -> ExprConvertResult {
+    if ns.name_defined(SyntacticForm::QUOTE) {
+        Ok(Some(if quoted {
+            into_quote_datum(None, ctx, ns)
+        } else {
+            into_shadowed_quote(inner, ctx, ns)
+        }))
+    } else {
+        into_datum(inner, ctx, quoted, ns)
+    }
+}
+
 fn into_datum(
     inner: Option<Expression>,
     ctx: ExprCtx,
@@ -593,10 +610,7 @@ fn into_datum(
         Some(expr) => {
             if let ExpressionKind::Literal(val) = expr.kind {
                 Ok(Some(if quoted {
-                    ctx.into_expr(ExpressionKind::Literal(zlist![
-                        Value::Symbol(ns.get_symbol(SyntacticForm::QUOTE)),
-                        val
-                    ]))
+                    into_quote_datum(Some(val), ctx, ns)
                 } else {
                     // TODO: can i remove this redundant ctor somehow (it recreates expr)
                     expr.ctx.into_expr(ExpressionKind::Literal(val))
@@ -610,6 +624,25 @@ fn into_datum(
             }
         }
     }
+}
+
+fn into_shadowed_quote(inner: Option<Expression>, ctx: ExprCtx, ns: &Namespace) -> Expression {
+    let txt = Rc::clone(&ctx.txt);
+    ctx.into_expr(ExpressionKind::Call {
+        args: inner.into_iter().collect::<Box<_>>(),
+        proc: Expression::variable(
+            ns.get_symbol(SyntacticForm::QUOTE),
+            ExprCtx { span: 0..0, txt },
+        )
+        .into(),
+    })
+}
+
+fn into_quote_datum(val: Option<Value>, ctx: ExprCtx, ns: &Namespace) -> Expression {
+    let qval = Value::Symbol(ns.get_symbol(SyntacticForm::QUOTE));
+    ctx.into_expr(ExpressionKind::Literal(Value::list(
+        iter::once(qval).chain(val),
+    )))
 }
 
 fn into_valid_sequence<T>(

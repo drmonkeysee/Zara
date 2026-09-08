@@ -1,5 +1,6 @@
 use super::*;
 use crate::eval::InvalidFormal;
+use crate::value::zlist;
 
 #[test]
 fn end() {
