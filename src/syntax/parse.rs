@@ -588,12 +588,8 @@ fn transform_quote(
     quoted: bool,
     ns: &Namespace,
 ) -> ExprConvertResult {
-    if ns.name_defined(SyntacticForm::QUOTE) {
-        Ok(Some(if quoted {
-            into_quote_datum(None, ctx, ns)
-        } else {
-            into_shadowed_quote(inner, ctx, ns)
-        }))
+    if !quoted && ns.name_defined(SyntacticForm::QUOTE) {
+        Ok(Some(into_shadowed_quote(inner, ctx, ns)))
     } else {
         into_datum(inner, ctx, quoted, ns)
     }
@@ -639,9 +635,8 @@ fn into_shadowed_quote(inner: Option<Expression>, ctx: ExprCtx, ns: &Namespace) 
 }
 
 fn into_quote_datum(val: Option<Value>, ctx: ExprCtx, ns: &Namespace) -> Expression {
-    let qval = Value::Symbol(ns.get_symbol(SyntacticForm::QUOTE));
     ctx.into_expr(ExpressionKind::Literal(Value::list(
-        iter::once(qval).chain(val),
+        iter::once(Value::Symbol(ns.get_symbol(SyntacticForm::QUOTE))).chain(val),
     )))
 }
 
