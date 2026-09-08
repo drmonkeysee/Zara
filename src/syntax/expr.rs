@@ -157,16 +157,13 @@ impl ExpressionKind {
                 None,
             ))),
             Self::Literal(v) => Ok(v.clone()),
-            Self::Set { var, expr } => {
-                if let Some(b) = env.scope.binding(var) {
-                    let mut val = expr.eval(env)?;
-                    ensure_proc_name(&mut val, var);
-                    b.bind(var.clone(), val);
-                    Ok(Value::Unspecified)
-                } else {
-                    Err(Exception::signal(Condition::bind_error(var)))
-                }
+            Self::Set { var, expr } if let Some(b) = env.scope.binding(var) => {
+                let mut val = expr.eval(env)?;
+                ensure_proc_name(&mut val, var);
+                b.bind(var.clone(), val);
+                Ok(Value::Unspecified)
             }
+            Self::Set { var, .. } => Err(Exception::signal(Condition::bind_error(var))),
             Self::Variable(n) => env
                 .scope
                 .lookup(n)

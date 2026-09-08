@@ -317,20 +317,16 @@ fn parse_formals(mut params: Value) -> Result<(Vec<Symbol>, Option<Symbol>), Exp
     loop {
         match params {
             Value::Null => break,
-            Value::Pair(p) => {
-                if let Value::Symbol(n) = &p.car {
-                    args.push(n.clone());
-                    params = p.cdr.clone();
-                    continue;
-                }
+            Value::Pair(ref p) if let Value::Symbol(n) = &p.car => {
+                args.push(n.clone());
+                params = p.cdr.clone();
             }
             Value::Symbol(n) => {
                 rest = Some(n.clone());
                 break;
             }
-            _ => (),
+            _ => return Err(ExpressionErrorKind::LambdaInvalidSignature),
         }
-        return Err(ExpressionErrorKind::LambdaInvalidSignature);
     }
     Ok((args, rest))
 }

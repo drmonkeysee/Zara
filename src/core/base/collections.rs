@@ -338,12 +338,10 @@ fn set_cdr(args: &[Value], _env: &Frame) -> EvalResult {
 #[allow(clippy::unnecessary_wraps, reason = "infallible intrinsic")]
 fn is_list(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = first(args);
-    Ok(Value::Boolean(if let Value::Null = arg {
-        true
-    } else if let Some(p) = arg.as_refpair() {
-        p.as_ref().is_list()
-    } else {
-        false
+    Ok(Value::Boolean(match arg {
+        Value::Null => true,
+        _ if let Some(p) = arg.as_refpair() => p.as_ref().is_list(),
+        _ => false,
     }))
 }
 
@@ -357,10 +355,9 @@ fn list(args: &[Value], _env: &Frame) -> EvalResult {
 
 fn list_length(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = first(args);
-    if let Value::Null = arg {
-        Ok(Value::real(0))
-    } else if let Some(p) = arg.as_refpair() {
-        p.len().map_or_else(
+    match arg {
+        Value::Null => Ok(Value::real(0)),
+        _ if let Some(p) = arg.as_refpair() => p.len().map_or_else(
             |err| {
                 Err(match err {
                     InvalidList::Cycle => Condition::circular_list(arg),
@@ -374,9 +371,8 @@ fn list_length(args: &[Value], _env: &Frame) -> EvalResult {
                 .into())
             },
             |len| Ok(Value::Number(Number::from_usize(len))),
-        )
-    } else {
-        Err(super::invalid_target(TypeName::LIST, arg))
+        ),
+        _ => Err(super::invalid_target(TypeName::LIST, arg)),
     }
 }
 
@@ -398,16 +394,13 @@ fn list_reverse(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = first(args);
     arg.cycle_iter()
         .enumerate()
-        .try_fold(Value::Null, |head, (i, (item, cycle))| {
-            if cycle {
-                Err(Condition::circular_list(arg).into())
-            } else if let Value::Null = item {
-                Ok(head)
-            } else if let Some(p) = item.as_refpair() {
+        .try_fold(Value::Null, |head, (i, (item, cycle))| match item {
+            _ if cycle => Err(Condition::circular_list(arg).into()),
+            Value::Null => Ok(head),
+            _ if let Some(p) = item.as_refpair() => {
                 Ok(Value::cons_mut(p.as_ref().car.clone(), head))
-            } else {
-                Err(Condition::arg_error(i, TypeName::LIST, &item).into())
             }
+            _ => Err(Condition::arg_error(i, TypeName::LIST, &item).into()),
         })
 }
 
@@ -934,17 +927,14 @@ fn try_list_to_vec(val: &Value) -> Result<Vec<Value>, Exception> {
 
 fn try_list_acc(val: &Value, acc: &mut Vec<Value>) -> Result<(), Exception> {
     val.cycle_iter()
-        .try_fold(acc, |acc, (item, cycle)| {
-            if cycle {
-                Err(Condition::circular_list(val).into())
-            } else if let Value::Null = item {
-                Ok(acc)
-            } else if let Some(p) = item.as_refpair() {
+        .try_fold(acc, |acc, (item, cycle)| match item {
+            _ if cycle => Err(Condition::circular_list(val).into()),
+            Value::Null => Ok(acc),
+            _ if let Some(p) = item.as_refpair() => {
                 acc.push(p.as_ref().car.clone());
                 Ok(acc)
-            } else {
-                Err(Condition::arg_error(acc.len(), TypeName::LIST, &item).into())
             }
+            _ => Err(Condition::arg_error(acc.len(), TypeName::LIST, &item).into()),
         })
         .map(|_| ())
 }

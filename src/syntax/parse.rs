@@ -603,21 +603,21 @@ fn into_datum(
 ) -> ExprConvertResult {
     match inner {
         None => Err(vec![ctx.into_error(ExpressionErrorKind::DatumExpected)]),
+        Some(Expression {
+            ctx: expr_ctx,
+            kind: ExpressionKind::Literal(val),
+        }) => Ok(Some(if quoted {
+            into_quote_datum(Some(val), ctx, ns)
+        } else {
+            // TODO: can i remove this redundant ctor somehow (it recreates expr)
+            expr_ctx.into_expr(ExpressionKind::Literal(val))
+        })),
         Some(expr) => {
-            if let ExpressionKind::Literal(val) = expr.kind {
-                Ok(Some(if quoted {
-                    into_quote_datum(Some(val), ctx, ns)
-                } else {
-                    // TODO: can i remove this redundant ctor somehow (it recreates expr)
-                    expr.ctx.into_expr(ExpressionKind::Literal(val))
-                }))
-            } else {
-                let mut expr_ctx = expr.ctx;
-                expr_ctx.span.start = ctx.span.start;
-                Err(vec![
-                    expr_ctx.into_error(ExpressionErrorKind::DatumInvalid(expr.kind)),
-                ])
-            }
+            let mut expr_ctx = expr.ctx;
+            expr_ctx.span.start = ctx.span.start;
+            Err(vec![
+                expr_ctx.into_error(ExpressionErrorKind::DatumInvalid(expr.kind)),
+            ])
         }
     }
 }
