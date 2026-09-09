@@ -1,3 +1,4 @@
+pub(crate) mod datum;
 #[cfg(test)]
 mod tests;
 mod token;

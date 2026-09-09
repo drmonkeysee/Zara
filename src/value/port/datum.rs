@@ -1,21 +1,20 @@
 #[cfg(test)]
 mod tests;
 
-use super::{CharReader, PortDatum, PortResult, PortString, Value};
+use super::{CharReader, PortDatum, PortError, Value};
 use crate::{
     DataReader,
     eval::{Frame, Namespace},
+    lex::datum::{self, CharCursor, CursorResult},
     src::StringSource,
-    string,
     syntax::ParserOutput,
 };
-use std::ops::ControlFlow;
 
 pub(super) fn parse(r: &mut dyn CharReader, env: &Frame, label: impl Into<String>) -> PortDatum {
     let mut src = StringSource::empty(label);
     let mut reader = DataReader::default();
     loop {
-        let Some(buf) = datum_scan(r)? else {
+        let Some(buf) = datum::scan(r)? else {
             return Ok(None);
         };
         src.set(buf);
@@ -38,152 +37,14 @@ pub(super) fn parse(r: &mut dyn CharReader, env: &Frame, label: impl Into<String
     }
 }
 
-type ScanFlow = ControlFlow<()>;
-type ScanResult = PortResult<ScanFlow>;
+impl<T: CharReader + ?Sized> CharCursor for T {
+    type Error = PortError;
 
-fn datum_scan(r: &mut dyn CharReader) -> PortString {
-    let mut buf = String::new();
-    while let Some(ch) = r.read_char()? {
-        buf.push(ch);
-        if let ScanFlow::Break(()) = match ch {
-            '"' | '|' => scan_escapable_delimiter(ch, r, &mut buf)?,
-            '#' => classify_hash(r, &mut buf)?,
-            '(' => scan_parens(1, r, &mut buf)?,
-            ';' => scan_line(r, &mut buf)?,
-            _ if string::is_whitespace(ch) => ScanFlow::Continue(()),
-            _ => scan_delimiter(r, &mut buf)?,
-        } {
-            return Ok(Some(buf));
-        }
+    fn read_char(&mut self) -> CursorResult<Self::Error> {
+        self.read_char()
     }
-    Ok(None)
-}
 
-fn classify_hash(r: &mut dyn CharReader, buf: &mut String) -> ScanResult {
-    if let Some(ch) = r.peek_char()? {
-        match ch {
-            '(' => {
-                // vector
-                consume_char(r, buf)?;
-                return scan_parens(1, r, buf);
-            }
-            ';' => {
-                // datum comment, keep going
-                consume_char(r, buf)?;
-            }
-            'u' => {
-                consume_char(r, buf)?;
-                if let Some(ch) = r.peek_char()?
-                    && ch == '8'
-                {
-                    consume_char(r, buf)?;
-                    if let Some(ch) = r.peek_char()?
-                        && ch == '('
-                    {
-                        // bytevector
-                        consume_char(r, buf)?;
-                        return scan_parens(1, r, buf);
-                    }
-                }
-                return scan_delimiter(r, buf);
-            }
-            '|' => {
-                consume_char(r, buf)?;
-                scan_block_comment(1, r, buf)?;
-            }
-            _ => return scan_delimiter(r, buf),
-        }
-    } else {
-        return Ok(ScanFlow::Break(()));
+    fn peek_char(&mut self) -> CursorResult<Self::Error> {
+        self.peek_char()
     }
-    Ok(ScanFlow::Continue(()))
-}
-
-fn scan_line(r: &mut dyn CharReader, buf: &mut String) -> ScanResult {
-    while let Some(ch) = r.read_char()? {
-        buf.push(ch);
-        if ch == '\n' {
-            break;
-        }
-    }
-    Ok(ScanFlow::Break(()))
-}
-
-fn scan_delimiter(r: &mut dyn CharReader, buf: &mut String) -> ScanResult {
-    while let Some(ch) = r.peek_char()? {
-        if string::is_delimiter(ch) {
-            break;
-        }
-        consume_char(r, buf)?;
-    }
-    Ok(ScanFlow::Break(()))
-}
-
-fn scan_escapable_delimiter(
-    delimiter: char,
-    r: &mut dyn CharReader,
-    buf: &mut String,
-) -> ScanResult {
-    let mut esc = false;
-    while let Some(ch) = r.read_char()? {
-        buf.push(ch);
-        match ch {
-            '\\' => esc = !esc,
-            _ if ch == delimiter && !esc => break,
-            _ => esc = false,
-        }
-    }
-    Ok(ScanFlow::Break(()))
-}
-
-fn scan_parens(mut c: usize, r: &mut dyn CharReader, buf: &mut String) -> ScanResult {
-    while let Some(ch) = r.read_char()? {
-        buf.push(ch);
-        match ch {
-            '(' => c += 1,
-            ')' => c -= 1,
-            _ => (),
-        }
-        if c == 0 {
-            break;
-        }
-    }
-    Ok(ScanFlow::Break(()))
-}
-
-enum BlockDelimiter {
-    None,
-    Hash,
-    Pipe,
-}
-
-fn scan_block_comment(mut c: usize, r: &mut dyn CharReader, buf: &mut String) -> PortResult {
-    let mut d = BlockDelimiter::None;
-    while let Some(ch) = r.read_char()? {
-        buf.push(ch);
-        match ch {
-            '#' => {
-                if let BlockDelimiter::Pipe = d {
-                    c -= 1;
-                }
-                d = BlockDelimiter::Hash;
-            }
-            '|' => {
-                if let BlockDelimiter::Hash = d {
-                    c += 1;
-                }
-                d = BlockDelimiter::Pipe;
-            }
-            _ => d = BlockDelimiter::None,
-        }
-        if c == 0 {
-            break;
-        }
-    }
-    Ok(())
-}
-
-fn consume_char(r: &mut dyn CharReader, buf: &mut String) -> PortResult {
-    buf.push(r.read_char()?.expect("just-peeked char should be readable"));
-    Ok(())
 }
