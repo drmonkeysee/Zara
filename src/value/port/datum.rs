@@ -129,13 +129,7 @@ fn scan_escapable_delimiter(
         buf.push(ch);
         match ch {
             '\\' => esc = !esc,
-            _ if ch == delimiter => {
-                if esc {
-                    esc = false;
-                } else {
-                    break;
-                }
-            }
+            _ if ch == delimiter && !esc => break,
             _ => esc = false,
         }
     }
