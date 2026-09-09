@@ -233,6 +233,7 @@ fn app_title() -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::assert_matches;
 
     #[test]
     fn cmd_ordering() {
@@ -250,7 +251,7 @@ mod tests {
 
         let result = Args::parse(args);
 
-        assert!(matches!(
+        assert_matches!(
             result,
             Args {
                 cmd: Cmd::Run,
@@ -259,7 +260,7 @@ mod tests {
                 mode: RunMode::Evaluate,
                 runargs: None,
             } if me == "zara"
-        ));
+        );
     }
 
     #[test]
@@ -268,7 +269,7 @@ mod tests {
 
         let result = Args::parse(args.into_iter().map(String::from));
 
-        assert!(matches!(
+        assert_matches!(
             result,
             Args {
                 cmd: Cmd::Run,
@@ -277,7 +278,7 @@ mod tests {
                 mode: RunMode::Evaluate,
                 runargs: None,
             } if me == "foo/me"
-        ));
+        );
     }
 
     #[test]
@@ -286,7 +287,7 @@ mod tests {
 
         let result = Args::parse(args.into_iter().map(String::from));
 
-        assert!(matches!(
+        assert_matches!(
             result,
             Args {
                 cmd: Cmd::Run,
@@ -295,7 +296,7 @@ mod tests {
                 mode: RunMode::Evaluate,
                 runargs: Some(_),
             } if me == "foo/me"
-        ));
+        );
         assert_eq!(result.runargs.unwrap(), ["arg1", "arg2", "--arg3=1"]);
     }
 
@@ -307,8 +308,7 @@ mod tests {
         for case in cases {
             let result = Args::parse(case.into_iter().map(String::from));
 
-            assert!(
-                matches!(
+            assert_matches!(
                     result,
                     Args {
                         cmd: Cmd::Help,
@@ -316,11 +316,8 @@ mod tests {
                         me,
                         mode: RunMode::Evaluate,
                         runargs: None,
-                    } if me == program
-                ),
-                "Unexpected match for argument {}",
-                case[1]
-            );
+                    } if me == program, "Unexpected match for argument {}",
+                case[1]);
         }
     }
 
@@ -330,7 +327,7 @@ mod tests {
 
         let result = Args::parse(args.into_iter().map(String::from));
 
-        assert!(matches!(
+        assert_matches!(
             result,
             Args {
                 cmd: Cmd::Run,
@@ -339,7 +336,7 @@ mod tests {
                 mode: RunMode::Evaluate,
                 runargs: None,
             },
-        ));
+        );
     }
 
     #[test]
@@ -349,7 +346,7 @@ mod tests {
 
         let result = Args::parse(args.into_iter().map(String::from));
 
-        assert!(matches!(
+        assert_matches!(
             result,
             Args {
                 cmd: Cmd::Run,
@@ -358,7 +355,7 @@ mod tests {
                 mode: RunMode::Evaluate,
                 runargs: None,
             } if s == input,
-        ));
+        );
     }
 
     #[test]
@@ -367,7 +364,7 @@ mod tests {
 
         let result = Args::parse(args.into_iter().map(String::from));
 
-        assert!(matches!(
+        assert_matches!(
             result,
             Args {
                 cmd: Cmd::Run,
@@ -376,7 +373,7 @@ mod tests {
                 mode: RunMode::Evaluate,
                 runargs: Some(_),
             },
-        ));
+        );
         assert_eq!(result.runargs.unwrap(), ["arg1", "arg2", "--arg3=1"]);
     }
 
@@ -387,7 +384,7 @@ mod tests {
 
         let result = Args::parse(args.into_iter().map(String::from));
 
-        assert!(matches!(
+        assert_matches!(
             result,
             Args {
                 cmd: Cmd::Run,
@@ -396,7 +393,7 @@ mod tests {
                 mode: RunMode::Evaluate,
                 runargs: Some(_),
             } if s == input,
-        ));
+        );
         assert_eq!(result.runargs.unwrap(), ["arg1", "arg2", "--arg3=1"]);
     }
 
@@ -407,17 +404,15 @@ mod tests {
         for case in cases {
             let result = Args::parse(case.into_iter().map(String::from));
 
-            assert!(
-                matches!(
-                    result,
-                    Args {
-                        cmd: Cmd::Run,
-                        input: Input::Repl,
-                        me: _,
-                        mode: RunMode::SyntaxTree,
-                        runargs: None,
-                    }
-                ),
+            assert_matches!(
+                result,
+                Args {
+                    cmd: Cmd::Run,
+                    input: Input::Repl,
+                    me: _,
+                    mode: RunMode::SyntaxTree,
+                    runargs: None,
+                },
                 "Unexpected match for argument {}",
                 case[1]
             );
@@ -431,17 +426,15 @@ mod tests {
         for case in cases {
             let result = Args::parse(case.into_iter().map(String::from));
 
-            assert!(
-                matches!(
-                    result,
-                    Args {
-                        cmd: Cmd::Run,
-                        input: Input::Repl,
-                        me: _,
-                        mode: RunMode::Tokenize,
-                        runargs: None,
-                    }
-                ),
+            assert_matches!(
+                result,
+                Args {
+                    cmd: Cmd::Run,
+                    input: Input::Repl,
+                    me: _,
+                    mode: RunMode::Tokenize,
+                    runargs: None,
+                },
                 "Unexpected match for argument {}",
                 case[1]
             );
@@ -455,17 +448,15 @@ mod tests {
         for case in cases {
             let result = Args::parse(case.into_iter().map(String::from));
 
-            assert!(
-                matches!(
-                    result,
-                    Args {
-                        cmd: Cmd::Run,
-                        input: Input::Repl,
-                        me: _,
-                        mode: RunMode::TokenTree,
-                        runargs: None,
-                    }
-                ),
+            assert_matches!(
+                result,
+                Args {
+                    cmd: Cmd::Run,
+                    input: Input::Repl,
+                    me: _,
+                    mode: RunMode::TokenTree,
+                    runargs: None,
+                },
                 "Unexpected match for argument {}",
                 case[1]
             );
@@ -479,17 +470,15 @@ mod tests {
         for case in cases {
             let result = Args::parse(case.into_iter().map(String::from));
 
-            assert!(
-                matches!(
-                    result,
-                    Args {
-                        cmd: Cmd::Version,
-                        input: Input::Repl,
-                        me: _,
-                        mode: RunMode::Evaluate,
-                        runargs: None,
-                    }
-                ),
+            assert_matches!(
+                result,
+                Args {
+                    cmd: Cmd::Version,
+                    input: Input::Repl,
+                    me: _,
+                    mode: RunMode::Evaluate,
+                    runargs: None,
+                },
                 "Unexpected match for argument {}",
                 case[1]
             );
@@ -502,7 +491,7 @@ mod tests {
 
         let result = Args::parse(args.into_iter().map(String::from));
 
-        assert!(matches!(
+        assert_matches!(
             result,
             Args {
                 cmd: Cmd::Run,
@@ -511,7 +500,7 @@ mod tests {
                 mode: RunMode::Evaluate,
                 runargs: None,
             } if p.to_str().unwrap() == "my/file"
-        ));
+        );
     }
 
     #[test]
@@ -520,7 +509,7 @@ mod tests {
 
         let result = Args::parse(args.into_iter().map(String::from));
 
-        assert!(matches!(
+        assert_matches!(
             result,
             Args {
                 cmd: Cmd::Run,
@@ -529,7 +518,7 @@ mod tests {
                 mode: RunMode::Evaluate,
                 runargs: Some(_),
             } if p.to_str().unwrap() == "my/file"
-        ));
+        );
         assert_eq!(result.runargs.unwrap(), ["arg1", "arg2", "--arg3=1"]);
     }
 
@@ -539,7 +528,7 @@ mod tests {
 
         let result = Args::parse(args.into_iter().map(String::from));
 
-        assert!(matches!(
+        assert_matches!(
             result,
             Args {
                 cmd: Cmd::Run,
@@ -548,7 +537,7 @@ mod tests {
                 mode: RunMode::Evaluate,
                 runargs: Some(_),
             } if me == "foo/me" && p.to_str().unwrap() == "my/file"
-        ));
+        );
         assert_eq!(result.runargs.unwrap(), ["--version", "-T", "-ST"]);
     }
 
@@ -558,7 +547,7 @@ mod tests {
 
         let result = Args::parse(args.into_iter().map(String::from));
 
-        assert!(matches!(
+        assert_matches!(
             result,
             Args {
                 cmd: Cmd::Run,
@@ -567,7 +556,7 @@ mod tests {
                 mode: RunMode::Evaluate,
                 runargs: Some(_),
             } if me == "foo/me"
-        ));
+        );
         assert_eq!(result.runargs.unwrap(), ["--version", "-T", "-ST"]);
     }
 

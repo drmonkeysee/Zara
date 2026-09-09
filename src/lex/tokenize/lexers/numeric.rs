@@ -5,7 +5,7 @@ use super::{
 use crate::number::{
     Decimal, FloatSpec, IntSpec, Integer, Number, NumericError, Radix, Real, Sign,
 };
-use std::{marker::PhantomData, ops::ControlFlow};
+use std::{debug_assert_matches, marker::PhantomData, ops::ControlFlow};
 
 pub(super) struct RealNumber<'me, 'txt> {
     classifier: RealClassifier,
@@ -292,7 +292,7 @@ impl<P: ClassifierProps> ConditionProcessor<'_, '_, P> {
     ) -> TokenExtractResult {
         match kind {
             ComplexKind::Cartesian => {
-                debug_assert!(matches!(start.1, '+' | '-'));
+                debug_assert_matches!(start.1, '+' | '-');
                 match self.props.cartesian_scan(self.scanner, start) {
                     Ok(TokenKind::Imaginary(imag)) => {
                         let real = match self.props.exactness() {

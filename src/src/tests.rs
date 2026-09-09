@@ -1,5 +1,6 @@
 use super::*;
 use crate::testutil::some_or_fail;
+use std::assert_matches;
 
 mod stringsrc {
     use super::*;
@@ -8,13 +9,13 @@ mod stringsrc {
     fn empty() {
         let target = StringSource::empty("test");
 
-        assert!(matches!(
+        assert_matches!(
             target.ctx.as_ref(),
             TextContext {
                 name,
                 path: None
             } if name == "test"
-        ));
+        );
         assert_eq!(target.lineno(), 0);
     }
 
@@ -24,13 +25,13 @@ mod stringsrc {
 
         let target = StringSource::new(src, "test");
 
-        assert!(matches!(
+        assert_matches!(
             target.ctx.as_ref(),
             TextContext {
                 name,
                 path: None
             } if name == "test"
-        ));
+        );
         assert_eq!(target.lineno(), 0);
     }
 
@@ -60,14 +61,14 @@ mod stringsrc {
 
         let line = some_or_fail!(target.next());
 
-        assert!(matches!(
+        assert_matches!(
             line,
             Ok(TextLine {
                 ctx,
                 line,
                 lineno: 1,
             }) if Rc::ptr_eq(&ctx, &target.ctx) && line == "line of source code"
-        ));
+        );
 
         let line = target.next();
 
@@ -82,14 +83,14 @@ mod stringsrc {
 
         let line = some_or_fail!(target.next());
 
-        assert!(matches!(
+        assert_matches!(
             line,
             Ok(TextLine {
                 ctx,
                 line,
                 lineno: 1,
             }) if Rc::ptr_eq(&ctx, &target.ctx) && line == "line of source code  \t  "
-        ));
+        );
 
         let line = target.next();
 
@@ -104,14 +105,14 @@ mod stringsrc {
 
         let line = some_or_fail!(target.next());
 
-        assert!(matches!(
+        assert_matches!(
             line,
             Ok(TextLine {
                 ctx,
                 line,
                 lineno: 1,
             }) if Rc::ptr_eq(&ctx, &target.ctx) && line == "line of source code"
-        ));
+        );
 
         let line = target.next();
 
@@ -126,36 +127,36 @@ mod stringsrc {
 
         let line = some_or_fail!(target.next());
 
-        assert!(matches!(
+        assert_matches!(
             line,
             Ok(TextLine {
                 ctx,
                 line,
                 lineno: 1,
             }) if Rc::ptr_eq(&ctx, &target.ctx) && line == "line1"
-        ));
+        );
 
         let line = some_or_fail!(target.next());
 
-        assert!(matches!(
+        assert_matches!(
             line,
             Ok(TextLine {
                 ctx,
                 line,
                 lineno: 2,
             }) if Rc::ptr_eq(&ctx, &target.ctx) && line == "line2"
-        ));
+        );
 
         let line = some_or_fail!(target.next());
 
-        assert!(matches!(
+        assert_matches!(
             line,
             Ok(TextLine {
                 ctx,
                 line,
                 lineno: 3,
             }) if Rc::ptr_eq(&ctx, &target.ctx) && line == "line3"
-        ));
+        );
 
         let line = target.next();
 
@@ -170,36 +171,36 @@ mod stringsrc {
 
         let line = some_or_fail!(target.next());
 
-        assert!(matches!(
+        assert_matches!(
             line,
             Ok(TextLine {
                 ctx,
                 line,
                 lineno: 1,
             }) if Rc::ptr_eq(&ctx, &target.ctx) && line == "line1"
-        ));
+        );
 
         let line = some_or_fail!(target.next());
 
-        assert!(matches!(
+        assert_matches!(
             line,
             Ok(TextLine {
                 ctx,
                 line,
                 lineno: 2,
             }) if Rc::ptr_eq(&ctx, &target.ctx) && line == "line2"
-        ));
+        );
 
         let line = some_or_fail!(target.next());
 
-        assert!(matches!(
+        assert_matches!(
             line,
             Ok(TextLine {
                 ctx,
                 line,
                 lineno: 3,
             }) if Rc::ptr_eq(&ctx, &target.ctx) && line == "line3"
-        ));
+        );
 
         let line = target.next();
 
@@ -214,36 +215,36 @@ mod stringsrc {
 
         let line = some_or_fail!(target.next());
 
-        assert!(matches!(
+        assert_matches!(
             line,
             Ok(TextLine {
                 ctx,
                 line,
                 lineno: 1,
             }) if Rc::ptr_eq(&ctx, &target.ctx) && line == "line1  "
-        ));
+        );
 
         let line = some_or_fail!(target.next());
 
-        assert!(matches!(
+        assert_matches!(
             line,
             Ok(TextLine {
                 ctx,
                 line,
                 lineno: 2,
             }) if Rc::ptr_eq(&ctx, &target.ctx) && line == "  line2\t"
-        ));
+        );
 
         let line = some_or_fail!(target.next());
 
-        assert!(matches!(
+        assert_matches!(
             line,
             Ok(TextLine {
                 ctx,
                 line,
                 lineno: 3,
             }) if Rc::ptr_eq(&ctx, &target.ctx) && line == "\tline3"
-        ));
+        );
 
         let line = target.next();
 
@@ -259,69 +260,69 @@ mod stringsrc {
 
         let line = some_or_fail!(target.next());
 
-        assert!(matches!(
+        assert_matches!(
             line,
             Ok(TextLine {
                 ctx,
                 line,
                 lineno: 1,
             }) if Rc::ptr_eq(&ctx, &target.ctx) && line == "line1"
-        ));
+        );
 
         let line = some_or_fail!(target.next());
 
-        assert!(matches!(
+        assert_matches!(
             line,
             Ok(TextLine {
                 ctx,
                 line,
                 lineno: 2,
             }) if Rc::ptr_eq(&ctx, &target.ctx) && line == "   "
-        ));
+        );
 
         let line = some_or_fail!(target.next());
 
-        assert!(matches!(
+        assert_matches!(
             line,
             Ok(TextLine {
                 ctx,
                 line,
                 lineno: 3,
             }) if Rc::ptr_eq(&ctx, &target.ctx) && line == "line3"
-        ));
+        );
 
         let line = some_or_fail!(target.next());
 
-        assert!(matches!(
+        assert_matches!(
             line,
             Ok(TextLine {
                 ctx,
                 line,
                 lineno: 4,
             }) if Rc::ptr_eq(&ctx, &target.ctx) && line.is_empty()
-        ));
+        );
 
         let line = some_or_fail!(target.next());
 
-        assert!(matches!(
+        assert_matches!(
             line,
             Ok(TextLine {
                 ctx,
                 line,
                 lineno: 5,
             }) if Rc::ptr_eq(&ctx, &target.ctx) && line == "line5"
-        ));
+        );
 
         let line = some_or_fail!(target.next());
 
-        assert!(matches!(
+        assert_matches!(
             line,
             Ok(TextLine {
                 ctx,
                 line,
                 lineno: 6,
             }) if Rc::ptr_eq(&ctx, &target.ctx) && line == "\t"
-        ));
+        );
 
         let line = target.next();
 
@@ -336,38 +337,38 @@ mod stringsrc {
 
         let line = some_or_fail!(target.next());
 
-        assert!(matches!(
+        assert_matches!(
             line,
             Ok(TextLine {
                 ctx,
                 line,
                 lineno: 1,
             }) if Rc::ptr_eq(&ctx, &target.ctx) && line == "line1"
-        ));
+        );
 
         let line = some_or_fail!(target.next());
 
-        assert!(matches!(
+        assert_matches!(
             line,
             Ok(TextLine {
                 ctx,
                 line,
                 lineno: 2,
             }) if Rc::ptr_eq(&ctx, &target.ctx) && line == "line2"
-        ));
+        );
 
         target.set("a different line");
 
         let line = some_or_fail!(target.next());
 
-        assert!(matches!(
+        assert_matches!(
             line,
             Ok(TextLine {
                 ctx,
                 line,
                 lineno: 1,
             }) if Rc::ptr_eq(&ctx, &target.ctx) && line == "a different line"
-        ));
+        );
 
         let line = target.next();
 
@@ -382,36 +383,36 @@ mod stringsrc {
 
         let line = some_or_fail!(target.next());
 
-        assert!(matches!(
+        assert_matches!(
             line,
             Ok(TextLine {
                 ctx,
                 line,
                 lineno: 1,
             }) if Rc::ptr_eq(&ctx, &target.ctx) && line == "line1"
-        ));
+        );
 
         let line = some_or_fail!(target.next());
 
-        assert!(matches!(
+        assert_matches!(
             line,
             Ok(TextLine {
                 ctx,
                 line,
                 lineno: 2,
             }) if Rc::ptr_eq(&ctx, &target.ctx) && line == "line2"
-        ));
+        );
 
         let line = some_or_fail!(target.next());
 
-        assert!(matches!(
+        assert_matches!(
             line,
             Ok(TextLine {
                 ctx,
                 line,
                 lineno: 3,
             }) if Rc::ptr_eq(&ctx, &target.ctx) && line == "line3"
-        ));
+        );
 
         let line = target.next();
 
@@ -421,14 +422,14 @@ mod stringsrc {
 
         let line = some_or_fail!(target.next());
 
-        assert!(matches!(
+        assert_matches!(
             line,
             Ok(TextLine {
                 ctx,
                 line,
                 lineno: 4,
             }) if Rc::ptr_eq(&ctx, &target.ctx) && line == "an additional line"
-        ));
+        );
 
         let line = target.next();
 
@@ -445,14 +446,14 @@ mod stringsrc {
 
         let line = some_or_fail!(target.next());
 
-        assert!(matches!(
+        assert_matches!(
             line,
             Ok(TextLine {
                 ctx,
                 line,
                 lineno: 1,
             }) if Rc::ptr_eq(&ctx, &target.ctx) && line == "line of source code"
-        ));
+        );
 
         let line = target.next();
 
@@ -467,25 +468,25 @@ mod stringsrc {
 
         let line = some_or_fail!(target.next());
 
-        assert!(matches!(
+        assert_matches!(
             line,
             Ok(TextLine {
                 ctx,
                 line,
                 lineno: 1,
             }) if Rc::ptr_eq(&ctx, &target.ctx) && line == "line1"
-        ));
+        );
 
         let line = some_or_fail!(target.next());
 
-        assert!(matches!(
+        assert_matches!(
             line,
             Ok(TextLine {
                 ctx,
                 line,
                 lineno: 2,
             }) if Rc::ptr_eq(&ctx, &target.ctx) && line == "line2"
-        ));
+        );
 
         target.clear();
 
@@ -535,13 +536,13 @@ mod linesrc {
             "test",
         );
 
-        assert!(matches!(
+        assert_matches!(
             target.ctx.as_ref(),
             TextContext {
                 name,
                 path: None
             } if name == "test"
-        ));
+        );
         assert_eq!(target.lineno(), 0);
     }
 

@@ -4,6 +4,7 @@ use crate::{
     testutil::{TestEnv, err_or_fail, extract_or_fail, ok_or_fail, some_or_fail},
     value::port::{PortError, StringReader},
 };
+use std::assert_matches;
 
 #[test]
 fn empty_string() {
@@ -13,7 +14,7 @@ fn empty_string() {
 
     let r = parse(&mut s, &f, "test-port");
 
-    assert!(matches!(r, Ok(None)));
+    assert_matches!(r, Ok(None));
 }
 
 #[test]
@@ -24,7 +25,7 @@ fn all_whitespace() {
 
     let r = parse(&mut s, &f, "test-port");
 
-    assert!(matches!(r, Ok(None)));
+    assert_matches!(r, Ok(None));
 }
 
 #[test]
@@ -35,7 +36,7 @@ fn comment() {
 
     let r = parse(&mut s, &f, "test-port");
 
-    assert!(matches!(r, Ok(None)));
+    assert_matches!(r, Ok(None));
 }
 
 #[test]
@@ -46,7 +47,7 @@ fn block_comment() {
 
     let r = parse(&mut s, &f, "test-port");
 
-    assert!(matches!(r, Ok(None)));
+    assert_matches!(r, Ok(None));
 }
 
 #[test]
@@ -57,7 +58,7 @@ fn nested_block_comment() {
 
     let r = parse(&mut s, &f, "test-port");
 
-    assert!(matches!(r, Ok(None)));
+    assert_matches!(r, Ok(None));
 }
 
 #[test]
@@ -68,7 +69,7 @@ fn unterminated_block_comment() {
 
     let r = parse(&mut s, &f, "test-port");
 
-    assert!(matches!(r, Ok(None)));
+    assert_matches!(r, Ok(None));
 }
 
 #[test]
@@ -79,7 +80,7 @@ fn almost_terminated_block_comment() {
 
     let r = parse(&mut s, &f, "test-port");
 
-    assert!(matches!(r, Ok(None)));
+    assert_matches!(r, Ok(None));
 }
 
 #[test]
@@ -129,11 +130,11 @@ fn boolean() {
     let r = parse(&mut s, &f, "test-port");
 
     let v = some_or_fail!(ok_or_fail!(r));
-    assert!(matches!(v, Value::Boolean(false)));
+    assert_matches!(v, Value::Boolean(false));
 
     let r = parse(&mut s, &f, "test-port");
 
-    assert!(matches!(r, Ok(None)));
+    assert_matches!(r, Ok(None));
 }
 
 #[test]
@@ -145,11 +146,11 @@ fn character() {
     let r = parse(&mut s, &f, "test-port");
 
     let v = some_or_fail!(ok_or_fail!(r));
-    assert!(matches!(v, Value::Character('a')));
+    assert_matches!(v, Value::Character('a'));
 
     let r = parse(&mut s, &f, "test-port");
 
-    assert!(matches!(r, Ok(None)));
+    assert_matches!(r, Ok(None));
 }
 
 #[test]
@@ -161,12 +162,12 @@ fn pair() {
     let r = parse(&mut s, &f, "test-port");
 
     let v = some_or_fail!(ok_or_fail!(r));
-    assert!(matches!(v, Value::Pair(_)));
+    assert_matches!(v, Value::Pair(_));
     assert_eq!(v.as_datum().to_string(), "(a . b)");
 
     let r = parse(&mut s, &f, "test-port");
 
-    assert!(matches!(r, Ok(None)));
+    assert_matches!(r, Ok(None));
 }
 
 #[test]
@@ -178,12 +179,12 @@ fn list() {
     let r = parse(&mut s, &f, "test-port");
 
     let v = some_or_fail!(ok_or_fail!(r));
-    assert!(matches!(v, Value::Pair(_)));
+    assert_matches!(v, Value::Pair(_));
     assert_eq!(v.as_datum().to_string(), "(a 2 \"three\")");
 
     let r = parse(&mut s, &f, "test-port");
 
-    assert!(matches!(r, Ok(None)));
+    assert_matches!(r, Ok(None));
 }
 
 #[test]
@@ -200,12 +201,12 @@ fn multiline_list() {
     let r = parse(&mut s, &f, "test-port");
 
     let v = some_or_fail!(ok_or_fail!(r));
-    assert!(matches!(v, Value::Pair(_)));
+    assert_matches!(v, Value::Pair(_));
     assert_eq!(v.as_datum().to_string(), "(a 2 \"three\")");
 
     let r = parse(&mut s, &f, "test-port");
 
-    assert!(matches!(r, Ok(None)));
+    assert_matches!(r, Ok(None));
 }
 
 #[test]
@@ -217,12 +218,12 @@ fn nested_list() {
     let r = parse(&mut s, &f, "test-port");
 
     let v = some_or_fail!(ok_or_fail!(r));
-    assert!(matches!(v, Value::Pair(_)));
+    assert_matches!(v, Value::Pair(_));
     assert_eq!(v.as_datum().to_string(), "(a (1 2 3) b c)");
 
     let r = parse(&mut s, &f, "test-port");
 
-    assert!(matches!(r, Ok(None)));
+    assert_matches!(r, Ok(None));
 }
 
 #[test]
@@ -234,12 +235,12 @@ fn quoted_element() {
     let r = parse(&mut s, &f, "test-port");
 
     let v = some_or_fail!(ok_or_fail!(r));
-    assert!(matches!(v, Value::Pair(_)));
+    assert_matches!(v, Value::Pair(_));
     assert_eq!(v.as_datum().to_string(), "(quote foo)");
 
     let r = parse(&mut s, &f, "test-port");
 
-    assert!(matches!(r, Ok(None)));
+    assert_matches!(r, Ok(None));
 }
 
 #[test]
@@ -251,7 +252,7 @@ fn syntax_list() {
     let r = parse(&mut s, &f, "test-port");
 
     let v = some_or_fail!(ok_or_fail!(r));
-    assert!(matches!(v, Value::Pair(_)));
+    assert_matches!(v, Value::Pair(_));
     assert_eq!(
         v.as_datum().to_string(),
         "(if (< a b) (quote less) (quote more))"
@@ -259,7 +260,7 @@ fn syntax_list() {
 
     let r = parse(&mut s, &f, "test-port");
 
-    assert!(matches!(r, Ok(None)));
+    assert_matches!(r, Ok(None));
 }
 
 #[test]
@@ -271,11 +272,11 @@ fn null() {
     let r = parse(&mut s, &f, "test-port");
 
     let v = some_or_fail!(ok_or_fail!(r));
-    assert!(matches!(v, Value::Null));
+    assert_matches!(v, Value::Null);
 
     let r = parse(&mut s, &f, "test-port");
 
-    assert!(matches!(r, Ok(None)));
+    assert_matches!(r, Ok(None));
 }
 
 #[test]
@@ -287,11 +288,11 @@ fn number() {
     let r = parse(&mut s, &f, "test-port");
 
     let v = some_or_fail!(ok_or_fail!(r));
-    assert!(matches!(v, Value::Number(r) if r.to_string() == "12"));
+    assert_matches!(v, Value::Number(r) if r.to_string() == "12");
 
     let r = parse(&mut s, &f, "test-port");
 
-    assert!(matches!(r, Ok(None)));
+    assert_matches!(r, Ok(None));
 }
 
 #[test]
@@ -303,38 +304,35 @@ fn inf_nan() {
     let r = parse(&mut s, &f, "test-port");
 
     let v = some_or_fail!(ok_or_fail!(r));
-    assert!(matches!(
-        v,
-        Value::Number(Number::Real(Real::Float(f64::INFINITY)))
-    ));
+    assert_matches!(v, Value::Number(Number::Real(Real::Float(f64::INFINITY))));
 
     let r = parse(&mut s, &f, "test-port");
 
     let v = some_or_fail!(ok_or_fail!(r));
-    assert!(matches!(
+    assert_matches!(
         v,
         Value::Number(Number::Real(Real::Float(f64::NEG_INFINITY)))
-    ));
+    );
 
     let r = parse(&mut s, &f, "test-port");
 
     let v = some_or_fail!(ok_or_fail!(r));
-    assert!(matches!(
+    assert_matches!(
         v,
         Value::Number(Number::Real(Real::Float(f))) if f.is_nan()
-    ));
+    );
 
     let r = parse(&mut s, &f, "test-port");
 
     let v = some_or_fail!(ok_or_fail!(r));
-    assert!(matches!(
+    assert_matches!(
         v,
         Value::Number(Number::Real(Real::Float(f))) if f.is_nan()
-    ));
+    );
 
     let r = parse(&mut s, &f, "test-port");
 
-    assert!(matches!(r, Ok(None)));
+    assert_matches!(r, Ok(None));
 }
 
 #[test]
@@ -346,62 +344,62 @@ fn complex() {
     let r = parse(&mut s, &f, "test-port");
 
     let v = some_or_fail!(ok_or_fail!(r));
-    assert!(matches!(
+    assert_matches!(
         v,
         Value::Number(n) if n.to_string() == "4+5i"
-    ));
+    );
 
     let r = parse(&mut s, &f, "test-port");
 
     let v = some_or_fail!(ok_or_fail!(r));
-    assert!(matches!(
+    assert_matches!(
         v,
         Value::Number(n) if n.to_string() == "3-2i"
-    ));
+    );
 
     let r = parse(&mut s, &f, "test-port");
 
     let v = some_or_fail!(ok_or_fail!(r));
-    assert!(matches!(
+    assert_matches!(
         v,
         Value::Number(n) if n.to_string() == "+i"
-    ));
+    );
 
     let r = parse(&mut s, &f, "test-port");
 
     let v = some_or_fail!(ok_or_fail!(r));
-    assert!(matches!(
+    assert_matches!(
         v,
         Value::Number(n) if n.to_string() == "-i"
-    ));
+    );
 
     let r = parse(&mut s, &f, "test-port");
 
     let v = some_or_fail!(ok_or_fail!(r));
-    assert!(matches!(
+    assert_matches!(
         v,
         Value::Number(n) if n.to_string() == "+2i"
-    ));
+    );
 
     let r = parse(&mut s, &f, "test-port");
 
     let v = some_or_fail!(ok_or_fail!(r));
-    assert!(matches!(
+    assert_matches!(
         v,
         Value::Number(n) if n.to_string() == "-3i"
-    ));
+    );
 
     let r = parse(&mut s, &f, "test-port");
 
     let v = some_or_fail!(ok_or_fail!(r));
-    assert!(matches!(
+    assert_matches!(
         v,
         Value::Number(n) if n.to_string() == "16.81030364216735+27.22891278509179i"
-    ));
+    );
 
     let r = parse(&mut s, &f, "test-port");
 
-    assert!(matches!(r, Ok(None)));
+    assert_matches!(r, Ok(None));
 }
 
 #[test]
@@ -413,11 +411,11 @@ fn simple_string() {
     let r = parse(&mut s, &f, "test-port");
 
     let v = some_or_fail!(ok_or_fail!(r));
-    assert!(matches!(v, Value::String(s) if s.as_ref() == "foo bar"));
+    assert_matches!(v, Value::String(s) if s.as_ref() == "foo bar");
 
     let r = parse(&mut s, &f, "test-port");
 
-    assert!(matches!(r, Ok(None)));
+    assert_matches!(r, Ok(None));
 }
 
 #[test]
@@ -433,11 +431,11 @@ bar
     let r = parse(&mut s, &f, "test-port");
 
     let v = some_or_fail!(ok_or_fail!(r));
-    assert!(matches!(v, Value::String(s) if s.as_ref() == "foo\nbar\n   baz"));
+    assert_matches!(v, Value::String(s) if s.as_ref() == "foo\nbar\n   baz");
 
     let r = parse(&mut s, &f, "test-port");
 
-    assert!(matches!(r, Ok(None)));
+    assert_matches!(r, Ok(None));
 }
 
 #[test]
@@ -449,13 +447,11 @@ fn nested_string() {
     let r = parse(&mut s, &f, "test-port");
 
     let v = some_or_fail!(ok_or_fail!(r));
-    assert!(
-        matches!(v, Value::String(s) if s.as_ref() == "string with \"inner string\" inside it")
-    );
+    assert_matches!(v, Value::String(s) if s.as_ref() == "string with \"inner string\" inside it");
 
     let r = parse(&mut s, &f, "test-port");
 
-    assert!(matches!(r, Ok(None)));
+    assert_matches!(r, Ok(None));
 }
 
 #[test]
@@ -467,13 +463,11 @@ fn nested_string_handles_nested_slash() {
     let r = parse(&mut s, &f, "test-port");
 
     let v = some_or_fail!(ok_or_fail!(r));
-    assert!(
-        matches!(v, Value::String(s) if s.as_ref() == "string with \"inner \\ string\" inside it")
-    );
+    assert_matches!(v, Value::String(s) if s.as_ref() == "string with \"inner \\ string\" inside it");
 
     let r = parse(&mut s, &f, "test-port");
 
-    assert!(matches!(r, Ok(None)));
+    assert_matches!(r, Ok(None));
 }
 
 #[test]
@@ -504,11 +498,11 @@ fn symbol() {
     let r = parse(&mut s, &f, "test-port");
 
     let v = some_or_fail!(ok_or_fail!(r));
-    assert!(matches!(v, Value::Symbol(s) if s.as_ref() == "foo"));
+    assert_matches!(v, Value::Symbol(s) if s.as_ref() == "foo");
 
     let r = parse(&mut s, &f, "test-port");
 
-    assert!(matches!(r, Ok(None)));
+    assert_matches!(r, Ok(None));
 }
 
 #[test]
@@ -520,11 +514,11 @@ fn verbose_symbol() {
     let r = parse(&mut s, &f, "test-port");
 
     let v = some_or_fail!(ok_or_fail!(r));
-    assert!(matches!(v, Value::Symbol(s) if s.as_ref() == "foo bar baz"));
+    assert_matches!(v, Value::Symbol(s) if s.as_ref() == "foo bar baz");
 
     let r = parse(&mut s, &f, "test-port");
 
-    assert!(matches!(r, Ok(None)));
+    assert_matches!(r, Ok(None));
 }
 
 #[test]
@@ -540,11 +534,11 @@ bar
     let r = parse(&mut s, &f, "test-port");
 
     let v = some_or_fail!(ok_or_fail!(r));
-    assert!(matches!(v, Value::Symbol(s) if s.as_ref() == "foo\nbar\n   baz"));
+    assert_matches!(v, Value::Symbol(s) if s.as_ref() == "foo\nbar\n   baz");
 
     let r = parse(&mut s, &f, "test-port");
 
-    assert!(matches!(r, Ok(None)));
+    assert_matches!(r, Ok(None));
 }
 
 #[test]
@@ -556,11 +550,11 @@ fn nested_verbose_symbol() {
     let r = parse(&mut s, &f, "test-port");
 
     let v = some_or_fail!(ok_or_fail!(r));
-    assert!(matches!(v, Value::Symbol(s) if s.as_ref() == "symbol with |nested symbol| in it"));
+    assert_matches!(v, Value::Symbol(s) if s.as_ref() == "symbol with |nested symbol| in it");
 
     let r = parse(&mut s, &f, "test-port");
 
-    assert!(matches!(r, Ok(None)));
+    assert_matches!(r, Ok(None));
 }
 
 #[test]
@@ -572,11 +566,11 @@ fn nested_verbose_symbol_handles_escaped_slash() {
     let r = parse(&mut s, &f, "test-port");
 
     let v = some_or_fail!(ok_or_fail!(r));
-    assert!(matches!(v, Value::Symbol(s) if s.as_ref() == "symbol with |nested \\ symbol| in it"));
+    assert_matches!(v, Value::Symbol(s) if s.as_ref() == "symbol with |nested \\ symbol| in it");
 
     let r = parse(&mut s, &f, "test-port");
 
-    assert!(matches!(r, Ok(None)));
+    assert_matches!(r, Ok(None));
 }
 
 #[test]
@@ -607,12 +601,12 @@ fn bytevector() {
     let r = parse(&mut s, &f, "test-port");
 
     let v = some_or_fail!(ok_or_fail!(r));
-    assert!(matches!(v, Value::ByteVector(_)));
+    assert_matches!(v, Value::ByteVector(_));
     assert_eq!(v.as_datum().to_string(), "#u8(1 2 3)");
 
     let r = parse(&mut s, &f, "test-port");
 
-    assert!(matches!(r, Ok(None)));
+    assert_matches!(r, Ok(None));
 }
 
 #[test]
@@ -629,12 +623,12 @@ fn multiline_bytevector() {
     let r = parse(&mut s, &f, "test-port");
 
     let v = some_or_fail!(ok_or_fail!(r));
-    assert!(matches!(v, Value::ByteVector(_)));
+    assert_matches!(v, Value::ByteVector(_));
     assert_eq!(v.as_datum().to_string(), "#u8(1 2 3)");
 
     let r = parse(&mut s, &f, "test-port");
 
-    assert!(matches!(r, Ok(None)));
+    assert_matches!(r, Ok(None));
 }
 
 #[test]
@@ -679,12 +673,12 @@ fn vector() {
     let r = parse(&mut s, &f, "test-port");
 
     let v = some_or_fail!(ok_or_fail!(r));
-    assert!(matches!(v, Value::Vector(_)));
+    assert_matches!(v, Value::Vector(_));
     assert_eq!(v.as_datum().to_string(), "#(a 2 \"three\")");
 
     let r = parse(&mut s, &f, "test-port");
 
-    assert!(matches!(r, Ok(None)));
+    assert_matches!(r, Ok(None));
 }
 
 #[test]
@@ -702,12 +696,12 @@ fn multiline_vector() {
     let r = parse(&mut s, &f, "test-port");
 
     let v = some_or_fail!(ok_or_fail!(r));
-    assert!(matches!(v, Value::Vector(_)));
+    assert_matches!(v, Value::Vector(_));
     assert_eq!(v.as_datum().to_string(), "#(a 2 \"three\")");
 
     let r = parse(&mut s, &f, "test-port");
 
-    assert!(matches!(r, Ok(None)));
+    assert_matches!(r, Ok(None));
 }
 
 #[test]
@@ -719,12 +713,12 @@ fn nested_vector() {
     let r = parse(&mut s, &f, "test-port");
 
     let v = some_or_fail!(ok_or_fail!(r));
-    assert!(matches!(v, Value::Vector(_)));
+    assert_matches!(v, Value::Vector(_));
     assert_eq!(v.as_datum().to_string(), "#(a #(1 2 3) b c)");
 
     let r = parse(&mut s, &f, "test-port");
 
-    assert!(matches!(r, Ok(None)));
+    assert_matches!(r, Ok(None));
 }
 
 #[test]
@@ -736,12 +730,12 @@ fn list_in_vector() {
     let r = parse(&mut s, &f, "test-port");
 
     let v = some_or_fail!(ok_or_fail!(r));
-    assert!(matches!(v, Value::Vector(_)));
+    assert_matches!(v, Value::Vector(_));
     assert_eq!(v.as_datum().to_string(), "#(a (1 2 3) b c)");
 
     let r = parse(&mut s, &f, "test-port");
 
-    assert!(matches!(r, Ok(None)));
+    assert_matches!(r, Ok(None));
 }
 
 #[test]
@@ -753,12 +747,12 @@ fn vector_in_list() {
     let r = parse(&mut s, &f, "test-port");
 
     let v = some_or_fail!(ok_or_fail!(r));
-    assert!(matches!(v, Value::Pair(_)));
+    assert_matches!(v, Value::Pair(_));
     assert_eq!(v.as_datum().to_string(), "(a #(1 2 3) b c)");
 
     let r = parse(&mut s, &f, "test-port");
 
-    assert!(matches!(r, Ok(None)));
+    assert_matches!(r, Ok(None));
 }
 
 #[test]
@@ -770,11 +764,11 @@ fn simple_value_ignore_leading_trailing_whitespace() {
     let r = parse(&mut s, &f, "test-port");
 
     let v = some_or_fail!(ok_or_fail!(r));
-    assert!(matches!(v, Value::Number(r) if r.to_string() == "12"));
+    assert_matches!(v, Value::Number(r) if r.to_string() == "12");
 
     let r = parse(&mut s, &f, "test-port");
 
-    assert!(matches!(r, Ok(None)));
+    assert_matches!(r, Ok(None));
 }
 
 #[test]
@@ -786,16 +780,16 @@ fn simple_value_stops_at_space() {
     let r = parse(&mut s, &f, "test-port");
 
     let v = some_or_fail!(ok_or_fail!(r));
-    assert!(matches!(v, Value::Number(r) if r.to_string() == "12"));
+    assert_matches!(v, Value::Number(r) if r.to_string() == "12");
 
     let r = parse(&mut s, &f, "test-port");
 
     let v = some_or_fail!(ok_or_fail!(r));
-    assert!(matches!(v, Value::Boolean(true)));
+    assert_matches!(v, Value::Boolean(true));
 
     let r = parse(&mut s, &f, "test-port");
 
-    assert!(matches!(r, Ok(None)));
+    assert_matches!(r, Ok(None));
 }
 
 #[test]
@@ -807,16 +801,16 @@ fn simple_value_stops_at_delimiter() {
     let r = parse(&mut s, &f, "test-port");
 
     let v = some_or_fail!(ok_or_fail!(r));
-    assert!(matches!(v, Value::Number(r) if r.to_string() == "12"));
+    assert_matches!(v, Value::Number(r) if r.to_string() == "12");
 
     let r = parse(&mut s, &f, "test-port");
 
     let v = some_or_fail!(ok_or_fail!(r));
-    assert!(matches!(v, Value::Boolean(true)));
+    assert_matches!(v, Value::Boolean(true));
 
     let r = parse(&mut s, &f, "test-port");
 
-    assert!(matches!(r, Ok(None)));
+    assert_matches!(r, Ok(None));
 }
 
 #[test]
@@ -828,11 +822,11 @@ fn datum_comment_is_ignored() {
     let r = parse(&mut s, &f, "test-port");
 
     let v = some_or_fail!(ok_or_fail!(r));
-    assert!(matches!(v, Value::Boolean(true)));
+    assert_matches!(v, Value::Boolean(true));
 
     let r = parse(&mut s, &f, "test-port");
 
-    assert!(matches!(r, Ok(None)));
+    assert_matches!(r, Ok(None));
 }
 
 #[test]
@@ -844,12 +838,12 @@ fn datum_item_is_ignored() {
     let r = parse(&mut s, &f, "test-port");
 
     let v = some_or_fail!(ok_or_fail!(r));
-    assert!(matches!(v, Value::Pair(_)));
+    assert_matches!(v, Value::Pair(_));
     assert_eq!(v.as_datum().to_string(), "(a c)");
 
     let r = parse(&mut s, &f, "test-port");
 
-    assert!(matches!(r, Ok(None)));
+    assert_matches!(r, Ok(None));
 }
 
 #[test]
@@ -860,7 +854,7 @@ fn just_datum_comment_is_eof() {
 
     let r = parse(&mut s, &f, "test-port");
 
-    assert!(matches!(r, Ok(None)));
+    assert_matches!(r, Ok(None));
 }
 
 #[test]
@@ -890,5 +884,5 @@ fn directive() {
     let mut s = StringReader::new("#!fold-case");
 
     let r = parse(&mut s, &f, "test-port");
-    assert!(matches!(r, Ok(None)));
+    assert_matches!(r, Ok(None));
 }

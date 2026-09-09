@@ -3,7 +3,7 @@ use crate::{
     Exception,
     testutil::{TestEnv, err_or_fail, extract_or_fail, ok_or_fail},
 };
-use std::rc::Rc;
+use std::{assert_matches, rc::Rc};
 
 #[test]
 fn all_boolean_empty() {
@@ -13,7 +13,7 @@ fn all_boolean_empty() {
     let r = booleans_eq(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::Boolean(true)));
+    assert_matches!(v, Value::Boolean(true));
 }
 
 #[test]
@@ -25,7 +25,7 @@ fn all_boolean_single() {
         let r = booleans_eq(&case, &env.new_frame());
 
         let v = ok_or_fail!(r);
-        assert!(matches!(v, Value::Boolean(true)));
+        assert_matches!(v, Value::Boolean(true));
     }
 }
 
@@ -41,7 +41,7 @@ fn all_boolean_trues() {
     let r = booleans_eq(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::Boolean(true)));
+    assert_matches!(v, Value::Boolean(true));
 }
 
 #[test]
@@ -56,7 +56,7 @@ fn all_boolean_falses() {
     let r = booleans_eq(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::Boolean(true)));
+    assert_matches!(v, Value::Boolean(true));
 }
 
 #[test]
@@ -71,7 +71,7 @@ fn all_boolean_mix() {
     let r = booleans_eq(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::Boolean(false)));
+    assert_matches!(v, Value::Boolean(false));
 }
 
 #[test]
@@ -119,7 +119,7 @@ fn all_symbols_empty() {
     let r = symbols_eq(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::Boolean(true)));
+    assert_matches!(v, Value::Boolean(true));
 }
 
 #[test]
@@ -130,7 +130,7 @@ fn all_symbols_single() {
     let r = symbols_eq(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::Boolean(true)));
+    assert_matches!(v, Value::Boolean(true));
 }
 
 #[test]
@@ -146,7 +146,7 @@ fn all_symbols_equal() {
     let r = symbols_eq(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::Boolean(true)));
+    assert_matches!(v, Value::Boolean(true));
 }
 
 #[test]
@@ -162,7 +162,7 @@ fn all_symbols_mixed() {
     let r = symbols_eq(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::Boolean(false)));
+    assert_matches!(v, Value::Boolean(false));
 }
 
 #[test]
@@ -177,7 +177,7 @@ fn all_symbols_interned_even_if_from_distinct_pointers() {
     let r = symbols_eq(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::Boolean(true)));
+    assert_matches!(v, Value::Boolean(true));
 }
 
 #[test]
@@ -207,7 +207,7 @@ fn all_chars_empty() {
     let r = chars_eq(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::Boolean(true)));
+    assert_matches!(v, Value::Boolean(true));
 }
 
 #[test]
@@ -218,7 +218,7 @@ fn all_chars_single() {
     let r = chars_eq(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::Boolean(true)));
+    assert_matches!(v, Value::Boolean(true));
 }
 
 #[test]
@@ -233,7 +233,7 @@ fn all_chars_equal() {
     let r = chars_eq(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::Boolean(true)));
+    assert_matches!(v, Value::Boolean(true));
 }
 
 #[test]
@@ -248,7 +248,7 @@ fn all_chars_mixed() {
     let r = chars_eq(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::Boolean(false)));
+    assert_matches!(v, Value::Boolean(false));
 }
 
 #[test]
@@ -281,7 +281,7 @@ fn all_chars_lt() {
     let r = chars_lt(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::Boolean(true)));
+    assert_matches!(v, Value::Boolean(true));
 }
 
 #[test]
@@ -296,7 +296,7 @@ fn all_chars_not_lt() {
     let r = chars_lt(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::Boolean(false)));
+    assert_matches!(v, Value::Boolean(false));
 }
 
 #[test]
@@ -307,7 +307,7 @@ fn int_to_char() {
     let r = char_from_integer(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::Character('A')));
+    assert_matches!(v, Value::Character('A'));
 }
 
 #[test]

@@ -21,6 +21,7 @@ use crate::{
     number::{Number, NumericError, Real},
     testutil::extract_or_fail,
 };
+use std::assert_matches;
 
 mod integer {
     use super::*;
@@ -38,13 +39,13 @@ mod integer {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 1 },
             }
-        ));
+        );
         let int = extract_number!(tok.kind, Number::Real, Real::Integer);
         assert_eq!(int.to_string(), "4");
     }
@@ -62,13 +63,13 @@ mod integer {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 2 },
             }
-        ));
+        );
         let int = extract_number!(tok.kind, Number::Real, Real::Integer);
         assert_eq!(int.to_string(), "4");
     }
@@ -86,13 +87,13 @@ mod integer {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 2 },
             }
-        ));
+        );
         let int = extract_number!(tok.kind, Number::Real, Real::Integer);
         assert_eq!(int.to_string(), "-5");
     }
@@ -110,13 +111,13 @@ mod integer {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 1 },
             }
-        ));
+        );
         let int = extract_number!(tok.kind, Number::Real, Real::Integer);
         assert_eq!(int.to_string(), "0");
     }
@@ -134,13 +135,13 @@ mod integer {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 2 },
             }
-        ));
+        );
         let int = extract_number!(tok.kind, Number::Real, Real::Integer);
         assert_eq!(int.to_string(), "0");
     }
@@ -159,13 +160,13 @@ mod integer {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 19 },
             }
-        ));
+        );
         let int = extract_number!(tok.kind, Number::Real, Real::Integer);
         assert_eq!(int.to_string(), "9223372036854775807");
     }
@@ -184,13 +185,13 @@ mod integer {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 20 },
             }
-        ));
+        );
         let int = extract_number!(tok.kind, Number::Real, Real::Integer);
         assert_eq!(int.to_string(), "-9223372036854775808");
     }
@@ -209,13 +210,13 @@ mod integer {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 20 },
             }
-        ));
+        );
         let int = extract_number!(tok.kind, Number::Real, Real::Integer);
         assert_eq!(int.to_string(), "18446744073709551615");
     }
@@ -234,13 +235,13 @@ mod integer {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 21 },
             }
-        ));
+        );
         let int = extract_number!(tok.kind, Number::Real, Real::Integer);
         assert_eq!(int.to_string(), "18446744073709551615");
     }
@@ -259,13 +260,13 @@ mod integer {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 21 },
             }
-        ));
+        );
         let int = extract_number!(tok.kind, Number::Real, Real::Integer);
         assert_eq!(int.to_string(), "-18446744073709551615");
     }
@@ -289,13 +290,13 @@ mod integer {
 
             assert!(c.is_none());
             let tok = ok_or_fail!(r);
-            assert!(matches!(
+            assert_matches!(
                 tok,
                 Token {
                     kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end },
                 } if end == case.len()
-            ));
+            );
             let int = extract_number!(tok.kind, Number::Real, Real::Integer);
             let expected = if case.contains('-') { "-42" } else { "42" };
             assert_eq!(int.to_string(), expected);
@@ -317,13 +318,13 @@ mod integer {
 
             assert!(c.is_none());
             let tok = ok_or_fail!(r);
-            assert!(matches!(
+            assert_matches!(
                 tok,
                 Token {
                     kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end },
                 } if end == case.len()
-            ));
+            );
             let int = extract_number!(tok.kind, Number::Real, Real::Integer);
             assert_eq!(int.to_string(), "42");
         }
@@ -342,13 +343,13 @@ mod integer {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 3 },
             }
-        ));
+        );
         let int = extract_number!(tok.kind, Number::Real, Real::Integer);
         assert_eq!(int.to_string(), "4");
     }
@@ -368,13 +369,13 @@ mod integer {
 
             assert!(c.is_none());
             let tok = ok_or_fail!(r);
-            assert!(matches!(
+            assert_matches!(
                 tok,
                 Token {
                     kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end: 5 },
                 }
-            ));
+            );
             let int = extract_number!(tok.kind, Number::Real, Real::Integer);
             assert_eq!(int.to_string(), "10");
         }
@@ -395,13 +396,13 @@ mod integer {
 
             assert!(c.is_none());
             let tok = ok_or_fail!(r);
-            assert!(matches!(
+            assert_matches!(
                 tok,
                 Token {
                     kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end: 5 },
                 }
-            ));
+            );
             let int = extract_number!(tok.kind, Number::Real, Real::Integer);
             assert_eq!(int.to_string(), "10");
         }
@@ -422,13 +423,13 @@ mod integer {
 
             assert!(c.is_none());
             let tok = ok_or_fail!(r);
-            assert!(matches!(
+            assert_matches!(
                 tok,
                 Token {
                     kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end },
                 } if end == case.len()
-            ));
+            );
             let r = extract_number!(tok.kind, Number::Real);
             assert_eq!(r.to_string(), "4.0");
         }
@@ -447,13 +448,13 @@ mod integer {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 3 },
             }
-        ));
+        );
         let r = extract_number!(tok.kind, Number::Real);
         assert_eq!(r.to_string(), "0.0");
     }
@@ -471,13 +472,13 @@ mod integer {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 4 },
             }
-        ));
+        );
         let r = extract_number!(tok.kind, Number::Real);
         assert_eq!(r.to_string(), "-4.0");
     }
@@ -495,13 +496,13 @@ mod integer {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 7 },
             }
-        ));
+        );
         let r = extract_number!(tok.kind, Number::Real);
         assert_eq!(r.to_string(), "4.0");
     }
@@ -520,13 +521,13 @@ mod integer {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end },
             } if end == input.len()
-        ));
+        );
         let r = extract_number!(tok.kind, Number::Real);
         assert_eq!(r.to_string(), "1.8446744073709552e19");
     }
@@ -546,13 +547,13 @@ mod integer {
 
             assert!(c.is_none());
             let err = err_or_fail!(r);
-            assert!(matches!(
+            assert_matches!(
                 err,
                 TokenError {
                     kind: TokenErrorKind::NumberInvalid,
                     span: TxtSpan { start: 0, end },
                 } if end == case.len()
-            ));
+            );
         }
     }
 }
@@ -573,13 +574,13 @@ mod rational {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 3 },
             }
-        ));
+        );
         let rat = extract_number!(tok.kind, Number::Real, Real::Rational);
         assert_eq!(rat.to_string(), "4/5");
     }
@@ -597,13 +598,13 @@ mod rational {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 4 },
             }
-        ));
+        );
         let rat = extract_number!(tok.kind, Number::Real, Real::Rational);
         assert_eq!(rat.to_string(), "4/5");
     }
@@ -621,13 +622,13 @@ mod rational {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 3 },
             }
-        ));
+        );
         let rat = extract_number!(tok.kind, Number::Real, Real::Integer);
         assert_eq!(rat.to_string(), "0");
     }
@@ -645,13 +646,13 @@ mod rational {
 
         assert!(c.is_none());
         let err = err_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             err,
             TokenError {
                 kind: TokenErrorKind::NumericError(NumericError::DivideByZero),
                 span: TxtSpan { start: 0, end: 3 },
             }
-        ));
+        );
     }
 
     #[test]
@@ -667,13 +668,13 @@ mod rational {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 4 },
             }
-        ));
+        );
         let rat = extract_number!(tok.kind, Number::Real, Real::Rational);
         assert_eq!(rat.to_string(), "2/5");
     }
@@ -691,13 +692,13 @@ mod rational {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 4 },
             }
-        ));
+        );
         let rat = extract_number!(tok.kind, Number::Real, Real::Integer);
         assert_eq!(rat.to_string(), "2");
     }
@@ -715,13 +716,13 @@ mod rational {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 5 },
             }
-        ));
+        );
         let rat = extract_number!(tok.kind, Number::Real, Real::Integer);
         assert_eq!(rat.to_string(), "1");
     }
@@ -739,13 +740,13 @@ mod rational {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 4 },
             }
-        ));
+        );
         let rat = extract_number!(tok.kind, Number::Real, Real::Integer);
         assert_eq!(rat.to_string(), "10");
     }
@@ -764,13 +765,13 @@ mod rational {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 23 },
             }
-        ));
+        );
         let rat = extract_number!(tok.kind, Number::Real, Real::Rational);
         assert_eq!(rat.to_string(), "1/18446744073709551615");
     }
@@ -788,13 +789,13 @@ mod rational {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 4 },
             }
-        ));
+        );
         let rat = extract_number!(tok.kind, Number::Real, Real::Rational);
         assert_eq!(rat.to_string(), "-4/5");
     }
@@ -823,13 +824,13 @@ mod rational {
 
             assert!(c.is_none());
             let tok = ok_or_fail!(r);
-            assert!(matches!(
+            assert_matches!(
                 tok,
                 Token {
                     kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end },
                 } if end == case.len()
-            ));
+            );
             let rat = extract_number!(tok.kind, Number::Real, Real::Rational);
             let expected = if case.contains('-') {
                 "-42/43"
@@ -853,13 +854,13 @@ mod rational {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 5 },
             }
-        ));
+        );
         let rat = extract_number!(tok.kind, Number::Real, Real::Rational);
         assert_eq!(rat.to_string(), "4/5");
     }
@@ -879,13 +880,13 @@ mod rational {
 
             assert!(c.is_none());
             let tok = ok_or_fail!(r);
-            assert!(matches!(
+            assert_matches!(
                 tok,
                 Token {
                     kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end: 7 },
                 }
-            ));
+            );
             let rat = extract_number!(tok.kind, Number::Real, Real::Rational);
             assert_eq!(rat.to_string(), "10/11");
         }
@@ -906,13 +907,13 @@ mod rational {
 
             assert!(c.is_none());
             let tok = ok_or_fail!(r);
-            assert!(matches!(
+            assert_matches!(
                 tok,
                 Token {
                     kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end: 7 },
                 }
-            ));
+            );
             let rat = extract_number!(tok.kind, Number::Real, Real::Rational);
             assert_eq!(rat.to_string(), "10/11");
         }
@@ -933,13 +934,13 @@ mod rational {
 
             assert!(c.is_none());
             let tok = ok_or_fail!(r);
-            assert!(matches!(
+            assert_matches!(
                 tok,
                 Token {
                     kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end },
                 } if end == case.len()
-            ));
+            );
             let flt = extract_number!(tok.kind, Number::Real);
             assert_eq!(flt.to_string(), "0.8");
         }
@@ -958,13 +959,13 @@ mod rational {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 6 },
             }
-        ));
+        );
         let flt = extract_number!(tok.kind, Number::Real);
         assert_eq!(flt.to_string(), "-0.8");
     }
@@ -982,13 +983,13 @@ mod rational {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 7 },
             }
-        ));
+        );
         let flt = extract_number!(tok.kind, Number::Real);
         assert_eq!(flt.to_string(), "0.9090909090909091");
     }
@@ -1006,13 +1007,13 @@ mod rational {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 6 },
             }
-        ));
+        );
         let flt = extract_number!(tok.kind, Number::Real);
         assert_eq!(flt.to_string(), "5.0");
     }
@@ -1031,13 +1032,13 @@ mod rational {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end },
             } if end == input.len()
-        ));
+        );
         let flt = extract_number!(tok.kind, Number::Real);
         assert_eq!(flt.to_string(), "5.421010862427522e-20");
     }
@@ -1055,13 +1056,13 @@ mod rational {
 
         assert!(c.is_none());
         let err = err_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             err,
             TokenError {
                 kind: TokenErrorKind::RationalInvalid,
                 span: TxtSpan { start: 0, end: 4 },
             }
-        ));
+        );
     }
 
     #[test]
@@ -1077,13 +1078,13 @@ mod rational {
 
         assert!(c.is_none());
         let err = err_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             err,
             TokenError {
                 kind: TokenErrorKind::RationalInvalid,
                 span: TxtSpan { start: 0, end: 4 },
             }
-        ));
+        );
     }
 
     #[test]
@@ -1099,13 +1100,13 @@ mod rational {
 
         assert!(c.is_none());
         let err = err_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             err,
             TokenError {
                 kind: TokenErrorKind::RationalInvalid,
                 span: TxtSpan { start: 0, end: 5 },
             }
-        ));
+        );
     }
 
     #[test]
@@ -1121,13 +1122,13 @@ mod rational {
 
         assert!(c.is_none());
         let err = err_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             err,
             TokenError {
                 kind: TokenErrorKind::RationalInvalid,
                 span: TxtSpan { start: 0, end: 2 },
             }
-        ));
+        );
     }
 
     #[test]
@@ -1143,13 +1144,13 @@ mod rational {
 
         assert!(c.is_none());
         let err = err_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             err,
             TokenError {
                 kind: TokenErrorKind::RationalInvalid,
                 span: TxtSpan { start: 0, end: 5 },
             }
-        ));
+        );
     }
 
     #[test]
@@ -1165,13 +1166,13 @@ mod rational {
 
         assert!(c.is_none());
         let err = err_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             err,
             TokenError {
                 kind: TokenErrorKind::RationalInvalid,
                 span: TxtSpan { start: 0, end: 5 },
             }
-        ));
+        );
     }
 
     #[test]
@@ -1189,13 +1190,13 @@ mod rational {
 
             assert!(c.is_none());
             let err = err_or_fail!(r);
-            assert!(matches!(
+            assert_matches!(
                 err,
                 TokenError {
                     kind: TokenErrorKind::RationalInvalid,
                     span: TxtSpan { start: 0, end: 10 },
                 }
-            ));
+            );
         }
     }
 
@@ -1214,13 +1215,13 @@ mod rational {
 
             assert!(c.is_none());
             let err = err_or_fail!(r);
-            assert!(matches!(
+            assert_matches!(
                 err,
                 TokenError {
                     kind: TokenErrorKind::RationalInvalid,
                     span: TxtSpan { start: 0, end: 8 },
                 }
-            ));
+            );
         }
     }
 
@@ -1237,13 +1238,13 @@ mod rational {
 
         assert!(c.is_none());
         let err = err_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             err,
             TokenError {
                 kind: TokenErrorKind::RationalInvalid,
                 span: TxtSpan { start: 0, end: 5 },
             }
-        ));
+        );
     }
 
     #[test]
@@ -1259,13 +1260,13 @@ mod rational {
 
         assert!(c.is_none());
         let err = err_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             err,
             TokenError {
                 kind: TokenErrorKind::NumberInvalid,
                 span: TxtSpan { start: 0, end: 4 },
             }
-        ));
+        );
     }
 
     #[test]
@@ -1281,13 +1282,13 @@ mod rational {
 
         assert!(c.is_none());
         let err = err_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             err,
             TokenError {
                 kind: TokenErrorKind::RationalInvalid,
                 span: TxtSpan { start: 0, end: 2 },
             }
-        ));
+        );
     }
 
     #[test]
@@ -1303,13 +1304,13 @@ mod rational {
 
         assert!(c.is_none());
         let err = err_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             err,
             TokenError {
                 kind: TokenErrorKind::RationalInvalid,
                 span: TxtSpan { start: 0, end: 7 },
             }
-        ));
+        );
     }
 }
 
@@ -1329,13 +1330,13 @@ mod float {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 5 },
             }
-        ));
+        );
         let flt = extract_number!(tok.kind, Number::Real);
         assert_eq!(flt.to_string(), "42.34");
     }
@@ -1353,13 +1354,13 @@ mod float {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 6 },
             }
-        ));
+        );
         let flt = extract_number!(tok.kind, Number::Real);
         assert_eq!(flt.to_string(), "42.34");
     }
@@ -1377,13 +1378,13 @@ mod float {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 6 },
             }
-        ));
+        );
         let flt = extract_number!(tok.kind, Number::Real);
         assert_eq!(flt.to_string(), "-42.34");
     }
@@ -1401,13 +1402,13 @@ mod float {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 2 },
             }
-        ));
+        );
         let flt = extract_number!(tok.kind, Number::Real);
         assert_eq!(flt.to_string(), "0.5");
     }
@@ -1425,13 +1426,13 @@ mod float {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 3 },
             }
-        ));
+        );
         let flt = extract_number!(tok.kind, Number::Real);
         assert_eq!(flt.to_string(), "0.5");
     }
@@ -1449,13 +1450,13 @@ mod float {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 3 },
             }
-        ));
+        );
         let flt = extract_number!(tok.kind, Number::Real);
         assert_eq!(flt.to_string(), "-0.5");
     }
@@ -1473,13 +1474,13 @@ mod float {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 2 },
             }
-        ));
+        );
         let flt = extract_number!(tok.kind, Number::Real);
         assert_eq!(flt.to_string(), "5.0");
     }
@@ -1497,13 +1498,13 @@ mod float {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 4 },
             }
-        ));
+        );
         let flt = extract_number!(tok.kind, Number::Real);
         assert_eq!(flt.to_string(), "340000.0");
     }
@@ -1521,13 +1522,13 @@ mod float {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 5 },
             }
-        ));
+        );
         let flt = extract_number!(tok.kind, Number::Real);
         assert_eq!(flt.to_string(), "340000.0");
     }
@@ -1545,13 +1546,13 @@ mod float {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 4 },
             }
-        ));
+        );
         let flt = extract_number!(tok.kind, Number::Real);
         assert_eq!(flt.to_string(), "34.0");
     }
@@ -1569,13 +1570,13 @@ mod float {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 4 },
             }
-        ));
+        );
         let flt = extract_number!(tok.kind, Number::Real);
         assert_eq!(flt.to_string(), "340000.0");
     }
@@ -1593,13 +1594,13 @@ mod float {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 5 },
             }
-        ));
+        );
         let flt = extract_number!(tok.kind, Number::Real);
         assert_eq!(flt.to_string(), "0.0034");
     }
@@ -1617,13 +1618,13 @@ mod float {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 7 },
             }
-        ));
+        );
         let flt = extract_number!(tok.kind, Number::Real);
         assert_eq!(flt.to_string(), "124500.0");
     }
@@ -1641,13 +1642,13 @@ mod float {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 8 },
             }
-        ));
+        );
         let flt = extract_number!(tok.kind, Number::Real);
         assert_eq!(flt.to_string(), "1.245e51");
     }
@@ -1665,13 +1666,13 @@ mod float {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 9 },
             }
-        ));
+        );
         let flt = extract_number!(tok.kind, Number::Real);
         assert_eq!(flt.to_string(), "+inf.0");
     }
@@ -1689,13 +1690,13 @@ mod float {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 10 },
             }
-        ));
+        );
         let flt = extract_number!(tok.kind, Number::Real);
         assert_eq!(flt.to_string(), "0.0");
     }
@@ -1713,13 +1714,13 @@ mod float {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 6 },
             }
-        ));
+        );
         let flt = extract_number!(tok.kind, Number::Real);
         assert_eq!(flt.to_string(), "+inf.0");
     }
@@ -1737,13 +1738,13 @@ mod float {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 6 },
             }
-        ));
+        );
         let flt = extract_number!(tok.kind, Number::Real);
         assert_eq!(flt.to_string(), "+inf.0");
     }
@@ -1761,13 +1762,13 @@ mod float {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 6 },
             }
-        ));
+        );
         let flt = extract_number!(tok.kind, Number::Real);
         assert_eq!(flt.to_string(), "-inf.0");
     }
@@ -1785,13 +1786,13 @@ mod float {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 7 },
             }
-        ));
+        );
         let flt = extract_number!(tok.kind, Number::Real);
         assert_eq!(flt.to_string(), "42.34");
     }
@@ -1814,13 +1815,13 @@ mod float {
 
             assert!(c.is_none());
             let tok = ok_or_fail!(r);
-            assert!(matches!(
+            assert_matches!(
                 tok,
                 Token {
                     kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end },
                 } if end == case.len()
-            ));
+            );
             let flt = extract_number!(tok.kind, Number::Real);
             let expected = if case.contains("-nan") {
                 case[2..].replace("-nan", "+nan")
@@ -1853,13 +1854,13 @@ mod float {
 
             assert!(c.is_none());
             let err = err_or_fail!(r);
-            assert!(matches!(
+            assert_matches!(
                 err,
                 TokenError {
                     kind: TokenErrorKind::NumberInvalid,
                     span: TxtSpan { start: 0, end },
                 } if end == case.len()
-            ));
+            );
         }
     }
 
@@ -1878,13 +1879,13 @@ mod float {
 
             assert!(c.is_none());
             let tok = ok_or_fail!(r);
-            assert!(matches!(
+            assert_matches!(
                 tok,
                 Token {
                     kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end },
                 } if end == case.len()
-            ));
+            );
             let flt = extract_number!(tok.kind, Number::Real);
             let expected = if case.contains("-nan") {
                 case[2..].replace("-nan", "+nan")
@@ -1919,13 +1920,13 @@ mod float {
 
             assert!(c.is_none());
             let tok = ok_or_fail!(r);
-            assert!(matches!(
+            assert_matches!(
                 tok,
                 Token {
                     kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end },
                 } if end == case.len()
-            ));
+            );
             let flt = extract_number!(tok.kind, Number::Real);
             let expected = if case.contains("-nan") {
                 case[4..].replace("-nan", "+nan")
@@ -1951,13 +1952,13 @@ mod float {
 
             assert!(c.is_none());
             let tok = ok_or_fail!(r);
-            assert!(matches!(
+            assert_matches!(
                 tok,
                 Token {
                     kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end: 9 },
                 }
-            ));
+            );
             let flt = extract_number!(tok.kind, Number::Real);
             assert_eq!(flt.to_string(), "42.34");
         }
@@ -1978,13 +1979,13 @@ mod float {
 
             assert!(c.is_none());
             let tok = ok_or_fail!(r);
-            assert!(matches!(
+            assert_matches!(
                 tok,
                 Token {
                     kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end: 9 },
                 }
-            ));
+            );
             let flt = extract_number!(tok.kind, Number::Real);
             assert_eq!(flt.to_string(), "42.34");
         }
@@ -2005,13 +2006,13 @@ mod float {
 
             assert!(c.is_none());
             let tok = ok_or_fail!(r);
-            assert!(matches!(
+            assert_matches!(
                 tok,
                 Token {
                     kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end },
                 } if end == case.len()
-            ));
+            );
             let int = extract_number!(tok.kind, Number::Real, Real::Integer);
             assert_eq!(int.to_string(), "4");
         }
@@ -2030,13 +2031,13 @@ mod float {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 5 },
             }
-        ));
+        );
         let int = extract_number!(tok.kind, Number::Real, Real::Integer);
         assert_eq!(int.to_string(), "0");
     }
@@ -2054,13 +2055,13 @@ mod float {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 6 },
             }
-        ));
+        );
         let int = extract_number!(tok.kind, Number::Real, Real::Integer);
         assert_eq!(int.to_string(), "-4");
     }
@@ -2078,13 +2079,13 @@ mod float {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 7 },
             }
-        ));
+        );
         let rat = extract_number!(tok.kind, Number::Real, Real::Rational);
         assert_eq!(rat.to_string(), "249/20");
     }
@@ -2104,13 +2105,13 @@ mod float {
 
             assert!(c.is_none());
             let tok = ok_or_fail!(r);
-            assert!(matches!(
+            assert_matches!(
                 tok,
                 Token {
                     kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end },
                 } if end == case.len()
-            ));
+            );
             let rat = extract_number!(tok.kind, Number::Real, Real::Rational);
             assert_eq!(rat.to_string(), "9/20");
         }
@@ -2131,13 +2132,13 @@ mod float {
 
             assert!(c.is_none());
             let tok = ok_or_fail!(r);
-            assert!(matches!(
+            assert_matches!(
                 tok,
                 Token {
                     kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end },
                 } if end == case.len()
-            ));
+            );
             let rat = extract_number!(tok.kind, Number::Real, Real::Rational);
             assert_eq!(rat.to_string(), "-9/20");
         }
@@ -2158,13 +2159,13 @@ mod float {
 
             assert!(c.is_none());
             let tok = ok_or_fail!(r);
-            assert!(matches!(
+            assert_matches!(
                 tok,
                 Token {
                     kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end },
                 } if end == case.len()
-            ));
+            );
             let int = extract_number!(tok.kind, Number::Real, Real::Integer);
             assert_eq!(int.to_string(), "40000");
         }
@@ -2183,13 +2184,13 @@ mod float {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 6 },
             }
-        ));
+        );
         let rat = extract_number!(tok.kind, Number::Real, Real::Rational);
         assert_eq!(rat.to_string(), "1/2500");
     }
@@ -2207,13 +2208,13 @@ mod float {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 8 },
             }
-        ));
+        );
         let int = extract_number!(tok.kind, Number::Real, Real::Integer);
         assert_eq!(int.to_string(), "45200");
     }
@@ -2231,13 +2232,13 @@ mod float {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 6 },
             }
-        ));
+        );
         let int = extract_number!(tok.kind, Number::Real, Real::Integer);
         assert_eq!(int.to_string(), "40000");
     }
@@ -2255,13 +2256,13 @@ mod float {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 12 },
             }
-        ));
+        );
         let rat = extract_number!(tok.kind, Number::Real, Real::Rational);
         assert_eq!(rat.to_string(), "2262121/500");
     }
@@ -2281,13 +2282,13 @@ mod float {
 
             assert!(c.is_none());
             let tok = ok_or_fail!(r);
-            assert!(matches!(
+            assert_matches!(
                 tok,
                 Token {
                     kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end },
                 } if end == case.len()
-            ));
+            );
             let int = extract_number!(tok.kind, Number::Real, Real::Integer);
             assert_eq!(int.to_string(), "42");
         }
@@ -2308,13 +2309,13 @@ mod float {
 
             assert!(c.is_none());
             let tok = ok_or_fail!(r);
-            assert!(matches!(
+            assert_matches!(
                 tok,
                 Token {
                     kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end },
                 } if end == case.len()
-            ));
+            );
             let flt = extract_number!(tok.kind, Number::Real);
             let expected = if case.contains("-nan") {
                 case[2..].replace("-nan", "+nan")
@@ -2349,13 +2350,13 @@ mod float {
 
             assert!(c.is_none());
             let tok = ok_or_fail!(r);
-            assert!(matches!(
+            assert_matches!(
                 tok,
                 Token {
                     kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end },
                 } if end == case.len()
-            ));
+            );
             let flt = extract_number!(tok.kind, Number::Real);
             let expected = if case.contains("-nan") {
                 case[4..].replace("-nan", "+nan")
@@ -2379,13 +2380,13 @@ mod float {
 
         assert!(c.is_none());
         let err = err_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             err,
             TokenError {
                 kind: TokenErrorKind::NumberInvalid,
                 span: TxtSpan { start: 0, end: 7 },
             }
-        ));
+        );
     }
 
     #[test]
@@ -2401,13 +2402,13 @@ mod float {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 6 },
             }
-        ));
+        );
         let flt = extract_number!(tok.kind, Number::Real);
         assert_eq!(flt.to_string(), "+nan.0");
     }
@@ -2425,13 +2426,13 @@ mod float {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 6 },
             }
-        ));
+        );
         let flt = extract_number!(tok.kind, Number::Real);
         assert_eq!(flt.to_string(), "+nan.0");
     }
@@ -2449,13 +2450,13 @@ mod float {
 
         assert!(c.is_none());
         let err = err_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             err,
             TokenError {
                 kind: TokenErrorKind::NumberInvalid,
                 span: TxtSpan { start: 0, end: 7 },
             }
-        ));
+        );
     }
 
     #[test]
@@ -2471,13 +2472,13 @@ mod float {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 6 },
             }
-        ));
+        );
         let flt = extract_number!(tok.kind, Number::Real);
         assert_eq!(flt.to_string(), "+nan.0");
     }
@@ -2495,13 +2496,13 @@ mod float {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 7 },
             }
-        ));
+        );
         let flt = extract_number!(tok.kind, Number::Real);
         assert_eq!(flt.to_string(), "42.34");
     }
@@ -2525,13 +2526,13 @@ mod float {
 
             assert!(c.is_none());
             let err = err_or_fail!(r);
-            assert!(matches!(
+            assert_matches!(
                 err,
                 TokenError {
                     kind: TokenErrorKind::NumberInvalidDecimalPoint { at: 3, radix },
                     span: TxtSpan { start: 3, end },
                 } if radix == label && end == case.len()
-            ));
+            );
         }
     }
 
@@ -2548,13 +2549,13 @@ mod float {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 6 },
             }
-        ));
+        );
         let flt = extract_number!(tok.kind, Number::Real);
         assert_eq!(flt.to_string(), "340000.0");
     }
@@ -2574,13 +2575,13 @@ mod float {
 
             assert!(c.is_none());
             let err = err_or_fail!(r);
-            assert!(matches!(
+            assert_matches!(
                 err,
                 TokenError {
                     kind: TokenErrorKind::NumberInvalidExponent { at: 4, radix },
                     span: TxtSpan { start: 4, end },
                 } if radix == label && end == case.len()
-            ));
+            );
         }
     }
 
@@ -2597,13 +2598,13 @@ mod float {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 7 },
             }
-        ));
+        );
         let num = extract_number!(tok.kind, Number::Real);
         assert_eq!(num.to_string(), "327330");
     }
@@ -2621,13 +2622,13 @@ mod float {
 
         assert!(c.is_none());
         let err = err_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             err,
             TokenError {
                 kind: TokenErrorKind::NumberUnexpectedDecimalPoint { at: 5 },
                 span: TxtSpan { start: 5, end: 8 },
             }
-        ));
+        );
     }
 
     #[test]
@@ -2643,7 +2644,7 @@ mod float {
 
         assert!(c.is_none());
         let err = err_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             err,
             TokenError {
                 kind: TokenErrorKind::NumericErrorAt {
@@ -2652,7 +2653,7 @@ mod float {
                 },
                 span: TxtSpan { start: 5, end: 6 },
             }
-        ));
+        );
     }
 
     #[test]
@@ -2668,7 +2669,7 @@ mod float {
 
         assert!(c.is_none());
         let err = err_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             err,
             TokenError {
                 kind: TokenErrorKind::NumericErrorAt {
@@ -2677,7 +2678,7 @@ mod float {
                 },
                 span: TxtSpan { start: 1, end: 2 },
             }
-        ));
+        );
     }
 
     #[test]
@@ -2693,7 +2694,7 @@ mod float {
 
         assert!(c.is_none());
         let err = err_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             err,
             TokenError {
                 kind: TokenErrorKind::NumericErrorAt {
@@ -2702,7 +2703,7 @@ mod float {
                 },
                 span: TxtSpan { start: 5, end: 7 },
             }
-        ));
+        );
     }
 
     #[test]
@@ -2718,7 +2719,7 @@ mod float {
 
         assert!(c.is_none());
         let err = err_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             err,
             TokenError {
                 kind: TokenErrorKind::NumericErrorAt {
@@ -2727,7 +2728,7 @@ mod float {
                 },
                 span: TxtSpan { start: 1, end: 3 },
             }
-        ));
+        );
     }
 
     #[test]
@@ -2743,7 +2744,7 @@ mod float {
 
         assert!(c.is_none());
         let err = err_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             err,
             TokenError {
                 kind: TokenErrorKind::NumericErrorAt {
@@ -2752,7 +2753,7 @@ mod float {
                 },
                 span: TxtSpan { start: 5, end: 9 },
             }
-        ));
+        );
     }
 
     #[test]
@@ -2768,7 +2769,7 @@ mod float {
 
         assert!(c.is_none());
         let err = err_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             err,
             TokenError {
                 kind: TokenErrorKind::NumericErrorAt {
@@ -2777,7 +2778,7 @@ mod float {
                 },
                 span: TxtSpan { start: 5, end: 8 },
             }
-        ));
+        );
     }
 
     #[test]
@@ -2795,7 +2796,7 @@ mod float {
 
             assert!(c.is_none());
             let err = err_or_fail!(r);
-            assert!(matches!(
+            assert_matches!(
                 err,
                 TokenError {
                     kind: TokenErrorKind::NumericErrorAt {
@@ -2804,7 +2805,7 @@ mod float {
                     },
                     span: TxtSpan { start: 5, end },
                 } if end == case.len()
-            ));
+            );
         }
     }
 
@@ -2824,7 +2825,7 @@ mod float {
 
             assert!(c.is_none());
             let err = err_or_fail!(r);
-            assert!(matches!(
+            assert_matches!(
                 err,
                 TokenError {
                     kind: TokenErrorKind::NumericErrorAt {
@@ -2833,7 +2834,7 @@ mod float {
                     },
                     span: TxtSpan { start: 5, end },
                 } if end == input.len()
-            ));
+            );
         }
     }
 }
@@ -2854,13 +2855,13 @@ mod imaginary {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Imaginary(_),
                 span: TxtSpan { start: 0, end: 2 },
             }
-        ));
+        );
         let r = extract_or_fail!(tok.kind, TokenKind::Imaginary);
         assert_eq!(r.to_string(), "1");
     }
@@ -2878,13 +2879,13 @@ mod imaginary {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Imaginary(_),
                 span: TxtSpan { start: 0, end: 2 },
             }
-        ));
+        );
         let r = extract_or_fail!(tok.kind, TokenKind::Imaginary);
         assert_eq!(r.to_string(), "1");
     }
@@ -2902,13 +2903,13 @@ mod imaginary {
 
         assert!(c.is_none());
         let err = err_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             err,
             TokenError {
                 kind: TokenErrorKind::ImaginaryMissingSign,
                 span: TxtSpan { start: 0, end: 2 },
             }
-        ));
+        );
     }
 
     #[test]
@@ -2924,13 +2925,13 @@ mod imaginary {
 
         assert!(c.is_none());
         let err = err_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             err,
             TokenError {
                 kind: TokenErrorKind::ImaginaryInvalid,
                 span: TxtSpan { start: 0, end: 4 },
             }
-        ));
+        );
     }
 
     #[test]
@@ -2946,13 +2947,13 @@ mod imaginary {
 
         assert!(c.is_none());
         let err = err_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             err,
             TokenError {
                 kind: TokenErrorKind::ImaginaryInvalid,
                 span: TxtSpan { start: 0, end: 4 },
             }
-        ));
+        );
     }
 
     #[test]
@@ -2968,13 +2969,13 @@ mod imaginary {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Imaginary(_),
                 span: TxtSpan { start: 0, end: 3 },
             }
-        ));
+        );
         let r = extract_or_fail!(tok.kind, TokenKind::Imaginary);
         assert_eq!(r.to_string(), "0");
     }
@@ -2992,13 +2993,13 @@ mod imaginary {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Imaginary(_),
                 span: TxtSpan { start: 0, end: 3 },
             }
-        ));
+        );
         let r = extract_or_fail!(tok.kind, TokenKind::Imaginary);
         assert_eq!(r.to_string(), "5");
     }
@@ -3016,13 +3017,13 @@ mod imaginary {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Imaginary(_),
                 span: TxtSpan { start: 0, end: 5 },
             }
-        ));
+        );
         let r = extract_or_fail!(tok.kind, TokenKind::Imaginary);
         assert_eq!(r.to_string(), "4/5");
     }
@@ -3040,13 +3041,13 @@ mod imaginary {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Imaginary(_),
                 span: TxtSpan { start: 0, end: 5 },
             }
-        ));
+        );
         let r = extract_or_fail!(tok.kind, TokenKind::Imaginary);
         assert_eq!(r.to_string(), "4");
     }
@@ -3070,13 +3071,13 @@ mod imaginary {
 
             assert!(c.is_none());
             let tok = ok_or_fail!(r);
-            assert!(matches!(
+            assert_matches!(
                 tok,
                 Token {
                     kind: TokenKind::Imaginary(_),
                     span: TxtSpan { start: 0, end },
                 } if end == case.len()
-            ));
+            );
             let r = extract_or_fail!(tok.kind, TokenKind::Imaginary);
             let expected = if case.contains('-') { "-42" } else { "42" };
             assert_eq!(r.to_string(), expected);
@@ -3102,13 +3103,13 @@ mod imaginary {
 
             assert!(c.is_none());
             let tok = ok_or_fail!(r);
-            assert!(matches!(
+            assert_matches!(
                 tok,
                 Token {
                     kind: TokenKind::Imaginary(_),
                     span: TxtSpan { start: 0, end },
                 } if end == case.len()
-            ));
+            );
             let r = extract_or_fail!(tok.kind, TokenKind::Imaginary);
             let expected = if case.contains('-') { "-1" } else { "1" };
             assert_eq!(r.to_string(), expected);
@@ -3130,13 +3131,13 @@ mod imaginary {
 
             assert!(c.is_none());
             let tok = ok_or_fail!(r);
-            assert!(matches!(
+            assert_matches!(
                 tok,
                 Token {
                     kind: TokenKind::Imaginary(_),
                     span: TxtSpan { start: 0, end: 7 },
                 }
-            ));
+            );
             let r = extract_or_fail!(tok.kind, TokenKind::Imaginary);
             assert_eq!(r.to_string(), "10");
         }
@@ -3157,13 +3158,13 @@ mod imaginary {
 
             assert!(c.is_none());
             let tok = ok_or_fail!(r);
-            assert!(matches!(
+            assert_matches!(
                 tok,
                 Token {
                     kind: TokenKind::Imaginary(_),
                     span: TxtSpan { start: 0, end: 7 },
                 }
-            ));
+            );
             let r = extract_or_fail!(tok.kind, TokenKind::Imaginary);
             assert_eq!(r.to_string(), "10");
         }
@@ -3184,13 +3185,13 @@ mod imaginary {
 
             assert!(c.is_none());
             let tok = ok_or_fail!(r);
-            assert!(matches!(
+            assert_matches!(
                 tok,
                 Token {
                     kind: TokenKind::Imaginary(_),
                     span: TxtSpan { start: 0, end: 11 },
                 }
-            ));
+            );
             let r = extract_or_fail!(tok.kind, TokenKind::Imaginary);
             assert_eq!(r.to_string(), "42.34");
         }
@@ -3211,13 +3212,13 @@ mod imaginary {
 
             assert!(c.is_none());
             let tok = ok_or_fail!(r);
-            assert!(matches!(
+            assert_matches!(
                 tok,
                 Token {
                     kind: TokenKind::Imaginary(_),
                     span: TxtSpan { start: 0, end: 11 },
                 }
-            ));
+            );
             let r = extract_or_fail!(tok.kind, TokenKind::Imaginary);
             assert_eq!(r.to_string(), "42.34");
         }
@@ -3236,13 +3237,13 @@ mod imaginary {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Imaginary(_),
                 span: TxtSpan { start: 0, end: 4 },
             }
-        ));
+        );
         let r = extract_or_fail!(tok.kind, TokenKind::Imaginary);
         assert_eq!(r.to_string(), "1.0");
     }
@@ -3260,13 +3261,13 @@ mod imaginary {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Imaginary(_),
                 span: TxtSpan { start: 0, end: 5 },
             }
-        ));
+        );
         let r = extract_or_fail!(tok.kind, TokenKind::Imaginary);
         assert_eq!(r.to_string(), "5.0");
     }
@@ -3284,13 +3285,13 @@ mod imaginary {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Imaginary(_),
                 span: TxtSpan { start: 0, end: 7 },
             }
-        ));
+        );
         let r = extract_or_fail!(tok.kind, TokenKind::Imaginary);
         assert_eq!(r.to_string(), "26/5");
     }
@@ -3308,13 +3309,13 @@ mod imaginary {
 
         assert!(c.is_none());
         let err = err_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             err,
             TokenError {
                 kind: TokenErrorKind::ImaginaryMissingSign,
                 span: TxtSpan { start: 0, end: 4 },
             }
-        ));
+        );
     }
 
     #[test]
@@ -3330,13 +3331,13 @@ mod imaginary {
 
         assert!(c.is_none());
         let err = err_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             err,
             TokenError {
                 kind: TokenErrorKind::ImaginaryInvalid,
                 span: TxtSpan { start: 0, end: 5 },
             }
-        ));
+        );
     }
 
     #[test]
@@ -3352,13 +3353,13 @@ mod imaginary {
 
         assert!(c.is_none());
         let err = err_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             err,
             TokenError {
                 kind: TokenErrorKind::RationalInvalid,
                 span: TxtSpan { start: 0, end: 4 },
             }
-        ));
+        );
     }
 
     #[test]
@@ -3374,13 +3375,13 @@ mod imaginary {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Imaginary(_),
                 span: TxtSpan { start: 0, end: 5 },
             }
-        ));
+        );
         let r = extract_or_fail!(tok.kind, TokenKind::Imaginary);
         assert_eq!(r.to_string(), "4.5");
     }
@@ -3398,13 +3399,13 @@ mod imaginary {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Imaginary(_),
                 span: TxtSpan { start: 0, end: 7 },
             }
-        ));
+        );
         let r = extract_or_fail!(tok.kind, TokenKind::Imaginary);
         assert_eq!(r.to_string(), "45000.0");
     }
@@ -3422,13 +3423,13 @@ mod imaginary {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Imaginary(_),
                 span: TxtSpan { start: 0, end: 8 },
             }
-        ));
+        );
         let r = extract_or_fail!(tok.kind, TokenKind::Imaginary);
         assert_eq!(r.to_string(), "45000.0");
     }
@@ -3446,13 +3447,13 @@ mod imaginary {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Imaginary(_),
                 span: TxtSpan { start: 0, end: 8 },
             }
-        ));
+        );
         let r = extract_or_fail!(tok.kind, TokenKind::Imaginary);
         assert_eq!(r.to_string(), "0.00045");
     }
@@ -3470,7 +3471,7 @@ mod imaginary {
 
         assert!(c.is_none());
         let err = err_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             err,
             TokenError {
                 kind: TokenErrorKind::NumericErrorAt {
@@ -3479,7 +3480,7 @@ mod imaginary {
                 },
                 span: TxtSpan { start: 4, end: 6 },
             }
-        ));
+        );
     }
 
     #[test]
@@ -3495,13 +3496,13 @@ mod imaginary {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Imaginary(_),
                 span: TxtSpan { start: 0, end: 2 },
             }
-        ));
+        );
         let r = extract_or_fail!(tok.kind, TokenKind::Imaginary);
         assert_eq!(r.to_string(), "-1");
     }
@@ -3519,13 +3520,13 @@ mod imaginary {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Imaginary(_),
                 span: TxtSpan { start: 0, end: 3 },
             }
-        ));
+        );
         let r = extract_or_fail!(tok.kind, TokenKind::Imaginary);
         assert_eq!(r.to_string(), "-5");
     }
@@ -3543,13 +3544,13 @@ mod imaginary {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Imaginary(_),
                 span: TxtSpan { start: 0, end: 7 },
             }
-        ));
+        );
         let r = extract_or_fail!(tok.kind, TokenKind::Imaginary);
         assert_eq!(r.to_string(), "+inf.0");
     }
@@ -3567,13 +3568,13 @@ mod imaginary {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Imaginary(_),
                 span: TxtSpan { start: 0, end: 9 },
             }
-        ));
+        );
         let r = extract_or_fail!(tok.kind, TokenKind::Imaginary);
         assert_eq!(r.to_string(), "+inf.0");
     }
@@ -3591,13 +3592,13 @@ mod imaginary {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Imaginary(_),
                 span: TxtSpan { start: 0, end: 7 },
             }
-        ));
+        );
         let r = extract_or_fail!(tok.kind, TokenKind::Imaginary);
         assert_eq!(r.to_string(), "+inf.0");
     }
@@ -3615,13 +3616,13 @@ mod imaginary {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Imaginary(_),
                 span: TxtSpan { start: 0, end: 7 },
             }
-        ));
+        );
         let r = extract_or_fail!(tok.kind, TokenKind::Imaginary);
         assert_eq!(r.to_string(), "-inf.0");
     }
@@ -3639,13 +3640,13 @@ mod imaginary {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Imaginary(_),
                 span: TxtSpan { start: 0, end: 7 },
             }
-        ));
+        );
         let r = extract_or_fail!(tok.kind, TokenKind::Imaginary);
         assert_eq!(r.to_string(), "+nan.0");
     }
@@ -3663,13 +3664,13 @@ mod imaginary {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Imaginary(_),
                 span: TxtSpan { start: 0, end: 9 },
             }
-        ));
+        );
         let r = extract_or_fail!(tok.kind, TokenKind::Imaginary);
         assert_eq!(r.to_string(), "+nan.0");
     }
@@ -3687,13 +3688,13 @@ mod imaginary {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Imaginary(_),
                 span: TxtSpan { start: 0, end: 7 },
             }
-        ));
+        );
         let r = extract_or_fail!(tok.kind, TokenKind::Imaginary);
         assert_eq!(r.to_string(), "+nan.0");
     }
@@ -3711,13 +3712,13 @@ mod imaginary {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Imaginary(_),
                 span: TxtSpan { start: 0, end: 7 },
             }
-        ));
+        );
         let r = extract_or_fail!(tok.kind, TokenKind::Imaginary);
         assert_eq!(r.to_string(), "+nan.0");
     }
@@ -3735,13 +3736,13 @@ mod imaginary {
 
         assert!(c.is_none());
         let err = err_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             err,
             TokenError {
                 kind: TokenErrorKind::ImaginaryInvalid,
                 span: TxtSpan { start: 0, end: 4 },
             }
-        ));
+        );
     }
 }
 
@@ -3761,13 +3762,13 @@ mod cartesian {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 4 },
             }
-        ));
+        );
         let num = extract_number!(tok.kind);
         assert_eq!(num.to_string(), "4+3i");
     }
@@ -3785,13 +3786,13 @@ mod cartesian {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 3 },
             }
-        ));
+        );
         let num = extract_number!(tok.kind);
         assert_eq!(num.to_string(), "4+i");
     }
@@ -3809,13 +3810,13 @@ mod cartesian {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 4 },
             }
-        ));
+        );
         let num = extract_number!(tok.kind);
         assert_eq!(num.to_string(), "4+i");
     }
@@ -3833,13 +3834,13 @@ mod cartesian {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 4 },
             }
-        ));
+        );
         let num = extract_number!(tok.kind);
         assert_eq!(num.to_string(), "4");
     }
@@ -3857,13 +3858,13 @@ mod cartesian {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 6 },
             }
-        ));
+        );
         let num = extract_number!(tok.kind);
         assert_eq!(num.to_string(), "4+0.0i");
     }
@@ -3881,13 +3882,13 @@ mod cartesian {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 4 },
             }
-        ));
+        );
         let num = extract_number!(tok.kind);
         assert_eq!(num.to_string(), "4");
     }
@@ -3905,13 +3906,13 @@ mod cartesian {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 6 },
             }
-        ));
+        );
         let num = extract_number!(tok.kind);
         assert_eq!(num.to_string(), "4-0.0i");
     }
@@ -3929,13 +3930,13 @@ mod cartesian {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 4 },
             }
-        ));
+        );
         let num = extract_number!(tok.kind);
         assert_eq!(num.to_string(), "+3i");
     }
@@ -3953,13 +3954,13 @@ mod cartesian {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 6 },
             }
-        ));
+        );
         let num = extract_number!(tok.kind);
         assert_eq!(num.to_string(), "0.0+3i");
     }
@@ -3977,13 +3978,13 @@ mod cartesian {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 5 },
             }
-        ));
+        );
         let num = extract_number!(tok.kind);
         assert_eq!(num.to_string(), "+3i");
     }
@@ -4001,13 +4002,13 @@ mod cartesian {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 7 },
             }
-        ));
+        );
         let num = extract_number!(tok.kind);
         assert_eq!(num.to_string(), "-0.0+3i");
     }
@@ -4025,13 +4026,13 @@ mod cartesian {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 5 },
             }
-        ));
+        );
         let num = extract_number!(tok.kind);
         assert_eq!(num.to_string(), "4+3i");
     }
@@ -4049,13 +4050,13 @@ mod cartesian {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 5 },
             }
-        ));
+        );
         let num = extract_number!(tok.kind);
         assert_eq!(num.to_string(), "-4+3i");
     }
@@ -4073,13 +4074,13 @@ mod cartesian {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 4 },
             }
-        ));
+        );
         let num = extract_number!(tok.kind);
         assert_eq!(num.to_string(), "4-3i");
     }
@@ -4097,13 +4098,13 @@ mod cartesian {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 5 },
             }
-        ));
+        );
         let num = extract_number!(tok.kind);
         assert_eq!(num.to_string(), "-4-3i");
     }
@@ -4127,13 +4128,13 @@ mod cartesian {
 
             assert!(c.is_none());
             let tok = ok_or_fail!(r);
-            assert!(matches!(
+            assert_matches!(
                 tok,
                 Token {
                     kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end },
                 } if end == cpx.len()
-            ));
+            );
             let num = extract_number!(tok.kind);
             assert_eq!(num.to_string(), cpx);
         }
@@ -4177,13 +4178,13 @@ mod cartesian {
 
             assert!(c.is_none());
             let tok = ok_or_fail!(r);
-            assert!(matches!(
+            assert_matches!(
                 tok,
                 Token {
                     kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end },
                 } if end == cpx.len()
-            ));
+            );
             let num = extract_number!(tok.kind);
             let expected = if cpx.contains("-nan") {
                 cpx.replace("-nan", "+nan")
@@ -4232,13 +4233,13 @@ mod cartesian {
 
             assert!(c.is_none());
             let tok = ok_or_fail!(r);
-            assert!(matches!(
+            assert_matches!(
                 tok,
                 Token {
                     kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end },
                 } if end == cpx.len()
-            ));
+            );
             let num = extract_number!(tok.kind);
             let mut expected = cpx.to_owned();
             if expected.contains("-nan") {
@@ -4282,21 +4283,21 @@ mod cartesian {
             let err = err_or_fail!(r);
             // missing sign causes lexing to fail before determining complex condition
             if let 0 | 3 = i {
-                assert!(matches!(
+                assert_matches!(
                     err,
                     TokenError {
                         kind: TokenErrorKind::NumberInvalid,
                         span: TxtSpan { start: 0, end },
                     } if end == cpx.len()
-                ));
+                );
             } else {
-                assert!(matches!(
+                assert_matches!(
                     err,
                     TokenError {
                         kind: TokenErrorKind::ComplexInvalid,
                         span: TxtSpan { start: 0, end },
                     } if end == cpx.len()
-                ));
+                );
             }
         }
     }
@@ -4333,13 +4334,13 @@ mod cartesian {
 
             assert!(c.is_none());
             let tok = ok_or_fail!(r);
-            assert!(matches!(
+            assert_matches!(
                 tok,
                 Token {
                     kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end },
                 } if end == case.len()
-            ));
+            );
             let num = extract_number!(tok.kind);
             let expected = if case.contains('-') {
                 "-42-43i"
@@ -4363,13 +4364,13 @@ mod cartesian {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 16 },
             }
-        ));
+        );
         let num = extract_number!(tok.kind);
         assert_eq!(num.to_string(), "4/5+2/3i");
     }
@@ -4389,13 +4390,13 @@ mod cartesian {
 
             assert!(c.is_none());
             let tok = ok_or_fail!(r);
-            assert!(matches!(
+            assert_matches!(
                 tok,
                 Token {
                     kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end: 8 },
                 }
-            ));
+            );
             let num = extract_number!(tok.kind);
             assert_eq!(num.to_string(), "11+10i");
         }
@@ -4416,13 +4417,13 @@ mod cartesian {
 
             assert!(c.is_none());
             let tok = ok_or_fail!(r);
-            assert!(matches!(
+            assert_matches!(
                 tok,
                 Token {
                     kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end: 8 },
                 }
-            ));
+            );
             let num = extract_number!(tok.kind);
             assert_eq!(num.to_string(), "11+10i");
         }
@@ -4443,13 +4444,13 @@ mod cartesian {
 
             assert!(c.is_none());
             let tok = ok_or_fail!(r);
-            assert!(matches!(
+            assert_matches!(
                 tok,
                 Token {
                     kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end: 13 },
                 }
-            ));
+            );
             let num = extract_number!(tok.kind);
             assert_eq!(num.to_string(), "3.5+12.2i");
         }
@@ -4470,13 +4471,13 @@ mod cartesian {
 
             assert!(c.is_none());
             let tok = ok_or_fail!(r);
-            assert!(matches!(
+            assert_matches!(
                 tok,
                 Token {
                     kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end: 13 },
                 }
-            ));
+            );
             let num = extract_number!(tok.kind);
             assert_eq!(num.to_string(), "3.5+12.2i");
         }
@@ -4495,13 +4496,13 @@ mod cartesian {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 8 },
             }
-        ));
+        );
         let num = extract_number!(tok.kind);
         assert_eq!(num.to_string(), "4.0+1.5i");
     }
@@ -4519,13 +4520,13 @@ mod cartesian {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 12 },
             }
-        ));
+        );
         let num = extract_number!(tok.kind);
         assert_eq!(num.to_string(), "21/5+3200i");
     }
@@ -4543,13 +4544,13 @@ mod cartesian {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 10 },
             }
-        ));
+        );
         let num = extract_number!(tok.kind);
         assert_eq!(num.to_string(), "12.0+0.9090909090909091i");
     }
@@ -4567,13 +4568,13 @@ mod cartesian {
 
         assert!(c.is_none());
         let err = err_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             err,
             TokenError {
                 kind: TokenErrorKind::ComplexInvalid,
                 span: TxtSpan { start: 0, end: 2 },
             }
-        ));
+        );
     }
 
     #[test]
@@ -4589,13 +4590,13 @@ mod cartesian {
 
         assert!(c.is_none());
         let err = err_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             err,
             TokenError {
                 kind: TokenErrorKind::ComplexInvalid,
                 span: TxtSpan { start: 0, end: 4 },
             }
-        ));
+        );
     }
 
     #[test]
@@ -4611,13 +4612,13 @@ mod cartesian {
 
         assert!(c.is_none());
         let err = err_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             err,
             TokenError {
                 kind: TokenErrorKind::ComplexInvalid,
                 span: TxtSpan { start: 0, end: 10 },
             }
-        ));
+        );
     }
 
     #[test]
@@ -4633,13 +4634,13 @@ mod cartesian {
 
         assert!(c.is_none());
         let err = err_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             err,
             TokenError {
                 kind: TokenErrorKind::ComplexInvalid,
                 span: TxtSpan { start: 0, end: 6 },
             }
-        ));
+        );
     }
 
     #[test]
@@ -4655,13 +4656,13 @@ mod cartesian {
 
         assert!(c.is_none());
         let err = err_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             err,
             TokenError {
                 kind: TokenErrorKind::ComplexInvalid,
                 span: TxtSpan { start: 0, end: 2 },
             }
-        ));
+        );
     }
 
     #[test]
@@ -4677,13 +4678,13 @@ mod cartesian {
 
         assert!(c.is_none());
         let err = err_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             err,
             TokenError {
                 kind: TokenErrorKind::ComplexInvalid,
                 span: TxtSpan { start: 0, end: 8 },
             }
-        ));
+        );
     }
 
     #[test]
@@ -4699,13 +4700,13 @@ mod cartesian {
 
         assert!(c.is_none());
         let err = err_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             err,
             TokenError {
                 kind: TokenErrorKind::ComplexInvalid,
                 span: TxtSpan { start: 0, end: 2 },
             }
-        ));
+        );
     }
 }
 
@@ -4725,13 +4726,13 @@ mod polar {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 3 },
             }
-        ));
+        );
         let num = extract_number!(tok.kind);
         assert_eq!(num.to_string(), "-3.9599699864017817+0.5644800322394689i");
     }
@@ -4749,13 +4750,13 @@ mod polar {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 4 },
             }
-        ));
+        );
         let num = extract_number!(tok.kind);
         assert_eq!(num.to_string(), "3.9599699864017817-0.5644800322394689i");
     }
@@ -4773,13 +4774,13 @@ mod polar {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 4 },
             }
-        ));
+        );
         let num = extract_number!(tok.kind);
         assert_eq!(num.to_string(), "-3.9599699864017817-0.5644800322394689i");
     }
@@ -4797,13 +4798,13 @@ mod polar {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 5 },
             }
-        ));
+        );
         let num = extract_number!(tok.kind);
         assert_eq!(num.to_string(), "3.9599699864017817+0.5644800322394689i");
     }
@@ -4821,13 +4822,13 @@ mod polar {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 3 },
             }
-        ));
+        );
         let num = extract_number!(tok.kind);
         assert_eq!(num.to_string(), "0");
     }
@@ -4845,13 +4846,13 @@ mod polar {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 7 },
             }
-        ));
+        );
         let num = extract_number!(tok.kind);
         assert_eq!(num.to_string(), "-0.0+0.0i");
     }
@@ -4869,13 +4870,13 @@ mod polar {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 4 },
             }
-        ));
+        );
         let num = extract_number!(tok.kind);
         assert_eq!(num.to_string(), "0");
     }
@@ -4893,13 +4894,13 @@ mod polar {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 3 },
             }
-        ));
+        );
         let num = extract_number!(tok.kind);
         assert_eq!(num.to_string(), "4");
     }
@@ -4917,13 +4918,13 @@ mod polar {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 7 },
             }
-        ));
+        );
         let num = extract_number!(tok.kind);
         assert_eq!(num.to_string(), "4.0+0.0i");
     }
@@ -4941,13 +4942,13 @@ mod polar {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 4 },
             }
-        ));
+        );
         let num = extract_number!(tok.kind);
         assert_eq!(num.to_string(), "4");
     }
@@ -4965,13 +4966,13 @@ mod polar {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 3 },
             }
-        ));
+        );
         let num = extract_number!(tok.kind);
         assert_eq!(num.to_string(), "0");
     }
@@ -4990,13 +4991,13 @@ mod polar {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 20 },
             }
-        ));
+        );
         let num = extract_number!(tok.kind);
         assert_eq!(num.to_string(), "0.7071067811865476+0.7071067811865475i");
     }
@@ -5039,13 +5040,13 @@ mod polar {
 
             assert!(c.is_none());
             let tok = ok_or_fail!(r);
-            assert!(matches!(
+            assert_matches!(
                 tok,
                 Token {
                     kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end },
                 } if end == cpx.len()
-            ));
+            );
             let num = extract_number!(tok.kind);
             assert_eq!(num.to_string(), expected[idx]);
         }
@@ -5083,13 +5084,13 @@ mod polar {
 
             assert!(c.is_none());
             let tok = ok_or_fail!(r);
-            assert!(matches!(
+            assert_matches!(
                 tok,
                 Token {
                     kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end },
                 } if end == cpx.len()
-            ));
+            );
             let num = extract_number!(tok.kind);
             assert_eq!(num.to_string(), exp);
         }
@@ -5127,13 +5128,13 @@ mod polar {
 
             assert!(c.is_none());
             let tok = ok_or_fail!(r);
-            assert!(matches!(
+            assert_matches!(
                 tok,
                 Token {
                     kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end },
                 } if end == cpx.len()
-            ));
+            );
             let num = extract_number!(tok.kind);
             assert_eq!(num.to_string(), exp);
         }
@@ -5166,21 +5167,21 @@ mod polar {
             assert!(c.is_none());
             let err = err_or_fail!(r);
             if let 0 | 3 = i {
-                assert!(matches!(
+                assert_matches!(
                     err,
                     TokenError {
                         kind: TokenErrorKind::NumberInvalid,
                         span: TxtSpan { start: 0, end },
                     } if end == cpx.len()
-                ));
+                );
             } else {
-                assert!(matches!(
+                assert_matches!(
                     err,
                     TokenError {
                         kind: TokenErrorKind::PolarInvalid,
                         span: TxtSpan { start: 0, end },
                     } if end == cpx.len()
-                ));
+                );
             }
         }
     }
@@ -5209,13 +5210,13 @@ mod polar {
 
             assert!(c.is_none());
             let tok = ok_or_fail!(r);
-            assert!(matches!(
+            assert_matches!(
                 tok,
                 Token {
                     kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end },
                 } if end == case.len()
-            ));
+            );
             let num = extract_number!(tok.kind);
             let expected = if case.contains('-') {
                 "-23.31475866386628-34.934539190401125i"
@@ -5239,13 +5240,13 @@ mod polar {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 15 },
             }
-        ));
+        );
         let num = extract_number!(tok.kind);
         assert_eq!(num.to_string(), "0.6287098086215585+0.4946958424557896i");
     }
@@ -5265,13 +5266,13 @@ mod polar {
 
             assert!(c.is_none());
             let tok = ok_or_fail!(r);
-            assert!(matches!(
+            assert_matches!(
                 tok,
                 Token {
                     kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end: 12 },
                 }
-            ));
+            );
             let num = extract_number!(tok.kind);
             assert_eq!(num.to_string(), "3.2677177542612306-1.2538024878289005i");
         }
@@ -5292,13 +5293,13 @@ mod polar {
 
             assert!(c.is_none());
             let tok = ok_or_fail!(r);
-            assert!(matches!(
+            assert_matches!(
                 tok,
                 Token {
                     kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end: 12 },
                 }
-            ));
+            );
             let num = extract_number!(tok.kind);
             assert_eq!(num.to_string(), "3.2677177542612306-1.2538024878289005i",);
         }
@@ -5319,13 +5320,13 @@ mod polar {
 
             assert!(c.is_none());
             let tok = ok_or_fail!(r);
-            assert!(matches!(
+            assert_matches!(
                 tok,
                 Token {
                     kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end },
                 } if end == case.len()
-            ));
+            );
             let num = extract_number!(tok.kind);
             assert_eq!(num.to_string(), "2.0901201280414963+2.1520682726985685i");
         }
@@ -5346,13 +5347,13 @@ mod polar {
 
             assert!(c.is_none());
             let tok = ok_or_fail!(r);
-            assert!(matches!(
+            assert_matches!(
                 tok,
                 Token {
                     kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end },
                 } if end == case.len()
-            ));
+            );
             let num = extract_number!(tok.kind);
             assert_eq!(num.to_string(), "-2.0901201280414963-2.1520682726985685i");
         }
@@ -5373,13 +5374,13 @@ mod polar {
 
             assert!(c.is_none());
             let tok = ok_or_fail!(r);
-            assert!(matches!(
+            assert_matches!(
                 tok,
                 Token {
                     kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end },
                 } if end == case.len()
-            ));
+            );
             let num = extract_number!(tok.kind);
             assert_eq!(
                 num.to_string(),
@@ -5403,13 +5404,13 @@ mod polar {
 
             assert!(c.is_none());
             let tok = ok_or_fail!(r);
-            assert!(matches!(
+            assert_matches!(
                 tok,
                 Token {
                     kind: TokenKind::Number(_),
                     span: TxtSpan { start: 0, end },
                 } if end == case.len()
-            ));
+            );
             let num = extract_number!(tok.kind);
             assert_eq!(
                 num.to_string(),
@@ -5431,13 +5432,13 @@ mod polar {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 9 },
             }
-        ));
+        );
         let num = extract_number!(tok.kind);
         assert_eq!(num.to_string(), "0");
     }
@@ -5455,13 +5456,13 @@ mod polar {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 9 },
             }
-        ));
+        );
         let num = extract_number!(tok.kind);
         assert_eq!(num.to_string(), "4");
     }
@@ -5479,13 +5480,13 @@ mod polar {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 5 },
             }
-        ));
+        );
         let num = extract_number!(tok.kind);
         assert_eq!(num.to_string(), "0.0");
     }
@@ -5503,13 +5504,13 @@ mod polar {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 5 },
             }
-        ));
+        );
         let num = extract_number!(tok.kind);
         assert_eq!(num.to_string(), "4.0");
     }
@@ -5527,13 +5528,13 @@ mod polar {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Number(_),
                 span: TxtSpan { start: 0, end: 9 },
             }
-        ));
+        );
         let num = extract_number!(tok.kind);
         assert_eq!(num.to_string(), "7.373558717381609+9.46734555413109i");
     }
@@ -5551,13 +5552,13 @@ mod polar {
 
         assert!(c.is_none());
         let err = err_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             err,
             TokenError {
                 kind: TokenErrorKind::PolarInvalid,
                 span: TxtSpan { start: 0, end: 4 },
             }
-        ));
+        );
     }
 
     #[test]
@@ -5573,13 +5574,13 @@ mod polar {
 
         assert!(c.is_none());
         let err = err_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             err,
             TokenError {
                 kind: TokenErrorKind::PolarInvalid,
                 span: TxtSpan { start: 0, end: 2 },
             }
-        ));
+        );
     }
 
     #[test]
@@ -5595,13 +5596,13 @@ mod polar {
 
         assert!(c.is_none());
         let err = err_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             err,
             TokenError {
                 kind: TokenErrorKind::PolarInvalid,
                 span: TxtSpan { start: 0, end: 5 },
             }
-        ));
+        );
     }
 
     #[test]
@@ -5617,13 +5618,13 @@ mod polar {
 
         assert!(c.is_none());
         let err = err_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             err,
             TokenError {
                 kind: TokenErrorKind::PolarInvalid,
                 span: TxtSpan { start: 0, end: 2 },
             }
-        ));
+        );
     }
 
     #[test]
@@ -5639,13 +5640,13 @@ mod polar {
 
         assert!(c.is_none());
         let err = err_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             err,
             TokenError {
                 kind: TokenErrorKind::PolarInvalid,
                 span: TxtSpan { start: 0, end: 7 },
             }
-        ));
+        );
     }
 
     #[test]
@@ -5661,13 +5662,13 @@ mod polar {
 
         assert!(c.is_none());
         let err = err_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             err,
             TokenError {
                 kind: TokenErrorKind::PolarInvalid,
                 span: TxtSpan { start: 0, end: 2 },
             }
-        ));
+        );
     }
 }
 
@@ -5687,13 +5688,13 @@ mod identifiers {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Identifier(txt),
                 span: TxtSpan { start: 0, end: 3 },
             } if txt == "+-4"
-        ));
+        );
     }
 
     #[test]
@@ -5709,13 +5710,13 @@ mod identifiers {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Identifier(txt),
                 span: TxtSpan { start: 0, end: 3 },
             } if txt == "+@4"
-        ));
+        );
     }
 
     #[test]
@@ -5731,13 +5732,13 @@ mod identifiers {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Identifier(txt),
                 span: TxtSpan { start: 0, end: 4 },
             } if txt == "+..4"
-        ));
+        );
     }
 
     #[test]
@@ -5753,13 +5754,13 @@ mod identifiers {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Identifier(txt),
                 span: TxtSpan { start: 0, end: 4 },
             } if txt == "+.-4"
-        ));
+        );
     }
 
     #[test]
@@ -5775,13 +5776,13 @@ mod identifiers {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Identifier(txt),
                 span: TxtSpan { start: 0, end: 3 },
             } if txt == "..4"
-        ));
+        );
     }
 
     #[test]
@@ -5797,13 +5798,13 @@ mod identifiers {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Identifier(txt),
                 span: TxtSpan { start: 0, end: 3 },
             } if txt == ".-4"
-        ));
+        );
     }
 
     #[test]
@@ -5819,13 +5820,13 @@ mod identifiers {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Identifier(txt),
                 span: TxtSpan { start: 0, end: 3 },
             } if txt == ".@4"
-        ));
+        );
     }
 
     #[test]
@@ -5841,13 +5842,13 @@ mod identifiers {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Identifier(txt),
                 span: TxtSpan { start: 0, end: 2 },
             } if txt == "@4"
-        ));
+        );
     }
 
     #[test]
@@ -5863,13 +5864,13 @@ mod identifiers {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Identifier(txt),
                 span: TxtSpan { start: 0, end: 5 },
             } if txt == "inf.0"
-        ));
+        );
     }
 
     #[test]
@@ -5885,13 +5886,13 @@ mod identifiers {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Identifier(txt),
                 span: TxtSpan { start: 0, end: 10 },
             } if txt == "+inf.0+foo"
-        ));
+        );
     }
 
     #[test]
@@ -5907,13 +5908,13 @@ mod identifiers {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Identifier(txt),
                 span: TxtSpan { start: 0, end: 13 },
             } if txt == "+inf.0+4.2.2i"
-        ));
+        );
     }
 
     #[test]
@@ -5929,13 +5930,13 @@ mod identifiers {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Identifier(txt),
                 span: TxtSpan { start: 0, end: 7 },
             } if txt == "+inf.0+"
-        ));
+        );
     }
 
     #[test]
@@ -5951,13 +5952,13 @@ mod identifiers {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Identifier(txt),
                 span: TxtSpan { start: 0, end: 10 },
             } if txt == "+inf.0@foo"
-        ));
+        );
     }
 
     #[test]
@@ -5973,13 +5974,13 @@ mod identifiers {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Identifier(txt),
                 span: TxtSpan { start: 0, end: 7 },
             } if txt == "+inf.0@"
-        ));
+        );
     }
 
     #[test]
@@ -5995,13 +5996,13 @@ mod identifiers {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Identifier(txt),
                 span: TxtSpan { start: 0, end: 9 },
             } if txt == "+inf.0@4i"
-        ));
+        );
     }
 
     #[test]
@@ -6017,13 +6018,13 @@ mod identifiers {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Identifier(txt),
                 span: TxtSpan { start: 0, end: 12 },
             } if txt == "+inf.0@4.2.2"
-        ));
+        );
     }
 
     #[test]
@@ -6039,13 +6040,13 @@ mod identifiers {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Identifier(txt),
                 span: TxtSpan { start: 0, end: 5 },
             } if txt == "nan.0"
-        ));
+        );
     }
 
     #[test]
@@ -6061,13 +6062,13 @@ mod identifiers {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Identifier(txt),
                 span: TxtSpan { start: 0, end: 10 },
             } if txt == "+nan.0-bar"
-        ));
+        );
     }
 
     #[test]
@@ -6083,13 +6084,13 @@ mod identifiers {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Identifier(txt),
                 span: TxtSpan { start: 0, end: 10 },
             } if txt == "+nan.0@bar"
-        ));
+        );
     }
 
     #[test]
@@ -6105,13 +6106,13 @@ mod identifiers {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Identifier(txt),
                 span: TxtSpan { start: 0, end: 9 },
             } if txt == "+nan.0@4i"
-        ));
+        );
     }
 
     #[test]
@@ -6127,13 +6128,13 @@ mod identifiers {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Identifier(txt),
                 span: TxtSpan { start: 0, end: 4 },
             } if txt == "+i+4"
-        ));
+        );
     }
 
     #[test]
@@ -6149,13 +6150,13 @@ mod identifiers {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Identifier(txt),
                 span: TxtSpan { start: 0, end: 4 },
             } if txt == "+i@4"
-        ));
+        );
     }
 
     #[test]
@@ -6171,13 +6172,13 @@ mod identifiers {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Identifier(txt),
                 span: TxtSpan { start: 0, end: 1 },
             } if txt == "i"
-        ));
+        );
     }
 
     #[test]
@@ -6193,13 +6194,13 @@ mod identifiers {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Identifier(txt),
                 span: TxtSpan { start: 0, end: 3 },
             } if txt == "+.i"
-        ));
+        );
     }
 
     #[test]
@@ -6215,13 +6216,13 @@ mod identifiers {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Identifier(txt),
                 span: TxtSpan { start: 0, end: 1 },
             } if txt == "i"
-        ));
+        );
     }
 
     #[test]
@@ -6237,13 +6238,13 @@ mod identifiers {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Identifier(txt),
                 span: TxtSpan { start: 0, end: 10 },
             } if txt == "+inf.0ifni"
-        ));
+        );
     }
 
     #[test]
@@ -6259,13 +6260,13 @@ mod identifiers {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Identifier(txt),
                 span: TxtSpan { start: 0, end: 10 },
             } if txt == "+nan.0inon"
-        ));
+        );
     }
 
     #[test]
@@ -6288,13 +6289,13 @@ mod identifiers {
 
             assert!(c.is_none());
             let err = err_or_fail!(r);
-            assert!(matches!(
+            assert_matches!(
                 err,
                 TokenError {
                     kind: TokenErrorKind::IdentifierInvalid('{'),
                     span: TxtSpan { start: 0, end },
                 } if end == case.len()
-            ));
+            );
         }
     }
 }

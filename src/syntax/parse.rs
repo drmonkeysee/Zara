@@ -21,6 +21,7 @@ pub(super) type MergeFlow = ControlFlow<()>;
 pub(super) type MergeResult = Result<MergeFlow, ParserError>;
 pub(super) type ParseErrFlow = ControlFlow<ParseErrBreak>;
 
+#[derive(Debug)]
 pub(super) enum ParseNode {
     Data(Vec<Expression>),
     Expr(ExprNode),
@@ -105,6 +106,7 @@ impl TryFrom<ParseNode> for Sequence {
     }
 }
 
+#[derive(Debug)]
 pub(super) struct ExprNode {
     ctx: ExprCtx,
     mode: ParseMode,

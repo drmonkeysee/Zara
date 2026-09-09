@@ -7,6 +7,7 @@ macro_rules! rational_parts {
 
 use super::*;
 use crate::testutil::{err_or_fail, extract_or_fail, ok_or_fail};
+use std::assert_matches;
 
 mod sign {
     use super::*;
@@ -833,7 +834,7 @@ mod integer {
         let r: Result<u8, _> = n.try_into();
 
         let err = err_or_fail!(r);
-        assert!(matches!(err, NumericError::ByteConversionInvalidRange));
+        assert_matches!(err, NumericError::ByteConversionInvalidRange);
     }
 
     #[test]
@@ -843,7 +844,7 @@ mod integer {
         let r: Result<u8, _> = n.try_into();
 
         let err = err_or_fail!(r);
-        assert!(matches!(err, NumericError::ByteConversionInvalidRange));
+        assert_matches!(err, NumericError::ByteConversionInvalidRange);
     }
 
     #[test]
@@ -856,7 +857,7 @@ mod integer {
         let r = i.try_to_u8();
 
         let err = err_or_fail!(r);
-        assert!(matches!(err, NumericError::ByteConversionInvalidRange));
+        assert_matches!(err, NumericError::ByteConversionInvalidRange);
     }
 
     #[test]
@@ -916,7 +917,7 @@ mod integer {
         let r: Result<i32, _> = n.try_into();
 
         let err = err_or_fail!(r);
-        assert!(matches!(err, NumericError::Int32ConversionInvalidRange));
+        assert_matches!(err, NumericError::Int32ConversionInvalidRange);
     }
 
     #[test]
@@ -926,7 +927,7 @@ mod integer {
         let r: Result<i32, _> = n.try_into();
 
         let err = err_or_fail!(r);
-        assert!(matches!(err, NumericError::Int32ConversionInvalidRange));
+        assert_matches!(err, NumericError::Int32ConversionInvalidRange);
     }
 
     #[test]
@@ -936,7 +937,7 @@ mod integer {
         let r: Result<i32, _> = n.try_into();
 
         let err = err_or_fail!(r);
-        assert!(matches!(err, NumericError::Int32ConversionInvalidRange));
+        assert_matches!(err, NumericError::Int32ConversionInvalidRange);
     }
 
     #[test]
@@ -946,7 +947,7 @@ mod integer {
         let r: Result<i32, _> = n.try_into();
 
         let err = err_or_fail!(r);
-        assert!(matches!(err, NumericError::Int32ConversionInvalidRange));
+        assert_matches!(err, NumericError::Int32ConversionInvalidRange);
     }
 
     #[test]
@@ -956,7 +957,7 @@ mod integer {
         let r: Result<i32, _> = n.try_into();
 
         let err = err_or_fail!(r);
-        assert!(matches!(err, NumericError::Int32ConversionInvalidRange));
+        assert_matches!(err, NumericError::Int32ConversionInvalidRange);
     }
 
     #[test]
@@ -966,7 +967,7 @@ mod integer {
         let r: Result<i32, _> = n.try_into();
 
         let err = err_or_fail!(r);
-        assert!(matches!(err, NumericError::Int32ConversionInvalidRange));
+        assert_matches!(err, NumericError::Int32ConversionInvalidRange);
     }
 
     #[test]
@@ -979,7 +980,7 @@ mod integer {
         let r = i.try_to_i32();
 
         let err = err_or_fail!(r);
-        assert!(matches!(err, NumericError::Int32ConversionInvalidRange));
+        assert_matches!(err, NumericError::Int32ConversionInvalidRange);
     }
 
     #[test]
@@ -1039,7 +1040,7 @@ mod integer {
         let r: Result<i64, _> = n.try_into();
 
         let err = err_or_fail!(r);
-        assert!(matches!(err, NumericError::Int64ConversionInvalidRange));
+        assert_matches!(err, NumericError::Int64ConversionInvalidRange);
     }
 
     #[test]
@@ -1049,7 +1050,7 @@ mod integer {
         let r: Result<i64, _> = n.try_into();
 
         let err = err_or_fail!(r);
-        assert!(matches!(err, NumericError::Int64ConversionInvalidRange));
+        assert_matches!(err, NumericError::Int64ConversionInvalidRange);
     }
 
     #[test]
@@ -1059,7 +1060,7 @@ mod integer {
         let r: Result<i64, _> = n.try_into();
 
         let err = err_or_fail!(r);
-        assert!(matches!(err, NumericError::Int64ConversionInvalidRange));
+        assert_matches!(err, NumericError::Int64ConversionInvalidRange);
     }
 
     #[test]
@@ -1069,7 +1070,7 @@ mod integer {
         let r: Result<i64, _> = n.try_into();
 
         let err = err_or_fail!(r);
-        assert!(matches!(err, NumericError::Int64ConversionInvalidRange));
+        assert_matches!(err, NumericError::Int64ConversionInvalidRange);
     }
 
     #[test]
@@ -1082,7 +1083,7 @@ mod integer {
         let r = i.try_to_i64();
 
         let err = err_or_fail!(r);
-        assert!(matches!(err, NumericError::Int64ConversionInvalidRange));
+        assert_matches!(err, NumericError::Int64ConversionInvalidRange);
     }
 
     #[test]
@@ -1112,7 +1113,7 @@ mod integer {
         let r: Result<u32, _> = n.try_into();
 
         let err = err_or_fail!(r);
-        assert!(matches!(err, NumericError::Uint32ConversionInvalidRange));
+        assert_matches!(err, NumericError::Uint32ConversionInvalidRange);
     }
 
     #[test]
@@ -1132,7 +1133,7 @@ mod integer {
         let r: Result<u32, _> = n.try_into();
 
         let err = err_or_fail!(r);
-        assert!(matches!(err, NumericError::Uint32ConversionInvalidRange));
+        assert_matches!(err, NumericError::Uint32ConversionInvalidRange);
     }
 
     #[test]
@@ -1142,7 +1143,7 @@ mod integer {
         let r: Result<u32, _> = n.try_into();
 
         let err = err_or_fail!(r);
-        assert!(matches!(err, NumericError::Uint32ConversionInvalidRange));
+        assert_matches!(err, NumericError::Uint32ConversionInvalidRange);
     }
 
     #[test]
@@ -1152,7 +1153,7 @@ mod integer {
         let r: Result<u32, _> = n.try_into();
 
         let err = err_or_fail!(r);
-        assert!(matches!(err, NumericError::Uint32ConversionInvalidRange));
+        assert_matches!(err, NumericError::Uint32ConversionInvalidRange);
     }
 
     #[test]
@@ -1162,7 +1163,7 @@ mod integer {
         let r: Result<u32, _> = n.try_into();
 
         let err = err_or_fail!(r);
-        assert!(matches!(err, NumericError::Uint32ConversionInvalidRange));
+        assert_matches!(err, NumericError::Uint32ConversionInvalidRange);
     }
 
     #[test]
@@ -1172,7 +1173,7 @@ mod integer {
         let r: Result<u32, _> = n.try_into();
 
         let err = err_or_fail!(r);
-        assert!(matches!(err, NumericError::Uint32ConversionInvalidRange));
+        assert_matches!(err, NumericError::Uint32ConversionInvalidRange);
     }
 
     #[test]
@@ -1185,7 +1186,7 @@ mod integer {
         let r = i.try_to_u32();
 
         let err = err_or_fail!(r);
-        assert!(matches!(err, NumericError::Uint32ConversionInvalidRange));
+        assert_matches!(err, NumericError::Uint32ConversionInvalidRange);
     }
 
     #[test]
@@ -1215,7 +1216,7 @@ mod integer {
         let r: Result<usize, _> = n.try_into();
 
         let err = err_or_fail!(r);
-        assert!(matches!(err, NumericError::UsizeConversionInvalidRange));
+        assert_matches!(err, NumericError::UsizeConversionInvalidRange);
     }
 
     #[test]
@@ -1235,7 +1236,7 @@ mod integer {
         let r: Result<usize, _> = n.try_into();
 
         let err = err_or_fail!(r);
-        assert!(matches!(err, NumericError::UsizeConversionInvalidRange));
+        assert_matches!(err, NumericError::UsizeConversionInvalidRange);
     }
 
     #[test]
@@ -1248,7 +1249,7 @@ mod integer {
         let r = i.try_to_usize();
 
         let err = err_or_fail!(r);
-        assert!(matches!(err, NumericError::UsizeConversionInvalidRange));
+        assert_matches!(err, NumericError::UsizeConversionInvalidRange);
     }
 
     #[test]
@@ -1637,7 +1638,7 @@ mod float {
         let n = n.try_into_exact();
 
         let err = err_or_fail!(n);
-        assert!(matches!(err, NumericError::NoExactRepresentation(s) if s.contains("+inf.0")));
+        assert_matches!(err, NumericError::NoExactRepresentation(s) if s.contains("+inf.0"));
     }
 
     #[test]
@@ -1647,7 +1648,7 @@ mod float {
         let n = n.try_into_exact();
 
         let err = err_or_fail!(n);
-        assert!(matches!(err, NumericError::NoExactRepresentation(s) if s.contains("+nan.0")));
+        assert_matches!(err, NumericError::NoExactRepresentation(s) if s.contains("+nan.0"));
     }
 
     #[test]
@@ -1658,7 +1659,7 @@ mod float {
         let r = n.try_into_exact();
 
         let r = ok_or_fail!(r);
-        assert!(matches!(r, Real::Rational(_)));
+        assert_matches!(r, Real::Rational(_));
 
         let f = r.into_inexact();
         assert_eq!(f.to_float(), expected);
@@ -1671,10 +1672,10 @@ mod float {
         let r: Result<u8, _> = n.try_into();
 
         let err = err_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             err,
             NumericError::IntConversionInvalidType(s)
-            if s == "floating-point"));
+            if s == "floating-point");
     }
 
     #[test]
@@ -1684,10 +1685,10 @@ mod float {
         let r: Result<i32, _> = n.try_into();
 
         let err = err_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             err,
             NumericError::IntConversionInvalidType(s)
-            if s == "floating-point"));
+            if s == "floating-point");
     }
 
     #[test]
@@ -1981,7 +1982,7 @@ mod float {
         let res = r.try_into_exact_integer();
 
         let err = err_or_fail!(res);
-        assert!(matches!(err, NumericError::NotExactInteger(s) if s == "4.2"));
+        assert_matches!(err, NumericError::NotExactInteger(s) if s == "4.2");
     }
 
     #[test]
@@ -1997,7 +1998,7 @@ mod float {
             let res = r.try_into_exact_integer();
 
             let err = err_or_fail!(res);
-            assert!(matches!(err, NumericError::NotExactInteger(s) if s == expected));
+            assert_matches!(err, NumericError::NotExactInteger(s) if s == expected);
         }
     }
 
@@ -2037,7 +2038,7 @@ mod float {
 
         let err = err_or_fail!(r.try_into_numerator());
 
-        assert!(matches!(err, NumericError::NoExactRepresentation(s) if s == "+inf.0"));
+        assert_matches!(err, NumericError::NoExactRepresentation(s) if s == "+inf.0");
     }
 
     #[test]
@@ -2046,7 +2047,7 @@ mod float {
 
         let err = err_or_fail!(r.try_into_numerator());
 
-        assert!(matches!(err, NumericError::NoExactRepresentation(s) if s == "+nan.0"));
+        assert_matches!(err, NumericError::NoExactRepresentation(s) if s == "+nan.0");
     }
 
     #[test]
@@ -2085,7 +2086,7 @@ mod float {
 
         let err = err_or_fail!(r.try_into_denominator());
 
-        assert!(matches!(err, NumericError::NoExactRepresentation(s) if s == "+inf.0"));
+        assert_matches!(err, NumericError::NoExactRepresentation(s) if s == "+inf.0");
     }
 
     #[test]
@@ -2094,7 +2095,7 @@ mod float {
 
         let err = err_or_fail!(r.try_into_denominator());
 
-        assert!(matches!(err, NumericError::NoExactRepresentation(s) if s == "+nan.0"));
+        assert_matches!(err, NumericError::NoExactRepresentation(s) if s == "+nan.0");
     }
 }
 
@@ -2278,7 +2279,7 @@ mod rational {
         let q = Real::reduce(1, 0);
         let err = err_or_fail!(q);
 
-        assert!(matches!(err, NumericError::DivideByZero));
+        assert_matches!(err, NumericError::DivideByZero);
     }
 
     #[test]
@@ -2368,10 +2369,10 @@ mod rational {
         let r: Result<u8, _> = n.try_into();
 
         let err = err_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             err,
             NumericError::IntConversionInvalidType(s)
-            if s == "rational"));
+            if s == "rational");
     }
 
     #[test]
@@ -2383,10 +2384,10 @@ mod rational {
         let r: Result<i32, _> = n.try_into();
 
         let err = err_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             err,
             NumericError::IntConversionInvalidType(s)
-            if s == "rational"));
+            if s == "rational");
     }
 
     #[test]
@@ -2494,7 +2495,7 @@ mod rational {
         let r = q.try_into_exact_integer();
 
         let err = err_or_fail!(r);
-        assert!(matches!(err, NumericError::NotExactInteger(s) if s == "4/5"));
+        assert_matches!(err, NumericError::NotExactInteger(s) if s == "4/5");
     }
 
     #[test]
@@ -2859,10 +2860,10 @@ mod complex {
         let r: Result<u8, _> = z.try_into();
 
         let err = err_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             err,
             NumericError::IntConversionInvalidType(s)
-            if s == "complex"));
+            if s == "complex");
     }
 
     #[test]
@@ -2872,10 +2873,10 @@ mod complex {
         let r: Result<i32, _> = z.try_into();
 
         let err = err_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             err,
             NumericError::IntConversionInvalidType(s)
-            if s == "complex"));
+            if s == "complex");
     }
 
     #[test]
@@ -2969,11 +2970,11 @@ mod specs {
 
         let err = err_or_fail!(espec.try_into_exact("1234"));
 
-        assert!(matches!(err, NumericError::ParseFailure));
+        assert_matches!(err, NumericError::ParseFailure);
 
         let err = err_or_fail!(ispec.try_into_inexact("1234"));
 
-        assert!(matches!(err, NumericError::ParseFailure));
+        assert_matches!(err, NumericError::ParseFailure);
     }
 
     #[test]
@@ -2988,11 +2989,11 @@ mod specs {
 
         let err = err_or_fail!(espec.try_into_exact(""));
 
-        assert!(matches!(err, NumericError::ParseFailure));
+        assert_matches!(err, NumericError::ParseFailure);
 
         let err = err_or_fail!(ispec.try_into_inexact(""));
 
-        assert!(matches!(err, NumericError::ParseFailure));
+        assert_matches!(err, NumericError::ParseFailure);
     }
 
     #[test]
@@ -3004,11 +3005,11 @@ mod specs {
 
         let err = err_or_fail!(espec.try_into_exact("1234.456e3"));
 
-        assert!(matches!(err, NumericError::ParseFailure));
+        assert_matches!(err, NumericError::ParseFailure);
 
         let err = err_or_fail!(ispec.try_into_inexact("1234.456e3"));
 
-        assert!(matches!(err, NumericError::ParseFailure));
+        assert_matches!(err, NumericError::ParseFailure);
     }
 
     #[test]
@@ -3027,11 +3028,11 @@ mod specs {
 
         let err = err_or_fail!(espec.try_into_exact(""));
 
-        assert!(matches!(err, NumericError::ParseExponentFailure));
+        assert_matches!(err, NumericError::ParseExponentFailure);
 
         let err = err_or_fail!(ispec.try_into_inexact(""));
 
-        assert!(matches!(err, NumericError::ParseFailure));
+        assert_matches!(err, NumericError::ParseFailure);
     }
 }
 

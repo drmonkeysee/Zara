@@ -4,7 +4,7 @@ use crate::{
     testutil::{TestEnv, err_or_fail, extract_or_fail, ok_or_fail, some_or_fail, zlist_mut},
     value::zlist,
 };
-use std::rc::Rc;
+use std::{assert_matches, rc::Rc};
 
 fn make_circular_list(env: &TestEnv) -> (Value, Value, Value) {
     // (a b . #0=(c d e f . #0#))
@@ -34,7 +34,7 @@ fn all_strings_empty() {
     let r = strings_eq(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::Boolean(true)));
+    assert_matches!(v, Value::Boolean(true));
 }
 
 #[test]
@@ -45,7 +45,7 @@ fn all_strings_single() {
     let r = strings_eq(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::Boolean(true)));
+    assert_matches!(v, Value::Boolean(true));
 }
 
 #[test]
@@ -60,7 +60,7 @@ fn all_strings_equal() {
     let r = strings_eq(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::Boolean(true)));
+    assert_matches!(v, Value::Boolean(true));
 }
 
 #[test]
@@ -75,7 +75,7 @@ fn all_strings_equal_with_mutable() {
     let r = strings_eq(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::Boolean(true)));
+    assert_matches!(v, Value::Boolean(true));
 }
 
 #[test]
@@ -90,7 +90,7 @@ fn all_strings_mixed() {
     let r = strings_eq(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::Boolean(false)));
+    assert_matches!(v, Value::Boolean(false));
 }
 
 #[test]
@@ -123,7 +123,7 @@ fn all_strings_lt() {
     let r = strings_lt(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::Boolean(true)));
+    assert_matches!(v, Value::Boolean(true));
 }
 
 #[test]
@@ -138,7 +138,7 @@ fn all_strings_lt_with_mutable() {
     let r = strings_lt(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::Boolean(true)));
+    assert_matches!(v, Value::Boolean(true));
 }
 
 #[test]
@@ -153,7 +153,7 @@ fn all_strings_not_lt() {
     let r = strings_lt(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::Boolean(false)));
+    assert_matches!(v, Value::Boolean(false));
 }
 
 #[test]
@@ -186,7 +186,7 @@ fn string_mutable_predicate() {
     let r = is_string(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::Boolean(true)));
+    assert_matches!(v, Value::Boolean(true));
 }
 
 #[test]
@@ -208,7 +208,7 @@ fn string_mutable_get_ref() {
     let r = string_get(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::Character('b')));
+    assert_matches!(v, Value::Character('b'));
 }
 
 #[test]
@@ -223,7 +223,7 @@ fn string_set_val() {
     let r = string_set(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::Unspecified));
+    assert_matches!(v, Value::Unspecified);
     assert_eq!(args[0].as_datum().to_string(), "\"aXc\"");
 }
 
@@ -239,7 +239,7 @@ fn string_set_val_unicode() {
     let r = string_set(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::Unspecified));
+    assert_matches!(v, Value::Unspecified);
     assert_eq!(args[0].as_datum().to_string(), "\"aXc\"");
 }
 
@@ -255,7 +255,7 @@ fn string_set_val_after_unicode() {
     let r = string_set(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::Unspecified));
+    assert_matches!(v, Value::Unspecified);
     assert_eq!(args[0].as_datum().to_string(), "\"a🦀X\"");
 }
 
@@ -332,7 +332,7 @@ fn pair_mut_predicate() {
     let r = is_pair(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::Boolean(true)));
+    assert_matches!(v, Value::Boolean(true));
 }
 
 #[test]
@@ -347,7 +347,7 @@ fn set_circular_list() {
     let r = set_cdr(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::Unspecified));
+    assert_matches!(v, Value::Unspecified);
     let lst = extract_or_fail!(&pair, Value::PairMut);
     let cdr = &lst.borrow().cdr;
     assert!(pair.is(cdr));
@@ -365,7 +365,7 @@ fn list_mut_predicate() {
     let r = is_list(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::Boolean(true)));
+    assert_matches!(v, Value::Boolean(true));
 }
 
 #[test]
@@ -377,28 +377,28 @@ fn list_circular_predicate() {
     let r = is_list(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::Boolean(false)));
+    assert_matches!(v, Value::Boolean(false));
 
     let args = [lst.clone()];
 
     let r = is_pair(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::Boolean(true)));
+    assert_matches!(v, Value::Boolean(true));
 
     let args = [loop_head.clone()];
 
     let r = is_pair(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::Boolean(true)));
+    assert_matches!(v, Value::Boolean(true));
 
     let args = [loop_tail.clone()];
 
     let r = is_pair(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::Boolean(true)));
+    assert_matches!(v, Value::Boolean(true));
 }
 
 #[test]
@@ -424,7 +424,7 @@ fn list_append_no_args() {
     let r = list_append(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::Null));
+    assert_matches!(v, Value::Null);
 }
 
 #[test]
@@ -435,7 +435,7 @@ fn list_append_empty() {
     let r = list_append(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::Null));
+    assert_matches!(v, Value::Null);
 }
 
 #[test]
@@ -446,7 +446,7 @@ fn list_append_all_empties() {
     let r = list_append(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::Null));
+    assert_matches!(v, Value::Null);
 }
 
 #[test]
@@ -457,7 +457,7 @@ fn list_append_single() {
     let r = list_append(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::Symbol(s) if s.as_ref() == "a"));
+    assert_matches!(v, Value::Symbol(s) if s.as_ref() == "a");
 }
 
 #[test]
@@ -468,7 +468,7 @@ fn list_append_empties_with_single() {
     let r = list_append(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::Symbol(s) if s.as_ref() == "a"));
+    assert_matches!(v, Value::Symbol(s) if s.as_ref() == "a");
 }
 
 #[test]
@@ -508,7 +508,7 @@ fn list_append_multiple_lists() {
     let r = list_append(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::PairMut(_)));
+    assert_matches!(v, Value::PairMut(_));
     assert_eq!(v.as_datum().to_string(), "(a b c 1 2 3 x y z)");
     let sub = ok_or_fail!(list_tail(
         &[v, Value::Number(Number::from_usize(6))],
@@ -534,7 +534,7 @@ fn list_append_improper_lists() {
     let r = list_append(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::PairMut(_)));
+    assert_matches!(v, Value::PairMut(_));
     assert_eq!(v.as_datum().to_string(), "(a b c 1 2 3 . x)");
     let sub = ok_or_fail!(list_tail(
         &[v, Value::Number(Number::from_usize(6))],
@@ -605,7 +605,7 @@ fn list_reverse_empty() {
     let r = list_reverse(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::Null));
+    assert_matches!(v, Value::Null);
 }
 
 #[test]
@@ -616,7 +616,7 @@ fn list_reverse_single_item() {
     let r = list_reverse(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::PairMut(_)));
+    assert_matches!(v, Value::PairMut(_));
     assert_eq!(v.as_datum().to_string(), "(a)");
 }
 
@@ -632,7 +632,7 @@ fn list_reverse_items() {
     let r = list_reverse(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::PairMut(_)));
+    assert_matches!(v, Value::PairMut(_));
     assert_eq!(v.as_datum().to_string(), "(c b a)");
 }
 
@@ -744,7 +744,7 @@ fn list_tail_empty_list() {
     let r = list_tail(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::Null));
+    assert_matches!(v, Value::Null);
 }
 
 #[test]
@@ -762,7 +762,7 @@ fn list_tail_index_to_empty_list() {
     let r = list_tail(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::Null));
+    assert_matches!(v, Value::Null);
 }
 
 #[test]
@@ -773,7 +773,7 @@ fn list_tail_non_list() {
     let r = list_tail(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::Symbol(s) if s.as_ref() == "a"));
+    assert_matches!(v, Value::Symbol(s) if s.as_ref() == "a");
 }
 
 #[test]
@@ -793,7 +793,7 @@ fn list_tail_end_of_improper_list() {
     let r = list_tail(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::Symbol(s) if s.as_ref() == "c"));
+    assert_matches!(v, Value::Symbol(s) if s.as_ref() == "c");
 }
 
 #[test]
@@ -813,7 +813,7 @@ fn list_tail_end_of_mutable_improper_list() {
     let r = list_tail(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::Symbol(s) if s.as_ref() == "c"));
+    assert_matches!(v, Value::Symbol(s) if s.as_ref() == "c");
 }
 
 #[test]
@@ -968,7 +968,7 @@ fn list_ref_normal_list() {
     let r = list_get(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::Symbol(s) if s.as_ref() == "b"));
+    assert_matches!(v, Value::Symbol(s) if s.as_ref() == "b");
 }
 
 #[test]
@@ -986,7 +986,7 @@ fn list_ref_normal_mutable_list() {
     let r = list_get(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::Symbol(s) if s.as_ref() == "b"));
+    assert_matches!(v, Value::Symbol(s) if s.as_ref() == "b");
 }
 
 #[test]
@@ -1008,17 +1008,17 @@ fn list_ref_circular_list() {
     let r = list_get(&[lst.clone(), Value::real(10)], &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::Symbol(s) if s.as_ref() == "c"));
+    assert_matches!(v, Value::Symbol(s) if s.as_ref() == "c");
 
     let r = list_get(&[lst.clone(), Value::real(11)], &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::Symbol(s) if s.as_ref() == "d"));
+    assert_matches!(v, Value::Symbol(s) if s.as_ref() == "d");
 
     let r = list_get(&[lst.clone(), Value::real(13)], &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::Symbol(s) if s.as_ref() == "f"));
+    assert_matches!(v, Value::Symbol(s) if s.as_ref() == "f");
 }
 
 #[test]
@@ -1052,7 +1052,7 @@ fn list_ref_improper_list_item() {
     let r = list_get(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::Symbol(s) if s.as_ref() == "b"));
+    assert_matches!(v, Value::Symbol(s) if s.as_ref() == "b");
 }
 
 #[test]
@@ -1072,7 +1072,7 @@ fn list_ref_mutable_improper_list_item() {
     let r = list_get(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::Symbol(s) if s.as_ref() == "b"));
+    assert_matches!(v, Value::Symbol(s) if s.as_ref() == "b");
 }
 
 #[test]
@@ -1156,7 +1156,7 @@ fn list_set_value() {
     let r = list_set(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::Unspecified));
+    assert_matches!(v, Value::Unspecified);
     assert_eq!(lst.as_datum().to_string(), "(a z c)");
 }
 
@@ -1180,7 +1180,7 @@ fn list_set_value_replace_pair() {
     let r = list_set(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::Unspecified));
+    assert_matches!(v, Value::Unspecified);
     assert_eq!(lst.as_datum().to_string(), "(a b z)");
 }
 
@@ -1206,7 +1206,7 @@ fn list_set_value_improper_list() {
     let r = list_set(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::Unspecified));
+    assert_matches!(v, Value::Unspecified);
     assert_eq!(lst.as_datum().to_string(), "(a b z . d)");
 }
 
@@ -1219,10 +1219,8 @@ fn list_set_circular_list() {
     let r = list_set(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::Unspecified));
-    assert!(
-        matches!(&some_or_fail!(list_head.as_refpair()).as_ref().car, Value::Symbol(s) if s.as_ref() == "z")
-    );
+    assert_matches!(v, Value::Unspecified);
+    assert_matches!(&some_or_fail!(list_head.as_refpair()).as_ref().car, Value::Symbol(s) if s.as_ref() == "z");
 }
 
 #[test]
@@ -1282,7 +1280,7 @@ fn list_copy_list() {
 
     let v = ok_or_fail!(r);
     assert!(!v.is(&lst));
-    assert!(matches!(v, Value::PairMut(_)));
+    assert_matches!(v, Value::PairMut(_));
     assert_eq!(v.as_datum().to_string(), "(a b c)");
 }
 
@@ -1303,7 +1301,7 @@ fn list_copy_improper_list() {
 
     let v = ok_or_fail!(r);
     assert!(!v.is(&lst));
-    assert!(matches!(v, Value::PairMut(_)));
+    assert_matches!(v, Value::PairMut(_));
     assert_eq!(v.as_datum().to_string(), "(a b c . d)");
     let vcdr = &extract_or_fail!(&v, Value::PairMut).as_ref().borrow().cdr;
     let last = &extract_or_fail!(vcdr, Value::PairMut).as_ref().borrow().cdr;
@@ -1337,7 +1335,7 @@ fn vector_mutable_predicate() {
     let r = is_vector(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::Boolean(true)));
+    assert_matches!(v, Value::Boolean(true));
 }
 
 #[test]
@@ -1373,7 +1371,7 @@ fn vector_mutable_get_ref() {
     let r = vector_get(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::Character('B')));
+    assert_matches!(v, Value::Character('B'));
 }
 
 #[test]
@@ -1391,7 +1389,7 @@ fn vector_get_ref() {
     let r = vector_get(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::Character('B')));
+    assert_matches!(v, Value::Character('B'));
 }
 
 #[test]
@@ -1491,7 +1489,7 @@ fn vector_set_val() {
     let r = vector_set(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::Unspecified));
+    assert_matches!(v, Value::Unspecified);
     assert_eq!(args[0].as_datum().to_string(), "#(#\\A 25 #\\C)");
 }
 
@@ -1503,7 +1501,7 @@ fn bytevector_mutable_predicate() {
     let r = is_bytevector(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::Boolean(true)));
+    assert_matches!(v, Value::Boolean(true));
 }
 
 #[test]
@@ -1540,7 +1538,7 @@ fn bytevector_set_val() {
     let r = bytevector_set(&args, &env.new_frame());
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::Unspecified));
+    assert_matches!(v, Value::Unspecified);
     assert_eq!(args[0].as_datum().to_string(), "#u8(1 25 3)");
 }
 

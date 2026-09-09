@@ -126,6 +126,7 @@ fn format_header(ctx: &TextContext, lineno: LineNumber, f: &mut Formatter) -> fm
 mod tests {
     use super::*;
     use crate::testutil::some_or_fail;
+    use std::assert_matches;
 
     #[derive(Clone, Copy, Debug)]
     struct MockError(i32);
@@ -142,13 +143,13 @@ mod tests {
     fn context_with_name() {
         let ctx = TextContext::named("foo");
 
-        assert!(matches!(
+        assert_matches!(
             ctx,
             TextContext {
                 name,
                 path: None
             } if name == "foo"
-        ));
+        );
     }
 
     #[test]

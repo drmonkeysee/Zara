@@ -1,4 +1,5 @@
 use super::*;
+use std::assert_matches;
 
 #[test]
 fn empty_string() {
@@ -24,13 +25,13 @@ fn single_token() {
 
     let r = s.collect::<Vec<_>>();
 
-    assert!(matches!(
+    assert_matches!(
         r[..],
         [Ok(Token {
             kind: TokenKind::ParenLeft,
             span: TxtSpan { start: 0, end: 1 }
         })]
-    ));
+    );
 }
 
 #[test]
@@ -39,13 +40,13 @@ fn single_token_with_whitespace() {
 
     let r = s.collect::<Vec<_>>();
 
-    assert!(matches!(
+    assert_matches!(
         r[..],
         [Ok(Token {
             kind: TokenKind::ParenLeft,
             span: TxtSpan { start: 2, end: 3 }
         })]
-    ));
+    );
 }
 
 #[test]
@@ -54,7 +55,7 @@ fn multiple_tokens() {
 
     let r = s.collect::<Vec<_>>();
 
-    assert!(matches!(
+    assert_matches!(
         r[..],
         [
             Ok(Token {
@@ -70,7 +71,7 @@ fn multiple_tokens() {
                 span: TxtSpan { start: 3, end: 4 }
             })
         ]
-    ));
+    );
 }
 
 #[test]
@@ -79,7 +80,7 @@ fn multiple_tokens_with_whitespace() {
 
     let r = s.collect::<Vec<_>>();
 
-    assert!(matches!(
+    assert_matches!(
         r[..],
         [
             Ok(Token {
@@ -95,7 +96,7 @@ fn multiple_tokens_with_whitespace() {
                 span: TxtSpan { start: 13, end: 14 }
             })
         ]
-    ));
+    );
 }
 
 #[test]
@@ -104,7 +105,7 @@ fn multiple_numbers() {
 
     let r = s.collect::<Vec<_>>();
 
-    assert!(matches!(
+    assert_matches!(
         r[..],
         [
             Ok(Token {
@@ -136,7 +137,7 @@ fn multiple_numbers() {
                 span: TxtSpan { start: 29, end: 33 }
             })
         ]
-    ));
+    );
 }
 
 #[test]
@@ -145,7 +146,7 @@ fn tokens_with_invalid_token() {
 
     let r = s.collect::<Vec<_>>();
 
-    assert!(matches!(
+    assert_matches!(
         r[..],
         [
             Ok(Token {
@@ -161,7 +162,7 @@ fn tokens_with_invalid_token() {
                 span: TxtSpan { start: 5, end: 6 }
             })
         ]
-    ));
+    );
 }
 
 #[test]
@@ -170,7 +171,7 @@ fn tokens_with_unterminated_token() {
 
     let r = s.collect::<Vec<_>>();
 
-    assert!(matches!(
+    assert_matches!(
         r[..],
         [
             Ok(Token {
@@ -186,7 +187,7 @@ fn tokens_with_unterminated_token() {
                 span: TxtSpan { start: 2, end: 3 }
             })
         ]
-    ));
+    );
 }
 
 #[test]
@@ -195,7 +196,7 @@ fn tokens_with_unterminated_token_to_whitespace() {
 
     let r = s.collect::<Vec<_>>();
 
-    assert!(matches!(
+    assert_matches!(
         r[..],
         [
             Err(TokenError {
@@ -207,7 +208,7 @@ fn tokens_with_unterminated_token_to_whitespace() {
                 span: TxtSpan { start: 2, end: 4 }
             })
         ]
-    ));
+    );
 }
 
 #[test]
@@ -216,7 +217,7 @@ fn hash_is_a_token_boundary() {
 
     let r = s.collect::<Vec<_>>();
 
-    assert!(matches!(
+    assert_matches!(
         r[..],
         [
             Ok(Token {
@@ -228,7 +229,7 @@ fn hash_is_a_token_boundary() {
                 span: TxtSpan { start: 2, end: 4 }
             })
         ]
-    ));
+    );
 }
 
 #[test]
@@ -237,7 +238,7 @@ fn quote_is_a_token_boundary() {
 
     let r = s.collect::<Vec<_>>();
 
-    assert!(matches!(
+    assert_matches!(
         r[..],
         [
             Ok(Token {
@@ -253,7 +254,7 @@ fn quote_is_a_token_boundary() {
                 span: TxtSpan { start: 3, end: 5 }
             })
         ]
-    ));
+    );
 }
 
 #[test]
@@ -262,7 +263,7 @@ fn quasiquote_is_a_token_boundary() {
 
     let r = s.collect::<Vec<_>>();
 
-    assert!(matches!(
+    assert_matches!(
         r[..],
         [
             Ok(Token {
@@ -278,7 +279,7 @@ fn quasiquote_is_a_token_boundary() {
                 span: TxtSpan { start: 3, end: 5 }
             })
         ]
-    ));
+    );
 }
 
 #[test]
@@ -287,7 +288,7 @@ fn unquote_is_a_token_boundary() {
 
     let r = s.collect::<Vec<_>>();
 
-    assert!(matches!(
+    assert_matches!(
         r[..],
         [
             Ok(Token {
@@ -303,7 +304,7 @@ fn unquote_is_a_token_boundary() {
                 span: TxtSpan { start: 3, end: 5 }
             })
         ]
-    ));
+    );
 }
 
 #[test]
@@ -312,7 +313,7 @@ fn pair_join_is_not_a_token_boundary() {
 
     let r = s.collect::<Vec<_>>();
 
-    assert!(matches!(
+    assert_matches!(
         r[..],
         [
             Err(TokenError {
@@ -324,7 +325,7 @@ fn pair_join_is_not_a_token_boundary() {
                 span: TxtSpan { start: 3, end: 5 }
             })
         ]
-    ));
+    );
 }
 
 #[test]
@@ -336,13 +337,13 @@ fn block_comment_fragment_uses_whole_line() {
 
     let r = s.collect::<Vec<_>>();
 
-    assert!(matches!(
+    assert_matches!(
         r[..],
         [Ok(Token {
             kind: TokenKind::BlockCommentFragment { depth: 2 },
             span: TxtSpan { start: 0, end: 17 }
         })]
-    ));
+    );
 }
 
 #[test]
@@ -354,7 +355,7 @@ fn block_comment_end_continues_tokenizing() {
 
     let r = s.collect::<Vec<_>>();
 
-    assert!(matches!(
+    assert_matches!(
         r[..],
         [
             Ok(Token {
@@ -366,7 +367,7 @@ fn block_comment_end_continues_tokenizing() {
                 span: TxtSpan { start: 15, end: 17 }
             })
         ]
-    ));
+    );
 }
 
 #[test]
@@ -379,13 +380,13 @@ fn string_fragment_uses_whole_line() {
     let r = s.collect::<Vec<_>>();
 
     assert_eq!(r.len(), 1);
-    assert!(matches!(
+    assert_matches!(
         &r[0],
         Ok(Token {
             kind: TokenKind::StringFragment { s, line_cont: false },
             span: TxtSpan { start: 0, end: 16 }
         }) if s == "continued string"
-    ));
+    );
 }
 
 #[test]
@@ -398,20 +399,20 @@ fn string_end_continues_tokenizing() {
     let r = s.collect::<Vec<_>>();
 
     assert_eq!(r.len(), 2);
-    assert!(matches!(
+    assert_matches!(
         &r[0],
         Ok(Token {
             kind: TokenKind::StringEnd(s),
             span: TxtSpan { start: 0, end: 12 }
         }) if s == "end string "
-    ));
-    assert!(matches!(
+    );
+    assert_matches!(
         r[1],
         Ok(Token {
             kind: TokenKind::Boolean(false),
             span: TxtSpan { start: 13, end: 15 }
         })
-    ));
+    );
 }
 
 #[test]
@@ -420,7 +421,7 @@ fn finishes_parsing_string_if_error() {
 
     let r = s.collect::<Vec<_>>();
 
-    assert!(matches!(
+    assert_matches!(
         r[..],
         [
             Err(TokenError {
@@ -436,7 +437,7 @@ fn finishes_parsing_string_if_error() {
                 span: TxtSpan { start: 13, end: 15 }
             })
         ]
-    ));
+    );
 }
 
 #[test]
@@ -445,7 +446,7 @@ fn unterminated_hex_does_not_consume_end_of_string() {
 
     let r = s.collect::<Vec<_>>();
 
-    assert!(matches!(
+    assert_matches!(
         r[..],
         [
             Err(TokenError {
@@ -461,7 +462,7 @@ fn unterminated_hex_does_not_consume_end_of_string() {
                 span: TxtSpan { start: 7, end: 9 }
             })
         ]
-    ));
+    );
 }
 
 #[test]
@@ -470,7 +471,7 @@ fn unterminated_hex_does_not_consume_string_escape_sequence() {
 
     let r = s.collect::<Vec<_>>();
 
-    assert!(matches!(
+    assert_matches!(
         r[..],
         [
             Err(TokenError {
@@ -486,7 +487,7 @@ fn unterminated_hex_does_not_consume_string_escape_sequence() {
                 span: TxtSpan { start: 9, end: 11 }
             })
         ]
-    ));
+    );
 }
 
 #[test]
@@ -495,7 +496,7 @@ fn multiple_string_errors() {
 
     let r = s.collect::<Vec<_>>();
 
-    assert!(matches!(
+    assert_matches!(
         r[..],
         [
             Err(TokenError {
@@ -515,7 +516,7 @@ fn multiple_string_errors() {
                 span: TxtSpan { start: 29, end: 31 }
             })
         ]
-    ));
+    );
 }
 
 #[test]
@@ -524,7 +525,7 @@ fn open_string_with_error() {
 
     let r = s.collect::<Vec<_>>();
 
-    assert!(matches!(
+    assert_matches!(
         r[..],
         [
             Err(TokenError {
@@ -536,7 +537,7 @@ fn open_string_with_error() {
                 span: TxtSpan { start: 7, end: 11 }
             })
         ]
-    ));
+    );
 }
 
 #[test]
@@ -545,13 +546,13 @@ fn invalid_identifer_consumes_token() {
 
     let r = s.collect::<Vec<_>>();
 
-    assert!(matches!(
+    assert_matches!(
         r[..],
         [Err(TokenError {
             kind: TokenErrorKind::IdentifierInvalid(']'),
             span: TxtSpan { start: 0, end: 5 }
         })]
-    ));
+    );
 }
 
 #[test]
@@ -564,13 +565,13 @@ fn identifier_fragment_uses_whole_line() {
     let r = s.collect::<Vec<_>>();
 
     assert_eq!(r.len(), 1);
-    assert!(matches!(
+    assert_matches!(
         &r[0],
         Ok(Token {
             kind: TokenKind::IdentifierFragment(s),
             span: TxtSpan { start: 0, end: 18 }
         }) if s == "continued verbatim"
-    ));
+    );
 }
 
 #[test]
@@ -583,20 +584,20 @@ fn identifier_end_continues_tokenizing() {
     let r = s.collect::<Vec<_>>();
 
     assert_eq!(r.len(), 2);
-    assert!(matches!(
+    assert_matches!(
         &r[0],
         Ok(Token {
             kind: TokenKind::IdentifierEnd(s),
             span: TxtSpan { start: 0, end: 14 }
         }) if s == "end verbatim "
-    ));
-    assert!(matches!(
+    );
+    assert_matches!(
         r[1],
         Ok(Token {
             kind: TokenKind::Boolean(false),
             span: TxtSpan { start: 15, end: 17 }
         })
-    ));
+    );
 }
 
 #[test]
@@ -605,7 +606,7 @@ fn finishes_parsing_identifier_if_error() {
 
     let r = s.collect::<Vec<_>>();
 
-    assert!(matches!(
+    assert_matches!(
         r[..],
         [
             Err(TokenError {
@@ -621,7 +622,7 @@ fn finishes_parsing_identifier_if_error() {
                 span: TxtSpan { start: 13, end: 15 }
             })
         ]
-    ));
+    );
 }
 
 #[test]
@@ -630,7 +631,7 @@ fn unterminated_hex_does_not_consume_end_of_identifier() {
 
     let r = s.collect::<Vec<_>>();
 
-    assert!(matches!(
+    assert_matches!(
         r[..],
         [
             Err(TokenError {
@@ -646,7 +647,7 @@ fn unterminated_hex_does_not_consume_end_of_identifier() {
                 span: TxtSpan { start: 7, end: 9 }
             })
         ]
-    ));
+    );
 }
 
 #[test]
@@ -655,7 +656,7 @@ fn unterminated_hex_does_not_consume_identifier_escape_sequence() {
 
     let r = s.collect::<Vec<_>>();
 
-    assert!(matches!(
+    assert_matches!(
         r[..],
         [
             Err(TokenError {
@@ -671,7 +672,7 @@ fn unterminated_hex_does_not_consume_identifier_escape_sequence() {
                 span: TxtSpan { start: 9, end: 11 }
             })
         ]
-    ));
+    );
 }
 
 #[test]
@@ -680,7 +681,7 @@ fn multiple_identifier_errors() {
 
     let r = s.collect::<Vec<_>>();
 
-    assert!(matches!(
+    assert_matches!(
         r[..],
         [
             Err(TokenError {
@@ -700,7 +701,7 @@ fn multiple_identifier_errors() {
                 span: TxtSpan { start: 29, end: 31 }
             })
         ]
-    ));
+    );
 }
 
 #[test]
@@ -709,7 +710,7 @@ fn open_identifier_with_error() {
 
     let r = s.collect::<Vec<_>>();
 
-    assert!(matches!(
+    assert_matches!(
         r[..],
         [
             Err(TokenError {
@@ -721,7 +722,7 @@ fn open_identifier_with_error() {
                 span: TxtSpan { start: 7, end: 11 }
             })
         ]
-    ));
+    );
 }
 
 #[test]
@@ -730,7 +731,7 @@ fn exactness_following_invalid_hash() {
 
     let r = s.collect::<Vec<_>>();
 
-    assert!(matches!(
+    assert_matches!(
         r[..],
         [
             Err(TokenError {
@@ -742,7 +743,7 @@ fn exactness_following_invalid_hash() {
                 span: TxtSpan { start: 2, end: 4 }
             })
         ]
-    ));
+    );
 }
 
 #[test]
@@ -751,7 +752,7 @@ fn radix_following_invalid_hash() {
 
     let r = s.collect::<Vec<_>>();
 
-    assert!(matches!(
+    assert_matches!(
         r[..],
         [
             Err(TokenError {
@@ -763,7 +764,7 @@ fn radix_following_invalid_hash() {
                 span: TxtSpan { start: 2, end: 4 }
             })
         ]
-    ));
+    );
 }
 
 #[test]
@@ -773,18 +774,18 @@ fn label_ref_shares_hashtag() {
     let r = s.collect::<Vec<_>>();
 
     assert_eq!(r.len(), 2);
-    assert!(matches!(
+    assert_matches!(
         &r[0],
         Ok(Token {
             kind: TokenKind::LabelRef(s),
             span: TxtSpan { start: 0, end: 3 }
         }) if s == "0"
-    ));
-    assert!(matches!(
+    );
+    assert_matches!(
         &r[1],
         Ok(Token {
             kind: TokenKind::Identifier(s),
             span: TxtSpan { start: 3, end: 4 }
         }) if s == "t"
-    ));
+    );
 }

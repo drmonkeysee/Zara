@@ -1,7 +1,7 @@
 macro_rules! extract_or_fail {
     ($exp:expr, $variant:path) => {{
         let var = $exp;
-        assert!(matches!(var, $variant(..)));
+        ::std::assert_matches!(var, $variant(..));
         if let $variant(inner) = var {
             inner
         } else {

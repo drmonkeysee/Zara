@@ -1,3 +1,4 @@
+use std::assert_matches;
 use zara::{Error, Evaluation, Interpreter, RunMode, Value, src::StringSource};
 
 struct TestRunner {
@@ -27,7 +28,7 @@ impl TestRunner {
     fn run_for_cont(&mut self, src: impl Into<String>) {
         let ev = self.run_eval(src);
         self.cont = true;
-        assert!(matches!(ev, Evaluation::Continuation));
+        assert_matches!(ev, Evaluation::Continuation);
     }
 
     fn run_for_err(&mut self, src: impl Into<String>) -> Error {

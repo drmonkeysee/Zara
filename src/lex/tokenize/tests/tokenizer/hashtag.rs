@@ -1,4 +1,5 @@
 use super::*;
+use std::assert_matches;
 
 #[test]
 fn unterminated() {
@@ -13,13 +14,13 @@ fn unterminated() {
 
     assert!(c.is_none());
     let err = err_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         err,
         TokenError {
             kind: TokenErrorKind::HashUnterminated,
             span: TxtSpan { start: 0, end: 1 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -35,13 +36,13 @@ fn unterminated_with_whitespace() {
 
     assert!(c.is_none());
     let err = err_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         err,
         TokenError {
             kind: TokenErrorKind::HashUnterminated,
             span: TxtSpan { start: 0, end: 1 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -57,13 +58,13 @@ fn unterminated_with_delimiter() {
 
     assert!(c.is_none());
     let err = err_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         err,
         TokenError {
             kind: TokenErrorKind::HashUnterminated,
             span: TxtSpan { start: 0, end: 1 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -79,13 +80,13 @@ fn invalid() {
 
     assert!(c.is_none());
     let err = err_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         err,
         TokenError {
             kind: TokenErrorKind::HashInvalid,
             span: TxtSpan { start: 0, end: 2 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -101,13 +102,13 @@ fn invalid_long() {
 
     assert!(c.is_none());
     let err = err_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         err,
         TokenError {
             kind: TokenErrorKind::HashInvalid,
             span: TxtSpan { start: 0, end: 20 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -123,13 +124,13 @@ fn directive_fold_case() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::DirectiveCase(true),
             span: TxtSpan { start: 0, end: 11 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -145,13 +146,13 @@ fn directive_no_fold_case() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::DirectiveCase(false),
             span: TxtSpan { start: 0, end: 14 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -167,13 +168,13 @@ fn directive_case_insensitive() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::DirectiveCase(true),
             span: TxtSpan { start: 0, end: 11 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -189,13 +190,13 @@ fn directive_fold_case_followed_by_token() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::DirectiveCase(true),
             span: TxtSpan { start: 0, end: 11 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -211,13 +212,13 @@ fn directive_expected() {
 
     assert!(c.is_none());
     let err = err_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         err,
         TokenError {
             kind: TokenErrorKind::DirectiveExpected,
             span: TxtSpan { start: 0, end: 2 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -233,13 +234,13 @@ fn directive_invalid() {
 
     assert!(c.is_none());
     let err = err_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         err,
         TokenError {
             kind: TokenErrorKind::DirectiveInvalid,
             span: TxtSpan { start: 0, end: 8 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -255,13 +256,13 @@ fn vector() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::Vector,
             span: TxtSpan { start: 0, end: 2 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -279,13 +280,13 @@ fn radix_with_no_number() {
 
         assert!(c.is_none());
         let err = err_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             err,
             TokenError {
                 kind: TokenErrorKind::NumberExpected,
                 span: TxtSpan { start: 0, end: 2 },
             }
-        ));
+        );
     }
 }
 
@@ -304,13 +305,13 @@ fn radix_with_invalid_number() {
 
         assert!(c.is_none());
         let err = err_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             err,
             TokenError {
                 kind: TokenErrorKind::NumberExpected,
                 span: TxtSpan { start: 0, end: 5 },
             }
-        ));
+        );
     }
 }
 
@@ -327,13 +328,13 @@ fn decimal_radix_with_malformed_number() {
 
     assert!(c.is_none());
     let err = err_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         err,
         TokenError {
             kind: TokenErrorKind::NumberUnexpectedDecimalPoint { at: 5 },
             span: TxtSpan { start: 5, end: 7 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -349,13 +350,13 @@ fn radix_with_malformed_number() {
 
     assert!(c.is_none());
     let err = err_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         err,
         TokenError {
             kind: TokenErrorKind::NumberInvalid,
             span: TxtSpan { start: 0, end: 8 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -373,13 +374,13 @@ fn exactness_with_no_number() {
 
         assert!(c.is_none());
         let err = err_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             err,
             TokenError {
                 kind: TokenErrorKind::NumberExpected,
                 span: TxtSpan { start: 0, end: 2 },
             }
-        ));
+        );
     }
 }
 
@@ -398,13 +399,13 @@ fn exactness_with_invalid_number() {
 
         assert!(c.is_none());
         let err = err_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             err,
             TokenError {
                 kind: TokenErrorKind::NumberExpected,
                 span: TxtSpan { start: 0, end: 5 },
             }
-        ));
+        );
     }
 }
 
@@ -423,13 +424,13 @@ fn exactness_with_malformed_number() {
 
         assert!(c.is_none());
         let err = err_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             err,
             TokenError {
                 kind: TokenErrorKind::NumberInvalid,
                 span: TxtSpan { start: 0, end: 6 },
             }
-        ));
+        );
     }
 }
 
@@ -446,13 +447,13 @@ fn exactness_missing_radix() {
 
     assert!(c.is_none());
     let err = err_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         err,
         TokenError {
             kind: TokenErrorKind::RadixExpected { at: 2 },
             span: TxtSpan { start: 2, end: 3 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -468,13 +469,13 @@ fn exactness_malformed_radix() {
 
     assert!(c.is_none());
     let err = err_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         err,
         TokenError {
             kind: TokenErrorKind::RadixExpected { at: 2 },
             span: TxtSpan { start: 2, end: 7 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -490,13 +491,13 @@ fn radix_missing_exactness() {
 
     assert!(c.is_none());
     let err = err_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         err,
         TokenError {
             kind: TokenErrorKind::ExactnessExpected { at: 2 },
             span: TxtSpan { start: 2, end: 3 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -512,13 +513,13 @@ fn radix_malformed_exactness() {
 
     assert!(c.is_none());
     let err = err_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         err,
         TokenError {
             kind: TokenErrorKind::ExactnessExpected { at: 2 },
             span: TxtSpan { start: 2, end: 9 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -534,13 +535,13 @@ fn label_definition() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::LabelDef(s),
             span: TxtSpan { start: 0, end: 3 },
         } if s == "0"
-    ));
+    );
 }
 
 #[test]
@@ -556,13 +557,13 @@ fn label_reference() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::LabelRef(s),
             span: TxtSpan { start: 0, end: 3 },
         } if s == "0"
-    ));
+    );
 }
 
 #[test]
@@ -578,13 +579,13 @@ fn label_def_multi_digits() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::LabelDef(s),
             span: TxtSpan { start: 0, end: 5 },
         } if s == "123"
-    ));
+    );
 }
 
 #[test]
@@ -600,13 +601,13 @@ fn label_ref_multi_digits() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::LabelRef(s),
             span: TxtSpan { start: 0, end: 5 },
         } if s == "987"
-    ));
+    );
 }
 
 #[test]
@@ -622,13 +623,13 @@ fn label_def_extreme_digits() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::LabelDef(s),
             span: TxtSpan { start: 0, end: 31 },
         } if s == "12345678909876543210123456789"
-    ));
+    );
 }
 
 #[test]
@@ -644,13 +645,13 @@ fn label_ref_extreme_digits() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::LabelRef(s),
             span: TxtSpan { start: 0, end: 31 },
         } if s == "98765432101234567890987654321"
-    ));
+    );
 }
 
 #[test]
@@ -666,13 +667,13 @@ fn label_incomplete() {
 
     assert!(c.is_none());
     let err = err_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         err,
         TokenError {
             kind: TokenErrorKind::LabelUnterminated,
             span: TxtSpan { start: 0, end: 2 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -688,13 +689,13 @@ fn label_incomplete_ends_at_token_boundary() {
 
     assert!(c.is_none());
     let err = err_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         err,
         TokenError {
             kind: TokenErrorKind::LabelUnterminated,
             span: TxtSpan { start: 0, end: 2 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -710,13 +711,13 @@ fn label_def_nondigits() {
 
     assert!(c.is_none());
     let err = err_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         err,
         TokenError {
             kind: TokenErrorKind::LabelInvalid,
             span: TxtSpan { start: 0, end: 5 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -732,13 +733,13 @@ fn label_def_invalid_eats_until_delimiter() {
 
     assert!(c.is_none());
     let err = err_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         err,
         TokenError {
             kind: TokenErrorKind::LabelInvalid,
             span: TxtSpan { start: 0, end: 11 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -754,13 +755,13 @@ fn label_ref_nondigits() {
 
     assert!(c.is_none());
     let err = err_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         err,
         TokenError {
             kind: TokenErrorKind::LabelInvalid,
             span: TxtSpan { start: 0, end: 5 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -776,13 +777,13 @@ fn label_incomplete_nondigits_ends_at_token_boundary() {
 
     assert!(c.is_none());
     let err = err_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         err,
         TokenError {
             kind: TokenErrorKind::LabelUnterminated,
             span: TxtSpan { start: 0, end: 7 },
         }
-    ));
+    );
 }
 
 mod comments {
@@ -801,13 +802,13 @@ mod comments {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Comment,
                 span: TxtSpan { start: 0, end: 4 },
             }
-        ));
+        );
     }
 
     #[test]
@@ -823,13 +824,13 @@ mod comments {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Comment,
                 span: TxtSpan { start: 0, end: 18 },
             }
-        ));
+        );
     }
 
     #[test]
@@ -845,13 +846,13 @@ mod comments {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Comment,
                 span: TxtSpan { start: 0, end: 20 },
             }
-        ));
+        );
     }
 
     #[test]
@@ -867,13 +868,13 @@ mod comments {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Comment,
                 span: TxtSpan { start: 0, end: 17 },
             }
-        ));
+        );
     }
 
     #[test]
@@ -889,13 +890,13 @@ mod comments {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Comment,
                 span: TxtSpan { start: 0, end: 35 },
             }
-        ));
+        );
     }
 
     #[test]
@@ -911,13 +912,13 @@ mod comments {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::Comment,
                 span: TxtSpan { start: 0, end: 13 },
             }
-        ));
+        );
     }
 
     #[test]
@@ -933,13 +934,13 @@ mod comments {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::BlockCommentBegin { depth: 0 },
                 span: TxtSpan { start: 0, end: 28 },
             }
-        ));
+        );
     }
 
     #[test]
@@ -955,13 +956,13 @@ mod comments {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::BlockCommentBegin { depth: 0 },
                 span: TxtSpan { start: 0, end: 24 },
             }
-        ));
+        );
     }
 
     #[test]
@@ -977,13 +978,13 @@ mod comments {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::BlockCommentBegin { depth: 0 },
                 span: TxtSpan { start: 0, end: 24 },
             }
-        ));
+        );
     }
 
     #[test]
@@ -999,13 +1000,13 @@ mod comments {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::BlockCommentBegin { depth: 0 },
                 span: TxtSpan { start: 0, end: 33 },
             }
-        ));
+        );
     }
 
     #[test]
@@ -1021,13 +1022,13 @@ mod comments {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::BlockCommentBegin { depth: 1 },
                 span: TxtSpan { start: 0, end: 21 },
             }
-        ));
+        );
     }
 
     #[test]
@@ -1043,13 +1044,13 @@ mod comments {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::BlockCommentBegin { depth: 2 },
                 span: TxtSpan { start: 0, end: 30 },
             }
-        ));
+        );
     }
 
     #[test]
@@ -1065,13 +1066,13 @@ mod comments {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::BlockCommentFragment { depth: 0 },
                 span: TxtSpan { start: 0, end: 17 },
             }
-        ));
+        );
     }
 
     #[test]
@@ -1087,13 +1088,13 @@ mod comments {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::BlockCommentFragment { depth: 0 },
                 span: TxtSpan { start: 0, end: 20 },
             }
-        ));
+        );
     }
 
     #[test]
@@ -1109,13 +1110,13 @@ mod comments {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::BlockCommentFragment { depth: 0 },
                 span: TxtSpan { start: 0, end: 36 },
             }
-        ));
+        );
     }
 
     #[test]
@@ -1131,13 +1132,13 @@ mod comments {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::BlockCommentFragment { depth: 1 },
                 span: TxtSpan { start: 0, end: 30 },
             }
-        ));
+        );
     }
 
     #[test]
@@ -1153,13 +1154,13 @@ mod comments {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::BlockCommentFragment { depth: 3 },
                 span: TxtSpan { start: 0, end: 30 },
             }
-        ));
+        );
     }
 
     #[test]
@@ -1175,13 +1176,13 @@ mod comments {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::BlockCommentEnd,
                 span: TxtSpan { start: 0, end: 14 },
             }
-        ));
+        );
     }
 
     #[test]
@@ -1197,13 +1198,13 @@ mod comments {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::BlockCommentEnd,
                 span: TxtSpan { start: 0, end: 16 },
             }
-        ));
+        );
     }
 
     #[test]
@@ -1219,13 +1220,13 @@ mod comments {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::BlockCommentEnd,
                 span: TxtSpan { start: 0, end: 14 },
             }
-        ));
+        );
     }
 
     #[test]
@@ -1241,13 +1242,13 @@ mod comments {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::BlockCommentEnd,
                 span: TxtSpan { start: 0, end: 27 },
             }
-        ));
+        );
     }
 
     #[test]
@@ -1263,13 +1264,13 @@ mod comments {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::BlockCommentEnd,
                 span: TxtSpan { start: 0, end: 25 },
             }
-        ));
+        );
     }
 
     #[test]
@@ -1285,13 +1286,13 @@ mod comments {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::CommentDatum,
                 span: TxtSpan { start: 0, end: 2 },
             }
-        ));
+        );
     }
 
     #[test]
@@ -1307,13 +1308,13 @@ mod comments {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::CommentDatum,
                 span: TxtSpan { start: 0, end: 2 },
             }
-        ));
+        );
     }
 
     #[test]
@@ -1329,12 +1330,12 @@ mod comments {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(matches!(
+        assert_matches!(
             tok,
             Token {
                 kind: TokenKind::CommentDatum,
                 span: TxtSpan { start: 0, end: 2 },
             }
-        ));
+        );
     }
 }

@@ -92,6 +92,7 @@ fn get_complex_part(
 mod tests {
     use super::*;
     use crate::testutil::{TestEnv, ok_or_fail};
+    use std::assert_matches;
 
     #[test]
     fn get_real_complex() {
@@ -101,7 +102,7 @@ mod tests {
         let v = get_real(&args, &env.new_frame());
 
         let r = ok_or_fail!(v);
-        assert!(matches!(r, Value::Number(Number::Real(Real::Integer(_)))));
+        assert_matches!(r, Value::Number(Number::Real(Real::Integer(_))));
         assert_eq!(r.as_datum().to_string(), "4");
     }
 
@@ -113,7 +114,7 @@ mod tests {
         let v = get_imag(&args, &env.new_frame());
 
         let r = ok_or_fail!(v);
-        assert!(matches!(r, Value::Number(Number::Real(Real::Integer(_)))));
+        assert_matches!(r, Value::Number(Number::Real(Real::Integer(_))));
         assert_eq!(r.as_datum().to_string(), "5");
     }
 
@@ -125,7 +126,7 @@ mod tests {
         let v = get_real(&args, &env.new_frame());
 
         let r = ok_or_fail!(v);
-        assert!(matches!(r, Value::Number(Number::Real(Real::Integer(_)))));
+        assert_matches!(r, Value::Number(Number::Real(Real::Integer(_))));
         assert_eq!(r.as_datum().to_string(), "8");
     }
 
@@ -137,7 +138,7 @@ mod tests {
         let v = get_imag(&args, &env.new_frame());
 
         let r = ok_or_fail!(v);
-        assert!(matches!(r, Value::Number(Number::Real(Real::Integer(_)))));
+        assert_matches!(r, Value::Number(Number::Real(Real::Integer(_))));
         assert_eq!(r.as_datum().to_string(), "0");
     }
 
@@ -149,7 +150,7 @@ mod tests {
         let v = get_mag(&args, &env.new_frame());
 
         let r = ok_or_fail!(v);
-        assert!(matches!(r, Value::Number(Number::Real(Real::Float(_)))));
+        assert_matches!(r, Value::Number(Number::Real(Real::Float(_))));
         assert_eq!(r.as_datum().to_string(), "6.4031242374328485");
     }
 
@@ -161,7 +162,7 @@ mod tests {
         let v = get_angle(&args, &env.new_frame());
 
         let r = ok_or_fail!(v);
-        assert!(matches!(r, Value::Number(Number::Real(Real::Float(_)))));
+        assert_matches!(r, Value::Number(Number::Real(Real::Float(_))));
         assert_eq!(r.as_datum().to_string(), "0.8960553845713439");
     }
 
@@ -173,7 +174,7 @@ mod tests {
         let v = get_mag(&args, &env.new_frame());
 
         let r = ok_or_fail!(v);
-        assert!(matches!(r, Value::Number(Number::Real(Real::Integer(_)))));
+        assert_matches!(r, Value::Number(Number::Real(Real::Integer(_))));
         assert_eq!(r.as_datum().to_string(), "8");
     }
 
@@ -185,7 +186,7 @@ mod tests {
         let v = get_angle(&args, &env.new_frame());
 
         let r = ok_or_fail!(v);
-        assert!(matches!(r, Value::Number(Number::Real(Real::Integer(_)))));
+        assert_matches!(r, Value::Number(Number::Real(Real::Integer(_))));
         assert_eq!(r.as_datum().to_string(), "0");
     }
 }

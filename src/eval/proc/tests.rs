@@ -6,6 +6,7 @@ use crate::{
         TestEnv, empty_procedure_body, err_or_fail, ok_or_fail, procedure_body, some_or_fail,
     },
 };
+use std::assert_matches;
 
 #[test]
 fn display_max_formals() {
@@ -388,7 +389,7 @@ fn lambda_too_many_params() {
     let err = err_or_fail!(lm);
 
     assert_eq!(err.len(), 1);
-    assert!(matches!(&err[0], InvalidFormal::MaxFormals));
+    assert_matches!(&err[0], InvalidFormal::MaxFormals);
 }
 
 #[test]
@@ -403,7 +404,7 @@ fn lambda_too_many_params_with_rest() {
     let err = err_or_fail!(lm);
 
     assert_eq!(err.len(), 1);
-    assert!(matches!(&err[0], InvalidFormal::MaxFormals));
+    assert_matches!(&err[0], InvalidFormal::MaxFormals);
 }
 
 #[test]
@@ -422,8 +423,8 @@ fn lambda_duplicate_params() {
     let err = err_or_fail!(lm);
 
     assert_eq!(err.len(), 2);
-    assert!(matches!(&err[0], InvalidFormal::DuplicateFormal(s) if s.as_ref() == "y"));
-    assert!(matches!(&err[1], InvalidFormal::DuplicateFormal(s) if s.as_ref() == "x"));
+    assert_matches!(&err[0], InvalidFormal::DuplicateFormal(s) if s.as_ref() == "y");
+    assert_matches!(&err[1], InvalidFormal::DuplicateFormal(s) if s.as_ref() == "x");
 }
 
 #[test]
@@ -441,7 +442,7 @@ fn apply_zero_arity() {
     let r = p.apply(&args, &f);
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::String(s) if s.as_ref() == "bar"));
+    assert_matches!(v, Value::String(s) if s.as_ref() == "bar");
 }
 
 #[test]
@@ -464,7 +465,7 @@ fn apply_single_arity() {
     let r = p.apply(&args, &f);
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::String(s) if s.as_ref() == "bar baz"));
+    assert_matches!(v, Value::String(s) if s.as_ref() == "bar baz");
 }
 
 #[test]
@@ -484,7 +485,7 @@ fn apply_zero_arity_lambda() {
     let r = p.apply(&args, &f);
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::String(s) if s.as_ref() == "bar"));
+    assert_matches!(v, Value::String(s) if s.as_ref() == "bar");
 }
 
 #[test]
@@ -503,7 +504,7 @@ fn apply_single_arity_lambda() {
     let r = p.apply(&args, &f);
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::Number(_)));
+    assert_matches!(v, Value::Number(_));
     assert_eq!(v.as_datum().to_string(), "5");
     assert!(!env.binding.bound("x"));
 }
@@ -536,7 +537,7 @@ fn apply_single_arity_lambda_with_closure() {
     let r = p.apply(&args, &f);
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::String(s) if s.as_ref() == "bar 5"));
+    assert_matches!(v, Value::String(s) if s.as_ref() == "bar 5");
     assert!(!env.binding.bound("x"));
 }
 
@@ -568,7 +569,7 @@ fn apply_variadic_lambda_with_closure() {
     let r = p.apply(&args, &f);
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::String(s) if s.as_ref() == "bar (1 2 3)"));
+    assert_matches!(v, Value::String(s) if s.as_ref() == "bar (1 2 3)");
     assert!(!env.binding.bound("x"));
 }
 
@@ -615,7 +616,7 @@ fn apply_rest_lambda_with_closure() {
     let r = p.apply(&args, &f);
 
     let v = ok_or_fail!(r);
-    assert!(matches!(v, Value::String(s) if s.as_ref() == "bar 1, 2, (3 4 5)"));
+    assert_matches!(v, Value::String(s) if s.as_ref() == "bar 1, 2, (3 4 5)");
     assert!(!env.binding.bound("x"));
     assert!(!env.binding.bound("y"));
     assert!(!env.binding.bound("z"));

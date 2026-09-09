@@ -4,6 +4,7 @@ use crate::{
     string::SymbolTable,
     testutil::{empty_procedure_body, extract_or_fail, ok_or_fail, some_or_fail, zlist_mut},
 };
+use std::assert_matches;
 
 mod display {
     use super::*;
@@ -1074,7 +1075,7 @@ mod pair {
             cdr: Value::Boolean(false),
         };
 
-        assert!(matches!(err_or_fail!(p.len()), InvalidList::Improper));
+        assert_matches!(err_or_fail!(p.len()), InvalidList::Improper);
     }
 
     #[test]
@@ -1124,7 +1125,7 @@ mod pair {
             cdr: Value::cons(Value::real(2), Value::real(3)),
         };
 
-        assert!(matches!(err_or_fail!(p.len()), InvalidList::Improper));
+        assert_matches!(err_or_fail!(p.len()), InvalidList::Improper);
     }
 
     #[test]
@@ -1135,7 +1136,7 @@ mod pair {
             cdr: Value::cons_mut(Value::real(2), Value::real(3)),
         };
 
-        assert!(matches!(err_or_fail!(p.len()), InvalidList::Improper));
+        assert_matches!(err_or_fail!(p.len()), InvalidList::Improper);
     }
 
     #[test]
@@ -1193,7 +1194,7 @@ mod pair {
         .into();
         end.borrow_mut().cdr = Value::Pair(Rc::clone(&p));
 
-        assert!(matches!(err_or_fail!(p.len()), InvalidList::Cycle));
+        assert_matches!(err_or_fail!(p.len()), InvalidList::Cycle);
     }
 
     #[test]
@@ -1294,7 +1295,7 @@ mod pair {
             cdr: Value::cons(Value::real(2), Value::Pair(Rc::clone(&start))),
         };
 
-        assert!(matches!(err_or_fail!(p.len()), InvalidList::Cycle));
+        assert_matches!(err_or_fail!(p.len()), InvalidList::Cycle);
     }
 
     #[test]
@@ -1662,7 +1663,7 @@ mod list_ctor {
     fn improper_ctor_single() {
         let lst = Value::list_cons(vec![Value::real(5)]);
 
-        assert!(matches!(lst, Value::Number(_)));
+        assert_matches!(lst, Value::Number(_));
         assert_eq!(lst.as_datum().to_string(), "5");
         assert_eq!(
             lst.as_simple_datum().to_string(),
@@ -2192,10 +2193,10 @@ mod iterator {
         let vec = it.collect::<Vec<_>>();
 
         assert_eq!(vec.len(), 1);
-        assert!(matches!(
+        assert_matches!(
             &vec[0],
             Value::Number(n) if n.to_string() == "5"
-        ));
+        );
     }
 
     #[test]
@@ -2206,8 +2207,8 @@ mod iterator {
         let vec = it.collect::<Vec<_>>();
 
         assert_eq!(vec.len(), 2);
-        assert!(matches!(&vec[0], v @ Value::Pair(_) if v.as_datum().to_string() == "(5 . 10)"));
-        assert!(matches!(&vec[1], Value::Number(n) if n.to_string() == "10"));
+        assert_matches!(&vec[0], v @ Value::Pair(_) if v.as_datum().to_string() == "(5 . 10)");
+        assert_matches!(&vec[1], Value::Number(n) if n.to_string() == "10");
     }
 
     #[test]
@@ -2218,9 +2219,9 @@ mod iterator {
         let vec = it.collect::<Vec<_>>();
 
         assert_eq!(vec.len(), 3);
-        assert!(matches!(&vec[0], v @ Value::Pair(_) if v.as_datum().to_string() == "(5 10)"));
-        assert!(matches!(&vec[1], v @ Value::Pair(_) if v.as_datum().to_string() == "(10)"));
-        assert!(matches!(&vec[2], Value::Null));
+        assert_matches!(&vec[0], v @ Value::Pair(_) if v.as_datum().to_string() == "(5 10)");
+        assert_matches!(&vec[1], v @ Value::Pair(_) if v.as_datum().to_string() == "(10)");
+        assert_matches!(&vec[2], Value::Null);
     }
 
     #[test]

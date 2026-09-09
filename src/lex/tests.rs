@@ -3,6 +3,7 @@ use crate::{
     testutil::{extract_or_fail, make_textline},
     txt::TextContext,
 };
+use std::assert_matches;
 
 mod lexer {
     use super::{
@@ -87,21 +88,21 @@ mod lexer {
         let lines = extract_or_fail!(o, LexerOutput::Complete);
         assert_eq!(lines.len(), 1);
         let line = &lines[0];
-        assert!(matches!(
+        assert_matches!(
             line.0[..],
             [TokenType {
                 kind: TokenKind::Boolean(true),
                 span: TxtSpan { start: 0, end: 2 }
             }]
-        ));
-        assert!(matches!(
+        );
+        assert_matches!(
             &line.1,
             TextLine {
                 ctx,
                 line,
                 lineno: 1,
             } if Rc::ptr_eq(ctx, &src.ctx) && line == "#t"
-        ));
+        );
         assert!(target.cont.is_none());
     }
 
@@ -116,7 +117,7 @@ mod lexer {
         let lines = extract_or_fail!(o, LexerOutput::Complete);
         assert_eq!(lines.len(), 1);
         let line = &lines[0];
-        assert!(matches!(
+        assert_matches!(
             line.0[..],
             [
                 TokenType {
@@ -132,15 +133,15 @@ mod lexer {
                     span: TxtSpan { start: 6, end: 9 }
                 }
             ]
-        ));
-        assert!(matches!(
+        );
+        assert_matches!(
             &line.1,
             TextLine {
                 ctx,
                 line,
                 lineno: 1,
             } if Rc::ptr_eq(ctx, &src.ctx) && line == "#t #f #\\a"
-        ));
+        );
         assert!(target.cont.is_none());
     }
 
@@ -155,23 +156,23 @@ mod lexer {
         let lines = extract_or_fail!(o, LexerOutput::Complete);
         assert_eq!(lines.len(), 3);
         let line = &lines[0];
-        assert!(matches!(
+        assert_matches!(
             line.0[..],
             [TokenType {
                 kind: TokenKind::Boolean(true),
                 span: TxtSpan { start: 0, end: 2 }
             }]
-        ));
-        assert!(matches!(
+        );
+        assert_matches!(
             &line.1,
             TextLine {
                 ctx,
                 line,
                 lineno: 1,
             } if Rc::ptr_eq(ctx, &src.ctx) && line == "#t"
-        ));
+        );
         let line = &lines[1];
-        assert!(matches!(
+        assert_matches!(
             line.0[..],
             [
                 TokenType {
@@ -183,18 +184,18 @@ mod lexer {
                     span: TxtSpan { start: 5, end: 8 }
                 }
             ]
-        ));
-        assert!(matches!(
+        );
+        assert_matches!(
             &line.1,
             TextLine {
                 ctx,
                 line,
                 lineno: 2,
             } if Rc::ptr_eq(ctx, &src.ctx) && line == "  #f #\\a"
-        ));
+        );
         assert!(target.cont.is_none());
         let line = &lines[2];
-        assert!(matches!(
+        assert_matches!(
             line.0[..],
             [
                 TokenType {
@@ -206,15 +207,15 @@ mod lexer {
                     span: TxtSpan { start: 3, end: 5 }
                 }
             ]
-        ));
-        assert!(matches!(
+        );
+        assert_matches!(
             &line.1,
             TextLine {
                 ctx,
                 line,
                 lineno: 3,
             } if Rc::ptr_eq(ctx, &src.ctx) && line == "#f #f"
-        ));
+        );
         assert!(target.cont.is_none());
     }
 
@@ -229,7 +230,7 @@ mod lexer {
         let err_lines = err.0;
         assert_eq!(err_lines.len(), 2);
         let TokenErrorLine(errs, line) = extract_or_fail!(&err_lines[0], LineFailure::Tokenize);
-        assert!(matches!(
+        assert_matches!(
             errs[..],
             [
                 TokenType {
@@ -241,31 +242,31 @@ mod lexer {
                     span: TxtSpan { start: 7, end: 9 }
                 }
             ]
-        ));
-        assert!(matches!(
+        );
+        assert_matches!(
             line,
             TextLine {
                 ctx,
                 line,
                 lineno: 2,
             } if Rc::ptr_eq(ctx, &src.ctx) && line == " #z #f #z #\\a"
-        ));
+        );
         let TokenErrorLine(errs, line) = extract_or_fail!(&err_lines[1], LineFailure::Tokenize);
-        assert!(matches!(
+        assert_matches!(
             errs[..],
             [TokenType {
                 kind: TokenErrorKind::HashInvalid,
                 span: TxtSpan { start: 3, end: 5 }
             }]
-        ));
-        assert!(matches!(
+        );
+        assert_matches!(
             line,
             TextLine {
                 ctx,
                 line,
                 lineno: 3,
             } if Rc::ptr_eq(ctx, &src.ctx) && line == "#f #z #f"
-        ));
+        );
         assert!(target.cont.is_none());
     }
 
@@ -297,7 +298,7 @@ mod lexer {
         let err_lines = err.0;
         assert_eq!(err_lines.len(), 2);
         let TokenErrorLine(errs, line) = extract_or_fail!(&err_lines[0], LineFailure::Tokenize);
-        assert!(matches!(
+        assert_matches!(
             errs[..],
             [
                 TokenType {
@@ -309,15 +310,15 @@ mod lexer {
                     span: TxtSpan { start: 7, end: 9 }
                 }
             ]
-        ));
-        assert!(matches!(
+        );
+        assert_matches!(
             line,
             TextLine {
                 ctx,
                 line,
                 lineno: 2,
             } if Rc::ptr_eq(ctx, &src.ctx) && line == " #z #f #z #\\a"
-        ));
+        );
         let inner = extract_or_fail!(&err_lines[1], LineFailure::Read);
         assert_eq!(inner.context() as *const _, Rc::as_ptr(&src.ctx));
         assert_eq!(inner.line_number(), 3);
@@ -333,11 +334,11 @@ mod lexer {
         let r = target.tokenize(&mut src);
 
         let o = ok_or_fail!(r);
-        assert!(matches!(o, LexerOutput::Continuation));
+        assert_matches!(o, LexerOutput::Continuation);
         let (lines, cont) = extract_or_fail!(target.cont, Some);
         assert_eq!(lines.len(), 1);
         let line = &lines[0];
-        assert!(matches!(
+        assert_matches!(
             line.0[..],
             [
                 TokenType {
@@ -349,16 +350,16 @@ mod lexer {
                     span: TxtSpan { start: 3, end: 16 }
                 }
             ]
-        ));
-        assert!(matches!(
+        );
+        assert_matches!(
             &line.1,
             TextLine {
                 ctx,
                 line,
                 lineno: 1,
             } if Rc::ptr_eq(ctx, &src.ctx) && line == "#t #|trailing..."
-        ));
-        assert!(matches!(cont, TokenContinuation::BlockComment { depth: 0 }));
+        );
+        assert_matches!(cont, TokenContinuation::BlockComment { depth: 0 });
     }
 
     #[test]
@@ -401,37 +402,37 @@ mod lexer {
         let lines = extract_or_fail!(o, LexerOutput::Complete);
         assert_eq!(lines.len(), 2);
         let line = &lines[0];
-        assert!(matches!(
+        assert_matches!(
             line.0[..],
             [TokenType {
                 kind: TokenKind::BlockCommentBegin { depth: 0 },
                 span: TxtSpan { start: 0, end: 14 }
             }]
-        ));
-        assert!(matches!(
+        );
+        assert_matches!(
             &line.1,
             TextLine {
                 ctx,
                 line,
                 lineno: 1,
             } if Rc::ptr_eq(ctx, &src.ctx) && line == "#| double line"
-        ));
+        );
         let line = &lines[1];
-        assert!(matches!(
+        assert_matches!(
             line.0[..],
             [TokenType {
                 kind: TokenKind::BlockCommentEnd,
                 span: TxtSpan { start: 0, end: 10 }
             }]
-        ));
-        assert!(matches!(
+        );
+        assert_matches!(
             &line.1,
             TextLine {
                 ctx,
                 line,
                 lineno: 2,
             } if Rc::ptr_eq(ctx, &src.ctx) && line == "comment |#"
-        ));
+        );
         assert!(target.cont.is_none());
     }
 
@@ -446,53 +447,53 @@ mod lexer {
         let lines = extract_or_fail!(o, LexerOutput::Complete);
         assert_eq!(lines.len(), 3);
         let line = &lines[0];
-        assert!(matches!(
+        assert_matches!(
             line.0[..],
             [TokenType {
                 kind: TokenKind::BlockCommentBegin { depth: 0 },
                 span: TxtSpan { start: 0, end: 8 }
             }]
-        ));
-        assert!(matches!(
+        );
+        assert_matches!(
             &line.1,
             TextLine {
                 ctx,
                 line,
                 lineno: 1,
             } if Rc::ptr_eq(ctx, &src.ctx) && line == "#| multi"
-        ));
+        );
         let line = &lines[1];
-        assert!(matches!(
+        assert_matches!(
             line.0[..],
             [TokenType {
                 kind: TokenKind::BlockCommentFragment { depth: 0 },
                 span: TxtSpan { start: 0, end: 4 }
             }]
-        ));
-        assert!(matches!(
+        );
+        assert_matches!(
             &line.1,
             TextLine {
                 ctx,
                 line,
                 lineno: 2,
             } if Rc::ptr_eq(ctx, &src.ctx) && line == "line"
-        ));
+        );
         let line = &lines[2];
-        assert!(matches!(
+        assert_matches!(
             line.0[..],
             [TokenType {
                 kind: TokenKind::BlockCommentEnd,
                 span: TxtSpan { start: 0, end: 10 }
             }]
-        ));
-        assert!(matches!(
+        );
+        assert_matches!(
             &line.1,
             TextLine {
                 ctx,
                 line,
                 lineno: 3,
             } if Rc::ptr_eq(ctx, &src.ctx) && line == "comment |#"
-        ));
+        );
         assert!(target.cont.is_none());
     }
 
@@ -507,37 +508,37 @@ mod lexer {
         let err_lines = err.0;
         assert_eq!(err_lines.len(), 2);
         let TokenErrorLine(errs, line) = extract_or_fail!(&err_lines[0], LineFailure::Tokenize);
-        assert!(matches!(
+        assert_matches!(
             errs[..],
             [TokenType {
                 kind: TokenErrorKind::HashInvalid,
                 span: TxtSpan { start: 3, end: 5 }
             }]
-        ));
-        assert!(matches!(
+        );
+        assert_matches!(
             line,
             TextLine {
                 ctx,
                 line,
                 lineno: 1,
             } if Rc::ptr_eq(ctx, &src.ctx) && line == "#t #z #| double line"
-        ));
+        );
         let TokenErrorLine(errs, line) = extract_or_fail!(&err_lines[1], LineFailure::Tokenize);
-        assert!(matches!(
+        assert_matches!(
             errs[..],
             [TokenType {
                 kind: TokenErrorKind::HashInvalid,
                 span: TxtSpan { start: 14, end: 16 }
             }]
-        ));
-        assert!(matches!(
+        );
+        assert_matches!(
             line,
             TextLine {
                 ctx,
                 line,
                 lineno: 2,
             } if Rc::ptr_eq(ctx, &src.ctx) && line == "#z comment |# #z"
-        ));
+        );
         assert!(target.cont.is_none());
     }
 
@@ -552,21 +553,21 @@ mod lexer {
         let err_lines = err.0;
         assert_eq!(err_lines.len(), 1);
         let TokenErrorLine(errs, line) = extract_or_fail!(&err_lines[0], LineFailure::Tokenize);
-        assert!(matches!(
+        assert_matches!(
             errs[..],
             [TokenType {
                 kind: TokenErrorKind::HashInvalid,
                 span: TxtSpan { start: 3, end: 5 }
             }]
-        ));
-        assert!(matches!(
+        );
+        assert_matches!(
             line,
             TextLine {
                 ctx,
                 line,
                 lineno: 1,
             } if Rc::ptr_eq(ctx, &src.ctx) && line == "#t #z #| double line"
-        ));
+        );
         assert!(target.cont.is_none());
     }
 
@@ -582,37 +583,37 @@ mod lexer {
         assert_eq!(lines.len(), 2);
         let line = &lines[0];
         assert_eq!(line.0.len(), 1);
-        assert!(matches!(
+        assert_matches!(
             &line.0[0],
             TokenType {
                 kind: TokenKind::StringBegin { s, line_cont: false },
                 span: TxtSpan { start: 0, end: 13 }
             } if s == " double line"
-        ));
-        assert!(matches!(
+        );
+        assert_matches!(
             &line.1,
             TextLine {
                 ctx,
                 line,
                 lineno: 1,
             } if Rc::ptr_eq(ctx, &src.ctx) && line == "\" double line"
-        ));
+        );
         let line = &lines[1];
-        assert!(matches!(
+        assert_matches!(
             &line.0[0],
             TokenType {
                 kind: TokenKind::StringEnd(s),
                 span: TxtSpan { start: 0, end: 8 }
             } if s == "string "
-        ));
-        assert!(matches!(
+        );
+        assert_matches!(
             &line.1,
             TextLine {
                 ctx,
                 line,
                 lineno: 2,
             } if Rc::ptr_eq(ctx, &src.ctx) && line == "string \""
-        ));
+        );
         assert!(target.cont.is_none());
     }
 
@@ -628,53 +629,53 @@ mod lexer {
         assert_eq!(lines.len(), 3);
         let line = &lines[0];
         assert_eq!(line.0.len(), 1);
-        assert!(matches!(
+        assert_matches!(
             &line.0[0],
             TokenType {
                 kind: TokenKind::StringBegin { s, line_cont: false },
                 span: TxtSpan { start: 0, end: 7 }
             } if s == " multi"
-        ));
-        assert!(matches!(
+        );
+        assert_matches!(
             &line.1,
             TextLine {
                 ctx,
                 line,
                 lineno: 1,
             } if Rc::ptr_eq(ctx, &src.ctx) && line == "\" multi"
-        ));
+        );
         let line = &lines[1];
-        assert!(matches!(
+        assert_matches!(
             &line.0[0],
             TokenType {
                 kind: TokenKind::StringFragment { s, line_cont: false },
                 span: TxtSpan { start: 0, end: 4 }
             } if s == "line"
-        ));
-        assert!(matches!(
+        );
+        assert_matches!(
             &line.1,
             TextLine {
                 ctx,
                 line,
                 lineno: 2,
             } if Rc::ptr_eq(ctx, &src.ctx) && line == "line"
-        ));
+        );
         let line = &lines[2];
-        assert!(matches!(
+        assert_matches!(
             &line.0[0],
             TokenType {
                 kind: TokenKind::StringEnd(s),
                 span: TxtSpan { start: 0, end: 8 }
             } if s == "string "
-        ));
-        assert!(matches!(
+        );
+        assert_matches!(
             &line.1,
             TextLine {
                 ctx,
                 line,
                 lineno: 3,
             } if Rc::ptr_eq(ctx, &src.ctx) && line == "string \""
-        ));
+        );
         assert!(target.cont.is_none());
     }
 
@@ -689,21 +690,21 @@ mod lexer {
         let err_lines = err.0;
         assert_eq!(err_lines.len(), 1);
         let TokenErrorLine(errs, line) = extract_or_fail!(&err_lines[0], LineFailure::Tokenize);
-        assert!(matches!(
+        assert_matches!(
             errs[..],
             [TokenType {
                 kind: TokenErrorKind::StringExpectedHex { at: 9 },
                 span: TxtSpan { start: 9, end: 14 }
             }]
-        ));
-        assert!(matches!(
+        );
+        assert_matches!(
             line,
             TextLine {
                 ctx,
                 line,
                 lineno: 1,
             } if Rc::ptr_eq(ctx, &src.ctx) && line == "\" double \\xZZ; line"
-        ));
+        );
         assert!(target.cont.is_none());
     }
 
@@ -718,37 +719,37 @@ mod lexer {
         let err_lines = err.0;
         assert_eq!(err_lines.len(), 2);
         let TokenErrorLine(errs, line) = extract_or_fail!(&err_lines[0], LineFailure::Tokenize);
-        assert!(matches!(
+        assert_matches!(
             errs[..],
             [TokenType {
                 kind: TokenErrorKind::StringExpectedHex { at: 9 },
                 span: TxtSpan { start: 9, end: 14 }
             }]
-        ));
-        assert!(matches!(
+        );
+        assert_matches!(
             line,
             TextLine {
                 ctx,
                 line,
                 lineno: 1,
             } if Rc::ptr_eq(ctx, &src.ctx) && line == "\" double \\xZZ; line"
-        ));
+        );
         let TokenErrorLine(errs, line) = extract_or_fail!(&err_lines[1], LineFailure::Tokenize);
-        assert!(matches!(
+        assert_matches!(
             errs[..],
             [TokenType {
                 kind: TokenErrorKind::HashInvalid,
                 span: TxtSpan { start: 11, end: 13 }
             }]
-        ));
-        assert!(matches!(
+        );
+        assert_matches!(
             line,
             TextLine {
                 ctx,
                 line,
                 lineno: 2,
             } if Rc::ptr_eq(ctx, &src.ctx) && line == "#z string\" #z"
-        ));
+        );
         assert!(target.cont.is_none());
     }
 
@@ -763,21 +764,21 @@ mod lexer {
         let err_lines = err.0;
         assert_eq!(err_lines.len(), 1);
         let TokenErrorLine(errs, line) = extract_or_fail!(&err_lines[0], LineFailure::Tokenize);
-        assert!(matches!(
+        assert_matches!(
             errs[..],
             [TokenType {
                 kind: TokenErrorKind::StringExpectedHex { at: 9 },
                 span: TxtSpan { start: 9, end: 14 }
             }]
-        ));
-        assert!(matches!(
+        );
+        assert_matches!(
             line,
             TextLine {
                 ctx,
                 line,
                 lineno: 1,
             } if Rc::ptr_eq(ctx, &src.ctx) && line == "\" double \\xZZ; line \\"
-        ));
+        );
         assert!(target.cont.is_none());
     }
 
@@ -793,7 +794,7 @@ mod lexer {
         let err_lines = err.0;
         assert_eq!(err_lines.len(), 1);
         let TokenErrorLine(errs, line) = extract_or_fail!(&err_lines[0], LineFailure::Tokenize);
-        assert!(matches!(
+        assert_matches!(
             errs[..],
             [
                 TokenType {
@@ -805,15 +806,15 @@ mod lexer {
                     span: TxtSpan { start: 29, end: 31 }
                 }
             ]
-        ));
-        assert!(matches!(
+        );
+        assert_matches!(
             line,
             TextLine {
                 ctx,
                 line,
                 lineno: 1,
             } if Rc::ptr_eq(ctx, &src.ctx) && line == "\"single \\x42 line string\" #t #z\"double"
-        ));
+        );
         assert!(target.cont.is_none());
     }
 
@@ -828,21 +829,21 @@ mod lexer {
         let err_lines = err.0;
         assert_eq!(err_lines.len(), 1);
         let TokenErrorLine(errs, line) = extract_or_fail!(&err_lines[0], LineFailure::Tokenize);
-        assert!(matches!(
+        assert_matches!(
             errs[..],
             [TokenType {
                 kind: TokenErrorKind::HashInvalid,
                 span: TxtSpan { start: 3, end: 5 }
             }]
-        ));
-        assert!(matches!(
+        );
+        assert_matches!(
             line,
             TextLine {
                 ctx,
                 line,
                 lineno: 1,
             } if Rc::ptr_eq(ctx, &src.ctx) && line == "#t #z \" double line"
-        ));
+        );
         assert!(target.cont.is_none());
     }
 
@@ -858,37 +859,37 @@ mod lexer {
         assert_eq!(lines.len(), 2);
         let line = &lines[0];
         assert_eq!(line.0.len(), 1);
-        assert!(matches!(
+        assert_matches!(
             &line.0[0],
             TokenType {
                 kind: TokenKind::IdentifierBegin(s),
                 span: TxtSpan { start: 0, end: 13 }
             } if s == " double line"
-        ));
-        assert!(matches!(
+        );
+        assert_matches!(
             &line.1,
             TextLine {
                 ctx,
                 line,
                 lineno: 1,
             } if Rc::ptr_eq(ctx, &src.ctx) && line == "| double line"
-        ));
+        );
         let line = &lines[1];
-        assert!(matches!(
+        assert_matches!(
             &line.0[0],
             TokenType {
                 kind: TokenKind::IdentifierEnd(s),
                 span: TxtSpan { start: 0, end: 10 }
             } if s == "verbatim "
-        ));
-        assert!(matches!(
+        );
+        assert_matches!(
             &line.1,
             TextLine {
                 ctx,
                 line,
                 lineno: 2,
             } if Rc::ptr_eq(ctx, &src.ctx) && line == "verbatim |"
-        ));
+        );
         assert!(target.cont.is_none());
     }
 
@@ -904,53 +905,53 @@ mod lexer {
         assert_eq!(lines.len(), 3);
         let line = &lines[0];
         assert_eq!(line.0.len(), 1);
-        assert!(matches!(
+        assert_matches!(
             &line.0[0],
             TokenType {
                 kind: TokenKind::IdentifierBegin(s),
                 span: TxtSpan { start: 0, end: 7 }
             } if s == " multi"
-        ));
-        assert!(matches!(
+        );
+        assert_matches!(
             &line.1,
             TextLine {
                 ctx,
                 line,
                 lineno: 1,
             } if Rc::ptr_eq(ctx, &src.ctx) && line == "| multi"
-        ));
+        );
         let line = &lines[1];
-        assert!(matches!(
+        assert_matches!(
             &line.0[0],
             TokenType {
                 kind: TokenKind::IdentifierFragment(s),
                 span: TxtSpan { start: 0, end: 4 }
             } if s == "line"
-        ));
-        assert!(matches!(
+        );
+        assert_matches!(
             &line.1,
             TextLine {
                 ctx,
                 line,
                 lineno: 2,
             } if Rc::ptr_eq(ctx, &src.ctx) && line == "line"
-        ));
+        );
         let line = &lines[2];
-        assert!(matches!(
+        assert_matches!(
             &line.0[0],
             TokenType {
                 kind: TokenKind::IdentifierEnd(s),
                 span: TxtSpan { start: 0, end: 10 }
             } if s == "verbatim "
-        ));
-        assert!(matches!(
+        );
+        assert_matches!(
             &line.1,
             TextLine {
                 ctx,
                 line,
                 lineno: 3,
             } if Rc::ptr_eq(ctx, &src.ctx) && line == "verbatim |"
-        ));
+        );
         assert!(target.cont.is_none());
     }
 
@@ -965,21 +966,21 @@ mod lexer {
         let err_lines = err.0;
         assert_eq!(err_lines.len(), 1);
         let TokenErrorLine(errs, line) = extract_or_fail!(&err_lines[0], LineFailure::Tokenize);
-        assert!(matches!(
+        assert_matches!(
             errs[..],
             [TokenType {
                 kind: TokenErrorKind::IdentifierExpectedHex { at: 9 },
                 span: TxtSpan { start: 9, end: 14 }
             }]
-        ));
-        assert!(matches!(
+        );
+        assert_matches!(
             line,
             TextLine {
                 ctx,
                 line,
                 lineno: 1,
             } if Rc::ptr_eq(ctx, &src.ctx) && line == "| double \\xZZ; line"
-        ));
+        );
         assert!(target.cont.is_none());
     }
 
@@ -994,37 +995,37 @@ mod lexer {
         let err_lines = err.0;
         assert_eq!(err_lines.len(), 2);
         let TokenErrorLine(errs, line) = extract_or_fail!(&err_lines[0], LineFailure::Tokenize);
-        assert!(matches!(
+        assert_matches!(
             errs[..],
             [TokenType {
                 kind: TokenErrorKind::IdentifierExpectedHex { at: 9 },
                 span: TxtSpan { start: 9, end: 14 }
             }]
-        ));
-        assert!(matches!(
+        );
+        assert_matches!(
             line,
             TextLine {
                 ctx,
                 line,
                 lineno: 1,
             } if Rc::ptr_eq(ctx, &src.ctx) && line == "| double \\xZZ; line"
-        ));
+        );
         let TokenErrorLine(errs, line) = extract_or_fail!(&err_lines[1], LineFailure::Tokenize);
-        assert!(matches!(
+        assert_matches!(
             errs[..],
             [TokenType {
                 kind: TokenErrorKind::HashInvalid,
                 span: TxtSpan { start: 13, end: 15 }
             }]
-        ));
-        assert!(matches!(
+        );
+        assert_matches!(
             line,
             TextLine {
                 ctx,
                 line,
                 lineno: 2,
             } if Rc::ptr_eq(ctx, &src.ctx) && line == "#z verbatim| #z"
-        ));
+        );
         assert!(target.cont.is_none());
     }
 
@@ -1040,7 +1041,7 @@ mod lexer {
         let err_lines = err.0;
         assert_eq!(err_lines.len(), 1);
         let TokenErrorLine(errs, line) = extract_or_fail!(&err_lines[0], LineFailure::Tokenize);
-        assert!(matches!(
+        assert_matches!(
             errs[..],
             [
                 TokenType {
@@ -1052,15 +1053,15 @@ mod lexer {
                     span: TxtSpan { start: 31, end: 33 }
                 }
             ]
-        ));
-        assert!(matches!(
+        );
+        assert_matches!(
             line,
             TextLine {
                 ctx,
                 line,
                 lineno: 1,
             } if Rc::ptr_eq(ctx, &src.ctx) && line == "|single \\x42 line verbatim| #t #z|double"
-        ));
+        );
         assert!(target.cont.is_none());
     }
 
@@ -1075,21 +1076,21 @@ mod lexer {
         let err_lines = err.0;
         assert_eq!(err_lines.len(), 1);
         let TokenErrorLine(errs, line) = extract_or_fail!(&err_lines[0], LineFailure::Tokenize);
-        assert!(matches!(
+        assert_matches!(
             errs[..],
             [TokenType {
                 kind: TokenErrorKind::HashInvalid,
                 span: TxtSpan { start: 3, end: 5 }
             }]
-        ));
-        assert!(matches!(
+        );
+        assert_matches!(
             line,
             TextLine {
                 ctx,
                 line,
                 lineno: 1,
             } if Rc::ptr_eq(ctx, &src.ctx) && line == "#t #z | double line"
-        ));
+        );
         assert!(target.cont.is_none());
     }
 
@@ -1108,21 +1109,21 @@ mod lexer {
         let err_lines = err.0;
         assert_eq!(err_lines.len(), 1);
         let TokenErrorLine(errs, line) = extract_or_fail!(&err_lines[0], LineFailure::Tokenize);
-        assert!(matches!(
+        assert_matches!(
             errs[..],
             [TokenType {
                 kind: TokenErrorKind::BlockCommentUnterminated,
                 span: TxtSpan { start: 3, end: 16 }
             }]
-        ));
-        assert!(matches!(
+        );
+        assert_matches!(
             line,
             TextLine {
                 ctx,
                 line,
                 lineno: 1,
             } if Rc::ptr_eq(ctx, &src.ctx) && line == "#t #|trailing..."
-        ));
+        );
         assert!(target.cont.is_none());
     }
 

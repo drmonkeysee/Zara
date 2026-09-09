@@ -3,6 +3,7 @@ use crate::{
     string::SymbolTable,
     testutil::{TestEnv, empty_procedure_body, make_textline, ok_or_fail},
 };
+use std::assert_matches;
 
 mod display {
     use super::*;
@@ -132,7 +133,7 @@ mod eval {
         let r = expr.eval(&f);
 
         let v = ok_or_fail!(r);
-        assert!(matches!(v, Value::Boolean(true)));
+        assert_matches!(v, Value::Boolean(true));
     }
 
     #[test]
@@ -151,7 +152,7 @@ mod eval {
         let r = expr.eval(&f);
 
         let v = ok_or_fail!(r);
-        assert!(matches!(v, Value::String(s) if s.as_ref() == "foo"));
+        assert_matches!(v, Value::String(s) if s.as_ref() == "foo");
     }
 
     #[test]
@@ -187,7 +188,7 @@ mod eval {
             let r = prg.eval(&f);
 
             let v = ok_or_fail!(r);
-            assert!(matches!(v, Value::Unspecified));
+            assert_matches!(v, Value::Unspecified);
         }
 
         #[test]
@@ -216,7 +217,7 @@ mod eval {
             let r = prg.eval(&f);
 
             let v = ok_or_fail!(r);
-            assert!(matches!(v, Value::Character('b')));
+            assert_matches!(v, Value::Character('b'));
         }
 
         #[test]
@@ -286,7 +287,7 @@ mod eval {
             let r = prg.eval(&f);
 
             let v = ok_or_fail!(r);
-            assert!(matches!(v, Value::Character('a')));
+            assert_matches!(v, Value::Character('a'));
             assert!(f.scope.lookup("foo_called").is_some());
         }
 
@@ -432,7 +433,7 @@ mod eval {
             let r = expr.eval(&f);
 
             let v = ok_or_fail!(r);
-            assert!(matches!(v, Value::String(s) if s.as_ref() == "bar"));
+            assert_matches!(v, Value::String(s) if s.as_ref() == "bar");
         }
 
         #[test]
@@ -505,7 +506,7 @@ mod eval {
             let r = expr.eval(&f);
 
             let v = ok_or_fail!(r);
-            assert!(matches!(v, Value::String(s) if s.as_ref() == "one, two, three"));
+            assert_matches!(v, Value::String(s) if s.as_ref() == "one, two, three");
         }
 
         #[test]
@@ -801,8 +802,8 @@ mod eval {
             let r = expr.eval(&f);
 
             let v = ok_or_fail!(r);
-            assert!(matches!(v, Value::Unspecified));
-            assert!(matches!(f.scope.lookup("foo"), Some(Value::String(s)) if s.as_ref() == "one"))
+            assert_matches!(v, Value::Unspecified);
+            assert_matches!(f.scope.lookup("foo"), Some(Value::String(s)) if s.as_ref() == "one")
         }
 
         #[test]
@@ -831,10 +832,8 @@ mod eval {
             let r = expr.eval(&f);
 
             let v = ok_or_fail!(r);
-            assert!(matches!(v, Value::Unspecified));
-            assert!(
-                matches!(f.scope.lookup("foo"), Some(Value::Procedure(p)) if some_or_fail!(p.name()) == "foo")
-            );
+            assert_matches!(v, Value::Unspecified);
+            assert_matches!(f.scope.lookup("foo"), Some(Value::Procedure(p)) if some_or_fail!(p.name()) == "foo");
         }
 
         #[test]
@@ -854,8 +853,8 @@ mod eval {
             let r = expr.eval(&f);
 
             let v = ok_or_fail!(r);
-            assert!(matches!(v, Value::Unspecified));
-            assert!(matches!(f.scope.lookup("foo"), Some(Value::Unspecified)));
+            assert_matches!(v, Value::Unspecified);
+            assert_matches!(f.scope.lookup("foo"), Some(Value::Unspecified));
         }
 
         #[test]
@@ -916,8 +915,8 @@ mod eval {
             let r = expr.eval(&f);
 
             let v = ok_or_fail!(r);
-            assert!(matches!(v, Value::Unspecified));
-            assert!(matches!(f.scope.lookup("foo"), Some(Value::String(s)) if s.as_ref() == "one"));
+            assert_matches!(v, Value::Unspecified);
+            assert_matches!(f.scope.lookup("foo"), Some(Value::String(s)) if s.as_ref() == "one");
         }
 
         #[test]
@@ -945,10 +944,8 @@ mod eval {
             let r = expr.eval(&f);
 
             let v = ok_or_fail!(r);
-            assert!(matches!(v, Value::Unspecified));
-            assert!(
-                matches!(f.scope.lookup("foo"), Some(Value::Procedure(p)) if some_or_fail!(p.name()) == "foo")
-            );
+            assert_matches!(v, Value::Unspecified);
+            assert_matches!(f.scope.lookup("foo"), Some(Value::Procedure(p)) if some_or_fail!(p.name()) == "foo");
         }
 
         #[test]
@@ -977,13 +974,9 @@ mod eval {
             let r = expr.eval(&call_f);
 
             let v = ok_or_fail!(r);
-            assert!(matches!(v, Value::Unspecified));
-            assert!(
-                matches!(call_f.scope.lookup("foo"), Some(Value::String(s)) if s.as_ref() == "one")
-            );
-            assert!(
-                matches!(env.binding.lookup("foo"), Some(Value::String(s)) if s.as_ref() == "one")
-            );
+            assert_matches!(v, Value::Unspecified);
+            assert_matches!(call_f.scope.lookup("foo"), Some(Value::String(s)) if s.as_ref() == "one");
+            assert_matches!(env.binding.lookup("foo"), Some(Value::String(s)) if s.as_ref() == "one");
             assert!(call_f.scope.sorted_bindings().is_empty());
         }
 
@@ -1016,7 +1009,7 @@ mod eval {
                 err.to_string(),
                 "#<environment-error \"unbound variable: x\">"
             );
-            assert!(matches!(f.scope.lookup("foo"), Some(Value::Unspecified)));
+            assert_matches!(f.scope.lookup("foo"), Some(Value::Unspecified));
         }
 
         #[test]
@@ -1164,7 +1157,7 @@ mod eval {
             let r = expr.eval(&f);
 
             let v = ok_or_fail!(r);
-            assert!(matches!(v, Value::Unspecified));
+            assert_matches!(v, Value::Unspecified);
         }
 
         #[test]
@@ -1269,13 +1262,13 @@ mod eval {
             let r = expr.eval(&f);
 
             let v = ok_or_fail!(r);
-            assert!(matches!(v, Value::Procedure(_)));
+            assert_matches!(v, Value::Procedure(_));
             let Value::Procedure(proc) = v else {
                 unreachable!();
             };
             let new_env = TestEnv::default();
             let v = ok_or_fail!(proc.apply(&[], &new_env.new_frame()));
-            assert!(matches!(v, Value::String(s) if s.as_ref() == "myval"));
+            assert_matches!(v, Value::String(s) if s.as_ref() == "myval");
         }
     }
 }

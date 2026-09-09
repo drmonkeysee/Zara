@@ -1207,6 +1207,7 @@ fn set_seekable_position(sk: &mut (impl Seek + ?Sized), pos: PortSeek) -> PortPo
 mod tests {
     use super::*;
     use crate::testutil::{err_or_fail, ok_or_fail, some_or_fail};
+    use std::assert_matches;
 
     mod binary {
         use super::*;
@@ -1259,7 +1260,7 @@ mod tests {
             let r = p.read_byte();
 
             let e = err_or_fail!(r);
-            assert!(matches!(e, PortError::Closed));
+            assert_matches!(e, PortError::Closed);
         }
 
         #[test]
@@ -1283,7 +1284,7 @@ mod tests {
             let r = p.byte_ready();
 
             let e = err_or_fail!(r);
-            assert!(matches!(e, PortError::Closed));
+            assert_matches!(e, PortError::Closed);
         }
 
         #[test]
@@ -1472,7 +1473,7 @@ mod tests {
             let r = p.seek(PortSeek::Start(-1));
 
             let err = err_or_fail!(r);
-            assert!(matches!(err, PortError::Io(ErrorKind::InvalidInput)));
+            assert_matches!(err, PortError::Io(ErrorKind::InvalidInput));
         }
 
         #[test]
@@ -1631,7 +1632,7 @@ mod tests {
             let r = p.read_char();
 
             let e = err_or_fail!(r);
-            assert!(matches!(e, PortError::Closed));
+            assert_matches!(e, PortError::Closed);
         }
 
         #[test]
@@ -1655,7 +1656,7 @@ mod tests {
             let r = p.char_ready();
 
             let e = err_or_fail!(r);
-            assert!(matches!(e, PortError::Closed));
+            assert_matches!(e, PortError::Closed);
         }
 
         #[test]

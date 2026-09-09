@@ -83,6 +83,7 @@ fn write_invalid_seq(seq: &[u8], f: &mut Formatter<'_>) -> fmt::Result {
 mod tests {
     use super::*;
     use crate::testutil::{err_or_fail, ok_or_fail};
+    use std::assert_matches;
 
     #[test]
     fn display_invalid_seq() {
@@ -142,10 +143,7 @@ mod tests {
 
         let len = utf8_char_len(ch);
 
-        assert!(matches!(
-            err_or_fail!(len),
-            UnicodeError::PrefixInvalid(0x80)
-        ));
+        assert_matches!(err_or_fail!(len), UnicodeError::PrefixInvalid(0x80));
     }
 
     #[test]
@@ -190,7 +188,7 @@ mod tests {
 
         let r = char_from_utf8(&seq);
 
-        assert!(matches!(err_or_fail!(r), UnicodeError::ByteSequenceEmpty));
+        assert_matches!(err_or_fail!(r), UnicodeError::ByteSequenceEmpty);
     }
 
     #[test]
@@ -199,10 +197,7 @@ mod tests {
 
         let r = char_from_utf8(&seq);
 
-        assert!(matches!(
-            err_or_fail!(r),
-            UnicodeError::ByteSequenceTooLong(5)
-        ));
+        assert_matches!(err_or_fail!(r), UnicodeError::ByteSequenceTooLong(5));
     }
 
     #[test]
@@ -220,9 +215,7 @@ mod tests {
 
         let r = char_from_utf8(&seq);
 
-        assert!(
-            matches!(err_or_fail!(r), UnicodeError::ByteSequenceInvalid(sq) if sq == [0xb7, 0x0, 0x0, 0x0])
-        );
+        assert_matches!(err_or_fail!(r), UnicodeError::ByteSequenceInvalid(sq) if sq == [0xb7, 0x0, 0x0, 0x0]);
     }
 
     #[test]
@@ -240,9 +233,7 @@ mod tests {
 
         let r = char_from_utf8(&seq);
 
-        assert!(
-            matches!(err_or_fail!(r), UnicodeError::ByteSequenceInvalid(sq) if sq == [0xc3, 0x0, 0x0, 0x0])
-        );
+        assert_matches!(err_or_fail!(r), UnicodeError::ByteSequenceInvalid(sq) if sq == [0xc3, 0x0, 0x0, 0x0]);
     }
 
     #[test]

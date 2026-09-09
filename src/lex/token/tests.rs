@@ -1,4 +1,5 @@
 use super::*;
+use std::assert_matches;
 
 mod token {
     use super::*;
@@ -388,20 +389,20 @@ mod token {
     fn block_comment_open_continuation() {
         let kind = TokenKind::BlockCommentBegin { depth: 2 };
 
-        assert!(matches!(
+        assert_matches!(
             kind.to_continuation(),
             Some(TokenContinuation::BlockComment { depth: 2 })
-        ));
+        );
     }
 
     #[test]
     fn block_comment_fragment_continuation() {
         let kind = TokenKind::BlockCommentFragment { depth: 2 };
 
-        assert!(matches!(
+        assert_matches!(
             kind.to_continuation(),
             Some(TokenContinuation::BlockComment { depth: 2 })
-        ));
+        );
     }
 
     #[test]
@@ -411,10 +412,10 @@ mod token {
             line_cont: false,
         };
 
-        assert!(matches!(
+        assert_matches!(
             kind.to_continuation(),
             Some(TokenContinuation::StringLiteral { line_cont: false })
-        ));
+        );
     }
 
     #[test]
@@ -424,30 +425,30 @@ mod token {
             line_cont: true,
         };
 
-        assert!(matches!(
+        assert_matches!(
             kind.to_continuation(),
             Some(TokenContinuation::StringLiteral { line_cont: true })
-        ));
+        );
     }
 
     #[test]
     fn identifier_open_continuation() {
         let kind = TokenKind::IdentifierBegin("".to_owned());
 
-        assert!(matches!(
+        assert_matches!(
             kind.to_continuation(),
             Some(TokenContinuation::VerbatimIdentifier)
-        ));
+        );
     }
 
     #[test]
     fn identifier_fragment_continuation() {
         let kind = TokenKind::IdentifierFragment("".to_owned());
 
-        assert!(matches!(
+        assert_matches!(
             kind.to_continuation(),
             Some(TokenContinuation::VerbatimIdentifier)
-        ));
+        );
     }
 }
 
@@ -631,40 +632,40 @@ mod tokenerror {
     fn string_invalid_sequence_continuation() {
         let kind = TokenErrorKind::StringEscapeInvalid { at: 0, ch: 'c' };
 
-        assert!(matches!(
+        assert_matches!(
             kind.to_continuation(),
             Some(TokenContinuation::SubstringError)
-        ));
+        );
     }
 
     #[test]
     fn string_hex_continuation() {
         let kind = TokenErrorKind::StringExpectedHex { at: 1 };
 
-        assert!(matches!(
+        assert_matches!(
             kind.to_continuation(),
             Some(TokenContinuation::SubstringError)
-        ));
+        );
     }
 
     #[test]
     fn identifier_invalid_sequence_continuation() {
         let kind = TokenErrorKind::IdentifierEscapeInvalid { at: 0, ch: 'c' };
 
-        assert!(matches!(
+        assert_matches!(
             kind.to_continuation(),
             Some(TokenContinuation::SubidentifierError)
-        ));
+        );
     }
 
     #[test]
     fn identifier_hex_continuation() {
         let kind = TokenErrorKind::IdentifierExpectedHex { at: 1 };
 
-        assert!(matches!(
+        assert_matches!(
             kind.to_continuation(),
             Some(TokenContinuation::SubidentifierError)
-        ));
+        );
     }
 
     #[test]
@@ -681,7 +682,7 @@ mod tokenerror {
             TokenErrorKind::StringEscapeInvalid { at: 3, ch: 'c' },
         ];
         for case in cases {
-            assert!(matches!(case.sub_idx(), Some(3)));
+            assert_matches!(case.sub_idx(), Some(3));
         }
     }
 
@@ -692,7 +693,7 @@ mod tokenerror {
             TokenErrorKind::StringExpectedHex { at: 3 },
         ];
         for case in cases {
-            assert!(matches!(case.sub_idx(), Some(3)));
+            assert_matches!(case.sub_idx(), Some(3));
         }
     }
 
@@ -710,7 +711,7 @@ mod tokenerror {
             TokenErrorKind::NumberUnexpectedDecimalPoint { at: 3 },
         ];
         for case in cases {
-            assert!(matches!(case.sub_idx(), Some(3)));
+            assert_matches!(case.sub_idx(), Some(3));
         }
     }
 
@@ -930,43 +931,34 @@ mod tokencontinuation {
     fn block_comment() {
         let cont = TokenContinuation::BlockComment { depth: 10 };
 
-        assert!(matches!(
-            cont.into(),
-            TokenErrorKind::BlockCommentUnterminated
-        ));
+        assert_matches!(cont.into(), TokenErrorKind::BlockCommentUnterminated);
     }
 
     #[test]
     fn string_fragment() {
         let cont = TokenContinuation::StringLiteral { line_cont: false };
 
-        assert!(matches!(cont.into(), TokenErrorKind::StringUnterminated));
+        assert_matches!(cont.into(), TokenErrorKind::StringUnterminated);
     }
 
     #[test]
     fn string_error() {
         let cont = TokenContinuation::SubstringError;
 
-        assert!(matches!(cont.into(), TokenErrorKind::StringUnterminated));
+        assert_matches!(cont.into(), TokenErrorKind::StringUnterminated);
     }
 
     #[test]
     fn identifier_fragment() {
         let cont = TokenContinuation::VerbatimIdentifier;
 
-        assert!(matches!(
-            cont.into(),
-            TokenErrorKind::IdentifierUnterminated
-        ));
+        assert_matches!(cont.into(), TokenErrorKind::IdentifierUnterminated);
     }
 
     #[test]
     fn identifier_error() {
         let cont = TokenContinuation::SubidentifierError;
 
-        assert!(matches!(
-            cont.into(),
-            TokenErrorKind::IdentifierUnterminated
-        ));
+        assert_matches!(cont.into(), TokenErrorKind::IdentifierUnterminated);
     }
 }

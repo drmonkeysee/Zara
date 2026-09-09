@@ -1,4 +1,5 @@
 use super::*;
+use std::assert_matches;
 
 #[test]
 fn basic_token() {
@@ -13,13 +14,13 @@ fn basic_token() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::ByteVector,
             span: TxtSpan { start: 0, end: 4 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -35,13 +36,13 @@ fn uppercase() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::ByteVector,
             span: TxtSpan { start: 0, end: 4 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -57,13 +58,13 @@ fn ends_at_paren() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::ByteVector,
             span: TxtSpan { start: 0, end: 4 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -79,13 +80,13 @@ fn unterminated() {
 
     assert!(c.is_none());
     let err = err_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         err,
         TokenError {
             kind: TokenErrorKind::ByteVectorExpected,
             span: TxtSpan { start: 0, end: 2 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -101,13 +102,13 @@ fn wrong_number() {
 
     assert!(c.is_none());
     let err = err_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         err,
         TokenError {
             kind: TokenErrorKind::ByteVectorExpected,
             span: TxtSpan { start: 0, end: 3 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -123,13 +124,13 @@ fn extra_number() {
 
     assert!(c.is_none());
     let err = err_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         err,
         TokenError {
             kind: TokenErrorKind::ByteVectorExpected,
             span: TxtSpan { start: 0, end: 4 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -145,13 +146,13 @@ fn no_paren() {
 
     assert!(c.is_none());
     let err = err_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         err,
         TokenError {
             kind: TokenErrorKind::ByteVectorExpected,
             span: TxtSpan { start: 0, end: 3 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -167,13 +168,13 @@ fn no_paren_whitespace() {
 
     assert!(c.is_none());
     let err = err_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         err,
         TokenError {
             kind: TokenErrorKind::ByteVectorExpected,
             span: TxtSpan { start: 0, end: 3 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -189,11 +190,11 @@ fn no_paren_extra_chars() {
 
     assert!(c.is_none());
     let err = err_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         err,
         TokenError {
             kind: TokenErrorKind::ByteVectorExpected,
             span: TxtSpan { start: 0, end: 6 },
         }
-    ));
+    );
 }

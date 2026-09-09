@@ -5,6 +5,7 @@ use crate::{
     testutil::{TestEnv, err_or_fail, extract_or_fail, make_textline, ok_or_fail, some_or_fail},
     txt::TxtSpan,
 };
+use std::assert_matches;
 
 mod expr {
     use super::*;
@@ -22,14 +23,14 @@ mod expr {
 
         let f = parse_expr(token, &txt, false, &ns);
 
-        assert!(matches!(
+        assert_matches!(
             f,
             ExprFlow::Continue(Some(
                 Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 0, end: 3 }, txt: line },
                 kind: ExpressionKind::Literal(Value::Boolean(true)),
             })) if Rc::ptr_eq(&txt, &line)
-        ));
+        );
     }
 
     #[test]
@@ -44,14 +45,14 @@ mod expr {
 
         let f = parse_expr(token, &txt, false, &ns);
 
-        assert!(matches!(
+        assert_matches!(
             f,
             ExprFlow::Continue(Some(
                 Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 0, end: 3 }, txt: line },
                 kind: ExpressionKind::Literal(Value::Character('a')),
             })) if Rc::ptr_eq(&txt, &line)
-        ));
+        );
     }
 
     #[test]
@@ -66,14 +67,14 @@ mod expr {
 
         let f = parse_expr(token, &txt, false, &ns);
 
-        assert!(matches!(
+        assert_matches!(
             f,
             ExprFlow::Continue(Some(
                 Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 0, end: 3 }, txt: line },
                 kind: ExpressionKind::Literal(Value::Number(n)),
             })) if Rc::ptr_eq(&txt, &line) && n.to_string() == "45"
-        ));
+        );
     }
 
     #[test]
@@ -88,14 +89,14 @@ mod expr {
 
         let f = parse_expr(token, &txt, false, &ns);
 
-        assert!(matches!(
+        assert_matches!(
             f,
             ExprFlow::Continue(Some(
                 Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 0, end: 3 }, txt: line },
                 kind: ExpressionKind::Literal(Value::Number(n)),
             })) if n.to_string() == "+1.2i" && Rc::ptr_eq(&txt, &line)
-        ));
+        );
     }
 
     #[test]
@@ -110,14 +111,14 @@ mod expr {
 
         let f = parse_expr(token, &txt, false, &ns);
 
-        assert!(matches!(
+        assert_matches!(
             f,
             ExprFlow::Continue(Some(
                 Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 0, end: 3 }, txt: line },
                 kind: ExpressionKind::Literal(Value::String(s)),
             })) if Rc::ptr_eq(&txt, &line) && s.as_ref() == "foo"
-        ));
+        );
     }
 
     #[test]
@@ -135,7 +136,7 @@ mod expr {
 
         let f = parse_expr(token, &txt, false, &ns);
 
-        assert!(matches!(
+        assert_matches!(
             f,
             ExprFlow::Break(ParseBreak::New(
                 ParseNew {
@@ -143,7 +144,7 @@ mod expr {
                     start: 3
                 }
             )) if s == "start\n"
-        ));
+        );
     }
 
     #[test]
@@ -161,7 +162,7 @@ mod expr {
 
         let f = parse_expr(token, &txt, false, &ns);
 
-        assert!(matches!(
+        assert_matches!(
             f,
             ExprFlow::Break(ParseBreak::New(
                 ParseNew {
@@ -169,7 +170,7 @@ mod expr {
                     start: 3
                 }
             )) if s == "start"
-        ));
+        );
     }
 
     #[test]
@@ -184,7 +185,7 @@ mod expr {
 
         let f = parse_expr(token, &txt, false, &ns);
 
-        assert!(matches!(
+        assert_matches!(
             f,
             ExprFlow::Break(ParseBreak::Err {
                 err: ExpressionError {
@@ -193,7 +194,7 @@ mod expr {
                 },
                 flow: ParseErrFlow::Break(ParseErrBreak::InvalidTokenStream),
             }) if Rc::ptr_eq(&line, &txt)
-        ));
+        );
     }
 
     #[test]
@@ -208,7 +209,7 @@ mod expr {
 
         let f = parse_expr(token, &txt, false, &ns);
 
-        assert!(matches!(
+        assert_matches!(
             f,
             ExprFlow::Break(ParseBreak::Err {
                 err: ExpressionError {
@@ -217,7 +218,7 @@ mod expr {
                 },
                 flow: ParseErrFlow::Continue(()),
             }) if Rc::ptr_eq(&line, &txt)
-        ));
+        );
     }
 
     #[test]
@@ -232,7 +233,7 @@ mod expr {
 
         let f = parse_expr(token, &txt, false, &ns);
 
-        assert!(matches!(f, ExprFlow::Continue(None)));
+        assert_matches!(f, ExprFlow::Continue(None));
     }
 
     #[test]
@@ -247,13 +248,13 @@ mod expr {
 
         let f = parse_expr(token, &txt, false, &ns);
 
-        assert!(matches!(
+        assert_matches!(
             f,
             ExprFlow::Break(ParseBreak::New(ParseNew {
                 mode: ParseMode::BlockComment,
                 start: 3
             }))
-        ));
+        );
     }
 
     #[test]
@@ -268,13 +269,13 @@ mod expr {
 
         let f = parse_expr(token, &txt, false, &ns);
 
-        assert!(matches!(
+        assert_matches!(
             f,
             ExprFlow::Break(ParseBreak::New(ParseNew {
                 mode: ParseMode::ByteVector(vec),
                 start: 3
             })) if vec.is_empty()
-        ));
+        );
     }
 
     #[test]
@@ -289,14 +290,14 @@ mod expr {
 
         let f = parse_expr(token, &txt, false, &ns);
 
-        assert!(matches!(
+        assert_matches!(
             f,
             ExprFlow::Continue(Some(
                 Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 0, end: 6 }, txt: line },
                 kind: ExpressionKind::Variable(s),
             })) if s.as_ref() == "myproc" && Rc::ptr_eq(&txt, &line)
-        ));
+        );
     }
 
     #[test]
@@ -311,14 +312,14 @@ mod expr {
 
         let f = parse_expr(token, &txt, false, &ns);
 
-        assert!(matches!(
+        assert_matches!(
             f,
             ExprFlow::Continue(Some(
                 Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 0, end: 0 }, txt: line },
                 kind: ExpressionKind::Variable(s),
             })) if s.as_ref() == "" && Rc::ptr_eq(&txt, &line)
-        ));
+        );
     }
 
     #[test]
@@ -333,14 +334,14 @@ mod expr {
 
         let f = parse_expr(token, &txt, true, &ns);
 
-        assert!(matches!(
+        assert_matches!(
             f,
             ExprFlow::Continue(Some(
                 Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 0, end: 6 }, txt: line },
                 kind: ExpressionKind::Literal(Value::Symbol(s)),
             })) if s.as_ref() == "foo" && Rc::ptr_eq(&txt, &line)
-        ));
+        );
     }
 
     #[test]
@@ -355,14 +356,14 @@ mod expr {
 
         let f = parse_expr(token, &txt, true, &ns);
 
-        assert!(matches!(
+        assert_matches!(
             f,
             ExprFlow::Continue(Some(
                 Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 0, end: 0 }, txt: line },
                 kind: ExpressionKind::Literal(Value::Symbol(s)),
             })) if s.as_ref() == "" && Rc::ptr_eq(&txt, &line)
-        ));
+        );
     }
 
     #[test]
@@ -377,7 +378,7 @@ mod expr {
 
         let f = parse_expr(token, &txt, false, &ns);
 
-        assert!(matches!(
+        assert_matches!(
             f,
             ExprFlow::Break(ParseBreak::New(
                 ParseNew {
@@ -385,7 +386,7 @@ mod expr {
                     start: 3
                 }
             )) if name == "start\n"
-        ));
+        );
     }
 
     #[test]
@@ -400,7 +401,7 @@ mod expr {
 
         let f = parse_expr(token, &txt, true, &ns);
 
-        assert!(matches!(
+        assert_matches!(
             f,
             ExprFlow::Break(ParseBreak::New(
                 ParseNew {
@@ -408,7 +409,7 @@ mod expr {
                     start: 3
                 }
             )) if name == "start\n"
-        ));
+        );
     }
 
     #[test]
@@ -423,7 +424,7 @@ mod expr {
 
         let f = parse_expr(token, &txt, false, &ns);
 
-        assert!(matches!(
+        assert_matches!(
             f,
             ExprFlow::Break(ParseBreak::New(
                 ParseNew {
@@ -431,7 +432,7 @@ mod expr {
                     start: 1
                 }
             )) if seq.is_empty()
-        ));
+        );
     }
 
     #[test]
@@ -446,7 +447,7 @@ mod expr {
 
         let f = parse_expr(token, &txt, true, &ns);
 
-        assert!(matches!(
+        assert_matches!(
             f,
             ExprFlow::Break(ParseBreak::New(
                 ParseNew {
@@ -454,7 +455,7 @@ mod expr {
                     start: 1
                 }
             )) if seq.is_empty()
-        ));
+        );
     }
 
     #[test]
@@ -469,13 +470,13 @@ mod expr {
 
         let f = parse_expr(token, &txt, false, &ns);
 
-        assert!(matches!(
+        assert_matches!(
             f,
             ExprFlow::Break(ParseBreak::New(ParseNew {
                 mode: ParseMode::CommentDatum(None),
                 start: 1
             }))
-        ));
+        );
     }
 
     #[test]
@@ -490,7 +491,7 @@ mod expr {
 
         let f = parse_expr(token, &txt, false, &ns);
 
-        assert!(matches!(
+        assert_matches!(
             f,
             ExprFlow::Break(ParseBreak::New(ParseNew {
                 mode: ParseMode::Quote {
@@ -499,7 +500,7 @@ mod expr {
                 },
                 start: 1
             }))
-        ));
+        );
     }
 
     #[test]
@@ -514,7 +515,7 @@ mod expr {
 
         let f = parse_expr(token, &txt, true, &ns);
 
-        assert!(matches!(
+        assert_matches!(
             f,
             ExprFlow::Break(ParseBreak::New(ParseNew {
                 mode: ParseMode::Quote {
@@ -523,7 +524,7 @@ mod expr {
                 },
                 start: 1
             }))
-        ));
+        );
     }
 
     #[test]
@@ -538,13 +539,13 @@ mod expr {
 
         let f = parse_expr(token, &txt, false, &ns);
 
-        assert!(matches!(
+        assert_matches!(
             f,
             ExprFlow::Break(ParseBreak::New(ParseNew {
                 mode: ParseMode::Vector(v),
                 start: 1
             })) if v.is_empty()
-        ));
+        );
     }
 }
 
@@ -568,18 +569,18 @@ mod datum {
 
         let f = parse_datum(&mut inner, token, &txt, &ctx, &ns);
 
-        assert!(matches!(
+        assert_matches!(
             f,
             ParseFlow::Break(ParseBreak::Complete(ExprEnd { lineno: 1, pos: 3 })),
-        ));
+        );
         let expr = some_or_fail!(inner);
-        assert!(matches!(
+        assert_matches!(
             expr,
             Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 1, end: 3 }, txt: line },
                 kind: ExpressionKind::Literal(Value::Boolean(true))
             } if Rc::ptr_eq(&txt, &line)
-        ));
+        );
     }
 
     #[test]
@@ -599,13 +600,13 @@ mod datum {
 
         let f = parse_datum(&mut inner, token, &txt, &ctx, &ns);
 
-        assert!(matches!(
+        assert_matches!(
             f,
             ParseFlow::Break(ParseBreak::New(ParseNew {
                 mode: ParseMode::List { form: SyntacticForm::Datum, seq },
                 start: 1
             })) if seq.is_empty(),
-        ));
+        );
         assert!(inner.is_none());
     }
 
@@ -626,7 +627,7 @@ mod datum {
 
         let f = parse_datum(&mut inner, token, &txt, &ctx, &ns);
 
-        assert!(matches!(f, ParseFlow::Continue(())));
+        assert_matches!(f, ParseFlow::Continue(()));
         assert!(inner.is_none());
     }
 
@@ -647,7 +648,7 @@ mod datum {
 
         let f = parse_datum(&mut inner, token, &txt, &ctx, &ns);
 
-        assert!(matches!(
+        assert_matches!(
             f,
             ParseFlow::Break(ParseBreak::Err{
                 err: ExpressionError {
@@ -656,7 +657,7 @@ mod datum {
                 },
                 flow: ParseErrFlow::Break(ParseErrBreak::InvalidTokenStream),
             }) if Rc::ptr_eq(&txt, &line),
-        ));
+        );
         assert!(inner.is_none());
     }
 
@@ -677,7 +678,7 @@ mod datum {
 
         let f = parse_datum(&mut inner, token, &txt, &ctx, &ns);
 
-        assert!(matches!(
+        assert_matches!(
             f,
             ParseFlow::Break(ParseBreak::Err{
                 err: ExpressionError {
@@ -686,7 +687,7 @@ mod datum {
                 },
                 flow: ParseErrFlow::Break(ParseErrBreak::FailedNode),
             }) if Rc::ptr_eq(&txt, &line),
-        ));
+        );
         assert!(inner.is_none());
     }
 }
@@ -718,13 +719,13 @@ mod bytevector {
         let r = node.try_into_expr(&ns);
 
         let expr = some_or_fail!(ok_or_fail!(r));
-        assert!(matches!(
+        assert_matches!(
             expr,
             Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 0, end: 3 }, txt: line },
                 kind: ExpressionKind::Literal(Value::ByteVector(_)),
             } if Rc::ptr_eq(&txt, &line)
-        ));
+        );
         let bv = extract_or_fail!(
             extract_or_fail!(expr.kind, ExpressionKind::Literal),
             Value::ByteVector
@@ -765,13 +766,13 @@ mod bytevector {
         let r = node.try_into_expr(&ns);
 
         let expr = some_or_fail!(ok_or_fail!(r));
-        assert!(matches!(
+        assert_matches!(
             expr,
             Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 0, end: 9 }, txt: line },
                 kind: ExpressionKind::Literal(Value::ByteVector(_)),
             } if Rc::ptr_eq(&txt, &line)
-        ));
+        );
         let bv = extract_or_fail!(
             extract_or_fail!(expr.kind, ExpressionKind::Literal),
             Value::ByteVector
@@ -795,13 +796,13 @@ mod bytevector {
         let r = node.try_into_expr(&ns);
 
         let expr = some_or_fail!(ok_or_fail!(r));
-        assert!(matches!(
+        assert_matches!(
             expr,
             Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 0, end: 3 }, txt: line },
                 kind: ExpressionKind::Literal(Value::ByteVector(_)),
             } if Rc::ptr_eq(&txt, &line)
-        ));
+        );
         let bv = extract_or_fail!(
             extract_or_fail!(expr.kind, ExpressionKind::Literal),
             Value::ByteVector
@@ -845,13 +846,13 @@ mod bytevector {
 
         let errs = err_or_fail!(r);
         assert_eq!(errs.len(), 1);
-        assert!(matches!(
+        assert_matches!(
             &errs[0],
             ExpressionError {
                 ctx: ExprCtx { span: TxtSpan { start: 3, end: 6 }, txt: line },
                 kind: ExpressionErrorKind::ByteVectorInvalidItem(ExpressionKind::Literal(Value::Symbol(s))),
             } if s.as_ref() == "foo" && Rc::ptr_eq(&txt, line)
-        ));
+        );
     }
 
     #[test]
@@ -895,20 +896,20 @@ mod bytevector {
 
         let errs = err_or_fail!(r);
         assert_eq!(errs.len(), 2);
-        assert!(matches!(
+        assert_matches!(
             &errs[0],
             ExpressionError {
                 ctx: ExprCtx { span: TxtSpan { start: 3, end: 6 }, txt: line },
                 kind: ExpressionErrorKind::ByteVectorInvalidItem(ExpressionKind::Variable(s)),
             } if s.as_ref() == "foo" && Rc::ptr_eq(&txt, line)
-        ));
-        assert!(matches!(
+        );
+        assert_matches!(
             &errs[1],
             ExpressionError {
                 ctx: ExprCtx { span: TxtSpan { start: 9, end: 12 }, txt: line },
                 kind: ExpressionErrorKind::ByteVectorInvalidNumber(NumericError::IntConversionInvalidType(s)),
             } if s == "floating-point" && Rc::ptr_eq(&txt, line)
-        ));
+        );
     }
 }
 
@@ -938,19 +939,19 @@ mod vector {
         let r = node.try_into_expr(&ns);
 
         let expr = some_or_fail!(ok_or_fail!(r));
-        assert!(matches!(
+        assert_matches!(
             expr,
             Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 0, end: 3 }, txt: line },
                 kind: ExpressionKind::Literal(Value::Vector(_)),
             } if Rc::ptr_eq(&txt, &line)
-        ));
+        );
         let v = extract_or_fail!(
             extract_or_fail!(expr.kind, ExpressionKind::Literal),
             Value::Vector
         );
         assert_eq!(v.len(), 1);
-        assert!(matches!(&v[0], Value::String(s) if s.as_ref() == "foo"));
+        assert_matches!(&v[0], Value::String(s) if s.as_ref() == "foo");
     }
 
     #[test]
@@ -988,24 +989,24 @@ mod vector {
         let r = node.try_into_expr(&ns);
 
         let expr = some_or_fail!(ok_or_fail!(r));
-        assert!(matches!(
+        assert_matches!(
             expr,
             Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 0, end: 9 }, txt: line },
                 kind: ExpressionKind::Literal(Value::Vector(_)),
             } if Rc::ptr_eq(&txt, &line)
-        ));
+        );
         let v = extract_or_fail!(
             extract_or_fail!(expr.kind, ExpressionKind::Literal),
             Value::Vector
         );
         assert_eq!(v.len(), 3);
-        assert!(matches!(&v[0], Value::Symbol(s) if s.as_ref() == "a"));
-        assert!(matches!(&v[1], Value::Null));
-        assert!(matches!(
+        assert_matches!(&v[0], Value::Symbol(s) if s.as_ref() == "a");
+        assert_matches!(&v[1], Value::Null);
+        assert_matches!(
             &v[2],
             Value::Number(n) if n.to_string() == "26"
-        ));
+        );
     }
 
     #[test]
@@ -1024,13 +1025,13 @@ mod vector {
         let r = node.try_into_expr(&ns);
 
         let expr = some_or_fail!(ok_or_fail!(r));
-        assert!(matches!(
+        assert_matches!(
             expr,
             Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 0, end: 3 }, txt: line },
                 kind: ExpressionKind::Literal(Value::Vector(_)),
             } if Rc::ptr_eq(&txt, &line)
-        ));
+        );
         let v = extract_or_fail!(
             extract_or_fail!(expr.kind, ExpressionKind::Literal),
             Value::Vector
@@ -1076,13 +1077,13 @@ mod vector {
 
         let errs = err_or_fail!(r);
         assert_eq!(errs.len(), 1);
-        assert!(matches!(
+        assert_matches!(
             &errs[0],
             ExpressionError {
                 ctx: ExprCtx { span: TxtSpan { start: 3, end: 6 }, txt: line },
                 kind: ExpressionErrorKind::VectorInvalidItem(ExpressionKind::Variable(s)),
             } if s.as_ref() == "foo" && Rc::ptr_eq(&txt, line)
-        ));
+        );
     }
 
     #[test]
@@ -1136,20 +1137,20 @@ mod vector {
 
         let errs = err_or_fail!(r);
         assert_eq!(errs.len(), 2);
-        assert!(matches!(
+        assert_matches!(
             &errs[0],
             ExpressionError {
                 ctx: ExprCtx { span: TxtSpan { start: 3, end: 6 }, txt: line },
                 kind: ExpressionErrorKind::VectorInvalidItem(ExpressionKind::Variable(s)),
             } if s.as_ref() == "foo" && Rc::ptr_eq(&txt, line)
-        ));
-        assert!(matches!(
+        );
+        assert_matches!(
             &errs[1],
             ExpressionError {
                 ctx: ExprCtx { span: TxtSpan { start: 9, end: 12 }, txt: line },
                 kind: ExpressionErrorKind::VectorInvalidItem(ExpressionKind::Call{ .. }),
             } if Rc::ptr_eq(&txt, line)
-        ));
+        );
     }
 }
 
@@ -1167,10 +1168,10 @@ mod identifier {
 
         let f = parse_verbatim_identifier(&mut s, token, &txt);
 
-        assert!(matches!(
+        assert_matches!(
             f,
             ParseFlow::Break(ParseBreak::Complete(ExprEnd { lineno: 1, pos: 4 }))
-        ));
+        );
         assert_eq!(s, "start\nend");
     }
 
@@ -1185,7 +1186,7 @@ mod identifier {
 
         let f = parse_verbatim_identifier(&mut s, token, &txt);
 
-        assert!(matches!(f, ParseFlow::Continue(())));
+        assert_matches!(f, ParseFlow::Continue(()));
         assert_eq!(s, "start\nmiddle\n");
     }
 
@@ -1200,7 +1201,7 @@ mod identifier {
 
         let f = parse_verbatim_identifier(&mut s, token, &txt);
 
-        assert!(matches!(
+        assert_matches!(
             f,
             ParseFlow::Break(ParseBreak::Err {
                 err: ExpressionError {
@@ -1209,7 +1210,7 @@ mod identifier {
                 },
                 flow: ParseErrFlow::Break(ParseErrBreak::InvalidTokenStream),
             }) if Rc::ptr_eq(&line, &txt)
-        ));
+        );
         assert_eq!(s, "start\n");
     }
 
@@ -1232,13 +1233,13 @@ mod identifier {
         let r = p.try_into_expr(&ns);
 
         let expr = some_or_fail!(ok_or_fail!(r));
-        assert!(matches!(
+        assert_matches!(
             expr,
             Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 0, end: 3 }, txt: line },
                 kind: ExpressionKind::Variable(s),
             } if s.as_ref() == "foo" && Rc::ptr_eq(&txt, &line)
-        ));
+        );
     }
 
     #[test]
@@ -1260,13 +1261,13 @@ mod identifier {
         let r = p.try_into_expr(&ns);
 
         let expr = some_or_fail!(ok_or_fail!(r));
-        assert!(matches!(
+        assert_matches!(
             expr,
             Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 0, end: 3 }, txt: line },
                 kind: ExpressionKind::Literal(Value::Symbol(s)),
             } if s.as_ref() == "foo" && Rc::ptr_eq(&txt, &line)
-        ));
+        );
     }
 }
 
@@ -1284,10 +1285,10 @@ mod string {
 
         let f = parse_str(&mut s, token, &txt);
 
-        assert!(matches!(
+        assert_matches!(
             f,
             ParseFlow::Break(ParseBreak::Complete(ExprEnd { lineno: 1, pos: 4 }))
-        ));
+        );
         assert_eq!(s, "start\nend");
     }
 
@@ -1305,7 +1306,7 @@ mod string {
 
         let f = parse_str(&mut s, token, &txt);
 
-        assert!(matches!(f, ParseFlow::Continue(())));
+        assert_matches!(f, ParseFlow::Continue(()));
         assert_eq!(s, "start\nmiddle\n");
     }
 
@@ -1323,7 +1324,7 @@ mod string {
 
         let f = parse_str(&mut s, token, &txt);
 
-        assert!(matches!(f, ParseFlow::Continue(())));
+        assert_matches!(f, ParseFlow::Continue(()));
         assert_eq!(s, "start\nmiddle");
     }
 
@@ -1338,7 +1339,7 @@ mod string {
 
         let f = parse_str(&mut s, token, &txt);
 
-        assert!(matches!(
+        assert_matches!(
             f,
             ParseFlow::Break(ParseBreak::Err {
                 err: ExpressionError {
@@ -1347,7 +1348,7 @@ mod string {
                 },
                 flow: ParseErrFlow::Break(ParseErrBreak::InvalidTokenStream),
             }) if Rc::ptr_eq(&line, &txt)
-        ));
+        );
         assert_eq!(s, "start\n");
     }
 
@@ -1367,13 +1368,13 @@ mod string {
         let r = p.try_into_expr(&ns);
 
         let expr = some_or_fail!(ok_or_fail!(r));
-        assert!(matches!(
+        assert_matches!(
             expr,
             Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 0, end: 3 }, txt: line },
                 kind: ExpressionKind::Literal(Value::String(s)),
             } if s.as_ref() == "foo" && Rc::ptr_eq(&txt, &line)
-        ));
+        );
     }
 }
 
@@ -1390,10 +1391,10 @@ mod comment {
 
         let f = parse_block_comment(token, &txt);
 
-        assert!(matches!(
+        assert_matches!(
             f,
             ParseFlow::Break(ParseBreak::Complete(ExprEnd { lineno: 1, pos: 4 }))
-        ));
+        );
     }
 
     #[test]
@@ -1406,7 +1407,7 @@ mod comment {
 
         let f = parse_block_comment(token, &txt);
 
-        assert!(matches!(f, ParseFlow::Continue(())));
+        assert_matches!(f, ParseFlow::Continue(()));
     }
 
     #[test]
@@ -1419,7 +1420,7 @@ mod comment {
 
         let f = parse_block_comment(token, &txt);
 
-        assert!(matches!(
+        assert_matches!(
             f,
             ParseFlow::Break(ParseBreak::Err {
                 err: ExpressionError {
@@ -1430,7 +1431,7 @@ mod comment {
                 },
                 flow: ParseErrFlow::Break(ParseErrBreak::InvalidTokenStream),
             }) if Rc::ptr_eq(&line, &txt)
-        ));
+        );
     }
 
     #[test]
@@ -1443,7 +1444,7 @@ mod comment {
 
         let f = parse_block_comment(token, &txt);
 
-        assert!(matches!(
+        assert_matches!(
             f,
             ParseFlow::Break(ParseBreak::Err {
                 err: ExpressionError {
@@ -1452,7 +1453,7 @@ mod comment {
                 },
                 flow: ParseErrFlow::Break(ParseErrBreak::InvalidTokenStream),
             }) if Rc::ptr_eq(&line, &txt)
-        ));
+        );
     }
 
     #[test]
@@ -1515,13 +1516,13 @@ mod comment {
 
         let errs = err_or_fail!(r);
         assert_eq!(errs.len(), 1);
-        assert!(matches!(
+        assert_matches!(
             &errs[0],
             ExpressionError {
                 ctx: ExprCtx { span: TxtSpan { start: 0, end: 2 }, txt },
                 kind: ExpressionErrorKind::DatumExpected,
             } if txt.lineno == 1
-        ));
+        );
     }
 }
 
@@ -1553,7 +1554,7 @@ mod quote {
         let r = p.try_into_expr(&ns);
 
         let expr = some_or_fail!(ok_or_fail!(r));
-        assert!(matches!(
+        assert_matches!(
             expr,
             Expression {
                 ctx: ExprCtx {
@@ -1562,7 +1563,7 @@ mod quote {
                 },
                 kind: ExpressionKind::Literal(Value::Boolean(true)),
             } if Rc::ptr_eq(&txt, &line)
-        ));
+        );
     }
 
     #[test]
@@ -1590,7 +1591,7 @@ mod quote {
         let r = p.try_into_expr(&ns);
 
         let expr = some_or_fail!(ok_or_fail!(r));
-        assert!(matches!(
+        assert_matches!(
             expr,
             Expression {
                 ctx: ExprCtx {
@@ -1599,7 +1600,7 @@ mod quote {
                 },
                 kind: ExpressionKind::Literal(Value::Symbol(s)),
             } if Rc::ptr_eq(&txt, &line) && s.as_ref() == "foo"
-        ));
+        );
     }
 
     #[test]
@@ -1627,7 +1628,7 @@ mod quote {
         let r = p.try_into_expr(&ns);
 
         let expr = some_or_fail!(ok_or_fail!(r));
-        assert!(matches!(
+        assert_matches!(
             expr,
             Expression {
                 ctx: ExprCtx {
@@ -1636,7 +1637,7 @@ mod quote {
                 },
                 kind: ExpressionKind::Literal(Value::Pair(_)),
             } if Rc::ptr_eq(&txt, &line)
-        ));
+        );
         let value = extract_or_fail!(expr.kind, ExpressionKind::Literal);
         assert_eq!(value.as_datum().to_string(), "(quote #t)");
     }
@@ -1682,13 +1683,13 @@ mod quote {
 
         let errs = err_or_fail!(r);
         assert_eq!(errs.len(), 1);
-        assert!(matches!(
+        assert_matches!(
             &errs[0],
             ExpressionError {
                 ctx: ExprCtx { span: TxtSpan { start: 0, end: 10 }, txt },
                 kind: ExpressionErrorKind::DatumInvalid(ExpressionKind::Call { .. }),
             } if txt.lineno == 1
-        ));
+        );
     }
 
     #[test]
@@ -1717,13 +1718,13 @@ mod quote {
 
         let errs = err_or_fail!(r);
         assert_eq!(errs.len(), 1);
-        assert!(matches!(
+        assert_matches!(
             &errs[0],
             ExpressionError {
                 ctx: ExprCtx { span: TxtSpan { start: 0, end: 5 }, txt },
                 kind: ExpressionErrorKind::DatumInvalid(ExpressionKind::Variable(s)),
             } if txt.lineno == 1 && s.as_ref() == "foo"
-        ));
+        );
     }
 
     #[test]
@@ -1746,13 +1747,13 @@ mod quote {
 
         let errs = err_or_fail!(r);
         assert_eq!(errs.len(), 1);
-        assert!(matches!(
+        assert_matches!(
             &errs[0],
             ExpressionError {
                 ctx: ExprCtx { span: TxtSpan { start: 0, end: 2 }, txt },
                 kind: ExpressionErrorKind::DatumExpected,
             } if txt.lineno == 1
-        ));
+        );
     }
 
     #[test]
@@ -1782,7 +1783,7 @@ mod quote {
         let r = p.try_into_expr(&ns);
 
         let expr = some_or_fail!(ok_or_fail!(r));
-        assert!(matches!(
+        assert_matches!(
             expr,
             Expression {
                 ctx: ExprCtx {
@@ -1791,7 +1792,7 @@ mod quote {
                 },
                 kind: ExpressionKind::Literal(Value::Pair(_)),
             } if Rc::ptr_eq(&txt, &line)
-        ));
+        );
         let value = extract_or_fail!(expr.kind, ExpressionKind::Literal);
         // Shadowing `quote` must not affect datum construction inside an
         // already-quoted context; the inner value is still preserved, same
@@ -1826,7 +1827,7 @@ mod quote {
         let r = p.try_into_expr(&ns);
 
         let expr = some_or_fail!(ok_or_fail!(r));
-        assert!(matches!(
+        assert_matches!(
             expr,
             Expression {
                 ctx: ExprCtx {
@@ -1835,25 +1836,25 @@ mod quote {
                 },
                 kind: ExpressionKind::Call { .. },
             } if Rc::ptr_eq(&txt, &line)
-        ));
+        );
         let ExpressionKind::Call { proc, args } = expr.kind else {
             unreachable!();
         };
-        assert!(matches!(
+        assert_matches!(
             *proc,
             Expression {
                 kind: ExpressionKind::Variable(s),
                 ..
             } if s.as_ref() == SyntacticForm::QUOTE
-        ));
+        );
         assert_eq!(args.len(), 1);
-        assert!(matches!(
+        assert_matches!(
             &args[0],
             Expression {
                 kind: ExpressionKind::Literal(Value::Boolean(true)),
                 ..
             }
-        ));
+        );
     }
 
     #[test]
@@ -1912,13 +1913,13 @@ mod quote {
         // resolves, not whether `'` requires a following datum.
         let errs = err_or_fail!(r);
         assert_eq!(errs.len(), 1);
-        assert!(matches!(
+        assert_matches!(
             &errs[0],
             ExpressionError {
                 ctx: ExprCtx { span: TxtSpan { start: 0, end: 2 }, txt },
                 kind: ExpressionErrorKind::DatumExpected,
             } if txt.lineno == 1
-        ));
+        );
     }
 }
 
@@ -1938,15 +1939,15 @@ mod program {
 
         let f = parse_prg(&mut seq, token, &txt, &ns);
 
-        assert!(matches!(f, ParseFlow::Continue(())));
+        assert_matches!(f, ParseFlow::Continue(()));
         assert_eq!(seq.len(), 1);
-        assert!(matches!(
+        assert_matches!(
             &seq[0],
             Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 0, end: 3 }, txt: line },
                 kind: ExpressionKind::Literal(Value::Boolean(true)),
             } if Rc::ptr_eq(&txt, line)
-        ));
+        );
     }
 
     #[test]
@@ -1974,15 +1975,15 @@ mod program {
 
         let f = parse_prg(&mut seq, token, &txt, &ns);
 
-        assert!(matches!(f, ParseFlow::Continue(())));
+        assert_matches!(f, ParseFlow::Continue(()));
         assert_eq!(seq.len(), 3);
-        assert!(matches!(
+        assert_matches!(
             &seq[2],
             Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 6, end: 9 }, txt: line },
                 kind: ExpressionKind::Literal(Value::Boolean(true)),
             } if Rc::ptr_eq(&txt, line)
-        ));
+        );
     }
 
     #[test]
@@ -1998,7 +1999,7 @@ mod program {
 
         let f = parse_prg(&mut seq, token, &txt, &ns);
 
-        assert!(matches!(
+        assert_matches!(
             f,
             ParseFlow::Break(ParseBreak::New(
                 ParseNew {
@@ -2006,7 +2007,7 @@ mod program {
                     start: 1
                 }
             )) if seq.is_empty()
-        ));
+        );
         assert!(seq.is_empty());
     }
 
@@ -2023,7 +2024,7 @@ mod program {
 
         let f = parse_prg(&mut seq, token, &txt, &ns);
 
-        assert!(matches!(
+        assert_matches!(
             f,
             ParseFlow::Break(ParseBreak::Err {
                 err: ExpressionError {
@@ -2032,7 +2033,7 @@ mod program {
                 },
                 flow: ParseErrFlow::Break(ParseErrBreak::InvalidTokenStream),
             }) if Rc::ptr_eq(&line, &txt)
-        ));
+        );
         assert!(seq.is_empty());
     }
 
@@ -2052,13 +2053,13 @@ mod program {
         let prg: Sequence = ok_or_fail!(r);
         let seq = prg.iter().collect::<Vec<_>>();
         assert_eq!(seq.len(), 1);
-        assert!(matches!(
+        assert_matches!(
             &seq[0],
             Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 0, end: 3 }, txt: line },
                 kind: ExpressionKind::Literal(Value::Number(n)),
             } if n.to_string() == "24" && Rc::ptr_eq(&txt, line)
-        ));
+        );
     }
 
     #[test]
@@ -2068,7 +2069,7 @@ mod program {
         let r: Result<Sequence, InvalidParseError> = p.try_into();
 
         let err = err_or_fail!(r);
-        assert!(matches!(err, InvalidParseError::InvalidExprSource));
+        assert_matches!(err, InvalidParseError::InvalidExprSource);
     }
 
     #[test]
@@ -2078,7 +2079,7 @@ mod program {
         let r: Result<Sequence, InvalidParseError> = p.try_into();
 
         let err = err_or_fail!(r);
-        assert!(matches!(err, InvalidParseError::EndOfParse));
+        assert_matches!(err, InvalidParseError::EndOfParse);
     }
 }
 
@@ -2098,15 +2099,15 @@ mod data {
 
         let f = parse_data(&mut seq, token, &txt, &ns);
 
-        assert!(matches!(f, ParseFlow::Continue(())));
+        assert_matches!(f, ParseFlow::Continue(()));
         assert_eq!(seq.len(), 1);
-        assert!(matches!(
+        assert_matches!(
             &seq[0],
             Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 0, end: 3 }, txt: line },
                 kind: ExpressionKind::Literal(Value::Boolean(true)),
             } if Rc::ptr_eq(&txt, line)
-        ));
+        );
     }
 
     #[test]
@@ -2134,15 +2135,15 @@ mod data {
 
         let f = parse_data(&mut seq, token, &txt, &ns);
 
-        assert!(matches!(f, ParseFlow::Continue(())));
+        assert_matches!(f, ParseFlow::Continue(()));
         assert_eq!(seq.len(), 3);
-        assert!(matches!(
+        assert_matches!(
             &seq[2],
             Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 6, end: 9 }, txt: line },
                 kind: ExpressionKind::Literal(Value::Boolean(true)),
             } if Rc::ptr_eq(&txt, line)
-        ));
+        );
     }
 
     #[test]
@@ -2158,7 +2159,7 @@ mod data {
 
         let f = parse_data(&mut seq, token, &txt, &ns);
 
-        assert!(matches!(
+        assert_matches!(
             f,
             ParseFlow::Break(ParseBreak::New(
                 ParseNew {
@@ -2166,7 +2167,7 @@ mod data {
                     start: 1
                 }
             )) if seq.is_empty()
-        ));
+        );
         assert!(seq.is_empty());
     }
 
@@ -2183,7 +2184,7 @@ mod data {
 
         let f = parse_data(&mut seq, token, &txt, &ns);
 
-        assert!(matches!(
+        assert_matches!(
             f,
             ParseFlow::Break(ParseBreak::Err {
                 err: ExpressionError {
@@ -2192,7 +2193,7 @@ mod data {
                 },
                 flow: ParseErrFlow::Break(ParseErrBreak::InvalidTokenStream),
             }) if Rc::ptr_eq(&line, &txt)
-        ));
+        );
         assert!(seq.is_empty());
     }
 
@@ -2212,13 +2213,13 @@ mod data {
         let prg: Sequence = ok_or_fail!(r);
         let seq = prg.iter().collect::<Vec<_>>();
         assert_eq!(seq.len(), 1);
-        assert!(matches!(
+        assert_matches!(
             &seq[0],
             Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 0, end: 3 }, txt: line },
                 kind: ExpressionKind::Literal(Value::Number(n)),
             } if n.to_string() == "24" && Rc::ptr_eq(&txt, line)
-        ));
+        );
     }
 }
 
@@ -2250,16 +2251,16 @@ mod merge {
 
         let r = p.merge(other, &ns);
 
-        assert!(matches!(r, Ok(MergeFlow::Continue(()))));
+        assert_matches!(r, Ok(MergeFlow::Continue(())));
         let seq = extract_or_fail!(p, ParseNode::Prg);
         assert_eq!(seq.len(), 2);
-        assert!(matches!(
+        assert_matches!(
             &seq[1],
             Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 0, end: 3 }, txt: line },
                 kind: ExpressionKind::Variable(s),
             } if s.as_ref() == "foo" && Rc::ptr_eq(&txt, line)
-        ));
+        );
     }
 
     #[test]
@@ -2286,13 +2287,13 @@ mod merge {
 
         let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
         assert_eq!(errs.len(), 1);
-        assert!(matches!(
+        assert_matches!(
             &errs[0],
             ExpressionError {
                 ctx: ExprCtx { span: TxtSpan { start: 0, end: 3 }, txt: line },
                 kind: ExpressionErrorKind::ByteVectorInvalidItem(ExpressionKind::Variable(s)),
             } if s.as_ref() == "foo" && Rc::ptr_eq(&txt, line)
-        ));
+        );
     }
 
     #[test]
@@ -2320,16 +2321,16 @@ mod merge {
 
         let r = p.merge(other, &ns);
 
-        assert!(matches!(r, Ok(MergeFlow::Continue(()))));
+        assert_matches!(r, Ok(MergeFlow::Continue(())));
         let seq = extract_or_fail!(p, ParseNode::Data);
         assert_eq!(seq.len(), 2);
-        assert!(matches!(
+        assert_matches!(
             &seq[1],
             Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 0, end: 3 }, txt: line },
                 kind: ExpressionKind::Variable(s),
             } if s.as_ref() == "foo" && Rc::ptr_eq(&txt, line)
-        ));
+        );
     }
 
     #[test]
@@ -2356,13 +2357,13 @@ mod merge {
 
         let errs = extract_or_fail!(err_or_fail!(r), ParserError::Syntax).0;
         assert_eq!(errs.len(), 1);
-        assert!(matches!(
+        assert_matches!(
             &errs[0],
             ExpressionError {
                 ctx: ExprCtx { span: TxtSpan { start: 0, end: 3 }, txt: line },
                 kind: ExpressionErrorKind::ByteVectorInvalidItem(ExpressionKind::Variable(s)),
             } if s.as_ref() == "foo" && Rc::ptr_eq(&txt, line)
-        ));
+        );
     }
 
     #[test]
@@ -2411,10 +2412,10 @@ mod merge {
 
         let r = p.merge(other, &ns);
 
-        assert!(matches!(
+        assert_matches!(
             r,
             Err(ParserError::Invalid(InvalidParseError::InvalidExprTarget))
-        ));
+        );
     }
 
     #[test]
@@ -2442,9 +2443,9 @@ mod merge {
 
         let r = p.merge(other, &ns);
 
-        assert!(matches!(r, Ok(MergeFlow::Break(()))));
+        assert_matches!(r, Ok(MergeFlow::Break(())));
         let inner = some_or_fail!(extract_or_fail!(p.mode, ParseMode::CommentDatum));
-        assert!(matches!(
+        assert_matches!(
             inner,
             Expression {
                 ctx: ExprCtx {
@@ -2453,7 +2454,7 @@ mod merge {
                 },
                 kind: ExpressionKind::Literal(Value::Symbol(s)),
             } if s.as_ref() == "foo" && Rc::ptr_eq(&txt, &line)
-        ));
+        );
     }
 
     #[test]
@@ -2487,9 +2488,9 @@ mod merge {
 
         let r = p.merge(other, &ns);
 
-        assert!(matches!(r, Ok(MergeFlow::Break(()))));
+        assert_matches!(r, Ok(MergeFlow::Break(())));
         let inner = some_or_fail!(extract_or_fail!(p.mode, ParseMode::CommentDatum));
-        assert!(matches!(
+        assert_matches!(
             inner,
             Expression {
                 ctx: ExprCtx {
@@ -2498,7 +2499,7 @@ mod merge {
                 },
                 kind: ExpressionKind::Literal(Value::Pair(_)),
             } if Rc::ptr_eq(&txt, &line)
-        ));
+        );
         let value = extract_or_fail!(inner.kind, ExpressionKind::Literal);
         assert_eq!(value.as_datum().to_string(), "(foo)");
     }
@@ -2528,9 +2529,9 @@ mod merge {
 
         let r = p.merge(other, &ns);
 
-        assert!(matches!(r, Ok(MergeFlow::Break(()))));
+        assert_matches!(r, Ok(MergeFlow::Break(())));
         let inner = some_or_fail!(extract_or_fail!(p.mode, ParseMode::CommentDatum));
-        assert!(matches!(
+        assert_matches!(
             inner,
             Expression {
                 ctx: ExprCtx {
@@ -2539,7 +2540,7 @@ mod merge {
                 },
                 kind: ExpressionKind::Literal(Value::Null),
             } if Rc::ptr_eq(&txt, &line)
-        ));
+        );
         let value = extract_or_fail!(inner.kind, ExpressionKind::Literal);
         assert_eq!(value.as_datum().to_string(), "()");
     }
@@ -2572,14 +2573,14 @@ mod merge {
 
         let r = p.merge(other, &ns);
 
-        assert!(matches!(r, Ok(MergeFlow::Break(()))));
+        assert_matches!(r, Ok(MergeFlow::Break(())));
         let ParseMode::Quote {
             inner: Some(inner), ..
         } = p.mode
         else {
             unreachable!();
         };
-        assert!(matches!(
+        assert_matches!(
             inner,
             Expression {
                 ctx: ExprCtx {
@@ -2588,7 +2589,7 @@ mod merge {
                 },
                 kind: ExpressionKind::Literal(Value::Symbol(s)),
             } if s.as_ref() == "foo" && Rc::ptr_eq(&txt, &line)
-        ));
+        );
     }
 
     #[test]
@@ -2625,14 +2626,14 @@ mod merge {
 
         let r = p.merge(other, &ns);
 
-        assert!(matches!(r, Ok(MergeFlow::Break(()))));
+        assert_matches!(r, Ok(MergeFlow::Break(())));
         let ParseMode::Quote {
             inner: Some(inner), ..
         } = p.mode
         else {
             unreachable!();
         };
-        assert!(matches!(
+        assert_matches!(
             inner,
             Expression {
                 ctx: ExprCtx {
@@ -2641,7 +2642,7 @@ mod merge {
                 },
                 kind: ExpressionKind::Literal(Value::Pair(_)),
             } if Rc::ptr_eq(&txt, &line)
-        ));
+        );
         let value = extract_or_fail!(inner.kind, ExpressionKind::Literal);
         assert_eq!(value.as_datum().to_string(), "(foo)");
     }
@@ -2674,14 +2675,14 @@ mod merge {
 
         let r = p.merge(other, &ns);
 
-        assert!(matches!(r, Ok(MergeFlow::Break(()))));
+        assert_matches!(r, Ok(MergeFlow::Break(())));
         let ParseMode::Quote {
             inner: Some(inner), ..
         } = p.mode
         else {
             unreachable!();
         };
-        assert!(matches!(
+        assert_matches!(
             inner,
             Expression {
                 ctx: ExprCtx {
@@ -2690,7 +2691,7 @@ mod merge {
                 },
                 kind: ExpressionKind::Literal(Value::Null),
             } if Rc::ptr_eq(&txt, &line)
-        ));
+        );
         let value = extract_or_fail!(inner.kind, ExpressionKind::Literal);
         assert_eq!(value.as_datum().to_string(), "()");
     }
@@ -2723,10 +2724,10 @@ mod merge {
 
         let r = p.merge(other, &ns);
 
-        assert!(matches!(
+        assert_matches!(
             r,
             Err(ParserError::Invalid(InvalidParseError::InvalidExprTarget))
-        ));
+        );
     }
 
     #[test]
@@ -2754,10 +2755,10 @@ mod merge {
 
         let r = p.merge(other, &ns);
 
-        assert!(matches!(
+        assert_matches!(
             r,
             Err(ParserError::Invalid(InvalidParseError::InvalidExprTarget))
-        ));
+        );
     }
 
     #[test]
@@ -2791,10 +2792,10 @@ mod merge {
 
         let r = p.merge(other, &ns);
 
-        assert!(matches!(r, Ok(MergeFlow::Continue(()))));
+        assert_matches!(r, Ok(MergeFlow::Continue(())));
         let seq = extract_or_fail!(p.mode, ParseMode::ByteVector);
         assert_eq!(seq.len(), 2);
-        assert!(matches!(
+        assert_matches!(
             &seq[1],
             Expression {
                 ctx: ExprCtx {
@@ -2803,7 +2804,7 @@ mod merge {
                 },
                 kind: ExpressionKind::Literal(Value::Symbol(s)),
             } if s.as_ref() == "foo" && Rc::ptr_eq(&txt, line)
-        ));
+        );
     }
 
     #[test]
@@ -2837,10 +2838,10 @@ mod merge {
 
         let r = p.merge(other, &ns);
 
-        assert!(matches!(r, Ok(MergeFlow::Continue(()))));
+        assert_matches!(r, Ok(MergeFlow::Continue(())));
         let seq = extract_or_fail!(p.mode, ParseMode::Vector);
         assert_eq!(seq.len(), 2);
-        assert!(matches!(
+        assert_matches!(
             &seq[1],
             Expression {
                 ctx: ExprCtx {
@@ -2849,7 +2850,7 @@ mod merge {
                 },
                 kind: ExpressionKind::Literal(Value::Symbol(s)),
             } if s.as_ref() == "foo" && Rc::ptr_eq(&txt, line)
-        ));
+        );
     }
 }
 
@@ -2872,13 +2873,13 @@ mod nodeutil {
         let o = p.into_continuation_unsupported();
 
         let err = some_or_fail!(o);
-        assert!(matches!(
+        assert_matches!(
             &err,
             ExpressionError {
                 ctx: ExprCtx { span: TxtSpan { start: 3, end: 19 }, txt },
                 kind: ExpressionErrorKind::ByteVectorUnterminated,
             } if txt.lineno == 1
-        ));
+        );
     }
 
     #[test]
@@ -2892,13 +2893,13 @@ mod nodeutil {
         let o = p.into_continuation_unsupported();
 
         let err = some_or_fail!(o);
-        assert!(matches!(
+        assert_matches!(
             &err,
             ExpressionError {
                 ctx: ExprCtx { span: TxtSpan { start: 3, end: 19 }, txt },
                 kind: ExpressionErrorKind::StrUnterminated,
             } if txt.lineno == 1
-        ));
+        );
     }
 
     #[test]
@@ -2908,13 +2909,13 @@ mod nodeutil {
         let o = p.into_continuation_unsupported();
 
         let err = some_or_fail!(o);
-        assert!(matches!(
+        assert_matches!(
             &err,
             ExpressionError {
                 ctx: ExprCtx { span: TxtSpan { start: 3, end: 19 }, txt },
                 kind: ExpressionErrorKind::BlockCommentUnterminated,
             } if txt.lineno == 1
-        ));
+        );
     }
 
     #[test]
@@ -2924,13 +2925,13 @@ mod nodeutil {
         let o = p.into_continuation_unsupported();
 
         let err = some_or_fail!(o);
-        assert!(matches!(
+        assert_matches!(
             &err,
             ExpressionError {
                 ctx: ExprCtx { span: TxtSpan { start: 3, end: 19 }, txt },
                 kind: ExpressionErrorKind::DatumExpected,
             } if txt.lineno == 1
-        ));
+        );
     }
 
     #[test]
@@ -2947,13 +2948,13 @@ mod nodeutil {
         let o = p.into_continuation_unsupported();
 
         let err = some_or_fail!(o);
-        assert!(matches!(
+        assert_matches!(
             &err,
             ExpressionError {
                 ctx: ExprCtx { span: TxtSpan { start: 3, end: 19 }, txt },
                 kind: ExpressionErrorKind::IdentifierUnterminated,
             } if txt.lineno == 1
-        ));
+        );
     }
 
     #[test]
@@ -2990,13 +2991,13 @@ mod nodeutil {
         let o = p.into_continuation_unsupported();
 
         let err = some_or_fail!(o);
-        assert!(matches!(
+        assert_matches!(
             &err,
             ExpressionError {
                 ctx: ExprCtx { span: TxtSpan { start: 3, end: 19 }, txt },
                 kind: ExpressionErrorKind::ListUnterminated,
             } if txt.lineno == 1
-        ));
+        );
     }
 
     #[test]
@@ -3013,13 +3014,13 @@ mod nodeutil {
         let o = p.into_continuation_unsupported();
 
         let err = some_or_fail!(o);
-        assert!(matches!(
+        assert_matches!(
             &err,
             ExpressionError {
                 ctx: ExprCtx { span: TxtSpan { start: 3, end: 19 }, txt },
                 kind: ExpressionErrorKind::DatumExpected,
             } if txt.lineno == 1
-        ));
+        );
     }
 
     #[test]
@@ -3029,13 +3030,13 @@ mod nodeutil {
         let o = p.into_continuation_unsupported();
 
         let err = some_or_fail!(o);
-        assert!(matches!(
+        assert_matches!(
             &err,
             ExpressionError {
                 ctx: ExprCtx { span: TxtSpan { start: 3, end: 19 }, txt },
                 kind: ExpressionErrorKind::VectorUnterminated,
             } if txt.lineno == 1
-        ));
+        );
     }
 
     #[test]
@@ -3050,7 +3051,7 @@ mod nodeutil {
         let o = p.into_expr_node(ExprEnd { lineno: 1, pos: 8 });
 
         let exp = some_or_fail!(o);
-        assert!(matches!(
+        assert_matches!(
             exp,
             ExprNode {
                 ctx: ExprCtx {
@@ -3059,7 +3060,7 @@ mod nodeutil {
                 },
                 mode: ParseMode::StringLiteral(s)
             } if s == "foo" && Rc::ptr_eq(&txt, &line)
-        ));
+        );
     }
 
     #[test]
@@ -3074,7 +3075,7 @@ mod nodeutil {
         let o = p.into_expr_node(ExprEnd { lineno: 2, pos: 8 });
 
         let exp = some_or_fail!(o);
-        assert!(matches!(
+        assert_matches!(
             exp,
             ExprNode {
                 ctx: ExprCtx {
@@ -3083,7 +3084,7 @@ mod nodeutil {
                 },
                 mode: ParseMode::StringLiteral(s)
             } if s == "foo" && Rc::ptr_eq(&txt, &line)
-        ));
+        );
     }
 
     #[test]

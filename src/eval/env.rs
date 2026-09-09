@@ -114,7 +114,7 @@ impl Namespace<'_> {
 mod tests {
     use super::*;
     use crate::testutil::some_or_fail;
-    use std::ptr;
+    use std::{assert_matches, ptr};
 
     #[test]
     fn empty_lookup() {
@@ -134,7 +134,7 @@ mod tests {
 
         let v = b.lookup("foo");
 
-        assert!(matches!(some_or_fail!(v), Value::Boolean(true)));
+        assert_matches!(some_or_fail!(v), Value::Boolean(true));
         assert!(b.bound("foo"));
     }
 
@@ -148,12 +148,12 @@ mod tests {
 
         let v = b.lookup("bar");
 
-        assert!(matches!(some_or_fail!(v), Value::String(s) if s.as_ref() == "beef"));
+        assert_matches!(some_or_fail!(v), Value::String(s) if s.as_ref() == "beef");
         assert!(b.bound("bar"));
 
         let v = b.lookup("foo");
 
-        assert!(matches!(some_or_fail!(v), Value::Boolean(true)));
+        assert_matches!(some_or_fail!(v), Value::Boolean(true));
         assert!(b.bound("foo"));
 
         let v = b.lookup("baz");

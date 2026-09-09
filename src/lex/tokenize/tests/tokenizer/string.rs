@@ -1,4 +1,5 @@
 use super::*;
+use std::assert_matches;
 
 #[test]
 fn empty() {
@@ -13,13 +14,13 @@ fn empty() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::String(txt),
             span: TxtSpan { start: 0, end: 2 },
         } if txt.is_empty()
-    ));
+    );
 }
 
 #[test]
@@ -35,13 +36,13 @@ fn alphanumeric() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::String(txt),
             span: TxtSpan { start: 0, end: 11 },
         } if txt == "abc123!@#"
-    ));
+    );
 }
 
 #[test]
@@ -57,13 +58,13 @@ fn raw_extended_and_higher_char() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::String(txt),
             span: TxtSpan { start: 0, end: 17 },
         } if txt == "λ 🦀 ␁ �"
-    ));
+    );
 }
 
 #[test]
@@ -79,13 +80,13 @@ fn contains_verbatim_identifier() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::String(txt),
             span: TxtSpan { start: 0, end: 20 },
         } if txt == "foo |verbatim| bar"
-    ));
+    );
 }
 
 #[test]
@@ -101,13 +102,13 @@ fn raw_escape_sequences() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::String(txt),
             span: TxtSpan { start: 0, end: 45 },
         } if txt == "a:\x07, b:\x08, d:\x7f, e:\x1b, n:\n, 0:\0, r:\r, t:\t, v:|"
-    ));
+    );
 }
 
 #[test]
@@ -123,13 +124,13 @@ fn escape_sequences() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::String(txt),
             span: TxtSpan { start: 0, end: 46 },
         } if txt == "a:\x07, b:\x08, n:\n, r:\r, t:\t, q:\", s:\\, v:|"
-    ));
+    );
 }
 
 #[test]
@@ -145,13 +146,13 @@ fn whitespace_escape() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::String(txt),
             span: TxtSpan { start: 0, end: 12 },
         } if txt == "foo   bar"
-    ));
+    );
 }
 
 #[test]
@@ -169,13 +170,13 @@ fn hex_escape_sequences() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::String(txt),
             span: TxtSpan { start: 0, end: 93 },
         } if txt == "a:\x07, b:\x08, d:\x7f, e:\x1b, n:\n, 0:\0, r:\r, t:\t, q:\", s:\\, v:|"
-    ));
+    );
 }
 
 #[test]
@@ -191,13 +192,13 @@ fn hex_case_insensitive() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::String(txt),
             span: TxtSpan { start: 0, end: 13 },
         } if txt == "J J"
-    ));
+    );
 }
 
 #[test]
@@ -213,13 +214,13 @@ fn higher_plane_raw() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::String(txt),
             span: TxtSpan { start: 0, end: 15 },
         } if txt == "\u{fff9} \u{e0001} \u{100001}"
-    ));
+    );
 }
 
 #[test]
@@ -235,13 +236,13 @@ fn higher_plane_hex() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::String(txt),
             span: TxtSpan { start: 0, end: 28 },
         } if txt == "\u{fff9} \u{e0001} \u{100001}"
-    ));
+    );
 }
 
 #[test]
@@ -255,15 +256,15 @@ fn invalid_escape() {
 
     let (r, c) = t.extract();
 
-    assert!(matches!(c, Some(TokenContinuation::SubstringError)));
+    assert_matches!(c, Some(TokenContinuation::SubstringError));
     let err = err_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         err,
         TokenError {
             kind: TokenErrorKind::StringEscapeInvalid { at: 1, ch: 'B' },
             span: TxtSpan { start: 1, end: 3 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -277,15 +278,15 @@ fn hex_sign_invalid() {
 
     let (r, c) = t.extract();
 
-    assert!(matches!(c, Some(TokenContinuation::SubstringError)));
+    assert_matches!(c, Some(TokenContinuation::SubstringError));
     let err = err_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         err,
         TokenError {
             kind: TokenErrorKind::StringExpectedHex { at: 1 },
             span: TxtSpan { start: 1, end: 6 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -299,15 +300,15 @@ fn hex_too_large() {
 
     let (r, c) = t.extract();
 
-    assert!(matches!(c, Some(TokenContinuation::SubstringError)));
+    assert_matches!(c, Some(TokenContinuation::SubstringError));
     let err = err_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         err,
         TokenError {
             kind: TokenErrorKind::StringInvalidHex { at: 1 },
             span: TxtSpan { start: 1, end: 12 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -321,15 +322,15 @@ fn hex_malformed() {
 
     let (r, c) = t.extract();
 
-    assert!(matches!(c, Some(TokenContinuation::SubstringError)));
+    assert_matches!(c, Some(TokenContinuation::SubstringError));
     let err = err_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         err,
         TokenError {
             kind: TokenErrorKind::StringExpectedHex { at: 1 },
             span: TxtSpan { start: 1, end: 11 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -343,15 +344,15 @@ fn hex_unterminated() {
 
     let (r, c) = t.extract();
 
-    assert!(matches!(c, Some(TokenContinuation::SubstringError)));
+    assert_matches!(c, Some(TokenContinuation::SubstringError));
     let err = err_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         err,
         TokenError {
             kind: TokenErrorKind::StringUnterminatedHex { at: 1 },
             span: TxtSpan { start: 1, end: 6 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -369,13 +370,13 @@ fn discard() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::StringDiscard,
             span: TxtSpan { start: 11, end: 24 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -391,13 +392,13 @@ fn begin() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::StringBegin { s, line_cont: false },
             span: TxtSpan { start: 0, end: 17 },
         } if s == "beginning string"
-    ));
+    );
 }
 
 #[test]
@@ -413,13 +414,13 @@ fn begin_with_line_continuation() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::StringBegin { s, line_cont: true },
             span: TxtSpan { start: 0, end: 18 },
         } if s == "beginning string"
-    ));
+    );
 }
 
 #[test]
@@ -435,13 +436,13 @@ fn begin_with_line_continuation_includes_leading_whitespace() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::StringBegin { s, line_cont: true },
             span: TxtSpan { start: 0, end: 22 },
         } if s == "beginning string    "
-    ));
+    );
 }
 
 #[test]
@@ -457,13 +458,13 @@ fn begin_with_line_continuation_excludes_trailing_whitespace() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::StringBegin { s, line_cont: true },
             span: TxtSpan { start: 0, end: 22 },
         } if s == "beginning string"
-    ));
+    );
 }
 
 #[test]
@@ -479,13 +480,13 @@ fn begin_only_counts_final_slash_as_line_continuation() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::StringBegin { s, line_cont: true },
             span: TxtSpan { start: 0, end: 26 },
         } if s == "beginning string    "
-    ));
+    );
 }
 
 #[test]
@@ -501,13 +502,13 @@ fn fragment() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::StringFragment { s, line_cont: false },
             span: TxtSpan { start: 0, end: 16 },
         } if s == "continued string"
-    ));
+    );
 }
 
 #[test]
@@ -523,13 +524,13 @@ fn fragment_includes_whitespace() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::StringFragment { s, line_cont: false },
             span: TxtSpan { start: 0, end: 19 },
         } if s == "   continued string"
-    ));
+    );
 }
 
 #[test]
@@ -545,13 +546,13 @@ fn fragment_with_line_continuation() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::StringFragment { s, line_cont: true },
             span: TxtSpan { start: 0, end: 24 },
         } if s == "continued string    "
-    ));
+    );
 }
 
 #[test]
@@ -567,13 +568,13 @@ fn fragment_from_string_continuation() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::StringFragment { s, line_cont: false },
             span: TxtSpan { start: 0, end: 16 },
         } if s == "continued string"
-    ));
+    );
 }
 
 #[test]
@@ -589,13 +590,13 @@ fn fragment_from_string_continuation_ignores_leading_whitespace() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::StringFragment { s, line_cont: false },
             span: TxtSpan { start: 0, end: 22 },
         } if s == "continued string   "
-    ));
+    );
 }
 
 #[test]
@@ -611,13 +612,13 @@ fn fragment_from_string_continuation_all_whitespace() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::StringFragment { s, line_cont: false },
             span: TxtSpan { start: 0, end: 6 },
         } if s.is_empty()
-    ));
+    );
 }
 
 #[test]
@@ -633,13 +634,13 @@ fn fragment_from_string_continuation_to_string_continuation() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::StringFragment { s, line_cont: true },
             span: TxtSpan { start: 0, end: 27 },
         } if s == "continued string    "
-    ));
+    );
 }
 
 #[test]
@@ -655,13 +656,13 @@ fn end() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::StringEnd(txt),
             span: TxtSpan { start: 0, end: 11 },
         } if txt == "end string"
-    ));
+    );
 }
 
 #[test]
@@ -677,13 +678,13 @@ fn end_includes_whitespace() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::StringEnd(txt),
             span: TxtSpan { start: 0, end: 16 },
         } if txt == "   end string  "
-    ));
+    );
 }
 
 #[test]
@@ -699,13 +700,13 @@ fn end_with_escaped_whitespace() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::StringEnd(txt),
             span: TxtSpan { start: 0, end: 19 },
         } if txt == "end string      "
-    ));
+    );
 }
 
 #[test]
@@ -721,13 +722,13 @@ fn end_from_string_continuation() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::StringEnd(txt),
             span: TxtSpan { start: 0, end: 11 },
         } if txt == "end string"
-    ));
+    );
 }
 
 #[test]
@@ -743,13 +744,13 @@ fn end_from_string_continuation_ignores_leading_whitespace() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::StringEnd(txt),
             span: TxtSpan { start: 0, end: 17 },
         } if txt == "end string   "
-    ));
+    );
 }
 
 #[test]
@@ -765,11 +766,11 @@ fn end_from_string_continuation_all_whitespace() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::StringEnd(txt),
             span: TxtSpan { start: 0, end: 7 },
         } if txt.is_empty()
-    ));
+    );
 }

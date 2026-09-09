@@ -1,4 +1,5 @@
 use super::*;
+use std::assert_matches;
 
 #[test]
 fn true_short() {
@@ -13,13 +14,13 @@ fn true_short() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::Boolean(true),
             span: TxtSpan { start: 0, end: 2 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -35,13 +36,13 @@ fn true_long() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::Boolean(true),
             span: TxtSpan { start: 0, end: 5 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -57,13 +58,13 @@ fn true_uppercase() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::Boolean(true),
             span: TxtSpan { start: 0, end: 5 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -79,13 +80,13 @@ fn true_malformed() {
 
     assert!(c.is_none());
     let err = err_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         err,
         TokenError {
             kind: TokenErrorKind::BooleanExpected(true),
             span: TxtSpan { start: 0, end: 8 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -101,13 +102,13 @@ fn false_short() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::Boolean(false),
             span: TxtSpan { start: 0, end: 2 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -123,13 +124,13 @@ fn false_long() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::Boolean(false),
             span: TxtSpan { start: 0, end: 6 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -145,13 +146,13 @@ fn false_uppercase() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::Boolean(false),
             span: TxtSpan { start: 0, end: 6 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -167,11 +168,11 @@ fn false_malformed() {
 
     assert!(c.is_none());
     let err = err_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         err,
         TokenError {
             kind: TokenErrorKind::BooleanExpected(false),
             span: TxtSpan { start: 0, end: 5 },
         }
-    ));
+    );
 }

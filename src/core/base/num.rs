@@ -156,6 +156,7 @@ mod tests {
         Exception,
         testutil::{TestEnv, err_or_fail, extract_or_fail, ok_or_fail},
     };
+    use std::assert_matches;
 
     #[test]
     fn is_even_integer() {
@@ -165,12 +166,12 @@ mod tests {
         let r = is_even(&args, &env.new_frame());
 
         let v = ok_or_fail!(r);
-        assert!(matches!(v, Value::Boolean(true)));
+        assert_matches!(v, Value::Boolean(true));
 
         let r = is_odd(&args, &env.new_frame());
 
         let v = ok_or_fail!(r);
-        assert!(matches!(v, Value::Boolean(false)));
+        assert_matches!(v, Value::Boolean(false));
     }
 
     #[test]
@@ -181,12 +182,12 @@ mod tests {
         let r = is_even(&args, &env.new_frame());
 
         let v = ok_or_fail!(r);
-        assert!(matches!(v, Value::Boolean(true)));
+        assert_matches!(v, Value::Boolean(true));
 
         let r = is_odd(&args, &env.new_frame());
 
         let v = ok_or_fail!(r);
-        assert!(matches!(v, Value::Boolean(false)));
+        assert_matches!(v, Value::Boolean(false));
     }
 
     #[test]
@@ -219,12 +220,12 @@ mod tests {
         let r = is_even(&args, &env.new_frame());
 
         let v = ok_or_fail!(r);
-        assert!(matches!(v, Value::Boolean(false)));
+        assert_matches!(v, Value::Boolean(false));
 
         let r = is_odd(&args, &env.new_frame());
 
         let v = ok_or_fail!(r);
-        assert!(matches!(v, Value::Boolean(true)));
+        assert_matches!(v, Value::Boolean(true));
     }
 
     #[test]
@@ -235,12 +236,12 @@ mod tests {
         let r = is_even(&args, &env.new_frame());
 
         let v = ok_or_fail!(r);
-        assert!(matches!(v, Value::Boolean(false)));
+        assert_matches!(v, Value::Boolean(false));
 
         let r = is_odd(&args, &env.new_frame());
 
         let v = ok_or_fail!(r);
-        assert!(matches!(v, Value::Boolean(true)));
+        assert_matches!(v, Value::Boolean(true));
     }
 
     #[test]

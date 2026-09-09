@@ -8,6 +8,7 @@ mod quoting;
 mod string;
 
 use super::*;
+use std::assert_matches;
 
 #[test]
 fn left_paren() {
@@ -22,13 +23,13 @@ fn left_paren() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::ParenLeft,
             span: TxtSpan { start: 0, end: 1 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -44,13 +45,13 @@ fn right_paren() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::ParenRight,
             span: TxtSpan { start: 0, end: 1 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -66,13 +67,13 @@ fn pair_joiner() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::PairJoiner,
             span: TxtSpan { start: 0, end: 1 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -88,13 +89,13 @@ fn pair_joiner_with_whitespace() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::PairJoiner,
             span: TxtSpan { start: 1, end: 2 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -110,13 +111,13 @@ fn pair_joiner_prefixed_is_identifier() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::Identifier(txt),
             span: TxtSpan { start: 0, end: 2 },
         } if txt == "a."
-    ));
+    );
 }
 
 #[test]
@@ -132,13 +133,13 @@ fn pair_joiner_postfixed_is_identifier() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::Identifier(txt),
             span: TxtSpan { start: 0, end: 2 },
         } if txt == ".a"
-    ));
+    );
 }
 
 #[test]
@@ -154,13 +155,13 @@ fn pair_joiner_followed_by_delimiter() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::PairJoiner,
             span: TxtSpan { start: 0, end: 1 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -176,13 +177,13 @@ fn token_ends_at_whitespace() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::ParenLeft,
             span: TxtSpan { start: 0, end: 1 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -198,13 +199,13 @@ fn token_ends_at_delimiter() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::ParenLeft,
             span: TxtSpan { start: 0, end: 1 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -220,13 +221,13 @@ fn comment() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::Comment,
             span: TxtSpan { start: 0, end: 1 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -242,11 +243,11 @@ fn comment_with_text() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::Comment,
             span: TxtSpan { start: 0, end: 34 },
         }
-    ));
+    );
 }

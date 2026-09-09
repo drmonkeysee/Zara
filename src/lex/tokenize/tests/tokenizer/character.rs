@@ -1,4 +1,5 @@
 use super::*;
+use std::assert_matches;
 
 #[test]
 fn ascii_literal() {
@@ -13,13 +14,13 @@ fn ascii_literal() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::Character('a'),
             span: TxtSpan { start: 0, end: 3 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -35,13 +36,13 @@ fn ascii_uppercase_literal() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::Character('A'),
             span: TxtSpan { start: 0, end: 3 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -57,13 +58,13 @@ fn extended_literal() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::Character('λ'),
             span: TxtSpan { start: 0, end: 4 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -79,13 +80,13 @@ fn emoji_literal() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::Character('🦀'),
             span: TxtSpan { start: 0, end: 6 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -106,13 +107,13 @@ fn space_literal() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::Character(' '),
             span: TxtSpan { start: 0, end: 3 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -128,13 +129,13 @@ fn tab_literal() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::Character('\t'),
             span: TxtSpan { start: 0, end: 3 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -165,13 +166,13 @@ fn name_does_not_match_uppercase() {
 
     assert!(c.is_none());
     let err = err_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         err,
         TokenError {
             kind: TokenErrorKind::CharacterExpected,
             span: TxtSpan { start: 0, end: 7 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -187,13 +188,13 @@ fn space_followed_by_alpha() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::Character(' '),
             span: TxtSpan { start: 0, end: 3 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -209,13 +210,13 @@ fn alpha_followed_by_alpha() {
 
     assert!(c.is_none());
     let err = err_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         err,
         TokenError {
             kind: TokenErrorKind::CharacterExpected,
             span: TxtSpan { start: 0, end: 4 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -231,13 +232,13 @@ fn emoji_followed_by_alpha() {
 
     assert!(c.is_none());
     let err = err_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         err,
         TokenError {
             kind: TokenErrorKind::CharacterExpected,
             span: TxtSpan { start: 0, end: 7 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -253,13 +254,13 @@ fn alpha_followed_by_delimiter() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::Character('a'),
             span: TxtSpan { start: 0, end: 3 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -275,13 +276,13 @@ fn letter_x_is_not_hex() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::Character('x'),
             span: TxtSpan { start: 0, end: 3 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -297,13 +298,13 @@ fn hex_zero() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::Character('\0'),
             span: TxtSpan { start: 0, end: 4 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -319,13 +320,13 @@ fn hex_lowercase() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::Character('\n'),
             span: TxtSpan { start: 0, end: 4 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -341,13 +342,13 @@ fn hex_uppercase() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::Character('\n'),
             span: TxtSpan { start: 0, end: 4 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -363,13 +364,13 @@ fn hex_uppercase_indicator() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::Character('\n'),
             span: TxtSpan { start: 0, end: 4 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -395,13 +396,13 @@ fn hex_sign_invalid() {
 
     assert!(c.is_none());
     let err = err_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         err,
         TokenError {
             kind: TokenErrorKind::CharacterExpectedHex,
             span: TxtSpan { start: 0, end: 5 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -417,13 +418,13 @@ fn hex_too_large() {
 
     assert!(c.is_none());
     let err = err_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         err,
         TokenError {
             kind: TokenErrorKind::CharacterInvalidHex,
             span: TxtSpan { start: 0, end: 11 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -439,13 +440,13 @@ fn hex_malformed() {
 
     assert!(c.is_none());
     let err = err_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         err,
         TokenError {
             kind: TokenErrorKind::CharacterExpectedHex,
             span: TxtSpan { start: 0, end: 10 },
         }
-    ));
+    );
 }
 
 fn check_character_list(cases: &[(&str, char)]) {
@@ -462,15 +463,11 @@ fn check_character_list(cases: &[(&str, char)]) {
 
         assert!(c.is_none());
         let tok = ok_or_fail!(r);
-        assert!(
-            matches!(
+        assert_matches!(
                 tok,
                 Token {
                     kind: TokenKind::Character(ch),
                     span: TxtSpan { start: 0, end },
-                } if ch == exp && end == input.len()
-            ),
-            "Unexpected match for character input ({inp}, {exp})"
-        );
+                } if ch == exp && end == input.len(), "Unexpected match for character input ({inp}, {exp})");
     }
 }

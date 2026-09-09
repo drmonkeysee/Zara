@@ -1,4 +1,5 @@
 use super::*;
+use std::assert_matches;
 
 #[test]
 fn quote() {
@@ -13,13 +14,13 @@ fn quote() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::Quote,
             span: TxtSpan { start: 0, end: 1 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -35,13 +36,13 @@ fn quasiquote() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::Quasiquote,
             span: TxtSpan { start: 0, end: 1 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -57,13 +58,13 @@ fn unquote() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::Unquote,
             span: TxtSpan { start: 0, end: 1 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -79,13 +80,13 @@ fn unquote_followed_by_non_splice() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::Unquote,
             span: TxtSpan { start: 0, end: 1 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -101,13 +102,13 @@ fn unquote_splicing() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::UnquoteSplice,
             span: TxtSpan { start: 0, end: 2 },
         }
-    ));
+    );
 }
 
 #[test]
@@ -123,11 +124,11 @@ fn unquote_whitespace_between_splice() {
 
     assert!(c.is_none());
     let tok = ok_or_fail!(r);
-    assert!(matches!(
+    assert_matches!(
         tok,
         Token {
             kind: TokenKind::Unquote,
             span: TxtSpan { start: 0, end: 1 },
         }
-    ));
+    );
 }

@@ -2,6 +2,7 @@
 name = "zara"
 version = "0.5.5"
 edition = "2024"
+rust-version = "1.96"
 authors = ["Brandon Stansbury <brandonrstansbury@gmail.com"]
 description = "An R7RS-small Scheme Interpreter"
 license = "MIT"
