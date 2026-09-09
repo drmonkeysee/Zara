@@ -181,9 +181,7 @@ fn bytevector_to_string(args: &[Value], _env: &Frame) -> EvalResult {
 
 fn bytevector_from_string(args: &[Value], _env: &Frame) -> EvalResult {
     str_to_coll(first(args), args.get(1)..args.get(2), |chars| {
-        // TODO: experimental
-        // https://doc.rust-lang.org/std/primitive.char.html#associatedconstant.MAX_LEN_UTF8
-        let mut buf = [0u8; 4];
+        let mut buf = [0u8; char::MAX_LEN_UTF8];
         Value::bytevector_mut(chars.flat_map(|ch| ch.encode_utf8(&mut buf).as_bytes().to_vec()))
     })
 }

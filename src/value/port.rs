@@ -235,7 +235,6 @@ impl BvReader {
     }
 
     fn ready(&self) -> PortBool {
-        // TODO: experimental ok_or https://doc.rust-lang.org/std/primitive.bool.html#method.ok_or
         if self.is_open() {
             Ok(true)
         } else {

@@ -2,17 +2,13 @@ use std::fmt::{self, Display, Formatter};
 
 // Set of Unicode code points are in the
 // ranges 0x0 to 0xD7FF and 0xE000 to 0x10FFFF, inclusive.
-const MIN: char = char::MIN;
 const LOW_MAX: char = '\u{d7ff}';
 const HI_MIN: char = '\u{e000}';
-const MAX: char = char::MAX;
-// TODO: experimental https://doc.rust-lang.org/std/primitive.char.html#associatedconstant.MAX_LEN_UTF8
-const MAX_UTF8_BYTES: usize = 4;
 
 #[derive(Debug)]
 pub(crate) enum UnicodeError {
     ByteSequenceEmpty,
-    ByteSequenceInvalid([u8; MAX_UTF8_BYTES]),
+    ByteSequenceInvalid([u8; char::MAX_LEN_UTF8]),
     ByteSequenceTooLong(usize),
     CodePointOutOfRange,
     PrefixInvalid(u8),
@@ -25,12 +21,16 @@ impl Display for UnicodeError {
             Self::ByteSequenceInvalid(seq) => write_invalid_seq(seq, f),
             Self::ByteSequenceTooLong(len) => write!(
                 f,
-                "utf-8 sequence length out of range: [1, {MAX_UTF8_BYTES}], {len}"
+                "utf-8 sequence length out of range: [1, {}], {len}",
+                char::MAX_LEN_UTF8
             ),
             Self::CodePointOutOfRange => write!(
                 f,
                 "unicode code point out of ranges [#x{0:x}, #x{1:x}], [#x{2:x}, #x{3:x}] ([{0}, {1}], [{2}, {3}])",
-                MIN as u32, LOW_MAX as u32, HI_MIN as u32, MAX as u32
+                char::MIN as u32,
+                LOW_MAX as u32,
+                HI_MIN as u32,
+                char::MAX as u32
             ),
             Self::PrefixInvalid(p) => write!(f, "invalid utf-8 prefix: #x{p:x}"),
         }
@@ -39,7 +39,7 @@ impl Display for UnicodeError {
 
 pub(crate) fn utf8_char_len(prefix: u8) -> Result<usize, UnicodeError> {
     #[allow(clippy::cast_possible_truncation)]
-    const MAX_UTF8_COUNT: u32 = MAX_UTF8_BYTES as u32;
+    const MAX_UTF8_COUNT: u32 = char::MAX_LEN_UTF8 as u32;
 
     match prefix.leading_ones() {
         c @ 2..=MAX_UTF8_COUNT => Ok(c
@@ -53,11 +53,11 @@ pub(crate) fn utf8_char_len(prefix: u8) -> Result<usize, UnicodeError> {
 pub(crate) fn char_from_utf8(seq: &[u8]) -> Result<char, UnicodeError> {
     let ch = match seq.len() {
         0 => return Err(UnicodeError::ByteSequenceEmpty),
-        1..=MAX_UTF8_BYTES => str::from_utf8(seq).ok().and_then(|s| s.chars().next()),
+        1..=char::MAX_LEN_UTF8 => str::from_utf8(seq).ok().and_then(|s| s.chars().next()),
         len => return Err(UnicodeError::ByteSequenceTooLong(len)),
     };
     ch.ok_or_else(|| {
-        let mut err = [0; MAX_UTF8_BYTES];
+        let mut err = [0; char::MAX_LEN_UTF8];
         err[0..seq.len()].copy_from_slice(seq);
         UnicodeError::ByteSequenceInvalid(err)
     })
