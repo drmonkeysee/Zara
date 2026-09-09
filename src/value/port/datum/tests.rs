@@ -814,6 +814,22 @@ fn simple_value_stops_at_delimiter() {
 }
 
 #[test]
+fn simple_value_following_comment() {
+    let env = TestEnv::default();
+    let f = env.new_frame();
+    let mut s = StringReader::new(";this is a comment\n12");
+
+    let r = parse(&mut s, &f, "test-port");
+
+    let v = some_or_fail!(ok_or_fail!(r));
+    assert_matches!(v, Value::Number(r) if r.to_string() == "12");
+
+    let r = parse(&mut s, &f, "test-port");
+
+    assert_matches!(r, Ok(None));
+}
+
+#[test]
 fn datum_comment_is_ignored() {
     let env = TestEnv::default();
     let f = env.new_frame();
