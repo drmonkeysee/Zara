@@ -606,14 +606,13 @@ fn into_datum(
     match inner {
         None => Err(vec![ctx.into_error(ExpressionErrorKind::DatumExpected)]),
         Some(Expression {
-            ctx: inner_ctx,
             kind: ExpressionKind::Literal(val),
-        }) => Ok(Some(if quoted {
-            into_quote_datum(Some(val), ctx, ns)
-        } else {
-            // TODO: can i remove this redundant ctor somehow (it recreates expr)
-            inner_ctx.into_expr(ExpressionKind::Literal(val))
-        })),
+            ..
+        }) if quoted => Ok(Some(into_quote_datum(Some(val), ctx, ns))),
+        Some(Expression {
+            kind: ExpressionKind::Literal(_),
+            ..
+        }) => Ok(inner),
         Some(Expression {
             ctx: mut inner_ctx,
             kind,
