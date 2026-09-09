@@ -612,11 +612,13 @@ fn into_datum(
             // TODO: can i remove this redundant ctor somehow (it recreates expr)
             inner_ctx.into_expr(ExpressionKind::Literal(val))
         })),
-        Some(expr) => {
-            let mut expr_ctx = expr.ctx;
-            expr_ctx.span.start = ctx.span.start;
+        Some(Expression {
+            ctx: mut inner_ctx,
+            kind,
+        }) => {
+            inner_ctx.span.start = ctx.span.start;
             Err(vec![
-                expr_ctx.into_error(ExpressionErrorKind::DatumInvalid(expr.kind)),
+                inner_ctx.into_error(ExpressionErrorKind::DatumInvalid(kind)),
             ])
         }
     }
