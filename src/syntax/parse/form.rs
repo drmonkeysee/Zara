@@ -253,9 +253,7 @@ fn into_list(seq: Vec<Expression>, ctx: ExprCtx, improper: bool) -> ExprConvertR
         ctx,
         |expr| match expr.kind {
             ExpressionKind::Literal(val) => Ok(val),
-            _ => Err(expr
-                .ctx
-                .into_error(ExpressionErrorKind::DatumInvalid(expr.kind))),
+            kind => Err(expr.ctx.into_error(ExpressionErrorKind::DatumInvalid(kind))),
         },
         |vals| {
             ExpressionKind::Literal(if improper {
