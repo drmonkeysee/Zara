@@ -140,13 +140,9 @@ impl Add for Cmd {
     type Output = Self;
 
     fn add(self, rhs: Self) -> Self::Output {
-        match self {
-            Self::Help => self,
-            Self::Run => rhs,
-            Self::Version => match rhs {
-                Self::Help => rhs,
-                _ => self,
-            },
+        match (self, rhs) {
+            (Self::Run, _) | (Self::Version, Self::Help) => rhs,
+            (Self::Help, _) | (Self::Version, _) => self,
         }
     }
 }

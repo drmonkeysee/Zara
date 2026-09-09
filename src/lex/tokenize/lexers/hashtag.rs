@@ -120,29 +120,22 @@ impl Hashtag<'_, '_> {
         let mut non_digit = false;
         while let Some((idx, ch)) = self.scanner.next_if_not_delimiter() {
             match ch {
+                '=' if non_digit => return Err(TokenErrorKind::LabelInvalid),
                 '=' => {
-                    return if non_digit {
-                        Err(TokenErrorKind::LabelInvalid)
-                    } else {
-                        Ok(TokenKind::LabelDef(
-                            self.scanner.lexeme(start..idx).to_owned(),
-                        ))
-                    };
+                    return Ok(TokenKind::LabelDef(
+                        self.scanner.lexeme(start..idx).to_owned(),
+                    ));
                 }
                 _ if ch.is_ascii_digit() => (),
                 _ => non_digit = true,
             }
         }
-        if let Some(idx) = self.scanner.char_if_eq('#') {
-            if non_digit {
-                Err(TokenErrorKind::LabelInvalid)
-            } else {
-                Ok(TokenKind::LabelRef(
-                    self.scanner.lexeme(start..idx).to_owned(),
-                ))
-            }
-        } else {
-            Err(TokenErrorKind::LabelUnterminated)
+        match self.scanner.char_if_eq('#') {
+            None => Err(TokenErrorKind::LabelUnterminated),
+            Some(_) if non_digit => Err(TokenErrorKind::LabelInvalid),
+            Some(idx) => Ok(TokenKind::LabelRef(
+                self.scanner.lexeme(start..idx).to_owned(),
+            )),
         }
     }
 

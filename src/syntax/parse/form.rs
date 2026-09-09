@@ -182,13 +182,10 @@ impl SyntacticForm {
         txt: &Rc<TextLine>,
     ) -> ParseFlow {
         let err = match self {
+            Self::Datum if seq.is_empty() => ExpressionErrorKind::PairIncomplete,
             Self::Datum => {
-                if seq.is_empty() {
-                    ExpressionErrorKind::PairIncomplete
-                } else {
-                    *self = Self::PairOpen;
-                    return ParseFlow::Continue(());
-                }
+                *self = Self::PairOpen;
+                return ParseFlow::Continue(());
             }
             Self::PairClosed | Self::PairOpen => {
                 *self = Self::Datum;
@@ -215,15 +212,14 @@ impl SyntacticForm {
         let token_span = token.span.clone();
         if let Some(expr) = super::parse_expr(token, txt, self.quoted(seq.len()), ns)? {
             match self {
-                Self::Call => {
+                Self::Call
                     if seq.is_empty()
                         && let ExpressionKind::Variable(n) = &expr.kind
                         && !ns.name_defined(n)
-                        && let Some(f) = Self::from_str(n)
-                    {
-                        *self = f;
-                        return ParseFlow::Continue(());
-                    }
+                        && let Some(f) = Self::from_str(n) =>
+                {
+                    *self = f;
+                    return ParseFlow::Continue(());
                 }
                 Self::PairClosed => {
                     *self = Self::Datum;

@@ -286,12 +286,12 @@ impl BvReader {
     fn get_bytes(&mut self, k: usize, advance: bool) -> PortBytes {
         match &mut self.buf {
             None => Err(PortError::Closed),
-            Some(buf) => Ok(if k == 0 {
-                Some(Vec::new())
-            } else if let Some(max) = buf.len().checked_sub(self.cur)
-                && max > 0
+            Some(_) if k == 0 => Ok(Some(Vec::new())),
+            Some(buf)
+                if let Some(max) = buf.len().checked_sub(self.cur)
+                    && max > 0 =>
             {
-                match buf.get(self.cur..(self.cur + cmp::min(k, max))) {
+                Ok(match buf.get(self.cur..(self.cur + cmp::min(k, max))) {
                     None => None,
                     Some(slice) => {
                         if advance {
@@ -299,10 +299,9 @@ impl BvReader {
                         }
                         Some(slice.to_vec())
                     }
-                }
-            } else {
-                None
-            }),
+                })
+            }
+            Some(_) => Ok(None),
         }
     }
 }
@@ -392,15 +391,9 @@ impl FileReader {
     fn get_bytes(&mut self, k: usize, advance: bool) -> PortBytes {
         match &self.file {
             None => Err(PortError::Closed),
-            Some(_) => {
-                if k == 0 {
-                    Ok(Some(Vec::new()))
-                } else if self.eof {
-                    Ok(None)
-                } else {
-                    self.read_buffer(k, advance)
-                }
-            }
+            Some(_) if k == 0 => Ok(Some(Vec::new())),
+            Some(_) if self.eof => Ok(None),
+            Some(_) => self.read_buffer(k, advance),
         }
     }
 
@@ -478,7 +471,7 @@ impl StdinReader {
             None => Err(PortError::Closed),
             Some(r) => {
                 // utf-8 encoding should ensure that any 0xa is a valid '\n'
-                let r = Ok(match self.rbuf.bytes().position(|b| b == 0xa) {
+                let res = Ok(match self.rbuf.bytes().position(|b| b == 0xa) {
                     None => {
                         let mut buf = self.rbuf.split_off(0).chars().rev().collect::<String>();
                         r.read_line(&mut buf)?;
@@ -497,7 +490,7 @@ impl StdinReader {
                     }
                 });
                 self.trim_buffer();
-                r
+                res
             }
         }
     }

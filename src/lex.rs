@@ -113,19 +113,15 @@ pub(crate) enum LineFailure {
 
 impl LineFailure {
     fn accumulate(&self, acc: LineFailureAcc) -> ControlFlow<(), LineFailureAcc> {
-        match self {
-            Self::Read(_) => match acc {
-                LineFailureAcc::Empty | LineFailureAcc::Read => {
-                    ControlFlow::Continue(LineFailureAcc::Read)
-                }
-                LineFailureAcc::Tokenize => ControlFlow::Break(()),
-            },
-            Self::Tokenize(_) => match acc {
-                LineFailureAcc::Empty | LineFailureAcc::Tokenize => {
-                    ControlFlow::Continue(LineFailureAcc::Tokenize)
-                }
-                LineFailureAcc::Read => ControlFlow::Break(()),
-            },
+        match (self, acc) {
+            (Self::Read(_), LineFailureAcc::Empty | LineFailureAcc::Read) => {
+                ControlFlow::Continue(LineFailureAcc::Read)
+            }
+            (Self::Read(_), LineFailureAcc::Tokenize) => ControlFlow::Break(()),
+            (Self::Tokenize(_), LineFailureAcc::Empty | LineFailureAcc::Tokenize) => {
+                ControlFlow::Continue(LineFailureAcc::Tokenize)
+            }
+            (Self::Tokenize(_), LineFailureAcc::Read) => ControlFlow::Break(()),
         }
     }
 }

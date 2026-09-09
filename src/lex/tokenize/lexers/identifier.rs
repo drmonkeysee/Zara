@@ -158,17 +158,13 @@ impl<'me, 'txt> Identifier<'me, 'txt> {
 
     fn classify_peculiar(&mut self, ch: char) {
         // only 3 cases: + | - | .
-        self.peculiar_state = Some(match ch {
-            '+' | '-' => match self.peculiar_state {
-                None => PeculiarState::MaybeSignedNumber,
-                _ => PeculiarState::DefiniteIdentifier,
-            },
-            '.' => match self.peculiar_state {
-                Some(PeculiarState::MaybeSignedNumber) => PeculiarState::MaybeSignedFloat,
-                None => PeculiarState::MaybeFloat,
-                _ => PeculiarState::DefiniteIdentifier,
-            },
-            _ => unreachable!("unexpected peculiar case lexeme"),
+        self.peculiar_state = Some(match (ch, &self.peculiar_state) {
+            ('+' | '-', None) => PeculiarState::MaybeSignedNumber,
+            ('+' | '-', _) => PeculiarState::DefiniteIdentifier,
+            ('.', Some(PeculiarState::MaybeSignedNumber)) => PeculiarState::MaybeSignedFloat,
+            ('.', None) => PeculiarState::MaybeFloat,
+            ('.', _) => PeculiarState::DefiniteIdentifier,
+            (_, _) => unreachable!("unexpected peculiar case lexeme"),
         });
     }
 

@@ -658,43 +658,34 @@ impl<R: Radix> Integral<R> {
     fn classify_int<'txt>(&mut self, item: ScanItem<'txt>) -> RadixControl<'txt> {
         let (idx, ch) = item;
         match ch {
-            '+' | '-' => {
-                if self.spec.is_empty() {
-                    if self.spec.sign.is_none() {
-                        self.spec.sign = Some(super::char_to_sign(ch));
-                        self.spec.magnitude = 1..1;
-                        RadixControl::Continue(())
-                    } else {
-                        RadixControl::Break(Err(TokenErrorKind::NumberInvalid))
-                    }
+            '+' | '-' if self.spec.is_empty() => {
+                if self.spec.sign.is_none() {
+                    self.spec.sign = Some(super::char_to_sign(ch));
+                    self.spec.magnitude = 1..1;
+                    RadixControl::Continue(())
                 } else {
-                    RadixControl::Break(Ok(BreakCondition::cartesian(item)))
+                    RadixControl::Break(Err(TokenErrorKind::NumberInvalid))
                 }
             }
+            '+' | '-' => RadixControl::Break(Ok(BreakCondition::cartesian(item))),
             '.' => RadixControl::Break(Err(TokenErrorKind::NumberInvalidDecimalPoint {
                 at: idx,
                 radix: R::NAME,
             })),
             '/' => RadixControl::Break(Ok(BreakCondition::Fraction)),
             '@' => RadixControl::Break(Ok(BreakCondition::polar(item))),
-            'i' | 'I' => {
-                if self.is_empty() && self.has_sign() {
-                    // length includes sign
-                    self.mode = IntegralMode::Inf(2);
-                    RadixControl::Continue(())
-                } else {
-                    RadixControl::Break(Ok(BreakCondition::imaginary()))
-                }
+            'i' | 'I' if self.is_empty() && self.has_sign() => {
+                // length includes sign
+                self.mode = IntegralMode::Inf(2);
+                RadixControl::Continue(())
             }
-            'n' | 'N' => {
-                if self.is_empty() && self.has_sign() {
-                    // length includes sign
-                    self.mode = IntegralMode::Nan(2);
-                    RadixControl::Continue(())
-                } else {
-                    RadixControl::Break(Err(TokenErrorKind::NumberInvalid))
-                }
+            'i' | 'I' => RadixControl::Break(Ok(BreakCondition::imaginary())),
+            'n' | 'N' if self.is_empty() && self.has_sign() => {
+                // length includes sign
+                self.mode = IntegralMode::Nan(2);
+                RadixControl::Continue(())
             }
+            'n' | 'N' => RadixControl::Break(Err(TokenErrorKind::NumberInvalid)),
             _ if self.spec.radix.is_digit(ch) => {
                 self.spec.magnitude.end += 1;
                 RadixControl::Continue(())
@@ -902,24 +893,19 @@ impl Scientific {
     fn classify<'txt>(&mut self, item: ScanItem<'txt>) -> RealControl<'txt> {
         let ch = item.1;
         match ch {
-            '+' | '-' => {
-                if self.exponent_sign.is_some() && self.spec.exponent.len() == 1 {
-                    RealControl::Break(Err(self.malformed_exponent()))
-                } else if self.spec.exponent.is_empty() {
-                    self.exponent_sign = Some(super::char_to_sign(ch));
-                    self.spec.exponent.end += 1;
-                    RealControl::Continue(None)
-                } else {
-                    RealControl::Break(Ok(BreakCondition::cartesian(item)))
-                }
+            '+' | '-' if self.exponent_sign.is_some() && self.spec.exponent.len() == 1 => {
+                RealControl::Break(Err(self.malformed_exponent()))
             }
+            '+' | '-' if self.spec.exponent.is_empty() => {
+                self.exponent_sign = Some(super::char_to_sign(ch));
+                self.spec.exponent.end += 1;
+                RealControl::Continue(None)
+            }
+            '+' | '-' => RealControl::Break(Ok(BreakCondition::cartesian(item))),
             '/' => RealControl::Break(Err(TokenErrorKind::RationalInvalid)),
             '@' => RealControl::Break(Ok(BreakCondition::polar(item))),
-            'i' | 'I' => RealControl::Break(if self.no_e_value() {
-                Err(self.malformed_exponent())
-            } else {
-                Ok(BreakCondition::imaginary())
-            }),
+            'i' | 'I' if self.no_e_value() => RealControl::Break(Err(self.malformed_exponent())),
+            'i' | 'I' => RealControl::Break(Ok(BreakCondition::imaginary())),
             _ if self.spec.integral.radix.is_digit(ch) => {
                 self.spec.exponent.end += 1;
                 RealControl::Continue(None)
