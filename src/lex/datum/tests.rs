@@ -84,22 +84,12 @@ fn comment_without_trailing_newline() {
 
     let r = scan(&mut s);
 
-    let v = some_or_fail!(ok_or_fail!(r));
-    assert_eq!(v, ";this is a comment");
-
-    let r = scan(&mut s);
-
     assert_eq!(ok_or_fail!(r), None);
 }
 
 #[test]
 fn comment_with_trailing_newline() {
     let mut s = StrCursor::new(";this is a comment\n");
-
-    let r = scan(&mut s);
-
-    let v = some_or_fail!(ok_or_fail!(r));
-    assert_eq!(v, ";this is a comment\n");
 
     let r = scan(&mut s);
 
@@ -782,6 +772,21 @@ fn hash_bang_directive_is_scanned_as_single_token() {
 
     let v = some_or_fail!(ok_or_fail!(r));
     assert_eq!(v, "#!fold-case");
+
+    let r = scan(&mut s);
+
+    assert_eq!(ok_or_fail!(r), None);
+}
+
+#[test]
+fn simple_value_following_comment() {
+    let input = ";this is a comment\n12";
+    let mut s = StrCursor::new(input);
+
+    let r = scan(&mut s);
+
+    let v = some_or_fail!(ok_or_fail!(r));
+    assert_eq!(v, input);
 
     let r = scan(&mut s);
 

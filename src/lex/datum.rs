@@ -21,7 +21,7 @@ pub(crate) fn scan<C: CharCursor + ?Sized>(cur: &mut C) -> DatumScanResult<C::Er
             '"' | '|' => scan_escapable_delimiter(ch, cur, &mut buf)?,
             '#' => classify_hash(cur, &mut buf)?,
             '(' => scan_parens(1, cur, &mut buf)?,
-            ';' => scan_line(cur, &mut buf)?,
+            ';' => scan_comment(cur, &mut buf)?,
             _ if string::is_whitespace(ch) => ScanFlow::Continue(()),
             _ => scan_delimiter(cur, &mut buf)?,
         } {
@@ -74,14 +74,14 @@ fn classify_hash<C: CharCursor + ?Sized>(cur: &mut C, buf: &mut String) -> ScanR
     Ok(ScanFlow::Continue(()))
 }
 
-fn scan_line<C: CharCursor + ?Sized>(cur: &mut C, buf: &mut String) -> ScanResult<C::Error> {
+fn scan_comment<C: CharCursor + ?Sized>(cur: &mut C, buf: &mut String) -> ScanResult<C::Error> {
     while let Some(ch) = cur.read_char()? {
         buf.push(ch);
         if ch == '\n' {
             break;
         }
     }
-    Ok(ScanFlow::Break(()))
+    Ok(ScanFlow::Continue(()))
 }
 
 fn scan_delimiter<C: CharCursor + ?Sized>(cur: &mut C, buf: &mut String) -> ScanResult<C::Error> {
