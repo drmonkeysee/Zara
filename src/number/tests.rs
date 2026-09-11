@@ -1529,6 +1529,190 @@ mod integer {
     }
 }
 
+mod ordering {
+    use super::*;
+
+    #[test]
+    fn integer_cmp_matrix() {
+        let cases = [
+            (0, 0, Ordering::Equal),
+            (5, 5, Ordering::Equal),
+            (-5, -5, Ordering::Equal),
+            (3, 5, Ordering::Less),
+            (5, 3, Ordering::Greater),
+            (-5, -3, Ordering::Less),
+            (-3, -5, Ordering::Greater),
+            (5, -3, Ordering::Greater),
+            (-3, 5, Ordering::Less),
+            (0, 5, Ordering::Less),
+            (5, 0, Ordering::Greater),
+            (0, -5, Ordering::Greater),
+            (-5, 0, Ordering::Less),
+            (5, -5, Ordering::Greater),
+            (-5, 5, Ordering::Less),
+        ];
+        for (a, b, expected) in cases {
+            let x: Integer = a.into();
+            let y: Integer = b.into();
+
+            assert_eq!(x.cmp(&y), expected);
+        }
+    }
+
+    #[test]
+    fn integer_partial_cmp_matches_cmp() {
+        let cases = [(0, 0), (3, 5), (5, 3), (-5, -3), (-3, -5), (5, -5)];
+        for (a, b) in cases {
+            let x: Integer = a.into();
+            let y: Integer = b.into();
+
+            assert_eq!(x.partial_cmp(&y), Some(x.cmp(&y)));
+        }
+    }
+
+    #[test]
+    fn integer_large_magnitude() {
+        let max = Integer::single(u64::MAX, Sign::Positive);
+        let min = Integer::single(u64::MAX, Sign::Negative);
+
+        assert_eq!(max.cmp(&min), Ordering::Greater);
+        assert_eq!(min.cmp(&max), Ordering::Less);
+        assert_eq!(max.cmp(&max), Ordering::Equal);
+        assert_eq!(min.cmp(&min), Ordering::Equal);
+    }
+
+    #[test]
+    fn float_finite_ordering() {
+        let cases = [
+            (1.0, 2.0, Some(Ordering::Less)),
+            (2.0, 1.0, Some(Ordering::Greater)),
+            (2.0, 2.0, Some(Ordering::Equal)),
+            (0.0, -0.0, Some(Ordering::Equal)),
+            (-2.0, -1.0, Some(Ordering::Less)),
+        ];
+        for (a, b, expected) in cases {
+            let x = Real::Float(a);
+            let y = Real::Float(b);
+
+            assert_eq!(x.partial_cmp(&y), expected);
+        }
+    }
+
+    #[test]
+    fn float_infinite_ordering() {
+        let cases = [
+            (f64::INFINITY, 5.0, Some(Ordering::Greater)),
+            (5.0, f64::INFINITY, Some(Ordering::Less)),
+            (f64::NEG_INFINITY, 5.0, Some(Ordering::Less)),
+            (5.0, f64::NEG_INFINITY, Some(Ordering::Greater)),
+            (f64::INFINITY, f64::INFINITY, Some(Ordering::Equal)),
+            (f64::NEG_INFINITY, f64::NEG_INFINITY, Some(Ordering::Equal)),
+            (f64::INFINITY, f64::NEG_INFINITY, Some(Ordering::Greater)),
+            (f64::NEG_INFINITY, f64::INFINITY, Some(Ordering::Less)),
+        ];
+        for (a, b, expected) in cases {
+            let x = Real::Float(a);
+            let y = Real::Float(b);
+
+            assert_eq!(x.partial_cmp(&y), expected);
+        }
+    }
+
+    #[test]
+    fn float_nan_is_unordered() {
+        let cases = [
+            (f64::NAN, 5.0),
+            (5.0, f64::NAN),
+            (f64::NAN, f64::NAN),
+            (f64::NAN, f64::INFINITY),
+            (f64::INFINITY, f64::NAN),
+            (f64::NAN, f64::NEG_INFINITY),
+        ];
+        for (a, b) in cases {
+            let x = Real::Float(a);
+            let y = Real::Float(b);
+
+            assert_eq!(x.partial_cmp(&y), None);
+        }
+    }
+
+    #[test]
+    fn float_vs_integer_float_first() {
+        let cases = [
+            (3.0, 5, Some(Ordering::Less)),
+            (5.0, 3, Some(Ordering::Greater)),
+            (5.0, 5, Some(Ordering::Equal)),
+            (3.0, -5, Some(Ordering::Greater)),
+            (-3.0, 5, Some(Ordering::Less)),
+            (0.0, 0, Some(Ordering::Equal)),
+        ];
+        for (f, n, expected) in cases {
+            let x = Real::Float(f);
+            let y = Real::Integer(n.into());
+
+            assert_eq!(x.partial_cmp(&y), expected);
+        }
+    }
+
+    #[test]
+    fn float_vs_integer_integer_first() {
+        let cases = [
+            (5, 3.0, Some(Ordering::Greater)),
+            (3, 5.0, Some(Ordering::Less)),
+            (5, 5.0, Some(Ordering::Equal)),
+            (-5, 3.0, Some(Ordering::Less)),
+            (5, -3.0, Some(Ordering::Greater)),
+            (0, 0.0, Some(Ordering::Equal)),
+        ];
+        for (n, f, expected) in cases {
+            let x = Real::Integer(n.into());
+            let y = Real::Float(f);
+
+            assert_eq!(x.partial_cmp(&y), expected);
+        }
+    }
+
+    #[test]
+    fn float_vs_integer_infinite() {
+        let inf = Real::Float(f64::INFINITY);
+        let neg_inf = Real::Float(f64::NEG_INFINITY);
+        let n = Real::Integer(5.into());
+
+        assert_eq!(inf.partial_cmp(&n), Some(Ordering::Greater));
+        assert_eq!(n.partial_cmp(&inf), Some(Ordering::Less));
+        assert_eq!(neg_inf.partial_cmp(&n), Some(Ordering::Less));
+        assert_eq!(n.partial_cmp(&neg_inf), Some(Ordering::Greater));
+    }
+
+    #[test]
+    fn float_vs_integer_nan_is_unordered() {
+        let nan = Real::Float(f64::NAN);
+        let n = Real::Integer(5.into());
+
+        assert_eq!(nan.partial_cmp(&n), None);
+        assert_eq!(n.partial_cmp(&nan), None);
+    }
+
+    #[test]
+    fn integer_vs_integer_ordering() {
+        let cases = [
+            (3, 5, Some(Ordering::Less)),
+            (5, 3, Some(Ordering::Greater)),
+            (5, 5, Some(Ordering::Equal)),
+            (-5, 3, Some(Ordering::Less)),
+            (5, -3, Some(Ordering::Greater)),
+            (-5, -3, Some(Ordering::Less)),
+            (0, 0, Some(Ordering::Equal)),
+        ];
+        for (a, b, expected) in cases {
+            let x = Real::Integer(a.into());
+            let y = Real::Integer(b.into());
+
+            assert_eq!(x.partial_cmp(&y), expected);
+        }
+    }
+}
+
 mod float {
     use super::*;
 

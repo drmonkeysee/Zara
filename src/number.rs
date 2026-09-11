@@ -495,14 +495,19 @@ impl PartialEq for Real {
 impl PartialOrd for Real {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         match (self, other) {
-            (Self::Float(a), r) | (r, Self::Float(a)) => a.partial_cmp(&r.to_float()),
+            (Self::Float(a), b) => a.partial_cmp(&b.to_float()),
+            (a, Self::Float(b)) => a.to_float().partial_cmp(b),
             (Self::Integer(a), Self::Integer(b)) => a.partial_cmp(b),
-            (Self::Rational(_), Self::Rational(_)) => {
-                //a.partial_cmp(b)
+            (Self::Integer(_), Self::Rational(_)) => {
+                //a.clone().into_rational().partial_cmp(b)
                 todo!("need a*d cmp c*b");
             }
-            (Self::Integer(_), Self::Rational(_)) | (Self::Rational(_), Self::Integer(_)) => {
-                //q.partial_cmp(&n.clone().into_rational())
+            (Self::Rational(_), Self::Integer(_)) => {
+                //a.partial_cmp(&b.clone().into_rational())
+                todo!("need a*d cmp c*b");
+            }
+            (Self::Rational(_), Self::Rational(_)) => {
+                //a.partial_cmp(b)
                 todo!("need a*d cmp c*b");
             }
         }
