@@ -24,6 +24,7 @@ macro_rules! seq_predicate {
 
 mod collections;
 mod num;
+mod system;
 #[cfg(test)]
 mod tests;
 
@@ -52,6 +53,7 @@ pub(super) fn load(env: &Frame) {
     load_symbol(env);
     collections::load(env);
     num::load(env);
+    system::load(env);
 }
 
 //
