@@ -482,34 +482,20 @@ impl Real {
 
 impl PartialEq for Real {
     fn eq(&self, other: &Self) -> bool {
-        match (self, other) {
-            (Self::Float(f), _) | (_, Self::Float(f)) if f.is_nan() => false,
-            (Self::Float(a), r) | (r, Self::Float(a)) => *a == r.to_float(),
-            (Self::Integer(a), Self::Integer(b)) => a == b,
-            (Self::Rational(a), Self::Rational(b)) => a == b,
-            _ => false,
+        match self {
+            Self::Float(f) => *f == other.to_float(),
+            Self::Integer(n) => n.eq(other),
+            Self::Rational(q) => q.eq(other),
         }
     }
 }
 
 impl PartialOrd for Real {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        match (self, other) {
-            (Self::Float(a), b) => a.partial_cmp(&b.to_float()),
-            (a, Self::Float(b)) => a.to_float().partial_cmp(b),
-            (Self::Integer(a), Self::Integer(b)) => a.partial_cmp(b),
-            (Self::Integer(_), Self::Rational(_)) => {
-                //a.clone().into_rational().partial_cmp(b)
-                todo!("need a*d cmp c*b");
-            }
-            (Self::Rational(_), Self::Integer(_)) => {
-                //a.partial_cmp(&b.clone().into_rational())
-                todo!("need a*d cmp c*b");
-            }
-            (Self::Rational(_), Self::Rational(_)) => {
-                //a.partial_cmp(b)
-                todo!("need a*d cmp c*b");
-            }
+        match self {
+            Self::Float(f) => f.partial_cmp(&other.to_float()),
+            Self::Integer(n) => n.partial_cmp(other),
+            Self::Rational(q) => q.partial_cmp(other),
         }
     }
 }
@@ -576,11 +562,43 @@ impl Rational {
     }
 }
 
+impl PartialOrd for Rational {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for Rational {
+    fn cmp(&self, _other: &Self) -> Ordering {
+        todo!("need a*d cmp c*b");
+    }
+}
+
 impl Display for Rational {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         let r = &self.0;
         r.0.fmt(f)?;
         write!(f, "/{}", r.1)
+    }
+}
+
+impl PartialEq<Real> for Rational {
+    fn eq(&self, other: &Real) -> bool {
+        match other {
+            Real::Float(f) => self.to_float() == *f,
+            Real::Integer(_) => false,
+            Real::Rational(q) => self.eq(q),
+        }
+    }
+}
+
+impl PartialOrd<Real> for Rational {
+    fn partial_cmp(&self, other: &Real) -> Option<Ordering> {
+        match other {
+            Real::Float(f) => self.to_float().partial_cmp(f),
+            Real::Integer(n) => self.partial_cmp(&n.clone().into_rational()),
+            Real::Rational(q) => self.partial_cmp(q),
+        }
     }
 }
 
@@ -751,6 +769,26 @@ impl From<i64> for Integer {
 impl From<(Sign, u64)> for Integer {
     fn from((sign, val): (Sign, u64)) -> Self {
         Self::single(val, sign)
+    }
+}
+
+impl PartialEq<Real> for Integer {
+    fn eq(&self, other: &Real) -> bool {
+        match other {
+            Real::Float(f) => self.to_float() == *f,
+            Real::Integer(n) => self.eq(n),
+            Real::Rational(_) => false,
+        }
+    }
+}
+
+impl PartialOrd<Real> for Integer {
+    fn partial_cmp(&self, other: &Real) -> Option<Ordering> {
+        match other {
+            Real::Float(f) => self.to_float().partial_cmp(f),
+            Real::Integer(n) => self.partial_cmp(n),
+            Real::Rational(q) => self.clone().into_rational().partial_cmp(q),
+        }
     }
 }
 
