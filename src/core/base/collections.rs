@@ -439,6 +439,8 @@ fn list_set(args: &[Value], env: &Frame) -> EvalResult {
     }
 }
 
+// TODO: figure out how to apply arbitrary functions for these
+// so impl can be member_cmp(obj, lst, proc)
 fn member_eq(_args: &[Value], _env: &Frame) -> EvalResult {
     todo!();
 }
