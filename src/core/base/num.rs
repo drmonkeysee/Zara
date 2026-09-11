@@ -30,6 +30,8 @@ pub(super) fn load(env: &Frame) {
     super::bind_intrinsic(env, "odd?", 1..1, is_odd);
     super::bind_intrinsic(env, "even?", 1..1, is_even);
 
+    super::bind_intrinsic(env, "+", 0..MAX_ARITY, nums_add);
+
     super::bind_intrinsic(env, "abs", 1..1, abs);
 
     super::bind_intrinsic(env, "numerator", 1..1, get_numerator);
@@ -105,6 +107,19 @@ fn is_odd(args: &[Value], _env: &Frame) -> EvalResult {
 
 fn is_even(args: &[Value], _env: &Frame) -> EvalResult {
     exact_int_predicate(first(args), Integer::is_even)
+}
+
+fn nums_add(args: &[Value], _env: &Frame) -> EvalResult {
+    args.iter()
+        .enumerate()
+        .try_fold(Number::zero(), |sum, (k, v)| {
+            if let Value::Number(n) = v {
+                Ok(sum + n.clone())
+            } else {
+                Err(Condition::arg_error(k, TypeName::NUMBER, v).into())
+            }
+        })
+        .map(|n| Value::Number(n))
 }
 
 fn abs(args: &[Value], _env: &Frame) -> EvalResult {

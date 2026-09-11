@@ -85,6 +85,7 @@ use std::{
     cmp::Ordering,
     fmt::{self, Display, Formatter, Write},
     num::{IntErrorKind, ParseFloatError, ParseIntError},
+    ops::Add,
     rc::Rc,
     result::Result,
 };
@@ -118,6 +119,10 @@ pub(crate) enum Number {
 }
 
 impl Number {
+    pub(crate) fn zero() -> Self {
+        Self::Real(Real::zero())
+    }
+
     pub(crate) fn nan() -> Self {
         Self::Real(Real::nan())
     }
@@ -150,9 +155,7 @@ impl Number {
         Self::Real(value.into())
     }
 
-    /*
-     * Explicit conversions that would clash with Integer From<i64>.
-     */
+    // Explicit conversions that would clash with Integer From<i64>
     pub(crate) fn from_usize(val: usize) -> Self {
         Self::real(Integer::from_usize(val))
     }
@@ -234,6 +237,17 @@ impl PartialEq for Number {
     }
 }
 
+impl Add for Number {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        match (self, rhs) {
+            (Self::Complex(z), n) | (n, Self::Complex(z)) => z + n,
+            (Self::Real(a), Self::Real(b)) => Self::real(a + b),
+        }
+    }
+}
+
 impl Display for Number {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
@@ -280,6 +294,22 @@ impl Complex {
 impl PartialEq for Complex {
     fn eq(&self, other: &Self) -> bool {
         self.real_part() == other.real_part() && self.imag_part() == other.imag_part()
+    }
+}
+
+impl Add<Number> for Complex {
+    type Output = Number;
+
+    fn add(self, rhs: Number) -> Self::Output {
+        match rhs {
+            Number::Complex(Complex(z)) => Number::complex(
+                self.real_part().clone() + z.0,
+                self.imag_part().clone() + z.1,
+            ),
+            Number::Real(r) => {
+                Number::complex(self.real_part().clone() + r, self.imag_part().clone())
+            }
+        }
     }
 }
 
@@ -519,6 +549,18 @@ impl From<f64> for Real {
 impl<T: Into<Integer>> From<T> for Real {
     fn from(value: T) -> Self {
         Self::Integer(value.into())
+    }
+}
+
+impl Add for Real {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        match self {
+            Self::Float(f) => (f + rhs.to_float()).into(),
+            Self::Integer(n) => todo!("n + rhs"),
+            Self::Rational(q) => todo!("q + rhs"),
+        }
     }
 }
 
