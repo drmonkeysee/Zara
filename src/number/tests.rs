@@ -3183,3 +3183,255 @@ mod equivalence {
         assert!(!a.is_eqv(&b));
     }
 }
+
+mod equality {
+    use super::*;
+
+    #[test]
+    fn nan_not_equal_to_itself() {
+        let n = Real::Float(f64::NAN);
+
+        assert_ne!(n, n);
+    }
+
+    #[test]
+    fn nan_not_equal_to_other_float() {
+        let n = Real::Float(f64::NAN);
+        let f = Real::Float(4.0);
+
+        assert_ne!(n, f);
+    }
+
+    #[test]
+    fn nan_not_equal_to_integer() {
+        let n = Real::Float(f64::NAN);
+        let i = Real::Integer(4.into());
+
+        assert_ne!(n, i);
+    }
+
+    #[test]
+    fn nan_not_equal_to_rational() {
+        let n = Real::Float(f64::NAN);
+        let q = ok_or_fail!(Real::reduce(4, 5));
+
+        assert_ne!(n, q);
+    }
+
+    #[test]
+    fn nan_numbers_not_equal() {
+        let a = Number::real(f64::NAN);
+        let b = Number::real(f64::NAN);
+
+        assert_ne!(a, b);
+    }
+
+    #[test]
+    fn positive_infinity_equal_to_itself() {
+        let a = Real::Float(f64::INFINITY);
+        let b = Real::Float(f64::INFINITY);
+
+        assert_eq!(a, b);
+    }
+
+    #[test]
+    fn negative_infinity_equal_to_itself() {
+        let a = Real::Float(f64::NEG_INFINITY);
+        let b = Real::Float(f64::NEG_INFINITY);
+
+        assert_eq!(a, b);
+    }
+
+    #[test]
+    fn positive_and_negative_infinity_not_equal() {
+        let a = Real::Float(f64::INFINITY);
+        let b = Real::Float(f64::NEG_INFINITY);
+
+        assert_ne!(a, b);
+    }
+
+    #[test]
+    fn zero_equal_to_negative_zero() {
+        let a = Real::Float(0.0);
+        let b = Real::Float(-0.0);
+
+        assert_eq!(a, b);
+    }
+
+    #[test]
+    fn integer_equal_to_matching_float() {
+        let i = Real::Integer(4.into());
+        let f = Real::Float(4.0);
+
+        assert_eq!(i, f);
+        assert_eq!(f, i);
+    }
+
+    #[test]
+    fn integer_not_equal_to_mismatched_float() {
+        let i = Real::Integer(4.into());
+        let f = Real::Float(4.2);
+
+        assert_ne!(i, f);
+    }
+
+    #[test]
+    fn rational_equal_to_matching_float() {
+        let q = ok_or_fail!(Real::reduce(1, 2));
+        let f = Real::Float(0.5);
+
+        assert_eq!(q, f);
+        assert_eq!(f, q);
+    }
+
+    #[test]
+    fn rational_not_equal_to_mismatched_float() {
+        let q = ok_or_fail!(Real::reduce(1, 2));
+        let f = Real::Float(0.6);
+
+        assert_ne!(q, f);
+    }
+
+    #[test]
+    fn equal_rationals_with_different_reduction_paths() {
+        let a = ok_or_fail!(Real::reduce(4, 8));
+        let b = ok_or_fail!(Real::reduce(1, 2));
+
+        assert_eq!(a, b);
+    }
+
+    #[test]
+    fn different_rationals_not_equal() {
+        let a = ok_or_fail!(Real::reduce(4, 5));
+        let b = ok_or_fail!(Real::reduce(3, 4));
+
+        assert_ne!(a, b);
+    }
+
+    #[test]
+    fn different_integers_not_equal() {
+        let a = Real::Integer(4.into());
+        let b = Real::Integer(5.into());
+
+        assert_ne!(a, b);
+    }
+
+    #[test]
+    fn reduced_rational_equals_integer_of_same_value() {
+        // Real::reduce normalizes 4/2 down to a bare Integer(2), so this
+        // is really an Integer-vs-Integer comparison, not a cross-variant one.
+        let q = ok_or_fail!(Real::reduce(4, 2));
+        let n = Real::Integer(2.into());
+
+        assert_eq!(q, n);
+    }
+
+    #[test]
+    fn unreduced_rational_not_equal_to_equivalent_integer() {
+        // Built directly, bypassing Real::reduce, so the Rational stays 4/2
+        // instead of normalizing to Integer(2). PartialEq only coerces
+        // through Float; Integer and Rational have no cross-variant case,
+        // so this is false even though 4/2 == 2 mathematically.
+        let q = Real::Rational(Rational((4.into(), 2.into()).into()));
+        let n = Real::Integer(2.into());
+
+        assert_ne!(q, n);
+    }
+
+    #[test]
+    fn unreduced_rational_equal_to_matching_unreduced_rational() {
+        let a = Real::Rational(Rational((4.into(), 2.into()).into()));
+        let b = Real::Rational(Rational((4.into(), 2.into()).into()));
+
+        assert_eq!(a, b);
+    }
+
+    #[test]
+    fn complex_equal() {
+        let a = Number::complex(4, 5);
+        let b = Number::complex(4, 5);
+
+        assert_eq!(a, b);
+    }
+
+    #[test]
+    fn complex_not_equal_different_real() {
+        let a = Number::complex(4, 5);
+        let b = Number::complex(6, 5);
+
+        assert_ne!(a, b);
+    }
+
+    #[test]
+    fn complex_not_equal_different_imag() {
+        let a = Number::complex(4, 5);
+        let b = Number::complex(4, 6);
+
+        assert_ne!(a, b);
+    }
+
+    #[test]
+    fn complex_parts_convert_across_exactness() {
+        let r = ok_or_fail!(Real::reduce(1, 2));
+        let a = Number::complex(r, 5);
+        let b = Number::complex(0.5, 5);
+
+        assert_eq!(a, b);
+    }
+
+    #[test]
+    fn complex_integer_equal_to_complex_float() {
+        let a = Number::complex(4, 5);
+        let b = Number::complex(4.0, 5.0);
+
+        assert_eq!(a, b);
+    }
+
+    #[test]
+    fn complex_infinite_equal_to_itself() {
+        let a = Number::complex(f64::INFINITY, f64::NEG_INFINITY);
+        let b = Number::complex(f64::INFINITY, f64::NEG_INFINITY);
+
+        assert_eq!(a, b);
+    }
+
+    #[test]
+    fn complex_mismatched_infinities_not_equal() {
+        let a = Number::complex(f64::INFINITY, 5);
+        let b = Number::complex(f64::NEG_INFINITY, 5);
+
+        assert_ne!(a, b);
+    }
+
+    #[test]
+    fn complex_nan_not_equal() {
+        let a = Number::complex(f64::NAN, 5);
+        let b = Number::complex(f64::NAN, 5);
+
+        assert_ne!(a, b);
+    }
+
+    #[test]
+    fn complex_not_equal_to_real() {
+        let z = Number::complex(4, 5);
+        let r = Number::real(4);
+
+        assert_ne!(z, r);
+    }
+
+    #[test]
+    fn real_equal_across_exactness() {
+        let a = Number::real(4);
+        let b = Number::real(4.0);
+
+        assert_eq!(a, b);
+    }
+
+    #[test]
+    fn real_not_equal_different_values() {
+        let a = Number::real(4);
+        let b = Number::real(5);
+
+        assert_ne!(a, b);
+    }
+}
