@@ -494,7 +494,18 @@ impl PartialEq for Real {
 
 impl PartialOrd for Real {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        todo!()
+        match (self, other) {
+            (Self::Float(a), r) | (r, Self::Float(a)) => a.partial_cmp(&r.to_float()),
+            (Self::Integer(a), Self::Integer(b)) => a.partial_cmp(b),
+            (Self::Rational(_), Self::Rational(_)) => {
+                //a.partial_cmp(b)
+                todo!("need a*d cmp c*b");
+            }
+            (Self::Integer(_), Self::Rational(_)) | (Self::Rational(_), Self::Integer(_)) => {
+                //q.partial_cmp(&n.clone().into_rational())
+                todo!("need a*d cmp c*b");
+            }
+        }
     }
 }
 
@@ -634,7 +645,7 @@ impl Integer {
             Precision::Single(u) => {
                 #[allow(clippy::cast_precision_loss)]
                 let f = u as f64;
-                if self.sign == Sign::Negative { -f } else { f }
+                if self.is_negative() { -f } else { f }
             }
             Precision::Multiple(_) => todo!(),
         }
@@ -686,9 +697,32 @@ impl Integer {
         Real::Float(self.to_float())
     }
 
+    fn into_rational(self) -> Rational {
+        Rational((self, Self::one()).into())
+    }
+
     fn into_abs(mut self) -> Self {
         self.make_positive();
         self
+    }
+}
+
+impl PartialOrd for Integer {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for Integer {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.sign.cmp(&other.sign).then_with(|| {
+            let mag = self.cmp_magnitude(other);
+            if self.is_negative() {
+                mag.reverse()
+            } else {
+                mag
+            }
+        })
     }
 }
 
