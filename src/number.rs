@@ -484,8 +484,8 @@ impl PartialEq for Real {
     fn eq(&self, other: &Self) -> bool {
         match self {
             Self::Float(f) => *f == other.to_float(),
-            Self::Integer(n) => n.eq(other),
-            Self::Rational(q) => q.eq(other),
+            Self::Integer(n) => n == other,
+            Self::Rational(q) => q == other,
         }
     }
 }
