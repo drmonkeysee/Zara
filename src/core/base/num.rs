@@ -43,6 +43,7 @@ predicate!(is_number, Value::Number(_));
 predicate!(is_real, Value::Number(Number::Real(_)));
 predicate!(is_rational, Value::Number(Number::Real(r)) if r.is_rational());
 predicate!(is_integer, Value::Number(Number::Real(r)) if r.is_integer());
+seq_predicate!(nums_equal, Value::Number, TypeName::NUMBER, Number::eq);
 try_predicate!(is_exact, Value::Number, TypeName::NUMBER, |n: &Number| {
     !n.is_inexact()
 });
@@ -57,10 +58,6 @@ try_predicate!(
 );
 try_predicate!(is_zero, Value::Number, TypeName::NUMBER, |n: &Number| n
     .is_zero());
-
-fn nums_equal(_args: &[Value], _env: &Frame) -> EvalResult {
-    todo!();
-}
 
 fn nums_lt(_args: &[Value], _env: &Frame) -> EvalResult {
     todo!();
