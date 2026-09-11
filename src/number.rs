@@ -224,6 +224,16 @@ impl Number {
     }
 }
 
+impl PartialEq for Number {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Self::Complex(a), Self::Complex(b)) => a == b,
+            (Self::Real(a), Self::Real(b)) => a == b,
+            _ => false,
+        }
+    }
+}
+
 impl Display for Number {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
@@ -255,15 +265,21 @@ impl Complex {
     }
 
     pub(crate) fn to_magnitude(&self) -> Real {
-        let x = self.0.0.to_float();
-        let y = self.0.1.to_float();
+        let x = self.real_part().to_float();
+        let y = self.imag_part().to_float();
         Real::Float(x.hypot(y))
     }
 
     pub(crate) fn to_angle(&self) -> Real {
-        let x = self.0.0.to_float();
-        let y = self.0.1.to_float();
+        let x = self.real_part().to_float();
+        let y = self.imag_part().to_float();
         Real::Float(y.atan2(x))
+    }
+}
+
+impl PartialEq for Complex {
+    fn eq(&self, other: &Self) -> bool {
+        self.real_part() == other.real_part() && self.imag_part() == other.imag_part()
     }
 }
 
@@ -460,6 +476,18 @@ impl Real {
             Self::Float(f) => *f,
             Self::Integer(n) => n.to_float(),
             Self::Rational(q) => q.to_float(),
+        }
+    }
+}
+
+impl PartialEq for Real {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Self::Float(f), _) | (_, Self::Float(f)) if f.is_nan() => false,
+            (Self::Float(a), r) | (r, Self::Float(a)) => *a == r.to_float(),
+            (Self::Integer(a), Self::Integer(b)) => a == b,
+            (Self::Rational(a), Self::Rational(b)) => a == b,
+            _ => false,
         }
     }
 }
