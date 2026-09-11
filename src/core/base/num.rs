@@ -1,4 +1,4 @@
-use super::{FIRST_ARG_LABEL, first, invalid_target};
+use super::{FIRST_ARG_LABEL, MAX_ARITY, first, invalid_target};
 use crate::{
     eval::{EvalResult, Frame},
     number::{Integer, Number, NumericTypeName, Real},
@@ -17,6 +17,12 @@ pub(super) fn load(env: &Frame) {
     super::bind_intrinsic(env, "exact?", 1..1, is_exact);
     super::bind_intrinsic(env, "inexact?", 1..1, is_inexact);
     super::bind_intrinsic(env, "exact-integer?", 1..1, is_exact_integer);
+
+    super::bind_intrinsic(env, "=", 0..MAX_ARITY, nums_equal);
+    super::bind_intrinsic(env, "<", 0..MAX_ARITY, nums_lt);
+    super::bind_intrinsic(env, ">", 0..MAX_ARITY, nums_gt);
+    super::bind_intrinsic(env, "<=", 0..MAX_ARITY, nums_lte);
+    super::bind_intrinsic(env, ">=", 0..MAX_ARITY, nums_gte);
 
     super::bind_intrinsic(env, "zero?", 1..1, is_zero);
     super::bind_intrinsic(env, "positive?", 1..1, is_positive);
@@ -51,6 +57,26 @@ try_predicate!(
 );
 try_predicate!(is_zero, Value::Number, TypeName::NUMBER, |n: &Number| n
     .is_zero());
+
+fn nums_equal(_args: &[Value], _env: &Frame) -> EvalResult {
+    todo!();
+}
+
+fn nums_lt(_args: &[Value], _env: &Frame) -> EvalResult {
+    todo!();
+}
+
+fn nums_gt(_args: &[Value], _env: &Frame) -> EvalResult {
+    todo!();
+}
+
+fn nums_lte(_args: &[Value], _env: &Frame) -> EvalResult {
+    todo!();
+}
+
+fn nums_gte(_args: &[Value], _env: &Frame) -> EvalResult {
+    todo!();
+}
 
 fn is_positive(args: &[Value], _env: &Frame) -> EvalResult {
     real_op(first(args), |r| Ok(Value::Boolean(r.is_positive())))
