@@ -1,20 +1,25 @@
 // (scheme base)
 macro_rules! seq_predicate {
     ($name:ident, $kind:path, $valname:expr, $pred:expr) => {
+        seq_predicate!($name, $kind(a), a, $valname, $pred, |idx, et, v| {
+            Condition::arg_error(idx, et, v)
+        });
+    };
+    ($name:ident, $pattern:pat, $varname:ident, $valname:expr, $pred:expr, $err:expr) => {
         fn $name(args: &[Value], _env: &Frame) -> EvalResult {
             let mut it = args.iter().enumerate();
             let first = match it.next() {
                 None => return Ok(Value::Boolean(true)),
-                Some((_, $kind(a))) => a,
+                Some((_, $pattern)) => $varname,
                 Some((idx, v)) => {
-                    return Err(Condition::arg_error(idx, $valname, v).into());
+                    return Err($err(idx, $valname, v).into());
                 }
             };
             it.try_fold((true, first), |(acc, prev), (idx, val)| {
-                if let $kind(next) = val {
-                    Ok((acc && $pred(prev, next), next))
+                if let $pattern = val {
+                    Ok((acc && $pred(prev, $varname), $varname))
                 } else {
-                    Err(Condition::arg_error(idx, $valname, val).into())
+                    Err($err(idx, $valname, val).into())
                 }
             })
             .map(|(b, _)| Value::Boolean(b))

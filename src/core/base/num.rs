@@ -44,6 +44,38 @@ predicate!(is_real, Value::Number(Number::Real(_)));
 predicate!(is_rational, Value::Number(Number::Real(r)) if r.is_rational());
 predicate!(is_integer, Value::Number(Number::Real(r)) if r.is_integer());
 seq_predicate!(nums_equal, Value::Number, TypeName::NUMBER, Number::eq);
+seq_predicate!(
+    nums_lt,
+    Value::Number(Number::Real(r)),
+    r,
+    NumericTypeName::REAL,
+    Real::lt,
+    seq_error
+);
+seq_predicate!(
+    nums_gt,
+    Value::Number(Number::Real(r)),
+    r,
+    NumericTypeName::REAL,
+    Real::gt,
+    seq_error
+);
+seq_predicate!(
+    nums_lte,
+    Value::Number(Number::Real(r)),
+    r,
+    NumericTypeName::REAL,
+    Real::le,
+    seq_error
+);
+seq_predicate!(
+    nums_gte,
+    Value::Number(Number::Real(r)),
+    r,
+    NumericTypeName::REAL,
+    Real::ge,
+    seq_error
+);
 try_predicate!(is_exact, Value::Number, TypeName::NUMBER, |n: &Number| {
     !n.is_inexact()
 });
@@ -58,22 +90,6 @@ try_predicate!(
 );
 try_predicate!(is_zero, Value::Number, TypeName::NUMBER, |n: &Number| n
     .is_zero());
-
-fn nums_lt(_args: &[Value], _env: &Frame) -> EvalResult {
-    todo!();
-}
-
-fn nums_gt(_args: &[Value], _env: &Frame) -> EvalResult {
-    todo!();
-}
-
-fn nums_lte(_args: &[Value], _env: &Frame) -> EvalResult {
-    todo!();
-}
-
-fn nums_gte(_args: &[Value], _env: &Frame) -> EvalResult {
-    todo!();
-}
 
 fn is_positive(args: &[Value], _env: &Frame) -> EvalResult {
     real_op(first(args), |r| Ok(Value::Boolean(r.is_positive())))
@@ -169,6 +185,14 @@ fn guarded_real_op(
         op(r)
     } else {
         Err(Condition::arg_type_error(FIRST_ARG_LABEL, expected_type, n.as_typename(), arg).into())
+    }
+}
+
+fn seq_error(name: impl Display, expected_type: impl Display, arg: &Value) -> Condition {
+    if let Value::Number(n) = arg {
+        Condition::arg_type_error(name, expected_type, n.as_typename(), arg)
+    } else {
+        Condition::arg_error(name, expected_type, arg)
     }
 }
 

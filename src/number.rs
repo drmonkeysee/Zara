@@ -492,6 +492,12 @@ impl PartialEq for Real {
     }
 }
 
+impl PartialOrd for Real {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        todo!()
+    }
+}
+
 impl Display for Real {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
