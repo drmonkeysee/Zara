@@ -30,6 +30,9 @@ pub(super) fn load(env: &Frame) {
     super::bind_intrinsic(env, "odd?", 1..1, is_odd);
     super::bind_intrinsic(env, "even?", 1..1, is_even);
 
+    super::bind_intrinsic(env, "max", 1..MAX_ARITY, nums_max);
+    super::bind_intrinsic(env, "min", 1..MAX_ARITY, nums_min);
+
     super::bind_intrinsic(env, "+", 0..MAX_ARITY, nums_add);
 
     super::bind_intrinsic(env, "abs", 1..1, abs);
@@ -107,6 +110,14 @@ fn is_odd(args: &[Value], _env: &Frame) -> EvalResult {
 
 fn is_even(args: &[Value], _env: &Frame) -> EvalResult {
     exact_int_predicate(first(args), Integer::is_even)
+}
+
+fn nums_max(args: &[Value], _env: &Frame) -> EvalResult {
+    real_acc_op(first(args), args.iter().skip(1), Real::lt)
+}
+
+fn nums_min(args: &[Value], _env: &Frame) -> EvalResult {
+    real_acc_op(first(args), args.iter().skip(1), Real::gt)
 }
 
 fn nums_add(args: &[Value], _env: &Frame) -> EvalResult {
@@ -201,6 +212,48 @@ fn guarded_real_op(
     } else {
         Err(Condition::arg_type_error(FIRST_ARG_LABEL, expected_type, n.as_typename(), arg).into())
     }
+}
+
+fn real_acc_op<'a>(
+    first: &Value,
+    rest: impl IntoIterator<Item = &'a Value>,
+    op: impl Fn(&Real, &Real) -> bool,
+) -> EvalResult {
+    let Value::Number(x) = first else {
+        return Err(invalid_target(NumericTypeName::REAL, first));
+    };
+    let Number::Real(r) = x else {
+        return Err(Condition::arg_type_error(
+            FIRST_ARG_LABEL,
+            NumericTypeName::REAL,
+            x.as_typename(),
+            first,
+        )
+        .into());
+    };
+    rest.into_iter()
+        .enumerate()
+        .try_fold(r.clone(), |acc, (k, v)| {
+            let Value::Number(x) = v else {
+                return Err(Condition::arg_error(k, NumericTypeName::REAL, v).into());
+            };
+            let Number::Real(r) = x else {
+                return Err(
+                    Condition::arg_type_error(k, NumericTypeName::REAL, x.as_typename(), v).into(),
+                );
+            };
+            Ok(if op(&acc, r) {
+                let new = r.clone();
+                if matches!(acc, Real::Float(_)) {
+                    new.into_inexact()
+                } else {
+                    new
+                }
+            } else {
+                acc
+            })
+        })
+        .map(|r| Value::Number(Number::real(r.clone())))
 }
 
 fn seq_error(name: impl Display, expected_type: impl Display, arg: &Value) -> Condition {
