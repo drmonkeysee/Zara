@@ -35,6 +35,10 @@ pub(super) fn load(env: &Frame) {
     super::bind_intrinsic(env, "min", 1..MAX_ARITY, nums_min);
 
     super::bind_intrinsic(env, "+", 0..MAX_ARITY, nums_add);
+    super::bind_intrinsic(env, "*", 0..MAX_ARITY, nums_mult);
+
+    super::bind_intrinsic(env, "-", 1..MAX_ARITY, nums_sub);
+    super::bind_intrinsic(env, "/", 1..MAX_ARITY, nums_div);
 
     super::bind_intrinsic(env, "abs", 1..1, abs);
 
@@ -134,6 +138,36 @@ fn nums_add(args: &[Value], _env: &Frame) -> EvalResult {
             }
         })
         .map(Value::Number)
+}
+
+fn nums_mult(_args: &[Value], _env: &Frame) -> EvalResult {
+    todo!();
+}
+
+fn nums_sub(args: &[Value], _env: &Frame) -> EvalResult {
+    let arg = first(args);
+    let Value::Number(x) = arg else {
+        return Err(invalid_target(TypeName::NUMBER, arg));
+    };
+    if args.len() == 1 {
+        Ok(Value::Number(x.clone().into_negated()))
+    } else {
+        args.iter()
+            .skip(1)
+            .enumerate()
+            .try_fold(x.clone(), |sum, (idx, v)| {
+                if let Value::Number(x) = v {
+                    Ok(sum + x.clone().into_negated())
+                } else {
+                    Err(Condition::arg_error(idx + 1, TypeName::NUMBER, v).into())
+                }
+            })
+            .map(Value::Number)
+    }
+}
+
+fn nums_div(_args: &[Value], _env: &Frame) -> EvalResult {
+    todo!();
 }
 
 fn abs(args: &[Value], _env: &Frame) -> EvalResult {
@@ -239,17 +273,18 @@ fn real_acc_op<'a>(
     op: impl Fn(&Real, &Real) -> bool,
 ) -> EvalResult {
     let r = arg_to_real(first, FIRST_ARG_LABEL, NumericTypeName::REAL)?;
+    let mut float_taint = r.is_inexact();
     rest.into_iter()
         .enumerate()
         .try_fold(r.clone(), |mut acc, (idx, v)| {
             let r = arg_to_real(v, idx + 1, NumericTypeName::REAL)?;
-            let float_taint = acc.is_inexact() || r.is_inexact();
+            float_taint = float_taint || r.is_inexact();
             if op(&acc, r) {
                 acc = r.clone();
             }
-            Ok(if float_taint { acc.into_inexact() } else { acc })
+            Ok(acc)
         })
-        .map(Value::real)
+        .map(|r| Value::real(if float_taint { r.into_inexact() } else { r }))
 }
 
 fn arg_to_real(

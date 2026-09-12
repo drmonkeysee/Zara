@@ -120,11 +120,11 @@ pub(crate) enum Number {
 
 impl Number {
     pub(crate) fn zero() -> Self {
-        Self::Real(Real::zero())
+        Self::real(Real::zero())
     }
 
     pub(crate) fn nan() -> Self {
-        Self::Real(Real::nan())
+        Self::real(Real::nan())
     }
 
     pub(crate) fn complex(real: impl Into<Real>, imag: impl Into<Real>) -> Self {
@@ -213,7 +213,14 @@ impl Number {
     pub(crate) fn into_inexact(self) -> Self {
         match self {
             Self::Complex(Complex(z)) => Self::complex(z.0.into_inexact(), z.1.into_inexact()),
-            Self::Real(r) => Self::Real(r.into_inexact()),
+            Self::Real(r) => Self::real(r.into_inexact()),
+        }
+    }
+
+    pub(crate) fn into_negated(self) -> Self {
+        match self {
+            Self::Complex(Complex(z)) => Self::complex(z.0.into_negated(), z.1.into_negated()),
+            Self::Real(r) => Self::real(r.into_negated()),
         }
     }
 
@@ -222,7 +229,7 @@ impl Number {
             Self::Complex(Complex(z)) => {
                 Self::complex(z.0.try_into_exact()?, z.1.try_into_exact()?)
             }
-            Self::Real(r) => Self::Real(r.try_into_exact()?),
+            Self::Real(r) => Self::real(r.try_into_exact()?),
         })
     }
 }
@@ -502,6 +509,14 @@ impl Real {
             Self::Rational(q) => q.to_float(),
         }
     }
+
+    fn into_negated(self) -> Self {
+        match self {
+            Self::Float(f) => (-f).into(),
+            Self::Integer(n) => n.into_negated().into(),
+            Self::Rational(q) => Self::Rational(q.into_negated()),
+        }
+    }
 }
 
 impl PartialEq for Real {
@@ -587,6 +602,10 @@ impl Rational {
     fn into_abs(mut self) -> Self {
         self.0.0 = self.0.0.into_abs();
         self
+    }
+
+    fn into_negated(self) -> Self {
+        Self((self.0.0.into_negated(), self.0.1).into())
     }
 
     fn into_numerator(self) -> Integer {
@@ -791,6 +810,15 @@ impl Integer {
 
     fn into_abs(mut self) -> Self {
         self.make_positive();
+        self
+    }
+
+    fn into_negated(mut self) -> Self {
+        match self.sign {
+            Sign::Negative => self.make_positive(),
+            Sign::Positive => self.make_negative(),
+            Sign::Zero => (),
+        }
         self
     }
 }
