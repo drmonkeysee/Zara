@@ -238,9 +238,13 @@ fn real_acc_op<'a>(
                 return Err(Condition::arg_error(k, NumericTypeName::REAL, v).into());
             };
             let Number::Real(r) = x else {
-                return Err(
-                    Condition::arg_type_error(k, NumericTypeName::REAL, x.as_typename(), v).into(),
-                );
+                return Err(Condition::arg_type_error(
+                    k,
+                    NumericTypeName::REAL,
+                    x.as_typename(),
+                    v,
+                )
+                .into());
             };
             Ok(if op(&acc, r) {
                 let new = r.clone();
@@ -378,6 +382,198 @@ mod tests {
         assert_eq!(
             err.to_string(),
             "#<value-error \"expected exact integer, got: 3.2\" (3.2)>"
+        );
+    }
+
+    #[test]
+    fn max_single_arg() {
+        let args = [Value::real(4)];
+        let env = TestEnv::default();
+
+        let r = nums_max(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_matches!(v, Value::Number(Number::Real(Real::Integer(_))));
+        assert_eq!(v.as_datum().to_string(), "4");
+    }
+
+    #[test]
+    fn max_of_integers() {
+        let args = [Value::real(3), Value::real(7), Value::real(5)];
+        let env = TestEnv::default();
+
+        let r = nums_max(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_matches!(v, Value::Number(Number::Real(Real::Integer(_))));
+        assert_eq!(v.as_datum().to_string(), "7");
+    }
+
+    #[test]
+    fn max_first_arg_is_largest() {
+        let args = [Value::real(9), Value::real(2), Value::real(3)];
+        let env = TestEnv::default();
+
+        let r = nums_max(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_matches!(v, Value::Number(Number::Real(Real::Integer(_))));
+        assert_eq!(v.as_datum().to_string(), "9");
+    }
+
+    #[test]
+    fn max_negative_integers() {
+        let args = [Value::real(-5), Value::real(-2), Value::real(-9)];
+        let env = TestEnv::default();
+
+        let r = nums_max(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_matches!(v, Value::Number(Number::Real(Real::Integer(_))));
+        assert_eq!(v.as_datum().to_string(), "-2");
+    }
+
+    #[test]
+    fn max_equal_args() {
+        let args = [Value::real(4), Value::real(4), Value::real(4)];
+        let env = TestEnv::default();
+
+        let r = nums_max(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_matches!(v, Value::Number(Number::Real(Real::Integer(_))));
+        assert_eq!(v.as_datum().to_string(), "4");
+    }
+
+    #[test]
+    #[ignore = "Rational ordering not yet implemented"]
+    fn max_rationals() {
+        let args = [
+            Value::real(ok_or_fail!(Real::reduce(1, 2))),
+            Value::real(ok_or_fail!(Real::reduce(2, 3))),
+        ];
+        let env = TestEnv::default();
+
+        let r = nums_max(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_matches!(v, Value::Number(Number::Real(Real::Rational(_))));
+        assert_eq!(v.as_datum().to_string(), "2/3");
+    }
+
+    #[test]
+    fn max_inexact_arg_wins() {
+        let args = [Value::real(3), Value::real(4.0)];
+        let env = TestEnv::default();
+
+        let r = nums_max(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_matches!(v, Value::Number(Number::Real(Real::Float(_))));
+        assert_eq!(v.as_datum().to_string(), "4.0");
+    }
+
+    #[test]
+    fn max_inexact_first_arg() {
+        let args = [Value::real(1.5), Value::real(3)];
+        let env = TestEnv::default();
+
+        let r = nums_max(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_matches!(v, Value::Number(Number::Real(Real::Float(_))));
+        assert_eq!(v.as_datum().to_string(), "3.0");
+    }
+
+    #[test]
+    fn max_exact_arg_beats_inexact() {
+        let args = [Value::real(5), Value::real(2.0)];
+        let env = TestEnv::default();
+
+        let r = nums_max(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_matches!(v, Value::Number(Number::Real(Real::Float(_))));
+        assert_eq!(v.as_datum().to_string(), "5.0");
+    }
+
+    #[test]
+    fn max_invalid_first_arg() {
+        let args = [Value::string("foo"), Value::real(1)];
+        let env = TestEnv::default();
+
+        let r = nums_max(&args, &env.new_frame());
+
+        let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
+        assert_eq!(
+            err.to_string(),
+            "#<value-error \"invalid type for arg `0` - expected: real, got: string\" (\"foo\")>"
+        );
+    }
+
+    #[test]
+    fn max_complex_first_arg() {
+        let args = [Value::Number(Number::complex(3, 4)), Value::real(1)];
+        let env = TestEnv::default();
+
+        let r = nums_max(&args, &env.new_frame());
+
+        let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
+        assert_eq!(
+            err.to_string(),
+            "#<value-error \"invalid type for arg `0` - expected: real, got: complex\" (3+4i)>"
+        );
+    }
+
+    #[test]
+    fn max_invalid_later_arg() {
+        let args = [Value::real(1), Value::string("foo")];
+        let env = TestEnv::default();
+
+        let r = nums_max(&args, &env.new_frame());
+
+        let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
+        assert_eq!(
+            err.to_string(),
+            "#<value-error \"invalid type for arg `1` - expected: real, got: string\" (\"foo\")>"
+        );
+    }
+
+    #[test]
+    fn min_of_integers() {
+        let args = [Value::real(3), Value::real(7), Value::real(5)];
+        let env = TestEnv::default();
+
+        let r = nums_min(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_matches!(v, Value::Number(Number::Real(Real::Integer(_))));
+        assert_eq!(v.as_datum().to_string(), "3");
+    }
+
+    #[test]
+    fn min_inexact_arg_wins() {
+        let args = [Value::real(3), Value::real(1.0)];
+        let env = TestEnv::default();
+
+        let r = nums_min(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_matches!(v, Value::Number(Number::Real(Real::Float(_))));
+        assert_eq!(v.as_datum().to_string(), "1.0");
+    }
+
+    #[test]
+    fn min_invalid_first_arg() {
+        let args = [Value::string("foo"), Value::real(1)];
+        let env = TestEnv::default();
+
+        let r = nums_min(&args, &env.new_frame());
+
+        let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
+        assert_eq!(
+            err.to_string(),
+            "#<value-error \"invalid type for arg `0` - expected: real, got: string\" (\"foo\")>"
         );
     }
 }
