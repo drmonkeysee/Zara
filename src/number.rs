@@ -876,7 +876,7 @@ impl Add<Real> for Integer {
         match rhs {
             Real::Float(f) => (self.to_float() + f).into(),
             Real::Integer(n) => self.add(n).into(),
-            Real::Rational(q) => (self.into_rational() + q).into(),
+            Real::Rational(q) => self.into_rational() + q,
         }
     }
 }

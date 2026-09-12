@@ -119,7 +119,7 @@ fn nums_add(args: &[Value], _env: &Frame) -> EvalResult {
                 Err(Condition::arg_error(k, TypeName::NUMBER, v).into())
             }
         })
-        .map(|n| Value::Number(n))
+        .map(Value::Number)
 }
 
 fn abs(args: &[Value], _env: &Frame) -> EvalResult {
