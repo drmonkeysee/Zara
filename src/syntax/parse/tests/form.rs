@@ -138,8 +138,8 @@ fn expression_item() {
         &seq[3],
         Expression {
             ctx: ExprCtx { span: TxtSpan { start: 6, end: 7 }, txt: line },
-            kind: ExpressionKind::Literal(Value::Number(n)),
-        } if n.to_string() == "10" && Rc::ptr_eq(&txt, line)
+            kind: ExpressionKind::Literal(Value::Number(x)),
+        } if x.to_string() == "10" && Rc::ptr_eq(&txt, line)
     );
 }
 
@@ -516,15 +516,15 @@ fn into_procedure_call() {
         &args[0],
         Expression {
             ctx: ExprCtx { span: TxtSpan { start: 1, end: 4 }, txt: line },
-            kind: ExpressionKind::Literal(Value::Number(n)),
-        } if n.to_string() == "4" && Rc::ptr_eq(&txt, line)
+            kind: ExpressionKind::Literal(Value::Number(x)),
+        } if x.to_string() == "4" && Rc::ptr_eq(&txt, line)
     );
     assert_matches!(
         &args[1],
         Expression {
             ctx: ExprCtx { span: TxtSpan { start: 4, end: 6 }, txt: line },
-            kind: ExpressionKind::Literal(Value::Number(n)),
-        } if n.to_string() == "5" && Rc::ptr_eq(&txt, line)
+            kind: ExpressionKind::Literal(Value::Number(x)),
+        } if x.to_string() == "5" && Rc::ptr_eq(&txt, line)
     );
 }
 

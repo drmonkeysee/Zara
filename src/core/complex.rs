@@ -78,8 +78,8 @@ fn get_complex_part(
     get: impl FnOnce(&Complex) -> Real,
     fallback: impl FnOnce(&Real) -> Real,
 ) -> EvalResult {
-    if let Value::Number(n) = arg {
-        Ok(Value::real(match n {
+    if let Value::Number(x) = arg {
+        Ok(Value::real(match x {
             Number::Complex(z) => get(z),
             Number::Real(r) => fallback(r),
         }))

@@ -89,7 +89,7 @@ fn resolve_exit<T: Copy>(
 ) -> T {
     v.map_or(success, |val| match val {
         Value::Boolean(true) => success,
-        Value::Number(n) => convert(n),
+        Value::Number(x) => convert(x),
         _ => failure,
     })
 }

@@ -383,12 +383,12 @@ fn parse_expr(token: Token, txt: &Rc<TextLine>, quoted: bool, ns: &Namespace) ->
             ParseMode::identifier(s, quoted),
             token.span.start,
         )),
-        TokenKind::Number(n) => ExprFlow::Continue(Some(
+        TokenKind::Number(x) => ExprFlow::Continue(Some(
             ExprCtx {
                 span: token.span,
                 txt: Rc::clone(txt),
             }
-            .into_expr(ExpressionKind::Literal(Value::Number(n))),
+            .into_expr(ExpressionKind::Literal(Value::Number(x))),
         )),
         TokenKind::PairJoiner => ExprFlow::Break(ParseBreak::recover(
             ExprCtx {
@@ -551,7 +551,7 @@ fn into_bytevector(seq: Vec<Expression>, ctx: ExprCtx) -> ExprConvertResult {
         seq,
         ctx,
         |expr| match expr.kind {
-            ExpressionKind::Literal(Value::Number(n)) => n.try_into().map_err(|err| {
+            ExpressionKind::Literal(Value::Number(x)) => x.try_into().map_err(|err| {
                 expr.ctx
                     .into_error(ExpressionErrorKind::ByteVectorInvalidNumber(err))
             }),

@@ -113,7 +113,7 @@ impl Display for TokenKind {
             Self::Imaginary(r) => write!(f, "IMAGINARY<{}>", r.as_token_descriptor()),
             Self::LabelDef(_) => f.write_str("LABELDEF"),
             Self::LabelRef(_) => f.write_str("LABELREF"),
-            Self::Number(n) => write!(f, "NUM<{}>", n.as_token_descriptor()),
+            Self::Number(x) => write!(f, "NUM<{}>", x.as_token_descriptor()),
             Self::PairJoiner => f.write_str("PAIR"),
             Self::ParenLeft => f.write_str("LEFTPAREN"),
             Self::ParenRight => f.write_str("RIGHTPAREN"),

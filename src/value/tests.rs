@@ -2195,7 +2195,7 @@ mod iterator {
         assert_eq!(vec.len(), 1);
         assert_matches!(
             &vec[0],
-            Value::Number(n) if n.to_string() == "5"
+            Value::Number(x) if x.to_string() == "5"
         );
     }
 
@@ -2208,7 +2208,7 @@ mod iterator {
 
         assert_eq!(vec.len(), 2);
         assert_matches!(&vec[0], v @ Value::Pair(_) if v.as_datum().to_string() == "(5 . 10)");
-        assert_matches!(&vec[1], Value::Number(n) if n.to_string() == "10");
+        assert_matches!(&vec[1], Value::Number(x) if x.to_string() == "10");
     }
 
     #[test]

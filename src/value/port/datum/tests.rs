@@ -346,7 +346,7 @@ fn complex() {
     let v = some_or_fail!(ok_or_fail!(r));
     assert_matches!(
         v,
-        Value::Number(n) if n.to_string() == "4+5i"
+        Value::Number(x) if x.to_string() == "4+5i"
     );
 
     let r = parse(&mut s, &f, "test-port");
@@ -354,7 +354,7 @@ fn complex() {
     let v = some_or_fail!(ok_or_fail!(r));
     assert_matches!(
         v,
-        Value::Number(n) if n.to_string() == "3-2i"
+        Value::Number(x) if x.to_string() == "3-2i"
     );
 
     let r = parse(&mut s, &f, "test-port");
@@ -362,7 +362,7 @@ fn complex() {
     let v = some_or_fail!(ok_or_fail!(r));
     assert_matches!(
         v,
-        Value::Number(n) if n.to_string() == "+i"
+        Value::Number(x) if x.to_string() == "+i"
     );
 
     let r = parse(&mut s, &f, "test-port");
@@ -370,7 +370,7 @@ fn complex() {
     let v = some_or_fail!(ok_or_fail!(r));
     assert_matches!(
         v,
-        Value::Number(n) if n.to_string() == "-i"
+        Value::Number(x) if x.to_string() == "-i"
     );
 
     let r = parse(&mut s, &f, "test-port");
@@ -378,7 +378,7 @@ fn complex() {
     let v = some_or_fail!(ok_or_fail!(r));
     assert_matches!(
         v,
-        Value::Number(n) if n.to_string() == "+2i"
+        Value::Number(x) if x.to_string() == "+2i"
     );
 
     let r = parse(&mut s, &f, "test-port");
@@ -386,7 +386,7 @@ fn complex() {
     let v = some_or_fail!(ok_or_fail!(r));
     assert_matches!(
         v,
-        Value::Number(n) if n.to_string() == "-3i"
+        Value::Number(x) if x.to_string() == "-3i"
     );
 
     let r = parse(&mut s, &f, "test-port");
@@ -394,7 +394,7 @@ fn complex() {
     let v = some_or_fail!(ok_or_fail!(r));
     assert_matches!(
         v,
-        Value::Number(n) if n.to_string() == "16.81030364216735+27.22891278509179i"
+        Value::Number(x) if x.to_string() == "16.81030364216735+27.22891278509179i"
     );
 
     let r = parse(&mut s, &f, "test-port");

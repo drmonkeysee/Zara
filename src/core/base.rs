@@ -112,8 +112,8 @@ fn char_to_integer(args: &[Value], _env: &Frame) -> EvalResult {
 
 fn char_from_integer(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = first(args);
-    if let Value::Number(n) = arg {
-        try_num_into_char(n, arg)
+    if let Value::Number(x) = arg {
+        try_num_into_char(x, arg)
     } else {
         Err(invalid_target(NumericTypeName::INTEGER, arg))
     }

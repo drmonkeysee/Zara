@@ -72,8 +72,8 @@ mod expr {
             ExprFlow::Continue(Some(
                 Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 0, end: 3 }, txt: line },
-                kind: ExpressionKind::Literal(Value::Number(n)),
-            })) if Rc::ptr_eq(&txt, &line) && n.to_string() == "45"
+                kind: ExpressionKind::Literal(Value::Number(x)),
+            })) if Rc::ptr_eq(&txt, &line) && x.to_string() == "45"
         );
     }
 
@@ -94,8 +94,8 @@ mod expr {
             ExprFlow::Continue(Some(
                 Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 0, end: 3 }, txt: line },
-                kind: ExpressionKind::Literal(Value::Number(n)),
-            })) if n.to_string() == "+1.2i" && Rc::ptr_eq(&txt, &line)
+                kind: ExpressionKind::Literal(Value::Number(x)),
+            })) if x.to_string() == "+1.2i" && Rc::ptr_eq(&txt, &line)
         );
     }
 
@@ -1005,7 +1005,7 @@ mod vector {
         assert_matches!(&v[1], Value::Null);
         assert_matches!(
             &v[2],
-            Value::Number(n) if n.to_string() == "26"
+            Value::Number(x) if x.to_string() == "26"
         );
     }
 
@@ -2057,8 +2057,8 @@ mod program {
             &seq[0],
             Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 0, end: 3 }, txt: line },
-                kind: ExpressionKind::Literal(Value::Number(n)),
-            } if n.to_string() == "24" && Rc::ptr_eq(&txt, line)
+                kind: ExpressionKind::Literal(Value::Number(x)),
+            } if x.to_string() == "24" && Rc::ptr_eq(&txt, line)
         );
     }
 
@@ -2217,8 +2217,8 @@ mod data {
             &seq[0],
             Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 0, end: 3 }, txt: line },
-                kind: ExpressionKind::Literal(Value::Number(n)),
-            } if n.to_string() == "24" && Rc::ptr_eq(&txt, line)
+                kind: ExpressionKind::Literal(Value::Number(x)),
+            } if x.to_string() == "24" && Rc::ptr_eq(&txt, line)
         );
     }
 }

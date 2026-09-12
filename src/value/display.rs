@@ -24,7 +24,7 @@ impl Display for SimpleDatum<'_> {
             Value::Error(c) => c.fmt(f),
             Value::Intrinsic(p) => p.fmt(f),
             Value::Null => f.write_str("()"),
-            Value::Number(n) => n.fmt(f),
+            Value::Number(x) => x.fmt(f),
             Value::Pair(p) => SimplePairDatum(p).fmt(f),
             Value::PairMut(p) => SimplePairDatum(&p.borrow()).fmt(f),
             Value::PortInput(p) => p.borrow().fmt(f),

@@ -123,11 +123,11 @@ fn nums_min(args: &[Value], _env: &Frame) -> EvalResult {
 fn nums_add(args: &[Value], _env: &Frame) -> EvalResult {
     args.iter()
         .enumerate()
-        .try_fold(Number::zero(), |sum, (k, v)| {
-            if let Value::Number(n) = v {
-                Ok(sum + n.clone())
+        .try_fold(Number::zero(), |sum, (idx, v)| {
+            if let Value::Number(x) = v {
+                Ok(sum + x.clone())
             } else {
-                Err(Condition::arg_error(k, TypeName::NUMBER, v).into())
+                Err(Condition::arg_error(idx, TypeName::NUMBER, v).into())
             }
         })
         .map(Value::Number)
@@ -159,8 +159,8 @@ fn get_denominator(args: &[Value], _env: &Frame) -> EvalResult {
 
 fn into_inexact(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = first(args);
-    if let Value::Number(n) = arg {
-        Ok(Value::Number(n.clone().into_inexact()))
+    if let Value::Number(x) = arg {
+        Ok(Value::Number(x.clone().into_inexact()))
     } else {
         Err(invalid_target(TypeName::NUMBER, arg))
     }
@@ -168,8 +168,8 @@ fn into_inexact(args: &[Value], _env: &Frame) -> EvalResult {
 
 fn into_exact(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = first(args);
-    if let Value::Number(n) = arg {
-        n.clone().try_into_exact().map_or_else(
+    if let Value::Number(x) = arg {
+        x.clone().try_into_exact().map_or_else(
             |err| Err(Condition::value_error(err, arg).into()),
             |n| Ok(Value::Number(n)),
         )
@@ -204,13 +204,13 @@ fn guarded_real_op(
     expected_type: impl Display,
     op: impl FnOnce(&Real) -> EvalResult,
 ) -> EvalResult {
-    let Value::Number(n) = arg else {
+    let Value::Number(x) = arg else {
         return Err(invalid_target(expected_type, arg));
     };
-    if let Number::Real(r) = n {
+    if let Number::Real(r) = x {
         op(r)
     } else {
-        Err(Condition::arg_type_error(FIRST_ARG_LABEL, expected_type, n.as_typename(), arg).into())
+        Err(Condition::arg_type_error(FIRST_ARG_LABEL, expected_type, x.as_typename(), arg).into())
     }
 }
 
@@ -233,13 +233,13 @@ fn real_acc_op<'a>(
     };
     rest.into_iter()
         .enumerate()
-        .try_fold(r.clone(), |mut acc, (k, v)| {
+        .try_fold(r.clone(), |mut acc, (idx, v)| {
             let Value::Number(x) = v else {
-                return Err(Condition::arg_error(k + 1, NumericTypeName::REAL, v).into());
+                return Err(Condition::arg_error(idx + 1, NumericTypeName::REAL, v).into());
             };
             let Number::Real(r) = x else {
                 return Err(Condition::arg_type_error(
-                    k + 1,
+                    idx + 1,
                     NumericTypeName::REAL,
                     x.as_typename(),
                     v,
@@ -256,8 +256,8 @@ fn real_acc_op<'a>(
 }
 
 fn seq_error(name: impl Display, expected_type: impl Display, arg: &Value) -> Condition {
-    if let Value::Number(n) = arg {
-        Condition::arg_type_error(name, expected_type, n.as_typename(), arg)
+    if let Value::Number(x) = arg {
+        Condition::arg_type_error(name, expected_type, x.as_typename(), arg)
     } else {
         Condition::arg_error(name, expected_type, arg)
     }

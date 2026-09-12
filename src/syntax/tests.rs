@@ -224,15 +224,15 @@ mod parsing {
             &args[0],
             Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 7, end: 8 }, .. },
-                kind: ExpressionKind::Literal(Value::Number(n)),
-            } if n.to_string() == "2"
+                kind: ExpressionKind::Literal(Value::Number(x)),
+            } if x.to_string() == "2"
         );
         assert_matches!(
             &args[1],
             Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 8, end: 9 }, .. },
-                kind: ExpressionKind::Literal(Value::Number(n)),
-            } if n.to_string() == "3"
+                kind: ExpressionKind::Literal(Value::Number(x)),
+            } if x.to_string() == "3"
         );
         assert!(et.parsers.is_empty());
     }
@@ -1365,8 +1365,8 @@ mod parsing {
             &args[1],
             Expression {
                 ctx: ExprCtx { span: TxtSpan { start: 3, end: 4 }, .. },
-                kind: ExpressionKind::Literal(Value::Number(n)),
-            } if n.to_string() == "20"
+                kind: ExpressionKind::Literal(Value::Number(x)),
+            } if x.to_string() == "20"
         );
         assert!(et.parsers.is_empty());
     }
