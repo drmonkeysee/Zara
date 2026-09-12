@@ -233,29 +233,24 @@ fn real_acc_op<'a>(
     };
     rest.into_iter()
         .enumerate()
-        .try_fold(r.clone(), |acc, (k, v)| {
+        .try_fold(r.clone(), |mut acc, (k, v)| {
             let Value::Number(x) = v else {
-                return Err(Condition::arg_error(k, NumericTypeName::REAL, v).into());
+                return Err(Condition::arg_error(k + 1, NumericTypeName::REAL, v).into());
             };
             let Number::Real(r) = x else {
                 return Err(Condition::arg_type_error(
-                    k,
+                    k + 1,
                     NumericTypeName::REAL,
                     x.as_typename(),
                     v,
                 )
                 .into());
             };
-            Ok(if op(&acc, r) {
-                let new = r.clone();
-                if matches!(acc, Real::Float(_)) {
-                    new.into_inexact()
-                } else {
-                    new
-                }
-            } else {
-                acc
-            })
+            let float_taint = acc.is_inexact() || r.is_inexact();
+            if op(&acc, r) {
+                acc = r.clone();
+            }
+            Ok(if float_taint { acc.into_inexact() } else { acc })
         })
         .map(|r| Value::Number(Number::real(r.clone())))
 }

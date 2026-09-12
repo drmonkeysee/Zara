@@ -384,6 +384,10 @@ impl Real {
         }
     }
 
+    pub(crate) fn is_inexact(&self) -> bool {
+        matches!(self, Self::Float(_))
+    }
+
     pub(crate) fn as_token_descriptor(&self) -> RealTokenDescriptor<'_> {
         RealTokenDescriptor(self)
     }
@@ -472,10 +476,6 @@ impl Real {
 
     fn is_exact_zero(&self) -> bool {
         !self.is_inexact() && self.is_zero()
-    }
-
-    fn is_inexact(&self) -> bool {
-        matches!(self, Self::Float(_))
     }
 
     fn is_infinite(&self) -> bool {
