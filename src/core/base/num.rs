@@ -255,10 +255,7 @@ fn seq_error(name: impl Display, expected_type: impl Display, arg: &Value) -> Co
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{
-        Exception,
-        testutil::{TestEnv, err_or_fail, extract_or_fail, ok_or_fail},
-    };
+    use crate::testutil::{TestEnv, err_or_fail, extract_or_fail, ok_or_fail};
     use std::assert_matches;
 
     #[test]
