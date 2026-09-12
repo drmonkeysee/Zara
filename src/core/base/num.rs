@@ -1,5 +1,6 @@
 use super::{FIRST_ARG_LABEL, MAX_ARITY, first, invalid_target};
 use crate::{
+    Exception,
     eval::{EvalResult, Frame},
     number::{Integer, Number, NumericTypeName, Real},
     value::{Condition, TypeName, Value},
@@ -204,14 +205,8 @@ fn guarded_real_op(
     expected_type: impl Display,
     op: impl FnOnce(&Real) -> EvalResult,
 ) -> EvalResult {
-    let Value::Number(x) = arg else {
-        return Err(invalid_target(expected_type, arg));
-    };
-    if let Number::Real(r) = x {
-        op(r)
-    } else {
-        Err(Condition::arg_type_error(FIRST_ARG_LABEL, expected_type, x.as_typename(), arg).into())
-    }
+    let r = arg_to_real(arg, FIRST_ARG_LABEL, expected_type)?;
+    op(r)
 }
 
 fn real_acc_op<'a>(
@@ -219,33 +214,11 @@ fn real_acc_op<'a>(
     rest: impl IntoIterator<Item = &'a Value>,
     op: impl Fn(&Real, &Real) -> bool,
 ) -> EvalResult {
-    let Value::Number(x) = first else {
-        return Err(invalid_target(NumericTypeName::REAL, first));
-    };
-    let Number::Real(r) = x else {
-        return Err(Condition::arg_type_error(
-            FIRST_ARG_LABEL,
-            NumericTypeName::REAL,
-            x.as_typename(),
-            first,
-        )
-        .into());
-    };
+    let r = arg_to_real(first, FIRST_ARG_LABEL, NumericTypeName::REAL)?;
     rest.into_iter()
         .enumerate()
         .try_fold(r.clone(), |mut acc, (idx, v)| {
-            let Value::Number(x) = v else {
-                return Err(Condition::arg_error(idx + 1, NumericTypeName::REAL, v).into());
-            };
-            let Number::Real(r) = x else {
-                return Err(Condition::arg_type_error(
-                    idx + 1,
-                    NumericTypeName::REAL,
-                    x.as_typename(),
-                    v,
-                )
-                .into());
-            };
+            let r = arg_to_real(v, idx + 1, NumericTypeName::REAL)?;
             let float_taint = acc.is_inexact() || r.is_inexact();
             if op(&acc, r) {
                 acc = r.clone();
@@ -253,6 +226,22 @@ fn real_acc_op<'a>(
             Ok(if float_taint { acc.into_inexact() } else { acc })
         })
         .map(Value::real)
+}
+
+fn arg_to_real(
+    arg: &Value,
+    arg_name: impl Display,
+    expected_type: impl Display,
+) -> Result<&Real, Exception> {
+    let Value::Number(x) = arg else {
+        return Err(Condition::arg_error(arg_name, expected_type, arg).into());
+    };
+    let Number::Real(r) = x else {
+        return Err(
+            Condition::arg_type_error(arg_name, expected_type, x.as_typename(), arg).into(),
+        );
+    };
+    Ok(r)
 }
 
 fn seq_error(name: impl Display, expected_type: impl Display, arg: &Value) -> Condition {
