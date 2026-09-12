@@ -718,4 +718,182 @@ mod tests {
             "#<value-error \"invalid type for arg `0` - expected: integer, got: complex\" (3+4i)>"
         );
     }
+
+    #[test]
+    fn sub_single_positive_arg_negates() {
+        let args = [Value::real(4)];
+        let env = TestEnv::default();
+
+        let r = nums_sub(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_eq!(v.as_datum().to_string(), "-4");
+    }
+
+    #[test]
+    fn sub_single_negative_arg_negates() {
+        let args = [Value::real(-4)];
+        let env = TestEnv::default();
+
+        let r = nums_sub(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_eq!(v.as_datum().to_string(), "4");
+    }
+
+    #[test]
+    fn sub_single_zero_arg() {
+        let args = [Value::real(0)];
+        let env = TestEnv::default();
+
+        let r = nums_sub(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_eq!(v.as_datum().to_string(), "0");
+    }
+
+    #[test]
+    fn sub_single_float_arg_negates() {
+        let args = [Value::real(1.5)];
+        let env = TestEnv::default();
+
+        let r = nums_sub(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_eq!(v.as_datum().to_string(), "-1.5");
+    }
+
+    #[test]
+    fn sub_single_complex_arg_negates() {
+        let args = [Value::Number(Number::complex(3, 4))];
+        let env = TestEnv::default();
+
+        let r = nums_sub(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_eq!(v.as_datum().to_string(), "-3-4i");
+    }
+
+    #[test]
+    fn sub_two_args() {
+        let args = [Value::real(10), Value::real(3)];
+        let env = TestEnv::default();
+
+        let r = nums_sub(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_eq!(v.as_datum().to_string(), "7");
+    }
+
+    #[test]
+    fn sub_two_args_result_negative() {
+        let args = [Value::real(3), Value::real(10)];
+        let env = TestEnv::default();
+
+        let r = nums_sub(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_eq!(v.as_datum().to_string(), "-7");
+    }
+
+    #[test]
+    fn sub_two_equal_args_is_zero() {
+        let args = [Value::real(5), Value::real(5)];
+        let env = TestEnv::default();
+
+        let r = nums_sub(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_eq!(v.as_datum().to_string(), "0");
+    }
+
+    #[test]
+    fn sub_is_left_associative() {
+        let args = [Value::real(10), Value::real(3), Value::real(2)];
+        let env = TestEnv::default();
+
+        let r = nums_sub(&args, &env.new_frame());
+
+        // (10 - 3) - 2, not 10 - (3 - 2)
+        let v = ok_or_fail!(r);
+        assert_eq!(v.as_datum().to_string(), "5");
+    }
+
+    #[test]
+    fn sub_exact_args_stay_exact() {
+        let args = [Value::real(10), Value::real(3)];
+        let env = TestEnv::default();
+
+        let r = nums_sub(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_matches!(v, Value::Number(Number::Real(Real::Integer(_))));
+    }
+
+    #[test]
+    fn sub_inexact_later_arg_taints_result() {
+        let args = [Value::real(5), Value::real(2.0)];
+        let env = TestEnv::default();
+
+        let r = nums_sub(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_matches!(v, Value::Number(Number::Real(Real::Float(_))));
+        assert_eq!(v.as_datum().to_string(), "3.0");
+    }
+
+    #[test]
+    fn sub_inexact_first_arg_taints_result() {
+        let args = [Value::real(5.0), Value::real(2)];
+        let env = TestEnv::default();
+
+        let r = nums_sub(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_matches!(v, Value::Number(Number::Real(Real::Float(_))));
+        assert_eq!(v.as_datum().to_string(), "3.0");
+    }
+
+    #[test]
+    fn sub_invalid_first_arg() {
+        let args = [Value::string("foo"), Value::real(1)];
+        let env = TestEnv::default();
+
+        let r = nums_sub(&args, &env.new_frame());
+
+        let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
+        assert_eq!(
+            err.to_string(),
+            "#<value-error \"invalid type for arg `0` - expected: number, got: string\" (\"foo\")>"
+        );
+    }
+
+    #[test]
+    fn sub_invalid_later_arg() {
+        let args = [Value::real(1), Value::string("foo")];
+        let env = TestEnv::default();
+
+        let r = nums_sub(&args, &env.new_frame());
+
+        let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
+        assert_eq!(
+            err.to_string(),
+            "#<value-error \"invalid type for arg `1` - expected: number, got: string\" (\"foo\")>"
+        );
+    }
+
+    #[test]
+    #[ignore = "rational addition not yet implemented"]
+    fn sub_rationals() {
+        let args = [
+            Value::real(ok_or_fail!(Real::reduce(3, 4))),
+            Value::real(ok_or_fail!(Real::reduce(1, 4))),
+        ];
+        let env = TestEnv::default();
+
+        let r = nums_sub(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_eq!(v.as_datum().to_string(), "1/2");
+    }
 }
