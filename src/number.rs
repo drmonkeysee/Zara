@@ -85,7 +85,7 @@ use std::{
     cmp::Ordering,
     fmt::{self, Display, Formatter, Write},
     num::{IntErrorKind, ParseFloatError, ParseIntError},
-    ops::Add,
+    ops::{Add, Sub},
     rc::Rc,
     result::Result,
 };
@@ -343,7 +343,7 @@ impl Real {
             return Ok(n.into());
         }
         if n.cmp_magnitude(&d) == Ordering::Equal {
-            return Ok(Integer::single(1, n.sign).into());
+            return Ok(Integer::new(1, n.sign).into());
         }
         n.reduce(&mut d);
         if d.is_magnitude_one() {
@@ -552,8 +552,8 @@ impl Add for Real {
     fn add(self, rhs: Self) -> Self::Output {
         match self {
             Self::Float(f) => (f + rhs.to_float()).into(),
-            Self::Integer(n) => todo!("n + rhs"),
-            Self::Rational(q) => todo!("q + rhs"),
+            Self::Integer(n) => n + rhs,
+            Self::Rational(q) => q + rhs,
         }
     }
 }
@@ -610,6 +610,14 @@ impl Ord for Rational {
     }
 }
 
+impl Add for Rational {
+    type Output = Real;
+
+    fn add(self, _rhs: Self) -> Self::Output {
+        todo!()
+    }
+}
+
 impl Display for Rational {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         let r = &self.0;
@@ -638,6 +646,18 @@ impl PartialOrd<Real> for Rational {
     }
 }
 
+impl Add<Real> for Rational {
+    type Output = Real;
+
+    fn add(self, rhs: Real) -> Self::Output {
+        match rhs {
+            Real::Float(f) => (self.to_float() + f).into(),
+            Real::Integer(n) => self.add(n.into_rational()),
+            Real::Rational(q) => self.add(q),
+        }
+    }
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(crate) struct Integer {
     precision: Precision,
@@ -653,14 +673,12 @@ impl Integer {
         1.into()
     }
 
-    fn single(magnitude: u64, mut sign: Sign) -> Self {
-        if magnitude == 0 {
+    fn new(precision: impl Into<Precision>, mut sign: Sign) -> Self {
+        let precision = precision.into();
+        if precision.is_zero() {
             sign = Sign::Zero;
         }
-        Self {
-            precision: Precision::Single(magnitude),
-            sign,
-        }
+        Self { precision, sign }
     }
 
     fn from_usize(val: usize) -> Self {
@@ -785,6 +803,29 @@ impl Ord for Integer {
     }
 }
 
+impl Add for Integer {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        match (&self.sign, &rhs.sign) {
+            (_, Sign::Zero) => self,
+            (Sign::Zero, _) => rhs,
+            (Sign::Positive, Sign::Positive) | (Sign::Negative, Sign::Negative) => {
+                let sum = self.precision + rhs.precision;
+                Integer::new(sum, self.sign)
+            }
+            (Sign::Positive, Sign::Negative) | (Sign::Negative, Sign::Positive) => {
+                let (sign, sum) = if self.precision < rhs.precision {
+                    (rhs.sign, rhs.precision - self.precision)
+                } else {
+                    (self.sign, self.precision - rhs.precision)
+                };
+                Integer::new(sum, sign)
+            }
+        }
+    }
+}
+
 impl Display for Integer {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         self.sign.fmt(f)?;
@@ -804,7 +845,7 @@ impl From<i64> for Integer {
 
 impl From<(Sign, u64)> for Integer {
     fn from((sign, val): (Sign, u64)) -> Self {
-        Self::single(val, sign)
+        Self::new(val, sign)
     }
 }
 
@@ -824,6 +865,18 @@ impl PartialOrd<Real> for Integer {
             Real::Float(f) => self.to_float().partial_cmp(f),
             Real::Integer(n) => self.partial_cmp(n),
             Real::Rational(q) => self.clone().into_rational().partial_cmp(q),
+        }
+    }
+}
+
+impl Add<Real> for Integer {
+    type Output = Real;
+
+    fn add(self, rhs: Real) -> Self::Output {
+        match rhs {
+            Real::Float(f) => (self.to_float() + f).into(),
+            Real::Integer(n) => self.add(n).into(),
+            Real::Rational(q) => (self.into_rational() + q).into(),
         }
     }
 }
@@ -1171,6 +1224,13 @@ enum Precision {
 }
 
 impl Precision {
+    fn is_zero(&self) -> bool {
+        match self {
+            Self::Single(u) => *u == 0,
+            Self::Multiple(_) => false,
+        }
+    }
+
     fn is_even(&self) -> bool {
         match self {
             Self::Single(u) => u % 2 == 0,
@@ -1190,6 +1250,36 @@ impl Precision {
     }
 }
 
+impl Add for Precision {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        match (self, rhs) {
+            (Self::Single(a), Self::Single(b)) => {
+                let (s, c) = a.overflowing_add(b);
+                if c {
+                    todo!("handle precision overflow")
+                } else {
+                    Self::Single(s)
+                }
+            }
+            _ => todo!(),
+        }
+    }
+}
+
+// Naive sub implementation, relying on Integer to avoid subtraction overflow
+impl Sub for Precision {
+    type Output = Self;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        match (self, rhs) {
+            (Self::Single(a), Self::Single(b)) => Self::Single(a - b),
+            _ => todo!(),
+        }
+    }
+}
+
 impl Display for Precision {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
@@ -1197,6 +1287,12 @@ impl Display for Precision {
             Self::Single(u) => write!(f, "{u}"),
             Self::Multiple(_) => todo!(),
         }
+    }
+}
+
+impl From<u64> for Precision {
+    fn from(value: u64) -> Self {
+        Self::Single(value)
     }
 }
 

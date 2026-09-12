@@ -599,7 +599,7 @@ mod integer {
 
     #[test]
     fn single_ctor_ignores_sign_for_zero() {
-        let n = Integer::single(0, Sign::Positive);
+        let n = Integer::new(0, Sign::Positive);
 
         assert_eq!(n.sign, Sign::Zero);
     }
@@ -663,7 +663,7 @@ mod integer {
 
     #[test]
     fn umax() {
-        let u = Integer::single(u64::MAX, Sign::Positive);
+        let u = Integer::new(u64::MAX, Sign::Positive);
         let n = u.into();
         let int = extract_or_fail!(n, Real::Integer);
 
@@ -676,7 +676,7 @@ mod integer {
 
     #[test]
     fn umin() {
-        let u = Integer::single(u64::MAX, Sign::Negative);
+        let u = Integer::new(u64::MAX, Sign::Negative);
         let n = u.into();
         let int = extract_or_fail!(n, Real::Integer);
 
@@ -761,7 +761,7 @@ mod integer {
 
     #[test]
     fn umax_into_float() {
-        let u = Integer::single(u64::MAX, Sign::Positive);
+        let u = Integer::new(u64::MAX, Sign::Positive);
         let n = Real::from(u);
 
         assert_eq!(n.to_float(), 1.8446744073709552e19);
@@ -769,7 +769,7 @@ mod integer {
 
     #[test]
     fn umin_into_float() {
-        let u = Integer::single(u64::MAX, Sign::Negative);
+        let u = Integer::new(u64::MAX, Sign::Negative);
         let n = Real::from(u);
 
         assert_eq!(n.to_float(), -1.8446744073709552e19);
@@ -777,7 +777,7 @@ mod integer {
 
     #[test]
     fn single_into_inexact() {
-        let n = Integer::single(42, Sign::Positive);
+        let n = Integer::new(42, Sign::Positive);
 
         let r = n.into_inexact();
 
@@ -787,7 +787,7 @@ mod integer {
 
     #[test]
     fn single_into_exact() {
-        let n = Real::Integer(Integer::single(42, Sign::Positive));
+        let n = Real::Integer(Integer::new(42, Sign::Positive));
 
         let r = n.try_into_exact();
 
@@ -1572,8 +1572,8 @@ mod ordering {
 
     #[test]
     fn integer_large_magnitude() {
-        let max = Integer::single(u64::MAX, Sign::Positive);
-        let min = Integer::single(u64::MAX, Sign::Negative);
+        let max = Integer::new(u64::MAX, Sign::Positive);
+        let min = Integer::new(u64::MAX, Sign::Negative);
 
         assert_eq!(max.cmp(&min), Ordering::Greater);
         assert_eq!(min.cmp(&max), Ordering::Less);
