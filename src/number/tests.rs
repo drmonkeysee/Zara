@@ -1529,470 +1529,6 @@ mod integer {
     }
 }
 
-mod ordering {
-    use super::*;
-
-    #[test]
-    fn integer_cmp_matrix() {
-        let cases = [
-            (0, 0, Ordering::Equal),
-            (5, 5, Ordering::Equal),
-            (-5, -5, Ordering::Equal),
-            (3, 5, Ordering::Less),
-            (5, 3, Ordering::Greater),
-            (-5, -3, Ordering::Less),
-            (-3, -5, Ordering::Greater),
-            (5, -3, Ordering::Greater),
-            (-3, 5, Ordering::Less),
-            (0, 5, Ordering::Less),
-            (5, 0, Ordering::Greater),
-            (0, -5, Ordering::Greater),
-            (-5, 0, Ordering::Less),
-            (5, -5, Ordering::Greater),
-            (-5, 5, Ordering::Less),
-        ];
-        for (a, b, expected) in cases {
-            let x: Integer = a.into();
-            let y: Integer = b.into();
-
-            assert_eq!(x.cmp(&y), expected);
-        }
-    }
-
-    #[test]
-    fn integer_partial_cmp_matches_cmp() {
-        let cases = [(0, 0), (3, 5), (5, 3), (-5, -3), (-3, -5), (5, -5)];
-        for (a, b) in cases {
-            let x: Integer = a.into();
-            let y: Integer = b.into();
-
-            assert_eq!(x.partial_cmp(&y), Some(x.cmp(&y)));
-        }
-    }
-
-    #[test]
-    fn integer_large_magnitude() {
-        let max = Integer::new(u64::MAX, Sign::Positive);
-        let min = Integer::new(u64::MAX, Sign::Negative);
-
-        assert_eq!(max.cmp(&min), Ordering::Greater);
-        assert_eq!(min.cmp(&max), Ordering::Less);
-        assert_eq!(max.cmp(&max), Ordering::Equal);
-        assert_eq!(min.cmp(&min), Ordering::Equal);
-    }
-
-    #[test]
-    fn float_finite_ordering() {
-        let cases = [
-            (1.0, 2.0, Some(Ordering::Less)),
-            (2.0, 1.0, Some(Ordering::Greater)),
-            (2.0, 2.0, Some(Ordering::Equal)),
-            (0.0, -0.0, Some(Ordering::Equal)),
-            (-2.0, -1.0, Some(Ordering::Less)),
-        ];
-        for (a, b, expected) in cases {
-            let x = Real::Float(a);
-            let y = Real::Float(b);
-
-            assert_eq!(x.partial_cmp(&y), expected);
-        }
-    }
-
-    #[test]
-    fn float_infinite_ordering() {
-        let cases = [
-            (f64::INFINITY, 5.0, Some(Ordering::Greater)),
-            (5.0, f64::INFINITY, Some(Ordering::Less)),
-            (f64::NEG_INFINITY, 5.0, Some(Ordering::Less)),
-            (5.0, f64::NEG_INFINITY, Some(Ordering::Greater)),
-            (f64::INFINITY, f64::INFINITY, Some(Ordering::Equal)),
-            (f64::NEG_INFINITY, f64::NEG_INFINITY, Some(Ordering::Equal)),
-            (f64::INFINITY, f64::NEG_INFINITY, Some(Ordering::Greater)),
-            (f64::NEG_INFINITY, f64::INFINITY, Some(Ordering::Less)),
-        ];
-        for (a, b, expected) in cases {
-            let x = Real::Float(a);
-            let y = Real::Float(b);
-
-            assert_eq!(x.partial_cmp(&y), expected);
-        }
-    }
-
-    #[test]
-    fn float_nan_is_unordered() {
-        let cases = [
-            (f64::NAN, 5.0),
-            (5.0, f64::NAN),
-            (f64::NAN, f64::NAN),
-            (f64::NAN, f64::INFINITY),
-            (f64::INFINITY, f64::NAN),
-            (f64::NAN, f64::NEG_INFINITY),
-        ];
-        for (a, b) in cases {
-            let x = Real::Float(a);
-            let y = Real::Float(b);
-
-            assert_eq!(x.partial_cmp(&y), None);
-        }
-    }
-
-    #[test]
-    fn float_vs_integer_float_first() {
-        let cases = [
-            (3.0, 5, Some(Ordering::Less)),
-            (5.0, 3, Some(Ordering::Greater)),
-            (5.0, 5, Some(Ordering::Equal)),
-            (3.0, -5, Some(Ordering::Greater)),
-            (-3.0, 5, Some(Ordering::Less)),
-            (0.0, 0, Some(Ordering::Equal)),
-        ];
-        for (f, n, expected) in cases {
-            let x = Real::Float(f);
-            let y = Real::Integer(n.into());
-
-            assert_eq!(x.partial_cmp(&y), expected);
-        }
-    }
-
-    #[test]
-    fn float_vs_integer_integer_first() {
-        let cases = [
-            (5, 3.0, Some(Ordering::Greater)),
-            (3, 5.0, Some(Ordering::Less)),
-            (5, 5.0, Some(Ordering::Equal)),
-            (-5, 3.0, Some(Ordering::Less)),
-            (5, -3.0, Some(Ordering::Greater)),
-            (0, 0.0, Some(Ordering::Equal)),
-        ];
-        for (n, f, expected) in cases {
-            let x = Real::Integer(n.into());
-            let y = Real::Float(f);
-
-            assert_eq!(x.partial_cmp(&y), expected);
-        }
-    }
-
-    #[test]
-    fn float_vs_integer_infinite() {
-        let inf = Real::Float(f64::INFINITY);
-        let neg_inf = Real::Float(f64::NEG_INFINITY);
-        let n = Real::Integer(5.into());
-
-        assert_eq!(inf.partial_cmp(&n), Some(Ordering::Greater));
-        assert_eq!(n.partial_cmp(&inf), Some(Ordering::Less));
-        assert_eq!(neg_inf.partial_cmp(&n), Some(Ordering::Less));
-        assert_eq!(n.partial_cmp(&neg_inf), Some(Ordering::Greater));
-    }
-
-    #[test]
-    fn float_vs_integer_nan_is_unordered() {
-        let nan = Real::Float(f64::NAN);
-        let n = Real::Integer(5.into());
-
-        assert_eq!(nan.partial_cmp(&n), None);
-        assert_eq!(n.partial_cmp(&nan), None);
-    }
-
-    #[test]
-    fn integer_vs_integer_ordering() {
-        let cases = [
-            (3, 5, Some(Ordering::Less)),
-            (5, 3, Some(Ordering::Greater)),
-            (5, 5, Some(Ordering::Equal)),
-            (-5, 3, Some(Ordering::Less)),
-            (5, -3, Some(Ordering::Greater)),
-            (-5, -3, Some(Ordering::Less)),
-            (0, 0, Some(Ordering::Equal)),
-        ];
-        for (a, b, expected) in cases {
-            let x = Real::Integer(a.into());
-            let y = Real::Integer(b.into());
-
-            assert_eq!(x.partial_cmp(&y), expected);
-        }
-    }
-}
-
-mod add {
-    use super::*;
-
-    #[test]
-    fn integer_matrix() {
-        let cases = [
-            (2, 3, "5"),
-            (0, 5, "5"),
-            (5, 0, "5"),
-            (0, 0, "0"),
-            (-2, -3, "-5"),
-            (5, -3, "2"),
-            (3, -5, "-2"),
-            (-5, 3, "-2"),
-            (-3, 5, "2"),
-            (5, -5, "0"),
-            (-5, 5, "0"),
-        ];
-        for (a, b, expected) in cases {
-            let sum = Number::real(a) + Number::real(b);
-
-            assert_eq!(sum.to_string(), expected);
-        }
-    }
-
-    #[test]
-    fn integer_sum_stays_exact() {
-        let sum = Number::real(2) + Number::real(3);
-
-        let n = extract_or_fail!(sum, Number::Real);
-        assert!(matches!(n, Real::Integer(_)));
-    }
-
-    #[test]
-    fn integer_sum_beyond_i64_max() {
-        let sum = Number::real(i64::MAX) + Number::real(1);
-
-        assert_eq!(sum.to_string(), "9223372036854775808");
-    }
-
-    #[test]
-    fn integer_sum_beyond_i64_min() {
-        let sum = Number::real(i64::MIN) + Number::real(-1);
-
-        assert_eq!(sum.to_string(), "-9223372036854775809");
-    }
-
-    #[test]
-    fn integer_addition_is_commutative() {
-        let cases = [(4, 7), (-4, 7), (4, -7), (-4, -7), (0, 7)];
-        for (a, b) in cases {
-            let ab = Number::real(a) + Number::real(b);
-            let ba = Number::real(b) + Number::real(a);
-
-            assert_eq!(ab.to_string(), ba.to_string());
-        }
-    }
-
-    #[test]
-    fn float_matrix() {
-        let cases = [
-            (1.5, 2.5, "4.0"),
-            (0.1, 0.2, "0.30000000000000004"),
-            (-1.5, 0.5, "-1.0"),
-            (0.0, -0.0, "0.0"),
-            (-0.0, -0.0, "-0.0"),
-        ];
-        for (a, b, expected) in cases {
-            let sum = Number::real(a) + Number::real(b);
-
-            assert_eq!(sum.to_string(), expected);
-        }
-    }
-
-    #[test]
-    fn integer_and_float_either_order() {
-        let a = Number::real(2) + Number::real(1.5);
-        let b = Number::real(1.5) + Number::real(2);
-
-        assert_eq!(a.to_string(), "3.5");
-        assert_eq!(b.to_string(), "3.5");
-    }
-
-    #[test]
-    fn zero_integer_and_zero_float_either_order() {
-        let a = Number::real(0) + Number::real(0.0);
-        let b = Number::real(0.0) + Number::real(0);
-
-        assert_eq!(a.to_string(), "0.0");
-        assert_eq!(b.to_string(), "0.0");
-    }
-
-    #[test]
-    fn integer_and_float_cancel_to_inexact_zero() {
-        let sum = Number::real(5) + Number::real(-5.0);
-
-        assert_eq!(sum.to_string(), "0.0");
-    }
-
-    #[test]
-    fn float_sum_is_inexact() {
-        let sum = Number::real(2) + Number::real(1.5);
-
-        let n = extract_or_fail!(sum, Number::Real);
-        assert!(matches!(n, Real::Float(_)));
-    }
-
-    #[test]
-    fn float_infinities() {
-        let cases = [
-            (f64::INFINITY, 1.0, "+inf.0"),
-            (f64::NEG_INFINITY, 1.0, "-inf.0"),
-            (f64::INFINITY, f64::INFINITY, "+inf.0"),
-        ];
-        for (a, b, expected) in cases {
-            let sum = Number::real(a) + Number::real(b);
-
-            assert_eq!(sum.to_string(), expected);
-        }
-    }
-
-    #[test]
-    fn opposite_infinities_sum_to_nan() {
-        let sum = Number::real(f64::INFINITY) + Number::real(f64::NEG_INFINITY);
-
-        assert!(sum.is_nan());
-    }
-
-    #[test]
-    fn nan_propagates_as_first_operand() {
-        let sum = Number::real(f64::NAN) + Number::real(1.0);
-
-        assert!(sum.is_nan());
-    }
-
-    #[test]
-    fn nan_propagates_as_second_operand() {
-        let sum = Number::real(1.0) + Number::real(f64::NAN);
-
-        assert!(sum.is_nan());
-    }
-
-    #[test]
-    fn rational_and_float_either_order() {
-        let q = ok_or_fail!(Real::reduce(1, 2));
-        let a = Number::real(q.clone()) + Number::real(0.5);
-        let b = Number::real(0.5) + Number::real(q);
-
-        assert_eq!(a.to_string(), "1.0");
-        assert_eq!(b.to_string(), "1.0");
-    }
-
-    #[test]
-    fn rational_and_float_matrix() {
-        let cases = [((3, 4), 0.25, "1.0"), ((-1, 2), 0.5, "0.0")];
-        for ((n, d), f, expected) in cases {
-            let q = ok_or_fail!(Real::reduce(n, d));
-            let sum = Number::real(q) + Number::real(f);
-
-            assert_eq!(sum.to_string(), expected);
-        }
-    }
-
-    #[test]
-    fn rational_and_float_sum_is_inexact() {
-        let q = ok_or_fail!(Real::reduce(1, 2));
-        let sum = Number::real(q) + Number::real(0.5);
-
-        let n = extract_or_fail!(sum, Number::Real);
-        assert!(matches!(n, Real::Float(_)));
-    }
-
-    #[test]
-    fn complex_plus_complex() {
-        let a = Number::complex(3, 2);
-        let b = Number::complex(1, 4);
-
-        let sum = a + b;
-
-        assert_eq!(sum.to_string(), "4+6i");
-    }
-
-    #[test]
-    fn complex_imaginary_parts_cancel_to_real() {
-        let a = Number::complex(3, 2);
-        let b = Number::complex(1, -2);
-
-        let sum = a + b;
-
-        assert_eq!(sum.to_string(), "4");
-        assert!(matches!(sum, Number::Real(_)));
-    }
-
-    #[test]
-    fn complex_real_parts_cancel() {
-        let a = Number::complex(3, 2);
-        let b = Number::complex(-3, 4);
-
-        let sum = a + b;
-
-        assert_eq!(sum.to_string(), "+6i");
-    }
-
-    #[test]
-    fn complex_fully_cancels_to_zero() {
-        let a = Number::complex(3, 2);
-        let b = Number::complex(-3, -2);
-
-        let sum = a + b;
-
-        assert_eq!(sum.to_string(), "0");
-    }
-
-    #[test]
-    fn complex_inexact_imaginary_cancels_to_inexact_zero_stays_complex() {
-        let a = Number::complex(3, 2.0);
-        let b = Number::complex(1, -2.0);
-
-        let sum = a + b;
-
-        assert_eq!(sum.to_string(), "4+0.0i");
-        assert!(matches!(sum, Number::Complex(_)));
-    }
-
-    #[test]
-    fn complex_plus_exact_real_either_order() {
-        let a = Number::complex(3, 2) + Number::real(5);
-        let b = Number::real(5) + Number::complex(3, 2);
-
-        assert_eq!(a.to_string(), "8+2i");
-        assert_eq!(b.to_string(), "8+2i");
-    }
-
-    #[test]
-    fn complex_plus_inexact_real_keeps_mixed_exactness() {
-        let sum = Number::complex(3, 2) + Number::real(1.5);
-
-        assert_eq!(sum.to_string(), "4.5+2i");
-    }
-
-    #[test]
-    fn all_inexact_complex() {
-        let a = Number::complex(3.0, 2.0);
-        let b = Number::complex(1.0, 1.0);
-
-        let sum = a + b;
-
-        assert_eq!(sum.to_string(), "4.0+3.0i");
-    }
-
-    #[test]
-    fn zero_is_exact_integer() {
-        let z = Number::zero();
-
-        assert_eq!(z.to_string(), "0");
-        assert!(matches!(z, Number::Real(Real::Integer(_))));
-    }
-
-    #[test]
-    fn zero_is_additive_identity_for_integer() {
-        let sum = Number::zero() + Number::real(7);
-
-        assert_eq!(sum.to_string(), "7");
-    }
-
-    #[test]
-    fn zero_is_additive_identity_for_float() {
-        let sum = Number::zero() + Number::real(4.5);
-
-        assert_eq!(sum.to_string(), "4.5");
-    }
-
-    #[test]
-    fn zero_is_additive_identity_for_complex() {
-        let sum = Number::zero() + Number::complex(3, 2);
-
-        assert_eq!(sum.to_string(), "3+2i");
-    }
-}
-
 mod float {
     use super::*;
 
@@ -3897,5 +3433,469 @@ mod equality {
         let b = Number::real(5);
 
         assert_ne!(a, b);
+    }
+}
+
+mod ordering {
+    use super::*;
+
+    #[test]
+    fn integer_cmp_matrix() {
+        let cases = [
+            (0, 0, Ordering::Equal),
+            (5, 5, Ordering::Equal),
+            (-5, -5, Ordering::Equal),
+            (3, 5, Ordering::Less),
+            (5, 3, Ordering::Greater),
+            (-5, -3, Ordering::Less),
+            (-3, -5, Ordering::Greater),
+            (5, -3, Ordering::Greater),
+            (-3, 5, Ordering::Less),
+            (0, 5, Ordering::Less),
+            (5, 0, Ordering::Greater),
+            (0, -5, Ordering::Greater),
+            (-5, 0, Ordering::Less),
+            (5, -5, Ordering::Greater),
+            (-5, 5, Ordering::Less),
+        ];
+        for (a, b, expected) in cases {
+            let x: Integer = a.into();
+            let y: Integer = b.into();
+
+            assert_eq!(x.cmp(&y), expected);
+        }
+    }
+
+    #[test]
+    fn integer_partial_cmp_matches_cmp() {
+        let cases = [(0, 0), (3, 5), (5, 3), (-5, -3), (-3, -5), (5, -5)];
+        for (a, b) in cases {
+            let x: Integer = a.into();
+            let y: Integer = b.into();
+
+            assert_eq!(x.partial_cmp(&y), Some(x.cmp(&y)));
+        }
+    }
+
+    #[test]
+    fn integer_large_magnitude() {
+        let max = Integer::new(u64::MAX, Sign::Positive);
+        let min = Integer::new(u64::MAX, Sign::Negative);
+
+        assert_eq!(max.cmp(&min), Ordering::Greater);
+        assert_eq!(min.cmp(&max), Ordering::Less);
+        assert_eq!(max.cmp(&max), Ordering::Equal);
+        assert_eq!(min.cmp(&min), Ordering::Equal);
+    }
+
+    #[test]
+    fn float_finite_ordering() {
+        let cases = [
+            (1.0, 2.0, Some(Ordering::Less)),
+            (2.0, 1.0, Some(Ordering::Greater)),
+            (2.0, 2.0, Some(Ordering::Equal)),
+            (0.0, -0.0, Some(Ordering::Equal)),
+            (-2.0, -1.0, Some(Ordering::Less)),
+        ];
+        for (a, b, expected) in cases {
+            let x = Real::Float(a);
+            let y = Real::Float(b);
+
+            assert_eq!(x.partial_cmp(&y), expected);
+        }
+    }
+
+    #[test]
+    fn float_infinite_ordering() {
+        let cases = [
+            (f64::INFINITY, 5.0, Some(Ordering::Greater)),
+            (5.0, f64::INFINITY, Some(Ordering::Less)),
+            (f64::NEG_INFINITY, 5.0, Some(Ordering::Less)),
+            (5.0, f64::NEG_INFINITY, Some(Ordering::Greater)),
+            (f64::INFINITY, f64::INFINITY, Some(Ordering::Equal)),
+            (f64::NEG_INFINITY, f64::NEG_INFINITY, Some(Ordering::Equal)),
+            (f64::INFINITY, f64::NEG_INFINITY, Some(Ordering::Greater)),
+            (f64::NEG_INFINITY, f64::INFINITY, Some(Ordering::Less)),
+        ];
+        for (a, b, expected) in cases {
+            let x = Real::Float(a);
+            let y = Real::Float(b);
+
+            assert_eq!(x.partial_cmp(&y), expected);
+        }
+    }
+
+    #[test]
+    fn float_nan_is_unordered() {
+        let cases = [
+            (f64::NAN, 5.0),
+            (5.0, f64::NAN),
+            (f64::NAN, f64::NAN),
+            (f64::NAN, f64::INFINITY),
+            (f64::INFINITY, f64::NAN),
+            (f64::NAN, f64::NEG_INFINITY),
+        ];
+        for (a, b) in cases {
+            let x = Real::Float(a);
+            let y = Real::Float(b);
+
+            assert_eq!(x.partial_cmp(&y), None);
+        }
+    }
+
+    #[test]
+    fn float_vs_integer_float_first() {
+        let cases = [
+            (3.0, 5, Some(Ordering::Less)),
+            (5.0, 3, Some(Ordering::Greater)),
+            (5.0, 5, Some(Ordering::Equal)),
+            (3.0, -5, Some(Ordering::Greater)),
+            (-3.0, 5, Some(Ordering::Less)),
+            (0.0, 0, Some(Ordering::Equal)),
+        ];
+        for (f, n, expected) in cases {
+            let x = Real::Float(f);
+            let y = Real::Integer(n.into());
+
+            assert_eq!(x.partial_cmp(&y), expected);
+        }
+    }
+
+    #[test]
+    fn float_vs_integer_integer_first() {
+        let cases = [
+            (5, 3.0, Some(Ordering::Greater)),
+            (3, 5.0, Some(Ordering::Less)),
+            (5, 5.0, Some(Ordering::Equal)),
+            (-5, 3.0, Some(Ordering::Less)),
+            (5, -3.0, Some(Ordering::Greater)),
+            (0, 0.0, Some(Ordering::Equal)),
+        ];
+        for (n, f, expected) in cases {
+            let x = Real::Integer(n.into());
+            let y = Real::Float(f);
+
+            assert_eq!(x.partial_cmp(&y), expected);
+        }
+    }
+
+    #[test]
+    fn float_vs_integer_infinite() {
+        let inf = Real::Float(f64::INFINITY);
+        let neg_inf = Real::Float(f64::NEG_INFINITY);
+        let n = Real::Integer(5.into());
+
+        assert_eq!(inf.partial_cmp(&n), Some(Ordering::Greater));
+        assert_eq!(n.partial_cmp(&inf), Some(Ordering::Less));
+        assert_eq!(neg_inf.partial_cmp(&n), Some(Ordering::Less));
+        assert_eq!(n.partial_cmp(&neg_inf), Some(Ordering::Greater));
+    }
+
+    #[test]
+    fn float_vs_integer_nan_is_unordered() {
+        let nan = Real::Float(f64::NAN);
+        let n = Real::Integer(5.into());
+
+        assert_eq!(nan.partial_cmp(&n), None);
+        assert_eq!(n.partial_cmp(&nan), None);
+    }
+
+    #[test]
+    fn integer_vs_integer_ordering() {
+        let cases = [
+            (3, 5, Some(Ordering::Less)),
+            (5, 3, Some(Ordering::Greater)),
+            (5, 5, Some(Ordering::Equal)),
+            (-5, 3, Some(Ordering::Less)),
+            (5, -3, Some(Ordering::Greater)),
+            (-5, -3, Some(Ordering::Less)),
+            (0, 0, Some(Ordering::Equal)),
+        ];
+        for (a, b, expected) in cases {
+            let x = Real::Integer(a.into());
+            let y = Real::Integer(b.into());
+
+            assert_eq!(x.partial_cmp(&y), expected);
+        }
+    }
+}
+
+mod add {
+    use super::*;
+
+    #[test]
+    fn integer_matrix() {
+        let cases = [
+            (2, 3, "5"),
+            (0, 5, "5"),
+            (5, 0, "5"),
+            (0, 0, "0"),
+            (-2, -3, "-5"),
+            (5, -3, "2"),
+            (3, -5, "-2"),
+            (-5, 3, "-2"),
+            (-3, 5, "2"),
+            (5, -5, "0"),
+            (-5, 5, "0"),
+        ];
+        for (a, b, expected) in cases {
+            let sum = Number::real(a) + Number::real(b);
+
+            assert_eq!(sum.to_string(), expected);
+        }
+    }
+
+    #[test]
+    fn integer_sum_stays_exact() {
+        let sum = Number::real(2) + Number::real(3);
+
+        let n = extract_or_fail!(sum, Number::Real);
+        assert!(matches!(n, Real::Integer(_)));
+    }
+
+    #[test]
+    fn integer_sum_beyond_i64_max() {
+        let sum = Number::real(i64::MAX) + Number::real(1);
+
+        assert_eq!(sum.to_string(), "9223372036854775808");
+    }
+
+    #[test]
+    fn integer_sum_beyond_i64_min() {
+        let sum = Number::real(i64::MIN) + Number::real(-1);
+
+        assert_eq!(sum.to_string(), "-9223372036854775809");
+    }
+
+    #[test]
+    fn integer_addition_is_commutative() {
+        let cases = [(4, 7), (-4, 7), (4, -7), (-4, -7), (0, 7)];
+        for (a, b) in cases {
+            let ab = Number::real(a) + Number::real(b);
+            let ba = Number::real(b) + Number::real(a);
+
+            assert_eq!(ab.to_string(), ba.to_string());
+        }
+    }
+
+    #[test]
+    fn float_matrix() {
+        let cases = [
+            (1.5, 2.5, "4.0"),
+            (0.1, 0.2, "0.30000000000000004"),
+            (-1.5, 0.5, "-1.0"),
+            (0.0, -0.0, "0.0"),
+            (-0.0, -0.0, "-0.0"),
+        ];
+        for (a, b, expected) in cases {
+            let sum = Number::real(a) + Number::real(b);
+
+            assert_eq!(sum.to_string(), expected);
+        }
+    }
+
+    #[test]
+    fn integer_and_float_either_order() {
+        let a = Number::real(2) + Number::real(1.5);
+        let b = Number::real(1.5) + Number::real(2);
+
+        assert_eq!(a.to_string(), "3.5");
+        assert_eq!(b.to_string(), "3.5");
+    }
+
+    #[test]
+    fn zero_integer_and_zero_float_either_order() {
+        let a = Number::real(0) + Number::real(0.0);
+        let b = Number::real(0.0) + Number::real(0);
+
+        assert_eq!(a.to_string(), "0.0");
+        assert_eq!(b.to_string(), "0.0");
+    }
+
+    #[test]
+    fn integer_and_float_cancel_to_inexact_zero() {
+        let sum = Number::real(5) + Number::real(-5.0);
+
+        assert_eq!(sum.to_string(), "0.0");
+    }
+
+    #[test]
+    fn float_sum_is_inexact() {
+        let sum = Number::real(2) + Number::real(1.5);
+
+        let n = extract_or_fail!(sum, Number::Real);
+        assert!(matches!(n, Real::Float(_)));
+    }
+
+    #[test]
+    fn float_infinities() {
+        let cases = [
+            (f64::INFINITY, 1.0, "+inf.0"),
+            (f64::NEG_INFINITY, 1.0, "-inf.0"),
+            (f64::INFINITY, f64::INFINITY, "+inf.0"),
+        ];
+        for (a, b, expected) in cases {
+            let sum = Number::real(a) + Number::real(b);
+
+            assert_eq!(sum.to_string(), expected);
+        }
+    }
+
+    #[test]
+    fn opposite_infinities_sum_to_nan() {
+        let sum = Number::real(f64::INFINITY) + Number::real(f64::NEG_INFINITY);
+
+        assert!(sum.is_nan());
+    }
+
+    #[test]
+    fn nan_propagates_as_first_operand() {
+        let sum = Number::real(f64::NAN) + Number::real(1.0);
+
+        assert!(sum.is_nan());
+    }
+
+    #[test]
+    fn nan_propagates_as_second_operand() {
+        let sum = Number::real(1.0) + Number::real(f64::NAN);
+
+        assert!(sum.is_nan());
+    }
+
+    #[test]
+    fn rational_and_float_either_order() {
+        let q = ok_or_fail!(Real::reduce(1, 2));
+        let a = Number::real(q.clone()) + Number::real(0.5);
+        let b = Number::real(0.5) + Number::real(q);
+
+        assert_eq!(a.to_string(), "1.0");
+        assert_eq!(b.to_string(), "1.0");
+    }
+
+    #[test]
+    fn rational_and_float_matrix() {
+        let cases = [((3, 4), 0.25, "1.0"), ((-1, 2), 0.5, "0.0")];
+        for ((n, d), f, expected) in cases {
+            let q = ok_or_fail!(Real::reduce(n, d));
+            let sum = Number::real(q) + Number::real(f);
+
+            assert_eq!(sum.to_string(), expected);
+        }
+    }
+
+    #[test]
+    fn rational_and_float_sum_is_inexact() {
+        let q = ok_or_fail!(Real::reduce(1, 2));
+        let sum = Number::real(q) + Number::real(0.5);
+
+        let n = extract_or_fail!(sum, Number::Real);
+        assert!(matches!(n, Real::Float(_)));
+    }
+
+    #[test]
+    fn complex_plus_complex() {
+        let a = Number::complex(3, 2);
+        let b = Number::complex(1, 4);
+
+        let sum = a + b;
+
+        assert_eq!(sum.to_string(), "4+6i");
+    }
+
+    #[test]
+    fn complex_imaginary_parts_cancel_to_real() {
+        let a = Number::complex(3, 2);
+        let b = Number::complex(1, -2);
+
+        let sum = a + b;
+
+        assert_eq!(sum.to_string(), "4");
+        assert!(matches!(sum, Number::Real(_)));
+    }
+
+    #[test]
+    fn complex_real_parts_cancel() {
+        let a = Number::complex(3, 2);
+        let b = Number::complex(-3, 4);
+
+        let sum = a + b;
+
+        assert_eq!(sum.to_string(), "+6i");
+    }
+
+    #[test]
+    fn complex_fully_cancels_to_zero() {
+        let a = Number::complex(3, 2);
+        let b = Number::complex(-3, -2);
+
+        let sum = a + b;
+
+        assert_eq!(sum.to_string(), "0");
+    }
+
+    #[test]
+    fn complex_inexact_imaginary_cancels_to_inexact_zero_stays_complex() {
+        let a = Number::complex(3, 2.0);
+        let b = Number::complex(1, -2.0);
+
+        let sum = a + b;
+
+        assert_eq!(sum.to_string(), "4+0.0i");
+        assert!(matches!(sum, Number::Complex(_)));
+    }
+
+    #[test]
+    fn complex_plus_exact_real_either_order() {
+        let a = Number::complex(3, 2) + Number::real(5);
+        let b = Number::real(5) + Number::complex(3, 2);
+
+        assert_eq!(a.to_string(), "8+2i");
+        assert_eq!(b.to_string(), "8+2i");
+    }
+
+    #[test]
+    fn complex_plus_inexact_real_keeps_mixed_exactness() {
+        let sum = Number::complex(3, 2) + Number::real(1.5);
+
+        assert_eq!(sum.to_string(), "4.5+2i");
+    }
+
+    #[test]
+    fn all_inexact_complex() {
+        let a = Number::complex(3.0, 2.0);
+        let b = Number::complex(1.0, 1.0);
+
+        let sum = a + b;
+
+        assert_eq!(sum.to_string(), "4.0+3.0i");
+    }
+
+    #[test]
+    fn zero_is_exact_integer() {
+        let z = Number::zero();
+
+        assert_eq!(z.to_string(), "0");
+        assert!(matches!(z, Number::Real(Real::Integer(_))));
+    }
+
+    #[test]
+    fn zero_is_additive_identity_for_integer() {
+        let sum = Number::zero() + Number::real(7);
+
+        assert_eq!(sum.to_string(), "7");
+    }
+
+    #[test]
+    fn zero_is_additive_identity_for_float() {
+        let sum = Number::zero() + Number::real(4.5);
+
+        assert_eq!(sum.to_string(), "4.5");
+    }
+
+    #[test]
+    fn zero_is_additive_identity_for_complex() {
+        let sum = Number::zero() + Number::complex(3, 2);
+
+        assert_eq!(sum.to_string(), "3+2i");
     }
 }
