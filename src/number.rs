@@ -672,7 +672,7 @@ pub(crate) struct Integer {
 }
 
 impl Integer {
-    fn zero() -> Self {
+    pub(crate) fn zero() -> Self {
         0.into()
     }
 
@@ -699,6 +699,14 @@ impl Integer {
 
     pub(crate) fn is_even(&self) -> bool {
         self.precision.is_even()
+    }
+
+    pub(crate) fn into_inexact(self) -> Real {
+        Real::Float(self.to_float())
+    }
+
+    pub(crate) fn gcd(&self, rhs: &Self) -> Self {
+        Self::new(self.precision.gcd(&rhs.precision), Sign::Positive)
     }
 
     fn is_positive(&self) -> bool {
@@ -775,10 +783,6 @@ impl Integer {
 
     fn reduce(&mut self, other: &mut Self) {
         self.precision.reduce(&mut other.precision);
-    }
-
-    fn into_inexact(self) -> Real {
-        Real::Float(self.to_float())
     }
 
     fn into_rational(self) -> Rational {
@@ -1242,6 +1246,13 @@ impl Precision {
         match self {
             Self::Single(u) => u % 2 == 0,
             Self::Multiple(_) => todo!(),
+        }
+    }
+
+    fn gcd(&self, rhs: &Self) -> Self {
+        match (self, rhs) {
+            (Self::Single(a), Self::Single(b)) => Self::Single(gcd_euclidean(*a, *b)),
+            _ => todo!(),
         }
     }
 
