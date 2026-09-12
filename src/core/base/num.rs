@@ -581,4 +581,106 @@ mod tests {
             "#<value-error \"invalid type for arg `0` - expected: real, got: string\" (\"foo\")>"
         );
     }
+
+    #[test]
+    fn gcd_basic() {
+        let args = [Value::real(32), Value::real(-36)];
+        let env = TestEnv::default();
+
+        let r = nums_gcd(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_matches!(v, Value::Number(Number::Real(Real::Integer(_))));
+        assert_eq!(v.as_datum().to_string(), "4");
+    }
+
+    #[test]
+    fn gcd_empty_sequence() {
+        let args = [];
+        let env = TestEnv::default();
+
+        let r = nums_gcd(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_matches!(v, Value::Number(Number::Real(Real::Integer(_))));
+        assert_eq!(v.as_datum().to_string(), "0");
+    }
+
+    #[test]
+    fn gcd_single_arg() {
+        let args = [Value::real(-9)];
+        let env = TestEnv::default();
+
+        let r = nums_gcd(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_matches!(v, Value::Number(Number::Real(Real::Integer(_))));
+        assert_eq!(v.as_datum().to_string(), "9");
+    }
+
+    #[test]
+    fn gcd_float_taint_later_arg() {
+        let args = [Value::real(4), Value::real(6.0)];
+        let env = TestEnv::default();
+
+        let r = nums_gcd(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_matches!(v, Value::Number(Number::Real(Real::Float(_))));
+        assert_eq!(v.as_datum().to_string(), "2.0");
+    }
+
+    #[test]
+    fn gcd_float_taint_first_arg() {
+        let args = [Value::real(4.0), Value::real(6)];
+        let env = TestEnv::default();
+
+        let r = nums_gcd(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_matches!(v, Value::Number(Number::Real(Real::Float(_))));
+        assert_eq!(v.as_datum().to_string(), "2.0");
+    }
+
+    #[test]
+    fn gcd_non_integral_float() {
+        let args = [Value::real(4.5)];
+        let env = TestEnv::default();
+
+        let r = nums_gcd(&args, &env.new_frame());
+
+        let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
+        assert_eq!(
+            err.to_string(),
+            "#<value-error \"expected exact integer, got: 4.5\" (4.5)>"
+        );
+    }
+
+    #[test]
+    fn gcd_invalid_later_arg() {
+        let args = [Value::real(4), Value::string("foo")];
+        let env = TestEnv::default();
+
+        let r = nums_gcd(&args, &env.new_frame());
+
+        let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
+        assert_eq!(
+            err.to_string(),
+            "#<value-error \"invalid type for arg `1` - expected: integer, got: string\" (\"foo\")>"
+        );
+    }
+
+    #[test]
+    fn gcd_complex_arg() {
+        let args = [Value::Number(Number::complex(3, 4))];
+        let env = TestEnv::default();
+
+        let r = nums_gcd(&args, &env.new_frame());
+
+        let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
+        assert_eq!(
+            err.to_string(),
+            "#<value-error \"invalid type for arg `0` - expected: integer, got: complex\" (3+4i)>"
+        );
+    }
 }

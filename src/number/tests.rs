@@ -1527,6 +1527,154 @@ mod integer {
         assert_eq!(extract_or_fail!(n.precision, Precision::Single), 1);
         assert_eq!(n.sign, Sign::Positive);
     }
+
+    mod gcd {
+        use super::*;
+
+        #[test]
+        fn common_divisor() {
+            let n = Integer::from(32).gcd(&36.into());
+
+            assert_eq!(extract_or_fail!(n.precision, Precision::Single), 4);
+            assert_eq!(n.sign, Sign::Positive);
+        }
+
+        #[test]
+        fn coprime() {
+            let n = Integer::from(9).gcd(&28.into());
+
+            assert_eq!(extract_or_fail!(n.precision, Precision::Single), 1);
+            assert_eq!(n.sign, Sign::Positive);
+        }
+
+        #[test]
+        fn one_divides_the_other() {
+            let n = Integer::from(6).gcd(&18.into());
+
+            assert_eq!(extract_or_fail!(n.precision, Precision::Single), 6);
+            assert_eq!(n.sign, Sign::Positive);
+        }
+
+        #[test]
+        fn equal_operands() {
+            let n = Integer::from(7).gcd(&7.into());
+
+            assert_eq!(extract_or_fail!(n.precision, Precision::Single), 7);
+            assert_eq!(n.sign, Sign::Positive);
+        }
+
+        #[test]
+        fn zero_and_positive() {
+            let n = Integer::from(0).gcd(&5.into());
+
+            assert_eq!(extract_or_fail!(n.precision, Precision::Single), 5);
+            assert_eq!(n.sign, Sign::Positive);
+        }
+
+        #[test]
+        fn positive_and_zero() {
+            let n = Integer::from(5).gcd(&0.into());
+
+            assert_eq!(extract_or_fail!(n.precision, Precision::Single), 5);
+            assert_eq!(n.sign, Sign::Positive);
+        }
+
+        #[test]
+        fn both_zero() {
+            let n = Integer::from(0).gcd(&0.into());
+
+            assert_eq!(extract_or_fail!(n.precision, Precision::Single), 0);
+            assert_eq!(n.sign, Sign::Zero);
+        }
+
+        #[test]
+        fn zero_and_negative() {
+            let n = Integer::from(0).gcd(&(-5).into());
+
+            assert_eq!(extract_or_fail!(n.precision, Precision::Single), 5);
+            assert_eq!(n.sign, Sign::Positive);
+        }
+
+        #[test]
+        fn negative_first_operand() {
+            let n = Integer::from(-32).gcd(&36.into());
+
+            assert_eq!(extract_or_fail!(n.precision, Precision::Single), 4);
+            assert_eq!(n.sign, Sign::Positive);
+        }
+
+        #[test]
+        fn negative_second_operand() {
+            let n = Integer::from(32).gcd(&(-36).into());
+
+            assert_eq!(extract_or_fail!(n.precision, Precision::Single), 4);
+            assert_eq!(n.sign, Sign::Positive);
+        }
+
+        #[test]
+        fn both_negative() {
+            let n = Integer::from(-32).gcd(&(-36).into());
+
+            assert_eq!(extract_or_fail!(n.precision, Precision::Single), 4);
+            assert_eq!(n.sign, Sign::Positive);
+        }
+
+        #[test]
+        fn commutative() {
+            let cases = [(32, 36), (9, 28), (0, 5), (7, 7), (-32, 36)];
+            for (a, b) in cases {
+                let x = Integer::from(a).gcd(&b.into());
+                let y = Integer::from(b).gcd(&a.into());
+
+                assert_eq!(x, y);
+            }
+        }
+
+        #[test]
+        fn unit_operand() {
+            let cases = [-32, 0, 1, 32];
+            for case in cases {
+                let n = Integer::from(case).gcd(&1.into());
+
+                assert_eq!(extract_or_fail!(n.precision, Precision::Single), 1);
+                assert_eq!(n.sign, Sign::Positive);
+            }
+        }
+
+        #[test]
+        fn beyond_i64_magnitude() {
+            let n = Integer::from(i64::MIN).gcd(&2.into());
+
+            assert_eq!(extract_or_fail!(n.precision, Precision::Single), 2);
+            assert_eq!(n.sign, Sign::Positive);
+        }
+
+        #[test]
+        fn large_u64_operands() {
+            let a = Integer::new(u64::MAX, Sign::Positive);
+            let b = Integer::new(3, Sign::Positive);
+
+            let n = a.gcd(&b);
+
+            assert_eq!(extract_or_fail!(n.precision, Precision::Single), 3);
+            assert_eq!(n.sign, Sign::Positive);
+        }
+
+        #[test]
+        #[ignore = "multi-precision gcd not yet implemented"]
+        fn multi_precision() {
+            let a = Integer {
+                precision: Precision::Multiple([4, 6].into()),
+                sign: Sign::Positive,
+            };
+            let b = Integer::from(4);
+
+            let n = a.gcd(&b);
+
+            assert_eq!(extract_or_fail!(n.precision, Precision::Single), 4);
+            assert_eq!(n.sign, Sign::Positive);
+        }
+    }
 }
 
 mod float {
