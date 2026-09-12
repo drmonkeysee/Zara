@@ -266,7 +266,7 @@ try_int_conversion!(u32, try_to_u32);
 try_int_conversion!(i64, try_to_i64);
 try_int_conversion!(usize, try_to_usize);
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub(crate) struct Complex(Box<(Real, Real)>);
 
 impl Complex {
@@ -288,12 +288,6 @@ impl Complex {
         let x = self.real_part().to_float();
         let y = self.imag_part().to_float();
         Real::Float(y.atan2(x))
-    }
-}
-
-impl PartialEq for Complex {
-    fn eq(&self, other: &Self) -> bool {
-        self.real_part() == other.real_part() && self.imag_part() == other.imag_part()
     }
 }
 
