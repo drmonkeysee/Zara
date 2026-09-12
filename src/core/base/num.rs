@@ -252,7 +252,7 @@ fn real_acc_op<'a>(
             }
             Ok(if float_taint { acc.into_inexact() } else { acc })
         })
-        .map(|r| Value::Number(Number::real(r.clone())))
+        .map(Value::real)
 }
 
 fn seq_error(name: impl Display, expected_type: impl Display, arg: &Value) -> Condition {
