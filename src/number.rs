@@ -614,7 +614,14 @@ impl Add for Rational {
     type Output = Real;
 
     fn add(self, _rhs: Self) -> Self::Output {
-        todo!()
+        todo!(
+            "need lcd calculation:
+             a/b + c/d ==>
+             g = gcd(b, d)
+             lcd = b / g * d
+             a/b + c/d = (a*(d/g) + c*(b/g)) / lcd
+             then one more reduce"
+        )
     }
 }
 
