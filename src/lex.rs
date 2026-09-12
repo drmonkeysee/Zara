@@ -118,11 +118,11 @@ impl LineFailure {
             (Self::Read(_), LineFailureAcc::Empty | LineFailureAcc::Read) => {
                 ControlFlow::Continue(LineFailureAcc::Read)
             }
-            (Self::Read(_), LineFailureAcc::Tokenize) => ControlFlow::Break(()),
+            (Self::Read(_), LineFailureAcc::Tokenize)
+            | (Self::Tokenize(_), LineFailureAcc::Read) => ControlFlow::Break(()),
             (Self::Tokenize(_), LineFailureAcc::Empty | LineFailureAcc::Tokenize) => {
                 ControlFlow::Continue(LineFailureAcc::Tokenize)
             }
-            (Self::Tokenize(_), LineFailureAcc::Read) => ControlFlow::Break(()),
         }
     }
 }

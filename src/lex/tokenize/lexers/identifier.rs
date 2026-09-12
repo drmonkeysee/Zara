@@ -160,10 +160,9 @@ impl<'me, 'txt> Identifier<'me, 'txt> {
         // only 3 cases: + | - | .
         self.peculiar_state = Some(match (ch, &self.peculiar_state) {
             ('+' | '-', None) => PeculiarState::MaybeSignedNumber,
-            ('+' | '-', _) => PeculiarState::DefiniteIdentifier,
             ('.', Some(PeculiarState::MaybeSignedNumber)) => PeculiarState::MaybeSignedFloat,
             ('.', None) => PeculiarState::MaybeFloat,
-            ('.', _) => PeculiarState::DefiniteIdentifier,
+            ('+' | '-' | '.', _) => PeculiarState::DefiniteIdentifier,
             (_, _) => unreachable!("unexpected peculiar case lexeme"),
         });
     }

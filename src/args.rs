@@ -142,7 +142,7 @@ impl Add for Cmd {
     fn add(self, rhs: Self) -> Self::Output {
         match (self, rhs) {
             (Self::Run, _) | (Self::Version, Self::Help) => rhs,
-            (Self::Help, _) | (Self::Version, _) => self,
+            (Self::Help | Self::Version, _) => self,
         }
     }
 }

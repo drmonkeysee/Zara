@@ -24,6 +24,7 @@ pub(super) fn load(env: &Frame) {
     super::bind_intrinsic(env, "features", 0..0, feature_list);
 }
 
+#[allow(clippy::unnecessary_wraps, reason = "infallible intrinsic")]
 fn feature_list(_args: &[Value], env: &Frame) -> EvalResult {
     Ok(Value::list(
         FEATURE_NAMES.iter().map(|n| Value::Symbol(env.sym.get(n))),
