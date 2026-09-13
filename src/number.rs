@@ -106,7 +106,8 @@ pub(crate) type IntResult = Result<Integer, NumericError>;
  * numeric values such as:
  * - sign attached to numerator
  * - no zero denominator
- * - rationals reduced to integers
+ * - rationals reduced to canonical form
+ * - rationals with divisor denominators are reduced to integers
  * - single-item MPs reduced to single precision
  * - etc
  * This way we don't have to worry about whether 4/5 == 8/10, 5/1 is an Integer
@@ -456,6 +457,17 @@ impl Real {
         Ok(Self::Rational(Rational((n, d).into())))
     }
 
+    // assume divisor is a factor of val, so reduction ensures an Integer;
+    // will panic if assumption does not hold.
+    fn reduce_divisor(val: impl Into<Integer>, divisor: impl Into<Integer>) -> Integer {
+        let r = Self::reduce(val, divisor).expect("denominator is a divisor of numerator");
+        if let Self::Integer(n) = r {
+            n
+        } else {
+            unreachable!("unexpected non-divisor")
+        }
+    }
+
     pub(crate) fn is_rational(&self) -> bool {
         match self {
             Self::Float(f) => f.is_finite(),
@@ -739,8 +751,7 @@ impl Rational {
 
     fn to_float(&self) -> f64 {
         let r = &self.0;
-        let (num, denom) = (r.0.to_float(), r.1.to_float());
-        num / denom
+        r.0.to_float() / r.1.to_float()
     }
 
     fn into_inexact(self) -> Real {
@@ -764,6 +775,10 @@ impl Rational {
         self.0.1
     }
 
+    fn into_parts(self) -> (Integer, Integer) {
+        (self.0.0, self.0.1)
+    }
+
     fn try_into_reciprocal(self) -> RealResult {
         Real::reduce(self.0.1, self.0.0)
     }
@@ -776,8 +791,11 @@ impl PartialOrd for Rational {
 }
 
 impl Ord for Rational {
-    fn cmp(&self, _other: &Self) -> Ordering {
-        todo!("need a*d cmp c*b");
+    // a/b < c/d => ad < cb
+    fn cmp(&self, other: &Self) -> Ordering {
+        let (a, b) = self.clone().into_parts();
+        let (c, d) = other.clone().into_parts();
+        (a * d).cmp(&(c * b))
     }
 }
 
@@ -799,8 +817,22 @@ impl Add for Rational {
 impl Mul for Rational {
     type Output = Real;
 
-    fn mul(self, _rhs: Self) -> Self::Output {
-        todo!("need integer division first")
+    // a/b * c/d = ac/bd except cross-reduce with gcds first to lessen
+    // likelihood of intermediate result overflow.
+    // div/0 should be a programmer error here, hence the panics. if everything
+    // is wired up correctly this will only be called with canonical rationals
+    // or integer reciprocals.
+    fn mul(self, rhs: Self) -> Self::Output {
+        let (a, b) = self.into_parts();
+        let (c, d) = rhs.into_parts();
+        let (g1, g2) = (a.gcd(&d), c.gcd(&b));
+        debug_assert!(!g1.is_zero());
+        debug_assert!(!g2.is_zero());
+        Real::reduce(
+            Real::reduce_divisor(a, g1.clone()) * Real::reduce_divisor(c, g2.clone()),
+            Real::reduce_divisor(b, g2) * Real::reduce_divisor(d, g1),
+        )
+        .expect("denominator cannot be zero for canonical rationals")
     }
 }
 
@@ -1149,7 +1181,7 @@ impl Div<Real> for Integer {
             Real::Float(_) if self.is_zero() => Ok(self.into()),
             Real::Float(f) => Ok((self.to_float() / f).into()),
             Real::Integer(n) => self.div(n),
-            Real::Rational(q) => todo!(),
+            Real::Rational(q) => Ok(self * q.try_into_reciprocal()?),
         }
     }
 }
