@@ -243,6 +243,13 @@ impl Number {
             Self::Real(r) => Self::real(r.try_into_exact()?),
         })
     }
+
+    pub(crate) fn try_into_reciprocal(self) -> NumResult {
+        match self {
+            Self::Complex(_) => todo!("need real/int division first"),
+            Self::Real(r) => Ok(Self::real(r.try_into_reciprocal()?)),
+        }
+    }
 }
 
 impl PartialEq for Number {
@@ -564,6 +571,14 @@ impl Real {
             Self::Rational(q) => Self::Rational(q.into_negated()),
         }
     }
+
+    fn try_into_reciprocal(self) -> RealResult {
+        match self {
+            Self::Float(f) => Ok(f.recip().into()),
+            Self::Integer(n) => n.try_into_reciprocal(),
+            Self::Rational(q) => q.try_into_reciprocal(),
+        }
+    }
 }
 
 impl PartialEq for Real {
@@ -681,6 +696,10 @@ impl Rational {
 
     fn into_denominator(self) -> Integer {
         self.0.1
+    }
+
+    fn try_into_reciprocal(self) -> RealResult {
+        Real::reduce(self.0.1, self.0.0)
     }
 }
 
@@ -905,6 +924,10 @@ impl Integer {
             Sign::Zero => (),
         }
         self
+    }
+
+    fn try_into_reciprocal(self) -> RealResult {
+        Real::reduce(Self::one(), self)
     }
 }
 

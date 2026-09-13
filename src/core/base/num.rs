@@ -177,8 +177,30 @@ fn nums_sub(args: &[Value], _env: &Frame) -> EvalResult {
     }
 }
 
-fn nums_div(_args: &[Value], _env: &Frame) -> EvalResult {
-    todo!();
+fn nums_div(args: &[Value], _env: &Frame) -> EvalResult {
+    let arg = first(args);
+    let Value::Number(x) = arg else {
+        return Err(invalid_target(TypeName::NUMBER, arg));
+    };
+    if args.len() == 1 {
+        x.clone().try_into_reciprocal().map_or_else(
+            |err| Err(Condition::value_error(err, arg).into()),
+            |x| Ok(Value::Number(x)),
+        )
+    } else {
+        todo!();
+        /*args.iter()
+        .skip(1)
+        .enumerate()
+        .try_fold(x.clone(), |sum, (idx, v)| {
+            if let Value::Number(x) = v {
+                Ok(sum + x.clone().into_negated())
+            } else {
+                Err(Condition::arg_error(idx + 1, TypeName::NUMBER, v).into())
+            }
+        })
+        .map(Value::Number)*/
+    }
 }
 
 fn abs(args: &[Value], _env: &Frame) -> EvalResult {
