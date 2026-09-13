@@ -47,6 +47,8 @@ pub(super) fn load(env: &Frame) {
     super::bind_intrinsic(env, "numerator", 1..1, get_numerator);
     super::bind_intrinsic(env, "denominator", 1..1, get_denominator);
 
+    super::bind_intrinsic(env, "square", 1..1, square);
+
     super::bind_intrinsic(env, "inexact", 1..1, into_inexact);
     super::bind_intrinsic(env, "exact", 1..1, into_exact);
 }
@@ -223,6 +225,11 @@ fn get_denominator(args: &[Value], _env: &Frame) -> EvalResult {
             |r| Ok(Value::real(r)),
         )
     })
+}
+
+fn square(args: &[Value], env: &Frame) -> EvalResult {
+    let arg = first(args);
+    nums_mult(&[arg.clone(), arg.clone()], env)
 }
 
 fn into_inexact(args: &[Value], _env: &Frame) -> EvalResult {
