@@ -905,4 +905,279 @@ mod tests {
         let v = ok_or_fail!(r);
         assert_eq!(v.as_datum().to_string(), "1/2");
     }
+
+    #[test]
+    fn add_empty_sequence() {
+        let args = [];
+        let env = TestEnv::default();
+
+        let r = nums_add(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_matches!(v, Value::Number(Number::Real(Real::Integer(_))));
+        assert_eq!(v.as_datum().to_string(), "0");
+    }
+
+    #[test]
+    fn add_single_arg() {
+        let args = [Value::real(7)];
+        let env = TestEnv::default();
+
+        let r = nums_add(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_eq!(v.as_datum().to_string(), "7");
+    }
+
+    #[test]
+    fn add_two_args() {
+        let args = [Value::real(3), Value::real(4)];
+        let env = TestEnv::default();
+
+        let r = nums_add(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_eq!(v.as_datum().to_string(), "7");
+    }
+
+    #[test]
+    fn add_many_args() {
+        let args = [Value::real(1), Value::real(2), Value::real(3)];
+        let env = TestEnv::default();
+
+        let r = nums_add(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_eq!(v.as_datum().to_string(), "6");
+    }
+
+    #[test]
+    fn add_exact_args_stay_exact() {
+        let args = [Value::real(3), Value::real(4)];
+        let env = TestEnv::default();
+
+        let r = nums_add(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_matches!(v, Value::Number(Number::Real(Real::Integer(_))));
+    }
+
+    #[test]
+    fn add_inexact_later_arg_taints_result() {
+        let args = [Value::real(5), Value::real(2.0)];
+        let env = TestEnv::default();
+
+        let r = nums_add(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_matches!(v, Value::Number(Number::Real(Real::Float(_))));
+        assert_eq!(v.as_datum().to_string(), "7.0");
+    }
+
+    #[test]
+    fn add_inexact_first_arg_taints_result() {
+        let args = [Value::real(5.0), Value::real(2)];
+        let env = TestEnv::default();
+
+        let r = nums_add(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_matches!(v, Value::Number(Number::Real(Real::Float(_))));
+        assert_eq!(v.as_datum().to_string(), "7.0");
+    }
+
+    #[test]
+    fn add_complex_arg() {
+        let args = [Value::real(2), Value::Number(Number::complex(3, 4))];
+        let env = TestEnv::default();
+
+        let r = nums_add(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_eq!(v.as_datum().to_string(), "5+4i");
+    }
+
+    #[test]
+    fn add_invalid_first_arg() {
+        let args = [Value::string("foo"), Value::real(1)];
+        let env = TestEnv::default();
+
+        let r = nums_add(&args, &env.new_frame());
+
+        let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
+        assert_eq!(
+            err.to_string(),
+            "#<value-error \"invalid type for arg `0` - expected: number, got: string\" (\"foo\")>"
+        );
+    }
+
+    #[test]
+    fn add_invalid_later_arg() {
+        let args = [Value::real(1), Value::string("foo")];
+        let env = TestEnv::default();
+
+        let r = nums_add(&args, &env.new_frame());
+
+        let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
+        assert_eq!(
+            err.to_string(),
+            "#<value-error \"invalid type for arg `1` - expected: number, got: string\" (\"foo\")>"
+        );
+    }
+
+    #[test]
+    fn mult_empty_sequence() {
+        let args = [];
+        let env = TestEnv::default();
+
+        let r = nums_mult(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_matches!(v, Value::Number(Number::Real(Real::Integer(_))));
+        assert_eq!(v.as_datum().to_string(), "1");
+    }
+
+    #[test]
+    fn mult_single_arg() {
+        let args = [Value::real(7)];
+        let env = TestEnv::default();
+
+        let r = nums_mult(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_eq!(v.as_datum().to_string(), "7");
+    }
+
+    #[test]
+    fn mult_single_negative_arg() {
+        let args = [Value::real(-4)];
+        let env = TestEnv::default();
+
+        let r = nums_mult(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_eq!(v.as_datum().to_string(), "-4");
+    }
+
+    #[test]
+    fn mult_two_args() {
+        let args = [Value::real(2), Value::real(3)];
+        let env = TestEnv::default();
+
+        let r = nums_mult(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_eq!(v.as_datum().to_string(), "6");
+    }
+
+    #[test]
+    fn mult_many_args() {
+        let args = [Value::real(2), Value::real(3), Value::real(4)];
+        let env = TestEnv::default();
+
+        let r = nums_mult(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_eq!(v.as_datum().to_string(), "24");
+    }
+
+    #[test]
+    fn mult_exact_args_stay_exact() {
+        let args = [Value::real(2), Value::real(3)];
+        let env = TestEnv::default();
+
+        let r = nums_mult(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_matches!(v, Value::Number(Number::Real(Real::Integer(_))));
+    }
+
+    #[test]
+    fn mult_inexact_later_arg_taints_result() {
+        let args = [Value::real(5), Value::real(2.0)];
+        let env = TestEnv::default();
+
+        let r = nums_mult(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_matches!(v, Value::Number(Number::Real(Real::Float(_))));
+        assert_eq!(v.as_datum().to_string(), "10.0");
+    }
+
+    #[test]
+    fn mult_inexact_first_arg_taints_result() {
+        let args = [Value::real(5.0), Value::real(2)];
+        let env = TestEnv::default();
+
+        let r = nums_mult(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_matches!(v, Value::Number(Number::Real(Real::Float(_))));
+        assert_eq!(v.as_datum().to_string(), "10.0");
+    }
+
+    #[test]
+    fn mult_exact_zero_arg() {
+        let args = [Value::real(0), Value::real(1.5)];
+        let env = TestEnv::default();
+
+        let r = nums_mult(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_eq!(v.as_datum().to_string(), "0");
+    }
+
+    #[test]
+    fn mult_complex_arg() {
+        let args = [Value::real(2), Value::Number(Number::complex(3, 4))];
+        let env = TestEnv::default();
+
+        let r = nums_mult(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_eq!(v.as_datum().to_string(), "6+8i");
+    }
+
+    #[test]
+    #[ignore = "rational multiplication not yet implemented"]
+    fn mult_rational_arg() {
+        let args = [
+            Value::real(2),
+            Value::real(ok_or_fail!(Real::reduce(1, 2))),
+        ];
+        let env = TestEnv::default();
+
+        let r = nums_mult(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_eq!(v.as_datum().to_string(), "1");
+    }
+
+    #[test]
+    fn mult_invalid_first_arg() {
+        let args = [Value::string("foo"), Value::real(1)];
+        let env = TestEnv::default();
+
+        let r = nums_mult(&args, &env.new_frame());
+
+        let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
+        assert_eq!(
+            err.to_string(),
+            "#<value-error \"invalid type for arg `0` - expected: number, got: string\" (\"foo\")>"
+        );
+    }
+
+    #[test]
+    fn mult_invalid_later_arg() {
+        let args = [Value::real(1), Value::string("foo")];
+        let env = TestEnv::default();
+
+        let r = nums_mult(&args, &env.new_frame());
+
+        let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
+        assert_eq!(
+            err.to_string(),
+            "#<value-error \"invalid type for arg `1` - expected: number, got: string\" (\"foo\")>"
+        );
+    }
 }

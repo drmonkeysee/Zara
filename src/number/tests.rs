@@ -54,6 +54,39 @@ mod sign {
             assert_eq!(s, exp);
         }
     }
+
+    #[test]
+    fn mul_matrix() {
+        let cases = [
+            (Sign::Negative, Sign::Negative, Sign::Positive),
+            (Sign::Negative, Sign::Zero, Sign::Zero),
+            (Sign::Negative, Sign::Positive, Sign::Negative),
+            (Sign::Zero, Sign::Negative, Sign::Zero),
+            (Sign::Zero, Sign::Zero, Sign::Zero),
+            (Sign::Zero, Sign::Positive, Sign::Zero),
+            (Sign::Positive, Sign::Negative, Sign::Negative),
+            (Sign::Positive, Sign::Zero, Sign::Zero),
+            (Sign::Positive, Sign::Positive, Sign::Positive),
+        ];
+        for (a, b, expected) in cases {
+            assert_eq!(a * b, expected);
+        }
+    }
+
+    #[test]
+    fn mul_is_commutative() {
+        let cases = [
+            (Sign::Negative, Sign::Negative),
+            (Sign::Negative, Sign::Zero),
+            (Sign::Negative, Sign::Positive),
+            (Sign::Zero, Sign::Zero),
+            (Sign::Zero, Sign::Positive),
+            (Sign::Positive, Sign::Positive),
+        ];
+        for (a, b) in cases {
+            assert_eq!(a * b, b * a);
+        }
+    }
 }
 
 mod token {
@@ -4045,6 +4078,348 @@ mod add {
         let sum = Number::zero() + Number::complex(3, 2);
 
         assert_eq!(sum.to_string(), "3+2i");
+    }
+}
+
+mod mult {
+    use super::*;
+
+    #[test]
+    fn integer_matrix() {
+        let cases = [
+            (2, 3, "6"),
+            (-2, 3, "-6"),
+            (2, -3, "-6"),
+            (-2, -3, "6"),
+            (0, 5, "0"),
+            (5, 0, "0"),
+            (0, 0, "0"),
+            (1, 7, "7"),
+            (-1, 7, "-7"),
+        ];
+        for (a, b, expected) in cases {
+            let product = Number::real(a) * Number::real(b);
+
+            assert_eq!(product.to_string(), expected);
+        }
+    }
+
+    #[test]
+    fn integer_product_stays_exact() {
+        let product = Number::real(2) * Number::real(3);
+
+        let n = extract_or_fail!(product, Number::Real);
+        assert!(matches!(n, Real::Integer(_)));
+    }
+
+    #[test]
+    fn integer_product_beyond_i64_max() {
+        let product = Number::real(i64::MAX) * Number::real(2);
+
+        assert_eq!(product.to_string(), "18446744073709551614");
+    }
+
+    #[test]
+    fn integer_multiplication_is_commutative() {
+        let cases = [(4, 7), (-4, 7), (4, -7), (-4, -7), (0, 7)];
+        for (a, b) in cases {
+            let ab = Number::real(a) * Number::real(b);
+            let ba = Number::real(b) * Number::real(a);
+
+            assert_eq!(ab.to_string(), ba.to_string());
+        }
+    }
+
+    #[test]
+    fn integer_multiplication_is_associative() {
+        let ab_c = (Number::real(2) * Number::real(3)) * Number::real(4);
+        let a_bc = Number::real(2) * (Number::real(3) * Number::real(4));
+
+        assert_eq!(ab_c.to_string(), a_bc.to_string());
+    }
+
+    #[test]
+    #[ignore = "multi-precision multiplication not yet implemented"]
+    fn integer_product_overflows_precision() {
+        let product = Number::real(i64::MIN) * Number::real(2);
+
+        assert_eq!(product.to_string(), "18446744073709551616");
+    }
+
+    #[test]
+    fn float_matrix() {
+        let cases = [
+            (1.5, 2.0, "3.0"),
+            (0.1, 0.2, "0.020000000000000004"),
+            (-1.5, 2.0, "-3.0"),
+            (0.0, -0.0, "-0.0"),
+            (-0.0, -0.0, "0.0"),
+        ];
+        for (a, b, expected) in cases {
+            let product = Number::real(a) * Number::real(b);
+
+            assert_eq!(product.to_string(), expected);
+        }
+    }
+
+    #[test]
+    fn float_infinities() {
+        let cases = [
+            (f64::INFINITY, 1.0, "+inf.0"),
+            (f64::NEG_INFINITY, 1.0, "-inf.0"),
+            (f64::INFINITY, f64::INFINITY, "+inf.0"),
+            (f64::INFINITY, f64::NEG_INFINITY, "-inf.0"),
+        ];
+        for (a, b, expected) in cases {
+            let product = Number::real(a) * Number::real(b);
+
+            assert_eq!(product.to_string(), expected);
+        }
+    }
+
+    #[test]
+    fn nan_propagates_as_first_operand() {
+        let product = Number::real(f64::NAN) * Number::real(2.0);
+
+        assert!(product.is_nan());
+    }
+
+    #[test]
+    fn nan_propagates_as_second_operand() {
+        let product = Number::real(2.0) * Number::real(f64::NAN);
+
+        assert!(product.is_nan());
+    }
+
+    #[test]
+    fn inexact_zero_times_infinity_is_nan() {
+        let product = Number::real(0.0) * Number::real(f64::INFINITY);
+
+        assert!(product.is_nan());
+    }
+
+    #[test]
+    fn integer_and_float_either_order() {
+        let a = Number::real(3) * Number::real(1.5);
+        let b = Number::real(1.5) * Number::real(3);
+
+        assert_eq!(a.to_string(), "4.5");
+        assert_eq!(b.to_string(), "4.5");
+    }
+
+    #[test]
+    fn float_product_is_inexact() {
+        let product = Number::real(3) * Number::real(1.5);
+
+        let n = extract_or_fail!(product, Number::Real);
+        assert!(matches!(n, Real::Float(_)));
+    }
+
+    #[test]
+    fn exact_zero_overrides_float_taint() {
+        let a = Number::real(0) * Number::real(1.5);
+        let b = Number::real(1.5) * Number::real(0);
+
+        assert_eq!(a.to_string(), "0");
+        assert!(matches!(extract_or_fail!(a, Number::Real), Real::Integer(_)));
+        assert_eq!(b.to_string(), "0");
+        assert!(matches!(extract_or_fail!(b, Number::Real), Real::Integer(_)));
+    }
+
+    #[test]
+    fn exact_zero_overrides_infinity() {
+        let a = Number::real(0) * Number::real(f64::INFINITY);
+        let b = Number::real(f64::INFINITY) * Number::real(0);
+
+        assert_eq!(a.to_string(), "0");
+        assert_eq!(b.to_string(), "0");
+    }
+
+    #[test]
+    fn exact_zero_overrides_nan() {
+        let a = Number::real(0) * Number::real(f64::NAN);
+        let b = Number::real(f64::NAN) * Number::real(0);
+
+        assert_eq!(a.to_string(), "0");
+        assert_eq!(b.to_string(), "0");
+    }
+
+    #[test]
+    fn inexact_zero_does_not_override() {
+        let a = Number::real(0.0) * Number::real(2);
+        let b = Number::real(2) * Number::real(0.0);
+
+        assert_eq!(a.to_string(), "0.0");
+        assert_eq!(b.to_string(), "0.0");
+    }
+
+    #[test]
+    fn rational_and_float_either_order() {
+        let q = ok_or_fail!(Real::reduce(1, 2));
+        let a = Number::real(q.clone()) * Number::real(0.5);
+        let b = Number::real(0.5) * Number::real(q);
+
+        assert_eq!(a.to_string(), "0.25");
+        assert_eq!(b.to_string(), "0.25");
+    }
+
+    #[test]
+    fn rational_and_float_product_is_inexact() {
+        let q = ok_or_fail!(Real::reduce(1, 2));
+        let product = Number::real(q) * Number::real(0.5);
+
+        let n = extract_or_fail!(product, Number::Real);
+        assert!(matches!(n, Real::Float(_)));
+    }
+
+    #[test]
+    #[ignore = "rational multiplication not yet implemented"]
+    fn rational_matrix() {
+        let a = ok_or_fail!(Real::reduce(1, 2));
+        let b = ok_or_fail!(Real::reduce(2, 3));
+        let product = Number::real(a) * Number::real(b);
+
+        assert_eq!(product.to_string(), "1/3");
+    }
+
+    #[test]
+    #[ignore = "rational multiplication not yet implemented"]
+    fn integer_and_rational_either_order() {
+        let q = ok_or_fail!(Real::reduce(1, 2));
+        let a = Number::real(3) * Number::real(q.clone());
+        let b = Number::real(q) * Number::real(3);
+
+        assert_eq!(a.to_string(), "3/2");
+        assert_eq!(b.to_string(), "3/2");
+    }
+
+    #[test]
+    #[ignore = "rational multiplication not yet implemented"]
+    fn rational_times_exact_zero() {
+        let q = ok_or_fail!(Real::reduce(1, 2));
+        let product = Number::real(0) * Number::real(q);
+
+        assert_eq!(product.to_string(), "0");
+    }
+
+    #[test]
+    fn complex_times_complex() {
+        let a = Number::complex(3, 2);
+        let b = Number::complex(1, 4);
+
+        let product = a * b;
+
+        assert_eq!(product.to_string(), "-5+14i");
+    }
+
+    #[test]
+    fn imaginary_unit_squared_is_negative_one() {
+        let a = Number::imaginary(1);
+        let b = Number::imaginary(1);
+
+        let product = a * b;
+
+        assert_eq!(product.to_string(), "-1");
+        assert!(matches!(product, Number::Real(_)));
+    }
+
+    #[test]
+    fn conjugates_multiply_to_real() {
+        let a = Number::complex(3, 2);
+        let b = Number::complex(3, -2);
+
+        let product = a * b;
+
+        assert_eq!(product.to_string(), "13");
+        assert!(matches!(product, Number::Real(_)));
+    }
+
+    #[test]
+    fn complex_times_exact_real_either_order() {
+        let a = Number::complex(3, 2) * Number::real(5);
+        let b = Number::real(5) * Number::complex(3, 2);
+
+        assert_eq!(a.to_string(), "15+10i");
+        assert_eq!(b.to_string(), "15+10i");
+    }
+
+    #[test]
+    fn complex_times_inexact_real() {
+        let product = Number::complex(3, 2) * Number::real(1.5);
+
+        assert_eq!(product.to_string(), "4.5+3.0i");
+    }
+
+    #[test]
+    fn complex_times_exact_zero() {
+        let product = Number::complex(3, 2) * Number::real(0);
+
+        assert_eq!(product.to_string(), "0");
+    }
+
+    #[test]
+    fn all_inexact_complex() {
+        let a = Number::complex(3.0, 2.0);
+        let b = Number::complex(1.0, 1.0);
+
+        let product = a * b;
+
+        assert_eq!(product.to_string(), "1.0+5.0i");
+    }
+
+    #[test]
+    fn complex_multiplication_is_commutative() {
+        let a = Number::complex(3, 2);
+        let b = Number::complex(1, 4);
+
+        let ab = a.clone() * b.clone();
+        let ba = b * a;
+
+        assert_eq!(ab.to_string(), ba.to_string());
+    }
+
+    #[test]
+    fn one_is_exact_integer() {
+        let one = Number::one();
+
+        assert_eq!(one.to_string(), "1");
+        assert!(matches!(one, Number::Real(Real::Integer(_))));
+    }
+
+    #[test]
+    fn one_is_multiplicative_identity_for_integer() {
+        let product = Number::one() * Number::real(7);
+
+        assert_eq!(product.to_string(), "7");
+    }
+
+    #[test]
+    fn one_is_multiplicative_identity_for_float() {
+        let product = Number::one() * Number::real(4.5);
+
+        assert_eq!(product.to_string(), "4.5");
+    }
+
+    #[test]
+    fn one_is_multiplicative_identity_for_complex() {
+        let product = Number::one() * Number::complex(3, 2);
+
+        assert_eq!(product.to_string(), "3+2i");
+    }
+
+    #[test]
+    fn zero_annihilates_integer() {
+        let product = Number::zero() * Number::real(7);
+
+        assert_eq!(product.to_string(), "0");
+    }
+
+    #[test]
+    fn zero_annihilates_float() {
+        // exact zero overrides float-taint, so the result stays exact
+        let product = Number::zero() * Number::real(4.5);
+
+        assert_eq!(product.to_string(), "0");
     }
 }
 
