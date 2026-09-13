@@ -646,7 +646,7 @@ fn into_quote_datum(val: Option<Value>, ctx: ExprCtx, ns: &Namespace) -> Express
 fn into_valid_sequence<T>(
     seq: Vec<Expression>,
     ctx: ExprCtx,
-    valid: impl FnMut(Expression) -> Result<T, ExpressionError>,
+    valid: impl Fn(Expression) -> Result<T, ExpressionError>,
     kind: impl FnOnce(Vec<T>) -> ExpressionKind,
 ) -> ExprConvertResult {
     let (items, errs): (Vec<_>, Vec<_>) = seq.into_iter().map(valid).partition(Result::is_ok);

@@ -189,7 +189,7 @@ impl Display for LexerErrorMessage<'_> {
 pub(crate) struct DisplayTokenLines<'a>(pub(crate) &'a [TokenLine]);
 
 impl DisplayTokenLines<'_> {
-    fn flatten_to_string(&self, cvt: impl FnMut(&TokenLine) -> String) -> String {
+    fn flatten_to_string(&self, cvt: impl Fn(&TokenLine) -> String) -> String {
         self.0.iter().map(cvt).collect()
     }
 }

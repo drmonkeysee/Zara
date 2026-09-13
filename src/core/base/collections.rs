@@ -1021,7 +1021,7 @@ fn val_identity(v: &Value) -> EvalResult {
 
 fn coll_new<T>(
     args: &[Value],
-    map: impl FnMut((usize, &Value)) -> Result<T, Exception>,
+    map: impl Fn((usize, &Value)) -> Result<T, Exception>,
     ctor: impl FnOnce(Vec<T>) -> Value,
 ) -> EvalResult {
     Ok(ctor(
