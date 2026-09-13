@@ -94,6 +94,7 @@ pub(crate) const INF_STR: &str = "inf.0";
 pub(crate) const NAN_STR: &str = "nan.0";
 // 2^53 - 1; maximum safe integer in f64 format
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/MAX_SAFE_INTEGER
+// TODO: https://github.com/rust-lang/rust/issues/152466
 const FMAX_INT: f64 = 9_007_199_254_740_991.0;
 
 pub(crate) type NumResult = Result<Number, NumericError>;
@@ -129,6 +130,30 @@ impl Number {
 
     pub(crate) fn nan() -> Self {
         Self::real(Real::nan())
+    }
+
+    pub(crate) fn float_max() -> Self {
+        Self::real(Real::float_max())
+    }
+
+    pub(crate) fn float_min() -> Self {
+        Self::real(Real::float_min())
+    }
+
+    pub(crate) fn float_min_positive() -> Self {
+        Self::real(Real::float_min_positive())
+    }
+
+    pub(crate) fn epsilon() -> Self {
+        Self::real(Real::epsilon())
+    }
+
+    pub(crate) fn float_max_int() -> Self {
+        Self::real(Real::float_max_int())
+    }
+
+    pub(crate) fn float_min_int() -> Self {
+        Self::real(Real::float_min_int())
     }
 
     pub(crate) fn complex(real: impl Into<Real>, imag: impl Into<Real>) -> Self {
@@ -513,6 +538,30 @@ impl Real {
 
     fn one() -> Self {
         Integer::one().into()
+    }
+
+    pub(crate) fn float_max() -> Self {
+        f64::MAX.into()
+    }
+
+    pub(crate) fn float_min() -> Self {
+        f64::MIN.into()
+    }
+
+    pub(crate) fn float_min_positive() -> Self {
+        f64::MIN_POSITIVE.into()
+    }
+
+    pub(crate) fn epsilon() -> Self {
+        f64::EPSILON.into()
+    }
+
+    pub(crate) fn float_max_int() -> Self {
+        FMAX_INT.into()
+    }
+
+    pub(crate) fn float_min_int() -> Self {
+        (-FMAX_INT).into()
     }
 
     fn is_eqv(&self, other: &Self) -> bool {
