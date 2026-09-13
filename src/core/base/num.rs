@@ -5,7 +5,10 @@ use crate::{
     number::{Integer, Number, NumericTypeName, Real},
     value::{Condition, TypeName, Value},
 };
-use std::fmt::Display;
+use std::{
+    fmt::Display,
+    ops::{Add, Mul},
+};
 
 pub(super) fn load(env: &Frame) {
     // complex and number predicates are identical sets
@@ -130,29 +133,11 @@ fn nums_min(args: &[Value], _env: &Frame) -> EvalResult {
 }
 
 fn nums_add(args: &[Value], _env: &Frame) -> EvalResult {
-    args.iter()
-        .enumerate()
-        .try_fold(Number::zero(), |sum, (idx, v)| {
-            if let Value::Number(x) = v {
-                Ok(sum + x.clone())
-            } else {
-                Err(Condition::arg_error(idx, TypeName::NUMBER, v).into())
-            }
-        })
-        .map(Value::Number)
+    commutative_arithmetic(args, Number::zero(), Number::add)
 }
 
 fn nums_mult(args: &[Value], _env: &Frame) -> EvalResult {
-    args.iter()
-        .enumerate()
-        .try_fold(Number::one(), |prod, (idx, v)| {
-            if let Value::Number(x) = v {
-                Ok(prod * x.clone())
-            } else {
-                Err(Condition::arg_error(idx, TypeName::NUMBER, v).into())
-            }
-        })
-        .map(Value::Number)
+    commutative_arithmetic(args, Number::one(), Number::mul)
 }
 
 fn nums_sub(args: &[Value], _env: &Frame) -> EvalResult {
@@ -323,6 +308,23 @@ fn real_acc_predicate<'a>(
             Ok(acc)
         })
         .map(|r| Value::real(if float_taint { r.into_inexact() } else { r }))
+}
+
+fn commutative_arithmetic(
+    args: &[Value],
+    identity: Number,
+    op: impl Fn(Number, Number) -> Number,
+) -> EvalResult {
+    args.iter()
+        .enumerate()
+        .try_fold(identity, |acc, (idx, v)| {
+            if let Value::Number(x) = v {
+                Ok(op(acc, x.clone()))
+            } else {
+                Err(Condition::arg_error(idx, TypeName::NUMBER, v).into())
+            }
+        })
+        .map(Value::Number)
 }
 
 fn arg_to_real(
