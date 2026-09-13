@@ -461,11 +461,10 @@ impl Real {
     // will panic if assumption does not hold.
     fn reduce_divisor(val: impl Into<Integer>, divisor: impl Into<Integer>) -> Integer {
         let r = Self::reduce(val, divisor).expect("denominator is a divisor of numerator");
-        if let Self::Integer(n) = r {
-            n
-        } else {
-            unreachable!("unexpected non-divisor")
-        }
+        let Self::Integer(n) = r else {
+            unreachable!("unexpected non-divisor");
+        };
+        n
     }
 
     pub(crate) fn is_rational(&self) -> bool {

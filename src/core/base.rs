@@ -505,21 +505,19 @@ fn try_num_into_char(n: &Number, arg: &Value) -> EvalResult {
 
 fn guard_input_port(arg: &Value, expected: PortSpec) -> Result<&InputPortRef, Exception> {
     guard_port_value(arg, expected, |v| {
-        if let Value::PortInput(p) = v {
-            p
-        } else {
-            unreachable!("unexpected non-input-port value")
-        }
+        let Value::PortInput(p) = v else {
+            unreachable!("unexpected non-input-port value");
+        };
+        p
     })
 }
 
 fn guard_output_port(arg: &Value, expected: PortSpec) -> Result<&OutputPortRef, Exception> {
     guard_port_value(arg, expected, |v| {
-        if let Value::PortOutput(p) = v {
-            p
-        } else {
-            unreachable!("unexpected non-output-port value")
-        }
+        let Value::PortOutput(p) = v else {
+            unreachable!("unexpected non-output-port value");
+        };
+        p
     })
 }
 
