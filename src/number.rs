@@ -228,6 +228,13 @@ impl Number {
         }
     }
 
+    pub(crate) fn into_complex_conjugate(self) -> Self {
+        match self {
+            Self::Complex(z) => z.into_conjugate(),
+            Self::Real(_) => self,
+        }
+    }
+
     pub(crate) fn try_into_exact(self) -> NumResult {
         Ok(match self {
             Self::Complex(Complex(z)) => {
@@ -310,6 +317,13 @@ impl Complex {
         let x = self.real_part().to_float();
         let y = self.imag_part().to_float();
         Real::Float(y.atan2(x))
+    }
+
+    fn into_conjugate(self) -> Number {
+        Number::complex(
+            self.real_part().clone(),
+            self.imag_part().clone().into_negated(),
+        )
     }
 }
 

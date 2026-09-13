@@ -1,5 +1,6 @@
 // (zara ext)
 mod file;
+mod num;
 
 use super::{
     SECOND_ARG_LABEL, THIRD_ARG_LABEL, bind_intrinsic, first, fs_cmd, fs_op, invalid_target, second,
@@ -45,6 +46,7 @@ pub(super) fn load(env: &Frame) {
     );
 
     file::load(env);
+    num::load(env);
 }
 
 predicate!(is_io_base_error, Value::Error(c) if c.is_io_base_err());
