@@ -4623,3 +4623,303 @@ mod negate {
         assert_eq!(sum.to_string(), "0");
     }
 }
+
+mod reciprocal {
+    use super::*;
+
+    mod integer {
+        use super::*;
+
+        #[test]
+        fn matrix() {
+            let cases = [(1, "1"), (-1, "-1"), (4, "1/4"), (-4, "-1/4"), (2, "1/2")];
+            for (n, expected) in cases {
+                let r = ok_or_fail!(Number::real(n).try_into_reciprocal());
+
+                assert_eq!(r.to_string(), expected);
+            }
+        }
+
+        #[test]
+        fn nonunit_reciprocal_is_exact_rational() {
+            let r = ok_or_fail!(Number::real(4).try_into_reciprocal());
+
+            assert!(matches!(r, Number::Real(Real::Rational(_))));
+        }
+
+        #[test]
+        fn unity_reciprocal_stays_an_integer() {
+            let cases = [1, -1];
+            for n in cases {
+                let r = ok_or_fail!(Number::real(n).try_into_reciprocal());
+
+                assert!(matches!(r, Number::Real(Real::Integer(_))));
+            }
+        }
+
+        #[test]
+        fn beyond_i64_magnitude() {
+            let r = ok_or_fail!(Number::real(i64::MIN).try_into_reciprocal());
+
+            assert_eq!(r.to_string(), "-1/9223372036854775808");
+        }
+
+        #[test]
+        fn zero_has_no_reciprocal() {
+            let r = Number::real(0).try_into_reciprocal();
+
+            let err = err_or_fail!(r);
+            assert_matches!(err, NumericError::DivideByZero);
+        }
+
+        #[test]
+        fn is_an_involution() {
+            let cases = [4, -4, 1, -1, 7];
+            for n in cases {
+                let x = Number::real(n);
+
+                let r = ok_or_fail!(x.clone().try_into_reciprocal());
+                let r2 = ok_or_fail!(r.try_into_reciprocal());
+
+                assert_eq!(r2.to_string(), x.to_string());
+            }
+        }
+
+        #[test]
+        fn preserves_sign() {
+            let positive = Real::Integer(4.into());
+            let r = ok_or_fail!(positive.try_into_reciprocal());
+            assert!(r.is_positive());
+
+            let negative = Real::Integer((-4).into());
+            let r = ok_or_fail!(negative.try_into_reciprocal());
+            assert!(r.is_negative());
+        }
+
+        #[test]
+        fn inverse_law_for_unity() {
+            let cases = [1, -1];
+            for n in cases {
+                let x = Number::real(n);
+                let r = ok_or_fail!(x.clone().try_into_reciprocal());
+
+                let product = x * r;
+
+                assert_eq!(product.to_string(), "1");
+            }
+        }
+
+        #[test]
+        #[ignore = "rational multiplication not yet implemented"]
+        fn inverse_law_for_nonunit() {
+            let x = Number::real(4);
+            let r = ok_or_fail!(x.clone().try_into_reciprocal());
+
+            let product = x * r;
+
+            assert_eq!(product.to_string(), "1");
+        }
+    }
+
+    mod rational {
+        use super::*;
+
+        #[test]
+        fn matrix() {
+            let cases = [
+                ((3, 4), "4/3"),
+                ((-3, 4), "-4/3"),
+                ((5, 2), "2/5"),
+                ((-5, 2), "-2/5"),
+            ];
+            for ((n, d), expected) in cases {
+                let q = ok_or_fail!(Real::reduce(n, d));
+
+                let r = ok_or_fail!(Number::real(q).try_into_reciprocal());
+
+                assert_eq!(r.to_string(), expected);
+            }
+        }
+
+        #[test]
+        fn unit_numerator_reciprocal_is_an_integer() {
+            let cases = [((1, 5), "5"), ((-1, 5), "-5")];
+            for ((n, d), expected) in cases {
+                let q = ok_or_fail!(Real::reduce(n, d));
+
+                let r = ok_or_fail!(Number::real(q).try_into_reciprocal());
+
+                assert_eq!(r.to_string(), expected);
+                assert!(matches!(r, Number::Real(Real::Integer(_))));
+            }
+        }
+
+        #[test]
+        fn is_an_involution() {
+            let cases = [(3, 4), (-3, 4)];
+            for (n, d) in cases {
+                let q = ok_or_fail!(Real::reduce(n, d));
+                let x = Number::real(q);
+
+                let r = ok_or_fail!(x.clone().try_into_reciprocal());
+                let r2 = ok_or_fail!(r.try_into_reciprocal());
+
+                assert_eq!(r2.to_string(), x.to_string());
+            }
+        }
+
+        #[test]
+        fn denominator_stays_positive_after_inverting_negative() {
+            let q = ok_or_fail!(Real::reduce(-3, 4));
+
+            let r = ok_or_fail!(Number::real(q).try_into_reciprocal());
+
+            let (_, den) = rational_parts!(extract_or_fail!(r, Number::Real));
+            assert_eq!(den.sign, Sign::Positive);
+        }
+
+        #[test]
+        #[ignore = "rational multiplication not yet implemented"]
+        fn inverse_law() {
+            let q = ok_or_fail!(Real::reduce(3, 4));
+            let x = Number::real(q);
+            let r = ok_or_fail!(x.clone().try_into_reciprocal());
+
+            let product = x * r;
+
+            assert_eq!(product.to_string(), "1");
+        }
+    }
+
+    mod float {
+        use super::*;
+
+        #[test]
+        fn matrix() {
+            let cases = [(2.0, "0.5"), (0.5, "2.0"), (-8.0, "-0.125"), (1.0, "1.0")];
+            for (f, expected) in cases {
+                let r = ok_or_fail!(Number::real(f).try_into_reciprocal());
+
+                assert_eq!(r.to_string(), expected);
+            }
+        }
+
+        #[test]
+        fn positive_zero_reciprocal_is_positive_infinity() {
+            let r = ok_or_fail!(Number::real(0.0).try_into_reciprocal());
+
+            assert_eq!(r.to_string(), "+inf.0");
+        }
+
+        #[test]
+        fn negative_zero_reciprocal_is_negative_infinity() {
+            let r = ok_or_fail!(Number::real(-0.0).try_into_reciprocal());
+
+            assert_eq!(r.to_string(), "-inf.0");
+        }
+
+        #[test]
+        fn positive_infinity_reciprocal_is_positive_zero() {
+            let r = ok_or_fail!(Number::real(f64::INFINITY).try_into_reciprocal());
+
+            assert_eq!(r.to_string(), "0.0");
+        }
+
+        #[test]
+        fn negative_infinity_reciprocal_is_negative_zero() {
+            let r = ok_or_fail!(Number::real(f64::NEG_INFINITY).try_into_reciprocal());
+
+            assert_eq!(r.to_string(), "-0.0");
+        }
+
+        #[test]
+        fn nan_reciprocal_is_nan() {
+            let r = ok_or_fail!(Number::real(f64::NAN).try_into_reciprocal());
+
+            assert!(r.is_nan());
+        }
+
+        #[test]
+        fn stays_inexact_even_for_whole_number_result() {
+            let r = ok_or_fail!(Number::real(0.5).try_into_reciprocal());
+
+            assert!(matches!(r, Number::Real(Real::Float(_))));
+        }
+
+        #[test]
+        fn small_normal_reciprocal_is_finite() {
+            let r = ok_or_fail!(Number::real(f64::MIN_POSITIVE).try_into_reciprocal());
+
+            assert!(!r.is_infinite());
+        }
+
+        #[test]
+        fn smallest_subnormal_reciprocal_overflows_to_infinity() {
+            let r = ok_or_fail!(Number::real(f64::from_bits(1)).try_into_reciprocal());
+
+            assert!(r.is_infinite());
+        }
+
+        #[test]
+        fn is_an_involution_for_exact_binary_fractions() {
+            let cases = [2.0, 0.25, -8.0];
+            for f in cases {
+                let x = Number::real(f);
+
+                let r = ok_or_fail!(x.clone().try_into_reciprocal());
+                let r2 = ok_or_fail!(r.try_into_reciprocal());
+
+                assert_eq!(r2.to_string(), x.to_string());
+            }
+        }
+
+        #[test]
+        fn is_not_an_involution_in_general() {
+            // 1/(1/f64::MAX) overflows to infinity rather than round-tripping,
+            // per IEEE 754 semantics -- this documents that limit, not a bug.
+            let x = Number::real(f64::MAX);
+
+            let r = ok_or_fail!(x.try_into_reciprocal());
+            let r2 = ok_or_fail!(r.try_into_reciprocal());
+
+            assert_eq!(r2.to_string(), "+inf.0");
+        }
+
+        #[test]
+        fn inverse_law() {
+            let x = Number::real(2.0);
+            let r = ok_or_fail!(x.clone().try_into_reciprocal());
+
+            let product = x * r;
+
+            assert_eq!(product.to_string(), "1.0");
+        }
+
+        #[test]
+        fn inverse_law_fails_for_infinity() {
+            let x = Number::real(f64::INFINITY);
+            let r = ok_or_fail!(x.clone().try_into_reciprocal());
+
+            let product = x * r;
+
+            assert!(product.is_nan());
+        }
+    }
+
+    mod complex {
+        use super::*;
+
+        #[test]
+        #[ignore = "complex reciprocal not yet implemented"]
+        fn conjugate_over_magnitude_squared() {
+            // 1/(a+bi) = (a-bi) / (a^2+b^2)
+            let z = Number::complex(3, 4);
+
+            let r = ok_or_fail!(z.try_into_reciprocal());
+
+            let expected_re = ok_or_fail!(Real::reduce(3, 25));
+            let expected_im = ok_or_fail!(Real::reduce(-4, 25));
+            assert_eq!(r, Number::complex(expected_re, expected_im));
+        }
+    }
+}
