@@ -140,8 +140,17 @@ fn nums_add(args: &[Value], _env: &Frame) -> EvalResult {
         .map(Value::Number)
 }
 
-fn nums_mult(_args: &[Value], _env: &Frame) -> EvalResult {
-    todo!();
+fn nums_mult(args: &[Value], _env: &Frame) -> EvalResult {
+    args.iter()
+        .enumerate()
+        .try_fold(Number::one(), |prod, (idx, v)| {
+            if let Value::Number(x) = v {
+                Ok(prod * x.clone())
+            } else {
+                Err(Condition::arg_error(idx, TypeName::NUMBER, v).into())
+            }
+        })
+        .map(Value::Number)
 }
 
 fn nums_sub(args: &[Value], _env: &Frame) -> EvalResult {

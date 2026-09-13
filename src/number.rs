@@ -85,7 +85,7 @@ use std::{
     cmp::Ordering,
     fmt::{self, Display, Formatter, Write},
     num::{IntErrorKind, ParseFloatError, ParseIntError},
-    ops::{Add, Sub},
+    ops::{Add, Mul, Sub},
     rc::Rc,
     result::Result,
 };
@@ -121,6 +121,10 @@ pub(crate) enum Number {
 impl Number {
     pub(crate) fn zero() -> Self {
         Self::real(Real::zero())
+    }
+
+    pub(crate) fn one() -> Self {
+        Self::real(Real::one())
     }
 
     pub(crate) fn nan() -> Self {
@@ -255,6 +259,17 @@ impl Add for Number {
     }
 }
 
+impl Mul for Number {
+    type Output = Self;
+
+    fn mul(self, rhs: Self) -> Self::Output {
+        match (self, rhs) {
+            (Self::Complex(z), n) | (n, Self::Complex(z)) => z * n,
+            (Self::Real(a), Self::Real(b)) => Self::real(a * b),
+        }
+    }
+}
+
 impl Display for Number {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
@@ -309,6 +324,22 @@ impl Add<Number> for Complex {
             ),
             Number::Real(r) => {
                 Number::complex(self.real_part().clone() + r, self.imag_part().clone())
+            }
+        }
+    }
+}
+
+impl Mul<Number> for Complex {
+    type Output = Number;
+
+    fn mul(self, rhs: Number) -> Self::Output {
+        match rhs {
+            Number::Complex(Complex(z)) => Number::complex(
+                self.real_part().clone() * z.0,
+                self.imag_part().clone() * z.1,
+            ),
+            Number::Real(r) => {
+                Number::complex(self.real_part().clone() * r, self.imag_part().clone())
             }
         }
     }
@@ -458,6 +489,10 @@ impl Real {
         })
     }
 
+    fn one() -> Self {
+        Integer::one().into()
+    }
+
     fn is_eqv(&self, other: &Self) -> bool {
         match (self, other) {
             (Self::Float(a), Self::Float(b)) if a.is_nan() && b.is_nan() => true,
@@ -536,6 +571,38 @@ impl PartialOrd for Real {
     }
 }
 
+impl Add for Real {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        match self {
+            Self::Float(f) => (f + rhs.to_float()).into(),
+            Self::Integer(n) => n + rhs,
+            Self::Rational(q) => q + rhs,
+        }
+    }
+}
+
+impl Mul for Real {
+    type Output = Self;
+
+    fn mul(self, rhs: Self) -> Self::Output {
+        match self {
+            // exact zero overrides
+            Self::Float(f) => {
+                // exact zero overrides float-taint
+                if rhs.is_exact_zero() {
+                    rhs
+                } else {
+                    (f * rhs.to_float()).into()
+                }
+            }
+            Self::Integer(n) => n * rhs,
+            Self::Rational(q) => q * rhs,
+        }
+    }
+}
+
 impl Display for Real {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
@@ -555,18 +622,6 @@ impl From<f64> for Real {
 impl<T: Into<Integer>> From<T> for Real {
     fn from(value: T) -> Self {
         Self::Integer(value.into())
-    }
-}
-
-impl Add for Real {
-    type Output = Self;
-
-    fn add(self, rhs: Self) -> Self::Output {
-        match self {
-            Self::Float(f) => (f + rhs.to_float()).into(),
-            Self::Integer(n) => n + rhs,
-            Self::Rational(q) => q + rhs,
-        }
     }
 }
 
@@ -641,6 +696,14 @@ impl Add for Rational {
     }
 }
 
+impl Mul for Rational {
+    type Output = Real;
+
+    fn mul(self, _rhs: Self) -> Self::Output {
+        todo!("need integer division first")
+    }
+}
+
 impl Display for Rational {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         let r = &self.0;
@@ -677,6 +740,18 @@ impl Add<Real> for Rational {
             Real::Float(f) => (self.to_float() + f).into(),
             Real::Integer(n) => self.add(n.into_rational()),
             Real::Rational(q) => self.add(q),
+        }
+    }
+}
+
+impl Mul<Real> for Rational {
+    type Output = Real;
+
+    fn mul(self, rhs: Real) -> Self::Output {
+        match rhs {
+            Real::Float(f) => (self.to_float() * f).into(),
+            Real::Integer(n) => self.mul(n.into_rational()),
+            Real::Rational(q) => self.mul(q),
         }
     }
 }
@@ -860,6 +935,17 @@ impl Add for Integer {
     }
 }
 
+impl Mul for Integer {
+    type Output = Self;
+
+    fn mul(self, rhs: Self) -> Self::Output {
+        match self.sign * rhs.sign {
+            Sign::Zero => Self::zero(),
+            s => Integer::new(self.precision * rhs.precision, s),
+        }
+    }
+}
+
 impl Display for Integer {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         self.sign.fmt(f)?;
@@ -915,6 +1001,25 @@ impl Add<Real> for Integer {
     }
 }
 
+impl Mul<Real> for Integer {
+    type Output = Real;
+
+    fn mul(self, rhs: Real) -> Self::Output {
+        match rhs {
+            Real::Float(f) => {
+                // exact zero overrides float-taint
+                if self.is_zero() {
+                    self.into()
+                } else {
+                    (self.to_float() * f).into()
+                }
+            }
+            Real::Integer(n) => self.mul(n).into(),
+            Real::Rational(q) => self.into_rational() * q,
+        }
+    }
+}
+
 // enum expression of the signum function
 #[derive(Clone, Copy, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
 pub(crate) enum Sign {
@@ -922,6 +1027,14 @@ pub(crate) enum Sign {
     Zero,
     #[default]
     Positive,
+}
+
+impl Mul for Sign {
+    type Output = Self;
+
+    fn mul(self, rhs: Self) -> Self::Output {
+        (self as i64 * rhs as i64).into()
+    }
 }
 
 impl Display for Sign {
@@ -1316,6 +1429,24 @@ impl Sub for Precision {
     fn sub(self, rhs: Self) -> Self::Output {
         match (self, rhs) {
             (Self::Single(a), Self::Single(b)) => Self::Single(a - b),
+            _ => todo!(),
+        }
+    }
+}
+
+impl Mul for Precision {
+    type Output = Self;
+
+    fn mul(self, rhs: Self) -> Self::Output {
+        match (self, rhs) {
+            (Self::Single(a), Self::Single(b)) => {
+                let (p, o) = a.carrying_mul(b, 0);
+                if o == 0 {
+                    Self::Single(p)
+                } else {
+                    todo!("handle precision overflow")
+                }
+            }
             _ => todo!(),
         }
     }

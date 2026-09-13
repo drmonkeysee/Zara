@@ -316,7 +316,7 @@ fn parse_formals(mut params: Value) -> Result<(Vec<Symbol>, Option<Symbol>), Exp
                 params = p.cdr.clone();
             }
             Value::Symbol(n) => {
-                rest = Some(n.clone());
+                rest = Some(n);
                 break;
             }
             _ => return Err(ExpressionErrorKind::LambdaInvalidSignature),
