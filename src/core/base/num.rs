@@ -120,11 +120,11 @@ fn is_even(args: &[Value], _env: &Frame) -> EvalResult {
 }
 
 fn nums_max(args: &[Value], _env: &Frame) -> EvalResult {
-    real_acc_op(first(args), args.iter().skip(1), Real::lt)
+    real_acc_predicate(first(args), args.iter().skip(1), Real::lt)
 }
 
 fn nums_min(args: &[Value], _env: &Frame) -> EvalResult {
-    real_acc_op(first(args), args.iter().skip(1), Real::gt)
+    real_acc_predicate(first(args), args.iter().skip(1), Real::gt)
 }
 
 fn nums_add(args: &[Value], _env: &Frame) -> EvalResult {
@@ -276,10 +276,10 @@ fn guarded_real_op(
     op(r)
 }
 
-fn real_acc_op<'a>(
+fn real_acc_predicate<'a>(
     first: &Value,
     rest: impl IntoIterator<Item = &'a Value>,
-    op: impl Fn(&Real, &Real) -> bool,
+    pred: impl Fn(&Real, &Real) -> bool,
 ) -> EvalResult {
     let r = arg_to_real(first, FIRST_ARG_LABEL, NumericTypeName::REAL)?;
     let mut float_taint = r.is_inexact();
@@ -288,7 +288,7 @@ fn real_acc_op<'a>(
         .try_fold(r.clone(), |mut acc, (idx, v)| {
             let r = arg_to_real(v, idx + 1, NumericTypeName::REAL)?;
             float_taint = float_taint || r.is_inexact();
-            if op(&acc, r) {
+            if pred(&acc, r) {
                 acc = r.clone();
             }
             Ok(acc)
@@ -1141,10 +1141,7 @@ mod tests {
     #[test]
     #[ignore = "rational multiplication not yet implemented"]
     fn mult_rational_arg() {
-        let args = [
-            Value::real(2),
-            Value::real(ok_or_fail!(Real::reduce(1, 2))),
-        ];
+        let args = [Value::real(2), Value::real(ok_or_fail!(Real::reduce(1, 2)))];
         let env = TestEnv::default();
 
         let r = nums_mult(&args, &env.new_frame());
