@@ -19,8 +19,10 @@ pub(super) fn load(env: &Frame) {
         env.sym.get("inexact-min-pos"),
         Value::Number(Number::float_min_positive()),
     );
-    env.scope
-        .bind(env.sym.get("epsilon"), Value::Number(Number::epsilon()));
+    env.scope.bind(
+        env.sym.get("inexact-epsilon"),
+        Value::Number(Number::epsilon()),
+    );
     env.scope.bind(
         env.sym.get("inexact-max-exact"),
         Value::Number(Number::float_max_int()),
