@@ -332,16 +332,17 @@ impl Add<Number> for Complex {
 impl Mul<Number> for Complex {
     type Output = Number;
 
+    // Complex multiplication: (a + bi) * (c + di) = (ac - bd) + (ad + bc)i
     fn mul(self, rhs: Number) -> Self::Output {
-        match rhs {
-            Number::Complex(Complex(z)) => Number::complex(
-                self.real_part().clone() * z.0,
-                self.imag_part().clone() * z.1,
-            ),
-            Number::Real(r) => {
-                Number::complex(self.real_part().clone() * r, self.imag_part().clone())
-            }
-        }
+        let (a, b) = (self.real_part().clone(), self.imag_part().clone());
+        let (c, d) = match rhs {
+            Number::Complex(z) => (z.real_part().clone(), z.imag_part().clone()),
+            Number::Real(r) => (r, Real::zero()),
+        };
+        Number::complex(
+            (a.clone() * c.clone()) + (b.clone() * d.clone()).into_negated(),
+            (a * d) + (b * c),
+        )
     }
 }
 
