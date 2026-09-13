@@ -173,18 +173,18 @@ fn nums_div(args: &[Value], _env: &Frame) -> EvalResult {
             |x| Ok(Value::Number(x)),
         )
     } else {
-        todo!();
-        /*args.iter()
-        .skip(1)
-        .enumerate()
-        .try_fold(x.clone(), |sum, (idx, v)| {
-            if let Value::Number(x) = v {
-                Ok(sum + x.clone().into_negated())
-            } else {
-                Err(Condition::arg_error(idx + 1, TypeName::NUMBER, v).into())
-            }
-        })
-        .map(Value::Number)*/
+        args.iter()
+            .skip(1)
+            .enumerate()
+            .try_fold(x.clone(), |sum, (idx, v)| {
+                if let Value::Number(x) = v {
+                    Ok((sum / x.clone())
+                        .map_err(|err| Exception::signal(Condition::value_error(err, v)))?)
+                } else {
+                    Err(Condition::arg_error(idx + 1, TypeName::NUMBER, v).into())
+                }
+            })
+            .map(Value::Number)
     }
 }
 

@@ -85,7 +85,7 @@ use std::{
     cmp::Ordering,
     fmt::{self, Display, Formatter, Write},
     num::{IntErrorKind, ParseFloatError, ParseIntError},
-    ops::{Add, Mul, Sub},
+    ops::{Add, Div, Mul, Sub},
     rc::Rc,
     result::Result,
 };
@@ -309,6 +309,17 @@ impl Mul for Number {
     }
 }
 
+impl Div for Number {
+    type Output = NumResult;
+
+    fn div(self, rhs: Self) -> Self::Output {
+        match (self, rhs) {
+            (Self::Complex(z), n) | (n, Self::Complex(z)) => z / n,
+            (Self::Real(a), Self::Real(b)) => Ok(Self::real((a / b)?)),
+        }
+    }
+}
+
 impl Display for Number {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
@@ -389,6 +400,14 @@ impl Mul<Number> for Complex {
             (a.clone() * c.clone()) + (b.clone() * d.clone()).into_negated(),
             (a * d) + (b * c),
         )
+    }
+}
+
+impl Div<Number> for Complex {
+    type Output = NumResult;
+
+    fn div(self, rhs: Number) -> Self::Output {
+        todo!()
     }
 }
 
@@ -502,6 +521,7 @@ impl Real {
     pub(crate) fn try_into_exact_integer(self) -> IntResult {
         match self {
             Self::Float(f) if f.fract() == 0.0 => {
+                // TODO: move this into Integer
                 if (-FMAX_INT..=FMAX_INT).contains(&f) {
                     #[allow(
                         clippy::cast_possible_truncation,
@@ -667,17 +687,25 @@ impl Mul for Real {
 
     fn mul(self, rhs: Self) -> Self::Output {
         match self {
-            // exact zero overrides
-            Self::Float(f) => {
-                // exact zero overrides float-taint
-                if rhs.is_exact_zero() {
-                    rhs
-                } else {
-                    (f * rhs.to_float()).into()
-                }
-            }
+            // exact zero overrides float-taint
+            Self::Float(_) if rhs.is_exact_zero() => rhs,
+            Self::Float(f) => (f * rhs.to_float()).into(),
             Self::Integer(n) => n * rhs,
             Self::Rational(q) => q * rhs,
+        }
+    }
+}
+
+impl Div for Real {
+    type Output = RealResult;
+
+    fn div(self, rhs: Self) -> Self::Output {
+        match self {
+            // exact zero overrides float-taint
+            Self::Float(_) if rhs.is_exact_zero() => Err(NumericError::DivideByZero),
+            Self::Float(f) => Ok((f / rhs.to_float()).into()),
+            Self::Integer(n) => n / rhs,
+            Self::Rational(q) => Ok(q * rhs.try_into_reciprocal()?),
         }
     }
 }
@@ -1033,6 +1061,14 @@ impl Mul for Integer {
     }
 }
 
+impl Div for Integer {
+    type Output = RealResult;
+
+    fn div(self, rhs: Self) -> Self::Output {
+        Real::reduce(self, rhs)
+    }
+}
+
 impl Display for Integer {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         self.sign.fmt(f)?;
@@ -1093,16 +1129,26 @@ impl Mul<Real> for Integer {
 
     fn mul(self, rhs: Real) -> Self::Output {
         match rhs {
-            Real::Float(f) => {
-                // exact zero overrides float-taint
-                if self.is_zero() {
-                    self.into()
-                } else {
-                    (self.to_float() * f).into()
-                }
-            }
+            // exact zero overrides float-taint
+            Real::Float(_) if self.is_zero() => self.into(),
+            Real::Float(f) => (self.to_float() * f).into(),
             Real::Integer(n) => self.mul(n).into(),
             Real::Rational(q) => self.into_rational() * q,
+        }
+    }
+}
+
+impl Div<Real> for Integer {
+    type Output = RealResult;
+
+    fn div(self, rhs: Real) -> Self::Output {
+        match rhs {
+            // nan overrides exact zero which overrides float-taint
+            Real::Float(f) if f.is_nan() => Ok(rhs.into()),
+            Real::Float(_) if self.is_zero() => Ok(self.into()),
+            Real::Float(f) => Ok((self.to_float() / f).into()),
+            Real::Integer(n) => self.div(n),
+            Real::Rational(q) => todo!(),
         }
     }
 }
