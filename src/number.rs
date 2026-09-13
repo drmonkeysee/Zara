@@ -360,10 +360,9 @@ impl Real {
     }
 
     pub(crate) fn is_rational(&self) -> bool {
-        if let Self::Float(f) = self {
-            f.is_finite()
-        } else {
-            true
+        match self {
+            Self::Float(f) => f.is_finite(),
+            _ => true,
         }
     }
 
@@ -486,18 +485,16 @@ impl Real {
     }
 
     fn is_infinite(&self) -> bool {
-        if let Self::Float(f) = self {
-            f.is_infinite()
-        } else {
-            false
+        match self {
+            Self::Float(f) => f.is_infinite(),
+            _ => false,
         }
     }
 
     fn is_nan(&self) -> bool {
-        if let Self::Float(f) = self {
-            f.is_nan()
-        } else {
-            false
+        match self {
+            Self::Float(f) => f.is_nan(),
+            _ => false,
         }
     }
 
@@ -708,11 +705,9 @@ impl Integer {
     }
 
     fn from_usize(val: usize) -> Self {
-        let r = u64::try_from(val);
-        if let Ok(u) = r {
-            (Sign::Positive, u).into()
-        } else {
-            todo!("handle multi-precision");
+        match u64::try_from(val) {
+            Ok(u) => (Sign::Positive, u).into(),
+            _ => todo!("handle multi-precision"),
         }
     }
 
@@ -1362,13 +1357,9 @@ struct ComplexRealDatum<'a>(&'a Real);
 
 impl Display for ComplexRealDatum<'_> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        let r = self.0;
-        if let Real::Integer(n) = r
-            && n.is_zero()
-        {
-            Ok(())
-        } else {
-            r.fmt(f)
+        match self.0 {
+            Real::Integer(n) if n.is_zero() => Ok(()),
+            r => r.fmt(f),
         }
     }
 }
@@ -1377,16 +1368,11 @@ struct ComplexImagDatum<'a>(&'a Real);
 
 impl Display for ComplexImagDatum<'_> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        let r = self.0;
-        if let Real::Integer(n) = r {
-            if n.is_zero() {
-                return Ok(());
-            }
-            if n.is_magnitude_one() {
-                return write!(f, "{:+}i", n.sign);
-            }
+        match self.0 {
+            Real::Integer(n) if n.is_zero() => Ok(()),
+            Real::Integer(n) if n.is_magnitude_one() => write!(f, "{:+}i", n.sign),
+            r => write!(f, "{r:+}i"),
         }
-        write!(f, "{r:+}i")
     }
 }
 
