@@ -520,18 +520,7 @@ impl Real {
 
     pub(crate) fn try_into_exact_integer(self) -> IntResult {
         match self {
-            Self::Float(f) if f.fract() == 0.0 => {
-                // TODO: move this into Integer
-                if (-FMAX_INT..=FMAX_INT).contains(&f) {
-                    #[allow(
-                        clippy::cast_possible_truncation,
-                        reason = "guarded against truncation"
-                    )]
-                    Ok((f as i64).into())
-                } else {
-                    todo!("convert f64 to multi-precision integer somehow")
-                }
-            }
+            Self::Float(f) if f.fract() == 0.0 => Ok(Integer::from_exact_float(f)),
             Self::Integer(n) => Ok(n.clone()),
             _ => Err(NumericError::NotExactInteger(self.to_string())),
         }
@@ -894,6 +883,18 @@ impl Integer {
         match u64::try_from(val) {
             Ok(u) => (Sign::Positive, u).into(),
             _ => todo!("handle multi-precision"),
+        }
+    }
+
+    fn from_exact_float(val: f64) -> Self {
+        if (-FMAX_INT..=FMAX_INT).contains(&val) {
+            #[allow(
+                clippy::cast_possible_truncation,
+                reason = "guarded against truncation"
+            )]
+            (val as i64).into()
+        } else {
+            todo!("convert f64 to multi-precision integer somehow")
         }
     }
 
