@@ -304,7 +304,7 @@ impl Mul for Number {
 
     fn mul(self, rhs: Self) -> Self::Output {
         match (self, rhs) {
-            (Self::Complex(z), n) | (n, Self::Complex(z)) => z * n,
+            (Self::Complex(z), x) | (x, Self::Complex(z)) => z * x,
             (Self::Real(a), Self::Real(b)) => Self::real(a * b),
         }
     }
@@ -315,8 +315,7 @@ impl Div for Number {
 
     fn div(self, rhs: Self) -> Self::Output {
         match (self, rhs) {
-            (Self::Complex(a), Self::Complex(b)) => Ok(a * b.try_into_reciprocal()?),
-            (Self::Complex(z), Self::Real(r)) => Ok(z * r.into_complex().try_into_reciprocal()?),
+            (Self::Complex(a), x) => a / x,
             (Self::Real(r), Self::Complex(z)) => Ok(r.into_complex() * z.try_into_reciprocal()?),
             (Self::Real(a), Self::Real(b)) => Ok(Self::real((a / b)?)),
         }
@@ -390,13 +389,24 @@ impl Complex {
     }
 }
 
+impl Div for Complex {
+    type Output = NumResult;
+
+    fn div(self, rhs: Self) -> Self::Output {
+        Ok(self * rhs.try_into_reciprocal()?)
+    }
+}
+
 impl Add<Number> for Complex {
     type Output = Number;
 
     fn add(self, rhs: Number) -> Self::Output {
         let (x, y) = self.into_parts();
         match rhs {
-            Number::Complex(Complex(z)) => Number::complex(x + z.0, y + z.1),
+            Number::Complex(w) => {
+                let (u, v) = w.into_parts();
+                Number::complex(x + u, y + v)
+            }
             Number::Real(r) => Number::complex(x + r, y),
         }
     }
@@ -416,6 +426,20 @@ impl Mul<Number> for Complex {
             (a.clone() * c.clone()) + (b.clone() * d.clone()).into_negated(),
             (a * d) + (b * c),
         )
+    }
+}
+
+impl Div<Number> for Complex {
+    type Output = NumResult;
+
+    fn div(self, rhs: Number) -> Self::Output {
+        match rhs {
+            Number::Complex(z) => self.div(z),
+            Number::Real(r) => {
+                let (x, y) = self.into_parts();
+                Ok(Number::complex((x / r.clone())?, (y / r)?))
+            }
+        }
     }
 }
 

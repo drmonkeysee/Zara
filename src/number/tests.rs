@@ -5623,7 +5623,6 @@ mod div {
         // Guile (dividing componentwise) give +inf.0+inf.0i / 0.0+0.0i
         // respectively.
         #[test]
-        #[ignore = "real-divisor complex division routes through magnitude-squared reciprocal instead of dividing componentwise (src/number.rs:319)"]
         fn division_by_inexact_zero_is_infinite() {
             let cases = [Number::complex(3, 2), Number::complex(3.0, 2.0)];
             for z in cases {
@@ -5634,7 +5633,6 @@ mod div {
         }
 
         #[test]
-        #[ignore = "real-divisor complex division routes through magnitude-squared reciprocal instead of dividing componentwise (src/number.rs:319)"]
         fn division_by_infinity_is_zero() {
             let cases = [Number::complex(3, 2), Number::complex(3.0, 2.0)];
             for z in cases {
@@ -5650,7 +5648,6 @@ mod div {
         // +0.0 but mishandles -0.0 (an easy slip given how much sign-of-zero
         // subtlety is at play here) would still fail this one.
         #[test]
-        #[ignore = "real-divisor complex division routes through magnitude-squared reciprocal instead of dividing componentwise (src/number.rs:319)"]
         fn division_by_negative_inexact_zero_is_negative_infinite() {
             let cases = [Number::complex(3, 2), Number::complex(3.0, 2.0)];
             for z in cases {
@@ -5663,7 +5660,6 @@ mod div {
         // Mirror of division_by_infinity_is_zero: 3/-inf.0 = -0.0 and
         // 2/-inf.0 = -0.0 componentwise.
         #[test]
-        #[ignore = "real-divisor complex division routes through magnitude-squared reciprocal instead of dividing componentwise (src/number.rs:319)"]
         fn division_by_negative_infinity_is_negative_zero() {
             let cases = [Number::complex(3, 2), Number::complex(3.0, 2.0)];
             for z in cases {
