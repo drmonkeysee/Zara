@@ -705,7 +705,7 @@ impl Div for Real {
             Self::Float(_) if rhs.is_exact_zero() => Err(NumericError::DivideByZero),
             Self::Float(f) => Ok((f / rhs.to_float()).into()),
             Self::Integer(n) => n / rhs,
-            Self::Rational(q) => Ok(q * rhs.try_into_reciprocal()?),
+            Self::Rational(q) => q / rhs,
         }
     }
 }
@@ -884,6 +884,19 @@ impl Mul<Real> for Rational {
             Real::Integer(n) => self.mul(n.into_rational()),
             Real::Rational(q) => self.mul(q),
         }
+    }
+}
+
+impl Div<Real> for Rational {
+    type Output = RealResult;
+
+    fn div(self, rhs: Real) -> Self::Output {
+        Ok(match rhs {
+            // need this because (q * f.recip()) ends up losing precision
+            Real::Float(f) => (self.to_float() / f).into(),
+            Real::Integer(n) => self.mul(n.try_into_reciprocal()?),
+            Real::Rational(q) => self.mul(q.try_into_reciprocal()?),
+        })
     }
 }
 
