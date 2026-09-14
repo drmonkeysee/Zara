@@ -61,6 +61,7 @@ TextSource -> Lexer -> Parser -> Evaluator -> Evaluation
 - `src/testutil.rs` (test-only, `#[cfg(test)]`) provides shared helpers/macros: `extract_or_fail!`, `ok_or_fail!`, `err_or_fail!`, `some_or_fail!` (assert-and-unwrap in one step) and `zlist_mut!` (build a mutable Scheme list literal for test fixtures), plus constructors like `make_textline()`.
 - `tests/integration.rs` drives the whole pipeline end-to-end through the public `zara` crate API (`Interpreter`, `StringSource`) via a small `TestRunner` harness with `run_for_val`/`run_for_err`/`run_for_cont` helpers — use this style for tests that exercise full program evaluation (multi-line/continuation behavior, closures, circular structures) rather than a single pipeline stage.
 - Tests marked `#[ignore = "..."]` document known-missing features or open language-design questions (e.g. nested `define`, quote-as-transformer) — check for one of these before assuming a failing behavior is a bug to fix outright; read the ignore reason and any nearby `TODO` first.
+- `assert_matches!(...)` can be used instead of `assert!(matches!(...))`
 
 ## Agentic Behavior
 
