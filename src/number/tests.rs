@@ -3799,6 +3799,145 @@ mod ordering {
             assert_eq!(x.partial_cmp(&y), expected);
         }
     }
+
+    #[test]
+    fn rational_cmp_matrix() {
+        let cases = [
+            ((1, 2), (3, 4), Some(Ordering::Less)),
+            ((3, 4), (1, 2), Some(Ordering::Greater)),
+            ((1, 2), (1, 2), Some(Ordering::Equal)),
+            ((-1, 2), (1, 2), Some(Ordering::Less)),
+            ((-3, 4), (-1, 2), Some(Ordering::Less)),
+            ((-1, 2), (-3, 4), Some(Ordering::Greater)),
+            ((1, 2), (-1, 2), Some(Ordering::Greater)),
+        ];
+        for ((an, ad), (bn, bd), expected) in cases {
+            let a = ok_or_fail!(Real::reduce(an, ad));
+            let b = ok_or_fail!(Real::reduce(bn, bd));
+
+            assert_eq!(a.partial_cmp(&b), expected);
+        }
+    }
+
+    #[test]
+    fn rational_cmp_matches_cross_multiplication_definition() {
+        // a/b < c/d iff a*d < c*b -- the textbook definition of comparing
+        // fractions, computed here independently of Ord for Rational.
+        let cases = [
+            ((1, 2), (3, 4)),
+            ((-3, 4), (-1, 2)),
+            ((5, 6), (5, 6)),
+            ((7, 3), (2, 5)),
+        ];
+        for ((an, ad), (bn, bd)) in cases {
+            let a = ok_or_fail!(Real::reduce(an, ad));
+            let b = ok_or_fail!(Real::reduce(bn, bd));
+
+            let expected = (an * bd).cmp(&(bn * ad));
+
+            assert_eq!(a.partial_cmp(&b), Some(expected));
+        }
+    }
+
+    #[test]
+    fn equal_value_different_construction_orders_as_equal() {
+        let a = ok_or_fail!(Real::reduce(4, 8));
+        let b = ok_or_fail!(Real::reduce(1, 2));
+
+        assert_eq!(a.partial_cmp(&b), Some(Ordering::Equal));
+    }
+
+    #[test]
+    fn rational_vs_integer_ordering() {
+        let cases = [
+            ((3, 2), 1, Some(Ordering::Greater)),
+            ((3, 2), 2, Some(Ordering::Less)),
+            ((-3, 2), -1, Some(Ordering::Less)),
+            ((5, 2), 2, Some(Ordering::Greater)),
+        ];
+        for ((qn, qd), n, expected) in cases {
+            let q = ok_or_fail!(Real::reduce(qn, qd));
+            let i = Real::Integer(n.into());
+
+            assert_eq!(q.partial_cmp(&i), expected);
+        }
+    }
+
+    #[test]
+    fn integer_vs_rational_ordering() {
+        let cases = [
+            (1, (3, 2), Some(Ordering::Less)),
+            (2, (3, 2), Some(Ordering::Greater)),
+            (-1, (-3, 2), Some(Ordering::Greater)),
+            (2, (5, 2), Some(Ordering::Less)),
+        ];
+        for (n, (qn, qd), expected) in cases {
+            let i = Real::Integer(n.into());
+            let q = ok_or_fail!(Real::reduce(qn, qd));
+
+            assert_eq!(i.partial_cmp(&q), expected);
+        }
+    }
+
+    #[test]
+    fn rational_vs_float_ordering() {
+        let q = ok_or_fail!(Real::reduce(1, 2));
+
+        assert_eq!(q.partial_cmp(&Real::Float(0.5)), Some(Ordering::Equal));
+        assert_eq!(Real::Float(0.5).partial_cmp(&q), Some(Ordering::Equal));
+        assert_eq!(q.partial_cmp(&Real::Float(0.4)), Some(Ordering::Greater));
+        assert_eq!(
+            q.partial_cmp(&Real::Float(f64::INFINITY)),
+            Some(Ordering::Less)
+        );
+        assert_eq!(
+            q.partial_cmp(&Real::Float(f64::NEG_INFINITY)),
+            Some(Ordering::Greater)
+        );
+    }
+
+    #[test]
+    fn rational_vs_nan_is_unordered() {
+        let q = ok_or_fail!(Real::reduce(1, 2));
+
+        assert_eq!(q.partial_cmp(&Real::Float(f64::NAN)), None);
+        assert_eq!(Real::Float(f64::NAN).partial_cmp(&q), None);
+    }
+
+    #[test]
+    fn rational_ordering_is_antisymmetric() {
+        let cases = [((1, 2), (3, 4)), ((-1, 3), (1, 3)), ((5, 6), (5, 6))];
+        for ((an, ad), (bn, bd)) in cases {
+            let a = ok_or_fail!(Real::reduce(an, ad));
+            let b = ok_or_fail!(Real::reduce(bn, bd));
+
+            assert_eq!(a.partial_cmp(&b), b.partial_cmp(&a).map(Ordering::reverse));
+        }
+    }
+
+    #[test]
+    fn rational_ordering_is_transitive() {
+        let a = ok_or_fail!(Real::reduce(1, 3));
+        let b = ok_or_fail!(Real::reduce(1, 2));
+        let c = ok_or_fail!(Real::reduce(2, 3));
+
+        assert_eq!(a.partial_cmp(&b), Some(Ordering::Less));
+        assert_eq!(b.partial_cmp(&c), Some(Ordering::Less));
+        assert_eq!(a.partial_cmp(&c), Some(Ordering::Less));
+    }
+
+    #[test]
+    #[ignore = "multi-precision multiplication not yet implemented"]
+    fn cross_product_overflows_precision() {
+        // a/7 vs b/11 cross-multiplies to (a*11) vs (b*7), both overflowing
+        // u64::MAX; multi-precision integers would be needed to compare
+        // them.
+        let big: Integer = (Sign::Positive, u64::MAX).into();
+        let a = ok_or_fail!(Real::reduce(big.clone(), 7));
+        let b = ok_or_fail!(Real::reduce(big, 11));
+
+        assert_eq!(a.partial_cmp(&b), Some(Ordering::Greater));
+    }
 }
 
 mod add {
@@ -4221,9 +4360,15 @@ mod mult {
         let b = Number::real(1.5) * Number::real(0);
 
         assert_eq!(a.to_string(), "0");
-        assert!(matches!(extract_or_fail!(a, Number::Real), Real::Integer(_)));
+        assert!(matches!(
+            extract_or_fail!(a, Number::Real),
+            Real::Integer(_)
+        ));
         assert_eq!(b.to_string(), "0");
-        assert!(matches!(extract_or_fail!(b, Number::Real), Real::Integer(_)));
+        assert!(matches!(
+            extract_or_fail!(b, Number::Real),
+            Real::Integer(_)
+        ));
     }
 
     #[test]
@@ -4273,7 +4418,6 @@ mod mult {
     }
 
     #[test]
-    #[ignore = "rational multiplication not yet implemented"]
     fn rational_matrix() {
         let a = ok_or_fail!(Real::reduce(1, 2));
         let b = ok_or_fail!(Real::reduce(2, 3));
@@ -4283,7 +4427,6 @@ mod mult {
     }
 
     #[test]
-    #[ignore = "rational multiplication not yet implemented"]
     fn integer_and_rational_either_order() {
         let q = ok_or_fail!(Real::reduce(1, 2));
         let a = Number::real(3) * Number::real(q.clone());
@@ -4294,12 +4437,125 @@ mod mult {
     }
 
     #[test]
-    #[ignore = "rational multiplication not yet implemented"]
     fn rational_times_exact_zero() {
         let q = ok_or_fail!(Real::reduce(1, 2));
         let product = Number::real(0) * Number::real(q);
 
         assert_eq!(product.to_string(), "0");
+    }
+
+    #[test]
+    fn rational_sign_matrix() {
+        let cases = [
+            ((1, 2), (1, 3), "1/6"),
+            ((-1, 2), (1, 3), "-1/6"),
+            ((1, 2), (-1, 3), "-1/6"),
+            ((-1, 2), (-1, 3), "1/6"),
+        ];
+        for ((an, ad), (bn, bd), expected) in cases {
+            let a = ok_or_fail!(Real::reduce(an, ad));
+            let b = ok_or_fail!(Real::reduce(bn, bd));
+
+            let product = Number::real(a) * Number::real(b);
+
+            assert_eq!(product.to_string(), expected);
+        }
+    }
+
+    #[test]
+    fn rational_product_reduces_to_integer() {
+        let a = ok_or_fail!(Real::reduce(2, 3));
+        let b = ok_or_fail!(Real::reduce(3, 2));
+
+        let product = Number::real(a) * Number::real(b);
+
+        assert_eq!(product.to_string(), "1");
+        assert!(matches!(
+            extract_or_fail!(product, Number::Real),
+            Real::Integer(_)
+        ));
+    }
+
+    #[test]
+    fn rational_times_integer_reduces_to_integer() {
+        let q = ok_or_fail!(Real::reduce(1, 2));
+
+        let product = Number::real(q) * Number::real(4);
+
+        assert_eq!(product.to_string(), "2");
+        assert!(matches!(
+            extract_or_fail!(product, Number::Real),
+            Real::Integer(_)
+        ));
+    }
+
+    #[test]
+    fn rational_multiplication_is_commutative() {
+        let cases = [((1, 2), (2, 3)), ((-1, 2), (3, 4)), ((5, 6), (7, 8))];
+        for ((an, ad), (bn, bd)) in cases {
+            let a = ok_or_fail!(Real::reduce(an, ad));
+            let b = ok_or_fail!(Real::reduce(bn, bd));
+
+            let ab = Number::real(a.clone()) * Number::real(b.clone());
+            let ba = Number::real(b) * Number::real(a);
+
+            assert_eq!(ab.to_string(), ba.to_string());
+        }
+    }
+
+    #[test]
+    fn rational_multiplication_is_associative() {
+        let a = ok_or_fail!(Real::reduce(1, 2));
+        let b = ok_or_fail!(Real::reduce(2, 3));
+        let c = ok_or_fail!(Real::reduce(3, 4));
+
+        let ab_c = (Number::real(a.clone()) * Number::real(b.clone())) * Number::real(c.clone());
+        let a_bc = Number::real(a) * (Number::real(b) * Number::real(c));
+
+        assert_eq!(ab_c.to_string(), a_bc.to_string());
+    }
+
+    #[test]
+    fn one_is_multiplicative_identity_for_rational() {
+        let q = ok_or_fail!(Real::reduce(3, 4));
+
+        let product = Number::one() * Number::real(q);
+
+        assert_eq!(product.to_string(), "3/4");
+    }
+
+    #[test]
+    fn cross_reduction_avoids_naive_overflow() {
+        // a*c here would be big*3, well beyond u64::MAX if computed before
+        // cross-reducing by the shared `big` factor; Mul for Rational's
+        // gcd-first strategy (src/number.rs:824) avoids it entirely and
+        // produces the exact answer.
+        let big: Integer = (Sign::Positive, u64::MAX - 1).into();
+        let a = ok_or_fail!(Real::reduce(big.clone(), 3));
+        let b = ok_or_fail!(Real::reduce(3, big));
+
+        let product = Number::real(a) * Number::real(b);
+
+        assert_eq!(product.to_string(), "1");
+    }
+
+    #[test]
+    #[ignore = "multi-precision multiplication not yet implemented"]
+    fn cross_product_overflows_precision() {
+        // both denominators are coprime with both numerators, so no
+        // cross-reduction is possible and the numerator computation
+        // big*big overflows u64::MAX; multi-precision integers would be
+        // needed to carry the result.
+        let big: Integer = (Sign::Positive, u64::MAX).into();
+        let a = ok_or_fail!(Real::reduce(big.clone(), 7));
+        let b = ok_or_fail!(Real::reduce(big, 11));
+
+        let product = Number::real(a) * Number::real(b);
+
+        assert_eq!(
+            product.to_string(),
+            "340282366920938463426481119284349108225/77"
+        );
     }
 
     #[test]
@@ -4420,6 +4676,457 @@ mod mult {
         let product = Number::zero() * Number::real(4.5);
 
         assert_eq!(product.to_string(), "0");
+    }
+}
+
+mod div {
+    use super::*;
+
+    mod integer {
+        use super::*;
+
+        #[test]
+        fn exact_matrix() {
+            let cases = [
+                (6, 3, "2"),
+                (3, 4, "3/4"),
+                (-3, 4, "-3/4"),
+                (3, -4, "-3/4"),
+                (-3, -4, "3/4"),
+                (0, 5, "0"),
+                (7, 1, "7"),
+                (8, -2, "-4"),
+                (4, 8, "1/2"),
+            ];
+            for (a, b, expected) in cases {
+                let quotient = ok_or_fail!(Number::real(a) / Number::real(b));
+
+                assert_eq!(quotient.to_string(), expected);
+            }
+        }
+
+        #[test]
+        fn divisible_pair_stays_integer() {
+            let quotient = ok_or_fail!(Number::real(6) / Number::real(3));
+
+            let n = extract_or_fail!(quotient, Number::Real);
+            assert!(matches!(n, Real::Integer(_)));
+        }
+
+        #[test]
+        fn non_divisible_pair_becomes_rational() {
+            let quotient = ok_or_fail!(Number::real(3) / Number::real(4));
+
+            let n = extract_or_fail!(quotient, Number::Real);
+            assert!(matches!(n, Real::Rational(_)));
+        }
+
+        #[test]
+        fn one_is_divisive_identity() {
+            let cases = [4, -4, 0, 7];
+            for n in cases {
+                let quotient = ok_or_fail!(Number::real(n) / Number::one());
+
+                assert_eq!(quotient.to_string(), Number::real(n).to_string());
+            }
+        }
+
+        #[test]
+        fn nonzero_self_division_is_one() {
+            let cases = [4, -4, 7, 1];
+            for n in cases {
+                let quotient = ok_or_fail!(Number::real(n) / Number::real(n));
+
+                assert_eq!(quotient.to_string(), "1");
+            }
+        }
+
+        #[test]
+        fn zero_dividend_is_zero() {
+            let cases = [4, -4, 7];
+            for n in cases {
+                let quotient = ok_or_fail!(Number::zero() / Number::real(n));
+
+                assert_eq!(quotient.to_string(), "0");
+            }
+        }
+
+        #[test]
+        fn division_by_exact_zero_is_an_error() {
+            let cases = [4, -4, 0];
+            for n in cases {
+                let quotient = Number::real(n) / Number::zero();
+
+                let err = err_or_fail!(quotient);
+                assert_matches!(err, NumericError::DivideByZero);
+            }
+        }
+
+        #[test]
+        fn not_commutative() {
+            let ab = ok_or_fail!(Number::real(3) / Number::real(4));
+            let ba = ok_or_fail!(Number::real(4) / Number::real(3));
+
+            assert_ne!(ab.to_string(), ba.to_string());
+        }
+
+        #[test]
+        fn agrees_with_multiply_by_reciprocal() {
+            let cases = [(7, 2), (-7, 2), (7, -2), (1, 3)];
+            for (a, b) in cases {
+                let quotient = ok_or_fail!(Number::real(a) / Number::real(b));
+                let reciprocal_product =
+                    Number::real(a) * ok_or_fail!(Number::real(b).try_into_reciprocal());
+
+                assert_eq!(quotient.to_string(), reciprocal_product.to_string());
+            }
+        }
+
+        #[test]
+        fn beyond_i64_magnitude() {
+            let quotient = ok_or_fail!(Number::real(i64::MIN) / Number::real(-1));
+
+            assert_eq!(quotient.to_string(), "9223372036854775808");
+        }
+
+        #[test]
+        fn reciprocal_beyond_i64_magnitude() {
+            let quotient = ok_or_fail!(Number::one() / Number::real(i64::MIN));
+
+            assert_eq!(quotient.to_string(), "-1/9223372036854775808");
+        }
+    }
+
+    mod float {
+        use super::*;
+
+        #[test]
+        fn matrix() {
+            let cases = [
+                (3.0, 2.0, "1.5"),
+                (-3.0, 2.0, "-1.5"),
+                (3.0, -2.0, "-1.5"),
+                (-3.0, -2.0, "1.5"),
+            ];
+            for (a, b, expected) in cases {
+                let quotient = ok_or_fail!(Number::real(a) / Number::real(b));
+
+                assert_eq!(quotient.to_string(), expected);
+            }
+        }
+
+        #[test]
+        fn positive_over_positive_zero_is_positive_infinity() {
+            let quotient = ok_or_fail!(Number::real(1.0) / Number::real(0.0));
+
+            assert_eq!(quotient.to_string(), "+inf.0");
+        }
+
+        #[test]
+        fn negative_over_positive_zero_is_negative_infinity() {
+            let quotient = ok_or_fail!(Number::real(-1.0) / Number::real(0.0));
+
+            assert_eq!(quotient.to_string(), "-inf.0");
+        }
+
+        #[test]
+        fn positive_over_negative_zero_is_negative_infinity() {
+            let quotient = ok_or_fail!(Number::real(1.0) / Number::real(-0.0));
+
+            assert_eq!(quotient.to_string(), "-inf.0");
+        }
+
+        #[test]
+        fn negative_over_negative_zero_is_positive_infinity() {
+            let quotient = ok_or_fail!(Number::real(-1.0) / Number::real(-0.0));
+
+            assert_eq!(quotient.to_string(), "+inf.0");
+        }
+
+        #[test]
+        fn finite_over_positive_infinity_is_positive_zero() {
+            let quotient = ok_or_fail!(Number::real(5.0) / Number::real(f64::INFINITY));
+
+            assert_eq!(quotient.to_string(), "0.0");
+        }
+
+        #[test]
+        fn finite_over_negative_infinity_is_negative_zero() {
+            let quotient = ok_or_fail!(Number::real(5.0) / Number::real(f64::NEG_INFINITY));
+
+            assert_eq!(quotient.to_string(), "-0.0");
+        }
+
+        #[test]
+        fn zero_over_zero_is_nan() {
+            let quotient = ok_or_fail!(Number::real(0.0) / Number::real(0.0));
+
+            assert!(quotient.is_nan());
+        }
+
+        #[test]
+        fn infinity_over_infinity_is_nan() {
+            let quotient = ok_or_fail!(Number::real(f64::INFINITY) / Number::real(f64::INFINITY));
+
+            assert!(quotient.is_nan());
+        }
+
+        #[test]
+        fn nan_propagates_as_dividend() {
+            let quotient = ok_or_fail!(Number::real(f64::NAN) / Number::real(2.0));
+
+            assert!(quotient.is_nan());
+        }
+
+        #[test]
+        fn nan_propagates_as_divisor() {
+            let quotient = ok_or_fail!(Number::real(2.0) / Number::real(f64::NAN));
+
+            assert!(quotient.is_nan());
+        }
+
+        #[test]
+        fn quotient_is_inexact() {
+            let quotient = ok_or_fail!(Number::real(3.0) / Number::real(2.0));
+
+            let n = extract_or_fail!(quotient, Number::Real);
+            assert!(matches!(n, Real::Float(_)));
+        }
+
+        #[test]
+        fn exact_zero_divisor_is_an_error_even_for_a_float_dividend() {
+            // R7RS: division by exact zero is an error, regardless of the
+            // dividend's exactness; contrast with 1.0 / 0.0 above.
+            let quotient = Number::real(1.0) / Number::zero();
+
+            let err = err_or_fail!(quotient);
+            assert_matches!(err, NumericError::DivideByZero);
+        }
+    }
+
+    mod mixed {
+        use super::*;
+
+        #[test]
+        fn integer_over_float_and_float_over_integer_agree() {
+            let a = ok_or_fail!(Number::real(7) / Number::real(2.0));
+            let b = ok_or_fail!(Number::real(7.0) / Number::real(2));
+
+            assert_eq!(a.to_string(), "3.5");
+            assert_eq!(b.to_string(), "3.5");
+        }
+
+        #[test]
+        fn mixed_quotient_is_inexact() {
+            let quotient = ok_or_fail!(Number::real(7) / Number::real(2.0));
+
+            let n = extract_or_fail!(quotient, Number::Real);
+            assert!(matches!(n, Real::Float(_)));
+        }
+
+        #[test]
+        fn integer_over_signed_zero_float() {
+            let cases = [(1, "+inf.0"), (-1, "-inf.0")];
+            for (n, expected) in cases {
+                let quotient = ok_or_fail!(Number::real(n) / Number::real(0.0));
+
+                assert_eq!(quotient.to_string(), expected);
+            }
+        }
+
+        #[test]
+        fn exact_zero_over_inexact_zero_stays_exact() {
+            let quotient = ok_or_fail!(Number::zero() / Number::real(0.0));
+
+            assert_eq!(quotient.to_string(), "0");
+            assert!(matches!(
+                extract_or_fail!(quotient, Number::Real),
+                Real::Integer(_)
+            ));
+        }
+
+        #[test]
+        fn exact_zero_over_nan_is_nan() {
+            // nan overrides the exact-zero shortcut above
+            let quotient = ok_or_fail!(Number::zero() / Number::real(f64::NAN));
+
+            assert!(quotient.is_nan());
+        }
+    }
+
+    mod rational {
+        use super::*;
+
+        #[test]
+        fn exact_matrix() {
+            let cases = [
+                ((1, 2), (3, 4), "2/3"),
+                ((3, 4), (3, 4), "1"),
+                ((-1, 2), (3, 4), "-2/3"),
+                ((1, 2), (-3, 4), "-2/3"),
+                ((3, 4), (3, 8), "2"),
+            ];
+            for ((an, ad), (bn, bd), expected) in cases {
+                let a = ok_or_fail!(Real::reduce(an, ad));
+                let b = ok_or_fail!(Real::reduce(bn, bd));
+
+                let quotient = ok_or_fail!(Number::real(a) / Number::real(b));
+
+                assert_eq!(quotient.to_string(), expected);
+            }
+        }
+
+        #[test]
+        fn integer_over_rational() {
+            let q = ok_or_fail!(Real::reduce(1, 2));
+
+            let quotient = ok_or_fail!(Number::real(3) / Number::real(q));
+
+            assert_eq!(quotient.to_string(), "6");
+        }
+
+        #[test]
+        fn rational_over_integer() {
+            let q = ok_or_fail!(Real::reduce(1, 2));
+
+            let quotient = ok_or_fail!(Number::real(q) / Number::real(3));
+
+            assert_eq!(quotient.to_string(), "1/6");
+        }
+
+        #[test]
+        fn division_by_exact_zero_is_an_error() {
+            let q = ok_or_fail!(Real::reduce(1, 2));
+
+            let quotient = Number::real(q) / Number::zero();
+
+            let err = err_or_fail!(quotient);
+            assert_matches!(err, NumericError::DivideByZero);
+        }
+
+        #[test]
+        fn zero_dividend_is_zero() {
+            let q = ok_or_fail!(Real::reduce(1, 2));
+
+            let quotient = ok_or_fail!(Number::zero() / Number::real(q));
+
+            assert_eq!(quotient.to_string(), "0");
+        }
+
+        #[test]
+        fn exact_operands_stay_exact() {
+            let a = ok_or_fail!(Real::reduce(1, 2));
+            let b = ok_or_fail!(Real::reduce(3, 4));
+
+            let quotient = ok_or_fail!(Number::real(a) / Number::real(b));
+
+            let n = extract_or_fail!(quotient, Number::Real);
+            assert!(!matches!(n, Real::Float(_)));
+        }
+
+        #[test]
+        fn rational_over_infinity_is_positive_zero() {
+            let q = ok_or_fail!(Real::reduce(1, 2));
+
+            let quotient = ok_or_fail!(Number::real(q) / Number::real(f64::INFINITY));
+
+            assert_eq!(quotient.to_string(), "0.0");
+        }
+
+        #[test]
+        fn rational_over_nan_is_nan() {
+            let q = ok_or_fail!(Real::reduce(1, 2));
+
+            let quotient = ok_or_fail!(Number::real(q) / Number::real(f64::NAN));
+
+            assert!(quotient.is_nan());
+        }
+
+        #[test]
+        fn float_over_rational_matches_direct_float_division() {
+            let q = ok_or_fail!(Real::reduce(1, 3));
+
+            let quotient = ok_or_fail!(Number::real(0.5) / Number::real(q));
+
+            let expected = 0.5_f64 / (1.0 / 3.0);
+            assert_eq!(quotient.to_string(), expected.to_string());
+        }
+
+        #[test]
+        fn rational_over_float_is_correctly_rounded() {
+            let q = ok_or_fail!(Real::reduce(1, 3));
+
+            let quotient = ok_or_fail!(Number::real(q) / Number::real(49.0));
+
+            let expected = (1.0_f64 / 3.0) / 49.0;
+            assert_eq!(quotient.to_string(), expected.to_string());
+        }
+
+        #[test]
+        #[ignore = "multi-precision multiplication not yet implemented"]
+        fn cross_product_overflows_precision() {
+            // dividing routes through reciprocal-then-multiply; a's
+            // numerator and b's numerator are coprime (as are their
+            // denominators), so Mul for Rational finds no shared factor to
+            // cross-reduce and big*big overflows u64::MAX.
+            let big: Integer = (Sign::Positive, u64::MAX).into();
+            let a = ok_or_fail!(Real::reduce(big.clone(), 7));
+            let b = ok_or_fail!(Real::reduce(11, big));
+
+            let quotient = Number::real(a) / Number::real(b);
+
+            assert!(quotient.is_ok());
+        }
+    }
+
+    mod complex {
+        use super::*;
+
+        #[test]
+        #[ignore = "complex division not yet implemented"]
+        fn basic() {
+            // (a+bi)/(c+di) = ((ac+bd) + (bc-ad)i) / (c^2+d^2)
+            let a = Number::complex(3, 2);
+            let b = Number::complex(1, 4);
+
+            let quotient = ok_or_fail!(a / b);
+
+            assert_eq!(quotient.to_string(), "11/17-10/17i");
+        }
+
+        #[test]
+        #[ignore = "complex division not yet implemented"]
+        fn dividing_by_one_is_identity() {
+            let z = Number::complex(3, 2);
+
+            let quotient = ok_or_fail!(z.clone() / Number::one());
+
+            assert_eq!(quotient.to_string(), z.to_string());
+        }
+
+        #[test]
+        #[ignore = "complex division not yet implemented"]
+        fn dividing_by_self_is_one() {
+            let z = Number::complex(3, 2);
+
+            let quotient = ok_or_fail!(z.clone() / z);
+
+            assert_eq!(quotient.to_string(), "1");
+        }
+
+        #[test]
+        #[ignore = "complex division not yet implemented"]
+        fn real_divided_by_imaginary_unit_is_not_the_reverse() {
+            // 1/i = -i, but i/1 = i: division is not commutative, so
+            // Div for Number cannot reuse the symmetric
+            // `(Complex, n) | (n, Complex)` pattern it shares with Add/Mul
+            // (see src/number.rs:318).
+            let one_over_i = ok_or_fail!(Number::one() / Number::imaginary(1));
+            let i_over_one = ok_or_fail!(Number::imaginary(1) / Number::one());
+
+            assert_eq!(one_over_i.to_string(), "-i");
+            assert_eq!(i_over_one.to_string(), "+i");
+        }
     }
 }
 
@@ -4710,7 +5417,6 @@ mod reciprocal {
         }
 
         #[test]
-        #[ignore = "rational multiplication not yet implemented"]
         fn inverse_law_for_nonunit() {
             let x = Number::real(4);
             let r = ok_or_fail!(x.clone().try_into_reciprocal());
@@ -4779,7 +5485,6 @@ mod reciprocal {
         }
 
         #[test]
-        #[ignore = "rational multiplication not yet implemented"]
         fn inverse_law() {
             let q = ok_or_fail!(Real::reduce(3, 4));
             let x = Number::real(q);
