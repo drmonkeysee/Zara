@@ -1708,6 +1708,166 @@ mod integer {
             assert_eq!(n.sign, Sign::Positive);
         }
     }
+
+    mod lcm {
+        use super::*;
+
+        #[test]
+        fn common_multiple() {
+            let n = Integer::from(4).lcm(&6.into());
+
+            assert_eq!(extract_or_fail!(n.precision, Precision::Single), 12);
+            assert_eq!(n.sign, Sign::Positive);
+        }
+
+        #[test]
+        fn coprime_operands_multiply() {
+            let n = Integer::from(9).lcm(&28.into());
+
+            assert_eq!(extract_or_fail!(n.precision, Precision::Single), 252);
+            assert_eq!(n.sign, Sign::Positive);
+        }
+
+        #[test]
+        fn one_divides_the_other() {
+            let n = Integer::from(6).lcm(&18.into());
+
+            assert_eq!(extract_or_fail!(n.precision, Precision::Single), 18);
+            assert_eq!(n.sign, Sign::Positive);
+        }
+
+        #[test]
+        fn equal_operands() {
+            let n = Integer::from(7).lcm(&7.into());
+
+            assert_eq!(extract_or_fail!(n.precision, Precision::Single), 7);
+            assert_eq!(n.sign, Sign::Positive);
+        }
+
+        #[test]
+        fn zero_and_positive() {
+            let n = Integer::from(0).lcm(&5.into());
+
+            assert_eq!(extract_or_fail!(n.precision, Precision::Single), 0);
+            assert_eq!(n.sign, Sign::Zero);
+        }
+
+        #[test]
+        fn positive_and_zero() {
+            let n = Integer::from(5).lcm(&0.into());
+
+            assert_eq!(extract_or_fail!(n.precision, Precision::Single), 0);
+            assert_eq!(n.sign, Sign::Zero);
+        }
+
+        #[test]
+        fn both_zero() {
+            let n = Integer::from(0).lcm(&0.into());
+
+            assert_eq!(extract_or_fail!(n.precision, Precision::Single), 0);
+            assert_eq!(n.sign, Sign::Zero);
+        }
+
+        #[test]
+        fn negative_first_operand() {
+            let n = Integer::from(-32).lcm(&36.into());
+
+            assert_eq!(extract_or_fail!(n.precision, Precision::Single), 288);
+            assert_eq!(n.sign, Sign::Positive);
+        }
+
+        #[test]
+        fn negative_second_operand() {
+            let n = Integer::from(32).lcm(&(-36).into());
+
+            assert_eq!(extract_or_fail!(n.precision, Precision::Single), 288);
+            assert_eq!(n.sign, Sign::Positive);
+        }
+
+        #[test]
+        fn both_negative() {
+            let n = Integer::from(-32).lcm(&(-36).into());
+
+            assert_eq!(extract_or_fail!(n.precision, Precision::Single), 288);
+            assert_eq!(n.sign, Sign::Positive);
+        }
+
+        #[test]
+        fn commutative() {
+            let cases = [(32, 36), (9, 28), (0, 5), (7, 7), (-32, 36)];
+            for (a, b) in cases {
+                let x = Integer::from(a).lcm(&b.into());
+                let y = Integer::from(b).lcm(&a.into());
+
+                assert_eq!(x, y);
+            }
+        }
+
+        #[test]
+        fn unit_operand() {
+            let cases = [-32, 0, 1, 32];
+            for case in cases {
+                let n = Integer::from(case).lcm(&1.into());
+
+                let expected = if case == 0 { 0 } else { case.unsigned_abs() };
+                assert_eq!(extract_or_fail!(n.precision, Precision::Single), expected);
+                assert_eq!(
+                    n.sign,
+                    if case == 0 {
+                        Sign::Zero
+                    } else {
+                        Sign::Positive
+                    }
+                );
+            }
+        }
+
+        // defining relationship between gcd and lcm: gcd(a,b) * lcm(a,b) = |a*b|
+        #[test]
+        fn gcd_lcm_product_identity() {
+            let cases = [(4, 6), (9, 28), (6, 18), (7, 7), (-32, 36), (0, 5)];
+            for (a, b) in cases {
+                let x = Integer::from(a);
+                let y = Integer::from(b);
+
+                let gcd = x.gcd(&y);
+                let lcm = x.lcm(&y);
+                let product = gcd * lcm;
+
+                let expected = Integer::from(a) * Integer::from(b);
+                assert_eq!(
+                    extract_or_fail!(product.precision, Precision::Single),
+                    extract_or_fail!(expected.into_abs().precision, Precision::Single)
+                );
+            }
+        }
+
+        #[test]
+        #[ignore = "multi-precision lcm not yet implemented"]
+        fn multi_precision() {
+            let a = Integer {
+                precision: Precision::Multiple([4, 6].into()),
+                sign: Sign::Positive,
+            };
+            let b = Integer::from(4);
+
+            let n = a.lcm(&b);
+
+            assert_eq!(extract_or_fail!(n.precision, Precision::Single), 4);
+            assert_eq!(n.sign, Sign::Positive);
+        }
+
+        #[test]
+        #[ignore = "multi-precision lcm not yet implemented"]
+        fn overflows_precision() {
+            let a: Integer = (Sign::Positive, u64::MAX).into();
+            let b = Integer::from(2);
+
+            let n = a.lcm(&b);
+
+            assert_eq!(n.sign, Sign::Positive);
+        }
+    }
 }
 
 mod float {
@@ -3970,7 +4130,7 @@ mod add {
         let sum = Number::real(2) + Number::real(3);
 
         let n = extract_or_fail!(sum, Number::Real);
-        assert!(matches!(n, Real::Integer(_)));
+        assert_matches!(n, Real::Integer(_));
     }
 
     #[test]
@@ -4044,7 +4204,7 @@ mod add {
         let sum = Number::real(2) + Number::real(1.5);
 
         let n = extract_or_fail!(sum, Number::Real);
-        assert!(matches!(n, Real::Float(_)));
+        assert_matches!(n, Real::Float(_));
     }
 
     #[test]
@@ -4109,7 +4269,136 @@ mod add {
         let sum = Number::real(q) + Number::real(0.5);
 
         let n = extract_or_fail!(sum, Number::Real);
-        assert!(matches!(n, Real::Float(_)));
+        assert_matches!(n, Real::Float(_));
+    }
+
+    #[test]
+    fn rational_matrix() {
+        let cases = [
+            ((1, 2), (1, 3), "5/6"),
+            ((1, 6), (1, 6), "1/3"),
+            ((1, 2), (1, 2), "1"),
+            ((3, 4), (1, 4), "1"),
+            ((1, 2), (-1, 3), "1/6"),
+            ((-1, 2), (-1, 3), "-5/6"),
+            ((2, 3), (5, 6), "3/2"),
+        ];
+        for ((an, ad), (bn, bd), expected) in cases {
+            let a = ok_or_fail!(Real::reduce(an, ad));
+            let b = ok_or_fail!(Real::reduce(bn, bd));
+
+            let sum = Number::real(a) + Number::real(b);
+
+            assert_eq!(sum.to_string(), expected);
+        }
+    }
+
+    #[test]
+    fn rational_sum_collapsing_to_integer_is_an_integer() {
+        let a = ok_or_fail!(Real::reduce(1, 2));
+        let b = ok_or_fail!(Real::reduce(1, 2));
+
+        let sum = Number::real(a) + Number::real(b);
+
+        let n = extract_or_fail!(sum, Number::Real);
+        assert_matches!(n, Real::Integer(_));
+    }
+
+    #[test]
+    fn rational_sum_stays_exact() {
+        let a = ok_or_fail!(Real::reduce(1, 2));
+        let b = ok_or_fail!(Real::reduce(1, 3));
+
+        let sum = Number::real(a) + Number::real(b);
+
+        let n = extract_or_fail!(sum, Number::Real);
+        assert!(!matches!(n, Real::Float(_)));
+    }
+
+    #[test]
+    fn rational_and_integer_either_order() {
+        let q = ok_or_fail!(Real::reduce(1, 2));
+        let a = Number::real(q.clone()) + Number::real(3);
+        let b = Number::real(3) + Number::real(q);
+
+        assert_eq!(a.to_string(), "7/2");
+        assert_eq!(b.to_string(), "7/2");
+    }
+
+    #[test]
+    fn rational_cancels_to_exact_zero() {
+        let a = ok_or_fail!(Real::reduce(1, 2));
+        let b = ok_or_fail!(Real::reduce(-1, 2));
+
+        let sum = Number::real(a) + Number::real(b);
+
+        assert_eq!(sum.to_string(), "0");
+        let n = extract_or_fail!(sum, Number::Real);
+        assert_matches!(n, Real::Integer(_));
+    }
+
+    #[test]
+    fn rational_addition_is_commutative() {
+        let cases = [
+            ((1, 2), (1, 3)),
+            ((1, 6), (1, 6)),
+            ((1, 2), (-1, 3)),
+            ((2, 3), (5, 6)),
+        ];
+        for ((an, ad), (bn, bd)) in cases {
+            let a = ok_or_fail!(Real::reduce(an, ad));
+            let b = ok_or_fail!(Real::reduce(bn, bd));
+
+            let ab = Number::real(a.clone()) + Number::real(b.clone());
+            let ba = Number::real(b) + Number::real(a);
+
+            assert_eq!(ab.to_string(), ba.to_string());
+        }
+    }
+
+    #[test]
+    fn rational_addition_is_associative() {
+        let cases = [
+            ((1, 2), (1, 3), (1, 6)),
+            ((1, 4), (1, 6), (1, 3)),
+            ((-1, 2), (1, 3), (1, 5)),
+        ];
+        for ((an, ad), (bn, bd), (cn, cd)) in cases {
+            let a = ok_or_fail!(Real::reduce(an, ad));
+            let b = ok_or_fail!(Real::reduce(bn, bd));
+            let c = ok_or_fail!(Real::reduce(cn, cd));
+
+            let ab_c =
+                (Number::real(a.clone()) + Number::real(b.clone())) + Number::real(c.clone());
+            let a_bc = Number::real(a) + (Number::real(b) + Number::real(c));
+
+            assert_eq!(ab_c.to_string(), a_bc.to_string());
+        }
+    }
+
+    #[test]
+    fn shared_denominator_avoids_intermediate_overflow() {
+        let big: Integer = (Sign::Positive, u64::MAX).into();
+        let a = ok_or_fail!(Real::reduce(1, big.clone()));
+        let b = ok_or_fail!(Real::reduce(1, big));
+
+        let sum = Number::real(a) + Number::real(b);
+
+        assert_eq!(sum.to_string(), "2/18446744073709551615");
+    }
+
+    #[test]
+    #[ignore = "multi-precision lcm not yet implemented"]
+    fn coprime_denominators_overflow_precision() {
+        // 7 shares no factor with u64::MAX (== 3*5*17*257*65537*641*6700417),
+        // so lcm(big, 7) == big*7, which overflows u64 precision.
+        let big: Integer = (Sign::Positive, u64::MAX).into();
+        let a = ok_or_fail!(Real::reduce(1, big));
+        let b = ok_or_fail!(Real::reduce(1, 7));
+
+        let sum = Number::real(a) + Number::real(b);
+
+        assert_matches!(sum, Number::Real(Real::Rational(_)));
     }
 
     #[test]
@@ -4130,7 +4419,7 @@ mod add {
         let sum = a + b;
 
         assert_eq!(sum.to_string(), "4");
-        assert!(matches!(sum, Number::Real(_)));
+        assert_matches!(sum, Number::Real(_));
     }
 
     #[test]
@@ -4161,7 +4450,7 @@ mod add {
         let sum = a + b;
 
         assert_eq!(sum.to_string(), "4+0.0i");
-        assert!(matches!(sum, Number::Complex(_)));
+        assert_matches!(sum, Number::Complex(_));
     }
 
     #[test]
@@ -4195,7 +4484,7 @@ mod add {
         let z = Number::zero();
 
         assert_eq!(z.to_string(), "0");
-        assert!(matches!(z, Number::Real(Real::Integer(_))));
+        assert_matches!(z, Number::Real(Real::Integer(_)));
     }
 
     #[test]
@@ -4248,7 +4537,7 @@ mod mult {
         let product = Number::real(2) * Number::real(3);
 
         let n = extract_or_fail!(product, Number::Real);
-        assert!(matches!(n, Real::Integer(_)));
+        assert_matches!(n, Real::Integer(_));
     }
 
     #[test]
@@ -4351,7 +4640,7 @@ mod mult {
         let product = Number::real(3) * Number::real(1.5);
 
         let n = extract_or_fail!(product, Number::Real);
-        assert!(matches!(n, Real::Float(_)));
+        assert_matches!(n, Real::Float(_));
     }
 
     #[test]
@@ -4414,7 +4703,7 @@ mod mult {
         let product = Number::real(q) * Number::real(0.5);
 
         let n = extract_or_fail!(product, Number::Real);
-        assert!(matches!(n, Real::Float(_)));
+        assert_matches!(n, Real::Float(_));
     }
 
     #[test]
@@ -4576,7 +4865,7 @@ mod mult {
         let product = a * b;
 
         assert_eq!(product.to_string(), "-1");
-        assert!(matches!(product, Number::Real(_)));
+        assert_matches!(product, Number::Real(_));
     }
 
     #[test]
@@ -4587,7 +4876,7 @@ mod mult {
         let product = a * b;
 
         assert_eq!(product.to_string(), "13");
-        assert!(matches!(product, Number::Real(_)));
+        assert_matches!(product, Number::Real(_));
     }
 
     #[test]
@@ -4639,7 +4928,7 @@ mod mult {
         let one = Number::one();
 
         assert_eq!(one.to_string(), "1");
-        assert!(matches!(one, Number::Real(Real::Integer(_))));
+        assert_matches!(one, Number::Real(Real::Integer(_)));
     }
 
     #[test]
@@ -4710,7 +4999,7 @@ mod div {
             let quotient = ok_or_fail!(Number::real(6) / Number::real(3));
 
             let n = extract_or_fail!(quotient, Number::Real);
-            assert!(matches!(n, Real::Integer(_)));
+            assert_matches!(n, Real::Integer(_));
         }
 
         #[test]
@@ -4718,7 +5007,7 @@ mod div {
             let quotient = ok_or_fail!(Number::real(3) / Number::real(4));
 
             let n = extract_or_fail!(quotient, Number::Real);
-            assert!(matches!(n, Real::Rational(_)));
+            assert_matches!(n, Real::Rational(_));
         }
 
         #[test]
@@ -4890,7 +5179,7 @@ mod div {
             let quotient = ok_or_fail!(Number::real(3.0) / Number::real(2.0));
 
             let n = extract_or_fail!(quotient, Number::Real);
-            assert!(matches!(n, Real::Float(_)));
+            assert_matches!(n, Real::Float(_));
         }
 
         #[test]
@@ -4921,7 +5210,7 @@ mod div {
             let quotient = ok_or_fail!(Number::real(7) / Number::real(2.0));
 
             let n = extract_or_fail!(quotient, Number::Real);
-            assert!(matches!(n, Real::Float(_)));
+            assert_matches!(n, Real::Float(_));
         }
 
         #[test]
@@ -5083,7 +5372,6 @@ mod div {
         use super::*;
 
         #[test]
-        #[ignore = "complex division not yet implemented"]
         fn basic() {
             // (a+bi)/(c+di) = ((ac+bd) + (bc-ad)i) / (c^2+d^2)
             let a = Number::complex(3, 2);
@@ -5095,7 +5383,6 @@ mod div {
         }
 
         #[test]
-        #[ignore = "complex division not yet implemented"]
         fn dividing_by_one_is_identity() {
             let z = Number::complex(3, 2);
 
@@ -5105,7 +5392,6 @@ mod div {
         }
 
         #[test]
-        #[ignore = "complex division not yet implemented"]
         fn dividing_by_self_is_one() {
             let z = Number::complex(3, 2);
 
@@ -5115,7 +5401,6 @@ mod div {
         }
 
         #[test]
-        #[ignore = "complex division not yet implemented"]
         fn real_divided_by_imaginary_unit_is_not_the_reverse() {
             // 1/i = -i, but i/1 = i: division is not commutative, so
             // Div for Number cannot reuse the symmetric
@@ -5126,6 +5411,163 @@ mod div {
 
             assert_eq!(one_over_i.to_string(), "-i");
             assert_eq!(i_over_one.to_string(), "+i");
+        }
+
+        #[test]
+        fn exact_matrix() {
+            // (a+bi)/(c+di) = ((ac+bd) + (bc-ad)i) / (c^2+d^2)
+            let cases = [
+                ((1, 1), (1, -1), "+i"),
+                ((4, 2), (2, 0), "2+i"),
+                ((-3, 4), (1, 2), "1+2i"),
+            ];
+            for ((are, aim), (bre, bim), expected) in cases {
+                let a = Number::complex(are, aim);
+                let b = Number::complex(bre, bim);
+
+                let quotient = ok_or_fail!(a / b);
+
+                assert_eq!(quotient.to_string(), expected);
+            }
+        }
+
+        #[test]
+        fn complex_over_exact_real() {
+            let z = Number::complex(3, 2);
+
+            let quotient = ok_or_fail!(z / Number::real(2));
+
+            assert_eq!(quotient.to_string(), "3/2+i");
+        }
+
+        #[test]
+        fn complex_over_inexact_real() {
+            let z = Number::complex(3, 2);
+
+            let quotient = ok_or_fail!(z / Number::real(2.0));
+
+            assert_eq!(quotient.to_string(), "1.5+1.0i");
+        }
+
+        #[test]
+        fn real_over_complex() {
+            let quotient = ok_or_fail!(Number::real(5) / Number::complex(1, 2));
+
+            assert_eq!(quotient.to_string(), "1-2i");
+        }
+
+        #[test]
+        fn non_commutative() {
+            let a = Number::complex(3, 2);
+            let b = Number::complex(1, 4);
+
+            let a_over_b = ok_or_fail!(a.clone() / b.clone());
+            let b_over_a = ok_or_fail!(b.clone() / a.clone());
+
+            assert_ne!(a_over_b.to_string(), b_over_a.to_string());
+
+            let product = a_over_b * b_over_a;
+            assert_eq!(product.to_string(), "1");
+        }
+
+        #[test]
+        fn quotient_times_divisor_recovers_dividend() {
+            let cases = [
+                ((1, 1), (1, -1)),
+                ((4, 2), (2, 0)),
+                ((-3, 4), (1, 2)),
+                ((3, 2), (1, 4)),
+            ];
+            for ((are, aim), (bre, bim)) in cases {
+                let a = Number::complex(are, aim);
+                let b = Number::complex(bre, bim);
+
+                let quotient = ok_or_fail!(a.clone() / b.clone());
+                let recovered = quotient * b;
+
+                assert_eq!(recovered.to_string(), a.to_string());
+            }
+        }
+
+        #[test]
+        fn dividing_into_zero_is_zero() {
+            let quotient = ok_or_fail!(Number::zero() / Number::complex(3, 4));
+
+            assert_eq!(quotient.to_string(), "0");
+            assert_matches!(quotient, Number::Real(Real::Integer(_)));
+        }
+
+        #[test]
+        fn division_by_exact_zero_is_an_error() {
+            let z = Number::complex(3, 2);
+
+            let quotient = z / Number::zero();
+
+            let err = err_or_fail!(quotient);
+            assert_matches!(err, NumericError::DivideByZero);
+        }
+
+        #[test]
+        fn all_inexact_operands() {
+            let a = Number::complex(3.0, 4.0);
+            let b = Number::complex(1.0, 1.0);
+
+            let quotient = ok_or_fail!(a / b);
+
+            assert_eq!(quotient.to_string(), "3.5+0.5i");
+        }
+
+        #[test]
+        fn mixed_exactness_taints_result() {
+            let z = Number::complex(3, 2);
+
+            let quotient = ok_or_fail!(z / Number::real(2.0));
+
+            let c = extract_or_fail!(quotient, Number::Complex);
+            let (re, im) = c.into_parts();
+            assert_matches!(re, Real::Float(_));
+            assert_matches!(im, Real::Float(_));
+        }
+
+        #[test]
+        fn exact_operands_stay_exact() {
+            let a = Number::complex(3, 2);
+            let b = Number::complex(1, 4);
+
+            let quotient = ok_or_fail!(a / b);
+
+            let c = extract_or_fail!(quotient, Number::Complex);
+            let (re, im) = c.into_parts();
+            assert!(!matches!(re, Real::Float(_)));
+            assert!(!matches!(im, Real::Float(_)));
+        }
+
+        #[test]
+        fn infinite_part_propagates() {
+            let z = Number::complex(f64::INFINITY, 1.0);
+
+            let quotient = ok_or_fail!(z / Number::real(2));
+
+            assert!(quotient.is_infinite());
+        }
+
+        #[test]
+        fn nan_part_propagates() {
+            let z = Number::complex(f64::NAN, 1.0);
+
+            let quotient = ok_or_fail!(z / Number::real(2));
+
+            assert!(quotient.is_nan());
+        }
+
+        #[test]
+        fn division_by_inexact_zero_is_nan() {
+            let cases = [Number::complex(3, 2), Number::complex(3.0, 2.0)];
+            for z in cases {
+                let quotient = ok_or_fail!(z / Number::real(0.0));
+
+                assert!(quotient.is_nan());
+            }
         }
     }
 }
@@ -5147,7 +5589,7 @@ mod negate {
     fn integer_negation_stays_exact_integer() {
         let neg = Number::real(4).into_negated();
 
-        assert!(matches!(neg, Number::Real(Real::Integer(_))));
+        assert_matches!(neg, Number::Real(Real::Integer(_)));
     }
 
     #[test]
@@ -5196,7 +5638,7 @@ mod negate {
     fn float_negation_stays_inexact() {
         let neg = Number::real(1.5).into_negated();
 
-        assert!(matches!(neg, Number::Real(Real::Float(_))));
+        assert_matches!(neg, Number::Real(Real::Float(_)));
     }
 
     #[test]
@@ -5233,7 +5675,7 @@ mod negate {
         let q = ok_or_fail!(Real::reduce(1, 2));
         let neg = Number::real(q).into_negated();
 
-        assert!(matches!(neg, Number::Real(Real::Rational(_))));
+        assert_matches!(neg, Number::Real(Real::Rational(_)));
     }
 
     #[test]
@@ -5277,7 +5719,7 @@ mod negate {
         let neg = z.into_negated();
 
         assert_eq!(neg.to_string(), "-3-0.0i");
-        assert!(matches!(neg, Number::Complex(_)));
+        assert_matches!(neg, Number::Complex(_));
     }
 
     #[test]
@@ -5321,7 +5763,6 @@ mod negate {
     }
 
     #[test]
-    #[ignore = "rational addition not yet implemented"]
     fn rational_inverse_law() {
         let q = ok_or_fail!(Real::reduce(1, 2));
         let x = Number::real(q);
@@ -5351,7 +5792,7 @@ mod reciprocal {
         fn nonunit_reciprocal_is_exact_rational() {
             let r = ok_or_fail!(Number::real(4).try_into_reciprocal());
 
-            assert!(matches!(r, Number::Real(Real::Rational(_))));
+            assert_matches!(r, Number::Real(Real::Rational(_)));
         }
 
         #[test]
@@ -5360,7 +5801,7 @@ mod reciprocal {
             for n in cases {
                 let r = ok_or_fail!(Number::real(n).try_into_reciprocal());
 
-                assert!(matches!(r, Number::Real(Real::Integer(_))));
+                assert_matches!(r, Number::Real(Real::Integer(_)));
             }
         }
 
@@ -5456,7 +5897,7 @@ mod reciprocal {
                 let r = ok_or_fail!(Number::real(q).try_into_reciprocal());
 
                 assert_eq!(r.to_string(), expected);
-                assert!(matches!(r, Number::Real(Real::Integer(_))));
+                assert_matches!(r, Number::Real(Real::Integer(_)));
             }
         }
 
@@ -5548,7 +5989,7 @@ mod reciprocal {
         fn stays_inexact_even_for_whole_number_result() {
             let r = ok_or_fail!(Number::real(0.5).try_into_reciprocal());
 
-            assert!(matches!(r, Number::Real(Real::Float(_))));
+            assert_matches!(r, Number::Real(Real::Float(_)));
         }
 
         #[test]
@@ -5615,7 +6056,6 @@ mod reciprocal {
         use super::*;
 
         #[test]
-        #[ignore = "complex reciprocal not yet implemented"]
         fn conjugate_over_magnitude_squared() {
             // 1/(a+bi) = (a-bi) / (a^2+b^2)
             let z = Number::complex(3, 4);
@@ -5625,6 +6065,100 @@ mod reciprocal {
             let expected_re = ok_or_fail!(Real::reduce(3, 25));
             let expected_im = ok_or_fail!(Real::reduce(-4, 25));
             assert_eq!(r, Number::complex(expected_re, expected_im));
+        }
+
+        #[test]
+        fn matrix() {
+            let cases = [
+                ((0, 1), "-i"),
+                ((1, 1), "1/2-1/2i"),
+                ((-3, 4), "-3/25-4/25i"),
+                ((1, -1), "1/2+1/2i"),
+            ];
+            for ((re, im), expected) in cases {
+                let z = Number::complex(re, im);
+
+                let r = ok_or_fail!(z.try_into_reciprocal());
+
+                assert_eq!(r.to_string(), expected);
+            }
+        }
+
+        #[test]
+        fn inexact_parts_stay_inexact() {
+            let z = Number::complex(3.0, 4.0);
+
+            let r = ok_or_fail!(z.try_into_reciprocal());
+
+            assert_eq!(r.to_string(), "0.12-0.16i");
+            assert!(r.is_inexact());
+        }
+
+        #[test]
+        fn is_an_involution() {
+            let cases = [(3, 4), (-3, 4), (1, -1)];
+            for (re, im) in cases {
+                let z = Number::complex(re, im);
+
+                let r = ok_or_fail!(z.clone().try_into_reciprocal());
+                let r2 = ok_or_fail!(r.try_into_reciprocal());
+
+                assert_eq!(r2.to_string(), z.to_string());
+            }
+        }
+
+        #[test]
+        fn inverse_law() {
+            let z = Number::complex(3, 4);
+            let r = ok_or_fail!(z.clone().try_into_reciprocal());
+
+            let product = z * r;
+
+            assert_eq!(product.to_string(), "1");
+            assert_matches!(product, Number::Real(Real::Integer(_)));
+        }
+
+        #[test]
+        fn preserves_conjugate_symmetry() {
+            // conj(z)^-1 == conj(z^-1)
+            let z = Number::complex(3, 4);
+
+            let conj_then_recip =
+                ok_or_fail!(z.clone().into_complex_conjugate().try_into_reciprocal());
+            let recip_then_conj = ok_or_fail!(z.try_into_reciprocal()).into_complex_conjugate();
+
+            assert_eq!(conj_then_recip.to_string(), recip_then_conj.to_string());
+        }
+
+        #[test]
+        fn purely_imaginary() {
+            let z = Number::imaginary(2);
+
+            let r = ok_or_fail!(z.try_into_reciprocal());
+
+            assert_eq!(r.to_string(), "-1/2i");
+        }
+
+        // Reproduces an exactness-contagion bug: when the real part is an
+        // exact-zero Integer but the magnitude-squared is an inexact
+        // (float) zero, `Integer::div`'s "exact-zero numerator" shortcut
+        // (src/number.rs:1209) answers exact 0 instead of computing
+        // 0.0/0.0 = NaN per IEEE 754. The imaginary part (a Float
+        // numerator) isn't affected by that shortcut and correctly comes
+        // back NaN, so the bug silently drops the real NaN and, worse,
+        // the result even *displays* as if it were a real-valued NaN,
+        // losing the imaginary part's NaN from view.
+        #[test]
+        #[ignore = "real part loses NaN when magnitude-squared is an inexact zero (src/number.rs:1209)"]
+        fn exact_zero_real_part_with_inexact_zero_magnitude_is_nan() {
+            let z = Number::complex(0, 0.0);
+
+            let r = ok_or_fail!(z.try_into_reciprocal());
+
+            let c = extract_or_fail!(r, Number::Complex);
+            let (re, im) = c.into_parts();
+            assert!(re.is_nan());
+            assert!(im.is_nan());
         }
     }
 }
