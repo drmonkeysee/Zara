@@ -995,6 +995,42 @@ mod tests {
         assert_eq!(v.as_datum().to_string(), "6");
     }
 
+    // Exact zero is *not* additive identity for floats, specifically it
+    // can mess with zero-sign if we blindly convert 0 => 0.0; next few
+    // tests cover this case.
+    #[test]
+    fn add_single_negative_zero_arg_preserves_sign() {
+        let args = [Value::real(-0.0)];
+        let env = TestEnv::default();
+
+        let r = nums_add(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_eq!(v.as_datum().to_string(), "-0.0");
+    }
+
+    #[test]
+    fn add_two_negative_zero_args_preserves_sign() {
+        let args = [Value::real(-0.0), Value::real(-0.0)];
+        let env = TestEnv::default();
+
+        let r = nums_add(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_eq!(v.as_datum().to_string(), "-0.0");
+    }
+
+    #[test]
+    fn add_negative_zero_then_exact_zero_preserves_sign() {
+        let args = [Value::real(-0.0), Value::real(0)];
+        let env = TestEnv::default();
+
+        let r = nums_add(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_eq!(v.as_datum().to_string(), "-0.0");
+    }
+
     #[test]
     fn add_exact_args_stay_exact() {
         let args = [Value::real(3), Value::real(4)];

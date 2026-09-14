@@ -715,6 +715,10 @@ impl Add for Real {
 
     fn add(self, rhs: Self) -> Self::Output {
         match self {
+            // integral additive identity should not affect a float;
+            // if we convert to float we get -0.0 + 0.0 = 0.0 which is wrong!
+            // exact zero shouldn't affect the sign of inexact zero.
+            Self::Float(_) if rhs.is_exact_zero() => self,
             Self::Float(f) => (f + rhs.to_float()).into(),
             Self::Integer(n) => n + rhs,
             Self::Rational(q) => q + rhs,
@@ -1215,6 +1219,10 @@ impl Add<Real> for Integer {
 
     fn add(self, rhs: Real) -> Self::Output {
         match rhs {
+            // integral additive identity should not affect a float;
+            // if we convert to float we get 0.0 + -0.0 = 0.0 which is wrong!
+            // exact zero shouldn't affect the sign of inexact zero.
+            Real::Float(_) if self.is_zero() => rhs,
             Real::Float(f) => (self.to_float() + f).into(),
             Real::Integer(n) => self.add(n).into(),
             Real::Rational(q) => self.into_rational() + q,
