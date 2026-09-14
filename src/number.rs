@@ -402,7 +402,7 @@ impl Mul<Number> for Complex {
         let (a, b) = self.into_parts();
         let (c, d) = match rhs {
             Number::Complex(z) => z.into_parts(),
-            Number::Real(r) => (r, Real::zero()),
+            Number::Real(r) => r.into_complex().into_parts(),
         };
         Number::complex(
             (a.clone() * c.clone()) + (b.clone() * d.clone()).into_negated(),
@@ -641,7 +641,12 @@ impl Real {
     }
 
     fn into_complex(self) -> Complex {
-        Complex((self, Real::zero()).into())
+        let im = if self.is_inexact() {
+            0.0.into()
+        } else {
+            Self::zero()
+        };
+        Complex((self, im).into())
     }
 
     fn try_into_reciprocal(self) -> RealResult {

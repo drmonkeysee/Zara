@@ -5456,6 +5456,68 @@ mod div {
             assert_eq!(quotient.to_string(), "1-2i");
         }
 
+        // Same root cause as reciprocal::complex::
+        // exact_zero_real_part_with_inexact_zero_magnitude_is_nan, reached
+        // via `(Real, Complex)` division instead of a bare reciprocal:
+        // dividing by a divisor whose real part is an exact-zero Integer
+        // and whose magnitude-squared is an inexact Float(0.0) drops the
+        // real part's NaN because `Integer::div`'s exact-zero-numerator
+        // shortcut (src/number.rs:1209) fires inside
+        // `Complex::try_into_reciprocal` before the surrounding multiply
+        // ever runs.
+        #[test]
+        #[ignore = "real part loses NaN when divisor's magnitude-squared is an inexact zero (src/number.rs:1209)"]
+        fn real_over_complex_with_exact_zero_real_part_and_inexact_zero_magnitude_is_nan() {
+            let quotient = ok_or_fail!(Number::real(5) / Number::complex(0, 0.0));
+
+            let c = extract_or_fail!(quotient, Number::Complex);
+            let (re, im) = (c.clone().into_real(), c.into_imag());
+            assert!(re.is_nan());
+            assert!(im.is_nan());
+        }
+
+        // A third, distinct bug from the two above (neither an inexact-zero
+        // magnitude nor a real-only divisor is involved here): `(Real,
+        // Complex)` division computes `r.into_complex() *
+        // z.try_into_reciprocal()`, and `Mul<Number> for Complex`
+        // (src/number.rs, imag = a*d + b*c) sums two independently-rounded
+        // zero-valued terms to get the imaginary part. For 0.0/(3+2i),
+        // `a*d` correctly rounds to -0.0, but summing it with the other
+        // (zero-valued) term goes through `Real::Add`'s float branch, and
+        // IEEE 754 addition of a negative zero and a positive zero always
+        // yields +0.0 (the only addition that yields -0.0 is
+        // (-0.0)+(-0.0)) - so the correctly-computed sign is discarded
+        // regardless of whether the summed zero terms are exact or
+        // inexact. Chez Scheme and Guile both answer 0.0-0.0i here (their
+        // divisor-vs-dividend roles are opposite Zara's, but the situation
+        // is symmetric: they use a division formula, e.g. Smith's
+        // algorithm, that derives the imaginary part via a single
+        // subtraction/negation rather than summing two already-rounded
+        // zero terms).
+        #[test]
+        #[ignore = "sign of zero lost when (Real, Complex) division sums two opposite-signed zero terms (src/number.rs Mul<Number> for Complex)"]
+        fn real_over_complex_preserves_sign_of_zero() {
+            let quotient = ok_or_fail!(Number::real(0.0) / Number::complex(3, 2));
+
+            assert_eq!(quotient.to_string(), "0.0-0.0i");
+        }
+
+        // Mirror of the case above: which component (real or imaginary)
+        // loses its sign depends on the divisor's quadrant, since it's
+        // whichever component's two summed terms (a*d + b*c, or a*c -
+        // b*d) happen to land on opposite signs for that particular
+        // divisor. For a positive-real divisor (3+2i) it was the
+        // imaginary part; for this negative-real divisor (-3+2i) it's
+        // the real part instead - confirmed independently via Smith's
+        // algorithm (real=-0.0, imag=-0.0).
+        #[test]
+        #[ignore = "sign of zero lost when (Real, Complex) division sums two opposite-signed zero terms (src/number.rs Mul<Number> for Complex)"]
+        fn real_over_complex_preserves_sign_of_zero_in_real_part() {
+            let quotient = ok_or_fail!(Number::real(0.0) / Number::complex(-3, 2));
+
+            assert_eq!(quotient.to_string(), "-0.0-0.0i");
+        }
+
         #[test]
         fn non_commutative() {
             let a = Number::complex(3, 2);
@@ -5560,13 +5622,64 @@ mod div {
             assert!(quotient.is_nan());
         }
 
+        // Reproduces a real-divisor bug: `Div for Number`'s `(Complex, Real)`
+        // arm promotes the real divisor to a Complex and routes through the
+        // general conjugate/magnitude-squared reciprocal algorithm
+        // (src/number.rs:319) instead of dividing each component directly.
+        // For a real divisor, direct component-wise division
+        // `(x+yi)/r = x/r + (y/r)i` is both simpler and IEEE-correct;
+        // the magnitude-squared detour instead produces 0.0/0.0 or
+        // inf/inf internally, yielding NaN+NaNi where Chez Scheme and
+        // Guile (dividing componentwise) give +inf.0+inf.0i / 0.0+0.0i
+        // respectively.
         #[test]
-        fn division_by_inexact_zero_is_nan() {
+        #[ignore = "real-divisor complex division routes through magnitude-squared reciprocal instead of dividing componentwise (src/number.rs:319)"]
+        fn division_by_inexact_zero_is_infinite() {
             let cases = [Number::complex(3, 2), Number::complex(3.0, 2.0)];
             for z in cases {
                 let quotient = ok_or_fail!(z / Number::real(0.0));
 
-                assert!(quotient.is_nan());
+                assert_eq!(quotient.to_string(), "+inf.0+inf.0i");
+            }
+        }
+
+        #[test]
+        #[ignore = "real-divisor complex division routes through magnitude-squared reciprocal instead of dividing componentwise (src/number.rs:319)"]
+        fn division_by_infinity_is_zero() {
+            let cases = [Number::complex(3, 2), Number::complex(3.0, 2.0)];
+            for z in cases {
+                let quotient = ok_or_fail!(z / Number::real(f64::INFINITY));
+
+                assert_eq!(quotient.to_string(), "0.0+0.0i");
+            }
+        }
+
+        // Same bug as division_by_inexact_zero_is_infinite, mirrored to a
+        // negative-signed zero divisor: componentwise division would give
+        // 3/-0.0 = -inf.0 and 2/-0.0 = -inf.0, so a fix that only handles
+        // +0.0 but mishandles -0.0 (an easy slip given how much sign-of-zero
+        // subtlety is at play here) would still fail this one.
+        #[test]
+        #[ignore = "real-divisor complex division routes through magnitude-squared reciprocal instead of dividing componentwise (src/number.rs:319)"]
+        fn division_by_negative_inexact_zero_is_negative_infinite() {
+            let cases = [Number::complex(3, 2), Number::complex(3.0, 2.0)];
+            for z in cases {
+                let quotient = ok_or_fail!(z / Number::real(-0.0));
+
+                assert_eq!(quotient.to_string(), "-inf.0-inf.0i");
+            }
+        }
+
+        // Mirror of division_by_infinity_is_zero: 3/-inf.0 = -0.0 and
+        // 2/-inf.0 = -0.0 componentwise.
+        #[test]
+        #[ignore = "real-divisor complex division routes through magnitude-squared reciprocal instead of dividing componentwise (src/number.rs:319)"]
+        fn division_by_negative_infinity_is_negative_zero() {
+            let cases = [Number::complex(3, 2), Number::complex(3.0, 2.0)];
+            for z in cases {
+                let quotient = ok_or_fail!(z / Number::real(f64::NEG_INFINITY));
+
+                assert_eq!(quotient.to_string(), "-0.0-0.0i");
             }
         }
     }
