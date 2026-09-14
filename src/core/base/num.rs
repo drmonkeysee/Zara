@@ -46,6 +46,7 @@ pub(super) fn load(env: &Frame) {
     super::bind_intrinsic(env, "abs", 1..1, abs);
 
     super::bind_intrinsic(env, "gcd", 0..MAX_ARITY, nums_gcd);
+    super::bind_intrinsic(env, "lcm", 0..MAX_ARITY, nums_lcm);
 
     super::bind_intrinsic(env, "numerator", 1..1, get_numerator);
     super::bind_intrinsic(env, "denominator", 1..1, get_denominator);
@@ -193,25 +194,11 @@ fn abs(args: &[Value], _env: &Frame) -> EvalResult {
 }
 
 fn nums_gcd(args: &[Value], _env: &Frame) -> EvalResult {
-    let mut float_taint = false;
-    args.iter()
-        .enumerate()
-        .try_fold(Integer::zero(), |acc, (idx, v)| {
-            let r = arg_to_real(v, idx, NumericTypeName::INTEGER)?;
-            float_taint = float_taint || r.is_inexact();
-            let n = r
-                .clone()
-                .try_into_exact_integer()
-                .map_err(|err| Exception::signal(Condition::value_error(err, v)))?;
-            Ok(acc.gcd(&n))
-        })
-        .map(|n| {
-            if float_taint {
-                Value::real(n.into_inexact())
-            } else {
-                Value::real(n)
-            }
-        })
+    exact_factor_op(args, Integer::zero(), Integer::gcd)
+}
+
+fn nums_lcm(args: &[Value], _env: &Frame) -> EvalResult {
+    exact_factor_op(args, Integer::one(), Integer::lcm)
 }
 
 fn get_numerator(args: &[Value], _env: &Frame) -> EvalResult {
@@ -325,6 +312,32 @@ fn commutative_arithmetic(
             }
         })
         .map(Value::Number)
+}
+
+fn exact_factor_op(
+    args: &[Value],
+    identity: Integer,
+    op: impl Fn(&Integer, &Integer) -> Integer,
+) -> EvalResult {
+    let mut float_taint = false;
+    args.iter()
+        .enumerate()
+        .try_fold(identity, |acc, (idx, v)| {
+            let r = arg_to_real(v, idx, NumericTypeName::INTEGER)?;
+            float_taint = float_taint || r.is_inexact();
+            let n = r
+                .clone()
+                .try_into_exact_integer()
+                .map_err(|err| Exception::signal(Condition::value_error(err, v)))?;
+            Ok(op(&acc, &n))
+        })
+        .map(|n| {
+            if float_taint {
+                Value::real(n.into_inexact())
+            } else {
+                Value::real(n)
+            }
+        })
 }
 
 fn arg_to_real(

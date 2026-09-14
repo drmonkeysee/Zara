@@ -272,7 +272,7 @@ impl Number {
 
     pub(crate) fn try_into_reciprocal(self) -> NumResult {
         match self {
-            Self::Complex(_) => todo!("need real/int division first"),
+            Self::Complex(z) => z.try_into_reciprocal(),
             Self::Real(r) => Ok(Self::real(r.try_into_reciprocal()?)),
         }
     }
@@ -315,7 +315,9 @@ impl Div for Number {
 
     fn div(self, rhs: Self) -> Self::Output {
         match (self, rhs) {
-            (Self::Complex(z), n) | (n, Self::Complex(z)) => z / n,
+            (Self::Complex(a), Self::Complex(b)) => Ok(a * b.try_into_reciprocal()?),
+            (Self::Complex(z), Self::Real(r)) => Ok(z * r.into_complex().try_into_reciprocal()?),
+            (Self::Real(r), Self::Complex(z)) => Ok(r.into_complex() * z.try_into_reciprocal()?),
             (Self::Real(a), Self::Real(b)) => Ok(Self::real((a / b)?)),
         }
     }
@@ -369,6 +371,15 @@ impl Complex {
         let (x, y) = self.into_parts();
         Number::complex(x, y.into_negated())
     }
+
+    fn try_into_reciprocal(self) -> NumResult {
+        let (x, y) = self.into_parts();
+        let magsq = (x.clone() * x.clone()) + (y.clone() * y.clone());
+        Ok(Number::complex(
+            (x / magsq.clone())?,
+            (y.into_negated() / magsq)?,
+        ))
+    }
 }
 
 impl Add<Number> for Complex {
@@ -397,14 +408,6 @@ impl Mul<Number> for Complex {
             (a.clone() * c.clone()) + (b.clone() * d.clone()).into_negated(),
             (a * d) + (b * c),
         )
-    }
-}
-
-impl Div<Number> for Complex {
-    type Output = NumResult;
-
-    fn div(self, rhs: Number) -> Self::Output {
-        todo!()
     }
 }
 
@@ -637,6 +640,10 @@ impl Real {
         }
     }
 
+    fn into_complex(self) -> Complex {
+        Complex((self, Real::zero()).into())
+    }
+
     fn try_into_reciprocal(self) -> RealResult {
         match self {
             Self::Float(f) => Ok(f.recip().into()),
@@ -797,15 +804,20 @@ impl Ord for Rational {
 impl Add for Rational {
     type Output = Real;
 
-    fn add(self, _rhs: Self) -> Self::Output {
-        todo!(
-            "need lcd calculation:
-             a/b + c/d ==>
-             g = gcd(b, d)
-             lcd = b / g * d
-             a/b + c/d = (a*(d/g) + c*(b/g)) / lcd
-             then one more reduce"
-        )
+    // a/b + c/d = (ad + cb)/bd except cross-reduce with gcd and lcm to lessen
+    // likelihood of intermediate result overflow.
+    // div/0 should be a programmer error here, hence the panics. if everything
+    // is wired up correctly this will only be called with canonical rationals
+    // or integer reciprocals.
+    fn add(self, rhs: Self) -> Self::Output {
+        let (a, b) = self.into_parts();
+        let (c, d) = rhs.into_parts();
+        let g = b.gcd(&d);
+        let m = b.lcm(&d);
+        debug_assert!(!g.is_zero());
+        debug_assert!(!m.is_zero());
+        (((a * Real::reduce_divisor(d, g.clone())) + (c * Real::reduce_divisor(b, g))) / m)
+            .expect("least common multiple of canonical denominators cannot be zero")
     }
 }
 
@@ -907,7 +919,7 @@ impl Integer {
         0.into()
     }
 
-    fn one() -> Self {
+    pub(crate) fn one() -> Self {
         1.into()
     }
 
@@ -942,12 +954,20 @@ impl Integer {
         self.precision.is_even()
     }
 
-    pub(crate) fn into_inexact(self) -> Real {
-        Real::Float(self.to_float())
-    }
-
     pub(crate) fn gcd(&self, rhs: &Self) -> Self {
         Self::new(self.precision.gcd(&rhs.precision), Sign::Positive)
+    }
+
+    pub(crate) fn lcm(&self, rhs: &Self) -> Self {
+        if self.is_zero() && rhs.is_zero() {
+            Self::zero()
+        } else {
+            Self::new(self.precision.lcm(&rhs.precision), Sign::Positive)
+        }
+    }
+
+    pub(crate) fn into_inexact(self) -> Real {
+        Real::Float(self.to_float())
     }
 
     fn is_positive(&self) -> bool {
@@ -1562,6 +1582,21 @@ impl Precision {
     fn gcd(&self, rhs: &Self) -> Self {
         match (self, rhs) {
             (Self::Single(a), Self::Single(b)) => Self::Single(gcd_euclidean(*a, *b)),
+            _ => todo!(),
+        }
+    }
+
+    fn lcm(&self, rhs: &Self) -> Self {
+        match (self, rhs) {
+            (Self::Single(a), Self::Single(b)) => {
+                let gcd = gcd_euclidean(*a, *b);
+                let (p, o) = b.carrying_mul(a / gcd, 0);
+                if o == 0 {
+                    Self::Single(p)
+                } else {
+                    todo!("handle precision overflow")
+                }
+            }
             _ => todo!(),
         }
     }
