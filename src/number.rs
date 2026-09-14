@@ -343,31 +343,31 @@ try_int_conversion!(usize, try_to_usize);
 pub(crate) struct Complex(Box<(Real, Real)>);
 
 impl Complex {
-    pub(crate) fn real_part(&self) -> &Real {
-        &self.0.0
+    pub(crate) fn into_real(self) -> Real {
+        self.0.0
     }
 
-    pub(crate) fn imag_part(&self) -> &Real {
-        &self.0.1
+    pub(crate) fn into_imag(self) -> Real {
+        self.0.1
     }
 
-    pub(crate) fn to_magnitude(&self) -> Real {
-        let x = self.real_part().to_float();
-        let y = self.imag_part().to_float();
-        Real::Float(x.hypot(y))
+    pub(crate) fn into_magnitude(self) -> Real {
+        let (x, y) = self.into_parts();
+        Real::Float(x.to_float().hypot(y.to_float()))
     }
 
-    pub(crate) fn to_angle(&self) -> Real {
-        let x = self.real_part().to_float();
-        let y = self.imag_part().to_float();
-        Real::Float(y.atan2(x))
+    pub(crate) fn into_angle(self) -> Real {
+        let (x, y) = self.into_parts();
+        Real::Float(y.to_float().atan2(x.to_float()))
+    }
+
+    fn into_parts(self) -> (Real, Real) {
+        (self.0.0, self.0.1)
     }
 
     fn into_conjugate(self) -> Number {
-        Number::complex(
-            self.real_part().clone(),
-            self.imag_part().clone().into_negated(),
-        )
+        let (x, y) = self.into_parts();
+        Number::complex(x, y.into_negated())
     }
 }
 
@@ -375,14 +375,10 @@ impl Add<Number> for Complex {
     type Output = Number;
 
     fn add(self, rhs: Number) -> Self::Output {
+        let (x, y) = self.into_parts();
         match rhs {
-            Number::Complex(Complex(z)) => Number::complex(
-                self.real_part().clone() + z.0,
-                self.imag_part().clone() + z.1,
-            ),
-            Number::Real(r) => {
-                Number::complex(self.real_part().clone() + r, self.imag_part().clone())
-            }
+            Number::Complex(Complex(z)) => Number::complex(x + z.0, y + z.1),
+            Number::Real(r) => Number::complex(x + r, y),
         }
     }
 }
@@ -392,9 +388,9 @@ impl Mul<Number> for Complex {
 
     // Complex multiplication: (a + bi) * (c + di) = (ac - bd) + (ad + bc)i
     fn mul(self, rhs: Number) -> Self::Output {
-        let (a, b) = (self.real_part().clone(), self.imag_part().clone());
+        let (a, b) = self.into_parts();
         let (c, d) = match rhs {
-            Number::Complex(z) => (z.real_part().clone(), z.imag_part().clone()),
+            Number::Complex(z) => z.into_parts(),
             Number::Real(r) => (r, Real::zero()),
         };
         Number::complex(

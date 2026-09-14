@@ -24,25 +24,21 @@ fn make_polar(args: &[Value], _env: &Frame) -> EvalResult {
 }
 
 fn get_real(args: &[Value], _env: &Frame) -> EvalResult {
-    get_complex_part(super::first(args), |z| z.real_part().clone(), Real::clone)
+    get_complex_part(super::first(args), Complex::into_real, Real::clone)
 }
 
 fn get_imag(args: &[Value], _env: &Frame) -> EvalResult {
-    get_complex_part(
-        super::first(args),
-        |z| z.imag_part().clone(),
-        |_| Real::zero(),
-    )
+    get_complex_part(super::first(args), Complex::into_imag, |_| Real::zero())
 }
 
 fn get_mag(args: &[Value], _env: &Frame) -> EvalResult {
-    get_complex_part(super::first(args), Complex::to_magnitude, |r| {
+    get_complex_part(super::first(args), Complex::into_magnitude, |r| {
         r.clone().into_abs()
     })
 }
 
 fn get_angle(args: &[Value], _env: &Frame) -> EvalResult {
-    get_complex_part(super::first(args), Complex::to_angle, |_| Real::zero())
+    get_complex_part(super::first(args), Complex::into_angle, |_| Real::zero())
 }
 
 fn make_complex(x: &Value, y: &Value, ctor: impl FnOnce(Real, Real) -> Number) -> EvalResult {
@@ -75,12 +71,12 @@ fn make_complex(x: &Value, y: &Value, ctor: impl FnOnce(Real, Real) -> Number) -
 
 fn get_complex_part(
     arg: &Value,
-    get: impl FnOnce(&Complex) -> Real,
+    get: impl FnOnce(Complex) -> Real,
     fallback: impl FnOnce(&Real) -> Real,
 ) -> EvalResult {
     if let Value::Number(x) = arg {
         Ok(Value::real(match x {
-            Number::Complex(z) => get(z),
+            Number::Complex(z) => get(z.clone()),
             Number::Real(r) => fallback(r),
         }))
     } else {
