@@ -4923,6 +4923,27 @@ mod mult {
         assert_eq!(ab.to_string(), ba.to_string());
     }
 
+    // Verify Smith's algorithm optimization for division, and specifically the
+    // zero-sign preservation, is not applied to multiplication; this aligns with
+    // other scheme implementations like Guile and Chez Scheme.
+    #[test]
+    fn complex_zero_times_complex_does_not_preserve_sign_of_zero() {
+        let cases = [
+            ((3, 2), "0.0+0.0i"),
+            ((-3, 2), "-0.0+0.0i"),
+            ((3, -2), "0.0+0.0i"),
+            ((-3, -2), "0.0-0.0i"),
+        ];
+        for ((re, im), expected) in cases {
+            let zero = Number::complex(0.0, 0.0);
+            let w = Number::complex(re, im);
+
+            let product = zero * w;
+
+            assert_eq!(product.to_string(), expected);
+        }
+    }
+
     #[test]
     fn one_is_exact_integer() {
         let one = Number::one();
