@@ -5487,42 +5487,14 @@ mod div {
             assert!(im.is_nan());
         }
 
-        // A third, distinct bug from the two above (neither an inexact-zero
-        // magnitude nor a real-only divisor is involved here): `(Real,
-        // Complex)` division computes `r.into_complex() *
-        // z.try_into_reciprocal()`, and `Mul<Number> for Complex`
-        // (src/number.rs, imag = a*d + b*c) sums two independently-rounded
-        // zero-valued terms to get the imaginary part. For 0.0/(3+2i),
-        // `a*d` correctly rounds to -0.0, but summing it with the other
-        // (zero-valued) term goes through `Real::Add`'s float branch, and
-        // IEEE 754 addition of a negative zero and a positive zero always
-        // yields +0.0 (the only addition that yields -0.0 is
-        // (-0.0)+(-0.0)) - so the correctly-computed sign is discarded
-        // regardless of whether the summed zero terms are exact or
-        // inexact. Chez Scheme and Guile both answer 0.0-0.0i here (their
-        // divisor-vs-dividend roles are opposite Zara's, but the situation
-        // is symmetric: they use a division formula, e.g. Smith's
-        // algorithm, that derives the imaginary part via a single
-        // subtraction/negation rather than summing two already-rounded
-        // zero terms).
         #[test]
-        #[ignore = "sign of zero lost when (Real, Complex) division sums two opposite-signed zero terms (src/number.rs Mul<Number> for Complex)"]
         fn real_over_complex_preserves_sign_of_zero() {
             let quotient = ok_or_fail!(Number::real(0.0) / Number::complex(3, 2));
 
             assert_eq!(quotient.to_string(), "0.0-0.0i");
         }
 
-        // Mirror of the case above: which component (real or imaginary)
-        // loses its sign depends on the divisor's quadrant, since it's
-        // whichever component's two summed terms (a*d + b*c, or a*c -
-        // b*d) happen to land on opposite signs for that particular
-        // divisor. For a positive-real divisor (3+2i) it was the
-        // imaginary part; for this negative-real divisor (-3+2i) it's
-        // the real part instead - confirmed independently via Smith's
-        // algorithm (real=-0.0, imag=-0.0).
         #[test]
-        #[ignore = "sign of zero lost when (Real, Complex) division sums two opposite-signed zero terms (src/number.rs Mul<Number> for Complex)"]
         fn real_over_complex_preserves_sign_of_zero_in_real_part() {
             let quotient = ok_or_fail!(Number::real(0.0) / Number::complex(-3, 2));
 

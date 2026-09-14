@@ -392,8 +392,51 @@ impl Complex {
 impl Div for Complex {
     type Output = NumResult;
 
+    /*
+     * Smith's Algorithm for (a + bi) / (c + di)
+     * https://dl.acm.org/doi/pdf/10.1145/214408.214414
+     *  if |c| < |d|:
+     *      r = c / d
+     *      denom = c*r + d
+     *      real = (a*r + b) / denom
+     *      imag = (b*r - a) / denom
+     *  else:
+     *      r = d / c
+     *      denom = c + d*r
+     *      real = (a + b*r) / denom
+     *      imag = (b - a*r) / denom
+     * The textbook formula for complex division is:
+     * (a + bi) / ( c + di ) = (ac + bd) / (c² + d²) + (bc - ad) / (c² + d²)i
+     * which causes issues with IEEE-754 where the squares could overflow to inf
+     * even if the final answer would be within range, as well as losing sign-of-zero
+     * in the event the numerators sum over opposite-sign zeros.
+     * Smith's algorithm avoids this by avoiding squares and using ratios of the
+     * imaginary parts, as well as avoiding addition/subtraction of two products.
+     */
     fn div(self, rhs: Self) -> Self::Output {
-        Ok(self * rhs.try_into_reciprocal()?)
+        let (a, b) = self.into_parts();
+        let (mut c, mut d) = rhs.into_parts();
+        // don't mix exact/inexact in the ratio/denominator elements for similar
+        // reasons as try_into_reciprocal.
+        if c.is_inexact() || d.is_inexact() {
+            (c, d) = (c.into_inexact(), d.into_inexact())
+        }
+        let (re, im) = if c.clone().into_abs() < d.clone().into_abs() {
+            let r = (c.clone() / d.clone())?;
+            let denom = (c.clone() * r.clone()) + d.clone();
+            (
+                (((a.clone() * r.clone()) + b.clone()) / denom.clone())?,
+                (((b * r) + a.into_negated()) / denom)?,
+            )
+        } else {
+            let r = (d.clone() / c.clone())?;
+            let denom = c.clone() + (d.clone() * r.clone());
+            (
+                ((a.clone() + (b.clone() * r.clone())) / denom.clone())?,
+                ((b + (a * r).into_negated()) / denom)?,
+            )
+        };
+        Ok(Number::complex(re, im))
     }
 }
 
@@ -673,12 +716,7 @@ impl Real {
     }
 
     fn into_complex(self) -> Complex {
-        let im = if self.is_inexact() {
-            0.0.into()
-        } else {
-            Self::zero()
-        };
-        Complex((self, im).into())
+        Complex((self, Self::zero()).into())
     }
 
     fn try_into_reciprocal(self) -> RealResult {
