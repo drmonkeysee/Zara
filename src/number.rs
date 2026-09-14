@@ -316,7 +316,7 @@ impl Div for Number {
     fn div(self, rhs: Self) -> Self::Output {
         match (self, rhs) {
             (Self::Complex(a), x) => a / x,
-            (Self::Real(r), Self::Complex(z)) => Ok(r.into_complex() * z.try_into_reciprocal()?),
+            (Self::Real(r), Self::Complex(z)) => r.into_complex() / z,
             (Self::Real(a), Self::Real(b)) => Ok(Self::real((a / b)?)),
         }
     }
