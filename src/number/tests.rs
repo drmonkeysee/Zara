@@ -5456,17 +5456,7 @@ mod div {
             assert_eq!(quotient.to_string(), "1-2i");
         }
 
-        // Same root cause as reciprocal::complex::
-        // exact_zero_real_part_with_inexact_zero_magnitude_is_nan, reached
-        // via `(Real, Complex)` division instead of a bare reciprocal:
-        // dividing by a divisor whose real part is an exact-zero Integer
-        // and whose magnitude-squared is an inexact Float(0.0) drops the
-        // real part's NaN because `Integer::div`'s exact-zero-numerator
-        // shortcut (src/number.rs:1209) fires inside
-        // `Complex::try_into_reciprocal` before the surrounding multiply
-        // ever runs.
         #[test]
-        #[ignore = "real part loses NaN when divisor's magnitude-squared is an inexact zero (src/number.rs:1209)"]
         fn real_over_complex_with_exact_zero_real_part_and_inexact_zero_magnitude_is_nan() {
             let quotient = ok_or_fail!(Number::real(5) / Number::complex(0, 0.0));
 
@@ -6252,17 +6242,7 @@ mod reciprocal {
             assert_eq!(r.to_string(), "-1/2i");
         }
 
-        // Reproduces an exactness-contagion bug: when the real part is an
-        // exact-zero Integer but the magnitude-squared is an inexact
-        // (float) zero, `Integer::div`'s "exact-zero numerator" shortcut
-        // (src/number.rs:1209) answers exact 0 instead of computing
-        // 0.0/0.0 = NaN per IEEE 754. The imaginary part (a Float
-        // numerator) isn't affected by that shortcut and correctly comes
-        // back NaN, so the bug silently drops the real NaN and, worse,
-        // the result even *displays* as if it were a real-valued NaN,
-        // losing the imaginary part's NaN from view.
         #[test]
-        #[ignore = "real part loses NaN when magnitude-squared is an inexact zero (src/number.rs:1209)"]
         fn exact_zero_real_part_with_inexact_zero_magnitude_is_nan() {
             let z = Number::complex(0, 0.0);
 

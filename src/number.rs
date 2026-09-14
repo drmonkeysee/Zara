@@ -373,7 +373,15 @@ impl Complex {
     }
 
     fn try_into_reciprocal(self) -> NumResult {
-        let (x, y) = self.into_parts();
+        let (mut x, mut y) = self.into_parts();
+        // Weird things happen when applying the normal exact/inexact multiply
+        // rules to complex reciprocals (dropped terms, flipped signs, etc),
+        // due to the way exact zero interacts with 0.0, nan, inf; this is a case
+        // where float-taint should apply to the whole calculation since both
+        // complex terms have an impact on the final result.
+        if x.is_inexact() || y.is_inexact() {
+            (x, y) = (x.into_inexact(), y.into_inexact());
+        }
         let magsq = (x.clone() * x.clone()) + (y.clone() * y.clone());
         Ok(Number::complex(
             (x / magsq.clone())?,
