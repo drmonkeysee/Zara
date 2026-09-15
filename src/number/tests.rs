@@ -5385,7 +5385,7 @@ mod div {
 
             let quotient = Number::real(a) / Number::real(b);
 
-            assert!(quotient.is_ok());
+            ok_or_fail!(quotient);
         }
     }
 
