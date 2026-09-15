@@ -381,7 +381,7 @@ impl Div for Complex {
 
     /*
      * Smith's Algorithm for (a + bi) / (c + di)
-     * https://dl.acm.org/doi/pdf/10.1145/214408.214414
+     * https://dl.acm.org/doi/abs/10.1145/368637.368661
      *  if |c| < |d|:
      *      r = c / d
      *      denom = c*r + d
