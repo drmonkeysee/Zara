@@ -238,15 +238,15 @@ impl Value {
     }
 
     pub(crate) fn is_pair(&self) -> bool {
-        matches!(self, Value::Pair(_) | Value::PairMut(_))
+        matches!(self, Self::Pair(_) | Self::PairMut(_))
     }
 
     pub(crate) fn is_list_element(&self) -> bool {
-        self.is_pair() || matches!(self, Value::Null)
+        self.is_pair() || matches!(self, Self::Null)
     }
 
     pub(crate) fn is_port(&self) -> bool {
-        matches!(self, Value::PortInput(_) | Value::PortOutput(_))
+        matches!(self, Self::PortInput(_) | Self::PortOutput(_))
     }
 
     pub(crate) fn display_message(&self) -> ValueMessage<'_> {
