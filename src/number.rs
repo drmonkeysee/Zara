@@ -1164,7 +1164,7 @@ impl Add for Integer {
             (Sign::Zero, _) => rhs,
             (Sign::Positive, Sign::Positive) | (Sign::Negative, Sign::Negative) => {
                 let sum = self.precision + rhs.precision;
-                Integer::new(sum, self.sign)
+                Self::new(sum, self.sign)
             }
             (Sign::Positive, Sign::Negative) | (Sign::Negative, Sign::Positive) => {
                 let (sign, sum) = if self.precision < rhs.precision {
@@ -1172,7 +1172,7 @@ impl Add for Integer {
                 } else {
                     (self.sign, self.precision - rhs.precision)
                 };
-                Integer::new(sum, sign)
+                Self::new(sum, sign)
             }
         }
     }
@@ -1184,7 +1184,7 @@ impl Mul for Integer {
     fn mul(self, rhs: Self) -> Self::Output {
         match self.sign * rhs.sign {
             Sign::Zero => Self::zero(),
-            s => Integer::new(self.precision * rhs.precision, s),
+            s => Self::new(self.precision * rhs.precision, s),
         }
     }
 }
