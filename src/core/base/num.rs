@@ -1257,4 +1257,168 @@ mod tests {
             "#<value-error \"invalid type for arg `1` - expected: number, got: string\" (\"foo\")>"
         );
     }
+
+    #[test]
+    fn div_single_positive_arg_reciprocates() {
+        let args = [Value::real(4)];
+        let env = TestEnv::default();
+
+        let r = nums_div(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_eq!(v.as_datum().to_string(), "1/4");
+    }
+
+    #[test]
+    fn div_single_zero_arg_is_an_error() {
+        let args = [Value::real(0)];
+        let env = TestEnv::default();
+
+        let r = nums_div(&args, &env.new_frame());
+
+        let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
+        assert_eq!(err.to_string(), "#<value-error \"divide by zero\" (0)>");
+    }
+
+    #[test]
+    fn div_two_args() {
+        let args = [Value::real(10), Value::real(2)];
+        let env = TestEnv::default();
+
+        let r = nums_div(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_eq!(v.as_datum().to_string(), "5");
+    }
+
+    #[test]
+    fn div_exact_zero_first_arg_is_exact_zero() {
+        let args = [Value::real(0), Value::real(5)];
+        let env = TestEnv::default();
+
+        let r = nums_div(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_matches!(v, Value::Number(Number::Real(Real::Integer(_))));
+        assert_eq!(v.as_datum().to_string(), "0");
+    }
+
+    #[test]
+    fn div_by_zero_later_arg_is_an_error() {
+        let args = [Value::real(5), Value::real(0)];
+        let env = TestEnv::default();
+
+        let r = nums_div(&args, &env.new_frame());
+
+        let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
+        assert_eq!(err.to_string(), "#<value-error \"divide by zero\" (0)>");
+    }
+
+    #[test]
+    fn div_is_left_associative() {
+        let args = [Value::real(100), Value::real(5), Value::real(2)];
+        let env = TestEnv::default();
+
+        let r = nums_div(&args, &env.new_frame());
+
+        // (100 / 5) / 2, not 100 / (5 / 2)
+        let v = ok_or_fail!(r);
+        assert_eq!(v.as_datum().to_string(), "10");
+    }
+
+    #[test]
+    fn div_exact_args_stay_exact() {
+        let args = [Value::real(10), Value::real(2)];
+        let env = TestEnv::default();
+
+        let r = nums_div(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_matches!(v, Value::Number(Number::Real(Real::Integer(_))));
+    }
+
+    #[test]
+    fn div_inexact_later_arg_taints_result() {
+        let args = [Value::real(10), Value::real(2.0)];
+        let env = TestEnv::default();
+
+        let r = nums_div(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_matches!(v, Value::Number(Number::Real(Real::Float(_))));
+        assert_eq!(v.as_datum().to_string(), "5.0");
+    }
+
+    #[test]
+    fn div_single_complex_arg_reciprocates() {
+        let args = [Value::Number(Number::complex(3, 4))];
+        let env = TestEnv::default();
+
+        let r = nums_div(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_eq!(v.as_datum().to_string(), "3/25-4/25i");
+    }
+
+    #[test]
+    fn div_complex_by_real_arg() {
+        let args = [Value::Number(Number::complex(3, 2)), Value::real(2)];
+        let env = TestEnv::default();
+
+        let r = nums_div(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_eq!(v.as_datum().to_string(), "3/2+i");
+    }
+
+    #[test]
+    fn div_real_by_complex_arg() {
+        let args = [Value::real(5), Value::Number(Number::complex(1, 2))];
+        let env = TestEnv::default();
+
+        let r = nums_div(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_eq!(v.as_datum().to_string(), "1-2i");
+    }
+
+    #[test]
+    fn div_single_complex_arg_with_large_magnitude_does_not_overflow() {
+        let args = [Value::Number(Number::complex(1e200, 1e200))];
+        let env = TestEnv::default();
+
+        let r = nums_div(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        let n = extract_or_fail!(v, Value::Number);
+        assert!(!n.is_zero());
+    }
+
+    #[test]
+    fn div_invalid_first_arg() {
+        let args = [Value::string("foo"), Value::real(1)];
+        let env = TestEnv::default();
+
+        let r = nums_div(&args, &env.new_frame());
+
+        let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
+        assert_eq!(
+            err.to_string(),
+            "#<value-error \"invalid type for arg `0` - expected: number, got: string\" (\"foo\")>"
+        );
+    }
+
+    #[test]
+    fn div_invalid_later_arg() {
+        let args = [Value::real(1), Value::string("foo")];
+        let env = TestEnv::default();
+
+        let r = nums_div(&args, &env.new_frame());
+
+        let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
+        assert_eq!(
+            err.to_string(),
+            "#<value-error \"invalid type for arg `1` - expected: number, got: string\" (\"foo\")>"
+        );
+    }
 }

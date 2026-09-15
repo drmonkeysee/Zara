@@ -5422,11 +5422,23 @@ mod div {
         }
 
         #[test]
+        fn division_by_large_magnitude_divisor_does_not_overflow() {
+            let quotient = ok_or_fail!(Number::one() / Number::complex(1e200, 1e200));
+
+            assert!(!quotient.is_zero());
+        }
+
+        #[test]
+        fn dividing_large_magnitude_complex_by_itself_is_one() {
+            let z = Number::complex(1e200, 1e200);
+
+            let quotient = ok_or_fail!(z.clone() / z);
+
+            assert_eq!(quotient.to_string(), "1.0+0.0i");
+        }
+
+        #[test]
         fn real_divided_by_imaginary_unit_is_not_the_reverse() {
-            // 1/i = -i, but i/1 = i: division is not commutative, so
-            // Div for Number cannot reuse the symmetric
-            // `(Complex, n) | (n, Complex)` pattern it shares with Add/Mul
-            // (see src/number.rs:318).
             let one_over_i = ok_or_fail!(Number::one() / Number::imaginary(1));
             let i_over_one = ok_or_fail!(Number::imaginary(1) / Number::one());
 
@@ -6241,6 +6253,17 @@ mod reciprocal {
             let (re, im) = c.into_parts();
             assert!(re.is_nan());
             assert!(im.is_nan());
+        }
+
+        #[test]
+        fn large_magnitude_reciprocal_does_not_overflow_to_zero() {
+            let z = Number::complex(1e200, 1e200);
+
+            let r = ok_or_fail!(z.clone().try_into_reciprocal());
+            let expected = ok_or_fail!(Number::real(1) / z);
+
+            assert!(!r.is_zero());
+            assert_eq!(r.to_string(), expected.to_string());
         }
     }
 }
