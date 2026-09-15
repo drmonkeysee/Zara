@@ -69,3 +69,6 @@ target/
 # Added by cargo
 
 /target
+
+# Project
+tools/arith_edge.scm
