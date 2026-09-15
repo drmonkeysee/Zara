@@ -400,6 +400,7 @@ impl Div for Complex {
      * Smith's algorithm avoids this by avoiding squares and using ratios of the
      * imaginary parts, as well as avoiding addition/subtraction of two products.
      */
+    #[allow(clippy::many_single_char_names)]
     fn div(self, rhs: Self) -> Self::Output {
         let (a, b) = self.into_parts();
         let (mut c, mut d) = rhs.into_parts();
@@ -407,7 +408,7 @@ impl Div for Complex {
         // can interact strangely with signed zeros, nan, and inf; apply float-taint
         // to quotient calculations to avoid these issues.
         if c.is_inexact() || d.is_inexact() {
-            (c, d) = (c.into_inexact(), d.into_inexact())
+            (c, d) = (c.into_inexact(), d.into_inexact());
         }
         let (re, im) = if c.clone().into_abs() < d.clone().into_abs() {
             let r = (c.clone() / d.clone())?;
@@ -431,6 +432,7 @@ impl Div for Complex {
 impl Add<Number> for Complex {
     type Output = Number;
 
+    #[allow(clippy::many_single_char_names)]
     fn add(self, rhs: Number) -> Self::Output {
         let (x, y) = self.into_parts();
         match rhs {
@@ -876,6 +878,7 @@ impl Add for Rational {
     // div/0 should be a programmer error here, hence the panics. if everything
     // is wired up correctly this will only be called with canonical rationals
     // or integer reciprocals.
+    #[allow(clippy::many_single_char_names)]
     fn add(self, rhs: Self) -> Self::Output {
         let (a, b) = self.into_parts();
         let (c, d) = rhs.into_parts();
@@ -1276,7 +1279,7 @@ impl Div<Real> for Integer {
     fn div(self, rhs: Real) -> Self::Output {
         match rhs {
             // nan overrides exact zero which overrides float-taint
-            Real::Float(f) if f.is_nan() => Ok(rhs.into()),
+            Real::Float(f) if f.is_nan() => Ok(rhs),
             Real::Float(_) if self.is_zero() => Ok(self.into()),
             Real::Float(f) => Ok((self.to_float() / f).into()),
             Real::Integer(n) => self.div(n),
