@@ -372,20 +372,7 @@ impl Complex {
     }
 
     fn try_into_reciprocal(self) -> NumResult {
-        let (mut x, mut y) = self.into_parts();
-        // Weird things happen when applying the normal exact/inexact multiply
-        // rules to complex reciprocals (dropped terms, flipped signs, etc),
-        // due to the way exact zero interacts with 0.0, nan, inf; this is a case
-        // where float-taint should apply to the whole calculation since both
-        // complex terms have an impact on the final result.
-        if x.is_inexact() || y.is_inexact() {
-            (x, y) = (x.into_inexact(), y.into_inexact());
-        }
-        let magsq = (x.clone() * x.clone()) + (y.clone() * y.clone());
-        Ok(Number::complex(
-            (x / magsq.clone())?,
-            (y.into_negated() / magsq)?,
-        ))
+        Real::one().into_complex() / self
     }
 }
 
@@ -416,8 +403,9 @@ impl Div for Complex {
     fn div(self, rhs: Self) -> Self::Output {
         let (a, b) = self.into_parts();
         let (mut c, mut d) = rhs.into_parts();
-        // don't mix exact/inexact in the ratio/denominator elements for similar
-        // reasons as try_into_reciprocal.
+        // Don't mix exact/inexact in the ratio/denominator elements as exact values
+        // can interact strangely with signed zeros, nan, and inf; apply float-taint
+        // to quotient calculations to avoid these issues.
         if c.is_inexact() || d.is_inexact() {
             (c, d) = (c.into_inexact(), d.into_inexact())
         }
