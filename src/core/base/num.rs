@@ -632,6 +632,49 @@ mod tests {
         );
     }
 
+    // NaN must propagate through max/min (R6RS explicitly requires it, and
+    // every IEEE-754/major-Scheme convention agrees): the max/min of a set
+    // containing an undefined element is undefined, i.e. NaN. A plain `bool`
+    // predicate can't tell "not less than" apart from "unordered", so a naive
+    // fold silently drops the NaN operand instead of propagating it.
+    #[test]
+    fn max_with_nan_later_arg_is_nan() {
+        let args = [Value::real(1.0), Value::real(f64::NAN)];
+        let env = TestEnv::default();
+
+        let r = nums_max(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_eq!(v.as_datum().to_string(), "+nan.0");
+    }
+
+    #[test]
+    fn max_with_nan_first_arg_is_nan() {
+        let args = [Value::real(f64::NAN), Value::real(1.0)];
+        let env = TestEnv::default();
+
+        let r = nums_max(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_eq!(v.as_datum().to_string(), "+nan.0");
+    }
+
+    #[test]
+    fn max_with_nan_among_many_args_is_nan() {
+        let args = [
+            Value::real(1),
+            Value::real(5.0),
+            Value::real(f64::NAN),
+            Value::real(2),
+        ];
+        let env = TestEnv::default();
+
+        let r = nums_max(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_eq!(v.as_datum().to_string(), "+nan.0");
+    }
+
     #[test]
     fn min_of_integers() {
         let args = [Value::real(3), Value::real(7), Value::real(5)];
@@ -654,6 +697,29 @@ mod tests {
         let v = ok_or_fail!(r);
         assert_matches!(v, Value::Number(Number::Real(Real::Float(_))));
         assert_eq!(v.as_datum().to_string(), "1.0");
+    }
+
+    // See the max_with_nan_* comment above -- min must propagate NaN too.
+    #[test]
+    fn min_with_nan_later_arg_is_nan() {
+        let args = [Value::real(1.0), Value::real(f64::NAN)];
+        let env = TestEnv::default();
+
+        let r = nums_min(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_eq!(v.as_datum().to_string(), "+nan.0");
+    }
+
+    #[test]
+    fn min_with_nan_first_arg_is_nan() {
+        let args = [Value::real(f64::NAN), Value::real(1.0)];
+        let env = TestEnv::default();
+
+        let r = nums_min(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_eq!(v.as_datum().to_string(), "+nan.0");
     }
 
     #[test]

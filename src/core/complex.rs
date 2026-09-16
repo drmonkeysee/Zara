@@ -185,4 +185,42 @@ mod tests {
         assert_matches!(r, Value::Number(Number::Real(Real::Integer(_))));
         assert_eq!(r.as_datum().to_string(), "0");
     }
+
+    // R7RS: (angle x) is the argument of x as a complex number; for a
+    // negative real z = x + 0i (x < 0), arg(z) = pi, not 0.
+    #[test]
+    fn get_angle_negative_real() {
+        let args = [Value::real(-8)];
+        let env = TestEnv::default();
+
+        let v = get_angle(&args, &env.new_frame());
+
+        let r = ok_or_fail!(v);
+        assert_matches!(r, Value::Number(Number::Real(Real::Float(_))));
+        assert_eq!(r.as_datum().to_string(), "3.141592653589793");
+    }
+
+    #[test]
+    fn get_angle_negative_float() {
+        let args = [Value::real(-1.0)];
+        let env = TestEnv::default();
+
+        let v = get_angle(&args, &env.new_frame());
+
+        let r = ok_or_fail!(v);
+        assert_matches!(r, Value::Number(Number::Real(Real::Float(_))));
+        assert_eq!(r.as_datum().to_string(), "3.141592653589793");
+    }
+
+    #[test]
+    fn get_angle_negative_infinity() {
+        let args = [Value::real(f64::NEG_INFINITY)];
+        let env = TestEnv::default();
+
+        let v = get_angle(&args, &env.new_frame());
+
+        let r = ok_or_fail!(v);
+        assert_matches!(r, Value::Number(Number::Real(Real::Float(_))));
+        assert_eq!(r.as_datum().to_string(), "3.141592653589793");
+    }
 }

@@ -1928,6 +1928,68 @@ mod float {
         assert_eq!(den.sign, Sign::Positive);
     }
 
+    // R7RS: inexact->exact "returns an exact representation of z... the
+    // exact number that is numerically closest to the argument", i.e. the
+    // *binary* value the f64 actually holds -- not a re-parse of its
+    // shortest round-tripping decimal string. 0.1 the double is exactly
+    // 3602879701896397/2^55, not the decimal shorthand 1/10.
+    #[test]
+    fn into_exact_uses_binary_value_not_decimal_shorthand() {
+        let n = Real::Float(0.1);
+
+        let n = n.try_into_exact();
+
+        let (num, den) = rational_parts!(ok_or_fail!(n));
+        assert_eq!(
+            extract_or_fail!(num.precision, Precision::Single),
+            3602879701896397
+        );
+        assert_eq!(num.sign, Sign::Positive);
+        assert_eq!(
+            extract_or_fail!(den.precision, Precision::Single),
+            36028797018963968
+        );
+        assert_eq!(den.sign, Sign::Positive);
+    }
+
+    #[test]
+    fn into_exact_one_third_float() {
+        let n = Real::Float(1.0 / 3.0);
+
+        let n = n.try_into_exact();
+
+        let (num, den) = rational_parts!(ok_or_fail!(n));
+        assert_eq!(
+            extract_or_fail!(num.precision, Precision::Single),
+            6004799503160661
+        );
+        assert_eq!(num.sign, Sign::Positive);
+        assert_eq!(
+            extract_or_fail!(den.precision, Precision::Single),
+            18014398509481984
+        );
+        assert_eq!(den.sign, Sign::Positive);
+    }
+
+    // Every finite non-integral f64 is exactly a dyadic rational (mantissa
+    // times a power of two), so its exact conversion's denominator must
+    // always be a power of two. A decimal-string round trip instead produces
+    // powers of ten, which fails this invariant for any non-terminating
+    // binary fraction.
+    #[test]
+    fn into_exact_denominator_is_always_a_power_of_two() {
+        let cases = [0.1, 0.2, 1.0 / 3.0, 4.23452e-2];
+        for case in cases {
+            let n = Real::Float(case);
+
+            let n = n.try_into_exact();
+
+            let (_, den) = rational_parts!(ok_or_fail!(n));
+            let d = extract_or_fail!(den.precision, Precision::Single);
+            assert_eq!(d & (d - 1), 0, "denominator {d} is not a power of two");
+        }
+    }
+
     #[test]
     fn into_exact_zero() {
         let n = Real::Float(0.0);
@@ -3444,12 +3506,26 @@ mod equivalence {
         assert!(!a.is_eqv(&b));
     }
 
+    // R7RS: eqv? must return #f for inexact numbers that are distinguishable
+    // by eqv?-preserving operations. 0.0 and -0.0 are distinguishable (e.g.
+    // (/ 1.0 0.0) => +inf.0 vs (/ 1.0 -0.0) => -inf.0), so they are not eqv?.
     #[test]
-    fn inexact_zeros_are_equivalent() {
+    fn inexact_zeros_of_opposite_sign_not_equivalent() {
         let a = Number::real(0.0);
         let b = Number::real(-0.0);
 
-        assert!(a.is_eqv(&b));
+        assert!(!a.is_eqv(&b));
+    }
+
+    #[test]
+    fn matching_inexact_zeros_are_equivalent() {
+        let cases = [(0.0, 0.0), (-0.0, -0.0)];
+        for (a, b) in cases {
+            let a = Number::real(a);
+            let b = Number::real(b);
+
+            assert!(a.is_eqv(&b));
+        }
     }
 
     #[test]
@@ -3623,6 +3699,20 @@ mod equality {
 
         assert_eq!(q, f);
         assert_eq!(f, q);
+    }
+
+    // 1/3 is not exactly representable in binary floating point; the
+    // nearest f64 (6004799503160661/2^54) is strictly less than the exact
+    // rational 1/3, so they must not compare equal. Comparing by coercing
+    // the rational down to a float (losing precision) instead of comparing
+    // exactly is the same root bug as the inexact->exact conversion above.
+    #[test]
+    fn rational_not_equal_to_nearest_float() {
+        let q = ok_or_fail!(Real::reduce(1, 3));
+        let f = Real::Float(1.0 / 3.0);
+
+        assert_ne!(q, f);
+        assert_ne!(f, q);
     }
 
     #[test]

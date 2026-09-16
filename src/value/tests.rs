@@ -1871,6 +1871,19 @@ mod equivalence {
         assert!(lst.is(&lst));
     }
 
+    // R7RS: eqv?/equal? must distinguish 0.0 from -0.0 -- they are
+    // operationally distinguishable inexact numbers (see number::tests
+    // ::equivalence::inexact_zeros_of_opposite_sign_not_equivalent for the
+    // Number-level version of this bug).
+    #[test]
+    fn signed_zero_values_are_not_equivalent() {
+        let a = Value::real(0.0);
+        let b = Value::real(-0.0);
+
+        assert!(!a.is_eqv(&b));
+        assert!(a != b);
+    }
+
     #[test]
     fn same_characters_are_equivalent() {
         let a = Value::Character('a');
