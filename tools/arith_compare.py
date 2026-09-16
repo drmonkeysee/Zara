@@ -413,8 +413,6 @@ sec(
 # 2. Generation
 # ---------------------------------------------------------------------------
 
-MARKER_RE = re.compile(r"^@@(\d+)$")
-
 # Chez lacks these R7RS names at the top level (no r7rs libs installed);
 # shim them in plain Scheme so the comparison is meaningful. Also used to
 # annotate affected rows in the report.
@@ -455,12 +453,13 @@ NEUTRAL_PRELUDE = """
 """.strip()
 
 
-def build_script(prelude: str, cases: list[Case]) -> str:
-    lines = [prelude, ""]
-    for i, c in enumerate(cases):
-        lines.append(f'(display "@@{i}")(newline)(zflush)')
-        lines.append(f"(display {c.expr})(newline)(zflush)")
-    return "\n".join(lines) + "\n"
+def build_case_script(prelude: str, case: Case) -> str:
+    """One case per process (see module docstring / section 3 below for why):
+    just the prelude plus a single display -- no @@N marker is needed since
+    the whole process's stdout belongs to this one case, and nothing else
+    can run after it to require a resume point.
+    """
+    return f"{prelude}\n\n(display {case.expr})(newline)\n"
 
 
 def write_neutral_scm(path: Path, cases: list[Case]) -> None:
@@ -475,7 +474,16 @@ def write_neutral_scm(path: Path, cases: list[Case]) -> None:
 
 
 # ---------------------------------------------------------------------------
-# 3. Running - resume-on-crash loop
+# 3. Running - one isolated process per case
+#
+# Each case gets its own subprocess rather than being batched into one script
+# with the rest of its section. Zara (like most Schemes run non-interactively)
+# aborts the whole file on the first unhandled top-level exception, so a
+# batched run's later cases silently never execute; a crash classifier that
+# then scans the *whole* accumulated output for clues ends up blaming the
+# next case for a completely unrelated earlier failure. One process per case
+# means classify_crash's input is always exactly that case's own output --
+# slower (up to len(cases) * 3 process spawns), but unambiguous.
 # ---------------------------------------------------------------------------
 
 
@@ -501,20 +509,6 @@ def classify_crash(stdout: str, stderr: str, returncode: int, timed_out: bool) -
     return Result("CRASH", msg)
 
 
-def parse_markers(stdout: str) -> dict[int, list[str]]:
-    """Split stdout into blocks keyed by case index based on @@N markers."""
-    blocks: dict[int, list[str]] = {}
-    current: int | None = None
-    for line in stdout.splitlines():
-        m = MARKER_RE.match(line)
-        if m:
-            current = int(m.group(1))
-            blocks[current] = []
-        elif current is not None:
-            blocks[current].append(line)
-    return blocks
-
-
 def run_one(cmd: list[str], cwd: Path, timeout: float) -> tuple[str, str, int, bool]:
     try:
         proc = subprocess.run(
@@ -525,6 +519,28 @@ def run_one(cmd: list[str], cwd: Path, timeout: float) -> tuple[str, str, int, b
         return (e.stdout or ""), (e.stderr or ""), -1, True
 
 
+def run_one_case(
+    name: str,
+    cmd_prefix: list[str],
+    prelude: str,
+    case: Case,
+    idx: int,
+    workdir: Path,
+    timeout: float,
+) -> Result:
+    script = build_case_script(prelude, case)
+    scm_path = workdir / f"gen_{name}_{idx}.scm"
+    scm_path.write_text(script)
+
+    stdout, stderr, rc, timed_out = run_one(cmd_prefix + [str(scm_path)], workdir, timeout)
+    if not timed_out:
+        # first non-empty line is the result; extra lines ignored
+        nonempty = [ln for ln in stdout.splitlines() if ln.strip() != ""]
+        if nonempty:
+            return Result("OK", nonempty[0])
+    return classify_crash(stdout, stderr, rc, timed_out)
+
+
 def run_interpreter(
     name: str,
     cmd_prefix: list[str],
@@ -532,60 +548,11 @@ def run_interpreter(
     cases: list[Case],
     workdir: Path,
     timeout: float,
-    max_restarts: int,
 ) -> list[Result]:
-    results: list[Result | None] = [None] * len(cases)
-    remaining = list(range(len(cases)))
-    restarts = 0
-    scm_path = workdir / f"gen_{name}.scm"
-
-    while remaining:
-        restarts += 1
-        if restarts > max_restarts:
-            for idx in remaining:
-                results[idx] = Result("CRASH", "max-restarts exceeded")
-            break
-
-        subset = [cases[i] for i in remaining]
-        script = build_script(prelude, subset)
-        scm_path.write_text(script)
-
-        stdout, stderr, rc, timed_out = run_one(
-            cmd_prefix + [str(scm_path)], workdir, timeout
-        )
-        blocks = parse_markers(stdout)
-
-        # local index within `subset` -> global index is remaining[local]
-        resolved_local: set[int] = set()
-        for local_idx in range(len(subset)):
-            block = blocks.get(local_idx)
-            if block is None:
-                continue
-            # first non-empty line is the result; extra lines ignored
-            nonempty = [ln for ln in block if ln.strip() != ""]
-            if nonempty:
-                results[remaining[local_idx]] = Result("OK", nonempty[0])
-                resolved_local.add(local_idx)
-
-        if len(resolved_local) == len(subset):
-            remaining = []
-            break
-
-        # Find first unresolved local index -> that's where it crashed.
-        first_unresolved = min(set(range(len(subset))) - resolved_local)
-        crash_idx = remaining[first_unresolved]
-        results[crash_idx] = classify_crash(stdout, stderr, rc, timed_out)
-
-        if timed_out:
-            # Stop this interpreter entirely; mark the rest TIMEOUT too.
-            for local_idx in range(first_unresolved + 1, len(subset)):
-                results[remaining[local_idx]] = Result("TIMEOUT")
-            remaining = []
-            break
-
-        remaining = remaining[first_unresolved + 1 :]
-
-    return [r if r is not None else Result("CRASH", "unresolved") for r in results], restarts
+    return [
+        run_one_case(name, cmd_prefix, prelude, case, i, workdir, timeout)
+        for i, case in enumerate(cases)
+    ]
 
 
 # ---------------------------------------------------------------------------
@@ -677,7 +644,6 @@ def make_report(
     cases: list[Case],
     results: dict[str, list[Result]],
     have: set[str],
-    restarts: dict[str, int],
     width: int,
 ) -> str:
     out = []
@@ -800,9 +766,7 @@ def make_report(
 
     out.append("")
     for name in ("zara", "chez", "guile"):
-        if name in have:
-            out.append(f"{name} restarts: {restarts.get(name, 0)}")
-        else:
+        if name not in have:
             out.append(f"{name}: not available (n/a)")
 
     if "chez" in have:
@@ -860,14 +824,13 @@ def main() -> int:
     ap.add_argument(
         "--only", action="append", default=[], help="only run sections matching this substring (repeatable)"
     )
-    ap.add_argument("--keep", type=Path, help="keep generated per-interpreter .scm files in this dir")
+    ap.add_argument("--keep", type=Path, help="keep generated per-case .scm files in this dir")
     ap.add_argument("--no-build", action="store_true", help="skip cargo build")
     ap.add_argument("--zara", help="path to zara binary")
     ap.add_argument("--chez", default="chez", help="chez command/path")
     ap.add_argument("--guile", default="guile", help="guile command/path")
     ap.add_argument("--timeout", type=float, default=20.0)
     ap.add_argument("--width", type=int, default=200)
-    ap.add_argument("--max-restarts", type=int, default=250)
     args = ap.parse_args()
 
     cases = CASES
@@ -918,42 +881,37 @@ def main() -> int:
     write_neutral_scm(SCRIPT_DIR / "arith_edge.scm", CASES)
 
     results: dict[str, list[Result]] = {}
-    restarts: dict[str, int] = {}
 
     if "zara" in have:
         print("running zara...", file=sys.stderr)
-        results["zara"], restarts["zara"] = run_interpreter(
-            "zara", [zara_bin], ZARA_PRELUDE, cases, workdir, args.timeout, args.max_restarts
+        results["zara"] = run_interpreter(
+            "zara", [zara_bin], ZARA_PRELUDE, cases, workdir, args.timeout
         )
     else:
         results["zara"] = [Result("NA") for _ in cases]
-        restarts["zara"] = 0
 
     if "chez" in have:
         print("running chez...", file=sys.stderr)
-        results["chez"], restarts["chez"] = run_interpreter(
-            "chez", [chez_bin, "--script"], CHEZ_PRELUDE, cases, workdir, args.timeout, args.max_restarts
+        results["chez"] = run_interpreter(
+            "chez", [chez_bin, "--script"], CHEZ_PRELUDE, cases, workdir, args.timeout
         )
     else:
         results["chez"] = [Result("NA") for _ in cases]
-        restarts["chez"] = 0
 
     if "guile" in have:
         print("running guile...", file=sys.stderr)
-        results["guile"], restarts["guile"] = run_interpreter(
+        results["guile"] = run_interpreter(
             "guile",
             [guile_bin, "--r7rs", "--no-auto-compile", "-s"],
             GUILE_PRELUDE,
             cases,
             workdir,
             args.timeout,
-            args.max_restarts,
         )
     else:
         results["guile"] = [Result("NA") for _ in cases]
-        restarts["guile"] = 0
 
-    report = make_report(cases, results, have, restarts, args.width)
+    report = make_report(cases, results, have, args.width)
     print(report)
 
     if args.md:
