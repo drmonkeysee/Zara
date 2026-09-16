@@ -493,6 +493,16 @@ class Result:
     text: str = ""
 
 
+# Zara doesn't crash the process on an unhandled unbound-variable reference --
+# it prints the condition object as an ordinary displayed value and exits 0
+# (see tools/arith_compare.py's run_one_case). That means it never reaches
+# classify_crash's "unbound variable" pattern match below, which only fires
+# on a genuine crash (empty stdout). Recognize the same case from the
+# displayed value itself so it's still counted/reported as UNBOUND rather
+# than as a same-answer-format "OK" value that merely disagrees.
+DISPLAYED_UNBOUND_RE = re.compile(r'^#<environment-error "(unbound variable: .+)">$')
+
+
 def classify_crash(stdout: str, stderr: str, returncode: int, timed_out: bool) -> Result:
     if timed_out:
         return Result("TIMEOUT")
@@ -537,7 +547,11 @@ def run_one_case(
         # first non-empty line is the result; extra lines ignored
         nonempty = [ln for ln in stdout.splitlines() if ln.strip() != ""]
         if nonempty:
-            return Result("OK", nonempty[0])
+            text = nonempty[0]
+            m = DISPLAYED_UNBOUND_RE.match(text)
+            if m:
+                return Result("UNBOUND", m.group(1))
+            return Result("OK", text)
     return classify_crash(stdout, stderr, rc, timed_out)
 
 
