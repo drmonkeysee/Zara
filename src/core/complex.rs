@@ -2,7 +2,7 @@
 use super::FIRST_ARG_LABEL;
 use crate::{
     eval::{EvalResult, Frame},
-    number::{Complex, Number, NumericTypeName, Real},
+    number::{Number, NumericTypeName, Real},
     value::{Condition, TypeName, Value},
 };
 
@@ -24,21 +24,19 @@ fn make_polar(args: &[Value], _env: &Frame) -> EvalResult {
 }
 
 fn get_real(args: &[Value], _env: &Frame) -> EvalResult {
-    get_complex_part(super::first(args), Complex::into_real, Real::clone)
+    get_complex_part(super::first(args), Number::into_real)
 }
 
 fn get_imag(args: &[Value], _env: &Frame) -> EvalResult {
-    get_complex_part(super::first(args), Complex::into_imag, |_| Real::zero())
+    get_complex_part(super::first(args), Number::into_imag)
 }
 
 fn get_mag(args: &[Value], _env: &Frame) -> EvalResult {
-    get_complex_part(super::first(args), Complex::into_magnitude, |r| {
-        r.clone().into_abs()
-    })
+    get_complex_part(super::first(args), Number::into_magnitude)
 }
 
 fn get_angle(args: &[Value], _env: &Frame) -> EvalResult {
-    get_complex_part(super::first(args), Complex::into_angle, |_| Real::zero())
+    get_complex_part(super::first(args), Number::into_angle)
 }
 
 fn make_complex(x: &Value, y: &Value, ctor: impl FnOnce(Real, Real) -> Number) -> EvalResult {
@@ -69,16 +67,9 @@ fn make_complex(x: &Value, y: &Value, ctor: impl FnOnce(Real, Real) -> Number) -
     Ok(Value::Number(ctor(r.clone(), i.clone())))
 }
 
-fn get_complex_part(
-    arg: &Value,
-    get: impl FnOnce(Complex) -> Real,
-    fallback: impl FnOnce(&Real) -> Real,
-) -> EvalResult {
+fn get_complex_part(arg: &Value, get: impl FnOnce(Number) -> Real) -> EvalResult {
     if let Value::Number(x) = arg {
-        Ok(Value::real(match x {
-            Number::Complex(z) => get(z.clone()),
-            Number::Real(r) => fallback(r),
-        }))
+        Ok(Value::real(get(x.clone())))
     } else {
         Err(super::invalid_target(TypeName::NUMBER, arg))
     }
@@ -186,8 +177,6 @@ mod tests {
         assert_eq!(r.as_datum().to_string(), "0");
     }
 
-    // R7RS: (angle x) is the argument of x as a complex number; for a
-    // negative real z = x + 0i (x < 0), arg(z) = pi, not 0.
     #[test]
     fn get_angle_negative_real() {
         let args = [Value::real(-8)];

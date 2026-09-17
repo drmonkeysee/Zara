@@ -83,6 +83,7 @@ mod tests;
 use crate::txt::TxtSpan;
 use std::{
     cmp::Ordering,
+    f64,
     fmt::{self, Display, Formatter, Write},
     num::{IntErrorKind, ParseFloatError, ParseIntError},
     ops::{Add, Div, Mul, Sub},
@@ -254,6 +255,42 @@ impl Number {
         }
     }
 
+    pub(crate) fn into_real(self) -> Real {
+        match self {
+            Self::Complex(z) => z.into_real(),
+            Self::Real(r) => r,
+        }
+    }
+
+    pub(crate) fn into_imag(self) -> Real {
+        match self {
+            Self::Complex(z) => z.into_imag(),
+            Self::Real(_) => Real::zero(),
+        }
+    }
+
+    pub(crate) fn into_magnitude(self) -> Real {
+        match self {
+            Self::Complex(z) => z.into_magnitude(),
+            // complex magnitude of a real is just √r² = r
+            Self::Real(r) => r,
+        }
+    }
+
+    pub(crate) fn into_angle(self) -> Real {
+        match self {
+            Self::Complex(z) => z.into_angle(),
+            Self::Real(r) => {
+                // positive real angles are always zero, negative are always π
+                if r.is_positive() {
+                    Real::zero()
+                } else {
+                    f64::consts::PI.into()
+                }
+            }
+        }
+    }
+
     pub(crate) fn into_complex_conjugate(self) -> Self {
         match self {
             Self::Complex(z) => z.into_conjugate(),
@@ -344,20 +381,20 @@ try_int_conversion!(usize, try_to_usize);
 pub(crate) struct Complex(Box<(Real, Real)>);
 
 impl Complex {
-    pub(crate) fn into_real(self) -> Real {
+    fn into_real(self) -> Real {
         self.0.0
     }
 
-    pub(crate) fn into_imag(self) -> Real {
+    fn into_imag(self) -> Real {
         self.0.1
     }
 
-    pub(crate) fn into_magnitude(self) -> Real {
+    fn into_magnitude(self) -> Real {
         let (x, y) = self.into_parts();
         Real::Float(x.to_float().hypot(y.to_float()))
     }
 
-    pub(crate) fn into_angle(self) -> Real {
+    fn into_angle(self) -> Real {
         let (x, y) = self.into_parts();
         Real::Float(y.to_float().atan2(x.to_float()))
     }
