@@ -2,12 +2,12 @@ use super::{FIRST_ARG_LABEL, MAX_ARITY, first, invalid_target};
 use crate::{
     Exception,
     eval::{EvalResult, Frame},
-    number::{Integer, Number, NumericTypeName, Real},
+    number::{Integer, NumResult, Number, NumericTypeName, Real},
     value::{Condition, TypeName, Value},
 };
 use std::{
     fmt::Display,
-    ops::{Add, Mul},
+    ops::{Add, Div, Mul},
 };
 
 pub(super) fn load(env: &Frame) {
@@ -142,51 +142,15 @@ fn nums_mult(args: &[Value], _env: &Frame) -> EvalResult {
 }
 
 fn nums_sub(args: &[Value], _env: &Frame) -> EvalResult {
-    let arg = first(args);
-    let Value::Number(x) = arg else {
-        return Err(invalid_target(TypeName::NUMBER, arg));
-    };
-    if args.len() == 1 {
-        Ok(Value::Number(x.clone().into_negated()))
-    } else {
-        args.iter()
-            .skip(1)
-            .enumerate()
-            .try_fold(x.clone(), |sum, (idx, v)| {
-                if let Value::Number(x) = v {
-                    Ok(sum + x.clone().into_negated())
-                } else {
-                    Err(Condition::arg_error(idx + 1, TypeName::NUMBER, v).into())
-                }
-            })
-            .map(Value::Number)
-    }
+    inverse_arithmetic(
+        args,
+        |x| Ok(x.into_negated()),
+        |a, b| Ok(a + b.into_negated()),
+    )
 }
 
 fn nums_div(args: &[Value], _env: &Frame) -> EvalResult {
-    let arg = first(args);
-    let Value::Number(x) = arg else {
-        return Err(invalid_target(TypeName::NUMBER, arg));
-    };
-    if args.len() == 1 {
-        x.clone().try_into_reciprocal().map_or_else(
-            |err| Err(Condition::value_error(err, arg).into()),
-            |x| Ok(Value::Number(x)),
-        )
-    } else {
-        args.iter()
-            .skip(1)
-            .enumerate()
-            .try_fold(x.clone(), |sum, (idx, v)| {
-                if let Value::Number(x) = v {
-                    Ok((sum / x.clone())
-                        .map_err(|err| Exception::signal(Condition::value_error(err, v)))?)
-                } else {
-                    Err(Condition::arg_error(idx + 1, TypeName::NUMBER, v).into())
-                }
-            })
-            .map(Value::Number)
-    }
+    inverse_arithmetic(args, Number::try_into_reciprocal, Number::div)
 }
 
 fn abs(args: &[Value], _env: &Frame) -> EvalResult {
@@ -312,6 +276,36 @@ fn commutative_arithmetic(
             }
         })
         .map(Value::Number)
+}
+
+fn inverse_arithmetic(
+    args: &[Value],
+    inverse: impl FnOnce(Number) -> NumResult,
+    op: impl Fn(Number, Number) -> NumResult,
+) -> EvalResult {
+    let arg = first(args);
+    let Value::Number(x) = arg else {
+        return Err(invalid_target(TypeName::NUMBER, arg));
+    };
+    if args.len() == 1 {
+        inverse(x.clone()).map_or_else(
+            |err| Err(Condition::value_error(err, arg).into()),
+            |x| Ok(Value::Number(x)),
+        )
+    } else {
+        args.iter()
+            .skip(1)
+            .enumerate()
+            .try_fold(x.clone(), |sum, (idx, v)| {
+                if let Value::Number(x) = v {
+                    Ok(op(sum, x.clone())
+                        .map_err(|err| Exception::signal(Condition::value_error(err, v)))?)
+                } else {
+                    Err(Condition::arg_error(idx + 1, TypeName::NUMBER, v).into())
+                }
+            })
+            .map(Value::Number)
+    }
 }
 
 fn exact_factor_op(
