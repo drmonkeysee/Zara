@@ -648,6 +648,13 @@ impl Real {
         (-FMAX_INT).into()
     }
 
+    pub(crate) fn is_nan(&self) -> bool {
+        match self {
+            Self::Float(f) => f.is_nan(),
+            _ => false,
+        }
+    }
+
     fn is_eqv(&self, other: &Self) -> bool {
         match (self, other) {
             (Self::Float(a), Self::Float(b)) if a.is_nan() && b.is_nan() => true,
@@ -682,13 +689,6 @@ impl Real {
     fn is_infinite(&self) -> bool {
         match self {
             Self::Float(f) => f.is_infinite(),
-            _ => false,
-        }
-    }
-
-    fn is_nan(&self) -> bool {
-        match self {
-            Self::Float(f) => f.is_nan(),
             _ => false,
         }
     }

@@ -253,7 +253,8 @@ fn real_acc_predicate<'a>(
         .try_fold(r.clone(), |mut acc, (idx, v)| {
             let r = arg_to_real(v, idx + 1, NumericTypeName::REAL)?;
             float_taint = float_taint || r.is_inexact();
-            if pred(&acc, r) {
+            // nan poisons max/min as it renders the ordering of the set undefined
+            if pred(&acc, r) || r.is_nan() {
                 acc = r.clone();
             }
             Ok(acc)
@@ -628,9 +629,7 @@ mod tests {
 
     // NaN must propagate through max/min (R6RS explicitly requires it, and
     // every IEEE-754/major-Scheme convention agrees): the max/min of a set
-    // containing an undefined element is undefined, i.e. NaN. A plain `bool`
-    // predicate can't tell "not less than" apart from "unordered", so a naive
-    // fold silently drops the NaN operand instead of propagating it.
+    // containing an undefined element is undefined, i.e. NaN.
     #[test]
     fn max_with_nan_later_arg_is_nan() {
         let args = [Value::real(1.0), Value::real(f64::NAN)];
