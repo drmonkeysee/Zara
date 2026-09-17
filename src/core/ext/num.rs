@@ -7,28 +7,22 @@ use crate::{
 pub(super) fn load(env: &Frame) {
     super::bind_intrinsic(env, "complex-conjugate", 1..1, conjugate);
 
+    env.scope
+        .bind(env.sym.get("fl-max"), Value::Number(Number::float_max()));
+    env.scope
+        .bind(env.sym.get("fl-min"), Value::Number(Number::float_min()));
     env.scope.bind(
-        env.sym.get("inexact-max"),
-        Value::Number(Number::float_max()),
-    );
-    env.scope.bind(
-        env.sym.get("inexact-min"),
-        Value::Number(Number::float_min()),
-    );
-    env.scope.bind(
-        env.sym.get("inexact-min-pos"),
+        env.sym.get("fl-min-pos"),
         Value::Number(Number::float_min_positive()),
     );
+    env.scope
+        .bind(env.sym.get("fl-epsilon"), Value::Number(Number::epsilon()));
     env.scope.bind(
-        env.sym.get("inexact-epsilon"),
-        Value::Number(Number::epsilon()),
-    );
-    env.scope.bind(
-        env.sym.get("inexact-max-exact"),
+        env.sym.get("fl-max-int"),
         Value::Number(Number::float_max_int()),
     );
     env.scope.bind(
-        env.sym.get("inexact-min-exact"),
+        env.sym.get("fl-min-int"),
         Value::Number(Number::float_min_int()),
     );
 }
