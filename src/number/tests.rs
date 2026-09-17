@@ -3506,15 +3506,13 @@ mod equivalence {
         assert!(!a.is_eqv(&b));
     }
 
-    // R7RS: eqv? must return #f for inexact numbers that are distinguishable
-    // by eqv?-preserving operations. 0.0 and -0.0 are distinguishable (e.g.
-    // (/ 1.0 0.0) => +inf.0 vs (/ 1.0 -0.0) => -inf.0), so they are not eqv?.
     #[test]
     fn inexact_zeros_of_opposite_sign_not_equivalent() {
         let a = Number::real(0.0);
         let b = Number::real(-0.0);
 
         assert!(!a.is_eqv(&b));
+        assert!(!b.is_eqv(&a));
     }
 
     #[test]

@@ -651,6 +651,11 @@ impl Real {
     fn is_eqv(&self, other: &Self) -> bool {
         match (self, other) {
             (Self::Float(a), Self::Float(b)) if a.is_nan() && b.is_nan() => true,
+            (Self::Float(a), Self::Float(b))
+                if *a == 0.0 && *b == 0.0 && a.signum() != b.signum() =>
+            {
+                false
+            }
             #[allow(
                 clippy::float_cmp,
                 reason = "underlying implementation does not hide epsilon inequality"
