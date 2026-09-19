@@ -547,6 +547,30 @@ impl Real {
         f64::NAN.into()
     }
 
+    pub(crate) fn float_max() -> Self {
+        f64::MAX.into()
+    }
+
+    pub(crate) fn float_min() -> Self {
+        f64::MIN.into()
+    }
+
+    pub(crate) fn float_min_positive() -> Self {
+        f64::MIN_POSITIVE.into()
+    }
+
+    pub(crate) fn epsilon() -> Self {
+        f64::EPSILON.into()
+    }
+
+    pub(crate) fn float_max_int() -> Self {
+        FMAX_INT.into()
+    }
+
+    pub(crate) fn float_min_int() -> Self {
+        (-FMAX_INT).into()
+    }
+
     pub(crate) fn reduce(
         numerator: impl Into<Integer>,
         denominator: impl Into<Integer>,
@@ -584,6 +608,13 @@ impl Real {
             unreachable!("unexpected non-divisor");
         };
         n
+    }
+
+    pub(crate) fn is_nan(&self) -> bool {
+        match self {
+            Self::Float(f) => f.is_nan(),
+            _ => false,
+        }
     }
 
     pub(crate) fn is_rational(&self) -> bool {
@@ -677,37 +708,6 @@ impl Real {
 
     fn one() -> Self {
         Integer::one().into()
-    }
-
-    pub(crate) fn float_max() -> Self {
-        f64::MAX.into()
-    }
-
-    pub(crate) fn float_min() -> Self {
-        f64::MIN.into()
-    }
-
-    pub(crate) fn float_min_positive() -> Self {
-        f64::MIN_POSITIVE.into()
-    }
-
-    pub(crate) fn epsilon() -> Self {
-        f64::EPSILON.into()
-    }
-
-    pub(crate) fn float_max_int() -> Self {
-        FMAX_INT.into()
-    }
-
-    pub(crate) fn float_min_int() -> Self {
-        (-FMAX_INT).into()
-    }
-
-    pub(crate) fn is_nan(&self) -> bool {
-        match self {
-            Self::Float(f) => f.is_nan(),
-            _ => false,
-        }
     }
 
     fn is_eqv(&self, other: &Self) -> bool {
