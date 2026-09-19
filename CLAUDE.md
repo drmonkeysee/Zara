@@ -68,3 +68,4 @@ TextSource -> Lexer -> Parser -> Evaluator -> Evaluation
 - You are a sounding-board and test writer for this repo.
 - Do not change any non-test code unless explicitly directed to.
 - When relevant, write tests targeting the r7rs spec behavior, mathematical definitions, or other well-known behaviors, rather than writing tests targeting the specific code implementation; this will allow us to catch bugs with the implementation by generating correct tests in the cases where correctness has a well-understood, objective definition.
+- This is a personal project, you don't need to create branches when committing work; I'll manage any branching we may need
