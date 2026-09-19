@@ -668,6 +668,132 @@ mod tests {
         assert_eq!(v.as_datum().to_string(), "+nan.0");
     }
 
+    // R7RS-small is silent on max/min tie-breaking between numerically-equal
+    // signed zeros (-0.0 = 0.0 under `=`, so either is a "legal" maximum).
+    // IEEE 754-2019 SS9.6 maximum/minimum settle it by ordering -0 < +0, and
+    // that convention is what these tests assert. Zara currently breaks ties
+    // by argument position (first arg wins) rather than by sign, so several
+    // of these fail today -- that is the bug this test block documents, not
+    // a mistake in the test.
+    #[test]
+    fn max_negative_zero_then_positive_zero() {
+        let args = [Value::real(-0.0), Value::real(0.0)];
+        let env = TestEnv::default();
+
+        let r = nums_max(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_matches!(v, Value::Number(Number::Real(Real::Float(_))));
+        assert_eq!(v.as_datum().to_string(), "0.0");
+    }
+
+    #[test]
+    fn max_positive_zero_then_negative_zero() {
+        let args = [Value::real(0.0), Value::real(-0.0)];
+        let env = TestEnv::default();
+
+        let r = nums_max(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_matches!(v, Value::Number(Number::Real(Real::Float(_))));
+        assert_eq!(v.as_datum().to_string(), "0.0");
+    }
+
+    #[test]
+    fn max_exact_zero_then_negative_zero() {
+        let args = [Value::real(0), Value::real(-0.0)];
+        let env = TestEnv::default();
+
+        let r = nums_max(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_matches!(v, Value::Number(Number::Real(Real::Float(_))));
+        assert_eq!(v.as_datum().to_string(), "0.0");
+    }
+
+    #[test]
+    fn max_negative_zero_then_exact_zero() {
+        let args = [Value::real(-0.0), Value::real(0)];
+        let env = TestEnv::default();
+
+        let r = nums_max(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_matches!(v, Value::Number(Number::Real(Real::Float(_))));
+        assert_eq!(v.as_datum().to_string(), "0.0");
+    }
+
+    #[test]
+    fn max_all_negative_zeros() {
+        let args = [Value::real(-0.0), Value::real(-0.0)];
+        let env = TestEnv::default();
+
+        let r = nums_max(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_matches!(v, Value::Number(Number::Real(Real::Float(_))));
+        assert_eq!(v.as_datum().to_string(), "-0.0");
+    }
+
+    #[test]
+    fn max_signed_zeros_among_many_args() {
+        let args = [Value::real(-0.0), Value::real(0.0), Value::real(-0.0)];
+        let env = TestEnv::default();
+
+        let r = nums_max(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_matches!(v, Value::Number(Number::Real(Real::Float(_))));
+        assert_eq!(v.as_datum().to_string(), "0.0");
+    }
+
+    #[test]
+    fn max_single_negative_zero_preserves_sign() {
+        let args = [Value::real(-0.0)];
+        let env = TestEnv::default();
+
+        let r = nums_max(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_matches!(v, Value::Number(Number::Real(Real::Float(_))));
+        assert_eq!(v.as_datum().to_string(), "-0.0");
+    }
+
+    #[test]
+    fn max_negative_zero_loses_to_positive() {
+        let args = [Value::real(-0.0), Value::real(1)];
+        let env = TestEnv::default();
+
+        let r = nums_max(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_matches!(v, Value::Number(Number::Real(Real::Float(_))));
+        assert_eq!(v.as_datum().to_string(), "1.0");
+    }
+
+    #[test]
+    fn max_negative_zero_beats_negative() {
+        let args = [Value::real(-1), Value::real(-0.0)];
+        let env = TestEnv::default();
+
+        let r = nums_max(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_matches!(v, Value::Number(Number::Real(Real::Float(_))));
+        assert_eq!(v.as_datum().to_string(), "-0.0");
+    }
+
+    #[test]
+    fn max_negative_zero_with_nan_is_nan() {
+        let args = [Value::real(-0.0), Value::real(f64::NAN)];
+        let env = TestEnv::default();
+
+        let r = nums_max(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_eq!(v.as_datum().to_string(), "+nan.0");
+    }
+
     #[test]
     fn min_of_integers() {
         let args = [Value::real(3), Value::real(7), Value::real(5)];
@@ -707,6 +833,115 @@ mod tests {
     #[test]
     fn min_with_nan_first_arg_is_nan() {
         let args = [Value::real(f64::NAN), Value::real(1.0)];
+        let env = TestEnv::default();
+
+        let r = nums_min(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_eq!(v.as_datum().to_string(), "+nan.0");
+    }
+
+    // See the max_negative_zero_* comment above -- min ties on signed zeros
+    // are decided the same IEEE 754-2019 way (-0 < +0), so -0.0 must win.
+    #[test]
+    fn min_positive_zero_then_negative_zero() {
+        let args = [Value::real(0.0), Value::real(-0.0)];
+        let env = TestEnv::default();
+
+        let r = nums_min(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_matches!(v, Value::Number(Number::Real(Real::Float(_))));
+        assert_eq!(v.as_datum().to_string(), "-0.0");
+    }
+
+    #[test]
+    fn min_negative_zero_then_positive_zero() {
+        let args = [Value::real(-0.0), Value::real(0.0)];
+        let env = TestEnv::default();
+
+        let r = nums_min(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_matches!(v, Value::Number(Number::Real(Real::Float(_))));
+        assert_eq!(v.as_datum().to_string(), "-0.0");
+    }
+
+    #[test]
+    fn min_exact_zero_then_negative_zero() {
+        let args = [Value::real(0), Value::real(-0.0)];
+        let env = TestEnv::default();
+
+        let r = nums_min(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_matches!(v, Value::Number(Number::Real(Real::Float(_))));
+        assert_eq!(v.as_datum().to_string(), "-0.0");
+    }
+
+    #[test]
+    fn min_negative_zero_then_exact_zero() {
+        let args = [Value::real(-0.0), Value::real(0)];
+        let env = TestEnv::default();
+
+        let r = nums_min(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_matches!(v, Value::Number(Number::Real(Real::Float(_))));
+        assert_eq!(v.as_datum().to_string(), "-0.0");
+    }
+
+    #[test]
+    fn min_all_positive_zeros() {
+        let args = [Value::real(0.0), Value::real(0.0)];
+        let env = TestEnv::default();
+
+        let r = nums_min(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_matches!(v, Value::Number(Number::Real(Real::Float(_))));
+        assert_eq!(v.as_datum().to_string(), "0.0");
+    }
+
+    #[test]
+    fn min_signed_zeros_among_many_args() {
+        let args = [Value::real(1), Value::real(0.0), Value::real(-0.0)];
+        let env = TestEnv::default();
+
+        let r = nums_min(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_matches!(v, Value::Number(Number::Real(Real::Float(_))));
+        assert_eq!(v.as_datum().to_string(), "-0.0");
+    }
+
+    #[test]
+    fn min_single_negative_zero_preserves_sign() {
+        let args = [Value::real(-0.0)];
+        let env = TestEnv::default();
+
+        let r = nums_min(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_matches!(v, Value::Number(Number::Real(Real::Float(_))));
+        assert_eq!(v.as_datum().to_string(), "-0.0");
+    }
+
+    #[test]
+    fn min_negative_zero_loses_to_negative() {
+        let args = [Value::real(0.0), Value::real(-1)];
+        let env = TestEnv::default();
+
+        let r = nums_min(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_matches!(v, Value::Number(Number::Real(Real::Float(_))));
+        assert_eq!(v.as_datum().to_string(), "-1.0");
+    }
+
+    #[test]
+    fn min_negative_zero_with_nan_is_nan() {
+        let args = [Value::real(-0.0), Value::real(f64::NAN)];
         let env = TestEnv::default();
 
         let r = nums_min(&args, &env.new_frame());
@@ -1266,6 +1501,37 @@ mod tests {
         assert_eq!(v.as_datum().to_string(), "0");
     }
 
+    // R7RS SS6.2.3 permits (but does not require) exact 0 times anything to
+    // be exact 0, and Zara takes that option -- exact zero short-circuits
+    // inexact contagion even when the other argument is NaN or infinite.
+    // This is a deliberate divergence from IEEE-754 float semantics (where
+    // 0 * NaN = NaN and 0 * inf = NaN) and from Guile, which returns NaN for
+    // both; Chez agrees with Zara. See the `Mul<Real> for Integer` impl in
+    // src/number.rs for the source of the shortcut.
+    #[test]
+    fn mult_exact_zero_with_nan_arg_is_exact_zero() {
+        let args = [Value::real(0), Value::real(f64::NAN)];
+        let env = TestEnv::default();
+
+        let r = nums_mult(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_matches!(v, Value::Number(Number::Real(Real::Integer(_))));
+        assert_eq!(v.as_datum().to_string(), "0");
+    }
+
+    #[test]
+    fn mult_exact_zero_with_infinity_arg_is_exact_zero() {
+        let args = [Value::real(0), Value::real(f64::INFINITY)];
+        let env = TestEnv::default();
+
+        let r = nums_mult(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_matches!(v, Value::Number(Number::Real(Real::Integer(_))));
+        assert_eq!(v.as_datum().to_string(), "0");
+    }
+
     #[test]
     fn mult_complex_arg() {
         let args = [Value::real(2), Value::Number(Number::complex(3, 4))];
@@ -1360,6 +1626,36 @@ mod tests {
         let v = ok_or_fail!(r);
         assert_matches!(v, Value::Number(Number::Real(Real::Integer(_))));
         assert_eq!(v.as_datum().to_string(), "0");
+    }
+
+    // Unlike `*` above, exact zero as the dividend still short-circuits
+    // inexact contagion when the divisor is an inexact zero or infinity --
+    // but NaN wins over the exact-zero shortcut here, so `(/ 0 +nan.0)` is
+    // `+nan.0`, not `0`. This is a deliberate `*` vs `/` asymmetry (see the
+    // `Div<Real> for Integer` impl in src/number.rs); Chez and Zara agree on
+    // the exact-zero cases, but Guile returns NaN for all of them.
+    #[test]
+    fn div_exact_zero_by_inexact_zero_is_exact_zero() {
+        let args = [Value::real(0), Value::real(0.0)];
+        let env = TestEnv::default();
+
+        let r = nums_div(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_matches!(v, Value::Number(Number::Real(Real::Integer(_))));
+        assert_eq!(v.as_datum().to_string(), "0");
+    }
+
+    #[test]
+    fn div_exact_zero_by_nan_is_nan() {
+        let args = [Value::real(0), Value::real(f64::NAN)];
+        let env = TestEnv::default();
+
+        let r = nums_div(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_matches!(v, Value::Number(Number::Real(Real::Float(_))));
+        assert_eq!(v.as_datum().to_string(), "+nan.0");
     }
 
     #[test]
