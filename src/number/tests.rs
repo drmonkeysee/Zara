@@ -1928,11 +1928,6 @@ mod float {
         assert_eq!(den.sign, Sign::Positive);
     }
 
-    // R7RS: inexact->exact "returns an exact representation of z... the
-    // exact number that is numerically closest to the argument", i.e. the
-    // *binary* value the f64 actually holds -- not a re-parse of its
-    // shortest round-tripping decimal string. 0.1 the double is exactly
-    // 3602879701896397/2^55, not the decimal shorthand 1/10.
     #[test]
     fn into_exact_uses_binary_value_not_decimal_shorthand() {
         let n = Real::Float(0.1);
@@ -1971,11 +1966,6 @@ mod float {
         assert_eq!(den.sign, Sign::Positive);
     }
 
-    // Every finite non-integral f64 is exactly a dyadic rational (mantissa
-    // times a power of two), so its exact conversion's denominator must
-    // always be a power of two. A decimal-string round trip instead produces
-    // powers of ten, which fails this invariant for any non-terminating
-    // binary fraction.
     #[test]
     fn into_exact_denominator_is_always_a_power_of_two() {
         let cases = [0.1, 0.2, 1.0 / 3.0, 4.23452e-2];
