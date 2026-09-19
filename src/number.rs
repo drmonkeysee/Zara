@@ -272,8 +272,8 @@ impl Number {
     pub(crate) fn into_magnitude(self) -> Real {
         match self {
             Self::Complex(z) => z.into_magnitude(),
-            // complex magnitude of a real is just √r² = r
-            Self::Real(r) => r,
+            // complex magnitude of a real is just √r² = |r|
+            Self::Real(r) => r.into_abs(),
         }
     }
 

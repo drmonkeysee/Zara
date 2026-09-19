@@ -166,6 +166,18 @@ mod tests {
     }
 
     #[test]
+    fn get_mag_negative_real() {
+        let args = [Value::real(-8)];
+        let env = TestEnv::default();
+
+        let v = get_mag(&args, &env.new_frame());
+
+        let r = ok_or_fail!(v);
+        assert_matches!(r, Value::Number(Number::Real(Real::Integer(_))));
+        assert_eq!(r.as_datum().to_string(), "8");
+    }
+
+    #[test]
     fn get_angle_real() {
         let args = [Value::real(8)];
         let env = TestEnv::default();
