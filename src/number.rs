@@ -105,7 +105,7 @@ use std::{
     f64,
     fmt::{self, Display, Formatter, Write},
     num::{IntErrorKind, ParseFloatError, ParseIntError},
-    ops::{Add, Div, Mul, Sub},
+    ops::{Add, Div, Mul, Neg, Sub},
     rc::Rc,
     result::Result,
 };
@@ -267,13 +267,6 @@ impl Number {
         }
     }
 
-    pub(crate) fn into_negated(self) -> Self {
-        match self {
-            Self::Complex(Complex(z)) => Self::complex(z.0.into_negated(), z.1.into_negated()),
-            Self::Real(r) => Self::real(r.into_negated()),
-        }
-    }
-
     pub(crate) fn into_real(self) -> Real {
         match self {
             Self::Complex(z) => z.into_real(),
@@ -340,6 +333,17 @@ impl PartialEq for Number {
             (Self::Complex(a), Self::Complex(b)) => a == b,
             (Self::Real(a), Self::Real(b)) => a == b,
             _ => false,
+        }
+    }
+}
+
+impl Neg for Number {
+    type Output = Self;
+
+    fn neg(self) -> Self::Output {
+        match self {
+            Self::Complex(Complex(z)) => Self::complex(-z.0, -z.1),
+            Self::Real(r) => Self::real(-r),
         }
     }
 }
@@ -424,7 +428,7 @@ impl Complex {
 
     fn into_conjugate(self) -> Number {
         let (x, y) = self.into_parts();
-        Number::complex(x, y.into_negated())
+        Number::complex(x, -y)
     }
 
     fn try_into_reciprocal(self) -> NumResult {
@@ -471,14 +475,14 @@ impl Div for Complex {
             let denom = (c.clone() * r.clone()) + d.clone();
             (
                 (((a.clone() * r.clone()) + b.clone()) / denom.clone())?,
-                (((b * r) + a.into_negated()) / denom)?,
+                (((b * r) + -a) / denom)?,
             )
         } else {
             let r = (d.clone() / c.clone())?;
             let denom = c.clone() + (d.clone() * r.clone());
             (
                 ((a.clone() + (b.clone() * r.clone())) / denom.clone())?,
-                ((b + (a * r).into_negated()) / denom)?,
+                ((b + -(a * r)) / denom)?,
             )
         };
         Ok(Number::complex(re, im))
@@ -512,7 +516,7 @@ impl Mul<Number> for Complex {
             Number::Real(r) => r.into_complex().into_parts(),
         };
         Number::complex(
-            (a.clone() * c.clone()) + (b.clone() * d.clone()).into_negated(),
+            (a.clone() * c.clone()) + -(b.clone() * d.clone()),
             (a * d) + (b * c),
         )
     }
@@ -801,14 +805,6 @@ impl Real {
         }
     }
 
-    fn into_negated(self) -> Self {
-        match self {
-            Self::Float(f) => (-f).into(),
-            Self::Integer(n) => n.into_negated().into(),
-            Self::Rational(q) => Self::Rational(q.into_negated()),
-        }
-    }
-
     fn into_complex(self) -> Complex {
         Complex((self, Self::zero()).into())
     }
@@ -840,6 +836,18 @@ impl PartialOrd for Real {
             Self::Float(f) => inexact_cmp_exact!(self, f, partial_cmp, other),
             Self::Integer(n) => n.partial_cmp(other),
             Self::Rational(q) => q.partial_cmp(other),
+        }
+    }
+}
+
+impl Neg for Real {
+    type Output = Self;
+
+    fn neg(self) -> Self::Output {
+        match self {
+            Self::Float(f) => (-f).into(),
+            Self::Integer(n) => (-n).into(),
+            Self::Rational(q) => Self::Rational(-q),
         }
     }
 }
@@ -940,10 +948,6 @@ impl Rational {
         self
     }
 
-    fn into_negated(self) -> Self {
-        Self((self.0.0.into_negated(), self.0.1).into())
-    }
-
     fn into_numerator(self) -> Integer {
         self.0.0
     }
@@ -973,6 +977,14 @@ impl Ord for Rational {
         let (a, b) = self.clone().into_parts();
         let (c, d) = other.clone().into_parts();
         (a * d).cmp(&(c * b))
+    }
+}
+
+impl Neg for Rational {
+    type Output = Self;
+
+    fn neg(self) -> Self::Output {
+        Self((-self.0.0, self.0.1).into())
     }
 }
 
@@ -1231,15 +1243,6 @@ impl Integer {
         self
     }
 
-    fn into_negated(mut self) -> Self {
-        match self.sign {
-            Sign::Negative => self.make_positive(),
-            Sign::Positive => self.make_negative(),
-            Sign::Zero => (),
-        }
-        self
-    }
-
     fn try_into_reciprocal(self) -> RealResult {
         Real::reduce(Self::one(), self)
     }
@@ -1261,6 +1264,19 @@ impl Ord for Integer {
                 mag
             }
         })
+    }
+}
+
+impl Neg for Integer {
+    type Output = Self;
+
+    fn neg(mut self) -> Self::Output {
+        match self.sign {
+            Sign::Negative => self.make_positive(),
+            Sign::Positive => self.make_negative(),
+            Sign::Zero => (),
+        }
+        self
     }
 }
 

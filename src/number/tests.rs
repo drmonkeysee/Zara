@@ -5758,7 +5758,7 @@ mod negate {
     fn integer_matrix() {
         let cases = [(4, "-4"), (-4, "4"), (0, "0")];
         for (n, expected) in cases {
-            let neg = Number::real(n).into_negated();
+            let neg = -Number::real(n);
 
             assert_eq!(neg.to_string(), expected);
         }
@@ -5766,14 +5766,14 @@ mod negate {
 
     #[test]
     fn integer_negation_stays_exact_integer() {
-        let neg = Number::real(4).into_negated();
+        let neg = -Number::real(4);
 
         assert_matches!(neg, Number::Real(Real::Integer(_)));
     }
 
     #[test]
     fn zero_negation_stays_zero_sign() {
-        let neg = Integer::from(0).into_negated();
+        let neg = -Integer::from(0);
 
         assert_eq!(neg.sign, Sign::Zero);
     }
@@ -5783,7 +5783,7 @@ mod negate {
         let cases = [4, -4, 0];
         for n in cases {
             let x = Number::real(n);
-            let double_neg = x.clone().into_negated().into_negated();
+            let double_neg = -(-x.clone());
 
             assert_eq!(double_neg.to_string(), x.to_string());
         }
@@ -5791,7 +5791,7 @@ mod negate {
 
     #[test]
     fn integer_negation_beyond_i64_max() {
-        let neg = Number::real(i64::MIN).into_negated();
+        let neg = -Number::real(i64::MIN);
 
         assert_eq!(neg.to_string(), "9223372036854775808");
     }
@@ -5807,7 +5807,7 @@ mod negate {
             (f64::NEG_INFINITY, "+inf.0"),
         ];
         for (f, expected) in cases {
-            let neg = Number::real(f).into_negated();
+            let neg = -Number::real(f);
 
             assert_eq!(neg.to_string(), expected);
         }
@@ -5815,14 +5815,14 @@ mod negate {
 
     #[test]
     fn float_negation_stays_inexact() {
-        let neg = Number::real(1.5).into_negated();
+        let neg = -Number::real(1.5);
 
         assert_matches!(neg, Number::Real(Real::Float(_)));
     }
 
     #[test]
     fn nan_negation_is_still_nan() {
-        let neg = Number::real(f64::NAN).into_negated();
+        let neg = -Number::real(f64::NAN);
 
         assert!(neg.is_nan());
     }
@@ -5832,7 +5832,7 @@ mod negate {
         let cases = [1.5, -1.5, 0.0, -0.0];
         for f in cases {
             let x = Number::real(f);
-            let double_neg = x.clone().into_negated().into_negated();
+            let double_neg = -(-x.clone());
 
             assert_eq!(double_neg.to_string(), x.to_string());
         }
@@ -5843,7 +5843,7 @@ mod negate {
         let cases = [((1, 2), "-1/2"), ((-1, 2), "1/2"), ((-3, 4), "3/4")];
         for ((n, d), expected) in cases {
             let q = ok_or_fail!(Real::reduce(n, d));
-            let neg = Number::real(q).into_negated();
+            let neg = -Number::real(q);
 
             assert_eq!(neg.to_string(), expected);
         }
@@ -5852,7 +5852,7 @@ mod negate {
     #[test]
     fn rational_negation_stays_rational() {
         let q = ok_or_fail!(Real::reduce(1, 2));
-        let neg = Number::real(q).into_negated();
+        let neg = -Number::real(q);
 
         assert_matches!(neg, Number::Real(Real::Rational(_)));
     }
@@ -5860,7 +5860,7 @@ mod negate {
     #[test]
     fn rational_negation_leaves_denominator_untouched() {
         let q = ok_or_fail!(Real::reduce(1, 2));
-        let neg = Number::real(q).into_negated();
+        let neg = -Number::real(q);
 
         let r = extract_or_fail!(neg, Number::Real);
         let q = extract_or_fail!(r, Real::Rational);
@@ -5871,7 +5871,7 @@ mod negate {
     fn rational_negation_is_an_involution() {
         let q = ok_or_fail!(Real::reduce(1, 2));
         let x = Number::real(q);
-        let double_neg = x.clone().into_negated().into_negated();
+        let double_neg = -(-x.clone());
 
         assert_eq!(double_neg.to_string(), x.to_string());
     }
@@ -5885,7 +5885,7 @@ mod negate {
             ((0, -2), "+2i"),
         ];
         for ((re, im), expected) in cases {
-            let neg = Number::complex(re, im).into_negated();
+            let neg = -Number::complex(re, im);
 
             assert_eq!(neg.to_string(), expected);
         }
@@ -5895,7 +5895,7 @@ mod negate {
     fn complex_with_inexact_zero_imag_stays_complex_when_negated() {
         let z = Number::complex(3, 0.0);
 
-        let neg = z.into_negated();
+        let neg = -z;
 
         assert_eq!(neg.to_string(), "-3-0.0i");
         assert_matches!(neg, Number::Complex(_));
@@ -5904,7 +5904,7 @@ mod negate {
     #[test]
     fn complex_negation_is_an_involution() {
         let x = Number::complex(3, 4);
-        let double_neg = x.clone().into_negated().into_negated();
+        let double_neg = -(-x.clone());
 
         assert_eq!(double_neg.to_string(), x.to_string());
     }
@@ -5912,7 +5912,7 @@ mod negate {
     #[test]
     fn integer_inverse_law() {
         let x = Number::real(7);
-        let sum = x.clone() + x.into_negated();
+        let sum = x.clone() + -x;
 
         assert_eq!(sum.to_string(), "0");
     }
@@ -5920,7 +5920,7 @@ mod negate {
     #[test]
     fn float_inverse_law() {
         let x = Number::real(1.5);
-        let sum = x.clone() + x.into_negated();
+        let sum = x.clone() + -x;
 
         assert_eq!(sum.to_string(), "0.0");
     }
@@ -5928,7 +5928,7 @@ mod negate {
     #[test]
     fn complex_inverse_law() {
         let x = Number::complex(3, 4);
-        let sum = x.clone() + x.into_negated();
+        let sum = x.clone() + -x;
 
         assert_eq!(sum.to_string(), "0");
     }
@@ -5936,7 +5936,7 @@ mod negate {
     #[test]
     fn infinity_has_no_additive_inverse() {
         let x = Number::real(f64::INFINITY);
-        let sum = x.clone() + x.into_negated();
+        let sum = x.clone() + -x;
 
         assert!(sum.is_nan());
     }
@@ -5945,7 +5945,7 @@ mod negate {
     fn rational_inverse_law() {
         let q = ok_or_fail!(Real::reduce(1, 2));
         let x = Number::real(q);
-        let sum = x.clone() + x.into_negated();
+        let sum = x.clone() + -x;
 
         assert_eq!(sum.to_string(), "0");
     }
