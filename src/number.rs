@@ -1472,51 +1472,55 @@ pub(crate) struct FloatSpec {
 }
 
 impl FloatSpec {
+    // The size of the mantissa in bits is one less than digits due to the
+    // implicit leading one.
+    const MANTISSA_SIZE: u32 = f64::MANTISSA_DIGITS - 1;
+
     fn try_float_to_exact(flt: f64) -> RealResult {
         if flt.is_finite() {
-            let (spec, flt_str) = Self::prep_parse(flt);
-            // This should never fail since the string input comes from
-            // an f64 but if something real weird happens return parse error.
-            spec.try_into_exact(&flt_str)
+            // Convert IEEE-754 floating point into dyadic rational by bit-decomposition;
+            // every finite f64 is exactly sign * mantissa * 2^exponent
+            let sign = flt.signum() as i64;
+            let bits = flt.to_bits();
+            // TODO: https://doc.rust-lang.org/std/primitive.f64.html#associatedconstant.EXPONENT_MASK
+            let exp_bits = ((bits & 0x7ff0_0000_0000_0000) >> Self::MANTISSA_SIZE) as i32;
+            // TODO: https://doc.rust-lang.org/std/primitive.f64.html#associatedconstant.MANTISSA_MASK
+            let mantissa_bits = bits & 0x000f_ffff_ffff_ffff;
+
+            let (mantissa, exp) = if flt.is_subnormal() {
+                // Subnormal: no implicit leading bit, but raw_mantissa is scaled up by
+                // 2^52 (integer, not fractional), so exponent is -1021 - 53 = -1074
+                (
+                    mantissa_bits as i64,
+                    f64::MIN_EXP - f64::MANTISSA_DIGITS as i32,
+                )
+            } else {
+                // Normal: mantissa | (1<<52) scales the true significand up by 2^52 to
+                // make it an integer (adding the implicit leading 1 back in),
+                // so exponent is (raw_exp - 1023) - 52 = raw_exp - 1075
+                let bias = f64::MAX_EXP - 1;
+                (
+                    (mantissa_bits | (1 << Self::MANTISSA_SIZE)) as i64,
+                    exp_bits - bias - Self::MANTISSA_SIZE as i32,
+                )
+            };
+
+            if exp < 0 {
+                // negative exponent: sign * mantissa * 2^exponent = (sign * mantissa) / 2^-exponent
+                let numerator = sign * mantissa;
+                let denom = 2i64.pow(-exp as u32);
+                Real::reduce(numerator, denom)
+            } else {
+                // positive exponent: sign * mantissa * 2^exponent
+                Ok(Real::Integer(
+                    (sign * mantissa * 2i64.pow(exp as u32)).into(),
+                ))
+            }
         } else {
             Err(NumericError::NoExactRepresentation(
                 FloatDatum(&flt).to_string(),
             ))
         }
-    }
-
-    fn prep_parse(flt: f64) -> (Self, String) {
-        let flt_str = FloatDatum(&flt).to_string();
-        let mut spec = Self {
-            integral: IntSpec {
-                magnitude: 0..flt_str.len(),
-                ..Default::default()
-            },
-            ..Default::default()
-        };
-        if flt.is_sign_negative() {
-            spec.integral.sign = Some(Sign::Negative);
-            spec.integral.magnitude.start = 1;
-        }
-        if let Some(idx) = flt_str.find('.') {
-            spec.integral.magnitude.end = idx;
-            let next = idx + 1;
-            if next < flt_str.len() {
-                spec.fraction = next..flt_str.len();
-            }
-        }
-        if let Some(idx) = flt_str.find('e') {
-            if spec.fraction.is_empty() {
-                spec.integral.magnitude.end = idx;
-            } else {
-                spec.fraction.end = idx;
-            }
-            let next = idx + 1;
-            if next < flt_str.len() {
-                spec.exponent = next..flt_str.len();
-            }
-        }
-        (spec, flt_str)
     }
 
     pub(crate) fn is_empty(&self) -> bool {
