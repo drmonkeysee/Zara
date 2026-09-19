@@ -763,7 +763,11 @@ impl Real {
 impl PartialEq for Real {
     fn eq(&self, other: &Self) -> bool {
         match self {
-            Self::Float(f) => *f == other.to_float(),
+            Self::Float(a) if let Self::Float(b) = other => a == b,
+            Self::Float(f) => self
+                .clone()
+                .try_into_exact()
+                .map_or_else(|_| *f == other.to_float(), |n| n.eq(other)),
             Self::Integer(n) => n == other,
             Self::Rational(q) => q == other,
         }
@@ -773,7 +777,11 @@ impl PartialEq for Real {
 impl PartialOrd for Real {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         match self {
-            Self::Float(f) => f.partial_cmp(&other.to_float()),
+            Self::Float(a) if let Self::Float(b) = other => a.partial_cmp(b),
+            Self::Float(f) => self.clone().try_into_exact().map_or_else(
+                |_| f.partial_cmp(&other.to_float()),
+                |n| n.partial_cmp(other),
+            ),
             Self::Integer(n) => n.partial_cmp(other),
             Self::Rational(q) => q.partial_cmp(other),
         }
@@ -966,7 +974,10 @@ impl Display for Rational {
 impl PartialEq<Real> for Rational {
     fn eq(&self, other: &Real) -> bool {
         match other {
-            Real::Float(f) => self.to_float() == *f,
+            Real::Float(f) => other
+                .clone()
+                .try_into_exact()
+                .map_or_else(|_| self.to_float() == *f, |n| self.eq(&n)),
             Real::Integer(_) => false,
             Real::Rational(q) => self.eq(q),
         }
@@ -976,7 +987,10 @@ impl PartialEq<Real> for Rational {
 impl PartialOrd<Real> for Rational {
     fn partial_cmp(&self, other: &Real) -> Option<Ordering> {
         match other {
-            Real::Float(f) => self.to_float().partial_cmp(f),
+            Real::Float(f) => other
+                .clone()
+                .try_into_exact()
+                .map_or_else(|_| self.to_float().partial_cmp(f), |n| self.partial_cmp(&n)),
             Real::Integer(n) => self.partial_cmp(&n.clone().into_rational()),
             Real::Rational(q) => self.partial_cmp(q),
         }
@@ -1268,7 +1282,10 @@ impl From<(Sign, u64)> for Integer {
 impl PartialEq<Real> for Integer {
     fn eq(&self, other: &Real) -> bool {
         match other {
-            Real::Float(f) => self.to_float() == *f,
+            Real::Float(f) => other
+                .clone()
+                .try_into_exact()
+                .map_or_else(|_| self.to_float() == *f, |n| self.eq(&n)),
             Real::Integer(n) => self.eq(n),
             Real::Rational(_) => false,
         }
@@ -1278,7 +1295,10 @@ impl PartialEq<Real> for Integer {
 impl PartialOrd<Real> for Integer {
     fn partial_cmp(&self, other: &Real) -> Option<Ordering> {
         match other {
-            Real::Float(f) => self.to_float().partial_cmp(f),
+            Real::Float(f) => other
+                .clone()
+                .try_into_exact()
+                .map_or_else(|_| self.to_float().partial_cmp(f), |n| self.partial_cmp(&n)),
             Real::Integer(n) => self.partial_cmp(n),
             Real::Rational(q) => self.clone().into_rational().partial_cmp(q),
         }

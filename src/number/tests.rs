@@ -3699,11 +3699,6 @@ mod equality {
         assert_eq!(f, q);
     }
 
-    // 1/3 is not exactly representable in binary floating point; the
-    // nearest f64 (6004799503160661/2^54) is strictly less than the exact
-    // rational 1/3, so they must not compare equal. Comparing by coercing
-    // the rational down to a float (losing precision) instead of comparing
-    // exactly is the same root bug as the inexact->exact conversion above.
     #[test]
     fn rational_not_equal_to_nearest_float() {
         let q = ok_or_fail!(Real::reduce(1, 3));
