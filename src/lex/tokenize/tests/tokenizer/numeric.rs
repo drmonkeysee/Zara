@@ -2091,6 +2091,33 @@ mod float {
     }
 
     #[test]
+    fn exact_decimal_does_not_match_dyadic_conversion() {
+        let mut s = Scanner::new("#e0.8");
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scanner: &mut s,
+            start,
+        };
+
+        let (r, c) = t.extract();
+
+        assert!(c.is_none());
+        let tok = ok_or_fail!(r);
+        assert_matches!(
+            tok,
+            Token {
+                kind: TokenKind::Number(_),
+                span: TxtSpan { start: 0, end: 5 },
+            }
+        );
+        let rat = extract_number!(tok.kind, Number::Real, Real::Rational);
+        // (exact 0.8) ==> 3602879701896397/4503599627370496 but exact-literal
+        // notation works on least-surprise principle and gives you the
+        // expected decimal fraction.
+        assert_eq!(rat.to_string(), "4/5");
+    }
+
+    #[test]
     fn exact_smaller_than_unity() {
         let cases = ["#e.45", "#e0.45", "#e+.45", "#e+0.45"];
         for case in cases {
@@ -4528,7 +4555,7 @@ mod cartesian {
             }
         );
         let num = extract_number!(tok.kind);
-        assert_eq!(num.to_string(), "21/5+3200i");
+        assert_eq!(num.to_string(), "4728779608739021/1125899906842624+3200i");
     }
 
     #[test]
@@ -5384,7 +5411,7 @@ mod polar {
             let num = extract_number!(tok.kind);
             assert_eq!(
                 num.to_string(),
-                "20901201280414963/10000000000000000+4304136545397137/2000000000000000i"
+                "1176633028725907/562949953421312+2423013467750285/1125899906842624i"
             );
         }
     }
@@ -5414,7 +5441,7 @@ mod polar {
             let num = extract_number!(tok.kind);
             assert_eq!(
                 num.to_string(),
-                "-20901201280414963/10000000000000000-4304136545397137/2000000000000000i"
+                "-1176633028725907/562949953421312-2423013467750285/1125899906842624i"
             );
         }
     }
