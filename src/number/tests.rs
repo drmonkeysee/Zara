@@ -3226,7 +3226,7 @@ mod complex {
 
     #[test]
     fn into_exact_rational() {
-        let z = Number::complex(1.5, 0.8);
+        let z = Number::complex(1.5, 0.875);
 
         let z = z.try_into_exact();
 
@@ -3237,9 +3237,9 @@ mod complex {
         assert_eq!(extract_or_fail!(den.precision, Precision::Single), 2);
         assert_eq!(den.sign, Sign::Positive);
         let (num, den) = rational_parts!(ri.0.1);
-        assert_eq!(extract_or_fail!(num.precision, Precision::Single), 4);
+        assert_eq!(extract_or_fail!(num.precision, Precision::Single), 7);
         assert_eq!(num.sign, Sign::Positive);
-        assert_eq!(extract_or_fail!(den.precision, Precision::Single), 5);
+        assert_eq!(extract_or_fail!(den.precision, Precision::Single), 8);
         assert_eq!(den.sign, Sign::Positive);
     }
 
@@ -3976,6 +3976,7 @@ mod ordering {
             (3.0, -5, Some(Ordering::Greater)),
             (-3.0, 5, Some(Ordering::Less)),
             (0.0, 0, Some(Ordering::Equal)),
+            (-0.0, 0, Some(Ordering::Equal)),
         ];
         for (f, n, expected) in cases {
             let x = Real::Float(f);
@@ -3994,6 +3995,7 @@ mod ordering {
             (-5, 3.0, Some(Ordering::Less)),
             (5, -3.0, Some(Ordering::Greater)),
             (0, 0.0, Some(Ordering::Equal)),
+            (0, -0.0, Some(Ordering::Equal)),
         ];
         for (n, f, expected) in cases {
             let x = Real::Integer(n.into());

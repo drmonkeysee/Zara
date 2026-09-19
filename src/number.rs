@@ -1477,48 +1477,55 @@ impl FloatSpec {
     const MANTISSA_SIZE: u32 = f64::MANTISSA_DIGITS - 1;
 
     fn try_float_to_exact(flt: f64) -> RealResult {
-        if flt.is_finite() {
-            // Convert IEEE-754 floating point into dyadic rational by bit-decomposition;
-            // every finite f64 is exactly sign * mantissa * 2^exponent
-            let sign = flt.signum() as i64;
-            let bits = flt.to_bits();
-            // TODO: https://doc.rust-lang.org/std/primitive.f64.html#associatedconstant.EXPONENT_MASK
-            let exp_bits = ((bits & 0x7ff0_0000_0000_0000) >> Self::MANTISSA_SIZE) as i32;
-            // TODO: https://doc.rust-lang.org/std/primitive.f64.html#associatedconstant.MANTISSA_MASK
-            let mantissa_bits = bits & 0x000f_ffff_ffff_ffff;
-
-            let (mantissa, exp) = if flt.is_subnormal() {
-                // Subnormal: no implicit leading bit, but raw_mantissa is scaled up by
-                // 2^52 (integer, not fractional), so exponent is -1021 - 53 = -1074
-                (
-                    mantissa_bits as i64,
-                    f64::MIN_EXP - f64::MANTISSA_DIGITS as i32,
-                )
-            } else {
-                // Normal: mantissa | (1<<52) scales the true significand up by 2^52 to
-                // make it an integer (adding the implicit leading 1 back in),
-                // so exponent is (raw_exp - 1023) - 52 = raw_exp - 1075
-                let bias = f64::MAX_EXP - 1;
-                (
-                    (mantissa_bits | (1 << Self::MANTISSA_SIZE)) as i64,
-                    exp_bits - bias - Self::MANTISSA_SIZE as i32,
-                )
-            };
-
-            if exp < 0 {
-                // negative exponent: sign * mantissa * 2^exponent = (sign * mantissa) / 2^-exponent
-                let numerator = sign * mantissa;
-                let denom = 2i64.pow(-exp as u32);
-                Real::reduce(numerator, denom)
-            } else {
-                // positive exponent: sign * mantissa * 2^exponent
-                Ok(Real::Integer(
-                    (sign * mantissa * 2i64.pow(exp as u32)).into(),
-                ))
-            }
+        if flt == 0.0 {
+            // both +/- zero converts to integer zero
+            Ok(Real::zero())
+        } else if flt.is_finite() {
+            Self::try_to_dyadic_rational(flt)
         } else {
             Err(NumericError::NoExactRepresentation(
                 FloatDatum(&flt).to_string(),
+            ))
+        }
+    }
+
+    // Convert IEEE-754 floating point into dyadic rational by bit-decomposition;
+    // every finite f64 is exactly sign * mantissa * 2^exponent
+    fn try_to_dyadic_rational(flt: f64) -> RealResult {
+        let sign = flt.signum() as i64;
+        let bits = flt.to_bits();
+        // TODO: https://doc.rust-lang.org/std/primitive.f64.html#associatedconstant.EXPONENT_MASK
+        let exp_bits = ((bits & 0x7ff0_0000_0000_0000) >> Self::MANTISSA_SIZE) as i32;
+        // TODO: https://doc.rust-lang.org/std/primitive.f64.html#associatedconstant.MANTISSA_MASK
+        let mantissa_bits = bits & 0x000f_ffff_ffff_ffff;
+
+        let (mantissa, exp) = if flt.is_subnormal() {
+            // Subnormal: no implicit leading bit, but raw_mantissa is scaled up by
+            // 2^52 (integer, not fractional), so exponent is -1021 - 53 = -1074
+            (
+                mantissa_bits as i64,
+                f64::MIN_EXP - f64::MANTISSA_DIGITS as i32,
+            )
+        } else {
+            // Normal: mantissa | (1<<52) scales the true significand up by 2^52 to
+            // make it an integer (adding the implicit leading 1 back in),
+            // so exponent is (raw_exp - 1023) - 52 = raw_exp - 1075
+            let bias = f64::MAX_EXP - 1;
+            (
+                (mantissa_bits | (1 << Self::MANTISSA_SIZE)) as i64,
+                exp_bits - bias - Self::MANTISSA_SIZE as i32,
+            )
+        };
+
+        if exp < 0 {
+            // negative exponent: sign * mantissa * 2^exponent = (sign * mantissa) / 2^-exponent
+            let numerator = sign * mantissa;
+            let denom = 2i64.pow(-exp as u32);
+            Real::reduce(numerator, denom)
+        } else {
+            // positive exponent: sign * mantissa * 2^exponent
+            Ok(Real::Integer(
+                (sign * mantissa * 2i64.pow(exp as u32)).into(),
             ))
         }
     }
