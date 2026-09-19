@@ -652,6 +652,14 @@ impl Real {
         matches!(self, Self::Float(_))
     }
 
+    pub(crate) fn strict_lt(&self, other: &Self) -> bool {
+        self.strict_ordering(&other, &Self::lt, &f64::lt)
+    }
+
+    pub(crate) fn strict_gt(&self, other: &Self) -> bool {
+        self.strict_ordering(&other, &Self::gt, &f64::gt)
+    }
+
     pub(crate) fn as_token_descriptor(&self) -> RealTokenDescriptor<'_> {
         RealTokenDescriptor(self)
     }
@@ -744,6 +752,37 @@ impl Real {
     fn is_infinite(&self) -> bool {
         match self {
             Self::Float(f) => f.is_infinite(),
+            _ => false,
+        }
+    }
+
+    /*
+     * For comparison sequences (e.g. max/min) the normal float comparison rules
+     * don't result in the correct result:
+     * - nan should render the entire set undefined
+     * - negative and positive zero should order according to sign;
+     *     IEEE-754 defines an ascending order of (-0.0, +0.0), despite -0.0 ≮ +0.0
+     */
+    fn strict_ordering(
+        &self,
+        other: &Self,
+        cmp: &impl Fn(&Real, &Real) -> bool,
+        fcmp: &impl Fn(&f64, &f64) -> bool,
+    ) -> bool {
+        cmp(self, other) || other.is_nan() || self.strict_zeros(other, fcmp)
+    }
+
+    fn strict_zeros(&self, other: &Self, cmp: &impl Fn(&f64, &f64) -> bool) -> bool {
+        match (self, other) {
+            (Self::Float(a), Self::Float(b)) if *a == 0.0 && *b == 0.0 => {
+                cmp(&a.signum(), &b.signum())
+            }
+            (Self::Float(f), Self::Integer(n)) if *f == 0.0 && n.is_zero() => {
+                cmp(&f.signum(), &1.0)
+            }
+            (Self::Integer(n), Self::Float(f)) if n.is_zero() && *f == 0.0 => {
+                cmp(&1.0, &f.signum())
+            }
             _ => false,
         }
     }

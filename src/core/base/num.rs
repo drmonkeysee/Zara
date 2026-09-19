@@ -126,11 +126,11 @@ fn is_even(args: &[Value], _env: &Frame) -> EvalResult {
 }
 
 fn nums_max(args: &[Value], _env: &Frame) -> EvalResult {
-    real_acc_predicate(first(args), args.iter().skip(1), Real::lt)
+    real_acc_cmp(first(args), args.iter().skip(1), Real::strict_lt)
 }
 
 fn nums_min(args: &[Value], _env: &Frame) -> EvalResult {
-    real_acc_predicate(first(args), args.iter().skip(1), Real::gt)
+    real_acc_cmp(first(args), args.iter().skip(1), Real::strict_gt)
 }
 
 fn nums_add(args: &[Value], _env: &Frame) -> EvalResult {
@@ -241,10 +241,10 @@ fn guarded_real_op(
     op(r)
 }
 
-fn real_acc_predicate<'a>(
+fn real_acc_cmp<'a>(
     first: &Value,
     rest: impl IntoIterator<Item = &'a Value>,
-    pred: impl Fn(&Real, &Real) -> bool,
+    cmp: impl Fn(&Real, &Real) -> bool,
 ) -> EvalResult {
     let r = arg_to_real(first, FIRST_ARG_LABEL, NumericTypeName::REAL)?;
     let mut float_taint = r.is_inexact();
@@ -253,8 +253,7 @@ fn real_acc_predicate<'a>(
         .try_fold(r.clone(), |mut acc, (idx, v)| {
             let r = arg_to_real(v, idx + 1, NumericTypeName::REAL)?;
             float_taint = float_taint || r.is_inexact();
-            // nan poisons max/min as it renders the ordering of the set undefined
-            if pred(&acc, r) || r.is_nan() {
+            if cmp(&acc, r) {
                 acc = r.clone();
             }
             Ok(acc)
@@ -671,10 +670,7 @@ mod tests {
     // R7RS-small is silent on max/min tie-breaking between numerically-equal
     // signed zeros (-0.0 = 0.0 under `=`, so either is a "legal" maximum).
     // IEEE 754-2019 SS9.6 maximum/minimum settle it by ordering -0 < +0, and
-    // that convention is what these tests assert. Zara currently breaks ties
-    // by argument position (first arg wins) rather than by sign, so several
-    // of these fail today -- that is the bug this test block documents, not
-    // a mistake in the test.
+    // that convention is what these tests assert.
     #[test]
     fn max_negative_zero_then_positive_zero() {
         let args = [Value::real(-0.0), Value::real(0.0)];
@@ -1505,9 +1501,7 @@ mod tests {
     // be exact 0, and Zara takes that option -- exact zero short-circuits
     // inexact contagion even when the other argument is NaN or infinite.
     // This is a deliberate divergence from IEEE-754 float semantics (where
-    // 0 * NaN = NaN and 0 * inf = NaN) and from Guile, which returns NaN for
-    // both; Chez agrees with Zara. See the `Mul<Real> for Integer` impl in
-    // src/number.rs for the source of the shortcut.
+    // 0 * NaN = NaN and 0 * inf = NaN).
     #[test]
     fn mult_exact_zero_with_nan_arg_is_exact_zero() {
         let args = [Value::real(0), Value::real(f64::NAN)];
@@ -1631,9 +1625,7 @@ mod tests {
     // Unlike `*` above, exact zero as the dividend still short-circuits
     // inexact contagion when the divisor is an inexact zero or infinity --
     // but NaN wins over the exact-zero shortcut here, so `(/ 0 +nan.0)` is
-    // `+nan.0`, not `0`. This is a deliberate `*` vs `/` asymmetry (see the
-    // `Div<Real> for Integer` impl in src/number.rs); Chez and Zara agree on
-    // the exact-zero cases, but Guile returns NaN for all of them.
+    // `+nan.0`, not `0`.
     #[test]
     fn div_exact_zero_by_inexact_zero_is_exact_zero() {
         let args = [Value::real(0), Value::real(0.0)];
