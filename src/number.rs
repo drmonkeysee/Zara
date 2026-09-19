@@ -12,11 +12,12 @@ macro_rules! try_int_conversion {
             type Error = NumericError;
 
             fn try_from(value: &Number) -> Result<Self, Self::Error> {
-                match value {
-                    Number::Real(Real::Integer(n)) => n.$convert(),
-                    _ => Err(Self::Error::IntConversionInvalidType(
+                if let Number::Real(Real::Integer(n)) = value {
+                    n.$convert()
+                } else {
+                    Err(Self::Error::IntConversionInvalidType(
                         value.as_typename().to_string(),
-                    )),
+                    ))
                 }
             }
         }
@@ -611,16 +612,18 @@ impl Real {
     }
 
     pub(crate) fn is_nan(&self) -> bool {
-        match self {
-            Self::Float(f) => f.is_nan(),
-            _ => false,
+        if let Self::Float(f) = self {
+            f.is_nan()
+        } else {
+            false
         }
     }
 
     pub(crate) fn is_rational(&self) -> bool {
-        match self {
-            Self::Float(f) => f.is_finite(),
-            _ => true,
+        if let Self::Float(f) = self {
+            f.is_finite()
+        } else {
+            true
         }
     }
 
@@ -681,9 +684,10 @@ impl Real {
     }
 
     pub(crate) fn try_into_exact(self) -> RealResult {
-        match self {
-            Self::Float(f) => FloatSpec::try_float_to_exact(f),
-            _ => Ok(self),
+        if let Self::Float(f) = self {
+            FloatSpec::try_float_to_exact(f)
+        } else {
+            Ok(self)
         }
     }
 
@@ -750,9 +754,10 @@ impl Real {
     }
 
     fn is_infinite(&self) -> bool {
-        match self {
-            Self::Float(f) => f.is_infinite(),
-            _ => false,
+        if let Self::Float(f) = self {
+            f.is_infinite()
+        } else {
+            false
         }
     }
 
