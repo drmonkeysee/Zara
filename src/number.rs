@@ -864,12 +864,14 @@ impl Real {
         }
     }
 
+    // Number handles negative sign so this function technically returns the
+    // wrong value for negative roots (e.g. √-4 = -2 instead of +2i)
     fn sqrt(self) -> Self {
         match self {
             Self::Float(f) if f == 0.0 => self,
             Self::Float(f) => sign_preserving_sqrt(f).into(),
             Self::Integer(n) => n.sqrt(),
-            Self::Rational(q) => todo!(),
+            Self::Rational(q) => q.sqrt(),
         }
     }
 }
@@ -1048,6 +1050,19 @@ impl Rational {
         let ad = a * Real::exact_quotient(d, g.clone());
         let cb = c * Real::exact_quotient(b, g);
         (op(ad, cb) / m).expect("least common multiple of canonical denominators cannot be zero")
+    }
+
+    fn sqrt(self) -> Real {
+        let (n, d) = self.into_parts();
+        let (nr, dr) = (n.sqrt(), d.sqrt());
+        debug_assert!(!dr.is_zero());
+        match (&nr, &dr) {
+            (Real::Float(_), _) | (_, Real::Float(_)) => (nr.to_float() / dr.to_float()).into(),
+            (Real::Integer(a), Real::Integer(b)) => {
+                Real::reduce(a.clone(), b.clone()).expect("denominator cannot be zero")
+            }
+            _ => unreachable!("sqrt of rational cannot result in two rational parts"),
+        }
     }
 }
 
@@ -1354,8 +1369,6 @@ impl Integer {
         Self::new(sum, sign)
     }
 
-    // Real handles negative sign so this function technically returns the
-    // wrong value for negative roots (e.g. √-4 = -2 instead of +2i)
     fn sqrt(self) -> Real {
         if self.is_zero() {
             self.into()
