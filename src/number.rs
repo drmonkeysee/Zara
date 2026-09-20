@@ -327,7 +327,10 @@ impl Number {
     }
 
     pub(crate) fn sqrt(self) -> Self {
-        todo!();
+        match self {
+            Self::Complex(z) => todo!(),
+            Self::Real(r) => Self::real(r.sqrt()),
+        }
     }
 }
 
@@ -853,6 +856,14 @@ impl Real {
             Self::Rational(q) => q.try_into_reciprocal(),
         }
     }
+
+    fn sqrt(self) -> Self {
+        match self {
+            Self::Float(f) => todo!(),
+            Self::Integer(n) => n.sqrt(),
+            Self::Rational(q) => todo!(),
+        }
+    }
 }
 
 impl PartialEq for Real {
@@ -1333,6 +1344,17 @@ impl Integer {
             (self.sign, self.precision - rhs.precision)
         };
         Self::new(sum, sign)
+    }
+
+    fn sqrt(self) -> Real {
+        if self.is_zero() {
+            self.into()
+        } else if let Some(p) = self.precision.isqrt() {
+            // do not handle sign here but up in Real
+            Self::new(p, self.sign).into()
+        } else {
+            self.to_float().sqrt().into()
+        }
     }
 }
 
@@ -1945,6 +1967,20 @@ impl Precision {
                 *other = Self::Single(*b / gcd);
             }
             _ => todo!(),
+        }
+    }
+
+    fn isqrt(&self) -> Option<Self> {
+        match self {
+            Self::Single(u) => {
+                let r = u.isqrt();
+                if r.pow(2) == *u {
+                    Some(Self::Single(r))
+                } else {
+                    None
+                }
+            }
+            Self::Multiple(_) => todo!(),
         }
     }
 }
