@@ -89,30 +89,30 @@ mod sign {
     }
 
     #[test]
-    fn flip_matrix() {
+    fn neg_matrix() {
         let cases = [
             (Sign::Negative, Sign::Positive),
             (Sign::Zero, Sign::Zero),
             (Sign::Positive, Sign::Negative),
         ];
         for (s, expected) in cases {
-            assert_eq!(s.flip(), expected);
+            assert_eq!(-s, expected);
         }
     }
 
     #[test]
-    fn flip_is_an_involution() {
+    fn neg_is_an_involution() {
         let cases = [Sign::Negative, Sign::Zero, Sign::Positive];
         for s in cases {
-            assert_eq!(s.flip().flip(), s);
+            assert_eq!(-(-s), s);
         }
     }
 
     #[test]
-    fn flip_negates_value() {
+    fn neg_negates_value() {
         let cases = [Sign::Negative, Sign::Zero, Sign::Positive];
         for s in cases {
-            assert_eq!(s.flip() as i32, -(s as i32));
+            assert_eq!(-s as i32, -(s as i32));
         }
     }
 }

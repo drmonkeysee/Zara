@@ -638,12 +638,12 @@ impl Real {
         Ok(Self::Rational(Rational((n, d).into())))
     }
 
-    // assume divisor is a factor of val, so reduction ensures an Integer;
+    // assume divisor is a factor of dividend, so reduction ensures an Integer;
     // will panic if assumption does not hold.
-    fn reduce_divisor(val: impl Into<Integer>, divisor: impl Into<Integer>) -> Integer {
-        let r = Self::reduce(val, divisor).expect("denominator is a divisor of numerator");
+    fn exact_quotient(dividend: impl Into<Integer>, divisor: impl Into<Integer>) -> Integer {
+        let r = Self::reduce(dividend, divisor).expect("divisor is a factor of dividend");
         let Self::Integer(n) = r else {
-            unreachable!("unexpected non-divisor");
+            unreachable!("unexpected non-factor divisor");
         };
         n
     }
@@ -1008,6 +1008,24 @@ impl Rational {
     fn try_into_reciprocal(self) -> RealResult {
         Real::reduce(self.0.1, self.0.0)
     }
+
+    // a/b ± c/d = (ad ± cb)/bd except cross-reduce with gcd and lcm to lessen
+    // likelihood of intermediate result overflow.
+    // div/0 should be a programmer error here, hence the panics. if everything
+    // is wired up correctly this will only be called with canonical rationals
+    // or integer reciprocals.
+    #[allow(clippy::many_single_char_names)]
+    fn additive_op(self, rhs: Self, op: impl FnOnce(Integer, Integer) -> Integer) -> Real {
+        let (a, b) = self.into_parts();
+        let (c, d) = rhs.into_parts();
+        let g = b.gcd(&d);
+        let m = b.lcm(&d);
+        debug_assert!(!g.is_zero());
+        debug_assert!(!m.is_zero());
+        let ad = a * Real::exact_quotient(d, g.clone());
+        let cb = c * Real::exact_quotient(b, g);
+        (op(ad, cb) / m).expect("least common multiple of canonical denominators cannot be zero")
+    }
 }
 
 impl PartialOrd for Rational {
@@ -1036,42 +1054,16 @@ impl Neg for Rational {
 impl Add for Rational {
     type Output = Real;
 
-    // a/b + c/d = (ad + cb)/bd except cross-reduce with gcd and lcm to lessen
-    // likelihood of intermediate result overflow.
-    // div/0 should be a programmer error here, hence the panics. if everything
-    // is wired up correctly this will only be called with canonical rationals
-    // or integer reciprocals.
-    #[allow(clippy::many_single_char_names)]
     fn add(self, rhs: Self) -> Self::Output {
-        let (a, b) = self.into_parts();
-        let (c, d) = rhs.into_parts();
-        let g = b.gcd(&d);
-        let m = b.lcm(&d);
-        debug_assert!(!g.is_zero());
-        debug_assert!(!m.is_zero());
-        (((a * Real::reduce_divisor(d, g.clone())) + (c * Real::reduce_divisor(b, g))) / m)
-            .expect("least common multiple of canonical denominators cannot be zero")
+        self.additive_op(rhs, Integer::add)
     }
 }
 
 impl Sub for Rational {
     type Output = Real;
 
-    // a/b - c/d = (ad - cb)/bd except cross-reduce with gcd and lcm to lessen
-    // likelihood of intermediate result overflow.
-    // div/0 should be a programmer error here, hence the panics. if everything
-    // is wired up correctly this will only be called with canonical rationals
-    // or integer reciprocals.
-    #[allow(clippy::many_single_char_names)]
     fn sub(self, rhs: Self) -> Self::Output {
-        let (a, b) = self.into_parts();
-        let (c, d) = rhs.into_parts();
-        let g = b.gcd(&d);
-        let m = b.lcm(&d);
-        debug_assert!(!g.is_zero());
-        debug_assert!(!m.is_zero());
-        (((a * Real::reduce_divisor(d, g.clone())) - (c * Real::reduce_divisor(b, g))) / m)
-            .expect("least common multiple of canonical denominators cannot be zero")
+        self.additive_op(rhs, Integer::sub)
     }
 }
 
@@ -1090,8 +1082,8 @@ impl Mul for Rational {
         debug_assert!(!g1.is_zero());
         debug_assert!(!g2.is_zero());
         Real::reduce(
-            Real::reduce_divisor(a, g1.clone()) * Real::reduce_divisor(c, g2.clone()),
-            Real::reduce_divisor(b, g2) * Real::reduce_divisor(d, g1),
+            Real::exact_quotient(a, g1.clone()) * Real::exact_quotient(c, g2.clone()),
+            Real::exact_quotient(b, g2) * Real::exact_quotient(d, g1),
         )
         .expect("denominator cannot be zero for canonical rationals")
     }
@@ -1324,6 +1316,20 @@ impl Integer {
     fn try_into_reciprocal(self) -> RealResult {
         Real::reduce(Self::one(), self)
     }
+
+    fn safe_sum(self, rhs: Self) -> Self {
+        let sum = self.precision + rhs.precision;
+        Self::new(sum, self.sign)
+    }
+
+    fn overflowing_sum(self, rhs: Self, ovf_sign: Sign) -> Self {
+        let (sign, sum) = if self.precision < rhs.precision {
+            (ovf_sign, rhs.precision - self.precision)
+        } else {
+            (self.sign, self.precision - rhs.precision)
+        };
+        Self::new(sum, sign)
+    }
 }
 
 impl PartialOrd for Integer {
@@ -1349,7 +1355,7 @@ impl Neg for Integer {
     type Output = Self;
 
     fn neg(mut self) -> Self::Output {
-        self.sign = self.sign.flip();
+        self.sign = -self.sign;
         self
     }
 }
@@ -1362,16 +1368,11 @@ impl Add for Integer {
             (_, Sign::Zero) => self,
             (Sign::Zero, _) => rhs,
             (Sign::Positive, Sign::Positive) | (Sign::Negative, Sign::Negative) => {
-                let sum = self.precision + rhs.precision;
-                Self::new(sum, self.sign)
+                self.safe_sum(rhs)
             }
             (Sign::Positive, Sign::Negative) | (Sign::Negative, Sign::Positive) => {
-                let (sign, sum) = if self.precision < rhs.precision {
-                    (rhs.sign, rhs.precision - self.precision)
-                } else {
-                    (self.sign, self.precision - rhs.precision)
-                };
-                Self::new(sum, sign)
+                let s = rhs.sign;
+                self.overflowing_sum(rhs, s)
             }
         }
     }
@@ -1385,16 +1386,11 @@ impl Sub for Integer {
             (_, Sign::Zero) => self,
             (Sign::Zero, _) => -rhs,
             (Sign::Positive, Sign::Positive) | (Sign::Negative, Sign::Negative) => {
-                let (sign, sum) = if self.precision < rhs.precision {
-                    (self.sign.flip(), rhs.precision - self.precision)
-                } else {
-                    (self.sign, self.precision - rhs.precision)
-                };
-                Self::new(sum, sign)
+                let s = -self.sign;
+                self.overflowing_sum(rhs, s)
             }
             (Sign::Positive, Sign::Negative) | (Sign::Negative, Sign::Positive) => {
-                let sum = self.precision + rhs.precision;
-                Self::new(sum, self.sign)
+                self.safe_sum(rhs)
             }
         }
     }
@@ -1485,7 +1481,7 @@ impl Sub<Real> for Integer {
         match rhs {
             // Integral additive reciprical should flip the sign of a float;
             // this ends up being relevant for 0 - 0.0 = -0.0
-            Real::Float(f) if self.is_zero() => (-f).into(),
+            Real::Float(_) if self.is_zero() => -rhs,
             Real::Float(f) => (self.to_float() - f).into(),
             Real::Integer(n) => self.sub(n).into(),
             Real::Rational(q) => self.into_rational() - q,
@@ -1531,8 +1527,10 @@ pub(crate) enum Sign {
     Positive,
 }
 
-impl Sign {
-    fn flip(self) -> Self {
+impl Neg for Sign {
+    type Output = Self;
+
+    fn neg(self) -> Self::Output {
         match self {
             Self::Negative => Self::Positive,
             Self::Positive => Self::Negative,
