@@ -69,6 +69,11 @@ fn arc_tangent(_args: &[Value], _env: &Frame) -> EvalResult {
     todo!();
 }
 
-fn square_root(_args: &[Value], _env: &Frame) -> EvalResult {
-    todo!();
+fn square_root(args: &[Value], _env: &Frame) -> EvalResult {
+    let arg = first(args);
+    if let Value::Number(x) = arg {
+        Ok(Value::Number(x.clone().sqrt()))
+    } else {
+        Err(invalid_target(TypeName::NUMBER, arg))
+    }
 }
