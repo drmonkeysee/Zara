@@ -142,7 +142,7 @@ fn nums_mult(args: &[Value], _env: &Frame) -> EvalResult {
 }
 
 fn nums_sub(args: &[Value], _env: &Frame) -> EvalResult {
-    inverse_arithmetic(args, |x| Ok(-x), |a, b| Ok(a + (-b)))
+    inverse_arithmetic(args, |x| Ok(-x), |a, b| Ok(a - b))
 }
 
 fn nums_div(args: &[Value], _env: &Frame) -> EvalResult {

@@ -5912,7 +5912,7 @@ mod negate {
     #[test]
     fn integer_inverse_law() {
         let x = Number::real(7);
-        let sum = x.clone() + -x;
+        let sum = x.clone() - x;
 
         assert_eq!(sum.to_string(), "0");
     }
@@ -5920,7 +5920,7 @@ mod negate {
     #[test]
     fn float_inverse_law() {
         let x = Number::real(1.5);
-        let sum = x.clone() + -x;
+        let sum = x.clone() - x;
 
         assert_eq!(sum.to_string(), "0.0");
     }
@@ -5928,7 +5928,7 @@ mod negate {
     #[test]
     fn complex_inverse_law() {
         let x = Number::complex(3, 4);
-        let sum = x.clone() + -x;
+        let sum = x.clone() - x;
 
         assert_eq!(sum.to_string(), "0");
     }
@@ -5936,7 +5936,7 @@ mod negate {
     #[test]
     fn infinity_has_no_additive_inverse() {
         let x = Number::real(f64::INFINITY);
-        let sum = x.clone() + -x;
+        let sum = x.clone() - x;
 
         assert!(sum.is_nan());
     }
@@ -5945,7 +5945,7 @@ mod negate {
     fn rational_inverse_law() {
         let q = ok_or_fail!(Real::reduce(1, 2));
         let x = Number::real(q);
-        let sum = x.clone() + -x;
+        let sum = x.clone() - x;
 
         assert_eq!(sum.to_string(), "0");
     }

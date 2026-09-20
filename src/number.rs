@@ -359,6 +359,18 @@ impl Add for Number {
     }
 }
 
+impl Sub for Number {
+    type Output = Self;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        match (self, rhs) {
+            (Self::Complex(z), n) => z - n,
+            (Self::Real(r), Self::Complex(z)) => r.into_complex() - z,
+            (Self::Real(a), Self::Real(b)) => Self::real(a - b),
+        }
+    }
+}
+
 impl Mul for Number {
     type Output = Self;
 
@@ -436,6 +448,16 @@ impl Complex {
     }
 }
 
+impl Sub for Complex {
+    type Output = Number;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        let (x, y) = self.into_parts();
+        let (u, v) = rhs.into_parts();
+        Number::complex(x - u, y - v)
+    }
+}
+
 impl Div for Complex {
     type Output = NumResult;
 
@@ -475,14 +497,14 @@ impl Div for Complex {
             let denom = (c.clone() * r.clone()) + d.clone();
             (
                 (((a.clone() * r.clone()) + b.clone()) / denom.clone())?,
-                (((b * r) + -a) / denom)?,
+                (((b * r) - a) / denom)?,
             )
         } else {
             let r = (d.clone() / c.clone())?;
             let denom = c.clone() + (d.clone() * r.clone());
             (
                 ((a.clone() + (b.clone() * r.clone())) / denom.clone())?,
-                ((b + -(a * r)) / denom)?,
+                ((b - (a * r)) / denom)?,
             )
         };
         Ok(Number::complex(re, im))
@@ -505,6 +527,17 @@ impl Add<Number> for Complex {
     }
 }
 
+impl Sub<Number> for Complex {
+    type Output = Number;
+
+    fn sub(self, rhs: Number) -> Self::Output {
+        match rhs {
+            Number::Complex(z) => self.sub(z),
+            Number::Real(r) => self.sub(r.into_complex()),
+        }
+    }
+}
+
 impl Mul<Number> for Complex {
     type Output = Number;
 
@@ -516,7 +549,7 @@ impl Mul<Number> for Complex {
             Number::Real(r) => r.into_complex().into_parts(),
         };
         Number::complex(
-            (a.clone() * c.clone()) + -(b.clone() * d.clone()),
+            (a.clone() * c.clone()) - (b.clone() * d.clone()),
             (a * d) + (b * c),
         )
     }
@@ -868,6 +901,18 @@ impl Add for Real {
     }
 }
 
+impl Sub for Real {
+    type Output = Self;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        match self {
+            Self::Float(f) => (f - rhs.to_float()).into(),
+            Self::Integer(n) => n - rhs,
+            Self::Rational(q) => q - rhs,
+        }
+    }
+}
+
 impl Mul for Real {
     type Output = Self;
 
@@ -1009,6 +1054,27 @@ impl Add for Rational {
     }
 }
 
+impl Sub for Rational {
+    type Output = Real;
+
+    // a/b - c/d = (ad - cb)/bd except cross-reduce with gcd and lcm to lessen
+    // likelihood of intermediate result overflow.
+    // div/0 should be a programmer error here, hence the panics. if everything
+    // is wired up correctly this will only be called with canonical rationals
+    // or integer reciprocals.
+    #[allow(clippy::many_single_char_names)]
+    fn sub(self, rhs: Self) -> Self::Output {
+        let (a, b) = self.into_parts();
+        let (c, d) = rhs.into_parts();
+        let g = b.gcd(&d);
+        let m = b.lcm(&d);
+        debug_assert!(!g.is_zero());
+        debug_assert!(!m.is_zero());
+        (((a * Real::reduce_divisor(d, g.clone())) - (c * Real::reduce_divisor(b, g))) / m)
+            .expect("least common multiple of canonical denominators cannot be zero")
+    }
+}
+
 impl Mul for Rational {
     type Output = Real;
 
@@ -1067,6 +1133,18 @@ impl Add<Real> for Rational {
             Real::Float(f) => (self.to_float() + f).into(),
             Real::Integer(n) => self.add(n.into_rational()),
             Real::Rational(q) => self.add(q),
+        }
+    }
+}
+
+impl Sub<Real> for Rational {
+    type Output = Real;
+
+    fn sub(self, rhs: Real) -> Self::Output {
+        match rhs {
+            Real::Float(f) => (self.to_float() - f).into(),
+            Real::Integer(n) => self.sub(n.into_rational()),
+            Real::Rational(q) => self.sub(q),
         }
     }
 }
@@ -1271,11 +1349,7 @@ impl Neg for Integer {
     type Output = Self;
 
     fn neg(mut self) -> Self::Output {
-        match self.sign {
-            Sign::Negative => self.make_positive(),
-            Sign::Positive => self.make_negative(),
-            Sign::Zero => (),
-        }
+        self.sign = self.sign.flip();
         self
     }
 }
@@ -1298,6 +1372,29 @@ impl Add for Integer {
                     (self.sign, self.precision - rhs.precision)
                 };
                 Self::new(sum, sign)
+            }
+        }
+    }
+}
+
+impl Sub for Integer {
+    type Output = Self;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        match (&self.sign, &rhs.sign) {
+            (_, Sign::Zero) => self,
+            (Sign::Zero, _) => -rhs,
+            (Sign::Positive, Sign::Positive) | (Sign::Negative, Sign::Negative) => {
+                let (sign, sum) = if self.precision < rhs.precision {
+                    (self.sign.flip(), rhs.precision - self.precision)
+                } else {
+                    (self.sign, self.precision - rhs.precision)
+                };
+                Self::new(sum, sign)
+            }
+            (Sign::Positive, Sign::Negative) | (Sign::Negative, Sign::Positive) => {
+                let sum = self.precision + rhs.precision;
+                Self::new(sum, self.sign)
             }
         }
     }
@@ -1381,6 +1478,21 @@ impl Add<Real> for Integer {
     }
 }
 
+impl Sub<Real> for Integer {
+    type Output = Real;
+
+    fn sub(self, rhs: Real) -> Self::Output {
+        match rhs {
+            // Integral additive reciprical should flip the sign of a float;
+            // this ends up being relevant for 0 - 0.0 = -0.0
+            Real::Float(f) if self.is_zero() => (-f).into(),
+            Real::Float(f) => (self.to_float() - f).into(),
+            Real::Integer(n) => self.sub(n).into(),
+            Real::Rational(q) => self.into_rational() - q,
+        }
+    }
+}
+
 impl Mul<Real> for Integer {
     type Output = Real;
 
@@ -1417,6 +1529,16 @@ pub(crate) enum Sign {
     Zero,
     #[default]
     Positive,
+}
+
+impl Sign {
+    fn flip(self) -> Self {
+        match self {
+            Self::Negative => Self::Positive,
+            Self::Positive => Self::Negative,
+            Self::Zero => self,
+        }
+    }
 }
 
 impl Mul for Sign {
