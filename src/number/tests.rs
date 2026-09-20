@@ -6910,3 +6910,702 @@ mod reciprocal {
         }
     }
 }
+
+mod sqrt {
+    use super::*;
+
+    // destructure a complex sqrt result into its real and imaginary parts
+    macro_rules! complex_parts {
+        ($n:expr) => {
+            extract_or_fail!($n, Number::Complex).into_parts()
+        };
+    }
+
+    // Irrational complex components are algorithm-dependent in the last ulp (unit of least precision)
+    // (Chez and Guile themselves disagree by a ulp or two on some of these),
+    // so those get a tolerance instead of an exact string match.
+    macro_rules! assert_near {
+        ($actual:expr, $expected:expr) => {{
+            let a: f64 = $actual;
+            let e: f64 = $expected;
+            let tolerance = (e.abs() * 1e-9).max(1e-12);
+            assert!(
+                (a - e).abs() <= tolerance,
+                "expected {a} to be within {tolerance} of {e}"
+            );
+        }};
+    }
+
+    mod integer {
+        use super::*;
+
+        #[test]
+        fn perfect_squares_are_exact() {
+            let cases = [
+                (0, 0),
+                (1, 1),
+                (4, 2),
+                (9, 3),
+                (25, 5),
+                (144, 12),
+                (10000, 100),
+            ];
+            for (n, root) in cases {
+                let r = Number::real(n).sqrt();
+
+                assert_eq!(r.to_string(), root.to_string());
+                assert_matches!(r, Number::Real(Real::Integer(_)));
+            }
+        }
+
+        #[test]
+        fn non_perfect_squares_are_inexact() {
+            let cases = [
+                (2, "1.4142135623730951"),
+                (3, "1.7320508075688772"),
+                (5, "2.23606797749979"),
+                (10, "3.1622776601683795"),
+            ];
+            for (n, expected) in cases {
+                let r = Number::real(n).sqrt();
+
+                assert_eq!(r.to_string(), expected);
+                assert_matches!(r, Number::Real(Real::Float(_)));
+            }
+        }
+
+        #[test]
+        fn large_perfect_square_beyond_f64_safe_integer_range() {
+            // 4294967295^2; larger than 2^53 (the largest integer f64 can
+            // represent exactly), so a naive round-trip through f64 would
+            // lose precision and miss that this is a perfect square.
+            let r = Number::real((Sign::Positive, 18446744065119617025)).sqrt();
+
+            assert_eq!(r.to_string(), "4294967295");
+            assert_matches!(r, Number::Real(Real::Integer(_)));
+        }
+
+        #[test]
+        fn perfect_square_near_i64_max_is_exact() {
+            let r = Number::real(9223372030926249001).sqrt(); // 3037000499^2
+
+            assert_eq!(r.to_string(), "3037000499");
+            assert_matches!(r, Number::Real(Real::Integer(_)));
+        }
+
+        #[test]
+        fn value_adjacent_to_a_perfect_square_stays_inexact() {
+            // one less than 3037000499^2: f64::sqrt happens to round-trip to
+            // exactly 3037000499.0, but the argument is NOT a perfect
+            // square, so the result must not be promoted to an exact
+            // integer.
+            let r = Number::real(9223372030926249000).sqrt();
+
+            assert_eq!(r.to_string(), "3037000499.0");
+            assert_matches!(r, Number::Real(Real::Float(_)));
+        }
+
+        #[test]
+        fn non_perfect_square_beyond_i64_range() {
+            let r = Number::real((Sign::Positive, 9223372036854775808)).sqrt(); // 2^63
+
+            assert_eq!(r.to_string(), "3037000499.97605");
+        }
+
+        #[test]
+        fn negative_perfect_squares_are_exact_imaginary() {
+            let cases = [
+                (-1, "+i"),
+                (-4, "+2i"),
+                (-9, "+3i"),
+                (-25, "+5i"),
+                (-144, "+12i"),
+            ];
+            for (n, expected) in cases {
+                let r = Number::real(n).sqrt();
+
+                assert_eq!(r.to_string(), expected);
+            }
+        }
+
+        #[test]
+        fn negative_perfect_square_real_part_is_exact_zero() {
+            let r = Number::real(-4).sqrt();
+
+            let (re, _) = complex_parts!(r);
+            assert!(extract_or_fail!(re, Real::Integer).is_zero());
+        }
+
+        #[test]
+        fn negative_non_perfect_squares_are_inexact_imaginary() {
+            let cases = [(-2, "+1.4142135623730951i"), (-3, "+1.7320508075688772i")];
+            for (n, expected) in cases {
+                let r = Number::real(n).sqrt();
+
+                assert_eq!(r.to_string(), expected);
+            }
+        }
+
+        #[test]
+        fn negative_non_perfect_square_real_part_stays_exact_zero() {
+            // Zara keeps the exact zero carried over from the exact real
+            // axis, even though the imaginary part is forced inexact; this
+            // is a deliberate Zara choice, not what Chez does (Chez
+            // float-taints the real part to 0.0 here too).
+            let r = Number::real(-2).sqrt();
+
+            let (re, im) = complex_parts!(r);
+            assert!(extract_or_fail!(re, Real::Integer).is_zero());
+            assert!(im.is_inexact());
+        }
+
+        #[test]
+        fn i64_min_magnitude() {
+            let r = Number::real(i64::MIN).sqrt();
+
+            assert_eq!(r.to_string(), "+3037000499.97605i");
+        }
+
+        #[test]
+        #[ignore = "multi-precision sqrt not yet implemented"]
+        fn multi_precision_argument() {
+            let n = Integer {
+                precision: Precision::Multiple([4, 6].into()),
+                sign: Sign::Positive,
+            };
+
+            let r = Number::real(n).sqrt();
+
+            assert_matches!(r, Number::Real(Real::Integer(_)));
+        }
+    }
+
+    mod rational {
+        use super::*;
+
+        #[test]
+        fn perfect_square_rationals_are_exact() {
+            let cases = [
+                ((1, 4), "1/2"),
+                ((9, 16), "3/4"),
+                ((4, 9), "2/3"),
+                ((25, 4), "5/2"),
+                ((49, 100), "7/10"),
+            ];
+            for ((n, d), expected) in cases {
+                let q = ok_or_fail!(Real::reduce(n, d));
+                let r = Number::real(q).sqrt();
+
+                assert_eq!(r.to_string(), expected);
+                assert_matches!(r, Number::Real(Real::Rational(_)));
+            }
+        }
+
+        #[test]
+        fn reduces_before_taking_the_root() {
+            // the underlying representation reduces 2/8 to 1/4, 18/50 to
+            // 9/25, and 12/27 to 4/9 before sqrt ever sees them.
+            let cases = [((2, 8), "1/2"), ((18, 50), "3/5"), ((12, 27), "2/3")];
+            for ((n, d), expected) in cases {
+                let q = ok_or_fail!(Real::reduce(n, d));
+                let r = Number::real(q).sqrt();
+
+                assert_eq!(r.to_string(), expected);
+                assert_matches!(r, Number::Real(Real::Rational(_)));
+            }
+        }
+
+        #[test]
+        fn perfect_square_rational_reduces_to_an_exact_integer() {
+            let cases = [((8, 2), "2"), ((100, 4), "5")];
+            for ((n, d), expected) in cases {
+                let q = ok_or_fail!(Real::reduce(n, d));
+                let r = Number::real(q).sqrt();
+
+                assert_eq!(r.to_string(), expected);
+                assert_matches!(r, Number::Real(Real::Integer(_)));
+            }
+        }
+
+        #[test]
+        fn non_perfect_square_rationals_are_inexact() {
+            let cases = [
+                ((2, 3), "0.816496580927726"),
+                ((1, 3), "0.5773502691896257"),
+                ((10, 8), "1.118033988749895"),
+                ((1, 2), "0.7071067811865476"),
+            ];
+            for ((n, d), expected) in cases {
+                let q = ok_or_fail!(Real::reduce(n, d));
+                let r = Number::real(q).sqrt();
+
+                assert_eq!(r.to_string(), expected);
+                assert_matches!(r, Number::Real(Real::Float(_)));
+            }
+        }
+
+        #[test]
+        fn only_one_of_numerator_or_denominator_being_square_is_still_inexact() {
+            let cases = [
+                ((4, 3), "1.1547005383792515"),
+                ((3, 4), "0.8660254037844386"),
+            ];
+            for ((n, d), expected) in cases {
+                let q = ok_or_fail!(Real::reduce(n, d));
+                let r = Number::real(q).sqrt();
+
+                assert_eq!(r.to_string(), expected);
+            }
+        }
+
+        #[test]
+        fn negative_perfect_square_rationals_are_exact_imaginary() {
+            let cases = [((-1, 4), "+1/2i"), ((-9, 16), "+3/4i"), ((-25, 4), "+5/2i")];
+            for ((n, d), expected) in cases {
+                let q = ok_or_fail!(Real::reduce(n, d));
+                let r = Number::real(q).sqrt();
+
+                assert_eq!(r.to_string(), expected);
+            }
+        }
+
+        #[test]
+        fn negative_non_perfect_square_rational_is_inexact_imaginary() {
+            let q = ok_or_fail!(Real::reduce(-1, 3));
+            let r = Number::real(q).sqrt();
+
+            assert_eq!(r.to_string(), "+0.5773502691896257i");
+        }
+    }
+
+    mod float {
+        use super::*;
+
+        #[test]
+        fn perfect_square_floats_are_still_inexact() {
+            let cases = [
+                (4.0, "2.0"),
+                (25.0, "5.0"),
+                (0.25, "0.5"),
+                (1.0, "1.0"),
+                (100.0, "10.0"),
+            ];
+            for (f, expected) in cases {
+                let r = Number::real(f).sqrt();
+
+                assert_eq!(r.to_string(), expected);
+                assert_matches!(r, Number::Real(Real::Float(_)));
+            }
+        }
+
+        #[test]
+        fn non_perfect_square_float() {
+            let r = Number::real(2.0).sqrt();
+
+            assert_eq!(r.to_string(), "1.4142135623730951");
+        }
+
+        #[test]
+        fn positive_zero() {
+            let r = Number::real(0.0).sqrt();
+
+            assert_eq!(r.to_string(), "0.0");
+            assert!(r.is_eqv(&Number::real(0.0)));
+        }
+
+        #[test]
+        fn negative_zero_stays_real_unlike_other_negatives() {
+            // IEEE 754: sqrt(-0.0) == -0.0, the one negative real input
+            // whose root does not move onto the imaginary axis.
+            let r = Number::real(-0.0).sqrt();
+
+            assert_eq!(r.to_string(), "-0.0");
+            assert!(r.is_eqv(&Number::real(-0.0)));
+            assert!(!r.is_eqv(&Number::real(0.0)));
+            assert_matches!(r, Number::Real(Real::Float(_)));
+        }
+
+        #[test]
+        fn positive_infinity() {
+            let r = Number::real(f64::INFINITY).sqrt();
+
+            assert_eq!(r.to_string(), "+inf.0");
+        }
+
+        #[test]
+        fn negative_infinity_is_a_purely_imaginary_infinity() {
+            let r = Number::real(f64::NEG_INFINITY).sqrt();
+
+            assert_eq!(r.to_string(), "0.0+inf.0i");
+        }
+
+        #[test]
+        fn nan_propagates() {
+            let r = Number::real(f64::NAN).sqrt();
+
+            assert!(r.is_nan());
+        }
+
+        #[test]
+        fn max_float() {
+            let r = Number::real(f64::MAX).sqrt();
+
+            assert_eq!(r.to_string(), "1.3407807929942596e154");
+        }
+
+        #[test]
+        fn min_positive_float() {
+            let r = Number::real(f64::MIN_POSITIVE).sqrt();
+
+            assert_eq!(r.to_string(), "1.4916681462400413e-154");
+        }
+
+        #[test]
+        fn large_exponent_does_not_overflow() {
+            let r = Number::real(1e308).sqrt();
+
+            assert_eq!(r.to_string(), "1e154");
+        }
+
+        #[test]
+        fn subnormal() {
+            let r = Number::real(1e-320).sqrt();
+
+            assert_eq!(r.to_string(), "9.99994433575849e-161");
+        }
+
+        #[test]
+        fn smallest_subnormal_does_not_underflow_to_zero() {
+            let r = Number::real(f64::from_bits(1)).sqrt();
+
+            assert_eq!(r.to_string(), "2.2227587494850775e-162");
+            assert!(!r.is_zero());
+        }
+
+        #[test]
+        fn negative_floats_are_purely_imaginary() {
+            let cases = [
+                (-4.0, "0.0+2.0i"),
+                (-25.0, "0.0+5.0i"),
+                (-2.0, "0.0+1.4142135623730951i"),
+            ];
+            for (f, expected) in cases {
+                let r = Number::real(f).sqrt();
+
+                assert_eq!(r.to_string(), expected);
+            }
+        }
+
+        #[test]
+        fn negative_float_real_part_is_inexact_zero() {
+            // unlike the exact-integer/rational case, a float argument
+            // taints the zero real part to inexact.
+            let r = Number::real(-4.0).sqrt();
+
+            let (re, _) = complex_parts!(r);
+            let f = extract_or_fail!(re, Real::Float);
+            assert_eq!(f, 0.0);
+        }
+    }
+
+    mod complex {
+        use super::*;
+
+        #[test]
+        fn gaussian_integer_roots_are_exact() {
+            let cases = [
+                ((3, 4), (2, 1)),
+                ((5, 12), (3, 2)),
+                ((-3, 4), (1, 2)),
+                ((3, -4), (2, -1)),
+                ((-3, -4), (1, -2)),
+                ((-5, 12), (2, 3)),
+                ((8, 6), (3, 1)),
+                ((-8, 6), (1, 3)),
+                ((8, -6), (3, -1)),
+                ((7, 24), (4, 3)),
+            ];
+            for ((re, im), (exp_re, exp_im)) in cases {
+                let z = Number::complex(re, im);
+
+                let r = z.sqrt();
+
+                assert_eq!(r, Number::complex(exp_re, exp_im));
+                assert!(!r.is_inexact());
+            }
+        }
+
+        #[test]
+        fn purely_imaginary_perfect_squares() {
+            let cases = [(2, (1, 1)), (-2, (1, -1))];
+            for (im, (exp_re, exp_im)) in cases {
+                let z = Number::imaginary(im);
+
+                let r = z.sqrt();
+
+                assert_eq!(r, Number::complex(exp_re, exp_im));
+            }
+        }
+
+        #[test]
+        fn exact_rational_imaginary_part_produces_an_exact_root() {
+            let half = ok_or_fail!(Real::reduce(1, 2));
+            let z = Number::complex(0, half.clone());
+
+            let r = z.sqrt();
+
+            assert_eq!(r, Number::complex(half.clone(), half));
+        }
+
+        #[test]
+        fn mixed_integer_real_and_rational_imaginary_parts() {
+            let three_halves = ok_or_fail!(Real::reduce(3, 2));
+            let half = ok_or_fail!(Real::reduce(1, 2));
+            let z = Number::complex(2, three_halves.clone());
+
+            let r = z.sqrt();
+
+            assert_eq!(r, Number::complex(three_halves, half));
+        }
+
+        #[test]
+        fn non_perfect_square_components_are_inexact() {
+            let cases = [
+                ((1, 1), (1.09868411346781, 0.45508986056222733)),
+                ((2, 3), (1.6741492280355401, 0.8959774761298381)),
+            ];
+            for ((re, im), (exp_re, exp_im)) in cases {
+                let z = Number::complex(re, im);
+
+                let r = z.sqrt();
+
+                assert!(r.is_inexact());
+                let (actual_re, actual_im) = complex_parts!(r);
+                assert_near!(actual_re.to_float(), exp_re);
+                assert_near!(actual_im.to_float(), exp_im);
+            }
+        }
+
+        #[test]
+        fn unit_imaginary_is_irrational() {
+            let z = Number::imaginary(1);
+
+            let r = z.sqrt();
+
+            assert_eq!(r.to_string(), "0.7071067811865476+0.7071067811865475i");
+        }
+
+        #[test]
+        fn inexact_components_stay_inexact_even_for_exact_valued_roots() {
+            let z = Number::complex(3.0, 4.0);
+
+            let r = z.sqrt();
+
+            assert_eq!(r.to_string(), "2.0+1.0i");
+            assert!(r.is_inexact());
+        }
+
+        #[test]
+        fn zero_exact_imaginary_reduces_to_a_real_result() {
+            let z = Number::complex(4, 0); // reduces to Number::Real at construction
+
+            let r = z.sqrt();
+
+            assert_eq!(r.to_string(), "2");
+            assert_matches!(r, Number::Real(Real::Integer(_)));
+        }
+
+        #[test]
+        fn zero_inexact_imaginary_keeps_the_complex_representation() {
+            let z = Number::complex(4, 0.0); // does NOT reduce; stays Complex
+
+            let r = z.sqrt();
+
+            assert_eq!(r.to_string(), "2.0+0.0i");
+        }
+
+        #[test]
+        fn sign_of_zero_imaginary_part_selects_the_branch() {
+            let cases = [((-4, 0.0), "0.0+2.0i"), ((-4, -0.0), "0.0-2.0i")];
+            for ((re, im), expected) in cases {
+                let z = Number::complex(re, im);
+
+                let r = z.sqrt();
+
+                assert_eq!(r.to_string(), expected);
+            }
+        }
+
+        #[test]
+        fn large_magnitude_does_not_overflow_to_infinity() {
+            let z = Number::complex(1e200, 1e200);
+
+            let r = z.sqrt();
+
+            assert!(!r.is_infinite());
+            let (re, im) = complex_parts!(r);
+            assert_near!(re.to_float(), 1.09868411346781e100);
+            assert_near!(im.to_float(), 4.550898605622274e99);
+        }
+
+        #[test]
+        fn small_magnitude_does_not_underflow_to_zero() {
+            let z = Number::complex(1e-200, 1e-200);
+
+            let r = z.sqrt();
+
+            assert!(!r.is_zero());
+        }
+
+        #[test]
+        fn both_components_infinite() {
+            let z = Number::complex(f64::INFINITY, f64::INFINITY);
+
+            let r = z.sqrt();
+
+            assert_eq!(r.to_string(), "+inf.0+inf.0i");
+        }
+
+        #[test]
+        fn negative_infinite_real_with_finite_imaginary() {
+            let z = Number::complex(f64::NEG_INFINITY, 1.0);
+
+            let r = z.sqrt();
+
+            assert_eq!(r.to_string(), "0.0+inf.0i");
+        }
+
+        #[test]
+        fn nan_in_either_component_propagates_to_both() {
+            let cases = [
+                Number::complex(f64::NAN, 1.0),
+                Number::complex(1.0, f64::NAN),
+            ];
+            for z in cases {
+                let r = z.sqrt();
+
+                let (re, im) = complex_parts!(r);
+                assert!(re.is_nan());
+                assert!(im.is_nan());
+            }
+        }
+
+        #[test]
+        fn conjugate_symmetry_off_the_negative_real_axis() {
+            // sqrt(conj(z)) == conj(sqrt(z)); this identity only holds off
+            // the negative real axis, where the branch cut would otherwise
+            // flip which root is "principal".
+            let cases = [(3, 4), (8, 6), (1, 1)];
+            for (re, im) in cases {
+                let z = Number::complex(re, im);
+
+                let conj_then_root = z.clone().into_complex_conjugate().sqrt();
+                let root_then_conj = z.sqrt().into_complex_conjugate();
+
+                assert_eq!(conj_then_root.to_string(), root_then_conj.to_string());
+            }
+        }
+    }
+
+    mod laws {
+        use super::*;
+
+        #[test]
+        fn exact_roots_square_back_to_the_original_value() {
+            let cases = [
+                Number::real(25),
+                Number::real(ok_or_fail!(Real::reduce(9, 16))),
+                Number::real(-4),
+                Number::complex(3, 4),
+                Number::complex(5, 12),
+            ];
+            for n in cases {
+                let r = n.clone().sqrt();
+
+                assert_eq!(r.clone() * r, n);
+            }
+        }
+
+        #[test]
+        fn principal_branch_real_part_is_never_negative() {
+            let cases = [
+                Number::real(4),
+                Number::real(-4),
+                Number::real(2),
+                Number::real(-2),
+                Number::real(4.0),
+                Number::real(-4.0),
+                Number::complex(3, 4),
+                Number::complex(-3, 4),
+                Number::complex(1, 1),
+                Number::complex(-1, -1),
+            ];
+            for n in cases {
+                let re = n.sqrt().into_real();
+
+                assert!(!re.is_negative());
+            }
+        }
+
+        #[test]
+        fn zero_real_part_pairs_with_a_nonnegative_imaginary_part() {
+            let cases = [Number::real(-4), Number::real(-2), Number::real(-4.0)];
+            for n in cases {
+                let r = n.sqrt();
+                let re = r.clone().into_real();
+
+                if re.is_zero() {
+                    let im = r.into_imag();
+                    assert!(!im.is_negative());
+                }
+            }
+        }
+
+        #[test]
+        fn inexact_arguments_always_produce_inexact_results() {
+            let cases = [
+                Number::real(2.0),
+                Number::real(-4.0),
+                Number::real(f64::INFINITY),
+                Number::complex(1.0, 1.0),
+                Number::complex(3.0, 4.0),
+            ];
+            for n in cases {
+                let r = n.sqrt();
+
+                assert!(r.is_inexact());
+            }
+        }
+
+        #[test]
+        fn sqrt_of_a_perfect_square_recovers_the_magnitude() {
+            let cases = [-7, -4, -1, 0, 1, 4, 7];
+            for n in cases {
+                let squared = Number::real(n) * Number::real(n);
+
+                let r = squared.sqrt();
+
+                assert_eq!(r.to_string(), n.unsigned_abs().to_string());
+            }
+        }
+
+        #[test]
+        fn inexact_roots_square_back_approximately() {
+            let cases = [Number::real(2), Number::real(3.0), Number::complex(1, 1)];
+            for n in cases {
+                let r = n.clone().sqrt();
+                let squared = r.clone() * r;
+
+                let expected = n.into_inexact();
+                assert_near!(
+                    squared.clone().into_real().to_float(),
+                    expected.clone().into_real().to_float()
+                );
+                assert_near!(
+                    squared.into_imag().to_float(),
+                    expected.into_imag().to_float()
+                );
+            }
+        }
+    }
+}
