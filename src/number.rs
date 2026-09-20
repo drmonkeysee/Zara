@@ -329,7 +329,14 @@ impl Number {
     pub(crate) fn sqrt(self) -> Self {
         match self {
             Self::Complex(z) => todo!(),
-            Self::Real(r) => Self::real(r.sqrt()),
+            Self::Real(r) => {
+                let rt = r.sqrt();
+                if rt.is_negative() {
+                    Self::imaginary(-rt)
+                } else {
+                    Self::real(rt)
+                }
+            }
         }
     }
 }
