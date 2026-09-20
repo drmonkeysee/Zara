@@ -859,6 +859,7 @@ impl Real {
 
     fn sqrt(self) -> Self {
         match self {
+            Self::Float(f) if f == 0.0 => self,
             Self::Float(f) => todo!(),
             Self::Integer(n) => n.sqrt(),
             Self::Rational(q) => todo!(),
@@ -1346,14 +1347,15 @@ impl Integer {
         Self::new(sum, sign)
     }
 
+    // Real handles negative sign so this function technically returns the
+    // wrong value for negative roots (e.g. √-4 = -2 instead of +2i)
     fn sqrt(self) -> Real {
         if self.is_zero() {
             self.into()
         } else if let Some(p) = self.precision.isqrt() {
-            // do not handle sign here but up in Real
             Self::new(p, self.sign).into()
         } else {
-            self.to_float().sqrt().into()
+            sign_preserving_sqrt(self.to_float()).into()
         }
     }
 }
@@ -2117,6 +2119,11 @@ fn gcd_euclidean(mut a: u64, mut b: u64) -> u64 {
         a = t;
     }
     a
+}
+
+// helper to keep the sign consistent across √ in order to apply imaginary root later
+fn sign_preserving_sqrt(f: f64) -> f64 {
+    f.abs().sqrt() * f.signum()
 }
 
 fn parse_signed<R: Radix>(spec: &IntSpec<R>, input: &str) -> IntResult {
