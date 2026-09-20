@@ -7698,3 +7698,99 @@ mod sqrt {
         }
     }
 }
+
+mod magnitude {
+    use super::*;
+
+    mod complex {
+        use super::*;
+
+        #[test]
+        fn perfect_square_magnitude_is_exact() {
+            let cases = [
+                ((3, 4), "5"),
+                ((5, 12), "13"),
+                ((8, 6), "10"),
+                ((7, 24), "25"),
+                ((-3, 4), "5"),
+                ((-3, -4), "5"),
+            ];
+            for ((re, im), expected) in cases {
+                let z = Number::complex(re, im);
+
+                let mag = z.into_magnitude();
+
+                assert_eq!(mag.to_string(), expected);
+                assert_matches!(mag, Real::Integer(_));
+            }
+        }
+
+        #[test]
+        fn perfect_square_rational_magnitude_is_exact() {
+            let re = ok_or_fail!(Real::reduce(3, 5));
+            let im = ok_or_fail!(Real::reduce(4, 5));
+            let z = Number::complex(re, im);
+
+            let mag = z.into_magnitude();
+
+            assert_eq!(mag.to_string(), "1");
+            assert_matches!(mag, Real::Integer(_));
+        }
+
+        #[test]
+        fn zero_magnitude_is_exact() {
+            let z = Number::complex(0, 0);
+
+            let mag = z.into_magnitude();
+
+            assert_eq!(mag.to_string(), "0");
+            assert_matches!(mag, Real::Integer(_));
+        }
+    }
+
+    mod laws {
+        use super::*;
+
+        #[test]
+        fn non_perfect_square_stays_inexact() {
+            // matches core/complex.rs's get_magnitude_complex intrinsic test
+            let z = Number::complex(4, 5);
+
+            let mag = z.into_magnitude();
+
+            assert_eq!(mag.to_string(), "6.4031242374328485");
+            assert_matches!(mag, Real::Float(_));
+        }
+
+        #[test]
+        fn inexact_components_always_stay_inexact() {
+            // exactness contagion (R7RS 6.2.2): even though 5 is exactly
+            // representable, any inexact component taints the result, the
+            // same rule mod sqrt pins down for sqrt itself.
+            let cases = [
+                Number::complex(3.0, 4.0),
+                Number::complex(3.0, 4),
+                Number::complex(3, 4.0),
+            ];
+            for z in cases {
+                let mag = z.into_magnitude();
+
+                assert_eq!(mag.to_string(), "5.0");
+                assert_matches!(mag, Real::Float(_));
+            }
+        }
+
+        #[test]
+        fn agrees_with_sqrt_of_sum_of_squares() {
+            let cases = [(3, 4), (5, 12), (8, 6), (7, 24)];
+            for (x, y) in cases {
+                let z = Number::complex(x, y);
+                let magnitude = Number::real(z.into_magnitude());
+
+                let via_sqrt = Number::real((x * x) + (y * y)).sqrt();
+
+                assert_eq!(magnitude.to_string(), via_sqrt.to_string());
+            }
+        }
+    }
+}
