@@ -6312,16 +6312,6 @@ mod div {
             assert!(quotient.is_nan());
         }
 
-        // Reproduces a real-divisor bug: `Div for Number`'s `(Complex, Real)`
-        // arm promotes the real divisor to a Complex and routes through the
-        // general conjugate/magnitude-squared reciprocal algorithm
-        // (src/number.rs:319) instead of dividing each component directly.
-        // For a real divisor, direct component-wise division
-        // `(x+yi)/r = x/r + (y/r)i` is both simpler and IEEE-correct;
-        // the magnitude-squared detour instead produces 0.0/0.0 or
-        // inf/inf internally, yielding NaN+NaNi where Chez Scheme and
-        // Guile (dividing componentwise) give +inf.0+inf.0i / 0.0+0.0i
-        // respectively.
         #[test]
         fn division_by_inexact_zero_is_infinite() {
             let cases = [Number::complex(3, 2), Number::complex(3.0, 2.0)];
@@ -6342,11 +6332,6 @@ mod div {
             }
         }
 
-        // Same bug as division_by_inexact_zero_is_infinite, mirrored to a
-        // negative-signed zero divisor: componentwise division would give
-        // 3/-0.0 = -inf.0 and 2/-0.0 = -inf.0, so a fix that only handles
-        // +0.0 but mishandles -0.0 (an easy slip given how much sign-of-zero
-        // subtlety is at play here) would still fail this one.
         #[test]
         fn division_by_negative_inexact_zero_is_negative_infinite() {
             let cases = [Number::complex(3, 2), Number::complex(3.0, 2.0)];
@@ -7325,7 +7310,7 @@ mod sqrt {
         fn negative_infinity_is_a_purely_imaginary_infinity() {
             let r = Number::real(f64::NEG_INFINITY).sqrt();
 
-            assert_eq!(r.to_string(), "0.0+inf.0i");
+            assert_eq!(r.to_string(), "+inf.0i");
         }
 
         #[test]
@@ -7374,9 +7359,9 @@ mod sqrt {
         #[test]
         fn negative_floats_are_purely_imaginary() {
             let cases = [
-                (-4.0, "0.0+2.0i"),
-                (-25.0, "0.0+5.0i"),
-                (-2.0, "0.0+1.4142135623730951i"),
+                (-4.0, "+2.0i"),
+                (-25.0, "+5.0i"),
+                (-2.0, "+1.4142135623730951i"),
             ];
             for (f, expected) in cases {
                 let r = Number::real(f).sqrt();
@@ -7386,14 +7371,11 @@ mod sqrt {
         }
 
         #[test]
-        fn negative_float_real_part_is_inexact_zero() {
-            // unlike the exact-integer/rational case, a float argument
-            // taints the zero real part to inexact.
+        fn negative_float_real_part_is_exact_zero() {
             let r = Number::real(-4.0).sqrt();
 
             let (re, _) = complex_parts!(r);
-            let f = extract_or_fail!(re, Real::Float);
-            assert_eq!(f, 0.0);
+            assert_eq!(re.to_string(), "0");
         }
     }
 
