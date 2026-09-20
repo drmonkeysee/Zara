@@ -1222,7 +1222,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "rational addition not yet implemented"]
     fn sub_rationals() {
         let args = [
             Value::real(ok_or_fail!(Real::reduce(3, 4))),

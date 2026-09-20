@@ -87,6 +87,34 @@ mod sign {
             assert_eq!(a * b, b * a);
         }
     }
+
+    #[test]
+    fn flip_matrix() {
+        let cases = [
+            (Sign::Negative, Sign::Positive),
+            (Sign::Zero, Sign::Zero),
+            (Sign::Positive, Sign::Negative),
+        ];
+        for (s, expected) in cases {
+            assert_eq!(s.flip(), expected);
+        }
+    }
+
+    #[test]
+    fn flip_is_an_involution() {
+        let cases = [Sign::Negative, Sign::Zero, Sign::Positive];
+        for s in cases {
+            assert_eq!(s.flip().flip(), s);
+        }
+    }
+
+    #[test]
+    fn flip_negates_value() {
+        let cases = [Sign::Negative, Sign::Zero, Sign::Positive];
+        for s in cases {
+            assert_eq!(s.flip() as i32, -(s as i32));
+        }
+    }
 }
 
 mod token {
@@ -4584,6 +4612,525 @@ mod add {
     }
 }
 
+mod sub {
+    use super::*;
+
+    #[test]
+    fn integer_matrix() {
+        let cases = [
+            (5, 3, "2"),
+            (3, 5, "-2"),
+            (0, 5, "-5"),
+            (5, 0, "5"),
+            (0, 0, "0"),
+            (-2, -3, "1"),
+            (-3, -2, "-1"),
+            (5, -3, "8"),
+            (3, -5, "8"),
+            (-5, 3, "-8"),
+            (5, 5, "0"),
+            (-5, -5, "0"),
+            (-5, 5, "-10"),
+        ];
+        for (a, b, expected) in cases {
+            let diff = Number::real(a) - Number::real(b);
+
+            assert_eq!(diff.to_string(), expected);
+        }
+    }
+
+    #[test]
+    fn integer_difference_stays_exact() {
+        let diff = Number::real(5) - Number::real(3);
+
+        let n = extract_or_fail!(diff, Number::Real);
+        assert_matches!(n, Real::Integer(_));
+    }
+
+    #[test]
+    fn integer_difference_beyond_i64_max() {
+        let diff = Number::real(i64::MAX) - Number::real(-1);
+
+        assert_eq!(diff.to_string(), "9223372036854775808");
+    }
+
+    #[test]
+    fn integer_difference_beyond_i64_min() {
+        let diff = Number::real(i64::MIN) - Number::real(1);
+
+        assert_eq!(diff.to_string(), "-9223372036854775809");
+    }
+
+    #[test]
+    fn equal_magnitude_difference_has_zero_sign() {
+        let cases = [(5, 5), (-5, -5)];
+        for (a, b) in cases {
+            let diff = Integer::from(a) - Integer::from(b);
+
+            assert_eq!(diff.sign, Sign::Zero);
+        }
+    }
+
+    #[test]
+    #[ignore = "multi-precision subtraction not yet implemented"]
+    fn integer_difference_overflows_precision() {
+        let a = Integer::new(u64::MAX, Sign::Positive);
+        let b = Integer::from(-1);
+
+        let diff = a - b;
+
+        assert_eq!(diff.to_string(), "18446744073709551616");
+    }
+
+    #[test]
+    #[ignore = "multi-precision subtraction not yet implemented"]
+    fn multi_precision() {
+        let a = Integer {
+            precision: Precision::Multiple([4, 6].into()),
+            sign: Sign::Positive,
+        };
+        let b = Integer::from(4);
+
+        let diff = a - b;
+
+        assert_eq!(extract_or_fail!(diff.precision, Precision::Single), 0);
+        assert_eq!(diff.sign, Sign::Zero);
+    }
+
+    #[test]
+    fn float_matrix() {
+        let cases = [
+            (2.5, 1.5, "1.0"),
+            (0.3, 0.1, "0.19999999999999998"),
+            (-1.5, 0.5, "-2.0"),
+            (1.5, -0.5, "2.0"),
+            (0.0, 0.0, "0.0"),
+            (0.0, -0.0, "0.0"),
+            (-0.0, 0.0, "-0.0"),
+            (-0.0, -0.0, "0.0"),
+        ];
+        for (a, b, expected) in cases {
+            let diff = Number::real(a) - Number::real(b);
+
+            assert_eq!(diff.to_string(), expected);
+        }
+    }
+
+    #[test]
+    fn float_difference_is_inexact() {
+        let diff = Number::real(2.5) - Number::real(1.5);
+
+        let n = extract_or_fail!(diff, Number::Real);
+        assert_matches!(n, Real::Float(_));
+    }
+
+    #[test]
+    fn float_infinities() {
+        let cases = [
+            (f64::INFINITY, 1.0, "+inf.0"),
+            (f64::NEG_INFINITY, 1.0, "-inf.0"),
+            (1.0, f64::INFINITY, "-inf.0"),
+            (f64::INFINITY, f64::NEG_INFINITY, "+inf.0"),
+            (f64::NEG_INFINITY, f64::INFINITY, "-inf.0"),
+        ];
+        for (a, b, expected) in cases {
+            let diff = Number::real(a) - Number::real(b);
+
+            assert_eq!(diff.to_string(), expected);
+        }
+    }
+
+    #[test]
+    fn like_infinities_difference_is_nan() {
+        let cases = [
+            (f64::INFINITY, f64::INFINITY),
+            (f64::NEG_INFINITY, f64::NEG_INFINITY),
+        ];
+        for (a, b) in cases {
+            let diff = Number::real(a) - Number::real(b);
+
+            assert!(diff.is_nan());
+        }
+    }
+
+    #[test]
+    fn nan_propagates_as_first_operand() {
+        let diff = Number::real(f64::NAN) - Number::real(1.0);
+
+        assert!(diff.is_nan());
+    }
+
+    #[test]
+    fn nan_propagates_as_second_operand() {
+        let diff = Number::real(1.0) - Number::real(f64::NAN);
+
+        assert!(diff.is_nan());
+    }
+
+    #[test]
+    fn integer_and_float_either_order() {
+        let a = Number::real(2) - Number::real(1.5);
+        let b = Number::real(1.5) - Number::real(2);
+
+        assert_eq!(a.to_string(), "0.5");
+        assert_eq!(b.to_string(), "-0.5");
+    }
+
+    #[test]
+    fn mixed_difference_is_inexact() {
+        let diff = Number::real(2) - Number::real(1.5);
+
+        let n = extract_or_fail!(diff, Number::Real);
+        assert_matches!(n, Real::Float(_));
+    }
+
+    #[test]
+    fn integer_and_float_cancel_to_inexact_zero() {
+        let diff = Number::real(5) - Number::real(5.0);
+
+        assert_eq!(diff.to_string(), "0.0");
+    }
+
+    // exact zero acts as a pure sign flip here, not an IEEE coercion to
+    // 0.0 - 0.0 == 0.0; this is the sub equivalent of exact zero's additive identity
+    #[test]
+    fn exact_zero_minus_inexact_zero_flips_sign() {
+        let diff = Number::real(0) - Number::real(0.0);
+
+        assert_eq!(diff.to_string(), "-0.0");
+    }
+
+    #[test]
+    fn exact_zero_minus_negative_inexact_zero() {
+        let diff = Number::real(0) - Number::real(-0.0);
+
+        assert_eq!(diff.to_string(), "0.0");
+    }
+
+    #[test]
+    fn exact_zero_minus_infinity_negates() {
+        let diff = Number::real(0) - Number::real(f64::INFINITY);
+
+        assert_eq!(diff.to_string(), "-inf.0");
+    }
+
+    #[test]
+    fn inexact_zero_minus_exact_zero_preserves_sign() {
+        let cases = [(0.0, "0.0"), (-0.0, "-0.0")];
+        for (f, expected) in cases {
+            let diff = Number::real(f) - Number::real(0);
+
+            assert_eq!(diff.to_string(), expected);
+        }
+    }
+
+    #[test]
+    fn rational_matrix() {
+        let cases = [
+            ((1, 2), (1, 3), "1/6"),
+            ((1, 3), (1, 2), "-1/6"),
+            ((1, 6), (1, 6), "0"),
+            ((3, 4), (1, 4), "1/2"),
+            ((1, 2), (-1, 3), "5/6"),
+            ((-1, 2), (-1, 3), "-1/6"),
+            ((2, 3), (5, 6), "-1/6"),
+            ((5, 6), (2, 3), "1/6"),
+        ];
+        for ((an, ad), (bn, bd), expected) in cases {
+            let a = ok_or_fail!(Real::reduce(an, ad));
+            let b = ok_or_fail!(Real::reduce(bn, bd));
+
+            let diff = Number::real(a) - Number::real(b);
+
+            assert_eq!(diff.to_string(), expected);
+        }
+    }
+
+    #[test]
+    fn rational_difference_collapsing_to_integer_is_an_integer() {
+        let a = ok_or_fail!(Real::reduce(3, 2));
+        let b = ok_or_fail!(Real::reduce(1, 2));
+
+        let diff = Number::real(a) - Number::real(b);
+
+        let n = extract_or_fail!(diff, Number::Real);
+        assert_matches!(n, Real::Integer(_));
+    }
+
+    #[test]
+    fn rational_difference_stays_exact() {
+        let a = ok_or_fail!(Real::reduce(1, 2));
+        let b = ok_or_fail!(Real::reduce(1, 3));
+
+        let diff = Number::real(a) - Number::real(b);
+
+        let n = extract_or_fail!(diff, Number::Real);
+        assert!(!matches!(n, Real::Float(_)));
+    }
+
+    #[test]
+    fn rational_cancels_to_exact_zero() {
+        let a = ok_or_fail!(Real::reduce(1, 2));
+        let b = ok_or_fail!(Real::reduce(1, 2));
+
+        let diff = Number::real(a) - Number::real(b);
+
+        assert_eq!(diff.to_string(), "0");
+        let n = extract_or_fail!(diff, Number::Real);
+        assert_matches!(n, Real::Integer(_));
+    }
+
+    #[test]
+    fn rational_and_integer_either_order() {
+        let q = ok_or_fail!(Real::reduce(1, 2));
+        let a = Number::real(q.clone()) - Number::real(3);
+        let b = Number::real(3) - Number::real(q);
+
+        assert_eq!(a.to_string(), "-5/2");
+        assert_eq!(b.to_string(), "5/2");
+    }
+
+    #[test]
+    fn rational_and_float_either_order() {
+        let q = ok_or_fail!(Real::reduce(1, 2));
+        let a = Number::real(q.clone()) - Number::real(0.25);
+        let b = Number::real(0.25) - Number::real(q);
+
+        assert_eq!(a.to_string(), "0.25");
+        assert_eq!(b.to_string(), "-0.25");
+    }
+
+    #[test]
+    fn rational_and_float_difference_is_inexact() {
+        let q = ok_or_fail!(Real::reduce(1, 2));
+        let diff = Number::real(q) - Number::real(0.25);
+
+        let n = extract_or_fail!(diff, Number::Real);
+        assert_matches!(n, Real::Float(_));
+    }
+
+    #[test]
+    fn shared_denominator_avoids_intermediate_overflow() {
+        let big: Integer = (Sign::Positive, u64::MAX).into();
+        let a = ok_or_fail!(Real::reduce(2, big.clone()));
+        let b = ok_or_fail!(Real::reduce(1, big));
+
+        let diff = Number::real(a) - Number::real(b);
+
+        assert_eq!(diff.to_string(), "1/18446744073709551615");
+    }
+
+    #[test]
+    #[ignore = "multi-precision lcm not yet implemented"]
+    fn coprime_denominators_overflow_precision() {
+        // 7 shares no factor with u64::MAX (== 3*5*17*257*65537*641*6700417),
+        // so lcm(big, 7) == big*7, which overflows u64 precision.
+        let big: Integer = (Sign::Positive, u64::MAX).into();
+        let a = ok_or_fail!(Real::reduce(1, big));
+        let b = ok_or_fail!(Real::reduce(1, 7));
+
+        let diff = Number::real(a) - Number::real(b);
+
+        assert_matches!(diff, Number::Real(Real::Rational(_)));
+    }
+
+    #[test]
+    fn complex_minus_complex() {
+        let a = Number::complex(3, 2);
+        let b = Number::complex(1, 4);
+
+        let diff = a - b;
+
+        assert_eq!(diff.to_string(), "2-2i");
+    }
+
+    // Add for Number uses an order-erasing (Complex, n) | (n, Complex) pattern,
+    // since addition is commutative; Sub must not do the same, or this would
+    // wrongly come out as -2+2i.
+    #[test]
+    fn real_minus_complex_subtracts_in_operand_order() {
+        let diff = Number::real(5) - Number::complex(3, 2);
+
+        assert_eq!(diff.to_string(), "2-2i");
+    }
+
+    #[test]
+    fn complex_minus_real() {
+        let diff = Number::complex(3, 2) - Number::real(5);
+
+        assert_eq!(diff.to_string(), "-2+2i");
+    }
+
+    #[test]
+    fn complex_and_real_are_anticommutative() {
+        let z = Number::complex(3, 2);
+        let a = Number::real(5) - z.clone();
+        let b = -(z - Number::real(5));
+
+        assert_eq!(a.to_string(), b.to_string());
+    }
+
+    #[test]
+    fn complex_imaginary_parts_cancel_to_real() {
+        let a = Number::complex(3, 2);
+        let b = Number::complex(1, 2);
+
+        let diff = a - b;
+
+        assert_eq!(diff.to_string(), "2");
+        assert_matches!(diff, Number::Real(_));
+    }
+
+    #[test]
+    fn complex_real_parts_cancel() {
+        let a = Number::complex(3, 2);
+        let b = Number::complex(3, 4);
+
+        let diff = a - b;
+
+        assert_eq!(diff.to_string(), "-2i");
+    }
+
+    #[test]
+    fn complex_fully_cancels_to_zero() {
+        let a = Number::complex(3, 2);
+        let b = Number::complex(3, 2);
+
+        let diff = a - b;
+
+        assert_eq!(diff.to_string(), "0");
+    }
+
+    #[test]
+    fn complex_inexact_imaginary_cancels_to_inexact_zero_stays_complex() {
+        let a = Number::complex(3, 2.0);
+        let b = Number::complex(1, 2.0);
+
+        let diff = a - b;
+
+        assert_eq!(diff.to_string(), "2+0.0i");
+        assert_matches!(diff, Number::Complex(_));
+    }
+
+    #[test]
+    fn complex_minus_inexact_real_keeps_mixed_exactness() {
+        let diff = Number::complex(3, 2) - Number::real(1.5);
+
+        assert_eq!(diff.to_string(), "1.5+2i");
+    }
+
+    #[test]
+    fn all_inexact_complex() {
+        let a = Number::complex(3.0, 2.0);
+        let b = Number::complex(1.0, 1.0);
+
+        let diff = a - b;
+
+        assert_eq!(diff.to_string(), "2.0+1.0i");
+    }
+
+    #[test]
+    fn zero_minus_complex_is_negation() {
+        let diff = Number::zero() - Number::complex(3, 2);
+
+        assert_eq!(diff.to_string(), "-3-2i");
+    }
+
+    #[test]
+    fn zero_is_right_identity() {
+        let q = ok_or_fail!(Real::reduce(1, 2));
+        let cases = [
+            Number::real(7),
+            Number::real(4.5),
+            Number::real(q),
+            Number::complex(3, 2),
+        ];
+        for a in cases {
+            let diff = a.clone() - Number::zero();
+
+            assert_eq!(diff.to_string(), a.to_string());
+        }
+    }
+
+    #[test]
+    fn zero_minus_operand_is_negation() {
+        let q = ok_or_fail!(Real::reduce(1, 2));
+        let cases = [
+            Number::real(7),
+            Number::real(4.5),
+            Number::real(q),
+            Number::complex(3, 2),
+        ];
+        for a in cases {
+            let diff = Number::zero() - a.clone();
+
+            assert_eq!(diff.to_string(), (-a).to_string());
+        }
+    }
+
+    #[test]
+    fn self_subtraction_is_zero() {
+        let cases = [
+            (Number::real(7), "0"),
+            (Number::real(1.5), "0.0"),
+            (Number::real(ok_or_fail!(Real::reduce(1, 2))), "0"),
+            (Number::complex(3, 4), "0"),
+        ];
+        for (x, expected) in cases {
+            let diff = x.clone() - x;
+
+            assert_eq!(diff.to_string(), expected);
+        }
+    }
+
+    #[test]
+    fn subtraction_is_addition_of_negation() {
+        let q = ok_or_fail!(Real::reduce(1, 2));
+        let cases: [(Number, Number); 7] = [
+            (Number::real(5), Number::real(3)),
+            (Number::real(5), Number::real(1.5)),
+            (Number::real(1.5), Number::real(5)),
+            (Number::real(q), Number::real(3)),
+            (Number::complex(3, 2), Number::real(5)),
+            (Number::real(5), Number::complex(3, 2)),
+            (Number::real(0), Number::real(0.0)),
+        ];
+        for (a, b) in cases {
+            let via_sub = a.clone() - b.clone();
+            let via_add_neg = a + (-b);
+
+            assert_eq!(via_sub.to_string(), via_add_neg.to_string());
+        }
+    }
+
+    #[test]
+    fn subtraction_is_anticommutative() {
+        // exact operands only: float cases legitimately differ in zero sign,
+        // e.g. 1.5 - 1.5 == 0.0 but -(1.5 - 1.5) == -0.0.
+        let q = ok_or_fail!(Real::reduce(1, 2));
+        let cases = [
+            (Number::real(5), Number::real(3)),
+            (Number::real(q), Number::real(3)),
+            (Number::complex(3, 2), Number::real(5)),
+        ];
+        for (a, b) in cases {
+            let ab = a.clone() - b.clone();
+            let neg_ba = -(b - a);
+
+            assert_eq!(ab.to_string(), neg_ba.to_string());
+        }
+    }
+
+    #[test]
+    fn subtraction_is_not_associative() {
+        let ab_c = (Number::real(10) - Number::real(3)) - Number::real(2);
+        let a_bc = Number::real(10) - (Number::real(3) - Number::real(2));
+
+        assert_eq!(ab_c.to_string(), "5");
+        assert_eq!(a_bc.to_string(), "9");
+    }
+}
+
 mod mult {
     use super::*;
 
@@ -5748,6 +6295,27 @@ mod div {
                 assert_eq!(quotient.to_string(), "-0.0-0.0i");
             }
         }
+
+        // An exact zero imaginary part collapses Number::complex straight to a
+        // Real (see Number::complex), so this never touches Complex::div at all
+        // -- contrast with the inexact case below.
+        #[test]
+        fn real_over_complex_with_exact_zero_imaginary_is_real() {
+            let quotient = ok_or_fail!(Number::real(1) / Number::complex(2.0, 0));
+
+            assert_eq!(quotient.to_string(), "0.5");
+            assert_matches!(quotient, Number::Real(_));
+        }
+
+        // Smith's algorithm computes the imaginary part as (b - a*r)/denom; here
+        // b is the exact int 0, so 0 - 1*0.0 relies on exact-zero-minus-inexact
+        // flipping the sign to -0.0, matching (0*2 - 1*0)/4's mathematical sign.
+        #[test]
+        fn real_over_complex_with_inexact_zero_imaginary_keeps_signed_zero() {
+            let quotient = ok_or_fail!(Number::real(1) / Number::complex(2.0, 0.0));
+
+            assert_eq!(quotient.to_string(), "0.5-0.0i");
+        }
     }
 }
 
@@ -5912,7 +6480,7 @@ mod negate {
     #[test]
     fn integer_inverse_law() {
         let x = Number::real(7);
-        let sum = x.clone() - x;
+        let sum = x.clone() + -x;
 
         assert_eq!(sum.to_string(), "0");
     }
@@ -5920,7 +6488,7 @@ mod negate {
     #[test]
     fn float_inverse_law() {
         let x = Number::real(1.5);
-        let sum = x.clone() - x;
+        let sum = x.clone() + -x;
 
         assert_eq!(sum.to_string(), "0.0");
     }
@@ -5928,7 +6496,7 @@ mod negate {
     #[test]
     fn complex_inverse_law() {
         let x = Number::complex(3, 4);
-        let sum = x.clone() - x;
+        let sum = x.clone() + -x;
 
         assert_eq!(sum.to_string(), "0");
     }
@@ -5936,7 +6504,7 @@ mod negate {
     #[test]
     fn infinity_has_no_additive_inverse() {
         let x = Number::real(f64::INFINITY);
-        let sum = x.clone() - x;
+        let sum = x.clone() + -x;
 
         assert!(sum.is_nan());
     }
@@ -5945,7 +6513,7 @@ mod negate {
     fn rational_inverse_law() {
         let q = ok_or_fail!(Real::reduce(1, 2));
         let x = Number::real(q);
-        let sum = x.clone() - x;
+        let sum = x.clone() + -x;
 
         assert_eq!(sum.to_string(), "0");
     }
