@@ -1054,11 +1054,12 @@ impl Rational {
 
     fn sqrt(self) -> Real {
         let (n, d) = self.into_parts();
-        let (nr, dr) = (n.sqrt(), d.sqrt());
-        debug_assert!(!dr.is_zero());
-        match (&nr, &dr) {
-            (Real::Float(_), _) | (_, Real::Float(_)) => (nr.to_float() / dr.to_float()).into(),
+        match (n.clone().sqrt(), d.clone().sqrt()) {
+            (Real::Float(_), _) | (_, Real::Float(_)) => {
+                sign_preserving_sqrt(n.to_float() / d.to_float()).into()
+            }
             (Real::Integer(a), Real::Integer(b)) => {
+                debug_assert!(!b.is_zero());
                 Real::reduce(a.clone(), b.clone()).expect("denominator cannot be zero")
             }
             _ => unreachable!("sqrt of rational cannot result in two rational parts"),
