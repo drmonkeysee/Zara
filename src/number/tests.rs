@@ -7643,10 +7643,9 @@ mod sqrt {
                 let r = n.sqrt();
                 let re = r.clone().into_real();
 
-                if re.is_zero() {
-                    let im = r.into_imag();
-                    assert!(!im.is_negative());
-                }
+                assert!(re.is_zero());
+                let im = r.into_imag();
+                assert!(!im.is_negative());
             }
         }
 

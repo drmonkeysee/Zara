@@ -860,7 +860,7 @@ impl Real {
     fn sqrt(self) -> Self {
         match self {
             Self::Float(f) if f == 0.0 => self,
-            Self::Float(f) => todo!(),
+            Self::Float(f) => sign_preserving_sqrt(f).into(),
             Self::Integer(n) => n.sqrt(),
             Self::Rational(q) => todo!(),
         }
