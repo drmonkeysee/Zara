@@ -440,7 +440,11 @@ impl Complex {
 
     fn into_magnitude(self) -> Real {
         let (x, y) = self.into_parts();
-        Real::Float(x.to_float().hypot(y.to_float()))
+        if x.is_inexact() || y.is_inexact() {
+            Real::Float(x.to_float().hypot(y.to_float()))
+        } else {
+            ((x.clone() * x) + (y.clone() * y)).sqrt()
+        }
     }
 
     fn into_angle(self) -> Real {
