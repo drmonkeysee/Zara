@@ -325,6 +325,10 @@ impl Number {
             Self::Real(r) => Ok(Self::real(r.try_into_reciprocal()?)),
         }
     }
+
+    pub(crate) fn sqrt(self) -> Self {
+        todo!();
+    }
 }
 
 impl PartialEq for Number {
