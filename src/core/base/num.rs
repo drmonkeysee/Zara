@@ -529,7 +529,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "Rational ordering not yet implemented"]
     fn max_rationals() {
         let args = [
             Value::real(ok_or_fail!(Real::reduce(1, 2))),
@@ -1533,7 +1532,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "rational multiplication not yet implemented"]
     fn mult_rational_arg() {
         let args = [Value::real(2), Value::real(ok_or_fail!(Real::reduce(1, 2)))];
         let env = TestEnv::default();
