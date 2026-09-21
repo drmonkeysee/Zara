@@ -7530,11 +7530,22 @@ mod sqrt {
 
         #[test]
         fn both_components_infinite() {
-            let z = Number::complex(f64::INFINITY, f64::INFINITY);
+            // sqrt(x+yi) = +inf.0 + (sign of y)*inf.0*i whenever y is
+            // infinite, regardless of x's sign; matches C99 csqrt (verified
+            // against libm's csqrt(3) directly).
+            let cases = [
+                ((f64::INFINITY, f64::INFINITY), "+inf.0+inf.0i"),
+                ((f64::INFINITY, f64::NEG_INFINITY), "+inf.0-inf.0i"),
+                ((f64::NEG_INFINITY, f64::INFINITY), "+inf.0+inf.0i"),
+                ((f64::NEG_INFINITY, f64::NEG_INFINITY), "+inf.0-inf.0i"),
+            ];
+            for ((re, im), expected) in cases {
+                let z = Number::complex(re, im);
 
-            let r = z.sqrt();
+                let r = z.sqrt();
 
-            assert_eq!(r.to_string(), "+inf.0+inf.0i");
+                assert_eq!(r.to_string(), expected);
+            }
         }
 
         #[test]
@@ -7547,10 +7558,78 @@ mod sqrt {
         }
 
         #[test]
+        fn positive_infinite_real_with_finite_imaginary() {
+            let z = Number::complex(f64::INFINITY, 1.0);
+
+            let r = z.sqrt();
+
+            assert_eq!(r.to_string(), "+inf.0+0.0i");
+        }
+
+        #[test]
+        fn both_components_zero() {
+            // sqrt(x+yi) = +0.0 + (sign of y)*0.0*i whenever both components
+            // are (signed) zero; the danger case is +0.0/+0.0 driving the
+            // cancellation-safe formula's scale factor to zero and turning
+            // im/t into a 0/0 NaN. Verified against libm's csqrt(3) directly.
+            let cases = [
+                ((0.0, 0.0), "0.0+0.0i"),
+                ((0.0, -0.0), "0.0-0.0i"),
+                ((-0.0, 0.0), "0.0+0.0i"),
+                ((-0.0, -0.0), "0.0-0.0i"),
+            ];
+            for ((re, im), expected) in cases {
+                let z = Number::complex(re, im);
+
+                let r = z.sqrt();
+
+                assert_eq!(r.to_string(), expected);
+            }
+        }
+
+        #[test]
         fn nan_in_either_component_propagates_to_both() {
             let cases = [
                 Number::complex(f64::NAN, 1.0),
                 Number::complex(1.0, f64::NAN),
+                Number::complex(f64::NAN, 0.0),
+                Number::complex(0.0, f64::NAN),
+                Number::complex(f64::NAN, f64::NAN),
+            ];
+            for z in cases {
+                let r = z.sqrt();
+
+                let (re, im) = complex_parts!(r);
+                assert!(re.is_nan());
+                assert!(im.is_nan());
+            }
+        }
+
+        #[test]
+        fn infinite_imaginary_dominates_a_nan_real_part() {
+            // The "infinite y wins" rule from both_components_infinite holds
+            // even when x is NaN rather than another infinity.
+            let cases = [
+                ((f64::NAN, f64::INFINITY), "+inf.0+inf.0i"),
+                ((f64::NAN, f64::NEG_INFINITY), "+inf.0-inf.0i"),
+            ];
+            for ((re, im), expected) in cases {
+                let z = Number::complex(re, im);
+
+                let r = z.sqrt();
+
+                assert_eq!(r.to_string(), expected);
+            }
+        }
+
+        #[test]
+        fn infinite_real_part_does_not_rescue_a_nan_imaginary_part() {
+            // Asymmetric with the case above: an infinite x does NOT turn a
+            // NaN y into an infinite result the way an infinite y overrides
+            // NaN x. Both components come back NaN.
+            let cases = [
+                Number::complex(f64::INFINITY, f64::NAN),
+                Number::complex(f64::NEG_INFINITY, f64::NAN),
             ];
             for z in cases {
                 let r = z.sqrt();
