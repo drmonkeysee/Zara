@@ -328,7 +328,7 @@ impl Number {
 
     pub(crate) fn sqrt(self) -> Self {
         match self {
-            Self::Complex(z) => todo!(),
+            Self::Complex(z) => z.sqrt(),
             Self::Real(r) => {
                 let rt = r.sqrt();
                 if rt.is_negative() {
@@ -463,6 +463,16 @@ impl Complex {
 
     fn try_into_reciprocal(self) -> NumResult {
         Real::one().into_complex() / self
+    }
+
+    fn sqrt(self) -> Number {
+        /*
+        3. Cancellation-safe variant of #2 (what C99's csqrt/most libms actually use): pick whichever half-difference is well-conditioned and derive the other from it via y:
+            - r = magnitude
+            - if x ≥ 0: t = sqrt(2*(r+x)), Re = t/2, Im = y/t
+            - if x < 0: t = sqrt(2*(r-x)), Re = |y|/t, Im = copysign(t/2, y)
+        */
+        todo!();
     }
 }
 
@@ -1296,10 +1306,10 @@ impl Integer {
 
     fn to_float(&self) -> f64 {
         match self.precision {
-            Precision::Single(u) => {
+            Precision::Single(u) =>
+            {
                 #[allow(clippy::cast_precision_loss)]
-                let f = u as f64;
-                if self.is_negative() { -f } else { f }
+                (u as f64).copysign(self.sign.to_float())
             }
             Precision::Multiple(_) => todo!(),
         }
@@ -1578,6 +1588,16 @@ pub(crate) enum Sign {
     Zero,
     #[default]
     Positive,
+}
+
+impl Sign {
+    fn to_float(self) -> f64 {
+        match self {
+            Self::Negative => -1.0,
+            Self::Zero => 0.0,
+            Self::Positive => 1.0,
+        }
+    }
 }
 
 impl Neg for Sign {
@@ -2148,7 +2168,7 @@ fn gcd_euclidean(mut a: u64, mut b: u64) -> u64 {
 
 // helper to keep the sign consistent across √ in order to apply imaginary root later
 fn sign_preserving_sqrt(f: f64) -> f64 {
-    f.abs().sqrt() * f.signum()
+    f.abs().sqrt().copysign(f)
 }
 
 fn parse_signed<R: Radix>(spec: &IntSpec<R>, input: &str) -> IntResult {
