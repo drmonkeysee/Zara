@@ -96,6 +96,12 @@ macro_rules! exact_cmp_inexact {
     };
 }
 
+macro_rules! assume_safe_div {
+    ($div:expr) => {
+        $div.expect("denominator cannot be zero")
+    };
+}
+
 #[cfg(test)]
 mod tests;
 
@@ -673,7 +679,7 @@ impl Real {
     // assume divisor is a factor of dividend, so reduction ensures an Integer;
     // will panic if assumption does not hold.
     fn exact_quotient(dividend: impl Into<Integer>, divisor: impl Into<Integer>) -> Integer {
-        let r = Self::reduce(dividend, divisor).expect("divisor is a factor of dividend");
+        let r = assume_safe_div!(Self::reduce(dividend, divisor));
         let Self::Integer(n) = r else {
             unreachable!("unexpected non-factor divisor");
         };
@@ -789,6 +795,10 @@ impl Real {
 
     fn one() -> Self {
         Integer::one().into()
+    }
+
+    fn two() -> Self {
+        Integer::two().into()
     }
 
     fn is_eqv(&self, other: &Self) -> bool {
@@ -1067,7 +1077,7 @@ impl Rational {
         debug_assert!(!m.is_zero());
         let ad = a * Real::exact_quotient(d, g.clone());
         let cb = c * Real::exact_quotient(b, g);
-        (op(ad, cb) / m).expect("least common multiple of canonical denominators cannot be zero")
+        assume_safe_div!(op(ad, cb) / m)
     }
 
     fn sqrt(self) -> Real {
@@ -1078,7 +1088,7 @@ impl Rational {
             }
             (Real::Integer(a), Real::Integer(b)) => {
                 debug_assert!(!b.is_zero());
-                Real::reduce(a.clone(), b.clone()).expect("denominator cannot be zero")
+                assume_safe_div!(Real::reduce(a.clone(), b.clone()))
             }
             _ => unreachable!("sqrt of rational cannot result in two rational parts"),
         }
@@ -1138,11 +1148,10 @@ impl Mul for Rational {
         let (g1, g2) = (a.gcd(&d), c.gcd(&b));
         debug_assert!(!g1.is_zero());
         debug_assert!(!g2.is_zero());
-        Real::reduce(
+        assume_safe_div!(Real::reduce(
             Real::exact_quotient(a, g1.clone()) * Real::exact_quotient(c, g2.clone()),
             Real::exact_quotient(b, g2) * Real::exact_quotient(d, g1),
-        )
-        .expect("denominator cannot be zero for canonical rationals")
+        ))
     }
 }
 
@@ -1283,6 +1292,10 @@ impl Integer {
 
     pub(crate) fn into_inexact(self) -> Real {
         Real::Float(self.to_float())
+    }
+
+    fn two() -> Self {
+        2.into()
     }
 
     fn is_positive(&self) -> bool {
