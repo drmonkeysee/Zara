@@ -7623,20 +7623,20 @@ mod sqrt {
         }
 
         #[test]
-        fn infinite_real_part_does_not_rescue_a_nan_imaginary_part() {
-            // Asymmetric with the case above: an infinite x does NOT turn a
-            // NaN y into an infinite result the way an infinite y overrides
-            // NaN x. Both components come back NaN.
+        fn infinite_real_part_with_nan_imaginary_follows_c99_table() {
+            // Asymmetric with the case above: a NaN y is NOT swallowed into
+            // NaN+NaNi just because x is infinite. This follows the C99
+            // Annex G csqrt table.
             let cases = [
-                Number::complex(f64::INFINITY, f64::NAN),
-                Number::complex(f64::NEG_INFINITY, f64::NAN),
+                ((f64::INFINITY, f64::NAN), "+inf.0+nan.0i"),
+                ((f64::NEG_INFINITY, f64::NAN), "+nan.0+inf.0i"),
             ];
-            for z in cases {
+            for ((re, im), expected) in cases {
+                let z = Number::complex(re, im);
+
                 let r = z.sqrt();
 
-                let (re, im) = complex_parts!(r);
-                assert!(re.is_nan());
-                assert!(im.is_nan());
+                assert_eq!(r.to_string(), expected);
             }
         }
 
