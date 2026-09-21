@@ -237,7 +237,7 @@ impl Number {
 
     pub(crate) fn is_zero(&self) -> bool {
         match self {
-            Self::Complex(Complex(z)) => z.0.is_zero() && z.1.is_zero(),
+            Self::Complex(z) => z.is_zero(),
             Self::Real(r) => r.is_zero(),
         }
     }
@@ -430,6 +430,10 @@ try_int_conversion!(usize, try_to_usize);
 pub(crate) struct Complex(Box<(Real, Real)>);
 
 impl Complex {
+    fn is_zero(&self) -> bool {
+        self.0.0.is_zero() && self.0.1.is_zero()
+    }
+
     fn into_real(self) -> Real {
         self.0.0
     }
