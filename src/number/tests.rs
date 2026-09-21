@@ -7492,8 +7492,24 @@ mod sqrt {
 
         #[test]
         fn sign_of_zero_imaginary_part_selects_the_branch() {
-            let cases = [((-4, 0.0), "0.0+2.0i"), ((-4, -0.0), "0.0-2.0i")];
-            for ((re, im), expected) in cases {
+            // exact real part, inexact zero imaginary part
+            let exact_cases = [((-4, 0.0), "0.0+2.0i"), ((-4, -0.0), "0.0-2.0i")];
+            for ((re, im), expected) in exact_cases {
+                let z = Number::complex(re, im);
+
+                let r = z.sqrt();
+
+                assert_eq!(r.to_string(), expected);
+            }
+
+            // both components inexact; x's sign flips which branch a zero y lands on
+            let float_cases = [
+                ((-4.0, -0.0), "0.0-2.0i"),
+                ((-4.0, 0.0), "0.0+2.0i"),
+                ((4.0, -0.0), "2.0-0.0i"),
+                ((4.0, 0.0), "2.0+0.0i"),
+            ];
+            for ((re, im), expected) in float_cases {
                 let z = Number::complex(re, im);
 
                 let r = z.sqrt();
@@ -7523,19 +7539,58 @@ mod sqrt {
             assert!(!r.is_zero());
         }
 
+        // The special-value behavior below (±0, ±inf, nan in either
+        // component) is checked as an exhaustive matrix over:
+        //   x (real part)      in { -inf, -4.0, -0.0, +0.0, +4.0, +inf, nan }
+        //   y (imaginary part) in { -inf, -2.0, -0.0, +0.0, +2.0, +inf, nan }
+        // partitioned across the tests below by which C99 Annex G rule
+        // governs each cell (verified against libm's csqrt(3) directly,
+        // except infinite_real_part_with_nan_imaginary_follows_c99_table --
+        // see the note on that test):
+        //   infinite_imaginary_always_wins                        14 cells
+        //   both_components_zero                                   4 cells
+        //   positive_infinite_real_with_finite_imaginary            4 cells
+        //   negative_infinite_real_with_finite_imaginary            4 cells
+        //   infinite_real_part_with_nan_imaginary_follows_c99_table 2 cells
+        //   nan_in_either_component_propagates_to_both              9 cells
+        //   zero_real_part_is_the_root_of_a_pure_imaginary          4 cells
+        //   sign_of_zero_imaginary_part_selects_the_branch (float)  4 cells
+        //   finite_components_take_the_ordinary_path                4 cells
+        //                                                    total 49 cells
         #[test]
-        fn both_components_infinite() {
+        fn infinite_imaginary_always_wins() {
             // sqrt(x+yi) = +inf.0 + (sign of y)*inf.0*i whenever y is
-            // infinite, regardless of x's sign; matches C99 csqrt (verified
-            // against libm's csqrt(3) directly).
-            let cases = [
-                ((f64::INFINITY, f64::INFINITY), "+inf.0+inf.0i"),
-                ((f64::INFINITY, f64::NEG_INFINITY), "+inf.0-inf.0i"),
-                ((f64::NEG_INFINITY, f64::INFINITY), "+inf.0+inf.0i"),
-                ((f64::NEG_INFINITY, f64::NEG_INFINITY), "+inf.0-inf.0i"),
+            // infinite, regardless of x -- finite, zero, infinite, or NaN.
+            let xs = [
+                f64::NEG_INFINITY,
+                -4.0,
+                -0.0,
+                0.0,
+                4.0,
+                f64::INFINITY,
+                f64::NAN,
             ];
-            for ((re, im), expected) in cases {
-                let z = Number::complex(re, im);
+            for x in xs {
+                let pos = Number::complex(x, f64::INFINITY).sqrt();
+                assert_eq!(pos.to_string(), "+inf.0+inf.0i");
+
+                let neg = Number::complex(x, f64::NEG_INFINITY).sqrt();
+                assert_eq!(neg.to_string(), "+inf.0-inf.0i");
+            }
+        }
+
+        #[test]
+        fn negative_infinite_real_with_finite_imaginary() {
+            // sqrt(-inf+yi) = +0.0 + (sign of y)*inf.0*i for finite y,
+            // including signed zero.
+            let cases = [
+                (-2.0, "0.0-inf.0i"),
+                (-0.0, "0.0-inf.0i"),
+                (0.0, "0.0+inf.0i"),
+                (2.0, "0.0+inf.0i"),
+            ];
+            for (im, expected) in cases {
+                let z = Number::complex(f64::NEG_INFINITY, im);
 
                 let r = z.sqrt();
 
@@ -7544,21 +7599,22 @@ mod sqrt {
         }
 
         #[test]
-        fn negative_infinite_real_with_finite_imaginary() {
-            let z = Number::complex(f64::NEG_INFINITY, 1.0);
-
-            let r = z.sqrt();
-
-            assert_eq!(r.to_string(), "0.0+inf.0i");
-        }
-
-        #[test]
         fn positive_infinite_real_with_finite_imaginary() {
-            let z = Number::complex(f64::INFINITY, 1.0);
+            // sqrt(+inf+yi) = +inf.0 + (sign of y)*0.0*i for finite y,
+            // including signed zero.
+            let cases = [
+                (-2.0, "+inf.0-0.0i"),
+                (-0.0, "+inf.0-0.0i"),
+                (0.0, "+inf.0+0.0i"),
+                (2.0, "+inf.0+0.0i"),
+            ];
+            for (im, expected) in cases {
+                let z = Number::complex(f64::INFINITY, im);
 
-            let r = z.sqrt();
+                let r = z.sqrt();
 
-            assert_eq!(r.to_string(), "+inf.0+0.0i");
+                assert_eq!(r.to_string(), expected);
+            }
         }
 
         #[test]
@@ -7584,12 +7640,21 @@ mod sqrt {
 
         #[test]
         fn nan_in_either_component_propagates_to_both() {
+            // NaN in either component yields NaN+NaNi, for any finite or
+            // zero value (either sign) in the other component. This is where
+            // the "infinite y wins" rule stops applying: NaN is not treated
+            // like an infinity here (contrast infinite_imaginary_always_wins,
+            // where x = NaN still produces an infinite result).
             let cases = [
-                Number::complex(f64::NAN, 1.0),
-                Number::complex(1.0, f64::NAN),
+                Number::complex(f64::NAN, -2.0),
+                Number::complex(f64::NAN, -0.0),
                 Number::complex(f64::NAN, 0.0),
-                Number::complex(0.0, f64::NAN),
+                Number::complex(f64::NAN, 2.0),
                 Number::complex(f64::NAN, f64::NAN),
+                Number::complex(-4.0, f64::NAN),
+                Number::complex(-0.0, f64::NAN),
+                Number::complex(0.0, f64::NAN),
+                Number::complex(4.0, f64::NAN),
             ];
             for z in cases {
                 let r = z.sqrt();
@@ -7601,27 +7666,16 @@ mod sqrt {
         }
 
         #[test]
-        fn infinite_imaginary_dominates_a_nan_real_part() {
-            // The "infinite y wins" rule from both_components_infinite holds
-            // even when x is NaN rather than another infinity.
-            let cases = [
-                ((f64::NAN, f64::INFINITY), "+inf.0+inf.0i"),
-                ((f64::NAN, f64::NEG_INFINITY), "+inf.0-inf.0i"),
-            ];
-            for ((re, im), expected) in cases {
-                let z = Number::complex(re, im);
-
-                let r = z.sqrt();
-
-                assert_eq!(r.to_string(), expected);
-            }
-        }
-
-        #[test]
         fn infinite_real_part_with_nan_imaginary_follows_c99_table() {
             // Asymmetric with the case above: a NaN y is NOT swallowed into
             // NaN+NaNi just because x is infinite. This follows the C99
-            // Annex G csqrt table.
+            // Annex G csqrt table -- note this is the one pair of cells in
+            // the matrix where Zara's implementation intentionally departs
+            // from what this repo's local libm actually returns (observed:
+            // NaN+NaNi for both signs of infinite x), because Annex G's
+            // csqrt table is optional and not every libm implements it; Zara
+            // hardcodes the Annex G text here instead of deferring to a
+            // possibly-noncompliant platform csqrt.
             let cases = [
                 ((f64::INFINITY, f64::NAN), "+inf.0+nan.0i"),
                 ((f64::NEG_INFINITY, f64::NAN), "+nan.0+inf.0i"),
@@ -7633,6 +7687,63 @@ mod sqrt {
 
                 assert_eq!(r.to_string(), expected);
             }
+        }
+
+        #[test]
+        fn zero_real_part_is_the_root_of_a_pure_imaginary() {
+            // A zero real part (either sign) doesn't affect the result --
+            // only the sign of y selects the branch, since Real::is_negative
+            // is `*f < 0.0` and so is false for -0.0; the branch cut on a
+            // zero real part only bites when y is zero too (both_components_zero).
+            let cases = [
+                ((-0.0, -2.0), "1.0-1.0i"),
+                ((-0.0, 2.0), "1.0+1.0i"),
+                ((0.0, -2.0), "1.0-1.0i"),
+                ((0.0, 2.0), "1.0+1.0i"),
+            ];
+            for ((re, im), expected) in cases {
+                let z = Number::complex(re, im);
+
+                let r = z.sqrt();
+
+                assert_eq!(r.to_string(), expected);
+            }
+        }
+
+        #[test]
+        fn finite_components_take_the_ordinary_path() {
+            let cases = [
+                ((-4.0, -2.0), (0.48586827175664565, -2.0581710272714924)),
+                ((-4.0, 2.0), (0.48586827175664565, 2.0581710272714924)),
+                ((4.0, -2.0), (2.0581710272714924, -0.48586827175664565)),
+                ((4.0, 2.0), (2.0581710272714924, 0.48586827175664565)),
+            ];
+            for ((re, im), (exp_re, exp_im)) in cases {
+                let z = Number::complex(re, im);
+
+                let r = z.sqrt();
+
+                assert!(r.is_inexact());
+                let (actual_re, actual_im) = complex_parts!(r);
+                assert_near!(actual_re.to_float(), exp_re);
+                assert_near!(actual_im.to_float(), exp_im);
+            }
+        }
+
+        #[test]
+        fn exact_zero_real_part_with_special_imaginary() {
+            // An exact zero real part doesn't shield the result from an
+            // infinite or NaN imaginary part; those still dominate.
+            let pos_inf = Number::complex(0, f64::INFINITY).sqrt();
+            assert_eq!(pos_inf.to_string(), "+inf.0+inf.0i");
+
+            let neg_inf = Number::complex(0, f64::NEG_INFINITY).sqrt();
+            assert_eq!(neg_inf.to_string(), "+inf.0-inf.0i");
+
+            let nan = Number::complex(0, f64::NAN).sqrt();
+            let (re, im) = complex_parts!(nan);
+            assert!(re.is_nan());
+            assert!(im.is_nan());
         }
 
         #[test]
