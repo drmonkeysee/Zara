@@ -479,13 +479,13 @@ impl Complex {
      * Square root of Complex is defined as:
      * given x+yi and r = √(x² + y²)
      * √x+yi = √((r+x)/2) + sign(y)i√((r-x)/2)
-     * split on whether x < 0 to avoid cancellation issues when (r-x)/2; x > 0, |y| << x
-     * used by C99's csqrt, which also includes some special casing for signed zeros, infs, and nans.
+     * split on whether x < 0 to avoid cancellation issues for (r-x)/2; x > 0, |y| << x
+     * used by C99's csqrt, which also includes some special casing for signed zeros and infs.
      */
     fn sqrt(self) -> Number {
         // Square root of zero always sets x to + and keeps sign of y; if we calculated
-        // this with the below algorithm instead the zero signs go wonky due to IEEE rules.
-        // Complex is_zero implies float values, exact zeros would have reduced to Integer,
+        // this with the below algorithm instead, the zero signs go wonky due to IEEE rules.
+        // Complex is_zero implies float values (exact zeros would have reduced to Integer),
         // so we can safely hardcode the answer without losing exactness.
         if self.is_zero() {
             return Number::complex(0.0, 0.0f64.copysign(self.0.1.signum()));
