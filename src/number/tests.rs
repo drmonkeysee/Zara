@@ -5655,8 +5655,7 @@ mod mult {
         }
 
         // Verify Smith's algorithm optimization for division, and specifically the
-        // zero-sign preservation, is not applied to multiplication; this aligns with
-        // other scheme implementations like Guile and Chez Scheme.
+        // zero-sign preservation, is not applied to multiplication.
         #[test]
         fn zero_times_complex_does_not_preserve_sign_of_zero() {
             let cases = [
@@ -6995,9 +6994,9 @@ mod sqrt {
         };
     }
 
-    // Irrational complex components are algorithm-dependent in the last ulp (unit of least precision)
-    // (Chez and Guile themselves disagree by a ulp or two on some of these),
-    // so those get a tolerance instead of an exact string match.
+    // Irrational complex components are algorithm-dependent in the last
+    // ulp (unit of least precision), so those get a tolerance instead of an
+    // exact string match.
     macro_rules! assert_near {
         ($actual:expr, $expected:expr) => {{
             let a: f64 = $actual;
@@ -7122,10 +7121,6 @@ mod sqrt {
 
         #[test]
         fn negative_non_perfect_square_real_part_stays_exact_zero() {
-            // Zara keeps the exact zero carried over from the exact real
-            // axis, even though the imaginary part is forced inexact; this
-            // is a deliberate Zara choice, not what Chez does (Chez
-            // float-taints the real part to 0.0 here too).
             let r = Number::real(-2).sqrt();
 
             let (re, im) = complex_parts!(r);

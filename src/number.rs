@@ -475,17 +475,28 @@ impl Complex {
         Real::one().into_complex() / self
     }
 
+    /*
+     * Square root of Complex is defined as:
+     * given x+yi and r = √(x² + y²)
+     * √x+yi = √((r+x)/2) + sign(y)i√((r-x)/2)
+     * split on whether x < 0 to avoid cancellation issues when (r-x)/2; x > 0, |y| << x
+     * used by C99's csqrt, which also includes some special casing for signed zeros, infs, and nans.
+     */
     fn sqrt(self) -> Number {
-        /*
-        3. Cancellation-safe variant of #2 (what C99's csqrt/most libms actually use): pick whichever half-difference is well-conditioned and derive the other from it via y:
-            - r = magnitude
-            - if x ≥ 0: t = sqrt(2*(r+x)), Re = t/2, Im = y/t
-            - if x < 0: t = sqrt(2*(r-x)), Re = |y|/t, Im = copysign(t/2, y)
-        */
+        // Square root of zero always sets x to + and keeps sign of y; if we calculated
+        // this with the below algorithm instead the zero signs go wonky due to IEEE rules.
+        // Complex is_zero implies float values, exact zeros would have reduced to Integer,
+        // so we can safely hardcode the answer without losing exactness.
         if self.is_zero() {
-            return Number::Complex(self);
+            return Number::complex(0.0, 0.0f64.copysign(self.0.1.signum()));
         }
         let (x, y) = self.clone().into_parts();
+        // According to C99-Annex-G inf y always sets x to +inf and keeps y
+        // because IEEE infinities are not limits but actual values, which means
+        // the math doesn't work out without special-casing it.
+        if y.is_infinite() {
+            return Number::complex(f64::INFINITY, f64::INFINITY.copysign(self.0.1.signum()));
+        }
         let r = self.into_magnitude();
         let (u, v) = if x.is_negative() {
             let t = scaled_re(r, x, Real::sub);
