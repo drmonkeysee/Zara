@@ -482,7 +482,25 @@ impl Complex {
             - if x ≥ 0: t = sqrt(2*(r+x)), Re = t/2, Im = y/t
             - if x < 0: t = sqrt(2*(r-x)), Re = |y|/t, Im = copysign(t/2, y)
         */
-        todo!();
+        if self.is_zero() {
+            return Number::Complex(self);
+        }
+        let (x, y) = self.clone().into_parts();
+        let r = self.into_magnitude();
+        let (u, v) = if x.is_negative() {
+            let t = scaled_re(r, x, Real::sub);
+            (
+                assume_safe_div!(y.clone().into_abs() / t.clone()),
+                assume_safe_div!(t / Real::two()).copysign(&y),
+            )
+        } else {
+            let t = scaled_re(r, x, Real::add);
+            (
+                assume_safe_div!(t.clone() / Real::two()),
+                assume_safe_div!(y / t),
+            )
+        };
+        Number::complex(u, v)
     }
 }
 
@@ -840,6 +858,14 @@ impl Real {
         }
     }
 
+    fn signum(&self) -> f64 {
+        match self {
+            Self::Float(f) => f.signum(),
+            Self::Integer(n) => n.signum(),
+            Self::Rational(q) => q.signum(),
+        }
+    }
+
     /*
      * For comparison sequences (e.g. max/min) the normal float comparison rules
      * don't result in the correct result:
@@ -877,6 +903,15 @@ impl Real {
             Self::Float(f) => *f,
             Self::Integer(n) => n.to_float(),
             Self::Rational(q) => q.to_float(),
+        }
+    }
+
+    fn copysign(self, sign: &Real) -> Self {
+        let s = sign.signum();
+        match self {
+            Self::Float(f) => f.copysign(s).into(),
+            Self::Integer(n) => n.copysign(s).into(),
+            Self::Rational(q) => Self::Rational(q.copysign(s)),
         }
     }
 
@@ -1032,6 +1067,10 @@ impl Rational {
         self.0.0.is_negative()
     }
 
+    fn signum(&self) -> f64 {
+        self.0.0.signum()
+    }
+
     fn to_float(&self) -> f64 {
         let r = &self.0;
         r.0.to_float() / r.1.to_float()
@@ -1092,6 +1131,11 @@ impl Rational {
             }
             _ => unreachable!("sqrt of rational cannot result in two rational parts"),
         }
+    }
+
+    fn copysign(self, sign: f64) -> Self {
+        let (n, d) = self.into_parts();
+        Self((n.copysign(sign), d).into())
     }
 }
 
@@ -1247,7 +1291,8 @@ impl Integer {
         1.into()
     }
 
-    fn new(precision: impl Into<Precision>, mut sign: Sign) -> Self {
+    fn new(precision: impl Into<Precision>, sign: impl Into<Sign>) -> Self {
+        let mut sign = sign.into();
         let precision = precision.into();
         if precision.is_zero() {
             sign = Sign::Zero;
@@ -1315,6 +1360,10 @@ impl Integer {
             Precision::Single(u) => *u == 1,
             Precision::Multiple(_) => todo!(),
         }
+    }
+
+    fn signum(&self) -> f64 {
+        self.sign.to_float()
     }
 
     fn cmp_magnitude(&self, other: &Self) -> Ordering {
@@ -1409,6 +1458,10 @@ impl Integer {
         } else {
             sign_preserving_sqrt(self.to_float()).into()
         }
+    }
+
+    fn copysign(self, sign: f64) -> Self {
+        Self::new(self.precision, sign)
     }
 }
 
@@ -2186,6 +2239,13 @@ fn gcd_euclidean(mut a: u64, mut b: u64) -> u64 {
 // helper to keep the sign consistent across √ in order to apply imaginary root later
 fn sign_preserving_sqrt(f: f64) -> f64 {
     f.abs().sqrt().copysign(f)
+}
+
+// helper to calculate the intermediate real value for complex sqrt
+fn scaled_re(r: Real, x: Real, op: impl FnOnce(Real, Real) -> Real) -> Real {
+    let t = (Real::two() * op(r, x)).sqrt();
+    debug_assert!(!t.is_zero());
+    t
 }
 
 fn parse_signed<R: Radix>(spec: &IntSpec<R>, input: &str) -> IntResult {
