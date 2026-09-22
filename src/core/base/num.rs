@@ -187,23 +187,19 @@ fn get_denominator(args: &[Value], _env: &Frame) -> EvalResult {
 }
 
 fn floor(args: &[Value], _env: &Frame) -> EvalResult {
-    let arg = first(args);
-    real_op(arg, |r| todo!())
+    real_op(first(args), |r| Ok(Value::real(r.clone().into_floor())))
 }
 
 fn ceiling(args: &[Value], _env: &Frame) -> EvalResult {
-    let arg = first(args);
-    real_op(arg, |r| todo!())
+    real_op(first(args), |r| Ok(Value::real(r.clone().into_ceiling())))
 }
 
 fn truncate(args: &[Value], _env: &Frame) -> EvalResult {
-    let arg = first(args);
-    real_op(arg, |r| todo!())
+    real_op(first(args), |r| Ok(Value::real(r.clone().into_truncate())))
 }
 
 fn round(args: &[Value], _env: &Frame) -> EvalResult {
-    let arg = first(args);
-    real_op(arg, |r| todo!())
+    real_op(first(args), |r| Ok(Value::real(r.clone().into_round())))
 }
 
 fn square(args: &[Value], env: &Frame) -> EvalResult {

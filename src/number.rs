@@ -787,6 +787,38 @@ impl Real {
         }
     }
 
+    pub(crate) fn into_floor(self) -> Self {
+        match self {
+            Self::Float(f) => f.floor().into(),
+            Self::Integer(n) => n.into(),
+            Self::Rational(q) => todo!(),
+        }
+    }
+
+    pub(crate) fn into_ceiling(self) -> Self {
+        match self {
+            Self::Float(f) => f.ceil().into(),
+            Self::Integer(n) => n.into(),
+            Self::Rational(q) => todo!(),
+        }
+    }
+
+    pub(crate) fn into_truncate(self) -> Self {
+        match self {
+            Self::Float(f) => f.trunc().into(),
+            Self::Integer(n) => n.into(),
+            Self::Rational(q) => todo!(),
+        }
+    }
+
+    pub(crate) fn into_round(self) -> Self {
+        match self {
+            Self::Float(f) => f.round().into(),
+            Self::Integer(n) => n.into(),
+            Self::Rational(q) => todo!(),
+        }
+    }
+
     pub(crate) fn try_into_exact(self) -> RealResult {
         if let Self::Float(f) = self {
             FloatSpec::try_float_to_exact(f)
