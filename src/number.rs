@@ -1375,7 +1375,7 @@ impl Integer {
     }
 
     fn signum(&self) -> f64 {
-        self.sign.to_float()
+        self.sign.into()
     }
 
     fn cmp_magnitude(&self, other: &Self) -> Ordering {
@@ -1387,7 +1387,7 @@ impl Integer {
             Precision::Single(u) =>
             {
                 #[allow(clippy::cast_precision_loss)]
-                (u as f64).copysign(self.sign.to_float())
+                (u as f64).copysign(self.sign.into())
             }
             Precision::Multiple(_) => todo!(),
         }
@@ -1672,16 +1672,6 @@ pub(crate) enum Sign {
     Positive,
 }
 
-impl Sign {
-    fn to_float(self) -> f64 {
-        match self {
-            Self::Negative => -1.0,
-            Self::Zero => 0.0,
-            Self::Positive => 1.0,
-        }
-    }
-}
-
 impl Neg for Sign {
     type Output = Self;
 
@@ -1716,6 +1706,16 @@ impl Display for Sign {
 
 sign_from!(i64);
 sign_from!(f64);
+
+impl From<Sign> for f64 {
+    fn from(value: Sign) -> Self {
+        match value {
+            Sign::Negative => -1.0,
+            Sign::Zero => 0.0,
+            Sign::Positive => 1.0,
+        }
+    }
+}
 
 #[allow(private_bounds)]
 pub(crate) trait Radix: RadixPrivate {
