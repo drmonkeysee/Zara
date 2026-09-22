@@ -111,7 +111,7 @@ use std::{
     f64,
     fmt::{self, Display, Formatter, Write},
     num::{IntErrorKind, ParseFloatError, ParseIntError},
-    ops::{Add, Div, Mul, Neg, Sub},
+    ops::{Add, Div, Mul, Neg, Rem, Sub},
     rc::Rc,
     result::Result,
 };
@@ -1142,15 +1142,18 @@ impl Rational {
     }
 
     fn into_floor(self) -> Integer {
-        todo!();
+        let (n, d) = self.into_parts();
+        n.div_floor(d)
     }
 
     fn into_ceiling(self) -> Integer {
-        todo!();
+        let (n, d) = self.into_parts();
+        n.div_ceiling(d)
     }
 
     fn into_truncate(self) -> Integer {
-        todo!();
+        let (n, d) = self.into_parts();
+        n.div_truncate(d)
     }
 
     fn into_round(self) -> Integer {
@@ -1522,6 +1525,52 @@ impl Integer {
 
     fn copysign(self, sign: f64) -> Self {
         Self::new(self.precision, sign)
+    }
+
+    fn div_floor(self, rhs: Self) -> Self {
+        self.div_exact(rhs, Precision::div, Precision::div_ceil)
+    }
+
+    fn div_ceiling(self, rhs: Self) -> Self {
+        self.div_exact(rhs, Precision::div_ceil, Precision::div)
+    }
+
+    fn div_truncate(self, rhs: Self) -> Self {
+        self.div_exact(rhs, Precision::div, Precision::div)
+    }
+
+    fn div_round(self, rhs: Self) -> Self {
+        /*
+        For rational n/d (canonical, d > 0):
+
+        q = floor(n/d)          // you already have this
+        r = n - q*d              // remainder, 0 <= r < d
+
+        compare 2r to d:
+          2r < d  →  round = q          (closer to floor)
+          2r > d  →  round = q + 1      (closer to ceiling)
+          2r == d →  exact tie:
+                        if q is even → round = q
+                        else          → round = q + 1
+        */
+        //let q = self.precision / rhs.precision;
+        //let r = self.precision % rhs.precision;
+        todo!();
+    }
+
+    fn div_exact(
+        self,
+        rhs: Self,
+        pos: impl FnOnce(Precision, Precision) -> Precision,
+        neg: impl FnOnce(Precision, Precision) -> Precision,
+    ) -> Self {
+        debug_assert!(!rhs.is_zero());
+        let s = self.sign * rhs.sign;
+        match s {
+            Sign::Negative => Self::new(neg(self.precision, rhs.precision), s),
+            Sign::Positive => Self::new(pos(self.precision, rhs.precision), s),
+            Sign::Zero => Self::zero(),
+        }
     }
 }
 
@@ -2136,17 +2185,6 @@ impl Precision {
         }
     }
 
-    fn reduce(&mut self, other: &mut Self) {
-        match (&self, &other) {
-            (Self::Single(a), Self::Single(b)) => {
-                let gcd = gcd_euclidean(*a, *b);
-                *self = Self::Single(*a / gcd);
-                *other = Self::Single(*b / gcd);
-            }
-            _ => todo!(),
-        }
-    }
-
     fn isqrt(&self) -> Option<Self> {
         match self {
             Self::Single(u) => {
@@ -2158,6 +2196,24 @@ impl Precision {
                 }
             }
             Self::Multiple(_) => todo!(),
+        }
+    }
+
+    fn reduce(&mut self, other: &mut Self) {
+        match (&self, &other) {
+            (Self::Single(a), Self::Single(b)) => {
+                let gcd = gcd_euclidean(*a, *b);
+                *self = Self::Single(*a / gcd);
+                *other = Self::Single(*b / gcd);
+            }
+            _ => todo!(),
+        }
+    }
+
+    fn div_ceil(self, rhs: Self) -> Self {
+        match (self, rhs) {
+            (Self::Single(a), Self::Single(b)) => Self::Single(a.div_ceil(b)),
+            _ => todo!(),
         }
     }
 }
@@ -2204,6 +2260,34 @@ impl Mul for Precision {
                 } else {
                     todo!("handle precision overflow")
                 }
+            }
+            _ => todo!(),
+        }
+    }
+}
+
+impl Div for Precision {
+    type Output = Self;
+
+    fn div(self, rhs: Self) -> Self::Output {
+        match (self, rhs) {
+            (Self::Single(a), Self::Single(b)) => {
+                debug_assert!(b != 0);
+                Self::Single(a / b)
+            }
+            _ => todo!(),
+        }
+    }
+}
+
+impl Rem for Precision {
+    type Output = Self;
+
+    fn rem(self, rhs: Self) -> Self::Output {
+        match (self, rhs) {
+            (Self::Single(a), Self::Single(b)) => {
+                debug_assert!(b != 0);
+                Self::Single(a % b)
             }
             _ => todo!(),
         }
