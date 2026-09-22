@@ -1896,6 +1896,220 @@ mod integer {
             assert_eq!(n.sign, Sign::Positive);
         }
     }
+
+    mod precision {
+        use super::*;
+
+        mod div {
+            use super::*;
+
+            #[test]
+            fn exact_division() {
+                let q = Precision::Single(12) / Precision::Single(4);
+
+                assert_eq!(q, Precision::Single(3));
+            }
+
+            #[test]
+            fn truncates_toward_zero_on_remainder() {
+                let cases = [(67, 6, 11), (7, 2, 3), (1, 3, 0), (2, 3, 0)];
+                for (a, b, expected) in cases {
+                    let q = Precision::Single(a) / Precision::Single(b);
+
+                    assert_eq!(q, Precision::Single(expected));
+                }
+            }
+
+            #[test]
+            fn divisor_larger_than_dividend_is_zero() {
+                let q = Precision::Single(3) / Precision::Single(7);
+
+                assert_eq!(q, Precision::Single(0));
+            }
+
+            #[test]
+            fn equal_operands_is_one() {
+                let q = Precision::Single(7) / Precision::Single(7);
+
+                assert_eq!(q, Precision::Single(1));
+            }
+
+            #[test]
+            fn unit_divisor_is_identity() {
+                let q = Precision::Single(9) / Precision::Single(1);
+
+                assert_eq!(q, Precision::Single(9));
+            }
+
+            #[test]
+            fn zero_dividend_is_zero() {
+                let q = Precision::Single(0) / Precision::Single(5);
+
+                assert_eq!(q, Precision::Single(0));
+            }
+
+            #[test]
+            fn large_magnitude_divides_exactly() {
+                let q = Precision::Single(u64::MAX) / Precision::Single(3);
+
+                assert_eq!(q, Precision::Single(u64::MAX / 3));
+            }
+
+            #[test]
+            #[ignore = "multi-precision division not yet implemented"]
+            fn multi_precision() {
+                let a = Precision::Multiple([4, 6].into());
+                let b = Precision::Single(4);
+
+                let q = a / b;
+
+                assert_eq!(q, Precision::Single(4));
+            }
+        }
+
+        mod rem {
+            use super::*;
+
+            #[test]
+            fn nonzero_remainder() {
+                let r = Precision::Single(67) % Precision::Single(6);
+
+                assert_eq!(r, Precision::Single(1));
+            }
+
+            #[test]
+            fn exact_division_leaves_zero() {
+                let r = Precision::Single(12) % Precision::Single(4);
+
+                assert_eq!(r, Precision::Single(0));
+            }
+
+            #[test]
+            fn divisor_larger_than_dividend_returns_dividend() {
+                let r = Precision::Single(3) % Precision::Single(7);
+
+                assert_eq!(r, Precision::Single(3));
+            }
+
+            #[test]
+            fn unit_divisor_is_always_zero() {
+                let r = Precision::Single(9) % Precision::Single(1);
+
+                assert_eq!(r, Precision::Single(0));
+            }
+
+            #[test]
+            fn zero_dividend_is_zero() {
+                let r = Precision::Single(0) % Precision::Single(5);
+
+                assert_eq!(r, Precision::Single(0));
+            }
+
+            #[test]
+            fn remainder_is_always_less_than_divisor() {
+                let cases = [(67, 6), (7, 2), (1, 3), (2, 3), (100, 7), (u64::MAX, 3)];
+                for (a, b) in cases {
+                    let r = Precision::Single(a) % Precision::Single(b);
+
+                    let r = extract_or_fail!(r, Precision::Single);
+                    assert!(r < b, "{a} % {b} = {r} should be < {b}");
+                }
+            }
+
+            #[test]
+            #[ignore = "multi-precision division not yet implemented"]
+            fn multi_precision() {
+                let a = Precision::Multiple([4, 6].into());
+                let b = Precision::Single(4);
+
+                let r = a % b;
+
+                assert_eq!(r, Precision::Single(0));
+            }
+        }
+
+        mod div_ceil {
+            use super::*;
+
+            #[test]
+            fn rounds_up_on_remainder() {
+                let q = Precision::Single(67).div_ceil(Precision::Single(6));
+
+                assert_eq!(q, Precision::Single(12));
+            }
+
+            #[test]
+            fn exact_division_does_not_round_up() {
+                let q = Precision::Single(12).div_ceil(Precision::Single(4));
+
+                assert_eq!(q, Precision::Single(3));
+            }
+
+            #[test]
+            fn dividend_smaller_than_divisor_rounds_up_to_one() {
+                let q = Precision::Single(1).div_ceil(Precision::Single(7));
+
+                assert_eq!(q, Precision::Single(1));
+            }
+
+            #[test]
+            fn zero_dividend_is_zero() {
+                let q = Precision::Single(0).div_ceil(Precision::Single(5));
+
+                assert_eq!(q, Precision::Single(0));
+            }
+
+            #[test]
+            fn agrees_with_div_plus_one_exactly_when_there_is_a_remainder() {
+                let cases = [(67, 6), (7, 2), (1, 3), (2, 3), (12, 4), (9, 3)];
+                for (a, b) in cases {
+                    let div = Precision::Single(a) / Precision::Single(b);
+                    let rem = Precision::Single(a) % Precision::Single(b);
+                    let div_ceil = Precision::Single(a).div_ceil(Precision::Single(b));
+
+                    let expected = if rem == Precision::Single(0) {
+                        div
+                    } else {
+                        div + Precision::Single(1)
+                    };
+                    assert_eq!(div_ceil, expected);
+                }
+            }
+
+            #[test]
+            #[ignore = "multi-precision division not yet implemented"]
+            fn multi_precision() {
+                let a = Precision::Multiple([4, 6].into());
+                let b = Precision::Single(4);
+
+                let q = a.div_ceil(b);
+
+                assert_eq!(q, Precision::Single(2));
+            }
+        }
+
+        #[test]
+        fn division_identity_holds() {
+            // a == (a / b) * b + (a % b)
+            let cases = [
+                (67, 6),
+                (7, 2),
+                (1, 3),
+                (2, 3),
+                (100, 7),
+                (9, 3),
+                (u64::MAX, 3),
+            ];
+            for (a, b) in cases {
+                let div = Precision::Single(a) / Precision::Single(b);
+                let rem = Precision::Single(a) % Precision::Single(b);
+
+                let reconstructed = div * Precision::Single(b) + rem;
+
+                assert_eq!(reconstructed, Precision::Single(a));
+            }
+        }
+    }
 }
 
 mod float {
@@ -7956,6 +8170,408 @@ mod magnitude {
                 let via_sqrt = Number::real((x * x) + (y * y)).sqrt();
 
                 assert_eq!(magnitude.to_string(), via_sqrt.to_string());
+            }
+        }
+    }
+}
+
+mod rounding {
+    use super::*;
+
+    // (n, d) fixtures used throughout: every entry is a genuine non-integer
+    // canonical rational (Real::reduce collapses anything else to an
+    // integer), chosen so floor/ceiling/truncate/round disagree with each
+    // other somewhere in the set.
+    const NON_INTEGER_RATIONALS: [(i64, i64); 12] = [
+        (7, 2),
+        (5, 2),
+        (3, 2),
+        (1, 2),
+        (-1, 2),
+        (-3, 2),
+        (-5, 2),
+        (-7, 2),
+        (1, 3),
+        (2, 3),
+        (-1, 3),
+        (-2, 3),
+    ];
+
+    mod floor {
+        use super::*;
+
+        #[test]
+        fn matrix() {
+            let cases = [
+                ((7, 2), "3"),
+                ((5, 2), "2"),
+                ((3, 2), "1"),
+                ((1, 2), "0"),
+                ((-1, 2), "-1"),
+                ((-3, 2), "-2"),
+                ((-5, 2), "-3"),
+                ((-7, 2), "-4"),
+                ((1, 3), "0"),
+                ((2, 3), "0"),
+                ((-1, 3), "-1"),
+                ((-2, 3), "-1"),
+                ((67, 6), "11"),
+                ((-67, 6), "-12"),
+            ];
+            for ((n, d), expected) in cases {
+                let x = ok_or_fail!(Real::reduce(n, d));
+
+                let floor = x.into_floor();
+
+                assert_eq!(floor.to_string(), expected);
+                assert_matches!(floor, Real::Integer(_));
+            }
+        }
+
+        #[test]
+        fn positive_proper_fraction_floors_to_positive_zero() {
+            let x = ok_or_fail!(Real::reduce(1, 3));
+
+            let floor = x.into_floor();
+
+            let int = extract_or_fail!(floor, Real::Integer);
+            assert_eq!(extract_or_fail!(int.precision, Precision::Single), 0);
+            assert_eq!(int.sign, Sign::Zero);
+        }
+
+        #[test]
+        fn negative_rationals_floor_away_from_zero() {
+            // floor rounds toward negative infinity, so a negative
+            // non-integer rational floors to a *more* negative integer than
+            // truncate would -- this is what distinguishes floor from
+            // truncate for negative operands.
+            let x = ok_or_fail!(Real::reduce(-7, 6));
+
+            let floor = x.into_floor();
+
+            assert_eq!(floor.to_string(), "-2");
+        }
+    }
+
+    mod ceiling {
+        use super::*;
+
+        #[test]
+        fn matrix() {
+            let cases = [
+                ((7, 2), "4"),
+                ((5, 2), "3"),
+                ((3, 2), "2"),
+                ((1, 2), "1"),
+                ((-1, 2), "0"),
+                ((-3, 2), "-1"),
+                ((-5, 2), "-2"),
+                ((-7, 2), "-3"),
+                ((1, 3), "1"),
+                ((2, 3), "1"),
+                ((-1, 3), "0"),
+                ((-2, 3), "0"),
+                ((67, 6), "12"),
+                ((-67, 6), "-11"),
+            ];
+            for ((n, d), expected) in cases {
+                let x = ok_or_fail!(Real::reduce(n, d));
+
+                let ceiling = x.into_ceiling();
+
+                assert_eq!(ceiling.to_string(), expected);
+                assert_matches!(ceiling, Real::Integer(_));
+            }
+        }
+
+        #[test]
+        fn negative_proper_fraction_ceilings_to_positive_zero() {
+            let x = ok_or_fail!(Real::reduce(-1, 2));
+
+            let ceiling = x.into_ceiling();
+
+            let int = extract_or_fail!(ceiling, Real::Integer);
+            assert_eq!(extract_or_fail!(int.precision, Precision::Single), 0);
+            assert_eq!(int.sign, Sign::Zero);
+        }
+    }
+
+    mod truncate {
+        use super::*;
+
+        #[test]
+        fn matrix() {
+            let cases = [
+                ((7, 2), "3"),
+                ((5, 2), "2"),
+                ((3, 2), "1"),
+                ((1, 2), "0"),
+                ((-1, 2), "0"),
+                ((-3, 2), "-1"),
+                ((-5, 2), "-2"),
+                ((-7, 2), "-3"),
+                ((1, 3), "0"),
+                ((2, 3), "0"),
+                ((-1, 3), "0"),
+                ((-2, 3), "0"),
+                ((67, 6), "11"),
+                ((-67, 6), "-11"),
+            ];
+            for ((n, d), expected) in cases {
+                let x = ok_or_fail!(Real::reduce(n, d));
+
+                let truncate = x.into_truncate();
+
+                assert_eq!(truncate.to_string(), expected);
+                assert_matches!(truncate, Real::Integer(_));
+            }
+        }
+
+        #[test]
+        fn negative_proper_fraction_truncates_to_positive_zero() {
+            let x = ok_or_fail!(Real::reduce(-1, 2));
+
+            let truncate = x.into_truncate();
+
+            let int = extract_or_fail!(truncate, Real::Integer);
+            assert_eq!(extract_or_fail!(int.precision, Precision::Single), 0);
+            assert_eq!(int.sign, Sign::Zero);
+        }
+
+        #[test]
+        fn agrees_with_floor_for_positive_operands() {
+            let cases = [(7, 2), (5, 2), (1, 3), (67, 6)];
+            for (n, d) in cases {
+                let truncate = ok_or_fail!(Real::reduce(n, d)).into_truncate();
+                let floor = ok_or_fail!(Real::reduce(n, d)).into_floor();
+
+                assert_eq!(truncate.to_string(), floor.to_string());
+            }
+        }
+
+        #[test]
+        fn agrees_with_ceiling_for_negative_operands() {
+            let cases = [(-7, 2), (-5, 2), (-1, 3), (-67, 6)];
+            for (n, d) in cases {
+                let truncate = ok_or_fail!(Real::reduce(n, d)).into_truncate();
+                let ceiling = ok_or_fail!(Real::reduce(n, d)).into_ceiling();
+
+                assert_eq!(truncate.to_string(), ceiling.to_string());
+            }
+        }
+    }
+
+    // R7RS: "Round rounds to the nearest integer, rounding to even when the
+    // argument is halfway between two integers." Round is expected to fail
+    // here: Rational::into_round is still todo!() (src/number.rs:1159).
+    mod round {
+        use super::*;
+
+        #[test]
+        fn matrix() {
+            let cases = [
+                ((7, 2), "4"),
+                ((5, 2), "2"),
+                ((3, 2), "2"),
+                ((1, 2), "0"),
+                ((-1, 2), "0"),
+                ((-3, 2), "-2"),
+                ((-5, 2), "-2"),
+                ((-7, 2), "-4"),
+                ((1, 3), "0"),
+                ((2, 3), "1"),
+                ((-1, 3), "0"),
+                ((-2, 3), "-1"),
+                ((67, 6), "11"),
+                ((-67, 6), "-11"),
+            ];
+            for ((n, d), expected) in cases {
+                let x = ok_or_fail!(Real::reduce(n, d));
+
+                let round = x.into_round();
+
+                assert_eq!(round.to_string(), expected);
+                assert_matches!(round, Real::Integer(_));
+            }
+        }
+
+        #[test]
+        fn positive_ties_round_to_even() {
+            let cases = [
+                ((1, 2), "0"),
+                ((3, 2), "2"),
+                ((5, 2), "2"),
+                ((7, 2), "4"),
+                ((9, 2), "4"),
+            ];
+            for ((n, d), expected) in cases {
+                let x = ok_or_fail!(Real::reduce(n, d));
+
+                assert_eq!(x.into_round().to_string(), expected);
+            }
+        }
+
+        #[test]
+        fn negative_ties_round_to_even() {
+            let cases = [
+                ((-1, 2), "0"),
+                ((-3, 2), "-2"),
+                ((-5, 2), "-2"),
+                ((-7, 2), "-4"),
+                ((-9, 2), "-4"),
+            ];
+            for ((n, d), expected) in cases {
+                let x = ok_or_fail!(Real::reduce(n, d));
+
+                assert_eq!(x.into_round().to_string(), expected);
+            }
+        }
+
+        #[test]
+        fn non_ties_round_to_the_nearer_integer() {
+            let cases = [
+                ((1, 3), "0"),
+                ((2, 3), "1"),
+                ((-1, 3), "0"),
+                ((-2, 3), "-1"),
+            ];
+            for ((n, d), expected) in cases {
+                let x = ok_or_fail!(Real::reduce(n, d));
+
+                assert_eq!(x.into_round().to_string(), expected);
+            }
+        }
+    }
+
+    mod laws {
+        use super::*;
+
+        #[test]
+        fn floor_ceiling_truncate_always_return_an_integer() {
+            for (n, d) in NON_INTEGER_RATIONALS {
+                let floor = ok_or_fail!(Real::reduce(n, d)).into_floor();
+                let ceiling = ok_or_fail!(Real::reduce(n, d)).into_ceiling();
+                let truncate = ok_or_fail!(Real::reduce(n, d)).into_truncate();
+
+                assert_matches!(floor, Real::Integer(_));
+                assert_matches!(ceiling, Real::Integer(_));
+                assert_matches!(truncate, Real::Integer(_));
+            }
+        }
+
+        #[test]
+        fn floor_is_at_most_ceiling() {
+            for (n, d) in NON_INTEGER_RATIONALS {
+                let floor = ok_or_fail!(Real::reduce(n, d)).into_floor();
+                let ceiling = ok_or_fail!(Real::reduce(n, d)).into_ceiling();
+
+                let f = extract_or_fail!(floor, Real::Integer);
+                let c = extract_or_fail!(ceiling, Real::Integer);
+                assert!(f <= c, "floor({n}/{d}) should be <= ceiling({n}/{d})");
+            }
+        }
+
+        #[test]
+        fn ceiling_minus_floor_is_one_for_every_non_integer() {
+            for (n, d) in NON_INTEGER_RATIONALS {
+                let floor = ok_or_fail!(Real::reduce(n, d)).into_floor();
+                let ceiling = ok_or_fail!(Real::reduce(n, d)).into_ceiling();
+
+                let f = extract_or_fail!(floor, Real::Integer);
+                let c = extract_or_fail!(ceiling, Real::Integer);
+                assert_eq!(c - f, Integer::from(1));
+            }
+        }
+
+        #[test]
+        fn floor_of_negation_is_negated_ceiling() {
+            for (n, d) in NON_INTEGER_RATIONALS {
+                let x = ok_or_fail!(Real::reduce(n, d));
+                let neg_x = -ok_or_fail!(Real::reduce(n, d));
+
+                let floor_of_neg = neg_x.into_floor();
+                let neg_ceiling = -x.into_ceiling();
+
+                assert_eq!(floor_of_neg.to_string(), neg_ceiling.to_string());
+            }
+        }
+
+        #[test]
+        fn ceiling_of_negation_is_negated_floor() {
+            for (n, d) in NON_INTEGER_RATIONALS {
+                let x = ok_or_fail!(Real::reduce(n, d));
+                let neg_x = -ok_or_fail!(Real::reduce(n, d));
+
+                let ceiling_of_neg = neg_x.into_ceiling();
+                let neg_floor = -x.into_floor();
+
+                assert_eq!(ceiling_of_neg.to_string(), neg_floor.to_string());
+            }
+        }
+
+        #[test]
+        fn truncate_is_an_odd_function() {
+            for (n, d) in NON_INTEGER_RATIONALS {
+                let x = ok_or_fail!(Real::reduce(n, d));
+                let neg_x = -ok_or_fail!(Real::reduce(n, d));
+
+                let truncate_of_neg = neg_x.into_truncate();
+                let neg_truncate = -x.into_truncate();
+
+                assert_eq!(truncate_of_neg.to_string(), neg_truncate.to_string());
+            }
+        }
+
+        #[test]
+        fn round_is_an_odd_function() {
+            for (n, d) in NON_INTEGER_RATIONALS {
+                let x = ok_or_fail!(Real::reduce(n, d));
+                let neg_x = -ok_or_fail!(Real::reduce(n, d));
+
+                let round_of_neg = neg_x.into_round();
+                let neg_round = -x.into_round();
+
+                assert_eq!(round_of_neg.to_string(), neg_round.to_string());
+            }
+        }
+
+        #[test]
+        fn truncate_never_rounds_away_from_zero() {
+            for (n, d) in NON_INTEGER_RATIONALS {
+                let x = ok_or_fail!(Real::reduce(n, d));
+                let magnitude = x.to_float().abs();
+
+                let truncated_magnitude = ok_or_fail!(Real::reduce(n, d))
+                    .into_truncate()
+                    .to_float()
+                    .abs();
+
+                assert!(
+                    truncated_magnitude <= magnitude,
+                    "truncate({n}/{d}) should not round away from zero"
+                );
+            }
+        }
+
+        #[test]
+        fn every_tie_rounds_to_an_even_integer() {
+            // every (2k+1)/2 in the fixture set is an exact tie; R7RS
+            // requires ties to round to the even neighbor.
+            let ties = [
+                (1, 2),
+                (3, 2),
+                (5, 2),
+                (7, 2),
+                (-1, 2),
+                (-3, 2),
+                (-5, 2),
+                (-7, 2),
+            ];
+            for (n, d) in ties {
+                let round = ok_or_fail!(Real::reduce(n, d)).into_round();
+
+                let int = extract_or_fail!(round, Real::Integer);
+                assert!(int.is_even(), "round({n}/{d}) = {int} should be even");
             }
         }
     }
