@@ -688,11 +688,10 @@ impl Real {
         let mut n = numerator.into();
         if n.sign == d.sign {
             n.make_positive();
-            d.make_positive();
         } else {
             n.make_negative();
-            d.make_positive();
         }
+        d.make_positive();
         if n.is_zero() || d.is_magnitude_one() {
             return Ok(n.into());
         }
