@@ -791,7 +791,7 @@ impl Real {
         match self {
             Self::Float(f) => f.floor().into(),
             Self::Integer(n) => n.into(),
-            Self::Rational(q) => todo!(),
+            Self::Rational(q) => q.into_floor().into(),
         }
     }
 
@@ -799,7 +799,7 @@ impl Real {
         match self {
             Self::Float(f) => f.ceil().into(),
             Self::Integer(n) => n.into(),
-            Self::Rational(q) => todo!(),
+            Self::Rational(q) => q.into_ceiling().into(),
         }
     }
 
@@ -807,7 +807,7 @@ impl Real {
         match self {
             Self::Float(f) => f.trunc().into(),
             Self::Integer(n) => n.into(),
-            Self::Rational(q) => todo!(),
+            Self::Rational(q) => q.into_truncate().into(),
         }
     }
 
@@ -815,7 +815,7 @@ impl Real {
         match self {
             Self::Float(f) => f.round().into(),
             Self::Integer(n) => n.into(),
-            Self::Rational(q) => todo!(),
+            Self::Rational(q) => q.into_round().into(),
         }
     }
 
@@ -1138,6 +1138,22 @@ impl Rational {
 
     fn into_parts(self) -> (Integer, Integer) {
         (self.0.0, self.0.1)
+    }
+
+    fn into_floor(self) -> Integer {
+        todo!();
+    }
+
+    fn into_ceiling(self) -> Integer {
+        todo!();
+    }
+
+    fn into_truncate(self) -> Integer {
+        todo!();
+    }
+
+    fn into_round(self) -> Integer {
+        todo!();
     }
 
     fn try_into_reciprocal(self) -> RealResult {
