@@ -134,6 +134,7 @@ pub(crate) type IntResult = Result<Integer, NumericError>;
  * - no zero denominator
  * - rationals reduced to canonical form
  * - rationals with divisor denominators are reduced to integers
+ * - complex with exact-zero imaginaries are reduced to reals
  * - single-item MPs reduced to single precision
  * - etc
  * This way we don't have to worry about whether 4/5 == 8/10, 5/1 is an Integer
