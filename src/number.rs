@@ -120,7 +120,7 @@ pub(crate) const INF_STR: &str = "inf.0";
 pub(crate) const NAN_STR: &str = "nan.0";
 // 2^53 - 1; maximum safe integer in f64 format
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/MAX_SAFE_INTEGER
-// TODO: https://github.com/rust-lang/rust/issues/152466
+// TODO: https://doc.rust-lang.org/std/primitive.f64.html#associatedconstant.MAX_EXACT_INTEGER
 const FMAX_INT: f64 = 9_007_199_254_740_991.0;
 
 pub(crate) type NumResult = Result<Number, NumericError>;
@@ -674,6 +674,7 @@ impl Real {
     }
 
     pub(crate) fn float_min_int() -> Self {
+        // TODO: https://doc.rust-lang.org/std/primitive.f64.html#associatedconstant.MIN_EXACT_INTEGER
         (-FMAX_INT).into()
     }
 
@@ -1792,7 +1793,7 @@ impl Radix for Octal {
     const NAME: &'static str = "octal";
 
     fn is_digit(&self, ch: char) -> bool {
-        // TODO: experimental https://doc.rust-lang.org/std/primitive.char.html#method.is_ascii_octdigit
+        // TODO: https://doc.rust-lang.org/std/primitive.char.html#method.is_ascii_octdigit
         ch.is_digit(8)
     }
 }

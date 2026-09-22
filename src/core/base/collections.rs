@@ -468,8 +468,7 @@ fn assoc_equal(_args: &[Value], _env: &Frame) -> EvalResult {
 fn list_copy(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = first(args);
     if arg.is_pair() {
-        // TODO: experimental
-        // https://doc.rust-lang.org/std/iter/trait.Iterator.html#method.try_collect
+        // TODO: https://doc.rust-lang.org/std/iter/trait.Iterator.html#method.try_collect
         Ok(Value::list_cons_mut(
             arg.cycle_iter()
                 .try_fold(Vec::new(), |mut acc, (item, cycle)| {
