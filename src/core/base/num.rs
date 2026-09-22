@@ -51,6 +51,11 @@ pub(super) fn load(env: &Frame) {
     super::bind_intrinsic(env, "numerator", 1..1, get_numerator);
     super::bind_intrinsic(env, "denominator", 1..1, get_denominator);
 
+    super::bind_intrinsic(env, "floor", 1..1, floor);
+    super::bind_intrinsic(env, "ceiling", 1..1, ceiling);
+    super::bind_intrinsic(env, "truncate", 1..1, truncate);
+    super::bind_intrinsic(env, "round", 1..1, round);
+
     super::bind_intrinsic(env, "square", 1..1, square);
 
     super::bind_intrinsic(env, "inexact", 1..1, into_inexact);
@@ -179,6 +184,26 @@ fn get_denominator(args: &[Value], _env: &Frame) -> EvalResult {
             |r| Ok(Value::real(r)),
         )
     })
+}
+
+fn floor(args: &[Value], _env: &Frame) -> EvalResult {
+    let arg = first(args);
+    real_op(arg, |r| todo!())
+}
+
+fn ceiling(args: &[Value], _env: &Frame) -> EvalResult {
+    let arg = first(args);
+    real_op(arg, |r| todo!())
+}
+
+fn truncate(args: &[Value], _env: &Frame) -> EvalResult {
+    let arg = first(args);
+    real_op(arg, |r| todo!())
+}
+
+fn round(args: &[Value], _env: &Frame) -> EvalResult {
+    let arg = first(args);
+    real_op(arg, |r| todo!())
 }
 
 fn square(args: &[Value], env: &Frame) -> EvalResult {
