@@ -791,7 +791,7 @@ impl Real {
     pub(crate) fn into_floor(self) -> Self {
         match self {
             Self::Float(f) => f.floor().into(),
-            Self::Integer(n) => n.into(),
+            Self::Integer(_) => self,
             Self::Rational(q) => q.into_floor().into(),
         }
     }
@@ -799,7 +799,7 @@ impl Real {
     pub(crate) fn into_ceiling(self) -> Self {
         match self {
             Self::Float(f) => f.ceil().into(),
-            Self::Integer(n) => n.into(),
+            Self::Integer(_) => self,
             Self::Rational(q) => q.into_ceiling().into(),
         }
     }
@@ -807,7 +807,7 @@ impl Real {
     pub(crate) fn into_truncate(self) -> Self {
         match self {
             Self::Float(f) => f.trunc().into(),
-            Self::Integer(n) => n.into(),
+            Self::Integer(_) => self,
             Self::Rational(q) => q.into_truncate().into(),
         }
     }
@@ -815,7 +815,7 @@ impl Real {
     pub(crate) fn into_round(self) -> Self {
         match self {
             Self::Float(f) => f.round().into(),
-            Self::Integer(n) => n.into(),
+            Self::Integer(_) => self,
             Self::Rational(q) => q.into_round().into(),
         }
     }
@@ -839,7 +839,7 @@ impl Real {
     pub(crate) fn try_into_numerator(self) -> RealResult {
         Ok(match self {
             Self::Float(_) => self.try_into_exact()?.try_into_numerator()?.into_inexact(),
-            Self::Integer(n) => n.into(),
+            Self::Integer(_) => self,
             Self::Rational(q) => q.into_numerator().into(),
         })
     }
@@ -1157,7 +1157,8 @@ impl Rational {
     }
 
     fn into_round(self) -> Integer {
-        todo!();
+        let (n, d) = self.into_parts();
+        n.div_round(d)
     }
 
     fn try_into_reciprocal(self) -> RealResult {
@@ -1527,6 +1528,8 @@ impl Integer {
         Self::new(self.precision, sign)
     }
 
+    // All of the following exact-division operations assume arguments come
+    // from a canonical rational, e.g. no zero, no negative divisor.
     fn div_floor(self, rhs: Self) -> Self {
         self.div_exact(rhs, Precision::div, Precision::div_ceil)
     }
@@ -1540,22 +1543,7 @@ impl Integer {
     }
 
     fn div_round(self, rhs: Self) -> Self {
-        /*
-        For rational n/d (canonical, d > 0):
-
-        q = floor(n/d)          // you already have this
-        r = n - q*d              // remainder, 0 <= r < d
-
-        compare 2r to d:
-          2r < d  →  round = q          (closer to floor)
-          2r > d  →  round = q + 1      (closer to ceiling)
-          2r == d →  exact tie:
-                        if q is even → round = q
-                        else          → round = q + 1
-        */
-        //let q = self.precision / rhs.precision;
-        //let r = self.precision % rhs.precision;
-        todo!();
+        self.div_exact(rhs, Precision::div_round, Precision::div_round)
     }
 
     fn div_exact(
@@ -1565,10 +1553,9 @@ impl Integer {
         neg: impl FnOnce(Precision, Precision) -> Precision,
     ) -> Self {
         debug_assert!(!rhs.is_zero());
-        let s = self.sign * rhs.sign;
-        match s {
-            Sign::Negative => Self::new(neg(self.precision, rhs.precision), s),
-            Sign::Positive => Self::new(pos(self.precision, rhs.precision), s),
+        match self.sign {
+            s @ Sign::Negative => Self::new(neg(self.precision, rhs.precision), s),
+            s @ Sign::Positive => Self::new(pos(self.precision, rhs.precision), s),
             Sign::Zero => Self::zero(),
         }
     }
@@ -2216,6 +2203,32 @@ impl Precision {
             _ => todo!(),
         }
     }
+
+    fn div_round(self, rhs: Self) -> Self {
+        match (self, rhs) {
+            (Self::Single(a), Self::Single(b)) => {
+                /*
+                 * For rational n/d:
+                 *   q = floor(n/d)
+                 *   r = n - q*d
+                 *   compare 2r to d:
+                 *     2r < d  →  q
+                 *     2r > d  →  q + 1
+                 *     2r == d →  q is even → q
+                 *                else      → q + 1
+                 */
+                let q = a / b;
+                let r = a % b;
+                let r2 = 2 * r;
+                match r2.cmp(&b) {
+                    Ordering::Equal if q % 2 == 0 => q.into(),
+                    Ordering::Less => q.into(),
+                    _ => (q + 1).into(),
+                }
+            }
+            _ => todo!(),
+        }
+    }
 }
 
 impl Add for Precision {
@@ -2266,6 +2279,7 @@ impl Mul for Precision {
     }
 }
 
+// Integer division (e.g. div_floor); caller ensures divisor is not zero
 impl Div for Precision {
     type Output = Self;
 
@@ -2280,6 +2294,7 @@ impl Div for Precision {
     }
 }
 
+// Unsigned remainder or modulo; caller ensures the modulus is not zero
 impl Rem for Precision {
     type Output = Self;
 
