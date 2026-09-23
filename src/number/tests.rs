@@ -1897,6 +1897,206 @@ mod integer {
         }
     }
 
+    // Integer::rem is truncated remainder (R7RS `remainder`/`truncate-remainder`,
+    // R7RS-small 6.2.6): the result takes the sign of the dividend, not the divisor,
+    // which is what distinguishes it from floored `modulo`/`floor-remainder`.
+    mod rem {
+        use super::*;
+
+        #[test]
+        fn matrix() {
+            // (dividend, divisor, expected remainder) -- R7RS 6.2.6 worked examples.
+            // modulo on these same inputs would give (1, 3, -3, -1); remainder must not.
+            let cases = [(13, 4, 1), (-13, 4, -1), (13, -4, 1), (-13, -4, -1)];
+            for (n, d, expected) in cases {
+                let r = ok_or_fail!(Integer::from(n) % Integer::from(d));
+
+                assert_eq!(r, Integer::from(expected), "{n} % {d}");
+            }
+        }
+
+        #[test]
+        fn exact_division_leaves_unsigned_zero() {
+            let r = ok_or_fail!(Integer::from(-12) % Integer::from(4));
+
+            assert_eq!(extract_or_fail!(r.precision, Precision::Single), 0);
+            assert_eq!(r.sign, Sign::Zero);
+        }
+
+        #[test]
+        fn zero_dividend_is_zero() {
+            let cases = [5, -5];
+            for d in cases {
+                let r = ok_or_fail!(Integer::from(0) % Integer::from(d));
+
+                assert_eq!(extract_or_fail!(r.precision, Precision::Single), 0);
+                assert_eq!(r.sign, Sign::Zero);
+            }
+        }
+
+        #[test]
+        fn divisor_larger_than_dividend_returns_dividend() {
+            let cases = [(3, 7), (-3, 7)];
+            for (n, d) in cases {
+                let r = ok_or_fail!(Integer::from(n) % Integer::from(d));
+
+                assert_eq!(r, Integer::from(n));
+            }
+        }
+
+        #[test]
+        fn unit_divisor_is_always_zero() {
+            let cases = [(9, 1), (-9, -1)];
+            for (n, d) in cases {
+                let r = ok_or_fail!(Integer::from(n) % Integer::from(d));
+
+                assert_eq!(extract_or_fail!(r.precision, Precision::Single), 0);
+                assert_eq!(r.sign, Sign::Zero);
+            }
+        }
+
+        #[test]
+        fn sign_follows_dividend_not_divisor() {
+            let cases = [(13, 4), (-13, 4), (13, -4), (-13, -4), (0, 4)];
+            for (n, d) in cases {
+                let r = ok_or_fail!(Integer::from(n) % Integer::from(d));
+
+                let expected = if r.is_zero() {
+                    Sign::Zero
+                } else {
+                    Integer::from(n).sign
+                };
+                assert_eq!(r.sign, expected, "{n} % {d}");
+            }
+        }
+
+        #[test]
+        fn remainder_magnitude_is_less_than_divisor_magnitude() {
+            let cases = [(13, 4), (-13, 4), (13, -4), (-13, -4), (7, 100)];
+            for (n, d) in cases {
+                let r = ok_or_fail!(Integer::from(n) % Integer::from(d));
+
+                let r = extract_or_fail!(r.precision, Precision::Single);
+                assert!(r < d.unsigned_abs(), "{n} % {d} = {r} should be < {d}");
+            }
+        }
+
+        #[test]
+        fn remainder_is_independent_of_divisor_sign() {
+            let cases = [13, -13, 7, 0];
+            for n in cases {
+                let pos = ok_or_fail!(Integer::from(n) % Integer::from(4));
+                let neg = ok_or_fail!(Integer::from(n) % Integer::from(-4));
+
+                assert_eq!(pos, neg, "{n} % 4 vs {n} % -4");
+            }
+        }
+
+        #[test]
+        fn negating_dividend_negates_remainder() {
+            let cases = [(13, 4), (13, -4), (7, 3)];
+            for (n, d) in cases {
+                let r = ok_or_fail!(Integer::from(n) % Integer::from(d));
+                let neg_r = ok_or_fail!(Integer::from(-n) % Integer::from(d));
+
+                assert_eq!(neg_r, -r, "-({n}) % {d}");
+            }
+        }
+
+        #[test]
+        fn division_identity_holds() {
+            // n == d * truncate(n/d) + remainder(n, d)
+            let cases = [(13, 4), (-13, 4), (13, -4), (-13, -4), (100, 7), (9, 3)];
+            for (n, d) in cases {
+                let r = ok_or_fail!(Integer::from(n) % Integer::from(d));
+
+                let reconstructed = Integer::from(d) * Integer::from(n / d) + r;
+
+                assert_eq!(reconstructed, Integer::from(n), "{n} == {d} * ({n}/{d}) + r");
+            }
+        }
+
+        #[test]
+        fn matches_native_truncated_remainder() {
+            // Rust's `%` on primitive integers is truncated remainder, the same
+            // convention as R7RS `remainder`, so it's a valid independent oracle here.
+            // i64::MIN is excluded: `i64::MIN % -1` overflow-panics natively even
+            // though the mathematical remainder is well-defined (see below).
+            for n in -20..=20i64 {
+                for d in -7..=7i64 {
+                    if d == 0 {
+                        continue;
+                    }
+                    let r = ok_or_fail!(Integer::from(n) % Integer::from(d));
+
+                    assert_eq!(r, Integer::from(n % d), "{n} % {d}");
+                }
+            }
+        }
+
+        #[test]
+        fn zero_divisor_is_an_error() {
+            let cases = [13, -13, 0];
+            for n in cases {
+                let r = Integer::from(n) % Integer::zero();
+
+                let err = err_or_fail!(r);
+                assert_matches!(err, NumericError::DivideByZero);
+            }
+        }
+
+        #[test]
+        fn magnitude_beyond_i64_range() {
+            // u64::MAX is odd, so its truncated remainder mod 2 is 1.
+            let a: Integer = (Sign::Negative, u64::MAX).into();
+
+            let r = ok_or_fail!(a % Integer::from(2));
+
+            assert_eq!(r, Integer::from(-1));
+        }
+
+        #[test]
+        fn min_i64_dividend_with_unit_divisor() {
+            // i64::MIN is mathematically divisible by -1, but computing that with
+            // native i64 arithmetic overflow-panics; sign-magnitude storage keeps
+            // the magnitude (2^63) and sign separate, so no overflow occurs here.
+            let r = ok_or_fail!(Integer::from(i64::MIN) % Integer::from(-1));
+
+            assert_eq!(extract_or_fail!(r.precision, Precision::Single), 0);
+            assert_eq!(r.sign, Sign::Zero);
+        }
+
+        #[test]
+        #[ignore = "floored modulo (R7RS `modulo`/`floor-remainder`) not implemented; `%` is truncated `remainder`"]
+        fn modulo_negative_dividend() {
+            let r = ok_or_fail!(Integer::from(-13) % Integer::from(4));
+
+            assert_eq!(r, Integer::from(3));
+        }
+
+        #[test]
+        #[ignore = "floored modulo (R7RS `modulo`/`floor-remainder`) not implemented; `%` is truncated `remainder`"]
+        fn modulo_negative_divisor() {
+            let r = ok_or_fail!(Integer::from(13) % Integer::from(-4));
+
+            assert_eq!(r, Integer::from(-3));
+        }
+
+        #[test]
+        #[ignore = "multi-precision division not yet implemented"]
+        fn multi_precision() {
+            let a = Integer {
+                precision: Precision::Multiple([4, 6].into()),
+                sign: Sign::Positive,
+            };
+            let b = Integer::from(4);
+
+            let r = ok_or_fail!(a % b);
+
+            assert_eq!(r, Integer::from(0));
+        }
+    }
+
     mod precision {
         use super::*;
 
