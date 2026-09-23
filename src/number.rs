@@ -1644,6 +1644,17 @@ impl Div for Integer {
     }
 }
 
+impl Rem for Integer {
+    type Output = IntResult;
+
+    fn rem(self, rhs: Self) -> Self::Output {
+        if rhs.is_zero() {
+            return Err(NumericError::DivideByZero);
+        }
+        Ok(Self::new(self.precision % rhs.precision, self.sign))
+    }
+}
+
 impl Display for Integer {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         self.sign.fmt(f)?;
