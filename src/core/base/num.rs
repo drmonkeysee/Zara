@@ -172,16 +172,19 @@ fn abs(args: &[Value], _env: &Frame) -> EvalResult {
 fn floor_qr(args: &[Value], _env: &Frame) -> EvalResult {
     let a = first(args);
     let b = super::second(args);
-    let n = arg_to_real(a, FIRST_ARG_LABEL, NumericTypeName::INTEGER)?
+    let ra = arg_to_real(a, FIRST_ARG_LABEL, NumericTypeName::INTEGER)?;
+    let rb = arg_to_real(b, super::SECOND_ARG_LABEL, NumericTypeName::INTEGER)?;
+    let float_taint = ra.is_inexact() || rb.is_inexact();
+    let n = ra
         .clone()
         .try_into_exact_integer()
         .map_err(|err| Exception::signal(Condition::value_error(err, a)))?;
-    let d = arg_to_real(b, super::SECOND_ARG_LABEL, NumericTypeName::INTEGER)?
+    let d = rb
         .clone()
         .try_into_exact_integer()
         .map_err(|err| Exception::signal(Condition::value_error(err, b)))?;
     let (q, r) = n
-        .into_quotrem_floor(d)
+        .into_floor_quotrem(d)
         .map_err(|err| Exception::signal(Condition::value_error(err, b)))?;
     todo!("i need a compound value in order to return two numbers");
 }
@@ -189,50 +192,71 @@ fn floor_qr(args: &[Value], _env: &Frame) -> EvalResult {
 fn floor_quotient(args: &[Value], _env: &Frame) -> EvalResult {
     let a = first(args);
     let b = super::second(args);
-    let n = arg_to_real(a, FIRST_ARG_LABEL, NumericTypeName::INTEGER)?
+    let ra = arg_to_real(a, FIRST_ARG_LABEL, NumericTypeName::INTEGER)?;
+    let rb = arg_to_real(b, super::SECOND_ARG_LABEL, NumericTypeName::INTEGER)?;
+    let float_taint = ra.is_inexact() || rb.is_inexact();
+    let n = ra
         .clone()
         .try_into_exact_integer()
         .map_err(|err| Exception::signal(Condition::value_error(err, a)))?;
-    let d = arg_to_real(b, super::SECOND_ARG_LABEL, NumericTypeName::INTEGER)?
+    let d = rb
         .clone()
         .try_into_exact_integer()
         .map_err(|err| Exception::signal(Condition::value_error(err, b)))?;
-    n.into_quotient_floor(d).map_or_else(
+    n.into_floor_quotient(d).map_or_else(
         |err| Err(Exception::signal(Condition::value_error(err, b))),
-        |q| Ok(Value::real(q)),
+        |q| {
+            Ok(if float_taint {
+                Value::real(q.into_inexact())
+            } else {
+                Value::real(q)
+            })
+        },
     )
 }
 
 fn floor_remainder(args: &[Value], _env: &Frame) -> EvalResult {
     let a = first(args);
     let b = super::second(args);
-    let n = arg_to_real(a, FIRST_ARG_LABEL, NumericTypeName::INTEGER)?
+    let ra = arg_to_real(a, FIRST_ARG_LABEL, NumericTypeName::INTEGER)?;
+    let rb = arg_to_real(b, super::SECOND_ARG_LABEL, NumericTypeName::INTEGER)?;
+    let float_taint = ra.is_inexact() || rb.is_inexact();
+    let n = ra
         .clone()
         .try_into_exact_integer()
         .map_err(|err| Exception::signal(Condition::value_error(err, a)))?;
-    let d = arg_to_real(b, super::SECOND_ARG_LABEL, NumericTypeName::INTEGER)?
+    let d = rb
         .clone()
         .try_into_exact_integer()
         .map_err(|err| Exception::signal(Condition::value_error(err, b)))?;
-    n.into_rem_floor(d).map_or_else(
+    n.into_floor_rem(d).map_or_else(
         |err| Err(Exception::signal(Condition::value_error(err, b))),
-        |r| Ok(Value::real(r)),
+        |r| {
+            Ok(if float_taint {
+                Value::real(r.into_inexact())
+            } else {
+                Value::real(r)
+            })
+        },
     )
 }
 
 fn truncate_qr(args: &[Value], _env: &Frame) -> EvalResult {
     let a = first(args);
     let b = super::second(args);
-    let n = arg_to_real(a, FIRST_ARG_LABEL, NumericTypeName::INTEGER)?
+    let ra = arg_to_real(a, FIRST_ARG_LABEL, NumericTypeName::INTEGER)?;
+    let rb = arg_to_real(b, super::SECOND_ARG_LABEL, NumericTypeName::INTEGER)?;
+    let float_taint = ra.is_inexact() || rb.is_inexact();
+    let n = ra
         .clone()
         .try_into_exact_integer()
         .map_err(|err| Exception::signal(Condition::value_error(err, a)))?;
-    let d = arg_to_real(b, super::SECOND_ARG_LABEL, NumericTypeName::INTEGER)?
+    let d = rb
         .clone()
         .try_into_exact_integer()
         .map_err(|err| Exception::signal(Condition::value_error(err, b)))?;
     let (q, r) = n
-        .into_quotrem_truncate(d)
+        .into_truncate_quotrem(d)
         .map_err(|err| Exception::signal(Condition::value_error(err, b)))?;
     todo!("i need a compound value in order to return two numbers");
 }
@@ -240,34 +264,52 @@ fn truncate_qr(args: &[Value], _env: &Frame) -> EvalResult {
 fn truncate_quotient(args: &[Value], _env: &Frame) -> EvalResult {
     let a = first(args);
     let b = super::second(args);
-    let n = arg_to_real(a, FIRST_ARG_LABEL, NumericTypeName::INTEGER)?
+    let ra = arg_to_real(a, FIRST_ARG_LABEL, NumericTypeName::INTEGER)?;
+    let rb = arg_to_real(b, super::SECOND_ARG_LABEL, NumericTypeName::INTEGER)?;
+    let float_taint = ra.is_inexact() || rb.is_inexact();
+    let n = ra
         .clone()
         .try_into_exact_integer()
         .map_err(|err| Exception::signal(Condition::value_error(err, a)))?;
-    let d = arg_to_real(b, super::SECOND_ARG_LABEL, NumericTypeName::INTEGER)?
+    let d = rb
         .clone()
         .try_into_exact_integer()
         .map_err(|err| Exception::signal(Condition::value_error(err, b)))?;
-    n.into_quotient_truncate(d).map_or_else(
+    n.into_truncate_quotient(d).map_or_else(
         |err| Err(Exception::signal(Condition::value_error(err, b))),
-        |q| Ok(Value::real(q)),
+        |q| {
+            Ok(if float_taint {
+                Value::real(q.into_inexact())
+            } else {
+                Value::real(q)
+            })
+        },
     )
 }
 
 fn truncate_remainder(args: &[Value], _env: &Frame) -> EvalResult {
     let a = first(args);
     let b = super::second(args);
-    let n = arg_to_real(a, FIRST_ARG_LABEL, NumericTypeName::INTEGER)?
+    let ra = arg_to_real(a, FIRST_ARG_LABEL, NumericTypeName::INTEGER)?;
+    let rb = arg_to_real(b, super::SECOND_ARG_LABEL, NumericTypeName::INTEGER)?;
+    let float_taint = ra.is_inexact() || rb.is_inexact();
+    let n = ra
         .clone()
         .try_into_exact_integer()
         .map_err(|err| Exception::signal(Condition::value_error(err, a)))?;
-    let d = arg_to_real(b, super::SECOND_ARG_LABEL, NumericTypeName::INTEGER)?
+    let d = rb
         .clone()
         .try_into_exact_integer()
         .map_err(|err| Exception::signal(Condition::value_error(err, b)))?;
-    n.into_rem_truncate(d).map_or_else(
+    n.into_truncate_rem(d).map_or_else(
         |err| Err(Exception::signal(Condition::value_error(err, b))),
-        |r| Ok(Value::real(r)),
+        |r| {
+            Ok(if float_taint {
+                Value::real(r.into_inexact())
+            } else {
+                Value::real(r)
+            })
+        },
     )
 }
 

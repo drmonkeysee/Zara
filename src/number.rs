@@ -1403,7 +1403,7 @@ impl Integer {
         Real::Float(self.to_float())
     }
 
-    pub(crate) fn into_quotient_truncate(self, rhs: Self) -> IntResult {
+    pub(crate) fn into_truncate_quotient(self, rhs: Self) -> IntResult {
         if rhs.is_zero() {
             Err(NumericError::DivideByZero)
         } else {
@@ -1411,18 +1411,18 @@ impl Integer {
         }
     }
 
-    pub(crate) fn into_rem_truncate(self, rhs: Self) -> IntResult {
+    pub(crate) fn into_truncate_rem(self, rhs: Self) -> IntResult {
         self % rhs
     }
 
-    pub(crate) fn into_quotrem_truncate(self, rhs: Self) -> Result<(Self, Self), NumericError> {
+    pub(crate) fn into_truncate_quotrem(self, rhs: Self) -> Result<(Self, Self), NumericError> {
         Ok((
-            self.clone().into_quotient_truncate(rhs.clone())?,
+            self.clone().into_truncate_quotient(rhs.clone())?,
             (self % rhs)?,
         ))
     }
 
-    pub(crate) fn into_quotient_floor(self, rhs: Self) -> IntResult {
+    pub(crate) fn into_floor_quotient(self, rhs: Self) -> IntResult {
         if rhs.is_zero() {
             Err(NumericError::DivideByZero)
         } else {
@@ -1430,12 +1430,12 @@ impl Integer {
         }
     }
 
-    pub(crate) fn into_rem_floor(self, rhs: Self) -> IntResult {
-        let (_, r) = self.into_quotrem_floor(rhs)?;
+    pub(crate) fn into_floor_rem(self, rhs: Self) -> IntResult {
+        let (_, r) = self.into_floor_quotrem(rhs)?;
         Ok(r)
     }
 
-    pub(crate) fn into_quotrem_floor(self, rhs: Self) -> Result<(Self, Self), NumericError> {
+    pub(crate) fn into_floor_quotrem(self, rhs: Self) -> Result<(Self, Self), NumericError> {
         if rhs.is_zero() {
             return Err(NumericError::DivideByZero);
         }
