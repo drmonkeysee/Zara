@@ -2097,6 +2097,375 @@ mod integer {
         }
     }
 
+    // truncate: q = truncate(n/d), r takes the sign of n (or zero).
+    // floor:    q = floor(n/d),    r takes the sign of d (or zero).
+    // They agree whenever sign(n) == sign(d) or r == 0; see R7RS-small 6.2.6.
+    mod division {
+        use super::*;
+
+        mod truncate {
+            use super::*;
+
+            #[test]
+            fn quotient_matrix() {
+                let cases = [(5, 2, 2), (-5, 2, -2), (5, -2, -2), (-5, -2, 2)];
+                for (n, d, expected) in cases {
+                    let q = ok_or_fail!(Integer::from(n).into_quotient_truncate(d.into()));
+
+                    assert_eq!(q, Integer::from(expected), "{n} truncate-quotient {d}");
+                }
+            }
+
+            #[test]
+            fn remainder_matrix() {
+                let cases = [(5, 2, 1), (-5, 2, -1), (5, -2, 1), (-5, -2, -1)];
+                for (n, d, expected) in cases {
+                    let r = ok_or_fail!(Integer::from(n).into_rem_truncate(d.into()));
+
+                    assert_eq!(r, Integer::from(expected), "{n} truncate-remainder {d}");
+                }
+            }
+
+            #[test]
+            fn exact_division() {
+                let cases = [(6, 3, 2), (-6, 3, -2), (6, -3, -2), (-6, -3, 2)];
+                for (n, d, expected_q) in cases {
+                    let q = ok_or_fail!(Integer::from(n).into_quotient_truncate(d.into()));
+                    let r = ok_or_fail!(Integer::from(n).into_rem_truncate(d.into()));
+
+                    assert_eq!(q, Integer::from(expected_q), "{n} truncate-quotient {d}");
+                    assert_eq!(extract_or_fail!(r.precision, Precision::Single), 0);
+                    assert_eq!(r.sign, Sign::Zero);
+                }
+            }
+
+            #[test]
+            fn dividend_smaller_than_divisor() {
+                let cases = [(3, 7), (-3, 7), (3, -7), (-3, -7)];
+                for (n, d) in cases {
+                    let q = ok_or_fail!(Integer::from(n).into_quotient_truncate(d.into()));
+                    let r = ok_or_fail!(Integer::from(n).into_rem_truncate(d.into()));
+
+                    assert_eq!(extract_or_fail!(q.precision, Precision::Single), 0);
+                    assert_eq!(q.sign, Sign::Zero);
+                    assert_eq!(r, Integer::from(n), "{n} truncate-remainder {d}");
+                }
+            }
+
+            #[test]
+            fn unit_divisor() {
+                let cases = [(9, 1, 9), (9, -1, -9)];
+                for (n, d, expected_q) in cases {
+                    let q = ok_or_fail!(Integer::from(n).into_quotient_truncate(d.into()));
+                    let r = ok_or_fail!(Integer::from(n).into_rem_truncate(d.into()));
+
+                    assert_eq!(q, Integer::from(expected_q), "{n} truncate-quotient {d}");
+                    assert_eq!(extract_or_fail!(r.precision, Precision::Single), 0);
+                    assert_eq!(r.sign, Sign::Zero);
+                }
+            }
+
+            #[test]
+            fn zero_dividend() {
+                let cases = [5, -5];
+                for d in cases {
+                    let q = ok_or_fail!(Integer::from(0).into_quotient_truncate(d.into()));
+                    let r = ok_or_fail!(Integer::from(0).into_rem_truncate(d.into()));
+
+                    assert_eq!(extract_or_fail!(q.precision, Precision::Single), 0);
+                    assert_eq!(q.sign, Sign::Zero);
+                    assert_eq!(extract_or_fail!(r.precision, Precision::Single), 0);
+                    assert_eq!(r.sign, Sign::Zero);
+                }
+            }
+
+            #[test]
+            fn zero_divisor_is_an_error() {
+                let cases = [13, -13, 0];
+                for n in cases {
+                    let q = Integer::from(n).into_quotient_truncate(Integer::zero());
+                    let r = Integer::from(n).into_rem_truncate(Integer::zero());
+
+                    assert_matches!(err_or_fail!(q), NumericError::DivideByZero);
+                    assert_matches!(err_or_fail!(r), NumericError::DivideByZero);
+                }
+            }
+
+            #[test]
+            fn min_i64_dividend() {
+                // i64::MIN truncate-quotient -1 is exactly 2^63, which overflow-panics
+                // in native i64 arithmetic but is representable in sign-magnitude form.
+                let q = ok_or_fail!(Integer::from(i64::MIN).into_quotient_truncate((-1).into()));
+                let r = ok_or_fail!(Integer::from(i64::MIN).into_rem_truncate((-1).into()));
+
+                let expected: Integer = (Sign::Positive, 1u64 << 63).into();
+                assert_eq!(q, expected);
+                assert_eq!(extract_or_fail!(r.precision, Precision::Single), 0);
+                assert_eq!(r.sign, Sign::Zero);
+            }
+        }
+
+        mod floor {
+            use super::*;
+
+            #[test]
+            fn quotient_matrix() {
+                let cases = [(5, 2, 2), (-5, 2, -3), (5, -2, -3), (-5, -2, 2)];
+                for (n, d, expected) in cases {
+                    let q = ok_or_fail!(Integer::from(n).into_quotient_floor(d.into()));
+
+                    assert_eq!(q, Integer::from(expected), "{n} floor-quotient {d}");
+                }
+            }
+
+            #[test]
+            fn remainder_matrix() {
+                let cases = [(5, 2, 1), (-5, 2, 1), (5, -2, -1), (-5, -2, -1)];
+                for (n, d, expected) in cases {
+                    let r = ok_or_fail!(Integer::from(n).into_rem_floor(d.into()));
+
+                    assert_eq!(r, Integer::from(expected), "{n} floor-remainder {d}");
+                }
+            }
+
+            #[test]
+            fn exact_division() {
+                // exact division has no remainder, so floor and truncate agree here.
+                let cases = [(6, 3, 2), (-6, 3, -2), (6, -3, -2), (-6, -3, 2)];
+                for (n, d, expected_q) in cases {
+                    let q = ok_or_fail!(Integer::from(n).into_quotient_floor(d.into()));
+                    let r = ok_or_fail!(Integer::from(n).into_rem_floor(d.into()));
+
+                    assert_eq!(q, Integer::from(expected_q), "{n} floor-quotient {d}");
+                    assert_eq!(extract_or_fail!(r.precision, Precision::Single), 0);
+                    assert_eq!(r.sign, Sign::Zero);
+                }
+            }
+
+            #[test]
+            fn dividend_smaller_than_divisor() {
+                let cases = [(3, 7, 0, 3), (-3, 7, -1, 4), (3, -7, -1, -4), (-3, -7, 0, -3)];
+                for (n, d, expected_q, expected_r) in cases {
+                    let q = ok_or_fail!(Integer::from(n).into_quotient_floor(d.into()));
+                    let r = ok_or_fail!(Integer::from(n).into_rem_floor(d.into()));
+
+                    assert_eq!(q, Integer::from(expected_q), "{n} floor-quotient {d}");
+                    assert_eq!(r, Integer::from(expected_r), "{n} floor-remainder {d}");
+                }
+            }
+
+            #[test]
+            fn unit_divisor() {
+                let cases = [(9, 1, 9), (9, -1, -9)];
+                for (n, d, expected_q) in cases {
+                    let q = ok_or_fail!(Integer::from(n).into_quotient_floor(d.into()));
+                    let r = ok_or_fail!(Integer::from(n).into_rem_floor(d.into()));
+
+                    assert_eq!(q, Integer::from(expected_q), "{n} floor-quotient {d}");
+                    assert_eq!(extract_or_fail!(r.precision, Precision::Single), 0);
+                    assert_eq!(r.sign, Sign::Zero);
+                }
+            }
+
+            #[test]
+            fn zero_dividend() {
+                let cases = [5, -5];
+                for d in cases {
+                    let q = ok_or_fail!(Integer::from(0).into_quotient_floor(d.into()));
+                    let r = ok_or_fail!(Integer::from(0).into_rem_floor(d.into()));
+
+                    assert_eq!(extract_or_fail!(q.precision, Precision::Single), 0);
+                    assert_eq!(q.sign, Sign::Zero);
+                    assert_eq!(extract_or_fail!(r.precision, Precision::Single), 0);
+                    assert_eq!(r.sign, Sign::Zero);
+                }
+            }
+
+            #[test]
+            fn zero_divisor_is_an_error() {
+                let cases = [13, -13, 0];
+                for n in cases {
+                    let q = Integer::from(n).into_quotient_floor(Integer::zero());
+                    let r = Integer::from(n).into_rem_floor(Integer::zero());
+
+                    assert_matches!(err_or_fail!(q), NumericError::DivideByZero);
+                    assert_matches!(err_or_fail!(r), NumericError::DivideByZero);
+                }
+            }
+
+            #[test]
+            fn min_i64_dividend() {
+                // i64::MIN floor-quotient -1 is exactly 2^63, which overflow-panics in
+                // native i64 arithmetic but is representable in sign-magnitude form.
+                let q = ok_or_fail!(Integer::from(i64::MIN).into_quotient_floor((-1).into()));
+                let r = ok_or_fail!(Integer::from(i64::MIN).into_rem_floor((-1).into()));
+
+                let expected: Integer = (Sign::Positive, 1u64 << 63).into();
+                assert_eq!(q, expected);
+                assert_eq!(extract_or_fail!(r.precision, Precision::Single), 0);
+                assert_eq!(r.sign, Sign::Zero);
+            }
+        }
+
+        mod laws {
+            use super::*;
+
+            #[test]
+            fn truncate_division_identity() {
+                // n == d * truncate(n/d) + truncate-remainder(n, d)
+                let cases = [(5, 2), (-5, 2), (5, -2), (-5, -2), (100, 7), (9, 3)];
+                for (n, d) in cases {
+                    let q = ok_or_fail!(Integer::from(n).into_quotient_truncate(d.into()));
+                    let r = ok_or_fail!(Integer::from(n).into_rem_truncate(d.into()));
+
+                    let reconstructed = Integer::from(d) * q + r;
+                    assert_eq!(reconstructed, Integer::from(n), "{n} == {d}*q + r");
+                }
+            }
+
+            // Note: this identity holds by construction (into_quotrem_floor defines
+            // r = n - q*d), so it cannot by itself catch a wrong q. See
+            // remainder_magnitude_is_less_than_divisor_magnitude and
+            // floor_remainder_sign_follows_divisor for tests that do.
+            #[test]
+            fn floor_division_identity() {
+                // n == d * floor(n/d) + floor-remainder(n, d)
+                let cases = [(5, 2), (-5, 2), (5, -2), (-5, -2), (100, 7), (9, 3)];
+                for (n, d) in cases {
+                    let q = ok_or_fail!(Integer::from(n).into_quotient_floor(d.into()));
+                    let r = ok_or_fail!(Integer::from(n).into_rem_floor(d.into()));
+
+                    let reconstructed = Integer::from(d) * q + r;
+                    assert_eq!(reconstructed, Integer::from(n), "{n} == {d}*q + r");
+                }
+            }
+
+            #[test]
+            fn remainder_magnitude_is_less_than_divisor_magnitude() {
+                let cases = [(5, 2), (-5, 2), (5, -2), (-5, -2), (100, 7), (7, 100)];
+                for (n, d) in cases {
+                    let trunc_r = ok_or_fail!(Integer::from(n).into_rem_truncate(d.into()));
+                    let floor_r = ok_or_fail!(Integer::from(n).into_rem_floor(d.into()));
+
+                    let trunc_mag = extract_or_fail!(trunc_r.precision, Precision::Single);
+                    let floor_mag = extract_or_fail!(floor_r.precision, Precision::Single);
+                    let d_mag = d.unsigned_abs();
+                    assert!(trunc_mag < d_mag, "{n} truncate-rem {d} = {trunc_mag} should be < {d_mag}");
+                    assert!(floor_mag < d_mag, "{n} floor-rem {d} = {floor_mag} should be < {d_mag}");
+                }
+            }
+
+            #[test]
+            fn truncate_remainder_sign_follows_dividend() {
+                let cases = [(5, 2), (-5, 2), (5, -2), (-5, -2), (0, 4)];
+                for (n, d) in cases {
+                    let r = ok_or_fail!(Integer::from(n).into_rem_truncate(d.into()));
+
+                    let expected = if r.is_zero() {
+                        Sign::Zero
+                    } else {
+                        Integer::from(n).sign
+                    };
+                    assert_eq!(r.sign, expected, "{n} truncate-remainder {d}");
+                }
+            }
+
+            #[test]
+            fn floor_remainder_sign_follows_divisor() {
+                let cases = [(5, 2), (-5, 2), (5, -2), (-5, -2), (0, 4)];
+                for (n, d) in cases {
+                    let r = ok_or_fail!(Integer::from(n).into_rem_floor(d.into()));
+
+                    let expected = if r.is_zero() {
+                        Sign::Zero
+                    } else {
+                        Integer::from(d).sign
+                    };
+                    assert_eq!(r.sign, expected, "{n} floor-remainder {d}");
+                }
+            }
+
+            #[test]
+            fn conventions_agree_when_signs_match_or_division_is_exact() {
+                let cases = [(6, 2), (-6, -2), (6, 3), (-9, -3), (0, 5)];
+                for (n, d) in cases {
+                    let trunc_q = ok_or_fail!(Integer::from(n).into_quotient_truncate(d.into()));
+                    let floor_q = ok_or_fail!(Integer::from(n).into_quotient_floor(d.into()));
+                    let trunc_r = ok_or_fail!(Integer::from(n).into_rem_truncate(d.into()));
+                    let floor_r = ok_or_fail!(Integer::from(n).into_rem_floor(d.into()));
+
+                    assert_eq!(trunc_q, floor_q, "{n} quotient {d}");
+                    assert_eq!(trunc_r, floor_r, "{n} remainder {d}");
+                }
+            }
+
+            #[test]
+            fn floor_trails_truncate_by_one_on_mixed_signs() {
+                // when sign(n) != sign(d) and the division isn't exact:
+                // floor_q == trunc_q - 1, floor_r == trunc_r + d
+                let cases = [(-5, 2), (5, -2), (-7, 3), (7, -3)];
+                for (n, d) in cases {
+                    let trunc_q = ok_or_fail!(Integer::from(n).into_quotient_truncate(d.into()));
+                    let floor_q = ok_or_fail!(Integer::from(n).into_quotient_floor(d.into()));
+                    let trunc_r = ok_or_fail!(Integer::from(n).into_rem_truncate(d.into()));
+                    let floor_r = ok_or_fail!(Integer::from(n).into_rem_floor(d.into()));
+
+                    assert_eq!(floor_q, trunc_q - Integer::one(), "{n} quotient {d}");
+                    assert_eq!(floor_r, trunc_r + Integer::from(d), "{n} remainder {d}");
+                }
+            }
+
+            #[test]
+            fn matches_native_truncated_division() {
+                // Rust's `/` and `%` on primitive integers are truncated, the same
+                // convention as R7RS truncate-quotient/truncate-remainder. i64::MIN is
+                // excluded because -i64::MIN overflow-panics natively for some divisors.
+                for n in -12..=12i64 {
+                    for d in -5..=5i64 {
+                        if d == 0 {
+                            continue;
+                        }
+                        let q = ok_or_fail!(Integer::from(n).into_quotient_truncate(d.into()));
+                        let r = ok_or_fail!(Integer::from(n).into_rem_truncate(d.into()));
+
+                        assert_eq!(q, Integer::from(n / d), "{n} truncate-quotient {d}");
+                        assert_eq!(r, Integer::from(n % d), "{n} truncate-remainder {d}");
+                    }
+                }
+            }
+
+            #[test]
+            fn matches_textbook_floored_division() {
+                // Floored division: q = floor(n/d), i.e. Rust's truncated q adjusted
+                // down by one whenever there's a nonzero remainder and the operands'
+                // signs differ; r is then defined as n - d*q. This is deliberately NOT
+                // div_euclid/rem_euclid, which keeps r >= 0 always and so disagrees
+                // with floored division whenever the divisor is negative.
+                for n in -12..=12i64 {
+                    for d in -5..=5i64 {
+                        if d == 0 {
+                            continue;
+                        }
+                        let trunc_q = n / d;
+                        let trunc_r = n % d;
+                        let expected_q = if trunc_r != 0 && (n < 0) != (d < 0) {
+                            trunc_q - 1
+                        } else {
+                            trunc_q
+                        };
+                        let expected_r = n - d * expected_q;
+
+                        let q = ok_or_fail!(Integer::from(n).into_quotient_floor(d.into()));
+                        let r = ok_or_fail!(Integer::from(n).into_rem_floor(d.into()));
+
+                        assert_eq!(q, Integer::from(expected_q), "{n} floor-quotient {d}");
+                        assert_eq!(r, Integer::from(expected_r), "{n} floor-remainder {d}");
+                    }
+                }
+            }
+        }
+    }
+
     mod precision {
         use super::*;
 
