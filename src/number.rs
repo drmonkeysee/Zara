@@ -1403,6 +1403,47 @@ impl Integer {
         Real::Float(self.to_float())
     }
 
+    pub(crate) fn into_quotient_truncate(self, rhs: Self) -> IntResult {
+        if rhs.is_zero() {
+            Err(NumericError::DivideByZero)
+        } else {
+            Ok(self.div_truncate(rhs))
+        }
+    }
+
+    pub(crate) fn into_rem_truncate(self, rhs: Self) -> IntResult {
+        self % rhs
+    }
+
+    pub(crate) fn into_quotrem_truncate(self, rhs: Self) -> Result<(Self, Self), NumericError> {
+        Ok((
+            self.clone().into_quotient_truncate(rhs.clone())?,
+            (self % rhs)?,
+        ))
+    }
+
+    pub(crate) fn into_quotient_floor(self, rhs: Self) -> IntResult {
+        if rhs.is_zero() {
+            Err(NumericError::DivideByZero)
+        } else {
+            Ok(self.div_floor(rhs))
+        }
+    }
+
+    pub(crate) fn into_rem_floor(self, rhs: Self) -> IntResult {
+        let (_, r) = self.into_quotrem_floor(rhs)?;
+        Ok(r)
+    }
+
+    pub(crate) fn into_quotrem_floor(self, rhs: Self) -> Result<(Self, Self), NumericError> {
+        if rhs.is_zero() {
+            return Err(NumericError::DivideByZero);
+        }
+        let q = self.clone().div_floor(rhs.clone());
+        let r = self - (q.clone() * rhs);
+        Ok((q, r))
+    }
+
     fn two() -> Self {
         2.into()
     }
@@ -1529,7 +1570,7 @@ impl Integer {
     }
 
     // All of the following exact-division operations assume arguments come
-    // from a canonical rational, e.g. no zero, no negative divisor.
+    // from well-formed arguments, i.e. no zero divisor.
     fn div_floor(self, rhs: Self) -> Self {
         self.div_exact(rhs, Precision::div, Precision::div_ceil)
     }
@@ -1553,9 +1594,10 @@ impl Integer {
         neg: impl FnOnce(Precision, Precision) -> Precision,
     ) -> Self {
         debug_assert!(!rhs.is_zero());
-        match self.sign {
-            s @ Sign::Negative => Self::new(neg(self.precision, rhs.precision), s),
-            s @ Sign::Positive => Self::new(pos(self.precision, rhs.precision), s),
+        let s = self.sign * rhs.sign;
+        match s {
+            Sign::Negative => Self::new(neg(self.precision, rhs.precision), s),
+            Sign::Positive => Self::new(pos(self.precision, rhs.precision), s),
             Sign::Zero => Self::zero(),
         }
     }
@@ -2221,7 +2263,7 @@ impl Precision {
                 /*
                  * For rational n/d:
                  *   q = floor(n/d)
-                 *   r = n - q*d
+                 *   r = remainder (n % d)
                  *   compare 2r to d:
                  *     2r < d  →  q
                  *     2r > d  →  q + 1

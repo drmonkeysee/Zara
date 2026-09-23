@@ -45,6 +45,17 @@ pub(super) fn load(env: &Frame) {
 
     super::bind_intrinsic(env, "abs", 1..1, abs);
 
+    super::bind_intrinsic(env, "floor/", 2..2, floor_qr);
+    super::bind_intrinsic(env, "floor-quotient", 2..2, floor_quotient);
+    super::bind_intrinsic(env, "floor-remainder", 2..2, floor_remainder);
+    super::bind_intrinsic(env, "truncate/", 2..2, truncate_qr);
+    super::bind_intrinsic(env, "truncate-quotient", 2..2, truncate_quotient);
+    super::bind_intrinsic(env, "truncate-remainder", 2..2, truncate_remainder);
+
+    super::bind_intrinsic(env, "quotient", 2..2, truncate_quotient);
+    super::bind_intrinsic(env, "remainder", 2..2, truncate_remainder);
+    super::bind_intrinsic(env, "modulo", 2..2, floor_remainder);
+
     super::bind_intrinsic(env, "gcd", 0..MAX_ARITY, nums_gcd);
     super::bind_intrinsic(env, "lcm", 0..MAX_ARITY, nums_lcm);
 
@@ -156,6 +167,108 @@ fn nums_div(args: &[Value], _env: &Frame) -> EvalResult {
 
 fn abs(args: &[Value], _env: &Frame) -> EvalResult {
     real_op(first(args), |r| Ok(Value::real(r.clone().into_abs())))
+}
+
+fn floor_qr(args: &[Value], _env: &Frame) -> EvalResult {
+    let a = first(args);
+    let b = super::second(args);
+    let n = arg_to_real(a, FIRST_ARG_LABEL, NumericTypeName::INTEGER)?
+        .clone()
+        .try_into_exact_integer()
+        .map_err(|err| Exception::signal(Condition::value_error(err, a)))?;
+    let d = arg_to_real(b, super::SECOND_ARG_LABEL, NumericTypeName::INTEGER)?
+        .clone()
+        .try_into_exact_integer()
+        .map_err(|err| Exception::signal(Condition::value_error(err, b)))?;
+    let (q, r) = n
+        .into_quotrem_floor(d)
+        .map_err(|err| Exception::signal(Condition::value_error(err, b)))?;
+    todo!("i need a compound value in order to return two numbers");
+}
+
+fn floor_quotient(args: &[Value], _env: &Frame) -> EvalResult {
+    let a = first(args);
+    let b = super::second(args);
+    let n = arg_to_real(a, FIRST_ARG_LABEL, NumericTypeName::INTEGER)?
+        .clone()
+        .try_into_exact_integer()
+        .map_err(|err| Exception::signal(Condition::value_error(err, a)))?;
+    let d = arg_to_real(b, super::SECOND_ARG_LABEL, NumericTypeName::INTEGER)?
+        .clone()
+        .try_into_exact_integer()
+        .map_err(|err| Exception::signal(Condition::value_error(err, b)))?;
+    n.into_quotient_floor(d).map_or_else(
+        |err| Err(Exception::signal(Condition::value_error(err, b))),
+        |q| Ok(Value::real(q)),
+    )
+}
+
+fn floor_remainder(args: &[Value], _env: &Frame) -> EvalResult {
+    let a = first(args);
+    let b = super::second(args);
+    let n = arg_to_real(a, FIRST_ARG_LABEL, NumericTypeName::INTEGER)?
+        .clone()
+        .try_into_exact_integer()
+        .map_err(|err| Exception::signal(Condition::value_error(err, a)))?;
+    let d = arg_to_real(b, super::SECOND_ARG_LABEL, NumericTypeName::INTEGER)?
+        .clone()
+        .try_into_exact_integer()
+        .map_err(|err| Exception::signal(Condition::value_error(err, b)))?;
+    n.into_rem_floor(d).map_or_else(
+        |err| Err(Exception::signal(Condition::value_error(err, b))),
+        |r| Ok(Value::real(r)),
+    )
+}
+
+fn truncate_qr(args: &[Value], _env: &Frame) -> EvalResult {
+    let a = first(args);
+    let b = super::second(args);
+    let n = arg_to_real(a, FIRST_ARG_LABEL, NumericTypeName::INTEGER)?
+        .clone()
+        .try_into_exact_integer()
+        .map_err(|err| Exception::signal(Condition::value_error(err, a)))?;
+    let d = arg_to_real(b, super::SECOND_ARG_LABEL, NumericTypeName::INTEGER)?
+        .clone()
+        .try_into_exact_integer()
+        .map_err(|err| Exception::signal(Condition::value_error(err, b)))?;
+    let (q, r) = n
+        .into_quotrem_truncate(d)
+        .map_err(|err| Exception::signal(Condition::value_error(err, b)))?;
+    todo!("i need a compound value in order to return two numbers");
+}
+
+fn truncate_quotient(args: &[Value], _env: &Frame) -> EvalResult {
+    let a = first(args);
+    let b = super::second(args);
+    let n = arg_to_real(a, FIRST_ARG_LABEL, NumericTypeName::INTEGER)?
+        .clone()
+        .try_into_exact_integer()
+        .map_err(|err| Exception::signal(Condition::value_error(err, a)))?;
+    let d = arg_to_real(b, super::SECOND_ARG_LABEL, NumericTypeName::INTEGER)?
+        .clone()
+        .try_into_exact_integer()
+        .map_err(|err| Exception::signal(Condition::value_error(err, b)))?;
+    n.into_quotient_truncate(d).map_or_else(
+        |err| Err(Exception::signal(Condition::value_error(err, b))),
+        |q| Ok(Value::real(q)),
+    )
+}
+
+fn truncate_remainder(args: &[Value], _env: &Frame) -> EvalResult {
+    let a = first(args);
+    let b = super::second(args);
+    let n = arg_to_real(a, FIRST_ARG_LABEL, NumericTypeName::INTEGER)?
+        .clone()
+        .try_into_exact_integer()
+        .map_err(|err| Exception::signal(Condition::value_error(err, a)))?;
+    let d = arg_to_real(b, super::SECOND_ARG_LABEL, NumericTypeName::INTEGER)?
+        .clone()
+        .try_into_exact_integer()
+        .map_err(|err| Exception::signal(Condition::value_error(err, b)))?;
+    n.into_rem_truncate(d).map_or_else(
+        |err| Err(Exception::signal(Condition::value_error(err, b))),
+        |r| Ok(Value::real(r)),
+    )
 }
 
 fn nums_gcd(args: &[Value], _env: &Frame) -> EvalResult {
