@@ -2,7 +2,7 @@ use super::{FIRST_ARG_LABEL, MAX_ARITY, first, invalid_target};
 use crate::{
     Exception,
     eval::{EvalResult, Frame},
-    number::{Integer, NumResult, Number, NumericTypeName, Real},
+    number::{Integer, NumResult, Number, NumericError, NumericTypeName, Real},
     value::{Condition, TypeName, Value},
 };
 use std::{
@@ -170,180 +170,56 @@ fn abs(args: &[Value], _env: &Frame) -> EvalResult {
 }
 
 fn floor_qr(args: &[Value], _env: &Frame) -> EvalResult {
-    let a = first(args);
-    let b = super::second(args);
-    let ra = arg_to_real(a, FIRST_ARG_LABEL, NumericTypeName::INTEGER)?;
-    let rb = arg_to_real(b, super::SECOND_ARG_LABEL, NumericTypeName::INTEGER)?;
-    let float_taint = ra.is_inexact() || rb.is_inexact();
-    let negdiv = (ra.signum() < 0.0) ^ (rb.signum() < 0.0);
-    let n = ra
-        .clone()
-        .try_into_exact_integer()
-        .map_err(|err| Exception::signal(Condition::value_error(err, a)))?;
-    let d = rb
-        .clone()
-        .try_into_exact_integer()
-        .map_err(|err| Exception::signal(Condition::value_error(err, b)))?;
-    n.into_floor_quotrem(d).map_or_else(
-        |err| Err(Condition::value_error(err, b).into()),
-        |(q, r)| {
-            Ok(Value::reals(
-                if float_taint {
-                    let qr = q.into_inexact();
-                    if negdiv && qr.is_zero() { -qr } else { qr }
-                } else {
-                    q.into()
-                },
-                if float_taint {
-                    r.into_inexact()
-                } else {
-                    r.into()
-                },
-            ))
-        },
+    exact_division(
+        first(args),
+        super::second(args),
+        Integer::into_floor_quotrem,
+        into_quotrem,
     )
 }
 
 fn floor_quotient(args: &[Value], _env: &Frame) -> EvalResult {
-    let a = first(args);
-    let b = super::second(args);
-    let ra = arg_to_real(a, FIRST_ARG_LABEL, NumericTypeName::INTEGER)?;
-    let rb = arg_to_real(b, super::SECOND_ARG_LABEL, NumericTypeName::INTEGER)?;
-    let float_taint = ra.is_inexact() || rb.is_inexact();
-    let negdiv = (ra.signum() < 0.0) ^ (rb.signum() < 0.0);
-    let n = ra
-        .clone()
-        .try_into_exact_integer()
-        .map_err(|err| Exception::signal(Condition::value_error(err, a)))?;
-    let d = rb
-        .clone()
-        .try_into_exact_integer()
-        .map_err(|err| Exception::signal(Condition::value_error(err, b)))?;
-    n.into_floor_quotient(d).map_or_else(
-        |err| Err(Condition::value_error(err, b).into()),
-        |q| {
-            Ok(if float_taint {
-                let qr = q.into_inexact();
-                Value::real(if negdiv && qr.is_zero() { -qr } else { qr })
-            } else {
-                Value::real(q)
-            })
-        },
+    exact_division(
+        first(args),
+        super::second(args),
+        Integer::into_floor_quotient,
+        into_quotient,
     )
 }
 
 fn floor_remainder(args: &[Value], _env: &Frame) -> EvalResult {
-    let a = first(args);
-    let b = super::second(args);
-    let ra = arg_to_real(a, FIRST_ARG_LABEL, NumericTypeName::INTEGER)?;
-    let rb = arg_to_real(b, super::SECOND_ARG_LABEL, NumericTypeName::INTEGER)?;
-    let float_taint = ra.is_inexact() || rb.is_inexact();
-    let n = ra
-        .clone()
-        .try_into_exact_integer()
-        .map_err(|err| Exception::signal(Condition::value_error(err, a)))?;
-    let d = rb
-        .clone()
-        .try_into_exact_integer()
-        .map_err(|err| Exception::signal(Condition::value_error(err, b)))?;
-    n.into_floor_rem(d).map_or_else(
-        |err| Err(Condition::value_error(err, b).into()),
-        |r| {
-            Ok(if float_taint {
-                Value::real(r.into_inexact())
-            } else {
-                Value::real(r)
-            })
-        },
+    exact_division(
+        first(args),
+        super::second(args),
+        Integer::into_floor_rem,
+        into_remainder,
     )
 }
 
 fn truncate_qr(args: &[Value], _env: &Frame) -> EvalResult {
-    let a = first(args);
-    let b = super::second(args);
-    let ra = arg_to_real(a, FIRST_ARG_LABEL, NumericTypeName::INTEGER)?;
-    let rb = arg_to_real(b, super::SECOND_ARG_LABEL, NumericTypeName::INTEGER)?;
-    let float_taint = ra.is_inexact() || rb.is_inexact();
-    let negdiv = (ra.signum() < 0.0) ^ (rb.signum() < 0.0);
-    let n = ra
-        .clone()
-        .try_into_exact_integer()
-        .map_err(|err| Exception::signal(Condition::value_error(err, a)))?;
-    let d = rb
-        .clone()
-        .try_into_exact_integer()
-        .map_err(|err| Exception::signal(Condition::value_error(err, b)))?;
-    n.into_truncate_quotrem(d).map_or_else(
-        |err| Err(Condition::value_error(err, b).into()),
-        |(q, r)| {
-            Ok(Value::reals(
-                if float_taint {
-                    let qr = q.into_inexact();
-                    if negdiv && qr.is_zero() { -qr } else { qr }
-                } else {
-                    q.into()
-                },
-                if float_taint {
-                    r.into_inexact()
-                } else {
-                    r.into()
-                },
-            ))
-        },
+    exact_division(
+        first(args),
+        super::second(args),
+        Integer::into_truncate_quotrem,
+        into_quotrem,
     )
 }
 
 fn truncate_quotient(args: &[Value], _env: &Frame) -> EvalResult {
-    let a = first(args);
-    let b = super::second(args);
-    let ra = arg_to_real(a, FIRST_ARG_LABEL, NumericTypeName::INTEGER)?;
-    let rb = arg_to_real(b, super::SECOND_ARG_LABEL, NumericTypeName::INTEGER)?;
-    let float_taint = ra.is_inexact() || rb.is_inexact();
-    let negdiv = (ra.signum() < 0.0) ^ (rb.signum() < 0.0);
-    let n = ra
-        .clone()
-        .try_into_exact_integer()
-        .map_err(|err| Exception::signal(Condition::value_error(err, a)))?;
-    let d = rb
-        .clone()
-        .try_into_exact_integer()
-        .map_err(|err| Exception::signal(Condition::value_error(err, b)))?;
-    n.into_truncate_quotient(d).map_or_else(
-        |err| Err(Condition::value_error(err, b).into()),
-        |q| {
-            Ok(if float_taint {
-                let qr = q.into_inexact();
-                Value::real(if negdiv && qr.is_zero() { -qr } else { qr })
-            } else {
-                Value::real(q)
-            })
-        },
+    exact_division(
+        first(args),
+        super::second(args),
+        Integer::into_truncate_quotient,
+        into_quotient,
     )
 }
 
 fn truncate_remainder(args: &[Value], _env: &Frame) -> EvalResult {
-    let a = first(args);
-    let b = super::second(args);
-    let ra = arg_to_real(a, FIRST_ARG_LABEL, NumericTypeName::INTEGER)?;
-    let rb = arg_to_real(b, super::SECOND_ARG_LABEL, NumericTypeName::INTEGER)?;
-    let float_taint = ra.is_inexact() || rb.is_inexact();
-    let n = ra
-        .clone()
-        .try_into_exact_integer()
-        .map_err(|err| Exception::signal(Condition::value_error(err, a)))?;
-    let d = rb
-        .clone()
-        .try_into_exact_integer()
-        .map_err(|err| Exception::signal(Condition::value_error(err, b)))?;
-    n.into_truncate_rem(d).map_or_else(
-        |err| Err(Condition::value_error(err, b).into()),
-        |r| {
-            Ok(if float_taint {
-                Value::real(r.into_inexact())
-            } else {
-                Value::real(r)
-            })
-        },
+    exact_division(
+        first(args),
+        super::second(args),
+        Integer::into_truncate_rem,
+        into_remainder,
     )
 }
 
@@ -538,6 +414,63 @@ fn exact_factor_op(
                 Value::real(n)
             }
         })
+}
+
+fn exact_division<R>(
+    a: &Value,
+    b: &Value,
+    div: impl FnOnce(Integer, Integer) -> Result<R, NumericError>,
+    map: impl FnOnce(bool, bool, R) -> EvalResult,
+) -> EvalResult {
+    let ra = arg_to_real(a, FIRST_ARG_LABEL, NumericTypeName::INTEGER)?;
+    let rb = arg_to_real(b, super::SECOND_ARG_LABEL, NumericTypeName::INTEGER)?;
+    let float_taint = ra.is_inexact() || rb.is_inexact();
+    let negdiv = (ra.signum() < 0.0) ^ (rb.signum() < 0.0);
+    let n = ra
+        .clone()
+        .try_into_exact_integer()
+        .map_err(|err| Exception::signal(Condition::value_error(err, a)))?;
+    let d = rb
+        .clone()
+        .try_into_exact_integer()
+        .map_err(|err| Exception::signal(Condition::value_error(err, b)))?;
+    div(n, d).map_or_else(
+        |err| Err(Condition::value_error(err, b).into()),
+        |r| map(float_taint, negdiv, r),
+    )
+}
+
+fn into_quotrem(float_taint: bool, negdiv: bool, (q, r): (Integer, Integer)) -> EvalResult {
+    Ok(Value::reals(
+        if float_taint {
+            let qr = q.into_inexact();
+            if negdiv && qr.is_zero() { -qr } else { qr }
+        } else {
+            q.into()
+        },
+        if float_taint {
+            r.into_inexact()
+        } else {
+            r.into()
+        },
+    ))
+}
+
+fn into_quotient(float_taint: bool, negdiv: bool, q: Integer) -> EvalResult {
+    Ok(if float_taint {
+        let qr = q.into_inexact();
+        Value::real(if negdiv && qr.is_zero() { -qr } else { qr })
+    } else {
+        Value::real(q)
+    })
+}
+
+fn into_remainder(float_taint: bool, _negdiv: bool, r: Integer) -> EvalResult {
+    Ok(if float_taint {
+        Value::real(r.into_inexact())
+    } else {
+        Value::real(r)
+    })
 }
 
 fn arg_to_real(
