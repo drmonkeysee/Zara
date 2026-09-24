@@ -2340,7 +2340,7 @@ impl Div for Precision {
     fn div(self, rhs: Self) -> Self::Output {
         match (self, rhs) {
             (Self::Single(a), Self::Single(b)) => {
-                debug_assert!(b != 0);
+                debug_assert_ne!(b, 0);
                 Self::Single(a / b)
             }
             _ => todo!(),
@@ -2355,7 +2355,7 @@ impl Rem for Precision {
     fn rem(self, rhs: Self) -> Self::Output {
         match (self, rhs) {
             (Self::Single(a), Self::Single(b)) => {
-                debug_assert!(b != 0);
+                debug_assert_ne!(b, 0);
                 Self::Single(a % b)
             }
             _ => todo!(),

@@ -77,7 +77,7 @@ impl<'me, 'txt> Identifier<'me, 'txt> {
             // A single '.' is invalid but Tokenizer handles '.'
             // before attempting Identifier so this case never happens.
             let txt = self.get_lexeme();
-            debug_assert!(txt != ".");
+            debug_assert_ne!(txt, ".");
             return Ok(TokenKind::Identifier(txt.to_owned()));
         };
 
