@@ -175,6 +175,7 @@ fn floor_qr(args: &[Value], _env: &Frame) -> EvalResult {
     let ra = arg_to_real(a, FIRST_ARG_LABEL, NumericTypeName::INTEGER)?;
     let rb = arg_to_real(b, super::SECOND_ARG_LABEL, NumericTypeName::INTEGER)?;
     let float_taint = ra.is_inexact() || rb.is_inexact();
+    let negdiv = (ra.signum() < 0.0) ^ (rb.signum() < 0.0);
     let n = ra
         .clone()
         .try_into_exact_integer()
@@ -188,7 +189,8 @@ fn floor_qr(args: &[Value], _env: &Frame) -> EvalResult {
         |(q, r)| {
             Ok(Value::reals(
                 if float_taint {
-                    q.into_inexact()
+                    let qr = q.into_inexact();
+                    if negdiv && qr.is_zero() { -qr } else { qr }
                 } else {
                     q.into()
                 },
@@ -208,6 +210,7 @@ fn floor_quotient(args: &[Value], _env: &Frame) -> EvalResult {
     let ra = arg_to_real(a, FIRST_ARG_LABEL, NumericTypeName::INTEGER)?;
     let rb = arg_to_real(b, super::SECOND_ARG_LABEL, NumericTypeName::INTEGER)?;
     let float_taint = ra.is_inexact() || rb.is_inexact();
+    let negdiv = (ra.signum() < 0.0) ^ (rb.signum() < 0.0);
     let n = ra
         .clone()
         .try_into_exact_integer()
@@ -220,7 +223,8 @@ fn floor_quotient(args: &[Value], _env: &Frame) -> EvalResult {
         |err| Err(Condition::value_error(err, b).into()),
         |q| {
             Ok(if float_taint {
-                Value::real(q.into_inexact())
+                let qr = q.into_inexact();
+                Value::real(if negdiv && qr.is_zero() { -qr } else { qr })
             } else {
                 Value::real(q)
             })
@@ -260,6 +264,7 @@ fn truncate_qr(args: &[Value], _env: &Frame) -> EvalResult {
     let ra = arg_to_real(a, FIRST_ARG_LABEL, NumericTypeName::INTEGER)?;
     let rb = arg_to_real(b, super::SECOND_ARG_LABEL, NumericTypeName::INTEGER)?;
     let float_taint = ra.is_inexact() || rb.is_inexact();
+    let negdiv = (ra.signum() < 0.0) ^ (rb.signum() < 0.0);
     let n = ra
         .clone()
         .try_into_exact_integer()
@@ -273,7 +278,8 @@ fn truncate_qr(args: &[Value], _env: &Frame) -> EvalResult {
         |(q, r)| {
             Ok(Value::reals(
                 if float_taint {
-                    q.into_inexact()
+                    let qr = q.into_inexact();
+                    if negdiv && qr.is_zero() { -qr } else { qr }
                 } else {
                     q.into()
                 },
@@ -293,6 +299,7 @@ fn truncate_quotient(args: &[Value], _env: &Frame) -> EvalResult {
     let ra = arg_to_real(a, FIRST_ARG_LABEL, NumericTypeName::INTEGER)?;
     let rb = arg_to_real(b, super::SECOND_ARG_LABEL, NumericTypeName::INTEGER)?;
     let float_taint = ra.is_inexact() || rb.is_inexact();
+    let negdiv = (ra.signum() < 0.0) ^ (rb.signum() < 0.0);
     let n = ra
         .clone()
         .try_into_exact_integer()
@@ -305,7 +312,8 @@ fn truncate_quotient(args: &[Value], _env: &Frame) -> EvalResult {
         |err| Err(Condition::value_error(err, b).into()),
         |q| {
             Ok(if float_taint {
-                Value::real(q.into_inexact())
+                let qr = q.into_inexact();
+                Value::real(if negdiv && qr.is_zero() { -qr } else { qr })
             } else {
                 Value::real(q)
             })

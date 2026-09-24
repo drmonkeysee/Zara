@@ -760,12 +760,28 @@ impl Real {
         matches!(self, Self::Float(_))
     }
 
+    pub(crate) fn is_zero(&self) -> bool {
+        match self {
+            Self::Float(f) => *f == 0.0,
+            Self::Integer(n) => n.is_zero(),
+            Self::Rational(q) => q.is_zero(),
+        }
+    }
+
     pub(crate) fn strict_lt(&self, other: &Self) -> bool {
         self.strict_ordering(other, &Self::lt, &f64::lt)
     }
 
     pub(crate) fn strict_gt(&self, other: &Self) -> bool {
         self.strict_ordering(other, &Self::gt, &f64::gt)
+    }
+
+    pub(crate) fn signum(&self) -> f64 {
+        match self {
+            Self::Float(f) => f.signum(),
+            Self::Integer(n) => n.signum(),
+            Self::Rational(q) => q.signum(),
+        }
     }
 
     pub(crate) fn as_token_descriptor(&self) -> RealTokenDescriptor<'_> {
@@ -882,14 +898,6 @@ impl Real {
         }
     }
 
-    fn is_zero(&self) -> bool {
-        match self {
-            Self::Float(f) => *f == 0.0,
-            Self::Integer(n) => n.is_zero(),
-            Self::Rational(q) => q.is_zero(),
-        }
-    }
-
     fn is_exact_zero(&self) -> bool {
         !self.is_inexact() && self.is_zero()
     }
@@ -899,14 +907,6 @@ impl Real {
             f.is_infinite()
         } else {
             false
-        }
-    }
-
-    fn signum(&self) -> f64 {
-        match self {
-            Self::Float(f) => f.signum(),
-            Self::Integer(n) => n.signum(),
-            Self::Rational(q) => q.signum(),
         }
     }
 
