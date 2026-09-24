@@ -443,6 +443,7 @@ fn exact_division<R>(
     )
 }
 
+#[allow(clippy::unnecessary_wraps, reason = "infallible helper")]
 fn into_quotrem(float_taint: bool, negdiv: bool, (q, r): (Integer, Integer)) -> EvalResult {
     Ok(Value::reals(
         if float_taint {
@@ -459,6 +460,7 @@ fn into_quotrem(float_taint: bool, negdiv: bool, (q, r): (Integer, Integer)) -> 
     ))
 }
 
+#[allow(clippy::unnecessary_wraps, reason = "infallible helper")]
 fn into_quotient(float_taint: bool, negdiv: bool, q: Integer) -> EvalResult {
     Ok(if float_taint {
         let qr = q.into_inexact();
@@ -468,6 +470,7 @@ fn into_quotient(float_taint: bool, negdiv: bool, q: Integer) -> EvalResult {
     })
 }
 
+#[allow(clippy::unnecessary_wraps, reason = "infallible helper")]
 fn into_remainder(float_taint: bool, _negdiv: bool, r: Integer) -> EvalResult {
     Ok(if float_taint {
         Value::real(r.into_inexact())

@@ -483,6 +483,7 @@ impl Complex {
      * split on whether x < 0 to avoid cancellation issues for (r-x)/2; x > 0, |y| << x
      * used by C99's csqrt, which also includes some special casing for signed zeros and infs.
      */
+    #[allow(clippy::many_single_char_names)]
     fn sqrt(self) -> Number {
         // Square root of zero always sets x to + and keeps sign of y; if we calculated
         // this with the below algorithm instead, the zero signs go wonky due to IEEE rules.
@@ -975,7 +976,7 @@ impl Real {
     // wrong value for negative roots (e.g. √-4 = -2 instead of +2i)
     fn sqrt(self) -> Self {
         match self {
-            Self::Float(f) if f == 0.0 => self,
+            Self::Float(0.0) => self,
             Self::Float(f) => sign_preserving_sqrt(f).into(),
             Self::Integer(n) => n.sqrt(),
             Self::Rational(q) => q.sqrt(),
