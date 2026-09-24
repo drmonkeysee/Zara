@@ -183,10 +183,23 @@ fn floor_qr(args: &[Value], _env: &Frame) -> EvalResult {
         .clone()
         .try_into_exact_integer()
         .map_err(|err| Exception::signal(Condition::value_error(err, b)))?;
-    let (q, r) = n
-        .into_floor_quotrem(d)
-        .map_err(|err| Exception::signal(Condition::value_error(err, b)))?;
-    todo!("i need a compound value in order to return two numbers");
+    n.into_floor_quotrem(d).map_or_else(
+        |err| Err(Condition::value_error(err, b).into()),
+        |(q, r)| {
+            Ok(Value::reals(
+                if float_taint {
+                    q.into_inexact()
+                } else {
+                    q.into()
+                },
+                if float_taint {
+                    r.into_inexact()
+                } else {
+                    r.into()
+                },
+            ))
+        },
+    )
 }
 
 fn floor_quotient(args: &[Value], _env: &Frame) -> EvalResult {
@@ -204,7 +217,7 @@ fn floor_quotient(args: &[Value], _env: &Frame) -> EvalResult {
         .try_into_exact_integer()
         .map_err(|err| Exception::signal(Condition::value_error(err, b)))?;
     n.into_floor_quotient(d).map_or_else(
-        |err| Err(Exception::signal(Condition::value_error(err, b))),
+        |err| Err(Condition::value_error(err, b).into()),
         |q| {
             Ok(if float_taint {
                 Value::real(q.into_inexact())
@@ -230,7 +243,7 @@ fn floor_remainder(args: &[Value], _env: &Frame) -> EvalResult {
         .try_into_exact_integer()
         .map_err(|err| Exception::signal(Condition::value_error(err, b)))?;
     n.into_floor_rem(d).map_or_else(
-        |err| Err(Exception::signal(Condition::value_error(err, b))),
+        |err| Err(Condition::value_error(err, b).into()),
         |r| {
             Ok(if float_taint {
                 Value::real(r.into_inexact())
@@ -255,10 +268,23 @@ fn truncate_qr(args: &[Value], _env: &Frame) -> EvalResult {
         .clone()
         .try_into_exact_integer()
         .map_err(|err| Exception::signal(Condition::value_error(err, b)))?;
-    let (q, r) = n
-        .into_truncate_quotrem(d)
-        .map_err(|err| Exception::signal(Condition::value_error(err, b)))?;
-    todo!("i need a compound value in order to return two numbers");
+    n.into_truncate_quotrem(d).map_or_else(
+        |err| Err(Condition::value_error(err, b).into()),
+        |(q, r)| {
+            Ok(Value::reals(
+                if float_taint {
+                    q.into_inexact()
+                } else {
+                    q.into()
+                },
+                if float_taint {
+                    r.into_inexact()
+                } else {
+                    r.into()
+                },
+            ))
+        },
+    )
 }
 
 fn truncate_quotient(args: &[Value], _env: &Frame) -> EvalResult {
@@ -276,7 +302,7 @@ fn truncate_quotient(args: &[Value], _env: &Frame) -> EvalResult {
         .try_into_exact_integer()
         .map_err(|err| Exception::signal(Condition::value_error(err, b)))?;
     n.into_truncate_quotient(d).map_or_else(
-        |err| Err(Exception::signal(Condition::value_error(err, b))),
+        |err| Err(Condition::value_error(err, b).into()),
         |q| {
             Ok(if float_taint {
                 Value::real(q.into_inexact())
@@ -302,7 +328,7 @@ fn truncate_remainder(args: &[Value], _env: &Frame) -> EvalResult {
         .try_into_exact_integer()
         .map_err(|err| Exception::signal(Condition::value_error(err, b)))?;
     n.into_truncate_rem(d).map_or_else(
-        |err| Err(Exception::signal(Condition::value_error(err, b))),
+        |err| Err(Condition::value_error(err, b).into()),
         |r| {
             Ok(if float_taint {
                 Value::real(r.into_inexact())

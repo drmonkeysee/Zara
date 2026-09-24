@@ -55,6 +55,9 @@ pub(crate) enum Value {
     PortInput(InputPortRef),
     PortOutput(OutputPortRef),
     Procedure(Rc<Procedure>),
+    // TODO: temp for functions returning two reals,
+    // real impl likely needs to be whatever underlies (values ...)
+    Reals(Rc<(Real, Real)>),
     String(Rc<str>),
     StringMut(Rc<RefCell<String>>),
     Symbol(Symbol),
@@ -151,6 +154,10 @@ impl Value {
 
     pub(crate) fn real(r: impl Into<Real>) -> Self {
         Self::Number(Number::real(r))
+    }
+
+    pub(crate) fn reals(a: Real, b: Real) -> Self {
+        Self::Reals((a, b).into())
     }
 
     pub(crate) fn string(s: impl Into<Rc<str>>) -> Self {
