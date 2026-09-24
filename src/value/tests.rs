@@ -1878,8 +1878,8 @@ mod equivalence {
 
         assert!(!a.is_eqv(&b));
         assert!(!b.is_eqv(&a));
-        assert!(a != b);
-        assert!(b != a);
+        assert_ne!(a, b);
+        assert_ne!(b, a);
     }
 
     #[test]
@@ -1905,7 +1905,7 @@ mod equivalence {
 
         assert!(!a.is(&b));
         assert!(!a.is_eqv(&b));
-        assert!(a == b);
+        assert_eq!(a, b);
     }
 
     #[test]
@@ -1915,7 +1915,7 @@ mod equivalence {
 
         assert!(!a.is(&b));
         assert!(!a.is_eqv(&b));
-        assert!(a != b);
+        assert_ne!(a, b);
     }
 
     #[test]
@@ -1925,7 +1925,7 @@ mod equivalence {
 
         assert!(!a.is(&b));
         assert!(!a.is_eqv(&b));
-        assert!(a == b);
+        assert_eq!(a, b);
     }
 
     #[test]
@@ -1935,7 +1935,7 @@ mod equivalence {
 
         assert!(!a.is(&b));
         assert!(!a.is_eqv(&b));
-        assert!(a != b);
+        assert_ne!(a, b);
     }
 
     #[test]
@@ -1945,11 +1945,11 @@ mod equivalence {
 
         assert!(!a.is(&b));
         assert!(!a.is_eqv(&b));
-        assert!(a == b);
+        assert_eq!(a, b);
 
         assert!(!b.is(&a));
         assert!(!b.is_eqv(&a));
-        assert!(b == a);
+        assert_eq!(b, a);
     }
 
     #[test]
@@ -1959,7 +1959,7 @@ mod equivalence {
 
         assert!(!a.is(&b));
         assert!(!a.is_eqv(&b));
-        assert!(a == b);
+        assert_eq!(a, b);
     }
 
     #[test]
@@ -1969,7 +1969,7 @@ mod equivalence {
 
         assert!(!a.is(&b));
         assert!(!a.is_eqv(&b));
-        assert!(a == b);
+        assert_eq!(a, b);
     }
 
     #[test]
@@ -1979,7 +1979,7 @@ mod equivalence {
 
         assert!(!a.is(&b));
         assert!(!a.is_eqv(&b));
-        assert!(a != b);
+        assert_ne!(a, b);
     }
 
     #[test]
@@ -1989,7 +1989,7 @@ mod equivalence {
 
         assert!(!a.is(&b));
         assert!(!a.is_eqv(&b));
-        assert!(a == b);
+        assert_eq!(a, b);
     }
 
     #[test]
@@ -1999,7 +1999,7 @@ mod equivalence {
 
         assert!(!a.is(&b));
         assert!(!a.is_eqv(&b));
-        assert!(a == b);
+        assert_eq!(a, b);
     }
 
     #[test]
@@ -2009,7 +2009,7 @@ mod equivalence {
 
         assert!(!a.is(&b));
         assert!(!a.is_eqv(&b));
-        assert!(a == b);
+        assert_eq!(a, b);
     }
 
     #[test]
@@ -2024,7 +2024,7 @@ mod equivalence {
 
         assert!(!a.is(&b));
         assert!(!a.is_eqv(&b));
-        assert!(a != b);
+        assert_ne!(a, b);
     }
 
     #[test]
@@ -2039,7 +2039,7 @@ mod equivalence {
 
         assert!(!a.is(&b));
         assert!(!a.is_eqv(&b));
-        assert!(a != b);
+        assert_ne!(a, b);
     }
 
     #[test]
@@ -2049,7 +2049,7 @@ mod equivalence {
 
         assert!(!a.is(&b));
         assert!(!a.is_eqv(&b));
-        assert!(a == b);
+        assert_eq!(a, b);
     }
 
     #[test]
@@ -2059,7 +2059,7 @@ mod equivalence {
 
         assert!(!a.is(&b));
         assert!(!a.is_eqv(&b));
-        assert!(a == b);
+        assert_eq!(a, b);
     }
 
     #[test]
@@ -2069,11 +2069,11 @@ mod equivalence {
 
         assert!(!a.is(&b));
         assert!(!a.is_eqv(&b));
-        assert!(a == b);
+        assert_eq!(a, b);
 
         assert!(!b.is(&a));
         assert!(!b.is_eqv(&a));
-        assert!(b == a);
+        assert_eq!(b, a);
     }
 
     #[test]
@@ -2084,7 +2084,7 @@ mod equivalence {
 
         assert!(!a.is(&b));
         assert!(!a.is_eqv(&b));
-        assert!(a != b);
+        assert_ne!(a, b);
     }
 
     #[test]
@@ -2095,7 +2095,7 @@ mod equivalence {
 
         assert!(!a.is(&b));
         assert!(!a.is_eqv(&b));
-        assert!(a != b);
+        assert_ne!(a, b);
     }
 
     #[test]
@@ -2105,7 +2105,7 @@ mod equivalence {
 
         assert!(!a.is(&b));
         assert!(!a.is_eqv(&b));
-        assert!(a == b);
+        assert_eq!(a, b);
     }
 
     #[test]
@@ -2115,7 +2115,7 @@ mod equivalence {
 
         assert!(!a.is(&b));
         assert!(!a.is_eqv(&b));
-        assert!(a == b);
+        assert_eq!(a, b);
     }
 
     #[test]
@@ -2125,11 +2125,11 @@ mod equivalence {
 
         assert!(!a.is(&b));
         assert!(!a.is_eqv(&b));
-        assert!(a == b);
+        assert_eq!(a, b);
 
         assert!(!b.is(&a));
         assert!(!b.is_eqv(&a));
-        assert!(b == a);
+        assert_eq!(b, a);
     }
 
     #[test]
@@ -2144,7 +2144,7 @@ mod equivalence {
 
         assert!(!a.is(&b));
         assert!(!a.is_eqv(&b));
-        assert!(a != b);
+        assert_ne!(a, b);
     }
 
     #[test]
@@ -2159,7 +2159,7 @@ mod equivalence {
 
         assert!(!a.is(&b));
         assert!(!a.is_eqv(&b));
-        assert!(a != b);
+        assert_ne!(a, b);
     }
 
     #[test]
@@ -2174,7 +2174,7 @@ mod equivalence {
 
         assert!(!a.is(&b));
         assert!(!a.is_eqv(&b));
-        assert!(a != b);
+        assert_ne!(a, b);
     }
 
     #[test]
@@ -2189,7 +2189,7 @@ mod equivalence {
 
         assert!(!a.is(&b));
         assert!(!a.is_eqv(&b));
-        assert!(a != b);
+        assert_ne!(a, b);
     }
 }
 

@@ -21,14 +21,14 @@ mod sign {
 
     #[test]
     fn comparisons() {
-        assert!(Sign::Negative == Sign::Negative);
-        assert!(Sign::Negative != Sign::Zero);
-        assert!(Sign::Negative != Sign::Positive);
+        assert_eq!(Sign::Negative, Sign::Negative);
+        assert_ne!(Sign::Negative, Sign::Zero);
+        assert_ne!(Sign::Negative, Sign::Positive);
 
-        assert!(Sign::Zero == Sign::Zero);
-        assert!(Sign::Zero != Sign::Positive);
+        assert_eq!(Sign::Zero, Sign::Zero);
+        assert_ne!(Sign::Zero, Sign::Positive);
 
-        assert!(Sign::Positive == Sign::Positive);
+        assert_eq!(Sign::Positive, Sign::Positive);
 
         assert!(Sign::Negative < Sign::Zero);
         assert!(Sign::Negative <= Sign::Zero);
