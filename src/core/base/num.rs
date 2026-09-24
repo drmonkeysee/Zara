@@ -1157,6 +1157,470 @@ mod tests {
         );
     }
 
+    // R7RS-small 6.2.6 examples: (floor/ 5 2) => 2 1,
+    // (floor/ -5 2) => -3 1, (floor/ 5 -2) => -3 -1, (floor/ -5 -2) => 2 -1;
+    // (truncate/ 5 2) => 2 1, (truncate/ -5 2) => -2 -1,
+    // (truncate/ 5 -2) => -2 1, (truncate/ -5 -2) => 2 -1,
+    // (truncate/ -5.0 -2) => 2.0 -1.0
+
+    #[test]
+    fn floor_qr_basic() {
+        let args = [Value::real(7), Value::real(2)];
+        let env = TestEnv::default();
+
+        let r = floor_qr(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_matches!(v, Value::Reals(_));
+        assert_eq!(v.as_datum().to_string(), "[3, 1]");
+    }
+
+    #[test]
+    fn truncate_qr_basic() {
+        let args = [Value::real(7), Value::real(2)];
+        let env = TestEnv::default();
+
+        let r = truncate_qr(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_matches!(v, Value::Reals(_));
+        assert_eq!(v.as_datum().to_string(), "[3, 1]");
+    }
+
+    #[test]
+    fn floor_quotient_basic() {
+        let args = [Value::real(7), Value::real(2)];
+        let env = TestEnv::default();
+
+        let r = floor_quotient(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_matches!(v, Value::Number(Number::Real(Real::Integer(_))));
+        assert_eq!(v.as_datum().to_string(), "3");
+    }
+
+    #[test]
+    fn truncate_quotient_basic() {
+        let args = [Value::real(7), Value::real(2)];
+        let env = TestEnv::default();
+
+        let r = truncate_quotient(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_matches!(v, Value::Number(Number::Real(Real::Integer(_))));
+        assert_eq!(v.as_datum().to_string(), "3");
+    }
+
+    #[test]
+    fn floor_remainder_basic() {
+        let args = [Value::real(7), Value::real(2)];
+        let env = TestEnv::default();
+
+        let r = floor_remainder(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_matches!(v, Value::Number(Number::Real(Real::Integer(_))));
+        assert_eq!(v.as_datum().to_string(), "1");
+    }
+
+    #[test]
+    fn truncate_remainder_basic() {
+        let args = [Value::real(7), Value::real(2)];
+        let env = TestEnv::default();
+
+        let r = truncate_remainder(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_matches!(v, Value::Number(Number::Real(Real::Integer(_))));
+        assert_eq!(v.as_datum().to_string(), "1");
+    }
+
+    #[test]
+    fn floor_qr_negative_dividend() {
+        let args = [Value::real(-5), Value::real(2)];
+        let env = TestEnv::default();
+
+        let r = floor_qr(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_eq!(v.as_datum().to_string(), "[-3, 1]");
+    }
+
+    #[test]
+    fn truncate_qr_negative_dividend() {
+        let args = [Value::real(-5), Value::real(2)];
+        let env = TestEnv::default();
+
+        let r = truncate_qr(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_eq!(v.as_datum().to_string(), "[-2, -1]");
+    }
+
+    #[test]
+    fn floor_qr_negative_divisor() {
+        let args = [Value::real(5), Value::real(-2)];
+        let env = TestEnv::default();
+
+        let r = floor_qr(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_eq!(v.as_datum().to_string(), "[-3, -1]");
+    }
+
+    #[test]
+    fn truncate_qr_negative_divisor() {
+        let args = [Value::real(5), Value::real(-2)];
+        let env = TestEnv::default();
+
+        let r = truncate_qr(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_eq!(v.as_datum().to_string(), "[-2, 1]");
+    }
+
+    #[test]
+    fn floor_qr_both_negative() {
+        let args = [Value::real(-5), Value::real(-2)];
+        let env = TestEnv::default();
+
+        let r = floor_qr(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_eq!(v.as_datum().to_string(), "[2, -1]");
+    }
+
+    #[test]
+    fn truncate_qr_both_negative() {
+        let args = [Value::real(-5), Value::real(-2)];
+        let env = TestEnv::default();
+
+        let r = truncate_qr(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_eq!(v.as_datum().to_string(), "[2, -1]");
+    }
+
+    #[test]
+    fn floor_quotient_negative_dividend() {
+        let args = [Value::real(-5), Value::real(2)];
+        let env = TestEnv::default();
+
+        let r = floor_quotient(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_eq!(v.as_datum().to_string(), "-3");
+    }
+
+    #[test]
+    fn truncate_quotient_negative_dividend() {
+        let args = [Value::real(-5), Value::real(2)];
+        let env = TestEnv::default();
+
+        let r = truncate_quotient(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_eq!(v.as_datum().to_string(), "-2");
+    }
+
+    // the classic modulo/remainder distinction (`modulo` binds to floor_remainder,
+    // `remainder` to truncate_remainder; see load())
+    #[test]
+    fn floor_remainder_negative_dividend() {
+        let args = [Value::real(-5), Value::real(2)];
+        let env = TestEnv::default();
+
+        let r = floor_remainder(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_eq!(v.as_datum().to_string(), "1");
+    }
+
+    #[test]
+    fn truncate_remainder_negative_dividend() {
+        let args = [Value::real(-5), Value::real(2)];
+        let env = TestEnv::default();
+
+        let r = truncate_remainder(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_eq!(v.as_datum().to_string(), "-1");
+    }
+
+    #[test]
+    fn truncate_qr_float_taint_dividend() {
+        let args = [Value::real(-5.0), Value::real(-2)];
+        let env = TestEnv::default();
+
+        let r = truncate_qr(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_eq!(v.as_datum().to_string(), "[2.0, -1.0]");
+    }
+
+    #[test]
+    fn floor_qr_float_taint_divisor() {
+        let args = [Value::real(-5), Value::real(-2.0)];
+        let env = TestEnv::default();
+
+        let r = floor_qr(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_eq!(v.as_datum().to_string(), "[2.0, -1.0]");
+    }
+
+    #[test]
+    fn floor_quotient_float_taint_dividend() {
+        let args = [Value::real(7.0), Value::real(2)];
+        let env = TestEnv::default();
+
+        let r = floor_quotient(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_matches!(v, Value::Number(Number::Real(Real::Float(_))));
+        assert_eq!(v.as_datum().to_string(), "3.0");
+    }
+
+    #[test]
+    fn truncate_remainder_float_taint_divisor() {
+        let args = [Value::real(7), Value::real(2.0)];
+        let env = TestEnv::default();
+
+        let r = truncate_remainder(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_matches!(v, Value::Number(Number::Real(Real::Float(_))));
+        assert_eq!(v.as_datum().to_string(), "1.0");
+    }
+
+    #[test]
+    fn floor_remainder_float_taint_both_args() {
+        let args = [Value::real(7.0), Value::real(2.0)];
+        let env = TestEnv::default();
+
+        let r = floor_remainder(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_matches!(v, Value::Number(Number::Real(Real::Float(_))));
+        assert_eq!(v.as_datum().to_string(), "1.0");
+    }
+
+    // Zero-dividend cases, checked against Chez Scheme 10 and Guile 3.0.
+    // Both give the quotient the IEEE sign of the division (sign(n) xor sign(d))
+    // while the remainder of a zero dividend is always +0.0 (not raw fmod's -0.0).
+
+    #[test]
+    fn floor_qr_exact_zero_dividend() {
+        let args = [Value::real(0), Value::real(5)];
+        let env = TestEnv::default();
+
+        let r = floor_qr(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_eq!(v.as_datum().to_string(), "[0, 0]");
+    }
+
+    #[test]
+    fn truncate_qr_exact_zero_dividend() {
+        let args = [Value::real(0), Value::real(5)];
+        let env = TestEnv::default();
+
+        let r = truncate_qr(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_eq!(v.as_datum().to_string(), "[0, 0]");
+    }
+
+    #[test]
+    fn floor_qr_exact_zero_dividend_negative_divisor() {
+        let args = [Value::real(0), Value::real(-5)];
+        let env = TestEnv::default();
+
+        let r = floor_qr(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_eq!(v.as_datum().to_string(), "[0, 0]");
+    }
+
+    #[test]
+    fn truncate_qr_exact_zero_dividend_negative_divisor() {
+        let args = [Value::real(0), Value::real(-5)];
+        let env = TestEnv::default();
+
+        let r = truncate_qr(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_eq!(v.as_datum().to_string(), "[0, 0]");
+    }
+
+    #[test]
+    fn floor_qr_positive_zero_dividend() {
+        let args = [Value::real(0.0), Value::real(5)];
+        let env = TestEnv::default();
+
+        let r = floor_qr(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_eq!(v.as_datum().to_string(), "[0.0, 0.0]");
+    }
+
+    #[test]
+    fn truncate_qr_positive_zero_dividend() {
+        let args = [Value::real(0.0), Value::real(5)];
+        let env = TestEnv::default();
+
+        let r = truncate_qr(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_eq!(v.as_datum().to_string(), "[0.0, 0.0]");
+    }
+
+    // Chez: (quotient -0.0 5) => -0.0; Guile: (quotient -0.0 5) => -0.0.
+    // Zara currently loses the dividend's zero sign in try_into_exact_integer
+    // and returns [0.0, 0.0].
+    #[test]
+    fn floor_qr_negative_zero_dividend() {
+        let args = [Value::real(-0.0), Value::real(5)];
+        let env = TestEnv::default();
+
+        let r = floor_qr(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_eq!(v.as_datum().to_string(), "[-0.0, 0.0]");
+    }
+
+    // Chez: (quotient -0.0 5) => -0.0; Guile: (quotient -0.0 5) => -0.0.
+    #[test]
+    fn truncate_qr_negative_zero_dividend() {
+        let args = [Value::real(-0.0), Value::real(5)];
+        let env = TestEnv::default();
+
+        let r = truncate_qr(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_eq!(v.as_datum().to_string(), "[-0.0, 0.0]");
+    }
+
+    // Chez: (quotient 0.0 -5) => -0.0; Guile: (quotient 0.0 -5) => -0.0.
+    #[test]
+    fn floor_qr_positive_zero_dividend_negative_divisor() {
+        let args = [Value::real(0.0), Value::real(-5)];
+        let env = TestEnv::default();
+
+        let r = floor_qr(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_eq!(v.as_datum().to_string(), "[-0.0, 0.0]");
+    }
+
+    // Chez: (quotient 0.0 -5) => -0.0; Guile: (quotient 0.0 -5) => -0.0.
+    #[test]
+    fn truncate_qr_positive_zero_dividend_negative_divisor() {
+        let args = [Value::real(0.0), Value::real(-5)];
+        let env = TestEnv::default();
+
+        let r = truncate_qr(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_eq!(v.as_datum().to_string(), "[-0.0, 0.0]");
+    }
+
+    // signs cancel here, so this already passes today; pins down that a fix
+    // for the negative-zero-dividend cases above must not over-correct this one.
+    #[test]
+    fn floor_qr_negative_zero_dividend_negative_divisor() {
+        let args = [Value::real(-0.0), Value::real(-5)];
+        let env = TestEnv::default();
+
+        let r = floor_qr(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_eq!(v.as_datum().to_string(), "[0.0, 0.0]");
+    }
+
+    #[test]
+    fn truncate_qr_negative_zero_dividend_negative_divisor() {
+        let args = [Value::real(-0.0), Value::real(-5)];
+        let env = TestEnv::default();
+
+        let r = truncate_qr(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_eq!(v.as_datum().to_string(), "[0.0, 0.0]");
+    }
+
+    // Chez: (quotient -0.0 5) => -0.0; Guile: (quotient -0.0 5) => -0.0.
+    #[test]
+    fn floor_quotient_negative_zero_dividend() {
+        let args = [Value::real(-0.0), Value::real(5)];
+        let env = TestEnv::default();
+
+        let r = floor_quotient(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_eq!(v.as_datum().to_string(), "-0.0");
+    }
+
+    // Chez: (quotient -0.0 5) => -0.0; Guile: (quotient -0.0 5) => -0.0.
+    #[test]
+    fn truncate_quotient_negative_zero_dividend() {
+        let args = [Value::real(-0.0), Value::real(5)];
+        let env = TestEnv::default();
+
+        let r = truncate_quotient(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_eq!(v.as_datum().to_string(), "-0.0");
+    }
+
+    // Chez and Guile both give (remainder -0.0 5) => 0.0 (not fmod's -0.0).
+    #[test]
+    fn floor_remainder_negative_zero_dividend() {
+        let args = [Value::real(-0.0), Value::real(5)];
+        let env = TestEnv::default();
+
+        let r = floor_remainder(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_eq!(v.as_datum().to_string(), "0.0");
+    }
+
+    #[test]
+    fn truncate_remainder_negative_zero_dividend() {
+        let args = [Value::real(-0.0), Value::real(5)];
+        let env = TestEnv::default();
+
+        let r = truncate_remainder(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_eq!(v.as_datum().to_string(), "0.0");
+    }
+
+    // Chez and Guile disagree here: Chez keeps an exact 0 result ((quotient 0 -5.0) => 0),
+    // Guile taints and signs it (-0.0). We follow Guile since Zara's float_taint
+    // convention already always taints on an inexact operand.
+    #[test]
+    fn floor_qr_exact_zero_dividend_inexact_divisor() {
+        let args = [Value::real(0), Value::real(-5.0)];
+        let env = TestEnv::default();
+
+        let r = floor_qr(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_eq!(v.as_datum().to_string(), "[-0.0, 0.0]");
+    }
+
+    #[test]
+    fn truncate_quotient_exact_zero_dividend_inexact_divisor() {
+        let args = [Value::real(0), Value::real(5.0)];
+        let env = TestEnv::default();
+
+        let r = truncate_quotient(&args, &env.new_frame());
+
+        let v = ok_or_fail!(r);
+        assert_eq!(v.as_datum().to_string(), "0.0");
+    }
+
     #[test]
     fn gcd_basic() {
         let args = [Value::real(32), Value::real(-36)];
