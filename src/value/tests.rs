@@ -163,7 +163,7 @@ mod display {
     fn empty_list_display() {
         let v = zlist![];
 
-        assert_eq!(v.as_datum().to_string(), "()")
+        assert_eq!(v.as_datum().to_string(), "()");
     }
 
     #[test]

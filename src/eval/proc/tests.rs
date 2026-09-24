@@ -380,7 +380,7 @@ fn lambda_max_arity_with_rest() {
 #[test]
 fn lambda_too_many_params() {
     let sym = SymbolTable::default();
-    let params = (0..MAX_ARITY as usize + 1)
+    let params = (0..=MAX_ARITY as usize)
         .map(|i| sym.get(format!("x{i}")))
         .collect::<Vec<_>>();
 

@@ -2838,7 +2838,7 @@ mod float {
 
     #[test]
     fn exact_exponent_overflow() {
-        let cases = [(i32::MAX as i64) + 1, (i32::MIN as i64) - 1];
+        let cases = [i64::from(i32::MAX) + 1, i64::from(i32::MIN) - 1];
         for case in cases {
             let input = format!("#e4.0e{case}");
             let mut s = Scanner::new(&input);
@@ -4270,13 +4270,13 @@ mod cartesian {
             let num = extract_number!(tok.kind);
             let mut expected = cpx.to_owned();
             if expected.contains("-nan") {
-                expected = expected.replace("-nan", "+nan")
+                expected = expected.replace("-nan", "+nan");
             }
             if expected.contains("xa") {
-                expected = expected.replace("xa", "x10")
+                expected = expected.replace("xa", "x10");
             }
             if expected.contains("ai") {
-                expected = expected.replace("ai", "10i")
+                expected = expected.replace("ai", "10i");
             }
             assert_eq!(num.to_string(), expected[2..]);
         }

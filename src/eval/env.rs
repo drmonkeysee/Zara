@@ -179,7 +179,7 @@ mod tests {
 
         let n = b.binding("foo");
 
-        assert!(ptr::eq(some_or_fail!(n), &b));
+        assert!(ptr::eq(some_or_fail!(n), &raw const b));
     }
 
     #[test]

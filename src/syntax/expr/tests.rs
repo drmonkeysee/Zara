@@ -803,7 +803,7 @@ mod eval {
 
             let v = ok_or_fail!(r);
             assert_matches!(v, Value::Unspecified);
-            assert_matches!(f.scope.lookup("foo"), Some(Value::String(s)) if s.as_ref() == "one")
+            assert_matches!(f.scope.lookup("foo"), Some(Value::String(s)) if s.as_ref() == "one");
         }
 
         #[test]
@@ -1679,7 +1679,7 @@ mod groupby {
         let (key, group) = &groups[0];
         assert!(ptr::eq(*key, Rc::as_ptr(&txt)));
         assert_eq!(group.len(), 1);
-        assert!(ptr::eq(group[0], &errs[0]));
+        assert!(ptr::eq(group[0], &raw const errs[0]));
     }
 
     #[test]
@@ -1709,9 +1709,9 @@ mod groupby {
         let (key, group) = &groups[0];
         assert!(ptr::eq(*key, Rc::as_ptr(&txt)));
         assert_eq!(group.len(), 3);
-        assert!(ptr::eq(group[0], &errs[0]));
-        assert!(ptr::eq(group[1], &errs[1]));
-        assert!(ptr::eq(group[2], &errs[2]));
+        assert!(ptr::eq(group[0], &raw const errs[0]));
+        assert!(ptr::eq(group[1], &raw const errs[1]));
+        assert!(ptr::eq(group[2], &raw const errs[2]));
     }
 
     #[test]
@@ -1743,13 +1743,13 @@ mod groupby {
         let (key, group) = &groups[0];
         assert!(ptr::eq(*key, Rc::as_ptr(&txt1)));
         assert_eq!(group.len(), 2);
-        assert!(ptr::eq(group[0], &errs[0]));
-        assert!(ptr::eq(group[1], &errs[1]));
+        assert!(ptr::eq(group[0], &raw const errs[0]));
+        assert!(ptr::eq(group[1], &raw const errs[1]));
 
         let (key, group) = &groups[1];
         assert!(ptr::eq(*key, Rc::as_ptr(&txt2)));
         assert_eq!(group.len(), 1);
-        assert!(ptr::eq(group[0], &errs[2]));
+        assert!(ptr::eq(group[0], &raw const errs[2]));
     }
 
     #[test]
@@ -1781,16 +1781,16 @@ mod groupby {
         let (key, group) = &groups[0];
         assert!(ptr::eq(*key, Rc::as_ptr(&txt1)));
         assert_eq!(group.len(), 1);
-        assert!(ptr::eq(group[0], &errs[0]));
+        assert!(ptr::eq(group[0], &raw const errs[0]));
 
         let (key, group) = &groups[1];
         assert!(ptr::eq(*key, Rc::as_ptr(&txt2)));
         assert_eq!(group.len(), 1);
-        assert!(ptr::eq(group[0], &errs[1]));
+        assert!(ptr::eq(group[0], &raw const errs[1]));
 
         let (key, group) = &groups[2];
         assert!(ptr::eq(*key, Rc::as_ptr(&txt1)));
         assert_eq!(group.len(), 1);
-        assert!(ptr::eq(group[0], &errs[2]));
+        assert!(ptr::eq(group[0], &raw const errs[2]));
     }
 }

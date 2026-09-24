@@ -14,7 +14,7 @@ mod lexer {
         testutil::{err_or_fail, ok_or_fail, some_or_fail},
         txt::{LineNumber, TextResult, TxtSpan},
     };
-    use std::{rc::Rc, str::Lines};
+    use std::{ptr, rc::Rc, str::Lines};
 
     struct MockTxtSource<'a> {
         ctx: Rc<TextContext>,
@@ -281,7 +281,7 @@ mod lexer {
         let err_lines = err.0;
         assert_eq!(err_lines.len(), 1);
         let inner = extract_or_fail!(&err_lines[0], LineFailure::Read);
-        assert_eq!(inner.context() as *const _, Rc::as_ptr(&src.ctx));
+        assert_eq!(ptr::from_ref(inner.context()), Rc::as_ptr(&src.ctx));
         assert_eq!(inner.line_number(), 2);
         assert!(inner.source().is_some());
         assert!(target.cont.is_none());
@@ -320,7 +320,7 @@ mod lexer {
             } if Rc::ptr_eq(ctx, &src.ctx) && line == " #z #f #z #\\a"
         );
         let inner = extract_or_fail!(&err_lines[1], LineFailure::Read);
-        assert_eq!(inner.context() as *const _, Rc::as_ptr(&src.ctx));
+        assert_eq!(ptr::from_ref(inner.context()), Rc::as_ptr(&src.ctx));
         assert_eq!(inner.line_number(), 3);
         assert!(inner.source().is_some());
         assert!(target.cont.is_none());

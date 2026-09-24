@@ -1403,7 +1403,7 @@ mod integer {
         for case in cases {
             let n = Integer::from(case);
 
-            assert!(n.is_even())
+            assert!(n.is_even());
         }
     }
 
@@ -1413,7 +1413,7 @@ mod integer {
         for case in cases {
             let n = Integer::from(case);
 
-            assert!(!n.is_even())
+            assert!(!n.is_even());
         }
     }
 
@@ -2012,7 +2012,11 @@ mod integer {
 
                 let reconstructed = Integer::from(d) * Integer::from(n / d) + r;
 
-                assert_eq!(reconstructed, Integer::from(n), "{n} == {d} * ({n}/{d}) + r");
+                assert_eq!(
+                    reconstructed,
+                    Integer::from(n),
+                    "{n} == {d} * ({n}/{d}) + r"
+                );
             }
         }
 
@@ -2244,7 +2248,12 @@ mod integer {
 
             #[test]
             fn dividend_smaller_than_divisor() {
-                let cases = [(3, 7, 0, 3), (-3, 7, -1, 4), (3, -7, -1, -4), (-3, -7, 0, -3)];
+                let cases = [
+                    (3, 7, 0, 3),
+                    (-3, 7, -1, 4),
+                    (3, -7, -1, -4),
+                    (-3, -7, 0, -3),
+                ];
                 for (n, d, expected_q, expected_r) in cases {
                     let q = ok_or_fail!(Integer::from(n).into_floor_quotient(d.into()));
                     let r = ok_or_fail!(Integer::from(n).into_floor_rem(d.into()));
@@ -2350,8 +2359,14 @@ mod integer {
                     let trunc_mag = extract_or_fail!(trunc_r.precision, Precision::Single);
                     let floor_mag = extract_or_fail!(floor_r.precision, Precision::Single);
                     let d_mag = d.unsigned_abs();
-                    assert!(trunc_mag < d_mag, "{n} truncate-rem {d} = {trunc_mag} should be < {d_mag}");
-                    assert!(floor_mag < d_mag, "{n} floor-rem {d} = {floor_mag} should be < {d_mag}");
+                    assert!(
+                        trunc_mag < d_mag,
+                        "{n} truncate-rem {d} = {trunc_mag} should be < {d_mag}"
+                    );
+                    assert!(
+                        floor_mag < d_mag,
+                        "{n} floor-rem {d} = {floor_mag} should be < {d_mag}"
+                    );
                 }
             }
 

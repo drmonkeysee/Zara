@@ -566,8 +566,8 @@ mod tests {
     fn cycle_count(graph: &Traverse) -> usize {
         graph.visits.values().fold(usize::MIN, |mut acc, vs| {
             if vs.cycle {
-                acc += 1
-            };
+                acc += 1;
+            }
             acc
         })
     }

@@ -92,14 +92,14 @@ mod tests {
         assert_eq!(
             err.to_string(),
             "invalid utf-8 sequence: [#x11, #x22, #xaa, #xbb]"
-        )
+        );
     }
 
     #[test]
     fn display_invalid_seq_with_trailing_zeros() {
         let err = UnicodeError::ByteSequenceInvalid([0x11, 0x22, 0x0, 0x0]);
 
-        assert_eq!(err.to_string(), "invalid utf-8 sequence: [#x11, #x22]")
+        assert_eq!(err.to_string(), "invalid utf-8 sequence: [#x11, #x22]");
     }
 
     #[test]
@@ -109,14 +109,14 @@ mod tests {
         assert_eq!(
             err.to_string(),
             "invalid utf-8 sequence: [#x11, #x0, #x0, #xbb]"
-        )
+        );
     }
 
     #[test]
     fn display_invalid_seq_with_mix_of_zeros() {
         let err = UnicodeError::ByteSequenceInvalid([0x0, 0x22, 0xaa, 0x0]);
 
-        assert_eq!(err.to_string(), "invalid utf-8 sequence: [#x0, #x22, #xaa]")
+        assert_eq!(err.to_string(), "invalid utf-8 sequence: [#x0, #x22, #xaa]");
     }
 
     #[test]

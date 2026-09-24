@@ -303,7 +303,7 @@ mod expr {
     #[test]
     fn empty_variable() {
         let token = Token {
-            kind: TokenKind::Identifier("".to_owned()),
+            kind: TokenKind::Identifier(String::new()),
             span: 0..0,
         };
         let txt = make_textline().into();
@@ -347,7 +347,7 @@ mod expr {
     #[test]
     fn empty_symbol() {
         let token = Token {
-            kind: TokenKind::Identifier("".to_owned()),
+            kind: TokenKind::Identifier(String::new()),
             span: 0..0,
         };
         let txt = make_textline().into();

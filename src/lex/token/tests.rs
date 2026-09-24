@@ -408,7 +408,7 @@ mod token {
     #[test]
     fn string_open_continuation() {
         let kind = TokenKind::StringBegin {
-            s: "".to_owned(),
+            s: String::new(),
             line_cont: false,
         };
 
@@ -421,7 +421,7 @@ mod token {
     #[test]
     fn string_fragment_continuation() {
         let kind = TokenKind::StringFragment {
-            s: "".to_owned(),
+            s: String::new(),
             line_cont: true,
         };
 
@@ -433,7 +433,7 @@ mod token {
 
     #[test]
     fn identifier_open_continuation() {
-        let kind = TokenKind::IdentifierBegin("".to_owned());
+        let kind = TokenKind::IdentifierBegin(String::new());
 
         assert_matches!(
             kind.to_continuation(),
@@ -443,7 +443,7 @@ mod token {
 
     #[test]
     fn identifier_fragment_continuation() {
-        let kind = TokenKind::IdentifierFragment("".to_owned());
+        let kind = TokenKind::IdentifierFragment(String::new());
 
         assert_matches!(
             kind.to_continuation(),
