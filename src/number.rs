@@ -1712,10 +1712,7 @@ impl Display for Integer {
 // TODO: handle multi-precision later
 impl From<i64> for Integer {
     fn from(value: i64) -> Self {
-        Self {
-            precision: Precision::Single(value.unsigned_abs()),
-            sign: value.into(),
-        }
+        Self::new(value.unsigned_abs(), value)
     }
 }
 
@@ -1986,7 +1983,7 @@ impl Precision {
 
     fn gcd(&self, rhs: &Self) -> Self {
         match (self, rhs) {
-            (Self::Single(a), Self::Single(b)) => Self::Single(gcd_euclidean(*a, *b)),
+            (Self::Single(a), Self::Single(b)) => gcd_euclidean(*a, *b).into(),
             _ => todo!(),
         }
     }
@@ -1997,7 +1994,7 @@ impl Precision {
                 let gcd = gcd_euclidean(*a, *b);
                 let (p, o) = b.carrying_mul(a / gcd, 0);
                 if o == 0 {
-                    Self::Single(p)
+                    p.into()
                 } else {
                     todo!("handle precision overflow")
                 }
@@ -2010,11 +2007,7 @@ impl Precision {
         match self {
             Self::Single(u) => {
                 let r = u.isqrt();
-                if r.pow(2) == *u {
-                    Some(Self::Single(r))
-                } else {
-                    None
-                }
+                if r.pow(2) == *u { Some(r.into()) } else { None }
             }
             Self::Multiple(_) => todo!(),
         }
@@ -2024,8 +2017,8 @@ impl Precision {
         match (&self, &other) {
             (Self::Single(a), Self::Single(b)) => {
                 let gcd = gcd_euclidean(*a, *b);
-                *self = Self::Single(*a / gcd);
-                *other = Self::Single(*b / gcd);
+                *self = (*a / gcd).into();
+                *other = (*b / gcd).into();
             }
             _ => todo!(),
         }
@@ -2033,7 +2026,7 @@ impl Precision {
 
     fn div_ceil(self, rhs: Self) -> Self {
         match (self, rhs) {
-            (Self::Single(a), Self::Single(b)) => Self::Single(a.div_ceil(b)),
+            (Self::Single(a), Self::Single(b)) => a.div_ceil(b).into(),
             _ => todo!(),
         }
     }
@@ -2075,7 +2068,7 @@ impl Add for Precision {
                 if c {
                     todo!("handle precision overflow")
                 } else {
-                    Self::Single(s)
+                    s.into()
                 }
             }
             _ => todo!(),
@@ -2089,7 +2082,7 @@ impl Sub for Precision {
 
     fn sub(self, rhs: Self) -> Self::Output {
         match (self, rhs) {
-            (Self::Single(a), Self::Single(b)) => Self::Single(a - b),
+            (Self::Single(a), Self::Single(b)) => (a - b).into(),
             _ => todo!(),
         }
     }
@@ -2103,7 +2096,7 @@ impl Mul for Precision {
             (Self::Single(a), Self::Single(b)) => {
                 let (p, o) = a.carrying_mul(b, 0);
                 if o == 0 {
-                    Self::Single(p)
+                    p.into()
                 } else {
                     todo!("handle precision overflow")
                 }
@@ -2121,7 +2114,7 @@ impl Div for Precision {
         match (self, rhs) {
             (Self::Single(a), Self::Single(b)) => {
                 debug_assert_ne!(b, 0);
-                Self::Single(a / b)
+                (a / b).into()
             }
             _ => todo!(),
         }
@@ -2136,7 +2129,7 @@ impl Rem for Precision {
         match (self, rhs) {
             (Self::Single(a), Self::Single(b)) => {
                 debug_assert_ne!(b, 0);
-                Self::Single(a % b)
+                (a % b).into()
             }
             _ => todo!(),
         }
