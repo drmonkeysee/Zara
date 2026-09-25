@@ -2617,28 +2617,28 @@ mod integer {
 
             #[test]
             fn rounds_up_on_remainder() {
-                let q = Precision::Single(67).div_ceil(Precision::Single(6));
+                let q = Precision::Single(67).div_ceil(&Precision::Single(6));
 
                 assert_eq!(q, Precision::Single(12));
             }
 
             #[test]
             fn exact_division_does_not_round_up() {
-                let q = Precision::Single(12).div_ceil(Precision::Single(4));
+                let q = Precision::Single(12).div_ceil(&Precision::Single(4));
 
                 assert_eq!(q, Precision::Single(3));
             }
 
             #[test]
             fn dividend_smaller_than_divisor_rounds_up_to_one() {
-                let q = Precision::Single(1).div_ceil(Precision::Single(7));
+                let q = Precision::Single(1).div_ceil(&Precision::Single(7));
 
                 assert_eq!(q, Precision::Single(1));
             }
 
             #[test]
             fn zero_dividend_is_zero() {
-                let q = Precision::Single(0).div_ceil(Precision::Single(5));
+                let q = Precision::Single(0).div_ceil(&Precision::Single(5));
 
                 assert_eq!(q, Precision::Single(0));
             }
@@ -2649,7 +2649,7 @@ mod integer {
                 for (a, b) in cases {
                     let div = Precision::Single(a) / Precision::Single(b);
                     let rem = Precision::Single(a) % Precision::Single(b);
-                    let div_ceil = Precision::Single(a).div_ceil(Precision::Single(b));
+                    let div_ceil = Precision::Single(a).div_ceil(&Precision::Single(b));
 
                     let expected = if rem == Precision::Single(0) {
                         div
@@ -2666,7 +2666,7 @@ mod integer {
                 let a = Precision::Multiple([4, 6].into());
                 let b = Precision::Single(4);
 
-                let q = a.div_ceil(b);
+                let q = a.div_ceil(&b);
 
                 assert_eq!(q, Precision::Single(2));
             }

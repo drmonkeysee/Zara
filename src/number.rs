@@ -78,6 +78,24 @@ macro_rules! sign_from {
     };
 }
 
+macro_rules! impl_val_op {
+    (Add, $type:ident) => { impl_val_op!(@imp Add, $type, add, +); };
+    (Sub, $type:ident) => { impl_val_op!(@imp Sub, $type, sub, -); };
+    (Mul, $type:ident) => { impl_val_op!(@imp Mul, $type, mul, *); };
+    (Div, $type:ident) => { impl_val_op!(@imp Div, $type, div, /); };
+    (Rem, $type:ident) => { impl_val_op!(@imp Rem, $type, rem, %); };
+
+    (@imp $imp:ident, $type:ident, $af:ident, $op:tt) => {
+        impl $imp for $type {
+            type Output = Self;
+
+            fn $af(self, rhs: Self) -> Self::Output {
+                &self $op &rhs
+            }
+        }
+    };
+}
+
 macro_rules! inexact_cmp_exact {
     ($inexact:expr, $flt:expr, $cmp:ident, $exact:expr) => {
         $inexact
@@ -1595,14 +1613,14 @@ impl Integer {
     fn div_exact(
         self,
         rhs: Self,
-        pos: impl FnOnce(Precision, Precision) -> Precision,
-        neg: impl FnOnce(Precision, Precision) -> Precision,
+        pos: impl FnOnce(&Precision, &Precision) -> Precision,
+        neg: impl FnOnce(&Precision, &Precision) -> Precision,
     ) -> Self {
         debug_assert!(!rhs.is_zero());
         let s = self.sign * rhs.sign;
         match s {
-            Sign::Negative => Self::new(neg(self.precision, rhs.precision), s),
-            Sign::Positive => Self::new(pos(self.precision, rhs.precision), s),
+            Sign::Negative => Self::new(neg(&self.precision, &rhs.precision), s),
+            Sign::Positive => Self::new(pos(&self.precision, &rhs.precision), s),
             Sign::Zero => Self::zero(),
         }
     }
@@ -2013,25 +2031,14 @@ impl Precision {
         }
     }
 
-    fn reduce(&mut self, other: &mut Self) {
-        match (&self, &other) {
-            (Self::Single(a), Self::Single(b)) => {
-                let gcd = gcd_euclidean(*a, *b);
-                *self = (*a / gcd).into();
-                *other = (*b / gcd).into();
-            }
-            _ => todo!(),
-        }
-    }
-
-    fn div_ceil(self, rhs: Self) -> Self {
+    fn div_ceil(&self, rhs: &Self) -> Self {
         match (self, rhs) {
-            (Self::Single(a), Self::Single(b)) => a.div_ceil(b).into(),
+            (Self::Single(a), Self::Single(b)) => a.div_ceil(*b).into(),
             _ => todo!(),
         }
     }
 
-    fn div_round(self, rhs: Self) -> Self {
+    fn div_round(&self, rhs: &Self) -> Self {
         match (self, rhs) {
             (Self::Single(a), Self::Single(b)) => {
                 /*
@@ -2047,7 +2054,7 @@ impl Precision {
                 let q = a / b;
                 let r = a % b;
                 let r2 = 2 * r;
-                match r2.cmp(&b) {
+                match r2.cmp(b) {
                     Ordering::Equal if q % 2 == 0 => q.into(),
                     Ordering::Less => q.into(),
                     _ => (q + 1).into(),
@@ -2056,15 +2063,31 @@ impl Precision {
             _ => todo!(),
         }
     }
+
+    // convenience wrapper for passing Div impl as closure
+    fn div(&self, rhs: &Self) -> Self {
+        self / rhs
+    }
+
+    fn reduce(&mut self, other: &mut Self) {
+        match (&self, &other) {
+            (Self::Single(a), Self::Single(b)) => {
+                let gcd = gcd_euclidean(*a, *b);
+                *self = (*a / gcd).into();
+                *other = (*b / gcd).into();
+            }
+            _ => todo!(),
+        }
+    }
 }
 
-impl Add for Precision {
-    type Output = Self;
+impl Add for &Precision {
+    type Output = Precision;
 
     fn add(self, rhs: Self) -> Self::Output {
         match (self, rhs) {
-            (Self::Single(a), Self::Single(b)) => {
-                let (s, c) = a.overflowing_add(b);
+            (Precision::Single(a), Precision::Single(b)) => {
+                let (s, c) = a.overflowing_add(*b);
                 if c {
                     todo!("handle precision overflow")
                 } else {
@@ -2075,26 +2098,28 @@ impl Add for Precision {
         }
     }
 }
+impl_val_op!(Add, Precision);
 
 // Naive sub implementation, relying on Integer to avoid subtraction overflow
-impl Sub for Precision {
-    type Output = Self;
+impl Sub for &Precision {
+    type Output = Precision;
 
     fn sub(self, rhs: Self) -> Self::Output {
         match (self, rhs) {
-            (Self::Single(a), Self::Single(b)) => (a - b).into(),
+            (Precision::Single(a), Precision::Single(b)) => (a - b).into(),
             _ => todo!(),
         }
     }
 }
+impl_val_op!(Sub, Precision);
 
-impl Mul for Precision {
-    type Output = Self;
+impl Mul for &Precision {
+    type Output = Precision;
 
     fn mul(self, rhs: Self) -> Self::Output {
         match (self, rhs) {
-            (Self::Single(a), Self::Single(b)) => {
-                let (p, o) = a.carrying_mul(b, 0);
+            (Precision::Single(a), Precision::Single(b)) => {
+                let (p, o) = a.carrying_mul(*b, 0);
                 if o == 0 {
                     p.into()
                 } else {
@@ -2105,36 +2130,39 @@ impl Mul for Precision {
         }
     }
 }
+impl_val_op!(Mul, Precision);
 
 // Integer division (e.g. div_floor); caller ensures divisor is not zero
-impl Div for Precision {
-    type Output = Self;
+impl Div for &Precision {
+    type Output = Precision;
 
     fn div(self, rhs: Self) -> Self::Output {
         match (self, rhs) {
-            (Self::Single(a), Self::Single(b)) => {
-                debug_assert_ne!(b, 0);
+            (Precision::Single(a), Precision::Single(b)) => {
+                debug_assert_ne!(*b, 0);
                 (a / b).into()
             }
             _ => todo!(),
         }
     }
 }
+impl_val_op!(Div, Precision);
 
 // Unsigned remainder or modulo; caller ensures the modulus is not zero
-impl Rem for Precision {
-    type Output = Self;
+impl Rem for &Precision {
+    type Output = Precision;
 
     fn rem(self, rhs: Self) -> Self::Output {
         match (self, rhs) {
-            (Self::Single(a), Self::Single(b)) => {
-                debug_assert_ne!(b, 0);
+            (Precision::Single(a), Precision::Single(b)) => {
+                debug_assert_ne!(*b, 0);
                 (a % b).into()
             }
             _ => todo!(),
         }
     }
 }
+impl_val_op!(Rem, Precision);
 
 impl Display for Precision {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
