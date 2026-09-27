@@ -145,8 +145,9 @@ mod tests;
 
 pub(crate) use self::spec::{Binary, Decimal, FloatSpec, Hexadecimal, IntSpec, Octal, Radix};
 use std::{
+    borrow::Borrow,
     cmp::Ordering,
-    f64,
+    convert, f64,
     fmt::{self, Display, Formatter, Write},
     num::ParseFloatError,
     ops::{Add, Div, Mul, Neg, Rem, Sub},
@@ -1727,55 +1728,82 @@ impl Neg for &Integer {
     }
 }
 
-impl Add for &Integer {
-    type Output = Integer;
+macro_rules! impl_int_add {
+    ($($this:ty, $that:ty, $addz:expr, $zadd:expr);+ $(;)?) => {
+        $(impl Add<$that> for $this {
+            type Output = Integer;
 
-    fn add(self, rhs: Self) -> Self::Output {
-        match (&self.sign, &rhs.sign) {
-            (_, Sign::Zero) => self.clone(),
-            (Sign::Zero, _) => rhs.clone(),
-            (Sign::Positive, Sign::Positive) | (Sign::Negative, Sign::Negative) => {
-                self.safe_sum(rhs)
+            fn add(self, rhs: $that) -> Self::Output {
+                match (&self.sign, &rhs.sign) {
+                    (_, Sign::Zero) => $addz(self),
+                    (Sign::Zero, _) => $zadd(rhs),
+                    (Sign::Positive, Sign::Positive) | (Sign::Negative, Sign::Negative) => {
+                        self.safe_sum(&rhs)
+                    }
+                    (Sign::Positive, Sign::Negative) | (Sign::Negative, Sign::Positive) => {
+                        let s = rhs.sign;
+                        self.overflowing_sum(&rhs, s)
+                    }
+                }
             }
-            (Sign::Positive, Sign::Negative) | (Sign::Negative, Sign::Positive) => {
-                let s = rhs.sign;
-                self.overflowing_sum(rhs, s)
-            }
-        }
+        })+
     }
 }
-ref_val_ops!(Add, Integer);
 
-impl Sub for &Integer {
-    type Output = Integer;
+impl_int_add! {
+    Integer, Integer, convert::identity, convert::identity;
+    Integer, &Integer, convert::identity, Integer::clone;
+    &Integer, Integer, Integer::clone, convert::identity;
+    &Integer, &Integer, Integer::clone, Integer::clone;
+}
 
-    fn sub(self, rhs: Self) -> Self::Output {
-        match (&self.sign, &rhs.sign) {
-            (_, Sign::Zero) => self.clone(),
-            (Sign::Zero, _) => -rhs,
-            (Sign::Positive, Sign::Positive) | (Sign::Negative, Sign::Negative) => {
-                let s = -self.sign;
-                self.overflowing_sum(rhs, s)
+macro_rules! impl_int_sub {
+    ($($this:ty, $that:ty, $subz:expr);+ $(;)?) => {
+        $(impl Sub<$that> for $this {
+            type Output = Integer;
+
+            fn sub(self, rhs: $that) -> Self::Output {
+                match (self.sign, rhs.sign) {
+                    (_, Sign::Zero) => $subz(self),
+                    (Sign::Zero, _) => -rhs,
+                    (Sign::Positive, Sign::Positive) | (Sign::Negative, Sign::Negative) => {
+                        let s = -self.sign;
+                        self.overflowing_sum(&rhs, s)
+                    }
+                    (Sign::Positive, Sign::Negative) | (Sign::Negative, Sign::Positive) => {
+                        self.safe_sum(&rhs)
+                    }
+                }
             }
-            (Sign::Positive, Sign::Negative) | (Sign::Negative, Sign::Positive) => {
-                self.safe_sum(rhs)
-            }
-        }
+        })+
     }
 }
-ref_val_ops!(Sub, Integer);
 
-impl Mul for &Integer {
+impl_int_sub! {
+    Integer, Integer, convert::identity;
+    Integer, &Integer, convert::identity;
+    &Integer, Integer, Integer::clone;
+    &Integer, &Integer, Integer::clone;
+}
+
+impl<Rhs: Borrow<Integer>> Mul<Rhs> for &Integer {
     type Output = Integer;
 
-    fn mul(self, rhs: Self) -> Self::Output {
-        match self.sign * rhs.sign {
+    fn mul(self, rhs: Rhs) -> Self::Output {
+        match self.sign * rhs.borrow().sign {
             Sign::Zero => Integer::zero(),
-            s => Integer::new(&self.precision * &rhs.precision, s),
+            s => Integer::new(&self.precision * &rhs.borrow().precision, s),
         }
     }
 }
-ref_val_ops!(Mul, Integer);
+
+impl<Rhs: Borrow<Integer>> Mul<Rhs> for Integer {
+    type Output = Self;
+
+    fn mul(self, rhs: Rhs) -> Self::Output {
+        self.borrow() * rhs.borrow()
+    }
+}
 
 macro_rules! impl_int_div {
     ($($this:ty, $that:ty, $op:expr);+ $(;)?) => {
