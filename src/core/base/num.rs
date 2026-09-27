@@ -176,7 +176,7 @@ fn floor_qr(args: &[Value], _env: &Frame) -> EvalResult {
     exact_division(
         first(args),
         super::second(args),
-        Integer::into_floor_quotrem,
+        Integer::to_floor_quotrem,
         into_quotrem,
     )
 }
@@ -185,7 +185,7 @@ fn floor_quotient(args: &[Value], _env: &Frame) -> EvalResult {
     exact_division(
         first(args),
         super::second(args),
-        Integer::into_floor_quotient,
+        Integer::to_floor_quotient,
         into_quotient,
     )
 }
@@ -194,7 +194,7 @@ fn floor_remainder(args: &[Value], _env: &Frame) -> EvalResult {
     exact_division(
         first(args),
         super::second(args),
-        Integer::into_floor_rem,
+        Integer::to_floor_rem,
         into_remainder,
     )
 }
@@ -203,7 +203,7 @@ fn truncate_qr(args: &[Value], _env: &Frame) -> EvalResult {
     exact_division(
         first(args),
         super::second(args),
-        Integer::into_truncate_quotrem,
+        Integer::to_truncate_quotrem,
         into_quotrem,
     )
 }
@@ -212,7 +212,7 @@ fn truncate_quotient(args: &[Value], _env: &Frame) -> EvalResult {
     exact_division(
         first(args),
         super::second(args),
-        Integer::into_truncate_quotient,
+        Integer::to_truncate_quotient,
         into_quotient,
     )
 }
@@ -221,7 +221,7 @@ fn truncate_remainder(args: &[Value], _env: &Frame) -> EvalResult {
     exact_division(
         first(args),
         super::second(args),
-        Integer::into_truncate_rem,
+        Integer::to_truncate_rem,
         into_remainder,
     )
 }
@@ -412,7 +412,7 @@ fn exact_factor_op(
         })
         .map(|n| {
             if float_taint {
-                Value::real(n.into_inexact())
+                Value::real(n.to_inexact())
             } else {
                 Value::real(n)
             }
@@ -422,7 +422,7 @@ fn exact_factor_op(
 fn exact_division<R>(
     a: &Value,
     b: &Value,
-    div: impl FnOnce(Integer, Integer) -> Result<R, NumericError>,
+    div: impl FnOnce(&Integer, &Integer) -> Result<R, NumericError>,
     map: impl FnOnce(bool, bool, R) -> EvalResult,
 ) -> EvalResult {
     let ra = arg_to_real(a, FIRST_ARG_LABEL, NumericTypeName::INTEGER)?;
@@ -437,7 +437,7 @@ fn exact_division<R>(
         .clone()
         .try_into_exact_integer()
         .map_err(|err| Exception::signal(Condition::value_error(err, b)))?;
-    div(n, d).map_or_else(
+    div(&n, &d).map_or_else(
         |err| Err(Condition::value_error(err, b).into()),
         |r| map(float_taint, negdiv, r),
     )
@@ -447,13 +447,13 @@ fn exact_division<R>(
 fn into_quotrem(float_taint: bool, negdiv: bool, (q, r): (Integer, Integer)) -> EvalResult {
     Ok(Value::reals(
         if float_taint {
-            let qr = q.into_inexact();
+            let qr = q.to_inexact();
             if negdiv && qr.is_zero() { -qr } else { qr }
         } else {
             q.into()
         },
         if float_taint {
-            r.into_inexact()
+            r.to_inexact()
         } else {
             r.into()
         },
@@ -461,21 +461,21 @@ fn into_quotrem(float_taint: bool, negdiv: bool, (q, r): (Integer, Integer)) -> 
 }
 
 #[allow(clippy::unnecessary_wraps, reason = "infallible helper")]
-fn into_quotient(float_taint: bool, negdiv: bool, q: Integer) -> EvalResult {
+fn into_quotient(float_taint: bool, negdiv: bool, n: Integer) -> EvalResult {
     Ok(if float_taint {
-        let qr = q.into_inexact();
+        let qr = n.to_inexact();
         Value::real(if negdiv && qr.is_zero() { -qr } else { qr })
     } else {
-        Value::real(q)
+        Value::real(n)
     })
 }
 
 #[allow(clippy::unnecessary_wraps, reason = "infallible helper")]
-fn into_remainder(float_taint: bool, _negdiv: bool, r: Integer) -> EvalResult {
+fn into_remainder(float_taint: bool, _negdiv: bool, n: Integer) -> EvalResult {
     Ok(if float_taint {
-        Value::real(r.into_inexact())
+        Value::real(n.to_inexact())
     } else {
-        Value::real(r)
+        Value::real(n)
     })
 }
 

@@ -79,18 +79,39 @@ macro_rules! sign_from {
 }
 
 macro_rules! impl_val_op {
-    (Add, $type:ident) => { impl_val_op!(@imp Add, $type, add, +); };
-    (Sub, $type:ident) => { impl_val_op!(@imp Sub, $type, sub, -); };
-    (Mul, $type:ident) => { impl_val_op!(@imp Mul, $type, mul, *); };
-    (Div, $type:ident) => { impl_val_op!(@imp Div, $type, div, /); };
-    (Rem, $type:ident) => { impl_val_op!(@imp Rem, $type, rem, %); };
+    (Add, $type:ty) => { impl_val_op!(@imp Add, $type, $type, add, +); };
+    (Sub, $type:ty) => { impl_val_op!(@imp Sub, $type, $type, sub, -); };
+    (Mul, $type:ty) => { impl_val_op!(@imp Mul, $type, $type, mul, *); };
+    (Div, $type:ty) => { impl_val_op!(@imp Div, $type, $type, div, /); };
+    (Rem, $type:ty) => { impl_val_op!(@imp Rem, $type, $type, rem, %); };
+    (Add, $type:ty, $out:ty) => { impl_val_op!(@imp Add, $type, $out, add, +); };
+    (Sub, $type:ty, $out:ty) => { impl_val_op!(@imp Sub, $type, $out, sub, -); };
+    (Mul, $type:ty, $out:ty) => { impl_val_op!(@imp Mul, $type, $out, mul, *); };
+    (Div, $type:ty, $out:ty) => { impl_val_op!(@imp Div, $type, $out, div, /); };
+    (Rem, $type:ty, $out:ty) => { impl_val_op!(@imp Rem, $type, $out, rem, %); };
 
-    (@imp $imp:ident, $type:ident, $af:ident, $op:tt) => {
+    (@imp $imp:ident, $type:ty, $out:ty, $af:ident, $op:tt) => {
         impl $imp for $type {
-            type Output = Self;
+            type Output = $out;
 
-            fn $af(self, rhs: Self) -> Self::Output {
+            fn $af(self, rhs: $type) -> Self::Output {
                 &self $op &rhs
+            }
+        }
+
+        impl $imp<&$type> for $type {
+            type Output = $out;
+
+            fn $af(self, rhs: &$type) -> Self::Output {
+                &self $op rhs
+            }
+        }
+
+        impl $imp<$type> for &$type {
+            type Output = $out;
+
+            fn $af(self, rhs: $type) -> Self::Output {
+                self $op &rhs
             }
         }
     };
@@ -814,7 +835,7 @@ impl Real {
     pub(crate) fn into_inexact(self) -> Self {
         match self {
             Self::Float(_) => self,
-            Self::Integer(n) => n.into_inexact(),
+            Self::Integer(n) => n.to_inexact(),
             Self::Rational(q) => q.into_inexact(),
         }
     }
@@ -822,7 +843,7 @@ impl Real {
     pub(crate) fn into_abs(self) -> Self {
         match self {
             Self::Float(f) => f.abs().into(),
-            Self::Integer(n) => n.into_abs().into(),
+            Self::Integer(n) => n.to_abs().into(),
             Self::Rational(q) => Self::Rational(q.into_abs()),
         }
     }
@@ -989,7 +1010,7 @@ impl Real {
     fn try_into_reciprocal(self) -> RealResult {
         match self {
             Self::Float(f) => Ok(f.recip().into()),
-            Self::Integer(n) => n.try_into_reciprocal(),
+            Self::Integer(n) => n.try_to_reciprocal(),
             Self::Rational(q) => q.try_into_reciprocal(),
         }
     }
@@ -1148,7 +1169,7 @@ impl Rational {
     }
 
     fn into_abs(mut self) -> Self {
-        self.0.0 = self.0.0.into_abs();
+        self.0.0 = self.0.0.to_abs();
         self
     }
 
@@ -1308,7 +1329,7 @@ impl PartialOrd<Real> for Rational {
     fn partial_cmp(&self, other: &Real) -> Option<Ordering> {
         match other {
             Real::Float(f) => exact_cmp_inexact!(self, partial_cmp, other, f),
-            Real::Integer(n) => self.partial_cmp(&n.clone().into_rational()),
+            Real::Integer(n) => self.partial_cmp(&n.to_rational()),
             Real::Rational(q) => self.partial_cmp(q),
         }
     }
@@ -1320,7 +1341,7 @@ impl Add<Real> for Rational {
     fn add(self, rhs: Real) -> Self::Output {
         match rhs {
             Real::Float(f) => (self.to_float() + f).into(),
-            Real::Integer(n) => self.add(n.into_rational()),
+            Real::Integer(n) => self.add(n.to_rational()),
             Real::Rational(q) => self.add(q),
         }
     }
@@ -1332,7 +1353,7 @@ impl Sub<Real> for Rational {
     fn sub(self, rhs: Real) -> Self::Output {
         match rhs {
             Real::Float(f) => (self.to_float() - f).into(),
-            Real::Integer(n) => self.sub(n.into_rational()),
+            Real::Integer(n) => self.sub(n.to_rational()),
             Real::Rational(q) => self.sub(q),
         }
     }
@@ -1344,7 +1365,7 @@ impl Mul<Real> for Rational {
     fn mul(self, rhs: Real) -> Self::Output {
         match rhs {
             Real::Float(f) => (self.to_float() * f).into(),
-            Real::Integer(n) => self.mul(n.into_rational()),
+            Real::Integer(n) => self.mul(n.to_rational()),
             Real::Rational(q) => self.mul(q),
         }
     }
@@ -1357,7 +1378,7 @@ impl Div<Real> for Rational {
         Ok(match rhs {
             // need this because (q * f.recip()) ends up losing precision
             Real::Float(f) => (self.to_float() / f).into(),
-            Real::Integer(n) => self.mul(n.try_into_reciprocal()?),
+            Real::Integer(n) => self.mul(n.try_to_reciprocal()?),
             Real::Rational(q) => self.mul(q.try_into_reciprocal()?),
         })
     }
@@ -1422,11 +1443,11 @@ impl Integer {
         }
     }
 
-    pub(crate) fn into_inexact(self) -> Real {
+    pub(crate) fn to_inexact(&self) -> Real {
         Real::Float(self.to_float())
     }
 
-    pub(crate) fn into_truncate_quotient(self, rhs: Self) -> IntResult {
+    pub(crate) fn to_truncate_quotient(&self, rhs: &Self) -> IntResult {
         if rhs.is_zero() {
             Err(NumericError::DivideByZero)
         } else {
@@ -1434,18 +1455,15 @@ impl Integer {
         }
     }
 
-    pub(crate) fn into_truncate_rem(self, rhs: Self) -> IntResult {
+    pub(crate) fn to_truncate_rem(&self, rhs: &Self) -> IntResult {
         self % rhs
     }
 
-    pub(crate) fn into_truncate_quotrem(self, rhs: Self) -> Result<(Self, Self), NumericError> {
-        Ok((
-            self.clone().into_truncate_quotient(rhs.clone())?,
-            (self % rhs)?,
-        ))
+    pub(crate) fn to_truncate_quotrem(&self, rhs: &Self) -> Result<(Self, Self), NumericError> {
+        Ok((self.to_truncate_quotient(rhs)?, (self % rhs)?))
     }
 
-    pub(crate) fn into_floor_quotient(self, rhs: Self) -> IntResult {
+    pub(crate) fn to_floor_quotient(&self, rhs: &Self) -> IntResult {
         if rhs.is_zero() {
             Err(NumericError::DivideByZero)
         } else {
@@ -1453,17 +1471,17 @@ impl Integer {
         }
     }
 
-    pub(crate) fn into_floor_rem(self, rhs: Self) -> IntResult {
-        let (_, r) = self.into_floor_quotrem(rhs)?;
+    pub(crate) fn to_floor_rem(&self, rhs: &Self) -> IntResult {
+        let (_, r) = self.to_floor_quotrem(rhs)?;
         Ok(r)
     }
 
-    pub(crate) fn into_floor_quotrem(self, rhs: Self) -> Result<(Self, Self), NumericError> {
+    pub(crate) fn to_floor_quotrem(&self, rhs: &Self) -> Result<(Self, Self), NumericError> {
         if rhs.is_zero() {
             return Err(NumericError::DivideByZero);
         }
-        let q = self.clone().div_floor(rhs.clone());
-        let r = self - (q.clone() * rhs);
+        let q = self.div_floor(rhs);
+        let r = self - (&q * rhs);
         Ok((q, r))
     }
 
@@ -1509,6 +1527,81 @@ impl Integer {
         }
     }
 
+    fn to_rational(&self) -> Rational {
+        Rational((self.clone(), Self::one()).into())
+    }
+
+    fn to_abs(&self) -> Self {
+        let mut a = self.clone();
+        a.make_positive();
+        a
+    }
+
+    fn try_to_reciprocal(&self) -> RealResult {
+        Self::one() / self
+    }
+
+    fn safe_sum(&self, rhs: &Self) -> Self {
+        let sum = &self.precision + &rhs.precision;
+        Self::new(sum, self.sign)
+    }
+
+    fn overflowing_sum(&self, rhs: &Self, ovf_sign: Sign) -> Self {
+        let (sign, sum) = if self.precision < rhs.precision {
+            (ovf_sign, &rhs.precision - &self.precision)
+        } else {
+            (self.sign, &self.precision - &rhs.precision)
+        };
+        Self::new(sum, sign)
+    }
+
+    fn sqrt(&self) -> Real {
+        if self.is_zero() {
+            self.clone().into()
+        } else if let Some(p) = self.precision.isqrt() {
+            Self::new(p, self.sign).into()
+        } else {
+            sign_preserving_sqrt(self.to_float()).into()
+        }
+    }
+
+    fn copysign(&self, sign: f64) -> Self {
+        Self::new(self.precision.clone(), sign)
+    }
+
+    // All of the following exact-division operations assume arguments come
+    // from well-formed arguments, i.e. no zero divisor.
+    fn div_floor(&self, rhs: &Self) -> Self {
+        self.div_exact(rhs, Precision::div, Precision::div_ceil)
+    }
+
+    fn div_ceiling(&self, rhs: &Self) -> Self {
+        self.div_exact(rhs, Precision::div_ceil, Precision::div)
+    }
+
+    fn div_truncate(&self, rhs: &Self) -> Self {
+        self.div_exact(rhs, Precision::div, Precision::div)
+    }
+
+    fn div_round(&self, rhs: &Self) -> Self {
+        self.div_exact(rhs, Precision::div_round, Precision::div_round)
+    }
+
+    fn div_exact(
+        &self,
+        rhs: &Self,
+        pos: impl FnOnce(&Precision, &Precision) -> Precision,
+        neg: impl FnOnce(&Precision, &Precision) -> Precision,
+    ) -> Self {
+        debug_assert!(!rhs.is_zero());
+        let s = self.sign * rhs.sign;
+        match s {
+            Sign::Negative => Self::new(neg(&self.precision, &rhs.precision), s),
+            Sign::Positive => Self::new(pos(&self.precision, &rhs.precision), s),
+            Sign::Zero => Self::zero(),
+        }
+    }
+
     int_convert!(
         try_to_i32,
         i32,
@@ -1550,80 +1643,6 @@ impl Integer {
     fn reduce(&mut self, other: &mut Self) {
         self.precision.reduce(&mut other.precision);
     }
-
-    fn into_rational(self) -> Rational {
-        Rational((self, Self::one()).into())
-    }
-
-    fn into_abs(mut self) -> Self {
-        self.make_positive();
-        self
-    }
-
-    fn try_into_reciprocal(self) -> RealResult {
-        Real::reduce(Self::one(), self)
-    }
-
-    fn safe_sum(self, rhs: Self) -> Self {
-        let sum = self.precision + rhs.precision;
-        Self::new(sum, self.sign)
-    }
-
-    fn overflowing_sum(self, rhs: Self, ovf_sign: Sign) -> Self {
-        let (sign, sum) = if self.precision < rhs.precision {
-            (ovf_sign, rhs.precision - self.precision)
-        } else {
-            (self.sign, self.precision - rhs.precision)
-        };
-        Self::new(sum, sign)
-    }
-
-    fn sqrt(self) -> Real {
-        if self.is_zero() {
-            self.into()
-        } else if let Some(p) = self.precision.isqrt() {
-            Self::new(p, self.sign).into()
-        } else {
-            sign_preserving_sqrt(self.to_float()).into()
-        }
-    }
-
-    fn copysign(self, sign: f64) -> Self {
-        Self::new(self.precision, sign)
-    }
-
-    // All of the following exact-division operations assume arguments come
-    // from well-formed arguments, i.e. no zero divisor.
-    fn div_floor(self, rhs: Self) -> Self {
-        self.div_exact(rhs, Precision::div, Precision::div_ceil)
-    }
-
-    fn div_ceiling(self, rhs: Self) -> Self {
-        self.div_exact(rhs, Precision::div_ceil, Precision::div)
-    }
-
-    fn div_truncate(self, rhs: Self) -> Self {
-        self.div_exact(rhs, Precision::div, Precision::div)
-    }
-
-    fn div_round(self, rhs: Self) -> Self {
-        self.div_exact(rhs, Precision::div_round, Precision::div_round)
-    }
-
-    fn div_exact(
-        self,
-        rhs: Self,
-        pos: impl FnOnce(&Precision, &Precision) -> Precision,
-        neg: impl FnOnce(&Precision, &Precision) -> Precision,
-    ) -> Self {
-        debug_assert!(!rhs.is_zero());
-        let s = self.sign * rhs.sign;
-        match s {
-            Sign::Negative => Self::new(neg(&self.precision, &rhs.precision), s),
-            Sign::Positive => Self::new(pos(&self.precision, &rhs.precision), s),
-            Sign::Zero => Self::zero(),
-        }
-    }
 }
 
 impl PartialOrd for Integer {
@@ -1654,13 +1673,21 @@ impl Neg for Integer {
     }
 }
 
-impl Add for Integer {
-    type Output = Self;
+impl Neg for &Integer {
+    type Output = Integer;
+
+    fn neg(self) -> Self::Output {
+        -self.clone()
+    }
+}
+
+impl Add for &Integer {
+    type Output = Integer;
 
     fn add(self, rhs: Self) -> Self::Output {
         match (&self.sign, &rhs.sign) {
-            (_, Sign::Zero) => self,
-            (Sign::Zero, _) => rhs,
+            (_, Sign::Zero) => self.clone(),
+            (Sign::Zero, _) => rhs.clone(),
             (Sign::Positive, Sign::Positive) | (Sign::Negative, Sign::Negative) => {
                 self.safe_sum(rhs)
             }
@@ -1671,13 +1698,14 @@ impl Add for Integer {
         }
     }
 }
+impl_val_op!(Add, Integer);
 
-impl Sub for Integer {
-    type Output = Self;
+impl Sub for &Integer {
+    type Output = Integer;
 
     fn sub(self, rhs: Self) -> Self::Output {
         match (&self.sign, &rhs.sign) {
-            (_, Sign::Zero) => self,
+            (_, Sign::Zero) => self.clone(),
             (Sign::Zero, _) => -rhs,
             (Sign::Positive, Sign::Positive) | (Sign::Negative, Sign::Negative) => {
                 let s = -self.sign;
@@ -1689,17 +1717,19 @@ impl Sub for Integer {
         }
     }
 }
+impl_val_op!(Sub, Integer);
 
-impl Mul for Integer {
-    type Output = Self;
+impl Mul for &Integer {
+    type Output = Integer;
 
     fn mul(self, rhs: Self) -> Self::Output {
         match self.sign * rhs.sign {
-            Sign::Zero => Self::zero(),
-            s => Self::new(self.precision * rhs.precision, s),
+            Sign::Zero => Integer::zero(),
+            s => Integer::new(&self.precision * &rhs.precision, s),
         }
     }
 }
+impl_val_op!(Mul, Integer);
 
 impl Div for Integer {
     type Output = RealResult;
@@ -1709,16 +1739,41 @@ impl Div for Integer {
     }
 }
 
-impl Rem for Integer {
+impl Div<&Integer> for Integer {
+    type Output = RealResult;
+
+    fn div(self, rhs: &Integer) -> Self::Output {
+        self / rhs.clone()
+    }
+}
+
+impl Div for &Integer {
+    type Output = RealResult;
+
+    fn div(self, rhs: Self) -> Self::Output {
+        self.clone() / rhs.clone()
+    }
+}
+
+impl Div<Integer> for &Integer {
+    type Output = RealResult;
+
+    fn div(self, rhs: Integer) -> Self::Output {
+        self.clone() / rhs
+    }
+}
+
+impl Rem for &Integer {
     type Output = IntResult;
 
     fn rem(self, rhs: Self) -> Self::Output {
         if rhs.is_zero() {
             return Err(NumericError::DivideByZero);
         }
-        Ok(Self::new(self.precision % rhs.precision, self.sign))
+        Ok(Integer::new(&self.precision % &rhs.precision, self.sign))
     }
 }
+impl_val_op!(Rem, Integer, IntResult);
 
 impl Display for Integer {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
@@ -1755,7 +1810,7 @@ impl PartialOrd<Real> for Integer {
         match other {
             Real::Float(f) => exact_cmp_inexact!(self, partial_cmp, other, f),
             Real::Integer(n) => self.partial_cmp(n),
-            Real::Rational(q) => self.clone().into_rational().partial_cmp(q),
+            Real::Rational(q) => self.to_rational().partial_cmp(q),
         }
     }
 }
@@ -1771,7 +1826,7 @@ impl Add<Real> for Integer {
             Real::Float(_) if self.is_zero() => rhs,
             Real::Float(f) => (self.to_float() + f).into(),
             Real::Integer(n) => self.add(n).into(),
-            Real::Rational(q) => self.into_rational() + q,
+            Real::Rational(q) => self.to_rational() + q,
         }
     }
 }
@@ -1786,7 +1841,7 @@ impl Sub<Real> for Integer {
             Real::Float(_) if self.is_zero() => -rhs,
             Real::Float(f) => (self.to_float() - f).into(),
             Real::Integer(n) => self.sub(n).into(),
-            Real::Rational(q) => self.into_rational() - q,
+            Real::Rational(q) => self.to_rational() - q,
         }
     }
 }
@@ -1800,7 +1855,7 @@ impl Mul<Real> for Integer {
             Real::Float(_) if self.is_zero() => self.into(),
             Real::Float(f) => (self.to_float() * f).into(),
             Real::Integer(n) => self.mul(n).into(),
-            Real::Rational(q) => self.into_rational() * q,
+            Real::Rational(q) => self.to_rational() * q,
         }
     }
 }

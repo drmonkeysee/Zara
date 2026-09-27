@@ -166,7 +166,7 @@ impl FloatSpec {
 trait RadixPrivate {
     fn parse_inexact<R: Radix>(spec: IntSpec<R>, input: &str) -> RealResult {
         // always parse exact magnitude first to account for radix
-        Ok(parse_signed(&spec, input)?.into_inexact())
+        Ok(parse_signed(&spec, input)?.to_inexact())
     }
 }
 
