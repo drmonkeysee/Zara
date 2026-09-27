@@ -752,8 +752,8 @@ impl Real {
 
     // assume divisor is a factor of dividend, so reduction ensures an Integer;
     // will panic if assumption does not hold.
-    fn exact_quotient(dividend: impl Into<Integer>, divisor: impl Into<Integer>) -> Integer {
-        let r = assume_safe_div!(Self::reduce(dividend, divisor));
+    fn exact_quotient(dividend: &Integer, divisor: &Integer) -> Integer {
+        let r = assume_safe_div!(Self::reduce(dividend.clone(), divisor.clone()));
         let Self::Integer(n) = r else {
             unreachable!("unexpected non-factor divisor");
         };
@@ -836,7 +836,7 @@ impl Real {
         match self {
             Self::Float(_) => self,
             Self::Integer(n) => n.to_inexact(),
-            Self::Rational(q) => q.into_inexact(),
+            Self::Rational(q) => q.to_inexact(),
         }
     }
 
@@ -844,7 +844,7 @@ impl Real {
         match self {
             Self::Float(f) => f.abs().into(),
             Self::Integer(n) => n.to_abs().into(),
-            Self::Rational(q) => Self::Rational(q.into_abs()),
+            Self::Rational(q) => Self::Rational(q.to_abs()),
         }
     }
 
@@ -852,7 +852,7 @@ impl Real {
         match self {
             Self::Float(f) => f.floor().into(),
             Self::Integer(_) => self,
-            Self::Rational(q) => q.into_floor().into(),
+            Self::Rational(q) => q.to_floor().into(),
         }
     }
 
@@ -860,7 +860,7 @@ impl Real {
         match self {
             Self::Float(f) => f.ceil().into(),
             Self::Integer(_) => self,
-            Self::Rational(q) => q.into_ceiling().into(),
+            Self::Rational(q) => q.to_ceiling().into(),
         }
     }
 
@@ -868,7 +868,7 @@ impl Real {
         match self {
             Self::Float(f) => f.trunc().into(),
             Self::Integer(_) => self,
-            Self::Rational(q) => q.into_truncate().into(),
+            Self::Rational(q) => q.to_truncate().into(),
         }
     }
 
@@ -876,7 +876,7 @@ impl Real {
         match self {
             Self::Float(f) => f.round().into(),
             Self::Integer(_) => self,
-            Self::Rational(q) => q.into_round().into(),
+            Self::Rational(q) => q.to_round().into(),
         }
     }
 
@@ -900,7 +900,7 @@ impl Real {
         Ok(match self {
             Self::Float(_) => self.try_into_exact()?.try_into_numerator()?.into_inexact(),
             Self::Integer(_) => self,
-            Self::Rational(q) => q.into_numerator().into(),
+            Self::Rational(q) => q.to_numerator().into(),
         })
     }
 
@@ -911,7 +911,7 @@ impl Real {
                 .try_into_denominator()?
                 .into_inexact(),
             Self::Integer(_) => Integer::one().into(),
-            Self::Rational(q) => q.into_denominator().into(),
+            Self::Rational(q) => q.to_denominator().into(),
         })
     }
 
@@ -1011,7 +1011,7 @@ impl Real {
         match self {
             Self::Float(f) => Ok(f.recip().into()),
             Self::Integer(n) => n.try_to_reciprocal(),
-            Self::Rational(q) => q.try_into_reciprocal(),
+            Self::Rational(q) => q.try_to_reciprocal(),
         }
     }
 
@@ -1164,49 +1164,48 @@ impl Rational {
         r.0.to_float() / r.1.to_float()
     }
 
-    fn into_inexact(self) -> Real {
+    fn to_inexact(&self) -> Real {
         self.to_float().into()
     }
 
-    fn into_abs(mut self) -> Self {
-        self.0.0 = self.0.0.to_abs();
-        self
+    fn to_abs(&self) -> Self {
+        Self((self.0.0.to_abs(), self.0.1.clone()).into())
     }
 
-    fn into_numerator(self) -> Integer {
-        self.0.0
+    fn to_numerator(&self) -> Integer {
+        self.0.0.clone()
     }
 
-    fn into_denominator(self) -> Integer {
-        self.0.1
+    fn to_denominator(&self) -> Integer {
+        self.0.1.clone()
     }
 
-    fn into_parts(self) -> (Integer, Integer) {
-        (self.0.0, self.0.1)
+    fn get_parts(&self) -> (&Integer, &Integer) {
+        (&self.0.0, &self.0.1)
     }
 
-    fn into_floor(self) -> Integer {
-        let (n, d) = self.into_parts();
+    fn to_floor(&self) -> Integer {
+        let (n, d) = self.get_parts();
         n.div_floor(d)
     }
 
-    fn into_ceiling(self) -> Integer {
-        let (n, d) = self.into_parts();
+    fn to_ceiling(&self) -> Integer {
+        let (n, d) = self.get_parts();
         n.div_ceiling(d)
     }
 
-    fn into_truncate(self) -> Integer {
-        let (n, d) = self.into_parts();
+    fn to_truncate(&self) -> Integer {
+        let (n, d) = self.get_parts();
         n.div_truncate(d)
     }
 
-    fn into_round(self) -> Integer {
-        let (n, d) = self.into_parts();
+    fn to_round(&self) -> Integer {
+        let (n, d) = self.get_parts();
         n.div_round(d)
     }
 
-    fn try_into_reciprocal(self) -> RealResult {
-        Real::reduce(self.0.1, self.0.0)
+    fn try_to_reciprocal(&self) -> RealResult {
+        Real::reduce(self.0.1.clone(), self.0.0.clone())
     }
 
     // a/b ± c/d = (ad ± cb)/bd except cross-reduce with gcd and lcm to lessen
@@ -1215,21 +1214,21 @@ impl Rational {
     // is wired up correctly this will only be called with canonical rationals
     // or integer reciprocals.
     #[allow(clippy::many_single_char_names)]
-    fn additive_op(self, rhs: Self, op: impl FnOnce(Integer, Integer) -> Integer) -> Real {
-        let (a, b) = self.into_parts();
-        let (c, d) = rhs.into_parts();
-        let g = b.gcd(&d);
-        let m = b.lcm(&d);
+    fn additive_op(&self, rhs: &Self, op: impl FnOnce(&Integer, &Integer) -> Integer) -> Real {
+        let (a, b) = self.get_parts();
+        let (c, d) = rhs.get_parts();
+        let g = b.gcd(d);
+        let m = b.lcm(d);
         debug_assert!(!g.is_zero());
         debug_assert!(!m.is_zero());
-        let ad = a * Real::exact_quotient(d, g.clone());
-        let cb = c * Real::exact_quotient(b, g);
-        assume_safe_div!(op(ad, cb) / m)
+        let ad = a * Real::exact_quotient(d, &g);
+        let cb = c * Real::exact_quotient(b, &g);
+        assume_safe_div!(op(&ad, &cb) / m)
     }
 
-    fn sqrt(self) -> Real {
-        let (n, d) = self.into_parts();
-        match (n.clone().sqrt(), d.clone().sqrt()) {
+    fn sqrt(&self) -> Real {
+        let (n, d) = self.get_parts();
+        match (n.sqrt(), d.sqrt()) {
             (Real::Float(_), _) | (_, Real::Float(_)) => {
                 sign_preserving_sqrt(n.to_float() / d.to_float()).into()
             }
@@ -1241,9 +1240,9 @@ impl Rational {
         }
     }
 
-    fn copysign(self, sign: f64) -> Self {
-        let (n, d) = self.into_parts();
-        Self((n.copysign(sign), d).into())
+    fn copysign(&self, sign: f64) -> Self {
+        let (n, d) = self.get_parts();
+        Self((n.copysign(sign), d.clone()).into())
     }
 }
 
@@ -1256,8 +1255,8 @@ impl PartialOrd for Rational {
 impl Ord for Rational {
     // a/b < c/d => ad < cb
     fn cmp(&self, other: &Self) -> Ordering {
-        let (a, b) = self.clone().into_parts();
-        let (c, d) = other.clone().into_parts();
+        let (a, b) = self.get_parts();
+        let (c, d) = other.get_parts();
         (a * d).cmp(&(c * b))
     }
 }
@@ -1270,23 +1269,33 @@ impl Neg for Rational {
     }
 }
 
-impl Add for Rational {
+impl Neg for &Rational {
+    type Output = Rational;
+
+    fn neg(self) -> Self::Output {
+        -self.clone()
+    }
+}
+
+impl Add for &Rational {
     type Output = Real;
 
     fn add(self, rhs: Self) -> Self::Output {
         self.additive_op(rhs, Integer::add)
     }
 }
+impl_val_op!(Add, Rational, Real);
 
-impl Sub for Rational {
+impl Sub for &Rational {
     type Output = Real;
 
     fn sub(self, rhs: Self) -> Self::Output {
         self.additive_op(rhs, Integer::sub)
     }
 }
+impl_val_op!(Sub, Rational, Real);
 
-impl Mul for Rational {
+impl Mul for &Rational {
     type Output = Real;
 
     // a/b * c/d = ac/bd except cross-reduce with gcds first to lessen
@@ -1295,17 +1304,18 @@ impl Mul for Rational {
     // is wired up correctly this will only be called with canonical rationals
     // or integer reciprocals.
     fn mul(self, rhs: Self) -> Self::Output {
-        let (a, b) = self.into_parts();
-        let (c, d) = rhs.into_parts();
-        let (g1, g2) = (a.gcd(&d), c.gcd(&b));
+        let (a, b) = self.get_parts();
+        let (c, d) = rhs.get_parts();
+        let (g1, g2) = (a.gcd(d), c.gcd(b));
         debug_assert!(!g1.is_zero());
         debug_assert!(!g2.is_zero());
         assume_safe_div!(Real::reduce(
-            Real::exact_quotient(a, g1.clone()) * Real::exact_quotient(c, g2.clone()),
-            Real::exact_quotient(b, g2) * Real::exact_quotient(d, g1),
+            Real::exact_quotient(a, &g1) * Real::exact_quotient(c, &g2),
+            Real::exact_quotient(b, &g2) * Real::exact_quotient(d, &g1),
         ))
     }
 }
+impl_val_op!(Mul, Rational, Real);
 
 impl Display for Rational {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
@@ -1379,7 +1389,7 @@ impl Div<Real> for Rational {
             // need this because (q * f.recip()) ends up losing precision
             Real::Float(f) => (self.to_float() / f).into(),
             Real::Integer(n) => self.mul(n.try_to_reciprocal()?),
-            Real::Rational(q) => self.mul(q.try_into_reciprocal()?),
+            Real::Rational(q) => self.mul(q.try_to_reciprocal()?),
         })
     }
 }
@@ -1600,6 +1610,14 @@ impl Integer {
             Sign::Positive => Self::new(pos(&self.precision, &rhs.precision), s),
             Sign::Zero => Self::zero(),
         }
+    }
+
+    // convenience wrappers for passing Op impls as closures
+    fn add(&self, rhs: &Self) -> Self {
+        self + rhs
+    }
+    fn sub(&self, rhs: &Self) -> Self {
+        self - rhs
     }
 
     int_convert!(
@@ -1870,7 +1888,7 @@ impl Div<Real> for Integer {
             Real::Float(_) if self.is_zero() => Ok(self.into()),
             Real::Float(f) => Ok((self.to_float() / f).into()),
             Real::Integer(n) => self.div(n),
-            Real::Rational(q) => Ok(self * q.try_into_reciprocal()?),
+            Real::Rational(q) => Ok(self * q.try_to_reciprocal()?),
         }
     }
 }
@@ -2119,7 +2137,7 @@ impl Precision {
         }
     }
 
-    // convenience wrapper for passing Div impl as closure
+    // convenience wrappers for passing Op impls as closures
     fn div(&self, rhs: &Self) -> Self {
         self / rhs
     }
