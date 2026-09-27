@@ -78,17 +78,17 @@ macro_rules! sign_from {
     };
 }
 
-macro_rules! impl_val_op {
-    (Add, $type:ty) => { impl_val_op!(@imp Add, $type, $type, add, +); };
-    (Sub, $type:ty) => { impl_val_op!(@imp Sub, $type, $type, sub, -); };
-    (Mul, $type:ty) => { impl_val_op!(@imp Mul, $type, $type, mul, *); };
-    (Div, $type:ty) => { impl_val_op!(@imp Div, $type, $type, div, /); };
-    (Rem, $type:ty) => { impl_val_op!(@imp Rem, $type, $type, rem, %); };
-    (Add, $type:ty, $out:ty) => { impl_val_op!(@imp Add, $type, $out, add, +); };
-    (Sub, $type:ty, $out:ty) => { impl_val_op!(@imp Sub, $type, $out, sub, -); };
-    (Mul, $type:ty, $out:ty) => { impl_val_op!(@imp Mul, $type, $out, mul, *); };
-    (Div, $type:ty, $out:ty) => { impl_val_op!(@imp Div, $type, $out, div, /); };
-    (Rem, $type:ty, $out:ty) => { impl_val_op!(@imp Rem, $type, $out, rem, %); };
+macro_rules! ref_val_ops {
+    (Add, $type:ty) => { ref_val_ops!(@imp Add, $type, $type, add, +); };
+    (Sub, $type:ty) => { ref_val_ops!(@imp Sub, $type, $type, sub, -); };
+    (Mul, $type:ty) => { ref_val_ops!(@imp Mul, $type, $type, mul, *); };
+    (Div, $type:ty) => { ref_val_ops!(@imp Div, $type, $type, div, /); };
+    (Rem, $type:ty) => { ref_val_ops!(@imp Rem, $type, $type, rem, %); };
+    (Add, $type:ty, $out:ty) => { ref_val_ops!(@imp Add, $type, $out, add, +); };
+    (Sub, $type:ty, $out:ty) => { ref_val_ops!(@imp Sub, $type, $out, sub, -); };
+    (Mul, $type:ty, $out:ty) => { ref_val_ops!(@imp Mul, $type, $out, mul, *); };
+    (Div, $type:ty, $out:ty) => { ref_val_ops!(@imp Div, $type, $out, div, /); };
+    (Rem, $type:ty, $out:ty) => { ref_val_ops!(@imp Rem, $type, $out, rem, %); };
 
     (@imp $imp:ident, $type:ty, $out:ty, $af:ident, $op:tt) => {
         impl $imp for $type {
@@ -437,7 +437,7 @@ impl Add for &Number {
         }
     }
 }
-impl_val_op!(Add, Number);
+ref_val_ops!(Add, Number);
 
 impl Sub for &Number {
     type Output = Number;
@@ -450,7 +450,7 @@ impl Sub for &Number {
         }
     }
 }
-impl_val_op!(Sub, Number);
+ref_val_ops!(Sub, Number);
 
 impl Mul for &Number {
     type Output = Number;
@@ -462,7 +462,7 @@ impl Mul for &Number {
         }
     }
 }
-impl_val_op!(Mul, Number);
+ref_val_ops!(Mul, Number);
 
 impl Div for &Number {
     type Output = NumResult;
@@ -475,7 +475,7 @@ impl Div for &Number {
         }
     }
 }
-impl_val_op!(Div, Number, NumResult);
+ref_val_ops!(Div, Number, NumResult);
 
 impl Display for Number {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
@@ -589,7 +589,7 @@ impl Sub for &Complex {
         Number::complex(x - u, y - v)
     }
 }
-impl_val_op!(Sub, Complex, Number);
+ref_val_ops!(Sub, Complex, Number);
 
 impl Div for &Complex {
     type Output = NumResult;
@@ -1100,7 +1100,7 @@ impl Add for &Real {
         }
     }
 }
-impl_val_op!(Add, Real);
+ref_val_ops!(Add, Real);
 
 impl Sub for &Real {
     type Output = Real;
@@ -1113,7 +1113,7 @@ impl Sub for &Real {
         }
     }
 }
-impl_val_op!(Sub, Real);
+ref_val_ops!(Sub, Real);
 
 impl Mul for &Real {
     type Output = Real;
@@ -1128,7 +1128,7 @@ impl Mul for &Real {
         }
     }
 }
-impl_val_op!(Mul, Real);
+ref_val_ops!(Mul, Real);
 
 impl Div for &Real {
     type Output = RealResult;
@@ -1143,7 +1143,7 @@ impl Div for &Real {
         }
     }
 }
-impl_val_op!(Div, Real, RealResult);
+ref_val_ops!(Div, Real, RealResult);
 
 impl Display for Real {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
@@ -1312,7 +1312,7 @@ impl Add for &Rational {
         self.additive_op(rhs, Integer::add)
     }
 }
-impl_val_op!(Add, Rational, Real);
+ref_val_ops!(Add, Rational, Real);
 
 impl Sub for &Rational {
     type Output = Real;
@@ -1321,7 +1321,7 @@ impl Sub for &Rational {
         self.additive_op(rhs, Integer::sub)
     }
 }
-impl_val_op!(Sub, Rational, Real);
+ref_val_ops!(Sub, Rational, Real);
 
 impl Mul for &Rational {
     type Output = Real;
@@ -1343,7 +1343,7 @@ impl Mul for &Rational {
         ))
     }
 }
-impl_val_op!(Mul, Rational, Real);
+ref_val_ops!(Mul, Rational, Real);
 
 impl Display for Rational {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
@@ -1744,7 +1744,7 @@ impl Add for &Integer {
         }
     }
 }
-impl_val_op!(Add, Integer);
+ref_val_ops!(Add, Integer);
 
 impl Sub for &Integer {
     type Output = Integer;
@@ -1763,7 +1763,7 @@ impl Sub for &Integer {
         }
     }
 }
-impl_val_op!(Sub, Integer);
+ref_val_ops!(Sub, Integer);
 
 impl Mul for &Integer {
     type Output = Integer;
@@ -1775,7 +1775,7 @@ impl Mul for &Integer {
         }
     }
 }
-impl_val_op!(Mul, Integer);
+ref_val_ops!(Mul, Integer);
 
 impl Div for Integer {
     type Output = RealResult;
@@ -1819,7 +1819,7 @@ impl Rem for &Integer {
         Ok(Integer::new(&self.precision % &rhs.precision, self.sign))
     }
 }
-impl_val_op!(Rem, Integer, IntResult);
+ref_val_ops!(Rem, Integer, IntResult);
 
 impl Display for Integer {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
@@ -2199,7 +2199,7 @@ impl Add for &Precision {
         }
     }
 }
-impl_val_op!(Add, Precision);
+ref_val_ops!(Add, Precision);
 
 // Naive sub implementation, relying on Integer to avoid subtraction overflow
 impl Sub for &Precision {
@@ -2212,7 +2212,7 @@ impl Sub for &Precision {
         }
     }
 }
-impl_val_op!(Sub, Precision);
+ref_val_ops!(Sub, Precision);
 
 impl Mul for &Precision {
     type Output = Precision;
@@ -2231,7 +2231,7 @@ impl Mul for &Precision {
         }
     }
 }
-impl_val_op!(Mul, Precision);
+ref_val_ops!(Mul, Precision);
 
 // Integer division (e.g. div_floor); caller ensures divisor is not zero
 impl Div for &Precision {
@@ -2247,7 +2247,7 @@ impl Div for &Precision {
         }
     }
 }
-impl_val_op!(Div, Precision);
+ref_val_ops!(Div, Precision);
 
 // Unsigned remainder or modulo; caller ensures the modulus is not zero
 impl Rem for &Precision {
@@ -2263,7 +2263,7 @@ impl Rem for &Precision {
         }
     }
 }
-impl_val_op!(Rem, Precision);
+ref_val_ops!(Rem, Precision);
 
 impl Display for Precision {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
