@@ -30,7 +30,7 @@ pub(super) fn load(env: &Frame) {
 fn conjugate(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = super::first(args);
     if let Value::Number(x) = arg {
-        Ok(Value::Number(x.clone().into_complex_conjugate()))
+        Ok(Value::Number(x.to_complex_conjugate()))
     } else {
         Err(super::invalid_target(TypeName::NUMBER, arg))
     }

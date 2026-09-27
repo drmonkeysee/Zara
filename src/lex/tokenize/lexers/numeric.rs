@@ -266,7 +266,7 @@ impl<P: ClassifierProps> ConditionProcessor<'_, '_, P> {
         match cond {
             SubCondition::Complete => {
                 if let Some(Exactness::Inexact) = self.props.exactness() {
-                    real = real.into_inexact();
+                    real = real.to_inexact();
                 }
                 Ok(real_to_token(real, false))
             }
@@ -274,7 +274,7 @@ impl<P: ClassifierProps> ConditionProcessor<'_, '_, P> {
             SubCondition::Imaginary => {
                 if self.props.has_sign() {
                     if let Some(Exactness::Inexact) = self.props.exactness() {
-                        real = real.into_inexact();
+                        real = real.to_inexact();
                     }
                     Ok(real_to_token(real, true))
                 } else {
@@ -298,8 +298,8 @@ impl<P: ClassifierProps> ConditionProcessor<'_, '_, P> {
                         let real = match self.props.exactness() {
                             // This conversion shouldn't ever fail because real has already
                             // been parsed as a valid float, but if it does, give up and return NaN.
-                            Some(Exactness::Exact) => real.try_into_exact().unwrap_or(Real::nan()),
-                            Some(Exactness::Inexact) => real.into_inexact(),
+                            Some(Exactness::Exact) => real.try_to_exact().unwrap_or(Real::nan()),
+                            Some(Exactness::Inexact) => real.to_inexact(),
                             None => real,
                         };
                         Ok(TokenKind::Number(Number::complex(real, imag)))
@@ -315,8 +315,8 @@ impl<P: ClassifierProps> ConditionProcessor<'_, '_, P> {
                         Ok(TokenKind::Number(match self.props.exactness() {
                             // This conversion shouldn't ever fail because pol has already
                             // been parsed as a valid float-complex, but if it does, give up and return NaN.
-                            Some(Exactness::Exact) => pol.try_into_exact().unwrap_or(Number::nan()),
-                            Some(Exactness::Inexact) => pol.into_inexact(),
+                            Some(Exactness::Exact) => pol.try_to_exact().unwrap_or(Number::nan()),
+                            Some(Exactness::Inexact) => pol.to_inexact(),
                             None => pol,
                         }))
                     }

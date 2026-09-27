@@ -24,19 +24,19 @@ fn make_polar(args: &[Value], _env: &Frame) -> EvalResult {
 }
 
 fn get_real(args: &[Value], _env: &Frame) -> EvalResult {
-    get_complex_part(super::first(args), Number::into_real)
+    get_complex_part(super::first(args), Number::to_real)
 }
 
 fn get_imag(args: &[Value], _env: &Frame) -> EvalResult {
-    get_complex_part(super::first(args), Number::into_imag)
+    get_complex_part(super::first(args), Number::to_imag)
 }
 
 fn get_mag(args: &[Value], _env: &Frame) -> EvalResult {
-    get_complex_part(super::first(args), Number::into_magnitude)
+    get_complex_part(super::first(args), Number::to_magnitude)
 }
 
 fn get_angle(args: &[Value], _env: &Frame) -> EvalResult {
-    get_complex_part(super::first(args), Number::into_angle)
+    get_complex_part(super::first(args), Number::to_angle)
 }
 
 fn make_complex(x: &Value, y: &Value, ctor: impl FnOnce(Real, Real) -> Number) -> EvalResult {
@@ -67,9 +67,9 @@ fn make_complex(x: &Value, y: &Value, ctor: impl FnOnce(Real, Real) -> Number) -
     Ok(Value::Number(ctor(r.clone(), i.clone())))
 }
 
-fn get_complex_part(arg: &Value, get: impl FnOnce(Number) -> Real) -> EvalResult {
+fn get_complex_part(arg: &Value, get: impl FnOnce(&Number) -> Real) -> EvalResult {
     if let Value::Number(x) = arg {
-        Ok(Value::real(get(x.clone())))
+        Ok(Value::real(get(x)))
     } else {
         Err(super::invalid_target(TypeName::NUMBER, arg))
     }

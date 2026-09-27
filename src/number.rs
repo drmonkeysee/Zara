@@ -120,8 +120,7 @@ macro_rules! impl_val_op {
 macro_rules! inexact_cmp_exact {
     ($inexact:expr, $flt:expr, $cmp:ident, $exact:expr) => {
         $inexact
-            .clone()
-            .try_into_exact()
+            .try_to_exact()
             .map_or_else(|_| f64::$cmp($flt, &$exact.to_float()), |n| n.$cmp($exact))
     };
 }
@@ -129,8 +128,7 @@ macro_rules! inexact_cmp_exact {
 macro_rules! exact_cmp_inexact {
     ($exact:expr, $cmp:ident, $inexact:expr, $flt:expr) => {
         $inexact
-            .clone()
-            .try_into_exact()
+            .try_to_exact()
             .map_or_else(|_| f64::$cmp(&$exact.to_float(), $flt), |n| $exact.$cmp(&n))
     };
 }
@@ -310,38 +308,38 @@ impl Number {
         NumericTypeName(self)
     }
 
-    pub(crate) fn into_inexact(self) -> Self {
+    pub(crate) fn to_inexact(&self) -> Self {
         match self {
-            Self::Complex(Complex(z)) => Self::complex(z.0.into_inexact(), z.1.into_inexact()),
-            Self::Real(r) => Self::real(r.into_inexact()),
+            Self::Complex(Complex(z)) => Self::complex(z.0.to_inexact(), z.1.to_inexact()),
+            Self::Real(r) => Self::real(r.to_inexact()),
         }
     }
 
-    pub(crate) fn into_real(self) -> Real {
+    pub(crate) fn to_real(&self) -> Real {
         match self {
-            Self::Complex(z) => z.into_real(),
-            Self::Real(r) => r,
+            Self::Complex(z) => z.to_real(),
+            Self::Real(r) => r.clone(),
         }
     }
 
-    pub(crate) fn into_imag(self) -> Real {
+    pub(crate) fn to_imag(&self) -> Real {
         match self {
-            Self::Complex(z) => z.into_imag(),
+            Self::Complex(z) => z.to_imag(),
             Self::Real(_) => Real::zero(),
         }
     }
 
-    pub(crate) fn into_magnitude(self) -> Real {
+    pub(crate) fn to_magnitude(&self) -> Real {
         match self {
-            Self::Complex(z) => z.into_magnitude(),
+            Self::Complex(z) => z.to_magnitude(),
             // complex magnitude of a real is just √r² = |r|
-            Self::Real(r) => r.into_abs(),
+            Self::Real(r) => r.to_abs(),
         }
     }
 
-    pub(crate) fn into_angle(self) -> Real {
+    pub(crate) fn to_angle(&self) -> Real {
         match self {
-            Self::Complex(z) => z.into_angle(),
+            Self::Complex(z) => z.to_angle(),
             Self::Real(r) => {
                 // positive real angles are always zero, negative are always π
                 if r.is_positive() {
@@ -353,30 +351,28 @@ impl Number {
         }
     }
 
-    pub(crate) fn into_complex_conjugate(self) -> Self {
+    pub(crate) fn to_complex_conjugate(&self) -> Self {
         match self {
-            Self::Complex(z) => z.into_conjugate(),
-            Self::Real(_) => self,
+            Self::Complex(z) => z.to_conjugate(),
+            Self::Real(_) => self.clone(),
         }
     }
 
-    pub(crate) fn try_into_exact(self) -> NumResult {
+    pub(crate) fn try_to_exact(&self) -> NumResult {
         Ok(match self {
-            Self::Complex(Complex(z)) => {
-                Self::complex(z.0.try_into_exact()?, z.1.try_into_exact()?)
-            }
-            Self::Real(r) => Self::real(r.try_into_exact()?),
+            Self::Complex(Complex(z)) => Self::complex(z.0.try_to_exact()?, z.1.try_to_exact()?),
+            Self::Real(r) => Self::real(r.try_to_exact()?),
         })
     }
 
-    pub(crate) fn try_into_reciprocal(self) -> NumResult {
+    pub(crate) fn try_to_reciprocal(&self) -> NumResult {
         match self {
-            Self::Complex(z) => z.try_into_reciprocal(),
-            Self::Real(r) => Ok(Self::real(r.try_into_reciprocal()?)),
+            Self::Complex(z) => z.try_to_reciprocal(),
+            Self::Real(r) => Ok(Self::real(r.try_to_reciprocal()?)),
         }
     }
 
-    pub(crate) fn sqrt(self) -> Self {
+    pub(crate) fn sqrt(&self) -> Self {
         match self {
             Self::Complex(z) => z.sqrt(),
             Self::Real(r) => {
@@ -388,6 +384,17 @@ impl Number {
                 }
             }
         }
+    }
+
+    // convenience wrappers for passing Op impls as closures
+    pub(crate) fn add(&self, rhs: &Self) -> Self {
+        self + rhs
+    }
+    pub(crate) fn mul(&self, rhs: &Self) -> Self {
+        self * rhs
+    }
+    pub(crate) fn div(&self, rhs: &Self) -> NumResult {
+        self / rhs
     }
 }
 
@@ -412,51 +419,63 @@ impl Neg for Number {
     }
 }
 
-impl Add for Number {
-    type Output = Self;
+impl Neg for &Number {
+    type Output = Number;
+
+    fn neg(self) -> Self::Output {
+        -self.clone()
+    }
+}
+
+impl Add for &Number {
+    type Output = Number;
 
     fn add(self, rhs: Self) -> Self::Output {
         match (self, rhs) {
-            (Self::Complex(z), n) | (n, Self::Complex(z)) => z + n,
-            (Self::Real(a), Self::Real(b)) => Self::real(a + b),
+            (Number::Complex(z), n) | (n, Number::Complex(z)) => z + n,
+            (Number::Real(a), Number::Real(b)) => Number::real(a + b),
         }
     }
 }
+impl_val_op!(Add, Number);
 
-impl Sub for Number {
-    type Output = Self;
+impl Sub for &Number {
+    type Output = Number;
 
     fn sub(self, rhs: Self) -> Self::Output {
         match (self, rhs) {
-            (Self::Complex(z), n) => z - n,
-            (Self::Real(r), Self::Complex(z)) => r.into_complex() - z,
-            (Self::Real(a), Self::Real(b)) => Self::real(a - b),
+            (Number::Complex(z), n) => z - n,
+            (Number::Real(r), Number::Complex(z)) => r.to_complex() - z,
+            (Number::Real(a), Number::Real(b)) => Number::real(a - b),
         }
     }
 }
+impl_val_op!(Sub, Number);
 
-impl Mul for Number {
-    type Output = Self;
+impl Mul for &Number {
+    type Output = Number;
 
     fn mul(self, rhs: Self) -> Self::Output {
         match (self, rhs) {
-            (Self::Complex(z), x) | (x, Self::Complex(z)) => z * x,
-            (Self::Real(a), Self::Real(b)) => Self::real(a * b),
+            (Number::Complex(z), x) | (x, Number::Complex(z)) => z * x,
+            (Number::Real(a), Number::Real(b)) => Number::real(a * b),
         }
     }
 }
+impl_val_op!(Mul, Number);
 
-impl Div for Number {
+impl Div for &Number {
     type Output = NumResult;
 
     fn div(self, rhs: Self) -> Self::Output {
         match (self, rhs) {
-            (Self::Complex(a), x) => a / x,
-            (Self::Real(r), Self::Complex(z)) => r.into_complex() / z,
-            (Self::Real(a), Self::Real(b)) => Ok(Self::real((a / b)?)),
+            (Number::Complex(a), x) => a / x,
+            (Number::Real(r), Number::Complex(z)) => &r.to_complex() / z,
+            (Number::Real(a), Number::Real(b)) => Ok(Number::real((a / b)?)),
         }
     }
 }
+impl_val_op!(Div, Number, NumResult);
 
 impl Display for Number {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
@@ -484,39 +503,43 @@ impl Complex {
         self.0.0.is_zero() && self.0.1.is_zero()
     }
 
-    fn into_real(self) -> Real {
-        self.0.0
+    fn to_real(&self) -> Real {
+        self.0.0.clone()
     }
 
-    fn into_imag(self) -> Real {
-        self.0.1
+    fn to_imag(&self) -> Real {
+        self.0.1.clone()
     }
 
-    fn into_magnitude(self) -> Real {
-        let (x, y) = self.into_parts();
+    fn to_magnitude(&self) -> Real {
+        let (x, y) = self.get_parts();
         if x.is_inexact() || y.is_inexact() {
             Real::Float(x.to_float().hypot(y.to_float()))
         } else {
-            ((x.clone() * x) + (y.clone() * y)).sqrt()
+            ((x * x) + (y * y)).sqrt()
         }
     }
 
-    fn into_angle(self) -> Real {
-        let (x, y) = self.into_parts();
+    fn to_angle(&self) -> Real {
+        let (x, y) = self.get_parts();
         Real::Float(y.to_float().atan2(x.to_float()))
     }
 
-    fn into_parts(self) -> (Real, Real) {
-        (self.0.0, self.0.1)
+    fn to_parts(&self) -> (Real, Real) {
+        (self.0.0.clone(), self.0.1.clone())
     }
 
-    fn into_conjugate(self) -> Number {
-        let (x, y) = self.into_parts();
-        Number::complex(x, -y)
+    fn to_conjugate(&self) -> Number {
+        let (x, y) = self.get_parts();
+        Number::complex(x.clone(), -y)
     }
 
-    fn try_into_reciprocal(self) -> NumResult {
-        Real::one().into_complex() / self
+    fn try_to_reciprocal(&self) -> NumResult {
+        &Real::one().to_complex() / self
+    }
+
+    fn get_parts(&self) -> (&Real, &Real) {
+        (&self.0.0, &self.0.1)
     }
 
     /*
@@ -527,7 +550,7 @@ impl Complex {
      * used by C99's csqrt, which also includes some special casing for signed zeros and infs.
      */
     #[allow(clippy::many_single_char_names)]
-    fn sqrt(self) -> Number {
+    fn sqrt(&self) -> Number {
         // Square root of zero always sets x to + and keeps sign of y; if we calculated
         // this with the below algorithm instead, the zero signs go wonky due to IEEE rules.
         // Complex is_zero implies float values (exact zeros would have reduced to Integer),
@@ -535,42 +558,40 @@ impl Complex {
         if self.is_zero() {
             return Number::complex(0.0, 0.0f64.copysign(self.0.1.signum()));
         }
-        let (x, y) = self.clone().into_parts();
+        let (x, y) = self.get_parts();
         // According to C99-Annex-G inf y always sets x to +inf and keeps y
         // because IEEE infinities are not limits but actual values, which means
         // the math doesn't work out without special-casing it.
         if y.is_infinite() {
             return Number::complex(f64::INFINITY, f64::INFINITY.copysign(self.0.1.signum()));
         }
-        let r = self.into_magnitude();
+        let r = self.to_magnitude();
         let (u, v) = if x.is_negative() {
-            let t = scaled_re(r, x, Real::sub);
+            let t = scaled_re(&r, x, Real::sub);
             (
-                assume_safe_div!(y.clone().into_abs() / t.clone()),
-                assume_safe_div!(t / Real::two()).copysign(&y),
+                assume_safe_div!(y.to_abs() / &t),
+                assume_safe_div!(&t / Real::two()).copysign(&y),
             )
         } else {
-            let t = scaled_re(r, x, Real::add);
-            (
-                assume_safe_div!(t.clone() / Real::two()),
-                assume_safe_div!(y / t),
-            )
+            let t = scaled_re(&r, x, Real::add);
+            (assume_safe_div!(&t / Real::two()), assume_safe_div!(y / t))
         };
         Number::complex(u, v)
     }
 }
 
-impl Sub for Complex {
+impl Sub for &Complex {
     type Output = Number;
 
     fn sub(self, rhs: Self) -> Self::Output {
-        let (x, y) = self.into_parts();
-        let (u, v) = rhs.into_parts();
+        let (x, y) = self.get_parts();
+        let (u, v) = rhs.get_parts();
         Number::complex(x - u, y - v)
     }
 }
+impl_val_op!(Sub, Complex, Number);
 
-impl Div for Complex {
+impl Div for &Complex {
     type Output = NumResult;
 
     /*
@@ -596,86 +617,76 @@ impl Div for Complex {
      */
     #[allow(clippy::many_single_char_names)]
     fn div(self, rhs: Self) -> Self::Output {
-        let (a, b) = self.into_parts();
-        let (mut c, mut d) = rhs.into_parts();
+        let ((a, b), (mut c, mut d)) = (self.get_parts(), rhs.to_parts());
         // Don't mix exact/inexact in the ratio/denominator elements as exact values
         // can interact strangely with signed zeros, nan, and inf; apply float-taint
         // to quotient calculations to avoid these issues.
         if c.is_inexact() || d.is_inexact() {
-            (c, d) = (c.into_inexact(), d.into_inexact());
+            (c, d) = (c.to_inexact(), d.to_inexact());
         }
-        let (re, im) = if c.clone().into_abs() < d.clone().into_abs() {
-            let r = (c.clone() / d.clone())?;
-            let denom = (c.clone() * r.clone()) + d.clone();
-            (
-                (((a.clone() * r.clone()) + b.clone()) / denom.clone())?,
-                (((b * r) - a) / denom)?,
-            )
+        let (re, im) = if c.to_abs() < d.to_abs() {
+            let r = (&c / &d)?;
+            let denom = (&c * &r) + &d;
+            ((((a * &r) + b) / &denom)?, (((b * &r) - a) / &denom)?)
         } else {
-            let r = (d.clone() / c.clone())?;
-            let denom = c.clone() + (d.clone() * r.clone());
-            (
-                ((a.clone() + (b.clone() * r.clone())) / denom.clone())?,
-                ((b - (a * r)) / denom)?,
-            )
+            let r = (&d / &c)?;
+            let denom = &c + (&d * &r);
+            (((a + (b * &r)) / &denom)?, ((b - (a * &r)) / &denom)?)
         };
         Ok(Number::complex(re, im))
     }
 }
 
-impl Add<Number> for Complex {
+impl Add<&Number> for &Complex {
     type Output = Number;
 
     #[allow(clippy::many_single_char_names)]
-    fn add(self, rhs: Number) -> Self::Output {
-        let (x, y) = self.into_parts();
+    fn add(self, rhs: &Number) -> Self::Output {
+        let (x, y) = self.get_parts();
         match rhs {
             Number::Complex(w) => {
-                let (u, v) = w.into_parts();
+                let (u, v) = w.get_parts();
                 Number::complex(x + u, y + v)
             }
-            Number::Real(r) => Number::complex(x + r, y),
+            Number::Real(r) => Number::complex(x + r, y.clone()),
         }
     }
 }
 
-impl Sub<Number> for Complex {
+impl Sub<&Number> for &Complex {
     type Output = Number;
 
-    fn sub(self, rhs: Number) -> Self::Output {
+    fn sub(self, rhs: &Number) -> Self::Output {
         match rhs {
             Number::Complex(z) => self.sub(z),
-            Number::Real(r) => self.sub(r.into_complex()),
+            Number::Real(r) => self.sub(r.to_complex()),
         }
     }
 }
 
-impl Mul<Number> for Complex {
+impl Mul<&Number> for &Complex {
     type Output = Number;
 
     // Complex multiplication: (a + bi) * (c + di) = (ac - bd) + (ad + bc)i
-    fn mul(self, rhs: Number) -> Self::Output {
-        let (a, b) = self.into_parts();
+    fn mul(self, rhs: &Number) -> Self::Output {
+        let (a, b) = self.get_parts();
         let (c, d) = match rhs {
-            Number::Complex(z) => z.into_parts(),
-            Number::Real(r) => r.into_complex().into_parts(),
+            Number::Complex(z) => z.to_parts(),
+            Number::Real(r) => r.to_complex().to_parts(),
         };
-        Number::complex(
-            (a.clone() * c.clone()) - (b.clone() * d.clone()),
-            (a * d) + (b * c),
-        )
+        Number::complex((a * &c) - (b * &d), (a * &d) + (b * &c))
     }
 }
 
-impl Div<Number> for Complex {
+impl Div<&Number> for &Complex {
     type Output = NumResult;
 
-    fn div(self, rhs: Number) -> Self::Output {
+    fn div(self, rhs: &Number) -> Self::Output {
         match rhs {
             Number::Complex(z) => self.div(z),
             Number::Real(r) => {
-                let (x, y) = self.into_parts();
-                Ok(Number::complex((x / r.clone())?, (y / r)?))
+                let (x, y) = self.get_parts();
+                Ok(Number::complex((x / r)?, (y / r)?))
             }
         }
     }
@@ -832,15 +843,15 @@ impl Real {
         RealTokenDescriptor(self)
     }
 
-    pub(crate) fn into_inexact(self) -> Self {
+    pub(crate) fn to_inexact(&self) -> Self {
         match self {
-            Self::Float(_) => self,
+            Self::Float(_) => self.clone(),
             Self::Integer(n) => n.to_inexact(),
             Self::Rational(q) => q.to_inexact(),
         }
     }
 
-    pub(crate) fn into_abs(self) -> Self {
+    pub(crate) fn to_abs(&self) -> Self {
         match self {
             Self::Float(f) => f.abs().into(),
             Self::Integer(n) => n.to_abs().into(),
@@ -848,68 +859,65 @@ impl Real {
         }
     }
 
-    pub(crate) fn into_floor(self) -> Self {
+    pub(crate) fn to_floor(&self) -> Self {
         match self {
             Self::Float(f) => f.floor().into(),
-            Self::Integer(_) => self,
+            Self::Integer(_) => self.clone(),
             Self::Rational(q) => q.to_floor().into(),
         }
     }
 
-    pub(crate) fn into_ceiling(self) -> Self {
+    pub(crate) fn to_ceiling(&self) -> Self {
         match self {
             Self::Float(f) => f.ceil().into(),
-            Self::Integer(_) => self,
+            Self::Integer(_) => self.clone(),
             Self::Rational(q) => q.to_ceiling().into(),
         }
     }
 
-    pub(crate) fn into_truncate(self) -> Self {
+    pub(crate) fn to_truncate(&self) -> Self {
         match self {
             Self::Float(f) => f.trunc().into(),
-            Self::Integer(_) => self,
+            Self::Integer(_) => self.clone(),
             Self::Rational(q) => q.to_truncate().into(),
         }
     }
 
-    pub(crate) fn into_round(self) -> Self {
+    pub(crate) fn to_round(&self) -> Self {
         match self {
             Self::Float(f) => f.round().into(),
-            Self::Integer(_) => self,
+            Self::Integer(_) => self.clone(),
             Self::Rational(q) => q.to_round().into(),
         }
     }
 
-    pub(crate) fn try_into_exact(self) -> RealResult {
+    pub(crate) fn try_to_exact(&self) -> RealResult {
         if let Self::Float(f) = self {
-            try_float_to_exact(f)
+            try_float_to_exact(*f)
         } else {
-            Ok(self)
+            Ok(self.clone())
         }
     }
 
-    pub(crate) fn try_into_exact_integer(self) -> IntResult {
+    pub(crate) fn try_to_exact_integer(&self) -> IntResult {
         match self {
-            Self::Float(f) if f.fract() == 0.0 => Ok(Integer::from_exact_float(f)),
+            Self::Float(f) if f.fract() == 0.0 => Ok(Integer::from_exact_float(*f)),
             Self::Integer(n) => Ok(n.clone()),
             _ => Err(NumericError::NotExactInteger(self.to_string())),
         }
     }
 
-    pub(crate) fn try_into_numerator(self) -> RealResult {
+    pub(crate) fn try_to_numerator(&self) -> RealResult {
         Ok(match self {
-            Self::Float(_) => self.try_into_exact()?.try_into_numerator()?.into_inexact(),
-            Self::Integer(_) => self,
+            Self::Float(_) => self.try_to_exact()?.try_to_numerator()?.to_inexact(),
+            Self::Integer(_) => self.clone(),
             Self::Rational(q) => q.to_numerator().into(),
         })
     }
 
-    pub(crate) fn try_into_denominator(self) -> RealResult {
+    pub(crate) fn try_to_denominator(&self) -> RealResult {
         Ok(match self {
-            Self::Float(_) => self
-                .try_into_exact()?
-                .try_into_denominator()?
-                .into_inexact(),
+            Self::Float(_) => self.try_to_exact()?.try_to_denominator()?.to_inexact(),
             Self::Integer(_) => Integer::one().into(),
             Self::Rational(q) => q.to_denominator().into(),
         })
@@ -994,7 +1002,7 @@ impl Real {
         }
     }
 
-    fn copysign(self, sign: &Real) -> Self {
+    fn copysign(&self, sign: &Real) -> Self {
         let s = sign.signum();
         match self {
             Self::Float(f) => f.copysign(s).into(),
@@ -1003,11 +1011,11 @@ impl Real {
         }
     }
 
-    fn into_complex(self) -> Complex {
-        Complex((self, Self::zero()).into())
+    fn to_complex(&self) -> Complex {
+        Complex((self.clone(), Self::zero()).into())
     }
 
-    fn try_into_reciprocal(self) -> RealResult {
+    fn try_to_reciprocal(&self) -> RealResult {
         match self {
             Self::Float(f) => Ok(f.recip().into()),
             Self::Integer(n) => n.try_to_reciprocal(),
@@ -1017,13 +1025,21 @@ impl Real {
 
     // Number handles negative sign so this function technically returns the
     // wrong value for negative roots (e.g. √-4 = -2 instead of +2i)
-    fn sqrt(self) -> Self {
+    fn sqrt(&self) -> Self {
         match self {
-            Self::Float(0.0) => self,
-            Self::Float(f) => sign_preserving_sqrt(f).into(),
+            Self::Float(0.0) => self.clone(),
+            Self::Float(f) => sign_preserving_sqrt(*f).into(),
             Self::Integer(n) => n.sqrt(),
             Self::Rational(q) => q.sqrt(),
         }
+    }
+
+    // convenience wrappers for passing Op impls as closures
+    fn add(&self, rhs: &Self) -> Self {
+        self + rhs
+    }
+    fn sub(&self, rhs: &Self) -> Self {
+        self - rhs
     }
 }
 
@@ -1061,61 +1077,73 @@ impl Neg for Real {
     }
 }
 
-impl Add for Real {
-    type Output = Self;
+impl Neg for &Real {
+    type Output = Real;
+
+    fn neg(self) -> Self::Output {
+        -self.clone()
+    }
+}
+
+impl Add for &Real {
+    type Output = Real;
 
     fn add(self, rhs: Self) -> Self::Output {
         match self {
             // integral additive identity should not affect a float;
             // if we convert to float we get -0.0 + 0.0 = 0.0 which is wrong!
             // exact zero shouldn't affect the sign of inexact zero.
-            Self::Float(_) if rhs.is_exact_zero() => self,
-            Self::Float(f) => (f + rhs.to_float()).into(),
-            Self::Integer(n) => n + rhs,
-            Self::Rational(q) => q + rhs,
+            Real::Float(_) if rhs.is_exact_zero() => self.clone(),
+            Real::Float(f) => (f + rhs.to_float()).into(),
+            Real::Integer(n) => n + rhs,
+            Real::Rational(q) => q + rhs,
         }
     }
 }
+impl_val_op!(Add, Real);
 
-impl Sub for Real {
-    type Output = Self;
+impl Sub for &Real {
+    type Output = Real;
 
     fn sub(self, rhs: Self) -> Self::Output {
         match self {
-            Self::Float(f) => (f - rhs.to_float()).into(),
-            Self::Integer(n) => n - rhs,
-            Self::Rational(q) => q - rhs,
+            Real::Float(f) => (f - rhs.to_float()).into(),
+            Real::Integer(n) => n - rhs,
+            Real::Rational(q) => q - rhs,
         }
     }
 }
+impl_val_op!(Sub, Real);
 
-impl Mul for Real {
-    type Output = Self;
+impl Mul for &Real {
+    type Output = Real;
 
     fn mul(self, rhs: Self) -> Self::Output {
         match self {
             // exact zero overrides float-taint
-            Self::Float(_) if rhs.is_exact_zero() => rhs,
-            Self::Float(f) => (f * rhs.to_float()).into(),
-            Self::Integer(n) => n * rhs,
-            Self::Rational(q) => q * rhs,
+            Real::Float(_) if rhs.is_exact_zero() => rhs.clone(),
+            Real::Float(f) => (f * rhs.to_float()).into(),
+            Real::Integer(n) => n * rhs,
+            Real::Rational(q) => q * rhs,
         }
     }
 }
+impl_val_op!(Mul, Real);
 
-impl Div for Real {
+impl Div for &Real {
     type Output = RealResult;
 
     fn div(self, rhs: Self) -> Self::Output {
         match self {
             // exact zero overrides float-taint
-            Self::Float(_) if rhs.is_exact_zero() => Err(NumericError::DivideByZero),
-            Self::Float(f) => Ok((f / rhs.to_float()).into()),
-            Self::Integer(n) => n / rhs,
-            Self::Rational(q) => q / rhs,
+            Real::Float(_) if rhs.is_exact_zero() => Err(NumericError::DivideByZero),
+            Real::Float(f) => Ok((f / rhs.to_float()).into()),
+            Real::Integer(n) => n / rhs,
+            Real::Rational(q) => q / rhs,
         }
     }
 }
+impl_val_op!(Div, Real, RealResult);
 
 impl Display for Real {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
@@ -1345,10 +1373,10 @@ impl PartialOrd<Real> for Rational {
     }
 }
 
-impl Add<Real> for Rational {
+impl Add<&Real> for &Rational {
     type Output = Real;
 
-    fn add(self, rhs: Real) -> Self::Output {
+    fn add(self, rhs: &Real) -> Self::Output {
         match rhs {
             Real::Float(f) => (self.to_float() + f).into(),
             Real::Integer(n) => self.add(n.to_rational()),
@@ -1357,10 +1385,10 @@ impl Add<Real> for Rational {
     }
 }
 
-impl Sub<Real> for Rational {
+impl Sub<&Real> for &Rational {
     type Output = Real;
 
-    fn sub(self, rhs: Real) -> Self::Output {
+    fn sub(self, rhs: &Real) -> Self::Output {
         match rhs {
             Real::Float(f) => (self.to_float() - f).into(),
             Real::Integer(n) => self.sub(n.to_rational()),
@@ -1369,10 +1397,10 @@ impl Sub<Real> for Rational {
     }
 }
 
-impl Mul<Real> for Rational {
+impl Mul<&Real> for &Rational {
     type Output = Real;
 
-    fn mul(self, rhs: Real) -> Self::Output {
+    fn mul(self, rhs: &Real) -> Self::Output {
         match rhs {
             Real::Float(f) => (self.to_float() * f).into(),
             Real::Integer(n) => self.mul(n.to_rational()),
@@ -1381,15 +1409,15 @@ impl Mul<Real> for Rational {
     }
 }
 
-impl Div<Real> for Rational {
+impl Div<&Real> for &Rational {
     type Output = RealResult;
 
-    fn div(self, rhs: Real) -> Self::Output {
+    fn div(self, rhs: &Real) -> Self::Output {
         Ok(match rhs {
             // need this because (q * f.recip()) ends up losing precision
             Real::Float(f) => (self.to_float() / f).into(),
-            Real::Integer(n) => self.mul(n.try_to_reciprocal()?),
-            Real::Rational(q) => self.mul(q.try_to_reciprocal()?),
+            Real::Integer(n) => self.mul(&n.try_to_reciprocal()?),
+            Real::Rational(q) => self.mul(&q.try_to_reciprocal()?),
         })
     }
 }
@@ -1833,15 +1861,15 @@ impl PartialOrd<Real> for Integer {
     }
 }
 
-impl Add<Real> for Integer {
+impl Add<&Real> for &Integer {
     type Output = Real;
 
-    fn add(self, rhs: Real) -> Self::Output {
+    fn add(self, rhs: &Real) -> Self::Output {
         match rhs {
             // integral additive identity should not affect a float;
             // if we convert to float we get 0.0 + -0.0 = 0.0 which is wrong!
             // exact zero shouldn't affect the sign of inexact zero.
-            Real::Float(_) if self.is_zero() => rhs,
+            Real::Float(_) if self.is_zero() => rhs.clone(),
             Real::Float(f) => (self.to_float() + f).into(),
             Real::Integer(n) => self.add(n).into(),
             Real::Rational(q) => self.to_rational() + q,
@@ -1849,10 +1877,10 @@ impl Add<Real> for Integer {
     }
 }
 
-impl Sub<Real> for Integer {
+impl Sub<&Real> for &Integer {
     type Output = Real;
 
-    fn sub(self, rhs: Real) -> Self::Output {
+    fn sub(self, rhs: &Real) -> Self::Output {
         match rhs {
             // Integral additive reciprical should flip the sign of a float;
             // this ends up being relevant for 0 - 0.0 = -0.0
@@ -1864,13 +1892,13 @@ impl Sub<Real> for Integer {
     }
 }
 
-impl Mul<Real> for Integer {
+impl Mul<&Real> for &Integer {
     type Output = Real;
 
-    fn mul(self, rhs: Real) -> Self::Output {
+    fn mul(self, rhs: &Real) -> Self::Output {
         match rhs {
             // exact zero overrides float-taint
-            Real::Float(_) if self.is_zero() => self.into(),
+            Real::Float(_) if self.is_zero() => self.clone().into(),
             Real::Float(f) => (self.to_float() * f).into(),
             Real::Integer(n) => self.mul(n).into(),
             Real::Rational(q) => self.to_rational() * q,
@@ -1878,17 +1906,17 @@ impl Mul<Real> for Integer {
     }
 }
 
-impl Div<Real> for Integer {
+impl Div<&Real> for &Integer {
     type Output = RealResult;
 
-    fn div(self, rhs: Real) -> Self::Output {
+    fn div(self, rhs: &Real) -> Self::Output {
         match rhs {
             // nan overrides exact zero which overrides float-taint
-            Real::Float(f) if f.is_nan() => Ok(rhs),
-            Real::Float(_) if self.is_zero() => Ok(self.into()),
+            Real::Float(f) if f.is_nan() => Ok(rhs.clone()),
+            Real::Float(_) if self.is_zero() => Ok(self.clone().into()),
             Real::Float(f) => Ok((self.to_float() / f).into()),
             Real::Integer(n) => self.div(n),
-            Real::Rational(q) => Ok(self * q.try_to_reciprocal()?),
+            Real::Rational(q) => Ok(self * &q.try_to_reciprocal()?),
         }
     }
 }
@@ -2308,7 +2336,7 @@ fn sign_preserving_sqrt(f: f64) -> f64 {
 }
 
 // helper to calculate the intermediate real value for complex sqrt
-fn scaled_re(r: Real, x: Real, op: impl FnOnce(Real, Real) -> Real) -> Real {
+fn scaled_re(r: &Real, x: &Real, op: impl FnOnce(&Real, &Real) -> Real) -> Real {
     let t = (Real::two() * op(r, x)).sqrt();
     debug_assert!(!t.is_zero());
     t

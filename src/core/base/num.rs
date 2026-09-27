@@ -8,10 +8,7 @@ use crate::{
     number::{Integer, NumResult, Number, NumericError, NumericTypeName, Real},
     value::{Condition, TypeName, Value},
 };
-use std::{
-    fmt::Display,
-    ops::{Add, Div, Mul},
-};
+use std::fmt::Display;
 
 pub(super) fn load(env: &Frame) {
     // complex and number predicates are identical sets
@@ -165,11 +162,11 @@ fn nums_sub(args: &[Value], _env: &Frame) -> EvalResult {
 }
 
 fn nums_div(args: &[Value], _env: &Frame) -> EvalResult {
-    inverse_arithmetic(args, Number::try_into_reciprocal, Number::div)
+    inverse_arithmetic(args, Number::try_to_reciprocal, Number::div)
 }
 
 fn abs(args: &[Value], _env: &Frame) -> EvalResult {
-    real_op(first(args), |r| Ok(Value::real(r.clone().into_abs())))
+    real_op(first(args), |r| Ok(Value::real(r.to_abs())))
 }
 
 fn floor_qr(args: &[Value], _env: &Frame) -> EvalResult {
@@ -237,7 +234,7 @@ fn nums_lcm(args: &[Value], _env: &Frame) -> EvalResult {
 fn get_numerator(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = first(args);
     rational_op(arg, |r| {
-        r.clone().try_into_numerator().map_or_else(
+        r.try_to_numerator().map_or_else(
             |err| Err(Condition::value_error(err, arg).into()),
             |r| Ok(Value::real(r)),
         )
@@ -247,7 +244,7 @@ fn get_numerator(args: &[Value], _env: &Frame) -> EvalResult {
 fn get_denominator(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = first(args);
     rational_op(arg, |r| {
-        r.clone().try_into_denominator().map_or_else(
+        r.try_to_denominator().map_or_else(
             |err| Err(Condition::value_error(err, arg).into()),
             |r| Ok(Value::real(r)),
         )
@@ -255,19 +252,19 @@ fn get_denominator(args: &[Value], _env: &Frame) -> EvalResult {
 }
 
 fn floor(args: &[Value], _env: &Frame) -> EvalResult {
-    real_op(first(args), |r| Ok(Value::real(r.clone().into_floor())))
+    real_op(first(args), |r| Ok(Value::real(r.to_floor())))
 }
 
 fn ceiling(args: &[Value], _env: &Frame) -> EvalResult {
-    real_op(first(args), |r| Ok(Value::real(r.clone().into_ceiling())))
+    real_op(first(args), |r| Ok(Value::real(r.to_ceiling())))
 }
 
 fn truncate(args: &[Value], _env: &Frame) -> EvalResult {
-    real_op(first(args), |r| Ok(Value::real(r.clone().into_truncate())))
+    real_op(first(args), |r| Ok(Value::real(r.to_truncate())))
 }
 
 fn round(args: &[Value], _env: &Frame) -> EvalResult {
-    real_op(first(args), |r| Ok(Value::real(r.clone().into_round())))
+    real_op(first(args), |r| Ok(Value::real(r.to_round())))
 }
 
 fn square(args: &[Value], env: &Frame) -> EvalResult {
@@ -278,7 +275,7 @@ fn square(args: &[Value], env: &Frame) -> EvalResult {
 fn into_inexact(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = first(args);
     if let Value::Number(x) = arg {
-        Ok(Value::Number(x.clone().into_inexact()))
+        Ok(Value::Number(x.to_inexact()))
     } else {
         Err(invalid_target(TypeName::NUMBER, arg))
     }
@@ -287,7 +284,7 @@ fn into_inexact(args: &[Value], _env: &Frame) -> EvalResult {
 fn into_exact(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = first(args);
     if let Value::Number(x) = arg {
-        x.clone().try_into_exact().map_or_else(
+        x.try_to_exact().map_or_else(
             |err| Err(Condition::value_error(err, arg).into()),
             |n| Ok(Value::Number(n)),
         )
@@ -310,7 +307,7 @@ fn rational_op(arg: &Value, op: impl FnOnce(&Real) -> EvalResult) -> EvalResult 
 
 fn exact_int_predicate(arg: &Value, pred: impl FnOnce(&Integer) -> bool) -> EvalResult {
     guarded_real_op(arg, NumericTypeName::INTEGER, |r| {
-        r.clone().try_into_exact_integer().map_or_else(
+        r.try_to_exact_integer().map_or_else(
             |err| Err(Condition::value_error(err, arg).into()),
             |n| Ok(Value::Boolean(pred(&n))),
         )
@@ -343,19 +340,19 @@ fn real_acc_cmp<'a>(
             }
             Ok(acc)
         })
-        .map(|r| Value::real(if float_taint { r.into_inexact() } else { r }))
+        .map(|r| Value::real(if float_taint { r.to_inexact() } else { r }))
 }
 
 fn commutative_arithmetic(
     args: &[Value],
     identity: Number,
-    op: impl Fn(Number, Number) -> Number,
+    op: impl Fn(&Number, &Number) -> Number,
 ) -> EvalResult {
     args.iter()
         .enumerate()
         .try_fold(identity, |acc, (idx, v)| {
             if let Value::Number(x) = v {
-                Ok(op(acc, x.clone()))
+                Ok(op(&acc, x))
             } else {
                 Err(Condition::arg_error(idx, TypeName::NUMBER, v).into())
             }
@@ -365,15 +362,15 @@ fn commutative_arithmetic(
 
 fn inverse_arithmetic(
     args: &[Value],
-    inverse: impl FnOnce(Number) -> NumResult,
-    op: impl Fn(Number, Number) -> NumResult,
+    inverse: impl FnOnce(&Number) -> NumResult,
+    op: impl Fn(&Number, &Number) -> NumResult,
 ) -> EvalResult {
     let arg = first(args);
     let Value::Number(x) = arg else {
         return Err(invalid_target(TypeName::NUMBER, arg));
     };
     if args.len() == 1 {
-        inverse(x.clone()).map_or_else(
+        inverse(x).map_or_else(
             |err| Err(Condition::value_error(err, arg).into()),
             |x| Ok(Value::Number(x)),
         )
@@ -383,7 +380,7 @@ fn inverse_arithmetic(
             .enumerate()
             .try_fold(x.clone(), |sum, (idx, v)| {
                 if let Value::Number(x) = v {
-                    Ok(op(sum, x.clone())
+                    Ok(op(&sum, x)
                         .map_err(|err| Exception::signal(Condition::value_error(err, v)))?)
                 } else {
                     Err(Condition::arg_error(idx + 1, TypeName::NUMBER, v).into())
@@ -405,8 +402,7 @@ fn exact_factor_op(
             let r = arg_to_real(v, idx, NumericTypeName::INTEGER)?;
             float_taint = float_taint || r.is_inexact();
             let n = r
-                .clone()
-                .try_into_exact_integer()
+                .try_to_exact_integer()
                 .map_err(|err| Exception::signal(Condition::value_error(err, v)))?;
             Ok(op(&acc, &n))
         })
@@ -430,12 +426,10 @@ fn exact_division<R>(
     let float_taint = ra.is_inexact() || rb.is_inexact();
     let negdiv = (ra.signum() < 0.0) ^ (rb.signum() < 0.0);
     let n = ra
-        .clone()
-        .try_into_exact_integer()
+        .try_to_exact_integer()
         .map_err(|err| Exception::signal(Condition::value_error(err, a)))?;
     let d = rb
-        .clone()
-        .try_into_exact_integer()
+        .try_to_exact_integer()
         .map_err(|err| Exception::signal(Condition::value_error(err, b)))?;
     div(&n, &d).map_or_else(
         |err| Err(Condition::value_error(err, b).into()),
