@@ -1777,36 +1777,23 @@ impl Mul for &Integer {
 }
 ref_val_ops!(Mul, Integer);
 
-impl Div for Integer {
-    type Output = RealResult;
+macro_rules! impl_int_div {
+    ($($this:ty, $that:ty, $op:expr);+ $(;)?) => {
+        $(impl Div<$that> for $this {
+            type Output = RealResult;
 
-    fn div(self, rhs: Self) -> Self::Output {
-        Real::reduce(self, rhs)
+            fn div(self, rhs: $that) -> Self::Output {
+                $op(self, rhs)
+            }
+        })+
     }
 }
 
-impl Div<&Integer> for Integer {
-    type Output = RealResult;
-
-    fn div(self, rhs: &Integer) -> Self::Output {
-        self / rhs.clone()
-    }
-}
-
-impl Div for &Integer {
-    type Output = RealResult;
-
-    fn div(self, rhs: Self) -> Self::Output {
-        self.clone() / rhs.clone()
-    }
-}
-
-impl Div<Integer> for &Integer {
-    type Output = RealResult;
-
-    fn div(self, rhs: Integer) -> Self::Output {
-        self.clone() / rhs
-    }
+impl_int_div! {
+    Integer, Integer, |a, b| Real::reduce(a, b);
+    Integer, &Integer, |a, b: &Integer| a / b.clone();
+    &Integer, Integer, |a: &Integer, b| a.clone() / b;
+    &Integer, &Integer, |a: &Integer, b: &Integer| a.clone() / b.clone();
 }
 
 impl Rem for &Integer {
