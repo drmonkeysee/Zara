@@ -78,62 +78,19 @@ macro_rules! sign_from {
     };
 }
 
-macro_rules! ref_val_ops {
-    (Add, $type:ty) => { ref_val_ops!(@imp Add, $type, $type, add, +); };
-    (Sub, $type:ty) => { ref_val_ops!(@imp Sub, $type, $type, sub, -); };
-    (Mul, $type:ty) => { ref_val_ops!(@imp Mul, $type, $type, mul, *); };
-    (Div, $type:ty) => { ref_val_ops!(@imp Div, $type, $type, div, /); };
-    (Rem, $type:ty) => { ref_val_ops!(@imp Rem, $type, $type, rem, %); };
-    (Add, $type:ty, $out:ty) => { ref_val_ops!(@imp Add, $type, $out, add, +); };
-    (Sub, $type:ty, $out:ty) => { ref_val_ops!(@imp Sub, $type, $out, sub, -); };
-    (Mul, $type:ty, $out:ty) => { ref_val_ops!(@imp Mul, $type, $out, mul, *); };
-    (Div, $type:ty, $out:ty) => { ref_val_ops!(@imp Div, $type, $out, div, /); };
-    (Rem, $type:ty, $out:ty) => { ref_val_ops!(@imp Rem, $type, $out, rem, %); };
-
-    (@imp $imp:ident, $type:ty, $out:ty, $af:ident, $op:tt) => {
-        impl $imp for $type {
-            type Output = $out;
-
-            fn $af(self, rhs: $type) -> Self::Output {
-                &self $op &rhs
-            }
-        }
-
-        impl $imp<&$type> for $type {
-            type Output = $out;
-
-            fn $af(self, rhs: &$type) -> Self::Output {
-                &self $op rhs
-            }
-        }
-
-        impl $imp<$type> for &$type {
-            type Output = $out;
-
-            fn $af(self, rhs: $type) -> Self::Output {
-                self $op &rhs
-            }
-        }
-    };
-}
-
 macro_rules! impl_val_delegate {
-    (Add, $type:ty) => { impl_val_delegate!(@imp Add, $type, $type, $type, add, +); };
-    (Sub, $type:ty) => { impl_val_delegate!(@imp Sub, $type, $type, $type, sub, -); };
-    (Mul, $type:ty) => { impl_val_delegate!(@imp Mul, $type, $type, $type, mul, *); };
-    (Rem, $type:ty) => { impl_val_delegate!(@imp Rem, $type, $type, $type, rem, %); };
-    (Add, $type:ty, $out:ty) => { impl_val_delegate!(@imp Add, $type, $type, $out, add, +); };
-    (Sub, $type:ty, $out:ty) => { impl_val_delegate!(@imp Sub, $type, $type, $out, sub, -); };
-    (Mul, $type:ty, $out:ty) => { impl_val_delegate!(@imp Mul, $type, $type, $out, mul, *); };
-    (Rem, $type:ty, $out:ty) => { impl_val_delegate!(@imp Rem, $type, $type, $out, rem, %); };
-    (Add, $this:ty, $that:ty, $out:ty) => { impl_val_delegate!(@imp Add, $this, $that, $out, add, +); };
-    (Sub, $this:ty, $that:ty, $out:ty) => { impl_val_delegate!(@imp Sub, $this, $that, $out, sub, -); };
-    (Mul, $this:ty, $that:ty, $out:ty) => { impl_val_delegate!(@imp Mul, $this, $that, $out, mul, *); };
-    (Div, $this:ty, $that:ty, $out:ty) => { impl_val_delegate!(@imp Div, $this, $that, $out, div, /); };
-    (Rem, $this:ty, $that:ty, $out:ty) => { impl_val_delegate!(@imp Rem, $this, $that, $out, rem, %); };
+    (Add, $type:ty) => { impl_val_delegate!(@imp Add, $type, $type, add, +); };
+    (Sub, $type:ty) => { impl_val_delegate!(@imp Sub, $type, $type, sub, -); };
+    (Mul, $type:ty) => { impl_val_delegate!(@imp Mul, $type, $type, mul, *); };
+    (Div, $type:ty) => { impl_val_delegate!(@imp Div, $type, $type, div, /); };
+    (Rem, $type:ty) => { impl_val_delegate!(@imp Rem, $type, $type, rem, %); };
+    (Add, $type:ty, $out:ty) => { impl_val_delegate!(@imp Add, $type, $out, add, +); };
+    (Sub, $type:ty, $out:ty) => { impl_val_delegate!(@imp Sub, $type, $out, sub, -); };
+    (Mul, $type:ty, $out:ty) => { impl_val_delegate!(@imp Mul, $type, $out, mul, *); };
+    (Rem, $type:ty, $out:ty) => { impl_val_delegate!(@imp Rem, $type, $out, rem, %); };
 
-    (@imp $imp:ident, $this:ty, $that:ty, $out:ty, $func:ident, $op:tt) => {
-        impl<Rhs: Borrow<$that>> $imp<Rhs> for $this {
+    (@imp $imp:ident, $this:ty, $out:ty, $func:ident, $op:tt) => {
+        impl<Rhs: Borrow<$this>> $imp<Rhs> for $this {
             type Output = $out;
 
             fn $func(self, rhs: Rhs) -> Self::Output {
@@ -2435,11 +2392,11 @@ impl Precision {
     }
 }
 
-impl Add for &Precision {
+impl<Rhs: Borrow<Precision>> Add<Rhs> for &Precision {
     type Output = Precision;
 
-    fn add(self, rhs: Self) -> Self::Output {
-        match (self, rhs) {
+    fn add(self, rhs: Rhs) -> Self::Output {
+        match (self, rhs.borrow()) {
             (Precision::Single(a), Precision::Single(b)) => {
                 let (s, c) = a.overflowing_add(*b);
                 if c {
@@ -2452,26 +2409,26 @@ impl Add for &Precision {
         }
     }
 }
-ref_val_ops!(Add, Precision);
+impl_val_delegate!(Add, Precision);
 
 // Naive sub implementation, relying on Integer to avoid subtraction overflow
-impl Sub for &Precision {
+impl<Rhs: Borrow<Precision>> Sub<Rhs> for &Precision {
     type Output = Precision;
 
-    fn sub(self, rhs: Self) -> Self::Output {
-        match (self, rhs) {
+    fn sub(self, rhs: Rhs) -> Self::Output {
+        match (self, rhs.borrow()) {
             (Precision::Single(a), Precision::Single(b)) => (a - b).into(),
             _ => todo!(),
         }
     }
 }
-ref_val_ops!(Sub, Precision);
+impl_val_delegate!(Sub, Precision);
 
-impl Mul for &Precision {
+impl<Rhs: Borrow<Precision>> Mul<Rhs> for &Precision {
     type Output = Precision;
 
-    fn mul(self, rhs: Self) -> Self::Output {
-        match (self, rhs) {
+    fn mul(self, rhs: Rhs) -> Self::Output {
+        match (self, rhs.borrow()) {
             (Precision::Single(a), Precision::Single(b)) => {
                 let (p, o) = a.carrying_mul(*b, 0);
                 if o == 0 {
@@ -2484,14 +2441,14 @@ impl Mul for &Precision {
         }
     }
 }
-ref_val_ops!(Mul, Precision);
+impl_val_delegate!(Mul, Precision);
 
 // Integer division (e.g. div_floor); caller ensures divisor is not zero
-impl Div for &Precision {
+impl<Rhs: Borrow<Precision>> Div<Rhs> for &Precision {
     type Output = Precision;
 
-    fn div(self, rhs: Self) -> Self::Output {
-        match (self, rhs) {
+    fn div(self, rhs: Rhs) -> Self::Output {
+        match (self, rhs.borrow()) {
             (Precision::Single(a), Precision::Single(b)) => {
                 debug_assert_ne!(*b, 0);
                 (a / b).into()
@@ -2500,14 +2457,14 @@ impl Div for &Precision {
         }
     }
 }
-ref_val_ops!(Div, Precision);
+impl_val_delegate!(Div, Precision);
 
 // Unsigned remainder or modulo; caller ensures the modulus is not zero
-impl Rem for &Precision {
+impl<Rhs: Borrow<Precision>> Rem<Rhs> for &Precision {
     type Output = Precision;
 
-    fn rem(self, rhs: Self) -> Self::Output {
-        match (self, rhs) {
+    fn rem(self, rhs: Rhs) -> Self::Output {
+        match (self, rhs.borrow()) {
             (Precision::Single(a), Precision::Single(b)) => {
                 debug_assert_ne!(*b, 0);
                 (a % b).into()
@@ -2516,7 +2473,7 @@ impl Rem for &Precision {
         }
     }
 }
-ref_val_ops!(Rem, Precision);
+impl_val_delegate!(Rem, Precision);
 
 impl Display for Precision {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
