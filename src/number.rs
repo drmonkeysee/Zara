@@ -454,55 +454,93 @@ impl Neg for &Number {
     }
 }
 
-impl Add for &Number {
-    type Output = Number;
+macro_rules! impl_num_add {
+    ($($this:ty, $that:ty);+ $(;)?) => {
+        $(impl Add<$that> for $this {
+            type Output = Number;
 
-    fn add(self, rhs: Self) -> Self::Output {
-        match (self, rhs) {
-            (Number::Complex(z), n) | (n, Number::Complex(z)) => z + n,
-            (Number::Real(a), Number::Real(b)) => Number::real(a + b),
-        }
+            fn add(self, rhs: $that) -> Self::Output {
+                match (self, rhs) {
+                    (Number::Complex(z), n) => z + n,
+                    (n, Number::Complex(z)) => z + n,
+                    (Number::Real(a), Number::Real(b)) => Number::real(a + b),
+                }
+            }
+        })+
     }
 }
-ref_val_ops!(Add, Number);
+impl_num_add! {
+    Number, Number;
+    Number, &Number;
+    &Number, Number;
+    &Number, &Number;
+}
 
-impl Sub for &Number {
-    type Output = Number;
+macro_rules! impl_num_sub {
+    ($($this:ty, $that:ty, $conv:expr);+ $(;)?) => {
+        $(impl Sub<$that> for $this {
+            type Output = Number;
 
-    fn sub(self, rhs: Self) -> Self::Output {
-        match (self, rhs) {
-            (Number::Complex(z), n) => z - n,
-            (Number::Real(r), Number::Complex(z)) => r.clone().into_complex() - z,
-            (Number::Real(a), Number::Real(b)) => Number::real(a - b),
-        }
+            fn sub(self, rhs: $that) -> Self::Output {
+                match (self, rhs) {
+                    (Number::Complex(z), n) => z - n,
+                    (Number::Real(r), Number::Complex(z)) => $conv(r).into_complex() - z,
+                    (Number::Real(a), Number::Real(b)) => Number::real(a - b),
+                }
+            }
+        })+
     }
 }
-ref_val_ops!(Sub, Number);
+impl_num_sub! {
+    Number, Number, convert::identity;
+    Number, &Number, convert::identity;
+    &Number, Number, Real::clone;
+    &Number, &Number, Real::clone;
+}
 
-impl Mul for &Number {
-    type Output = Number;
+macro_rules! impl_num_mul {
+    ($($this:ty, $that:ty);+ $(;)?) => {
+        $(impl Mul<$that> for $this {
+            type Output = Number;
 
-    fn mul(self, rhs: Self) -> Self::Output {
-        match (self, rhs) {
-            (Number::Complex(z), x) | (x, Number::Complex(z)) => z * x,
-            (Number::Real(a), Number::Real(b)) => Number::real(a * b),
-        }
+            fn mul(self, rhs: $that) -> Self::Output {
+                match (self, rhs) {
+                    (Number::Complex(z), x) => z * x,
+                    (x, Number::Complex(z)) => z * x,
+                    (Number::Real(a), Number::Real(b)) => Number::real(a * b),
+                }
+            }
+        })+
     }
 }
-ref_val_ops!(Mul, Number);
+impl_num_mul! {
+    Number, Number;
+    Number, &Number;
+    &Number, Number;
+    &Number, &Number;
+}
 
-impl Div for &Number {
-    type Output = NumResult;
+macro_rules! impl_num_div {
+    ($($this:ty, $that:ty, $conv:expr);+ $(;)?) => {
+        $(impl Div<$that> for $this {
+            type Output = NumResult;
 
-    fn div(self, rhs: Self) -> Self::Output {
-        match (self, rhs) {
-            (Number::Complex(a), x) => a / x,
-            (Number::Real(r), Number::Complex(z)) => &r.clone().into_complex() / z,
-            (Number::Real(a), Number::Real(b)) => Ok(Number::real((a / b)?)),
-        }
+            fn div(self, rhs: $that) -> Self::Output {
+                match (self, rhs) {
+                    (Number::Complex(a), x) => a / x,
+                    (Number::Real(r), Number::Complex(z)) => $conv(r).into_complex() / z,
+                    (Number::Real(a), Number::Real(b)) => Ok(Number::real((a / b)?)),
+                }
+            }
+        })+
     }
 }
-ref_val_ops!(Div, Number, NumResult);
+impl_num_div! {
+    Number, Number, convert::identity;
+    Number, &Number, convert::identity;
+    &Number, Number, Real::clone;
+    &Number, &Number, Real::clone;
+}
 
 impl Display for Number {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
