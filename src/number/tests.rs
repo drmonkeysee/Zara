@@ -6995,7 +6995,7 @@ mod div {
             let quotient = ok_or_fail!(z / Number::real(2.0));
 
             let c = extract_or_fail!(quotient, Number::Complex);
-            let (re, im) = c.get_parts();
+            let (re, im) = c.into_parts();
             assert_matches!(re, Real::Float(_));
             assert_matches!(im, Real::Float(_));
         }
@@ -7008,7 +7008,7 @@ mod div {
             let quotient = ok_or_fail!(a / b);
 
             let c = extract_or_fail!(quotient, Number::Complex);
-            let (re, im) = c.get_parts();
+            let (re, im) = c.into_parts();
             assert!(!matches!(re, Real::Float(_)));
             assert!(!matches!(im, Real::Float(_)));
         }
@@ -7685,7 +7685,7 @@ mod reciprocal {
             let r = ok_or_fail!(z.try_to_reciprocal());
 
             let c = extract_or_fail!(r, Number::Complex);
-            let (re, im) = c.get_parts();
+            let (re, im) = c.into_parts();
             assert!(re.is_nan());
             assert!(im.is_nan());
         }
