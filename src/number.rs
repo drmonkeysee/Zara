@@ -1,32 +1,6 @@
-macro_rules! try_int_conversion {
-    ($type:ty, $convert:ident) => {
-        impl TryFrom<Number> for $type {
-            type Error = NumericError;
-
-            fn try_from(value: Number) -> Result<Self, Self::Error> {
-                <Self as TryFrom<&Number>>::try_from(&value)
-            }
-        }
-
-        impl TryFrom<&Number> for $type {
-            type Error = NumericError;
-
-            fn try_from(value: &Number) -> Result<Self, Self::Error> {
-                if let Number::Real(Real::Integer(n)) = value {
-                    n.$convert()
-                } else {
-                    Err(Self::Error::IntConversionInvalidType(
-                        value.as_typename().to_string(),
-                    ))
-                }
-            }
-        }
-    };
-}
-
 macro_rules! int_convert {
-    ($name:ident, $type: ty, $err:expr, $conv:expr) => {
-        fn $name(&self) -> Result<$type, NumericError> {
+    ($($name:ident, $type: ty, $err:expr, $conv:expr);+ $(;)?) => {
+        $(fn $name(&self) -> Result<$type, NumericError> {
             let Precision::Single(u) = self.precision else {
                 return Err($err);
             };
@@ -41,13 +15,13 @@ macro_rules! int_convert {
                 u.try_into()
             }
             .map_err(|_| $err)
-        }
+        })+
     };
 }
 
 macro_rules! uint_convert {
-    ($name:ident, $type:ty, $err:expr) => {
-        fn $name(&self) -> Result<$type, NumericError> {
+    ($($name:ident, $type:ty, $err:expr);+ $(;)?) => {
+        $(fn $name(&self) -> Result<$type, NumericError> {
             if self.is_negative() {
                 return Err($err);
             }
@@ -55,26 +29,7 @@ macro_rules! uint_convert {
                 return Err($err);
             };
             u.try_into().map_err(|_| $err)
-        }
-    };
-}
-
-macro_rules! sign_from {
-    ($type:ty) => {
-        impl From<$type> for Sign {
-            fn from(value: $type) -> Self {
-                #[allow(
-                    clippy::cast_possible_truncation,
-                    reason = "conversion is never called for invalid value"
-                )]
-                match value.signum() as i32 {
-                    -1 => Self::Negative,
-                    0 => Self::Zero,
-                    1 => Self::Positive,
-                    _ => unreachable!("unexpected value from signum()"),
-                }
-            }
-        }
+        })+
     };
 }
 
@@ -511,11 +466,38 @@ impl Display for Number {
     }
 }
 
-try_int_conversion!(u8, try_to_u8);
-try_int_conversion!(i32, try_to_i32);
-try_int_conversion!(u32, try_to_u32);
-try_int_conversion!(i64, try_to_i64);
-try_int_conversion!(usize, try_to_usize);
+macro_rules! try_int_conversion {
+    ($($type:ty, $convert:ident);+ $(;)?) => {
+        $(impl TryFrom<Number> for $type {
+            type Error = NumericError;
+
+            fn try_from(value: Number) -> Result<Self, Self::Error> {
+                <Self as TryFrom<&Number>>::try_from(&value)
+            }
+        }
+
+        impl TryFrom<&Number> for $type {
+            type Error = NumericError;
+
+            fn try_from(value: &Number) -> Result<Self, Self::Error> {
+                if let Number::Real(Real::Integer(n)) = value {
+                    n.$convert()
+                } else {
+                    Err(Self::Error::IntConversionInvalidType(
+                        value.as_typename().to_string(),
+                    ))
+                }
+            }
+        })+
+    };
+}
+try_int_conversion! {
+    u8, try_to_u8;
+    i32, try_to_i32;
+    u32, try_to_u32;
+    i64, try_to_i64;
+    usize, try_to_usize;
+}
 
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) struct Complex(Box<(Real, Real)>);
@@ -1785,13 +1767,12 @@ impl Integer {
         }
     }
 
-    int_convert!(
+    int_convert! {
         try_to_i32,
         i32,
         NumericError::Int32ConversionInvalidRange,
-        |u| (-(u as i64)).try_into()
-    );
-    int_convert!(
+        |u| (-(u as i64)).try_into();
+
         try_to_i64,
         i64,
         NumericError::Int64ConversionInvalidRange,
@@ -1801,15 +1782,13 @@ impl Integer {
             } else {
                 -(u as i64)
             })
-        }
-    );
-    uint_convert!(try_to_u8, u8, NumericError::ByteConversionInvalidRange);
-    uint_convert!(try_to_u32, u32, NumericError::Uint32ConversionInvalidRange);
-    uint_convert!(
-        try_to_usize,
-        usize,
-        NumericError::UsizeConversionInvalidRange
-    );
+        };
+    }
+    uint_convert! {
+        try_to_u8, u8, NumericError::ByteConversionInvalidRange;
+        try_to_u32, u32, NumericError::Uint32ConversionInvalidRange;
+        try_to_usize, usize, NumericError::UsizeConversionInvalidRange;
+    }
 
     fn make_positive(&mut self) {
         if self.sign == Sign::Negative {
@@ -2172,8 +2151,28 @@ impl Display for Sign {
     }
 }
 
-sign_from!(i64);
-sign_from!(f64);
+macro_rules! sign_from {
+    ($($type:ty);+ $(;)?) => {
+        $(impl From<$type> for Sign {
+            fn from(value: $type) -> Self {
+                #[allow(
+                    clippy::cast_possible_truncation,
+                    reason = "conversion is never called for invalid value"
+                )]
+                match value.signum() as i32 {
+                    -1 => Self::Negative,
+                    0 => Self::Zero,
+                    1 => Self::Positive,
+                    _ => unreachable!("unexpected value from signum()"),
+                }
+            }
+        })+
+    };
+}
+sign_from! {
+    i64;
+    f64;
+}
 
 impl From<Sign> for f64 {
     fn from(value: Sign) -> Self {
