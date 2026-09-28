@@ -570,7 +570,7 @@ impl Complex {
             let t = scaled_re(&r, x, Real::sub);
             (
                 assume_safe_div!(y.to_abs() / &t),
-                assume_safe_div!(&t / Real::two()).copysign(&y),
+                assume_safe_div!(t / Real::two()).copysign(y),
             )
         } else {
             let t = scaled_re(&r, x, Real::add);
@@ -736,7 +736,7 @@ impl_cpx_num_mul! {
 }
 
 macro_rules! impl_cpx_num_div {
-    ($($this:ty, $that:ty);+ $(;)?) => {
+    ($($this:ty, $that:ty, $parts:expr);+ $(;)?) => {
         $(impl Div<$that> for $this {
             type Output = NumResult;
 
@@ -744,7 +744,7 @@ macro_rules! impl_cpx_num_div {
                 match rhs {
                     Number::Complex(z) => self / z,
                     Number::Real(r) => {
-                        let (x, y) = self.get_parts();
+                        let (x, y) = $parts(self);
                         Ok(Number::complex((x / r.borrow())?, (y / r)?))
                     }
                 }
@@ -753,10 +753,10 @@ macro_rules! impl_cpx_num_div {
     };
 }
 impl_cpx_num_div! {
-    Complex, Number;
-    Complex, &Number;
-    &Complex, Number;
-    &Complex, &Number;
+    Complex, Number, Complex::into_parts;
+    Complex, &Number, Complex::into_parts;
+    &Complex, Number, Complex::get_parts;
+    &Complex, &Number, Complex::get_parts;
 }
 
 #[derive(Clone, Debug)]
