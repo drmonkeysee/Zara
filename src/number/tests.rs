@@ -1511,7 +1511,7 @@ mod integer {
     fn negative_abs() {
         let n = Integer::from(-4);
 
-        let a = n.to_abs();
+        let a = n.into_abs();
 
         assert_eq!(a.sign, Sign::Positive);
     }
@@ -1520,7 +1520,7 @@ mod integer {
     fn positive_abs() {
         let n = Integer::from(4);
 
-        let a = n.to_abs();
+        let a = n.into_abs();
 
         assert_eq!(a.sign, Sign::Positive);
     }
@@ -1529,7 +1529,7 @@ mod integer {
     fn zero_abs() {
         let n = Integer::from(0);
 
-        let a = n.to_abs();
+        let a = n.into_abs();
 
         assert_eq!(a.sign, Sign::Zero);
     }
@@ -1865,7 +1865,7 @@ mod integer {
                 let expected = Integer::from(a) * Integer::from(b);
                 assert_eq!(
                     extract_or_fail!(product.precision, Precision::Single),
-                    extract_or_fail!(expected.to_abs().precision, Precision::Single)
+                    extract_or_fail!(expected.into_abs().precision, Precision::Single)
                 );
             }
         }
@@ -3721,7 +3721,7 @@ mod rational {
     fn negative_abs() {
         let q = Rational(((-4).into(), 5.into()).into());
 
-        let abs = q.to_abs();
+        let abs = q.into_abs();
 
         assert_eq!(abs.0.0.sign, Sign::Positive);
     }
@@ -3730,7 +3730,7 @@ mod rational {
     fn positive_abs() {
         let q = Rational((4.into(), 5.into()).into());
 
-        let abs = q.to_abs();
+        let abs = q.into_abs();
 
         assert_eq!(abs.0.0.sign, Sign::Positive);
     }
@@ -3739,7 +3739,7 @@ mod rational {
     fn zero_abs() {
         let q = Rational((0.into(), 5.into()).into());
 
-        let abs = q.to_abs();
+        let abs = q.into_abs();
 
         assert_eq!(abs.0.0.sign, Sign::Zero);
     }
@@ -3748,7 +3748,7 @@ mod rational {
     fn negative_denom_not_checked_for_abs() {
         let q = Rational((4.into(), (-5).into()).into());
 
-        let abs = q.to_abs();
+        let abs = q.into_abs();
 
         assert_eq!(abs.0.0.sign, Sign::Positive);
         assert_eq!(abs.0.1.sign, Sign::Negative);

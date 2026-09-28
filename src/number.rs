@@ -467,7 +467,7 @@ impl Sub for &Number {
     fn sub(self, rhs: Self) -> Self::Output {
         match (self, rhs) {
             (Number::Complex(z), n) => z - n,
-            (Number::Real(r), Number::Complex(z)) => r.to_complex() - z,
+            (Number::Real(r), Number::Complex(z)) => r.clone().into_complex() - z,
             (Number::Real(a), Number::Real(b)) => Number::real(a - b),
         }
     }
@@ -492,7 +492,7 @@ impl Div for &Number {
     fn div(self, rhs: Self) -> Self::Output {
         match (self, rhs) {
             (Number::Complex(a), x) => a / x,
-            (Number::Real(r), Number::Complex(z)) => &r.to_complex() / z,
+            (Number::Real(r), Number::Complex(z)) => &r.clone().into_complex() / z,
             (Number::Real(a), Number::Real(b)) => Ok(Number::real((a / b)?)),
         }
     }
@@ -557,7 +557,7 @@ impl Complex {
     }
 
     fn try_to_reciprocal(&self) -> NumResult {
-        &Real::one().to_complex() / self
+        &Real::one().into_complex() / self
     }
 
     fn get_parts(&self) -> (&Real, &Real) {
@@ -681,7 +681,7 @@ impl Sub<&Number> for &Complex {
     fn sub(self, rhs: &Number) -> Self::Output {
         match rhs {
             Number::Complex(z) => self.sub(z),
-            Number::Real(r) => self.sub(r.to_complex()),
+            Number::Real(r) => self.sub(r.clone().into_complex()),
         }
     }
 }
@@ -694,7 +694,7 @@ impl Mul<&Number> for &Complex {
         let (a, b) = self.get_parts();
         let (c, d) = match rhs {
             Number::Complex(z) => z.to_parts(),
-            Number::Real(r) => r.to_complex().to_parts(),
+            Number::Real(r) => r.clone().into_complex().to_parts(),
         };
         Number::complex((a * &c) - (b * &d), (a * &d) + (b * &c))
     }
@@ -876,8 +876,8 @@ impl Real {
     pub(crate) fn to_abs(&self) -> Self {
         match self {
             Self::Float(f) => f.abs().into(),
-            Self::Integer(n) => n.to_abs().into(),
-            Self::Rational(q) => Self::Rational(q.to_abs()),
+            Self::Integer(n) => n.clone().into_abs().into(),
+            Self::Rational(q) => Self::Rational(q.clone().into_abs()),
         }
     }
 
@@ -1024,24 +1024,20 @@ impl Real {
         }
     }
 
-    fn copysign(&self, sign: &Real) -> Self {
-        let s = sign.signum();
-        match self {
-            Self::Float(f) => f.copysign(s).into(),
-            Self::Integer(n) => n.copysign(s).into(),
-            Self::Rational(q) => Self::Rational(q.copysign(s)),
-        }
-    }
-
-    fn to_complex(&self) -> Complex {
-        Complex((self.clone(), Self::zero()).into())
-    }
-
     fn try_to_reciprocal(&self) -> RealResult {
         match self {
             Self::Float(f) => Ok(f.recip().into()),
             Self::Integer(n) => n.clone().try_into_reciprocal(),
             Self::Rational(q) => q.clone().try_into_reciprocal(),
+        }
+    }
+
+    fn copysign(&self, sign: &Real) -> Self {
+        let s = sign.signum();
+        match self {
+            Self::Float(f) => f.copysign(s).into(),
+            Self::Integer(n) => n.clone().copysign(s).into(),
+            Self::Rational(q) => Self::Rational(q.clone().copysign(s)),
         }
     }
 
@@ -1062,6 +1058,10 @@ impl Real {
     }
     fn sub(&self, rhs: &Self) -> Self {
         self - rhs
+    }
+
+    fn into_complex(self) -> Complex {
+        Complex((self, Self::zero()).into())
     }
 }
 
@@ -1254,10 +1254,6 @@ impl Rational {
         self.to_float().into()
     }
 
-    fn to_abs(&self) -> Self {
-        Self((self.0.0.to_abs(), self.0.1.clone()).into())
-    }
-
     fn to_numerator(&self) -> Integer {
         self.0.0.clone()
     }
@@ -1288,10 +1284,6 @@ impl Rational {
     fn to_round(&self) -> Integer {
         let (n, d) = self.get_parts();
         n.div_round(d)
-    }
-
-    fn try_into_reciprocal(self) -> RealResult {
-        Real::reduce(self.0.1, self.0.0)
     }
 
     // a/b ± c/d = (ad ± cb)/bd except cross-reduce with gcd and lcm to lessen
@@ -1326,9 +1318,18 @@ impl Rational {
         }
     }
 
-    fn copysign(&self, sign: f64) -> Self {
-        let (n, d) = self.get_parts();
-        Self((n.copysign(sign), d.clone()).into())
+    fn into_abs(mut self) -> Self {
+        self.0.0 = self.0.0.into_abs();
+        self
+    }
+
+    fn try_into_reciprocal(self) -> RealResult {
+        Real::reduce(self.0.1, self.0.0)
+    }
+
+    fn copysign(mut self, sign: f64) -> Self {
+        self.0.0 = self.0.0.copysign(sign);
+        self
     }
 }
 
@@ -1664,20 +1665,6 @@ impl Integer {
         }
     }
 
-    fn into_rational(self) -> Rational {
-        Rational((self, Self::one()).into())
-    }
-
-    fn to_abs(&self) -> Self {
-        let mut a = self.clone();
-        a.make_positive();
-        a
-    }
-
-    fn try_into_reciprocal(self) -> RealResult {
-        Self::one() / self
-    }
-
     fn safe_sum(&self, rhs: &Self) -> Self {
         let sum = &self.precision + &rhs.precision;
         Self::new(sum, self.sign)
@@ -1700,10 +1687,6 @@ impl Integer {
         } else {
             sign_preserving_sqrt(self.to_float()).into()
         }
-    }
-
-    fn copysign(&self, sign: f64) -> Self {
-        Self::new(self.precision.clone(), sign)
     }
 
     // All of the following exact-division operations assume arguments come
@@ -1737,14 +1720,6 @@ impl Integer {
             Sign::Positive => Self::new(pos(&self.precision, &rhs.precision), s),
             Sign::Zero => Self::zero(),
         }
-    }
-
-    // convenience wrappers for passing Op impls as closures
-    fn add(self, rhs: Self) -> Self {
-        self + rhs
-    }
-    fn sub(self, rhs: Self) -> Self {
-        self - rhs
     }
 
     int_convert!(
@@ -1787,6 +1762,32 @@ impl Integer {
 
     fn reduce(&mut self, other: &mut Self) {
         self.precision.reduce(&mut other.precision);
+    }
+
+    fn into_rational(self) -> Rational {
+        Rational((self, Self::one()).into())
+    }
+
+    fn into_abs(mut self) -> Self {
+        self.make_positive();
+        self
+    }
+
+    fn try_into_reciprocal(self) -> RealResult {
+        Self::one() / self
+    }
+
+    fn copysign(mut self, sign: f64) -> Self {
+        self.sign = sign.into();
+        self
+    }
+
+    // convenience wrappers for passing Op impls as closures
+    fn add(self, rhs: Self) -> Self {
+        self + rhs
+    }
+    fn sub(self, rhs: Self) -> Self {
+        self - rhs
     }
 }
 
