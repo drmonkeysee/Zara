@@ -346,13 +346,13 @@ fn real_acc_cmp<'a>(
 fn commutative_arithmetic(
     args: &[Value],
     identity: Number,
-    op: impl Fn(&Number, &Number) -> Number,
+    op: impl Fn(Number, &Number) -> Number,
 ) -> EvalResult {
     args.iter()
         .enumerate()
         .try_fold(identity, |acc, (idx, v)| {
             if let Value::Number(x) = v {
-                Ok(op(&acc, x))
+                Ok(op(acc, x))
             } else {
                 Err(Condition::arg_error(idx, TypeName::NUMBER, v).into())
             }
@@ -363,7 +363,7 @@ fn commutative_arithmetic(
 fn inverse_arithmetic(
     args: &[Value],
     inverse: impl FnOnce(&Number) -> NumResult,
-    op: impl Fn(&Number, &Number) -> NumResult,
+    op: impl Fn(Number, &Number) -> NumResult,
 ) -> EvalResult {
     let arg = first(args);
     let Value::Number(x) = arg else {
@@ -380,7 +380,7 @@ fn inverse_arithmetic(
             .enumerate()
             .try_fold(x.clone(), |sum, (idx, v)| {
                 if let Value::Number(x) = v {
-                    Ok(op(&sum, x)
+                    Ok(op(sum, x)
                         .map_err(|err| Exception::signal(Condition::value_error(err, v)))?)
                 } else {
                     Err(Condition::arg_error(idx + 1, TypeName::NUMBER, v).into())

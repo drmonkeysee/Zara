@@ -326,13 +326,13 @@ impl Number {
     }
 
     // convenience wrappers for passing Op impls as closures
-    pub(crate) fn add(&self, rhs: &Self) -> Self {
+    pub(crate) fn add(self, rhs: &Self) -> Self {
         self + rhs
     }
-    pub(crate) fn mul(&self, rhs: &Self) -> Self {
+    pub(crate) fn mul(self, rhs: &Self) -> Self {
         self * rhs
     }
-    pub(crate) fn div(&self, rhs: &Self) -> NumResult {
+    pub(crate) fn div(self, rhs: &Self) -> NumResult {
         self / rhs
     }
 }
