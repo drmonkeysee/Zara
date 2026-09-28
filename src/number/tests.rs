@@ -7709,7 +7709,7 @@ mod sqrt {
     // destructure a complex sqrt result into its real and imaginary parts
     macro_rules! complex_parts {
         ($n:expr) => {
-            extract_or_fail!($n, Number::Complex).to_parts()
+            extract_or_fail!($n, Number::Complex).into_parts()
         };
     }
 

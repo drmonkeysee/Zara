@@ -118,17 +118,22 @@ macro_rules! ref_val_ops {
 }
 
 macro_rules! impl_val_delegate {
-    (Add, $type:ty) => { impl_val_delegate!(@imp Add, $type, $type, add, +); };
-    (Sub, $type:ty) => { impl_val_delegate!(@imp Sub, $type, $type, sub, -); };
-    (Mul, $type:ty) => { impl_val_delegate!(@imp Mul, $type, $type, mul, *); };
-    (Rem, $type:ty) => { impl_val_delegate!(@imp Rem, $type, $type, rem, %); };
-    (Add, $type:ty, $out:ty) => { impl_val_delegate!(@imp Add, $type, $out, add, +); };
-    (Sub, $type:ty, $out:ty) => { impl_val_delegate!(@imp Sub, $type, $out, sub, -); };
-    (Mul, $type:ty, $out:ty) => { impl_val_delegate!(@imp Mul, $type, $out, mul, *); };
-    (Rem, $type:ty, $out:ty) => { impl_val_delegate!(@imp Rem, $type, $out, rem, %); };
+    (Add, $type:ty) => { impl_val_delegate!(@imp Add, $type, $type, $type, add, +); };
+    (Sub, $type:ty) => { impl_val_delegate!(@imp Sub, $type, $type, $type, sub, -); };
+    (Mul, $type:ty) => { impl_val_delegate!(@imp Mul, $type, $type, $type, mul, *); };
+    (Rem, $type:ty) => { impl_val_delegate!(@imp Rem, $type, $type, $type, rem, %); };
+    (Add, $type:ty, $out:ty) => { impl_val_delegate!(@imp Add, $type, $type, $out, add, +); };
+    (Sub, $type:ty, $out:ty) => { impl_val_delegate!(@imp Sub, $type, $type, $out, sub, -); };
+    (Mul, $type:ty, $out:ty) => { impl_val_delegate!(@imp Mul, $type, $type, $out, mul, *); };
+    (Rem, $type:ty, $out:ty) => { impl_val_delegate!(@imp Rem, $type, $type, $out, rem, %); };
+    (Add, $this:ty, $that:ty, $out:ty) => { impl_val_delegate!(@imp Add, $this, $that, $out, add, +); };
+    (Sub, $this:ty, $that:ty, $out:ty) => { impl_val_delegate!(@imp Sub, $this, $that, $out, sub, -); };
+    (Mul, $this:ty, $that:ty, $out:ty) => { impl_val_delegate!(@imp Mul, $this, $that, $out, mul, *); };
+    (Div, $this:ty, $that:ty, $out:ty) => { impl_val_delegate!(@imp Div, $this, $that, $out, div, /); };
+    (Rem, $this:ty, $that:ty, $out:ty) => { impl_val_delegate!(@imp Rem, $this, $that, $out, rem, %); };
 
-    (@imp $imp:ident, $this:ty, $out:ty, $func:ident, $op:tt) => {
-        impl<Rhs: Borrow<$this>> $imp<Rhs> for $this {
+    (@imp $imp:ident, $this:ty, $that:ty, $out:ty, $func:ident, $op:tt) => {
+        impl<Rhs: Borrow<$that>> $imp<Rhs> for $this {
             type Output = $out;
 
             fn $func(self, rhs: Rhs) -> Self::Output {
@@ -547,17 +552,13 @@ impl Complex {
         Real::Float(y.to_float().atan2(x.to_float()))
     }
 
-    fn to_parts(&self) -> (Real, Real) {
-        (self.0.0.clone(), self.0.1.clone())
-    }
-
     fn to_conjugate(&self) -> Number {
         let (x, y) = self.get_parts();
         Number::complex(x.clone(), -y)
     }
 
     fn try_to_reciprocal(&self) -> NumResult {
-        &Real::one().into_complex() / self
+        Real::one().into_complex() / self
     }
 
     fn get_parts(&self) -> (&Real, &Real) {
@@ -600,118 +601,185 @@ impl Complex {
         };
         Number::complex(u, v)
     }
-}
 
-impl Sub for &Complex {
-    type Output = Number;
-
-    fn sub(self, rhs: Self) -> Self::Output {
-        let (x, y) = self.get_parts();
-        let (u, v) = rhs.get_parts();
-        Number::complex(x - u, y - v)
-    }
-}
-ref_val_ops!(Sub, Complex, Number);
-
-impl Div for &Complex {
-    type Output = NumResult;
-
-    /*
-     * Smith's Algorithm for (a + bi) / (c + di)
-     * https://dl.acm.org/doi/abs/10.1145/368637.368661
-     *  if |c| < |d|:
-     *      r = c / d
-     *      denom = c*r + d
-     *      real = (a*r + b) / denom
-     *      imag = (b*r - a) / denom
-     *  else:
-     *      r = d / c
-     *      denom = c + d*r
-     *      real = (a + b*r) / denom
-     *      imag = (b - a*r) / denom
-     * The textbook formula for complex division is:
-     * (a + bi) / ( c + di ) = (ac + bd) / (c² + d²) + (bc - ad) / (c² + d²)i
-     * which causes issues with IEEE-754 where the squares could overflow to inf
-     * even if the final answer would be within range, as well as losing sign-of-zero
-     * in the event the numerators sum over opposite-sign zeros.
-     * Smith's algorithm avoids this by avoiding squares and using ratios of the
-     * imaginary parts, as well as avoiding addition/subtraction of two products.
-     */
-    #[allow(clippy::many_single_char_names)]
-    fn div(self, rhs: Self) -> Self::Output {
-        let ((a, b), (mut c, mut d)) = (self.get_parts(), rhs.to_parts());
-        // Don't mix exact/inexact in the ratio/denominator elements as exact values
-        // can interact strangely with signed zeros, nan, and inf; apply float-taint
-        // to quotient calculations to avoid these issues.
-        if c.is_inexact() || d.is_inexact() {
-            (c, d) = (c.to_inexact(), d.to_inexact());
-        }
-        let (re, im) = if c.to_abs() < d.to_abs() {
-            let r = (&c / &d)?;
-            let denom = (&c * &r) + &d;
-            ((((a * &r) + b) / &denom)?, (((b * &r) - a) / &denom)?)
-        } else {
-            let r = (&d / &c)?;
-            let denom = &c + (&d * &r);
-            (((a + (b * &r)) / &denom)?, ((b - (a * &r)) / &denom)?)
-        };
-        Ok(Number::complex(re, im))
+    fn into_parts(self) -> (Real, Real) {
+        (self.0.0, self.0.1)
     }
 }
 
-impl Add<&Number> for &Complex {
-    type Output = Number;
+macro_rules! impl_cpx_sub {
+    ($($this:ty, $that:ty, $lp:expr, $rp:expr);+ $(;)?) => {
+        $(impl Sub<$that> for $this {
+            type Output = Number;
 
-    #[allow(clippy::many_single_char_names)]
-    fn add(self, rhs: &Number) -> Self::Output {
-        let (x, y) = self.get_parts();
-        match rhs {
-            Number::Complex(w) => {
-                let (u, v) = w.get_parts();
-                Number::complex(x + u, y + v)
+            fn sub(self, rhs: $that) -> Self::Output {
+                let (x, y) = $lp(self);
+                let (u, v) = $rp(rhs);
+                Number::complex(x - u, y - v)
             }
-            Number::Real(r) => Number::complex(x + r, y.clone()),
-        }
-    }
+        })+
+    };
+}
+impl_cpx_sub! {
+    Complex, Complex, Complex::into_parts, Complex::into_parts;
+    Complex, &Complex, Complex::into_parts, Complex::get_parts;
+    &Complex, Complex, Complex::get_parts, Complex::into_parts;
+    &Complex, &Complex, Complex::get_parts, Complex::get_parts;
 }
 
-impl Sub<&Number> for &Complex {
-    type Output = Number;
+macro_rules! impl_cpx_div {
+    ($($this:ty, $that:ty, $conv:expr);+ $(;)?) => {
+        $(impl Div<$that> for $this {
+            type Output = NumResult;
 
-    fn sub(self, rhs: &Number) -> Self::Output {
-        match rhs {
-            Number::Complex(z) => self.sub(z),
-            Number::Real(r) => self.sub(r.clone().into_complex()),
-        }
-    }
-}
-
-impl Mul<&Number> for &Complex {
-    type Output = Number;
-
-    // Complex multiplication: (a + bi) * (c + di) = (ac - bd) + (ad + bc)i
-    fn mul(self, rhs: &Number) -> Self::Output {
-        let (a, b) = self.get_parts();
-        let (c, d) = match rhs {
-            Number::Complex(z) => z.to_parts(),
-            Number::Real(r) => r.clone().into_complex().to_parts(),
-        };
-        Number::complex((a * &c) - (b * &d), (a * &d) + (b * &c))
-    }
-}
-
-impl Div<&Number> for &Complex {
-    type Output = NumResult;
-
-    fn div(self, rhs: &Number) -> Self::Output {
-        match rhs {
-            Number::Complex(z) => self.div(z),
-            Number::Real(r) => {
-                let (x, y) = self.get_parts();
-                Ok(Number::complex((x / r)?, (y / r)?))
+            /*
+             * Smith's Algorithm for (a + bi) / (c + di)
+             * https://dl.acm.org/doi/abs/10.1145/368637.368661
+             *  if |c| < |d|:
+             *      r = c / d
+             *      denom = c*r + d
+             *      real = (a*r + b) / denom
+             *      imag = (b*r - a) / denom
+             *  else:
+             *      r = d / c
+             *      denom = c + d*r
+             *      real = (a + b*r) / denom
+             *      imag = (b - a*r) / denom
+             * The textbook formula for complex division is:
+             * (a + bi) / ( c + di ) = (ac + bd) / (c² + d²) + (bc - ad) / (c² + d²)i
+             * which causes issues with IEEE-754 where the squares could overflow to inf
+             * even if the final answer would be within range, as well as losing sign-of-zero
+             * in the event the numerators sum over opposite-sign zeros.
+             * Smith's algorithm avoids this by avoiding squares and using ratios of the
+             * imaginary parts, as well as avoiding addition/subtraction of two products.
+             */
+            #[allow(clippy::many_single_char_names)]
+            fn div(self, rhs: $that) -> Self::Output {
+                let ((a, b), (mut c, mut d)) = (self.get_parts(), $conv(rhs).into_parts());
+                // Don't mix exact/inexact in the ratio/denominator elements as exact values
+                // can interact strangely with signed zeros, nan, and inf; apply float-taint
+                // to quotient calculations to avoid these issues.
+                if c.is_inexact() || d.is_inexact() {
+                    (c, d) = (c.to_inexact(), d.to_inexact());
+                }
+                let (re, im) = if c.to_abs() < d.to_abs() {
+                    let r = (&c / &d)?;
+                    let denom = (c * &r) + d;
+                    ((((a * &r) + b) / &denom)?, (((b * r) - a) / denom)?)
+                } else {
+                    let r = (&d / &c)?;
+                    let denom = c + (d * &r);
+                    (((a + (b * &r)) / &denom)?, ((b - (a * r)) / denom)?)
+                };
+                Ok(Number::complex(re, im))
             }
-        }
-    }
+        })+
+    };
+}
+impl_cpx_div! {
+    Complex, Complex, convert::identity;
+    Complex, &Complex, Complex::clone;
+    &Complex, Complex, convert::identity;
+    &Complex, &Complex, Complex::clone;
+}
+
+macro_rules! impl_cpx_num_add {
+    ($($this:ty, $that:ty, $lp:expr, $rp:expr, $ic:expr);+ $(;)?) => {
+        $(impl Add<$that> for $this {
+            type Output = Number;
+
+            fn add(self, rhs: $that) -> Self::Output {
+                let (x, y) = $lp(self);
+                match rhs {
+                    Number::Complex(w) => {
+                        let (u, v) = $rp(w);
+                        Number::complex(x + u, y + v)
+                    }
+                    Number::Real(r) => Number::complex(x + r, $ic(y)),
+                }
+            }
+        })+
+    };
+}
+impl_cpx_num_add! {
+    Complex, Number, Complex::into_parts, Complex::into_parts, convert::identity;
+    Complex, &Number, Complex::into_parts, Complex::get_parts, convert::identity;
+    &Complex, Number, Complex::get_parts, Complex::into_parts, Real::clone;
+    &Complex, &Number, Complex::get_parts, Complex::get_parts, Real::clone;
+}
+
+macro_rules! impl_cpx_num_sub {
+    ($($this:ty, $that:ty, $conv:expr);+ $(;)?) => {
+        $(impl Sub<$that> for $this {
+            type Output = Number;
+
+            fn sub(self, rhs: $that) -> Self::Output {
+                match rhs {
+                    Number::Complex(z) => self - z,
+                    Number::Real(r) => self - $conv(r).into_complex(),
+                }
+            }
+        })+
+    };
+}
+impl_cpx_num_sub! {
+    Complex, Number, convert::identity;
+    Complex, &Number, Real::clone;
+    &Complex, Number, convert::identity;
+    &Complex, &Number, Real::clone;
+}
+
+macro_rules! impl_cpx_num_mul {
+    ($($this:ty, $that:ty, $rc:expr);+ $(;)?) => {
+        $(impl Mul<$that> for $this {
+            type Output = Number;
+
+            // Complex multiplication: (a + bi) * (c + di) = (ac - bd) + (ad + bc)i
+            fn mul(self, rhs: $that) -> Self::Output {
+                let (a, b) = self.get_parts();
+                match rhs {
+                    Number::Complex(z) => {
+                        let (c, d) = z.get_parts();
+                        cpx_product(a, b, c, d)
+                    },
+                    Number::Real(r) => {
+                        let (c, d) = $rc(r).into_complex().into_parts();
+                        cpx_product(a, b, &c, &d)
+                    },
+                }
+            }
+        })+
+    };
+}
+impl_cpx_num_mul! {
+    Complex, Number, convert::identity;
+    Complex, &Number, Real::clone;
+    &Complex, Number, convert::identity;
+    &Complex, &Number, Real::clone;
+}
+
+macro_rules! impl_cpx_num_div {
+    ($($this:ty, $that:ty);+ $(;)?) => {
+        $(impl Div<$that> for $this {
+            type Output = NumResult;
+
+            fn div(self, rhs: $that) -> Self::Output {
+                match rhs {
+                    Number::Complex(z) => self / z,
+                    Number::Real(r) => {
+                        let (x, y) = self.get_parts();
+                        Ok(Number::complex((x / r.borrow())?, (y / r)?))
+                    }
+                }
+            }
+        })+
+    };
+}
+impl_cpx_num_div! {
+    Complex, Number;
+    Complex, &Number;
+    &Complex, Number;
+    &Complex, &Number;
 }
 
 #[derive(Clone, Debug)]
@@ -2487,6 +2555,10 @@ fn scaled_re(r: &Real, x: &Real, op: impl FnOnce(&Real, &Real) -> Real) -> Real 
     let t = (Real::two() * op(r, x)).sqrt();
     debug_assert!(!t.is_zero());
     t
+}
+
+fn cpx_product(a: &Real, b: &Real, c: &Real, d: &Real) -> Number {
+    Number::complex((a * c) - (b * d), (a * d) + (b * c))
 }
 
 fn try_float_to_exact(flt: f64) -> RealResult {
