@@ -1949,7 +1949,7 @@ macro_rules! impl_int_div {
     }
 }
 impl_int_div! {
-    Integer, Integer, |a, b| Real::reduce(a, b);
+    Integer, Integer, Real::reduce;
     Integer, &Integer, |a, b: &Integer| a / b.clone();
     &Integer, Integer, |a: &Integer, b| a.clone() / b;
     &Integer, &Integer, |a: &Integer, b: &Integer| a.clone() / b.clone();
