@@ -117,6 +117,27 @@ macro_rules! ref_val_ops {
     };
 }
 
+macro_rules! impl_val_delegate {
+    (Add, $type:ty) => { impl_val_delegate!(@imp Add, $type, $type, add, +); };
+    (Sub, $type:ty) => { impl_val_delegate!(@imp Sub, $type, $type, sub, -); };
+    (Mul, $type:ty) => { impl_val_delegate!(@imp Mul, $type, $type, mul, *); };
+    (Rem, $type:ty) => { impl_val_delegate!(@imp Rem, $type, $type, rem, %); };
+    (Add, $type:ty, $out:ty) => { impl_val_delegate!(@imp Add, $type, $out, add, +); };
+    (Sub, $type:ty, $out:ty) => { impl_val_delegate!(@imp Sub, $type, $out, sub, -); };
+    (Mul, $type:ty, $out:ty) => { impl_val_delegate!(@imp Mul, $type, $out, mul, *); };
+    (Rem, $type:ty, $out:ty) => { impl_val_delegate!(@imp Rem, $type, $out, rem, %); };
+
+    (@imp $imp:ident, $this:ty, $out:ty, $func:ident, $op:tt) => {
+        impl<Rhs: Borrow<$this>> $imp<Rhs> for $this {
+            type Output = $out;
+
+            fn $func(self, rhs: Rhs) -> Self::Output {
+                &self $op rhs
+            }
+        }
+    };
+}
+
 macro_rules! inexact_cmp_exact {
     ($inexact:expr, $flt:expr, $cmp:ident, $exact:expr) => {
         $inexact
@@ -764,8 +785,8 @@ impl Real {
 
     // assume divisor is a factor of dividend, so reduction ensures an Integer;
     // will panic if assumption does not hold.
-    fn exact_quotient(dividend: &Integer, divisor: &Integer) -> Integer {
-        let r = assume_safe_div!(Self::reduce(dividend.clone(), divisor.clone()));
+    fn exact_quotient(dividend: impl Into<Integer>, divisor: impl Into<Integer>) -> Integer {
+        let r = assume_safe_div!(Self::reduce(dividend, divisor));
         let Self::Integer(n) = r else {
             unreachable!("unexpected non-factor divisor");
         };
@@ -1019,8 +1040,8 @@ impl Real {
     fn try_to_reciprocal(&self) -> RealResult {
         match self {
             Self::Float(f) => Ok(f.recip().into()),
-            Self::Integer(n) => n.try_to_reciprocal(),
-            Self::Rational(q) => q.try_to_reciprocal(),
+            Self::Integer(n) => n.clone().try_into_reciprocal(),
+            Self::Rational(q) => q.clone().try_into_reciprocal(),
         }
     }
 
@@ -1086,65 +1107,101 @@ impl Neg for &Real {
     }
 }
 
-impl Add for &Real {
-    type Output = Real;
+macro_rules! impl_real_add {
+    ($($this:ty, $that:ty, $addz:expr);+ $(;)?) => {
+        $(impl Add<$that> for $this {
+            type Output = Real;
 
-    fn add(self, rhs: Self) -> Self::Output {
-        match self {
-            // integral additive identity should not affect a float;
-            // if we convert to float we get -0.0 + 0.0 = 0.0 which is wrong!
-            // exact zero shouldn't affect the sign of inexact zero.
-            Real::Float(_) if rhs.is_exact_zero() => self.clone(),
-            Real::Float(f) => (f + rhs.to_float()).into(),
-            Real::Integer(n) => n + rhs,
-            Real::Rational(q) => q + rhs,
-        }
-    }
+            fn add(self, rhs: $that) -> Self::Output {
+                match self {
+                    // integral additive identity should not affect a float;
+                    // if we convert to float we get -0.0 + 0.0 = 0.0 which is wrong!
+                    // exact zero shouldn't affect the sign of inexact zero.
+                    Real::Float(_) if rhs.is_exact_zero() => $addz(self),
+                    Real::Float(f) => (f + rhs.to_float()).into(),
+                    Real::Integer(n) => n + rhs,
+                    Real::Rational(q) => q + rhs,
+                }
+            }
+        })+
+    };
 }
-ref_val_ops!(Add, Real);
-
-impl Sub for &Real {
-    type Output = Real;
-
-    fn sub(self, rhs: Self) -> Self::Output {
-        match self {
-            Real::Float(f) => (f - rhs.to_float()).into(),
-            Real::Integer(n) => n - rhs,
-            Real::Rational(q) => q - rhs,
-        }
-    }
+impl_real_add! {
+    Real, Real, convert::identity;
+    Real, &Real, convert::identity;
+    &Real, Real, Real::clone;
+    &Real, &Real, Real::clone;
 }
-ref_val_ops!(Sub, Real);
 
-impl Mul for &Real {
-    type Output = Real;
+macro_rules! impl_real_sub {
+    ($($this:ty, $that:ty);+ $(;)?) => {
+        $(impl Sub<$that> for $this {
+            type Output = Real;
 
-    fn mul(self, rhs: Self) -> Self::Output {
-        match self {
-            // exact zero overrides float-taint
-            Real::Float(_) if rhs.is_exact_zero() => rhs.clone(),
-            Real::Float(f) => (f * rhs.to_float()).into(),
-            Real::Integer(n) => n * rhs,
-            Real::Rational(q) => q * rhs,
-        }
-    }
+            fn sub(self, rhs: $that) -> Self::Output {
+                match self {
+                    Real::Float(f) => (f - rhs.to_float()).into(),
+                    Real::Integer(n) => n - rhs,
+                    Real::Rational(q) => q - rhs,
+                }
+            }
+        })+
+    };
 }
-ref_val_ops!(Mul, Real);
-
-impl Div for &Real {
-    type Output = RealResult;
-
-    fn div(self, rhs: Self) -> Self::Output {
-        match self {
-            // exact zero overrides float-taint
-            Real::Float(_) if rhs.is_exact_zero() => Err(NumericError::DivideByZero),
-            Real::Float(f) => Ok((f / rhs.to_float()).into()),
-            Real::Integer(n) => n / rhs,
-            Real::Rational(q) => q / rhs,
-        }
-    }
+impl_real_sub! {
+    Real, Real;
+    Real, &Real;
+    &Real, Real;
+    &Real, &Real;
 }
-ref_val_ops!(Div, Real, RealResult);
+
+macro_rules! impl_real_mul {
+    ($($this:ty, $that:ty, $mulz:expr);+ $(;)?) => {
+        $(impl Mul<$that> for $this {
+            type Output = Real;
+
+            fn mul(self, rhs: $that) -> Self::Output {
+                match self {
+                    // exact zero overrides float-taint
+                    Real::Float(_) if rhs.is_exact_zero() => $mulz(rhs),
+                    Real::Float(f) => (f * rhs.to_float()).into(),
+                    Real::Integer(n) => n * rhs,
+                    Real::Rational(q) => q * rhs,
+                }
+            }
+        })+
+    };
+}
+impl_real_mul! {
+    Real, Real, convert::identity;
+    Real, &Real, Real::clone;
+    &Real, Real, convert::identity;
+    &Real, &Real, Real::clone;
+}
+
+macro_rules! impl_real_div {
+    ($($this:ty, $that:ty);+ $(;)?) => {
+        $(impl Div<$that> for $this {
+            type Output = RealResult;
+
+            fn div(self, rhs: $that) -> Self::Output {
+                match self {
+                    // exact zero overrides float-taint
+                    Real::Float(_) if rhs.is_exact_zero() => Err(NumericError::DivideByZero),
+                    Real::Float(f) => Ok((f / rhs.to_float()).into()),
+                    Real::Integer(n) => n / rhs,
+                    Real::Rational(q) => q / rhs,
+                }
+            }
+        })+
+    };
+}
+impl_real_div! {
+    Real, Real;
+    Real, &Real;
+    &Real, Real;
+    &Real, &Real;
+}
 
 impl Display for Real {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
@@ -1233,8 +1290,8 @@ impl Rational {
         n.div_round(d)
     }
 
-    fn try_to_reciprocal(&self) -> RealResult {
-        Real::reduce(self.0.1.clone(), self.0.0.clone())
+    fn try_into_reciprocal(self) -> RealResult {
+        Real::reduce(self.0.1, self.0.0)
     }
 
     // a/b ± c/d = (ad ± cb)/bd except cross-reduce with gcd and lcm to lessen
@@ -1243,16 +1300,16 @@ impl Rational {
     // is wired up correctly this will only be called with canonical rationals
     // or integer reciprocals.
     #[allow(clippy::many_single_char_names)]
-    fn additive_op(&self, rhs: &Self, op: impl FnOnce(&Integer, &Integer) -> Integer) -> Real {
+    fn additive_op(&self, rhs: &Self, op: impl FnOnce(Integer, Integer) -> Integer) -> Real {
         let (a, b) = self.get_parts();
         let (c, d) = rhs.get_parts();
         let g = b.gcd(d);
         let m = b.lcm(d);
         debug_assert!(!g.is_zero());
         debug_assert!(!m.is_zero());
-        let ad = a * Real::exact_quotient(d, &g);
-        let cb = c * Real::exact_quotient(b, &g);
-        assume_safe_div!(op(&ad, &cb) / m)
+        let ad = a * Real::exact_quotient(d.clone(), g.clone());
+        let cb = c * Real::exact_quotient(b.clone(), g);
+        assume_safe_div!(op(ad, cb) / m)
     }
 
     fn sqrt(&self) -> Real {
@@ -1306,25 +1363,25 @@ impl Neg for &Rational {
     }
 }
 
-impl Add for &Rational {
+impl<Rhs: Borrow<Rational>> Add<Rhs> for &Rational {
     type Output = Real;
 
-    fn add(self, rhs: Self) -> Self::Output {
-        self.additive_op(rhs, Integer::add)
+    fn add(self, rhs: Rhs) -> Self::Output {
+        self.additive_op(rhs.borrow(), Integer::add)
     }
 }
-ref_val_ops!(Add, Rational, Real);
+impl_val_delegate!(Add, Rational, Real);
 
-impl Sub for &Rational {
+impl<Rhs: Borrow<Rational>> Sub<Rhs> for &Rational {
     type Output = Real;
 
-    fn sub(self, rhs: Self) -> Self::Output {
-        self.additive_op(rhs, Integer::sub)
+    fn sub(self, rhs: Rhs) -> Self::Output {
+        self.additive_op(rhs.borrow(), Integer::sub)
     }
 }
-ref_val_ops!(Sub, Rational, Real);
+impl_val_delegate!(Sub, Rational, Real);
 
-impl Mul for &Rational {
+impl<Rhs: Borrow<Rational>> Mul<Rhs> for &Rational {
     type Output = Real;
 
     // a/b * c/d = ac/bd except cross-reduce with gcds first to lessen
@@ -1332,19 +1389,20 @@ impl Mul for &Rational {
     // div/0 should be a programmer error here, hence the panics. if everything
     // is wired up correctly this will only be called with canonical rationals
     // or integer reciprocals.
-    fn mul(self, rhs: Self) -> Self::Output {
+    fn mul(self, rhs: Rhs) -> Self::Output {
         let (a, b) = self.get_parts();
-        let (c, d) = rhs.get_parts();
+        let (c, d) = rhs.borrow().get_parts();
         let (g1, g2) = (a.gcd(d), c.gcd(b));
         debug_assert!(!g1.is_zero());
         debug_assert!(!g2.is_zero());
         assume_safe_div!(Real::reduce(
-            Real::exact_quotient(a, &g1) * Real::exact_quotient(c, &g2),
-            Real::exact_quotient(b, &g2) * Real::exact_quotient(d, &g1),
+            Real::exact_quotient(a.clone(), g1.clone())
+                * Real::exact_quotient(c.clone(), g2.clone()),
+            Real::exact_quotient(b.clone(), g2) * Real::exact_quotient(d.clone(), g1),
         ))
     }
 }
-ref_val_ops!(Mul, Rational, Real);
+impl_val_delegate!(Mul, Rational, Real);
 
 impl Display for Rational {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
@@ -1368,59 +1426,99 @@ impl PartialOrd<Real> for Rational {
     fn partial_cmp(&self, other: &Real) -> Option<Ordering> {
         match other {
             Real::Float(f) => exact_cmp_inexact!(self, partial_cmp, other, f),
-            Real::Integer(n) => self.partial_cmp(&n.to_rational()),
+            Real::Integer(n) => self.partial_cmp(&n.clone().into_rational()),
             Real::Rational(q) => self.partial_cmp(q),
         }
     }
 }
 
-impl Add<&Real> for &Rational {
-    type Output = Real;
+macro_rules! impl_rat_real_add {
+    ($($this:ty, $that:ty, $nc:expr);+ $(;)?) => {
+        $(impl Add<$that> for $this {
+            type Output = Real;
 
-    fn add(self, rhs: &Real) -> Self::Output {
-        match rhs {
-            Real::Float(f) => (self.to_float() + f).into(),
-            Real::Integer(n) => self.add(n.to_rational()),
-            Real::Rational(q) => self.add(q),
-        }
+            fn add(self, rhs: $that) -> Self::Output {
+                match rhs {
+                    Real::Float(f) => (self.to_float() + f).into(),
+                    Real::Integer(n) => self + $nc(n).into_rational(),
+                    Real::Rational(q) => self + q,
+                }
+            }
+        })+
     }
 }
-
-impl Sub<&Real> for &Rational {
-    type Output = Real;
-
-    fn sub(self, rhs: &Real) -> Self::Output {
-        match rhs {
-            Real::Float(f) => (self.to_float() - f).into(),
-            Real::Integer(n) => self.sub(n.to_rational()),
-            Real::Rational(q) => self.sub(q),
-        }
-    }
+impl_rat_real_add! {
+    Rational, Real, convert::identity;
+    Rational, &Real, Integer::clone;
+    &Rational, Real, convert::identity;
+    &Rational, &Real, Integer::clone;
 }
 
-impl Mul<&Real> for &Rational {
-    type Output = Real;
+macro_rules! impl_rat_real_sub {
+    ($($this:ty, $that:ty, $nc:expr);+ $(;)?) => {
+        $(impl Sub<$that> for $this {
+            type Output = Real;
 
-    fn mul(self, rhs: &Real) -> Self::Output {
-        match rhs {
-            Real::Float(f) => (self.to_float() * f).into(),
-            Real::Integer(n) => self.mul(n.to_rational()),
-            Real::Rational(q) => self.mul(q),
-        }
+            fn sub(self, rhs: $that) -> Self::Output {
+                match rhs {
+                    Real::Float(f) => (self.to_float() - f).into(),
+                    Real::Integer(n) => self - $nc(n).into_rational(),
+                    Real::Rational(q) => self - q,
+                }
+            }
+        })+
     }
 }
+impl_rat_real_sub! {
+    Rational, Real, convert::identity;
+    Rational, &Real, Integer::clone;
+    &Rational, Real, convert::identity;
+    &Rational, &Real, Integer::clone;
+}
 
-impl Div<&Real> for &Rational {
-    type Output = RealResult;
+macro_rules! impl_rat_real_mul {
+    ($($this:ty, $that:ty, $nc:expr);+ $(;)?) => {
+        $(impl Mul<$that> for $this {
+            type Output = Real;
 
-    fn div(self, rhs: &Real) -> Self::Output {
-        Ok(match rhs {
-            // need this because (q * f.recip()) ends up losing precision
-            Real::Float(f) => (self.to_float() / f).into(),
-            Real::Integer(n) => self.mul(&n.try_to_reciprocal()?),
-            Real::Rational(q) => self.mul(&q.try_to_reciprocal()?),
-        })
+            fn mul(self, rhs: $that) -> Self::Output {
+                match rhs {
+                    Real::Float(f) => (self.to_float() * f).into(),
+                    Real::Integer(n) => self * $nc(n).into_rational(),
+                    Real::Rational(q) => self * q,
+                }
+            }
+        })+
     }
+}
+impl_rat_real_mul! {
+    Rational, Real, convert::identity;
+    Rational, &Real, Integer::clone;
+    &Rational, Real, convert::identity;
+    &Rational, &Real, Integer::clone;
+}
+
+macro_rules! impl_rat_real_div {
+    ($($this:ty, $that:ty, $nc:expr, $qc:expr);+ $(;)?) => {
+        $(impl Div<$that> for $this {
+            type Output = RealResult;
+
+            fn div(self, rhs: $that) -> Self::Output {
+                Ok(match rhs {
+                    // need this because (q * f.recip()) ends up losing precision
+                    Real::Float(f) => (self.to_float() / f).into(),
+                    Real::Integer(n) => self * $nc(n).try_into_reciprocal()?,
+                    Real::Rational(q) => self * $qc(q).try_into_reciprocal()?,
+                })
+            }
+        })+
+    }
+}
+impl_rat_real_div! {
+    Rational, Real, convert::identity, convert::identity;
+    Rational, &Real, Integer::clone, Rational::clone;
+    &Rational, Real, convert::identity, convert::identity;
+    &Rational, &Real, Integer::clone, Rational::clone;
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -1566,8 +1664,8 @@ impl Integer {
         }
     }
 
-    fn to_rational(&self) -> Rational {
-        Rational((self.clone(), Self::one()).into())
+    fn into_rational(self) -> Rational {
+        Rational((self, Self::one()).into())
     }
 
     fn to_abs(&self) -> Self {
@@ -1576,7 +1674,7 @@ impl Integer {
         a
     }
 
-    fn try_to_reciprocal(&self) -> RealResult {
+    fn try_into_reciprocal(self) -> RealResult {
         Self::one() / self
     }
 
@@ -1642,10 +1740,10 @@ impl Integer {
     }
 
     // convenience wrappers for passing Op impls as closures
-    fn add(&self, rhs: &Self) -> Self {
+    fn add(self, rhs: Self) -> Self {
         self + rhs
     }
-    fn sub(&self, rhs: &Self) -> Self {
+    fn sub(self, rhs: Self) -> Self {
         self - rhs
     }
 
@@ -1749,7 +1847,6 @@ macro_rules! impl_int_add {
         })+
     }
 }
-
 impl_int_add! {
     Integer, Integer, convert::identity, convert::identity;
     Integer, &Integer, convert::identity, Integer::clone;
@@ -1778,7 +1875,6 @@ macro_rules! impl_int_sub {
         })+
     }
 }
-
 impl_int_sub! {
     Integer, Integer, convert::identity;
     Integer, &Integer, convert::identity;
@@ -1796,14 +1892,7 @@ impl<Rhs: Borrow<Integer>> Mul<Rhs> for &Integer {
         }
     }
 }
-
-impl<Rhs: Borrow<Integer>> Mul<Rhs> for Integer {
-    type Output = Self;
-
-    fn mul(self, rhs: Rhs) -> Self::Output {
-        self.borrow() * rhs.borrow()
-    }
-}
+impl_val_delegate!(Mul, Integer);
 
 macro_rules! impl_int_div {
     ($($this:ty, $that:ty, $op:expr);+ $(;)?) => {
@@ -1816,7 +1905,6 @@ macro_rules! impl_int_div {
         })+
     }
 }
-
 impl_int_div! {
     Integer, Integer, |a, b| Real::reduce(a, b);
     Integer, &Integer, |a, b: &Integer| a / b.clone();
@@ -1824,17 +1912,20 @@ impl_int_div! {
     &Integer, &Integer, |a: &Integer, b: &Integer| a.clone() / b.clone();
 }
 
-impl Rem for &Integer {
+impl<Rhs: Borrow<Integer>> Rem<Rhs> for &Integer {
     type Output = IntResult;
 
-    fn rem(self, rhs: Self) -> Self::Output {
-        if rhs.is_zero() {
+    fn rem(self, rhs: Rhs) -> Self::Output {
+        if rhs.borrow().is_zero() {
             return Err(NumericError::DivideByZero);
         }
-        Ok(Integer::new(&self.precision % &rhs.precision, self.sign))
+        Ok(Integer::new(
+            &self.precision % &rhs.borrow().precision,
+            self.sign,
+        ))
     }
 }
-ref_val_ops!(Rem, Integer, IntResult);
+impl_val_delegate!(Rem, Integer, IntResult);
 
 impl Display for Integer {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
@@ -1871,69 +1962,109 @@ impl PartialOrd<Real> for Integer {
         match other {
             Real::Float(f) => exact_cmp_inexact!(self, partial_cmp, other, f),
             Real::Integer(n) => self.partial_cmp(n),
-            Real::Rational(q) => self.to_rational().partial_cmp(q),
+            Real::Rational(q) => self.clone().into_rational().partial_cmp(q),
         }
     }
 }
 
-impl Add<&Real> for &Integer {
-    type Output = Real;
+macro_rules! impl_int_real_add {
+    ($($this:ty, $that:ty, $fz:expr, $rat:expr);+ $(;)?) => {
+        $(impl Add<$that> for $this {
+            type Output = Real;
 
-    fn add(self, rhs: &Real) -> Self::Output {
-        match rhs {
-            // integral additive identity should not affect a float;
-            // if we convert to float we get 0.0 + -0.0 = 0.0 which is wrong!
-            // exact zero shouldn't affect the sign of inexact zero.
-            Real::Float(_) if self.is_zero() => rhs.clone(),
-            Real::Float(f) => (self.to_float() + f).into(),
-            Real::Integer(n) => self.add(n).into(),
-            Real::Rational(q) => self.to_rational() + q,
-        }
+            fn add(self, rhs: $that) -> Self::Output {
+                match rhs {
+                    // Integral additive identity should not affect a float;
+                    // if we convert to float we get 0.0 + -0.0 = 0.0 which is wrong!
+                    // Exact zero shouldn't affect the sign of inexact zero.
+                    Real::Float(_) if self.is_zero() => $fz(rhs),
+                    Real::Float(f) => (self.to_float() + f).into(),
+                    Real::Integer(n) => (self + n).into(),
+                    Real::Rational(q) => $rat(self).into_rational() + q,
+                }
+            }
+        })+
     }
 }
-
-impl Sub<&Real> for &Integer {
-    type Output = Real;
-
-    fn sub(self, rhs: &Real) -> Self::Output {
-        match rhs {
-            // Integral additive reciprical should flip the sign of a float;
-            // this ends up being relevant for 0 - 0.0 = -0.0
-            Real::Float(_) if self.is_zero() => -rhs,
-            Real::Float(f) => (self.to_float() - f).into(),
-            Real::Integer(n) => self.sub(n).into(),
-            Real::Rational(q) => self.to_rational() - q,
-        }
-    }
+impl_int_real_add! {
+    Integer, Real, convert::identity, convert::identity;
+    Integer, &Real, Real::clone, convert::identity;
+    &Integer, Real, convert::identity, Integer::clone;
+    &Integer, &Real, Real::clone, Integer::clone;
 }
 
-impl Mul<&Real> for &Integer {
-    type Output = Real;
+macro_rules! impl_int_real_sub {
+    ($($this:ty, $that:ty, $rat:expr);+ $(;)?) => {
+        $(impl Sub<$that> for $this {
+            type Output = Real;
 
-    fn mul(self, rhs: &Real) -> Self::Output {
-        match rhs {
-            // exact zero overrides float-taint
-            Real::Float(_) if self.is_zero() => self.clone().into(),
-            Real::Float(f) => (self.to_float() * f).into(),
-            Real::Integer(n) => self.mul(n).into(),
-            Real::Rational(q) => self.to_rational() * q,
-        }
+            fn sub(self, rhs: $that) -> Self::Output {
+                match rhs {
+                    // Integral additive reciprical should flip the sign of a float;
+                    // this ends up being relevant for 0 - 0.0 = -0.0
+                    Real::Float(_) if self.is_zero() => -rhs,
+                    Real::Float(f) => (self.to_float() - f).into(),
+                    Real::Integer(n) => (self - n).into(),
+                    Real::Rational(q) => $rat(self).into_rational() - q,
+                }
+            }
+        })+
     }
 }
+impl_int_real_sub! {
+    Integer, Real, convert::identity;
+    Integer, &Real, convert::identity;
+    &Integer, Real, Integer::clone;
+    &Integer, &Real, Integer::clone;
+}
 
-impl Div<&Real> for &Integer {
-    type Output = RealResult;
+macro_rules! impl_int_real_mul {
+    ($($this:ty, $that:ty, $conv:expr);+ $(;)?) => {
+        $(impl Mul<$that> for $this {
+            type Output = Real;
 
-    fn div(self, rhs: &Real) -> Self::Output {
-        match rhs {
-            // nan overrides exact zero which overrides float-taint
-            Real::Float(f) if f.is_nan() => Ok(rhs.clone()),
-            Real::Float(_) if self.is_zero() => Ok(self.clone().into()),
-            Real::Float(f) => Ok((self.to_float() / f).into()),
-            Real::Integer(n) => self.div(n),
-            Real::Rational(q) => Ok(self * &q.try_to_reciprocal()?),
-        }
+            fn mul(self, rhs: $that) -> Self::Output {
+                match rhs {
+                    // exact zero overrides float-taint
+                    Real::Float(_) if self.is_zero() => $conv(self).into(),
+                    Real::Float(f) => (self.to_float() * f).into(),
+                    Real::Integer(n) => (self * n).into(),
+                    Real::Rational(q) => $conv(self).into_rational() * q,
+                }
+            }
+        })+
     }
+}
+impl_int_real_mul! {
+    Integer, Real, convert::identity;
+    Integer, &Real, convert::identity;
+    &Integer, Real, Integer::clone;
+    &Integer, &Real, Integer::clone;
+}
+
+macro_rules! impl_int_real_div {
+    ($($this:ty, $that:ty, $lhc:expr, $rhc:expr, $qc:expr);+ $(;)?) => {
+        $(impl Div<$that> for $this {
+            type Output = RealResult;
+
+            fn div(self, rhs: $that) -> Self::Output {
+                match rhs {
+                    // nan overrides exact zero which overrides float-taint
+                    Real::Float(f) if f.is_nan() => Ok($rhc(rhs)),
+                    Real::Float(_) if self.is_zero() => Ok($lhc(self).into()),
+                    Real::Float(f) => Ok((self.to_float() / f).into()),
+                    Real::Integer(n) => self / n,
+                    Real::Rational(q) => Ok(self * $qc(q).try_into_reciprocal()?),
+                }
+            }
+        })+
+    }
+}
+impl_int_real_div! {
+    Integer, Real, convert::identity, convert::identity, convert::identity;
+    Integer, &Real, convert::identity, Real::clone, Rational::clone;
+    &Integer, Real, Integer::clone, convert::identity, convert::identity;
+    &Integer, &Real, Integer::clone, Real::clone, Rational::clone;
 }
 
 // enum expression of the signum function
