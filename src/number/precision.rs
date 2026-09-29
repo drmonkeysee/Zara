@@ -433,4 +433,38 @@ mod tests {
             assert_eq!(reconstructed, Precision::Single(a));
         }
     }
+
+    mod euclid {
+        use super::*;
+
+        #[test]
+        fn zeros() {
+            assert_eq!(gcd_euclidean(0, 0), 0);
+        }
+
+        #[test]
+        fn numerator_zero() {
+            assert_eq!(gcd_euclidean(0, 5), 5);
+        }
+
+        #[test]
+        fn denominator_zero() {
+            assert_eq!(gcd_euclidean(5, 0), 5);
+        }
+
+        #[test]
+        fn reduce_below_zero() {
+            assert_eq!(gcd_euclidean(6, 10), 2);
+        }
+
+        #[test]
+        fn reduce_above_zero() {
+            assert_eq!(gcd_euclidean(15, 10), 5);
+        }
+
+        #[test]
+        fn reduce_equal() {
+            assert_eq!(gcd_euclidean(7, 7), 7);
+        }
+    }
 }
