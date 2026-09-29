@@ -367,92 +367,64 @@ impl Neg for &Number {
     }
 }
 
-macro_rules! impl_num_add {
-    ($($this:ty, $that:ty);+ $(;)?) => {
-        $(impl Add<$that> for $this {
+macro_rules! impl_num_commutative {
+    ($imp:ident, $func:ident, $op:tt; $($this:ty, $that:ty);+ $(;)?) => {
+        $(impl $imp<$that> for $this {
             type Output = Number;
 
-            fn add(self, rhs: $that) -> Self::Output {
+            fn $func(self, rhs: $that) -> Self::Output {
                 match (self, rhs) {
-                    (Number::Complex(z), n) => z + n,
-                    (n, Number::Complex(z)) => z + n,
-                    (Number::Real(a), Number::Real(b)) => Number::real(a + b),
+                    (Number::Complex(z), x) => z $op x,
+                    (x, Number::Complex(z)) => z $op x,
+                    (Number::Real(a), Number::Real(b)) => Number::real(a $op b),
                 }
             }
         })+
-    }
+    };
 }
-impl_num_add! {
+impl_num_commutative! {
+    Add, add, +;
+    Number, Number;
+    Number, &Number;
+    &Number, Number;
+    &Number, &Number;
+}
+impl_num_commutative! {
+    Mul, mul, *;
     Number, Number;
     Number, &Number;
     &Number, Number;
     &Number, &Number;
 }
 
-macro_rules! impl_num_sub {
-    ($($this:ty, $that:ty, $conv:expr);+ $(;)?) => {
-        $(impl Sub<$that> for $this {
-            type Output = Number;
+macro_rules! impl_num_inverse {
+    ($imp:ident, $func:ident, $op:tt, $out:ty; $($this:ty, $that:ty, $conv:expr, $rfn:expr);+ $(;)?) => {
+        $(impl $imp<$that> for $this {
+            type Output = $out;
 
-            fn sub(self, rhs: $that) -> Self::Output {
+            fn $func(self, rhs: $that) -> Self::Output {
                 match (self, rhs) {
-                    (Number::Complex(z), n) => z - n,
-                    (Number::Real(r), Number::Complex(z)) => $conv(r).into_complex() - z,
-                    (Number::Real(a), Number::Real(b)) => Number::real(a - b),
+                    (Number::Complex(z), n) => z $op n,
+                    (Number::Real(r), Number::Complex(z)) => $conv(r).into_complex() $op z,
+                    (Number::Real(a), Number::Real(b)) => $rfn(a, b),
                 }
             }
         })+
-    }
+    };
 }
-impl_num_sub! {
-    Number, Number, convert::identity;
-    Number, &Number, convert::identity;
-    &Number, Number, Real::clone;
-    &Number, &Number, Real::clone;
+impl_num_inverse! {
+    Sub, sub, -, Number;
+    Number, Number, convert::identity, |a, b| Number::real(a - b);
+    Number, &Number, convert::identity, |a, b| Number::real(a - b);
+    &Number, Number, Real::clone, |a, b| Number::real(a - b);
+    &Number, &Number, Real::clone, |a, b| Number::real(a - b);
 }
-
-macro_rules! impl_num_mul {
-    ($($this:ty, $that:ty);+ $(;)?) => {
-        $(impl Mul<$that> for $this {
-            type Output = Number;
-
-            fn mul(self, rhs: $that) -> Self::Output {
-                match (self, rhs) {
-                    (Number::Complex(z), x) => z * x,
-                    (x, Number::Complex(z)) => z * x,
-                    (Number::Real(a), Number::Real(b)) => Number::real(a * b),
-                }
-            }
-        })+
-    }
-}
-impl_num_mul! {
-    Number, Number;
-    Number, &Number;
-    &Number, Number;
-    &Number, &Number;
-}
-
-macro_rules! impl_num_div {
-    ($($this:ty, $that:ty, $conv:expr);+ $(;)?) => {
-        $(impl Div<$that> for $this {
-            type Output = NumResult;
-
-            fn div(self, rhs: $that) -> Self::Output {
-                match (self, rhs) {
-                    (Number::Complex(a), x) => a / x,
-                    (Number::Real(r), Number::Complex(z)) => $conv(r).into_complex() / z,
-                    (Number::Real(a), Number::Real(b)) => Ok(Number::real((a / b)?)),
-                }
-            }
-        })+
-    }
-}
-impl_num_div! {
-    Number, Number, convert::identity;
-    Number, &Number, convert::identity;
-    &Number, Number, Real::clone;
-    &Number, &Number, Real::clone;
+impl_num_inverse! {
+    Div, div, /, NumResult;
+    Number, Number, convert::identity, |a, b| Ok(Number::real((a / b)?));
+    Number, &Number, convert::identity, |a, b| Ok(Number::real((a / b)?));
+    &Number, Number, Real::clone, |a, b| Ok(Number::real((a / b)?));
+    &Number, &Number, Real::clone, |a, b| Ok(Number::real((a / b)?));
 }
 
 impl Display for Number {
@@ -604,7 +576,6 @@ impl_cpx_sub! {
     &Complex, Complex, Complex::get_parts, Complex::into_parts;
     &Complex, &Complex, Complex::get_parts, Complex::get_parts;
 }
-
 macro_rules! impl_cpx_div {
     ($($this:ty, $that:ty, $conv:expr);+ $(;)?) => {
         $(impl Div<$that> for $this {
@@ -685,28 +656,6 @@ impl_cpx_num_add! {
     &Complex, Number, Complex::get_parts, Complex::into_parts, Real::clone;
     &Complex, &Number, Complex::get_parts, Complex::get_parts, Real::clone;
 }
-
-macro_rules! impl_cpx_num_sub {
-    ($($this:ty, $that:ty, $conv:expr);+ $(;)?) => {
-        $(impl Sub<$that> for $this {
-            type Output = Number;
-
-            fn sub(self, rhs: $that) -> Self::Output {
-                match rhs {
-                    Number::Complex(z) => self - z,
-                    Number::Real(r) => self - $conv(r).into_complex(),
-                }
-            }
-        })+
-    };
-}
-impl_cpx_num_sub! {
-    Complex, Number, convert::identity;
-    Complex, &Number, Real::clone;
-    &Complex, Number, convert::identity;
-    &Complex, &Number, Real::clone;
-}
-
 macro_rules! impl_cpx_num_mul {
     ($($this:ty, $that:ty, $rc:expr);+ $(;)?) => {
         $(impl Mul<$that> for $this {
@@ -736,6 +685,26 @@ impl_cpx_num_mul! {
     &Complex, &Number, Real::clone;
 }
 
+macro_rules! impl_cpx_num_sub {
+    ($($this:ty, $that:ty, $conv:expr);+ $(;)?) => {
+        $(impl Sub<$that> for $this {
+            type Output = Number;
+
+            fn sub(self, rhs: $that) -> Self::Output {
+                match rhs {
+                    Number::Complex(z) => self - z,
+                    Number::Real(r) => self - $conv(r).into_complex(),
+                }
+            }
+        })+
+    };
+}
+impl_cpx_num_sub! {
+    Complex, Number, convert::identity;
+    Complex, &Number, Real::clone;
+    &Complex, Number, convert::identity;
+    &Complex, &Number, Real::clone;
+}
 macro_rules! impl_cpx_num_div {
     ($($this:ty, $that:ty, $parts:expr);+ $(;)?) => {
         $(impl Div<$that> for $this {
@@ -1153,30 +1122,39 @@ impl Neg for &Real {
     }
 }
 
-macro_rules! impl_real_add {
-    ($($this:ty, $that:ty, $addz:expr);+ $(;)?) => {
-        $(impl Add<$that> for $this {
+macro_rules! impl_real_commutative {
+    ($imp:ident, $func:ident, $op:tt; $($this:ty, $that:ty, $zfn:expr);+ $(;)?) => {
+        $(impl $imp<$that> for $this {
             type Output = Real;
 
-            fn add(self, rhs: $that) -> Self::Output {
+            fn $func(self, rhs: $that) -> Self::Output {
                 match self {
-                    // integral additive identity should not affect a float;
+                    // Addition: integral additive identity should not affect a float;
                     // if we convert to float we get -0.0 + 0.0 = 0.0 which is wrong!
                     // exact zero shouldn't affect the sign of inexact zero.
-                    Real::Float(_) if rhs.is_exact_zero() => $addz(self),
-                    Real::Float(f) => (f + rhs.to_float()).into(),
-                    Real::Integer(n) => n + rhs,
-                    Real::Rational(q) => q + rhs,
+                    // Multiplication: exact zero overrides float-taint.
+                    Real::Float(_) if rhs.is_exact_zero() => $zfn(self, rhs),
+                    Real::Float(f) => (f $op rhs.to_float()).into(),
+                    Real::Integer(n) => n $op rhs,
+                    Real::Rational(q) => q $op rhs,
                 }
             }
         })+
     };
 }
-impl_real_add! {
-    Real, Real, convert::identity;
-    Real, &Real, convert::identity;
-    &Real, Real, Real::clone;
-    &Real, &Real, Real::clone;
+impl_real_commutative! {
+    Add, add, +;
+    Real, Real, |s, _| s;
+    Real, &Real, |s, _| s;
+    &Real, Real, |s: &Real, _| s.clone();
+    &Real, &Real, |s: &Real, _| s.clone();
+}
+impl_real_commutative! {
+    Mul, mul, *;
+    Real, Real, |_, r| r;
+    Real, &Real, |_, r: &Real| r.clone();
+    &Real, Real, |_, r| r;
+    &Real, &Real, |_, r: &Real| r.clone();
 }
 
 macro_rules! impl_real_sub {
@@ -1200,31 +1178,6 @@ impl_real_sub! {
     &Real, Real;
     &Real, &Real;
 }
-
-macro_rules! impl_real_mul {
-    ($($this:ty, $that:ty, $mulz:expr);+ $(;)?) => {
-        $(impl Mul<$that> for $this {
-            type Output = Real;
-
-            fn mul(self, rhs: $that) -> Self::Output {
-                match self {
-                    // exact zero overrides float-taint
-                    Real::Float(_) if rhs.is_exact_zero() => $mulz(rhs),
-                    Real::Float(f) => (f * rhs.to_float()).into(),
-                    Real::Integer(n) => n * rhs,
-                    Real::Rational(q) => q * rhs,
-                }
-            }
-        })+
-    };
-}
-impl_real_mul! {
-    Real, Real, convert::identity;
-    Real, &Real, Real::clone;
-    &Real, Real, convert::identity;
-    &Real, &Real, Real::clone;
-}
-
 macro_rules! impl_real_div {
     ($($this:ty, $that:ty);+ $(;)?) => {
         $(impl Div<$that> for $this {
@@ -1410,22 +1363,20 @@ impl Neg for &Rational {
     }
 }
 
-impl<Rhs: Borrow<Rational>> Add<Rhs> for &Rational {
-    type Output = Real;
+macro_rules! impl_rat_additive {
+    ($imp:ident, $func:ident) => {
+        impl<Rhs: Borrow<Rational>> $imp<Rhs> for &Rational {
+            type Output = Real;
 
-    fn add(self, rhs: Rhs) -> Self::Output {
-        self.additive_op(rhs.borrow(), Integer::add)
-    }
+            fn $func(self, rhs: Rhs) -> Self::Output {
+                self.additive_op(rhs.borrow(), Integer::$func)
+            }
+        }
+    };
 }
+impl_rat_additive!(Add, add);
 impl_val_delegate!(Add, Rational, Real);
-
-impl<Rhs: Borrow<Rational>> Sub<Rhs> for &Rational {
-    type Output = Real;
-
-    fn sub(self, rhs: Rhs) -> Self::Output {
-        self.additive_op(rhs.borrow(), Integer::sub)
-    }
-}
+impl_rat_additive!(Sub, sub);
 impl_val_delegate!(Sub, Rational, Real);
 
 impl<Rhs: Borrow<Rational>> Mul<Rhs> for &Rational {
@@ -1479,66 +1430,37 @@ impl PartialOrd<Real> for Rational {
     }
 }
 
-macro_rules! impl_rat_real_add {
-    ($($this:ty, $that:ty, $nc:expr);+ $(;)?) => {
-        $(impl Add<$that> for $this {
+macro_rules! impl_rat_real_arithmetic_ring {
+    ($imp:ident, $func:ident, $op:tt; $($this:ty, $that:ty, $int_conv:expr);+ $(;)?) => {
+        $(impl $imp<$that> for $this {
             type Output = Real;
 
-            fn add(self, rhs: $that) -> Self::Output {
+            fn $func(self, rhs: $that) -> Self::Output {
                 match rhs {
-                    Real::Float(f) => (self.to_float() + f).into(),
-                    Real::Integer(n) => self + $nc(n).into_rational(),
-                    Real::Rational(q) => self + q,
+                    Real::Float(f) => (self.to_float() $op f).into(),
+                    Real::Integer(n) => self $op $int_conv(n).into_rational(),
+                    Real::Rational(q) => self $op q,
                 }
             }
         })+
-    }
+    };
 }
-impl_rat_real_add! {
+impl_rat_real_arithmetic_ring! {
+    Add, add, +;
     Rational, Real, convert::identity;
     Rational, &Real, Integer::clone;
     &Rational, Real, convert::identity;
     &Rational, &Real, Integer::clone;
 }
-
-macro_rules! impl_rat_real_sub {
-    ($($this:ty, $that:ty, $nc:expr);+ $(;)?) => {
-        $(impl Sub<$that> for $this {
-            type Output = Real;
-
-            fn sub(self, rhs: $that) -> Self::Output {
-                match rhs {
-                    Real::Float(f) => (self.to_float() - f).into(),
-                    Real::Integer(n) => self - $nc(n).into_rational(),
-                    Real::Rational(q) => self - q,
-                }
-            }
-        })+
-    }
-}
-impl_rat_real_sub! {
+impl_rat_real_arithmetic_ring! {
+    Sub, sub, -;
     Rational, Real, convert::identity;
     Rational, &Real, Integer::clone;
     &Rational, Real, convert::identity;
     &Rational, &Real, Integer::clone;
 }
-
-macro_rules! impl_rat_real_mul {
-    ($($this:ty, $that:ty, $nc:expr);+ $(;)?) => {
-        $(impl Mul<$that> for $this {
-            type Output = Real;
-
-            fn mul(self, rhs: $that) -> Self::Output {
-                match rhs {
-                    Real::Float(f) => (self.to_float() * f).into(),
-                    Real::Integer(n) => self * $nc(n).into_rational(),
-                    Real::Rational(q) => self * q,
-                }
-            }
-        })+
-    }
-}
-impl_rat_real_mul! {
+impl_rat_real_arithmetic_ring! {
+    Mul, mul, *;
     Rational, Real, convert::identity;
     Rational, &Real, Integer::clone;
     &Rational, Real, convert::identity;
@@ -1716,6 +1638,14 @@ impl Integer {
         Self::new(sum, self.sign)
     }
 
+    fn add_opposite_signs(&self, rhs: &Self) -> Self {
+        self.overflowing_sum(rhs, rhs.sign)
+    }
+
+    fn sub_same_signs(&self, rhs: &Self) -> Self {
+        self.overflowing_sum(&rhs, -self.sign)
+    }
+
     fn overflowing_sum(&self, rhs: &Self, ovf_sign: Sign) -> Self {
         let (sign, sum) = if self.precision < rhs.precision {
             (ovf_sign, &rhs.precision - &self.precision)
@@ -1870,60 +1800,39 @@ impl Neg for &Integer {
     }
 }
 
-macro_rules! impl_int_add {
-    ($($this:ty, $that:ty, $addz:expr, $zadd:expr);+ $(;)?) => {
-        $(impl Add<$that> for $this {
+macro_rules! impl_int_additive {
+    ($imp:ident, $func:ident; $($this:ty, $that:ty, $zrhs:expr, $zlhs:expr, $same:expr, $diff:expr);+ $(;)?) => {
+        $(impl $imp<$that> for $this {
             type Output = Integer;
 
-            fn add(self, rhs: $that) -> Self::Output {
+            fn $func(self, rhs: $that) -> Self::Output {
                 match (&self.sign, &rhs.sign) {
-                    (_, Sign::Zero) => $addz(self),
-                    (Sign::Zero, _) => $zadd(rhs),
+                    (_, Sign::Zero) => $zrhs(self),
+                    (Sign::Zero, _) => $zlhs(rhs),
                     (Sign::Positive, Sign::Positive) | (Sign::Negative, Sign::Negative) => {
-                        self.safe_sum(&rhs)
+                        $same(&self, &rhs)
                     }
                     (Sign::Positive, Sign::Negative) | (Sign::Negative, Sign::Positive) => {
-                        let s = rhs.sign;
-                        self.overflowing_sum(&rhs, s)
+                        $diff(&self, &rhs)
                     }
                 }
             }
         })+
-    }
+    };
 }
-impl_int_add! {
-    Integer, Integer, convert::identity, convert::identity;
-    Integer, &Integer, convert::identity, Integer::clone;
-    &Integer, Integer, Integer::clone, convert::identity;
-    &Integer, &Integer, Integer::clone, Integer::clone;
+impl_int_additive! {
+    Add, add;
+    Integer, Integer, convert::identity, convert::identity, Integer::safe_sum, Integer::add_opposite_signs;
+    Integer, &Integer, convert::identity, Integer::clone, Integer::safe_sum, Integer::add_opposite_signs;
+    &Integer, Integer, Integer::clone, convert::identity, Integer::safe_sum, Integer::add_opposite_signs;
+    &Integer, &Integer, Integer::clone, Integer::clone, Integer::safe_sum, Integer::add_opposite_signs;
 }
-
-macro_rules! impl_int_sub {
-    ($($this:ty, $that:ty, $subz:expr);+ $(;)?) => {
-        $(impl Sub<$that> for $this {
-            type Output = Integer;
-
-            fn sub(self, rhs: $that) -> Self::Output {
-                match (self.sign, rhs.sign) {
-                    (_, Sign::Zero) => $subz(self),
-                    (Sign::Zero, _) => -rhs,
-                    (Sign::Positive, Sign::Positive) | (Sign::Negative, Sign::Negative) => {
-                        let s = -self.sign;
-                        self.overflowing_sum(&rhs, s)
-                    }
-                    (Sign::Positive, Sign::Negative) | (Sign::Negative, Sign::Positive) => {
-                        self.safe_sum(&rhs)
-                    }
-                }
-            }
-        })+
-    }
-}
-impl_int_sub! {
-    Integer, Integer, convert::identity;
-    Integer, &Integer, convert::identity;
-    &Integer, Integer, Integer::clone;
-    &Integer, &Integer, Integer::clone;
+impl_int_additive! {
+    Sub, sub;
+    Integer, Integer, convert::identity, Integer::neg, Integer::sub_same_signs, Integer::safe_sum;
+    Integer, &Integer, convert::identity, <&Integer>::neg, Integer::sub_same_signs, Integer::safe_sum;
+    &Integer, Integer, Integer::clone, Integer::neg, Integer::sub_same_signs, Integer::safe_sum;
+    &Integer, &Integer, Integer::clone, <&Integer>::neg, Integer::sub_same_signs, Integer::safe_sum;
 }
 
 impl<Rhs: Borrow<Integer>> Mul<Rhs> for &Integer {
@@ -2011,79 +1920,47 @@ impl PartialOrd<Real> for Integer {
     }
 }
 
-macro_rules! impl_int_real_add {
-    ($($this:ty, $that:ty, $fz:expr, $rat:expr);+ $(;)?) => {
-        $(impl Add<$that> for $this {
+macro_rules! impl_int_real_arithmetic_ring {
+    ($imp:ident, $func:ident, $op:tt; $($this:ty, $that:ty, $zfn:expr, $rat_conv:expr);+ $(;)?) => {
+        $(impl $imp<$that> for $this {
             type Output = Real;
 
-            fn add(self, rhs: $that) -> Self::Output {
+            fn $func(self, rhs: $that) -> Self::Output {
                 match rhs {
-                    // Integral additive identity should not affect a float;
+                    // Addition: integral additive identity should not affect a float;
                     // if we convert to float we get 0.0 + -0.0 = 0.0 which is wrong!
                     // Exact zero shouldn't affect the sign of inexact zero.
-                    Real::Float(_) if self.is_zero() => $fz(rhs),
-                    Real::Float(f) => (self.to_float() + f).into(),
-                    Real::Integer(n) => (self + n).into(),
-                    Real::Rational(q) => $rat(self).into_rational() + q,
-                }
-            }
-        })+
-    }
-}
-impl_int_real_add! {
-    Integer, Real, convert::identity, convert::identity;
-    Integer, &Real, Real::clone, convert::identity;
-    &Integer, Real, convert::identity, Integer::clone;
-    &Integer, &Real, Real::clone, Integer::clone;
-}
-
-macro_rules! impl_int_real_sub {
-    ($($this:ty, $that:ty, $rat:expr);+ $(;)?) => {
-        $(impl Sub<$that> for $this {
-            type Output = Real;
-
-            fn sub(self, rhs: $that) -> Self::Output {
-                match rhs {
-                    // Integral additive reciprical should flip the sign of a float;
+                    // Subtraction: integral additive reciprical should flip the sign of a float;
                     // this ends up being relevant for 0 - 0.0 = -0.0
-                    Real::Float(_) if self.is_zero() => -rhs,
-                    Real::Float(f) => (self.to_float() - f).into(),
-                    Real::Integer(n) => (self - n).into(),
-                    Real::Rational(q) => $rat(self).into_rational() - q,
+                    Real::Float(_) if self.is_zero() => $zfn(self, rhs).into(),
+                    Real::Float(f) => (self.to_float() $op f).into(),
+                    Real::Integer(n) => (self $op n).into(),
+                    Real::Rational(q) => $rat_conv(self).into_rational() $op q,
                 }
             }
         })+
     }
 }
-impl_int_real_sub! {
-    Integer, Real, convert::identity;
-    Integer, &Real, convert::identity;
-    &Integer, Real, Integer::clone;
-    &Integer, &Real, Integer::clone;
+impl_int_real_arithmetic_ring! {
+    Add, add, +;
+    Integer, Real, |_, r| r, convert::identity;
+    Integer, &Real, |_, r: &Real| r.clone(), convert::identity;
+    &Integer, Real, |_, r| r, Integer::clone;
+    &Integer, &Real, |_, r: &Real| r.clone(), Integer::clone;
 }
-
-macro_rules! impl_int_real_mul {
-    ($($this:ty, $that:ty, $conv:expr);+ $(;)?) => {
-        $(impl Mul<$that> for $this {
-            type Output = Real;
-
-            fn mul(self, rhs: $that) -> Self::Output {
-                match rhs {
-                    // exact zero overrides float-taint
-                    Real::Float(_) if self.is_zero() => $conv(self).into(),
-                    Real::Float(f) => (self.to_float() * f).into(),
-                    Real::Integer(n) => (self * n).into(),
-                    Real::Rational(q) => $conv(self).into_rational() * q,
-                }
-            }
-        })+
-    }
+impl_int_real_arithmetic_ring! {
+    Sub, sub, -;
+    Integer, Real, |_, r: Real| -r, convert::identity;
+    Integer, &Real, |_, r: &Real| -r, convert::identity;
+    &Integer, Real, |_, r: Real| -r, Integer::clone;
+    &Integer, &Real, |_, r: &Real| -r, Integer::clone;
 }
-impl_int_real_mul! {
-    Integer, Real, convert::identity;
-    Integer, &Real, convert::identity;
-    &Integer, Real, Integer::clone;
-    &Integer, &Real, Integer::clone;
+impl_int_real_arithmetic_ring! {
+    Mul, mul, *;
+    Integer, Real, |l, _| l, convert::identity;
+    Integer, &Real, |l, _| l, convert::identity;
+    &Integer, Real, |l: &Integer, _| l.clone(), Integer::clone;
+    &Integer, &Real, |l: &Integer, _| l.clone(), Integer::clone;
 }
 
 macro_rules! impl_int_real_div {
