@@ -5,6 +5,28 @@ macro_rules! rational_parts {
     }};
 }
 
+// destructure a complex result into its real and imaginary parts
+macro_rules! complex_parts {
+    ($n:expr) => {
+        extract_or_fail!($n, Number::Complex).into_parts()
+    };
+}
+
+// Irrational complex components are algorithm-dependent in the last
+// ulp (unit of least precision), so those get a tolerance instead of an
+// exact string match.
+macro_rules! assert_near {
+    ($actual:expr, $expected:expr) => {{
+        let a: f64 = $actual;
+        let e: f64 = $expected;
+        let tolerance = (e.abs() * 1e-9).max(1e-12);
+        assert!(
+            (a - e).abs() <= tolerance,
+            "expected {a} to be within {tolerance} of {e}"
+        );
+    }};
+}
+
 use super::*;
 use crate::testutil::{err_or_fail, extract_or_fail, ok_or_fail};
 use std::assert_matches;
@@ -7643,28 +7665,6 @@ mod reciprocal {
 mod sqrt {
     use super::*;
 
-    // destructure a complex sqrt result into its real and imaginary parts
-    macro_rules! complex_parts {
-        ($n:expr) => {
-            extract_or_fail!($n, Number::Complex).into_parts()
-        };
-    }
-
-    // Irrational complex components are algorithm-dependent in the last
-    // ulp (unit of least precision), so those get a tolerance instead of an
-    // exact string match.
-    macro_rules! assert_near {
-        ($actual:expr, $expected:expr) => {{
-            let a: f64 = $actual;
-            let e: f64 = $expected;
-            let tolerance = (e.abs() * 1e-9).max(1e-12);
-            assert!(
-                (a - e).abs() <= tolerance,
-                "expected {a} to be within {tolerance} of {e}"
-            );
-        }};
-    }
-
     mod integer {
         use super::*;
 
@@ -8510,6 +8510,896 @@ mod sqrt {
                 let expected = n.to_inexact();
                 assert_near!(squared.to_real().to_float(), expected.to_real().to_float());
                 assert_near!(squared.to_imag().to_float(), expected.to_imag().to_float());
+            }
+        }
+    }
+}
+
+// Transcendental functions: exp, log (ln and two-argument log-base), sin,
+// cos, tan, asin, acos, and single-argument atan. The two-argument atan
+// (atan2) is exercised separately in `mod angle` above, since it is planned
+// to be implemented as (angle (make-rectangular x y)) rather than as its own
+// method.
+//
+// Expected values are cross-checked against Chez Scheme 10 and Guile 3.0.11,
+// and against Rust's own f64 exp/ln/sin/cos/tan/asin/acos/atan (all three
+// agree bit-for-bit on every real-domain case below). Where Chez and Guile
+// disagree, the choice and reasoning are called out inline.
+//
+// None of the methods these tests call (`exp`, `ln`, `log_base`, `sin`,
+// `cos`, `tan`, `asin`, `acos`, `atan`) exist on `Number` yet -- this module
+// intentionally does not compile until they are implemented.
+mod transcendental {
+    use super::*;
+
+    mod exactness {
+        use super::*;
+
+        #[test]
+        fn exp_of_exact_zero_is_exact_one() {
+            let r = Number::real(0).exp();
+
+            assert_eq!(r.to_string(), "1");
+            assert_matches!(r, Number::Real(Real::Integer(_)));
+        }
+
+        #[test]
+        fn ln_of_exact_one_is_exact_zero() {
+            let r = ok_or_fail!(Number::real(1).ln());
+
+            assert_eq!(r.to_string(), "0");
+            assert_matches!(r, Number::Real(Real::Integer(_)));
+        }
+
+        #[test]
+        fn log_base_exactness_is_driven_by_the_first_argument() {
+            // (log 1 b): the value being logged is exact 1, so the result is
+            // exact 0 no matter whether the base is exact, inexact, or
+            // negative.
+            let bases = [Number::real(2), Number::real(2.0), Number::real(-2)];
+            for base in bases {
+                let r = ok_or_fail!(Number::real(1).log_base(&base));
+
+                assert_eq!(r.to_string(), "0");
+                assert_matches!(r, Number::Real(Real::Integer(_)));
+            }
+        }
+
+        #[test]
+        fn log_base_of_an_inexact_value_is_inexact_even_with_an_exact_base() {
+            let r = ok_or_fail!(Number::real(1.0).log_base(&Number::real(2)));
+
+            assert_eq!(r.to_string(), "0.0");
+            assert_matches!(r, Number::Real(Real::Float(_)));
+        }
+
+        #[test]
+        fn sin_of_exact_zero_is_exact_zero() {
+            let r = Number::real(0).sin();
+
+            assert_eq!(r.to_string(), "0");
+            assert_matches!(r, Number::Real(Real::Integer(_)));
+        }
+
+        #[test]
+        fn cos_of_exact_zero_is_exact_one() {
+            let r = Number::real(0).cos();
+
+            assert_eq!(r.to_string(), "1");
+            assert_matches!(r, Number::Real(Real::Integer(_)));
+        }
+
+        #[test]
+        fn tan_of_exact_zero_is_exact_zero() {
+            let r = Number::real(0).tan();
+
+            assert_eq!(r.to_string(), "0");
+            assert_matches!(r, Number::Real(Real::Integer(_)));
+        }
+
+        #[test]
+        fn asin_of_exact_zero_is_exact_zero() {
+            let r = Number::real(0).asin();
+
+            assert_eq!(r.to_string(), "0");
+            assert_matches!(r, Number::Real(Real::Integer(_)));
+        }
+
+        #[test]
+        fn acos_of_exact_one_is_exact_zero() {
+            let r = Number::real(1).acos();
+
+            assert_eq!(r.to_string(), "0");
+            assert_matches!(r, Number::Real(Real::Integer(_)));
+        }
+
+        #[test]
+        fn atan_of_exact_zero_is_exact_zero() {
+            let r = Number::real(0).atan();
+
+            assert_eq!(r.to_string(), "0");
+            assert_matches!(r, Number::Real(Real::Integer(_)));
+        }
+
+        #[test]
+        fn inexact_zero_arguments_stay_inexact() {
+            assert_matches!(Number::real(0.0).exp(), Number::Real(Real::Float(_)));
+            assert_matches!(
+                ok_or_fail!(Number::real(1.0).ln()),
+                Number::Real(Real::Float(_))
+            );
+            assert_matches!(Number::real(0.0).sin(), Number::Real(Real::Float(_)));
+            assert_matches!(Number::real(0.0).cos(), Number::Real(Real::Float(_)));
+            assert_matches!(Number::real(0.0).tan(), Number::Real(Real::Float(_)));
+            assert_matches!(Number::real(0.0).asin(), Number::Real(Real::Float(_)));
+            assert_matches!(Number::real(1.0).acos(), Number::Real(Real::Float(_)));
+            assert_matches!(Number::real(0.0).atan(), Number::Real(Real::Float(_)));
+        }
+
+        #[test]
+        fn signed_zero_is_preserved_by_odd_functions() {
+            let cases = [
+                Number::real(-0.0).sin(),
+                Number::real(-0.0).tan(),
+                Number::real(-0.0).asin(),
+                Number::real(-0.0).atan(),
+            ];
+            for r in cases {
+                assert!(r.is_eqv(&Number::real(-0.0)));
+                assert!(!r.is_eqv(&Number::real(0.0)));
+            }
+        }
+
+        #[test]
+        fn cos_and_exp_of_negative_zero_are_positive_one() {
+            assert_eq!(Number::real(-0.0).cos().to_string(), "1.0");
+            assert_eq!(Number::real(-0.0).exp().to_string(), "1.0");
+        }
+    }
+
+    mod exp {
+        use super::*;
+
+        #[test]
+        fn exact_arguments_are_generally_inexact() {
+            let cases = [
+                (Number::real(1), "2.718281828459045"),
+                (Number::real(2), "7.38905609893065"),
+                (
+                    Number::real(ok_or_fail!(Real::reduce(1, 2))),
+                    "1.6487212707001282",
+                ),
+            ];
+            for (n, expected) in cases {
+                let r = n.exp();
+
+                assert_eq!(r.to_string(), expected);
+                assert_matches!(r, Number::Real(Real::Float(_)));
+            }
+        }
+
+        #[test]
+        fn large_exact_arguments_overflow_to_infinity() {
+            for n in [Number::real(710), Number::real(1000)] {
+                assert_eq!(n.exp().to_string(), "+inf.0");
+            }
+        }
+
+        #[test]
+        fn negative_infinity_is_zero() {
+            assert_eq!(Number::real(f64::NEG_INFINITY).exp().to_string(), "0.0");
+        }
+
+        #[test]
+        fn positive_infinity_is_infinity() {
+            assert_eq!(Number::real(f64::INFINITY).exp().to_string(), "+inf.0");
+        }
+
+        #[test]
+        fn nan_propagates() {
+            assert!(Number::real(f64::NAN).exp().is_nan());
+        }
+
+        #[test]
+        fn subnormal_result_does_not_underflow_to_zero() {
+            let r = Number::real(-745.0).exp();
+
+            assert_eq!(r.to_string(), "5e-324");
+            assert!(!r.is_zero());
+        }
+
+        #[test]
+        fn just_past_the_subnormal_boundary_underflows_to_zero() {
+            assert_eq!(Number::real(-746.0).exp().to_string(), "0.0");
+        }
+    }
+
+    mod log {
+        use super::*;
+
+        #[test]
+        fn exact_arguments_are_generally_inexact() {
+            let cases = [
+                (Number::real(2), "0.6931471805599453"),
+                (Number::real(10), "2.302585092994046"),
+                (
+                    Number::real(ok_or_fail!(Real::reduce(1, 2))),
+                    "-0.6931471805599453",
+                ),
+            ];
+            for (n, expected) in cases {
+                let r = ok_or_fail!(n.ln());
+
+                assert_eq!(r.to_string(), expected);
+                assert_matches!(r, Number::Real(Real::Float(_)));
+            }
+        }
+
+        #[test]
+        fn exact_zero_is_undefined() {
+            let r = Number::real(0).ln();
+
+            assert_matches!(err_or_fail!(r), NumericError::UndefinedAtZero);
+        }
+
+        #[test]
+        fn inexact_positive_zero_is_negative_infinity() {
+            let r = ok_or_fail!(Number::real(0.0).ln());
+
+            assert_eq!(r.to_string(), "-inf.0");
+        }
+
+        #[test]
+        fn inexact_negative_zero_is_negative_infinity_plus_pi_i() {
+            // ln z = ln|z| + i*angle(z); angle(-0.0) = pi (Real::signum
+            // treats -0.0 as negative -- see the `angle` module above), so
+            // this follows Guile rather than Chez, which inconsistently
+            // gives -inf.0 here despite agreeing that (angle -0.0) is pi.
+            let r = ok_or_fail!(Number::real(-0.0).ln());
+
+            let (re, im) = complex_parts!(r);
+            assert_eq!(re.to_string(), "-inf.0");
+            assert_eq!(im.to_float(), std::f64::consts::PI);
+        }
+
+        #[test]
+        fn positive_infinity_is_positive_infinity() {
+            let r = ok_or_fail!(Number::real(f64::INFINITY).ln());
+
+            assert_eq!(r.to_string(), "+inf.0");
+        }
+
+        #[test]
+        fn negative_infinity_is_infinity_plus_pi_i() {
+            let r = ok_or_fail!(Number::real(f64::NEG_INFINITY).ln());
+
+            let (re, im) = complex_parts!(r);
+            assert_eq!(re.to_string(), "+inf.0");
+            assert_eq!(im.to_float(), std::f64::consts::PI);
+        }
+
+        #[test]
+        fn negative_reals_are_complex_on_the_standard_branch_cut() {
+            let cases = [
+                (Number::real(-1), 0.0, std::f64::consts::PI),
+                (Number::real(-2), 0.6931471805599453, std::f64::consts::PI),
+            ];
+            for (n, exp_re, exp_im) in cases {
+                let r = ok_or_fail!(n.ln());
+
+                let (re, im) = complex_parts!(r);
+                assert_near!(re.to_float(), exp_re);
+                assert_eq!(im.to_float(), exp_im);
+            }
+        }
+
+        #[test]
+        fn base_of_one_is_a_divide_by_zero() {
+            let r = Number::real(8).log_base(&Number::real(1));
+
+            assert_matches!(err_or_fail!(r), NumericError::DivideByZero);
+        }
+
+        #[test]
+        fn inexact_base_of_one_is_infinity_not_an_error() {
+            let r = ok_or_fail!(Number::real(8).log_base(&Number::real(1.0)));
+
+            assert_eq!(r.to_string(), "+inf.0");
+        }
+
+        #[test]
+        fn zero_base_is_undefined() {
+            let r = Number::real(8).log_base(&Number::real(0));
+
+            assert_matches!(err_or_fail!(r), NumericError::UndefinedAtZero);
+        }
+
+        #[test]
+        fn inexact_zero_base_is_negative_zero_not_an_error() {
+            let r = ok_or_fail!(Number::real(8).log_base(&Number::real(0.0)));
+
+            assert_eq!(r.to_string(), "-0.0");
+        }
+
+        #[test]
+        fn value_of_zero_is_undefined_regardless_of_base() {
+            let r = Number::real(0).log_base(&Number::real(2));
+
+            assert_matches!(err_or_fail!(r), NumericError::UndefinedAtZero);
+        }
+
+        #[test]
+        fn two_arg_log_is_inexact_even_for_exact_powers() {
+            let cases = [
+                (8, 2, "3.0"),
+                (4, 2, "2.0"),
+                (2, 2, "1.0"),
+                (100, 10, "2.0"),
+            ];
+            for (n, base, expected) in cases {
+                let r = ok_or_fail!(Number::real(n).log_base(&Number::real(base)));
+
+                assert_eq!(r.to_string(), expected);
+                assert_matches!(r, Number::Real(Real::Float(_)));
+            }
+        }
+
+        #[test]
+        fn rational_argument_two_arg_log() {
+            let n = ok_or_fail!(Real::reduce(1, 8));
+
+            let r = ok_or_fail!(Number::real(n).log_base(&Number::real(2)));
+
+            assert_eq!(r.to_string(), "-3.0");
+        }
+
+        #[test]
+        fn two_arg_log_is_not_computed_exactly_even_when_the_true_answer_is_an_integer() {
+            // log_base is a ratio of natural logs, not integer factorization,
+            // so (log 1000 10) does not land on the mathematically exact 3.0.
+            let r = ok_or_fail!(Number::real(1000).log_base(&Number::real(10)));
+
+            assert_eq!(r.to_string(), "2.9999999999999996");
+        }
+
+        #[test]
+        fn negative_base_two_arg_log_is_complex() {
+            let r = ok_or_fail!(Number::real(-8).log_base(&Number::real(2)));
+
+            let (re, im) = complex_parts!(r);
+            assert_near!(re.to_float(), 3.0);
+            assert_near!(im.to_float(), 4.532360141827194);
+        }
+    }
+
+    mod sin {
+        use super::*;
+
+        #[test]
+        fn exact_arguments_are_generally_inexact() {
+            let cases = [
+                (Number::real(1), "0.8414709848078965"),
+                (
+                    Number::real(ok_or_fail!(Real::reduce(1, 2))),
+                    "0.479425538604203",
+                ),
+            ];
+            for (n, expected) in cases {
+                let r = n.sin();
+
+                assert_eq!(r.to_string(), expected);
+                assert_matches!(r, Number::Real(Real::Float(_)));
+            }
+        }
+
+        #[test]
+        fn infinite_and_nan_arguments_are_nan() {
+            let cases = [
+                Number::real(f64::INFINITY),
+                Number::real(f64::NEG_INFINITY),
+                Number::real(f64::NAN),
+            ];
+            for n in cases {
+                assert!(n.sin().is_nan());
+            }
+        }
+
+        #[test]
+        fn large_arguments_are_range_reduced() {
+            let r = Number::real(1e22).sin();
+
+            assert_eq!(r.to_string(), "-0.8522008497671888");
+        }
+
+        #[test]
+        fn sine_of_pi_is_not_exactly_zero() {
+            // pi is only ever a finite f64 approximation, so sin(pi) does
+            // not land on exact 0 -- it returns the true sine of that f64,
+            // a tiny but nonzero residual.
+            let r = Number::real(std::f64::consts::PI).sin();
+
+            assert_eq!(r.to_string(), "1.2246467991473532e-16");
+        }
+
+        #[test]
+        fn exact_bignum_argument_still_produces_a_finite_result() {
+            let n = Number::real((Sign::Positive, 10000000000000000000));
+
+            let r = n.sin();
+
+            assert_eq!(r.to_string(), "-0.9270631660486504");
+        }
+    }
+
+    mod cos {
+        use super::*;
+
+        #[test]
+        fn exact_arguments_are_generally_inexact() {
+            let r = Number::real(1).cos();
+
+            assert_eq!(r.to_string(), "0.5403023058681398");
+            assert_matches!(r, Number::Real(Real::Float(_)));
+        }
+
+        #[test]
+        fn infinite_and_nan_arguments_are_nan() {
+            let cases = [
+                Number::real(f64::INFINITY),
+                Number::real(f64::NEG_INFINITY),
+                Number::real(f64::NAN),
+            ];
+            for n in cases {
+                assert!(n.cos().is_nan());
+            }
+        }
+
+        #[test]
+        fn large_arguments_are_range_reduced() {
+            let r = Number::real(1e22).cos();
+
+            assert_eq!(r.to_string(), "0.523214785395139");
+        }
+
+        #[test]
+        fn cosine_of_pi_is_negative_one() {
+            let r = Number::real(std::f64::consts::PI).cos();
+
+            assert_eq!(r.to_string(), "-1.0");
+        }
+
+        #[test]
+        fn cosine_near_the_pole_is_a_small_residual_not_exactly_zero() {
+            let r = Number::real(std::f64::consts::FRAC_PI_2).cos();
+
+            assert_eq!(r.to_string(), "6.123233995736766e-17");
+        }
+    }
+
+    mod tan {
+        use super::*;
+
+        #[test]
+        fn exact_arguments_are_generally_inexact() {
+            let r = Number::real(1).tan();
+
+            assert_eq!(r.to_string(), "1.557407724654902");
+            assert_matches!(r, Number::Real(Real::Float(_)));
+        }
+
+        #[test]
+        fn infinite_and_nan_arguments_are_nan() {
+            let cases = [
+                Number::real(f64::INFINITY),
+                Number::real(f64::NEG_INFINITY),
+                Number::real(f64::NAN),
+            ];
+            for n in cases {
+                assert!(n.tan().is_nan());
+            }
+        }
+
+        #[test]
+        fn tangent_near_the_pole_is_large_but_finite() {
+            // pi/2 is only ever a finite f64 approximation, so tan does not
+            // diverge to infinity here -- it returns the true (very large)
+            // tangent of that f64.
+            let r = Number::real(std::f64::consts::FRAC_PI_2).tan();
+
+            assert_eq!(r.to_string(), "1.633123935319537e16");
+        }
+    }
+
+    mod asin {
+        use super::*;
+
+        #[test]
+        fn exact_arguments_are_generally_inexact() {
+            let cases = [
+                (Number::real(1), "1.5707963267948966"),
+                (
+                    Number::real(ok_or_fail!(Real::reduce(1, 2))),
+                    "0.5235987755982988",
+                ),
+            ];
+            for (n, expected) in cases {
+                let r = n.asin();
+
+                assert_eq!(r.to_string(), expected);
+                assert_matches!(r, Number::Real(Real::Float(_)));
+            }
+        }
+
+        #[test]
+        fn out_of_domain_arguments_go_complex_on_the_standard_branch_cut() {
+            let r = Number::real(2).asin();
+
+            let (re, im) = complex_parts!(r);
+            assert_near!(re.to_float(), 1.5707963267948966);
+            assert_near!(im.to_float(), -1.3169578969248166);
+        }
+
+        #[test]
+        fn is_an_odd_function_past_the_domain_boundary() {
+            // asin(-z) = -asin(z). Guile's asin breaks this identity past
+            // +/-1 (see `mod laws` below); Zara follows the standard branch
+            // cut, matching Chez.
+            let r = Number::real(-2).asin();
+
+            let (re, im) = complex_parts!(r);
+            assert_near!(re.to_float(), -1.5707963267948966);
+            assert_near!(im.to_float(), 1.3169578969248166);
+        }
+    }
+
+    mod acos {
+        use super::*;
+
+        #[test]
+        fn exact_arguments_are_generally_inexact() {
+            let cases = [
+                (Number::real(0), "1.5707963267948966"),
+                (
+                    Number::real(ok_or_fail!(Real::reduce(1, 2))),
+                    "1.0471975511965976",
+                ),
+                (Number::real(-1), "3.141592653589793"),
+            ];
+            for (n, expected) in cases {
+                let r = n.acos();
+
+                assert_eq!(r.to_string(), expected);
+                assert_matches!(r, Number::Real(Real::Float(_)));
+            }
+        }
+
+        #[test]
+        fn out_of_domain_arguments_go_complex_on_the_standard_branch_cut() {
+            let r = Number::real(2).acos();
+
+            let (re, im) = complex_parts!(r);
+            assert_near!(re.to_float(), 0.0);
+            assert_near!(im.to_float(), 1.3169578969248166);
+        }
+
+        #[test]
+        fn reflects_about_pi_past_the_domain_boundary() {
+            // acos(-z) = pi - acos(z). Guile's acos breaks this identity
+            // past +/-1 (see `mod laws` below); Zara follows the standard
+            // branch cut, matching Chez.
+            let r = Number::real(-2).acos();
+
+            let (re, im) = complex_parts!(r);
+            assert_near!(re.to_float(), 3.141592653589793);
+            assert_near!(im.to_float(), -1.3169578969248166);
+        }
+    }
+
+    mod atan {
+        use super::*;
+
+        #[test]
+        fn exact_arguments_are_generally_inexact() {
+            let cases = [
+                (Number::real(1), "0.7853981633974483"),
+                (
+                    Number::real(ok_or_fail!(Real::reduce(1, 2))),
+                    "0.46364760900080615",
+                ),
+            ];
+            for (n, expected) in cases {
+                let r = n.atan();
+
+                assert_eq!(r.to_string(), expected);
+                assert_matches!(r, Number::Real(Real::Float(_)));
+            }
+        }
+
+        #[test]
+        fn infinite_arguments_approach_the_asymptotes() {
+            assert_eq!(
+                Number::real(f64::INFINITY).atan().to_string(),
+                "1.5707963267948966"
+            );
+            assert_eq!(
+                Number::real(f64::NEG_INFINITY).atan().to_string(),
+                "-1.5707963267948966"
+            );
+        }
+
+        #[test]
+        fn nan_propagates() {
+            assert!(Number::real(f64::NAN).atan().is_nan());
+        }
+    }
+
+    // (atan +i) is a pole and is intentionally left untested: Chez errors on
+    // the exact form and returns a garbage value for (atan 0.0+1.0i)
+    // (0.785...+177.099...i), while Guile gives +nan.0+inf.0i. Neither is a
+    // usable reference.
+    mod complex {
+        use super::*;
+
+        #[test]
+        fn complex_arguments_always_produce_inexact_results() {
+            // Unlike sqrt, none of these has an exact complex case: every
+            // Gaussian integer here produces an inexact result.
+            let z = Number::complex(1, 2);
+
+            assert!(z.exp().is_inexact());
+            assert!(ok_or_fail!(z.ln()).is_inexact());
+            assert!(z.sin().is_inexact());
+            assert!(z.cos().is_inexact());
+            assert!(z.tan().is_inexact());
+            assert!(z.asin().is_inexact());
+            assert!(z.acos().is_inexact());
+        }
+
+        #[test]
+        fn exp_of_pure_imaginary() {
+            let r = Number::imaginary(1).exp();
+
+            let (re, im) = complex_parts!(r);
+            assert_near!(re.to_float(), 0.5403023058681398);
+            assert_near!(im.to_float(), 0.8414709848078965);
+        }
+
+        #[test]
+        fn exp_of_a_general_complex_value() {
+            let r = Number::complex(1, 2).exp();
+
+            let (re, im) = complex_parts!(r);
+            assert_near!(re.to_float(), -1.1312043837568135);
+            assert_near!(im.to_float(), 2.4717266720048188);
+        }
+
+        #[test]
+        fn log_of_pure_imaginary() {
+            let r = ok_or_fail!(Number::imaginary(1).ln());
+
+            let (re, im) = complex_parts!(r);
+            assert_near!(re.to_float(), 0.0);
+            assert_near!(im.to_float(), 1.5707963267948966);
+        }
+
+        #[test]
+        fn log_of_a_general_complex_value() {
+            let r = ok_or_fail!(Number::complex(1, 2).ln());
+
+            let (re, im) = complex_parts!(r);
+            assert_near!(re.to_float(), 0.8047189562170501);
+            assert_near!(im.to_float(), 1.1071487177940904);
+        }
+
+        #[test]
+        fn sin_of_pure_imaginary() {
+            let r = Number::imaginary(1).sin();
+
+            let (re, im) = complex_parts!(r);
+            assert_near!(re.to_float(), 0.0);
+            assert_near!(im.to_float(), 1.1752011936438014);
+        }
+
+        #[test]
+        fn sin_of_a_general_complex_value() {
+            let r = Number::complex(1, 2).sin();
+
+            let (re, im) = complex_parts!(r);
+            assert_near!(re.to_float(), 3.165778513216168);
+            assert_near!(im.to_float(), 1.959601041421606);
+        }
+
+        #[test]
+        fn cos_of_pure_imaginary_has_negative_zero_imaginary_part() {
+            let r = Number::imaginary(1).cos();
+
+            let (re, im) = complex_parts!(r);
+            assert_near!(re.to_float(), 1.5430806348152437);
+            assert_eq!(im.to_float(), 0.0);
+            assert!(im.to_float().is_sign_negative());
+        }
+
+        #[test]
+        fn tan_of_pure_imaginary() {
+            let r = Number::imaginary(1).tan();
+
+            let (re, im) = complex_parts!(r);
+            assert_near!(re.to_float(), 0.0);
+            assert_near!(im.to_float(), 0.7615941559557649);
+        }
+
+        #[test]
+        fn asin_of_pure_imaginary() {
+            let r = Number::imaginary(1).asin();
+
+            let (re, im) = complex_parts!(r);
+            assert_near!(re.to_float(), 0.0);
+            assert_near!(im.to_float(), 0.881373587019543);
+        }
+
+        #[test]
+        fn acos_of_pure_imaginary() {
+            let r = Number::imaginary(1).acos();
+
+            let (re, im) = complex_parts!(r);
+            assert_near!(re.to_float(), 1.5707963267948966);
+            assert_near!(im.to_float(), -0.881373587019543);
+        }
+
+        #[test]
+        fn exp_of_inexact_zero_complex_stays_complex() {
+            // (exp 0.0+0.0i): the inexact zero imaginary part does not
+            // collapse the way (exp 0+0i)'s exact zero would, so the result
+            // stays Complex even though its value is the same as (exp 0.0).
+            let r = Number::complex(0.0, 0.0).exp();
+
+            let (re, im) = complex_parts!(r);
+            assert_eq!(re.to_float(), 1.0);
+            assert_eq!(im.to_float(), 0.0);
+        }
+    }
+
+    mod laws {
+        use super::*;
+
+        #[test]
+        fn exp_and_ln_are_inverses() {
+            let a = ok_or_fail!(Number::real(1).exp().ln());
+            assert_near!(a.to_real().to_float(), 1.0);
+
+            let b = ok_or_fail!(Number::real(2).ln()).exp();
+            assert_near!(b.to_real().to_float(), 2.0);
+        }
+
+        #[test]
+        fn pythagorean_identity_holds_for_real_and_complex_arguments() {
+            let cases = [Number::real(1), Number::real(0.5), Number::complex(1, 2)];
+            for x in cases {
+                let sum = (&x.sin() * &x.sin()) + (&x.cos() * &x.cos());
+
+                assert_near!(sum.to_real().to_float(), 1.0);
+                assert_near!(sum.to_imag().to_float(), 0.0);
+            }
+        }
+
+        #[test]
+        fn eulers_identity() {
+            let i_pi = Number::imaginary(std::f64::consts::PI);
+
+            let r = i_pi.exp();
+
+            let (re, im) = complex_parts!(r);
+            assert_near!(re.to_float(), -1.0);
+            assert_near!(im.to_float(), 0.0);
+        }
+
+        #[test]
+        fn tan_is_sin_over_cos() {
+            let cases = [Number::real(1), Number::real(0.5), Number::complex(1, 2)];
+            for x in cases {
+                let ratio = ok_or_fail!(&x.sin() / &x.cos());
+                let tan = x.tan();
+
+                assert_near!(ratio.to_real().to_float(), tan.to_real().to_float());
+                assert_near!(ratio.to_imag().to_float(), tan.to_imag().to_float());
+            }
+        }
+
+        #[test]
+        fn asin_is_an_odd_function_past_the_domain_boundary() {
+            // asin(-z) = -asin(z). Guile's asin breaks this identity past
+            // +/-1 -- see the branch-cut note under `mod asin` above; Zara
+            // follows the standard branch cut, matching Chez.
+            let sum = Number::real(2).asin() + Number::real(-2).asin();
+
+            assert_near!(sum.to_real().to_float(), 0.0);
+            assert_near!(sum.to_imag().to_float(), 0.0);
+        }
+
+        #[test]
+        fn acos_reflects_about_pi_past_the_domain_boundary() {
+            let sum = Number::real(2).acos() + Number::real(-2).acos();
+
+            assert_near!(sum.to_real().to_float(), std::f64::consts::PI);
+            assert_near!(sum.to_imag().to_float(), 0.0);
+        }
+
+        #[test]
+        fn acos_is_half_pi_minus_asin() {
+            let cases = [Number::real(0.5), Number::real(2), Number::real(-2)];
+            for x in cases {
+                let lhs = x.acos();
+                let rhs = Number::real(std::f64::consts::FRAC_PI_2) - x.asin();
+
+                assert_near!(lhs.to_real().to_float(), rhs.to_real().to_float());
+                assert_near!(lhs.to_imag().to_float(), rhs.to_imag().to_float());
+            }
+        }
+
+        #[test]
+        fn asin_inverts_sin_on_the_principal_branch() {
+            let cases = [-1.0, -0.5, 0.0, 0.5, 1.0];
+            for x in cases {
+                let r = Number::real(x).sin().asin();
+
+                assert_near!(r.to_real().to_float(), x);
+            }
+        }
+
+        #[test]
+        fn log_base_is_a_ratio_of_natural_logs() {
+            let lhs = ok_or_fail!(Number::real(8).log_base(&Number::real(2)));
+            let rhs =
+                ok_or_fail!(ok_or_fail!(Number::real(8).ln()) / ok_or_fail!(Number::real(2).ln()));
+
+            assert_near!(lhs.to_real().to_float(), rhs.to_real().to_float());
+        }
+
+        #[test]
+        fn log_of_a_product_is_a_sum_of_logs() {
+            let lhs = ok_or_fail!(Number::real(6).ln());
+            let rhs = ok_or_fail!(Number::real(2).ln()) + ok_or_fail!(Number::real(3).ln());
+
+            assert_near!(lhs.to_real().to_float(), rhs.to_real().to_float());
+        }
+
+        #[test]
+        fn log_agrees_with_magnitude_and_angle() {
+            // ln z = ln(magnitude z) + i*(angle z), tying the transcendental
+            // ln to the existing to_magnitude/try_to_angle machinery.
+            let cases = [
+                Number::real(-2),
+                Number::complex(1, 2),
+                Number::imaginary(3),
+            ];
+            for z in cases {
+                let expected_re = z.to_magnitude().to_float().ln();
+                let expected_im = ok_or_fail!(z.try_to_angle()).to_float();
+
+                let lhs = ok_or_fail!(z.ln());
+
+                assert_near!(lhs.to_real().to_float(), expected_re);
+                assert_near!(lhs.to_imag().to_float(), expected_im);
+            }
+        }
+
+        #[test]
+        fn inexact_arguments_always_produce_inexact_results() {
+            let cases = [
+                Number::real(2.0),
+                Number::real(-4.0),
+                Number::real(f64::INFINITY),
+                Number::complex(1.0, 1.0),
+            ];
+            for n in cases {
+                assert!(n.exp().is_inexact());
+                assert!(ok_or_fail!(n.ln()).is_inexact());
+                assert!(n.sin().is_inexact());
+                assert!(n.cos().is_inexact());
+                assert!(n.tan().is_inexact());
+                assert!(n.asin().is_inexact());
+                assert!(n.acos().is_inexact());
+                assert!(n.atan().is_inexact());
             }
         }
     }
