@@ -3936,6 +3936,184 @@ mod complex {
     }
 }
 
+// R7RS's two-argument `(atan y x)` is equivalent to `(angle (make-rectangular x y))`.
+mod angle {
+    use super::*;
+
+    #[test]
+    fn matches_atan2_by_quadrant() {
+        // (x, y) => angle, i.e. (atan y x)
+        let cases = [
+            (1, 1, "0.7853981633974483"),   // atan(1, 1), Q1
+            (-1, 1, "2.356194490192345"),   // atan(1, -1), Q2
+            (-1, -1, "-2.356194490192345"), // atan(-1, -1), Q3
+            (1, -1, "-0.7853981633974483"), // atan(-1, 1), Q4
+        ];
+        for (x, y, expected) in cases {
+            let z = Number::complex(x, y);
+
+            let r = ok_or_fail!(z.try_to_angle());
+
+            assert_eq!(r.to_string(), expected);
+        }
+    }
+
+    #[test]
+    fn on_axis_cases_match_atan2() {
+        // (x, y) => angle, i.e. (atan y x)
+        let cases = [
+            (1, 0, "0"),                    // atan(0, 1)
+            (-1, 0, "3.141592653589793"),   // atan(0, -1)
+            (0, 1, "1.5707963267948966"),   // atan(1, 0)
+            (0, -1, "-1.5707963267948966"), // atan(-1, 0)
+        ];
+        for (x, y, expected) in cases {
+            let z = Number::complex(x, y);
+
+            let r = ok_or_fail!(z.try_to_angle());
+
+            assert_eq!(r.to_string(), expected);
+        }
+    }
+
+    #[test]
+    fn exact_positive_real_gives_exact_zero_angle() {
+        // atan(0, 1): the exact-zero imaginary part collapses Number::complex
+        // into Real::Integer(1), so the angle comes from Real::try_to_angle
+        // rather than Complex::to_angle, and is exact.
+        let z = Number::complex(1, 0);
+
+        let r = ok_or_fail!(z.try_to_angle());
+
+        assert_eq!(r.to_string(), "0");
+        assert_matches!(r, Real::Integer(_));
+    }
+
+    #[test]
+    fn exact_negative_real_gives_inexact_pi() {
+        // atan(0, -1): collapses to Real::Integer(-1); the angle pi is
+        // irrational, so it is inexact even though the input was exact.
+        let z = Number::complex(-1, 0);
+
+        let r = ok_or_fail!(z.try_to_angle());
+
+        assert_eq!(r.to_string(), "3.141592653589793");
+        assert_matches!(r, Real::Float(_));
+    }
+
+    #[test]
+    fn inexact_zero_imaginary_does_not_collapse() {
+        // atan(0.0, 1): the imaginary part (0.0) is inexact, so the value
+        // stays Complex and goes through Complex::to_angle (f64 atan2)
+        // instead of Real::try_to_angle.
+        let z = Number::complex(1, 0.0);
+
+        let r = ok_or_fail!(z.try_to_angle());
+
+        assert_eq!(r.to_string(), "0.0");
+        assert_matches!(r, Real::Float(_));
+    }
+
+    #[test]
+    fn signed_zero_imaginary_of_positive_real_is_negative_zero() {
+        // atan(-0.0, 1) => -0.0, the IEEE atan2 sign convention.
+        let z = Number::complex(1, -0.0);
+
+        let r = ok_or_fail!(z.try_to_angle());
+
+        assert_eq!(r.to_string(), "-0.0");
+        assert!(r.is_eqv(&Real::Float(-0.0)));
+    }
+
+    #[test]
+    fn negative_zero_real_with_positive_zero_imaginary_is_pi() {
+        // atan(0.0, -0.0) => pi, not -pi: IEEE atan2 treats a -0.0 real part
+        // as approaching from just below the negative axis.
+        let z = Number::complex(-0.0, 0.0);
+
+        let r = ok_or_fail!(z.try_to_angle());
+
+        assert_eq!(r.to_string(), "3.141592653589793");
+    }
+
+    #[test]
+    fn both_arguments_exact_zero_is_undefined() {
+        // atan(0, 0): the imaginary part collapses to exact Real::Integer(0),
+        // and the angle of an exact zero is undefined.
+        let z = Number::complex(0, 0);
+
+        let r = z.try_to_angle();
+
+        assert_matches!(err_or_fail!(r), NumericError::UndefinedAtZero);
+    }
+
+    #[test]
+    fn an_inexact_zero_on_either_side_is_defined() {
+        // Unlike (atan 0 0), a 0.0 on either side is never treated as
+        // undefined, because 0.0 is never an exact zero.
+        let cases = [
+            Number::complex(0, 0.0),   // atan(0.0, 0)
+            Number::complex(0.0, 0.0), // atan(0.0, 0.0)
+        ];
+        for z in cases {
+            let r = ok_or_fail!(z.try_to_angle());
+
+            assert_eq!(r.to_string(), "0.0");
+            assert_matches!(r, Real::Float(_));
+        }
+    }
+
+    #[test]
+    fn exact_zero_imaginary_stays_exact_even_with_an_inexact_real() {
+        // atan(0, 0.0): the imaginary part (0) is exact, so this collapses to
+        // Real::Float(0.0) and takes the Real::try_to_angle path, which
+        // returns the same exact zero it would for any positive real --
+        // matching Chez's (atan 0 0.0) => 0 (exact) rather than 0.0.
+        let z = Number::complex(0.0, 0);
+
+        let r = ok_or_fail!(z.try_to_angle());
+
+        assert_eq!(r.to_string(), "0");
+        assert_matches!(r, Real::Integer(_));
+    }
+
+    #[test]
+    fn infinite_arguments_do_not_produce_nan() {
+        // atan(1, +inf.0)
+        let r = ok_or_fail!(Number::complex(f64::INFINITY, 1).try_to_angle());
+        assert_eq!(r.to_string(), "0.0");
+
+        // atan(+inf.0, +inf.0)
+        let r = ok_or_fail!(Number::complex(f64::INFINITY, f64::INFINITY).try_to_angle());
+        assert_eq!(r.to_string(), "0.7853981633974483");
+    }
+
+    #[test]
+    fn angle_of_negative_zero_real_alone_is_pi() {
+        // Load-bearing for (log -0.0): Real::signum treats -0.0 as negative,
+        // so the angle of -0.0 (as a bare real, not part of a complex) is pi,
+        // matching Guile's arg(-0.0) = pi rather than Chez's arg(-0.0) = 0.
+        let r = ok_or_fail!(Number::real(-0.0).try_to_angle());
+
+        assert_eq!(r.to_string(), "3.141592653589793");
+    }
+
+    #[test]
+    fn angle_of_positive_zero_float_is_exact_zero() {
+        let r = ok_or_fail!(Number::real(0.0).try_to_angle());
+
+        assert_eq!(r.to_string(), "0");
+        assert_matches!(r, Real::Integer(_));
+    }
+
+    #[test]
+    fn angle_of_exact_zero_is_undefined() {
+        let r = Number::real(0).try_to_angle();
+
+        assert_matches!(err_or_fail!(r), NumericError::UndefinedAtZero);
+    }
+}
+
 mod equivalence {
     use super::*;
 
