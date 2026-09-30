@@ -284,17 +284,17 @@ impl Number {
         }
     }
 
-    pub(crate) fn complex_conjugate(&self) -> Self {
-        match self {
-            Self::Complex(z) => z.conjugate(),
-            Self::Real(_) => self.clone(),
-        }
-    }
-
     pub(crate) fn angle(&self) -> RealResult {
         match self {
             Self::Complex(z) => Ok(z.angle()),
             Self::Real(r) => r.angle(),
+        }
+    }
+
+    pub(crate) fn complex_conjugate(&self) -> Self {
+        match self {
+            Self::Complex(z) => z.conjugate(),
+            Self::Real(_) => self.clone(),
         }
     }
 
@@ -952,7 +952,7 @@ impl Real {
     pub(crate) fn abs(&self) -> Self {
         match self {
             Self::Float(f) => f.abs().into(),
-            Self::Integer(n) => n.clone().into_abs().into(),
+            Self::Integer(n) => n.clone().abs().into(),
             Self::Rational(q) => Self::Rational(q.clone().abs()),
         }
     }
@@ -1359,7 +1359,7 @@ impl Rational {
     }
 
     fn abs(mut self) -> Self {
-        self.0.0 = self.0.0.into_abs();
+        self.0.0 = self.0.0.abs();
         self
     }
 
@@ -1778,7 +1778,7 @@ impl Integer {
         Rational((self, Self::one()).into())
     }
 
-    fn into_abs(mut self) -> Self {
+    fn abs(mut self) -> Self {
         self.make_positive();
         self
     }

@@ -1540,7 +1540,7 @@ mod integer {
     fn negative_abs() {
         let n = Integer::from(-4);
 
-        let a = n.into_abs();
+        let a = n.abs();
 
         assert_eq!(a.sign, Sign::Positive);
     }
@@ -1549,7 +1549,7 @@ mod integer {
     fn positive_abs() {
         let n = Integer::from(4);
 
-        let a = n.into_abs();
+        let a = n.abs();
 
         assert_eq!(a.sign, Sign::Positive);
     }
@@ -1558,7 +1558,7 @@ mod integer {
     fn zero_abs() {
         let n = Integer::from(0);
 
-        let a = n.into_abs();
+        let a = n.abs();
 
         assert_eq!(a.sign, Sign::Zero);
     }
@@ -1894,7 +1894,7 @@ mod integer {
                 let expected = Integer::from(a) * Integer::from(b);
                 assert_eq!(
                     extract_or_fail!(product.precision, Precision::Single),
-                    extract_or_fail!(expected.into_abs().precision, Precision::Single)
+                    extract_or_fail!(expected.abs().precision, Precision::Single)
                 );
             }
         }
