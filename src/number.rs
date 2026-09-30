@@ -277,24 +277,17 @@ impl Number {
         }
     }
 
-    pub(crate) fn to_angle(&self) -> Real {
-        match self {
-            Self::Complex(z) => z.to_angle(),
-            Self::Real(r) => {
-                // positive real angles are always zero, negative are always π
-                if r.is_positive() {
-                    Real::zero()
-                } else {
-                    f64::consts::PI.into()
-                }
-            }
-        }
-    }
-
     pub(crate) fn to_complex_conjugate(&self) -> Self {
         match self {
             Self::Complex(z) => z.to_conjugate(),
             Self::Real(_) => self.clone(),
+        }
+    }
+
+    pub(crate) fn try_to_angle(&self) -> RealResult {
+        match self {
+            Self::Complex(z) => Ok(z.to_angle()),
+            Self::Real(r) => r.try_to_angle(),
         }
     }
 
@@ -1044,6 +1037,14 @@ impl Real {
             Self::Float(f) => Ok(f.recip().into()),
             Self::Integer(n) => n.clone().try_into_reciprocal(),
             Self::Rational(q) => q.clone().try_into_reciprocal(),
+        }
+    }
+
+    fn try_to_angle(&self) -> RealResult {
+        if self.is_exact_zero() {
+            Err(NumericError::UndefinedAtZero)
+        } else {
+            Ok(real_angle(self.signum()))
         }
     }
 
@@ -2075,6 +2076,7 @@ pub(crate) enum NumericError {
     ParseExponentFailure,
     ParseExponentOutOfRange,
     ParseFailure,
+    UndefinedAtZero,
     Uint32ConversionInvalidRange,
     Unimplemented(String),
     UsizeConversionInvalidRange,
@@ -2106,6 +2108,7 @@ impl Display for NumericError {
             }
             Self::ParseExponentFailure => f.write_str("exponent parse failure"),
             Self::ParseFailure => f.write_str("number parse failure"),
+            Self::UndefinedAtZero => f.write_str("undefined at 0"),
             Self::Uint32ConversionInvalidRange => {
                 write_intconversion_range_error(u32::MIN, u32::MAX, f)
             }
@@ -2218,6 +2221,14 @@ fn scaled_re(r: &Real, x: &Real, op: impl FnOnce(&Real, &Real) -> Real) -> Real 
 
 fn cpx_product(a: &Real, b: &Real, c: &Real, d: &Real) -> Number {
     Number::complex((a * c) - (b * d), (a * d) + (b * c))
+}
+
+fn real_angle(sign: f64) -> Real {
+    if sign > 0.0 {
+        Real::zero()
+    } else {
+        f64::consts::PI.into()
+    }
 }
 
 fn try_float_to_exact(flt: f64) -> RealResult {

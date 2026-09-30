@@ -601,6 +601,13 @@ mod error {
     }
 
     #[test]
+    fn display_parse_undef_at_zero() {
+        let err = NumericError::UndefinedAtZero;
+
+        assert_eq!(err.to_string(), "undefined at 0");
+    }
+
+    #[test]
     fn display_unimplemented() {
         let err = NumericError::Unimplemented("foo".to_owned());
 

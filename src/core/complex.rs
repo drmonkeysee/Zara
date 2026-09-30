@@ -36,7 +36,15 @@ fn get_mag(args: &[Value], _env: &Frame) -> EvalResult {
 }
 
 fn get_angle(args: &[Value], _env: &Frame) -> EvalResult {
-    get_complex_part(super::first(args), Number::to_angle)
+    let arg = super::first(args);
+    if let Value::Number(x) = arg {
+        x.try_to_angle().map_or_else(
+            |err| Err(Condition::value_error(err, arg).into()),
+            |r| Ok(Value::real(r)),
+        )
+    } else {
+        Err(super::invalid_target(TypeName::NUMBER, arg))
+    }
 }
 
 fn make_complex(x: &Value, y: &Value, ctor: impl FnOnce(Real, Real) -> Number) -> EvalResult {
