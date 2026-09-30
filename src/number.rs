@@ -269,6 +269,13 @@ impl Number {
         }
     }
 
+    pub(crate) fn try_to_exact(&self) -> NumResult {
+        Ok(match self {
+            Self::Complex(Complex(z)) => Self::complex(z.0.try_to_exact()?, z.1.try_to_exact()?),
+            Self::Real(r) => Self::real(r.try_to_exact()?),
+        })
+    }
+
     pub(crate) fn magnitude(&self) -> Real {
         match self {
             Self::Complex(z) => z.magnitude(),
@@ -289,13 +296,6 @@ impl Number {
             Self::Complex(z) => Ok(z.angle()),
             Self::Real(r) => r.angle(),
         }
-    }
-
-    pub(crate) fn try_to_exact(&self) -> NumResult {
-        Ok(match self {
-            Self::Complex(Complex(z)) => Self::complex(z.0.try_to_exact()?, z.1.try_to_exact()?),
-            Self::Real(r) => Self::real(r.try_to_exact()?),
-        })
     }
 
     pub(crate) fn reciprocal(&self) -> NumResult {
@@ -897,14 +897,6 @@ impl Real {
         self.strict_ordering(other, &Self::gt, &f64::gt)
     }
 
-    pub(crate) fn signum(&self) -> f64 {
-        match self {
-            Self::Float(f) => f.signum(),
-            Self::Integer(n) => n.signum(),
-            Self::Rational(q) => q.signum(),
-        }
-    }
-
     pub(crate) fn as_token_descriptor(&self) -> RealTokenDescriptor<'_> {
         RealTokenDescriptor(self)
     }
@@ -914,6 +906,46 @@ impl Real {
             Self::Float(_) => self.clone(),
             Self::Integer(n) => n.to_inexact(),
             Self::Rational(q) => q.to_inexact(),
+        }
+    }
+
+    pub(crate) fn try_to_exact(&self) -> RealResult {
+        if let Self::Float(f) = self {
+            try_float_to_exact(*f)
+        } else {
+            Ok(self.clone())
+        }
+    }
+
+    pub(crate) fn try_to_exact_integer(&self) -> IntResult {
+        match self {
+            Self::Float(f) if f.fract() == 0.0 => Ok(Integer::from_exact_float(*f)),
+            Self::Integer(n) => Ok(n.clone()),
+            _ => Err(NumericError::NotExactInteger(self.to_string())),
+        }
+    }
+
+    pub(crate) fn try_to_numerator(&self) -> RealResult {
+        Ok(match self {
+            Self::Float(_) => self.try_to_exact()?.try_to_numerator()?.to_inexact(),
+            Self::Integer(_) => self.clone(),
+            Self::Rational(q) => q.to_numerator().into(),
+        })
+    }
+
+    pub(crate) fn try_to_denominator(&self) -> RealResult {
+        Ok(match self {
+            Self::Float(_) => self.try_to_exact()?.try_to_denominator()?.to_inexact(),
+            Self::Integer(_) => Integer::one().into(),
+            Self::Rational(q) => q.to_denominator().into(),
+        })
+    }
+
+    pub(crate) fn signum(&self) -> f64 {
+        match self {
+            Self::Float(f) => f.signum(),
+            Self::Integer(n) => n.signum(),
+            Self::Rational(q) => q.signum(),
         }
     }
 
@@ -955,38 +987,6 @@ impl Real {
             Self::Integer(_) => self.clone(),
             Self::Rational(q) => q.round().into(),
         }
-    }
-
-    pub(crate) fn try_to_exact(&self) -> RealResult {
-        if let Self::Float(f) = self {
-            try_float_to_exact(*f)
-        } else {
-            Ok(self.clone())
-        }
-    }
-
-    pub(crate) fn try_to_exact_integer(&self) -> IntResult {
-        match self {
-            Self::Float(f) if f.fract() == 0.0 => Ok(Integer::from_exact_float(*f)),
-            Self::Integer(n) => Ok(n.clone()),
-            _ => Err(NumericError::NotExactInteger(self.to_string())),
-        }
-    }
-
-    pub(crate) fn try_to_numerator(&self) -> RealResult {
-        Ok(match self {
-            Self::Float(_) => self.try_to_exact()?.try_to_numerator()?.to_inexact(),
-            Self::Integer(_) => self.clone(),
-            Self::Rational(q) => q.to_numerator().into(),
-        })
-    }
-
-    pub(crate) fn try_to_denominator(&self) -> RealResult {
-        Ok(match self {
-            Self::Float(_) => self.try_to_exact()?.try_to_denominator()?.to_inexact(),
-            Self::Integer(_) => Integer::one().into(),
-            Self::Rational(q) => q.to_denominator().into(),
-        })
     }
 
     fn one() -> Self {
@@ -1354,13 +1354,13 @@ impl Rational {
         }
     }
 
+    fn reciprocal(self) -> RealResult {
+        Real::reduce(self.0.1, self.0.0)
+    }
+
     fn abs(mut self) -> Self {
         self.0.0 = self.0.0.into_abs();
         self
-    }
-
-    fn reciprocal(self) -> RealResult {
-        Real::reduce(self.0.1, self.0.0)
     }
 
     fn copysign(mut self, sign: f64) -> Self {
@@ -1574,6 +1574,10 @@ impl Integer {
         self.precision.is_even()
     }
 
+    pub(crate) fn to_inexact(&self) -> Real {
+        Real::Float(self.to_float())
+    }
+
     pub(crate) fn gcd(&self, rhs: &Self) -> Self {
         Self::new(self.precision.gcd(&rhs.precision), Sign::Positive)
     }
@@ -1584,10 +1588,6 @@ impl Integer {
         } else {
             Self::new(self.precision.lcm(&rhs.precision), Sign::Positive)
         }
-    }
-
-    pub(crate) fn to_inexact(&self) -> Real {
-        Real::Float(self.to_float())
     }
 
     pub(crate) fn truncate_quotient(&self, rhs: &Self) -> IntResult {
@@ -1651,14 +1651,6 @@ impl Integer {
         }
     }
 
-    fn signum(&self) -> f64 {
-        self.sign.into()
-    }
-
-    fn cmp_magnitude(&self, other: &Self) -> Ordering {
-        self.precision.cmp(&other.precision)
-    }
-
     fn to_float(&self) -> f64 {
         match self.precision {
             Precision::Single(u) =>
@@ -1668,6 +1660,37 @@ impl Integer {
             }
             Precision::Multiple(_) => todo!(),
         }
+    }
+
+    int_convert! {
+        try_to_i32,
+        i32,
+        NumericError::Int32ConversionInvalidRange,
+        |u| (-(u as i64)).try_into();
+
+        try_to_i64,
+        i64,
+        NumericError::Int64ConversionInvalidRange,
+        |u| {
+            Ok(if u == i64::MIN.unsigned_abs() {
+                i64::MIN
+            } else {
+                -(u as i64)
+            })
+        };
+    }
+    uint_convert! {
+        try_to_u8, u8, NumericError::ByteConversionInvalidRange;
+        try_to_u32, u32, NumericError::Uint32ConversionInvalidRange;
+        try_to_usize, usize, NumericError::UsizeConversionInvalidRange;
+    }
+
+    fn signum(&self) -> f64 {
+        self.sign.into()
+    }
+
+    fn cmp_magnitude(&self, other: &Self) -> Ordering {
+        self.precision.cmp(&other.precision)
     }
 
     fn safe_sum(&self, rhs: &Self) -> Self {
@@ -1733,29 +1756,6 @@ impl Integer {
             Sign::Positive => Self::new(pos(&self.precision, &rhs.precision), s),
             Sign::Zero => Self::zero(),
         }
-    }
-
-    int_convert! {
-        try_to_i32,
-        i32,
-        NumericError::Int32ConversionInvalidRange,
-        |u| (-(u as i64)).try_into();
-
-        try_to_i64,
-        i64,
-        NumericError::Int64ConversionInvalidRange,
-        |u| {
-            Ok(if u == i64::MIN.unsigned_abs() {
-                i64::MIN
-            } else {
-                -(u as i64)
-            })
-        };
-    }
-    uint_convert! {
-        try_to_u8, u8, NumericError::ByteConversionInvalidRange;
-        try_to_u32, u32, NumericError::Uint32ConversionInvalidRange;
-        try_to_usize, usize, NumericError::UsizeConversionInvalidRange;
     }
 
     fn make_positive(&mut self) {
