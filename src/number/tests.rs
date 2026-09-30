@@ -8612,9 +8612,8 @@ mod rounding {
         }
     }
 
-    // R7RS: "Round rounds to the nearest integer, rounding to even when the
-    // argument is halfway between two integers." Round is expected to fail
-    // here: Rational::into_round is still todo!() (src/number.rs:1159).
+    // R7RS: Round rounds to the nearest integer, rounding to even when the
+    // argument is halfway between two integers.
     mod round {
         use super::*;
 
@@ -8690,6 +8689,16 @@ mod rounding {
                 let x = ok_or_fail!(Real::reduce(n, d));
 
                 assert_eq!(x.to_round().to_string(), expected);
+            }
+        }
+
+        #[test]
+        fn float_ties_round_to_nearest_even() {
+            let cases = [(2.5, "2.0"), (3.5, "4.0"), (-2.5, "-2.0"), (-3.5, "-4.0")];
+            for (f, expected) in cases {
+                let r = Real::from(f);
+
+                assert_eq!(r.to_round().to_string(), expected);
             }
         }
     }

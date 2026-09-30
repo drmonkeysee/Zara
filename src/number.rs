@@ -922,7 +922,7 @@ impl Real {
 
     pub(crate) fn to_round(&self) -> Self {
         match self {
-            Self::Float(f) => f.round().into(),
+            Self::Float(f) => f.round_ties_even().into(),
             Self::Integer(_) => self.clone(),
             Self::Rational(q) => q.to_round().into(),
         }
