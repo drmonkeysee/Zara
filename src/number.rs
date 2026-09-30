@@ -640,7 +640,7 @@ macro_rules! impl_cpx_div {
                 if c.is_inexact() || d.is_inexact() {
                     (c, d) = (c.to_inexact(), d.to_inexact());
                 }
-                let (re, im) = if c.to_abs() < d.to_abs() {
+                let (re, im) = if c.abs() < d.abs() {
                     let r = (&c / &d)?;
                     let denom = (c * &r) + d;
                     ((((a * &r) + b) / &denom)?, (((b * r) - a) / denom)?)
@@ -1071,7 +1071,7 @@ impl Real {
     fn reciprocal(&self) -> RealResult {
         match self {
             Self::Float(f) => Ok(f.recip().into()),
-            Self::Integer(n) => n.clone().try_into_reciprocal(),
+            Self::Integer(n) => n.clone().reciprocal(),
             Self::Rational(q) => q.clone().reciprocal(),
         }
     }
@@ -1513,8 +1513,8 @@ macro_rules! impl_rat_real_div {
                 Ok(match rhs {
                     // need this because (q * f.recip()) ends up losing precision
                     Real::Float(f) => (self.to_float() / f).into(),
-                    Real::Integer(n) => self * $nc(n).try_into_reciprocal()?,
-                    Real::Rational(q) => self * $qc(q).try_into_reciprocal()?,
+                    Real::Integer(n) => self * $nc(n).reciprocal()?,
+                    Real::Rational(q) => self * $qc(q).reciprocal()?,
                 })
             }
         })+
@@ -1783,7 +1783,7 @@ impl Integer {
         self
     }
 
-    fn try_into_reciprocal(self) -> RealResult {
+    fn reciprocal(self) -> RealResult {
         Self::one() / self
     }
 
@@ -2012,7 +2012,7 @@ macro_rules! impl_int_real_div {
                     Real::Float(_) if self.is_zero() => Ok($lhc(self).into()),
                     Real::Float(f) => Ok((self.to_float() / f).into()),
                     Real::Integer(n) => self / n,
-                    Real::Rational(q) => Ok(self * $qc(q).try_into_reciprocal()?),
+                    Real::Rational(q) => Ok(self * $qc(q).reciprocal()?),
                 }
             }
         })+
