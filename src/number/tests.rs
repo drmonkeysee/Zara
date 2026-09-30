@@ -2143,7 +2143,7 @@ mod integer {
             fn quotient_matrix() {
                 let cases = [(5, 2, 2), (-5, 2, -2), (5, -2, -2), (-5, -2, 2)];
                 for (n, d, expected) in cases {
-                    let q = ok_or_fail!(Integer::from(n).to_truncate_quotient(&d.into()));
+                    let q = ok_or_fail!(Integer::from(n).truncate_quotient(&d.into()));
 
                     assert_eq!(q, Integer::from(expected), "{n} truncate-quotient {d}");
                 }
@@ -2153,7 +2153,7 @@ mod integer {
             fn remainder_matrix() {
                 let cases = [(5, 2, 1), (-5, 2, -1), (5, -2, 1), (-5, -2, -1)];
                 for (n, d, expected) in cases {
-                    let r = ok_or_fail!(Integer::from(n).to_truncate_rem(&d.into()));
+                    let r = ok_or_fail!(Integer::from(n).truncate_rem(&d.into()));
 
                     assert_eq!(r, Integer::from(expected), "{n} truncate-remainder {d}");
                 }
@@ -2163,8 +2163,8 @@ mod integer {
             fn exact_division() {
                 let cases = [(6, 3, 2), (-6, 3, -2), (6, -3, -2), (-6, -3, 2)];
                 for (n, d, expected_q) in cases {
-                    let q = ok_or_fail!(Integer::from(n).to_truncate_quotient(&d.into()));
-                    let r = ok_or_fail!(Integer::from(n).to_truncate_rem(&d.into()));
+                    let q = ok_or_fail!(Integer::from(n).truncate_quotient(&d.into()));
+                    let r = ok_or_fail!(Integer::from(n).truncate_rem(&d.into()));
 
                     assert_eq!(q, Integer::from(expected_q), "{n} truncate-quotient {d}");
                     assert_eq!(extract_or_fail!(r.precision, Precision::Single), 0);
@@ -2176,8 +2176,8 @@ mod integer {
             fn dividend_smaller_than_divisor() {
                 let cases = [(3, 7), (-3, 7), (3, -7), (-3, -7)];
                 for (n, d) in cases {
-                    let q = ok_or_fail!(Integer::from(n).to_truncate_quotient(&d.into()));
-                    let r = ok_or_fail!(Integer::from(n).to_truncate_rem(&d.into()));
+                    let q = ok_or_fail!(Integer::from(n).truncate_quotient(&d.into()));
+                    let r = ok_or_fail!(Integer::from(n).truncate_rem(&d.into()));
 
                     assert_eq!(extract_or_fail!(q.precision, Precision::Single), 0);
                     assert_eq!(q.sign, Sign::Zero);
@@ -2189,8 +2189,8 @@ mod integer {
             fn unit_divisor() {
                 let cases = [(9, 1, 9), (9, -1, -9)];
                 for (n, d, expected_q) in cases {
-                    let q = ok_or_fail!(Integer::from(n).to_truncate_quotient(&d.into()));
-                    let r = ok_or_fail!(Integer::from(n).to_truncate_rem(&d.into()));
+                    let q = ok_or_fail!(Integer::from(n).truncate_quotient(&d.into()));
+                    let r = ok_or_fail!(Integer::from(n).truncate_rem(&d.into()));
 
                     assert_eq!(q, Integer::from(expected_q), "{n} truncate-quotient {d}");
                     assert_eq!(extract_or_fail!(r.precision, Precision::Single), 0);
@@ -2202,8 +2202,8 @@ mod integer {
             fn zero_dividend() {
                 let cases = [5, -5];
                 for d in cases {
-                    let q = ok_or_fail!(Integer::from(0).to_truncate_quotient(&d.into()));
-                    let r = ok_or_fail!(Integer::from(0).to_truncate_rem(&d.into()));
+                    let q = ok_or_fail!(Integer::from(0).truncate_quotient(&d.into()));
+                    let r = ok_or_fail!(Integer::from(0).truncate_rem(&d.into()));
 
                     assert_eq!(extract_or_fail!(q.precision, Precision::Single), 0);
                     assert_eq!(q.sign, Sign::Zero);
@@ -2216,8 +2216,8 @@ mod integer {
             fn zero_divisor_is_an_error() {
                 let cases = [13, -13, 0];
                 for n in cases {
-                    let q = Integer::from(n).to_truncate_quotient(&Integer::zero());
-                    let r = Integer::from(n).to_truncate_rem(&Integer::zero());
+                    let q = Integer::from(n).truncate_quotient(&Integer::zero());
+                    let r = Integer::from(n).truncate_rem(&Integer::zero());
 
                     assert_matches!(err_or_fail!(q), NumericError::DivideByZero);
                     assert_matches!(err_or_fail!(r), NumericError::DivideByZero);
@@ -2228,8 +2228,8 @@ mod integer {
             fn min_i64_dividend() {
                 // i64::MIN truncate-quotient -1 is exactly 2^63, which overflow-panics
                 // in native i64 arithmetic but is representable in sign-magnitude form.
-                let q = ok_or_fail!(Integer::from(i64::MIN).to_truncate_quotient(&(-1).into()));
-                let r = ok_or_fail!(Integer::from(i64::MIN).to_truncate_rem(&(-1).into()));
+                let q = ok_or_fail!(Integer::from(i64::MIN).truncate_quotient(&(-1).into()));
+                let r = ok_or_fail!(Integer::from(i64::MIN).truncate_rem(&(-1).into()));
 
                 let expected: Integer = (Sign::Positive, 1u64 << 63).into();
                 assert_eq!(q, expected);
@@ -2245,7 +2245,7 @@ mod integer {
             fn quotient_matrix() {
                 let cases = [(5, 2, 2), (-5, 2, -3), (5, -2, -3), (-5, -2, 2)];
                 for (n, d, expected) in cases {
-                    let q = ok_or_fail!(Integer::from(n).to_floor_quotient(&d.into()));
+                    let q = ok_or_fail!(Integer::from(n).floor_quotient(&d.into()));
 
                     assert_eq!(q, Integer::from(expected), "{n} floor-quotient {d}");
                 }
@@ -2255,7 +2255,7 @@ mod integer {
             fn remainder_matrix() {
                 let cases = [(5, 2, 1), (-5, 2, 1), (5, -2, -1), (-5, -2, -1)];
                 for (n, d, expected) in cases {
-                    let r = ok_or_fail!(Integer::from(n).to_floor_rem(&d.into()));
+                    let r = ok_or_fail!(Integer::from(n).floor_rem(&d.into()));
 
                     assert_eq!(r, Integer::from(expected), "{n} floor-remainder {d}");
                 }
@@ -2266,8 +2266,8 @@ mod integer {
                 // exact division has no remainder, so floor and truncate agree here.
                 let cases = [(6, 3, 2), (-6, 3, -2), (6, -3, -2), (-6, -3, 2)];
                 for (n, d, expected_q) in cases {
-                    let q = ok_or_fail!(Integer::from(n).to_floor_quotient(&d.into()));
-                    let r = ok_or_fail!(Integer::from(n).to_floor_rem(&d.into()));
+                    let q = ok_or_fail!(Integer::from(n).floor_quotient(&d.into()));
+                    let r = ok_or_fail!(Integer::from(n).floor_rem(&d.into()));
 
                     assert_eq!(q, Integer::from(expected_q), "{n} floor-quotient {d}");
                     assert_eq!(extract_or_fail!(r.precision, Precision::Single), 0);
@@ -2284,8 +2284,8 @@ mod integer {
                     (-3, -7, 0, -3),
                 ];
                 for (n, d, expected_q, expected_r) in cases {
-                    let q = ok_or_fail!(Integer::from(n).to_floor_quotient(&d.into()));
-                    let r = ok_or_fail!(Integer::from(n).to_floor_rem(&d.into()));
+                    let q = ok_or_fail!(Integer::from(n).floor_quotient(&d.into()));
+                    let r = ok_or_fail!(Integer::from(n).floor_rem(&d.into()));
 
                     assert_eq!(q, Integer::from(expected_q), "{n} floor-quotient {d}");
                     assert_eq!(r, Integer::from(expected_r), "{n} floor-remainder {d}");
@@ -2296,8 +2296,8 @@ mod integer {
             fn unit_divisor() {
                 let cases = [(9, 1, 9), (9, -1, -9)];
                 for (n, d, expected_q) in cases {
-                    let q = ok_or_fail!(Integer::from(n).to_floor_quotient(&d.into()));
-                    let r = ok_or_fail!(Integer::from(n).to_floor_rem(&d.into()));
+                    let q = ok_or_fail!(Integer::from(n).floor_quotient(&d.into()));
+                    let r = ok_or_fail!(Integer::from(n).floor_rem(&d.into()));
 
                     assert_eq!(q, Integer::from(expected_q), "{n} floor-quotient {d}");
                     assert_eq!(extract_or_fail!(r.precision, Precision::Single), 0);
@@ -2309,8 +2309,8 @@ mod integer {
             fn zero_dividend() {
                 let cases = [5, -5];
                 for d in cases {
-                    let q = ok_or_fail!(Integer::from(0).to_floor_quotient(&d.into()));
-                    let r = ok_or_fail!(Integer::from(0).to_floor_rem(&d.into()));
+                    let q = ok_or_fail!(Integer::from(0).floor_quotient(&d.into()));
+                    let r = ok_or_fail!(Integer::from(0).floor_rem(&d.into()));
 
                     assert_eq!(extract_or_fail!(q.precision, Precision::Single), 0);
                     assert_eq!(q.sign, Sign::Zero);
@@ -2323,8 +2323,8 @@ mod integer {
             fn zero_divisor_is_an_error() {
                 let cases = [13, -13, 0];
                 for n in cases {
-                    let q = Integer::from(n).to_floor_quotient(&Integer::zero());
-                    let r = Integer::from(n).to_floor_rem(&Integer::zero());
+                    let q = Integer::from(n).floor_quotient(&Integer::zero());
+                    let r = Integer::from(n).floor_rem(&Integer::zero());
 
                     assert_matches!(err_or_fail!(q), NumericError::DivideByZero);
                     assert_matches!(err_or_fail!(r), NumericError::DivideByZero);
@@ -2335,8 +2335,8 @@ mod integer {
             fn min_i64_dividend() {
                 // i64::MIN floor-quotient -1 is exactly 2^63, which overflow-panics in
                 // native i64 arithmetic but is representable in sign-magnitude form.
-                let q = ok_or_fail!(Integer::from(i64::MIN).to_floor_quotient(&(-1).into()));
-                let r = ok_or_fail!(Integer::from(i64::MIN).to_floor_rem(&(-1).into()));
+                let q = ok_or_fail!(Integer::from(i64::MIN).floor_quotient(&(-1).into()));
+                let r = ok_or_fail!(Integer::from(i64::MIN).floor_rem(&(-1).into()));
 
                 let expected: Integer = (Sign::Positive, 1u64 << 63).into();
                 assert_eq!(q, expected);
@@ -2353,8 +2353,8 @@ mod integer {
                 // n == d * truncate(n/d) + truncate-remainder(n, d)
                 let cases = [(5, 2), (-5, 2), (5, -2), (-5, -2), (100, 7), (9, 3)];
                 for (n, d) in cases {
-                    let q = ok_or_fail!(Integer::from(n).to_truncate_quotient(&d.into()));
-                    let r = ok_or_fail!(Integer::from(n).to_truncate_rem(&d.into()));
+                    let q = ok_or_fail!(Integer::from(n).truncate_quotient(&d.into()));
+                    let r = ok_or_fail!(Integer::from(n).truncate_rem(&d.into()));
 
                     let reconstructed = Integer::from(d) * q + r;
                     assert_eq!(reconstructed, Integer::from(n), "{n} == {d}*q + r");
@@ -2370,8 +2370,8 @@ mod integer {
                 // n == d * floor(n/d) + floor-remainder(n, d)
                 let cases = [(5, 2), (-5, 2), (5, -2), (-5, -2), (100, 7), (9, 3)];
                 for (n, d) in cases {
-                    let q = ok_or_fail!(Integer::from(n).to_floor_quotient(&d.into()));
-                    let r = ok_or_fail!(Integer::from(n).to_floor_rem(&d.into()));
+                    let q = ok_or_fail!(Integer::from(n).floor_quotient(&d.into()));
+                    let r = ok_or_fail!(Integer::from(n).floor_rem(&d.into()));
 
                     let reconstructed = Integer::from(d) * q + r;
                     assert_eq!(reconstructed, Integer::from(n), "{n} == {d}*q + r");
@@ -2382,8 +2382,8 @@ mod integer {
             fn remainder_magnitude_is_less_than_divisor_magnitude() {
                 let cases = [(5, 2), (-5, 2), (5, -2), (-5, -2), (100, 7), (7, 100)];
                 for (n, d) in cases {
-                    let trunc_r = ok_or_fail!(Integer::from(n).to_truncate_rem(&d.into()));
-                    let floor_r = ok_or_fail!(Integer::from(n).to_floor_rem(&d.into()));
+                    let trunc_r = ok_or_fail!(Integer::from(n).truncate_rem(&d.into()));
+                    let floor_r = ok_or_fail!(Integer::from(n).floor_rem(&d.into()));
 
                     let trunc_mag = extract_or_fail!(trunc_r.precision, Precision::Single);
                     let floor_mag = extract_or_fail!(floor_r.precision, Precision::Single);
@@ -2403,7 +2403,7 @@ mod integer {
             fn truncate_remainder_sign_follows_dividend() {
                 let cases = [(5, 2), (-5, 2), (5, -2), (-5, -2), (0, 4)];
                 for (n, d) in cases {
-                    let r = ok_or_fail!(Integer::from(n).to_truncate_rem(&d.into()));
+                    let r = ok_or_fail!(Integer::from(n).truncate_rem(&d.into()));
 
                     let expected = if r.is_zero() {
                         Sign::Zero
@@ -2418,7 +2418,7 @@ mod integer {
             fn floor_remainder_sign_follows_divisor() {
                 let cases = [(5, 2), (-5, 2), (5, -2), (-5, -2), (0, 4)];
                 for (n, d) in cases {
-                    let r = ok_or_fail!(Integer::from(n).to_floor_rem(&d.into()));
+                    let r = ok_or_fail!(Integer::from(n).floor_rem(&d.into()));
 
                     let expected = if r.is_zero() {
                         Sign::Zero
@@ -2433,10 +2433,10 @@ mod integer {
             fn conventions_agree_when_signs_match_or_division_is_exact() {
                 let cases = [(6, 2), (-6, -2), (6, 3), (-9, -3), (0, 5)];
                 for (n, d) in cases {
-                    let trunc_q = ok_or_fail!(Integer::from(n).to_truncate_quotient(&d.into()));
-                    let floor_q = ok_or_fail!(Integer::from(n).to_floor_quotient(&d.into()));
-                    let trunc_r = ok_or_fail!(Integer::from(n).to_truncate_rem(&d.into()));
-                    let floor_r = ok_or_fail!(Integer::from(n).to_floor_rem(&d.into()));
+                    let trunc_q = ok_or_fail!(Integer::from(n).truncate_quotient(&d.into()));
+                    let floor_q = ok_or_fail!(Integer::from(n).floor_quotient(&d.into()));
+                    let trunc_r = ok_or_fail!(Integer::from(n).truncate_rem(&d.into()));
+                    let floor_r = ok_or_fail!(Integer::from(n).floor_rem(&d.into()));
 
                     assert_eq!(trunc_q, floor_q, "{n} quotient {d}");
                     assert_eq!(trunc_r, floor_r, "{n} remainder {d}");
@@ -2449,10 +2449,10 @@ mod integer {
                 // floor_q == trunc_q - 1, floor_r == trunc_r + d
                 let cases = [(-5, 2), (5, -2), (-7, 3), (7, -3)];
                 for (n, d) in cases {
-                    let trunc_q = ok_or_fail!(Integer::from(n).to_truncate_quotient(&d.into()));
-                    let floor_q = ok_or_fail!(Integer::from(n).to_floor_quotient(&d.into()));
-                    let trunc_r = ok_or_fail!(Integer::from(n).to_truncate_rem(&d.into()));
-                    let floor_r = ok_or_fail!(Integer::from(n).to_floor_rem(&d.into()));
+                    let trunc_q = ok_or_fail!(Integer::from(n).truncate_quotient(&d.into()));
+                    let floor_q = ok_or_fail!(Integer::from(n).floor_quotient(&d.into()));
+                    let trunc_r = ok_or_fail!(Integer::from(n).truncate_rem(&d.into()));
+                    let floor_r = ok_or_fail!(Integer::from(n).floor_rem(&d.into()));
 
                     assert_eq!(floor_q, trunc_q - Integer::one(), "{n} quotient {d}");
                     assert_eq!(floor_r, trunc_r + Integer::from(d), "{n} remainder {d}");
@@ -2469,8 +2469,8 @@ mod integer {
                         if d == 0 {
                             continue;
                         }
-                        let q = ok_or_fail!(Integer::from(n).to_truncate_quotient(&d.into()));
-                        let r = ok_or_fail!(Integer::from(n).to_truncate_rem(&d.into()));
+                        let q = ok_or_fail!(Integer::from(n).truncate_quotient(&d.into()));
+                        let r = ok_or_fail!(Integer::from(n).truncate_rem(&d.into()));
 
                         assert_eq!(q, Integer::from(n / d), "{n} truncate-quotient {d}");
                         assert_eq!(r, Integer::from(n % d), "{n} truncate-remainder {d}");
@@ -2499,8 +2499,8 @@ mod integer {
                         };
                         let expected_r = n - d * expected_q;
 
-                        let q = ok_or_fail!(Integer::from(n).to_floor_quotient(&d.into()));
-                        let r = ok_or_fail!(Integer::from(n).to_floor_rem(&d.into()));
+                        let q = ok_or_fail!(Integer::from(n).floor_quotient(&d.into()));
+                        let r = ok_or_fail!(Integer::from(n).floor_rem(&d.into()));
 
                         assert_eq!(q, Integer::from(expected_q), "{n} floor-quotient {d}");
                         assert_eq!(r, Integer::from(expected_r), "{n} floor-remainder {d}");
@@ -3502,7 +3502,7 @@ mod rational {
     fn negative_abs() {
         let q = Rational(((-4).into(), 5.into()).into());
 
-        let abs = q.into_abs();
+        let abs = q.abs();
 
         assert_eq!(abs.0.0.sign, Sign::Positive);
     }
@@ -3511,7 +3511,7 @@ mod rational {
     fn positive_abs() {
         let q = Rational((4.into(), 5.into()).into());
 
-        let abs = q.into_abs();
+        let abs = q.abs();
 
         assert_eq!(abs.0.0.sign, Sign::Positive);
     }
@@ -3520,7 +3520,7 @@ mod rational {
     fn zero_abs() {
         let q = Rational((0.into(), 5.into()).into());
 
-        let abs = q.into_abs();
+        let abs = q.abs();
 
         assert_eq!(abs.0.0.sign, Sign::Zero);
     }
@@ -3529,7 +3529,7 @@ mod rational {
     fn negative_denom_not_checked_for_abs() {
         let q = Rational((4.into(), (-5).into()).into());
 
-        let abs = q.into_abs();
+        let abs = q.abs();
 
         assert_eq!(abs.0.0.sign, Sign::Positive);
         assert_eq!(abs.0.1.sign, Sign::Negative);
@@ -3974,7 +3974,7 @@ mod angle {
         for (x, y, expected) in cases {
             let z = Number::complex(x, y);
 
-            let r = ok_or_fail!(z.try_to_angle());
+            let r = ok_or_fail!(z.angle());
 
             assert_eq!(r.to_string(), expected);
         }
@@ -3992,7 +3992,7 @@ mod angle {
         for (x, y, expected) in cases {
             let z = Number::complex(x, y);
 
-            let r = ok_or_fail!(z.try_to_angle());
+            let r = ok_or_fail!(z.angle());
 
             assert_eq!(r.to_string(), expected);
         }
@@ -4005,7 +4005,7 @@ mod angle {
         // rather than Complex::to_angle, and is exact.
         let z = Number::complex(1, 0);
 
-        let r = ok_or_fail!(z.try_to_angle());
+        let r = ok_or_fail!(z.angle());
 
         assert_eq!(r.to_string(), "0");
         assert_matches!(r, Real::Integer(_));
@@ -4017,7 +4017,7 @@ mod angle {
         // irrational, so it is inexact even though the input was exact.
         let z = Number::complex(-1, 0);
 
-        let r = ok_or_fail!(z.try_to_angle());
+        let r = ok_or_fail!(z.angle());
 
         assert_eq!(r.to_string(), "3.141592653589793");
         assert_matches!(r, Real::Float(_));
@@ -4030,7 +4030,7 @@ mod angle {
         // instead of Real::try_to_angle.
         let z = Number::complex(1, 0.0);
 
-        let r = ok_or_fail!(z.try_to_angle());
+        let r = ok_or_fail!(z.angle());
 
         assert_eq!(r.to_string(), "0.0");
         assert_matches!(r, Real::Float(_));
@@ -4041,7 +4041,7 @@ mod angle {
         // atan(-0.0, 1) => -0.0, the IEEE atan2 sign convention.
         let z = Number::complex(1, -0.0);
 
-        let r = ok_or_fail!(z.try_to_angle());
+        let r = ok_or_fail!(z.angle());
 
         assert_eq!(r.to_string(), "-0.0");
         assert!(r.is_eqv(&Real::Float(-0.0)));
@@ -4053,7 +4053,7 @@ mod angle {
         // as approaching from just below the negative axis.
         let z = Number::complex(-0.0, 0.0);
 
-        let r = ok_or_fail!(z.try_to_angle());
+        let r = ok_or_fail!(z.angle());
 
         assert_eq!(r.to_string(), "3.141592653589793");
     }
@@ -4064,7 +4064,7 @@ mod angle {
         // and the angle of an exact zero is undefined.
         let z = Number::complex(0, 0);
 
-        let r = z.try_to_angle();
+        let r = z.angle();
 
         assert_matches!(err_or_fail!(r), NumericError::UndefinedAtZero);
     }
@@ -4078,7 +4078,7 @@ mod angle {
             Number::complex(0.0, 0.0), // atan(0.0, 0.0)
         ];
         for z in cases {
-            let r = ok_or_fail!(z.try_to_angle());
+            let r = ok_or_fail!(z.angle());
 
             assert_eq!(r.to_string(), "0.0");
             assert_matches!(r, Real::Float(_));
@@ -4093,7 +4093,7 @@ mod angle {
         // matching Chez's (atan 0 0.0) => 0 (exact) rather than 0.0.
         let z = Number::complex(0.0, 0);
 
-        let r = ok_or_fail!(z.try_to_angle());
+        let r = ok_or_fail!(z.angle());
 
         assert_eq!(r.to_string(), "0");
         assert_matches!(r, Real::Integer(_));
@@ -4102,11 +4102,11 @@ mod angle {
     #[test]
     fn infinite_arguments_do_not_produce_nan() {
         // atan(1, +inf.0)
-        let r = ok_or_fail!(Number::complex(f64::INFINITY, 1).try_to_angle());
+        let r = ok_or_fail!(Number::complex(f64::INFINITY, 1).angle());
         assert_eq!(r.to_string(), "0.0");
 
         // atan(+inf.0, +inf.0)
-        let r = ok_or_fail!(Number::complex(f64::INFINITY, f64::INFINITY).try_to_angle());
+        let r = ok_or_fail!(Number::complex(f64::INFINITY, f64::INFINITY).angle());
         assert_eq!(r.to_string(), "0.7853981633974483");
     }
 
@@ -4115,14 +4115,14 @@ mod angle {
         // Load-bearing for (log -0.0): Real::signum treats -0.0 as negative,
         // so the angle of -0.0 (as a bare real, not part of a complex) is pi,
         // matching Guile's arg(-0.0) = pi rather than Chez's arg(-0.0) = 0.
-        let r = ok_or_fail!(Number::real(-0.0).try_to_angle());
+        let r = ok_or_fail!(Number::real(-0.0).angle());
 
         assert_eq!(r.to_string(), "3.141592653589793");
     }
 
     #[test]
     fn angle_of_positive_zero_float_is_exact_zero() {
-        let r = ok_or_fail!(Number::real(0.0).try_to_angle());
+        let r = ok_or_fail!(Number::real(0.0).angle());
 
         assert_eq!(r.to_string(), "0");
         assert_matches!(r, Real::Integer(_));
@@ -4130,7 +4130,7 @@ mod angle {
 
     #[test]
     fn angle_of_exact_zero_is_undefined() {
-        let r = Number::real(0).try_to_angle();
+        let r = Number::real(0).angle();
 
         assert_matches!(err_or_fail!(r), NumericError::UndefinedAtZero);
     }
@@ -6459,7 +6459,7 @@ mod div {
             for (a, b) in cases {
                 let quotient = ok_or_fail!(Number::real(a) / Number::real(b));
                 let reciprocal_product =
-                    Number::real(a) * ok_or_fail!(Number::real(b).try_to_reciprocal());
+                    Number::real(a) * ok_or_fail!(Number::real(b).reciprocal());
 
                 assert_eq!(quotient.to_string(), reciprocal_product.to_string());
             }
@@ -7281,7 +7281,7 @@ mod reciprocal {
         fn matrix() {
             let cases = [(1, "1"), (-1, "-1"), (4, "1/4"), (-4, "-1/4"), (2, "1/2")];
             for (n, expected) in cases {
-                let r = ok_or_fail!(Number::real(n).try_to_reciprocal());
+                let r = ok_or_fail!(Number::real(n).reciprocal());
 
                 assert_eq!(r.to_string(), expected);
             }
@@ -7289,7 +7289,7 @@ mod reciprocal {
 
         #[test]
         fn nonunit_reciprocal_is_exact_rational() {
-            let r = ok_or_fail!(Number::real(4).try_to_reciprocal());
+            let r = ok_or_fail!(Number::real(4).reciprocal());
 
             assert_matches!(r, Number::Real(Real::Rational(_)));
         }
@@ -7298,7 +7298,7 @@ mod reciprocal {
         fn unity_reciprocal_stays_an_integer() {
             let cases = [1, -1];
             for n in cases {
-                let r = ok_or_fail!(Number::real(n).try_to_reciprocal());
+                let r = ok_or_fail!(Number::real(n).reciprocal());
 
                 assert_matches!(r, Number::Real(Real::Integer(_)));
             }
@@ -7306,14 +7306,14 @@ mod reciprocal {
 
         #[test]
         fn beyond_i64_magnitude() {
-            let r = ok_or_fail!(Number::real(i64::MIN).try_to_reciprocal());
+            let r = ok_or_fail!(Number::real(i64::MIN).reciprocal());
 
             assert_eq!(r.to_string(), "-1/9223372036854775808");
         }
 
         #[test]
         fn zero_has_no_reciprocal() {
-            let r = Number::real(0).try_to_reciprocal();
+            let r = Number::real(0).reciprocal();
 
             let err = err_or_fail!(r);
             assert_matches!(err, NumericError::DivideByZero);
@@ -7325,8 +7325,8 @@ mod reciprocal {
             for n in cases {
                 let x = Number::real(n);
 
-                let r = ok_or_fail!(x.try_to_reciprocal());
-                let r2 = ok_or_fail!(r.try_to_reciprocal());
+                let r = ok_or_fail!(x.reciprocal());
+                let r2 = ok_or_fail!(r.reciprocal());
 
                 assert_eq!(r2.to_string(), x.to_string());
             }
@@ -7335,11 +7335,11 @@ mod reciprocal {
         #[test]
         fn preserves_sign() {
             let positive = Real::Integer(4.into());
-            let r = ok_or_fail!(positive.try_to_reciprocal());
+            let r = ok_or_fail!(positive.reciprocal());
             assert!(r.is_positive());
 
             let negative = Real::Integer((-4).into());
-            let r = ok_or_fail!(negative.try_to_reciprocal());
+            let r = ok_or_fail!(negative.reciprocal());
             assert!(r.is_negative());
         }
 
@@ -7348,7 +7348,7 @@ mod reciprocal {
             let cases = [1, -1];
             for n in cases {
                 let x = Number::real(n);
-                let r = ok_or_fail!(x.try_to_reciprocal());
+                let r = ok_or_fail!(x.reciprocal());
 
                 let product = x * r;
 
@@ -7359,7 +7359,7 @@ mod reciprocal {
         #[test]
         fn inverse_law_for_nonunit() {
             let x = Number::real(4);
-            let r = ok_or_fail!(x.try_to_reciprocal());
+            let r = ok_or_fail!(x.reciprocal());
 
             let product = x * r;
 
@@ -7381,7 +7381,7 @@ mod reciprocal {
             for ((n, d), expected) in cases {
                 let q = ok_or_fail!(Real::reduce(n, d));
 
-                let r = ok_or_fail!(Number::real(q).try_to_reciprocal());
+                let r = ok_or_fail!(Number::real(q).reciprocal());
 
                 assert_eq!(r.to_string(), expected);
             }
@@ -7393,7 +7393,7 @@ mod reciprocal {
             for ((n, d), expected) in cases {
                 let q = ok_or_fail!(Real::reduce(n, d));
 
-                let r = ok_or_fail!(Number::real(q).try_to_reciprocal());
+                let r = ok_or_fail!(Number::real(q).reciprocal());
 
                 assert_eq!(r.to_string(), expected);
                 assert_matches!(r, Number::Real(Real::Integer(_)));
@@ -7407,8 +7407,8 @@ mod reciprocal {
                 let q = ok_or_fail!(Real::reduce(n, d));
                 let x = Number::real(q);
 
-                let r = ok_or_fail!(x.try_to_reciprocal());
-                let r2 = ok_or_fail!(r.try_to_reciprocal());
+                let r = ok_or_fail!(x.reciprocal());
+                let r2 = ok_or_fail!(r.reciprocal());
 
                 assert_eq!(r2.to_string(), x.to_string());
             }
@@ -7418,7 +7418,7 @@ mod reciprocal {
         fn denominator_stays_positive_after_inverting_negative() {
             let q = ok_or_fail!(Real::reduce(-3, 4));
 
-            let r = ok_or_fail!(Number::real(q).try_to_reciprocal());
+            let r = ok_or_fail!(Number::real(q).reciprocal());
 
             let (_, den) = rational_parts!(extract_or_fail!(r, Number::Real));
             assert_eq!(den.sign, Sign::Positive);
@@ -7428,7 +7428,7 @@ mod reciprocal {
         fn inverse_law() {
             let q = ok_or_fail!(Real::reduce(3, 4));
             let x = Number::real(q);
-            let r = ok_or_fail!(x.try_to_reciprocal());
+            let r = ok_or_fail!(x.reciprocal());
 
             let product = x * r;
 
@@ -7443,7 +7443,7 @@ mod reciprocal {
         fn matrix() {
             let cases = [(2.0, "0.5"), (0.5, "2.0"), (-8.0, "-0.125"), (1.0, "1.0")];
             for (f, expected) in cases {
-                let r = ok_or_fail!(Number::real(f).try_to_reciprocal());
+                let r = ok_or_fail!(Number::real(f).reciprocal());
 
                 assert_eq!(r.to_string(), expected);
             }
@@ -7451,56 +7451,56 @@ mod reciprocal {
 
         #[test]
         fn positive_zero_reciprocal_is_positive_infinity() {
-            let r = ok_or_fail!(Number::real(0.0).try_to_reciprocal());
+            let r = ok_or_fail!(Number::real(0.0).reciprocal());
 
             assert_eq!(r.to_string(), "+inf.0");
         }
 
         #[test]
         fn negative_zero_reciprocal_is_negative_infinity() {
-            let r = ok_or_fail!(Number::real(-0.0).try_to_reciprocal());
+            let r = ok_or_fail!(Number::real(-0.0).reciprocal());
 
             assert_eq!(r.to_string(), "-inf.0");
         }
 
         #[test]
         fn positive_infinity_reciprocal_is_positive_zero() {
-            let r = ok_or_fail!(Number::real(f64::INFINITY).try_to_reciprocal());
+            let r = ok_or_fail!(Number::real(f64::INFINITY).reciprocal());
 
             assert_eq!(r.to_string(), "0.0");
         }
 
         #[test]
         fn negative_infinity_reciprocal_is_negative_zero() {
-            let r = ok_or_fail!(Number::real(f64::NEG_INFINITY).try_to_reciprocal());
+            let r = ok_or_fail!(Number::real(f64::NEG_INFINITY).reciprocal());
 
             assert_eq!(r.to_string(), "-0.0");
         }
 
         #[test]
         fn nan_reciprocal_is_nan() {
-            let r = ok_or_fail!(Number::real(f64::NAN).try_to_reciprocal());
+            let r = ok_or_fail!(Number::real(f64::NAN).reciprocal());
 
             assert!(r.is_nan());
         }
 
         #[test]
         fn stays_inexact_even_for_whole_number_result() {
-            let r = ok_or_fail!(Number::real(0.5).try_to_reciprocal());
+            let r = ok_or_fail!(Number::real(0.5).reciprocal());
 
             assert_matches!(r, Number::Real(Real::Float(_)));
         }
 
         #[test]
         fn small_normal_reciprocal_is_finite() {
-            let r = ok_or_fail!(Number::real(f64::MIN_POSITIVE).try_to_reciprocal());
+            let r = ok_or_fail!(Number::real(f64::MIN_POSITIVE).reciprocal());
 
             assert!(!r.is_infinite());
         }
 
         #[test]
         fn smallest_subnormal_reciprocal_overflows_to_infinity() {
-            let r = ok_or_fail!(Number::real(f64::from_bits(1)).try_to_reciprocal());
+            let r = ok_or_fail!(Number::real(f64::from_bits(1)).reciprocal());
 
             assert!(r.is_infinite());
         }
@@ -7511,8 +7511,8 @@ mod reciprocal {
             for f in cases {
                 let x = Number::real(f);
 
-                let r = ok_or_fail!(x.try_to_reciprocal());
-                let r2 = ok_or_fail!(r.try_to_reciprocal());
+                let r = ok_or_fail!(x.reciprocal());
+                let r2 = ok_or_fail!(r.reciprocal());
 
                 assert_eq!(r2.to_string(), x.to_string());
             }
@@ -7524,8 +7524,8 @@ mod reciprocal {
             // per IEEE 754 semantics -- this documents that limit, not a bug.
             let x = Number::real(f64::MAX);
 
-            let r = ok_or_fail!(x.try_to_reciprocal());
-            let r2 = ok_or_fail!(r.try_to_reciprocal());
+            let r = ok_or_fail!(x.reciprocal());
+            let r2 = ok_or_fail!(r.reciprocal());
 
             assert_eq!(r2.to_string(), "+inf.0");
         }
@@ -7533,7 +7533,7 @@ mod reciprocal {
         #[test]
         fn inverse_law() {
             let x = Number::real(2.0);
-            let r = ok_or_fail!(x.try_to_reciprocal());
+            let r = ok_or_fail!(x.reciprocal());
 
             let product = x * r;
 
@@ -7543,7 +7543,7 @@ mod reciprocal {
         #[test]
         fn inverse_law_fails_for_infinity() {
             let x = Number::real(f64::INFINITY);
-            let r = ok_or_fail!(x.try_to_reciprocal());
+            let r = ok_or_fail!(x.reciprocal());
 
             let product = x * r;
 
@@ -7559,7 +7559,7 @@ mod reciprocal {
             // 1/(a+bi) = (a-bi) / (a^2+b^2)
             let z = Number::complex(3, 4);
 
-            let r = ok_or_fail!(z.try_to_reciprocal());
+            let r = ok_or_fail!(z.reciprocal());
 
             let expected_re = ok_or_fail!(Real::reduce(3, 25));
             let expected_im = ok_or_fail!(Real::reduce(-4, 25));
@@ -7577,7 +7577,7 @@ mod reciprocal {
             for ((re, im), expected) in cases {
                 let z = Number::complex(re, im);
 
-                let r = ok_or_fail!(z.try_to_reciprocal());
+                let r = ok_or_fail!(z.reciprocal());
 
                 assert_eq!(r.to_string(), expected);
             }
@@ -7587,7 +7587,7 @@ mod reciprocal {
         fn inexact_parts_stay_inexact() {
             let z = Number::complex(3.0, 4.0);
 
-            let r = ok_or_fail!(z.try_to_reciprocal());
+            let r = ok_or_fail!(z.reciprocal());
 
             assert_eq!(r.to_string(), "0.12-0.16i");
             assert!(r.is_inexact());
@@ -7599,8 +7599,8 @@ mod reciprocal {
             for (re, im) in cases {
                 let z = Number::complex(re, im);
 
-                let r = ok_or_fail!(z.try_to_reciprocal());
-                let r2 = ok_or_fail!(r.try_to_reciprocal());
+                let r = ok_or_fail!(z.reciprocal());
+                let r2 = ok_or_fail!(r.reciprocal());
 
                 assert_eq!(r2.to_string(), z.to_string());
             }
@@ -7609,7 +7609,7 @@ mod reciprocal {
         #[test]
         fn inverse_law() {
             let z = Number::complex(3, 4);
-            let r = ok_or_fail!(z.try_to_reciprocal());
+            let r = ok_or_fail!(z.reciprocal());
 
             let product = z * r;
 
@@ -7622,8 +7622,8 @@ mod reciprocal {
             // conj(z)^-1 == conj(z^-1)
             let z = Number::complex(3, 4);
 
-            let conj_then_recip = ok_or_fail!(z.to_complex_conjugate().try_to_reciprocal());
-            let recip_then_conj = ok_or_fail!(z.try_to_reciprocal()).to_complex_conjugate();
+            let conj_then_recip = ok_or_fail!(z.complex_conjugate().reciprocal());
+            let recip_then_conj = ok_or_fail!(z.reciprocal()).complex_conjugate();
 
             assert_eq!(conj_then_recip.to_string(), recip_then_conj.to_string());
         }
@@ -7632,7 +7632,7 @@ mod reciprocal {
         fn purely_imaginary() {
             let z = Number::imaginary(2);
 
-            let r = ok_or_fail!(z.try_to_reciprocal());
+            let r = ok_or_fail!(z.reciprocal());
 
             assert_eq!(r.to_string(), "-1/2i");
         }
@@ -7641,7 +7641,7 @@ mod reciprocal {
         fn exact_zero_real_part_with_inexact_zero_magnitude_is_nan() {
             let z = Number::complex(0, 0.0);
 
-            let r = ok_or_fail!(z.try_to_reciprocal());
+            let r = ok_or_fail!(z.reciprocal());
 
             let c = extract_or_fail!(r, Number::Complex);
             let (re, im) = c.into_parts();
@@ -7653,7 +7653,7 @@ mod reciprocal {
         fn large_magnitude_reciprocal_does_not_overflow_to_zero() {
             let z = Number::complex(1e200, 1e200);
 
-            let r = ok_or_fail!(z.try_to_reciprocal());
+            let r = ok_or_fail!(z.reciprocal());
             let expected = ok_or_fail!(Number::real(1) / z);
 
             assert!(!r.is_zero());
@@ -8411,8 +8411,8 @@ mod sqrt {
             for (re, im) in cases {
                 let z = Number::complex(re, im);
 
-                let conj_then_root = z.to_complex_conjugate().sqrt();
-                let root_then_conj = z.sqrt().to_complex_conjugate();
+                let conj_then_root = z.complex_conjugate().sqrt();
+                let root_then_conj = z.sqrt().complex_conjugate();
 
                 assert_eq!(conj_then_root.to_string(), root_then_conj.to_string());
             }
@@ -9373,8 +9373,8 @@ mod transcendental {
                 Number::imaginary(3),
             ];
             for z in cases {
-                let expected_re = z.to_magnitude().to_float().ln();
-                let expected_im = ok_or_fail!(z.try_to_angle()).to_float();
+                let expected_re = z.magnitude().to_float().ln();
+                let expected_im = ok_or_fail!(z.angle()).to_float();
 
                 let lhs = ok_or_fail!(z.ln());
 
@@ -9424,7 +9424,7 @@ mod magnitude {
             for ((re, im), expected) in cases {
                 let z = Number::complex(re, im);
 
-                let mag = z.to_magnitude();
+                let mag = z.magnitude();
 
                 assert_eq!(mag.to_string(), expected);
                 assert_matches!(mag, Real::Integer(_));
@@ -9437,7 +9437,7 @@ mod magnitude {
             let im = ok_or_fail!(Real::reduce(4, 5));
             let z = Number::complex(re, im);
 
-            let mag = z.to_magnitude();
+            let mag = z.magnitude();
 
             assert_eq!(mag.to_string(), "1");
             assert_matches!(mag, Real::Integer(_));
@@ -9447,7 +9447,7 @@ mod magnitude {
         fn zero_magnitude_is_exact() {
             let z = Number::complex(0, 0);
 
-            let mag = z.to_magnitude();
+            let mag = z.magnitude();
 
             assert_eq!(mag.to_string(), "0");
             assert_matches!(mag, Real::Integer(_));
@@ -9462,7 +9462,7 @@ mod magnitude {
             // matches core/complex.rs's get_magnitude_complex intrinsic test
             let z = Number::complex(4, 5);
 
-            let mag = z.to_magnitude();
+            let mag = z.magnitude();
 
             assert_eq!(mag.to_string(), "6.4031242374328485");
             assert_matches!(mag, Real::Float(_));
@@ -9479,7 +9479,7 @@ mod magnitude {
                 Number::complex(3, 4.0),
             ];
             for z in cases {
-                let mag = z.to_magnitude();
+                let mag = z.magnitude();
 
                 assert_eq!(mag.to_string(), "5.0");
                 assert_matches!(mag, Real::Float(_));
@@ -9491,7 +9491,7 @@ mod magnitude {
             let cases = [(3, 4), (5, 12), (8, 6), (7, 24)];
             for (x, y) in cases {
                 let z = Number::complex(x, y);
-                let magnitude = Number::real(z.to_magnitude());
+                let magnitude = Number::real(z.magnitude());
 
                 let via_sqrt = Number::real((x * x) + (y * y)).sqrt();
 
@@ -9547,7 +9547,7 @@ mod rounding {
             for ((n, d), expected) in cases {
                 let x = ok_or_fail!(Real::reduce(n, d));
 
-                let floor = x.to_floor();
+                let floor = x.floor();
 
                 assert_eq!(floor.to_string(), expected);
                 assert_matches!(floor, Real::Integer(_));
@@ -9558,7 +9558,7 @@ mod rounding {
         fn positive_proper_fraction_floors_to_positive_zero() {
             let x = ok_or_fail!(Real::reduce(1, 3));
 
-            let floor = x.to_floor();
+            let floor = x.floor();
 
             let int = extract_or_fail!(floor, Real::Integer);
             assert_eq!(extract_or_fail!(int.precision, Precision::Single), 0);
@@ -9573,7 +9573,7 @@ mod rounding {
             // truncate for negative operands.
             let x = ok_or_fail!(Real::reduce(-7, 6));
 
-            let floor = x.to_floor();
+            let floor = x.floor();
 
             assert_eq!(floor.to_string(), "-2");
         }
@@ -9603,7 +9603,7 @@ mod rounding {
             for ((n, d), expected) in cases {
                 let x = ok_or_fail!(Real::reduce(n, d));
 
-                let ceiling = x.to_ceiling();
+                let ceiling = x.ceiling();
 
                 assert_eq!(ceiling.to_string(), expected);
                 assert_matches!(ceiling, Real::Integer(_));
@@ -9614,7 +9614,7 @@ mod rounding {
         fn negative_proper_fraction_ceilings_to_positive_zero() {
             let x = ok_or_fail!(Real::reduce(-1, 2));
 
-            let ceiling = x.to_ceiling();
+            let ceiling = x.ceiling();
 
             let int = extract_or_fail!(ceiling, Real::Integer);
             assert_eq!(extract_or_fail!(int.precision, Precision::Single), 0);
@@ -9646,7 +9646,7 @@ mod rounding {
             for ((n, d), expected) in cases {
                 let x = ok_or_fail!(Real::reduce(n, d));
 
-                let truncate = x.to_truncate();
+                let truncate = x.truncate();
 
                 assert_eq!(truncate.to_string(), expected);
                 assert_matches!(truncate, Real::Integer(_));
@@ -9657,7 +9657,7 @@ mod rounding {
         fn negative_proper_fraction_truncates_to_positive_zero() {
             let x = ok_or_fail!(Real::reduce(-1, 2));
 
-            let truncate = x.to_truncate();
+            let truncate = x.truncate();
 
             let int = extract_or_fail!(truncate, Real::Integer);
             assert_eq!(extract_or_fail!(int.precision, Precision::Single), 0);
@@ -9668,8 +9668,8 @@ mod rounding {
         fn agrees_with_floor_for_positive_operands() {
             let cases = [(7, 2), (5, 2), (1, 3), (67, 6)];
             for (n, d) in cases {
-                let truncate = ok_or_fail!(Real::reduce(n, d)).to_truncate();
-                let floor = ok_or_fail!(Real::reduce(n, d)).to_floor();
+                let truncate = ok_or_fail!(Real::reduce(n, d)).truncate();
+                let floor = ok_or_fail!(Real::reduce(n, d)).floor();
 
                 assert_eq!(truncate.to_string(), floor.to_string());
             }
@@ -9679,8 +9679,8 @@ mod rounding {
         fn agrees_with_ceiling_for_negative_operands() {
             let cases = [(-7, 2), (-5, 2), (-1, 3), (-67, 6)];
             for (n, d) in cases {
-                let truncate = ok_or_fail!(Real::reduce(n, d)).to_truncate();
-                let ceiling = ok_or_fail!(Real::reduce(n, d)).to_ceiling();
+                let truncate = ok_or_fail!(Real::reduce(n, d)).truncate();
+                let ceiling = ok_or_fail!(Real::reduce(n, d)).ceiling();
 
                 assert_eq!(truncate.to_string(), ceiling.to_string());
             }
@@ -9713,7 +9713,7 @@ mod rounding {
             for ((n, d), expected) in cases {
                 let x = ok_or_fail!(Real::reduce(n, d));
 
-                let round = x.to_round();
+                let round = x.round();
 
                 assert_eq!(round.to_string(), expected);
                 assert_matches!(round, Real::Integer(_));
@@ -9732,7 +9732,7 @@ mod rounding {
             for ((n, d), expected) in cases {
                 let x = ok_or_fail!(Real::reduce(n, d));
 
-                assert_eq!(x.to_round().to_string(), expected);
+                assert_eq!(x.round().to_string(), expected);
             }
         }
 
@@ -9748,7 +9748,7 @@ mod rounding {
             for ((n, d), expected) in cases {
                 let x = ok_or_fail!(Real::reduce(n, d));
 
-                assert_eq!(x.to_round().to_string(), expected);
+                assert_eq!(x.round().to_string(), expected);
             }
         }
 
@@ -9763,7 +9763,7 @@ mod rounding {
             for ((n, d), expected) in cases {
                 let x = ok_or_fail!(Real::reduce(n, d));
 
-                assert_eq!(x.to_round().to_string(), expected);
+                assert_eq!(x.round().to_string(), expected);
             }
         }
 
@@ -9773,7 +9773,7 @@ mod rounding {
             for (f, expected) in cases {
                 let r = Real::from(f);
 
-                assert_eq!(r.to_round().to_string(), expected);
+                assert_eq!(r.round().to_string(), expected);
             }
         }
     }
@@ -9784,9 +9784,9 @@ mod rounding {
         #[test]
         fn floor_ceiling_truncate_always_return_an_integer() {
             for (n, d) in NON_INTEGER_RATIONALS {
-                let floor = ok_or_fail!(Real::reduce(n, d)).to_floor();
-                let ceiling = ok_or_fail!(Real::reduce(n, d)).to_ceiling();
-                let truncate = ok_or_fail!(Real::reduce(n, d)).to_truncate();
+                let floor = ok_or_fail!(Real::reduce(n, d)).floor();
+                let ceiling = ok_or_fail!(Real::reduce(n, d)).ceiling();
+                let truncate = ok_or_fail!(Real::reduce(n, d)).truncate();
 
                 assert_matches!(floor, Real::Integer(_));
                 assert_matches!(ceiling, Real::Integer(_));
@@ -9797,8 +9797,8 @@ mod rounding {
         #[test]
         fn floor_is_at_most_ceiling() {
             for (n, d) in NON_INTEGER_RATIONALS {
-                let floor = ok_or_fail!(Real::reduce(n, d)).to_floor();
-                let ceiling = ok_or_fail!(Real::reduce(n, d)).to_ceiling();
+                let floor = ok_or_fail!(Real::reduce(n, d)).floor();
+                let ceiling = ok_or_fail!(Real::reduce(n, d)).ceiling();
 
                 let f = extract_or_fail!(floor, Real::Integer);
                 let c = extract_or_fail!(ceiling, Real::Integer);
@@ -9809,8 +9809,8 @@ mod rounding {
         #[test]
         fn ceiling_minus_floor_is_one_for_every_non_integer() {
             for (n, d) in NON_INTEGER_RATIONALS {
-                let floor = ok_or_fail!(Real::reduce(n, d)).to_floor();
-                let ceiling = ok_or_fail!(Real::reduce(n, d)).to_ceiling();
+                let floor = ok_or_fail!(Real::reduce(n, d)).floor();
+                let ceiling = ok_or_fail!(Real::reduce(n, d)).ceiling();
 
                 let f = extract_or_fail!(floor, Real::Integer);
                 let c = extract_or_fail!(ceiling, Real::Integer);
@@ -9824,8 +9824,8 @@ mod rounding {
                 let x = ok_or_fail!(Real::reduce(n, d));
                 let neg_x = -ok_or_fail!(Real::reduce(n, d));
 
-                let floor_of_neg = neg_x.to_floor();
-                let neg_ceiling = -x.to_ceiling();
+                let floor_of_neg = neg_x.floor();
+                let neg_ceiling = -x.ceiling();
 
                 assert_eq!(floor_of_neg.to_string(), neg_ceiling.to_string());
             }
@@ -9837,8 +9837,8 @@ mod rounding {
                 let x = ok_or_fail!(Real::reduce(n, d));
                 let neg_x = -ok_or_fail!(Real::reduce(n, d));
 
-                let ceiling_of_neg = neg_x.to_ceiling();
-                let neg_floor = -x.to_floor();
+                let ceiling_of_neg = neg_x.ceiling();
+                let neg_floor = -x.floor();
 
                 assert_eq!(ceiling_of_neg.to_string(), neg_floor.to_string());
             }
@@ -9850,8 +9850,8 @@ mod rounding {
                 let x = ok_or_fail!(Real::reduce(n, d));
                 let neg_x = -ok_or_fail!(Real::reduce(n, d));
 
-                let truncate_of_neg = neg_x.to_truncate();
-                let neg_truncate = -x.to_truncate();
+                let truncate_of_neg = neg_x.truncate();
+                let neg_truncate = -x.truncate();
 
                 assert_eq!(truncate_of_neg.to_string(), neg_truncate.to_string());
             }
@@ -9863,8 +9863,8 @@ mod rounding {
                 let x = ok_or_fail!(Real::reduce(n, d));
                 let neg_x = -ok_or_fail!(Real::reduce(n, d));
 
-                let round_of_neg = neg_x.to_round();
-                let neg_round = -x.to_round();
+                let round_of_neg = neg_x.round();
+                let neg_round = -x.round();
 
                 assert_eq!(round_of_neg.to_string(), neg_round.to_string());
             }
@@ -9876,10 +9876,8 @@ mod rounding {
                 let x = ok_or_fail!(Real::reduce(n, d));
                 let magnitude = x.to_float().abs();
 
-                let truncated_magnitude = ok_or_fail!(Real::reduce(n, d))
-                    .to_truncate()
-                    .to_float()
-                    .abs();
+                let truncated_magnitude =
+                    ok_or_fail!(Real::reduce(n, d)).truncate().to_float().abs();
 
                 assert!(
                     truncated_magnitude <= magnitude,
@@ -9903,7 +9901,7 @@ mod rounding {
                 (-7, 2),
             ];
             for (n, d) in ties {
-                let round = ok_or_fail!(Real::reduce(n, d)).to_round();
+                let round = ok_or_fail!(Real::reduce(n, d)).round();
 
                 let int = extract_or_fail!(round, Real::Integer);
                 assert!(int.is_even(), "round({n}/{d}) = {int} should be even");

@@ -32,13 +32,13 @@ fn get_imag(args: &[Value], _env: &Frame) -> EvalResult {
 }
 
 fn get_mag(args: &[Value], _env: &Frame) -> EvalResult {
-    get_complex_part(super::first(args), Number::to_magnitude)
+    get_complex_part(super::first(args), Number::magnitude)
 }
 
 fn get_angle(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = super::first(args);
     if let Value::Number(x) = arg {
-        x.try_to_angle().map_or_else(
+        x.angle().map_or_else(
             |err| Err(Condition::value_error(err, arg).into()),
             |r| Ok(Value::real(r)),
         )

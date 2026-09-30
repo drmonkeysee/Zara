@@ -269,25 +269,25 @@ impl Number {
         }
     }
 
-    pub(crate) fn to_magnitude(&self) -> Real {
+    pub(crate) fn magnitude(&self) -> Real {
         match self {
-            Self::Complex(z) => z.to_magnitude(),
+            Self::Complex(z) => z.magnitude(),
             // complex magnitude of a real is just √r² = |r|
-            Self::Real(r) => r.to_abs(),
+            Self::Real(r) => r.abs(),
         }
     }
 
-    pub(crate) fn to_complex_conjugate(&self) -> Self {
+    pub(crate) fn complex_conjugate(&self) -> Self {
         match self {
-            Self::Complex(z) => z.to_conjugate(),
+            Self::Complex(z) => z.conjugate(),
             Self::Real(_) => self.clone(),
         }
     }
 
-    pub(crate) fn try_to_angle(&self) -> RealResult {
+    pub(crate) fn angle(&self) -> RealResult {
         match self {
-            Self::Complex(z) => Ok(z.to_angle()),
-            Self::Real(r) => r.try_to_angle(),
+            Self::Complex(z) => Ok(z.angle()),
+            Self::Real(r) => r.angle(),
         }
     }
 
@@ -298,10 +298,10 @@ impl Number {
         })
     }
 
-    pub(crate) fn try_to_reciprocal(&self) -> NumResult {
+    pub(crate) fn reciprocal(&self) -> NumResult {
         match self {
-            Self::Complex(z) => z.try_to_reciprocal(),
-            Self::Real(r) => Ok(Self::real(r.try_to_reciprocal()?)),
+            Self::Complex(z) => z.reciprocal(),
+            Self::Real(r) => Ok(Self::real(r.reciprocal()?)),
         }
     }
 
@@ -517,7 +517,7 @@ impl Complex {
         self.0.1.clone()
     }
 
-    fn to_magnitude(&self) -> Real {
+    fn magnitude(&self) -> Real {
         let (x, y) = self.get_parts();
         if x.is_inexact() || y.is_inexact() {
             Real::Float(x.to_float().hypot(y.to_float()))
@@ -526,17 +526,17 @@ impl Complex {
         }
     }
 
-    fn to_angle(&self) -> Real {
+    fn angle(&self) -> Real {
         let (x, y) = self.get_parts();
         Real::Float(y.to_float().atan2(x.to_float()))
     }
 
-    fn to_conjugate(&self) -> Number {
+    fn conjugate(&self) -> Number {
         let (x, y) = self.get_parts();
         Number::complex(x.clone(), -y)
     }
 
-    fn try_to_reciprocal(&self) -> NumResult {
+    fn reciprocal(&self) -> NumResult {
         Real::one().into_complex() / self
     }
 
@@ -567,11 +567,11 @@ impl Complex {
         if y.is_infinite() {
             return Number::complex(f64::INFINITY, f64::INFINITY.copysign(self.0.1.signum()));
         }
-        let r = self.to_magnitude();
+        let r = self.magnitude();
         let (u, v) = if x.is_negative() {
             let t = scaled_re(&r, x, Real::sub);
             (
-                assume_safe_div!(y.to_abs() / &t),
+                assume_safe_div!(y.abs() / &t),
                 assume_safe_div!(t / Real::two()).copysign(y),
             )
         } else {
@@ -917,43 +917,43 @@ impl Real {
         }
     }
 
-    pub(crate) fn to_abs(&self) -> Self {
+    pub(crate) fn abs(&self) -> Self {
         match self {
             Self::Float(f) => f.abs().into(),
             Self::Integer(n) => n.clone().into_abs().into(),
-            Self::Rational(q) => Self::Rational(q.clone().into_abs()),
+            Self::Rational(q) => Self::Rational(q.clone().abs()),
         }
     }
 
-    pub(crate) fn to_floor(&self) -> Self {
+    pub(crate) fn floor(&self) -> Self {
         match self {
             Self::Float(f) => f.floor().into(),
             Self::Integer(_) => self.clone(),
-            Self::Rational(q) => q.to_floor().into(),
+            Self::Rational(q) => q.floor().into(),
         }
     }
 
-    pub(crate) fn to_ceiling(&self) -> Self {
+    pub(crate) fn ceiling(&self) -> Self {
         match self {
             Self::Float(f) => f.ceil().into(),
             Self::Integer(_) => self.clone(),
-            Self::Rational(q) => q.to_ceiling().into(),
+            Self::Rational(q) => q.ceiling().into(),
         }
     }
 
-    pub(crate) fn to_truncate(&self) -> Self {
+    pub(crate) fn truncate(&self) -> Self {
         match self {
             Self::Float(f) => f.trunc().into(),
             Self::Integer(_) => self.clone(),
-            Self::Rational(q) => q.to_truncate().into(),
+            Self::Rational(q) => q.truncate().into(),
         }
     }
 
-    pub(crate) fn to_round(&self) -> Self {
+    pub(crate) fn round(&self) -> Self {
         match self {
             Self::Float(f) => f.round_ties_even().into(),
             Self::Integer(_) => self.clone(),
-            Self::Rational(q) => q.to_round().into(),
+            Self::Rational(q) => q.round().into(),
         }
     }
 
@@ -1068,15 +1068,15 @@ impl Real {
         }
     }
 
-    fn try_to_reciprocal(&self) -> RealResult {
+    fn reciprocal(&self) -> RealResult {
         match self {
             Self::Float(f) => Ok(f.recip().into()),
             Self::Integer(n) => n.clone().try_into_reciprocal(),
-            Self::Rational(q) => q.clone().try_into_reciprocal(),
+            Self::Rational(q) => q.clone().reciprocal(),
         }
     }
 
-    fn try_to_angle(&self) -> RealResult {
+    fn angle(&self) -> RealResult {
         if self.is_exact_zero() {
             Err(NumericError::UndefinedAtZero)
         } else {
@@ -1302,22 +1302,22 @@ impl Rational {
         (&self.0.0, &self.0.1)
     }
 
-    fn to_floor(&self) -> Integer {
+    fn floor(&self) -> Integer {
         let (n, d) = self.get_parts();
         n.div_floor(d)
     }
 
-    fn to_ceiling(&self) -> Integer {
+    fn ceiling(&self) -> Integer {
         let (n, d) = self.get_parts();
         n.div_ceiling(d)
     }
 
-    fn to_truncate(&self) -> Integer {
+    fn truncate(&self) -> Integer {
         let (n, d) = self.get_parts();
         n.div_truncate(d)
     }
 
-    fn to_round(&self) -> Integer {
+    fn round(&self) -> Integer {
         let (n, d) = self.get_parts();
         n.div_round(d)
     }
@@ -1354,12 +1354,12 @@ impl Rational {
         }
     }
 
-    fn into_abs(mut self) -> Self {
+    fn abs(mut self) -> Self {
         self.0.0 = self.0.0.into_abs();
         self
     }
 
-    fn try_into_reciprocal(self) -> RealResult {
+    fn reciprocal(self) -> RealResult {
         Real::reduce(self.0.1, self.0.0)
     }
 
@@ -1590,7 +1590,7 @@ impl Integer {
         Real::Float(self.to_float())
     }
 
-    pub(crate) fn to_truncate_quotient(&self, rhs: &Self) -> IntResult {
+    pub(crate) fn truncate_quotient(&self, rhs: &Self) -> IntResult {
         if rhs.is_zero() {
             Err(NumericError::DivideByZero)
         } else {
@@ -1598,15 +1598,15 @@ impl Integer {
         }
     }
 
-    pub(crate) fn to_truncate_rem(&self, rhs: &Self) -> IntResult {
+    pub(crate) fn truncate_rem(&self, rhs: &Self) -> IntResult {
         self % rhs
     }
 
-    pub(crate) fn to_truncate_quotrem(&self, rhs: &Self) -> Result<(Self, Self), NumericError> {
-        Ok((self.to_truncate_quotient(rhs)?, (self % rhs)?))
+    pub(crate) fn truncate_quotrem(&self, rhs: &Self) -> Result<(Self, Self), NumericError> {
+        Ok((self.truncate_quotient(rhs)?, (self % rhs)?))
     }
 
-    pub(crate) fn to_floor_quotient(&self, rhs: &Self) -> IntResult {
+    pub(crate) fn floor_quotient(&self, rhs: &Self) -> IntResult {
         if rhs.is_zero() {
             Err(NumericError::DivideByZero)
         } else {
@@ -1614,12 +1614,12 @@ impl Integer {
         }
     }
 
-    pub(crate) fn to_floor_rem(&self, rhs: &Self) -> IntResult {
-        let (_, r) = self.to_floor_quotrem(rhs)?;
+    pub(crate) fn floor_rem(&self, rhs: &Self) -> IntResult {
+        let (_, r) = self.floor_quotrem(rhs)?;
         Ok(r)
     }
 
-    pub(crate) fn to_floor_quotrem(&self, rhs: &Self) -> Result<(Self, Self), NumericError> {
+    pub(crate) fn floor_quotrem(&self, rhs: &Self) -> Result<(Self, Self), NumericError> {
         if rhs.is_zero() {
             return Err(NumericError::DivideByZero);
         }

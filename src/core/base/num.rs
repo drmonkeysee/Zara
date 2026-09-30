@@ -162,18 +162,18 @@ fn nums_sub(args: &[Value], _env: &Frame) -> EvalResult {
 }
 
 fn nums_div(args: &[Value], _env: &Frame) -> EvalResult {
-    inverse_arithmetic(args, Number::try_to_reciprocal, Number::div)
+    inverse_arithmetic(args, Number::reciprocal, Number::div)
 }
 
 fn abs(args: &[Value], _env: &Frame) -> EvalResult {
-    real_op(first(args), |r| Ok(Value::real(r.to_abs())))
+    real_op(first(args), |r| Ok(Value::real(r.abs())))
 }
 
 fn floor_qr(args: &[Value], _env: &Frame) -> EvalResult {
     exact_division(
         first(args),
         super::second(args),
-        Integer::to_floor_quotrem,
+        Integer::floor_quotrem,
         into_quotrem,
     )
 }
@@ -182,7 +182,7 @@ fn floor_quotient(args: &[Value], _env: &Frame) -> EvalResult {
     exact_division(
         first(args),
         super::second(args),
-        Integer::to_floor_quotient,
+        Integer::floor_quotient,
         into_quotient,
     )
 }
@@ -191,7 +191,7 @@ fn floor_remainder(args: &[Value], _env: &Frame) -> EvalResult {
     exact_division(
         first(args),
         super::second(args),
-        Integer::to_floor_rem,
+        Integer::floor_rem,
         into_remainder,
     )
 }
@@ -200,7 +200,7 @@ fn truncate_qr(args: &[Value], _env: &Frame) -> EvalResult {
     exact_division(
         first(args),
         super::second(args),
-        Integer::to_truncate_quotrem,
+        Integer::truncate_quotrem,
         into_quotrem,
     )
 }
@@ -209,7 +209,7 @@ fn truncate_quotient(args: &[Value], _env: &Frame) -> EvalResult {
     exact_division(
         first(args),
         super::second(args),
-        Integer::to_truncate_quotient,
+        Integer::truncate_quotient,
         into_quotient,
     )
 }
@@ -218,7 +218,7 @@ fn truncate_remainder(args: &[Value], _env: &Frame) -> EvalResult {
     exact_division(
         first(args),
         super::second(args),
-        Integer::to_truncate_rem,
+        Integer::truncate_rem,
         into_remainder,
     )
 }
@@ -252,19 +252,19 @@ fn get_denominator(args: &[Value], _env: &Frame) -> EvalResult {
 }
 
 fn floor(args: &[Value], _env: &Frame) -> EvalResult {
-    real_op(first(args), |r| Ok(Value::real(r.to_floor())))
+    real_op(first(args), |r| Ok(Value::real(r.floor())))
 }
 
 fn ceiling(args: &[Value], _env: &Frame) -> EvalResult {
-    real_op(first(args), |r| Ok(Value::real(r.to_ceiling())))
+    real_op(first(args), |r| Ok(Value::real(r.ceiling())))
 }
 
 fn truncate(args: &[Value], _env: &Frame) -> EvalResult {
-    real_op(first(args), |r| Ok(Value::real(r.to_truncate())))
+    real_op(first(args), |r| Ok(Value::real(r.truncate())))
 }
 
 fn round(args: &[Value], _env: &Frame) -> EvalResult {
-    real_op(first(args), |r| Ok(Value::real(r.to_round())))
+    real_op(first(args), |r| Ok(Value::real(r.round())))
 }
 
 fn square(args: &[Value], env: &Frame) -> EvalResult {
