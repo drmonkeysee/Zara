@@ -8558,7 +8558,7 @@ mod transcendental {
             // negative.
             let bases = [Number::real(2), Number::real(2.0), Number::real(-2)];
             for base in bases {
-                let r = ok_or_fail!(Number::real(1).log_base(&base));
+                let r = ok_or_fail!(Number::real(1).log(&base));
 
                 assert_eq!(r.to_string(), "0");
                 assert_matches!(r, Number::Real(Real::Integer(_)));
@@ -8567,7 +8567,7 @@ mod transcendental {
 
         #[test]
         fn log_base_of_an_inexact_value_is_inexact_even_with_an_exact_base() {
-            let r = ok_or_fail!(Number::real(1.0).log_base(&Number::real(2)));
+            let r = ok_or_fail!(Number::real(1.0).log(&Number::real(2)));
 
             assert_eq!(r.to_string(), "0.0");
             assert_matches!(r, Number::Real(Real::Float(_)));
@@ -8795,35 +8795,35 @@ mod transcendental {
 
         #[test]
         fn base_of_one_is_a_divide_by_zero() {
-            let r = Number::real(8).log_base(&Number::real(1));
+            let r = Number::real(8).log(&Number::real(1));
 
             assert_matches!(err_or_fail!(r), NumericError::DivideByZero);
         }
 
         #[test]
         fn inexact_base_of_one_is_infinity_not_an_error() {
-            let r = ok_or_fail!(Number::real(8).log_base(&Number::real(1.0)));
+            let r = ok_or_fail!(Number::real(8).log(&Number::real(1.0)));
 
             assert_eq!(r.to_string(), "+inf.0");
         }
 
         #[test]
         fn zero_base_is_undefined() {
-            let r = Number::real(8).log_base(&Number::real(0));
+            let r = Number::real(8).log(&Number::real(0));
 
             assert_matches!(err_or_fail!(r), NumericError::UndefinedAtZero);
         }
 
         #[test]
         fn inexact_zero_base_is_negative_zero_not_an_error() {
-            let r = ok_or_fail!(Number::real(8).log_base(&Number::real(0.0)));
+            let r = ok_or_fail!(Number::real(8).log(&Number::real(0.0)));
 
             assert_eq!(r.to_string(), "-0.0");
         }
 
         #[test]
         fn value_of_zero_is_undefined_regardless_of_base() {
-            let r = Number::real(0).log_base(&Number::real(2));
+            let r = Number::real(0).log(&Number::real(2));
 
             assert_matches!(err_or_fail!(r), NumericError::UndefinedAtZero);
         }
@@ -8837,7 +8837,7 @@ mod transcendental {
                 (100, 10, "2.0"),
             ];
             for (n, base, expected) in cases {
-                let r = ok_or_fail!(Number::real(n).log_base(&Number::real(base)));
+                let r = ok_or_fail!(Number::real(n).log(&Number::real(base)));
 
                 assert_eq!(r.to_string(), expected);
                 assert_matches!(r, Number::Real(Real::Float(_)));
@@ -8848,7 +8848,7 @@ mod transcendental {
         fn rational_argument_two_arg_log() {
             let n = ok_or_fail!(Real::reduce(1, 8));
 
-            let r = ok_or_fail!(Number::real(n).log_base(&Number::real(2)));
+            let r = ok_or_fail!(Number::real(n).log(&Number::real(2)));
 
             assert_eq!(r.to_string(), "-3.0");
         }
@@ -8857,14 +8857,14 @@ mod transcendental {
         fn two_arg_log_is_not_computed_exactly_even_when_the_true_answer_is_an_integer() {
             // log_base is a ratio of natural logs, not integer factorization,
             // so (log 1000 10) does not land on the mathematically exact 3.0.
-            let r = ok_or_fail!(Number::real(1000).log_base(&Number::real(10)));
+            let r = ok_or_fail!(Number::real(1000).log(&Number::real(10)));
 
             assert_eq!(r.to_string(), "2.9999999999999996");
         }
 
         #[test]
         fn negative_base_two_arg_log_is_complex() {
-            let r = ok_or_fail!(Number::real(-8).log_base(&Number::real(2)));
+            let r = ok_or_fail!(Number::real(-8).log(&Number::real(2)));
 
             let (re, im) = complex_parts!(r);
             assert_near!(re.to_float(), 3.0);
@@ -9348,7 +9348,7 @@ mod transcendental {
 
         #[test]
         fn log_base_is_a_ratio_of_natural_logs() {
-            let lhs = ok_or_fail!(Number::real(8).log_base(&Number::real(2)));
+            let lhs = ok_or_fail!(Number::real(8).log(&Number::real(2)));
             let rhs =
                 ok_or_fail!(ok_or_fail!(Number::real(8).ln()) / ok_or_fail!(Number::real(2).ln()));
 

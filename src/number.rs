@@ -319,6 +319,42 @@ impl Number {
         }
     }
 
+    pub(crate) fn exp(&self) -> Self {
+        todo!();
+    }
+
+    pub(crate) fn ln(&self) -> NumResult {
+        todo!();
+    }
+
+    pub(crate) fn log(&self, base: &Self) -> NumResult {
+        todo!();
+    }
+
+    pub(crate) fn sin(&self) -> Self {
+        todo!();
+    }
+
+    pub(crate) fn cos(&self) -> Self {
+        todo!();
+    }
+
+    pub(crate) fn tan(&self) -> Self {
+        todo!();
+    }
+
+    pub(crate) fn asin(&self) -> Self {
+        todo!();
+    }
+
+    pub(crate) fn acos(&self) -> Self {
+        todo!();
+    }
+
+    pub(crate) fn atan(&self) -> Self {
+        todo!();
+    }
+
     // convenience wrappers for passing Op impls as closures
     pub(crate) fn add(self, rhs: &Self) -> Self {
         self + rhs
