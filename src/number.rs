@@ -2144,7 +2144,7 @@ impl Display for NumericError {
             }
             Self::ParseExponentFailure => f.write_str("exponent parse failure"),
             Self::ParseFailure => f.write_str("number parse failure"),
-            Self::UndefinedAtZero => f.write_str("undefined at 0"),
+            Self::UndefinedAtZero => f.write_str("undefined at zero"),
             Self::Uint32ConversionInvalidRange => {
                 write_intconversion_range_error(u32::MIN, u32::MAX, f)
             }

@@ -626,7 +626,7 @@ mod error {
     fn display_parse_undef_at_zero() {
         let err = NumericError::UndefinedAtZero;
 
-        assert_eq!(err.to_string(), "undefined at 0");
+        assert_eq!(err.to_string(), "undefined at zero");
     }
 
     #[test]
