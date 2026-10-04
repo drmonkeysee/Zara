@@ -46,7 +46,13 @@ fn logarithm(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = first(args);
     match args.get(1) {
         None => super::num_op(arg, Number::ln, super::numresult_to_valresult),
-        Some(_base) => todo!("implement log base"),
+        Some(base) => {
+            if let Value::Number(x) = base {
+                super::num_op(arg, |y| y.log(x), super::numresult_to_valresult)
+            } else {
+                Err(invalid_target(TypeName::NUMBER, base))
+            }
+        }
     }
 }
 
