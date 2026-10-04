@@ -320,7 +320,10 @@ impl Number {
     }
 
     pub(crate) fn ln(&self) -> NumResult {
-        todo!();
+        match self {
+            Self::Complex(z) => Ok(z.ln()),
+            Self::Real(r) => Ok(Self::real(r.ln()?)),
+        }
     }
 
     pub(crate) fn log(&self, base: &Self) -> NumResult {
@@ -580,6 +583,10 @@ impl Complex {
     }
 
     fn exp(&self) -> Number {
+        todo!();
+    }
+
+    fn ln(&self) -> Number {
         todo!();
     }
 
@@ -1024,7 +1031,19 @@ impl Real {
     }
 
     fn is_exact_zero(&self) -> bool {
-        !self.is_inexact() && self.is_zero()
+        if let Self::Integer(n) = self {
+            n.is_zero()
+        } else {
+            false
+        }
+    }
+
+    fn is_exact_one(&self) -> bool {
+        if let Self::Integer(n) = self {
+            n.is_one()
+        } else {
+            false
+        }
     }
 
     fn is_infinite(&self) -> bool {
@@ -1116,6 +1135,16 @@ impl Real {
             Self::one()
         } else {
             self.to_float().exp().into()
+        }
+    }
+
+    fn ln(&self) -> RealResult {
+        if self.is_exact_zero() {
+            Err(NumericError::UndefinedAtZero)
+        } else if self.is_exact_one() {
+            Ok(Self::zero())
+        } else {
+            Ok(self.to_float().ln().into())
         }
     }
 
@@ -1657,6 +1686,10 @@ impl Integer {
 
     fn is_negative(&self) -> bool {
         self.sign == Sign::Negative
+    }
+
+    fn is_one(&self) -> bool {
+        self.is_positive() && self.is_magnitude_one()
     }
 
     fn is_magnitude_one(&self) -> bool {
