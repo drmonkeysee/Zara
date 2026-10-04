@@ -332,27 +332,45 @@ impl Number {
     }
 
     pub(crate) fn sin(&self) -> Self {
-        todo!();
+        match self {
+            Self::Complex(z) => z.sin(),
+            Self::Real(r) => Self::real(r.sin()),
+        }
     }
 
     pub(crate) fn cos(&self) -> Self {
-        todo!();
+        match self {
+            Self::Complex(z) => z.cos(),
+            Self::Real(r) => Self::real(r.cos()),
+        }
     }
 
     pub(crate) fn tan(&self) -> Self {
-        todo!();
+        match self {
+            Self::Complex(z) => z.tan(),
+            Self::Real(r) => Self::real(r.tan()),
+        }
     }
 
     pub(crate) fn asin(&self) -> Self {
-        todo!();
+        match self {
+            Self::Complex(z) => z.asin(),
+            Self::Real(r) => Self::real(r.asin()),
+        }
     }
 
     pub(crate) fn acos(&self) -> Self {
-        todo!();
+        match self {
+            Self::Complex(z) => z.acos(),
+            Self::Real(r) => Self::real(r.acos()),
+        }
     }
 
     pub(crate) fn atan(&self) -> Self {
-        todo!();
+        match self {
+            Self::Complex(z) => z.atan(),
+            Self::Real(r) => Self::real(r.atan()),
+        }
     }
 
     pub(crate) fn complex_conjugate(self) -> Self {
@@ -588,6 +606,30 @@ impl Complex {
     }
 
     fn ln(&self) -> Number {
+        todo!();
+    }
+
+    fn sin(&self) -> Number {
+        todo!();
+    }
+
+    fn cos(&self) -> Number {
+        todo!();
+    }
+
+    fn tan(&self) -> Number {
+        todo!();
+    }
+
+    fn asin(&self) -> Number {
+        todo!();
+    }
+
+    fn acos(&self) -> Number {
+        todo!();
+    }
+
+    fn atan(&self) -> Number {
         todo!();
     }
 
@@ -1150,6 +1192,54 @@ impl Real {
             // use signum so it doesn't differentiate between ± NaN
             let f = self.to_float();
             Ok(Number::complex(f.abs().ln(), real_angle(f.signum())))
+        }
+    }
+
+    fn sin(&self) -> Self {
+        if self.is_exact_zero() {
+            Self::zero()
+        } else {
+            todo!();
+        }
+    }
+
+    fn cos(&self) -> Self {
+        if self.is_exact_zero() {
+            Self::one()
+        } else {
+            todo!();
+        }
+    }
+
+    fn tan(&self) -> Self {
+        if self.is_exact_zero() {
+            Self::zero()
+        } else {
+            todo!();
+        }
+    }
+
+    fn asin(&self) -> Self {
+        if self.is_exact_zero() {
+            Self::zero()
+        } else {
+            todo!();
+        }
+    }
+
+    fn acos(&self) -> Self {
+        if self.is_exact_one() {
+            Self::zero()
+        } else {
+            todo!();
+        }
+    }
+
+    fn atan(&self) -> Self {
+        if self.is_exact_zero() {
+            Self::zero()
+        } else {
+            todo!();
         }
     }
 
