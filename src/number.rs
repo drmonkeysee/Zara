@@ -327,7 +327,16 @@ impl Number {
     }
 
     pub(crate) fn log(&self, base: &Self) -> NumResult {
-        todo!();
+        if base.is_exact_one() {
+            Err(NumericError::DivideByZero)
+        } else if base.is_exact_zero() || self.is_exact_zero() {
+            Err(NumericError::UndefinedAtZero)
+        } else {
+            Ok(match self {
+                Self::Complex(z) => z.log(base),
+                Self::Real(r) => r.log(base),
+            })
+        }
     }
 
     pub(crate) fn sin(&self) -> Self {
@@ -370,6 +379,20 @@ impl Number {
     }
     pub(crate) fn div(self, rhs: &Self) -> NumResult {
         self / rhs
+    }
+
+    fn is_exact_zero(&self) -> bool {
+        match self {
+            Self::Complex(_) => false,
+            Self::Real(r) => r.is_exact_zero(),
+        }
+    }
+
+    fn is_exact_one(&self) -> bool {
+        match self {
+            Self::Complex(_) => false,
+            Self::Real(r) => r.is_exact_one(),
+        }
     }
 }
 
@@ -587,6 +610,10 @@ impl Complex {
     }
 
     fn ln(&self) -> Number {
+        todo!();
+    }
+
+    fn log(&self, base: &Number) -> Number {
         todo!();
     }
 
@@ -1150,6 +1177,10 @@ impl Real {
             let f = self.to_float();
             Ok(Number::complex(f.abs().ln(), real_angle(f.signum())))
         }
+    }
+
+    fn log(&self, base: &Number) -> Number {
+        todo!();
     }
 
     // convenience wrappers for passing Op impls as closures
