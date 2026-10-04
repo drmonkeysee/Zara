@@ -1199,7 +1199,7 @@ impl Real {
         if self.is_exact_zero() {
             Self::zero()
         } else {
-            todo!();
+            self.to_float().sin().into()
         }
     }
 
@@ -1207,7 +1207,7 @@ impl Real {
         if self.is_exact_zero() {
             Self::one()
         } else {
-            todo!();
+            self.to_float().cos().into()
         }
     }
 
@@ -1215,7 +1215,7 @@ impl Real {
         if self.is_exact_zero() {
             Self::zero()
         } else {
-            todo!();
+            self.to_float().tan().into()
         }
     }
 
@@ -1223,7 +1223,7 @@ impl Real {
         if self.is_exact_zero() {
             Self::zero()
         } else {
-            todo!();
+            self.to_float().asin().into()
         }
     }
 
@@ -1231,7 +1231,7 @@ impl Real {
         if self.is_exact_one() {
             Self::zero()
         } else {
-            todo!();
+            self.to_float().acos().into()
         }
     }
 
@@ -1239,7 +1239,7 @@ impl Real {
         if self.is_exact_zero() {
             Self::zero()
         } else {
-            todo!();
+            self.to_float().atan().into()
         }
     }
 
