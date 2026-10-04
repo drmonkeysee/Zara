@@ -320,7 +320,10 @@ impl Number {
     }
 
     pub(crate) fn exp(&self) -> Self {
-        todo!();
+        match self {
+            Self::Complex(z) => z.exp(),
+            Self::Real(r) => Self::real(r.exp()),
+        }
     }
 
     pub(crate) fn ln(&self) -> NumResult {
@@ -579,6 +582,10 @@ impl Complex {
             (assume_safe_div!(&t / Real::two()), assume_safe_div!(y / t))
         };
         Number::complex(u, v)
+    }
+
+    fn exp(&self) -> Number {
+        todo!();
     }
 
     fn into_parts(self) -> (Real, Real) {
@@ -1102,6 +1109,10 @@ impl Real {
             Self::Integer(n) => n.sqrt(),
             Self::Rational(q) => q.sqrt(),
         }
+    }
+
+    fn exp(&self) -> Self {
+        todo!();
     }
 
     // convenience wrappers for passing Op impls as closures
