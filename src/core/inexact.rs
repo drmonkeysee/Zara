@@ -73,28 +73,34 @@ fn logarithm(args: &[Value], _env: &Frame) -> EvalResult {
     }
 }
 
-fn sine(_args: &[Value], _env: &Frame) -> EvalResult {
-    todo!();
+fn sine(args: &[Value], _env: &Frame) -> EvalResult {
+    let arg = first(args);
+    super::num_op(arg, Number::sin, super::num_to_valresult)
 }
 
-fn cosine(_args: &[Value], _env: &Frame) -> EvalResult {
-    todo!();
+fn cosine(args: &[Value], _env: &Frame) -> EvalResult {
+    let arg = first(args);
+    super::num_op(arg, Number::cos, super::num_to_valresult)
 }
 
-fn tangent(_args: &[Value], _env: &Frame) -> EvalResult {
-    todo!();
+fn tangent(args: &[Value], _env: &Frame) -> EvalResult {
+    let arg = first(args);
+    super::num_op(arg, Number::tan, super::num_to_valresult)
 }
 
-fn arc_sine(_args: &[Value], _env: &Frame) -> EvalResult {
-    todo!();
+fn arc_sine(args: &[Value], _env: &Frame) -> EvalResult {
+    let arg = first(args);
+    super::num_op(arg, Number::asin, super::num_to_valresult)
 }
 
-fn arc_cosine(_args: &[Value], _env: &Frame) -> EvalResult {
-    todo!();
+fn arc_cosine(args: &[Value], _env: &Frame) -> EvalResult {
+    let arg = first(args);
+    super::num_op(arg, Number::acos, super::num_to_valresult)
 }
 
-fn arc_tangent(_args: &[Value], _env: &Frame) -> EvalResult {
-    todo!();
+fn arc_tangent(args: &[Value], _env: &Frame) -> EvalResult {
+    let arg = first(args);
+    super::num_op(arg, Number::atan, super::num_to_valresult)
 }
 
 fn square_root(args: &[Value], _env: &Frame) -> EvalResult {
