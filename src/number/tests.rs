@@ -7622,7 +7622,7 @@ mod reciprocal {
             // conj(z)^-1 == conj(z^-1)
             let z = Number::complex(3, 4);
 
-            let conj_then_recip = ok_or_fail!(z.complex_conjugate().reciprocal());
+            let conj_then_recip = ok_or_fail!(z.clone().complex_conjugate().reciprocal());
             let recip_then_conj = ok_or_fail!(z.reciprocal()).complex_conjugate();
 
             assert_eq!(conj_then_recip.to_string(), recip_then_conj.to_string());
@@ -8411,7 +8411,7 @@ mod sqrt {
             for (re, im) in cases {
                 let z = Number::complex(re, im);
 
-                let conj_then_root = z.complex_conjugate().sqrt();
+                let conj_then_root = z.clone().complex_conjugate().sqrt();
                 let root_then_conj = z.sqrt().complex_conjugate();
 
                 assert_eq!(conj_then_root.to_string(), root_then_conj.to_string());

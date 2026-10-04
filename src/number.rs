@@ -291,13 +291,6 @@ impl Number {
         }
     }
 
-    pub(crate) fn complex_conjugate(&self) -> Self {
-        match self {
-            Self::Complex(z) => z.conjugate(),
-            Self::Real(_) => self.clone(),
-        }
-    }
-
     pub(crate) fn reciprocal(&self) -> NumResult {
         match self {
             Self::Complex(z) => z.reciprocal(),
@@ -356,6 +349,13 @@ impl Number {
 
     pub(crate) fn atan(&self) -> Self {
         todo!();
+    }
+
+    pub(crate) fn complex_conjugate(self) -> Self {
+        match self {
+            Self::Complex(z) => z.conjugate(),
+            Self::Real(_) => self,
+        }
     }
 
     // convenience wrappers for passing Op impls as closures
@@ -534,11 +534,6 @@ impl Complex {
         Real::Float(y.to_float().atan2(x.to_float()))
     }
 
-    fn conjugate(&self) -> Number {
-        let (x, y) = self.get_parts();
-        Number::complex(x.clone(), -y)
-    }
-
     fn reciprocal(&self) -> NumResult {
         Real::one().into_complex() / self
     }
@@ -590,6 +585,11 @@ impl Complex {
 
     fn into_parts(self) -> (Real, Real) {
         (self.0.0, self.0.1)
+    }
+
+    fn conjugate(self) -> Number {
+        let (x, y) = self.into_parts();
+        Number::complex(x, -y)
     }
 }
 
