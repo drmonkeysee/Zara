@@ -322,7 +322,7 @@ impl Number {
     pub(crate) fn ln(&self) -> NumResult {
         match self {
             Self::Complex(z) => Ok(z.ln()),
-            Self::Real(r) => Ok(Self::real(r.ln()?)),
+            Self::Real(r) => r.ln(),
         }
     }
 
@@ -1138,13 +1138,17 @@ impl Real {
         }
     }
 
-    fn ln(&self) -> RealResult {
+    fn ln(&self) -> NumResult {
         if self.is_exact_zero() {
             Err(NumericError::UndefinedAtZero)
         } else if self.is_exact_one() {
-            Ok(Self::zero())
+            Ok(Number::zero())
         } else {
-            Ok(self.to_float().ln().into())
+            // ln(-x) = ln(x) + iπ
+            // ln(x) = ln(x) + i0 -> ln(x)
+            // use signum so it doesn't differentiate between ± NaN
+            let f = self.to_float();
+            Ok(Number::complex(f.abs().ln(), real_angle(f.signum())))
         }
     }
 
