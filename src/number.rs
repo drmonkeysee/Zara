@@ -1112,7 +1112,11 @@ impl Real {
     }
 
     fn exp(&self) -> Self {
-        todo!();
+        if self.is_exact_zero() {
+            Self::one()
+        } else {
+            self.to_float().exp().into()
+        }
     }
 
     // convenience wrappers for passing Op impls as closures
