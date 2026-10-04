@@ -35,7 +35,7 @@ mod tests;
 
 use super::{
     FIRST_ARG_LABEL, SECOND_ARG_LABEL, THIRD_ARG_LABEL, bind_intrinsic, first, invalid_target,
-    pcar, pcdr, second, third,
+    num_op, num_to_valresult, numresult_to_valresult, pcar, pcdr, second, third,
 };
 use crate::{
     Exception,

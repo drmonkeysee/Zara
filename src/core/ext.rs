@@ -3,7 +3,8 @@ mod file;
 mod num;
 
 use super::{
-    SECOND_ARG_LABEL, THIRD_ARG_LABEL, bind_intrinsic, first, fs_cmd, fs_op, invalid_target, second,
+    SECOND_ARG_LABEL, THIRD_ARG_LABEL, bind_intrinsic, first, fs_cmd, fs_op, invalid_target,
+    num_op, num_to_valresult, second,
 };
 use crate::{
     Exception,

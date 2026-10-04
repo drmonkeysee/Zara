@@ -74,6 +74,7 @@ mod time;
 use crate::{
     Exception,
     eval::{Arity, EvalResult, Frame, Intrinsic, IntrinsicFn},
+    number::{NumResult, Number},
     value::{Condition, TypeName, Value},
 };
 use std::{fmt::Display, io};
@@ -164,5 +165,28 @@ fn fs_op<T>(
                 ret,
             )
         },
+    )
+}
+
+fn num_op<R>(
+    arg: &Value,
+    op: impl FnOnce(&Number) -> R,
+    map: impl FnOnce(R, &Value) -> EvalResult,
+) -> EvalResult {
+    if let Value::Number(x) = arg {
+        map(op(x), arg)
+    } else {
+        Err(invalid_target(TypeName::NUMBER, arg))
+    }
+}
+
+fn num_to_valresult(x: Number, _arg: &Value) -> EvalResult {
+    Ok(Value::Number(x))
+}
+
+fn numresult_to_valresult(res: NumResult, arg: &Value) -> EvalResult {
+    res.map_or_else(
+        |err| Err(Condition::value_error(err, arg).into()),
+        |x| num_to_valresult(x, arg),
     )
 }

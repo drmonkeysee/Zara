@@ -37,12 +37,18 @@ try_predicate!(
 try_predicate!(is_nan, Value::Number, TypeName::NUMBER, |n: &Number| n
     .is_nan());
 
-fn exponential(_args: &[Value], _env: &Frame) -> EvalResult {
-    todo!();
+fn exponential(args: &[Value], _env: &Frame) -> EvalResult {
+    let arg = first(args);
+    super::num_op(arg, Number::exp, super::num_to_valresult)
 }
 
-fn logarithm(_args: &[Value], _env: &Frame) -> EvalResult {
-    todo!();
+fn logarithm(args: &[Value], _env: &Frame) -> EvalResult {
+    let arg = first(args);
+    if let Some(_base) = args.get(1) {
+        todo!("implement log base");
+    } else {
+        super::num_op(arg, Number::ln, super::numresult_to_valresult)
+    }
 }
 
 fn sine(_args: &[Value], _env: &Frame) -> EvalResult {
