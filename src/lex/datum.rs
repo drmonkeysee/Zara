@@ -35,8 +35,9 @@ type ScanFlow = ControlFlow<()>;
 type ScanResult<E, T = ScanFlow> = Result<T, E>;
 
 fn classify_hash<C: CharCursor + ?Sized>(cur: &mut C, buf: &mut String) -> ScanResult<C::Error> {
-    if let Some(ch) = cur.peek_char()? {
-        match ch {
+    match cur.peek_char()? {
+        None => return Ok(ScanFlow::Break(())),
+        Some(ch) => match ch {
             '(' => {
                 // vector
                 consume_char(cur, buf)?;
@@ -67,9 +68,7 @@ fn classify_hash<C: CharCursor + ?Sized>(cur: &mut C, buf: &mut String) -> ScanR
                 scan_block_comment(1, cur, buf)?;
             }
             _ => return scan_delimiter(cur, buf),
-        }
-    } else {
-        return Ok(ScanFlow::Break(()));
+        },
     }
     Ok(ScanFlow::Continue(()))
 }

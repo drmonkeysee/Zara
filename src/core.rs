@@ -128,18 +128,16 @@ fn third(args: &[Value]) -> &Value {
 }
 
 fn pcar(arg: &Value) -> EvalResult {
-    if let Some(p) = arg.as_refpair() {
-        Ok(p.as_ref().car.clone())
-    } else {
-        Err(invalid_target(TypeName::PAIR, arg))
+    match arg.as_refpair() {
+        None => Err(invalid_target(TypeName::PAIR, arg)),
+        Some(p) => Ok(p.as_ref().car.clone()),
     }
 }
 
 fn pcdr(arg: &Value) -> EvalResult {
-    if let Some(p) = arg.as_refpair() {
-        Ok(p.as_ref().cdr.clone())
-    } else {
-        Err(invalid_target(TypeName::PAIR, arg))
+    match arg.as_refpair() {
+        None => Err(invalid_target(TypeName::PAIR, arg)),
+        Some(p) => Ok(p.as_ref().cdr.clone()),
     }
 }
 

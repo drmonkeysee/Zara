@@ -44,10 +44,9 @@ fn exponential(args: &[Value], _env: &Frame) -> EvalResult {
 
 fn logarithm(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = first(args);
-    if let Some(_base) = args.get(1) {
-        todo!("implement log base");
-    } else {
-        super::num_op(arg, Number::ln, super::numresult_to_valresult)
+    match args.get(1) {
+        None => super::num_op(arg, Number::ln, super::numresult_to_valresult),
+        Some(_base) => todo!("implement log base"),
     }
 }
 
