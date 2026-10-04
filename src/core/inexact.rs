@@ -48,7 +48,24 @@ fn logarithm(args: &[Value], _env: &Frame) -> EvalResult {
         None => super::num_op(arg, Number::ln, super::numresult_to_valresult),
         Some(base) => {
             if let Value::Number(x) = base {
-                super::num_op(arg, |y| y.log(x), super::numresult_to_valresult)
+                super::num_op(
+                    arg,
+                    |y| y.log(x),
+                    |res, first| {
+                        // pick which argument threw the zero error
+                        super::numresult_to_valresult(
+                            res,
+                            if let Value::Number(Number::Real(r)) = first
+                                && !r.is_inexact()
+                                && r.is_zero()
+                            {
+                                first
+                            } else {
+                                base
+                            },
+                        )
+                    },
+                )
             } else {
                 Err(invalid_target(TypeName::NUMBER, base))
             }
