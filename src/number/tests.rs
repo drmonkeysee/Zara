@@ -9191,6 +9191,31 @@ mod transcendental {
             assert_near!(im.to_float(), 1.1071487177940904);
         }
 
+        // ln|z| = ln(hypot(x, y)) cancels catastrophically near |z| = 1, where
+        // the true value is tiny: ln|z| = (1/2) ln_1p((x-1)(x+1) + y^2).
+        // assert_near!'s 1e-12 absolute floor would hide this, so compare
+        // relative to the exact value (50-digit decimal arithmetic). Guile
+        // matches; Chez uses the naive formula and returns 0.0 for the first
+        // case and is off in the 8th digit for the second.
+        #[test]
+        fn log_near_the_unit_circle_keeps_relative_precision() {
+            let cases = [
+                (1.0, 1e-10, 5.0e-21, 1e-10),
+                (1e-5, 1.0, 4.9999999997500000e-11, 1.5707963267948966 - 1e-5),
+            ];
+            for (x, y, expected_re, expected_im) in cases {
+                let r = ok_or_fail!(Number::complex(x, y).ln());
+
+                let (re, im) = complex_parts!(r);
+                let re = re.to_float();
+                assert!(
+                    (re - expected_re).abs() <= expected_re * 1e-12,
+                    "ln({x}+{y}i): expected real part {expected_re}, got {re}"
+                );
+                assert_near!(im.to_float(), expected_im);
+            }
+        }
+
         #[test]
         fn sin_of_pure_imaginary() {
             let r = Number::imaginary(1).sin();
