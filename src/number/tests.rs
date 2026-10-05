@@ -9339,10 +9339,139 @@ mod transcendental {
             assert_eq!(re.to_float(), 1.0);
             assert_eq!(im.to_float(), 0.0);
         }
+
+        // e^x overflows to infinity before cos y / sin y scale it back down,
+        // so a naive e^x * cos y turns a finite component into inf. Chez and
+        // Guile both keep the finite component (last ulps differ).
+        #[test]
+        fn exp_overflow_does_not_spill_into_a_finite_component() {
+            let cases = [
+                (710.0, 1.0, 1.2070325234545225e308),
+                (710.0, std::f64::consts::FRAC_PI_2, 1.3679272698459832e292),
+                (709.9, 2.0, -8.412000710440356e307),
+            ];
+            for (x, y, expected_re) in cases {
+                let r = Number::complex(x, y).exp();
+
+                let (re, im) = complex_parts!(r);
+                assert_near!(re.to_float(), expected_re);
+                assert_eq!(im.to_float(), f64::INFINITY, "exp({x}+{y}i)");
+            }
+        }
+
+        // A zero imaginary part must not turn inf * 0.0 into NaN. Chez (and
+        // C99 cexp) preserve the sign of the zero; Guile drops it and always
+        // returns +0.0 for (exp 1000.0-0.0i). Zara follows Chez.
+        #[test]
+        fn exp_overflow_with_a_zero_imaginary_part_is_not_nan() {
+            let r = Number::complex(1000.0, 0.0).exp();
+            let (re, im) = complex_parts!(r);
+            assert_eq!(re.to_float(), f64::INFINITY);
+            assert_eq!(im.to_float(), 0.0);
+            assert!(im.to_float().is_sign_positive());
+
+            let r = Number::complex(1000.0, -0.0).exp();
+            let (re, im) = complex_parts!(r);
+            assert_eq!(re.to_float(), f64::INFINITY);
+            assert_eq!(im.to_float(), 0.0);
+            assert!(im.to_float().is_sign_negative());
+        }
+
+        #[test]
+        fn exp_of_infinite_real_part() {
+            let r = Number::complex(f64::INFINITY, 1.0).exp();
+            let (re, im) = complex_parts!(r);
+            assert_eq!(re.to_float(), f64::INFINITY);
+            assert_eq!(im.to_float(), f64::INFINITY);
+
+            let r = Number::complex(f64::NEG_INFINITY, 1.0).exp();
+            let (re, im) = complex_parts!(r);
+            assert_eq!(re.to_float(), 0.0);
+            assert_eq!(im.to_float(), 0.0);
+        }
+
+        #[test]
+        fn exp_underflows_to_zero() {
+            let r = Number::complex(-1000.0, 1.0).exp();
+
+            let (re, im) = complex_parts!(r);
+            assert_eq!(re.to_float(), 0.0);
+            assert_eq!(im.to_float(), 0.0);
+        }
     }
 
     mod laws {
         use super::*;
+
+        // exp(z + 2*pi*i*k) = exp(z). Chez and Guile agree with the base
+        // value to within ~1e-14, well inside assert_near!'s tolerance.
+        #[test]
+        fn exp_is_periodic_in_the_imaginary_part() {
+            use std::f64::consts::TAU;
+
+            let base = Number::complex(1.0, 2.0).exp();
+            let (base_re, base_im) = complex_parts!(base);
+            for k in [1.0, -1.0, 10.0] {
+                let r = Number::complex(1.0, 2.0 + TAU * k).exp();
+
+                let (re, im) = complex_parts!(r);
+                assert_near!(re.to_float(), base_re.to_float());
+                assert_near!(im.to_float(), base_im.to_float());
+            }
+
+            let base = Number::imaginary(1.0).exp();
+            let (base_re, base_im) = complex_parts!(base);
+            let r = Number::imaginary(1.0 + TAU).exp();
+            let (re, im) = complex_parts!(r);
+            assert_near!(re.to_float(), base_re.to_float());
+            assert_near!(im.to_float(), base_im.to_float());
+        }
+
+        #[test]
+        fn ln_inverts_exp_within_the_principal_strip() {
+            // Im(z) in (-pi, pi]
+            let cases = [(1.0, 2.0), (0.5, -3.0), (-2.0, 3.0)];
+            for (x, y) in cases {
+                let r = ok_or_fail!(Number::complex(x, y).exp().ln());
+
+                let (re, im) = complex_parts!(r);
+                assert_near!(re.to_float(), x);
+                assert_near!(im.to_float(), y);
+            }
+        }
+
+        // Outside the strip ln(exp z) only recovers Im(z) mod 2*pi; the
+        // result is wrapped into (-pi, pi]. Chez and Guile agree.
+        #[test]
+        fn ln_of_exp_wraps_the_imaginary_part_into_the_principal_strip() {
+            use std::f64::consts::TAU;
+
+            let cases = [
+                (1.0, 4.0, 4.0 - TAU),
+                (1.0, -4.0, TAU - 4.0),
+                (1.0, 7.0, 7.0 - TAU),
+            ];
+            for (x, y, expected_im) in cases {
+                let r = ok_or_fail!(Number::complex(x, y).exp().ln());
+
+                let (re, im) = complex_parts!(r);
+                assert_near!(re.to_float(), x);
+                assert_near!(im.to_float(), expected_im);
+            }
+        }
+
+        // exp(ln z) = z holds for every nonzero z, strip or not.
+        #[test]
+        fn exp_inverts_ln_for_any_nonzero_complex() {
+            let cases = [(1.0, 2.0), (0.5, -3.0), (1.0, 4.0), (1.0, 7.0)];
+            for (x, y) in cases {
+                let r = ok_or_fail!(Number::complex(x, y).ln()).exp();
+
+                let (re, im) = complex_parts!(r);
+                assert_near!(re.to_float(), x);
+                assert_near!(im.to_float(), y);
+            }
+        }
 
         #[test]
         fn exp_and_ln_are_inverses() {
