@@ -8108,6 +8108,20 @@ mod sqrt {
             }
         }
 
+        // sqrt(0) is an exact 0, so an exact zero real part is kept while the
+        // inexact zero imaginary part keeps its sign. (An inexact zero real
+        // part, e.g. 0.0-0.0i, stays inexact -- see the special-value matrix
+        // below.)
+        #[test]
+        fn zero_with_an_exact_zero_real_part_keeps_it_exact() {
+            for (y, expected) in [(0.0, "+0.0i"), (-0.0, "-0.0i")] {
+                let r = Number::complex(0, y).sqrt();
+
+                assert_eq!(r.to_string(), expected);
+                assert!(r.to_real().is_exact_zero(), "sqrt 0+{y}i re");
+            }
+        }
+
         #[test]
         fn unit_imaginary_is_irrational() {
             let z = Number::imaginary(1);
@@ -9173,13 +9187,26 @@ mod transcendental {
             assert_near!(im.to_float(), 2.4717266720048188);
         }
 
-        // ln(ni) = ln|n| + i*sign(n)*pi/2. At |n| = 1 the real part is a
-        // computed zero, so it is an inexact +0.0 -- not the exact 0 that
-        // (log 1) gives for a bare real. Chez agrees: (log 1) => 0 but
-        // (log +i) => 0.0+1.5707963267948966i, with +0.0 for both +i and -i.
+        // ln(ni) = ln|n| + i*sign(n)*pi/2. The magnitude of an exact 0+-i is
+        // exact 1 and (ln 1) is an exact 0, so the real part stays exact.
+        // Chez and Guile return 0.0+1.5707963267948966i; Zara keeps the
+        // exactness that the exact inputs determine.
         #[test]
-        fn log_of_unit_pure_imaginary_has_an_inexact_positive_zero_real_part() {
+        fn log_of_unit_pure_imaginary_has_an_exact_zero_real_part() {
             for (n, expected_im) in [(1, 1.5707963267948966), (-1, -1.5707963267948966)] {
+                let r = ok_or_fail!(Number::imaginary(n).ln());
+
+                let (re, im) = complex_parts!(r);
+                assert!(re.is_exact_zero(), "log 0+{n}i re: {re}");
+                assert_near!(im.to_float(), expected_im);
+            }
+        }
+
+        // The same value with an inexact unit magnitude has no exactness to
+        // keep: hypot(0, 1.0) = 1.0 and ln(1.0) is an inexact +0.0.
+        #[test]
+        fn log_of_inexact_unit_pure_imaginary_has_an_inexact_zero_real_part() {
+            for (n, expected_im) in [(1.0, 1.5707963267948966), (-1.0, -1.5707963267948966)] {
                 let r = ok_or_fail!(Number::imaginary(n).ln());
 
                 let (re, im) = complex_parts!(r);
@@ -9266,25 +9293,66 @@ mod transcendental {
             assert_near!(im.to_float(), 1.959601041421606);
         }
 
-        // cos(0+ni) = cosh n - i (sin 0)(sinh n). Unlike sin and tan, the zero
-        // is not kept exact: it becomes an inexact zero whose sign is the
-        // opposite of n's (-0.0 for n > 0, +0.0 for n < 0). Chez and Guile
-        // agree on the sign.
+        // cos(0+ni) = cosh n - i (sin 0)(sinh n). (sin 0) is an exact 0, so
+        // the imaginary part is an exact zero and the result collapses to a
+        // real. Chez and Guile return cosh n -/+ 0.0i (-0.0 for n > 0), which
+        // makes cos(+ni) and cos(-ni) not eqv? even though cos is even; Zara's
+        // real result keeps that symmetry.
         #[test]
-        fn cos_of_pure_imaginary_has_an_inexact_zero_imaginary_part_opposite_to_n() {
+        fn cos_of_pure_imaginary_is_a_real_cosh() {
             let cases = [
-                (1, 1.5430806348152437, true),
-                (-1, 1.5430806348152437, false),
-                (2, 3.7621956910836314, true),
-                (-2, 3.7621956910836314, false),
+                (1, 1.5430806348152437),
+                (-1, 1.5430806348152437),
+                (2, 3.7621956910836314),
+                (-2, 3.7621956910836314),
             ];
-            for (n, expected_re, zero_is_negative) in cases {
+            for (n, expected) in cases {
                 let r = Number::imaginary(n).cos();
 
-                let (re, im) = complex_parts!(r);
-                assert_near!(re.to_float(), expected_re);
-                assert!(im.is_inexact(), "cos 0+{n}i im: {im}");
-                assert_signed_zero(im.to_float(), zero_is_negative, "cos 0+ni im");
+                assert_matches!(r, Number::Real(Real::Float(_)));
+                assert_near!(r.to_real().to_float(), expected);
+            }
+        }
+
+        #[test]
+        fn cos_is_even_for_pure_imaginary_arguments() {
+            for n in [1, 2] {
+                let pos = Number::imaginary(n).cos();
+                let neg = Number::imaginary(-n).cos();
+
+                assert!(pos.is_eqv(&neg), "cos {n}i vs cos -{n}i: {pos} vs {neg}");
+            }
+        }
+
+        // An exact zero real part with an inexact zero imaginary part: for the
+        // functions that are odd in x (sin, tan) the real part stays an exact
+        // zero and the imaginary part keeps the sign of its zero.
+        #[test]
+        fn exact_zero_real_part_with_inexact_zero_imaginary_part() {
+            for (y, expected) in [(0.0, "+0.0i"), (-0.0, "-0.0i")] {
+                let z = Number::complex(0, y);
+
+                let sin = z.sin();
+                assert_eq!(sin.to_string(), expected, "sin 0+{y}i");
+                assert!(sin.to_real().is_exact_zero(), "sin 0+{y}i re");
+
+                let tan = z.tan();
+                assert_eq!(tan.to_string(), expected, "tan 0+{y}i");
+                assert!(tan.to_real().is_exact_zero(), "tan 0+{y}i re");
+            }
+        }
+
+        // cos(0+yi) with y an inexact zero: the exact (sin 0) overrides the
+        // float sinh y (exact zero times a float is an exact zero), so the
+        // imaginary part collapses and the result is the real 1.0. C99 ccos
+        // would give 1.0-0.0i / 1.0+0.0i here; Zara's exactness rule wins.
+        #[test]
+        fn cos_of_exact_zero_real_part_with_inexact_zero_imaginary_part_is_real() {
+            for y in [0.0, -0.0] {
+                let r = Number::complex(0, y).cos();
+
+                assert_matches!(r, Number::Real(Real::Float(_)));
+                assert_eq!(r.to_string(), "1.0", "cos 0+{y}i");
             }
         }
 
