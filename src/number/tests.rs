@@ -9246,6 +9246,88 @@ mod transcendental {
             assert_near!(im.to_float(), -0.881373587019543);
         }
 
+        // asin/acos have cuts on the real axis outside [-1, 1]; atan has its
+        // cuts on the imaginary axis outside [-i, i]. On a cut, the sign of
+        // the zero component picks the side (Kahan): +0 imaginary part is
+        // continuous with the upper half-plane, -0 with the lower.
+        // Chez and Guile agree on all of the asin/acos cases below.
+        #[test]
+        fn asin_past_the_real_domain_follows_the_sign_of_a_zero_imaginary_part() {
+            let cases = [
+                (2.0, 0.0, 1.5707963267948966, 1.3169578969248166),
+                (2.0, -0.0, 1.5707963267948966, -1.3169578969248166),
+                (-2.0, 0.0, -1.5707963267948966, 1.3169578969248166),
+                (-2.0, -0.0, -1.5707963267948966, -1.3169578969248166),
+            ];
+            for (x, y, expected_re, expected_im) in cases {
+                let r = Number::complex(x, y).asin();
+
+                let (re, im) = complex_parts!(r);
+                assert_near!(re.to_float(), expected_re);
+                assert_near!(im.to_float(), expected_im);
+            }
+        }
+
+        #[test]
+        fn acos_past_the_real_domain_follows_the_sign_of_a_zero_imaginary_part() {
+            let cases = [
+                (2.0, 0.0, 0.0, -1.3169578969248166),
+                (2.0, -0.0, 0.0, 1.3169578969248166),
+                (-2.0, 0.0, 3.141592653589793, -1.3169578969248166),
+                (-2.0, -0.0, 3.141592653589793, 1.3169578969248166),
+            ];
+            for (x, y, expected_re, expected_im) in cases {
+                let r = Number::complex(x, y).acos();
+
+                let (re, im) = complex_parts!(r);
+                assert_near!(re.to_float(), expected_re);
+                assert_near!(im.to_float(), expected_im);
+            }
+        }
+
+        #[test]
+        fn atan_above_the_imaginary_cut() {
+            // atan(2i) = pi/2 + (ln 3 / 2)i
+            let r = Number::imaginary(2).atan();
+
+            let (re, im) = complex_parts!(r);
+            assert_near!(re.to_float(), 1.5707963267948966);
+            assert_near!(im.to_float(), 0.5493061443340549);
+        }
+
+        #[test]
+        fn atan_below_the_imaginary_cut_treats_an_exact_zero_real_part_as_positive() {
+            // An exact 0 has no sign, so it lands on the +0 side of the cut:
+            // (atan 0-2i) => pi/2 - (ln 3 / 2)i, matching Chez. Guile instead
+            // gives -pi/2 here, preserving atan's oddness.
+            let r = Number::imaginary(-2).atan();
+
+            let (re, im) = complex_parts!(r);
+            assert_near!(re.to_float(), 1.5707963267948966);
+            assert_near!(im.to_float(), -0.5493061443340549);
+        }
+
+        #[test]
+        fn atan_on_the_imaginary_cut_follows_the_sign_of_a_zero_real_part() {
+            // The real part's zero picks the side of the cut; the imaginary
+            // part is unaffected. Guile ignores the sign of the zero for
+            // lower-half cases like (atan 0.0-2.0i); Zara follows Kahan and
+            // Chez.
+            let cases = [
+                (0.0, 2.0, 1.5707963267948966, 0.5493061443340549),
+                (-0.0, 2.0, -1.5707963267948966, 0.5493061443340549),
+                (0.0, -2.0, 1.5707963267948966, -0.5493061443340549),
+                (-0.0, -2.0, -1.5707963267948966, -0.5493061443340549),
+            ];
+            for (x, y, expected_re, expected_im) in cases {
+                let r = Number::complex(x, y).atan();
+
+                let (re, im) = complex_parts!(r);
+                assert_near!(re.to_float(), expected_re);
+                assert_near!(im.to_float(), expected_im);
+            }
+        }
+
         #[test]
         fn exp_of_inexact_zero_complex_stays_complex() {
             // (exp 0.0+0.0i): the inexact zero imaginary part does not
