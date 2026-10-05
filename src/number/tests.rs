@@ -9173,13 +9173,35 @@ mod transcendental {
             assert_near!(im.to_float(), 2.4717266720048188);
         }
 
+        // ln(ni) = ln|n| + i*sign(n)*pi/2. At |n| = 1 the real part is a
+        // computed zero, so it is an inexact +0.0 -- not the exact 0 that
+        // (log 1) gives for a bare real. Chez agrees: (log 1) => 0 but
+        // (log +i) => 0.0+1.5707963267948966i, with +0.0 for both +i and -i.
+        #[test]
+        fn log_of_unit_pure_imaginary_has_an_inexact_positive_zero_real_part() {
+            for (n, expected_im) in [(1, 1.5707963267948966), (-1, -1.5707963267948966)] {
+                let r = ok_or_fail!(Number::imaginary(n).ln());
+
+                let (re, im) = complex_parts!(r);
+                assert!(re.is_inexact(), "log 0+{n}i re: {re}");
+                assert_signed_zero(re.to_float(), false, "log 0+ni re");
+                assert_near!(im.to_float(), expected_im);
+            }
+        }
+
         #[test]
         fn log_of_pure_imaginary() {
-            let r = ok_or_fail!(Number::imaginary(1).ln());
+            let cases = [
+                (2, 0.6931471805599453, 1.5707963267948966),
+                (-2, 0.6931471805599453, -1.5707963267948966),
+            ];
+            for (n, expected_re, expected_im) in cases {
+                let r = ok_or_fail!(Number::imaginary(n).ln());
 
-            let (re, im) = complex_parts!(r);
-            assert_near!(re.to_float(), 0.0);
-            assert_near!(im.to_float(), 1.5707963267948966);
+                let (re, im) = complex_parts!(r);
+                assert_near!(re.to_float(), expected_re);
+                assert_near!(im.to_float(), expected_im);
+            }
         }
 
         #[test]
@@ -9216,13 +9238,23 @@ mod transcendental {
             }
         }
 
+        // sin(0+ni) = 0 + i sinh n. The exact zero real part stays exact
+        // (sin 0 is exact 0) rather than becoming a signed 0.0.
         #[test]
-        fn sin_of_pure_imaginary() {
-            let r = Number::imaginary(1).sin();
+        fn sin_of_pure_imaginary_keeps_an_exact_zero_real_part() {
+            let cases = [
+                (1, 1.1752011936438014),
+                (-1, -1.1752011936438014),
+                (2, 3.6268604078470186),
+                (-2, -3.6268604078470186),
+            ];
+            for (n, expected_im) in cases {
+                let r = Number::imaginary(n).sin();
 
-            let (re, im) = complex_parts!(r);
-            assert_near!(re.to_float(), 0.0);
-            assert_near!(im.to_float(), 1.1752011936438014);
+                let (re, im) = complex_parts!(r);
+                assert!(re.is_exact_zero(), "sin 0+{n}i re: {re}");
+                assert_near!(im.to_float(), expected_im);
+            }
         }
 
         #[test]
@@ -9234,23 +9266,44 @@ mod transcendental {
             assert_near!(im.to_float(), 1.959601041421606);
         }
 
+        // cos(0+ni) = cosh n - i (sin 0)(sinh n). Unlike sin and tan, the zero
+        // is not kept exact: it becomes an inexact zero whose sign is the
+        // opposite of n's (-0.0 for n > 0, +0.0 for n < 0). Chez and Guile
+        // agree on the sign.
         #[test]
-        fn cos_of_pure_imaginary_has_negative_zero_imaginary_part() {
-            let r = Number::imaginary(1).cos();
+        fn cos_of_pure_imaginary_has_an_inexact_zero_imaginary_part_opposite_to_n() {
+            let cases = [
+                (1, 1.5430806348152437, true),
+                (-1, 1.5430806348152437, false),
+                (2, 3.7621956910836314, true),
+                (-2, 3.7621956910836314, false),
+            ];
+            for (n, expected_re, zero_is_negative) in cases {
+                let r = Number::imaginary(n).cos();
 
-            let (re, im) = complex_parts!(r);
-            assert_near!(re.to_float(), 1.5430806348152437);
-            assert_eq!(im.to_float(), 0.0);
-            assert!(im.to_float().is_sign_negative());
+                let (re, im) = complex_parts!(r);
+                assert_near!(re.to_float(), expected_re);
+                assert!(im.is_inexact(), "cos 0+{n}i im: {im}");
+                assert_signed_zero(im.to_float(), zero_is_negative, "cos 0+ni im");
+            }
         }
 
+        // tan(0+ni) = i tanh n; like sin, the exact zero real part stays exact.
         #[test]
-        fn tan_of_pure_imaginary() {
-            let r = Number::imaginary(1).tan();
+        fn tan_of_pure_imaginary_keeps_an_exact_zero_real_part() {
+            let cases = [
+                (1, 0.7615941559557649),
+                (-1, -0.7615941559557649),
+                (2, 0.9640275800758169),
+                (-2, -0.9640275800758169),
+            ];
+            for (n, expected_im) in cases {
+                let r = Number::imaginary(n).tan();
 
-            let (re, im) = complex_parts!(r);
-            assert_near!(re.to_float(), 0.0);
-            assert_near!(im.to_float(), 0.7615941559557649);
+                let (re, im) = complex_parts!(r);
+                assert!(re.is_exact_zero(), "tan 0+{n}i re: {re}");
+                assert_near!(im.to_float(), expected_im);
+            }
         }
 
         fn assert_signed_zero(actual: f64, negative: bool, label: &str) {
@@ -9463,13 +9516,43 @@ mod transcendental {
             }
         }
 
+        // asin(ni) = i asinh n. Like sin and tan, the exact zero real part is
+        // passed through by an odd function and stays exact.
         #[test]
-        fn asin_of_pure_imaginary() {
-            let r = Number::imaginary(1).asin();
+        fn asin_of_pure_imaginary_keeps_an_exact_zero_real_part() {
+            let cases = [
+                (1, 0.881373587019543),
+                (-1, -0.881373587019543),
+                (2, 1.4436354751788103),
+                (-2, -1.4436354751788103),
+            ];
+            for (n, expected_im) in cases {
+                let r = Number::imaginary(n).asin();
 
-            let (re, im) = complex_parts!(r);
-            assert_near!(re.to_float(), 0.0);
-            assert_near!(im.to_float(), 0.881373587019543);
+                let (re, im) = complex_parts!(r);
+                assert!(re.is_exact_zero(), "asin 0+{n}i re: {re}");
+                assert_near!(im.to_float(), expected_im);
+            }
+        }
+
+        // atan(ni) = i atanh n for |n| < 1 (past +/-1 the real part is
+        // +/-pi/2; see the cut tests below). The exact zero real part stays
+        // exact, as for asin.
+        #[test]
+        fn atan_of_pure_imaginary_inside_the_cut_keeps_an_exact_zero_real_part() {
+            let half = ok_or_fail!(Real::reduce(1, 2));
+            let cases = [
+                (Number::imaginary(half.clone()), 0.5493061443340549),
+                (Number::imaginary(-half), -0.5493061443340549),
+                (Number::imaginary(0.5), 0.5493061443340549),
+            ];
+            for (z, expected_im) in cases {
+                let r = z.atan();
+
+                let (re, im) = complex_parts!(r);
+                assert!(re.is_exact_zero(), "atan {z} re: {re}");
+                assert_near!(im.to_float(), expected_im);
+            }
         }
 
         #[test]
@@ -9515,7 +9598,12 @@ mod transcendental {
                 let r = Number::complex(x, y).acos();
 
                 let (re, im) = complex_parts!(r);
-                assert_near!(re.to_float(), expected_re);
+                if expected_re == 0.0 {
+                    // +0.0 on the positive side of the cut, in Chez and Guile
+                    assert_signed_zero(re.to_float(), false, "acos re");
+                } else {
+                    assert_near!(re.to_float(), expected_re);
+                }
                 assert_near!(im.to_float(), expected_im);
             }
         }
@@ -9572,7 +9660,19 @@ mod transcendental {
 
             let (re, im) = complex_parts!(r);
             assert_eq!(re.to_float(), 1.0);
-            assert_eq!(im.to_float(), 0.0);
+            assert_signed_zero(im.to_float(), false, "exp 0.0+0.0i im");
+        }
+
+        // (exp 0.0-0.0i) keeps the sign of the zero imaginary part, as in
+        // Chez (1.0-0.0i). Guile drops it and returns 1.0+0.0i; Zara follows
+        // Chez, consistent with exp_overflow_with_a_zero_imaginary_part_is_not_nan.
+        #[test]
+        fn exp_of_inexact_negative_zero_imaginary_part_keeps_its_sign() {
+            let r = Number::complex(0.0, -0.0).exp();
+
+            let (re, im) = complex_parts!(r);
+            assert_eq!(re.to_float(), 1.0);
+            assert_signed_zero(im.to_float(), true, "exp 0.0-0.0i im");
         }
 
         // e^x overflows to infinity before cos y / sin y scale it back down,
@@ -9602,14 +9702,12 @@ mod transcendental {
             let r = Number::complex(1000.0, 0.0).exp();
             let (re, im) = complex_parts!(r);
             assert_eq!(re.to_float(), f64::INFINITY);
-            assert_eq!(im.to_float(), 0.0);
-            assert!(im.to_float().is_sign_positive());
+            assert_signed_zero(im.to_float(), false, "exp 1000.0+0.0i im");
 
             let r = Number::complex(1000.0, -0.0).exp();
             let (re, im) = complex_parts!(r);
             assert_eq!(re.to_float(), f64::INFINITY);
-            assert_eq!(im.to_float(), 0.0);
-            assert!(im.to_float().is_sign_negative());
+            assert_signed_zero(im.to_float(), true, "exp 1000.0-0.0i im");
         }
 
         #[test]
@@ -9621,8 +9719,8 @@ mod transcendental {
 
             let r = Number::complex(f64::NEG_INFINITY, 1.0).exp();
             let (re, im) = complex_parts!(r);
-            assert_eq!(re.to_float(), 0.0);
-            assert_eq!(im.to_float(), 0.0);
+            assert_signed_zero(re.to_float(), false, "exp -inf+1.0i re");
+            assert_signed_zero(im.to_float(), false, "exp -inf+1.0i im");
         }
 
         #[test]
@@ -9630,8 +9728,8 @@ mod transcendental {
             let r = Number::complex(-1000.0, 1.0).exp();
 
             let (re, im) = complex_parts!(r);
-            assert_eq!(re.to_float(), 0.0);
-            assert_eq!(im.to_float(), 0.0);
+            assert_signed_zero(re.to_float(), false, "exp -1000.0+1.0i re");
+            assert_signed_zero(im.to_float(), false, "exp -1000.0+1.0i im");
         }
     }
 
