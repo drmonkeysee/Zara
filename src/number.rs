@@ -355,14 +355,14 @@ impl Number {
     pub(crate) fn asin(&self) -> Self {
         match self {
             Self::Complex(z) => z.asin(),
-            Self::Real(r) => Self::real(r.asin()),
+            Self::Real(r) => r.asin(),
         }
     }
 
     pub(crate) fn acos(&self) -> Self {
         match self {
             Self::Complex(z) => z.acos(),
-            Self::Real(r) => Self::real(r.acos()),
+            Self::Real(r) => r.acos(),
         }
     }
 
@@ -1219,19 +1219,19 @@ impl Real {
         }
     }
 
-    fn asin(&self) -> Self {
+    fn asin(&self) -> Number {
         if self.is_exact_zero() {
-            Self::zero()
+            Number::zero()
         } else {
-            self.to_float().asin().into()
+            self.arc_sincos(Number::asin, f64::asin)
         }
     }
 
-    fn acos(&self) -> Self {
+    fn acos(&self) -> Number {
         if self.is_exact_one() {
-            Self::zero()
+            Number::zero()
         } else {
-            self.to_float().acos().into()
+            self.arc_sincos(Number::acos, f64::acos)
         }
     }
 
@@ -1240,6 +1240,23 @@ impl Real {
             Self::zero()
         } else {
             self.to_float().atan().into()
+        }
+    }
+
+    // Inverse cos/sin have complex-number cuts above 1 and below -1; according
+    // to Kahan's rule the imaginary part's sign is the opposite of the real.
+    fn arc_sincos(
+        &self,
+        zfn: impl FnOnce(&Number) -> Number,
+        ffn: impl FnOnce(f64) -> f64,
+    ) -> Number {
+        let f = self.to_float();
+        if f > 1.0 {
+            zfn(&Number::complex(f, -0.0))
+        } else if f < -1.0 {
+            zfn(&Number::complex(f, 0.0))
+        } else {
+            Number::real(ffn(f))
         }
     }
 
