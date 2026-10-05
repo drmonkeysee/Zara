@@ -601,22 +601,29 @@ impl Complex {
         Number::complex(u, v)
     }
 
+    // e^z = e^(x+yi) = e^x * e^yi = (e^x * cos y) + (ie^x * sin y)
     fn exp(&self) -> Number {
         todo!();
     }
 
+    // ln z = ln r + iθ = ln (mag z) + i(angle z)
     fn ln(&self) -> Number {
         todo!();
     }
 
+    // sin z = sin (x+yi) = (sin x)(cosh y) + i(cos x)(sinh y)
     fn sin(&self) -> Number {
         todo!();
     }
 
+    // cos z = cos (x+yi) = (cos x)(cosh y) - i(sin x)(sinh y)
     fn cos(&self) -> Number {
         todo!();
     }
 
+    // tan z = sin z / cos z = (sin 2x + i(sinh 2y)) / (cos 2x + cosh 2y)
+    // The real-form identity is used to avoid rounding errors with dividing
+    // complex trig functions.
     fn tan(&self) -> Number {
         todo!();
     }
