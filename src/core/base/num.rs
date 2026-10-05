@@ -308,7 +308,7 @@ fn guarded_real_op(
     expected_type: impl Display,
     op: impl FnOnce(&Real) -> EvalResult,
 ) -> EvalResult {
-    let r = arg_to_real(arg, FIRST_ARG_LABEL, expected_type)?;
+    let r = super::arg_to_real(arg, FIRST_ARG_LABEL, expected_type)?;
     op(r)
 }
 
@@ -317,12 +317,12 @@ fn real_acc_cmp<'a>(
     rest: impl IntoIterator<Item = &'a Value>,
     cmp: impl Fn(&Real, &Real) -> bool,
 ) -> EvalResult {
-    let r = arg_to_real(first, FIRST_ARG_LABEL, NumericTypeName::REAL)?;
+    let r = super::arg_to_real(first, FIRST_ARG_LABEL, NumericTypeName::REAL)?;
     let mut float_taint = r.is_inexact();
     rest.into_iter()
         .enumerate()
         .try_fold(r.clone(), |mut acc, (idx, v)| {
-            let r = arg_to_real(v, idx + 1, NumericTypeName::REAL)?;
+            let r = super::arg_to_real(v, idx + 1, NumericTypeName::REAL)?;
             float_taint = float_taint || r.is_inexact();
             if cmp(&acc, r) {
                 acc = r.clone();
@@ -385,7 +385,7 @@ fn exact_factor_op(
     args.iter()
         .enumerate()
         .try_fold(identity, |acc, (idx, v)| {
-            let r = arg_to_real(v, idx, NumericTypeName::INTEGER)?;
+            let r = super::arg_to_real(v, idx, NumericTypeName::INTEGER)?;
             float_taint = float_taint || r.is_inexact();
             let n = r
                 .try_to_exact_integer()
@@ -407,8 +407,8 @@ fn exact_division<R>(
     div: impl FnOnce(&Integer, &Integer) -> Result<R, NumericError>,
     map: impl FnOnce(bool, bool, R) -> EvalResult,
 ) -> EvalResult {
-    let ra = arg_to_real(a, FIRST_ARG_LABEL, NumericTypeName::INTEGER)?;
-    let rb = arg_to_real(b, super::SECOND_ARG_LABEL, NumericTypeName::INTEGER)?;
+    let ra = super::arg_to_real(a, FIRST_ARG_LABEL, NumericTypeName::INTEGER)?;
+    let rb = super::arg_to_real(b, super::SECOND_ARG_LABEL, NumericTypeName::INTEGER)?;
     let float_taint = ra.is_inexact() || rb.is_inexact();
     let negdiv = (ra.signum() < 0.0) ^ (rb.signum() < 0.0);
     let n = ra
@@ -457,22 +457,6 @@ fn into_remainder(float_taint: bool, _negdiv: bool, n: Integer) -> EvalResult {
     } else {
         Value::real(n)
     })
-}
-
-fn arg_to_real(
-    arg: &Value,
-    arg_name: impl Display,
-    expected_type: impl Display,
-) -> Result<&Real, Exception> {
-    let Value::Number(x) = arg else {
-        return Err(Condition::arg_error(arg_name, expected_type, arg).into());
-    };
-    let Number::Real(r) = x else {
-        return Err(
-            Condition::arg_type_error(arg_name, expected_type, x.as_typename(), arg).into(),
-        );
-    };
-    Ok(r)
 }
 
 fn seq_error(name: impl Display, expected_type: impl Display, arg: &Value) -> Condition {

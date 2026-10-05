@@ -1,9 +1,9 @@
 // (scheme inexact)
-use super::{first, invalid_target};
+use super::{FIRST_ARG_LABEL, SECOND_ARG_LABEL, first, invalid_target};
 use crate::{
     eval::{EvalResult, Frame},
-    number::Number,
-    value::{TypeName, Value},
+    number::{Number, NumericTypeName},
+    value::{Condition, TypeName, Value},
 };
 
 pub(super) fn load(env: &Frame) {
@@ -100,7 +100,17 @@ fn arc_cosine(args: &[Value], _env: &Frame) -> EvalResult {
 
 fn arc_tangent(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = first(args);
-    super::num_op(arg, Number::atan, super::num_to_valresult)
+    match args.get(1) {
+        None => super::num_op(arg, Number::atan, super::num_to_valresult),
+        Some(arg2) => {
+            let y = super::arg_to_real(arg, FIRST_ARG_LABEL, NumericTypeName::REAL)?;
+            let x = super::arg_to_real(arg2, SECOND_ARG_LABEL, NumericTypeName::REAL)?;
+            Number::complex(x.clone(), y.clone()).angle().map_or_else(
+                |err| Err(Condition::bi_value_error(err, arg, arg2).into()),
+                |r| Ok(Value::real(r)),
+            )
+        }
+    }
 }
 
 fn square_root(args: &[Value], _env: &Frame) -> EvalResult {

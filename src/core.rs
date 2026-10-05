@@ -74,7 +74,7 @@ mod time;
 use crate::{
     Exception,
     eval::{Arity, EvalResult, Frame, Intrinsic, IntrinsicFn},
-    number::{NumResult, Number},
+    number::{NumResult, Number, Real},
     value::{Condition, TypeName, Value},
 };
 use std::{fmt::Display, io};
@@ -164,6 +164,22 @@ fn fs_op<T>(
             )
         },
     )
+}
+
+fn arg_to_real(
+    arg: &Value,
+    arg_name: impl Display,
+    expected_type: impl Display,
+) -> Result<&Real, Exception> {
+    let Value::Number(x) = arg else {
+        return Err(Condition::arg_error(arg_name, expected_type, arg).into());
+    };
+    let Number::Real(r) = x else {
+        return Err(
+            Condition::arg_type_error(arg_name, expected_type, x.as_typename(), arg).into(),
+        );
+    };
+    Ok(r)
 }
 
 fn num_op<R>(
