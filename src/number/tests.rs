@@ -9253,6 +9253,216 @@ mod transcendental {
             assert_near!(im.to_float(), 0.7615941559557649);
         }
 
+        fn assert_signed_zero(actual: f64, negative: bool, label: &str) {
+            assert_eq!(actual, 0.0, "{label}");
+            assert_eq!(actual.is_sign_negative(), negative, "{label}: sign of zero");
+        }
+
+        // Past |y| ~ 710, cosh/sinh overflow even though the product with a
+        // small sin x / cos x may not. 1.0+710.0i is the last case that is
+        // finite in both components. Chez and Guile agree on all of these.
+        #[test]
+        fn sin_and_cos_just_below_overflow_are_finite() {
+            let z = Number::complex(1.0, 710.0);
+
+            let (re, im) = complex_parts!(z.sin());
+            assert_near!(re.to_float(), 9.399208879688907e307);
+            assert_near!(im.to_float(), 6.035162617272641e307);
+
+            let (re, im) = complex_parts!(z.cos());
+            assert_near!(re.to_float(), 6.035162617272641e307);
+            assert_near!(im.to_float(), -9.399208879688907e307);
+        }
+
+        // sin: re = sin x cosh y, im = cos x sinh y. Past the overflow point a
+        // component can still be finite when its trig factor is small enough
+        // (cos(pi/2) ~ 6e-17) or the scaled product still fits, and must stay
+        // finite. Chez does this; Guile uses the naive formula and overflows both
+        // components to infinity.
+        #[test]
+        fn sin_and_cos_overflow_does_not_spill_into_a_finite_component() {
+            let half_pi = std::f64::consts::FRAC_PI_2;
+            let inf = f64::INFINITY;
+            // (x, y, sin re, sin im, cos re, cos im); infinities are exact
+            let cases = [
+                (
+                    1.0,
+                    711.0,
+                    inf,
+                    1.6405272874328378e308,
+                    1.6405272874328378e308,
+                    -inf,
+                ),
+                (
+                    1.0,
+                    -711.0,
+                    inf,
+                    -1.6405272874328378e308,
+                    1.6405272874328378e308,
+                    inf,
+                ),
+                (
+                    half_pi,
+                    711.0,
+                    inf,
+                    1.8592059201380668e292,
+                    1.8592059201380668e292,
+                    -inf,
+                ),
+            ];
+            for (x, y, sin_re, sin_im, cos_re, cos_im) in cases {
+                let z = Number::complex(x, y);
+                let label = format!("{x}+{y}i");
+
+                let (re, im) = complex_parts!(z.sin());
+                for (actual, expected) in [(re, sin_re), (im, sin_im)] {
+                    let actual = actual.to_float();
+                    if expected.is_infinite() {
+                        assert_eq!(actual, expected, "sin {label}");
+                    } else {
+                        assert_near!(actual, expected);
+                    }
+                }
+
+                let (re, im) = complex_parts!(z.cos());
+                for (actual, expected) in [(re, cos_re), (im, cos_im)] {
+                    let actual = actual.to_float();
+                    if expected.is_infinite() {
+                        assert_eq!(actual, expected, "cos {label}");
+                    } else {
+                        assert_near!(actual, expected);
+                    }
+                }
+            }
+        }
+
+        // A zero component times an overflowed cosh/sinh must stay zero, not
+        // inf * 0.0 = NaN. Chez gives 0.0+inf i and +inf+0.0i; Guile yields
+        // NaN in the zero component.
+        #[test]
+        fn sin_and_cos_overflow_with_a_zero_real_part_is_not_nan() {
+            let z = Number::complex(0.0, 711.0);
+
+            let (re, im) = complex_parts!(z.sin());
+            assert_signed_zero(re.to_float(), false, "sin 0.0+711.0i re");
+            assert_eq!(im.to_float(), f64::INFINITY);
+
+            let (re, im) = complex_parts!(z.cos());
+            assert_eq!(re.to_float(), f64::INFINITY);
+            assert_signed_zero(im.to_float(), false, "cos 0.0+711.0i im");
+        }
+
+        // tan z = sin z / cos z is inf/inf = NaN once cosh/sinh overflow
+        // (|y| > ~710), but the true value tends to +/-i well before that. Chez returns 0.0 +/- 1.0i; Guile yields NaN for the
+        // imaginary part. 1.0+355.0i: Guile keeps the subnormal 8e-309 real
+        // part where Chez flushes to 0, which assert_near! tolerates.
+        #[test]
+        fn tan_with_a_large_imaginary_part_approaches_plus_or_minus_i() {
+            let cases = [
+                (1.0, 355.0, 0.0, 1.0),
+                (1.0, 1000.0, 0.0, 1.0),
+                (1.0, -1000.0, 0.0, -1.0),
+                (0.0, 1000.0, 0.0, 1.0),
+                (1.0, 20.0, 7.726035185161155e-18, 1.0),
+            ];
+            for (x, y, expected_re, expected_im) in cases {
+                let r = Number::complex(x, y).tan();
+
+                let (re, im) = complex_parts!(r);
+                assert_near!(re.to_float(), expected_re);
+                assert_eq!(im.to_float(), expected_im, "tan {x}+{y}i");
+            }
+        }
+
+        #[test]
+        fn tan_with_a_large_imaginary_part_keeps_the_sign_of_a_vanishing_real_part() {
+            // The real part underflows to zero but should keep the sign of
+            // sin 2x. Chez: (tan -1.0+1000.0i) => -0.0+1.0i.
+            let r = Number::complex(-1.0, 1000.0).tan();
+
+            let (re, im) = complex_parts!(r);
+            assert_signed_zero(re.to_float(), true, "tan -1.0+1000.0i re");
+            assert_eq!(im.to_float(), 1.0);
+        }
+
+        // On the real axis the sign of a zero imaginary part follows the sign
+        // of y for sin and tan, and is flipped for cos (im = -sin x sinh y).
+        #[test]
+        fn signed_zero_imaginary_part_on_the_real_axis() {
+            for (y, zero_is_negative) in [(0.0, false), (-0.0, true)] {
+                let z = Number::complex(1.0, y);
+
+                let (re, im) = complex_parts!(z.sin());
+                assert_near!(re.to_float(), 0.8414709848078965);
+                assert_signed_zero(im.to_float(), zero_is_negative, "sin 1.0+yi im");
+
+                let (re, im) = complex_parts!(z.cos());
+                assert_near!(re.to_float(), 0.5403023058681398);
+                assert_signed_zero(im.to_float(), !zero_is_negative, "cos 1.0+yi im");
+
+                let (re, im) = complex_parts!(z.tan());
+                assert_near!(re.to_float(), 1.557407724654902);
+                assert_signed_zero(im.to_float(), zero_is_negative, "tan 1.0+yi im");
+            }
+        }
+
+        // Complements the positive-zero cos test above: a -0.0 real part
+        // flips the sign of the zero in sin and tan's real part, and of cos's
+        // imaginary part.
+        #[test]
+        fn signed_zero_real_part_on_the_imaginary_axis() {
+            let z = Number::complex(-0.0, 1.0);
+
+            let (re, im) = complex_parts!(z.sin());
+            assert_signed_zero(re.to_float(), true, "sin -0.0+1.0i re");
+            assert_near!(im.to_float(), 1.1752011936438014);
+
+            let (re, im) = complex_parts!(z.cos());
+            assert_near!(re.to_float(), 1.5430806348152437);
+            assert_signed_zero(im.to_float(), false, "cos -0.0+1.0i im");
+
+            let (re, im) = complex_parts!(z.tan());
+            assert_signed_zero(re.to_float(), true, "tan -0.0+1.0i re");
+            assert_near!(im.to_float(), 0.7615941559557649);
+        }
+
+        // Chez and Guile agree on sin/cos. For tan, Chez returns +/-i (the
+        // limit); Guile yields NaN in the imaginary part. Zara follows Chez.
+        #[test]
+        fn infinite_imaginary_part() {
+            let inf = f64::INFINITY;
+            let z = Number::complex(1.0, inf);
+
+            let (re, im) = complex_parts!(z.sin());
+            assert_eq!(re.to_float(), inf);
+            assert_eq!(im.to_float(), inf);
+
+            let (re, im) = complex_parts!(z.cos());
+            assert_eq!(re.to_float(), inf);
+            assert_eq!(im.to_float(), -inf);
+
+            for (y, expected_im) in [(inf, 1.0), (-inf, -1.0)] {
+                let r = Number::complex(1.0, y).tan();
+
+                let (re, im) = complex_parts!(r);
+                assert_signed_zero(re.to_float(), false, "tan 1.0+inf i re");
+                assert_eq!(im.to_float(), expected_im);
+            }
+        }
+
+        #[test]
+        fn infinite_real_part_or_nan_is_nan() {
+            for (x, y) in [(f64::INFINITY, 0.0), (f64::NAN, 1.0)] {
+                let z = Number::complex(x, y);
+
+                for (name, r) in [("sin", z.sin()), ("cos", z.cos()), ("tan", z.tan())] {
+                    let (re, im) = complex_parts!(r);
+                    assert!(re.to_float().is_nan(), "{name} {x}+{y}i re");
+                    assert!(im.to_float().is_nan(), "{name} {x}+{y}i im");
+                }
+            }
+        }
+
         #[test]
         fn asin_of_pure_imaginary() {
             let r = Number::imaginary(1).asin();
