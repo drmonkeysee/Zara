@@ -56,8 +56,7 @@ fn logarithm(args: &[Value], _env: &Frame) -> EvalResult {
                         super::try_num_to_val(
                             res,
                             if let Value::Number(Number::Real(r)) = first
-                                && !r.is_inexact()
-                                && r.is_zero()
+                                && r.is_exact_zero()
                             {
                                 first
                             } else {

@@ -953,6 +953,14 @@ impl Real {
         }
     }
 
+    pub(crate) fn is_exact_zero(&self) -> bool {
+        if let Self::Integer(n) = self {
+            n.is_zero()
+        } else {
+            false
+        }
+    }
+
     pub(crate) fn strict_lt(&self, other: &Self) -> bool {
         self.strict_ordering(other, &Self::lt, &f64::lt)
     }
@@ -1077,14 +1085,6 @@ impl Real {
             (Self::Integer(a), Self::Integer(b)) => a == b,
             (Self::Rational(a), Self::Rational(b)) => a == b,
             _ => false,
-        }
-    }
-
-    fn is_exact_zero(&self) -> bool {
-        if let Self::Integer(n) = self {
-            n.is_zero()
-        } else {
-            false
         }
     }
 
