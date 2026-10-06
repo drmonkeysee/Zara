@@ -39,13 +39,13 @@ try_predicate!(is_nan, Value::Number, TypeName::NUMBER, |n: &Number| n
 
 fn exponential(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = first(args);
-    super::num_op(arg, Number::exp, super::num_to_valresult)
+    super::num_op(arg, Number::exp, super::num_to_val)
 }
 
 fn logarithm(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = first(args);
     match args.get(1) {
-        None => super::num_op(arg, Number::ln, super::numresult_to_valresult),
+        None => super::num_op(arg, Number::ln, super::try_num_to_val),
         Some(base) => {
             if let Value::Number(x) = base {
                 super::num_op(
@@ -53,7 +53,7 @@ fn logarithm(args: &[Value], _env: &Frame) -> EvalResult {
                     |y| y.log(x),
                     |res, first| {
                         // pick which argument threw the zero error
-                        super::numresult_to_valresult(
+                        super::try_num_to_val(
                             res,
                             if let Value::Number(Number::Real(r)) = first
                                 && !r.is_inexact()
@@ -75,33 +75,33 @@ fn logarithm(args: &[Value], _env: &Frame) -> EvalResult {
 
 fn sine(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = first(args);
-    super::num_op(arg, Number::sin, super::num_to_valresult)
+    super::num_op(arg, Number::sin, super::num_to_val)
 }
 
 fn cosine(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = first(args);
-    super::num_op(arg, Number::cos, super::num_to_valresult)
+    super::num_op(arg, Number::cos, super::num_to_val)
 }
 
 fn tangent(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = first(args);
-    super::num_op(arg, Number::tan, super::num_to_valresult)
+    super::num_op(arg, Number::tan, super::num_to_val)
 }
 
 fn arc_sine(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = first(args);
-    super::num_op(arg, Number::asin, super::num_to_valresult)
+    super::num_op(arg, Number::asin, super::num_to_val)
 }
 
 fn arc_cosine(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = first(args);
-    super::num_op(arg, Number::acos, super::num_to_valresult)
+    super::num_op(arg, Number::acos, super::num_to_val)
 }
 
 fn arc_tangent(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = first(args);
     match args.get(1) {
-        None => super::num_op(arg, Number::atan, super::num_to_valresult),
+        None => super::num_op(arg, Number::atan, super::num_to_val),
         Some(arg2) => {
             let y = super::arg_to_real(arg, FIRST_ARG_LABEL, NumericTypeName::REAL)?;
             let x = super::arg_to_real(arg2, SECOND_ARG_LABEL, NumericTypeName::REAL)?;

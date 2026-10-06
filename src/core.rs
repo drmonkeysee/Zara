@@ -194,13 +194,13 @@ fn num_op<R>(
     }
 }
 
-fn num_to_valresult(x: Number, _arg: &Value) -> EvalResult {
+fn num_to_val(x: Number, _arg: &Value) -> EvalResult {
     Ok(Value::Number(x))
 }
 
-fn numresult_to_valresult(res: NumResult, arg: &Value) -> EvalResult {
+fn try_num_to_val(res: NumResult, arg: &Value) -> EvalResult {
     res.map_or_else(
         |err| Err(Condition::value_error(err, arg).into()),
-        |x| num_to_valresult(x, arg),
+        |x| num_to_val(x, arg),
     )
 }

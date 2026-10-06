@@ -274,12 +274,12 @@ fn square(args: &[Value], env: &Frame) -> EvalResult {
 
 fn into_inexact(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = first(args);
-    super::num_op(arg, Number::to_inexact, super::num_to_valresult)
+    super::num_op(arg, Number::to_inexact, super::num_to_val)
 }
 
 fn into_exact(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = first(args);
-    super::num_op(arg, Number::try_to_exact, super::numresult_to_valresult)
+    super::num_op(arg, Number::try_to_exact, super::try_num_to_val)
 }
 
 //
@@ -359,7 +359,7 @@ fn inverse_arithmetic(
         return Err(invalid_target(TypeName::NUMBER, arg));
     };
     if args.len() == 1 {
-        super::num_op(arg, inverse, super::numresult_to_valresult)
+        super::num_op(arg, inverse, super::try_num_to_val)
     } else {
         args.iter()
             .skip(1)

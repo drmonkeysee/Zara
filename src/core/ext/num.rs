@@ -29,9 +29,5 @@ pub(super) fn load(env: &Frame) {
 
 fn conjugate(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = super::first(args);
-    super::num_op(
-        arg,
-        |x| x.clone().complex_conjugate(),
-        super::num_to_valresult,
-    )
+    super::num_op(arg, |x| x.clone().complex_conjugate(), super::num_to_val)
 }

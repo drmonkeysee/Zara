@@ -4,7 +4,7 @@ mod num;
 
 use super::{
     SECOND_ARG_LABEL, THIRD_ARG_LABEL, bind_intrinsic, first, fs_cmd, fs_op, invalid_target,
-    num_op, num_to_valresult, second,
+    num_op, num_to_val, second,
 };
 use crate::{
     Exception,
