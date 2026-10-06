@@ -560,8 +560,12 @@ impl Complex {
         Real::one().into_complex() / self
     }
 
+    fn get_real(&self) -> &Real {
+        &self.0.0
+    }
+
     fn get_parts(&self) -> (&Real, &Real) {
-        (&self.0.0, &self.0.1)
+        (self.get_real(), &self.0.1)
     }
 
     /*
@@ -575,10 +579,16 @@ impl Complex {
     fn sqrt(&self) -> Number {
         // Square root of zero always sets x to + and keeps sign of y; if we calculated
         // this with the below algorithm instead, the zero signs go wonky due to IEEE rules.
-        // Complex is_zero implies float values (exact zeros would have reduced to Integer),
-        // so we can safely hardcode the answer without losing exactness.
+        // Complex is_zero implies non-exact imaginary, so only check exactness of the real part.
         if self.is_zero() {
-            return Number::complex(0.0, 0.0f64.copysign(self.0.1.signum()));
+            return Number::complex(
+                if self.get_real().is_exact_zero() {
+                    Real::zero()
+                } else {
+                    0.0.into()
+                },
+                0.0f64.copysign(self.0.1.signum()),
+            );
         }
         let (x, y) = self.get_parts();
         // According to C99-Annex-G inf y always sets x to +inf and keeps y

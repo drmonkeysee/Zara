@@ -6867,7 +6867,7 @@ mod div {
             let quotient = ok_or_fail!(Number::real(5) / Number::complex(0, 0.0));
 
             let c = extract_or_fail!(quotient, Number::Complex);
-            let (re, im) = (c.to_real(), c.to_imag());
+            let (re, im) = c.get_parts();
             assert!(re.is_nan());
             assert!(im.is_nan());
         }
