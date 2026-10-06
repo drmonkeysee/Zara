@@ -115,9 +115,5 @@ fn arc_tangent(args: &[Value], _env: &Frame) -> EvalResult {
 
 fn square_root(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = first(args);
-    if let Value::Number(x) = arg {
-        Ok(Value::Number(x.sqrt()))
-    } else {
-        Err(invalid_target(TypeName::NUMBER, arg))
-    }
+    super::num_op(arg, Number::sqrt, super::num_to_val)
 }

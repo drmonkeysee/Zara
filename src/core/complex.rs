@@ -3,7 +3,7 @@ use super::FIRST_ARG_LABEL;
 use crate::{
     eval::{EvalResult, Frame},
     number::{Number, NumericTypeName, Real},
-    value::{Condition, TypeName, Value},
+    value::{Condition, Value},
 };
 
 pub(super) fn load(env: &Frame) {
@@ -37,14 +37,12 @@ fn get_mag(args: &[Value], _env: &Frame) -> EvalResult {
 
 fn get_angle(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = super::first(args);
-    if let Value::Number(x) = arg {
-        x.angle().map_or_else(
-            |err| Err(Condition::value_error(err, arg).into()),
+    super::num_op(arg, Number::angle, |res, a| {
+        res.map_or_else(
+            |err| Err(Condition::value_error(err, a).into()),
             |r| Ok(Value::real(r)),
         )
-    } else {
-        Err(super::invalid_target(TypeName::NUMBER, arg))
-    }
+    })
 }
 
 fn make_complex(x: &Value, y: &Value, ctor: impl FnOnce(Real, Real) -> Number) -> EvalResult {
@@ -76,11 +74,7 @@ fn make_complex(x: &Value, y: &Value, ctor: impl FnOnce(Real, Real) -> Number) -
 }
 
 fn get_complex_part(arg: &Value, get: impl FnOnce(&Number) -> Real) -> EvalResult {
-    if let Value::Number(x) = arg {
-        Ok(Value::real(get(x)))
-    } else {
-        Err(super::invalid_target(TypeName::NUMBER, arg))
-    }
+    super::num_op(arg, get, |r, _| Ok(Value::real(r)))
 }
 
 #[cfg(test)]
