@@ -9167,6 +9167,7 @@ mod transcendental {
             assert!(z.tan().is_inexact());
             assert!(z.asin().is_inexact());
             assert!(z.acos().is_inexact());
+            assert!(z.atan().is_inexact());
         }
 
         #[test]
@@ -9719,6 +9720,217 @@ mod transcendental {
             }
         }
 
+        // Compare relative to the expected value; assert_near!'s absolute
+        // floor would hide errors in very small or very large components.
+        fn assert_close_rel(actual: f64, expected: f64, label: &str) {
+            assert!(
+                (actual - expected).abs() <= expected.abs() * 1e-12,
+                "{label}: expected {expected}, got {actual}"
+            );
+        }
+
+        #[test]
+        fn asin_of_a_general_complex_value() {
+            let cases = [
+                (1, 2, 0.4270785863924761, 1.5285709194809982),
+                (-1, -2, -0.4270785863924761, -1.5285709194809982),
+            ];
+            for (x, y, expected_re, expected_im) in cases {
+                let r = Number::complex(x, y).asin();
+
+                let (re, im) = complex_parts!(r);
+                assert_near!(re.to_float(), expected_re);
+                assert_near!(im.to_float(), expected_im);
+            }
+        }
+
+        #[test]
+        fn acos_of_a_general_complex_value() {
+            let cases = [
+                (1, 2, 1.1437177404024204, -1.5285709194809982),
+                (-1, -2, 1.9978749131873728, 1.5285709194809982),
+            ];
+            for (x, y, expected_re, expected_im) in cases {
+                let r = Number::complex(x, y).acos();
+
+                let (re, im) = complex_parts!(r);
+                assert_near!(re.to_float(), expected_re);
+                assert_near!(im.to_float(), expected_im);
+            }
+        }
+
+        #[test]
+        fn atan_of_a_general_complex_value() {
+            let cases = [
+                (1, 2, 1.3389725222944935, 0.40235947810852507),
+                (-1, -2, -1.3389725222944935, -0.40235947810852507),
+            ];
+            for (x, y, expected_re, expected_im) in cases {
+                let r = Number::complex(x, y).atan();
+
+                let (re, im) = complex_parts!(r);
+                assert_near!(re.to_float(), expected_re);
+                assert_near!(im.to_float(), expected_im);
+            }
+        }
+
+        #[test]
+        fn acos_of_negative_unit_pure_imaginary() {
+            let r = Number::imaginary(-1).acos();
+
+            let (re, im) = complex_parts!(r);
+            assert_near!(re.to_float(), 1.5707963267948966);
+            assert_near!(im.to_float(), 0.881373587019543);
+        }
+
+        // Inside the cut an inexact zero real part is odd-function input, so
+        // its sign passes through to the real part of the result. Guile drops
+        // the sign for asin; Zara follows Chez.
+        #[test]
+        fn asin_and_atan_keep_the_sign_of_an_inexact_zero_real_part() {
+            for (x, negative) in [(0.0, false), (-0.0, true)] {
+                let z = Number::complex(x, 0.5);
+
+                let (re, im) = complex_parts!(z.asin());
+                assert_signed_zero(re.to_float(), negative, "asin re");
+                assert_near!(im.to_float(), 0.48121182505960347);
+
+                let (re, im) = complex_parts!(z.atan());
+                assert_signed_zero(re.to_float(), negative, "atan re");
+                assert_near!(im.to_float(), 0.5493061443340549);
+            }
+        }
+
+        // Inside the domain on the real axis, the sign of a zero imaginary
+        // part follows y for asin and atan and is flipped for acos. Chez and
+        // C99 agree; Guile adds a spurious ~2.8e-17i and loses the signs.
+        #[test]
+        fn signed_zero_imaginary_part_on_the_real_axis_inside_the_domain() {
+            for (y, zero_is_negative) in [(0.0, false), (-0.0, true)] {
+                let z = Number::complex(0.5, y);
+                let (re, im) = complex_parts!(z.asin());
+                assert_near!(re.to_float(), 0.5235987755982989);
+                assert_signed_zero(im.to_float(), zero_is_negative, "asin 0.5+yi im");
+
+                let (re, im) = complex_parts!(z.acos());
+                assert_near!(re.to_float(), 1.0471975511965979);
+                assert_signed_zero(im.to_float(), !zero_is_negative, "acos 0.5+yi im");
+
+                let z = Number::complex(1.0, y);
+                let (re, im) = complex_parts!(z.atan());
+                assert_near!(re.to_float(), 0.7853981633974483);
+                assert_signed_zero(im.to_float(), zero_is_negative, "atan 1.0+yi im");
+
+                let (re, im) = complex_parts!(z.acos());
+                assert_signed_zero(re.to_float(), false, "acos 1.0+yi re");
+                assert_signed_zero(im.to_float(), !zero_is_negative, "acos 1.0+yi im");
+            }
+        }
+
+        // An exact zero real part with an inexact zero imaginary part: asin
+        // and atan are odd in x, so the real part stays an exact zero and the
+        // imaginary part keeps its zero's sign. acos(0+yi) = pi/2 - asin.
+        #[test]
+        fn exact_zero_real_part_with_inexact_zero_imaginary_part_for_inverse_functions() {
+            for (y, expected, negative) in [(0.0, "+0.0i", false), (-0.0, "-0.0i", true)] {
+                let z = Number::complex(0, y);
+
+                let asin = z.asin();
+                assert_eq!(asin.to_string(), expected, "asin 0+{y}i");
+                assert!(asin.to_real().is_exact_zero(), "asin 0+{y}i re");
+
+                let atan = z.atan();
+                assert_eq!(atan.to_string(), expected, "atan 0+{y}i");
+                assert!(atan.to_real().is_exact_zero(), "atan 0+{y}i re");
+
+                let (re, im) = complex_parts!(z.acos());
+                assert_near!(re.to_float(), 1.5707963267948966);
+                assert_signed_zero(im.to_float(), !negative, "acos 0+yi im");
+            }
+        }
+
+        // A naive sqrt(1 - z^2) or x^2 + y^2 overflows here. Chez and C99
+        // agree; Guile returns NaN (and 0.0 for the atan imaginary part).
+        #[test]
+        fn large_magnitude_arguments_do_not_overflow() {
+            let z = Number::complex(1e300, 1e300);
+
+            let (re, im) = complex_parts!(z.asin());
+            assert_near!(re.to_float(), 0.7853981633974483);
+            assert_close_rel(im.to_float(), 691.8152486690535, "asin im");
+
+            let (re, im) = complex_parts!(z.acos());
+            assert_near!(re.to_float(), 0.7853981633974483);
+            assert_close_rel(im.to_float(), -691.8152486690535, "acos im");
+
+            // atan z -> pi/2 + i Im(1/z)-ish; the imaginary part is ~5e-301
+            let (re, im) = complex_parts!(z.atan());
+            assert_near!(re.to_float(), 1.5707963267948966);
+            assert_close_rel(im.to_float(), 5e-301, "atan im");
+        }
+
+        // asin z ~ atan z ~ z for small z. The naive (1/2i) ln((1+iz)/(1-iz))
+        // cancels catastrophically here: Chez gives 1.0000000825e-10 for the
+        // imaginary part of atan(1e-10+1e-10i) (true value 1e-10) and 0.0
+        // for atan(0+1e-20i); Guile is similarly off.
+        #[test]
+        fn small_arguments_keep_relative_precision() {
+            let z = Number::complex(1e-10, 1e-10);
+            for (name, r) in [("asin", z.asin()), ("atan", z.atan())] {
+                let (re, im) = complex_parts!(r);
+                assert_close_rel(re.to_float(), 1e-10, &format!("{name} re"));
+                assert_close_rel(im.to_float(), 1e-10, &format!("{name} im"));
+            }
+
+            let z = Number::complex(0.0, 1e-20);
+            for (name, r) in [("asin", z.asin()), ("atan", z.atan())] {
+                let (_, im) = complex_parts!(r);
+                assert_close_rel(im.to_float(), 1e-20, &format!("{name} 0+1e-20i im"));
+            }
+        }
+
+        // Chez and C99 agree on all of these except asin(inf+1i), where Chez
+        // gives +nan.0+inf.0i. Zara follows C99 (pi/2 + inf i), which is
+        // consistent with acos(inf+1i) = 0 - inf i via acos = pi/2 - asin.
+        #[test]
+        fn infinite_parts() {
+            let inf = f64::INFINITY;
+            let half_pi = std::f64::consts::FRAC_PI_2;
+
+            for z in [Number::complex(inf, 1.0), Number::complex(1.0, inf)] {
+                let (re, im) = complex_parts!(z.atan());
+                assert_near!(re.to_float(), half_pi);
+                assert_signed_zero(im.to_float(), false, "atan inf im");
+            }
+
+            let (re, im) = complex_parts!(Number::complex(inf, 1.0).asin());
+            assert_near!(re.to_float(), half_pi);
+            assert_eq!(im.to_float(), inf);
+
+            let (re, im) = complex_parts!(Number::complex(1.0, inf).asin());
+            assert_signed_zero(re.to_float(), false, "asin 1.0+inf i re");
+            assert_eq!(im.to_float(), inf);
+
+            let (re, im) = complex_parts!(Number::complex(inf, 1.0).acos());
+            assert_signed_zero(re.to_float(), false, "acos inf+1.0i re");
+            assert_eq!(im.to_float(), -inf);
+
+            let (re, im) = complex_parts!(Number::complex(1.0, inf).acos());
+            assert_near!(re.to_float(), half_pi);
+            assert_eq!(im.to_float(), -inf);
+        }
+
+        #[test]
+        fn nan_part_is_nan() {
+            let z = Number::complex(f64::NAN, 1.0);
+
+            for (name, r) in [("asin", z.asin()), ("acos", z.acos()), ("atan", z.atan())] {
+                let (re, im) = complex_parts!(r);
+                assert!(re.to_float().is_nan(), "{name} nan+1.0i re");
+                assert!(im.to_float().is_nan(), "{name} nan+1.0i im");
+            }
+        }
+
         #[test]
         fn exp_of_inexact_zero_complex_stays_complex() {
             // (exp 0.0+0.0i): the inexact zero imaginary part does not
@@ -9938,7 +10150,12 @@ mod transcendental {
 
         #[test]
         fn acos_is_half_pi_minus_asin() {
-            let cases = [Number::real(0.5), Number::real(2), Number::real(-2)];
+            let cases = [
+                Number::real(0.5),
+                Number::real(2),
+                Number::real(-2),
+                Number::complex(1, 2),
+            ];
             for x in cases {
                 let lhs = x.acos();
                 let rhs = Number::real(std::f64::consts::FRAC_PI_2) - x.asin();
@@ -9955,6 +10172,52 @@ mod transcendental {
                 let r = Number::real(x).sin().asin();
 
                 assert_near!(r.to_real().to_float(), x);
+            }
+        }
+
+        #[test]
+        fn inverse_functions_invert_their_forward_functions_on_complex_values() {
+            let cases = [
+                Number::complex(1, 2),
+                Number::complex(0.5, -3),
+                Number::complex(-2, 0.5),
+            ];
+            for z in cases {
+                for (name, r) in [
+                    ("sin(asin z)", z.asin().sin()),
+                    ("cos(acos z)", z.acos().cos()),
+                    ("tan(atan z)", z.atan().tan()),
+                ] {
+                    assert_near!(r.to_real().to_float(), z.to_real().to_float());
+                    assert_near!(r.to_imag().to_float(), z.to_imag().to_float());
+                    assert!(r.is_inexact(), "{name} of {z}");
+                }
+            }
+        }
+
+        // Off the branch cuts asin and atan are odd, and all three commute
+        // with conjugation: f(conj z) = conj f(z).
+        #[test]
+        fn complex_inverse_functions_are_odd_and_conjugate_symmetric() {
+            let z = Number::complex(1, 2);
+            let neg = Number::complex(-1, -2);
+            let conj = Number::complex(1, -2);
+
+            for (name, f) in [
+                ("asin", Number::asin as fn(&Number) -> Number),
+                ("acos", Number::acos),
+                ("atan", Number::atan),
+            ] {
+                let (re, im) = complex_parts!(f(&z));
+                let (conj_re, conj_im) = complex_parts!(f(&conj));
+                assert_near!(conj_re.to_float(), re.to_float());
+                assert_near!(conj_im.to_float(), -im.to_float());
+
+                if name != "acos" {
+                    let (neg_re, neg_im) = complex_parts!(f(&neg));
+                    assert_near!(neg_re.to_float(), -re.to_float());
+                    assert_near!(neg_im.to_float(), -im.to_float());
+                }
             }
         }
 
