@@ -9217,6 +9217,29 @@ mod transcendental {
             }
         }
 
+        // Exact Gaussian rationals on the unit circle, such as 3/5+4/5i, have
+        // an exact magnitude of 1, so the real part of the log is an exact 0.
+        // Rounding x and y to f64 first would give 0.6^2 + 0.8^2 - 1 ~ 1e-16
+        // and a spurious real part of ~5e-17, so exact inputs need
+        // x^2 + y^2 - 1 evaluated in exact arithmetic.
+        #[test]
+        fn log_of_exact_rational_on_the_unit_circle_has_an_exact_zero_real_part() {
+            let cases = [
+                ((3, 5), (4, 5), 0.9272952180016122),
+                ((5, 13), (12, 13), 1.176005207095135),
+                ((-3, 5), (-4, 5), 0.9272952180016122 - std::f64::consts::PI),
+            ];
+            for ((xn, xd), (yn, yd), expected_im) in cases {
+                let x = ok_or_fail!(Real::reduce(xn, xd));
+                let y = ok_or_fail!(Real::reduce(yn, yd));
+                let r = ok_or_fail!(Number::complex(x, y).ln());
+
+                let (re, im) = complex_parts!(r);
+                assert!(re.is_exact_zero(), "ln {xn}/{xd}+{yn}/{yd}i re: {re}");
+                assert_near!(im.to_float(), expected_im);
+            }
+        }
+
         #[test]
         fn log_of_pure_imaginary() {
             let cases = [
