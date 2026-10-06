@@ -2491,6 +2491,7 @@ fn calculate_ln_real((x, y): (&Real, &Real)) -> Option<Real> {
         // If x and y are exact keep everything exact until we need to take ln_p;
         // calculate x²+y²-1 directly
         let t = (x * x) + (y * y) - Real::one();
+        // exact zero magnitude -> exact zero real part
         if t.is_exact_zero() {
             return Some(t);
         } else {
