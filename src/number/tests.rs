@@ -9990,6 +9990,42 @@ mod transcendental {
             assert_signed_zero(im.to_float(), true, "exp 1000.0-0.0i im");
         }
 
+        // Exact parts must take the same overflow path as the float case
+        // above: (710, 1) is (710.0, 1.0) once e^x is inexact.
+        #[test]
+        fn exp_overflow_with_exact_parts_matches_the_inexact_case() {
+            let r = Number::complex(710, 1).exp();
+
+            assert!(r.is_inexact());
+            let (re, im) = complex_parts!(r);
+            assert_near!(re.to_float(), 1.2070325234545225e308);
+            assert_eq!(im.to_float(), f64::INFINITY, "exp(710+1i)");
+        }
+
+        // An exact zero imaginary part collapses at construction, so
+        // (exp 1000+0i) is just (exp 1000): a real +inf.0, not +inf.0+0.0i
+        // and not NaN.
+        #[test]
+        fn exp_of_large_exact_real_with_exact_zero_imaginary_part_is_real_infinity() {
+            let r = Number::complex(1000, 0).exp();
+
+            assert_matches!(r, Number::Real(Real::Float(_)));
+            assert_eq!(r.to_string(), "+inf.0");
+        }
+
+        // e^0 is an exact 1, but scaling it by the inexact cos/sin of an
+        // inexact imaginary part makes both components inexact.
+        #[test]
+        fn exp_of_exact_zero_real_part_with_inexact_imaginary_part() {
+            let r = Number::complex(0, 1.0).exp();
+
+            let (re, im) = complex_parts!(r);
+            assert!(re.is_inexact(), "exp 0+1.0i re: {re}");
+            assert!(im.is_inexact(), "exp 0+1.0i im: {im}");
+            assert_near!(re.to_float(), 0.5403023058681398);
+            assert_near!(im.to_float(), 0.8414709848078965);
+        }
+
         #[test]
         fn exp_of_infinite_real_part() {
             let r = Number::complex(f64::INFINITY, 1.0).exp();
