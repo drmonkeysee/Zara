@@ -690,7 +690,7 @@ impl Complex {
     }
 
     fn real_for_ln(&self) -> RealResult {
-        Ok(match calculate_ln_real(self.get_parts()) {
+        Ok(match near_unit_ln_real(self.get_parts()) {
             // magnitude is always positive so ln(mag z) is always real
             None => (self.magnitude().ln()?).into_real(),
             Some(r) => r,
@@ -2483,7 +2483,8 @@ fn scaled_re(r: &Real, x: &Real, op: impl FnOnce(&Real, &Real) -> Real) -> Real 
     t
 }
 
-fn calculate_ln_real((x, y): (&Real, &Real)) -> Option<Real> {
+// calculate the real part of ln if z is near the unit circle, otherwise None
+fn near_unit_ln_real((x, y): (&Real, &Real)) -> Option<Real> {
     // if x is zero the naive calculation will work regardless of y
     if x.is_zero() {
         return None;
