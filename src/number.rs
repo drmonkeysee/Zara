@@ -657,12 +657,7 @@ impl Complex {
      * This is the same technique used in FreeBSD's clog implementation.
      */
     fn ln(&self) -> NumResult {
-        let re = match calculate_ln_real(self.get_parts()) {
-            // magnitude is always positive so ln(mag z) is always real
-            None => (self.magnitude().ln()?).into_real(),
-            Some(r) => r,
-        };
-        Ok(Number::complex(re, self.angle()))
+        Ok(Number::complex(self.real_for_ln()?, self.angle()))
     }
 
     // sin z = sin (x+yi) = (sin x)(cosh y) + i(cos x)(sinh y)
@@ -692,6 +687,14 @@ impl Complex {
 
     fn atan(&self) -> Number {
         todo!();
+    }
+
+    fn real_for_ln(&self) -> RealResult {
+        Ok(match calculate_ln_real(self.get_parts()) {
+            // magnitude is always positive so ln(mag z) is always real
+            None => (self.magnitude().ln()?).into_real(),
+            Some(r) => r,
+        })
     }
 
     fn into_real(self) -> Real {
