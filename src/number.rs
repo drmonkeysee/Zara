@@ -321,7 +321,7 @@ impl Number {
 
     pub(crate) fn ln(&self) -> NumResult {
         match self {
-            Self::Complex(z) => Ok(z.ln()),
+            Self::Complex(z) => z.ln(),
             Self::Real(r) => r.ln(),
         }
     }
@@ -389,6 +389,13 @@ impl Number {
     }
     pub(crate) fn div(self, rhs: &Self) -> NumResult {
         self / rhs
+    }
+
+    fn into_real(self) -> Real {
+        match self {
+            Self::Complex(z) => z.into_real(),
+            Self::Real(r) => r,
+        }
     }
 }
 
@@ -624,6 +631,7 @@ impl Complex {
         let (x, y) = self.get_parts();
         // arbitrary cut, exp overflow hits around 709.78
         if x > &Real::from(700.0) {
+            // split in half: e^x = e^(x/2 + x/2) = e^(x/2) * e^(x/2)
             let hx = assume_safe_div!(x / Real::two());
             let exp_hx = hx.exp();
             Number::complex((&exp_hx * y.cos()) * &exp_hx, (&exp_hx * y.sin()) * exp_hx)
@@ -633,9 +641,13 @@ impl Complex {
         }
     }
 
-    // ln z = ln r + iθ = ln (mag z) + i(angle z)
-    fn ln(&self) -> Number {
-        todo!();
+    // z = re^(iθ) => ln z = ln r + iθ = ln(mag z) + i(angle z)
+    fn ln(&self) -> NumResult {
+        // magnitude is always positive so ln(mag z) is always real
+        Ok(Number::complex(
+            (self.magnitude().ln()?).into_real(),
+            self.angle(),
+        ))
     }
 
     // sin z = sin (x+yi) = (sin x)(cosh y) + i(cos x)(sinh y)
@@ -665,6 +677,10 @@ impl Complex {
 
     fn atan(&self) -> Number {
         todo!();
+    }
+
+    fn into_real(self) -> Real {
+        self.0.0
     }
 
     fn into_parts(self) -> (Real, Real) {
