@@ -613,7 +613,9 @@ impl Complex {
 
     // e^z = e^(x+yi) = e^x * e^yi = (e^x * cos y) + (ie^x * sin y)
     fn exp(&self) -> Number {
-        todo!();
+        let (x, y) = self.get_parts();
+        let expx = x.exp();
+        Number::complex(&expx * y.cos(), expx * y.sin())
     }
 
     // ln z = ln r + iθ = ln (mag z) + i(angle z)
