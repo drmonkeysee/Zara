@@ -2506,23 +2506,21 @@ fn dd_2sum_2product(x: f64, y: f64) -> Option<f64> {
     let p = x * x;
     let q = y * y;
     let s = p + q;
-    // near the unit circle, we need the double-double precision approach
-    if 0.5 <= s && s <= 2.0 {
-        // error of x*x and y*y
-        let e = x.mul_add(x, -p);
-        let f = y.mul_add(y, -q);
-        // how much of q made it into s after rounding errors
-        let bb = s - p;
-        // error from p + error from q => now p + q = s + t exactly
-        let t = (p - (s - bb)) + (q - bb);
-        // add in the small error factors and the -1,
-        // order matters here to avoid blowing up intermediate results
-        // => now we have x²+y²-1 with rounding errors handled
-        Some(t + e + f + (s - 1.0))
-    } else {
-        // otherwise fallback to naive calculation where rounding isn't a problem
-        None
+    // 0.5 <= s <= 2.0 is considered near the unit circle (r in about [0.71, 1.41])
+    if s < 0.5 || s > 2.0 {
+        return None;
     }
+    // error of x*x and y*y
+    let e = x.mul_add(x, -p);
+    let f = y.mul_add(y, -q);
+    // how much of q made it into s after rounding errors
+    let bb = s - p;
+    // error from p + error from q => now p + q = s + t exactly
+    let t = (p - (s - bb)) + (q - bb);
+    // add in the small error factors and the -1,
+    // order matters here to avoid blowing up intermediate results
+    // => now we have x²+y²-1 with rounding errors handled
+    Some(t + e + f + (s - 1.0))
 }
 
 fn cpx_product(a: &Real, b: &Real, c: &Real, d: &Real) -> Number {
