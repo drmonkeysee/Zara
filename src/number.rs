@@ -647,58 +647,22 @@ impl Complex {
      *
      * However when z is near the unit circle (on either side) (i.e. r <= 1) you get
      * cancellation of ln r that throws the answer off. Start with the formulation:
-     * ln|z| = ln(r) = ½·ln(r²) = ½·ln(1 + (x²+y²−1)) = ½·ln_1p(x²+y²−1), which means
-     * we need to calculate x²+y²-1 accurately when its natural log will be very small.
-     * The solution is to use an alternate calculation called double-double evaluation
-     * via TwoSum/TwoProduct (from Knuth/Dekker) which factors out the rounding errors
-     * and combines them in the final result. This is the same technique used in
-     * FreeBSD's clog implementation.
+     *
+     * ln|z| = ln(r) = ½·ln(r²) = ½·ln(1 + (x²+y²−1)) = ½·ln_1p(x²+y²−1)
+     *
+     * which means we need to calculate x²+y²-1 accurately when its natural log will
+     * be very small. The solution is to use an alternate calculation called
+     * double-double evaluation via TwoSum/TwoProduct (from Knuth/Dekker) which
+     * factors out the rounding errors and combines them in the final result.
+     * This is the same technique used in FreeBSD's clog implementation.
      */
     fn ln(&self) -> NumResult {
-        let (x, y) = self.get_parts();
-        // if x is zero the naive calculation will work regardless of y
-        if !x.is_zero() {
-            let total = if x.is_inexact() || y.is_inexact() {
-                let (x, y) = (x.to_float(), y.to_float());
-                let p = x * x;
-                let q = y * y;
-                let s = p + q;
-                // near the unit circle, we need the double-double precision approach
-                if 0.5 <= s && s <= 2.0 {
-                    // error of x*x and y*y
-                    let e = x.mul_add(x, -p);
-                    let f = y.mul_add(y, -q);
-                    // how much of q made it into s after rounding errors
-                    let bb = s - p;
-                    // error from p + error from q => now p + q = s + t exactly
-                    let t = (p - (s - bb)) + (q - bb);
-                    // add in the small error factors and the -1,
-                    // order matters here to avoid blowing up intermediate results
-                    // => now we have x²+y²-1 with rounding errors handled
-                    Some(t + e + f + (s - 1.0))
-                } else {
-                    None
-                }
-            } else {
-                // If x and y are exact keep everything exact until we need to take ln_p;
-                // calculate x²+y²-1 directly
-                let t = (x * x) + (y * y) - Real::one();
-                if t.is_exact_zero() {
-                    return Ok(Number::complex(t, self.angle()));
-                } else {
-                    Some(t.to_float())
-                }
-            };
-            if let Some(t) = total {
-                let re = 0.5 * t.ln_1p();
-                return Ok(Number::complex(re, self.angle()));
-            }
-        }
-        // magnitude is always positive so ln(mag z) is always real
-        Ok(Number::complex(
-            (self.magnitude().ln()?).into_real(),
-            self.angle(),
-        ))
+        let re = match calculate_ln_real(self.get_parts()) {
+            // magnitude is always positive so ln(mag z) is always real
+            None => (self.magnitude().ln()?).into_real(),
+            Some(r) => r,
+        };
+        Ok(Number::complex(re, self.angle()))
     }
 
     // sin z = sin (x+yi) = (sin x)(cosh y) + i(cos x)(sinh y)
@@ -2514,6 +2478,51 @@ fn scaled_re(r: &Real, x: &Real, op: impl FnOnce(&Real, &Real) -> Real) -> Real 
     let t = (Real::two() * op(r, x)).sqrt();
     debug_assert!(!t.is_zero());
     t
+}
+
+fn calculate_ln_real((x, y): (&Real, &Real)) -> Option<Real> {
+    // if x is zero the naive calculation will work regardless of y
+    if x.is_zero() {
+        return None;
+    }
+    let total = if x.is_inexact() || y.is_inexact() {
+        dd_2sum_2product(x.to_float(), y.to_float())
+    } else {
+        // If x and y are exact keep everything exact until we need to take ln_p;
+        // calculate x²+y²-1 directly
+        let t = (x * x) + (y * y) - Real::one();
+        if t.is_exact_zero() {
+            return Some(t);
+        } else {
+            Some(t.to_float())
+        }
+    };
+    total.map(|t| (0.5 * t.ln_1p()).into())
+}
+
+// double-double TwoSum/TwoProduct
+fn dd_2sum_2product(x: f64, y: f64) -> Option<f64> {
+    // calculate s = x²+y²
+    let p = x * x;
+    let q = y * y;
+    let s = p + q;
+    // near the unit circle, we need the double-double precision approach
+    if 0.5 <= s && s <= 2.0 {
+        // error of x*x and y*y
+        let e = x.mul_add(x, -p);
+        let f = y.mul_add(y, -q);
+        // how much of q made it into s after rounding errors
+        let bb = s - p;
+        // error from p + error from q => now p + q = s + t exactly
+        let t = (p - (s - bb)) + (q - bb);
+        // add in the small error factors and the -1,
+        // order matters here to avoid blowing up intermediate results
+        // => now we have x²+y²-1 with rounding errors handled
+        Some(t + e + f + (s - 1.0))
+    } else {
+        // otherwise fallback to naive calculation where rounding isn't a problem
+        None
+    }
 }
 
 fn cpx_product(a: &Real, b: &Real, c: &Real, d: &Real) -> Number {
