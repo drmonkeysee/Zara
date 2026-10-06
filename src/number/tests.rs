@@ -9247,11 +9247,24 @@ mod transcendental {
         // relative to the exact value (50-digit decimal arithmetic). Guile
         // matches; Chez uses the naive formula and returns 0.0 for the first
         // case and is off in the 8th digit for the second.
+        //
+        // The third case has x^2 + y^2 - 1 cancelling between two terms near
+        // 1/2, so (x-1)(x+1) + y^2 (even with fma) still loses digits; it
+        // needs the squares and their sum carried to double-double precision.
+        // FRAC_1_SQRT_2 is not exactly 1/sqrt(2), so the expected value is
+        // ln of the actual f64 pair (x^2 + y^2 - 1 = 1.367e-16), not 0. Neither
+        // Chez nor Guile is accurate here: both return 5.551115123125783e-17.
         #[test]
         fn log_near_the_unit_circle_keeps_relative_precision() {
             let cases = [
                 (1.0, 1e-10, 5.0e-21, 1e-10),
                 (1e-5, 1.0, 4.9999999997500000e-11, 1.5707963267948966 - 1e-5),
+                (
+                    std::f64::consts::FRAC_1_SQRT_2,
+                    std::f64::consts::FRAC_1_SQRT_2,
+                    6.835808657661923e-17,
+                    std::f64::consts::FRAC_PI_4,
+                ),
             ];
             for (x, y, expected_re, expected_im) in cases {
                 let r = ok_or_fail!(Number::complex(x, y).ln());
