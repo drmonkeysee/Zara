@@ -611,11 +611,26 @@ impl Complex {
         Number::complex(u, v)
     }
 
-    // e^z = e^(x+yi) = e^x * e^yi = (e^x * cos y) + (ie^x * sin y)
+    /*
+     * Complex Exponential
+     * e^z = e^(x+yi) = e^x * e^yi = (e^x * cos y) + (ie^x * sin y)
+     *
+     * EXCEPT e^x can overflow if it's too large so mitigate this with the following:
+     * split e^x in two and distribute it across the multiplication so cos/sin can scale
+     * half the exponent down before accounting for the other half. Overflow can still
+     * happen but at a much higher threshold.
+     */
     fn exp(&self) -> Number {
         let (x, y) = self.get_parts();
-        let expx = x.exp();
-        Number::complex(&expx * y.cos(), expx * y.sin())
+        // arbitrary cut, exp overflow hits around 709.78
+        if x > &Real::from(700.0) {
+            let hx = assume_safe_div!(x / Real::two());
+            let exp_hx = hx.exp();
+            Number::complex((&exp_hx * y.cos()) * &exp_hx, (&exp_hx * y.sin()) * exp_hx)
+        } else {
+            let expx = x.exp();
+            Number::complex(&expx * y.cos(), expx * y.sin())
+        }
     }
 
     // ln z = ln r + iθ = ln (mag z) + i(angle z)
@@ -704,8 +719,8 @@ macro_rules! impl_cpx_div {
              * which causes issues with IEEE-754 where the squares could overflow to inf
              * even if the final answer would be within range, as well as losing sign-of-zero
              * in the event the numerators sum over opposite-sign zeros.
-             * Smith's algorithm avoids this by avoiding squares and using ratios of the
-             * imaginary parts, as well as avoiding addition/subtraction of two products.
+             * Smith's algorithm fixes this by replacing squares with ratios of the
+             * denominator, as well as avoiding addition/subtraction of two products.
              */
             #[allow(clippy::many_single_char_names)]
             fn div(self, rhs: $that) -> Self::Output {
