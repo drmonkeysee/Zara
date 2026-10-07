@@ -672,18 +672,47 @@ impl Complex {
         Number::complex(x.cos() * y.cosh(), -(x.sin() * y.sinh()))
     }
 
-    // tan z = sin z / cos z = (sin 2x + i(sinh 2y)) / (cos 2x + cosh 2y)
-    // The real-form identity is used to avoid rounding errors with dividing
-    // complex trig functions.
+    /*
+     * Complex Tangent
+     * tan z = sin z / cos z = (sin 2x + i(sinh 2y)) / (cos 2x + cosh 2y)
+     *
+     * However as per-usual there are floating-point rounding errors if done
+     * naively. For |2y| ≳ 710 sinh/cosh both overflow so you end up with ∞/∞ = NaN,
+     * but complex tan is supposed to saturate around ±i. Instead use the following
+     * approximations:
+     *  sinh 2y ≈ sign(y) * e^(2|y|)/2
+     *  cosh 2y ≈ e^(2|y|)/2
+     * Then:
+     * let t = e^(−2|y|) which is in (0, 1] so never overflows
+     * D = (1 − t)² + 4t * cos²x  <= this is 1 + t² + 2t * cos 2x rearranged to
+     *                               avoid cancellation with t ≈ 1 and cos 2x ≈ -1
+     * real part = 2t * sin 2x / D
+     * imag part = sign(y) * (1 − t²) / D
+     *
+     * Optimization: exact real 0 passes through as exact real 0 since sin 0 = 0
+     */
     fn tan(&self) -> Number {
         let (x, y) = self.get_parts();
-        let (x2, y2) = (x * Real::two(), y * Real::two());
-        let d = x2.cos() + y2.cosh();
-        assert!(!d.is_zero());
-        Number::complex(
-            assume_safe_div!(x2.sin() / &d),
-            assume_safe_div!(y2.sinh() / d),
-        )
+        // an exact y has no impact on this algorithm so convert to float
+        let yf = y.to_float();
+        // with u = -2|y| then
+        // t = e^u and
+        // 1 − t = −(e^u − 1) which avoids rounding when t ≈ 1
+        let u = -2.0 * yf.abs();
+        let t = u.exp();
+        let one_minus_t = -u.exp_m1();
+        let xcos = x.cos().to_float();
+        let t2 = 2.0 * t;
+        let d = one_minus_t.powi(2) + (2.0 * t2 * xcos.powi(2));
+        let re = if x.is_exact_zero() {
+            x.clone()
+        } else {
+            let sin2x = (Real::two() * x).sin().to_float();
+            ((t2 * sin2x) / d).into()
+        };
+        // (1-t²) = (1-t)(1+t)
+        let im = ((one_minus_t * (1.0 + t)) / d).copysign(yf);
+        Number::complex(re, im)
     }
 
     fn asin(&self) -> Number {
