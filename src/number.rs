@@ -662,35 +662,13 @@ impl Complex {
 
     // sin z = sin (x+yi) = (sin x)(cosh y) + i(cos x)(sinh y)
     fn sin(&self) -> Number {
-        let (x, y) = self.get_parts();
-        let (sinhy, coshy) = (y.sinh(), y.cosh());
-        let re = if coshy.is_infinite() {
-            scale_hyperbolic_ovf(x.sin(), y.to_float(), false)
-        } else {
-            x.sin() * coshy
-        };
-        let im = if sinhy.is_infinite() {
-            scale_hyperbolic_ovf(x.cos(), y.to_float(), true)
-        } else {
-            x.cos() * sinhy
-        };
+        let (re, im) = cpx_trig(self.get_parts(), Real::sin, Real::cos);
         Number::complex(re, im)
     }
 
     // cos z = cos (x+yi) = (cos x)(cosh y) - i(sin x)(sinh y)
     fn cos(&self) -> Number {
-        let (x, y) = self.get_parts();
-        let (sinhy, coshy) = (y.sinh(), y.cosh());
-        let re = if coshy.is_infinite() {
-            scale_hyperbolic_ovf(x.cos(), y.to_float(), false)
-        } else {
-            x.cos() * coshy
-        };
-        let im = if sinhy.is_infinite() {
-            scale_hyperbolic_ovf(x.sin(), y.to_float(), true)
-        } else {
-            x.sin() * sinhy
-        };
+        let (re, im) = cpx_trig(self.get_parts(), Real::cos, Real::sin);
         Number::complex(re, -im)
     }
 
@@ -2631,6 +2609,25 @@ fn scale_hyperbolic_ovf(mut trig: Real, y: f64, odd: bool) -> Real {
 
 fn cpx_product(a: &Real, b: &Real, c: &Real, d: &Real) -> Number {
     Number::complex((a * c) - (b * d), (a * d) + (b * c))
+}
+
+fn cpx_trig(
+    (x, y): (&Real, &Real),
+    re_trig: impl FnOnce(&Real) -> Real,
+    im_trig: impl FnOnce(&Real) -> Real,
+) -> (Real, Real) {
+    let (sinhy, coshy) = (y.sinh(), y.cosh());
+    let re = if coshy.is_infinite() {
+        scale_hyperbolic_ovf(re_trig(x), y.to_float(), false)
+    } else {
+        re_trig(x) * coshy
+    };
+    let im = if sinhy.is_infinite() {
+        scale_hyperbolic_ovf(im_trig(x), y.to_float(), true)
+    } else {
+        im_trig(x) * sinhy
+    };
+    (re, im)
 }
 
 fn real_angle(sign: f64) -> Real {
