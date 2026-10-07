@@ -662,19 +662,28 @@ impl Complex {
 
     // sin z = sin (x+yi) = (sin x)(cosh y) + i(cos x)(sinh y)
     fn sin(&self) -> Number {
-        todo!();
+        let (x, y) = self.get_parts();
+        Number::complex(x.sin() * y.cosh(), x.cos() * y.sinh())
     }
 
     // cos z = cos (x+yi) = (cos x)(cosh y) - i(sin x)(sinh y)
     fn cos(&self) -> Number {
-        todo!();
+        let (x, y) = self.get_parts();
+        Number::complex(x.cos() * y.cosh(), -(x.sin() * y.sinh()))
     }
 
     // tan z = sin z / cos z = (sin 2x + i(sinh 2y)) / (cos 2x + cosh 2y)
     // The real-form identity is used to avoid rounding errors with dividing
     // complex trig functions.
     fn tan(&self) -> Number {
-        todo!();
+        let (x, y) = self.get_parts();
+        let (x2, y2) = (x * Real::two(), y * Real::two());
+        let d = x2.cos() + y2.cosh();
+        assert!(!d.is_zero());
+        Number::complex(
+            assume_safe_div!(x2.sin() / &d),
+            assume_safe_div!(y2.sinh() / d),
+        )
     }
 
     fn asin(&self) -> Number {
@@ -690,7 +699,7 @@ impl Complex {
     }
 
     fn real_for_ln(&self) -> RealResult {
-        Ok(match near_unit_ln_real(self.get_parts()) {
+        Ok(match near_unit_ln_re(self.get_parts()) {
             // magnitude is always positive so ln(mag z) is always real
             None => (self.magnitude().ln()?).into_real(),
             Some(r) => r,
@@ -1308,6 +1317,22 @@ impl Real {
             Self::zero()
         } else {
             self.to_float().atan().into()
+        }
+    }
+
+    fn sinh(&self) -> Self {
+        if self.is_exact_zero() {
+            Self::zero()
+        } else {
+            self.to_float().sinh().into()
+        }
+    }
+
+    fn cosh(&self) -> Self {
+        if self.is_exact_zero() {
+            Self::one()
+        } else {
+            self.to_float().cosh().into()
         }
     }
 
@@ -2484,7 +2509,7 @@ fn scaled_re(r: &Real, x: &Real, op: impl FnOnce(&Real, &Real) -> Real) -> Real 
 }
 
 // calculate the real part of ln if z is near the unit circle, otherwise None
-fn near_unit_ln_real((x, y): (&Real, &Real)) -> Option<Real> {
+fn near_unit_ln_re((x, y): (&Real, &Real)) -> Option<Real> {
     // if x is zero the naive calculation will work regardless of y
     if x.is_zero() {
         return None;
@@ -2506,6 +2531,9 @@ fn near_unit_ln_real((x, y): (&Real, &Real)) -> Option<Real> {
 }
 
 // double-double TwoSum/TwoProduct
+// https://en.wikipedia.org/wiki/2Sum
+// https://en.wikipedia.org/wiki/Quadruple-precision_floating-point_format#Double-double_arithmetic
+// also related to: https://en.wikipedia.org/wiki/Kahan_summation_algorithm
 fn dd_2sum_2product(x: f64, y: f64) -> Option<f64> {
     // calculate s = x²+y²
     let p = x * x;
