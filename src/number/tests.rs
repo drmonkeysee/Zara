@@ -9330,6 +9330,57 @@ mod transcendental {
             assert_near!(im.to_float(), 1.959601041421606);
         }
 
+        // cos(x+yi) = cos x cosh y - i sin x sinh y; note the minus sign on
+        // the imaginary part, which makes cos(conj z) = conj(cos z).
+        #[test]
+        fn cos_of_a_general_complex_value() {
+            let cases = [
+                (1.0, 2.0, 2.0327230070196656, -3.0518977991518),
+                (1.0, -2.0, 2.0327230070196656, 3.0518977991518),
+                (-1.0, 2.0, 2.0327230070196656, 3.0518977991518),
+                (1.0, 1.0, 0.8337300251311491, -0.9888977057628651),
+            ];
+            for (x, y, expected_re, expected_im) in cases {
+                let r = Number::complex(x, y).cos();
+
+                let (re, im) = complex_parts!(r);
+                assert_near!(re.to_float(), expected_re);
+                assert_near!(im.to_float(), expected_im);
+            }
+        }
+
+        #[test]
+        fn tan_of_a_general_complex_value() {
+            let cases = [
+                (1.0, 2.0, 0.03381282607989669, 1.0147936161466335),
+                (-1.0, 2.0, -0.03381282607989669, 1.0147936161466335),
+                (1.0, -2.0, 0.03381282607989669, -1.0147936161466335),
+            ];
+            for (x, y, expected_re, expected_im) in cases {
+                let r = Number::complex(x, y).tan();
+
+                let (re, im) = complex_parts!(r);
+                assert_near!(re.to_float(), expected_re);
+                assert_near!(im.to_float(), expected_im);
+            }
+        }
+
+        // tan has poles at x = pi/2 + k*pi on the real axis, but the f64
+        // nearest pi/2 is not exactly pi/2, so the true tangent there is
+        // finite: ~1.633123935319537e16. The real-form identity's
+        // denominator cos 2x + cosh 2y rounds to exactly 0 for this input,
+        // which must not panic or produce inf/NaN.
+        #[test]
+        fn tan_near_the_real_axis_pole_is_large_but_finite() {
+            for y in [0.0, -0.0] {
+                let r = Number::complex(std::f64::consts::FRAC_PI_2, y).tan();
+
+                let (re, im) = complex_parts!(r);
+                assert_near!(re.to_float(), 1.633123935319537e16);
+                assert_signed_zero(im.to_float(), y.is_sign_negative(), "tan pi/2+yi im");
+            }
+        }
+
         // cos(0+ni) = cosh n - i (sin 0)(sinh n). (sin 0) is an exact 0, so
         // the imaginary part is an exact zero and the result collapses to a
         // real. Chez and Guile return cosh n -/+ 0.0i (-0.0 for n > 0), which
@@ -10198,6 +10249,60 @@ mod transcendental {
 
                 assert_near!(ratio.to_real().to_float(), tan.to_real().to_float());
                 assert_near!(ratio.to_imag().to_float(), tan.to_imag().to_float());
+            }
+        }
+
+        // tan(z) * cos(z) = sin(z)
+        #[test]
+        fn tan_times_cos_is_sin() {
+            let cases = [(1.0, 2.0), (-0.5, 0.3), (2.0, -1.5), (0.1, 3.0)];
+            for (x, y) in cases {
+                let z = Number::complex(x, y);
+
+                let product = &z.tan() * &z.cos();
+                let sin = z.sin();
+
+                assert_near!(product.to_real().to_float(), sin.to_real().to_float());
+                assert_near!(product.to_imag().to_float(), sin.to_imag().to_float());
+            }
+        }
+
+        // tan(-z) = -tan(z), cos(-z) = cos(z), cos(conj z) = conj(cos z)
+        #[test]
+        fn tan_is_odd_and_cos_is_even() {
+            let cases = [(1.0, 2.0), (-0.5, 0.3), (2.0, -1.5)];
+            for (x, y) in cases {
+                let z = Number::complex(x, y);
+                let neg_z = Number::complex(-x, -y);
+
+                let tan = z.tan();
+                let neg_tan = neg_z.tan();
+                assert_near!(neg_tan.to_real().to_float(), -tan.to_real().to_float());
+                assert_near!(neg_tan.to_imag().to_float(), -tan.to_imag().to_float());
+
+                let cos = z.cos();
+                let neg_cos = neg_z.cos();
+                assert_near!(neg_cos.to_real().to_float(), cos.to_real().to_float());
+                assert_near!(neg_cos.to_imag().to_float(), cos.to_imag().to_float());
+
+                let conj_cos = Number::complex(x, -y).cos();
+                assert_near!(conj_cos.to_real().to_float(), cos.to_real().to_float());
+                assert_near!(conj_cos.to_imag().to_float(), -cos.to_imag().to_float());
+            }
+        }
+
+        // sin^2 z + cos^2 z = 1
+        #[test]
+        fn sin_squared_plus_cos_squared_is_one() {
+            let cases = [(1.0, 2.0), (-0.5, 0.3), (2.0, -1.5)];
+            for (x, y) in cases {
+                let z = Number::complex(x, y);
+                let (s, c) = (z.sin(), z.cos());
+
+                let sum = &(&s * &s) + &(&c * &c);
+
+                assert_near!(sum.to_real().to_float(), 1.0);
+                assert_near!(sum.to_imag().to_float(), 0.0);
             }
         }
 
