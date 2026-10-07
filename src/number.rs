@@ -620,7 +620,7 @@ impl Complex {
 
     /*
      * Complex Exponential
-     * e^z = e^(x+yi) = e^x * e^yi = (e^x * cos y) + (ie^x * sin y)
+     * e^z = e^(x+yi) = e^x·e^yi = (e^x·cos y) + (ie^x·sin y)
      *
      * EXCEPT e^x can overflow if it's too large so mitigate this with the following:
      * split e^x in two and distribute it across the multiplication so cos/sin can scale
@@ -631,7 +631,7 @@ impl Complex {
         let (x, y) = self.get_parts();
         // arbitrary cut, exp overflow hits around 709.78
         if x > &Real::from(700.0) {
-            // split in half: e^x = e^(x/2 + x/2) = e^(x/2) * e^(x/2)
+            // split in half: e^x = e^(x/2 + x/2) = e^(x/2)·e^(x/2)
             let hx = assume_safe_div!(x / Real::two());
             let exp_hx = hx.exp();
             Number::complex((&exp_hx * y.cos()) * &exp_hx, (&exp_hx * y.sin()) * exp_hx)
@@ -645,10 +645,10 @@ impl Complex {
      * Complex Natural Logarithm
      * z = re^(iθ) => ln z = ln r + iθ = ln(mag z) + i(angle z)
      *
-     * However when z is near the unit circle (on either side) (i.e. r <= 1) you get
+     * However when z is near the unit circle (on either side, i.e. r around 1) you get
      * cancellation of ln r that throws the answer off. Start with the formulation:
      *
-     * ln|z| = ln(r) = ½·ln(r²) = ½·ln(1 + (x²+y²−1)) = ½·ln_1p(x²+y²−1)
+     * ln|z| = ln(r) = ½ln(r²) = ½ln(1 + (x²+y²−1)) = ½ln_1p(x²+y²−1)
      *
      * which means we need to calculate x²+y²-1 accurately when its natural log will
      * be very small. The solution is to use an alternate calculation called
@@ -680,14 +680,14 @@ impl Complex {
      * naively. For |2y| ≳ 710 sinh/cosh both overflow so you end up with ∞/∞ = NaN,
      * but complex tan is supposed to saturate around ±i. Instead use the following
      * approximations:
-     *  sinh 2y ≈ sign(y) * e^(2|y|)/2
+     *  sinh 2y ≈ sign(y)·e^(2|y|)/2
      *  cosh 2y ≈ e^(2|y|)/2
      * Then:
      * let t = e^(−2|y|) which is in (0, 1] so never overflows
-     * D = (1 − t)² + 4t * cos²x  <= this is 1 + t² + 2t * cos 2x rearranged to
-     *                               avoid cancellation with t ≈ 1 and cos 2x ≈ -1
+     * D = (1−t)² + 4t·cos²x  <= this is 1 + t² + 2t·cos 2x rearranged to
+     *                           avoid cancellation with t ≈ 1 and cos 2x ≈ -1
      * real part = 2t * sin 2x / D
-     * imag part = sign(y) * (1 − t²) / D
+     * imag part = sign(y)·(1−t²) / D
      *
      * Optimization: exact real 0 passes through as exact real 0 since sin 0 = 0
      */
@@ -774,20 +774,20 @@ macro_rules! impl_cpx_div {
             type Output = NumResult;
 
             /*
-             * Smith's Algorithm for (a + bi) / (c + di)
+             * Smith's Algorithm for (a+bi) / (c+di)
              * https://dl.acm.org/doi/abs/10.1145/368637.368661
              *  if |c| < |d|:
              *      r = c / d
-             *      denom = c*r + d
-             *      real = (a*r + b) / denom
-             *      imag = (b*r - a) / denom
+             *      denom = cr + d
+             *      real = (ar + b) / denom
+             *      imag = (br - a) / denom
              *  else:
              *      r = d / c
-             *      denom = c + d*r
-             *      real = (a + b*r) / denom
-             *      imag = (b - a*r) / denom
+             *      denom = c + dr
+             *      real = (a + br) / denom
+             *      imag = (b - ar) / denom
              * The textbook formula for complex division is:
-             * (a + bi) / ( c + di ) = (ac + bd) / (c² + d²) + (bc - ad) / (c² + d²)i
+             * (a+bi) / (c+di) = (ac+bd) / (c²+d²) + (bc-ad) / (c²+d²)i
              * which causes issues with IEEE-754 where the squares could overflow to inf
              * even if the final answer would be within range, as well as losing sign-of-zero
              * in the event the numerators sum over opposite-sign zeros.
@@ -2572,12 +2572,12 @@ fn dd_2sum_2product(x: f64, y: f64) -> Option<f64> {
     if s < 0.5 || s > 2.0 {
         return None;
     }
-    // error of x*x and y*y
+    // error of x² and y²
     let e = x.mul_add(x, -p);
     let f = y.mul_add(y, -q);
     // how much of q made it into s after rounding errors
     let bb = s - p;
-    // error from p + error from q => now p + q = s + t exactly
+    // (error from p) + (error from q) => now p+q = s+t exactly
     let t = (p - (s - bb)) + (q - bb);
     // add in the small error factors and the -1,
     // order matters here to avoid blowing up intermediate results
@@ -2590,8 +2590,8 @@ fn dd_2sum_2product(x: f64, y: f64) -> Option<f64> {
  * both of these trig functions. So if they do overflow use the approximation:
  * sinh/cosh y ≈ e^|y| / 2
  * to keep this approximation managable:
- * let h = e^(|y|/2) <=> e^|y| = h * h (cuts magnitude in half to reduce overflow)
- * trig * e^|y| / 2 = trig * (h * h) / 2 = (trig * (0.5 * h)) * h
+ * let h = e^(|y|/2) <=> e^|y| = h·h (cuts magnitude in half to reduce overflow)
+ * trig * e^|y| / 2 = trig·(h·h) / 2 = (trig·(0.5·h))·h
  */
 fn scale_hyperbolic_ovf(mut trig: Real, y: f64, odd: bool) -> Real {
     // sinh is odd so the sign of y propagates through the result (including zero)
@@ -2640,7 +2640,7 @@ fn real_angle(sign: f64) -> Real {
 
 fn try_float_to_exact(flt: f64) -> RealResult {
     if flt == 0.0 {
-        // both +/- zero converts to integer zero
+        // both ± zero converts to integer zero
         Ok(Real::zero())
     } else if flt.is_finite() {
         try_to_dyadic_rational(flt)
