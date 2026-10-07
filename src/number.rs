@@ -663,13 +663,35 @@ impl Complex {
     // sin z = sin (x+yi) = (sin x)(cosh y) + i(cos x)(sinh y)
     fn sin(&self) -> Number {
         let (x, y) = self.get_parts();
-        Number::complex(x.sin() * y.cosh(), x.cos() * y.sinh())
+        let (sinhy, coshy) = (y.sinh(), y.cosh());
+        let re = if coshy.is_infinite() {
+            scale_hyperbolic_ovf(x.sin(), y.to_float(), false)
+        } else {
+            x.sin() * coshy
+        };
+        let im = if sinhy.is_infinite() {
+            scale_hyperbolic_ovf(x.cos(), y.to_float(), true)
+        } else {
+            x.cos() * sinhy
+        };
+        Number::complex(re, im)
     }
 
     // cos z = cos (x+yi) = (cos x)(cosh y) - i(sin x)(sinh y)
     fn cos(&self) -> Number {
         let (x, y) = self.get_parts();
-        Number::complex(x.cos() * y.cosh(), -(x.sin() * y.sinh()))
+        let (sinhy, coshy) = (y.sinh(), y.cosh());
+        let re = if coshy.is_infinite() {
+            scale_hyperbolic_ovf(x.cos(), y.to_float(), false)
+        } else {
+            x.cos() * coshy
+        };
+        let im = if sinhy.is_infinite() {
+            scale_hyperbolic_ovf(x.sin(), y.to_float(), true)
+        } else {
+            x.sin() * sinhy
+        };
+        Number::complex(re, -im)
     }
 
     /*
@@ -2583,6 +2605,28 @@ fn dd_2sum_2product(x: f64, y: f64) -> Option<f64> {
     // order matters here to avoid blowing up intermediate results
     // => now we have x²+y²-1 with rounding errors handled
     Some(t + e + f + (s - 1.0))
+}
+
+/*
+ * More floating-point woes: if sinh/cosh y overflow you lose precision on
+ * both of these trig functions. So if they do overflow use the approximation:
+ * sinh/cosh y ≈ e^|y| / 2
+ * to keep this approximation managable:
+ * let h = e^(|y|/2) <=> e^|y| = h * h (cuts magnitude in half to reduce overflow)
+ * trig * e^|y| / 2 = trig * (h * h) / 2 = (trig * (0.5 * h)) * h
+ */
+fn scale_hyperbolic_ovf(mut trig: Real, y: f64, odd: bool) -> Real {
+    // sinh is odd so the sign of y propagates through the result (including zero)
+    if odd && y.is_sign_negative() {
+        trig = -trig
+    }
+    // handle zero as a special case to avoid NaN and loss of sign
+    if trig.is_zero() {
+        return trig;
+    }
+    let h = (y.abs() / 2.0).exp();
+    // order matters here to calculate from smallest-to-largest values
+    (((0.5 * h) * trig.to_float()) * h).into()
 }
 
 fn cpx_product(a: &Real, b: &Real, c: &Real, d: &Real) -> Number {
