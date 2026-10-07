@@ -9545,20 +9545,138 @@ mod transcendental {
             }
         }
 
+        // Infinities are compared exactly (and so a NaN fails), finite values
+        // with a tolerance.
+        fn assert_float_or_inf(actual: f64, expected: f64, label: &str) {
+            if expected.is_infinite() {
+                assert_eq!(actual, expected, "{label}");
+            } else {
+                assert_near!(actual, expected);
+            }
+        }
+
         // A zero component times an overflowed cosh/sinh must stay zero, not
-        // inf * 0.0 = NaN. Chez gives 0.0+inf i and +inf+0.0i; Guile yields
-        // NaN in the zero component.
+        // inf * 0.0 = NaN, and keep its sign: sin re = sin x cosh y takes the
+        // sign of x, and cos im = -(sin x)(sinh y) is negative exactly when x
+        // and y have the same sign. C99 (ccos(0+inf i) = inf-0.0i) agrees, as
+        // does Chez below the overflow point. Chez returns +0.0 for cos im here
+        // in every case because its overflow path loses the sign; Guile yields
+        // NaN in the zero component. Zara follows C99 and the formula.
         #[test]
         fn sin_and_cos_overflow_with_a_zero_real_part_is_not_nan() {
-            let z = Number::complex(0.0, 711.0);
+            let inf = f64::INFINITY;
+            for x in [0.0_f64, -0.0] {
+                for y in [711.0_f64, -711.0] {
+                    let z = Number::complex(x, y);
+                    let label = format!("{x:?}+{y:?}i");
 
-            let (re, im) = complex_parts!(z.sin());
-            assert_signed_zero(re.to_float(), false, "sin 0.0+711.0i re");
-            assert_eq!(im.to_float(), f64::INFINITY);
+                    let (re, im) = complex_parts!(z.sin());
+                    assert_signed_zero(
+                        re.to_float(),
+                        x.is_sign_negative(),
+                        &format!("sin {label} re"),
+                    );
+                    assert_eq!(im.to_float(), inf.copysign(y), "sin {label} im");
 
-            let (re, im) = complex_parts!(z.cos());
-            assert_eq!(re.to_float(), f64::INFINITY);
-            assert_signed_zero(im.to_float(), false, "cos 0.0+711.0i im");
+                    let (re, im) = complex_parts!(z.cos());
+                    assert_eq!(re.to_float(), inf, "cos {label} re");
+                    let same_sign = x.is_sign_negative() == y.is_sign_negative();
+                    assert_signed_zero(im.to_float(), same_sign, &format!("cos {label} im"));
+                }
+            }
+        }
+
+        // With a nonzero trig factor the signs of the overflowed components
+        // follow sin: (sin x cosh y, cos x sinh y) and cos: (cos x cosh y,
+        // -sin x sinh y) in every quadrant. Chez (and C99 for nonzero factors)
+        // agree. The 1500 rows are past |y| ~ 1419 where e^(|y|/2) itself
+        // overflows.
+        #[test]
+        fn sin_and_cos_overflow_signs_follow_each_quadrant() {
+            let inf = f64::INFINITY;
+            let (a, b) = (1.6405272874328378e308, 1.2635523363860068e308);
+            // (x, y, sin re, sin im, cos re, cos im)
+            let cases = [
+                (1.0, 711.0, inf, a, a, -inf),
+                (1.0, -711.0, inf, -a, a, inf),
+                (-1.0, 711.0, -inf, a, a, inf),
+                (-1.0, -711.0, -inf, -a, a, -inf),
+                (2.0, 711.0, inf, -b, -b, -inf),
+                (2.0, -711.0, inf, b, -b, inf),
+                (-2.0, 711.0, -inf, -b, -b, inf),
+                (-2.0, -711.0, -inf, b, -b, -inf),
+                (1.0, 1500.0, inf, inf, inf, -inf),
+                (-2.0, -1500.0, -inf, inf, -inf, -inf),
+            ];
+            for (x, y, sin_re, sin_im, cos_re, cos_im) in cases {
+                let z = Number::complex(x, y);
+                let label = format!("{x}+{y}i");
+
+                let (re, im) = complex_parts!(z.sin());
+                assert_float_or_inf(re.to_float(), sin_re, &format!("sin {label} re"));
+                assert_float_or_inf(im.to_float(), sin_im, &format!("sin {label} im"));
+
+                let (re, im) = complex_parts!(z.cos());
+                assert_float_or_inf(re.to_float(), cos_re, &format!("cos {label} re"));
+                assert_float_or_inf(im.to_float(), cos_im, &format!("cos {label} im"));
+            }
+        }
+
+        // The sign of a zero component must not change as |y| crosses the
+        // overflow threshold: 700 is below it, 711 is above it, 1500 is past
+        // the e^(|y|/2) limit and inf is the C99 Annex G limit case (checked
+        // against Python's cmath: cos(0.0+inf i) = inf-0.0i, cos(0.0-inf i) =
+        // inf+0.0i, cos(-0.0+inf i) = inf+0.0i, cos(-0.0-inf i) = inf-0.0i).
+        #[test]
+        fn signed_zero_trig_factor_is_continuous_across_overflow() {
+            for x in [0.0_f64, -0.0] {
+                for (y_abs, mag) in [
+                    (700.0, 5.0711602736750225e303),
+                    (711.0, f64::INFINITY),
+                    (1500.0, f64::INFINITY),
+                    (f64::INFINITY, f64::INFINITY),
+                ] {
+                    for y in [y_abs, -y_abs] {
+                        let z = Number::complex(x, y);
+                        let label = format!("{x:?}+{y:?}i");
+
+                        let (re, im) = complex_parts!(z.sin());
+                        assert_signed_zero(
+                            re.to_float(),
+                            x.is_sign_negative(),
+                            &format!("sin {label} re"),
+                        );
+                        assert_float_or_inf(
+                            im.to_float(),
+                            mag.copysign(y),
+                            &format!("sin {label} im"),
+                        );
+
+                        let (re, im) = complex_parts!(z.cos());
+                        assert_float_or_inf(re.to_float(), mag, &format!("cos {label} re"));
+                        let same_sign = x.is_sign_negative() == y.is_sign_negative();
+                        assert_signed_zero(im.to_float(), same_sign, &format!("cos {label} im"));
+                    }
+                }
+            }
+        }
+
+        // An exact zero real part stays exact past the overflow point, and cos
+        // collapses to a real, as in cos_of_pure_imaginary_is_a_real_cosh. This
+        // deliberately diverges from C99, which would give inf-0.0i.
+        #[test]
+        fn exact_zero_real_part_past_overflow_stays_exact() {
+            for y in [711.0, -711.0, 1500.0] {
+                let z = Number::complex(0, y);
+
+                let (re, im) = complex_parts!(z.sin());
+                assert!(re.is_exact_zero(), "sin 0+{y}i re: {re}");
+                assert_eq!(im.to_float(), f64::INFINITY.copysign(y), "sin 0+{y}i im");
+
+                let r = z.cos();
+                assert_matches!(r, Number::Real(Real::Float(_)));
+                assert_eq!(r.to_real().to_float(), f64::INFINITY, "cos 0+{y}i");
+            }
         }
 
         // tan z = sin z / cos z is inf/inf = NaN once cosh/sinh overflow
