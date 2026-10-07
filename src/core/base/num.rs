@@ -321,13 +321,10 @@ fn real_acc_cmp<'a>(
     let mut float_taint = r.is_inexact();
     rest.into_iter()
         .enumerate()
-        .try_fold(r, |mut acc, (idx, v)| {
+        .try_fold(r, |acc, (idx, v)| {
             let r = super::arg_to_real(v, idx + 1, NumericTypeName::REAL)?;
             float_taint = float_taint || r.is_inexact();
-            if cmp(acc, r) {
-                acc = r;
-            }
-            Ok(acc)
+            Ok(if cmp(acc, r) { r } else { acc })
         })
         .map(|r| {
             Value::real(if float_taint {
