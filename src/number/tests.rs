@@ -8200,6 +8200,46 @@ mod sqrt {
             assert_near!(im.to_float(), 4.550898605622274e99);
         }
 
+        // The root of a finite z is always finite (|sqrt z| = sqrt|z|), but an
+        // implementation that computes 2(r + |x|) before taking the root
+        // overflows once |z| passes about f64::MAX / 4. 5e307 is below even
+        // that cutoff because r itself is already ~7e307 and doubling pushes
+        // the sum past the limit. Reference values from C99 csqrt (cmath).
+        #[test]
+        fn magnitude_near_the_float_limit_does_not_overflow_to_infinity() {
+            let max = f64::MAX;
+            let cases: [(f64, f64, f64, f64); 7] = [
+                (1e308, 1e308, 1.09868411346781e154, 4.5508986056222734e153),
+                (-1e308, 1e308, 4.5508986056222734e153, 1.09868411346781e154),
+                (1e308, -1e308, 1.09868411346781e154, -4.5508986056222734e153),
+                (max, max, 1.4730945569055655e154, 6.101757441282702e153),
+                (max, 0.0, 1.3407807929942596e154, 0.0),
+                (-max, 0.0, 0.0, 1.3407807929942596e154),
+                (5e307, 5e307, 7.768869870150187e153, 3.2179712645279132e153),
+            ];
+            for (x, y, expected_re, expected_im) in cases {
+                let r = Number::complex(x, y).sqrt();
+
+                assert!(!r.is_infinite(), "sqrt {x:e}+{y:e}i overflowed: {r}");
+                let (re, im) = complex_parts!(r);
+                for (actual, expected, label) in [
+                    (re.to_float(), expected_re, "re"),
+                    (im.to_float(), expected_im, "im"),
+                ] {
+                    if expected == 0.0 {
+                        // an exact comparison also checks the sign of the zero
+                        assert_eq!(
+                            actual.to_bits(),
+                            expected.to_bits(),
+                            "sqrt {x:e}+{y:e}i {label}"
+                        );
+                    } else {
+                        assert_near!(actual, expected);
+                    }
+                }
+            }
+        }
+
         #[test]
         fn small_magnitude_does_not_underflow_to_zero() {
             let z = Number::complex(1e-200, 1e-200);
@@ -9939,6 +9979,8 @@ mod transcendental {
             let cases = [
                 (1, 2, 0.4270785863924761, 1.5285709194809982),
                 (-1, -2, -0.4270785863924761, -1.5285709194809982),
+                (-1, 2, -0.4270785863924761, 1.5285709194809982),
+                (1, -2, 0.4270785863924761, -1.5285709194809982),
             ];
             for (x, y, expected_re, expected_im) in cases {
                 let r = Number::complex(x, y).asin();
@@ -9954,6 +9996,8 @@ mod transcendental {
             let cases = [
                 (1, 2, 1.1437177404024204, -1.5285709194809982),
                 (-1, -2, 1.9978749131873728, 1.5285709194809982),
+                (-1, 2, 1.9978749131873728, -1.5285709194809982),
+                (1, -2, 1.1437177404024204, 1.5285709194809982),
             ];
             for (x, y, expected_re, expected_im) in cases {
                 let r = Number::complex(x, y).acos();
@@ -9969,6 +10013,8 @@ mod transcendental {
             let cases = [
                 (1, 2, 1.3389725222944935, 0.40235947810852507),
                 (-1, -2, -1.3389725222944935, -0.40235947810852507),
+                (-1, 2, -1.3389725222944935, 0.40235947810852507),
+                (1, -2, 1.3389725222944935, -0.40235947810852507),
             ];
             for (x, y, expected_re, expected_im) in cases {
                 let r = Number::complex(x, y).atan();
@@ -10123,6 +10169,162 @@ mod transcendental {
             let (re, im) = complex_parts!(Number::complex(1.0, inf).acos());
             assert_near!(re.to_float(), half_pi);
             assert_eq!(im.to_float(), -inf);
+        }
+
+        // Both acos's real part and asin's imaginary part are ~1e-10 here
+        // (true values from C99 casin/cacos). Computing acos as pi/2 - asin
+        // loses it to cancellation: the real part comes out as 1.0000000827e-10.
+        // assert_near!'s absolute floor can't see that, hence assert_close_rel.
+        #[test]
+        fn asin_and_acos_just_off_one_keep_relative_precision() {
+            for (y, negative) in [(1e-20, false), (-1e-20, true)] {
+                let z = Number::complex(1.0, y);
+                let sign = if negative { -1.0 } else { 1.0 };
+
+                let (re, im) = complex_parts!(z.asin());
+                assert_close_rel(re.to_float(), 1.5707963266948965, "asin re");
+                assert_close_rel(im.to_float(), sign * 1e-10, "asin im");
+
+                let (re, im) = complex_parts!(z.acos());
+                assert_close_rel(re.to_float(), 9.999999999999999e-11, "acos re");
+                assert_close_rel(im.to_float(), -sign * 1e-10, "acos im");
+            }
+        }
+
+        // atan has poles at +/-i. Nearby, its real part is a ln_1p of a
+        // quotient that is 4x/(0) at the pole, and the imaginary part is
+        // ~ln(1/distance)/2 on either side, so both must stay accurate when
+        // the denominator is tiny. Values from C99 catan (cmath).
+        #[test]
+        fn atan_near_the_poles_keeps_precision() {
+            use std::f64::consts::{FRAC_PI_2, FRAC_PI_4};
+            for (x, expected_re) in [(1e-20, FRAC_PI_4), (-1e-20, -FRAC_PI_4)] {
+                let (re, im) = complex_parts!(Number::complex(x, 1.0).atan());
+                assert_close_rel(re.to_float(), expected_re, "atan re");
+                assert_close_rel(im.to_float(), 23.37242452022043, "atan im");
+            }
+
+            // inside the cut the real part is a zero with the sign of x
+            let (re, im) = complex_parts!(Number::complex(0.0, 0.9999999999).atan());
+            assert_signed_zero(re.to_float(), false, "atan 0.0+0.9999999999i re");
+            assert_close_rel(im.to_float(), 11.859499013855018, "atan 0.9999999999i im");
+
+            // past the pole it jumps to pi/2
+            let (re, im) = complex_parts!(Number::complex(0.0, 1.0000000001).atan());
+            assert_near!(re.to_float(), FRAC_PI_2);
+            assert_close_rel(im.to_float(), 11.859499013905017, "atan 1.0000000001i im");
+        }
+
+        // z = +/-1 sit on the ends of the real-axis cuts for asin and acos,
+        // so the sign of the zero imaginary part picks the side. Values from
+        // C99 casin/cacos (cmath).
+        #[test]
+        fn branch_points_follow_the_sign_of_a_zero_imaginary_part() {
+            let half_pi = std::f64::consts::FRAC_PI_2;
+            // (x, y is negative, asin re, acos re); the imaginary parts have the
+            // sign of y for asin and the opposite for acos
+            let cases = [
+                (1.0, false, half_pi, 0.0),
+                (1.0, true, half_pi, 0.0),
+                (-1.0, false, -half_pi, std::f64::consts::PI),
+                (-1.0, true, -half_pi, std::f64::consts::PI),
+            ];
+            for (x, negative, asin_re, acos_re) in cases {
+                let z = Number::complex(x, if negative { -0.0 } else { 0.0 });
+
+                let (re, im) = complex_parts!(z.asin());
+                assert_near!(re.to_float(), asin_re);
+                assert_signed_zero(im.to_float(), negative, "asin +/-1 im");
+
+                let (re, im) = complex_parts!(z.acos());
+                if acos_re == 0.0 {
+                    assert_signed_zero(re.to_float(), false, "acos 1 re");
+                } else {
+                    assert_near!(re.to_float(), acos_re);
+                }
+                assert_signed_zero(im.to_float(), !negative, "acos +/-1 im");
+            }
+        }
+
+        // Infinite parts in all four quadrants, per C99 Annex G. The real
+        // part's sign tracks x for asin and atan, and the imaginary part's sign
+        // tracks y (flipped for acos). Values from cmath.
+        #[test]
+        fn infinite_parts_in_every_quadrant() {
+            use std::f64::consts::{FRAC_PI_2, FRAC_PI_4, PI};
+            let inf = f64::INFINITY;
+            // (x, y, asin, acos, atan)
+            let cases = [
+                (
+                    inf,
+                    inf,
+                    (FRAC_PI_4, inf),
+                    (FRAC_PI_4, -inf),
+                    (FRAC_PI_2, 0.0),
+                ),
+                (-inf, 1.0, (-FRAC_PI_2, inf), (PI, -inf), (-FRAC_PI_2, 0.0)),
+                (1.0, -inf, (0.0, -inf), (FRAC_PI_2, inf), (FRAC_PI_2, -0.0)),
+                (
+                    -inf,
+                    -inf,
+                    (-FRAC_PI_4, -inf),
+                    (3.0 * FRAC_PI_4, inf),
+                    (-FRAC_PI_2, -0.0),
+                ),
+            ];
+            for (x, y, asin, acos, atan) in cases {
+                let z = Number::complex(x, y);
+                for (name, r, (expected_re, expected_im)) in [
+                    ("asin", z.asin(), asin),
+                    ("acos", z.acos(), acos),
+                    ("atan", z.atan(), atan),
+                ] {
+                    let (re, im) = complex_parts!(r);
+                    let label = format!("{name} {x}+{y}i");
+                    for (actual, expected, part) in [
+                        (re.to_float(), expected_re, "re"),
+                        (im.to_float(), expected_im, "im"),
+                    ] {
+                        if expected == 0.0 {
+                            assert_signed_zero(actual, expected.is_sign_negative(), &label);
+                        } else if expected.is_infinite() {
+                            assert_eq!(actual, expected, "{label} {part}");
+                        } else {
+                            assert_near!(actual, expected);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Past about |z| = 1e154, squaring (or even hypot-ing a sum of
+        // squares) overflows, so the asymptotic forms have to take over:
+        // asin z ~ atan2(x, |y|) + i sign(y) ln(2|z|), acos z ~ pi/2 - asin z
+        // and atan z ~ +/-pi/2 + i Im(1/z). Values from cmath.
+        #[test]
+        fn arguments_near_the_float_limit_do_not_overflow() {
+            use std::f64::consts::{FRAC_PI_2, FRAC_PI_4};
+            let cases = [
+                (1e308, FRAC_PI_4, FRAC_PI_4, FRAC_PI_2),
+                (-1e308, -FRAC_PI_4, 3.0 * FRAC_PI_4, -FRAC_PI_2),
+            ];
+            for (x, asin_re, acos_re, atan_re) in cases {
+                let z = Number::complex(x, 1e308);
+
+                let (re, im) = complex_parts!(z.asin());
+                assert_near!(re.to_float(), asin_re);
+                assert_close_rel(im.to_float(), 710.235929413006, "asin im");
+
+                let (re, im) = complex_parts!(z.acos());
+                assert_near!(re.to_float(), acos_re);
+                assert_close_rel(im.to_float(), -710.235929413006, "acos im");
+
+                // 1/z is subnormal-ish (~5e-309), so the imaginary part is
+                // only recoverable if nothing was squared on the way
+                let (re, im) = complex_parts!(z.atan());
+                assert_near!(re.to_float(), atan_re);
+                assert_close_rel(im.to_float(), 5e-309, "atan im");
+            }
         }
 
         #[test]
@@ -10454,6 +10656,28 @@ mod transcendental {
             for x in cases {
                 let lhs = x.acos();
                 let rhs = Number::real(std::f64::consts::FRAC_PI_2) - x.asin();
+
+                assert_near!(lhs.to_real().to_float(), rhs.to_real().to_float());
+                assert_near!(lhs.to_imag().to_float(), rhs.to_imag().to_float());
+            }
+        }
+
+        // acos(-z) = pi - acos(z): acos's counterpart to the oddness of asin
+        // and atan, which `complex_inverse_functions_are_odd_and_conjugate_symmetric`
+        // skips for acos. Covers every quadrant off the cuts.
+        #[test]
+        fn acos_of_a_negated_complex_is_pi_minus_acos() {
+            let cases = [
+                (1.0, 2.0),
+                (-1.0, 2.0),
+                (0.5, -3.0),
+                (-0.5, -3.0),
+                (-2.0, 0.5),
+                (2.0, 0.5),
+            ];
+            for (x, y) in cases {
+                let lhs = Number::complex(-x, -y).acos();
+                let rhs = Number::real(std::f64::consts::PI) - Number::complex(x, y).acos();
 
                 assert_near!(lhs.to_real().to_float(), rhs.to_real().to_float());
                 assert_near!(lhs.to_imag().to_float(), rhs.to_imag().to_float());
