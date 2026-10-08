@@ -100,6 +100,9 @@ pub(crate) const NAN_STR: &str = "nan.0";
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/MAX_SAFE_INTEGER
 // TODO: https://doc.rust-lang.org/std/primitive.f64.html#associatedconstant.MAX_EXACT_INTEGER
 const FMAX_INT: f64 = 9_007_199_254_740_991.0;
+// The size of the mantissa in bits is one less than digits due to the
+// implicit leading one.
+const MANTISSA_SIZE: u32 = f64::MANTISSA_DIGITS - 1;
 
 pub(crate) type NumResult = Result<Number, NumericError>;
 pub(crate) type RealResult = Result<Real, NumericError>;
@@ -583,7 +586,7 @@ impl Complex {
     fn sqrt(&self) -> Number {
         // Float threshold for complex √ overflow-avoidant scaling; avoids numbers large
         // enough that either magnitude (r) or scaling 2(r+x) overflows.
-        const CPX_SQRT_SCALE: f64 = f64::MAX / 8.0;
+        const SCALE_T: f64 = f64::MAX / 8.0;
 
         // Square root of zero always sets x to + and keeps sign of y; if we calculated
         // this with the below algorithm instead, the zero signs go wonky due to IEEE rules.
@@ -609,7 +612,7 @@ impl Complex {
         // taking scaled r = magnitude z/16, then multipling re/im by 4 avoids the issue
         if x.is_inexact() || y.is_inexact() {
             let (xf, yf) = (x.to_float(), y.to_float());
-            if xf.abs() > CPX_SQRT_SCALE || yf.abs() > CPX_SQRT_SCALE {
+            if xf.abs() > SCALE_T || yf.abs() > SCALE_T {
                 return float_scaled_cpx_sqrt(xf, yf);
             }
         }
@@ -2694,10 +2697,6 @@ fn try_float_to_exact(flt: f64) -> RealResult {
 // every finite f64 is exactly sign * mantissa * 2^exponent
 #[allow(clippy::similar_names, reason = "bits and bias have clear semantics")]
 fn try_to_dyadic_rational(flt: f64) -> RealResult {
-    // The size of the mantissa in bits is one less than digits due to the
-    // implicit leading one.
-    const MANTISSA_SIZE: u32 = f64::MANTISSA_DIGITS - 1;
-
     #[allow(
         clippy::cast_possible_truncation,
         reason = "only values are -1.0 or 1.0"
