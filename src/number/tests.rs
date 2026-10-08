@@ -10248,6 +10248,52 @@ mod transcendental {
             }
         }
 
+        // An exact integer above 2^53 can't be held exactly in an f64, so
+        // it rounds on the way in; the answer must match the function applied
+        // to that rounded float (here 2^64 - 1 -> 1.8446744073709552e19).
+        // The small parts (1/x and Im(1/z)) are ~1e-20 and ~1e-39, so they
+        // are compared relatively. Values from cmath. Exact integers past
+        // f64::MAX need multi-precision integers and aren't covered yet.
+        #[test]
+        fn exact_integer_parts_beyond_f64_precision_round_to_the_nearest_float() {
+            use std::f64::consts::{FRAC_PI_2, PI};
+            let big = (Sign::Positive, u64::MAX);
+            let neg_big = (Sign::Negative, u64::MAX);
+            // (z, asin, acos, atan)
+            let cases = [
+                (
+                    Number::complex(big, 1),
+                    (FRAC_PI_2, 45.054566736396445),
+                    (5.421010862427522e-20, -45.054566736396445),
+                    (FRAC_PI_2, 2.938735877055719e-39),
+                ),
+                (
+                    Number::complex(1, big),
+                    (5.421010862427522e-20, 45.054566736396445),
+                    (FRAC_PI_2, -45.054566736396445),
+                    (FRAC_PI_2, 5.421010862427522e-20),
+                ),
+                (
+                    Number::complex(neg_big, 1),
+                    (-FRAC_PI_2, 45.054566736396445),
+                    (PI, -45.054566736396445),
+                    (-FRAC_PI_2, 2.938735877055719e-39),
+                ),
+            ];
+            for (z, asin, acos, atan) in cases {
+                for (name, r, (expected_re, expected_im)) in [
+                    ("asin", z.asin(), asin),
+                    ("acos", z.acos(), acos),
+                    ("atan", z.atan(), atan),
+                ] {
+                    assert!(r.is_inexact(), "{name} {z}");
+                    let (re, im) = complex_parts!(r);
+                    assert_close_rel(re.to_float(), expected_re, &format!("{name} {z} re"));
+                    assert_close_rel(im.to_float(), expected_im, &format!("{name} {z} im"));
+                }
+            }
+        }
+
         // Infinite parts in all four quadrants, per C99 Annex G. The real
         // part's sign tracks x for asin and atan, and the imaginary part's sign
         // tracks y (flipped for acos). Values from cmath.
