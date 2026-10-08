@@ -8208,7 +8208,7 @@ mod sqrt {
         #[test]
         fn magnitude_near_the_float_limit_does_not_overflow_to_infinity() {
             let max = f64::MAX;
-            let cases: [(f64, f64, f64, f64); 7] = [
+            let cases: [(f64, f64, f64, f64); 8] = [
                 (1e308, 1e308, 1.09868411346781e154, 4.5508986056222734e153),
                 (-1e308, 1e308, 4.5508986056222734e153, 1.09868411346781e154),
                 (1e308, -1e308, 1.09868411346781e154, -4.5508986056222734e153),
@@ -8216,6 +8216,8 @@ mod sqrt {
                 (max, 0.0, 1.3407807929942596e154, 0.0),
                 (-max, 0.0, 0.0, 1.3407807929942596e154),
                 (5e307, 5e307, 7.768869870150187e153, 3.2179712645279132e153),
+                // 2(r + x) overflows here although |z| < f64::MAX / 4
+                (4e307, 4e307, 6.948688455202313e153, 2.8782409988501485e153),
             ];
             for (x, y, expected_re, expected_im) in cases {
                 let r = Number::complex(x, y).sqrt();
