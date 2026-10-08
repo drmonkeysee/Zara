@@ -100,9 +100,6 @@ pub(crate) const NAN_STR: &str = "nan.0";
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/MAX_SAFE_INTEGER
 // TODO: https://doc.rust-lang.org/std/primitive.f64.html#associatedconstant.MAX_EXACT_INTEGER
 const FMAX_INT: f64 = 9_007_199_254_740_991.0;
-// The size of the mantissa in bits is one less than digits due to the
-// implicit leading one.
-const MANTISSA_SIZE: u32 = f64::MANTISSA_DIGITS - 1;
 
 pub(crate) type NumResult = Result<Number, NumericError>;
 pub(crate) type RealResult = Result<Real, NumericError>;
@@ -578,12 +575,16 @@ impl Complex {
     /*
      * Square root of Complex is defined as:
      * given x+yi and r = √(x² + y²)
-     * √x+yi = √((r+x)/2) + sign(y)i√((r-x)/2)
-     * split on whether x < 0 to avoid cancellation issues for (r-x)/2; x > 0, |y| << x
+     * √x+yi = √(½(r+x)) + sign(y)i√(½(r-x))
+     * split on whether x < 0 to avoid cancellation issues for ½(r-x); x > 0, |y| << x
      * used by C99's csqrt, which also includes some special casing for signed zeros and infs.
      */
     #[allow(clippy::many_single_char_names)]
     fn sqrt(&self) -> Number {
+        // Float threshold for complex √ overflow-avoidant scaling; avoids numbers large
+        // enough that either magnitude (r) or scaling 2(r+x) overflows.
+        const CPX_SQRT_SCALE: f64 = f64::MAX / 8.0;
+
         // Square root of zero always sets x to + and keeps sign of y; if we calculated
         // this with the below algorithm instead, the zero signs go wonky due to IEEE rules.
         // Complex is_zero implies non-exact imaginary, so only check exactness of the real part.
@@ -604,26 +605,23 @@ impl Complex {
         if y.is_infinite() {
             return Number::complex(f64::INFINITY, f64::INFINITY.copysign(self.0.1.signum()));
         }
-        let r = self.magnitude();
-        let (u, v) = if x.is_negative() {
-            let t = scaled_re(&r, x, Real::sub);
-            (
-                assume_safe_div!(y.abs() / &t),
-                assume_safe_div!(t / Real::two()).copysign(y),
-            )
-        } else {
-            let t = scaled_re(&r, x, Real::add);
-            (assume_safe_div!(&t / Real::two()), assume_safe_div!(y / t))
-        };
-        Number::complex(u, v)
+        // if x or y are very large floats, then scaling r with x will overflow;
+        // taking scaled r = magnitude z/16, then multipling re/im by 4 avoids the issue
+        if x.is_inexact() || y.is_inexact() {
+            let (xf, yf) = (x.to_float(), y.to_float());
+            if xf.abs() > CPX_SQRT_SCALE || yf.abs() > CPX_SQRT_SCALE {
+                return float_scaled_cpx_sqrt(xf, yf);
+            }
+        }
+        scaled_cpx_sqrt(&self.magnitude(), x, y)
     }
 
     /*
      * Complex Exponential
      * e^z = e^(x+yi) = e^x·e^yi = (e^x·cos y) + (ie^x·sin y)
      *
-     * EXCEPT e^x can overflow if it's too large so mitigate this with the following:
-     * split e^x in two and distribute it across the multiplication so cos/sin can scale
+     * EXCEPT e^x can overflow if it's too large, so mitigate this with the following:
+     * split e^x in two and distribute it across the multiplication, so cos/sin can scale
      * half the exponent down before accounting for the other half. Overflow can still
      * happen but at a much higher threshold.
      */
@@ -677,13 +675,13 @@ impl Complex {
      * tan z = sin z / cos z = (sin 2x + i(sinh 2y)) / (cos 2x + cosh 2y)
      *
      * However as per-usual there are floating-point rounding errors if done
-     * naively. For |2y| ≳ 710 sinh/cosh both overflow so you end up with ∞/∞ = NaN,
+     * naively. For |2y| ≳ 710 sinh/cosh both overflow, so you end up with ∞/∞ = NaN,
      * but complex tan is supposed to saturate around ±i. Instead use the following
      * approximations:
      *  sinh 2y ≈ sign(y)·½e^(2|y|)
      *  cosh 2y ≈ ½e^(2|y|)
      * Then:
-     * let t = e^(−2|y|) which is in (0, 1] so never overflows
+     * let t = e^(−2|y|) which is in (0, 1], so never overflows
      * D = (1−t)² + 4t·cos²x  <= this is 1 + t² + 2t·cos 2x rearranged to
      *                           avoid cancellation with t ≈ 1 and cos 2x ≈ -1
      * real part = 2t * sin 2x / D
@@ -693,7 +691,7 @@ impl Complex {
      */
     fn tan(&self) -> Number {
         let (x, y) = self.get_parts();
-        // an exact y has no impact on this algorithm so convert to float
+        // an exact y has no impact on this algorithm, so convert to float
         let yf = y.to_float();
         // with u = -2|y| then
         // t = e^u and
@@ -729,7 +727,7 @@ impl Complex {
 
     fn real_for_ln(&self) -> RealResult {
         Ok(match near_unit_ln_re(self.get_parts()) {
-            // magnitude is always positive so ln(mag z) is always real
+            // magnitude is always positive, so ln(mag z) is always real
             None => (self.magnitude().ln()?).into_real(),
             Some(r) => r,
         })
@@ -1268,7 +1266,7 @@ impl Real {
         }
     }
 
-    // Number handles negative sign so this function technically returns the
+    // Number handles negative sign, so this function technically returns the
     // wrong value for negative roots (e.g. √-4 = -2 instead of +2i)
     fn sqrt(&self) -> Self {
         match self {
@@ -1295,7 +1293,7 @@ impl Real {
         } else {
             // ln(-x) = ln(x) + iπ
             // ln(x) = ln(x) + i0 -> ln(x)
-            // use signum so it doesn't differentiate between ± NaN
+            // use signum, so it doesn't differentiate between ± NaN
             let f = self.to_float();
             Ok(Number::complex(f.abs().ln(), real_angle(f.signum())))
         }
@@ -2530,10 +2528,51 @@ fn sign_preserving_sqrt(f: f64) -> f64 {
     f.abs().sqrt().copysign(f)
 }
 
+// Ultimately from Kahan 1987; Numerical Recipes §5.4, scale the real part
+// based on x's sign to avoid r±x canceling for ∓x when x >> y and dominates r.
+fn scaled_cpx_sqrt(r: &Real, x: &Real, y: &Real) -> Number {
+    let (u, v) = if x.is_negative() {
+        let t = scaled_re(&r, x, Real::sub);
+        (
+            assume_safe_div!(y.abs() / &t),
+            assume_safe_div!(t / Real::two()).copysign(y),
+        )
+    } else {
+        let t = scaled_re(&r, x, Real::add);
+        (assume_safe_div!(&t / Real::two()), assume_safe_div!(y / t))
+    };
+    Number::complex(u, v)
+}
+
+// same algorithm as above except optimized for large floats
+fn float_scaled_cpx_sqrt(x: f64, y: f64) -> Number {
+    // scale-down, scale-up
+    const SD: f64 = 16.0;
+    const SU: f64 = 4.0;
+
+    let (xs, ys) = (x / SD, y / SD);
+    // magnitude is hypotenuse if both args are inexact
+    let r = xs.hypot(ys);
+    let (u, v) = if xs.is_sign_negative() {
+        let t = scaledf_re(r, xs, f64::sub);
+        (ys.abs() / t, (t / 2.0).copysign(ys))
+    } else {
+        let t = scaledf_re(r, xs, f64::add);
+        (t / 2.0, ys / t)
+    };
+    return Number::complex(u * SU, v * SU);
+}
+
 // helper to calculate the intermediate real value for complex sqrt
 fn scaled_re(r: &Real, x: &Real, op: impl FnOnce(&Real, &Real) -> Real) -> Real {
     let t = (Real::two() * op(r, x)).sqrt();
     debug_assert!(!t.is_zero());
+    t
+}
+
+fn scaledf_re(r: f64, x: f64, op: impl FnOnce(f64, f64) -> f64) -> f64 {
+    let t = (2.0 * op(r, x)).sqrt();
+    debug_assert_ne!(t, 0.0);
     t
 }
 
@@ -2556,7 +2595,7 @@ fn near_unit_ln_re((x, y): (&Real, &Real)) -> Option<Real> {
             Some(t.to_float())
         }
     };
-    total.map(|t| (0.5 * t.ln_1p()).into())
+    total.map(|t| (t.ln_1p() / 2.0).into())
 }
 
 // double-double TwoSum/TwoProduct
@@ -2591,10 +2630,10 @@ fn dd_2sum_2product(x: f64, y: f64) -> Option<f64> {
  * sinh/cosh y ≈ ½e^|y|
  * to keep this approximation managable:
  * let h = e^(|y|/2) <=> e^|y| = h·h (cuts magnitude in half to reduce overflow)
- * trig * ½e^|y| = trig·½(h·h) = (trig·(0.5·h))·h
+ * trig·½e^|y| = trig·½(h·h) = (trig·½h)·h
  */
 fn scale_hyperbolic_ovf(mut trig: Real, y: f64, odd: bool) -> Real {
-    // sinh is odd so the sign of y propagates through the result (including zero)
+    // sinh is odd, so the sign of y propagates through the result (including zero)
     if odd && y.is_sign_negative() {
         trig = -trig
     }
@@ -2604,7 +2643,7 @@ fn scale_hyperbolic_ovf(mut trig: Real, y: f64, odd: bool) -> Real {
     }
     let h = (y.abs() / 2.0).exp();
     // order matters here to calculate from smallest-to-largest values
-    (((0.5 * h) * trig.to_float()) * h).into()
+    (((h / 2.0) * trig.to_float()) * h).into()
 }
 
 fn cpx_product(a: &Real, b: &Real, c: &Real, d: &Real) -> Number {
@@ -2655,6 +2694,10 @@ fn try_float_to_exact(flt: f64) -> RealResult {
 // every finite f64 is exactly sign * mantissa * 2^exponent
 #[allow(clippy::similar_names, reason = "bits and bias have clear semantics")]
 fn try_to_dyadic_rational(flt: f64) -> RealResult {
+    // The size of the mantissa in bits is one less than digits due to the
+    // implicit leading one.
+    const MANTISSA_SIZE: u32 = f64::MANTISSA_DIGITS - 1;
+
     #[allow(
         clippy::cast_possible_truncation,
         reason = "only values are -1.0 or 1.0"
