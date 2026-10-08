@@ -680,8 +680,8 @@ impl Complex {
      * naively. For |2y| ≳ 710 sinh/cosh both overflow so you end up with ∞/∞ = NaN,
      * but complex tan is supposed to saturate around ±i. Instead use the following
      * approximations:
-     *  sinh 2y ≈ sign(y)·e^(2|y|)/2
-     *  cosh 2y ≈ e^(2|y|)/2
+     *  sinh 2y ≈ sign(y)·½e^(2|y|)
+     *  cosh 2y ≈ ½e^(2|y|)
      * Then:
      * let t = e^(−2|y|) which is in (0, 1] so never overflows
      * D = (1−t)² + 4t·cos²x  <= this is 1 + t² + 2t·cos 2x rearranged to
@@ -2588,10 +2588,10 @@ fn dd_2sum_2product(x: f64, y: f64) -> Option<f64> {
 /*
  * More floating-point woes: if sinh/cosh y overflow you lose precision on
  * both of these trig functions. So if they do overflow use the approximation:
- * sinh/cosh y ≈ e^|y| / 2
+ * sinh/cosh y ≈ ½e^|y|
  * to keep this approximation managable:
  * let h = e^(|y|/2) <=> e^|y| = h·h (cuts magnitude in half to reduce overflow)
- * trig * e^|y| / 2 = trig·(h·h) / 2 = (trig·(0.5·h))·h
+ * trig * ½e^|y| = trig·½(h·h) = (trig·(0.5·h))·h
  */
 fn scale_hyperbolic_ovf(mut trig: Real, y: f64, odd: bool) -> Real {
     // sinh is odd so the sign of y propagates through the result (including zero)
