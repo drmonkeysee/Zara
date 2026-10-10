@@ -2783,8 +2783,9 @@ fn cpx_atanh(fy: f64, x: f64, scale_th: f64) -> (f64, f64) {
         let im = f64::consts::FRAC_PI_2.copysign(x);
         return (re, im);
     }
-    // another special case near the complex pole
-    if fy == 1.0 && xa < f64::MIN_POSITIVE.sqrt() {
+    // Another special case near the complex pole, except x=0 is a singularity,
+    // so exclude that special case from this special case.
+    if fy == 1.0 && xa != 0.0 && xa < f64::MIN_POSITIVE.sqrt() {
         let re = (2.0_f64.ln() - xa.ln()) / 2.0;
         let im = (2.0_f64.atan2(-xa) / 2.0).copysign(x);
         return (re, im);
