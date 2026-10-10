@@ -2783,6 +2783,11 @@ fn cpx_atanh(fy: f64, x: f64, scale: f64) -> (f64, f64) {
         let im = f64::consts::FRAC_PI_2.copysign(x);
         return (re, im);
     }
+    if fy == 1.0 && xa < f64::MIN_POSITIVE.sqrt() {
+        let re = (2.0_f64.ln() - xa.ln()) / 2.0;
+        let im = (2.0_f64.atan2(-xa) / 2.0).copysign(x);
+        return (re, im);
+    }
     let xsq = x * x;
     let one_minus_fy = 1.0 - fy;
     let re = ((4.0 * fy) / ((one_minus_fy * one_minus_fy) + xsq)).ln_1p() / 4.0;
