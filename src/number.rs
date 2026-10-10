@@ -752,9 +752,8 @@ impl Complex {
     }
 
     fn acos(&self) -> Number {
-        let (x, y) = self.get_parts();
-        let (xf, yf) = (x.to_float(), y.to_float());
-        let (s1, s2) = cpx_atrig_roots(xf, yf);
+        let (x, y) = self.to_floats();
+        let (s1, s2) = cpx_atrig_roots(x, y);
         let ((s1r, s1i), (s2r, s2i)) = (s1.to_cpx_floats(), s2.to_cpx_floats());
         Number::complex(2.0 * s1r.atan2(s2r), ((s2r * s1i) - (s2i * s1r)).asinh())
     }
