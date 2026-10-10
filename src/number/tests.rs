@@ -2055,8 +2055,8 @@ mod integer {
             // convention as R7RS `remainder`, so it's a valid independent oracle here.
             // i64::MIN is excluded: `i64::MIN % -1` overflow-panics natively even
             // though the mathematical remainder is well-defined (see below).
-            for n in -20..=20i64 {
-                for d in -7..=7i64 {
+            for n in -20..=20_i64 {
+                for d in -7..=7_i64 {
                     if d == 0 {
                         continue;
                     }
@@ -2231,7 +2231,7 @@ mod integer {
                 let q = ok_or_fail!(Integer::from(i64::MIN).truncate_quotient(&(-1).into()));
                 let r = ok_or_fail!(Integer::from(i64::MIN).truncate_rem(&(-1).into()));
 
-                let expected: Integer = (Sign::Positive, 1u64 << 63).into();
+                let expected: Integer = (Sign::Positive, 1_u64 << 63).into();
                 assert_eq!(q, expected);
                 assert_eq!(extract_or_fail!(r.precision, Precision::Single), 0);
                 assert_eq!(r.sign, Sign::Zero);
@@ -2338,7 +2338,7 @@ mod integer {
                 let q = ok_or_fail!(Integer::from(i64::MIN).floor_quotient(&(-1).into()));
                 let r = ok_or_fail!(Integer::from(i64::MIN).floor_rem(&(-1).into()));
 
-                let expected: Integer = (Sign::Positive, 1u64 << 63).into();
+                let expected: Integer = (Sign::Positive, 1_u64 << 63).into();
                 assert_eq!(q, expected);
                 assert_eq!(extract_or_fail!(r.precision, Precision::Single), 0);
                 assert_eq!(r.sign, Sign::Zero);
@@ -2464,8 +2464,8 @@ mod integer {
                 // Rust's `/` and `%` on primitive integers are truncated, the same
                 // convention as R7RS truncate-quotient/truncate-remainder. i64::MIN is
                 // excluded because -i64::MIN overflow-panics natively for some divisors.
-                for n in -12..=12i64 {
-                    for d in -5..=5i64 {
+                for n in -12..=12_i64 {
+                    for d in -5..=5_i64 {
                         if d == 0 {
                             continue;
                         }
@@ -2485,8 +2485,8 @@ mod integer {
                 // signs differ; r is then defined as n - d*q. This is deliberately NOT
                 // div_euclid/rem_euclid, which keeps r >= 0 always and so disagrees
                 // with floored division whenever the divisor is negative.
-                for n in -12..=12i64 {
-                    for d in -5..=5i64 {
+                for n in -12..=12_i64 {
+                    for d in -5..=5_i64 {
                         if d == 0 {
                             continue;
                         }

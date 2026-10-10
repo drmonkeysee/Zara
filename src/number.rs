@@ -613,7 +613,7 @@ impl Complex {
                 } else {
                     0.0.into()
                 },
-                0.0f64.copysign(self.0.1.signum()),
+                0.0_f64.copysign(self.0.1.signum()),
             );
         }
         let (x, y) = self.get_parts();
@@ -716,10 +716,10 @@ impl Complex {
         // 1 − t = −(e^u − 1) which avoids rounding when t ≈ 1
         let u = -2.0 * yf.abs();
         let t = u.exp();
-        let one_minus_t = -u.exp_m1();
+        let one_minust = -u.exp_m1();
         let xcos = x.cos().to_float();
         let t2 = 2.0 * t;
-        let d = (one_minus_t * one_minus_t) + (2.0 * t2 * (xcos * xcos));
+        let d = (one_minust * one_minust) + (2.0 * t2 * (xcos * xcos));
         let re = if x.is_exact_zero() {
             x.clone()
         } else {
@@ -727,7 +727,7 @@ impl Complex {
             ((t2 * sin2x) / d).into()
         };
         // (1-t²) = (1-t)(1+t)
-        let im = ((one_minus_t * (1.0 + t)) / d).copysign(yf);
+        let im = ((one_minust * (1.0 + t)) / d).copysign(yf);
         Number::complex(re, im)
     }
 
@@ -792,7 +792,7 @@ impl Complex {
                 } else {
                     f64::consts::FRAC_PI_2.copysign(xf)
                 },
-                0.0f64.copysign(yf),
+                0.0_f64.copysign(yf),
             );
         }
         /*
@@ -2686,7 +2686,7 @@ fn near_unit_ln_re((x, y): (&Real, &Real)) -> Option<Real> {
  * L = ln(hypot(x/2, y/2)) + 2·ln 2
  */
 fn atrig_mag_im(x: f64, y: f64) -> f64 {
-    (x / 2.0).hypot(y / 2.0).ln() + (2.0 * 2.0f64.ln())
+    (x / 2.0).hypot(y / 2.0).ln() + (2.0 * 2.0_f64.ln())
 }
 
 // double-double TwoSum/TwoProduct
@@ -2828,12 +2828,12 @@ fn try_to_dyadic_rational(flt: f64) -> RealResult {
     if exp < 0 {
         // negative exponent: sign * mantissa * 2^exponent = (sign * mantissa) / 2^-exponent
         let numerator = sign * mantissa;
-        let denom = 2i64.pow((-exp).cast_unsigned());
+        let denom = 2_i64.pow((-exp).cast_unsigned());
         Real::reduce(numerator, denom)
     } else {
         // positive exponent: sign * mantissa * 2^exponent
         Ok(Real::Integer(
-            (sign * mantissa * 2i64.pow(exp.cast_unsigned())).into(),
+            (sign * mantissa * 2_i64.pow(exp.cast_unsigned())).into(),
         ))
     }
 }
