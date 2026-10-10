@@ -10222,6 +10222,39 @@ mod transcendental {
             assert_close_rel(im.to_float(), 11.859499013905017, "atan 1.0000000001i im");
         }
 
+        // z = +/-i is the pole of atan. C99 catan gives a zero real part with
+        // the sign of x and an infinite imaginary part with the sign of y, the
+        // same as the exact (atan +i) = +inf.0i, rather than the pi/4 that the
+        // limit along the line Re(iz) = 1 would suggest.
+        #[test]
+        fn atan_at_the_exact_pole_has_a_zero_real_part() {
+            for (x_negative, y_negative) in
+                [(false, false), (true, false), (false, true), (true, true)]
+            {
+                let x = if x_negative { -0.0 } else { 0.0 };
+                let y = if y_negative { -1.0 } else { 1.0 };
+                let (re, im) = complex_parts!(Number::complex(x, y).atan());
+                assert_signed_zero(re.to_float(), x_negative, "atan +/-0.0+/-1.0i re");
+                assert_eq!(
+                    im.to_float(),
+                    if y_negative { f64::NEG_INFINITY } else { f64::INFINITY },
+                    "atan +/-0.0+/-1.0i im"
+                );
+            }
+        }
+
+        // The zero-real-part rule is only for the exact pole: a nonzero but
+        // tiny x (below sqrt(MIN_POSITIVE)) is still on the pi/4 side.
+        #[test]
+        fn atan_just_beside_the_pole_keeps_pi_over_four() {
+            use std::f64::consts::FRAC_PI_4;
+            for (x, expected_re) in [(1e-200, FRAC_PI_4), (-1e-200, -FRAC_PI_4)] {
+                let (re, im) = complex_parts!(Number::complex(x, 1.0).atan());
+                assert_close_rel(re.to_float(), expected_re, "atan re");
+                assert_close_rel(im.to_float(), 230.60508288968455, "atan im");
+            }
+        }
+
         // z = +/-1 sit on the ends of the real-axis cuts for asin and acos,
         // so the sign of the zero imaginary part picks the side. Values from
         // C99 casin/cacos (cmath).
