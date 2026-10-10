@@ -746,6 +746,17 @@ impl Complex {
                 return Number::complex(x.clone(), yf.atanh());
             }
         }
+        let xf = x.to_float();
+        if xf.is_infinite() || yf.is_infinite() {
+            return Number::complex(
+                if xf.is_nan() {
+                    xf
+                } else {
+                    f64::consts::FRAC_PI_2.copysign(xf)
+                },
+                0.0f64.copysign(yf),
+            );
+        }
         todo!();
     }
 
