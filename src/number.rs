@@ -801,8 +801,10 @@ impl Complex {
          * now calculate atanh on that which gives some new w = u + vi;
          * rotate back to the original input as -iw → −i(u + vi) = −ui − vi² = v − ui → (v, −u);
          * at the end of it all atan z = v-ui
+         * the too-big threshold is √asin/acos threshold
          */
-        todo!();
+        let (u, v) = cpx_atanh(-yf, xf, Self::ATRIG_SCALE_T.sqrt());
+        Number::complex(v, -u)
     }
 
     fn real_for_ln(&self) -> RealResult {
@@ -2766,9 +2768,19 @@ fn cpx_atrig_roots(x: f64, y: f64) -> (Number, Number) {
     (z1.sqrt(), z2.sqrt())
 }
 
-// the atanh core of complex atan, due to the rotation of z = x+iy it takes -y, x
-fn cpx_atanh(ny: f64, x: f64) -> (f64, f64) {
-    todo!();
+// The atanh core of complex atan, due to the rotation of z = x+iy it takes -y, x;
+// denoted here flip-y and x.
+fn cpx_atanh(fy: f64, x: f64, scale: f64) -> (f64, f64) {
+    // if flip-y is negative, calculate mirror atanh to avoid cancellation of ln_1p
+    if fy.is_sign_negative() {
+        let (u, v) = cpx_atanh(-fy, -x, scale);
+        return (-u, -v);
+    }
+    let xsq = x * x;
+    let one_minus_fy = 1.0 - fy;
+    let re = ((4.0 * fy) / ((one_minus_fy * one_minus_fy) + xsq)).ln_1p() / 4.0;
+    let im = (2.0 * x).atan2((one_minus_fy * (1.0 + fy)) - xsq) / 2.0;
+    (re, im)
 }
 
 fn real_angle(sign: f64) -> Real {
