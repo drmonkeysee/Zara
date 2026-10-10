@@ -9861,13 +9861,18 @@ mod transcendental {
                 (Number::imaginary(half.clone()), 0.5493061443340549),
                 (Number::imaginary(-half), -0.5493061443340549),
                 (Number::imaginary(0.5), 0.5493061443340549),
+                (Number::imaginary(1.0), f64::INFINITY),
             ];
             for (z, expected_im) in cases {
                 let r = z.atan();
 
                 let (re, im) = complex_parts!(r);
                 assert!(re.is_exact_zero(), "atan {z} re: {re}");
-                assert_near!(im.to_float(), expected_im);
+                if expected_im.is_infinite() {
+                    assert_eq!(im.to_float(), expected_im);
+                } else {
+                    assert_near!(im.to_float(), expected_im);
+                }
             }
         }
 

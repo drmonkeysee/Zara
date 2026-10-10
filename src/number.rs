@@ -716,7 +716,21 @@ impl Complex {
         Number::complex(re, im)
     }
 
+    /*
+     * Complex Inverse Trig Formulations
+     * once again the classic mathematical formulations as defined in the R7RS
+     * spec aren't useful for avoiding floating-point nonsense.
+     *
+     * Instead use Kahan's formulations as specified in C99 Annex G based around
+     * the shared roots of z: s1 = √(1-z), s2 = √(1+z). In addition we have a
+     * large number threshold similar to sqrt where we need an alternate approach
+     * to avoid rounding errors.
+     */
     fn asin(&self) -> Number {
+        let (x, y) = self.get_parts();
+        if x.is_exact_zero() {
+            return Number::complex(x.clone(), y.to_float().asinh());
+        }
         todo!();
     }
 
@@ -725,6 +739,13 @@ impl Complex {
     }
 
     fn atan(&self) -> Number {
+        let (x, y) = self.get_parts();
+        let yf = y.to_float();
+        if x.is_exact_zero() {
+            if yf.abs() <= 1.0 {
+                return Number::complex(x.clone(), yf.atanh());
+            }
+        }
         todo!();
     }
 
