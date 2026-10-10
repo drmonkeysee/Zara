@@ -391,17 +391,17 @@ impl Number {
         self / rhs
     }
 
+    fn to_cpx_floats(&self) -> (f64, f64) {
+        match self {
+            Self::Complex(z) => z.to_floats(),
+            Self::Real(r) => (r.to_float(), 0.0),
+        }
+    }
+
     fn into_real(self) -> Real {
         match self {
             Self::Complex(z) => z.into_real(),
             Self::Real(r) => r,
-        }
-    }
-
-    fn into_complex_inexact(self) -> Complex {
-        match self {
-            Self::Complex(z) => z,
-            Self::Real(r) => Complex((r, 0.0.into()).into()),
         }
     }
 }
@@ -554,6 +554,11 @@ impl Complex {
 
     fn to_imag(&self) -> Real {
         self.0.1.clone()
+    }
+
+    fn to_floats(&self) -> (f64, f64) {
+        let (x, y) = self.get_parts();
+        (x.to_float(), y.to_float())
     }
 
     fn magnitude(&self) -> Real {
@@ -731,23 +736,27 @@ impl Complex {
      * Instead use Kahan's formulations as specified in C99 Annex G based around
      * the shared roots of z: s1 = √(1-z), s2 = √(1+z). In addition we have a
      * large number threshold similar to sqrt where we need an alternate approach
-     * to avoid rounding errors.
+     * to avoid rounding errors (Kahan 1987, "Branch Cuts for Complex Elementary Functions").
      */
     fn asin(&self) -> Number {
         let (x, y) = self.get_parts();
         if x.is_exact_zero() {
             return Number::complex(x.clone(), y.to_float().asinh());
         }
-        todo!();
+        let (xf, yf) = (x.to_float(), y.to_float());
+        let (s1, s2) = cpx_atrig_roots(xf, yf);
+        let ((s1r, s1i), (s2r, s2i)) = (s1.to_cpx_floats(), s2.to_cpx_floats());
+        let re = xf.atan2((s1 * s2).into_real().to_float());
+        let im = ((s1r * s2i) - (s1i * s2r)).asinh();
+        Number::complex(re, im)
     }
 
     fn acos(&self) -> Number {
         let (x, y) = self.get_parts();
         let (xf, yf) = (x.to_float(), y.to_float());
-        let ((s1r, s1i), (s2r, s2i)) = cpx_atrig_roots(xf, yf);
-        let re = 2.0 * s1r.atan2(s2r);
-        let im = ((s2r * s1i) - (s2i * s1r)).asinh();
-        Number::complex(re, im)
+        let (s1, s2) = cpx_atrig_roots(xf, yf);
+        let ((s1r, s1i), (s2r, s2i)) = (s1.to_cpx_floats(), s2.to_cpx_floats());
+        Number::complex(2.0 * s1r.atan2(s2r), ((s2r * s1i) - (s2i * s1r)).asinh())
     }
 
     fn atan(&self) -> Number {
@@ -2717,16 +2726,9 @@ fn cpx_trig(
 }
 
 // calculate √(1-z), √(1+z) as √(1-x, -y), √(1+x, y)
-fn cpx_atrig_roots(x: f64, y: f64) -> ((f64, f64), (f64, f64)) {
+fn cpx_atrig_roots(x: f64, y: f64) -> (Number, Number) {
     let (z1, z2) = (Number::complex(1.0 - x, -y), Number::complex(1.0 + x, y));
-    let ((s1r, s1i), (s2r, s2i)) = (
-        z1.sqrt().into_complex_inexact().into_parts(),
-        z2.sqrt().into_complex_inexact().into_parts(),
-    );
-    (
-        (s1r.to_float(), s1i.to_float()),
-        (s2r.to_float(), s2i.to_float()),
-    )
+    (z1.sqrt(), z2.sqrt())
 }
 
 fn real_angle(sign: f64) -> Real {
