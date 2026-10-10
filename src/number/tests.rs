@@ -10391,6 +10391,103 @@ mod transcendental {
             }
         }
 
+        // NaN paired with an infinity, per C99 Annex G (values from cmath,
+        // which implements those tables). Where Annex G leaves a sign
+        // unspecified ("+/-"), only the magnitude/class is asserted.
+        // Chez and Guile both differ here and are not followed: Chez gives
+        // NaN real parts for asin/acos(+-inf+NaN i) and NaN imaginary parts for
+        // atan(+-inf+NaN i) and atan(NaN+-inf i); Guile returns nan+nan i for
+        // every one of these.
+        #[test]
+        fn infinite_part_with_a_nan_part() {
+            use std::f64::consts::FRAC_PI_2;
+            let (inf, nan) = (f64::INFINITY, f64::NAN);
+
+            // asin(+-inf+NaN i) = NaN +- inf i
+            for x in [inf, -inf] {
+                let (re, im) = complex_parts!(Number::complex(x, nan).asin());
+                assert!(re.to_float().is_nan(), "asin {x}+nan i re");
+                assert!(im.to_float().is_infinite(), "asin {x}+nan i im");
+            }
+            // acos(+-inf+NaN i) = NaN +- inf i
+            for x in [inf, -inf] {
+                let (re, im) = complex_parts!(Number::complex(x, nan).acos());
+                assert!(re.to_float().is_nan(), "acos {x}+nan i re");
+                assert!(im.to_float().is_infinite(), "acos {x}+nan i im");
+            }
+            // atan(+-inf+NaN i) = +-pi/2 +- 0 i
+            for (x, expected) in [(inf, FRAC_PI_2), (-inf, -FRAC_PI_2)] {
+                let (re, im) = complex_parts!(Number::complex(x, nan).atan());
+                assert_near!(re.to_float(), expected);
+                assert_eq!(im.to_float(), 0.0, "atan {x}+nan i im");
+            }
+
+            // asin(NaN+-inf i) = NaN +- inf i (sign follows y)
+            for y in [inf, -inf] {
+                let (re, im) = complex_parts!(Number::complex(nan, y).asin());
+                assert!(re.to_float().is_nan(), "asin nan+{y}i re");
+                assert_eq!(im.to_float(), y, "asin nan+{y}i im");
+            }
+            // acos(NaN+-inf i) = NaN -+ inf i (sign opposes y)
+            for y in [inf, -inf] {
+                let (re, im) = complex_parts!(Number::complex(nan, y).acos());
+                assert!(re.to_float().is_nan(), "acos nan+{y}i re");
+                assert_eq!(im.to_float(), -y, "acos nan+{y}i im");
+            }
+            // atan(NaN+-inf i) = NaN +- 0 i (sign follows y)
+            for y in [inf, -inf] {
+                let (re, im) = complex_parts!(Number::complex(nan, y).atan());
+                assert!(re.to_float().is_nan(), "atan nan+{y}i re");
+                assert_signed_zero(im.to_float(), y < 0.0, &format!("atan nan+{y}i im"));
+            }
+        }
+
+        // NaN against a finite part carries no information, so the result is
+        // NaN in both parts. The exceptions are the zero cases C99 singles out:
+        // casin(0+NaN i) = 0+NaN i, cacos(0+NaN i) = pi/2+NaN i and
+        // catan(NaN+0i) = NaN+0i. Values from cmath.
+        #[test]
+        fn nan_with_a_finite_part() {
+            use std::f64::consts::FRAC_PI_2;
+            let nan = f64::NAN;
+
+            for z in [
+                Number::complex(1.0, nan),
+                Number::complex(nan, 1.0),
+                Number::complex(-2.0, nan),
+                Number::complex(nan, -2.0),
+            ] {
+                for (name, r) in [("asin", z.asin()), ("acos", z.acos()), ("atan", z.atan())] {
+                    let (re, im) = complex_parts!(r);
+                    assert!(re.to_float().is_nan(), "{name} re");
+                    assert!(im.to_float().is_nan(), "{name} im");
+                }
+            }
+
+            // NaN real part with an inexact zero imaginary part
+            let z = Number::complex(nan, 0.0);
+            for (name, r) in [("asin", z.asin()), ("acos", z.acos())] {
+                let (re, im) = complex_parts!(r);
+                assert!(re.to_float().is_nan(), "{name} nan+0.0i re");
+                assert!(im.to_float().is_nan(), "{name} nan+0.0i im");
+            }
+            let (re, im) = complex_parts!(z.atan());
+            assert!(re.to_float().is_nan(), "atan nan+0.0i re");
+            assert_signed_zero(im.to_float(), false, "atan nan+0.0i im");
+
+            // inexact zero real part with a NaN imaginary part
+            let z = Number::complex(0.0, nan);
+            let (re, im) = complex_parts!(z.asin());
+            assert_signed_zero(re.to_float(), false, "asin 0.0+nan i re");
+            assert!(im.to_float().is_nan(), "asin 0.0+nan i im");
+            let (re, im) = complex_parts!(z.acos());
+            assert_near!(re.to_float(), FRAC_PI_2);
+            assert!(im.to_float().is_nan(), "acos 0.0+nan i im");
+            let (re, im) = complex_parts!(z.atan());
+            assert!(re.to_float().is_nan(), "atan 0.0+nan i re");
+            assert!(im.to_float().is_nan(), "atan 0.0+nan i im");
+        }
+
         #[test]
         fn exp_of_inexact_zero_complex_stays_complex() {
             // (exp 0.0+0.0i): the inexact zero imaginary part does not
