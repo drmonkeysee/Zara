@@ -795,6 +795,13 @@ impl Complex {
                 0.0f64.copysign(yf),
             );
         }
+        /*
+         * atan z is easier to calculate using atanh but we need to transform z to the atanh form and then back
+         * atan z = −i · atanh(iz), so rotate z → iz; let z = x+iy, then iz = i(x + iy) = ix − y → (−y, x);
+         * now calculate atanh on that which gives some new w = u + vi;
+         * rotate back to the original input as -iw → −i(u + vi) = −ui − vi² = v − ui → (v, −u);
+         * at the end of it all atan z = v-ui
+         */
         todo!();
     }
 
@@ -2757,6 +2764,11 @@ fn cpx_trig(
 fn cpx_atrig_roots(x: f64, y: f64) -> (Number, Number) {
     let (z1, z2) = (Number::complex(1.0 - x, -y), Number::complex(1.0 + x, y));
     (z1.sqrt(), z2.sqrt())
+}
+
+// the atanh core of complex atan, due to the rotation of z = x+iy it takes -y, x
+fn cpx_atanh(ny: f64, x: f64) -> (f64, f64) {
+    todo!();
 }
 
 fn real_angle(sign: f64) -> Real {
