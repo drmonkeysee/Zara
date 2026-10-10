@@ -397,6 +397,13 @@ impl Number {
             Self::Real(r) => r,
         }
     }
+
+    fn into_complex_inexact(self) -> Complex {
+        match self {
+            Self::Complex(z) => z,
+            Self::Real(r) => Complex((r, 0.0.into()).into()),
+        }
+    }
 }
 
 impl PartialEq for Number {
@@ -735,7 +742,12 @@ impl Complex {
     }
 
     fn acos(&self) -> Number {
-        todo!();
+        let (x, y) = self.get_parts();
+        let (xf, yf) = (x.to_float(), y.to_float());
+        let ((s1r, s1i), (s2r, s2i)) = cpx_atrig_roots(xf, yf);
+        let re = 2.0 * s1r.atan2(s2r);
+        let im = ((s2r * s1i) - (s2i * s1r)).asinh();
+        Number::complex(re, im)
     }
 
     fn atan(&self) -> Number {
@@ -2702,6 +2714,19 @@ fn cpx_trig(
         im_trig(x) * sinhy
     };
     (re, im)
+}
+
+// calculate √(1-z), √(1+z) as √(1-x, -y), √(1+x, y)
+fn cpx_atrig_roots(x: f64, y: f64) -> ((f64, f64), (f64, f64)) {
+    let (z1, z2) = (Number::complex(1.0 - x, -y), Number::complex(1.0 + x, y));
+    let ((s1r, s1i), (s2r, s2i)) = (
+        z1.sqrt().into_complex_inexact().into_parts(),
+        z2.sqrt().into_complex_inexact().into_parts(),
+    );
+    (
+        (s1r.to_float(), s1i.to_float()),
+        (s2r.to_float(), s2i.to_float()),
+    )
 }
 
 fn real_angle(sign: f64) -> Real {
