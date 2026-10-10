@@ -716,10 +716,10 @@ impl Complex {
         // 1 − t = −(e^u − 1) which avoids rounding when t ≈ 1
         let u = -2.0 * yf.abs();
         let t = u.exp();
-        let one_minust = -u.exp_m1();
+        let t_1m = -u.exp_m1();
         let xcos = x.cos().to_float();
         let t2 = 2.0 * t;
-        let d = (one_minust * one_minust) + (2.0 * t2 * (xcos * xcos));
+        let d = (t_1m * t_1m) + (2.0 * t2 * (xcos * xcos));
         let re = if x.is_exact_zero() {
             x.clone()
         } else {
@@ -727,7 +727,7 @@ impl Complex {
             ((t2 * sin2x) / d).into()
         };
         // (1-t²) = (1-t)(1+t)
-        let im = ((one_minust * (1.0 + t)) / d).copysign(yf);
+        let im = ((t_1m * (1.0 + t)) / d).copysign(yf);
         Number::complex(re, im)
     }
 
@@ -801,7 +801,7 @@ impl Complex {
          * now calculate atanh on that which gives some new w = u + vi;
          * rotate back to the original input as -iw → −i(u + vi) = −ui − vi² = v − ui → (v, −u);
          * at the end of it all atan z = v-ui
-         * the too-big threshold is √asin/acos threshold
+         * the too-big threshold is √(asin/acos threshold)
          */
         let (u, v) = cpx_atanh(-yf, xf, Self::ATRIG_SCALE_T.sqrt());
         Number::complex(v, -u)
@@ -2770,19 +2770,20 @@ fn cpx_atrig_roots(x: f64, y: f64) -> (Number, Number) {
 
 // The atanh core of complex atan, due to the rotation of z = x+iy it takes -y, x;
 // denoted here flip-y and x.
-fn cpx_atanh(fy: f64, x: f64, scale: f64) -> (f64, f64) {
+fn cpx_atanh(fy: f64, x: f64, scale_th: f64) -> (f64, f64) {
     // if flip-y is negative, calculate mirror atanh to avoid cancellation of ln_1p
     if fy.is_sign_negative() {
-        let (u, v) = cpx_atanh(-fy, -x, scale);
-        return (-u, -v);
+        let (re, im) = cpx_atanh(-fy, -x, scale_th);
+        return (-re, -im);
     }
     let (fya, xa) = (fy.abs(), x.abs());
-    if fya > scale || xa > scale {
+    if fya > scale_th || xa > scale_th {
         let h = (fy / 2.0).hypot(x / 2.0);
         let re = ((fy / 4.0) / h) / h;
         let im = f64::consts::FRAC_PI_2.copysign(x);
         return (re, im);
     }
+    // another special case near the complex pole
     if fy == 1.0 && xa < f64::MIN_POSITIVE.sqrt() {
         let re = (2.0_f64.ln() - xa.ln()) / 2.0;
         let im = (2.0_f64.atan2(-xa) / 2.0).copysign(x);
