@@ -544,6 +544,9 @@ try_int_conversion! {
 pub(crate) struct Complex(Box<(Real, Real)>);
 
 impl Complex {
+    // large number threshold for asin/acos (same as CPython)
+    const ATRIG_SCALE_T: f64 = f64::MAX / 4.0;
+
     fn is_zero(&self) -> bool {
         self.0.0.is_zero() && self.0.1.is_zero()
     }
@@ -744,18 +747,33 @@ impl Complex {
             return Number::complex(x.clone(), y.to_float().asinh());
         }
         let (xf, yf) = (x.to_float(), y.to_float());
-        let (s1, s2) = cpx_atrig_roots(xf, yf);
-        let ((s1r, s1i), (s2r, s2i)) = (s1.to_cpx_floats(), s2.to_cpx_floats());
-        let re = xf.atan2((s1 * s2).into_real().to_float());
-        let im = ((s1r * s2i) - (s1i * s2r)).asinh();
+        let yfa = yf.abs();
+        let (re, im) = if yfa > Self::ATRIG_SCALE_T || xf.abs() > Self::ATRIG_SCALE_T {
+            let im_mag = atrig_mag_im(xf, yf);
+            (xf.atan2(yfa), im_mag.copysign(yf))
+        } else {
+            let (s1, s2) = cpx_atrig_roots(xf, yf);
+            let ((s1r, s1i), (s2r, s2i)) = (s1.to_cpx_floats(), s2.to_cpx_floats());
+            (
+                xf.atan2((s1 * s2).into_real().to_float()),
+                ((s1r * s2i) - (s1i * s2r)).asinh(),
+            )
+        };
         Number::complex(re, im)
     }
 
     fn acos(&self) -> Number {
         let (x, y) = self.to_floats();
-        let (s1, s2) = cpx_atrig_roots(x, y);
-        let ((s1r, s1i), (s2r, s2i)) = (s1.to_cpx_floats(), s2.to_cpx_floats());
-        Number::complex(2.0 * s1r.atan2(s2r), ((s2r * s1i) - (s2i * s1r)).asinh())
+        let ya = y.abs();
+        let (re, im) = if ya > Self::ATRIG_SCALE_T || x.abs() > Self::ATRIG_SCALE_T {
+            let im_mag = atrig_mag_im(x, y);
+            (ya.atan2(x), im_mag.copysign(-y))
+        } else {
+            let (s1, s2) = cpx_atrig_roots(x, y);
+            let ((s1r, s1i), (s2r, s2i)) = (s1.to_cpx_floats(), s2.to_cpx_floats());
+            (2.0 * s1r.atan2(s2r), ((s2r * s1i) - (s2i * s1r)).asinh())
+        };
+        Number::complex(re, im)
     }
 
     fn atan(&self) -> Number {
@@ -2651,6 +2669,17 @@ fn near_unit_ln_re((x, y): (&Real, &Real)) -> Option<Real> {
         }
     };
     total.map(|t| (t.ln_1p() / 2.0).into())
+}
+
+/*
+ * For large |z|, asin z ≈ −i·ln(2iz), this calculates the ln(2|z|) factor of that
+ * approximation, with halving and then scaling by 4 (2·ln2) to avoid overflow;
+ * this is the asymptotic magnitude of the imaginary part of asin/acos, defined
+ * in the formulation as:
+ * L = ln(hypot(x/2, y/2)) + 2·ln 2
+ */
+fn atrig_mag_im(x: f64, y: f64) -> f64 {
+    (x / 2.0).hypot(y / 2.0).ln() + (2.0 * 2.0f64.ln())
 }
 
 // double-double TwoSum/TwoProduct
