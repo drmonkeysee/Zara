@@ -719,7 +719,7 @@ impl Complex {
         let one_minus_t = -u.exp_m1();
         let xcos = x.cos().to_float();
         let t2 = 2.0 * t;
-        let d = one_minus_t.powi(2) + (2.0 * t2 * xcos.powi(2));
+        let d = (one_minus_t * one_minus_t) + (2.0 * t2 * (xcos * xcos));
         let re = if x.is_exact_zero() {
             x.clone()
         } else {
