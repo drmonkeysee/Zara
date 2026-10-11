@@ -1176,11 +1176,11 @@ impl Real {
         }
     }
 
-    pub(crate) fn try_to_exact_integer(&self) -> IntResult {
+    pub(crate) fn try_to_integer(&self) -> IntResult {
         match self {
             Self::Float(f) if f.fract() == 0.0 => Ok(Integer::from_exact_float(*f)),
             Self::Integer(n) => Ok(n.clone()),
-            _ => Err(NumericError::NotExactInteger(self.to_string())),
+            _ => Err(NumericError::NotInteger(self.to_string())),
         }
     }
 
@@ -2478,7 +2478,7 @@ pub(crate) enum NumericError {
     IntConversionInvalidType(String),
     IsizeConversionInvalidRange,
     NoExactRepresentation(String),
-    NotExactInteger(String),
+    NotInteger(String),
     ParseExponentFailure,
     ParseExponentOutOfRange,
     ParseFailure,
@@ -2508,7 +2508,7 @@ impl Display for NumericError {
                 write_intconversion_range_error(isize::MIN, isize::MAX, f)
             }
             Self::NoExactRepresentation(s) => write!(f, "no exact representation for: {s}"),
-            Self::NotExactInteger(s) => write!(f, "expected exact integer, got: {s}"),
+            Self::NotInteger(s) => write!(f, "expected integer, got: {s}"),
             Self::ParseExponentOutOfRange => {
                 write!(f, "exponent out of range: [{}, {}]", i32::MIN, i32::MAX)
             }

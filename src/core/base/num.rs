@@ -134,11 +134,11 @@ fn is_negative(args: &[Value], _env: &Frame) -> EvalResult {
 }
 
 fn is_odd(args: &[Value], _env: &Frame) -> EvalResult {
-    exact_int_predicate(first(args), |n| !n.is_even())
+    int_predicate(first(args), |n| !n.is_even())
 }
 
 fn is_even(args: &[Value], _env: &Frame) -> EvalResult {
-    exact_int_predicate(first(args), Integer::is_even)
+    int_predicate(first(args), Integer::is_even)
 }
 
 fn nums_max(args: &[Value], _env: &Frame) -> EvalResult {
@@ -294,9 +294,9 @@ fn rational_op(arg: &Value, op: impl FnOnce(&Real) -> EvalResult) -> EvalResult 
     guarded_real_op(arg, NumericTypeName::RATIONAL, op)
 }
 
-fn exact_int_predicate(arg: &Value, pred: impl FnOnce(&Integer) -> bool) -> EvalResult {
+fn int_predicate(arg: &Value, pred: impl FnOnce(&Integer) -> bool) -> EvalResult {
     guarded_real_op(arg, NumericTypeName::INTEGER, |r| {
-        r.try_to_exact_integer().map_or_else(
+        r.try_to_integer().map_or_else(
             |err| Err(Condition::value_error(err, arg).into()),
             |n| Ok(Value::Boolean(pred(&n))),
         )
@@ -391,7 +391,7 @@ fn exact_factor_op(
             let r = super::arg_to_real(v, idx, NumericTypeName::INTEGER)?;
             float_taint = float_taint || r.is_inexact();
             let n = r
-                .try_to_exact_integer()
+                .try_to_integer()
                 .map_err(|err| Exception::signal(Condition::value_error(err, v)))?;
             Ok(op(&acc, &n))
         })
@@ -415,10 +415,10 @@ fn exact_division<R>(
     let float_taint = ra.is_inexact() || rb.is_inexact();
     let negdiv = (ra.signum() < 0.0) ^ (rb.signum() < 0.0);
     let n = ra
-        .try_to_exact_integer()
+        .try_to_integer()
         .map_err(|err| Exception::signal(Condition::value_error(err, a)))?;
     let d = rb
-        .try_to_exact_integer()
+        .try_to_integer()
         .map_err(|err| Exception::signal(Condition::value_error(err, b)))?;
     div(&n, &d).map_or_else(
         |err| Err(Condition::value_error(err, b).into()),

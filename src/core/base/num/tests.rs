@@ -44,7 +44,7 @@ fn is_even_float_with_frac() {
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
     assert_eq!(
         err.to_string(),
-        "#<value-error \"expected exact integer, got: 4.2\" (4.2)>"
+        "#<value-error \"expected integer, got: 4.2\" (4.2)>"
     );
 
     let r = is_odd(&args, &env.new_frame());
@@ -52,7 +52,7 @@ fn is_even_float_with_frac() {
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
     assert_eq!(
         err.to_string(),
-        "#<value-error \"expected exact integer, got: 4.2\" (4.2)>"
+        "#<value-error \"expected integer, got: 4.2\" (4.2)>"
     );
 }
 
@@ -98,7 +98,7 @@ fn is_odd_float_with_frac() {
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
     assert_eq!(
         err.to_string(),
-        "#<value-error \"expected exact integer, got: 3.2\" (3.2)>"
+        "#<value-error \"expected integer, got: 3.2\" (3.2)>"
     );
 
     let r = is_odd(&args, &env.new_frame());
@@ -106,7 +106,7 @@ fn is_odd_float_with_frac() {
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
     assert_eq!(
         err.to_string(),
-        "#<value-error \"expected exact integer, got: 3.2\" (3.2)>"
+        "#<value-error \"expected integer, got: 3.2\" (3.2)>"
     );
 }
 
@@ -916,7 +916,7 @@ fn truncate_qr_positive_zero_dividend() {
 }
 
 // Chez: (quotient -0.0 5) => -0.0; Guile: (quotient -0.0 5) => -0.0.
-// Zara currently loses the dividend's zero sign in try_into_exact_integer
+// Zara currently loses the dividend's zero sign in try_to_integer
 // and returns [0.0, 0.0].
 #[test]
 fn floor_qr_negative_zero_dividend() {
@@ -1131,7 +1131,7 @@ fn gcd_non_integral_float() {
     let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
     assert_eq!(
         err.to_string(),
-        "#<value-error \"expected exact integer, got: 4.5\" (4.5)>"
+        "#<value-error \"expected integer, got: 4.5\" (4.5)>"
     );
 }
 
