@@ -2108,11 +2108,8 @@ impl Integer {
         if self.is_negative() {
             Err(NumericError::NotNaturalNumber(self.to_string()))
         } else {
-            let (root, rem) = self.precision.isqrt_rem();
-            Ok((
-                Self::new(root, Sign::Positive),
-                Self::new(rem, Sign::Positive),
-            ))
+            let (s, r) = self.precision.isqrt_rem();
+            Ok((Self::new(s, Sign::Positive), Self::new(r, Sign::Positive)))
         }
     }
 
