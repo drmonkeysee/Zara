@@ -3338,6 +3338,159 @@ mod rational {
         assert_eq!(q.to_float(), f64::NEG_INFINITY);
     }
 
+    // Rational -> f64 must be the single correctly rounded (nearest, ties to
+    // even) value of the exact quotient. Expected values come from exact
+    // rational arithmetic (Python `float(Fraction(n, d))`, Chez `exact->inexact`).
+    macro_rules! assert_ratio_to_float {
+        ($num:expr, $den:expr => $expected:expr) => {{
+            let q = ok_or_fail!(Real::reduce(Integer::from($num), Integer::from($den)));
+            assert_matches!(q, Real::Rational(_));
+            assert_eq!(q.to_float(), $expected);
+        }};
+    }
+
+    fn pos(u: u64) -> (Sign, u64) {
+        (Sign::Positive, u)
+    }
+
+    fn neg(u: u64) -> (Sign, u64) {
+        (Sign::Negative, u)
+    }
+
+    mod to_float {
+        use super::*;
+
+        // 2^53 + 1 is the smallest integer an f64 cannot represent
+        const BEYOND: u64 = (1 << 53) + 1;
+
+        #[test]
+        fn small_non_dyadic_ratios() {
+            assert_ratio_to_float!(1, 3 => 0.333_333_333_333_333_3);
+            assert_ratio_to_float!(2, 3 => 0.666_666_666_666_666_6);
+            assert_ratio_to_float!(1, 10 => 0.1);
+            assert_ratio_to_float!(-1, 3 => -0.333_333_333_333_333_3);
+        }
+
+        #[test]
+        fn large_numerator_is_not_rounded_before_dividing() {
+            assert_ratio_to_float!(pos(BEYOND + 2), 3 => 3_002_399_751_580_331.5);
+            assert_ratio_to_float!(pos(BEYOND + 4), 5 => 1_801_439_850_948_199.5);
+            assert_ratio_to_float!(pos(BEYOND), 7 => 1_286_742_750_677_284.8);
+            assert_ratio_to_float!(pos(BEYOND + 4), 10 => 900_719_925_474_099.8);
+        }
+
+        #[test]
+        fn large_denominator_is_not_rounded_before_dividing() {
+            assert_ratio_to_float!(1, pos(BEYOND) => 1.110_223_024_625_156_4e-16);
+            assert_ratio_to_float!(3, pos(BEYOND + 2) => 3.330_669_073_875_468_6e-16);
+            assert_ratio_to_float!(7, pos(BEYOND) => 7.771_561_172_376_095e-16);
+        }
+
+        #[test]
+        fn large_numerator_and_denominator() {
+            assert_ratio_to_float!(pos(BEYOND), pos(BEYOND + 2) => 0.999_999_999_999_999_8);
+            assert_ratio_to_float!(
+                pos(16_414_075_337_596_777_394),
+                pos(14_136_303_640_247_592_237)
+                => 1.161_129_228_355_291
+            );
+            assert_ratio_to_float!(
+                pos(15_600_419_082_433_424_441),
+                pos(16_900_536_854_896_466_293)
+                => 0.923_072_398_017_559_5
+            );
+        }
+
+        #[test]
+        fn large_negative_numerator() {
+            assert_ratio_to_float!(neg(BEYOND + 2), 3 => -3_002_399_751_580_331.5);
+        }
+
+        #[test]
+        fn large_negative_denominator() {
+            assert_ratio_to_float!(pos(BEYOND + 2), neg(3) => -3_002_399_751_580_331.5);
+        }
+
+        #[test]
+        fn halfway_case_rounds_to_even_down() {
+            // 2^52 + 1/2 is exactly between two doubles; even mantissa is 2^52
+            assert_ratio_to_float!(pos(BEYOND), 2 => 4_503_599_627_370_496.0);
+        }
+
+        #[test]
+        fn halfway_case_rounds_to_even_up() {
+            // 2^52 + 3/2 is exactly between two doubles; even mantissa is 2^52 + 2
+            assert_ratio_to_float!(pos(BEYOND + 2), 2 => 4_503_599_627_370_498.0);
+        }
+
+        #[test]
+        fn just_past_halfway_rounds_up() {
+            // (2^54 + 1) / 4 = 2^52 + 1/4 rounds down; (2^54 + 3) / 4 = 2^52 + 3/4 rounds up
+            assert_ratio_to_float!(pos((1 << 54) + 1), 4 => 4_503_599_627_370_496.0);
+            assert_ratio_to_float!(pos((1 << 54) + 3), 4 => 4_503_599_627_370_497.0);
+        }
+
+        #[test]
+        fn smallest_ratio_with_u64_operands() {
+            assert_ratio_to_float!(1, pos(u64::MAX) => 5.421_010_862_427_522e-20);
+        }
+
+        #[test]
+        fn largest_numerator_over_power_of_two() {
+            assert_ratio_to_float!(pos(u64::MAX), 2048 => 9_007_199_254_740_992.0);
+        }
+
+        #[test]
+        fn adjacent_max_operands_round_to_one() {
+            assert_ratio_to_float!(pos(u64::MAX), pos(u64::MAX - 1) => 1.0);
+        }
+
+        // The cases below need Integer::Multiple, which is not implemented yet.
+        // Each documents the correctly rounded result.
+
+        #[test]
+        #[ignore = "requires multi-precision Integer: 1 / 2^1074"]
+        fn smallest_subnormal() {
+            // expected: 5e-324 (f64::from_bits(1))
+            todo!("1 / 2^1074 => 5e-324");
+        }
+
+        #[test]
+        #[ignore = "requires multi-precision Integer: 1 / 2^1075"]
+        fn half_of_smallest_subnormal_ties_to_even_zero() {
+            // expected: 0.0
+            todo!("1 / 2^1075 => 0.0");
+        }
+
+        #[test]
+        #[ignore = "requires multi-precision Integer: -1 / 2^1075"]
+        fn negative_tie_to_even_keeps_negative_zero() {
+            // expected: -0.0 (sign bit set)
+            todo!("-1 / 2^1075 => -0.0");
+        }
+
+        #[test]
+        #[ignore = "requires multi-precision Integer: 3 / 2^1076"]
+        fn just_above_half_of_smallest_subnormal_rounds_up() {
+            // expected: 5e-324
+            todo!("3 / 2^1076 => 5e-324");
+        }
+
+        #[test]
+        #[ignore = "requires multi-precision Integer: 10^400 / 10^399"]
+        fn huge_operands_with_modest_quotient() {
+            // expected: 10.0, not inf/inf = NaN
+            todo!("10^400 / 10^399 => 10.0");
+        }
+
+        #[test]
+        #[ignore = "requires multi-precision Integer: (2^1024 - 2^970) / 1"]
+        fn halfway_between_max_and_overflow_is_infinite() {
+            // expected: +inf (ties to even rounds up to 2^1024), while one less is f64::MAX
+            todo!("(2^1024 - 2^970) / 3 style boundary => inf; one less => f64::MAX");
+        }
+    }
+
     #[test]
     fn positive_into_inexact() {
         let q = ok_or_fail!(Real::reduce(4, 5));
