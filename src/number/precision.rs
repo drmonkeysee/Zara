@@ -434,6 +434,134 @@ mod tests {
         }
     }
 
+    // R7RS exact-integer-sqrt: for natural k returns s, r where
+    // k = s^2 + r and k < (s+1)^2, i.e. s = floor(sqrt(k)) and 0 <= r <= 2s.
+    mod isqrt_rem {
+        use super::*;
+        use crate::testutil::extract_or_fail;
+
+        const MAX_SQUARE: u64 = (u32::MAX as u64) * (u32::MAX as u64);
+
+        fn check(k: u64, s: u64, r: u64) {
+            let (rs, rr) = Precision::Single(k).isqrt_rem();
+
+            assert_eq!(rs, Precision::Single(s), "root of {k}");
+            assert_eq!(rr, Precision::Single(r), "remainder of {k}");
+        }
+
+        fn sample_inputs() -> Vec<u64> {
+            let mut ks: Vec<u64> = (0..=1000).collect();
+            let roots = [
+                2,
+                3,
+                10,
+                1 << 16,
+                (1 << 26) + 1,
+                1 << 31,
+                u64::from(u32::MAX) - 1,
+                u64::from(u32::MAX),
+            ];
+            for s in roots {
+                ks.extend([s * s - 1, s * s, s * s + 1]);
+            }
+            ks.push(u64::MAX);
+            ks
+        }
+
+        #[test]
+        fn zero() {
+            check(0, 0, 0);
+        }
+
+        #[test]
+        fn one() {
+            check(1, 1, 0);
+        }
+
+        #[test]
+        fn small_non_squares() {
+            check(2, 1, 1);
+            check(3, 1, 2);
+        }
+
+        #[test]
+        fn r7rs_examples() {
+            check(4, 2, 0);
+            check(5, 2, 1);
+        }
+
+        #[test]
+        fn remainder_is_maximal_just_below_next_square() {
+            check(8, 2, 4);
+            check(15, 3, 6);
+        }
+
+        #[test]
+        fn perfect_squares_have_zero_remainder() {
+            check(9, 3, 0);
+            check(144, 12, 0);
+            check(1_000_000_000_000_000_000, 1_000_000_000, 0);
+        }
+
+        #[test]
+        fn largest_perfect_square() {
+            check(MAX_SQUARE, u64::from(u32::MAX), 0);
+        }
+
+        #[test]
+        fn one_below_largest_perfect_square() {
+            let s = u64::from(u32::MAX) - 1;
+
+            check(MAX_SQUARE - 1, s, 2 * s);
+        }
+
+        #[test]
+        fn max_u64() {
+            let s = u64::from(u32::MAX);
+
+            check(u64::MAX, s, 2 * s);
+        }
+
+        #[test]
+        fn satisfies_definition() {
+            for k in sample_inputs() {
+                let (s, r) = Precision::Single(k).isqrt_rem();
+
+                let s = u128::from(extract_or_fail!(s, Precision::Single));
+                let r = u128::from(extract_or_fail!(r, Precision::Single));
+                assert_eq!(s * s + r, u128::from(k), "k = s^2 + r for {k}");
+                assert!(u128::from(k) < (s + 1) * (s + 1), "k < (s+1)^2 for {k}");
+                assert!(r <= 2 * s, "r <= 2s for {k}");
+            }
+        }
+
+        #[test]
+        fn zero_remainder_exactly_when_perfect_square() {
+            for k in sample_inputs() {
+                let p = Precision::Single(k);
+
+                let (s, r) = p.isqrt_rem();
+
+                assert_eq!(r.is_zero(), p.isqrt().is_some(), "perfect square test for {k}");
+                if r.is_zero() {
+                    assert_eq!(p.isqrt(), Some(s));
+                }
+            }
+        }
+
+        #[test]
+        #[ignore = "multi-precision sqrt not yet implemented"]
+        fn multi_precision() {
+            // 2^64, assuming little-endian limbs
+            let p = Precision::Multiple([0, 1].into());
+
+            let (s, r) = p.isqrt_rem();
+
+            assert_eq!(s, Precision::Single(1 << 32));
+            assert_eq!(r, Precision::Single(0));
+        }
+    }
+
     mod euclid {
         use super::*;
 
