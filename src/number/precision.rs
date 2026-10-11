@@ -60,6 +60,10 @@ impl Precision {
         }
     }
 
+    pub(super) fn isqrt_rem(&self) -> (Self, Self) {
+        todo!();
+    }
+
     pub(super) fn div_ceil(&self, rhs: &Self) -> Self {
         match (self, rhs) {
             (Self::Single(a), Self::Single(b)) => a.div_ceil(*b).into(),
@@ -542,7 +546,11 @@ mod tests {
 
                 let (s, r) = p.isqrt_rem();
 
-                assert_eq!(r.is_zero(), p.isqrt().is_some(), "perfect square test for {k}");
+                assert_eq!(
+                    r.is_zero(),
+                    p.isqrt().is_some(),
+                    "perfect square test for {k}"
+                );
                 if r.is_zero() {
                     assert_eq!(p.isqrt(), Some(s));
                 }

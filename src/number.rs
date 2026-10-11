@@ -313,13 +313,12 @@ impl Number {
         }
     }
 
-    pub(crate) fn exact_integer_sqrt(&self) -> IntPairResult {
+    pub(crate) fn isqrt_rem(&self) -> IntPairResult {
         if let Self::Real(Real::Integer(n)) = self {
-            if !n.is_negative() {
-                todo!();
-            }
+            n.isqrt_rem()
+        } else {
+            Err(NumericError::NotNaturalNumber(self.to_string()))
         }
-        Err(NumericError::NotNaturalNumber(self.to_string()))
     }
 
     pub(crate) fn exp(&self) -> Self {
@@ -2102,6 +2101,18 @@ impl Integer {
             Self::new(p, self.sign).into()
         } else {
             sign_preserving_sqrt(self.to_float()).into()
+        }
+    }
+
+    fn isqrt_rem(&self) -> IntPairResult {
+        if self.is_negative() {
+            Err(NumericError::NotNaturalNumber(self.to_string()))
+        } else {
+            let (root, rem) = self.precision.isqrt_rem();
+            Ok((
+                Self::new(root, Sign::Positive),
+                Self::new(rem, Sign::Positive),
+            ))
         }
     }
 

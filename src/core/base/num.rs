@@ -275,7 +275,7 @@ fn square(args: &[Value], env: &Frame) -> EvalResult {
 
 fn exact_integer_sqrt(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = first(args);
-    super::num_op(arg, Number::exact_integer_sqrt, |res, arg| {
+    super::num_op(arg, Number::isqrt_rem, |res, arg| {
         res.map_or_else(
             |err| Err(Condition::value_error(err, arg).into()),
             |(n, m)| Ok(Value::reals(n, m)),
