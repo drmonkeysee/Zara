@@ -746,8 +746,8 @@ impl Complex {
         if x.is_zero() {
             return Number::complex(x.clone(), y.to_float().asinh());
         }
-        let (xf, yf) = (x.to_float(), y.to_float());
 
+        let (xf, yf) = (x.to_float(), y.to_float());
         let yfa = yf.abs();
         let (re, im) = if yfa > Self::ATRIG_SCALE_T || xf.abs() > Self::ATRIG_SCALE_T {
             let im_mag = atrig_mag_im(xf, yf);
@@ -768,6 +768,7 @@ impl Complex {
         if x == 0.0 && y.is_nan() {
             return Number::complex(f64::consts::FRAC_PI_2.copysign(x), y);
         }
+
         let ya = y.abs();
         let (re, im) = if ya > Self::ATRIG_SCALE_T || x.abs() > Self::ATRIG_SCALE_T {
             let im_mag = atrig_mag_im(x, y);
@@ -782,6 +783,10 @@ impl Complex {
 
     fn atan(&self) -> Number {
         let (x, y) = self.get_parts();
+        if x.is_nan() && y.is_zero() {
+            return Number::Complex(self.clone());
+        }
+
         let yf = y.to_float();
         if x.is_exact_zero() {
             if yf.abs() <= 1.0 {
@@ -789,9 +794,6 @@ impl Complex {
             }
         }
         let xf = x.to_float();
-        if xf.is_nan() && yf == 0.0 {
-            return Number::complex(xf, yf);
-        }
         if xf.is_infinite() || yf.is_infinite() {
             return Number::complex(
                 if xf.is_nan() {
