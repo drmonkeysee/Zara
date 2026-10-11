@@ -785,10 +785,8 @@ impl Complex {
             return Number::Complex(self.clone());
         }
         let yf = y.to_float();
-        if x.is_exact_zero() {
-            if yf.abs() <= 1.0 {
-                return Number::complex(x.clone(), yf.atanh());
-            }
+        if x.is_exact_zero() && yf.abs() <= 1.0 {
+            return Number::complex(x.clone(), yf.atanh());
         }
         let xf = x.to_float();
         if xf.is_infinite() || yf.is_infinite() {
@@ -2075,7 +2073,7 @@ impl Integer {
     }
 
     fn sub_same_signs(&self, rhs: &Self) -> Self {
-        self.overflowing_sum(&rhs, -self.sign)
+        self.overflowing_sum(rhs, -self.sign)
     }
 
     fn overflowing_sum(&self, rhs: &Self, ovf_sign: Sign) -> Self {
@@ -2624,13 +2622,13 @@ fn sign_preserving_sqrt(f: f64) -> f64 {
 // based on x's sign to avoid r±x canceling for ∓x when x >> y and dominates r.
 fn scaled_cpx_sqrt(r: &Real, x: &Real, y: &Real) -> Number {
     let (u, v) = if x.is_negative() {
-        let t = scaled_re(&r, x, Real::sub);
+        let t = scaled_re(r, x, Real::sub);
         (
             assume_safe_div!(y.abs() / &t),
             assume_safe_div!(t / Real::two()).copysign(y),
         )
     } else {
-        let t = scaled_re(&r, x, Real::add);
+        let t = scaled_re(r, x, Real::add);
         (assume_safe_div!(&t / Real::two()), assume_safe_div!(y / t))
     };
     Number::complex(u, v)
@@ -2663,9 +2661,7 @@ fn scaled_re(r: &Real, x: &Real, op: impl FnOnce(&Real, &Real) -> Real) -> Real 
 }
 
 fn scaledf_re(r: f64, x: f64, op: impl FnOnce(f64, f64) -> f64) -> f64 {
-    let t = (2.0 * op(r, x)).sqrt();
-    debug_assert_ne!(t, 0.0);
-    t
+    (2.0 * op(r, x)).sqrt()
 }
 
 // calculate the real part of ln if z is near the unit circle, otherwise None
@@ -2683,9 +2679,8 @@ fn near_unit_ln_re((x, y): (&Real, &Real)) -> Option<Real> {
         // exact zero magnitude -> exact zero real part
         if t.is_exact_zero() {
             return Some(t);
-        } else {
-            Some(t.to_float())
         }
+        Some(t.to_float())
     };
     total.map(|t| (t.ln_1p() / 2.0).into())
 }
@@ -2739,7 +2734,7 @@ fn dd_2sum_2product(x: f64, y: f64) -> Option<f64> {
 fn scale_hyperbolic_ovf(mut trig: Real, y: f64, odd: bool) -> Real {
     // sinh is odd, so the sign of y propagates through the result (including zero)
     if odd && y.is_sign_negative() {
-        trig = -trig
+        trig = -trig;
     }
     // handle zero as a special case to avoid NaN and loss of sign
     if trig.is_zero() {
