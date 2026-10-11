@@ -746,7 +746,6 @@ impl Complex {
         if x.is_zero() {
             return Number::complex(x.clone(), y.to_float().asinh());
         }
-
         let (xf, yf) = (x.to_float(), y.to_float());
         let yfa = yf.abs();
         let (re, im) = if yfa > Self::ATRIG_SCALE_T || xf.abs() > Self::ATRIG_SCALE_T {
@@ -768,7 +767,6 @@ impl Complex {
         if x == 0.0 && y.is_nan() {
             return Number::complex(f64::consts::FRAC_PI_2.copysign(x), y);
         }
-
         let ya = y.abs();
         let (re, im) = if ya > Self::ATRIG_SCALE_T || x.abs() > Self::ATRIG_SCALE_T {
             let im_mag = atrig_mag_im(x, y);
@@ -786,7 +784,6 @@ impl Complex {
         if x.is_nan() && y.is_zero() {
             return Number::Complex(self.clone());
         }
-
         let yf = y.to_float();
         if x.is_exact_zero() {
             if yf.abs() <= 1.0 {
@@ -795,25 +792,29 @@ impl Complex {
         }
         let xf = x.to_float();
         if xf.is_infinite() || yf.is_infinite() {
-            return Number::complex(
+            Number::complex(
                 if xf.is_nan() {
                     xf
                 } else {
                     f64::consts::FRAC_PI_2.copysign(xf)
                 },
                 0.0_f64.copysign(yf),
-            );
+            )
+        } else {
+            /*
+             * atan z is calculated through atanh,
+             * we transform z to the atanh form and then back;
+             * atan z = −i · atanh(iz), so rotate z → iz;
+             * let z = x+iy, then iz = i(x + iy) = ix − y → (−y, x);
+             * now calculate atanh on that which gives some new w = u + vi;
+             * rotate back to the original input as:
+             * -iw → −i(u + vi) = −ui − vi² = v − ui → (v, −u);
+             * at the end of it all atan z = v-ui
+             * the too-big threshold is √(asin/acos threshold)
+             */
+            let (u, v) = cpx_atanh(-yf, xf, Self::ATRIG_SCALE_T.sqrt());
+            Number::complex(v, -u)
         }
-        /*
-         * atan z is calculated through atanh, we transform z to the atanh form and then back;
-         * atan z = −i · atanh(iz), so rotate z → iz; let z = x+iy, then iz = i(x + iy) = ix − y → (−y, x);
-         * now calculate atanh on that which gives some new w = u + vi;
-         * rotate back to the original input as -iw → −i(u + vi) = −ui − vi² = v − ui → (v, −u);
-         * at the end of it all atan z = v-ui
-         * the too-big threshold is √(asin/acos threshold)
-         */
-        let (u, v) = cpx_atanh(-yf, xf, Self::ATRIG_SCALE_T.sqrt());
-        Number::complex(v, -u)
     }
 
     fn real_for_ln(&self) -> RealResult {
@@ -2651,7 +2652,7 @@ fn float_scaled_cpx_sqrt(x: f64, y: f64) -> Number {
         let t = scaledf_re(r, xs, f64::add);
         (t / 2.0, ys / t)
     };
-    return Number::complex(u * SU, v * SU);
+    Number::complex(u * SU, v * SU)
 }
 
 // helper to calculate the intermediate real value for complex sqrt
@@ -2742,11 +2743,12 @@ fn scale_hyperbolic_ovf(mut trig: Real, y: f64, odd: bool) -> Real {
     }
     // handle zero as a special case to avoid NaN and loss of sign
     if trig.is_zero() {
-        return trig;
+        trig
+    } else {
+        let h = (y.abs() / 2.0).exp();
+        // order matters here to calculate from smallest-to-largest values
+        (((h / 2.0) * trig.to_float()) * h).into()
     }
-    let h = (y.abs() / 2.0).exp();
-    // order matters here to calculate from smallest-to-largest values
-    (((h / 2.0) * trig.to_float()) * h).into()
 }
 
 fn cpx_product(a: &Real, b: &Real, c: &Real, d: &Real) -> Number {
@@ -2791,20 +2793,20 @@ fn cpx_atanh(fy: f64, x: f64, scale_th: f64) -> (f64, f64) {
         let h = (fy / 2.0).hypot(x / 2.0);
         let re = ((fy / 4.0) / h) / h;
         let im = f64::consts::FRAC_PI_2.copysign(x);
-        return (re, im);
-    }
-    // Another special case near the complex pole, except x=0 is a singularity,
-    // so exclude that special case from this special case.
-    if fy == 1.0 && xa != 0.0 && xa < f64::MIN_POSITIVE.sqrt() {
+        (re, im)
+    } else if fy == 1.0 && xa != 0.0 && xa < f64::MIN_POSITIVE.sqrt() {
+        // Another special case near the complex pole, except x=0 is a singularity,
+        // so exclude that special case from this special case.
         let re = (2.0_f64.ln() - xa.ln()) / 2.0;
         let im = (2.0_f64.atan2(-xa) / 2.0).copysign(x);
-        return (re, im);
+        (re, im)
+    } else {
+        let xsq = x * x;
+        let one_minus_fy = 1.0 - fy;
+        let re = ((4.0 * fy) / ((one_minus_fy * one_minus_fy) + xsq)).ln_1p() / 4.0;
+        let im = (2.0 * x).atan2((one_minus_fy * (1.0 + fy)) - xsq) / 2.0;
+        (re, im)
     }
-    let xsq = x * x;
-    let one_minus_fy = 1.0 - fy;
-    let re = ((4.0 * fy) / ((one_minus_fy * one_minus_fy) + xsq)).ln_1p() / 4.0;
-    let im = (2.0 * x).atan2((one_minus_fy * (1.0 + fy)) - xsq) / 2.0;
-    (re, im)
 }
 
 fn real_angle(sign: f64) -> Real {
