@@ -1,3 +1,4 @@
+use super::FMAX_INT;
 use std::{
     borrow::Borrow,
     cmp::Ordering,
@@ -8,6 +9,8 @@ use std::{
 
 #[cfg(test)]
 mod tests;
+
+const MAX_FLT_INT: u64 = FMAX_INT as u64;
 
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub(super) enum Precision {
@@ -27,6 +30,28 @@ impl Precision {
     pub(super) fn is_even(&self) -> bool {
         match self {
             Self::Single(u) => u % 2 == 0,
+            Self::Multiple(_) => todo!(),
+        }
+    }
+
+    pub(super) fn is_magnitude_one(&self) -> bool {
+        match self {
+            Self::Single(u) => *u == 1,
+            Self::Multiple(_) => false,
+        }
+    }
+
+    pub(super) fn in_float_range(&self) -> bool {
+        match self {
+            Self::Single(u) => *u <= MAX_FLT_INT,
+            Self::Multiple(_) => false,
+        }
+    }
+
+    pub(super) fn to_float(&self) -> f64 {
+        match self {
+            #[allow(clippy::cast_precision_loss)]
+            Self::Single(u) => *u as f64,
             Self::Multiple(_) => todo!(),
         }
     }

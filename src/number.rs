@@ -1657,8 +1657,12 @@ impl Rational {
     }
 
     fn to_float(&self) -> f64 {
-        let r = &self.0;
-        r.0.to_float() / r.1.to_float()
+        let (n, d) = self.get_parts();
+        if n.mag_in_float_range() && d.mag_in_float_range() {
+            n.to_float() / d.to_float()
+        } else {
+            todo!();
+        }
     }
 
     fn to_inexact(&self) -> Real {
@@ -2024,21 +2028,15 @@ impl Integer {
     }
 
     fn is_magnitude_one(&self) -> bool {
-        match &self.precision {
-            Precision::Single(u) => *u == 1,
-            Precision::Multiple(_) => todo!(),
-        }
+        self.precision.is_magnitude_one()
+    }
+
+    fn mag_in_float_range(&self) -> bool {
+        self.precision.in_float_range()
     }
 
     fn to_float(&self) -> f64 {
-        match self.precision {
-            Precision::Single(u) =>
-            {
-                #[allow(clippy::cast_precision_loss)]
-                (u as f64).copysign(self.sign.into())
-            }
-            Precision::Multiple(_) => todo!(),
-        }
+        self.precision.to_float().copysign(self.sign.into())
     }
 
     int_convert! {
