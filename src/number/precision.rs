@@ -64,7 +64,14 @@ impl Precision {
     }
 
     pub(super) fn isqrt_rem(&self) -> (Self, Self) {
-        todo!();
+        match self {
+            Self::Single(u) => {
+                let root = u.isqrt();
+                let rem = u - (root * root);
+                (root.into(), rem.into())
+            }
+            Self::Multiple(_) => todo!(),
+        }
     }
 
     pub(super) fn div_ceil(&self, rhs: &Self) -> Self {
