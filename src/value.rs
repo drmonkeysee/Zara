@@ -156,8 +156,8 @@ impl Value {
         Self::Number(Number::real(r))
     }
 
-    pub(crate) fn reals(a: Real, b: Real) -> Self {
-        Self::Reals((a, b).into())
+    pub(crate) fn reals(a: impl Into<Real>, b: impl Into<Real>) -> Self {
+        Self::Reals((a.into(), b.into()).into())
     }
 
     pub(crate) fn string(s: impl Into<Rc<str>>) -> Self {

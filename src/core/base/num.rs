@@ -68,6 +68,7 @@ pub(super) fn load(env: &Frame) {
     super::bind_intrinsic(env, "round", 1..1, round);
 
     super::bind_intrinsic(env, "square", 1..1, square);
+    super::bind_intrinsic(env, "exact-integer-sqrt", 1..1, exact_integer_sqrt);
 
     super::bind_intrinsic(env, "inexact", 1..1, into_inexact);
     super::bind_intrinsic(env, "exact", 1..1, into_exact);
@@ -270,6 +271,16 @@ fn round(args: &[Value], _env: &Frame) -> EvalResult {
 fn square(args: &[Value], env: &Frame) -> EvalResult {
     let arg = first(args);
     nums_mult(&[arg.clone(), arg.clone()], env)
+}
+
+fn exact_integer_sqrt(args: &[Value], _env: &Frame) -> EvalResult {
+    let arg = first(args);
+    super::num_op(arg, Number::exact_integer_sqrt, |res, arg| {
+        res.map_or_else(
+            |err| Err(Condition::value_error(err, arg).into()),
+            |(n, m)| Ok(Value::reals(n, m)),
+        )
+    })
 }
 
 fn into_inexact(args: &[Value], _env: &Frame) -> EvalResult {

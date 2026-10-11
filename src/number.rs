@@ -107,6 +107,7 @@ const MANTISSA_SIZE: u32 = f64::MANTISSA_DIGITS - 1;
 pub(crate) type NumResult = Result<Number, NumericError>;
 pub(crate) type RealResult = Result<Real, NumericError>;
 pub(crate) type IntResult = Result<Integer, NumericError>;
+pub(crate) type IntPairResult = Result<(Integer, Integer), NumericError>;
 
 /*
  * All predicates, equivalence relationships, and operators assume normalized
@@ -310,6 +311,15 @@ impl Number {
                 }
             }
         }
+    }
+
+    pub(crate) fn exact_integer_sqrt(&self) -> IntPairResult {
+        if let Self::Real(Real::Integer(n)) = self {
+            if !n.is_negative() {
+                todo!();
+            }
+        }
+        Err(NumericError::NotNaturalNumber(self.to_string()))
     }
 
     pub(crate) fn exp(&self) -> Self {
@@ -1968,7 +1978,7 @@ impl Integer {
         self % rhs
     }
 
-    pub(crate) fn truncate_quotrem(&self, rhs: &Self) -> Result<(Self, Self), NumericError> {
+    pub(crate) fn truncate_quotrem(&self, rhs: &Self) -> IntPairResult {
         Ok((self.truncate_quotient(rhs)?, (self % rhs)?))
     }
 
@@ -1985,7 +1995,7 @@ impl Integer {
         Ok(r)
     }
 
-    pub(crate) fn floor_quotrem(&self, rhs: &Self) -> Result<(Self, Self), NumericError> {
+    pub(crate) fn floor_quotrem(&self, rhs: &Self) -> IntPairResult {
         if rhs.is_zero() {
             return Err(NumericError::DivideByZero);
         }
@@ -2479,6 +2489,7 @@ pub(crate) enum NumericError {
     IsizeConversionInvalidRange,
     NoExactRepresentation(String),
     NotInteger(String),
+    NotNaturalNumber(String),
     ParseExponentFailure,
     ParseExponentOutOfRange,
     ParseFailure,
@@ -2509,6 +2520,7 @@ impl Display for NumericError {
             }
             Self::NoExactRepresentation(s) => write!(f, "no exact representation for: {s}"),
             Self::NotInteger(s) => write!(f, "expected integer, got: {s}"),
+            Self::NotNaturalNumber(s) => write!(f, "expected positive exact integer, got: {s}"),
             Self::ParseExponentOutOfRange => {
                 write!(f, "exponent out of range: [{}, {}]", i32::MIN, i32::MAX)
             }
