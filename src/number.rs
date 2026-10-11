@@ -805,7 +805,7 @@ impl Complex {
             );
         }
         /*
-         * atan z is easier to calculate using atanh but we need to transform z to the atanh form and then back
+         * atan z is calculated through atanh, we transform z to the atanh form and then back;
          * atan z = −i · atanh(iz), so rotate z → iz; let z = x+iy, then iz = i(x + iy) = ix − y → (−y, x);
          * now calculate atanh on that which gives some new w = u + vi;
          * rotate back to the original input as -iw → −i(u + vi) = −ui − vi² = v − ui → (v, −u);
