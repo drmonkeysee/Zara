@@ -53,11 +53,12 @@ impl Precision {
         }
     }
 
+    // return sqrt of self if self is a perfect square
     pub(super) fn isqrt(&self) -> Option<Self> {
         match self {
-            Self::Single(u) => {
-                let r = u.isqrt();
-                if r.pow(2) == *u { Some(r.into()) } else { None }
+            Self::Single(_) => {
+                let (s, r) = self.isqrt_rem();
+                if r.is_zero() { Some(s) } else { None }
             }
             Self::Multiple(_) => todo!(),
         }
@@ -66,9 +67,9 @@ impl Precision {
     pub(super) fn isqrt_rem(&self) -> (Self, Self) {
         match self {
             Self::Single(u) => {
-                let root = u.isqrt();
-                let rem = u - (root * root);
-                (root.into(), rem.into())
+                let s = u.isqrt();
+                let r = u - (s * s);
+                (s.into(), r.into())
             }
             Self::Multiple(_) => todo!(),
         }
