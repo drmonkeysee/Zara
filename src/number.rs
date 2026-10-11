@@ -743,10 +743,11 @@ impl Complex {
      */
     fn asin(&self) -> Number {
         let (x, y) = self.get_parts();
-        if x.is_exact_zero() {
+        if x.is_zero() {
             return Number::complex(x.clone(), y.to_float().asinh());
         }
         let (xf, yf) = (x.to_float(), y.to_float());
+
         let yfa = yf.abs();
         let (re, im) = if yfa > Self::ATRIG_SCALE_T || xf.abs() > Self::ATRIG_SCALE_T {
             let im_mag = atrig_mag_im(xf, yf);
@@ -764,6 +765,9 @@ impl Complex {
 
     fn acos(&self) -> Number {
         let (x, y) = self.to_floats();
+        if x == 0.0 && y.is_nan() {
+            return Number::complex(f64::consts::FRAC_PI_2.copysign(x), y);
+        }
         let ya = y.abs();
         let (re, im) = if ya > Self::ATRIG_SCALE_T || x.abs() > Self::ATRIG_SCALE_T {
             let im_mag = atrig_mag_im(x, y);
@@ -785,6 +789,9 @@ impl Complex {
             }
         }
         let xf = x.to_float();
+        if xf.is_nan() && yf == 0.0 {
+            return Number::complex(xf, yf);
+        }
         if xf.is_infinite() || yf.is_infinite() {
             return Number::complex(
                 if xf.is_nan() {
@@ -2695,6 +2702,7 @@ fn atrig_mag_im(x: f64, y: f64) -> f64 {
 // https://en.wikipedia.org/wiki/2Sum
 // https://en.wikipedia.org/wiki/Quadruple-precision_floating-point_format#Double-double_arithmetic
 // also related to: https://en.wikipedia.org/wiki/Kahan_summation_algorithm
+// https://en.wikipedia.org/wiki/William_Kahan
 fn dd_2sum_2product(x: f64, y: f64) -> Option<f64> {
     // calculate s = x²+y²
     let p = x * x;
