@@ -916,8 +916,6 @@ fn truncate_qr_positive_zero_dividend() {
 }
 
 // Chez: (quotient -0.0 5) => -0.0; Guile: (quotient -0.0 5) => -0.0.
-// Zara currently loses the dividend's zero sign in try_to_integer
-// and returns [0.0, 0.0].
 #[test]
 fn floor_qr_negative_zero_dividend() {
     let args = [Value::real(-0.0), Value::real(5)];
@@ -965,8 +963,6 @@ fn truncate_qr_positive_zero_dividend_negative_divisor() {
     assert_eq!(v.as_datum().to_string(), "[-0.0, 0.0]");
 }
 
-// signs cancel here, so this already passes today; pins down that a fix
-// for the negative-zero-dividend cases above must not over-correct this one.
 #[test]
 fn floor_qr_negative_zero_dividend_negative_divisor() {
     let args = [Value::real(-0.0), Value::real(-5)];

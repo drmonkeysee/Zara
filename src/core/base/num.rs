@@ -134,11 +134,11 @@ fn is_negative(args: &[Value], _env: &Frame) -> EvalResult {
 }
 
 fn is_odd(args: &[Value], _env: &Frame) -> EvalResult {
-    int_predicate(first(args), |n| !n.is_even())
+    integer_predicate(first(args), |n| !n.is_even())
 }
 
 fn is_even(args: &[Value], _env: &Frame) -> EvalResult {
-    int_predicate(first(args), Integer::is_even)
+    integer_predicate(first(args), Integer::is_even)
 }
 
 fn nums_max(args: &[Value], _env: &Frame) -> EvalResult {
@@ -294,7 +294,7 @@ fn rational_op(arg: &Value, op: impl FnOnce(&Real) -> EvalResult) -> EvalResult 
     guarded_real_op(arg, NumericTypeName::RATIONAL, op)
 }
 
-fn int_predicate(arg: &Value, pred: impl FnOnce(&Integer) -> bool) -> EvalResult {
+fn integer_predicate(arg: &Value, pred: impl FnOnce(&Integer) -> bool) -> EvalResult {
     guarded_real_op(arg, NumericTypeName::INTEGER, |r| {
         r.try_to_integer().map_or_else(
             |err| Err(Condition::value_error(err, arg).into()),
