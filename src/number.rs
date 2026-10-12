@@ -1658,11 +1658,7 @@ impl Rational {
 
     fn to_float(&self) -> f64 {
         let (n, d) = self.get_parts();
-        if n.mag_in_float_range() && d.mag_in_float_range() {
-            n.to_float() / d.to_float()
-        } else {
-            todo!();
-        }
+        n.to_rat_float(d)
     }
 
     fn to_inexact(&self) -> Real {
@@ -2031,12 +2027,14 @@ impl Integer {
         self.precision.is_magnitude_one()
     }
 
-    fn mag_in_float_range(&self) -> bool {
-        self.precision.in_float_range()
+    fn to_float(&self) -> f64 {
+        self.precision.to_float().copysign(self.signum())
     }
 
-    fn to_float(&self) -> f64 {
-        self.precision.to_float().copysign(self.sign.into())
+    fn to_rat_float(&self, d: &Self) -> f64 {
+        self.precision
+            .to_rat_float(&d.precision)
+            .copysign(self.signum())
     }
 
     int_convert! {

@@ -41,18 +41,19 @@ impl Precision {
         }
     }
 
-    pub(super) fn in_float_range(&self) -> bool {
-        match self {
-            Self::Single(u) => *u <= MAX_FLT_INT,
-            Self::Multiple(_) => false,
-        }
-    }
-
     pub(super) fn to_float(&self) -> f64 {
         match self {
             #[allow(clippy::cast_precision_loss)]
             Self::Single(u) => *u as f64,
             Self::Multiple(_) => todo!(),
+        }
+    }
+
+    pub(super) fn to_rat_float(&self, d: &Self) -> f64 {
+        if self.in_float_range() && d.in_float_range() {
+            self.to_float() / d.to_float()
+        } else {
+            todo!();
         }
     }
 
@@ -146,6 +147,13 @@ impl Precision {
                 *other = (*b / gcd).into();
             }
             _ => todo!(),
+        }
+    }
+
+    fn in_float_range(&self) -> bool {
+        match self {
+            Self::Single(u) => *u <= MAX_FLT_INT,
+            Self::Multiple(_) => false,
         }
     }
 }
