@@ -3268,25 +3268,11 @@ mod rational {
     }
 
     #[test]
-    fn unreduced_zero_numerator_is_zero() {
-        let q = Rational((0.into(), 7.into()).into());
-
-        assert!(q.is_zero());
-    }
-
-    #[test]
     fn zero_denominator() {
         let q = Real::reduce(1, 0);
         let err = err_or_fail!(q);
 
         assert_matches!(err, NumericError::DivideByZero);
-    }
-
-    #[test]
-    fn unreduced_zero_denomintor_ignored_for_is_zero() {
-        let q = Rational((7.into(), 0.into()).into());
-
-        assert!(!q.is_zero());
     }
 
     #[test]
@@ -3322,20 +3308,6 @@ mod rational {
         let q = Rational((0.into(), 7.into()).into());
 
         assert_eq!(q.to_float(), 0.0);
-    }
-
-    #[test]
-    fn unreduced_div_by_zero_into_float() {
-        let q = Rational((7.into(), 0.into()).into());
-
-        assert_eq!(q.to_float(), f64::INFINITY);
-    }
-
-    #[test]
-    fn unreduced_negative_div_by_zero_into_float() {
-        let q = Rational(((-7).into(), 0.into()).into());
-
-        assert_eq!(q.to_float(), f64::NEG_INFINITY);
     }
 
     // Rational -> f64 must be the single correctly rounded (nearest, ties to

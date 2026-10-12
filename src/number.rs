@@ -1147,7 +1147,7 @@ impl Real {
         match self {
             Self::Float(f) => *f == 0.0,
             Self::Integer(n) => n.is_zero(),
-            Self::Rational(q) => q.is_zero(),
+            Self::Rational(_) => false,
         }
     }
 
@@ -1489,6 +1489,8 @@ impl Real {
         self - rhs
     }
 
+    // WARNING: only used for reciprocal as it's non-simplified and may act
+    // strangely for other complex operations.
     fn into_complex(self) -> Complex {
         Complex((self, Self::zero()).into())
     }
@@ -1638,16 +1640,14 @@ impl<T: Into<Integer>> From<T> for Real {
     }
 }
 
+// Assume Rationals are always reduced (with one exception for cmp), sign is
+// always on the numerator, and neither numerator nor denonominator can be zero.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(crate) struct Rational(Box<(Integer, Integer)>);
 
 impl Rational {
     fn is_positive(&self) -> bool {
         self.0.0.is_positive()
-    }
-
-    fn is_zero(&self) -> bool {
-        self.0.0.is_zero()
     }
 
     fn is_negative(&self) -> bool {
@@ -2160,6 +2160,8 @@ impl Integer {
         self.precision.reduce(&mut other.precision);
     }
 
+    // WARNING: only used for cmp as it's non-reduced
+    // and will act strangely for mathematical operations.
     fn into_rational(self) -> Rational {
         Rational((self, Self::one()).into())
     }
