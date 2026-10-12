@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests;
 
-use super::{FIRST_ARG_LABEL, MAX_ARITY, first, invalid_target};
+use super::{FIRST_ARG_LABEL, MAX_ARITY, SECOND_ARG_LABEL, first, invalid_target};
 use crate::{
     Exception,
     eval::{EvalResult, Frame},
@@ -69,6 +69,7 @@ pub(super) fn load(env: &Frame) {
 
     super::bind_intrinsic(env, "square", 1..1, square);
     super::bind_intrinsic(env, "exact-integer-sqrt", 1..1, exact_integer_sqrt);
+    super::bind_intrinsic(env, "expt", 2..2, pow);
 
     super::bind_intrinsic(env, "inexact", 1..1, into_inexact);
     super::bind_intrinsic(env, "exact", 1..1, into_exact);
@@ -281,6 +282,20 @@ fn exact_integer_sqrt(args: &[Value], _env: &Frame) -> EvalResult {
             |(n, m)| Ok(Value::reals(n, m)),
         )
     })
+}
+
+fn pow(args: &[Value], _env: &Frame) -> EvalResult {
+    let (arg1, arg2) = (first(args), super::second(args));
+    let Value::Number(base) = arg1 else {
+        return Err(invalid_target(TypeName::NUMBER, arg1));
+    };
+    let Value::Number(exponent) = arg2 else {
+        return Err(Condition::arg_error(SECOND_ARG_LABEL, TypeName::NUMBER, arg2).into());
+    };
+    base.pow(exponent).map_or_else(
+        |err| Err(Condition::value_error(err, arg2).into()),
+        |x| Ok(Value::Number(x)),
+    )
 }
 
 fn into_inexact(args: &[Value], _env: &Frame) -> EvalResult {

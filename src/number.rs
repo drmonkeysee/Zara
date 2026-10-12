@@ -323,6 +323,10 @@ impl Number {
         }
     }
 
+    pub(crate) fn pow(&self, expt: &Self) -> NumResult {
+        todo!();
+    }
+
     pub(crate) fn exp(&self) -> Self {
         match self {
             Self::Complex(z) => z.exp(),
