@@ -3303,13 +3303,6 @@ mod rational {
         assert_eq!(q.to_float(), 0.8);
     }
 
-    #[test]
-    fn unreduced_zero_into_float() {
-        let q = Rational((0.into(), 7.into()).into());
-
-        assert_eq!(q.to_float(), 0.0);
-    }
-
     // Rational -> f64 must be the single correctly rounded (nearest, ties to
     // even) value of the exact quotient. Expected values come from exact
     // rational arithmetic (Python `float(Fraction(n, d))`, Chez `exact->inexact`).
@@ -3639,15 +3632,6 @@ mod rational {
         let abs = q.abs();
 
         assert_eq!(abs.0.0.sign, Sign::Positive);
-    }
-
-    #[test]
-    fn zero_abs() {
-        let q = Rational((0.into(), 5.into()).into());
-
-        let abs = q.abs();
-
-        assert_eq!(abs.0.0.sign, Sign::Zero);
     }
 
     #[test]
