@@ -103,6 +103,8 @@ const FMAX_INT: f64 = 9_007_199_254_740_991.0;
 // The size of the mantissa in bits is one less than digits due to the
 // implicit leading one.
 const MANTISSA_SIZE: u32 = f64::MANTISSA_DIGITS - 1;
+// float exponent bias is one < max exponent, due to the implicit leading one
+const EXP_BIAS: i32 = f64::MAX_EXP - 1;
 
 pub(crate) type NumResult = Result<Number, NumericError>;
 pub(crate) type RealResult = Result<Real, NumericError>;
@@ -2867,10 +2869,9 @@ fn try_to_dyadic_rational(flt: f64) -> RealResult {
         // Normal: mantissa | (1<<52) scales the true significand up by 2^52 to
         // make it an integer (adding the implicit leading 1 back in),
         // so exponent is (raw_exp - 1023) - 52 = raw_exp - 1075
-        let bias = f64::MAX_EXP - 1;
         (
             mantissa_bits.cast_signed() | (1 << MANTISSA_SIZE),
-            exp_bits - bias - MANTISSA_SIZE.cast_signed(),
+            exp_bits - EXP_BIAS - MANTISSA_SIZE.cast_signed(),
         )
     };
 

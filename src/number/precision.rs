@@ -1,4 +1,4 @@
-use super::FMAX_INT;
+use super::{EXP_BIAS, FMAX_INT, MANTISSA_SIZE};
 use std::{
     borrow::Borrow,
     cmp::Ordering,
@@ -49,11 +49,18 @@ impl Precision {
         }
     }
 
-    pub(super) fn to_rat_float(&self, d: &Self) -> f64 {
-        if self.in_float_range() && d.in_float_range() {
-            self.to_float() / d.to_float()
+    pub(super) fn to_rat_float(&self, denom: &Self) -> f64 {
+        debug_assert!(!denom.is_zero());
+
+        // if n,d are both ≤ 2^53, then direct conversion is exact
+        if self.in_float_range() && denom.in_float_range() {
+            self.to_float() / denom.to_float()
         } else {
-            todo!();
+            // otherwise scale and divide exactly, round, then rescale
+            match (self, denom) {
+                (Self::Single(n), Self::Single(d)) => u64_float_div(*n, *d),
+                _ => todo!(),
+            }
         }
     }
 
@@ -265,4 +272,43 @@ fn gcd_euclidean(mut a: u64, mut b: u64) -> u64 {
         a = t;
     }
     a
+}
+
+/*
+ * Scale both u64s up to u128 in order to produce a quotient of at least 55 bits;
+ * the specific identity is: n/d = (n·2^s / d) · 2^-s;
+ * the remainder "sticky bit" is used to resolve ties when converting the quotient
+ * to f64, since the sticky bit is below the round bit (because q-width > 53), the
+ * rounding breaks in the correct direction based on what was lost in the division.
+ */
+fn u64_float_div(n: u64, d: u64) -> f64 {
+    // width of the quotient = mantissa-width + rounding bit + sticky (remainder) bit
+    const QBITS: i32 = (f64::MANTISSA_DIGITS + 2).cast_signed();
+
+    // ratio of the scale of n,d:
+    // n ∈ [2^(bn-1), 2^bn), d ∈ [2^(bd-1), 2^bd) => n/d ∈ (2^(bn-bd-1), 2^(bn-bd+1))
+    let (bn, bd) = (
+        (u64::BITS - n.leading_zeros()).cast_signed(),
+        (u64::BITS - d.leading_zeros()).cast_signed(),
+    );
+    let s = QBITS + bd - bn;
+    let (ns, ds) = if s < 0 {
+        (u128::from(n), u128::from(d) << -s)
+    } else {
+        (u128::from(n) << s, u128::from(d))
+    };
+
+    // divide, get remainder, and combine to quotient + stick bit
+    let (q, r) = (ns / ds, ns % ds);
+    let qs = q | u128::from(r != 0);
+
+    // round to float, then scale back up with the operand ratio:
+    // result = f * 2^-s where -s ∈ [-118, 8] and the result is in [2^-64, 2^64]
+    // build the scale factor exactly using bits rather than mathematical operators
+    // to keep the power of 2 exact.
+    let f = qs as f64;
+    let k = -s;
+    // build exact 2^k value
+    let fs = f64::from_bits(((EXP_BIAS + k) as u64) << MANTISSA_SIZE);
+    f * fs
 }
