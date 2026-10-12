@@ -298,17 +298,14 @@ fn u64_float_div(n: u64, d: u64) -> f64 {
         (u128::from(n) << s, u128::from(d))
     };
 
-    // divide, get remainder, and combine to quotient + stick bit
+    // divide, get remainder, and combine to quotient + sticky bit
     let (q, r) = (ns / ds, ns % ds);
     let qs = q | u128::from(r != 0);
 
     // round to float, then scale back up with the operand ratio:
     // result = f * 2^-s where -s ∈ [-118, 8] and the result is in [2^-64, 2^64]
-    // build the scale factor exactly using bits rather than mathematical operators
-    // to keep the power of 2 exact.
-    let f = qs as f64;
-    let k = -s;
-    // build exact 2^k value
-    let fs = f64::from_bits(((EXP_BIAS + k) as u64) << MANTISSA_SIZE);
-    f * fs
+    // build the scale factor 2^-s exactly using bits rather than mathematical
+    // operators to keep the power of 2 exact.
+    let fs = f64::from_bits(((EXP_BIAS - s) as u64) << MANTISSA_SIZE);
+    (qs as f64) * fs
 }
