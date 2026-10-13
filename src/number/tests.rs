@@ -8691,18 +8691,14 @@ mod sqrt {
 // agree bit-for-bit on every real-domain case below). Where Chez and Guile
 // disagree, the choice and reasoning are called out inline.
 //
-// None of the methods these tests call (`exp`, `ln`, `log_base`, `sin`,
-// `cos`, `tan`, `asin`, `acos`, `atan`) exist on `Number` yet -- this module
-// intentionally does not compile until they are implemented.
-/*
- * expt expectations come from R7RS §6.2.6, C99 Annex F (real `pow`) and Annex G
- * (complex), and the Chez/Guile reference implementations. Where Zara
- * deliberately diverges from them the test says so:
- * - exact results whenever the root is a perfect q-th root (Chez only does q=2)
- * - exact zeros stay exact in complex results, so (expt +i +i) is a real float
- * - (expt 0.0 +iy) is complex nan (Chez returns 0.0)
- * - negative base with an infinite exponent is complex nan (Chez/Guile agree)
- */
+//
+// expt expectations come from R7RS §6.2.6, C99 Annex F (real `pow`) and Annex G
+// (complex), and the Chez/Guile reference implementations. Where Zara
+// deliberately diverges from them the test says so:
+// - exact results whenever the root is a perfect q-th root (Chez only does q=2)
+// - exact zeros stay exact in complex results, so (expt +i +i) is a real float
+// - (expt 0.0 +iy) is complex nan (Chez returns 0.0)
+// - negative base with an infinite exponent is complex nan (Chez/Guile agree)
 mod expt {
     use super::*;
 
