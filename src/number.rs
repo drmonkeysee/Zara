@@ -324,7 +324,22 @@ impl Number {
     }
 
     pub(crate) fn pow(&self, expt: &Self) -> NumResult {
-        todo!();
+        Ok(match expt {
+            Self::Complex(w) => match self {
+                Self::Complex(z) => z.powc(w),
+                Self::Real(r) => r.powc(w)?,
+            },
+            Self::Real(y) => {
+                if y.is_exact_zero() {
+                    Number::one()
+                } else {
+                    match self {
+                        Self::Complex(z) => z.powr(y),
+                        Self::Real(r) => r.powr(y)?,
+                    }
+                }
+            }
+        })
     }
 
     pub(crate) fn exp(&self) -> Self {
@@ -647,6 +662,15 @@ impl Complex {
             }
         }
         scaled_cpx_sqrt(&self.magnitude(), x, y)
+    }
+
+    // z^w = e^(w·ln z)
+    fn powc(&self, expt: &Complex) -> Number {
+        todo!();
+    }
+
+    fn powr(&self, expt: &Real) -> Number {
+        todo!();
     }
 
     /*
@@ -1380,6 +1404,14 @@ impl Real {
             Self::Integer(n) => n.sqrt(),
             Self::Rational(q) => q.sqrt(),
         }
+    }
+
+    fn powc(&self, expt: &Complex) -> NumResult {
+        todo!();
+    }
+
+    fn powr(&self, expt: &Real) -> NumResult {
+        todo!();
     }
 
     fn exp(&self) -> Self {
