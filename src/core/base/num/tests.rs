@@ -1863,3 +1863,76 @@ fn div_invalid_later_arg() {
         "#<value-error \"invalid type for arg `1` - expected: number, got: string\" (\"foo\")>"
     );
 }
+
+#[test]
+fn expt_integers() {
+    let args = [Value::real(2), Value::real(10)];
+    let env = TestEnv::default();
+
+    let r = pow(&args, &env.new_frame());
+
+    assert_eq!(ok_or_fail!(r).as_datum().to_string(), "1024");
+}
+
+#[test]
+fn expt_exact_rational_root() {
+    let args = [
+        Value::real(8),
+        Value::Number(Number::real(ok_or_fail!(Real::reduce(2, 3)))),
+    ];
+    let env = TestEnv::default();
+
+    let r = pow(&args, &env.new_frame());
+
+    assert_eq!(ok_or_fail!(r).as_datum().to_string(), "4");
+}
+
+#[test]
+fn expt_invalid_first_arg() {
+    let args = [Value::string("foo"), Value::real(2)];
+    let env = TestEnv::default();
+
+    let r = pow(&args, &env.new_frame());
+
+    let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
+    assert_eq!(
+        err.to_string(),
+        "#<value-error \"invalid type for arg `0` - expected: number, got: string\" (\"foo\")>"
+    );
+}
+
+#[test]
+fn expt_invalid_second_arg() {
+    let args = [Value::real(2), Value::string("foo")];
+    let env = TestEnv::default();
+
+    let r = pow(&args, &env.new_frame());
+
+    let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
+    assert_eq!(
+        err.to_string(),
+        "#<value-error \"invalid type for arg `1` - expected: number, got: string\" (\"foo\")>"
+    );
+}
+
+#[test]
+fn expt_zero_to_negative_power_is_divide_by_zero() {
+    let args = [Value::real(0), Value::real(-1)];
+    let env = TestEnv::default();
+
+    let r = pow(&args, &env.new_frame());
+
+    let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
+    assert_eq!(err.to_string(), "#<value-error \"divide by zero\" (-1)>");
+}
+
+#[test]
+fn expt_zero_to_imaginary_power_is_undefined() {
+    let args = [Value::real(0), Value::Number(Number::imaginary(1))];
+    let env = TestEnv::default();
+
+    let r = pow(&args, &env.new_frame());
+
+    let err = extract_or_fail!(err_or_fail!(r), Exception::Signal);
+    assert_eq!(err.to_string(), "#<value-error \"undefined at zero\" (+i)>");
+}

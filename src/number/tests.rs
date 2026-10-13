@@ -8694,6 +8694,1245 @@ mod sqrt {
 // None of the methods these tests call (`exp`, `ln`, `log_base`, `sin`,
 // `cos`, `tan`, `asin`, `acos`, `atan`) exist on `Number` yet -- this module
 // intentionally does not compile until they are implemented.
+/*
+ * expt expectations come from R7RS §6.2.6, C99 Annex F (real `pow`) and Annex G
+ * (complex), and the Chez/Guile reference implementations. Where Zara
+ * deliberately diverges from them the test says so:
+ * - exact results whenever the root is a perfect q-th root (Chez only does q=2)
+ * - exact zeros stay exact in complex results, so (expt +i +i) is a real float
+ * - (expt 0.0 +iy) is complex nan (Chez returns 0.0)
+ * - negative base with an infinite exponent is complex nan (Chez/Guile agree)
+ */
+mod expt {
+    use super::*;
+
+    fn int(n: i64) -> Number {
+        Number::real(n)
+    }
+
+    fn flt(f: f64) -> Number {
+        Number::real(f)
+    }
+
+    fn rat(n: i64, d: i64) -> Number {
+        Number::real(ok_or_fail!(Real::reduce(n, d)))
+    }
+
+    fn big(n: u64) -> Number {
+        Number::from_u64(n)
+    }
+
+    fn neg_big(n: u64) -> Number {
+        Number::real((Sign::Negative, n))
+    }
+
+    // exact gaussian integer/rational
+    fn gauss(re: i64, im: i64) -> Number {
+        Number::complex(re, im)
+    }
+
+    fn cpxf(re: f64, im: f64) -> Number {
+        Number::complex(re, im)
+    }
+
+    fn expt(b: &Number, e: &Number) -> Number {
+        ok_or_fail!(b.pow(e))
+    }
+
+    fn assert_exact(b: &Number, e: &Number, expected: &str) {
+        let r = expt(b, e);
+
+        assert_eq!(r.to_string(), expected, "(expt {b} {e})");
+        assert!(!r.is_inexact(), "(expt {b} {e}) should be exact");
+    }
+
+    fn assert_inexact(b: &Number, e: &Number, expected: &str) {
+        let r = expt(b, e);
+
+        assert_eq!(r.to_string(), expected, "(expt {b} {e})");
+        assert!(r.is_inexact(), "(expt {b} {e}) should be inexact");
+    }
+
+    // eqv distinguishes exactness and the sign of zero
+    fn assert_eqv(b: &Number, e: &Number, expected: &Number) {
+        let r = expt(b, e);
+
+        assert!(
+            r.is_eqv(expected),
+            "(expt {b} {e}) = {r}, expected {expected}"
+        );
+    }
+
+    // compare real/imag parts with tolerance; real results have imag = 0
+    fn assert_near_cpx(b: &Number, e: &Number, re: f64, im: f64) {
+        let r = expt(b, e);
+
+        assert_near!(r.to_real().to_float(), re);
+        assert_near!(r.to_imag().to_float(), im);
+    }
+
+    fn assert_cpx_nan(b: &Number, e: &Number) {
+        let r = expt(b, e);
+
+        let shown = r.to_string();
+        let (re, im) = complex_parts!(r);
+        assert!(re.is_nan() && im.is_nan(), "(expt {b} {e}) = {shown}");
+    }
+
+    mod exponent_zero {
+        use super::*;
+
+        #[test]
+        fn exact_zero_exponent_is_exact_one_for_any_base() {
+            let bases = [
+                int(2),
+                int(-2),
+                int(0),
+                rat(2, 3),
+                flt(2.0),
+                flt(0.0),
+                flt(-0.0),
+                flt(f64::NAN),
+                flt(f64::INFINITY),
+                flt(f64::NEG_INFINITY),
+                gauss(1, 1),
+                cpxf(1.5, 0.5),
+            ];
+            for b in bases {
+                let r = expt(&b, &int(0));
+
+                assert_eq!(r.to_string(), "1", "(expt {b} 0)");
+                assert_matches!(r, Number::Real(Real::Integer(_)));
+            }
+        }
+
+        #[test]
+        fn inexact_zero_exponent_is_inexact_one() {
+            let bases = [int(2), int(0), flt(0.0), flt(f64::INFINITY), flt(f64::NAN)];
+            for b in bases {
+                for e in [flt(0.0), flt(-0.0)] {
+                    assert_inexact(&b, &e, "1.0");
+                }
+            }
+        }
+
+        #[test]
+        fn inexact_zero_exponent_on_complex_base_is_inexact_near_one() {
+            for b in [gauss(1, 1), cpxf(1.5, 0.5), Number::imaginary(1)] {
+                let r = expt(&b, &flt(0.0));
+
+                assert!(r.is_inexact());
+                assert_near!(r.to_real().to_float(), 1.0);
+                assert_near!(r.to_imag().to_float(), 0.0);
+            }
+        }
+
+        // R7RS: 0.0^z is 1.0 if z = 0.0; a complex zero exponent is still zero
+        #[test]
+        fn complex_inexact_zero_exponent_is_one() {
+            let r = expt(&flt(0.0), &cpxf(0.0, 0.0));
+
+            assert_near!(r.to_real().to_float(), 1.0);
+            assert_near!(r.to_imag().to_float(), 0.0);
+        }
+    }
+
+    mod base_one {
+        use super::*;
+
+        // 1^z = e^(z·ln 1) = e^(z·0) = 1 for every z, including nan and inf
+        #[test]
+        fn exact_one_is_exact_one_for_any_exponent() {
+            let exponents = [
+                flt(f64::NAN),
+                flt(f64::INFINITY),
+                flt(f64::NEG_INFINITY),
+                rat(1, 2),
+                int(-5),
+                Number::imaginary(1),
+                gauss(1, 1),
+                flt(2.5),
+            ];
+            for e in exponents {
+                assert_exact(&int(1), &e, "1");
+            }
+        }
+
+        #[test]
+        fn inexact_one_with_nonfinite_exponent_is_one() {
+            for e in [f64::NAN, f64::INFINITY, f64::NEG_INFINITY] {
+                assert_inexact(&flt(1.0), &flt(e), "1.0");
+            }
+        }
+
+        #[test]
+        fn inexact_one_with_imaginary_exponent_is_near_one() {
+            assert_near_cpx(&flt(1.0), &Number::imaginary(1), 1.0, 0.0);
+        }
+    }
+
+    mod exact_zero_base {
+        use super::*;
+
+        #[test]
+        fn positive_exponents_give_exact_zero() {
+            let exponents = [
+                int(5),
+                int(1),
+                rat(1, 2),
+                flt(2.0),
+                flt(f64::INFINITY),
+                gauss(1, 1),
+                cpxf(1.0, 1.0),
+            ];
+            for e in exponents {
+                assert_exact(&int(0), &e, "0");
+            }
+        }
+
+        #[test]
+        fn huge_exponent_does_not_loop() {
+            assert_exact(&int(0), &big(u64::MAX), "0");
+        }
+
+        #[test]
+        fn nan_exponent_is_nan() {
+            let r = expt(&int(0), &flt(f64::NAN));
+
+            assert!(r.is_nan());
+        }
+
+        #[test]
+        fn negative_real_exponent_is_divide_by_zero() {
+            let exponents = [int(-1), flt(-1.0), rat(-1, 2), flt(f64::NEG_INFINITY)];
+            for e in exponents {
+                let err = err_or_fail!(int(0).pow(&e));
+
+                assert_matches!(err, NumericError::DivideByZero);
+            }
+        }
+
+        #[test]
+        fn negative_real_part_complex_exponent_is_divide_by_zero() {
+            let err = err_or_fail!(int(0).pow(&gauss(-1, 1)));
+
+            assert_matches!(err, NumericError::DivideByZero);
+        }
+
+        // R7RS: 0^z is an error if z has a zero real part but nonzero imaginary
+        #[test]
+        fn imaginary_exponent_is_undefined() {
+            let exponents = [Number::imaginary(1), Number::imaginary(2), cpxf(0.0, 1.0)];
+            for e in exponents {
+                let err = err_or_fail!(int(0).pow(&e));
+
+                assert_matches!(err, NumericError::UndefinedAtZero);
+            }
+        }
+    }
+
+    // C99 Annex F pow(±0, y), extended to exact exponents
+    mod inexact_zero_base {
+        use super::*;
+
+        #[test]
+        fn exact_integer_exponents_keep_signed_zero_semantics() {
+            let cases = [
+                (0.0, 2, 0.0),
+                (-0.0, 3, -0.0),
+                (-0.0, 2, 0.0),
+                (0.0, -1, f64::INFINITY),
+                (-0.0, -1, f64::NEG_INFINITY),
+                (-0.0, -2, f64::INFINITY),
+                (0.0, 1, 0.0),
+                (-0.0, 1, -0.0),
+            ];
+            for (b, e, expected) in cases {
+                assert_eqv(&flt(b), &int(e), &flt(expected));
+            }
+        }
+
+        #[test]
+        fn float_exponents_follow_pow() {
+            let cases = [
+                (-0.0, 3.0, -0.0),
+                (-0.0, -3.0, f64::NEG_INFINITY),
+                (-0.0, 2.0, 0.0),
+                (-0.0, 0.5, 0.0),
+                (-0.0, -0.5, f64::INFINITY),
+                (0.0, 0.5, 0.0),
+                (0.0, f64::INFINITY, 0.0),
+                (0.0, f64::NEG_INFINITY, f64::INFINITY),
+            ];
+            for (b, e, expected) in cases {
+                assert_eqv(&flt(b), &flt(e), &flt(expected));
+            }
+        }
+
+        #[test]
+        fn rational_exponent_on_negative_zero_is_positive_zero() {
+            assert_eqv(&flt(-0.0), &rat(1, 2), &flt(0.0));
+        }
+
+        #[test]
+        fn nan_exponent_is_nan() {
+            assert!(expt(&flt(0.0), &flt(f64::NAN)).is_nan());
+        }
+
+        #[test]
+        fn complex_zero_base_with_integer_exponent() {
+            let r = expt(&cpxf(0.0, 0.0), &int(2));
+
+            assert_eq!(r.to_string(), "0.0+0.0i");
+        }
+
+        #[test]
+        fn positive_real_part_complex_exponent_is_zero() {
+            assert_eqv(&flt(0.0), &cpxf(1.0, 1.0), &flt(0.0));
+        }
+
+        // The limit of r^(x+iy) as r → 0 does not exist when x <= 0 (|r^iy| = 1
+        // and it spins; for x < 0 the magnitude diverges). The naive Annex G
+        // cexp(z2·clog(0)) gives nan, as does Guile; Chez returns 0.0 for
+        // x = 0 which is wrong. R7RS only says "it is an error".
+        #[test]
+        fn nonpositive_real_part_complex_exponent_is_complex_nan() {
+            let exponents = [
+                gauss(-1, 1),
+                Number::imaginary(1),
+                cpxf(0.0, 1.0),
+                cpxf(-1.0, 1.0),
+            ];
+            for e in exponents {
+                assert_cpx_nan(&flt(0.0), &e);
+            }
+        }
+    }
+
+    mod integer {
+        use super::*;
+
+        #[test]
+        fn small_powers_are_exact() {
+            let cases = [
+                (2, 10, "1024"),
+                (-2, 3, "-8"),
+                (-2, 4, "16"),
+                (3, 5, "243"),
+                (10, 9, "1000000000"),
+                (7, 1, "7"),
+                (-7, 1, "-7"),
+                (0, 5, "0"),
+                (1, 100, "1"),
+            ];
+            for (b, e, expected) in cases {
+                assert_exact(&int(b), &int(e), expected);
+            }
+        }
+
+        #[test]
+        fn negative_exponents_give_exact_reciprocals() {
+            let cases = [
+                (1, -5, "1"),
+                (-1, -5, "-1"),
+                (-1, -4, "1"),
+                (2, -3, "1/8"),
+                (-2, -3, "-1/8"),
+                (-2, -4, "1/16"),
+                (10, -2, "1/100"),
+                (3, -1, "1/3"),
+                (-3, -1, "-1/3"),
+            ];
+            for (b, e, expected) in cases {
+                let r = expt(&int(b), &int(e));
+
+                assert_eq!(r.to_string(), expected);
+                assert_matches!(r, Number::Real(Real::Integer(_) | Real::Rational(_)));
+            }
+        }
+
+        #[test]
+        fn negative_exponent_of_a_power_of_two_near_u64_limit() {
+            assert_exact(&int(2), &int(-63), "1/9223372036854775808");
+        }
+
+        // (-1)^n depends only on the parity of n, so a huge exponent
+        // must not loop or overflow
+        #[test]
+        fn negative_one_depends_on_parity_only() {
+            assert_exact(&int(-1), &int(1_000_001), "-1");
+            assert_exact(&int(-1), &int(1_000_000), "1");
+            assert_exact(&int(-1), &big(9_007_199_254_740_993), "-1");
+            assert_exact(&int(-1), &big(9_007_199_254_740_992), "1");
+            assert_exact(&int(-1), &big(u64::MAX), "-1");
+            assert_exact(&int(-1), &neg_big(u64::MAX), "-1");
+            assert_exact(&int(-1), &neg_big(u64::MAX - 1), "1");
+        }
+
+        #[test]
+        fn zero_and_one_with_huge_exponents() {
+            assert_exact(&int(0), &big(u64::MAX), "0");
+            assert_exact(&int(1), &big(u64::MAX), "1");
+            assert_exact(&int(1), &neg_big(u64::MAX), "1");
+        }
+
+        #[test]
+        fn zero_to_the_zero_is_one() {
+            assert_exact(&int(0), &int(0), "1");
+        }
+
+        #[test]
+        fn results_up_to_the_single_precision_limit_stay_exact() {
+            let cases = [
+                (2, 62, "4611686018427387904"),
+                (2, 63, "9223372036854775808"),
+                (-2, 63, "-9223372036854775808"),
+                (-2, 62, "4611686018427387904"),
+                (3, 40, "12157665459056928801"),
+                (-3, 40, "12157665459056928801"),
+                (-3, 39, "-4052555153018976267"),
+                (10, 19, "10000000000000000000"),
+                (4_294_967_295, 2, "18446744065119617025"),
+                (2, 32, "4294967296"),
+            ];
+            for (b, e, expected) in cases {
+                assert_exact(&int(b), &int(e), expected);
+            }
+        }
+
+        #[test]
+        fn largest_single_precision_base_to_the_first_power() {
+            assert_exact(&big(u64::MAX), &int(1), "18446744073709551615");
+            assert_exact(&neg_big(u64::MAX), &int(1), "-18446744073709551615");
+        }
+
+        #[test]
+        fn exponent_zero_and_one_are_identities() {
+            for b in [int(5), int(-5), big(u64::MAX)] {
+                assert_eqv(&b, &int(1), &b);
+                assert_exact(&b, &int(0), "1");
+            }
+        }
+
+        mod multi_precision {
+            use super::*;
+
+            #[test]
+            #[ignore = "multi-precision expt not yet implemented"]
+            fn overflowing_u64_promotes_to_multi_precision() {
+                let cases = [
+                    (2, 64, "18446744073709551616"),
+                    (-2, 64, "18446744073709551616"),
+                    (-2, 65, "-36893488147419103232"),
+                    (3, 41, "36472996377170786403"),
+                    (10, 20, "100000000000000000000"),
+                    (2, 100, "1267650600228229401496703205376"),
+                ];
+                for (b, e, expected) in cases {
+                    assert_exact(&int(b), &int(e), expected);
+                }
+            }
+
+            #[test]
+            #[ignore = "multi-precision expt not yet implemented"]
+            fn negative_exponent_with_multi_precision_denominator() {
+                assert_exact(&int(2), &int(-64), "1/18446744073709551616");
+            }
+
+            #[test]
+            #[ignore = "multi-precision expt not yet implemented"]
+            fn rational_base_with_multi_precision_parts() {
+                assert_exact(&rat(2, 3), &int(41), "2199023255552/36472996377170786403");
+            }
+
+            #[test]
+            #[ignore = "multi-precision expt not yet implemented"]
+            fn gaussian_power_with_multi_precision_result() {
+                // (1+i)^2 = 2i, so (1+i)^128 = (2i)^64 = 2^64
+                assert_exact(&gauss(1, 1), &int(128), "18446744073709551616");
+            }
+        }
+    }
+
+    mod rational_base {
+        use super::*;
+
+        #[test]
+        fn integer_exponents_stay_exact() {
+            let cases = [
+                ((2, 3), 3, "8/27"),
+                ((2, 3), -3, "27/8"),
+                ((-2, 3), 3, "-8/27"),
+                ((-2, 3), -2, "9/4"),
+                ((1, 2), 63, "1/9223372036854775808"),
+                ((3, 4), 2, "9/16"),
+                ((3, 4), 1, "3/4"),
+            ];
+            for ((n, d), e, expected) in cases {
+                assert_exact(&rat(n, d), &int(e), expected);
+            }
+        }
+
+        #[test]
+        fn reciprocal_powers_that_become_integers_are_integers() {
+            let r = expt(&rat(1, 2), &int(-3));
+
+            assert_eq!(r.to_string(), "8");
+            assert_matches!(r, Number::Real(Real::Integer(_)));
+        }
+
+        #[test]
+        fn exponent_zero_is_exact_one() {
+            assert_exact(&rat(1, 2), &int(0), "1");
+        }
+
+        #[test]
+        fn float_exponents_are_inexact() {
+            assert_inexact(&rat(1, 2), &flt(2.0), "0.25");
+            assert_inexact(&rat(2, 3), &flt(0.5), "0.816496580927726");
+        }
+    }
+
+    // b^(p/q) is exact exactly when b's numerator and denominator are both
+    // perfect q-th powers
+    mod rational_exponent {
+        use super::*;
+
+        #[test]
+        fn perfect_roots_are_exact() {
+            let cases = [
+                (int(4), (1, 2), "2"),
+                (int(8), (1, 3), "2"),
+                (int(8), (2, 3), "4"),
+                (int(8), (-2, 3), "1/4"),
+                (int(4), (3, 2), "8"),
+                (int(4), (-3, 2), "1/8"),
+                (int(9), (-1, 2), "1/3"),
+                (rat(1, 4), (-1, 2), "2"),
+                (rat(4, 9), (1, 2), "2/3"),
+                (rat(27, 8), (-2, 3), "4/9"),
+                (int(16), (3, 4), "8"),
+                (int(27), (1, 3), "3"),
+                (int(32), (2, 5), "4"),
+                (int(1024), (1, 10), "2"),
+                (int(64), (1, 6), "2"),
+            ];
+            for (b, (p, q), expected) in cases {
+                assert_exact(&b, &rat(p, q), expected);
+            }
+        }
+
+        #[test]
+        fn perfect_roots_of_large_bases_are_exact() {
+            // 2^63, 3^40 and 4294967295^2 are exact in u64 but not in f64
+            let two_63 = big(1 << 63);
+            assert_exact(&two_63, &rat(1, 63), "2");
+            assert_exact(&two_63, &rat(1, 9), "128");
+            let three_40 = big(12_157_665_459_056_928_801);
+            assert_exact(&three_40, &rat(1, 40), "3");
+            assert_exact(&three_40, &rat(1, 20), "9");
+            assert_exact(&three_40, &rat(1, 8), "243");
+            assert_exact(&big(18_446_744_065_119_617_025), &rat(1, 2), "4294967295");
+        }
+
+        #[test]
+        fn imperfect_roots_are_inexact() {
+            let cases = [
+                (int(2), (1, 2), "1.4142135623730951"),
+                (int(8), (1, 2), "2.8284271247461903"),
+                (int(3), (1, 3), "1.4422495703074083"),
+                // numerator is a perfect square but the denominator is not
+                (rat(4, 3), (1, 2), "1.1547005383792515"),
+                (rat(3, 4), (1, 2), "0.8660254037844386"),
+            ];
+            for (b, (p, q), expected) in cases {
+                assert_inexact(&b, &rat(p, q), expected);
+            }
+        }
+
+        // one below 3^40: f64 rounds the base up to exactly 3^40, so a
+        // check that round-trips through floats wrongly reports a perfect root
+        #[test]
+        fn base_adjacent_to_a_perfect_power_is_inexact() {
+            assert_inexact(&big(12_157_665_459_056_928_800), &rat(1, 40), "3.0");
+            assert_inexact(&big(12_157_665_459_056_928_802), &rat(1, 40), "3.0");
+        }
+
+        // 8^(2/3) is 4 exactly, not the 3.9999999999999996 of exp(2/3·ln 8)
+        #[test]
+        fn exact_root_does_not_suffer_float_error() {
+            let r = expt(&int(8), &rat(2, 3));
+
+            assert_eq!(r.to_string(), "4");
+        }
+    }
+
+    mod negative_base_rational_exponent {
+        use super::*;
+
+        #[test]
+        fn square_roots_of_negative_perfect_squares_are_exact() {
+            let cases = [
+                (int(-1), (1, 2), "+i"),
+                (int(-4), (1, 2), "+2i"),
+                (int(-9), (1, 2), "+3i"),
+                (rat(-9, 4), (1, 2), "+3/2i"),
+                (int(-4), (3, 2), "-8i"),
+                (int(-4), (-1, 2), "-1/2i"),
+                (int(-4), (5, 2), "+32i"),
+            ];
+            for (b, (p, q), expected) in cases {
+                assert_exact(&b, &rat(p, q), expected);
+            }
+        }
+
+        #[test]
+        fn square_root_of_negative_imperfect_square_has_exact_zero_real_part() {
+            let r = expt(&int(-2), &rat(1, 2));
+
+            assert_eq!(r.to_string(), "+1.4142135623730951i");
+            let (re, im) = complex_parts!(r);
+            assert!(extract_or_fail!(re, Real::Integer).is_zero());
+            assert!(im.is_inexact());
+        }
+
+        // principal value: |b|^(p/q)·cis(π·p/q)
+        #[test]
+        fn other_roots_use_the_principal_value() {
+            let cases = [
+                (-8, (1, 3), 1.0, 1.7320508075688772),
+                (-1, (1, 3), 0.5, 0.8660254037844386),
+                (-1, (2, 3), -0.5, 0.8660254037844386),
+                (-27, (2, 3), -4.5, 7.794228634059948),
+                (-16, (1, 4), 1.4142135623730951, 1.4142135623730951),
+                (-4, (-3, 2), 0.0, 0.125),
+            ];
+            for (b, (p, q), re, im) in cases {
+                assert_near_cpx(&int(b), &rat(p, q), re, im);
+            }
+        }
+
+        // R7RS defines expt in terms of the principal branch of log, so
+        // (expt -8 1/3) is NOT the real cube root -2
+        #[test]
+        fn real_cube_root_is_not_the_principal_value() {
+            let r = expt(&int(-8), &rat(1, 3));
+
+            assert!(r.to_imag().to_float().abs() > 1.0);
+        }
+    }
+
+    mod float_base {
+        use super::*;
+
+        #[test]
+        fn integer_exponents() {
+            let cases = [
+                (2.0, 3, "8.0"),
+                (2.0, -1, "0.5"),
+                (1.5, 2, "2.25"),
+                (3.0, -3, "0.037037037037037035"),
+                (-2.0, 3, "-8.0"),
+                (-2.0, 4, "16.0"),
+                (-2.0, -3, "-0.125"),
+                (10.0, 22, "1e22"),
+                (10.0, 23, "1e23"),
+                (1.1, 100, "13780.61233982238"),
+            ];
+            for (b, e, expected) in cases {
+                assert_inexact(&flt(b), &int(e), expected);
+            }
+        }
+
+        #[test]
+        fn overflow_and_underflow() {
+            let cases = [
+                (10.0, 308, "1e308"),
+                (10.0, 309, "+inf.0"),
+                (10.0, -308, "1e-308"),
+                (10.0, -324, "0.0"),
+                (2.0, 1023, "8.98846567431158e307"),
+                (2.0, 1024, "+inf.0"),
+                (2.0, -1074, "5e-324"),
+                (2.0, -1075, "0.0"),
+                (0.5, 1074, "5e-324"),
+                (1e300, 2, "+inf.0"),
+                (1e-300, 2, "0.0"),
+                (-1e300, 3, "-inf.0"),
+                (-1e300, 2, "+inf.0"),
+            ];
+            for (b, e, expected) in cases {
+                assert_inexact(&flt(b), &int(e), expected);
+            }
+        }
+
+        // an exponent past i32 must not wrap or truncate (powi takes an i32)
+        #[test]
+        fn exponents_beyond_i32() {
+            assert_inexact(&flt(2.0), &int(3_000_000_000), "+inf.0");
+            assert_inexact(&flt(0.5), &int(3_000_000_000), "0.0");
+            assert_inexact(&flt(2.0), &int(-3_000_000_000), "0.0");
+
+            let r = expt(&flt(1.000_000_1), &int(3_000_000_000));
+            assert_near!(r.to_real().to_float(), 1.942_397_599_296_388_5e130);
+            let r = expt(&flt(-1.000_000_1), &int(3_000_000_001));
+            assert_near!(r.to_real().to_float(), -1.942_397_793_536_148_7e130);
+        }
+
+        // f64 cannot represent 2^53+1, so the parity has to come from the
+        // exact integer rather than from the float value of the exponent
+        #[test]
+        fn parity_of_a_huge_exponent_comes_from_the_exact_integer() {
+            assert_inexact(&flt(-1.0), &big(9_007_199_254_740_993), "-1.0");
+            assert_inexact(&flt(-1.0), &big(9_007_199_254_740_992), "1.0");
+            assert_inexact(&flt(-1.0), &flt(9_007_199_254_740_992.0), "1.0");
+        }
+
+        #[test]
+        fn rational_exponents_are_inexact() {
+            assert_inexact(&flt(4.0), &rat(1, 2), "2.0");
+            assert_inexact(&flt(8.0), &rat(1, 3), "2.0");
+            assert_inexact(&flt(2.0), &rat(1, 2), "1.4142135623730951");
+        }
+
+        #[test]
+        fn negative_float_to_rational_exponent_uses_the_principal_value() {
+            let r = expt(&flt(-4.0), &rat(1, 2));
+
+            assert_eq!(r.to_string(), "+2.0i");
+            assert_near_cpx(&flt(-8.0), &rat(1, 3), 1.0, 1.7320508075688772);
+        }
+    }
+
+    mod float_exponent {
+        use super::*;
+
+        #[test]
+        fn exact_base_with_float_exponent_is_inexact() {
+            let cases = [
+                (2, 3.0, "8.0"),
+                (2, 0.5, "1.4142135623730951"),
+                (2, 1024.0, "+inf.0"),
+                (10, 309.0, "+inf.0"),
+                (4, 0.5, "2.0"),
+                (4, -0.5, "0.5"),
+            ];
+            for (b, e, expected) in cases {
+                assert_inexact(&int(b), &flt(e), expected);
+            }
+        }
+
+        #[test]
+        fn negative_base_with_integral_float_exponent_is_real() {
+            let cases = [(-2, 3.0, "-8.0"), (-2, 4.0, "16.0"), (-2, -3.0, "-0.125")];
+            for (b, e, expected) in cases {
+                let r = expt(&int(b), &flt(e));
+
+                assert_eq!(r.to_string(), expected);
+                assert_matches!(r, Number::Real(Real::Float(_)));
+            }
+            assert_inexact(&flt(-2.0), &flt(3.0), "-8.0");
+        }
+
+        #[test]
+        fn exact_zero_and_one_bases_are_the_only_exact_results() {
+            assert_exact(&int(1), &flt(2.5), "1");
+            assert_exact(&int(0), &flt(2.5), "0");
+        }
+
+        #[test]
+        fn large_float_exponent_on_a_float_base() {
+            let r = expt(&flt(1e308), &flt(1.000_000_1));
+
+            assert_near!(r.to_real().to_float(), 1.000_070_922_135_761_4e308);
+        }
+
+        // (-b)^x = b^x·e^(iπx) for non-integer x
+        #[test]
+        fn negative_base_with_non_integral_exponent_is_complex() {
+            let cases = [
+                (-8.0, 0.5, 0.0, 2.8284271247461903),
+                (-2.0, 0.5, 0.0, 1.4142135623730951),
+                (-1.0, 0.5, 0.0, 1.0),
+                (-1.0, 1.5, 0.0, -1.0),
+                (-4.0, 0.5, 0.0, 2.0),
+            ];
+            for (b, e, re, im) in cases {
+                assert_near_cpx(&flt(b), &flt(e), re, im);
+            }
+            assert_near_cpx(&int(-4), &flt(0.5), 0.0, 2.0);
+            assert_near_cpx(&int(-1), &flt(1.5), 0.0, -1.0);
+        }
+    }
+
+    mod infinities_and_nan {
+        use super::*;
+
+        #[test]
+        fn infinite_base_with_integer_exponent() {
+            let cases = [
+                (f64::INFINITY, 2, "+inf.0"),
+                (f64::INFINITY, -2, "0.0"),
+                (f64::NEG_INFINITY, 3, "-inf.0"),
+                (f64::NEG_INFINITY, 2, "+inf.0"),
+                (f64::NEG_INFINITY, -3, "-0.0"),
+                (f64::NEG_INFINITY, -2, "0.0"),
+            ];
+            for (b, e, expected) in cases {
+                assert_inexact(&flt(b), &int(e), expected);
+            }
+        }
+
+        #[test]
+        fn infinite_base_with_float_exponent() {
+            let cases = [
+                (f64::NEG_INFINITY, 2.0, "+inf.0"),
+                (f64::NEG_INFINITY, 3.0, "-inf.0"),
+                (f64::INFINITY, 0.5, "+inf.0"),
+                (f64::INFINITY, -0.5, "0.0"),
+            ];
+            for (b, e, expected) in cases {
+                assert_inexact(&flt(b), &flt(e), expected);
+            }
+        }
+
+        #[test]
+        fn negative_infinity_with_fractional_exponent_is_complex() {
+            assert_inexact(&flt(f64::NEG_INFINITY), &flt(0.5), "+inf.0+inf.0i");
+            assert_inexact(&flt(f64::NEG_INFINITY), &flt(-0.5), "0.0-0.0i");
+        }
+
+        #[test]
+        fn infinite_exponent() {
+            let cases = [(2, f64::INFINITY, "+inf.0"), (2, f64::NEG_INFINITY, "0.0")];
+            for (b, e, expected) in cases {
+                assert_inexact(&int(b), &flt(e), expected);
+            }
+            assert_inexact(&flt(0.5), &flt(f64::INFINITY), "0.0");
+            assert_inexact(&flt(0.5), &flt(f64::NEG_INFINITY), "+inf.0");
+        }
+
+        // principal-value path: -1·∞ is not an integer so the result
+        // is e^(∞·(0+πi)), a nan in both parts. Chez and Guile agree.
+        #[test]
+        fn negative_base_with_infinite_exponent_is_complex_nan() {
+            let bases = [flt(-1.0), int(-1), flt(-2.0), flt(-0.5)];
+            for b in bases {
+                for e in [f64::INFINITY, f64::NEG_INFINITY] {
+                    assert_cpx_nan(&b, &flt(e));
+                }
+            }
+        }
+
+        #[test]
+        fn nan_propagates() {
+            let nan = flt(f64::NAN);
+            assert!(expt(&nan, &int(2)).is_nan());
+            assert!(expt(&nan, &int(1)).is_nan());
+            assert!(expt(&nan, &int(-1)).is_nan());
+            assert!(expt(&int(2), &nan).is_nan());
+            assert!(expt(&nan, &nan).is_nan());
+        }
+
+        #[test]
+        fn nan_or_infinite_base_with_imaginary_exponent_is_complex_nan() {
+            assert_cpx_nan(&flt(f64::NAN), &Number::imaginary(1));
+            assert_cpx_nan(&flt(f64::INFINITY), &Number::imaginary(1));
+        }
+    }
+
+    mod complex_integer_exponent {
+        use super::*;
+
+        #[test]
+        fn powers_of_i_cycle() {
+            let expected = ["1", "+i", "-1", "-i"];
+            for (n, expected) in (0..8).zip(expected.iter().cycle()) {
+                assert_exact(&Number::imaginary(1), &int(n), expected);
+            }
+        }
+
+        #[test]
+        fn negative_powers_of_i() {
+            assert_exact(&Number::imaginary(1), &int(-1), "-i");
+            assert_exact(&Number::imaginary(1), &int(-2), "-1");
+            assert_exact(&Number::imaginary(1), &int(-3), "+i");
+            assert_exact(&Number::imaginary(1), &int(-4), "1");
+        }
+
+        #[test]
+        fn gaussian_powers_are_exact() {
+            let cases = [
+                (gauss(1, 1), 2, "+2i"),
+                (gauss(1, 1), 3, "-2+2i"),
+                (gauss(1, 1), 4, "-4"),
+                (gauss(1, 1), 10, "+32i"),
+                (gauss(1, 1), -1, "1/2-1/2i"),
+                (gauss(1, 1), -2, "-1/2i"),
+                (gauss(1, 2), 3, "-11-2i"),
+                (gauss(1, -1), 2, "-2i"),
+                (gauss(3, 4), 2, "-7+24i"),
+            ];
+            for (b, e, expected) in cases {
+                assert_exact(&b, &int(e), expected);
+            }
+        }
+
+        #[test]
+        fn rational_gaussian_base() {
+            let b = Number::complex(
+                ok_or_fail!(Real::reduce(1, 2)),
+                ok_or_fail!(Real::reduce(1, 2)),
+            );
+
+            assert_exact(&b, &int(2), "+1/2i");
+        }
+
+        #[test]
+        fn real_result_collapses_to_real() {
+            for (b, e) in [(gauss(0, 1), 2), (gauss(1, 1), 4), (gauss(3, 4), 0)] {
+                assert_matches!(expt(&b, &int(e)), Number::Real(Real::Integer(_)));
+            }
+        }
+
+        #[test]
+        fn exponent_one_is_identity() {
+            assert_exact(&gauss(1, 1), &int(1), "1+i");
+            assert_exact(&gauss(3, -4), &int(1), "3-4i");
+        }
+    }
+
+    mod complex_inexact_integer_exponent {
+        use super::*;
+
+        #[test]
+        fn small_powers() {
+            assert_near_cpx(&cpxf(1.0, 2.0), &int(2), -3.0, 4.0);
+            assert_near_cpx(&cpxf(1.0, 1.0), &int(4), -4.0, 0.0);
+            assert_near_cpx(&cpxf(1.5, 0.5), &int(2), 2.0, 1.5);
+            assert_near_cpx(&cpxf(0.0, 1.0), &int(2), -1.0, 0.0);
+            assert_near_cpx(&cpxf(1.0, 1.0), &int(-2), 0.0, -0.5);
+        }
+
+        #[test]
+        fn exponent_one_is_identity() {
+            let b = cpxf(1.5, 0.5);
+
+            assert_eqv(&b, &int(1), &b);
+        }
+
+        // (1+i)^2000 = 2^1000·i^1000... = 2^1000 exactly; exp/ln loses about
+        // 12 digits in the real part and leaves a garbage imaginary part
+        #[test]
+        fn repeated_squaring_beats_exp_ln_accuracy() {
+            let r = expt(&cpxf(1.0, 1.0), &int(2000));
+
+            let (re, im) = (r.to_real().to_float(), r.to_imag().to_float());
+            assert_near!(re, 2.0_f64.powi(1000));
+            assert!(im.abs() <= re.abs() * 1e-12, "im = {im}");
+        }
+
+        #[test]
+        fn intermediate_overflow() {
+            // (1e154·(1+i))^2 = 2e308·i: the imaginary part overflows,
+            // the real part is zero and must not become nan
+            let r = expt(&cpxf(1e154, 1e154), &int(2));
+
+            assert!(r.to_imag().to_float().is_infinite());
+            assert!(!r.to_real().is_nan());
+        }
+
+        #[test]
+        fn large_negative_exponent_underflows_to_zero() {
+            let r = expt(&cpxf(1e200, 1e200), &int(-2));
+
+            assert_eq!(r.to_real().to_float(), 0.0);
+            assert_eq!(r.to_imag().to_float(), -0.0);
+        }
+    }
+
+    mod complex_rational_exponent {
+        use super::*;
+
+        // x+yi with p/2 exponent routes through the exact complex sqrt
+        #[test]
+        fn square_roots_of_perfect_gaussian_squares_are_exact() {
+            let cases = [
+                (gauss(3, 4), (1, 2), "2+i"),
+                (gauss(0, 2), (1, 2), "1+i"),
+                (gauss(-3, 4), (1, 2), "1+2i"),
+                (gauss(3, 4), (3, 2), "2+11i"),
+                (gauss(3, 4), (-1, 2), "2/5-1/5i"),
+            ];
+            for (b, (p, q), expected) in cases {
+                assert_exact(&b, &rat(p, q), expected);
+            }
+        }
+
+        #[test]
+        fn imperfect_square_roots_are_inexact() {
+            assert_near_cpx(
+                &gauss(0, 1),
+                &rat(1, 2),
+                0.7071067811865476,
+                0.7071067811865475,
+            );
+            assert_near_cpx(
+                &gauss(1, 1),
+                &rat(1, 2),
+                1.09868411346781,
+                0.45508986056222733,
+            );
+        }
+
+        #[test]
+        fn higher_roots_are_inexact_even_when_the_answer_is_gaussian() {
+            // (1+i)^3 = -2+2i so (-2+2i)^(1/3) is mathematically 1+i,
+            // but only the q=2 case is detected exactly
+            let r = expt(&gauss(-2, 2), &rat(1, 3));
+
+            assert!(r.is_inexact());
+            assert_near!(r.to_real().to_float(), 1.0);
+            assert_near!(r.to_imag().to_float(), 1.0);
+        }
+
+        #[test]
+        fn cube_root_of_i() {
+            assert_near_cpx(&gauss(0, 1), &rat(1, 3), 0.8660254037844387, 0.5);
+        }
+    }
+
+    mod complex_general {
+        use super::*;
+
+        #[test]
+        fn real_base_complex_exponent() {
+            let e = Number::imaginary(1);
+            assert_near_cpx(&int(2), &e, 0.7692389013639721, 0.6389612763136348);
+            assert_near_cpx(
+                &int(2),
+                &gauss(1, 1),
+                1.5384778027279442,
+                1.2779225526272695,
+            );
+            assert_near_cpx(
+                &int(2),
+                &cpxf(0.0, 1.0),
+                0.7692389013639721,
+                0.6389612763136348,
+            );
+        }
+
+        // i^i = e^(-π/2). Chez returns 0.20787957635076193+0.0i; Zara keeps the
+        // exact-zero imaginary part exact, so the result collapses to a real.
+        #[test]
+        fn i_to_the_i_is_a_real_float() {
+            let r = expt(&Number::imaginary(1), &Number::imaginary(1));
+
+            assert_eq!(r.to_string(), "0.20787957635076193");
+            assert_matches!(r, Number::Real(Real::Float(_)));
+        }
+
+        #[test]
+        fn negative_one_to_the_i() {
+            // (-1)^i = e^(i·iπ) = e^-π
+            assert_near_cpx(&int(-1), &Number::imaginary(1), 0.04321391826377226, 0.0);
+        }
+
+        #[test]
+        fn float_exponent_on_complex_base() {
+            assert_near_cpx(&gauss(0, 1), &flt(2.0), -1.0, 0.0);
+            assert_near_cpx(&gauss(1, 1), &flt(2.0), 0.0, 2.0);
+        }
+
+        #[test]
+        fn complex_exponent_on_complex_base() {
+            // (1+i)^(1+i) = e^((1+i)·(ln√2 + iπ/4))
+            assert_near_cpx(
+                &gauss(1, 1),
+                &gauss(1, 1),
+                0.2739572538301211,
+                0.5837007587586147,
+            );
+        }
+    }
+
+    mod laws {
+        use super::*;
+
+        fn sample_exact() -> Vec<Number> {
+            vec![
+                int(5),
+                int(-5),
+                rat(2, 3),
+                rat(-3, 4),
+                gauss(1, 1),
+                gauss(3, -2),
+            ]
+        }
+
+        #[test]
+        fn first_power_is_identity() {
+            let values = [
+                int(7),
+                int(-7),
+                rat(2, 3),
+                flt(1.5),
+                flt(-0.0),
+                flt(0.0),
+                flt(f64::NAN),
+                flt(f64::INFINITY),
+                gauss(1, 1),
+                cpxf(1.5, 0.5),
+            ];
+            for x in values {
+                assert_eqv(&x, &int(1), &x);
+            }
+        }
+
+        #[test]
+        fn square_is_self_product() {
+            let values = [
+                int(7),
+                int(-7),
+                rat(2, 3),
+                flt(1.5),
+                flt(-0.0),
+                flt(-2.5),
+                gauss(1, 2),
+                gauss(3, -4),
+                cpxf(1.5, 0.5),
+            ];
+            for x in values {
+                assert_eqv(&x, &int(2), &(&x * &x));
+            }
+        }
+
+        #[test]
+        fn exponents_add_when_multiplying_powers() {
+            for x in sample_exact() {
+                for (a, b) in [(2, 3), (-1, 4), (3, -5), (0, 2)] {
+                    let lhs = expt(&x, &int(a + b));
+                    let rhs = expt(&x, &int(a)) * expt(&x, &int(b));
+
+                    assert!(lhs.is_eqv(&rhs), "{x}^({a}+{b}): {lhs} vs {rhs}");
+                }
+            }
+        }
+
+        #[test]
+        fn exponents_multiply_when_powering_a_power() {
+            for x in sample_exact() {
+                for (a, b) in [(2, 3), (-1, 3), (3, -2)] {
+                    let lhs = expt(&expt(&x, &int(a)), &int(b));
+                    let rhs = expt(&x, &int(a * b));
+
+                    assert!(lhs.is_eqv(&rhs), "({x}^{a})^{b}: {lhs} vs {rhs}");
+                }
+            }
+        }
+
+        #[test]
+        fn product_of_bases_distributes() {
+            let (x, y) = (gauss(1, 2), rat(2, 3));
+            for n in [-3, 2, 5] {
+                let lhs = expt(&(&x * &y), &int(n));
+                let rhs = expt(&x, &int(n)) * expt(&y, &int(n));
+
+                assert!(lhs.is_eqv(&rhs), "(xy)^{n}: {lhs} vs {rhs}");
+            }
+        }
+
+        #[test]
+        fn negative_exponent_is_reciprocal_of_positive() {
+            for x in sample_exact() {
+                for n in [1, 2, 5] {
+                    let lhs = expt(&x, &int(-n));
+                    let rhs = ok_or_fail!(Number::one() / expt(&x, &int(n)));
+
+                    assert!(lhs.is_eqv(&rhs), "{x}^-{n}: {lhs} vs {rhs}");
+                }
+            }
+        }
+
+        #[test]
+        fn conjugate_commutes_with_integer_powers() {
+            for x in [gauss(1, 2), gauss(3, -4), cpxf(1.5, 0.5)] {
+                for n in [2, 3, -2] {
+                    let lhs = expt(&x.clone().complex_conjugate(), &int(n));
+                    let rhs = expt(&x, &int(n)).complex_conjugate();
+
+                    assert!(lhs.is_eqv(&rhs), "conj({x})^{n}: {lhs} vs {rhs}");
+                }
+            }
+        }
+
+        // x^(1/2) = √x; signed zero is excluded because C99 pow(-0.0, .5) is
+        // +0.0 while sqrt preserves the sign
+        #[test]
+        fn one_half_exponent_is_sqrt() {
+            let values = [
+                int(4),
+                int(2),
+                int(-4),
+                int(-2),
+                rat(1, 4),
+                rat(9, 4),
+                rat(-9, 4),
+                flt(4.0),
+                flt(2.0),
+                flt(-4.0),
+                gauss(3, 4),
+                gauss(0, 2),
+                gauss(1, 1),
+                cpxf(3.0, 4.0),
+            ];
+            for x in values {
+                assert_eqv(&x, &rat(1, 2), &x.sqrt());
+            }
+        }
+
+        #[test]
+        fn rational_root_raised_to_q_recovers_the_power() {
+            let cases = [
+                (int(8), (2, 3)),
+                (int(4), (3, 2)),
+                (rat(27, 8), (2, 3)),
+                (int(16), (3, 4)),
+                (rat(4, 9), (-1, 2)),
+            ];
+            for (b, (p, q)) in cases {
+                let root = expt(&b, &rat(p, q));
+
+                let lhs = expt(&root, &int(q));
+                let rhs = expt(&b, &int(p));
+                assert!(lhs.is_eqv(&rhs), "({b}^{p}/{q})^{q}: {lhs} vs {rhs}");
+            }
+        }
+
+        // outside the special cases, z1^z2 = e^(z2·ln z1) by definition
+        #[test]
+        fn general_case_matches_exp_of_exponent_times_ln() {
+            let cases = [
+                (int(2), flt(0.5)),
+                (int(3), flt(-1.5)),
+                (flt(2.5), flt(3.5)),
+                (int(-3), flt(0.25)),
+                (gauss(1, 2), flt(1.5)),
+                (gauss(1, 2), gauss(2, -1)),
+                (int(5), gauss(0, 2)),
+            ];
+            for (b, e) in cases {
+                let expected = (&e * ok_or_fail!(b.ln())).exp();
+
+                let r = expt(&b, &e);
+                assert_near!(r.to_real().to_float(), expected.to_real().to_float());
+                assert_near!(r.to_imag().to_float(), expected.to_imag().to_float());
+            }
+        }
+    }
+}
+
 mod transcendental {
     use super::*;
 
