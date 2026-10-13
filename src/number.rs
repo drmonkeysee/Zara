@@ -2430,14 +2430,14 @@ macro_rules! impl_int_real_div {
             type Output = RealResult;
 
             fn div(self, rhs: $that) -> Self::Output {
-                match rhs {
+                Ok(match rhs {
                     // nan overrides exact zero which overrides float-taint
-                    Real::Float(f) if f.is_nan() => Ok($rhc(rhs)),
-                    Real::Float(_) if self.is_zero() => Ok($lhc(self).into()),
-                    Real::Float(f) => Ok((self.to_float() / f).into()),
-                    Real::Integer(n) => self / n,
-                    Real::Rational(q) => Ok(self * $qc(q).reciprocal()?),
-                }
+                    Real::Float(f) if f.is_nan() => $rhc(rhs),
+                    Real::Float(_) if self.is_zero() => $lhc(self).into(),
+                    Real::Float(f) => (self.to_float() / f).into(),
+                    Real::Integer(n) => (self / n)?,
+                    Real::Rational(q) => self * $qc(q).reciprocal()?,
+                })
             }
         })+
     }
