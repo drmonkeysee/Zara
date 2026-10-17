@@ -324,22 +324,22 @@ impl Number {
     }
 
     pub(crate) fn pow(&self, expt: &Self) -> NumResult {
-        Ok(match expt {
+        match expt {
             Self::Complex(w) => match self {
-                Self::Complex(z) => z.powc(w),
-                Self::Real(r) => r.powc(w)?,
+                Self::Complex(z) => Ok(z.powc(w)),
+                Self::Real(r) => r.powc(w),
             },
             Self::Real(y) => {
                 if y.is_exact_zero() {
-                    Number::one()
+                    Ok(Number::one())
                 } else {
                     match self {
-                        Self::Complex(z) => z.powr(y),
-                        Self::Real(r) => r.powr(y)?,
+                        Self::Complex(z) => Ok(z.powr(y)),
+                        Self::Real(r) => r.powr(y),
                     }
                 }
             }
-        })
+        }
     }
 
     pub(crate) fn exp(&self) -> Self {
@@ -2459,14 +2459,14 @@ macro_rules! impl_int_real_div {
             type Output = RealResult;
 
             fn div(self, rhs: $that) -> Self::Output {
-                Ok(match rhs {
+                match rhs {
                     // nan overrides exact zero which overrides float-taint
-                    Real::Float(f) if f.is_nan() => $rhc(rhs),
-                    Real::Float(_) if self.is_zero() => $lhc(self).into(),
-                    Real::Float(f) => (self.to_float() / f).into(),
-                    Real::Integer(n) => (self / n)?,
-                    Real::Rational(q) => self * $qc(q).reciprocal()?,
-                })
+                    Real::Float(f) if f.is_nan() => Ok($rhc(rhs)),
+                    Real::Float(_) if self.is_zero() => Ok($lhc(self).into()),
+                    Real::Float(f) => Ok((self.to_float() / f).into()),
+                    Real::Integer(n) => self / n,
+                    Real::Rational(q) => Ok(self * $qc(q).reciprocal()?),
+                }
             }
         })+
     }
