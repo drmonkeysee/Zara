@@ -421,6 +421,10 @@ impl Number {
         self / rhs
     }
 
+    fn onef() -> Self {
+        Self::real(1.0)
+    }
+
     fn to_cpx_floats(&self) -> (f64, f64) {
         match self {
             Self::Complex(z) => z.to_floats(),
@@ -1407,10 +1411,35 @@ impl Real {
     }
 
     fn powc(&self, expt: &Complex) -> NumResult {
+        if self.is_exact_one() {
+            return Ok(Number::one());
+        }
+        let (x, y) = expt.get_parts();
+        if self.is_exact_zero() {
+            if expt.is_zero() {
+                return Ok(Number::onef());
+            } else if x.is_zero() || x.is_nan() {
+                return Err(NumericError::UndefinedAtZero);
+            } else if x.is_positive() {
+                return Ok(Number::zero());
+            } else {
+                return Err(NumericError::DivideByZero);
+            }
+        }
         todo!();
     }
 
     fn powr(&self, expt: &Real) -> NumResult {
+        if self.is_exact_one() {
+            return Ok(Number::one());
+        }
+        if self.is_exact_zero() {
+            if expt.is_zero() {
+                return Ok(Number::onef());
+            } else if expt.is_nan() {
+                return Ok(Number::nan());
+            }
+        }
         todo!();
     }
 
