@@ -2404,24 +2404,24 @@ macro_rules! impl_int_real_arithmetic_ring {
 }
 impl_int_real_arithmetic_ring! {
     Add, add, +;
-    Integer, Real, |_, r| r, convert::identity;
-    Integer, &Real, |_, r: &Real| r.clone(), convert::identity;
-    &Integer, Real, |_, r| r, Integer::clone;
-    &Integer, &Real, |_, r: &Real| r.clone(), Integer::clone;
+    Integer, Real, |_, b| b, convert::identity;
+    Integer, &Real, |_, b: &Real| b.clone(), convert::identity;
+    &Integer, Real, |_, b| b, Integer::clone;
+    &Integer, &Real, |_, b: &Real| b.clone(), Integer::clone;
 }
 impl_int_real_arithmetic_ring! {
     Sub, sub, -;
-    Integer, Real, |_, r: Real| -r, convert::identity;
-    Integer, &Real, |_, r: &Real| -r, convert::identity;
-    &Integer, Real, |_, r: Real| -r, Integer::clone;
-    &Integer, &Real, |_, r: &Real| -r, Integer::clone;
+    Integer, Real, |_, b: Real| -b, convert::identity;
+    Integer, &Real, |_, b: &Real| -b, convert::identity;
+    &Integer, Real, |_, b: Real| -b, Integer::clone;
+    &Integer, &Real, |_, b: &Real| -b, Integer::clone;
 }
 impl_int_real_arithmetic_ring! {
     Mul, mul, *;
-    Integer, Real, |l, _| l, convert::identity;
-    Integer, &Real, |l, _| l, convert::identity;
-    &Integer, Real, |l: &Integer, _| l.clone(), Integer::clone;
-    &Integer, &Real, |l: &Integer, _| l.clone(), Integer::clone;
+    Integer, Real, |a, _| a, convert::identity;
+    Integer, &Real, |a, _| a, convert::identity;
+    &Integer, Real, |a: &Integer, _| a.clone(), Integer::clone;
+    &Integer, &Real, |a: &Integer, _| a.clone(), Integer::clone;
 }
 
 macro_rules! impl_int_real_div {
