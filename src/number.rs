@@ -1440,7 +1440,21 @@ impl Real {
                 return Ok(Number::nan());
             }
         }
-        todo!();
+        match expt {
+            Real::Float(f) => {
+                // if b < 0 and e is non-integral => polar(|b|^e, πe),
+                // otherwise normal inexact exponential
+                if self.is_negative() && !expt.is_integer() {
+                    Ok(Number::polar(
+                        self.to_float().abs().powf(*f),
+                        f64::consts::PI * f,
+                    ))
+                } else {
+                    Ok(Number::real(self.to_float().powf(*f)))
+                }
+            }
+            _ => todo!(),
+        }
     }
 
     fn exp(&self) -> Self {
