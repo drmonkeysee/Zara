@@ -8886,6 +8886,21 @@ mod expt {
             }
         }
 
+        // R7RS: 0^z is 0 if (real-part z) is positive; the imaginary part only
+        // sets the phase, and |0^z| = 0^Re(z) = 0 regardless of it
+        #[test]
+        fn positive_real_part_with_nan_or_infinite_imaginary_part_gives_exact_zero() {
+            let exponents = [
+                cpxf(1.0, f64::NAN),
+                cpxf(f64::INFINITY, f64::NAN),
+                cpxf(1.0, f64::INFINITY),
+                cpxf(f64::INFINITY, 1.0),
+            ];
+            for e in exponents {
+                assert_exact(&int(0), &e, "0");
+            }
+        }
+
         #[test]
         fn huge_exponent_does_not_loop() {
             assert_exact(&int(0), &big(u64::MAX), "0");
@@ -8908,17 +8923,60 @@ mod expt {
             }
         }
 
+        // the magnitude 0^Re(z) diverges whatever the imaginary part is
         #[test]
         fn negative_real_part_complex_exponent_is_divide_by_zero() {
-            let err = err_or_fail!(int(0).pow(&gauss(-1, 1)));
+            let exponents = [
+                gauss(-1, 1),
+                cpxf(-1.0, f64::NAN),
+                cpxf(f64::NEG_INFINITY, f64::NAN),
+                cpxf(f64::NEG_INFINITY, 1.0),
+            ];
+            for e in exponents {
+                let err = err_or_fail!(int(0).pow(&e));
 
-            assert_matches!(err, NumericError::DivideByZero);
+                assert_matches!(err, NumericError::DivideByZero);
+            }
+        }
+
+        // R7RS: 0^z is "an error otherwise". With Re(z) nan the sign of the real
+        // part is unknown, so none of the defined cases apply (contrast a real
+        // +nan.0 exponent, which gives +nan.0). Chez also raises an error; Guile
+        // raises for every complex exponent of exact 0.
+        #[test]
+        fn nan_real_part_complex_exponent_is_undefined() {
+            let exponents = [
+                cpxf(f64::NAN, f64::NAN),
+                cpxf(f64::NAN, 1.0),
+                cpxf(f64::NAN, -1.0),
+                cpxf(f64::NAN, f64::INFINITY),
+            ];
+            for e in exponents {
+                let err = err_or_fail!(int(0).pow(&e));
+
+                assert_matches!(err, NumericError::UndefinedAtZero);
+            }
+        }
+
+        // R7RS: (zero? z) => 1, with an inexact result for an inexact zero
+        #[test]
+        fn complex_inexact_zero_exponent_is_inexact_one() {
+            let r = expt(&int(0), &cpxf(0.0, 0.0));
+
+            assert!(r.is_inexact());
+            assert_near!(r.to_real().to_float(), 1.0);
+            assert_near!(r.to_imag().to_float(), 0.0);
         }
 
         // R7RS: 0^z is an error if z has a zero real part but nonzero imaginary
         #[test]
         fn imaginary_exponent_is_undefined() {
-            let exponents = [Number::imaginary(1), Number::imaginary(2), cpxf(0.0, 1.0)];
+            let exponents = [
+                Number::imaginary(1),
+                Number::imaginary(2),
+                cpxf(0.0, 1.0),
+                cpxf(0.0, f64::NAN),
+            ];
             for e in exponents {
                 let err = err_or_fail!(int(0).pow(&e));
 
@@ -8982,22 +9040,39 @@ mod expt {
             assert_eq!(r.to_string(), "0.0+0.0i");
         }
 
+        // Re(z) > 0 gives zero whatever the imaginary part is (R7RS; Chez agrees),
+        // even though cexp(z·clog 0) would give nan for an infinite imaginary part
         #[test]
         fn positive_real_part_complex_exponent_is_zero() {
-            assert_eqv(&flt(0.0), &cpxf(1.0, 1.0), &flt(0.0));
+            let exponents = [
+                cpxf(1.0, 1.0),
+                cpxf(1.0, f64::NAN),
+                cpxf(f64::INFINITY, f64::NAN),
+                cpxf(1.0, f64::INFINITY),
+            ];
+            for e in exponents {
+                assert_eqv(&flt(0.0), &e, &flt(0.0));
+            }
         }
 
         // The limit of r^(x+iy) as r → 0 does not exist when x <= 0 (|r^iy| = 1
-        // and it spins; for x < 0 the magnitude diverges). The naive Annex G
-        // cexp(z2·clog(0)) gives nan, as does Guile; Chez returns 0.0 for
-        // x = 0 which is wrong. R7RS only says "it is an error".
+        // and it spins; for x < 0 the magnitude diverges). C99 Annex G
+        // footnote 327 permits cpow(z, c) = cexp(c·clog(z)), which gives nan
+        // here, as does Guile; Chez returns 0.0 for x = 0 which is wrong. The
+        // formula's inf+nan i for x < 0 is collapsed to nan+nan i. A nan real
+        // part is likewise unknown. R7RS only says "it is an error".
         #[test]
-        fn nonpositive_real_part_complex_exponent_is_complex_nan() {
+        fn nonpositive_or_nan_real_part_complex_exponent_is_complex_nan() {
             let exponents = [
                 gauss(-1, 1),
                 Number::imaginary(1),
                 cpxf(0.0, 1.0),
                 cpxf(-1.0, 1.0),
+                cpxf(f64::NAN, f64::NAN),
+                cpxf(f64::NAN, 1.0),
+                cpxf(0.0, f64::NAN),
+                cpxf(-1.0, f64::NAN),
+                cpxf(f64::NEG_INFINITY, f64::NAN),
             ];
             for e in exponents {
                 assert_cpx_nan(&flt(0.0), &e);
