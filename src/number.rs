@@ -608,7 +608,7 @@ impl Complex {
         (x.to_float(), y.to_float())
     }
 
-    fn clonen(&self) -> Number {
+    fn to_number(&self) -> Number {
         Number::Complex(self.clone())
     }
 
@@ -690,7 +690,7 @@ impl Complex {
     fn powr(&self, expt: &Real) -> NumResult {
         match expt {
             Real::Float(_) => todo!(),
-            Real::Integer(n) => square_and_multiply(self.clonen(), n),
+            Real::Integer(n) => square_and_multiply(self.to_number(), n),
             Real::Rational(q) => {
                 let (n, d) = q.get_parts();
                 if d.is_two() {
@@ -850,7 +850,7 @@ impl Complex {
     fn atan(&self) -> Number {
         let (x, y) = self.get_parts();
         if x.is_nan() && y.is_zero() {
-            return self.clonen();
+            return self.to_number();
         }
         let yf = y.to_float();
         if x.is_exact_zero() && yf.abs() <= 1.0 {
@@ -1399,7 +1399,7 @@ impl Real {
         }
     }
 
-    fn clonen(&self) -> Number {
+    fn to_number(&self) -> Number {
         Number::real(self.clone())
     }
 
@@ -1513,9 +1513,9 @@ impl Real {
                             Number::real(-1)
                         });
                     }
-                    square_and_multiply(self.clonen(), n)
+                    square_and_multiply(self.to_number(), n)
                 }
-                Self::Rational(_) => square_and_multiply(self.clonen(), n),
+                Self::Rational(_) => square_and_multiply(self.to_number(), n),
             },
             Self::Rational(q) => match self {
                 Self::Float(f) => {
