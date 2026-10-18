@@ -724,7 +724,12 @@ impl Complex {
     // needed for general Mult but does come up for this specific algorithm.
     fn powsq(&self) -> Number {
         let (x, y) = self.get_parts();
-        Number::complex((x - y) * (x + y), Real::two() * x * y)
+        let re = (x - y) * (x + y);
+        // if re = nan that means x+y overflowed and x²-y²=0
+        Number::complex(
+            if re.is_nan() { 0.0.into() } else { re },
+            Real::two() * x * y,
+        )
     }
 
     /*
