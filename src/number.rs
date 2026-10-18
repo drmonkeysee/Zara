@@ -1477,7 +1477,17 @@ impl Real {
                         Number::real(r)
                     })
                 }
-                _ => todo!(),
+                Self::Integer(b) => {
+                    if b.is_negative_one() {
+                        return Ok(if n.is_even() {
+                            Number::one()
+                        } else {
+                            Number::real(-1)
+                        });
+                    }
+                    todo!();
+                }
+                Self::Rational(q) => todo!(),
             },
             _ => todo!(),
         }
@@ -2128,6 +2138,10 @@ impl Integer {
 
     fn is_one(&self) -> bool {
         self.is_positive() && self.is_magnitude_one()
+    }
+
+    fn is_negative_one(&self) -> bool {
+        self.is_negative() && self.is_magnitude_one()
     }
 
     fn is_magnitude_one(&self) -> bool {
