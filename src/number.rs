@@ -720,8 +720,8 @@ impl Complex {
     }
 
     // safe complex square for square-and-multiply to avoid cancellation and
-    // rounding of floats: implements z * z as (x-y)(x+y) + i2xy; this is not
-    // needed for general Mult but does come up for this specific algorithm.
+    // rounding of floats: z * z as (x-y)(x+y) + i2xy; this is not needed for
+    // general Mult but does come up for this specific algorithm.
     fn powsq(&self) -> Number {
         let (x, y) = self.get_parts();
         let re = (x - y) * (x + y);
