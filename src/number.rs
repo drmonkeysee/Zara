@@ -442,6 +442,13 @@ impl Number {
         }
     }
 
+    fn powsq(&self) -> Self {
+        match self {
+            Self::Complex(z) => z.powsq(),
+            Self::Real(r) => Number::real(r * r),
+        }
+    }
+
     fn into_real(self) -> Real {
         match self {
             Self::Complex(z) => z.into_real(),
@@ -710,6 +717,14 @@ impl Complex {
                 }
             }
         }
+    }
+
+    // safe complex square for square-and-multiply to avoid cancellation and
+    // rounding of floats: implements z * z as (x-y)(x+y) + i2xy; this is not
+    // needed for general Mult but does come up for this specific algorithm.
+    fn powsq(&self) -> Number {
+        let (x, y) = self.get_parts();
+        Number::complex((x - y) * (x + y), Real::two() * x * y)
     }
 
     /*
@@ -2828,7 +2843,7 @@ fn square_and_multiply(mut b: Number, n: &Integer) -> NumResult {
         // TODO: remove when MP is implemented as overflow panic goes away
         // SP only overflows on last iteration when b² is not used, so safe to skip
         if !e.is_zero() {
-            b = &b * &b;
+            b = b.powsq();
         }
     }
     if n.is_negative() {
