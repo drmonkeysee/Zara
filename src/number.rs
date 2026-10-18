@@ -690,30 +690,7 @@ impl Complex {
     fn powr(&self, expt: &Real) -> NumResult {
         match expt {
             Real::Float(_) => todo!(),
-            Real::Integer(n) => {
-                // square-and-multiply: compute b^n in O(log₂ n);
-                // each set bit p in the exponent contributes b^p to the result
-                // where p ∈ [1, n]; if n < 0 take the reciprical of b^|n|
-                let mut r = Number::one();
-                let mut b = self.clonen();
-                let mut e = n.precision.clone();
-                while !e.is_zero() {
-                    if !e.is_even() {
-                        r = r * &b;
-                    }
-                    e = e >> 1;
-                    // TODO: remove when MP is implemented as overflow panic goes away
-                    // SP only overflows on last iteration when b² is not used, so safe to skip
-                    if !e.is_zero() {
-                        b = &b * &b;
-                    }
-                }
-                if n.is_negative() {
-                    r.reciprocal()
-                } else {
-                    Ok(r)
-                }
-            }
+            Real::Integer(n) => square_and_multiply(self.clonen(), n),
             Real::Rational(q) => {
                 let (n, d) = q.get_parts();
                 if d.is_two() {
@@ -1536,53 +1513,9 @@ impl Real {
                             Number::real(-1)
                         });
                     }
-                    // square-and-multiply: compute b^n in O(log₂ n);
-                    // each set bit p in the exponent contributes b^p to the result
-                    // where p ∈ [1, n]; if n < 0 take the reciprical of b^|n|
-                    let mut r = Integer::one();
-                    let mut b = b.clone();
-                    let mut e = n.precision.clone();
-                    while !e.is_zero() {
-                        if !e.is_even() {
-                            r = r * &b;
-                        }
-                        e = e >> 1;
-                        // TODO: remove when MP is implemented as overflow panic goes away
-                        // SP only overflows on last iteration when b² is not used, so safe to skip
-                        if !e.is_zero() {
-                            b = &b * &b;
-                        }
-                    }
-                    Ok(if n.is_negative() {
-                        Number::real(r.reciprocal()?)
-                    } else {
-                        Number::real(r)
-                    })
+                    square_and_multiply(self.clonen(), n)
                 }
-                Self::Rational(_) => {
-                    // square-and-multiply: compute b^n in O(log₂ n);
-                    // each set bit p in the exponent contributes b^p to the result
-                    // where p ∈ [1, n]; if n < 0 take the reciprical of b^|n|
-                    let mut r = Number::one();
-                    let mut b = self.clonen();
-                    let mut e = n.precision.clone();
-                    while !e.is_zero() {
-                        if !e.is_even() {
-                            r = r * &b;
-                        }
-                        e = e >> 1;
-                        // TODO: remove when MP is implemented as overflow panic goes away
-                        // SP only overflows on last iteration when b² is not used, so safe to skip
-                        if !e.is_zero() {
-                            b = &b * &b;
-                        }
-                    }
-                    if n.is_negative() {
-                        r.reciprocal()
-                    } else {
-                        Ok(r)
-                    }
-                }
+                Self::Rational(_) => square_and_multiply(self.clonen(), n),
             },
             Self::Rational(q) => match self {
                 Self::Float(f) => {
@@ -2868,6 +2801,30 @@ impl Display for ComplexImagDatum<'_> {
             Real::Integer(n) if n.is_magnitude_one() => write!(f, "{:+}i", n.sign),
             r => write!(f, "{r:+}i"),
         }
+    }
+}
+
+// square-and-multiply: compute b^n in O(log₂ n);
+// each set bit p in the exponent contributes b^p to the result,
+// where p ∈ [1, n]; if n < 0 take the reciprical of b^|n|.
+fn square_and_multiply(mut b: Number, n: &Integer) -> NumResult {
+    let mut r = Number::one();
+    let mut e = n.precision.clone();
+    while !e.is_zero() {
+        if !e.is_even() {
+            r = r * &b;
+        }
+        e = e >> 1;
+        // TODO: remove when MP is implemented as overflow panic goes away
+        // SP only overflows on last iteration when b² is not used, so safe to skip
+        if !e.is_zero() {
+            b = &b * &b;
+        }
+    }
+    if n.is_negative() {
+        r.reciprocal()
+    } else {
+        Ok(r)
     }
 }
 
