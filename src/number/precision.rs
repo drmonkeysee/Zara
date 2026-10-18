@@ -64,6 +64,13 @@ impl Precision {
         }
     }
 
+    pub(super) fn parity(&self) -> Parity {
+        match self {
+            Self::Single(u) => (u % 2).into(),
+            Self::Multiple(_) => todo!(),
+        }
+    }
+
     pub(super) fn gcd(&self, rhs: &Self) -> Self {
         match (self, rhs) {
             (Self::Single(a), Self::Single(b)) => gcd_euclidean(*a, *b).into(),
@@ -261,6 +268,22 @@ impl Display for Precision {
 impl From<u64> for Precision {
     fn from(value: u64) -> Self {
         Self::Single(value)
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) enum Parity {
+    Even,
+    Odd,
+}
+
+impl From<u64> for Parity {
+    fn from(value: u64) -> Self {
+        match value {
+            0 => Self::Even,
+            1 => Self::Odd,
+            _ => unreachable!("unexpected mod 2 value"),
+        }
     }
 }
 

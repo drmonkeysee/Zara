@@ -376,3 +376,17 @@ mod euclid {
         assert_eq!(gcd_euclidean(7, 7), 7);
     }
 }
+
+#[test]
+fn parity_even() {
+    let n = 4_u64;
+
+    assert_eq!(Parity::from(n % 2), Parity::Even);
+}
+
+#[test]
+fn parity_odd() {
+    let n = 5_u64;
+
+    assert_eq!(Parity::from(n % 2), Parity::Odd);
+}
