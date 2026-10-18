@@ -214,7 +214,7 @@ impl Number {
 
     pub(crate) fn is_infinite(&self) -> bool {
         match self {
-            Self::Complex(Complex(z)) => z.0.is_infinite() || z.1.is_infinite(),
+            Self::Complex(z) => z.is_infinite(),
             Self::Real(r) => r.is_infinite(),
         }
     }
@@ -595,6 +595,10 @@ impl Complex {
         self.0.0.is_zero() && self.0.1.is_zero()
     }
 
+    fn is_infinite(&self) -> bool {
+        self.0.0.is_infinite() || self.0.1.is_infinite()
+    }
+
     fn to_real(&self) -> Real {
         self.0.0.clone()
     }
@@ -627,7 +631,13 @@ impl Complex {
     }
 
     fn reciprocal(&self) -> NumResult {
-        Real::one().into_complex() / self
+        // according to C99 Annex G if z has any infinite part,
+        // even with nan, the reciprocal is 0-0i.
+        if self.is_infinite() {
+            Ok(Number::complex(0.0, -0.0))
+        } else {
+            Real::one().into_complex() / self
+        }
     }
 
     fn get_real(&self) -> &Real {
