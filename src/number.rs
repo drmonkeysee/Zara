@@ -1530,22 +1530,25 @@ impl Real {
                 } else {
                     Number::real(-1)
                 }),
-                Self::Integer(_) | Self::Rational(_) => square_and_multiply(self.to_number(), n),
+                _ => square_and_multiply(self.to_number(), n),
             },
-            Self::Rational(q) => match self {
-                Self::Float(f) if self.is_negative() => {
-                    let (n, d) = q.get_parts();
-                    if d.is_two() {
-                        // TODO: Number::real(*f).sqrt().powr(&n.clone().into())
-                        Ok(Number::imaginary(f.abs().sqrt().powf(n.to_float())))
-                    } else {
-                        let qf = q.to_float();
-                        Ok(Number::polar(f.abs().powf(qf), f64::consts::PI * qf))
+            Self::Rational(q) => {
+                let (n, d) = q.get_parts();
+                match self {
+                    Self::Float(f) if self.is_negative() => {
+                        if d.is_two() {
+                            // TODO: Number::real(*f).sqrt().powr(&n.clone().into())
+                            Ok(Number::imaginary(f.abs().sqrt().powf(n.to_float())))
+                        } else {
+                            let qf = q.to_float();
+                            Ok(Number::polar(f.abs().powf(qf), f64::consts::PI * qf))
+                        }
                     }
+                    Self::Float(f) => Ok(Number::real(f.powf(q.to_float()))),
+                    _ if self.is_negative() => todo!(),
+                    _ => todo!(),
                 }
-                Self::Float(f) => Ok(Number::real(f.powf(q.to_float()))),
-                _ => todo!(),
-            },
+            }
         }
     }
 
