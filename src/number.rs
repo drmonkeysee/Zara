@@ -1431,7 +1431,9 @@ impl Real {
             }
         }
         if self.is_zero() {
-            if re.is_positive() {
+            if expt.is_zero() {
+                return Ok(Number::complex(1.0, 0.0));
+            } else if re.is_positive() {
                 return Ok(Number::zerof());
             } else {
                 return Ok(Number::complex(Real::nan(), Real::nan()));
@@ -1449,6 +1451,8 @@ impl Real {
                 return Ok(Number::onef());
             } else if expt.is_nan() {
                 return Ok(Number::nan());
+            } else if expt.is_positive() {
+                return Ok(Number::zero());
             }
         }
         match expt {
