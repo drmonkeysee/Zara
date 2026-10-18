@@ -688,7 +688,7 @@ impl Complex {
             Real::Rational(q) => {
                 let (n, d) = q.get_parts();
                 if d.is_two() {
-                    self.sqrt().powr(&Real::Integer(n.clone()))
+                    self.sqrt().powr(&n.clone().into())
                 } else {
                     Ok((Number::real(expt.clone()) * self.ln()?).exp())
                 }
@@ -1510,6 +1510,7 @@ impl Real {
                     if self.is_negative() {
                         let (n, d) = q.get_parts();
                         if d.is_two() {
+                            // TODO: Number::real(*f).sqrt().powr(&n.clone().into())
                             Ok(Number::imaginary(f.abs().sqrt().powf(n.to_float())))
                         } else {
                             let qf = q.to_float();
@@ -3042,9 +3043,7 @@ fn try_to_dyadic_rational(flt: f64) -> RealResult {
         Real::reduce(numerator, denom)
     } else {
         // positive exponent: sign * mantissa * 2^exponent
-        Ok(Real::Integer(
-            (sign * mantissa * 2_i64.pow(exp.cast_unsigned())).into(),
-        ))
+        Ok((sign * mantissa * 2_i64.pow(exp.cast_unsigned())).into())
     }
 }
 
