@@ -326,7 +326,7 @@ impl Number {
     pub(crate) fn pow(&self, expt: &Self) -> NumResult {
         match expt {
             Self::Complex(w) => match self {
-                Self::Complex(z) => Ok(z.powc(w)),
+                Self::Complex(z) => z.powc(w),
                 Self::Real(r) => r.powc(w),
             },
             Self::Real(y) => {
@@ -334,7 +334,7 @@ impl Number {
                     Ok(Number::one())
                 } else {
                     match self {
-                        Self::Complex(z) => Ok(z.powr(y)),
+                        Self::Complex(z) => z.powr(y),
                         Self::Real(r) => r.powr(y),
                     }
                 }
@@ -673,11 +673,11 @@ impl Complex {
     }
 
     // z^w = e^(w·ln z)
-    fn powc(&self, expt: &Complex) -> Number {
-        todo!();
+    fn powc(&self, expt: &Complex) -> NumResult {
+        Ok((expt * self.ln()?).exp())
     }
 
-    fn powr(&self, expt: &Real) -> Number {
+    fn powr(&self, expt: &Real) -> NumResult {
         todo!();
     }
 
