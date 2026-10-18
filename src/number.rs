@@ -1418,26 +1418,26 @@ impl Real {
         if self.is_exact_one() {
             return Ok(Number::one());
         }
-        let (x, y) = expt.get_parts();
+        let re = expt.get_real();
         if self.is_exact_zero() {
             if expt.is_zero() {
                 return Ok(Number::onef());
-            } else if x.is_zero() || x.is_nan() {
+            } else if re.is_zero() || re.is_nan() {
                 return Err(NumericError::UndefinedAtZero);
-            } else if x.is_positive() {
+            } else if re.is_positive() {
                 return Ok(Number::zero());
             } else {
                 return Err(NumericError::DivideByZero);
             }
         }
         if self.is_zero() {
-            if x.is_positive() {
+            if re.is_positive() {
                 return Ok(Number::zerof());
             } else {
                 return Ok(Number::complex(Real::nan(), Real::nan()));
             }
         }
-        todo!();
+        Ok((expt * self.ln()?).exp())
     }
 
     fn powr(&self, expt: &Real) -> NumResult {
