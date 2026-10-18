@@ -421,6 +421,10 @@ impl Number {
         self / rhs
     }
 
+    fn zerof() -> Self {
+        Self::real(0.0)
+    }
+
     fn onef() -> Self {
         Self::real(1.0)
     }
@@ -1424,6 +1428,13 @@ impl Real {
                 return Ok(Number::zero());
             } else {
                 return Err(NumericError::DivideByZero);
+            }
+        }
+        if self.is_zero() {
+            if x.is_positive() {
+                return Ok(Number::zerof());
+            } else {
+                return Ok(Number::complex(Real::nan(), Real::nan()));
             }
         }
         todo!();
