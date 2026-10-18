@@ -1469,6 +1469,8 @@ impl Real {
                 return Ok(Number::nan());
             } else if expt.is_positive() {
                 return Ok(Number::zero());
+            } else {
+                return Err(NumericError::DivideByZero);
             }
         }
         match expt {
