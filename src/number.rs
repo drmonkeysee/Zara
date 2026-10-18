@@ -1471,7 +1471,7 @@ impl Real {
             Self::Integer(n) => match self {
                 Self::Float(f) => {
                     let r = f.abs().powf(n.to_float());
-                    Ok(if self.is_negative() && n.parity() == Parity::Odd {
+                    Ok(if f.is_sign_negative() && n.parity() == Parity::Odd {
                         Number::real(-r)
                     } else {
                         Number::real(r)
