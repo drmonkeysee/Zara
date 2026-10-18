@@ -82,7 +82,7 @@ mod spec;
 #[cfg(test)]
 mod tests;
 
-use self::precision::{Parity, Precision};
+use self::precision::Precision;
 pub(crate) use self::spec::{Binary, Decimal, FloatSpec, Hexadecimal, IntSpec, Octal, Radix};
 use std::{
     borrow::Borrow,
@@ -1471,7 +1471,7 @@ impl Real {
             Self::Integer(n) => match self {
                 Self::Float(f) => {
                     let r = f.abs().powf(n.to_float());
-                    Ok(if f.is_sign_negative() && n.parity() == Parity::Odd {
+                    Ok(if f.is_sign_negative() && !n.is_even() {
                         Number::real(-r)
                     } else {
                         Number::real(r)
@@ -2165,10 +2165,6 @@ impl Integer {
         try_to_u8, u8, NumericError::ByteConversionInvalidRange;
         try_to_u32, u32, NumericError::Uint32ConversionInvalidRange;
         try_to_usize, usize, NumericError::UsizeConversionInvalidRange;
-    }
-
-    fn parity(&self) -> Parity {
-        self.precision.parity()
     }
 
     fn signum(&self) -> f64 {
