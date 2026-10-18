@@ -1465,28 +1465,34 @@ impl Real {
     }
 
     fn powc(&self, expt: &Complex) -> NumResult {
+        if self.is_zero() {
+            self.powc_zero(expt)
+        } else {
+            Ok((expt * self.ln()?).exp())
+        }
+    }
+
+    fn powc_zero(&self, expt: &Complex) -> NumResult {
         let re = expt.get_real();
         if self.is_exact_zero() {
             if expt.is_zero() {
-                return Ok(Number::onef());
+                Ok(Number::onef())
             } else if re.is_zero() || re.is_nan() {
-                return Err(NumericError::UndefinedAtZero);
+                Err(NumericError::UndefinedAtZero)
             } else if re.is_positive() {
-                return Ok(Number::zero());
+                Ok(Number::zero())
             } else {
-                return Err(NumericError::DivideByZero);
+                Err(NumericError::DivideByZero)
             }
-        }
-        if self.is_zero() {
-            if expt.is_zero() {
-                return Ok(Number::complex(1.0, 0.0));
+        } else {
+            Ok(if expt.is_zero() {
+                Number::complex(1.0, 0.0)
             } else if re.is_positive() {
-                return Ok(Number::zerof());
+                Number::zerof()
             } else {
-                return Ok(Number::complex(Real::nan(), Real::nan()));
-            }
+                Number::complex(Real::nan(), Real::nan())
+            })
         }
-        Ok((expt * self.ln()?).exp())
     }
 
     fn powr(&self, expt: &Real) -> NumResult {
