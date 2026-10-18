@@ -3,7 +3,7 @@ use std::{
     borrow::Borrow,
     cmp::Ordering,
     fmt::{self, Display, Formatter},
-    ops::{Add, Div, Mul, Rem, Sub},
+    ops::{Add, Div, Mul, Rem, Shr, Sub},
     rc::Rc,
 };
 
@@ -30,7 +30,7 @@ impl Precision {
     pub(super) fn is_even(&self) -> bool {
         match self {
             Self::Single(u) => u % 2 == 0,
-            Self::Multiple(_) => todo!(),
+            Self::Multiple(_) => todo!("handle mp"),
         }
     }
 
@@ -52,7 +52,7 @@ impl Precision {
         match self {
             #[allow(clippy::cast_precision_loss)]
             Self::Single(u) => *u as f64,
-            Self::Multiple(_) => todo!(),
+            Self::Multiple(_) => todo!("handle mp"),
         }
     }
 
@@ -66,7 +66,7 @@ impl Precision {
             // otherwise scale and divide exactly, round, then rescale
             match (self, denom) {
                 (Self::Single(n), Self::Single(d)) => u64_float_div(*n, *d),
-                _ => todo!(),
+                _ => todo!("handle sp+mp"),
             }
         }
     }
@@ -74,7 +74,7 @@ impl Precision {
     pub(super) fn gcd(&self, rhs: &Self) -> Self {
         match (self, rhs) {
             (Self::Single(a), Self::Single(b)) => gcd_euclidean(*a, *b).into(),
-            _ => todo!(),
+            _ => todo!("handle sp+mp"),
         }
     }
 
@@ -89,7 +89,7 @@ impl Precision {
                     todo!("handle precision overflow")
                 }
             }
-            _ => todo!(),
+            _ => todo!("handle sp+mp"),
         }
     }
 
@@ -100,7 +100,7 @@ impl Precision {
                 let (s, r) = self.isqrt_rem();
                 if r.is_zero() { Some(s) } else { None }
             }
-            Self::Multiple(_) => todo!(),
+            Self::Multiple(_) => todo!("handle mp"),
         }
     }
 
@@ -111,14 +111,14 @@ impl Precision {
                 let r = u - (s * s);
                 (s.into(), r.into())
             }
-            Self::Multiple(_) => todo!(),
+            Self::Multiple(_) => todo!("handle mp"),
         }
     }
 
     pub(super) fn div_ceil(&self, rhs: &Self) -> Self {
         match (self, rhs) {
             (Self::Single(a), Self::Single(b)) => a.div_ceil(*b).into(),
-            _ => todo!(),
+            _ => todo!("handle sp+mp"),
         }
     }
 
@@ -144,7 +144,7 @@ impl Precision {
                     _ => (q + 1).into(),
                 }
             }
-            _ => todo!(),
+            _ => todo!("handle sp+mp"),
         }
     }
 
@@ -160,7 +160,7 @@ impl Precision {
                 *self = (*a / gcd).into();
                 *other = (*b / gcd).into();
             }
-            _ => todo!(),
+            _ => todo!("handle sp+mp"),
         }
     }
 
@@ -185,7 +185,7 @@ impl<Rhs: Borrow<Precision>> Add<Rhs> for &Precision {
                     s.into()
                 }
             }
-            _ => todo!(),
+            _ => todo!("handle sp+mp"),
         }
     }
 }
@@ -198,7 +198,7 @@ impl<Rhs: Borrow<Precision>> Sub<Rhs> for &Precision {
     fn sub(self, rhs: Rhs) -> Self::Output {
         match (self, rhs.borrow()) {
             (Precision::Single(a), Precision::Single(b)) => (a - b).into(),
-            _ => todo!(),
+            _ => todo!("handle sp+mp"),
         }
     }
 }
@@ -217,7 +217,7 @@ impl<Rhs: Borrow<Precision>> Mul<Rhs> for &Precision {
                     todo!("handle precision overflow")
                 }
             }
-            _ => todo!(),
+            _ => todo!("handle sp+mp"),
         }
     }
 }
@@ -233,7 +233,7 @@ impl<Rhs: Borrow<Precision>> Div<Rhs> for &Precision {
                 debug_assert_ne!(*b, 0);
                 (a / b).into()
             }
-            _ => todo!(),
+            _ => todo!("handle sp+mp"),
         }
     }
 }
@@ -249,18 +249,29 @@ impl<Rhs: Borrow<Precision>> Rem<Rhs> for &Precision {
                 debug_assert_ne!(*b, 0);
                 (a % b).into()
             }
-            _ => todo!(),
+            _ => todo!("handle sp+mp"),
         }
     }
 }
 impl_val_delegate!(Rem, Precision);
+
+impl Shr<u64> for Precision {
+    type Output = Self;
+
+    fn shr(self, rhs: u64) -> Self::Output {
+        match self {
+            Self::Single(u) => (u >> rhs).into(),
+            Self::Multiple(_) => todo!("handle mp"),
+        }
+    }
+}
 
 impl Display for Precision {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
             // avoid direct Display impl for u64 to control expression of sign
             Self::Single(u) => write!(f, "{u}"),
-            Self::Multiple(_) => todo!(),
+            Self::Multiple(_) => todo!("handle mp"),
         }
     }
 }
