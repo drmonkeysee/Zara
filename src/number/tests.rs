@@ -7768,6 +7768,42 @@ mod reciprocal {
             assert!(!r.is_zero());
             assert_eq!(r.to_string(), expected.to_string());
         }
+
+        // C99 Annex G.3: a value with an infinite part is an infinity even if its
+        // other part is nan, and the reciprocal of an infinity is a zero
+        #[test]
+        fn infinite_part_gives_zero_even_with_nan_other_part() {
+            let (inf, nan) = (f64::INFINITY, f64::NAN);
+            let cases = [
+                (0.0, inf),
+                (nan, inf),
+                (inf, nan),
+                (-inf, 1.0),
+                (1.0, -inf),
+                (nan, -inf),
+            ];
+            for (re, im) in cases {
+                let z = Number::complex(re, im);
+
+                let r = ok_or_fail!(z.reciprocal());
+
+                let (rr, ri) = complex_parts!(r);
+                let (rr, ri) = (rr.to_float(), ri.to_float());
+                assert!(rr == 0.0 && ri == 0.0, "1/({re}{im:+}i) = {rr}{ri:+}i");
+            }
+        }
+
+        // 1/(a+bi) = (a-bi)/(a²+b²): a = +0 and b = +inf gives +0 - 0i
+        #[test]
+        fn imaginary_infinity_keeps_conjugate_signs() {
+            let z = Number::complex(0.0, f64::INFINITY);
+
+            let r = ok_or_fail!(z.reciprocal());
+
+            let (rr, ri) = complex_parts!(r);
+            assert!(rr.to_float().is_sign_positive());
+            assert!(ri.to_float().is_sign_negative());
+        }
     }
 }
 
@@ -9713,12 +9749,81 @@ mod expt {
             assert!(!r.to_real().is_nan());
         }
 
+        // z^-2 = 1/(2e400i) = -i·5e-401, which underflows to +0.0-0.0i. The
+        // naive square gives nan+inf·i, which must not leak through.
         #[test]
         fn large_negative_exponent_underflows_to_zero() {
             let r = expt(&cpxf(1e200, 1e200), &int(-2));
 
+            let (re, im) = (r.to_real().to_float(), r.to_imag().to_float());
+            assert!(re == 0.0 && re.is_sign_positive(), "re = {re}");
+            assert!(im == 0.0 && im.is_sign_negative(), "im = {im}");
+        }
+
+        // (x+xi)² = (x²-x²) + 2x²i: the real part is exactly zero even when x²
+        // overflows, and only the imaginary part overflows
+        #[test]
+        fn squaring_equal_parts_past_overflow_has_zero_real_part() {
+            let cases = [
+                (1e200, 1e200, f64::INFINITY),
+                (-1e200, 1e200, f64::NEG_INFINITY),
+                (1e200, -1e200, f64::NEG_INFINITY),
+                (-1e200, -1e200, f64::INFINITY),
+            ];
+            for (x, y, expected_im) in cases {
+                let r = expt(&cpxf(x, y), &int(2));
+
+                let (re, im) = (r.to_real().to_float(), r.to_imag().to_float());
+                assert_eq!(re, 0.0, "(expt {x}{y:+}i 2) real part");
+                assert_eq!(im, expected_im, "(expt {x}{y:+}i 2) imaginary part");
+            }
+        }
+
+        // x+y itself overflows here while x-y is exactly zero (0·inf = nan if
+        // the factored form is used naively)
+        #[test]
+        fn squaring_equal_parts_near_float_max_has_zero_real_part() {
+            let r = expt(&cpxf(1e308, 1e308), &int(2));
+
             assert_eq!(r.to_real().to_float(), 0.0);
-            assert_eq!(r.to_imag().to_float(), -0.0);
+            assert_eq!(r.to_imag().to_float(), f64::INFINITY);
+        }
+
+        #[test]
+        fn squaring_tiny_parts_underflows_without_nan() {
+            let r = expt(&cpxf(1e-200, 1e-200), &int(2));
+
+            assert_eq!(r.to_real().to_float(), 0.0);
+            assert_eq!(r.to_imag().to_float(), 0.0);
+        }
+
+        // (1+yi)² for y = 1+2⁻²⁷ has real part -(2⁻²⁶+2⁻⁵⁴). Computing 1 - y·y
+        // rounds y² to 1+2⁻²⁶ and loses the 2⁻⁵⁴ (a 4e-9 relative error), so
+        // this requires the cancellation-free form (x-y)(x+y).
+        #[test]
+        fn squaring_nearly_equal_parts_has_no_cancellation_error() {
+            let y = 1.0 + 2.0_f64.powi(-27);
+
+            let r = expt(&cpxf(1.0, y), &int(2));
+
+            let expected_re = -(2.0_f64.powi(-26) + 2.0_f64.powi(-54));
+            assert_eq!(r.to_real().to_float(), expected_re);
+            assert_eq!(r.to_imag().to_float(), 2.0 * y);
+        }
+
+        // z^-n must agree with the reciprocal of z^n
+        #[test]
+        fn negative_exponent_is_reciprocal_of_positive() {
+            for z in [cpxf(1.0, 2.0), cpxf(1.5, -0.5), cpxf(-3.0, 4.0)] {
+                for n in [2, 3, 5] {
+                    let pos = expt(&z, &int(n));
+                    let neg = expt(&z, &int(-n));
+
+                    let recip = ok_or_fail!(pos.reciprocal());
+                    assert_near!(neg.to_real().to_float(), recip.to_real().to_float());
+                    assert_near!(neg.to_imag().to_float(), recip.to_imag().to_float());
+                }
+            }
         }
     }
 
