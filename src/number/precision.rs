@@ -41,6 +41,13 @@ impl Precision {
         }
     }
 
+    pub(super) fn is_magnitude_two(&self) -> bool {
+        match self {
+            Self::Single(u) => *u == 2,
+            Self::Multiple(_) => false,
+        }
+    }
+
     pub(super) fn to_float(&self) -> f64 {
         match self {
             #[allow(clippy::cast_precision_loss)]

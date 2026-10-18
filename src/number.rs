@@ -1489,7 +1489,22 @@ impl Real {
                 }
                 Self::Rational(q) => todo!(),
             },
-            _ => todo!(),
+            Self::Rational(q) => match self {
+                Self::Float(f) => {
+                    if self.is_negative() {
+                        let (n, d) = q.get_parts();
+                        if d.is_two() {
+                            Ok(Number::imaginary(f.abs().sqrt().powf(n.to_float())))
+                        } else {
+                            let qf = q.to_float();
+                            Ok(Number::polar(f.abs().powf(qf), f64::consts::PI * qf))
+                        }
+                    } else {
+                        Ok(Number::real(f.powf(q.to_float())))
+                    }
+                }
+                _ => todo!(),
+            },
         }
     }
 
@@ -2144,8 +2159,16 @@ impl Integer {
         self.is_negative() && self.is_magnitude_one()
     }
 
+    fn is_two(&self) -> bool {
+        self.is_positive() && self.is_magnitude_two()
+    }
+
     fn is_magnitude_one(&self) -> bool {
         self.precision.is_magnitude_one()
+    }
+
+    fn is_magnitude_two(&self) -> bool {
+        self.precision.is_magnitude_two()
     }
 
     fn to_float(&self) -> f64 {
