@@ -706,7 +706,7 @@ impl Complex {
 
     fn powr(&self, expt: &Real) -> NumResult {
         match expt {
-            Real::Float(_) => todo!(),
+            Real::Float(f) => Ok((Number::real(*f) * self.ln()?).exp()),
             Real::Integer(n) => square_and_multiply(self.to_number(), n),
             Real::Rational(q) => {
                 let (n, d) = q.get_parts();
