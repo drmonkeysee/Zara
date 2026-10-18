@@ -1514,8 +1514,12 @@ impl Real {
                         if !e.is_even() {
                             r = r * &b;
                         }
-                        b = &b * &b; // watch out for overflow at the end
                         e = e >> 1;
+                        // TODO: remove when MP is implemented as overflow panic goes away
+                        // SP only overflows on last iteration when b² is not used, so safe to skip
+                        if !e.is_zero() {
+                            b = &b * &b;
+                        }
                     }
                     Ok(if n.is_negative() {
                         Number::real(r.reciprocal()?)
