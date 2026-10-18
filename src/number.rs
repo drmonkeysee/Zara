@@ -325,20 +325,8 @@ impl Number {
 
     pub(crate) fn pow(&self, expt: &Self) -> NumResult {
         match expt {
-            Self::Complex(w) => match self {
-                Self::Complex(z) => z.powc(w),
-                Self::Real(r) => r.powc(w),
-            },
-            Self::Real(y) => {
-                if y.is_exact_zero() {
-                    Ok(Number::one())
-                } else {
-                    match self {
-                        Self::Complex(z) => z.powr(y),
-                        Self::Real(r) => r.powr(y),
-                    }
-                }
-            }
+            Self::Complex(w) => self.powc(w),
+            Self::Real(y) => self.powr(y),
         }
     }
 
@@ -433,6 +421,24 @@ impl Number {
         match self {
             Self::Complex(z) => z.to_floats(),
             Self::Real(r) => (r.to_float(), 0.0),
+        }
+    }
+
+    fn powc(&self, expt: &Complex) -> NumResult {
+        match self {
+            Self::Complex(z) => z.powc(expt),
+            Self::Real(r) => r.powc(expt),
+        }
+    }
+
+    fn powr(&self, expt: &Real) -> NumResult {
+        if expt.is_exact_zero() {
+            Ok(Number::one())
+        } else {
+            match self {
+                Self::Complex(z) => z.powr(expt),
+                Self::Real(r) => r.powr(expt),
+            }
         }
     }
 
@@ -678,7 +684,17 @@ impl Complex {
     }
 
     fn powr(&self, expt: &Real) -> NumResult {
-        todo!();
+        match expt {
+            Real::Rational(q) => {
+                let (n, d) = q.get_parts();
+                if d.is_two() {
+                    self.sqrt().powr(&Real::Integer(n.clone()))
+                } else {
+                    Ok((Number::real(expt.clone()) * self.ln()?).exp())
+                }
+            }
+            _ => todo!(),
+        }
     }
 
     /*
