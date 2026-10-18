@@ -1422,6 +1422,10 @@ impl Real {
         }
     }
 
+    fn clonen(&self) -> Number {
+        Number::real(self.clone())
+    }
+
     fn reciprocal(&self) -> RealResult {
         match self {
             Self::Float(f) => Ok(f.recip().into()),
@@ -1555,7 +1559,30 @@ impl Real {
                         Number::real(r)
                     })
                 }
-                Self::Rational(q) => todo!(),
+                Self::Rational(_) => {
+                    // square-and-multiply: compute b^n in O(log₂ n);
+                    // each set bit p in the exponent contributes b^p to the result
+                    // where p ∈ [1, n]; if n < 0 take the reciprical of b^|n|
+                    let mut r = Number::one();
+                    let mut b = self.clonen();
+                    let mut e = n.precision.clone();
+                    while !e.is_zero() {
+                        if !e.is_even() {
+                            r = r * &b;
+                        }
+                        e = e >> 1;
+                        // TODO: remove when MP is implemented as overflow panic goes away
+                        // SP only overflows on last iteration when b² is not used, so safe to skip
+                        if !e.is_zero() {
+                            b = &b * &b;
+                        }
+                    }
+                    if n.is_negative() {
+                        r.reciprocal()
+                    } else {
+                        Ok(r)
+                    }
+                }
             },
             Self::Rational(q) => match self {
                 Self::Float(f) => {
