@@ -82,7 +82,7 @@ mod spec;
 #[cfg(test)]
 mod tests;
 
-use self::precision::Precision;
+use self::precision::{Parity, Precision};
 pub(crate) use self::spec::{Binary, Decimal, FloatSpec, Hexadecimal, IntSpec, Octal, Radix};
 use std::{
     borrow::Borrow,
@@ -1456,7 +1456,7 @@ impl Real {
             }
         }
         match expt {
-            Real::Float(f) => {
+            Self::Float(f) => {
                 // if b < 0 and e is non-integral => polar(|b|^e, πe),
                 // otherwise normal inexact exponential
                 if self.is_negative() && !expt.is_integer() {
@@ -1468,6 +1468,17 @@ impl Real {
                     Ok(Number::real(self.to_float().powf(*f)))
                 }
             }
+            Self::Integer(n) => match self {
+                Self::Float(f) => {
+                    let r = f.abs().powf(n.to_float());
+                    Ok(if self.is_negative() && n.parity() == Parity::Odd {
+                        Number::real(-r)
+                    } else {
+                        Number::real(r)
+                    })
+                }
+                _ => todo!(),
+            },
             _ => todo!(),
         }
     }
@@ -2154,6 +2165,10 @@ impl Integer {
         try_to_u8, u8, NumericError::ByteConversionInvalidRange;
         try_to_u32, u32, NumericError::Uint32ConversionInvalidRange;
         try_to_usize, usize, NumericError::UsizeConversionInvalidRange;
+    }
+
+    fn parity(&self) -> Parity {
+        self.precision.parity()
     }
 
     fn signum(&self) -> f64 {
