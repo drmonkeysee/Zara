@@ -324,9 +324,15 @@ impl Number {
     }
 
     pub(crate) fn pow(&self, expt: &Self) -> NumResult {
-        match expt {
-            Self::Complex(w) => self.powc(w),
-            Self::Real(y) => self.powr(y),
+        if let Number::Real(r) = expt
+            && r.is_exact_zero()
+        {
+            Ok(Number::one())
+        } else {
+            match self {
+                Self::Complex(z) => z.pow(expt),
+                Self::Real(r) => r.pow(expt),
+            }
         }
     }
 
@@ -421,24 +427,6 @@ impl Number {
         match self {
             Self::Complex(z) => z.to_floats(),
             Self::Real(r) => (r.to_float(), 0.0),
-        }
-    }
-
-    fn powc(&self, expt: &Complex) -> NumResult {
-        match self {
-            Self::Complex(z) => z.powc(expt),
-            Self::Real(r) => r.powc(expt),
-        }
-    }
-
-    fn powr(&self, expt: &Real) -> NumResult {
-        if expt.is_exact_zero() {
-            Ok(Number::one())
-        } else {
-            match self {
-                Self::Complex(z) => z.powr(expt),
-                Self::Real(r) => r.powr(expt),
-            }
         }
     }
 
@@ -699,24 +687,20 @@ impl Complex {
         scaled_cpx_sqrt(&self.magnitude(), x, y)
     }
 
-    // z^w = e^(w·ln z)
-    fn powc(&self, expt: &Complex) -> NumResult {
-        Ok((expt * self.ln()?).exp())
-    }
-
-    fn powr(&self, expt: &Real) -> NumResult {
-        match expt {
-            Real::Float(f) => Ok((Number::real(*f) * self.ln()?).exp()),
-            Real::Integer(n) => square_and_multiply(self.to_number(), n),
-            Real::Rational(q) => {
-                let (n, d) = q.get_parts();
-                if d.is_two() {
-                    self.sqrt().powr(&n.clone().into())
-                } else {
-                    Ok((Number::real(expt.clone()) * self.ln()?).exp())
-                }
+    // General form: z^w = e^(w·ln z); for exact int exponent square-and-multiply
+    // works for both exact and inexact; for rational exponent q=n/d if d=2 then
+    // (√z)^n keeps exactness better than general form.
+    fn pow(&self, expt: &Number) -> NumResult {
+        if let Number::Real(Real::Integer(n)) = expt {
+            return square_and_multiply(self.to_number(), n);
+        }
+        if let Number::Real(Real::Rational(q)) = expt {
+            let (n, d) = q.get_parts();
+            if d.is_two() {
+                return self.sqrt().pow(&n.to_number());
             }
         }
+        Ok((expt * self.ln()?).exp())
     }
 
     // safe complex square for square-and-multiply to avoid cancellation and
@@ -1469,10 +1453,18 @@ impl Real {
         }
     }
 
-    fn powc(&self, expt: &Complex) -> NumResult {
+    fn pow(&self, expt: &Number) -> NumResult {
         if self.is_exact_one() {
-            return Ok(Number::one());
+            Ok(Number::one())
+        } else {
+            match expt {
+                Number::Complex(w) => self.powc(w),
+                Number::Real(r) => self.powr(r),
+            }
         }
+    }
+
+    fn powc(&self, expt: &Complex) -> NumResult {
         let re = expt.get_real();
         if self.is_exact_zero() {
             if expt.is_zero() {
@@ -1498,9 +1490,6 @@ impl Real {
     }
 
     fn powr(&self, expt: &Real) -> NumResult {
-        if self.is_exact_one() {
-            return Ok(Number::one());
-        }
         if self.is_exact_zero() {
             if expt.is_zero() {
                 return Ok(Number::onef());
@@ -2238,6 +2227,10 @@ impl Integer {
         self.precision
             .to_rat_float(&d.precision)
             .copysign(self.signum())
+    }
+
+    fn to_number(&self) -> Number {
+        Number::real(self.clone())
     }
 
     int_convert! {
