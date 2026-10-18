@@ -1508,18 +1508,13 @@ impl Real {
             }
         }
         match expt {
-            Self::Float(f) => {
-                // if b < 0 and e is non-integral => polar(|b|^e, πe),
-                // otherwise normal inexact exponential
-                if self.is_negative() && !expt.is_integer() {
-                    Ok(Number::polar(
-                        self.to_float().abs().powf(*f),
-                        f64::consts::PI * f,
-                    ))
-                } else {
-                    Ok(Number::real(self.to_float().powf(*f)))
-                }
-            }
+            // if b < 0 and e is non-integral => polar(|b|^e, πe),
+            // otherwise normal inexact exponential
+            Self::Float(f) if self.is_negative() && !expt.is_integer() => Ok(Number::polar(
+                self.to_float().abs().powf(*f),
+                f64::consts::PI * f,
+            )),
+            Self::Float(f) => Ok(Number::real(self.to_float().powf(*f))),
             Self::Integer(n) => match self {
                 Self::Float(f) => {
                     let r = f.abs().powf(n.to_float());
@@ -1529,34 +1524,26 @@ impl Real {
                         Number::real(r)
                     })
                 }
-                Self::Integer(b) => {
-                    // -1 shortcut: result is 1 with sign set by n's parity
-                    if b.is_negative_one() {
-                        return Ok(if n.is_even() {
-                            Number::one()
-                        } else {
-                            Number::real(-1)
-                        });
-                    }
-                    square_and_multiply(self.to_number(), n)
-                }
-                Self::Rational(_) => square_and_multiply(self.to_number(), n),
+                // -1 shortcut: result is 1 with sign set by n's parity
+                Self::Integer(b) if b.is_negative_one() => Ok(if n.is_even() {
+                    Number::one()
+                } else {
+                    Number::real(-1)
+                }),
+                Self::Integer(_) | Self::Rational(_) => square_and_multiply(self.to_number(), n),
             },
             Self::Rational(q) => match self {
-                Self::Float(f) => {
-                    if self.is_negative() {
-                        let (n, d) = q.get_parts();
-                        if d.is_two() {
-                            // TODO: Number::real(*f).sqrt().powr(&n.clone().into())
-                            Ok(Number::imaginary(f.abs().sqrt().powf(n.to_float())))
-                        } else {
-                            let qf = q.to_float();
-                            Ok(Number::polar(f.abs().powf(qf), f64::consts::PI * qf))
-                        }
+                Self::Float(f) if self.is_negative() => {
+                    let (n, d) = q.get_parts();
+                    if d.is_two() {
+                        // TODO: Number::real(*f).sqrt().powr(&n.clone().into())
+                        Ok(Number::imaginary(f.abs().sqrt().powf(n.to_float())))
                     } else {
-                        Ok(Number::real(f.powf(q.to_float())))
+                        let qf = q.to_float();
+                        Ok(Number::polar(f.abs().powf(qf), f64::consts::PI * qf))
                     }
                 }
+                Self::Float(f) => Ok(Number::real(f.powf(q.to_float()))),
                 _ => todo!(),
             },
         }
