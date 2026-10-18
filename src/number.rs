@@ -608,6 +608,10 @@ impl Complex {
         (x.to_float(), y.to_float())
     }
 
+    fn clonen(&self) -> Number {
+        Number::Complex(self.clone())
+    }
+
     fn magnitude(&self) -> Real {
         let (x, y) = self.get_parts();
         if x.is_inexact() || y.is_inexact() {
@@ -685,6 +689,31 @@ impl Complex {
 
     fn powr(&self, expt: &Real) -> NumResult {
         match expt {
+            Real::Float(_) => todo!(),
+            Real::Integer(n) => {
+                // square-and-multiply: compute b^n in O(log₂ n);
+                // each set bit p in the exponent contributes b^p to the result
+                // where p ∈ [1, n]; if n < 0 take the reciprical of b^|n|
+                let mut r = Number::one();
+                let mut b = self.clonen();
+                let mut e = n.precision.clone();
+                while !e.is_zero() {
+                    if !e.is_even() {
+                        r = r * &b;
+                    }
+                    e = e >> 1;
+                    // TODO: remove when MP is implemented as overflow panic goes away
+                    // SP only overflows on last iteration when b² is not used, so safe to skip
+                    if !e.is_zero() {
+                        b = &b * &b;
+                    }
+                }
+                if n.is_negative() {
+                    r.reciprocal()
+                } else {
+                    Ok(r)
+                }
+            }
             Real::Rational(q) => {
                 let (n, d) = q.get_parts();
                 if d.is_two() {
@@ -693,7 +722,6 @@ impl Complex {
                     Ok((Number::real(expt.clone()) * self.ln()?).exp())
                 }
             }
-            _ => todo!(),
         }
     }
 
@@ -845,7 +873,7 @@ impl Complex {
     fn atan(&self) -> Number {
         let (x, y) = self.get_parts();
         if x.is_nan() && y.is_zero() {
-            return Number::Complex(self.clone());
+            return self.clonen();
         }
         let yf = y.to_float();
         if x.is_exact_zero() && yf.abs() <= 1.0 {
