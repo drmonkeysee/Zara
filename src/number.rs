@@ -1494,6 +1494,7 @@ impl Real {
                     })
                 }
                 Self::Integer(b) => {
+                    // -1 shortcut: result is 1 with sign set by n's parity
                     if b.is_negative_one() {
                         return Ok(if n.is_even() {
                             Number::one()
@@ -1501,7 +1502,24 @@ impl Real {
                             Number::real(-1)
                         });
                     }
-                    todo!();
+                    // square-and-multiply: compute b^n in O(log₂ n);
+                    // each set bit p in the exponent contributes b^p to the result
+                    // where p ∈ [1, n]; if n < 0 take the reciprical of b^|n|
+                    let mut r = Integer::one();
+                    let mut b = b.clone();
+                    let mut e = n.precision.clone();
+                    while !e.is_zero() {
+                        if !e.is_even() {
+                            r = r * &b;
+                        }
+                        b = &b * &b; // watch out for overflow at the end
+                        e = e >> 1;
+                    }
+                    Ok(if n.is_negative() {
+                        Number::real(r.reciprocal()?)
+                    } else {
+                        Number::real(r)
+                    })
                 }
                 Self::Rational(q) => todo!(),
             },
