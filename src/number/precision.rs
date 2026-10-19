@@ -115,6 +115,33 @@ impl Precision {
         }
     }
 
+    // return root r if r^n = self, meaning self is a perfect nth power;
+    // assumes n > 0 and does not handle the undefined 0th root case.
+    pub(super) fn nth_root(&self, n: &Self) -> Option<Self> {
+        match (self, n) {
+            (Self::Single(u), Self::Single(q)) => {
+                debug_assert_ne!(*q, 0);
+                if *q == 1 || *u < 2 {
+                    // 0 and 1 are perfect roots of any n
+                    // and any u is a perfect power of 1.
+                    return Some(self.clone());
+                }
+                let bitlen = u64::BITS - u.leading_zeros();
+                // if q ≥ bitlen(u) then only 0 and 1 can be roots;
+                // r ≥ 2 only exists if u ≥ 2^q, i.e. u has > q bits
+                if u64::from(bitlen) > *q {
+                    // q must be < 64 if we got this far so we can cast down
+                    debug_assert!(*q < u64::BITS.into());
+                    let q = *q as u32;
+                    Some(root_bsearch(0, 2 << bitlen.div_ceil(q), q, *u)?.into())
+                } else {
+                    None
+                }
+            }
+            _ => todo!("handle sp+mp"),
+        }
+    }
+
     pub(super) fn div_ceil(&self, rhs: &Self) -> Self {
         match (self, rhs) {
             (Self::Single(a), Self::Single(b)) => a.div_ceil(*b).into(),
@@ -326,4 +353,20 @@ fn u64_float_div(n: u64, d: u64) -> f64 {
     // operators to keep the power of 2 exact.
     let fs = f64::from_bits(((EXP_BIAS - s) as u64) << MANTISSA_SIZE);
     (qs as f64) * fs
+}
+
+// binary search for root r ∈ (0, 2^max], where r^n = needle; None if not found
+fn root_bsearch(mut min: u64, mut max: u64, n: u32, needle: u64) -> Option<u64> {
+    while min <= max {
+        let mid = min + ((max - min) / 2);
+        let r = mid.pow(n);
+        if r < needle {
+            min = mid + 1;
+        } else if r > needle {
+            max = mid - 1;
+        } else {
+            return Some(mid);
+        }
+    }
+    None
 }
