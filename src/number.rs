@@ -1545,8 +1545,31 @@ impl Real {
                         }
                     }
                     Self::Float(f) => Ok(Number::real(f.powf(q.to_float()))),
-                    _ if self.is_negative() => todo!(),
-                    _ => todo!(),
+                    Self::Integer(m) if m.is_negative() => {
+                        if d.is_two() {
+                            let Number::Real(mag) =
+                                self.abs().sqrt().powr(&Real::from(n.clone()))?
+                            else {
+                                unreachable!("guaranteed real result");
+                            };
+                            Ok(Number::imaginary(mag))
+                        } else {
+                            let Number::Real(mag) = self.abs().powr(expt)? else {
+                                unreachable!("guaranteed real result");
+                            };
+                            Ok(Number::polar(mag, f64::consts::PI * q.to_float()))
+                        }
+                    }
+                    Self::Integer(m) => {
+                        if let Some(root) = m.precision.nth_root(&d.precision) {
+                            let mr = Real::from(Integer::new(root, Sign::Positive));
+                            mr.powr(&Real::from(n.clone()))
+                        } else {
+                            Ok(Number::real(m.to_float().powf(q.to_float())))
+                        }
+                    }
+                    Self::Rational(p) if p.is_negative() => todo!(),
+                    Self::Rational(p) => todo!(),
                 }
             }
         }
