@@ -1547,12 +1547,10 @@ impl Real {
                     Self::Float(f) => Ok(Number::real(f.powf(q.to_float()))),
                     Self::Integer(m) if m.is_negative() => {
                         if d.is_two() {
-                            let Number::Real(mag) =
-                                self.abs().sqrt().powr(&Real::from(n.clone()))?
-                            else {
-                                unreachable!("guaranteed real result");
-                            };
-                            Ok(Number::imaginary(mag))
+                            let nr = Real::from(n.clone());
+                            let mag = self.abs().sqrt().powr(&nr)?;
+                            let im = Number::imaginary(Real::one()).pow(&nr.to_number())?;
+                            Ok(mag * im)
                         } else {
                             let Number::Real(mag) = self.abs().powr(expt)? else {
                                 unreachable!("guaranteed real result");
@@ -1568,8 +1566,35 @@ impl Real {
                             Ok(Number::real(m.to_float().powf(q.to_float())))
                         }
                     }
-                    Self::Rational(p) if p.is_negative() => todo!(),
-                    Self::Rational(p) => todo!(),
+                    Self::Rational(p) if p.is_negative() => {
+                        if d.is_two() {
+                            let nr = Real::from(n.clone());
+                            let mag = self.abs().sqrt().powr(&nr)?;
+                            let im = Number::imaginary(Real::one()).pow(&nr.to_number())?;
+                            Ok(mag * im)
+                        } else {
+                            let Number::Real(mag) = self.abs().powr(expt)? else {
+                                unreachable!("guaranteed real result");
+                            };
+                            Ok(Number::polar(mag, f64::consts::PI * q.to_float()))
+                        }
+                    }
+                    Self::Rational(p) => {
+                        let (pn, pd) = p.get_parts();
+                        if let Some(pnr) = pn.precision.nth_root(&d.precision)
+                            && let Some(pnd) = pd.precision.nth_root(&d.precision)
+                        {
+                            let (rn, rd) = (
+                                Integer::new(pnr, Sign::Positive),
+                                Integer::new(pnd, Sign::Positive),
+                            );
+                            debug_assert!(!rd.is_zero());
+                            let pr = assume_safe_div!(Real::reduce(rn, rd));
+                            pr.powr(&Real::from(n.clone()))
+                        } else {
+                            Ok(Number::real(p.to_float().powf(q.to_float())))
+                        }
+                    }
                 }
             }
         }
