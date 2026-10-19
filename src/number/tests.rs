@@ -9509,6 +9509,45 @@ mod expt {
             assert_eq!(r.to_string(), "+2.0i");
             assert_near_cpx(&flt(-8.0), &rat(1, 3), 1.0, 1.7320508075688772);
         }
+
+        // (sqrt b)^p = (±2i)^p cycles through i^p, so the sign of the result
+        // follows p mod 4: (expt -4.0 3/2) = (2i)³ = -8i, not +8i
+        #[test]
+        fn negative_float_to_odd_halves_follows_the_powers_of_i() {
+            let cases = [
+                (-4.0, (1, 2), "+2.0i"),
+                (-4.0, (3, 2), "-8.0i"),
+                (-4.0, (5, 2), "+32.0i"),
+                (-4.0, (7, 2), "-128.0i"),
+                (-4.0, (-1, 2), "-0.5i"),
+                (-4.0, (-3, 2), "+0.125i"),
+                (-4.0, (-5, 2), "-0.03125i"),
+                (-9.0, (3, 2), "-27.0i"),
+            ];
+            for (b, (p, q), expected) in cases {
+                assert_inexact(&flt(b), &rat(p, q), expected);
+            }
+        }
+
+        // an inexact base only changes the exactness of an exact result
+        #[test]
+        fn negative_float_to_halves_matches_the_exact_base() {
+            for p in (-7..=7).filter(|p| p % 2 != 0) {
+                let exact = expt(&int(-4), &rat(p, 2));
+                let inexact = expt(&flt(-4.0), &rat(p, 2));
+
+                assert!(inexact.is_inexact());
+                assert_eq!(
+                    inexact.to_imag().to_float(),
+                    exact.to_imag().to_float(),
+                    "(expt -4.0 {p}/2) vs (expt -4 {p}/2)"
+                );
+                assert!(
+                    extract_or_fail!(inexact.to_real(), Real::Integer).is_zero(),
+                    "(expt -4.0 {p}/2) should have an exact-zero real part"
+                );
+            }
+        }
     }
 
     mod float_exponent {
