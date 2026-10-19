@@ -1538,7 +1538,11 @@ impl Real {
                     Self::Float(f) if self.is_negative() => {
                         if d.is_two() {
                             // TODO: Number::real(*f).sqrt().powr(&n.clone().into())
-                            Ok(Number::imaginary(f.abs().sqrt().powf(n.to_float())))
+                            let mag = Number::real(f.abs().sqrt().powf(n.to_float()));
+                            // TODO: can this be turned into special case i^n
+                            // where n mod 4 => 1, i, -1, -i
+                            let im = Number::imaginary(Real::one()).pow(&n.to_number())?;
+                            Ok(mag * im)
                         } else {
                             let qf = q.to_float();
                             Ok(Number::polar(f.abs().powf(qf), f64::consts::PI * qf))
@@ -1549,7 +1553,7 @@ impl Real {
                         if d.is_two() {
                             let nr = Real::from(n.clone());
                             let mag = self.abs().sqrt().powr(&nr)?;
-                            let im = Number::imaginary(Real::one()).pow(&nr.to_number())?;
+                            let im = Number::imaginary(Real::one()).pow(&n.to_number())?;
                             Ok(mag * im)
                         } else {
                             let Number::Real(mag) = self.abs().powr(expt)? else {
@@ -1570,7 +1574,7 @@ impl Real {
                         if d.is_two() {
                             let nr = Real::from(n.clone());
                             let mag = self.abs().sqrt().powr(&nr)?;
-                            let im = Number::imaginary(Real::one()).pow(&nr.to_number())?;
+                            let im = Number::imaginary(Real::one()).pow(&n.to_number())?;
                             Ok(mag * im)
                         } else {
                             let Number::Real(mag) = self.abs().powr(expt)? else {
