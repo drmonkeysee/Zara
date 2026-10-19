@@ -359,13 +359,13 @@ fn u64_float_div(n: u64, d: u64) -> f64 {
 fn root_bsearch(mut min: u64, mut max: u64, n: u32, needle: u64) -> Option<u64> {
     while min <= max {
         let mid = min + ((max - min) / 2);
-        let r = mid.pow(n);
-        if r < needle {
-            min = mid + 1;
-        } else if r > needle {
-            max = mid - 1;
-        } else {
-            return Some(mid);
+        match mid
+            .checked_pow(n)
+            .map_or(Ordering::Greater, |r| r.cmp(&needle))
+        {
+            Ordering::Equal => return Some(mid),
+            Ordering::Greater => max = mid - 1,
+            Ordering::Less => min = mid + 1,
         }
     }
     None
