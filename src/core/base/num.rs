@@ -67,6 +67,8 @@ pub(super) fn load(env: &Frame) {
     super::bind_intrinsic(env, "truncate", 1..1, truncate);
     super::bind_intrinsic(env, "round", 1..1, round);
 
+    super::bind_intrinsic(env, "rationalize", 2..2, rationalize);
+
     super::bind_intrinsic(env, "square", 1..1, square);
     super::bind_intrinsic(env, "exact-integer-sqrt", 1..1, exact_integer_sqrt);
     super::bind_intrinsic(env, "expt", 2..2, pow);
@@ -267,6 +269,13 @@ fn truncate(args: &[Value], _env: &Frame) -> EvalResult {
 
 fn round(args: &[Value], _env: &Frame) -> EvalResult {
     real_op(first(args), |r| Ok(Value::real(r.round())))
+}
+
+fn rationalize(args: &[Value], _env: &Frame) -> EvalResult {
+    let (arg, arg2) = (first(args), super::second(args));
+    let x = super::arg_to_real(arg, FIRST_ARG_LABEL, NumericTypeName::REAL)?;
+    let y = super::arg_to_real(arg2, SECOND_ARG_LABEL, NumericTypeName::REAL)?;
+    Ok(Value::real(x.rationalize(y)))
 }
 
 fn square(args: &[Value], env: &Frame) -> EvalResult {

@@ -1334,6 +1334,10 @@ impl Real {
         }
     }
 
+    pub(crate) fn rationalize(&self, tolerance: &Self) -> Self {
+        todo!();
+    }
+
     fn one() -> Self {
         Integer::one().into()
     }
