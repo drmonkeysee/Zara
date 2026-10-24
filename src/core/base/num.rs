@@ -75,6 +75,9 @@ pub(super) fn load(env: &Frame) {
 
     super::bind_intrinsic(env, "inexact", 1..1, into_inexact);
     super::bind_intrinsic(env, "exact", 1..1, into_exact);
+
+    super::bind_intrinsic(env, "number->string", 1..2, number_to_string);
+    super::bind_intrinsic(env, "string->number", 1..2, number_from_string);
 }
 
 predicate!(is_number, Value::Number(_));
@@ -315,6 +318,14 @@ fn into_inexact(args: &[Value], _env: &Frame) -> EvalResult {
 fn into_exact(args: &[Value], _env: &Frame) -> EvalResult {
     let arg = first(args);
     super::num_op(arg, Number::try_to_exact, super::try_num_to_val)
+}
+
+fn number_to_string(_args: &[Value], _env: &Frame) -> EvalResult {
+    todo!();
+}
+
+fn number_from_string(_args: &[Value], _env: &Frame) -> EvalResult {
+    todo!();
 }
 
 //
