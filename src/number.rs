@@ -1885,6 +1885,9 @@ impl Rational {
         }
     }
 
+    // for positive base we can maintain exactness if the base parts are exact roots
+    // of the exponent's denominator d (e.g. if base is a d-th root of q), otherwise
+    // reduces to inexact powf.
     fn pos_rpow(&self, base: &Real) -> NumResult {
         let (n, d) = self.get_parts();
         match base {
@@ -1912,10 +1915,10 @@ impl Rational {
         }
     }
 
+    // for negative base we can maintain exactness for most inputs if
+    // denominator = 2 by short-cutting through (√x)^n; otherwise use
+    // the same formulation as Real::powr inexact path: polar(|b|^e, πe).
     fn neg_rpow(&self, base: &Real, orig_expt: &Real) -> NumResult {
-        // for negative base we can maintain exactness for most inputs if
-        // denominator = 2 by short-cutting through (√x)^n; otherwise use
-        // the same formulation as Real::powr inexact path: polar(|b|^e, πe).
         let (n, d) = self.get_parts();
         if d.is_two() {
             let im = Number::i().pow(&n.to_number())?;
