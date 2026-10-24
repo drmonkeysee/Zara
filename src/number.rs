@@ -1878,72 +1878,66 @@ impl Rational {
     }
 
     fn rpow(&self, base: &Real, orig_expt: &Real) -> NumResult {
-        let (n, d) = self.get_parts();
         if base.is_negative() {
-            self.neg_rpow(n, d, base, orig_expt)
+            self.neg_rpow(base, orig_expt)
         } else {
-            self.pos_rpow(n, d, base)
+            self.pos_rpow(base)
         }
     }
 
-    fn pos_rpow(&self, n: &Integer, d: &Integer, base: &Real) -> NumResult {
+    fn pos_rpow(&self, base: &Real) -> NumResult {
+        let (n, d) = self.get_parts();
         match base {
             Real::Float(f) => Ok(Number::real(f.powf(self.to_float()))),
             Real::Integer(m) => {
                 if let Some(root) = m.precision.nth_root(&d.precision) {
-                    let mr = Real::from(Integer::new(root, Sign::Positive));
+                    let mr = Real::from(root);
                     mr.powr(&Real::from(n.clone()))
                 } else {
                     Ok(Number::real(m.to_float().powf(self.to_float())))
                 }
             }
-            Real::Rational(p) => {
-                let (pn, pd) = p.get_parts();
-                if let Some(pnr) = pn.precision.nth_root(&d.precision)
-                    && let Some(pnd) = pd.precision.nth_root(&d.precision)
+            Real::Rational(q) => {
+                let (qn, qd) = q.get_parts();
+                if let Some(pnr) = qn.precision.nth_root(&d.precision)
+                    && let Some(pnd) = qd.precision.nth_root(&d.precision)
                 {
-                    let (rn, rd) = (
-                        Integer::new(pnr, Sign::Positive),
-                        Integer::new(pnd, Sign::Positive),
-                    );
-                    debug_assert!(!rd.is_zero());
-                    let pr = assume_safe_div!(Real::reduce(rn, rd));
+                    debug_assert!(!pnd.is_zero());
+                    let pr = assume_safe_div!(Real::reduce(pnr, pnd));
                     pr.powr(&Real::from(n.clone()))
                 } else {
-                    Ok(Number::real(p.to_float().powf(self.to_float())))
+                    Ok(Number::real(q.to_float().powf(self.to_float())))
                 }
             }
         }
     }
 
-    fn neg_rpow(&self, n: &Integer, d: &Integer, base: &Real, orig_expt: &Real) -> NumResult {
+    fn neg_rpow(&self, base: &Real, orig_expt: &Real) -> NumResult {
         // for negative base we can maintain exactness for most inputs if
         // denominator = 2 by short-cutting through (√x)^n; otherwise use
         // the same formulation as Real::powr inexact path: polar(|b|^e, πe).
+        let (n, d) = self.get_parts();
         if d.is_two() {
-            if let Real::Float(f) = base {
-                // TODO: Number::real(*f).sqrt().powr(&n.clone().into())
-                let mag = Number::real(f.abs().sqrt().powf(n.to_float()));
-                // TODO: can this be turned into special case i^n
-                // where n mod 4 => 1, i, -1, -i
-                let im = Number::i().pow(&n.to_number())?;
-                Ok(mag * im)
+            let im = Number::i().pow(&n.to_number())?;
+            let mag = if let Real::Float(f) = base {
+                Number::real(f.abs().sqrt().powf(n.to_float()))
             } else {
                 let nr = Real::from(n.clone());
-                let mag = base.abs().sqrt().powr(&nr)?;
-                let im = Number::i().pow(&n.to_number())?;
-                Ok(mag * im)
-            }
+                base.abs().sqrt().powr(&nr)?
+            };
+            Ok(mag * im)
         } else {
-            if let Real::Float(f) = base {
-                let qf = self.to_float();
-                Ok(Number::polar(f.abs().powf(qf), f64::consts::PI * qf))
+            let qf = self.to_float();
+            let im = f64::consts::PI * qf;
+            Ok(if let Real::Float(f) = base {
+                Number::polar(f.abs().powf(qf), im)
             } else {
-                let Number::Real(mag) = base.abs().powr(orig_expt)? else {
-                    unreachable!("guaranteed real result");
-                };
-                Ok(Number::polar(mag, f64::consts::PI * self.to_float()))
-            }
+                Number::polar(
+                    // guaranteed real result
+                    base.abs().powr(orig_expt)?.into_real(),
+                    im,
+                )
+            })
         }
     }
 
@@ -2172,14 +2166,14 @@ impl Integer {
     }
 
     pub(crate) fn gcd(&self, rhs: &Self) -> Self {
-        Self::new(self.precision.gcd(&rhs.precision), Sign::Positive)
+        self.precision.gcd(&rhs.precision).into()
     }
 
     pub(crate) fn lcm(&self, rhs: &Self) -> Self {
         if self.is_zero() && rhs.is_zero() {
             Self::zero()
         } else {
-            Self::new(self.precision.lcm(&rhs.precision), Sign::Positive)
+            self.precision.lcm(&rhs.precision).into()
         }
     }
 
@@ -2339,7 +2333,7 @@ impl Integer {
             Err(NumericError::NotNaturalNumber(self.to_string()))
         } else {
             let (s, r) = self.precision.isqrt_rem();
-            Ok((Self::new(s, Sign::Positive), Self::new(r, Sign::Positive)))
+            Ok((s.into(), r.into()))
         }
     }
 
@@ -2574,6 +2568,12 @@ impl From<i64> for Integer {
 impl From<(Sign, u64)> for Integer {
     fn from((sign, val): (Sign, u64)) -> Self {
         Self::new(val, sign)
+    }
+}
+
+impl From<Precision> for Integer {
+    fn from(value: Precision) -> Self {
+        Self::new(value, Sign::Positive)
     }
 }
 
