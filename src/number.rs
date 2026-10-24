@@ -189,7 +189,7 @@ impl Number {
     }
 
     pub(crate) fn imaginary(value: impl Into<Real>) -> Self {
-        Self::complex(0, value)
+        Self::complex(Real::zero(), value)
     }
 
     pub(crate) fn real(value: impl Into<Real>) -> Self {
