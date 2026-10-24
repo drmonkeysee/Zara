@@ -13053,3 +13053,356 @@ mod rounding {
         }
     }
 }
+
+// R7RS: (rationalize x y) returns the simplest rational within |y| of x,
+// i.e. the rational with the smallest denominator (then smallest |numerator|)
+// in the closed interval [x - |y|, x + |y|]. Inexact arguments yield an
+// inexact result.
+//
+// Expected values were derived from the mathematical definition (Stern-Brocot
+// / continued-fraction search), not from the implementation.
+mod rationalize {
+    use super::*;
+
+    fn exact(n: i64, d: i64) -> Real {
+        ok_or_fail!(Real::reduce(n, d))
+    }
+
+    // (x numerator, x denominator, y numerator, y denominator, expected)
+    const EXACT_CASES: [(i64, i64, i64, i64, &str); 19] = [
+        (3, 10, 1, 10, "1/3"),
+        (-3, 10, 1, 10, "-1/3"),
+        (1, 3, 0, 1, "1/3"),
+        (3, 1, 0, 1, "3"),
+        (3, 1, 1, 2, "3"),
+        (3, 1, 1, 1, "2"),
+        (7, 2, 1, 2, "3"),
+        (-7, 2, 1, 2, "-3"),
+        (5, 2, 1, 2, "2"),
+        (5, 1, 10, 1, "0"),
+        (-5, 1, 10, 1, "0"),
+        (-3, 1, 1, 1, "-2"),
+        (0, 1, 1, 1, "0"),
+        (0, 1, 0, 1, "0"),
+        // the interval's lower endpoint is exactly 1/3: endpoints are included
+        (1, 4, 1, 12, "1/3"),
+        (1, 3, 1, 1_000_000, "1/3"),
+        (314_159, 100_000, 1, 100, "22/7"),
+        (314_159, 100_000, 1, 1_000, "201/64"),
+        // continued fraction of all 1s: the deepest recursion per digit of precision
+        (309_017, 500_000, 1, 10_000, "55/89"),
+    ];
+
+    // splits a rendered exact rational ("p/q" or "p") into (p, q)
+    fn parts(r: &Real) -> (i128, i128) {
+        let s = r.to_string();
+        match s.split_once('/') {
+            Some((p, q)) => (p.parse().unwrap(), q.parse().unwrap()),
+            None => (s.parse().unwrap(), 1),
+        }
+    }
+
+    mod exact {
+        use super::*;
+
+        #[test]
+        fn matrix() {
+            for (xn, xd, yn, yd, expected) in EXACT_CASES {
+                let x = exact(xn, xd);
+                let y = exact(yn, yd);
+
+                let r = x.rationalize(&y);
+
+                assert_eq!(r.to_string(), expected, "rationalize {xn}/{xd} {yn}/{yd}");
+                assert!(!r.is_inexact());
+            }
+        }
+
+        #[test]
+        fn r7rs_example() {
+            let r = exact(3, 10).rationalize(&exact(1, 10));
+
+            assert_matches!(r, Real::Rational(_));
+            assert_eq!(r.to_string(), "1/3");
+        }
+
+        #[test]
+        fn negative_tolerance_matches_positive() {
+            let r = exact(3, 10).rationalize(&exact(-1, 10));
+
+            assert_eq!(r.to_string(), "1/3");
+        }
+
+        #[test]
+        fn integer_result_is_integer_variant() {
+            let r = exact(3, 1).rationalize(&exact(1, 1));
+
+            assert_matches!(r, Real::Integer(_));
+        }
+
+        #[test]
+        fn zero_tolerance_on_large_integer_is_identity() {
+            let r = Real::from(i64::MAX).rationalize(&exact(1, 2));
+
+            assert_eq!(r.to_string(), i64::MAX.to_string());
+        }
+    }
+
+    mod inexact {
+        use super::*;
+
+        #[test]
+        fn r7rs_example() {
+            let r = Real::from(0.3).rationalize(&exact(1, 10));
+
+            assert_matches!(r, Real::Float(_));
+            assert_eq!(r.to_string(), "0.3333333333333333");
+        }
+
+        #[test]
+        fn inexact_tolerance_makes_result_inexact() {
+            let r = exact(3, 10).rationalize(&Real::from(0.1));
+
+            assert_matches!(r, Real::Float(_));
+            assert_eq!(r.to_string(), "0.3333333333333333");
+        }
+
+        #[test]
+        fn both_inexact() {
+            let r = Real::from(0.3).rationalize(&Real::from(0.1));
+
+            assert_matches!(r, Real::Float(_));
+            assert_eq!(r.to_string(), "0.3333333333333333");
+        }
+
+        #[test]
+        fn negative_inexact() {
+            let r = Real::from(-0.3).rationalize(&exact(1, 10));
+
+            assert_eq!(r.to_string(), "-0.3333333333333333");
+        }
+
+        #[test]
+        fn zero_tolerance_returns_x_and_stays_inexact() {
+            let a = Real::from(0.1).rationalize(&exact(0, 1));
+            let b = Real::from(3.0).rationalize(&exact(0, 1));
+
+            assert_matches!(a, Real::Float(_));
+            assert_eq!(a.to_string(), "0.1");
+            assert_matches!(b, Real::Float(_));
+            assert_eq!(b.to_string(), "3.0");
+        }
+
+        #[test]
+        fn interval_containing_zero_gives_inexact_zero() {
+            let r = Real::from(0.25).rationalize(&Real::from(1.0));
+
+            assert_matches!(r, Real::Float(_));
+            assert_eq!(r.to_string(), "0.0");
+        }
+
+        #[test]
+        fn interval_containing_zero_gives_positive_zero_for_negative_x() {
+            // Chez and Guile both return 0.0, not -0.0
+            let r = Real::from(-0.25).rationalize(&Real::from(1.0));
+
+            assert_matches!(r, Real::Float(_));
+            assert_eq!(r.to_string(), "0.0");
+        }
+
+        #[test]
+        fn negative_zero_x_gives_positive_zero() {
+            // the result is the exact simplest rational 0 converted to inexact,
+            // which carries no sign, so the sign of x's zero is not preserved
+            let r = Real::from(-0.0).rationalize(&Real::from(1.0));
+
+            assert_matches!(r, Real::Float(_));
+            assert_eq!(r.to_string(), "0.0");
+        }
+
+        #[test]
+        fn exact_zero_tolerance_returns_x_unchanged_including_negative_zero() {
+            // Chez short-circuits a zero tolerance before converting to exact,
+            // so (rationalize -0.0 0) keeps the sign of the zero
+            let r = Real::from(-0.0).rationalize(&exact(0, 1));
+
+            assert_matches!(r, Real::Float(_));
+            assert_eq!(r.to_string(), "-0.0");
+        }
+
+        #[test]
+        fn inexact_zero_tolerance_returns_x_unchanged_including_negative_zero() {
+            // Chez: (rationalize -0.0 0.0) => -0.0
+            let r = Real::from(-0.0).rationalize(&Real::from(0.0));
+
+            assert_matches!(r, Real::Float(_));
+            assert_eq!(r.to_string(), "-0.0");
+        }
+
+        #[test]
+        fn negative_zero_tolerance_is_zero_tolerance() {
+            let r = Real::from(0.1).rationalize(&Real::from(-0.0));
+
+            assert_eq!(r.to_string(), "0.1");
+        }
+
+        #[test]
+        fn zero_at_the_interval_endpoint_gives_positive_zero() {
+            let r = Real::from(-0.25).rationalize(&Real::from(0.25));
+
+            assert_eq!(r.to_string(), "0.0");
+        }
+    }
+
+    mod special {
+        use super::*;
+
+        #[test]
+        fn infinite_x_with_finite_tolerance_is_unchanged() {
+            let pos = Real::from(f64::INFINITY).rationalize(&exact(3, 1));
+            let neg = Real::from(f64::NEG_INFINITY).rationalize(&exact(3, 1));
+
+            assert_eq!(pos.to_string(), "+inf.0");
+            assert_eq!(neg.to_string(), "-inf.0");
+        }
+
+        #[test]
+        fn infinite_tolerance_with_finite_x_is_zero() {
+            let r = exact(3, 1).rationalize(&Real::from(f64::INFINITY));
+
+            assert_matches!(r, Real::Float(_));
+            assert!(r.is_zero());
+        }
+
+        #[test]
+        fn infinite_x_with_infinite_tolerance_is_nan() {
+            let r = Real::from(f64::INFINITY).rationalize(&Real::from(f64::INFINITY));
+
+            assert_eq!(r.to_string(), "+nan.0");
+        }
+
+        #[test]
+        fn nan_in_either_argument_is_nan() {
+            let a = Real::from(f64::NAN).rationalize(&exact(1, 1));
+            let b = exact(1, 1).rationalize(&Real::from(f64::NAN));
+
+            assert_eq!(a.to_string(), "+nan.0");
+            assert_eq!(b.to_string(), "+nan.0");
+        }
+    }
+
+    mod laws {
+        use super::*;
+
+        const NON_INTEGER_RATIONALS: [(i64, i64); 8] = [
+            (7, 2),
+            (1, 3),
+            (-1, 3),
+            (-7, 2),
+            (22, 7),
+            (-355, 113),
+            (1, 1000),
+            (67, 6),
+        ];
+
+        #[test]
+        fn result_is_within_tolerance() {
+            for (xn, xd, yn, yd, _) in EXACT_CASES {
+                let r = exact(xn, xd).rationalize(&exact(yn, yd));
+
+                let (p, q) = parts(&r);
+                let (xn, xd, yn, yd) = (xn as i128, xd as i128, yn as i128, yd as i128);
+                // |p/q - xn/xd| <= |yn/yd|, cross-multiplied (all denominators positive)
+                let lhs = (p * xd - xn * q).abs() * yd;
+                let rhs = yn.abs() * q * xd;
+                assert!(lhs <= rhs, "{p}/{q} not within {yn}/{yd} of {xn}/{xd}");
+            }
+        }
+
+        #[test]
+        fn no_simpler_rational_exists_in_the_interval() {
+            for (xn, xd, yn, yd, _) in EXACT_CASES {
+                let r = exact(xn, xd).rationalize(&exact(yn, yd));
+                let (p, q) = parts(&r);
+
+                // interval [lo, hi] as lo_n/d and hi_n/d over d = xd * yd
+                let (xn, xd, yn, yd) = (xn as i128, xd as i128, yn as i128, yd as i128);
+                let d = xd * yd;
+                let lo_n = xn * yd - yn.abs() * xd;
+                let hi_n = xn * yd + yn.abs() * xd;
+
+                // for each denominator, the interval's numerators are
+                // ceil(lo_n*k/d) ..= floor(hi_n*k/d)
+                for k in 1..=q {
+                    let min_p = -((-(lo_n * k)).div_euclid(d));
+                    let max_p = (hi_n * k).div_euclid(d);
+                    if k < q {
+                        assert!(
+                            min_p > max_p,
+                            "{p}/{q} is not simplest for {xn}/{xd} +- {yn}/{yd}: \
+                             denominator {k} also fits"
+                        );
+                    } else {
+                        // same denominator: the numerator closest to zero wins
+                        let closest = if min_p > 0 {
+                            min_p
+                        } else if max_p < 0 {
+                            max_p
+                        } else {
+                            0
+                        };
+                        assert_eq!(
+                            p, closest,
+                            "numerator not minimal for {xn}/{xd} +- {yn}/{yd}"
+                        );
+                    }
+                }
+            }
+        }
+
+        #[test]
+        fn is_an_odd_function_of_x() {
+            for (xn, xd, yn, yd, _) in EXACT_CASES {
+                let y = exact(yn, yd);
+
+                let of_neg = (-exact(xn, xd)).rationalize(&y);
+                let neg_of = -exact(xn, xd).rationalize(&y);
+
+                assert_eq!(of_neg.to_string(), neg_of.to_string());
+            }
+        }
+
+        #[test]
+        fn tolerance_sign_is_irrelevant() {
+            for (xn, xd, yn, yd, _) in EXACT_CASES {
+                let x = exact(xn, xd);
+
+                let pos = x.rationalize(&exact(yn, yd));
+                let neg = x.rationalize(&exact(-yn, yd));
+
+                assert_eq!(pos.to_string(), neg.to_string());
+            }
+        }
+
+        #[test]
+        fn exact_zero_tolerance_is_identity() {
+            for (n, d) in NON_INTEGER_RATIONALS {
+                let r = exact(n, d).rationalize(&exact(0, 1));
+
+                assert_eq!(r.to_string(), exact(n, d).to_string());
+            }
+        }
+
+        #[test]
+        fn exact_arguments_never_produce_a_float() {
+            for (xn, xd, yn, yd, _) in EXACT_CASES {
+                let r = exact(xn, xd).rationalize(&exact(yn, yd));
+
+                assert!(
+                    matches!(r, Real::Integer(_) | Real::Rational(_)),
+                    "rationalize {xn}/{xd} {yn}/{yd} gave an inexact result"
+                );
+            }
+        }
+    }
+}
