@@ -1346,7 +1346,10 @@ impl Real {
             (_, Err(_)) if tolerance.is_nan() => Real::nan(),
             (Err(_), _) => self.clone(),
             (_, Err(_)) => 0.0.into(),
-            (Ok(x), Ok(y)) => todo!(),
+            (Ok(x), Ok(y)) => {
+                let ya = y.abs();
+                simplest_rational(&x - &ya, x + ya)
+            }
         }
     }
 
@@ -3181,6 +3184,14 @@ fn try_to_dyadic_rational(flt: f64) -> RealResult {
         // positive exponent: sign * mantissa * 2^exponent
         Ok((sign * mantissa * 2_i64.pow(exp.cast_unsigned())).into())
     }
+}
+
+// algorithm for determining simplest rational in the range [lo, hi];
+// equivalent to continued-fraction recursion through a Stern-Brocot tree:
+// https://en.wikipedia.org/wiki/Stern–Brocot_tree;
+// lo and hi are guaranteed to be finite and exact.
+fn simplest_rational(lo: Real, hi: Real) -> Real {
+    todo!();
 }
 
 fn write_intconversion_range_error(
