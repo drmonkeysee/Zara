@@ -13257,28 +13257,74 @@ mod rationalize {
     mod special {
         use super::*;
 
-        #[test]
-        fn infinite_x_with_finite_tolerance_is_unchanged() {
-            let pos = Real::from(f64::INFINITY).rationalize(&exact(3, 1));
-            let neg = Real::from(f64::NEG_INFINITY).rationalize(&exact(3, 1));
+        const INFINITIES: [f64; 2] = [f64::INFINITY, f64::NEG_INFINITY];
 
-            assert_eq!(pos.to_string(), "+inf.0");
-            assert_eq!(neg.to_string(), "-inf.0");
+        // exact and inexact finite values of both signs, plus zero
+        fn finite_values() -> Vec<Real> {
+            vec![
+                exact(3, 1),
+                exact(-3, 1),
+                exact(1, 3),
+                exact(-1, 3),
+                exact(0, 1),
+                Real::from(0.5),
+                Real::from(-0.5),
+                Real::from(0.0),
+            ]
         }
 
         #[test]
-        fn infinite_tolerance_with_finite_x_is_zero() {
-            let r = exact(3, 1).rationalize(&Real::from(f64::INFINITY));
+        fn infinite_x_with_finite_tolerance_is_unchanged() {
+            // an infinite x has no finite rational within a finite tolerance
+            for inf in INFINITIES {
+                for y in finite_values() {
+                    let r = Real::from(inf).rationalize(&y);
 
-            assert_matches!(r, Real::Float(_));
-            assert!(r.is_zero());
+                    assert_matches!(r, Real::Float(_));
+                    assert_eq!(r.to_string(), Real::from(inf).to_string(), "y = {y}");
+                }
+            }
+        }
+
+        #[test]
+        fn infinite_x_with_negative_finite_tolerance_is_unchanged() {
+            for inf in INFINITIES {
+                for y in [exact(-3, 1), exact(-1, 3), Real::from(-0.5)] {
+                    let r = Real::from(inf).rationalize(&y);
+
+                    assert_eq!(r.to_string(), Real::from(inf).to_string(), "y = {y}");
+                }
+            }
+        }
+
+        #[test]
+        fn infinite_tolerance_with_finite_x_is_positive_zero() {
+            // |y| = inf, so the interval is (-inf, +inf) and contains 0; the
+            // result is inexact because y is
+            for inf in INFINITIES {
+                for x in finite_values() {
+                    let r = x.rationalize(&Real::from(inf));
+
+                    assert_matches!(r, Real::Float(_));
+                    assert_eq!(r.to_string(), "0.0", "x = {x}, y = {inf}");
+                }
+            }
         }
 
         #[test]
         fn infinite_x_with_infinite_tolerance_is_nan() {
-            let r = Real::from(f64::INFINITY).rationalize(&Real::from(f64::INFINITY));
+            // R6RS and Guile give nan for all four sign pairings. Chez gives
+            // nan only when the signs match: for mixed signs one endpoint
+            // (x - |y| or x + |y|) is nan and its fallthrough returns the other
+            // endpoint, e.g. (rationalize -inf.0 +inf.0) => -inf.0. That is an
+            // accident of its implementation, not a rule to copy.
+            for x in INFINITIES {
+                for y in INFINITIES {
+                    let r = Real::from(x).rationalize(&Real::from(y));
 
-            assert_eq!(r.to_string(), "+nan.0");
+                    assert_eq!(r.to_string(), "+nan.0", "x = {x}, y = {y}");
+                }
+            }
         }
 
         #[test]
@@ -13288,6 +13334,24 @@ mod rationalize {
 
             assert_eq!(a.to_string(), "+nan.0");
             assert_eq!(b.to_string(), "+nan.0");
+        }
+
+        #[test]
+        fn nan_with_an_infinity_is_nan() {
+            for inf in INFINITIES {
+                let a = Real::from(f64::NAN).rationalize(&Real::from(inf));
+                let b = Real::from(inf).rationalize(&Real::from(f64::NAN));
+
+                assert_eq!(a.to_string(), "+nan.0");
+                assert_eq!(b.to_string(), "+nan.0");
+            }
+        }
+
+        #[test]
+        fn nan_with_nan_is_nan() {
+            let r = Real::from(f64::NAN).rationalize(&Real::from(f64::NAN));
+
+            assert_eq!(r.to_string(), "+nan.0");
         }
     }
 
