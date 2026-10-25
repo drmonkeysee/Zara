@@ -1334,8 +1334,22 @@ impl Real {
         }
     }
 
+    // the simplest rational r with |r - x| <= |y|,
+    // i.e. in the closed interval [x - |y|, x + |y|].
     pub(crate) fn rationalize(&self, tolerance: &Self) -> Self {
-        todo!();
+        if tolerance.is_zero() {
+            self.clone()
+        } else if self.is_nan() || tolerance.is_nan() {
+            Real::nan()
+        } else {
+            // err must be ±inf as nan is handled above
+            match (self.try_to_exact(), tolerance.try_to_exact()) {
+                (Err(_), Err(_)) => Real::nan(),
+                (Err(_), _) => self.clone(),
+                (_, Err(_)) => 0.0.into(),
+                (Ok(x), Ok(y)) => todo!(),
+            }
+        }
     }
 
     fn one() -> Self {
