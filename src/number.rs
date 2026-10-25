@@ -618,7 +618,7 @@ impl Complex {
     fn magnitude(&self) -> Real {
         let (x, y) = self.get_parts();
         if x.is_inexact() || y.is_inexact() {
-            Real::Float(x.to_float().hypot(y.to_float()))
+            x.to_float().hypot(y.to_float()).into()
         } else {
             ((x * x) + (y * y)).sqrt()
         }
@@ -626,7 +626,7 @@ impl Complex {
 
     fn angle(&self) -> Real {
         let (x, y) = self.get_parts();
-        Real::Float(y.to_float().atan2(x.to_float()))
+        y.to_float().atan2(x.to_float()).into()
     }
 
     fn reciprocal(&self) -> NumResult {
@@ -2169,7 +2169,7 @@ impl Integer {
     }
 
     pub(crate) fn to_inexact(&self) -> Real {
-        Real::Float(self.to_float())
+        self.to_float().into()
     }
 
     pub(crate) fn gcd(&self, rhs: &Self) -> Self {
