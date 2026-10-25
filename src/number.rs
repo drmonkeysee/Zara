@@ -1363,7 +1363,7 @@ impl Real {
     }
 
     fn two() -> Self {
-        Integer::two().into()
+        2.into()
     }
 
     fn is_eqv(&self, other: &Self) -> bool {
@@ -2240,10 +2240,6 @@ impl Integer {
         let q = self.div_floor(rhs);
         let r = self - (&q * rhs);
         Ok((q, r))
-    }
-
-    fn two() -> Self {
-        2.into()
     }
 
     fn is_positive(&self) -> bool {
