@@ -1348,7 +1348,12 @@ impl Real {
             (_, Err(_)) => 0.0.into(),
             (Ok(x), Ok(y)) => {
                 let ya = y.abs();
-                simplest_rational(&x - &ya, x + ya)
+                let r = simplest_rational(&x - &ya, x + ya);
+                if self.is_inexact() || tolerance.is_inexact() {
+                    r.to_inexact()
+                } else {
+                    r
+                }
             }
         }
     }
