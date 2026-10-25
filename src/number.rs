@@ -3190,7 +3190,32 @@ fn try_to_dyadic_rational(flt: f64) -> RealResult {
 // https://en.wikipedia.org/wiki/Stern–Brocot_tree;
 // lo and hi are guaranteed to be finite and exact.
 fn simplest_rational(lo: Real, hi: Real) -> Real {
-    todo!();
+    // lo <= 0 <= hi
+    if !lo.is_positive() && !hi.is_negative() {
+        return Real::zero();
+    }
+    // hi < 0 → -simplest(-hi, -lo)
+    if hi.is_negative() {
+        return -simplest_rational(-hi, -lo);
+    }
+    // integer in range [lo, hi] closest to 0
+    let clo = lo.ceiling();
+    if clo <= hi {
+        return clo;
+    }
+    // both endpoints lie strictly inside (n, n+1)
+    // → n + 1/simplest(1/(hi - n), 1/(lo - n)), endpoints swap for reciprocals;
+    // due to earlier preconditions we can assume no div/0, because
+    // floor(lo) < lo <= hi and there is no integer in [lo, hi].
+    let n = lo.floor();
+    let (nlo, nhi) = (hi - &n, lo - &n);
+    debug_assert!(!nlo.is_zero() && !nhi.is_zero());
+    let next = simplest_rational(
+        assume_safe_div!(nlo.reciprocal()),
+        assume_safe_div!(nhi.reciprocal()),
+    );
+    debug_assert!(!next.is_zero());
+    n + assume_safe_div!(next.reciprocal())
 }
 
 fn write_intconversion_range_error(
