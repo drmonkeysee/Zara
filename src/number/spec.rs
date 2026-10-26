@@ -12,7 +12,7 @@ pub(crate) enum Radix {
 }
 
 #[allow(private_bounds)]
-pub(crate) trait RadixProps: RadixParser {
+pub(crate) trait RadixClassifier: RadixParser {
     const BASE: u32;
     const NAME: &'static str;
 
@@ -22,7 +22,7 @@ pub(crate) trait RadixProps: RadixParser {
 #[derive(Clone, Copy, Default)]
 pub(crate) struct Binary;
 
-impl RadixProps for Binary {
+impl RadixClassifier for Binary {
     const BASE: u32 = 2;
     const NAME: &'static str = "binary";
 
@@ -34,7 +34,7 @@ impl RadixProps for Binary {
 #[derive(Clone, Copy, Default)]
 pub(crate) struct Octal;
 
-impl RadixProps for Octal {
+impl RadixClassifier for Octal {
     const BASE: u32 = 8;
     const NAME: &'static str = "octal";
 
@@ -47,7 +47,7 @@ impl RadixProps for Octal {
 #[derive(Clone, Copy, Default)]
 pub(crate) struct Decimal;
 
-impl RadixProps for Decimal {
+impl RadixClassifier for Decimal {
     const BASE: u32 = 10;
     const NAME: &'static str = "decimal";
 
@@ -59,7 +59,7 @@ impl RadixProps for Decimal {
 #[derive(Clone, Copy, Default)]
 pub(crate) struct Hexadecimal;
 
-impl RadixProps for Hexadecimal {
+impl RadixClassifier for Hexadecimal {
     const BASE: u32 = 16;
     const NAME: &'static str = "hexadecimal";
 
@@ -75,7 +75,7 @@ pub(crate) struct IntSpec<R> {
     pub(crate) sign: Option<Sign>,
 }
 
-impl<R: RadixProps> IntSpec<R> {
+impl<R: RadixClassifier> IntSpec<R> {
     pub(crate) fn is_empty(&self) -> bool {
         self.magnitude.is_empty()
     }
@@ -173,7 +173,7 @@ impl FloatSpec {
 }
 
 trait RadixParser {
-    fn parse_inexact<R: RadixProps>(spec: IntSpec<R>, input: &str) -> RealResult {
+    fn parse_inexact<R: RadixClassifier>(spec: IntSpec<R>, input: &str) -> RealResult {
         // always parse exact magnitude first to account for radix
         Ok(parse_signed(&spec, input)?.to_inexact())
     }
@@ -193,7 +193,7 @@ impl RadixParser for Decimal {
     }
 }
 
-fn parse_signed<R: RadixProps>(spec: &IntSpec<R>, input: &str) -> IntResult {
+fn parse_signed<R: RadixClassifier>(spec: &IntSpec<R>, input: &str) -> IntResult {
     if spec.is_empty() {
         Err(NumericError::ParseFailure)
     } else {
@@ -206,7 +206,7 @@ fn parse_signed<R: RadixProps>(spec: &IntSpec<R>, input: &str) -> IntResult {
     }
 }
 
-fn parse_sign_magnitude<R: RadixProps>(spec: &IntSpec<R>, input: &str) -> IntResult {
+fn parse_sign_magnitude<R: RadixClassifier>(spec: &IntSpec<R>, input: &str) -> IntResult {
     input
         .get(spec.magnitude.start..)
         .map_or(Err(NumericError::ParseFailure), |mag| {
@@ -220,7 +220,7 @@ fn parse_sign_magnitude<R: RadixProps>(spec: &IntSpec<R>, input: &str) -> IntRes
         })
 }
 
-fn parse_multi_precision<R: RadixProps>(_spec: &IntSpec<R>, input: &str) -> IntResult {
+fn parse_multi_precision<R: RadixClassifier>(_spec: &IntSpec<R>, input: &str) -> IntResult {
     Err(NumericError::Unimplemented(input.to_owned()))
 }
 

@@ -3,7 +3,7 @@ use super::{
     TokenKind,
 };
 use crate::number::{
-    Decimal, FloatSpec, IntSpec, Integer, Number, NumericError, RadixProps, Real, Sign,
+    Decimal, FloatSpec, IntSpec, Integer, Number, NumericError, RadixClassifier, Real, Sign,
 };
 use std::{debug_assert_matches, marker::PhantomData, ops::ControlFlow};
 
@@ -120,7 +120,7 @@ pub(super) struct RadixNumber<'me, 'txt, R> {
     start: usize,
 }
 
-impl<'me, 'txt, R: RadixProps + Default> RadixNumber<'me, 'txt, R> {
+impl<'me, 'txt, R: RadixClassifier + Default> RadixNumber<'me, 'txt, R> {
     pub(super) fn new(scanner: &'me mut Scanner<'txt>, exactness: Option<Exactness>) -> Self {
         let start = scanner.pos();
         Self {
@@ -357,7 +357,7 @@ impl<'me, 'txt> Denominator<'me, 'txt> {
         Self { scanner, start }
     }
 
-    fn scan<R: RadixProps + Default>(
+    fn scan<R: RadixClassifier + Default>(
         mut self,
     ) -> Result<(Integer, SubCondition<'txt>), TokenErrorKind> {
         let mut brk = Ok(BreakCondition::default());
@@ -463,7 +463,7 @@ impl<'txt> From<BreakCondition<'txt>> for SubCondition<'txt> {
 }
 
 trait ClassifierProps {
-    type Radix: RadixProps + Default;
+    type Radix: RadixClassifier + Default;
 
     fn sign(&self) -> Option<Sign>;
     fn exactness(&self) -> Option<Exactness>;
@@ -628,7 +628,7 @@ struct Integral<R> {
     spec: IntSpec<R>,
 }
 
-impl<R: RadixProps> Integral<R> {
+impl<R: RadixClassifier> Integral<R> {
     fn has_sign(&self) -> bool {
         self.spec.has_sign()
     }
@@ -736,7 +736,7 @@ struct RadixProps<R> {
     radix: PhantomData<R>,
 }
 
-impl<R: RadixProps + Default> ClassifierProps for RadixProps<R> {
+impl<R: RadixClassifier + Default> ClassifierProps for RadixProps<R> {
     type Radix = R;
 
     fn sign(&self) -> Option<Sign> {
@@ -770,7 +770,7 @@ struct RadixParser<'txt, R> {
     spec: IntSpec<R>,
 }
 
-impl<R: RadixProps> ClassifierParser for RadixParser<'_, R> {
+impl<R: RadixClassifier> ClassifierParser for RadixParser<'_, R> {
     fn parse(self, exactness: Option<Exactness>) -> ParseResult {
         parse_intspec(self.spec, self.input, exactness)
     }
@@ -958,7 +958,7 @@ fn real_to_token(r: impl Into<Real>, is_imaginary: bool) -> TokenKind {
     }
 }
 
-fn parse_intspec<R: RadixProps>(
+fn parse_intspec<R: RadixClassifier>(
     spec: IntSpec<R>,
     input: &str,
     exactness: Option<Exactness>,

@@ -3,7 +3,7 @@ use super::{
     TokenKind, numeric::RadixNumber,
 };
 use crate::{
-    number::{Binary, Hexadecimal, Octal, Radix, RadixProps},
+    number::{Binary, Hexadecimal, Octal, Radix, RadixClassifier},
     string,
 };
 
@@ -266,7 +266,7 @@ impl NumberKind {
     }
 }
 
-fn radix<R: RadixProps + Clone + Default>(
+fn radix<R: RadixClassifier + Clone + Default>(
     scanner: &mut Scanner,
     exactness: Option<Exactness>,
 ) -> TokenExtractResult {
