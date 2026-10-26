@@ -2156,6 +2156,10 @@ impl Integer {
         1.into()
     }
 
+    pub(crate) fn try_to_radix(&self) -> Result<Radix, NumericError> {
+        todo!();
+    }
+
     fn new(precision: impl Into<Precision>, sign: impl Into<Sign>) -> Self {
         let mut sign = sign.into();
         let precision = precision.into();
@@ -2776,6 +2780,7 @@ pub(crate) enum NumericError {
     ParseExponentFailure,
     ParseExponentOutOfRange,
     ParseFailure,
+    RadixInvalid,
     UndefinedAtZero,
     Uint32ConversionInvalidRange,
     Unimplemented(String),
@@ -2809,6 +2814,7 @@ impl Display for NumericError {
             }
             Self::ParseExponentFailure => f.write_str("exponent parse failure"),
             Self::ParseFailure => f.write_str("number parse failure"),
+            Self::RadixInvalid => f.write_str("expected valid radix, one of: 2, 8, 10, 16"),
             Self::UndefinedAtZero => f.write_str("undefined at zero"),
             Self::Uint32ConversionInvalidRange => {
                 write_intconversion_range_error(u32::MIN, u32::MAX, f)

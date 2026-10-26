@@ -5,7 +5,7 @@ use super::{FIRST_ARG_LABEL, MAX_ARITY, SECOND_ARG_LABEL, first, invalid_target}
 use crate::{
     Exception,
     eval::{EvalResult, Frame},
-    number::{Integer, NumResult, Number, NumericError, NumericTypeName, Real},
+    number::{Integer, NumResult, Number, NumericError, NumericTypeName, Radix, Real},
     value::{Condition, TypeName, Value},
 };
 use std::fmt::Display;
@@ -311,17 +311,33 @@ fn pow(args: &[Value], _env: &Frame) -> EvalResult {
 }
 
 fn into_inexact(args: &[Value], _env: &Frame) -> EvalResult {
-    let arg = first(args);
-    super::num_op(arg, Number::to_inexact, super::num_to_val)
+    super::num_op(first(args), Number::to_inexact, super::num_to_val)
 }
 
 fn into_exact(args: &[Value], _env: &Frame) -> EvalResult {
-    let arg = first(args);
-    super::num_op(arg, Number::try_to_exact, super::try_num_to_val)
+    super::num_op(first(args), Number::try_to_exact, super::try_num_to_val)
 }
 
-fn number_to_string(_args: &[Value], _env: &Frame) -> EvalResult {
-    todo!();
+fn number_to_string(args: &[Value], _env: &Frame) -> EvalResult {
+    super::num_op(
+        first(args),
+        |x| {
+            let radix = args
+                .get(1)
+                .map(|v| {
+                    if let Value::Number(Number::Real(Real::Integer(n))) = v {
+                        n.try_to_radix()
+                            .map_err(|err| Exception::from(Condition::value_error(err, v)))
+                    } else {
+                        Err(Condition::value_error(NumericError::RadixInvalid, v).into())
+                    }
+                })
+                .transpose()?
+                .unwrap_or(Radix::default());
+            Ok(Value::string("foo"))
+        },
+        |r: EvalResult, v| r,
+    )
 }
 
 fn number_from_string(_args: &[Value], _env: &Frame) -> EvalResult {
