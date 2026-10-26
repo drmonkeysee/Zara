@@ -83,7 +83,9 @@ mod spec;
 mod tests;
 
 use self::precision::Precision;
-pub(crate) use self::spec::{Binary, Decimal, FloatSpec, Hexadecimal, IntSpec, Octal, Radix};
+pub(crate) use self::spec::{
+    Binary, Decimal, FloatSpec, Hexadecimal, IntSpec, Octal, Radix, RadixProps,
+};
 use std::{
     borrow::Borrow,
     cmp::Ordering,

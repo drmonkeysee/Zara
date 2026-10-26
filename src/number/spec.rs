@@ -2,8 +2,17 @@ use super::{IntResult, NumericError, Real, RealResult, Sign};
 use crate::txt::TxtSpan;
 use std::num::{IntErrorKind, ParseIntError};
 
+#[derive(Default)]
+pub(crate) enum Radix {
+    Binary,
+    #[default]
+    Decimal,
+    Hexadecimal,
+    Octal,
+}
+
 #[allow(private_bounds)]
-pub(crate) trait Radix: RadixPrivate {
+pub(crate) trait RadixProps: RadixParser {
     const BASE: u32;
     const NAME: &'static str;
 
@@ -13,7 +22,7 @@ pub(crate) trait Radix: RadixPrivate {
 #[derive(Clone, Copy, Default)]
 pub(crate) struct Binary;
 
-impl Radix for Binary {
+impl RadixProps for Binary {
     const BASE: u32 = 2;
     const NAME: &'static str = "binary";
 
@@ -25,7 +34,7 @@ impl Radix for Binary {
 #[derive(Clone, Copy, Default)]
 pub(crate) struct Octal;
 
-impl Radix for Octal {
+impl RadixProps for Octal {
     const BASE: u32 = 8;
     const NAME: &'static str = "octal";
 
@@ -38,7 +47,7 @@ impl Radix for Octal {
 #[derive(Clone, Copy, Default)]
 pub(crate) struct Decimal;
 
-impl Radix for Decimal {
+impl RadixProps for Decimal {
     const BASE: u32 = 10;
     const NAME: &'static str = "decimal";
 
@@ -50,7 +59,7 @@ impl Radix for Decimal {
 #[derive(Clone, Copy, Default)]
 pub(crate) struct Hexadecimal;
 
-impl Radix for Hexadecimal {
+impl RadixProps for Hexadecimal {
     const BASE: u32 = 16;
     const NAME: &'static str = "hexadecimal";
 
@@ -66,7 +75,7 @@ pub(crate) struct IntSpec<R> {
     pub(crate) sign: Option<Sign>,
 }
 
-impl<R: Radix> IntSpec<R> {
+impl<R: RadixProps> IntSpec<R> {
     pub(crate) fn is_empty(&self) -> bool {
         self.magnitude.is_empty()
     }
@@ -163,18 +172,18 @@ impl FloatSpec {
     }
 }
 
-trait RadixPrivate {
-    fn parse_inexact<R: Radix>(spec: IntSpec<R>, input: &str) -> RealResult {
+trait RadixParser {
+    fn parse_inexact<R: RadixProps>(spec: IntSpec<R>, input: &str) -> RealResult {
         // always parse exact magnitude first to account for radix
         Ok(parse_signed(&spec, input)?.to_inexact())
     }
 }
 
-impl RadixPrivate for Binary {}
-impl RadixPrivate for Octal {}
-impl RadixPrivate for Hexadecimal {}
+impl RadixParser for Binary {}
+impl RadixParser for Octal {}
+impl RadixParser for Hexadecimal {}
 
-impl RadixPrivate for Decimal {
+impl RadixParser for Decimal {
     fn parse_inexact<R>(spec: IntSpec<R>, input: &str) -> RealResult {
         input
             .get(..spec.magnitude.end)
@@ -184,7 +193,7 @@ impl RadixPrivate for Decimal {
     }
 }
 
-fn parse_signed<R: Radix>(spec: &IntSpec<R>, input: &str) -> IntResult {
+fn parse_signed<R: RadixProps>(spec: &IntSpec<R>, input: &str) -> IntResult {
     if spec.is_empty() {
         Err(NumericError::ParseFailure)
     } else {
@@ -197,7 +206,7 @@ fn parse_signed<R: Radix>(spec: &IntSpec<R>, input: &str) -> IntResult {
     }
 }
 
-fn parse_sign_magnitude<R: Radix>(spec: &IntSpec<R>, input: &str) -> IntResult {
+fn parse_sign_magnitude<R: RadixProps>(spec: &IntSpec<R>, input: &str) -> IntResult {
     input
         .get(spec.magnitude.start..)
         .map_or(Err(NumericError::ParseFailure), |mag| {
@@ -211,7 +220,7 @@ fn parse_sign_magnitude<R: Radix>(spec: &IntSpec<R>, input: &str) -> IntResult {
         })
 }
 
-fn parse_multi_precision<R: Radix>(_spec: &IntSpec<R>, input: &str) -> IntResult {
+fn parse_multi_precision<R: RadixProps>(_spec: &IntSpec<R>, input: &str) -> IntResult {
     Err(NumericError::Unimplemented(input.to_owned()))
 }
 

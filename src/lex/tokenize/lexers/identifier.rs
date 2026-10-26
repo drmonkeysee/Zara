@@ -3,7 +3,7 @@ use super::{
     TokenExtractResult, TokenKind, numeric::RealNumber,
 };
 use crate::{
-    number::{Decimal, Number, Radix},
+    number::{Decimal, Number, RadixProps},
     string::identifier,
 };
 

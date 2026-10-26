@@ -3,7 +3,7 @@ use super::{
     TokenKind, numeric::RadixNumber,
 };
 use crate::{
-    number::{Binary, Hexadecimal, Octal, Radix},
+    number::{Binary, Hexadecimal, Octal, Radix, RadixProps},
     string,
 };
 
@@ -112,7 +112,7 @@ impl Hashtag<'_, '_> {
             )?;
             num.scan(self.scanner, Some(exactness))
         } else {
-            NumberKind::Decimal.scan(self.scanner, Some(exactness))
+            NumberKind::default().scan(self.scanner, Some(exactness))
         }
     }
 
@@ -238,12 +238,8 @@ impl BlockCommentPolicy for StartComment {
     }
 }
 
-enum NumberKind {
-    Binary,
-    Decimal,
-    Hexadecimal,
-    Octal,
-}
+#[derive(Default)]
+struct NumberKind(Radix);
 
 impl NumberKind {
     fn select_or(
@@ -252,25 +248,25 @@ impl NumberKind {
         ch: Option<char>,
     ) -> Result<Self, TokenErrorKind> {
         match ch.or_else(|| scanner.char_if_not_delimiter()) {
-            Some('b' | 'B') => Ok(Self::Binary),
-            Some('d' | 'D') => Ok(Self::Decimal),
-            Some('o' | 'O') => Ok(Self::Octal),
-            Some('x' | 'X') => Ok(Self::Hexadecimal),
+            Some('b' | 'B') => Ok(Self(Radix::Binary)),
+            Some('d' | 'D') => Ok(Self(Radix::Decimal)),
+            Some('o' | 'O') => Ok(Self(Radix::Octal)),
+            Some('x' | 'X') => Ok(Self(Radix::Hexadecimal)),
             _ => Err(failure),
         }
     }
 
     fn scan(&self, scanner: &mut Scanner, exactness: Option<Exactness>) -> TokenExtractResult {
-        match self {
-            Self::Binary => radix::<Binary>(scanner, exactness),
-            Self::Decimal => decimal(scanner, exactness),
-            Self::Hexadecimal => radix::<Hexadecimal>(scanner, exactness),
-            Self::Octal => radix::<Octal>(scanner, exactness),
+        match self.0 {
+            Radix::Binary => radix::<Binary>(scanner, exactness),
+            Radix::Decimal => decimal(scanner, exactness),
+            Radix::Hexadecimal => radix::<Hexadecimal>(scanner, exactness),
+            Radix::Octal => radix::<Octal>(scanner, exactness),
         }
     }
 }
 
-fn radix<R: Radix + Clone + Default>(
+fn radix<R: RadixProps + Clone + Default>(
     scanner: &mut Scanner,
     exactness: Option<Exactness>,
 ) -> TokenExtractResult {
