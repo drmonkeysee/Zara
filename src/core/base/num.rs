@@ -326,17 +326,21 @@ fn number_to_string(args: &[Value], _env: &Frame) -> EvalResult {
                 .get(1)
                 .map(|v| {
                     if let Value::Number(Number::Real(Real::Integer(n))) = v {
-                        n.try_to_radix()
-                            .map_err(|err| Exception::from(Condition::value_error(err, v)))
+                        n.try_to_radix().map_err(|err| (err, v))
                     } else {
-                        Err(Condition::value_error(NumericError::RadixInvalid, v).into())
+                        Err((NumericError::RadixInvalid, v))
                     }
                 })
                 .transpose()?
                 .unwrap_or(Radix::default());
-            Ok(Value::string("foo"))
+            Ok(radix.num_to_string(x))
         },
-        |r: EvalResult, v| r,
+        |res, _| {
+            res.map_or_else(
+                |(err, v)| Err(Condition::value_error(err, v).into()),
+                |s| Ok(Value::string(s)),
+            )
+        },
     )
 }
 

@@ -91,7 +91,7 @@ use std::{
     borrow::Borrow,
     cmp::Ordering,
     convert, f64,
-    fmt::{self, Display, Formatter, Write},
+    fmt::{self, Binary, Display, Formatter, LowerHex, Octal, Write},
     num::ParseFloatError,
     ops::{Add, Div, Mul, Neg, Rem, Sub},
     result::Result,
@@ -113,6 +113,7 @@ pub(crate) type NumResult = Result<Number, NumericError>;
 pub(crate) type RealResult = Result<Real, NumericError>;
 pub(crate) type IntResult = Result<Integer, NumericError>;
 pub(crate) type IntPairResult = Result<(Integer, Integer), NumericError>;
+pub(crate) type RadixResult = Result<Radix, NumericError>;
 
 /*
  * All predicates, equivalence relationships, and operators assume normalized
@@ -548,8 +549,29 @@ impl Display for Number {
                 ComplexRealDatum(&z.0).fmt(f)?;
                 ComplexImagDatum(&z.1).fmt(f)
             }
-            Self::Real(r) => r.fmt(f),
+            Self::Real(r) => Display::fmt(r, f),
         }
+    }
+}
+
+impl Binary for Number {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Complex(_) => todo!(),
+            Self::Real(r) => Binary::fmt(r, f),
+        }
+    }
+}
+
+impl Octal for Number {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        todo!()
+    }
+}
+
+impl LowerHex for Number {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        todo!()
     }
 }
 
@@ -1793,8 +1815,18 @@ impl Display for Real {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
             Self::Float(d) => FloatDatum(d).fmt(f),
-            Self::Integer(n) => n.fmt(f),
-            Self::Rational(q) => q.fmt(f),
+            Self::Integer(n) => Display::fmt(n, f),
+            Self::Rational(q) => Display::fmt(q, f),
+        }
+    }
+}
+
+impl Binary for Real {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Float(d) => FloatDatum(d).fmt(f),
+            Self::Integer(n) => Binary::fmt(n, f),
+            Self::Rational(q) => Binary::fmt(q, f),
         }
     }
 }
@@ -2057,8 +2089,16 @@ impl_val_delegate!(Mul, Rational, Real);
 impl Display for Rational {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         let r = &self.0;
-        r.0.fmt(f)?;
+        Display::fmt(&r.0, f)?;
         write!(f, "/{}", r.1)
+    }
+}
+
+impl Binary for Rational {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        let r = &self.0;
+        Binary::fmt(&r.0, f)?;
+        write!(f, "/{:b}", r.1)
     }
 }
 
@@ -2157,8 +2197,12 @@ impl Integer {
         1.into()
     }
 
-    pub(crate) fn try_to_radix(&self) -> Result<Radix, NumericError> {
-        todo!();
+    pub(crate) fn try_to_radix(&self) -> RadixResult {
+        if self.is_positive() {
+            self.precision.try_to_radix()
+        } else {
+            Err(NumericError::RadixInvalid)
+        }
     }
 
     fn new(precision: impl Into<Precision>, sign: impl Into<Sign>) -> Self {
@@ -2582,7 +2626,14 @@ impl_val_delegate!(Rem, Integer, IntResult);
 impl Display for Integer {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         self.sign.fmt(f)?;
-        self.precision.fmt(f)
+        Display::fmt(&self.precision, f)
+    }
+}
+
+impl Binary for Integer {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        self.sign.fmt(f)?;
+        Binary::fmt(&self.precision, f)
     }
 }
 
@@ -2898,7 +2949,7 @@ impl Display for ComplexRealDatum<'_> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self.0 {
             Real::Integer(n) if n.is_zero() => Ok(()),
-            r => r.fmt(f),
+            r => Display::fmt(r, f),
         }
     }
 }

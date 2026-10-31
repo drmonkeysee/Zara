@@ -1,8 +1,8 @@
-use super::{EXP_BIAS, FMAX_INT, MANTISSA_SIZE};
+use super::{EXP_BIAS, FMAX_INT, MANTISSA_SIZE, NumericError, Radix, RadixResult};
 use std::{
     borrow::Borrow,
     cmp::Ordering,
-    fmt::{self, Display, Formatter},
+    fmt::{self, Binary, Display, Formatter, LowerHex, Octal},
     ops::{Add, Div, Mul, Rem, Shr, Sub},
     rc::Rc,
 };
@@ -68,6 +68,19 @@ impl Precision {
                 (Self::Single(n), Self::Single(d)) => u64_float_div(*n, *d),
                 _ => todo!("handle sp+mp"),
             }
+        }
+    }
+
+    pub(super) fn try_to_radix(&self) -> RadixResult {
+        match self {
+            Self::Single(u) => match u {
+                2 => Ok(Radix::Binary),
+                8 => Ok(Radix::Octal),
+                10 => Ok(Radix::Decimal),
+                16 => Ok(Radix::Hexadecimal),
+                _ => Err(NumericError::RadixInvalid),
+            },
+            Self::Multiple(_) => Err(NumericError::RadixInvalid),
         }
     }
 
@@ -293,14 +306,25 @@ impl Shr<u64> for Precision {
     }
 }
 
-impl Display for Precision {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        match self {
-            // avoid direct Display impl for u64 to control expression of sign
-            Self::Single(u) => write!(f, "{u}"),
-            Self::Multiple(_) => todo!("handle mp"),
-        }
-    }
+macro_rules! display_impl {
+    ($($type:ty, $fmt:expr);+ $(;)?) => {
+        $(impl $type for Precision {
+            fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+                match self {
+                    // avoid direct impl::fmt for u64 to suppress sign
+                    Self::Single(u) => write!(f, $fmt, u),
+                    Self::Multiple(_) => todo!("handle mp"),
+                }
+            }
+        })+
+    };
+}
+
+display_impl! {
+    Display, "{}";
+    Binary, "{:b}";
+    Octal, "{:o}";
+    LowerHex, "{:x}";
 }
 
 impl From<u64> for Precision {

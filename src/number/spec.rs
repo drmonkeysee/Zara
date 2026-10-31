@@ -1,4 +1,4 @@
-use super::{IntResult, NumericError, Real, RealResult, Sign};
+use super::{IntResult, Number, NumericError, Real, RealResult, Sign};
 use crate::txt::TxtSpan;
 use std::num::{IntErrorKind, ParseIntError};
 
@@ -9,6 +9,17 @@ pub(crate) enum Radix {
     Decimal,
     Hexadecimal,
     Octal,
+}
+
+impl Radix {
+    pub(crate) fn num_to_string(&self, x: &Number) -> String {
+        match self {
+            Radix::Binary => format!("{:b}", x),
+            Radix::Decimal => format!("{}", x),
+            Radix::Hexadecimal => format!("{:x}", x),
+            Radix::Octal => format!("{:o}", x),
+        }
+    }
 }
 
 #[allow(private_bounds)]
