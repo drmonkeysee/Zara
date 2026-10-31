@@ -20,9 +20,9 @@ pub(crate) trait RadixClassifier: RadixParser {
 }
 
 #[derive(Clone, Copy, Default)]
-pub(crate) struct Binary;
+pub(crate) struct BinClassifier;
 
-impl RadixClassifier for Binary {
+impl RadixClassifier for BinClassifier {
     const BASE: u32 = 2;
     const NAME: &'static str = "binary";
 
@@ -32,9 +32,9 @@ impl RadixClassifier for Binary {
 }
 
 #[derive(Clone, Copy, Default)]
-pub(crate) struct Octal;
+pub(crate) struct OctClassifier;
 
-impl RadixClassifier for Octal {
+impl RadixClassifier for OctClassifier {
     const BASE: u32 = 8;
     const NAME: &'static str = "octal";
 
@@ -45,9 +45,9 @@ impl RadixClassifier for Octal {
 }
 
 #[derive(Clone, Copy, Default)]
-pub(crate) struct Decimal;
+pub(crate) struct DecClassifier;
 
-impl RadixClassifier for Decimal {
+impl RadixClassifier for DecClassifier {
     const BASE: u32 = 10;
     const NAME: &'static str = "decimal";
 
@@ -57,9 +57,9 @@ impl RadixClassifier for Decimal {
 }
 
 #[derive(Clone, Copy, Default)]
-pub(crate) struct Hexadecimal;
+pub(crate) struct HexClassifier;
 
-impl RadixClassifier for Hexadecimal {
+impl RadixClassifier for HexClassifier {
     const BASE: u32 = 16;
     const NAME: &'static str = "hexadecimal";
 
@@ -97,7 +97,7 @@ impl<R: RadixClassifier> IntSpec<R> {
 pub(crate) struct FloatSpec {
     pub(crate) exponent: TxtSpan,
     pub(crate) fraction: TxtSpan,
-    pub(crate) integral: IntSpec<Decimal>,
+    pub(crate) integral: IntSpec<DecClassifier>,
 }
 
 impl FloatSpec {
@@ -107,7 +107,7 @@ impl FloatSpec {
 
     pub(crate) fn try_into_exact(self, input: &str) -> RealResult {
         let mut buf = String::new();
-        let mut num = IntSpec::<Decimal>::default();
+        let mut num = IntSpec::<DecClassifier>::default();
         if self.integral.has_sign() {
             buf += input.get(..1).unwrap_or_default();
             num.sign = self.integral.sign;
@@ -124,7 +124,7 @@ impl FloatSpec {
         if scale < 0 {
             num.magnitude.end = buf.len();
             let adjustment = format!("1{adjustment}");
-            let denom = IntSpec::<Decimal> {
+            let denom = IntSpec::<DecClassifier> {
                 magnitude: 0..adjustment.len(),
                 ..Default::default()
             };
@@ -179,11 +179,11 @@ trait RadixParser {
     }
 }
 
-impl RadixParser for Binary {}
-impl RadixParser for Octal {}
-impl RadixParser for Hexadecimal {}
+impl RadixParser for BinClassifier {}
+impl RadixParser for OctClassifier {}
+impl RadixParser for HexClassifier {}
 
-impl RadixParser for Decimal {
+impl RadixParser for DecClassifier {
     fn parse_inexact<R>(spec: IntSpec<R>, input: &str) -> RealResult {
         input
             .get(..spec.magnitude.end)
@@ -232,7 +232,7 @@ mod tests {
 
     #[test]
     fn int_empty() {
-        let espec = IntSpec::<Decimal>::default();
+        let espec = IntSpec::<DecClassifier>::default();
         let ispec = espec.clone();
 
         assert!(espec.is_empty());
@@ -248,7 +248,7 @@ mod tests {
 
     #[test]
     fn int_blank_string() {
-        let espec = IntSpec::<Decimal> {
+        let espec = IntSpec::<DecClassifier> {
             magnitude: 1..3,
             ..Default::default()
         };

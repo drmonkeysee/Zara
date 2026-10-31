@@ -3,7 +3,7 @@ use super::{
     TokenKind, numeric::RadixNumber,
 };
 use crate::{
-    number::{Binary, Hexadecimal, Octal, Radix, RadixClassifier},
+    number::{BinClassifier, HexClassifier, OctClassifier, Radix, RadixClassifier},
     string,
 };
 
@@ -258,10 +258,10 @@ impl NumberKind {
 
     fn scan(&self, scanner: &mut Scanner, exactness: Option<Exactness>) -> TokenExtractResult {
         match self.0 {
-            Radix::Binary => radix::<Binary>(scanner, exactness),
+            Radix::Binary => radix::<BinClassifier>(scanner, exactness),
             Radix::Decimal => decimal(scanner, exactness),
-            Radix::Hexadecimal => radix::<Hexadecimal>(scanner, exactness),
-            Radix::Octal => radix::<Octal>(scanner, exactness),
+            Radix::Hexadecimal => radix::<HexClassifier>(scanner, exactness),
+            Radix::Octal => radix::<OctClassifier>(scanner, exactness),
         }
     }
 }

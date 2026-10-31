@@ -3,7 +3,7 @@ use super::{
     TokenKind,
 };
 use crate::number::{
-    Decimal, FloatSpec, IntSpec, Integer, Number, NumericError, RadixClassifier, Real, Sign,
+    DecClassifier, FloatSpec, IntSpec, Integer, Number, NumericError, RadixClassifier, Real, Sign,
 };
 use std::{debug_assert_matches, marker::PhantomData, ops::ControlFlow};
 
@@ -539,7 +539,7 @@ impl RealClassifier {
         )
     }
 
-    fn into_int_spec(self) -> IntSpec<Decimal> {
+    fn into_int_spec(self) -> IntSpec<DecClassifier> {
         match self {
             Self::Flt(Float(f)) => f.integral,
             Self::Int(RealInt(i)) => i,
@@ -563,7 +563,7 @@ struct RealProps {
 }
 
 impl ClassifierProps for RealProps {
-    type Radix = Decimal;
+    type Radix = DecClassifier;
 
     fn sign(&self) -> Option<Sign> {
         self.sign
@@ -790,7 +790,7 @@ impl<R: RadixClassifier> ClassifierParser for RadixParser<'_, R> {
     }
 }
 
-struct RealInt(IntSpec<Decimal>);
+struct RealInt(IntSpec<DecClassifier>);
 
 impl RealInt {
     fn classify<'txt>(&mut self, item: ScanItem<'txt>) -> RealControl<'txt> {

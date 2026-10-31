@@ -3,7 +3,7 @@ use super::{
     TokenExtractResult, TokenKind, numeric::RealNumber,
 };
 use crate::{
-    number::{Decimal, Number, RadixClassifier},
+    number::{DecClassifier, Number, RadixClassifier},
     string::identifier,
 };
 
@@ -39,7 +39,7 @@ impl<'me, 'txt> Identifier<'me, 'txt> {
         let first = self.start.1;
         if first == '|' {
             VerbatimIdentifer::new(self.scanner).scan()
-        } else if Decimal.is_digit(first) {
+        } else if DecClassifier.is_digit(first) {
             RealNumber::new(self.scanner, self.start.0, self.exactness).scan()
         } else if identifier::is_peculiar_initial(first) {
             self.peculiar(first)
@@ -81,7 +81,7 @@ impl<'me, 'txt> Identifier<'me, 'txt> {
             return Ok(TokenKind::Identifier(txt.to_owned()));
         };
 
-        if Decimal.is_digit(ch) {
+        if DecClassifier.is_digit(ch) {
             debug_assert!(self.peculiar_state.is_some());
             match self.peculiar_state.as_ref().expect(
                 "decimal-or-identifier check should only be reachable via peculiar identifier state",

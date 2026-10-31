@@ -84,7 +84,8 @@ mod tests;
 
 use self::precision::Precision;
 pub(crate) use self::spec::{
-    Binary, Decimal, FloatSpec, Hexadecimal, IntSpec, Octal, Radix, RadixClassifier,
+    BinClassifier, DecClassifier, FloatSpec, HexClassifier, IntSpec, OctClassifier, Radix,
+    RadixClassifier,
 };
 use std::{
     borrow::Borrow,
