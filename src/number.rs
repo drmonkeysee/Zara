@@ -211,7 +211,7 @@ impl Number {
 
     pub(crate) fn is_inexact(&self) -> bool {
         match self {
-            Self::Complex(Complex(z)) => z.0.is_inexact() || z.1.is_inexact(),
+            Self::Complex(z) => z.is_inexact(),
             Self::Real(r) => r.is_inexact(),
         }
     }
@@ -225,7 +225,7 @@ impl Number {
 
     pub(crate) fn is_nan(&self) -> bool {
         match self {
-            Self::Complex(Complex(z)) => z.0.is_nan() || z.1.is_nan(),
+            Self::Complex(z) => z.is_nan(),
             Self::Real(r) => r.is_nan(),
         }
     }
@@ -239,9 +239,7 @@ impl Number {
 
     pub(crate) fn is_eqv(&self, other: &Self) -> bool {
         match (self, other) {
-            (Self::Complex(Complex(a)), Self::Complex(Complex(b))) => {
-                a.0.is_eqv(&b.0) && a.1.is_eqv(&b.1)
-            }
+            (Self::Complex(a), Self::Complex(b)) => a.is_eqv(b),
             (Self::Real(a), Self::Real(b)) => a.is_eqv(b),
             _ => false,
         }
@@ -257,7 +255,7 @@ impl Number {
 
     pub(crate) fn to_inexact(&self) -> Self {
         match self {
-            Self::Complex(Complex(z)) => Self::complex(z.0.to_inexact(), z.1.to_inexact()),
+            Self::Complex(z) => z.to_inexact(),
             Self::Real(r) => Self::real(r.to_inexact()),
         }
     }
@@ -277,10 +275,10 @@ impl Number {
     }
 
     pub(crate) fn try_to_exact(&self) -> NumResult {
-        Ok(match self {
-            Self::Complex(Complex(z)) => Self::complex(z.0.try_to_exact()?, z.1.try_to_exact()?),
-            Self::Real(r) => Self::real(r.try_to_exact()?),
-        })
+        match self {
+            Self::Complex(z) => z.try_to_exact(),
+            Self::Real(r) => Ok(Self::real(r.try_to_exact()?)),
+        }
     }
 
     pub(crate) fn magnitude(&self) -> Real {
@@ -468,7 +466,7 @@ impl Neg for Number {
 
     fn neg(self) -> Self::Output {
         match self {
-            Self::Complex(Complex(z)) => Self::complex(-z.0, -z.1),
+            Self::Complex(z) => -z,
             Self::Real(r) => Self::real(-r),
         }
     }
@@ -547,9 +545,10 @@ macro_rules! impl_num_display {
         $(impl $trait for Number {
             fn fmt(&self, f: &mut Formatter) -> fmt::Result {
                 match self {
-                    Self::Complex(Complex(z)) => {
-                        <_ as $trait>::fmt(&ComplexRealDatum(&z.0), f)?;
-                        <_ as $trait>::fmt(&ComplexImagDatum(&z.1), f)
+                    Self::Complex(z) => {
+                        let (re, im) = z.to_display_datums();
+                        <_ as $trait>::fmt(&re, f)?;
+                        <_ as $trait>::fmt(&im, f)
                     }
                     Self::Real(r) => <_ as $trait>::fmt(r, f),
                 }
@@ -607,6 +606,18 @@ impl Complex {
         self.0.0.is_infinite() || self.0.1.is_infinite()
     }
 
+    fn is_nan(&self) -> bool {
+        self.0.0.is_nan() || self.0.1.is_nan()
+    }
+
+    fn is_inexact(&self) -> bool {
+        self.0.0.is_inexact() || self.0.1.is_inexact()
+    }
+
+    fn is_eqv(&self, other: &Self) -> bool {
+        self.0.0.is_eqv(&other.0.0) && self.0.1.is_eqv(&other.0.1)
+    }
+
     fn to_real(&self) -> Real {
         self.0.0.clone()
     }
@@ -622,6 +633,21 @@ impl Complex {
 
     fn to_number(&self) -> Number {
         Number::Complex(self.clone())
+    }
+
+    fn to_inexact(&self) -> Number {
+        Number::complex(self.0.0.to_inexact(), self.0.1.to_inexact())
+    }
+
+    fn to_display_datums(&self) -> (ComplexRealDatum<'_>, ComplexImagDatum<'_>) {
+        (ComplexRealDatum(&self.0.0), ComplexImagDatum(&self.0.1))
+    }
+
+    fn try_to_exact(&self) -> NumResult {
+        Ok(Number::complex(
+            self.0.0.try_to_exact()?,
+            self.0.1.try_to_exact()?,
+        ))
     }
 
     fn magnitude(&self) -> Real {
@@ -929,6 +955,22 @@ impl Complex {
     fn conjugate(self) -> Number {
         let (x, y) = self.into_parts();
         Number::complex(x, -y)
+    }
+}
+
+impl Neg for Complex {
+    type Output = Number;
+
+    fn neg(self) -> Self::Output {
+        Number::complex(-self.0.0, -self.0.1)
+    }
+}
+
+impl Neg for &Complex {
+    type Output = Number;
+
+    fn neg(self) -> Self::Output {
+        -self.clone()
     }
 }
 
