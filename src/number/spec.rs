@@ -12,12 +12,22 @@ pub(crate) enum Radix {
 }
 
 impl Radix {
+    pub(crate) fn from_char(c: Option<char>) -> Option<Self> {
+        match c? {
+            'b' | 'B' => Some(Self::Binary),
+            'd' | 'D' => Some(Self::Decimal),
+            'o' | 'O' => Some(Self::Octal),
+            'x' | 'X' => Some(Self::Hexadecimal),
+            _ => None,
+        }
+    }
+
     pub(crate) fn num_to_string(&self, x: &Number) -> String {
         match self {
-            Radix::Binary => format!("{:b}", x),
-            Radix::Decimal => format!("{}", x),
-            Radix::Hexadecimal => format!("{:x}", x),
-            Radix::Octal => format!("{:o}", x),
+            Self::Binary => format!("{:b}", x),
+            Self::Decimal => format!("{}", x),
+            Self::Hexadecimal => format!("{:x}", x),
+            Self::Octal => format!("{:o}", x),
         }
     }
 }

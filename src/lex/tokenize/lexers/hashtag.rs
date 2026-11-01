@@ -247,13 +247,8 @@ impl NumberKind {
         scanner: &mut Scanner,
         ch: Option<char>,
     ) -> Result<Self, TokenErrorKind> {
-        match ch.or_else(|| scanner.char_if_not_delimiter()) {
-            Some('b' | 'B') => Ok(Self(Radix::Binary)),
-            Some('d' | 'D') => Ok(Self(Radix::Decimal)),
-            Some('o' | 'O') => Ok(Self(Radix::Octal)),
-            Some('x' | 'X') => Ok(Self(Radix::Hexadecimal)),
-            _ => Err(failure),
-        }
+        Radix::from_char(ch.or_else(|| scanner.char_if_not_delimiter()))
+            .map_or(Err(failure), |r| Ok(Self(r)))
     }
 
     fn scan(&self, scanner: &mut Scanner, exactness: Option<Exactness>) -> TokenExtractResult {
