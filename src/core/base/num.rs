@@ -344,7 +344,23 @@ fn number_to_string(args: &[Value], _env: &Frame) -> EvalResult {
     )
 }
 
-fn number_from_string(_args: &[Value], _env: &Frame) -> EvalResult {
+fn number_from_string(args: &[Value], _env: &Frame) -> EvalResult {
+    let arg = first(args);
+    let s = arg
+        .as_refstr()
+        .ok_or_else(|| invalid_target(TypeName::STRING, arg))?;
+    let radix = args
+        .get(1)
+        .map(|v| {
+            if let Value::Number(Number::Real(Real::Integer(n))) = v {
+                n.try_to_radix()
+                    .map_err(|err| Exception::from(Condition::value_error(err, v)))
+            } else {
+                Err(Condition::value_error(NumericError::RadixInvalid, v).into())
+            }
+        })
+        .transpose()?
+        .unwrap_or(Radix::default());
     todo!();
 }
 
