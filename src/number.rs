@@ -44,8 +44,8 @@ macro_rules! impl_val_delegate {
     (Mul, $type:ty, $out:ty) => { impl_val_delegate!(@imp Mul, $type, $out, mul, *); };
     (Rem, $type:ty, $out:ty) => { impl_val_delegate!(@imp Rem, $type, $out, rem, %); };
 
-    (@imp $imp:ident, $this:ty, $out:ty, $func:ident, $op:tt) => {
-        impl<Rhs: Borrow<$this>> $imp<Rhs> for $this {
+    (@imp $trait:ident, $this:ty, $out:ty, $func:ident, $op:tt) => {
+        impl<Rhs: Borrow<$this>> $trait<Rhs> for $this {
             type Output = $out;
 
             fn $func(self, rhs: Rhs) -> Self::Output {
@@ -481,8 +481,8 @@ impl Neg for &Number {
 }
 
 macro_rules! impl_num_commutative {
-    ($imp:ident, $func:ident, $op:tt; $($this:ty, $that:ty);+ $(;)?) => {
-        $(impl $imp<$that> for $this {
+    ($trait:ident, $func:ident, $op:tt; $($this:ty, $that:ty);+ $(;)?) => {
+        $(impl $trait<$that> for $this {
             type Output = Number;
 
             fn $func(self, rhs: $that) -> Self::Output {
@@ -511,8 +511,8 @@ impl_num_commutative! {
 }
 
 macro_rules! impl_num_inverse {
-    ($imp:ident, $func:ident, $op:tt, $out:ty; $($this:ty, $that:ty, $conv:expr, $rfn:expr);+ $(;)?) => {
-        $(impl $imp<$that> for $this {
+    ($trait:ident, $func:ident, $op:tt, $out:ty; $($this:ty, $that:ty, $conv:expr, $rfn:expr);+ $(;)?) => {
+        $(impl $trait<$that> for $this {
             type Output = $out;
 
             fn $func(self, rhs: $that) -> Self::Output {
@@ -1766,8 +1766,8 @@ impl Neg for &Real {
 }
 
 macro_rules! impl_real_commutative {
-    ($imp:ident, $func:ident, $op:tt; $($this:ty, $that:ty, $zfn:expr);+ $(;)?) => {
-        $(impl $imp<$that> for $this {
+    ($trait:ident, $func:ident, $op:tt; $($this:ty, $that:ty, $zfn:expr);+ $(;)?) => {
+        $(impl $trait<$that> for $this {
             type Output = Real;
 
             fn $func(self, rhs: $that) -> Self::Output {
@@ -2082,8 +2082,8 @@ impl Neg for &Rational {
 }
 
 macro_rules! impl_rat_additive {
-    ($imp:ident, $func:ident) => {
-        impl<Rhs: Borrow<Rational>> $imp<Rhs> for &Rational {
+    ($trait:ident, $func:ident) => {
+        impl<Rhs: Borrow<Rational>> $trait<Rhs> for &Rational {
             type Output = Real;
 
             fn $func(self, rhs: Rhs) -> Self::Output {
@@ -2155,8 +2155,8 @@ impl PartialOrd<Real> for Rational {
 }
 
 macro_rules! impl_rat_real_arithmetic_ring {
-    ($imp:ident, $func:ident, $op:tt; $($this:ty, $that:ty, $int_conv:expr);+ $(;)?) => {
-        $(impl $imp<$that> for $this {
+    ($trait:ident, $func:ident, $op:tt; $($this:ty, $that:ty, $int_conv:expr);+ $(;)?) => {
+        $(impl $trait<$that> for $this {
             type Output = Real;
 
             fn $func(self, rhs: $that) -> Self::Output {
@@ -2576,8 +2576,8 @@ impl Neg for &Integer {
 }
 
 macro_rules! impl_int_additive {
-    ($imp:ident, $func:ident; $($this:ty, $that:ty, $zrhs:expr, $zlhs:expr, $same:expr, $diff:expr);+ $(;)?) => {
-        $(impl $imp<$that> for $this {
+    ($trait:ident, $func:ident; $($this:ty, $that:ty, $zrhs:expr, $zlhs:expr, $same:expr, $diff:expr);+ $(;)?) => {
+        $(impl $trait<$that> for $this {
             type Output = Integer;
 
             fn $func(self, rhs: $that) -> Self::Output {
@@ -2707,8 +2707,8 @@ impl PartialOrd<Real> for Integer {
 }
 
 macro_rules! impl_int_real_arithmetic_ring {
-    ($imp:ident, $func:ident, $op:tt; $($this:ty, $that:ty, $zfn:expr, $rat_conv:expr);+ $(;)?) => {
-        $(impl $imp<$that> for $this {
+    ($trait:ident, $func:ident, $op:tt; $($this:ty, $that:ty, $zfn:expr, $rat_conv:expr);+ $(;)?) => {
+        $(impl $trait<$that> for $this {
             type Output = Real;
 
             fn $func(self, rhs: $that) -> Self::Output {
