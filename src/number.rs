@@ -542,38 +542,22 @@ impl_num_inverse! {
     &Number, &Number, Real::clone, |a, b| Ok(Number::real((a / b)?));
 }
 
-impl Display for Number {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        match self {
-            Self::Complex(Complex(z)) => {
-                ComplexRealDatum(&z.0).fmt(f)?;
-                ComplexImagDatum(&z.1).fmt(f)
+macro_rules! impl_num_display {
+    ($($trait:path),+) => {
+        $(impl $trait for Number {
+            fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+                match self {
+                    Self::Complex(Complex(z)) => {
+                        <_ as $trait>::fmt(&ComplexRealDatum(&z.0), f)?;
+                        <_ as $trait>::fmt(&ComplexImagDatum(&z.1), f)
+                    }
+                    Self::Real(r) => <_ as $trait>::fmt(r, f),
+                }
             }
-            Self::Real(r) => Display::fmt(r, f),
-        }
-    }
+        })+
+    };
 }
-
-impl Binary for Number {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Complex(_) => todo!(),
-            Self::Real(r) => Binary::fmt(r, f),
-        }
-    }
-}
-
-impl Octal for Number {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        todo!()
-    }
-}
-
-impl LowerHex for Number {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        todo!()
-    }
-}
+impl_num_display!(Display, Binary, Octal, LowerHex);
 
 macro_rules! try_int_conversion {
     ($($type:ty, $convert:ident);+ $(;)?) => {
@@ -1468,6 +1452,14 @@ impl Real {
         Number::real(self.clone())
     }
 
+    fn sign(&self) -> Sign {
+        match self {
+            Self::Float(f) => f.signum().into(),
+            Self::Integer(n) => n.sign,
+            Self::Rational(q) => q.sign(),
+        }
+    }
+
     fn reciprocal(&self) -> RealResult {
         match self {
             Self::Float(f) => Ok(f.recip().into()),
@@ -1811,25 +1803,21 @@ impl_real_div! {
     &Real, &Real;
 }
 
-impl Display for Real {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        match self {
-            Self::Float(d) => FloatDatum(d).fmt(f),
-            Self::Integer(n) => Display::fmt(n, f),
-            Self::Rational(q) => Display::fmt(q, f),
-        }
-    }
+macro_rules! impl_real_display {
+    ($($trait:path),+) => {
+        $(impl $trait for Real {
+            fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+                match self {
+                    // floats ignore radix and always print base-10
+                    Self::Float(d) => FloatDatum(d).fmt(f),
+                    Self::Integer(n) => <_ as $trait>::fmt(n, f),
+                    Self::Rational(q) => <_ as $trait>::fmt(q, f),
+                }
+            }
+        })+
+    };
 }
-
-impl Binary for Real {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Float(d) => FloatDatum(d).fmt(f),
-            Self::Integer(n) => Binary::fmt(n, f),
-            Self::Rational(q) => Binary::fmt(q, f),
-        }
-    }
-}
+impl_real_display!(Display, Binary, Octal, LowerHex);
 
 impl From<f64> for Real {
     fn from(value: f64) -> Self {
@@ -1855,6 +1843,10 @@ impl Rational {
 
     fn is_negative(&self) -> bool {
         self.0.0.is_negative()
+    }
+
+    fn sign(&self) -> Sign {
+        self.0.0.sign
     }
 
     fn signum(&self) -> f64 {
@@ -2086,21 +2078,19 @@ impl<Rhs: Borrow<Rational>> Mul<Rhs> for &Rational {
 }
 impl_val_delegate!(Mul, Rational, Real);
 
-impl Display for Rational {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        let r = &self.0;
-        Display::fmt(&r.0, f)?;
-        write!(f, "/{}", r.1)
-    }
+macro_rules! impl_rat_display {
+    ($($trait:path),+) => {
+        $(impl $trait for Rational {
+            fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+                let r = &self.0;
+                <_ as $trait>::fmt(&r.0, f)?;
+                f.write_char('/')?;
+                <_ as $trait>::fmt(&r.1, f)
+            }
+        })+
+    };
 }
-
-impl Binary for Rational {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        let r = &self.0;
-        Binary::fmt(&r.0, f)?;
-        write!(f, "/{:b}", r.1)
-    }
-}
+impl_rat_display!(Display, Binary, Octal, LowerHex);
 
 impl PartialEq<Real> for Rational {
     fn eq(&self, other: &Real) -> bool {
@@ -2623,19 +2613,17 @@ impl<Rhs: Borrow<Integer>> Rem<Rhs> for &Integer {
 }
 impl_val_delegate!(Rem, Integer, IntResult);
 
-impl Display for Integer {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        self.sign.fmt(f)?;
-        Display::fmt(&self.precision, f)
-    }
+macro_rules! impl_int_display {
+    ($($trait:path),+) => {
+        $(impl $trait for Integer {
+            fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+                self.sign.fmt(f)?;
+                <_ as $trait>::fmt(&self.precision, f)
+            }
+        })+
+    };
 }
-
-impl Binary for Integer {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        self.sign.fmt(f)?;
-        Binary::fmt(&self.precision, f)
-    }
-}
+impl_int_display!(Display, Binary, Octal, LowerHex);
 
 // TODO: handle multi-precision later
 impl From<i64> for Integer {
@@ -2945,26 +2933,41 @@ impl Display for FloatDatum<'_> {
 
 struct ComplexRealDatum<'a>(&'a Real);
 
-impl Display for ComplexRealDatum<'_> {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        match self.0 {
-            Real::Integer(n) if n.is_zero() => Ok(()),
-            r => Display::fmt(r, f),
-        }
-    }
+macro_rules! impl_cpxre_display {
+    ($($trait:path),+) => {
+        $(impl $trait for ComplexRealDatum<'_> {
+            fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+                match self.0 {
+                    Real::Integer(n) if n.is_zero() => Ok(()),
+                    r => <_ as $trait>::fmt(r, f),
+                }
+            }
+        })+
+    };
 }
+impl_cpxre_display!(Display, Binary, Octal, LowerHex);
 
 struct ComplexImagDatum<'a>(&'a Real);
 
-impl Display for ComplexImagDatum<'_> {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        match self.0 {
-            Real::Integer(n) if n.is_zero() => Ok(()),
-            Real::Integer(n) if n.is_magnitude_one() => write!(f, "{:+}i", n.sign),
-            r => write!(f, "{r:+}i"),
-        }
-    }
+macro_rules! impl_cpxim_display {
+    ($($trait:path),+) => {
+        $(impl $trait for ComplexImagDatum<'_> {
+            fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+                match self.0 {
+                    Real::Float(r) => write!(f, "{:+}i", FloatDatum(r)),
+                    Real::Integer(n) if n.is_zero() => Ok(()),
+                    Real::Integer(n) if n.is_magnitude_one() => write!(f, "{:+}i", n.sign),
+                    r => {
+                        write!(f, "{:+}", r.sign())?;
+                        <_ as $trait>::fmt(r, f)?;
+                        f.write_char('i')
+                    },
+                }
+            }
+        })+
+    };
 }
+impl_cpxim_display!(Display, Binary, Octal, LowerHex);
 
 // square-and-multiply: compute b^n in O(log₂ n);
 // each set bit p in the exponent contributes b^p to the result,

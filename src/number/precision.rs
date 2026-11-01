@@ -307,8 +307,8 @@ impl Shr<u64> for Precision {
 }
 
 macro_rules! display_impl {
-    ($($type:ty, $fmt:expr);+ $(;)?) => {
-        $(impl $type for Precision {
+    ($($trait:path, $fmt:expr);+ $(;)?) => {
+        $(impl $trait for Precision {
             fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
                 match self {
                     // avoid direct impl::fmt for u64 to suppress sign
@@ -319,7 +319,6 @@ macro_rules! display_impl {
         })+
     };
 }
-
 display_impl! {
     Display, "{}";
     Binary, "{:b}";
