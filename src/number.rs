@@ -3000,7 +3000,11 @@ macro_rules! impl_cpxim_display {
                     Real::Integer(n) if n.is_zero() => Ok(()),
                     Real::Integer(n) if n.is_magnitude_one() => write!(f, "{:+}i", n.sign),
                     r => {
-                        write!(f, "{:+}", r.sign())?;
+                        let s = r.sign();
+                        // trait fmt already adds negative sign
+                        if s != Sign::Negative {
+                            write!(f, "{:+}", s)?;
+                        }
                         <_ as $trait>::fmt(r, f)?;
                         f.write_char('i')
                     },
