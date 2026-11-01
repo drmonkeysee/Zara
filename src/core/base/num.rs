@@ -338,7 +338,7 @@ fn number_to_string(args: &[Value], _env: &Frame) -> EvalResult {
         |res, _| {
             res.map_or_else(
                 |(err, v)| Err(Condition::value_error(err, v).into()),
-                |s| Ok(Value::string(s)),
+                |s| Ok(Value::string_mut(s)),
             )
         },
     )
