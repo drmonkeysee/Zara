@@ -3,7 +3,7 @@ mod tests;
 
 use super::{FIRST_ARG_LABEL, MAX_ARITY, SECOND_ARG_LABEL, first, invalid_target};
 use crate::{
-    Exception,
+    Exception, NumReader,
     eval::{EvalResult, Frame},
     number::{Integer, NumResult, Number, NumericError, NumericTypeName, Radix, Real},
     value::{Condition, TypeName, Value},
@@ -361,6 +361,7 @@ fn number_from_string(args: &[Value], _env: &Frame) -> EvalResult {
         })
         .transpose()?
         .unwrap_or(Radix::default());
+    let r = NumReader::default();
     todo!();
 }
 

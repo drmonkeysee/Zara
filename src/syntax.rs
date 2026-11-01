@@ -70,6 +70,19 @@ impl Parser for TokenList {
 }
 
 #[derive(Default)]
+pub(crate) struct NumExtractor;
+
+impl Parser for NumExtractor {
+    fn parse(&mut self, token_lines: Box<[TokenLine]>, ns: Namespace) -> ParserResult {
+        todo!()
+    }
+
+    fn unsupported_continuation(&mut self) -> Option<ParserError> {
+        todo!()
+    }
+}
+
+#[derive(Default)]
 pub(crate) struct PrgBasis;
 
 #[derive(Default)]

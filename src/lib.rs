@@ -14,7 +14,9 @@ pub use self::eval::{Evaluation, Exception, Signal, Value};
 use self::{
     eval::{Ast, Environment, Eval, Evaluator, Namespace},
     lex::{Lexer, LexerError, LexerOutput, TokenLine},
-    syntax::{DataTree, ExpressionTree, Parser, ParserError, ParserOutput, TokenList},
+    syntax::{
+        DataTree, ExpressionTree, NumExtractor, Parser, ParserError, ParserOutput, TokenList,
+    },
     txt::TextSource,
 };
 use std::{
@@ -146,6 +148,7 @@ impl Display for ErrorMessage<'_> {
 
 type ExecResult = result::Result<Evaluation, ReadError>;
 type DataReader = Reader<DataTree>;
+type NumReader = Reader<NumExtractor>;
 
 trait Executor {
     fn exec(&mut self, token_lines: Box<[TokenLine]>) -> ExecResult;
