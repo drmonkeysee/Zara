@@ -70,15 +70,18 @@ impl Parser for TokenList {
 }
 
 #[derive(Default)]
-pub(crate) struct NumParser;
+pub(crate) struct NumParser(DataTree);
 
 impl Parser for NumParser {
     fn parse(&mut self, token_lines: Box<[TokenLine]>, ns: Namespace) -> ParserResult {
-        todo!()
+        if !matches!(&*token_lines, [line] if line.is_numeric()) {
+            return Err(InvalidParseError::InvalidNumericDatum.into());
+        }
+        self.0.parse(token_lines, ns)
     }
 
     fn unsupported_continuation(&mut self) -> Option<ParserError> {
-        todo!()
+        self.0.unsupported_continuation()
     }
 }
 
@@ -148,6 +151,7 @@ pub(crate) enum InvalidParseError {
     EndOfParse,
     InvalidExprSource,
     InvalidExprTarget,
+    InvalidNumericDatum,
     MissingExprTarget,
 }
 
@@ -312,6 +316,9 @@ impl Display for InvalidParseErrorMessage<'_> {
             }
             InvalidParseError::InvalidExprTarget => {
                 f.write_str("invalid merge target expression\n")
+            }
+            InvalidParseError::InvalidNumericDatum => {
+                f.write_str("invalid numeric datum expression")
             }
             InvalidParseError::MissingExprTarget => {
                 f.write_str("unexpected end-of-parse for merge target\n")

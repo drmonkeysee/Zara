@@ -73,6 +73,10 @@ pub(crate) enum TokenKind {
 }
 
 impl TokenKind {
+    pub(super) fn is_numeric(&self) -> bool {
+        matches!(self, TokenKind::Imaginary(_) | TokenKind::Number(_))
+    }
+
     pub(super) fn to_continuation(&self) -> Option<TokenContinuation> {
         match self {
             Self::BlockCommentBegin { depth } | Self::BlockCommentFragment { depth } => {

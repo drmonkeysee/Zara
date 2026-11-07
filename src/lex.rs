@@ -143,6 +143,12 @@ impl From<TokenErrorLine> for LineFailure {
 pub(crate) struct TokenLine(pub(crate) Vec<Token>, pub(crate) TextLine);
 
 impl TokenLine {
+    // token line contains *only* a numeric token (even whitespace doesn't count)
+    pub(crate) fn is_numeric(&self) -> bool {
+        let Self(tokens, txt) = self;
+        matches!(tokens.as_slice(), [token] if token.kind.is_numeric() && token.span.len() == txt.line.len())
+    }
+
     fn into_continuation_unsupported(self, cont: TokenContinuation) -> LexerError {
         let Self(mut tokens, txtline) = self;
         debug_assert!(!tokens.is_empty());
