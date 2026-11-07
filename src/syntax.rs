@@ -70,9 +70,9 @@ impl Parser for TokenList {
 }
 
 #[derive(Default)]
-pub(crate) struct NumExtractor;
+pub(crate) struct NumParser;
 
-impl Parser for NumExtractor {
+impl Parser for NumParser {
     fn parse(&mut self, token_lines: Box<[TokenLine]>, ns: Namespace) -> ParserResult {
         todo!()
     }
