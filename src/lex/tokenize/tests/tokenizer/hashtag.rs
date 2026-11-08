@@ -385,6 +385,58 @@ fn exactness_with_no_number() {
 }
 
 #[test]
+fn decimal_or_exactness_prefix_with_lone_period_is_not_a_number() {
+    let cases = ["#d.", "#e.", "#i."];
+    for case in cases {
+        let mut s = Scanner::new(case);
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scanner: &mut s,
+            start,
+        };
+
+        let (r, c) = t.extract();
+
+        assert!(c.is_none(), "{case:?} should not request a continuation");
+        let err = err_or_fail!(r);
+        assert_matches!(
+            err,
+            TokenError {
+                kind: TokenErrorKind::NumberExpected,
+                span: TxtSpan { start: 0, end: 3 },
+            },
+            "{case:?}"
+        );
+    }
+}
+
+#[test]
+fn non_decimal_radix_with_lone_period_is_invalid_decimal_point() {
+    let cases = ["#b.", "#o.", "#x."];
+    for case in cases {
+        let mut s = Scanner::new(case);
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scanner: &mut s,
+            start,
+        };
+
+        let (r, c) = t.extract();
+
+        assert!(c.is_none(), "{case:?} should not request a continuation");
+        let err = err_or_fail!(r);
+        assert_matches!(
+            err,
+            TokenError {
+                kind: TokenErrorKind::NumberInvalidDecimalPoint { at: 2, .. },
+                span: TxtSpan { start: 2, end: 3 },
+            },
+            "{case:?}"
+        );
+    }
+}
+
+#[test]
 fn exactness_with_invalid_number() {
     let cases = ["#efoo", "#ibar"];
     for case in cases {
