@@ -74,11 +74,7 @@ impl<'me, 'txt> Identifier<'me, 'txt> {
 
     fn continue_peculiar(&mut self, next_ch: Option<char>) -> TokenExtractResult {
         let Some(ch) = next_ch else {
-            // A single '.' is invalid but Tokenizer handles '.'
-            // before attempting Identifier so this case never happens.
-            let txt = self.get_lexeme();
-            debug_assert_ne!(txt, ".");
-            return Ok(TokenKind::Identifier(txt.to_owned()));
+            return Ok(TokenKind::Identifier(self.get_lexeme().to_owned()));
         };
 
         if DecClassifier.is_digit(ch) {
