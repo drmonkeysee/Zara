@@ -287,8 +287,21 @@ mod tests {
             assert_reads("#B101", rx, &int(5));
             assert_reads("#O17", rx, &int(15));
             assert_reads("#D10", rx, &int(10));
-            assert_reads("#E10", rx, &int(10));
-            assert_reads("#I10", rx, &float(10.0));
+        }
+    }
+
+    #[test]
+    fn uppercase_exactness_prefix_respects_radix_param() {
+        // #E/#I are exactness prefixes, not radix prefixes, so the radix
+        // argument still decides how "10" is read
+        for (rx, n) in [
+            (Radix::Binary, 2),
+            (Radix::Octal, 8),
+            (Radix::Decimal, 10),
+            (Radix::Hexadecimal, 16),
+        ] {
+            assert_reads("#E10", rx, &int(n.into()));
+            assert_reads("#I10", rx, &float(n.into()));
         }
     }
 
