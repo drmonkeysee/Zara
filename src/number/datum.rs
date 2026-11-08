@@ -21,7 +21,7 @@ pub(crate) fn read(
     if !Radix::in_string(&s) {
         s.insert_str(0, rx.into_prefix());
     }
-    let mut src = StringSource::new(s, label);
+    let mut src = StringSource::raw(s, label);
     let mut r = NumReader::default();
     match r.read(&mut src, Namespace(env.new_child())) {
         Err(_) | Ok(ParserOutput::Continuation) => Ok(Value::Boolean(false)),

@@ -7,21 +7,19 @@ use std::{
     io::{self, BufRead, BufReader, Error, ErrorKind, IsTerminal},
     path::Path,
     rc::Rc,
+    vec::IntoIter,
 };
 
 pub struct StringSource {
     ctx: Rc<TextContext>,
     lineno: LineNumber,
-    lines: Option<<Vec<String> as IntoIterator>::IntoIter>,
+    lines: Option<IntoIter<String>>,
+    mode: StringSourceMode,
 }
 
 impl StringSource {
     pub fn empty(name: impl Into<String>) -> Self {
-        Self {
-            ctx: TextContext::named(name).into(),
-            lineno: 0,
-            lines: None,
-        }
+        Self::make(name, StringSourceMode::Lines)
     }
 
     pub fn new(src: impl Into<String>, name: impl Into<String>) -> Self {
@@ -36,18 +34,27 @@ impl StringSource {
     }
 
     pub fn cont(&mut self, src: impl Into<String>) {
-        self.lines = Some(
-            src.into()
-                .lines()
-                .map(String::from)
-                .collect::<Vec<_>>()
-                .into_iter(),
-        );
+        self.lines = Some(self.mode.lines(src));
     }
 
     pub fn clear(&mut self) {
         self.lineno = 0;
         self.lines = None;
+    }
+
+    pub(crate) fn raw(src: impl Into<String>, name: impl Into<String>) -> Self {
+        let mut me = Self::make(name, StringSourceMode::Raw);
+        me.set(src);
+        me
+    }
+
+    fn make(name: impl Into<String>, mode: StringSourceMode) -> Self {
+        Self {
+            ctx: TextContext::named(name).into(),
+            lineno: 0,
+            lines: None,
+            mode,
+        }
     }
 }
 
@@ -175,5 +182,21 @@ impl FileSource {
             ctx: TextContext { name, path: p }.into(),
             lineno: 0,
         })
+    }
+}
+
+enum StringSourceMode {
+    Lines,
+    Raw,
+}
+
+impl StringSourceMode {
+    fn lines(&self, src: impl Into<String>) -> IntoIter<String> {
+        let s = src.into();
+        match self {
+            Self::Lines => s.lines().map(String::from).collect::<Vec<_>>(),
+            Self::Raw => vec![s],
+        }
+        .into_iter()
     }
 }
