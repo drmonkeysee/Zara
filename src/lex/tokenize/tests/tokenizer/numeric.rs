@@ -5611,6 +5611,34 @@ mod polar {
     }
 
     #[test]
+    fn angle_is_not_a_real() {
+        // Unlike an infnan magnitude, a plain number magnitude can't fall
+        // back to being an identifier (identifiers can't start with a digit)
+        let cases = ["1@.", "1@..", "1@+", "1@-", "1@a"];
+        for case in cases {
+            let mut s = Scanner::new(case);
+            let start = some_or_fail!(s.next_token());
+            let t = Tokenizer {
+                scanner: &mut s,
+                start,
+            };
+
+            let (r, c) = t.extract();
+
+            assert!(c.is_none(), "{case:?} should not request a continuation");
+            let err = err_or_fail!(r);
+            assert_matches!(
+                err,
+                TokenError {
+                    kind: TokenErrorKind::PolarInvalid,
+                    span: TxtSpan { start: 0, end },
+                } if end == case.len(),
+                "{case:?}"
+            );
+        }
+    }
+
+    #[test]
     fn recursive_polar() {
         let mut s = Scanner::new("4@3@2");
         let start = some_or_fail!(s.next_token());
