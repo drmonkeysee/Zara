@@ -20,6 +20,7 @@ use std::{
     iter::FilterMap,
     marker::PhantomData,
     rc::Rc,
+    vec::IntoIter,
 };
 
 pub(crate) type ParserResult = Result<ParserOutput, ParserError>;
@@ -367,7 +368,7 @@ impl Display for SyntaxErrorLineMessage<'_> {
 }
 
 struct PartitionByOverlap<'a> {
-    groups: <Vec<<Self as Iterator>::Item> as IntoIterator>::IntoIter,
+    groups: IntoIter<<Self as Iterator>::Item>,
 }
 
 impl<'a> PartitionByOverlap<'a> {
