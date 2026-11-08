@@ -358,6 +358,34 @@ fn period_identifier() {
 }
 
 #[test]
+fn infnan_polar_marker_with_trailing_period_is_identifier() {
+    // <peculiar identifier> permits '@' and '.' as subsequent characters, so
+    // an infnan followed by "@." is an identifier rather than a polar number
+    let cases = ["+inf.0@.", "-inf.0@.", "+nan.0@.", "-nan.0@."];
+    for case in cases {
+        let mut s = Scanner::new(case);
+        let start = some_or_fail!(s.next_token());
+        let t = Tokenizer {
+            scanner: &mut s,
+            start,
+        };
+
+        let (r, c) = t.extract();
+
+        assert!(c.is_none(), "{case:?} should not request a continuation");
+        let tok = ok_or_fail!(r);
+        assert_matches!(
+            tok,
+            Token {
+                kind: TokenKind::Identifier(txt),
+                span: TxtSpan { start: 0, end },
+            } if txt == case && end == case.len(),
+            "{case:?}"
+        );
+    }
+}
+
+#[test]
 fn start_digit() {
     let mut s = Scanner::new("4foo");
     let start = some_or_fail!(s.next_token());
